@@ -2,7 +2,7 @@
 
 ## Overview
 
-Paladin is a Rust-based software system designed using Hexagonal Architecture principles to provide robust and flexible handling of various content types, notification management, machine learning integrations, and content delivery mechanisms.
+Paladin is an enterprise capable AI Orchestration system designed using hexagonal architecture principles to provide robust and flexible handling of a large range of functionality including processing any type of content (structured documents, test, audio, video, images, etc), notification management (push, email, sms, etc), machine learning integrations (LLM's, ML, etc), and content delivery mechanisms (web servers, streaming, apis, etc).
 
 This project utilizes clearly defined Ports and Adapters, enabling seamless integration with external services such as email, SMS, push notifications, webhooks, machine learning models, and more. The design ensures high modularity, scalability, and ease of maintenance.
 
