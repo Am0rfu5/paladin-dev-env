@@ -1,6 +1,12 @@
 # Paladin
 
-## Overview
+## General Overview
+
+Paladin is a Rust-based, modular content processing platform built with Hexagonal Architecture principles. It provides configurable pipelines to ingest, normalize, analyze, enrich, store, and deliver diverse content types (web pages, documents, feeds, and streams) at scale.
+
+Key capabilities include configurable content ingestion, NLP/LLM analysis and summarization, metadata extraction and subject tagging, content filtering and lifecycle management, and flexible delivery channels (HTTP/webhooks, email, push, and queue-based adapters). Clear ports-and-adapters boundaries make integrations, testing, and replacement of components straightforward. Paladin is designed for content aggregation, monitoring, enrichment, and automated delivery workflows where extensibility, observability, and reliable storage across SQL/NoSQL/file backends are important.
+
+## Architectural Overview
 
 Paladin is a Rust-based software system designed using Hexagonal Architecture principles to provide robust and flexible handling of various content types, notification management, machine learning integrations, and content delivery mechanisms.
 
