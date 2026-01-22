@@ -4,3 +4,4 @@
 //! builders, execution services, and error handling.
 
 pub mod error;
+pub mod paladin_builder;
