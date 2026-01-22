@@ -22,7 +22,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
-use crate::core::platform::container::log::{LogEntry, LogLevel, LogDestination};
+use crate::core::platform::container::log::{LogDestination, LogEntry, LogLevel};
 
 /// Result type for logging operations
 pub type LogResult<T> = Result<T, LogError>;
@@ -32,31 +32,31 @@ pub type LogResult<T> = Result<T, LogError>;
 pub enum LogError {
     #[error("IO error: {0}")]
     IoError(String),
-    
+
     #[error("Configuration error: {0}")]
     ConfigError(String),
-    
+
     #[error("Serialization error: {0}")]
     SerializationError(String),
-    
+
     #[error("Network error: {0}")]
     NetworkError(String),
-    
+
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
-    
+
     #[error("Log destination not found: {0}")]
     DestinationNotFound(String),
-    
+
     #[error("Log buffer full")]
     BufferFull,
-    
+
     #[error("Log service unavailable")]
     ServiceUnavailable,
-    
+
     #[error("Invalid log format: {0}")]
     InvalidFormat(String),
-    
+
     #[error("Unknown error: {0}")]
     Unknown(String),
 }
@@ -190,13 +190,13 @@ impl BatchWriteRequest {
             timeout: None,
         }
     }
-    
+
     /// Set atomic write behavior
     pub fn with_atomic(mut self, atomic: bool) -> Self {
         self.atomic = atomic;
         self
     }
-    
+
     /// Set write timeout
     pub fn with_timeout(mut self, timeout: std::time::Duration) -> Self {
         self.timeout = Some(timeout);
@@ -224,64 +224,75 @@ pub struct LogHealthCheck {
 pub trait LogPort: Send + Sync {
     /// Write a single log entry
     async fn write_entry(&self, entry: LogEntry) -> LogResult<()>;
-    
+
     /// Write multiple log entries atomically
     async fn write_entries(&self, entries: Vec<LogEntry>) -> LogResult<()>;
-    
+
     /// Write entries in batch with options
     async fn batch_write(&self, request: BatchWriteRequest) -> LogResult<()>;
-    
+
     /// Read log entries based on query parameters
     async fn read_entries(&self, query: LogQuery) -> LogResult<Vec<LogEntry>>;
-    
+
     /// Get the count of entries matching query
     async fn count_entries(&self, query: LogQuery) -> LogResult<u64>;
-    
+
     /// Configure a log destination
     async fn configure_destination(&self, config: LogDestinationConfig) -> LogResult<()>;
-    
+
     /// Remove a log destination configuration
     async fn remove_destination(&self, destination: LogDestination) -> LogResult<()>;
-    
+
     /// Get list of configured destinations
     async fn list_destinations(&self) -> LogResult<Vec<LogDestination>>;
-    
+
     /// Flush any buffered log entries
     async fn flush(&self) -> LogResult<()>;
-    
+
     /// Flush specific destination
     async fn flush_destination(&self, destination: LogDestination) -> LogResult<()>;
-    
+
     /// Rotate logs for a specific destination
     async fn rotate_logs(&self, destination: LogDestination) -> LogResult<()>;
-    
+
     /// Get logging statistics
     async fn get_stats(&self) -> LogResult<LogStats>;
-    
+
     /// Get statistics for specific destination
     async fn get_destination_stats(&self, destination: LogDestination) -> LogResult<LogStats>;
-    
+
     /// Clear logs for a destination
     async fn clear_logs(&self, destination: LogDestination) -> LogResult<()>;
-    
+
     /// Clear logs older than specified date
-    async fn clear_logs_before(&self, destination: LogDestination, before: DateTime<Utc>) -> LogResult<u64>;
-    
+    async fn clear_logs_before(
+        &self,
+        destination: LogDestination,
+        before: DateTime<Utc>,
+    ) -> LogResult<u64>;
+
     /// Health check for log destinations
     async fn health_check(&self) -> LogResult<Vec<LogHealthCheck>>;
-    
+
     /// Health check for specific destination
-    async fn health_check_destination(&self, destination: LogDestination) -> LogResult<LogHealthCheck>;
-    
+    async fn health_check_destination(
+        &self,
+        destination: LogDestination,
+    ) -> LogResult<LogHealthCheck>;
+
     /// Get the name of this log port implementation
     fn get_provider_name(&self) -> &'static str;
-    
+
     /// Test connectivity and permissions
     async fn test_connection(&self) -> LogResult<()>;
-    
+
     /// Archive old logs
-    async fn archive_logs(&self, destination: LogDestination, before: DateTime<Utc>) -> LogResult<String>;
-    
+    async fn archive_logs(
+        &self,
+        destination: LogDestination,
+        before: DateTime<Utc>,
+    ) -> LogResult<String>;
+
     /// Get available log formats supported by this implementation
     fn supported_formats(&self) -> Vec<LogFormat>;
 }
@@ -290,12 +301,12 @@ pub trait LogPort: Send + Sync {
 pub trait LogFormatter: Send + Sync {
     /// Format a log entry for output
     fn format_entry(&self, entry: &LogEntry) -> LogResult<String>;
-    
+
     /// Format multiple entries
     fn format_entries(&self, entries: &[LogEntry]) -> LogResult<Vec<String>> {
         entries.iter().map(|e| self.format_entry(e)).collect()
     }
-    
+
     /// Get the format identifier
     fn format_type(&self) -> LogFormat;
 }
@@ -313,7 +324,7 @@ impl LogFormatter for TextLogFormatter {
             entry.message.formatted()
         ))
     }
-    
+
     fn format_type(&self) -> LogFormat {
         LogFormat::Text
     }
@@ -324,10 +335,9 @@ pub struct JsonLogFormatter;
 
 impl LogFormatter for JsonLogFormatter {
     fn format_entry(&self, entry: &LogEntry) -> LogResult<String> {
-        serde_json::to_string(entry)
-            .map_err(|e| LogError::SerializationError(e.to_string()))
+        serde_json::to_string(entry).map_err(|e| LogError::SerializationError(e.to_string()))
     }
-    
+
     fn format_type(&self) -> LogFormat {
         LogFormat::Json
     }
@@ -337,7 +347,7 @@ impl LogFormatter for JsonLogFormatter {
 mod tests {
     use super::*;
     use crate::core::base::entity::message::Location;
-    use crate::core::platform::container::log::{LogEntryBuilder, LogLevel, LogDestination};
+    use crate::core::platform::container::log::{LogDestination, LogEntryBuilder, LogLevel};
 
     #[test]
     fn test_log_query_default() {
@@ -348,19 +358,17 @@ mod tests {
 
     #[test]
     fn test_batch_write_request() {
-        let entries = vec![
-            LogEntryBuilder::new_entry(
-                Location::service("test"),
-                LogDestination::System,
-                LogLevel::Info,
-                "Test message".to_string(),
-            )
-        ];
-        
+        let entries = vec![LogEntryBuilder::new_entry(
+            Location::service("test"),
+            LogDestination::System,
+            LogLevel::Info,
+            "Test message".to_string(),
+        )];
+
         let request = BatchWriteRequest::new(entries.clone())
             .with_atomic(false)
             .with_timeout(std::time::Duration::from_secs(5));
-        
+
         assert_eq!(request.entries.len(), 1);
         assert!(!request.atomic);
         assert_eq!(request.timeout, Some(std::time::Duration::from_secs(5)));
@@ -389,7 +397,7 @@ mod tests {
             LogLevel::Info,
             "Test message".to_string(),
         );
-        
+
         let formatted = formatter.format_entry(&entry).unwrap();
         assert!(formatted.contains("\"Info\"") || formatted.contains("Info"));
         assert!(formatted.contains("Test message"));

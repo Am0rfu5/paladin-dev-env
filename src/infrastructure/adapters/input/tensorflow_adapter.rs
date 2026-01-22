@@ -1,11 +1,11 @@
 use crate::application::ports::input::ml_port::{
-    MlPort, MlPredictionRequest, MlPredictionResponse, MlPortError, MlModelInfo,
-    MlInputData, MlPrediction
+    MlInputData, MlModelInfo, MlPort, MlPortError, MlPrediction, MlPredictionRequest,
+    MlPredictionResponse,
 };
 use crate::core::platform::container::content::ContentItem;
 use std::collections::HashMap;
-use std::time::Instant;
 use std::path::Path;
+use std::time::Instant;
 
 /// TensorFlow Adapter
 /// An implementation of the ML Port using TensorFlow.
@@ -30,15 +30,17 @@ struct TensorFlowModel {
 
 impl TensorFlowAdapter {
     pub fn new<P: AsRef<Path>>(model_path: P) -> Result<Self, MlPortError> {
-        let path_str = model_path.as_ref()
+        let path_str = model_path
+            .as_ref()
             .to_str()
             .ok_or_else(|| MlPortError::ModelLoadingError("Invalid model path".to_string()))?
             .to_string();
 
         if !model_path.as_ref().exists() {
-            return Err(MlPortError::ModelLoadingError(
-                format!("Model path does not exist: {}", path_str)
-            ));
+            return Err(MlPortError::ModelLoadingError(format!(
+                "Model path does not exist: {}",
+                path_str
+            )));
         }
 
         Ok(Self {
@@ -60,7 +62,7 @@ impl TensorFlowAdapter {
         }
 
         let model_path = format!("{}/{}", self.model_path, model_name);
-        
+
         if !Path::new(&model_path).exists() {
             return Err(MlPortError::ModelNotFound(model_name.to_string()));
         }
@@ -80,40 +82,37 @@ impl TensorFlowAdapter {
         Ok(())
     }
 
-    fn execute_model(&self, model_name: &str, input_data: &MlInputData) -> Result<Vec<MlPrediction>, MlPortError> {
-        let _model = self.loaded_models.get(model_name)
+    fn execute_model(
+        &self,
+        model_name: &str,
+        input_data: &MlInputData,
+    ) -> Result<Vec<MlPrediction>, MlPortError> {
+        let _model = self
+            .loaded_models
+            .get(model_name)
             .ok_or_else(|| MlPortError::ModelNotFound(model_name.to_string()))?;
 
         // In a real implementation, this would call TensorFlow's C API or use tensorflow-rust
         // For demonstration, we'll provide mock predictions based on input type
         match input_data {
-            MlInputData::Text(text) => {
-                self.process_text_prediction(text)
-            },
-            MlInputData::Image(_bytes) => {
-                self.process_image_prediction()
-            },
-            MlInputData::Audio(_bytes) => {
-                self.process_audio_prediction()
-            },
-            MlInputData::Video(_bytes) => {
-                self.process_video_prediction()
-            },
-            MlInputData::Structured(_data) => {
-                self.process_structured_prediction()
-            },
+            MlInputData::Text(text) => self.process_text_prediction(text),
+            MlInputData::Image(_bytes) => self.process_image_prediction(),
+            MlInputData::Audio(_bytes) => self.process_audio_prediction(),
+            MlInputData::Video(_bytes) => self.process_video_prediction(),
+            MlInputData::Structured(_data) => self.process_structured_prediction(),
         }
     }
 
     fn process_text_prediction(&self, text: &str) -> Result<Vec<MlPrediction>, MlPortError> {
         // Mock sentiment analysis
-        let sentiment = if text.contains("good") || text.contains("great") || text.contains("excellent") {
-            ("positive", 0.85)
-        } else if text.contains("bad") || text.contains("terrible") || text.contains("awful") {
-            ("negative", 0.80)
-        } else {
-            ("neutral", 0.60)
-        };
+        let sentiment =
+            if text.contains("good") || text.contains("great") || text.contains("excellent") {
+                ("positive", 0.85)
+            } else if text.contains("bad") || text.contains("terrible") || text.contains("awful") {
+                ("negative", 0.80)
+            } else {
+                ("neutral", 0.60)
+            };
 
         Ok(vec![
             MlPrediction::Sentiment {
@@ -133,39 +132,29 @@ impl TensorFlowAdapter {
                 class: "object".to_string(),
                 confidence: 0.75,
             },
-            MlPrediction::ObjectDetection {
-                objects: vec![],
-            },
+            MlPrediction::ObjectDetection { objects: vec![] },
         ])
     }
 
     fn process_audio_prediction(&self) -> Result<Vec<MlPrediction>, MlPortError> {
         // Mock audio classification
-        Ok(vec![
-            MlPrediction::Classification {
-                class: "speech".to_string(),
-                confidence: 0.90,
-            }
-        ])
+        Ok(vec![MlPrediction::Classification {
+            class: "speech".to_string(),
+            confidence: 0.90,
+        }])
     }
 
     fn process_video_prediction(&self) -> Result<Vec<MlPrediction>, MlPortError> {
         // Mock video analysis
-        Ok(vec![
-            MlPrediction::Classification {
-                class: "action".to_string(),
-                confidence: 0.70,
-            }
-        ])
+        Ok(vec![MlPrediction::Classification {
+            class: "action".to_string(),
+            confidence: 0.70,
+        }])
     }
 
     fn process_structured_prediction(&self) -> Result<Vec<MlPrediction>, MlPortError> {
         // Mock structured data prediction
-        Ok(vec![
-            MlPrediction::Regression {
-                value: 42.0,
-            }
-        ])
+        Ok(vec![MlPrediction::Regression { value: 42.0 }])
     }
 
     fn discover_models(&self) -> Result<Vec<String>, MlPortError> {
@@ -191,18 +180,19 @@ impl TensorFlowAdapter {
 impl MlPort for TensorFlowAdapter {
     fn predict(&self, request: MlPredictionRequest) -> Result<MlPredictionResponse, MlPortError> {
         let start_time = Instant::now();
-        
+
         // Check if model is loaded
         if !self.loaded_models.contains_key(&request.model_name) {
             return Err(MlPortError::ModelNotFound(request.model_name));
         }
 
         let predictions = self.execute_model(&request.model_name, &request.input_data)?;
-        
+
         let processing_time = start_time.elapsed().as_millis() as u64;
-        
+
         // Extract confidence scores
-        let confidence_scores: Vec<f64> = predictions.iter()
+        let confidence_scores: Vec<f64> = predictions
+            .iter()
             .filter_map(|p| match p {
                 MlPrediction::Classification { confidence, .. } => Some(*confidence),
                 MlPrediction::Sentiment { confidence, .. } => Some(*confidence),
@@ -213,16 +203,24 @@ impl MlPort for TensorFlowAdapter {
         Ok(MlPredictionResponse {
             model_name: request.model_name,
             predictions,
-            confidence_scores: if confidence_scores.is_empty() { None } else { Some(confidence_scores) },
+            confidence_scores: if confidence_scores.is_empty() {
+                None
+            } else {
+                Some(confidence_scores)
+            },
             processing_time_ms: processing_time,
             metadata: None,
         })
     }
 
-    fn analyze_content(&self, mut content: ContentItem, model_name: &str) -> Result<ContentItem, MlPortError> {
+    fn analyze_content(
+        &self,
+        mut content: ContentItem,
+        model_name: &str,
+    ) -> Result<ContentItem, MlPortError> {
         // Convert content to ML input
         let input_data = MlInputData::from_content_item(&content)?;
-        
+
         let request = MlPredictionRequest {
             model_name: model_name.to_string(),
             input_data,
@@ -230,10 +228,10 @@ impl MlPort for TensorFlowAdapter {
         };
 
         let response = self.predict(request)?;
-        
+
         // Enrich content item with ML predictions
         let mut tags = content.tags().cloned().unwrap_or_default();
-        
+
         for prediction in &response.predictions {
             match prediction {
                 MlPrediction::Classification { class, confidence } => {
@@ -241,28 +239,33 @@ impl MlPort for TensorFlowAdapter {
                     if *confidence > 0.8 {
                         tags.push(format!("ml:high_confidence:{}", class));
                     }
-                },
-                MlPrediction::Sentiment { sentiment, confidence } => {
+                }
+                MlPrediction::Sentiment {
+                    sentiment,
+                    confidence,
+                } => {
                     tags.push(format!("ml:sentiment:{}", sentiment));
                     if *confidence > 0.8 {
                         tags.push(format!("ml:strong_sentiment:{}", sentiment));
                     }
-                },
+                }
                 _ => {}
             }
         }
-        
+
         content.set_tags(Some(tags));
-        
+
         // Add ML metadata to description if not present
         if content.description().is_none() {
-            let ml_summary: Vec<String> = response.predictions.iter()
+            let ml_summary: Vec<String> = response
+                .predictions
+                .iter()
                 .filter_map(|p| match p {
                     MlPrediction::TextGeneration { text } => Some(text.clone()),
                     _ => None,
                 })
                 .collect();
-            
+
             if !ml_summary.is_empty() {
                 content.set_description(Some(ml_summary.join("; ")));
             }
@@ -274,13 +277,13 @@ impl MlPort for TensorFlowAdapter {
     fn list_models(&self) -> Result<Vec<String>, MlPortError> {
         let mut models: Vec<String> = self.loaded_models.keys().cloned().collect();
         let discovered = self.discover_models()?;
-        
+
         for model in discovered {
             if !models.contains(&model) {
                 models.push(model);
             }
         }
-        
+
         Ok(models)
     }
 
@@ -288,7 +291,7 @@ impl MlPort for TensorFlowAdapter {
         if self.loaded_models.contains_key(model_name) {
             return Ok(true);
         }
-        
+
         let model_path = format!("{}/{}", self.model_path, model_name);
         Ok(Path::new(&model_path).exists())
     }
@@ -321,15 +324,15 @@ impl MlPort for TensorFlowAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
-    use std::fs;
     use crate::core::platform::container::content::{ContentType, TextContent};
+    use std::fs;
+    use tempfile::tempdir;
 
     fn create_test_adapter() -> TensorFlowAdapter {
         let temp_dir = tempdir().unwrap();
         let model_dir = temp_dir.path().join("test_model");
         fs::create_dir_all(&model_dir).unwrap();
-        
+
         TensorFlowAdapter::new(temp_dir.path()).unwrap()
     }
 
@@ -349,7 +352,7 @@ mod tests {
     #[test]
     fn test_text_prediction() {
         let adapter = create_test_adapter();
-        
+
         let request = MlPredictionRequest {
             model_name: "test_model".to_string(),
             input_data: MlInputData::Text("This is great!".to_string()),
@@ -365,7 +368,7 @@ mod tests {
     #[test]
     fn test_analyze_content() {
         let mut adapter = create_test_adapter();
-        
+
         // Create a mock model
         let model = TensorFlowModel {
             name: "sentiment_model".to_string(),
@@ -375,14 +378,17 @@ mod tests {
             output_types: vec!["classification".to_string()],
             loaded: true,
         };
-        adapter.loaded_models.insert("sentiment_model".to_string(), model);
+        adapter
+            .loaded_models
+            .insert("sentiment_model".to_string(), model);
 
-        let text_content = TextContent::new(None, Some("This is excellent content!".to_string())).unwrap();
+        let text_content =
+            TextContent::new(None, Some("This is excellent content!".to_string())).unwrap();
         let content_item = ContentItem::new(ContentType::Text(text_content)).unwrap();
 
         let result = adapter.analyze_content(content_item, "sentiment_model");
         assert!(result.is_ok());
-        
+
         let enriched_content = result.unwrap();
         assert!(enriched_content.tags().is_some());
         let tags = enriched_content.tags().unwrap();
@@ -401,9 +407,9 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         let model_dir = temp_dir.path().join("available_model");
         fs::create_dir_all(&model_dir).unwrap();
-        
+
         let adapter = TensorFlowAdapter::new(temp_dir.path()).unwrap();
-        
+
         assert!(adapter.is_model_available("available_model").unwrap());
         assert!(!adapter.is_model_available("nonexistent_model").unwrap());
     }

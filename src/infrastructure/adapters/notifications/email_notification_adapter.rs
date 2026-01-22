@@ -17,24 +17,23 @@ This implementation uses lettre for SMTP email sending and Handlebars for templa
 */
 
 use crate::application::ports::output::notification_port::{
-    NotificationDeliveryPort, NotificationTemplatePort, BasicNotificationPort,
-    NotificationPortResult, NotificationPortError, NotificationDeliveryResult,
-    DeliveryCapabilities,
-    NotificationChannel, NotificationTemplate, NotificationContent,
-    Notification, NotificationStatus, NotificationRecipient,
+    BasicNotificationPort, DeliveryCapabilities, Notification, NotificationChannel,
+    NotificationContent, NotificationDeliveryPort, NotificationDeliveryResult,
+    NotificationPortError, NotificationPortResult, NotificationRecipient, NotificationStatus,
+    NotificationTemplate, NotificationTemplatePort,
 };
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use handlebars::Handlebars;
 use lettre::{
     Message, SmtpTransport, Transport,
-    message::{header::ContentType, Attachment, MultiPart, SinglePart},
+    message::{Attachment, MultiPart, SinglePart, header::ContentType},
     transport::smtp::authentication::Credentials,
 };
-use handlebars::Handlebars;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
-use chrono::{DateTime, Utc};
 
 /// Email delivery configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,7 +72,7 @@ impl Default for EmailAdapterConfig {
             use_tls: true,
             timeout_seconds: Some(30),
             max_attachment_size: 25 * 1024 * 1024, // 25MB
-            rate_limit: Some(100), // 100 emails per minute
+            rate_limit: Some(100),                 // 100 emails per minute
         }
     }
 }
@@ -101,12 +100,15 @@ impl EmailNotificationAdapter {
     /// Create a new email notification adapter
     pub fn new(config: EmailAdapterConfig) -> NotificationPortResult<Self> {
         let credentials = Credentials::new(config.username.clone(), config.password.clone());
-        
+
         let smtp_transport = if config.use_tls {
             SmtpTransport::relay(&config.smtp_host)
-                .map_err(|e| NotificationPortError::ConfigurationError(
-                    format!("SMTP relay configuration error: {}", e)
-                ))?
+                .map_err(|e| {
+                    NotificationPortError::ConfigurationError(format!(
+                        "SMTP relay configuration error: {}",
+                        e
+                    ))
+                })?
                 .port(config.smtp_port)
                 .credentials(credentials)
                 .build()
@@ -130,22 +132,22 @@ impl EmailNotificationAdapter {
     }
 
     /// Extract email address from notification recipient
-    fn extract_email_address(&self, recipient: &NotificationRecipient) -> NotificationPortResult<String> {
+    fn extract_email_address(
+        &self,
+        recipient: &NotificationRecipient,
+    ) -> NotificationPortResult<String> {
         match recipient {
             NotificationRecipient::Email(email) => Ok(email.clone()),
             _ => Err(NotificationPortError::ValidationError(
-                "Email adapter only supports email recipients".to_string()
+                "Email adapter only supports email recipients".to_string(),
             )),
         }
     }
 
     /// Build email message from notification
-    fn build_email_message(
-        &self,
-        notification: &Notification,
-    ) -> NotificationPortResult<Message> {
+    fn build_email_message(&self, notification: &Notification) -> NotificationPortResult<Message> {
         let to_email = self.extract_email_address(&notification.recipient)?;
-        
+
         let from_address = if let Some(ref name) = self.config.from_name {
             format!("{} <{}>", name, self.config.from_address)
         } else {
@@ -163,15 +165,22 @@ impl EmailNotificationAdapter {
 
         // Build message with or without attachments
         let message = if !notification.content.attachments.is_empty() {
-            self.build_multipart_message(message_builder, &notification.content, &notification.content.attachments)?
+            self.build_multipart_message(
+                message_builder,
+                &notification.content,
+                &notification.content.attachments,
+            )?
         } else {
             // Simple HTML message
             message_builder
                 .header(ContentType::TEXT_HTML)
                 .body(notification.content.body.clone())
-                .map_err(|e| NotificationPortError::DeliveryFailed(
-                    format!("Failed to build email body: {}", e)
-                ))?
+                .map_err(|e| {
+                    NotificationPortError::DeliveryFailed(format!(
+                        "Failed to build email body: {}",
+                        e
+                    ))
+                })?
         };
 
         Ok(message)
@@ -187,29 +196,34 @@ impl EmailNotificationAdapter {
         let mut multipart = MultiPart::mixed().singlepart(
             SinglePart::builder()
                 .header(ContentType::TEXT_HTML)
-                .body(content.body.clone())
+                .body(content.body.clone()),
         );
 
         for attachment in attachments {
             // Check attachment size
             if attachment.data.len() > self.config.max_attachment_size {
-                return Err(NotificationPortError::ValidationError(
-                    format!("Attachment '{}' exceeds maximum size", attachment.filename)
-                ));
+                return Err(NotificationPortError::ValidationError(format!(
+                    "Attachment '{}' exceeds maximum size",
+                    attachment.filename
+                )));
             }
 
-            let content_type = attachment.content_type.parse()
+            let content_type = attachment
+                .content_type
+                .parse()
                 .unwrap_or(ContentType::TEXT_PLAIN);
-                
+
             let attachment_part = Attachment::new(attachment.filename.clone())
                 .body(attachment.data.clone(), content_type);
             multipart = multipart.singlepart(attachment_part);
         }
 
-        message_builder.multipart(multipart)
-            .map_err(|e| NotificationPortError::DeliveryFailed(
-                format!("Failed to build multipart message: {}", e)
+        message_builder.multipart(multipart).map_err(|e| {
+            NotificationPortError::DeliveryFailed(format!(
+                "Failed to build multipart message: {}",
+                e
             ))
+        })
     }
 
     /// Send email via SMTP
@@ -217,7 +231,8 @@ impl EmailNotificationAdapter {
         let result = tokio::task::spawn_blocking({
             let transport = self.smtp_transport.clone();
             move || transport.send(&message)
-        }).await;
+        })
+        .await;
 
         match result {
             Ok(Ok(response)) => {
@@ -226,8 +241,8 @@ impl EmailNotificationAdapter {
                     stats.total_sent += 1;
                     stats.last_success = Some(Utc::now());
                 }
-                
-                // Extract message ID if available  
+
+                // Extract message ID if available
                 let message_id = response.first_word().unwrap_or("unknown").to_string();
                 Ok(message_id)
             }
@@ -237,14 +252,16 @@ impl EmailNotificationAdapter {
                     stats.total_failed += 1;
                     stats.last_failure = Some(Utc::now());
                 }
-                
-                Err(NotificationPortError::DeliveryFailed(
-                    format!("SMTP delivery failed: {}", e)
-                ))
+
+                Err(NotificationPortError::DeliveryFailed(format!(
+                    "SMTP delivery failed: {}",
+                    e
+                )))
             }
-            Err(e) => Err(NotificationPortError::DeliveryFailed(
-                format!("Task execution failed: {}", e)
-            )),
+            Err(e) => Err(NotificationPortError::DeliveryFailed(format!(
+                "Task execution failed: {}",
+                e
+            ))),
         }
     }
 
@@ -256,10 +273,15 @@ impl EmailNotificationAdapter {
     ) -> NotificationPortResult<NotificationContent> {
         let template = {
             let templates = self.templates.read().map_err(|_| {
-                NotificationPortError::ServiceUnavailable("Template storage unavailable".to_string())
+                NotificationPortError::ServiceUnavailable(
+                    "Template storage unavailable".to_string(),
+                )
             })?;
             templates.get(template_id).cloned().ok_or_else(|| {
-                NotificationPortError::TemplateError(format!("Template '{}' not found", template_id))
+                NotificationPortError::TemplateError(format!(
+                    "Template '{}' not found",
+                    template_id
+                ))
             })?
         };
 
@@ -269,23 +291,37 @@ impl EmailNotificationAdapter {
 
         // Render subject
         let subject = if let Some(ref subject_template) = template.subject_template {
-            engine.render_template(subject_template, variables)
-                .map_err(|e| NotificationPortError::TemplateError(
-                    format!("Subject template rendering failed: {}", e)
-                ))?
+            engine
+                .render_template(subject_template, variables)
+                .map_err(|e| {
+                    NotificationPortError::TemplateError(format!(
+                        "Subject template rendering failed: {}",
+                        e
+                    ))
+                })?
         } else {
             template.name.clone()
         };
 
         // Render body
-        let body = engine.render_template(&template.body_template, variables)
-            .map_err(|e| NotificationPortError::TemplateError(
-                format!("Body template rendering failed: {}", e)
-            ))?;
+        let body = engine
+            .render_template(&template.body_template, variables)
+            .map_err(|e| {
+                NotificationPortError::TemplateError(format!(
+                    "Body template rendering failed: {}",
+                    e
+                ))
+            })?;
 
         let mut metadata = HashMap::new();
-        metadata.insert("template_id".to_string(), serde_json::Value::String(template_id.to_string()));
-        metadata.insert("rendered_at".to_string(), serde_json::Value::String(Utc::now().to_rfc3339()));
+        metadata.insert(
+            "template_id".to_string(),
+            serde_json::Value::String(template_id.to_string()),
+        );
+        metadata.insert(
+            "rendered_at".to_string(),
+            serde_json::Value::String(Utc::now().to_rfc3339()),
+        );
 
         Ok(NotificationContent {
             title: subject,
@@ -311,32 +347,41 @@ impl NotificationDeliveryPort for EmailNotificationAdapter {
     }
 
     fn can_handle(&self, notification: &Notification) -> bool {
-        notification.channel == NotificationChannel::Email &&
-        matches!(notification.recipient, NotificationRecipient::Email(_))
+        notification.channel == NotificationChannel::Email
+            && matches!(notification.recipient, NotificationRecipient::Email(_))
     }
 
-    async fn deliver_notification(&self, notification: Notification) -> NotificationPortResult<NotificationDeliveryResult> {
+    async fn deliver_notification(
+        &self,
+        notification: Notification,
+    ) -> NotificationPortResult<NotificationDeliveryResult> {
         let start_time = Instant::now();
-        
+
         // Validate notification
         if !self.can_handle(&notification) {
             return Err(NotificationPortError::ValidationError(
-                "Email adapter cannot handle this notification".to_string()
+                "Email adapter cannot handle this notification".to_string(),
             ));
         }
 
         // Build email message
         let message = self.build_email_message(&notification)?;
-        
+
         // Send email
         let external_id = self.send_email(message).await?;
-        
+
         let processing_time = start_time.elapsed().as_millis() as u64;
-        
+
         let mut metadata = HashMap::new();
-        metadata.insert("smtp_message_id".to_string(), serde_json::Value::String(external_id.clone()));
-        metadata.insert("from_address".to_string(), serde_json::Value::String(self.config.from_address.clone()));
-        
+        metadata.insert(
+            "smtp_message_id".to_string(),
+            serde_json::Value::String(external_id.clone()),
+        );
+        metadata.insert(
+            "from_address".to_string(),
+            serde_json::Value::String(self.config.from_address.clone()),
+        );
+
         Ok(NotificationDeliveryResult {
             notification_id: notification.id,
             status: NotificationStatus::Sent, // Email is considered sent when SMTP accepts it
@@ -357,7 +402,9 @@ impl NotificationDeliveryPort for EmailNotificationAdapter {
                 // This is a simple test - in production you might want a more sophisticated health check
                 transport.test_connection().unwrap_or(false)
             }
-        }).await.unwrap_or(false)
+        })
+        .await
+        .unwrap_or(false)
     }
 
     fn capabilities(&self) -> DeliveryCapabilities {
@@ -375,10 +422,13 @@ impl NotificationDeliveryPort for EmailNotificationAdapter {
 
 #[async_trait]
 impl NotificationTemplatePort for EmailNotificationAdapter {
-    async fn create_template(&self, template: NotificationTemplate) -> NotificationPortResult<String> {
+    async fn create_template(
+        &self,
+        template: NotificationTemplate,
+    ) -> NotificationPortResult<String> {
         if template.channel != NotificationChannel::Email {
             return Err(NotificationPortError::ValidationError(
-                "Email adapter only supports email templates".to_string()
+                "Email adapter only supports email templates".to_string(),
             ));
         }
 
@@ -387,26 +437,36 @@ impl NotificationTemplatePort for EmailNotificationAdapter {
             let mut engine = self.template_engine.write().map_err(|_| {
                 NotificationPortError::ServiceUnavailable("Template engine unavailable".to_string())
             })?;
-            
-            engine.register_template_string(&template.id, &template.body_template)
-                .map_err(|e| NotificationPortError::TemplateError(
-                    format!("Failed to register body template: {}", e)
-                ))?;
+
+            engine
+                .register_template_string(&template.id, &template.body_template)
+                .map_err(|e| {
+                    NotificationPortError::TemplateError(format!(
+                        "Failed to register body template: {}",
+                        e
+                    ))
+                })?;
 
             // Register subject template if provided
             if let Some(ref subject_template) = template.subject_template {
                 let subject_template_id = format!("{}_subject", template.id);
-                engine.register_template_string(&subject_template_id, subject_template)
-                    .map_err(|e| NotificationPortError::TemplateError(
-                        format!("Failed to register subject template: {}", e)
-                    ))?;
+                engine
+                    .register_template_string(&subject_template_id, subject_template)
+                    .map_err(|e| {
+                        NotificationPortError::TemplateError(format!(
+                            "Failed to register subject template: {}",
+                            e
+                        ))
+                    })?;
             }
         }
 
         // Store template
         {
             let mut templates = self.templates.write().map_err(|_| {
-                NotificationPortError::ServiceUnavailable("Template storage unavailable".to_string())
+                NotificationPortError::ServiceUnavailable(
+                    "Template storage unavailable".to_string(),
+                )
             })?;
             templates.insert(template.id.clone(), template.clone());
         }
@@ -426,15 +486,17 @@ impl NotificationTemplatePort for EmailNotificationAdapter {
             let mut engine = self.template_engine.write().map_err(|_| {
                 NotificationPortError::ServiceUnavailable("Template engine unavailable".to_string())
             })?;
-            
+
             engine.unregister_template(template_id);
             engine.unregister_template(&format!("{}_subject", template_id));
         }
-        
+
         // Remove from storage
         {
             let mut templates = self.templates.write().map_err(|_| {
-                NotificationPortError::ServiceUnavailable("Template storage unavailable".to_string())
+                NotificationPortError::ServiceUnavailable(
+                    "Template storage unavailable".to_string(),
+                )
             })?;
             templates.remove(template_id);
         }
@@ -442,26 +504,33 @@ impl NotificationTemplatePort for EmailNotificationAdapter {
         Ok(())
     }
 
-    async fn get_template(&self, template_id: &str) -> NotificationPortResult<NotificationTemplate> {
+    async fn get_template(
+        &self,
+        template_id: &str,
+    ) -> NotificationPortResult<NotificationTemplate> {
         let templates = self.templates.read().map_err(|_| {
             NotificationPortError::ServiceUnavailable("Template storage unavailable".to_string())
         })?;
-        
+
         templates.get(template_id).cloned().ok_or_else(|| {
             NotificationPortError::TemplateError(format!("Template '{}' not found", template_id))
         })
     }
 
-    async fn list_templates(&self, channel: Option<NotificationChannel>) -> NotificationPortResult<Vec<NotificationTemplate>> {
+    async fn list_templates(
+        &self,
+        channel: Option<NotificationChannel>,
+    ) -> NotificationPortResult<Vec<NotificationTemplate>> {
         let templates = self.templates.read().map_err(|_| {
             NotificationPortError::ServiceUnavailable("Template storage unavailable".to_string())
         })?;
-        
-        let filtered_templates: Vec<NotificationTemplate> = templates.values()
+
+        let filtered_templates: Vec<NotificationTemplate> = templates
+            .values()
             .filter(|t| channel.is_none() || Some(t.channel.clone()) == channel)
             .cloned()
             .collect();
-            
+
         Ok(filtered_templates)
     }
 
@@ -473,7 +542,10 @@ impl NotificationTemplatePort for EmailNotificationAdapter {
         self.render_template_content(template_id, &variables).await
     }
 
-    async fn validate_template(&self, template: &NotificationTemplate) -> NotificationPortResult<()> {
+    async fn validate_template(
+        &self,
+        template: &NotificationTemplate,
+    ) -> NotificationPortResult<()> {
         let _engine = self.template_engine.read().map_err(|_| {
             NotificationPortError::ServiceUnavailable("Template engine unavailable".to_string())
         })?;
@@ -481,17 +553,25 @@ impl NotificationTemplatePort for EmailNotificationAdapter {
         // Test compile body template by trying to register it temporarily
         {
             let mut temp_engine = Handlebars::new();
-            temp_engine.register_template_string("test_body", &template.body_template)
-                .map_err(|e| NotificationPortError::TemplateError(
-                    format!("Body template syntax error: {}", e)
-                ))?;
+            temp_engine
+                .register_template_string("test_body", &template.body_template)
+                .map_err(|e| {
+                    NotificationPortError::TemplateError(format!(
+                        "Body template syntax error: {}",
+                        e
+                    ))
+                })?;
 
             // Test compile subject template if provided
             if let Some(ref subject_template) = template.subject_template {
-                temp_engine.register_template_string("test_subject", subject_template)
-                    .map_err(|e| NotificationPortError::TemplateError(
-                        format!("Subject template syntax error: {}", e)
-                    ))?;
+                temp_engine
+                    .register_template_string("test_subject", subject_template)
+                    .map_err(|e| {
+                        NotificationPortError::TemplateError(format!(
+                            "Subject template syntax error: {}",
+                            e
+                        ))
+                    })?;
             }
         }
 
@@ -506,7 +586,7 @@ impl BasicNotificationPort for EmailNotificationAdapter {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::notification::{NotificationPriority};
+    use crate::core::platform::container::notification::NotificationPriority;
 
     fn create_test_config() -> EmailAdapterConfig {
         EmailAdapterConfig {
@@ -529,13 +609,14 @@ mod tests {
             "Test body".to_string(),
             "email".to_string(),
         );
-        
+
         Notification::new(
             NotificationRecipient::Email("test@example.com".to_string()),
             content,
             NotificationChannel::Email,
             NotificationPriority::Normal,
-        ).unwrap()
+        )
+        .unwrap()
     }
 
     #[test]
@@ -557,7 +638,7 @@ mod tests {
         let config = create_test_config();
         let adapter = EmailNotificationAdapter::new(config).unwrap();
         let notification = create_test_notification();
-        
+
         assert!(adapter.can_handle(&notification));
     }
 
@@ -565,7 +646,7 @@ mod tests {
     fn test_extract_email_address() {
         let config = create_test_config();
         let adapter = EmailNotificationAdapter::new(config).unwrap();
-        
+
         let email_recipient = NotificationRecipient::Email("test@example.com".to_string());
         let result = adapter.extract_email_address(&email_recipient);
         assert!(result.is_ok());
@@ -581,7 +662,7 @@ mod tests {
         let config = create_test_config();
         let adapter = EmailNotificationAdapter::new(config).unwrap();
         let capabilities = adapter.capabilities();
-        
+
         assert!(capabilities.supports_bulk);
         assert!(capabilities.supports_attachments);
         assert!(capabilities.supports_rich_content);
@@ -595,7 +676,7 @@ mod tests {
     async fn test_template_lifecycle() {
         let config = create_test_config();
         let adapter = EmailNotificationAdapter::new(config).unwrap();
-        
+
         let template = NotificationTemplate {
             id: "welcome".to_string(),
             name: "Welcome Email".to_string(),
@@ -635,7 +716,7 @@ mod tests {
     async fn test_template_rendering() {
         let config = create_test_config();
         let adapter = EmailNotificationAdapter::new(config).unwrap();
-        
+
         let template = NotificationTemplate {
             id: "greeting".to_string(),
             name: "Greeting".to_string(),
@@ -654,11 +735,14 @@ mod tests {
 
         // Render template
         let mut variables = HashMap::new();
-        variables.insert("name".to_string(), serde_json::Value::String("John".to_string()));
-        
+        variables.insert(
+            "name".to_string(),
+            serde_json::Value::String("John".to_string()),
+        );
+
         let rendered = adapter.render_template("greeting", variables).await;
         assert!(rendered.is_ok());
-        
+
         let content = rendered.unwrap();
         assert_eq!(content.title, "Hello John");
         assert_eq!(content.body, "Dear John, this is a test message.");

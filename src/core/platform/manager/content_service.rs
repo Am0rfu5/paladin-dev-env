@@ -1,10 +1,11 @@
-use crate::core::platform::container::content::{ContentItem, ContentItemError, ContentData};
 use crate::core::base::service::node_version_service::{
-    NodeVersionService, NodeVersionRepository, ChangeType, VersioningError, NodeVersion, VersionHistory
+    ChangeType, NodeVersion, NodeVersionRepository, NodeVersionService, VersionHistory,
+    VersioningError,
 };
-use uuid::Uuid;
+use crate::core::platform::container::content::{ContentData, ContentItem, ContentItemError};
 use std::sync::Arc;
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Error)]
 pub enum ContentItemServiceError {
@@ -79,7 +80,9 @@ impl ContentItemService {
         content_id: Uuid,
         version_number: u32,
     ) -> Result<Option<NodeVersion<ContentData>>, ContentItemServiceError> {
-        Ok(self.version_service.get_version(content_id, version_number)?)
+        Ok(self
+            .version_service
+            .get_version(content_id, version_number)?)
     }
 
     /// Get version history for a content item
@@ -97,11 +100,9 @@ impl ContentItemService {
         version_number: u32,
         restored_by: Option<String>,
     ) -> Result<(ContentItem, NodeVersion<ContentData>), ContentItemServiceError> {
-        let restored_version = self.version_service.restore_version(
-            content_id,
-            version_number,
-            restored_by,
-        )?;
+        let restored_version =
+            self.version_service
+                .restore_version(content_id, version_number, restored_by)?;
 
         // Reconstruct ContentItem from the restored version
         let content_item = ContentItem {
@@ -172,8 +173,13 @@ impl ContentItemService {
         content_id: Uuid,
         version1: u32,
         version2: u32,
-    ) -> Result<crate::core::base::service::node_version_service::VersionComparison<ContentData>, ContentItemServiceError> {
-        Ok(self.version_service.compare_versions(content_id, version1, version2)?)
+    ) -> Result<
+        crate::core::base::service::node_version_service::VersionComparison<ContentData>,
+        ContentItemServiceError,
+    > {
+        Ok(self
+            .version_service
+            .compare_versions(content_id, version1, version2)?)
     }
 
     /// Purge old versions of a content item
@@ -182,15 +188,17 @@ impl ContentItemService {
         content_id: Uuid,
         keep_count: u32,
     ) -> Result<u32, ContentItemServiceError> {
-        Ok(self.version_service.purge_old_versions(content_id, keep_count)?)
+        Ok(self
+            .version_service
+            .purge_old_versions(content_id, keep_count)?)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::content::{ContentType, TextContent};
     use crate::core::base::service::node_version_service::InMemoryNodeVersionRepository;
+    use crate::core::platform::container::content::{ContentType, TextContent};
     use std::sync::Arc;
 
     fn create_test_service() -> ContentItemService {
@@ -200,26 +208,24 @@ mod tests {
 
     fn create_test_content_item() -> ContentItem {
         let text_content = TextContent::new(None, Some("test content".to_string())).unwrap();
-        ContentItem::new_with_title(
-            ContentType::Text(text_content),
-            "Test Content".to_string(),
-        ).unwrap()
+        ContentItem::new_with_title(ContentType::Text(text_content), "Test Content".to_string())
+            .unwrap()
     }
 
     #[test]
     fn test_create_content_item() {
         let service = create_test_service();
         let content_item = create_test_content_item();
-        
+
         let result = service.create_content_item(
             content_item.clone(),
             Some("test_user".to_string()),
             Some("Initial creation".to_string()),
         );
-        
+
         assert!(result.is_ok());
         let (returned_item, version) = result.unwrap();
-        
+
         assert_eq!(returned_item.uuid(), content_item.uuid());
         assert_eq!(version.version_number, 1);
         assert_eq!(version.node_id, content_item.uuid());
@@ -230,28 +236,32 @@ mod tests {
     fn test_update_content_item() {
         let service = create_test_service();
         let content_item = create_test_content_item();
-        
+
         // Create initial version
-        let (mut content_item, _) = service.create_content_item(
-            content_item,
-            Some("test_user".to_string()),
-            Some("Initial creation".to_string()),
-        ).unwrap();
-        
+        let (mut content_item, _) = service
+            .create_content_item(
+                content_item,
+                Some("test_user".to_string()),
+                Some("Initial creation".to_string()),
+            )
+            .unwrap();
+
         // Update the content
         let new_text_content = TextContent::new(None, Some("updated content".to_string())).unwrap();
-        content_item.update_content(ContentType::Text(new_text_content)).unwrap();
-        
+        content_item
+            .update_content(ContentType::Text(new_text_content))
+            .unwrap();
+
         // Create updated version
         let result = service.update_content_item(
             content_item.clone(),
             Some("test_user".to_string()),
             Some("Content updated".to_string()),
         );
-        
+
         assert!(result.is_ok());
         let (_, version) = result.unwrap();
-        
+
         assert_eq!(version.version_number, 2);
         assert_eq!(version.metadata.change_type, ChangeType::Updated);
     }
@@ -260,28 +270,26 @@ mod tests {
     fn test_get_version_history() {
         let service = create_test_service();
         let content_item = create_test_content_item();
-        
+
         // Create initial version
-        let (mut content_item, _) = service.create_content_item(
-            content_item,
-            Some("test_user".to_string()),
-            None,
-        ).unwrap();
-        
+        let (mut content_item, _) = service
+            .create_content_item(content_item, Some("test_user".to_string()), None)
+            .unwrap();
+
         // Update the content
         let new_text_content = TextContent::new(None, Some("updated content".to_string())).unwrap();
-        content_item.update_content(ContentType::Text(new_text_content)).unwrap();
-        
+        content_item
+            .update_content(ContentType::Text(new_text_content))
+            .unwrap();
+
         // Create updated version
-        service.update_content_item(
-            content_item.clone(),
-            Some("test_user".to_string()),
-            None,
-        ).unwrap();
-        
+        service
+            .update_content_item(content_item.clone(), Some("test_user".to_string()), None)
+            .unwrap();
+
         // Get version history
         let history = service.get_version_history(content_item.uuid()).unwrap();
-        
+
         assert_eq!(history.total_versions, 2);
         assert_eq!(history.current_version, 2);
         assert_eq!(history.versions.len(), 2);
@@ -291,35 +299,29 @@ mod tests {
     fn test_restore_version() {
         let service = create_test_service();
         let content_item = create_test_content_item();
-        
+
         // Create initial version
-        let (mut content_item, _) = service.create_content_item(
-            content_item,
-            Some("test_user".to_string()),
-            None,
-        ).unwrap();
-        
+        let (mut content_item, _) = service
+            .create_content_item(content_item, Some("test_user".to_string()), None)
+            .unwrap();
+
         // Update the content
         let new_text_content = TextContent::new(None, Some("updated content".to_string())).unwrap();
-        content_item.update_content(ContentType::Text(new_text_content)).unwrap();
-        
+        content_item
+            .update_content(ContentType::Text(new_text_content))
+            .unwrap();
+
         // Create updated version
-        service.update_content_item(
-            content_item.clone(),
-            Some("test_user".to_string()),
-            None,
-        ).unwrap();
-        
+        service
+            .update_content_item(content_item.clone(), Some("test_user".to_string()), None)
+            .unwrap();
+
         // Restore to version 1
-        let result = service.restore_version(
-            content_item.uuid(),
-            1,
-            Some("test_user".to_string()),
-        );
-        
+        let result = service.restore_version(content_item.uuid(), 1, Some("test_user".to_string()));
+
         assert!(result.is_ok());
         let (_, restored_version) = result.unwrap();
-        
+
         assert_eq!(restored_version.version_number, 3);
         assert_eq!(restored_version.metadata.change_type, ChangeType::Restored);
     }
@@ -328,37 +330,32 @@ mod tests {
     fn test_publish_unpublish_archive() {
         let service = create_test_service();
         let content_item = create_test_content_item();
-        
+
         // Create initial version
-        let (content_item, _) = service.create_content_item(
-            content_item,
-            Some("test_user".to_string()),
-            None,
-        ).unwrap();
-        
+        let (content_item, _) = service
+            .create_content_item(content_item, Some("test_user".to_string()), None)
+            .unwrap();
+
         // Publish
-        let publish_result = service.publish_content_item(
-            &content_item,
-            Some("test_user".to_string()),
-        );
+        let publish_result =
+            service.publish_content_item(&content_item, Some("test_user".to_string()));
         assert!(publish_result.is_ok());
         let publish_version = publish_result.unwrap();
         assert_eq!(publish_version.metadata.change_type, ChangeType::Published);
-        
+
         // Unpublish
-        let unpublish_result = service.unpublish_content_item(
-            &content_item,
-            Some("test_user".to_string()),
-        );
+        let unpublish_result =
+            service.unpublish_content_item(&content_item, Some("test_user".to_string()));
         assert!(unpublish_result.is_ok());
         let unpublish_version = unpublish_result.unwrap();
-        assert_eq!(unpublish_version.metadata.change_type, ChangeType::Unpublished);
-        
-        // Archive
-        let archive_result = service.archive_content_item(
-            &content_item,
-            Some("test_user".to_string()),
+        assert_eq!(
+            unpublish_version.metadata.change_type,
+            ChangeType::Unpublished
         );
+
+        // Archive
+        let archive_result =
+            service.archive_content_item(&content_item, Some("test_user".to_string()));
         assert!(archive_result.is_ok());
         let archive_version = archive_result.unwrap();
         assert_eq!(archive_version.metadata.change_type, ChangeType::Archived);
@@ -368,19 +365,18 @@ mod tests {
     fn test_versioning_disabled() {
         let service = create_test_service();
         let mut content_item = create_test_content_item();
-        
+
         // Disable versioning
         content_item.disable_versioning();
-        
+
         // Try to create version - should fail
-        let result = service.create_content_item(
-            content_item,
-            Some("test_user".to_string()),
-            None,
-        );
-        
+        let result = service.create_content_item(content_item, Some("test_user".to_string()), None);
+
         assert!(result.is_err());
-        if let Err(ContentItemServiceError::VersioningError(VersioningError::VersioningDisabled(_))) = result {
+        if let Err(ContentItemServiceError::VersioningError(VersioningError::VersioningDisabled(
+            _,
+        ))) = result
+        {
             // Expected error
         } else {
             panic!("Expected VersioningDisabled error");

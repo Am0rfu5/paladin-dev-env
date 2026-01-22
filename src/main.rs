@@ -1,8 +1,8 @@
-use structopt::StructOpt;
 use env_logger::Env;
 use log::info;
 use paladin::config::application_settings::Settings;
 use paladin::config::setup::setup_and_run;
+use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "smartcontent-aggregator")]
@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::process::exit(1);
         }
     };
-    
+
     info!("Loaded configuration: {:?}", config);
 
     setup_and_run(config).await

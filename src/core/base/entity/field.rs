@@ -1,7 +1,7 @@
 /*
 Field
 
-A Field is a base type of Node that is used to store a single piece of data, a single value, 
+A Field is a base type of Node that is used to store a single piece of data, a single value,
 which as a child to another Node.
 
 The Field is a generic type for building specialized Fields.

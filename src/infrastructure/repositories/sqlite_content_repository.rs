@@ -1,17 +1,19 @@
 use crate::application::storage::sql_store::{
-    ContentRepository, ContentListRepository, 
-    TransactionManager, MigrationManager, SqlStore, RepositoryError, RepositoryStats
+    ContentListRepository, ContentRepository, MigrationManager, RepositoryError, RepositoryStats,
+    SqlStore, TransactionManager,
 };
-use crate::core::platform::container::content::{ContentItem, ContentType, TextContent, VideoContent, AudioContent, ImageContent, ContentData};
-use crate::core::platform::container::content_list::ContentList;
 use crate::core::base::entity::node::Node;
+use crate::core::platform::container::content::{
+    AudioContent, ContentData, ContentItem, ContentType, ImageContent, TextContent, VideoContent,
+};
+use crate::core::platform::container::content_list::ContentList;
 use async_trait::async_trait;
 
-use sqlx::{SqlitePool, Row, sqlite::SqlitePoolOptions};
-use serde_json;
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use serde_json;
+use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
 use url::Url;
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct SqliteStore {
@@ -46,10 +48,10 @@ impl SqliteStore {
             .map_err(|e| RepositoryError::ConnectionError(e.to_string()))?;
 
         let repository = Self { pool };
-        
+
         // Run migrations on startup
         repository.migrate().await?;
-        
+
         Ok(repository)
     }
 
@@ -66,14 +68,17 @@ impl SqliteStore {
             .map_err(|e| RepositoryError::ConnectionError(e.to_string()))?;
 
         let repository = Self { pool };
-        
+
         // Run migrations on startup
         repository.migrate().await?;
-        
+
         Ok(repository)
     }
 
-    async fn serialize_content_type(&self, content: &ContentType) -> Result<(String, serde_json::Value), RepositoryError> {
+    async fn serialize_content_type(
+        &self,
+        content: &ContentType,
+    ) -> Result<(String, serde_json::Value), RepositoryError> {
         let (content_type, content_data) = match content {
             ContentType::Text(text) => {
                 let data = serde_json::json!({
@@ -82,7 +87,7 @@ impl SqliteStore {
                     "filesize": text.filesize
                 });
                 ("text", data)
-            },
+            }
             ContentType::Video(video) => {
                 let data = serde_json::json!({
                     "path": video.path,
@@ -90,7 +95,7 @@ impl SqliteStore {
                     "filesize": video.filesize
                 });
                 ("video", data)
-            },
+            }
             ContentType::Audio(audio) => {
                 let data = serde_json::json!({
                     "path": audio.path,
@@ -98,7 +103,7 @@ impl SqliteStore {
                     "filesize": audio.filesize
                 });
                 ("audio", data)
-            },
+            }
             ContentType::Image(image) => {
                 let data = serde_json::json!({
                     "path": image.path,
@@ -106,13 +111,17 @@ impl SqliteStore {
                     "filesize": image.filesize
                 });
                 ("image", data)
-            },
+            }
         };
 
         Ok((content_type.to_string(), content_data))
     }
 
-    async fn deserialize_content_type(&self, content_type: &str, content_data: &str) -> Result<ContentType, RepositoryError> {
+    async fn deserialize_content_type(
+        &self,
+        content_type: &str,
+        content_data: &str,
+    ) -> Result<ContentType, RepositoryError> {
         let data: serde_json::Value = serde_json::from_str(content_data)
             .map_err(|e| RepositoryError::SerializationError(e.to_string()))?;
 
@@ -121,41 +130,41 @@ impl SqliteStore {
                 let path = data["path"].as_str().map(|s| s.to_string());
                 let content = data["content"].as_str().map(|s| s.to_string());
                 let filesize = data["filesize"].as_u64().unwrap_or(0);
-                
+
                 let text_content = TextContent {
                     path,
                     content,
                     filesize,
                 };
-                
+
                 Ok(ContentType::Text(text_content))
-            },
+            }
             "video" => {
                 let path = data["path"].as_str().map(|s| s.to_string());
                 let duration = data["duration"].as_u64().unwrap_or(0);
                 let filesize = data["filesize"].as_u64().unwrap_or(0);
-                
+
                 let video_content = VideoContent {
                     path,
                     duration,
                     filesize,
                 };
-                
+
                 Ok(ContentType::Video(video_content))
-            },
+            }
             "audio" => {
                 let path = data["path"].as_str().map(|s| s.to_string());
                 let duration = data["duration"].as_u64().unwrap_or(0);
                 let filesize = data["filesize"].as_u64().unwrap_or(0);
-                
+
                 let audio_content = AudioContent {
                     path,
                     duration,
                     filesize,
                 };
-                
+
                 Ok(ContentType::Audio(audio_content))
-            },
+            }
             "image" => {
                 let path = data["path"].as_str().map(|s| s.to_string());
                 let resolution = if let Some(res_array) = data["resolution"].as_array() {
@@ -166,76 +175,101 @@ impl SqliteStore {
                     (0, 0)
                 };
                 let filesize = data["filesize"].as_u64().unwrap_or(0);
-                
+
                 let image_content = ImageContent {
                     path,
                     resolution,
                     filesize,
                 };
-                
+
                 Ok(ContentType::Image(image_content))
-            },
-            _ => Err(RepositoryError::SerializationError(format!("Unknown content type: {}", content_type))),
+            }
+            _ => Err(RepositoryError::SerializationError(format!(
+                "Unknown content type: {}",
+                content_type
+            ))),
         }
     }
 
-    async fn row_to_content_item(&self, row: &sqlx::sqlite::SqliteRow) -> Result<ContentItem, RepositoryError> {
+    async fn row_to_content_item(
+        &self,
+        row: &sqlx::sqlite::SqliteRow,
+    ) -> Result<ContentItem, RepositoryError> {
         // Extract database values
-        let uuid_str: String = row.try_get("uuid")
+        let uuid_str: String = row
+            .try_get("uuid")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
         let uuid = Uuid::parse_str(&uuid_str)
             .map_err(|e| RepositoryError::SerializationError(e.to_string()))?;
 
-        let created: DateTime<Utc> = row.try_get("created")
+        let created: DateTime<Utc> = row
+            .try_get("created")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
-        let modified: DateTime<Utc> = row.try_get("modified")
+        let modified: DateTime<Utc> = row
+            .try_get("modified")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let content_type_str: String = row.try_get("content_type")
+        let content_type_str: String = row
+            .try_get("content_type")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
-        let content_data_str: String = row.try_get("content_data")
+        let content_data_str: String = row
+            .try_get("content_data")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
-        
-        let content = self.deserialize_content_type(&content_type_str, &content_data_str).await?;
+
+        let content = self
+            .deserialize_content_type(&content_type_str, &content_data_str)
+            .await?;
 
         // Extract optional fields
-        let title: Option<String> = row.try_get("title")
+        let title: Option<String> = row
+            .try_get("title")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let url = row.try_get::<Option<String>, _>("url")
+        let url = row
+            .try_get::<Option<String>, _>("url")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?
             .and_then(|url_str| Url::parse(&url_str).ok());
 
-        let hash: Option<String> = row.try_get("hash")
+        let hash: Option<String> = row
+            .try_get("hash")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let source_url = row.try_get::<Option<String>, _>("source_url")
+        let source_url = row
+            .try_get::<Option<String>, _>("source_url")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?
             .and_then(|url_str| Url::parse(&url_str).ok());
 
-        let description: Option<String> = row.try_get("description")
+        let description: Option<String> = row
+            .try_get("description")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let tags_str: Option<String> = row.try_get("tags")
+        let tags_str: Option<String> = row
+            .try_get("tags")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
         let tags = tags_str.and_then(|s| serde_json::from_str(&s).ok());
 
-        let source: Option<String> = row.try_get("source")
+        let source: Option<String> = row
+            .try_get("source")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let author: Option<String> = row.try_get("author")
+        let author: Option<String> = row
+            .try_get("author")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let source_id: Option<String> = row.try_get("source_id")
+        let source_id: Option<String> = row
+            .try_get("source_id")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let pub_date: Option<DateTime<Utc>> = row.try_get("pub_date")
+        let pub_date: Option<DateTime<Utc>> = row
+            .try_get("pub_date")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let mod_date: Option<DateTime<Utc>> = row.try_get("mod_date")
+        let mod_date: Option<DateTime<Utc>> = row
+            .try_get("mod_date")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let version: bool = row.try_get("version")
+        let version: bool = row
+            .try_get("version")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
         // Reconstruct ContentData
@@ -298,21 +332,29 @@ impl ContentRepository for SqliteStore {
 
     async fn create(&self, content: ContentItem) -> Result<Uuid, RepositoryError> {
         let id = content.uuid();
-        let (content_type, content_data_json) = self.serialize_content_type(&content.node.node.content).await?;
+        let (content_type, content_data_json) = self
+            .serialize_content_type(&content.node.node.content)
+            .await?;
         let content_data_str = serde_json::to_string(&content_data_json)
             .map_err(|e| RepositoryError::SerializationError(e.to_string()))?;
-        let tags_str = content.node.node.tags.as_ref()
+        let tags_str = content
+            .node
+            .node
+            .tags
+            .as_ref()
             .map(|tags| serde_json::to_string(tags))
             .transpose()
             .map_err(|e| RepositoryError::SerializationError(e.to_string()))?;
 
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             INSERT INTO content_items (
                 uuid, created, modified, content_type, content_data, url, hash,
                 source_url, title, description, tags, source, author, source_id,
                 pub_date, mod_date, version
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        "#)
+        "#,
+        )
         .bind(content.node.uuid.to_string())
         .bind(content.node.created)
         .bind(content.node.modified)
@@ -338,21 +380,29 @@ impl ContentRepository for SqliteStore {
     }
 
     async fn update(&self, content: &ContentItem) -> Result<(), RepositoryError> {
-        let (content_type, content_data_json) = self.serialize_content_type(&content.node.node.content).await?;
+        let (content_type, content_data_json) = self
+            .serialize_content_type(&content.node.node.content)
+            .await?;
         let content_data_str = serde_json::to_string(&content_data_json)
             .map_err(|e| RepositoryError::SerializationError(e.to_string()))?;
-        let tags_str = content.node.node.tags.as_ref()
+        let tags_str = content
+            .node
+            .node
+            .tags
+            .as_ref()
             .map(|tags| serde_json::to_string(tags))
             .transpose()
             .map_err(|e| RepositoryError::SerializationError(e.to_string()))?;
 
-        let result = sqlx::query(r#"
+        let result = sqlx::query(
+            r#"
             UPDATE content_items SET 
                 modified = ?, content_type = ?, content_data = ?, url = ?, hash = ?,
                 source_url = ?, title = ?, description = ?, tags = ?, 
                 source = ?, author = ?, source_id = ?, pub_date = ?, mod_date = ?, version = ?
             WHERE uuid = ?
-        "#)
+        "#,
+        )
         .bind(content.node.modified)
         .bind(&content_type)
         .bind(&content_data_str)
@@ -412,11 +462,12 @@ impl ContentRepository for SqliteStore {
         let mut items = Vec::new();
         for tag in tags {
             // SQLite uses different JSON functions than MySQL
-            let rows = sqlx::query("SELECT * FROM content_items WHERE json_extract(tags, '$') LIKE ?")
-                .bind(format!("%{}%", tag))
-                .fetch_all(&self.pool)
-                .await
-                .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
+            let rows =
+                sqlx::query("SELECT * FROM content_items WHERE json_extract(tags, '$') LIKE ?")
+                    .bind(format!("%{}%", tag))
+                    .fetch_all(&self.pool)
+                    .await
+                    .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
             for row in rows {
                 items.push(self.row_to_content_item(&row).await?);
@@ -445,7 +496,8 @@ impl ContentRepository for SqliteStore {
             .await
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let count: i64 = row.try_get("count")
+        let count: i64 = row
+            .try_get("count")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
         Ok(count as u64)
@@ -458,7 +510,8 @@ impl ContentRepository for SqliteStore {
             .await
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
-        let count: i64 = row.try_get("count")
+        let count: i64 = row
+            .try_get("count")
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
 
         Ok(count > 0)
@@ -469,7 +522,8 @@ impl ContentRepository for SqliteStore {
 impl MigrationManager for SqliteStore {
     async fn migrate(&self) -> Result<(), RepositoryError> {
         // Create content_items table
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             CREATE TABLE IF NOT EXISTS content_items (
                 uuid TEXT PRIMARY KEY,
                 created DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -489,7 +543,8 @@ impl MigrationManager for SqliteStore {
                 mod_date DATETIME,
                 version BOOLEAN DEFAULT TRUE
             )
-        "#)
+        "#,
+        )
         .execute(&self.pool)
         .await
         .map_err(|e| RepositoryError::MigrationError(e.to_string()))?;
@@ -516,7 +571,8 @@ impl MigrationManager for SqliteStore {
             .map_err(|e| RepositoryError::MigrationError(e.to_string()))?;
 
         // Create content_lists table
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             CREATE TABLE IF NOT EXISTS content_lists (
                 uuid TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -525,13 +581,15 @@ impl MigrationManager for SqliteStore {
                 modified DATETIME DEFAULT CURRENT_TIMESTAMP,
                 version BOOLEAN DEFAULT TRUE
             )
-        "#)
+        "#,
+        )
         .execute(&self.pool)
         .await
         .map_err(|e| RepositoryError::MigrationError(e.to_string()))?;
 
         // Create content_list_items junction table
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             CREATE TABLE IF NOT EXISTS content_list_items (
                 list_uuid TEXT,
                 item_uuid TEXT,
@@ -539,7 +597,8 @@ impl MigrationManager for SqliteStore {
                 PRIMARY KEY (list_uuid, item_uuid),
                 FOREIGN KEY (list_uuid) REFERENCES content_lists(uuid) ON DELETE CASCADE
             )
-        "#)
+        "#,
+        )
         .execute(&self.pool)
         .await
         .map_err(|e| RepositoryError::MigrationError(e.to_string()))?;
@@ -560,19 +619,20 @@ impl MigrationManager for SqliteStore {
 
     async fn is_up_to_date(&self) -> Result<bool, RepositoryError> {
         let tables = vec!["content_items", "content_lists", "content_list_items"];
-        
+
         for table in tables {
-            let result = sqlx::query("SELECT name FROM sqlite_master WHERE type='table' AND name=?")
-                .bind(table)
-                .fetch_optional(&self.pool)
-                .await
-                .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
-            
+            let result =
+                sqlx::query("SELECT name FROM sqlite_master WHERE type='table' AND name=?")
+                    .bind(table)
+                    .fetch_optional(&self.pool)
+                    .await
+                    .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
+
             if result.is_none() {
                 return Ok(false);
             }
         }
-        
+
         Ok(true)
     }
 
@@ -602,11 +662,19 @@ impl ContentListRepository for SqliteStore {
         todo!("Implement ContentList delete")
     }
 
-    fn find_all(&self, _limit: Option<u32>, _offset: Option<u32>) -> Result<Vec<ContentList>, RepositoryError> {
+    fn find_all(
+        &self,
+        _limit: Option<u32>,
+        _offset: Option<u32>,
+    ) -> Result<Vec<ContentList>, RepositoryError> {
         todo!("Implement ContentList find_all")
     }
 
-    fn find_by_date_range(&self, _start: DateTime<Utc>, _end: DateTime<Utc>) -> Result<Vec<ContentList>, RepositoryError> {
+    fn find_by_date_range(
+        &self,
+        _start: DateTime<Utc>,
+        _end: DateTime<Utc>,
+    ) -> Result<Vec<ContentList>, RepositoryError> {
         todo!("Implement ContentList find_by_date_range")
     }
 
@@ -626,7 +694,7 @@ impl ContentListRepository for SqliteStore {
 impl TransactionManager for SqliteStore {
     fn with_transaction<F, R>(&self, operation: F) -> Result<R, RepositoryError>
     where
-        F: FnOnce() -> Result<R, RepositoryError>
+        F: FnOnce() -> Result<R, RepositoryError>,
     {
         // Simplified transaction management for now
         operation()
@@ -637,7 +705,7 @@ impl TransactionManager for SqliteStore {
 impl SqlStore for SqliteStore {
     async fn get_stats(&self) -> Result<RepositoryStats, RepositoryError> {
         let content_items_count = ContentRepository::count(self).await?;
-        
+
         Ok(RepositoryStats {
             total_content_items: content_items_count,
             total_content_lists: 0,
@@ -652,7 +720,7 @@ impl SqlStore for SqliteStore {
             .fetch_one(&self.pool)
             .await
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
-        
+
         Ok(true)
     }
 
@@ -662,7 +730,7 @@ impl SqlStore for SqliteStore {
             .execute(&self.pool)
             .await
             .map_err(|e| RepositoryError::QueryError(e.to_string()))?;
-        
+
         Ok(result.rows_affected())
     }
 }
@@ -678,7 +746,7 @@ mod tests {
             database_url: ":memory:".to_string(),
             ..Default::default()
         };
-        
+
         let result = SqliteStore::with_config(config).await;
         assert!(result.is_ok());
     }
@@ -690,7 +758,7 @@ mod tests {
             content: Some("Test content".to_string()),
             filesize: 12,
         };
-        
+
         let content_type = ContentType::Text(text_content);
         println!("Content type created: {:?}", content_type);
     }
@@ -702,7 +770,7 @@ mod tests {
             content: Some("Test content".to_string()),
             filesize: 12,
         };
-        
+
         let content_data = ContentData {
             content: ContentType::Text(text_content),
             url: None,
@@ -719,7 +787,7 @@ mod tests {
 
         let uuid = Uuid::new_v4();
         let now = Utc::now();
-        
+
         let node = Node {
             uuid,
             created: now,
@@ -730,7 +798,7 @@ mod tests {
         };
 
         let content_item = ContentItem { node };
-        
+
         assert_eq!(content_item.uuid(), uuid);
         assert_eq!(content_item.created(), now);
         assert_eq!(content_item.title(), Some(&"Test Item".to_string()));

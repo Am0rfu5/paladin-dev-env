@@ -7,30 +7,28 @@ and uses a mock LLM to simulate the analysis process. This ensures separation of
 doesn't know about specific LLM APIs and works with domain objects (PromptItem and ContentItem).
 */
 
-use std::sync::Arc;
-use std::collections::HashMap;
-use uuid::Uuid;
-use chrono::Utc;
-use serde_json::json;
-use tokio;
 use async_trait::async_trait;
+use chrono::Utc;
 use futures::stream;
+use serde_json::json;
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio;
+use uuid::Uuid;
 
-use paladin::application::use_cases::content::content_llm_analysis_service::{
-    LlmContentAnalyzer, LlmContentAnalysisInput, LlmContentAnalysisConfig
-};
-use paladin::core::platform::container::content::{
-    ContentItem, ContentType, TextContent, VideoContent, AudioContent, ImageContent
-};
-use paladin::core::platform::container::prompt::{
-    PromptItem, PromptType, TextPrompt, PromptRole
-};
 use paladin::application::ports::output::llm_port::{
-    LlmPort, LlmRequest, LlmResponse, LlmError, TokenUsage, FinishReason, StreamingResponse
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
 };
 use paladin::application::use_cases::analysis::llm_analysis_service::{
-    LlmAnalysisService, LlmAnalysisConfig
+    LlmAnalysisConfig, LlmAnalysisService,
 };
+use paladin::application::use_cases::content::content_llm_analysis_service::{
+    LlmContentAnalysisConfig, LlmContentAnalysisInput, LlmContentAnalyzer,
+};
+use paladin::core::platform::container::content::{
+    AudioContent, ContentItem, ContentType, ImageContent, TextContent, VideoContent,
+};
+use paladin::core::platform::container::prompt::{PromptItem, PromptRole, PromptType, TextPrompt};
 
 /// Mock LLM Port for testing
 struct MockLlmPort {
@@ -43,7 +41,7 @@ struct MockLlmPort {
 impl MockLlmPort {
     fn new() -> Self {
         let mut responses = HashMap::new();
-        
+
         // Text content analysis response
         responses.insert("text".to_string(), json!({
             "main_topics": ["technology", "artificial intelligence", "future trends"],
@@ -59,42 +57,50 @@ impl MockLlmPort {
         }).to_string());
 
         // Video content analysis response
-        responses.insert("video".to_string(), json!({
-            "main_topics": ["educational content", "tutorial", "visual learning"],
-            "key_information": [
-                "Step-by-step instructions provided",
-                "Visual demonstrations enhance understanding",
-                "Suitable for beginners"
-            ],
-            "sentiment": "neutral",
-            "tone": "instructional",
-            "quality_score": 7.8,
-            "video_analysis": {
-                "estimated_engagement": "high",
-                "content_density": "medium",
-                "pacing": "appropriate"
-            },
-            "summary": "An instructional video with clear demonstrations and good pacing."
-        }).to_string());
+        responses.insert(
+            "video".to_string(),
+            json!({
+                "main_topics": ["educational content", "tutorial", "visual learning"],
+                "key_information": [
+                    "Step-by-step instructions provided",
+                    "Visual demonstrations enhance understanding",
+                    "Suitable for beginners"
+                ],
+                "sentiment": "neutral",
+                "tone": "instructional",
+                "quality_score": 7.8,
+                "video_analysis": {
+                    "estimated_engagement": "high",
+                    "content_density": "medium",
+                    "pacing": "appropriate"
+                },
+                "summary": "An instructional video with clear demonstrations and good pacing."
+            })
+            .to_string(),
+        );
 
         // Audio content analysis response
-        responses.insert("audio".to_string(), json!({
-            "main_topics": ["podcast", "interview", "discussion"],
-            "key_information": [
-                "Expert insights shared",
-                "Multiple perspectives presented",
-                "Q&A format engaged audience"
-            ],
-            "sentiment": "positive",
-            "tone": "conversational",
-            "quality_score": 8.2,
-            "audio_analysis": {
-                "speech_clarity": "excellent",
-                "background_noise": "minimal",
-                "engagement_level": "high"
-            },
-            "summary": "An engaging interview with expert insights and clear audio quality."
-        }).to_string());
+        responses.insert(
+            "audio".to_string(),
+            json!({
+                "main_topics": ["podcast", "interview", "discussion"],
+                "key_information": [
+                    "Expert insights shared",
+                    "Multiple perspectives presented",
+                    "Q&A format engaged audience"
+                ],
+                "sentiment": "positive",
+                "tone": "conversational",
+                "quality_score": 8.2,
+                "audio_analysis": {
+                    "speech_clarity": "excellent",
+                    "background_noise": "minimal",
+                    "engagement_level": "high"
+                },
+                "summary": "An engaging interview with expert insights and clear audio quality."
+            })
+            .to_string(),
+        );
 
         // Image content analysis response
         responses.insert("image".to_string(), json!({
@@ -138,16 +144,20 @@ impl MockLlmPort {
     }
 
     fn get_response_for_content_type(&self, content_type: &str) -> String {
-        self.responses.get(content_type)
+        self.responses
+            .get(content_type)
             .cloned()
-            .unwrap_or_else(|| json!({
-                "main_topics": ["general content"],
-                "key_information": ["Content analyzed successfully"],
-                "sentiment": "neutral",
-                "tone": "informative",
-                "quality_score": 7.0,
-                "summary": "General content analysis completed."
-            }).to_string())
+            .unwrap_or_else(|| {
+                json!({
+                    "main_topics": ["general content"],
+                    "key_information": ["Content analyzed successfully"],
+                    "sentiment": "neutral",
+                    "tone": "informative",
+                    "quality_score": 7.0,
+                    "summary": "General content analysis completed."
+                })
+                .to_string()
+            })
     }
 }
 
@@ -200,21 +210,25 @@ impl LlmPort for MockLlmPort {
         })
     }
 
-    async fn generate_stream(&self, request: LlmRequest) -> Result<Box<dyn futures::Stream<Item = Result<StreamingResponse, LlmError>> + Send>, LlmError> {
+    async fn generate_stream(
+        &self,
+        request: LlmRequest,
+    ) -> Result<Box<dyn futures::Stream<Item = Result<StreamingResponse, LlmError>> + Send>, LlmError>
+    {
         let response = self.generate(request).await?;
         let chunks = vec![
             Ok(StreamingResponse {
                 id: response.id,
-                delta: response.content[..response.content.len()/2].to_string(),
+                delta: response.content[..response.content.len() / 2].to_string(),
                 finish_reason: None,
             }),
             Ok(StreamingResponse {
                 id: response.id,
-                delta: response.content[response.content.len()/2..].to_string(),
+                delta: response.content[response.content.len() / 2..].to_string(),
                 finish_reason: Some(FinishReason::Stop),
             }),
         ];
-        
+
         Ok(Box::new(stream::iter(chunks)))
     }
 
@@ -223,7 +237,10 @@ impl LlmPort for MockLlmPort {
     }
 
     async fn get_available_models(&self) -> Result<Vec<String>, LlmError> {
-        Ok(vec!["mock-model-v1".to_string(), "mock-model-v2".to_string()])
+        Ok(vec![
+            "mock-model-v1".to_string(),
+            "mock-model-v2".to_string(),
+        ])
     }
 
     fn get_provider_name(&self) -> &'static str {
@@ -348,7 +365,7 @@ async fn test_content_llm_analysis_pipeline_complete_flow() {
     // Setup
     let mock_llm = Arc::new(MockLlmPort::new());
     let llm_service = Arc::new(LlmAnalysisService::new(mock_llm.clone()));
-    
+
     let analyzer = LlmContentAnalyzer::new(llm_service);
     let content_items = create_test_content_items();
     let prompts = create_test_prompts();
@@ -360,24 +377,36 @@ async fn test_content_llm_analysis_pipeline_complete_flow() {
 
     for (index, content_item) in content_items.iter().enumerate() {
         println!("Testing content item {}: {:?}", index, content_item.title());
-        
+
         let input = LlmContentAnalysisInput {
             prompt: general_prompt.clone(),
             content: content_item.clone(),
         };
-        
+
         let result = analyzer.analyze_with_prompt_async(&input, &config).await; // Use async version
-        
-        assert!(result.is_ok(), "Analysis failed for content item {}: {:?}", index, result.err());
-        
+
+        assert!(
+            result.is_ok(),
+            "Analysis failed for content item {}: {:?}",
+            index,
+            result.err()
+        );
+
         let analysis = result.unwrap();
-        assert!(analysis.is_object(), "Analysis result should be a JSON object");
-        
+        assert!(
+            analysis.is_object(),
+            "Analysis result should be a JSON object"
+        );
+
         // ... rest of assertions remain the same
     }
 
     // Verify that the mock LLM was called for each content item
-    assert_eq!(mock_llm.get_call_count(), content_items.len(), "Mock LLM should be called once per content item");
+    assert_eq!(
+        mock_llm.get_call_count(),
+        content_items.len(),
+        "Mock LLM should be called once per content item"
+    );
 }
 
 #[tokio::test]
@@ -385,7 +414,7 @@ async fn test_multiple_prompt_types_with_same_content() {
     let mock_llm = Arc::new(MockLlmPort::new());
     let llm_service = Arc::new(LlmAnalysisService::new(mock_llm.clone()));
     let analyzer = LlmContentAnalyzer::new(llm_service);
-    
+
     let content_items = create_test_content_items();
     let prompts = create_test_prompts();
     let config = LlmContentAnalysisConfig::default();
@@ -395,24 +424,39 @@ async fn test_multiple_prompt_types_with_same_content() {
 
     for (prompt_index, prompt) in prompts.iter().enumerate() {
         println!("Testing with prompt {}: {:?}", prompt_index, prompt.title());
-        
+
         let input = LlmContentAnalysisInput {
             prompt: prompt.clone(),
             content: text_content.clone(),
         };
-        
+
         let result = analyzer.analyze_with_prompt_async(&input, &config).await; // Use async version
-        assert!(result.is_ok(), "Analysis should succeed with prompt {}: {:?}", prompt_index, result.err());
-        
+        assert!(
+            result.is_ok(),
+            "Analysis should succeed with prompt {}: {:?}",
+            prompt_index,
+            result.err()
+        );
+
         let analysis = result.unwrap();
-        assert!(analysis.is_object(), "Analysis result should be a JSON object");
-        
+        assert!(
+            analysis.is_object(),
+            "Analysis result should be a JSON object"
+        );
+
         // Each prompt should produce analysis
-        assert!(analysis.get("content_metadata").is_some(), "Metadata should be present regardless of prompt type");
+        assert!(
+            analysis.get("content_metadata").is_some(),
+            "Metadata should be present regardless of prompt type"
+        );
     }
 
     // Verify that the mock LLM was called for each prompt
-    assert_eq!(mock_llm.get_call_count(), prompts.len(), "Mock LLM should be called once per prompt");
+    assert_eq!(
+        mock_llm.get_call_count(),
+        prompts.len(),
+        "Mock LLM should be called once per prompt"
+    );
 }
 
 #[tokio::test]
@@ -420,10 +464,10 @@ async fn test_content_llm_analysis_with_custom_configuration() {
     let mock_llm = Arc::new(MockLlmPort::new().with_delay(100));
     let llm_service = Arc::new(LlmAnalysisService::new(mock_llm));
     let analyzer = LlmContentAnalyzer::new(llm_service);
-    
+
     let content_items = create_test_content_items();
     let prompts = create_test_prompts();
-    
+
     // Custom configuration
     let config = LlmContentAnalysisConfig {
         llm_config: LlmAnalysisConfig {
@@ -446,12 +490,18 @@ async fn test_content_llm_analysis_with_custom_configuration() {
     let elapsed = start_time.elapsed();
 
     assert!(result.is_ok(), "Analysis should succeed with custom config");
-    assert!(elapsed.as_millis() >= 100, "Should respect delay configuration");
-    
+    assert!(
+        elapsed.as_millis() >= 100,
+        "Should respect delay configuration"
+    );
+
     let analysis = result.unwrap();
-    
+
     // Metadata should not be present due to configuration
-    assert!(analysis.get("content_metadata").is_none(), "Metadata should not be present when disabled");
+    assert!(
+        analysis.get("content_metadata").is_none(),
+        "Metadata should not be present when disabled"
+    );
 }
 
 #[tokio::test]
@@ -459,23 +509,27 @@ async fn test_content_length_validation() {
     let mock_llm = Arc::new(MockLlmPort::new());
     let llm_service = Arc::new(LlmAnalysisService::new(mock_llm));
     let analyzer = LlmContentAnalyzer::new(llm_service);
-    
+
     let prompts = create_test_prompts();
-    
+
     // Create content that exceeds length limit
     let long_content = ContentItem::new_with_title(
-        ContentType::Text(TextContent::new(
-            None,
-            Some("a".repeat(2000)) // Long content
-        ).expect("Failed to create long text content")),
-        "Long Content".to_string()
-    ).expect("Failed to create long content item");
+        ContentType::Text(
+            TextContent::new(
+                None,
+                Some("a".repeat(2000)), // Long content
+            )
+            .expect("Failed to create long text content"),
+        ),
+        "Long Content".to_string(),
+    )
+    .expect("Failed to create long content item");
 
     let input = LlmContentAnalysisInput {
         prompt: prompts[0].clone(),
         content: long_content,
     };
-    
+
     // Set a low max content length
     let config = LlmContentAnalysisConfig {
         max_content_length: Some(100),
@@ -483,8 +537,16 @@ async fn test_content_length_validation() {
     };
 
     let result = analyzer.analyze_with_prompt_async(&input, &config).await; // Use async version
-    assert!(result.is_err(), "Analysis should fail for content exceeding length limit");
-    assert!(result.unwrap_err().contains("exceeds maximum allowed length"), "Error should mention length limit");
+    assert!(
+        result.is_err(),
+        "Analysis should fail for content exceeding length limit"
+    );
+    assert!(
+        result
+            .unwrap_err()
+            .contains("exceeds maximum allowed length"),
+        "Error should mention length limit"
+    );
 }
 
 #[tokio::test]
@@ -492,7 +554,7 @@ async fn test_prompt_validation() {
     let mock_llm = Arc::new(MockLlmPort::new());
     let llm_service = Arc::new(LlmAnalysisService::new(mock_llm));
     let analyzer = LlmContentAnalyzer::new(llm_service);
-    
+
     let content_items = create_test_content_items();
     let config = LlmContentAnalysisConfig::default();
 
@@ -502,8 +564,9 @@ async fn test_prompt_validation() {
             content: "".to_string(), // Empty prompt
             role: PromptRole::User,
         }),
-        "Empty Prompt".to_string()
-    ).expect("Failed to create empty prompt");
+        "Empty Prompt".to_string(),
+    )
+    .expect("Failed to create empty prompt");
 
     let input = LlmContentAnalysisInput {
         prompt: empty_prompt,
@@ -512,7 +575,10 @@ async fn test_prompt_validation() {
 
     let result = analyzer.analyze_with_prompt_async(&input, &config).await; // Use async version
     assert!(result.is_err(), "Analysis should fail with empty prompt");
-    assert!(result.unwrap_err().contains("cannot be empty"), "Error should mention empty prompt");
+    assert!(
+        result.unwrap_err().contains("cannot be empty"),
+        "Error should mention empty prompt"
+    );
 }
 
 #[tokio::test]
@@ -521,10 +587,10 @@ async fn test_error_handling_and_retries() {
     let mock_llm = Arc::new(MockLlmPort::new().with_failure());
     let llm_service = Arc::new(LlmAnalysisService::new(mock_llm));
     let analyzer = LlmContentAnalyzer::new(llm_service);
-    
+
     let content_items = create_test_content_items();
     let prompts = create_test_prompts();
-    
+
     let config = LlmContentAnalysisConfig {
         llm_config: LlmAnalysisConfig {
             model: "failing-model".to_string(),
@@ -541,22 +607,28 @@ async fn test_error_handling_and_retries() {
     };
 
     let result = analyzer.analyze_with_prompt_async(&input, &config).await; // Use async version
-    assert!(result.is_err(), "Analysis should fail with failing mock LLM");
-    assert!(result.unwrap_err().contains("LLM analysis failed"), "Error should indicate LLM failure");
+    assert!(
+        result.is_err(),
+        "Analysis should fail with failing mock LLM"
+    );
+    assert!(
+        result.unwrap_err().contains("LLM analysis failed"),
+        "Error should indicate LLM failure"
+    );
 }
 
 #[tokio::test]
 async fn test_batch_processing_with_different_prompts() {
     let mock_llm = Arc::new(MockLlmPort::new());
     let llm_service = Arc::new(LlmAnalysisService::new(mock_llm.clone()));
-    
+
     let content_items = create_test_content_items();
     let prompts = create_test_prompts();
     let config = LlmContentAnalysisConfig::default();
 
     // Process multiple combinations in parallel
     let mut handles = vec![];
-    
+
     for (content_index, content_item) in content_items.iter().enumerate() {
         for (prompt_index, prompt) in prompts.iter().enumerate() {
             let analyzer = LlmContentAnalyzer::new(llm_service.clone());
@@ -565,11 +637,17 @@ async fn test_batch_processing_with_different_prompts() {
                 content: content_item.clone(),
             };
             let config_clone = config.clone();
-            
+
             let handle = tokio::spawn(async move {
-                (content_index, prompt_index, analyzer.analyze_with_prompt_async(&input, &config_clone).await) // Use async version
+                (
+                    content_index,
+                    prompt_index,
+                    analyzer
+                        .analyze_with_prompt_async(&input, &config_clone)
+                        .await,
+                ) // Use async version
             });
-            
+
             handles.push(handle);
         }
     }
@@ -583,15 +661,25 @@ async fn test_batch_processing_with_different_prompts() {
 
     // Verify all analyses succeeded
     for (content_index, prompt_index, result) in results.iter() {
-        assert!(result.is_ok(), "Batch analysis content {} prompt {} should succeed: {:?}", 
-                content_index, prompt_index, result);
+        assert!(
+            result.is_ok(),
+            "Batch analysis content {} prompt {} should succeed: {:?}",
+            content_index,
+            prompt_index,
+            result
+        );
     }
 
     // Verify correct number of LLM calls (content_items * prompts)
     let expected_calls = content_items.len() * prompts.len();
-    assert_eq!(mock_llm.get_call_count(), expected_calls, 
-               "Should make {} LLM calls for {} contents × {} prompts", 
-               expected_calls, content_items.len(), prompts.len());
+    assert_eq!(
+        mock_llm.get_call_count(),
+        expected_calls,
+        "Should make {} LLM calls for {} contents × {} prompts",
+        expected_calls,
+        content_items.len(),
+        prompts.len()
+    );
 }
 
 #[tokio::test]
@@ -601,42 +689,57 @@ async fn test_content_analysis_separation_of_concerns() {
     // 2. It doesn't create prompts internally
     // 3. It uses the LLM port abstraction
     // 4. It returns structured results
-    
+
     let mock_llm = Arc::new(MockLlmPort::new());
     let llm_service = Arc::new(LlmAnalysisService::new(mock_llm.clone()));
     let analyzer = LlmContentAnalyzer::new(llm_service);
-    
+
     // Domain objects created outside the analyzer
     let content = ContentItem::new_with_title(
-        ContentType::Text(TextContent::new(
-            None,
-            Some("Test content for separation of concerns validation.".to_string())
-        ).expect("Failed to create test content")),
-        "SoC Test Content".to_string()
-    ).expect("Failed to create content item");
+        ContentType::Text(
+            TextContent::new(
+                None,
+                Some("Test content for separation of concerns validation.".to_string()),
+            )
+            .expect("Failed to create test content"),
+        ),
+        "SoC Test Content".to_string(),
+    )
+    .expect("Failed to create content item");
 
     let prompt = PromptItem::new_with_title(
         PromptType::Text(TextPrompt {
             content: "Analyze this content for architectural compliance.".to_string(),
             role: PromptRole::User,
         }),
-        "SoC Test Prompt".to_string()
-    ).expect("Failed to create test prompt");
+        "SoC Test Prompt".to_string(),
+    )
+    .expect("Failed to create test prompt");
 
     let input = LlmContentAnalysisInput { prompt, content };
     let config = LlmContentAnalysisConfig::default();
 
     // The analyzer should work with these pre-existing objects
     let result = analyzer.analyze_with_prompt_async(&input, &config).await; // Use async version
-    
-    assert!(result.is_ok(), "Analyzer should work with pre-existing domain objects");
-    
+
+    assert!(
+        result.is_ok(),
+        "Analyzer should work with pre-existing domain objects"
+    );
+
     let analysis = result.unwrap();
-    
+
     // Verify proper structure and metadata handling
     assert!(analysis.is_object(), "Result should be properly structured");
-    assert!(analysis.get("content_metadata").is_some(), "Metadata should be properly added");
-    
+    assert!(
+        analysis.get("content_metadata").is_some(),
+        "Metadata should be properly added"
+    );
+
     // Verify the mock was called (showing port abstraction works)
-    assert_eq!(mock_llm.get_call_count(), 1, "LLM port should be called exactly once");
+    assert_eq!(
+        mock_llm.get_call_count(),
+        1,
+        "LLM port should be called exactly once"
+    );
 }

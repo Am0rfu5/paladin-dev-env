@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Node<T> {
@@ -91,9 +91,9 @@ mod tests {
             value: "test".to_string(),
             number: 42,
         };
-        
+
         let node = Node::new(test_data.clone(), Some("Test Node".to_string()));
-        
+
         assert_eq!(node.node, test_data);
         assert_eq!(node.name, Some("Test Node".to_string()));
         assert!(node.version);
@@ -106,19 +106,19 @@ mod tests {
             value: "initial".to_string(),
             number: 1,
         };
-        
+
         let mut node = Node::new(initial_data, None);
         let initial_modified = node.modified;
-        
+
         std::thread::sleep(std::time::Duration::from_millis(1));
-        
+
         let new_data = TestData {
             value: "updated".to_string(),
             number: 2,
         };
-        
+
         node.update(new_data.clone());
-        
+
         assert_eq!(node.node, new_data);
         assert!(node.modified > initial_modified);
     }
@@ -129,14 +129,14 @@ mod tests {
             value: "test".to_string(),
             number: 42,
         };
-        
+
         let mut node = Node::new(test_data, None);
-        
+
         assert!(node.is_versioning_enabled());
-        
+
         node.disable_versioning();
         assert!(!node.is_versioning_enabled());
-        
+
         node.enable_versioning();
         assert!(node.is_versioning_enabled());
     }
@@ -147,22 +147,22 @@ mod tests {
             value: "test1".to_string(),
             number: 1,
         };
-        
+
         let test_data2 = TestData {
             value: "test2".to_string(),
             number: 2,
         };
-        
+
         let node1 = Node::new(test_data1, Some("Node 1".to_string()));
         let node2 = Node::new(test_data2, Some("Node 2".to_string()));
-        
+
         // Different nodes should have different hashes
         let mut hasher1 = std::collections::hash_map::DefaultHasher::new();
         let mut hasher2 = std::collections::hash_map::DefaultHasher::new();
-        
+
         node1.hash(&mut hasher1);
         node2.hash(&mut hasher2);
-        
+
         assert_ne!(hasher1.finish(), hasher2.finish());
     }
 
@@ -172,17 +172,17 @@ mod tests {
             value: "serialize_test".to_string(),
             number: 100,
         };
-        
+
         let node = Node::new(test_data, Some("Serialization Test".to_string()));
-        
+
         // Test serialization
         let serialized = serde_json::to_string(&node)?;
         assert!(!serialized.is_empty());
-        
+
         // Test deserialization
         let deserialized: Node<TestData> = serde_json::from_str(&serialized)?;
         assert_eq!(node, deserialized);
-        
+
         Ok(())
     }
 }

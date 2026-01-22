@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
-use config::{Config, ConfigError, File, Environment};
-use std::fs;
-use std::time::Duration;
 use crate::infrastructure::adapters::file_storage::minio::MinioConfig;
 use crate::infrastructure::adapters::notifications::{EmailAdapterConfig, SystemAdapterConfig};
+use config::{Config, ConfigError, Environment, File};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::time::Duration;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SourceConfig {
@@ -90,11 +90,21 @@ impl Default for FileStorageConfig {
             max_idle_conns: Some(10),
             max_file_size: Some(100 * 1024 * 1024), // 100MB
             allowed_extensions: Some(vec![
-                "txt".to_string(), "md".to_string(), "json".to_string(),
-                "pdf".to_string(), "doc".to_string(), "docx".to_string(),
-                "jpg".to_string(), "png".to_string(), "gif".to_string(),
-                "rs".to_string(), "py".to_string(), "js".to_string(),
-                "html".to_string(), "css".to_string(), "xml".to_string(),
+                "txt".to_string(),
+                "md".to_string(),
+                "json".to_string(),
+                "pdf".to_string(),
+                "doc".to_string(),
+                "docx".to_string(),
+                "jpg".to_string(),
+                "png".to_string(),
+                "gif".to_string(),
+                "rs".to_string(),
+                "py".to_string(),
+                "js".to_string(),
+                "html".to_string(),
+                "css".to_string(),
+                "xml".to_string(),
             ]),
         }
     }
@@ -152,7 +162,8 @@ impl Settings {
             .add_source(Environment::with_prefix("APP"));
 
         if let Ok(env) = std::env::var("APP_ENV") {
-            builder = builder.add_source(File::with_name(&format!("config.{}", env)).required(false));
+            builder =
+                builder.add_source(File::with_name(&format!("config.{}", env)).required(false));
         }
 
         builder.build()?.try_deserialize()
@@ -334,7 +345,7 @@ impl Settings {
     /// Convert FileStorageConfig to MinioConfig
     pub fn to_minio_config(&self) -> MinioConfig {
         let fs_config = self.get_file_storage_config();
-        
+
         MinioConfig {
             endpoint: fs_config.minio_endpoint,
             access_key: fs_config.minio_access_key,
@@ -381,8 +392,8 @@ impl Default for Settings {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env;
     use serial_test::serial;
+    use std::env;
 
     #[test]
     fn test_default_file_storage_config() {
@@ -432,10 +443,16 @@ mod tests {
         assert_eq!(config.request_timeout, Some(600));
         assert_eq!(config.max_idle_conns, Some(20));
         assert_eq!(config.max_file_size, Some(209715200));
-        assert_eq!(config.allowed_extensions, Some(vec![
-            "pdf".to_string(), "doc".to_string(), "docx".to_string(),
-            "jpg".to_string(), "png".to_string()
-        ]));
+        assert_eq!(
+            config.allowed_extensions,
+            Some(vec![
+                "pdf".to_string(),
+                "doc".to_string(),
+                "docx".to_string(),
+                "jpg".to_string(),
+                "png".to_string()
+            ])
+        );
 
         // Clean up
         unsafe {
@@ -503,7 +520,7 @@ mod tests {
         // Ensure existing queue config functionality still works
         let settings = Settings::default();
         let queue_config = settings.get_queue_config();
-        
+
         assert_eq!(queue_config.redis_host, "localhost");
         assert_eq!(queue_config.redis_port, 6379);
         assert_eq!(queue_config.redis_db, 0);

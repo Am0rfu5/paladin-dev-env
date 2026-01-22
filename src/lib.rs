@@ -1,12 +1,11 @@
-pub mod cli;
-pub mod core;
 pub mod application;
-pub mod infrastructure;
+pub mod cli;
 pub mod config;
+pub mod core;
+pub mod infrastructure;
 
-
-pub use core::*;
 pub use application::*;
-pub use infrastructure::*;
 pub use cli::*;
 pub use config::*;
+pub use core::*;
+pub use infrastructure::*;

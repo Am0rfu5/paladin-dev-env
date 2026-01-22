@@ -1,25 +1,25 @@
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use crate::config::application_settings::Settings;
-use crate::infrastructure::repositories::sqlite_content_repository::SqliteStore;
+use crate::application::ports::output::file_storage_port::FileStoragePort;
+use crate::application::ports::output::file_storage_port::FileStorageUtils;
+use crate::application::ports::output::log_port::LogPort;
+use crate::application::ports::output::queue_port::QueuePort;
 use crate::application::storage::sql_store::MigrationManager;
-use crate::core::platform::manager::scheduler::Scheduler;
+use crate::config::application_settings::Settings;
+use crate::config::user_config::UserServiceFactory;
 use crate::core::base::service::message_service::{MessageService, MessageServiceConfig};
 use crate::core::platform::manager::event_manager::EventService;
-use crate::infrastructure::adapters::queue::redis::RedisQueueAdapter;
-use crate::application::ports::output::queue_port::QueuePort;
+use crate::core::platform::manager::notification_service::NotificationService;
+use crate::core::platform::manager::scheduler::Scheduler;
+use crate::core::platform::manager::user_service::UserService;
 use crate::infrastructure::adapters::file_storage::minio::MinioAdapter;
 use crate::infrastructure::adapters::logs::system_log_adapter::SystemLogAdapter;
-use crate::application::ports::output::log_port::LogPort;
-use tokio::task::JoinHandle;
-use tokio::signal;
+use crate::infrastructure::adapters::queue::redis::RedisQueueAdapter;
+use crate::infrastructure::repositories::sqlite_content_repository::SqliteStore;
 use std::env;
 use std::path::PathBuf;
-use crate::application::ports::output::file_storage_port::FileStorageUtils;
-use crate::application::ports::output::file_storage_port::FileStoragePort;
-use crate::core::platform::manager::user_service::UserService;
-use crate::config::user_config::UserServiceFactory;
-use crate::core::platform::manager::notification_service::NotificationService;
+use std::sync::Arc;
+use tokio::signal;
+use tokio::sync::RwLock;
+use tokio::task::JoinHandle;
 pub struct ServiceRunner {
     scheduler: Arc<RwLock<Scheduler>>,
     scheduler_handle: Option<JoinHandle<()>>,
@@ -49,7 +49,10 @@ impl ServiceRunner {
         }
     }
 
-    pub async fn run_services(&mut self, config: Arc<Settings>) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run_services(
+        &mut self,
+        config: Arc<Settings>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         println!("Starting services...");
 
         // Initialize the database
@@ -71,19 +74,23 @@ impl ServiceRunner {
             redis_password: queue_config.redis_password,
             redis_db: queue_config.redis_db,
             connection_timeout: queue_config.connection_timeout.unwrap_or(30),
-            key_prefix: queue_config.key_prefix.unwrap_or_else(|| "paladin:queue".to_string()),
+            key_prefix: queue_config
+                .key_prefix
+                .unwrap_or_else(|| "paladin:queue".to_string()),
             max_retries: queue_config.max_retries.unwrap_or(3),
         };
 
         let queue_adapter = Arc::new(
             RedisQueueAdapter::new(redis_config, Some(log_adapter.clone() as Arc<dyn LogPort>))
                 .await
-                .map_err(|e| format!("Failed to initialize Redis queue adapter: {}", e))?
+                .map_err(|e| format!("Failed to initialize Redis queue adapter: {}", e))?,
         );
         self.queue_adapter = Some(queue_adapter.clone());
-        
+
         // Test Redis connection
-        queue_adapter.health_check().await
+        queue_adapter
+            .health_check()
+            .await
             .map_err(|e| format!("Redis queue adapter health check failed: {}", e))?;
         println!("Redis queue adapter initialized successfully");
 
@@ -92,33 +99,41 @@ impl ServiceRunner {
         let file_storage_adapter = Arc::new(
             MinioAdapter::new(minio_config, Some(log_adapter.clone() as Arc<dyn LogPort>))
                 .await
-                .map_err(|e| format!("Failed to initialize MinIO file storage adapter: {}", e))?
+                .map_err(|e| format!("Failed to initialize MinIO file storage adapter: {}", e))?,
         );
         self.file_storage_adapter = Some(file_storage_adapter.clone());
 
         // Test MinIO connection
-        file_storage_adapter.health_check().await
+        file_storage_adapter
+            .health_check()
+            .await
             .map_err(|e| format!("MinIO file storage adapter health check failed: {}", e))?;
         println!("MinIO file storage adapter initialized successfully");
 
         // Initialize MessageService
         let message_service_config = Self::create_message_service_config(&config);
         let message_service = Arc::new(MessageService::new(message_service_config));
-        message_service.start().await
+        message_service
+            .start()
+            .await
             .map_err(|e| format!("Failed to start message service: {}", e))?;
-        
+
         println!("Message service started successfully");
         self.message_service = Some(message_service.clone());
 
         // Initialize EventService
-        let event_service = Arc::new(EventService::new(message_service.clone()).await
-            .map_err(|e| format!("Failed to create event service: {}", e))?);
-        
+        let event_service = Arc::new(
+            EventService::new(message_service.clone())
+                .await
+                .map_err(|e| format!("Failed to create event service: {}", e))?,
+        );
+
         println!("Event service initialized successfully");
         self.event_service = Some(event_service.clone());
 
         // Initialize Notification Service
-        let notification_service = Self::init_notification_service(&config, message_service.clone()).await?;
+        let notification_service =
+            Self::init_notification_service(&config, message_service.clone()).await?;
         self.notification_service = Some(notification_service);
         println!("Notification service initialized successfully");
 
@@ -143,7 +158,10 @@ impl ServiceRunner {
         println!("Scheduler started successfully");
         println!("All services started successfully!");
         println!("Queue adapter: {}", queue_adapter.get_connection_info());
-        println!("File storage adapter: {}", file_storage_adapter.get_connection_info());
+        println!(
+            "File storage adapter: {}",
+            file_storage_adapter.get_connection_info()
+        );
 
         // Wait for shutdown signal
         self.wait_for_shutdown().await;
@@ -217,12 +235,12 @@ impl ServiceRunner {
 
     async fn wait_for_shutdown(&self) {
         let ctrl_c = signal::ctrl_c();
-        
+
         #[cfg(unix)]
         {
-            use tokio::signal::unix::{signal, SignalKind};
+            use tokio::signal::unix::{SignalKind, signal};
             let mut sigterm = signal(SignalKind::terminate()).unwrap();
-            
+
             tokio::select! {
                 _ = ctrl_c => {
                     println!("Received Ctrl+C, shutting down...");
@@ -232,7 +250,7 @@ impl ServiceRunner {
                 }
             }
         }
-        
+
         #[cfg(not(unix))]
         {
             ctrl_c.await.expect("Failed to listen for ctrl-c");
@@ -257,14 +275,18 @@ impl ServiceRunner {
 
         // Shutdown file storage adapter
         if let Some(file_storage_adapter) = &self.file_storage_adapter {
-            file_storage_adapter.shutdown().await
+            file_storage_adapter
+                .shutdown()
+                .await
                 .map_err(|e| format!("Failed to shutdown file storage adapter: {}", e))?;
             println!("File storage adapter stopped");
         }
 
         // Shutdown queue adapter
         if let Some(queue_adapter) = &self.queue_adapter {
-            queue_adapter.shutdown().await
+            queue_adapter
+                .shutdown()
+                .await
                 .map_err(|e| format!("Failed to shutdown queue adapter: {}", e))?;
             println!("Queue adapter stopped");
         }
@@ -363,15 +385,29 @@ impl ServiceRunner {
     /// Initialize a sample file for testing file storage
     pub async fn initialize_sample_files(&self) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(file_storage) = &self.file_storage_adapter {
+            use crate::application::ports::output::file_storage_port::{
+                FileStoragePort, UploadOptions,
+            };
             use std::path::PathBuf;
-            use crate::application::ports::output::file_storage_port::{FileStoragePort, UploadOptions};
 
             // Create a sample analysis directory structure
             let sample_files = vec![
-                ("analysis/README.md", "# Analysis Files\n\nThis directory contains files for security analysis."),
-                ("reports/README.md", "# Reports\n\nGenerated security audit reports are stored here."),
-                ("code/sample.rs", "// Sample Rust code for analysis\nfn main() {\n    println!(\"Hello, world!\");\n}"),
-                ("code/sample.py", "# Sample Python code for analysis\nprint(\"Hello, world!\")"),
+                (
+                    "analysis/README.md",
+                    "# Analysis Files\n\nThis directory contains files for security analysis.",
+                ),
+                (
+                    "reports/README.md",
+                    "# Reports\n\nGenerated security audit reports are stored here.",
+                ),
+                (
+                    "code/sample.rs",
+                    "// Sample Rust code for analysis\nfn main() {\n    println!(\"Hello, world!\");\n}",
+                ),
+                (
+                    "code/sample.py",
+                    "# Sample Python code for analysis\nprint(\"Hello, world!\")",
+                ),
             ];
 
             for (path, content) in sample_files {
@@ -383,9 +419,16 @@ impl ServiceRunner {
                     ..Default::default()
                 };
 
-                match file_storage.upload_file(&file_path, content.as_bytes(), Some(upload_options)).await {
+                match file_storage
+                    .upload_file(&file_path, content.as_bytes(), Some(upload_options))
+                    .await
+                {
                     Ok(file_item) => {
-                        println!("Created sample file: {} ({} bytes)", file_item.path.display(), file_item.size);
+                        println!(
+                            "Created sample file: {} ({} bytes)",
+                            file_item.path.display(),
+                            file_item.size
+                        );
                     }
                     Err(e) => {
                         println!("Failed to create sample file {}: {}", path, e);
@@ -401,17 +444,22 @@ impl ServiceRunner {
 
     /// Helper method to detect content type from file extension
     fn detect_content_type(path: &PathBuf) -> String {
-        <() as FileStorageUtils>::detect_content_type(path).unwrap_or_else(|| "application/octet-stream".to_string())
+        <() as FileStorageUtils>::detect_content_type(path)
+            .unwrap_or_else(|| "application/octet-stream".to_string())
     }
-    
+
     async fn init_user_service(
         &mut self,
         config: Arc<Settings>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let log_adapter = self.log_adapter.as_ref()
+        let log_adapter = self
+            .log_adapter
+            .as_ref()
             .ok_or("LogAdapter must be initialized before UserService")?;
 
-        let notification_service = self.notification_service.as_ref()
+        let notification_service = self
+            .notification_service
+            .as_ref()
             .ok_or("NotificationService must be initialized before UserService")?;
 
         self.user_service = Some(
@@ -419,7 +467,8 @@ impl ServiceRunner {
                 &config,
                 log_adapter.clone(),
                 notification_service.clone(),
-            ).await?
+            )
+            .await?,
         );
 
         println!("User service initialized successfully");
@@ -436,17 +485,18 @@ impl ServiceRunner {
         message_service: Arc<MessageService>,
     ) -> Result<Arc<NotificationService>, Box<dyn std::error::Error>> {
         let notification_config = config.get_notification_config();
-        
+
         // Create service config from notification config
-        let service_config = crate::core::platform::manager::notification_service::NotificationServiceConfig {
-            default_max_retries: notification_config.max_retries,
-            default_expiry_seconds: 86400, // 24 hours
-            enable_persistence: true,
-            batch_size: 100,
-            processing_interval_ms: 1000,
-            template_cache_size: 1000,
-            max_attachment_size: 25 * 1024 * 1024, // 25MB
-        };
+        let service_config =
+            crate::core::platform::manager::notification_service::NotificationServiceConfig {
+                default_max_retries: notification_config.max_retries,
+                default_expiry_seconds: 86400, // 24 hours
+                enable_persistence: true,
+                batch_size: 100,
+                processing_interval_ms: 1000,
+                template_cache_size: 1000,
+                max_attachment_size: 25 * 1024 * 1024, // 25MB
+            };
 
         // Create notification service
         let notification_service = NotificationService::new(service_config, message_service);
@@ -461,7 +511,7 @@ impl ServiceRunner {
         // This will be implemented in a future phase when we create adapter bridges
 
         println!("Notification service configured (adapter registration pending)");
-        
+
         Ok(Arc::new(notification_service))
     }
 }
@@ -533,7 +583,7 @@ mod tests {
     async fn test_service_health_status() {
         let runner = ServiceRunner::new();
         let health = runner.get_service_health().await;
-        
+
         assert!(!health.database_connected);
         assert!(!health.message_service_healthy);
         assert!(!health.event_service_initialized);
@@ -548,22 +598,34 @@ mod tests {
     #[test]
     fn test_content_type_detection() {
         use std::path::PathBuf;
-        
-        assert_eq!(ServiceRunner::detect_content_type(&PathBuf::from("test.rs")), "text/x-rust");
-        assert_eq!(ServiceRunner::detect_content_type(&PathBuf::from("test.json")), "application/json");
-        assert_eq!(ServiceRunner::detect_content_type(&PathBuf::from("test.jpg")), "image/jpeg");
-        assert_eq!(ServiceRunner::detect_content_type(&PathBuf::from("test.pdf")), "application/pdf");
+
+        assert_eq!(
+            ServiceRunner::detect_content_type(&PathBuf::from("test.rs")),
+            "text/x-rust"
+        );
+        assert_eq!(
+            ServiceRunner::detect_content_type(&PathBuf::from("test.json")),
+            "application/json"
+        );
+        assert_eq!(
+            ServiceRunner::detect_content_type(&PathBuf::from("test.jpg")),
+            "image/jpeg"
+        );
+        assert_eq!(
+            ServiceRunner::detect_content_type(&PathBuf::from("test.pdf")),
+            "application/pdf"
+        );
     }
 
     #[tokio::test]
     async fn test_adapters_integration() {
         let runner = ServiceRunner::new();
-        
+
         // Initially no adapters
         assert!(runner.get_queue_adapter().is_none());
         assert!(runner.get_file_storage_adapter().is_none());
         assert!(runner.get_log_adapter().is_none());
-        
+
         // After initialization, adapters should be available
         // This would require a full service initialization which needs Redis and MinIO
         // So we'll skip this for unit tests and rely on integration tests

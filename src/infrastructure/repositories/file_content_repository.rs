@@ -14,10 +14,11 @@ or for debugging and auditing purposes in the information gathering and delivery
 */
 
 use crate::application::ports::output::content_delivery_port::{
-    ContentDeliveryService, BatchContentDeliveryService, DeliveryRequest, DeliveryResponse,
-    DeliveryMethod, ContentPayload, DeliveryStatus, DeliveryStats, ContentDeliveryError
+    BatchContentDeliveryService, ContentDeliveryError, ContentDeliveryService, ContentPayload,
+    DeliveryMethod, DeliveryRequest, DeliveryResponse, DeliveryStats, DeliveryStatus,
 };
 use crate::core::platform::container::content::ContentType;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -25,7 +26,6 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
-use chrono::Utc;
 
 #[derive(Debug, Clone)]
 pub struct FileStorageClient {
@@ -79,20 +79,23 @@ impl Default for FileStorageConfig {
 impl FileStorageClient {
     pub fn new(config: FileStorageConfig) -> Result<Self, ContentDeliveryError> {
         let base_path = config.base_path;
-        
+
         // Create base directory if it doesn't exist and create_directories is enabled
         if config.create_directories && !base_path.exists() {
-            fs::create_dir_all(&base_path)
-                .map_err(|e| ContentDeliveryError::DeliveryFailed(
-                    format!("Failed to create storage directory: {}", e)
-                ))?;
+            fs::create_dir_all(&base_path).map_err(|e| {
+                ContentDeliveryError::DeliveryFailed(format!(
+                    "Failed to create storage directory: {}",
+                    e
+                ))
+            })?;
         }
 
         // Verify base path is writable
         if !base_path.exists() || !base_path.is_dir() {
-            return Err(ContentDeliveryError::DeliveryFailed(
-                format!("Storage path does not exist or is not a directory: {:?}", base_path)
-            ));
+            return Err(ContentDeliveryError::DeliveryFailed(format!(
+                "Storage path does not exist or is not a directory: {:?}",
+                base_path
+            )));
         }
 
         Ok(Self {
@@ -116,11 +119,16 @@ impl FileStorageClient {
 
         match &self.naming_strategy {
             NamingStrategy::Timestamp => {
-                format!("{}_{}.{}", content_type, Utc::now().format("%Y%m%d_%H%M%S_%3f"), extension)
-            },
+                format!(
+                    "{}_{}.{}",
+                    content_type,
+                    Utc::now().format("%Y%m%d_%H%M%S_%3f"),
+                    extension
+                )
+            }
             NamingStrategy::Uuid => {
                 format!("{}_{}.{}", content_type, delivery_id, extension)
-            },
+            }
             NamingStrategy::Sequential => {
                 // Find next sequential number
                 let mut counter = 1;
@@ -132,17 +140,22 @@ impl FileStorageClient {
                     }
                     counter += 1;
                 }
-            },
+            }
             NamingStrategy::ContentBased => {
                 // Use a hash of content for naming (simplified)
                 format!("{}_{:x}.{}", content_type, delivery_id.as_u128(), extension)
-            },
+            }
             NamingStrategy::Custom(template) => {
-                template.replace("{type}", content_type)
-                       .replace("{id}", &delivery_id.to_string())
-                       .replace("{timestamp}", &Utc::now().format("%Y%m%d_%H%M%S").to_string())
-                       + "." + extension
-            },
+                template
+                    .replace("{type}", content_type)
+                    .replace("{id}", &delivery_id.to_string())
+                    .replace(
+                        "{timestamp}",
+                        &Utc::now().format("%Y%m%d_%H%M%S").to_string(),
+                    )
+                    + "."
+                    + extension
+            }
         }
     }
 
@@ -159,25 +172,17 @@ impl FileStorageClient {
 
     fn serialize_content(&self, payload: &ContentPayload) -> Result<String, ContentDeliveryError> {
         match self.file_format {
-            FileFormat::Json => {
-                serde_json::to_string_pretty(payload)
-                    .map_err(|e| ContentDeliveryError::SerializationError(e.to_string()))
-            },
+            FileFormat::Json => serde_json::to_string_pretty(payload)
+                .map_err(|e| ContentDeliveryError::SerializationError(e.to_string())),
             FileFormat::Xml => {
                 // For XML, we'll use a simple JSON-to-XML conversion
                 let json_value = serde_json::to_value(payload)
                     .map_err(|e| ContentDeliveryError::SerializationError(e.to_string()))?;
                 self.json_to_xml(&json_value)
-            },
-            FileFormat::PlainText => {
-                self.payload_to_text(payload)
-            },
-            FileFormat::Csv => {
-                self.payload_to_csv(payload)
-            },
-            FileFormat::Markdown => {
-                self.payload_to_markdown(payload)
-            },
+            }
+            FileFormat::PlainText => self.payload_to_text(payload),
+            FileFormat::Csv => self.payload_to_csv(payload),
+            FileFormat::Markdown => self.payload_to_markdown(payload),
         }
     }
 
@@ -187,12 +192,20 @@ impl FileStorageClient {
             serde_json::Value::Object(map) => {
                 let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n");
                 for (key, val) in map {
-                    xml.push_str(&format!("  <{}>{}</{}>\n", key, self.json_value_to_string(val), key));
+                    xml.push_str(&format!(
+                        "  <{}>{}</{}>\n",
+                        key,
+                        self.json_value_to_string(val),
+                        key
+                    ));
                 }
                 xml.push_str("</root>");
                 Ok(xml)
-            },
-            _ => Ok(format!("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>{}</root>", self.json_value_to_string(value))),
+            }
+            _ => Ok(format!(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>{}</root>",
+                self.json_value_to_string(value)
+            )),
         }
     }
 
@@ -217,32 +230,30 @@ impl FileStorageClient {
                 if let Some(ref description) = item.description() {
                     text.push_str(&format!("Description: {}\n", description));
                 }
-                
+
                 match item.content() {
                     ContentType::Text(text_content) => {
                         if let Some(ref content) = text_content.content {
                             text.push_str(&format!("Content: {}\n", content));
                         }
-                    },
+                    }
                     _ => {
                         text.push_str("Content: [Binary content not displayed in text format]\n");
                     }
                 }
-                
+
                 Ok(text)
-            },
-            ContentPayload::Notification(notif) => {
-                Ok(format!("Notification: {}\n{}\nCategory: {}\n", 
-                          notif.title, notif.body, notif.category))
-            },
-            ContentPayload::Alert(alert) => {
-                Ok(format!("Alert [{:?}]: {}\nSource: {}\nTimestamp: {}\n", 
-                          alert.level, alert.message, alert.source, alert.timestamp))
-            },
-            _ => {
-                serde_json::to_string_pretty(payload)
-                    .map_err(|e| ContentDeliveryError::SerializationError(e.to_string()))
             }
+            ContentPayload::Notification(notif) => Ok(format!(
+                "Notification: {}\n{}\nCategory: {}\n",
+                notif.title, notif.body, notif.category
+            )),
+            ContentPayload::Alert(alert) => Ok(format!(
+                "Alert [{:?}]: {}\nSource: {}\nTimestamp: {}\n",
+                alert.level, alert.message, alert.source, alert.timestamp
+            )),
+            _ => serde_json::to_string_pretty(payload)
+                .map_err(|e| ContentDeliveryError::SerializationError(e.to_string())),
         }
     }
 
@@ -252,7 +263,8 @@ impl FileStorageClient {
                 let mut csv = String::from("UUID,Title,Description,Created,Modified,Source\n");
                 // Use the correct field name 'items' instead of 'list_items'
                 for item in &list.items {
-                    csv.push_str(&format!("\"{}\",\"{}\",\"{}\",\"{}\",\"{}\",\"{}\"\n",
+                    csv.push_str(&format!(
+                        "\"{}\",\"{}\",\"{}\",\"{}\",\"{}\",\"{}\"\n",
                         item.uuid(),
                         item.title().map(|s| s.as_str()).unwrap_or(""),
                         item.description().map(|s| s.as_str()).unwrap_or(""),
@@ -262,98 +274,124 @@ impl FileStorageClient {
                     ));
                 }
                 Ok(csv)
-            },
-            _ => {
-                Err(ContentDeliveryError::SerializationError(
-                    "CSV format only supported for ContentList".to_string()
-                ))
             }
+            _ => Err(ContentDeliveryError::SerializationError(
+                "CSV format only supported for ContentList".to_string(),
+            )),
         }
     }
 
-    fn payload_to_markdown(&self, payload: &ContentPayload) -> Result<String, ContentDeliveryError> {
+    fn payload_to_markdown(
+        &self,
+        payload: &ContentPayload,
+    ) -> Result<String, ContentDeliveryError> {
         match payload {
             ContentPayload::SingleItem(item) => {
-                let mut md = format!("# {}\n\n", item.title().map(|s| s.as_str()).unwrap_or("Content Item"));
+                let mut md = format!(
+                    "# {}\n\n",
+                    item.title().map(|s| s.as_str()).unwrap_or("Content Item")
+                );
                 md.push_str(&format!("**UUID:** {}\n", item.uuid()));
                 md.push_str(&format!("**Created:** {}\n", item.created()));
                 md.push_str(&format!("**Modified:** {}\n\n", item.modified()));
-                
+
                 if let Some(ref description) = item.description() {
                     md.push_str(&format!("## Description\n\n{}\n\n", description));
                 }
-                
+
                 if let ContentType::Text(text_content) = item.content() {
                     if let Some(ref content) = text_content.content {
                         md.push_str(&format!("## Content\n\n{}\n", content));
                     }
                 }
-                
+
                 Ok(md)
-            },
-            ContentPayload::Notification(notif) => {
-                Ok(format!("# {}\n\n{}\n\n**Category:** {}\n", 
-                          notif.title, notif.body, notif.category))
-            },
-            _ => {
-                serde_json::to_string_pretty(payload)
-                    .map_err(|e| ContentDeliveryError::SerializationError(e.to_string()))
             }
+            ContentPayload::Notification(notif) => Ok(format!(
+                "# {}\n\n{}\n\n**Category:** {}\n",
+                notif.title, notif.body, notif.category
+            )),
+            _ => serde_json::to_string_pretty(payload)
+                .map_err(|e| ContentDeliveryError::SerializationError(e.to_string())),
         }
     }
 
-    fn write_content_to_file(&self, file_path: &Path, content: &str) -> Result<(), ContentDeliveryError> {
+    fn write_content_to_file(
+        &self,
+        file_path: &Path,
+        content: &str,
+    ) -> Result<(), ContentDeliveryError> {
         // Check file size limit
         if content.len() as u64 > self.max_file_size_bytes {
-            return Err(ContentDeliveryError::DeliveryFailed(
-                format!("Content size {} exceeds maximum file size limit {}", 
-                       content.len(), self.max_file_size_bytes)
-            ));
+            return Err(ContentDeliveryError::DeliveryFailed(format!(
+                "Content size {} exceeds maximum file size limit {}",
+                content.len(),
+                self.max_file_size_bytes
+            )));
         }
 
         // Create directory if it doesn't exist
         if let Some(parent) = file_path.parent() {
             if self.create_directories && !parent.exists() {
-                fs::create_dir_all(parent)
-                    .map_err(|e| ContentDeliveryError::DeliveryFailed(
-                        format!("Failed to create directory: {}", e)
-                    ))?;
+                fs::create_dir_all(parent).map_err(|e| {
+                    ContentDeliveryError::DeliveryFailed(format!(
+                        "Failed to create directory: {}",
+                        e
+                    ))
+                })?;
             }
         }
 
         // Write content to file
-        let mut file = File::create(file_path)
-            .map_err(|e| ContentDeliveryError::DeliveryFailed(
-                format!("Failed to create file: {}", e)
-            ))?;
+        let mut file = File::create(file_path).map_err(|e| {
+            ContentDeliveryError::DeliveryFailed(format!("Failed to create file: {}", e))
+        })?;
 
-        file.write_all(content.as_bytes())
-            .map_err(|e| ContentDeliveryError::DeliveryFailed(
-                format!("Failed to write content: {}", e)
-            ))?;
+        file.write_all(content.as_bytes()).map_err(|e| {
+            ContentDeliveryError::DeliveryFailed(format!("Failed to write content: {}", e))
+        })?;
 
-        file.sync_all()
-            .map_err(|e| ContentDeliveryError::DeliveryFailed(
-                format!("Failed to sync file: {}", e)
-            ))?;
+        file.sync_all().map_err(|e| {
+            ContentDeliveryError::DeliveryFailed(format!("Failed to sync file: {}", e))
+        })?;
 
         Ok(())
     }
 
-    fn create_delivery_response(&self, delivery_id: Uuid, status: DeliveryStatus, file_path: Option<&Path>, error: Option<&ContentDeliveryError>) -> DeliveryResponse {
+    fn create_delivery_response(
+        &self,
+        delivery_id: Uuid,
+        status: DeliveryStatus,
+        file_path: Option<&Path>,
+        error: Option<&ContentDeliveryError>,
+    ) -> DeliveryResponse {
         let mut metadata = HashMap::new();
         if let Some(path) = file_path {
-            metadata.insert("file_path".to_string(), serde_json::Value::String(path.to_string_lossy().to_string()));
-            metadata.insert("file_format".to_string(), serde_json::Value::String(format!("{:?}", self.file_format)));
+            metadata.insert(
+                "file_path".to_string(),
+                serde_json::Value::String(path.to_string_lossy().to_string()),
+            );
+            metadata.insert(
+                "file_format".to_string(),
+                serde_json::Value::String(format!("{:?}", self.file_format)),
+            );
         }
 
         DeliveryResponse {
             delivery_id,
-            delivered_at: if matches!(status, DeliveryStatus::Delivered) { Some(Utc::now()) } else { None },
+            delivered_at: if matches!(status, DeliveryStatus::Delivered) {
+                Some(Utc::now())
+            } else {
+                None
+            },
             status,
             attempt_count: 1,
             error_message: error.map(|e| e.to_string()),
-            metadata: if metadata.is_empty() { None } else { Some(metadata) },
+            metadata: if metadata.is_empty() {
+                None
+            } else {
+                Some(metadata)
+            },
         }
     }
 
@@ -365,9 +403,12 @@ impl FileStorageClient {
 }
 
 impl ContentDeliveryService for FileStorageClient {
-    fn deliver_content(&self, request: DeliveryRequest) -> Result<DeliveryResponse, ContentDeliveryError> {
+    fn deliver_content(
+        &self,
+        request: DeliveryRequest,
+    ) -> Result<DeliveryResponse, ContentDeliveryError> {
         let delivery_id = Uuid::new_v4();
-        
+
         // Determine content type for file naming
         let content_type = match &request.content_payload {
             ContentPayload::SingleItem(_) => "content_item",
@@ -394,12 +435,16 @@ impl ContentDeliveryService for FileStorageClient {
         };
 
         let response = self.create_delivery_response(
-            delivery_id, 
-            status, 
-            if result.is_ok() { Some(&file_path) } else { None }, 
-            error
+            delivery_id,
+            status,
+            if result.is_ok() {
+                Some(&file_path)
+            } else {
+                None
+            },
+            error,
         );
-        
+
         self.store_delivery_history(response.clone());
 
         match result {
@@ -408,12 +453,16 @@ impl ContentDeliveryService for FileStorageClient {
         }
     }
 
-    fn schedule_delivery(&self, _request: DeliveryRequest) -> Result<DeliveryResponse, ContentDeliveryError> {
+    fn schedule_delivery(
+        &self,
+        _request: DeliveryRequest,
+    ) -> Result<DeliveryResponse, ContentDeliveryError> {
         // For file storage, we'll just mark as scheduled and store the request
         let delivery_id = Uuid::new_v4();
-        let response = self.create_delivery_response(delivery_id, DeliveryStatus::Scheduled, None, None);
+        let response =
+            self.create_delivery_response(delivery_id, DeliveryStatus::Scheduled, None, None);
         self.store_delivery_history(response.clone());
-        
+
         // TODO: Integrate with actual scheduler
         Ok(response)
     }
@@ -425,16 +474,22 @@ impl ContentDeliveryService for FileStorageClient {
                 history.insert(delivery_id, delivery);
                 Ok(())
             } else {
-                Err(ContentDeliveryError::RecipientNotFound(delivery_id.to_string()))
+                Err(ContentDeliveryError::RecipientNotFound(
+                    delivery_id.to_string(),
+                ))
             }
         } else {
             Err(ContentDeliveryError::ServiceUnavailable)
         }
     }
 
-    fn get_delivery_status(&self, delivery_id: Uuid) -> Result<DeliveryResponse, ContentDeliveryError> {
+    fn get_delivery_status(
+        &self,
+        delivery_id: Uuid,
+    ) -> Result<DeliveryResponse, ContentDeliveryError> {
         if let Ok(history) = self.delivery_history.lock() {
-            history.get(&delivery_id)
+            history
+                .get(&delivery_id)
                 .cloned()
                 .ok_or_else(|| ContentDeliveryError::RecipientNotFound(delivery_id.to_string()))
         } else {
@@ -442,13 +497,19 @@ impl ContentDeliveryService for FileStorageClient {
         }
     }
 
-    fn list_deliveries(&self, _recipient_id: &str, limit: Option<u32>) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
+    fn list_deliveries(
+        &self,
+        _recipient_id: &str,
+        limit: Option<u32>,
+    ) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
         if let Ok(history) = self.delivery_history.lock() {
             let mut deliveries: Vec<DeliveryResponse> = history.values().cloned().collect();
-            
+
             // Sort by most recent first
             deliveries.sort_by(|a, b| {
-                b.delivered_at.unwrap_or(Utc::now()).cmp(&a.delivered_at.unwrap_or(Utc::now()))
+                b.delivered_at
+                    .unwrap_or(Utc::now())
+                    .cmp(&a.delivered_at.unwrap_or(Utc::now()))
             });
 
             if let Some(limit) = limit {
@@ -461,17 +522,30 @@ impl ContentDeliveryService for FileStorageClient {
         }
     }
 
-    fn get_delivery_stats(&self, _recipient_id: Option<&str>) -> Result<DeliveryStats, ContentDeliveryError> {
+    fn get_delivery_stats(
+        &self,
+        _recipient_id: Option<&str>,
+    ) -> Result<DeliveryStats, ContentDeliveryError> {
         if let Ok(history) = self.delivery_history.lock() {
             let total = history.len() as u64;
-            let successful = history.values()
+            let successful = history
+                .values()
                 .filter(|d| matches!(d.status, DeliveryStatus::Delivered))
                 .count() as u64;
-            let failed = history.values()
+            let failed = history
+                .values()
                 .filter(|d| matches!(d.status, DeliveryStatus::Failed))
                 .count() as u64;
-            let pending = history.values()
-                .filter(|d| matches!(d.status, DeliveryStatus::Pending | DeliveryStatus::InProgress | DeliveryStatus::Scheduled))
+            let pending = history
+                .values()
+                .filter(|d| {
+                    matches!(
+                        d.status,
+                        DeliveryStatus::Pending
+                            | DeliveryStatus::InProgress
+                            | DeliveryStatus::Scheduled
+                    )
+                })
                 .count() as u64;
 
             Ok(DeliveryStats {
@@ -486,36 +560,47 @@ impl ContentDeliveryService for FileStorageClient {
         }
     }
 
-    fn validate_delivery_method(&self, _method: &DeliveryMethod) -> Result<(), ContentDeliveryError> {
+    fn validate_delivery_method(
+        &self,
+        _method: &DeliveryMethod,
+    ) -> Result<(), ContentDeliveryError> {
         // File storage doesn't use delivery methods in the traditional sense
         Ok(())
     }
 }
 
 impl BatchContentDeliveryService for FileStorageClient {
-    fn batch_deliver(&self, requests: Vec<DeliveryRequest>) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
+    fn batch_deliver(
+        &self,
+        requests: Vec<DeliveryRequest>,
+    ) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
         let mut responses = Vec::new();
-        
+
         for request in requests {
             let response = self.deliver_content(request)?;
             responses.push(response);
         }
-        
+
         Ok(responses)
     }
 
-    fn get_batch_status(&self, _batch_id: Uuid) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
+    fn get_batch_status(
+        &self,
+        _batch_id: Uuid,
+    ) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
         // In a real implementation, you'd track batch IDs
-        Err(ContentDeliveryError::DeliveryFailed("Batch status tracking not implemented".to_string()))
+        Err(ContentDeliveryError::DeliveryFailed(
+            "Batch status tracking not implemented".to_string(),
+        ))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::content::{TextContent, ContentType};
-    use crate::core::platform::container::content::ContentItem;
     use crate::application::ports::output::content_delivery_port::DeliveryPriority;
+    use crate::core::platform::container::content::ContentItem;
+    use crate::core::platform::container::content::{ContentType, TextContent};
     use tempfile::tempdir;
 
     fn create_test_config() -> FileStorageConfig {
@@ -540,7 +625,7 @@ mod tests {
     fn test_deliver_single_content_item() {
         let config = create_test_config();
         let client = FileStorageClient::new(config).unwrap();
-        
+
         let text_content = TextContent::new(None, Some("Test content".to_string())).unwrap();
         let content_item = ContentItem::new(ContentType::Text(text_content)).unwrap();
 
@@ -558,7 +643,7 @@ mod tests {
 
         let result = client.deliver_content(request);
         assert!(result.is_ok());
-        
+
         let response = result.unwrap();
         assert_eq!(response.status, DeliveryStatus::Delivered);
         assert!(response.delivered_at.is_some());
@@ -568,7 +653,7 @@ mod tests {
     #[test]
     fn test_different_file_formats() {
         let temp_dir = tempdir().unwrap();
-        
+
         let formats = vec![
             FileFormat::Json,
             FileFormat::PlainText,
@@ -609,7 +694,7 @@ mod tests {
     fn test_delivery_stats() {
         let config = create_test_config();
         let client = FileStorageClient::new(config).unwrap();
-        
+
         let stats = client.get_delivery_stats(None).unwrap();
         assert_eq!(stats.total_deliveries, 0);
         assert_eq!(stats.successful_deliveries, 0);
@@ -621,10 +706,10 @@ mod tests {
     fn test_filename_generation() {
         let config = create_test_config();
         let client = FileStorageClient::new(config).unwrap();
-        
+
         let delivery_id = Uuid::new_v4();
         let filename = client.generate_filename("test", &delivery_id);
-        
+
         assert!(filename.contains("test"));
         assert!(filename.ends_with(".json"));
     }

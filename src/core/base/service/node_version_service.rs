@@ -10,12 +10,12 @@ each change creates a new version while preserving the complete history.
 */
 
 use crate::core::base::entity::node::Node;
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Error)]
 pub enum VersioningError {
@@ -77,8 +77,13 @@ pub struct VersionHistory<T> {
 /// Defines the contract for persisting node versions
 pub trait NodeVersionRepository<T> {
     fn save_version(&self, version: &NodeVersion<T>) -> Result<(), VersioningError>;
-    fn get_version(&self, node_id: Uuid, version_number: u32) -> Result<Option<NodeVersion<T>>, VersioningError>;
-    fn get_current_version(&self, node_id: Uuid) -> Result<Option<NodeVersion<T>>, VersioningError>;
+    fn get_version(
+        &self,
+        node_id: Uuid,
+        version_number: u32,
+    ) -> Result<Option<NodeVersion<T>>, VersioningError>;
+    fn get_current_version(&self, node_id: Uuid)
+    -> Result<Option<NodeVersion<T>>, VersioningError>;
     fn get_version_history(&self, node_id: Uuid) -> Result<VersionHistory<T>, VersioningError>;
     fn delete_version(&self, node_id: Uuid, version_number: u32) -> Result<(), VersioningError>;
     fn purge_old_versions(&self, node_id: Uuid, keep_count: u32) -> Result<u32, VersioningError>;
@@ -117,8 +122,8 @@ impl Default for VersioningConfig {
     }
 }
 
-impl<T> NodeVersionService<T> 
-where 
+impl<T> NodeVersionService<T>
+where
     T: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>,
 {
     pub fn new(
@@ -197,12 +202,19 @@ where
     }
 
     /// Get a specific version of a node
-    pub fn get_version(&self, node_id: Uuid, version_number: u32) -> Result<Option<NodeVersion<T>>, VersioningError> {
+    pub fn get_version(
+        &self,
+        node_id: Uuid,
+        version_number: u32,
+    ) -> Result<Option<NodeVersion<T>>, VersioningError> {
         self.repository.get_version(node_id, version_number)
     }
 
     /// Get the current (latest) version of a node
-    pub fn get_current_version(&self, node_id: Uuid) -> Result<Option<NodeVersion<T>>, VersioningError> {
+    pub fn get_current_version(
+        &self,
+        node_id: Uuid,
+    ) -> Result<Option<NodeVersion<T>>, VersioningError> {
         self.repository.get_current_version(node_id)
     }
 
@@ -218,8 +230,12 @@ where
         version_number: u32,
         restored_by: Option<String>,
     ) -> Result<NodeVersion<T>, VersioningError> {
-        let version_to_restore = self.repository.get_version(node_id, version_number)?
-            .ok_or_else(|| VersioningError::VersionNotFound(format!("{}:{}", node_id, version_number)))?;
+        let version_to_restore = self
+            .repository
+            .get_version(node_id, version_number)?
+            .ok_or_else(|| {
+                VersioningError::VersionNotFound(format!("{}:{}", node_id, version_number))
+            })?;
 
         // Create a new version based on the restored data
         let node = Node {
@@ -246,10 +262,14 @@ where
         version1: u32,
         version2: u32,
     ) -> Result<VersionComparison<T>, VersioningError> {
-        let v1 = self.repository.get_version(node_id, version1)?
+        let v1 = self
+            .repository
+            .get_version(node_id, version1)?
             .ok_or_else(|| VersioningError::VersionNotFound(format!("{}:{}", node_id, version1)))?;
-        
-        let v2 = self.repository.get_version(node_id, version2)?
+
+        let v2 = self
+            .repository
+            .get_version(node_id, version2)?
             .ok_or_else(|| VersioningError::VersionNotFound(format!("{}:{}", node_id, version2)))?;
 
         let hash_changed = v1.metadata.content_hash != v2.metadata.content_hash;
@@ -267,7 +287,11 @@ where
     }
 
     /// Purge old versions manually
-    pub fn purge_old_versions(&self, node_id: Uuid, keep_count: u32) -> Result<u32, VersioningError> {
+    pub fn purge_old_versions(
+        &self,
+        node_id: Uuid,
+        keep_count: u32,
+    ) -> Result<u32, VersioningError> {
         self.repository.purge_old_versions(node_id, keep_count)
     }
 
@@ -277,21 +301,21 @@ where
 
         match self.config.hash_algorithm {
             HashAlgorithm::Sha256 => {
-                use sha2::{Sha256, Digest};
+                use sha2::{Digest, Sha256};
                 let hash = Sha256::digest(&serialized);
                 Ok(format!("{:x}", hash))
-            },
+            }
             HashAlgorithm::Blake3 => {
                 let hash = blake3::hash(&serialized);
                 Ok(hash.to_hex().to_string())
-            },
+            }
             HashAlgorithm::Xxhash => {
                 use std::collections::hash_map::DefaultHasher;
                 use std::hash::{Hash, Hasher};
                 let mut hasher = DefaultHasher::new();
                 serialized.hash(&mut hasher);
                 Ok(format!("{:x}", hasher.finish()))
-            },
+            }
         }
     }
 
@@ -332,13 +356,17 @@ where
     T: Clone,
 {
     fn save_version(&self, version: &NodeVersion<T>) -> Result<(), VersioningError> {
-        let mut versions = self.versions.write()
+        let mut versions = self
+            .versions
+            .write()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        let mut current_versions = self.current_versions.write()
+        let mut current_versions = self
+            .current_versions
+            .write()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
 
         versions.insert((version.node_id, version.version_number), version.clone());
-        
+
         if version.metadata.is_current {
             current_versions.insert(version.node_id, version.version_number);
         }
@@ -346,16 +374,29 @@ where
         Ok(())
     }
 
-    fn get_version(&self, node_id: Uuid, version_number: u32) -> Result<Option<NodeVersion<T>>, VersioningError> {
-        let versions = self.versions.read()
+    fn get_version(
+        &self,
+        node_id: Uuid,
+        version_number: u32,
+    ) -> Result<Option<NodeVersion<T>>, VersioningError> {
+        let versions = self
+            .versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
         Ok(versions.get(&(node_id, version_number)).cloned())
     }
 
-    fn get_current_version(&self, node_id: Uuid) -> Result<Option<NodeVersion<T>>, VersioningError> {
-        let current_versions = self.current_versions.read()
+    fn get_current_version(
+        &self,
+        node_id: Uuid,
+    ) -> Result<Option<NodeVersion<T>>, VersioningError> {
+        let current_versions = self
+            .current_versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        let versions = self.versions.read()
+        let versions = self
+            .versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
 
         if let Some(&current_version_number) = current_versions.get(&node_id) {
@@ -366,9 +407,13 @@ where
     }
 
     fn get_version_history(&self, node_id: Uuid) -> Result<VersionHistory<T>, VersioningError> {
-        let versions = self.versions.read()
+        let versions = self
+            .versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        let current_versions = self.current_versions.read()
+        let current_versions = self
+            .current_versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
 
         let mut node_versions: Vec<NodeVersion<T>> = versions
@@ -391,16 +436,18 @@ where
     }
 
     fn delete_version(&self, node_id: Uuid, version_number: u32) -> Result<(), VersioningError> {
-        let mut versions = self.versions.write()
+        let mut versions = self
+            .versions
+            .write()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        
+
         versions.remove(&(node_id, version_number));
         Ok(())
     }
 
     fn purge_old_versions(&self, node_id: Uuid, keep_count: u32) -> Result<u32, VersioningError> {
         let history = self.get_version_history(node_id)?;
-        
+
         if history.total_versions <= keep_count {
             return Ok(0);
         }
@@ -440,12 +487,14 @@ mod tests {
 
         let node = Node::new(test_data, Some("test_node".to_string()));
 
-        let version = service.create_version(
-            &node,
-            ChangeType::Created,
-            Some("test_user".to_string()),
-            Some("Initial creation".to_string()),
-        ).unwrap();
+        let version = service
+            .create_version(
+                &node,
+                ChangeType::Created,
+                Some("test_user".to_string()),
+                Some("Initial creation".to_string()),
+            )
+            .unwrap();
 
         assert_eq!(version.version_number, 1);
         assert_eq!(version.node_id, node.uuid);
@@ -466,7 +515,9 @@ mod tests {
         let node = Node::new(test_data.clone(), Some("test_node".to_string()));
 
         // Create initial version
-        service.create_version(&node, ChangeType::Created, None, None).unwrap();
+        service
+            .create_version(&node, ChangeType::Created, None, None)
+            .unwrap();
 
         // Create updated version
         let updated_data = TestData {
@@ -477,8 +528,10 @@ mod tests {
             node: updated_data,
             ..node
         };
-        
-        service.create_version(&updated_node, ChangeType::Updated, None, None).unwrap();
+
+        service
+            .create_version(&updated_node, ChangeType::Updated, None, None)
+            .unwrap();
 
         let history = service.get_version_history(node.uuid).unwrap();
         assert_eq!(history.total_versions, 2);
@@ -498,7 +551,9 @@ mod tests {
         let node = Node::new(test_data.clone(), Some("test_node".to_string()));
 
         // Create initial version
-        service.create_version(&node, ChangeType::Created, None, None).unwrap();
+        service
+            .create_version(&node, ChangeType::Created, None, None)
+            .unwrap();
 
         // Create updated version
         let updated_data = TestData {
@@ -509,12 +564,16 @@ mod tests {
             node: updated_data,
             ..node
         };
-        
-        service.create_version(&updated_node, ChangeType::Updated, None, None).unwrap();
+
+        service
+            .create_version(&updated_node, ChangeType::Updated, None, None)
+            .unwrap();
 
         // Restore original version
-        let restored = service.restore_version(node.uuid, 1, Some("test_user".to_string())).unwrap();
-        
+        let restored = service
+            .restore_version(node.uuid, 1, Some("test_user".to_string()))
+            .unwrap();
+
         assert_eq!(restored.version_number, 3);
         assert_eq!(restored.metadata.change_type, ChangeType::Restored);
     }

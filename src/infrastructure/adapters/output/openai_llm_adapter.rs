@@ -1,18 +1,21 @@
-use std::collections::HashMap;
-use std::env;
 use async_trait::async_trait;
-use reqwest::{Client, header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE}};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use uuid::Uuid;
 use chrono::Utc;
 use futures::{Stream, stream};
+use reqwest::{
+    Client,
+    header::{AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderValue},
+};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashMap;
+use std::env;
+use uuid::Uuid;
 
 use crate::application::ports::output::llm_port::{
-    LlmPort, LlmRequest, LlmResponse, LlmError, TokenUsage, FinishReason, StreamingResponse
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
 };
-use crate::core::platform::container::prompt::{PromptItem, PromptType};
 use crate::core::platform::container::content::{ContentItem, ContentType};
+use crate::core::platform::container::prompt::{PromptItem, PromptType};
 
 /// Configuration for OpenAI LLM adapter
 #[derive(Debug, Clone)]
@@ -30,8 +33,8 @@ impl OpenAIConfig {
         let api_key = env::var("OPENAI_LLM_API_KEY")
             .map_err(|_| "OPENAI_LLM_API_KEY environment variable not set")?;
 
-        let base_url = env::var("OPENAI_LLM_URL")
-            .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+        let base_url =
+            env::var("OPENAI_LLM_URL").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
 
         let organization = env::var("OPENAI_ORGANIZATION").ok();
 
@@ -191,7 +194,11 @@ impl OpenAILlmAdapter {
     }
 
     /// Convert internal prompt to OpenAI messages format
-    fn convert_prompt_to_messages(&self, prompt: &PromptItem, attachments: &[ContentItem]) -> Result<Vec<OpenAIMessage>, LlmError> {
+    fn convert_prompt_to_messages(
+        &self,
+        prompt: &PromptItem,
+        attachments: &[ContentItem],
+    ) -> Result<Vec<OpenAIMessage>, LlmError> {
         let mut messages = Vec::new();
 
         // Convert the main prompt - Handle all PromptType variants
@@ -202,31 +209,37 @@ impl OpenAILlmAdapter {
                     crate::core::platform::container::prompt::PromptRole::User => "user",
                     crate::core::platform::container::prompt::PromptRole::Assistant => "assistant",
                     crate::core::platform::container::prompt::PromptRole::Function => "function",
-                }.to_string();
+                }
+                .to_string();
 
                 messages.push(OpenAIMessage {
                     role,
                     content: text_prompt.content.clone(),
                 });
-            },
+            }
             // Handle other prompt types correctly based on their actual fields
             PromptType::System(system_prompt) => {
-                let content = format!("{}\nConstraints: {}", 
+                let content = format!(
+                    "{}\nConstraints: {}",
                     system_prompt.instructions,
-                    system_prompt.constraints.as_ref().map(|c| c.join(", ")).unwrap_or_default()
+                    system_prompt
+                        .constraints
+                        .as_ref()
+                        .map(|c| c.join(", "))
+                        .unwrap_or_default()
                 );
                 messages.push(OpenAIMessage {
                     role: "system".to_string(),
                     content,
                 });
-            },
+            }
             PromptType::User(user_prompt) => {
                 // User prompt has context field, not content
                 messages.push(OpenAIMessage {
                     role: "user".to_string(),
                     content: user_prompt.context.clone().unwrap_or_default(),
                 });
-            },
+            }
             PromptType::Assistant(assistant_prompt) => {
                 // Assistant prompt has response field, not content
                 let content = if let Some(reasoning) = &assistant_prompt.reasoning {
@@ -238,14 +251,14 @@ impl OpenAILlmAdapter {
                     role: "assistant".to_string(),
                     content,
                 });
-            },
+            }
             // Add the missing Function variant
             PromptType::Function(function_prompt) => {
                 messages.push(OpenAIMessage {
                     role: "function".to_string(),
                     content: function_prompt.function_name.clone(), // Use function name as content
                 });
-            },
+            }
         }
 
         // Add content attachments as user messages
@@ -267,29 +280,23 @@ impl OpenAILlmAdapter {
         match content.content() {
             ContentType::Text(text_content) => {
                 Ok(text_content.content.as_deref().unwrap_or("").to_string())
-            },
-            ContentType::Video(video_content) => {
-                Ok(format!(
-                    "Video content: {} (Duration: {}s)",
-                    content.title().unwrap_or(&"Untitled Video".to_string()),
-                    video_content.duration
-                ))
-            },
-            ContentType::Audio(audio_content) => {
-                Ok(format!(
-                    "Audio content: {} (Duration: {}s)",
-                    content.title().unwrap_or(&"Untitled Audio".to_string()),
-                    audio_content.duration
-                ))
-            },
-            ContentType::Image(image_content) => {
-                Ok(format!(
-                    "Image content: {} (Resolution: {}x{})",
-                    content.title().unwrap_or(&"Untitled Image".to_string()),
-                    image_content.resolution.0,
-                    image_content.resolution.1
-                ))
-            },
+            }
+            ContentType::Video(video_content) => Ok(format!(
+                "Video content: {} (Duration: {}s)",
+                content.title().unwrap_or(&"Untitled Video".to_string()),
+                video_content.duration
+            )),
+            ContentType::Audio(audio_content) => Ok(format!(
+                "Audio content: {} (Duration: {}s)",
+                content.title().unwrap_or(&"Untitled Audio".to_string()),
+                audio_content.duration
+            )),
+            ContentType::Image(image_content) => Ok(format!(
+                "Image content: {} (Resolution: {}x{})",
+                content.title().unwrap_or(&"Untitled Image".to_string()),
+                image_content.resolution.0,
+                image_content.resolution.1
+            )),
         }
     }
 
@@ -316,7 +323,10 @@ impl OpenAILlmAdapter {
     }
 
     /// Make request with retries
-    async fn make_request_with_retries(&self, request: &OpenAIRequest) -> Result<OpenAIResponse, LlmError> {
+    async fn make_request_with_retries(
+        &self,
+        request: &OpenAIRequest,
+    ) -> Result<OpenAIResponse, LlmError> {
         let mut last_error = None;
 
         for attempt in 0..=self.config.max_retries {
@@ -336,10 +346,14 @@ impl OpenAILlmAdapter {
     }
 
     /// Make a single request to OpenAI API
-    async fn make_single_request(&self, request: &OpenAIRequest) -> Result<OpenAIResponse, LlmError> {
+    async fn make_single_request(
+        &self,
+        request: &OpenAIRequest,
+    ) -> Result<OpenAIResponse, LlmError> {
         let url = format!("{}/chat/completions", self.config.base_url);
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&url)
             .json(request)
             .send()
@@ -363,7 +377,10 @@ impl OpenAILlmAdapter {
                         Err(LlmError::InvalidPrompt(response_text))
                     }
                 }
-                _ => Err(LlmError::ProcessingError(format!("HTTP {}: {}", status, response_text))),
+                _ => Err(LlmError::ProcessingError(format!(
+                    "HTTP {}: {}",
+                    status, response_text
+                ))),
             };
         }
 
@@ -392,7 +409,9 @@ impl LlmPort for OpenAILlmAdapter {
         let response = self.make_request_with_retries(&openai_request).await?;
 
         if response.choices.is_empty() {
-            return Err(LlmError::ProcessingError("No choices in response".to_string()));
+            return Err(LlmError::ProcessingError(
+                "No choices in response".to_string(),
+            ));
         }
 
         let choice = &response.choices[0];
@@ -414,22 +433,25 @@ impl LlmPort for OpenAILlmAdapter {
         })
     }
 
-    async fn generate_stream(&self, request: LlmRequest) -> Result<Box<dyn Stream<Item = Result<StreamingResponse, LlmError>> + Send>, LlmError> {
+    async fn generate_stream(
+        &self,
+        request: LlmRequest,
+    ) -> Result<Box<dyn Stream<Item = Result<StreamingResponse, LlmError>> + Send>, LlmError> {
         let _messages = self.convert_prompt_to_messages(&request.prompt, &request.attachments)?;
         let _model = self.map_model_name(&request.model);
 
         // Create a simple mock stream for now
-        let mock_chunks = vec![
-            "Hello",
-            " world",
-            "!",
-        ];
+        let mock_chunks = vec!["Hello", " world", "!"];
 
         let stream = stream::iter(mock_chunks.into_iter().enumerate().map(|(i, chunk)| {
             Ok(StreamingResponse {
                 id: Uuid::new_v4(),
                 delta: chunk.to_string(),
-                finish_reason: if i == 2 { Some(FinishReason::Stop) } else { None },
+                finish_reason: if i == 2 {
+                    Some(FinishReason::Stop)
+                } else {
+                    None
+                },
             })
         }));
 
@@ -443,24 +465,28 @@ impl LlmPort for OpenAILlmAdapter {
 
     async fn get_available_models(&self) -> Result<Vec<String>, LlmError> {
         let url = format!("{}/models", self.config.base_url);
-        
-        let response = self.client
+
+        let response = self
+            .client
             .get(&url)
             .send()
             .await
             .map_err(|e| LlmError::NetworkError(format!("Models request failed: {}", e)))?;
 
         if !response.status().is_success() {
-            return Err(LlmError::ProcessingError(format!("HTTP {}", response.status())));
+            return Err(LlmError::ProcessingError(format!(
+                "HTTP {}",
+                response.status()
+            )));
         }
 
-        let response_text = response
-            .text()
-            .await
-            .map_err(|e| LlmError::ProcessingError(format!("Failed to read models response: {}", e)))?;
+        let response_text = response.text().await.map_err(|e| {
+            LlmError::ProcessingError(format!("Failed to read models response: {}", e))
+        })?;
 
-        let models_response: Value = serde_json::from_str(&response_text)
-            .map_err(|e| LlmError::ProcessingError(format!("Failed to parse models response: {}", e)))?;
+        let models_response: Value = serde_json::from_str(&response_text).map_err(|e| {
+            LlmError::ProcessingError(format!("Failed to parse models response: {}", e))
+        })?;
 
         let models = models_response["data"]
             .as_array()
@@ -488,14 +514,14 @@ mod tests {
             env::set_var("OPENAI_LLM_API_KEY", "test-api-key");
             env::set_var("OPENAI_LLM_URL", "https://api.openai.com/v1");
         }
-        
+
         let config = OpenAIConfig::from_env().expect("Config should be created from env");
-        
+
         assert_eq!(config.api_key, "test-api-key");
         assert_eq!(config.base_url, "https://api.openai.com/v1");
         assert_eq!(config.timeout_seconds, 30);
         assert_eq!(config.max_retries, 3);
-        
+
         // Clean up using unsafe blocks
         unsafe {
             env::remove_var("OPENAI_LLM_API_KEY");
@@ -511,16 +537,12 @@ mod tests {
         );
         assert!(valid_config.validate().is_ok());
 
-        let invalid_config = OpenAIConfig::new(
-            "".to_string(),
-            "https://api.openai.com/v1".to_string(),
-        );
+        let invalid_config =
+            OpenAIConfig::new("".to_string(), "https://api.openai.com/v1".to_string());
         assert!(invalid_config.validate().is_err());
 
-        let invalid_url_config = OpenAIConfig::new(
-            "test-key".to_string(),
-            "invalid-url".to_string(),
-        );
+        let invalid_url_config =
+            OpenAIConfig::new("test-key".to_string(), "invalid-url".to_string());
         assert!(invalid_url_config.validate().is_err());
     }
 

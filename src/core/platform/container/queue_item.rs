@@ -4,23 +4,23 @@ Queue Item Container
 A Queue Item is a type of Message that is placed in a Queue via the Queue Manager Service.
 
 A Queue Item will be abstracted in the Application Layer along with an abstraction of the
-Queue Manager Service. 
+Queue Manager Service.
 
-This container is the base for the Queue Item Message Container on which more complex 
+This container is the base for the Queue Item Message Container on which more complex
 Queue Item Messages can be built.
 
 Example:
-A typical use case would be a Job Queue where the Queue Item is a Job that needs to be 
+A typical use case would be a Job Queue where the Queue Item is a Job that needs to be
 processed. The Job Queue Item and Job Queue Manager Service would be defined in the
 Application Layer.
 */
 
-use crate::core::base::entity::message::{Message, MessagePriority};
 use crate::core::base::component::action::{Action, ActionResult};
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use crate::core::base::entity::message::{Message, MessagePriority};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 /// Queue Item processing status
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -67,7 +67,7 @@ impl Default for QueueItemConfig {
         Self {
             max_retries: 3,
             retry_delay_ms: 1000,
-            ttl_seconds: 3600, // 1 hour
+            ttl_seconds: 3600,    // 1 hour
             timeout_seconds: 300, // 5 minutes
             preserve_after_completion: false,
         }
@@ -99,29 +99,31 @@ pub struct QueueItem<T> {
     pub queue_metadata: HashMap<String, serde_json::Value>,
 }
 
-impl<T> QueueItem<T> 
-where 
+impl<T> QueueItem<T>
+where
     T: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>,
 {
     /// Create a new queue item
-    pub fn new(
-        queue_name: String,
-        message: Message<T>,
-        config: Option<QueueItemConfig>,
-    ) -> Self {
+    pub fn new(queue_name: String, message: Message<T>, config: Option<QueueItemConfig>) -> Self {
         let item_name = format!("Queue Item: {}", message.id);
-        let description = format!("Queue item for queue '{}' from {}", queue_name, message.source);
-        
+        let description = format!(
+            "Queue item for queue '{}' from {}",
+            queue_name, message.source
+        );
+
         let action = Action::new(
             item_name,
             description,
             message.source.to_string(),
             queue_name.clone(),
-        ).with_priority(match message.priority {
+        )
+        .with_priority(match message.priority {
             MessagePriority::Low => crate::core::base::component::action::ActionPriority::Low,
             MessagePriority::Normal => crate::core::base::component::action::ActionPriority::Normal,
             MessagePriority::High => crate::core::base::component::action::ActionPriority::High,
-            MessagePriority::Critical => crate::core::base::component::action::ActionPriority::Critical,
+            MessagePriority::Critical => {
+                crate::core::base::component::action::ActionPriority::Critical
+            }
         });
 
         Self {
@@ -139,11 +141,7 @@ where
     }
 
     /// Create a queue item with custom configuration
-    pub fn with_config(
-        queue_name: String,
-        message: Message<T>,
-        config: QueueItemConfig,
-    ) -> Self {
+    pub fn with_config(queue_name: String, message: Message<T>, config: QueueItemConfig) -> Self {
         Self::new(queue_name, message, Some(config))
     }
 
@@ -208,7 +206,10 @@ where
     /// Start processing the queue item
     pub fn start_processing(&mut self, worker_id: String) -> Result<(), String> {
         if !self.can_process() {
-            return Err(format!("Queue item cannot be processed, current status: {:?}", self.status));
+            return Err(format!(
+                "Queue item cannot be processed, current status: {:?}",
+                self.status
+            ));
         }
 
         if self.is_expired() {
@@ -220,10 +221,10 @@ where
         self.worker_id = Some(worker_id);
         self.processing_started_at = Some(Utc::now());
         self.attempt_count += 1;
-        
+
         // Start the underlying action
         self.action.start_execution();
-        
+
         Ok(())
     }
 
@@ -231,7 +232,7 @@ where
     pub fn complete_processing(&mut self, result_data: Option<serde_json::Value>) {
         self.status = QueueItemStatus::Completed;
         self.processing_started_at = None;
-        
+
         let action_result = ActionResult {
             success: true,
             duration_ms: self.processing_duration_ms(),
@@ -239,7 +240,7 @@ where
             error: None,
             metadata: self.queue_metadata.clone(),
         };
-        
+
         self.action.complete_execution(action_result);
     }
 
@@ -247,16 +248,17 @@ where
     pub fn fail_processing(&mut self, error: String) -> bool {
         self.status = QueueItemStatus::Failed;
         self.processing_started_at = None;
-        
+
         let duration_ms = self.processing_duration_ms();
-        let can_retry = self.action.fail_execution(error.clone(), duration_ms) && !self.is_retry_exhausted();
-        
+        let can_retry =
+            self.action.fail_execution(error.clone(), duration_ms) && !self.is_retry_exhausted();
+
         if can_retry {
             self.status = QueueItemStatus::Pending; // Reset to pending for retry
         } else {
             self.status = QueueItemStatus::Abandoned;
         }
-        
+
         can_retry
     }
 
@@ -303,7 +305,7 @@ where
         U: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>,
     {
         let new_message = self.message.map(f);
-        
+
         QueueItem {
             action: self.action,
             message: new_message,
@@ -364,9 +366,9 @@ mod tests {
             Location::system("queue-system"),
             "test payload".to_string(),
         );
-        
+
         let queue_item = QueueItem::new("test-queue".to_string(), message, None);
-        
+
         assert_eq!(queue_item.queue_name, "test-queue");
         assert_eq!(queue_item.status, QueueItemStatus::Pending);
         assert_eq!(queue_item.attempt_count, 0);
@@ -380,15 +382,15 @@ mod tests {
             Location::system("queue"),
             "payload".to_string(),
         );
-        
+
         let mut queue_item = QueueItem::new("test".to_string(), message, None);
-        
+
         // Start processing
         assert!(queue_item.start_processing("worker-1".to_string()).is_ok());
         assert_eq!(queue_item.status, QueueItemStatus::Processing);
         assert_eq!(queue_item.worker_id, Some("worker-1".to_string()));
         assert_eq!(queue_item.attempt_count, 1);
-        
+
         // Complete processing
         queue_item.complete_processing(Some(serde_json::json!({"result": "success"})));
         assert_eq!(queue_item.status, QueueItemStatus::Completed);
@@ -401,25 +403,25 @@ mod tests {
             Location::system("queue"),
             "payload".to_string(),
         );
-        
+
         let config = QueueItemConfig {
             max_retries: 2,
             ..Default::default()
         };
-        
+
         let mut queue_item = QueueItem::with_config("test".to_string(), message, config);
-        
+
         // First failure - should allow retry
         queue_item.start_processing("worker-1".to_string()).unwrap();
         let can_retry = queue_item.fail_processing("Test error".to_string());
         assert!(can_retry);
         assert_eq!(queue_item.status, QueueItemStatus::Pending);
-        
+
         // Second failure - should allow retry
         queue_item.start_processing("worker-1".to_string()).unwrap();
         let can_retry = queue_item.fail_processing("Test error 2".to_string());
         assert!(can_retry);
-        
+
         // Third failure - should not allow retry (exceeded max_retries)
         queue_item.start_processing("worker-1".to_string()).unwrap();
         let can_retry = queue_item.fail_processing("Test error 3".to_string());
@@ -434,12 +436,12 @@ mod tests {
             Location::system("queue"),
             "payload".to_string(),
         );
-        
+
         let mut queue_item = QueueItem::new("test".to_string(), message, None);
-        
+
         let defer_until = Utc::now() + chrono::Duration::minutes(5);
         queue_item.defer_processing(defer_until);
-        
+
         assert_eq!(queue_item.status, QueueItemStatus::Deferred);
         assert!(!queue_item.can_process()); // Should not be processable yet
     }

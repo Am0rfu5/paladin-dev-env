@@ -1,5 +1,5 @@
-use serde_json::Value;
 use crate::core::platform::container::content::ContentItem;
+use serde_json::Value;
 
 /// Trait for content analysis services
 pub trait ContentAnalysisService {
@@ -39,18 +39,15 @@ mod tests {
     fn test_analyze_content() {
         let service = MockContentAnalysisService;
         let use_case = AnalyzeContent::new(service);
-        
+
         // Create a proper ContentItem for testing
-        let text_content = TextContent::new(
-            None, 
-            Some("Mock Content".to_string())
-        ).expect("Failed to create text content");
-        
-        let content = ContentItem::new_with_title(
-            ContentType::Text(text_content),
-            "Mock Title".to_string(),
-        ).expect("Failed to create content item");
-        
+        let text_content = TextContent::new(None, Some("Mock Content".to_string()))
+            .expect("Failed to create text content");
+
+        let content =
+            ContentItem::new_with_title(ContentType::Text(text_content), "Mock Title".to_string())
+                .expect("Failed to create content item");
+
         let result = use_case.execute(&content);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::String("Test Summary".to_string()));

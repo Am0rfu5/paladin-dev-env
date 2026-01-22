@@ -1,5 +1,5 @@
-use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
 use crate::application::use_cases::content::content_fetching_service::ContentFetchingService;
+use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -25,9 +25,10 @@ impl ContentFetchingService for HttpContentFetcher {
     fn fetch_content(&self, url: &str) -> Result<ContentItem, String> {
         // Validate URL
         let parsed_url = Url::parse(url).map_err(|e| format!("Invalid URL: {}", e))?;
-        
+
         // Fetch content from URL
-        let response = self.client
+        let response = self
+            .client
             .get(url)
             .send()
             .map_err(|e| format!("Failed to fetch URL: {}", e))?;
@@ -37,7 +38,9 @@ impl ContentFetchingService for HttpContentFetcher {
         }
 
         // Get content body
-        let body = response.text().map_err(|e| format!("Failed to read response body: {}", e))?;
+        let body = response
+            .text()
+            .map_err(|e| format!("Failed to read response body: {}", e))?;
 
         // Create text content with the fetched body
         let text_content = TextContent::new(None, Some(body))
@@ -52,7 +55,7 @@ impl ContentFetchingService for HttpContentFetcher {
         // Set URL-specific metadata using setter methods
         content_item.set_url(Some(parsed_url.clone()));
         content_item.set_source_url(Some(parsed_url));
-        
+
         // Try to extract title from HTML if it's HTML content
         if let ContentType::Text(text_content) = content_item.content() {
             if let Some(ref html_content) = text_content.content {
@@ -89,10 +92,13 @@ mod tests {
     #[test]
     fn test_fetch_content_success() {
         let mut server = Server::new();
-        let mock = server.mock("GET", "/test")
+        let mock = server
+            .mock("GET", "/test")
             .with_status(200)
             .with_header("content-type", "text/html")
-            .with_body("<html><head><title>Test Page</title></head><body>Test content</body></html>")
+            .with_body(
+                "<html><head><title>Test Page</title></head><body>Test content</body></html>",
+            )
             .create();
 
         let fetcher = HttpContentFetcher::new();
@@ -101,14 +107,20 @@ mod tests {
 
         assert!(result.is_ok());
         let content_item = result.unwrap();
-        
+
         assert!(content_item.title().is_some());
         assert_eq!(content_item.title().unwrap(), "Test Page");
         assert!(matches!(content_item.content(), ContentType::Text(_)));
-        
+
         if let ContentType::Text(text_content) = content_item.content() {
             assert!(text_content.content.is_some());
-            assert!(text_content.content.as_ref().unwrap().contains("Test content"));
+            assert!(
+                text_content
+                    .content
+                    .as_ref()
+                    .unwrap()
+                    .contains("Test content")
+            );
         }
 
         mock.assert();
@@ -118,7 +130,7 @@ mod tests {
     fn test_fetch_content_invalid_url() {
         let fetcher = HttpContentFetcher::new();
         let result = fetcher.fetch_content("not-a-valid-url");
-        
+
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Invalid URL"));
     }
@@ -126,9 +138,7 @@ mod tests {
     #[test]
     fn test_fetch_content_http_error() {
         let mut server = Server::new();
-        let mock = server.mock("GET", "/error")
-            .with_status(404)
-            .create();
+        let mock = server.mock("GET", "/error").with_status(404).create();
 
         let fetcher = HttpContentFetcher::new();
         let url = format!("{}/error", server.url());

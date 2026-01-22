@@ -11,7 +11,7 @@ that implementations only need to implement the functionality they actually prov
 
 Port Segregation:
 - NotificationDeliveryPort: Core delivery functionality
-- NotificationSchedulingPort: Scheduling and timing operations  
+- NotificationSchedulingPort: Scheduling and timing operations
 - NotificationTemplatePort: Template management and rendering
 - NotificationQueryPort: Read operations and status queries
 - NotificationStoragePort: Persistence operations
@@ -22,16 +22,16 @@ allowing for flexible adapter implementations and better testability.
 */
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 // Re-export domain types for convenience
 pub use crate::core::platform::container::notification::{
-    Notification, NotificationContent, NotificationChannel, NotificationPriority,
-    NotificationRecipient, NotificationStatus, NotificationTemplate, NotificationEvent,
-    NotificationAttachment, NotificationDomainError,
+    Notification, NotificationAttachment, NotificationChannel, NotificationContent,
+    NotificationDomainError, NotificationEvent, NotificationPriority, NotificationRecipient,
+    NotificationStatus, NotificationTemplate,
 };
 
 /// Result type for notification port operations
@@ -42,37 +42,37 @@ pub type NotificationPortResult<T> = Result<T, NotificationPortError>;
 pub enum NotificationPortError {
     #[error("Domain error: {0}")]
     DomainError(#[from] NotificationDomainError),
-    
+
     #[error("Delivery failed: {0}")]
     DeliveryFailed(String),
-    
+
     #[error("Template error: {0}")]
     TemplateError(String),
-    
+
     #[error("Storage error: {0}")]
     StorageError(String),
-    
+
     #[error("Connection error: {0}")]
     ConnectionError(String),
-    
+
     #[error("Authentication error: {0}")]
     AuthenticationError(String),
-    
+
     #[error("Rate limit exceeded")]
     RateLimitExceeded,
-    
+
     #[error("Service unavailable: {0}")]
     ServiceUnavailable(String),
-    
+
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
-    
+
     #[error("Validation error: {0}")]
     ValidationError(String),
-    
+
     #[error("Timeout error")]
     Timeout,
-    
+
     #[error("Unknown error: {0}")]
     Unknown(String),
 }
@@ -199,32 +199,41 @@ pub enum SortOrder {
 // ============================================================================
 
 /// Core notification delivery port
-/// 
+///
 /// This port defines the essential delivery functionality that all notification
 /// adapters must implement. It focuses purely on the delivery mechanism.
 #[async_trait]
 pub trait NotificationDeliveryPort: Send + Sync {
     /// Get the channel this port handles
     fn channel(&self) -> NotificationChannel;
-    
+
     /// Check if this port can handle the given notification
     fn can_handle(&self, notification: &Notification) -> bool;
-    
+
     /// Deliver a single notification
-    async fn deliver_notification(&self, notification: Notification) -> NotificationPortResult<NotificationDeliveryResult>;
-    
+    async fn deliver_notification(
+        &self,
+        notification: Notification,
+    ) -> NotificationPortResult<NotificationDeliveryResult>;
+
     /// Deliver multiple notifications (if supported)
-    async fn deliver_bulk(&self, notifications: Vec<Notification>) -> NotificationPortResult<BulkDeliveryResult> {
+    async fn deliver_bulk(
+        &self,
+        notifications: Vec<Notification>,
+    ) -> NotificationPortResult<BulkDeliveryResult> {
         // Default implementation delivers one by one
         let mut results = Vec::new();
         let start_time = std::time::Instant::now();
         let mut success_count = 0;
         let mut failure_count = 0;
-        
+
         for notification in notifications {
             match self.deliver_notification(notification).await {
                 Ok(result) => {
-                    if matches!(result.status, NotificationStatus::Sent | NotificationStatus::Delivered) {
+                    if matches!(
+                        result.status,
+                        NotificationStatus::Sent | NotificationStatus::Delivered
+                    ) {
                         success_count += 1;
                     } else {
                         failure_count += 1;
@@ -247,7 +256,7 @@ pub trait NotificationDeliveryPort: Send + Sync {
                 }
             }
         }
-        
+
         Ok(BulkDeliveryResult {
             total_count: results.len(),
             success_count,
@@ -256,10 +265,10 @@ pub trait NotificationDeliveryPort: Send + Sync {
             total_processing_time_ms: start_time.elapsed().as_millis() as u64,
         })
     }
-    
+
     /// Check delivery port health
     async fn health_check(&self) -> bool;
-    
+
     /// Get delivery port capabilities
     fn capabilities(&self) -> DeliveryCapabilities;
 }
@@ -289,29 +298,39 @@ pub struct DeliveryCapabilities {
 #[async_trait]
 pub trait NotificationTemplatePort: Send + Sync {
     /// Create a new template
-    async fn create_template(&self, template: NotificationTemplate) -> NotificationPortResult<String>;
-    
+    async fn create_template(
+        &self,
+        template: NotificationTemplate,
+    ) -> NotificationPortResult<String>;
+
     /// Update an existing template
     async fn update_template(&self, template: NotificationTemplate) -> NotificationPortResult<()>;
-    
+
     /// Delete a template
     async fn delete_template(&self, template_id: &str) -> NotificationPortResult<()>;
-    
+
     /// Get a template by ID
-    async fn get_template(&self, template_id: &str) -> NotificationPortResult<NotificationTemplate>;
-    
+    async fn get_template(&self, template_id: &str)
+    -> NotificationPortResult<NotificationTemplate>;
+
     /// List templates with optional filtering
-    async fn list_templates(&self, channel: Option<NotificationChannel>) -> NotificationPortResult<Vec<NotificationTemplate>>;
-    
+    async fn list_templates(
+        &self,
+        channel: Option<NotificationChannel>,
+    ) -> NotificationPortResult<Vec<NotificationTemplate>>;
+
     /// Render template with variables
     async fn render_template(
         &self,
         template_id: &str,
         variables: HashMap<String, serde_json::Value>,
     ) -> NotificationPortResult<NotificationContent>;
-    
+
     /// Validate template syntax
-    async fn validate_template(&self, template: &NotificationTemplate) -> NotificationPortResult<()>;
+    async fn validate_template(
+        &self,
+        template: &NotificationTemplate,
+    ) -> NotificationPortResult<()>;
 }
 
 /// Basic notification port for simple use cases
@@ -320,7 +339,10 @@ pub trait NotificationTemplatePort: Send + Sync {
 #[async_trait]
 pub trait BasicNotificationPort: NotificationDeliveryPort + Send + Sync {
     /// Send a notification and return delivery result
-    async fn send_notification(&self, notification: Notification) -> NotificationPortResult<NotificationDeliveryResult> {
+    async fn send_notification(
+        &self,
+        notification: Notification,
+    ) -> NotificationPortResult<NotificationDeliveryResult> {
         self.deliver_notification(notification).await
     }
 }
@@ -339,7 +361,7 @@ impl NotificationPortConfig {
     pub fn get_channel_config(&self, channel: &NotificationChannel) -> Option<&serde_json::Value> {
         self.channels.get(channel)
     }
-    
+
     /// Get global configuration value
     pub fn get_global_config(&self, key: &str) -> Option<&serde_json::Value> {
         self.global.get(key)
@@ -367,9 +389,9 @@ mod tests {
             supports_rich_content: true,
             supports_templates: true,
             max_attachment_size: Some(10 * 1024 * 1024), // 10MB
-            rate_limit: Some(100), // 100 per minute
+            rate_limit: Some(100),                       // 100 per minute
         };
-        
+
         assert!(capabilities.supports_bulk);
         assert!(!capabilities.supports_attachments);
         assert_eq!(capabilities.max_attachment_size, Some(10 * 1024 * 1024));

@@ -1,20 +1,20 @@
 /*
 Workflow container
 
-Workflows are Node entities that encapsulate the orchestration logic and can be triggered by 
+Workflows are Node entities that encapsulate the orchestration logic and can be triggered by
 various events or conditions.
-They allow for advanced control over job execution, including sequential, parallel, and 
+They allow for advanced control over job execution, including sequential, parallel, and
 event-driven processing.
-They can also define custom execution orders and stages, enabling sophisticated 
+They can also define custom execution orders and stages, enabling sophisticated
 orchestration patterns.
 */
 use crate::core::platform::container::job::{Job, JobExecutionMode};
-use crate::core::platform::manager::queue_service::QueueConfig;
+use crate::core::platform::container::trigger::TriggerCondition;
 use crate::core::platform::manager::orchestrator::OrchestrationContext;
-use uuid::Uuid;
+use crate::core::platform::manager::queue_service::QueueConfig;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use crate::core::platform::container::trigger::TriggerCondition;
+use uuid::Uuid;
 
 /// Workflow definition for complex orchestrations
 #[derive(Debug, Clone, Serialize, Deserialize)]

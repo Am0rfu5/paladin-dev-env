@@ -7,11 +7,11 @@ components and as the foundation for logging and notification systems.
 Messages contain source and destination locations, timestamps, priorities,
 and can carry any type of payload data.
 */
-use std::hash::{Hash, Hasher};
-use std::fmt;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::hash::{Hash, Hasher};
+use uuid::Uuid;
 
 /// Message priority levels for routing and processing
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -46,22 +46,22 @@ impl Location {
     pub fn service(name: &str) -> Self {
         Location::Service(name.to_string())
     }
-    
+
     /// Create a new system location
     pub fn system(name: &str) -> Self {
         Location::System(name.to_string())
     }
-    
+
     /// Create a new external location
     pub fn external(name: &str) -> Self {
         Location::External(name.to_string())
     }
-    
+
     /// Create a new user location
     pub fn user(id: &str) -> Self {
         Location::User(id.to_string())
     }
-    
+
     /// Get the location name
     pub fn name(&self) -> &str {
         match self {
@@ -71,17 +71,17 @@ impl Location {
             Location::User(id) => id,
         }
     }
-    
+
     /// Check if this is a system location
     pub fn is_system(&self) -> bool {
         matches!(self, Location::System(_))
     }
-    
+
     /// Check if this is a service location
     pub fn is_service(&self) -> bool {
         matches!(self, Location::Service(_))
     }
-    
+
     /// Check if this is an external location
     pub fn is_external(&self) -> bool {
         matches!(self, Location::External(_))
@@ -133,11 +133,7 @@ where
 
 impl<T> Message<T> {
     /// Create a new message with default priority
-    pub fn new(
-        source: Location,
-        destination: Location,
-        message: T,
-    ) -> Self {
+    pub fn new(source: Location, destination: Location, message: T) -> Self {
         Self {
             id: Uuid::new_v4(),
             source,
@@ -148,7 +144,7 @@ impl<T> Message<T> {
             priority: MessagePriority::default(),
         }
     }
-    
+
     /// Create a new message with specified priority
     pub fn with_priority(
         source: Location,
@@ -166,7 +162,7 @@ impl<T> Message<T> {
             priority,
         }
     }
-    
+
     /// Create a new message with correlation ID
     pub fn with_correlation(
         source: Location,
@@ -184,7 +180,7 @@ impl<T> Message<T> {
             priority: MessagePriority::default(),
         }
     }
-    
+
     /// Create a complete message with all options
     pub fn complete(
         source: Location,
@@ -203,42 +199,42 @@ impl<T> Message<T> {
             priority,
         }
     }
-    
+
     /// Set correlation ID
     pub fn set_correlation_id(&mut self, correlation_id: Uuid) {
         self.correlation_id = Some(correlation_id);
     }
-    
+
     /// Set priority
     pub fn set_priority(&mut self, priority: MessagePriority) {
         self.priority = priority;
     }
-    
+
     /// Get message age in seconds
     pub fn age_seconds(&self) -> i64 {
         Utc::now().timestamp() - self.timestamp.timestamp()
     }
-    
+
     /// Check if message is expired based on TTL
     pub fn is_expired(&self, ttl_seconds: i64) -> bool {
         self.age_seconds() > ttl_seconds
     }
-    
+
     /// Check if message has correlation ID
     pub fn has_correlation(&self) -> bool {
         self.correlation_id.is_some()
     }
-    
+
     /// Get a reference to the message payload
     pub fn payload(&self) -> &T {
         &self.message
     }
-    
+
     /// Get a mutable reference to the message payload
     pub fn payload_mut(&mut self) -> &mut T {
         &mut self.message
     }
-    
+
     /// Transform the message payload to a different type
     pub fn map<U, F>(self, f: F) -> Message<U>
     where
@@ -254,7 +250,7 @@ impl<T> Message<T> {
             priority: self.priority,
         }
     }
-    
+
     /// Create a reply message to this message
     pub fn reply<U>(&self, reply_message: U) -> Message<U> {
         Message {
@@ -277,8 +273,12 @@ mod tests {
     fn test_message_creation() {
         let source = Location::service("test-service");
         let destination = Location::system("test-system");
-        let message = Message::new(source.clone(), destination.clone(), "test message".to_string());
-        
+        let message = Message::new(
+            source.clone(),
+            destination.clone(),
+            "test message".to_string(),
+        );
+
         assert_eq!(message.source, source);
         assert_eq!(message.destination, destination);
         assert_eq!(message.message, "test message");
@@ -291,12 +291,12 @@ mod tests {
         let source = Location::service("test");
         let destination = Location::system("test");
         let message = Message::with_priority(
-            source, 
-            destination, 
-            "urgent".to_string(), 
-            MessagePriority::Critical
+            source,
+            destination,
+            "urgent".to_string(),
+            MessagePriority::Critical,
         );
-        
+
         assert_eq!(message.priority, MessagePriority::Critical);
     }
 
@@ -306,7 +306,7 @@ mod tests {
         assert_eq!(service_loc.name(), "my-service");
         assert!(service_loc.is_service());
         assert!(!service_loc.is_system());
-        
+
         let system_loc = Location::system("core");
         assert!(system_loc.is_system());
         assert!(!system_loc.is_external());
@@ -319,9 +319,9 @@ mod tests {
             Location::service("server"),
             "request".to_string(),
         );
-        
+
         let reply = original.reply("response".to_string());
-        
+
         assert_eq!(reply.source, original.destination);
         assert_eq!(reply.destination, original.source);
         assert_eq!(reply.correlation_id, Some(original.id));
@@ -335,7 +335,7 @@ mod tests {
             Location::system("test"),
             "test".to_string(),
         );
-        
+
         // Message should be very new (less than 1 second old)
         assert!(message.age_seconds() < 1);
         assert!(!message.is_expired(60)); // Not expired with 60 second TTL

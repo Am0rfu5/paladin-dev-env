@@ -2,7 +2,7 @@
 /*
 User Container
 
-User type built on the core base entity Node type to utilize the versioning system 
+User type built on the core base entity Node type to utilize the versioning system
 through composition. It represents a user entity in the system with all needed values
 including username, email, and password hash.
 
@@ -10,10 +10,10 @@ This follows Domain-Driven Design principles and leverages the existing Node inf
 */
 
 use crate::core::base::entity::node::Node;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 use uuid::Uuid;
-use chrono::Utc;
 
 /// Email value object that encapsulates email validation logic
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -25,7 +25,9 @@ impl Email {
     /// Creates a new Email value object with validation
     pub fn new(email: String) -> Result<Self, UserError> {
         if Self::is_valid(&email) {
-            Ok(Self { value: email.to_lowercase() })
+            Ok(Self {
+                value: email.to_lowercase(),
+            })
         } else {
             Err(UserError::InvalidEmail(email))
         }
@@ -34,11 +36,11 @@ impl Email {
     /// Validates email format using a comprehensive regex
     fn is_valid(email: &str) -> bool {
         use regex::Regex;
-        
+
         let email_regex = Regex::new(
             r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
         ).unwrap();
-        
+
         email_regex.is_match(email) && email.len() <= 254
     }
 
@@ -165,15 +167,21 @@ impl User {
     /// Updates username
     pub fn update_username(&mut self, new_username: String) -> Result<(), UserError> {
         if new_username.trim().is_empty() {
-            return Err(UserError::InvalidUsername("Username cannot be empty".to_string()));
+            return Err(UserError::InvalidUsername(
+                "Username cannot be empty".to_string(),
+            ));
         }
         if new_username.len() < 3 {
-            return Err(UserError::InvalidUsername("Username must be at least 3 characters".to_string()));
+            return Err(UserError::InvalidUsername(
+                "Username must be at least 3 characters".to_string(),
+            ));
         }
         if new_username.len() > 50 {
-            return Err(UserError::InvalidUsername("Username cannot exceed 50 characters".to_string()));
+            return Err(UserError::InvalidUsername(
+                "Username cannot exceed 50 characters".to_string(),
+            ));
         }
-        
+
         self.node.username = new_username;
         self.modified = Utc::now(); // Update modified timestamp directly
         Ok(())
@@ -268,7 +276,7 @@ mod tests {
     #[test]
     fn test_email_methods() {
         let email = Email::new("Test.User@Example.COM".to_string()).unwrap();
-        
+
         // Email should be normalized to lowercase
         assert_eq!(email.value(), "test.user@example.com");
         assert_eq!(email.domain(), Some("example.com"));
@@ -321,7 +329,7 @@ mod tests {
         let new_email = Email::new("new@example.com".to_string()).unwrap();
         let before_email_update = user.modified;
         std::thread::sleep(std::time::Duration::from_millis(1));
-        
+
         assert!(user.update_email(new_email.clone()).is_ok());
         assert_eq!(user.email(), &new_email);
         assert!(!user.is_verified()); // Should reset verification
@@ -330,14 +338,14 @@ mod tests {
         // Test activation/deactivation
         let before_deactivate = user.modified;
         std::thread::sleep(std::time::Duration::from_millis(1));
-        
+
         user.deactivate();
         assert!(!user.is_active());
         assert!(user.modified > before_deactivate);
-        
+
         let before_activate = user.modified;
         std::thread::sleep(std::time::Duration::from_millis(1));
-        
+
         user.activate();
         assert!(user.is_active());
         assert!(user.modified > before_activate);
@@ -345,7 +353,7 @@ mod tests {
         // Test verification
         let before_verify = user.modified;
         std::thread::sleep(std::time::Duration::from_millis(1));
-        
+
         user.verify();
         assert!(user.is_verified());
         assert!(user.modified > before_verify);
@@ -372,7 +380,7 @@ mod tests {
 
         let before_update = user.modified;
         std::thread::sleep(std::time::Duration::from_millis(1));
-        
+
         user.update_profile(new_profile.clone());
         assert_eq!(user.profile(), &new_profile);
         assert!(user.modified > before_update);
@@ -396,7 +404,7 @@ mod tests {
         // Invalid usernames
         assert!(user.update_username("".to_string()).is_err());
         assert!(user.update_username("ab".to_string()).is_err());
-        
+
         // Username too long
         let long_username = "a".repeat(51);
         assert!(user.update_username(long_username).is_err());
@@ -414,10 +422,10 @@ mod tests {
 
         // User should have versioning enabled by default
         assert!(user.is_versioning_enabled());
-        
+
         // UUID should be generated
         assert!(!user.uuid.is_nil());
-        
+
         // Timestamps should be set
         assert_eq!(user.created, user.modified);
     }

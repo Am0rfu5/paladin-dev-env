@@ -9,18 +9,20 @@ from sources like RSS feeds, web pages, or other content providers, rather than 
 content from a database or cache.
 */
 
+use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use async_trait::async_trait;
-use tokio::sync::RwLock;
-use uuid::Uuid;
-use chrono::{DateTime, Utc};
-use serde::{Serialize, Deserialize};
 use thiserror::Error;
+use tokio::sync::RwLock;
 use url::Url;
+use uuid::Uuid;
 
 use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
-use crate::core::platform::manager::orchestrator::{Orchestrator, OrchestrationContext, ContentAnalysisType};
+use crate::core::platform::manager::orchestrator::{
+    ContentAnalysisType, OrchestrationContext, Orchestrator,
+};
 
 /// Content repository trait that must be thread-safe
 #[async_trait]
@@ -167,37 +169,56 @@ pub enum IngestionError {
 pub trait ContentIngestionService: Send + Sync {
     /// Register a new content source
     async fn register_source(&self, source: ContentSource) -> Result<Uuid, IngestionError>;
-    
+
     /// Remove a content source
     async fn remove_source(&self, source_id: Uuid) -> Result<(), IngestionError>;
-    
+
     /// Update source configuration
-    async fn update_source(&self, source_id: Uuid, config: SourceConfig) -> Result<(), IngestionError>;
-    
+    async fn update_source(
+        &self,
+        source_id: Uuid,
+        config: SourceConfig,
+    ) -> Result<(), IngestionError>;
+
     /// Enable/disable a source
-    async fn set_source_enabled(&self, source_id: Uuid, enabled: bool) -> Result<(), IngestionError>;
-    
+    async fn set_source_enabled(
+        &self,
+        source_id: Uuid,
+        enabled: bool,
+    ) -> Result<(), IngestionError>;
+
     /// Ingest content from a single URL
-    async fn ingest_from_url(&self, url: Url, source_id: Option<Uuid>) -> Result<IngestionResult, IngestionError>;
-    
+    async fn ingest_from_url(
+        &self,
+        url: Url,
+        source_id: Option<Uuid>,
+    ) -> Result<IngestionResult, IngestionError>;
+
     /// Ingest raw content directly
-    async fn ingest_content(&self, content: String, metadata: HashMap<String, serde_json::Value>) -> Result<IngestionResult, IngestionError>;
-    
+    async fn ingest_content(
+        &self,
+        content: String,
+        metadata: HashMap<String, serde_json::Value>,
+    ) -> Result<IngestionResult, IngestionError>;
+
     /// Ingest content from a registered source
-    async fn ingest_from_source(&self, source_id: Uuid) -> Result<BatchIngestionResult, IngestionError>;
-    
+    async fn ingest_from_source(
+        &self,
+        source_id: Uuid,
+    ) -> Result<BatchIngestionResult, IngestionError>;
+
     /// Ingest content from all enabled sources
     async fn ingest_from_all_sources(&self) -> Result<Vec<BatchIngestionResult>, IngestionError>;
-    
+
     /// Get list of registered sources
     async fn list_sources(&self) -> Result<Vec<ContentSource>, IngestionError>;
-    
+
     /// Get ingestion statistics
     async fn get_stats(&self) -> Result<IngestionStats, IngestionError>;
-    
+
     /// Start automatic ingestion scheduler
     async fn start_scheduler(&self) -> Result<(), IngestionError>;
-    
+
     /// Stop automatic ingestion scheduler
     async fn stop_scheduler(&self) -> Result<(), IngestionError>;
 }
@@ -240,11 +261,15 @@ impl DefaultContentIngestionService {
             stats: Arc::new(RwLock::new(IngestionStats::default())),
         }
     }
-    
+
     /// Parse content from different source types
-    async fn parse_content(&self, source: &ContentSource, raw_content: String) -> Result<Vec<ContentItem>, IngestionError> {
+    async fn parse_content(
+        &self,
+        source: &ContentSource,
+        raw_content: String,
+    ) -> Result<Vec<ContentItem>, IngestionError> {
         let mut items = Vec::new();
-        
+
         match source.source_type {
             SourceType::RssFeed => {
                 // Parse RSS/Atom feed
@@ -269,17 +294,21 @@ impl DefaultContentIngestionService {
                 items.push(content_item);
             }
         }
-        
+
         Ok(items)
     }
-    
+
     async fn parse_rss_feed(&self, _content: String) -> Result<Vec<ContentItem>, IngestionError> {
         // Implement RSS parsing logic
         // This would use a crate like `rss` or `feed-rs`
         Ok(vec![])
     }
-    
-    async fn parse_web_page(&self, content: String, url: Option<Url>) -> Result<ContentItem, IngestionError> {
+
+    async fn parse_web_page(
+        &self,
+        content: String,
+        url: Option<Url>,
+    ) -> Result<ContentItem, IngestionError> {
         // Extract text content from HTML
         // This would use a crate like `scraper` or `html2text`
         let url_string = url.map(|u| u.to_string());
@@ -288,19 +317,26 @@ impl DefaultContentIngestionService {
         ContentItem::new(ContentType::Text(text_content))
             .map_err(|e| IngestionError::ParseError(e.to_string()))
     }
-    
-    async fn parse_api_response(&self, _content: String) -> Result<Vec<ContentItem>, IngestionError> {
+
+    async fn parse_api_response(
+        &self,
+        _content: String,
+    ) -> Result<Vec<ContentItem>, IngestionError> {
         // Parse structured API response
         Ok(vec![])
     }
-    
+
     /// Fetch content from a URL
-    async fn fetch_from_url(&self, url: &Url, _source: &ContentSource) -> Result<String, IngestionError> {
+    async fn fetch_from_url(
+        &self,
+        url: &Url,
+        _source: &ContentSource,
+    ) -> Result<String, IngestionError> {
         // This would use reqwest or similar HTTP client
         // For now, return a placeholder
         Ok(format!("Content from {}", url))
     }
-    
+
     /// Get content size for different content types
     fn get_content_size(content_type: &ContentType) -> usize {
         match content_type {
@@ -312,26 +348,29 @@ impl DefaultContentIngestionService {
             ContentType::Image(image_content) => image_content.filesize as usize,
         }
     }
-    
+
     /// Trigger content analysis if enabled
     async fn trigger_analysis(&self, content_item: &ContentItem) -> Result<(), IngestionError> {
         if !self.config.auto_analyze {
             return Ok(());
         }
-        
+
         let context = OrchestrationContext::new(
             "content_ingestion_service".to_string(),
             "production".to_string(),
         );
-        
+
         for analysis_type in &self.config.analysis_types {
-            let _ = self.orchestrator.create_content_analysis_workflow(
-                vec![content_item.clone()],
-                analysis_type.clone(),
-                context.clone(),
-            ).await;
+            let _ = self
+                .orchestrator
+                .create_content_analysis_workflow(
+                    vec![content_item.clone()],
+                    analysis_type.clone(),
+                    context.clone(),
+                )
+                .await;
         }
-        
+
         Ok(())
     }
 }
@@ -341,57 +380,72 @@ impl ContentIngestionService for DefaultContentIngestionService {
     async fn register_source(&self, mut source: ContentSource) -> Result<Uuid, IngestionError> {
         source.created_at = Utc::now();
         let source_id = source.id;
-        
+
         let mut sources = self.sources.write().await;
         sources.insert(source_id, source);
-        
+
         // Update stats
         let mut stats = self.stats.write().await;
         stats.total_sources = sources.len();
         stats.enabled_sources = sources.values().filter(|s| s.enabled).count();
-        
+
         Ok(source_id)
     }
-    
+
     async fn remove_source(&self, source_id: Uuid) -> Result<(), IngestionError> {
         let mut sources = self.sources.write().await;
-        sources.remove(&source_id)
+        sources
+            .remove(&source_id)
             .ok_or(IngestionError::SourceNotFound(source_id))?;
-        
+
         // Update stats
         let mut stats = self.stats.write().await;
         stats.total_sources = sources.len();
         stats.enabled_sources = sources.values().filter(|s| s.enabled).count();
-        
+
         Ok(())
     }
-    
-    async fn update_source(&self, source_id: Uuid, config: SourceConfig) -> Result<(), IngestionError> {
+
+    async fn update_source(
+        &self,
+        source_id: Uuid,
+        config: SourceConfig,
+    ) -> Result<(), IngestionError> {
         let mut sources = self.sources.write().await;
-        let source = sources.get_mut(&source_id)
+        let source = sources
+            .get_mut(&source_id)
             .ok_or(IngestionError::SourceNotFound(source_id))?;
-        
+
         source.config = config;
         Ok(())
     }
-    
-    async fn set_source_enabled(&self, source_id: Uuid, enabled: bool) -> Result<(), IngestionError> {
+
+    async fn set_source_enabled(
+        &self,
+        source_id: Uuid,
+        enabled: bool,
+    ) -> Result<(), IngestionError> {
         let mut sources = self.sources.write().await;
-        let source = sources.get_mut(&source_id)
+        let source = sources
+            .get_mut(&source_id)
             .ok_or(IngestionError::SourceNotFound(source_id))?;
-        
+
         source.enabled = enabled;
-        
+
         // Update stats
         let mut stats = self.stats.write().await;
         stats.enabled_sources = sources.values().filter(|s| s.enabled).count();
-        
+
         Ok(())
     }
-    
-    async fn ingest_from_url(&self, url: Url, source_id: Option<Uuid>) -> Result<IngestionResult, IngestionError> {
+
+    async fn ingest_from_url(
+        &self,
+        url: Url,
+        source_id: Option<Uuid>,
+    ) -> Result<IngestionResult, IngestionError> {
         let start_time = std::time::Instant::now();
-        
+
         // Create temporary source if none provided
         let temp_source = ContentSource {
             id: source_id.unwrap_or_else(Uuid::new_v4),
@@ -408,10 +462,10 @@ impl ContentIngestionService for DefaultContentIngestionService {
             last_ingested: None,
             created_at: Utc::now(),
         };
-        
+
         // Fetch content
         let raw_content = self.fetch_from_url(&url, &temp_source).await?;
-        
+
         // Check content size
         if raw_content.len() > self.config.max_content_size {
             return Err(IngestionError::ContentTooLarge {
@@ -419,25 +473,27 @@ impl ContentIngestionService for DefaultContentIngestionService {
                 max: self.config.max_content_size,
             });
         }
-        
+
         // Parse content
         let content_items = self.parse_content(&temp_source, raw_content).await?;
-        
+
         let processing_time_ms = start_time.elapsed().as_millis() as u64;
-        
+
         if let Some(content_item) = content_items.first() {
             // Store content
-            self.repository.create(content_item.clone()).await
+            self.repository
+                .create(content_item.clone())
+                .await
                 .map_err(|e| IngestionError::StorageError(e.to_string()))?;
-            
+
             // Trigger analysis
             let analysis_triggered = self.trigger_analysis(content_item).await.is_ok();
-            
+
             // Update stats
             let mut stats = self.stats.write().await;
             stats.total_items_ingested += 1;
             stats.last_ingestion = Some(Utc::now());
-            
+
             Ok(IngestionResult {
                 content_id: Some(content_item.uuid()),
                 source_url: Some(url.to_string()),
@@ -461,10 +517,14 @@ impl ContentIngestionService for DefaultContentIngestionService {
             })
         }
     }
-    
-    async fn ingest_content(&self, content: String, _metadata: HashMap<String, serde_json::Value>) -> Result<IngestionResult, IngestionError> {
+
+    async fn ingest_content(
+        &self,
+        content: String,
+        _metadata: HashMap<String, serde_json::Value>,
+    ) -> Result<IngestionResult, IngestionError> {
         let start_time = std::time::Instant::now();
-        
+
         // Check content size
         if content.len() > self.config.max_content_size {
             return Err(IngestionError::ContentTooLarge {
@@ -472,27 +532,29 @@ impl ContentIngestionService for DefaultContentIngestionService {
                 max: self.config.max_content_size,
             });
         }
-        
+
         // Create content item
         let text_content = TextContent::new(None, Some(content))
             .map_err(|e| IngestionError::ParseError(e.to_string()))?;
         let content_item = ContentItem::new(ContentType::Text(text_content))
             .map_err(|e| IngestionError::ParseError(e.to_string()))?;
-        
+
         // Store content
-        self.repository.create(content_item.clone()).await
+        self.repository
+            .create(content_item.clone())
+            .await
             .map_err(|e| IngestionError::StorageError(e.to_string()))?;
-        
+
         // Trigger analysis
         let analysis_triggered = self.trigger_analysis(&content_item).await.is_ok();
-        
+
         let processing_time_ms = start_time.elapsed().as_millis() as u64;
-        
+
         // Update stats
         let mut stats = self.stats.write().await;
         stats.total_items_ingested += 1;
         stats.last_ingestion = Some(Utc::now());
-        
+
         Ok(IngestionResult {
             content_id: Some(content_item.uuid()),
             source_url: None,
@@ -504,24 +566,28 @@ impl ContentIngestionService for DefaultContentIngestionService {
             analysis_triggered,
         })
     }
-    
-    async fn ingest_from_source(&self, source_id: Uuid) -> Result<BatchIngestionResult, IngestionError> {
+
+    async fn ingest_from_source(
+        &self,
+        source_id: Uuid,
+    ) -> Result<BatchIngestionResult, IngestionError> {
         let start_time = std::time::Instant::now();
         let started_at = Utc::now();
-        
+
         let source = {
             let sources = self.sources.read().await;
-            sources.get(&source_id)
+            sources
+                .get(&source_id)
                 .ok_or(IngestionError::SourceNotFound(source_id))?
                 .clone()
         };
-        
+
         if !source.enabled {
             return Err(IngestionError::SourceDisabled(source_id));
         }
-        
+
         let mut results = Vec::new();
-        
+
         if let Some(url) = &source.url {
             match self.ingest_from_url(url.clone(), Some(source_id)).await {
                 Ok(result) => results.push(result),
@@ -539,7 +605,7 @@ impl ContentIngestionService for DefaultContentIngestionService {
                 }
             }
         }
-        
+
         // Update source last_ingested timestamp
         {
             let mut sources = self.sources.write().await;
@@ -547,13 +613,13 @@ impl ContentIngestionService for DefaultContentIngestionService {
                 source.last_ingested = Some(Utc::now());
             }
         }
-        
+
         let completed_at = Utc::now();
         let total_processing_time_ms = start_time.elapsed().as_millis() as u64;
-        
+
         let successful = results.iter().filter(|r| r.success).count();
         let failed = results.len() - successful;
-        
+
         Ok(BatchIngestionResult {
             total_items: results.len(),
             successful,
@@ -564,18 +630,19 @@ impl ContentIngestionService for DefaultContentIngestionService {
             total_processing_time_ms,
         })
     }
-    
+
     async fn ingest_from_all_sources(&self) -> Result<Vec<BatchIngestionResult>, IngestionError> {
         let source_ids: Vec<Uuid> = {
             let sources = self.sources.read().await;
-            sources.values()
+            sources
+                .values()
                 .filter(|s| s.enabled)
                 .map(|s| s.id)
                 .collect()
         };
-        
+
         let mut batch_results = Vec::new();
-        
+
         for source_id in source_ids {
             match self.ingest_from_source(source_id).await {
                 Ok(result) => batch_results.push(result),
@@ -585,41 +652,42 @@ impl ContentIngestionService for DefaultContentIngestionService {
                 }
             }
         }
-        
+
         Ok(batch_results)
     }
-    
+
     async fn list_sources(&self) -> Result<Vec<ContentSource>, IngestionError> {
         let sources = self.sources.read().await;
         Ok(sources.values().cloned().collect())
     }
-    
+
     async fn get_stats(&self) -> Result<IngestionStats, IngestionError> {
         let stats = self.stats.read().await;
         Ok(stats.clone())
     }
-    
+
     async fn start_scheduler(&self) -> Result<(), IngestionError> {
         let mut scheduler_running = self.scheduler_running.write().await;
         if *scheduler_running {
             return Ok(());
         }
-        
+
         *scheduler_running = true;
-        
+
         // Start background task for periodic ingestion
         let sources = Arc::clone(&self.sources);
         let service = Arc::new(self.clone());
-        
+
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(60)); // Check every minute
-            
+
             loop {
                 interval.tick().await;
-                
+
                 let source_ids: Vec<Uuid> = {
                     let sources = sources.read().await;
-                    sources.values()
+                    sources
+                        .values()
                         .filter(|s| s.enabled)
                         .filter(|s| {
                             // Check if enough time has passed since last ingestion
@@ -633,21 +701,21 @@ impl ContentIngestionService for DefaultContentIngestionService {
                         .map(|s| s.id)
                         .collect()
                 };
-                
+
                 for source_id in source_ids {
                     let _ = service.ingest_from_source(source_id).await;
                 }
             }
         });
-        
+
         println!("Content ingestion scheduler started");
         Ok(())
     }
-    
+
     async fn stop_scheduler(&self) -> Result<(), IngestionError> {
         let mut scheduler_running = self.scheduler_running.write().await;
         *scheduler_running = false;
-        
+
         println!("Content ingestion scheduler stopped");
         Ok(())
     }
@@ -703,25 +771,25 @@ impl ContentRepository for InMemoryContentRepository {
         items.insert(id, content);
         Ok(id)
     }
-    
+
     async fn get_by_id(&self, id: Uuid) -> Result<Option<ContentItem>, String> {
         let items = self.items.read().await;
         Ok(items.get(&id).cloned())
     }
-    
+
     async fn update(&self, content: ContentItem) -> Result<(), String> {
         let id = content.uuid();
         let mut items = self.items.write().await;
         items.insert(id, content);
         Ok(())
     }
-    
+
     async fn delete(&self, id: Uuid) -> Result<(), String> {
         let mut items = self.items.write().await;
         items.remove(&id);
         Ok(())
     }
-    
+
     async fn list(&self) -> Result<Vec<ContentItem>, String> {
         let items = self.items.read().await;
         Ok(items.values().cloned().collect())
@@ -737,22 +805,22 @@ mod tests {
         let config = IngestionConfig::default();
         let orchestrator = Arc::new(Orchestrator::new());
         let repository = Arc::new(InMemoryContentRepository::new());
-        
+
         let service = DefaultContentIngestionService::new(config, orchestrator, repository);
-        
+
         let stats = service.get_stats().await.unwrap();
         assert_eq!(stats.total_sources, 0);
         assert_eq!(stats.enabled_sources, 0);
     }
-    
+
     #[tokio::test]
     async fn test_source_registration() {
         let config = IngestionConfig::default();
         let orchestrator = Arc::new(Orchestrator::new());
         let repository = Arc::new(InMemoryContentRepository::new());
-        
+
         let service = DefaultContentIngestionService::new(config, orchestrator, repository);
-        
+
         let source = ContentSource {
             id: Uuid::new_v4(),
             name: "Test Source".to_string(),
@@ -768,27 +836,27 @@ mod tests {
             last_ingested: None,
             created_at: Utc::now(),
         };
-        
+
         let source_id = service.register_source(source).await.unwrap();
-        
+
         let sources = service.list_sources().await.unwrap();
         assert_eq!(sources.len(), 1);
         assert_eq!(sources[0].id, source_id);
     }
-    
+
     #[tokio::test]
     async fn test_content_ingestion() {
         let config = IngestionConfig::default();
         let orchestrator = Arc::new(Orchestrator::new());
         let repository = Arc::new(InMemoryContentRepository::new());
-        
+
         let service = DefaultContentIngestionService::new(config, orchestrator, repository);
-        
+
         let content = "This is test content for ingestion".to_string();
         let metadata = HashMap::new();
-        
+
         let result = service.ingest_content(content, metadata).await.unwrap();
-        
+
         assert!(result.success);
         assert!(result.content_id.is_some());
         assert!(result.content_size.is_some());

@@ -14,13 +14,13 @@ This container is the base for more complex Trigger types that can be built in t
 Application Layer for specific use cases.
 */
 
-use crate::core::base::component::event::Event;
 use crate::core::base::component::action::{Action, ActionStatus};
+use crate::core::base::component::event::Event;
 use crate::core::base::entity::message::MessagePriority;
+use chrono::{DateTime, Datelike, Timelike, Utc};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use chrono::{DateTime, Utc, Datelike, Timelike};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 /// Trigger execution status
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -183,7 +183,15 @@ impl Trigger {
         condition: TriggerCondition,
         config: TriggerConfig,
     ) -> Self {
-        let mut trigger = Self::new(name, description, source, target, triggering_event, action, condition);
+        let mut trigger = Self::new(
+            name,
+            description,
+            source,
+            target,
+            triggering_event,
+            action,
+            condition,
+        );
         trigger.config = config;
         trigger
     }
@@ -220,7 +228,7 @@ impl Trigger {
         if pattern == "*" {
             return true;
         }
-        
+
         if pattern.contains('*') {
             // Simple wildcard matching
             let parts: Vec<&str> = pattern.split('*').collect();
@@ -230,14 +238,14 @@ impl Trigger {
                 return value.starts_with(prefix) && value.ends_with(suffix);
             }
         }
-        
+
         pattern == value
     }
 
     /// Check if current time matches time conditions
     fn matches_time_condition(&self, time_cond: &TimeCondition) -> bool {
         let now = Utc::now();
-        
+
         // Check active hours
         if let Some((start_hour, end_hour)) = time_cond.active_hours {
             let current_hour = now.hour() as u8;
@@ -245,7 +253,7 @@ impl Trigger {
                 return false;
             }
         }
-        
+
         // Check active days
         if let Some(active_days) = &time_cond.active_days {
             let current_day = now.weekday().num_days_from_sunday() as u8;
@@ -253,10 +261,10 @@ impl Trigger {
                 return false;
             }
         }
-        
+
         // TODO: Check cooldown period
         // This would require tracking the last execution time
-        
+
         true
     }
 
@@ -282,7 +290,10 @@ impl Trigger {
     /// Start processing the trigger
     pub fn start_processing(&mut self, worker_id: String) -> Result<(), String> {
         if !self.can_process() {
-            return Err(format!("Trigger cannot be processed, current status: {:?}", self.status));
+            return Err(format!(
+                "Trigger cannot be processed, current status: {:?}",
+                self.status
+            ));
         }
 
         if self.is_expired() {
@@ -294,10 +305,10 @@ impl Trigger {
         self.worker_id = Some(worker_id);
         self.attempt_count += 1;
         self.updated_at = Utc::now();
-        
+
         // Start the underlying action
         self.action.start_execution();
-        
+
         Ok(())
     }
 
@@ -307,7 +318,7 @@ impl Trigger {
         self.processed_at = Some(Utc::now());
         self.updated_at = Utc::now();
         self.worker_id = None;
-        
+
         // Complete the underlying action
         let action_result = crate::core::base::component::action::ActionResult {
             success: true,
@@ -316,25 +327,26 @@ impl Trigger {
             error: None,
             metadata: self.metadata.clone(),
         };
-        
+
         self.action.complete_execution(action_result);
     }
 
     /// Fail processing with an error
     pub fn fail_processing(&mut self, error: String) -> bool {
         let duration_ms = self.processing_duration_ms();
-        let can_retry = self.action.fail_execution(error.clone(), duration_ms) && !self.is_retry_exhausted();
-        
+        let can_retry =
+            self.action.fail_execution(error.clone(), duration_ms) && !self.is_retry_exhausted();
+
         if can_retry {
             self.status = TriggerStatus::Pending; // Reset to pending for retry
         } else {
             self.status = TriggerStatus::Failed;
             self.processed_at = Some(Utc::now());
         }
-        
+
         self.updated_at = Utc::now();
         self.worker_id = None;
-        
+
         can_retry
     }
 
@@ -434,14 +446,14 @@ mod tests {
             json!({"test": "data"}),
             "test_source".to_string(),
         );
-        
+
         let action = Action::new(
             "Test Action".to_string(),
             "Test action".to_string(),
             "test_source".to_string(),
             "test_service".to_string(),
         );
-        
+
         let condition = TriggerCondition {
             event_type_pattern: "test_*".to_string(),
             source_pattern: None,
@@ -449,7 +461,7 @@ mod tests {
             min_priority: None,
             time_conditions: None,
         };
-        
+
         let trigger = Trigger::new(
             "Test Trigger".to_string(),
             "Test trigger".to_string(),
@@ -459,7 +471,7 @@ mod tests {
             action,
             condition,
         );
-        
+
         assert_eq!(trigger.name, "Test Trigger");
         assert_eq!(trigger.status, TriggerStatus::Pending);
         assert!(trigger.can_process());
@@ -472,9 +484,9 @@ mod tests {
             json!({"user_id": "123"}),
             "user_service".to_string(),
         );
-        
+
         let action = Action::default();
-        
+
         let condition = TriggerCondition {
             event_type_pattern: "user_*".to_string(),
             source_pattern: Some("user_service".to_string()),
@@ -482,7 +494,7 @@ mod tests {
             min_priority: None,
             time_conditions: None,
         };
-        
+
         let trigger = Trigger::new(
             "User Event Trigger".to_string(),
             "Triggers on user events".to_string(),
@@ -492,10 +504,10 @@ mod tests {
             action,
             condition,
         );
-        
+
         // Should match the same event
         assert!(trigger.matches_event(&event));
-        
+
         // Should not match different event type
         let different_event = Event::new(
             "order_created".to_string(),
@@ -516,7 +528,7 @@ mod tests {
             min_priority: None,
             time_conditions: None,
         };
-        
+
         let mut trigger = Trigger::new(
             "Test".to_string(),
             "Test".to_string(),
@@ -526,12 +538,12 @@ mod tests {
             action,
             condition,
         );
-        
+
         // Start processing
         assert!(trigger.start_processing("worker-1".to_string()).is_ok());
         assert_eq!(trigger.status, TriggerStatus::Processing);
         assert_eq!(trigger.attempt_count, 1);
-        
+
         // Complete processing
         trigger.complete_processing(Some(json!({"result": "success"})));
         assert_eq!(trigger.status, TriggerStatus::Completed);
@@ -549,7 +561,7 @@ mod tests {
             min_priority: None,
             time_conditions: None,
         };
-        
+
         let trigger = Trigger::new(
             "Test".to_string(),
             "Test".to_string(),
@@ -559,13 +571,13 @@ mod tests {
             action,
             condition,
         );
-        
+
         // Test wildcard matching
         assert!(trigger.matches_pattern("*", "anything"));
         assert!(trigger.matches_pattern("user_*", "user_created"));
         assert!(trigger.matches_pattern("*_event", "test_event"));
         assert!(!trigger.matches_pattern("user_*", "order_created"));
-        
+
         // Test exact matching
         assert!(trigger.matches_pattern("exact_match", "exact_match"));
         assert!(!trigger.matches_pattern("exact_match", "different"));

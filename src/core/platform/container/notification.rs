@@ -21,14 +21,14 @@ The notification domain follows hexagonal architecture principles with clear bou
 between domain logic and external concerns.
 */
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use uuid::Uuid;
-use chrono::{DateTime, Utc};
 use std::fmt;
 use thiserror::Error;
+use uuid::Uuid;
 
-use crate::core::base::entity::message::{Message, Location, MessagePriority};
+use crate::core::base::entity::message::{Location, Message, MessagePriority};
 
 /// Result type for notification domain operations
 pub type NotificationResult<T> = Result<T, NotificationDomainError>;
@@ -38,25 +38,25 @@ pub type NotificationResult<T> = Result<T, NotificationDomainError>;
 pub enum NotificationDomainError {
     #[error("Invalid recipient: {0}")]
     InvalidRecipient(String),
-    
+
     #[error("Invalid content: {0}")]
     InvalidContent(String),
-    
+
     #[error("Template not found: {0}")]
     TemplateNotFound(String),
-    
+
     #[error("Template rendering failed: {0}")]
     TemplateRenderingFailed(String),
-    
+
     #[error("Notification expired")]
     NotificationExpired,
-    
+
     #[error("Invalid notification state transition from {from} to {to}")]
     InvalidStateTransition { from: String, to: String },
-    
+
     #[error("Notification already processed")]
     NotificationAlreadyProcessed,
-    
+
     #[error("Validation error: {0}")]
     ValidationError(String),
 }
@@ -83,7 +83,9 @@ impl From<NotificationPriority> for MessagePriority {
             NotificationPriority::Low => MessagePriority::Low,
             NotificationPriority::Normal => MessagePriority::Normal,
             NotificationPriority::High => MessagePriority::High,
-            NotificationPriority::Critical | NotificationPriority::Emergency => MessagePriority::Critical,
+            NotificationPriority::Critical | NotificationPriority::Emergency => {
+                MessagePriority::Critical
+            }
         }
     }
 }
@@ -141,20 +143,24 @@ pub enum NotificationStatus {
 impl NotificationStatus {
     /// Check if the notification is in a final state
     pub fn is_final(&self) -> bool {
-        matches!(self, 
-            NotificationStatus::Delivered |
-            NotificationStatus::Read |
-            NotificationStatus::Failed |
-            NotificationStatus::Cancelled |
-            NotificationStatus::Expired
+        matches!(
+            self,
+            NotificationStatus::Delivered
+                | NotificationStatus::Read
+                | NotificationStatus::Failed
+                | NotificationStatus::Cancelled
+                | NotificationStatus::Expired
         )
     }
-    
+
     /// Check if the notification can be retried
     pub fn can_retry(&self) -> bool {
-        matches!(self, NotificationStatus::Failed | NotificationStatus::Retry(_))
+        matches!(
+            self,
+            NotificationStatus::Failed | NotificationStatus::Retry(_)
+        )
     }
-    
+
     /// Get the next retry status
     pub fn next_retry(&self, max_retries: u32) -> Option<NotificationStatus> {
         match self {
@@ -187,18 +193,20 @@ impl NotificationRecipient {
                 if email.contains('@') && email.len() > 3 {
                     Ok(())
                 } else {
-                    Err(NotificationDomainError::InvalidRecipient(
-                        format!("Invalid email format: {}", email)
-                    ))
+                    Err(NotificationDomainError::InvalidRecipient(format!(
+                        "Invalid email format: {}",
+                        email
+                    )))
                 }
             }
             NotificationRecipient::Phone(phone) => {
                 if phone.len() >= 10 {
                     Ok(())
                 } else {
-                    Err(NotificationDomainError::InvalidRecipient(
-                        format!("Invalid phone format: {}", phone)
-                    ))
+                    Err(NotificationDomainError::InvalidRecipient(format!(
+                        "Invalid phone format: {}",
+                        phone
+                    )))
                 }
             }
             NotificationRecipient::UserId(id) => {
@@ -206,7 +214,7 @@ impl NotificationRecipient {
                     Ok(())
                 } else {
                     Err(NotificationDomainError::InvalidRecipient(
-                        "User ID cannot be empty".to_string()
+                        "User ID cannot be empty".to_string(),
                     ))
                 }
             }
@@ -219,7 +227,7 @@ impl NotificationRecipient {
             _ => Ok(()), // Other types are assumed valid for now
         }
     }
-    
+
     /// Get the primary identifier for the recipient
     pub fn identifier(&self) -> String {
         match self {
@@ -234,7 +242,7 @@ impl NotificationRecipient {
             }
         }
     }
-    
+
     /// Get the compatible channels for this recipient type
     pub fn compatible_channels(&self) -> Vec<NotificationChannel> {
         match self {
@@ -245,10 +253,9 @@ impl NotificationRecipient {
                 NotificationChannel::Push,
                 NotificationChannel::InApp,
             ],
-            NotificationRecipient::DeviceToken(_) => vec![
-                NotificationChannel::Push,
-                NotificationChannel::WebPush,
-            ],
+            NotificationRecipient::DeviceToken(_) => {
+                vec![NotificationChannel::Push, NotificationChannel::WebPush]
+            }
             NotificationRecipient::WebhookUrl(_) => vec![NotificationChannel::Webhook],
             NotificationRecipient::SystemComponent(_) => vec![NotificationChannel::System],
             NotificationRecipient::Multiple(_) => vec![], // Determined by individual recipients
@@ -283,7 +290,7 @@ impl NotificationContent {
             metadata: HashMap::new(),
         }
     }
-    
+
     /// Create content with template
     pub fn with_template(
         template_id: String,
@@ -301,42 +308,46 @@ impl NotificationContent {
             metadata: HashMap::new(),
         }
     }
-    
+
     /// Validate the content
     pub fn validate(&self) -> NotificationResult<()> {
         if self.title.is_empty() && self.template_id.is_none() {
             return Err(NotificationDomainError::InvalidContent(
-                "Title cannot be empty when no template is specified".to_string()
+                "Title cannot be empty when no template is specified".to_string(),
             ));
         }
-        
+
         if self.body.is_empty() && self.template_id.is_none() {
             return Err(NotificationDomainError::InvalidContent(
-                "Body cannot be empty when no template is specified".to_string()
+                "Body cannot be empty when no template is specified".to_string(),
             ));
         }
-        
+
         if self.category.is_empty() {
             return Err(NotificationDomainError::InvalidContent(
-                "Category cannot be empty".to_string()
+                "Category cannot be empty".to_string(),
             ));
         }
-        
+
         Ok(())
     }
-    
+
     /// Check if this content uses a template
     pub fn uses_template(&self) -> bool {
         self.template_id.is_some()
     }
-    
+
     /// Add attachment
     pub fn add_attachment(&mut self, attachment: NotificationAttachment) {
         self.attachments.push(attachment);
     }
-    
+
     /// Add template variable
-    pub fn add_variable<T: serde::Serialize>(&mut self, key: String, value: T) -> NotificationResult<()> {
+    pub fn add_variable<T: serde::Serialize>(
+        &mut self,
+        key: String,
+        value: T,
+    ) -> NotificationResult<()> {
         let json_value = serde_json::to_value(value)
             .map_err(|e| NotificationDomainError::ValidationError(e.to_string()))?;
         self.template_variables.insert(key, json_value);
@@ -364,21 +375,22 @@ impl NotificationAttachment {
             size,
         }
     }
-    
+
     /// Validate attachment
     pub fn validate(&self, max_size: usize) -> NotificationResult<()> {
         if self.filename.is_empty() {
             return Err(NotificationDomainError::InvalidContent(
-                "Attachment filename cannot be empty".to_string()
+                "Attachment filename cannot be empty".to_string(),
             ));
         }
-        
+
         if self.size > max_size {
-            return Err(NotificationDomainError::InvalidContent(
-                format!("Attachment size {} exceeds maximum {}", self.size, max_size)
-            ));
+            return Err(NotificationDomainError::InvalidContent(format!(
+                "Attachment size {} exceeds maximum {}",
+                self.size, max_size
+            )));
         }
-        
+
         Ok(())
     }
 }
@@ -421,30 +433,30 @@ impl NotificationTemplate {
             is_active: true,
         }
     }
-    
+
     /// Validate template
     pub fn validate(&self) -> NotificationResult<()> {
         if self.id.is_empty() {
             return Err(NotificationDomainError::ValidationError(
-                "Template ID cannot be empty".to_string()
+                "Template ID cannot be empty".to_string(),
             ));
         }
-        
+
         if self.name.is_empty() {
             return Err(NotificationDomainError::ValidationError(
-                "Template name cannot be empty".to_string()
+                "Template name cannot be empty".to_string(),
             ));
         }
-        
+
         if self.body_template.is_empty() {
             return Err(NotificationDomainError::ValidationError(
-                "Template body cannot be empty".to_string()
+                "Template body cannot be empty".to_string(),
             ));
         }
-        
+
         Ok(())
     }
-    
+
     /// Update template
     pub fn update(&mut self, body_template: String, variables: Vec<String>) {
         self.body_template = body_template;
@@ -452,7 +464,7 @@ impl NotificationTemplate {
         self.updated_at = Utc::now();
         self.version += 1;
     }
-    
+
     /// Deactivate template
     pub fn deactivate(&mut self) {
         self.is_active = false;
@@ -494,15 +506,17 @@ impl Notification {
         // Validate inputs
         recipient.validate()?;
         content.validate()?;
-        
+
         // Validate channel compatibility
-        if !recipient.compatible_channels().is_empty() && 
-           !recipient.compatible_channels().contains(&channel) {
-            return Err(NotificationDomainError::InvalidRecipient(
-                format!("Channel {:?} not compatible with recipient type", channel)
-            ));
+        if !recipient.compatible_channels().is_empty()
+            && !recipient.compatible_channels().contains(&channel)
+        {
+            return Err(NotificationDomainError::InvalidRecipient(format!(
+                "Channel {:?} not compatible with recipient type",
+                channel
+            )));
         }
-        
+
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
@@ -525,33 +539,33 @@ impl Notification {
             metadata: HashMap::new(),
         })
     }
-    
+
     /// Schedule notification for future delivery
     pub fn schedule(&mut self, scheduled_time: DateTime<Utc>) -> NotificationResult<()> {
         if scheduled_time <= Utc::now() {
             return Err(NotificationDomainError::ValidationError(
-                "Scheduled time must be in the future".to_string()
+                "Scheduled time must be in the future".to_string(),
             ));
         }
-        
+
         self.scheduled_time = Some(scheduled_time);
         self.update_status(NotificationStatus::Pending)?;
         Ok(())
     }
-    
+
     /// Set expiry time
     pub fn set_expiry(&mut self, expiry_time: DateTime<Utc>) -> NotificationResult<()> {
         if expiry_time <= Utc::now() {
             return Err(NotificationDomainError::ValidationError(
-                "Expiry time must be in the future".to_string()
+                "Expiry time must be in the future".to_string(),
             ));
         }
-        
+
         self.expiry_time = Some(expiry_time);
         self.updated_at = Utc::now();
         Ok(())
     }
-    
+
     /// Update notification status
     pub fn update_status(&mut self, new_status: NotificationStatus) -> NotificationResult<()> {
         // Validate state transition
@@ -561,11 +575,11 @@ impl Notification {
                 to: format!("{:?}", new_status),
             });
         }
-        
+
         let _old_status = self.status.clone();
         self.status = new_status;
         self.updated_at = Utc::now();
-        
+
         // Update timestamps based on status
         match &self.status {
             NotificationStatus::Sent => {
@@ -588,49 +602,49 @@ impl Notification {
             }
             _ => {}
         }
-        
+
         Ok(())
     }
-    
+
     /// Check if notification can transition to new status
     fn can_transition_to(&self, new_status: &NotificationStatus) -> bool {
         use NotificationStatus::*;
-        
+
         match (&self.status, new_status) {
             // From Draft
             (Draft, Pending | Queued | Cancelled) => true,
-            
+
             // From Pending
             (Pending, Queued | Cancelled | Expired) => true,
-            
+
             // From Queued
             (Queued, Sending | Cancelled | Expired) => true,
-            
+
             // From Sending
             (Sending, Sent | Failed | Cancelled) => true,
-            
+
             // From Sent
             (Sent, Delivered | Failed) => true,
-            
+
             // From Delivered
             (Delivered, Read) => true,
-            
+
             // From Failed
             (Failed, Retry(_) | Cancelled) => true,
-            
+
             // From Retry
             (Retry(_), Sending | Failed | Cancelled) => true,
-            
+
             // Final states cannot transition
             (Cancelled | Expired | Read, _) => false,
-            
+
             // Same status is allowed
             (status1, status2) if status1 == status2 => true,
-            
+
             _ => false,
         }
     }
-    
+
     /// Check if notification is expired
     pub fn is_expired(&self) -> bool {
         if let Some(expiry) = self.expiry_time {
@@ -639,26 +653,30 @@ impl Notification {
             false
         }
     }
-    
+
     /// Check if notification should be sent now
     pub fn should_send_now(&self) -> bool {
         if self.is_expired() {
             return false;
         }
-        
+
         match self.scheduled_time {
             Some(scheduled) => Utc::now() >= scheduled,
             None => matches!(self.status, NotificationStatus::Queued),
         }
     }
-    
+
     /// Check if notification can be retried
     pub fn can_retry(&self) -> bool {
         self.status.can_retry() && self.retry_count < self.max_retries && !self.is_expired()
     }
-    
+
     /// Convert to message for delivery
-    pub fn to_message(&self, source: Location, destination: Location) -> Message<NotificationContent> {
+    pub fn to_message(
+        &self,
+        source: Location,
+        destination: Location,
+    ) -> Message<NotificationContent> {
         Message::complete(
             source,
             destination,
@@ -667,9 +685,13 @@ impl Notification {
             self.correlation_id,
         )
     }
-    
+
     /// Add metadata
-    pub fn add_metadata<T: serde::Serialize>(&mut self, key: String, value: T) -> NotificationResult<()> {
+    pub fn add_metadata<T: serde::Serialize>(
+        &mut self,
+        key: String,
+        value: T,
+    ) -> NotificationResult<()> {
         let json_value = serde_json::to_value(value)
             .map_err(|e| NotificationDomainError::ValidationError(e.to_string()))?;
         self.metadata.insert(key, json_value);
@@ -733,18 +755,36 @@ impl NotificationEvent {
     /// Get the notification ID for this event
     pub fn notification_id(&self) -> Uuid {
         match self {
-            NotificationEvent::NotificationCreated { notification_id, .. } |
-            NotificationEvent::NotificationScheduled { notification_id, .. } |
-            NotificationEvent::NotificationQueued { notification_id, .. } |
-            NotificationEvent::NotificationSent { notification_id, .. } |
-            NotificationEvent::NotificationDelivered { notification_id, .. } |
-            NotificationEvent::NotificationRead { notification_id, .. } |
-            NotificationEvent::NotificationFailed { notification_id, .. } |
-            NotificationEvent::NotificationCancelled { notification_id, .. } |
-            NotificationEvent::NotificationExpired { notification_id, .. } => *notification_id,
+            NotificationEvent::NotificationCreated {
+                notification_id, ..
+            }
+            | NotificationEvent::NotificationScheduled {
+                notification_id, ..
+            }
+            | NotificationEvent::NotificationQueued {
+                notification_id, ..
+            }
+            | NotificationEvent::NotificationSent {
+                notification_id, ..
+            }
+            | NotificationEvent::NotificationDelivered {
+                notification_id, ..
+            }
+            | NotificationEvent::NotificationRead {
+                notification_id, ..
+            }
+            | NotificationEvent::NotificationFailed {
+                notification_id, ..
+            }
+            | NotificationEvent::NotificationCancelled {
+                notification_id, ..
+            }
+            | NotificationEvent::NotificationExpired {
+                notification_id, ..
+            } => *notification_id,
         }
     }
-    
+
     /// Get the event timestamp
     pub fn timestamp(&self) -> DateTime<Utc> {
         match self {
@@ -773,14 +813,14 @@ mod tests {
             "Test Body".to_string(),
             "test".to_string(),
         );
-        
+
         let notification = Notification::new(
             recipient,
             content,
             NotificationChannel::Email,
             NotificationPriority::Normal,
         );
-        
+
         assert!(notification.is_ok());
         let notification = notification.unwrap();
         assert_eq!(notification.status, NotificationStatus::Draft);
@@ -790,32 +830,38 @@ mod tests {
     #[test]
     fn test_notification_status_transitions() {
         let recipient = NotificationRecipient::Email("test@example.com".to_string());
-        let content = NotificationContent::new(
-            "Test".to_string(),
-            "Test".to_string(),
-            "test".to_string(),
-        );
-        
+        let content =
+            NotificationContent::new("Test".to_string(), "Test".to_string(), "test".to_string());
+
         let mut notification = Notification::new(
             recipient,
             content,
             NotificationChannel::Email,
             NotificationPriority::Normal,
-        ).unwrap();
-        
+        )
+        .unwrap();
+
         // Valid transition
-        assert!(notification.update_status(NotificationStatus::Pending).is_ok());
+        assert!(
+            notification
+                .update_status(NotificationStatus::Pending)
+                .is_ok()
+        );
         assert_eq!(notification.status, NotificationStatus::Pending);
-        
+
         // Invalid transition
-        assert!(notification.update_status(NotificationStatus::Read).is_err());
+        assert!(
+            notification
+                .update_status(NotificationStatus::Read)
+                .is_err()
+        );
     }
 
     #[test]
     fn test_recipient_validation() {
         let valid_email = NotificationRecipient::Email("test@example.com".to_string());
         assert!(valid_email.validate().is_ok());
-        
+
         let invalid_email = NotificationRecipient::Email("invalid".to_string());
         assert!(invalid_email.validate().is_err());
     }
@@ -829,7 +875,7 @@ mod tests {
             "Hello {{name}}!".to_string(),
             vec!["name".to_string()],
         );
-        
+
         assert!(template.validate().is_ok());
         assert_eq!(template.version, 1);
         assert!(template.is_active);
@@ -838,23 +884,21 @@ mod tests {
     #[test]
     fn test_notification_expiry() {
         let recipient = NotificationRecipient::Email("test@example.com".to_string());
-        let content = NotificationContent::new(
-            "Test".to_string(),
-            "Test".to_string(),
-            "test".to_string(),
-        );
-        
+        let content =
+            NotificationContent::new("Test".to_string(), "Test".to_string(), "test".to_string());
+
         let mut notification = Notification::new(
             recipient,
             content,
             NotificationChannel::Email,
             NotificationPriority::Normal,
-        ).unwrap();
-        
+        )
+        .unwrap();
+
         // Set expiry in the past
         let past_time = Utc::now() - chrono::Duration::hours(1);
         notification.expiry_time = Some(past_time);
-        
+
         assert!(notification.is_expired());
         assert!(!notification.should_send_now());
     }

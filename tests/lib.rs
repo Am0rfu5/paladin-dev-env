@@ -1,7 +1,7 @@
 // tests/lib.rs - Test library configuration
 
 //! Integration test library for paladin
-//! 
+//!
 //! This module provides common functionality for integration tests including:
 //! - Environment detection (local vs CI/CD)
 //! - Service management (Redis, MinIO)
@@ -12,6 +12,9 @@ use std::sync::Once;
 // Re-export integration test modules
 pub mod integration;
 
+// Re-export unit test modules
+pub mod unit;
+
 // Initialize logging once for all tests
 static INIT: Once = Once::new();
 
@@ -20,15 +23,14 @@ pub fn init_test_env() {
     INIT.call_once(|| {
         // Set up test logging
         if std::env::var("TEST_LOG").is_ok() {
-            env_logger::Builder::from_env(
-                env_logger::Env::default().default_filter_or("debug")
-            ).init();
+            env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug"))
+                .init();
         }
 
         unsafe {
             // Set test-specific environment variables
             std::env::set_var("RUST_BACKTRACE", "1");
-            
+
             // Ensure we're in test mode
             std::env::set_var("ENVIRONMENT", "test");
         }
@@ -54,14 +56,14 @@ pub mod timing {
         Fut: std::future::Future<Output = bool>,
     {
         let start = Instant::now();
-        
+
         while start.elapsed() < timeout {
             if condition().await {
                 return true;
             }
             sleep(check_interval).await;
         }
-        
+
         false
     }
 
@@ -83,7 +85,11 @@ pub mod generators {
 
     /// Generate test content
     pub fn test_content(size: usize) -> String {
-        format!("Test content with {} characters: {}", size, "x".repeat(size.saturating_sub(40)))
+        format!(
+            "Test content with {} characters: {}",
+            size,
+            "x".repeat(size.saturating_sub(40))
+        )
     }
 
     /// Generate binary test data
@@ -118,13 +124,16 @@ pub mod assertions {
         minio_endpoint: &str,
     ) -> TestResult {
         // Check Redis
-        if !crate::integration::TestEnvironment::check_service_availability(redis_host, redis_port) {
+        if !crate::integration::TestEnvironment::check_service_availability(redis_host, redis_port)
+        {
             return Err(format!("Redis not available at {}:{}", redis_host, redis_port).into());
         }
 
         // Check MinIO
-        let (minio_host, minio_port) = crate::integration::TestEnvironment::parse_endpoint(minio_endpoint);
-        if !crate::integration::TestEnvironment::check_service_availability(&minio_host, minio_port) {
+        let (minio_host, minio_port) =
+            crate::integration::TestEnvironment::parse_endpoint(minio_endpoint);
+        if !crate::integration::TestEnvironment::check_service_availability(&minio_host, minio_port)
+        {
             return Err(format!("MinIO not available at {}", minio_endpoint).into());
         }
 
@@ -134,8 +143,8 @@ pub mod assertions {
 
 /// Parallel test execution utilities
 pub mod parallel {
-    use futures::future::try_join_all;
     use crate::TestResult;
+    use futures::future::try_join_all;
 
     /// Run tests in parallel with controlled concurrency
     pub async fn run_parallel_tests<F, Fut>(
@@ -147,30 +156,33 @@ pub mod parallel {
         Fut: std::future::Future<Output = TestResult> + Send,
     {
         let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(max_concurrency));
-        
-        let tasks: Vec<_> = tests.into_iter().map(|(name, test)| {
-            let semaphore = semaphore.clone();
-            let name = name.to_string();
-            
-            tokio::spawn(async move {
-                let _permit = semaphore.acquire().await.unwrap();
-                println!("🧪 Running test: {}", name);
-                
-                match test().await {
-                    Ok(_) => {
-                        println!("✅ Test passed: {}", name);
-                        Ok(())
+
+        let tasks: Vec<_> = tests
+            .into_iter()
+            .map(|(name, test)| {
+                let semaphore = semaphore.clone();
+                let name = name.to_string();
+
+                tokio::spawn(async move {
+                    let _permit = semaphore.acquire().await.unwrap();
+                    println!("🧪 Running test: {}", name);
+
+                    match test().await {
+                        Ok(_) => {
+                            println!("✅ Test passed: {}", name);
+                            Ok(())
+                        }
+                        Err(e) => {
+                            println!("❌ Test failed: {} - {}", name, e);
+                            Err(e)
+                        }
                     }
-                    Err(e) => {
-                        println!("❌ Test failed: {} - {}", name, e);
-                        Err(e)
-                    }
-                }
+                })
             })
-        }).collect();
+            .collect();
 
         let results: Result<Vec<_>, _> = try_join_all(tasks).await;
-        
+
         match results {
             Ok(test_results) => {
                 for result in test_results {
@@ -228,8 +240,10 @@ pub mod performance {
         let total_duration = start.elapsed();
         let avg_duration = total_duration / iterations as u32;
 
-        println!("📊 Benchmark {}: {} iterations, total: {:?}, avg: {:?}",
-                name, iterations, total_duration, avg_duration);
+        println!(
+            "📊 Benchmark {}: {} iterations, total: {:?}, avg: {:?}",
+            name, iterations, total_duration, avg_duration
+        );
 
         (total_duration, results)
     }
@@ -239,7 +253,7 @@ pub mod performance {
 #[cfg(test)]
 mod test_config {
     use chrono::Duration;
-    
+
     /// Test configuration that adapts to environment
     pub struct TestConfig {
         pub use_external_services: bool,
@@ -258,7 +272,8 @@ mod test_config {
                 use_external_services: std::env::var("USE_EXTERNAL_TEST_SERVICES")
                     .map(|v| v.to_lowercase() == "true")
                     .unwrap_or(is_ci),
-                redis_host: std::env::var("TEST_REDIS_HOST").unwrap_or_else(|_| "localhost".to_string()),
+                redis_host: std::env::var("TEST_REDIS_HOST")
+                    .unwrap_or_else(|_| "localhost".to_string()),
                 redis_port: std::env::var("TEST_REDIS_PORT")
                     .unwrap_or_else(|_| "6380".to_string())
                     .parse()

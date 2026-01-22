@@ -1,13 +1,13 @@
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
-use serde::{Deserialize, Serialize};
 
-use crate::core::base::service::analysis_service::{
-    AnalysisService, AnalysisResult, AnalysisError, AnalysisConfig
-};
 use crate::application::ports::output::llm_port::{LlmPort, LlmRequest};
-use crate::core::platform::container::prompt::PromptItem;
+use crate::core::base::service::analysis_service::{
+    AnalysisConfig, AnalysisError, AnalysisResult, AnalysisService,
+};
 use crate::core::platform::container::content::ContentItem;
+use crate::core::platform::container::prompt::PromptItem;
 
 #[derive(Debug, Clone)]
 pub struct LlmAnalysisConfig {
@@ -20,10 +20,14 @@ pub struct LlmAnalysisConfig {
 impl AnalysisConfig for LlmAnalysisConfig {
     fn validate(&self) -> Result<(), AnalysisError> {
         if self.model.is_empty() {
-            return Err(AnalysisError::InvalidInput("Model name cannot be empty".to_string()));
+            return Err(AnalysisError::InvalidInput(
+                "Model name cannot be empty".to_string(),
+            ));
         }
         if self.timeout_seconds == 0 {
-            return Err(AnalysisError::InvalidInput("Timeout must be greater than 0".to_string()));
+            return Err(AnalysisError::InvalidInput(
+                "Timeout must be greater than 0".to_string(),
+            ));
         }
         Ok(())
     }
@@ -59,7 +63,10 @@ pub struct LlmAnalysisService {
 impl std::fmt::Debug for LlmAnalysisService {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LlmAnalysisService")
-            .field("llm_port", &format!("Arc<dyn LlmPort: {}>", self.llm_port.get_provider_name()))
+            .field(
+                "llm_port",
+                &format!("Arc<dyn LlmPort: {}>", self.llm_port.get_provider_name()),
+            )
             .finish()
     }
 }
@@ -70,12 +77,16 @@ impl LlmAnalysisService {
     }
 
     /// Async version of analyze that should be used when possible
-    pub async fn analyze_async(&self, input: &LlmAnalysisInput, config: &LlmAnalysisConfig) -> Result<AnalysisResult<LlmAnalysisOutput>, AnalysisError> {
+    pub async fn analyze_async(
+        &self,
+        input: &LlmAnalysisInput,
+        config: &LlmAnalysisConfig,
+    ) -> Result<AnalysisResult<LlmAnalysisOutput>, AnalysisError> {
         let start_time = std::time::Instant::now();
-        
+
         // Validate configuration
         config.validate()?;
-        
+
         // Validate input
         self.validate_input(input)?;
 
@@ -95,7 +106,7 @@ impl LlmAnalysisService {
             match self.llm_port.generate(request.clone()).await {
                 Ok(response) => {
                     let processing_time = start_time.elapsed().as_millis() as u64;
-                    
+
                     let output = LlmAnalysisOutput {
                         content: response.content,
                         model_used: response.model,
@@ -117,29 +128,37 @@ impl LlmAnalysisService {
                         metadata: std::collections::HashMap::new(),
                         processing_time_ms: processing_time,
                     });
-                },
+                }
                 Err(e) => {
                     last_error = Some(e);
                     if attempt < config.max_retries {
-                        tokio::time::sleep(tokio::time::Duration::from_secs(2_u64.pow(attempt))).await;
+                        tokio::time::sleep(tokio::time::Duration::from_secs(2_u64.pow(attempt)))
+                            .await;
                     }
                 }
             }
         }
 
-        Err(AnalysisError::ProcessingError(
-            format!("LLM analysis failed after {} retries: {:?}", config.max_retries, last_error)
-        ))
+        Err(AnalysisError::ProcessingError(format!(
+            "LLM analysis failed after {} retries: {:?}",
+            config.max_retries, last_error
+        )))
     }
 }
 
 #[async_trait::async_trait]
-impl AnalysisService<LlmAnalysisInput, LlmAnalysisOutput, LlmAnalysisConfig> for LlmAnalysisService {
-    fn analyze(&self, _input: &LlmAnalysisInput, _config: &LlmAnalysisConfig) -> Result<AnalysisResult<LlmAnalysisOutput>, AnalysisError> {
+impl AnalysisService<LlmAnalysisInput, LlmAnalysisOutput, LlmAnalysisConfig>
+    for LlmAnalysisService
+{
+    fn analyze(
+        &self,
+        _input: &LlmAnalysisInput,
+        _config: &LlmAnalysisConfig,
+    ) -> Result<AnalysisResult<LlmAnalysisOutput>, AnalysisError> {
         // For sync version, return an error or use a different approach
         // This avoids the nested runtime issue
         Err(AnalysisError::ProcessingError(
-            "Sync analysis not supported. Use analyze_async for proper async handling.".to_string()
+            "Sync analysis not supported. Use analyze_async for proper async handling.".to_string(),
         ))
     }
 
@@ -152,9 +171,11 @@ impl AnalysisService<LlmAnalysisInput, LlmAnalysisOutput, LlmAnalysisConfig> for
         match input.prompt.prompt_type() {
             crate::core::platform::container::prompt::PromptType::Text(text_prompt) => {
                 if text_prompt.content.is_empty() {
-                    return Err(AnalysisError::InvalidInput("Prompt content cannot be empty".to_string()));
+                    return Err(AnalysisError::InvalidInput(
+                        "Prompt content cannot be empty".to_string(),
+                    ));
                 }
-            },
+            }
             _ => {} // Other prompt types can be added as needed
         }
         Ok(())

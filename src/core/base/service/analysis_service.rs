@@ -1,13 +1,13 @@
 /*
 Analysis Service
 
-This is the generalized base service for performing analysis of containers in the platform. It provides a types and traits on top of which use case level services that perform analysis can build can build.  
+This is the generalized base service for performing analysis of containers in the platform. It provides a types and traits on top of which use case level services that perform analysis can build can build.
 */
-use std::fmt::Debug;
-use serde::{Serialize, Deserialize};
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Error)]
 pub enum AnalysisError {
@@ -42,16 +42,20 @@ pub trait AnalysisConfig: Debug + Clone {
 }
 
 /// Base trait for all analysis services
-pub trait AnalysisService<TInput, TOutput, TConfig> 
-where 
+pub trait AnalysisService<TInput, TOutput, TConfig>
+where
     TInput: Debug + Clone,
     TOutput: Debug + Clone + Serialize,
     TConfig: AnalysisConfig,
 {
-    fn analyze(&self, input: &TInput, config: &TConfig) -> Result<AnalysisResult<TOutput>, AnalysisError>;
-    
+    fn analyze(
+        &self,
+        input: &TInput,
+        config: &TConfig,
+    ) -> Result<AnalysisResult<TOutput>, AnalysisError>;
+
     fn get_analysis_type(&self) -> &'static str;
-    
+
     fn validate_input(&self, input: &TInput) -> Result<(), AnalysisError>;
 }
 
@@ -60,5 +64,8 @@ pub trait AnalysisRepository<T> {
     fn store_result(&self, result: &AnalysisResult<T>) -> Result<(), AnalysisError>;
     fn get_result(&self, id: Uuid) -> Result<Option<AnalysisResult<T>>, AnalysisError>;
     fn get_results_by_hash(&self, hash: &str) -> Result<Vec<AnalysisResult<T>>, AnalysisError>;
-    fn get_results_by_type(&self, analysis_type: &str) -> Result<Vec<AnalysisResult<T>>, AnalysisError>;
+    fn get_results_by_type(
+        &self,
+        analysis_type: &str,
+    ) -> Result<Vec<AnalysisResult<T>>, AnalysisError>;
 }

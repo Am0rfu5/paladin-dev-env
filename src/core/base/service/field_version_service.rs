@@ -10,12 +10,14 @@ are versioned, similar to Drupal's field-level revision system.
 */
 
 use crate::core::base::entity::field::Field;
-use crate::core::base::service::node_version_service::{VersioningError, ChangeType, HashAlgorithm};
-use uuid::Uuid;
+use crate::core::base::service::node_version_service::{
+    ChangeType, HashAlgorithm, VersioningError,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FieldVersion<T> {
@@ -60,12 +62,33 @@ pub struct FieldVersionHistory<T> {
 /// Field Version Repository trait
 pub trait FieldVersionRepository<T> {
     fn save_field_version(&self, version: &FieldVersion<T>) -> Result<(), VersioningError>;
-    fn get_field_version(&self, field_id: Uuid, version_number: u32) -> Result<Option<FieldVersion<T>>, VersioningError>;
-    fn get_current_field_version(&self, field_id: Uuid) -> Result<Option<FieldVersion<T>>, VersioningError>;
-    fn get_field_version_history(&self, field_id: Uuid) -> Result<FieldVersionHistory<T>, VersioningError>;
-    fn get_node_field_versions(&self, node_id: Uuid) -> Result<Vec<FieldVersion<T>>, VersioningError>;
-    fn delete_field_version(&self, field_id: Uuid, version_number: u32) -> Result<(), VersioningError>;
-    fn purge_old_field_versions(&self, field_id: Uuid, keep_count: u32) -> Result<u32, VersioningError>;
+    fn get_field_version(
+        &self,
+        field_id: Uuid,
+        version_number: u32,
+    ) -> Result<Option<FieldVersion<T>>, VersioningError>;
+    fn get_current_field_version(
+        &self,
+        field_id: Uuid,
+    ) -> Result<Option<FieldVersion<T>>, VersioningError>;
+    fn get_field_version_history(
+        &self,
+        field_id: Uuid,
+    ) -> Result<FieldVersionHistory<T>, VersioningError>;
+    fn get_node_field_versions(
+        &self,
+        node_id: Uuid,
+    ) -> Result<Vec<FieldVersion<T>>, VersioningError>;
+    fn delete_field_version(
+        &self,
+        field_id: Uuid,
+        version_number: u32,
+    ) -> Result<(), VersioningError>;
+    fn purge_old_field_versions(
+        &self,
+        field_id: Uuid,
+        keep_count: u32,
+    ) -> Result<u32, VersioningError>;
 }
 
 /// Field Version Service
@@ -174,7 +197,9 @@ where
         if self.config.auto_purge_enabled {
             if let Some(max_versions) = self.config.max_versions_per_field {
                 if current_version_number > max_versions {
-                    let _ = self.repository.purge_old_field_versions(field.fid, max_versions);
+                    let _ = self
+                        .repository
+                        .purge_old_field_versions(field.fid, max_versions);
                 }
             }
         }
@@ -183,22 +208,35 @@ where
     }
 
     /// Get a specific version of a field
-    pub fn get_field_version(&self, field_id: Uuid, version_number: u32) -> Result<Option<FieldVersion<T>>, VersioningError> {
+    pub fn get_field_version(
+        &self,
+        field_id: Uuid,
+        version_number: u32,
+    ) -> Result<Option<FieldVersion<T>>, VersioningError> {
         self.repository.get_field_version(field_id, version_number)
     }
 
     /// Get the current (latest) version of a field
-    pub fn get_current_field_version(&self, field_id: Uuid) -> Result<Option<FieldVersion<T>>, VersioningError> {
+    pub fn get_current_field_version(
+        &self,
+        field_id: Uuid,
+    ) -> Result<Option<FieldVersion<T>>, VersioningError> {
         self.repository.get_current_field_version(field_id)
     }
 
     /// Get complete version history for a field
-    pub fn get_field_version_history(&self, field_id: Uuid) -> Result<FieldVersionHistory<T>, VersioningError> {
+    pub fn get_field_version_history(
+        &self,
+        field_id: Uuid,
+    ) -> Result<FieldVersionHistory<T>, VersioningError> {
         self.repository.get_field_version_history(field_id)
     }
 
     /// Get all field versions for a specific node
-    pub fn get_node_field_versions(&self, node_id: Uuid) -> Result<Vec<FieldVersion<T>>, VersioningError> {
+    pub fn get_node_field_versions(
+        &self,
+        node_id: Uuid,
+    ) -> Result<Vec<FieldVersion<T>>, VersioningError> {
         self.repository.get_node_field_versions(node_id)
     }
 
@@ -209,11 +247,19 @@ where
         version1: u32,
         version2: u32,
     ) -> Result<FieldVersionComparison<T>, VersioningError> {
-        let v1 = self.repository.get_field_version(field_id, version1)?
-            .ok_or_else(|| VersioningError::VersionNotFound(format!("{}:{}", field_id, version1)))?;
-        
-        let v2 = self.repository.get_field_version(field_id, version2)?
-            .ok_or_else(|| VersioningError::VersionNotFound(format!("{}:{}", field_id, version2)))?;
+        let v1 = self
+            .repository
+            .get_field_version(field_id, version1)?
+            .ok_or_else(|| {
+                VersioningError::VersionNotFound(format!("{}:{}", field_id, version1))
+            })?;
+
+        let v2 = self
+            .repository
+            .get_field_version(field_id, version2)?
+            .ok_or_else(|| {
+                VersioningError::VersionNotFound(format!("{}:{}", field_id, version2))
+            })?;
 
         let time_diff = v2.created_at.signed_duration_since(v1.created_at);
         let value_changed = self.values_differ(&v1.field_value, &v2.field_value)?;
@@ -239,8 +285,12 @@ where
         version_number: u32,
         restored_by: Option<String>,
     ) -> Result<FieldVersion<T>, VersioningError> {
-        let version_to_restore = self.repository.get_field_version(field_id, version_number)?
-            .ok_or_else(|| VersioningError::VersionNotFound(format!("{}:{}", field_id, version_number)))?;
+        let version_to_restore = self
+            .repository
+            .get_field_version(field_id, version_number)?
+            .ok_or_else(|| {
+                VersioningError::VersionNotFound(format!("{}:{}", field_id, version_number))
+            })?;
 
         let field = Field {
             fid: field_id,
@@ -262,21 +312,21 @@ where
 
         match self.config.hash_algorithm {
             HashAlgorithm::Sha256 => {
-                use sha2::{Sha256, Digest};
+                use sha2::{Digest, Sha256};
                 let hash = Sha256::digest(&serialized);
                 Ok(format!("{:x}", hash))
-            },
+            }
             HashAlgorithm::Blake3 => {
                 let hash = blake3::hash(&serialized);
                 Ok(hash.to_hex().to_string())
-            },
+            }
             HashAlgorithm::Xxhash => {
                 use std::collections::hash_map::DefaultHasher;
                 use std::hash::{Hash, Hasher};
                 let mut hasher = DefaultHasher::new();
                 serialized.hash(&mut hasher);
                 Ok(format!("{:x}", hasher.finish()))
-            },
+            }
         }
     }
 
@@ -330,13 +380,17 @@ where
     T: Clone,
 {
     fn save_field_version(&self, version: &FieldVersion<T>) -> Result<(), VersioningError> {
-        let mut versions = self.versions.write()
+        let mut versions = self
+            .versions
+            .write()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        let mut current_versions = self.current_versions.write()
+        let mut current_versions = self
+            .current_versions
+            .write()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
 
         versions.insert((version.field_id, version.version_number), version.clone());
-        
+
         if version.metadata.is_current {
             current_versions.insert(version.field_id, version.version_number);
         }
@@ -344,16 +398,29 @@ where
         Ok(())
     }
 
-    fn get_field_version(&self, field_id: Uuid, version_number: u32) -> Result<Option<FieldVersion<T>>, VersioningError> {
-        let versions = self.versions.read()
+    fn get_field_version(
+        &self,
+        field_id: Uuid,
+        version_number: u32,
+    ) -> Result<Option<FieldVersion<T>>, VersioningError> {
+        let versions = self
+            .versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
         Ok(versions.get(&(field_id, version_number)).cloned())
     }
 
-    fn get_current_field_version(&self, field_id: Uuid) -> Result<Option<FieldVersion<T>>, VersioningError> {
-        let current_versions = self.current_versions.read()
+    fn get_current_field_version(
+        &self,
+        field_id: Uuid,
+    ) -> Result<Option<FieldVersion<T>>, VersioningError> {
+        let current_versions = self
+            .current_versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        let versions = self.versions.read()
+        let versions = self
+            .versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
 
         if let Some(&current_version_number) = current_versions.get(&field_id) {
@@ -363,10 +430,17 @@ where
         }
     }
 
-    fn get_field_version_history(&self, field_id: Uuid) -> Result<FieldVersionHistory<T>, VersioningError> {
-        let versions = self.versions.read()
+    fn get_field_version_history(
+        &self,
+        field_id: Uuid,
+    ) -> Result<FieldVersionHistory<T>, VersioningError> {
+        let versions = self
+            .versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        let current_versions = self.current_versions.read()
+        let current_versions = self
+            .current_versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
 
         let mut field_versions: Vec<FieldVersion<T>> = versions
@@ -379,7 +453,10 @@ where
 
         let current_version = current_versions.get(&field_id).copied().unwrap_or(0);
         let total_versions = field_versions.len() as u32;
-        let node_id = field_versions.first().map(|v| v.node_id).unwrap_or_else(Uuid::new_v4);
+        let node_id = field_versions
+            .first()
+            .map(|v| v.node_id)
+            .unwrap_or_else(Uuid::new_v4);
 
         Ok(FieldVersionHistory {
             field_id,
@@ -390,8 +467,13 @@ where
         })
     }
 
-    fn get_node_field_versions(&self, node_id: Uuid) -> Result<Vec<FieldVersion<T>>, VersioningError> {
-        let versions = self.versions.read()
+    fn get_node_field_versions(
+        &self,
+        node_id: Uuid,
+    ) -> Result<Vec<FieldVersion<T>>, VersioningError> {
+        let versions = self
+            .versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
 
         let node_field_versions: Vec<FieldVersion<T>> = versions
@@ -403,17 +485,27 @@ where
         Ok(node_field_versions)
     }
 
-    fn delete_field_version(&self, field_id: Uuid, version_number: u32) -> Result<(), VersioningError> {
-        let mut versions = self.versions.write()
+    fn delete_field_version(
+        &self,
+        field_id: Uuid,
+        version_number: u32,
+    ) -> Result<(), VersioningError> {
+        let mut versions = self
+            .versions
+            .write()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        
+
         versions.remove(&(field_id, version_number));
         Ok(())
     }
 
-    fn purge_old_field_versions(&self, field_id: Uuid, keep_count: u32) -> Result<u32, VersioningError> {
+    fn purge_old_field_versions(
+        &self,
+        field_id: Uuid,
+        keep_count: u32,
+    ) -> Result<u32, VersioningError> {
         let history = self.get_field_version_history(field_id)?;
-        
+
         if history.total_versions <= keep_count {
             return Ok(0);
         }
@@ -441,12 +533,14 @@ mod tests {
 
         let field = Field::new("test_value".to_string());
 
-        let version = service.create_field_version(
-            &field,
-            ChangeType::Created,
-            Some("test_user".to_string()),
-            Some("Initial field creation".to_string()),
-        ).unwrap();
+        let version = service
+            .create_field_version(
+                &field,
+                ChangeType::Created,
+                Some("test_user".to_string()),
+                Some("Initial field creation".to_string()),
+            )
+            .unwrap();
 
         assert_eq!(version.version_number, 1);
         assert_eq!(version.field_id, field.fid);
@@ -461,11 +555,15 @@ mod tests {
         let mut field = Field::new("original".to_string());
 
         // Create initial version
-        service.create_field_version(&field, ChangeType::Created, None, None).unwrap();
+        service
+            .create_field_version(&field, ChangeType::Created, None, None)
+            .unwrap();
 
         // Update field value
         field.value = "updated".to_string();
-        service.create_field_version(&field, ChangeType::Updated, None, None).unwrap();
+        service
+            .create_field_version(&field, ChangeType::Updated, None, None)
+            .unwrap();
 
         let history = service.get_field_version_history(field.fid).unwrap();
         assert_eq!(history.total_versions, 2);

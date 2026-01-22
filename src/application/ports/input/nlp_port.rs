@@ -1,4 +1,4 @@
-/* 
+/*
 NLP port
 
 A port that defines how the application interacts with the NLP (Natural Language Processing) model.

@@ -1,10 +1,10 @@
-use crate::core::platform::container::content_list::ContentList;
-use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
-use crate::application::use_cases::content::content_list_fetching_service::ContentListFetchingService;
-use crate::infrastructure::adapters::input::http_content_fetcher::HttpContentFetcher;
 use crate::application::use_cases::content::content_fetching_service::ContentFetchingService;
-use url::Url;
+use crate::application::use_cases::content::content_list_fetching_service::ContentListFetchingService;
+use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
+use crate::core::platform::container::content_list::ContentList;
+use crate::infrastructure::adapters::input::http_content_fetcher::HttpContentFetcher;
 use serde::Deserialize;
+use url::Url;
 use urlencoding;
 
 #[derive(Debug, Clone)]
@@ -70,29 +70,32 @@ impl NewsApiFetcher {
         )
     }
 
-    fn create_content_item_from_article(&self, article: &NewsArticle) -> Result<ContentItem, String> {
+    fn create_content_item_from_article(
+        &self,
+        article: &NewsArticle,
+    ) -> Result<ContentItem, String> {
         // Create basic text content with article metadata
         let text_content = TextContent::new(None, article.content.clone())
             .map_err(|e| format!("Failed to create text content: {}", e))?;
-        
+
         let content_type = ContentType::Text(text_content);
         let mut content_item = ContentItem::new(content_type)
             .map_err(|e| format!("Failed to create content item: {}", e))?;
 
         // Set article metadata using setter methods
-        let article_url = Url::parse(&article.url)
-            .map_err(|e| format!("Invalid article URL: {}", e))?;
-        
+        let article_url =
+            Url::parse(&article.url).map_err(|e| format!("Invalid article URL: {}", e))?;
+
         content_item.set_url(Some(article_url.clone()));
         content_item.set_source_url(Some(article_url));
         content_item.set_title(Some(article.title.clone()));
         content_item.set_description(article.description.clone());
         content_item.set_author(article.author.clone());
         content_item.set_source(Some(article.source.name.clone()));
-        
+
         // Note: source_id and pub_date are not available in the current ContentItem API
         // These would need to be added to the ContentItem if needed
-        
+
         // Add news-related tags
         let mut tags = vec!["news".to_string(), article.source.name.clone()];
         if let Some(author) = &article.author {
@@ -107,19 +110,16 @@ impl NewsApiFetcher {
         if let Some(ref content_fetcher) = self.content_fetcher {
             // Use HTTP content fetcher to get full article content
             let mut content_item = content_fetcher.fetch_content(&article.url)?;
-            
+
             // Override with news API metadata which might be more accurate
             content_item.set_title(Some(article.title.clone()));
             content_item.set_description(article.description.clone());
             content_item.set_author(article.author.clone());
             content_item.set_source(Some(article.source.name.clone()));
-            
+
             // Add news-specific tags
             let mut existing_tags = content_item.tags().cloned().unwrap_or_default();
-            existing_tags.extend(vec![
-                "news".to_string(),
-                article.source.name.clone(),
-            ]);
+            existing_tags.extend(vec!["news".to_string(), article.source.name.clone()]);
             if let Some(author) = &article.author {
                 existing_tags.push(format!("author:{}", author));
             }
@@ -136,8 +136,9 @@ impl NewsApiFetcher {
 impl ContentListFetchingService for NewsApiFetcher {
     fn fetch_content_list(&self, query: &str) -> Result<ContentList, String> {
         let url = self.build_news_api_url(query, 20, 1);
-        
-        let response = self.http_client
+
+        let response = self
+            .http_client
             .get(&url)
             .header("User-Agent", "paladin-content-fetcher/1.0")
             .send()
@@ -152,17 +153,20 @@ impl ContentListFetchingService for NewsApiFetcher {
             .map_err(|e| format!("Failed to parse News API response: {}", e))?;
 
         if news_response.status != "ok" {
-            return Err(format!("News API returned error status: {}", news_response.status));
+            return Err(format!(
+                "News API returned error status: {}",
+                news_response.status
+            ));
         }
 
         // Create content list
         let mut content_list = ContentList::new();
-        
+
         // Set metadata
         let list_name = format!("News: {}", query);
         let list_url = Url::parse(&format!("newsapi://query/{}", urlencoding::encode(query)))
             .map_err(|e| format!("Failed to create list URL: {}", e))?;
-        
+
         content_list.set_name(Some(list_name));
         content_list.set_url(Some(list_url));
         content_list.set_source(Some("news_api".to_string()));
@@ -174,7 +178,10 @@ impl ContentListFetchingService for NewsApiFetcher {
                     content_list.add_item(content_item);
                 }
                 Err(e) => {
-                    eprintln!("Failed to fetch content for article '{}': {}", article.title, e);
+                    eprintln!(
+                        "Failed to fetch content for article '{}': {}",
+                        article.title, e
+                    );
                     // For failed items, we could create a placeholder content item
                     // or implement a retry mechanism later
                     if let Ok(placeholder_item) = self.create_content_item_from_article(article) {
@@ -231,10 +238,11 @@ mod tests {
     #[test]
     fn test_fetch_content_list_success() {
         let mut server = Server::new();
-        
+
         // Mock the News API response
         let mock_response = create_mock_news_response();
-        let _mock = server.mock("GET", mockito::Matcher::Any)
+        let _mock = server
+            .mock("GET", mockito::Matcher::Any)
             .with_status(200)
             .with_header("content-type", "application/json")
             .with_body(mock_response.to_string())
@@ -242,7 +250,7 @@ mod tests {
 
         // Create fetcher with mock server URL as base (in real implementation, you'd inject the base URL)
         let _fetcher = NewsApiFetcher::new("test-api-key".to_string());
-        
+
         // Note: This test would need the fetcher to accept a base URL for the API
         // For now, we'll test the parsing logic separately
     }
@@ -268,9 +276,12 @@ mod tests {
 
         assert!(result.is_ok());
         let content_item = result.unwrap();
-        
+
         assert_eq!(content_item.title(), Some(&"Test Title".to_string()));
-        assert_eq!(content_item.description(), Some(&"Test Description".to_string()));
+        assert_eq!(
+            content_item.description(),
+            Some(&"Test Description".to_string())
+        );
         assert_eq!(content_item.author(), Some(&"Test Author".to_string()));
         assert_eq!(content_item.source(), Some(&"Test Source".to_string()));
         assert!(content_item.tags().unwrap().contains(&"news".to_string()));
@@ -280,7 +291,7 @@ mod tests {
     fn test_build_news_api_url() {
         let fetcher = NewsApiFetcher::new("test-key".to_string());
         let url = fetcher.build_news_api_url("rust programming", 10, 1);
-        
+
         assert!(url.contains("q=rust%20programming"));
         assert!(url.contains("pageSize=10"));
         assert!(url.contains("page=1"));
@@ -290,9 +301,9 @@ mod tests {
     #[test]
     fn test_with_content_fetcher() {
         let http_fetcher = HttpContentFetcher::new();
-        let fetcher = NewsApiFetcher::new("test-key".to_string())
-            .with_content_fetcher(http_fetcher);
-        
+        let fetcher =
+            NewsApiFetcher::new("test-key".to_string()).with_content_fetcher(http_fetcher);
+
         assert!(fetcher.content_fetcher.is_some());
     }
 
@@ -300,7 +311,7 @@ mod tests {
     fn test_parse_news_api_response() {
         let json_response = create_mock_news_response();
         let news_response: Result<NewsApiResponse, _> = serde_json::from_value(json_response);
-        
+
         assert!(news_response.is_ok());
         let response = news_response.unwrap();
         assert_eq!(response.status, "ok");

@@ -1,14 +1,14 @@
 use crate::application::ports::output::content_delivery_port::{
-    ContentDeliveryService, BatchContentDeliveryService, DeliveryRequest, DeliveryResponse,
-    DeliveryMethod, ContentPayload, DeliveryStatus, DeliveryStats, ContentDeliveryError
+    BatchContentDeliveryService, ContentDeliveryError, ContentDeliveryService, ContentPayload,
+    DeliveryMethod, DeliveryRequest, DeliveryResponse, DeliveryStats, DeliveryStatus,
 };
-use actix_web::{web, HttpResponse, Result as ActixResult};
+use actix_web::{HttpResponse, Result as ActixResult, web};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use tokio::time::{Duration, sleep};
 use uuid::Uuid;
-use chrono::Utc;
-use tokio::time::{sleep, Duration};
 
 #[derive(Debug, Clone)]
 pub struct ApiContentDeliverer {
@@ -52,9 +52,12 @@ impl ApiContentDeliverer {
     }
 
     // Add async version of deliver_content for internal use and testing
-    pub async fn deliver_content_async(&self, request: DeliveryRequest) -> Result<DeliveryResponse, ContentDeliveryError> {
+    pub async fn deliver_content_async(
+        &self,
+        request: DeliveryRequest,
+    ) -> Result<DeliveryResponse, ContentDeliveryError> {
         let delivery_id = Uuid::new_v4();
-        
+
         let result = self.delivery_with_retry(&request).await;
 
         let (status, attempt_count, error) = match result {
@@ -71,7 +74,12 @@ impl ApiContentDeliverer {
         }
     }
 
-    async fn deliver_http(&self, endpoint: &str, headers: &Option<HashMap<String, String>>, payload: &ContentPayload) -> Result<(), ContentDeliveryError> {
+    async fn deliver_http(
+        &self,
+        endpoint: &str,
+        headers: &Option<HashMap<String, String>>,
+        payload: &ContentPayload,
+    ) -> Result<(), ContentDeliveryError> {
         let mut request_builder = self.http_client.post(endpoint);
 
         // Add custom headers
@@ -100,13 +108,23 @@ impl ApiContentDeliverer {
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(ContentDeliveryError::DeliveryFailed(
-                format!("HTTP {} - {}", response.status(), response.status().canonical_reason().unwrap_or("Unknown error"))
-            ))
+            Err(ContentDeliveryError::DeliveryFailed(format!(
+                "HTTP {} - {}",
+                response.status(),
+                response
+                    .status()
+                    .canonical_reason()
+                    .unwrap_or("Unknown error")
+            )))
         }
     }
 
-    async fn deliver_webhook(&self, url: &str, method: &str, payload: &ContentPayload) -> Result<(), ContentDeliveryError> {
+    async fn deliver_webhook(
+        &self,
+        url: &str,
+        method: &str,
+        payload: &ContentPayload,
+    ) -> Result<(), ContentDeliveryError> {
         let json_payload = serde_json::to_value(payload)
             .map_err(|e| ContentDeliveryError::SerializationError(e.to_string()))?;
 
@@ -114,7 +132,12 @@ impl ApiContentDeliverer {
             "POST" => self.http_client.post(url),
             "PUT" => self.http_client.put(url),
             "PATCH" => self.http_client.patch(url),
-            _ => return Err(ContentDeliveryError::InvalidDeliveryMethod(format!("Unsupported HTTP method: {}", method))),
+            _ => {
+                return Err(ContentDeliveryError::InvalidDeliveryMethod(format!(
+                    "Unsupported HTTP method: {}",
+                    method
+                )));
+            }
         };
 
         let response = request_builder
@@ -126,42 +149,59 @@ impl ApiContentDeliverer {
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(ContentDeliveryError::DeliveryFailed(
-                format!("Webhook delivery failed: HTTP {}", response.status())
-            ))
+            Err(ContentDeliveryError::DeliveryFailed(format!(
+                "Webhook delivery failed: HTTP {}",
+                response.status()
+            )))
         }
     }
 
-    async fn execute_delivery(&self, request: &DeliveryRequest) -> Result<(), ContentDeliveryError> {
+    async fn execute_delivery(
+        &self,
+        request: &DeliveryRequest,
+    ) -> Result<(), ContentDeliveryError> {
         match &request.delivery_method {
             DeliveryMethod::Http { endpoint, headers } => {
-                self.deliver_http(endpoint, headers, &request.content_payload).await
-            },
+                self.deliver_http(endpoint, headers, &request.content_payload)
+                    .await
+            }
             DeliveryMethod::Webhook { url, method } => {
-                self.deliver_webhook(url, method, &request.content_payload).await
-            },
+                self.deliver_webhook(url, method, &request.content_payload)
+                    .await
+            }
             DeliveryMethod::Email { .. } => {
                 // Email delivery would be implemented here
-                Err(ContentDeliveryError::DeliveryFailed("Email delivery not implemented".to_string()))
-            },
+                Err(ContentDeliveryError::DeliveryFailed(
+                    "Email delivery not implemented".to_string(),
+                ))
+            }
             DeliveryMethod::Push { .. } => {
                 // Push notification delivery would be implemented here
-                Err(ContentDeliveryError::DeliveryFailed("Push notification delivery not implemented".to_string()))
-            },
+                Err(ContentDeliveryError::DeliveryFailed(
+                    "Push notification delivery not implemented".to_string(),
+                ))
+            }
             DeliveryMethod::Sms { .. } => {
                 // SMS delivery would be implemented here
-                Err(ContentDeliveryError::DeliveryFailed("SMS delivery not implemented".to_string()))
-            },
+                Err(ContentDeliveryError::DeliveryFailed(
+                    "SMS delivery not implemented".to_string(),
+                ))
+            }
             DeliveryMethod::WebSocket { .. } => {
                 // WebSocket delivery would be implemented here
-                Err(ContentDeliveryError::DeliveryFailed("WebSocket delivery not implemented".to_string()))
-            },
+                Err(ContentDeliveryError::DeliveryFailed(
+                    "WebSocket delivery not implemented".to_string(),
+                ))
+            }
         }
     }
 
-    async fn delivery_with_retry(&self, request: &DeliveryRequest) -> Result<u32, ContentDeliveryError> {
+    async fn delivery_with_retry(
+        &self,
+        request: &DeliveryRequest,
+    ) -> Result<u32, ContentDeliveryError> {
         let mut last_error = None;
-        
+
         for attempt in 1..=self.max_retries {
             match self.execute_delivery(request).await {
                 Ok(()) => return Ok(attempt),
@@ -174,11 +214,23 @@ impl ApiContentDeliverer {
             }
         }
 
-        Err(last_error.unwrap_or(ContentDeliveryError::DeliveryFailed("Unknown error".to_string())))
+        Err(last_error.unwrap_or(ContentDeliveryError::DeliveryFailed(
+            "Unknown error".to_string(),
+        )))
     }
 
-    fn create_delivery_response(&self, delivery_id: Uuid, status: DeliveryStatus, attempt_count: u32, error: Option<&ContentDeliveryError>) -> DeliveryResponse {
-        let delivered_at = if matches!(status, DeliveryStatus::Delivered) { Some(Utc::now()) } else { None };
+    fn create_delivery_response(
+        &self,
+        delivery_id: Uuid,
+        status: DeliveryStatus,
+        attempt_count: u32,
+        error: Option<&ContentDeliveryError>,
+    ) -> DeliveryResponse {
+        let delivered_at = if matches!(status, DeliveryStatus::Delivered) {
+            Some(Utc::now())
+        } else {
+            None
+        };
         DeliveryResponse {
             delivery_id,
             status,
@@ -203,7 +255,10 @@ impl Default for ApiContentDeliverer {
 }
 
 impl ContentDeliveryService for ApiContentDeliverer {
-    fn deliver_content(&self, request: DeliveryRequest) -> Result<DeliveryResponse, ContentDeliveryError> {
+    fn deliver_content(
+        &self,
+        request: DeliveryRequest,
+    ) -> Result<DeliveryResponse, ContentDeliveryError> {
         // Check if we're already in a Tokio runtime
         match tokio::runtime::Handle::try_current() {
             Ok(_) => {
@@ -213,9 +268,11 @@ impl ContentDeliveryService for ApiContentDeliverer {
                     let rt = tokio::runtime::Runtime::new()
                         .map_err(|_| ContentDeliveryError::ServiceUnavailable)?;
                     rt.block_on(deliverer.deliver_content_async(request))
-                }).join().map_err(|_| ContentDeliveryError::ServiceUnavailable)?;
+                })
+                .join()
+                .map_err(|_| ContentDeliveryError::ServiceUnavailable)?;
                 result
-            },
+            }
             Err(_) => {
                 // We're not in a runtime, create one
                 let rt = tokio::runtime::Runtime::new()
@@ -225,14 +282,18 @@ impl ContentDeliveryService for ApiContentDeliverer {
         }
     }
 
-    fn schedule_delivery(&self, _request: DeliveryRequest) -> Result<DeliveryResponse, ContentDeliveryError> {
+    fn schedule_delivery(
+        &self,
+        _request: DeliveryRequest,
+    ) -> Result<DeliveryResponse, ContentDeliveryError> {
         let delivery_id = Uuid::new_v4();
-        
+
         // For demo purposes, we'll just mark it as scheduled
         // In a real implementation, you'd integrate with a job scheduler
-        let response = self.create_delivery_response(delivery_id, DeliveryStatus::Scheduled, 0, None);
+        let response =
+            self.create_delivery_response(delivery_id, DeliveryStatus::Scheduled, 0, None);
         self.store_delivery_history(response.clone());
-        
+
         // TODO: Integrate with actual scheduler (e.g., tokio-cron-scheduler)
         Ok(response)
     }
@@ -244,16 +305,22 @@ impl ContentDeliveryService for ApiContentDeliverer {
                 history.insert(delivery_id, delivery);
                 Ok(())
             } else {
-                Err(ContentDeliveryError::RecipientNotFound(delivery_id.to_string()))
+                Err(ContentDeliveryError::RecipientNotFound(
+                    delivery_id.to_string(),
+                ))
             }
         } else {
             Err(ContentDeliveryError::ServiceUnavailable)
         }
     }
 
-    fn get_delivery_status(&self, delivery_id: Uuid) -> Result<DeliveryResponse, ContentDeliveryError> {
+    fn get_delivery_status(
+        &self,
+        delivery_id: Uuid,
+    ) -> Result<DeliveryResponse, ContentDeliveryError> {
         if let Ok(history) = self.delivery_history.lock() {
-            history.get(&delivery_id)
+            history
+                .get(&delivery_id)
                 .cloned()
                 .ok_or_else(|| ContentDeliveryError::RecipientNotFound(delivery_id.to_string()))
         } else {
@@ -261,15 +328,19 @@ impl ContentDeliveryService for ApiContentDeliverer {
         }
     }
 
-    fn list_deliveries(&self, _recipient_id: &str, limit: Option<u32>) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
+    fn list_deliveries(
+        &self,
+        _recipient_id: &str,
+        limit: Option<u32>,
+    ) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
         if let Ok(history) = self.delivery_history.lock() {
-            let mut deliveries: Vec<DeliveryResponse> = history.values()
-                .cloned()
-                .collect();
-            
+            let mut deliveries: Vec<DeliveryResponse> = history.values().cloned().collect();
+
             // Sort by most recent first
             deliveries.sort_by(|a, b| {
-                b.delivered_at.unwrap_or(Utc::now()).cmp(&a.delivered_at.unwrap_or(Utc::now()))
+                b.delivered_at
+                    .unwrap_or(Utc::now())
+                    .cmp(&a.delivered_at.unwrap_or(Utc::now()))
             });
 
             if let Some(limit) = limit {
@@ -282,17 +353,30 @@ impl ContentDeliveryService for ApiContentDeliverer {
         }
     }
 
-    fn get_delivery_stats(&self, _recipient_id: Option<&str>) -> Result<DeliveryStats, ContentDeliveryError> {
+    fn get_delivery_stats(
+        &self,
+        _recipient_id: Option<&str>,
+    ) -> Result<DeliveryStats, ContentDeliveryError> {
         if let Ok(history) = self.delivery_history.lock() {
             let total = history.len() as u64;
-            let successful = history.values()
+            let successful = history
+                .values()
                 .filter(|d| matches!(d.status, DeliveryStatus::Delivered))
                 .count() as u64;
-            let failed = history.values()
+            let failed = history
+                .values()
                 .filter(|d| matches!(d.status, DeliveryStatus::Failed))
                 .count() as u64;
-            let pending = history.values()
-                .filter(|d| matches!(d.status, DeliveryStatus::Pending | DeliveryStatus::InProgress | DeliveryStatus::Scheduled))
+            let pending = history
+                .values()
+                .filter(|d| {
+                    matches!(
+                        d.status,
+                        DeliveryStatus::Pending
+                            | DeliveryStatus::InProgress
+                            | DeliveryStatus::Scheduled
+                    )
+                })
                 .count() as u64;
 
             Ok(DeliveryStats {
@@ -307,53 +391,77 @@ impl ContentDeliveryService for ApiContentDeliverer {
         }
     }
 
-    fn validate_delivery_method(&self, method: &DeliveryMethod) -> Result<(), ContentDeliveryError> {
+    fn validate_delivery_method(
+        &self,
+        method: &DeliveryMethod,
+    ) -> Result<(), ContentDeliveryError> {
         match method {
             DeliveryMethod::Http { endpoint, .. } => {
                 if endpoint.is_empty() {
-                    Err(ContentDeliveryError::InvalidDeliveryMethod("HTTP endpoint cannot be empty".to_string()))
+                    Err(ContentDeliveryError::InvalidDeliveryMethod(
+                        "HTTP endpoint cannot be empty".to_string(),
+                    ))
                 } else if !endpoint.starts_with("http") {
-                    Err(ContentDeliveryError::InvalidDeliveryMethod("HTTP endpoint must start with http:// or https://".to_string()))
+                    Err(ContentDeliveryError::InvalidDeliveryMethod(
+                        "HTTP endpoint must start with http:// or https://".to_string(),
+                    ))
                 } else {
                     Ok(())
                 }
-            },
+            }
             DeliveryMethod::Webhook { url, method } => {
                 if url.is_empty() {
-                    Err(ContentDeliveryError::InvalidDeliveryMethod("Webhook URL cannot be empty".to_string()))
-                } else if !["GET", "POST", "PUT", "PATCH", "DELETE"].contains(&method.to_uppercase().as_str()) {
-                    Err(ContentDeliveryError::InvalidDeliveryMethod(format!("Unsupported HTTP method: {}", method)))
+                    Err(ContentDeliveryError::InvalidDeliveryMethod(
+                        "Webhook URL cannot be empty".to_string(),
+                    ))
+                } else if !["GET", "POST", "PUT", "PATCH", "DELETE"]
+                    .contains(&method.to_uppercase().as_str())
+                {
+                    Err(ContentDeliveryError::InvalidDeliveryMethod(format!(
+                        "Unsupported HTTP method: {}",
+                        method
+                    )))
                 } else {
                     Ok(())
                 }
-            },
+            }
             DeliveryMethod::Email { to, .. } => {
                 if to.is_empty() || !to.contains('@') {
-                    Err(ContentDeliveryError::InvalidDeliveryMethod("Invalid email address".to_string()))
+                    Err(ContentDeliveryError::InvalidDeliveryMethod(
+                        "Invalid email address".to_string(),
+                    ))
                 } else {
                     Ok(())
                 }
-            },
+            }
             _ => Ok(()), // Other methods would have their own validation
         }
     }
 }
 
 impl BatchContentDeliveryService for ApiContentDeliverer {
-    fn batch_deliver(&self, requests: Vec<DeliveryRequest>) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
+    fn batch_deliver(
+        &self,
+        requests: Vec<DeliveryRequest>,
+    ) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
         let mut responses = Vec::new();
-        
+
         for request in requests {
             let response = self.deliver_content(request)?;
             responses.push(response);
         }
-        
+
         Ok(responses)
     }
 
-    fn get_batch_status(&self, _batch_id: Uuid) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
+    fn get_batch_status(
+        &self,
+        _batch_id: Uuid,
+    ) -> Result<Vec<DeliveryResponse>, ContentDeliveryError> {
         // In a real implementation, you'd track batch IDs
-        Err(ContentDeliveryError::DeliveryFailed("Batch status tracking not implemented".to_string()))
+        Err(ContentDeliveryError::DeliveryFailed(
+            "Batch status tracking not implemented".to_string(),
+        ))
     }
 }
 
@@ -362,8 +470,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/delivery")
             .route("/deliver", web::post().to(deliver_content_handler))
-            .route("/status/{delivery_id}", web::get().to(get_delivery_status_handler))
-            .route("/stats", web::get().to(get_delivery_stats_handler))
+            .route(
+                "/status/{delivery_id}",
+                web::get().to(get_delivery_status_handler),
+            )
+            .route("/stats", web::get().to(get_delivery_stats_handler)),
     );
 }
 
@@ -385,15 +496,13 @@ async fn get_delivery_status_handler(
     deliverer: web::Data<ApiContentDeliverer>,
 ) -> ActixResult<HttpResponse> {
     let delivery_id_str = path.into_inner();
-    
+
     match Uuid::parse_str(&delivery_id_str) {
-        Ok(delivery_id) => {
-            match deliverer.get_delivery_status(delivery_id) {
-                Ok(response) => Ok(HttpResponse::Ok().json(response)),
-                Err(e) => Ok(HttpResponse::NotFound().json(serde_json::json!({
-                    "error": e.to_string()
-                }))),
-            }
+        Ok(delivery_id) => match deliverer.get_delivery_status(delivery_id) {
+            Ok(response) => Ok(HttpResponse::Ok().json(response)),
+            Err(e) => Ok(HttpResponse::NotFound().json(serde_json::json!({
+                "error": e.to_string()
+            }))),
         },
         Err(_) => Ok(HttpResponse::BadRequest().json(serde_json::json!({
             "error": "Invalid delivery ID format"
@@ -415,8 +524,8 @@ async fn get_delivery_stats_handler(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
     use crate::application::ports::output::content_delivery_port::DeliveryPriority;
+    use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
     use mockito::Server;
 
     #[tokio::test]
@@ -457,7 +566,7 @@ mod tests {
     #[test]
     fn test_validate_delivery_method_http() {
         let deliverer = ApiContentDeliverer::new();
-        
+
         let valid_method = DeliveryMethod::Http {
             endpoint: "https://example.com/webhook".to_string(),
             headers: None,
@@ -475,7 +584,7 @@ mod tests {
     fn test_delivery_stats() {
         let deliverer = ApiContentDeliverer::new();
         let stats = deliverer.get_delivery_stats(None).unwrap();
-        
+
         assert_eq!(stats.total_deliveries, 0);
         assert_eq!(stats.successful_deliveries, 0);
         assert_eq!(stats.failed_deliveries, 0);

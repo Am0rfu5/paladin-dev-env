@@ -14,18 +14,16 @@ This is useful for alerts, confirmations, and status updates within the applicat
 */
 
 use crate::application::ports::output::notification_port::{
-    NotificationDeliveryPort, BasicNotificationPort,
-    NotificationPortResult, NotificationPortError, NotificationDeliveryResult,
-    DeliveryCapabilities,
-    NotificationChannel, NotificationStatus,
-    Notification, NotificationRecipient,
+    BasicNotificationPort, DeliveryCapabilities, Notification, NotificationChannel,
+    NotificationDeliveryPort, NotificationDeliveryResult, NotificationPortError,
+    NotificationPortResult, NotificationRecipient, NotificationStatus,
 };
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
-use chrono::{DateTime, Utc};
 
 /// System notification configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,34 +69,41 @@ impl SystemNotificationAdapter {
     }
 
     /// Get all stored notifications for a recipient
-    pub fn get_notifications_for_recipient(&self, recipient: &NotificationRecipient) -> NotificationPortResult<Vec<Notification>> {
+    pub fn get_notifications_for_recipient(
+        &self,
+        recipient: &NotificationRecipient,
+    ) -> NotificationPortResult<Vec<Notification>> {
         let notifications = self.notifications.read().map_err(|_| {
-            NotificationPortError::ServiceUnavailable("Notification storage unavailable".to_string())
+            NotificationPortError::ServiceUnavailable(
+                "Notification storage unavailable".to_string(),
+            )
         })?;
-        
+
         let filtered: Vec<Notification> = notifications
             .iter()
             .filter(|n| &n.recipient == recipient)
             .cloned()
             .collect();
-            
+
         Ok(filtered)
     }
 
     /// Clear old notifications based on cleanup policy
     pub fn cleanup_old_notifications(&self) -> NotificationPortResult<usize> {
         let mut notifications = self.notifications.write().map_err(|_| {
-            NotificationPortError::ServiceUnavailable("Notification storage unavailable".to_string())
+            NotificationPortError::ServiceUnavailable(
+                "Notification storage unavailable".to_string(),
+            )
         })?;
 
         let before_count = notifications.len();
-        
+
         // Simple cleanup: keep only the most recent notifications
         if notifications.len() > self.config.max_stored_notifications {
             notifications.sort_by(|a, b| b.created_at.cmp(&a.created_at));
             notifications.truncate(self.config.max_stored_notifications);
         }
-        
+
         let after_count = notifications.len();
         Ok(before_count - after_count)
     }
@@ -118,23 +123,28 @@ impl NotificationDeliveryPort for SystemNotificationAdapter {
         notification.channel == NotificationChannel::System
     }
 
-    async fn deliver_notification(&self, mut notification: Notification) -> NotificationPortResult<NotificationDeliveryResult> {
+    async fn deliver_notification(
+        &self,
+        mut notification: Notification,
+    ) -> NotificationPortResult<NotificationDeliveryResult> {
         let start_time = Instant::now();
-        
+
         // Validate notification
         if !self.can_handle(&notification) {
             return Err(NotificationPortError::ValidationError(
-                "System adapter cannot handle this notification".to_string()
+                "System adapter cannot handle this notification".to_string(),
             ));
         }
 
         // For system notifications, delivery is immediate (just store it)
         notification.status = NotificationStatus::Delivered;
-        
+
         // Store notification
         {
             let mut notifications = self.notifications.write().map_err(|_| {
-                NotificationPortError::ServiceUnavailable("Notification storage unavailable".to_string())
+                NotificationPortError::ServiceUnavailable(
+                    "Notification storage unavailable".to_string(),
+                )
             })?;
             notifications.push(notification.clone());
         }
@@ -149,11 +159,17 @@ impl NotificationDeliveryPort for SystemNotificationAdapter {
         }
 
         let processing_time = start_time.elapsed().as_millis() as u64;
-        
+
         let mut metadata = HashMap::new();
-        metadata.insert("delivery_method".to_string(), serde_json::Value::String("in_memory".to_string()));
-        metadata.insert("stored_at".to_string(), serde_json::Value::String(Utc::now().to_rfc3339()));
-        
+        metadata.insert(
+            "delivery_method".to_string(),
+            serde_json::Value::String("in_memory".to_string()),
+        );
+        metadata.insert(
+            "stored_at".to_string(),
+            serde_json::Value::String(Utc::now().to_rfc3339()),
+        );
+
         Ok(NotificationDeliveryResult {
             notification_id: notification.id,
             status: NotificationStatus::Delivered,
@@ -191,7 +207,9 @@ impl BasicNotificationPort for SystemNotificationAdapter {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::notification::{NotificationContent, NotificationPriority};
+    use crate::core::platform::container::notification::{
+        NotificationContent, NotificationPriority,
+    };
 
     fn create_test_system_notification() -> Notification {
         let content = NotificationContent::new(
@@ -199,13 +217,14 @@ mod tests {
             "This is a test system notification".to_string(),
             "system".to_string(),
         );
-        
+
         Notification::new(
             NotificationRecipient::SystemComponent("user123".to_string()),
             content,
             NotificationChannel::System,
             NotificationPriority::High,
-        ).unwrap()
+        )
+        .unwrap()
     }
 
     #[test]
@@ -220,7 +239,7 @@ mod tests {
         let config = SystemAdapterConfig::default();
         let adapter = SystemNotificationAdapter::new(config);
         let notification = create_test_system_notification();
-        
+
         assert!(adapter.can_handle(&notification));
     }
 
@@ -230,26 +249,29 @@ mod tests {
         let adapter = SystemNotificationAdapter::new(config);
         let notification = create_test_system_notification();
         let recipient = notification.recipient.clone();
-        
+
         // Deliver notification
         let result = adapter.deliver_notification(notification).await;
         assert!(result.is_ok());
-        
+
         let delivery_result = result.unwrap();
         assert_eq!(delivery_result.status, NotificationStatus::Delivered);
         assert_eq!(delivery_result.channel, NotificationChannel::System);
-        
+
         // Verify notification was stored
         let stored_notifications = adapter.get_notifications_for_recipient(&recipient).unwrap();
         assert_eq!(stored_notifications.len(), 1);
-        assert_eq!(stored_notifications[0].status, NotificationStatus::Delivered);
+        assert_eq!(
+            stored_notifications[0].status,
+            NotificationStatus::Delivered
+        );
     }
 
     #[tokio::test]
     async fn test_health_check() {
         let config = SystemAdapterConfig::default();
         let adapter = SystemNotificationAdapter::new(config);
-        
+
         let is_healthy = adapter.health_check().await;
         assert!(is_healthy);
     }
@@ -259,7 +281,7 @@ mod tests {
         let config = SystemAdapterConfig::default();
         let adapter = SystemNotificationAdapter::new(config);
         let capabilities = adapter.capabilities();
-        
+
         assert!(capabilities.supports_bulk);
         assert!(capabilities.supports_rich_content);
         assert!(!capabilities.supports_attachments);
@@ -274,7 +296,7 @@ mod tests {
             cleanup_interval_seconds: 3600,
         };
         let adapter = SystemNotificationAdapter::new(config);
-        
+
         // Add more notifications than the limit
         {
             let mut notifications = adapter.notifications.write().unwrap();
@@ -284,11 +306,11 @@ mod tests {
                 notifications.push(notification);
             }
         }
-        
+
         // Cleanup
         let cleaned_count = adapter.cleanup_old_notifications().unwrap();
         assert_eq!(cleaned_count, 3); // 5 - 2 = 3 cleaned
-        
+
         // Verify only 2 notifications remain
         let remaining = adapter.notifications.read().unwrap();
         assert_eq!(remaining.len(), 2);

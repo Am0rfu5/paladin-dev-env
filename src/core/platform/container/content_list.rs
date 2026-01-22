@@ -1,10 +1,10 @@
 use super::content::ContentItem;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use url::Url;
 use chrono::prelude::*;
-use thiserror::Error;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use thiserror::Error;
+use url::Url;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct ContentList {
@@ -171,19 +171,19 @@ impl ContentList {
 
     pub fn get_all_tags(&self) -> HashSet<String> {
         let mut all_tags = HashSet::new();
-        
+
         // Add list tags if present
         if let Some(ref tags) = self.tags {
             all_tags.extend(tags.clone());
         }
-        
+
         // Add item tags
         for item in &self.items {
             if let Some(tags) = item.tags() {
                 all_tags.extend(tags.clone());
             }
         }
-        
+
         all_tags
     }
 
@@ -196,19 +196,19 @@ impl ContentList {
 
     pub fn get_all_sources(&self) -> HashSet<String> {
         let mut sources = HashSet::new();
-        
+
         // Add list source if present
         if let Some(ref source) = self.source {
             sources.insert(source.clone());
         }
-        
+
         // Add item sources
         for item in &self.items {
             if let Some(source) = item.source() {
                 sources.insert(source.clone());
             }
         }
-        
+
         sources
     }
 
@@ -224,13 +224,11 @@ impl ContentList {
     }
 
     pub fn sort_by_title(&mut self) {
-        self.items.sort_by(|a, b| {
-            match (a.title(), b.title()) {
-                (Some(title_a), Some(title_b)) => title_a.cmp(title_b),
-                (Some(_), None) => std::cmp::Ordering::Less,
-                (None, Some(_)) => std::cmp::Ordering::Greater,
-                (None, None) => std::cmp::Ordering::Equal,
-            }
+        self.items.sort_by(|a, b| match (a.title(), b.title()) {
+            (Some(title_a), Some(title_b)) => title_a.cmp(title_b),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => std::cmp::Ordering::Equal,
         });
         self.modified = Utc::now();
     }
@@ -238,7 +236,7 @@ impl ContentList {
     // Statistics
     pub fn content_type_stats(&self) -> std::collections::HashMap<String, usize> {
         let mut stats = std::collections::HashMap::new();
-        
+
         for item in &self.items {
             let content_type = match item.content() {
                 crate::core::platform::container::content::ContentType::Text(_) => "Text",
@@ -246,10 +244,10 @@ impl ContentList {
                 crate::core::platform::container::content::ContentType::Audio(_) => "Audio",
                 crate::core::platform::container::content::ContentType::Image(_) => "Image",
             };
-            
+
             *stats.entry(content_type.to_string()).or_insert(0) += 1;
         }
-        
+
         stats
     }
 }
@@ -310,16 +308,13 @@ mod tests {
 
     fn create_test_content_item(title: &str, content: &str) -> ContentItem {
         let text_content = TextContent::new(None, Some(content.to_string())).unwrap();
-        ContentItem::new_with_title(
-            ContentType::Text(text_content),
-            title.to_string(),
-        ).unwrap()
+        ContentItem::new_with_title(ContentType::Text(text_content), title.to_string()).unwrap()
     }
 
     #[test]
     fn test_content_list_creation() {
         let list = ContentList::new();
-        
+
         assert!(list.uuid != Uuid::nil());
         assert_eq!(list.created, list.modified);
         assert!(list.items.is_empty());
@@ -329,7 +324,7 @@ mod tests {
     #[test]
     fn test_content_list_with_name() {
         let list = ContentList::with_name("Test List".to_string());
-        
+
         assert_eq!(list.name, Some("Test List".to_string()));
     }
 
@@ -338,10 +333,10 @@ mod tests {
         let mut list = ContentList::new();
         let item1 = create_test_content_item("Item 1", "Content 1");
         let item1_uuid = item1.uuid();
-        
+
         list.add_item(item1);
         assert_eq!(list.len(), 1);
-        
+
         let removed_item = list.remove_item(item1_uuid);
         assert!(removed_item.is_some());
         assert_eq!(list.len(), 0);
@@ -350,19 +345,19 @@ mod tests {
     #[test]
     fn test_filter_by_tag() {
         let mut list = ContentList::new();
-        
+
         let mut item1 = create_test_content_item("Item 1", "Content 1");
         item1.set_tags(Some(vec!["rust".to_string(), "test".to_string()]));
-        
+
         let mut item2 = create_test_content_item("Item 2", "Content 2");
         item2.set_tags(Some(vec!["python".to_string(), "test".to_string()]));
-        
+
         list.add_item(item1);
         list.add_item(item2);
-        
+
         let rust_items = list.filter_by_tag("rust");
         assert_eq!(rust_items.len(), 1);
-        
+
         let test_items = list.filter_by_tag("test");
         assert_eq!(test_items.len(), 2);
     }
@@ -370,10 +365,10 @@ mod tests {
     #[test]
     fn test_content_type_stats() {
         let mut list = ContentList::new();
-        
+
         list.add_item(create_test_content_item("Text 1", "Content 1"));
         list.add_item(create_test_content_item("Text 2", "Content 2"));
-        
+
         let stats = list.content_type_stats();
         assert_eq!(stats.get("Text"), Some(&2));
     }
@@ -381,13 +376,13 @@ mod tests {
     #[test]
     fn test_sort_by_title() {
         let mut list = ContentList::new();
-        
+
         list.add_item(create_test_content_item("Zebra", "Content"));
         list.add_item(create_test_content_item("Apple", "Content"));
         list.add_item(create_test_content_item("Banana", "Content"));
-        
+
         list.sort_by_title();
-        
+
         assert_eq!(list.items[0].title(), Some(&"Apple".to_string()));
         assert_eq!(list.items[1].title(), Some(&"Banana".to_string()));
         assert_eq!(list.items[2].title(), Some(&"Zebra".to_string()));
@@ -397,15 +392,15 @@ mod tests {
     fn test_content_list_serialization() -> Result<(), Box<dyn std::error::Error>> {
         let mut list = ContentList::with_name("Serialization Test".to_string());
         list.add_item(create_test_content_item("Test Item", "Test Content"));
-        
+
         // Test serialization
         let serialized = serde_json::to_string(&list)?;
         assert!(!serialized.is_empty());
-        
+
         // Test deserialization
         let deserialized: ContentList = serde_json::from_str(&serialized)?;
         assert_eq!(list, deserialized);
-        
+
         Ok(())
     }
 }

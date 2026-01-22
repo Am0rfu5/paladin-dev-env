@@ -1,9 +1,9 @@
 /*
-Event Component 
+Event Component
 
 This module contains the Event component and its related traits and implementations.
 
-An Event represents a significant occurrence within the system. These are used for communication 
+An Event represents a significant occurrence within the system. These are used for communication
 between different parts of the system, triggering actions, messages, etc.  It contains
 information about the event, such as the event type, the source of the event, and the timestamp
 when the event occurred.
@@ -11,15 +11,15 @@ when the event occurred.
 This component is used to handle events in a structured way, allowing for easy management and
 processing of events within the system. It can be used to implement event-driven architectures,
 where components can listen for specific events and react accordingly.
-It is designed to be flexible and extensible, allowing for the addition of new event types, 
+It is designed to be flexible and extensible, allowing for the addition of new event types,
 containers, and properties as needed.
 */
 /*
-Event Component 
+Event Component
 
 This module contains the Event component and its related traits and implementations.
 
-An Event represents a significant occurrence within the system. These are used for communication 
+An Event represents a significant occurrence within the system. These are used for communication
 between different parts of the system, triggering actions, messages, etc.  It contains
 information about the event, such as the event type, the source of the event, and the timestamp
 when the event occurred.
@@ -27,17 +27,17 @@ when the event occurred.
 This component is used to handle events in a structured way, allowing for easy management and
 processing of events within the system. It can be used to implement event-driven architectures,
 where components can listen for specific events and react accordingly.
-It is designed to be flexible and extensible, allowing for the addition of new event types, 
+It is designed to be flexible and extensible, allowing for the addition of new event types,
 containers, and properties as needed.
 */
 
 use chrono::{DateTime, Utc};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
 /// Represents an event in the paladin system.
-/// 
+///
 /// Events are domain entities that represent significant occurrences within the system.
 /// They are used for communication between different parts of the system, triggering
 /// actions, and implementing event-driven architectures.
@@ -75,10 +75,10 @@ impl Event {
 
     /// Creates a new event with correlation ID for tracking related events.
     pub fn new_with_correlation(
-        event_type: String, 
-        payload: Value, 
-        source: String, 
-        correlation_id: Uuid
+        event_type: String,
+        payload: Value,
+        source: String,
+        correlation_id: Uuid,
     ) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -93,10 +93,10 @@ impl Event {
 
     /// Creates a new event with a specific version for schema evolution.
     pub fn new_versioned(
-        event_type: String, 
-        payload: Value, 
-        source: String, 
-        version: String
+        event_type: String,
+        payload: Value,
+        source: String,
+        version: String,
     ) -> Self {
         Self {
             id: Uuid::new_v4(),

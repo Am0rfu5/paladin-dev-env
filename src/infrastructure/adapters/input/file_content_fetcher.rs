@@ -4,12 +4,13 @@ File Content Fetcher Adapter
 This adapter fetches content from an external file system location and creates a ContentItem object from it.
 It implements the ContentIngestionPort trait and handles different content types based on file extensions.
 */
+use crate::core::platform::container::content::{
+    AudioContent, ContentItem, ContentType, ImageContent, TextContent, VideoContent,
+};
+use crate::ports::input::content_input_port::ContentIngestionPort;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
-use crate::ports::input::content_input_port::ContentIngestionPort;
-use crate::core::platform::container::content::{
-    ContentItem, ContentType, TextContent, VideoContent, AudioContent, ImageContent};
 
 pub struct FileContentFetcher;
 
@@ -26,73 +27,74 @@ impl FileContentFetcher {
             // Text files
             "txt" | "md" | "rst" | "json" | "xml" | "yaml" | "yml" | "toml" | "csv" | "log" => {
                 self.create_text_content(path)
-            },
+            }
             // Video files
             "mp4" | "avi" | "mkv" | "mov" | "wmv" | "flv" | "webm" | "m4v" => {
                 self.create_video_content(path)
-            },
+            }
             // Audio files
             "mp3" | "wav" | "flac" | "aac" | "ogg" | "m4a" | "wma" => {
                 self.create_audio_content(path)
-            },
+            }
             // Image files
             "jpg" | "jpeg" | "png" | "gif" | "bmp" | "tiff" | "tif" | "webp" | "svg" => {
                 self.create_image_content(path)
-            },
-            _ => Err(format!("Unsupported file type: {}", extension))
+            }
+            _ => Err(format!("Unsupported file type: {}", extension)),
         }
     }
 
     fn create_text_content(&self, path: &Path) -> Result<ContentType, String> {
         let path_str = path.to_string_lossy().to_string();
-        
+
         // Read the file content
         let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
         let mut content = String::new();
-        file.read_to_string(&mut content).map_err(|e| e.to_string())?;
-
-        let text_content = TextContent::new(Some(path_str), Some(content))
+        file.read_to_string(&mut content)
             .map_err(|e| e.to_string())?;
-        
+
+        let text_content =
+            TextContent::new(Some(path_str), Some(content)).map_err(|e| e.to_string())?;
+
         Ok(ContentType::Text(text_content))
     }
 
     fn create_video_content(&self, path: &Path) -> Result<ContentType, String> {
         let path_str = path.to_string_lossy().to_string();
-        
+
         // For now, we'll use a placeholder duration
         // In a real implementation, you'd use a library like ffmpeg-rust to get actual duration
         let duration = self.get_video_duration(path).unwrap_or(0);
-        
-        let video_content = VideoContent::new(Some(path_str), duration)
-            .map_err(|e| e.to_string())?;
-        
+
+        let video_content =
+            VideoContent::new(Some(path_str), duration).map_err(|e| e.to_string())?;
+
         Ok(ContentType::Video(video_content))
     }
 
     fn create_audio_content(&self, path: &Path) -> Result<ContentType, String> {
         let path_str = path.to_string_lossy().to_string();
-        
+
         // For now, we'll use a placeholder duration
         // In a real implementation, you'd use a library like symphonia or rodio to get actual duration
         let duration = self.get_audio_duration(path).unwrap_or(0);
-        
-        let audio_content = AudioContent::new(Some(path_str), duration)
-            .map_err(|e| e.to_string())?;
-        
+
+        let audio_content =
+            AudioContent::new(Some(path_str), duration).map_err(|e| e.to_string())?;
+
         Ok(ContentType::Audio(audio_content))
     }
 
     fn create_image_content(&self, path: &Path) -> Result<ContentType, String> {
         let path_str = path.to_string_lossy().to_string();
-        
+
         // For now, we'll use placeholder dimensions
         // In a real implementation, you'd use a library like image-rs to get actual dimensions
         let resolution = self.get_image_dimensions(path).unwrap_or((0, 0));
-        
-        let image_content = ImageContent::new(Some(path_str), resolution)
-            .map_err(|e| e.to_string())?;
-        
+
+        let image_content =
+            ImageContent::new(Some(path_str), resolution).map_err(|e| e.to_string())?;
+
         Ok(ContentType::Image(image_content))
     }
 
@@ -113,19 +115,21 @@ impl FileContentFetcher {
         // You'll need to add `image = "0.24"` to Cargo.toml
         None
     }
-
 }
 
 impl ContentIngestionPort for FileContentFetcher {
     fn fetch_content(&self, content: ContentItem) -> Result<ContentItem, String> {
         let url = content.url().cloned().ok_or("URL is None")?;
-        let path = url.to_file_path().map_err(|_| "Failed to convert URL to file path")?;
-        
+        let path = url
+            .to_file_path()
+            .map_err(|_| "Failed to convert URL to file path")?;
+
         // Determine content type based on file extension
         let content_type = self.determine_content_type(&path)?;
-        
+
         // Get file name for title
-        let title = path.file_name()
+        let title = path
+            .file_name()
             .and_then(|n| n.to_str())
             .map(|s| s.to_string());
 
@@ -133,17 +137,17 @@ impl ContentIngestionPort for FileContentFetcher {
         // The hash will be automatically generated by the constructor if the content has a path
         let mut content_item = ContentItem::new(content_type)
             .map_err(|e| format!("Failed to create content item: {:?}", e))?;
-        
+
         // Set optional fields using setter methods
         content_item.set_url(Some(url));
         if let Some(title) = title {
             content_item.set_title(Some(title));
         }
         content_item.set_tags(Some(Vec::new()));
-        
+
         Ok(content_item)
     }
-    
+
     fn ingest_content(&self, content: ContentItem) -> Result<(), String> {
         // This would implement the logic to store the content in your system
         // For now, we'll just validate that the content is properly formed
@@ -153,34 +157,34 @@ impl ContentIngestionPort for FileContentFetcher {
                 if content.url().is_none() {
                     return Err("Text content requires a URL".to_string());
                 }
-            },
+            }
             ContentType::Video(_) => {
                 // Validate video content
                 if content.url().is_none() {
                     return Err("Video content requires a URL".to_string());
                 }
-            },
+            }
             ContentType::Audio(_) => {
                 // Validate audio content
                 if content.url().is_none() {
                     return Err("Audio content requires a URL".to_string());
                 }
-            },
+            }
             ContentType::Image(_) => {
                 // Validate image content
                 if content.url().is_none() {
                     return Err("Image content requires a URL".to_string());
                 }
-            },
+            }
         }
-        
+
         // TODO: Implement actual ingestion logic
         // This might involve:
         // - Storing content in a repository
         // - Creating search indices
         // - Generating thumbnails for images/videos
         // - Extracting metadata
-        
+
         Ok(())
     }
 }
@@ -202,7 +206,7 @@ mod tests {
 
         let fetcher = FileContentFetcher;
         let file_url = Url::from_file_path(&file_path).unwrap();
-        
+
         // Create input content using the new API
         let text_content = TextContent::new(None, Some(String::new()))?;
         let mut input_content = ContentItem::new(ContentType::Text(text_content))?;
@@ -215,7 +219,7 @@ mod tests {
             ContentType::Text(text_content) => {
                 assert!(text_content.content.is_some());
                 assert_eq!(text_content.content.as_ref().unwrap(), "Hello, world!\n");
-            },
+            }
             _ => panic!("Expected text content"),
         }
 
@@ -234,7 +238,7 @@ mod tests {
 
         let fetcher = FileContentFetcher;
         let file_url = Url::from_file_path(&file_path).unwrap();
-        
+
         // Create input content using the new API
         let text_content = TextContent::new(None, Some(String::new()))?;
         let mut input_content = ContentItem::new(ContentType::Text(text_content))?;
@@ -246,7 +250,7 @@ mod tests {
         match content.content() {
             ContentType::Video(_) => {
                 // Test passes if we get video content
-            },
+            }
             _ => panic!("Expected video content"),
         }
 
@@ -258,10 +262,10 @@ mod tests {
     #[test]
     fn test_determine_content_type() -> Result<(), Box<dyn std::error::Error>> {
         let fetcher = FileContentFetcher;
-        
+
         // Create temporary files for different types
         let dir = tempdir()?;
-        
+
         let txt_path = dir.path().join("test.txt");
         File::create(&txt_path)?;
         let content_type = fetcher.determine_content_type(&txt_path)?;
@@ -291,7 +295,7 @@ mod tests {
         let dir = tempdir()?;
         let unsupported_path = dir.path().join("test.xyz");
         File::create(&unsupported_path)?;
-        
+
         let result = fetcher.determine_content_type(&unsupported_path);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Unsupported file type"));
@@ -302,7 +306,7 @@ mod tests {
     #[test]
     fn test_ingest_content_validation() -> Result<(), Box<dyn std::error::Error>> {
         let fetcher = FileContentFetcher;
-        
+
         // Test with valid content
         let text_content = TextContent::new(None, Some("test".to_string()))?;
         let mut valid_content = ContentItem::new(ContentType::Text(text_content))?;

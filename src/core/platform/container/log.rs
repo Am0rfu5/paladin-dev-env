@@ -1,8 +1,8 @@
 /*
 Logging Container
 
-The Log Container is a type of Node that has a UUID with a vector of LogEntry items. 
-The Log can be abstracted in the application layer so that multiple Logs may exist. 
+The Log Container is a type of Node that has a UUID with a vector of LogEntry items.
+The Log can be abstracted in the application layer so that multiple Logs may exist.
 
 By defining only the most fundamental requirements within the Core we allow the application
 to handle all the details that it requires while still enabling the other containers and
@@ -14,7 +14,7 @@ log message, the log level, and the timestamp when the log entry was created.
 
 The Config Service Settings requires at least one log location to be defined.
 */
-use crate::core::base::entity::message::{Message, Location, MessagePriority};
+use crate::core::base::entity::message::{Location, Message, MessagePriority};
 use crate::core::base::entity::node::Node;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -43,7 +43,7 @@ impl LogLevel {
             LogLevel::Fatal => "FATAL",
         }
     }
-    
+
     /// Parse from string
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_uppercase().as_str() {
@@ -56,7 +56,7 @@ impl LogLevel {
             _ => None,
         }
     }
-    
+
     /// Convert to message priority
     pub fn to_priority(&self) -> MessagePriority {
         match self {
@@ -103,7 +103,7 @@ impl LogDestination {
             LogDestination::Custom(name) => Location::service(&format!("custom-log-{}", name)),
         }
     }
-    
+
     /// Get the log destination name
     pub fn name(&self) -> String {
         match self {
@@ -146,50 +146,47 @@ impl LogMessage {
             context: None,
         }
     }
-    
+
     /// Create with module information
     pub fn with_module(mut self, module: String) -> Self {
         self.module = Some(module);
         self
     }
-    
+
     /// Create with function information
     pub fn with_function(mut self, function: String) -> Self {
         self.function = Some(function);
         self
     }
-    
+
     /// Create with location information
     pub fn with_location(mut self, location: String) -> Self {
         self.location = Some(location);
         self
     }
-    
+
     /// Create with context data
     pub fn with_context(mut self, context: serde_json::Value) -> Self {
         self.context = Some(context);
         self
     }
-    
+
     /// Get formatted message for display
     pub fn formatted(&self) -> String {
-        let mut parts = vec![
-            format!("[{}]", self.level.as_str()),
-            self.message.clone(),
-        ];
-        
+        let mut parts = vec![format!("[{}]", self.level.as_str()), self.message.clone()];
+
         if let Some(module) = &self.module {
             parts.push(format!("module:{}", module));
         }
-        
+
         if let Some(function) = &self.function {
             parts.push(format!("fn:{}", function));
         }
-        
+
         if let Some(location) = &self.location {
             parts.push(format!("at:{}", location));
         }
-        
+
         parts.join(" ")
     }
 }
@@ -210,15 +207,10 @@ impl LogEntryBuilder {
     ) -> LogEntry {
         let log_message = LogMessage::new(level, message);
         let priority = level.to_priority();
-        
-        Message::with_priority(
-            source,
-            destination.to_location(),
-            log_message,
-            priority,
-        )
+
+        Message::with_priority(source, destination.to_location(), log_message, priority)
     }
-    
+
     /// Create a log entry with additional context
     pub fn new_entry_with_context(
         source: Location,
@@ -231,31 +223,26 @@ impl LogEntryBuilder {
         context: Option<serde_json::Value>,
     ) -> LogEntry {
         let mut log_message = LogMessage::new(level, message);
-        
+
         if let Some(module) = module {
             log_message = log_message.with_module(module);
         }
-        
+
         if let Some(function) = function {
             log_message = log_message.with_function(function);
         }
-        
+
         if let Some(location) = location {
             log_message = log_message.with_location(location);
         }
-        
+
         if let Some(context) = context {
             log_message = log_message.with_context(context);
         }
-        
+
         let priority = level.to_priority();
-        
-        Message::with_priority(
-            source,
-            destination.to_location(),
-            log_message,
-            priority,
-        )
+
+        Message::with_priority(source, destination.to_location(), log_message, priority)
     }
 }
 
@@ -263,10 +250,10 @@ impl LogEntryBuilder {
 pub trait LogEntryExt {
     /// Get the log level of this entry
     fn level(&self) -> LogLevel;
-    
+
     /// Get the formatted message
     fn formatted_message(&self) -> String;
-    
+
     /// Check if this entry matches a minimum log level
     fn matches_level(&self, min_level: LogLevel) -> bool;
 }
@@ -275,11 +262,11 @@ impl LogEntryExt for LogEntry {
     fn level(&self) -> LogLevel {
         self.message.level
     }
-    
+
     fn formatted_message(&self) -> String {
         self.message.formatted()
     }
-    
+
     fn matches_level(&self, min_level: LogLevel) -> bool {
         self.message.level >= min_level
     }
@@ -321,62 +308,69 @@ impl LogContainer {
             active: true,
         }
     }
-    
+
     /// Create with maximum entries limit
     pub fn with_max_entries(mut self, max_entries: usize) -> Self {
         self.max_entries = max_entries;
         self
     }
-    
+
     /// Add a log entry if it meets the minimum level requirement
     pub fn add_entry(&mut self, entry: LogEntry) -> bool {
         if !self.active || !entry.matches_level(self.min_level) {
             return false;
         }
-        
+
         self.entries.push(entry);
-        
+
         // Enforce max entries limit
         if self.max_entries > 0 && self.entries.len() > self.max_entries {
             self.entries.remove(0); // Remove oldest entry
         }
-        
+
         true
     }
-    
+
     /// Get entries matching a minimum level
     pub fn get_entries(&self, min_level: Option<LogLevel>) -> Vec<&LogEntry> {
         match min_level {
-            Some(level) => self.entries.iter().filter(|e| e.matches_level(level)).collect(),
+            Some(level) => self
+                .entries
+                .iter()
+                .filter(|e| e.matches_level(level))
+                .collect(),
             None => self.entries.iter().collect(),
         }
     }
-    
+
     /// Get entries within a time range
     pub fn get_entries_since(&self, since: DateTime<Utc>) -> Vec<&LogEntry> {
-        self.entries.iter().filter(|e| e.timestamp >= since).collect()
+        self.entries
+            .iter()
+            .filter(|e| e.timestamp >= since)
+            .collect()
     }
-    
+
     /// Clear all entries
     pub fn clear(&mut self) {
         self.entries.clear();
     }
-    
+
     /// Get entry count
     pub fn entry_count(&self) -> usize {
         self.entries.len()
     }
-    
+
     /// Enable/disable this log
     pub fn set_active(&mut self, active: bool) {
         self.active = active;
     }
-    
+
     /// Check if log is active
     pub fn is_active(&self) -> bool {
         self.active
     }
-    
+
     /// Set minimum log level
     pub fn set_min_level(&mut self, level: LogLevel) {
         self.min_level = level;
@@ -390,13 +384,13 @@ pub type Log = Node<LogContainer>;
 pub trait LogExt {
     /// Create a new log node
     fn new_log(name: String, destination: LogDestination, min_level: LogLevel) -> Self;
-    
+
     /// Add an entry to this log
     fn add_entry(&mut self, entry: LogEntry) -> bool;
-    
+
     /// Get the log destination
     fn destination(&self) -> &LogDestination;
-    
+
     /// Get the minimum log level
     fn min_level(&self) -> LogLevel;
 }
@@ -406,7 +400,7 @@ impl LogExt for Log {
         let container = LogContainer::new(name.clone(), destination, min_level);
         Node::new(container, Some(name))
     }
-    
+
     fn add_entry(&mut self, entry: LogEntry) -> bool {
         let result = self.node.add_entry(entry);
         if result {
@@ -414,11 +408,11 @@ impl LogExt for Log {
         }
         result
     }
-    
+
     fn destination(&self) -> &LogDestination {
         &self.node.destination
     }
-    
+
     fn min_level(&self) -> LogLevel {
         self.node.min_level
     }
@@ -433,7 +427,7 @@ mod tests {
         assert_eq!(LogLevel::from_str("INFO"), Some(LogLevel::Info));
         assert_eq!(LogLevel::from_str("error"), Some(LogLevel::Error));
         assert_eq!(LogLevel::from_str("INVALID"), None);
-        
+
         assert_eq!(LogLevel::Info.as_str(), "INFO");
         assert_eq!(LogLevel::Error.to_priority(), MessagePriority::Critical);
     }
@@ -443,7 +437,7 @@ mod tests {
         let msg = LogMessage::new(LogLevel::Info, "Test message".to_string())
             .with_module("test_module".to_string())
             .with_function("test_function".to_string());
-        
+
         assert_eq!(msg.level, LogLevel::Info);
         assert_eq!(msg.message, "Test message");
         assert_eq!(msg.module, Some("test_module".to_string()));
@@ -459,7 +453,7 @@ mod tests {
             LogLevel::Info,
             "Test log entry".to_string(),
         );
-        
+
         assert_eq!(entry.level(), LogLevel::Info);
         assert_eq!(entry.message.message, "Test log entry");
         assert_eq!(entry.destination, LogDestination::System.to_location());
@@ -472,17 +466,17 @@ mod tests {
             LogDestination::System,
             LogLevel::Info,
         );
-        
+
         let entry = LogEntryBuilder::new_entry(
             Location::service("test"),
             LogDestination::System,
             LogLevel::Info,
             "Test message".to_string(),
         );
-        
+
         assert!(container.add_entry(entry));
         assert_eq!(container.entry_count(), 1);
-        
+
         // Test level filtering
         let debug_entry = LogEntryBuilder::new_entry(
             Location::service("test"),
@@ -490,7 +484,7 @@ mod tests {
             LogLevel::Debug,
             "Debug message".to_string(),
         );
-        
+
         assert!(!container.add_entry(debug_entry)); // Should be filtered out
         assert_eq!(container.entry_count(), 1);
     }
@@ -502,14 +496,14 @@ mod tests {
             LogDestination::System,
             LogLevel::Info,
         );
-        
+
         let entry = LogEntryBuilder::new_entry(
             Location::service("test"),
             LogDestination::System,
             LogLevel::Warn,
             "Warning message".to_string(),
         );
-        
+
         let initial_modified = log.modified;
         assert!(log.add_entry(entry));
         assert!(log.modified > initial_modified);

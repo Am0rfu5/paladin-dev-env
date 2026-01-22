@@ -2,7 +2,7 @@
 
 Content Port
 
-A port that defines how the application fetches content from external sources or 
+A port that defines how the application fetches content from external sources or
 ingests content from the user. This could be an HTTP API, a database, a file system,
 or any other source of content.
 

@@ -1,8 +1,8 @@
 /*
 Task Container
 
-A Task is a platform-level container that extends the base Action component 
-to provide specific execution capabilities. Tasks represent individual units 
+A Task is a platform-level container that extends the base Action component
+to provide specific execution capabilities. Tasks represent individual units
 of work that can be executed independently or as part of a larger Job.
 
 Tasks add:
@@ -11,18 +11,20 @@ Tasks add:
 - Integration with the Action lifecycle
 - Platform-level orchestration capabilities
 
-Tasks are the building blocks for Jobs and can be scheduled, queued, 
+Tasks are the building blocks for Jobs and can be scheduled, queued,
 and executed through various platform services.
 */
 
-use std::fmt::Debug;
 use async_trait::async_trait;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 use thiserror::Error;
 use uuid::Uuid;
 
 // Import the base Action component
-use crate::core::base::component::action::{Action, ActionStatus, ActionResult, ActionError, ActionPriority};
+use crate::core::base::component::action::{
+    Action, ActionError, ActionPriority, ActionResult, ActionStatus,
+};
 
 /// Task-specific execution modes
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -79,7 +81,8 @@ impl Task {
             description,
             "task_manager".to_string(),
             service_name.clone(),
-        ).with_priority(priority);
+        )
+        .with_priority(priority);
 
         Self {
             action,
@@ -151,7 +154,7 @@ impl Task {
             Err(task_error) => {
                 let error_message = task_error.to_string();
                 let can_retry = self.action.fail_execution(error_message, duration_ms);
-                
+
                 if can_retry && matches!(self.execution_mode, TaskExecutionMode::Retryable) {
                     Err(TaskError::RetryableFailure(task_error.to_string()))
                 } else {
@@ -283,12 +286,12 @@ pub trait TaskService: Debug + Send + Sync {
 
     /// Executes the task and returns optional result data
     async fn execute(&self, action: &Action) -> Result<Option<serde_json::Value>, TaskError>;
-        
+
     /// Checks if the service can handle the given task
     fn can_handle(&self, task: &Task) -> bool {
         task.service_name == self.name()
     }
-    
+
     /// Clones the service for re-use
     fn clone_service(&self) -> Box<dyn TaskService>;
 }
@@ -306,11 +309,14 @@ impl TaskService for DataBackupService {
     }
 
     async fn execute(&self, action: &Action) -> Result<Option<serde_json::Value>, TaskError> {
-        println!("Running data backup to: {} for task: {}", self.backup_path, action.name);
-        
+        println!(
+            "Running data backup to: {} for task: {}",
+            self.backup_path, action.name
+        );
+
         // Simulate backup work
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        
+
         Ok(Some(serde_json::json!({
             "backup_path": self.backup_path,
             // "documents_indexed": 500,
@@ -319,7 +325,7 @@ impl TaskService for DataBackupService {
             "timestamp": chrono::Utc::now()
         })))
     }
-    
+
     fn clone_service(&self) -> Box<dyn TaskService> {
         Box::new(self.clone())
     }
@@ -337,12 +343,15 @@ impl TaskService for ContentIndexingService {
     }
 
     async fn execute(&self, action: &Action) -> Result<Option<serde_json::Value>, TaskError> {
-        println!("Running content indexing for index: {} for task: {}", self.index_name, action.name);
+        println!(
+            "Running content indexing for index: {} for task: {}",
+            self.index_name, action.name
+        );
         println!("Action: {} - {}", action.name, action.description);
-        
+
         // Simulate indexing work
         tokio::time::sleep(std::time::Duration::from_millis(800)).await;
-        
+
         let result = serde_json::json!({
             "index_name": self.index_name,
             // "documents_indexed": 500,
@@ -350,11 +359,11 @@ impl TaskService for ContentIndexingService {
             "status": "indexed",
             "timestamp": chrono::Utc::now()
         });
-        
+
         println!("Content indexing completed for task: {}", action.name);
         Ok(Some(result))
     }
-    
+
     fn clone_service(&self) -> Box<dyn TaskService> {
         Box::new(self.clone())
     }
@@ -370,29 +379,36 @@ impl TaskService for EmailNotificationService {
     fn name(&self) -> &str {
         "EmailNotificationService"
     }
-    
+
     async fn execute(&self, action: &Action) -> Result<Option<serde_json::Value>, TaskError> {
-        println!("Sending email notification via: {} for task: {}", self.smtp_server, action.name);
-        
+        println!(
+            "Sending email notification via: {} for task: {}",
+            self.smtp_server, action.name
+        );
+
         // Get email details from action arguments
-        let to_email = action.get_argument("to_email")
+        let to_email = action
+            .get_argument("to_email")
             .and_then(|v| v.as_str())
             .unwrap_or("unknown@example.com");
-        
+
         // Simulate email sending
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-        
+
         let result = serde_json::json!({
             "smtp_server": self.smtp_server,
             "to_email": to_email,
             "status": "sent",
             "timestamp": chrono::Utc::now()
         });
-        
-        println!("Email notification sent to: {} for task: {}", to_email, action.name);
+
+        println!(
+            "Email notification sent to: {} for task: {}",
+            to_email, action.name
+        );
         Ok(Some(result))
     }
-    
+
     fn clone_service(&self) -> Box<dyn TaskService> {
         Box::new(self.clone())
     }
@@ -456,10 +472,14 @@ mod tests {
             "TestService".to_string(),
         );
 
-        task.add_metadata("custom_field".to_string(), "custom_value").unwrap();
+        task.add_metadata("custom_field".to_string(), "custom_value")
+            .unwrap();
         task.add_metadata("priority_level".to_string(), 5).unwrap();
 
-        assert_eq!(task.get_metadata("custom_field"), Some(&json!("custom_value")));
+        assert_eq!(
+            task.get_metadata("custom_field"),
+            Some(&json!("custom_value"))
+        );
         assert_eq!(task.get_metadata("priority_level"), Some(&json!(5)));
     }
 
@@ -471,7 +491,8 @@ mod tests {
             "ConfigService".to_string(),
             TaskExecutionMode::Idempotent,
             ActionPriority::High,
-        ).with_timeout(30);
+        )
+        .with_timeout(30);
 
         assert_eq!(task.execution_mode, TaskExecutionMode::Idempotent);
         assert_eq!(task.action.priority, ActionPriority::High);
@@ -524,8 +545,12 @@ mod tests {
         );
 
         // Add email arguments
-        task.action.add_argument("to_email".to_string(), "user@example.com").unwrap();
-        task.action.add_argument("subject".to_string(), "Test Subject").unwrap();
+        task.action
+            .add_argument("to_email".to_string(), "user@example.com")
+            .unwrap();
+        task.action
+            .add_argument("subject".to_string(), "Test Subject")
+            .unwrap();
 
         let service = EmailNotificationService {
             smtp_server: "smtp.example.com".to_string(),

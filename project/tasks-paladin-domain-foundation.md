@@ -68,29 +68,29 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Verify feature branch `feature/epic_1-paladin-domain-foundation` is checked out (already created)
-  - [ ] 0.2 Ensure branch is up to date with develop branch
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Verify feature branch `feature/epic_1-paladin-domain-foundation` is checked out (already created)
+  - [x] 0.2 Ensure branch is up to date with develop branch
 
-- [ ] 1.0 Implement Core Domain Layer (Paladin Entity & Configuration)
-  - [ ] 1.1 Read existing `src/core/base/node.rs` to understand Node<T> pattern
-  - [ ] 1.2 Create `src/core/platform/container/paladin.rs`
-  - [ ] 1.3 Define `PaladinStatus` enum (Idle, Reasoning, Executing, Completed, Failed)
-  - [ ] 1.4 Define `PaladinData` struct with all required fields (system_prompt, name, user_name, model, temperature, max_loops, stop_words, status)
-  - [ ] 1.5 Implement `Serialize` and `Deserialize` derives for PaladinData
-  - [ ] 1.6 Create type alias `pub type Paladin = Node<PaladinData>`
-  - [ ] 1.7 Create `src/core/platform/container/paladin_config.rs`
-  - [ ] 1.8 Define `OutputFormat` enum (Text, Json, Structured)
-  - [ ] 1.9 Define `PaladinConfig` struct with Builder derive (retry_attempts, timeout_seconds, enable_planning, planning_prompt, output_format)
-  - [ ] 1.10 Add default implementations for PaladinConfig fields
-  - [ ] 1.11 Update `src/core/platform/container/mod.rs` to export paladin and paladin_config modules
-  - [ ] 1.12 Write unit test: `test_paladin_status_transitions` in `tests/unit/paladin_entity_test.rs`
-  - [ ] 1.13 Write unit test: `test_paladin_data_serialization_roundtrip`
-  - [ ] 1.14 Write unit test: `test_paladin_data_clone`
-  - [ ] 1.15 Write unit test: `test_paladin_config_defaults` in `tests/unit/paladin_config_test.rs`
-  - [ ] 1.16 Write unit test: `test_paladin_config_builder`
-  - [ ] 1.17 Run tests: `cargo test paladin_entity` and `cargo test paladin_config`
-  - [ ] 1.18 Verify all tests pass
+- [x] 1.0 Implement Core Domain Layer (Paladin Entity & Configuration)
+  - [x] 1.1 Read existing `src/core/base/entity/node.rs` to understand Node<T> pattern
+  - [x] 1.2 Create `src/core/platform/container/paladin.rs`
+  - [x] 1.3 Define `PaladinStatus` enum (Idle, Reasoning, Executing, Completed, Failed)
+  - [x] 1.4 Define `PaladinData` struct with all required fields (system_prompt, name, user_name, model, temperature, max_loops, stop_words, status)
+  - [x] 1.5 Implement `Serialize` and `Deserialize` derives for PaladinData
+  - [x] 1.6 Create type alias `pub type Paladin = Node<PaladinData>`
+  - [x] 1.7 Create `src/core/platform/container/paladin_config.rs`
+  - [x] 1.8 Define `OutputFormat` enum (Text, Json, Structured)
+  - [x] 1.9 Define `PaladinConfig` struct with Builder derive (retry_attempts, timeout_seconds, enable_planning, planning_prompt, output_format)
+  - [x] 1.10 Add default implementations for PaladinConfig fields
+  - [x] 1.11 Update `src/core/platform/container/mod.rs` to export paladin and paladin_config modules
+  - [x] 1.12 Write unit test: `test_paladin_status_transitions` in `tests/unit/paladin_entity_test.rs`
+  - [x] 1.13 Write unit test: `test_paladin_data_serialization_roundtrip`
+  - [x] 1.14 Write unit test: `test_paladin_data_clone`
+  - [x] 1.15 Write unit test: `test_paladin_config_defaults` in `tests/unit/paladin_config_test.rs`
+  - [x] 1.16 Write unit test: `test_paladin_config_builder`
+  - [x] 1.17 Run tests: `cargo test paladin_entity` and `cargo test paladin_config`
+  - [x] 1.18 Verify all tests pass
 
 - [ ] 2.0 Implement Application Layer Ports
   - [ ] 2.1 Create `src/application/use_cases/paladin/error.rs`

@@ -13,13 +13,13 @@ along with metadata management and error handling.
 */
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use md5::compute;
+use mime_guess::from_path;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use thiserror::Error;
 use uuid::Uuid;
-use md5::compute;
-use mime_guess::from_path;
 
 /// Result type for file storage operations
 pub type FileStorageResult<T> = Result<T, FileStorageError>;
@@ -29,43 +29,43 @@ pub type FileStorageResult<T> = Result<T, FileStorageError>;
 pub enum FileStorageError {
     #[error("File not found: {0}")]
     FileNotFound(String),
-    
+
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
-    
+
     #[error("Storage quota exceeded")]
     QuotaExceeded,
-    
+
     #[error("File too large: {size} bytes (max: {max_size} bytes)")]
     FileTooLarge { size: u64, max_size: u64 },
-    
+
     #[error("Invalid file path: {0}")]
     InvalidPath(String),
-    
+
     #[error("Bucket not found: {0}")]
     BucketNotFound(String),
-    
+
     #[error("Connection error: {0}")]
     ConnectionError(String),
-    
+
     #[error("Authentication failed: {0}")]
     AuthenticationError(String),
-    
+
     #[error("Serialization error: {0}")]
     SerializationError(String),
-    
+
     #[error("IO error: {0}")]
     IoError(String),
-    
+
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
-    
+
     #[error("Operation timeout")]
     Timeout,
-    
+
     #[error("Service unavailable")]
     ServiceUnavailable,
-    
+
     #[error("Unknown error: {0}")]
     Unknown(String),
 }
@@ -418,10 +418,13 @@ pub trait FullFileStoragePort:
 pub trait FileStorageUtils {
     /// Detect content type from file extension
     fn detect_content_type(path: &PathBuf) -> Option<String>;
-    
+
     fn detect_content_type_with_fallback(path: &PathBuf, fallback: &str) -> String;
-    
-    fn validate_content_type_for_domain(path: &PathBuf, expected_types: &[&str]) -> FileStorageResult<String>;
+
+    fn validate_content_type_for_domain(
+        path: &PathBuf,
+        expected_types: &[&str],
+    ) -> FileStorageResult<String>;
 
     /// Generate MD5 hash of content
     fn calculate_md5(content: &[u8]) -> String;
@@ -437,24 +440,28 @@ impl FileStorageUtils for () {
     fn detect_content_type(path: &PathBuf) -> Option<String> {
         Some(from_path(path).first_or_text_plain().to_string())
     }
-    
+
     fn detect_content_type_with_fallback(path: &PathBuf, fallback: &str) -> String {
         from_path(path)
             .first()
             .map(|mime| mime.to_string())
             .unwrap_or_else(|| fallback.to_string())
     }
-    
-    fn validate_content_type_for_domain(path: &PathBuf, expected_types: &[&str]) -> FileStorageResult<String> {
+
+    fn validate_content_type_for_domain(
+        path: &PathBuf,
+        expected_types: &[&str],
+    ) -> FileStorageResult<String> {
         let detected = Self::detect_content_type(path)
             .unwrap_or_else(|| "application/octet-stream".to_string());
-        
+
         if expected_types.is_empty() || expected_types.contains(&detected.as_str()) {
             Ok(detected)
         } else {
-            Err(FileStorageError::InvalidPath(
-                format!("File type '{}' not allowed. Expected one of: {:?}", detected, expected_types)
-            ))
+            Err(FileStorageError::InvalidPath(format!(
+                "File type '{}' not allowed. Expected one of: {:?}",
+                detected, expected_types
+            )))
         }
     }
 
@@ -465,7 +472,7 @@ impl FileStorageUtils for () {
 
     fn validate_path(path: &PathBuf) -> FileStorageResult<()> {
         let path_str = path.to_string_lossy();
-        
+
         // Check for invalid characters
         if path_str.contains("..") {
             return Err(FileStorageError::InvalidPath(
@@ -480,7 +487,9 @@ impl FileStorageUtils for () {
         }
 
         if path_str.is_empty() {
-            return Err(FileStorageError::InvalidPath("Path cannot be empty".to_string()));
+            return Err(FileStorageError::InvalidPath(
+                "Path cannot be empty".to_string(),
+            ));
         }
 
         // Check path length

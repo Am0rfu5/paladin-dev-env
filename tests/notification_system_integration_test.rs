@@ -3,7 +3,7 @@ Integration Test for the Notification System
 
 This test demonstrates the complete notification system functionality including:
 - Domain model validation and state management
-- Application service orchestration  
+- Application service orchestration
 - Infrastructure adapter delivery
 - Platform service coordination
 - Configuration integration
@@ -12,21 +12,20 @@ The test covers the full flow from notification creation to delivery
 across multiple channels following DDD and Hexagonal Architecture patterns.
 */
 
-use tokio;
 use std::collections::HashMap;
+use tokio;
 
-use paladin::core::platform::container::notification::{
-    Notification, NotificationContent, NotificationChannel, NotificationPriority,
-    NotificationRecipient, NotificationTemplate,
-};
 use paladin::application::ports::output::notification_port::{
     NotificationDeliveryPort, NotificationTemplatePort,
 };
-use paladin::infrastructure::adapters::notifications::{
-    EmailNotificationAdapter, EmailAdapterConfig,
-    SystemNotificationAdapter, SystemAdapterConfig,
+use paladin::config::application_settings::NotificationConfig;
+use paladin::core::platform::container::notification::{
+    Notification, NotificationChannel, NotificationContent, NotificationPriority,
+    NotificationRecipient, NotificationTemplate,
 };
-use paladin::config::application_settings::{NotificationConfig};
+use paladin::infrastructure::adapters::notifications::{
+    EmailAdapterConfig, EmailNotificationAdapter, SystemAdapterConfig, SystemNotificationAdapter,
+};
 
 /// Integration test for email notification flow
 #[tokio::test]
@@ -66,7 +65,8 @@ async fn test_email_notification_end_to_end() {
         content,
         NotificationChannel::Email,
         NotificationPriority::Normal,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 4. Verify adapter can handle this notification
     assert!(email_adapter.can_handle(&notification));
@@ -108,14 +108,18 @@ async fn test_system_notification_end_to_end() {
         content,
         NotificationChannel::System,
         NotificationPriority::High,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 4. Verify adapter can handle this notification
     assert!(system_adapter.can_handle(&notification));
     assert_eq!(system_adapter.channel(), NotificationChannel::System);
 
     // 5. Test delivery
-    let delivery_result = system_adapter.deliver_notification(notification.clone()).await.unwrap();
+    let delivery_result = system_adapter
+        .deliver_notification(notification.clone())
+        .await
+        .unwrap();
     assert_eq!(delivery_result.channel, NotificationChannel::System);
     assert_eq!(delivery_result.notification_id, notification.id);
 
@@ -153,7 +157,8 @@ async fn test_email_template_end_to_end() {
                 <p>We're excited to have you on board!</p>
             </body>
             </html>
-        "#.to_string(),
+        "#
+        .to_string(),
         variables: vec!["user_name".to_string(), "service_name".to_string()],
         version: 1,
         is_active: true,
@@ -166,22 +171,37 @@ async fn test_email_template_end_to_end() {
     assert!(validation_result.is_ok());
 
     // 4. Create template
-    let template_id = email_adapter.create_template(template.clone()).await.unwrap();
+    let template_id = email_adapter
+        .create_template(template.clone())
+        .await
+        .unwrap();
     assert_eq!(template_id, "welcome_email");
 
     // 5. Render template with variables
     let mut variables = HashMap::new();
-    variables.insert("user_name".to_string(), serde_json::Value::String("John Doe".to_string()));
-    variables.insert("service_name".to_string(), serde_json::Value::String("Amazing App".to_string()));
+    variables.insert(
+        "user_name".to_string(),
+        serde_json::Value::String("John Doe".to_string()),
+    );
+    variables.insert(
+        "service_name".to_string(),
+        serde_json::Value::String("Amazing App".to_string()),
+    );
 
-    let rendered_content = email_adapter.render_template("welcome_email", variables).await.unwrap();
-    
+    let rendered_content = email_adapter
+        .render_template("welcome_email", variables)
+        .await
+        .unwrap();
+
     assert_eq!(rendered_content.title, "Welcome to Amazing App, John Doe!");
     assert!(rendered_content.body.contains("Welcome John Doe!"));
     assert!(rendered_content.body.contains("joining Amazing App"));
 
     // 6. List templates
-    let templates = email_adapter.list_templates(Some(NotificationChannel::Email)).await.unwrap();
+    let templates = email_adapter
+        .list_templates(Some(NotificationChannel::Email))
+        .await
+        .unwrap();
     assert_eq!(templates.len(), 1);
     assert_eq!(templates[0].id, "welcome_email");
 
@@ -190,21 +210,24 @@ async fn test_email_template_end_to_end() {
     assert!(delete_result.is_ok());
 
     // 8. Verify template was deleted
-    let templates_after_delete = email_adapter.list_templates(Some(NotificationChannel::Email)).await.unwrap();
+    let templates_after_delete = email_adapter
+        .list_templates(Some(NotificationChannel::Email))
+        .await
+        .unwrap();
     assert_eq!(templates_after_delete.len(), 0);
 
     println!("✅ Email template end-to-end test completed successfully");
 }
 
 /// Integration test for application service
-#[tokio::test]  
+#[tokio::test]
 async fn test_email_notification_application_service() {
     // This test would require a mock MessageService
     // For now, we'll test the basic creation
-    
+
     // Create EmailNotificationService configuration would go here
     // This demonstrates the application layer orchestration
-    
+
     println!("✅ Email notification application service test completed successfully");
 }
 
@@ -248,7 +271,8 @@ async fn test_multi_channel_notification_flow() {
         ),
         NotificationChannel::Email,
         NotificationPriority::Normal,
-    ).unwrap();
+    )
+    .unwrap();
 
     let system_notification = Notification::new(
         NotificationRecipient::SystemComponent("user123".to_string()),
@@ -259,27 +283,31 @@ async fn test_multi_channel_notification_flow() {
         ),
         NotificationChannel::System,
         NotificationPriority::Normal,
-    ).unwrap();
+    )
+    .unwrap();
 
     // 3. Verify each adapter can handle its respective notification
     assert!(email_adapter.can_handle(&email_notification));
     assert!(!email_adapter.can_handle(&system_notification));
-    
+
     assert!(system_adapter.can_handle(&system_notification));
     assert!(!system_adapter.can_handle(&email_notification));
 
     // 4. Test capabilities differences
     let email_caps = email_adapter.capabilities();
     let system_caps = system_adapter.capabilities();
-    
+
     assert!(email_caps.supports_attachments);
     assert!(!system_caps.supports_attachments);
-    
+
     assert!(email_caps.rate_limit.is_some());
     assert!(system_caps.rate_limit.is_none());
 
     // 5. Test system delivery (email would require SMTP server)
-    let system_result = system_adapter.deliver_notification(system_notification).await.unwrap();
+    let system_result = system_adapter
+        .deliver_notification(system_notification)
+        .await
+        .unwrap();
     assert_eq!(system_result.channel, NotificationChannel::System);
 
     println!("✅ Multi-channel notification test completed successfully");
@@ -309,14 +337,18 @@ fn test_notification_system_summary() {
     println!("   • /src/core/platform/manager/notification_service.rs - Platform orchestrator");
     println!("   • /src/application/ports/output/notification_port.rs - Segregated ports");
     println!("   • /src/application/notifications/email_notifications.rs - Application service");
-    println!("   • /src/infrastructure/adapters/notifications/email_notification_adapter.rs - Email adapter");
-    println!("   • /src/infrastructure/adapters/notifications/system_notification_adapter.rs - System adapter");
+    println!(
+        "   • /src/infrastructure/adapters/notifications/email_notification_adapter.rs - Email adapter"
+    );
+    println!(
+        "   • /src/infrastructure/adapters/notifications/system_notification_adapter.rs - System adapter"
+    );
     println!("   • /src/config/application_settings.rs - Enhanced with notification config");
     println!("   • /src/config/setup/service_runner.rs - Notification service integration");
     println!();
     println!("🧪 Test Coverage:");
     println!("   • Domain model unit tests");
-    println!("   • Adapter integration tests");  
+    println!("   • Adapter integration tests");
     println!("   • Template rendering tests");
     println!("   • Multi-channel delivery tests");
     println!("   • Configuration validation tests");

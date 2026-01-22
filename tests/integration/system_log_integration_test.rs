@@ -9,14 +9,14 @@ use std::time::Duration;
 use tokio::time::sleep;
 use uuid::Uuid;
 
-use paladin::infrastructure::adapters::logs::system_log_adapter::{
-    SystemLogAdapter, SystemLogAdapterConfig
-};
-use paladin::application::ports::output::log_port::{LogPort, LogFormat};
-use paladin::core::platform::container::log::{
-    LogEntry, LogLevel, LogDestination, LogEntryBuilder
-};
+use paladin::application::ports::output::log_port::{LogFormat, LogPort};
 use paladin::core::base::entity::message::Location;
+use paladin::core::platform::container::log::{
+    LogDestination, LogEntry, LogEntryBuilder, LogLevel,
+};
+use paladin::infrastructure::adapters::logs::system_log_adapter::{
+    SystemLogAdapter, SystemLogAdapterConfig,
+};
 
 /// Test that the adapter can be created and write entries
 #[tokio::test]
@@ -54,18 +54,24 @@ async fn test_adapter_creation_and_writing() {
 
     // Write entries one by one
     for entry in &entries {
-        adapter.write_entry(entry.clone()).await.expect("Failed to write entry");
+        adapter
+            .write_entry(entry.clone())
+            .await
+            .expect("Failed to write entry");
     }
 
     // Flush to ensure all entries are processed
     adapter.flush().await.expect("Failed to flush");
-    
+
     sleep(Duration::from_millis(10)).await;
 
     // Check statistics
     let stats = adapter.get_stats().await.expect("Failed to get stats");
     assert_eq!(stats.entries_written, 3, "Should have written 3 entries");
-    assert!(stats.last_write.is_some(), "Should have last_write timestamp");
+    assert!(
+        stats.last_write.is_some(),
+        "Should have last_write timestamp"
+    );
 
     println!("Successfully wrote {} log entries", entries.len());
 }
@@ -89,30 +95,39 @@ async fn test_json_format_logging() {
         LogLevel::Info,
         "JSON test message".to_string(),
     );
-    
+
     // Add some context
     entry.message.context = Some(serde_json::json!({
         "user_id": "12345",
         "session_id": "abc-def-ghi",
         "action": "test_json_logging"
     }));
-    
+
     entry.correlation_id = Some(Uuid::new_v4());
 
-    adapter.write_entry(entry.clone()).await.expect("Failed to write JSON entry");
+    adapter
+        .write_entry(entry.clone())
+        .await
+        .expect("Failed to write JSON entry");
     adapter.flush().await.expect("Failed to flush");
-    
+
     sleep(Duration::from_millis(10)).await;
 
     // Instead of testing the formatted output directly (which requires private method access),
     // we'll test that the entry was written successfully and verify the adapter's behavior
     let stats = adapter.get_stats().await.expect("Failed to get stats");
     assert_eq!(stats.entries_written, 1, "Should have written 1 entry");
-    assert!(stats.last_write.is_some(), "Should have last_write timestamp");
+    assert!(
+        stats.last_write.is_some(),
+        "Should have last_write timestamp"
+    );
 
     // Test that the adapter supports JSON format
     let formats = adapter.supported_formats();
-    assert!(formats.contains(&LogFormat::Json), "Should support JSON format");
+    assert!(
+        formats.contains(&LogFormat::Json),
+        "Should support JSON format"
+    );
 
     println!("JSON formatting test passed - adapter successfully processed JSON entry");
 }
@@ -144,14 +159,20 @@ async fn test_batch_writing() {
     let batch_size = batch_entries.len();
 
     // Write the batch
-    adapter.write_entries(batch_entries).await.expect("Failed to write batch");
+    adapter
+        .write_entries(batch_entries)
+        .await
+        .expect("Failed to write batch");
     adapter.flush().await.expect("Failed to flush batch");
-    
+
     sleep(Duration::from_millis(50)).await;
 
     // Check statistics
     let stats = adapter.get_stats().await.expect("Failed to get stats");
-    assert_eq!(stats.entries_written, batch_size as u64, "Incorrect entry count in stats");
+    assert_eq!(
+        stats.entries_written, batch_size as u64,
+        "Incorrect entry count in stats"
+    );
     assert!(stats.last_write.is_some(), "Last write timestamp not set");
 
     println!("Batch writing test passed: wrote {} entries", batch_size);
@@ -185,7 +206,10 @@ async fn test_log_levels() {
             level,
             message.to_string(),
         );
-        adapter.write_entry(entry).await.expect("Failed to write level test entry");
+        adapter
+            .write_entry(entry)
+            .await
+            .expect("Failed to write level test entry");
     }
 
     adapter.flush().await.expect("Failed to flush level test");
@@ -210,13 +234,28 @@ async fn test_health_and_statistics() {
     let adapter = SystemLogAdapter::new(config).expect("Failed to create adapter");
 
     // Initial health check
-    let health = adapter.health_check().await.expect("Failed to perform health check");
-    assert!(health.is_empty() || health.iter().all(|h| h.healthy), "Adapter should be healthy initially");
+    let health = adapter
+        .health_check()
+        .await
+        .expect("Failed to perform health check");
+    assert!(
+        health.is_empty() || health.iter().all(|h| h.healthy),
+        "Adapter should be healthy initially"
+    );
 
     // Initial stats
-    let initial_stats = adapter.get_stats().await.expect("Failed to get initial stats");
-    assert_eq!(initial_stats.entries_written, 0, "Should start with 0 entries written");
-    assert!(initial_stats.last_write.is_none(), "Should not have last_write initially");
+    let initial_stats = adapter
+        .get_stats()
+        .await
+        .expect("Failed to get initial stats");
+    assert_eq!(
+        initial_stats.entries_written, 0,
+        "Should start with 0 entries written"
+    );
+    assert!(
+        initial_stats.last_write.is_none(),
+        "Should not have last_write initially"
+    );
 
     // Write some entries
     for i in 0..10 {
@@ -226,20 +265,41 @@ async fn test_health_and_statistics() {
             LogLevel::Info,
             format!("Health test message {}", i),
         );
-        adapter.write_entry(entry).await.expect("Failed to write health test entry");
+        adapter
+            .write_entry(entry)
+            .await
+            .expect("Failed to write health test entry");
     }
 
     // Check stats after writing
-    let final_stats = adapter.get_stats().await.expect("Failed to get final stats");
-    assert_eq!(final_stats.entries_written, 10, "Should have written 10 entries");
-    assert!(final_stats.last_write.is_some(), "Should have last_write timestamp");
+    let final_stats = adapter
+        .get_stats()
+        .await
+        .expect("Failed to get final stats");
+    assert_eq!(
+        final_stats.entries_written, 10,
+        "Should have written 10 entries"
+    );
+    assert!(
+        final_stats.last_write.is_some(),
+        "Should have last_write timestamp"
+    );
 
     // Health check after activity
-    let final_health = adapter.health_check().await.expect("Failed to perform final health check");
-    assert!(final_health.is_empty() || final_health.iter().all(|h| h.healthy), "Adapter should still be healthy");
+    let final_health = adapter
+        .health_check()
+        .await
+        .expect("Failed to perform final health check");
+    assert!(
+        final_health.is_empty() || final_health.iter().all(|h| h.healthy),
+        "Adapter should still be healthy"
+    );
 
     // Test connection
-    adapter.test_connection().await.expect("Connection test should succeed");
+    adapter
+        .test_connection()
+        .await
+        .expect("Connection test should succeed");
 
     println!("Health and statistics test passed: {:?}", final_stats);
 }
@@ -263,7 +323,7 @@ async fn test_error_handling() {
         LogLevel::Error,
         "Error handling test".to_string(),
     );
-    
+
     let result = adapter.write_entry(entry).await;
     assert!(result.is_ok(), "Write entry should succeed");
 
@@ -283,12 +343,21 @@ async fn test_adapter_metadata() {
     let adapter = SystemLogAdapter::new(config).expect("Failed to create adapter");
 
     // Test provider name
-    assert_eq!(adapter.get_provider_name(), "SystemLogAdapter (log + env_logger)");
+    assert_eq!(
+        adapter.get_provider_name(),
+        "SystemLogAdapter (log + env_logger)"
+    );
 
     // Test supported formats
     let formats = adapter.supported_formats();
-    assert!(formats.contains(&LogFormat::Json), "Should support JSON format");
-    assert!(formats.contains(&LogFormat::Text), "Should support Text format");
+    assert!(
+        formats.contains(&LogFormat::Json),
+        "Should support JSON format"
+    );
+    assert!(
+        formats.contains(&LogFormat::Text),
+        "Should support Text format"
+    );
     assert!(formats.len() >= 2, "Should support at least 2 formats");
 
     println!("Metadata test passed. Supported formats: {:?}", formats);
@@ -312,15 +381,18 @@ async fn test_environment_configuration() {
     assert_eq!(config.target, "env_test");
 
     let adapter = SystemLogAdapter::new(config).expect("Failed to create adapter from env");
-    
+
     let entry = LogEntryBuilder::new_entry(
         Location::system("env_test"),
         LogDestination::System,
         LogLevel::Info,
         "Environment configuration test".to_string(),
     );
-    
-    adapter.write_entry(entry).await.expect("Failed to write entry");
+
+    adapter
+        .write_entry(entry)
+        .await
+        .expect("Failed to write entry");
 
     // TODO See above, this may remove existing env vars that are needed for other tests
     // Clean up

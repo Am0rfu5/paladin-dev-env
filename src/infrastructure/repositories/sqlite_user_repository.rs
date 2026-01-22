@@ -6,13 +6,13 @@ This adapter handles the actual database operations for user persistence.
 */
 
 use crate::application::storage::user_store::UserRepositoryPort;
-use crate::core::platform::container::user::{User, UserData, Email, UserProfile, UserError};
 use crate::config::application_settings::Settings;
+use crate::core::platform::container::user::{Email, User, UserData, UserError, UserProfile};
 use async_trait::async_trait;
-use sqlx::{SqlitePool, Row, sqlite::SqlitePoolOptions};
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
 use std::str::FromStr;
+use uuid::Uuid;
 
 pub struct SqliteUserRepository {
     pool: SqlitePool,
@@ -23,16 +23,18 @@ impl SqliteUserRepository {
     pub async fn new(_settings: &Settings) -> Result<Self, UserError> {
         // For now, use the same database as the main store
         let database_url = "sqlite:database.db";
-        
+
         let pool = SqlitePoolOptions::new()
             .max_connections(10)
             .connect(database_url)
             .await
-            .map_err(|e| UserError::RepositoryError(format!("Failed to connect to database: {}", e)))?;
+            .map_err(|e| {
+                UserError::RepositoryError(format!("Failed to connect to database: {}", e))
+            })?;
 
         let repository = Self { pool };
         repository.migrate().await?;
-        
+
         Ok(repository)
     }
 
@@ -86,22 +88,26 @@ impl SqliteUserRepository {
 
     /// Convert database row to User
     fn row_to_user(&self, row: &sqlx::sqlite::SqliteRow) -> Result<User, UserError> {
-        let uuid_str: String = row.try_get("uuid")
+        let uuid_str: String = row
+            .try_get("uuid")
             .map_err(|e| UserError::RepositoryError(format!("Failed to get uuid: {}", e)))?;
         let uuid = Uuid::from_str(&uuid_str)
             .map_err(|e| UserError::RepositoryError(format!("Invalid UUID: {}", e)))?;
 
-        let email_str: String = row.try_get("email")
+        let email_str: String = row
+            .try_get("email")
             .map_err(|e| UserError::RepositoryError(format!("Failed to get email: {}", e)))?;
         let email = Email::new(email_str)?;
 
-        let created_str: String = row.try_get("created_at")
+        let created_str: String = row
+            .try_get("created_at")
             .map_err(|e| UserError::RepositoryError(format!("Failed to get created_at: {}", e)))?;
         let created_at = DateTime::parse_from_rfc3339(&created_str)
             .map_err(|e| UserError::RepositoryError(format!("Invalid created_at: {}", e)))?
             .with_timezone(&Utc);
 
-        let modified_str: String = row.try_get("modified_at")
+        let modified_str: String = row
+            .try_get("modified_at")
             .map_err(|e| UserError::RepositoryError(format!("Failed to get modified_at: {}", e)))?;
         let modified_at = DateTime::parse_from_rfc3339(&modified_str)
             .map_err(|e| UserError::RepositoryError(format!("Invalid modified_at: {}", e)))?
@@ -117,21 +123,26 @@ impl SqliteUserRepository {
         };
 
         let user_data = UserData {
-            username: row.try_get("username")
-                .map_err(|e| UserError::RepositoryError(format!("Failed to get username: {}", e)))?,
+            username: row.try_get("username").map_err(|e| {
+                UserError::RepositoryError(format!("Failed to get username: {}", e))
+            })?,
             email,
-            password_hash: row.try_get("password_hash")
-                .map_err(|e| UserError::RepositoryError(format!("Failed to get password_hash: {}", e)))?,
-            is_active: row.try_get("is_active")
-                .map_err(|e| UserError::RepositoryError(format!("Failed to get is_active: {}", e)))?,
-            is_verified: row.try_get("is_verified")
-                .map_err(|e| UserError::RepositoryError(format!("Failed to get is_verified: {}", e)))?,
+            password_hash: row.try_get("password_hash").map_err(|e| {
+                UserError::RepositoryError(format!("Failed to get password_hash: {}", e))
+            })?,
+            is_active: row.try_get("is_active").map_err(|e| {
+                UserError::RepositoryError(format!("Failed to get is_active: {}", e))
+            })?,
+            is_verified: row.try_get("is_verified").map_err(|e| {
+                UserError::RepositoryError(format!("Failed to get is_verified: {}", e))
+            })?,
             profile,
         };
 
         let user = User {
             uuid,
-            version: row.try_get("version")
+            version: row
+                .try_get("version")
                 .map_err(|e| UserError::RepositoryError(format!("Failed to get version: {}", e)))?,
             created: created_at,
             modified: modified_at,
@@ -269,7 +280,8 @@ impl UserRepositoryPort for SqliteUserRepository {
             .await
             .map_err(|e| UserError::RepositoryError(format!("Database query failed: {}", e)))?;
 
-        let count: i64 = row.try_get("count")
+        let count: i64 = row
+            .try_get("count")
             .map_err(|e| UserError::RepositoryError(format!("Failed to get count: {}", e)))?;
 
         Ok(count > 0)
@@ -282,7 +294,8 @@ impl UserRepositoryPort for SqliteUserRepository {
             .await
             .map_err(|e| UserError::RepositoryError(format!("Database query failed: {}", e)))?;
 
-        let count: i64 = row.try_get("count")
+        let count: i64 = row
+            .try_get("count")
             .map_err(|e| UserError::RepositoryError(format!("Failed to get count: {}", e)))?;
 
         Ok(count > 0)
@@ -324,7 +337,8 @@ impl UserRepositoryPort for SqliteUserRepository {
             .await
             .map_err(|e| UserError::RepositoryError(format!("Database query failed: {}", e)))?;
 
-        let count: i64 = row.try_get("count")
+        let count: i64 = row
+            .try_get("count")
             .map_err(|e| UserError::RepositoryError(format!("Failed to get count: {}", e)))?;
 
         Ok(count as u64)

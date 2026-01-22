@@ -1,12 +1,12 @@
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use url::Url;
+use crate::core::base::entity::node::Node;
 use chrono::{DateTime, Utc};
+use fasthash::{FastHash, murmur3::Hash128_x64};
+use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 use std::io::Read;
-use fasthash::{murmur3::Hash128_x64, FastHash};
 use thiserror::Error;
-use crate::core::base::entity::node::Node;
+use url::Url;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct ContentItem {
@@ -96,10 +96,10 @@ impl ContentItem {
         self.node.node.content = new_content;
         self.node.node.hash = new_hash;
         self.node.node.mod_date = Some(Utc::now());
-        
+
         // Update the node's modified timestamp
         self.node.modified = Utc::now();
-        
+
         Ok(())
     }
 
@@ -137,7 +137,7 @@ impl ContentItem {
         self.node.node.source_url = source_url;
         self.node.modified = Utc::now();
     }
-    
+
     pub fn set_source_id(&mut self, source_id: Option<String>) {
         self.node.node.source_id = source_id;
         self.node.modified = Utc::now();
@@ -366,7 +366,8 @@ pub enum ContentItemError {
 fn generate_file_hash(path: &str) -> Result<String, ContentItemError> {
     let mut file = std::fs::File::open(path).map_err(|_| ContentItemError::FileNotFound)?;
     let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer).map_err(|_| ContentItemError::FileReadError)?;
+    file.read_to_end(&mut buffer)
+        .map_err(|_| ContentItemError::FileReadError)?;
     let hash = Hash128_x64::hash(&buffer);
     Ok(format!("{:x}", hash))
 }
@@ -388,9 +389,9 @@ mod tests {
     fn test_content_item_new() {
         let text_content = TextContent::new(None, Some("test content".to_string())).unwrap();
         let content_type = ContentType::Text(text_content);
-        
+
         let content_item = ContentItem::new(content_type.clone()).unwrap();
-        
+
         assert_eq!(content_item.content(), &content_type);
         assert!(content_item.uuid() != Uuid::nil());
         assert!(content_item.created() <= Utc::now());
@@ -404,16 +405,16 @@ mod tests {
     fn test_content_item_hash() {
         let text_content1 = TextContent::new(None, Some("content 1".to_string())).unwrap();
         let text_content2 = TextContent::new(None, Some("content 2".to_string())).unwrap();
-        
+
         let item1 = ContentItem::new(ContentType::Text(text_content1)).unwrap();
         let item2 = ContentItem::new(ContentType::Text(text_content2)).unwrap();
-        
+
         let mut hasher1 = std::collections::hash_map::DefaultHasher::new();
         let mut hasher2 = std::collections::hash_map::DefaultHasher::new();
-        
+
         Hash::hash(&item1, &mut hasher1);
         Hash::hash(&item2, &mut hasher2);
-        
+
         // Different content should produce different hashes
         assert_ne!(hasher1.finish(), hasher2.finish());
     }
@@ -421,19 +422,17 @@ mod tests {
     #[test]
     fn test_content_item_serialization() -> Result<(), Box<dyn std::error::Error>> {
         let text_content = TextContent::new(None, Some("serialize test".to_string()))?;
-        let content_item = ContentItem::new_with_title(
-            ContentType::Text(text_content),
-            "Test Item".to_string(),
-        )?;
-        
+        let content_item =
+            ContentItem::new_with_title(ContentType::Text(text_content), "Test Item".to_string())?;
+
         // Test serialization
         let serialized = serde_json::to_string(&content_item)?;
         assert!(!serialized.is_empty());
-        
+
         // Test deserialization
         let deserialized: ContentItem = serde_json::from_str(&serialized)?;
         assert_eq!(content_item, deserialized);
-        
+
         Ok(())
     }
 

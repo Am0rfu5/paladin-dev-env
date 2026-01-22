@@ -21,9 +21,9 @@ impl<T: ContentListFetchingService> FetchContentList<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uuid::Uuid;
-    use url::Url;
     use chrono::Utc;
+    use url::Url;
+    use uuid::Uuid;
 
     struct MockContentListFetchingService;
 
@@ -31,10 +31,10 @@ mod tests {
         fn fetch_content_list(&self, _url: &str) -> Result<ContentList, String> {
             let test_url = Url::parse("https://example.com/test-list")
                 .map_err(|e| format!("Failed to parse URL: {}", e))?;
-            
+
             let mut content_list = ContentList::with_name("test.txt".to_string());
             content_list.set_url(Some(test_url));
-            
+
             Ok(content_list)
         }
     }
@@ -55,7 +55,7 @@ mod tests {
     #[test]
     fn test_fetch_content_list_with_error() {
         struct FailingMockService;
-        
+
         impl ContentListFetchingService for FailingMockService {
             fn fetch_content_list(&self, _url: &str) -> Result<ContentList, String> {
                 Err("Failed to fetch content list".to_string())
@@ -78,17 +78,22 @@ mod tests {
 
         assert!(result.is_ok());
         let content_list = result.unwrap();
-        
+
         // Test that the URL is valid
-        assert_eq!(content_list.url.as_ref().unwrap().as_str(), "https://example.com/test-list");
-        
+        assert_eq!(
+            content_list.url.as_ref().unwrap().as_str(),
+            "https://example.com/test-list"
+        );
+
         // Test that timestamps are reasonable (within the last minute)
         let now = Utc::now();
         let time_diff = now.signed_duration_since(content_list.created);
         assert!(time_diff.num_seconds() < 60); // Created within last minute
-        
+
         // Test that created and modified are close to each other
-        let creation_diff = content_list.modified.signed_duration_since(content_list.created);
+        let creation_diff = content_list
+            .modified
+            .signed_duration_since(content_list.created);
         assert!(creation_diff.num_milliseconds() < 1000); // Within 1 second
     }
 }

@@ -1,13 +1,15 @@
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
-use async_trait::async_trait;
-use tokio::sync::RwLock;
 use thiserror::Error;
+use tokio::sync::RwLock;
 
 // Fixed imports - now importing Event from base component
 use crate::core::base::component::event::Event;
-use crate::core::base::entity::message::{Message, Location, MessagePriority};
-use crate::core::base::service::message_service::{MessageService, MessageHandler, MessageResult, MessageError};
+use crate::core::base::entity::message::{Location, Message, MessagePriority};
+use crate::core::base::service::message_service::{
+    MessageError, MessageHandler, MessageResult, MessageService,
+};
 
 /// Defines the interface for handling events asynchronously.
 #[async_trait]
@@ -40,7 +42,9 @@ impl MessageHandler<Event> for EventMessageHandler {
                 let subscribers = self.subscribers.read().await;
                 if let Some(handlers) = subscribers.get(event_type) {
                     for handler in handlers {
-                        handler.handle(&message.message).await
+                        handler
+                            .handle(&message.message)
+                            .await
                             .map_err(|e| MessageError::DeliveryFailed(e.to_string()))?;
                     }
                 }
@@ -55,7 +59,7 @@ impl MessageHandler<Event> for EventMessageHandler {
 }
 
 /// Manages event publishing and subscription using the MessageService.
-/// 
+///
 /// This service provides a high-level interface for event-driven communication
 /// within the paladin system. It handles event routing, subscription management,
 /// and integrates with the underlying MessageService for transport.
@@ -113,7 +117,11 @@ impl EventService {
     }
 
     /// Subscribes a handler to a specific event type.
-    pub async fn subscribe(&self, event_type: &str, handler: Arc<dyn EventHandler>) -> Result<(), EventError> {
+    pub async fn subscribe(
+        &self,
+        event_type: &str,
+        handler: Arc<dyn EventHandler>,
+    ) -> Result<(), EventError> {
         let mut subscribers = self.subscribers.write().await;
         subscribers
             .entry(event_type.to_string())
@@ -123,7 +131,11 @@ impl EventService {
     }
 
     /// Subscribes a handler to multiple event types.
-    pub async fn subscribe_multiple(&self, event_types: Vec<&str>, handler: Arc<dyn EventHandler>) -> Result<(), EventError> {
+    pub async fn subscribe_multiple(
+        &self,
+        event_types: Vec<&str>,
+        handler: Arc<dyn EventHandler>,
+    ) -> Result<(), EventError> {
         for event_type in event_types {
             self.subscribe(event_type, handler.clone()).await?;
         }
@@ -158,8 +170,8 @@ impl EventService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::time::{sleep, Duration};
     use serde_json::json;
+    use tokio::time::{Duration, sleep};
 
     /// Mock event handler for testing.
     struct MockHandler {
@@ -179,10 +191,8 @@ mod tests {
     async fn test_event_publish_and_subscribe() {
         let message_service = Arc::new(MessageService::new(Default::default()));
         message_service.start().await.unwrap();
-        
-        let event_service = EventService::new(message_service.clone())
-            .await
-            .unwrap();
+
+        let event_service = EventService::new(message_service.clone()).await.unwrap();
 
         let received_events = Arc::new(RwLock::new(Vec::new()));
         let handler = Arc::new(MockHandler {
@@ -190,7 +200,10 @@ mod tests {
         });
 
         // Subscribe to "content_ingested" events
-        event_service.subscribe("content_ingested", handler).await.unwrap();
+        event_service
+            .subscribe("content_ingested", handler)
+            .await
+            .unwrap();
 
         // Publish an event
         let event = Event::new(
@@ -214,20 +227,28 @@ mod tests {
     async fn test_multiple_subscribers() {
         let message_service = Arc::new(MessageService::new(Default::default()));
         message_service.start().await.unwrap();
-        
-        let event_service = EventService::new(message_service.clone())
-            .await
-            .unwrap();
+
+        let event_service = EventService::new(message_service.clone()).await.unwrap();
 
         let received_events_1 = Arc::new(RwLock::new(Vec::new()));
         let received_events_2 = Arc::new(RwLock::new(Vec::new()));
-        
-        let handler_1 = Arc::new(MockHandler { received: received_events_1.clone() });
-        let handler_2 = Arc::new(MockHandler { received: received_events_2.clone() });
+
+        let handler_1 = Arc::new(MockHandler {
+            received: received_events_1.clone(),
+        });
+        let handler_2 = Arc::new(MockHandler {
+            received: received_events_2.clone(),
+        });
 
         // Subscribe both handlers to the same event type
-        event_service.subscribe("test_event", handler_1).await.unwrap();
-        event_service.subscribe("test_event", handler_2).await.unwrap();
+        event_service
+            .subscribe("test_event", handler_1)
+            .await
+            .unwrap();
+        event_service
+            .subscribe("test_event", handler_2)
+            .await
+            .unwrap();
 
         // Publish an event
         let event = Event::new(
@@ -251,25 +272,38 @@ mod tests {
     async fn test_batch_publish() {
         let message_service = Arc::new(MessageService::new(Default::default()));
         message_service.start().await.unwrap();
-        
-        let event_service = EventService::new(message_service.clone())
-            .await
-            .unwrap();
+
+        let event_service = EventService::new(message_service.clone()).await.unwrap();
 
         let received_events = Arc::new(RwLock::new(Vec::new()));
         let handler = Arc::new(MockHandler {
             received: received_events.clone(),
         });
 
-        event_service.subscribe("batch_event", handler).await.unwrap();
+        event_service
+            .subscribe("batch_event", handler)
+            .await
+            .unwrap();
 
         // Publish multiple events in batch
         let events = vec![
-            Event::new("batch_event".to_string(), json!({"id": 1}), "test".to_string()),
-            Event::new("batch_event".to_string(), json!({"id": 2}), "test".to_string()),
-            Event::new("batch_event".to_string(), json!({"id": 3}), "test".to_string()),
+            Event::new(
+                "batch_event".to_string(),
+                json!({"id": 1}),
+                "test".to_string(),
+            ),
+            Event::new(
+                "batch_event".to_string(),
+                json!({"id": 2}),
+                "test".to_string(),
+            ),
+            Event::new(
+                "batch_event".to_string(),
+                json!({"id": 3}),
+                "test".to_string(),
+            ),
         ];
-        
+
         event_service.publish_batch(events).await.unwrap();
 
         sleep(Duration::from_millis(100)).await;
@@ -282,10 +316,8 @@ mod tests {
     async fn test_subscriber_count() {
         let message_service = Arc::new(MessageService::new(Default::default()));
         message_service.start().await.unwrap();
-        
-        let event_service = EventService::new(message_service.clone())
-            .await
-            .unwrap();
+
+        let event_service = EventService::new(message_service.clone()).await.unwrap();
 
         let handler = Arc::new(MockHandler {
             received: Arc::new(RwLock::new(Vec::new())),
@@ -294,11 +326,17 @@ mod tests {
         assert_eq!(event_service.subscriber_count("test_event").await, 0);
         assert!(!event_service.has_subscribers("test_event").await);
 
-        event_service.subscribe("test_event", handler.clone()).await.unwrap();
+        event_service
+            .subscribe("test_event", handler.clone())
+            .await
+            .unwrap();
         assert_eq!(event_service.subscriber_count("test_event").await, 1);
         assert!(event_service.has_subscribers("test_event").await);
 
-        event_service.subscribe("test_event", handler).await.unwrap();
+        event_service
+            .subscribe("test_event", handler)
+            .await
+            .unwrap();
         assert_eq!(event_service.subscriber_count("test_event").await, 2);
     }
 }

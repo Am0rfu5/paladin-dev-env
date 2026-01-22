@@ -22,17 +22,24 @@ mod cli_tests {
     #[test]
     fn test_register_command_parsing() {
         let args = vec![
-            "test", "register", 
-            "--username", "testuser",
-            "--email", "test@example.com",
-            "--password", "securepassword",
-            "--first-name", "Test",
-            "--last-name", "User",
-            "--bio", "Test bio"
+            "test",
+            "register",
+            "--username",
+            "testuser",
+            "--email",
+            "test@example.com",
+            "--password",
+            "securepassword",
+            "--first-name",
+            "Test",
+            "--last-name",
+            "User",
+            "--bio",
+            "Test bio",
         ];
 
         let cli = TestCli::try_parse_from(args).unwrap();
-        
+
         if let Some(UserCommands::Register(register_args)) = cli.user {
             assert_eq!(register_args.username, "testuser");
             assert_eq!(register_args.email, "test@example.com");
@@ -50,13 +57,16 @@ mod cli_tests {
     #[test]
     fn test_login_command_parsing() {
         let args = vec![
-            "test", "login",
-            "--email", "test@example.com",
-            "--password", "securepassword"
+            "test",
+            "login",
+            "--email",
+            "test@example.com",
+            "--password",
+            "securepassword",
         ];
 
         let cli = TestCli::try_parse_from(args).unwrap();
-        
+
         if let Some(UserCommands::Login(login_args)) = cli.user {
             assert_eq!(login_args.email, "test@example.com");
             assert_eq!(login_args.password, "securepassword");
@@ -67,13 +77,10 @@ mod cli_tests {
 
     #[test]
     fn test_get_user_command_parsing() {
-        let args = vec![
-            "test", "get",
-            "--identifier", "user123"
-        ];
+        let args = vec!["test", "get", "--identifier", "user123"];
 
         let cli = TestCli::try_parse_from(args).unwrap();
-        
+
         if let Some(UserCommands::Get(get_args)) = cli.user {
             assert_eq!(get_args.identifier, "user123");
         } else {
@@ -84,14 +91,18 @@ mod cli_tests {
     #[test]
     fn test_register_command_with_minimal_args() {
         let args = vec![
-            "test", "register",
-            "--username", "testuser",
-            "--email", "test@example.com", 
-            "--password", "securepassword"
+            "test",
+            "register",
+            "--username",
+            "testuser",
+            "--email",
+            "test@example.com",
+            "--password",
+            "securepassword",
         ];
 
         let cli = TestCli::try_parse_from(args).unwrap();
-        
+
         if let Some(UserCommands::Register(register_args)) = cli.user {
             assert_eq!(register_args.username, "testuser");
             assert_eq!(register_args.email, "test@example.com");

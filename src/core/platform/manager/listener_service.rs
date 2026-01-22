@@ -18,15 +18,17 @@ Ports for external Event Adapters are at the Infrastructure Layer.
 */
 
 use crate::core::base::component::event::Event;
-use crate::core::platform::container::trigger::{Trigger, TriggerCondition, TriggerConfig, TriggerStatus, TriggerSummary};
-use std::collections::{HashMap, VecDeque};
-use std::sync::Arc;
-use tokio::sync::{RwLock, Mutex};
-use uuid::Uuid;
+use crate::core::platform::container::trigger::{
+    Trigger, TriggerCondition, TriggerConfig, TriggerStatus, TriggerSummary,
+};
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, VecDeque};
+use std::sync::Arc;
 use thiserror::Error;
-use async_trait::async_trait;
+use tokio::sync::{Mutex, RwLock};
+use uuid::Uuid;
 
 /// Listener service errors
 #[derive(Debug, Error)]
@@ -96,25 +98,25 @@ pub struct ListenerStats {
 pub trait EventListener: Send + Sync {
     /// Get the listener name
     fn name(&self) -> &str;
-    
+
     /// Get the listener description
     fn description(&self) -> &str;
-    
+
     /// Get the trigger conditions this listener matches
     fn conditions(&self) -> &[TriggerCondition];
-    
+
     /// Check if this listener should process the given event
     async fn should_process(&self, event: &Event) -> bool;
-    
+
     /// Create a trigger for the given event
     async fn create_trigger(&self, event: Event) -> Result<Trigger, ListenerError>;
-    
+
     /// Get listener configuration
     fn config(&self) -> &ListenerConfig;
-    
+
     /// Update listener configuration
     fn update_config(&mut self, config: ListenerConfig);
-    
+
     /// Health check for the listener
     async fn health_check(&self) -> Result<bool, ListenerError>;
 }
@@ -172,7 +174,8 @@ impl ListenerWrapper {
         }
 
         // Clean up old entries from the time window
-        let window_start = Utc::now() - chrono::Duration::seconds(config.time_window_seconds as i64);
+        let window_start =
+            Utc::now() - chrono::Duration::seconds(config.time_window_seconds as i64);
         while let Some(&front_time) = self.trigger_count_window.front() {
             if front_time < window_start {
                 self.trigger_count_window.pop_front();
@@ -225,12 +228,15 @@ impl ListenerService {
             trigger_queue: Arc::new(Mutex::new(VecDeque::new())),
         }
     }
-    
+
     /// Register a new event listener
-    pub async fn register_listener(&self, listener: Box<dyn EventListener>) -> Result<(), ListenerError> {
+    pub async fn register_listener(
+        &self,
+        listener: Box<dyn EventListener>,
+    ) -> Result<(), ListenerError> {
         let name = listener.name().to_string();
         let wrapper = Arc::new(Mutex::new(ListenerWrapper::new(listener)));
-        
+
         let mut listeners = self.listeners.write().await;
         listeners.insert(name, wrapper);
         Ok(())
@@ -239,7 +245,8 @@ impl ListenerService {
     /// Unregister an event listener
     pub async fn unregister_listener(&self, name: &str) -> Result<(), ListenerError> {
         let mut listeners = self.listeners.write().await;
-        listeners.remove(name)
+        listeners
+            .remove(name)
             .ok_or_else(|| ListenerError::ListenerNotFound(name.to_string()))?;
         Ok(())
     }
@@ -248,51 +255,55 @@ impl ListenerService {
     pub async fn process_event(&self, event: Event) -> Result<Vec<Uuid>, ListenerError> {
         let mut created_triggers = Vec::new();
         let listeners = self.listeners.read().await;
-        
+
         for listener_wrapper in listeners.values() {
             let mut wrapper = listener_wrapper.lock().await;
-            
+
             // Record that we processed an event
             wrapper.record_event_processed();
-            
+
             // Check if listener should process this event
             if !wrapper.listener.should_process(&event).await {
                 continue;
             }
-            
+
             // Check rate limiting
             if !wrapper.can_create_trigger() {
                 continue;
             }
-            
+
             // Create trigger
             match wrapper.listener.create_trigger(event.clone()).await {
                 Ok(trigger) => {
                     let trigger_id = trigger.id;
-                    
+
                     // Store the trigger
                     {
                         let mut triggers = self.triggers.write().await;
                         triggers.insert(trigger_id, trigger);
                     }
-                    
+
                     // Add to processing queue
                     {
                         let mut queue = self.trigger_queue.lock().await;
                         queue.push_back(trigger_id);
                     }
-                    
+
                     // Record metrics
                     wrapper.record_trigger_created();
                     created_triggers.push(trigger_id);
                 }
                 Err(e) => {
                     // Log error but continue processing with other listeners
-                    eprintln!("Failed to create trigger for listener {}: {}", wrapper.listener.name(), e);
+                    eprintln!(
+                        "Failed to create trigger for listener {}: {}",
+                        wrapper.listener.name(),
+                        e
+                    );
                 }
             }
         }
-        
+
         Ok(created_triggers)
     }
 
@@ -302,7 +313,7 @@ impl ListenerService {
             let mut queue = self.trigger_queue.lock().await;
             queue.pop_front()
         }?;
-        
+
         let mut triggers = self.triggers.write().await;
         triggers.remove(&trigger_id)
     }
@@ -310,13 +321,18 @@ impl ListenerService {
     /// Get a specific trigger
     pub async fn get_trigger(&self, trigger_id: Uuid) -> Result<Trigger, ListenerError> {
         let triggers = self.triggers.read().await;
-        triggers.get(&trigger_id)
+        triggers
+            .get(&trigger_id)
             .cloned()
             .ok_or_else(|| ListenerError::TriggerNotFound(trigger_id))
     }
 
     /// Update trigger status
-    pub async fn update_trigger_status(&self, trigger_id: Uuid, trigger: Trigger) -> Result<(), ListenerError> {
+    pub async fn update_trigger_status(
+        &self,
+        trigger_id: Uuid,
+        trigger: Trigger,
+    ) -> Result<(), ListenerError> {
         // Update listener stats based on trigger status
         {
             let listeners = self.listeners.read().await;
@@ -329,22 +345,23 @@ impl ListenerService {
                 }
             }
         }
-        
+
         // Store updated trigger if it should be preserved
         if trigger.config.preserve_after_completion || trigger.status != TriggerStatus::Completed {
             let mut triggers = self.triggers.write().await;
             triggers.insert(trigger_id, trigger);
         }
-        
+
         Ok(())
     }
 
     /// Get listener statistics
     pub async fn get_listener_stats(&self, name: &str) -> Result<ListenerStats, ListenerError> {
         let listeners = self.listeners.read().await;
-        let wrapper = listeners.get(name)
+        let wrapper = listeners
+            .get(name)
             .ok_or_else(|| ListenerError::ListenerNotFound(name.to_string()))?;
-        
+
         let wrapper_guard = wrapper.lock().await;
         Ok(wrapper_guard.stats.clone())
     }
@@ -359,28 +376,33 @@ impl ListenerService {
     pub async fn get_all_stats(&self) -> HashMap<String, ListenerStats> {
         let listeners = self.listeners.read().await;
         let mut stats = HashMap::new();
-        
+
         for (name, wrapper) in listeners.iter() {
             let wrapper_guard = wrapper.lock().await;
             stats.insert(name.clone(), wrapper_guard.stats.clone());
         }
-        
+
         stats
     }
 
     /// Enable or disable a listener
-    pub async fn set_listener_enabled(&self, name: &str, enabled: bool) -> Result<(), ListenerError> {
+    pub async fn set_listener_enabled(
+        &self,
+        name: &str,
+        enabled: bool,
+    ) -> Result<(), ListenerError> {
         let listeners = self.listeners.read().await;
-        let wrapper = listeners.get(name)
+        let wrapper = listeners
+            .get(name)
             .ok_or_else(|| ListenerError::ListenerNotFound(name.to_string()))?;
-        
+
         let mut wrapper_guard = wrapper.lock().await;
         let mut config = wrapper_guard.listener.config().clone();
         config.enabled = enabled;
         wrapper_guard.listener.update_config(config);
         wrapper_guard.stats.enabled = enabled;
         wrapper_guard.last_updated = Utc::now();
-        
+
         Ok(())
     }
 
@@ -399,11 +421,12 @@ impl ListenerService {
     /// Cleanup expired triggers
     pub async fn cleanup_expired_triggers(&self) {
         let mut triggers = self.triggers.write().await;
-        let expired_ids: Vec<_> = triggers.iter()
+        let expired_ids: Vec<_> = triggers
+            .iter()
             .filter(|(_, trigger)| trigger.is_expired())
             .map(|(id, _)| *id)
             .collect();
-            
+
         for id in expired_ids {
             triggers.remove(&id);
         }
@@ -413,7 +436,7 @@ impl ListenerService {
     pub async fn health_check(&self) -> Result<HashMap<String, bool>, ListenerError> {
         let listeners = self.listeners.read().await;
         let mut health_status = HashMap::new();
-        
+
         for (name, wrapper) in listeners.iter() {
             let wrapper_guard = wrapper.lock().await;
             match wrapper_guard.listener.health_check().await {
@@ -425,7 +448,7 @@ impl ListenerService {
                 }
             }
         }
-        
+
         Ok(health_status)
     }
 }
@@ -439,8 +462,8 @@ impl Default for ListenerService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::base::component::event::Event;
     use crate::core::base::component::action::Action;
+    use crate::core::base::component::event::Event;
     use serde_json::json;
 
     // Mock listener for testing
@@ -455,19 +478,19 @@ mod tests {
         fn name(&self) -> &str {
             &self.name
         }
-        
+
         fn description(&self) -> &str {
             "Mock listener for testing"
         }
-        
+
         fn conditions(&self) -> &[TriggerCondition] {
             &self.conditions
         }
-        
+
         async fn should_process(&self, event: &Event) -> bool {
             event.event_type.starts_with("test_")
         }
-        
+
         async fn create_trigger(&self, event: Event) -> Result<Trigger, ListenerError> {
             let action = Action::new(
                 "Test Action".to_string(),
@@ -475,7 +498,7 @@ mod tests {
                 self.name.clone(),
                 "mock_service".to_string(),
             );
-            
+
             let condition = TriggerCondition {
                 event_type_pattern: "test_*".to_string(),
                 source_pattern: None,
@@ -483,7 +506,7 @@ mod tests {
                 min_priority: None,
                 time_conditions: None,
             };
-            
+
             Ok(Trigger::new(
                 format!("Trigger for {}", event.event_type),
                 "Generated trigger".to_string(),
@@ -494,15 +517,15 @@ mod tests {
                 condition,
             ))
         }
-        
+
         fn config(&self) -> &ListenerConfig {
             &self.config
         }
-        
+
         fn update_config(&mut self, config: ListenerConfig) {
             self.config = config;
         }
-        
+
         async fn health_check(&self) -> Result<bool, ListenerError> {
             Ok(true)
         }
@@ -511,16 +534,16 @@ mod tests {
     #[tokio::test]
     async fn test_listener_registration() {
         let service = ListenerService::new();
-        
+
         let listener = Box::new(MockEventListener {
             name: "test_listener".to_string(),
             config: ListenerConfig::default(),
             conditions: vec![],
         });
-        
+
         let result = service.register_listener(listener).await;
         assert!(result.is_ok());
-        
+
         let listeners = service.list_listeners().await;
         assert!(listeners.contains(&"test_listener".to_string()));
     }
@@ -528,24 +551,24 @@ mod tests {
     #[tokio::test]
     async fn test_event_processing() {
         let service = ListenerService::new();
-        
+
         let listener = Box::new(MockEventListener {
             name: "test_listener".to_string(),
             config: ListenerConfig::default(),
             conditions: vec![],
         });
-        
+
         service.register_listener(listener).await.unwrap();
-        
+
         let event = Event::new(
             "test_event".to_string(),
             json!({"data": "test"}),
             "test_source".to_string(),
         );
-        
+
         let triggers = service.process_event(event).await.unwrap();
         assert_eq!(triggers.len(), 1);
-        
+
         // Check that trigger was created
         let trigger = service.get_next_trigger().await;
         assert!(trigger.is_some());
@@ -554,23 +577,23 @@ mod tests {
     #[tokio::test]
     async fn test_listener_stats() {
         let service = ListenerService::new();
-        
+
         let listener = Box::new(MockEventListener {
             name: "test_listener".to_string(),
             config: ListenerConfig::default(),
             conditions: vec![],
         });
-        
+
         service.register_listener(listener).await.unwrap();
-        
+
         let event = Event::new(
             "test_event".to_string(),
             json!({}),
             "test_source".to_string(),
         );
-        
+
         service.process_event(event).await.unwrap();
-        
+
         let stats = service.get_listener_stats("test_listener").await.unwrap();
         assert_eq!(stats.events_processed, 1);
         assert_eq!(stats.triggers_created, 1);

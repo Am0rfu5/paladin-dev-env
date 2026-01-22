@@ -7,10 +7,10 @@ TODO Should this be renamed as the ContentSqlRepository in the content_sql_store
 */
 use crate::core::platform::container::content::{ContentItem, ContentItemError};
 use crate::core::platform::container::content_list::{ContentList, ContentListError};
-use uuid::Uuid;
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use thiserror::Error;
-use async_trait::async_trait;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Error)]
 pub enum RepositoryError {
@@ -38,31 +38,31 @@ pub enum RepositoryError {
 pub trait ContentRepository: Send + Sync {
     /// Get content item by hash
     async fn get_by_hash(&self, hash: &str) -> Result<Option<ContentItem>, RepositoryError>;
-    
+
     /// Get content item by UUID  
     async fn get_by_id(&self, id: Uuid) -> Result<Option<ContentItem>, RepositoryError>;
-    
+
     /// Create/save a content item
     async fn create(&self, content: ContentItem) -> Result<Uuid, RepositoryError>;
-    
+
     /// Update an existing content item
     async fn update(&self, content: &ContentItem) -> Result<(), RepositoryError>;
-    
+
     /// Delete a content item by UUID
     async fn delete(&self, id: Uuid) -> Result<(), RepositoryError>;
-    
+
     /// Get all content items with pagination
     async fn list(&self) -> Result<Vec<ContentItem>, RepositoryError>;
-    
+
     /// Find content items by tags
     async fn find_by_tags(&self, tags: &[String]) -> Result<Vec<ContentItem>, RepositoryError>;
-    
+
     /// Find content items by source
     async fn find_by_source(&self, source: &str) -> Result<Vec<ContentItem>, RepositoryError>;
-    
+
     /// Count total content items
     async fn count(&self) -> Result<u64, RepositoryError>;
-    
+
     /// Check if content with hash exists
     async fn exists_by_hash(&self, hash: &str) -> Result<bool, RepositoryError>;
 }
@@ -73,31 +73,39 @@ pub trait ContentRepository: Send + Sync {
 pub trait ContentListRepository {
     /// Get content list by UUID
     fn get_by_id(&self, id: Uuid) -> Result<Option<ContentList>, RepositoryError>;
-    
+
     /// Get content list by name
     fn get_by_name(&self, name: &str) -> Result<Option<ContentList>, RepositoryError>;
-    
+
     /// Save a content list
     fn save(&self, content_list: &ContentList) -> Result<(), RepositoryError>;
-    
+
     /// Update an existing content list
     fn update(&self, content_list: &ContentList) -> Result<(), RepositoryError>;
-    
+
     /// Delete a content list by UUID
     fn delete(&self, id: Uuid) -> Result<(), RepositoryError>;
-    
+
     /// Get all content lists with pagination
-    fn find_all(&self, limit: Option<u32>, offset: Option<u32>) -> Result<Vec<ContentList>, RepositoryError>;
-    
+    fn find_all(
+        &self,
+        limit: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<Vec<ContentList>, RepositoryError>;
+
     /// Find content lists created within a date range
-    fn find_by_date_range(&self, start: DateTime<Utc>, end: DateTime<Utc>) -> Result<Vec<ContentList>, RepositoryError>;
-    
+    fn find_by_date_range(
+        &self,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Result<Vec<ContentList>, RepositoryError>;
+
     /// Count total content lists
     fn count(&self) -> Result<u64, RepositoryError>;
-    
+
     /// Add item to content list
     fn add_item_to_list(&self, list_id: Uuid, item: &ContentItem) -> Result<(), RepositoryError>;
-    
+
     /// Remove item from content list
     fn remove_item_from_list(&self, list_id: Uuid, item_id: Uuid) -> Result<(), RepositoryError>;
 }
@@ -117,10 +125,10 @@ pub trait TransactionManager {
 pub trait MigrationManager: Send + Sync {
     /// Run database migrations
     async fn migrate(&self) -> Result<(), RepositoryError>;
-    
+
     /// Check if database is up to date
     async fn is_up_to_date(&self) -> Result<bool, RepositoryError>;
-    
+
     /// Get current migration version
     async fn current_version(&self) -> Result<Option<String>, RepositoryError>;
 }
@@ -129,10 +137,10 @@ pub trait MigrationManager: Send + Sync {
 pub trait SqlStore: Send + Sync {
     /// Get repository statistics
     async fn get_stats(&self) -> Result<RepositoryStats, RepositoryError>;
-    
+
     /// Perform health check
     async fn health_check(&self) -> Result<bool, RepositoryError>;
-    
+
     /// Clean up old content
     async fn cleanup(&self, older_than: DateTime<Utc>) -> Result<u64, RepositoryError>;
 }

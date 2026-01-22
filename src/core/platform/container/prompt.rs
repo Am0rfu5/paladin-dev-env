@@ -1,10 +1,10 @@
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use chrono::Utc;
-use std::hash::{Hash, Hasher};
-use std::collections::BTreeMap;
-use thiserror::Error;
 use crate::core::base::entity::node::Node;
+use chrono::Utc;
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::hash::{Hash, Hasher};
+use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct PromptItem {
@@ -66,62 +66,54 @@ impl PartialOrd for PromptParameters {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         // First compare max_tokens
         match self.max_tokens.cmp(&other.max_tokens) {
-            std::cmp::Ordering::Equal => {},
+            std::cmp::Ordering::Equal => {}
             ord => return Some(ord),
         }
-        
+
         // Then compare temperature using bits representation for consistency
         match (self.temperature, other.temperature) {
-            (Some(a), Some(b)) => {
-                match a.to_bits().cmp(&b.to_bits()) {
-                    std::cmp::Ordering::Equal => {},
-                    ord => return Some(ord),
-                }
+            (Some(a), Some(b)) => match a.to_bits().cmp(&b.to_bits()) {
+                std::cmp::Ordering::Equal => {}
+                ord => return Some(ord),
             },
-            (None, None) => {},
+            (None, None) => {}
             (Some(_), None) => return Some(std::cmp::Ordering::Greater),
             (None, Some(_)) => return Some(std::cmp::Ordering::Less),
         }
-        
+
         // Compare top_p
         match (self.top_p, other.top_p) {
-            (Some(a), Some(b)) => {
-                match a.to_bits().cmp(&b.to_bits()) {
-                    std::cmp::Ordering::Equal => {},
-                    ord => return Some(ord),
-                }
+            (Some(a), Some(b)) => match a.to_bits().cmp(&b.to_bits()) {
+                std::cmp::Ordering::Equal => {}
+                ord => return Some(ord),
             },
-            (None, None) => {},
+            (None, None) => {}
             (Some(_), None) => return Some(std::cmp::Ordering::Greater),
             (None, Some(_)) => return Some(std::cmp::Ordering::Less),
         }
-        
+
         // Compare frequency_penalty
         match (self.frequency_penalty, other.frequency_penalty) {
-            (Some(a), Some(b)) => {
-                match a.to_bits().cmp(&b.to_bits()) {
-                    std::cmp::Ordering::Equal => {},
-                    ord => return Some(ord),
-                }
+            (Some(a), Some(b)) => match a.to_bits().cmp(&b.to_bits()) {
+                std::cmp::Ordering::Equal => {}
+                ord => return Some(ord),
             },
-            (None, None) => {},
+            (None, None) => {}
             (Some(_), None) => return Some(std::cmp::Ordering::Greater),
             (None, Some(_)) => return Some(std::cmp::Ordering::Less),
         }
-        
+
         // Compare presence_penalty
         match (self.presence_penalty, other.presence_penalty) {
-            (Some(a), Some(b)) => {
-                match a.to_bits().cmp(&b.to_bits()) {
-                    std::cmp::Ordering::Equal => {},
-                    ord => return Some(ord),
-                }
+            (Some(a), Some(b)) => match a.to_bits().cmp(&b.to_bits()) {
+                std::cmp::Ordering::Equal => {}
+                ord => return Some(ord),
             },
-            (None, None) => {},
+            (None, None) => {}
             (Some(_), None) => return Some(std::cmp::Ordering::Greater),
             (None, Some(_)) => return Some(std::cmp::Ordering::Less),
         }
-        
+
         // Finally compare stop_sequences
         Some(self.stop_sequences.cmp(&other.stop_sequences))
     }
@@ -241,12 +233,22 @@ impl PromptItem {
     }
 
     // Getters and setters
-    pub fn uuid(&self) -> Uuid { self.node.uuid }
-    pub fn title(&self) -> Option<&String> { self.node.name.as_ref() }
-    pub fn prompt_type(&self) -> &PromptType { &self.node.node.prompt_type }
-    pub fn parameters(&self) -> &PromptParameters { &self.node.node.parameters }
-    pub fn content_attachments(&self) -> &[Uuid] { &self.node.node.content_attachments }
-    
+    pub fn uuid(&self) -> Uuid {
+        self.node.uuid
+    }
+    pub fn title(&self) -> Option<&String> {
+        self.node.name.as_ref()
+    }
+    pub fn prompt_type(&self) -> &PromptType {
+        &self.node.node.prompt_type
+    }
+    pub fn parameters(&self) -> &PromptParameters {
+        &self.node.node.parameters
+    }
+    pub fn content_attachments(&self) -> &[Uuid] {
+        &self.node.node.content_attachments
+    }
+
     pub fn add_content_attachment(&mut self, content_id: Uuid) {
         self.node.node.content_attachments.push(content_id);
         self.node.modified = Utc::now();
@@ -322,20 +324,18 @@ mod tests {
             role: PromptRole::User,
         };
 
-        let prompt_item = PromptItem::new_with_title(
-            PromptType::Text(text_prompt),
-            "Test Prompt".to_string(),
-        );
+        let prompt_item =
+            PromptItem::new_with_title(PromptType::Text(text_prompt), "Test Prompt".to_string());
 
         assert!(prompt_item.is_ok());
         let item = prompt_item.unwrap();
         assert_eq!(item.title(), Some(&"Test Prompt".to_string()));
-        
+
         match item.prompt_type() {
             PromptType::Text(text) => {
                 assert_eq!(text.content, "Hello, world!");
                 assert_eq!(text.role, PromptRole::User);
-            },
+            }
             _ => panic!("Expected text prompt"),
         }
     }
@@ -350,7 +350,8 @@ mod tests {
         let mut prompt_item = PromptItem::new_with_title(
             PromptType::Text(text_prompt),
             "Modifiable Prompt".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Test adding content attachment
         let content_id = Uuid::new_v4();
@@ -369,6 +370,9 @@ mod tests {
 
         // Test setting context
         prompt_item.set_context(Some("Test context".to_string()));
-        assert_eq!(prompt_item.node.node.context, Some("Test context".to_string()));
+        assert_eq!(
+            prompt_item.node.node.context,
+            Some("Test context".to_string())
+        );
     }
 }

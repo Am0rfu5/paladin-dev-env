@@ -10,11 +10,11 @@ This creates a type of View that can be used to filter and sort users based on t
 shared Element.
 
  A User Group Element is a generic that is
-any type of element.  
+any type of element.
 
 Example:
 A User_Group node has a UUID and a name.  A User Type can be definied on the Application
-level to have a User Group Element.  The User Group Element can be a Tag, a Role, a 
+level to have a User Group Element.  The User Group Element can be a Tag, a Role, a
 Department, a Team, or any other type of Element that can be shared by a group of users.
 
 

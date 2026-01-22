@@ -13,20 +13,20 @@ of the high-level use cases into calls to the LLM, and to translate the results 
 back into a format that the application can use.
 
 An LLM Api usually requires a few standard fields to be present in the request and response
-like the prompt, max_tokens, different weights for "temperature". The LLM Port handles 
+like the prompt, max_tokens, different weights for "temperature". The LLM Port handles
 these fields and provide a clean interface for the application to interact with the LLM and
 for the adapter to translate the application's requirements into calls to the LLM.
 
 */
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use uuid::Uuid;
-use chrono::{DateTime, Utc};
 use thiserror::Error;
+use uuid::Uuid;
 
-use crate::core::platform::container::prompt::PromptItem;
 use crate::core::platform::container::content::ContentItem;
+use crate::core::platform::container::prompt::PromptItem;
 
 #[derive(Debug, Clone, Error)]
 pub enum LlmError {
@@ -97,12 +97,15 @@ pub struct StreamingResponse {
 #[async_trait]
 pub trait LlmPort: Send + Sync {
     async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError>;
-    
-    async fn generate_stream(&self, request: LlmRequest) -> Result<Box<dyn futures::Stream<Item = Result<StreamingResponse, LlmError>> + Send>, LlmError>;
-    
+
+    async fn generate_stream(
+        &self,
+        request: LlmRequest,
+    ) -> Result<Box<dyn futures::Stream<Item = Result<StreamingResponse, LlmError>> + Send>, LlmError>;
+
     async fn validate_model(&self, model: &str) -> Result<bool, LlmError>;
-    
+
     async fn get_available_models(&self) -> Result<Vec<String>, LlmError>;
-    
+
     fn get_provider_name(&self) -> &'static str;
 }

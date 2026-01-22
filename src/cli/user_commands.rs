@@ -5,10 +5,11 @@ Command-line interface for user operations, useful for administrative tasks
 and testing.
 */
 
-use crate::core::platform::manager::user_service::{
-    UserService, UserServiceTrait, UserRegistrationRequest, UserLoginRequest, UserProfileUpdateRequest
-};
 use crate::core::platform::container::user::{User, UserProfile};
+use crate::core::platform::manager::user_service::{
+    UserLoginRequest, UserProfileUpdateRequest, UserRegistrationRequest, UserService,
+    UserServiceTrait,
+};
 use clap::{Args, Subcommand};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -38,31 +39,31 @@ pub struct RegisterArgs {
     /// Username
     #[arg(short, long)]
     pub username: String,
-    
+
     /// Email address
     #[arg(short, long)]
     pub email: String,
-    
+
     /// Password
     #[arg(short, long)]
     pub password: String,
-    
+
     /// First name
     #[arg(long)]
     pub first_name: Option<String>,
-    
+
     /// Last name
     #[arg(long)]
     pub last_name: Option<String>,
-    
+
     /// Bio
     #[arg(long)]
     pub bio: Option<String>,
-    
+
     /// Timezone
     #[arg(long, default_value = "UTC")]
     pub timezone: String,
-    
+
     /// Locale
     #[arg(long, default_value = "en-US")]
     pub locale: String,
@@ -73,7 +74,7 @@ pub struct LoginArgs {
     /// Email address
     #[arg(short, long)]
     pub email: String,
-    
+
     /// Password
     #[arg(short, long)]
     pub password: String,
@@ -91,27 +92,27 @@ pub struct UpdateUserArgs {
     /// User ID
     #[arg(short, long)]
     pub user_id: String,
-    
+
     /// New username
     #[arg(long)]
     pub username: Option<String>,
-    
+
     /// New email
     #[arg(long)]
     pub email: Option<String>,
-    
+
     /// First name
     #[arg(long)]
     pub first_name: Option<String>,
-    
+
     /// Last name
     #[arg(long)]
     pub last_name: Option<String>,
-    
+
     /// Bio
     #[arg(long)]
     pub bio: Option<String>,
-    
+
     /// Avatar URL
     #[arg(long)]
     pub avatar_url: Option<String>,
@@ -122,11 +123,11 @@ pub struct ListUsersArgs {
     /// Filter by active status
     #[arg(long)]
     pub active: Option<bool>,
-    
+
     /// Filter by verification status
     #[arg(long)]
     pub verified: Option<bool>,
-    
+
     /// Limit number of results
     #[arg(short, long, default_value = "10")]
     pub limit: u32,
@@ -163,7 +164,10 @@ impl UserCommandHandler {
         Self { user_service }
     }
 
-    pub async fn handle_command(&self, command: UserCommands) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn handle_command(
+        &self,
+        command: UserCommands,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         match command {
             UserCommands::Register(args) => self.register_user(args).await,
             UserCommands::Login(args) => self.login_user(args).await,
@@ -194,7 +198,7 @@ impl UserCommandHandler {
         };
 
         let user = self.user_service.register_user(request).await?;
-        
+
         println!("✅ User registered successfully!");
         println!("   ID: {}", user.uuid);
         println!("   Username: {}", user.username());
@@ -212,7 +216,7 @@ impl UserCommandHandler {
         };
 
         let result = self.user_service.login_user(request).await?;
-        
+
         if result.success {
             println!("✅ Login successful!");
             println!("   User ID: {}", result.user_id);
@@ -230,7 +234,9 @@ impl UserCommandHandler {
         let user = if let Ok(uuid) = Uuid::parse_str(&args.identifier) {
             self.user_service.get_user_by_id(uuid).await?
         } else {
-            self.user_service.get_user_by_email(&args.identifier).await?
+            self.user_service
+                .get_user_by_email(&args.identifier)
+                .await?
         };
 
         match user {
@@ -241,13 +247,20 @@ impl UserCommandHandler {
                 println!("   Email: {}", user.email());
                 println!("   Active: {}", user.is_active());
                 println!("   Verified: {}", user.is_verified());
-                println!("   Created: {}", user.created.format("%Y-%m-%d %H:%M:%S UTC"));
-                println!("   Modified: {}", user.modified.format("%Y-%m-%d %H:%M:%S UTC"));
-                
+                println!(
+                    "   Created: {}",
+                    user.created.format("%Y-%m-%d %H:%M:%S UTC")
+                );
+                println!(
+                    "   Modified: {}",
+                    user.modified.format("%Y-%m-%d %H:%M:%S UTC")
+                );
+
                 let profile = user.profile();
                 if profile.first_name.is_some() || profile.last_name.is_some() {
-                    println!("   Name: {} {}", 
-                        profile.first_name.as_deref().unwrap_or(""), 
+                    println!(
+                        "   Name: {} {}",
+                        profile.first_name.as_deref().unwrap_or(""),
                         profile.last_name.as_deref().unwrap_or("")
                     );
                 }
@@ -269,18 +282,28 @@ impl UserCommandHandler {
 
     async fn update_user(&self, args: UpdateUserArgs) -> Result<(), Box<dyn std::error::Error>> {
         let user_id = Uuid::parse_str(&args.user_id)?;
-        
-        let profile = if args.first_name.is_some() || args.last_name.is_some() || 
-                         args.bio.is_some() || args.avatar_url.is_some() {
+
+        let profile = if args.first_name.is_some()
+            || args.last_name.is_some()
+            || args.bio.is_some()
+            || args.avatar_url.is_some()
+        {
             // Get current user to preserve existing values
-            let current_user = self.user_service.get_user_by_id(user_id).await?
+            let current_user = self
+                .user_service
+                .get_user_by_id(user_id)
+                .await?
                 .ok_or("User not found")?;
-            
+
             Some(UserProfile {
-                first_name: args.first_name.or(current_user.profile().first_name.clone()),
+                first_name: args
+                    .first_name
+                    .or(current_user.profile().first_name.clone()),
                 last_name: args.last_name.or(current_user.profile().last_name.clone()),
                 bio: args.bio.or(current_user.profile().bio.clone()),
-                avatar_url: args.avatar_url.or(current_user.profile().avatar_url.clone()),
+                avatar_url: args
+                    .avatar_url
+                    .or(current_user.profile().avatar_url.clone()),
                 timezone: current_user.profile().timezone.clone(),
                 locale: current_user.profile().locale.clone(),
             })
@@ -296,7 +319,7 @@ impl UserCommandHandler {
         };
 
         let user = self.user_service.update_user_profile(request).await?;
-        
+
         println!("✅ User updated successfully!");
         println!("   ID: {}", user.uuid);
         println!("   Username: {}", user.username());
@@ -308,14 +331,17 @@ impl UserCommandHandler {
     async fn list_users(&self, args: ListUsersArgs) -> Result<(), Box<dyn std::error::Error>> {
         // This would require additional methods in UserService and UserRepository
         // For now, we'll implement a basic version
-        
+
         println!("📋 User List:");
-        
+
         if let Some(active) = args.active {
             let users = self.user_service.find_by_active_status(active).await?;
             self.print_user_list(&users, args.limit);
         } else if let Some(verified) = args.verified {
-            let users = self.user_service.find_by_verification_status(verified).await?;
+            let users = self
+                .user_service
+                .find_by_verification_status(verified)
+                .await?;
             self.print_user_list(&users, args.limit);
         } else {
             println!("   Use --active or --verified filters to list users");
@@ -326,32 +352,39 @@ impl UserCommandHandler {
 
     fn print_user_list(&self, users: &[User], limit: u32) {
         let displayed_users = users.iter().take(limit as usize);
-        
+
         for user in displayed_users {
-            println!("   • {} ({}) - {} - Active: {} - Verified: {}", 
-                user.username(), 
-                user.email(), 
+            println!(
+                "   • {} ({}) - {} - Active: {} - Verified: {}",
+                user.username(),
+                user.email(),
                 user.uuid,
                 user.is_active(),
                 user.is_verified()
             );
         }
-        
+
         if users.len() > limit as usize {
             println!("   ... and {} more users", users.len() - limit as usize);
         }
-        
+
         println!("   Total: {} users", users.len());
     }
 
-    async fn activate_user(&self, args: ActivateUserArgs) -> Result<(), Box<dyn std::error::Error>> {
+    async fn activate_user(
+        &self,
+        args: ActivateUserArgs,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let user_id = Uuid::parse_str(&args.user_id)?;
         self.user_service.activate_user(user_id).await?;
         println!("✅ User activated successfully: {}", user_id);
         Ok(())
     }
 
-    async fn deactivate_user(&self, args: DeactivateUserArgs) -> Result<(), Box<dyn std::error::Error>> {
+    async fn deactivate_user(
+        &self,
+        args: DeactivateUserArgs,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let user_id = Uuid::parse_str(&args.user_id)?;
         self.user_service.deactivate_user(user_id).await?;
         println!("✅ User deactivated successfully: {}", user_id);
@@ -365,4 +398,3 @@ impl UserCommandHandler {
         Ok(())
     }
 }
-

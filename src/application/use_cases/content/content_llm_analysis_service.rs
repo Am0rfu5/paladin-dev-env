@@ -1,11 +1,11 @@
-use std::sync::Arc;
 use serde_json::Value;
+use std::sync::Arc;
 
 use crate::core::platform::container::content::ContentItem;
 use crate::core::platform::container::prompt::PromptItem;
 
 use crate::application::use_cases::analysis::llm_analysis_service::{
-    LlmAnalysisService, LlmAnalysisInput, LlmAnalysisConfig
+    LlmAnalysisConfig, LlmAnalysisInput, LlmAnalysisService,
 };
 use crate::application::use_cases::content::content_analysis_service::ContentAnalysisService;
 
@@ -51,9 +51,9 @@ impl LlmContentAnalyzer {
 
     /// Analyze content using a pre-existing prompt (async version)
     pub async fn analyze_with_prompt_async(
-        &self, 
-        input: &LlmContentAnalysisInput, 
-        config: &LlmContentAnalysisConfig
+        &self,
+        input: &LlmContentAnalysisInput,
+        config: &LlmContentAnalysisConfig,
     ) -> Result<Value, String> {
         // Validate inputs
         self.validate_input(input, config)?;
@@ -65,7 +65,8 @@ impl LlmContentAnalyzer {
         };
 
         // Perform analysis using the LLM service async method
-        let result = self.llm_service
+        let result = self
+            .llm_service
             .analyze_async(&llm_input, &config.llm_config)
             .await
             .map_err(|e| format!("LLM analysis failed: {:?}", e))?;
@@ -76,9 +77,9 @@ impl LlmContentAnalyzer {
 
     /// Analyze content using a pre-existing prompt (sync version for compatibility)
     pub fn analyze_with_prompt(
-        &self, 
-        _input: &LlmContentAnalysisInput, 
-        _config: &LlmContentAnalysisConfig
+        &self,
+        _input: &LlmContentAnalysisInput,
+        _config: &LlmContentAnalysisConfig,
     ) -> Result<Value, String> {
         // For sync version, we need to handle this differently
         // TODO Might want to use a different approach
@@ -88,9 +89,9 @@ impl LlmContentAnalyzer {
 
     /// Validate the input for analysis
     fn validate_input(
-        &self, 
-        input: &LlmContentAnalysisInput, 
-        config: &LlmContentAnalysisConfig
+        &self,
+        input: &LlmContentAnalysisInput,
+        config: &LlmContentAnalysisConfig,
     ) -> Result<(), String> {
         // Validate prompt
         match input.prompt.prompt_type() {
@@ -98,7 +99,7 @@ impl LlmContentAnalyzer {
                 if text_prompt.content.trim().is_empty() {
                     return Err("Prompt content cannot be empty".to_string());
                 }
-            },
+            }
             _ => {
                 // For now, we only support text prompts for content analysis
                 return Err("Only text prompts are supported for content analysis".to_string());
@@ -110,8 +111,8 @@ impl LlmContentAnalyzer {
             let content_text = self.extract_content_text(&input.content);
             if content_text.len() > max_length {
                 return Err(format!(
-                    "Content length ({}) exceeds maximum allowed length ({})", 
-                    content_text.len(), 
+                    "Content length ({}) exceeds maximum allowed length ({})",
+                    content_text.len(),
                     max_length
                 ));
             }
@@ -125,16 +126,25 @@ impl LlmContentAnalyzer {
         match content.content() {
             crate::core::platform::container::content::ContentType::Text(text) => {
                 text.content.as_deref().unwrap_or("").to_string()
-            },
+            }
             crate::core::platform::container::content::ContentType::Video(_) => {
-                format!("Video content: {}", content.title().unwrap_or(&"Untitled".to_string()))
-            },
+                format!(
+                    "Video content: {}",
+                    content.title().unwrap_or(&"Untitled".to_string())
+                )
+            }
             crate::core::platform::container::content::ContentType::Audio(_) => {
-                format!("Audio content: {}", content.title().unwrap_or(&"Untitled".to_string()))
-            },
+                format!(
+                    "Audio content: {}",
+                    content.title().unwrap_or(&"Untitled".to_string())
+                )
+            }
             crate::core::platform::container::content::ContentType::Image(_) => {
-                format!("Image content: {}", content.title().unwrap_or(&"Untitled".to_string()))
-            },
+                format!(
+                    "Image content: {}",
+                    content.title().unwrap_or(&"Untitled".to_string())
+                )
+            }
         }
     }
 
@@ -208,7 +218,7 @@ impl DefaultPromptContentAnalyzer {
 
     /// Create a default content analysis prompt
     pub fn create_default_analysis_prompt() -> Result<PromptItem, String> {
-        use crate::core::platform::container::prompt::{PromptType, TextPrompt, PromptRole};
+        use crate::core::platform::container::prompt::{PromptRole, PromptType, TextPrompt};
 
         let prompt_text = r#"Please analyze the following content and provide insights in JSON format:
 
@@ -231,8 +241,9 @@ Analyze the attached content according to these categories."#;
 
         PromptItem::new_with_title(
             PromptType::Text(text_prompt),
-            "Default Content Analysis Prompt".to_string()
-        ).map_err(|e| format!("Failed to create default prompt: {:?}", e))
+            "Default Content Analysis Prompt".to_string(),
+        )
+        .map_err(|e| format!("Failed to create default prompt: {:?}", e))
     }
 }
 
@@ -252,13 +263,15 @@ impl ContentAnalysisService for DefaultPromptContentAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::ports::output::llm_port::{
+        FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
+    };
     use crate::core::platform::container::content::{ContentType, TextContent};
-    use crate::core::platform::container::prompt::{PromptType, TextPrompt, PromptRole};
-    use crate::application::ports::output::llm_port::{LlmPort, LlmRequest, LlmResponse, LlmError, TokenUsage, FinishReason};
+    use crate::core::platform::container::prompt::{PromptRole, PromptType, TextPrompt};
     use async_trait::async_trait;
+    use chrono::Utc;
     use std::collections::HashMap;
     use uuid::Uuid;
-    use chrono::Utc;
 
     struct MockLlmPort;
 
@@ -269,7 +282,8 @@ mod tests {
                 id: Uuid::new_v4(),
                 request_id: Uuid::new_v4(),
                 model: "test-model".to_string(),
-                content: r#"{"topics": ["test"], "sentiment": "positive", "quality_score": 0.8}"#.to_string(),
+                content: r#"{"topics": ["test"], "sentiment": "positive", "quality_score": 0.8}"#
+                    .to_string(),
                 finish_reason: FinishReason::Stop,
                 usage: TokenUsage {
                     prompt_tokens: 100,
@@ -281,7 +295,20 @@ mod tests {
             })
         }
 
-        async fn generate_stream(&self, _request: LlmRequest) -> Result<Box<dyn futures::Stream<Item = Result<crate::application::ports::output::llm_port::StreamingResponse, LlmError>> + Send>, LlmError> {
+        async fn generate_stream(
+            &self,
+            _request: LlmRequest,
+        ) -> Result<
+            Box<
+                dyn futures::Stream<
+                        Item = Result<
+                            crate::application::ports::output::llm_port::StreamingResponse,
+                            LlmError,
+                        >,
+                    > + Send,
+            >,
+            LlmError,
+        > {
             todo!()
         }
 
@@ -302,19 +329,19 @@ mod tests {
     async fn test_llm_content_analyzer_with_prompt() {
         let mock_port = Arc::new(MockLlmPort);
         let llm_service = Arc::new(LlmAnalysisService::new(mock_port));
-        
+
         let analyzer = LlmContentAnalyzer::new(llm_service);
 
         // Create test content
-        let text_content = TextContent::new(
-            None,
-            Some("This is test content for analysis".to_string())
-        ).expect("Failed to create text content");
+        let text_content =
+            TextContent::new(None, Some("This is test content for analysis".to_string()))
+                .expect("Failed to create text content");
 
         let content = ContentItem::new_with_title(
             ContentType::Text(text_content),
             "Test Content".to_string(),
-        ).expect("Failed to create content item");
+        )
+        .expect("Failed to create content item");
 
         // Create test prompt
         let text_prompt = TextPrompt {
@@ -325,25 +352,33 @@ mod tests {
         let prompt = PromptItem::new_with_title(
             PromptType::Text(text_prompt),
             "Test Analysis Prompt".to_string(),
-        ).expect("Failed to create prompt");
+        )
+        .expect("Failed to create prompt");
 
         // Create analysis input
-        let input = LlmContentAnalysisInput {
-            prompt,
-            content,
-        };
+        let input = LlmContentAnalysisInput { prompt, content };
 
         let config = LlmContentAnalysisConfig::default();
 
         // Use the async version
         let result = analyzer.analyze_with_prompt_async(&input, &config).await;
-        assert!(result.is_ok(), "Analysis should succeed: {:?}", result.err());
-        
+        assert!(
+            result.is_ok(),
+            "Analysis should succeed: {:?}",
+            result.err()
+        );
+
         let analysis = result.unwrap();
-        assert!(analysis.is_object(), "Analysis result should be a JSON object");
+        assert!(
+            analysis.is_object(),
+            "Analysis result should be a JSON object"
+        );
 
         // Check that metadata was added
-        assert!(analysis.get("content_metadata").is_some(), "Metadata should be present");
+        assert!(
+            analysis.get("content_metadata").is_some(),
+            "Metadata should be present"
+        );
     }
 
     // Create a sync-compatible version for the DefaultPromptContentAnalyzer test
@@ -367,7 +402,7 @@ mod tests {
             // Create a new runtime for this specific test
             let rt = tokio::runtime::Runtime::new()
                 .map_err(|e| format!("Failed to create runtime: {}", e))?;
-            
+
             rt.block_on(self.analyzer.analyze_with_prompt_async(input, config))
         }
     }
@@ -376,25 +411,25 @@ mod tests {
     fn test_default_prompt_content_analyzer() {
         let mock_port = Arc::new(MockLlmPort);
         let llm_service = Arc::new(LlmAnalysisService::new(mock_port));
-        
+
         let default_prompt = DefaultPromptContentAnalyzer::create_default_analysis_prompt()
             .expect("Failed to create default prompt");
-        
+
         let config = LlmContentAnalysisConfig::default();
-        
+
         // Use the sync adapter for testing
         let sync_adapter = SyncTestAdapter::new(llm_service);
 
         // Create test content
-        let text_content = TextContent::new(
-            None,
-            Some("This is test content for analysis".to_string())
-        ).expect("Failed to create text content");
+        let text_content =
+            TextContent::new(None, Some("This is test content for analysis".to_string()))
+                .expect("Failed to create text content");
 
         let content = ContentItem::new_with_title(
             ContentType::Text(text_content),
             "Test Content".to_string(),
-        ).expect("Failed to create content item");
+        )
+        .expect("Failed to create content item");
 
         let input = LlmContentAnalysisInput {
             prompt: default_prompt,
@@ -402,43 +437,48 @@ mod tests {
         };
 
         let result = sync_adapter.analyze_with_prompt_sync(&input, &config);
-        assert!(result.is_ok(), "Analysis should succeed: {:?}", result.err());
-        
+        assert!(
+            result.is_ok(),
+            "Analysis should succeed: {:?}",
+            result.err()
+        );
+
         let analysis = result.unwrap();
-        assert!(analysis.is_object(), "Analysis result should be a JSON object");
+        assert!(
+            analysis.is_object(),
+            "Analysis result should be a JSON object"
+        );
     }
 
     #[tokio::test] // Changed to async test
     async fn test_content_length_validation() {
         let mock_port = Arc::new(MockLlmPort);
         let llm_service = Arc::new(LlmAnalysisService::new(mock_port));
-        
+
         let analyzer = LlmContentAnalyzer::new(llm_service);
 
         // Create content that exceeds length limit
         let long_content = "a".repeat(1000);
-        let text_content = TextContent::new(
-            None,
-            Some(long_content)
-        ).expect("Failed to create text content");
+        let text_content =
+            TextContent::new(None, Some(long_content)).expect("Failed to create text content");
 
         let content = ContentItem::new_with_title(
             ContentType::Text(text_content),
             "Long Content".to_string(),
-        ).expect("Failed to create content item");
+        )
+        .expect("Failed to create content item");
 
         let text_prompt = TextPrompt {
             content: "Analyze this content.".to_string(),
             role: PromptRole::User,
         };
 
-        let prompt = PromptItem::new_with_title(
-            PromptType::Text(text_prompt),
-            "Test Prompt".to_string(),
-        ).expect("Failed to create prompt");
+        let prompt =
+            PromptItem::new_with_title(PromptType::Text(text_prompt), "Test Prompt".to_string())
+                .expect("Failed to create prompt");
 
         let input = LlmContentAnalysisInput { prompt, content };
-        
+
         // Set a low max content length
         let config = LlmContentAnalysisConfig {
             max_content_length: Some(100),
@@ -447,10 +487,16 @@ mod tests {
 
         // Use the async version
         let result = analyzer.analyze_with_prompt_async(&input, &config).await;
-        assert!(result.is_err(), "Analysis should fail for content exceeding length limit");
+        assert!(
+            result.is_err(),
+            "Analysis should fail for content exceeding length limit"
+        );
         let error_msg = result.unwrap_err();
-        assert!(error_msg.contains("exceeds maximum allowed length"), 
-                "Error should mention length limit: {:?}", error_msg);
+        assert!(
+            error_msg.contains("exceeds maximum allowed length"),
+            "Error should mention length limit: {:?}",
+            error_msg
+        );
     }
 
     // Test the sync version error handling
@@ -458,29 +504,27 @@ mod tests {
     fn test_sync_method_returns_error() {
         let mock_port = Arc::new(MockLlmPort);
         let llm_service = Arc::new(LlmAnalysisService::new(mock_port));
-        
+
         let analyzer = LlmContentAnalyzer::new(llm_service);
 
         // Create minimal test data
-        let text_content = TextContent::new(
-            None,
-            Some("Test content".to_string())
-        ).expect("Failed to create text content");
+        let text_content = TextContent::new(None, Some("Test content".to_string()))
+            .expect("Failed to create text content");
 
         let content = ContentItem::new_with_title(
             ContentType::Text(text_content),
             "Test Content".to_string(),
-        ).expect("Failed to create content item");
+        )
+        .expect("Failed to create content item");
 
         let text_prompt = TextPrompt {
             content: "Test prompt".to_string(),
             role: PromptRole::User,
         };
 
-        let prompt = PromptItem::new_with_title(
-            PromptType::Text(text_prompt),
-            "Test Prompt".to_string(),
-        ).expect("Failed to create prompt");
+        let prompt =
+            PromptItem::new_with_title(PromptType::Text(text_prompt), "Test Prompt".to_string())
+                .expect("Failed to create prompt");
 
         let input = LlmContentAnalysisInput { prompt, content };
         let config = LlmContentAnalysisConfig::default();
@@ -489,8 +533,11 @@ mod tests {
         let result = analyzer.analyze_with_prompt(&input, &config);
         assert!(result.is_err(), "Sync method should return error");
         let error_msg = result.unwrap_err();
-        assert!(error_msg.contains("async"), 
-                "Error should mention async: {:?}", error_msg);
+        assert!(
+            error_msg.contains("async"),
+            "Error should mention async: {:?}",
+            error_msg
+        );
     }
 
     // Test empty prompt validation
@@ -498,19 +545,18 @@ mod tests {
     async fn test_empty_prompt_validation() {
         let mock_port = Arc::new(MockLlmPort);
         let llm_service = Arc::new(LlmAnalysisService::new(mock_port));
-        
+
         let analyzer = LlmContentAnalyzer::new(llm_service);
 
         // Create test content
-        let text_content = TextContent::new(
-            None,
-            Some("Test content".to_string())
-        ).expect("Failed to create text content");
+        let text_content = TextContent::new(None, Some("Test content".to_string()))
+            .expect("Failed to create text content");
 
         let content = ContentItem::new_with_title(
             ContentType::Text(text_content),
             "Test Content".to_string(),
-        ).expect("Failed to create content item");
+        )
+        .expect("Failed to create content item");
 
         // Create empty prompt
         let text_prompt = TextPrompt {
@@ -518,10 +564,9 @@ mod tests {
             role: PromptRole::User,
         };
 
-        let prompt = PromptItem::new_with_title(
-            PromptType::Text(text_prompt),
-            "Empty Prompt".to_string(),
-        ).expect("Failed to create prompt");
+        let prompt =
+            PromptItem::new_with_title(PromptType::Text(text_prompt), "Empty Prompt".to_string())
+                .expect("Failed to create prompt");
 
         let input = LlmContentAnalysisInput { prompt, content };
         let config = LlmContentAnalysisConfig::default();
@@ -529,7 +574,10 @@ mod tests {
         let result = analyzer.analyze_with_prompt_async(&input, &config).await;
         assert!(result.is_err(), "Analysis should fail with empty prompt");
         let error_msg = result.unwrap_err();
-        assert!(error_msg.contains("cannot be empty"), 
-                "Error should mention empty prompt: {:?}", error_msg);
+        assert!(
+            error_msg.contains("cannot be empty"),
+            "Error should mention empty prompt: {:?}",
+            error_msg
+        );
     }
 }

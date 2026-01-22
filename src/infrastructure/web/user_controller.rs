@@ -5,17 +5,17 @@ REST API endpoints for user operations. This handles HTTP requests and responses
 delegating business logic to the UserService.
 */
 
-use crate::core::platform::manager::user_service::{
-    UserService, UserServiceTrait, UserRegistrationRequest, UserLoginRequest, 
-    UserProfileUpdateRequest
-};
 use crate::core::platform::container::user::{UserError, UserProfile};
+use crate::core::platform::manager::user_service::{
+    UserLoginRequest, UserProfileUpdateRequest, UserRegistrationRequest, UserService,
+    UserServiceTrait,
+};
 use axum::{
+    Router,
     extract::{Path, State},
     http::StatusCode,
     response::Json,
     routing::{get, post, put},
-    Router,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -125,17 +125,51 @@ impl<T> ApiResponse<T> {
 fn user_error_to_response(error: UserError) -> (StatusCode, Json<ApiResponse<()>>) {
     let (status, code, message) = match error {
         UserError::InvalidEmail(_) => (StatusCode::BAD_REQUEST, "INVALID_EMAIL", error.to_string()),
-        UserError::InvalidUsername(_) => (StatusCode::BAD_REQUEST, "INVALID_USERNAME", error.to_string()),
-        UserError::InvalidPassword(_) => (StatusCode::BAD_REQUEST, "INVALID_PASSWORD", error.to_string()),
-        UserError::EmailAlreadyExists(_) => (StatusCode::CONFLICT, "EMAIL_EXISTS", error.to_string()),
-        UserError::UsernameAlreadyExists(_) => (StatusCode::CONFLICT, "USERNAME_EXISTS", error.to_string()),
+        UserError::InvalidUsername(_) => (
+            StatusCode::BAD_REQUEST,
+            "INVALID_USERNAME",
+            error.to_string(),
+        ),
+        UserError::InvalidPassword(_) => (
+            StatusCode::BAD_REQUEST,
+            "INVALID_PASSWORD",
+            error.to_string(),
+        ),
+        UserError::EmailAlreadyExists(_) => {
+            (StatusCode::CONFLICT, "EMAIL_EXISTS", error.to_string())
+        }
+        UserError::UsernameAlreadyExists(_) => {
+            (StatusCode::CONFLICT, "USERNAME_EXISTS", error.to_string())
+        }
         UserError::UserNotFound(_) => (StatusCode::NOT_FOUND, "USER_NOT_FOUND", error.to_string()),
-        UserError::UserNotFoundByEmail(_) => (StatusCode::NOT_FOUND, "USER_NOT_FOUND", error.to_string()),
-        UserError::AuthenticationFailed => (StatusCode::UNAUTHORIZED, "AUTH_FAILED", "Invalid credentials".to_string()),
-        UserError::UserNotActive => (StatusCode::FORBIDDEN, "USER_INACTIVE", "User account is not active".to_string()),
-        UserError::UserNotVerified => (StatusCode::FORBIDDEN, "USER_NOT_VERIFIED", "User email is not verified".to_string()),
-        UserError::RepositoryError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Internal server error".to_string()),
-        UserError::HashError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Internal server error".to_string()),
+        UserError::UserNotFoundByEmail(_) => {
+            (StatusCode::NOT_FOUND, "USER_NOT_FOUND", error.to_string())
+        }
+        UserError::AuthenticationFailed => (
+            StatusCode::UNAUTHORIZED,
+            "AUTH_FAILED",
+            "Invalid credentials".to_string(),
+        ),
+        UserError::UserNotActive => (
+            StatusCode::FORBIDDEN,
+            "USER_INACTIVE",
+            "User account is not active".to_string(),
+        ),
+        UserError::UserNotVerified => (
+            StatusCode::FORBIDDEN,
+            "USER_NOT_VERIFIED",
+            "User email is not verified".to_string(),
+        ),
+        UserError::RepositoryError(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "INTERNAL_ERROR",
+            "Internal server error".to_string(),
+        ),
+        UserError::HashError(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "INTERNAL_ERROR",
+            "Internal server error".to_string(),
+        ),
     };
 
     (status, Json(ApiResponse::error(message, code.to_string())))
@@ -167,8 +201,12 @@ async fn register_user(
     State(user_service): State<Arc<UserService>>,
     Json(request): Json<RegisterUserRequest>,
 ) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
-    let profile = if request.first_name.is_some() || request.last_name.is_some() || 
-                     request.bio.is_some() || request.timezone.is_some() || request.locale.is_some() {
+    let profile = if request.first_name.is_some()
+        || request.last_name.is_some()
+        || request.bio.is_some()
+        || request.timezone.is_some()
+        || request.locale.is_some()
+    {
         Some(UserProfile {
             first_name: request.first_name,
             last_name: request.last_name,
@@ -225,7 +263,10 @@ async fn get_user(
         Ok(Some(user)) => Ok(Json(ApiResponse::success(user_to_response(&user)))),
         Ok(None) => Err((
             StatusCode::NOT_FOUND,
-            Json(ApiResponse::error("User not found".to_string(), "USER_NOT_FOUND".to_string()))
+            Json(ApiResponse::error(
+                "User not found".to_string(),
+                "USER_NOT_FOUND".to_string(),
+            )),
         )),
         Err(error) => Err(user_error_to_response(error)),
     }
@@ -237,24 +278,39 @@ async fn update_user_profile(
     Path(user_id): Path<Uuid>,
     Json(request): Json<UpdateUserProfileRequest>,
 ) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
-    let profile = if request.first_name.is_some() || request.last_name.is_some() || 
-                     request.bio.is_some() || request.avatar_url.is_some() ||
-                     request.timezone.is_some() || request.locale.is_some() {
+    let profile = if request.first_name.is_some()
+        || request.last_name.is_some()
+        || request.bio.is_some()
+        || request.avatar_url.is_some()
+        || request.timezone.is_some()
+        || request.locale.is_some()
+    {
         // First, get current user to preserve existing profile values
         let current_user = match user_service.get_user_by_id(user_id).await {
             Ok(Some(user)) => user,
-            Ok(None) => return Err((
-                StatusCode::NOT_FOUND,
-                Json(ApiResponse::error("User not found".to_string(), "USER_NOT_FOUND".to_string()))
-            )),
+            Ok(None) => {
+                return Err((
+                    StatusCode::NOT_FOUND,
+                    Json(ApiResponse::error(
+                        "User not found".to_string(),
+                        "USER_NOT_FOUND".to_string(),
+                    )),
+                ));
+            }
             Err(error) => return Err(user_error_to_response(error)),
         };
 
         Some(UserProfile {
-            first_name: request.first_name.or(current_user.profile().first_name.clone()),
-            last_name: request.last_name.or(current_user.profile().last_name.clone()),
+            first_name: request
+                .first_name
+                .or(current_user.profile().first_name.clone()),
+            last_name: request
+                .last_name
+                .or(current_user.profile().last_name.clone()),
             bio: request.bio.or(current_user.profile().bio.clone()),
-            avatar_url: request.avatar_url.or(current_user.profile().avatar_url.clone()),
+            avatar_url: request
+                .avatar_url
+                .or(current_user.profile().avatar_url.clone()),
             timezone: request.timezone.or(current_user.profile().timezone.clone()),
             locale: request.locale.or(current_user.profile().locale.clone()),
         })

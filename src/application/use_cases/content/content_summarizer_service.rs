@@ -1,4 +1,6 @@
-use crate::core::platform::container::content::{ContentItem, ContentType, TextContent, VideoContent, AudioContent, ImageContent};
+use crate::core::platform::container::content::{
+    AudioContent, ContentItem, ContentType, ImageContent, TextContent, VideoContent,
+};
 
 pub struct ContentSummarizer;
 
@@ -26,7 +28,9 @@ impl ContentSummarizer {
     /// Generate a summary of the content based on its type
     pub fn summarize_content(&self, content: &ContentItem, max_length: usize) -> ContentSummary {
         match content.content() {
-            ContentType::Text(text_content) => self.summarize_text_content(text_content, max_length),
+            ContentType::Text(text_content) => {
+                self.summarize_text_content(text_content, max_length)
+            }
             ContentType::Video(video_content) => self.summarize_video_content(video_content),
             ContentType::Audio(audio_content) => self.summarize_audio_content(audio_content),
             ContentType::Image(image_content) => self.summarize_image_content(image_content),
@@ -34,12 +38,16 @@ impl ContentSummarizer {
     }
 
     /// Summarize text content by truncating to specified length
-    fn summarize_text_content(&self, text_content: &TextContent, max_length: usize) -> ContentSummary {
+    fn summarize_text_content(
+        &self,
+        text_content: &TextContent,
+        max_length: usize,
+    ) -> ContentSummary {
         let (summary, char_count, word_count) = match &text_content.content {
             Some(content) => {
                 let char_count = content.chars().count();
                 let word_count = content.split_whitespace().count();
-                
+
                 let summary = if char_count <= max_length {
                     content.clone()
                 } else {
@@ -51,15 +59,13 @@ impl ContentSummarizer {
                         format!("{}...", truncated)
                     }
                 };
-                
+
                 (summary, Some(char_count), Some(word_count))
-            },
-            None => {
-                match &text_content.path {
-                    Some(path) => (format!("Text file: {}", path), None, None),
-                    None => ("Empty text content".to_string(), Some(0), Some(0)),
-                }
             }
+            None => match &text_content.path {
+                Some(path) => (format!("Text file: {}", path), None, None),
+                None => ("Empty text content".to_string(), Some(0), Some(0)),
+            },
         };
 
         ContentSummary {
@@ -83,14 +89,14 @@ impl ContentSummarizer {
                     .file_name()
                     .and_then(|n| n.to_str())
                     .unwrap_or("Unknown video");
-                
+
                 format!(
                     "Video: {} (Duration: {}s, Size: {})",
                     filename,
                     video_content.duration,
                     Self::format_file_size(video_content.filesize)
                 )
-            },
+            }
             None => format!(
                 "Video content (Duration: {}s, Size: {})",
                 video_content.duration,
@@ -119,14 +125,14 @@ impl ContentSummarizer {
                     .file_name()
                     .and_then(|n| n.to_str())
                     .unwrap_or("Unknown audio");
-                
+
                 format!(
                     "Audio: {} (Duration: {}s, Size: {})",
                     filename,
                     audio_content.duration,
                     Self::format_file_size(audio_content.filesize)
                 )
-            },
+            }
             None => format!(
                 "Audio content (Duration: {}s, Size: {})",
                 audio_content.duration,
@@ -150,14 +156,14 @@ impl ContentSummarizer {
     /// Summarize image content with metadata
     fn summarize_image_content(&self, image_content: &ImageContent) -> ContentSummary {
         let (width, height) = image_content.resolution;
-        
+
         let summary = match &image_content.path {
             Some(path) => {
                 let filename = std::path::Path::new(path)
                     .file_name()
                     .and_then(|n| n.to_str())
                     .unwrap_or("Unknown image");
-                
+
                 format!(
                     "Image: {} ({}×{}, Size: {})",
                     filename,
@@ -165,7 +171,7 @@ impl ContentSummarizer {
                     height,
                     Self::format_file_size(image_content.filesize)
                 )
-            },
+            }
             None => format!(
                 "Image content ({}×{}, Size: {})",
                 width,
@@ -199,7 +205,10 @@ impl ContentSummarizer {
         let mut details = vec![
             format!("Type: {}", summary.content_type),
             format!("Summary: {}", summary.summary),
-            format!("File Size: {}", Self::format_file_size(summary.metadata.file_size)),
+            format!(
+                "File Size: {}",
+                Self::format_file_size(summary.metadata.file_size)
+            ),
         ];
 
         if let Some(duration) = summary.metadata.duration {
@@ -237,7 +246,8 @@ impl ContentSummarizer {
         if let Some(path) = content.content().path() {
             if let Some(extension) = std::path::Path::new(path)
                 .extension()
-                .and_then(|ext| ext.to_str()) {
+                .and_then(|ext| ext.to_str())
+            {
                 keywords.push(extension.to_lowercase());
             }
         }
@@ -254,7 +264,11 @@ impl ContentSummarizer {
                     .split_whitespace()
                     .filter(|word| word.len() > 3) // Filter out short words
                     .take(10) // Take first 10 significant words
-                    .map(|word| word.to_lowercase().trim_matches(|c: char| !c.is_alphanumeric()).to_string())
+                    .map(|word| {
+                        word.to_lowercase()
+                            .trim_matches(|c: char| !c.is_alphanumeric())
+                            .to_string()
+                    })
                     .filter(|word| !word.is_empty())
                     .collect();
                 keywords.extend(words);
@@ -296,10 +310,10 @@ mod tests {
 
     fn create_test_text_content() -> Result<ContentItem, Box<dyn std::error::Error>> {
         let text_content = TextContent::new(
-            None, 
+            None,
             Some("This is a test content for summarization. It contains multiple sentences and should be properly summarized.".to_string())
         )?;
-        
+
         Ok(ContentItem::new(ContentType::Text(text_content))?)
     }
 
@@ -312,10 +326,10 @@ mod tests {
     fn create_test_video_content_with_path() -> Result<ContentItem, Box<dyn std::error::Error>> {
         // Create a temporary file for testing file path functionality
         use tempfile::NamedTempFile;
-        
+
         let temp_file = NamedTempFile::new()?;
         let path = temp_file.path().to_string_lossy().to_string();
-        
+
         let video_content = VideoContent::new(Some(path), 3600)?;
         Ok(ContentItem::new(ContentType::Video(video_content))?)
     }
@@ -324,14 +338,14 @@ mod tests {
     fn test_summarize_text_content() -> Result<(), Box<dyn std::error::Error>> {
         let content = create_test_text_content()?;
         let summarizer = ContentSummarizer::new();
-        
+
         let summary = summarizer.summarize_content(&content, 50);
-        
+
         assert_eq!(summary.content_type, "Text");
         assert!(summary.summary.len() <= 53); // 50 + "..." 
         assert!(summary.metadata.character_count.is_some());
         assert!(summary.metadata.word_count.is_some());
-        
+
         Ok(())
     }
 
@@ -339,13 +353,13 @@ mod tests {
     fn test_summarize_video_content() -> Result<(), Box<dyn std::error::Error>> {
         let content = create_test_video_content()?;
         let summarizer = ContentSummarizer::new();
-        
+
         let summary = summarizer.summarize_content(&content, 100);
-        
+
         assert_eq!(summary.content_type, "Video");
         assert!(summary.summary.contains("Duration: 3600s"));
         assert_eq!(summary.metadata.duration, Some(3600));
-        
+
         Ok(())
     }
 
@@ -353,14 +367,14 @@ mod tests {
     fn test_summarize_video_content_with_path() -> Result<(), Box<dyn std::error::Error>> {
         let content = create_test_video_content_with_path()?;
         let summarizer = ContentSummarizer::new();
-        
+
         let summary = summarizer.summarize_content(&content, 100);
-        
+
         assert_eq!(summary.content_type, "Video");
         assert!(summary.summary.contains("Video:"));
         assert!(summary.summary.contains("Duration: 3600s"));
         assert_eq!(summary.metadata.duration, Some(3600));
-        
+
         Ok(())
     }
 
@@ -368,12 +382,12 @@ mod tests {
     fn test_brief_summary() -> Result<(), Box<dyn std::error::Error>> {
         let content = create_test_text_content()?;
         let summarizer = ContentSummarizer::new();
-        
+
         let brief = summarizer.brief_summary(&content);
-        
+
         assert!(brief.starts_with("Text:"));
         assert!(brief.len() <= 200); // Should be reasonably brief
-        
+
         Ok(())
     }
 
@@ -381,14 +395,14 @@ mod tests {
     fn test_detailed_summary() -> Result<(), Box<dyn std::error::Error>> {
         let content = create_test_text_content()?;
         let summarizer = ContentSummarizer::new();
-        
+
         let detailed = summarizer.detailed_summary(&content);
-        
+
         assert!(detailed.contains("Type: Text"));
         assert!(detailed.contains("File Size:"));
         assert!(detailed.contains("Characters:"));
         assert!(detailed.contains("Words:"));
-        
+
         Ok(())
     }
 
@@ -396,12 +410,12 @@ mod tests {
     fn test_extract_keywords() -> Result<(), Box<dyn std::error::Error>> {
         let content = create_test_text_content()?;
         let summarizer = ContentSummarizer::new();
-        
+
         let keywords = summarizer.extract_keywords(&content);
-        
+
         assert!(keywords.contains(&"text".to_string()));
         assert!(!keywords.is_empty());
-        
+
         Ok(())
     }
 
@@ -419,43 +433,43 @@ mod tests {
         let text_content = TextContent::new(None, None)?;
         let content = ContentItem::new(ContentType::Text(text_content))?;
         let summarizer = ContentSummarizer::new();
-        
+
         let summary = summarizer.summarize_content(&content, 100);
-        
+
         assert_eq!(summary.content_type, "Text");
         assert_eq!(summary.summary, "Empty text content");
-        
+
         Ok(())
     }
 
     #[test]
     fn test_all_content_types() -> Result<(), Box<dyn std::error::Error>> {
         let summarizer = ContentSummarizer::new();
-        
+
         // Text
         let text_content = TextContent::new(None, Some("Test".to_string()))?;
         let text_item = ContentItem::new(ContentType::Text(text_content))?;
         let text_summary = summarizer.summarize_content(&text_item, 100);
         assert_eq!(text_summary.content_type, "Text");
-        
+
         // Video - use None for path in tests
         let video_content = VideoContent::new(None, 100)?;
         let video_item = ContentItem::new(ContentType::Video(video_content))?;
         let video_summary = summarizer.summarize_content(&video_item, 100);
         assert_eq!(video_summary.content_type, "Video");
-        
+
         // Audio - use None for path in tests
         let audio_content = AudioContent::new(None, 200)?;
         let audio_item = ContentItem::new(ContentType::Audio(audio_content))?;
         let audio_summary = summarizer.summarize_content(&audio_item, 100);
         assert_eq!(audio_summary.content_type, "Audio");
-        
+
         // Image - use None for path in tests
         let image_content = ImageContent::new(None, (800, 600))?;
         let image_item = ContentItem::new(ContentType::Image(image_content))?;
         let image_summary = summarizer.summarize_content(&image_item, 100);
         assert_eq!(image_summary.content_type, "Image");
-        
+
         Ok(())
     }
 }

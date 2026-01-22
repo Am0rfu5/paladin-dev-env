@@ -1,5 +1,5 @@
 /*
-Collection 
+Collection
 
 A Collection is a generic type that can be used to store a collection of Data Items.
 */

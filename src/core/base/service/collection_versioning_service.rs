@@ -11,15 +11,17 @@ are tracked over time.
 */
 
 use crate::core::base::entity::collection::{CollectionType, Item};
-use crate::core::base::service::node_version_service::{VersioningError, ChangeType, HashAlgorithm};
-use uuid::Uuid;
+use crate::core::base::service::node_version_service::{
+    ChangeType, HashAlgorithm, VersioningError,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use uuid::Uuid;
 
 // Add required dependencies for hashing
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -67,12 +69,33 @@ pub enum CollectionChangeType {
 
 /// Collection Version Repository trait
 pub trait CollectionVersionRepository<T> {
-    fn save_collection_version(&self, version: &CollectionVersion<T>) -> Result<(), VersioningError>;
-    fn get_collection_version(&self, collection_id: Uuid, version_number: u32) -> Result<Option<CollectionVersion<T>>, VersioningError>;
-    fn get_current_collection_version(&self, collection_id: Uuid) -> Result<Option<CollectionVersion<T>>, VersioningError>;
-    fn get_collection_version_history(&self, collection_id: Uuid) -> Result<CollectionVersionHistory<T>, VersioningError>;
-    fn delete_collection_version(&self, collection_id: Uuid, version_number: u32) -> Result<(), VersioningError>;
-    fn purge_old_collection_versions(&self, collection_id: Uuid, keep_count: u32) -> Result<u32, VersioningError>;
+    fn save_collection_version(
+        &self,
+        version: &CollectionVersion<T>,
+    ) -> Result<(), VersioningError>;
+    fn get_collection_version(
+        &self,
+        collection_id: Uuid,
+        version_number: u32,
+    ) -> Result<Option<CollectionVersion<T>>, VersioningError>;
+    fn get_current_collection_version(
+        &self,
+        collection_id: Uuid,
+    ) -> Result<Option<CollectionVersion<T>>, VersioningError>;
+    fn get_collection_version_history(
+        &self,
+        collection_id: Uuid,
+    ) -> Result<CollectionVersionHistory<T>, VersioningError>;
+    fn delete_collection_version(
+        &self,
+        collection_id: Uuid,
+        version_number: u32,
+    ) -> Result<(), VersioningError>;
+    fn purge_old_collection_versions(
+        &self,
+        collection_id: Uuid,
+        keep_count: u32,
+    ) -> Result<u32, VersioningError>;
 }
 
 /// Collection Version Service
@@ -131,14 +154,19 @@ where
         // Check collection size limits
         if let Some(max_items) = self.config.max_items_per_version {
             if collection.items().len() > max_items as usize {
-                return Err(VersioningError::StorageError(
-                    format!("Collection exceeds maximum items per version: {} > {}", collection.items().len(), max_items)
-                ));
+                return Err(VersioningError::StorageError(format!(
+                    "Collection exceeds maximum items per version: {} > {}",
+                    collection.items().len(),
+                    max_items
+                )));
             }
         }
 
         // Get current version number
-        let current_version_number = match self.repository.get_current_collection_version(collection.uuid)? {
+        let current_version_number = match self
+            .repository
+            .get_current_collection_version(collection.uuid)?
+        {
             Some(current) => current.version_number + 1,
             None => 1,
         };
@@ -176,7 +204,10 @@ where
         };
 
         // Mark previous version as not current
-        if let Some(mut current) = self.repository.get_current_collection_version(collection.uuid)? {
+        if let Some(mut current) = self
+            .repository
+            .get_current_collection_version(collection.uuid)?
+        {
             current.metadata.is_current = false;
             self.repository.save_collection_version(&current)?;
         }
@@ -188,7 +219,9 @@ where
         if self.config.auto_purge_enabled {
             if let Some(max_versions) = self.config.max_versions_per_collection {
                 if current_version_number > max_versions {
-                    let _ = self.repository.purge_old_collection_versions(collection.uuid, max_versions);
+                    let _ = self
+                        .repository
+                        .purge_old_collection_versions(collection.uuid, max_versions);
                 }
             }
         }
@@ -197,18 +230,31 @@ where
     }
 
     /// Get a specific version of a collection
-    pub fn get_collection_version(&self, collection_id: Uuid, version_number: u32) -> Result<Option<CollectionVersion<T>>, VersioningError> {
-        self.repository.get_collection_version(collection_id, version_number)
+    pub fn get_collection_version(
+        &self,
+        collection_id: Uuid,
+        version_number: u32,
+    ) -> Result<Option<CollectionVersion<T>>, VersioningError> {
+        self.repository
+            .get_collection_version(collection_id, version_number)
     }
 
     /// Get the current (latest) version of a collection
-    pub fn get_current_collection_version(&self, collection_id: Uuid) -> Result<Option<CollectionVersion<T>>, VersioningError> {
-        self.repository.get_current_collection_version(collection_id)
+    pub fn get_current_collection_version(
+        &self,
+        collection_id: Uuid,
+    ) -> Result<Option<CollectionVersion<T>>, VersioningError> {
+        self.repository
+            .get_current_collection_version(collection_id)
     }
 
     /// Get complete version history for a collection
-    pub fn get_collection_version_history(&self, collection_id: Uuid) -> Result<CollectionVersionHistory<T>, VersioningError> {
-        self.repository.get_collection_version_history(collection_id)
+    pub fn get_collection_version_history(
+        &self,
+        collection_id: Uuid,
+    ) -> Result<CollectionVersionHistory<T>, VersioningError> {
+        self.repository
+            .get_collection_version_history(collection_id)
     }
 
     /// Compare two collection versions
@@ -218,11 +264,19 @@ where
         version1: u32,
         version2: u32,
     ) -> Result<CollectionVersionComparison<T>, VersioningError> {
-        let v1 = self.repository.get_collection_version(collection_id, version1)?
-            .ok_or_else(|| VersioningError::VersionNotFound(format!("{}:{}", collection_id, version1)))?;
-        
-        let v2 = self.repository.get_collection_version(collection_id, version2)?
-            .ok_or_else(|| VersioningError::VersionNotFound(format!("{}:{}", collection_id, version2)))?;
+        let v1 = self
+            .repository
+            .get_collection_version(collection_id, version1)?
+            .ok_or_else(|| {
+                VersioningError::VersionNotFound(format!("{}:{}", collection_id, version1))
+            })?;
+
+        let v2 = self
+            .repository
+            .get_collection_version(collection_id, version2)?
+            .ok_or_else(|| {
+                VersioningError::VersionNotFound(format!("{}:{}", collection_id, version2))
+            })?;
 
         let changes = self.detect_collection_changes(&v1.items, &v2.items);
 
@@ -254,8 +308,12 @@ where
         version_number: u32,
         restored_by: Option<String>,
     ) -> Result<CollectionVersion<T>, VersioningError> {
-        let version_to_restore = self.repository.get_collection_version(collection_id, version_number)?
-            .ok_or_else(|| VersioningError::VersionNotFound(format!("{}:{}", collection_id, version_number)))?;
+        let version_to_restore = self
+            .repository
+            .get_collection_version(collection_id, version_number)?
+            .ok_or_else(|| {
+                VersioningError::VersionNotFound(format!("{}:{}", collection_id, version_number))
+            })?;
 
         let collection = CollectionType::new(collection_id, version_to_restore.items);
 
@@ -280,16 +338,13 @@ where
             CollectionChangeType::ItemModified(id) => Some(format!("Modified item: {}", id)),
             CollectionChangeType::ItemsReordered => Some("Items reordered".to_string()),
             CollectionChangeType::MetadataChanged => Some("Metadata changed".to_string()),
-            CollectionChangeType::Bulk(changes) => Some(format!("Bulk changes: {} operations", changes.len())),
+            CollectionChangeType::Bulk(changes) => {
+                Some(format!("Bulk changes: {} operations", changes.len()))
+            }
             _ => None,
         };
 
-        self.create_collection_version(
-            collection,
-            ChangeType::Updated,
-            created_by,
-            change_summary,
-        )
+        self.create_collection_version(collection, ChangeType::Updated, created_by, change_summary)
     }
 
     fn generate_structure_hash(&self, items: &[Item<T>]) -> Result<String, VersioningError> {
@@ -309,17 +364,17 @@ where
             HashAlgorithm::Sha256 => {
                 let hash = Sha256::digest(data);
                 Ok(format!("{:x}", hash))
-            },
+            }
             HashAlgorithm::Blake3 => {
                 let hash = blake3::hash(data);
                 Ok(hash.to_hex().to_string())
-            },
+            }
             HashAlgorithm::Xxhash => {
                 use std::collections::hash_map::DefaultHasher;
                 let mut hasher = DefaultHasher::new();
                 data.hash(&mut hasher);
                 Ok(format!("{:x}", hasher.finish()))
-            },
+            }
         }
     }
 
@@ -329,7 +384,11 @@ where
         Ok(serialized.len() as u64)
     }
 
-    fn detect_collection_changes(&self, items1: &[Item<T>], items2: &[Item<T>]) -> Vec<CollectionChangeType> {
+    fn detect_collection_changes(
+        &self,
+        items1: &[Item<T>],
+        items2: &[Item<T>],
+    ) -> Vec<CollectionChangeType> {
         let mut changes = Vec::new();
 
         if items1.len() != items2.len() {
@@ -381,14 +440,24 @@ impl<T> CollectionVersionRepository<T> for InMemoryCollectionVersionRepository<T
 where
     T: Clone,
 {
-    fn save_collection_version(&self, version: &CollectionVersion<T>) -> Result<(), VersioningError> {
-        let mut versions = self.versions.write()
+    fn save_collection_version(
+        &self,
+        version: &CollectionVersion<T>,
+    ) -> Result<(), VersioningError> {
+        let mut versions = self
+            .versions
+            .write()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        let mut current_versions = self.current_versions.write()
+        let mut current_versions = self
+            .current_versions
+            .write()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
 
-        versions.insert((version.collection_id, version.version_number), version.clone());
-        
+        versions.insert(
+            (version.collection_id, version.version_number),
+            version.clone(),
+        );
+
         if version.metadata.is_current {
             current_versions.insert(version.collection_id, version.version_number);
         }
@@ -396,29 +465,51 @@ where
         Ok(())
     }
 
-    fn get_collection_version(&self, collection_id: Uuid, version_number: u32) -> Result<Option<CollectionVersion<T>>, VersioningError> {
-        let versions = self.versions.read()
+    fn get_collection_version(
+        &self,
+        collection_id: Uuid,
+        version_number: u32,
+    ) -> Result<Option<CollectionVersion<T>>, VersioningError> {
+        let versions = self
+            .versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
         Ok(versions.get(&(collection_id, version_number)).cloned())
     }
 
-    fn get_current_collection_version(&self, collection_id: Uuid) -> Result<Option<CollectionVersion<T>>, VersioningError> {
-        let current_versions = self.current_versions.read()
+    fn get_current_collection_version(
+        &self,
+        collection_id: Uuid,
+    ) -> Result<Option<CollectionVersion<T>>, VersioningError> {
+        let current_versions = self
+            .current_versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        let versions = self.versions.read()
+        let versions = self
+            .versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
 
         if let Some(&current_version_number) = current_versions.get(&collection_id) {
-            Ok(versions.get(&(collection_id, current_version_number)).cloned())
+            Ok(versions
+                .get(&(collection_id, current_version_number))
+                .cloned())
         } else {
             Ok(None)
         }
     }
 
-    fn get_collection_version_history(&self, collection_id: Uuid) -> Result<CollectionVersionHistory<T>, VersioningError> {
-        let versions = self.versions.read()
+    fn get_collection_version_history(
+        &self,
+        collection_id: Uuid,
+    ) -> Result<CollectionVersionHistory<T>, VersioningError> {
+        let versions = self
+            .versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        let current_versions = self.current_versions.read()
+        let current_versions = self
+            .current_versions
+            .read()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
 
         let mut collection_versions: Vec<CollectionVersion<T>> = versions
@@ -440,17 +531,27 @@ where
         })
     }
 
-    fn delete_collection_version(&self, collection_id: Uuid, version_number: u32) -> Result<(), VersioningError> {
-        let mut versions = self.versions.write()
+    fn delete_collection_version(
+        &self,
+        collection_id: Uuid,
+        version_number: u32,
+    ) -> Result<(), VersioningError> {
+        let mut versions = self
+            .versions
+            .write()
             .map_err(|e| VersioningError::StorageError(e.to_string()))?;
-        
+
         versions.remove(&(collection_id, version_number));
         Ok(())
     }
 
-    fn purge_old_collection_versions(&self, collection_id: Uuid, keep_count: u32) -> Result<u32, VersioningError> {
+    fn purge_old_collection_versions(
+        &self,
+        collection_id: Uuid,
+        keep_count: u32,
+    ) -> Result<u32, VersioningError> {
         let history = self.get_collection_version_history(collection_id)?;
-        
+
         if history.total_versions <= keep_count {
             return Ok(0);
         }
@@ -485,8 +586,18 @@ mod tests {
         let service = CollectionVersionService::new(repository, None);
 
         let items = vec![
-            Item { item: TestItem { name: "item1".to_string(), value: 1 } },
-            Item { item: TestItem { name: "item2".to_string(), value: 2 } },
+            Item {
+                item: TestItem {
+                    name: "item1".to_string(),
+                    value: 1,
+                },
+            },
+            Item {
+                item: TestItem {
+                    name: "item2".to_string(),
+                    value: 2,
+                },
+            },
         ];
 
         let collection = CollectionType {
@@ -494,12 +605,14 @@ mod tests {
             items,
         };
 
-        let version = service.create_collection_version(
-            &collection,
-            ChangeType::Created,
-            Some("test_user".to_string()),
-            Some("Initial collection creation".to_string()),
-        ).unwrap();
+        let version = service
+            .create_collection_version(
+                &collection,
+                ChangeType::Created,
+                Some("test_user".to_string()),
+                Some("Initial collection creation".to_string()),
+            )
+            .unwrap();
 
         assert_eq!(version.version_number, 1);
         assert_eq!(version.collection_id, collection.uuid);
@@ -514,22 +627,34 @@ mod tests {
 
         let mut collection = CollectionType {
             uuid: Uuid::new_v4(),
-            items: vec![Item { item: TestItem { name: "original".to_string(), value: 1 } }],
+            items: vec![Item {
+                item: TestItem {
+                    name: "original".to_string(),
+                    value: 1,
+                },
+            }],
         };
 
         // Create initial version
-        service.create_collection_version(&collection, ChangeType::Created, None, None).unwrap();
+        service
+            .create_collection_version(&collection, ChangeType::Created, None, None)
+            .unwrap();
 
         // Modify collection
-        collection.items.push(Item { item: TestItem { name: "added".to_string(), value: 2 } });
-        service.create_collection_version(&collection, ChangeType::Updated, None, None).unwrap();
+        collection.items.push(Item {
+            item: TestItem {
+                name: "added".to_string(),
+                value: 2,
+            },
+        });
+        service
+            .create_collection_version(&collection, ChangeType::Updated, None, None)
+            .unwrap();
 
         // Restore to version 1
-        let restored = service.restore_collection_version(
-            collection.uuid, 
-            1, 
-            Some("test_user".to_string())
-        ).unwrap();
+        let restored = service
+            .restore_collection_version(collection.uuid, 1, Some("test_user".to_string()))
+            .unwrap();
 
         assert_eq!(restored.version_number, 3);
         assert_eq!(restored.metadata.change_type, ChangeType::Restored);
@@ -544,17 +669,33 @@ mod tests {
 
         let mut collection = CollectionType {
             uuid: Uuid::new_v4(),
-            items: vec![Item { item: TestItem { name: "item1".to_string(), value: 1 } }],
+            items: vec![Item {
+                item: TestItem {
+                    name: "item1".to_string(),
+                    value: 1,
+                },
+            }],
         };
 
         // Create versions
-        service.create_collection_version(&collection, ChangeType::Created, None, None).unwrap();
-        
-        collection.items.push(Item { item: TestItem { name: "item2".to_string(), value: 2 } });
-        service.create_collection_version(&collection, ChangeType::Updated, None, None).unwrap();
+        service
+            .create_collection_version(&collection, ChangeType::Created, None, None)
+            .unwrap();
 
-        let comparison = service.compare_collection_versions(collection.uuid, 1, 2).unwrap();
-        
+        collection.items.push(Item {
+            item: TestItem {
+                name: "item2".to_string(),
+                value: 2,
+            },
+        });
+        service
+            .create_collection_version(&collection, ChangeType::Updated, None, None)
+            .unwrap();
+
+        let comparison = service
+            .compare_collection_versions(collection.uuid, 1, 2)
+            .unwrap();
+
         assert!(comparison.structure_changed);
         assert!(comparison.content_changed);
         assert!(comparison.item_count_changed);
@@ -570,19 +711,37 @@ mod tests {
         let collection = CollectionType {
             uuid: Uuid::new_v4(),
             items: vec![
-                Item { item: TestItem { name: "item1".to_string(), value: 1 } },
-                Item { item: TestItem { name: "item2".to_string(), value: 2 } },
+                Item {
+                    item: TestItem {
+                        name: "item1".to_string(),
+                        value: 1,
+                    },
+                },
+                Item {
+                    item: TestItem {
+                        name: "item2".to_string(),
+                        value: 2,
+                    },
+                },
             ],
         };
 
-        let version = service.track_item_change(
-            &collection,
-            CollectionChangeType::ItemAdded(Uuid::new_v4()),
-            Some("test_user".to_string()),
-        ).unwrap();
+        let version = service
+            .track_item_change(
+                &collection,
+                CollectionChangeType::ItemAdded(Uuid::new_v4()),
+                Some("test_user".to_string()),
+            )
+            .unwrap();
 
         assert_eq!(version.version_number, 1);
-        assert!(version.change_summary.as_ref().unwrap().contains("Added item"));
+        assert!(
+            version
+                .change_summary
+                .as_ref()
+                .unwrap()
+                .contains("Added item")
+        );
         assert_eq!(version.metadata.item_count, 2);
     }
 
@@ -598,21 +757,35 @@ mod tests {
         let collection = CollectionType {
             uuid: Uuid::new_v4(),
             items: vec![
-                Item { item: TestItem { name: "item1".to_string(), value: 1 } },
-                Item { item: TestItem { name: "item2".to_string(), value: 2 } },
-                Item { item: TestItem { name: "item3".to_string(), value: 3 } },
+                Item {
+                    item: TestItem {
+                        name: "item1".to_string(),
+                        value: 1,
+                    },
+                },
+                Item {
+                    item: TestItem {
+                        name: "item2".to_string(),
+                        value: 2,
+                    },
+                },
+                Item {
+                    item: TestItem {
+                        name: "item3".to_string(),
+                        value: 3,
+                    },
+                },
             ],
         };
 
-        let result = service.create_collection_version(
-            &collection,
-            ChangeType::Created,
-            None,
-            None,
-        );
+        let result =
+            service.create_collection_version(&collection, ChangeType::Created, None, None);
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), VersioningError::StorageError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            VersioningError::StorageError(_)
+        ));
     }
 
     #[test]
@@ -627,19 +800,32 @@ mod tests {
 
         let mut collection = CollectionType {
             uuid: Uuid::new_v4(),
-            items: vec![Item { item: TestItem { name: "item1".to_string(), value: 1 } }],
+            items: vec![Item {
+                item: TestItem {
+                    name: "item1".to_string(),
+                    value: 1,
+                },
+            }],
         };
 
         // Create 3 versions (should trigger auto-purge)
-        service.create_collection_version(&collection, ChangeType::Created, None, None).unwrap();
-        
-        collection.items[0].item.value = 2;
-        service.create_collection_version(&collection, ChangeType::Updated, None, None).unwrap();
-        
-        collection.items[0].item.value = 3;
-        service.create_collection_version(&collection, ChangeType::Updated, None, None).unwrap();
+        service
+            .create_collection_version(&collection, ChangeType::Created, None, None)
+            .unwrap();
 
-        let history = service.get_collection_version_history(collection.uuid).unwrap();
+        collection.items[0].item.value = 2;
+        service
+            .create_collection_version(&collection, ChangeType::Updated, None, None)
+            .unwrap();
+
+        collection.items[0].item.value = 3;
+        service
+            .create_collection_version(&collection, ChangeType::Updated, None, None)
+            .unwrap();
+
+        let history = service
+            .get_collection_version_history(collection.uuid)
+            .unwrap();
         // Should only have 2 versions due to auto-purge
         assert_eq!(history.total_versions, 2);
     }
@@ -651,7 +837,12 @@ mod tests {
 
         let collection = CollectionType {
             uuid: Uuid::new_v4(),
-            items: vec![Item { item: TestItem { name: "item1".to_string(), value: 1 } }],
+            items: vec![Item {
+                item: TestItem {
+                    name: "item1".to_string(),
+                    value: 1,
+                },
+            }],
         };
 
         let bulk_changes = vec![
@@ -659,14 +850,22 @@ mod tests {
             CollectionChangeType::ItemModified(Uuid::new_v4()),
         ];
 
-        let version = service.track_item_change(
-            &collection,
-            CollectionChangeType::Bulk(bulk_changes),
-            Some("test_user".to_string()),
-        ).unwrap();
+        let version = service
+            .track_item_change(
+                &collection,
+                CollectionChangeType::Bulk(bulk_changes),
+                Some("test_user".to_string()),
+            )
+            .unwrap();
 
         assert_eq!(version.version_number, 1);
-        assert!(version.change_summary.as_ref().unwrap().contains("Bulk changes: 2 operations"));
+        assert!(
+            version
+                .change_summary
+                .as_ref()
+                .unwrap()
+                .contains("Bulk changes: 2 operations")
+        );
     }
 
     #[test]
@@ -676,26 +875,46 @@ mod tests {
 
         let collection1 = CollectionType {
             uuid: Uuid::new_v4(),
-            items: vec![Item { item: TestItem { name: "item1".to_string(), value: 1 } }],
+            items: vec![Item {
+                item: TestItem {
+                    name: "item1".to_string(),
+                    value: 1,
+                },
+            }],
         };
 
         let collection2 = CollectionType {
             uuid: Uuid::new_v4(),
-            items: vec![Item { item: TestItem { name: "item1".to_string(), value: 2 } }],
+            items: vec![Item {
+                item: TestItem {
+                    name: "item1".to_string(),
+                    value: 2,
+                },
+            }],
         };
 
-        let version1 = service.create_collection_version(&collection1, ChangeType::Created, None, None).unwrap();
-        let version2 = service.create_collection_version(&collection2, ChangeType::Created, None, None).unwrap();
+        let version1 = service
+            .create_collection_version(&collection1, ChangeType::Created, None, None)
+            .unwrap();
+        let version2 = service
+            .create_collection_version(&collection2, ChangeType::Created, None, None)
+            .unwrap();
 
         // Same structure but different content should have same structure hash but different content hash
-        assert_eq!(version1.metadata.structure_hash, version2.metadata.structure_hash);
-        assert_ne!(version1.metadata.content_hash, version2.metadata.content_hash);
+        assert_eq!(
+            version1.metadata.structure_hash,
+            version2.metadata.structure_hash
+        );
+        assert_ne!(
+            version1.metadata.content_hash,
+            version2.metadata.content_hash
+        );
     }
 
     #[test]
     fn test_versioning_config_defaults() {
         let config = CollectionVersioningConfig::default();
-        
+
         assert_eq!(config.max_versions_per_collection, Some(30));
         assert_eq!(config.auto_purge_enabled, true);
         assert_eq!(config.track_item_changes, true);
@@ -729,14 +948,14 @@ mod tests {
         let repository = Arc::new(InMemoryCollectionVersionRepository::<TestItem>::new());
         let service = CollectionVersionService::new(repository, None);
 
-        let result = service.restore_collection_version(
-            Uuid::new_v4(),
-            1,
-            Some("test_user".to_string()),
-        );
+        let result =
+            service.restore_collection_version(Uuid::new_v4(), 1, Some("test_user".to_string()));
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), VersioningError::VersionNotFound(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            VersioningError::VersionNotFound(_)
+        ));
     }
 
     #[test]
@@ -746,7 +965,10 @@ mod tests {
 
         let result = service.compare_collection_versions(Uuid::new_v4(), 1, 2);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), VersioningError::VersionNotFound(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            VersioningError::VersionNotFound(_)
+        ));
     }
 
     #[test]
@@ -767,14 +989,26 @@ mod tests {
 
         let collection = CollectionType {
             uuid: Uuid::new_v4(),
-            items: vec![Item { item: TestItem { name: "item1".to_string(), value: 1 } }],
+            items: vec![Item {
+                item: TestItem {
+                    name: "item1".to_string(),
+                    value: 1,
+                },
+            }],
         };
 
-        let version1 = service1.create_collection_version(&collection, ChangeType::Created, None, None).unwrap();
-        let version2 = service2.create_collection_version(&collection, ChangeType::Created, None, None).unwrap();
+        let version1 = service1
+            .create_collection_version(&collection, ChangeType::Created, None, None)
+            .unwrap();
+        let version2 = service2
+            .create_collection_version(&collection, ChangeType::Created, None, None)
+            .unwrap();
 
         // Different hash algorithms should produce different hashes for the same content
-        assert_ne!(version1.metadata.content_hash, version2.metadata.content_hash);
+        assert_ne!(
+            version1.metadata.content_hash,
+            version2.metadata.content_hash
+        );
     }
 
     #[test]
@@ -784,15 +1018,22 @@ mod tests {
 
         let collection = CollectionType {
             uuid: Uuid::new_v4(),
-            items: vec![Item { item: TestItem { name: "item1".to_string(), value: 1 } }],
+            items: vec![Item {
+                item: TestItem {
+                    name: "item1".to_string(),
+                    value: 1,
+                },
+            }],
         };
 
-        let version = service.create_collection_version(
-            &collection,
-            ChangeType::Created,
-            Some("test_user".to_string()),
-            Some("Test creation".to_string()),
-        ).unwrap();
+        let version = service
+            .create_collection_version(
+                &collection,
+                ChangeType::Created,
+                Some("test_user".to_string()),
+                Some("Test creation".to_string()),
+            )
+            .unwrap();
 
         assert!(version.metadata.is_current);
         assert_eq!(version.metadata.change_type, ChangeType::Created);
@@ -811,17 +1052,33 @@ mod tests {
 
         let mut collection = CollectionType {
             uuid: Uuid::new_v4(),
-            items: vec![Item { item: TestItem { name: "item1".to_string(), value: 1 } }],
+            items: vec![Item {
+                item: TestItem {
+                    name: "item1".to_string(),
+                    value: 1,
+                },
+            }],
         };
 
         // Create initial version
-        service.create_collection_version(&collection, ChangeType::Created, None, None).unwrap();
+        service
+            .create_collection_version(&collection, ChangeType::Created, None, None)
+            .unwrap();
 
         // Add an item and create new version
-        collection.items.push(Item { item: TestItem { name: "item2".to_string(), value: 2 } });
-        service.create_collection_version(&collection, ChangeType::Updated, None, None).unwrap();
+        collection.items.push(Item {
+            item: TestItem {
+                name: "item2".to_string(),
+                value: 2,
+            },
+        });
+        service
+            .create_collection_version(&collection, ChangeType::Updated, None, None)
+            .unwrap();
 
-        let history = service.get_collection_version_history(collection.uuid).unwrap();
+        let history = service
+            .get_collection_version_history(collection.uuid)
+            .unwrap();
         assert_eq!(history.total_versions, 2);
         assert_eq!(history.current_version, 2);
         assert_eq!(history.versions[0].metadata.item_count, 1);

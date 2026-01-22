@@ -2,7 +2,7 @@
 Message Service
 
 The core base-level message service that provides the most generalized messaging functionality.
-This service handles message routing, delivery, and basic message operations that other 
+This service handles message routing, delivery, and basic message operations that other
 messaging services can build upon.
 
 This is the foundation service for:
@@ -13,14 +13,14 @@ This is the foundation service for:
 
 All platform and application level messaging services should extend this base service.
 */
+use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use std::sync::Arc;
-use async_trait::async_trait;
 use tokio::sync::{RwLock, mpsc};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
-use crate::core::base::entity::message::{Message, Location, MessagePriority};
+use crate::core::base::entity::message::{Location, Message, MessagePriority};
 
 /// Result type for message operations
 pub type MessageResult<T> = Result<T, MessageError>;
@@ -30,34 +30,34 @@ pub type MessageResult<T> = Result<T, MessageError>;
 pub enum MessageError {
     #[error("Invalid destination: {0}")]
     InvalidDestination(String),
-    
+
     #[error("Message delivery failed: {0}")]
     DeliveryFailed(String),
-    
+
     #[error("Handler not found for destination: {0}")]
     HandlerNotFound(String),
-    
+
     #[error("Message routing failed: {0}")]
     RoutingFailed(String),
-    
+
     #[error("Message serialization failed: {0}")]
     SerializationFailed(String),
-    
+
     #[error("Message queue full")]
     QueueFull,
-    
+
     #[error("Service unavailable")]
     ServiceUnavailable,
-    
+
     #[error("Permission denied for destination: {0}")]
     PermissionDenied(String),
-    
+
     #[error("Message expired")]
     MessageExpired,
-    
+
     #[error("Invalid message format: {0}")]
     InvalidFormat(String),
-    
+
     #[error("Unknown error: {0}")]
     Unknown(String),
 }
@@ -116,10 +116,10 @@ impl Default for MessageServiceConfig {
 pub trait MessageHandler<T>: Send + Sync {
     /// Handle a message
     async fn handle_message(&self, message: Message<T>) -> MessageResult<()>;
-    
+
     /// Get the destinations this handler can process
     fn supported_destinations(&self) -> Vec<Location>;
-    
+
     /// Check if this handler can process messages to the given destination
     fn can_handle(&self, destination: &Location) -> bool {
         self.supported_destinations().contains(destination)
@@ -181,56 +181,57 @@ impl MessageService {
             workers: Arc::new(RwLock::new(Vec::new())),
         }
     }
-    
+
     /// Start the message service
     pub async fn start(&self) -> MessageResult<()> {
         // Start worker threads
         let mut workers = self.workers.write().await;
-        
+
         for i in 0..self.config.worker_threads {
             let worker = self.start_worker(i).await;
             workers.push(worker);
         }
-        
+
         Ok(())
     }
-    
+
     /// Stop the message service
     pub async fn stop(&self) -> MessageResult<()> {
         let mut workers = self.workers.write().await;
-        
+
         // Cancel all workers
         for worker in workers.drain(..) {
             worker.abort();
         }
-        
+
         Ok(())
     }
-    
+
     /// Register a message handler for specific destinations
-    pub async fn register_handler<T>(&self, 
-        destination_type: String, 
-        handler: Arc<dyn MessageHandler<T>>
-    ) -> MessageResult<()> 
+    pub async fn register_handler<T>(
+        &self,
+        destination_type: String,
+        handler: Arc<dyn MessageHandler<T>>,
+    ) -> MessageResult<()>
     where
         T: serde::Serialize + serde::de::DeserializeOwned + Send + Sync + 'static,
     {
         // Create a wrapper that handles the generic type conversion
         let wrapper = GenericHandlerWrapper::new(handler);
-        
+
         let mut handlers = self.handlers.write().await;
         handlers.insert(destination_type, Arc::new(wrapper));
-        
+
         Ok(())
     }
-    
+
     /// Send a message
     pub async fn send_message<T>(&self, message: Message<T>) -> MessageResult<DeliveryReceipt>
     where
         T: serde::Serialize + Send + Sync,
     {
         let start_time = std::time::Instant::now();
-        
+
         // Check if message is expired
         if message.is_expired(self.config.default_ttl_seconds) {
             return Ok(DeliveryReceipt {
@@ -241,20 +242,26 @@ impl MessageService {
                 processing_time_ms: start_time.elapsed().as_millis() as u64,
             });
         }
-        
+
         // Update statistics
         {
             let mut stats = self.stats.write().await;
             stats.messages_sent += 1;
-            *stats.messages_by_priority.entry(message.priority).or_insert(0) += 1;
-            *stats.destination_stats.entry(message.destination.to_string()).or_insert(0) += 1;
+            *stats
+                .messages_by_priority
+                .entry(message.priority)
+                .or_insert(0) += 1;
+            *stats
+                .destination_stats
+                .entry(message.destination.to_string())
+                .or_insert(0) += 1;
             stats.last_activity = Some(Utc::now());
         }
-        
+
         // Convert message to generic format
         let json_value = serde_json::to_value(&message.message)
             .map_err(|e| MessageError::SerializationFailed(e.to_string()))?;
-        
+
         let generic_message = Message {
             id: message.id,
             source: message.source,
@@ -264,14 +271,14 @@ impl MessageService {
             correlation_id: message.correlation_id,
             priority: message.priority,
         };
-        
+
         // Try to deliver immediately if handler is available
         if let Some(handler) = self.find_handler(&message.destination).await {
             match handler.handle_message(generic_message).await {
                 Ok(()) => {
                     let mut stats = self.stats.write().await;
                     stats.messages_delivered += 1;
-                    
+
                     return Ok(DeliveryReceipt {
                         message_id: message.id,
                         status: DeliveryStatus::Delivered,
@@ -283,7 +290,7 @@ impl MessageService {
                 Err(e) => {
                     let mut stats = self.stats.write().await;
                     stats.messages_failed += 1;
-                    
+
                     return Ok(DeliveryReceipt {
                         message_id: message.id,
                         status: DeliveryStatus::Failed,
@@ -294,10 +301,10 @@ impl MessageService {
                 }
             }
         }
-        
+
         // Queue the message for later processing
         self.queue_message(generic_message).await?;
-        
+
         Ok(DeliveryReceipt {
             message_id: message.id,
             status: DeliveryStatus::Pending,
@@ -306,54 +313,60 @@ impl MessageService {
             processing_time_ms: start_time.elapsed().as_millis() as u64,
         })
     }
-    
+
     /// Send multiple messages
-    pub async fn send_messages<T>(&self, messages: Vec<Message<T>>) -> MessageResult<Vec<DeliveryReceipt>>
+    pub async fn send_messages<T>(
+        &self,
+        messages: Vec<Message<T>>,
+    ) -> MessageResult<Vec<DeliveryReceipt>>
     where
         T: serde::Serialize + Send + Sync,
     {
         let mut receipts = Vec::new();
-        
+
         for message in messages {
             let receipt = self.send_message(message).await?;
             receipts.push(receipt);
         }
-        
+
         Ok(receipts)
     }
-    
+
     /// Get service statistics
     pub async fn get_stats(&self) -> MessageStats {
         let stats = self.stats.read().await;
         stats.clone()
     }
-    
+
     /// Get list of registered destinations
     pub async fn list_destinations(&self) -> Vec<String> {
         let handlers = self.handlers.read().await;
         handlers.keys().cloned().collect()
     }
-    
+
     /// Check service health
     pub async fn health_check(&self) -> MessageResult<bool> {
         let handlers = self.handlers.read().await;
         let queues = self.queues.read().await;
-        
+
         // Service is healthy if we have handlers and queues are not overflowing
         Ok(!handlers.is_empty() && queues.len() < self.config.max_queue_size)
     }
-    
+
     // Private helper methods
-    
+
     /// Find a handler for the given destination
-    async fn find_handler(&self, destination: &Location) -> Option<Arc<dyn MessageHandler<serde_json::Value>>> {
+    async fn find_handler(
+        &self,
+        destination: &Location,
+    ) -> Option<Arc<dyn MessageHandler<serde_json::Value>>> {
         let handlers = self.handlers.read().await;
-        
+
         // Try exact match first
         if let Some(handler) = handlers.get(&destination.to_string()) {
             return Some(handler.clone());
         }
-        
+
         // Try by destination type
         let dest_type = match destination {
             Location::System(_) => "system",
@@ -361,26 +374,29 @@ impl MessageService {
             Location::External(_) => "external",
             Location::User(_) => "user",
         };
-        
+
         handlers.get(dest_type).cloned()
     }
-    
+
     /// Queue a message for later processing
     async fn queue_message(&self, message: Message<serde_json::Value>) -> MessageResult<()> {
         let mut queues = self.queues.write().await;
-        
-        let sender = queues.entry(message.destination.clone())
+
+        let sender = queues
+            .entry(message.destination.clone())
             .or_insert_with(|| {
                 let (tx, mut rx) = mpsc::unbounded_channel::<Message<serde_json::Value>>();
-                
+
                 // Spawn processor for this queue
                 let handlers = self.handlers.clone();
                 let stats = self.stats.clone();
-                
+
                 tokio::spawn(async move {
                     while let Some(msg) = rx.recv().await {
                         // Process message
-                        if let Some(handler) = Self::find_handler_static(&handlers, &msg.destination).await {
+                        if let Some(handler) =
+                            Self::find_handler_static(&handlers, &msg.destination).await
+                        {
                             match handler.handle_message(msg).await {
                                 Ok(()) => {
                                     let mut stats = stats.write().await;
@@ -394,37 +410,36 @@ impl MessageService {
                         }
                     }
                 });
-                
+
                 tx
             });
-        
-        sender.send(message)
-            .map_err(|_| MessageError::QueueFull)?;
-        
+
+        sender.send(message).map_err(|_| MessageError::QueueFull)?;
+
         Ok(())
     }
-    
+
     /// Static version of find_handler for use in spawned tasks
     async fn find_handler_static(
         handlers: &Arc<RwLock<HashMap<String, Arc<dyn MessageHandler<serde_json::Value>>>>>,
-        destination: &Location
+        destination: &Location,
     ) -> Option<Arc<dyn MessageHandler<serde_json::Value>>> {
         let handlers_guard = handlers.read().await;
-        
+
         if let Some(handler) = handlers_guard.get(&destination.to_string()) {
             return Some(handler.clone());
         }
-        
+
         let dest_type = match destination {
             Location::System(_) => "system",
-            Location::Service(_) => "service", 
+            Location::Service(_) => "service",
             Location::External(_) => "external",
             Location::User(_) => "user",
         };
-        
+
         handlers_guard.get(dest_type).cloned()
     }
-    
+
     /// Start a worker thread
     async fn start_worker(&self, _worker_id: usize) -> tokio::task::JoinHandle<()> {
         // For now, workers are handled by the queue processors
@@ -459,7 +474,7 @@ where
         // Convert JSON value back to the specific type
         let typed_message = serde_json::from_value::<T>(message.message)
             .map_err(|e| MessageError::SerializationFailed(e.to_string()))?;
-        
+
         let converted_message = Message {
             id: message.id,
             source: message.source,
@@ -469,10 +484,10 @@ where
             correlation_id: message.correlation_id,
             priority: message.priority,
         };
-        
+
         self.inner.handle_message(converted_message).await
     }
-    
+
     fn supported_destinations(&self) -> Vec<Location> {
         self.inner.supported_destinations()
     }
@@ -483,13 +498,13 @@ mod tests {
     use super::*;
 
     struct TestHandler;
-    
+
     #[async_trait]
     impl MessageHandler<String> for TestHandler {
         async fn handle_message(&self, _message: Message<String>) -> MessageResult<()> {
             Ok(())
         }
-        
+
         fn supported_destinations(&self) -> Vec<Location> {
             vec![Location::service("test")]
         }
@@ -499,7 +514,7 @@ mod tests {
     async fn test_message_service_creation() {
         let config = MessageServiceConfig::default();
         let service = MessageService::new(config);
-        
+
         assert!(service.health_check().await.is_ok());
     }
 
@@ -507,10 +522,10 @@ mod tests {
     async fn test_handler_registration() {
         let service = MessageService::new(MessageServiceConfig::default());
         let handler = Arc::new(TestHandler);
-        
+
         let result = service.register_handler("test".to_string(), handler).await;
         assert!(result.is_ok());
-        
+
         let destinations = service.list_destinations().await;
         assert!(destinations.contains(&"test".to_string()));
     }
@@ -519,14 +534,17 @@ mod tests {
     async fn test_message_sending() {
         let service = MessageService::new(MessageServiceConfig::default());
         let handler = Arc::new(TestHandler);
-        service.register_handler("service".to_string(), handler).await.unwrap();
-        
+        service
+            .register_handler("service".to_string(), handler)
+            .await
+            .unwrap();
+
         let message = Message::new(
             Location::system("test-system"),
             Location::service("test"),
             "Hello, World!".to_string(),
         );
-        
+
         let receipt = service.send_message(message).await.unwrap();
         assert_eq!(receipt.status, DeliveryStatus::Delivered);
     }

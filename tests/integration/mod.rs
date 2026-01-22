@@ -5,9 +5,9 @@ use std::sync::Once;
 use std::time::Duration;
 use tokio::time::sleep;
 
-pub mod redis_queue_integration_test;
 pub mod file_storage_integration_tests;
 pub mod openai_content_analysis_integration_test;
+pub mod redis_queue_integration_test;
 pub mod system_log_integration_test;
 
 static INIT: Once = Once::new();
@@ -58,8 +58,9 @@ impl TestEnvironment {
     pub fn check_service_availability(host: &str, port: u16) -> bool {
         std::net::TcpStream::connect_timeout(
             &format!("{}:{}", host, port).parse().unwrap(),
-            Duration::from_secs(1)
-        ).is_ok()
+            Duration::from_secs(1),
+        )
+        .is_ok()
     }
 
     /// Configuration for external services (CI/CD)
@@ -107,7 +108,10 @@ impl TestEnvironment {
         // Wait for Redis
         for attempt in 1..=30 {
             if Self::check_service_availability(&config.redis_host, config.redis_port) {
-                println!("✅ Redis is ready at {}:{}", config.redis_host, config.redis_port);
+                println!(
+                    "✅ Redis is ready at {}:{}",
+                    config.redis_host, config.redis_port
+                );
                 break;
             }
             if attempt == 30 {
@@ -178,8 +182,8 @@ macro_rules! integration_test {
 
 /// Helper function to setup test tracing/logging
 pub fn setup_test_logging() {
-    use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
-    
+    use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+
     if env::var("TEST_LOG").is_ok() {
         tracing_subscriber::registry()
             .with(EnvFilter::from_default_env())

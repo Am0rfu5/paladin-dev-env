@@ -1,12 +1,12 @@
 /*
 Content Aggregator Service Use Case
 
-This use case offers a service for aggregating content. 
+This use case offers a service for aggregating content.
 
 It takes a list of content items as input and returns a single aggregated content list.
 */
-use serde_json::Value;
 use crate::core::platform::container::content_list::ContentList;
+use serde_json::Value;
 
 pub trait ContentListService {
     fn fetch_content_list(&self, url: &str) -> Result<ContentList, String>;

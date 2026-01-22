@@ -20,11 +20,11 @@ an HTTP API without being tightly coupled to the details of how that API is impl
 
 use crate::core::platform::container::content::ContentItem;
 use crate::core::platform::container::content_list::ContentList;
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
-use std::collections::HashMap;
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRequest {
@@ -38,12 +38,28 @@ pub struct DeliveryRequest {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DeliveryMethod {
-    Http { endpoint: String, headers: Option<HashMap<String, String>> },
-    Email { to: String, subject: String },
-    Webhook { url: String, method: String },
-    Push { device_token: String, title: String },
-    Sms { phone_number: String },
-    WebSocket { connection_id: String },
+    Http {
+        endpoint: String,
+        headers: Option<HashMap<String, String>>,
+    },
+    Email {
+        to: String,
+        subject: String,
+    },
+    Webhook {
+        url: String,
+        method: String,
+    },
+    Push {
+        device_token: String,
+        title: String,
+    },
+    Sms {
+        phone_number: String,
+    },
+    WebSocket {
+        connection_id: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -142,35 +158,58 @@ pub enum ContentDeliveryError {
 /// Defines the contract for delivering content to various destinations
 pub trait ContentDeliveryService {
     /// Deliver content using the specified delivery request
-    fn deliver_content(&self, request: DeliveryRequest) -> Result<DeliveryResponse, ContentDeliveryError>;
-    
+    fn deliver_content(
+        &self,
+        request: DeliveryRequest,
+    ) -> Result<DeliveryResponse, ContentDeliveryError>;
+
     /// Schedule content delivery for a future time
-    fn schedule_delivery(&self, request: DeliveryRequest) -> Result<DeliveryResponse, ContentDeliveryError>;
-    
+    fn schedule_delivery(
+        &self,
+        request: DeliveryRequest,
+    ) -> Result<DeliveryResponse, ContentDeliveryError>;
+
     /// Cancel a scheduled delivery
     fn cancel_delivery(&self, delivery_id: Uuid) -> Result<(), ContentDeliveryError>;
-    
+
     /// Get delivery status
-    fn get_delivery_status(&self, delivery_id: Uuid) -> Result<DeliveryResponse, ContentDeliveryError>;
-    
+    fn get_delivery_status(
+        &self,
+        delivery_id: Uuid,
+    ) -> Result<DeliveryResponse, ContentDeliveryError>;
+
     /// List deliveries for a recipient
-    fn list_deliveries(&self, recipient_id: &str, limit: Option<u32>) -> Result<Vec<DeliveryResponse>, ContentDeliveryError>;
-    
+    fn list_deliveries(
+        &self,
+        recipient_id: &str,
+        limit: Option<u32>,
+    ) -> Result<Vec<DeliveryResponse>, ContentDeliveryError>;
+
     /// Get delivery statistics
-    fn get_delivery_stats(&self, recipient_id: Option<&str>) -> Result<DeliveryStats, ContentDeliveryError>;
+    fn get_delivery_stats(
+        &self,
+        recipient_id: Option<&str>,
+    ) -> Result<DeliveryStats, ContentDeliveryError>;
 
     /// Validate delivery method configuration
-    fn validate_delivery_method(&self, method: &DeliveryMethod) -> Result<(), ContentDeliveryError>;
+    fn validate_delivery_method(&self, method: &DeliveryMethod)
+    -> Result<(), ContentDeliveryError>;
 }
 
 /// Batch Content Delivery Service
 /// For high-volume delivery scenarios
 pub trait BatchContentDeliveryService {
     /// Deliver multiple content items in batch
-    fn batch_deliver(&self, requests: Vec<DeliveryRequest>) -> Result<Vec<DeliveryResponse>, ContentDeliveryError>;
-    
+    fn batch_deliver(
+        &self,
+        requests: Vec<DeliveryRequest>,
+    ) -> Result<Vec<DeliveryResponse>, ContentDeliveryError>;
+
     /// Get batch delivery status
-    fn get_batch_status(&self, batch_id: Uuid) -> Result<Vec<DeliveryResponse>, ContentDeliveryError>;
+    fn get_batch_status(
+        &self,
+        batch_id: Uuid,
+    ) -> Result<Vec<DeliveryResponse>, ContentDeliveryError>;
 }
 
 #[cfg(test)]

@@ -1,29 +1,29 @@
 /*
 Queue Manager Service
 
-This is the Queue Manager Service, it is responsible for managing queue. This module 
+This is the Queue Manager Service, it is responsible for managing queue. This module
 contains the Queue Manager Service, its related traits and implementations.
 
-Within our Hexagonal Architecture, the Queue Manager Service is at the Platform Layer, 
-above the Domain Layer and below the Application layer. It places Queue Item Containers 
-into a Queue and retrieves them from a Queue.   
+Within our Hexagonal Architecture, the Queue Manager Service is at the Platform Layer,
+above the Domain Layer and below the Application layer. It places Queue Item Containers
+into a Queue and retrieves them from a Queue.
 
 The Queue is a FIFO (First In First Out) data structure that is used to store Queue Items.
 The Queue Service is abstracted in the application layer with a Hexagonal Architecture "Port" and Adapter that multiple Queues may exist.
 
-Ports for the External Queue Adapters are also on the Infrastructure Layer. 
+Ports for the External Queue Adapters are also on the Infrastructure Layer.
 
 An example of an external queue would be a message broker like RabbitMQ, Kafka, or AWS SQS.
 */
 
 use crate::core::platform::container::queue_item::{QueueItem, QueueItemConfig};
-use std::collections::{HashMap, VecDeque};
-use std::sync::Arc;
-use tokio::sync::{RwLock, Mutex};
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, VecDeque};
+use std::sync::Arc;
 use thiserror::Error;
+use tokio::sync::{Mutex, RwLock};
+use uuid::Uuid;
 
 /// Queue service errors
 #[derive(Debug, Error)]
@@ -157,7 +157,7 @@ impl Queue {
             // Insert based on priority
             let priority = item.message.priority;
             let mut inserted = false;
-            
+
             for (index, existing_item) in self.items.iter().enumerate() {
                 if priority > existing_item.message.priority {
                     self.items.insert(index, item.clone());
@@ -165,7 +165,7 @@ impl Queue {
                     break;
                 }
             }
-            
+
             if !inserted {
                 self.items.push_back(item);
             }
@@ -208,14 +208,18 @@ impl Queue {
         }
     }
 
-    fn complete_processing(&mut self, item_id: Uuid, result_data: Option<serde_json::Value>) -> Result<(), QueueError> {
+    fn complete_processing(
+        &mut self,
+        item_id: Uuid,
+        result_data: Option<serde_json::Value>,
+    ) -> Result<(), QueueError> {
         if let Some(mut item) = self.processing_items.remove(&item_id) {
             item.complete_processing(result_data);
-            
+
             if self.config.preserve_completed {
                 self.completed_items.insert(item_id, item);
             }
-            
+
             self.update_stats();
             Ok(())
         } else {
@@ -226,7 +230,7 @@ impl Queue {
     fn fail_processing(&mut self, item_id: Uuid, error: String) -> Result<bool, QueueError> {
         if let Some(mut item) = self.processing_items.remove(&item_id) {
             let can_retry = item.fail_processing(error);
-            
+
             if can_retry {
                 // Re-queue for retry
                 self.items.push_back(item);
@@ -236,7 +240,7 @@ impl Queue {
                     self.failed_items.insert(item_id, item);
                 }
             }
-            
+
             self.update_stats();
             Ok(can_retry)
         } else {
@@ -245,31 +249,37 @@ impl Queue {
     }
 
     fn update_stats(&mut self) {
-        self.stats.total_items = self.items.len() + self.processing_items.len() + 
-                                self.completed_items.len() + self.failed_items.len();
+        self.stats.total_items = self.items.len()
+            + self.processing_items.len()
+            + self.completed_items.len()
+            + self.failed_items.len();
         self.stats.pending_items = self.items.len();
         self.stats.processing_items = self.processing_items.len();
         self.stats.completed_items = self.completed_items.len();
         self.stats.failed_items = self.failed_items.len();
-        
+
         // Calculate oldest item age
-        self.stats.oldest_item_age_seconds = self.items.iter()
+        self.stats.oldest_item_age_seconds = self
+            .items
+            .iter()
             .map(|item| item.message.age_seconds())
             .max();
     }
 
     fn cleanup_expired(&mut self) {
         let now = Utc::now();
-        
+
         // Remove expired items from pending queue
         self.items.retain(|item| !item.is_expired());
-        
+
         // Handle processing timeouts
-        let timed_out_items: Vec<_> = self.processing_items.iter()
+        let timed_out_items: Vec<_> = self
+            .processing_items
+            .iter()
             .filter(|(_, item)| item.is_processing_timeout())
             .map(|(id, _)| *id)
             .collect();
-            
+
         for item_id in timed_out_items {
             if let Some(mut item) = self.processing_items.remove(&item_id) {
                 item.fail_processing("Processing timeout".to_string());
@@ -278,7 +288,7 @@ impl Queue {
                 }
             }
         }
-        
+
         self.last_cleanup = now;
         self.update_stats();
     }
@@ -309,10 +319,14 @@ impl QueueService {
     }
 
     /// Create a new queue
-    pub async fn create_queue(&self, name: String, config: Option<QueueConfig>) -> Result<(), QueueError> {
+    pub async fn create_queue(
+        &self,
+        name: String,
+        config: Option<QueueConfig>,
+    ) -> Result<(), QueueError> {
         let config = config.unwrap_or_else(|| self.default_config.clone());
         let queue = Arc::new(Mutex::new(Queue::new(name.clone(), config)));
-        
+
         let mut queues = self.queues.write().await;
         queues.insert(name, queue);
         Ok(())
@@ -321,7 +335,8 @@ impl QueueService {
     /// Delete a queue
     pub async fn delete_queue(&self, name: &str) -> Result<(), QueueError> {
         let mut queues = self.queues.write().await;
-        queues.remove(name)
+        queues
+            .remove(name)
             .ok_or_else(|| QueueError::QueueNotFound(name.to_string()))?;
         Ok(())
     }
@@ -332,31 +347,35 @@ impl QueueService {
         T: serde::Serialize + Clone + for<'de> serde::Deserialize<'de>,
     {
         let queues = self.queues.read().await;
-        let queue = queues.get(queue_name)
+        let queue = queues
+            .get(queue_name)
             .ok_or_else(|| QueueError::QueueNotFound(queue_name.to_string()))?;
-        
+
         // Convert to JSON value for storage
         let json_item = item.map_payload(|payload| {
-            serde_json::to_value(payload)
-                .unwrap_or(serde_json::Value::Null)
+            serde_json::to_value(payload).unwrap_or(serde_json::Value::Null)
         });
-        
+
         let item_id = json_item.id();
         let mut queue_guard = queue.lock().await;
         queue_guard.enqueue(json_item)?;
-        
+
         Ok(item_id)
     }
-    
+
     /// Dequeue an item
-    pub async fn dequeue(&self, queue_name: &str) -> Result<Option<QueueItem<serde_json::Value>>, QueueError> {
+    pub async fn dequeue(
+        &self,
+        queue_name: &str,
+    ) -> Result<Option<QueueItem<serde_json::Value>>, QueueError> {
         let queues = self.queues.read().await;
-        let queue = queues.get(queue_name)
+        let queue = queues
+            .get(queue_name)
             .ok_or_else(|| QueueError::QueueNotFound(queue_name.to_string()))?;
-        
+
         let mut queue_guard = queue.lock().await;
         let item = queue_guard.dequeue();
-        
+
         // Move to processing if item was found
         if let Some(item) = item {
             let item_id = item.id();
@@ -368,31 +387,49 @@ impl QueueService {
     }
 
     /// Start processing an item
-    pub async fn start_processing(&self, queue_name: &str, item_id: Uuid, worker_id: String) -> Result<(), QueueError> {
+    pub async fn start_processing(
+        &self,
+        queue_name: &str,
+        item_id: Uuid,
+        worker_id: String,
+    ) -> Result<(), QueueError> {
         let queues = self.queues.read().await;
-        let queue = queues.get(queue_name)
+        let queue = queues
+            .get(queue_name)
             .ok_or_else(|| QueueError::QueueNotFound(queue_name.to_string()))?;
-        
+
         let mut queue_guard = queue.lock().await;
         queue_guard.start_processing(item_id, worker_id)
     }
 
     /// Complete processing an item
-    pub async fn complete_processing(&self, queue_name: &str, item_id: Uuid, result_data: Option<serde_json::Value>) -> Result<(), QueueError> {
+    pub async fn complete_processing(
+        &self,
+        queue_name: &str,
+        item_id: Uuid,
+        result_data: Option<serde_json::Value>,
+    ) -> Result<(), QueueError> {
         let queues = self.queues.read().await;
-        let queue = queues.get(queue_name)
+        let queue = queues
+            .get(queue_name)
             .ok_or_else(|| QueueError::QueueNotFound(queue_name.to_string()))?;
-        
+
         let mut queue_guard = queue.lock().await;
         queue_guard.complete_processing(item_id, result_data)
     }
 
     /// Fail processing an item
-    pub async fn fail_processing(&self, queue_name: &str, item_id: Uuid, error: String) -> Result<bool, QueueError> {
+    pub async fn fail_processing(
+        &self,
+        queue_name: &str,
+        item_id: Uuid,
+        error: String,
+    ) -> Result<bool, QueueError> {
         let queues = self.queues.read().await;
-        let queue = queues.get(queue_name)
+        let queue = queues
+            .get(queue_name)
             .ok_or_else(|| QueueError::QueueNotFound(queue_name.to_string()))?;
-        
+
         let mut queue_guard = queue.lock().await;
         queue_guard.fail_processing(item_id, error)
     }
@@ -400,9 +437,10 @@ impl QueueService {
     /// Get queue statistics
     pub async fn get_queue_stats(&self, queue_name: &str) -> Result<QueueStats, QueueError> {
         let queues = self.queues.read().await;
-        let queue = queues.get(queue_name)
+        let queue = queues
+            .get(queue_name)
             .ok_or_else(|| QueueError::QueueNotFound(queue_name.to_string()))?;
-        
+
         let queue_guard = queue.lock().await;
         Ok(queue_guard.stats.clone())
     }
@@ -416,9 +454,10 @@ impl QueueService {
     /// Get queue length
     pub async fn queue_length(&self, queue_name: &str) -> Result<usize, QueueError> {
         let queues = self.queues.read().await;
-        let queue = queues.get(queue_name)
+        let queue = queues
+            .get(queue_name)
             .ok_or_else(|| QueueError::QueueNotFound(queue_name.to_string()))?;
-        
+
         let queue_guard = queue.lock().await;
         Ok(queue_guard.items.len())
     }
@@ -436,12 +475,12 @@ impl QueueService {
     pub async fn get_all_stats(&self) -> HashMap<String, QueueStats> {
         let queues = self.queues.read().await;
         let mut stats = HashMap::new();
-        
+
         for (name, queue) in queues.iter() {
             let queue_guard = queue.lock().await;
             stats.insert(name.clone(), queue_guard.stats.clone());
         }
-        
+
         stats
     }
 }
@@ -455,15 +494,15 @@ impl Default for QueueService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::base::entity::message::{Message, Location};
+    use crate::core::base::entity::message::{Location, Message};
 
     #[tokio::test]
     async fn test_queue_creation() {
         let service = QueueService::new();
-        
+
         let result = service.create_queue("test-queue".to_string(), None).await;
         assert!(result.is_ok());
-        
+
         let queues = service.list_queues().await;
         assert!(queues.contains(&"test-queue".to_string()));
     }
@@ -471,20 +510,23 @@ mod tests {
     #[tokio::test]
     async fn test_enqueue_dequeue() {
         let service = QueueService::new();
-        service.create_queue("test-queue".to_string(), None).await.unwrap();
-        
+        service
+            .create_queue("test-queue".to_string(), None)
+            .await
+            .unwrap();
+
         let message = Message::new(
             Location::service("test"),
             Location::system("queue"),
             "test payload".to_string(),
         );
-        
+
         let queue_item = QueueItem::new("test-queue".to_string(), message, None);
         let item_id = service.enqueue("test-queue", queue_item).await.unwrap();
-        
+
         let dequeued = service.dequeue("test-queue").await.unwrap();
         assert!(dequeued.is_some());
-        
+
         let item = dequeued.unwrap();
         assert_eq!(item.id(), item_id);
     }
@@ -492,44 +534,58 @@ mod tests {
     #[tokio::test]
     async fn test_processing_lifecycle() {
         let service = QueueService::new();
-        service.create_queue("test-queue".to_string(), None).await.unwrap();
-        
+        service
+            .create_queue("test-queue".to_string(), None)
+            .await
+            .unwrap();
+
         let message = Message::new(
             Location::service("test"),
             Location::system("queue"),
             "test payload".to_string(),
         );
-        
+
         let queue_item = QueueItem::new("test-queue".to_string(), message, None);
         // ToDo - item_id is currently unread but maybe should be verified with a test
         let _item_id = service.enqueue("test-queue", queue_item).await.unwrap();
-        
+
         let dequeued = service.dequeue("test-queue").await.unwrap().unwrap();
         let item_id = dequeued.id();
-        
+
         // Start processing
-        let result = service.start_processing("test-queue", item_id, "worker-1".to_string()).await;
+        let result = service
+            .start_processing("test-queue", item_id, "worker-1".to_string())
+            .await;
         assert!(result.is_ok());
-        
+
         // Complete processing
-        let result = service.complete_processing("test-queue", item_id, Some(serde_json::json!({"result": "success"}))).await;
+        let result = service
+            .complete_processing(
+                "test-queue",
+                item_id,
+                Some(serde_json::json!({"result": "success"})),
+            )
+            .await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_queue_stats() {
         let service = QueueService::new();
-        service.create_queue("test-queue".to_string(), None).await.unwrap();
-        
+        service
+            .create_queue("test-queue".to_string(), None)
+            .await
+            .unwrap();
+
         let message = Message::new(
             Location::service("test"),
             Location::system("queue"),
             "test payload".to_string(),
         );
-        
+
         let queue_item = QueueItem::new("test-queue".to_string(), message, None);
         service.enqueue("test-queue", queue_item).await.unwrap();
-        
+
         let stats = service.get_queue_stats("test-queue").await.unwrap();
         assert_eq!(stats.pending_items, 1);
         assert_eq!(stats.total_items, 1);

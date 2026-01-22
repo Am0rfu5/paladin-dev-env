@@ -1,4 +1,4 @@
-/* 
+/*
 
 ML Port
 
@@ -13,7 +13,7 @@ of the high-level use cases into calls to the ML model, and to translate the res
 back into a format that the application can use.
 
 An ML Api usually requires a few standard fields to be present in the request and response
-like 
+like
 
 A typical adapter for this type of port would be TensorFlow or PyTorch.
 
@@ -22,8 +22,8 @@ https://github.com/tensorflow/rust
 */
 use crate::core::platform::container::content::ContentItem;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 use std::collections::HashMap;
+use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MlPredictionRequest {
@@ -100,16 +100,20 @@ pub enum MlPortError {
 pub trait MlPort {
     /// Make a prediction using the ML model
     fn predict(&self, request: MlPredictionRequest) -> Result<MlPredictionResponse, MlPortError>;
-    
+
     /// Analyze content and return enriched content item with ML predictions
-    fn analyze_content(&self, content: ContentItem, model_name: &str) -> Result<ContentItem, MlPortError>;
-    
+    fn analyze_content(
+        &self,
+        content: ContentItem,
+        model_name: &str,
+    ) -> Result<ContentItem, MlPortError>;
+
     /// List available models
     fn list_models(&self) -> Result<Vec<String>, MlPortError>;
-    
+
     /// Check if a model is available
     fn is_model_available(&self, model_name: &str) -> Result<bool, MlPortError>;
-    
+
     /// Get model information
     fn get_model_info(&self, model_name: &str) -> Result<MlModelInfo, MlPortError>;
 }
@@ -128,47 +132,59 @@ pub struct MlModelInfo {
 impl MlInputData {
     pub fn from_content_item(content_item: &ContentItem) -> Result<Self, MlPortError> {
         use crate::core::platform::container::content::ContentType;
-        
+
         match content_item.content() {
             ContentType::Text(text_content) => {
                 if let Some(ref content) = text_content.content {
                     Ok(MlInputData::Text(content.clone()))
                 } else if let Some(ref path) = text_content.path {
                     // Read file content
-                    let content = std::fs::read_to_string(path)
-                        .map_err(|e| MlPortError::InvalidInput(format!("Failed to read text file: {}", e)))?;
+                    let content = std::fs::read_to_string(path).map_err(|e| {
+                        MlPortError::InvalidInput(format!("Failed to read text file: {}", e))
+                    })?;
                     Ok(MlInputData::Text(content))
                 } else {
-                    Err(MlPortError::InvalidInput("No text content available".to_string()))
+                    Err(MlPortError::InvalidInput(
+                        "No text content available".to_string(),
+                    ))
                 }
-            },
+            }
             ContentType::Image(image_content) => {
                 if let Some(ref path) = image_content.path {
-                    let bytes = std::fs::read(path)
-                        .map_err(|e| MlPortError::InvalidInput(format!("Failed to read image file: {}", e)))?;
+                    let bytes = std::fs::read(path).map_err(|e| {
+                        MlPortError::InvalidInput(format!("Failed to read image file: {}", e))
+                    })?;
                     Ok(MlInputData::Image(bytes))
                 } else {
-                    Err(MlPortError::InvalidInput("No image file path available".to_string()))
+                    Err(MlPortError::InvalidInput(
+                        "No image file path available".to_string(),
+                    ))
                 }
-            },
+            }
             ContentType::Audio(audio_content) => {
                 if let Some(ref path) = audio_content.path {
-                    let bytes = std::fs::read(path)
-                        .map_err(|e| MlPortError::InvalidInput(format!("Failed to read audio file: {}", e)))?;
+                    let bytes = std::fs::read(path).map_err(|e| {
+                        MlPortError::InvalidInput(format!("Failed to read audio file: {}", e))
+                    })?;
                     Ok(MlInputData::Audio(bytes))
                 } else {
-                    Err(MlPortError::InvalidInput("No audio file path available".to_string()))
+                    Err(MlPortError::InvalidInput(
+                        "No audio file path available".to_string(),
+                    ))
                 }
-            },
+            }
             ContentType::Video(video_content) => {
                 if let Some(ref path) = video_content.path {
-                    let bytes = std::fs::read(path)
-                        .map_err(|e| MlPortError::InvalidInput(format!("Failed to read video file: {}", e)))?;
+                    let bytes = std::fs::read(path).map_err(|e| {
+                        MlPortError::InvalidInput(format!("Failed to read video file: {}", e))
+                    })?;
                     Ok(MlInputData::Video(bytes))
                 } else {
-                    Err(MlPortError::InvalidInput("No video file path available".to_string()))
+                    Err(MlPortError::InvalidInput(
+                        "No video file path available".to_string(),
+                    ))
                 }
-            },
+            }
         }
     }
 }
@@ -182,9 +198,9 @@ mod tests {
     fn test_ml_input_data_from_text_content() {
         let text_content = TextContent::new(None, Some("Hello world".to_string())).unwrap();
         let content_item = ContentItem::new(ContentType::Text(text_content)).unwrap();
-        
+
         let ml_input = MlInputData::from_content_item(&content_item).unwrap();
-        
+
         match ml_input {
             MlInputData::Text(text) => assert_eq!(text, "Hello world"),
             _ => panic!("Expected text input data"),
@@ -197,10 +213,10 @@ mod tests {
             class: "positive".to_string(),
             confidence: 0.95,
         };
-        
+
         let json = serde_json::to_string(&prediction).unwrap();
         let deserialized: MlPrediction = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(prediction, deserialized);
     }
 }

@@ -1,7 +1,7 @@
 /*
 Job Container
 
-A Job is a platform-level container that extends the base Action component 
+A Job is a platform-level container that extends the base Action component
 to orchestrate multiple Tasks. Jobs provide higher-level workflow management
 and can execute Tasks in sequence or parallel.
 
@@ -16,15 +16,17 @@ Jobs are the primary unit of work for the Scheduler and can represent
 complex business processes composed of multiple related Tasks.
 */
 
+use futures::future::join_all;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use uuid::Uuid;
-use futures::future::join_all;
 
 // Import base Action and Task components
-use crate::core::base::component::action::{Action, ActionStatus, ActionResult, ActionError, ActionPriority};
 use super::task::{Task, TaskService};
+use crate::core::base::component::action::{
+    Action, ActionError, ActionPriority, ActionResult, ActionStatus,
+};
 
 /// Job execution strategy
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -107,7 +109,8 @@ impl Job {
             description,
             "job_manager".to_string(),
             "job_orchestrator".to_string(),
-        ).with_priority(priority);
+        )
+        .with_priority(priority);
 
         Self {
             action,
@@ -165,14 +168,17 @@ impl Job {
 
     /// Adds job metadata
     pub fn add_metadata<T: Serialize>(&mut self, key: String, value: T) -> Result<(), JobError> {
-        let json_value = serde_json::to_value(value)
-            .map_err(|e| JobError::SerializationError(e.to_string()))?;
+        let json_value =
+            serde_json::to_value(value).map_err(|e| JobError::SerializationError(e.to_string()))?;
         self.job_metadata.insert(key, json_value);
         Ok(())
     }
 
     /// Executes the job with provided task services
-    pub async fn execute(&mut self, services: &HashMap<String, Box<dyn TaskService>>) -> Result<(), JobError> {
+    pub async fn execute(
+        &mut self,
+        services: &HashMap<String, Box<dyn TaskService>>,
+    ) -> Result<(), JobError> {
         if self.tasks.is_empty() {
             return Err(JobError::NoTasks);
         }
@@ -188,9 +194,13 @@ impl Job {
         // Execute based on mode
         let execution_result = match self.execution_mode {
             JobExecutionMode::Sequential => self.execute_sequential(services).await,
-            JobExecutionMode::SequentialContinueOnError => self.execute_sequential_continue_on_error(services).await,
+            JobExecutionMode::SequentialContinueOnError => {
+                self.execute_sequential_continue_on_error(services).await
+            }
             JobExecutionMode::Parallel => self.execute_parallel(services).await,
-            JobExecutionMode::ParallelLimited(limit) => self.execute_parallel_limited(services, limit).await,
+            JobExecutionMode::ParallelLimited(limit) => {
+                self.execute_parallel_limited(services, limit).await
+            }
             JobExecutionMode::Dependency => self.execute_with_dependencies(services).await,
         };
 
@@ -215,7 +225,7 @@ impl Job {
 
                 let error_message = job_error.to_string();
                 let can_retry = self.action.fail_execution(error_message, duration_ms);
-                
+
                 if can_retry {
                     Err(JobError::RetryableFailure(job_error.to_string()))
                 } else {
@@ -224,9 +234,12 @@ impl Job {
             }
         }
     }
-    
+
     /// Executes tasks sequentially, stopping on first failure
-    async fn execute_sequential(&mut self, services: &HashMap<String, Box<dyn TaskService>>) -> Result<(), JobError> {
+    async fn execute_sequential(
+        &mut self,
+        services: &HashMap<String, Box<dyn TaskService>>,
+    ) -> Result<(), JobError> {
         for task in &mut self.tasks {
             Self::execute_single_task(task, services).await?;
         }
@@ -234,7 +247,10 @@ impl Job {
     }
 
     /// Executes tasks sequentially, continuing on errors
-    async fn execute_sequential_continue_on_error(&mut self, services: &HashMap<String, Box<dyn TaskService>>) -> Result<(), JobError> {
+    async fn execute_sequential_continue_on_error(
+        &mut self,
+        services: &HashMap<String, Box<dyn TaskService>>,
+    ) -> Result<(), JobError> {
         let mut has_failures = false;
         let mut error_messages = Vec::new();
 
@@ -253,7 +269,10 @@ impl Job {
     }
 
     /// Executes tasks based on dependencies (simplified DAG execution)
-    async fn execute_with_dependencies(&mut self, services: &HashMap<String, Box<dyn TaskService>>) -> Result<(), JobError> {
+    async fn execute_with_dependencies(
+        &mut self,
+        services: &HashMap<String, Box<dyn TaskService>>,
+    ) -> Result<(), JobError> {
         // Pre-validate all services exist
         for task in &self.tasks {
             if !services.contains_key(&task.service_name) {
@@ -271,10 +290,16 @@ impl Job {
             // Find tasks that are ready to execute
             for &task_index in &remaining_task_indices {
                 let task_id = self.tasks[task_index].id();
-                let dependencies = self.task_dependencies.get(&task_id).cloned().unwrap_or_default();
-                
-                let ready = dependencies.iter().all(|dep_id| completed_tasks.contains(dep_id));
-                
+                let dependencies = self
+                    .task_dependencies
+                    .get(&task_id)
+                    .cloned()
+                    .unwrap_or_default();
+
+                let ready = dependencies
+                    .iter()
+                    .all(|dep_id| completed_tasks.contains(dep_id));
+
                 if ready {
                     ready_task_indices.push(task_index);
                 } else {
@@ -290,7 +315,7 @@ impl Job {
             for task_index in ready_task_indices {
                 let task = &mut self.tasks[task_index];
                 let task_id = task.id();
-                
+
                 match Self::execute_single_task(task, services).await {
                     Ok(_) => {
                         completed_tasks.insert(task_id);
@@ -308,20 +333,23 @@ impl Job {
     }
 
     /// Executes tasks in parallel
-    async fn execute_parallel(&mut self, services: &HashMap<String, Box<dyn TaskService>>) -> Result<(), JobError> {
+    async fn execute_parallel(
+        &mut self,
+        services: &HashMap<String, Box<dyn TaskService>>,
+    ) -> Result<(), JobError> {
         // Collect task execution futures
         let mut futures = Vec::new();
-        
+
         // Pre-validate all services exist
         for task in &self.tasks {
             if !services.contains_key(&task.service_name) {
                 return Err(JobError::ServiceNotFound(task.service_name.clone()));
             }
         }
-        
+
         // Split self to avoid multiple mutable borrows
         let tasks = &mut self.tasks;
-        
+
         for (i, task) in tasks.iter_mut().enumerate() {
             let service = services.get(&task.service_name).unwrap(); // Safe due to validation above
             let future = async move {
@@ -332,7 +360,7 @@ impl Job {
         }
 
         let results = join_all(futures).await;
-        
+
         let mut errors = Vec::new();
         for (i, result) in results {
             if let Err(error) = result {
@@ -348,19 +376,34 @@ impl Job {
     }
 
     /// Executes tasks in parallel with concurrency limit
-    async fn execute_parallel_limited(&mut self, services: &HashMap<String, Box<dyn TaskService>>, limit: usize) -> Result<(), JobError> {
+    async fn execute_parallel_limited(
+        &mut self,
+        services: &HashMap<String, Box<dyn TaskService>>,
+        limit: usize,
+    ) -> Result<(), JobError> {
         use futures::stream::{FuturesUnordered, StreamExt};
-        use std::pin::Pin;
         use std::future::Future;
-        
+        use std::pin::Pin;
+
         // Pre-validate all services exist
         for task in &self.tasks {
             if !services.contains_key(&task.service_name) {
                 return Err(JobError::ServiceNotFound(task.service_name.clone()));
             }
         }
-        
-        let mut futures: FuturesUnordered<Pin<Box<dyn Future<Output = (String, Result<(), crate::core::platform::container::task::TaskError>)> + Send>>> = FuturesUnordered::new();
+
+        let mut futures: FuturesUnordered<
+            Pin<
+                Box<
+                    dyn Future<
+                            Output = (
+                                String,
+                                Result<(), crate::core::platform::container::task::TaskError>,
+                            ),
+                        > + Send,
+                >,
+            >,
+        > = FuturesUnordered::new();
         let tasks_len = self.tasks.len();
         let mut task_iter = self.tasks.iter_mut().enumerate();
         let mut errors = Vec::new();
@@ -402,10 +445,10 @@ impl Job {
             Ok(())
         }
     }
-    
+
     // // Add this method to work with service references
     // pub async fn execute_with_service_refs(
-    //     &mut self, 
+    //     &mut self,
     //     services: &HashMap<String, &Box<dyn TaskService>>
     // ) -> Result<(), JobError> {
     //     for task in &mut self.tasks {
@@ -414,7 +457,7 @@ impl Job {
     //             // Execute the task with the service
     //             let result = service.execute(&task.action).await
     //                 .map_err(|e| JobError::TaskExecutionFailed(task.name.clone(), e.to_string()))?;
-                
+
     //             // Store result if needed
     //             if let Some(data) = result {
     //                 task.action.add_argument("execution_result".to_string(), data)
@@ -424,17 +467,22 @@ impl Job {
     //             return Err(JobError::ServiceNotFound(task.target.clone()));
     //         }
     //     }
-        
+
     //     self.action.status = ActionStatus::Completed;
     //     Ok(())
-    // }    
+    // }
 
     /// Executes a single task - static helper function
-    async fn execute_single_task(task: &mut Task, services: &HashMap<String, Box<dyn TaskService>>) -> Result<(), JobError> {
-        let service = services.get(&task.service_name)
+    async fn execute_single_task(
+        task: &mut Task,
+        services: &HashMap<String, Box<dyn TaskService>>,
+    ) -> Result<(), JobError> {
+        let service = services
+            .get(&task.service_name)
             .ok_or_else(|| JobError::ServiceNotFound(task.service_name.clone()))?;
 
-        task.execute(service.as_ref()).await
+        task.execute(service.as_ref())
+            .await
             .map_err(|e| JobError::TaskExecutionFailed(e.to_string()))
     }
 
@@ -471,8 +519,16 @@ impl Job {
 
     /// Creates job result summary
     fn create_job_result(&self) -> serde_json::Value {
-        let completed_tasks = self.tasks.iter().filter(|t| matches!(t.status(), ActionStatus::Completed)).count();
-        let failed_tasks = self.tasks.iter().filter(|t| matches!(t.status(), ActionStatus::Failed)).count();
+        let completed_tasks = self
+            .tasks
+            .iter()
+            .filter(|t| matches!(t.status(), ActionStatus::Completed))
+            .count();
+        let failed_tasks = self
+            .tasks
+            .iter()
+            .filter(|t| matches!(t.status(), ActionStatus::Failed))
+            .count();
         let total_tasks = self.tasks.len();
 
         serde_json::json!({
@@ -487,16 +543,32 @@ impl Job {
     /// Gets job statistics
     pub fn job_stats(&self) -> JobStats {
         let total_tasks = self.tasks.len();
-        let completed_tasks = self.tasks.iter().filter(|t| matches!(t.status(), ActionStatus::Completed)).count();
-        let failed_tasks = self.tasks.iter().filter(|t| matches!(t.status(), ActionStatus::Failed)).count();
-        let running_tasks = self.tasks.iter().filter(|t| matches!(t.status(), ActionStatus::Running)).count();
+        let completed_tasks = self
+            .tasks
+            .iter()
+            .filter(|t| matches!(t.status(), ActionStatus::Completed))
+            .count();
+        let failed_tasks = self
+            .tasks
+            .iter()
+            .filter(|t| matches!(t.status(), ActionStatus::Failed))
+            .count();
+        let running_tasks = self
+            .tasks
+            .iter()
+            .filter(|t| matches!(t.status(), ActionStatus::Running))
+            .count();
 
         JobStats {
             total_tasks,
             completed_tasks,
             failed_tasks,
             running_tasks,
-            success_rate: if total_tasks > 0 { (completed_tasks as f64 / total_tasks as f64) * 100.0 } else { 0.0 },
+            success_rate: if total_tasks > 0 {
+                (completed_tasks as f64 / total_tasks as f64) * 100.0
+            } else {
+                0.0
+            },
             execution_count: self.action.execution_count,
             last_execution: self.action.last_execution,
         }
@@ -586,13 +658,23 @@ pub enum JobError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::task::{DataBackupService, ContentIndexingService, EmailNotificationService};
-   
+    use crate::core::platform::container::task::{
+        ContentIndexingService, DataBackupService, EmailNotificationService,
+    };
+
     #[tokio::test]
     async fn test_job_creation() {
         let tasks = vec![
-            Task::new("Task 1".to_string(), "First task".to_string(), "TestService".to_string()),
-            Task::new("Task 2".to_string(), "Second task".to_string(), "TestService".to_string()),
+            Task::new(
+                "Task 1".to_string(),
+                "First task".to_string(),
+                "TestService".to_string(),
+            ),
+            Task::new(
+                "Task 2".to_string(),
+                "Second task".to_string(),
+                "TestService".to_string(),
+            ),
         ];
 
         let job = Job::new(
@@ -610,8 +692,16 @@ mod tests {
     #[tokio::test]
     async fn test_job_sequential_execution() {
         let tasks = vec![
-            Task::new("Backup Task".to_string(), "Backup data".to_string(), "DataBackupService".to_string()),
-            Task::new("Index Task".to_string(), "Index content".to_string(), "ContentIndexingService".to_string()),
+            Task::new(
+                "Backup Task".to_string(),
+                "Backup data".to_string(),
+                "DataBackupService".to_string(),
+            ),
+            Task::new(
+                "Index Task".to_string(),
+                "Index content".to_string(),
+                "ContentIndexingService".to_string(),
+            ),
         ];
 
         let mut job = Job::new(
@@ -621,8 +711,18 @@ mod tests {
         );
 
         let mut services: HashMap<String, Box<dyn TaskService>> = HashMap::new();
-        services.insert("DataBackupService".to_string(), Box::new(DataBackupService { backup_path: "/tmp/backup".to_string() }));
-        services.insert("ContentIndexingService".to_string(), Box::new(ContentIndexingService { index_name: "test_index".to_string() }));
+        services.insert(
+            "DataBackupService".to_string(),
+            Box::new(DataBackupService {
+                backup_path: "/tmp/backup".to_string(),
+            }),
+        );
+        services.insert(
+            "ContentIndexingService".to_string(),
+            Box::new(ContentIndexingService {
+                index_name: "test_index".to_string(),
+            }),
+        );
 
         let result = job.execute(&services).await;
         assert!(result.is_ok());
@@ -637,9 +737,21 @@ mod tests {
     #[tokio::test]
     async fn test_job_parallel_execution() {
         let tasks = vec![
-            Task::new("Task 1".to_string(), "First parallel task".to_string(), "DataBackupService".to_string()),
-            Task::new("Task 2".to_string(), "Second parallel task".to_string(), "ContentIndexingService".to_string()),
-            Task::new("Task 3".to_string(), "Third parallel task".to_string(), "EmailNotificationService".to_string()),
+            Task::new(
+                "Task 1".to_string(),
+                "First parallel task".to_string(),
+                "DataBackupService".to_string(),
+            ),
+            Task::new(
+                "Task 2".to_string(),
+                "Second parallel task".to_string(),
+                "ContentIndexingService".to_string(),
+            ),
+            Task::new(
+                "Task 3".to_string(),
+                "Third parallel task".to_string(),
+                "EmailNotificationService".to_string(),
+            ),
         ];
 
         let mut job = Job::new_with_config(
@@ -651,12 +763,30 @@ mod tests {
         );
 
         // Add email arguments to the email task
-        job.tasks[2].action.add_argument("to_email".to_string(), "test@example.com").unwrap();
+        job.tasks[2]
+            .action
+            .add_argument("to_email".to_string(), "test@example.com")
+            .unwrap();
 
         let mut services: HashMap<String, Box<dyn TaskService>> = HashMap::new();
-        services.insert("DataBackupService".to_string(), Box::new(DataBackupService { backup_path: "/tmp/backup".to_string() }));
-        services.insert("ContentIndexingService".to_string(), Box::new(ContentIndexingService { index_name: "test_index".to_string() }));
-        services.insert("EmailNotificationService".to_string(), Box::new(EmailNotificationService { smtp_server: "smtp.test.com".to_string() }));
+        services.insert(
+            "DataBackupService".to_string(),
+            Box::new(DataBackupService {
+                backup_path: "/tmp/backup".to_string(),
+            }),
+        );
+        services.insert(
+            "ContentIndexingService".to_string(),
+            Box::new(ContentIndexingService {
+                index_name: "test_index".to_string(),
+            }),
+        );
+        services.insert(
+            "EmailNotificationService".to_string(),
+            Box::new(EmailNotificationService {
+                smtp_server: "smtp.test.com".to_string(),
+            }),
+        );
 
         let result = job.execute(&services).await;
         assert!(result.is_ok());
@@ -665,9 +795,21 @@ mod tests {
 
     #[tokio::test]
     async fn test_job_with_dependencies() {
-        let task1 = Task::new("Task 1".to_string(), "First task".to_string(), "DataBackupService".to_string());
-        let task2 = Task::new("Task 2".to_string(), "Second task".to_string(), "ContentIndexingService".to_string());
-        let task3 = Task::new("Task 3".to_string(), "Third task".to_string(), "EmailNotificationService".to_string());
+        let task1 = Task::new(
+            "Task 1".to_string(),
+            "First task".to_string(),
+            "DataBackupService".to_string(),
+        );
+        let task2 = Task::new(
+            "Task 2".to_string(),
+            "Second task".to_string(),
+            "ContentIndexingService".to_string(),
+        );
+        let task3 = Task::new(
+            "Task 3".to_string(),
+            "Third task".to_string(),
+            "EmailNotificationService".to_string(),
+        );
 
         let task1_id = task1.id();
         let task2_id = task2.id();
@@ -685,12 +827,30 @@ mod tests {
         job.add_task_dependency(job.tasks[2].id(), vec![task1_id, task2_id]);
 
         // Add email arguments
-        job.tasks[2].action.add_argument("to_email".to_string(), "test@example.com").unwrap();
+        job.tasks[2]
+            .action
+            .add_argument("to_email".to_string(), "test@example.com")
+            .unwrap();
 
         let mut services: HashMap<String, Box<dyn TaskService>> = HashMap::new();
-        services.insert("DataBackupService".to_string(), Box::new(DataBackupService { backup_path: "/tmp/backup".to_string() }));
-        services.insert("ContentIndexingService".to_string(), Box::new(ContentIndexingService { index_name: "test_index".to_string() }));
-        services.insert("EmailNotificationService".to_string(), Box::new(EmailNotificationService { smtp_server: "smtp.test.com".to_string() }));
+        services.insert(
+            "DataBackupService".to_string(),
+            Box::new(DataBackupService {
+                backup_path: "/tmp/backup".to_string(),
+            }),
+        );
+        services.insert(
+            "ContentIndexingService".to_string(),
+            Box::new(ContentIndexingService {
+                index_name: "test_index".to_string(),
+            }),
+        );
+        services.insert(
+            "EmailNotificationService".to_string(),
+            Box::new(EmailNotificationService {
+                smtp_server: "smtp.test.com".to_string(),
+            }),
+        );
 
         let result = job.execute(&services).await;
         assert!(result.is_ok());
@@ -706,10 +866,17 @@ mod tests {
         );
 
         let mut job = job;
-        job.add_metadata("workflow_id".to_string(), "workflow_123").unwrap();
+        job.add_metadata("workflow_id".to_string(), "workflow_123")
+            .unwrap();
         job.add_metadata("priority_level".to_string(), 5).unwrap();
 
-        assert_eq!(job.job_metadata.get("workflow_id"), Some(&serde_json::json!("workflow_123")));
-        assert_eq!(job.job_metadata.get("priority_level"), Some(&serde_json::json!(5)));
+        assert_eq!(
+            job.job_metadata.get("workflow_id"),
+            Some(&serde_json::json!("workflow_123"))
+        );
+        assert_eq!(
+            job.job_metadata.get("priority_level"),
+            Some(&serde_json::json!(5))
+        );
     }
 }

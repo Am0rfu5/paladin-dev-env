@@ -6,7 +6,7 @@ It is the base abstraction for all executable entities in the paladin system.
 
 Actions contain:
 - Identity and metadata (id, name, description)
-- Execution tracking (timestamps, run counts, status)  
+- Execution tracking (timestamps, run counts, status)
 - Error handling and results
 - Execution context and parameters
 
@@ -18,12 +18,12 @@ through a decoupled system of Triggers and Action Services.
 */
 
 use chrono::{DateTime, Utc};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use uuid::Uuid;
 use thiserror::Error;
+use uuid::Uuid;
 
 /// Represents the execution status of an Action
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -122,12 +122,7 @@ pub struct Action {
 
 impl Action {
     /// Creates a new Action with required parameters
-    pub fn new(
-        name: String,
-        description: String,
-        source: String,
-        target_service: String,
-    ) -> Self {
+    pub fn new(name: String, description: String, source: String, target_service: String) -> Self {
         let now = Utc::now();
         Self {
             id: Uuid::new_v4(),
@@ -254,7 +249,7 @@ impl Action {
 
         // Determine if we can retry - allow retries up to and including max_retries
         let can_retry = self.retryable && self.retry_count <= self.max_retries;
-        
+
         if can_retry {
             self.status = ActionStatus::Pending; // Reset to pending for retry
         } else {
@@ -285,7 +280,10 @@ impl Action {
     pub fn is_terminal(&self) -> bool {
         matches!(
             self.status,
-            ActionStatus::Completed | ActionStatus::Failed | ActionStatus::Cancelled | ActionStatus::TimedOut
+            ActionStatus::Completed
+                | ActionStatus::Failed
+                | ActionStatus::Cancelled
+                | ActionStatus::TimedOut
         )
     }
 
@@ -423,7 +421,8 @@ mod tests {
             "A test action".to_string(),
             "test_source".to_string(),
             "test_service".to_string(),
-        ).with_retry_config(true, 2);
+        )
+        .with_retry_config(true, 2);
 
         // First failure - should allow retry
         let can_retry = action.fail_execution("Test error".to_string(), 500);
@@ -449,14 +448,24 @@ mod tests {
         let mut action = Action::default();
 
         // Add arguments
-        action.add_argument("string_arg".to_string(), "test_value").unwrap();
+        action
+            .add_argument("string_arg".to_string(), "test_value")
+            .unwrap();
         action.add_argument("number_arg".to_string(), 42).unwrap();
-        action.add_argument("object_arg".to_string(), json!({"key": "value"})).unwrap();
+        action
+            .add_argument("object_arg".to_string(), json!({"key": "value"}))
+            .unwrap();
 
         // Verify arguments
-        assert_eq!(action.get_argument("string_arg"), Some(&json!("test_value")));
+        assert_eq!(
+            action.get_argument("string_arg"),
+            Some(&json!("test_value"))
+        );
         assert_eq!(action.get_argument("number_arg"), Some(&json!(42)));
-        assert_eq!(action.get_argument("object_arg"), Some(&json!({"key": "value"})));
+        assert_eq!(
+            action.get_argument("object_arg"),
+            Some(&json!({"key": "value"}))
+        );
         assert_eq!(action.get_argument("missing_arg"), None);
     }
 
