@@ -3,5 +3,6 @@
 //! This module contains use cases related to Paladin operations including
 //! builders, execution services, and error handling.
 
+pub mod circuit_breaker;
 pub mod error;
 pub mod paladin_builder;
