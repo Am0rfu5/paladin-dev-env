@@ -6,3 +6,4 @@
 pub mod circuit_breaker;
 pub mod error;
 pub mod paladin_builder;
+pub mod paladin_execution_service;

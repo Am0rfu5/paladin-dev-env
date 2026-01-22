@@ -61,7 +61,7 @@ use std::sync::Arc;
 /// # }
 /// ```
 pub struct PaladinBuilder {
-    llm_port: Arc<dyn LlmPort>,
+    _llm_port: Arc<dyn LlmPort>, // Stored for future use, not currently used in build()
     data: PaladinData,
     config: PaladinConfig,
 }
@@ -85,7 +85,7 @@ impl PaladinBuilder {
     /// ```
     pub fn new(llm_port: Arc<dyn LlmPort>) -> Self {
         Self {
-            llm_port,
+            _llm_port: llm_port,
             data: PaladinData::default(),
             config: PaladinConfig::default(),
         }

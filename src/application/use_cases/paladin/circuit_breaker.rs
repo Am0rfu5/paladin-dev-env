@@ -233,6 +233,63 @@ impl CircuitBreaker {
         }
     }
 
+    /// Executes the given async operation through the circuit breaker
+    ///
+    /// This is the async version of `call` for async operations. If the circuit is open,
+    /// the operation fails fast without execution. Otherwise, the operation is executed
+    /// and the result affects the circuit state.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `F` - Future type that performs the async operation
+    /// * `T` - Return type of the operation
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - Future that performs the potentially failing async operation
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(T)` - Operation succeeded
+    /// - `Err(PaladinError::CircuitBreakerOpen)` - Circuit is open, operation not executed
+    /// - `Err(PaladinError)` - Operation was executed but failed
+    pub async fn call_async<F, T>(&self, f: F) -> Result<T, PaladinError>
+    where
+        F: std::future::Future<Output = Result<T, PaladinError>>,
+    {
+        // Check if we should transition from Open to HalfOpen
+        self.check_and_transition_to_half_open();
+
+        // Read current state
+        let current_state = {
+            let state = self.state.read().unwrap();
+            state.clone()
+        };
+
+        match current_state {
+            CircuitState::Open { .. } => {
+                debug!("Circuit breaker is open, failing fast");
+                Err(PaladinError::CircuitBreakerOpen)
+            }
+            CircuitState::Closed { .. } | CircuitState::HalfOpen { .. } => {
+                // Execute the async operation
+                match f.await {
+                    Ok(result) => {
+                        self.on_success();
+                        Ok(result)
+                    }
+                    Err(e) => {
+                        // Only count retryable errors as failures for circuit breaker
+                        if e.is_retryable() {
+                            self.on_failure();
+                        }
+                        Err(e)
+                    }
+                }
+            }
+        }
+    }
+
     /// Gets the current state of the circuit breaker
     ///
     /// This is useful for monitoring and testing purposes.
