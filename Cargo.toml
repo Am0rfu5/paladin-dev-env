@@ -35,6 +35,7 @@ handlebars = "6.3.2"
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "mysql", "sqlite", "chrono", "uuid", "json"] }
 sha2 = "0.10.9"
 blake3 = "1.8.2"
+tiktoken-rs = "0.6.0"
 toml = "0.8.23"
 md5 = "0.8.0"
 async-trait = "0.1.88"

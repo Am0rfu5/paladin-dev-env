@@ -4,5 +4,7 @@
 //! for different storage backends.
 
 pub mod in_memory_garrison;
+pub mod token_counter;
 
 pub use in_memory_garrison::InMemoryGarrison;
+pub use token_counter::{TiktokenCounter, TokenCounter, TokenCounterFactory};

@@ -139,19 +139,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 4.17 Add proper error handling and conversion from sqlx errors
   - [ ] 4.18 Run `cargo build` to verify SqliteGarrison compiles
 
-- [ ] 5.0 Implement Token Counting System
-  - [ ] 5.1 Add tiktoken-rs dependency to `Cargo.toml`
-  - [ ] 5.2 Create `src/infrastructure/adapters/garrison/token_counter.rs`
-  - [ ] 5.3 Define `TokenCounter` trait with `count_tokens(&str) -> Result<u32>`
-  - [ ] 5.4 Define `TiktokenCounter` struct wrapping tiktoken CoreBPE
-  - [ ] 5.5 Implement `TiktokenCounter::new(model_name)` - initialize tokenizer for model
-  - [ ] 5.6 Implement `TokenCounter` trait for `TiktokenCounter`
-  - [ ] 5.7 Add caching logic to avoid redundant tokenization
-  - [ ] 5.8 Create factory method `TokenCounter::for_model(name)` returning appropriate counter
-  - [ ] 5.9 Add error handling for unsupported models
-  - [ ] 5.10 Update `GarrisonEntry` to accept optional token_count in constructor
-  - [ ] 5.11 Add method to calculate and cache token count on entry
-  - [ ] 5.12 Run `cargo build` to verify token counter compiles
+- [x] 5.0 Implement Token Counting System
+  - [x] 5.1 Add tiktoken-rs dependency to `Cargo.toml`
+  - [x] 5.2 Create `src/infrastructure/adapters/garrison/token_counter.rs`
+  - [x] 5.3 Define `TokenCounter` trait with `count_tokens(&str) -> Result<u32>`
+  - [x] 5.4 Define `TiktokenCounter` struct wrapping tiktoken CoreBPE
+  - [x] 5.5 Implement `TiktokenCounter::new(model_name)` - initialize tokenizer for model
+  - [x] 5.6 Implement `TokenCounter` trait for `TiktokenCounter`
+  - [x] 5.7 Add caching logic to avoid redundant tokenization
+  - [x] 5.8 Create factory method `TokenCounter::for_model(name)` returning appropriate counter
+  - [x] 5.9 Add error handling for unsupported models
+  - [x] 5.10 Update `GarrisonEntry` to accept optional token_count in constructor
+  - [x] 5.11 Add method to calculate and cache token count on entry
+  - [x] 5.12 Run `cargo build` to verify token counter compiles
 
 - [ ] 6.0 Integrate Garrison with Paladin System
   - [ ] 6.1 Read existing `src/application/use_cases/paladin/paladin_builder.rs`
