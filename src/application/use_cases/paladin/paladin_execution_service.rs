@@ -340,7 +340,7 @@ impl PaladinExecutionService {
                 };
                 prompt.push_str(&format!("{}: {}\n", role_str, entry.content));
             }
-            prompt.push_str("\n");
+            prompt.push('\n');
         }
 
         prompt.push_str(&format!("User: {}\n", input));
