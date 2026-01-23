@@ -118,7 +118,7 @@ impl LlmPort for MockLlmPort {
 async fn test_execution_service_executes_successfully() {
     let llm_port = Arc::new(MockLlmPort::simple_success());
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker);
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None);
 
     let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("You are a helpful assistant")
@@ -159,7 +159,7 @@ async fn test_execution_service_respects_max_loops() {
     ];
     let llm_port = Arc::new(MockLlmPort::new(responses));
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker);
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None);
 
     let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("You are a helpful assistant")
@@ -181,7 +181,7 @@ async fn test_execution_service_respects_max_loops() {
 async fn test_execution_service_detects_stop_words() {
     let llm_port = Arc::new(MockLlmPort::with_stop_word());
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker);
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None);
 
     let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("You are a helpful assistant")
@@ -207,7 +207,7 @@ async fn test_execution_service_enforces_timeout() {
     let responses = vec![Ok("Response".to_string()); 100];
     let llm_port = Arc::new(MockLlmPort::new(responses));
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let _service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker);
+    let _service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None);
 
     // Note: Current design uses max_loops * 60 seconds as timeout
     // For 1 loop, timeout is 60 seconds, which is more than enough
@@ -234,7 +234,7 @@ async fn test_execution_service_enforces_timeout() {
 async fn test_execution_service_retries_on_failure() {
     let llm_port = Arc::new(MockLlmPort::with_failures_then_success(2));
     let circuit_breaker = Arc::new(CircuitBreaker::new(5, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker);
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None);
 
     let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("You are a helpful assistant")
@@ -255,7 +255,7 @@ async fn test_execution_service_retries_on_failure() {
 async fn test_execution_service_exponential_backoff() {
     let llm_port = Arc::new(MockLlmPort::with_failures_then_success(2));
     let circuit_breaker = Arc::new(CircuitBreaker::new(5, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker);
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None);
 
     let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("You are a helpful assistant")
@@ -280,7 +280,7 @@ async fn test_execution_service_exponential_backoff() {
 async fn test_execution_service_uses_circuit_breaker() {
     let llm_port = Arc::new(MockLlmPort::always_fail());
     let circuit_breaker = Arc::new(CircuitBreaker::new(2, 2, Duration::from_millis(100)));
-    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker.clone());
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker.clone(), None);
 
     let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("You are a helpful assistant")
@@ -311,7 +311,7 @@ async fn test_execution_service_uses_circuit_breaker() {
 async fn test_execution_service_tracks_metadata() {
     let llm_port = Arc::new(MockLlmPort::simple_success());
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker);
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None);
 
     let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("You are a helpful assistant")

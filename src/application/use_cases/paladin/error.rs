@@ -3,6 +3,7 @@
 //! This module defines error types for Paladin operations using the `thiserror` crate
 //! for ergonomic error handling and clear error messages.
 
+use crate::application::ports::output::garrison_port::GarrisonError;
 use thiserror::Error;
 
 /// Errors that can occur during Paladin operations
@@ -46,6 +47,14 @@ pub enum PaladinError {
     /// Maximum retry attempts exceeded
     #[error("Maximum retry attempts ({0}) exceeded")]
     MaxRetriesExceeded(u32),
+
+    /// Error from the Garrison memory system
+    #[error("Garrison error: {0}")]
+    GarrisonError(#[from] GarrisonError),
+
+    /// Garrison is required for multi-turn conversations but not provided
+    #[error("Garrison is required for multi-turn conversations")]
+    GarrisonRequired,
 }
 
 impl PaladinError {
@@ -70,6 +79,7 @@ impl PaladinError {
                 | PaladinError::StopWordDetected(_)
                 | PaladinError::CircuitBreakerOpen
                 | PaladinError::MaxRetriesExceeded(_)
+                | PaladinError::GarrisonRequired
         )
     }
 }
@@ -135,7 +145,27 @@ mod tests {
         assert!(PaladinError::StopWordDetected("STOP".to_string()).is_terminal());
         assert!(PaladinError::CircuitBreakerOpen.is_terminal());
         assert!(PaladinError::MaxRetriesExceeded(3).is_terminal());
+        assert!(PaladinError::GarrisonRequired.is_terminal());
         assert!(!PaladinError::LlmError("temp".to_string()).is_terminal());
         assert!(!PaladinError::ConfigurationError("temp".to_string()).is_terminal());
+    }
+
+    #[test]
+    fn test_garrison_error_conversion() {
+        use crate::application::ports::output::garrison_port::GarrisonError;
+
+        let garrison_error = GarrisonError::StorageError("test".to_string());
+        let paladin_error: PaladinError = garrison_error.into();
+
+        assert!(matches!(paladin_error, PaladinError::GarrisonError(_)));
+    }
+
+    #[test]
+    fn test_garrison_required_error_message() {
+        let error = PaladinError::GarrisonRequired;
+        assert_eq!(
+            error.to_string(),
+            "Garrison is required for multi-turn conversations"
+        );
     }
 }

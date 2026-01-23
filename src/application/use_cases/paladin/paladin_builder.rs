@@ -29,6 +29,7 @@
 //! # }
 //! ```
 
+use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::application::ports::output::llm_port::LlmPort;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::base::entity::node::Node;
@@ -64,6 +65,7 @@ pub struct PaladinBuilder {
     _llm_port: Arc<dyn LlmPort>, // Stored for future use, not currently used in build()
     data: PaladinData,
     config: PaladinConfig,
+    garrison: Option<Arc<dyn GarrisonPort>>,
 }
 
 impl PaladinBuilder {
@@ -88,6 +90,7 @@ impl PaladinBuilder {
             _llm_port: llm_port,
             data: PaladinData::default(),
             config: PaladinConfig::default(),
+            garrison: None,
         }
     }
 
@@ -343,6 +346,34 @@ impl PaladinBuilder {
         self
     }
 
+    /// Attaches a Garrison memory system to the Paladin
+    ///
+    /// The Garrison enables the Paladin to maintain conversation context across
+    /// multiple turns. It is optional for single-turn operations but required
+    /// for multi-turn conversations.
+    ///
+    /// # Arguments
+    ///
+    /// * `garrison` - The Garrison port implementation to use for memory
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin::application::ports::output::garrison_port::GarrisonPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>, garrison: Arc<dyn GarrisonPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are a conversational assistant")
+    ///     .with_garrison(garrison);
+    /// # }
+    /// ```
+    pub fn with_garrison(mut self, garrison: Arc<dyn GarrisonPort>) -> Self {
+        self.garrison = Some(garrison);
+        self
+    }
+
     /// Validates all configuration parameters
     ///
     /// # Validation Rules
@@ -430,6 +461,7 @@ mod tests {
                 ..Default::default()
             },
             config: PaladinConfig::default(),
+            garrison: None,
         };
 
         let result = builder.validate();
@@ -447,6 +479,7 @@ mod tests {
                 ..Default::default()
             },
             config: PaladinConfig::default(),
+            garrison: None,
         };
 
         let result = builder.validate();
@@ -463,6 +496,7 @@ mod tests {
                 ..Default::default()
             },
             config: PaladinConfig::default(),
+            garrison: None,
         };
 
         let result = builder.validate();

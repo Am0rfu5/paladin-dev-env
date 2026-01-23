@@ -7,6 +7,7 @@ use tokio::time::sleep;
 
 pub mod file_storage_integration_tests;
 pub mod openai_content_analysis_integration_test;
+pub mod paladin_garrison_integration_test;
 pub mod paladin_integration_test;
 pub mod redis_queue_integration_test;
 pub mod system_log_integration_test;

@@ -153,23 +153,23 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.11 Add method to calculate and cache token count on entry
   - [x] 5.12 Run `cargo build` to verify token counter compiles
 
-- [ ] 6.0 Integrate Garrison with Paladin System
-  - [ ] 6.1 Read existing `src/application/use_cases/paladin/paladin_builder.rs`
-  - [ ] 6.2 Add `garrison: Option<Arc<dyn GarrisonPort>>` field to `PaladinBuilder`
-  - [ ] 6.3 Implement `.with_garrison(garrison: Arc<dyn GarrisonPort>)` method
-  - [ ] 6.4 Pass garrison to Paladin/service during build
-  - [ ] 6.5 Read existing `src/application/use_cases/paladin/paladin_execution_service.rs`
-  - [ ] 6.6 Add `garrison: Option<Arc<dyn GarrisonPort>>` field to `PaladinExecutionService`
-  - [ ] 6.7 Update constructor to accept garrison parameter
-  - [ ] 6.8 Modify `execute()` method to store user input as GarrisonEntry before LLM call
-  - [ ] 6.9 Add history retrieval: `garrison.recall_recent(limit)` before prompt building
-  - [ ] 6.10 Update prompt building to include conversation history
-  - [ ] 6.11 Store LLM response as GarrisonEntry after generation
-  - [ ] 6.12 Add logic to check for garrison requirement in multi-turn scenarios
-  - [ ] 6.13 Return `PaladinError::GarrisonRequired` when garrison missing for multi-turn
-  - [ ] 6.14 Update `PaladinError` enum to include `GarrisonError(GarrisonError)` variant
-  - [ ] 6.15 Implement `From<GarrisonError>` for `PaladinError`
-  - [ ] 6.16 Run `cargo build` to verify integration compiles
+- [x] 6.0 Integrate Garrison with Paladin System
+  - [x] 6.1 Read existing `src/application/use_cases/paladin/paladin_builder.rs`
+  - [x] 6.2 Add `garrison: Option<Arc<dyn GarrisonPort>>` field to `PaladinBuilder`
+  - [x] 6.3 Implement `.with_garrison(garrison: Arc<dyn GarrisonPort>)` method
+  - [x] 6.4 Pass garrison to Paladin/service during build
+  - [x] 6.5 Read existing `src/application/use_cases/paladin/paladin_execution_service.rs`
+  - [x] 6.6 Add `garrison: Option<Arc<dyn GarrisonPort>>` field to `PaladinExecutionService`
+  - [x] 6.7 Update constructor to accept garrison parameter
+  - [x] 6.8 Modify `execute()` method to store user input as GarrisonEntry before LLM call
+  - [x] 6.9 Add history retrieval: `garrison.recall_recent(limit)` before prompt building
+  - [x] 6.10 Update prompt building to include conversation history
+  - [x] 6.11 Store LLM response as GarrisonEntry after generation
+  - [x] 6.12 Add logic to check for garrison requirement in multi-turn scenarios
+  - [x] 6.13 Return `PaladinError::GarrisonRequired` when garrison missing for multi-turn
+  - [x] 6.14 Update `PaladinError` enum to include `GarrisonError(GarrisonError)` variant
+  - [x] 6.15 Implement `From<GarrisonError>` for `PaladinError`
+  - [x] 6.16 Run `cargo build` to verify integration compiles
 
 - [ ] 7.0 Implement Configuration and Error Handling
   - [ ] 7.1 Read existing `src/config/application_settings.rs`

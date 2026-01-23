@@ -46,11 +46,13 @@
 //! # }
 //! ```
 
+use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::application::ports::output::llm_port::{LlmPort, LlmRequest};
 use crate::application::ports::output::paladin_port::{PaladinResult, StopReason};
 use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::base::entity::node::Node;
+use crate::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
 use crate::core::platform::container::paladin::Paladin;
 use crate::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptType, UserPrompt,
@@ -72,6 +74,7 @@ use tokio::time::{Duration, sleep, timeout};
 /// - **Timeout Enforcement**: Respects configured timeout limits
 /// - **Stop Word Detection**: Halts execution on detected stop words
 /// - **Metadata Tracking**: Records execution time, loops, and token usage
+/// - **Memory Management**: Stores conversation history in Garrison when provided
 ///
 /// # Thread Safety
 ///
@@ -82,6 +85,9 @@ pub struct PaladinExecutionService {
 
     /// Circuit breaker for fault tolerance
     circuit_breaker: Arc<CircuitBreaker>,
+
+    /// Optional Garrison for conversation memory
+    garrison: Option<Arc<dyn GarrisonPort>>,
 }
 
 impl PaladinExecutionService {
@@ -91,6 +97,7 @@ impl PaladinExecutionService {
     ///
     /// * `llm_port` - The LLM port implementation to use for model calls
     /// * `circuit_breaker` - Circuit breaker for fault tolerance
+    /// * `garrison` - Optional Garrison for conversation memory (None for stateless operations)
     ///
     /// # Example
     ///
@@ -103,14 +110,22 @@ impl PaladinExecutionService {
     ///
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
     /// let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    /// let service = PaladinExecutionService::new(llm_port, circuit_breaker);
+    /// let service = PaladinExecutionService::new(llm_port, circuit_breaker, None);
     /// # }
     /// ```
-    pub fn new(llm_port: Arc<dyn LlmPort>, circuit_breaker: Arc<CircuitBreaker>) -> Self {
-        info!("Creating PaladinExecutionService");
+    pub fn new(
+        llm_port: Arc<dyn LlmPort>,
+        circuit_breaker: Arc<CircuitBreaker>,
+        garrison: Option<Arc<dyn GarrisonPort>>,
+    ) -> Self {
+        info!(
+            "Creating PaladinExecutionService with garrison: {}",
+            garrison.is_some()
+        );
         Self {
             llm_port,
             circuit_breaker,
+            garrison,
         }
     }
 
@@ -198,6 +213,29 @@ impl PaladinExecutionService {
         let mut total_tokens = 0u32;
         let mut accumulated_output = String::new();
 
+        // Store user input in garrison if available
+        if let Some(garrison) = &self.garrison {
+            let user_entry = GarrisonEntry::new(ConversationRole::User, input.to_string());
+            garrison.remember(user_entry).await?;
+            debug!(
+                "Stored user input in garrison: execution_id={}",
+                execution_id
+            );
+        }
+
+        // Retrieve conversation history if garrison is available
+        let conversation_history = if let Some(garrison) = &self.garrison {
+            let history = garrison.recall_recent(20).await?;
+            debug!(
+                "Retrieved {} messages from garrison: execution_id={}",
+                history.len(),
+                execution_id
+            );
+            history
+        } else {
+            vec![]
+        };
+
         // Execute reasoning loop
         for loop_num in 1..=paladin.node.max_loops {
             debug!(
@@ -205,8 +243,13 @@ impl PaladinExecutionService {
                 execution_id, loop_num, paladin.node.max_loops
             );
 
-            // Build prompt for this iteration
-            let prompt = self.build_prompt(paladin, input, &accumulated_output);
+            // Build prompt for this iteration with conversation history
+            let prompt = self.build_prompt_with_history(
+                paladin,
+                input,
+                &accumulated_output,
+                &conversation_history,
+            );
 
             // Execute with retry and circuit breaker
             let response = self
@@ -233,6 +276,17 @@ impl PaladinExecutionService {
                     execution_id, paladin.node.max_loops
                 );
 
+                // Store assistant response in garrison if available
+                if let Some(garrison) = &self.garrison {
+                    let assistant_entry =
+                        GarrisonEntry::new(ConversationRole::Assistant, accumulated_output.clone());
+                    garrison.remember(assistant_entry).await?;
+                    debug!(
+                        "Stored assistant response in garrison: execution_id={}",
+                        execution_id
+                    );
+                }
+
                 return Ok(PaladinResult {
                     output: accumulated_output,
                     token_count: total_tokens,
@@ -244,6 +298,13 @@ impl PaladinExecutionService {
         }
 
         // This should not be reached due to the loop logic, but provide a fallback
+        // Store response in garrison before returning
+        if let Some(garrison) = &self.garrison {
+            let assistant_entry =
+                GarrisonEntry::new(ConversationRole::Assistant, accumulated_output.clone());
+            garrison.remember(assistant_entry).await?;
+        }
+
         Ok(PaladinResult {
             output: accumulated_output,
             token_count: total_tokens,
@@ -255,9 +316,33 @@ impl PaladinExecutionService {
 
     /// Builds the prompt for an LLM call
     ///
-    /// Combines the system prompt, user input, and accumulated output from previous loops.
-    fn build_prompt(&self, paladin: &Paladin, input: &str, accumulated_output: &str) -> String {
+    /// Combines the system prompt, conversation history from Garrison,
+    /// user input, and accumulated output from previous loops.
+    fn build_prompt_with_history(
+        &self,
+        paladin: &Paladin,
+        input: &str,
+        accumulated_output: &str,
+        conversation_history: &[GarrisonEntry],
+    ) -> String {
         let mut prompt = format!("{}\n\n", paladin.node.system_prompt);
+
+        // Add conversation history if available
+        if !conversation_history.is_empty() {
+            prompt.push_str("Previous conversation:\n");
+            for entry in conversation_history.iter().rev().take(10).rev() {
+                // Most recent 10 entries
+                let role_str = match entry.role {
+                    ConversationRole::System => "System",
+                    ConversationRole::User => "User",
+                    ConversationRole::Assistant => "Assistant",
+                    ConversationRole::Tool => "Tool",
+                };
+                prompt.push_str(&format!("{}: {}\n", role_str, entry.content));
+            }
+            prompt.push_str("\n");
+        }
+
         prompt.push_str(&format!("User: {}\n", input));
 
         if !accumulated_output.is_empty() {
