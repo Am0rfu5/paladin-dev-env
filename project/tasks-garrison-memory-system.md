@@ -91,17 +91,17 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.11 Add all garrison types to `src/core/platform/container/mod.rs` exports
   - [x] 1.12 Run `cargo build` to verify compilation
 
-- [ ] 2.0 Define Application Layer Ports (GarrisonPort Traits)
-  - [ ] 2.1 Create `src/application/ports/output/garrison_port.rs` file
-  - [ ] 2.2 Define `GarrisonStats` struct (entry_count, total_tokens, size_bytes)
-  - [ ] 2.3 Define `GarrisonError` enum with thiserror (StorageError, SerializationError, TokenizationError, NotFound, ConfigurationError)
-  - [ ] 2.4 Implement Display and Error traits for `GarrisonError` using thiserror macros
-  - [ ] 2.5 Define `GarrisonPort` trait with async methods (remember, recall_recent, search, forget_all, stats)
-  - [ ] 2.6 Add `Send + Sync` bounds to `GarrisonPort` trait
-  - [ ] 2.7 Define `LongTermGarrisonPort` trait extending `GarrisonPort` (remember_with_embedding, search_similar)
-  - [ ] 2.8 Add comprehensive rustdoc comments to all trait methods
-  - [ ] 2.9 Add garrison_port to `src/application/ports/output/mod.rs` exports
-  - [ ] 2.10 Run `cargo build` to verify trait definitions compile
+- [x] 2.0 Define Application Layer Ports (GarrisonPort Traits)
+  - [x] 2.1 Create `src/application/ports/output/garrison_port.rs` file
+  - [x] 2.2 Define `GarrisonStats` struct (entry_count, total_tokens, size_bytes)
+  - [x] 2.3 Define `GarrisonError` enum with thiserror (StorageError, SerializationError, TokenizationError, NotFound, ConfigurationError)
+  - [x] 2.4 Implement Display and Error traits for `GarrisonError` using thiserror macros
+  - [x] 2.5 Define `GarrisonPort` trait with async methods (remember, recall_recent, search, forget_all, stats)
+  - [x] 2.6 Add `Send + Sync` bounds to `GarrisonPort` trait
+  - [x] 2.7 Define `LongTermGarrisonPort` trait extending `GarrisonPort` (remember_with_embedding, search_similar)
+  - [x] 2.8 Add comprehensive rustdoc comments to all trait methods
+  - [x] 2.9 Add garrison_port to `src/application/ports/output/mod.rs` exports
+  - [x] 2.10 Run `cargo build` to verify trait definitions compile
 
 - [ ] 3.0 Implement In-Memory Garrison Adapter
   - [ ] 3.1 Create `src/infrastructure/adapters/garrison/` directory
