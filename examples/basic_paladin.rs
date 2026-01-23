@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Duration::from_secs(30), // 30 second timeout
     ));
 
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker);
+    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None);
 
     // Step 4: Execute the Paladin with your input
     println!("🚀 Executing Paladin...\n");

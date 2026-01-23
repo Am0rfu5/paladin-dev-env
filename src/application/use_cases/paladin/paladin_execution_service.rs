@@ -28,7 +28,7 @@
 //! let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
 //!
 //! // Create execution service
-//! let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker);
+//! let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None);
 //!
 //! // Build paladin
 //! let paladin = PaladinBuilder::new(llm_port)

@@ -12,8 +12,8 @@ use crate::application::ports::output::garrison_port::{
 };
 use crate::core::platform::container::garrison::{ConversationRole, GarrisonConfig, GarrisonEntry};
 use async_trait::async_trait;
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use sqlx::Row;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use std::path::Path;
 use std::str::FromStr;
 
@@ -130,7 +130,8 @@ impl SqliteGarrison {
 
         // Calculate how many entries to keep (not remove)
         // Use the smaller of max_entries and preserve_recent_count to ensure we don't exceed limits
-        let target_count = std::cmp::min(self.config.max_entries, self.config.preserve_recent_count);
+        let target_count =
+            std::cmp::min(self.config.max_entries, self.config.preserve_recent_count);
 
         match self.config.eviction_strategy {
             crate::core::platform::container::garrison::EvictionStrategy::FIFO => {
@@ -229,9 +230,9 @@ impl SqliteGarrison {
         let entry_count: i64 = row
             .try_get("entry_count")
             .map_err(|e| GarrisonError::SerializationError(format!("Entry count error: {}", e)))?;
-        let total_tokens: i64 = row.try_get("total_tokens").map_err(|e| {
-            GarrisonError::SerializationError(format!("Total tokens error: {}", e))
-        })?;
+        let total_tokens: i64 = row
+            .try_get("total_tokens")
+            .map_err(|e| GarrisonError::SerializationError(format!("Total tokens error: {}", e)))?;
 
         sqlx::query(
             r#"
@@ -258,8 +259,9 @@ impl SqliteGarrison {
 impl GarrisonPort for SqliteGarrison {
     async fn remember(&self, entry: GarrisonEntry) -> Result<(), GarrisonError> {
         // Validate entry
-        entry.validate()
-            .map_err(|e| GarrisonError::ConfigurationError(e))?;
+        entry
+            .validate()
+            .map_err(GarrisonError::ConfigurationError)?;
 
         // Insert entry
         sqlx::query(
@@ -315,9 +317,9 @@ impl GarrisonPort for SqliteGarrison {
                 _ => ConversationRole::User,
             };
 
-            let id: String = row.try_get("id").map_err(|e| {
-                GarrisonError::SerializationError(format!("ID parse error: {}", e))
-            })?;
+            let id: String = row
+                .try_get("id")
+                .map_err(|e| GarrisonError::SerializationError(format!("ID parse error: {}", e)))?;
             let content: String = row.try_get("content").map_err(|e| {
                 GarrisonError::SerializationError(format!("Content parse error: {}", e))
             })?;
@@ -387,9 +389,9 @@ impl GarrisonPort for SqliteGarrison {
                 _ => ConversationRole::User,
             };
 
-            let id: String = row.try_get("id").map_err(|e| {
-                GarrisonError::SerializationError(format!("ID parse error: {}", e))
-            })?;
+            let id: String = row
+                .try_get("id")
+                .map_err(|e| GarrisonError::SerializationError(format!("ID parse error: {}", e)))?;
             let content: String = row.try_get("content").map_err(|e| {
                 GarrisonError::SerializationError(format!("Content parse error: {}", e))
             })?;
@@ -451,15 +453,17 @@ impl GarrisonPort for SqliteGarrison {
         let entry_count: i64 = row
             .try_get("entry_count")
             .map_err(|e| GarrisonError::SerializationError(format!("Entry count error: {}", e)))?;
-        let total_tokens: i64 = row.try_get("total_tokens").map_err(|e| {
-            GarrisonError::SerializationError(format!("Total tokens error: {}", e))
-        })?;
+        let total_tokens: i64 = row
+            .try_get("total_tokens")
+            .map_err(|e| GarrisonError::SerializationError(format!("Total tokens error: {}", e)))?;
 
         // Get database file size (approximate)
-        let size_row = sqlx::query("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(|e| GarrisonError::StorageError(format!("Size query failed: {}", e)))?;
+        let size_row = sqlx::query(
+            "SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()",
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| GarrisonError::StorageError(format!("Size query failed: {}", e)))?;
 
         let size_bytes = size_row
             .and_then(|r| r.try_get::<i64, _>("size").ok())
@@ -515,11 +519,13 @@ mod tests {
 
         // First connection - add entry
         {
-            let garrison = SqliteGarrison::connect(temp_file.path(), config.clone(), "test-paladin")
-                .await
-                .unwrap();
+            let garrison =
+                SqliteGarrison::connect(temp_file.path(), config.clone(), "test-paladin")
+                    .await
+                    .unwrap();
 
-            let entry = GarrisonEntry::new(ConversationRole::User, "Persistent message".to_string());
+            let entry =
+                GarrisonEntry::new(ConversationRole::User, "Persistent message".to_string());
             garrison.remember(entry).await.unwrap();
         }
 
