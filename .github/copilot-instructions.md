@@ -538,21 +538,29 @@ make clean-code        # Format, lint, check
 
 Run `snyk_code_scan` on first-party code per `.github/instructions/snyk_rules.instructions.md`.
 
-## Current Epic Focus
+## AI Instructions
 
-Refer to `paladin_project_plan.md` for the current development phase. Key milestones:
+When working with Rust task lists, the AI must:
 
-| Milestone | Target | Deliverables |
-|-----------|--------|--------------|
-| M1: Alpha | Week 6 | Single Paladin execution working |
-| M2: Beta | Week 12 | All Battalion types functional |
-| M3: RC1 | Week 18 | Full feature complete |
-| M4: Release | Week 20 | Production ready |
-
+1. Regularly update the task list file after finishing any significant work.
+2. Follow the completion protocol:
+   - Mark each finished **sub‑task** `[x]`.
+   - Run `cargo test`, `cargo fmt --check`, and `cargo clippy` before committing.
+   - Mark the **parent task** `[x]` once **all** its subtasks are `[x]` and code passes all checks.
+3. Add newly discovered tasks.
+4. Keep "Relevant Files" accurate and up to date.
+5. Before starting work, check which sub‑task is next.
+6. After implementing a sub‑task, update the file and proceed with the next sub-task.
+7. **Rust-specific considerations:**
+   - Ensure all public items have documentation comments (`///` or `//!`).
+   - Handle `Result` and `Option` types appropriately—avoid excessive `.unwrap()` in production code.
+   - Use `thiserror` or similar for custom error types when appropriate.
+   - Prefer `&str` over `String` for function parameters when ownership isn't needed.
+   - Run `cargo clippy` and address warnings before marking tasks complete.
+   
 **When implementing, always:**
-1. Check which Epic the work belongs to
-2. Follow the technical design in the project plan
+1. Check which Task the work belongs to
+2. Follow the technical design in the Project Requirements Document PRD
 3. Write tests first (TDD)
-4. Use the Medieval Military naming consistently
-5. Maintain hexagonal architecture boundaries
-6. Document all public APIs
+4. Maintain hexagonal architecture boundaries
+5. Document all public APIs
