@@ -9,6 +9,51 @@
 
 use std::sync::Once;
 
+// Conditional compilation for different test environments
+#[cfg(test)]
+mod test_config {
+    use chrono::Duration;
+
+    /// Test configuration that adapts to environment
+    pub struct TestConfig {
+        pub use_external_services: bool,
+        pub redis_host: String,
+        pub redis_port: u16,
+        pub minio_endpoint: String,
+        pub minio_bucket: String,
+        pub minio_access_key: String,
+        pub minio_secret_key: String,
+        pub request_timeout: Duration,
+    }
+
+    impl TestConfig {
+        pub fn from_env() -> Self {
+            Self {
+                use_external_services: std::env::var("USE_EXTERNAL_SERVICES")
+                    .unwrap_or_else(|_| "false".to_string())
+                    == "true",
+                redis_host: std::env::var("REDIS_HOST").unwrap_or_else(|_| "localhost".to_string()),
+                redis_port: std::env::var("REDIS_PORT")
+                    .unwrap_or_else(|_| "6379".to_string())
+                    .parse()
+                    .unwrap_or(6379),
+                minio_endpoint: std::env::var("MINIO_ENDPOINT")
+                    .unwrap_or_else(|_| "localhost:9000".to_string()),
+                minio_bucket: std::env::var("MINIO_BUCKET")
+                    .unwrap_or_else(|_| "test-bucket".to_string()),
+                minio_access_key: std::env::var("MINIO_ACCESS_KEY")
+                    .unwrap_or_else(|_| "minioadmin".to_string()),
+                minio_secret_key: std::env::var("MINIO_SECRET_KEY")
+                    .unwrap_or_else(|_| "minioadmin".to_string()),
+                request_timeout: Duration::seconds(30),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+pub use test_config::TestConfig;
+
 // Re-export integration test modules
 pub mod integration;
 
@@ -248,51 +293,3 @@ pub mod performance {
         (total_duration, results)
     }
 }
-
-// Conditional compilation for different test environments
-#[cfg(test)]
-mod test_config {
-    use chrono::Duration;
-
-    /// Test configuration that adapts to environment
-    pub struct TestConfig {
-        pub use_external_services: bool,
-        pub redis_host: String,
-        pub redis_port: u16,
-        pub minio_endpoint: String,
-        pub timeout_multiplier: f32,
-    }
-
-    impl TestConfig {
-        pub fn from_env() -> Self {
-            let is_ci = std::env::var("CI").is_ok() || std::env::var("GITHUB_ACTIONS").is_ok();
-            let timeout_multiplier = if is_ci { 2.0 } else { 1.0 };
-
-            Self {
-                use_external_services: std::env::var("USE_EXTERNAL_TEST_SERVICES")
-                    .map(|v| v.to_lowercase() == "true")
-                    .unwrap_or(is_ci),
-                redis_host: std::env::var("TEST_REDIS_HOST")
-                    .unwrap_or_else(|_| "localhost".to_string()),
-                redis_port: std::env::var("TEST_REDIS_PORT")
-                    .unwrap_or_else(|_| "6380".to_string())
-                    .parse()
-                    .unwrap_or(6380),
-                minio_endpoint: std::env::var("TEST_MINIO_ENDPOINT")
-                    .unwrap_or_else(|_| "localhost:9010".to_string()),
-                timeout_multiplier,
-            }
-        }
-
-        pub fn timeout(&self, base: Duration) -> Duration {
-            let secs_f = base.num_seconds() as f32 * self.timeout_multiplier;
-            let nanos_f = base.num_nanoseconds().unwrap_or(0) as f32 * self.timeout_multiplier;
-            // Prefer nanoseconds for higher precision if available
-            Duration::nanoseconds(nanos_f.round() as i64)
-                .max(Duration::seconds(secs_f.round() as i64))
-        }
-    }
-}
-
-#[cfg(test)]
-pub use test_config::TestConfig;

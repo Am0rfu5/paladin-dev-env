@@ -503,10 +503,12 @@ mod tests {
 
     #[test]
     fn test_action_clone_for_new_execution() {
-        let mut original = Action::default();
-        original.execution_count = 5;
-        original.retry_count = 2;
-        original.status = ActionStatus::Failed;
+        let mut original = Action {
+            execution_count: 5,
+            retry_count: 2,
+            status: ActionStatus::Failed,
+            ..Default::default()
+        };
 
         let cloned = original.clone_for_new_execution();
 

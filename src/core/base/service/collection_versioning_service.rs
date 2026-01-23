@@ -427,6 +427,12 @@ pub struct InMemoryCollectionVersionRepository<T> {
     current_versions: Arc<RwLock<HashMap<Uuid, u32>>>,
 }
 
+impl<T> Default for InMemoryCollectionVersionRepository<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> InMemoryCollectionVersionRepository<T> {
     pub fn new() -> Self {
         Self {
@@ -916,9 +922,9 @@ mod tests {
         let config = CollectionVersioningConfig::default();
 
         assert_eq!(config.max_versions_per_collection, Some(30));
-        assert_eq!(config.auto_purge_enabled, true);
-        assert_eq!(config.track_item_changes, true);
-        assert_eq!(config.track_structure_changes, true);
+        assert!(config.auto_purge_enabled);
+        assert!(config.track_item_changes);
+        assert!(config.track_structure_changes);
         assert_eq!(config.max_items_per_version, Some(1000));
         assert!(!config.compress_large_collections);
     }

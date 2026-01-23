@@ -214,12 +214,12 @@ impl ContentList {
 
     // Sort methods
     pub fn sort_by_created(&mut self) {
-        self.items.sort_by(|a, b| a.created().cmp(&b.created()));
+        self.items.sort_by_key(|a| a.created());
         self.modified = Utc::now();
     }
 
     pub fn sort_by_modified(&mut self) {
-        self.items.sort_by(|a, b| a.modified().cmp(&b.modified()));
+        self.items.sort_by_key(|a| a.modified());
         self.modified = Utc::now();
     }
 

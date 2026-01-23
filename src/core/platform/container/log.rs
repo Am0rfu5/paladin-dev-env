@@ -22,9 +22,11 @@ use std::hash::{Hash, Hasher};
 
 /// Log severity levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum LogLevel {
     Trace = 0,
     Debug = 1,
+    #[default]
     Info = 2,
     Warn = 3,
     Error = 4,
@@ -68,11 +70,6 @@ impl LogLevel {
     }
 }
 
-impl Default for LogLevel {
-    fn default() -> Self {
-        LogLevel::Info
-    }
-}
 
 /// Log destinations for routing log entries
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

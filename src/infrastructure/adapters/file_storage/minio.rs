@@ -8,7 +8,7 @@ use s3::region::Region;
 use s3::serde_types::Object;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::timeout;
@@ -202,7 +202,7 @@ impl MinioAdapter {
             let entry = LogEntry {
                 id: Uuid::new_v4(),
                 timestamp: Utc::now(),
-                message: LogMessage::new(level.clone(), message.clone()),
+                message: LogMessage::new(level, message.clone()),
                 source: Location::service("minio-adapter"),
                 destination: Location::system("minio-adapter"),
                 correlation_id: None,
@@ -216,7 +216,7 @@ impl MinioAdapter {
     }
 
     /// Convert PathBuf to string, ensuring proper format
-    fn path_to_object_name(&self, path: &PathBuf) -> FileStorageResult<String> {
+    fn path_to_object_name(&self, path: &Path) -> FileStorageResult<String> {
         <() as FileStorageUtils>::validate_path(path)?;
 
         let path_str = path.to_string_lossy();
@@ -336,7 +336,7 @@ impl MinioAdapter {
 impl FileStoragePort for MinioAdapter {
     async fn upload_file(
         &self,
-        path: &PathBuf,
+        path: &Path,
         content: &[u8],
         options: Option<UploadOptions>,
     ) -> FileStorageResult<FileItem> {
@@ -387,7 +387,7 @@ impl FileStoragePort for MinioAdapter {
 
     async fn download_file(
         &self,
-        path: &PathBuf,
+        path: &Path,
         _options: Option<DownloadOptions>,
     ) -> FileStorageResult<Vec<u8>> {
         let object_name = self.path_to_object_name(path)?;
@@ -414,7 +414,7 @@ impl FileStoragePort for MinioAdapter {
         Ok(content)
     }
 
-    async fn delete_file(&self, path: &PathBuf) -> FileStorageResult<()> {
+    async fn delete_file(&self, path: &Path) -> FileStorageResult<()> {
         let object_name = self.path_to_object_name(path)?;
 
         self.execute_with_retry(|| self.bucket.delete_object(&object_name))
@@ -427,7 +427,7 @@ impl FileStoragePort for MinioAdapter {
         Ok(())
     }
 
-    async fn file_exists(&self, path: &PathBuf) -> FileStorageResult<bool> {
+    async fn file_exists(&self, path: &Path) -> FileStorageResult<bool> {
         let object_name = self.path_to_object_name(path)?;
 
         match timeout(
@@ -446,7 +446,7 @@ impl FileStoragePort for MinioAdapter {
         }
     }
 
-    async fn get_file_info(&self, path: &PathBuf) -> FileStorageResult<FileItem> {
+    async fn get_file_info(&self, path: &Path) -> FileStorageResult<FileItem> {
         let object_name = self.path_to_object_name(path)?;
 
         let (head_result, _) = self
@@ -466,7 +466,7 @@ impl FileStoragePort for MinioAdapter {
 
         let size = head_result.content_length.unwrap_or(0) as u64;
 
-        let mut file_item = FileItem::new(path.clone(), size);
+        let mut file_item = FileItem::new(path.to_path_buf(), size);
         file_item.metadata = metadata;
         file_item.content_type = head_result.content_type.clone();
 
@@ -526,8 +526,8 @@ impl FileStoragePort for MinioAdapter {
 
     async fn copy_file(
         &self,
-        source_path: &PathBuf,
-        destination_path: &PathBuf,
+        source_path: &Path,
+        destination_path: &Path,
     ) -> FileStorageResult<FileItem> {
         let source_object = self.path_to_object_name(source_path)?;
         let dest_object = self.path_to_object_name(destination_path)?;
@@ -556,8 +556,8 @@ impl FileStoragePort for MinioAdapter {
 
     async fn move_file(
         &self,
-        source_path: &PathBuf,
-        destination_path: &PathBuf,
+        source_path: &Path,
+        destination_path: &Path,
     ) -> FileStorageResult<FileItem> {
         // Copy file to new location
         let file_item = self.copy_file(source_path, destination_path).await?;
@@ -656,7 +656,7 @@ impl FileStoragePort for MinioAdapter {
 }
 
 impl MinioAdapter {
-    fn should_include_file(&self, object: &Object, path: &PathBuf, options: &ListOptions) -> bool {
+    fn should_include_file(&self, object: &Object, path: &Path, options: &ListOptions) -> bool {
         // Filter by extensions
         if !options.extensions.is_empty() {
             if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
@@ -847,7 +847,7 @@ impl BatchFileStoragePort for MinioAdapter {
 impl AdvancedFileStoragePort for MinioAdapter {
     async fn generate_upload_url(
         &self,
-        path: &PathBuf,
+        path: &Path,
         expires_in: Duration,
         _options: Option<UploadOptions>,
     ) -> FileStorageResult<String> {
@@ -868,7 +868,7 @@ impl AdvancedFileStoragePort for MinioAdapter {
 
     async fn generate_download_url(
         &self,
-        path: &PathBuf,
+        path: &Path,
         expires_in: Duration,
         _options: Option<DownloadOptions>,
     ) -> FileStorageResult<String> {
@@ -889,7 +889,7 @@ impl AdvancedFileStoragePort for MinioAdapter {
 
     async fn create_multipart_upload(
         &self,
-        path: &PathBuf,
+        path: &Path,
         _options: Option<UploadOptions>,
     ) -> FileStorageResult<String> {
         let object_name = self.path_to_object_name(path)?;
@@ -939,13 +939,13 @@ impl AdvancedFileStoragePort for MinioAdapter {
 impl FileVersioningPort for MinioAdapter {
     async fn upload_file_version(
         &self,
-        path: &PathBuf,
+        path: &Path,
         content: &[u8],
         options: Option<UploadOptions>,
     ) -> FileStorageResult<FileItem> {
         // For basic versioning, we can append a timestamp to the filename
         let timestamp = Utc::now().format("%Y%m%d_%H%M%S").to_string();
-        let mut versioned_path = path.clone();
+        let mut versioned_path = path.to_path_buf();
 
         if let Some(filename) = path.file_stem().and_then(|s| s.to_str()) {
             if let Some(extension) = path.extension().and_then(|s| s.to_str()) {
@@ -960,7 +960,7 @@ impl FileVersioningPort for MinioAdapter {
         self.upload_file(&versioned_path, content, options).await
     }
 
-    async fn list_file_versions(&self, path: &PathBuf) -> FileStorageResult<Vec<FileItem>> {
+    async fn list_file_versions(&self, path: &Path) -> FileStorageResult<Vec<FileItem>> {
         let filename_stem = path
             .file_stem()
             .and_then(|s| s.to_str())
@@ -982,7 +982,7 @@ impl FileVersioningPort for MinioAdapter {
 
     async fn download_file_version(
         &self,
-        path: &PathBuf,
+        path: &Path,
         _version_id: &str,
         options: Option<DownloadOptions>,
     ) -> FileStorageResult<Vec<u8>> {
@@ -992,7 +992,7 @@ impl FileVersioningPort for MinioAdapter {
 
     async fn delete_file_version(
         &self,
-        path: &PathBuf,
+        path: &Path,
         _version_id: &str,
     ) -> FileStorageResult<()> {
         // For simple versioning, treat version_id as the versioned filename
@@ -1001,7 +1001,7 @@ impl FileVersioningPort for MinioAdapter {
 
     async fn get_file_version_info(
         &self,
-        path: &PathBuf,
+        path: &Path,
         _version_id: &str,
     ) -> FileStorageResult<FileItem> {
         // For simple versioning, treat version_id as the versioned filename

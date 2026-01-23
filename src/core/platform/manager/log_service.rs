@@ -360,7 +360,7 @@ impl LogService {
                     e.message
                         .module
                         .as_ref()
-                        .map_or(false, |m| m.contains(module))
+                        .is_some_and(|m| m.contains(module))
                 });
             }
 
@@ -400,9 +400,10 @@ impl LogService {
 
         if let Some(log) = logs.get(&destination) {
             let entries = log.node.get_entries(None);
-            let mut stats = LogStats::default();
-
-            stats.entries_written = entries.len() as u64;
+            let mut stats = LogStats {
+                entries_written: entries.len() as u64,
+                ..Default::default()
+            };
 
             for entry in &entries {
                 *stats.entries_by_level.entry(entry.level()).or_insert(0) += 1;
@@ -784,7 +785,7 @@ mod tests {
         sleep(Duration::from_millis(200)).await;
 
         // Verify each destination has its entry
-        for (destination, expected_message) in vec![
+        for (destination, expected_message) in [
             (LogDestination::System, "System message"),
             (LogDestination::Access, "Access message"),
             (LogDestination::Error, "Error message"),
@@ -863,8 +864,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_log_level_filtering() {
-        let mut config = LogServiceConfig::default();
-        config.default_min_level = LogLevel::Warn; // Only Warn and above
+        let mut config = LogServiceConfig {
+            default_min_level: LogLevel::Warn, // Only Warn and above
+            ..Default::default()
+        };
 
         let service = LogService::new(config);
         service.initialize().await.unwrap();

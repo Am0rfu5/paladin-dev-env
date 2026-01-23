@@ -7,7 +7,6 @@ use paladin::core::platform::container::content::{
 use paladin::infrastructure::repositories::mysql_content_repository::{
     MySqlConfig, MySqlContentRepository,
 };
-use serde_json;
 use uuid::Uuid;
 
 // Helper function to create a test ContentItem (moved outside modules so it can be shared)

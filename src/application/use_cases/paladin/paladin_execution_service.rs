@@ -431,7 +431,7 @@ mod tests {
     fn test_check_stop_words_case_insensitive() {
         // Test stop word detection logic
         let output = "This response contains STOP keyword";
-        let stop_words = vec!["stop".to_string()];
+        let stop_words = ["stop".to_string()];
 
         let output_lower = output.to_lowercase();
         let found = stop_words

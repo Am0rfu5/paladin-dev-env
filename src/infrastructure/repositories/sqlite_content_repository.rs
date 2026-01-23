@@ -168,7 +168,7 @@ impl SqliteStore {
             "image" => {
                 let path = data["path"].as_str().map(|s| s.to_string());
                 let resolution = if let Some(res_array) = data["resolution"].as_array() {
-                    let width = res_array.get(0).and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+                    let width = res_array.first().and_then(|v| v.as_u64()).unwrap_or(0) as u32;
                     let height = res_array.get(1).and_then(|v| v.as_u64()).unwrap_or(0) as u32;
                     (width, height)
                 } else {
@@ -342,7 +342,7 @@ impl ContentRepository for SqliteStore {
             .node
             .tags
             .as_ref()
-            .map(|tags| serde_json::to_string(tags))
+            .map(serde_json::to_string)
             .transpose()
             .map_err(|e| RepositoryError::SerializationError(e.to_string()))?;
 
@@ -390,7 +390,7 @@ impl ContentRepository for SqliteStore {
             .node
             .tags
             .as_ref()
-            .map(|tags| serde_json::to_string(tags))
+            .map(serde_json::to_string)
             .transpose()
             .map_err(|e| RepositoryError::SerializationError(e.to_string()))?;
 

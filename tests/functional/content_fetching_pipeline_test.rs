@@ -83,7 +83,7 @@ async fn test_content_fetching_pipeline() {
     let fetch_use_case = FetchContent::new(fetcher);
 
     // Test sources (simulating different content sources)
-    let test_sources = vec![
+    let test_sources = [
         "https://example.com/rss/feed.xml",
         "https://api.example.com/v1/data",
         "https://example.com/web/page.html",
@@ -98,7 +98,7 @@ async fn test_content_fetching_pipeline() {
 
         let content_item = fetch_use_case
             .execute(source_url)
-            .expect(&format!("Failed to fetch content from {}", source_url));
+            .unwrap_or_else(|_| panic!("Failed to fetch content from {}", source_url));
 
         println!(
             "   ✅ Fetched: {}",

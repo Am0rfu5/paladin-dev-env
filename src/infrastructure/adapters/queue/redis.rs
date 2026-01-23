@@ -271,15 +271,15 @@ impl QueuePort for RedisQueueAdapter {
 
         // Delete all queue-related keys using pipeline for efficiency
         let mut pipe = redis::pipe();
-        pipe.del(&self.queue_key(name))
-            .del(&self.queue_meta_key(name))
-            .del(&self.processing_key(name))
-            .del(&self.completed_key(name))
-            .del(&self.failed_key(name));
+        pipe.del(self.queue_key(name))
+            .del(self.queue_meta_key(name))
+            .del(self.processing_key(name))
+            .del(self.completed_key(name))
+            .del(self.failed_key(name));
 
         // Delete priority queues
         for priority in Self::get_priority_levels() {
-            pipe.del(&self.priority_queue_key(name, priority));
+            pipe.del(self.priority_queue_key(name, priority));
         }
 
         let _: () = pipe
@@ -481,7 +481,7 @@ impl QueuePort for RedisQueueAdapter {
                 })?;
                 let _: () = conn
                     .hset(
-                        &format!("{}:result", completed_key),
+                        format!("{}:result", completed_key),
                         item_id.to_string(),
                         result_json,
                     )
@@ -629,7 +629,7 @@ impl QueuePort for RedisQueueAdapter {
                 // Store error details
                 let _: () = conn
                     .hset(
-                        &format!("{}:error", failed_key),
+                        format!("{}:error", failed_key),
                         item_id.to_string(),
                         &error,
                     )
@@ -723,10 +723,7 @@ impl QueuePort for RedisQueueAdapter {
         let mut conn = self.conn.write().await;
         let queue_list_key = format!("{}:queues", self.config.key_prefix);
 
-        match conn.smembers::<_, Vec<String>>(&queue_list_key).await {
-            Ok(queues) => queues,
-            Err(_) => Vec::new(),
-        }
+        conn.smembers::<_, Vec<String>>(&queue_list_key).await.unwrap_or_default()
     }
 
     async fn queue_length(&self, queue_name: &str) -> Result<usize, QueueError> {
@@ -1415,7 +1412,7 @@ impl QueueManagementPort for RedisQueueAdapter {
             })?;
 
             if let Some(data) = item_data {
-                return Ok(self.deserialize_item(&data)?);
+                return self.deserialize_item(&data);
             }
         }
 

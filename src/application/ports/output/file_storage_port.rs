@@ -17,7 +17,7 @@ use md5::compute;
 use mime_guess::from_path;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -262,7 +262,7 @@ pub trait FileStoragePort: Send + Sync {
     /// Upload a file to storage
     async fn upload_file(
         &self,
-        path: &PathBuf,
+        path: &Path,
         content: &[u8],
         options: Option<UploadOptions>,
     ) -> FileStorageResult<FileItem>;
@@ -270,18 +270,18 @@ pub trait FileStoragePort: Send + Sync {
     /// Download a file from storage
     async fn download_file(
         &self,
-        path: &PathBuf,
+        path: &Path,
         options: Option<DownloadOptions>,
     ) -> FileStorageResult<Vec<u8>>;
 
     /// Delete a file from storage
-    async fn delete_file(&self, path: &PathBuf) -> FileStorageResult<()>;
+    async fn delete_file(&self, path: &Path) -> FileStorageResult<()>;
 
     /// Check if a file exists
-    async fn file_exists(&self, path: &PathBuf) -> FileStorageResult<bool>;
+    async fn file_exists(&self, path: &Path) -> FileStorageResult<bool>;
 
     /// Get file metadata without downloading content
-    async fn get_file_info(&self, path: &PathBuf) -> FileStorageResult<FileItem>;
+    async fn get_file_info(&self, path: &Path) -> FileStorageResult<FileItem>;
 
     /// List files in storage
     async fn list_files(&self, options: Option<ListOptions>) -> FileStorageResult<FileListResult>;
@@ -289,15 +289,15 @@ pub trait FileStoragePort: Send + Sync {
     /// Copy a file within storage
     async fn copy_file(
         &self,
-        source_path: &PathBuf,
-        destination_path: &PathBuf,
+        source_path: &Path,
+        destination_path: &Path,
     ) -> FileStorageResult<FileItem>;
 
     /// Move/rename a file within storage
     async fn move_file(
         &self,
-        source_path: &PathBuf,
-        destination_path: &PathBuf,
+        source_path: &Path,
+        destination_path: &Path,
     ) -> FileStorageResult<FileItem>;
 
     /// Get storage statistics
@@ -336,7 +336,7 @@ pub trait AdvancedFileStoragePort: Send + Sync {
     /// Generate a pre-signed URL for file upload
     async fn generate_upload_url(
         &self,
-        path: &PathBuf,
+        path: &Path,
         expires_in: std::time::Duration,
         options: Option<UploadOptions>,
     ) -> FileStorageResult<String>;
@@ -344,7 +344,7 @@ pub trait AdvancedFileStoragePort: Send + Sync {
     /// Generate a pre-signed URL for file download
     async fn generate_download_url(
         &self,
-        path: &PathBuf,
+        path: &Path,
         expires_in: std::time::Duration,
         options: Option<DownloadOptions>,
     ) -> FileStorageResult<String>;
@@ -352,7 +352,7 @@ pub trait AdvancedFileStoragePort: Send + Sync {
     /// Create a multipart upload session
     async fn create_multipart_upload(
         &self,
-        path: &PathBuf,
+        path: &Path,
         options: Option<UploadOptions>,
     ) -> FileStorageResult<String>;
 
@@ -381,29 +381,29 @@ pub trait FileVersioningPort: Send + Sync {
     /// Upload a new version of a file
     async fn upload_file_version(
         &self,
-        path: &PathBuf,
+        path: &Path,
         content: &[u8],
         options: Option<UploadOptions>,
     ) -> FileStorageResult<FileItem>;
 
     /// List all versions of a file
-    async fn list_file_versions(&self, path: &PathBuf) -> FileStorageResult<Vec<FileItem>>;
+    async fn list_file_versions(&self, path: &Path) -> FileStorageResult<Vec<FileItem>>;
 
     /// Download a specific version of a file
     async fn download_file_version(
         &self,
-        path: &PathBuf,
+        path: &Path,
         version_id: &str,
         options: Option<DownloadOptions>,
     ) -> FileStorageResult<Vec<u8>>;
 
     /// Delete a specific version of a file
-    async fn delete_file_version(&self, path: &PathBuf, version_id: &str) -> FileStorageResult<()>;
+    async fn delete_file_version(&self, path: &Path, version_id: &str) -> FileStorageResult<()>;
 
     /// Get info for a specific version
     async fn get_file_version_info(
         &self,
-        path: &PathBuf,
+        path: &Path,
         version_id: &str,
     ) -> FileStorageResult<FileItem>;
 }
@@ -417,12 +417,12 @@ pub trait FullFileStoragePort:
 /// Helper trait for common file operations
 pub trait FileStorageUtils {
     /// Detect content type from file extension
-    fn detect_content_type(path: &PathBuf) -> Option<String>;
+    fn detect_content_type(path: &Path) -> Option<String>;
 
-    fn detect_content_type_with_fallback(path: &PathBuf, fallback: &str) -> String;
+    fn detect_content_type_with_fallback(path: &Path, fallback: &str) -> String;
 
     fn validate_content_type_for_domain(
-        path: &PathBuf,
+        path: &Path,
         expected_types: &[&str],
     ) -> FileStorageResult<String>;
 
@@ -430,18 +430,18 @@ pub trait FileStorageUtils {
     fn calculate_md5(content: &[u8]) -> String;
 
     /// Validate file path
-    fn validate_path(path: &PathBuf) -> FileStorageResult<()>;
+    fn validate_path(path: &Path) -> FileStorageResult<()>;
 
     /// Sanitize filename
     fn sanitize_filename(filename: &str) -> String;
 }
 
 impl FileStorageUtils for () {
-    fn detect_content_type(path: &PathBuf) -> Option<String> {
+    fn detect_content_type(path: &Path) -> Option<String> {
         Some(from_path(path).first_or_text_plain().to_string())
     }
 
-    fn detect_content_type_with_fallback(path: &PathBuf, fallback: &str) -> String {
+    fn detect_content_type_with_fallback(path: &Path, fallback: &str) -> String {
         from_path(path)
             .first()
             .map(|mime| mime.to_string())
@@ -449,7 +449,7 @@ impl FileStorageUtils for () {
     }
 
     fn validate_content_type_for_domain(
-        path: &PathBuf,
+        path: &Path,
         expected_types: &[&str],
     ) -> FileStorageResult<String> {
         let detected = Self::detect_content_type(path)
@@ -470,7 +470,7 @@ impl FileStorageUtils for () {
         format!("{:x}", hasher)
     }
 
-    fn validate_path(path: &PathBuf) -> FileStorageResult<()> {
+    fn validate_path(path: &Path) -> FileStorageResult<()> {
         let path_str = path.to_string_lossy();
 
         // Check for invalid characters

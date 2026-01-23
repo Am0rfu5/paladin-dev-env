@@ -13,7 +13,6 @@ across multiple channels following DDD and Hexagonal Architecture patterns.
 */
 
 use std::collections::HashMap;
-use tokio;
 
 use paladin::application::ports::output::notification_port::{
     NotificationDeliveryPort, NotificationTemplatePort,

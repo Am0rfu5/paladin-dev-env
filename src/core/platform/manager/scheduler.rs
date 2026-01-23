@@ -384,7 +384,7 @@ impl Scheduler {
             Schedule::Daily(hour, minute) => {
                 let mut next = now.date_naive().and_hms_opt(*hour, *minute, 0)?;
                 if next <= now.naive_utc() {
-                    next = next + chrono::Duration::days(1);
+                    next += chrono::Duration::days(1);
                 }
                 Some(DateTime::from_naive_utc_and_offset(next, Utc))
             }
@@ -571,7 +571,7 @@ mod tests {
         let scheduler = Scheduler::new();
         assert!(!scheduler.running);
         assert_eq!(scheduler.scheduled_jobs.len(), 0);
-        assert!(scheduler.services.len() > 0); // Should have default services
+        assert!(!scheduler.services.is_empty()); // Should have default services
     }
 
     #[tokio::test]

@@ -200,7 +200,7 @@ impl Queue {
     fn start_processing(&mut self, item_id: Uuid, worker_id: String) -> Result<(), QueueError> {
         if let Some(item) = self.processing_items.get_mut(&item_id) {
             item.start_processing(worker_id)
-                .map_err(|e| QueueError::OperationFailed(e))?;
+                .map_err(QueueError::OperationFailed)?;
             self.update_stats();
             Ok(())
         } else {

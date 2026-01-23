@@ -136,6 +136,54 @@ impl FileStorageTestContext {
     }
 }
 
+// Helper functions for running all tests
+pub async fn run_all_file_storage_tests() -> Result<(), Box<dyn std::error::Error>> {
+    use crate::integration::report_test_result;
+
+    println!("🧪 Running File Storage Integration Tests");
+
+    let tests = vec![
+        ("health_check", tests::test_file_storage_health_check()),
+        (
+            "upload_download",
+            tests::test_file_upload_download_lifecycle(),
+        ),
+        ("file_operations", tests::test_file_operations_full_cycle()),
+        ("batch_operations", tests::test_batch_operations()),
+        ("presigned_urls", tests::test_presigned_urls()),
+        ("storage_stats", tests::test_storage_statistics()),
+        ("error_handling", tests::test_error_handling()),
+        (
+            "end_to_end",
+            tests::test_end_to_end_security_audit_workflow(),
+        ),
+    ];
+
+    let mut passed = 0;
+    let mut failed = 0;
+
+    for (name, test) in tests {
+        let result = test;
+        report_test_result(&format!("file_storage_{}", name), &result);
+
+        match result {
+            Ok(_) => passed += 1,
+            Err(_) => failed += 1,
+        }
+    }
+
+    println!(
+        "\n📊 File Storage Test Results: {} passed, {} failed",
+        passed, failed
+    );
+
+    if failed > 0 {
+        Err(format!("{} tests failed", failed).into())
+    } else {
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -312,7 +360,7 @@ mod tests {
             .generate_download_url(&file_path, Duration::from_secs(3600), None)
             .await?;
 
-        assert!(download_url.contains(&ctx.env.minio_endpoint.split(':').next().unwrap()));
+        assert!(download_url.contains(ctx.env.minio_endpoint.split(':').next().unwrap()));
         println!("✅ Generated presigned download URL: {}", download_url);
 
         // Test presigned upload URL generation
@@ -322,7 +370,7 @@ mod tests {
             .generate_upload_url(&upload_path, Duration::from_secs(3600), None)
             .await?;
 
-        assert!(upload_url.contains(&ctx.env.minio_endpoint.split(':').next().unwrap()));
+        assert!(upload_url.contains(ctx.env.minio_endpoint.split(':').next().unwrap()));
         println!("✅ Generated presigned upload URL: {}", upload_url);
 
         ctx.cleanup().await?;
@@ -475,54 +523,6 @@ mod tests {
         );
 
         ctx.cleanup().await?;
-        Ok(())
-    }
-}
-
-// Helper functions for running all tests
-pub async fn run_all_file_storage_tests() -> Result<(), Box<dyn std::error::Error>> {
-    use crate::integration::report_test_result;
-
-    println!("🧪 Running File Storage Integration Tests");
-
-    let tests = vec![
-        ("health_check", tests::test_file_storage_health_check()),
-        (
-            "upload_download",
-            tests::test_file_upload_download_lifecycle(),
-        ),
-        ("file_operations", tests::test_file_operations_full_cycle()),
-        ("batch_operations", tests::test_batch_operations()),
-        ("presigned_urls", tests::test_presigned_urls()),
-        ("storage_stats", tests::test_storage_statistics()),
-        ("error_handling", tests::test_error_handling()),
-        (
-            "end_to_end",
-            tests::test_end_to_end_security_audit_workflow(),
-        ),
-    ];
-
-    let mut passed = 0;
-    let mut failed = 0;
-
-    for (name, test) in tests {
-        let result = test;
-        report_test_result(&format!("file_storage_{}", name), &result);
-
-        match result {
-            Ok(_) => passed += 1,
-            Err(_) => failed += 1,
-        }
-    }
-
-    println!(
-        "\n📊 File Storage Test Results: {} passed, {} failed",
-        passed, failed
-    );
-
-    if failed > 0 {
-        Err(format!("{} tests failed", failed).into())
-    } else {
         Ok(())
     }
 }

@@ -366,6 +366,12 @@ pub struct InMemoryFieldVersionRepository<T> {
     current_versions: Arc<RwLock<HashMap<Uuid, u32>>>,
 }
 
+impl<T> Default for InMemoryFieldVersionRepository<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> InMemoryFieldVersionRepository<T> {
     pub fn new() -> Self {
         Self {

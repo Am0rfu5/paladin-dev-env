@@ -324,7 +324,7 @@ impl ListenerService {
         triggers
             .get(&trigger_id)
             .cloned()
-            .ok_or_else(|| ListenerError::TriggerNotFound(trigger_id))
+            .ok_or(ListenerError::TriggerNotFound(trigger_id))
     }
 
     /// Update trigger status

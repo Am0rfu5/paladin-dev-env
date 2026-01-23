@@ -264,14 +264,14 @@ impl ContentDeliveryService for ApiContentDeliverer {
             Ok(_) => {
                 // We're in a runtime, use spawn_blocking to avoid nested runtime
                 let deliverer = self.clone();
-                let result = std::thread::spawn(move || {
+                
+                std::thread::spawn(move || {
                     let rt = tokio::runtime::Runtime::new()
                         .map_err(|_| ContentDeliveryError::ServiceUnavailable)?;
                     rt.block_on(deliverer.deliver_content_async(request))
                 })
                 .join()
-                .map_err(|_| ContentDeliveryError::ServiceUnavailable)?;
-                result
+                .map_err(|_| ContentDeliveryError::ServiceUnavailable)?
             }
             Err(_) => {
                 // We're not in a runtime, create one

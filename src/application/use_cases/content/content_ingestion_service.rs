@@ -755,6 +755,12 @@ pub struct InMemoryContentRepository {
     items: Arc<RwLock<HashMap<Uuid, ContentItem>>>,
 }
 
+impl Default for InMemoryContentRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InMemoryContentRepository {
     pub fn new() -> Self {
         Self {

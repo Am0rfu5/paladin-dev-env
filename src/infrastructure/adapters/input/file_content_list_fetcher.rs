@@ -70,43 +70,41 @@ impl ContentListFetchingService for FileContentListFetcher {
         );
 
         if let Ok(entries) = fs::read_dir(directory) {
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    let path = entry.path();
-                    if path.is_file() {
-                        // Determine content type based on file extension
-                        let content_type = Self::determine_content_type(&path)?;
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    // Determine content type based on file extension
+                    let content_type = Self::determine_content_type(&path)?;
 
-                        // Create ContentItem using the new method
-                        match ContentItem::new(content_type) {
-                            Ok(mut content_item) => {
-                                // Set additional metadata using setter methods
-                                let file_url =
-                                    Url::parse(&format!("file://{}", path.to_string_lossy()))
-                                        .map_err(|e| format!("Invalid file URL: {}", e))?;
+                    // Create ContentItem using the new method
+                    match ContentItem::new(content_type) {
+                        Ok(mut content_item) => {
+                            // Set additional metadata using setter methods
+                            let file_url =
+                                Url::parse(&format!("file://{}", path.to_string_lossy()))
+                                    .map_err(|e| format!("Invalid file URL: {}", e))?;
 
-                                content_item.set_url(Some(file_url.clone()));
-                                content_item.set_source_url(Some(file_url));
+                            content_item.set_url(Some(file_url.clone()));
+                            content_item.set_source_url(Some(file_url));
 
-                                if let Some(file_name) =
-                                    path.file_name().and_then(|name| name.to_str())
-                                {
-                                    content_item.set_title(Some(file_name.to_string()));
-                                }
-
-                                content_item.set_tags(Some(Vec::new()));
-
-                                // Add to content list
-                                content_list.add_item(content_item);
+                            if let Some(file_name) =
+                                path.file_name().and_then(|name| name.to_str())
+                            {
+                                content_item.set_title(Some(file_name.to_string()));
                             }
-                            Err(e) => {
-                                eprintln!(
-                                    "Failed to create content item for {}: {}",
-                                    path.display(),
-                                    e
-                                );
-                                continue;
-                            }
+
+                            content_item.set_tags(Some(Vec::new()));
+
+                            // Add to content list
+                            content_list.add_item(content_item);
+                        }
+                        Err(e) => {
+                            eprintln!(
+                                "Failed to create content item for {}: {}",
+                                path.display(),
+                                e
+                            );
+                            continue;
                         }
                     }
                 }

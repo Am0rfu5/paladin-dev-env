@@ -87,7 +87,6 @@ pub trait UserServiceTrait: Send + Sync {
     async fn verify_user(&self, user_id: Uuid) -> Result<(), UserError>;
 
     /// CLI support methods
-
     /// Find users by active status
     async fn find_by_active_status(&self, is_active: bool) -> Result<Vec<User>, UserError>;
 
@@ -257,7 +256,7 @@ impl UserServiceTrait for UserService {
         let email = Email::new(request.email)?;
 
         // Check if user already exists
-        if let Some(_) = self.user_repository.find_by_email(email.value()).await? {
+        if self.user_repository.find_by_email(email.value()).await?.is_some() {
             return Err(UserError::EmailAlreadyExists(email.value().to_string()));
         }
 
@@ -464,7 +463,6 @@ impl UserServiceTrait for UserService {
     }
 
     /// CLI support methods
-
     /// Find users by active status
     async fn find_by_active_status(&self, is_active: bool) -> Result<Vec<User>, UserError> {
         self.user_repository.find_by_active_status(is_active).await
