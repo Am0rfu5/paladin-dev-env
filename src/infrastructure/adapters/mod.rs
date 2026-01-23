@@ -1,4 +1,5 @@
 pub mod file_storage;
+pub mod garrison;
 pub mod input;
 pub mod llm;
 pub mod logs;

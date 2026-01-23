@@ -103,21 +103,21 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.9 Add garrison_port to `src/application/ports/output/mod.rs` exports
   - [x] 2.10 Run `cargo build` to verify trait definitions compile
 
-- [ ] 3.0 Implement In-Memory Garrison Adapter
-  - [ ] 3.1 Create `src/infrastructure/adapters/garrison/` directory
-  - [ ] 3.2 Create `src/infrastructure/adapters/garrison/mod.rs` with module structure
-  - [ ] 3.3 Create `src/infrastructure/adapters/garrison/in_memory_garrison.rs`
-  - [ ] 3.4 Define `InMemoryGarrison` struct with `RwLock<VecDeque<GarrisonEntry>>` and `GarrisonConfig`
-  - [ ] 3.5 Implement `InMemoryGarrison::new(config)` constructor
-  - [ ] 3.6 Implement `GarrisonPort::remember()` - add entry with write lock
-  - [ ] 3.7 Implement `GarrisonPort::recall_recent()` - retrieve N most recent with read lock
-  - [ ] 3.8 Implement `GarrisonPort::search()` - simple substring search
-  - [ ] 3.9 Implement `GarrisonPort::forget_all()` - clear all entries
-  - [ ] 3.10 Implement `GarrisonPort::stats()` - calculate statistics
-  - [ ] 3.11 Implement importance-based eviction logic in private method
-  - [ ] 3.12 Add comprehensive error handling for all operations
-  - [ ] 3.13 Add to `src/infrastructure/adapters/mod.rs` exports
-  - [ ] 3.14 Run `cargo build` to verify InMemoryGarrison compiles
+- [x] 3.0 Implement In-Memory Garrison Adapter
+  - [x] 3.1 Create `src/infrastructure/adapters/garrison/` directory
+  - [x] 3.2 Create `src/infrastructure/adapters/garrison/mod.rs` with module structure
+  - [x] 3.3 Create `src/infrastructure/adapters/garrison/in_memory_garrison.rs`
+  - [x] 3.4 Define `InMemoryGarrison` struct with `RwLock<VecDeque<GarrisonEntry>>` and `GarrisonConfig`
+  - [x] 3.5 Implement `InMemoryGarrison::new(config)` constructor
+  - [x] 3.6 Implement `GarrisonPort::remember()` - add entry with write lock
+  - [x] 3.7 Implement `GarrisonPort::recall_recent()` - retrieve N most recent with read lock
+  - [x] 3.8 Implement `GarrisonPort::search()` - simple substring search
+  - [x] 3.9 Implement `GarrisonPort::forget_all()` - clear all entries
+  - [x] 3.10 Implement `GarrisonPort::stats()` - calculate statistics
+  - [x] 3.11 Implement importance-based eviction logic in private method
+  - [x] 3.12 Add comprehensive error handling for all operations
+  - [x] 3.13 Add to `src/infrastructure/adapters/mod.rs` exports
+  - [x] 3.14 Run `cargo build` to verify InMemoryGarrison compiles
 
 - [ ] 4.0 Implement SQLite Garrison Adapter
   - [ ] 4.1 Add sqlx and sqlite-vss dependencies to `Cargo.toml`
