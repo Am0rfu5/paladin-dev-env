@@ -87,8 +87,7 @@ impl ContentListFetchingService for FileContentListFetcher {
                             content_item.set_url(Some(file_url.clone()));
                             content_item.set_source_url(Some(file_url));
 
-                            if let Some(file_name) =
-                                path.file_name().and_then(|name| name.to_str())
+                            if let Some(file_name) = path.file_name().and_then(|name| name.to_str())
                             {
                                 content_item.set_title(Some(file_name.to_string()));
                             }

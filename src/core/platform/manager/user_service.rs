@@ -256,7 +256,12 @@ impl UserServiceTrait for UserService {
         let email = Email::new(request.email)?;
 
         // Check if user already exists
-        if self.user_repository.find_by_email(email.value()).await?.is_some() {
+        if self
+            .user_repository
+            .find_by_email(email.value())
+            .await?
+            .is_some()
+        {
             return Err(UserError::EmailAlreadyExists(email.value().to_string()));
         }
 

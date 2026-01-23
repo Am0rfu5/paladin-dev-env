@@ -503,7 +503,7 @@ mod tests {
 
     #[test]
     fn test_action_clone_for_new_execution() {
-        let mut original = Action {
+        let original = Action {
             execution_count: 5,
             retry_count: 2,
             status: ActionStatus::Failed,

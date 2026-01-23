@@ -990,11 +990,7 @@ impl FileVersioningPort for MinioAdapter {
         self.download_file(path, options).await
     }
 
-    async fn delete_file_version(
-        &self,
-        path: &Path,
-        _version_id: &str,
-    ) -> FileStorageResult<()> {
+    async fn delete_file_version(&self, path: &Path, _version_id: &str) -> FileStorageResult<()> {
         // For simple versioning, treat version_id as the versioned filename
         self.delete_file(path).await
     }

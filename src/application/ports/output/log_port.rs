@@ -317,10 +317,10 @@ pub struct TextLogFormatter;
 impl LogFormatter for TextLogFormatter {
     fn format_entry(&self, entry: &LogEntry) -> LogResult<String> {
         Ok(format!(
-            "{} [{}] {} - {}",
+            "{} [{}] {:?} - {}",
             entry.timestamp.format("%Y-%m-%d %H:%M:%S%.3f"),
             entry.message.level.as_str(),
-            format!("{:?}", entry.source),
+            entry.source,
             entry.message.formatted()
         ))
     }

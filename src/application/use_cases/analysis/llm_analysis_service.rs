@@ -168,15 +168,15 @@ impl AnalysisService<LlmAnalysisInput, LlmAnalysisOutput, LlmAnalysisConfig>
 
     fn validate_input(&self, input: &LlmAnalysisInput) -> Result<(), AnalysisError> {
         // Validate prompt
-        match input.prompt.prompt_type() {
-            crate::core::platform::container::prompt::PromptType::Text(text_prompt) => {
-                if text_prompt.content.is_empty() {
-                    return Err(AnalysisError::InvalidInput(
-                        "Prompt content cannot be empty".to_string(),
-                    ));
-                }
+        // Other prompt types can be added as needed
+        if let crate::core::platform::container::prompt::PromptType::Text(text_prompt) =
+            input.prompt.prompt_type()
+        {
+            if text_prompt.content.is_empty() {
+                return Err(AnalysisError::InvalidInput(
+                    "Prompt content cannot be empty".to_string(),
+                ));
             }
-            _ => {} // Other prompt types can be added as needed
         }
         Ok(())
     }

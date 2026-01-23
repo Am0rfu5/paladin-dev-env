@@ -15,7 +15,7 @@ use crate::infrastructure::adapters::logs::system_log_adapter::SystemLogAdapter;
 use crate::infrastructure::adapters::queue::redis::RedisQueueAdapter;
 use crate::infrastructure::repositories::sqlite_content_repository::SqliteStore;
 use std::env;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::signal;
 use tokio::sync::RwLock;
@@ -185,7 +185,6 @@ impl ServiceRunner {
                 worker_threads: msg_config.worker_threads.unwrap_or(4),
                 retry_attempts: msg_config.retry_attempts.unwrap_or(3),
                 retry_delay_ms: msg_config.retry_delay_ms.unwrap_or(1000),
-                ..Default::default()
             }
         } else {
             MessageServiceConfig::default()
@@ -443,7 +442,7 @@ impl ServiceRunner {
     }
 
     /// Helper method to detect content type from file extension
-    fn detect_content_type(path: &PathBuf) -> String {
+    fn detect_content_type(path: &Path) -> String {
         <() as FileStorageUtils>::detect_content_type(path)
             .unwrap_or_else(|| "application/octet-stream".to_string())
     }

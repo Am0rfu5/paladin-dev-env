@@ -21,8 +21,9 @@ use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
 /// Log severity levels
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 pub enum LogLevel {
     Trace = 0,
     Debug = 1,
@@ -47,7 +48,7 @@ impl LogLevel {
     }
 
     /// Parse from string
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn parse_str(s: &str) -> Option<Self> {
         match s.to_uppercase().as_str() {
             "TRACE" => Some(LogLevel::Trace),
             "DEBUG" => Some(LogLevel::Debug),
@@ -69,7 +70,6 @@ impl LogLevel {
         }
     }
 }
-
 
 /// Log destinations for routing log entries
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -421,9 +421,9 @@ mod tests {
 
     #[test]
     fn test_log_level_conversion() {
-        assert_eq!(LogLevel::from_str("INFO"), Some(LogLevel::Info));
-        assert_eq!(LogLevel::from_str("error"), Some(LogLevel::Error));
-        assert_eq!(LogLevel::from_str("INVALID"), None);
+        assert_eq!(LogLevel::parse_str("INFO"), Some(LogLevel::Info));
+        assert_eq!(LogLevel::parse_str("error"), Some(LogLevel::Error));
+        assert_eq!(LogLevel::parse_str("INVALID"), None);
 
         assert_eq!(LogLevel::Info.as_str(), "INFO");
         assert_eq!(LogLevel::Error.to_priority(), MessagePriority::Critical);

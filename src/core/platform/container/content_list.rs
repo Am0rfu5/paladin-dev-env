@@ -23,7 +23,7 @@ pub struct ContentList {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum ContentListTypes {
     ContentItemsOnly(Vec<ContentItem>),
-    ContentListWithMeta(ContentList),
+    ContentListWithMeta(Box<ContentList>),
 }
 
 impl ContentList {

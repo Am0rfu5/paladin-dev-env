@@ -628,11 +628,7 @@ impl QueuePort for RedisQueueAdapter {
 
                 // Store error details
                 let _: () = conn
-                    .hset(
-                        format!("{}:error", failed_key),
-                        item_id.to_string(),
-                        &error,
-                    )
+                    .hset(format!("{}:error", failed_key), item_id.to_string(), &error)
                     .await
                     .map_err(|e| {
                         QueueError::OperationFailed(format!("Failed to store error: {}", e))
@@ -723,7 +719,9 @@ impl QueuePort for RedisQueueAdapter {
         let mut conn = self.conn.write().await;
         let queue_list_key = format!("{}:queues", self.config.key_prefix);
 
-        conn.smembers::<_, Vec<String>>(&queue_list_key).await.unwrap_or_default()
+        conn.smembers::<_, Vec<String>>(&queue_list_key)
+            .await
+            .unwrap_or_default()
     }
 
     async fn queue_length(&self, queue_name: &str) -> Result<usize, QueueError> {

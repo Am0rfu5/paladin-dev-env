@@ -62,66 +62,66 @@ impl PartialEq for PromptParameters {
 
 impl Eq for PromptParameters {}
 
-impl PartialOrd for PromptParameters {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+impl Ord for PromptParameters {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // First compare max_tokens
         match self.max_tokens.cmp(&other.max_tokens) {
             std::cmp::Ordering::Equal => {}
-            ord => return Some(ord),
+            ord => return ord,
         }
 
         // Then compare temperature using bits representation for consistency
         match (self.temperature, other.temperature) {
             (Some(a), Some(b)) => match a.to_bits().cmp(&b.to_bits()) {
                 std::cmp::Ordering::Equal => {}
-                ord => return Some(ord),
+                ord => return ord,
             },
             (None, None) => {}
-            (Some(_), None) => return Some(std::cmp::Ordering::Greater),
-            (None, Some(_)) => return Some(std::cmp::Ordering::Less),
+            (Some(_), None) => return std::cmp::Ordering::Greater,
+            (None, Some(_)) => return std::cmp::Ordering::Less,
         }
 
         // Compare top_p
         match (self.top_p, other.top_p) {
             (Some(a), Some(b)) => match a.to_bits().cmp(&b.to_bits()) {
                 std::cmp::Ordering::Equal => {}
-                ord => return Some(ord),
+                ord => return ord,
             },
             (None, None) => {}
-            (Some(_), None) => return Some(std::cmp::Ordering::Greater),
-            (None, Some(_)) => return Some(std::cmp::Ordering::Less),
+            (Some(_), None) => return std::cmp::Ordering::Greater,
+            (None, Some(_)) => return std::cmp::Ordering::Less,
         }
 
         // Compare frequency_penalty
         match (self.frequency_penalty, other.frequency_penalty) {
             (Some(a), Some(b)) => match a.to_bits().cmp(&b.to_bits()) {
                 std::cmp::Ordering::Equal => {}
-                ord => return Some(ord),
+                ord => return ord,
             },
             (None, None) => {}
-            (Some(_), None) => return Some(std::cmp::Ordering::Greater),
-            (None, Some(_)) => return Some(std::cmp::Ordering::Less),
+            (Some(_), None) => return std::cmp::Ordering::Greater,
+            (None, Some(_)) => return std::cmp::Ordering::Less,
         }
 
         // Compare presence_penalty
         match (self.presence_penalty, other.presence_penalty) {
             (Some(a), Some(b)) => match a.to_bits().cmp(&b.to_bits()) {
                 std::cmp::Ordering::Equal => {}
-                ord => return Some(ord),
+                ord => return ord,
             },
             (None, None) => {}
-            (Some(_), None) => return Some(std::cmp::Ordering::Greater),
-            (None, Some(_)) => return Some(std::cmp::Ordering::Less),
+            (Some(_), None) => return std::cmp::Ordering::Greater,
+            (None, Some(_)) => return std::cmp::Ordering::Less,
         }
 
         // Finally compare stop_sequences
-        Some(self.stop_sequences.cmp(&other.stop_sequences))
+        self.stop_sequences.cmp(&other.stop_sequences)
     }
 }
 
-impl Ord for PromptParameters {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap_or(std::cmp::Ordering::Equal)
+impl PartialOrd for PromptParameters {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 

@@ -864,7 +864,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_log_level_filtering() {
-        let mut config = LogServiceConfig {
+        let config = LogServiceConfig {
             default_min_level: LogLevel::Warn, // Only Warn and above
             ..Default::default()
         };
