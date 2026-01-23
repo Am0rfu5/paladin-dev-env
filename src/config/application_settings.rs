@@ -1,3 +1,4 @@
+use crate::core::platform::container::garrison::EvictionStrategy;
 use crate::infrastructure::adapters::file_storage::minio::MinioConfig;
 use crate::infrastructure::adapters::notifications::{EmailAdapterConfig, SystemAdapterConfig};
 use config::{Config, ConfigError, Environment, File};
@@ -141,6 +142,95 @@ impl Default for NotificationConfig {
     }
 }
 
+/// Configuration for Garrison memory system
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GarrisonSettings {
+    /// Type of garrison storage: "in_memory" or "sqlite"
+    pub garrison_type: String,
+    /// Path to SQLite database file (only used if garrison_type is "sqlite")
+    pub path: Option<String>,
+    /// Maximum number of entries to keep in memory
+    pub max_entries: usize,
+    /// Maximum total tokens across all entries (None = no limit)
+    pub max_tokens: Option<u32>,
+    /// Tokenizer to use for token counting: "gpt-4", "gpt-3.5-turbo", etc.
+    pub tokenizer: String,
+    /// Eviction strategy: "importance_based", "fifo", or "sliding_window"
+    pub eviction_strategy: String,
+    /// Number of recent entries to always preserve
+    pub preserve_recent_count: usize,
+}
+
+impl Default for GarrisonSettings {
+    fn default() -> Self {
+        Self {
+            garrison_type: "in_memory".to_string(),
+            path: None,
+            max_entries: 100,
+            max_tokens: Some(4000),
+            tokenizer: "gpt-4".to_string(),
+            eviction_strategy: "importance_based".to_string(),
+            preserve_recent_count: 10,
+        }
+    }
+}
+
+impl GarrisonSettings {
+    /// Validates garrison configuration
+    pub fn validate(&self) -> Result<(), String> {
+        // Validate garrison type
+        if self.garrison_type != "in_memory" && self.garrison_type != "sqlite" {
+            return Err(format!(
+                "Invalid garrison_type '{}': must be 'in_memory' or 'sqlite'",
+                self.garrison_type
+            ));
+        }
+
+        // Validate SQLite path is provided when type is sqlite
+        if self.garrison_type == "sqlite" && self.path.is_none() {
+            return Err("SQLite garrison requires a 'path' to be specified".to_string());
+        }
+
+        // Validate max_entries
+        if self.max_entries == 0 {
+            return Err("max_entries must be greater than 0".to_string());
+        }
+
+        // Validate preserve_recent_count doesn't exceed max_entries
+        if self.preserve_recent_count > self.max_entries {
+            return Err(format!(
+                "preserve_recent_count ({}) cannot exceed max_entries ({})",
+                self.preserve_recent_count, self.max_entries
+            ));
+        }
+
+        // Validate eviction strategy
+        if self.eviction_strategy != "importance_based"
+            && self.eviction_strategy != "fifo"
+            && self.eviction_strategy != "sliding_window"
+        {
+            return Err(format!(
+                "Invalid eviction_strategy '{}': must be 'importance_based', 'fifo', or 'sliding_window'",
+                self.eviction_strategy
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Converts settings string to EvictionStrategy enum
+    /// Convert the eviction_strategy string to EvictionStrategy enum
+    /// Returns the enum value, defaulting to ImportanceBased for unknown strings
+    pub fn get_eviction_strategy(&self) -> EvictionStrategy {
+        match self.eviction_strategy.as_str() {
+            "fifo" => EvictionStrategy::FIFO,
+            "sliding_window" => EvictionStrategy::SlidingWindow,
+            "importance_based" => EvictionStrategy::ImportanceBased,
+            _ => EvictionStrategy::ImportanceBased, // default for unknown
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Settings {
     pub llm_type: String,
@@ -153,6 +243,7 @@ pub struct Settings {
     pub queue: Option<QueueConfig>,
     pub file_storage: Option<FileStorageConfig>,
     pub notifications: Option<NotificationConfig>,
+    pub garrison: Option<GarrisonSettings>,
 }
 
 impl Settings {
@@ -342,6 +433,48 @@ impl Settings {
         config
     }
 
+    /// Get garrison configuration with environment variable overrides
+    pub fn get_garrison_config(&self) -> GarrisonSettings {
+        let mut config = self.garrison.clone().unwrap_or_default();
+
+        // Override with environment variables if present
+        if let Ok(garrison_type) = std::env::var("APP_GARRISON_TYPE") {
+            config.garrison_type = garrison_type;
+        }
+
+        if let Ok(path) = std::env::var("APP_GARRISON_PATH") {
+            config.path = Some(path);
+        }
+
+        if let Ok(max_entries_str) = std::env::var("APP_GARRISON_MAX_ENTRIES") {
+            if let Ok(max_entries) = max_entries_str.parse::<usize>() {
+                config.max_entries = max_entries;
+            }
+        }
+
+        if let Ok(max_tokens_str) = std::env::var("APP_GARRISON_MAX_TOKENS") {
+            if let Ok(max_tokens) = max_tokens_str.parse::<u32>() {
+                config.max_tokens = Some(max_tokens);
+            }
+        }
+
+        if let Ok(tokenizer) = std::env::var("APP_GARRISON_TOKENIZER") {
+            config.tokenizer = tokenizer;
+        }
+
+        if let Ok(eviction_strategy) = std::env::var("APP_GARRISON_EVICTION_STRATEGY") {
+            config.eviction_strategy = eviction_strategy;
+        }
+
+        if let Ok(preserve_recent_str) = std::env::var("APP_GARRISON_PRESERVE_RECENT_COUNT") {
+            if let Ok(preserve_recent) = preserve_recent_str.parse::<usize>() {
+                config.preserve_recent_count = preserve_recent;
+            }
+        }
+
+        config
+    }
+
     /// Convert FileStorageConfig to MinioConfig
     pub fn to_minio_config(&self) -> MinioConfig {
         let fs_config = self.get_file_storage_config();
@@ -385,6 +518,7 @@ impl Default for Settings {
             queue: Some(QueueConfig::default()),
             file_storage: Some(FileStorageConfig::default()),
             notifications: Some(NotificationConfig::default()),
+            garrison: Some(GarrisonSettings::default()),
         }
     }
 }
@@ -524,5 +658,215 @@ mod tests {
         assert_eq!(queue_config.redis_host, "localhost");
         assert_eq!(queue_config.redis_port, 6379);
         assert_eq!(queue_config.redis_db, 0);
+    }
+
+    #[test]
+    #[serial]
+    fn test_garrison_config_defaults() {
+        let settings = Settings::default();
+        let garrison_config = settings.get_garrison_config();
+
+        assert_eq!(garrison_config.garrison_type, "in_memory");
+        assert_eq!(garrison_config.max_entries, 100);
+        assert_eq!(garrison_config.max_tokens, Some(4000));
+        assert_eq!(garrison_config.tokenizer, "gpt-4");
+        assert_eq!(garrison_config.eviction_strategy, "importance_based");
+        assert_eq!(garrison_config.preserve_recent_count, 10);
+        assert!(garrison_config.path.is_none());
+    }
+
+    #[test]
+    #[serial]
+    fn test_garrison_config_with_overrides() {
+        let settings = Settings {
+            garrison: Some(GarrisonSettings {
+                garrison_type: "sqlite".to_string(),
+                path: Some("./test_garrison.db".to_string()),
+                max_entries: 200,
+                max_tokens: Some(8000),
+                tokenizer: "gpt-3.5-turbo".to_string(),
+                eviction_strategy: "fifo".to_string(),
+                preserve_recent_count: 20,
+            }),
+            ..Default::default()
+        };
+
+        let config = settings.get_garrison_config();
+        assert_eq!(config.garrison_type, "sqlite");
+        assert_eq!(config.path, Some("./test_garrison.db".to_string()));
+        assert_eq!(config.max_entries, 200);
+        assert_eq!(config.max_tokens, Some(8000));
+        assert_eq!(config.tokenizer, "gpt-3.5-turbo");
+        assert_eq!(config.eviction_strategy, "fifo");
+        assert_eq!(config.preserve_recent_count, 20);
+    }
+
+    #[test]
+    #[serial]
+    fn test_garrison_config_env_overrides() {
+        use std::env;
+
+        // Set environment variables
+        unsafe {
+            env::set_var("APP_GARRISON_TYPE", "sqlite");
+            env::set_var("APP_GARRISON_PATH", "./env_garrison.db");
+            env::set_var("APP_GARRISON_MAX_ENTRIES", "500");
+            env::set_var("APP_GARRISON_MAX_TOKENS", "16000");
+            env::set_var("APP_GARRISON_TOKENIZER", "claude-v1");
+            env::set_var("APP_GARRISON_EVICTION_STRATEGY", "sliding_window");
+            env::set_var("APP_GARRISON_PRESERVE_RECENT_COUNT", "50");
+        }
+
+        let settings = Settings::default();
+        let config = settings.get_garrison_config();
+
+        assert_eq!(config.garrison_type, "sqlite");
+        assert_eq!(config.path, Some("./env_garrison.db".to_string()));
+        assert_eq!(config.max_entries, 500);
+        assert_eq!(config.max_tokens, Some(16000));
+        assert_eq!(config.tokenizer, "claude-v1");
+        assert_eq!(config.eviction_strategy, "sliding_window");
+        assert_eq!(config.preserve_recent_count, 50);
+
+        // Cleanup
+        unsafe {
+            env::remove_var("APP_GARRISON_TYPE");
+            env::remove_var("APP_GARRISON_PATH");
+            env::remove_var("APP_GARRISON_MAX_ENTRIES");
+            env::remove_var("APP_GARRISON_MAX_TOKENS");
+            env::remove_var("APP_GARRISON_TOKENIZER");
+            env::remove_var("APP_GARRISON_EVICTION_STRATEGY");
+            env::remove_var("APP_GARRISON_PRESERVE_RECENT_COUNT");
+        }
+    }
+
+    #[test]
+    fn test_garrison_settings_validation_success() {
+        let valid_settings = GarrisonSettings {
+            garrison_type: "in_memory".to_string(),
+            path: None,
+            max_entries: 100,
+            max_tokens: Some(4000),
+            tokenizer: "gpt-4".to_string(),
+            eviction_strategy: "importance_based".to_string(),
+            preserve_recent_count: 10,
+        };
+
+        assert!(valid_settings.validate().is_ok());
+    }
+
+    #[test]
+    fn test_garrison_settings_validation_invalid_type() {
+        let invalid_settings = GarrisonSettings {
+            garrison_type: "invalid_type".to_string(),
+            path: None,
+            max_entries: 100,
+            max_tokens: Some(4000),
+            tokenizer: "gpt-4".to_string(),
+            eviction_strategy: "importance_based".to_string(),
+            preserve_recent_count: 10,
+        };
+
+        assert!(invalid_settings.validate().is_err());
+    }
+
+    #[test]
+    fn test_garrison_settings_validation_sqlite_without_path() {
+        let invalid_settings = GarrisonSettings {
+            garrison_type: "sqlite".to_string(),
+            path: None,
+            max_entries: 100,
+            max_tokens: Some(4000),
+            tokenizer: "gpt-4".to_string(),
+            eviction_strategy: "importance_based".to_string(),
+            preserve_recent_count: 10,
+        };
+
+        assert!(invalid_settings.validate().is_err());
+    }
+
+    #[test]
+    fn test_garrison_settings_validation_zero_max_entries() {
+        let invalid_settings = GarrisonSettings {
+            garrison_type: "in_memory".to_string(),
+            path: None,
+            max_entries: 0,
+            max_tokens: Some(4000),
+            tokenizer: "gpt-4".to_string(),
+            eviction_strategy: "importance_based".to_string(),
+            preserve_recent_count: 10,
+        };
+
+        assert!(invalid_settings.validate().is_err());
+    }
+
+    #[test]
+    fn test_garrison_settings_validation_preserve_exceeds_max() {
+        let invalid_settings = GarrisonSettings {
+            garrison_type: "in_memory".to_string(),
+            path: None,
+            max_entries: 10,
+            max_tokens: Some(4000),
+            tokenizer: "gpt-4".to_string(),
+            eviction_strategy: "importance_based".to_string(),
+            preserve_recent_count: 20,
+        };
+
+        assert!(invalid_settings.validate().is_err());
+    }
+
+    #[test]
+    fn test_garrison_settings_validation_invalid_eviction() {
+        let invalid_settings = GarrisonSettings {
+            garrison_type: "in_memory".to_string(),
+            path: None,
+            max_entries: 100,
+            max_tokens: Some(4000),
+            tokenizer: "gpt-4".to_string(),
+            eviction_strategy: "invalid_strategy".to_string(),
+            preserve_recent_count: 10,
+        };
+
+        assert!(invalid_settings.validate().is_err());
+    }
+
+    #[test]
+    fn test_garrison_get_eviction_strategy() {
+        let settings_importance = GarrisonSettings {
+            eviction_strategy: "importance_based".to_string(),
+            ..Default::default()
+        };
+        assert!(matches!(
+            settings_importance.get_eviction_strategy(),
+            crate::core::platform::container::garrison::EvictionStrategy::ImportanceBased
+        ));
+
+        let settings_fifo = GarrisonSettings {
+            eviction_strategy: "fifo".to_string(),
+            ..Default::default()
+        };
+        assert!(matches!(
+            settings_fifo.get_eviction_strategy(),
+            crate::core::platform::container::garrison::EvictionStrategy::FIFO
+        ));
+
+        let settings_sliding = GarrisonSettings {
+            eviction_strategy: "sliding_window".to_string(),
+            ..Default::default()
+        };
+        assert!(matches!(
+            settings_sliding.get_eviction_strategy(),
+            crate::core::platform::container::garrison::EvictionStrategy::SlidingWindow
+        ));
+
+        // Unknown strategy defaults to ImportanceBased
+        let settings_invalid = GarrisonSettings {
+            eviction_strategy: "invalid".to_string(),
+            ..Default::default()
+        };
+        assert!(matches!(
+            settings_invalid.get_eviction_strategy(),
+            crate::core::platform::container::garrison::EvictionStrategy::ImportanceBased
+        ));
     }
 }
