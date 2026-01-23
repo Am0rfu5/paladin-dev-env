@@ -47,6 +47,21 @@ The project clearly defines Ports as interfaces to external systems, enabling ad
 * **Content Filtering:** Implements filtering mechanisms based on keywords or criteria.
 * **ML and NLP Analysis:** Leverages machine learning and NLP models to analyze and enrich content.
 * **Subject Tagging and Searching:** Advanced tagging, indexing, and search capabilities.
+* **Paladin Agents:** Autonomous AI agents with memory and context management.
+* **Garrison Memory System:** Persistent conversation history with windowing and search capabilities.
+
+### AI Agent System (Paladin)
+
+Paladin provides a sophisticated AI agent framework with memory management:
+
+* **Paladins**: Autonomous AI agents with configurable behaviors and tool access
+* **Garrison Memory**: Context-aware conversation history storage
+  * **InMemoryGarrison**: Fast, ephemeral storage for development and testing
+  * **SqliteGarrison**: Persistent storage with full-text search for production
+* **Circuit Breaker**: Fault tolerance with automatic retry and backoff
+* **Execution Service**: Orchestrates agent execution with memory integration
+
+See [docs/GARRISON.md](docs/GARRISON.md) for detailed documentation on the memory system.
 
 ### Storage Solutions
 
@@ -88,6 +103,42 @@ cargo test
 ```
 
 ## Examples
+
+### Paladin Agent with Memory
+
+```rust
+use paladin::application::use_cases::paladin::{PaladinBuilder, PaladinExecutionService, CircuitBreaker};
+use paladin::infrastructure::adapters::garrison::InMemoryGarrison;
+use paladin::core::platform::container::garrison::GarrisonConfig;
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create memory system
+    let garrison = Arc::new(InMemoryGarrison::new(GarrisonConfig::default()));
+    
+    // Build agent
+    let paladin = PaladinBuilder::new(llm_port)
+        .name("Assistant")
+        .system_prompt("You are a helpful AI assistant.")
+        .with_garrison(garrison.clone())
+        .build()?;
+    
+    // Execute with memory
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, 30000));
+    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison));
+    
+    let result = service.execute(&paladin, "What is Rust?").await?;
+    println!("Response: {}", result.content);
+    
+    Ok(())
+}
+```
+
+See `examples/` directory for more examples:
+- `garrison_in_memory.rs` - In-memory conversation history
+- `garrison_persistent.rs` - SQLite persistence example
+- `garrison_semantic_search.rs` - Future vector search demo
 
 ### Notification Example
 

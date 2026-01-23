@@ -1,7 +1,7 @@
 //! Paladin Domain Entity
 //!
 //! This module defines the core domain entity representing an autonomous AI agent
-//! capable of reasoning and executing actions. The Paladin follows the Node<T> pattern
+//! capable of reasoning and executing actions. The Paladin follows the `Node<T>` pattern
 //! for consistency with other domain entities in the system.
 //!
 //! # Example
@@ -45,7 +45,7 @@ pub enum PaladinStatus {
 /// Core data payload for a Paladin entity
 ///
 /// Contains all configuration and state information for an autonomous AI agent.
-/// This struct is wrapped in a Node<T> to provide UUID, timestamps, and versioning.
+/// This struct is wrapped in a `Node<T>` to provide UUID, timestamps, and versioning.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PaladinData {
     /// System prompt defining the Paladin's behavior and personality
@@ -73,7 +73,7 @@ pub struct PaladinData {
     pub status: PaladinStatus,
 }
 
-/// Type alias for a Paladin entity following the Node<T> pattern
+/// Type alias for a Paladin entity following the `Node<T>` pattern
 ///
 /// # Example
 ///
