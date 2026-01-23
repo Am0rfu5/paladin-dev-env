@@ -372,6 +372,25 @@ mod tests {
     }
 
     #[test]
+    fn test_garrison_entry_serialization() {
+        let entry =
+            GarrisonEntry::with_token_count(ConversationRole::User, "Test message".to_string(), 10);
+
+        // Serialize to JSON
+        let json = serde_json::to_string(&entry).unwrap();
+        assert!(json.contains("\"role\":\"user\""));
+        assert!(json.contains("\"content\":\"Test message\""));
+        assert!(json.contains("\"token_count\":10"));
+
+        // Deserialize back
+        let deserialized: GarrisonEntry = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.role, entry.role);
+        assert_eq!(deserialized.content, entry.content);
+        assert_eq!(deserialized.token_count, entry.token_count);
+        assert_eq!(deserialized.id, entry.id);
+    }
+
+    #[test]
     fn test_conversation_history_add_and_get() {
         let config = GarrisonConfig::default();
         let mut history = ConversationHistory::new(config);
@@ -456,5 +475,43 @@ mod tests {
         let entries = history.get_all();
         assert_eq!(entries[0].role, ConversationRole::System);
         assert_eq!(entries[1].content, "User 2");
+    }
+
+    #[test]
+    fn test_fifo_eviction() {
+        let config = GarrisonConfig::new(3, None).with_eviction_strategy(EvictionStrategy::FIFO);
+
+        let mut history = ConversationHistory::new(config);
+
+        // Add 5 entries - FIFO should remove oldest first
+        for i in 0..5 {
+            history.add(GarrisonEntry::new(
+                ConversationRole::User,
+                format!("Message {}", i),
+            ));
+        }
+
+        // Should have 3 entries: Message 2, 3, 4 (oldest 0, 1 evicted)
+        assert_eq!(history.len(), 3);
+        let entries = history.get_all();
+        assert_eq!(entries[0].content, "Message 2");
+        assert_eq!(entries[1].content, "Message 3");
+        assert_eq!(entries[2].content, "Message 4");
+    }
+
+    #[test]
+    fn test_empty_history_operations() {
+        let config = GarrisonConfig::default();
+        let history = ConversationHistory::new(config);
+
+        // Empty history operations should not panic
+        assert_eq!(history.len(), 0);
+        assert_eq!(history.total_tokens(), 0);
+
+        let recent = history.get_recent(10);
+        assert!(recent.is_empty());
+
+        let all = history.get_all();
+        assert!(all.is_empty());
     }
 }
