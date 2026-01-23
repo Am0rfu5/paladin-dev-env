@@ -424,7 +424,7 @@ mod tests {
     #[test]
     fn test_builder_validation_empty_prompt() {
         let builder = PaladinBuilder {
-            llm_port: Arc::new(MockLlmPort),
+            _llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "".to_string(),
                 ..Default::default()
@@ -440,7 +440,7 @@ mod tests {
     #[test]
     fn test_builder_validation_invalid_temperature() {
         let builder = PaladinBuilder {
-            llm_port: Arc::new(MockLlmPort),
+            _llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "Test".to_string(),
                 temperature: 1.5,
@@ -456,7 +456,7 @@ mod tests {
     #[test]
     fn test_builder_validation_invalid_max_loops() {
         let builder = PaladinBuilder {
-            llm_port: Arc::new(MockLlmPort),
+            _llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "Test".to_string(),
                 max_loops: 0,
