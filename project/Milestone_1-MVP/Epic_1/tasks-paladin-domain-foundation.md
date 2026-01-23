@@ -46,11 +46,12 @@ Update the file after completing each sub-task, not just after completing an ent
 - `tests/unit/paladin_builder_test.rs` - Unit tests for PaladinBuilder
 - `tests/unit/circuit_breaker_test.rs` - Unit tests for circuit breaker
 - `tests/unit/paladin_execution_service_test.rs` - Unit tests for execution service
+- `tests/unit/mock_llm_adapter_test.rs` - Unit tests for MockLlmAdapter
 - `tests/integration/paladin_integration_test.rs` - Integration tests for complete Paladin flow
 
 ### Example Files
 - `examples/basic_paladin.rs` - Basic Paladin creation and execution example
-- `examples/paladin_with_config.rs` - Advanced configuration example
+- `examples/paladin_with_config.rs` - Advanced configuration example with multi-loop, stop words, retry
 
 ### Notes
 
@@ -233,31 +234,31 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.14 Ensure unit test coverage ≥ 80%
   - [x] 7.15 Ensure integration test coverage ≥ 70%
 
-- [ ] 8.0 Documentation and Examples
-  - [ ] 8.1 Create `examples/basic_paladin.rs`
-  - [ ] 8.2 Implement basic example: create Paladin, execute with simple input, print result
-  - [ ] 8.3 Add comments explaining each step for junior developers
-  - [ ] 8.4 Test example: `cargo run --example basic_paladin`
-  - [ ] 8.5 Create `examples/paladin_with_config.rs`
-  - [ ] 8.6 Implement advanced example: custom configuration, retry logic, timeout handling
-  - [ ] 8.7 Demonstrate stop word usage and max_loops
-  - [ ] 8.8 Test example: `cargo run --example paladin_with_config`
-  - [ ] 8.9 Review all rustdoc comments in core domain layer
-  - [ ] 8.10 Review all rustdoc comments in application layer
-  - [ ] 8.11 Review all rustdoc comments in infrastructure layer
-  - [ ] 8.12 Ensure all public APIs have rustdoc examples
-  - [ ] 8.13 Generate documentation: `cargo doc --no-deps --open`
-  - [ ] 8.14 Review generated documentation for clarity
-  - [ ] 8.15 Add module-level documentation to `src/core/platform/container/paladin.rs`
-  - [ ] 8.16 Add module-level documentation to `src/application/use_cases/paladin/mod.rs`
-  - [ ] 8.17 Create or update `docs/paladin_user_guide.md` with usage guide
-  - [ ] 8.18 Document error handling patterns
-  - [ ] 8.19 Document retry and circuit breaker behavior
-  - [ ] 8.20 Run final checks: `cargo fmt`, `cargo clippy`, `cargo test`
-  - [ ] 8.21 Verify zero clippy warnings
-  - [ ] 8.22 Verify all tests pass
-  - [ ] 8.23 Create PR description summarizing Epic 1 implementation
-  - [ ] 8.24 Request code review from team
+- [x] 8.0 Documentation and Examples
+  - [x] 8.1 Create `examples/basic_paladin.rs`
+  - [x] 8.2 Implement basic example: create Paladin, execute with simple input, print result
+  - [x] 8.3 Add comments explaining each step for junior developers
+  - [x] 8.4 Test example: `cargo run --example basic_paladin`
+  - [x] 8.5 Create `examples/paladin_with_config.rs`
+  - [x] 8.6 Implement advanced example: custom configuration, retry logic, timeout handling
+  - [x] 8.7 Demonstrate stop word usage and max_loops
+  - [x] 8.8 Test example: `cargo run --example paladin_with_config`
+  - [x] 8.9 Review all rustdoc comments in core domain layer
+  - [x] 8.10 Review all rustdoc comments in application layer
+  - [x] 8.11 Review all rustdoc comments in infrastructure layer
+  - [x] 8.12 Ensure all public APIs have rustdoc examples
+  - [x] 8.13 Generate documentation: `cargo doc --no-deps --open`
+  - [x] 8.14 Review generated documentation for clarity
+  - [x] 8.15 Add module-level documentation to `src/core/platform/container/paladin.rs`
+  - [x] 8.16 Add module-level documentation to `src/application/use_cases/paladin/mod.rs`
+  - [x] 8.17 Create or update `docs/paladin_user_guide.md` with usage guide
+  - [x] 8.18 Document error handling patterns
+  - [x] 8.19 Document retry and circuit breaker behavior
+  - [x] 8.20 Run final checks: `cargo fmt`, `cargo clippy`, `cargo test`
+  - [x] 8.21 Verify zero clippy warnings
+  - [x] 8.22 Verify all tests pass
+  - [x] 8.23 Create PR description summarizing Epic 1 implementation
+  - [x] 8.24 Request code review from team
 
 ---
 

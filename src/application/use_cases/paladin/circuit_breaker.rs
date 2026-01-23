@@ -180,21 +180,19 @@ impl CircuitBreaker {
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust
     /// use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     /// use paladin::application::use_cases::paladin::error::PaladinError;
     /// use std::time::Duration;
     ///
     /// let cb = CircuitBreaker::new(3, 2, Duration::from_secs(30));
     ///
+    /// // Simulate an operation that succeeds
     /// let result = cb.call(|| {
-    ///     // Simulate an operation that might fail
-    ///     if rand::random::<bool>() {
-    ///         Ok("Success!")
-    ///     } else {
-    ///         Err(PaladinError::ExecutionError("Failed".to_string()))
-    ///     }
+    ///     Ok("Success!")
     /// });
+    ///
+    /// assert!(result.is_ok());
     /// ```
     pub fn call<F, T>(&self, f: F) -> Result<T, PaladinError>
     where
