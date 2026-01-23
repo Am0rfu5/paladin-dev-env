@@ -1,6 +1,7 @@
 pub mod comment;
 pub mod content;
 pub mod content_list;
+pub mod garrison;
 pub mod job;
 pub mod log;
 pub mod notification;
