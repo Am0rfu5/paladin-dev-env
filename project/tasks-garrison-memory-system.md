@@ -119,25 +119,25 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.13 Add to `src/infrastructure/adapters/mod.rs` exports
   - [x] 3.14 Run `cargo build` to verify InMemoryGarrison compiles
 
-- [ ] 4.0 Implement SQLite Garrison Adapter
-  - [ ] 4.1 Add sqlx and sqlite-vss dependencies to `Cargo.toml`
-  - [ ] 4.2 Create `migrations/001_create_garrison_tables.sql` with schema from PRD
-  - [ ] 4.3 Add indexes (idx_paladin_timestamp, idx_paladin_role) to migration
-  - [ ] 4.4 Create virtual table for vector search (garrison_embeddings) in migration
-  - [ ] 4.5 Create `src/infrastructure/adapters/garrison/sqlite_garrison.rs`
-  - [ ] 4.6 Define `SqliteGarrison` struct with SqlitePool and GarrisonConfig
-  - [ ] 4.7 Implement `SqliteGarrison::connect(path)` - create connection pool
-  - [ ] 4.8 Implement `SqliteGarrison::initialize()` - run migrations
-  - [ ] 4.9 Implement `GarrisonPort::remember()` - INSERT entry into database
-  - [ ] 4.10 Implement `GarrisonPort::recall_recent()` - SELECT with LIMIT and ORDER BY
-  - [ ] 4.11 Implement `GarrisonPort::search()` - full-text search query
-  - [ ] 4.12 Implement `GarrisonPort::forget_all()` - DELETE all entries
-  - [ ] 4.13 Implement `GarrisonPort::stats()` - aggregate queries
-  - [ ] 4.14 Implement `LongTermGarrisonPort::remember_with_embedding()` - store entry with vector
-  - [ ] 4.15 Implement `LongTermGarrisonPort::search_similar()` - vector similarity search using sqlite-vss
-  - [ ] 4.16 Add connection pooling configuration
-  - [ ] 4.17 Add proper error handling and conversion from sqlx errors
-  - [ ] 4.18 Run `cargo build` to verify SqliteGarrison compiles
+- [x] 4.0 Implement SQLite Garrison Adapter
+  - [x] 4.1 Add sqlx and sqlite-vss dependencies to `Cargo.toml`
+  - [x] 4.2 Create `migrations/001_create_garrison_tables.sql` with schema from PRD
+  - [x] 4.3 Add indexes (idx_paladin_timestamp, idx_paladin_role) to migration
+  - [x] 4.4 Create virtual table for vector search (garrison_embeddings) in migration
+  - [x] 4.5 Create `src/infrastructure/adapters/garrison/sqlite_garrison.rs`
+  - [x] 4.6 Define `SqliteGarrison` struct with SqlitePool and GarrisonConfig
+  - [x] 4.7 Implement `SqliteGarrison::connect(path)` - create connection pool
+  - [x] 4.8 Implement `SqliteGarrison::initialize()` - run migrations
+  - [x] 4.9 Implement `GarrisonPort::remember()` - INSERT entry into database
+  - [x] 4.10 Implement `GarrisonPort::recall_recent()` - SELECT with LIMIT and ORDER BY
+  - [x] 4.11 Implement `GarrisonPort::search()` - full-text search query
+  - [x] 4.12 Implement `GarrisonPort::forget_all()` - DELETE all entries
+  - [x] 4.13 Implement `GarrisonPort::stats()` - aggregate queries
+  - [x] 4.14 Implement `LongTermGarrisonPort::remember_with_embedding()` - store entry with vector
+  - [x] 4.15 Implement `LongTermGarrisonPort::search_similar()` - vector similarity search using sqlite-vss
+  - [x] 4.16 Add connection pooling configuration
+  - [x] 4.17 Add proper error handling and conversion from sqlx errors
+  - [x] 4.18 Run `cargo build` to verify SqliteGarrison compiles
 
 - [x] 5.0 Implement Token Counting System
   - [x] 5.1 Add tiktoken-rs dependency to `Cargo.toml`

@@ -4,7 +4,9 @@
 //! for different storage backends.
 
 pub mod in_memory_garrison;
+pub mod sqlite_garrison;
 pub mod token_counter;
 
 pub use in_memory_garrison::InMemoryGarrison;
+pub use sqlite_garrison::SqliteGarrison;
 pub use token_counter::{TiktokenCounter, TokenCounter, TokenCounterFactory};
