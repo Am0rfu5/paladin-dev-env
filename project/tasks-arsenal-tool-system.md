@@ -167,30 +167,30 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.21 Run `cargo test mcp_stdio` and verify all tests pass
   - [x] 4.22 Run `cargo clippy -- -D warnings` and fix any issues
 
-- [ ] 5.0 SSE Transport Adapter (FR-5)
-  - [ ] 5.1 Create `src/infrastructure/adapters/arsenal/mcp_sse_adapter.rs` file
-  - [ ] 5.2 Define `MCPSseAdapter` struct with endpoint, client (reqwest::Client) fields
-  - [ ] 5.3 Implement `MCPSseAdapter::new()` constructor
-  - [ ] 5.4 Implement `MCPSseAdapter::connect()` async method with SSE connection
-  - [ ] 5.5 Configure reqwest client with timeout settings
-  - [ ] 5.6 Implement `MCPTransport` trait for `MCPSseAdapter`
-  - [ ] 5.7 Implement `send()` method using HTTP POST to endpoint
-  - [ ] 5.8 Implement `receive()` method using SSE stream reading
-  - [ ] 5.9 Implement retry logic with exponential backoff (3 retries, 1s, 2s, 4s)
-  - [ ] 5.10 Add connection timeout handling (default 10 seconds)
-  - [ ] 5.11 Add error handling for HTTP errors
-  - [ ] 5.12 Add error handling for SSE parsing errors
-  - [ ] 5.13 Add rustdoc comments to all methods
-  - [ ] 5.14 Export mcp_sse_adapter in arsenal adapter module
-  - [ ] 5.15 Create `tests/integration/mcp_sse_test.rs` file
-  - [ ] 5.16 Create a mock SSE MCP server using mockito or similar
-  - [ ] 5.17 Write integration test `test_sse_connect` for connection
-  - [ ] 5.18 Write integration test `test_sse_discover_tools` for tool discovery
-  - [ ] 5.19 Write integration test `test_sse_invoke_tool` for tool invocation
-  - [ ] 5.20 Write integration test `test_sse_retry_on_failure` for retry logic
-  - [ ] 5.21 Write integration test `test_sse_connection_timeout` for timeout
-  - [ ] 5.22 Run `cargo test mcp_sse` and verify all tests pass
-  - [ ] 5.23 Run `cargo clippy -- -D warnings` and fix any issues
+- [x] 5.0 SSE Transport Adapter (FR-5)
+  - [x] 5.1 Create `src/infrastructure/adapters/arsenal/mcp_sse_adapter.rs` file
+  - [x] 5.2 Define `MCPSseAdapter` struct with endpoint, client (reqwest::Client) fields
+  - [x] 5.3 Implement `MCPSseAdapter::new()` constructor
+  - [x] 5.4 Implement `MCPSseAdapter::connect()` async method with SSE connection
+  - [x] 5.5 Configure reqwest client with timeout settings
+  - [x] 5.6 Implement `MCPTransport` trait for `MCPSseAdapter`
+  - [x] 5.7 Implement `send()` method using HTTP POST to endpoint
+  - [x] 5.8 Implement `receive()` method using SSE stream reading
+  - [x] 5.9 Implement retry logic with exponential backoff (3 retries, 1s, 2s, 4s)
+  - [x] 5.10 Add connection timeout handling (default 10 seconds)
+  - [x] 5.11 Add error handling for HTTP errors
+  - [x] 5.12 Add error handling for SSE parsing errors
+  - [x] 5.13 Add rustdoc comments to all methods
+  - [x] 5.14 Export mcp_sse_adapter in arsenal adapter module
+  - [x] 5.15 Create `tests/integration/mcp_sse_test.rs` file
+  - [x] 5.16 Create a mock SSE MCP server using mockito or similar
+  - [x] 5.17 Write integration test `test_sse_connect` for connection
+  - [x] 5.18 Write integration test `test_sse_discover_tools` for tool discovery
+  - [x] 5.19 Write integration test `test_sse_invoke_tool` for tool invocation
+  - [x] 5.20 Write integration test `test_sse_retry_on_failure` for retry logic
+  - [x] 5.21 Write integration test `test_sse_connection_timeout` for timeout
+  - [x] 5.22 Run `cargo test mcp_sse` and verify all tests pass
+  - [x] 5.23 Run `cargo clippy -- -D warnings` and fix any issues
 
 - [ ] 6.0 PaladinBuilder Integration & Configuration (FR-6)
   - [ ] 6.1 Read existing `src/application/use_cases/paladin/paladin_builder.rs` file

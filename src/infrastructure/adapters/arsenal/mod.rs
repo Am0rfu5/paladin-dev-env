@@ -4,4 +4,5 @@
 //! for connecting to external tool servers.
 
 pub mod mcp_protocol;
+pub mod mcp_sse_adapter;
 pub mod mcp_stdio_adapter;
