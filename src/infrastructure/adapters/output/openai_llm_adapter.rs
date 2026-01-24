@@ -130,6 +130,9 @@ struct OpenAIUsage {
     total_tokens: u32,
 }
 
+// Streaming response structures
+// Note: These are defined for future streaming implementation
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct OpenAIStreamResponse {
     _id: String,
@@ -139,6 +142,7 @@ struct OpenAIStreamResponse {
     _choices: Vec<OpenAIStreamChoice>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct OpenAIStreamChoice {
     _index: u32,
@@ -146,6 +150,7 @@ struct OpenAIStreamChoice {
     _finish_reason: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct OpenAIStreamDelta {
     _role: Option<String>,
