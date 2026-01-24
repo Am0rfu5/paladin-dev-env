@@ -152,15 +152,15 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.26 Implement shared context injection into Paladin prompts
   - [x] 3.27 Add comprehensive rustdoc with examples
   - [x] 3.28 Run unit tests: `cargo test formation`
-  - [ ] 3.29 Create `tests/integration/battalion/formation_integration_test.rs`
-  - [ ] 3.30 Write integration test with mock Paladins for end-to-end flow
-  - [ ] 3.31 Write integration test for error scenarios
-  - [ ] 3.32 Run integration tests: `cargo test --test formation_integration_test`
-  - [ ] 3.33 Create `examples/formation_sequential.rs` with complete example
-  - [ ] 3.34 Test example: `cargo run --example formation_sequential`
-  - [ ] 3.35 Run fmt and clippy: `cargo fmt && cargo clippy`
-  - [ ] 3.36 Verify ≥80% coverage for Formation code
-  - [ ] 3.37 Commit: "feat(battalion): implement Formation sequential pattern"
+  - [x] 3.29 Create `tests/integration/battalion/formation_integration_test.rs`
+  - [x] 3.30 Write integration test with mock Paladins for end-to-end flow
+  - [x] 3.31 Write integration test for error scenarios
+  - [x] 3.32 Run integration tests: `cargo test --test formation_integration_test`
+  - [x] 3.33 Create `examples/formation_sequential.rs` with complete example
+  - [x] 3.34 Test example: `cargo run --example formation_sequential`
+  - [x] 3.35 Run fmt and clippy: `cargo fmt && cargo clippy`
+  - [x] 3.36 Verify ≥80% coverage for Formation code
+  - [x] 3.37 Commit: "test(battalion): add Formation integration tests and examples"
 
 - [ ] 4.0 Implement Phalanx Pattern (Phase 1 - Concurrent Execution)
   - [ ] 4.1 Create `tests/unit/battalion/phalanx_tests.rs`

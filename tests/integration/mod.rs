@@ -5,6 +5,7 @@ use std::sync::Once;
 use std::time::Duration;
 use tokio::time::sleep;
 
+pub mod battalion;
 pub mod context_injection_test;
 pub mod file_storage_integration_tests;
 pub mod mcp_sse_test;

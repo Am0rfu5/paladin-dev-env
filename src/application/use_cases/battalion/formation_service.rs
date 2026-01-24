@@ -12,10 +12,11 @@ use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult
 use crate::application::use_cases::battalion::error_aggregation::AggregatedError;
 use crate::application::use_cases::battalion::retry::{calculate_retry_delay, should_retry};
 use crate::core::platform::container::battalion::formation::Formation;
-use crate::core::platform::container::battalion::{
-    BattalionError, BattalionResult, BattalionStatus, ErrorStrategy,
-};
+use crate::core::platform::container::battalion::{BattalionError, BattalionResult, ErrorStrategy};
 use crate::core::platform::container::paladin::Paladin;
+
+#[cfg(test)]
+use crate::core::platform::container::battalion::BattalionStatus;
 
 /// Service for executing Formation patterns
 ///
