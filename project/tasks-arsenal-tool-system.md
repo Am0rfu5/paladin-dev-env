@@ -192,29 +192,29 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.22 Run `cargo test mcp_sse` and verify all tests pass
   - [x] 5.23 Run `cargo clippy -- -D warnings` and fix any issues
 
-- [ ] 6.0 PaladinBuilder Integration & Configuration (FR-6)
-  - [ ] 6.1 Read existing `src/application/use_cases/paladin/paladin_builder.rs` file
-  - [ ] 6.2 Add `arsenal_registry: Option<Arc<dyn ArsenalRegistry>>` field to PaladinBuilder
-  - [ ] 6.3 Add `mcp_servers: Vec<MCPServerConfig>` field to PaladinBuilder
-  - [ ] 6.4 Implement `add_mcp_stdio(command: &str, args: &[&str])` method
-  - [ ] 6.5 Implement `add_mcp_sse(name: &str, endpoint: &str)` method
-  - [ ] 6.6 Implement `with_arsenal_registry(registry: Arc<dyn ArsenalRegistry>)` method
-  - [ ] 6.7 Update `build()` method to initialize MCP servers and discover tools
-  - [ ] 6.8 Add validation for MCP server connections in build()
-  - [ ] 6.9 Update `config.yml` with arsenal configuration section
-  - [ ] 6.10 Add `default_timeout_seconds`, `max_concurrent_tools` config fields
-  - [ ] 6.11 Add `mcp_servers` array with name, type, command, args, endpoint fields
-  - [ ] 6.12 Update `src/config/application_settings.rs` to include ArsenalConfig struct
-  - [ ] 6.13 Define `ArsenalConfig` struct with timeout, concurrency, mcp_servers fields
-  - [ ] 6.14 Define `MCPServerConfig` struct with name, server_type, command, args, endpoint
-  - [ ] 6.15 Update ApplicationSettings deserialization to include arsenal field
-  - [ ] 6.16 Update `config.test.yml` with test arsenal configuration
-  - [ ] 6.17 Write unit test `test_builder_add_mcp_stdio` for STDIO addition
-  - [ ] 6.18 Write unit test `test_builder_add_mcp_sse` for SSE addition
-  - [ ] 6.19 Write unit test `test_builder_validates_mcp_connections` for validation
-  - [ ] 6.20 Write unit test `test_arsenal_config_loading` for config deserialization
-  - [ ] 6.21 Run `cargo test paladin_builder` and verify all tests pass
-  - [ ] 6.22 Run `cargo clippy -- -D warnings` and fix any issues
+- [x] 6.0 PaladinBuilder Integration & Configuration (FR-6)
+  - [x] 6.1 Read existing `src/application/use_cases/paladin/paladin_builder.rs` file
+  - [x] 6.2 Add `arsenal_registry: Option<Arc<dyn ArsenalRegistry>>` field to PaladinBuilder
+  - [x] 6.3 Add `mcp_servers: Vec<MCPServerConfig>` field to PaladinBuilder
+  - [x] 6.4 Implement `add_mcp_stdio(command: &str, args: &[&str])` method
+  - [x] 6.5 Implement `add_mcp_sse(name: &str, endpoint: &str)` method
+  - [x] 6.6 Implement `with_arsenal_registry(registry: Arc<dyn ArsenalRegistry>)` method
+  - [x] 6.7 Update `build()` method to initialize MCP servers and discover tools
+  - [x] 6.8 Add validation for MCP server connections in build()
+  - [x] 6.9 Update `config.yml` with arsenal configuration section
+  - [x] 6.10 Add `default_timeout_seconds`, `max_concurrent_tools` config fields
+  - [x] 6.11 Add `mcp_servers` array with name, type, command, args, endpoint fields
+  - [x] 6.12 Update `src/config/application_settings.rs` to include ArsenalConfig struct
+  - [x] 6.13 Define `ArsenalConfig` struct with timeout, concurrency, mcp_servers fields
+  - [x] 6.14 Define `MCPServerConfig` struct with name, server_type, command, args, endpoint
+  - [x] 6.15 Update ApplicationSettings deserialization to include arsenal field
+  - [x] 6.16 Update `config.test.yml` with test arsenal configuration
+  - [x] 6.17 Write unit test `test_builder_add_mcp_stdio` for STDIO addition
+  - [x] 6.18 Write unit test `test_builder_add_mcp_sse` for SSE addition
+  - [x] 6.19 Write unit test `test_builder_validates_mcp_connections` for validation
+  - [x] 6.20 Write unit test `test_arsenal_config_loading` for config deserialization
+  - [x] 6.21 Run `cargo test paladin_builder` and verify all tests pass
+  - [x] 6.22 Run `cargo clippy -- -D warnings` and fix any issues
 
 - [ ] 7.0 Resource Controls - Timeout & Concurrency (FR-7)
   - [ ] 7.1 Create `src/infrastructure/adapters/arsenal/resource_controls.rs` file

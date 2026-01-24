@@ -29,9 +29,11 @@
 //! # }
 //! ```
 
+use crate::application::ports::output::arsenal_port::ArsenalRegistry;
 use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::application::ports::output::llm_port::LlmPort;
 use crate::application::use_cases::paladin::error::PaladinError;
+use crate::config::application_settings::MCPServerConfig;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::paladin::{Paladin, PaladinData};
 use crate::core::platform::container::paladin_config::{OutputFormat, PaladinConfig};
@@ -66,6 +68,8 @@ pub struct PaladinBuilder {
     data: PaladinData,
     config: PaladinConfig,
     garrison: Option<Arc<dyn GarrisonPort>>,
+    arsenal_registry: Option<Arc<dyn ArsenalRegistry>>,
+    mcp_servers: Vec<MCPServerConfig>,
 }
 
 impl PaladinBuilder {
@@ -91,6 +95,8 @@ impl PaladinBuilder {
             data: PaladinData::default(),
             config: PaladinConfig::default(),
             garrison: None,
+            arsenal_registry: None,
+            mcp_servers: Vec::new(),
         }
     }
 
@@ -374,6 +380,106 @@ impl PaladinBuilder {
         self
     }
 
+    /// Attaches an Arsenal registry to the Paladin for tool execution
+    ///
+    /// The Arsenal enables the Paladin to discover and invoke external tools
+    /// through the Model Context Protocol (MCP). Tools can be STDIO-based
+    /// (command-line) or SSE-based (HTTP).
+    ///
+    /// # Arguments
+    ///
+    /// * `registry` - The Arsenal registry implementation containing registered tools
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>, registry: Arc<dyn ArsenalRegistry>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are a tool-using assistant")
+    ///     .with_arsenal_registry(registry);
+    /// # }
+    /// ```
+    pub fn with_arsenal_registry(mut self, registry: Arc<dyn ArsenalRegistry>) -> Self {
+        self.arsenal_registry = Some(registry);
+        self
+    }
+
+    /// Adds an STDIO-based MCP server configuration
+    ///
+    /// STDIO servers are command-line tools that communicate via stdin/stdout
+    /// using the Model Context Protocol.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - Identifier for the server
+    /// * `command` - Command to execute
+    /// * `args` - Command-line arguments
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are an assistant with web search")
+    ///     .add_mcp_stdio("web_search", "uvx", &["mcp-web-search"]);
+    /// # }
+    /// ```
+    pub fn add_mcp_stdio(
+        mut self,
+        name: impl Into<String>,
+        command: impl Into<String>,
+        args: &[&str],
+    ) -> Self {
+        self.mcp_servers.push(MCPServerConfig {
+            name: name.into(),
+            server_type: "stdio".to_string(),
+            command: Some(command.into()),
+            args: Some(args.iter().map(|s| s.to_string()).collect()),
+            endpoint: None,
+        });
+        self
+    }
+
+    /// Adds an SSE-based MCP server configuration
+    ///
+    /// SSE servers are HTTP-based tools that communicate using Server-Sent Events
+    /// and the Model Context Protocol.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - Identifier for the server
+    /// * `endpoint` - HTTP endpoint URL
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are an assistant with code analysis")
+    ///     .add_mcp_sse("code_analyzer", "http://localhost:8080/mcp");
+    /// # }
+    /// ```
+    pub fn add_mcp_sse(mut self, name: impl Into<String>, endpoint: impl Into<String>) -> Self {
+        self.mcp_servers.push(MCPServerConfig {
+            name: name.into(),
+            server_type: "sse".to_string(),
+            command: None,
+            args: None,
+            endpoint: Some(endpoint.into()),
+        });
+        self
+    }
+
     /// Validates all configuration parameters
     ///
     /// # Validation Rules
@@ -462,6 +568,8 @@ mod tests {
             },
             config: PaladinConfig::default(),
             garrison: None,
+            arsenal_registry: None,
+            mcp_servers: Vec::new(),
         };
 
         let result = builder.validate();
@@ -480,6 +588,8 @@ mod tests {
             },
             config: PaladinConfig::default(),
             garrison: None,
+            arsenal_registry: None,
+            mcp_servers: Vec::new(),
         };
 
         let result = builder.validate();
@@ -497,6 +607,8 @@ mod tests {
             },
             config: PaladinConfig::default(),
             garrison: None,
+            arsenal_registry: None,
+            mcp_servers: Vec::new(),
         };
 
         let result = builder.validate();
