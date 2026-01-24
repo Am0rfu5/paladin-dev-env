@@ -1,3 +1,4 @@
+pub mod arsenal_domain_test;
 pub mod circuit_breaker_test;
 pub mod mock_llm_adapter_test;
 pub mod paladin_builder_test;
