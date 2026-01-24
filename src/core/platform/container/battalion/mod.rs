@@ -4,6 +4,7 @@
 //! Battalions coordinate multiple Paladins using various execution patterns.
 
 pub mod formation;
+pub mod phalanx;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -283,6 +284,14 @@ pub enum BattalionError {
     /// Aggregation error
     #[error("Aggregation error: {0}")]
     AggregationError(String),
+
+    /// Battalion execution cancelled
+    #[error("Battalion execution was cancelled")]
+    Cancelled,
+
+    /// General execution error
+    #[error("Execution error: {0}")]
+    ExecutionError(String),
 }
 
 #[cfg(test)]

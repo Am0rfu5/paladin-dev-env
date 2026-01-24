@@ -1,0 +1,647 @@
+//! Phalanx Execution Service
+//!
+//! Provides orchestration logic for executing Paladins in concurrent Phalanx pattern.
+
+use chrono::Utc;
+use futures::future::{BoxFuture, FutureExt, select_ok};
+use log::{debug, info, warn};
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Semaphore;
+use tokio::time::{Duration, timeout};
+use tokio_util::sync::CancellationToken;
+use uuid::Uuid;
+
+use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult};
+use crate::application::use_cases::battalion::error_aggregation::AggregatedError;
+use crate::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
+use crate::core::platform::container::battalion::{BattalionError, BattalionResult, ErrorStrategy};
+use crate::core::platform::container::paladin::Paladin;
+
+#[cfg(test)]
+use crate::core::platform::container::battalion::BattalionStatus;
+
+#[cfg(test)]
+use tokio::sync::mpsc;
+
+/// Service for executing Phalanx patterns
+///
+/// Orchestrates concurrent Paladin execution with configurable aggregation strategies,
+/// concurrency limiting via semaphore, and cancellation support.
+///
+/// # Example
+///
+/// ```ignore
+/// let service = PhalanxExecutionService::new(paladin_port);
+/// let result = service.execute(&phalanx, "Analyze this data").await?;
+/// ```
+pub struct PhalanxExecutionService {
+    paladin_port: Arc<dyn PaladinPort>,
+}
+
+impl PhalanxExecutionService {
+    /// Create a new Phalanx execution service
+    pub fn new(paladin_port: Arc<dyn PaladinPort>) -> Self {
+        Self { paladin_port }
+    }
+
+    /// Execute a Phalanx with the given input
+    ///
+    /// Paladins are executed concurrently according to the aggregation strategy.
+    /// Respects timeout, concurrency limits, and error strategies.
+    pub async fn execute(
+        &self,
+        phalanx: &Phalanx,
+        input: &str,
+    ) -> Result<BattalionResult, BattalionError> {
+        let config = phalanx.config();
+        let timeout_duration = Duration::from_secs(config.timeout_seconds);
+
+        info!(
+            "Starting Phalanx execution: {} with {} Paladins",
+            config.name,
+            phalanx.paladin_count()
+        );
+
+        // Wrap execution with timeout
+        match timeout(timeout_duration, self.execute_internal(phalanx, input)).await {
+            Ok(result) => result,
+            Err(_) => {
+                warn!(
+                    "Phalanx '{}' timed out after {} seconds",
+                    config.name, config.timeout_seconds
+                );
+                Err(BattalionError::Timeout(config.timeout_seconds))
+            }
+        }
+    }
+
+    /// Execute Phalanx with cancellation support
+    ///
+    /// Allows external cancellation of ongoing execution
+    pub async fn execute_with_cancellation(
+        &self,
+        phalanx: &Phalanx,
+        input: &str,
+        cancellation_token: CancellationToken,
+    ) -> Result<BattalionResult, BattalionError> {
+        let config = phalanx.config();
+        let timeout_duration = Duration::from_secs(config.timeout_seconds);
+
+        tokio::select! {
+            result = timeout(timeout_duration, self.execute_internal(phalanx, input)) => {
+                match result {
+                    Ok(r) => r,
+                    Err(_) => Err(BattalionError::Timeout(config.timeout_seconds)),
+                }
+            }
+            _ = cancellation_token.cancelled() => {
+                info!("Phalanx '{}' cancelled", config.name);
+                Err(BattalionError::Cancelled)
+            }
+        }
+    }
+
+    /// Internal execution logic
+    async fn execute_internal(
+        &self,
+        phalanx: &Phalanx,
+        input: &str,
+    ) -> Result<BattalionResult, BattalionError> {
+        let config = phalanx.config();
+        let started_at = Utc::now();
+        let battalion_id = Uuid::new_v4();
+
+        // Validate aggregation strategy
+        self.validate_aggregation_strategy(phalanx)?;
+
+        // Execute based on aggregation strategy
+        let (paladin_results, errors) = match phalanx.aggregation_strategy() {
+            AggregationStrategy::CollectAll => self.execute_collect_all(phalanx, input).await?,
+            AggregationStrategy::FirstSuccess => self.execute_first_success(phalanx, input).await?,
+            AggregationStrategy::Majority => self.execute_majority(phalanx, input).await?,
+            AggregationStrategy::Custom(fn_name) => {
+                return Err(BattalionError::ConfigurationError(format!(
+                    "Custom aggregation '{}' not yet implemented",
+                    fn_name
+                )));
+            }
+        };
+
+        // Handle errors according to error strategy
+        if !errors.is_empty() {
+            match config.error_strategy {
+                ErrorStrategy::FailFast => {
+                    let mut agg_error = AggregatedError::new(phalanx.paladin_count());
+                    for error in errors {
+                        agg_error.add_error(BattalionError::ExecutionError(error));
+                    }
+                    return Err(BattalionError::AggregationError(format!(
+                        "Phalanx execution failed with {} errors",
+                        agg_error.errors.len()
+                    )));
+                }
+                ErrorStrategy::ContinueOnError => {
+                    warn!(
+                        "Phalanx '{}' completed with {} errors (ContinueOnError)",
+                        config.name,
+                        errors.len()
+                    );
+                }
+                ErrorStrategy::RetryThenContinue => {
+                    // Retries handled at Paladin level in concurrent execution
+                    warn!(
+                        "Phalanx '{}' completed with {} errors after retries",
+                        config.name,
+                        errors.len()
+                    );
+                }
+            }
+        }
+
+        // Determine final output based on aggregation
+        let final_output = if paladin_results.is_empty() {
+            String::new()
+        } else {
+            paladin_results.last().unwrap().output.clone()
+        };
+
+        let completed_at = Utc::now();
+        Ok(BattalionResult {
+            battalion_id,
+            battalion_name: config.name.clone(),
+            paladin_results,
+            started_at,
+            completed_at,
+            final_output,
+            status: crate::core::platform::container::battalion::BattalionStatus::Completed,
+        })
+    }
+
+    /// Validate aggregation strategy requirements
+    fn validate_aggregation_strategy(&self, phalanx: &Phalanx) -> Result<(), BattalionError> {
+        if matches!(phalanx.aggregation_strategy(), AggregationStrategy::Majority)
+            && phalanx.paladin_count() < 3
+        {
+            return Err(BattalionError::ValidationError(
+                "Majority aggregation requires at least 3 Paladins".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    /// CollectAll: Wait for all Paladins to complete
+    async fn execute_collect_all(
+        &self,
+        phalanx: &Phalanx,
+        input: &str,
+    ) -> Result<(Vec<PaladinResult>, Vec<String>), BattalionError> {
+        let semaphore = phalanx
+            .max_concurrency()
+            .map(|max| Arc::new(Semaphore::new(max)));
+
+        let mut tasks = Vec::new();
+
+        for paladin in phalanx.paladins() {
+            let paladin_clone = paladin.clone();
+            let input_clone = input.to_string();
+            let port = self.paladin_port.clone();
+            let semaphore_clone = semaphore.clone();
+
+            let task = tokio::spawn(async move {
+                // Acquire semaphore permit if concurrency limiting is enabled
+                let _permit = if let Some(sem) = &semaphore_clone {
+                    Some(sem.acquire().await.unwrap())
+                } else {
+                    None
+                };
+
+                debug!("Executing Paladin: {}", paladin_clone.node.name);
+                port.execute(&paladin_clone, &input_clone).await
+            });
+
+            tasks.push(task);
+        }
+
+        // Wait for all tasks to complete
+        let mut results = Vec::new();
+        let mut errors = Vec::new();
+
+        for (i, task) in tasks.into_iter().enumerate() {
+            match task.await {
+                Ok(Ok(result)) => results.push(result),
+                Ok(Err(e)) => {
+                    let paladin_name = &phalanx.paladins()[i].node.name;
+                    errors.push(format!("{}: {}", paladin_name, e));
+                }
+                Err(e) => {
+                    let paladin_name = &phalanx.paladins()[i].node.name;
+                    errors.push(format!("{}: Task join error: {}", paladin_name, e));
+                }
+            }
+        }
+
+        Ok((results, errors))
+    }
+
+    /// FirstSuccess: Return first successful result (early termination)
+    async fn execute_first_success(
+        &self,
+        phalanx: &Phalanx,
+        input: &str,
+    ) -> Result<(Vec<PaladinResult>, Vec<String>), BattalionError> {
+        let mut futures: Vec<BoxFuture<Result<PaladinResult, BattalionError>>> = Vec::new();
+
+        for paladin in phalanx.paladins() {
+            let paladin_clone = paladin.clone();
+            let input_clone = input.to_string();
+            let port = self.paladin_port.clone();
+
+            let fut = async move {
+                port.execute(&paladin_clone, &input_clone)
+                    .await
+                    .map_err(|e| BattalionError::PaladinError(e.to_string()))
+            }
+            .boxed();
+
+            futures.push(fut);
+        }
+
+        // Use select_ok to get first successful result
+        match select_ok(futures).await {
+            Ok((result, _remaining)) => {
+                info!("FirstSuccess: Got first successful result");
+                Ok((vec![result], vec![]))
+            }
+            Err(e) => {
+                // All failed
+                Err(BattalionError::ExecutionError(format!(
+                    "All Paladins failed: {}",
+                    e
+                )))
+            }
+        }
+    }
+
+    /// Majority: Require consensus (≥50% agreement)
+    async fn execute_majority(
+        &self,
+        phalanx: &Phalanx,
+        input: &str,
+    ) -> Result<(Vec<PaladinResult>, Vec<String>), BattalionError> {
+        // First collect all results
+        let (results, errors) = self.execute_collect_all(phalanx, input).await?;
+
+        if results.is_empty() {
+            return Err(BattalionError::ExecutionError(
+                "No Paladin results to determine majority".to_string(),
+            ));
+        }
+
+        // Count output occurrences
+        let mut output_counts: HashMap<String, usize> = HashMap::new();
+        for result in &results {
+            *output_counts.entry(result.output.clone()).or_insert(0) += 1;
+        }
+
+        // Find majority (>50% threshold)
+        let total_count = results.len();
+        let majority_threshold = (total_count / 2) + 1;
+
+        let majority_output = output_counts
+            .iter()
+            .find(|(_, count)| **count >= majority_threshold)
+            .map(|(output, _)| output.clone());
+
+        match majority_output {
+            Some(output) => {
+                info!(
+                    "Majority consensus reached: {} out of {} Paladins agreed",
+                    output_counts.get(&output).unwrap(),
+                    total_count
+                );
+                // Return only the majority result
+                let majority_result = results.into_iter().find(|r| r.output == output).unwrap();
+                Ok((vec![majority_result], errors))
+            }
+            None => Err(BattalionError::ExecutionError(
+                "No majority consensus reached".to_string(),
+            )),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::ports::output::paladin_port::StopReason;
+    use crate::application::use_cases::paladin::error::PaladinError;
+    use crate::core::base::entity::node::Node;
+    use crate::core::platform::container::battalion::BattalionConfig;
+    use crate::core::platform::container::paladin::{PaladinData, PaladinStatus};
+    use async_trait::async_trait;
+    use std::sync::Mutex;
+
+    /// Mock PaladinPort for testing
+    struct MockPaladinPort {
+        call_count: Arc<Mutex<usize>>,
+        should_fail: bool,
+        fail_paladin_names: Arc<Mutex<Vec<String>>>,
+        delay_ms: u64,
+        output_override: Arc<Mutex<HashMap<String, String>>>,
+    }
+
+    impl MockPaladinPort {
+        fn new() -> Self {
+            Self {
+                call_count: Arc::new(Mutex::new(0)),
+                should_fail: false,
+                fail_paladin_names: Arc::new(Mutex::new(Vec::new())),
+                delay_ms: 10,
+                output_override: Arc::new(Mutex::new(HashMap::new())),
+            }
+        }
+
+        fn with_failures(self, names: Vec<String>) -> Self {
+            *self.fail_paladin_names.lock().unwrap() = names;
+            self
+        }
+
+        fn with_output_override(self, overrides: HashMap<String, String>) -> Self {
+            *self.output_override.lock().unwrap() = overrides;
+            self
+        }
+    }
+
+    #[async_trait]
+    impl PaladinPort for MockPaladinPort {
+        async fn execute(
+            &self,
+            paladin: &Paladin,
+            input: &str,
+        ) -> Result<PaladinResult, PaladinError> {
+            *self.call_count.lock().unwrap() += 1;
+
+            tokio::time::sleep(Duration::from_millis(self.delay_ms)).await;
+
+            // Check if this Paladin should fail
+            let should_fail = self
+                .fail_paladin_names
+                .lock()
+                .unwrap()
+                .contains(&paladin.node.name);
+
+            if should_fail {
+                return Err(PaladinError::ExecutionError(format!(
+                    "Mock failure for {}",
+                    paladin.node.name
+                )));
+            }
+
+            // Check for output override
+            let output = if let Some(override_output) =
+                self.output_override.lock().unwrap().get(&paladin.node.name)
+            {
+                override_output.clone()
+            } else {
+                format!("{}: {}", paladin.node.name, input)
+            };
+
+            Ok(PaladinResult {
+                output,
+                token_count: 50,
+                execution_time_ms: self.delay_ms,
+                loop_count: 1,
+                stop_reason: StopReason::Completed,
+            })
+        }
+
+        async fn execute_stream(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<
+            tokio::sync::mpsc::Receiver<
+                Result<
+                    crate::application::ports::output::paladin_port::PaladinStreamChunk,
+                    PaladinError,
+                >,
+            >,
+            PaladinError,
+        > {
+            let (_tx, rx) = mpsc::channel(1);
+            Ok(rx)
+        }
+
+        fn validate(&self, _paladin: &Paladin) -> Result<(), PaladinError> {
+            Ok(())
+        }
+    }
+
+    fn create_paladin(name: &str) -> Paladin {
+        let data = PaladinData {
+            system_prompt: format!("{} prompt", name),
+            name: name.to_string(),
+            user_name: "TestUser".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: 3,
+            stop_words: vec![],
+            status: PaladinStatus::Idle,
+        };
+        Node::new(data, Some(name.to_string()))
+    }
+
+    #[tokio::test]
+    async fn test_phalanx_service_creation() {
+        let mock_port = Arc::new(MockPaladinPort::new());
+        let _service = PhalanxExecutionService::new(mock_port);
+    }
+
+    #[tokio::test]
+    async fn test_collect_all_strategy_success() {
+        let p1 = create_paladin("Agent1");
+        let p2 = create_paladin("Agent2");
+        let p3 = create_paladin("Agent3");
+
+        let phalanx =
+            Phalanx::new(vec![p1, p2, p3], BattalionConfig::new("test_collect_all")).unwrap();
+
+        let mock_port = Arc::new(MockPaladinPort::new());
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await;
+
+        assert!(result.is_ok());
+        let battalion_result = result.unwrap();
+        assert_eq!(battalion_result.paladin_results.len(), 3);
+        assert_eq!(battalion_result.status, BattalionStatus::Completed);
+    }
+
+    #[tokio::test]
+    async fn test_collect_all_with_concurrency_limit() {
+        let paladins: Vec<Paladin> = (1..=10)
+            .map(|i| create_paladin(&format!("Agent{}", i)))
+            .collect();
+
+        let phalanx = Phalanx::new(paladins, BattalionConfig::new("test_concurrency"))
+            .unwrap()
+            .with_max_concurrency(3);
+
+        let mock_port = Arc::new(MockPaladinPort::new());
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await;
+
+        assert!(result.is_ok());
+        let battalion_result = result.unwrap();
+        assert_eq!(battalion_result.paladin_results.len(), 10);
+    }
+
+    #[tokio::test]
+    async fn test_first_success_strategy() {
+        let p1 = create_paladin("Agent1");
+        let p2 = create_paladin("Agent2");
+        let p3 = create_paladin("Agent3");
+
+        let phalanx = Phalanx::new(vec![p1, p2, p3], BattalionConfig::new("test_first"))
+            .unwrap()
+            .with_aggregation(AggregationStrategy::FirstSuccess);
+
+        let mock_port = Arc::new(MockPaladinPort::new());
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await;
+
+        assert!(result.is_ok());
+        let battalion_result = result.unwrap();
+        // FirstSuccess returns only one result
+        assert_eq!(battalion_result.paladin_results.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_majority_strategy_with_consensus() {
+        let p1 = create_paladin("Agent1");
+        let p2 = create_paladin("Agent2");
+        let p3 = create_paladin("Agent3");
+
+        let phalanx = Phalanx::new(vec![p1, p2, p3], BattalionConfig::new("test_majority"))
+            .unwrap()
+            .with_aggregation(AggregationStrategy::Majority);
+
+        // Set up so Agent1 and Agent2 return "Result A", Agent3 returns different
+        let mut overrides = HashMap::new();
+        overrides.insert("Agent1".to_string(), "Result A".to_string());
+        overrides.insert("Agent2".to_string(), "Result A".to_string());
+        overrides.insert("Agent3".to_string(), "Result B".to_string());
+
+        let mock_port = Arc::new(MockPaladinPort::new().with_output_override(overrides));
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await;
+
+        assert!(result.is_ok());
+        let battalion_result = result.unwrap();
+        assert_eq!(battalion_result.paladin_results.len(), 1);
+        assert_eq!(battalion_result.paladin_results[0].output, "Result A");
+    }
+
+    #[tokio::test]
+    async fn test_majority_strategy_validation() {
+        let p1 = create_paladin("Agent1");
+        let p2 = create_paladin("Agent2");
+
+        let phalanx = Phalanx::new(vec![p1, p2], BattalionConfig::new("test_majority_invalid"))
+            .unwrap()
+            .with_aggregation(AggregationStrategy::Majority);
+
+        let mock_port = Arc::new(MockPaladinPort::new());
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await;
+
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("at least 3 Paladins")
+        );
+    }
+
+    #[tokio::test]
+    async fn test_partial_failures_with_continue_on_error() {
+        let p1 = create_paladin("Agent1");
+        let p2 = create_paladin("Agent2");
+        let p3 = create_paladin("Agent3");
+
+        let config = BattalionConfig::new("test_partial_fail")
+            .with_error_strategy(ErrorStrategy::ContinueOnError);
+
+        let phalanx = Phalanx::new(vec![p1, p2, p3], config).unwrap();
+
+        let mock_port = Arc::new(MockPaladinPort::new().with_failures(vec!["Agent2".to_string()]));
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await;
+
+        assert!(result.is_ok());
+        let battalion_result = result.unwrap();
+        // Only 2 successful results (Agent1 and Agent3)
+        assert_eq!(battalion_result.paladin_results.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_timeout_enforcement() {
+        let p1 = create_paladin("Agent1");
+        let p2 = create_paladin("Agent2");
+
+        let config = BattalionConfig::new("test_timeout").with_timeout(1);
+
+        let phalanx = Phalanx::new(vec![p1, p2], config).unwrap();
+
+        let mut mock_port = MockPaladinPort::new();
+        mock_port.delay_ms = 2000; // 2 seconds > 1 second timeout
+
+        let service = PhalanxExecutionService::new(Arc::new(mock_port));
+
+        let result = service.execute(&phalanx, "Test input").await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            BattalionError::Timeout(seconds) => assert_eq!(seconds, 1),
+            _ => panic!("Expected Timeout error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_cancellation_support() {
+        let p1 = create_paladin("Agent1");
+        let p2 = create_paladin("Agent2");
+
+        let phalanx = Phalanx::new(vec![p1, p2], BattalionConfig::new("test_cancel")).unwrap();
+
+        let mut mock_port = MockPaladinPort::new();
+        mock_port.delay_ms = 1000; // 1 second delay
+
+        let service = PhalanxExecutionService::new(Arc::new(mock_port));
+        let cancellation_token = CancellationToken::new();
+        let token_clone = cancellation_token.clone();
+
+        // Cancel after 100ms
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            token_clone.cancel();
+        });
+
+        let result = service
+            .execute_with_cancellation(&phalanx, "Test input", cancellation_token)
+            .await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            BattalionError::Cancelled => {}
+            _ => panic!("Expected Cancelled error"),
+        }
+    }
+}

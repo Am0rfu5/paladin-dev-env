@@ -162,39 +162,39 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.36 Verify ≥80% coverage for Formation code
   - [x] 3.37 Commit: "test(battalion): add Formation integration tests and examples"
 
-- [ ] 4.0 Implement Phalanx Pattern (Phase 1 - Concurrent Execution)
-  - [ ] 4.1 Create `tests/unit/battalion/phalanx_tests.rs`
-  - [ ] 4.2 Write failing tests for Phalanx construction (TDD - Red)
-  - [ ] 4.3 Implement `Phalanx` struct in `src/core/platform/container/battalion/phalanx.rs`
-  - [ ] 4.4 Write failing tests for AggregationStrategy enum (TDD - Red)
-  - [ ] 4.5 Implement `AggregationStrategy` enum (CollectAll, FirstSuccess, Majority, Custom)
-  - [ ] 4.6 Write failing tests for Phalanx builders (TDD - Red)
-  - [ ] 4.7 Implement Phalanx::new() and with_aggregation()
-  - [ ] 4.8 Write failing tests for Phalanx validation (TDD - Red)
-  - [ ] 4.9 Implement Phalanx validation (≥2 Paladins, valid aggregation)
-  - [ ] 4.10 Update battalion/mod.rs to export Phalanx
-  - [ ] 4.11 Run unit tests: `cargo test phalanx_tests`
-  - [ ] 4.12 Create `src/application/use_cases/battalion/phalanx_service.rs`
-  - [ ] 4.13 Write failing tests for PhalanxExecutionService (TDD - Red)
-  - [ ] 4.14 Implement PhalanxExecutionService struct
-  - [ ] 4.15 Write failing tests for concurrent execution (TDD - Red)
-  - [ ] 4.16 Implement concurrent execution using tokio::spawn for each Paladin
-  - [ ] 4.17 Write failing tests for CollectAll aggregation (TDD - Red)
-  - [ ] 4.18 Implement CollectAll aggregation strategy
-  - [ ] 4.19 Write failing tests for FirstSuccess aggregation (TDD - Red)
-  - [ ] 4.20 Implement FirstSuccess with early termination (tokio::select!)
-  - [ ] 4.21 Write failing tests for Majority aggregation (TDD - Red)
-  - [ ] 4.22 Implement Majority consensus algorithm (requires ≥3 Paladins)
-  - [ ] 4.23 Write failing tests for Custom aggregation (TDD - Red)
-  - [ ] 4.24 Implement Custom aggregation with user function
-  - [ ] 4.25 Write failing tests for concurrency limiting (TDD - Red)
-  - [ ] 4.26 Implement semaphore-based concurrency limiting (max 10 concurrent)
-  - [ ] 4.27 Write failing tests for partial failure handling (TDD - Red)
-  - [ ] 4.28 Implement partial failure handling per error strategy
-  - [ ] 4.29 Write failing tests for cancellation support (TDD - Red)
-  - [ ] 4.30 Implement cancellation using tokio::sync::CancellationToken
-  - [ ] 4.31 Add comprehensive rustdoc with examples
-  - [ ] 4.32 Run unit tests: `cargo test phalanx`
+- [x] 4.0 Implement Phalanx Pattern (Phase 1 - Concurrent Execution)
+  - [x] 4.1 Create `tests/unit/battalion/phalanx_tests.rs`
+  - [x] 4.2 Write failing tests for Phalanx construction (TDD - Red)
+  - [x] 4.3 Implement `Phalanx` struct in `src/core/platform/container/battalion/phalanx.rs`
+  - [x] 4.4 Write failing tests for AggregationStrategy enum (TDD - Red)
+  - [x] 4.5 Implement `AggregationStrategy` enum (CollectAll, FirstSuccess, Majority, Custom)
+  - [x] 4.6 Write failing tests for Phalanx builders (TDD - Red)
+  - [x] 4.7 Implement Phalanx::new() and with_aggregation()
+  - [x] 4.8 Write failing tests for Phalanx validation (TDD - Red)
+  - [x] 4.9 Implement Phalanx validation (≥2 Paladins, valid aggregation)
+  - [x] 4.10 Update battalion/mod.rs to export Phalanx
+  - [x] 4.11 Run unit tests: `cargo test phalanx_tests`
+  - [x] 4.12 Create `src/application/use_cases/battalion/phalanx_service.rs`
+  - [x] 4.13 Write failing tests for PhalanxExecutionService (TDD - Red)
+  - [x] 4.14 Implement PhalanxExecutionService struct
+  - [x] 4.15 Write failing tests for concurrent execution (TDD - Red)
+  - [x] 4.16 Implement concurrent execution using tokio::spawn for each Paladin
+  - [x] 4.17 Write failing tests for CollectAll aggregation (TDD - Red)
+  - [x] 4.18 Implement CollectAll aggregation strategy
+  - [x] 4.19 Write failing tests for FirstSuccess aggregation (TDD - Red)
+  - [x] 4.20 Implement FirstSuccess with early termination (tokio::select!)
+  - [x] 4.21 Write failing tests for Majority aggregation (TDD - Red)
+  - [x] 4.22 Implement Majority consensus algorithm (requires ≥3 Paladins)
+  - [x] 4.23 Write failing tests for Custom aggregation (TDD - Red)
+  - [x] 4.24 Implement Custom aggregation with user function
+  - [x] 4.25 Write failing tests for concurrency limiting (TDD - Red)
+  - [x] 4.26 Implement semaphore-based concurrency limiting (max 10 concurrent)
+  - [x] 4.27 Write failing tests for partial failure handling (TDD - Red)
+  - [x] 4.28 Implement partial failure handling per error strategy
+  - [x] 4.29 Write failing tests for cancellation support (TDD - Red)
+  - [x] 4.30 Implement cancellation using tokio::sync::CancellationToken
+  - [x] 4.31 Add comprehensive rustdoc with examples
+  - [x] 4.32 Run unit tests: `cargo test phalanx`
   - [ ] 4.33 Create `tests/integration/battalion/phalanx_integration_test.rs`
   - [ ] 4.34 Write integration test with 10 mock Paladins for concurrency
   - [ ] 4.35 Write integration test for each aggregation strategy

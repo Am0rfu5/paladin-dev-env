@@ -2868,6 +2868,7 @@ dependencies = [
  "tiktoken-rs",
  "tokio",
  "tokio-test",
+ "tokio-util",
  "toml",
  "tracing-subscriber",
  "url",

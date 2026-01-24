@@ -4,4 +4,5 @@
 
 pub mod error_aggregation;
 pub mod formation_service;
+pub mod phalanx_service;
 pub mod retry;
