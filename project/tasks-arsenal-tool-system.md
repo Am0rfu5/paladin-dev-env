@@ -143,29 +143,29 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.21 Run `cargo test mcp_protocol` and verify all tests pass
   - [x] 3.22 Run `cargo clippy -- -D warnings` and fix any issues
 
-- [ ] 4.0 STDIO Transport Adapter (FR-4)
-  - [ ] 4.1 Create `src/infrastructure/adapters/arsenal/mcp_stdio_adapter.rs` file
-  - [ ] 4.2 Define `MCPStdioAdapter` struct with command, args, process (Option<Child>) fields
-  - [ ] 4.3 Implement `MCPStdioAdapter::new()` constructor
-  - [ ] 4.4 Implement `MCPStdioAdapter::connect()` async method to spawn process
-  - [ ] 4.5 Implement process spawning with stdin/stdout/stderr piped
-  - [ ] 4.6 Implement `MCPTransport` trait for `MCPStdioAdapter`
-  - [ ] 4.7 Implement `send()` method to write JSON to stdin
-  - [ ] 4.8 Implement `receive()` method to read JSON from stdout
-  - [ ] 4.9 Implement `Drop` trait for cleanup on shutdown
-  - [ ] 4.10 Add process kill and wait in Drop implementation
-  - [ ] 4.11 Add error handling for process spawn failures
-  - [ ] 4.12 Add error handling for pipe communication errors
-  - [ ] 4.13 Add rustdoc comments to all methods
-  - [ ] 4.14 Export mcp_stdio_adapter in arsenal adapter module
-  - [ ] 4.15 Create `tests/integration/mcp_stdio_test.rs` file
-  - [ ] 4.16 Create a mock STDIO MCP server script for testing (Python/Node.js)
-  - [ ] 4.17 Write integration test `test_stdio_connect` for connection
-  - [ ] 4.18 Write integration test `test_stdio_discover_tools` for tool discovery
-  - [ ] 4.19 Write integration test `test_stdio_invoke_tool` for tool invocation
-  - [ ] 4.20 Write integration test `test_stdio_cleanup` for process cleanup
-  - [ ] 4.21 Run `cargo test mcp_stdio` and verify all tests pass
-  - [ ] 4.22 Run `cargo clippy -- -D warnings` and fix any issues
+- [x] 4.0 STDIO Transport Adapter (FR-4)
+  - [x] 4.1 Create `src/infrastructure/adapters/arsenal/mcp_stdio_adapter.rs` file
+  - [x] 4.2 Define `MCPStdioAdapter` struct with command, args, process (Option<Child>) fields
+  - [x] 4.3 Implement `MCPStdioAdapter::new()` constructor
+  - [x] 4.4 Implement `MCPStdioAdapter::connect()` async method to spawn process
+  - [x] 4.5 Implement process spawning with stdin/stdout/stderr piped
+  - [x] 4.6 Implement `MCPTransport` trait for `MCPStdioAdapter`
+  - [x] 4.7 Implement `send()` method to write JSON to stdin
+  - [x] 4.8 Implement `receive()` method to read JSON from stdout
+  - [x] 4.9 Implement `Drop` trait for cleanup on shutdown
+  - [x] 4.10 Add process kill and wait in Drop implementation
+  - [x] 4.11 Add error handling for process spawn failures
+  - [x] 4.12 Add error handling for pipe communication errors
+  - [x] 4.13 Add rustdoc comments to all methods
+  - [x] 4.14 Export mcp_stdio_adapter in arsenal adapter module
+  - [x] 4.15 Create `tests/integration/mcp_stdio_test.rs` file
+  - [x] 4.16 Create a mock STDIO MCP server script for testing (Python/Node.js)
+  - [x] 4.17 Write integration test `test_stdio_connect` for connection
+  - [x] 4.18 Write integration test `test_stdio_discover_tools` for tool discovery
+  - [x] 4.19 Write integration test `test_stdio_invoke_tool` for tool invocation
+  - [x] 4.20 Write integration test `test_stdio_cleanup` for process cleanup
+  - [x] 4.21 Run `cargo test mcp_stdio` and verify all tests pass
+  - [x] 4.22 Run `cargo clippy -- -D warnings` and fix any issues
 
 - [ ] 5.0 SSE Transport Adapter (FR-5)
   - [ ] 5.1 Create `src/infrastructure/adapters/arsenal/mcp_sse_adapter.rs` file
