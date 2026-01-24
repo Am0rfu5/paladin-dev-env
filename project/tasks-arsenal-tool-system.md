@@ -93,31 +93,31 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.16 Run `cargo test arsenal_domain` and verify all tests pass
   - [x] 1.17 Run `cargo clippy -- -D warnings` and fix any issues
 
-- [ ] 2.0 Application Layer - Arsenal Ports (FR-2)
-  - [ ] 2.1 Create `src/application/ports/output/arsenal_port.rs` file
-  - [ ] 2.2 Define `ArsenalPort` trait with async methods: list_armaments(), invoke(), validate_call()
-  - [ ] 2.3 Add `Send + Sync` bounds to `ArsenalPort` trait
-  - [ ] 2.4 Add rustdoc comments to all `ArsenalPort` methods
-  - [ ] 2.5 Define `ArsenalRegistry` trait with methods: register(), unregister(), get()
-  - [ ] 2.6 Add `Send + Sync` bounds to `ArsenalRegistry` trait
-  - [ ] 2.7 Add rustdoc comments to all `ArsenalRegistry` methods
-  - [ ] 2.8 Export arsenal_port in `src/application/ports/output/mod.rs`
-  - [ ] 2.9 Create `src/application/use_cases/arsenal/mod.rs` directory and file
-  - [ ] 2.10 Create `src/application/use_cases/arsenal/arsenal_registry_service.rs`
-  - [ ] 2.11 Implement `ArsenalRegistryService` struct with HashMap storage for armaments
-  - [ ] 2.12 Implement `ArsenalRegistry` trait for `ArsenalRegistryService`
-  - [ ] 2.13 Create `src/application/use_cases/arsenal/arsenal_execution_service.rs`
-  - [ ] 2.14 Implement `ArsenalExecutionService` struct that holds registry and transport references
-  - [ ] 2.15 Implement `ArsenalPort` trait for `ArsenalExecutionService`
-  - [ ] 2.16 Export arsenal module in `src/application/use_cases/mod.rs`
-  - [ ] 2.17 Create `tests/unit/arsenal_port_test.rs` file
-  - [ ] 2.18 Write unit test `test_registry_register_tool` for registering a tool
-  - [ ] 2.19 Write unit test `test_registry_get_tool` for retrieving a tool
-  - [ ] 2.20 Write unit test `test_registry_unregister_tool` for removing a tool
-  - [ ] 2.21 Write unit test `test_validate_call_success` for valid tool call
-  - [ ] 2.22 Write unit test `test_validate_call_missing_required_param` for invalid call
-  - [ ] 2.23 Run `cargo test arsenal_port` and verify all tests pass
-  - [ ] 2.24 Run `cargo clippy -- -D warnings` and fix any issues
+- [x] 2.0 Application Layer - Arsenal Ports (FR-2)
+  - [x] 2.1 Create `src/application/ports/output/arsenal_port.rs` file
+  - [x] 2.2 Define `ArsenalPort` trait with async methods: list_armaments(), invoke(), validate_call()
+  - [x] 2.3 Add `Send + Sync` bounds to `ArsenalPort` trait
+  - [x] 2.4 Add rustdoc comments to all `ArsenalPort` methods
+  - [x] 2.5 Define `ArsenalRegistry` trait with methods: register(), unregister(), get()
+  - [x] 2.6 Add `Send + Sync` bounds to `ArsenalRegistry` trait
+  - [x] 2.7 Add rustdoc comments to all `ArsenalRegistry` methods
+  - [x] 2.8 Export arsenal_port in `src/application/ports/output/mod.rs`
+  - [x] 2.9 Create `src/application/use_cases/arsenal/mod.rs` directory and file
+  - [x] 2.10 Create `src/application/use_cases/arsenal/arsenal_registry_service.rs`
+  - [x] 2.11 Implement `ArsenalRegistryService` struct with HashMap storage for armaments
+  - [x] 2.12 Implement `ArsenalRegistry` trait for `ArsenalRegistryService`
+  - [x] 2.13 Create `src/application/use_cases/arsenal/arsenal_execution_service.rs`
+  - [x] 2.14 Implement `ArsenalExecutionService` struct that holds registry and transport references
+  - [x] 2.15 Implement `ArsenalPort` trait for `ArsenalExecutionService`
+  - [x] 2.16 Export arsenal module in `src/application/use_cases/mod.rs`
+  - [x] 2.17 Create `tests/unit/arsenal_port_test.rs` file
+  - [x] 2.18 Write unit test `test_registry_register_tool` for registering a tool
+  - [x] 2.19 Write unit test `test_registry_get_tool` for retrieving a tool
+  - [x] 2.20 Write unit test `test_registry_unregister_tool` for removing a tool
+  - [x] 2.21 Write unit test `test_validate_call_success` for valid tool call
+  - [x] 2.22 Write unit test `test_validate_call_missing_required_param` for invalid call
+  - [x] 2.23 Run `cargo test arsenal_port` and verify all tests pass
+  - [x] 2.24 Run `cargo clippy -- -D warnings` and fix any issues
 
 - [ ] 3.0 MCP Protocol Core Implementation (FR-3)
   - [ ] 3.1 Create `src/infrastructure/adapters/arsenal/mod.rs` directory and file

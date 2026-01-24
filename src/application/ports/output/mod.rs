@@ -1,3 +1,4 @@
+pub mod arsenal_port;
 pub mod content_delivery_port;
 pub mod file_storage_port;
 pub mod garrison_port;
