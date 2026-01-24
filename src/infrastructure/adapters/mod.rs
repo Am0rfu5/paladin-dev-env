@@ -1,3 +1,4 @@
+pub mod arsenal;
 pub mod file_storage;
 pub mod garrison;
 pub mod input;

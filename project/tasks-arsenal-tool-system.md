@@ -119,29 +119,29 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.23 Run `cargo test arsenal_port` and verify all tests pass
   - [x] 2.24 Run `cargo clippy -- -D warnings` and fix any issues
 
-- [ ] 3.0 MCP Protocol Core Implementation (FR-3)
-  - [ ] 3.1 Create `src/infrastructure/adapters/arsenal/mod.rs` directory and file
-  - [ ] 3.2 Create `src/infrastructure/adapters/arsenal/mcp_protocol.rs` file
-  - [ ] 3.3 Define `MCPMessage` enum for JSON-RPC 2.0 message types (Request, Response, Notification)
-  - [ ] 3.4 Define `MCPRequest` struct with jsonrpc, id, method, params fields
-  - [ ] 3.5 Define `MCPResponse` struct with jsonrpc, id, result, error fields
-  - [ ] 3.6 Define `MCPError` struct with code, message, data fields
-  - [ ] 3.7 Define `MCPCapabilities` struct for server capability reporting
-  - [ ] 3.8 Define `MCPTransport` trait with async methods: send(), receive()
-  - [ ] 3.9 Add `Send + Sync` bounds to `MCPTransport` trait
-  - [ ] 3.10 Implement `MCPClient` struct with transport field and capabilities
-  - [ ] 3.11 Implement `MCPClient::new()` constructor
-  - [ ] 3.12 Implement `MCPClient::discover_tools()` method using tools/list request
-  - [ ] 3.13 Implement `MCPClient::invoke_tool()` method using tools/call request
-  - [ ] 3.14 Add rustdoc comments to all MCP types and methods
-  - [ ] 3.15 Export mcp_protocol in arsenal adapter module
-  - [ ] 3.16 Create `tests/unit/mcp_protocol_test.rs` file
-  - [ ] 3.17 Write unit test `test_mcp_request_serialization` for request format
-  - [ ] 3.18 Write unit test `test_mcp_response_deserialization` for response parsing
-  - [ ] 3.19 Write unit test `test_mcp_error_handling` for error responses
-  - [ ] 3.20 Write unit test `test_mcp_capabilities_parsing` for capabilities
-  - [ ] 3.21 Run `cargo test mcp_protocol` and verify all tests pass
-  - [ ] 3.22 Run `cargo clippy -- -D warnings` and fix any issues
+- [x] 3.0 MCP Protocol Core Implementation (FR-3)
+  - [x] 3.1 Create `src/infrastructure/adapters/arsenal/mod.rs` directory and file
+  - [x] 3.2 Create `src/infrastructure/adapters/arsenal/mcp_protocol.rs` file
+  - [x] 3.3 Define `MCPMessage` enum for JSON-RPC 2.0 message types (Request, Response, Notification)
+  - [x] 3.4 Define `MCPRequest` struct with jsonrpc, id, method, params fields
+  - [x] 3.5 Define `MCPResponse` struct with jsonrpc, id, result, error fields
+  - [x] 3.6 Define `MCPError` struct with code, message, data fields
+  - [x] 3.7 Define `MCPCapabilities` struct for server capability reporting
+  - [x] 3.8 Define `MCPTransport` trait with async methods: send(), receive()
+  - [x] 3.9 Add `Send + Sync` bounds to `MCPTransport` trait
+  - [x] 3.10 Implement `MCPClient` struct with transport field and capabilities
+  - [x] 3.11 Implement `MCPClient::new()` constructor
+  - [x] 3.12 Implement `MCPClient::discover_tools()` method using tools/list request
+  - [x] 3.13 Implement `MCPClient::invoke_tool()` method using tools/call request
+  - [x] 3.14 Add rustdoc comments to all MCP types and methods
+  - [x] 3.15 Export mcp_protocol in arsenal adapter module
+  - [x] 3.16 Create `tests/unit/mcp_protocol_test.rs` file
+  - [x] 3.17 Write unit test `test_mcp_request_serialization` for request format
+  - [x] 3.18 Write unit test `test_mcp_response_deserialization` for response parsing
+  - [x] 3.19 Write unit test `test_mcp_error_handling` for error responses
+  - [x] 3.20 Write unit test `test_mcp_capabilities_parsing` for capabilities
+  - [x] 3.21 Run `cargo test mcp_protocol` and verify all tests pass
+  - [x] 3.22 Run `cargo clippy -- -D warnings` and fix any issues
 
 - [ ] 4.0 STDIO Transport Adapter (FR-4)
   - [ ] 4.1 Create `src/infrastructure/adapters/arsenal/mcp_stdio_adapter.rs` file
