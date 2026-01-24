@@ -253,6 +253,7 @@ impl LlmPort for MockLlmAdapter {
             usage: token_usage,
             created_at: Utc::now(),
             metadata: HashMap::new(),
+            function_call: None,
         })
     }
 

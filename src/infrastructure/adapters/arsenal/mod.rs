@@ -7,3 +7,4 @@ pub mod mcp_protocol;
 pub mod mcp_sse_adapter;
 pub mod mcp_stdio_adapter;
 pub mod resource_controls;
+pub mod tool_result_formatter;

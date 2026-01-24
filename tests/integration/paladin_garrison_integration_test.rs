@@ -50,6 +50,7 @@ impl LlmPort for MockLlmPort {
             finish_reason: FinishReason::Stop,
             created_at: Utc::now(),
             metadata: HashMap::new(),
+            function_call: None,
         })
     }
 
@@ -94,7 +95,8 @@ async fn test_paladin_with_garrison_stores_conversation() {
 
     // Create execution service WITH garrison
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // Execute first turn
     let result = service.execute(&paladin, "Hello, can you help me?").await;
@@ -148,7 +150,7 @@ async fn test_paladin_without_garrison_single_turn() {
 
     // Create execution service WITHOUT garrison (None)
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None);
+    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
 
     // Execute single turn - should work without garrison
     let result = service.execute(&paladin, "Quick question").await;
@@ -179,7 +181,8 @@ async fn test_paladin_multi_turn_conversation() {
 
     // Create execution service WITH garrison
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // First turn
     let result1 = service.execute(&paladin, "My name is Alice").await;
@@ -268,7 +271,8 @@ async fn test_garrison_error_handling() {
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // Execution should fail due to garrison error
     let result = service.execute(&paladin, "Test input").await;
@@ -298,7 +302,8 @@ async fn test_garrison_token_limit_enforcement() {
         .expect("Failed to build paladin");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // Execute multiple turns to exceed token limit
     for i in 0..5 {
@@ -336,7 +341,8 @@ async fn test_garrison_importance_based_eviction() {
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // Add more entries than max_entries
     for i in 0..10 {
@@ -376,7 +382,8 @@ async fn test_garrison_fifo_eviction() {
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // Add entries to trigger FIFO eviction
     for i in 0..6 {
@@ -411,7 +418,8 @@ async fn test_garrison_sliding_window_eviction() {
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // Add entries to trigger sliding window
     for i in 0..8 {
@@ -448,7 +456,8 @@ async fn test_garrison_search_functionality() {
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // Execute with specific content
     let result = service
@@ -486,7 +495,8 @@ async fn test_garrison_forget_all() {
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // Execute multiple turns
     for i in 0..3 {
@@ -557,7 +567,8 @@ async fn test_garrison_with_circuit_breaker_interaction() {
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(1)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // Execute and expect failure
     let result = service.execute(&paladin, "Test input").await;
@@ -586,7 +597,8 @@ async fn test_garrison_stats_accuracy() {
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()));
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison.clone()), None);
 
     // Initial stats should be empty
     let initial_stats = garrison.stats().await.expect("Failed to get stats");

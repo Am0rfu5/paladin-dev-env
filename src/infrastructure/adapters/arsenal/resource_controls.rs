@@ -36,6 +36,7 @@ use crate::core::platform::container::arsenal::ArsenalError;
 ///
 /// ```rust,no_run
 /// use paladin::infrastructure::adapters::arsenal::resource_controls::TimeoutWrapper;
+/// use paladin::core::platform::container::arsenal::ArsenalError;
 /// use std::time::Duration;
 ///
 /// # async fn example() {
@@ -43,7 +44,7 @@ use crate::core::platform::container::arsenal::ArsenalError;
 ///
 /// let result = wrapper.execute(async {
 ///     // Your tool execution logic here
-///     Ok::<_, String>("result".to_string())
+///     Ok::<_, ArsenalError>("result".to_string())
 /// }).await;
 /// # }
 /// ```
@@ -96,7 +97,7 @@ impl TimeoutWrapper {
     ///
     /// wrapper.execute(async {
     ///     // Tool execution logic
-    ///     Ok("success".to_string())
+    ///     Ok::<_, ArsenalError>("success".to_string())
     /// }).await
     /// # }
     /// ```

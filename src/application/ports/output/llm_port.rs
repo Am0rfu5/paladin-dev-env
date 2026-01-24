@@ -68,6 +68,20 @@ pub struct LlmResponse {
     pub usage: TokenUsage,
     pub created_at: DateTime<Utc>,
     pub metadata: HashMap<String, String>,
+    /// Function call details if the model requested a function/tool call
+    pub function_call: Option<FunctionCall>,
+}
+
+/// Function call request from the LLM
+///
+/// When the LLM wants to invoke a tool, it returns this structure
+/// containing the function name and arguments as JSON.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunctionCall {
+    /// Name of the function/tool to call
+    pub name: String,
+    /// Arguments as a JSON-formatted string
+    pub arguments: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

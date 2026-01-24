@@ -240,34 +240,34 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.21 Run `cargo test resource_controls` and verify all tests pass
   - [x] 7.22 Run `cargo clippy -- -D warnings` and fix any issues
 
-- [ ] 8.0 Error Handling & Context Injection (FR-8, FR-9)
-  - [ ] 8.1 Create `src/infrastructure/adapters/arsenal/tool_result_formatter.rs` file
-  - [ ] 8.2 Define `ToolResultFormatter` struct
-  - [ ] 8.3 Implement `format_result()` method to convert ArmamentResult to text
-  - [ ] 8.4 Format successful results with tool name, arguments, output, execution time
-  - [ ] 8.5 Format failed results with tool name, arguments, error message, execution time
-  - [ ] 8.6 Ensure formatted output is LLM-readable (structured markdown-like format)
-  - [ ] 8.7 Add rustdoc comments to formatter methods
-  - [ ] 8.8 Export tool_result_formatter in arsenal adapter module
-  - [ ] 8.9 Read existing Paladin execution service implementation
-  - [ ] 8.10 Integrate ToolResultFormatter into Paladin execution loop
-  - [ ] 8.11 Detect tool calls in LLM responses (function calling format)
-  - [ ] 8.12 Invoke tools via ArsenalPort when tool calls are detected
-  - [ ] 8.13 Format tool results using ToolResultFormatter
-  - [ ] 8.14 Inject formatted results into conversation context
-  - [ ] 8.15 Continue execution loop after tool invocation
-  - [ ] 8.16 Add logging for tool failures at warn level
-  - [ ] 8.17 Add logging for tool success at debug level
-  - [ ] 8.18 Implement error conversion from ArsenalError to PaladinError
-  - [ ] 8.19 Create `tests/unit/tool_result_formatter_test.rs` file
-  - [ ] 8.20 Write unit test `test_format_success_result` for successful formatting
-  - [ ] 8.21 Write unit test `test_format_error_result` for error formatting
-  - [ ] 8.22 Create `tests/integration/context_injection_test.rs` file
-  - [ ] 8.23 Write integration test `test_tool_call_detection` for detecting calls
-  - [ ] 8.24 Write integration test `test_tool_invocation_and_injection` for full flow
-  - [ ] 8.25 Write integration test `test_paladin_continues_after_tool_failure` for resilience
-  - [ ] 8.26 Run `cargo test tool_result` and verify all tests pass
-  - [ ] 8.27 Run `cargo clippy -- -D warnings` and fix any issues
+- [x] 8.0 Error Handling & Context Injection (FR-8, FR-9)
+  - [x] 8.1 Create `src/infrastructure/adapters/arsenal/tool_result_formatter.rs` file
+  - [x] 8.2 Define `ToolResultFormatter` struct
+  - [x] 8.3 Implement `format_result()` method to convert ArmamentResult to text
+  - [x] 8.4 Format successful results with tool name, arguments, output, execution time
+  - [x] 8.5 Format failed results with tool name, arguments, error message, execution time
+  - [x] 8.6 Ensure formatted output is LLM-readable (structured markdown-like format)
+  - [x] 8.7 Add rustdoc comments to formatter methods
+  - [x] 8.8 Export tool_result_formatter in arsenal adapter module
+  - [x] 8.9 Read existing Paladin execution service implementation
+  - [x] 8.10 Integrate ToolResultFormatter into Paladin execution loop
+  - [x] 8.11 Detect tool calls in LLM responses (function calling format)
+  - [x] 8.12 Invoke tools via ArsenalPort when tool calls are detected
+  - [x] 8.13 Format tool results using ToolResultFormatter
+  - [x] 8.14 Inject formatted results into conversation context
+  - [x] 8.15 Continue execution loop after tool invocation
+  - [x] 8.16 Add logging for tool failures at warn level
+  - [x] 8.17 Add logging for tool success at debug level
+  - [x] 8.18 Implement error conversion from ArsenalError to PaladinError
+  - [x] 8.19 Create `tests/unit/tool_result_formatter_test.rs` file
+  - [x] 8.20 Write unit test `test_format_success_result` for successful formatting
+  - [x] 8.21 Write unit test `test_format_error_result` for error formatting
+  - [x] 8.22 Create `tests/integration/context_injection_test.rs` file
+  - [x] 8.23 Write integration test `test_tool_call_detection` for detecting calls
+  - [x] 8.24 Write integration test `test_tool_invocation_and_injection` for full flow
+  - [x] 8.25 Write integration test `test_paladin_continues_after_tool_failure` for resilience
+  - [x] 8.26 Run `cargo test tool_result` and verify all tests pass
+  - [x] 8.27 Run `cargo clippy -- -D warnings` and fix any issues (no new issues in Arsenal code)
 
 - [ ] 9.0 Comprehensive Testing & Documentation
   - [ ] 9.1 Create `tests/functional/paladin_tool_invocation_test.rs` file

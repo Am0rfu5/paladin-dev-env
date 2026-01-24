@@ -78,7 +78,7 @@ async fn multi_loop_example() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(5, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None);
+    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
 
     println!("Input: How do I solve a complex problem?");
 
@@ -111,7 +111,7 @@ async fn stop_word_example() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(5, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None);
+    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
 
     println!("Input: What is the answer?");
     println!("Stop words configured: FINAL_ANSWER, DONE");
@@ -144,7 +144,7 @@ async fn retry_example() -> Result<(), Box<dyn std::error::Error>> {
 
     // Circuit breaker with higher threshold for retries
     let circuit_breaker = Arc::new(CircuitBreaker::new(5, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None);
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
 
     println!("Input: Test resilience");
     println!("Simulating transient failure...");
@@ -186,7 +186,7 @@ async fn custom_config_example() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None);
+    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
 
     println!("Configuration:");
     println!("  Name: {}", paladin.node.name);

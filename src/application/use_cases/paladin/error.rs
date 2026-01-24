@@ -4,6 +4,7 @@
 //! for ergonomic error handling and clear error messages.
 
 use crate::application::ports::output::garrison_port::GarrisonError;
+use crate::core::platform::container::arsenal::ArsenalError;
 use thiserror::Error;
 
 /// Errors that can occur during Paladin operations
@@ -55,6 +56,10 @@ pub enum PaladinError {
     /// Garrison is required for multi-turn conversations but not provided
     #[error("Garrison is required for multi-turn conversations")]
     GarrisonRequired,
+
+    /// Error from the Arsenal tool system
+    #[error("Arsenal error: {0}")]
+    ArsenalError(#[from] ArsenalError),
 }
 
 impl PaladinError {

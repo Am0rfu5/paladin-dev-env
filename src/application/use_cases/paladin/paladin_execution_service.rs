@@ -28,7 +28,7 @@
 //! let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
 //!
 //! // Create execution service
-//! let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None);
+//! let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
 //!
 //! // Build paladin
 //! let paladin = PaladinBuilder::new(llm_port)
@@ -46,19 +46,24 @@
 //! # }
 //! ```
 
+use crate::application::ports::output::arsenal_port::ArsenalPort;
 use crate::application::ports::output::garrison_port::GarrisonPort;
-use crate::application::ports::output::llm_port::{LlmPort, LlmRequest};
+use crate::application::ports::output::llm_port::{FunctionCall, LlmPort, LlmRequest};
 use crate::application::ports::output::paladin_port::{PaladinResult, StopReason};
 use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::base::entity::node::Node;
+use crate::core::platform::container::arsenal::{ArmamentCall, ArsenalError};
 use crate::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
 use crate::core::platform::container::paladin::Paladin;
 use crate::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptType, UserPrompt,
 };
+use crate::infrastructure::adapters::arsenal::tool_result_formatter::ToolResultFormatter;
 use log::{debug, error, info, warn};
+use serde_json::Value;
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::time::{Duration, sleep, timeout};
@@ -88,6 +93,12 @@ pub struct PaladinExecutionService {
 
     /// Optional Garrison for conversation memory
     garrison: Option<Arc<dyn GarrisonPort>>,
+
+    /// Optional Arsenal for tool execution
+    arsenal: Option<Arc<dyn ArsenalPort>>,
+
+    /// Tool result formatter for context injection
+    formatter: ToolResultFormatter,
 }
 
 impl PaladinExecutionService {
@@ -98,6 +109,7 @@ impl PaladinExecutionService {
     /// * `llm_port` - The LLM port implementation to use for model calls
     /// * `circuit_breaker` - Circuit breaker for fault tolerance
     /// * `garrison` - Optional Garrison for conversation memory (None for stateless operations)
+    /// * `arsenal` - Optional Arsenal for tool execution (None to disable tool support)
     ///
     /// # Example
     ///
@@ -110,22 +122,26 @@ impl PaladinExecutionService {
     ///
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
     /// let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    /// let service = PaladinExecutionService::new(llm_port, circuit_breaker, None);
+    /// let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
     /// # }
     /// ```
     pub fn new(
         llm_port: Arc<dyn LlmPort>,
         circuit_breaker: Arc<CircuitBreaker>,
         garrison: Option<Arc<dyn GarrisonPort>>,
+        arsenal: Option<Arc<dyn ArsenalPort>>,
     ) -> Self {
         info!(
-            "Creating PaladinExecutionService with garrison: {}",
-            garrison.is_some()
+            "Creating PaladinExecutionService with garrison: {}, arsenal: {}",
+            garrison.is_some(),
+            arsenal.is_some()
         );
         Self {
             llm_port,
             circuit_breaker,
             garrison,
+            arsenal,
+            formatter: ToolResultFormatter::new(),
         }
     }
 
@@ -259,6 +275,55 @@ impl PaladinExecutionService {
             // Update accumulated output and token count
             accumulated_output = response.content.clone();
             total_tokens += response.usage.total_tokens;
+
+            // Check for tool calls and execute them if arsenal is available
+            if let Some(ref function_call) = response.function_call {
+                if let Some(ref arsenal) = self.arsenal {
+                    debug!(
+                        "Tool call detected: id={}, tool={}, loop={}",
+                        execution_id, function_call.name, loop_num
+                    );
+
+                    match self
+                        .handle_tool_call(function_call, arsenal.as_ref(), execution_id)
+                        .await
+                    {
+                        Ok(formatted_result) => {
+                            debug!(
+                                "Tool execution succeeded: id={}, tool={}",
+                                execution_id, function_call.name
+                            );
+                            // Inject tool result into accumulated output for next iteration
+                            accumulated_output.push_str("\n\n");
+                            accumulated_output.push_str(&formatted_result);
+
+                            // Store tool result in garrison if available
+                            if let Some(garrison) = &self.garrison {
+                                let tool_entry =
+                                    GarrisonEntry::new(ConversationRole::Tool, formatted_result);
+                                garrison.remember(tool_entry).await?;
+                            }
+                        }
+                        Err(e) => {
+                            warn!(
+                                "Tool execution failed: id={}, tool={}, error={}",
+                                execution_id, function_call.name, e
+                            );
+                            // Inject error message for LLM to see and potentially recover
+                            let error_message = format!(
+                                "\n\n🔧 Tool Execution: {}\nResult: FAILED\nError: {}\n",
+                                function_call.name, e
+                            );
+                            accumulated_output.push_str(&error_message);
+                        }
+                    }
+                } else {
+                    warn!(
+                        "Tool call requested but no arsenal available: id={}, tool={}",
+                        execution_id, function_call.name
+                    );
+                }
+            }
 
             // Check for stop words
             if let Some(stop_word) = self.check_stop_words(paladin, &accumulated_output) {
@@ -495,6 +560,58 @@ impl PaladinExecutionService {
                 }
             }
         }
+    }
+
+    /// Handles tool call execution and formatting
+    ///
+    /// Parses the function call, invokes the tool via Arsenal, and formats
+    /// the result for injection into the conversation context.
+    ///
+    /// # Arguments
+    ///
+    /// * `function_call` - The function call details from the LLM
+    /// * `arsenal` - The Arsenal port for tool execution
+    /// * `execution_id` - Unique ID for this execution (for logging)
+    ///
+    /// # Returns
+    ///
+    /// Formatted tool result as a string, or error if tool execution fails
+    async fn handle_tool_call(
+        &self,
+        function_call: &FunctionCall,
+        arsenal: &dyn ArsenalPort,
+        execution_id: uuid::Uuid,
+    ) -> Result<String, ArsenalError> {
+        // Parse function call arguments
+        let arguments: HashMap<String, Value> = serde_json::from_str(&function_call.arguments)
+            .map_err(|e| {
+                error!(
+                    "Failed to parse function call arguments: id={}, error={}",
+                    execution_id, e
+                );
+                ArsenalError::InvalidArguments(format!("Failed to parse arguments JSON: {}", e))
+            })?;
+
+        // Create armament call
+        let call = ArmamentCall::new(&function_call.name, arguments);
+
+        debug!(
+            "Invoking tool: id={}, tool={}, call_id={}",
+            execution_id, call.tool_name, call.call_id
+        );
+
+        // Invoke the tool (clone because invoke takes ownership)
+        let result = arsenal.invoke(call.clone()).await?;
+
+        debug!(
+            "Tool invocation completed: id={}, tool={}, success={}, time_ms={}",
+            execution_id, call.tool_name, result.success, result.execution_time_ms
+        );
+
+        // Format result for LLM context
+        let formatted = self.formatter.format_result(&call, &result);
+
+        Ok(formatted)
     }
 }
 

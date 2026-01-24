@@ -15,9 +15,8 @@
 //!
 //! ```no_run
 //! use paladin::infrastructure::adapters::arsenal::mcp_protocol::{MCPClient, MCPRequest};
-//! # use std::sync::Arc;
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! # let transport: Arc<dyn paladin::infrastructure::adapters::arsenal::mcp_protocol::MCPTransport> = todo!();
+//! # let transport: Box<dyn paladin::infrastructure::adapters::arsenal::mcp_protocol::MCPTransport> = todo!();
 //! let client = MCPClient::new(transport);
 //! let tools = client.discover_tools().await?;
 //! println!("Available tools: {:?}", tools);

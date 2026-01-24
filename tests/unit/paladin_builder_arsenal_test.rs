@@ -32,6 +32,7 @@ impl LlmPort for MockLlmPort {
             finish_reason: FinishReason::Stop,
             created_at: Utc::now(),
             metadata: HashMap::new(),
+            function_call: None,
         })
     }
 
