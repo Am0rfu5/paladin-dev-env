@@ -216,29 +216,29 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.21 Run `cargo test paladin_builder` and verify all tests pass
   - [x] 6.22 Run `cargo clippy -- -D warnings` and fix any issues
 
-- [ ] 7.0 Resource Controls - Timeout & Concurrency (FR-7)
-  - [ ] 7.1 Create `src/infrastructure/adapters/arsenal/resource_controls.rs` file
-  - [ ] 7.2 Define `TimeoutWrapper` struct with duration field
-  - [ ] 7.3 Implement `TimeoutWrapper::new(duration: Duration)` constructor
-  - [ ] 7.4 Implement `TimeoutWrapper::execute()` method using tokio::time::timeout
-  - [ ] 7.5 Define `ConcurrencyLimiter` struct with semaphore field
-  - [ ] 7.6 Implement `ConcurrencyLimiter::new(max_concurrent: usize)` constructor
-  - [ ] 7.7 Implement `ConcurrencyLimiter::acquire()` method for permit acquisition
-  - [ ] 7.8 Update `ArsenalExecutionService` to include TimeoutWrapper and ConcurrencyLimiter
-  - [ ] 7.9 Modify `invoke()` method to acquire permit before execution
-  - [ ] 7.10 Wrap tool invocation with timeout in invoke() method
-  - [ ] 7.11 Return timeout error if execution exceeds duration
-  - [ ] 7.12 Add execution time tracking using tokio::time::Instant
-  - [ ] 7.13 Update ArmamentResult with actual execution_time_ms
-  - [ ] 7.14 Add rustdoc comments to resource control types
-  - [ ] 7.15 Export resource_controls in arsenal adapter module
-  - [ ] 7.16 Create `tests/unit/resource_controls_test.rs` file
-  - [ ] 7.17 Write unit test `test_timeout_within_limit` for successful execution
-  - [ ] 7.18 Write unit test `test_timeout_exceeds_limit` for timeout error
-  - [ ] 7.19 Write unit test `test_concurrency_limit_enforced` for max concurrent
-  - [ ] 7.20 Write unit test `test_concurrency_queuing` for waiting on permits
-  - [ ] 7.21 Run `cargo test resource_controls` and verify all tests pass
-  - [ ] 7.22 Run `cargo clippy -- -D warnings` and fix any issues
+- [x] 7.0 Resource Controls - Timeout & Concurrency (FR-7)
+  - [x] 7.1 Create `src/infrastructure/adapters/arsenal/resource_controls.rs` file
+  - [x] 7.2 Define `TimeoutWrapper` struct with duration field
+  - [x] 7.3 Implement `TimeoutWrapper::new(duration: Duration)` constructor
+  - [x] 7.4 Implement `TimeoutWrapper::execute()` method using tokio::time::timeout
+  - [x] 7.5 Define `ConcurrencyLimiter` struct with semaphore field
+  - [x] 7.6 Implement `ConcurrencyLimiter::new(max_concurrent: usize)` constructor
+  - [x] 7.7 Implement `ConcurrencyLimiter::acquire()` method for permit acquisition
+  - [x] 7.8 Update `ArsenalExecutionService` to include TimeoutWrapper and ConcurrencyLimiter
+  - [x] 7.9 Modify `invoke()` method to acquire permit before execution
+  - [x] 7.10 Wrap tool invocation with timeout in invoke() method
+  - [x] 7.11 Return timeout error if execution exceeds duration
+  - [x] 7.12 Add execution time tracking using tokio::time::Instant
+  - [x] 7.13 Update ArmamentResult with actual execution_time_ms
+  - [x] 7.14 Add rustdoc comments to resource control types
+  - [x] 7.15 Export resource_controls in arsenal adapter module
+  - [x] 7.16 Create `tests/unit/resource_controls_test.rs` file
+  - [x] 7.17 Write unit test `test_timeout_within_limit` for successful execution
+  - [x] 7.18 Write unit test `test_timeout_exceeds_limit` for timeout error
+  - [x] 7.19 Write unit test `test_concurrency_limit_enforced` for max concurrent
+  - [x] 7.20 Write unit test `test_concurrency_queuing` for waiting on permits
+  - [x] 7.21 Run `cargo test resource_controls` and verify all tests pass
+  - [x] 7.22 Run `cargo clippy -- -D warnings` and fix any issues
 
 - [ ] 8.0 Error Handling & Context Injection (FR-8, FR-9)
   - [ ] 8.1 Create `src/infrastructure/adapters/arsenal/tool_result_formatter.rs` file
