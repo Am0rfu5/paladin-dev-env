@@ -649,7 +649,7 @@ impl PaladinBuilder {
 
 #### Domain Layer
 
-**battalion/mod.rs - Battalion Base**
+**battalion/battalion.rs - Battalion Base**
 
 ```rust
 /// Configuration for Battalion operations

@@ -1,4 +1,5 @@
 pub mod arsenal;
+pub mod battalion;
 pub mod comment;
 pub mod content;
 pub mod content_list;
