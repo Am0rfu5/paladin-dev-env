@@ -31,7 +31,7 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ### Core Domain Layer
 - `src/core/platform/container/battalion/mod.rs` - Battalion base types, config, results, error types
-- `src/core/platform/container/battalion/formation.rs` - Formation domain entity (sequential pattern)
+- `src/core/platform/container/battalion/formation.rs` - Formation domain entity (sequential pattern) ✓
 - `src/core/platform/container/battalion/phalanx.rs` - Phalanx domain entity (concurrent pattern)
 - `src/core/platform/container/battalion/campaign.rs` - Campaign domain entity (graph pattern)
 - `src/core/platform/container/battalion/chain_of_command.rs` - Chain of Command domain entity (hierarchical pattern)
@@ -41,7 +41,7 @@ Update the file after completing each sub-task, not just after completing an ent
 - `src/application/use_cases/battalion/mod.rs` - Battalion use cases module
 - `src/application/use_cases/battalion/retry.rs` - Retry logic utility with exponential backoff
 - `src/application/use_cases/battalion/error_aggregation.rs` - Error aggregation utility
-- `src/application/use_cases/battalion/formation_service.rs` - Formation execution orchestration
+- `src/application/use_cases/battalion/formation_service.rs` - Formation execution orchestration ✓
 - `src/application/use_cases/battalion/phalanx_service.rs` - Phalanx execution orchestration
 - `src/application/use_cases/battalion/campaign_service.rs` - Campaign execution orchestration
 - `src/application/use_cases/battalion/chain_of_command_service.rs` - Chain of Command execution orchestration
@@ -123,35 +123,35 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.13 Run fmt and clippy: `cargo fmt && cargo clippy`
   - [x] 2.14 Commit: "feat(application): add BattalionPort and utilities"
 
-- [ ] 3.0 Implement Formation Pattern (Phase 1 - Sequential Execution)
-  - [ ] 3.1 Create `tests/unit/battalion/formation_tests.rs`
-  - [ ] 3.2 Write failing tests for Formation construction (TDD - Red)
-  - [ ] 3.3 Implement `Formation` struct in `src/core/platform/container/battalion/formation.rs`
-  - [ ] 3.4 Write failing tests for Formation::new() and builders (TDD - Red)
-  - [ ] 3.5 Implement Formation::new(), with_config(), with_shared_context()
-  - [ ] 3.6 Write failing tests for Formation validation (TDD - Red)
-  - [ ] 3.7 Implement Formation validation (≥2 Paladins required)
-  - [ ] 3.8 Update battalion/mod.rs to export Formation
-  - [ ] 3.9 Run unit tests: `cargo test formation_tests`
-  - [ ] 3.10 Create `src/application/use_cases/battalion/formation_service.rs`
-  - [ ] 3.11 Write failing tests for FormationExecutionService (TDD - Red)
-  - [ ] 3.12 Implement FormationExecutionService struct with PaladinExecutionService dependency
-  - [ ] 3.13 Write failing tests for sequential execution logic (TDD - Red)
-  - [ ] 3.14 Implement execute() method with sequential Paladin execution
-  - [ ] 3.15 Write failing tests for output passing (N → N+1) (TDD - Red)
-  - [ ] 3.16 Implement output passing between Paladins
-  - [ ] 3.17 Write failing tests for FailFast error strategy (TDD - Red)
-  - [ ] 3.18 Implement FailFast error handling
-  - [ ] 3.19 Write failing tests for ContinueOnError strategy (TDD - Red)
-  - [ ] 3.20 Implement ContinueOnError with error collection
-  - [ ] 3.21 Write failing tests for RetryThenContinue strategy (TDD - Red)
-  - [ ] 3.22 Implement RetryThenContinue with retry logic
-  - [ ] 3.23 Write failing tests for timeout enforcement (TDD - Red)
-  - [ ] 3.24 Implement Battalion-level timeout using tokio::time::timeout
-  - [ ] 3.25 Write failing tests for shared context injection (TDD - Red)
-  - [ ] 3.26 Implement shared context injection into Paladin prompts
-  - [ ] 3.27 Add comprehensive rustdoc with examples
-  - [ ] 3.28 Run unit tests: `cargo test formation`
+- [x] 3.0 Implement Formation Pattern (Phase 1 - Sequential Execution)
+  - [x] 3.1 Create `tests/unit/battalion/formation_tests.rs`
+  - [x] 3.2 Write failing tests for Formation construction (TDD - Red)
+  - [x] 3.3 Implement `Formation` struct in `src/core/platform/container/battalion/formation.rs`
+  - [x] 3.4 Write failing tests for Formation::new() and builders (TDD - Red)
+  - [x] 3.5 Implement Formation::new(), with_config(), with_shared_context()
+  - [x] 3.6 Write failing tests for Formation validation (TDD - Red)
+  - [x] 3.7 Implement Formation validation (≥2 Paladins required)
+  - [x] 3.8 Update battalion/mod.rs to export Formation
+  - [x] 3.9 Run unit tests: `cargo test formation_tests`
+  - [x] 3.10 Create `src/application/use_cases/battalion/formation_service.rs`
+  - [x] 3.11 Write failing tests for FormationExecutionService (TDD - Red)
+  - [x] 3.12 Implement FormationExecutionService struct with PaladinExecutionService dependency
+  - [x] 3.13 Write failing tests for sequential execution logic (TDD - Red)
+  - [x] 3.14 Implement execute() method with sequential Paladin execution
+  - [x] 3.15 Write failing tests for output passing (N → N+1) (TDD - Red)
+  - [x] 3.16 Implement output passing between Paladins
+  - [x] 3.17 Write failing tests for FailFast error strategy (TDD - Red)
+  - [x] 3.18 Implement FailFast error handling
+  - [x] 3.19 Write failing tests for ContinueOnError strategy (TDD - Red)
+  - [x] 3.20 Implement ContinueOnError with error collection
+  - [x] 3.21 Write failing tests for RetryThenContinue strategy (TDD - Red)
+  - [x] 3.22 Implement RetryThenContinue with retry logic
+  - [x] 3.23 Write failing tests for timeout enforcement (TDD - Red)
+  - [x] 3.24 Implement Battalion-level timeout using tokio::time::timeout
+  - [x] 3.25 Write failing tests for shared context injection (TDD - Red)
+  - [x] 3.26 Implement shared context injection into Paladin prompts
+  - [x] 3.27 Add comprehensive rustdoc with examples
+  - [x] 3.28 Run unit tests: `cargo test formation`
   - [ ] 3.29 Create `tests/integration/battalion/formation_integration_test.rs`
   - [ ] 3.30 Write integration test with mock Paladins for end-to-end flow
   - [ ] 3.31 Write integration test for error scenarios

@@ -3,6 +3,8 @@
 //! This module provides the core domain types for multi-Paladin orchestration.
 //! Battalions coordinate multiple Paladins using various execution patterns.
 
+pub mod formation;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;

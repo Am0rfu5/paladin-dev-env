@@ -1,6 +1,7 @@
 pub mod arsenal_config_test;
 pub mod arsenal_domain_test;
 pub mod arsenal_port_test;
+pub mod battalion;
 pub mod circuit_breaker_test;
 pub mod mcp_protocol_test;
 pub mod mock_llm_adapter_test;
