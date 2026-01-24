@@ -49,19 +49,26 @@ The project clearly defines Ports as interfaces to external systems, enabling ad
 * **Subject Tagging and Searching:** Advanced tagging, indexing, and search capabilities.
 * **Paladin Agents:** Autonomous AI agents with memory and context management.
 * **Garrison Memory System:** Persistent conversation history with windowing and search capabilities.
+* **Arsenal Tool System:** External tool integration via Model Context Protocol (MCP).
 
 ### AI Agent System (Paladin)
 
-Paladin provides a sophisticated AI agent framework with memory management:
+Paladin provides a sophisticated AI agent framework with memory management and tool capabilities:
 
 * **Paladins**: Autonomous AI agents with configurable behaviors and tool access
 * **Garrison Memory**: Context-aware conversation history storage
   * **InMemoryGarrison**: Fast, ephemeral storage for development and testing
   * **SqliteGarrison**: Persistent storage with full-text search for production
+* **Arsenal Tool System**: External tool integration via MCP
+  * **STDIO Transport**: Command-line tool execution (Python, Node.js, binaries)
+  * **SSE Transport**: HTTP-based remote tool services
+  * **Tool Registry**: Dynamic tool discovery and registration
+  * **Resource Controls**: Timeout management and concurrency limiting
 * **Circuit Breaker**: Fault tolerance with automatic retry and backoff
 * **Execution Service**: Orchestrates agent execution with memory integration
 
-See [docs/GARRISON.md](docs/GARRISON.md) for detailed documentation on the memory system.
+See [docs/GARRISON.md](docs/GARRISON.md) for detailed memory system documentation.
+See [docs/ARSENAL.md](docs/ARSENAL.md) for comprehensive tool system documentation.
 
 ### Storage Solutions
 
@@ -139,6 +146,46 @@ See `examples/` directory for more examples:
 - `garrison_in_memory.rs` - In-memory conversation history
 - `garrison_persistent.rs` - SQLite persistence example
 - `garrison_semantic_search.rs` - Future vector search demo
+- `arsenal_stdio_tools.rs` - STDIO MCP tool integration
+- `arsenal_sse_tools.rs` - SSE MCP tool integration
+
+### Arsenal Tool System Example
+
+```rust
+use paladin::application::use_cases::arsenal::ArsenalRegistryService;
+use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
+use paladin::infrastructure::adapters::arsenal::Armament;
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create tool registry
+    let registry = Arc::new(ArsenalRegistryService::new());
+
+    // Register a calculator tool
+    let calculator = Armament {
+        name: "calculator".to_string(),
+        description: "Performs basic arithmetic operations".to_string(),
+        parameters: serde_json::json!({
+            "type": "object",
+            "properties": {
+                "operation": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
+                "a": {"type": "number"},
+                "b": {"type": "number"}
+            },
+            "required": ["operation", "a", "b"]
+        }),
+        required_params: vec!["operation".to_string(), "a".to_string(), "b".to_string()],
+    };
+
+    registry.register(calculator).await;
+
+    // Paladin agents can now use the calculator tool via function calling
+    Ok(())
+}
+```
+
+See [docs/ARSENAL.md](docs/ARSENAL.md) for comprehensive tool system documentation.
 
 ### Notification Example
 
