@@ -240,7 +240,7 @@ impl BattalionResult {
 }
 
 /// Error types for Battalion operations
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum BattalionError {
     /// Configuration error
     #[error("Configuration error: {0}")]

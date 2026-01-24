@@ -38,7 +38,9 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ### Application Layer
 - `src/application/ports/output/battalion_port.rs` - BattalionPort trait definition
-- `src/application/use_cases/battalion/battalion.rs` - Battalion use cases module
+- `src/application/use_cases/battalion/mod.rs` - Battalion use cases module
+- `src/application/use_cases/battalion/retry.rs` - Retry logic utility with exponential backoff
+- `src/application/use_cases/battalion/error_aggregation.rs` - Error aggregation utility
 - `src/application/use_cases/battalion/formation_service.rs` - Formation execution orchestration
 - `src/application/use_cases/battalion/phalanx_service.rs` - Phalanx execution orchestration
 - `src/application/use_cases/battalion/campaign_service.rs` - Campaign execution orchestration
@@ -102,24 +104,24 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.14 Implement `BattalionError` using thiserror with From<PaladinError>
   - [x] 1.15 Update `src/core/platform/container/mod.rs` to export battalion module
   - [x] 1.16 Run tests: `cargo test battalion::mod`
-  - [ ] 1.17 Run fmt and clippy: `cargo fmt && cargo clippy`
-  - [ ] 1.18 Commit: "feat(core): add Battalion base infrastructure"
+  - [x] 1.17 Run fmt and clippy: `cargo fmt && cargo clippy`
+  - [x] 1.18 Commit: "feat(core): add Battalion base infrastructure"
 
-- [ ] 2.0 Implement Battalion Application Layer (Ports & Base Services)
-  - [ ] 2.1 Create `src/application/ports/output/battalion_port.rs`
-  - [ ] 2.2 Write trait definition tests for `BattalionPort` (TDD - Red)
-  - [ ] 2.3 Implement `BattalionPort` trait with execute, status, cancel methods
-  - [ ] 2.4 Add rustdoc with examples for all trait methods
-  - [ ] 2.5 Update `src/application/ports/output/mod.rs` to export battalion_port
-  - [ ] 2.6 Create `src/application/use_cases/battalion/mod.rs`
-  - [ ] 2.7 Write unit tests for retry logic utility (TDD - Red)
-  - [ ] 2.8 Implement retry logic utility with exponential backoff and jitter
-  - [ ] 2.9 Write unit tests for error aggregation utility (TDD - Red)
-  - [ ] 2.10 Implement error aggregation for ContinueOnError strategy
-  - [ ] 2.11 Update `src/application/use_cases/mod.rs` to export battalion module
-  - [ ] 2.12 Run tests: `cargo test battalion_port`
-  - [ ] 2.13 Run fmt and clippy: `cargo fmt && cargo clippy`
-  - [ ] 2.14 Commit: "feat(application): add BattalionPort and utilities"
+- [x] 2.0 Implement Battalion Application Layer (Ports & Base Services)
+  - [x] 2.1 Create `src/application/ports/output/battalion_port.rs`
+  - [x] 2.2 Write trait definition tests for `BattalionPort` (TDD - Red)
+  - [x] 2.3 Implement `BattalionPort` trait with execute, status, cancel methods
+  - [x] 2.4 Add rustdoc with examples for all trait methods
+  - [x] 2.5 Update `src/application/ports/output/mod.rs` to export battalion_port
+  - [x] 2.6 Create `src/application/use_cases/battalion/mod.rs`
+  - [x] 2.7 Write unit tests for retry logic utility (TDD - Red)
+  - [x] 2.8 Implement retry logic utility with exponential backoff and jitter
+  - [x] 2.9 Write unit tests for error aggregation utility (TDD - Red)
+  - [x] 2.10 Implement error aggregation for ContinueOnError strategy
+  - [x] 2.11 Update `src/application/use_cases/mod.rs` to export battalion module
+  - [x] 2.12 Run tests: `cargo test battalion_port`
+  - [x] 2.13 Run fmt and clippy: `cargo fmt && cargo clippy`
+  - [x] 2.14 Commit: "feat(application): add BattalionPort and utilities"
 
 - [ ] 3.0 Implement Formation Pattern (Phase 1 - Sequential Execution)
   - [ ] 3.1 Create `tests/unit/battalion/formation_tests.rs`
