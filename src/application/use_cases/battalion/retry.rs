@@ -202,8 +202,10 @@ mod tests {
 
     #[test]
     fn test_should_retry_custom_limit() {
-        let mut policy = RetryPolicy::default();
-        policy.max_attempts = 5;
+        let policy = RetryPolicy {
+            max_attempts: 5,
+            ..Default::default()
+        };
 
         assert!(should_retry(&policy, 4)); // Within limit
         assert!(!should_retry(&policy, 5)); // At limit
@@ -223,11 +225,13 @@ mod tests {
 
     #[test]
     fn test_exponential_backoff_sequence() {
-        let mut policy = RetryPolicy::default();
-        policy.exponential_backoff = true;
-        policy.jitter = false;
-        policy.base_delay = Duration::from_millis(10);
-        policy.max_delay = Duration::from_secs(60);
+        let policy = RetryPolicy {
+            exponential_backoff: true,
+            jitter: false,
+            base_delay: Duration::from_millis(10),
+            max_delay: Duration::from_secs(60),
+            ..Default::default()
+        };
 
         // Verify exponential growth
         let delays: Vec<Duration> = (0..5).map(|i| calculate_retry_delay(&policy, i)).collect();

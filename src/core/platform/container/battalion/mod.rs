@@ -4,6 +4,7 @@
 //! Battalions coordinate multiple Paladins using various execution patterns.
 
 pub mod campaign;
+pub mod chain_of_command;
 pub mod formation;
 pub mod phalanx;
 
