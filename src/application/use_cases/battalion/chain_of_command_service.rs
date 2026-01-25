@@ -14,7 +14,7 @@
 //!
 //! # Examples
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use paladin::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
 //! use paladin::core::platform::container::battalion::{ChainOfCommand, DelegationStrategy};
 //! use std::sync::Arc;

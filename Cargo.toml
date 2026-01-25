@@ -2,6 +2,13 @@
 name = "paladin"
 version = "0.1.0"
 edition = "2024"
+authors = ["Am0rfu5"]
+description = "Enterprise AI orchestration framework with multi-agent coordination patterns"
+readme = "README.md"
+repository = "https://github.com/DF3NDR/paladin-dev-env"
+license = "MIT"
+keywords = ["ai", "agents", "orchestration", "llm", "multi-agent"]
+categories = ["development-tools", "asynchronous", "api-bindings"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -60,6 +67,7 @@ testcontainers = "0.24.0"
 tokio-test = "0.4"
 proptest = "1.4"
 serial_test = "3.2.0"
+criterion = { version = "0.5", features = ["async_tokio"] }
 
 # Integration test configuration
 [[test]]
@@ -94,3 +102,7 @@ overflow-checks = true
 [profile.test]
 opt-level = 0
 debug = true
+
+[[bench]]
+name = "battalion_benchmarks"
+harness = false

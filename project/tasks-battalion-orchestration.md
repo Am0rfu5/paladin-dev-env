@@ -312,18 +312,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.10 Document all four Battalion patterns with examples
   - [x] 7.11 Document error strategies and retry policies
   - [x] 7.12 Document performance characteristics and limitations
-  - [ ] 7.13 Update main `README.md` with Battalion section
-  - [ ] 7.14 Add Battalion configuration section to `config.yml`
-  - [ ] 7.15 Update `Cargo.toml` metadata and feature flags
-  - [ ] 7.16 Run final code quality checks: `make clean-code`
-  - [ ] 7.17 Verify all examples run successfully
-  - [ ] 7.18 Run security audit: `cargo audit`
-  - [ ] 7.19 Run Snyk scan on new code: `snyk_code_scan`
-  - [ ] 7.20 Address any security issues found
-  - [ ] 7.21 Create benchmark suite for performance tracking
-  - [ ] 7.22 Run benchmarks and document baseline performance
-  - [ ] 7.23 Review all rustdoc for completeness and accuracy
-  - [ ] 7.24 Commit: "docs(battalion): add comprehensive documentation"
+  - [x] 7.13 Update main `README.md` with Battalion section
+  - [x] 7.14 Add Battalion configuration section to `config.yml`
+  - [x] 7.15 Update `Cargo.toml` metadata and feature flags
+  - [x] 7.16 Run final code quality checks: `make clean-code`
+  - [x] 7.17 Verify all examples run successfully
+  - [x] 7.18 Run security audit: `cargo audit`
+  - [x] 7.19 Run Snyk scan on new code: `snyk code test` & `snyk test --file=Cargo.lock`
+  - [x] 7.20 Address any security issues found
+  - [x] 7.21 Create benchmark suite for performance tracking
+  - [x] 7.22 Run benchmarks and document baseline performance
+  - [x] 7.23 Review all rustdoc for completeness and accuracy
+  - [x] 7.24 Commit: "docs(battalion): add comprehensive documentation and benchmarks"
   - [ ] 7.25 Final commit: "feat(epic4): complete Battalion Orchestration System"
   - [ ] 7.26 Push feature branch to remote
   - [ ] 7.27 Create Pull Request with Epic 4 completion summary

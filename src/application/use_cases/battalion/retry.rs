@@ -27,10 +27,15 @@ use crate::core::platform::container::battalion::RetryPolicy;
 /// use paladin::core::platform::container::battalion::RetryPolicy;
 /// use std::time::Duration;
 ///
-/// let policy = RetryPolicy::default();
+/// // Test with jitter disabled for deterministic results
+/// let mut policy = RetryPolicy::default();
+/// policy.jitter = false;
+///
 /// let delay = calculate_retry_delay(&policy, 0);
-/// assert!(delay >= Duration::from_millis(100));
-/// assert!(delay <= Duration::from_millis(200)); // with jitter
+/// assert_eq!(delay, Duration::from_millis(100));
+///
+/// let delay = calculate_retry_delay(&policy, 1);
+/// assert_eq!(delay, Duration::from_millis(200));
 /// ```
 pub fn calculate_retry_delay(policy: &RetryPolicy, attempt: u32) -> Duration {
     let base_delay = policy.base_delay;
