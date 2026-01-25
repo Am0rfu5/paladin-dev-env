@@ -64,13 +64,13 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 0.1 Create and checkout new branch: `git checkout -b feature/epic5-commander-strategy-router`
   - [x] 0.2 Verify current branch with `git branch`
 
-- [ ] 1.0 Define BattalionStrategy enum and core types
-  - [ ] 1.1 Read Epic 4 Battalion types to understand BattalionConfig, BattalionResult, BattalionError
-  - [ ] 1.2 Determine location for BattalionStrategy enum (likely `src/core/platform/container/battalion/mod.rs`)
-  - [ ] 1.3 Create BattalionStrategy enum with variants: Formation, Phalanx, Campaign, ChainOfCommand, Auto
-  - [ ] 1.4 Implement Debug, Clone, PartialEq, Serialize, Deserialize derives
-  - [ ] 1.5 Write unit test for enum creation and serialization
-  - [ ] 1.6 Run tests: `cargo test battalion_strategy`
+- [x] 1.0 Define BattalionStrategy enum and core types
+  - [x] 1.1 Read Epic 4 Battalion types to understand BattalionConfig, BattalionResult, BattalionError
+  - [x] 1.2 Determine location for BattalionStrategy enum (likely `src/core/platform/container/battalion/mod.rs`)
+  - [x] 1.3 Create BattalionStrategy enum with variants: Formation, Phalanx, Campaign, ChainOfCommand, Auto
+  - [x] 1.4 Implement Debug, Clone, PartialEq, Serialize, Deserialize derives
+  - [x] 1.5 Write unit test for enum creation and serialization
+  - [x] 1.6 Run tests: `cargo test battalion_strategy`
 
 - [ ] 2.0 Implement Commander struct and builder pattern
   - [ ] 2.1 Create `src/application/use_cases/battalion/commander.rs` file

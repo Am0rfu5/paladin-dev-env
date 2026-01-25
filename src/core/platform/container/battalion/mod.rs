@@ -148,6 +148,39 @@ pub enum ErrorStrategy {
     RetryThenContinue,
 }
 
+/// Battalion orchestration strategy
+///
+/// Defines the pattern used to coordinate multiple Paladins.
+///
+/// # Examples
+///
+/// ```
+/// use paladin::core::platform::container::battalion::BattalionStrategy;
+///
+/// let strategy = BattalionStrategy::Formation;
+/// assert_eq!(strategy, BattalionStrategy::Formation);
+///
+/// let auto = BattalionStrategy::Auto;
+/// // Auto will be resolved to a specific strategy at runtime
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BattalionStrategy {
+    /// Sequential execution with output chaining (Paladin N output → Paladin N+1 input)
+    Formation,
+
+    /// Concurrent parallel execution (all Paladins receive same input, results aggregated)
+    Phalanx,
+
+    /// Graph/DAG-based orchestration (conditional branching and complex workflows)
+    Campaign,
+
+    /// Hierarchical delegation pattern (commander delegates to specialist Paladins)
+    ChainOfCommand,
+
+    /// Automatic strategy selection based on heuristics
+    Auto,
+}
+
 /// Current status of a Battalion execution
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum BattalionStatus {
@@ -274,6 +307,14 @@ pub enum BattalionError {
     /// Chain of Command error
     #[error("Chain of Command error: {0}")]
     ChainOfCommandError(String),
+
+    /// Commander validation error
+    #[error("Commander validation error: {0}")]
+    CommanderValidation(String),
+
+    /// Strategy selection error
+    #[error("Strategy selection failed: {0}")]
+    StrategySelection(String),
 
     /// Timeout error
     #[error("Battalion execution timed out after {0} seconds")]
@@ -489,4 +530,33 @@ mod tests {
             assert!(!msg.is_empty());
         }
     }
+}
+
+#[test]
+fn test_battalion_strategy_creation() {
+    let formation = BattalionStrategy::Formation;
+    let phalanx = BattalionStrategy::Phalanx;
+    let campaign = BattalionStrategy::Campaign;
+    let chain = BattalionStrategy::ChainOfCommand;
+    let auto = BattalionStrategy::Auto;
+
+    assert_eq!(formation, BattalionStrategy::Formation);
+    assert_eq!(phalanx, BattalionStrategy::Phalanx);
+    assert_eq!(campaign, BattalionStrategy::Campaign);
+    assert_eq!(chain, BattalionStrategy::ChainOfCommand);
+    assert_eq!(auto, BattalionStrategy::Auto);
+    assert_ne!(formation, phalanx);
+}
+
+#[test]
+fn test_battalion_strategy_serialization() {
+    let strategy = BattalionStrategy::Formation;
+    let serialized = serde_json::to_string(&strategy).unwrap();
+    let deserialized: BattalionStrategy = serde_json::from_str(&serialized).unwrap();
+    assert_eq!(strategy, deserialized);
+
+    let auto = BattalionStrategy::Auto;
+    let serialized = serde_json::to_string(&auto).unwrap();
+    let deserialized: BattalionStrategy = serde_json::from_str(&serialized).unwrap();
+    assert_eq!(auto, deserialized);
 }
