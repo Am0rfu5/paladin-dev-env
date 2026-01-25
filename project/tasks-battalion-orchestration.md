@@ -205,43 +205,43 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.40 Run fmt and clippy: `cargo fmt && cargo clippy`
   - [x] 4.41 Verify ≥80% coverage for Phalanx code
   - [x] 4.42 Commit: "test(battalion): add Phalanx integration tests and examples"
-  - [ ] 4.43 **PHASE 1 MILESTONE:** Run full test suite: `cargo test`
-  - [ ] 4.44 **PHASE 1 MILESTONE:** Create PR for Phase 1 review
-
-- [ ] 5.0 Implement Campaign Pattern (Phase 2 - Graph Orchestration)
-  - [ ] 5.1 Create `tests/unit/battalion/campaign_tests.rs`
-  - [ ] 5.2 Write failing tests for Campaign construction (TDD - Red)
-  - [ ] 5.3 Implement `Campaign` struct in `src/core/platform/container/battalion/campaign.rs`
-  - [ ] 5.4 Write failing tests for CampaignEdge struct (TDD - Red)
-  - [ ] 5.5 Implement `CampaignEdge` with condition and transform
-  - [ ] 5.6 Write failing tests for EdgeCondition enum (TDD - Red)
-  - [ ] 5.7 Implement `EdgeCondition` (Always, Contains, Regex, Custom)
-  - [ ] 5.8 Write failing tests for Campaign::new() and builders (TDD - Red)
-  - [ ] 5.9 Implement Campaign::new(), add_paladin(), add_edge()
-  - [ ] 5.10 Write failing tests for graph validation (TDD - Red)
-  - [ ] 5.11 Implement Campaign::validate() with cycle detection using petgraph
-  - [ ] 5.12 Write failing tests for entry point validation (TDD - Red)
-  - [ ] 5.13 Implement entry point management
-  - [ ] 5.14 Update battalion/mod.rs to export Campaign
-  - [ ] 5.15 Run unit tests: `cargo test campaign_tests`
-  - [ ] 5.16 Create `src/application/use_cases/battalion/campaign_service.rs`
-  - [ ] 5.17 Write failing tests for CampaignExecutionService (TDD - Red)
-  - [ ] 5.18 Implement CampaignExecutionService struct
-  - [ ] 5.19 Write failing tests for topological sort execution (TDD - Red)
-  - [ ] 5.20 Implement topological sort using petgraph::algo::toposort
-  - [ ] 5.21 Write failing tests for edge condition evaluation (TDD - Red)
-  - [ ] 5.22 Implement edge condition evaluation logic
-  - [ ] 5.23 Write failing tests for output transformation on edges (TDD - Red)
-  - [ ] 5.24 Implement edge transform application
-  - [ ] 5.25 Write failing tests for parallel branch execution (TDD - Red)
-  - [ ] 5.26 Implement parallel execution of independent branches
-  - [ ] 5.27 Write failing tests for fan-out pattern (1 → N) (TDD - Red)
-  - [ ] 5.28 Implement fan-out with concurrent execution
-  - [ ] 5.29 Write failing tests for fan-in pattern (N → 1) (TDD - Red)
-  - [ ] 5.30 Implement fan-in with result collection
-  - [ ] 5.31 Write failing tests for multiple entry points (TDD - Red)
-  - [ ] 5.32 Implement multiple entry point handling
-  - [ ] 5.33 Add comprehensive rustdoc with graph examples
+  - [x] 4.43 **PHASE 1 MILESTONE:** Run full test suite: `cargo test`
+  - [x] 4.44 **PHASE 1 MILESTONE:** Create PR for Phase 1 review
+  
+- [x] 5.0 Implement Campaign Pattern (Phase 2 - Graph Orchestration)
+  - [x] 5.1 Create `tests/unit/battalion/campaign_tests.rs`
+  - [x] 5.2 Write failing tests for Campaign construction (TDD - Red)
+  - [x] 5.3 Implement `Campaign` struct in `src/core/platform/container/battalion/campaign.rs`
+  - [x] 5.4 Write failing tests for CampaignEdge struct (TDD - Red)
+  - [x] 5.5 Implement `CampaignEdge` with condition and transform
+  - [x] 5.6 Write failing tests for EdgeCondition enum (TDD - Red)
+  - [x] 5.7 Implement `EdgeCondition` (Always, Contains, Regex, Custom)
+  - [x] 5.8 Write failing tests for Campaign::new() and builders (TDD - Red)
+  - [x] 5.9 Implement Campaign::new(), add_paladin(), add_edge()
+  - [x] 5.10 Write failing tests for graph validation (TDD - Red)
+  - [x] 5.11 Implement Campaign::validate() with cycle detection using petgraph
+  - [x] 5.12 Write failing tests for entry point validation (TDD - Red)
+  - [x] 5.13 Implement entry point management
+  - [x] 5.14 Update battalion/mod.rs to export Campaign
+  - [x] 5.15 Run unit tests: `cargo test campaign_tests`
+  - [x] 5.16 Create `src/application/use_cases/battalion/campaign_service.rs`
+  - [x] 5.17 Write failing tests for CampaignExecutionService (TDD - Red)
+  - [x] 5.18 Implement CampaignExecutionService struct
+  - [x] 5.19 Write failing tests for topological sort execution (TDD - Red)
+  - [x] 5.20 Implement topological sort using petgraph::algo::toposort
+  - [x] 5.21 Write failing tests for edge condition evaluation (TDD - Red)
+  - [x] 5.22 Implement edge condition evaluation logic
+  - [x] 5.23 Write failing tests for output transformation on edges (TDD - Red)
+  - [x] 5.24 Implement edge transform application
+  - [x] 5.25 Write failing tests for parallel branch execution (TDD - Red)
+  - [x] 5.26 Implement parallel execution of independent branches
+  - [x] 5.27 Write failing tests for fan-out pattern (1 → N) (TDD - Red)
+  - [x] 5.28 Implement fan-out with concurrent execution
+  - [x] 5.29 Write failing tests for fan-in pattern (N → 1) (TDD - Red)
+  - [x] 5.30 Implement fan-in with result collection
+  - [x] 5.31 Write failing tests for multiple entry points (TDD - Red)
+  - [x] 5.32 Implement multiple entry point handling
+  - [x] 5.33 Add comprehensive rustdoc with graph examples
   - [ ] 5.34 Run unit tests: `cargo test campaign`
   - [ ] 5.35 Create `tests/integration/battalion/campaign_integration_test.rs`
   - [ ] 5.36 Write integration test for linear graph (chain)

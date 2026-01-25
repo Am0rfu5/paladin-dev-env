@@ -36,7 +36,7 @@ impl IntegrationMockPaladinPort {
         }
     }
 
-    fn with_failures(mut self, paladin_names: Vec<String>) -> Self {
+    fn with_failures(self, paladin_names: Vec<String>) -> Self {
         self.failure_config.lock().unwrap().fail_paladin_names = paladin_names;
         self
     }
@@ -285,7 +285,7 @@ async fn test_formation_timeout_enforcement() {
     let formation = Formation::new(vec![p1, p2], config).unwrap();
 
     // Use a mock with longer delays
-    let mut mock_port = IntegrationMockPaladinPort::new();
+    let mock_port = IntegrationMockPaladinPort::new();
     mock_port.failure_config.lock().unwrap().delay_ms = 600; // 600ms per Paladin = 1.2s total
 
     let service = FormationExecutionService::new(Arc::new(mock_port));

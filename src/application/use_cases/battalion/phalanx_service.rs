@@ -346,7 +346,6 @@ mod tests {
     /// Mock PaladinPort for testing
     struct MockPaladinPort {
         call_count: Arc<Mutex<usize>>,
-        should_fail: bool,
         fail_paladin_names: Arc<Mutex<Vec<String>>>,
         delay_ms: u64,
         output_override: Arc<Mutex<HashMap<String, String>>>,
@@ -356,7 +355,6 @@ mod tests {
         fn new() -> Self {
             Self {
                 call_count: Arc::new(Mutex::new(0)),
-                should_fail: false,
                 fail_paladin_names: Arc::new(Mutex::new(Vec::new())),
                 delay_ms: 10,
                 output_override: Arc::new(Mutex::new(HashMap::new())),
