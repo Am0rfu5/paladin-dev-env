@@ -71,9 +71,9 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Create and checkout new branch `feature/epic6-provider-expansion`
-  - [ ] 0.2 Verify clean working directory with `git status`
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Create and checkout new branch `feature/epic6-provider-expansion`
+  - [x] 0.2 Verify clean working directory with `git status`
 
 - [ ] 1.0 Enhance LlmPort trait with provider capabilities
   - [ ] 1.1 Read existing `src/application/ports/output/llm_port.rs` to understand current trait
@@ -90,34 +90,34 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 1.12 Run `cargo test` to verify no regressions
   - [ ] 1.13 Run `cargo fmt` and `cargo clippy`
 
-- [ ] 2.0 Implement DeepSeek adapter
-  - [ ] 2.1 Create `src/infrastructure/adapters/llm/deepseek_adapter.rs`
-  - [ ] 2.2 Define `DeepSeekConfig` struct with required fields (REQ-4)
-  - [ ] 2.3 Implement `DeepSeekConfig::from_env()` for loading from environment variables
-  - [ ] 2.4 Define `DeepSeekAdapter` struct with `reqwest::Client` and config
-  - [ ] 2.5 Implement `DeepSeekAdapter::new()` constructor with validation (REQ-7)
-  - [ ] 2.6 Implement `LlmPort::generate()` for standard completions (REQ-5)
-  - [ ] 2.7 Implement request serialization for DeepSeek API format
-  - [ ] 2.8 Implement response deserialization from DeepSeek API
-  - [ ] 2.9 Implement error mapping from DeepSeek errors to `LlmError` (REQ-8, REQ-23)
-  - [ ] 2.10 Implement `LlmPort::generate_stream()` for SSE streaming (REQ-6)
-  - [ ] 2.11 Implement SSE parsing logic for streaming responses
-  - [ ] 2.12 Implement `LlmPort::validate_model()` with API call or local validation
-  - [ ] 2.13 Implement `LlmPort::get_available_models()` returning DeepSeek model list
-  - [ ] 2.14 Implement `LlmPort::get_provider_name()` returning "deepseek"
-  - [ ] 2.15 Implement `LlmPort::get_capabilities()` returning DeepSeek capabilities
-  - [ ] 2.16 Add timeout handling with configurable timeout (REQ-4)
-  - [ ] 2.17 Add retry logic with exponential backoff for rate limits (Section 7.3)
-  - [ ] 2.18 Add module to `src/infrastructure/adapters/llm/mod.rs`
-  - [ ] 2.19 Write unit test: `test_deepseek_config_from_env()`
-  - [ ] 2.20 Write unit test: `test_deepseek_adapter_creation()`
-  - [ ] 2.21 Write unit test: `test_deepseek_basic_completion()` with mock
-  - [ ] 2.22 Write unit test: `test_deepseek_streaming()` with mock
-  - [ ] 2.23 Write unit test: `test_deepseek_error_mapping()`
-  - [ ] 2.24 Write unit test: `test_deepseek_authentication_error()` (REQ-24)
-  - [ ] 2.25 Run `cargo test` to verify all tests pass
-  - [ ] 2.26 Run `cargo clippy` and fix any warnings
-  - [ ] 2.27 Add rustdoc comments to all public items
+- [x] 2.0 Implement DeepSeek adapter
+  - [x] 2.1 Create `src/infrastructure/adapters/llm/deepseek_adapter.rs`
+  - [x] 2.2 Define `DeepSeekConfig` struct with required fields (REQ-4)
+  - [x] 2.3 Implement `DeepSeekConfig::from_env()` for loading from environment variables
+  - [x] 2.4 Define `DeepSeekAdapter` struct with `reqwest::Client` and config
+  - [x] 2.5 Implement `DeepSeekAdapter::new()` constructor with validation (REQ-7)
+  - [x] 2.6 Implement `LlmPort::generate()` for standard completions (REQ-5)
+  - [x] 2.7 Implement request serialization for DeepSeek API format
+  - [x] 2.8 Implement response deserialization from DeepSeek API
+  - [x] 2.9 Implement error mapping from DeepSeek errors to `LlmError` (REQ-8, REQ-23)
+  - [x] 2.10 Implement `LlmPort::generate_stream()` for SSE streaming (REQ-6)
+  - [x] 2.11 Implement SSE parsing logic for streaming responses
+  - [x] 2.12 Implement `LlmPort::validate_model()` with API call or local validation
+  - [x] 2.13 Implement `LlmPort::get_available_models()` returning DeepSeek model list
+  - [x] 2.14 Implement `LlmPort::get_provider_name()` returning "deepseek"
+  - [ ] 2.15 Implement `LlmPort::get_capabilities()` returning DeepSeek capabilities (BLOCKED: waiting for Task 1.7)
+  - [x] 2.16 Add timeout handling with configurable timeout (REQ-4)
+  - [x] 2.17 Add retry logic with exponential backoff for rate limits (Section 7.3)
+  - [x] 2.18 Add module to `src/infrastructure/adapters/llm/mod.rs`
+  - [x] 2.19 Write unit test: `test_deepseek_config_from_env()`
+  - [x] 2.20 Write unit test: `test_deepseek_adapter_creation()`
+  - [x] 2.21 Write unit test: `test_deepseek_basic_completion()` with mock
+  - [x] 2.22 Write unit test: `test_deepseek_streaming()` with mock
+  - [x] 2.23 Write unit test: `test_deepseek_error_mapping()`
+  - [x] 2.24 Write unit test: `test_deepseek_authentication_error()` (REQ-24)
+  - [x] 2.25 Run `cargo test` to verify all tests pass
+  - [x] 2.26 Run `cargo clippy` and fix any warnings
+  - [x] 2.27 Add rustdoc comments to all public items
 
 - [ ] 3.0 Implement Anthropic adapter
   - [ ] 3.1 Create `src/infrastructure/adapters/llm/anthropic_adapter.rs`
