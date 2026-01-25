@@ -75,20 +75,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 0.1 Create and checkout new branch `feature/epic6-provider-expansion`
   - [x] 0.2 Verify clean working directory with `git status`
 
-- [ ] 1.0 Enhance LlmPort trait with provider capabilities
-  - [ ] 1.1 Read existing `src/application/ports/output/llm_port.rs` to understand current trait
-  - [ ] 1.2 Create `src/core/platform/container/llm_types.rs` for shared types
-  - [ ] 1.3 Define `ProviderCapabilities` struct with all required fields (REQ-2)
-  - [ ] 1.4 Define `LlmRequest` struct for standardized request format
-  - [ ] 1.5 Define `LlmResponse` struct for standardized response format
-  - [ ] 1.6 Define `StreamingResponse` struct for streaming chunks
-  - [ ] 1.7 Add `get_capabilities()` method to `LlmPort` trait (REQ-1)
-  - [ ] 1.8 Add `get_provider_name()` method to `LlmPort` trait (REQ-1)
-  - [ ] 1.9 Ensure `validate_model()` and `get_available_models()` are in trait (REQ-1)
-  - [ ] 1.10 Update module exports in `src/core/mod.rs` and `src/application/ports/output/mod.rs`
-  - [ ] 1.11 Write unit tests for new types (serialization, validation)
-  - [ ] 1.12 Run `cargo test` to verify no regressions
-  - [ ] 1.13 Run `cargo fmt` and `cargo clippy`
+- [x] 1.0 Enhance LlmPort trait with provider capabilities
+  - [x] 1.1 Read existing `src/application/ports/output/llm_port.rs` to understand current trait
+  - [x] 1.2 Create `src/core/platform/container/llm_types.rs` for shared types (N/A - added to llm_port.rs instead)
+  - [x] 1.3 Define `ProviderCapabilities` struct with all required fields (REQ-2)
+  - [x] 1.4 Define `LlmRequest` struct for standardized request format (Already exists)
+  - [x] 1.5 Define `LlmResponse` struct for standardized response format (Already exists)
+  - [x] 1.6 Define `StreamingResponse` struct for streaming chunks (Already exists)
+  - [x] 1.7 Add `get_capabilities()` method to `LlmPort` trait (REQ-1)
+  - [x] 1.8 Add `get_provider_name()` method to `LlmPort` trait (REQ-1) (Already exists)
+  - [x] 1.9 Ensure `validate_model()` and `get_available_models()` are in trait (REQ-1) (Already exists)
+  - [x] 1.10 Update module exports in `src/core/mod.rs` and `src/application/ports/output/mod.rs`
+  - [x] 1.11 Write unit tests for new types (serialization, validation)
+  - [x] 1.12 Run `cargo test` to verify no regressions
+  - [x] 1.13 Run `cargo fmt` and `cargo clippy`
 
 - [x] 2.0 Implement DeepSeek adapter
   - [x] 2.1 Create `src/infrastructure/adapters/llm/deepseek_adapter.rs`
@@ -105,7 +105,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.12 Implement `LlmPort::validate_model()` with API call or local validation
   - [x] 2.13 Implement `LlmPort::get_available_models()` returning DeepSeek model list
   - [x] 2.14 Implement `LlmPort::get_provider_name()` returning "deepseek"
-  - [ ] 2.15 Implement `LlmPort::get_capabilities()` returning DeepSeek capabilities (BLOCKED: waiting for Task 1.7)
+  - [x] 2.15 Implement `LlmPort::get_capabilities()` returning DeepSeek capabilities
   - [x] 2.16 Add timeout handling with configurable timeout (REQ-4)
   - [x] 2.17 Add retry logic with exponential backoff for rate limits (Section 7.3)
   - [x] 2.18 Add module to `src/infrastructure/adapters/llm/mod.rs`

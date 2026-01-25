@@ -12,7 +12,8 @@ use std::env;
 use uuid::Uuid;
 
 use crate::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities,
+    StreamingResponse, TokenUsage,
 };
 use crate::core::platform::container::content::{ContentItem, ContentType};
 use crate::core::platform::container::prompt::{PromptItem, PromptType};
@@ -506,6 +507,18 @@ impl LlmPort for OpenAILlmAdapter {
 
     fn get_provider_name(&self) -> &'static str {
         "OpenAI"
+    }
+
+    fn get_capabilities(&self) -> ProviderCapabilities {
+        ProviderCapabilities {
+            supports_streaming: true,
+            supports_tool_calling: true,
+            supports_function_calling: true,
+            supports_vision: true,
+            max_context_tokens: Some(128000), // GPT-4 Turbo context window
+            supports_embeddings: true,
+            supports_system_messages: true,
+        }
     }
 }
 

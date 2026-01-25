@@ -73,6 +73,11 @@ impl LlmPort for MockLlmPort {
     fn get_provider_name(&self) -> &'static str {
         "Mock"
     }
+    fn get_capabilities(
+        &self,
+    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
+        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    }
 }
 
 #[tokio::test]
@@ -555,6 +560,12 @@ async fn test_garrison_with_circuit_breaker_interaction() {
 
         fn get_provider_name(&self) -> &'static str {
             "Failing"
+        }
+
+        fn get_capabilities(
+            &self,
+        ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
+            paladin::application::ports::output::llm_port::ProviderCapabilities::default()
         }
     }
 

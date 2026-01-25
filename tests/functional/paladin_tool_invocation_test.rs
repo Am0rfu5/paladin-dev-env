@@ -89,6 +89,12 @@ impl LlmPort for MockToolLlm {
     fn get_provider_name(&self) -> &'static str {
         "mock"
     }
+
+    fn get_capabilities(
+        &self,
+    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
+        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    }
 }
 
 /// Mock arsenal with calculator and echo tools

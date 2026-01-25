@@ -663,5 +663,11 @@ mod tests {
         fn get_provider_name(&self) -> &'static str {
             "Mock"
         }
+
+        fn get_capabilities(
+            &self,
+        ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
+            crate::application::ports::output::llm_port::ProviderCapabilities::default()
+        }
     }
 }

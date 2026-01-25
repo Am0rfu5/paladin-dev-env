@@ -19,7 +19,8 @@ use std::time::Duration;
 use uuid::Uuid;
 
 use crate::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities,
+    StreamingResponse, TokenUsage,
 };
 use crate::core::platform::container::prompt::{PromptItem, PromptType};
 
@@ -535,6 +536,29 @@ impl LlmPort for DeepSeekAdapter {
     /// Get provider name
     fn get_provider_name(&self) -> &'static str {
         "deepseek"
+    }
+
+    /// Get provider capabilities
+    ///
+    /// DeepSeek supports:
+    /// - Streaming responses via SSE
+    /// - System messages
+    /// - 64K context window
+    ///
+    /// Currently does not support:
+    /// - Tool/function calling (may be added in future)
+    /// - Vision/image inputs
+    /// - Embeddings (separate API)
+    fn get_capabilities(&self) -> ProviderCapabilities {
+        ProviderCapabilities {
+            supports_streaming: true,
+            supports_tool_calling: false,
+            supports_function_calling: false,
+            supports_vision: false,
+            supports_embeddings: false,
+            max_context_tokens: Some(64000),
+            supports_system_messages: true,
+        }
     }
 }
 

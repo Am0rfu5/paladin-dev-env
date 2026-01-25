@@ -57,6 +57,12 @@ impl LlmPort for MockLlmPort {
     fn get_provider_name(&self) -> &'static str {
         "Mock"
     }
+
+    fn get_capabilities(
+        &self,
+    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
+        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    }
 }
 
 // Mock Arsenal Registry for testing

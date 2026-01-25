@@ -12,7 +12,8 @@
 // - Streaming support
 
 use crate::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities,
+    StreamingResponse, TokenUsage,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -314,6 +315,19 @@ impl LlmPort for MockLlmAdapter {
 
     fn get_provider_name(&self) -> &'static str {
         "MockLLM"
+    }
+
+    fn get_capabilities(&self) -> ProviderCapabilities {
+        // Mock adapter supports everything for testing purposes
+        ProviderCapabilities {
+            supports_streaming: true,
+            supports_tool_calling: true,
+            supports_function_calling: true,
+            supports_vision: true,
+            supports_embeddings: true,
+            max_context_tokens: Some(100000),
+            supports_system_messages: true,
+        }
     }
 }
 

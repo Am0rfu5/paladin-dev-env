@@ -89,6 +89,12 @@ impl LlmPort for MockLlmWithFunctionCalls {
     fn get_provider_name(&self) -> &'static str {
         "mock"
     }
+
+    fn get_capabilities(
+        &self,
+    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
+        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    }
 }
 
 /// Mock Arsenal adapter for testing tool invocation
