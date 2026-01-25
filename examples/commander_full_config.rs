@@ -84,16 +84,19 @@ impl PaladinPort for ConfigurableMockPort {
 }
 
 fn create_paladin(name: &str) -> Paladin {
-    Node::new(PaladinData {
-        system_prompt: format!("You are {}, a specialized processor.", name),
-        name: name.to_string(),
-        user_name: "System".to_string(),
-        model: "gpt-4".to_string(),
-        temperature: 0.7,
-        max_loops: 1,
-        stop_words: vec![],
-        status: PaladinStatus::Idle,
-    }, None)
+    Node::new(
+        PaladinData {
+            system_prompt: format!("You are {}, a specialized processor.", name),
+            name: name.to_string(),
+            user_name: "System".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: 1,
+            stop_words: vec![],
+            status: PaladinStatus::Idle,
+        },
+        None,
+    )
 }
 
 /// Demonstrate different error handling strategies
@@ -122,7 +125,10 @@ async fn demonstrate_error_strategy(
     println!("{}", "-".repeat(70));
     println!("   Battalion Name: {}", config.name);
     println!("   Timeout: {} seconds", config.timeout_seconds);
-    println!("   Max Retry Attempts: {}", config.retry_policy.max_attempts);
+    println!(
+        "   Max Retry Attempts: {}",
+        config.retry_policy.max_attempts
+    );
     println!("   Error Strategy: {:?}", config.error_strategy);
     println!(
         "   Metadata Dir: {}",
@@ -164,7 +170,10 @@ async fn demonstrate_error_strategy(
             println!("   Strategy: {:?}", battalion_result.strategy_used);
             println!(
                 "   Total Time: {}ms",
-                battalion_result.completed_at.signed_duration_since(battalion_result.started_at).num_milliseconds()
+                battalion_result
+                    .completed_at
+                    .signed_duration_since(battalion_result.started_at)
+                    .num_milliseconds()
             );
             println!(
                 "   Succeeded: {} | Failed: {}",

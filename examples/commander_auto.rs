@@ -53,16 +53,19 @@ impl PaladinPort for MockPaladinPort {
 }
 
 fn create_paladin(name: &str) -> Paladin {
-    Node::new(PaladinData {
-        system_prompt: format!("You are {}", name),
-        name: name.to_string(),
-        user_name: "User".to_string(),
-        model: "gpt-4".to_string(),
-        temperature: 0.7,
-        max_loops: 1,
-        stop_words: vec![],
-        status: PaladinStatus::Idle,
-    }, None)
+    Node::new(
+        PaladinData {
+            system_prompt: format!("You are {}", name),
+            name: name.to_string(),
+            user_name: "User".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: 1,
+            stop_words: vec![],
+            status: PaladinStatus::Idle,
+        },
+        None,
+    )
 }
 
 /// Demonstrate Auto mode with different Paladin configurations
@@ -108,8 +111,17 @@ async fn run_auto_example(
 
     // Display telemetry metadata
     println!("\n   ⏱️  Telemetry:");
-    println!("      Strategy Selection Time: {}ms", result.strategy_selection_time_ms);
-    println!("      Total Execution Time: {}ms", result.completed_at.signed_duration_since(result.started_at).num_milliseconds());
+    println!(
+        "      Strategy Selection Time: {}ms",
+        result.strategy_selection_time_ms
+    );
+    println!(
+        "      Total Execution Time: {}ms",
+        result
+            .completed_at
+            .signed_duration_since(result.started_at)
+            .num_milliseconds()
+    );
     println!("      Paladins Succeeded: {}", result.paladin_success_count);
     println!("      Paladins Failed: {}", result.paladin_failure_count);
 

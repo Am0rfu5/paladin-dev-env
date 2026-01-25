@@ -18,26 +18,118 @@ use crate::core::platform::container::battalion::{
 };
 use crate::core::platform::container::paladin::Paladin;
 
-/// Commander for routing Battalion execution to appropriate strategies
+/// Commander for routing Battalion execution to appropriate strategies.
 ///
-/// The Commander provides a unified interface for executing groups of Paladins,
-/// automatically selecting the optimal orchestration pattern based on configured
-/// strategy or intelligent heuristics.
+/// The Commander is the primary interface for orchestrating multiple Paladins in coordinated
+/// workflows. It provides intelligent strategy selection and unified execution across all
+/// Battalion patterns: Formation, Phalanx, Campaign, and ChainOfCommand.
 ///
-/// # Example
+/// # Features
+///
+/// - **Auto Mode**: Automatically selects optimal strategy based on input analysis and Paladin count
+/// - **Explicit Strategy**: Manually select Formation, Phalanx, Campaign, or ChainOfCommand
+/// - **Timeout Enforcement**: Configurable execution timeouts with automatic cancellation
+/// - **Error Handling**: Supports FailFast, ContinueOnError, and RetryThenContinue strategies
+/// - **Telemetry**: Comprehensive execution metadata including timing and success/failure counts
+/// - **Retry Logic**: Configurable retry policies with exponential backoff
+///
+/// # Auto Mode Heuristics
+///
+/// When using `BattalionStrategy::Auto`, the Commander applies the following rules:
+///
+/// 1. **Formation** (Sequential)
+///    - 1-3 Paladins by default
+///    - Keywords: "sequential", "pipeline", "step by step", "one after", "first then"
+///
+/// 2. **Phalanx** (Parallel)
+///    - 4+ Paladins with independent tasks
+///    - Keywords: "parallel", "concurrent", "all at once", "simultaneously"
+///
+/// 3. **Campaign** (Graph/Workflow)
+///    - Complex multi-stage workflows
+///    - Keywords: "workflow", "graph", "conditional", "if-then", "depends on"
+///
+/// 4. **ChainOfCommand** (Hierarchical)
+///    - Specialist delegation patterns
+///    - Keywords: "delegate", "hierarchy", "specialist", "expert", "assign to"
+///
+/// # Examples
+///
+/// ## Basic Usage with Explicit Strategy
 ///
 /// ```ignore
-/// use paladin::application::use_cases::battalion::commander::{Commander, CommanderBuilder};
+/// use paladin::application::use_cases::battalion::commander::CommanderBuilder;
+/// use paladin::core::platform::container::battalion::{BattalionConfig, BattalionStrategy};
 /// use std::sync::Arc;
 ///
+/// // Create Commander with Formation strategy
+/// let commander = CommanderBuilder::new(paladin_port)
+///     .strategy(BattalionStrategy::Formation)
+///     .paladins(vec![analyzer, enhancer, reviewer])
+///     .config(BattalionConfig::new("sequential_pipeline").with_timeout(60))
+///     .build()?;
+///
+/// // Execute with input
+/// let result = commander.execute("Process this data").await?;
+/// println!("Final output: {}", result.final_output);
+/// ```
+///
+/// ## Auto Mode with Telemetry
+///
+/// ```ignore
+/// use paladin::core::platform::container::battalion::BattalionStrategy;
+///
+/// // Auto mode will select the best strategy
 /// let commander = CommanderBuilder::new(paladin_port)
 ///     .strategy(BattalionStrategy::Auto)
-///     .paladins(vec![paladin1, paladin2])
+///     .paladins(vec![worker1, worker2, worker3, worker4, worker5])
+///     .build()?; // Uses default config
+///
+/// let result = commander.execute("Process batch in parallel").await?;
+///
+/// // Check what strategy was selected
+/// println!("Selected: {:?}", result.strategy_used);
+/// if let Some(reasoning) = &result.strategy_selection_reasoning {
+///     println!("Because: {}", reasoning);
+/// }
+/// println!("Selection took: {}ms", result.strategy_selection_time_ms);
+/// ```
+///
+/// ## Production Configuration
+///
+/// ```ignore
+/// use paladin::core::platform::container::battalion::{BattalionConfig, ErrorStrategy, RetryPolicy};
+///
+/// let config = BattalionConfig::new("production_battalion")
+///     .with_timeout(300)
+///     .with_error_strategy(ErrorStrategy::RetryThenContinue)
+///     .with_retry_policy(RetryPolicy {
+///         max_attempts: 3,
+///         ..Default::default()
+///     });
+///
+/// let commander = CommanderBuilder::new(paladin_port)
+///     .strategy(BattalionStrategy::Formation)
+///     .paladins(paladins)
 ///     .config(config)
 ///     .build()?;
 ///
-/// let result = commander.execute("Initial input").await?;
+/// match commander.execute("Critical task").await {
+///     Ok(result) => {
+///         println!("Success: {} succeeded, {} failed",
+///             result.paladin_success_count,
+///             result.paladin_failure_count);
+///     }
+///     Err(e) => eprintln!("Battalion failed: {}", e),
+/// }
 /// ```
+///
+/// # See Also
+///
+/// - [`CommanderBuilder`] - Fluent builder for creating Commander instances
+/// - [`BattalionStrategy`] - Available orchestration patterns
+/// - [`BattalionConfig`] - Configuration options for execution
+/// - [`BattalionResult`] - Result type with execution metadata
 pub struct Commander {
     /// Unique identifier for this Commander instance
     pub id: Uuid,
@@ -103,22 +195,110 @@ impl Commander {
         }
     }
 
-    /// Execute the Commander's Battalion with the given input
+    /// Execute the Commander's Battalion with the given input.
     ///
-    /// Routes execution to the appropriate strategy service based on the
-    /// configured strategy. For Auto mode, applies heuristics to select
-    /// the optimal strategy.
+    /// This is the primary entry point for Battalion execution. It handles strategy
+    /// resolution, timeout enforcement, service delegation, and result enrichment.
     ///
-    /// Enforces timeout based on BattalionConfig::timeout_seconds.
+    /// # Execution Flow
+    ///
+    /// 1. **Strategy Resolution**: If using Auto mode, analyzes input and Paladin characteristics
+    ///    to select the optimal strategy. Otherwise, uses the explicitly configured strategy.
+    ///
+    /// 2. **Timeout Enforcement**: Wraps execution with `tokio::time::timeout` using the
+    ///    configured `timeout_seconds`. If execution exceeds this limit, returns a Timeout error.
+    ///
+    /// 3. **Service Delegation**: Routes to the appropriate Battalion service:
+    ///    - Formation -> Sequential pipeline execution
+    ///    - Phalanx -> Concurrent parallel execution  
+    ///    - Campaign -> Graph-based workflow execution
+    ///    - ChainOfCommand -> Hierarchical delegation execution
+    ///
+    /// 4. **Result Enrichment**: Enhances the result with Commander-specific metadata:
+    ///    - `strategy_used`: The actual strategy executed (resolved from Auto if applicable)
+    ///    - `strategy_selection_reasoning`: Explanation of why the strategy was chosen
+    ///    - `strategy_selection_time_ms`: Time spent selecting strategy
+    ///    - Timing and success/failure counts
     ///
     /// # Arguments
     ///
-    /// * `input` - Initial input for the Battalion
+    /// * `input` - The initial input string to provide to the Battalion. For:
+    ///   - **Formation**: Provided to the first Paladin; subsequent Paladins receive prior output
+    ///   - **Phalanx**: Provided identically to all Paladins in parallel
+    ///   - **Campaign**: Provided to entry point Paladin(s) in the graph
+    ///   - **ChainOfCommand**: Provided to the commander Paladin for delegation decisions
     ///
     /// # Returns
     ///
-    /// * `Ok(BattalionResult)` - Result of Battalion execution
-    /// * `Err(BattalionError)` - If execution fails or times out
+    /// * `Ok(BattalionResult)` - Successful execution with:
+    ///   - `final_output`: The final result from the Battalion
+    ///   - `status`: BattalionStatus::Completed
+    ///   - `strategy_used`: The strategy that was actually executed
+    ///   - `strategy_selection_reasoning`: Auto mode explanation (if applicable)
+    ///   - `paladin_success_count` / `paladin_failure_count`: Execution statistics
+    ///   - `started_at` / `completed_at`: Timestamp metadata
+    ///   - Additional telemetry fields
+    ///
+    /// # Errors
+    ///
+    /// * `BattalionError::Timeout` - Execution exceeded configured timeout_seconds
+    /// * `BattalionError::ExecutionError` - One or more Paladins failed (if using FailFast)
+    /// * `BattalionError::ValidationError` - Invalid Battalion configuration or state
+    /// * `BattalionError::PaladinError` - Underlying Paladin execution failure
+    /// * Other strategy-specific errors from delegated services
+    ///
+    /// # Examples
+    ///
+    /// ## Basic Execution
+    ///
+    /// ```ignore
+    /// let result = commander.execute("Analyze this customer feedback").await?;
+    /// println!("Analysis result: {}", result.final_output);
+    /// ```
+    ///
+    /// ## With Error Handling
+    ///
+    /// ```ignore
+    /// match commander.execute("Process data").await {
+    ///     Ok(result) => {
+    ///         println!("✅ Success: {}", result.final_output);
+    ///         println!("   Strategy: {:?}", result.strategy_used);
+    ///         println!("   Duration: {}ms",
+    ///             result.completed_at.signed_duration_since(result.started_at).num_milliseconds());
+    ///     }
+    ///     Err(BattalionError::Timeout(secs)) => {
+    ///         eprintln!("❌ Execution timed out after {} seconds", secs);
+    ///     }
+    ///     Err(e) => {
+    ///         eprintln!("❌ Execution failed: {}", e);
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// ## Analyzing Auto Mode Selection
+    ///
+    /// ```ignore
+    /// let result = commander.execute("Run these tasks in parallel").await?;
+    ///
+    /// // Auto mode provides reasoning
+    /// if let Some(reasoning) = result.strategy_selection_reasoning {
+    ///     println!("Auto mode selected {:?}", result.strategy_used);
+    ///     println!("Reasoning: {}", reasoning);
+    ///     println!("Selection time: {}ms", result.strategy_selection_time_ms);
+    /// }
+    /// ```
+    ///
+    /// # Performance Considerations
+    ///
+    /// - Auto mode adds 0-5ms overhead for strategy analysis
+    /// - Timeout is enforced at the Commander level and also passed to services
+    /// - Telemetry collection adds minimal overhead (<1ms typically)
+    ///
+    /// # See Also
+    ///
+    /// - [`BattalionStrategy`] - Available orchestration patterns
+    /// - [`BattalionResult`] - Detailed result structure
+    /// - [`BattalionConfig`] - Configuration options affecting execution
     pub async fn execute(&self, input: &str) -> Result<BattalionResult, BattalionError> {
         let timeout_duration = Duration::from_secs(self.config.timeout_seconds);
 
@@ -460,6 +640,88 @@ impl Commander {
 ///     .paladins(vec![paladin1, paladin2])
 ///     .config(config)
 ///     .build()?;
+/// ```
+///
+/// # Builder Pattern
+///
+/// The CommanderBuilder follows the fluent builder pattern, allowing method chaining
+/// for readable and flexible Commander construction.
+///
+/// ## Required Fields
+///
+/// - **paladin_port**: Must be provided to `new()` - adapter for executing Paladins
+/// - **strategy**: Must be set via `strategy()` - the orchestration pattern to use
+/// - **paladins**: Must be set via `paladins()` - the Paladins to orchestrate (cannot be empty)
+///
+/// ## Optional Fields
+///
+/// - **config**: Can be set via `config()` - if omitted, uses sensible defaults:
+///   - Name: "default_commander_battalion"
+///   - Timeout: 300 seconds (5 minutes)
+///   - Error Strategy: FailFast
+///   - Retry Policy: 3 attempts with exponential backoff
+///
+/// # Validation
+///
+/// The `build()` method performs comprehensive validation:
+///
+/// - Ensures strategy is set
+/// - Ensures at least one Paladin is provided
+/// - Validates config timeout_seconds > 0
+/// - Validates retry_policy max_attempts > 0
+///
+/// # Examples
+///
+/// ## Minimal Configuration (with defaults)
+///
+/// ```ignore
+/// let commander = CommanderBuilder::new(paladin_port)
+///     .strategy(BattalionStrategy::Formation)
+///     .paladins(vec![paladin1, paladin2])
+///     .build()?; // Uses default config
+/// ```
+///
+/// ## Full Configuration
+///
+/// ```ignore
+/// use paladin::core::platform::container::battalion::{
+///     BattalionConfig, BattalionStrategy, ErrorStrategy, RetryPolicy
+/// };
+/// use std::path::PathBuf;
+///
+/// let config = BattalionConfig::new("custom_battalion")
+///     .with_description("Customer data processing pipeline")
+///     .with_timeout(600) // 10 minutes
+///     .with_error_strategy(ErrorStrategy::RetryThenContinue)
+///     .with_retry_policy(RetryPolicy {
+///         max_attempts: 5,
+///         ..Default::default()
+///     })
+///     .with_metadata_dir(PathBuf::from("./checkpoints"));
+///
+/// let commander = CommanderBuilder::new(paladin_port)
+///     .strategy(BattalionStrategy::Auto)
+///     .paladins(paladins)
+///     .config(config)
+///     .build()?;
+/// ```
+///
+/// ## Error Handling
+///
+/// ```ignore
+/// use paladin::core::platform::container::battalion::BattalionError;
+///
+/// match CommanderBuilder::new(paladin_port)
+///     .strategy(BattalionStrategy::Formation)
+///     .paladins(vec![])
+///     .build()
+/// {
+///     Ok(commander) => { /* use commander */ }
+///     Err(BattalionError::CommanderValidation(msg)) => {
+///         eprintln!("Validation failed: {}", msg);
+///     }
+///     Err(e) => eprintln!("Build error: {}", e),
+/// }
 /// ```
 pub struct CommanderBuilder {
     strategy: Option<BattalionStrategy>,

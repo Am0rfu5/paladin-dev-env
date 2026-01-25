@@ -162,22 +162,135 @@ pub enum ErrorStrategy {
 ///
 /// let auto = BattalionStrategy::Auto;
 /// // Auto will be resolved to a specific strategy at runtime
+///
+/// // Explicit strategy selection
+/// let strategy = BattalionStrategy::Formation;
+///
+/// // Auto mode for intelligent selection
+/// let auto_strategy = BattalionStrategy::Auto;
+///
+/// // Explicit strategy for known patterns
+/// let formation = BattalionStrategy::Formation;
+/// let phalanx = BattalionStrategy::Phalanx;
+///
+/// // Pattern matching
+/// match formation {
+///     BattalionStrategy::Formation => println!("Sequential pipeline"),
+///     BattalionStrategy::Phalanx => println!("Parallel execution"),
+///     BattalionStrategy::Campaign => println!("Graph workflow"),
+///     BattalionStrategy::ChainOfCommand => println!("Hierarchical delegation"),
+///     BattalionStrategy::Auto => println!("Automatic selection"),
+/// }
 /// ```
+///
+/// # Strategy Descriptions
+///
+/// ## Formation
+///
+/// Sequential execution where each Paladin output becomes input for the next Paladin.
+/// Ideal for pipelines and multi-stage transformations.
+///
+/// Use When:
+/// - Tasks must be performed in a specific order
+/// - Each step depends on the previous step output
+/// - Data flows through a linear transformation pipeline
+///
+/// Example Use Cases:
+/// - Research -> Analysis -> Summary workflow
+/// - Data extraction -> Transformation -> Loading (ETL)
+/// - Draft -> Edit -> Review document workflow
+///
+/// ## Phalanx
+///
+/// Concurrent parallel execution where all Paladins receive the same input and execute
+/// simultaneously. Results are aggregated at the end.
+/// Ideal for independent parallel tasks.
+///
+/// Use When:
+/// - Tasks can run independently without dependencies
+/// - All tasks need the same input data
+/// - Want to maximize throughput via parallelism
+///
+/// Example Use Cases:
+/// - Analyzing same data with different models
+/// - Batch processing independent items
+/// - Multi-perspective analysis (technical, business, legal review in parallel)
+///
+/// ## Campaign
+///
+/// Graph/DAG-based execution with conditional branching and complex dependencies.
+/// Paladins are organized in a directed graph with conditional edges.
+/// Ideal for complex workflows with branching logic.
+///
+/// Use When:
+/// - Workflow has conditional branching (if-then-else)
+/// - Dependencies form a complex graph (not just linear)
+/// - Need dynamic routing based on intermediate results
+///
+/// Example Use Cases:
+/// - Approval workflows with escalation paths
+/// - Multi-stage decision trees
+/// - Error handling with fallback paths
+///
+/// ## ChainOfCommand
+///
+/// Hierarchical delegation where a commander Paladin analyzes the task and delegates
+/// to specialist Paladins based on expertise matching.
+/// Ideal for dynamic task routing to specialists.
+///
+/// Use When:
+/// - Have specialized Paladins with different expertise
+/// - Task requires intelligent routing to the right specialist
+/// - Need hierarchical decision-making
+///
+/// Example Use Cases:
+/// - Customer support routing to specialized agents
+/// - Code review routing to domain experts
+/// - Medical triage routing to specialists
+///
+/// ## Auto
+///
+/// Automatic strategy selection based on intelligent heuristics analyzing:
+/// - Input keywords such as parallel, sequential, workflow, delegate
+/// - Number of Paladins (1-3 uses Formation, 4+ considers parallelism)
+/// - Task characteristics
+///
+/// Use When:
+/// - Want the framework to select the optimal pattern
+/// - Building general-purpose orchestration APIs
+/// - Prototyping or exploring different patterns
+///
+/// Selection Rules:
+/// - Formation: Keywords like sequential, step-by-step, pipeline; or 1-3 Paladins
+/// - Phalanx: Keywords like parallel, concurrent, simultaneously; or 4+ similar tasks
+/// - Campaign: Keywords like workflow, conditional, if-then, depends-on
+/// - ChainOfCommand: Keywords like delegate, specialist, expert, route-to
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BattalionStrategy {
-    /// Sequential execution with output chaining (Paladin N output → Paladin N+1 input)
+    /// Sequential execution with output chaining (Paladin N output -> Paladin N+1 input)
+    ///
+    /// Best for linear pipelines where each stage depends on the previous stage's output.
     Formation,
 
     /// Concurrent parallel execution (all Paladins receive same input, results aggregated)
+    ///
+    /// Best for independent tasks that can run simultaneously to maximize throughput.
     Phalanx,
 
     /// Graph/DAG-based orchestration (conditional branching and complex workflows)
+    ///
+    /// Best for complex workflows with conditional logic and multi-path dependencies.
     Campaign,
 
     /// Hierarchical delegation pattern (commander delegates to specialist Paladins)
+    ///
+    /// Best for dynamic routing to specialists based on task characteristics.
     ChainOfCommand,
 
     /// Automatic strategy selection based on heuristics
+    ///
+    /// Analyzes input and Paladin characteristics to intelligently select Formation,
+    /// Phalanx, Campaign, or ChainOfCommand. Provides reasoning for transparency.
     Auto,
 }
 

@@ -95,7 +95,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // This defines behavior like timeouts and error handling
     let config = BattalionConfig::new("basic_formation")
         .with_timeout(60) // 60 second timeout
-        .with_error_strategy(paladin::core::platform::container::battalion::ErrorStrategy::FailFast);
+        .with_error_strategy(
+            paladin::core::platform::container::battalion::ErrorStrategy::FailFast,
+        );
 
     println!("\n⚙️  Configuration:");
     println!("   Battalion: {}", config.name);
@@ -127,7 +129,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📊 Execution Results:");
     println!("   Strategy Used: {:?}", result.strategy_used);
     println!("   Status: {:?}", result.status);
-    println!("   Execution Time: {}ms", result.completed_at.signed_duration_since(result.started_at).num_milliseconds());
+    println!(
+        "   Execution Time: {}ms",
+        result
+            .completed_at
+            .signed_duration_since(result.started_at)
+            .num_milliseconds()
+    );
     println!("   Paladins Succeeded: {}", result.paladin_success_count);
     println!("   Paladins Failed: {}", result.paladin_failure_count);
     println!("\n📝 Final Output:\n   {}", result.final_output);

@@ -9,11 +9,12 @@
 1. [Overview](#overview)
 2. [Quick Start](#quick-start)
 3. [Orchestration Patterns](#orchestration-patterns)
-4. [Configuration](#configuration)
-5. [Error Handling](#error-handling)
-6. [Performance](#performance)
-7. [Best Practices](#best-practices)
-8. [API Reference](#api-reference)
+4. [Commander Strategy Router](#commander-strategy-router)
+5. [Configuration](#configuration)
+6. [Error Handling](#error-handling)
+7. [Performance](#performance)
+8. [Best Practices](#best-practices)
+9. [API Reference](#api-reference)
 
 ---
 
@@ -252,6 +253,284 @@ let result = chain_service.execute(&chain, "Query user database").await?;
 ```
 
 **Performance**: O(1) for delegation decision + O(k) for executing k selected specialists.
+
+---
+
+## Commander Strategy Router
+
+**Unified interface for intelligent Battalion orchestration**
+
+### Overview
+
+The Commander is a high-level abstraction that simplifies Battalion usage by:
+
+1. **Auto Mode**: Automatically selecting the optimal strategy based on input analysis
+2. **Unified API**: Single interface for all four Battalion patterns
+3. **Simplified Configuration**: Smart defaults with optional customization
+4. **Enhanced Telemetry**: Strategy selection reasoning and detailed timing metadata
+
+### Quick Start with Commander
+
+```rust
+use paladin::application::use_cases::battalion::commander::CommanderBuilder;
+use paladin::core::platform::container::battalion::BattalionStrategy;
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Auto mode - Commander selects best strategy
+    let commander = CommanderBuilder::new(paladin_port)
+        .strategy(BattalionStrategy::Auto)
+        .paladins(vec![paladin1, paladin2, paladin3])
+        .build()?; // Uses smart defaults
+    
+    let result = commander.execute("Analyze this data in parallel").await?;
+    
+    // See what strategy was selected
+    println!("Strategy: {:?}", result.strategy_used);
+    if let Some(reasoning) = &result.strategy_selection_reasoning {
+        println!("Because: {}", reasoning);
+    }
+    
+    Ok(())
+}
+```
+
+### Auto Mode Strategy Selection
+
+When using `BattalionStrategy::Auto`, the Commander analyzes:
+
+#### 1. **Input Keywords**
+
+- **Formation**: "sequential", "pipeline", "step by step", "one after", "first then"
+- **Phalanx**: "parallel", "concurrent", "all at once", "simultaneously"
+- **Campaign**: "workflow", "graph", "conditional", "if-then", "depends on"
+- **ChainOfCommand**: "delegate", "hierarchy", "specialist", "expert"
+
+#### 2. **Paladin Count Heuristics**
+
+- **1-3 Paladins**: Defaults to Formation (sequential)
+- **4+ Paladins**: Analyzes for parallelism or specialization
+- **Many similar Paladins**: Prefers Phalanx (parallel)
+- **Mixed specialist Paladins**: Considers ChainOfCommand
+
+#### 3. **Fallback Logic**
+
+- If no clear indicators: Formation (safe default)
+- Strategy selection takes 0-5ms typically
+- Selection reasoning included in result metadata
+
+### Examples by Strategy
+
+#### Explicit Formation
+
+```rust
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Formation)
+    .paladins(vec![analyzer, enhancer, reviewer])
+    .config(BattalionConfig::new("review_pipeline").with_timeout(60))
+    .build()?;
+
+let result = commander.execute("Review this document").await?;
+```
+
+#### Auto Mode with Telemetry
+
+```rust
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Auto)
+    .paladins(workers)
+    .build()?;
+
+let result = commander.execute("Process these items in parallel").await?;
+
+println!("Selected: {:?} in {}ms",
+    result.strategy_used,
+    result.strategy_selection_time_ms);
+println!("Executed in {}ms",
+    result.completed_at.signed_duration_since(result.started_at)
+        .num_milliseconds());
+```
+
+#### Production Configuration
+
+```rust
+use paladin::core::platform::container::battalion::{ErrorStrategy, RetryPolicy};
+use std::path::PathBuf;
+
+let config = BattalionConfig::new("production_battalion")
+    .with_description("Critical data processing pipeline")
+    .with_timeout(300) // 5 minutes
+    .with_error_strategy(ErrorStrategy::RetryThenContinue)
+    .with_retry_policy(RetryPolicy {
+        max_attempts: 3,
+        ..Default::default()
+    })
+    .with_metadata_dir(PathBuf::from("./checkpoints"));
+
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Formation)
+    .paladins(critical_paladins)
+    .config(config)
+    .build()?;
+
+match commander.execute("Critical task").await {
+    Ok(result) => println!("Success: {} succeeded, {} failed",
+        result.paladin_success_count,
+        result.paladin_failure_count),
+    Err(e) => eprintln!("Failed: {}", e),
+}
+```
+
+### Configuration Options
+
+#### Required Fields
+
+- **strategy**: BattalionStrategy (Formation, Phalanx, Campaign, ChainOfCommand, Auto)
+- **paladins**: Vec<Paladin> (must contain at least 1 Paladin)
+
+#### Optional Fields (with defaults)
+
+- **config**: BattalionConfig (default: 300s timeout, FailFast, 3 retries)
+  - `name`: Battalion identifier (default: "default_commander_battalion")
+  - `timeout_seconds`: Max execution time (default: 300)
+  - `error_strategy`: How to handle failures (default: FailFast)
+  - `retry_policy`: Retry configuration (default: 3 attempts with backoff)
+  - `metadata_output_dir`: Checkpoint directory (default: None)
+
+### Error Handling Strategies
+
+#### FailFast (Default)
+
+Stops execution immediately on first Paladin failure.
+
+**Use When:**
+- All Paladins must succeed for valid result
+- Failures indicate fundamental issues
+- Want fast failure feedback
+
+```rust
+.with_error_strategy(ErrorStrategy::FailFast)
+```
+
+#### ContinueOnError
+
+Continues executing remaining Paladins despite failures, collects all errors.
+
+**Use When:**
+- Partial results are valuable
+- Independent tasks where some failures acceptable
+- Need complete execution report
+
+```rust
+.with_error_strategy(ErrorStrategy::ContinueOnError)
+```
+
+#### RetryThenContinue (Recommended for Production)
+
+Retries failed Paladins up to `max_attempts`, then continues with remaining Paladins.
+
+**Use When:**
+- Transient failures are possible (network, rate limits)
+- Want resilience without blocking entire workflow
+- Production environments
+
+```rust
+.with_error_strategy(ErrorStrategy::RetryThenContinue)
+.with_retry_policy(RetryPolicy {
+    max_attempts: 3,
+    ..Default::default()
+})
+```
+
+### Telemetry & Metadata
+
+Commander results include comprehensive metadata:
+
+```rust
+pub struct BattalionResult {
+    pub battalion_id: Uuid,
+    pub battalion_name: String,
+    pub started_at: DateTime<Utc>,
+    pub completed_at: DateTime<Utc>,
+    pub status: BattalionStatus,
+    pub strategy_used: BattalionStrategy,         // Actual strategy executed
+    pub strategy_selection_reasoning: Option<String>, // Auto mode explanation
+    pub strategy_selection_time_ms: u64,          // Selection overhead
+    pub final_output: String,
+    pub paladin_success_count: usize,
+    pub paladin_failure_count: usize,
+    pub per_paladin_times: Vec<u64>,              // Individual timing
+    // ... additional fields
+}
+```
+
+**Key Metrics:**
+
+- `strategy_selection_time_ms`: Overhead for Auto mode (typically 0-5ms)
+- `paladin_success_count` / `paladin_failure_count`: Execution statistics
+- `per_paladin_times`: Individual Paladin execution times
+- `strategy_selection_reasoning`: Transparency for Auto mode decisions
+
+### Best Practices
+
+#### Use Auto Mode for Flexibility
+
+```rust
+// Good: Let Commander optimize
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Auto)
+    .paladins(paladins)
+    .build()?;
+```
+
+#### Use Explicit Strategies for Predictability
+
+```rust
+// Good: Known pattern, explicit selection
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Formation)
+    .paladins(pipeline_paladins)
+    .build()?;
+```
+
+#### Configure Timeouts Appropriately
+
+```rust
+// Good: Realistic timeout with buffer
+let config = BattalionConfig::new("batch_job")
+    .with_timeout(600); // 10 minutes for batch processing
+```
+
+#### Use RetryThenContinue in Production
+
+```rust
+// Best for production
+let config = BattalionConfig::new("production")
+    .with_error_strategy(ErrorStrategy::RetryThenContinue)
+    .with_retry_policy(RetryPolicy { max_attempts: 3, ..Default::default() });
+```
+
+#### Monitor Telemetry
+
+```rust
+let result = commander.execute(input).await?;
+metrics.record_execution_time(
+    result.completed_at.signed_duration_since(result.started_at).num_milliseconds()
+);
+metrics.record_success_rate(
+    result.paladin_success_count,
+    result.paladin_failure_count
+);
+```
+
+### Performance Characteristics
+
+- **Auto Mode Overhead**: 0-5ms for strategy selection
+- **Timeout Enforcement**: Tokio-based, minimal overhead
+- **Telemetry Collection**: <1ms overhead
+- **Builder Validation**: Compile-time + runtime validation
+- **Strategy Delegation**: Zero-cost abstraction after selection
 
 ---
 
