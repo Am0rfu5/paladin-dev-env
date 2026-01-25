@@ -300,18 +300,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.42 **PHASE 2 MILESTONE:** Run full test suite: `cargo test`
 
 - [ ] 7.0 Integration Testing, Performance Validation & Documentation
-  - [ ] 7.1 Create comprehensive load test: `tests/integration/battalion/load_test.rs`
-  - [ ] 7.2 Implement load test: 50 concurrent Battalions, 10 Paladins each
-  - [ ] 7.3 Run load test and verify performance targets met
-  - [ ] 7.4 Create stress test for concurrency limits
-  - [ ] 7.5 Verify <1s orchestration overhead for typical workloads
-  - [ ] 7.6 Run all tests with coverage: `cargo tarpaulin` or equivalent
-  - [ ] 7.7 Verify ≥80% unit test coverage across all Battalion modules
-  - [ ] 7.8 Update `src/lib.rs` to properly export Battalion types
-  - [ ] 7.9 Create `docs/BATTALION.md` with comprehensive usage guide
-  - [ ] 7.10 Document all four Battalion patterns with examples
-  - [ ] 7.11 Document error strategies and retry policies
-  - [ ] 7.12 Document performance characteristics and limitations
+  - [x] 7.1 Create comprehensive load test: `tests/integration/battalion/load_test.rs`
+  - [x] 7.2 Implement load test: 50 concurrent Battalions, 10 Paladins each
+  - [x] 7.3 Run load test and verify performance targets met
+  - [x] 7.4 Create stress test for concurrency limits
+  - [x] 7.5 Verify <1s orchestration overhead for typical workloads
+  - [x] 7.6 Run all tests with coverage: `cargo llvm-cov` or equivalent
+  - [x] 7.7 Verify ≥80% unit test coverage across all Battalion modules
+  - [x] 7.8 Update `src/lib.rs` to properly export Battalion types
+  - [x] 7.9 Create `docs/BATTALION.md` with comprehensive usage guide
+  - [x] 7.10 Document all four Battalion patterns with examples
+  - [x] 7.11 Document error strategies and retry policies
+  - [x] 7.12 Document performance characteristics and limitations
   - [ ] 7.13 Update main `README.md` with Battalion section
   - [ ] 7.14 Add Battalion configuration section to `config.yml`
   - [ ] 7.15 Update `Cargo.toml` metadata and feature flags

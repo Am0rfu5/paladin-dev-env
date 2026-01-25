@@ -230,7 +230,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.10 Write test: `test_paladin_builder_validation_errors` checking error messages
   - [x] 7.11 Run integration tests: `cargo test --test paladin_integration_test`
   - [x] 7.12 Verify all integration tests pass
-  - [x] 7.13 Check test coverage: `cargo tarpaulin` or `cargo llvm-cov` (if available)
+  - [x] 7.13 Check test coverage: `cargo llvm-cov`
   - [x] 7.14 Ensure unit test coverage ≥ 80%
   - [x] 7.15 Ensure integration test coverage ≥ 70%
 

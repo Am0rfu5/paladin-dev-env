@@ -248,7 +248,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 11.2 Run `cargo clippy` and fix all warnings
   - [x] 11.3 Run `cargo test` and ensure all tests pass
   - [x] 11.4 Run `cargo build --release` to verify release build
-  - [ ] 11.5 Verify test coverage ≥ 80% using `cargo tarpaulin` or similar
+  - [ ] 11.5 Verify test coverage ≥ 80% using `cargo llvm-cov`
   - [ ] 11.6 Review all acceptance criteria from PRD - ensure all met
 
 ---
