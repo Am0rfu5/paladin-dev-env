@@ -3,6 +3,7 @@
 //! This module provides the core domain types for multi-Paladin orchestration.
 //! Battalions coordinate multiple Paladins using various execution patterns.
 
+pub mod campaign;
 pub mod formation;
 pub mod phalanx;
 
