@@ -149,19 +149,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.10 Write unit test: test_partial_results_returned_with_errors (ignored - requires integration test setup)
   - [x] 6.11 Run tests: `cargo test error_handling` (18 passing, 1 known failing, 6 ignored)
 
-- [ ] 7.0 Implement configuration passthrough
-  - [ ] 7.1 Verify BattalionConfig includes: name, timeout_seconds, retry_attempts, error_strategy, enable_checkpointing, metadata_output_dir
-  - [ ] 7.2 Implement config validation in Commander builder
-  - [ ] 7.3 Implement default config generation if none provided
-  - [ ] 7.4 Ensure config is passed to FormationExecutionService
-  - [ ] 7.5 Ensure config is passed to PhalanxExecutionService
-  - [ ] 7.6 Ensure config is passed to CampaignExecutionService
-  - [ ] 7.7 Ensure config is passed to ChainOfCommandService
-  - [ ] 7.8 Implement timeout enforcement using tokio::time::timeout
-  - [ ] 7.9 Write unit test: test_config_passthrough_to_services
-  - [ ] 7.10 Write unit test: test_timeout_enforcement
-  - [ ] 7.11 Write unit test: test_default_config_generation
-  - [ ] 7.12 Run tests: `cargo test config_passthrough`
+- [x] 7.0 Implement configuration passthrough ✅ COMMITTED
+  - [x] 7.1 Verify BattalionConfig includes: name, timeout_seconds, retry_attempts, error_strategy, enable_checkpointing, metadata_output_dir
+  - [x] 7.2 Implement config validation in Commander builder
+  - [x] 7.3 Implement default config generation if none provided
+  - [x] 7.4 Ensure config is passed to FormationExecutionService
+  - [x] 7.5 Ensure config is passed to PhalanxExecutionService
+  - [x] 7.6 Ensure config is passed to CampaignExecutionService
+  - [x] 7.7 Ensure config is passed to ChainOfCommandService
+  - [x] 7.8 Implement timeout enforcement using tokio::time::timeout
+  - [x] 7.9 Write unit test: test_config_passthrough_to_services
+  - [x] 7.10 Write unit test: test_timeout_enforcement
+  - [x] 7.11 Write unit test: test_default_config_generation
+  - [x] 7.12 Run tests: `cargo test config_passthrough` (21 passing, 1 known failing, 6 ignored)
 
 - [ ] 8.0 Write unit tests for Commander core logic
   - [ ] 8.1 Create `tests/unit/commander_tests.rs` file

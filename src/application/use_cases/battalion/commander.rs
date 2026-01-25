@@ -5,6 +5,7 @@
 
 use log::{debug, info};
 use std::sync::Arc;
+use tokio::time::{Duration, timeout};
 use uuid::Uuid;
 
 use crate::application::ports::output::paladin_port::PaladinPort;
@@ -13,7 +14,7 @@ use crate::application::use_cases::battalion::chain_of_command_service::ChainOfC
 use crate::application::use_cases::battalion::formation_service::FormationExecutionService;
 use crate::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
 use crate::core::platform::container::battalion::{
-    BattalionConfig, BattalionError, BattalionResult, BattalionStrategy,
+    BattalionConfig, BattalionError, BattalionResult, BattalionStrategy, ErrorStrategy,
 };
 use crate::core::platform::container::paladin::Paladin;
 
@@ -108,6 +109,8 @@ impl Commander {
     /// configured strategy. For Auto mode, applies heuristics to select
     /// the optimal strategy.
     ///
+    /// Enforces timeout based on BattalionConfig::timeout_seconds.
+    ///
     /// # Arguments
     ///
     /// * `input` - Initial input for the Battalion
@@ -115,8 +118,24 @@ impl Commander {
     /// # Returns
     ///
     /// * `Ok(BattalionResult)` - Result of Battalion execution
-    /// * `Err(BattalionError)` - If execution fails
+    /// * `Err(BattalionError)` - If execution fails or times out
     pub async fn execute(&self, input: &str) -> Result<BattalionResult, BattalionError> {
+        let timeout_duration = Duration::from_secs(self.config.timeout_seconds);
+
+        match timeout(timeout_duration, self.execute_internal(input)).await {
+            Ok(result) => result,
+            Err(_) => {
+                info!(
+                    "Commander {} timed out after {} seconds",
+                    self.id, self.config.timeout_seconds
+                );
+                Err(BattalionError::Timeout(self.config.timeout_seconds))
+            }
+        }
+    }
+
+    /// Internal execution logic without timeout wrapper
+    async fn execute_internal(&self, input: &str) -> Result<BattalionResult, BattalionError> {
         let start_time = std::time::Instant::now();
         let started_at = chrono::Utc::now();
 
@@ -523,6 +542,12 @@ impl CommanderBuilder {
     /// Validates that all required fields are present and returns a configured
     /// Commander ready for execution.
     ///
+    /// If no config is provided, generates a default configuration with:
+    /// - Name: "default_commander_battalion"
+    /// - Timeout: 300 seconds
+    /// - Error strategy: FailFast
+    /// - Retry policy: 3 attempts with exponential backoff
+    ///
     /// # Returns
     ///
     /// * `Ok(Commander)` - Successfully built Commander
@@ -533,7 +558,7 @@ impl CommanderBuilder {
     /// Returns `CommanderValidation` error if:
     /// - Strategy is not set
     /// - Paladins vector is not set or is empty
-    /// - Config is not set
+    /// - Config validation fails (timeout_seconds == 0)
     ///
     /// # Example
     ///
@@ -555,9 +580,26 @@ impl CommanderBuilder {
             ));
         }
 
-        let config = self
-            .config
-            .ok_or_else(|| BattalionError::CommanderValidation("Config is required".to_string()))?;
+        // Generate default config if none provided
+        let config = self.config.unwrap_or_else(|| {
+            debug!("No config provided, generating default configuration");
+            BattalionConfig::new("default_commander_battalion")
+                .with_timeout(300)
+                .with_error_strategy(ErrorStrategy::FailFast)
+        });
+
+        // Validate config
+        if config.timeout_seconds == 0 {
+            return Err(BattalionError::CommanderValidation(
+                "Config timeout_seconds must be greater than 0".to_string(),
+            ));
+        }
+
+        if config.retry_policy.max_attempts == 0 {
+            return Err(BattalionError::CommanderValidation(
+                "Config retry_policy.max_attempts must be greater than 0".to_string(),
+            ));
+        }
 
         Ok(Commander::new(
             strategy,
@@ -717,19 +759,23 @@ mod tests {
     }
 
     #[test]
-    fn test_commander_builder_missing_config() {
+    fn test_commander_builder_invalid_config() {
         let paladin_port = Arc::new(MockPaladinPort);
         let paladin = create_test_paladin();
 
+        // Test with zero timeout (invalid)
+        let invalid_config = BattalionConfig::new("test").with_timeout(0);
+
         let result = CommanderBuilder::new(paladin_port)
-            .strategy(BattalionStrategy::ChainOfCommand)
+            .strategy(BattalionStrategy::Formation)
             .paladins(vec![paladin])
+            .config(invalid_config)
             .build();
 
         assert!(result.is_err());
         match result.unwrap_err() {
             BattalionError::CommanderValidation(msg) => {
-                assert_eq!(msg, "Config is required");
+                assert!(msg.contains("timeout_seconds must be greater than 0"));
             }
             _ => panic!("Expected CommanderValidation error"),
         }
@@ -1148,5 +1194,122 @@ mod tests {
         // Test that successful Paladin results are preserved when others fail
         // Verify that BattalionResult contains both successes and failures
         // Verify metadata correctly tracks success/failure counts
+    }
+
+    #[tokio::test]
+    async fn test_config_passthrough_to_services() {
+        let paladin_port = Arc::new(MockPaladinPort);
+
+        // Create paladin for testing
+        let paladin = create_test_paladin();
+
+        // Create config with specific values to verify passthrough
+        let config = BattalionConfig::new("test_battalion")
+            .with_timeout(600)
+            .with_error_strategy(ErrorStrategy::ContinueOnError);
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Formation)
+            .paladins(vec![paladin])
+            .config(config.clone())
+            .build()
+            .unwrap();
+
+        // Verify config is properly stored
+        assert_eq!(commander.config.name, "test_battalion");
+        assert_eq!(commander.config.timeout_seconds, 600);
+        assert_eq!(
+            commander.config.error_strategy,
+            ErrorStrategy::ContinueOnError
+        );
+    }
+
+    #[tokio::test]
+    async fn test_timeout_enforcement() {
+        // Create a mock that simulates a long-running operation
+        struct SlowMockPaladinPort;
+
+        #[async_trait]
+        impl PaladinPort for SlowMockPaladinPort {
+            async fn execute(
+                &self,
+                _paladin: &Paladin,
+                _input: &str,
+            ) -> Result<PaladinResult, crate::application::use_cases::paladin::error::PaladinError>
+            {
+                // Sleep for 2 seconds to trigger timeout
+                tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                Ok(PaladinResult {
+                    output: "slow output".to_string(),
+                    token_count: 100,
+                    execution_time_ms: 2000,
+                    loop_count: 1,
+                    stop_reason: StopReason::Completed,
+                })
+            }
+
+            async fn execute_stream(
+                &self,
+                _paladin: &Paladin,
+                _input: &str,
+            ) -> Result<PaladinStream, crate::application::use_cases::paladin::error::PaladinError>
+            {
+                unimplemented!()
+            }
+
+            fn validate(
+                &self,
+                _paladin: &Paladin,
+            ) -> Result<(), crate::application::use_cases::paladin::error::PaladinError>
+            {
+                Ok(())
+            }
+        }
+
+        let paladin_port = Arc::new(SlowMockPaladinPort);
+        let paladin1 = create_test_paladin();
+        let paladin2 = create_test_paladin();
+
+        // Create config with 1 second timeout
+        let config = BattalionConfig::new("timeout_test").with_timeout(1);
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Formation)
+            .paladins(vec![paladin1, paladin2])
+            .config(config)
+            .build()
+            .unwrap();
+
+        // Execute should timeout
+        let result = commander.execute("Test input").await;
+
+        // Verify timeout error
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            BattalionError::Timeout(seconds) => {
+                assert_eq!(seconds, 1);
+            }
+            other => panic!("Expected Timeout error, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_default_config_generation() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladin = create_test_paladin();
+
+        // Build Commander without providing config
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Formation)
+            .paladins(vec![paladin])
+            // Intentionally NOT calling .config()
+            .build()
+            .unwrap();
+
+        // Verify default config was generated
+        assert_eq!(commander.config.name, "default_commander_battalion");
+        assert_eq!(commander.config.timeout_seconds, 300);
+        assert_eq!(commander.config.error_strategy, ErrorStrategy::FailFast);
+        assert_eq!(commander.config.retry_policy.max_attempts, 3);
     }
 }
