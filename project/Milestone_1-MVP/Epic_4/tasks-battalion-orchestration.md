@@ -324,13 +324,6 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.22 Run benchmarks and document baseline performance
   - [x] 7.23 Review all rustdoc for completeness and accuracy
   - [x] 7.24 Commit: "docs(battalion): add comprehensive documentation and benchmarks"
-  - [ ] 7.25 Final commit: "feat(epic4): complete Battalion Orchestration System"
-  - [ ] 7.26 Push feature branch to remote
-  - [ ] 7.27 Create Pull Request with Epic 4 completion summary
-  - [ ] 7.28 Address PR review feedback
-  - [ ] 7.29 Merge to main after approval
-  - [ ] 7.30 Update Epic 4 acceptance criteria in epic4.md
-  - [ ] 7.31 Close Epic 4 in project tracker
 
 ---
 
