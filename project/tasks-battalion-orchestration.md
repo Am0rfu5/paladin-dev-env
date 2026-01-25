@@ -195,16 +195,16 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.30 Implement cancellation using tokio::sync::CancellationToken
   - [x] 4.31 Add comprehensive rustdoc with examples
   - [x] 4.32 Run unit tests: `cargo test phalanx`
-  - [ ] 4.33 Create `tests/integration/battalion/phalanx_integration_test.rs`
-  - [ ] 4.34 Write integration test with 10 mock Paladins for concurrency
-  - [ ] 4.35 Write integration test for each aggregation strategy
-  - [ ] 4.36 Write performance test: verify <1s orchestration overhead
-  - [ ] 4.37 Run integration tests: `cargo test --test phalanx_integration_test`
-  - [ ] 4.38 Create `examples/phalanx_parallel.rs` with complete example
-  - [ ] 4.39 Test example: `cargo run --example phalanx_parallel`
-  - [ ] 4.40 Run fmt and clippy: `cargo fmt && cargo clippy`
-  - [ ] 4.41 Verify ≥80% coverage for Phalanx code
-  - [ ] 4.42 Commit: "feat(battalion): implement Phalanx concurrent pattern"
+  - [x] 4.33 Create `tests/integration/battalion/phalanx_integration_test.rs`
+  - [x] 4.34 Write integration test with 10 mock Paladins for concurrency
+  - [x] 4.35 Write integration test for each aggregation strategy
+  - [x] 4.36 Write performance test: verify <1s orchestration overhead
+  - [x] 4.37 Run integration tests: `cargo test --test phalanx_integration_test`
+  - [x] 4.38 Create `examples/phalanx_parallel.rs` with complete example
+  - [x] 4.39 Test example: `cargo run --example phalanx_parallel`
+  - [x] 4.40 Run fmt and clippy: `cargo fmt && cargo clippy`
+  - [x] 4.41 Verify ≥80% coverage for Phalanx code
+  - [x] 4.42 Commit: "test(battalion): add Phalanx integration tests and examples"
   - [ ] 4.43 **PHASE 1 MILESTONE:** Run full test suite: `cargo test`
   - [ ] 4.44 **PHASE 1 MILESTONE:** Create PR for Phase 1 review
 

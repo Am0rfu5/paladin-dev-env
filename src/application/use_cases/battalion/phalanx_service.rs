@@ -16,7 +16,6 @@ use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult
 use crate::application::use_cases::battalion::error_aggregation::AggregatedError;
 use crate::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use crate::core::platform::container::battalion::{BattalionError, BattalionResult, ErrorStrategy};
-use crate::core::platform::container::paladin::Paladin;
 
 #[cfg(test)]
 use crate::core::platform::container::battalion::BattalionStatus;
@@ -180,8 +179,10 @@ impl PhalanxExecutionService {
 
     /// Validate aggregation strategy requirements
     fn validate_aggregation_strategy(&self, phalanx: &Phalanx) -> Result<(), BattalionError> {
-        if matches!(phalanx.aggregation_strategy(), AggregationStrategy::Majority)
-            && phalanx.paladin_count() < 3
+        if matches!(
+            phalanx.aggregation_strategy(),
+            AggregationStrategy::Majority
+        ) && phalanx.paladin_count() < 3
         {
             return Err(BattalionError::ValidationError(
                 "Majority aggregation requires at least 3 Paladins".to_string(),
@@ -338,7 +339,7 @@ mod tests {
     use crate::application::use_cases::paladin::error::PaladinError;
     use crate::core::base::entity::node::Node;
     use crate::core::platform::container::battalion::BattalionConfig;
-    use crate::core::platform::container::paladin::{PaladinData, PaladinStatus};
+    use crate::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
     use async_trait::async_trait;
     use std::sync::Mutex;
 
