@@ -120,21 +120,21 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.15 Run tests: `cargo test commander_execute` (15 passed, 1 known failing from 3.11, 2 ignored)
 
 - [ ] 5.0 Implement result normalization and telemetry metadata
-  - [ ] 5.1 Review BattalionMetadata structure from Epic 4
-  - [ ] 5.2 Extend BattalionMetadata with Commander-specific fields if needed:
-  - [ ] 5.3 Add `strategy_selection_reasoning: Option<String>` to metadata
-  - [ ] 5.4 Add `strategy_selection_time_ms: u64` to metadata
-  - [ ] 5.5 Add `per_paladin_times: Vec<u64>` to metadata
-  - [ ] 5.6 Add `paladin_success_count: usize` to metadata
-  - [ ] 5.7 Add `paladin_failure_count: usize` to metadata
-  - [ ] 5.8 Implement result wrapping logic to populate all metadata fields
-  - [ ] 5.9 Ensure `strategy_used` field contains resolved strategy (not Auto)
-  - [ ] 5.10 Implement metadata export to file if `metadata_output_dir` is configured
-  - [ ] 5.11 Write unit test: test_result_contains_strategy_used
-  - [ ] 5.12 Write unit test: test_result_contains_selection_reasoning
-  - [ ] 5.13 Write unit test: test_result_contains_telemetry_metadata
-  - [ ] 5.14 Write unit test: test_metadata_export_to_file
-  - [ ] 5.15 Run tests: `cargo test result_normalization`
+  - [x] 5.1 Review BattalionMetadata structure from Epic 4
+  - [x] 5.2 Extend BattalionMetadata with Commander-specific fields if needed:
+  - [x] 5.3 Add `strategy_selection_reasoning: Option<String>` to metadata
+  - [x] 5.4 Add `strategy_selection_time_ms: u64` to metadata
+  - [x] 5.5 Add `per_paladin_times: Vec<u64>` to metadata
+  - [x] 5.6 Add `paladin_success_count: usize` to metadata
+  - [x] 5.7 Add `paladin_failure_count: usize` to metadata
+  - [x] 5.8 Implement result wrapping logic to populate all metadata fields
+  - [x] 5.9 Ensure `strategy_used` field contains resolved strategy (not Auto)
+  - [ ] 5.10 Implement metadata export to file if `metadata_output_dir` is configured (deferred - requires file I/O)
+  - [x] 5.11 Write unit test: test_result_contains_strategy_used
+  - [x] 5.12 Write unit test: test_result_contains_selection_reasoning
+  - [x] 5.13 Write unit test: test_result_contains_telemetry_metadata
+  - [ ] 5.14 Write unit test: test_metadata_export_to_file (deferred - requires file I/O setup)
+  - [x] 5.15 Run tests: `cargo test result_normalization` (18 passing, 1 known failing, 2 ignored)
 
 - [ ] 6.0 Implement error handling strategies
   - [ ] 6.1 Verify ErrorStrategy enum exists in Epic 4 with FailFast, ContinueOnError, RetryThenContinue

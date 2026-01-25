@@ -154,7 +154,7 @@ impl Commander {
         );
 
         // Delegate to appropriate service
-        let result = match effective_strategy {
+        let mut result = match effective_strategy {
             BattalionStrategy::Formation => {
                 debug!("Delegating to FormationExecutionService");
                 let formation =
@@ -163,7 +163,7 @@ impl Commander {
                         self.config.clone(),
                     )?;
                 let service = FormationExecutionService::new(Arc::clone(&self.paladin_port));
-                service.execute(&formation, input).await
+                service.execute(&formation, input).await?
             }
             BattalionStrategy::Phalanx => {
                 debug!("Delegating to PhalanxExecutionService");
@@ -172,7 +172,7 @@ impl Commander {
                     self.config.clone(),
                 )?;
                 let service = PhalanxExecutionService::new(Arc::clone(&self.paladin_port));
-                service.execute(&phalanx, input).await
+                service.execute(&phalanx, input).await?
             }
             BattalionStrategy::Campaign => {
                 debug!("Delegating to CampaignExecutionService");
@@ -205,7 +205,7 @@ impl Commander {
                 }
 
                 let service = CampaignExecutionService::new(Arc::clone(&self.paladin_port));
-                service.execute(&campaign, input).await
+                service.execute(&campaign, input).await?
             }
             BattalionStrategy::ChainOfCommand => {
                 debug!("Delegating to ChainOfCommandExecutionService");
@@ -232,7 +232,7 @@ impl Commander {
 
                 // Convert DelegationResult to BattalionResult
                 let final_output = delegation_result.outputs.join("\n");
-                Ok(BattalionResult {
+                BattalionResult {
                     battalion_id: Uuid::new_v4(),
                     battalion_name: self.config.name.clone(),
                     started_at,
@@ -240,7 +240,13 @@ impl Commander {
                     final_output,
                     paladin_results: vec![], // ChainOfCommand handles this internally
                     status: crate::core::platform::container::battalion::BattalionStatus::Completed,
-                })
+                    strategy_used: BattalionStrategy::ChainOfCommand,
+                    strategy_selection_reasoning: None,
+                    strategy_selection_time_ms: 0,
+                    per_paladin_times: Vec::new(),
+                    paladin_success_count: 0,
+                    paladin_failure_count: 0,
+                }
             }
             BattalionStrategy::Auto => {
                 // This should never happen as Auto is resolved above
@@ -249,6 +255,11 @@ impl Commander {
                 ));
             }
         };
+
+        // Enrich result with Commander-specific metadata
+        result.strategy_used = effective_strategy.clone();
+        result.strategy_selection_reasoning = selection_reason.clone();
+        result.strategy_selection_time_ms = selection_time_ms;
 
         let total_time_ms = start_time.elapsed().as_millis() as u64;
         info!(
@@ -263,7 +274,7 @@ impl Commander {
             debug!("Auto-selection reasoning: {}", reason);
         }
 
-        result
+        Ok(result)
     }
 
     /// Analyze input and Paladins to select optimal strategy
@@ -1016,5 +1027,91 @@ mod tests {
             result2.is_ok(),
             "Auto mode with sequential keyword should succeed"
         );
+    }
+
+    #[tokio::test]
+    async fn test_result_contains_strategy_used() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(); 2];
+        let config = create_test_config();
+
+        // Test explicit strategy
+        let commander = CommanderBuilder::new(paladin_port.clone())
+            .strategy(BattalionStrategy::Formation)
+            .paladins(paladins.clone())
+            .config(config.clone())
+            .build()
+            .unwrap();
+
+        let result = commander.execute("Test input").await.unwrap();
+        assert_eq!(result.strategy_used, BattalionStrategy::Formation);
+
+        // Test Auto mode resolves to actual strategy (not Auto)
+        let commander_auto = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let result_auto = commander_auto.execute("Test input").await.unwrap();
+        assert_ne!(result_auto.strategy_used, BattalionStrategy::Auto);
+        assert_eq!(result_auto.strategy_used, BattalionStrategy::Formation);
+    }
+
+    #[tokio::test]
+    async fn test_result_contains_selection_reasoning() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(); 3];
+        let config = create_test_config();
+
+        // Test explicit strategy - should have no reasoning
+        let commander = CommanderBuilder::new(paladin_port.clone())
+            .strategy(BattalionStrategy::Phalanx)
+            .paladins(paladins.clone())
+            .config(config.clone())
+            .build()
+            .unwrap();
+
+        let result = commander.execute("Test input").await.unwrap();
+        assert!(result.strategy_selection_reasoning.is_none());
+
+        // Test Auto mode - should have reasoning
+        let commander_auto = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let result_auto = commander_auto
+            .execute("Run these in parallel")
+            .await
+            .unwrap();
+        assert!(result_auto.strategy_selection_reasoning.is_some());
+        let reasoning = result_auto.strategy_selection_reasoning.unwrap();
+        assert!(reasoning.contains("parallel") || reasoning.contains("Phalanx"));
+    }
+
+    #[tokio::test]
+    async fn test_result_contains_telemetry_metadata() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(); 2];
+        let config = create_test_config();
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let result = commander.execute("Test input").await.unwrap();
+
+        // Verify all metadata fields are present
+        // strategy_selection_time_ms is u64 so always >= 0
+        assert!(!result.battalion_id.is_nil());
+        assert!(!result.battalion_name.is_empty());
+        assert_eq!(result.strategy_used, BattalionStrategy::Formation);
     }
 }

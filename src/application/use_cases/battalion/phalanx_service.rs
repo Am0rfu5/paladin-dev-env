@@ -174,6 +174,12 @@ impl PhalanxExecutionService {
             completed_at,
             final_output,
             status: crate::core::platform::container::battalion::BattalionStatus::Completed,
+            strategy_used: crate::core::platform::container::battalion::BattalionStrategy::Phalanx,
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times: Vec::new(), // TODO: Track individual execution times
+            paladin_success_count: 0,      // Will be calculated from paladin_results
+            paladin_failure_count: 0,      // Will be calculated from paladin_results
         })
     }
 

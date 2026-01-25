@@ -229,6 +229,25 @@ pub struct BattalionResult {
 
     /// Final status
     pub status: BattalionStatus,
+
+    /// The orchestration strategy that was used for execution
+    /// For Auto mode, this contains the resolved strategy, not Auto
+    pub strategy_used: BattalionStrategy,
+
+    /// Reasoning for strategy selection (only present for Auto mode)
+    pub strategy_selection_reasoning: Option<String>,
+
+    /// Time spent on strategy selection in milliseconds
+    pub strategy_selection_time_ms: u64,
+
+    /// Execution time for each Paladin in milliseconds
+    pub per_paladin_times: Vec<u64>,
+
+    /// Count of Paladins that completed successfully
+    pub paladin_success_count: usize,
+
+    /// Count of Paladins that failed
+    pub paladin_failure_count: usize,
 }
 
 impl BattalionResult {
@@ -240,6 +259,18 @@ impl BattalionResult {
         final_output: String,
         paladin_results: Vec<PaladinResult>,
     ) -> Self {
+        // Count successes and failures based on stop_reason
+        let paladin_success_count = paladin_results
+            .iter()
+            .filter(|r| {
+                matches!(
+                    r.stop_reason,
+                    crate::application::ports::output::paladin_port::StopReason::Completed
+                )
+            })
+            .count();
+        let paladin_failure_count = paladin_results.len() - paladin_success_count;
+
         Self {
             battalion_id,
             battalion_name,
@@ -248,6 +279,12 @@ impl BattalionResult {
             final_output,
             paladin_results,
             status: BattalionStatus::Completed,
+            strategy_used: BattalionStrategy::Formation, // Default to Formation
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times: Vec::new(),
+            paladin_success_count,
+            paladin_failure_count,
         }
     }
 
@@ -274,6 +311,30 @@ impl BattalionResult {
         (self.completed_at - self.started_at)
             .to_std()
             .unwrap_or_default()
+    }
+
+    /// Set the strategy used for this execution
+    pub fn with_strategy(mut self, strategy: BattalionStrategy) -> Self {
+        self.strategy_used = strategy;
+        self
+    }
+
+    /// Set the strategy selection reasoning (for Auto mode)
+    pub fn with_selection_reasoning(mut self, reasoning: String) -> Self {
+        self.strategy_selection_reasoning = Some(reasoning);
+        self
+    }
+
+    /// Set the strategy selection time in milliseconds
+    pub fn with_selection_time_ms(mut self, time_ms: u64) -> Self {
+        self.strategy_selection_time_ms = time_ms;
+        self
+    }
+
+    /// Set the per-Paladin execution times
+    pub fn with_paladin_times(mut self, times: Vec<u64>) -> Self {
+        self.per_paladin_times = times;
+        self
     }
 }
 
