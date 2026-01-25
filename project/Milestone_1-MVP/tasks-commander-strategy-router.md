@@ -175,37 +175,37 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 8.9 Run all unit tests: `cargo test --test commander_tests` (21 passed, 1 known failing, 6 ignored)
   - [x] 8.10 Check coverage: `cargo llvm-cov --test commander_tests` (verify ≥80%) - **81.39% coverage ✓**
 
-- [ ] 9.0 Write integration tests for all strategies
-  - [ ] 9.1 Create `tests/integration/commander_integration_tests.rs` file
-  - [ ] 9.2 Set up integration test environment with real services (or comprehensive mocks)
-  - [ ] 9.3 Write test: test_commander_executes_formation_end_to_end
-  - [ ] 9.4 Write test: test_commander_executes_phalanx_end_to_end
-  - [ ] 9.5 Write test: test_commander_executes_campaign_end_to_end
-  - [ ] 9.6 Write test: test_commander_executes_chain_of_command_end_to_end
-  - [ ] 9.7 Write test: test_auto_mode_selects_formation_and_executes
-  - [ ] 9.8 Write test: test_auto_mode_selects_phalanx_and_executes
-  - [ ] 9.9 Write test: test_auto_mode_selects_campaign_and_executes
-  - [ ] 9.10 Write test: test_auto_mode_selects_chain_and_executes
-  - [ ] 9.11 Write test: test_fail_fast_error_strategy_integration
-  - [ ] 9.12 Write test: test_continue_on_error_strategy_integration
-  - [ ] 9.13 Write test: test_retry_then_continue_strategy_integration
-  - [ ] 9.14 Write test: test_telemetry_accuracy_end_to_end
-  - [ ] 9.15 Write test: test_timeout_enforcement_integration
-  - [ ] 9.16 Run all integration tests: `cargo test --test commander_integration_tests`
-  - [ ] 9.17 Verify all tests pass
+- [x] 9.0 Write integration tests for all strategies
+  - [x] 9.1 Create `tests/integration/commander_integration_tests.rs` file
+  - [x] 9.2 Set up integration test environment with real services (or comprehensive mocks)
+  - [x] 9.3 Write test: test_commander_executes_formation_end_to_end
+  - [x] 9.4 Write test: test_commander_executes_phalanx_end_to_end
+  - [x] 9.5 Write test: test_commander_executes_campaign_end_to_end
+  - [x] 9.6 Write test: test_commander_executes_chain_of_command_end_to_end
+  - [x] 9.7 Write test: test_auto_mode_selects_formation_and_executes
+  - [x] 9.8 Write test: test_auto_mode_selects_phalanx_and_executes
+  - [x] 9.9 Write test: test_auto_mode_selects_campaign_and_executes
+  - [x] 9.10 Write test: test_auto_mode_selects_chain_and_executes
+  - [x] 9.11 Write test: test_fail_fast_error_strategy_integration
+  - [x] 9.12 Write test: test_continue_on_error_strategy_integration
+  - [x] 9.13 Write test: test_retry_then_continue_strategy_integration
+  - [x] 9.14 Write test: test_telemetry_accuracy_end_to_end
+  - [x] 9.15 Write test: test_timeout_enforcement_integration
+  - [x] 9.16 Run all integration tests: `cargo test --test commander_integration_tests` - 13 passed ✓
+  - [x] 9.17 Verify all tests pass - All 13 passing ✓
 
-- [ ] 10.0 Create example usage code
-  - [ ] 10.1 Create `examples/commander_basic.rs` demonstrating explicit Formation strategy
-  - [ ] 10.2 Add comments explaining each step in commander_basic.rs
-  - [ ] 10.3 Test example runs: `cargo run --example commander_basic`
-  - [ ] 10.4 Create `examples/commander_auto.rs` demonstrating Auto mode with telemetry output
-  - [ ] 10.5 Add comments explaining Auto mode selection and reasoning in commander_auto.rs
-  - [ ] 10.6 Test example runs: `cargo run --example commander_auto`
-  - [ ] 10.7 Create `examples/commander_full_config.rs` demonstrating comprehensive configuration
-  - [ ] 10.8 Include error handling strategy, timeout, retry, checkpointing in full config example
-  - [ ] 10.9 Add comments explaining all configuration options in commander_full_config.rs
-  - [ ] 10.10 Test example runs: `cargo run --example commander_full_config`
-  - [ ] 10.11 Verify all examples compile and execute successfully
+- [x] 10.0 Create example usage code
+  - [x] 10.1 Create `examples/commander_basic.rs` demonstrating explicit Formation strategy
+  - [x] 10.2 Add comments explaining each step in commander_basic.rs
+  - [x] 10.3 Test example runs: `cargo run --example commander_basic` ✓
+  - [x] 10.4 Create `examples/commander_auto.rs` demonstrating Auto mode with telemetry output
+  - [x] 10.5 Add comments explaining Auto mode selection and reasoning in commander_auto.rs
+  - [x] 10.6 Test example runs: `cargo run --example commander_auto` ✓
+  - [x] 10.7 Create `examples/commander_full_config.rs` demonstrating comprehensive configuration
+  - [x] 10.8 Include error handling strategy, timeout, retry, checkpointing in full config example
+  - [x] 10.9 Add comments explaining all configuration options in commander_full_config.rs
+  - [x] 10.10 Test example runs: `cargo run --example commander_full_config` ✓
+  - [x] 10.11 Verify all examples compile and execute successfully ✓
 
 - [ ] 11.0 Write documentation and prepare for code review
   - [ ] 11.1 Write rustdoc for Commander struct with overview and usage examples

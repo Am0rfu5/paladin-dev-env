@@ -55,6 +55,7 @@ impl IntegrationMockPaladinPort {
         self
     }
 
+    #[allow(dead_code)]
     fn with_retry_failures(self, paladin_names: Vec<String>, fail_count: usize) -> Self {
         {
             let mut config = self.failure_config.lock().unwrap();
@@ -68,6 +69,7 @@ impl IntegrationMockPaladinPort {
         self.execution_log.lock().unwrap().clone()
     }
 
+    #[allow(dead_code)]
     fn clear_log(&self) {
         self.execution_log.lock().unwrap().clear();
     }
