@@ -242,18 +242,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.31 Write failing tests for multiple entry points (TDD - Red)
   - [x] 5.32 Implement multiple entry point handling
   - [x] 5.33 Add comprehensive rustdoc with graph examples
-  - [ ] 5.34 Run unit tests: `cargo test campaign`
-  - [ ] 5.35 Create `tests/integration/battalion/campaign_integration_test.rs`
-  - [ ] 5.36 Write integration test for linear graph (chain)
-  - [ ] 5.37 Write integration test for branching graph (conditional routing)
-  - [ ] 5.38 Write integration test for complex DAG with fan-out/fan-in
-  - [ ] 5.39 Write integration test for cycle detection
-  - [ ] 5.40 Run integration tests: `cargo test --test campaign_integration_test`
-  - [ ] 5.41 Create `examples/campaign_workflow.rs` with complex DAG example
-  - [ ] 5.42 Test example: `cargo run --example campaign_workflow`
-  - [ ] 5.43 Run fmt and clippy: `cargo fmt && cargo clippy`
-  - [ ] 5.44 Verify ≥80% coverage for Campaign code
-  - [ ] 5.45 Commit: "feat(battalion): implement Campaign graph pattern"
+  - [x] 5.34 Run unit tests: `cargo test campaign`
+  - [x] 5.35 Create `tests/integration/battalion/campaign_integration_test.rs`
+  - [x] 5.36 Write integration test for linear graph (chain)
+  - [x] 5.37 Write integration test for branching graph (conditional routing)
+  - [x] 5.38 Write integration test for complex DAG with fan-out/fan-in
+  - [x] 5.39 Write integration test for cycle detection
+  - [x] 5.40 Run integration tests: `cargo test --test campaign_integration_test`
+  - [x] 5.41 Create `examples/campaign_workflow.rs` with complex DAG example
+  - [x] 5.42 Test example: `cargo run --example campaign_workflow`
+  - [x] 5.43 Run fmt and clippy: `cargo fmt && cargo clippy`
+  - [x] 5.44 Verify ≥80% coverage for Campaign code
+  - [x] 5.45 Commit: "feat(battalion): implement Campaign graph pattern"
 
 - [ ] 6.0 Implement Chain of Command Pattern (Phase 2 - Hierarchical Delegation)
   - [ ] 6.1 Create `tests/unit/battalion/chain_of_command_tests.rs`

@@ -252,7 +252,7 @@ impl Campaign {
         }
 
         // Check for cycles using petgraph
-        if let Err(_) = petgraph::algo::toposort(&self.graph, None) {
+        if petgraph::algo::toposort(&self.graph, None).is_err() {
             return Err(BattalionError::InvalidGraph(
                 "Campaign graph contains a cycle, must be a DAG".to_string(),
             ));
