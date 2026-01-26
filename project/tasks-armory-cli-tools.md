@@ -93,20 +93,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.13 Test `cargo run --bin paladin-cli -- --help` displays all commands correctly
   - [x] 2.14 Test `cargo run --bin paladin-cli -- agent --help` shows agent subcommands
 
-- [ ] 3.0 Implement configuration loading and validation
-  - [ ] 3.1 In `src/cli/config/paladin_config.rs`, define `PaladinYamlConfig` struct with serde derives matching FR-15 schema
-  - [ ] 3.2 Define nested `ProviderConfig`, `GarrisonConfig`, `ArsenalConfig`, and `McpServerConfig` structs
-  - [ ] 3.3 Implement `Validate` trait for `PaladinYamlConfig` with validation logic (required fields, valid ranges)
-  - [ ] 3.4 In `src/cli/config/battalion_config.rs`, define `BattalionYamlConfig` struct with type discriminator
-  - [ ] 3.5 Define battalion-specific config types: `FormationConfig`, `PhalanxConfig`, `CampaignConfig`, `ChainOfCommandConfig`
-  - [ ] 3.6 In `src/cli/config/loader.rs`, implement `load_paladin_config(path: &Path) -> Result<PaladinYamlConfig, ConfigError>`
-  - [ ] 3.7 Implement `load_battalion_config(path: &Path) -> Result<BattalionYamlConfig, ConfigError>`
-  - [ ] 3.8 Implement error handling for: file not found, invalid YAML, validation failures
-  - [ ] 3.9 In `src/cli/output/errors.rs`, define `CliError` enum covering all CLI error cases per FR-20 format
-  - [ ] 3.10 Implement `Display` trait for `CliError` with actionable error messages (what, why, how to fix)
-  - [ ] 3.11 Write unit test for loading valid Paladin YAML config
-  - [ ] 3.12 Write unit test for validation error with missing required field
-  - [ ] 3.13 Write unit test for invalid YAML syntax error handling
+- [x] 3.0 Implement configuration loading and validation
+  - [x] 3.1 In `src/cli/config/paladin_config.rs`, define `PaladinYamlConfig` struct with serde derives matching FR-15 schema
+  - [x] 3.2 Define nested `ProviderConfig`, `GarrisonConfig`, `ArsenalConfig`, and `McpServerConfig` structs
+  - [x] 3.3 Implement `Validate` trait for `PaladinYamlConfig` with validation logic (required fields, valid ranges)
+  - [x] 3.4 In `src/cli/config/battalion_config.rs`, define `BattalionYamlConfig` struct with type discriminator
+  - [x] 3.5 Define battalion-specific config types: `FormationConfig`, `PhalanxConfig`, `CampaignConfig`, `ChainOfCommandConfig`
+  - [x] 3.6 In `src/cli/config/loader.rs`, implement `load_paladin_config(path: &Path) -> Result<PaladinYamlConfig, ConfigError>`
+  - [x] 3.7 Implement `load_battalion_config(path: &Path) -> Result<BattalionYamlConfig, ConfigError>`
+  - [x] 3.8 Implement error handling for: file not found, invalid YAML, validation failures
+  - [x] 3.9 In `src/cli/output/errors.rs`, define `CliError` enum covering all CLI error cases per FR-20 format
+  - [x] 3.10 Implement `Display` trait for `CliError` with actionable error messages (what, why, how to fix)
+  - [x] 3.11 Write unit test for loading valid Paladin YAML config
+  - [x] 3.12 Write unit test for validation error with missing required field
+  - [x] 3.13 Write unit test for invalid YAML syntax error handling
 
 - [ ] 4.0 Implement `paladin agent new` command (template generation)
   - [ ] 4.1 In `src/cli/templates/paladin_template.rs`, define `generate_paladin_template(name: &str, provider: &str) -> String`
