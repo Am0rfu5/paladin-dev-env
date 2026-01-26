@@ -119,22 +119,22 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.14 Write unit tests for all Herald trait methods
   - [x] 3.15 Write property test for format → parse → format roundtrip
 
-- [ ] 4.0 Implement MarkdownHerald formatter
-  - [ ] 4.1 Add dependencies to Cargo.toml (colored or ansi_term for colors - optional)
-  - [ ] 4.2 Create `src/infrastructure/adapters/herald/markdown_herald.rs`
-  - [ ] 4.3 Define MarkdownHerald struct with configuration (include_colors, heading_level)
-  - [ ] 4.4 Implement Herald trait for MarkdownHerald
-  - [ ] 4.5 Implement format_paladin_result with Markdown formatting (headings, bold, lists)
-  - [ ] 4.6 Add status badges/emojis (✅ Success, ❌ Failed, ⏱️ Timeout)
-  - [ ] 4.7 Implement format_battalion_result with nested sections
-  - [ ] 4.8 Implement format_stream_chunk for progressive Markdown output
-  - [ ] 4.9 Implement finalize_stream to append metadata section
-  - [ ] 4.10 Implement format_error with formatted error blocks
-  - [ ] 4.11 Implement name() returning "markdown" and mime_type() returning "text/markdown"
-  - [ ] 4.12 Add color support detection and configuration
-  - [ ] 4.13 Add comprehensive rustdoc with Markdown examples
-  - [ ] 4.14 Write unit tests for all Herald trait methods
-  - [ ] 4.15 Test color output with and without ANSI support
+- [x] 4.0 Implement MarkdownHerald formatter
+  - [x] 4.1 Add dependencies to Cargo.toml (colored or ansi_term for colors - optional)
+  - [x] 4.2 Create `src/infrastructure/adapters/herald/markdown_herald.rs`
+  - [x] 4.3 Define MarkdownHerald struct with configuration (include_colors, heading_level)
+  - [x] 4.4 Implement Herald trait for MarkdownHerald
+  - [x] 4.5 Implement format_paladin_result with Markdown formatting (headings, bold, lists)
+  - [x] 4.6 Add status badges/emojis (✅ Success, ❌ Failed, ⏱️ Timeout)
+  - [x] 4.7 Implement format_battalion_result with nested sections
+  - [x] 4.8 Implement format_stream_chunk for progressive Markdown output
+  - [x] 4.9 Implement finalize_stream to append metadata section
+  - [x] 4.10 Implement format_error with formatted error blocks
+  - [x] 4.11 Implement name() returning "markdown" and mime_type() returning "text/markdown"
+  - [x] 4.12 Add color support detection and configuration
+  - [x] 4.13 Add comprehensive rustdoc with Markdown examples
+  - [x] 4.14 Write unit tests for all Herald trait methods
+  - [x] 4.15 Test color output with and without ANSI support
 
 - [ ] 5.0 Implement TableHerald formatter
   - [ ] 5.1 Add dependencies to Cargo.toml (comfy-table or tabled)
