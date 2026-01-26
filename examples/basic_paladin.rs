@@ -17,6 +17,8 @@ use paladin::application::ports::output::llm_port::LlmPort;
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::core::platform::container::herald::Herald;
+use paladin::infrastructure::adapters::herald::MarkdownHerald;
 use paladin::infrastructure::adapters::llm::mock_llm_adapter::MockLlmAdapter;
 use std::sync::Arc;
 use std::time::Duration;
@@ -54,15 +56,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Temperature: {}", paladin.node.temperature);
     println!();
 
-    // Step 3: Create an execution service with circuit breaker
+    // Step 3: Create an execution service with circuit breaker and Herald
     // The circuit breaker prevents cascading failures
+    // The Herald formats output in a human-readable way
     let circuit_breaker = Arc::new(CircuitBreaker::new(
         3,                       // Open after 3 failures
         2,                       // Close after 2 successes
         Duration::from_secs(30), // 30 second timeout
     ));
 
-    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+    // Create a Markdown Herald for beautiful formatted output
+    let herald: Arc<dyn Herald> = Arc::new(MarkdownHerald::new());
+
+    let service =
+        PaladinExecutionService::new(llm_port, circuit_breaker, None, None).with_herald(herald);
 
     // Step 4: Execute the Paladin with your input
     println!("🚀 Executing Paladin...\n");
@@ -82,7 +89,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Stop Reason: {:?}", result.stop_reason);
     println!();
 
+    // Step 6: Format with Herald for beautiful output
+    println!("📝 Formatted Output (Markdown Herald):");
+    println!("{}", "─".repeat(60));
+    if let Some(formatted) = service.format_result(&result, &paladin)? {
+        println!("{}", formatted);
+    }
+    println!("{}", "─".repeat(60));
+    println!();
+
     println!("✨ Example completed successfully!");
+    println!("\n💡 Try other Herald formatters:");
+    println!("   - JsonHerald for structured JSON output");
+    println!("   - TableHerald for compact table format");
+    println!("   - Or create your own custom formatter!");
 
     Ok(())
 }

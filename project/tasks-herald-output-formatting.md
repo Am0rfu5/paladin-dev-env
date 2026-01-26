@@ -211,17 +211,17 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 9.17 Verify ≥80% coverage for Herald module
 
 - [ ] 10.0 Write documentation and examples
-  - [ ] 10.1 Create `docs/HERALD.md` user guide
-  - [ ] 10.2 Document Herald trait and how to implement custom formatters
-  - [ ] 10.3 Document all built-in formatters (JSON, Markdown, Table)
-  - [ ] 10.4 Document configuration options and defaults
-  - [ ] 10.5 Document runtime override pattern
-  - [ ] 10.6 Document streaming formatter behavior
-  - [ ] 10.7 Create `examples/herald_json_output.rs` demonstrating JSON Herald
-  - [ ] 10.8 Create `examples/herald_markdown_output.rs` demonstrating Markdown Herald
-  - [ ] 10.9 Create `examples/herald_custom_formatter.rs` with XML or CSV example
-  - [ ] 10.10 Create `examples/herald_streaming.rs` demonstrating streaming formatters
-  - [ ] 10.11 Update existing examples to use Herald (basic_paladin.rs, etc.)
+  - [x] 10.1 Create `docs/HERALD.md` user guide
+  - [x] 10.2 Document Herald trait and how to implement custom formatters
+  - [x] 10.3 Document all built-in formatters (JSON, Markdown, Table)
+  - [x] 10.4 Document configuration options and defaults
+  - [x] 10.5 Document runtime override pattern
+  - [x] 10.6 Document streaming formatter behavior
+  - [x] 10.7 Create `examples/herald_json_output.rs` demonstrating JSON Herald
+  - [x] 10.8 Create `examples/herald_markdown_output.rs` demonstrating Markdown Herald
+  - [x] 10.9 Create `examples/herald_custom_formatter.rs` with XML or CSV example
+  - [x] 10.10 Create `examples/herald_streaming.rs` demonstrating streaming formatters
+  - [x] 10.11 Update existing examples to use Herald (basic_paladin.rs, etc.)
   - [ ] 10.12 Add Herald section to README.md
   - [ ] 10.13 Generate rustdoc: `cargo doc --open`
   - [ ] 10.14 Review all public API documentation for completeness
