@@ -7,6 +7,7 @@ use tokio::time::sleep;
 
 pub mod battalion;
 pub mod citadel_integration_test;
+pub mod cli_integration_test;
 pub mod commander_integration_tests;
 pub mod context_injection_test;
 pub mod file_storage_integration_tests;

@@ -274,10 +274,10 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 12.21 Run all unit tests: `cargo test --lib cli`
   - [x] 12.22 Verify unit test coverage ≥80% using `cargo llvm-cov` if available
 
-- [ ] 13.0 Write integration tests for end-to-end workflows
-  - [ ] 13.1 Create `tests/integration/cli_integration_test.rs`
-  - [ ] 13.2 Write test: generate Paladin template, verify file created and valid
-  - [ ] 13.3 Write test: generate Battalion template (formation), verify file and structure
+- [x] 13.0 Write integration tests for end-to-end workflows
+  - [x] 13.1 Create `tests/integration/cli_integration_test.rs`
+  - [x] 13.2 Write test: generate Paladin template, verify file created and valid
+  - [x] 13.3 Write test: generate Battalion template (formation), verify file and structure
   - [ ] 13.4 Write test: run Paladin from config with mock LLM adapter
   - [ ] 13.5 Write test: run Formation with multiple mock Paladins
   - [ ] 13.6 Write test: run Phalanx with parallel execution
@@ -289,7 +289,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 13.12 Write test: verbose mode output
   - [ ] 13.13 Write test: exit codes for different error types
   - [ ] 13.14 Set up integration test helpers for creating temp configs and files
-  - [ ] 13.15 Run integration tests: `cargo test --test cli_integration_test`
+  - [x] 13.15 Run integration tests: `cargo test --test cli_integration_test`
   - [ ] 13.16 Verify integration test coverage ≥70%
 
 - [ ] 14.0 Create documentation and example configurations
