@@ -55,6 +55,7 @@ use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::arsenal::{ArmamentCall, ArsenalError};
 use crate::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
+use crate::core::platform::container::herald::Herald;
 use crate::core::platform::container::paladin::Paladin;
 use crate::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptType, UserPrompt,
@@ -96,6 +97,9 @@ pub struct PaladinExecutionService {
 
     /// Optional Arsenal for tool execution
     arsenal: Option<Arc<dyn ArsenalPort>>,
+
+    /// Optional Herald for output formatting
+    herald: Option<Arc<dyn Herald>>,
 
     /// Tool result formatter for context injection
     formatter: ToolResultFormatter,
@@ -141,7 +145,84 @@ impl PaladinExecutionService {
             circuit_breaker,
             garrison,
             arsenal,
+            herald: None,
             formatter: ToolResultFormatter::new(),
+        }
+    }
+
+    /// Sets the Herald formatter for this service
+    ///
+    /// # Arguments
+    ///
+    /// * `herald` - The Herald implementation to use for formatting execution results
+    ///
+    /// # Returns
+    ///
+    /// Returns self for method chaining
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    /// use paladin::infrastructure::adapters::herald::JsonHerald;
+    /// use std::sync::Arc;
+    /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::time::Duration;
+    ///
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// # let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    /// let herald = Arc::new(JsonHerald::default());
+    /// let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None)
+    ///     .with_herald(herald);
+    /// # }
+    /// ```
+    pub fn with_herald(mut self, herald: Arc<dyn Herald>) -> Self {
+        self.herald = Some(herald);
+        self
+    }
+
+    /// Formats a Paladin execution result using the configured Herald
+    ///
+    /// If no Herald is configured, returns None. This allows for optional formatting
+    /// based on runtime configuration or user preferences.
+    ///
+    /// # Arguments
+    ///
+    /// * `result` - The Paladin execution result to format
+    /// * `paladin` - The Paladin that produced this result (for name/ID)
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(formatted_output)` if a Herald is configured and formatting succeeds,
+    /// `None` if no Herald is configured.
+    ///
+    /// # Errors
+    ///
+    /// Returns `PaladinError::ExecutionError` if formatting fails.
+    pub fn format_result(
+        &self,
+        result: &PaladinResult,
+        paladin: &Paladin,
+    ) -> Result<Option<String>, PaladinError> {
+        if let Some(ref herald) = self.herald {
+            // Convert PaladinResult from paladin_port to herald types
+            let herald_result = crate::core::platform::container::herald::PaladinResult {
+                paladin_id: paladin.uuid.to_string(),
+                paladin_name: paladin
+                    .name
+                    .clone()
+                    .unwrap_or_else(|| "unnamed".to_string()),
+                status: format!("{:?}", result.stop_reason),
+                output: result.output.clone(),
+            };
+
+            let formatted = herald.format_paladin_result(&herald_result).map_err(|e| {
+                PaladinError::ExecutionError(format!("Herald formatting failed: {}", e))
+            })?;
+            Ok(Some(formatted))
+        } else {
+            Ok(None)
         }
     }
 

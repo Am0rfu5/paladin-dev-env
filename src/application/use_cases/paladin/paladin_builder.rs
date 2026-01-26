@@ -36,6 +36,7 @@ use crate::application::ports::output::llm_port::LlmPort;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::config::application_settings::MCPServerConfig;
 use crate::core::base::entity::node::Node;
+use crate::core::platform::container::herald::Herald;
 use crate::core::platform::container::paladin::{Paladin, PaladinData};
 use crate::core::platform::container::paladin_config::{OutputFormat, PaladinConfig};
 use crate::infrastructure::adapters::citadel::file_citadel::FileCitadel;
@@ -77,6 +78,7 @@ pub struct PaladinBuilder {
     citadel_port: Option<Arc<dyn CitadelPort>>,
     autosave_enabled: bool,
     state_dir: Option<String>,
+    herald: Option<Arc<dyn Herald>>,
 }
 
 impl PaladinBuilder {
@@ -107,6 +109,7 @@ impl PaladinBuilder {
             citadel_port: None,
             autosave_enabled: false,
             state_dir: None,
+            herald: None,
         }
     }
 
@@ -415,6 +418,34 @@ impl PaladinBuilder {
     /// ```
     pub fn with_arsenal_registry(mut self, registry: Arc<dyn ArsenalRegistry>) -> Self {
         self.arsenal_registry = Some(registry);
+        self
+    }
+
+    /// Sets a Herald formatter for output formatting
+    ///
+    /// Herald formatters control how Paladin execution results are formatted for display.
+    /// Built-in formatters include JSON, Markdown, and Table.
+    ///
+    /// # Arguments
+    ///
+    /// * `herald` - The Herald implementation to use for formatting
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::infrastructure::adapters::herald::JsonHerald;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let herald = Arc::new(JsonHerald::default());
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are a helpful assistant")
+    ///     .with_herald(herald);
+    /// # }
+    /// ```
+    pub fn with_herald(mut self, herald: Arc<dyn Herald>) -> Self {
+        self.herald = Some(herald);
         self
     }
 
@@ -752,6 +783,7 @@ mod tests {
             citadel_port: None,
             autosave_enabled: false,
             state_dir: None,
+            herald: None,
         };
 
         let result = builder.validate();
@@ -775,6 +807,7 @@ mod tests {
             citadel_port: None,
             autosave_enabled: false,
             state_dir: None,
+            herald: None,
         };
 
         let result = builder.validate();
@@ -797,6 +830,7 @@ mod tests {
             citadel_port: None,
             autosave_enabled: false,
             state_dir: None,
+            herald: None,
         };
 
         let result = builder.validate();
@@ -846,6 +880,7 @@ mod tests {
             citadel_port: None,
             autosave_enabled: true,
             state_dir: None,
+            herald: None,
         };
 
         let result = builder.validate();
@@ -868,6 +903,7 @@ mod tests {
             citadel_port: Some(Arc::new(MockCitadelPort)),
             autosave_enabled: true,
             state_dir: None,
+            herald: None,
         };
 
         let result = builder.validate();
@@ -889,6 +925,7 @@ mod tests {
             citadel_port: None,
             autosave_enabled: true,
             state_dir: Some("./test".to_string()),
+            herald: None,
         };
 
         let result = builder.validate();

@@ -165,12 +165,12 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.10 Document configuration options in rustdoc
 
 - [ ] 7.0 Integrate Herald with Paladin/Battalion execution
-  - [ ] 7.1 Read `src/application/use_cases/paladin/paladin_execution_service.rs`
-  - [ ] 7.2 Add optional herald parameter to PaladinExecutionService
-  - [ ] 7.3 Add format_result method to PaladinExecutionService
+  - [x] 7.1 Read `src/application/use_cases/paladin/paladin_execution_service.rs`
+  - [x] 7.2 Add optional herald parameter to PaladinExecutionService
+  - [x] 7.3 Add format_result method to PaladinExecutionService
   - [ ] 7.4 Implement global default Herald resolution from config
-  - [ ] 7.5 Implement runtime override support via Option<Arc<dyn Herald>>
-  - [ ] 7.6 Update PaladinBuilder to accept with_herald(herald) method
+  - [x] 7.5 Implement runtime override support via Option<Arc<dyn Herald>>
+  - [x] 7.6 Update PaladinBuilder to accept with_herald(herald) method
   - [ ] 7.7 Read Battalion service files (formation, phalanx)
   - [ ] 7.8 Add Herald support to FormationExecutionService
   - [ ] 7.9 Add Herald support to PhalanxExecutionService
