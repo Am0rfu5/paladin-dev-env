@@ -212,28 +212,28 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 9.13 Test stdio: All tests pass, integration requires actual MCP server
   - [x] 9.14 Test error handling: Validated with missing args and parse logic
 
-- [ ] 10.0 Implement output formatting and error handling
-  - [ ] 10.1 In `src/cli/output/formatter.rs`, define `OutputFormatter` struct
-  - [ ] 10.2 Implement `format_paladin_result(result: &PaladinResult, verbose: bool) -> String` for human-readable output per FR-22
-  - [ ] 10.3 Format should include: Paladin name, input, final output, execution time, token usage
-  - [ ] 10.4 Implement `format_paladin_result_json(result: &PaladinResult) -> serde_json::Value` for file output per FR-23
-  - [ ] 10.5 JSON format should include: metadata, conversation history, tool calls, timestamps
-  - [ ] 10.6 Implement `format_battalion_result(results: &BattalionResult, verbose: bool) -> String`
-  - [ ] 10.7 Battalion format should show each Paladin's output in sequence or aggregated based on type
-  - [ ] 10.8 Implement verbose output formatting per FR-24: show loops, tool calls, timing
-  - [ ] 10.9 In `src/cli/output/errors.rs`, implement detailed error formatting per FR-20 format:
+- [x] 10.0 Implement output formatting and error handling
+  - [x] 10.1 In `src/cli/output/formatter.rs`, define `OutputFormatter` struct
+  - [x] 10.2 Implement `format_paladin_result(result: &PaladinResult, verbose: bool) -> String` for human-readable output per FR-22
+  - [x] 10.3 Format should include: Paladin name, input, final output, execution time, token usage
+  - [x] 10.4 Implement `format_paladin_result_json(result: &PaladinResult) -> serde_json::Value` for file output per FR-23
+  - [x] 10.5 JSON format should include: metadata, conversation history, tool calls, timestamps
+  - [x] 10.6 Implement `format_battalion_result(results: &BattalionResult, verbose: bool) -> String`
+  - [x] 10.7 Battalion format should show each Paladin's output in sequence or aggregated based on type
+  - [x] 10.8 Implement verbose output formatting per FR-24: show loops, tool calls, timing
+  - [x] 10.9 In `src/cli/output/errors.rs`, implement detailed error formatting per FR-20 format:
     ```
     Error: <Short description>
     Details: <Longer explanation>
     Suggestion: <How to fix>
     Example: <If applicable>
     ```
-  - [ ] 10.10 Implement colored error output: red for "Error:", yellow for "Details:", green for "Suggestion:"
-  - [ ] 10.11 Add examples to error messages where applicable (e.g., correct YAML syntax)
-  - [ ] 10.12 Ensure exit codes per FR-21: 0 success, 1 user errors, 2 runtime errors, 130 SIGINT
-  - [ ] 10.13 Set up signal handler for SIGINT (Ctrl+C) to return exit code 130
-  - [ ] 10.14 Write unit tests for each formatter function
-  - [ ] 10.15 Write unit tests for error message formatting
+  - [x] 10.10 Implement colored error output: red for "Error:", yellow for "Details:", green for "Suggestion:"
+  - [x] 10.11 Add examples to error messages where applicable (e.g., correct YAML syntax)
+  - [x] 10.12 Ensure exit codes per FR-21: 0 success, 1 user errors, 2 runtime errors, 130 SIGINT
+  - [x] 10.13 Set up signal handler for SIGINT (Ctrl+C) to return exit code 130
+  - [x] 10.14 Write unit tests for each formatter function
+  - [x] 10.15 Write unit tests for error message formatting
 
 - [ ] 11.0 Implement interactive prompts for missing arguments
   - [ ] 11.1 In `src/cli/interactive.rs`, implement `prompt_for_input(prompt: &str) -> Result<String, CliError>`

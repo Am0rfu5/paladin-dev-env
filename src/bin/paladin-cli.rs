@@ -6,6 +6,7 @@ use paladin::cli::commands::{
     battalion::{BattalionCommands, handle_battalion_new, handle_battalion_run},
 };
 use std::process;
+use tokio::signal;
 
 #[derive(Parser)]
 #[command(name = "paladin")]
@@ -36,6 +37,14 @@ enum Commands {
 
 #[tokio::main]
 async fn main() {
+    // Setup SIGINT handler for graceful shutdown (Ctrl+C)
+    let _sigint_handler = tokio::spawn(async {
+        if signal::ctrl_c().await.is_ok() {
+            eprintln!("\n\nReceived interrupt signal (Ctrl+C). Exiting...");
+            process::exit(130); // Standard SIGINT exit code
+        }
+    });
+
     let cli = Cli::parse();
 
     let result = match cli.command {
@@ -50,9 +59,13 @@ async fn main() {
         Commands::Arsenal { action } => handle_arsenal_command(action).await,
     };
 
-    // Handle errors and exit with appropriate code
+    // Handle errors and exit with appropriate code per FR-21
+    // - 0: Success
+    // - 1: User errors (config, validation, missing args)
+    // - 2: Runtime errors (LLM, execution, tools)
+    // - 130: SIGINT (handled by signal handler above)
     if let Err(e) = result {
         eprintln!("{}", e.format_detailed());
-        process::exit(1);
+        process::exit(e.exit_code());
     }
 }
