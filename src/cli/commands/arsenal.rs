@@ -217,9 +217,197 @@ async fn connect_and_discover_stdio(
         .map_err(|e| format!("Tool discovery failed: {}", e))
 }
 
-/// Test an MCP server connection (stub for Task 9.0)
-async fn handle_arsenal_test(_args: ArsenalTestArgs) -> Result<(), CliError> {
-    Err(CliError::Other(
-        "arsenal test command not yet implemented (Task 9.0)".to_string(),
-    ))
+/// Test an MCP server connection with timing and diagnostics
+async fn handle_arsenal_test(args: ArsenalTestArgs) -> Result<(), CliError> {
+    use crate::infrastructure::adapters::arsenal::mcp_protocol::MCPClient;
+    use crate::infrastructure::adapters::arsenal::mcp_stdio_adapter::MCPStdioAdapter;
+    use std::time::Instant;
+
+    // Validate mutually exclusive args
+    if args.mcp_stdio.is_none() && args.mcp_sse.is_none() {
+        return Err(CliError::MissingRequiredField {
+            field: "mcp_stdio or mcp_sse".to_string(),
+            message: "You must specify either --mcp-stdio or --mcp-sse".to_string(),
+        });
+    }
+
+    println!("{} Testing MCP server connection...\n", "→".cyan().bold());
+
+    // Handle STDIO server testing
+    if let Some(stdio_command) = args.mcp_stdio {
+        println!("{} Server type: {}", "→".cyan(), "STDIO".bold());
+        println!("{} Command string: {}", "→".cyan(), stdio_command.cyan());
+
+        // Parse command and args
+        let parts: Vec<&str> = stdio_command.split_whitespace().collect();
+        if parts.is_empty() {
+            return Err(CliError::InvalidFieldValue {
+                field: "mcp_stdio".to_string(),
+                message: "Command string cannot be empty".to_string(),
+            });
+        }
+
+        let command = parts[0];
+        let args_vec: Vec<String> = parts[1..].iter().map(|s| s.to_string()).collect();
+
+        println!("{} Parsed command: {}", "→".cyan(), command.yellow());
+        if !args_vec.is_empty() {
+            println!("{} Arguments: {}", "→".cyan(), args_vec.join(" ").yellow());
+        }
+
+        println!("\n{} Connecting to MCP server...", "→".cyan().bold());
+
+        // Create adapter and measure connection time
+        let start = Instant::now();
+        let mut adapter = MCPStdioAdapter::new(command, args_vec);
+
+        match adapter.connect().await {
+            Ok(_) => {
+                let connection_time = start.elapsed();
+                println!(
+                    "{} Connected successfully in {:.2}ms\n",
+                    "✓".green().bold(),
+                    connection_time.as_secs_f64() * 1000.0
+                );
+
+                // Create MCP client and discover tools
+                println!("{} Discovering available tools...", "→".cyan());
+                let client = MCPClient::new(Box::new(adapter));
+
+                let discovery_start = Instant::now();
+                match client.discover_tools().await {
+                    Ok(tools) => {
+                        let discovery_time = discovery_start.elapsed();
+                        println!(
+                            "{} Discovered {} tool(s) in {:.2}ms\n",
+                            "✓".green().bold(),
+                            tools.len(),
+                            discovery_time.as_secs_f64() * 1000.0
+                        );
+
+                        if tools.is_empty() {
+                            println!(
+                                "{} No tools available from this server",
+                                "⚠".yellow().bold()
+                            );
+                        } else {
+                            // Display tools table
+                            println!("{}", "═".repeat(100));
+                            println!("{:30} | {}", "Tool Name".bold(), "Description".bold());
+                            println!("{}", "═".repeat(100));
+
+                            for tool in &tools {
+                                let description = if tool.description.len() > 65 {
+                                    format!("{}...", &tool.description[..65])
+                                } else {
+                                    tool.description.clone()
+                                };
+                                println!("{:30} | {}", tool.name.cyan(), description);
+                            }
+
+                            println!("{}", "═".repeat(100));
+
+                            // Show detailed schema for first tool as example
+                            if let Some(first_tool) = tools.first() {
+                                println!(
+                                    "\n{} Example tool schema ({})",
+                                    "→".cyan().bold(),
+                                    first_tool.name.cyan()
+                                );
+                                println!("{}", "─".repeat(100));
+                                let schema_json =
+                                    serde_json::to_string_pretty(&first_tool.parameters)
+                                        .unwrap_or_else(|_| {
+                                            "Unable to serialize schema".to_string()
+                                        });
+                                println!("{}", schema_json.dimmed());
+                                println!("{}", "─".repeat(100));
+                            }
+                        }
+
+                        // Display summary
+                        println!("\n{}", "═".repeat(100));
+                        println!("{} Connection Test Summary", "📊".cyan().bold());
+                        println!("{}", "═".repeat(100));
+                        println!(
+                            "  {} Connection:  {}",
+                            "→".cyan(),
+                            "Successful".green().bold()
+                        );
+                        println!(
+                            "  {} Latency:     {:.2}ms",
+                            "→".cyan(),
+                            connection_time.as_secs_f64() * 1000.0
+                        );
+                        println!(
+                            "  {} Discovery:   {:.2}ms",
+                            "→".cyan(),
+                            discovery_time.as_secs_f64() * 1000.0
+                        );
+                        println!(
+                            "  {} Tools:       {}",
+                            "→".cyan(),
+                            tools.len().to_string().yellow().bold()
+                        );
+                        println!("{}", "═".repeat(100));
+
+                        Ok(())
+                    }
+                    Err(e) => {
+                        println!("{} Tool discovery failed: {}", "✗".red().bold(), e);
+
+                        println!("\n{} Debugging Tips:", "💡".yellow().bold());
+                        println!("  • Ensure the MCP server responds to 'tools/list' requests");
+                        println!("  • Check server logs for protocol errors");
+                        println!("  • Verify the server implements the MCP protocol correctly");
+
+                        Err(CliError::ToolError {
+                            message: format!("Tool discovery failed: {}", e),
+                        })
+                    }
+                }
+            }
+            Err(e) => {
+                let connection_time = start.elapsed();
+                println!(
+                    "{} Connection failed after {:.2}ms",
+                    "✗".red().bold(),
+                    connection_time.as_secs_f64() * 1000.0
+                );
+                println!("\n{} Error: {}", "→".red(), e);
+
+                println!("\n{} Debugging Tips:", "💡".yellow().bold());
+                println!("  • Verify the command exists and is in your PATH");
+                println!("  • Check that the command accepts STDIO communication");
+                println!("  • Ensure the command implements the MCP protocol");
+                println!(
+                    "  • Try running the command manually to test: {}",
+                    stdio_command.yellow()
+                );
+
+                Err(CliError::McpConnectionError {
+                    message: format!("Connection failed: {}", e),
+                })
+            }
+        }
+    }
+    // Handle SSE server testing
+    else if let Some(sse_endpoint) = args.mcp_sse {
+        println!("{} Server type: {}", "→".cyan(), "SSE (HTTP)".bold());
+        println!("{} Endpoint: {}", "→".cyan(), sse_endpoint.cyan());
+
+        println!(
+            "\n{} SSE server support not yet implemented",
+            "⚠".yellow().bold()
+        );
+        println!("\n{} Debugging Tips:", "💡".yellow().bold());
+        println!("  • SSE MCP servers will be supported in a future release");
+        println!("  • Use --mcp-stdio for command-line MCP servers");
+
+        Err(CliError::Other(
+            "SSE server testing not yet implemented".to_string(),
+        ))
+    } else {
+        unreachable!("Validation ensures at least one is Some")
+    }
 }
