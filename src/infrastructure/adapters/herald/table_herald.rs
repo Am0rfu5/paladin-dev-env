@@ -262,6 +262,7 @@ impl Default for TableHerald {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::platform::container::herald::{ExecutionMetadata, StreamChunk};
 
     #[test]
     fn test_table_herald_creation() {
@@ -492,5 +493,48 @@ mod tests {
 
         assert_eq!(deserialized.max_column_width, 80);
         assert_eq!(deserialized.border_style, "ascii");
+    }
+
+    #[test]
+    fn test_streaming_buffering_behavior() {
+        let herald = TableHerald::default();
+
+        // TableHerald should buffer all chunks and return None during streaming
+        let chunks = vec![
+            StreamChunk {
+                content: "First chunk".to_string(),
+                is_final: false,
+            },
+            StreamChunk {
+                content: "Second chunk".to_string(),
+                is_final: false,
+            },
+            StreamChunk {
+                content: "Final chunk".to_string(),
+                is_final: true,
+            },
+        ];
+
+        // All chunks should return None (buffering)
+        for chunk in &chunks {
+            let result = herald.format_stream_chunk(chunk).unwrap();
+            assert!(
+                result.is_none(),
+                "TableHerald should buffer chunks and return None"
+            );
+        }
+
+        // Only finalize_stream should produce output
+        let metadata = ExecutionMetadata {
+            execution_time_ms: 2000,
+            total_tokens: 400,
+        };
+        let metadata_output = herald.finalize_stream(&metadata).unwrap();
+
+        // Verify metadata table is generated
+        assert!(!metadata_output.is_empty());
+        assert!(metadata_output.contains("│") || metadata_output.contains("|"));
+        // Metadata table should contain placeholder or actual values
+        assert!(metadata_output.contains("Duration") || metadata_output.contains("Tokens"));
     }
 }

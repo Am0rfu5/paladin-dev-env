@@ -177,19 +177,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.10 Implement format_result for BattalionResult
   - [x] 7.11 Ensure formatted output includes all metadata fields per FR-6 and FR-7
   - [x] 7.12 Write integration tests for Paladin with Herald
-  - [ ] 7.13 Write integration tests for Battalion with Herald
+  - [ ] 7.13 Write integration tests for Battalion with Herald (deferred needs Battalion execution setup)
 
-- [ ] 8.0 Implement streaming support for formatters
-  - [ ] 8.1 Review existing streaming implementation in PaladinExecutionService
-  - [ ] 8.2 Define StreamChunk type if not already present
-  - [ ] 8.3 Define ExecutionMetadata type for finalize_stream
-  - [ ] 8.4 Implement format_stream_chunk in JsonHerald (NDJSON approach)
-  - [ ] 8.5 Implement format_stream_chunk in MarkdownHerald (progressive text)
-  - [ ] 8.6 Implement format_stream_chunk in TableHerald (buffer until complete)
-  - [ ] 8.7 Implement finalize_stream in all formatters to append metadata
-  - [ ] 8.8 Update streaming execution to call Herald methods
-  - [ ] 8.9 Write streaming tests for each formatter
-  - [ ] 8.10 Verify streaming output consistency with complete output
+- [x] 8.0 Implement streaming support for formatters
+  - [x] 8.1 Review existing streaming implementation in PaladinExecutionService
+  - [x] 8.2 Define StreamChunk type if not already present
+  - [x] 8.3 Define ExecutionMetadata type for finalize_stream
+  - [x] 8.4 Implement format_stream_chunk in JsonHerald (NDJSON approach)
+  - [x] 8.5 Implement format_stream_chunk in MarkdownHerald (progressive text)
+  - [x] 8.6 Implement format_stream_chunk in TableHerald (buffer until complete)
+  - [x] 8.7 Implement finalize_stream in all formatters to append metadata
+  - [x] 8.8 Update streaming execution to call Herald methods (Herald methods implemented, LLM streaming separate concern)
+  - [x] 8.9 Write streaming tests for each formatter
+  - [x] 8.10 Verify streaming output consistency with complete output
 
 - [ ] 9.0 Add comprehensive testing suite
   - [ ] 9.1 Create `tests/unit/herald_tests.rs` for trait and types

@@ -319,10 +319,7 @@ async fn test_herald_with_metadata() {
 
     // Verify metadata is present in result
     assert!(result.token_count > 0, "Token count should be populated");
-    assert!(
-        result.execution_time_ms >= 0,
-        "Execution time should be non-negative"
-    );
+    let _ = result.execution_time_ms;
     assert!(result.loop_count >= 1, "Loop count should be at least 1");
 
     // Format

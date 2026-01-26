@@ -69,6 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ),
     );
 
+    #[allow(unused_variables)]
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
 
     // Create the first Paladin in the workflow

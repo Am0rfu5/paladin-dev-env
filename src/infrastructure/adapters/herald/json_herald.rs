@@ -490,4 +490,74 @@ mod tests {
         assert!(herald.config.pretty);
         assert!(herald.config.include_metadata);
     }
+
+    #[test]
+    fn test_streaming_output_consistency() {
+        let herald = JsonHerald::new();
+
+        // Simulate streaming chunks
+        let chunks = vec![
+            StreamChunk {
+                content: "First chunk ".to_string(),
+                is_final: false,
+            },
+            StreamChunk {
+                content: "Second chunk ".to_string(),
+                is_final: false,
+            },
+            StreamChunk {
+                content: "Final chunk".to_string(),
+                is_final: true,
+            },
+        ];
+
+        // Collect streamed output
+        let mut streamed_output = String::new();
+        for chunk in &chunks {
+            if let Some(formatted) = herald.format_stream_chunk(chunk).unwrap() {
+                streamed_output.push_str(&formatted);
+            }
+        }
+
+        // Add metadata
+        let metadata = ExecutionMetadata {
+            execution_time_ms: 500,
+            total_tokens: 150,
+        };
+        let metadata_output = herald.finalize_stream(&metadata).unwrap();
+        streamed_output.push_str(&metadata_output);
+
+        // Verify NDJSON format (each line should be valid JSON)
+        let lines: Vec<&str> = streamed_output.lines().collect();
+        assert_eq!(
+            lines.len(),
+            4,
+            "Should have 3 chunk lines + 1 metadata line"
+        );
+
+        // Verify all lines are valid JSON
+        for line in &lines {
+            let parsed: Value = serde_json::from_str(line)
+                .expect(&format!("Each line should be valid JSON: {}", line));
+            assert!(parsed.is_object());
+        }
+
+        // Verify content chunks
+        let chunk0: Value = serde_json::from_str(lines[0]).unwrap();
+        assert_eq!(chunk0["content"], "First chunk ");
+        assert_eq!(chunk0["is_final"], false);
+
+        let chunk1: Value = serde_json::from_str(lines[1]).unwrap();
+        assert_eq!(chunk1["content"], "Second chunk ");
+
+        let chunk2: Value = serde_json::from_str(lines[2]).unwrap();
+        assert_eq!(chunk2["content"], "Final chunk");
+        assert_eq!(chunk2["is_final"], true);
+
+        // Verify metadata
+        let meta: Value = serde_json::from_str(lines[3]).unwrap();
+        assert_eq!(meta["type"], "metadata");
+        assert_eq!(meta["execution_time_ms"], 500);
+        assert_eq!(meta["total_tokens"], 150);
+    }
 }

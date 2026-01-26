@@ -539,4 +539,60 @@ mod tests {
         let herald = MarkdownHerald::default();
         assert_eq!(herald.config.heading_level, 2);
     }
+
+    #[test]
+    fn test_streaming_output_consistency() {
+        let herald = MarkdownHerald::new();
+
+        // Simulate streaming chunks
+        let chunks = vec![
+            StreamChunk {
+                content: "First chunk of text. ".to_string(),
+                is_final: false,
+            },
+            StreamChunk {
+                content: "Second chunk of text. ".to_string(),
+                is_final: false,
+            },
+            StreamChunk {
+                content: "Final chunk.".to_string(),
+                is_final: true,
+            },
+        ];
+
+        // Collect streamed output
+        let mut streamed_output = String::new();
+        for chunk in &chunks {
+            if let Some(formatted) = herald.format_stream_chunk(chunk).unwrap() {
+                streamed_output.push_str(&formatted);
+            }
+        }
+
+        // Add metadata
+        let metadata = ExecutionMetadata {
+            execution_time_ms: 1500,
+            total_tokens: 300,
+        };
+        let metadata_output = herald.finalize_stream(&metadata).unwrap();
+        streamed_output.push_str(&metadata_output);
+
+        // Verify the concatenated content
+        assert!(streamed_output.contains("First chunk of text."));
+        assert!(streamed_output.contains("Second chunk of text."));
+        assert!(streamed_output.contains("Final chunk."));
+
+        // Verify metadata section is present
+        assert!(
+            streamed_output.contains("Execution Metadata") || streamed_output.contains("execution")
+        );
+        assert!(streamed_output.contains("1500ms") || streamed_output.contains("1500"));
+        assert!(streamed_output.contains("300"));
+
+        // Verify progressive nature - chunks should appear in order
+        let first_pos = streamed_output.find("First chunk").unwrap();
+        let second_pos = streamed_output.find("Second chunk").unwrap();
+        let final_pos = streamed_output.find("Final chunk").unwrap();
+        assert!(first_pos < second_pos);
+        assert!(second_pos < final_pos);
+    }
 }
