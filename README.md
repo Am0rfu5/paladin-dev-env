@@ -51,6 +51,7 @@ The project clearly defines Ports as interfaces to external systems, enabling ad
 * **Garrison Memory System:** Persistent conversation history with windowing and search capabilities.
 * **Arsenal Tool System:** External tool integration via Model Context Protocol (MCP).
 * **Battalion Orchestration:** Multi-agent coordination with four orchestration patterns.
+* **Herald Output Formatting:** Pluggable formatters (JSON, Markdown, Table) with streaming support.
 
 ### AI Agent System (Paladin)
 
@@ -143,6 +144,55 @@ Battalion provides powerful multi-agent coordination capabilities with four dist
 **Testing**: 218 comprehensive tests (85 unit + 133 integration) ensuring reliability
 
 See [docs/BATTALION.md](docs/BATTALION.md) for comprehensive orchestration documentation.
+
+### Herald Output Formatting System
+
+Herald provides a powerful, pluggable output formatting system that transforms Paladin and Battalion execution results into human-readable formats:
+
+* **JSON Herald**: Structured JSON output for APIs and machine parsing
+  * Pretty-printed or compact format
+  * Optional timestamps
+  * NDJSON streaming support
+* **Markdown Herald**: Beautiful, human-readable output with colors
+  * Color-coded status badges (✅ ❌ ⏱️)
+  * Configurable heading levels
+  * Progressive text streaming
+* **Table Herald**: Compact ASCII/Unicode tables for dashboards
+  * Multiple border styles (rounded, ascii, modern, none)
+  * Automatic text truncation
+  * Buffered rendering for consistency
+
+**Key Features**:
+* ⚡ **High Performance**: <1ms for 10KB results (tested at 0.0095ms - 105x faster than target)
+* 🔌 **Pluggable**: Easy to implement custom formatters (XML, CSV, etc.)
+* 📡 **Streaming Support**: Three strategies (NDJSON, Progressive, Buffered)
+* ⚙️ **Configurable**: YAML-based config with runtime overrides
+* 🏗️ **Type-Safe**: Strong typing with comprehensive error handling
+
+**Quick Example**:
+```rust
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald};
+use std::sync::Arc;
+
+// Create Herald from config
+let herald = settings.create_default_herald()?;
+
+// Or create directly
+let herald: Arc<dyn Herald> = Arc::new(MarkdownHerald::new());
+
+// Use with Paladin
+let service = PaladinExecutionService::new(llm_port, cb, None, None)
+    .with_herald(herald);
+
+let result = service.execute(&paladin, "input").await?;
+if let Some(formatted) = service.format_result(&result, &paladin)? {
+    println!("{}", formatted);
+}
+```
+
+**Custom Formatters**: Implement the `Herald` trait to create custom output formats (XML, CSV, YAML, etc.)
+
+See [docs/HERALD.md](docs/HERALD.md) for comprehensive formatting documentation.
 
 ### Storage Solutions
 

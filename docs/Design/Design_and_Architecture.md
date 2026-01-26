@@ -135,6 +135,31 @@ Technical implementations and external integrations:
 - **File Store**: Binary content storage
 - **Key-Value Store**: Fast caching and temporary storage
 
+#### 5. AI Agent System
+- **Paladin**: Autonomous AI agent with configurable behaviors and tool access
+- **Garrison**: Memory system for conversation history and context
+  - **InMemoryGarrison**: Fast, ephemeral storage for development
+  - **SqliteGarrison**: Persistent storage with full-text search
+- **Arsenal**: Tool and capability registry for external integrations
+  - **MCP Protocol**: Model Context Protocol for tool communication
+  - **STDIO/SSE Transports**: Command-line and HTTP-based tool execution
+- **Battalion**: Multi-agent orchestration with four patterns
+  - **Formation**: Sequential execution with output chaining
+  - **Phalanx**: Concurrent execution with result aggregation
+  - **Campaign**: Graph-based conditional routing (DAG)
+  - **Chain of Command**: Hierarchical delegation with strategies
+- **Herald**: Output formatting system for results
+  - **JsonHerald**: Structured JSON output with NDJSON streaming
+  - **MarkdownHerald**: Human-readable formatted text with colors
+  - **TableHerald**: Compact ASCII/Unicode tables for dashboards
+- **Citadel**: State persistence and checkpoint recovery for long-running operations
+
+See comprehensive documentation:
+- [Garrison Memory System](../GARRISON.md)
+- [Arsenal Tool Integration](../ARSENAL.md)
+- [Battalion Orchestration](../BATTALION.md)
+- [Herald Output Formatting](../HERALD.md)
+
 ## Data Flow and Business Domain Logic
 
 ### Content Processing Pipeline

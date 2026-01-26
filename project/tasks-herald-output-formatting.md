@@ -210,7 +210,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 9.16 Generate coverage report: `cargo llvm-cov` (if available)
   - [x] 9.17 Verify ≥80% coverage for Herald module
 
-- [ ] 10.0 Write documentation and examples
+- [x] 10.0 Write documentation and examples
   - [x] 10.1 Create `docs/HERALD.md` user guide
   - [x] 10.2 Document Herald trait and how to implement custom formatters
   - [x] 10.3 Document all built-in formatters (JSON, Markdown, Table)
@@ -222,10 +222,10 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 10.9 Create `examples/herald_custom_formatter.rs` with XML or CSV example
   - [x] 10.10 Create `examples/herald_streaming.rs` demonstrating streaming formatters
   - [x] 10.11 Update existing examples to use Herald (basic_paladin.rs, etc.)
-  - [ ] 10.12 Add Herald section to README.md
-  - [ ] 10.13 Generate rustdoc: `cargo doc --open`
-  - [ ] 10.14 Review all public API documentation for completeness
-  - [ ] 10.15 Add Herald to project glossary and architecture docs
+  - [x] 10.12 Add Herald section to README.md
+  - [x] 10.13 Generate rustdoc: `cargo doc --open`
+  - [x] 10.14 Review all public API documentation for completeness
+  - [x] 10.15 Add Herald to project glossary and architecture docs
 
 ---
 
