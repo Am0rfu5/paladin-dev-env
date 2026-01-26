@@ -16,7 +16,8 @@
 //! println!("{}", formatted);
 //! ```
 
-use super::herald_error::HeraldError;
+// Re-export HeraldError for convenience
+pub use super::herald_error::HeraldError;
 
 /// Herald trait for formatting Paladin execution results
 ///
@@ -201,10 +202,7 @@ mod tests {
             Ok(format!("MOCK: {}", result.paladin_name))
         }
 
-        fn format_battalion_result(
-            &self,
-            result: &BattalionResult,
-        ) -> Result<String, HeraldError> {
+        fn format_battalion_result(&self, result: &BattalionResult) -> Result<String, HeraldError> {
             Ok(format!("MOCK BATTALION: {}", result.battalion_name))
         }
 

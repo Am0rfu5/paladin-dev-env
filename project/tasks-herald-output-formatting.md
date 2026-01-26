@@ -89,18 +89,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.8 Write unit tests for error type creation and formatting
   - [x] 1.9 Update `src/core/platform/container/mod.rs` to export herald module
 
-- [ ] 2.0 Implement Herald Registry system
-  - [ ] 2.1 Create `src/application/use_cases/herald/` directory
-  - [ ] 2.2 Create `src/application/use_cases/herald/herald_registry.rs`
-  - [ ] 2.3 Define HeraldRegistry struct with HashMap<String, Arc<dyn Herald>>
-  - [ ] 2.4 Implement register method for adding formatters
-  - [ ] 2.5 Implement get method for retrieving formatters by name
-  - [ ] 2.6 Implement list method for listing available formatter names
-  - [ ] 2.7 Add thread-safe concurrent access with RwLock
-  - [ ] 2.8 Implement Default trait to auto-register built-in formatters
-  - [ ] 2.9 Add comprehensive rustdoc documentation
-  - [ ] 2.10 Write unit tests for registry operations (register, get, list)
-  - [ ] 2.11 Update `src/application/use_cases/mod.rs` to export herald module
+- [x] 2.0 Implement Herald Registry system
+  - [x] 2.1 Create `src/application/use_cases/herald/` directory
+  - [x] 2.2 Create `src/application/use_cases/herald/herald_registry.rs`
+  - [x] 2.3 Define HeraldRegistry struct with HashMap<String, Arc<dyn Herald>>
+  - [x] 2.4 Implement register method for adding formatters
+  - [x] 2.5 Implement get method for retrieving formatters by name
+  - [x] 2.6 Implement list method for listing available formatter names
+  - [x] 2.7 Add thread-safe concurrent access with RwLock
+  - [x] 2.8 Implement Default trait to auto-register built-in formatters
+  - [x] 2.9 Add comprehensive rustdoc documentation
+  - [x] 2.10 Write unit tests for registry operations (register, get, list)
+  - [x] 2.11 Update `src/application/use_cases/mod.rs` to export herald module
 
 - [ ] 3.0 Implement JsonHerald formatter
   - [ ] 3.1 Add dependencies to Cargo.toml (serde_json already present, verify)
