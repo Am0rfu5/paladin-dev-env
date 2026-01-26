@@ -152,30 +152,30 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.30 Run `cargo clippy` and fix any warnings
   - [x] 3.31 Add rustdoc comments to all public items
 
-- [ ] 4.0 Create provider factory and configuration system
-  - [ ] 4.1 Create `src/infrastructure/adapters/llm/provider_factory.rs`
-  - [ ] 4.2 Define `LlmProviderFactory` struct
-  - [ ] 4.3 Implement `create()` method accepting provider name (REQ-17)
-  - [ ] 4.4 Add match arms for "openai", "deepseek", "anthropic"
-  - [ ] 4.5 Return appropriate adapter wrapped in `Arc<dyn LlmPort>`
-  - [ ] 4.6 Return clear error for unknown provider (REQ-19)
-  - [ ] 4.7 Read `src/config/application_settings.rs` to understand current structure
-  - [ ] 4.8 Add `LlmConfig` section to `ApplicationSettings` (REQ-16)
-  - [ ] 4.9 Add `OpenAiConfig`, `DeepSeekConfig`, `AnthropicConfig` to settings
-  - [ ] 4.10 Implement environment variable substitution for API keys (REQ-18)
-  - [ ] 4.11 Update `config.yml` with all three provider sections (REQ-16)
-  - [ ] 4.12 Update `config.test.yml` with test provider configurations
-  - [ ] 4.13 Implement default provider logic (OpenAI if configured) (REQ-20)
-  - [ ] 4.14 Write unit test: `test_factory_creates_openai_adapter()`
-  - [ ] 4.15 Write unit test: `test_factory_creates_deepseek_adapter()`
-  - [ ] 4.16 Write unit test: `test_factory_creates_anthropic_adapter()`
-  - [ ] 4.17 Write unit test: `test_factory_unknown_provider_error()`
-  - [ ] 4.18 Write unit test: `test_factory_missing_api_key_error()` (REQ-19)
-  - [ ] 4.19 Write unit test: `test_config_loads_from_yaml()`
-  - [ ] 4.20 Write unit test: `test_config_environment_variable_substitution()`
-  - [ ] 4.21 Run `cargo test` to verify all tests pass
-  - [ ] 4.22 Run `cargo clippy` and fix any warnings
-  - [ ] 4.23 Add rustdoc comments to all public items
+- [x] 4.0 Create provider factory and configuration system
+  - [x] 4.1 Create `src/infrastructure/adapters/llm/provider_factory.rs`
+  - [x] 4.2 Define `LlmProviderFactory` struct
+  - [x] 4.3 Implement `create()` method accepting provider name (REQ-17)
+  - [x] 4.4 Add match arms for "openai", "deepseek", "anthropic"
+  - [x] 4.5 Return appropriate adapter wrapped in `Arc<dyn LlmPort>`
+  - [x] 4.6 Return clear error for unknown provider (REQ-19)
+  - [x] 4.7 Read `src/config/application_settings.rs` to understand current structure
+  - [x] 4.8 Add `LlmConfig` section to `ApplicationSettings` (REQ-16)
+  - [x] 4.9 Add `OpenAiConfig`, `DeepSeekConfig`, `AnthropicConfig` to settings
+  - [x] 4.10 Implement environment variable substitution for API keys (REQ-18)
+  - [x] 4.11 Update `config.yml` with all three provider sections (REQ-16)
+  - [x] 4.12 Update `config.test.yml` with test provider configurations
+  - [x] 4.13 Implement default provider logic (OpenAI if configured) (REQ-20)
+  - [x] 4.14 Write unit test: `test_factory_creates_openai_adapter()`
+  - [x] 4.15 Write unit test: `test_factory_creates_deepseek_adapter()`
+  - [x] 4.16 Write unit test: `test_factory_creates_anthropic_adapter()`
+  - [x] 4.17 Write unit test: `test_factory_unknown_provider_error()`
+  - [x] 4.18 Write unit test: `test_factory_missing_api_key_error()` (REQ-19)
+  - [x] 4.19 Write unit test: `test_config_loads_from_yaml()`
+  - [x] 4.20 Write unit test: `test_config_environment_variable_substitution()`
+  - [x] 4.21 Run `cargo test` to verify all tests pass
+  - [x] 4.22 Run `cargo clippy` and fix any warnings
+  - [x] 4.23 Add rustdoc comments to all public items
 
 - [ ] 5.0 Enhance existing OpenAI adapter for consistency
   - [ ] 5.1 Read `src/infrastructure/adapters/output/llm_adapter.rs` current implementation
