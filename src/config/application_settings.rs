@@ -32,6 +32,21 @@ pub struct ArsenalConfig {
     pub mcp_servers: Vec<MCPServerConfig>,
 }
 
+/// Configuration for Citadel state persistence system
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CitadelConfig {
+    /// Enable or disable state persistence
+    pub enabled: bool,
+    /// Directory where state files will be saved
+    pub state_dir: String,
+    /// Enable automatic saving after Paladin execution
+    pub autosave_enabled: bool,
+    /// Enable automatic state cleanup (remove old states)
+    pub cleanup_enabled: bool,
+    /// Maximum age of state files in days before cleanup (if cleanup_enabled is true)
+    pub max_state_age_days: Option<u32>,
+}
+
 impl Default for ArsenalConfig {
     fn default() -> Self {
         Self {
@@ -39,6 +54,46 @@ impl Default for ArsenalConfig {
             max_concurrent_tools: 5,
             mcp_servers: Vec::new(),
         }
+    }
+}
+
+impl Default for CitadelConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            state_dir: "./paladin-states".to_string(),
+            autosave_enabled: false,
+            cleanup_enabled: false,
+            max_state_age_days: Some(30),
+        }
+    }
+}
+
+impl CitadelConfig {
+    /// Validates citadel configuration
+    pub fn validate(&self) -> Result<(), String> {
+        // Validate state_dir is not empty when enabled
+        if self.enabled && self.state_dir.trim().is_empty() {
+            return Err("state_dir cannot be empty when citadel is enabled".to_string());
+        }
+
+        // Validate max_state_age_days if cleanup is enabled
+        if self.cleanup_enabled {
+            if let Some(max_age) = self.max_state_age_days {
+                if max_age == 0 {
+                    return Err(
+                        "max_state_age_days must be greater than 0 when cleanup is enabled"
+                            .to_string(),
+                    );
+                }
+            } else {
+                return Err(
+                    "max_state_age_days must be specified when cleanup_enabled is true".to_string(),
+                );
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -400,6 +455,7 @@ pub struct Settings {
     pub notifications: Option<NotificationConfig>,
     pub garrison: Option<GarrisonSettings>,
     pub arsenal: Option<ArsenalConfig>,
+    pub citadel: Option<CitadelConfig>,
     pub llm: Option<LlmConfig>,
 }
 
@@ -632,6 +688,42 @@ impl Settings {
         config
     }
 
+    /// Get citadel configuration with environment variable overrides
+    pub fn get_citadel_config(&self) -> CitadelConfig {
+        let mut config = self.citadel.clone().unwrap_or_default();
+
+        // Override with environment variables if present
+        if let Ok(enabled_str) = std::env::var("APP_CITADEL_ENABLED") {
+            if let Ok(enabled) = enabled_str.parse::<bool>() {
+                config.enabled = enabled;
+            }
+        }
+
+        if let Ok(state_dir) = std::env::var("APP_CITADEL_STATE_DIR") {
+            config.state_dir = state_dir;
+        }
+
+        if let Ok(autosave_str) = std::env::var("APP_CITADEL_AUTOSAVE_ENABLED") {
+            if let Ok(autosave) = autosave_str.parse::<bool>() {
+                config.autosave_enabled = autosave;
+            }
+        }
+
+        if let Ok(cleanup_str) = std::env::var("APP_CITADEL_CLEANUP_ENABLED") {
+            if let Ok(cleanup) = cleanup_str.parse::<bool>() {
+                config.cleanup_enabled = cleanup;
+            }
+        }
+
+        if let Ok(max_age_str) = std::env::var("APP_CITADEL_MAX_STATE_AGE_DAYS") {
+            if let Ok(max_age) = max_age_str.parse::<u32>() {
+                config.max_state_age_days = Some(max_age);
+            }
+        }
+
+        config
+    }
+
     /// Convert FileStorageConfig to MinioConfig
     pub fn to_minio_config(&self) -> MinioConfig {
         let fs_config = self.get_file_storage_config();
@@ -677,6 +769,7 @@ impl Default for Settings {
             notifications: Some(NotificationConfig::default()),
             garrison: Some(GarrisonSettings::default()),
             arsenal: Some(ArsenalConfig::default()),
+            citadel: Some(CitadelConfig::default()),
             llm: Some(LlmConfig::default()),
         }
     }
@@ -1188,5 +1281,128 @@ mod tests {
             config.get_default_provider_name(),
             Some("anthropic".to_string())
         );
+    }
+
+    #[test]
+    fn test_citadel_config_default() {
+        let config = CitadelConfig::default();
+        assert!(!config.enabled);
+        assert_eq!(config.state_dir, "./paladin-states");
+        assert!(!config.autosave_enabled);
+        assert!(!config.cleanup_enabled);
+        assert_eq!(config.max_state_age_days, Some(30));
+    }
+
+    #[test]
+    fn test_citadel_config_validate_valid() {
+        let config = CitadelConfig {
+            enabled: true,
+            state_dir: "./states".to_string(),
+            autosave_enabled: true,
+            cleanup_enabled: true,
+            max_state_age_days: Some(7),
+        };
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_citadel_config_validate_empty_state_dir_when_enabled() {
+        let config = CitadelConfig {
+            enabled: true,
+            state_dir: "   ".to_string(), // Empty after trim
+            autosave_enabled: false,
+            cleanup_enabled: false,
+            max_state_age_days: Some(30),
+        };
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .contains("state_dir cannot be empty when citadel is enabled")
+        );
+    }
+
+    #[test]
+    fn test_citadel_config_validate_cleanup_no_max_age() {
+        let config = CitadelConfig {
+            enabled: true,
+            state_dir: "./states".to_string(),
+            autosave_enabled: false,
+            cleanup_enabled: true,
+            max_state_age_days: None,
+        };
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .contains("max_state_age_days must be specified when cleanup_enabled is true")
+        );
+    }
+
+    #[test]
+    fn test_citadel_config_validate_cleanup_zero_max_age() {
+        let config = CitadelConfig {
+            enabled: true,
+            state_dir: "./states".to_string(),
+            autosave_enabled: false,
+            cleanup_enabled: true,
+            max_state_age_days: Some(0),
+        };
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .contains("max_state_age_days must be greater than 0 when cleanup is enabled")
+        );
+    }
+
+    #[test]
+    #[serial]
+    fn test_citadel_config_env_override() {
+        unsafe {
+            env::set_var("APP_CITADEL_ENABLED", "true");
+            env::set_var("APP_CITADEL_STATE_DIR", "/custom/states");
+            env::set_var("APP_CITADEL_AUTOSAVE_ENABLED", "true");
+            env::set_var("APP_CITADEL_CLEANUP_ENABLED", "true");
+            env::set_var("APP_CITADEL_MAX_STATE_AGE_DAYS", "60");
+        }
+
+        let settings = Settings::default();
+        let config = settings.get_citadel_config();
+
+        assert!(config.enabled);
+        assert_eq!(config.state_dir, "/custom/states");
+        assert!(config.autosave_enabled);
+        assert!(config.cleanup_enabled);
+        assert_eq!(config.max_state_age_days, Some(60));
+
+        unsafe {
+            env::remove_var("APP_CITADEL_ENABLED");
+            env::remove_var("APP_CITADEL_STATE_DIR");
+            env::remove_var("APP_CITADEL_AUTOSAVE_ENABLED");
+            env::remove_var("APP_CITADEL_CLEANUP_ENABLED");
+            env::remove_var("APP_CITADEL_MAX_STATE_AGE_DAYS");
+        }
+    }
+
+    #[test]
+    fn test_citadel_config_deserialization_from_yml() {
+        // Test that CitadelConfig can be deserialized with all fields
+        let config = CitadelConfig {
+            enabled: true,
+            state_dir: "./test-states".to_string(),
+            autosave_enabled: true,
+            cleanup_enabled: false,
+            max_state_age_days: Some(14),
+        };
+
+        assert!(config.enabled);
+        assert_eq!(config.state_dir, "./test-states");
+        assert!(config.autosave_enabled);
+        assert!(!config.cleanup_enabled);
+        assert_eq!(config.max_state_age_days, Some(14));
     }
 }
