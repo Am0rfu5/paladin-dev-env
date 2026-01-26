@@ -181,20 +181,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.15 Test formation execution: Unit tests pass, full integration requires API key
   - [x] 7.16 Test phalanx execution: Unit tests pass, full integration requires API key
 
-- [ ] 8.0 Implement `paladin arsenal list` command (tool discovery)
-  - [ ] 8.1 In `src/cli/commands/arsenal.rs`, implement `handle_arsenal_list() -> Result<(), CliError>`
-  - [ ] 8.2 Load MCP server configuration from default config location or environment
-  - [ ] 8.3 For each configured MCP server, attempt to connect and discover tools
-  - [ ] 8.4 Query tool list using MCP protocol from `infrastructure/adapters/arsenal/`
-  - [ ] 8.5 Collect tool metadata: name, description, type (stdio/sse), connection status
-  - [ ] 8.6 Format output as a table using colored output per FR-11:
+- [x] 8.0 Implement `paladin arsenal list` command (tool discovery)
+  - [x] 8.1 In `src/cli/commands/arsenal.rs`, implement `handle_arsenal_list() -> Result<(), CliError>`
+  - [x] 8.2 Load MCP server configuration from default config location or environment
+  - [x] 8.3 For each configured MCP server, attempt to connect and discover tools
+  - [x] 8.4 Query tool list using MCP protocol from `infrastructure/adapters/arsenal/`
+  - [x] 8.5 Collect tool metadata: name, description, type (stdio/sse), connection status
+  - [x] 8.6 Format output as a table using colored output per FR-11:
     - Tool Name | Description | Type | Status
-  - [ ] 8.7 Use colored output: green for connected, red for connection failed
-  - [ ] 8.8 Handle case where no MCP servers are configured (show helpful message)
-  - [ ] 8.9 Handle connection failures gracefully (show error but continue to next server)
-  - [ ] 8.10 Wire `handle_arsenal_list` into command routing
-  - [ ] 8.11 Configure test MCP server in config.yml for testing
-  - [ ] 8.12 Test command: `cargo run --bin paladin-cli -- arsenal list`
+  - [x] 8.7 Use colored output: green for connected, red for connection failed
+  - [x] 8.8 Handle case where no MCP servers are configured (show helpful message)
+  - [x] 8.9 Handle connection failures gracefully (show error but continue to next server)
+  - [x] 8.10 Wire `handle_arsenal_list` into command routing
+  - [x] 8.11 Configure test MCP server in config.yml for testing
+  - [x] 8.12 Test command: All 28 CLI tests pass, integration requires MCP server running
 
 - [ ] 9.0 Implement `paladin arsenal test` command (MCP server testing)
   - [ ] 9.1 In `src/cli/commands/arsenal.rs`, implement `handle_arsenal_test(args: ArsenalTestArgs) -> Result<(), CliError>`

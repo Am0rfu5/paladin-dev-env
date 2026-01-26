@@ -2,7 +2,7 @@
 use clap::{Parser, Subcommand};
 use paladin::cli::commands::{
     agent::{AgentCommands, handle_agent_new, handle_agent_run},
-    arsenal::ArsenalCommands,
+    arsenal::{ArsenalCommands, handle_arsenal_command},
     battalion::{BattalionCommands, handle_battalion_new, handle_battalion_run},
 };
 use std::process;
@@ -47,11 +47,7 @@ async fn main() {
             BattalionCommands::New(args) => handle_battalion_new(args),
             BattalionCommands::Run(args) => handle_battalion_run(args).await,
         },
-        Commands::Arsenal { action } => {
-            println!("Arsenal command: {:?}", action);
-            // TODO: implement arsenal command routing
-            Ok(())
-        }
+        Commands::Arsenal { action } => handle_arsenal_command(action).await,
     };
 
     // Handle errors and exit with appropriate code
