@@ -701,7 +701,10 @@ impl PaladinBuilder {
         if let Some(state_dir) = &self.state_dir {
             if self.citadel_port.is_none() {
                 let file_citadel = FileCitadel::new(PathBuf::from(state_dir)).map_err(|e| {
-                    PaladinError::ConfigurationError(format!("Failed to initialize FileCitadel: {}", e))
+                    PaladinError::ConfigurationError(format!(
+                        "Failed to initialize FileCitadel: {}",
+                        e
+                    ))
                 })?;
                 self.citadel_port = Some(Arc::new(file_citadel));
             }

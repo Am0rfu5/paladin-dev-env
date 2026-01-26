@@ -321,7 +321,7 @@ impl Default for CheckpointData {
 ///
 /// Provides metadata about a saved state file without loading
 /// the complete state data.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StateSummary {
     /// Unique identifier for the state
     pub id: Uuid,
@@ -336,7 +336,7 @@ pub struct StateSummary {
 }
 
 /// Type of saved state
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StateType {
     /// Paladin agent state
     Paladin,
@@ -569,5 +569,72 @@ mod tests {
         assert!(serde_json::to_string(&failed).is_ok());
         assert!(serde_json::to_string(&timeout).is_ok());
         assert!(serde_json::to_string(&stop).is_ok());
+    }
+
+    #[test]
+    fn test_state_summary_serialization() {
+        let summary = StateSummary {
+            id: Uuid::new_v4(),
+            state_type: StateType::Paladin,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            file_path: PathBuf::from("/test/path.json"),
+        };
+
+        // Serialize to JSON
+        let json = serde_json::to_string(&summary).expect("Failed to serialize StateSummary");
+
+        // Deserialize back
+        let deserialized: StateSummary =
+            serde_json::from_str(&json).expect("Failed to deserialize StateSummary");
+
+        assert_eq!(deserialized.id, summary.id);
+        assert_eq!(deserialized.state_type, summary.state_type);
+        assert_eq!(deserialized.file_path, summary.file_path);
+    }
+
+    #[test]
+    fn test_state_type_serialization() {
+        let paladin_type = StateType::Paladin;
+        let battalion_type = StateType::Battalion;
+
+        // Serialize both types
+        let paladin_json = serde_json::to_string(&paladin_type).expect("Failed to serialize");
+        let battalion_json = serde_json::to_string(&battalion_type).expect("Failed to serialize");
+
+        // Deserialize back
+        let deser_paladin: StateType =
+            serde_json::from_str(&paladin_json).expect("Failed to deserialize");
+        let deser_battalion: StateType =
+            serde_json::from_str(&battalion_json).expect("Failed to deserialize");
+
+        assert_eq!(deser_paladin, StateType::Paladin);
+        assert_eq!(deser_battalion, StateType::Battalion);
+    }
+
+    #[test]
+    fn test_all_domain_types_are_serializable() {
+        // This test ensures all types used in state persistence are serializable
+        let paladin = create_test_paladin();
+        let garrison_entry = GarrisonEntry::new(
+            crate::core::platform::container::garrison::ConversationRole::User,
+            "test".to_string(),
+        );
+        let exec_record = ExecutionRecord {
+            timestamp: Utc::now(),
+            input: "test".to_string(),
+            output: "result".to_string(),
+            status: ExecutionStatus::Success,
+            loops_used: 1,
+        };
+        let checkpoint = CheckpointData::new();
+        let config = BattalionConfig::default();
+
+        // All these should serialize successfully
+        assert!(serde_json::to_string(&paladin).is_ok());
+        assert!(serde_json::to_string(&garrison_entry).is_ok());
+        assert!(serde_json::to_string(&exec_record).is_ok());
+        assert!(serde_json::to_string(&checkpoint).is_ok());
+        assert!(serde_json::to_string(&config).is_ok());
     }
 }

@@ -127,18 +127,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.17 Commit changes with message describing builder integration
 
 - [ ] 5.0 Add serialization support for domain entities
-  - [ ] 5.1 Open `src/core/platform/container/paladin.rs`
-  - [ ] 5.2 Verify PaladinData has Serialize/Deserialize derives
-  - [ ] 5.3 Open `src/core/platform/container/garrison.rs`
-  - [ ] 5.4 Verify GarrisonEntry has Serialize/Deserialize derives
-  - [ ] 5.5 Add `ExecutionRecord` struct to citadel.rs if not exists
-  - [ ] 5.6 Add Serialize/Deserialize to ExecutionRecord
-  - [ ] 5.7 Ensure all nested types in state structs are serializable
-  - [ ] 5.8 Write serialization roundtrip tests in citadel.rs unit tests
-  - [ ] 5.9 Test JSON output is human-readable with proper formatting
-  - [ ] 5.10 Run `cargo test` to verify all serialization tests pass
-  - [ ] 5.11 Run `cargo fmt` and `cargo clippy`
-  - [ ] 5.12 Commit changes with message describing serialization support
+- [x] 5.0  Add serialization support for domain entities
+  - [x] 5.1 Open `src/core/platform/container/paladin.rs`
+  - [x] 5.2 Verify PaladinData has Serialize/Deserialize derives (already present)
+  - [x] 5.3 Open `src/core/platform/container/garrison.rs`
+  - [x] 5.4 Verify GarrisonEntry has Serialize/Deserialize derives (already present)
+  - [x] 5.5 Add `ExecutionRecord` struct to citadel.rs if not exists (already exists)
+  - [x] 5.6 Add Serialize/Deserialize to ExecutionRecord (already present)
+  - [x] 5.7 Ensure all nested types in state structs are serializable (added to StateSummary and StateType)
+  - [x] 5.8 Write serialization roundtrip tests in citadel.rs unit tests
+  - [x] 5.9 Test JSON output is human-readable with proper formatting
+  - [x] 5.10 Run `cargo test` to verify all serialization tests pass
+  - [x] 5.11 Run `cargo fmt` and `cargo clippy`
+  - [x] 5.12 Commit changes with message describing serialization support
+
 
 - [ ] 6.0 Write unit tests for domain types and serialization
   - [ ] 6.1 Add `#[cfg(test)]` module to `src/core/platform/container/citadel.rs`
