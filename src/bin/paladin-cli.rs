@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 use paladin::cli::commands::{
     agent::{AgentCommands, handle_agent_new, handle_agent_run},
     arsenal::ArsenalCommands,
-    battalion::{BattalionCommands, handle_battalion_new},
+    battalion::{BattalionCommands, handle_battalion_new, handle_battalion_run},
 };
 use std::process;
 
@@ -45,11 +45,7 @@ async fn main() {
         },
         Commands::Battalion { action } => match action {
             BattalionCommands::New(args) => handle_battalion_new(args),
-            BattalionCommands::Run(args) => {
-                println!("Battalion run command: {:?}", args);
-                // TODO: implement in Task 7.0
-                Ok(())
-            }
+            BattalionCommands::Run(args) => handle_battalion_run(args).await,
         },
         Commands::Arsenal { action } => {
             println!("Arsenal command: {:?}", action);

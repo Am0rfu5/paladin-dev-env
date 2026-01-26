@@ -1,0 +1,38 @@
+# Formation Battalion Configuration Example
+# Sequential execution: Output from one Paladin flows to the next
+
+type: formation
+
+name: "SimpleFormation"
+
+paladins:
+  # First Paladin: Analyzer
+  - inline:
+      name: "AnalyzerPaladin"
+      system_prompt: |
+        You are an expert analyzer. Review the input and provide structured analysis.
+        Extract key points and patterns. Be concise.
+      model: "gpt-4"
+      temperature: 0.7
+      max_loops: 2
+      timeout_seconds: 180
+      stop_words: []
+      provider:
+        type: openai
+  
+  # Second Paladin: Summarizer
+  - inline:
+      name: "SummarizerPaladin"
+      system_prompt: |
+        You are an expert summarizer. Take the analysis provided and create a
+        concise executive summary. Focus on actionable insights.
+      model: "gpt-4"
+      temperature: 0.5
+      max_loops: 2
+      timeout_seconds: 180
+      stop_words: []
+      provider:
+        type: openai
+
+# Pass output from analyzer to summarizer
+pass_output_to_next: true

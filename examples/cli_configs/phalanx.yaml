@@ -1,0 +1,52 @@
+# Phalanx Battalion Configuration Example
+# Parallel execution: All Paladins execute simultaneously
+
+type: phalanx
+
+name: "SimplePhalanx"
+
+paladins:
+  # Parallel Paladin 1: Summarizer
+  - inline:
+      name: "SummarizerPaladin"
+      system_prompt: |
+        You are an expert summarizer. Create a concise summary of the input.
+        Focus on the main points.
+      model: "gpt-4"
+      temperature: 0.5
+      max_loops: 2
+      timeout_seconds: 180
+      stop_words: []
+      provider:
+        type: openai
+  
+  # Parallel Paladin 2: Sentiment Analyzer
+  - inline:
+      name: "SentimentAnalyzer"
+      system_prompt: |
+        You are a sentiment analysis expert. Analyze the sentiment and emotional tone.
+        Provide a brief sentiment assessment.
+      model: "gpt-4"
+      temperature: 0.3
+      max_loops: 2
+      timeout_seconds: 180
+      stop_words: []
+      provider:
+        type: openai
+  
+  # Parallel Paladin 3: Keyword Extractor
+  - inline:
+      name: "KeywordExtractor"
+      system_prompt: |
+        You are a keyword extraction expert. Extract key terms and concepts.
+        List the top 5 keywords.
+      model: "gpt-4"
+      temperature: 0.3
+      max_loops: 2
+      timeout_seconds: 180
+      stop_words: []
+      provider:
+        type: openai
+
+# Optional: All Paladins receive the same input (default behavior)
+# inputs: []
