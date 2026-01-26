@@ -12,7 +12,8 @@ use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::herald::Herald;
-use paladin::infrastructure::adapters::herald::{JsonHerald, JsonHeraldConfig};
+use paladin::infrastructure::adapters::herald::JsonHerald;
+use paladin::infrastructure::adapters::herald::json_herald::JsonHeraldConfig;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -124,10 +125,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("--- Example 2: Compact JSON ---\n");
     {
         let config = JsonHeraldConfig {
-            pretty_print: false,
-            include_timestamps: false,
+            pretty: false,
+            include_metadata: false,
         };
-        let herald: Arc<dyn Herald> = Arc::new(JsonHerald::new().with_config(config));
+        let herald: Arc<dyn Herald> = Arc::new(JsonHerald::with_config(config));
 
         let paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("You are a helpful geography assistant")
@@ -151,14 +152,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Example 3: With timestamps
-    println!("--- Example 3: JSON with Timestamps ---\n");
+    // Example 3: With metadata
+    println!("--- Example 3: JSON with Metadata ---\n");
     {
         let config = JsonHeraldConfig {
-            pretty_print: true,
-            include_timestamps: true,
+            pretty: true,
+            include_metadata: true,
         };
-        let herald: Arc<dyn Herald> = Arc::new(JsonHerald::new().with_config(config));
+        let herald: Arc<dyn Herald> = Arc::new(JsonHerald::with_config(config));
 
         let paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("You are a helpful geography assistant")

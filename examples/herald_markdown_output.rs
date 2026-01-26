@@ -12,7 +12,8 @@ use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::herald::Herald;
-use paladin::infrastructure::adapters::herald::{MarkdownHerald, MarkdownHeraldConfig};
+use paladin::infrastructure::adapters::herald::MarkdownHerald;
+use paladin::infrastructure::adapters::herald::markdown_herald::MarkdownHeraldConfig;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -128,10 +129,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("--- Example 2: Markdown without Colors ---\n");
     {
         let config = MarkdownHeraldConfig {
-            use_colors: false,
+            include_colors: false,
             heading_level: 2,
         };
-        let herald: Arc<dyn Herald> = Arc::new(MarkdownHerald::new().with_config(config));
+        let herald: Arc<dyn Herald> = Arc::new(MarkdownHerald::with_config(config));
 
         let paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt(
@@ -159,10 +160,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("--- Example 3: Markdown with Heading Level 3 ---\n");
     {
         let config = MarkdownHeraldConfig {
-            use_colors: true,
+            include_colors: true,
             heading_level: 3,
         };
-        let herald: Arc<dyn Herald> = Arc::new(MarkdownHerald::new().with_config(config));
+        let herald: Arc<dyn Herald> = Arc::new(MarkdownHerald::with_config(config));
 
         let paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt(

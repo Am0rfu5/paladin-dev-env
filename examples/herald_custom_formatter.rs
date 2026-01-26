@@ -89,12 +89,12 @@ impl Herald for XmlHerald {
         Ok(xml)
     }
 
-    fn format_error(&self, error: &str) -> Result<String, HeraldError> {
-        Ok(format!(
+    fn format_error(&self, error: &paladin::platform::container::herald::PaladinError) -> String {
+        format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
 <error>{}</error>"#,
-            Self::xml_escape(error)
-        ))
+            Self::xml_escape(&error.message)
+        )
     }
 
     fn format_stream_chunk(&self, chunk: &StreamChunk) -> Result<Option<String>, HeraldError> {
@@ -166,11 +166,11 @@ impl Herald for CsvHerald {
         Ok(csv)
     }
 
-    fn format_error(&self, error: &str) -> Result<String, HeraldError> {
-        Ok(format!(
+    fn format_error(&self, error: &paladin::platform::container::herald::PaladinError) -> String {
+        format!(
             "error_type,error_message\nerror,{}\n",
-            Self::csv_escape(error)
-        ))
+            Self::csv_escape(&error.message)
+        )
     }
 
     fn format_stream_chunk(&self, chunk: &StreamChunk) -> Result<Option<String>, HeraldError> {
