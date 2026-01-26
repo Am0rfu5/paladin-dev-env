@@ -52,6 +52,8 @@ pub struct AgentRunArgs {
 ///
 /// Creates a new Paladin configuration template file with documented options
 pub fn handle_agent_new(args: AgentNewArgs) -> Result<(), CliError> {
+    use crate::cli::interactive::confirm;
+
     // Validate and normalize provider
     let provider = args.provider.as_deref().unwrap_or("openai");
     let valid_providers = ["openai", "deepseek", "anthropic"];
@@ -67,12 +69,19 @@ pub fn handle_agent_new(args: AgentNewArgs) -> Result<(), CliError> {
         });
     }
 
-    // Check if output file already exists
+    // Check if output file already exists and prompt for confirmation
     if args.output.exists() {
-        // For now, return error. Interactive confirmation will be added in Task 11.0
-        return Err(CliError::FileAlreadyExists {
-            path: args.output.clone(),
-        });
+        let should_overwrite = confirm(
+            &format!(
+                "File '{}' already exists. Overwrite?",
+                args.output.display()
+            ),
+            false,
+        )?;
+
+        if !should_overwrite {
+            return Err(CliError::Cancelled);
+        }
     }
 
     // Generate template
@@ -100,6 +109,7 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::cli::config::loader::load_paladin_config;
+    use crate::cli::interactive::prompt_for_input;
     use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
     use std::sync::Arc;
     use std::time::Duration;
@@ -107,13 +117,12 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     // Load configuration
     let config = load_paladin_config(&args.config)?;
 
-    // Get input (for now, require --input flag; interactive mode in Task 11.0)
-    let input = args.input.ok_or_else(|| CliError::MissingRequiredField {
-        field: "input".to_string(),
-        message:
-            "Input text is required. Use --input flag or wait for Task 11.0 for interactive mode."
-                .to_string(),
-    })?;
+    // Get input - prompt interactively if not provided per FR-6
+    let input = if let Some(input_text) = args.input {
+        input_text
+    } else {
+        prompt_for_input("Enter input for Paladin")?
+    };
 
     // Load API key from environment variable based on provider
     let env_var_name = match config.provider.provider_type.as_str() {

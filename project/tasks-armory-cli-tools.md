@@ -235,20 +235,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 10.14 Write unit tests for each formatter function
   - [x] 10.15 Write unit tests for error message formatting
 
-- [ ] 11.0 Implement interactive prompts for missing arguments
-  - [ ] 11.1 In `src/cli/interactive.rs`, implement `prompt_for_input(prompt: &str) -> Result<String, CliError>`
-  - [ ] 11.2 Use `dialoguer::Input` to create interactive text prompt
-  - [ ] 11.3 Display prompt text and wait for user input
-  - [ ] 11.4 Handle Ctrl+C gracefully (return CliError::Cancelled)
-  - [ ] 11.5 Implement `confirm(prompt: &str, default: bool) -> Result<bool, CliError>` for yes/no confirmations
-  - [ ] 11.6 Use `dialoguer::Confirm` for confirmation prompts
-  - [ ] 11.7 Implement `prompt_with_validation<F>(prompt: &str, validator: F) -> Result<String, CliError>` where F: Fn(&str) -> Result<(), String>
-  - [ ] 11.8 Add validation support to re-prompt on invalid input with error message per FR-26
-  - [ ] 11.9 Update `handle_agent_run` to use `prompt_for_input` when args.input is None per FR-6
-  - [ ] 11.10 Update file overwrite checks to use `confirm` prompt
-  - [ ] 11.11 Detect if running in non-TTY environment and fail with error instead of prompting
-  - [ ] 11.12 Write unit test for prompt functionality (mock stdin)
-  - [ ] 11.13 Test interactive prompt manually: run agent without --input flag
+- [x] 11.0 Implement interactive prompts for missing arguments
+  - [x] 11.1 In `src/cli/interactive.rs`, implement `prompt_for_input(prompt: &str) -> Result<String, CliError>`
+  - [x] 11.2 Use `dialoguer::Input` to create interactive text prompt
+  - [x] 11.3 Display prompt text and wait for user input
+  - [x] 11.4 Handle Ctrl+C gracefully (return CliError::Cancelled)
+  - [x] 11.5 Implement `confirm(prompt: &str, default: bool) -> Result<bool, CliError>` for yes/no confirmations
+  - [x] 11.6 Use `dialoguer::Confirm` for confirmation prompts
+  - [x] 11.7 Implement `prompt_with_validation<F>(prompt: &str, validator: F) -> Result<String, CliError>` where F: Fn(&str) -> Result<(), String>
+  - [x] 11.8 Add validation support to re-prompt on invalid input with error message per FR-26
+  - [x] 11.9 Update `handle_agent_run` to use `prompt_for_input` when args.input is None per FR-6
+  - [x] 11.10 Update file overwrite checks to use `confirm` prompt
+  - [x] 11.11 Detect if running in non-TTY environment and fail with error instead of prompting
+  - [x] 11.12 Write unit test for prompt functionality (mock stdin)
+  - [x] 11.13 Test interactive prompt manually: run agent without --input flag
 
 - [ ] 12.0 Write unit tests for CLI components
   - [ ] 12.1 Create `tests/cli/agent_commands_test.rs`

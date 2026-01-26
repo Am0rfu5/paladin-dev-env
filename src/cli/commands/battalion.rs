@@ -53,6 +53,8 @@ pub struct BattalionRunArgs {
 ///
 /// Creates a new Battalion configuration template file with documented options
 pub fn handle_battalion_new(args: BattalionNewArgs) -> Result<(), CliError> {
+    use crate::cli::interactive::confirm;
+
     // Validate battalion type
     let valid_types = ["formation", "phalanx", "campaign", "chain-of-command"];
     if !valid_types.contains(&args.r#type.as_str()) {
@@ -66,12 +68,19 @@ pub fn handle_battalion_new(args: BattalionNewArgs) -> Result<(), CliError> {
         });
     }
 
-    // Check if output file already exists
+    // Check if output file already exists and prompt for confirmation
     if args.output.exists() {
-        // For now, return error. Interactive confirmation will be added in Task 11.0
-        return Err(CliError::FileAlreadyExists {
-            path: args.output.clone(),
-        });
+        let should_overwrite = confirm(
+            &format!(
+                "File '{}' already exists. Overwrite?",
+                args.output.display()
+            ),
+            false,
+        )?;
+
+        if !should_overwrite {
+            return Err(CliError::Cancelled);
+        }
     }
 
     // Generate template
