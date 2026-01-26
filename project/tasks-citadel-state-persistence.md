@@ -84,28 +84,28 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.16 Run `cargo fmt` and `cargo clippy`
   - [x] 2.17 Commit changes with message describing port trait
 
-- [ ] 3.0 Implement FileCitadel adapter in infrastructure layer
-  - [ ] 3.1 Create `src/infrastructure/adapters/citadel/` directory
-  - [ ] 3.2 Create `src/infrastructure/adapters/citadel/mod.rs` with module exports
-  - [ ] 3.3 Create `src/infrastructure/adapters/citadel/file_citadel.rs`
-  - [ ] 3.4 Define `FileCitadel` struct with state_dir PathBuf field
-  - [ ] 3.5 Implement `FileCitadel::new()` constructor with directory creation (FR9.1)
-  - [ ] 3.6 Add directory permission validation in constructor (FR9.2)
-  - [ ] 3.7 Implement private `paladin_path(&self, id: Uuid) -> PathBuf` helper (FR9.4)
-  - [ ] 3.8 Implement private `battalion_path(&self, id: Uuid) -> PathBuf` helper (FR9.4)
-  - [ ] 3.9 Implement `CitadelPort::save_paladin` using tokio::fs and serde_json (FR2)
-  - [ ] 3.10 Add INFO logging for save operations (FR10.1)
-  - [ ] 3.11 Implement `CitadelPort::load_paladin` with error handling (FR3, FR7)
-  - [ ] 3.12 Add INFO logging for load operations (FR10.2)
-  - [ ] 3.13 Implement `CitadelPort::save_battalion` following same pattern
-  - [ ] 3.14 Implement `CitadelPort::load_battalion` with error handling
-  - [ ] 3.15 Implement `CitadelPort::list_saved` by scanning directory (FR6.5)
-  - [ ] 3.16 Add comprehensive error handling for all I/O operations
-  - [ ] 3.17 Add rustdoc comments to FileCitadel and all methods
-  - [ ] 3.18 Run `cargo test --lib` to verify adapter compiles
-  - [ ] 3.19 Run `cargo clippy` and address any warnings
-  - [ ] 3.20 Run `cargo fmt`
-  - [ ] 3.21 Commit changes with message describing adapter implementation
+- [x] 3.0 Implement FileCitadel adapter in infrastructure layer
+  - [x] 3.1 Create `src/infrastructure/adapters/citadel/` directory
+  - [x] 3.2 Create `src/infrastructure/adapters/citadel/mod.rs` with module exports
+  - [x] 3.3 Create `src/infrastructure/adapters/citadel/file_citadel.rs`
+  - [x] 3.4 Define `FileCitadel` struct with state_dir PathBuf field
+  - [x] 3.5 Implement `FileCitadel::new()` constructor with directory creation (FR9.1)
+  - [x] 3.6 Add directory permission validation in constructor (FR9.2)
+  - [x] 3.7 Implement private `paladin_path(&self, id: Uuid) -> PathBuf` helper (FR9.4)
+  - [x] 3.8 Implement private `battalion_path(&self, id: Uuid) -> PathBuf` helper (FR9.4)
+  - [x] 3.9 Implement `CitadelPort::save_paladin` using tokio::fs and serde_json (FR2)
+  - [x] 3.10 Add INFO logging for save operations (FR10.1)
+  - [x] 3.11 Implement `CitadelPort::load_paladin` with error handling (FR3, FR7)
+  - [x] 3.12 Add INFO logging for load operations (FR10.2)
+  - [x] 3.13 Implement `CitadelPort::save_battalion` following same pattern
+  - [x] 3.14 Implement `CitadelPort::load_battalion` with error handling
+  - [x] 3.15 Implement `CitadelPort::list_saved` by scanning directory (FR6.5)
+  - [x] 3.16 Add comprehensive error handling for all I/O operations
+  - [x] 3.17 Add rustdoc comments to FileCitadel and all methods
+  - [x] 3.18 Run `cargo test --lib` to verify adapter compiles
+  - [x] 3.19 Run `cargo clippy` and address any warnings
+  - [x] 3.20 Run `cargo fmt`
+  - [x] 3.21 Commit changes with message describing adapter implementation
 
 - [ ] 4.0 Integrate Citadel with PaladinBuilder
   - [ ] 4.1 Open `src/application/use_cases/paladin/paladin_builder.rs`
