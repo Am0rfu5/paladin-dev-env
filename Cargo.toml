@@ -78,6 +78,10 @@ path = "tests/integration/system_log_integration_test.rs"
 name = "paladin_garrison_integration"
 path = "tests/integration/paladin_garrison_integration_test.rs"
 
+[[test]]
+name = "citadel_integration"
+path = "tests/integration/citadel_integration_test.rs"
+
 [[bin]]
 name = "paladin"
 path = "src/main.rs"

@@ -157,25 +157,25 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.13 Run `cargo fmt`
   - [x] 6.14 Commit changes with message describing unit tests (no new changes - all tests existed from Tasks 1.0 and 5.0)
 
-- [ ] 7.0 Write integration tests for file persistence
-  - [ ] 7.1 Create `tests/integration/citadel_integration_test.rs` file
-  - [ ] 7.2 Add helper function to create temporary test directory
-  - [ ] 7.3 Write `test_save_and_load_paladin_state` integration test
-  - [ ] 7.4 Write `test_save_overwrites_existing_state` test (FR2.4)
-  - [ ] 7.5 Write `test_load_nonexistent_state_returns_none` test
-  - [ ] 7.6 Write `test_load_corrupted_json_returns_error` test (FR7.1)
-  - [ ] 7.7 Write `test_directory_created_automatically` test (FR9.1)
-  - [ ] 7.8 Write `test_list_saved_states` test (FR6.5)
-  - [ ] 7.9 Write `test_save_and_load_battalion_state` test
-  - [ ] 7.10 Write `test_file_naming_convention` test (FR9.4)
-  - [ ] 7.11 Write `test_permission_error_handling` test (FR7.4)
-  - [ ] 7.12 Write `test_paladin_restoration_via_builder` test
-  - [ ] 7.13 Write `test_garrison_context_restored_correctly` test
-  - [ ] 7.14 Add cleanup for temporary test directories in each test
-  - [ ] 7.15 Run `cargo test --test citadel_integration_test` to verify all tests pass
-  - [ ] 7.16 Run `cargo clippy` on test file
-  - [ ] 7.17 Run `cargo fmt`
-  - [ ] 7.18 Commit changes with message describing integration tests
+- [x] 7.0 Write integration tests for file persistence
+  - [x] 7.1 Create `tests/integration/citadel_integration_test.rs` file
+  - [x] 7.2 Add helper function to create temporary test directory
+  - [x] 7.3 Write `test_save_and_load_paladin_state` integration test
+  - [x] 7.4 Write `test_save_overwrites_existing_state` test (FR2.4)
+  - [x] 7.5 Write `test_load_nonexistent_state_returns_none` test
+  - [x] 7.6 Write `test_load_corrupted_json_returns_error` test (FR7.1)
+  - [x] 7.7 Write `test_directory_created_automatically` test (FR9.1)
+  - [x] 7.8 Write `test_list_saved_states` test (FR6.5)
+  - [x] 7.9 Write `test_save_and_load_battalion_state` test
+  - [x] 7.10 Write `test_file_naming_convention` test (FR9.4)
+  - [x] 7.11 Write `test_permission_error_handling` test (FR7.4)
+  - [x] 7.12 Write `test_paladin_restoration_via_builder` test
+  - [x] 7.13 Write `test_garrison_context_restored_correctly` test
+  - [x] 7.14 Add cleanup for temporary test directories in each test (using TempDir auto-cleanup)
+  - [x] 7.15 Run `cargo test --test citadel_integration_test` to verify all tests pass
+  - [x] 7.16 Run `cargo clippy` on test file
+  - [x] 7.17 Run `cargo fmt`
+  - [x] 7.18 Commit changes with message describing integration tests
 
 - [ ] 8.0 Add configuration support for Citadel
   - [ ] 8.1 Open `src/config/application_settings.rs`
