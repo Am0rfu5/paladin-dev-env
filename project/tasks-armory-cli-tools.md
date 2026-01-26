@@ -250,29 +250,29 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 11.12 Write unit test for prompt functionality (mock stdin)
   - [x] 11.13 Test interactive prompt manually: run agent without --input flag
 
-- [ ] 12.0 Write unit tests for CLI components
-  - [ ] 12.1 Create `tests/cli/agent_commands_test.rs`
-  - [ ] 12.2 Write test for `generate_paladin_template` with different providers
-  - [ ] 12.3 Write test for `handle_agent_new` creating file correctly
-  - [ ] 12.4 Write test for agent command argument parsing
-  - [ ] 12.5 Create `tests/cli/battalion_commands_test.rs`
-  - [ ] 12.6 Write test for each battalion template type (formation, phalanx, campaign, chain-of-command)
-  - [ ] 12.7 Write test for battalion type validation
-  - [ ] 12.8 Create `tests/cli/arsenal_commands_test.rs`
-  - [ ] 12.9 Write test for arsenal command argument parsing
-  - [ ] 12.10 Write test for mcp_stdio and mcp_sse mutual exclusivity
-  - [ ] 12.11 Create `tests/cli/config_loading_test.rs`
-  - [ ] 12.12 Write test for loading valid Paladin YAML
-  - [ ] 12.13 Write test for loading valid Battalion YAML (all types)
-  - [ ] 12.14 Write test for missing required field error
-  - [ ] 12.15 Write test for invalid field value error
-  - [ ] 12.16 Write test for file not found error
-  - [ ] 12.17 Write test for invalid YAML syntax error with line numbers
-  - [ ] 12.18 Create `tests/cli/template_generation_test.rs`
-  - [ ] 12.19 Write test verifying generated templates are valid YAML
-  - [ ] 12.20 Write test verifying all required fields present in templates
-  - [ ] 12.21 Run all unit tests: `cargo test --lib cli`
-  - [ ] 12.22 Verify unit test coverage ≥80% using `cargo llvm-cov` if available
+- [x] 12.0 Write unit tests for CLI components
+  - [x] 12.1 Create `tests/cli/agent_commands_test.rs`
+  - [x] 12.2 Write test for `generate_paladin_template` with different providers
+  - [x] 12.3 Write test for `handle_agent_new` creating file correctly
+  - [x] 12.4 Write test for agent command argument parsing
+  - [x] 12.5 Create `tests/cli/battalion_commands_test.rs`
+  - [x] 12.6 Write test for each battalion template type (formation, phalanx, campaign, chain-of-command)
+  - [x] 12.7 Write test for battalion type validation
+  - [x] 12.8 Create `tests/cli/arsenal_commands_test.rs`
+  - [x] 12.9 Write test for arsenal command argument parsing
+  - [x] 12.10 Write test for mcp_stdio and mcp_sse mutual exclusivity
+  - [x] 12.11 Create `tests/cli/config_loading_test.rs`
+  - [x] 12.12 Write test for loading valid Paladin YAML
+  - [x] 12.13 Write test for loading valid Battalion YAML (all types)
+  - [x] 12.14 Write test for missing required field error
+  - [x] 12.15 Write test for invalid field value error
+  - [x] 12.16 Write test for file not found error
+  - [x] 12.17 Write test for invalid YAML syntax error with line numbers
+  - [x] 12.18 Create `tests/cli/template_generation_test.rs`
+  - [x] 12.19 Write test verifying generated templates are valid YAML
+  - [x] 12.20 Write test verifying all required fields present in templates
+  - [x] 12.21 Run all unit tests: `cargo test --lib cli`
+  - [x] 12.22 Verify unit test coverage ≥80% using `cargo llvm-cov` if available
 
 - [ ] 13.0 Write integration tests for end-to-end workflows
   - [ ] 13.1 Create `tests/integration/cli_integration_test.rs`
