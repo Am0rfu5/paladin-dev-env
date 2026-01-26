@@ -152,17 +152,17 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.13 Write unit tests for all Herald trait methods
   - [x] 5.14 Test with various border styles and column widths
 
-- [ ] 6.0 Add configuration integration
-  - [ ] 6.1 Read current `src/config/application_settings.rs` structure
-  - [ ] 6.2 Define HeraldConfig struct in application_settings.rs
-  - [ ] 6.3 Add fields (default_formatter, json, markdown, table configurations)
-  - [ ] 6.4 Implement Deserialize for all Herald config structs
-  - [ ] 6.5 Add Herald config to ApplicationSettings
-  - [ ] 6.6 Update `config.yml` with herald section and defaults
-  - [ ] 6.7 Update `config.test.yml` with test Herald configuration
-  - [ ] 6.8 Add environment variable overrides (HERALD_DEFAULT_FORMATTER)
-  - [ ] 6.9 Write configuration loading tests
-  - [ ] 6.10 Document configuration options in rustdoc
+- [x] 6.0 Add configuration integration
+  - [x] 6.1 Read current `src/config/application_settings.rs` structure
+  - [x] 6.2 Define HeraldConfig struct in application_settings.rs
+  - [x] 6.3 Add fields (default_formatter, json, markdown, table configurations)
+  - [x] 6.4 Implement Deserialize for all Herald config structs
+  - [x] 6.5 Add Herald config to ApplicationSettings
+  - [x] 6.6 Update `config.yml` with herald section and defaults
+  - [x] 6.7 Update `config.test.yml` with test Herald configuration
+  - [x] 6.8 Add environment variable overrides (HERALD_DEFAULT_FORMATTER)
+  - [x] 6.9 Write configuration loading tests
+  - [x] 6.10 Document configuration options in rustdoc
 
 - [ ] 7.0 Integrate Herald with Paladin/Battalion execution
   - [ ] 7.1 Read `src/application/use_cases/paladin/paladin_execution_service.rs`

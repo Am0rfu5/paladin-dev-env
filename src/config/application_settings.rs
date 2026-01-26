@@ -6,6 +6,114 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::time::Duration;
 
+/// Configuration for JSON Herald formatter
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JsonHeraldConfig {
+    /// Enable pretty-printing (formatted with indentation)
+    pub pretty: bool,
+    /// Include metadata fields in output
+    pub include_metadata: bool,
+}
+
+impl Default for JsonHeraldConfig {
+    fn default() -> Self {
+        Self {
+            pretty: true,
+            include_metadata: true,
+        }
+    }
+}
+
+/// Configuration for Markdown Herald formatter
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarkdownHeraldConfig {
+    /// Enable ANSI color codes for terminal output
+    pub include_colors: bool,
+    /// Heading level for main sections (1-6)
+    pub heading_level: u8,
+}
+
+impl Default for MarkdownHeraldConfig {
+    fn default() -> Self {
+        Self {
+            include_colors: true,
+            heading_level: 2,
+        }
+    }
+}
+
+/// Configuration for Table Herald formatter
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableHeraldConfig {
+    /// Maximum width for table columns (characters)
+    pub max_column_width: usize,
+    /// Border style preset: "ascii", "rounded", "modern", "sharp", "none"
+    pub border_style: String,
+}
+
+impl Default for TableHeraldConfig {
+    fn default() -> Self {
+        Self {
+            max_column_width: 60,
+            border_style: "rounded".to_string(),
+        }
+    }
+}
+
+/// Configuration for Herald output formatting system
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HeraldConfig {
+    /// Default formatter to use: "json", "markdown", "table"
+    pub default_formatter: String,
+    /// JSON formatter configuration
+    pub json: JsonHeraldConfig,
+    /// Markdown formatter configuration
+    pub markdown: MarkdownHeraldConfig,
+    /// Table formatter configuration
+    pub table: TableHeraldConfig,
+}
+
+impl Default for HeraldConfig {
+    fn default() -> Self {
+        Self {
+            default_formatter: "json".to_string(),
+            json: JsonHeraldConfig::default(),
+            markdown: MarkdownHeraldConfig::default(),
+            table: TableHeraldConfig::default(),
+        }
+    }
+}
+
+impl HeraldConfig {
+    /// Validates herald configuration
+    pub fn validate(&self) -> Result<(), String> {
+        // Validate default_formatter
+        let valid_formatters = ["json", "markdown", "table"];
+        if !valid_formatters.contains(&self.default_formatter.as_str()) {
+            return Err(format!(
+                "Invalid default_formatter '{}'. Must be one of: {}",
+                self.default_formatter,
+                valid_formatters.join(", ")
+            ));
+        }
+
+        // Validate markdown heading_level
+        if !(1..=6).contains(&self.markdown.heading_level) {
+            return Err(format!(
+                "Invalid markdown heading_level {}. Must be between 1 and 6",
+                self.markdown.heading_level
+            ));
+        }
+
+        // Validate table max_column_width
+        if self.table.max_column_width == 0 {
+            return Err("table max_column_width must be greater than 0".to_string());
+        }
+
+        Ok(())
+    }
+}
+
 /// Configuration for a single MCP server
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MCPServerConfig {
@@ -457,6 +565,7 @@ pub struct Settings {
     pub arsenal: Option<ArsenalConfig>,
     pub citadel: Option<CitadelConfig>,
     pub llm: Option<LlmConfig>,
+    pub herald: Option<HeraldConfig>,
 }
 
 impl Settings {
@@ -724,6 +833,59 @@ impl Settings {
         config
     }
 
+    /// Get herald configuration with environment variable overrides
+    pub fn get_herald_config(&self) -> HeraldConfig {
+        let mut config = self.herald.clone().unwrap_or_default();
+
+        // Override default formatter with environment variable if present
+        if let Ok(default_formatter) = std::env::var("HERALD_DEFAULT_FORMATTER") {
+            config.default_formatter = default_formatter;
+        }
+        if let Ok(default_formatter) = std::env::var("APP_HERALD_DEFAULT_FORMATTER") {
+            config.default_formatter = default_formatter;
+        }
+
+        // JSON configuration overrides
+        if let Ok(pretty_str) = std::env::var("APP_HERALD_JSON_PRETTY") {
+            if let Ok(pretty) = pretty_str.parse::<bool>() {
+                config.json.pretty = pretty;
+            }
+        }
+        if let Ok(include_metadata_str) = std::env::var("APP_HERALD_JSON_INCLUDE_METADATA") {
+            if let Ok(include_metadata) = include_metadata_str.parse::<bool>() {
+                config.json.include_metadata = include_metadata;
+            }
+        }
+
+        // Markdown configuration overrides
+        if let Ok(include_colors_str) = std::env::var("APP_HERALD_MARKDOWN_INCLUDE_COLORS") {
+            if let Ok(include_colors) = include_colors_str.parse::<bool>() {
+                config.markdown.include_colors = include_colors;
+            }
+        }
+        if let Ok(heading_level_str) = std::env::var("APP_HERALD_MARKDOWN_HEADING_LEVEL") {
+            if let Ok(heading_level) = heading_level_str.parse::<u8>() {
+                if (1..=6).contains(&heading_level) {
+                    config.markdown.heading_level = heading_level;
+                }
+            }
+        }
+
+        // Table configuration overrides
+        if let Ok(max_column_width_str) = std::env::var("APP_HERALD_TABLE_MAX_COLUMN_WIDTH") {
+            if let Ok(max_column_width) = max_column_width_str.parse::<usize>() {
+                if max_column_width > 0 {
+                    config.table.max_column_width = max_column_width;
+                }
+            }
+        }
+        if let Ok(border_style) = std::env::var("APP_HERALD_TABLE_BORDER_STYLE") {
+            config.table.border_style = border_style;
+        }
+
+        config
+    }
+
     /// Convert FileStorageConfig to MinioConfig
     pub fn to_minio_config(&self) -> MinioConfig {
         let fs_config = self.get_file_storage_config();
@@ -771,6 +933,7 @@ impl Default for Settings {
             arsenal: Some(ArsenalConfig::default()),
             citadel: Some(CitadelConfig::default()),
             llm: Some(LlmConfig::default()),
+            herald: Some(HeraldConfig::default()),
         }
     }
 }
@@ -1404,5 +1567,184 @@ mod tests {
         assert!(config.autosave_enabled);
         assert!(!config.cleanup_enabled);
         assert_eq!(config.max_state_age_days, Some(14));
+    }
+
+    #[test]
+    fn test_herald_config_default() {
+        let config = HeraldConfig::default();
+        assert_eq!(config.default_formatter, "json");
+        assert!(config.json.pretty);
+        assert!(config.json.include_metadata);
+        assert!(config.markdown.include_colors);
+        assert_eq!(config.markdown.heading_level, 2);
+        assert_eq!(config.table.max_column_width, 60);
+        assert_eq!(config.table.border_style, "rounded");
+    }
+
+    #[test]
+    fn test_herald_config_validate_valid() {
+        let config = HeraldConfig {
+            default_formatter: "markdown".to_string(),
+            json: JsonHeraldConfig {
+                pretty: true,
+                include_metadata: true,
+            },
+            markdown: MarkdownHeraldConfig {
+                include_colors: true,
+                heading_level: 3,
+            },
+            table: TableHeraldConfig {
+                max_column_width: 80,
+                border_style: "ascii".to_string(),
+            },
+        };
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_herald_config_validate_invalid_formatter() {
+        let config = HeraldConfig {
+            default_formatter: "invalid".to_string(),
+            ..Default::default()
+        };
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Invalid default_formatter"));
+    }
+
+    #[test]
+    fn test_herald_config_validate_invalid_heading_level_low() {
+        let config = HeraldConfig {
+            default_formatter: "markdown".to_string(),
+            markdown: MarkdownHeraldConfig {
+                include_colors: true,
+                heading_level: 0,
+            },
+            ..Default::default()
+        };
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .contains("Invalid markdown heading_level")
+        );
+    }
+
+    #[test]
+    fn test_herald_config_validate_invalid_heading_level_high() {
+        let config = HeraldConfig {
+            default_formatter: "markdown".to_string(),
+            markdown: MarkdownHeraldConfig {
+                include_colors: true,
+                heading_level: 7,
+            },
+            ..Default::default()
+        };
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .contains("Invalid markdown heading_level")
+        );
+    }
+
+    #[test]
+    fn test_herald_config_validate_zero_column_width() {
+        let config = HeraldConfig {
+            default_formatter: "table".to_string(),
+            table: TableHeraldConfig {
+                max_column_width: 0,
+                border_style: "rounded".to_string(),
+            },
+            ..Default::default()
+        };
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .contains("table max_column_width must be greater than 0")
+        );
+    }
+
+    #[test]
+    #[serial]
+    fn test_herald_config_env_override() {
+        unsafe {
+            env::set_var("HERALD_DEFAULT_FORMATTER", "markdown");
+            env::set_var("APP_HERALD_JSON_PRETTY", "false");
+            env::set_var("APP_HERALD_JSON_INCLUDE_METADATA", "false");
+            env::set_var("APP_HERALD_MARKDOWN_INCLUDE_COLORS", "false");
+            env::set_var("APP_HERALD_MARKDOWN_HEADING_LEVEL", "4");
+            env::set_var("APP_HERALD_TABLE_MAX_COLUMN_WIDTH", "100");
+            env::set_var("APP_HERALD_TABLE_BORDER_STYLE", "modern");
+        }
+
+        let settings = Settings::default();
+        let config = settings.get_herald_config();
+
+        assert_eq!(config.default_formatter, "markdown");
+        assert!(!config.json.pretty);
+        assert!(!config.json.include_metadata);
+        assert!(!config.markdown.include_colors);
+        assert_eq!(config.markdown.heading_level, 4);
+        assert_eq!(config.table.max_column_width, 100);
+        assert_eq!(config.table.border_style, "modern");
+
+        unsafe {
+            env::remove_var("HERALD_DEFAULT_FORMATTER");
+            env::remove_var("APP_HERALD_JSON_PRETTY");
+            env::remove_var("APP_HERALD_JSON_INCLUDE_METADATA");
+            env::remove_var("APP_HERALD_MARKDOWN_INCLUDE_COLORS");
+            env::remove_var("APP_HERALD_MARKDOWN_HEADING_LEVEL");
+            env::remove_var("APP_HERALD_TABLE_MAX_COLUMN_WIDTH");
+            env::remove_var("APP_HERALD_TABLE_BORDER_STYLE");
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_herald_config_app_prefix_override() {
+        unsafe {
+            env::set_var("APP_HERALD_DEFAULT_FORMATTER", "table");
+        }
+
+        let settings = Settings::default();
+        let config = settings.get_herald_config();
+
+        assert_eq!(config.default_formatter, "table");
+
+        unsafe {
+            env::remove_var("APP_HERALD_DEFAULT_FORMATTER");
+        }
+    }
+
+    #[test]
+    fn test_herald_config_deserialization() {
+        let config = HeraldConfig {
+            default_formatter: "json".to_string(),
+            json: JsonHeraldConfig {
+                pretty: false,
+                include_metadata: false,
+            },
+            markdown: MarkdownHeraldConfig {
+                include_colors: false,
+                heading_level: 1,
+            },
+            table: TableHeraldConfig {
+                max_column_width: 120,
+                border_style: "sharp".to_string(),
+            },
+        };
+
+        assert_eq!(config.default_formatter, "json");
+        assert!(!config.json.pretty);
+        assert!(!config.json.include_metadata);
+        assert!(!config.markdown.include_colors);
+        assert_eq!(config.markdown.heading_level, 1);
+        assert_eq!(config.table.max_column_width, 120);
+        assert_eq!(config.table.border_style, "sharp");
     }
 }
