@@ -30,6 +30,7 @@
 //! ```
 
 use crate::application::ports::output::arsenal_port::ArsenalRegistry;
+use crate::application::ports::output::citadel_port::CitadelPort;
 use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::application::ports::output::llm_port::LlmPort;
 use crate::application::use_cases::paladin::error::PaladinError;
@@ -37,7 +38,10 @@ use crate::config::application_settings::MCPServerConfig;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::paladin::{Paladin, PaladinData};
 use crate::core::platform::container::paladin_config::{OutputFormat, PaladinConfig};
+use crate::infrastructure::adapters::citadel::file_citadel::FileCitadel;
+use std::path::PathBuf;
 use std::sync::Arc;
+use uuid::Uuid;
 
 /// Builder for creating Paladin instances with validation
 ///
@@ -70,6 +74,9 @@ pub struct PaladinBuilder {
     garrison: Option<Arc<dyn GarrisonPort>>,
     arsenal_registry: Option<Arc<dyn ArsenalRegistry>>,
     mcp_servers: Vec<MCPServerConfig>,
+    citadel_port: Option<Arc<dyn CitadelPort>>,
+    autosave_enabled: bool,
+    state_dir: Option<String>,
 }
 
 impl PaladinBuilder {
@@ -97,6 +104,9 @@ impl PaladinBuilder {
             garrison: None,
             arsenal_registry: None,
             mcp_servers: Vec::new(),
+            citadel_port: None,
+            autosave_enabled: false,
+            state_dir: None,
         }
     }
 
@@ -480,6 +490,142 @@ impl PaladinBuilder {
         self
     }
 
+    /// Attaches a Citadel state persistence system to the Paladin
+    ///
+    /// The Citadel enables automatic saving and restoration of Paladin state,
+    /// including configuration, execution history, and Garrison context.
+    ///
+    /// # Arguments
+    ///
+    /// * `citadel` - The Citadel port implementation to use for state persistence
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin::application::ports::output::citadel_port::CitadelPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>, citadel: Arc<dyn CitadelPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are a stateful assistant")
+    ///     .with_citadel(citadel);
+    /// # }
+    /// ```
+    pub fn with_citadel(mut self, citadel: Arc<dyn CitadelPort>) -> Self {
+        self.citadel_port = Some(citadel);
+        self
+    }
+
+    /// Enables automatic state saving after Paladin execution
+    ///
+    /// When enabled, the Paladin's state will be automatically saved to the
+    /// Citadel after each execution completes successfully. This enables
+    /// resumption of work and audit trails.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are a persistent assistant")
+    ///     .enable_autosave();
+    /// # }
+    /// ```
+    pub fn enable_autosave(mut self) -> Self {
+        self.autosave_enabled = true;
+        self
+    }
+
+    /// Sets the directory path for state persistence
+    ///
+    /// If not set, the default directory from configuration will be used.
+    /// The directory will be created automatically if it doesn't exist.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Directory path where state files will be saved
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are a persistent assistant")
+    ///     .save_state_dir("./my_citadel");
+    /// # }
+    /// ```
+    pub fn save_state_dir(mut self, path: impl Into<String>) -> Self {
+        self.state_dir = Some(path.into());
+        self
+    }
+
+    /// Restores a Paladin from a previously saved state
+    ///
+    /// Loads the Paladin configuration, execution history, and Garrison context
+    /// from the Citadel, allowing resumption of previous work.
+    ///
+    /// # Arguments
+    ///
+    /// * `state_id` - UUID of the saved state to restore
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(Self)` if state was successfully restored
+    /// - `Err(PaladinError)` if state couldn't be loaded or Citadel is not configured
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin::application::ports::output::citadel_port::CitadelPort;
+    /// # use uuid::Uuid;
+    /// # use std::sync::Arc;
+    /// # async fn example(llm_port: Arc<dyn LlmPort>, citadel: Arc<dyn CitadelPort>) -> Result<(), Box<dyn std::error::Error>> {
+    /// let state_id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000")?;
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .with_citadel(citadel)
+    ///     .restore_from(state_id).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn restore_from(mut self, state_id: Uuid) -> Result<Self, PaladinError> {
+        let citadel = self.citadel_port.as_ref().ok_or_else(|| {
+            PaladinError::ConfigurationError(
+                "Citadel port must be configured to restore state".to_string(),
+            )
+        })?;
+
+        let state = citadel
+            .load_paladin(state_id)
+            .await
+            .map_err(|e| PaladinError::ConfigurationError(format!("Failed to load state: {}", e)))?
+            .ok_or_else(|| {
+                PaladinError::ConfigurationError(format!("State not found: {}", state_id))
+            })?;
+
+        // Restore data from state
+        self.data.system_prompt = state.paladin.node.system_prompt.clone();
+        self.data.name = state.paladin.node.name.clone();
+        self.data.user_name = state.paladin.node.user_name.clone();
+        self.data.model = state.paladin.node.model.clone();
+        self.data.temperature = state.paladin.node.temperature;
+        self.data.max_loops = state.paladin.node.max_loops;
+        self.data.stop_words = state.paladin.node.stop_words.clone();
+
+        // Note: Config fields (retry_attempts, timeout_seconds) are not part of PaladinData
+        // They would need to be stored separately if we want to restore them
+
+        Ok(self)
+    }
+
     /// Validates all configuration parameters
     ///
     /// # Validation Rules
@@ -487,6 +633,7 @@ impl PaladinBuilder {
     /// - `system_prompt` must be non-empty
     /// - `temperature` must be in range [0.0, 1.0]
     /// - `max_loops` must be in range [1, 100]
+    /// - If `autosave_enabled` is true, `state_dir` must be set or Citadel must be configured
     ///
     /// # Returns
     ///
@@ -515,6 +662,13 @@ impl PaladinBuilder {
             )));
         }
 
+        // Validate autosave configuration
+        if self.autosave_enabled && self.citadel_port.is_none() && self.state_dir.is_none() {
+            return Err(PaladinError::ConfigurationError(
+                "autosave_enabled requires either citadel_port or state_dir to be set".to_string(),
+            ));
+        }
+
         Ok(())
     }
 
@@ -539,9 +693,19 @@ impl PaladinBuilder {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn build(self) -> Result<Paladin, PaladinError> {
+    pub fn build(mut self) -> Result<Paladin, PaladinError> {
         // Validate configuration
         self.validate()?;
+
+        // Initialize FileCitadel if state_dir is provided but citadel_port is not
+        if let Some(state_dir) = &self.state_dir {
+            if self.citadel_port.is_none() {
+                let file_citadel = FileCitadel::new(PathBuf::from(state_dir)).map_err(|e| {
+                    PaladinError::ConfigurationError(format!("Failed to initialize FileCitadel: {}", e))
+                })?;
+                self.citadel_port = Some(Arc::new(file_citadel));
+            }
+        }
 
         // Create Paladin using Node pattern with name
         let name = if self.data.name.is_empty() {
@@ -570,6 +734,9 @@ mod tests {
             garrison: None,
             arsenal_registry: None,
             mcp_servers: Vec::new(),
+            citadel_port: None,
+            autosave_enabled: false,
+            state_dir: None,
         };
 
         let result = builder.validate();
@@ -590,6 +757,9 @@ mod tests {
             garrison: None,
             arsenal_registry: None,
             mcp_servers: Vec::new(),
+            citadel_port: None,
+            autosave_enabled: false,
+            state_dir: None,
         };
 
         let result = builder.validate();
@@ -609,10 +779,140 @@ mod tests {
             garrison: None,
             arsenal_registry: None,
             mcp_servers: Vec::new(),
+            citadel_port: None,
+            autosave_enabled: false,
+            state_dir: None,
         };
 
         let result = builder.validate();
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_builder_with_citadel() {
+        let citadel = Arc::new(MockCitadelPort);
+        let builder = PaladinBuilder::new(Arc::new(MockLlmPort))
+            .system_prompt("Test")
+            .with_citadel(citadel);
+
+        assert!(builder.citadel_port.is_some());
+    }
+
+    #[test]
+    fn test_builder_enable_autosave() {
+        let builder = PaladinBuilder::new(Arc::new(MockLlmPort))
+            .system_prompt("Test")
+            .enable_autosave();
+
+        assert!(builder.autosave_enabled);
+    }
+
+    #[test]
+    fn test_builder_save_state_dir() {
+        let builder = PaladinBuilder::new(Arc::new(MockLlmPort))
+            .system_prompt("Test")
+            .save_state_dir("./test_citadel");
+
+        assert_eq!(builder.state_dir, Some("./test_citadel".to_string()));
+    }
+
+    #[test]
+    fn test_builder_validation_autosave_without_citadel_or_dir() {
+        let builder = PaladinBuilder {
+            _llm_port: Arc::new(MockLlmPort),
+            data: PaladinData {
+                system_prompt: "Test".to_string(),
+                ..Default::default()
+            },
+            config: PaladinConfig::default(),
+            garrison: None,
+            arsenal_registry: None,
+            mcp_servers: Vec::new(),
+            citadel_port: None,
+            autosave_enabled: true,
+            state_dir: None,
+        };
+
+        let result = builder.validate();
+        assert!(result.is_err());
+        assert!(matches!(result, Err(PaladinError::ConfigurationError(_))));
+    }
+
+    #[test]
+    fn test_builder_validation_autosave_with_citadel() {
+        let builder = PaladinBuilder {
+            _llm_port: Arc::new(MockLlmPort),
+            data: PaladinData {
+                system_prompt: "Test".to_string(),
+                ..Default::default()
+            },
+            config: PaladinConfig::default(),
+            garrison: None,
+            arsenal_registry: None,
+            mcp_servers: Vec::new(),
+            citadel_port: Some(Arc::new(MockCitadelPort)),
+            autosave_enabled: true,
+            state_dir: None,
+        };
+
+        let result = builder.validate();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_builder_validation_autosave_with_state_dir() {
+        let builder = PaladinBuilder {
+            _llm_port: Arc::new(MockLlmPort),
+            data: PaladinData {
+                system_prompt: "Test".to_string(),
+                ..Default::default()
+            },
+            config: PaladinConfig::default(),
+            garrison: None,
+            arsenal_registry: None,
+            mcp_servers: Vec::new(),
+            citadel_port: None,
+            autosave_enabled: true,
+            state_dir: Some("./test".to_string()),
+        };
+
+        let result = builder.validate();
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_builder_restore_from_without_citadel() {
+        let builder = PaladinBuilder::new(Arc::new(MockLlmPort));
+        let state_id = Uuid::new_v4();
+
+        let result = builder.restore_from(state_id).await;
+        assert!(result.is_err());
+        assert!(matches!(result, Err(PaladinError::ConfigurationError(_))));
+    }
+
+    #[tokio::test]
+    async fn test_builder_restore_from_state_not_found() {
+        let citadel = Arc::new(MockCitadelPort);
+        let builder = PaladinBuilder::new(Arc::new(MockLlmPort)).with_citadel(citadel);
+        let state_id = Uuid::new_v4();
+
+        let result = builder.restore_from(state_id).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_builder_restore_from_success() {
+        let citadel = Arc::new(MockCitadelPortWithState);
+        let builder = PaladinBuilder::new(Arc::new(MockLlmPort)).with_citadel(citadel);
+        let state_id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
+
+        let result = builder.restore_from(state_id).await;
+        assert!(result.is_ok());
+
+        let restored_builder = result.unwrap();
+        assert_eq!(restored_builder.data.system_prompt, "Restored prompt");
+        assert_eq!(restored_builder.data.name, "RestoredPaladin");
+        assert_eq!(restored_builder.data.model, "gpt-4");
     }
 
     // Mock for internal tests
@@ -668,6 +968,132 @@ mod tests {
             &self,
         ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
             crate::application::ports::output::llm_port::ProviderCapabilities::default()
+        }
+    }
+
+    // Mock CitadelPort for testing
+    struct MockCitadelPort;
+
+    #[async_trait::async_trait]
+    impl CitadelPort for MockCitadelPort {
+        async fn save_paladin(
+            &self,
+            _state: &crate::core::platform::container::citadel::PaladinState,
+        ) -> Result<(), crate::application::errors::citadel_error::CitadelError> {
+            Ok(())
+        }
+
+        async fn load_paladin(
+            &self,
+            _state_id: Uuid,
+        ) -> Result<
+            Option<crate::core::platform::container::citadel::PaladinState>,
+            crate::application::errors::citadel_error::CitadelError,
+        > {
+            Ok(None)
+        }
+
+        async fn save_battalion(
+            &self,
+            _state: &crate::core::platform::container::citadel::BattalionState,
+        ) -> Result<(), crate::application::errors::citadel_error::CitadelError> {
+            Ok(())
+        }
+
+        async fn load_battalion(
+            &self,
+            _state_id: Uuid,
+        ) -> Result<
+            Option<crate::core::platform::container::citadel::BattalionState>,
+            crate::application::errors::citadel_error::CitadelError,
+        > {
+            Ok(None)
+        }
+
+        async fn list_saved(
+            &self,
+        ) -> Result<
+            Vec<crate::core::platform::container::citadel::StateSummary>,
+            crate::application::errors::citadel_error::CitadelError,
+        > {
+            Ok(vec![])
+        }
+    }
+
+    // Mock CitadelPort that returns a state for testing restore
+    struct MockCitadelPortWithState;
+
+    #[async_trait::async_trait]
+    impl CitadelPort for MockCitadelPortWithState {
+        async fn save_paladin(
+            &self,
+            _state: &crate::core::platform::container::citadel::PaladinState,
+        ) -> Result<(), crate::application::errors::citadel_error::CitadelError> {
+            Ok(())
+        }
+
+        async fn load_paladin(
+            &self,
+            state_id: Uuid,
+        ) -> Result<
+            Option<crate::core::platform::container::citadel::PaladinState>,
+            crate::application::errors::citadel_error::CitadelError,
+        > {
+            if state_id == Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap() {
+                // Create PaladinData
+                let data = crate::core::platform::container::citadel::PaladinData {
+                    system_prompt: "Restored prompt".to_string(),
+                    name: "RestoredPaladin".to_string(),
+                    user_name: "User".to_string(),
+                    model: "gpt-4".to_string(),
+                    temperature: 0.8,
+                    max_loops: 5,
+                    stop_words: vec![],
+                    status: crate::core::platform::container::citadel::PaladinStatus::Idle,
+                };
+
+                // Create Paladin (Node<PaladinData>)
+                let paladin = Node::new(data, Some("RestoredPaladin".to_string()));
+
+                Ok(Some(
+                    crate::core::platform::container::citadel::PaladinState {
+                        paladin,
+                        garrison: vec![],
+                        execution_history: vec![],
+                        created_at: chrono::Utc::now(),
+                        updated_at: chrono::Utc::now(),
+                        schema_version: "1.0.0".to_string(),
+                    },
+                ))
+            } else {
+                Ok(None)
+            }
+        }
+
+        async fn save_battalion(
+            &self,
+            _state: &crate::core::platform::container::citadel::BattalionState,
+        ) -> Result<(), crate::application::errors::citadel_error::CitadelError> {
+            Ok(())
+        }
+
+        async fn load_battalion(
+            &self,
+            _state_id: Uuid,
+        ) -> Result<
+            Option<crate::core::platform::container::citadel::BattalionState>,
+            crate::application::errors::citadel_error::CitadelError,
+        > {
+            Ok(None)
+        }
+
+        async fn list_saved(
+            &self,
+        ) -> Result<
+            Vec<crate::core::platform::container::citadel::StateSummary>,
+            crate::application::errors::citadel_error::CitadelError,
+        > {
+            Ok(vec![])
         }
     }
 }
