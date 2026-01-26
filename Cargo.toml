@@ -112,3 +112,7 @@ debug = true
 [[bench]]
 name = "battalion_benchmarks"
 harness = false
+
+[[bench]]
+name = "herald_benchmarks"
+harness = false

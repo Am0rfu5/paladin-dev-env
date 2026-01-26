@@ -8,10 +8,20 @@ use chrono::Utc;
 use paladin::application::ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
 };
+use paladin::application::ports::output::paladin_port::{
+    PaladinPort, PaladinResult, PaladinStream,
+};
+use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
+use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::core::platform::container::battalion::BattalionConfig;
+use paladin::core::platform::container::battalion::formation::Formation;
+use paladin::core::platform::container::battalion::phalanx::Phalanx;
 use paladin::core::platform::container::herald::Herald;
+use paladin::core::platform::container::paladin::Paladin;
 use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -334,4 +344,233 @@ async fn test_herald_with_metadata() {
     assert!(parsed.is_object());
 
     println!("Formatted output with metadata:\n{}", formatted);
+}
+
+/// Mock Paladin Port for Battalion testing
+struct MockPaladinPort {
+    response_suffix: String,
+}
+
+impl MockPaladinPort {
+    fn new(response_suffix: impl Into<String>) -> Self {
+        Self {
+            response_suffix: response_suffix.into(),
+        }
+    }
+}
+
+#[async_trait]
+impl PaladinPort for MockPaladinPort {
+    async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult, PaladinError> {
+        use paladin::application::ports::output::paladin_port::StopReason;
+
+        Ok(PaladinResult {
+            output: format!(
+                "{}: {} - {}",
+                paladin.node.name, input, self.response_suffix
+            ),
+            token_count: 50,
+            execution_time_ms: 25,
+            loop_count: 1,
+            stop_reason: StopReason::Completed,
+        })
+    }
+
+    async fn execute_stream(
+        &self,
+        _paladin: &Paladin,
+        _input: &str,
+    ) -> Result<PaladinStream, PaladinError> {
+        let (_tx, rx) = tokio::sync::mpsc::channel(10);
+        Ok(rx)
+    }
+
+    fn validate(&self, _paladin: &Paladin) -> Result<(), PaladinError> {
+        Ok(())
+    }
+}
+
+#[tokio::test]
+async fn test_battalion_formation_with_herald() {
+    // Create mock LLM port
+    let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort::new("Formation step completed"));
+
+    // Create mock Paladin port
+    let paladin_port: Arc<dyn PaladinPort> = Arc::new(MockPaladinPort::new("completed"));
+
+    // Create Herald
+    let herald: Arc<dyn Herald> = Arc::new(JsonHerald::new());
+
+    // Create two Paladins for the Formation
+    let paladin1 = PaladinBuilder::new(Arc::clone(&llm_port))
+        .system_prompt("You are step 1")
+        .name("Paladin 1")
+        .build()
+        .expect("Failed to build Paladin 1");
+
+    let paladin2 = PaladinBuilder::new(Arc::clone(&llm_port))
+        .system_prompt("You are step 2")
+        .name("Paladin 2")
+        .build()
+        .expect("Failed to build Paladin 2");
+
+    // Create Formation
+    let formation = Formation::new(vec![paladin1, paladin2], BattalionConfig::default())
+        .expect("Failed to create Formation");
+
+    // Create Formation service with Herald
+    let service =
+        FormationExecutionService::new(Arc::clone(&paladin_port)).with_herald(Arc::clone(&herald));
+
+    // Execute Formation
+    let result = service.execute(&formation, "Start").await;
+    assert!(result.is_ok(), "Formation execution should succeed");
+
+    let result = result.unwrap();
+
+    // Format the result with Herald
+    let formatted = service.format_result(&result);
+    assert!(formatted.is_ok(), "Herald formatting should succeed");
+
+    let formatted = formatted.unwrap();
+    assert!(formatted.is_some(), "Herald should format Battalion result");
+
+    let json_output = formatted.unwrap();
+
+    // Verify it's valid JSON
+    let parsed: serde_json::Value =
+        serde_json::from_str(&json_output).expect("Output should be valid JSON");
+
+    println!("Formation Herald output:\n{}", json_output);
+    println!(
+        "Parsed JSON keys: {:?}",
+        parsed.as_object().map(|o| o.keys().collect::<Vec<_>>())
+    );
+
+    // Verify JSON contains Battalion fields
+    assert!(parsed.as_object().is_some(), "Should be a JSON object");
+    assert!(parsed.get("status").is_some(), "Should have status field");
+
+    println!("All assertions passed for Formation Herald output");
+}
+
+#[tokio::test]
+async fn test_battalion_phalanx_with_herald() {
+    // Create mock LLM port
+    let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort::new("Phalanx step completed"));
+
+    // Create mock Paladin port
+    let paladin_port: Arc<dyn PaladinPort> = Arc::new(MockPaladinPort::new("completed"));
+
+    // Create Herald
+    let herald: Arc<dyn Herald> = Arc::new(MarkdownHerald::new());
+
+    // Create three Paladins for concurrent execution
+    let paladin1 = PaladinBuilder::new(Arc::clone(&llm_port))
+        .system_prompt("You are worker 1")
+        .name("Worker 1")
+        .build()
+        .expect("Failed to build Worker 1");
+
+    let paladin2 = PaladinBuilder::new(Arc::clone(&llm_port))
+        .system_prompt("You are worker 2")
+        .name("Worker 2")
+        .build()
+        .expect("Failed to build Worker 2");
+
+    let paladin3 = PaladinBuilder::new(Arc::clone(&llm_port))
+        .system_prompt("You are worker 3")
+        .name("Worker 3")
+        .build()
+        .expect("Failed to build Worker 3");
+
+    // Create Phalanx with CollectAll strategy
+    let phalanx = Phalanx::new(
+        vec![paladin1, paladin2, paladin3],
+        BattalionConfig::default(),
+    )
+    .expect("Failed to create Phalanx");
+
+    // Create Phalanx service with Herald
+    let service =
+        PhalanxExecutionService::new(Arc::clone(&paladin_port)).with_herald(Arc::clone(&herald));
+
+    // Execute Phalanx
+    let result = service.execute(&phalanx, "Parallel task").await;
+    assert!(result.is_ok(), "Phalanx execution should succeed");
+
+    let result = result.unwrap();
+
+    // Format the result with Herald
+    let formatted = service.format_result(&result);
+    assert!(formatted.is_ok(), "Herald formatting should succeed");
+
+    let formatted = formatted.unwrap();
+    assert!(formatted.is_some(), "Herald should format Phalanx result");
+
+    let markdown_output = formatted.unwrap();
+
+    // Verify Markdown content
+    assert!(markdown_output.contains("##") || markdown_output.contains("**"));
+
+    println!("Phalanx Herald output:\n{}", markdown_output);
+}
+
+#[tokio::test]
+async fn test_runtime_herald_override() {
+    // Create mock LLM port
+    let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort::new("Runtime override test"));
+
+    // Create circuit breaker
+    let circuit_breaker = Arc::new(CircuitBreaker::new(
+        5,
+        3,
+        std::time::Duration::from_secs(60),
+    ));
+
+    // Create Paladin
+    let paladin = PaladinBuilder::new(Arc::clone(&llm_port))
+        .system_prompt("You are a helpful assistant")
+        .name("Override Test Paladin")
+        .build()
+        .expect("Failed to build Paladin");
+
+    // Create execution service with JSON Herald
+    let json_herald: Arc<dyn Herald> = Arc::new(JsonHerald::new());
+    let service = PaladinExecutionService::new(Arc::clone(&llm_port), circuit_breaker, None, None)
+        .with_herald(Arc::clone(&json_herald));
+
+    // Execute with JSON Herald
+    let result = service.execute(&paladin, "Test 1").await;
+    assert!(result.is_ok());
+
+    let result = result.unwrap();
+    let formatted_json = service.format_result(&result, &paladin).unwrap().unwrap();
+
+    // Verify JSON output
+    let parsed: serde_json::Value = serde_json::from_str(&formatted_json).unwrap();
+    assert!(parsed.is_object());
+
+    // Now override with Markdown Herald at runtime
+    let markdown_herald: Arc<dyn Herald> = Arc::new(MarkdownHerald::new());
+    let service = service.with_herald(Arc::clone(&markdown_herald));
+
+    // Execute with overridden Markdown Herald
+    let result = service.execute(&paladin, "Test 2").await;
+    assert!(result.is_ok());
+
+    let result = result.unwrap();
+    let formatted_markdown = service.format_result(&result, &paladin).unwrap().unwrap();
+
+    // Verify Markdown output
+    assert!(formatted_markdown.contains("##") || formatted_markdown.contains("**"));
+
+    // The two outputs should be different formats
+    assert_ne!(
+        formatted_json, formatted_markdown,
+        "Overridden Herald should produce different format"
+    );
+
+    println!("JSON format:\n{}\n", formatted_json);
+    println!("Markdown format after override:\n{}", formatted_markdown);
 }
