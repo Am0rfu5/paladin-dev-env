@@ -136,21 +136,21 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.14 Write unit tests for all Herald trait methods
   - [x] 4.15 Test color output with and without ANSI support
 
-- [ ] 5.0 Implement TableHerald formatter
-  - [ ] 5.1 Add dependencies to Cargo.toml (comfy-table or tabled)
-  - [ ] 5.2 Create `src/infrastructure/adapters/herald/table_herald.rs`
-  - [ ] 5.3 Define TableHerald struct with configuration (max_column_width, border_style)
-  - [ ] 5.4 Implement Herald trait for TableHerald
-  - [ ] 5.5 Implement format_paladin_result with ASCII table (columns: Field, Value)
-  - [ ] 5.6 Implement format_battalion_result with multi-row table for each Paladin
-  - [ ] 5.7 Implement format_stream_chunk (may return None until complete)
-  - [ ] 5.8 Implement finalize_stream to create final table with metadata
-  - [ ] 5.9 Implement format_error with table formatting
-  - [ ] 5.10 Implement name() returning "table" and mime_type() returning "text/plain"
-  - [ ] 5.11 Add configurable column widths and border styles
-  - [ ] 5.12 Add comprehensive rustdoc with table examples
-  - [ ] 5.13 Write unit tests for all Herald trait methods
-  - [ ] 5.14 Test with various border styles and column widths
+- [x] 5.0 Implement TableHerald formatter
+  - [x] 5.1 Add dependencies to Cargo.toml (comfy-table or tabled)
+  - [x] 5.2 Create `src/infrastructure/adapters/herald/table_herald.rs`
+  - [x] 5.3 Define TableHerald struct with configuration (max_column_width, border_style)
+  - [x] 5.4 Implement Herald trait for TableHerald
+  - [x] 5.5 Implement format_paladin_result with ASCII table (columns: Field, Value)
+  - [x] 5.6 Implement format_battalion_result with multi-row table for each Paladin
+  - [x] 5.7 Implement format_stream_chunk (may return None until complete)
+  - [x] 5.8 Implement finalize_stream to create final table with metadata
+  - [x] 5.9 Implement format_error with table formatting
+  - [x] 5.10 Implement name() returning "table" and mime_type() returning "text/plain"
+  - [x] 5.11 Add configurable column widths and border styles
+  - [x] 5.12 Add comprehensive rustdoc with table examples
+  - [x] 5.13 Write unit tests for all Herald trait methods
+  - [x] 5.14 Test with various border styles and column widths
 
 - [ ] 6.0 Add configuration integration
   - [ ] 6.1 Read current `src/config/application_settings.rs` structure

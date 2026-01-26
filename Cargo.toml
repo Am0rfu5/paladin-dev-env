@@ -60,6 +60,7 @@ clap = { version = "4.5.40", features = ["derive"] }
 petgraph = "0.6"
 rand = "0.8"
 colored = "2.1"
+comfy-table = "7.1"
 
 [dev-dependencies]
 mockito = "1.7.0"

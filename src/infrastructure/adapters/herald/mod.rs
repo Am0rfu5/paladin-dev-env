@@ -5,6 +5,8 @@
 
 pub mod json_herald;
 pub mod markdown_herald;
+pub mod table_herald;
 
 pub use json_herald::JsonHerald;
 pub use markdown_herald::MarkdownHerald;
+pub use table_herald::TableHerald;
