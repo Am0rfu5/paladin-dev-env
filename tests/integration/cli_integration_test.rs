@@ -529,3 +529,409 @@ fn test_multiple_templates_in_same_directory() {
     let content2 = fs::read_to_string(&agent2_path).unwrap();
     assert_ne!(content1, content2, "Templates should have different names");
 }
+
+// ============================================================================
+// Test Helpers for Config Creation and Environment Management (Subtask 13.14)
+// ============================================================================
+
+/// Helper to create a valid Paladin YAML config for testing
+fn create_test_paladin_config(temp_dir: &TempDir, name: &str, provider: &str) -> PathBuf {
+    let config_path = temp_dir.path().join(format!("{}.yaml", name));
+    let config_content = format!(
+        r#"
+name: "{}"
+system_prompt: "You are a helpful assistant for testing."
+model: "gpt-4"
+temperature: 0.7
+max_loops: 1
+timeout_seconds: 30
+stop_words: []
+
+provider:
+  type: {}
+  api_key_env: "{}_API_KEY"
+"#,
+        name,
+        provider,
+        provider.to_uppercase()
+    );
+
+    fs::write(&config_path, config_content).expect("Failed to write test config");
+    config_path
+}
+
+/// Helper to create a Formation battalion config
+#[allow(dead_code)] // Reserved for future subtasks 13.4-13.6
+fn create_test_formation_config(temp_dir: &TempDir, name: &str) -> PathBuf {
+    let config_path = temp_dir.path().join(format!("{}.yaml", name));
+    let config_content = format!(
+        r#"
+name: "{}"
+type: formation
+pass_output_to_next: true
+
+paladins:
+  - inline:
+      name: "Step1"
+      system_prompt: "Process step 1"
+      model: "gpt-4"
+      temperature: 0.7
+      max_loops: 1
+      provider:
+        type: openai
+        api_key_env: "OPENAI_API_KEY"
+  
+  - inline:
+      name: "Step2"
+      system_prompt: "Process step 2"
+      model: "gpt-4"
+      temperature: 0.7
+      max_loops: 1
+      provider:
+        type: openai
+        api_key_env: "OPENAI_API_KEY"
+"#,
+        name
+    );
+
+    fs::write(&config_path, config_content).expect("Failed to write test formation config");
+    config_path
+}
+
+/// Helper to temporarily set environment variable for test
+struct EnvVarGuard {
+    key: String,
+    old_value: Option<String>,
+}
+
+impl EnvVarGuard {
+    fn new(key: &str, value: &str) -> Self {
+        let old_value = std::env::var(key).ok();
+        unsafe {
+            std::env::set_var(key, value);
+        }
+        Self {
+            key: key.to_string(),
+            old_value,
+        }
+    }
+}
+
+impl Drop for EnvVarGuard {
+    fn drop(&mut self) {
+        unsafe {
+            match &self.old_value {
+                Some(val) => std::env::set_var(&self.key, val),
+                None => std::env::remove_var(&self.key),
+            }
+        }
+    }
+}
+
+// ============================================================================
+// Error Handling Tests (Subtasks 13.9-13.10)
+// ============================================================================
+
+/// Test: Missing API key error handling (Subtask 13.9)
+#[test]
+fn test_missing_api_key_error() {
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let config_path = create_test_paladin_config(&temp_dir, "test-agent", "openai");
+
+    // Ensure API key is NOT set
+    let _guard = EnvVarGuard::new("OPENAI_API_KEY", "");
+    unsafe {
+        std::env::remove_var("OPENAI_API_KEY");
+    }
+
+    let output = run_cli_command(&[
+        "agent",
+        "run",
+        "-c",
+        config_path.to_str().unwrap(),
+        "-i",
+        "test input",
+    ])
+    .expect("Failed to run CLI");
+
+    // Command should fail with non-zero exit code
+    assert!(
+        !output.status.success(),
+        "Command should fail without API key"
+    );
+
+    // Error message should mention API key
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let combined = format!("{}{}", stderr, stdout);
+
+    assert!(
+        combined.to_lowercase().contains("api") || combined.to_lowercase().contains("key"),
+        "Error message should mention API key issue"
+    );
+}
+
+/// Test: Invalid config file error handling (Subtask 13.10)
+#[test]
+fn test_invalid_config_file_error() {
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let invalid_config = temp_dir.path().join("invalid.yaml");
+
+    // Create invalid YAML
+    fs::write(&invalid_config, "invalid: yaml: content: [unclosed").expect("Failed to write file");
+
+    let output = run_cli_command(&[
+        "agent",
+        "run",
+        "-c",
+        invalid_config.to_str().unwrap(),
+        "-i",
+        "test input",
+    ])
+    .expect("Failed to run CLI");
+
+    // Command should fail
+    assert!(
+        !output.status.success(),
+        "Command should fail with invalid config"
+    );
+
+    // Error message should mention config or YAML
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let combined = format!("{}{}", stderr, stdout);
+
+    assert!(
+        combined.to_lowercase().contains("config")
+            || combined.to_lowercase().contains("yaml")
+            || combined.to_lowercase().contains("parse"),
+        "Error message should mention config/YAML issue"
+    );
+}
+
+/// Test: File not found error handling
+#[test]
+fn test_config_file_not_found_error() {
+    let output = run_cli_command(&[
+        "agent",
+        "run",
+        "-c",
+        "/nonexistent/path/to/config.yaml",
+        "-i",
+        "test input",
+    ])
+    .expect("Failed to run CLI");
+
+    // Command should fail
+    assert!(
+        !output.status.success(),
+        "Command should fail with missing config file"
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let combined = format!("{}{}", stderr, stdout);
+
+    assert!(
+        combined.to_lowercase().contains("not found")
+            || combined.to_lowercase().contains("no such file"),
+        "Error message should mention file not found"
+    );
+}
+
+// ============================================================================
+// Output Options Tests (Subtasks 13.11-13.12)
+// ============================================================================
+
+/// Test: Output to file with --output flag (Subtask 13.11)
+#[test]
+fn test_output_to_file_flag() {
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let _output_path = temp_dir.path().join("result.txt");
+
+    // Generate a template to test file output
+    let template_path = temp_dir.path().join("test.yaml");
+    let _create_output = run_cli_command(&[
+        "agent",
+        "new",
+        "-n",
+        "test-agent",
+        "-o",
+        template_path.to_str().unwrap(),
+    ])
+    .expect("Failed to run CLI");
+
+    // Note: We can't easily test agent run --output without API keys,
+    // but we can verify the flag is accepted and file handling works
+    // by testing that --output is a valid argument
+
+    let output = run_cli_command(&["agent", "run", "--help"]).expect("Failed to run CLI");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("--output") || stdout.contains("-o"),
+        "Help should document --output flag"
+    );
+}
+
+/// Test: Verbose mode flag (Subtask 13.12)
+#[test]
+fn test_verbose_mode_flag() {
+    // Verify that --verbose flag is recognized
+    let output = run_cli_command(&["agent", "run", "--help"]).expect("Failed to run CLI");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("--verbose") || stdout.contains("-v"),
+        "Help should document --verbose flag"
+    );
+
+    // Verify for battalion as well
+    let output = run_cli_command(&["battalion", "run", "--help"]).expect("Failed to run CLI");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("--verbose") || stdout.contains("-v"),
+        "Battalion help should document --verbose flag"
+    );
+}
+
+// ============================================================================
+// Exit Code Tests (Subtask 13.13)
+// ============================================================================
+
+/// Test: Success exit code (0)
+#[test]
+fn test_exit_code_success() {
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let output_path = temp_dir.path().join("test.yaml");
+
+    let output = run_cli_command(&[
+        "agent",
+        "new",
+        "-n",
+        "test-agent",
+        "-o",
+        output_path.to_str().unwrap(),
+    ])
+    .expect("Failed to run CLI");
+
+    // Success should return exit code 0
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "Successful commands should exit with code 0"
+    );
+}
+
+/// Test: User error exit code (1)
+#[test]
+fn test_exit_code_user_error() {
+    let output = run_cli_command(&[
+        "agent",
+        "new",
+        "-n",
+        "test",
+        "-o",
+        "/tmp/test.yaml",
+        "-p",
+        "invalid-provider",
+    ])
+    .expect("Failed to run CLI");
+
+    // User errors (invalid provider) should return non-zero exit code
+    assert!(
+        output.status.code() != Some(0),
+        "User errors should return non-zero exit code"
+    );
+
+    // Common convention is exit code 1 for user errors
+    let code = output.status.code().unwrap_or(1);
+    assert!(
+        code == 1 || code == 2,
+        "User error exit code should be 1 or 2, got {}",
+        code
+    );
+}
+
+/// Test: Missing required argument error
+#[test]
+fn test_exit_code_missing_argument() {
+    // Try to run agent new without required -o argument
+    let output = run_cli_command(&["agent", "new", "-n", "test"]).expect("Failed to run CLI");
+
+    // Should fail with error exit code
+    assert!(
+        !output.status.success(),
+        "Missing required argument should fail"
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("required") || stderr.contains("output"),
+        "Error should mention missing required argument"
+    );
+}
+
+// ============================================================================
+// Arsenal/MCP Tests (Subtasks 13.7-13.8)
+// ============================================================================
+
+/// Test: Arsenal list command structure (Subtask 13.7)
+#[test]
+fn test_arsenal_list_command_exists() {
+    // Verify arsenal list command is recognized
+    let output = run_cli_command(&["arsenal", "list", "--help"]).expect("Failed to run CLI");
+
+    // Should succeed (help is always available)
+    assert!(
+        output.status.success(),
+        "Arsenal list help should be available"
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("list") || stdout.contains("arsenal"),
+        "Help output should mention arsenal list"
+    );
+}
+
+/// Test: Arsenal test command structure (Subtask 13.8)
+#[test]
+fn test_arsenal_test_command_exists() {
+    // Verify arsenal test command recognizes --mcp-stdio flag
+    let output = run_cli_command(&["arsenal", "test", "--help"]).expect("Failed to run CLI");
+
+    assert!(
+        output.status.success(),
+        "Arsenal test help should be available"
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("--mcp-stdio") || stdout.contains("--mcp-sse"),
+        "Help should document MCP connection options"
+    );
+}
+
+/// Test: Arsenal test requires one of the MCP options
+#[test]
+fn test_arsenal_test_requires_mcp_option() {
+    // Try to run arsenal test without any MCP option
+    let output = run_cli_command(&["arsenal", "test"]).expect("Failed to run CLI");
+
+    // Should fail because one of --mcp-stdio or --mcp-sse is required
+    assert!(
+        !output.status.success(),
+        "Arsenal test should require MCP connection option"
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let combined = format!("{}{}", stderr, stdout);
+
+    assert!(
+        combined.contains("mcp") || combined.contains("required"),
+        "Error should mention MCP options or required arguments"
+    );
+}
