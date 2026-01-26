@@ -11,6 +11,7 @@ use thiserror::Error;
 
 use super::anthropic_adapter::{AnthropicAdapter, AnthropicConfig};
 use super::deepseek_adapter::{DeepSeekAdapter, DeepSeekConfig};
+use super::openai_adapter::{OpenAIAdapter, OpenAIConfig};
 use crate::application::ports::output::llm_port::LlmPort;
 
 #[derive(Debug, Error)]
@@ -90,12 +91,21 @@ impl LlmProviderFactory {
     pub fn create(&self, provider_name: &str) -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
         match provider_name.to_lowercase().as_str() {
             "openai" => {
-                // OpenAI adapter not yet migrated to new structure
-                // For now, return an error directing to use DeepSeek or Anthropic
-                Err(ProviderFactoryError::ConfigurationMissing(
-                    "OpenAI adapter migration pending. Use 'deepseek' or 'anthropic' for now."
-                        .to_string(),
-                ))
+                let config = OpenAIConfig::from_env().map_err(|e| {
+                    ProviderFactoryError::ConfigurationMissing(format!(
+                        "OpenAI configuration error: {}. Ensure OPENAI_API_KEY is set.",
+                        e
+                    ))
+                })?;
+
+                let adapter = OpenAIAdapter::new(config).map_err(|e| {
+                    ProviderFactoryError::AdapterCreationFailed(format!(
+                        "Failed to create OpenAI adapter: {}",
+                        e
+                    ))
+                })?;
+
+                Ok(Arc::new(adapter))
             }
             "deepseek" => {
                 let config = DeepSeekConfig::from_env().map_err(|e| {
@@ -156,6 +166,15 @@ impl LlmProviderFactory {
         config: ProviderConfig,
     ) -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
         match (provider_name.to_lowercase().as_str(), config) {
+            ("openai", ProviderConfig::OpenAI(config)) => {
+                let adapter = OpenAIAdapter::new(config).map_err(|e| {
+                    ProviderFactoryError::AdapterCreationFailed(format!(
+                        "Failed to create OpenAI adapter: {}",
+                        e
+                    ))
+                })?;
+                Ok(Arc::new(adapter))
+            }
             ("deepseek", ProviderConfig::DeepSeek(config)) => {
                 let adapter = DeepSeekAdapter::new(config).map_err(|e| {
                     ProviderFactoryError::AdapterCreationFailed(format!(
@@ -242,6 +261,7 @@ impl Default for LlmProviderFactory {
 /// allowing type-safe configuration passing.
 #[derive(Debug, Clone)]
 pub enum ProviderConfig {
+    OpenAI(OpenAIConfig),
     DeepSeek(DeepSeekConfig),
     Anthropic(AnthropicConfig),
 }

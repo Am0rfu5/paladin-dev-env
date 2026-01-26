@@ -177,25 +177,25 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.22 Run `cargo clippy` and fix any warnings
   - [x] 4.23 Add rustdoc comments to all public items
 
-- [ ] 5.0 Enhance existing OpenAI adapter for consistency
-  - [ ] 5.1 Read `src/infrastructure/adapters/output/llm_adapter.rs` current implementation
-  - [ ] 5.2 Create new `src/infrastructure/adapters/llm/openai_adapter.rs` if needed
-  - [ ] 5.3 Ensure OpenAI adapter implements new `get_capabilities()` method
-  - [ ] 5.4 Ensure OpenAI adapter implements new `get_provider_name()` returning "openai"
-  - [ ] 5.5 Verify OpenAI adapter implements `validate_model()` correctly
-  - [ ] 5.6 Verify OpenAI adapter implements `get_available_models()` correctly
-  - [ ] 5.7 Ensure OpenAI adapter uses standardized `LlmRequest`/`LlmResponse` types
-  - [ ] 5.8 Ensure OpenAI error mapping aligns with standardized `LlmError` (REQ-23)
-  - [ ] 5.9 Add retry logic with exponential backoff if not present
-  - [ ] 5.10 Refactor to match DeepSeek/Anthropic adapter patterns for consistency
-  - [ ] 5.11 Move adapter to `src/infrastructure/adapters/llm/` if in different location
-  - [ ] 5.12 Update imports throughout codebase if file moved
-  - [ ] 5.13 Write unit test: `test_openai_get_capabilities()`
-  - [ ] 5.14 Write unit test: `test_openai_get_provider_name()`
-  - [ ] 5.15 Verify existing OpenAI tests still pass
-  - [ ] 5.16 Run `cargo test` to ensure no regressions (REQ-20, REQ-21, REQ-22)
-  - [ ] 5.17 Run `cargo clippy` and fix any warnings
-  - [ ] 5.18 Update rustdoc comments for consistency
+- [x] 5.0 Enhance existing OpenAI adapter for consistency
+  - [x] 5.1 Read `src/infrastructure/adapters/output/openai_llm_adapter.rs` current implementation
+  - [x] 5.2 Create new `src/infrastructure/adapters/llm/openai_adapter.rs` if needed
+  - [x] 5.3 Ensure OpenAI adapter implements new `get_capabilities()` method
+  - [x] 5.4 Ensure OpenAI adapter implements new `get_provider_name()` returning "openai"
+  - [x] 5.5 Verify OpenAI adapter implements `validate_model()` correctly
+  - [x] 5.6 Verify OpenAI adapter implements `get_available_models()` correctly
+  - [x] 5.7 Ensure OpenAI adapter uses standardized `LlmRequest`/`LlmResponse` types
+  - [x] 5.8 Ensure OpenAI error mapping aligns with standardized `LlmError` (REQ-23)
+  - [x] 5.9 Add retry logic with exponential backoff if not present
+  - [x] 5.10 Refactor to match DeepSeek/Anthropic adapter patterns for consistency
+  - [x] 5.11 Move adapter to `src/infrastructure/adapters/llm/` if in different location
+  - [x] 5.12 Update imports throughout codebase if file moved
+  - [x] 5.13 Write unit test: `test_openai_get_capabilities()`
+  - [x] 5.14 Write unit test: `test_openai_get_provider_name()`
+  - [x] 5.15 Verify existing OpenAI tests still pass
+  - [x] 5.16 Run `cargo test` to ensure no regressions (REQ-20, REQ-21, REQ-22)
+  - [x] 5.17 Run `cargo clippy` and fix any warnings
+  - [x] 5.18 Update rustdoc comments for consistency
 
 - [ ] 6.0 Write unit tests with mocked HTTP responses
   - [ ] 6.1 Add `mockito` or `wiremock` to dev-dependencies in `Cargo.toml`
