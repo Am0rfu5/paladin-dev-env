@@ -513,7 +513,7 @@ impl Commander {
     fn analyze_and_select(&self, input: &str) -> (BattalionStrategy, String) {
         let input_lower = input.to_lowercase();
 
-        // Check for Formation indicators
+        // Check for Formation indicators (sequential execution)
         let formation_keywords = [
             "sequential",
             "pipeline",
@@ -522,7 +522,6 @@ impl Commander {
             "one after",
             "in order",
             "first",
-            "then",
             "next",
         ];
         if formation_keywords.iter().any(|kw| input_lower.contains(kw)) {
@@ -535,7 +534,7 @@ impl Commander {
             );
         }
 
-        // Check for Phalanx indicators
+        // Check for Phalanx indicators (parallel execution)
         let phalanx_keywords = [
             "parallel",
             "concurrent",
@@ -555,12 +554,13 @@ impl Commander {
             );
         }
 
-        // Check for Campaign indicators
+        // Check for Campaign indicators (workflow/graph orchestration)
+        // Check these BEFORE ChainOfCommand since "if-then" should match Campaign
         let campaign_keywords = [
             "workflow",
             "graph",
             "conditional",
-            "if-then",
+            "if-then", // Multi-word phrase checked as a whole
             "depends on",
             "after",
             "before",
@@ -578,7 +578,7 @@ impl Commander {
             );
         }
 
-        // Check for ChainOfCommand indicators
+        // Check for ChainOfCommand indicators (hierarchical delegation)
         let chain_keywords = [
             "delegate",
             "hierarchy",
@@ -600,7 +600,7 @@ impl Commander {
             );
         }
 
-        // Heuristics based on Paladin count
+        // Heuristics based on Paladin count (only if no keywords matched)
         match self.paladins.len() {
             1 => (
                 BattalionStrategy::Formation,

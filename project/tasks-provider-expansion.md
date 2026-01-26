@@ -197,30 +197,30 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.17 Run `cargo clippy` and fix any warnings
   - [x] 5.18 Update rustdoc comments for consistency
 
-- [ ] 6.0 Write unit tests with mocked HTTP responses
-  - [ ] 6.1 Add `mockito` or `wiremock` to dev-dependencies in `Cargo.toml`
-  - [ ] 6.2 Create `tests/unit/llm/mod.rs` for test organization
-  - [ ] 6.3 Create `tests/unit/llm/deepseek_adapter_test.rs`
-  - [ ] 6.4 Write mock test: `test_deepseek_successful_completion()`
-  - [ ] 6.5 Write mock test: `test_deepseek_streaming_response()`
-  - [ ] 6.6 Write mock test: `test_deepseek_auth_failure_401()`
-  - [ ] 6.7 Write mock test: `test_deepseek_rate_limit_429()`
-  - [ ] 6.8 Write mock test: `test_deepseek_timeout()`
-  - [ ] 6.9 Write mock test: `test_deepseek_invalid_model_error()`
-  - [ ] 6.10 Create `tests/unit/llm/anthropic_adapter_test.rs`
-  - [ ] 6.11 Write mock test: `test_anthropic_successful_completion()`
-  - [ ] 6.12 Write mock test: `test_anthropic_streaming_response()`
-  - [ ] 6.13 Write mock test: `test_anthropic_system_message_formatting()`
-  - [ ] 6.14 Write mock test: `test_anthropic_max_tokens_enforcement()`
-  - [ ] 6.15 Write mock test: `test_anthropic_auth_failure_401()`
-  - [ ] 6.16 Write mock test: `test_anthropic_rate_limit_429()`
-  - [ ] 6.17 Create `tests/unit/llm/provider_factory_test.rs`
-  - [ ] 6.18 Write test: `test_factory_provider_selection()`
-  - [ ] 6.19 Write test: `test_factory_config_validation()`
-  - [ ] 6.20 Run `cargo test --lib` to execute all unit tests
-  - [ ] 6.21 Verify unit test coverage ≥80% using `cargo llvm-cov` or similar (REQ-25)
-  - [ ] 6.22 Fix any failing tests
-  - [ ] 6.23 Run `cargo clippy` on test code
+- [x] 6.0 Write unit tests with mocked HTTP responses
+  - [x] 6.1 Add `mockito` or `wiremock` to dev-dependencies in `Cargo.toml` (mockito already present)
+  - [x] 6.2 Create `tests/unit/llm/mod.rs` for test organization
+  - [x] 6.3 Create `tests/unit/llm/deepseek_adapter_test.rs`
+  - [x] 6.4 Write mock test: `test_deepseek_successful_completion()`
+  - [x] 6.5 Write mock test: `test_deepseek_streaming_response()`
+  - [x] 6.6 Write mock test: `test_deepseek_auth_failure_401()`
+  - [x] 6.7 Write mock test: `test_deepseek_rate_limit_429()`
+  - [x] 6.8 Write mock test: `test_deepseek_timeout()`
+  - [x] 6.9 Write mock test: `test_deepseek_invalid_model_error()`
+  - [x] 6.10 Create `tests/unit/llm/anthropic_adapter_test.rs`
+  - [x] 6.11 Write mock test: `test_anthropic_successful_completion()`
+  - [x] 6.12 Write mock test: `test_anthropic_streaming_response()`
+  - [x] 6.13 Write mock test: `test_anthropic_system_message_formatting()`
+  - [x] 6.14 Write mock test: `test_anthropic_max_tokens_enforcement()`
+  - [x] 6.15 Write mock test: `test_anthropic_auth_failure_401()`
+  - [x] 6.16 Write mock test: `test_anthropic_rate_limit_429()`
+  - [x] 6.17 Create `tests/unit/llm/provider_factory_test.rs`
+  - [x] 6.18 Write test: `test_factory_provider_selection()`
+  - [x] 6.19 Write test: `test_factory_config_validation()`
+  - [x] 6.20 Run `cargo test --lib` to execute all unit tests
+  - [x] 6.21 Verify unit test coverage ≥80% using `cargo llvm-cov` or similar (REQ-25)
+  - [x] 6.22 Fix any failing tests (fixed Commander keyword matching bug)
+  - [x] 6.23 Run `cargo clippy` on test code
 
 - [ ] 7.0 Write integration tests for live API validation
   - [ ] 7.1 Create `tests/integration/llm/mod.rs` for integration test organization
