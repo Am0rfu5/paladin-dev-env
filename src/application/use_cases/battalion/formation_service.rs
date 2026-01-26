@@ -13,6 +13,7 @@ use crate::application::use_cases::battalion::error_aggregation::AggregatedError
 use crate::application::use_cases::battalion::retry::{calculate_retry_delay, should_retry};
 use crate::core::platform::container::battalion::formation::Formation;
 use crate::core::platform::container::battalion::{BattalionError, BattalionResult, ErrorStrategy};
+use crate::core::platform::container::herald::Herald;
 use crate::core::platform::container::paladin::Paladin;
 
 #[cfg(test)]
@@ -35,6 +36,8 @@ use crate::core::platform::container::battalion::BattalionStatus;
 pub struct FormationExecutionService {
     /// Paladin execution port
     paladin_port: Arc<dyn PaladinPort>,
+    /// Optional Herald for formatting Battalion results
+    herald: Option<Arc<dyn Herald>>,
 }
 
 impl FormationExecutionService {
@@ -51,7 +54,94 @@ impl FormationExecutionService {
     /// ```
     pub fn new(paladin_port: Arc<dyn PaladinPort>) -> Self {
         info!("Creating FormationExecutionService");
-        Self { paladin_port }
+        Self {
+            paladin_port,
+            herald: None,
+        }
+    }
+
+    /// Set the Herald for formatting results
+    ///
+    /// This allows runtime override of the default Herald. If set, this Herald
+    /// will be used to format Battalion results.
+    ///
+    /// # Arguments
+    ///
+    /// * `herald` - The Herald to use for formatting
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let service = FormationExecutionService::new(paladin_port)
+    ///     .with_herald(Arc::new(JsonHerald::new()));
+    /// ```
+    pub fn with_herald(mut self, herald: Arc<dyn Herald>) -> Self {
+        self.herald = Some(herald);
+        self
+    }
+
+    /// Format a Battalion result using the configured Herald
+    ///
+    /// Converts the Battalion result into the Herald's output format. If no Herald
+    /// is configured, returns None.
+    ///
+    /// # Arguments
+    ///
+    /// * `result` - The Battalion result to format
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Some(String))` - Formatted output if Herald is configured
+    /// * `Ok(None)` - If no Herald is configured
+    /// * `Err(BattalionError)` - If formatting fails
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let formatted = service.format_result(&result)?;
+    /// if let Some(output) = formatted {
+    ///     println!("{}", output);
+    /// }
+    /// ```
+    pub fn format_result(
+        &self,
+        result: &BattalionResult,
+    ) -> Result<Option<String>, BattalionError> {
+        match &self.herald {
+            Some(herald) => {
+                // Convert application layer BattalionResult to herald BattalionResult
+                let herald_paladin_results: Vec<
+                    crate::core::platform::container::herald::PaladinResult,
+                > = result
+                    .paladin_results
+                    .iter()
+                    .enumerate()
+                    .map(
+                        |(idx, pr)| crate::core::platform::container::herald::PaladinResult {
+                            paladin_id: format!("paladin-{}", idx),
+                            paladin_name: format!("Paladin {}", idx + 1),
+                            status: format!("{:?}", pr.stop_reason),
+                            output: pr.output.clone(),
+                        },
+                    )
+                    .collect();
+
+                let herald_result = crate::core::platform::container::herald::BattalionResult {
+                    battalion_id: result.battalion_id.to_string(),
+                    battalion_name: result.battalion_name.clone(),
+                    status: format!("{:?}", result.status),
+                    results: herald_paladin_results,
+                };
+
+                herald
+                    .format_battalion_result(&herald_result)
+                    .map(Some)
+                    .map_err(|e| {
+                        BattalionError::FormationError(format!("Herald formatting error: {}", e))
+                    })
+            }
+            None => Ok(None),
+        }
     }
 
     /// Execute a Formation with the given input

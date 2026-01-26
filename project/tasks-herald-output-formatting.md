@@ -168,15 +168,15 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.1 Read `src/application/use_cases/paladin/paladin_execution_service.rs`
   - [x] 7.2 Add optional herald parameter to PaladinExecutionService
   - [x] 7.3 Add format_result method to PaladinExecutionService
-  - [ ] 7.4 Implement global default Herald resolution from config
+  - [x] 7.4 Implement global default Herald resolution from config
   - [x] 7.5 Implement runtime override support via Option<Arc<dyn Herald>>
   - [x] 7.6 Update PaladinBuilder to accept with_herald(herald) method
-  - [ ] 7.7 Read Battalion service files (formation, phalanx)
-  - [ ] 7.8 Add Herald support to FormationExecutionService
-  - [ ] 7.9 Add Herald support to PhalanxExecutionService
-  - [ ] 7.10 Implement format_result for BattalionResult
-  - [ ] 7.11 Ensure formatted output includes all metadata fields per FR-6 and FR-7
-  - [ ] 7.12 Write integration tests for Paladin with Herald
+  - [x] 7.7 Read Battalion service files (formation, phalanx)
+  - [x] 7.8 Add Herald support to FormationExecutionService
+  - [x] 7.9 Add Herald support to PhalanxExecutionService
+  - [x] 7.10 Implement format_result for BattalionResult
+  - [x] 7.11 Ensure formatted output includes all metadata fields per FR-6 and FR-7
+  - [x] 7.12 Write integration tests for Paladin with Herald
   - [ ] 7.13 Write integration tests for Battalion with Herald
 
 - [ ] 8.0 Implement streaming support for formatters

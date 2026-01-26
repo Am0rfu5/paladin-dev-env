@@ -886,6 +886,65 @@ impl Settings {
         config
     }
 
+    /// Create a default Herald instance from configuration
+    ///
+    /// This method reads the `herald.default_formatter` setting and creates
+    /// the appropriate Herald implementation with its specific configuration.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Arc<dyn Herald>` containing the configured default formatter,
+    /// or an error if the formatter name is invalid or cannot be created.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,ignore
+    /// let settings = Settings::new()?;
+    /// let herald = settings.create_default_herald()?;
+    /// let formatted = herald.format_paladin_result(&result)?;
+    /// ```
+    pub fn create_default_herald(
+        &self,
+    ) -> Result<std::sync::Arc<dyn crate::core::platform::container::herald::Herald>, String> {
+        use crate::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
+        use std::sync::Arc;
+
+        let config = self.get_herald_config();
+
+        match config.default_formatter.as_str() {
+            "json" => {
+                let json_config =
+                    crate::infrastructure::adapters::herald::json_herald::JsonHeraldConfig {
+                        pretty: config.json.pretty,
+                        include_metadata: config.json.include_metadata,
+                    };
+                let herald = JsonHerald::with_config(json_config);
+                Ok(Arc::new(herald))
+            }
+            "markdown" => {
+                let markdown_config = crate::infrastructure::adapters::herald::markdown_herald::MarkdownHeraldConfig {
+                    include_colors: config.markdown.include_colors,
+                    heading_level: config.markdown.heading_level,
+                };
+                let herald = MarkdownHerald::with_config(markdown_config);
+                Ok(Arc::new(herald))
+            }
+            "table" => {
+                let table_config =
+                    crate::infrastructure::adapters::herald::table_herald::TableHeraldConfig {
+                        max_column_width: config.table.max_column_width,
+                        border_style: config.table.border_style.clone(),
+                    };
+                let herald = TableHerald::new(table_config);
+                Ok(Arc::new(herald))
+            }
+            other => Err(format!(
+                "Unknown formatter '{}'. Valid options: json, markdown, table",
+                other
+            )),
+        }
+    }
+
     /// Convert FileStorageConfig to MinioConfig
     pub fn to_minio_config(&self) -> MinioConfig {
         let fs_config = self.get_file_storage_config();
@@ -1746,5 +1805,81 @@ mod tests {
         assert_eq!(config.markdown.heading_level, 1);
         assert_eq!(config.table.max_column_width, 120);
         assert_eq!(config.table.border_style, "sharp");
+    }
+
+    #[test]
+    fn test_create_default_herald_json() {
+        let mut settings = Settings::default();
+        settings.herald = Some(HeraldConfig {
+            default_formatter: "json".to_string(),
+            ..Default::default()
+        });
+
+        let herald = settings.create_default_herald();
+        assert!(herald.is_ok());
+        let herald = herald.unwrap();
+        assert_eq!(herald.name(), "json");
+        assert_eq!(herald.mime_type(), "application/json");
+    }
+
+    #[test]
+    fn test_create_default_herald_markdown() {
+        let mut settings = Settings::default();
+        settings.herald = Some(HeraldConfig {
+            default_formatter: "markdown".to_string(),
+            ..Default::default()
+        });
+
+        let herald = settings.create_default_herald();
+        assert!(herald.is_ok());
+        let herald = herald.unwrap();
+        assert_eq!(herald.name(), "markdown");
+        assert_eq!(herald.mime_type(), "text/markdown");
+    }
+
+    #[test]
+    fn test_create_default_herald_table() {
+        let mut settings = Settings::default();
+        settings.herald = Some(HeraldConfig {
+            default_formatter: "table".to_string(),
+            ..Default::default()
+        });
+
+        let herald = settings.create_default_herald();
+        assert!(herald.is_ok());
+        let herald = herald.unwrap();
+        assert_eq!(herald.name(), "table");
+        assert_eq!(herald.mime_type(), "text/plain");
+    }
+
+    #[test]
+    fn test_create_default_herald_invalid_formatter() {
+        let mut settings = Settings::default();
+        settings.herald = Some(HeraldConfig {
+            default_formatter: "invalid".to_string(),
+            ..Default::default()
+        });
+
+        let herald = settings.create_default_herald();
+        assert!(herald.is_err());
+        let err_msg = herald.err().unwrap();
+        assert!(err_msg.contains("Unknown formatter 'invalid'"));
+    }
+
+    #[test]
+    fn test_create_default_herald_with_custom_config() {
+        let mut settings = Settings::default();
+        settings.herald = Some(HeraldConfig {
+            default_formatter: "json".to_string(),
+            json: JsonHeraldConfig {
+                pretty: false,
+                include_metadata: false,
+            },
+            ..Default::default()
+        });
+
+        let herald = settings.create_default_herald();
+        assert!(herald.is_ok());
+        // Config is passed correctly to JsonHerald (verified via unit tests)
     }
 }
