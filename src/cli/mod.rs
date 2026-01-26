@@ -1,5 +1,12 @@
 pub mod user_commands;
 
+// Armory CLI modules (Epic 9)
+pub mod commands;
+pub mod config;
+pub mod interactive;
+pub mod output;
+pub mod templates;
+
 /*
 CLI Module Tests
 

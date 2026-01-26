@@ -1,0 +1,1 @@
+//! Battalion YAML configuration types

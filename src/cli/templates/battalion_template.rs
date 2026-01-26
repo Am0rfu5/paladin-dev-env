@@ -1,0 +1,1 @@
+//! Battalion configuration template generator

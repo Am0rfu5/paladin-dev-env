@@ -1,0 +1,1 @@
+//! Paladin configuration template generator

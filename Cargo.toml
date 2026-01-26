@@ -56,11 +56,14 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 testcontainers-modules = { version = "0.12.1", features = ["minio"]}
 argon2 = "0.5.3"
 axum = "0.8.4"
-clap = { version = "4.5.40", features = ["derive"] }
+clap = { version = "4.5.40", features = ["derive", "cargo", "env"] }
 petgraph = "0.6"
 rand = "0.8"
 colored = "2.1"
 comfy-table = "7.1"
+serde_yaml = "0.9"
+indicatif = "0.17"
+dialoguer = "0.11"
 
 [dev-dependencies]
 mockito = "1.7.0"
@@ -87,6 +90,10 @@ path = "tests/integration/citadel_integration_test.rs"
 [[bin]]
 name = "paladin"
 path = "src/main.rs"
+
+[[bin]]
+name = "paladin-cli"
+path = "src/bin/paladin-cli.rs"
 
 [features]
 default = ["redis-queue", "s3-storage"]
