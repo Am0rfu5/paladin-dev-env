@@ -5,6 +5,8 @@ pub mod comment;
 pub mod content;
 pub mod content_list;
 pub mod garrison;
+pub mod herald;
+pub mod herald_error;
 pub mod job;
 pub mod log;
 pub mod notification;
