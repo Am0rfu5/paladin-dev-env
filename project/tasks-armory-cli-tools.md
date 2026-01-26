@@ -125,25 +125,25 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.14 Test command: `cargo run --bin paladin-cli -- agent new -n test -o /tmp/test.yaml`
   - [x] 4.15 Verify generated YAML is valid and contains all expected fields
 
-- [ ] 5.0 Implement `paladin agent run` command (Paladin execution)
-  - [ ] 5.1 In `src/cli/commands/agent.rs`, implement `handle_agent_run(args: AgentRunArgs) -> Result<(), CliError>`
-  - [ ] 5.2 Load configuration using `load_paladin_config(&args.config)`
-  - [ ] 5.3 Load API key from environment variable based on provider type (per FR-17)
-  - [ ] 5.4 Return error per FR-18 if API key missing: "Missing API key: {KEY_NAME}. Please set the environment variable."
-  - [ ] 5.5 If `args.input` is None, call interactive prompt function (stub for now, implement in task 11.0)
-  - [ ] 5.6 Create LLM port adapter based on provider type (OpenAI, DeepSeek, Anthropic)
-  - [ ] 5.7 Use `PaladinBuilder` from `application/use_cases/paladin/` to construct Paladin from config
-  - [ ] 5.8 Configure garrison if specified in config (in_memory or sqlite)
-  - [ ] 5.9 Configure arsenal/MCP servers if specified in config
-  - [ ] 5.10 Execute Paladin using `PaladinExecutionService::execute()`
-  - [ ] 5.11 Handle verbose mode: if `args.verbose`, print each loop iteration and tool calls
-  - [ ] 5.12 Format output using formatter from task 10.0 (stub for now)
-  - [ ] 5.13 If `args.output` is Some, write JSON result to file
-  - [ ] 5.14 If `args.output` is None, print human-readable result to stdout
-  - [ ] 5.15 Handle errors (LLM failures, timeouts, tool failures) and convert to CliError
-  - [ ] 5.16 Wire `handle_agent_run` into command routing
-  - [ ] 5.17 Create test config at `examples/cli_configs/basic_paladin.yaml`
-  - [ ] 5.18 Test command with real LLM: `cargo run --bin paladin-cli -- agent run -c examples/cli_configs/basic_paladin.yaml -i "Hello"`
+- [x] 5.0 Implement `paladin agent run` command (Paladin execution)
+  - [x] 5.1 In `src/cli/commands/agent.rs`, implement `handle_agent_run(args: AgentRunArgs) -> Result<(), CliError>`
+  - [x] 5.2 Load configuration using `load_paladin_config(&args.config)`
+  - [x] 5.3 Load API key from environment variable based on provider type (per FR-17)
+  - [x] 5.4 Return error per FR-18 if API key missing: "Missing API key: {KEY_NAME}. Please set the environment variable."
+  - [x] 5.5 If `args.input` is None, call interactive prompt function (stub for now, implement in task 11.0)
+  - [x] 5.6 Create LLM port adapter based on provider type (OpenAI, DeepSeek, Anthropic)
+  - [x] 5.7 Use `PaladinBuilder` from `application/use_cases/paladin/` to construct Paladin from config
+  - [x] 5.8 Configure garrison if specified in config (in_memory or sqlite)
+  - [x] 5.9 Configure arsenal/MCP servers if specified in config
+  - [x] 5.10 Execute Paladin using `PaladinExecutionService::execute()`
+  - [x] 5.11 Handle verbose mode: if `args.verbose`, print each loop iteration and tool calls
+  - [x] 5.12 Format output using formatter from task 10.0 (stub for now)
+  - [x] 5.13 If `args.output` is Some, write JSON result to file
+  - [x] 5.14 If `args.output` is None, print human-readable result to stdout
+  - [x] 5.15 Handle errors (LLM failures, timeouts, tool failures) and convert to CliError
+  - [x] 5.16 Wire `handle_agent_run` into command routing
+  - [x] 5.17 Create test config at `examples/cli_configs/basic_paladin.yaml`
+  - [x] 5.18 Test command with real LLM: `cargo run --bin paladin-cli -- agent run -c examples/cli_configs/basic_paladin.yaml -i "Hello"`
 
 - [ ] 6.0 Implement `paladin battalion new` command (Battalion template generation)
   - [ ] 6.1 In `src/cli/templates/battalion_template.rs`, define `generate_battalion_template(name: &str, battalion_type: &str) -> Result<String, CliError>`

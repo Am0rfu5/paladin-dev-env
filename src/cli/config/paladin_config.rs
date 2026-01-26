@@ -130,18 +130,21 @@ impl Validate for PaladinYamlConfig {
         if self.name.is_empty() {
             return Err(CliError::MissingRequiredField {
                 field: "name".to_string(),
+                message: "Paladin name is required".to_string(),
             });
         }
 
         if self.system_prompt.is_empty() {
             return Err(CliError::MissingRequiredField {
                 field: "system_prompt".to_string(),
+                message: "System prompt is required to define Paladin behavior".to_string(),
             });
         }
 
         if self.model.is_empty() {
             return Err(CliError::MissingRequiredField {
                 field: "model".to_string(),
+                message: "LLM model name is required".to_string(),
             });
         }
 
@@ -196,6 +199,7 @@ impl Validate for PaladinYamlConfig {
                 if server.server_type == "stdio" && server.command.is_none() {
                     return Err(CliError::MissingRequiredField {
                         field: format!("arsenal.mcp_servers.{}.command", server.name),
+                        message: "stdio server requires command field".to_string(),
                     });
                 }
 
@@ -203,6 +207,7 @@ impl Validate for PaladinYamlConfig {
                 if server.server_type == "sse" && server.endpoint.is_none() {
                     return Err(CliError::MissingRequiredField {
                         field: format!("arsenal.mcp_servers.{}.endpoint", server.name),
+                        message: "sse server requires endpoint field".to_string(),
                     });
                 }
             }
@@ -255,7 +260,7 @@ mod tests {
 
         assert!(matches!(
             config.validate(),
-            Err(CliError::MissingRequiredField { field }) if field == "name"
+            Err(CliError::MissingRequiredField { field, .. }) if field == "name"
         ));
     }
 

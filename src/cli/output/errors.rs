@@ -22,16 +22,16 @@ pub enum CliError {
     ValidationError { message: String },
 
     /// Missing required field
-    #[error("Missing required field: {field}")]
-    MissingRequiredField { field: String },
+    #[error("Missing required field: {field}. {message}")]
+    MissingRequiredField { field: String, message: String },
 
     /// Invalid field value
     #[error("Invalid value for field '{field}': {message}")]
     InvalidFieldValue { field: String, message: String },
 
     /// Missing API key
-    #[error("Missing API key: {key_name}")]
-    MissingApiKey { key_name: String },
+    #[error("Missing API key for {provider}. Please set {env_var}")]
+    MissingApiKey { provider: String, env_var: String },
 
     /// File already exists
     #[error("File already exists: {path}")]
@@ -53,6 +53,14 @@ pub enum CliError {
     #[error("LLM execution error: {message}")]
     LlmError { message: String },
 
+    /// LLM provider creation error
+    #[error("LLM provider error: {message}")]
+    LlmProviderError { message: String },
+
+    /// Paladin execution error
+    #[error("Paladin execution error: {message}")]
+    ExecutionError { message: String },
+
     /// Battalion execution error
     #[error("Battalion execution error: {message}")]
     BattalionError { message: String },
@@ -64,6 +72,10 @@ pub enum CliError {
     /// MCP connection error
     #[error("MCP connection error: {message}")]
     McpConnectionError { message: String },
+
+    /// Serialization error
+    #[error("Serialization error: {message}")]
+    SerializationError { message: String },
 
     /// Generic error
     #[error("{0}")]
@@ -96,13 +108,13 @@ impl CliError {
                     source
                 )
             }
-            CliError::MissingRequiredField { field } => {
+            CliError::MissingRequiredField { field, message } => {
                 format!(
                     "\n\x1b[31mError:\x1b[0m Missing required field\n\n\
-                     \x1b[33mDetails:\x1b[0m The configuration is missing the required field '{}'.\n\n\
+                     \x1b[33mDetails:\x1b[0m The configuration is missing the required field '{}'.\n{}\n\n\
                      \x1b[32mSuggestion:\x1b[0m Add the field to your configuration file.\n\n\
                      \x1b[36mExample:\x1b[0m\n{}: <value>\n",
-                    field, field
+                    field, message, field
                 )
             }
             CliError::InvalidFieldValue { field, message } => {
@@ -113,13 +125,13 @@ impl CliError {
                     field, message
                 )
             }
-            CliError::MissingApiKey { key_name } => {
+            CliError::MissingApiKey { provider, env_var } => {
                 format!(
                     "\n\x1b[31mError:\x1b[0m Missing API key\n\n\
-                     \x1b[33mDetails:\x1b[0m The environment variable '{}' is not set.\n\n\
+                     \x1b[33mDetails:\x1b[0m The environment variable '{}' is not set for provider '{}'.\n\n\
                      \x1b[32mSuggestion:\x1b[0m Set the environment variable:\n\n\
                      \x1b[36mexport {}=<your-api-key>\x1b[0m\n",
-                    key_name, key_name
+                    env_var, provider, env_var
                 )
             }
             CliError::FileAlreadyExists { path } => {
@@ -147,5 +159,13 @@ impl From<std::io::Error> for CliError {
 impl From<serde_yaml::Error> for CliError {
     fn from(error: serde_yaml::Error) -> Self {
         CliError::Other(format!("YAML error: {}", error))
+    }
+}
+
+impl From<crate::application::use_cases::paladin::error::PaladinError> for CliError {
+    fn from(error: crate::application::use_cases::paladin::error::PaladinError) -> Self {
+        CliError::ExecutionError {
+            message: error.to_string(),
+        }
     }
 }

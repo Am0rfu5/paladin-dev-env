@@ -61,6 +61,7 @@ impl FormationConfig {
         if self.name.is_empty() {
             return Err(CliError::MissingRequiredField {
                 field: "name".to_string(),
+                message: "Campaign name is required".to_string(),
             });
         }
 
@@ -93,6 +94,7 @@ impl PhalanxConfig {
         if self.name.is_empty() {
             return Err(CliError::MissingRequiredField {
                 field: "name".to_string(),
+                message: "Phalanx name is required".to_string(),
             });
         }
 
@@ -140,6 +142,7 @@ impl CampaignConfig {
         if self.name.is_empty() {
             return Err(CliError::MissingRequiredField {
                 field: "name".to_string(),
+                message: "Campaign name is required".to_string(),
             });
         }
 
@@ -212,6 +215,7 @@ impl ChainOfCommandConfig {
         if self.name.is_empty() {
             return Err(CliError::MissingRequiredField {
                 field: "name".to_string(),
+                message: "Chain of Command name is required".to_string(),
             });
         }
 

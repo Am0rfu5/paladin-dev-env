@@ -1,7 +1,7 @@
 /// Paladin CLI - Command-line interface for Paladin multi-agent orchestration
 use clap::{Parser, Subcommand};
 use paladin::cli::commands::{
-    agent::{AgentCommands, handle_agent_new},
+    agent::{AgentCommands, handle_agent_new, handle_agent_run},
     arsenal::ArsenalCommands,
     battalion::BattalionCommands,
 };
@@ -34,17 +34,14 @@ enum Commands {
     },
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
 
     let result = match cli.command {
         Commands::Agent { action } => match action {
             AgentCommands::New(args) => handle_agent_new(args),
-            AgentCommands::Run(args) => {
-                println!("Agent run command: {:?}", args);
-                // TODO: implement in Task 5.0
-                Ok(())
-            }
+            AgentCommands::Run(args) => handle_agent_run(args).await,
         },
         Commands::Battalion { action } => {
             println!("Battalion command: {:?}", action);
