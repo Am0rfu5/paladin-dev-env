@@ -544,7 +544,7 @@ struct ClaudeMessage {
 
 #[derive(Debug, Deserialize)]
 struct ClaudeResponse {
-    id: String,
+    _id: String,
     model: String,
     content: Vec<ClaudeContent>,
     stop_reason: Option<String>,
@@ -554,7 +554,7 @@ struct ClaudeResponse {
 #[derive(Debug, Deserialize)]
 struct ClaudeContent {
     #[serde(rename = "type")]
-    content_type: String,
+    _content_type: String,
     text: String,
 }
 
@@ -575,7 +575,7 @@ struct ClaudeStreamEvent {
 #[derive(Debug, Deserialize)]
 struct ClaudeDelta {
     #[serde(rename = "type")]
-    delta_type: Option<String>,
+    _delta_type: Option<String>,
     text: Option<String>,
 }
 

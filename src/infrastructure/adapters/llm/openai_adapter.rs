@@ -131,7 +131,7 @@ struct OpenAIMessage {
 /// OpenAI API response structure
 #[derive(Debug, Deserialize)]
 struct OpenAIResponse {
-    id: String,
+    _id: String,
     model: String,
     choices: Vec<OpenAIChoice>,
     usage: OpenAIUsage,
@@ -139,7 +139,7 @@ struct OpenAIResponse {
 
 #[derive(Debug, Deserialize)]
 struct OpenAIChoice {
-    index: u32,
+    _index: u32,
     message: OpenAIMessage,
     finish_reason: Option<String>,
 }
@@ -154,20 +154,20 @@ struct OpenAIUsage {
 /// OpenAI streaming response structure
 #[derive(Debug, Deserialize)]
 struct OpenAIStreamChunk {
-    id: String,
+    _id: String,
     choices: Vec<OpenAIStreamChoice>,
 }
 
 #[derive(Debug, Deserialize)]
 struct OpenAIStreamChoice {
-    index: u32,
+    _index: u32,
     delta: OpenAIStreamDelta,
     finish_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct OpenAIStreamDelta {
-    role: Option<String>,
+    _role: Option<String>,
     content: Option<String>,
 }
 

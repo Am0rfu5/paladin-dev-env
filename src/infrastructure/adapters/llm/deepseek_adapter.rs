@@ -132,7 +132,7 @@ struct DeepSeekMessage {
 /// DeepSeek API response structures
 #[derive(Debug, Deserialize)]
 struct DeepSeekResponse {
-    id: String,
+    _id: String,
     model: String,
     choices: Vec<DeepSeekChoice>,
     usage: DeepSeekUsage,
@@ -140,7 +140,7 @@ struct DeepSeekResponse {
 
 #[derive(Debug, Deserialize)]
 struct DeepSeekChoice {
-    index: u32,
+    _index: u32,
     message: DeepSeekMessage,
     finish_reason: Option<String>,
 }
@@ -155,7 +155,7 @@ struct DeepSeekUsage {
 /// DeepSeek streaming response structures
 #[derive(Debug, Deserialize)]
 struct DeepSeekStreamResponse {
-    id: String,
+    _id: String,
     choices: Vec<DeepSeekStreamChoice>,
 }
 

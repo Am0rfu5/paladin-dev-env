@@ -326,10 +326,7 @@ mod tests {
         // In a clean environment, should return empty list
         let providers = LlmProviderFactory::list_available_providers();
 
-        // Should be a valid vec (might be empty)
-        assert!(providers.len() >= 0);
-
-        // All returned providers should be known
+        // All returned providers should be known (list could be empty in clean environment)
         for provider in providers {
             assert!(
                 provider == "openai" || provider == "deepseek" || provider == "anthropic",
