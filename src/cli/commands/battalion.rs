@@ -1,6 +1,9 @@
 //! Battalion command implementations
 
+use crate::cli::output::errors::CliError;
+use crate::cli::templates::battalion_template::generate_battalion_template;
 use clap::Subcommand;
+use colored::Colorize;
 use std::path::PathBuf;
 
 #[derive(Debug, Subcommand)]
@@ -43,4 +46,45 @@ pub struct BattalionRunArgs {
     /// Enable verbose logging
     #[arg(short, long)]
     pub verbose: bool,
+}
+
+/// Handle the `paladin battalion new` command
+///
+/// Creates a new Battalion configuration template file with documented options
+pub fn handle_battalion_new(args: BattalionNewArgs) -> Result<(), CliError> {
+    // Validate battalion type
+    let valid_types = ["formation", "phalanx", "campaign", "chain-of-command"];
+    if !valid_types.contains(&args.r#type.as_str()) {
+        return Err(CliError::InvalidFieldValue {
+            field: "type".to_string(),
+            message: format!(
+                "must be one of: {}. Got: {}",
+                valid_types.join(", "),
+                args.r#type
+            ),
+        });
+    }
+
+    // Check if output file already exists
+    if args.output.exists() {
+        // For now, return error. Interactive confirmation will be added in Task 11.0
+        return Err(CliError::FileAlreadyExists {
+            path: args.output.clone(),
+        });
+    }
+
+    // Generate template
+    let template = generate_battalion_template(&args.name, &args.r#type)?;
+
+    // Write to file
+    std::fs::write(&args.output, template)?;
+
+    // Print success message with colored output
+    println!(
+        "{} Created Battalion template: {}",
+        "✓".green().bold(),
+        args.output.display()
+    );
+
+    Ok(())
 }

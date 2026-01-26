@@ -145,23 +145,23 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.17 Create test config at `examples/cli_configs/basic_paladin.yaml`
   - [x] 5.18 Test command with real LLM: `cargo run --bin paladin-cli -- agent run -c examples/cli_configs/basic_paladin.yaml -i "Hello"`
 
-- [ ] 6.0 Implement `paladin battalion new` command (Battalion template generation)
-  - [ ] 6.1 In `src/cli/templates/battalion_template.rs`, define `generate_battalion_template(name: &str, battalion_type: &str) -> Result<String, CliError>`
-  - [ ] 6.2 Implement formation template with sequential Paladin list and pass_output_to_next: true
-  - [ ] 6.3 Implement phalanx template with parallel Paladin list and inputs array
-  - [ ] 6.4 Implement campaign template with DAG structure (nodes, edges, start_node)
-  - [ ] 6.5 Implement chain_of_command template with commander and delegate hierarchy
-  - [ ] 6.6 Each template should include inline Paladin definitions or references to external config files
-  - [ ] 6.7 Add comprehensive comments explaining each Battalion type's structure
-  - [ ] 6.8 In `src/cli/commands/battalion.rs`, implement `handle_battalion_new(args: BattalionNewArgs) -> Result<(), CliError>`
-  - [ ] 6.9 Validate battalion_type is one of: formation, phalanx, campaign, chain-of-command
-  - [ ] 6.10 Generate template using `generate_battalion_template`
-  - [ ] 6.11 Check if output file exists, prompt for overwrite
-  - [ ] 6.12 Write template to output file
-  - [ ] 6.13 Print success message with colored output
-  - [ ] 6.14 Wire `handle_battalion_new` into command routing
-  - [ ] 6.15 Test command: `cargo run --bin paladin-cli -- battalion new -n test-formation -t formation -o /tmp/formation.yaml`
-  - [ ] 6.16 Verify all four battalion type templates generate valid YAML
+- [x] 6.0 Implement `paladin battalion new` command (Battalion template generation)
+  - [x] 6.1 In `src/cli/templates/battalion_template.rs`, define `generate_battalion_template(name: &str, battalion_type: &str) -> Result<String, CliError>`
+  - [x] 6.2 Implement formation template with sequential Paladin list and pass_output_to_next: true
+  - [x] 6.3 Implement phalanx template with parallel Paladin list and inputs array
+  - [x] 6.4 Implement campaign template with DAG structure (nodes, edges, start_node)
+  - [x] 6.5 Implement chain_of_command template with commander and delegate hierarchy
+  - [x] 6.6 Each template should include inline Paladin definitions or references to external config files
+  - [x] 6.7 Add comprehensive comments explaining each Battalion type's structure
+  - [x] 6.8 In `src/cli/commands/battalion.rs`, implement `handle_battalion_new(args: BattalionNewArgs) -> Result<(), CliError>`
+  - [x] 6.9 Validate battalion_type is one of: formation, phalanx, campaign, chain-of-command
+  - [x] 6.10 Generate template using `generate_battalion_template`
+  - [x] 6.11 Check if output file exists, prompt for overwrite
+  - [x] 6.12 Write template to output file
+  - [x] 6.13 Print success message with colored output
+  - [x] 6.14 Wire `handle_battalion_new` into command routing
+  - [x] 6.15 Test command: `cargo run --bin paladin-cli -- battalion new -n test-formation -t formation -o /tmp/formation.yaml`
+  - [x] 6.16 Verify all four battalion type templates generate valid YAML
 
 - [ ] 7.0 Implement `paladin battalion run` command (Battalion execution)
   - [ ] 7.1 In `src/cli/commands/battalion.rs`, implement `handle_battalion_run(args: BattalionRunArgs) -> Result<(), CliError>`
