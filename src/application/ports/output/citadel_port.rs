@@ -14,6 +14,34 @@ use crate::core::platform::container::citadel::{BattalionState, PaladinState, St
 ///
 /// Defines the contract for saving and loading Paladin and Battalion states.
 /// Implementations must be thread-safe (`Send + Sync`) for async compatibility.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use paladin::application::ports::output::citadel_port::CitadelPort;
+/// use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
+/// use std::sync::Arc;
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// // Create a FileCitadel adapter
+/// let citadel: Arc<dyn CitadelPort> = Arc::new(
+///     FileCitadel::new("./paladin-states").await?
+/// );
+///
+/// // Save a Paladin state
+/// // citadel.save_paladin(&paladin_state).await?;
+///
+/// // Load a Paladin state by ID
+/// // let state = citadel.load_paladin(&paladin_id).await?;
+///
+/// // List all saved states
+/// let states = citadel.list_saved().await?;
+/// for summary in states {
+///     println!("Saved: {} ({})", summary.name, summary.id);
+/// }
+/// # Ok(())
+/// # }
+/// ```
 #[async_trait]
 pub trait CitadelPort: Send + Sync {
     /// Saves a Paladin state to persistent storage

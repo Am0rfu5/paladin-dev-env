@@ -507,9 +507,31 @@ impl PaladinBuilder {
     /// # use paladin::application::ports::output::citadel_port::CitadelPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>, citadel: Arc<dyn CitadelPort>) {
+    /// Enables state persistence by attaching a Citadel adapter
+    ///
+    /// The Citadel system provides automatic state saving and restoration for
+    /// Paladin agents. This enables fault tolerance, debugging, and long-running
+    /// workflows that can survive system restarts.
+    ///
+    /// # Arguments
+    ///
+    /// * `citadel` - A Citadel adapter implementing the CitadelPort trait
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
+    /// # use std::sync::Arc;
+    /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
+    /// // Create a file-based Citadel adapter
+    /// let citadel = Arc::new(FileCitadel::new("./paladin-states").await?);
+    ///
     /// let builder = PaladinBuilder::new(llm_port)
     ///     .system_prompt("You are a stateful assistant")
     ///     .with_citadel(citadel);
+    /// # Ok(())
     /// # }
     /// ```
     pub fn with_citadel(mut self, citadel: Arc<dyn CitadelPort>) -> Self {
