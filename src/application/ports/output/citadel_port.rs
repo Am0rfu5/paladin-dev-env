@@ -25,7 +25,7 @@ use crate::core::platform::container::citadel::{BattalionState, PaladinState, St
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// // Create a FileCitadel adapter
 /// let citadel: Arc<dyn CitadelPort> = Arc::new(
-///     FileCitadel::new("./paladin-states").await?
+///     FileCitadel::new("./paladin-states")?
 /// );
 ///
 /// // Save a Paladin state
@@ -37,7 +37,7 @@ use crate::core::platform::container::citadel::{BattalionState, PaladinState, St
 /// // List all saved states
 /// let states = citadel.list_saved().await?;
 /// for summary in states {
-///     println!("Saved: {} ({})", summary.name, summary.id);
+///     println!("Saved: {} at {}", summary.id, summary.created_at);
 /// }
 /// # Ok(())
 /// # }

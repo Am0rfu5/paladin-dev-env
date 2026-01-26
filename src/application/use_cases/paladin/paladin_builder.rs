@@ -468,7 +468,6 @@ impl PaladinBuilder {
     /// * `endpoint` - HTTP endpoint URL
     ///
     /// # Example
-    ///
     /// ```rust,no_run
     /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin::application::ports::output::llm_port::LlmPort;
@@ -498,15 +497,6 @@ impl PaladinBuilder {
     /// # Arguments
     ///
     /// * `citadel` - The Citadel port implementation to use for state persistence
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
-    /// # use paladin::application::ports::output::llm_port::LlmPort;
-    /// # use paladin::application::ports::output::citadel_port::CitadelPort;
-    /// # use std::sync::Arc;
-    /// # fn example(llm_port: Arc<dyn LlmPort>, citadel: Arc<dyn CitadelPort>) {
     /// Enables state persistence by attaching a Citadel adapter
     ///
     /// The Citadel system provides automatic state saving and restoration for
@@ -524,9 +514,9 @@ impl PaladinBuilder {
     /// # use paladin::application::ports::output::llm_port::LlmPort;
     /// # use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
     /// # use std::sync::Arc;
-    /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
     /// // Create a file-based Citadel adapter
-    /// let citadel = Arc::new(FileCitadel::new("./paladin-states").await?);
+    /// let citadel = Arc::new(FileCitadel::new("./paladin-states")?);
     ///
     /// let builder = PaladinBuilder::new(llm_port)
     ///     .system_prompt("You are a stateful assistant")
