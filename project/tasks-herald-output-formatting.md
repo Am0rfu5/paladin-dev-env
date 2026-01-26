@@ -102,22 +102,22 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.10 Write unit tests for registry operations (register, get, list)
   - [x] 2.11 Update `src/application/use_cases/mod.rs` to export herald module
 
-- [ ] 3.0 Implement JsonHerald formatter
-  - [ ] 3.1 Add dependencies to Cargo.toml (serde_json already present, verify)
-  - [ ] 3.2 Create `src/infrastructure/adapters/herald/` directory
-  - [ ] 3.3 Create `src/infrastructure/adapters/herald/mod.rs`
-  - [ ] 3.4 Create `src/infrastructure/adapters/herald/json_herald.rs`
-  - [ ] 3.5 Define JsonHerald struct with configuration (pretty, include_metadata)
-  - [ ] 3.6 Implement Herald trait for JsonHerald
-  - [ ] 3.7 Implement format_paladin_result with JSON serialization
-  - [ ] 3.8 Implement format_battalion_result with nested JSON structure
-  - [ ] 3.9 Implement format_stream_chunk for streaming JSON (NDJSON or similar)
-  - [ ] 3.10 Implement finalize_stream to append metadata as JSON
-  - [ ] 3.11 Implement format_error with JSON error structure
-  - [ ] 3.12 Implement name() returning "json" and mime_type() returning "application/json"
-  - [ ] 3.13 Add comprehensive rustdoc with JSON schema examples
-  - [ ] 3.14 Write unit tests for all Herald trait methods
-  - [ ] 3.15 Write property test for format → parse → format roundtrip
+- [x] 3.0 Implement JsonHerald formatter
+  - [x] 3.1 Add dependencies to Cargo.toml (serde_json already present, verify)
+  - [x] 3.2 Create `src/infrastructure/adapters/herald/` directory
+  - [x] 3.3 Create `src/infrastructure/adapters/herald/mod.rs`
+  - [x] 3.4 Create `src/infrastructure/adapters/herald/json_herald.rs`
+  - [x] 3.5 Define JsonHerald struct with configuration (pretty, include_metadata)
+  - [x] 3.6 Implement Herald trait for JsonHerald
+  - [x] 3.7 Implement format_paladin_result with JSON serialization
+  - [x] 3.8 Implement format_battalion_result with nested JSON structure
+  - [x] 3.9 Implement format_stream_chunk for streaming JSON (NDJSON or similar)
+  - [x] 3.10 Implement finalize_stream to append metadata as JSON
+  - [x] 3.11 Implement format_error with JSON error structure
+  - [x] 3.12 Implement name() returning "json" and mime_type() returning "application/json"
+  - [x] 3.13 Add comprehensive rustdoc with JSON schema examples
+  - [x] 3.14 Write unit tests for all Herald trait methods
+  - [x] 3.15 Write property test for format → parse → format roundtrip
 
 - [ ] 4.0 Implement MarkdownHerald formatter
   - [ ] 4.1 Add dependencies to Cargo.toml (colored or ansi_term for colors - optional)

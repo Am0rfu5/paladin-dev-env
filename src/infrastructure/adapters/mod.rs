@@ -2,6 +2,7 @@ pub mod arsenal;
 pub mod citadel;
 pub mod file_storage;
 pub mod garrison;
+pub mod herald;
 pub mod input;
 pub mod llm;
 pub mod logs;
