@@ -71,6 +71,54 @@ Paladin provides a sophisticated AI agent framework with memory management and t
 See [docs/GARRISON.md](docs/GARRISON.md) for detailed memory system documentation.
 See [docs/ARSENAL.md](docs/ARSENAL.md) for comprehensive tool system documentation.
 
+### Multi-Provider LLM Support
+
+Paladin supports multiple LLM providers with a consistent interface, allowing you to choose the best provider for your needs:
+
+* **OpenAI** (GPT-4, GPT-3.5-turbo): Mature ecosystem, vision support, production-ready
+* **DeepSeek**: Cost-effective, strong reasoning capabilities, high throughput
+* **Anthropic Claude**: Safety-focused, long context (200K tokens), complex analysis
+
+**Key Features**:
+* Unified `LlmPort` trait across all providers
+* Hot-swappable providers without code changes
+* Provider-specific capabilities detection
+* Automatic retry with exponential backoff
+* Comprehensive error handling and rate limiting
+
+**Configuration Example**:
+```yaml
+llm:
+  default_provider: "openai"  # or "deepseek", "anthropic"
+  
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    model: "gpt-4"
+  
+  deepseek:
+    api_key: "${DEEPSEEK_API_KEY}"
+    model: "deepseek-chat"
+  
+  anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
+    model: "claude-3-5-sonnet-20241022"
+```
+
+**Programmatic Usage**:
+```rust
+// Create adapter
+let config = DeepSeekConfig::from_env()?;
+let llm_port = Arc::new(DeepSeekAdapter::new(config)?);
+
+// Use with Paladin
+let paladin = PaladinBuilder::new(llm_port)
+    .system_prompt("You are a helpful assistant")
+    .build()?;
+```
+
+See [docs/PROVIDER_EXPANSION.md](docs/PROVIDER_EXPANSION.md) for detailed comparison and migration guide.
+See [docs/CONTRIBUTING_PROVIDERS.md](docs/CONTRIBUTING_PROVIDERS.md) to add new providers.
+
 ### Battalion Orchestration System
 
 Battalion provides powerful multi-agent coordination capabilities with four distinct orchestration patterns:
