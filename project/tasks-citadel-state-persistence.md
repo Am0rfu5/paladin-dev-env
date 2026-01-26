@@ -45,25 +45,25 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Create and checkout new branch `feature/epic7-citadel-state-persistence` from main
-  - [ ] 0.2 Verify current branch and clean working directory
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Create and checkout new branch `feature/epic7-citadel-state-persistence` from main
+  - [x] 0.2 Verify current branch and clean working directory
 
-- [ ] 1.0 Create Citadel domain types in core layer
-  - [ ] 1.1 Create `src/core/platform/container/citadel.rs` file
-  - [ ] 1.2 Define `PaladinState` struct with all required fields (FR1.1-FR1.4)
-  - [ ] 1.3 Add serde Serialize/Deserialize derives to PaladinState
-  - [ ] 1.4 Define `BattalionState` struct with battalion type, config, paladin states, checkpoint (FR4)
-  - [ ] 1.5 Add serde derives to BattalionState
-  - [ ] 1.6 Define `StateSummary` struct for listing saved states
-  - [ ] 1.7 Define `StateType` enum (Paladin, Battalion)
-  - [ ] 1.8 Define `CheckpointData` struct for Battalion resumption tracking
-  - [ ] 1.9 Add schema_version field to both PaladinState and BattalionState (Q1 recommendation)
-  - [ ] 1.10 Add rustdoc comments to all public types
-  - [ ] 1.11 Write unit tests for struct creation and basic operations
-  - [ ] 1.12 Run `cargo test` to verify domain types compile and tests pass
-  - [ ] 1.13 Run `cargo fmt` and `cargo clippy`
-  - [ ] 1.14 Commit changes with message describing domain types
+- [x] 1.0 Create Citadel domain types in core layer
+  - [x] 1.1 Create `src/core/platform/container/citadel.rs` file
+  - [x] 1.2 Define `PaladinState` struct with all required fields (FR1.1-FR1.4)
+  - [x] 1.3 Add serde Serialize/Deserialize derives to PaladinState
+  - [x] 1.4 Define `BattalionState` struct with battalion type, config, paladin states, checkpoint (FR4)
+  - [x] 1.5 Add serde derives to BattalionState
+  - [x] 1.6 Define `StateSummary` struct for listing saved states
+  - [x] 1.7 Define `StateType` enum (Paladin, Battalion)
+  - [x] 1.8 Define `CheckpointData` struct for Battalion resumption tracking
+  - [x] 1.9 Add schema_version field to both PaladinState and BattalionState (Q1 recommendation)
+  - [x] 1.10 Add rustdoc comments to all public types
+  - [x] 1.11 Write unit tests for struct creation and basic operations
+  - [x] 1.12 Run `cargo test` to verify domain types compile and tests pass
+  - [x] 1.13 Run `cargo fmt` and `cargo clippy`
+  - [x] 1.14 Commit changes with message describing domain types
 
 - [ ] 2.0 Define CitadelPort trait in application layer
   - [ ] 2.1 Create `src/application/errors/citadel_error.rs` file
