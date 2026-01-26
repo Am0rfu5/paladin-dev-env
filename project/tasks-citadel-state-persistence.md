@@ -65,24 +65,24 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.13 Run `cargo fmt` and `cargo clippy`
   - [x] 1.14 Commit changes with message describing domain types
 
-- [ ] 2.0 Define CitadelPort trait in application layer
-  - [ ] 2.1 Create `src/application/errors/citadel_error.rs` file
-  - [ ] 2.2 Define `CitadelError` enum with all error variants (FR7)
-  - [ ] 2.3 Implement `thiserror::Error` derive for CitadelError
-  - [ ] 2.4 Add conversion from std::io::Error and serde_json::Error
-  - [ ] 2.5 Create `src/application/ports/output/citadel_port.rs` file
-  - [ ] 2.6 Define `CitadelPort` trait with Send + Sync bounds
-  - [ ] 2.7 Add `save_paladin` async method (FR6.1)
-  - [ ] 2.8 Add `load_paladin` async method (FR6.2)
-  - [ ] 2.9 Add `save_battalion` async method (FR6.3)
-  - [ ] 2.10 Add `load_battalion` async method (FR6.4)
-  - [ ] 2.11 Add `list_saved` async method (FR6.5)
-  - [ ] 2.12 Add comprehensive rustdoc comments to trait and all methods
-  - [ ] 2.13 Export citadel_port from `src/application/ports/output/mod.rs`
-  - [ ] 2.14 Export citadel_error from `src/application/errors/mod.rs`
-  - [ ] 2.15 Run `cargo check` to verify trait compiles
-  - [ ] 2.16 Run `cargo fmt` and `cargo clippy`
-  - [ ] 2.17 Commit changes with message describing port trait
+- [x] 2.0 Define CitadelPort trait in application layer
+  - [x] 2.1 Create `src/application/errors/citadel_error.rs` file
+  - [x] 2.2 Define `CitadelError` enum with all error variants (FR7)
+  - [x] 2.3 Implement `thiserror::Error` derive for CitadelError
+  - [x] 2.4 Add conversion from std::io::Error and serde_json::Error
+  - [x] 2.5 Create `src/application/ports/output/citadel_port.rs` file
+  - [x] 2.6 Define `CitadelPort` trait with Send + Sync bounds
+  - [x] 2.7 Add `save_paladin` async method (FR6.1)
+  - [x] 2.8 Add `load_paladin` async method (FR6.2)
+  - [x] 2.9 Add `save_battalion` async method (FR6.3)
+  - [x] 2.10 Add `load_battalion` async method (FR6.4)
+  - [x] 2.11 Add `list_saved` async method (FR6.5)
+  - [x] 2.12 Add comprehensive rustdoc comments to trait and all methods
+  - [x] 2.13 Export citadel_port from `src/application/ports/output/mod.rs`
+  - [x] 2.14 Export citadel_error from `src/application/errors/mod.rs`
+  - [x] 2.15 Run `cargo check` to verify trait compiles
+  - [x] 2.16 Run `cargo fmt` and `cargo clippy`
+  - [x] 2.17 Commit changes with message describing port trait
 
 - [ ] 3.0 Implement FileCitadel adapter in infrastructure layer
   - [ ] 3.1 Create `src/infrastructure/adapters/citadel/` directory
