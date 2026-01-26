@@ -77,21 +77,21 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.6 Create placeholder files for all modules listed in Relevant Files
   - [x] 1.7 Run `cargo build` to verify structure compiles
 
-- [ ] 2.0 Implement core CLI argument parsing with clap
-  - [ ] 2.1 Create `src/bin/paladin-cli.rs` with main function and clap setup
-  - [ ] 2.2 Define `Cli` struct in `src/bin/paladin-cli.rs` using clap derive macros with version and about text
-  - [ ] 2.3 Define `Commands` enum with `Agent`, `Battalion`, and `Arsenal` variants
-  - [ ] 2.4 In `src/cli/commands/agent.rs`, define `AgentCommands` enum with `Run` and `New` variants
-  - [ ] 2.5 Define `AgentRunArgs` struct with fields: config (PathBuf), input (Option<String>), output (Option<PathBuf>), verbose (bool)
-  - [ ] 2.6 Define `AgentNewArgs` struct with fields: name (String), output (PathBuf), provider (Option<String>)
-  - [ ] 2.7 In `src/cli/commands/battalion.rs`, define `BattalionCommands` enum with `Run` and `New` variants
-  - [ ] 2.8 Define `BattalionRunArgs` struct with fields: config (PathBuf), type (String), output (Option<PathBuf>), verbose (bool)
-  - [ ] 2.9 Define `BattalionNewArgs` struct with fields: name (String), type (String), output (PathBuf)
-  - [ ] 2.10 In `src/cli/commands/arsenal.rs`, define `ArsenalCommands` enum with `List` and `Test` variants
-  - [ ] 2.11 Define `ArsenalTestArgs` struct with fields: mcp_stdio (Option<String>), mcp_sse (Option<String>)
-  - [ ] 2.12 Implement basic command routing in `src/bin/paladin-cli.rs` main function (match on command and call stub functions)
-  - [ ] 2.13 Test `cargo run --bin paladin-cli -- --help` displays all commands correctly
-  - [ ] 2.14 Test `cargo run --bin paladin-cli -- agent --help` shows agent subcommands
+- [x] 2.0 Implement core CLI argument parsing with clap
+  - [x] 2.1 Create `src/bin/paladin-cli.rs` with main function and clap setup
+  - [x] 2.2 Define `Cli` struct in `src/bin/paladin-cli.rs` using clap derive macros with version and about text
+  - [x] 2.3 Define `Commands` enum with `Agent`, `Battalion`, and `Arsenal` variants
+  - [x] 2.4 In `src/cli/commands/agent.rs`, define `AgentCommands` enum with `Run` and `New` variants
+  - [x] 2.5 Define `AgentRunArgs` struct with fields: config (PathBuf), input (Option<String>), output (Option<PathBuf>), verbose (bool)
+  - [x] 2.6 Define `AgentNewArgs` struct with fields: name (String), output (PathBuf), provider (Option<String>)
+  - [x] 2.7 In `src/cli/commands/battalion.rs`, define `BattalionCommands` enum with `Run` and `New` variants
+  - [x] 2.8 Define `BattalionRunArgs` struct with fields: config (PathBuf), type (String), output (Option<PathBuf>), verbose (bool)
+  - [x] 2.9 Define `BattalionNewArgs` struct with fields: name (String), type (String), output (PathBuf)
+  - [x] 2.10 In `src/cli/commands/arsenal.rs`, define `ArsenalCommands` enum with `List` and `Test` variants
+  - [x] 2.11 Define `ArsenalTestArgs` struct with fields: mcp_stdio (Option<String>), mcp_sse (Option<String>)
+  - [x] 2.12 Implement basic command routing in `src/bin/paladin-cli.rs` main function (match on command and call stub functions)
+  - [x] 2.13 Test `cargo run --bin paladin-cli -- --help` displays all commands correctly
+  - [x] 2.14 Test `cargo run --bin paladin-cli -- agent --help` shows agent subcommands
 
 - [ ] 3.0 Implement configuration loading and validation
   - [ ] 3.1 In `src/cli/config/paladin_config.rs`, define `PaladinYamlConfig` struct with serde derives matching FR-15 schema
