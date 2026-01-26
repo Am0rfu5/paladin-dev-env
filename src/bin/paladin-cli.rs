@@ -1,8 +1,11 @@
 /// Paladin CLI - Command-line interface for Paladin multi-agent orchestration
 use clap::{Parser, Subcommand};
 use paladin::cli::commands::{
-    agent::AgentCommands, arsenal::ArsenalCommands, battalion::BattalionCommands,
+    agent::{AgentCommands, handle_agent_new},
+    arsenal::ArsenalCommands,
+    battalion::BattalionCommands,
 };
+use std::process;
 
 #[derive(Parser)]
 #[command(name = "paladin")]
@@ -34,18 +37,30 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
 
-    match cli.command {
-        Commands::Agent { action } => {
-            println!("Agent command: {:?}", action);
-            // TODO: implement agent command routing
-        }
+    let result = match cli.command {
+        Commands::Agent { action } => match action {
+            AgentCommands::New(args) => handle_agent_new(args),
+            AgentCommands::Run(args) => {
+                println!("Agent run command: {:?}", args);
+                // TODO: implement in Task 5.0
+                Ok(())
+            }
+        },
         Commands::Battalion { action } => {
             println!("Battalion command: {:?}", action);
             // TODO: implement battalion command routing
+            Ok(())
         }
         Commands::Arsenal { action } => {
             println!("Arsenal command: {:?}", action);
             // TODO: implement arsenal command routing
+            Ok(())
         }
+    };
+
+    // Handle errors and exit with appropriate code
+    if let Err(e) = result {
+        eprintln!("{}", e.format_detailed());
+        process::exit(1);
     }
 }

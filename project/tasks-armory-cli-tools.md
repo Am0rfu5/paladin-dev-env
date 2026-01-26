@@ -108,22 +108,22 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.12 Write unit test for validation error with missing required field
   - [x] 3.13 Write unit test for invalid YAML syntax error handling
 
-- [ ] 4.0 Implement `paladin agent new` command (template generation)
-  - [ ] 4.1 In `src/cli/templates/paladin_template.rs`, define `generate_paladin_template(name: &str, provider: &str) -> String`
-  - [ ] 4.2 Create YAML template string with all fields from FR-15, including comments explaining each option
-  - [ ] 4.3 Add system_prompt placeholder with guidance text as multi-line string
-  - [ ] 4.4 Include garrison example (in_memory) with commented sqlite alternative
-  - [ ] 4.5 Include arsenal example with MCP server (stdio type) commented out
-  - [ ] 4.6 Implement template variable substitution for name and provider
-  - [ ] 4.7 In `src/cli/commands/agent.rs`, implement `handle_agent_new(args: AgentNewArgs) -> Result<(), CliError>`
-  - [ ] 4.8 Validate provider is one of: openai, deepseek, anthropic (default openai if None)
-  - [ ] 4.9 Generate template string using `generate_paladin_template`
-  - [ ] 4.10 Check if output file already exists, prompt for overwrite confirmation
-  - [ ] 4.11 Write template to output file using `std::fs::write`
-  - [ ] 4.12 Print success message with colored output: "✓ Created Paladin template: {path}"
-  - [ ] 4.13 Wire `handle_agent_new` into command routing in `src/bin/paladin-cli.rs`
-  - [ ] 4.14 Test command: `cargo run --bin paladin-cli -- agent new -n test -o /tmp/test.yaml`
-  - [ ] 4.15 Verify generated YAML is valid and contains all expected fields
+- [x] 4.0 Implement `paladin agent new` command (template generation)
+  - [x] 4.1 In `src/cli/templates/paladin_template.rs`, define `generate_paladin_template(name: &str, provider: &str) -> String`
+  - [x] 4.2 Create YAML template string with all fields from FR-15, including comments explaining each option
+  - [x] 4.3 Add system_prompt placeholder with guidance text as multi-line string
+  - [x] 4.4 Include garrison example (in_memory) with commented sqlite alternative
+  - [x] 4.5 Include arsenal example with MCP server (stdio type) commented out
+  - [x] 4.6 Implement template variable substitution for name and provider
+  - [x] 4.7 In `src/cli/commands/agent.rs`, implement `handle_agent_new(args: AgentNewArgs) -> Result<(), CliError>`
+  - [x] 4.8 Validate provider is one of: openai, deepseek, anthropic (default openai if None)
+  - [x] 4.9 Generate template string using `generate_paladin_template`
+  - [x] 4.10 Check if output file already exists, prompt for overwrite confirmation
+  - [x] 4.11 Write template to output file using `std::fs::write`
+  - [x] 4.12 Print success message with colored output: "✓ Created Paladin template: {path}"
+  - [x] 4.13 Wire `handle_agent_new` into command routing in `src/bin/paladin-cli.rs`
+  - [x] 4.14 Test command: `cargo run --bin paladin-cli -- agent new -n test -o /tmp/test.yaml`
+  - [x] 4.15 Verify generated YAML is valid and contains all expected fields
 
 - [ ] 5.0 Implement `paladin agent run` command (Paladin execution)
   - [ ] 5.1 In `src/cli/commands/agent.rs`, implement `handle_agent_run(args: AgentRunArgs) -> Result<(), CliError>`
