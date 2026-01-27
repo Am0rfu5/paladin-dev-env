@@ -130,16 +130,16 @@ impl PhalanxConfig {
         }
 
         // If inputs provided, must match paladin count
-        if let Some(inputs) = &self.inputs {
-            if inputs.len() != self.paladins.len() {
-                return Err(CliError::ValidationError {
-                    message: format!(
-                        "Number of inputs ({}) must match number of Paladins ({})",
-                        inputs.len(),
-                        self.paladins.len()
-                    ),
-                });
-            }
+        if let Some(inputs) = &self.inputs
+            && inputs.len() != self.paladins.len()
+        {
+            return Err(CliError::ValidationError {
+                message: format!(
+                    "Number of inputs ({}) must match number of Paladins ({})",
+                    inputs.len(),
+                    self.paladins.len()
+                ),
+            });
         }
 
         Ok(())

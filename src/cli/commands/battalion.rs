@@ -560,7 +560,7 @@ async fn build_paladin_from_reference(
                     inline.name
                 );
             }
-            (&**inline).clone()
+            (**inline).clone()
         }
     };
 

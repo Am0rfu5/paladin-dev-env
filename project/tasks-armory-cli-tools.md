@@ -311,12 +311,12 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 14.16 Generate docs: `cargo doc --no-deps --open` and verify CLI module documented
 
 - [ ] 15.0 Final validation and code review preparation
-  - [ ] 15.1 Run `cargo fmt` to format all code
-  - [ ] 15.2 Run `cargo clippy -- -D warnings` and fix all warnings
-  - [ ] 15.3 Run `cargo test --all` and verify all tests pass
-  - [ ] 15.4 Run `cargo audit` to check for security vulnerabilities
-  - [ ] 15.5 Run Snyk scan on CLI code: `snyk_code_scan` per security rules
-  - [ ] 15.6 Fix any security issues identified
+  - [x] 15.1 Run `cargo fmt` to format all code
+  - [x] 15.2 Run `cargo clippy -- -D warnings` and fix all warnings
+  - [x] 15.3 Run `cargo test --all` and verify all tests pass
+  - [x] 15.4 Run `cargo audit` to check for security vulnerabilities
+  - [x] 15.5 Run Snyk scan on CLI code: `snyk_code_scan` per security rules
+  - [x] 15.6 Fix any security issues identified
   - [ ] 15.7 Test all CLI commands manually end-to-end:
     - `paladin agent new` → edit → `paladin agent run`
     - `paladin battalion new` → edit → `paladin battalion run`
