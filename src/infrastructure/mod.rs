@@ -28,42 +28,42 @@
 //!
 //! ### LLM Provider Adapters ([`adapters::llm`](adapters::llm))
 //!
-//! - **[`OpenAiAdapter`](adapters::llm::openai_adapter::OpenAiAdapter)** - OpenAI GPT models
+//! - **OpenAiAdapter** - OpenAI GPT models (in `adapters::llm::openai_adapter`)
 //!   - Models: gpt-4, gpt-3.5-turbo, etc.
 //!   - Features: Streaming, function calling, vision
-//! - **[`DeepSeekAdapter`](adapters::llm::deepseek_adapter::DeepSeekAdapter)** - DeepSeek models
+//! - **DeepSeekAdapter** - DeepSeek models (in `adapters::llm::deepseek_adapter`)
 //!   - Cost-effective alternative with competitive performance
-//! - **[`AnthropicAdapter`](adapters::llm::anthropic_adapter::AnthropicAdapter)** - Claude models
+//! - **AnthropicAdapter** - Claude models (in `adapters::llm::anthropic_adapter`)
 //!   - Models: claude-3-opus, claude-3-sonnet
 //!
 //! ### Memory Storage Adapters ([`adapters::garrison`](adapters::garrison))
 //!
-//! - **[`InMemoryGarrison`]** - In-process memory storage
+//! - **InMemoryGarrison** - In-process memory storage
 //!   - Fast, ephemeral, suitable for development
-//! - **[`SqliteGarrison`]** - SQLite-backed persistent memory
+//! - **SqliteGarrison** - SQLite-backed persistent memory
 //!   - Local file storage, full-text search support
 //!
 //! ### Tool System Adapters ([`adapters::arsenal`](adapters::arsenal))
 //!
-//! - **[`McpStdioAdapter`]** - MCP (Model Context Protocol) STDIO tools
+//! - **McpStdioAdapter** - MCP (Model Context Protocol) STDIO tools
 //!   - Command-line tool integration
-//! - **[`McpSseAdapter`]** - MCP SSE (Server-Sent Events) tools
+//! - **McpSseAdapter** - MCP SSE (Server-Sent Events) tools
 //!   - Web-based tool integration
 //!
 //! ### State Persistence Adapters ([`adapters::citadel`](adapters::citadel))
 //!
-//! - **[`FileCitadel`]** - File-based state persistence
+//! - **FileCitadel** - File-based state persistence
 //!   - Local filesystem storage
 //!
 //! ### Queue Adapters ([`adapters::queue`](adapters::queue))
 //!
-//! - **[`RedisQueueAdapter`](adapters::queue::redis_adapter::RedisQueueAdapter)** - Redis-backed queue
+//! - **RedisQueueAdapter** - Redis-backed queue (in `adapters::queue::redis_adapter`)
 //!   - Distributed task queue
 //!   - Feature flag: `redis-queue`
 //!
 //! ### File Storage Adapters ([`adapters::file_storage`](adapters::file_storage))
 //!
-//! - **[`MinioAdapter`](adapters::file_storage::minio_adapter::MinioAdapter)** - S3-compatible storage
+//! - **MinioAdapter** - S3-compatible storage (in `adapters::file_storage::minio_adapter`)
 //!   - Object storage for large files
 //!   - Feature flag: `s3-storage`
 //!
