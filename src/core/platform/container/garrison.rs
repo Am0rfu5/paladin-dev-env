@@ -134,7 +134,18 @@ impl GarrisonEntry {
     }
 }
 
-/// Memory type classification
+/// Classification of memory storage types in the Garrison system.
+///
+/// Different memory types have different persistence and access patterns.
+///
+/// # Examples
+///
+/// ```
+/// use paladin::core::platform::container::garrison::GarrisonType;
+///
+/// let memory_type = GarrisonType::ShortTerm;
+/// assert_eq!(memory_type, GarrisonType::ShortTerm);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GarrisonType {
     /// Active conversation context (ephemeral)
@@ -145,7 +156,18 @@ pub enum GarrisonType {
     Episodic,
 }
 
-/// Strategy for evicting old entries when limits are reached
+/// Strategy for evicting old entries when storage limits are reached.
+///
+/// Different strategies prioritize different types of information retention.
+///
+/// # Examples
+///
+/// ```
+/// use paladin::core::platform::container::garrison::EvictionStrategy;
+///
+/// let strategy = EvictionStrategy::ImportanceBased;
+/// // This strategy preserves system prompts and recent messages
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EvictionStrategy {
     /// First In, First Out - remove oldest entries
@@ -156,7 +178,22 @@ pub enum EvictionStrategy {
     SlidingWindow,
 }
 
-/// Configuration for Garrison behavior
+/// Configuration for Garrison memory management behavior.
+///
+/// Controls how the Garrison stores, retrieves, and evicts conversation history.
+///
+/// # Examples
+///
+/// ```
+/// use paladin::core::platform::container::garrison::{GarrisonConfig, EvictionStrategy};
+///
+/// let config = GarrisonConfig::new(50, Some(2000))
+///     .with_eviction_strategy(EvictionStrategy::SlidingWindow)
+///     .with_preserve_recent(5);
+///
+/// assert_eq!(config.max_entries, 50);
+/// assert_eq!(config.max_tokens, Some(2000));
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GarrisonConfig {
     /// Maximum number of entries to keep
@@ -170,6 +207,13 @@ pub struct GarrisonConfig {
 }
 
 impl Default for GarrisonConfig {
+    /// Creates a GarrisonConfig with sensible defaults.
+    ///
+    /// # Default Values
+    /// - `max_entries`: 100
+    /// - `max_tokens`: Some(4000)
+    /// - `eviction_strategy`: ImportanceBased
+    /// - `preserve_recent_count`: 10
     fn default() -> Self {
         Self {
             max_entries: 100,
@@ -181,7 +225,14 @@ impl Default for GarrisonConfig {
 }
 
 impl GarrisonConfig {
-    /// Creates a new configuration with specified limits
+    /// Creates a new configuration with specified limits.
+    ///
+    /// # Arguments
+    ///
+    /// * `max_entries` - Maximum number of conversation entries to store
+    /// * `max_tokens` - Optional maximum token count across all entries
+    ///
+    /// Uses default values for eviction_strategy and preserve_recent_count.
     pub fn new(max_entries: usize, max_tokens: Option<u32>) -> Self {
         Self {
             max_entries,
@@ -190,13 +241,21 @@ impl GarrisonConfig {
         }
     }
 
-    /// Builder method to set eviction strategy
+    /// Sets the eviction strategy for this configuration (builder pattern).
+    ///
+    /// # Arguments
+    ///
+    /// * `strategy` - The [`EvictionStrategy`] to use when removing entries
     pub fn with_eviction_strategy(mut self, strategy: EvictionStrategy) -> Self {
         self.eviction_strategy = strategy;
         self
     }
 
-    /// Builder method to set preserve count
+    /// Sets the number of recent entries to preserve (builder pattern).
+    ///
+    /// # Arguments
+    ///
+    /// * `count` - Number of recent entries to always keep, regardless of eviction strategy
     pub fn with_preserve_recent(mut self, count: usize) -> Self {
         self.preserve_recent_count = count;
         self
@@ -214,7 +273,21 @@ pub struct ConversationHistory {
 }
 
 impl ConversationHistory {
-    /// Creates a new conversation history with the given configuration
+    /// Creates a new conversation history with the given configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - The [`GarrisonConfig`] defining behavior and limits
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paladin::core::platform::container::garrison::{ConversationHistory, GarrisonConfig};
+    ///
+    /// let config = GarrisonConfig::default();
+    /// let history = ConversationHistory::new(config);
+    /// assert_eq!(history.len(), 0);
+    /// ```
     pub fn new(config: GarrisonConfig) -> Self {
         Self {
             entries: VecDeque::new(),
@@ -231,9 +304,13 @@ impl ConversationHistory {
         self.apply_windowing();
     }
 
-    /// Retrieves the N most recent entries
+    /// Retrieves the N most recent entries.
     ///
     /// Returns entries in chronological order (oldest first).
+    ///
+    /// # Arguments
+    ///
+    /// * `limit` - Maximum number of recent entries to retrieve
     pub fn get_recent(&self, limit: usize) -> Vec<&GarrisonEntry> {
         let start = self.entries.len().saturating_sub(limit);
         self.entries.range(start..).collect()

@@ -98,6 +98,17 @@ pub struct PaladinData {
 pub type Paladin = Node<PaladinData>;
 
 impl Default for PaladinData {
+    /// Creates a PaladinData instance with sensible defaults.
+    ///
+    /// # Default Values
+    /// - `system_prompt`: Empty string (must be set before use)
+    /// - `name`: "Paladin"
+    /// - `user_name`: "User"
+    /// - `model`: "gpt-4"
+    /// - `temperature`: 0.7
+    /// - `max_loops`: 3
+    /// - `stop_words`: Empty vector
+    /// - `status`: Idle
     fn default() -> Self {
         Self {
             system_prompt: String::new(),
@@ -113,12 +124,38 @@ impl Default for PaladinData {
 }
 
 impl PaladinStatus {
-    /// Check if the status represents a terminal state
+    /// Returns `true` if the status represents a terminal state.
+    ///
+    /// Terminal states are [`Completed`](PaladinStatus::Completed) and
+    /// [`Failed`](PaladinStatus::Failed), indicating the Paladin's work is done.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paladin::core::platform::container::paladin::PaladinStatus;
+    ///
+    /// assert!(PaladinStatus::Completed.is_terminal());
+    /// assert!(PaladinStatus::Failed("error".to_string()).is_terminal());
+    /// assert!(!PaladinStatus::Idle.is_terminal());
+    /// ```
     pub fn is_terminal(&self) -> bool {
         matches!(self, PaladinStatus::Completed | PaladinStatus::Failed(_))
     }
 
-    /// Check if the status represents an active state
+    /// Returns `true` if the status represents an active state.
+    ///
+    /// Active states are [`Reasoning`](PaladinStatus::Reasoning) and
+    /// [`Executing`](PaladinStatus::Executing), indicating the Paladin is currently working.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paladin::core::platform::container::paladin::PaladinStatus;
+    ///
+    /// assert!(PaladinStatus::Reasoning.is_active());
+    /// assert!(PaladinStatus::Executing.is_active());
+    /// assert!(!PaladinStatus::Idle.is_active());
+    /// ```
     pub fn is_active(&self) -> bool {
         matches!(self, PaladinStatus::Reasoning | PaladinStatus::Executing)
     }
