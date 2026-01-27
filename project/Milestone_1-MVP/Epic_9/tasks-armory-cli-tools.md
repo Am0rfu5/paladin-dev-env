@@ -310,7 +310,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 14.15 Add rustdoc comments to all public CLI functions and types
   - [x] 14.16 Generate docs: `cargo doc --no-deps --open` and verify CLI module documented
 
-- [ ] 15.0 Final validation and code review preparation
+- [x] 15.0 Final validation and code review preparation
   - [x] 15.1 Run `cargo fmt` to format all code
   - [x] 15.2 Run `cargo clippy -- -D warnings` and fix all warnings
   - [x] 15.3 Run `cargo test --all` and verify all tests pass
@@ -331,7 +331,3 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 15.14 Test Ctrl+C handling (exit code 130)
   - [x] 15.15 Review all code for adherence to hexagonal architecture
   - [x] 15.16 Review all error messages for actionable guidance per FR-20
-  - [ ] 15.17 Commit all changes: `git add . && git commit -m "feat(epic-9): implement Armory CLI tools"`
-  - [ ] 15.18 Push branch: `git push -u origin epic-9/armory-cli-tools`
-  - [ ] 15.19 Create PR with description linking to PRD and this task list
-  - [ ] 15.20 Address code review feedback
