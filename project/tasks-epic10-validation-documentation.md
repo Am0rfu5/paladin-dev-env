@@ -63,7 +63,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.16 Write `docs/contributing/testing-guide.md` - unit test, integration test, benchmark requirements (FR-CONTRIB-1)
   - [x] 2.17 Update root `README.md` with links to documentation structure
 
-- [ ] 3.0 Integration Testing Infrastructure (FR-INT)
+- [x] 3.0 Integration Testing Infrastructure (FR-INT)
   - [x] 3.1 Add `integration-tests` feature flag to `Cargo.toml` with testcontainers dependency (FR-INT-6)
   - [x] 3.2 Create `tests/integration/paladin_execution_test.rs` - end-to-end Paladin execution with mocked LLM (FR-INT-1)
   - [x] 3.3 Create `tests/integration/formation_integration_test.rs` - sequential Battalion execution test (FR-INT-2)
@@ -80,8 +80,8 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.14 Create `tests/integration/minio_storage_integration_test.rs` - verify MinIO/Citadel persistence with integration tests (existing, ensure gated)
   - [x] 3.15 Update `Makefile` with `test-integration-docker` target that starts Docker services and runs integration tests (FR-INT-7)
   - [x] 3.16 Configure testcontainers or docker-compose for CI integration test execution
-  - [ ] 3.17 Run integration tests: `cargo test --features integration-tests` and verify all pass
-  - [ ] 3.18 Measure integration test coverage with `cargo llvm-cov --features integration-tests` and verify ≥70% (FR-INT-8)
+  - [x] 3.17 Run integration tests: `cargo test --features integration-tests` and verify all pass
+  - [x] 3.18 Measure integration test coverage with `cargo llvm-cov --features integration-tests` and verify ≥70% (FR-INT-8)
 
 - [ ] 4.0 Performance Benchmarking (FR-PERF)
   - [ ] 4.1 Add `criterion` dependency to `Cargo.toml` under `[dev-dependencies]`
