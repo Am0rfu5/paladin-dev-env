@@ -1,22 +1,18 @@
-/*
-
-Content Delivery Port
-
-A port that defines how the application delivers content to the user. This would
-typically be an HTTP API that the user interacts with to access the application's
-functionality.
-
-This port is responsible for translating application use cases into responses that
-can be sent back to the user. It provides an abstraction layer that allows the application
-to deliver content without being tightly coupled to the details of how that content is
-delivered.
-
-Typical implementations of this port would be for the adapter to translate the results
-of application use cases into HTTP responses, and to translate incoming HTTP requests
-into application use cases. This allows the application to interact with the user through
-an HTTP API without being tightly coupled to the details of how that API is implemented.
-
-*/
+//! Content Delivery Port
+//!
+//! A port that defines how the application delivers content to the user. This would
+//! typically be an HTTP API that the user interacts with to access the application's
+//! functionality.
+//!
+//! This port is responsible for translating application use cases into responses that
+//! can be sent back to the user. It provides an abstraction layer that allows the application
+//! to deliver content without being tightly coupled to the details of how that content is
+//! delivered.
+//!
+//! Typical implementations of this port would be for the adapter to translate the results
+//! of application use cases into HTTP responses, and to translate incoming HTTP requests
+//! into application use cases. This allows the application to interact with the user through
+//! an HTTP API without being tightly coupled to the details of how that API is implemented.
 
 use crate::core::platform::container::content::ContentItem;
 use crate::core::platform::container::content_list::ContentList;

@@ -1,16 +1,15 @@
-/*
-File Storage Port
+//! File Storage Port
+//!
+//! A port that defines how the application interacts with file storage systems.
+//! This port provides an abstraction layer that allows the application to store and retrieve files
+//! without being tightly coupled to the specific file storage implementation.
+//!
+//! Typical implementations of this port would include local file systems, cloud storage services
+//! like AWS S3, MinIO, Google Cloud Storage, or Azure Blob Storage.
+//!
+//! The port handles common file operations like upload, download, delete, and listing files,
+//! along with metadata management and error handling.
 
-A port that defines how the application interacts with file storage systems.
-This port provides an abstraction layer that allows the application to store and retrieve files
-without being tightly coupled to the specific file storage implementation.
-
-Typical implementations of this port would include local file systems, cloud storage services
-like AWS S3, MinIO, Google Cloud Storage, or Azure Blob Storage.
-
-The port handles common file operations like upload, download, delete, and listing files,
-along with metadata management and error handling.
-*/
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use md5::compute;

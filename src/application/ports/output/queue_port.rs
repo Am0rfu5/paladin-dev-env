@@ -1,22 +1,22 @@
-/*
-Queue Port Module
-
-This module defines the Queue Port, which is an interface for the Queue Manager Service.
-It is used to abstract the Queue Manager Service from the Application Layer, allowing for
-different implementations of the Queue Manager Service to be used without changing the
-Application Layer code.
-The Queue Port defines the methods that the Application Layer can use to interact with the
-Queue Manager Service, such as adding items to the queue, retrieving items from the queue,
-and checking the status of the queue.
-This allows for a clean separation of concerns and makes it easier to test the Application Layer
-without relying on the actual Queue Manager Service implementation.
-
-The Queue Port is part of the Application Layer in our Hexagonal Architecture, sitting above
-the Platform Layer it allows for Queue Adapters to be implemented in the Infrastructure Layer.
-It is designed to be flexible and extensible, allowing for different queue implementations
-to be with specific Queues developed within the Application Layer code. The external queue
-implementation is specified by the adapter.
-*/
+//! Queue Port Module
+//!
+//! This module defines the Queue Port, which is an interface for the Queue Manager Service.
+//! It is used to abstract the Queue Manager Service from the Application Layer, allowing for
+//! different implementations of the Queue Manager Service to be used without changing the
+//! Application Layer code.
+//!
+//! The Queue Port defines the methods that the Application Layer can use to interact with the
+//! Queue Manager Service, such as adding items to the queue, retrieving items from the queue,
+//! and checking the status of the queue.
+//!
+//! This allows for a clean separation of concerns and makes it easier to test the Application Layer
+//! without relying on the actual Queue Manager Service implementation.
+//!
+//! The Queue Port is part of the Application Layer in our Hexagonal Architecture, sitting above
+//! the Platform Layer it allows for Queue Adapters to be implemented in the Infrastructure Layer.
+//! It is designed to be flexible and extensible, allowing for different queue implementations
+//! to be with specific Queues developed within the Application Layer code. The external queue
+//! implementation is specified by the adapter.
 
 use crate::core::base::entity::message::{Location, MessagePriority};
 use crate::core::platform::container::queue_item::{QueueItem, QueueItemConfig, QueueItemSummary};

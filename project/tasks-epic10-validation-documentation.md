@@ -41,8 +41,8 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.14 Add rustdoc comments to all public types in `src/core/platform/container/battalion/` modules (FR-API-1)
   - [ ] 1.15 Add rustdoc comments to all public traits in `src/application/ports/` (FR-API-1)
   - [x] 1.16 Add module-level documentation (`//!`) to `src/core/mod.rs`, `src/application/mod.rs`, `src/infrastructure/mod.rs` (FR-API-3)
-  - [ ] 1.17 Generate rustdoc HTML: `cargo doc --no-deps --document-private-items` and verify no warnings (FR-API-2)
-  - [ ] 1.18 Run doc tests: `cargo test --doc` and ensure all pass (FR-API-4)
+  - [x] 1.17 Generate rustdoc HTML: `cargo doc --no-deps --document-private-items` and verify no warnings (FR-API-2)
+  - [x] 1.18 Run doc tests: `cargo test --doc` and ensure all pass (FR-API-4)
 
 - [x] 2.0 Technical Documentation (FR-ARCH, FR-DEPLOY, FR-OPS, FR-CONTRIB)
   - [x] 2.1 Write `docs/architecture/overview.md` - three-layer hexagonal architecture with diagrams (FR-ARCH-1)

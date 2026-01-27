@@ -1,23 +1,20 @@
-/*
+//! LLM Port
+//!
+//! A port that defines how the application interacts with the LLM (Large Language Model).
+//!
+//! This port is responsible for translating high-level application use cases into interactions
+//! with the LLM. It provides an abstraction layer that allows the application to interact with
+//! the LLM without being tightly coupled to its implementation details.
+//!
+//! Typical implementations of this port would be for the adapter to translate the requirements
+//! of the high-level use cases into calls to the LLM, and to translate the results of those calls
+//! back into a format that the application can use.
+//!
+//! An LLM API usually requires a few standard fields to be present in the request and response
+//! like the prompt, max_tokens, different weights for "temperature". The LLM Port handles
+//! these fields and provides a clean interface for the application to interact with the LLM and
+//! for the adapter to translate the application's requirements into calls to the LLM.
 
-LLM Port
-
-A port that defines how the application interacts with the LLM (Low Level Model).
-
-This port is responsible for translating high-level application use cases into interactions
-with the LLM. It provides an abstraction layer that allows the application to interact with
-the LLM without being tightly coupled to its implementation details.
-
-Typical implementations of this port would be for the adapter to translate the requirements
-of the high-level use cases into calls to the LLM, and to translate the results of those calls
-back into a format that the application can use.
-
-An LLM Api usually requires a few standard fields to be present in the request and response
-like the prompt, max_tokens, different weights for "temperature". The LLM Port handles
-these fields and provide a clean interface for the application to interact with the LLM and
-for the adapter to translate the application's requirements into calls to the LLM.
-
-*/
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

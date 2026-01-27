@@ -1,25 +1,24 @@
-/*
-Notification Ports
-
-This module defines the output ports (interfaces) for the notification system following
-Hexagonal Architecture principles. These ports provide clean abstractions that allow
-the application layer to interact with external notification delivery mechanisms
-without being coupled to their implementation details.
-
-The ports are segregated based on Interface Segregation Principle (ISP) to ensure
-that implementations only need to implement the functionality they actually provide.
-
-Port Segregation:
-- NotificationDeliveryPort: Core delivery functionality
-- NotificationSchedulingPort: Scheduling and timing operations
-- NotificationTemplatePort: Template management and rendering
-- NotificationQueryPort: Read operations and status queries
-- NotificationStoragePort: Persistence operations
-- NotificationEventPort: Event publishing for notification lifecycle
-
-Each port defines a focused interface that can be implemented independently,
-allowing for flexible adapter implementations and better testability.
-*/
+//! Notification Ports
+//!
+//! This module defines the output ports (interfaces) for the notification system following
+//! Hexagonal Architecture principles. These ports provide clean abstractions that allow
+//! the application layer to interact with external notification delivery mechanisms
+//! without being coupled to their implementation details.
+//!
+//! The ports are segregated based on Interface Segregation Principle (ISP) to ensure
+//! that implementations only need to implement the functionality they actually provide.
+//!
+//! # Port Segregation
+//!
+//! - **NotificationDeliveryPort**: Core delivery functionality
+//! - **NotificationSchedulingPort**: Scheduling and timing operations
+//! - **NotificationTemplatePort**: Template management and rendering
+//! - **NotificationQueryPort**: Read operations and status queries
+//! - **NotificationStoragePort**: Persistence operations
+//! - **NotificationEventPort**: Event publishing for notification lifecycle
+//!
+//! Each port defines a focused interface that can be implemented independently,
+//! allowing for flexible adapter implementations and better testability.
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
