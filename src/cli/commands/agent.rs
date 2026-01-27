@@ -1,4 +1,18 @@
-// Agent command implementations
+//! Agent command implementations for creating and running Paladin agents
+//!
+//! This module provides CLI commands for:
+//! - Creating Paladin configuration templates
+//! - Executing Paladins from YAML configuration files
+//!
+//! # Examples
+//!
+//! ```bash
+//! # Create a new agent template
+//! paladin agent new my-assistant --output agent.yaml --provider openai
+//!
+//! # Run an agent from config
+//! paladin agent run --config agent.yaml --input "What is Rust?"
+//! ```
 
 use crate::cli::output::errors::CliError;
 use crate::cli::templates::paladin_template::generate_paladin_template;
@@ -6,6 +20,7 @@ use clap::Subcommand;
 use colored::Colorize;
 use std::path::PathBuf;
 
+/// Agent subcommands for Paladin management
 #[derive(Debug, Subcommand)]
 pub enum AgentCommands {
     /// Create a new Paladin configuration template
@@ -14,6 +29,7 @@ pub enum AgentCommands {
     Run(AgentRunArgs),
 }
 
+/// Arguments for creating a new Paladin agent template
 #[derive(Debug, clap::Args)]
 pub struct AgentNewArgs {
     /// Name for the Paladin
@@ -29,6 +45,7 @@ pub struct AgentNewArgs {
     pub provider: Option<String>,
 }
 
+/// Arguments for executing a Paladin agent
 #[derive(Debug, clap::Args)]
 pub struct AgentRunArgs {
     /// Path to Paladin YAML configuration file

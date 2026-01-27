@@ -1,4 +1,23 @@
-//! Battalion command implementations
+//! Battalion command implementations for multi-agent orchestration
+//!
+//! This module provides CLI commands for creating and running Battalion workflows:
+//! - **Formation**: Sequential execution (output N → input N+1)
+//! - **Phalanx**: Concurrent execution with result aggregation
+//! - **Campaign**: Graph/DAG-based conditional routing
+//! - **Chain of Command**: Hierarchical delegation with commander
+//!
+//! # Examples
+//!
+//! ```bash
+//! # Create a Formation (sequential pipeline)
+//! paladin battalion new my-pipeline --type formation --output pipeline.yaml
+//!
+//! # Create a Phalanx (parallel execution)
+//! paladin battalion new my-phalanx --type phalanx --output phalanx.yaml
+//!
+//! # Run a Battalion workflow
+//! paladin battalion run --config pipeline.yaml --type formation
+//! ```
 
 use crate::cli::output::errors::CliError;
 use crate::cli::templates::battalion_template::generate_battalion_template;
@@ -7,6 +26,7 @@ use colored::Colorize;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+/// Battalion subcommands for multi-agent orchestration
 #[derive(Debug, Subcommand)]
 pub enum BattalionCommands {
     /// Create a new Battalion configuration template
@@ -15,6 +35,7 @@ pub enum BattalionCommands {
     Run(BattalionRunArgs),
 }
 
+/// Arguments for creating a new Battalion template
 #[derive(Debug, clap::Args)]
 pub struct BattalionNewArgs {
     /// Name for the Battalion
@@ -30,6 +51,7 @@ pub struct BattalionNewArgs {
     pub output: PathBuf,
 }
 
+/// Arguments for executing a Battalion workflow
 #[derive(Debug, clap::Args)]
 pub struct BattalionRunArgs {
     /// Path to Battalion YAML configuration file

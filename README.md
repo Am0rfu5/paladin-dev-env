@@ -233,6 +233,46 @@ Run unit tests to ensure functionality:
 cargo test
 ```
 
+### CLI Tools (Armory)
+
+Paladin includes a powerful command-line interface for managing agents, battalions, and tools without writing code.
+
+**Quick Start:**
+
+```bash
+# Build the CLI
+cargo build --release
+
+# Create a new Paladin agent from template
+./target/release/paladin agent new my-assistant --output agent.yaml
+
+# Edit the configuration file (agent.yaml) with your settings
+# Then execute the agent
+./target/release/paladin agent run agent.yaml "What is Rust?"
+
+# Create and run a Battalion (multi-agent workflow)
+./target/release/paladin battalion new formation --output pipeline.yaml
+./target/release/paladin battalion run pipeline.yaml "Analyze this text"
+
+# List available tools
+./target/release/paladin arsenal list
+```
+
+**Features:**
+- 🤖 **Agent Management**: Create, configure, and execute Paladins
+- 🏢 **Battalion Operations**: Orchestrate multi-agent workflows (Formation, Phalanx, Campaign, Chain of Command)
+- 🛠️ **Arsenal Tools**: List and test MCP-compatible tools
+- 📝 **Template System**: Quick-start YAML templates for all agent types
+- 🔧 **Interactive Mode**: Prompts for missing configuration
+- 📊 **Multiple Output Formats**: JSON, Markdown, or save to file
+
+**Comprehensive Documentation**: See [docs/CLI_USAGE.md](docs/CLI_USAGE.md) for detailed usage guide, including:
+- Complete command reference with all flags and options
+- Configuration file schemas and examples
+- Troubleshooting guide for common errors
+- Environment variable setup
+- Advanced topics (streaming, custom formatters, arsenal integration)
+
 ## Examples
 
 ### Paladin Agent with Memory

@@ -305,10 +305,10 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 14.10 Document configuration file format with full schema in CLI_USAGE.md
   - [x] 14.11 Document environment variables required (API keys) in CLI_USAGE.md
   - [x] 14.12 Add troubleshooting section with common errors and solutions
-  - [ ] 14.13 Update main `README.md` with link to CLI documentation
-  - [ ] 14.14 Update main `README.md` with quick start example using CLI
-  - [ ] 14.15 Add rustdoc comments to all public CLI functions and types
-  - [ ] 14.16 Generate docs: `cargo doc --no-deps --open` and verify CLI module documented
+  - [x] 14.13 Update main `README.md` with link to CLI documentation
+  - [x] 14.14 Update main `README.md` with quick start example using CLI
+  - [x] 14.15 Add rustdoc comments to all public CLI functions and types
+  - [x] 14.16 Generate docs: `cargo doc --no-deps --open` and verify CLI module documented
 
 - [ ] 15.0 Final validation and code review preparation
   - [ ] 15.1 Run `cargo fmt` to format all code

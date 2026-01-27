@@ -1,4 +1,29 @@
-//! Battalion YAML configuration types
+//! Battalion YAML configuration types for multi-agent orchestration
+//!
+//! This module defines configuration schemas for four Battalion orchestration patterns:
+//! - **Formation**: Sequential execution (output N → input N+1)
+//! - **Phalanx**: Concurrent execution with result aggregation
+//! - **Campaign**: Graph/DAG-based conditional routing
+//! - **Chain of Command**: Hierarchical delegation with commander
+//!
+//! # Example Formation Config
+//!
+//! ```yaml
+//! type: formation
+//! name: "document-pipeline"
+//! agents:
+//!   - name: "analyzer"
+//!     system_prompt: "Analyze the input"
+//!     model: "gpt-4"
+//!     provider:
+//!       type: "openai"
+//!   - name: "summarizer"
+//!     system_prompt: "Summarize the analysis"
+//!     model: "gpt-4"
+//!     provider:
+//!       type: "openai"
+//! pass_output_to_next: true
+//! ```
 
 use crate::cli::output::errors::CliError;
 use serde::{Deserialize, Serialize};

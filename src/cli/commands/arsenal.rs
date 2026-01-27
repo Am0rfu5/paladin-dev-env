@@ -1,9 +1,31 @@
-//! Arsenal command implementations
+//! Arsenal command implementations for MCP tool management
+//!
+//! This module provides CLI commands for discovering and testing MCP
+//! (Model Context Protocol) tools and servers.
+//!
+//! # MCP Protocol Support
+//!
+//! - **STDIO**: Command-line tools executed via stdin/stdout
+//! - **SSE**: HTTP-based remote tool services
+//!
+//! # Examples
+//!
+//! ```bash
+//! # List all configured MCP tools
+//! paladin arsenal list
+//!
+//! # Test an STDIO MCP server
+//! paladin arsenal test --mcp-stdio "uvx mcp-web-search"
+//!
+//! # Test an SSE MCP server
+//! paladin arsenal test --mcp-sse "http://localhost:8080/mcp"
+//! ```
 
 use crate::cli::output::errors::CliError;
 use clap::Subcommand;
 use colored::Colorize;
 
+/// Arsenal subcommands for MCP tool management
 #[derive(Debug, Subcommand)]
 pub enum ArsenalCommands {
     /// List available MCP tools
@@ -12,6 +34,7 @@ pub enum ArsenalCommands {
     Test(ArsenalTestArgs),
 }
 
+/// Arguments for testing MCP server connections
 #[derive(Debug, clap::Args)]
 pub struct ArsenalTestArgs {
     /// Test STDIO-based MCP server (e.g., "uvx mcp-web-search")

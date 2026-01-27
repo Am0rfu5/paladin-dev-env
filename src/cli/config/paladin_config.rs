@@ -1,4 +1,35 @@
-//! Paladin YAML configuration types
+//! Paladin YAML configuration types for CLI agent management
+//!
+//! This module defines the YAML configuration schema for Paladin agents,
+//! including LLM provider settings, garrison (memory), and arsenal (tools).
+//!
+//! # Configuration Schema
+//!
+//! ```yaml
+//! name: "my-assistant"
+//! system_prompt: "You are a helpful assistant"
+//! model: "gpt-4"
+//! temperature: 0.7
+//! max_loops: 3
+//! timeout_seconds: 300
+//!
+//! provider:
+//!   type: "openai"
+//!   api_key: "${OPENAI_API_KEY}"
+//!
+//! # Optional memory
+//! garrison:
+//!   type: "sqlite"
+//!   path: "./memory.db"
+//!
+//! # Optional tools
+//! arsenal:
+//!   mcp_servers:
+//!     - name: "web_search"
+//!       server_type: "stdio"
+//!       command: "uvx"
+//!       args: ["mcp-web-search"]
+//! ```
 
 use crate::cli::output::errors::CliError;
 use serde::{Deserialize, Serialize};

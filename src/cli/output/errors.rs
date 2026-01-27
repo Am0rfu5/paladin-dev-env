@@ -1,4 +1,14 @@
-//! CLI-specific error types
+//! CLI error types with user-friendly formatting
+//!
+//! This module defines all error types used by the Armory CLI,
+//! with Display implementations that provide helpful error messages.
+//!
+//! # Error Categories
+//!
+//! - **Validation errors**: Invalid config, missing fields
+//! - **Execution errors**: LLM failures, timeout, stop words
+//! - **I/O errors**: File not found, permission denied
+//! - **User interaction**: Cancelled operations
 
 use std::path::PathBuf;
 use thiserror::Error;

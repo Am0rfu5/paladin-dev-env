@@ -1,3 +1,63 @@
+//! Armory CLI - Command-line interface for Paladin management
+//!
+//! This module provides a comprehensive CLI for creating, configuring, and executing
+//! Paladin agents and Battalion multi-agent workflows without writing code.
+//!
+//! # Features
+//!
+//! - **Agent Commands**: Create and run Paladin agents from YAML configs
+//! - **Battalion Commands**: Orchestrate multi-agent workflows (Formation, Phalanx, Campaign, Chain of Command)
+//! - **Arsenal Commands**: Discover and test MCP tools
+//! - **Interactive Mode**: Prompts for missing configuration
+//! - **Multiple Output Formats**: JSON, Markdown, or file output
+//! - **Template Generation**: Quick-start YAML templates
+//!
+//! # Command Structure
+//!
+//! ```bash
+//! paladin <command> <subcommand> [options]
+//! ```
+//!
+//! ## Agent Commands
+//!
+//! ```bash
+//! # Create agent template
+//! paladin agent new <name> --output <path> [--provider <provider>]
+//!
+//! # Run agent
+//! paladin agent run --config <path> [--input <text>] [--output <path>]
+//! ```
+//!
+//! ## Battalion Commands
+//!
+//! ```bash
+//! # Create battalion template
+//! paladin battalion new <name> --type <type> --output <path>
+//!
+//! # Run battalion
+//! paladin battalion run --config <path> --type <type> [--output <path>]
+//! ```
+//!
+//! ## Arsenal Commands
+//!
+//! ```bash
+//! # List available tools
+//! paladin arsenal list
+//!
+//! # Test MCP server
+//! paladin arsenal test --mcp-stdio <command> | --mcp-sse <url>
+//! ```
+//!
+//! # See Also
+//!
+//! - [CLI Usage Guide](../../docs/CLI_USAGE.md) - Comprehensive documentation
+//! - [Examples](../../examples/cli_configs/) - Sample configuration files
+//!
+//! # Epic 9: Armory CLI Tools
+//!
+//! This module implements the complete CLI tooling for Paladin, enabling
+//! command-line creation and execution of agents and multi-agent workflows.
+
 pub mod user_commands;
 
 // Armory CLI modules (Epic 9)
