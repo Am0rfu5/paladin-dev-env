@@ -126,3 +126,15 @@ harness = false
 [[bench]]
 name = "herald_benchmarks"
 harness = false
+
+[[bench]]
+name = "paladin_benchmarks"
+harness = false
+
+[[bench]]
+name = "garrison_benchmarks"
+harness = false
+
+[[bench]]
+name = "arsenal_benchmarks"
+harness = false

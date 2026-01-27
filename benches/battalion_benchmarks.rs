@@ -284,11 +284,174 @@ fn benchmark_orchestration_overhead(c: &mut Criterion) {
     group.finish();
 }
 
+/// Benchmark Campaign (graph-based) orchestration
+fn benchmark_campaign(c: &mut Criterion) {
+    let runtime = Runtime::new().unwrap();
+    let port = Arc::new(BenchmarkMockPort::new(10_000)); // 10ms latency
+    let service = PaladinExecutionService::new(port.clone());
+    let battalion_service = BattalionExecutionService::new(service);
+
+    let mut group = c.benchmark_group("campaign");
+
+    // Linear graph (essentially a Formation)
+    group.bench_function("linear_3_nodes", |b| {
+        let p1 = create_benchmark_paladin("p1");
+        let p2 = create_benchmark_paladin("p2");
+        let p3 = create_benchmark_paladin("p3");
+
+        let mut campaign = Campaign::new();
+        campaign.add_node("p1", p1).unwrap();
+        campaign.add_node("p2", p2).unwrap();
+        campaign.add_node("p3", p3).unwrap();
+        campaign.add_edge("p1", "p2").unwrap();
+        campaign.add_edge("p2", "p3").unwrap();
+        campaign.set_entry_node("p1").unwrap();
+
+        b.iter(|| {
+            runtime.block_on(async { battalion_service.execute(black_box(&campaign), "benchmark").await })
+        });
+    });
+
+    // Diamond graph (parallel + merge)
+    group.bench_function("diamond_4_nodes", |b| {
+        let p1 = create_benchmark_paladin("p1");
+        let p2 = create_benchmark_paladin("p2");
+        let p3 = create_benchmark_paladin("p3");
+        let p4 = create_benchmark_paladin("p4");
+
+        let mut campaign = Campaign::new();
+        campaign.add_node("p1", p1).unwrap();
+        campaign.add_node("p2", p2).unwrap();
+        campaign.add_node("p3", p3).unwrap();
+        campaign.add_node("p4", p4).unwrap();
+        campaign.add_edge("p1", "p2").unwrap();
+        campaign.add_edge("p1", "p3").unwrap();
+        campaign.add_edge("p2", "p4").unwrap();
+        campaign.add_edge("p3", "p4").unwrap();
+        campaign.set_entry_node("p1").unwrap();
+
+        b.iter(|| {
+            runtime.block_on(async { battalion_service.execute(black_box(&campaign), "benchmark").await })
+        });
+    });
+
+    // Complex graph (10 nodes, mixed topology)
+    group.bench_function("complex_10_nodes", |b| {
+        let mut campaign = Campaign::new();
+        
+        // Create 10 paladins
+        for i in 0..10 {
+            let p = create_benchmark_paladin(&format!("p{}", i));
+            campaign.add_node(&format!("p{}", i), p).unwrap();
+        }
+
+        // Create a mixed topology:
+        // p0 -> p1, p2
+        // p1 -> p3, p4
+        // p2 -> p5, p6
+        // p3, p4, p5 -> p7
+        // p6 -> p8
+        // p7, p8 -> p9
+        campaign.add_edge("p0", "p1").unwrap();
+        campaign.add_edge("p0", "p2").unwrap();
+        campaign.add_edge("p1", "p3").unwrap();
+        campaign.add_edge("p1", "p4").unwrap();
+        campaign.add_edge("p2", "p5").unwrap();
+        campaign.add_edge("p2", "p6").unwrap();
+        campaign.add_edge("p3", "p7").unwrap();
+        campaign.add_edge("p4", "p7").unwrap();
+        campaign.add_edge("p5", "p7").unwrap();
+        campaign.add_edge("p6", "p8").unwrap();
+        campaign.add_edge("p7", "p9").unwrap();
+        campaign.add_edge("p8", "p9").unwrap();
+        campaign.set_entry_node("p0").unwrap();
+
+        b.iter(|| {
+            runtime.block_on(async { battalion_service.execute(black_box(&campaign), "benchmark").await })
+        });
+    });
+
+    group.finish();
+}
+
+/// Benchmark ChainOfCommand (hierarchical delegation)
+fn benchmark_chain_of_command(c: &mut Criterion) {
+    let runtime = Runtime::new().unwrap();
+    let port = Arc::new(BenchmarkMockPort::new(10_000)); // 10ms latency
+    let service = PaladinExecutionService::new(port.clone());
+    let battalion_service = BattalionExecutionService::new(service);
+
+    let mut group = c.benchmark_group("chain_of_command");
+
+    // 2-level hierarchy
+    group.bench_function("2_levels_3_subordinates", |b| {
+        let commander = create_benchmark_paladin("commander");
+        let sub1 = create_benchmark_paladin("sub1");
+        let sub2 = create_benchmark_paladin("sub2");
+        let sub3 = create_benchmark_paladin("sub3");
+
+        let chain = ChainOfCommand::new(commander, vec![sub1, sub2, sub3]);
+
+        b.iter(|| {
+            runtime.block_on(async { battalion_service.execute(black_box(&chain), "benchmark").await })
+        });
+    });
+
+    // 3-level hierarchy (commander -> 2 lieutenants -> 4 soldiers)
+    group.bench_function("3_levels_deep", |b| {
+        let commander = create_benchmark_paladin("commander");
+        
+        // Lieutenant 1 with 2 soldiers
+        let soldier1 = create_benchmark_paladin("soldier1");
+        let soldier2 = create_benchmark_paladin("soldier2");
+        let lieutenant1 = ChainOfCommand::new(
+            create_benchmark_paladin("lieutenant1"),
+            vec![soldier1, soldier2],
+        );
+
+        // Lieutenant 2 with 2 soldiers
+        let soldier3 = create_benchmark_paladin("soldier3");
+        let soldier4 = create_benchmark_paladin("soldier4");
+        let lieutenant2 = ChainOfCommand::new(
+            create_benchmark_paladin("lieutenant2"),
+            vec![soldier3, soldier4],
+        );
+
+        // Top-level chain
+        let chain = ChainOfCommand::new_with_subchains(
+            commander,
+            vec![Box::new(lieutenant1), Box::new(lieutenant2)],
+        );
+
+        b.iter(|| {
+            runtime.block_on(async { battalion_service.execute(black_box(&chain), "benchmark").await })
+        });
+    });
+
+    // Wide hierarchy (1 commander -> 10 subordinates)
+    group.bench_function("wide_10_subordinates", |b| {
+        let commander = create_benchmark_paladin("commander");
+        let subordinates: Vec<Paladin> = (0..10)
+            .map(|i| create_benchmark_paladin(&format!("sub{}", i)))
+            .collect();
+
+        let chain = ChainOfCommand::new(commander, subordinates);
+
+        b.iter(|| {
+            runtime.block_on(async { battalion_service.execute(black_box(&chain), "benchmark").await })
+        });
+    });
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     benchmark_formation,
     benchmark_phalanx,
     benchmark_aggregation_strategies,
-    benchmark_orchestration_overhead
+    benchmark_orchestration_overhead,
+    benchmark_campaign,
+    benchmark_chain_of_command
 );
 criterion_main!(benches);
