@@ -24,7 +24,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 0.1 Create and checkout new branch `feature/epic10-validation-documentation`
   - [x] 0.2 Verify clean working directory with `git status`
 
-- [ ] 1.0 User-Facing Documentation (FR-USER, FR-API)
+- [x] 1.0 User-Facing Documentation (FR-USER, FR-API)
   - [x] 1.1 Create `docs/` directory structure (README, QUICKSTART, INSTALLATION, guides/, deployment/, operations/, architecture/, contributing/)
   - [x] 1.2 Write `docs/QUICKSTART.md` - 15-minute getting started tutorial (FR-USER-1)
   - [x] 1.3 Write `docs/INSTALLATION.md` - detailed setup for Linux, macOS, Windows (FR-USER-1)
@@ -39,7 +39,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.12 Add rustdoc comments to all public types in `src/core/platform/container/garrison.rs` (FR-API-1)
   - [x] 1.13 Add rustdoc comments to all public types in `src/core/platform/container/arsenal.rs` (FR-API-1)
   - [x] 1.14 Add rustdoc comments to all public types in `src/core/platform/container/battalion/` modules (FR-API-1)
-  - [ ] 1.15 Add rustdoc comments to all public traits in `src/application/ports/` (FR-API-1)
+  - [x] 1.15 Add rustdoc comments to all public traits in `src/application/ports/` (FR-API-1)
   - [x] 1.16 Add module-level documentation (`//!`) to `src/core/mod.rs`, `src/application/mod.rs`, `src/infrastructure/mod.rs` (FR-API-3)
   - [x] 1.17 Generate rustdoc HTML: `cargo doc --no-deps --document-private-items` and verify no warnings (FR-API-2)
   - [x] 1.18 Run doc tests: `cargo test --doc` and ensure all pass (FR-API-4)
