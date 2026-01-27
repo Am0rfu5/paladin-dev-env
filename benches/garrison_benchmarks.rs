@@ -10,13 +10,11 @@
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use paladin::core::platform::container::garrison::{
     ConversationHistory, ConversationRole, EvictionStrategy, GarrisonConfig, GarrisonEntry,
-    GarrisonType,
 };
 
 /// Create a garrison with specific configuration
-fn create_garrison(max_entries: u32, eviction: EvictionStrategy) -> ConversationHistory {
-    let config = GarrisonConfig::default()
-        .with_max_entries(max_entries)
+fn create_garrison(max_entries: usize, eviction: EvictionStrategy) -> ConversationHistory {
+    let config = GarrisonConfig::new(max_entries, None)
         .with_eviction_strategy(eviction);
     ConversationHistory::new(config)
 }
@@ -37,7 +35,7 @@ fn benchmark_add_single(c: &mut Criterion) {
             size,
             |b, &entry_size| {
                 b.iter_batched(
-                    || create_garrison(1000, EvictionStrategy::Fifo),
+                    || create_garrison(1000, EvictionStrategy::FIFO),
                     |mut garrison| {
                         let entry = create_entry(ConversationRole::User, entry_size);
                         garrison.add(black_box(entry));
@@ -63,7 +61,7 @@ fn benchmark_add_batch(c: &mut Criterion) {
             |b, &size| {
                 b.iter_batched(
                     || {
-                        let mut garrison = create_garrison(1000, EvictionStrategy::Fifo);
+                        let garrison = create_garrison(1000, EvictionStrategy::FIFO);
                         let entries: Vec<GarrisonEntry> = (0..size)
                             .map(|i| {
                                 let role = if i % 2 == 0 {
@@ -95,7 +93,7 @@ fn benchmark_retrieve(c: &mut Criterion) {
     let mut group = c.benchmark_group("garrison_retrieve");
 
     // Setup: Create garrison with entries
-    let mut garrison = create_garrison(1000, EvictionStrategy::Fifo);
+    let mut garrison = create_garrison(1000, EvictionStrategy::FIFO);
     for i in 0..100 {
         let role = if i % 2 == 0 {
             ConversationRole::User
@@ -105,17 +103,17 @@ fn benchmark_retrieve(c: &mut Criterion) {
         garrison.add(create_entry(role, 100));
     }
 
-    // Benchmark get_last_n
+    // Benchmark get_recent
     group.bench_function("get_last_10", |b| {
         b.iter(|| {
-            let entries = garrison.get_last_n(black_box(10));
+            let entries = garrison.get_recent(black_box(10));
             black_box(entries);
         });
     });
 
     group.bench_function("get_last_50", |b| {
         b.iter(|| {
-            let entries = garrison.get_last_n(black_box(50));
+            let entries = garrison.get_recent(black_box(50));
             black_box(entries);
         });
     });
@@ -136,8 +134,8 @@ fn benchmark_eviction_strategies(c: &mut Criterion) {
     let mut group = c.benchmark_group("garrison_eviction");
 
     let strategies = vec![
-        ("fifo", EvictionStrategy::Fifo),
-        ("lifo", EvictionStrategy::Lifo),
+        ("fifo", EvictionStrategy::FIFO),
+        ("sliding_window", EvictionStrategy::SlidingWindow),
     ];
 
     for (name, strategy) in strategies {
@@ -160,6 +158,7 @@ fn benchmark_eviction_strategies(c: &mut Criterion) {
                 |mut garrison| {
                     // Add one more to trigger eviction
                     garrison.add(black_box(create_entry(ConversationRole::User, 100)));
+                    garrison
                 },
                 criterion::BatchSize::SmallInput,
             );
@@ -176,7 +175,7 @@ fn benchmark_memory_pressure(c: &mut Criterion) {
     // Scenario: Rapid additions at capacity
     group.bench_function("rapid_additions_at_capacity", |b| {
         b.iter_batched(
-            || create_garrison(100, EvictionStrategy::Fifo),
+            || create_garrison(100, EvictionStrategy::FIFO),
             |mut garrison| {
                 // Add 200 entries (will cause 100 evictions)
                 for i in 0..200 {
@@ -200,7 +199,7 @@ fn benchmark_windowing(c: &mut Criterion) {
     let mut group = c.benchmark_group("garrison_windowing");
 
     // Setup: Create garrison with many entries
-    let mut garrison = create_garrison(1000, EvictionStrategy::Fifo);
+    let mut garrison = create_garrison(1000, EvictionStrategy::FIFO);
     for i in 0..500 {
         let role = if i % 2 == 0 {
             ConversationRole::User
@@ -217,7 +216,7 @@ fn benchmark_windowing(c: &mut Criterion) {
             window_size,
             |b, &size| {
                 b.iter(|| {
-                    let entries = garrison.get_last_n(black_box(size));
+                    let entries = garrison.get_recent(black_box(size));
                     black_box(entries);
                 });
             },
@@ -239,7 +238,7 @@ fn benchmark_clear(c: &mut Criterion) {
             |b, &count| {
                 b.iter_batched(
                     || {
-                        let mut garrison = create_garrison(2000, EvictionStrategy::Fifo);
+                        let mut garrison = create_garrison(2000, EvictionStrategy::FIFO);
                         for i in 0..count {
                             let role = if i % 2 == 0 {
                                 ConversationRole::User
@@ -268,14 +267,14 @@ fn benchmark_mixed_operations(c: &mut Criterion) {
 
     group.bench_function("realistic_conversation", |b| {
         b.iter_batched(
-            || create_garrison(200, EvictionStrategy::Fifo),
+            || create_garrison(200, EvictionStrategy::FIFO),
             |mut garrison| {
                 // Simulate a conversation: 10 turns (20 messages)
-                for i in 0..10 {
+                for _i in 0..10 {
                     // User message
                     garrison.add(black_box(create_entry(ConversationRole::User, 150)));
                     // Retrieve context (last 10 messages)
-                    let _ = garrison.get_last_n(10);
+                    let _ = garrison.get_recent(10);
                     // Assistant response
                     garrison.add(black_box(create_entry(ConversationRole::Assistant, 300)));
                 }

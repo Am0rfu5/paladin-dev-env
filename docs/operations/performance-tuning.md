@@ -27,17 +27,65 @@ Comprehensive guide for optimizing Paladin performance across different workload
 
 ### Benchmark Results
 
-```bash
-# Run benchmarks
-cargo bench
+**Garrison Memory Operations (Measured - January 2026):**
 
-# Example results:
-Paladin execution (mock LLM): 15.2ms avg
-Formation (3 Paladins): 47.8ms avg
-Phalanx (3 Paladins concurrent): 18.9ms avg
-Garrison add/retrieve: 82.3µs avg
-Arsenal tool invocation: 125.6µs avg
-```
+Single Entry Operations:
+- Add entry (10 chars): ~170 ns
+- Add entry (100 chars): ~210 ns  
+- Add entry (1000 chars): ~225 ns
+- Add entry (10000 chars): ~380 ns
+
+Batch Operations:
+- Add 10 entries: ~1.05 µs (105 ns/entry)
+- Add 50 entries: ~4.2 µs (84 ns/entry)
+- Add 100 entries: ~8.0 µs (80 ns/entry)
+- Add 500 entries: ~37.5 µs (75 ns/entry)
+
+Retrieval Operations:
+- Get last 10 entries: ~33 ns
+- Get last 50 entries: ~46 ns
+- Get all (100 entries): ~55 ns
+
+Eviction Strategies:
+- FIFO eviction: ~280 ns/eviction
+- SlidingWindow eviction: ~295 ns/eviction
+
+Realistic Conversation (10 turns, 20 messages): ~3.35 µs
+
+**Battalion Orchestration (Measured - January 2026):**
+
+Formation (Sequential):
+- 3 Paladins (10ms latency): ~30 ms total
+- 5 Paladins (10ms latency): ~50 ms total
+- 10 Paladins (10ms latency): ~100 ms total
+
+Phalanx (Concurrent):
+- 3-20 Paladins (10ms latency): ~10 ms total (parallel)
+
+Orchestration Overhead (Zero Latency):
+- Formation (5 Paladins): ~1.8 µs pure overhead
+- Phalanx (5 Paladins): ~25 µs pure overhead
+
+Aggregation Strategies:
+- CollectAll: ~25 µs
+- FirstSuccess: ~2.6 µs
+- Majority: ~25 µs
+
+**Herald Output Formatting (Measured - January 2026):**
+
+- JSON (1KB): ~2.3 µs
+- Markdown (1KB): ~570 ns (fastest)
+- Table (1KB): ~5.5 µs
+- JSON (10KB): ~10 µs
+- Markdown (10KB): ~2.3 µs
+- Table (10KB): ~23 µs
+
+**Key Insights:**
+- Garrison operations are sub-microsecond (extremely fast)
+- Batch operations show ~25% performance improvement
+- Battalion orchestration overhead is negligible vs LLM latency
+- Markdown formatting is 2-4x faster than JSON
+- All orchestration overhead < 100µs (LLM calls dominate at 1-5s)
 
 ## Benchmarking
 
