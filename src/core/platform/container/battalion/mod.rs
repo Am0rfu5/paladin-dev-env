@@ -52,7 +52,13 @@ pub struct BattalionConfig {
 }
 
 impl BattalionConfig {
-    /// Create a new BattalionConfig with the given name
+    /// Create a new BattalionConfig with the given name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - Name identifier for this Battalion
+    ///
+    /// Uses default values for all other configuration options.
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
@@ -64,13 +70,21 @@ impl BattalionConfig {
         }
     }
 
-    /// Set the description
+    /// Set the description (builder pattern).
+    ///
+    /// # Arguments
+    ///
+    /// * `description` - Human-readable description of the Battalion's purpose
     pub fn with_description(mut self, description: impl Into<String>) -> Self {
         self.description = Some(description.into());
         self
     }
 
-    /// Set the timeout in seconds
+    /// Set the timeout in seconds (builder pattern).
+    ///
+    /// # Arguments
+    ///
+    /// * `seconds` - Maximum execution time before timing out
     pub fn with_timeout(mut self, seconds: u64) -> Self {
         self.timeout_seconds = seconds;
         self
@@ -96,14 +110,37 @@ impl BattalionConfig {
 }
 
 impl Default for BattalionConfig {
+    /// Creates a BattalionConfig with default values.
+    ///
+    /// # Default Values
+    /// - `name`: "default_battalion"
+    /// - `timeout_seconds`: 300 (5 minutes)
+    /// - `retry_policy`: RetryPolicy::default()
+    /// - `error_strategy`: ErrorStrategy::FailFast
     fn default() -> Self {
         Self::new("default_battalion")
     }
 }
 
-/// Retry policy configuration
+/// Retry policy configuration for Battalion operations.
 ///
-/// Defines how failed operations should be retried with exponential backoff.
+/// Defines how failed operations should be retried with exponential backoff
+/// and jitter to prevent thundering herd problems.
+///
+/// # Examples
+///
+/// ```
+/// use paladin::core::platform::container::battalion::RetryPolicy;
+/// use std::time::Duration;
+///
+/// let policy = RetryPolicy {
+///     max_attempts: 5,
+///     base_delay: Duration::from_millis(200),
+///     max_delay: Duration::from_secs(30),
+///     exponential_backoff: true,
+///     jitter: true,
+/// };
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetryPolicy {
     /// Maximum number of retry attempts
@@ -123,6 +160,14 @@ pub struct RetryPolicy {
 }
 
 impl Default for RetryPolicy {
+    /// Creates a RetryPolicy with sensible defaults.
+    ///
+    /// # Default Values
+    /// - `max_attempts`: 3
+    /// - `base_delay`: 100ms
+    /// - `max_delay`: 10s
+    /// - `exponential_backoff`: true
+    /// - `jitter`: true
     fn default() -> Self {
         Self {
             max_attempts: 3,
@@ -134,7 +179,19 @@ impl Default for RetryPolicy {
     }
 }
 
-/// Strategy for handling errors during Battalion execution
+/// Strategy for handling errors during Battalion execution.
+///
+/// Determines how the Battalion should respond when individual Paladin executions fail.
+///
+/// # Examples
+///
+/// ```
+/// use paladin::core::platform::container::battalion::ErrorStrategy;
+///
+/// let fail_fast = ErrorStrategy::FailFast; // Stop on first error
+/// let continue_on_error = ErrorStrategy::ContinueOnError; // Collect all errors
+/// let retry = ErrorStrategy::RetryThenContinue; // Retry then proceed
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ErrorStrategy {
     /// Stop immediately on first error
@@ -294,7 +351,20 @@ pub enum BattalionStrategy {
     Auto,
 }
 
-/// Current status of a Battalion execution
+/// Current status of a Battalion execution.
+///
+/// Tracks the lifecycle state of a Battalion from creation through completion.
+///
+/// # Examples
+///
+/// ```
+/// use paladin::core::platform::container::battalion::BattalionStatus;
+///
+/// let mut status = BattalionStatus::Idle;
+/// status = BattalionStatus::Running;
+/// // ... execution happens ...
+/// status = BattalionStatus::Completed;
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum BattalionStatus {
     /// Battalion is idle, not yet started
