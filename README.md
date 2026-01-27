@@ -434,9 +434,74 @@ let delivery_request = DeliveryRequest {
 let delivery_response = content_delivery_service.deliver_content(delivery_request)?;
 ```
 
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+### Getting Started
+
+- **[Installation Guide](docs/INSTALLATION.md)** - Platform-specific installation instructions
+- **[Quick Start](docs/QUICKSTART.md)** - 15-minute tutorial to get up and running
+- **[Examples Gallery](examples/README.md)** - Complete catalog of working examples with learning path
+
+### User Guides
+
+- **[Paladin Configuration](docs/guides/paladin-configuration.md)** - Agent configuration, system prompts, and behavior tuning
+- **[Battalion Patterns](docs/guides/battalion-patterns.md)** - Multi-agent orchestration strategies (Formation, Phalanx, Campaign, Chain of Command)
+- **[Tool Integration](docs/guides/tool-integration.md)** - Arsenal system and MCP protocol integration for external tools
+- **[Memory Management](docs/guides/memory-management.md)** - Garrison memory system with windowing and semantic search
+- **[Output Formatting](docs/guides/output-formatting.md)** - Herald formatters for JSON, Markdown, HTML, and custom formats
+- **[User System](docs/USER_SYSTEM.md)** - User authentication and authorization
+- **[CLI Usage](docs/CLI_USAGE.md)** - Command-line interface (Armory) reference
+
+### Architecture & Design
+
+- **[Architecture Overview](docs/architecture/overview.md)** - Three-layer hexagonal architecture with diagrams
+- **[Hexagonal Design](docs/architecture/hexagonal-design.md)** - Ports and adapters pattern with implementation details
+- **[Domain Model](docs/architecture/domain-model.md)** - DDD entities, aggregates, and business rules
+- **[Design Patterns](docs/architecture/design-patterns.md)** - Builder, Factory, Strategy, Repository patterns
+- **[Design & Architecture](docs/Design/Design_and_Architecture.md)** - Comprehensive system design document
+
+### Deployment
+
+- **[Docker Deployment](docs/deployment/docker.md)** - Multi-arch images, docker-compose, and production configuration
+- **[Kubernetes Deployment](docs/deployment/kubernetes.md)** - K8s manifests, Helm charts, auto-scaling, and HA setup
+- **[CI/CD Pipeline](docs/deployment/cicd.md)** - GitHub Actions workflows for automated testing and deployment
+- **[Production Best Practices](docs/deployment/production-best-practices.md)** - Security, performance, and reliability checklist
+
+### Operations
+
+- **[Logging](docs/operations/logging.md)** - Structured logging with tracing, log levels, and aggregation
+- **[Monitoring](docs/operations/monitoring.md)** - Metrics collection with Prometheus and Grafana dashboards
+- **[Troubleshooting](docs/operations/troubleshooting.md)** - Common issues and diagnostic procedures
+- **[Performance Tuning](docs/operations/performance-tuning.md)** - Optimization strategies and benchmarking
+
+### Component Documentation
+
+- **[Battalion System](docs/BATTALION.md)** - Multi-agent orchestration patterns and benchmarks
+- **[Garrison System](docs/GARRISON.md)** - Memory management and conversation history
+- **[Arsenal System](docs/ARSENAL.md)** - Tool integration and MCP protocol
+- **[Herald System](docs/HERALD.md)** - Output formatting and transformation
+- **[Provider Expansion](docs/PROVIDER_EXPANSION.md)** - LLM provider comparison and selection guide
+- **[Contributing Providers](docs/CONTRIBUTING_PROVIDERS.md)** - Adding new LLM provider adapters
+
+### Contributing
+
+- **[Contributing Guide](docs/contributing/CONTRIBUTING.md)** - How to contribute code, tests, and documentation
+- **[Adapter Development](docs/contributing/adapter-development.md)** - Creating custom adapters for ports
+- **[Testing Guide](docs/contributing/testing-guide.md)** - Testing requirements and best practices
+
+### API Documentation
+
+Generate and view the Rust API documentation:
+
+```bash
+cargo doc --no-deps --open
+```
+
 ## Contributing
 
-Contributions are welcome! Please open issues and submit pull requests for new features, enhancements, or bug fixes.
+Contributions are welcome! Please read our [Contributing Guide](docs/contributing/CONTRIBUTING.md) before submitting pull requests.
 
 ## License
 
