@@ -1,0 +1,64 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+*.pdb
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+docs/
+notes/
+*.md
+!README.md
+
+# Test files
+tests/
+benches/
+examples/
+
+# CI/CD
+.github/
+
+# Development
+.env
+.env.local
+*.log
+tmp/
+temp/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Kubernetes
+k8s/
+
+# Project management
+project/
+
+# Backup files
+backup/
+*.bak
+*.tmp
+
+# Coverage reports
+*.profraw
+*.profdata
+
+# Criterion benchmarks output
+target/criterion/
+
+# Flat files
+flat/

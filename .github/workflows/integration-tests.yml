@@ -1,0 +1,243 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
+  schedule:
+    # Run integration tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      minio:
+        image: minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        # MinIO requires a command argument
+        volumes:
+          - /tmp/minio-data:/data
+        command: server /data
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-integration-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Wait for services
+        run: |
+          timeout 60 bash -c 'until nc -z localhost 6379; do sleep 1; done'
+          timeout 60 bash -c 'until nc -z localhost 9000; do sleep 1; done'
+          echo "Services are ready"
+
+      - name: Run integration tests
+        env:
+          REDIS_URL: redis://localhost:6379
+          MINIO_ENDPOINT: localhost:9000
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadmin
+          MINIO_USE_SSL: false
+        run: cargo test --features integration-tests --verbose -- --test-threads=1
+
+      - name: Generate integration test coverage
+        if: success()
+        run: |
+          cargo install cargo-llvm-cov
+          cargo llvm-cov --features integration-tests --lcov --output-path integration-lcov.info
+
+      - name: Upload integration coverage
+        if: success()
+        uses: codecov/codecov-action@v3
+        with:
+          files: integration-lcov.info
+          flags: integration
+          fail_ci_if_error: false
+
+  docker-integration:
+    name: Docker Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services with Docker Compose
+        run: |
+          docker-compose -f docker/docker-compose.test.yml up -d
+          sleep 10
+
+      - name: Wait for services
+        run: |
+          timeout 60 bash -c 'until docker-compose -f docker/docker-compose.test.yml ps | grep -q "Up"; do sleep 2; done'
+          echo "Docker services are ready"
+
+      - name: Run integration tests in Docker
+        run: |
+          docker-compose -f docker/docker-compose.test.yml run --rm paladin-test cargo test --features integration-tests
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          docker-compose -f docker/docker-compose.test.yml logs
+
+      - name: Stop services
+        if: always()
+        run: |
+          docker-compose -f docker/docker-compose.test.yml down -v
+
+  kubernetes-smoke-test:
+    name: Kubernetes Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kind (Kubernetes in Docker)
+        uses: helm/kind-action@v1
+        with:
+          version: v0.20.0
+          cluster_name: paladin-test
+
+      - name: Verify cluster
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Create namespace
+        run: kubectl create namespace paladin
+
+      - name: Create secret (with dummy values)
+        run: |
+          kubectl create secret generic paladin-secrets \
+            --from-literal=OPENAI_API_KEY=dummy \
+            --from-literal=DEEPSEEK_API_KEY=dummy \
+            --from-literal=ANTHROPIC_API_KEY=dummy \
+            --from-literal=MINIO_ROOT_USER=minioadmin \
+            --from-literal=MINIO_ROOT_PASSWORD=minioadmin \
+            --from-literal=MINIO_ACCESS_KEY=paladin \
+            --from-literal=MINIO_SECRET_KEY=paladin-secret \
+            -n paladin
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/redis.yaml
+          kubectl apply -f k8s/minio.yaml
+          sleep 20
+
+      - name: Wait for dependencies
+        run: |
+          kubectl wait --for=condition=ready pod -l app=redis -n paladin --timeout=120s
+          kubectl wait --for=condition=ready pod -l app=minio -n paladin --timeout=120s
+
+      - name: Build and load Docker image
+        run: |
+          docker build -t paladin:test .
+          kind load docker-image paladin:test --name paladin-test
+
+      - name: Deploy Paladin
+        run: |
+          # Use test image tag
+          sed 's/paladin:latest/paladin:test/g' k8s/deployment.yaml | kubectl apply -f -
+          kubectl apply -f k8s/service.yaml
+
+      - name: Wait for Paladin pods
+        run: |
+          kubectl wait --for=condition=ready pod -l app=paladin -n paladin --timeout=180s || true
+          kubectl get pods -n paladin
+
+      - name: Check pod status
+        run: |
+          kubectl get pods -n paladin
+          kubectl describe pods -n paladin
+          kubectl logs -l app=paladin -n paladin --tail=100 || true
+
+      - name: Verify startup time
+        run: |
+          START_TIME=$(kubectl get pod -l app=paladin -n paladin -o jsonpath='{.items[0].status.startTime}')
+          READY_TIME=$(kubectl get pod -l app=paladin -n paladin -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].lastTransitionTime}')
+          if [ -n "$START_TIME" ] && [ -n "$READY_TIME" ]; then
+            START_EPOCH=$(date -d "$START_TIME" +%s)
+            READY_EPOCH=$(date -d "$READY_TIME" +%s)
+            STARTUP_TIME=$((READY_EPOCH - START_EPOCH))
+            echo "Startup time: ${STARTUP_TIME} seconds"
+            if [ $STARTUP_TIME -gt 30 ]; then
+              echo "::warning::Startup time (${STARTUP_TIME}s) exceeds 30 second target"
+            fi
+          fi
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          echo "=== Paladin Pods ==="
+          kubectl get pods -n paladin
+          echo "=== Paladin Logs ==="
+          kubectl logs -l app=paladin -n paladin --tail=200 || true
+          echo "=== Redis Logs ==="
+          kubectl logs -l app=redis -n paladin --tail=100 || true
+          echo "=== MinIO Logs ==="
+          kubectl logs -l app=minio -n paladin --tail=100 || true
+          echo "=== Events ==="
+          kubectl get events -n paladin --sort-by='.lastTimestamp'

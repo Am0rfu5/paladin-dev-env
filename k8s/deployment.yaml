@@ -1,0 +1,212 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paladin
+  namespace: paladin
+  labels:
+    app: paladin
+    version: v0.1.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: paladin
+  template:
+    metadata:
+      labels:
+        app: paladin
+        version: v0.1.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Security context for pod
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532  # distroless nonroot user
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      
+      # Init container to ensure dependencies are ready
+      initContainers:
+        - name: wait-for-redis
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z paladin-redis 6379; do
+                echo "Waiting for Redis..."
+                sleep 2
+              done
+              echo "Redis is ready!"
+        
+        - name: wait-for-minio
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z paladin-minio 9000; do
+                echo "Waiting for MinIO..."
+                sleep 2
+              done
+              echo "MinIO is ready!"
+      
+      containers:
+        - name: paladin
+          image: paladin:latest
+          imagePullPolicy: IfNotPresent
+          
+          # Security context for container
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # Need write access for SQLite and logs
+            runAsNonRoot: true
+            runAsUser: 65532
+            capabilities:
+              drop:
+                - ALL
+          
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          
+          # Environment variables from secrets
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paladin-secrets
+                  key: OPENAI_API_KEY
+            - name: DEEPSEEK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paladin-secrets
+                  key: DEEPSEEK_API_KEY
+                  optional: true
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paladin-secrets
+                  key: ANTHROPIC_API_KEY
+                  optional: true
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paladin-secrets
+                  key: REDIS_PASSWORD
+                  optional: true
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paladin-secrets
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paladin-secrets
+                  key: MINIO_SECRET_KEY
+            - name: RUST_LOG
+              value: "info"
+            - name: RUST_BACKTRACE
+              value: "1"
+          
+          # Resource requests and limits (based on benchmarks)
+          resources:
+            requests:
+              cpu: "500m"       # 0.5 CPU cores
+              memory: "256Mi"   # 256 MB RAM
+            limits:
+              cpu: "2000m"      # 2 CPU cores (for burst)
+              memory: "512Mi"   # 512 MB RAM
+          
+          # Liveness probe - restarts container if unhealthy
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          
+          # Readiness probe - removes from service if not ready
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          
+          # Startup probe - gives app time to start before liveness checks
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 6  # 30 seconds total
+          
+          # Volume mounts
+          volumeMounts:
+            - name: config
+              mountPath: /etc/paladin
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: logs
+              mountPath: /var/log/paladin
+      
+      # Volumes
+      volumes:
+        - name: config
+          configMap:
+            name: paladin-config
+        - name: data
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: logs
+          emptyDir:
+            sizeLimit: 500Mi
+      
+      # Scheduling preferences
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - paladin
+                topologyKey: kubernetes.io/hostname
+      
+      # Tolerations for spot/preemptible instances (optional)
+      # tolerations:
+      #   - key: "workload-type"
+      #     operator: "Equal"
+      #     value: "spot"
+      #     effect: "NoSchedule"

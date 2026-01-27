@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paladin-config
+  namespace: paladin
+  labels:
+    app: paladin
+data:
+  # Paladin configuration
+  config.yml: |
+    # Paladin Configuration for Kubernetes Deployment
+    
+    paladin:
+      default_model: "gpt-4"
+      default_temperature: 0.7
+      default_max_loops: 3
+      timeout_seconds: 300
+      max_retries: 3
+    
+    garrison:
+      type: "sqlite"
+      path: "/data/garrison.db"
+      max_entries: 1000
+      max_tokens: 100000
+      eviction_strategy: "sliding_window"
+      preserve_recent: 10
+    
+    arsenal:
+      mcp_servers:
+        - name: "web_search"
+          type: "stdio"
+          command: "uvx"
+          args: ["mcp-web-search"]
+    
+    llm:
+      openai:
+        base_url: "https://api.openai.com/v1"
+        timeout_seconds: 60
+        max_retries: 3
+      deepseek:
+        base_url: "https://api.deepseek.com/v1"
+        timeout_seconds: 60
+        max_retries: 3
+      anthropic:
+        base_url: "https://api.anthropic.com/v1"
+        timeout_seconds: 60
+        max_retries: 3
+    
+    redis:
+      enabled: true
+      url: "redis://paladin-redis:6379"
+      pool_size: 10
+      timeout_seconds: 5
+    
+    minio:
+      enabled: true
+      endpoint: "paladin-minio:9000"
+      bucket: "paladin"
+      region: "us-east-1"
+      use_ssl: false
+    
+    server:
+      host: "0.0.0.0"
+      port: 8080
+      workers: 4
+    
+    logging:
+      level: "info"
+      format: "json"
+      file: "/var/log/paladin/paladin.log"
+    
+    monitoring:
+      enabled: true
+      prometheus_port: 9090
+      health_check_interval_seconds: 30

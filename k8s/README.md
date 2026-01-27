@@ -1,0 +1,387 @@
+# Kubernetes Deployment Guide
+
+This directory contains Kubernetes manifests for deploying Paladin in a production environment.
+
+## Quick Start
+
+### Prerequisites
+
+- Kubernetes cluster (1.24+)
+- `kubectl` configured
+- Docker registry access (for custom images)
+
+### 1. Create Namespace
+
+```bash
+kubectl apply -f k8s/namespace.yaml
+```
+
+### 2. Create Secrets
+
+Copy the example secret and fill in your API keys:
+
+```bash
+cp k8s/secret.yaml.example k8s/secret.yaml
+
+# Edit secret.yaml with your actual API keys (base64 encoded)
+# To encode: echo -n "your-api-key" | base64
+
+kubectl apply -f k8s/secret.yaml
+```
+
+### 3. Deploy Dependencies
+
+```bash
+# Redis (for queue management)
+kubectl apply -f k8s/redis.yaml
+
+# MinIO (for object storage)
+kubectl apply -f k8s/minio.yaml
+
+# Wait for dependencies to be ready
+kubectl wait --for=condition=ready pod -l app=redis -n paladin --timeout=120s
+kubectl wait --for=condition=ready pod -l app=minio -n paladin --timeout=120s
+```
+
+### 4. Deploy Paladin
+
+```bash
+# Apply configuration
+kubectl apply -f k8s/configmap.yaml
+
+# Deploy Paladin
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+
+# Wait for Paladin to be ready
+kubectl wait --for=condition=ready pod -l app=paladin -n paladin --timeout=180s
+```
+
+### 5. Verify Deployment
+
+```bash
+# Check pod status
+kubectl get pods -n paladin
+
+# Check logs
+kubectl logs -l app=paladin -n paladin --tail=50
+
+# Test health endpoint
+kubectl port-forward -n paladin svc/paladin 8080:80
+curl http://localhost:8080/health
+```
+
+## Configuration
+
+### Environment Variables
+
+Paladin configuration is managed through ConfigMap and Secrets:
+
+- **ConfigMap** (`k8s/configmap.yaml`): Non-sensitive configuration
+- **Secrets** (`k8s/secret.yaml`): API keys and sensitive data
+
+### Resource Limits
+
+Default resource allocation (per pod):
+
+```yaml
+requests:
+  cpu: "500m"      # 0.5 CPU cores
+  memory: "256Mi"  # 256 MB RAM
+limits:
+  cpu: "2000m"     # 2 CPU cores
+  memory: "512Mi"  # 512 MB RAM
+```
+
+Adjust based on workload:
+
+```bash
+kubectl edit deployment paladin -n paladin
+# Modify resources.requests and resources.limits
+```
+
+### Scaling
+
+#### Horizontal Scaling
+
+```bash
+# Scale to 5 replicas
+kubectl scale deployment paladin -n paladin --replicas=5
+
+# Auto-scaling (requires metrics-server)
+kubectl autoscale deployment paladin -n paladin \
+  --min=3 --max=10 --cpu-percent=70
+```
+
+#### Vertical Scaling
+
+Edit deployment resource requests/limits:
+
+```bash
+kubectl edit deployment paladin -n paladin
+```
+
+## Health Checks
+
+Paladin includes three types of probes:
+
+- **Liveness Probe**: Restarts container if unhealthy (30s interval)
+- **Readiness Probe**: Removes from service if not ready (10s interval)
+- **Startup Probe**: Gives 30s for application startup
+
+Health check endpoints:
+- `/health` - Overall health status
+- `/ready` - Readiness status
+
+## Monitoring
+
+### Prometheus Metrics
+
+Paladin exposes Prometheus metrics on port 9090:
+
+```bash
+# Port forward metrics endpoint
+kubectl port-forward -n paladin svc/paladin-metrics 9090:9090
+
+# Scrape metrics
+curl http://localhost:9090/metrics
+```
+
+### Logs
+
+```bash
+# Stream logs from all Paladin pods
+kubectl logs -f -l app=paladin -n paladin
+
+# View logs from specific pod
+kubectl logs -n paladin paladin-<pod-id>
+
+# View logs with timestamps
+kubectl logs -n paladin -l app=paladin --timestamps=true
+```
+
+## Troubleshooting
+
+### Pod Not Starting
+
+```bash
+# Check pod events
+kubectl describe pod -l app=paladin -n paladin
+
+# Check logs
+kubectl logs -l app=paladin -n paladin --tail=100
+
+# Common issues:
+# - Missing secrets: kubectl get secret paladin-secrets -n paladin
+# - Image pull errors: Check imagePullPolicy and registry access
+# - Resource constraints: Check node capacity
+```
+
+### High Memory Usage
+
+```bash
+# Check current memory usage
+kubectl top pod -l app=paladin -n paladin
+
+# Review configuration
+kubectl get configmap paladin-config -n paladin -o yaml
+
+# Adjust Garrison max_entries to reduce memory
+kubectl edit configmap paladin-config -n paladin
+# Then restart pods:
+kubectl rollout restart deployment paladin -n paladin
+```
+
+### Connection Issues to Redis/MinIO
+
+```bash
+# Verify Redis is running
+kubectl get pods -l app=redis -n paladin
+kubectl logs -l app=redis -n paladin
+
+# Verify MinIO is running
+kubectl get pods -l app=minio -n paladin
+kubectl logs -l app=minio -n paladin
+
+# Test connectivity from Paladin pod
+kubectl exec -it -n paladin <paladin-pod> -- sh
+# nc -zv paladin-redis 6379
+# nc -zv paladin-minio 9000
+```
+
+### Performance Issues
+
+```bash
+# Check resource usage
+kubectl top pod -n paladin
+
+# Check for throttling
+kubectl describe pod -l app=paladin -n paladin | grep -A 5 "Limits\\|Requests"
+
+# Review metrics
+kubectl port-forward -n paladin svc/paladin-metrics 9090:9090
+curl http://localhost:9090/metrics | grep paladin_
+```
+
+## Production Best Practices
+
+### 1. Use Persistent Volumes
+
+For production, replace `emptyDir` with PersistentVolumeClaims:
+
+```yaml
+volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: paladin-data
+```
+
+### 2. Configure Ingress
+
+Example NGINX Ingress:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: paladin
+  namespace: paladin
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - paladin.yourdomain.com
+      secretName: paladin-tls
+  rules:
+    - host: paladin.yourdomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: paladin
+                port:
+                  number: 80
+```
+
+### 3. Use External Secrets
+
+For production, use External Secrets Operator or similar:
+
+```bash
+# Install External Secrets Operator
+helm repo add external-secrets https://charts.external-secrets.io
+helm install external-secrets external-secrets/external-secrets -n external-secrets-system --create-namespace
+
+# See k8s/secret.yaml.example for ExternalSecret configuration
+```
+
+### 4. Enable Network Policies
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: paladin
+  namespace: paladin
+spec:
+  podSelector:
+    matchLabels:
+      app: paladin
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - podSelector:
+            matchLabels:
+              app: minio
+      ports:
+        - protocol: TCP
+          port: 9000
+    - to:  # Allow external LLM API access
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+```
+
+### 5. Configure Pod Disruption Budget
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: paladin
+  namespace: paladin
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: paladin
+```
+
+### 6. Use HPA (Horizontal Pod Autoscaler)
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: paladin
+  namespace: paladin
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: paladin
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+```
+
+## Cleanup
+
+```bash
+# Delete all Paladin resources
+kubectl delete -f k8s/
+
+# Or delete namespace (removes everything)
+kubectl delete namespace paladin
+```
+
+## Additional Resources
+
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
+- [Kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+- [Paladin Performance Tuning](../docs/operations/performance-tuning.md)
+- [Paladin Operations Guide](../docs/operations/operations-guide.md)
