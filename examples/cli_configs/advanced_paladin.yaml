@@ -1,0 +1,144 @@
+# Advanced Paladin Configuration Example
+# Demonstrates garrison (memory) and arsenal (tools) integration
+# For use with: paladin agent run -c advanced_paladin.yaml -i "Your query"
+
+# ============================================================================
+# IDENTITY CONFIGURATION
+# ============================================================================
+
+# Unique identifier for this Paladin
+name: "AdvancedPaladin"
+
+# User name used in conversation context
+user_name: "Developer"
+
+# ============================================================================
+# SYSTEM PROMPT
+# ============================================================================
+
+# Defines the Paladin's personality, capabilities, and behavior
+# This is the most important configuration - it guides all AI responses
+system_prompt: |
+  You are an advanced AI assistant with access to memory and external tools.
+  
+  CAPABILITIES:
+  - Remember context from previous interactions using your garrison (memory)
+  - Search the web when you need current information
+  - Perform calculations and data processing
+  - Break down complex tasks into steps
+  
+  BEHAVIOR:
+  - Be thorough but concise
+  - Cite sources when using external information
+  - Explain your reasoning process
+  - Ask clarifying questions when needed
+  - Use tools proactively when they would help
+
+# ============================================================================
+# LLM CONFIGURATION
+# ============================================================================
+
+# Model selection - choose based on complexity and cost requirements
+# Options: gpt-4, gpt-4-turbo, gpt-3.5-turbo, deepseek-chat, claude-3-opus
+model: "gpt-4"
+
+# Temperature controls randomness (0.0 = deterministic, 1.0 = creative)
+# Lower for factual tasks, higher for creative work
+temperature: 0.7
+
+# Maximum reasoning loops before stopping
+# Higher allows more complex multi-step reasoning
+max_loops: 5
+
+# Timeout in seconds for entire execution
+# Prevents runaway costs from infinite loops
+timeout_seconds: 600
+
+# Words that trigger immediate stop
+# Useful for controlling conversation flow
+stop_words: ["TERMINATE", "END_CONVERSATION"]
+
+# ============================================================================
+# PROVIDER CONFIGURATION
+# ============================================================================
+
+provider:
+  # Provider type: openai, deepseek, or anthropic
+  type: openai
+  
+  # API key is loaded from environment variable
+  # Set OPENAI_API_KEY before running
+  # api_key_env: OPENAI_API_KEY (default)
+
+# ============================================================================
+# GARRISON (MEMORY) CONFIGURATION
+# ============================================================================
+
+# Garrison provides persistent memory across interactions
+garrison:
+  # Memory type: in_memory (ephemeral) or sqlite (persistent)
+  type: sqlite
+  
+  # Path to SQLite database file
+  path: ./paladin_memory.db
+  
+  # Maximum number of memory entries to retain
+  max_entries: 1000
+  
+  # Optional: Semantic search configuration
+  # Requires embedding model support
+  # semantic_search:
+  #   enabled: true
+  #   embedding_model: "text-embedding-ada-002"
+
+# ============================================================================
+# ARSENAL (TOOLS) CONFIGURATION
+# ============================================================================
+
+# Arsenal provides access to external tools via Model Context Protocol (MCP)
+arsenal:
+  mcp_servers:
+    # Web search capability
+    - name: web_search
+      type: stdio
+      command: uvx
+      args:
+        - mcp-web-search
+      description: "Search the web for current information"
+    
+    # File system access (be careful with permissions!)
+    # - name: filesystem
+    #   type: stdio
+    #   command: npx
+    #   args:
+    #     - -y
+    #     - "@modelcontextprotocol/server-filesystem"
+    #     - /path/to/allowed/directory
+    #   description: "Read and write files in specified directory"
+    
+    # GitHub integration
+    # - name: github
+    #   type: stdio
+    #   command: npx
+    #   args:
+    #     - -y
+    #     - "@modelcontextprotocol/server-github"
+    #   description: "Interact with GitHub repositories"
+    #   env:
+    #     GITHUB_TOKEN: "${GITHUB_TOKEN}"
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+
+# Run with input:
+#   paladin agent run -c advanced_paladin.yaml -i "Search for the latest AI news"
+
+# Run with verbose output:
+#   paladin agent run -c advanced_paladin.yaml -i "Query" --verbose
+
+# Save output to file:
+#   paladin agent run -c advanced_paladin.yaml -i "Query" -o result.json
+
+# Interactive mode (prompt for input):
+#   paladin agent run -c advanced_paladin.yaml

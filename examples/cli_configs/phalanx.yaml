@@ -1,52 +1,249 @@
-# Phalanx Battalion Configuration Example
-# Parallel execution: All Paladins execute simultaneously
+# ============================================================================
+# PHALANX BATTALION CONFIGURATION EXAMPLE
+# ============================================================================
+# Parallel execution: All Paladins execute simultaneously on the same input.
+# Perfect for getting multiple perspectives or processing tasks concurrently.
+#
+# For use with: paladin battalion run -c phalanx.yaml -i "Input text"
+#
+# Flow: Input → [Summarizer | Sentiment | Keywords] → Combined Output
+# ============================================================================
 
+# ============================================================================
+# BATTALION TYPE
+# ============================================================================
+
+# Phalanx: Parallel execution pattern
+# - All Paladins start simultaneously
+# - Each processes the same (or different) input independently
+# - No dependencies between Paladins
+# - Results collected and returned together
+# - Perfect for multi-perspective analysis or parallel tasks
 type: phalanx
 
+# Battalion identifier
 name: "SimplePhalanx"
 
+# ============================================================================
+# PALADINS (PARALLEL EXECUTION)
+# ============================================================================
+
 paladins:
-  # Parallel Paladin 1: Summarizer
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PALADIN 1: SUMMARIZER
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Role: Create concise summary of content
+  # Runs: In parallel with other Paladins
+  # Input: Same input text as other Paladins
+  
   - inline:
       name: "SummarizerPaladin"
+      
       system_prompt: |
-        You are an expert summarizer. Create a concise summary of the input.
-        Focus on the main points.
+        You are an expert summarizer. Your role is to create a concise,
+        accurate summary of the input text.
+        
+        TASK:
+        - Capture main ideas and key points
+        - Use 3-5 bullet points
+        - Be objective and factual
+        - Focus on substance over style
+        
+        OUTPUT:
+        Provide a brief summary followed by key takeaways.
+      
+      # Moderate temperature for balanced summarization
       model: "gpt-4"
       temperature: 0.5
       max_loops: 2
       timeout_seconds: 180
       stop_words: []
+      
       provider:
         type: openai
   
-  # Parallel Paladin 2: Sentiment Analyzer
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PALADIN 2: SENTIMENT ANALYZER
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Role: Analyze emotional tone and sentiment
+  # Runs: In parallel with other Paladins
+  # Input: Same input text as other Paladins
+  
   - inline:
       name: "SentimentAnalyzer"
+      
       system_prompt: |
-        You are a sentiment analysis expert. Analyze the sentiment and emotional tone.
-        Provide a brief sentiment assessment.
+        You are a sentiment analysis expert. Your role is to analyze the
+        emotional tone and sentiment of the input text.
+        
+        TASK:
+        - Identify overall sentiment (positive/negative/neutral/mixed)
+        - Note emotional tone and intensity
+        - Identify key emotional triggers
+        - Assess tone (formal/casual/aggressive/empathetic/etc.)
+        
+        OUTPUT FORMAT:
+        - Overall Sentiment: [rating]
+        - Tone: [description]
+        - Key Emotions: [list]
+        - Confidence: [high/medium/low]
+      
+      # Lower temperature for consistent analysis
       model: "gpt-4"
       temperature: 0.3
       max_loops: 2
       timeout_seconds: 180
       stop_words: []
+      
       provider:
         type: openai
   
-  # Parallel Paladin 3: Keyword Extractor
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PALADIN 3: KEYWORD EXTRACTOR
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Role: Extract important keywords and concepts
+  # Runs: In parallel with other Paladins
+  # Input: Same input text as other Paladins
+  
   - inline:
       name: "KeywordExtractor"
+      
       system_prompt: |
-        You are a keyword extraction expert. Extract key terms and concepts.
-        List the top 5 keywords.
+        You are a keyword extraction expert. Your role is to identify the most
+        important terms, concepts, and entities in the text.
+        
+        TASK:
+        - Extract top 10 keywords/phrases
+        - Identify named entities (people, places, organizations)
+        - Note technical terms or domain-specific vocabulary
+        - Group related concepts
+        
+        OUTPUT FORMAT:
+        1. Top Keywords: [ranked list]
+        2. Named Entities: [list]
+        3. Concept Categories: [grouped terms]
+      
+      # Lower temperature for consistent extraction
       model: "gpt-4"
       temperature: 0.3
       max_loops: 2
       timeout_seconds: 180
       stop_words: []
+      
       provider:
         type: openai
 
-# Optional: All Paladins receive the same input (default behavior)
-# inputs: []
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # OPTIONAL: ADD MORE PARALLEL PALADINS
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  # Example: Language Detector
+  # - inline:
+  #     name: "LanguageDetector"
+  #     system_prompt: |
+  #       Detect the language(s) used in the text and assess:
+  #       - Primary language and confidence
+  #       - Secondary languages if present
+  #       - Language complexity level
+  #       - Writing style (academic, casual, technical, etc.)
+  #     model: "gpt-4"
+  #     temperature: 0.2
+  #     max_loops: 1
+  #     timeout_seconds: 120
+  #     provider:
+  #       type: openai
+  
+  # Example: Fact Checker
+  # - inline:
+  #     name: "FactChecker"
+  #     system_prompt: |
+  #       Identify factual claims in the text and assess their verifiability.
+  #       Note: You cannot actually verify facts, but can identify what would
+  #       need to be verified.
+  #     model: "gpt-4"
+  #     temperature: 0.4
+  #     max_loops: 2
+  #     timeout_seconds: 180
+  #     provider:
+  #       type: openai
+
+# ============================================================================
+# INPUT CONFIGURATION
+# ============================================================================
+
+# Optional: Provide different inputs for each Paladin
+# By default, all Paladins receive the same input from the command line
+# Uncomment and customize to give each Paladin different tasks:
+
+# inputs:
+#   - "Summarize this text"           # Goes to Summarizer
+#   - "Analyze sentiment"              # Goes to Sentiment Analyzer
+#   - "Extract key terms"              # Goes to Keyword Extractor
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+
+# Example 1: Analyze text from multiple angles
+#   paladin battalion run -c phalanx.yaml \
+#     -i "Your text to analyze from multiple perspectives"
+
+# Example 2: With verbose output (see each Paladin's execution)
+#   paladin battalion run -c phalanx.yaml \
+#     -i "Input text" --verbose
+
+# Example 3: Save combined results
+#   paladin battalion run -c phalanx.yaml \
+#     -i "Input text" -o phalanx_results.json
+
+# Example 4: Process file content
+#   paladin battalion run -c phalanx.yaml \
+#     -i "$(cat document.txt)"
+
+# ============================================================================
+# WHEN TO USE PHALANX
+# ============================================================================
+
+# ✅ GOOD USE CASES:
+# - Multi-perspective analysis (summary + sentiment + keywords)
+# - Parallel processing of independent tasks
+# - Comparing different approaches to same problem
+# - Ensemble methods (combine multiple opinions)
+# - Speed optimization (parallel = faster than sequential)
+# - Quality checks with multiple validators
+
+# ❌ NOT IDEAL FOR:
+# - Sequential workflows where output of one feeds next (use Formation)
+# - Complex dependencies between tasks (use Campaign)
+# - Hierarchical delegation (use Chain of Command)
+# - When you need results from one task before starting another
+
+# ============================================================================
+# PERFORMANCE CONSIDERATIONS
+# ============================================================================
+
+# SPEED:
+# - All Paladins run simultaneously
+# - Total time ≈ slowest Paladin (not sum of all)
+# - Great for reducing overall execution time
+
+# COST:
+# - All Paladins make LLM API calls at once
+# - Cost = sum of all Paladin costs
+# - Consider using cheaper models for simpler tasks
+
+# RESOURCE USAGE:
+# - Higher memory usage (all running at once)
+# - More concurrent API requests
+# - May hit rate limits with many Paladins
+
+# ============================================================================
+# TIPS FOR EFFECTIVE PHALANX
+# ============================================================================
+
+# 1. INDEPENDENCE: Ensure tasks are truly independent (no dependencies)
+# 2. DIVERSITY: Choose complementary perspectives or analyses
+# 3. BALANCE: Mix different temperature/model settings for variety
+# 4. TIMEOUTS: Set appropriate timeouts (slowest Paladin determines total time)
+# 5. AGGREGATION: Plan how to combine results (in application layer)
+

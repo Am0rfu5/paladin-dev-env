@@ -1,0 +1,194 @@
+# Campaign Battalion Configuration Example
+# Directed Acyclic Graph (DAG) workflow with conditional branching
+# For use with: paladin battalion run -c campaign.yaml
+
+# ============================================================================
+# BATTALION TYPE: CAMPAIGN
+# ============================================================================
+
+# Campaign allows complex workflows with:
+# - Conditional branching based on Paladin outputs
+# - Parallel execution paths
+# - Multi-step dependencies
+# - Error handling and retry logic
+
+type: campaign
+
+name: "ContentCreationCampaign"
+
+# ============================================================================
+# WORKFLOW NODES
+# ============================================================================
+
+# Each node represents a Paladin with specific responsibilities
+nodes:
+  # Node 1: Content Planner
+  - id: planner
+    paladin:
+      inline:
+        name: "ContentPlanner"
+        system_prompt: |
+          You are a content strategist. Analyze the topic and create a structured
+          content plan with:
+          1. Main themes and angles
+          2. Target audience
+          3. Key messages
+          4. Suggested outline
+          
+          Output JSON format:
+          {
+            "themes": ["theme1", "theme2"],
+            "audience": "description",
+            "outline": ["section1", "section2"]
+          }
+        model: "gpt-4"
+        temperature: 0.7
+        max_loops: 2
+        timeout_seconds: 180
+        provider:
+          type: openai
+  
+  # Node 2: Research Specialist
+  - id: researcher
+    paladin:
+      inline:
+        name: "ResearchSpecialist"
+        system_prompt: |
+          You are a research specialist. Take the content plan and gather
+          relevant information, facts, and data to support each section.
+          Cite sources when possible.
+        model: "gpt-4"
+        temperature: 0.5
+        max_loops: 3
+        timeout_seconds: 300
+        provider:
+          type: openai
+  
+  # Node 3a: Technical Writer (parallel path)
+  - id: technical_writer
+    paladin:
+      inline:
+        name: "TechnicalWriter"
+        system_prompt: |
+          You are a technical writer. Write clear, precise technical content
+          based on the research. Use diagrams and code examples when appropriate.
+        model: "gpt-4"
+        temperature: 0.6
+        max_loops: 2
+        timeout_seconds: 240
+        provider:
+          type: openai
+  
+  # Node 3b: Creative Writer (parallel path)
+  - id: creative_writer
+    paladin:
+      inline:
+        name: "CreativeWriter"
+        system_prompt: |
+          You are a creative writer. Write engaging, narrative-style content
+          based on the research. Use storytelling techniques and vivid language.
+        model: "gpt-4"
+        temperature: 0.8
+        max_loops: 2
+        timeout_seconds: 240
+        provider:
+          type: openai
+  
+  # Node 4: Editor (merges parallel paths)
+  - id: editor
+    paladin:
+      inline:
+        name: "Editor"
+        system_prompt: |
+          You are an editor. Review both technical and creative versions.
+          Combine the best elements of both to create a polished final piece
+          that is both accurate and engaging.
+        model: "gpt-4"
+        temperature: 0.5
+        max_loops: 2
+        timeout_seconds: 240
+        provider:
+          type: openai
+  
+  # Node 5: Quality Reviewer
+  - id: reviewer
+    paladin:
+      inline:
+        name: "QualityReviewer"
+        system_prompt: |
+          You are a quality reviewer. Check for:
+          - Factual accuracy
+          - Grammatical correctness
+          - Logical flow
+          - Target audience appropriateness
+          
+          Provide a quality score (1-10) and list any issues.
+        model: "gpt-4"
+        temperature: 0.3
+        max_loops: 1
+        timeout_seconds: 180
+        provider:
+          type: openai
+
+# ============================================================================
+# WORKFLOW EDGES (DEPENDENCIES)
+# ============================================================================
+
+# Define execution order and data flow between nodes
+edges:
+  # Planner → Researcher (sequential)
+  - from: planner
+    to: researcher
+  
+  # Researcher → Technical Writer (parallel branch)
+  - from: researcher
+    to: technical_writer
+  
+  # Researcher → Creative Writer (parallel branch)
+  - from: researcher
+    to: creative_writer
+  
+  # Technical Writer → Editor (merge)
+  - from: technical_writer
+    to: editor
+  
+  # Creative Writer → Editor (merge)
+  - from: creative_writer
+    to: editor
+  
+  # Editor → Reviewer (final check)
+  - from: editor
+    to: reviewer
+
+# ============================================================================
+# WORKFLOW CONFIGURATION
+# ============================================================================
+
+# Starting node for execution
+start_node: planner
+
+# Optional: Error handling configuration
+# error_handling:
+#   retry_failed_nodes: true
+#   max_retries: 2
+#   continue_on_error: false
+
+# Optional: Conditional branching
+# Use output inspection to determine execution path
+# conditions:
+#   - from: planner
+#     evaluate: |
+#       output.contains("technical") ? "technical_writer" : "creative_writer"
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+
+# Run campaign with input:
+#   paladin battalion run -c campaign.yaml -i "Topic: AI in Healthcare"
+
+# Run with verbose output to see each node execution:
+#   paladin battalion run -c campaign.yaml -i "Topic" --verbose
+
+# Save detailed results:
+#   paladin battalion run -c campaign.yaml -i "Topic" -o campaign_results.json

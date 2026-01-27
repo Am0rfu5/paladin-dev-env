@@ -1,0 +1,214 @@
+# Chain of Command Battalion Configuration Example
+# Hierarchical delegation with commander and specialized delegates
+# For use with: paladin battalion run -c chain_of_command.yaml
+
+# ============================================================================
+# BATTALION TYPE: CHAIN OF COMMAND
+# ============================================================================
+
+# Chain of Command implements hierarchical task delegation:
+# - Commander analyzes requests and delegates to specialists
+# - Delegates have specific expertise domains
+# - Commander synthesizes delegate outputs into final response
+# - Supports dynamic delegation based on task complexity
+
+type: chain_of_command
+
+name: "EngineeringTeam"
+
+# ============================================================================
+# COMMANDER CONFIGURATION
+# ============================================================================
+
+# The commander is the primary decision maker
+# Responsibilities:
+# 1. Analyze incoming requests
+# 2. Determine which delegates to involve
+# 3. Synthesize delegate responses
+# 4. Provide final unified response
+
+commander:
+  inline:
+    name: "TechLead"
+    system_prompt: |
+      You are a technical lead managing a team of engineering specialists.
+      
+      RESPONSIBILITIES:
+      - Analyze technical requests and break them into subtasks
+      - Delegate to appropriate specialists:
+        * Backend developer for server/API/database work
+        * Frontend developer for UI/UX work
+        * DevOps engineer for infrastructure/deployment
+      - Synthesize responses from all delegates
+      - Provide comprehensive final recommendations
+      
+      DELEGATION FORMAT:
+      When delegating, clearly specify:
+      1. Which specialist(s) to involve
+      2. Specific questions or tasks for each
+      3. Priority and dependencies
+      
+      SYNTHESIS:
+      - Combine specialist insights
+      - Resolve conflicts or contradictions
+      - Provide actionable next steps
+      - Note any risks or considerations
+    
+    model: "gpt-4"
+    temperature: 0.7
+    max_loops: 3
+    timeout_seconds: 300
+    stop_words: []
+    
+    provider:
+      type: openai
+
+# ============================================================================
+# DELEGATE CONFIGURATION
+# ============================================================================
+
+# Delegates are specialized experts consulted by the commander
+# Each has deep knowledge in their domain
+
+delegates:
+  # Backend Specialist
+  - inline:
+      name: "BackendEngineer"
+      system_prompt: |
+        You are a senior backend engineer specializing in:
+        - API design (REST, GraphQL, gRPC)
+        - Database architecture (SQL, NoSQL, caching)
+        - Server-side logic and business rules
+        - Authentication and authorization
+        - Performance optimization
+        - Error handling and logging
+        
+        Provide detailed technical recommendations including:
+        - Specific technologies and frameworks
+        - Code structure and patterns
+        - Performance considerations
+        - Security best practices
+        - Testing strategies
+      
+      model: "gpt-4"
+      temperature: 0.6
+      max_loops: 2
+      timeout_seconds: 240
+      
+      provider:
+        type: openai
+  
+  # Frontend Specialist
+  - inline:
+      name: "FrontendEngineer"
+      system_prompt: |
+        You are a senior frontend engineer specializing in:
+        - Modern UI frameworks (React, Vue, Svelte)
+        - State management (Redux, Zustand, Context)
+        - Responsive design and accessibility
+        - Performance optimization (lazy loading, code splitting)
+        - Browser APIs and WebAssembly
+        - Testing (Jest, Testing Library, E2E)
+        
+        Provide detailed recommendations including:
+        - Component architecture
+        - Styling approach (CSS-in-JS, Tailwind, etc.)
+        - Build tooling (Vite, webpack, etc.)
+        - Performance optimizations
+        - Accessibility considerations
+      
+      model: "gpt-4"
+      temperature: 0.6
+      max_loops: 2
+      timeout_seconds: 240
+      
+      provider:
+        type: openai
+  
+  # DevOps Specialist
+  - inline:
+      name: "DevOpsEngineer"
+      system_prompt: |
+        You are a senior DevOps engineer specializing in:
+        - Container orchestration (Docker, Kubernetes)
+        - CI/CD pipelines (GitHub Actions, GitLab CI, Jenkins)
+        - Infrastructure as Code (Terraform, Pulumi)
+        - Cloud platforms (AWS, GCP, Azure)
+        - Monitoring and observability (Prometheus, Grafana)
+        - Security and compliance
+        
+        Provide detailed recommendations including:
+        - Deployment strategy
+        - Infrastructure setup
+        - Monitoring and alerting
+        - Scaling approach
+        - Disaster recovery
+        - Cost optimization
+      
+      model: "gpt-4"
+      temperature: 0.5
+      max_loops: 2
+      timeout_seconds: 240
+      
+      provider:
+        type: openai
+  
+  # Optional: Additional specialists
+  # 
+  # - inline:
+  #     name: "SecurityEngineer"
+  #     system_prompt: |
+  #       You are a security engineer specializing in application security,
+  #       threat modeling, and compliance...
+  #     model: "gpt-4"
+  #     temperature: 0.4
+  #     max_loops: 2
+  #     timeout_seconds: 240
+  #     provider:
+  #       type: openai
+
+# ============================================================================
+# DELEGATION STRATEGY
+# ============================================================================
+
+# Optional: Configure how the commander delegates
+# delegation_strategy:
+#   # Strategy: all, selective, dynamic
+#   mode: dynamic
+#   
+#   # Maximum parallel delegate consultations
+#   max_parallel: 3
+#   
+#   # Minimum confidence threshold for delegation
+#   confidence_threshold: 0.7
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+
+# Example 1: Full stack feature request
+#   paladin battalion run -c chain_of_command.yaml \
+#     -i "Design and implement a real-time chat feature with message history"
+
+# Example 2: Infrastructure planning
+#   paladin battalion run -c chain_of_command.yaml \
+#     -i "Plan the deployment of a high-traffic web application to AWS"
+
+# Example 3: With verbose output to see delegation process
+#   paladin battalion run -c chain_of_command.yaml \
+#     -i "Optimize performance of a slow API endpoint" --verbose
+
+# Example 4: Save detailed delegation log
+#   paladin battalion run -c chain_of_command.yaml \
+#     -i "Architecture review for microservices migration" \
+#     -o delegation_results.json
+
+# ============================================================================
+# BENEFITS OF CHAIN OF COMMAND
+# ============================================================================
+
+# 1. EXPERTISE: Each delegate has deep domain knowledge
+# 2. SYNTHESIS: Commander combines perspectives into coherent plan
+# 3. EFFICIENCY: Only relevant specialists are consulted
+# 4. QUALITY: Multiple expert reviews improve solution quality
+# 5. SCALABILITY: Easy to add new specialist delegates

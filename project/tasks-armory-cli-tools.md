@@ -292,19 +292,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 13.15 Run integration tests: `cargo test --test cli_integration_test`
   - [x] 13.16 Verify integration test coverage ≥70% (26 tests, comprehensive CLI coverage)
 
-- [ ] 14.0 Create documentation and example configurations
-  - [ ] 14.1 Create `examples/cli_configs/basic_paladin.yaml` with simple Paladin config
-  - [ ] 14.2 Create `examples/cli_configs/advanced_paladin.yaml` with garrison and arsenal
-  - [ ] 14.3 Create `examples/cli_configs/formation.yaml` with 3-step sequential workflow
-  - [ ] 14.4 Create `examples/cli_configs/phalanx.yaml` with parallel execution
-  - [ ] 14.5 Create `examples/cli_configs/campaign.yaml` with DAG workflow
-  - [ ] 14.6 Create `examples/cli_configs/chain_of_command.yaml` with hierarchical delegation
-  - [ ] 14.7 Add inline comments to all example configs explaining each field
-  - [ ] 14.8 Create `docs/CLI_USAGE.md` with comprehensive CLI documentation
-  - [ ] 14.9 Document all commands with syntax and examples in CLI_USAGE.md
-  - [ ] 14.10 Document configuration file format with full schema in CLI_USAGE.md
-  - [ ] 14.11 Document environment variables required (API keys) in CLI_USAGE.md
-  - [ ] 14.12 Add troubleshooting section with common errors and solutions
+- [x] 14.0 Create documentation and example configurations
+  - [x] 14.1 Create `examples/cli_configs/basic_paladin.yaml` with simple Paladin config
+  - [x] 14.2 Create `examples/cli_configs/advanced_paladin.yaml` with garrison and arsenal
+  - [x] 14.3 Create `examples/cli_configs/formation.yaml` with 3-step sequential workflow
+  - [x] 14.4 Create `examples/cli_configs/phalanx.yaml` with parallel execution
+  - [x] 14.5 Create `examples/cli_configs/campaign.yaml` with DAG workflow
+  - [x] 14.6 Create `examples/cli_configs/chain_of_command.yaml` with hierarchical delegation
+  - [x] 14.7 Add inline comments to all example configs explaining each field
+  - [x] 14.8 Create `docs/CLI_USAGE.md` with comprehensive CLI documentation
+  - [x] 14.9 Document all commands with syntax and examples in CLI_USAGE.md
+  - [x] 14.10 Document configuration file format with full schema in CLI_USAGE.md
+  - [x] 14.11 Document environment variables required (API keys) in CLI_USAGE.md
+  - [x] 14.12 Add troubleshooting section with common errors and solutions
   - [ ] 14.13 Update main `README.md` with link to CLI documentation
   - [ ] 14.14 Update main `README.md` with quick start example using CLI
   - [ ] 14.15 Add rustdoc comments to all public CLI functions and types
