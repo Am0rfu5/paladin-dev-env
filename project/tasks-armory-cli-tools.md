@@ -317,20 +317,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 15.4 Run `cargo audit` to check for security vulnerabilities
   - [x] 15.5 Run Snyk scan on CLI code: `snyk_code_scan` per security rules
   - [x] 15.6 Fix any security issues identified
-  - [ ] 15.7 Test all CLI commands manually end-to-end:
+  - [x] 15.7 Test all CLI commands manually end-to-end:
     - `paladin agent new` → edit → `paladin agent run`
     - `paladin battalion new` → edit → `paladin battalion run`
     - `paladin arsenal list`
     - `paladin arsenal test`
-  - [ ] 15.8 Test with all three LLM providers (OpenAI, DeepSeek, Anthropic)
-  - [ ] 15.9 Test error scenarios: missing API key, invalid config, connection failures
-  - [ ] 15.10 Verify --help works for all commands and subcommands
-  - [ ] 15.11 Verify --verbose flag provides detailed output
-  - [ ] 15.12 Verify --output flag saves results to file correctly
-  - [ ] 15.13 Verify interactive prompts work when arguments missing
-  - [ ] 15.14 Test Ctrl+C handling (exit code 130)
-  - [ ] 15.15 Review all code for adherence to hexagonal architecture
-  - [ ] 15.16 Review all error messages for actionable guidance per FR-20
+  - [x] 15.8 Test with all three LLM providers (OpenAI, DeepSeek, Anthropic)
+  - [x] 15.9 Test error scenarios: missing API key, invalid config, connection failures
+  - [x] 15.10 Verify --help works for all commands and subcommands
+  - [x] 15.11 Verify --verbose flag provides detailed output
+  - [x] 15.12 Verify --output flag saves results to file correctly
+  - [x] 15.13 Verify interactive prompts work when arguments missing
+  - [x] 15.14 Test Ctrl+C handling (exit code 130)
+  - [x] 15.15 Review all code for adherence to hexagonal architecture
+  - [x] 15.16 Review all error messages for actionable guidance per FR-20
   - [ ] 15.17 Commit all changes: `git add . && git commit -m "feat(epic-9): implement Armory CLI tools"`
   - [ ] 15.18 Push branch: `git push -u origin epic-9/armory-cli-tools`
   - [ ] 15.19 Create PR with description linking to PRD and this task list
