@@ -73,6 +73,8 @@ tokio-test = "0.4"
 proptest = "1.4"
 serial_test = "3.2.0"
 criterion = { version = "0.5", features = ["async_tokio"] }
+# Integration test dependencies (gated by integration-tests feature)
+wiremock = "0.6"
 
 # Integration test configuration
 [[test]]
@@ -99,6 +101,7 @@ path = "src/bin/paladin-cli.rs"
 default = ["redis-queue", "s3-storage"]
 redis-queue = ["redis"]
 s3-storage = ["rust-s3"]
+integration-tests = []
 
 # Performance optimizations for Redis
 [profile.release]

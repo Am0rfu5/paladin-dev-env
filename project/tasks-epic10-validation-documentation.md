@@ -64,22 +64,22 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.17 Update root `README.md` with links to documentation structure
 
 - [ ] 3.0 Integration Testing Infrastructure (FR-INT)
-  - [ ] 3.1 Add `integration-tests` feature flag to `Cargo.toml` with testcontainers dependency (FR-INT-6)
-  - [ ] 3.2 Create `tests/integration/paladin_execution_test.rs` - end-to-end Paladin execution with mocked LLM (FR-INT-1)
-  - [ ] 3.3 Create `tests/integration/formation_integration_test.rs` - sequential Battalion execution test (FR-INT-2)
-  - [ ] 3.4 Create `tests/integration/phalanx_integration_test.rs` - concurrent Battalion execution test (FR-INT-2)
-  - [ ] 3.5 Create `tests/integration/campaign_integration_test.rs` - graph-based Battalion orchestration test (FR-INT-2)
-  - [ ] 3.6 Create `tests/integration/chain_of_command_integration_test.rs` - hierarchical delegation test (FR-INT-2)
-  - [ ] 3.7 Create `tests/integration/mcp_stdio_integration_test.rs` - MCP STDIO adapter connection test (FR-INT-3)
-  - [ ] 3.8 Create `tests/integration/mcp_sse_integration_test.rs` - MCP SSE adapter connection test (FR-INT-3)
-  - [ ] 3.9 Create `tests/integration/openai_provider_test.rs` - OpenAI adapter integration test with feature flag (FR-INT-4)
-  - [ ] 3.10 Create `tests/integration/deepseek_provider_test.rs` - DeepSeek adapter integration test with feature flag (FR-INT-4)
-  - [ ] 3.11 Create `tests/integration/anthropic_provider_test.rs` - Anthropic adapter integration test with feature flag (FR-INT-4)
-  - [ ] 3.12 Create `tests/integration/phalanx_load_test.rs` - concurrent Phalanx load test measuring throughput, latency, resource usage (FR-INT-5)
-  - [ ] 3.13 Create `tests/integration/redis_queue_integration_test.rs` - verify Redis queue service with integration tests (existing, ensure gated)
-  - [ ] 3.14 Create `tests/integration/minio_storage_integration_test.rs` - verify MinIO/Citadel persistence with integration tests (existing, ensure gated)
-  - [ ] 3.15 Update `Makefile` with `test-integration-docker` target that starts Docker services and runs integration tests (FR-INT-7)
-  - [ ] 3.16 Configure testcontainers or docker-compose for CI integration test execution
+  - [x] 3.1 Add `integration-tests` feature flag to `Cargo.toml` with testcontainers dependency (FR-INT-6)
+  - [x] 3.2 Create `tests/integration/paladin_execution_test.rs` - end-to-end Paladin execution with mocked LLM (FR-INT-1)
+  - [x] 3.3 Create `tests/integration/formation_integration_test.rs` - sequential Battalion execution test (FR-INT-2)
+  - [x] 3.4 Create `tests/integration/phalanx_integration_test.rs` - concurrent Battalion execution test (FR-INT-2)
+  - [x] 3.5 Create `tests/integration/campaign_integration_test.rs` - graph-based Battalion orchestration test (FR-INT-2)
+  - [x] 3.6 Create `tests/integration/chain_of_command_integration_test.rs` - hierarchical delegation test (FR-INT-2)
+  - [x] 3.7 Create `tests/integration/mcp_stdio_integration_test.rs` - MCP STDIO adapter connection test (FR-INT-3)
+  - [x] 3.8 Create `tests/integration/mcp_sse_integration_test.rs` - MCP SSE adapter connection test (FR-INT-3)
+  - [x] 3.9 Create `tests/integration/openai_provider_test.rs` - OpenAI adapter integration test with feature flag (FR-INT-4)
+  - [x] 3.10 Create `tests/integration/deepseek_provider_test.rs` - DeepSeek adapter integration test with feature flag (FR-INT-4)
+  - [x] 3.11 Create `tests/integration/anthropic_provider_test.rs` - Anthropic adapter integration test with feature flag (FR-INT-4)
+  - [x] 3.12 Create `tests/integration/phalanx_load_test.rs` - concurrent Phalanx load test measuring throughput, latency, resource usage (FR-INT-5)
+  - [x] 3.13 Create `tests/integration/redis_queue_integration_test.rs` - verify Redis queue service with integration tests (existing, ensure gated)
+  - [x] 3.14 Create `tests/integration/minio_storage_integration_test.rs` - verify MinIO/Citadel persistence with integration tests (existing, ensure gated)
+  - [x] 3.15 Update `Makefile` with `test-integration-docker` target that starts Docker services and runs integration tests (FR-INT-7)
+  - [x] 3.16 Configure testcontainers or docker-compose for CI integration test execution
   - [ ] 3.17 Run integration tests: `cargo test --features integration-tests` and verify all pass
   - [ ] 3.18 Measure integration test coverage with `cargo llvm-cov --features integration-tests` and verify ≥70% (FR-INT-8)
 
