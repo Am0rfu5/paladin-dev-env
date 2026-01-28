@@ -1027,3 +1027,170 @@ impl MinioAdapter {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_minio_config_default() {
+        let config = MinioConfig::default();
+
+        assert_eq!(config.endpoint, "localhost:9000");
+        assert_eq!(config.access_key, "minioadmin");
+        assert_eq!(config.secret_key, "minioadmin");
+        assert_eq!(config.bucket, "paladin-files");
+        assert_eq!(config.region, Some("us-east-1".to_string()));
+        assert!(!config.secure);
+        assert!(config.path_style);
+        assert_eq!(config.connection_timeout, Duration::from_secs(30));
+        assert_eq!(config.request_timeout, Duration::from_secs(300));
+        assert_eq!(config.max_retries, 3);
+        assert_eq!(config.max_idle_conns, 10);
+    }
+
+    #[test]
+    fn test_minio_config_custom() {
+        let config = MinioConfig {
+            endpoint: "s3.amazonaws.com".to_string(),
+            access_key: "AKIAIOSFODNN7EXAMPLE".to_string(),
+            secret_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY".to_string(),
+            bucket: "my-bucket".to_string(),
+            region: Some("us-west-2".to_string()),
+            secure: true,
+            path_style: false,
+            connection_timeout: Duration::from_secs(60),
+            request_timeout: Duration::from_secs(600),
+            max_retries: 5,
+            max_idle_conns: 20,
+        };
+
+        assert_eq!(config.endpoint, "s3.amazonaws.com");
+        assert_eq!(config.access_key, "AKIAIOSFODNN7EXAMPLE");
+        assert_eq!(config.bucket, "my-bucket");
+        assert_eq!(config.region, Some("us-west-2".to_string()));
+        assert!(config.secure);
+        assert!(!config.path_style);
+        assert_eq!(config.max_retries, 5);
+        assert_eq!(config.max_idle_conns, 20);
+    }
+
+    #[test]
+    fn test_minio_config_clone() {
+        let config1 = MinioConfig::default();
+        let config2 = config1.clone();
+
+        assert_eq!(config1.endpoint, config2.endpoint);
+        assert_eq!(config1.bucket, config2.bucket);
+        assert_eq!(config1.max_retries, config2.max_retries);
+    }
+
+    #[test]
+    fn test_minio_config_debug_format() {
+        let config = MinioConfig::default();
+        let debug_str = format!("{:?}", config);
+
+        assert!(debug_str.contains("MinioConfig"));
+        assert!(debug_str.contains("endpoint"));
+        assert!(debug_str.contains("localhost:9000"));
+    }
+
+    #[test]
+    fn test_minio_config_serialization() {
+        let config = MinioConfig::default();
+
+        // Test that serialization works (actual values would require serde_json)
+        let serialized = serde_json::to_string(&config).expect("Should serialize");
+        assert!(serialized.contains("localhost:9000"));
+        assert!(serialized.contains("paladin-files"));
+
+        // Test deserialization
+        let deserialized: MinioConfig =
+            serde_json::from_str(&serialized).expect("Should deserialize");
+        assert_eq!(deserialized.endpoint, config.endpoint);
+        assert_eq!(deserialized.bucket, config.bucket);
+    }
+
+    #[test]
+    fn test_minio_config_with_optional_region() {
+        let config_with_region = MinioConfig {
+            region: Some("eu-west-1".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(config_with_region.region, Some("eu-west-1".to_string()));
+
+        let config_without_region = MinioConfig {
+            region: None,
+            ..Default::default()
+        };
+        assert_eq!(config_without_region.region, None);
+    }
+
+    #[test]
+    fn test_minio_config_timeout_values() {
+        let config = MinioConfig {
+            connection_timeout: Duration::from_secs(10),
+            request_timeout: Duration::from_secs(120),
+            ..Default::default()
+        };
+
+        assert_eq!(config.connection_timeout.as_secs(), 10);
+        assert_eq!(config.request_timeout.as_secs(), 120);
+    }
+
+    #[test]
+    fn test_minio_config_retry_settings() {
+        let config = MinioConfig {
+            max_retries: 0,
+            ..Default::default()
+        };
+        assert_eq!(config.max_retries, 0);
+
+        let config_with_retries = MinioConfig {
+            max_retries: 10,
+            ..Default::default()
+        };
+        assert_eq!(config_with_retries.max_retries, 10);
+    }
+
+    #[test]
+    fn test_minio_config_secure_https_endpoint() {
+        let secure_config = MinioConfig {
+            endpoint: "s3.amazonaws.com".to_string(),
+            secure: true,
+            ..Default::default()
+        };
+        assert!(secure_config.secure);
+
+        let insecure_config = MinioConfig {
+            endpoint: "localhost:9000".to_string(),
+            secure: false,
+            ..Default::default()
+        };
+        assert!(!insecure_config.secure);
+    }
+
+    #[test]
+    fn test_minio_config_path_style_setting() {
+        let path_style_config = MinioConfig {
+            path_style: true,
+            ..Default::default()
+        };
+        assert!(path_style_config.path_style);
+
+        let virtual_hosted_config = MinioConfig {
+            path_style: false,
+            ..Default::default()
+        };
+        assert!(!virtual_hosted_config.path_style);
+    }
+
+    // Note: Tests requiring actual MinIO connection are in integration tests
+    // The following would require mocking or actual MinIO instance:
+    // - new()
+    // - upload_file()
+    // - download_file()
+    // - delete_file()
+    // - list_files()
+    // - health_check()
+}
