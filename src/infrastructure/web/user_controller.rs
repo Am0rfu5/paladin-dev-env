@@ -6,10 +6,10 @@ delegating business logic to the UserService.
 */
 
 use crate::core::platform::container::user::{UserError, UserProfile};
-// use crate::core::platform::manager::user_service::{
-//     UserLoginRequest, UserProfileUpdateRequest, UserRegistrationRequest, UserService,
-//     UserServiceTrait,
-// };
+use crate::core::platform::manager::user_service::{
+    UserLoginRequest, UserProfileUpdateRequest, UserRegistrationRequest, UserServiceTrait,
+};
+
 use axum::{
     Router,
     extract::{Path, State},
@@ -20,61 +20,6 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
-
-/// Placeholder types for user service until implemented
-#[derive(Debug)]
-pub struct UserRegistrationRequest {
-    pub username: String,
-    pub email: String,
-    pub password: String,
-    pub profile: Option<UserProfile>,
-}
-
-#[derive(Debug)]
-pub struct UserLoginRequest {
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Debug)]
-pub struct UserProfileUpdateRequest {
-    pub user_id: Uuid,
-    pub username: Option<String>,
-    pub email: Option<String>,
-    pub profile: Option<UserProfile>,
-}
-
-#[async_trait::async_trait]
-pub trait UserServiceTrait: Send + Sync {
-    async fn register_user(
-        &self,
-        request: UserRegistrationRequest,
-    ) -> Result<crate::core::platform::container::user::User, UserError>;
-    async fn login_user(&self, request: UserLoginRequest) -> Result<LoginResult, UserError>;
-    async fn get_user_by_id(
-        &self,
-        user_id: Uuid,
-    ) -> Result<Option<crate::core::platform::container::user::User>, UserError>;
-    async fn update_user_profile(
-        &self,
-        request: UserProfileUpdateRequest,
-    ) -> Result<crate::core::platform::container::user::User, UserError>;
-    async fn activate_user(&self, user_id: Uuid) -> Result<(), UserError>;
-    async fn deactivate_user(&self, user_id: Uuid) -> Result<(), UserError>;
-    async fn verify_user(&self, user_id: Uuid) -> Result<(), UserError>;
-}
-
-#[derive(Debug, Clone)]
-pub struct LoginResult {
-    pub user_id: Uuid,
-    pub username: String,
-    pub email: String,
-    pub is_verified: bool,
-    pub success: bool,
-}
-
-/// Placeholder type for UserService until the actual service is implemented
-pub type UserService = dyn UserServiceTrait;
 
 /// User registration request DTO
 #[derive(Debug, Deserialize)]
@@ -253,7 +198,7 @@ fn user_to_response(user: &crate::core::platform::container::user::User) -> User
 
 /// Register a new user
 async fn register_user(
-    State(user_service): State<Arc<UserService>>,
+    State(user_service): State<Arc<dyn UserServiceTrait>>,
     Json(request): Json<RegisterUserRequest>,
 ) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
     let profile = if request.first_name.is_some()
@@ -289,7 +234,7 @@ async fn register_user(
 
 /// User login
 async fn login_user(
-    State(user_service): State<Arc<UserService>>,
+    State(user_service): State<Arc<dyn UserServiceTrait>>,
     Json(request): Json<LoginUserRequest>,
 ) -> Result<Json<ApiResponse<LoginResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
     let login_request = UserLoginRequest {
@@ -311,7 +256,7 @@ async fn login_user(
 
 /// Get user by ID
 async fn get_user(
-    State(user_service): State<Arc<UserService>>,
+    State(user_service): State<Arc<dyn UserServiceTrait>>,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
     match user_service.get_user_by_id(user_id).await {
@@ -329,7 +274,7 @@ async fn get_user(
 
 /// Update user profile
 async fn update_user_profile(
-    State(user_service): State<Arc<UserService>>,
+    State(user_service): State<Arc<dyn UserServiceTrait>>,
     Path(user_id): Path<Uuid>,
     Json(request): Json<UpdateUserProfileRequest>,
 ) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
@@ -388,7 +333,7 @@ async fn update_user_profile(
 
 /// Activate user account
 async fn activate_user(
-    State(user_service): State<Arc<UserService>>,
+    State(user_service): State<Arc<dyn UserServiceTrait>>,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<()>>, (StatusCode, Json<ApiResponse<()>>)> {
     match user_service.activate_user(user_id).await {
@@ -399,7 +344,7 @@ async fn activate_user(
 
 /// Deactivate user account
 async fn deactivate_user(
-    State(user_service): State<Arc<UserService>>,
+    State(user_service): State<Arc<dyn UserServiceTrait>>,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<()>>, (StatusCode, Json<ApiResponse<()>>)> {
     match user_service.deactivate_user(user_id).await {
@@ -410,7 +355,7 @@ async fn deactivate_user(
 
 /// Verify user email
 async fn verify_user(
-    State(user_service): State<Arc<UserService>>,
+    State(user_service): State<Arc<dyn UserServiceTrait>>,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<()>>, (StatusCode, Json<ApiResponse<()>>)> {
     match user_service.verify_user(user_id).await {
@@ -420,7 +365,7 @@ async fn verify_user(
 }
 
 /// Create the user routes
-pub fn create_user_routes(user_service: Arc<UserService>) -> Router {
+pub fn create_user_routes(user_service: Arc<dyn UserServiceTrait>) -> Router {
     Router::new()
         .route("/users/register", post(register_user))
         .route("/users/login", post(login_user))
@@ -436,6 +381,7 @@ pub fn create_user_routes(user_service: Arc<UserService>) -> Router {
 mod tests {
     use super::*;
     use crate::core::platform::container::user::{User, UserError, UserProfile};
+    use crate::core::platform::manager::user_service::UserAuthenticationResult;
     use async_trait::async_trait;
     use chrono;
     use std::collections::HashMap;
@@ -480,7 +426,7 @@ mod tests {
     // Mock UserService for testing
     struct MockUserService {
         users: Mutex<HashMap<Uuid, User>>,
-        login_results: Mutex<HashMap<String, Result<super::LoginResult, UserError>>>,
+        login_results: Mutex<HashMap<String, Result<UserAuthenticationResult, UserError>>>,
         should_fail: Mutex<bool>,
     }
 
@@ -502,7 +448,11 @@ mod tests {
         }
 
         #[allow(dead_code)]
-        fn set_login_result(&self, email: &str, result: Result<super::LoginResult, UserError>) {
+        fn set_login_result(
+            &self,
+            email: &str,
+            result: Result<UserAuthenticationResult, UserError>,
+        ) {
             self.login_results
                 .lock()
                 .unwrap()
@@ -531,7 +481,7 @@ mod tests {
         async fn login_user(
             &self,
             request: UserLoginRequest,
-        ) -> Result<super::LoginResult, UserError> {
+        ) -> Result<UserAuthenticationResult, UserError> {
             if *self.should_fail.lock().unwrap() {
                 return Err(UserError::AuthenticationFailed);
             }
@@ -540,7 +490,7 @@ mod tests {
                 result
             } else {
                 // Default successful login
-                Ok(super::LoginResult {
+                Ok(UserAuthenticationResult {
                     user_id: Uuid::new_v4(),
                     username: "testuser".to_string(),
                     email: request.email,
@@ -627,6 +577,61 @@ mod tests {
                 return Err(UserError::RepositoryError("Mock error".to_string()));
             }
             Ok(())
+        }
+
+        async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+
+            Ok(self
+                .users
+                .lock()
+                .unwrap()
+                .values()
+                .find(|u| u.email().value() == email)
+                .cloned())
+        }
+
+        async fn find_by_active_status(&self, is_active: bool) -> Result<Vec<User>, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+
+            Ok(self
+                .users
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|u| u.is_active() == is_active)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_verification_status(
+            &self,
+            is_verified: bool,
+        ) -> Result<Vec<User>, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+
+            Ok(self
+                .users
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|u| u.is_verified() == is_verified)
+                .cloned()
+                .collect())
+        }
+
+        async fn count_users(&self) -> Result<u64, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+
+            Ok(self.users.lock().unwrap().len() as u64)
         }
     }
 

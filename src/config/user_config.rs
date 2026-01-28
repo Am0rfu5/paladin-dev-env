@@ -64,7 +64,7 @@ mod tests {
         LogDestinationConfig, LogFormat, LogHealthCheck, LogQuery, LogResult, LogStats,
     };
     use crate::core::base::service::message_service::MessageService;
-    use crate::core::platform::container::log::{LogDestination, LogEntry, LogLevel};
+    use crate::core::platform::container::log::{LogDestination, LogEntry};
     use crate::core::platform::manager::notification_service::NotificationServiceConfig;
     use async_trait::async_trait;
     use chrono::DateTime;
@@ -84,10 +84,12 @@ mod tests {
             }
         }
 
+        #[allow(dead_code)]
         fn set_should_fail(&self, fail: bool) {
             *self.should_fail.lock().unwrap() = fail;
         }
 
+        #[allow(dead_code)]
         fn get_call_count(&self) -> usize {
             *self.call_count.lock().unwrap()
         }
