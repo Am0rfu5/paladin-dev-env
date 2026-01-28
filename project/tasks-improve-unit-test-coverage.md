@@ -46,7 +46,7 @@
 ### Current Progress
 
 **Overall Coverage**: 70.56% regions / 68.29% lines (Target: >85%)
-**Completed Tasks**: 16/28 (57.1%)
+**Completed Tasks**: 18/28 (64.3%)
 - ✅ 0.0 Create feature branch
 - ✅ 1.0 Analyze coverage and prioritize files  
 - ✅ 2.1 Add unit tests for src/main.rs (3 tests, improved from 0% to ~48.65%)
@@ -56,6 +56,7 @@
 - ✅ 2.5 Add unit tests for src/config/setup/mod.rs (2 tests, improved from 0% to ~0% - thin wrapper function tested)
 - ✅ 2.6 Add unit tests for src/application/use_cases/content/content_aggregator_service.rs (7 tests, improved from 0% to ~97.21% regions / 94.23% lines)
 - ✅ 2.7 Add unit tests for src/cli/user_commands.rs (22 tests, improved from 0% to ~91.15% regions / 93.15% lines)
+- ✅ 3.1 Add unit tests for MinIO adapter (10 tests for MinioConfig)
 - ✅ 3.2 Add unit tests for OpenAI adapter (10 new tests)
 - ✅ 3.3 Add unit tests for Anthropic adapter (8 new tests)
 - ✅ 3.4 Add unit tests for DeepSeek adapter (9 new tests)
@@ -63,8 +64,9 @@
 - ✅ 3.6 Add unit tests for src/cli/commands/arsenal.rs (8 tests covering struct args and enum variants)
 - ✅ 3.7 Add unit tests for src/cli/commands/battalion.rs (13 tests covering all battalion types)
 - ✅ 3.8 Add unit tests for src/cli/interactive.rs (11 tests covering validator functions)
+- ✅ 3.9 Add unit tests for src/config/setup/service_runner.rs (11 tests, improved from 5 to 16 total tests)
 
-**Next Priority**: Complete remaining Task 3.0 subtasks (3.1 MinIO, 3.9 service_runner)
+**Next Priority**: Task 4.0 - Add unit tests for moderate coverage files (50-80%)
 
 ## Instructions for Completing Tasks
 
@@ -95,8 +97,8 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.6 Add unit tests for src/application/use_cases/content/content_aggregator_service.rs (7 tests, improved from 0% to ~97.21% regions / 94.23% lines)
   - [x] 2.7 Add unit tests for src/cli/user_commands.rs (22 tests, improved from 0% to ~91.15% regions / 93.15% lines)
 
-- [ ] 3.0 Add unit tests for files with low coverage (<50%)
-  - [ ] 3.1 Add unit tests for src/infrastructure/adapters/file_storage/minio.rs (deferred requires integration tests)
+- [x] 3.0 Add unit tests for files with low coverage (<50%)
+  - [x] 3.1 Add unit tests for src/infrastructure/adapters/file_storage/minio.rs (10 tests for MinioConfig - defaults, custom config, serialization, timeouts, retries, secure/insecure, path-style)
   - [x] 3.2 Add unit tests for src/infrastructure/adapters/llm/openai_adapter.rs (10 new tests - config validation, custom settings, capabilities, debug format)
   - [x] 3.3 Add unit tests for src/infrastructure/adapters/llm/anthropic_adapter.rs (8 new tests - config validation, model settings, clone, debug format)
   - [x] 3.4 Add unit tests for src/infrastructure/adapters/llm/deepseek_adapter.rs (9 new tests - adapter creation, capabilities, model validation, clone)
@@ -104,7 +106,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.6 Add unit tests for src/cli/commands/arsenal.rs (8 tests covering ArsenalTestArgs struct, stdio/sse options, enum variants, mutual exclusivity)
   - [x] 3.7 Add unit tests for src/cli/commands/battalion.rs (13 tests covering BattalionNewArgs, BattalionRunArgs, all 4 battalion types (formation/phalanx/campaign/chain-of-command), error cases, enum variants)
   - [x] 3.8 Add unit tests for src/cli/interactive.rs (11 tests covering TTY checks, error variants, function signatures, validator functions for numeric/port/email validation)
-  - [ ] 3.9 Add unit tests for src/config/setup/service_runner.rs (service initialization)
+  - [x] 3.9 Add unit tests for src/config/setup/service_runner.rs (11 tests - scheduler, defaults, adapters, content types, health status, config defaults - improved from 5 to 16 total tests)
 
 - [ ] 4.0 Add unit tests for moderate coverage files (50-80%)
   - [ ] 4.1 Add unit tests for src/application/use_cases/content/content_ingestion_service.rs (missing error paths and edge cases)
