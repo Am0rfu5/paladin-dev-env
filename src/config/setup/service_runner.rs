@@ -629,4 +629,107 @@ mod tests {
         // This would require a full service initialization which needs Redis and MinIO
         // So we'll skip this for unit tests and rely on integration tests
     }
+
+    #[tokio::test]
+    async fn test_scheduler_initialization() {
+        let runner = ServiceRunner::new();
+        // Verify scheduler is initialized
+        let scheduler_lock = runner.scheduler.read().await;
+        // Scheduler should exist (no panic when accessing)
+        drop(scheduler_lock);
+    }
+
+    #[test]
+    fn test_service_runner_default() {
+        let runner = ServiceRunner::default();
+        assert!(runner.database.is_none());
+        assert!(runner.scheduler_handle.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_get_queue_adapter_initially_none() {
+        let runner = ServiceRunner::new();
+        assert!(runner.get_queue_adapter().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_get_file_storage_adapter_initially_none() {
+        let runner = ServiceRunner::new();
+        assert!(runner.get_file_storage_adapter().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_get_log_adapter_initially_none() {
+        let runner = ServiceRunner::new();
+        assert!(runner.get_log_adapter().is_none());
+    }
+
+    #[test]
+    fn test_content_type_txt() {
+        use std::path::PathBuf;
+        assert_eq!(
+            ServiceRunner::detect_content_type(&PathBuf::from("readme.txt")),
+            "text/plain"
+        );
+    }
+
+    #[test]
+    fn test_content_type_html() {
+        use std::path::PathBuf;
+        assert_eq!(
+            ServiceRunner::detect_content_type(&PathBuf::from("index.html")),
+            "text/html"
+        );
+    }
+
+    #[test]
+    fn test_content_type_unknown() {
+        use std::path::PathBuf;
+        // mime_guess defaults to text/plain for unknown extensions (first_or_text_plain)
+        let result = ServiceRunner::detect_content_type(&PathBuf::from("unknown.unknownext"));
+        assert_eq!(result, "text/plain");
+    }
+
+    #[tokio::test]
+    async fn test_service_health_all_fields() {
+        let runner = ServiceRunner::new();
+        let health = runner.get_service_health().await;
+
+        // Verify all health check fields exist and have expected initial values
+        assert!(!health.database_connected);
+        assert!(!health.message_service_healthy);
+        assert!(!health.event_service_initialized);
+        assert!(!health.queue_adapter_healthy);
+        assert!(!health.redis_connected);
+        assert!(!health.file_storage_adapter_healthy);
+        assert!(!health.minio_connected);
+        assert_eq!(health.total_jobs, 0);
+        assert_eq!(health.enabled_jobs, 0);
+        assert!(!health.scheduler_running);
+    }
+
+    #[test]
+    fn test_message_service_config_defaults() {
+        let settings = Settings::default();
+        let config = ServiceRunner::create_message_service_config(&settings);
+
+        assert_eq!(config.max_queue_size, 10000);
+        assert_eq!(config.worker_threads, 4);
+        assert_eq!(config.retry_attempts, 3);
+        assert_eq!(config.default_ttl_seconds, 3600);
+        assert!(!config.enable_persistence);
+    }
+
+    #[test]
+    fn test_content_type_case_insensitive() {
+        use std::path::PathBuf;
+        assert_eq!(
+            ServiceRunner::detect_content_type(&PathBuf::from("FILE.TXT")),
+            "text/plain"
+        );
+        assert_eq!(
+            ServiceRunner::detect_content_type(&PathBuf::from("IMAGE.PNG")),
+            "image/png"
+        );
+    }
 }
