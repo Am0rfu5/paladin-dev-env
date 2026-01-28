@@ -871,4 +871,341 @@ mod tests {
         assert!(result.content_size.unwrap() > 0);
         assert!(result.ingested_at <= chrono::Utc::now());
     }
+
+    #[tokio::test]
+    async fn test_remove_source_success() {
+        let config = IngestionConfig::default();
+        let orchestrator = Arc::new(Orchestrator::new());
+        let repository = Arc::new(InMemoryContentRepository::new());
+        let service = DefaultContentIngestionService::new(config, orchestrator, repository);
+
+        let source = ContentSource {
+            id: Uuid::new_v4(),
+            name: "Test Source".to_string(),
+            source_type: SourceType::WebPage,
+            url: Some("https://example.com".parse().unwrap()),
+            config: SourceConfig {
+                check_interval: 3600,
+                auth: None,
+                headers: HashMap::new(),
+                parameters: HashMap::new(),
+            },
+            enabled: true,
+            last_ingested: None,
+            created_at: Utc::now(),
+        };
+
+        let source_id = service.register_source(source).await.unwrap();
+        assert!(service.remove_source(source_id).await.is_ok());
+
+        let sources = service.list_sources().await.unwrap();
+        assert_eq!(sources.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_remove_nonexistent_source_fails() {
+        let config = IngestionConfig::default();
+        let orchestrator = Arc::new(Orchestrator::new());
+        let repository = Arc::new(InMemoryContentRepository::new());
+        let service = DefaultContentIngestionService::new(config, orchestrator, repository);
+
+        let nonexistent_id = Uuid::new_v4();
+        let result = service.remove_source(nonexistent_id).await;
+
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            IngestionError::SourceNotFound(_)
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_update_source_config() {
+        let config = IngestionConfig::default();
+        let orchestrator = Arc::new(Orchestrator::new());
+        let repository = Arc::new(InMemoryContentRepository::new());
+        let service = DefaultContentIngestionService::new(config, orchestrator, repository);
+
+        let source = ContentSource {
+            id: Uuid::new_v4(),
+            name: "Test Source".to_string(),
+            source_type: SourceType::WebPage,
+            url: Some("https://example.com".parse().unwrap()),
+            config: SourceConfig {
+                check_interval: 3600,
+                auth: None,
+                headers: HashMap::new(),
+                parameters: HashMap::new(),
+            },
+            enabled: true,
+            last_ingested: None,
+            created_at: Utc::now(),
+        };
+
+        let source_id = service.register_source(source).await.unwrap();
+
+        let new_config = SourceConfig {
+            check_interval: 7200,
+            auth: None,
+            headers: HashMap::new(),
+            parameters: HashMap::new(),
+        };
+
+        assert!(
+            service
+                .update_source(source_id, new_config.clone())
+                .await
+                .is_ok()
+        );
+
+        let sources = service.list_sources().await.unwrap();
+        assert_eq!(sources[0].config.check_interval, 7200);
+    }
+
+    #[tokio::test]
+    async fn test_update_nonexistent_source_fails() {
+        let config = IngestionConfig::default();
+        let orchestrator = Arc::new(Orchestrator::new());
+        let repository = Arc::new(InMemoryContentRepository::new());
+        let service = DefaultContentIngestionService::new(config, orchestrator, repository);
+
+        let nonexistent_id = Uuid::new_v4();
+        let new_config = SourceConfig {
+            check_interval: 7200,
+            auth: None,
+            headers: HashMap::new(),
+            parameters: HashMap::new(),
+        };
+
+        let result = service.update_source(nonexistent_id, new_config).await;
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            IngestionError::SourceNotFound(_)
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_set_source_enabled() {
+        let config = IngestionConfig::default();
+        let orchestrator = Arc::new(Orchestrator::new());
+        let repository = Arc::new(InMemoryContentRepository::new());
+        let service = DefaultContentIngestionService::new(config, orchestrator, repository);
+
+        let source = ContentSource {
+            id: Uuid::new_v4(),
+            name: "Test Source".to_string(),
+            source_type: SourceType::WebPage,
+            url: Some("https://example.com".parse().unwrap()),
+            config: SourceConfig {
+                check_interval: 3600,
+                auth: None,
+                headers: HashMap::new(),
+                parameters: HashMap::new(),
+            },
+            enabled: true,
+            last_ingested: None,
+            created_at: Utc::now(),
+        };
+
+        let source_id = service.register_source(source).await.unwrap();
+
+        // Disable the source
+        assert!(service.set_source_enabled(source_id, false).await.is_ok());
+
+        let sources = service.list_sources().await.unwrap();
+        assert!(!sources[0].enabled);
+
+        // Re-enable the source
+        assert!(service.set_source_enabled(source_id, true).await.is_ok());
+
+        let sources = service.list_sources().await.unwrap();
+        assert!(sources[0].enabled);
+    }
+
+    #[tokio::test]
+    async fn test_set_nonexistent_source_enabled_fails() {
+        let config = IngestionConfig::default();
+        let orchestrator = Arc::new(Orchestrator::new());
+        let repository = Arc::new(InMemoryContentRepository::new());
+        let service = DefaultContentIngestionService::new(config, orchestrator, repository);
+
+        let nonexistent_id = Uuid::new_v4();
+        let result = service.set_source_enabled(nonexistent_id, false).await;
+
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            IngestionError::SourceNotFound(_)
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_ingestion_config_default() {
+        let config = IngestionConfig::default();
+
+        assert_eq!(config.max_content_size, 10 * 1024 * 1024); // 10MB
+        assert!(config.auto_analyze);
+        assert_eq!(config.batch_size, 50);
+        assert_eq!(config.max_concurrent, 10);
+        assert!(!config.analysis_types.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_ingestion_stats_default() {
+        let stats = IngestionStats::default();
+
+        assert_eq!(stats.total_sources, 0);
+        assert_eq!(stats.enabled_sources, 0);
+        assert_eq!(stats.total_items_ingested, 0);
+        assert_eq!(stats.items_ingested_today, 0);
+        assert_eq!(stats.failed_ingestions, 0);
+        assert!(!stats.scheduler_running);
+    }
+
+    #[tokio::test]
+    async fn test_source_type_variants() {
+        let rss = SourceType::RssFeed;
+        let webpage = SourceType::WebPage;
+        let dir = SourceType::Directory;
+        let db = SourceType::Database;
+        let api = SourceType::Api;
+        let custom = SourceType::Custom("custom-type".to_string());
+
+        // Verify different variants exist and can be created
+        assert!(matches!(rss, SourceType::RssFeed));
+        assert!(matches!(webpage, SourceType::WebPage));
+        assert!(matches!(dir, SourceType::Directory));
+        assert!(matches!(db, SourceType::Database));
+        assert!(matches!(api, SourceType::Api));
+        assert!(matches!(custom, SourceType::Custom(_)));
+    }
+
+    #[tokio::test]
+    async fn test_auth_type_variants() {
+        let none = AuthType::None;
+        let basic = AuthType::Basic;
+        let bearer = AuthType::Bearer;
+        let api_key = AuthType::ApiKey;
+        let oauth2 = AuthType::OAuth2;
+
+        assert!(matches!(none, AuthType::None));
+        assert!(matches!(basic, AuthType::Basic));
+        assert!(matches!(bearer, AuthType::Bearer));
+        assert!(matches!(api_key, AuthType::ApiKey));
+        assert!(matches!(oauth2, AuthType::OAuth2));
+    }
+
+    #[test]
+    fn test_ingestion_error_display() {
+        let error = IngestionError::SourceNotFound(Uuid::new_v4());
+        let error_str = error.to_string();
+        assert!(error_str.contains("Source not found"));
+
+        let error = IngestionError::InvalidContent("bad content".to_string());
+        assert!(error.to_string().contains("Invalid content"));
+
+        let error = IngestionError::ContentTooLarge {
+            size: 1000,
+            max: 500,
+        };
+        assert!(error.to_string().contains("Content too large"));
+    }
+
+    #[tokio::test]
+    async fn test_stats_updates_on_source_registration() {
+        let config = IngestionConfig::default();
+        let orchestrator = Arc::new(Orchestrator::new());
+        let repository = Arc::new(InMemoryContentRepository::new());
+        let service = DefaultContentIngestionService::new(config, orchestrator, repository);
+
+        let stats_before = service.get_stats().await.unwrap();
+        assert_eq!(stats_before.total_sources, 0);
+        assert_eq!(stats_before.enabled_sources, 0);
+
+        let source = ContentSource {
+            id: Uuid::new_v4(),
+            name: "Test Source".to_string(),
+            source_type: SourceType::WebPage,
+            url: Some("https://example.com".parse().unwrap()),
+            config: SourceConfig {
+                check_interval: 3600,
+                auth: None,
+                headers: HashMap::new(),
+                parameters: HashMap::new(),
+            },
+            enabled: true,
+            last_ingested: None,
+            created_at: Utc::now(),
+        };
+
+        let _ = service.register_source(source).await.unwrap();
+
+        let stats_after = service.get_stats().await.unwrap();
+        assert_eq!(stats_after.total_sources, 1);
+        assert_eq!(stats_after.enabled_sources, 1);
+    }
+
+    #[tokio::test]
+    async fn test_stats_updates_on_source_removal() {
+        let config = IngestionConfig::default();
+        let orchestrator = Arc::new(Orchestrator::new());
+        let repository = Arc::new(InMemoryContentRepository::new());
+        let service = DefaultContentIngestionService::new(config, orchestrator, repository);
+
+        let source = ContentSource {
+            id: Uuid::new_v4(),
+            name: "Test Source".to_string(),
+            source_type: SourceType::WebPage,
+            url: Some("https://example.com".parse().unwrap()),
+            config: SourceConfig {
+                check_interval: 3600,
+                auth: None,
+                headers: HashMap::new(),
+                parameters: HashMap::new(),
+            },
+            enabled: true,
+            last_ingested: None,
+            created_at: Utc::now(),
+        };
+
+        let source_id = service.register_source(source).await.unwrap();
+        let _ = service.remove_source(source_id).await.unwrap();
+
+        let stats = service.get_stats().await.unwrap();
+        assert_eq!(stats.total_sources, 0);
+        assert_eq!(stats.enabled_sources, 0);
+    }
+
+    #[tokio::test]
+    async fn test_multiple_sources_stats() {
+        let config = IngestionConfig::default();
+        let orchestrator = Arc::new(Orchestrator::new());
+        let repository = Arc::new(InMemoryContentRepository::new());
+        let service = DefaultContentIngestionService::new(config, orchestrator, repository);
+
+        // Add 3 sources, 2 enabled, 1 disabled
+        for i in 0..3 {
+            let source = ContentSource {
+                id: Uuid::new_v4(),
+                name: format!("Source {}", i),
+                source_type: SourceType::WebPage,
+                url: Some("https://example.com".parse().unwrap()),
+                config: SourceConfig {
+                    check_interval: 3600,
+                    auth: None,
+                    headers: HashMap::new(),
+                    parameters: HashMap::new(),
+                },
+                enabled: i < 2, // First two enabled, last one disabled
+                last_ingested: None,
+                created_at: Utc::now(),
+            };
+            let _ = service.register_source(source).await.unwrap();
+        }
+
+        let stats = service.get_stats().await.unwrap();
+        assert_eq!(stats.total_sources, 3);
+        assert_eq!(stats.enabled_sources, 2);
+    }
 }
