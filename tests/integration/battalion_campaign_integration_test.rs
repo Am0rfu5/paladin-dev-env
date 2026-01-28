@@ -3,13 +3,17 @@
 //! Tests graph-based DAG orchestration including linear workflows, branching,
 //! fan-out/fan-in, conditional routing, and error handling.
 
-use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResult, PaladinStream, StopReason};
+use async_trait::async_trait;
+use paladin::application::ports::output::paladin_port::{
+    PaladinPort, PaladinResult, PaladinStream, StopReason,
+};
 use paladin::application::use_cases::battalion::campaign_service::CampaignExecutionService;
-use paladin::core::platform::container::battalion::campaign::{Campaign, CampaignEdge, EdgeCondition};
+use paladin::core::base::entity::node::Node;
+use paladin::core::platform::container::battalion::campaign::{
+    Campaign, CampaignEdge, EdgeCondition,
+};
 use paladin::core::platform::container::battalion::{BattalionConfig, BattalionError};
 use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
-use paladin::core::base::entity::node::Node;
-use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
 
 /// Mock Paladin port for testing
@@ -43,7 +47,11 @@ impl MockPaladinPort {
 
 #[async_trait]
 impl PaladinPort for MockPaladinPort {
-    async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult, paladin::application::use_cases::paladin::error::PaladinError> {
+    async fn execute(
+        &self,
+        paladin: &Paladin,
+        input: &str,
+    ) -> Result<PaladinResult, paladin::application::use_cases::paladin::error::PaladinError> {
         // Log execution
         self.execution_log
             .lock()
@@ -76,7 +84,10 @@ impl PaladinPort for MockPaladinPort {
         unimplemented!("Streaming not needed for tests")
     }
 
-    fn validate(&self, _paladin: &Paladin) -> Result<(), paladin::application::use_cases::paladin::error::PaladinError> {
+    fn validate(
+        &self,
+        _paladin: &Paladin,
+    ) -> Result<(), paladin::application::use_cases::paladin::error::PaladinError> {
         Ok(())
     }
 }
@@ -121,8 +132,12 @@ async fn test_linear_campaign_execution() {
     let id_b = campaign.add_paladin(paladin_b);
     let id_c = campaign.add_paladin(paladin_c);
 
-    campaign.add_edge(CampaignEdge::new(id_a, id_b, EdgeCondition::Always)).unwrap();
-    campaign.add_edge(CampaignEdge::new(id_b, id_c, EdgeCondition::Always)).unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(id_a, id_b, EdgeCondition::Always))
+        .unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(id_b, id_c, EdgeCondition::Always))
+        .unwrap();
 
     campaign.set_entry_point(id_a).unwrap();
 
@@ -151,8 +166,12 @@ async fn test_branching_campaign_fan_out() {
     let id_b = campaign.add_paladin(paladin_b);
     let id_c = campaign.add_paladin(paladin_c);
 
-    campaign.add_edge(CampaignEdge::new(id_a, id_b, EdgeCondition::Always)).unwrap();
-    campaign.add_edge(CampaignEdge::new(id_a, id_c, EdgeCondition::Always)).unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(id_a, id_b, EdgeCondition::Always))
+        .unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(id_a, id_c, EdgeCondition::Always))
+        .unwrap();
 
     campaign.set_entry_point(id_a).unwrap();
 
@@ -161,7 +180,7 @@ async fn test_branching_campaign_fan_out() {
 
     assert!(result.is_ok());
     let execution_log = mock_port.get_execution_log();
-    
+
     // A should execute first, then B and C in any order
     assert_eq!(execution_log[0], "paladin_a");
     assert!(execution_log.contains(&"paladin_b".to_string()));
@@ -188,10 +207,18 @@ async fn test_diamond_graph_campaign() {
     let id_c = campaign.add_paladin(paladin_c);
     let id_d = campaign.add_paladin(paladin_d);
 
-    campaign.add_edge(CampaignEdge::new(id_a, id_b, EdgeCondition::Always)).unwrap();
-    campaign.add_edge(CampaignEdge::new(id_a, id_c, EdgeCondition::Always)).unwrap();
-    campaign.add_edge(CampaignEdge::new(id_b, id_d, EdgeCondition::Always)).unwrap();
-    campaign.add_edge(CampaignEdge::new(id_c, id_d, EdgeCondition::Always)).unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(id_a, id_b, EdgeCondition::Always))
+        .unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(id_a, id_c, EdgeCondition::Always))
+        .unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(id_b, id_d, EdgeCondition::Always))
+        .unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(id_c, id_d, EdgeCondition::Always))
+        .unwrap();
 
     campaign.set_entry_point(id_a).unwrap();
 
@@ -200,7 +227,7 @@ async fn test_diamond_graph_campaign() {
 
     assert!(result.is_ok());
     let execution_log = mock_port.get_execution_log();
-    
+
     // Verify execution order: A first, then B and C, then D last
     assert_eq!(execution_log[0], "paladin_a");
     assert_eq!(execution_log[3], "paladin_d");
@@ -224,7 +251,10 @@ async fn test_empty_campaign_validation() {
     // Check for any graph validation error (actual message may vary)
     if let Err(err) = result {
         // Just verify it's a Battalion error - don't check exact message
-        assert!(matches!(err, BattalionError::InvalidGraph(_) | BattalionError::ConfigurationError(_)));
+        assert!(matches!(
+            err,
+            BattalionError::InvalidGraph(_) | BattalionError::ConfigurationError(_)
+        ));
     }
 }
 
@@ -265,8 +295,12 @@ async fn test_multiple_entry_points() {
     let id_b = campaign.add_paladin(paladin_b);
     let id_c = campaign.add_paladin(paladin_c);
 
-    campaign.add_edge(CampaignEdge::new(id_a, id_c, EdgeCondition::Always)).unwrap();
-    campaign.add_edge(CampaignEdge::new(id_b, id_c, EdgeCondition::Always)).unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(id_a, id_c, EdgeCondition::Always))
+        .unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(id_b, id_c, EdgeCondition::Always))
+        .unwrap();
 
     campaign.set_entry_point(id_a).unwrap();
     campaign.set_entry_point(id_b).unwrap();
@@ -276,7 +310,7 @@ async fn test_multiple_entry_points() {
 
     assert!(result.is_ok());
     let execution_log = mock_port.get_execution_log();
-    
+
     // Both entry points should execute, then C
     assert!(execution_log.contains(&"paladin_a".to_string()));
     assert!(execution_log.contains(&"paladin_b".to_string()));
@@ -303,15 +337,25 @@ async fn test_complex_workflow() {
         .collect();
 
     // A → B
-    campaign.add_edge(CampaignEdge::new(ids[0], ids[1], EdgeCondition::Always)).unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(ids[0], ids[1], EdgeCondition::Always))
+        .unwrap();
     // B → C
-    campaign.add_edge(CampaignEdge::new(ids[1], ids[2], EdgeCondition::Always)).unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(ids[1], ids[2], EdgeCondition::Always))
+        .unwrap();
     // B → D
-    campaign.add_edge(CampaignEdge::new(ids[1], ids[3], EdgeCondition::Always)).unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(ids[1], ids[3], EdgeCondition::Always))
+        .unwrap();
     // C → E
-    campaign.add_edge(CampaignEdge::new(ids[2], ids[4], EdgeCondition::Always)).unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(ids[2], ids[4], EdgeCondition::Always))
+        .unwrap();
     // D → E
-    campaign.add_edge(CampaignEdge::new(ids[3], ids[4], EdgeCondition::Always)).unwrap();
+    campaign
+        .add_edge(CampaignEdge::new(ids[3], ids[4], EdgeCondition::Always))
+        .unwrap();
 
     campaign.set_entry_point(ids[0]).unwrap();
 
@@ -320,7 +364,7 @@ async fn test_complex_workflow() {
 
     assert!(result.is_ok());
     let execution_log = mock_port.get_execution_log();
-    
+
     // Verify order: A, B, then C&D (parallel), then E
     assert_eq!(execution_log[0], "paladin_A");
     assert_eq!(execution_log[1], "paladin_B");
@@ -332,7 +376,7 @@ async fn test_complex_workflow() {
 async fn test_campaign_with_edge_transform() {
     let mock_port = Arc::new(MockPaladinPort::new());
     mock_port.set_output("paladin_a", "result from A");
-    
+
     let service = CampaignExecutionService::new(mock_port.clone());
 
     let config = BattalionConfig::new("transform_campaign");
@@ -346,7 +390,7 @@ async fn test_campaign_with_edge_transform() {
 
     let edge = CampaignEdge::new(id_a, id_b, EdgeCondition::Always)
         .with_transform("Transform: {output}".to_string());
-    
+
     campaign.add_edge(edge).unwrap();
     campaign.set_entry_point(id_a).unwrap();
 
@@ -373,7 +417,7 @@ async fn test_campaign_execution_timeout() {
     // Note: This test passes because mock execution is fast
     // In real scenario with slow Paladin, timeout would trigger
     let result = service.execute(&campaign, "input").await;
-    
+
     // Should complete successfully with fast mock
     assert!(result.is_ok());
 }
