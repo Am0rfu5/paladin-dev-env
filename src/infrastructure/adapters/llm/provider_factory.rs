@@ -375,4 +375,349 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn test_create_with_config_openai() {
+        let factory = LlmProviderFactory::new();
+        let config = OpenAIConfig {
+            api_key: "test-key".to_string(),
+            base_url: "https://api.openai.com/v1".to_string(),
+            organization: None,
+            timeout_seconds: 30,
+            max_retries: 3,
+        };
+
+        let result = factory.create_with_config("openai", ProviderConfig::OpenAI(config));
+        assert!(result.is_ok(), "Should create OpenAI adapter with config");
+    }
+
+    #[test]
+    fn test_create_with_config_deepseek() {
+        let factory = LlmProviderFactory::new();
+        let config = DeepSeekConfig {
+            api_key: "test-key".to_string(),
+            base_url: "https://api.deepseek.com/v1".to_string(),
+            model: "deepseek-chat".to_string(),
+            timeout_seconds: 60,
+        };
+
+        let result = factory.create_with_config("deepseek", ProviderConfig::DeepSeek(config));
+        assert!(result.is_ok(), "Should create DeepSeek adapter with config");
+    }
+
+    #[test]
+    fn test_create_with_config_anthropic() {
+        let factory = LlmProviderFactory::new();
+        let config = AnthropicConfig {
+            api_key: "test-key".to_string(),
+            base_url: "https://api.anthropic.com/v1".to_string(),
+            model: "claude-3-opus-20240229".to_string(),
+            max_tokens: 4096,
+            timeout_seconds: 45,
+        };
+
+        let result = factory.create_with_config("anthropic", ProviderConfig::Anthropic(config));
+        assert!(
+            result.is_ok(),
+            "Should create Anthropic adapter with config"
+        );
+    }
+
+    #[test]
+    fn test_create_with_config_mismatched_provider_and_config() {
+        let factory = LlmProviderFactory::new();
+        let openai_config = OpenAIConfig {
+            api_key: "test-key".to_string(),
+            base_url: "https://api.openai.com/v1".to_string(),
+            organization: None,
+            timeout_seconds: 30,
+            max_retries: 3,
+        };
+
+        // Try to create DeepSeek with OpenAI config - should fail
+        let result = factory.create_with_config("deepseek", ProviderConfig::OpenAI(openai_config));
+        assert!(
+            result.is_err(),
+            "Should fail with mismatched provider and config"
+        );
+        assert!(matches!(
+            result.err().unwrap(),
+            ProviderFactoryError::UnknownProvider(_)
+        ));
+    }
+
+    #[test]
+    fn test_create_with_config_unknown_provider() {
+        let factory = LlmProviderFactory::new();
+        let config = OpenAIConfig {
+            api_key: "test-key".to_string(),
+            base_url: "https://api.openai.com/v1".to_string(),
+            organization: None,
+            timeout_seconds: 30,
+            max_retries: 3,
+        };
+
+        let result = factory.create_with_config("unknown", ProviderConfig::OpenAI(config));
+        assert!(result.is_err());
+        assert!(matches!(
+            result.err().unwrap(),
+            ProviderFactoryError::UnknownProvider(_)
+        ));
+    }
+
+    #[test]
+    fn test_create_with_config_case_insensitive() {
+        let factory = LlmProviderFactory::new();
+        let config = OpenAIConfig {
+            api_key: "test-key".to_string(),
+            base_url: "https://api.openai.com/v1".to_string(),
+            organization: None,
+            timeout_seconds: 30,
+            max_retries: 3,
+        };
+
+        // All case variations should work
+        let result1 = factory.create_with_config("OpenAI", ProviderConfig::OpenAI(config.clone()));
+        let result2 = factory.create_with_config("OPENAI", ProviderConfig::OpenAI(config.clone()));
+        let result3 = factory.create_with_config("openai", ProviderConfig::OpenAI(config));
+
+        assert!(result1.is_ok());
+        assert!(result2.is_ok());
+        assert!(result3.is_ok());
+    }
+
+    #[test]
+    fn test_provider_config_enum_variants() {
+        // Test that ProviderConfig enum can hold different config types
+        let openai_config = ProviderConfig::OpenAI(OpenAIConfig {
+            api_key: "test".to_string(),
+            base_url: "url".to_string(),
+            organization: None,
+            timeout_seconds: 30,
+            max_retries: 3,
+        });
+
+        let deepseek_config = ProviderConfig::DeepSeek(DeepSeekConfig {
+            api_key: "test".to_string(),
+            base_url: "url".to_string(),
+            model: "model".to_string(),
+            timeout_seconds: 30,
+        });
+
+        let anthropic_config = ProviderConfig::Anthropic(AnthropicConfig {
+            api_key: "test".to_string(),
+            base_url: "url".to_string(),
+            model: "model".to_string(),
+            max_tokens: 1000,
+            timeout_seconds: 30,
+        });
+
+        // Verify we can match on variants
+        assert!(matches!(openai_config, ProviderConfig::OpenAI(_)));
+        assert!(matches!(deepseek_config, ProviderConfig::DeepSeek(_)));
+        assert!(matches!(anthropic_config, ProviderConfig::Anthropic(_)));
+    }
+
+    #[test]
+    fn test_provider_config_debug_format() {
+        let config = ProviderConfig::OpenAI(OpenAIConfig {
+            api_key: "test-key".to_string(),
+            base_url: "https://api.openai.com/v1".to_string(),
+            organization: None,
+            timeout_seconds: 30,
+            max_retries: 3,
+        });
+
+        let debug_str = format!("{:?}", config);
+        assert!(debug_str.contains("OpenAI"));
+    }
+
+    #[test]
+    fn test_provider_config_clone() {
+        let config = ProviderConfig::DeepSeek(DeepSeekConfig {
+            api_key: "test-key".to_string(),
+            base_url: "https://api.deepseek.com/v1".to_string(),
+            model: "deepseek-chat".to_string(),
+            timeout_seconds: 60,
+        });
+
+        let cloned = config.clone();
+        assert!(matches!(cloned, ProviderConfig::DeepSeek(_)));
+    }
+
+    #[test]
+    fn test_provider_factory_error_debug() {
+        let err1 = ProviderFactoryError::UnknownProvider("test".to_string());
+        let err2 = ProviderFactoryError::ConfigurationMissing("config".to_string());
+        let err3 = ProviderFactoryError::AdapterCreationFailed("failed".to_string());
+
+        // Verify Debug trait works
+        assert!(format!("{:?}", err1).contains("UnknownProvider"));
+        assert!(format!("{:?}", err2).contains("ConfigurationMissing"));
+        assert!(format!("{:?}", err3).contains("AdapterCreationFailed"));
+    }
+
+    #[test]
+    fn test_create_openai_without_env() {
+        // Ensure OPENAI_API_KEY is not set for this test
+        unsafe {
+            std::env::remove_var("OPENAI_API_KEY");
+        }
+
+        let factory = LlmProviderFactory::new();
+        let result = factory.create("openai");
+
+        assert!(result.is_err());
+        if let Err(e) = result {
+            assert!(matches!(e, ProviderFactoryError::ConfigurationMissing(_)));
+            assert!(e.to_string().contains("OPENAI_API_KEY"));
+        }
+    }
+
+    #[test]
+    fn test_create_anthropic_without_env() {
+        // Ensure ANTHROPIC_API_KEY is not set for this test
+        unsafe {
+            std::env::remove_var("ANTHROPIC_API_KEY");
+        }
+
+        let factory = LlmProviderFactory::new();
+        let result = factory.create("anthropic");
+
+        assert!(result.is_err());
+        if let Err(e) = result {
+            assert!(matches!(e, ProviderFactoryError::ConfigurationMissing(_)));
+            assert!(e.to_string().contains("ANTHROPIC_API_KEY"));
+        }
+    }
+
+    #[test]
+    fn test_empty_provider_name_is_unknown() {
+        let factory = LlmProviderFactory::new();
+        let result = factory.create("");
+
+        assert!(result.is_err());
+        assert!(matches!(
+            result.err().unwrap(),
+            ProviderFactoryError::UnknownProvider(_)
+        ));
+    }
+
+    #[test]
+    fn test_whitespace_provider_name() {
+        let factory = LlmProviderFactory::new();
+        let result = factory.create("  openai  ");
+
+        // Should fail because to_lowercase() doesn't trim
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_default_provider_priority() {
+        // This test verifies the priority logic exists
+        // Actual behavior depends on environment variables
+
+        // Save current env state
+        let openai_backup = std::env::var("OPENAI_API_KEY").ok();
+        let deepseek_backup = std::env::var("DEEPSEEK_API_KEY").ok();
+        let anthropic_backup = std::env::var("ANTHROPIC_API_KEY").ok();
+
+        unsafe {
+            // Test with OpenAI set - should return openai
+            std::env::set_var("OPENAI_API_KEY", "test");
+            std::env::remove_var("DEEPSEEK_API_KEY");
+            std::env::remove_var("ANTHROPIC_API_KEY");
+            assert_eq!(
+                LlmProviderFactory::get_default_provider(),
+                Some("openai".to_string())
+            );
+
+            // Test with only DeepSeek - should return deepseek
+            std::env::remove_var("OPENAI_API_KEY");
+            std::env::set_var("DEEPSEEK_API_KEY", "test");
+            std::env::remove_var("ANTHROPIC_API_KEY");
+            assert_eq!(
+                LlmProviderFactory::get_default_provider(),
+                Some("deepseek".to_string())
+            );
+
+            // Test with only Anthropic - should return anthropic
+            std::env::remove_var("OPENAI_API_KEY");
+            std::env::remove_var("DEEPSEEK_API_KEY");
+            std::env::set_var("ANTHROPIC_API_KEY", "test");
+            assert_eq!(
+                LlmProviderFactory::get_default_provider(),
+                Some("anthropic".to_string())
+            );
+
+            // Test with none - should return None
+            std::env::remove_var("OPENAI_API_KEY");
+            std::env::remove_var("DEEPSEEK_API_KEY");
+            std::env::remove_var("ANTHROPIC_API_KEY");
+            assert_eq!(LlmProviderFactory::get_default_provider(), None);
+
+            // Restore env state
+            if let Some(key) = openai_backup {
+                std::env::set_var("OPENAI_API_KEY", key);
+            }
+            if let Some(key) = deepseek_backup {
+                std::env::set_var("DEEPSEEK_API_KEY", key);
+            }
+            if let Some(key) = anthropic_backup {
+                std::env::set_var("ANTHROPIC_API_KEY", key);
+            }
+        }
+    }
+
+    #[test]
+    fn test_list_available_providers_comprehensive() {
+        // Save current env state
+        let openai_backup = std::env::var("OPENAI_API_KEY").ok();
+        let deepseek_backup = std::env::var("DEEPSEEK_API_KEY").ok();
+        let anthropic_backup = std::env::var("ANTHROPIC_API_KEY").ok();
+
+        unsafe {
+            // Test with all providers configured
+            std::env::set_var("OPENAI_API_KEY", "test1");
+            std::env::set_var("DEEPSEEK_API_KEY", "test2");
+            std::env::set_var("ANTHROPIC_API_KEY", "test3");
+            let all_providers = LlmProviderFactory::list_available_providers();
+            assert_eq!(all_providers.len(), 3);
+            assert!(all_providers.contains(&"openai".to_string()));
+            assert!(all_providers.contains(&"deepseek".to_string()));
+            assert!(all_providers.contains(&"anthropic".to_string()));
+
+            // Test with no providers configured
+            std::env::remove_var("OPENAI_API_KEY");
+            std::env::remove_var("DEEPSEEK_API_KEY");
+            std::env::remove_var("ANTHROPIC_API_KEY");
+            let no_providers = LlmProviderFactory::list_available_providers();
+            assert_eq!(no_providers.len(), 0);
+
+            // Test with only one provider
+            std::env::set_var("DEEPSEEK_API_KEY", "test");
+            std::env::remove_var("OPENAI_API_KEY");
+            std::env::remove_var("ANTHROPIC_API_KEY");
+            let one_provider = LlmProviderFactory::list_available_providers();
+            assert_eq!(one_provider.len(), 1);
+            assert_eq!(one_provider[0], "deepseek");
+
+            // Restore env state
+            if let Some(key) = openai_backup {
+                std::env::set_var("OPENAI_API_KEY", key);
+            } else {
+                std::env::remove_var("OPENAI_API_KEY");
+            }
+            if let Some(key) = deepseek_backup {
+                std::env::set_var("DEEPSEEK_API_KEY", key);
+            } else {
+                std::env::remove_var("DEEPSEEK_API_KEY");
+            }
+            if let Some(key) = anthropic_backup {
+                std::env::set_var("ANTHROPIC_API_KEY", key);
+            } else {
+                std::env::remove_var("ANTHROPIC_API_KEY");
+            }
+        }
+    }
 }
