@@ -319,6 +319,42 @@ profile: ## Profile the application
 	@echo "Run: perf record target/release/$(PROJECT_NAME)"
 	@echo "Then: perf report"
 
+##@ DevContainer
+
+.PHONY: devcontainer-build
+devcontainer-build: ## Build the DevContainer image
+	@echo "$(CYAN)Building DevContainer image...$(NC)"
+	@$(DOCKER) build -f .devcontainer/Dockerfile.dev -t $(PROJECT_NAME)-devcontainer:latest .
+	@echo "$(GREEN)✅ DevContainer image built$(NC)"
+
+.PHONY: devcontainer-validate
+devcontainer-validate: ## Validate DevContainer setup
+	@echo "$(CYAN)Validating DevContainer...$(NC)"
+	@.devcontainer/validate.sh
+
+.PHONY: devcontainer-network
+devcontainer-network: ## Create DevContainer network
+	@.devcontainer/setup-network.sh
+
+.PHONY: devcontainer-services
+devcontainer-services: ## Start DevContainer services
+	@echo "$(CYAN)Starting DevContainer services...$(NC)"
+	@$(DOCKER_COMPOSE) -f .devcontainer/docker-compose.yml up -d redis minio mysql
+	@echo "$(GREEN)✅ Services started$(NC)"
+
+.PHONY: devcontainer-services-down
+devcontainer-services-down: ## Stop DevContainer services
+	@echo "$(CYAN)Stopping DevContainer services...$(NC)"
+	@$(DOCKER_COMPOSE) -f .devcontainer/docker-compose.yml down
+	@echo "$(GREEN)✅ Services stopped$(NC)"
+
+.PHONY: devcontainer-push
+devcontainer-push: ## Push DevContainer image to registry
+	@echo "$(CYAN)Pushing DevContainer image...$(NC)"
+	@$(DOCKER) tag $(PROJECT_NAME)-devcontainer:latest ghcr.io/df3ndr/$(PROJECT_NAME)-devcontainer:latest
+	@$(DOCKER) push ghcr.io/df3ndr/$(PROJECT_NAME)-devcontainer:latest
+	@echo "$(GREEN)✅ Image pushed$(NC)"
+
 ##@ Help
 
 .PHONY:

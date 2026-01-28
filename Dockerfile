@@ -6,7 +6,7 @@
 # Stage 1: Builder
 # Builds the application with all dependencies
 # =============================================================================
-FROM rust:nightly-slim-bookworm AS builder
+FROM rust:1.93-slim-bullseye AS builder
 WORKDIR /app
 
 # Install required build dependencies
@@ -32,13 +32,13 @@ RUN strip target/release/paladin
 # Stage 2: Runtime
 # Minimal runtime image with only the binary
 # =============================================================================
-FROM debian:12-slim
+FROM debian:11-slim
 WORKDIR /app
 
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
-    libssl3 \
+    libssl1.1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
