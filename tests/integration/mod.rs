@@ -5,6 +5,8 @@ use std::sync::Once;
 use std::time::Duration;
 use tokio::time::sleep;
 
+pub mod arsenal_execution_integration_test;
+pub mod arsenal_registry_integration_test;
 pub mod battalion;
 pub mod citadel_integration_test;
 pub mod cli_integration_test;
