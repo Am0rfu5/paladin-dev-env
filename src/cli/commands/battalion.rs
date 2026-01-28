@@ -622,3 +622,241 @@ async fn build_paladin_from_reference(
 
     Ok(paladin)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_battalion_new_args_creation() {
+        let args = BattalionNewArgs {
+            name: "test-battalion".to_string(),
+            r#type: "formation".to_string(),
+            output: PathBuf::from("battalion.yaml"),
+        };
+
+        assert_eq!(args.name, "test-battalion");
+        assert_eq!(args.r#type, "formation");
+        assert_eq!(args.output, PathBuf::from("battalion.yaml"));
+    }
+
+    #[test]
+    fn test_battalion_run_args_creation() {
+        let args = BattalionRunArgs {
+            config: PathBuf::from("config.yaml"),
+            r#type: "phalanx".to_string(),
+            output: Some(PathBuf::from("output.json")),
+            verbose: true,
+        };
+
+        assert_eq!(args.config, PathBuf::from("config.yaml"));
+        assert_eq!(args.r#type, "phalanx");
+        assert_eq!(args.output, Some(PathBuf::from("output.json")));
+        assert!(args.verbose);
+    }
+
+    #[test]
+    fn test_handle_battalion_new_formation() {
+        let temp_dir = TempDir::new().unwrap();
+        let output_path = temp_dir.path().join("formation.yaml");
+
+        let args = BattalionNewArgs {
+            name: "test-formation".to_string(),
+            r#type: "formation".to_string(),
+            output: output_path.clone(),
+        };
+
+        let result = handle_battalion_new(args);
+        assert!(result.is_ok());
+        assert!(output_path.exists());
+
+        let content = fs::read_to_string(&output_path).unwrap();
+        assert!(content.contains("test-formation"));
+        assert!(content.contains("formation"));
+    }
+
+    #[test]
+    fn test_handle_battalion_new_phalanx() {
+        let temp_dir = TempDir::new().unwrap();
+        let output_path = temp_dir.path().join("phalanx.yaml");
+
+        let args = BattalionNewArgs {
+            name: "test-phalanx".to_string(),
+            r#type: "phalanx".to_string(),
+            output: output_path.clone(),
+        };
+
+        let result = handle_battalion_new(args);
+        assert!(result.is_ok());
+        assert!(output_path.exists());
+
+        let content = fs::read_to_string(&output_path).unwrap();
+        assert!(content.contains("phalanx"));
+    }
+
+    #[test]
+    fn test_handle_battalion_new_campaign() {
+        let temp_dir = TempDir::new().unwrap();
+        let output_path = temp_dir.path().join("campaign.yaml");
+
+        let args = BattalionNewArgs {
+            name: "test-campaign".to_string(),
+            r#type: "campaign".to_string(),
+            output: output_path.clone(),
+        };
+
+        let result = handle_battalion_new(args);
+        assert!(result.is_ok());
+        assert!(output_path.exists());
+
+        let content = fs::read_to_string(&output_path).unwrap();
+        assert!(content.contains("campaign"));
+    }
+
+    #[test]
+    fn test_handle_battalion_new_chain_of_command() {
+        let temp_dir = TempDir::new().unwrap();
+        let output_path = temp_dir.path().join("chain.yaml");
+
+        let args = BattalionNewArgs {
+            name: "test-chain".to_string(),
+            r#type: "chain-of-command".to_string(),
+            output: output_path.clone(),
+        };
+
+        let result = handle_battalion_new(args);
+        assert!(result.is_ok());
+        assert!(output_path.exists());
+
+        let content = fs::read_to_string(&output_path).unwrap();
+        assert!(content.contains("chain-of-command") || content.contains("chain_of_command"));
+    }
+
+    #[test]
+    fn test_handle_battalion_new_invalid_type() {
+        let temp_dir = TempDir::new().unwrap();
+        let output_path = temp_dir.path().join("invalid.yaml");
+
+        let args = BattalionNewArgs {
+            name: "test-battalion".to_string(),
+            r#type: "invalid_type".to_string(),
+            output: output_path,
+        };
+
+        let result = handle_battalion_new(args);
+        assert!(result.is_err());
+
+        match result {
+            Err(CliError::InvalidFieldValue { field, message }) => {
+                assert_eq!(field, "type");
+                assert!(message.contains("invalid_type"));
+                assert!(message.contains("formation"));
+            }
+            _ => panic!("Expected InvalidFieldValue error"),
+        }
+    }
+
+    #[test]
+    fn test_handle_battalion_new_file_write_error() {
+        let invalid_path = PathBuf::from("/nonexistent/directory/battalion.yaml");
+
+        let args = BattalionNewArgs {
+            name: "test-battalion".to_string(),
+            r#type: "formation".to_string(),
+            output: invalid_path,
+        };
+
+        let result = handle_battalion_new(args);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_battalion_commands_enum_new_variant() {
+        let new_args = BattalionNewArgs {
+            name: "test".to_string(),
+            r#type: "formation".to_string(),
+            output: PathBuf::from("test.yaml"),
+        };
+        let command = BattalionCommands::New(new_args);
+
+        match command {
+            BattalionCommands::New(args) => {
+                assert_eq!(args.name, "test");
+                assert_eq!(args.r#type, "formation");
+            }
+            _ => panic!("Expected New variant"),
+        }
+    }
+
+    #[test]
+    fn test_battalion_commands_enum_run_variant() {
+        let run_args = BattalionRunArgs {
+            config: PathBuf::from("config.yaml"),
+            r#type: "phalanx".to_string(),
+            output: None,
+            verbose: false,
+        };
+        let command = BattalionCommands::Run(run_args);
+
+        match command {
+            BattalionCommands::Run(args) => {
+                assert_eq!(args.config, PathBuf::from("config.yaml"));
+                assert_eq!(args.r#type, "phalanx");
+            }
+            _ => panic!("Expected Run variant"),
+        }
+    }
+
+    #[test]
+    fn test_all_valid_battalion_types() {
+        let temp_dir = TempDir::new().unwrap();
+        let valid_types = ["formation", "phalanx", "campaign", "chain-of-command"];
+
+        for battalion_type in &valid_types {
+            let output_path = temp_dir.path().join(format!("{}.yaml", battalion_type));
+            let args = BattalionNewArgs {
+                name: format!("test-{}", battalion_type),
+                r#type: battalion_type.to_string(),
+                output: output_path.clone(),
+            };
+
+            let result = handle_battalion_new(args);
+            assert!(
+                result.is_ok(),
+                "Failed to create battalion of type: {}",
+                battalion_type
+            );
+            assert!(
+                output_path.exists(),
+                "Output file not created for type: {}",
+                battalion_type
+            );
+        }
+    }
+
+    #[test]
+    fn test_battalion_run_args_without_output() {
+        let args = BattalionRunArgs {
+            config: PathBuf::from("config.yaml"),
+            r#type: "formation".to_string(),
+            output: None,
+            verbose: false,
+        };
+
+        assert_eq!(args.output, None);
+    }
+
+    #[test]
+    fn test_battalion_run_args_with_verbose() {
+        let args = BattalionRunArgs {
+            config: PathBuf::from("config.yaml"),
+            r#type: "formation".to_string(),
+            output: None,
+            verbose: true,
+        };
+
+        assert!(args.verbose);
+    }
+}
