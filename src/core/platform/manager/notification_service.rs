@@ -869,4 +869,410 @@ mod tests {
         let stats = service.get_stats().await;
         assert_eq!(stats.notifications_created, 1);
     }
+
+    #[tokio::test]
+    async fn test_config_default_values() {
+        let config = NotificationServiceConfig::default();
+        assert_eq!(config.default_max_retries, 3);
+        assert_eq!(config.default_expiry_seconds, 86400);
+        assert!(config.enable_persistence);
+        assert_eq!(config.batch_size, 100);
+        assert_eq!(config.processing_interval_ms, 1000);
+        assert_eq!(config.template_cache_size, 1000);
+        assert_eq!(config.max_attachment_size, 25 * 1024 * 1024);
+    }
+
+    #[tokio::test]
+    async fn test_notification_stats_default() {
+        let stats = NotificationServiceStats::default();
+        assert_eq!(stats.notifications_created, 0);
+        assert_eq!(stats.notifications_sent, 0);
+        assert_eq!(stats.notifications_delivered, 0);
+        assert_eq!(stats.notifications_failed, 0);
+        assert!(stats.channel_stats.is_empty());
+        assert!(stats.priority_stats.is_empty());
+        assert!(stats.avg_delivery_time_ms.is_none());
+        assert!(stats.last_activity.is_none());
+        assert_eq!(stats.active_notifications, 0);
+    }
+
+    #[tokio::test]
+    async fn test_error_variants_display() {
+        let domain_err = NotificationServiceError::DomainError(
+            NotificationDomainError::InvalidRecipient("bad".to_string()),
+        );
+        assert!(domain_err.to_string().contains("Domain error"));
+
+        let template_err = NotificationServiceError::TemplateNotFound("test_template".to_string());
+        assert_eq!(
+            template_err.to_string(),
+            "Template not found: test_template"
+        );
+
+        let channel_err = NotificationServiceError::ChannelNotAvailable("sms".to_string());
+        assert_eq!(channel_err.to_string(), "Channel not available: sms");
+
+        let delivery_err = NotificationServiceError::DeliveryFailed("timeout".to_string());
+        assert_eq!(delivery_err.to_string(), "Delivery failed: timeout");
+
+        let init_err = NotificationServiceError::ServiceNotInitialized;
+        assert_eq!(init_err.to_string(), "Service not initialized");
+
+        let config_err = NotificationServiceError::ConfigurationError("invalid".to_string());
+        assert_eq!(config_err.to_string(), "Configuration error: invalid");
+
+        let validation_err = NotificationServiceError::ValidationError("missing field".to_string());
+        assert_eq!(
+            validation_err.to_string(),
+            "Validation error: missing field"
+        );
+
+        let storage_err = NotificationServiceError::StorageError("db down".to_string());
+        assert_eq!(storage_err.to_string(), "Storage error: db down");
+
+        let unknown_err = NotificationServiceError::Unknown("mystery".to_string());
+        assert_eq!(unknown_err.to_string(), "Unknown error: mystery");
+    }
+
+    #[tokio::test]
+    async fn test_service_start_and_stop() {
+        let config = NotificationServiceConfig::default();
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let service = NotificationService::new(config, message_service);
+
+        // Service should not be healthy before starting
+        assert!(!service.health_check().await);
+
+        // Start the service
+        let start_result = service.start().await;
+        assert!(start_result.is_ok());
+
+        // Starting again should be idempotent
+        let start_again = service.start().await;
+        assert!(start_again.is_ok());
+
+        // Stop the service
+        let stop_result = service.stop().await;
+        assert!(stop_result.is_ok());
+
+        // Stopping again should be idempotent
+        let stop_again = service.stop().await;
+        assert!(stop_again.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_multiple_notification_creation() {
+        let config = NotificationServiceConfig::default();
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let service = NotificationService::new(config, message_service);
+
+        // Create multiple notifications
+        for i in 0..5 {
+            let recipient = NotificationRecipient::Email(format!("user{}@example.com", i));
+            let content = NotificationContent::new(
+                format!("Subject {}", i),
+                format!("Body {}", i),
+                format!("test{}", i),
+            );
+
+            let result = service
+                .create_notification(
+                    recipient,
+                    content,
+                    NotificationChannel::Email,
+                    NotificationPriority::Normal,
+                )
+                .await;
+            assert!(result.is_ok());
+        }
+
+        let stats = service.get_stats().await;
+        assert_eq!(stats.notifications_created, 5);
+        assert_eq!(stats.active_notifications, 5);
+        assert_eq!(service.get_active_count().await, 5);
+    }
+
+    #[tokio::test]
+    async fn test_notification_with_different_priorities() {
+        let config = NotificationServiceConfig::default();
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let service = NotificationService::new(config, message_service);
+
+        let recipient = NotificationRecipient::Email("test@example.com".to_string());
+
+        // Create notifications with different priorities
+        for priority in [
+            NotificationPriority::Low,
+            NotificationPriority::Normal,
+            NotificationPriority::High,
+            NotificationPriority::Critical,
+            NotificationPriority::Emergency,
+        ] {
+            let content = NotificationContent::new(
+                "Test".to_string(),
+                "Body".to_string(),
+                "test".to_string(),
+            );
+
+            let result = service
+                .create_notification(
+                    recipient.clone(),
+                    content,
+                    NotificationChannel::Email,
+                    priority,
+                )
+                .await;
+            assert!(result.is_ok());
+        }
+
+        let stats = service.get_stats().await;
+        assert_eq!(stats.notifications_created, 5);
+        assert_eq!(stats.priority_stats.len(), 5);
+    }
+
+    #[tokio::test]
+    async fn test_notification_with_different_channels() {
+        let config = NotificationServiceConfig::default();
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let service = NotificationService::new(config, message_service);
+
+        // Create notifications for different channels
+        let channels = vec![
+            (
+                NotificationChannel::Email,
+                NotificationRecipient::Email("test@example.com".to_string()),
+            ),
+            (
+                NotificationChannel::Sms,
+                NotificationRecipient::Phone("+1234567890".to_string()),
+            ),
+            (
+                NotificationChannel::Push,
+                NotificationRecipient::DeviceToken("token123".to_string()),
+            ),
+            (
+                NotificationChannel::InApp,
+                NotificationRecipient::UserId("user123".to_string()),
+            ),
+        ];
+
+        for (channel, recipient) in channels {
+            let content = NotificationContent::new(
+                "Test".to_string(),
+                "Body".to_string(),
+                "test".to_string(),
+            );
+
+            let result = service
+                .create_notification(
+                    recipient,
+                    content,
+                    channel.clone(),
+                    NotificationPriority::Normal,
+                )
+                .await;
+            assert!(result.is_ok());
+        }
+
+        let stats = service.get_stats().await;
+        assert_eq!(stats.notifications_created, 4);
+        assert_eq!(stats.channel_stats.len(), 4);
+    }
+
+    #[tokio::test]
+    async fn test_schedule_notification() {
+        let config = NotificationServiceConfig::default();
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let service = NotificationService::new(config, message_service);
+
+        let recipient = NotificationRecipient::Email("test@example.com".to_string());
+        let content =
+            NotificationContent::new("Test".to_string(), "Body".to_string(), "test".to_string());
+
+        let notification = service
+            .create_notification(
+                recipient,
+                content,
+                NotificationChannel::Email,
+                NotificationPriority::Normal,
+            )
+            .await
+            .unwrap();
+
+        let scheduled_time = Utc::now() + chrono::Duration::hours(1);
+        let schedule_result = service
+            .schedule_notification(notification.id, scheduled_time)
+            .await;
+
+        assert!(schedule_result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_schedule_nonexistent_notification() {
+        let config = NotificationServiceConfig::default();
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let service = NotificationService::new(config, message_service);
+
+        let fake_id = Uuid::new_v4();
+        let scheduled_time = Utc::now() + chrono::Duration::hours(1);
+        let result = service.schedule_notification(fake_id, scheduled_time).await;
+
+        assert!(result.is_err());
+        match result {
+            Err(NotificationServiceError::ValidationError(msg)) => {
+                assert!(msg.contains("Notification not found"));
+            }
+            _ => panic!("Expected ValidationError"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_cancel_notification() {
+        let config = NotificationServiceConfig::default();
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let service = NotificationService::new(config, message_service);
+
+        let recipient = NotificationRecipient::Email("test@example.com".to_string());
+        let content =
+            NotificationContent::new("Test".to_string(), "Body".to_string(), "test".to_string());
+
+        let notification = service
+            .create_notification(
+                recipient,
+                content,
+                NotificationChannel::Email,
+                NotificationPriority::Normal,
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(service.get_active_count().await, 1);
+
+        let cancel_result = service
+            .cancel_notification(notification.id, Some("User requested".to_string()))
+            .await;
+
+        assert!(cancel_result.is_ok());
+        assert_eq!(service.get_active_count().await, 0);
+    }
+
+    #[tokio::test]
+    async fn test_cancel_nonexistent_notification() {
+        let config = NotificationServiceConfig::default();
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let service = NotificationService::new(config, message_service);
+
+        let fake_id = Uuid::new_v4();
+        let result = service.cancel_notification(fake_id, None).await;
+
+        // Should succeed without error even if notification doesn't exist
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_event_subscription() {
+        let config = NotificationServiceConfig::default();
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let service = NotificationService::new(config, message_service);
+
+        let mut receiver = service.subscribe_to_events().await;
+
+        let recipient = NotificationRecipient::Email("test@example.com".to_string());
+        let content =
+            NotificationContent::new("Test".to_string(), "Body".to_string(), "test".to_string());
+
+        let _notification = service
+            .create_notification(
+                recipient,
+                content,
+                NotificationChannel::Email,
+                NotificationPriority::Normal,
+            )
+            .await
+            .unwrap();
+
+        // Should receive a notification created event
+        let event =
+            tokio::time::timeout(tokio::time::Duration::from_millis(100), receiver.recv()).await;
+
+        assert!(event.is_ok());
+        if let Ok(Some(NotificationEvent::NotificationCreated { .. })) = event {
+            // Event received successfully
+        } else {
+            panic!("Expected NotificationCreated event");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_notification_delivery_result_structure() {
+        let result = NotificationDeliveryResult {
+            notification_id: Uuid::new_v4(),
+            status: NotificationStatus::Sent,
+            external_id: Some("ext_123".to_string()),
+            processing_time_ms: 250,
+            error_message: None,
+            timestamp: Utc::now(),
+        };
+
+        assert_eq!(result.status, NotificationStatus::Sent);
+        assert_eq!(result.external_id.unwrap(), "ext_123");
+        assert_eq!(result.processing_time_ms, 250);
+        assert!(result.error_message.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_stats_tracking_across_operations() {
+        let config = NotificationServiceConfig::default();
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let service = NotificationService::new(config, message_service);
+
+        // Initial stats should be default
+        let stats = service.get_stats().await;
+        assert_eq!(stats.notifications_created, 0);
+
+        // Create a notification
+        let recipient = NotificationRecipient::Email("test@example.com".to_string());
+        let content =
+            NotificationContent::new("Test".to_string(), "Body".to_string(), "test".to_string());
+
+        let notification = service
+            .create_notification(
+                recipient,
+                content,
+                NotificationChannel::Email,
+                NotificationPriority::High,
+            )
+            .await
+            .unwrap();
+
+        // Check stats updated
+        let stats = service.get_stats().await;
+        assert_eq!(stats.notifications_created, 1);
+        assert_eq!(stats.active_notifications, 1);
+        assert_eq!(
+            *stats
+                .channel_stats
+                .get(&NotificationChannel::Email)
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            *stats
+                .priority_stats
+                .get(&NotificationPriority::High)
+                .unwrap(),
+            1
+        );
+        assert!(stats.last_activity.is_some());
+
+        // Cancel notification
+        service
+            .cancel_notification(notification.id, None)
+            .await
+            .unwrap();
+
+        // Active count should decrease
+        let stats = service.get_stats().await;
+        assert_eq!(stats.active_notifications, 0);
+    }
 }
