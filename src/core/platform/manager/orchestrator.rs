@@ -892,6 +892,100 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_orchestrator_default() {
+        let orchestrator = Orchestrator::default();
+        let stats = orchestrator.get_stats().await;
+        assert_eq!(stats.active_sessions, 0);
+    }
+
+    #[tokio::test]
+    async fn test_orchestration_context_creation() {
+        let context = OrchestrationContext::new("test_user".to_string(), "dev".to_string());
+
+        assert_eq!(context.initiator, "test_user");
+        assert_eq!(context.environment, "dev");
+        assert!(context.correlation_id.is_none());
+        assert!(context.metadata.is_empty());
+        assert!(context.started_at <= Utc::now());
+    }
+
+    #[tokio::test]
+    async fn test_orchestration_context_with_correlation() {
+        let correlation_id = Uuid::new_v4();
+        let context = OrchestrationContext::new("test_user".to_string(), "staging".to_string())
+            .with_correlation(correlation_id);
+
+        assert_eq!(context.correlation_id, Some(correlation_id));
+    }
+
+    #[tokio::test]
+    async fn test_orchestration_context_add_metadata() {
+        let mut context = OrchestrationContext::new("test_user".to_string(), "prod".to_string());
+
+        let result = context.add_metadata("key1".to_string(), "value1");
+        assert!(result.is_ok());
+
+        assert_eq!(context.metadata.len(), 1);
+        assert!(context.metadata.contains_key("key1"));
+    }
+
+    #[tokio::test]
+    async fn test_orchestration_context_add_complex_metadata() {
+        let mut context = OrchestrationContext::new("test_user".to_string(), "test".to_string());
+
+        let complex_data = serde_json::json!({
+            "nested": {
+                "field": 123,
+                "array": [1, 2, 3]
+            }
+        });
+
+        let result = context.add_metadata("complex".to_string(), complex_data);
+        assert!(result.is_ok());
+        assert!(context.metadata.contains_key("complex"));
+    }
+
+    #[tokio::test]
+    async fn test_error_variants_display() {
+        let scheduler_err =
+            OrchestratorError::SchedulerError(SchedulerError::JobNotFound(Uuid::new_v4()));
+        assert!(scheduler_err.to_string().contains("Scheduler error"));
+
+        let queue_err =
+            OrchestratorError::QueueError(QueueError::QueueNotFound("test_queue".to_string()));
+        assert!(queue_err.to_string().contains("Queue error"));
+
+        let listener_err = OrchestratorError::ListenerError(ListenerError::ListenerNotFound(
+            "test_listener".to_string(),
+        ));
+        assert!(listener_err.to_string().contains("Listener error"));
+
+        let processor_err = OrchestratorError::ProcessorNotFound("test_processor".to_string());
+        assert_eq!(
+            processor_err.to_string(),
+            "Processor not found: test_processor"
+        );
+
+        let workflow_err = OrchestratorError::WorkflowNotFound(Uuid::new_v4());
+        assert!(workflow_err.to_string().contains("Workflow not found"));
+
+        let session_err = OrchestratorError::SessionNotFound(Uuid::new_v4());
+        assert!(session_err.to_string().contains("Session not found"));
+
+        let serialization_err = OrchestratorError::SerializationError("invalid json".to_string());
+        assert_eq!(
+            serialization_err.to_string(),
+            "Serialization error: invalid json"
+        );
+
+        let config_err = OrchestratorError::ConfigurationError("bad config".to_string());
+        assert_eq!(config_err.to_string(), "Configuration error: bad config");
+
+        let service_err = OrchestratorError::ServiceError("service down".to_string());
+        assert_eq!(service_err.to_string(), "Service error: service down");
+    }
+
+    #[tokio::test]
     async fn test_orchestrator_service_registration() {
         let orchestrator = Orchestrator::new();
 
@@ -900,6 +994,42 @@ mod tests {
         };
 
         let result = orchestrator.register_task_service(Box::new(service)).await;
+        assert!(result.is_ok());
+
+        let stats = orchestrator.get_stats().await;
+        assert_eq!(stats.total_services, 1);
+    }
+
+    #[tokio::test]
+    async fn test_start_and_end_session() {
+        let orchestrator = Orchestrator::new();
+
+        let context = OrchestrationContext::new("test_user".to_string(), "test".to_string());
+        let session_id = context.session_id;
+
+        // Start session
+        let start_result = orchestrator.start_session(context).await;
+        assert!(start_result.is_ok());
+
+        let stats = orchestrator.get_stats().await;
+        assert_eq!(stats.active_sessions, 1);
+
+        // End session
+        let end_result = orchestrator.end_session(session_id).await;
+        assert!(end_result.is_ok());
+
+        let stats = orchestrator.get_stats().await;
+        assert_eq!(stats.active_sessions, 0);
+    }
+
+    #[tokio::test]
+    async fn test_end_nonexistent_session() {
+        let orchestrator = Orchestrator::new();
+
+        let fake_session_id = Uuid::new_v4();
+        let result = orchestrator.end_session(fake_session_id).await;
+
+        // end_session returns Ok even if session doesn't exist (idempotent)
         assert!(result.is_ok());
     }
 
@@ -922,6 +1052,30 @@ mod tests {
         let processing_result = result.unwrap();
         assert!(processing_result.success);
         assert!(processing_result.result_data.is_some());
+        assert!(processing_result.error.is_none());
+        assert_eq!(processing_result.processor_name, "DefaultContentProcessor");
+    }
+
+    #[tokio::test]
+    async fn test_content_processing_with_nonexistent_processor() {
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        let text_content = TextContent::new(None, Some("Test".to_string())).unwrap();
+        let content_item = ContentItem::new(ContentType::Text(text_content)).unwrap();
+        let context = OrchestrationContext::new("test_user".to_string(), "test".to_string());
+
+        let result = orchestrator
+            .process_content(content_item, "NonExistentProcessor", context)
+            .await;
+
+        assert!(result.is_err());
+        match result {
+            Err(OrchestratorError::ProcessorNotFound(name)) => {
+                assert_eq!(name, "NonExistentProcessor");
+            }
+            _ => panic!("Expected ProcessorNotFound error"),
+        }
     }
 
     #[tokio::test]
@@ -941,6 +1095,60 @@ mod tests {
         let context = OrchestrationContext::new("test_user".to_string(), "test".to_string());
 
         let result = orchestrator.execute_job(job, context).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_schedule_job() {
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        let task = Task::new(
+            "Scheduled Task".to_string(),
+            "A scheduled task".to_string(),
+            "DataBackupService".to_string(),
+        );
+
+        let job = Job::new(
+            "Scheduled Job".to_string(),
+            "A scheduled job".to_string(),
+            vec![task],
+        );
+
+        // Use Interval schedule instead of cron
+        let schedule = Schedule::Interval(std::time::Duration::from_secs(3600));
+        let context = OrchestrationContext::new("test_user".to_string(), "test".to_string());
+
+        let result = orchestrator.schedule_job(job, schedule, context).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_queue_job() {
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        let task = Task::new(
+            "Queued Task".to_string(),
+            "A queued task".to_string(),
+            "DataBackupService".to_string(),
+        );
+
+        let job = Job::new(
+            "Queued Job".to_string(),
+            "A queued job".to_string(),
+            vec![task],
+        );
+
+        let context = OrchestrationContext::new("test_user".to_string(), "test".to_string());
+
+        // Create the queue first
+        let _ = orchestrator
+            .queue_service
+            .create_queue("test_queue".to_string(), None)
+            .await;
+
+        let result = orchestrator.queue_job(job, "test_queue", context).await;
         assert!(result.is_ok());
     }
 
@@ -999,5 +1207,117 @@ mod tests {
 
         let result = orchestrator.process_event(event).await;
         assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_multiple_sessions() {
+        let orchestrator = Orchestrator::new();
+
+        // Start multiple sessions
+        let context1 = OrchestrationContext::new("user1".to_string(), "dev".to_string());
+        let context2 = OrchestrationContext::new("user2".to_string(), "prod".to_string());
+        let context3 = OrchestrationContext::new("user3".to_string(), "staging".to_string());
+
+        orchestrator.start_session(context1.clone()).await.unwrap();
+        orchestrator.start_session(context2.clone()).await.unwrap();
+        orchestrator.start_session(context3.clone()).await.unwrap();
+
+        let stats = orchestrator.get_stats().await;
+        assert_eq!(stats.active_sessions, 3);
+
+        // End one session
+        orchestrator.end_session(context1.session_id).await.unwrap();
+
+        let stats = orchestrator.get_stats().await;
+        assert_eq!(stats.active_sessions, 2);
+    }
+
+    #[tokio::test]
+    async fn test_workflow_creation() {
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        // Create workflow manually since there's no Workflow::new
+        let context = OrchestrationContext::new("test_user".to_string(), "test".to_string());
+        let workflow = Workflow {
+            id: Uuid::new_v4(),
+            name: "Test Workflow".to_string(),
+            description: "A test workflow".to_string(),
+            jobs: Vec::new(),
+            listeners: Vec::new(),
+            queues: Vec::new(),
+            execution_order: WorkflowExecutionOrder::Sequential,
+            context,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+
+        let result = orchestrator.create_workflow(workflow).await;
+        assert!(result.is_ok());
+
+        let stats = orchestrator.get_stats().await;
+        assert_eq!(stats.total_workflows, 1);
+    }
+
+    #[tokio::test]
+    async fn test_default_content_processor() {
+        let processor = DefaultContentProcessor;
+        assert_eq!(processor.name(), "DefaultContentProcessor");
+
+        let text_content = TextContent::new(None, Some("Test content".to_string())).unwrap();
+        let content_item = ContentItem::new(ContentType::Text(text_content)).unwrap();
+        let context = OrchestrationContext::new("test_user".to_string(), "test".to_string());
+
+        let result = processor.process_content(content_item, context).await;
+        assert!(result.is_ok());
+
+        let processing_result = result.unwrap();
+        assert!(processing_result.success);
+        assert_eq!(processing_result.processor_name, "DefaultContentProcessor");
+    }
+
+    #[tokio::test]
+    async fn test_content_processor_clone() {
+        let processor = DefaultContentProcessor;
+        let cloned = processor.clone_box();
+        assert!(cloned.is_ok());
+
+        let cloned_processor = cloned.unwrap();
+        assert_eq!(cloned_processor.name(), "DefaultContentProcessor");
+    }
+
+    #[tokio::test]
+    async fn test_orchestrator_stats_structure() {
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap(); // Start to register default processor and services
+
+        let stats = orchestrator.get_stats().await;
+
+        assert_eq!(stats.active_sessions, 0);
+        assert_eq!(stats.total_workflows, 0);
+        assert_eq!(stats.total_services, 3); // DataBackupService, ContentIndexingService, EmailNotificationService
+        assert_eq!(stats.total_processors, 1); // DefaultContentProcessor registered on start
+        assert!(stats.queue_stats.is_empty());
+        assert!(stats.listener_stats.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_content_processing_result_structure() {
+        let result = ContentProcessingResult {
+            content_id: Uuid::new_v4(),
+            processor_name: "TestProcessor".to_string(),
+            processing_time_ms: 150,
+            success: true,
+            result_data: Some(serde_json::json!({"test": "data"})),
+            error: None,
+            metadata: HashMap::new(),
+        };
+
+        assert_eq!(result.processor_name, "TestProcessor");
+        assert_eq!(result.processing_time_ms, 150);
+        assert!(result.success);
+        assert!(result.result_data.is_some());
+        assert!(result.error.is_none());
+        assert!(result.metadata.is_empty());
     }
 }
