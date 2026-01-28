@@ -590,4 +590,356 @@ mod tests {
         assert_eq!(stats.pending_items, 1);
         assert_eq!(stats.total_items, 1);
     }
+
+    #[tokio::test]
+    async fn test_queue_config_default() {
+        let config = QueueConfig::default();
+        assert_eq!(config.max_capacity, 10000);
+        assert!(!config.preserve_completed);
+        assert!(config.preserve_failed);
+        assert_eq!(config.cleanup_interval_seconds, 300);
+        assert!(config.priority_based);
+    }
+
+    #[tokio::test]
+    async fn test_error_variants_display() {
+        let queue_not_found = QueueError::QueueNotFound("my_queue".to_string());
+        assert_eq!(queue_not_found.to_string(), "Queue not found: my_queue");
+
+        let item_not_found = QueueError::ItemNotFound(Uuid::new_v4());
+        assert!(item_not_found.to_string().contains("Queue item not found"));
+
+        let queue_full = QueueError::QueueFull {
+            queue_name: "full_queue".to_string(),
+            capacity: 100,
+        };
+        assert_eq!(
+            queue_full.to_string(),
+            "Queue is full: full_queue (capacity: 100)"
+        );
+
+        let queue_empty = QueueError::QueueEmpty("empty_queue".to_string());
+        assert_eq!(queue_empty.to_string(), "Queue is empty: empty_queue");
+
+        let invalid_config = QueueError::InvalidConfiguration("bad config".to_string());
+        assert_eq!(
+            invalid_config.to_string(),
+            "Invalid queue configuration: bad config"
+        );
+
+        let operation_failed = QueueError::OperationFailed("timeout".to_string());
+        assert_eq!(
+            operation_failed.to_string(),
+            "Queue operation failed: timeout"
+        );
+
+        let serialization_err = QueueError::SerializationError("invalid json".to_string());
+        assert_eq!(
+            serialization_err.to_string(),
+            "Serialization error: invalid json"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_service_with_custom_config() {
+        let custom_config = QueueConfig {
+            max_capacity: 5,
+            preserve_completed: true,
+            preserve_failed: false,
+            cleanup_interval_seconds: 600,
+            priority_based: false,
+            default_item_config: QueueItemConfig::default(),
+        };
+
+        let service = QueueService::with_default_config(custom_config.clone());
+        service
+            .create_queue("custom-queue".to_string(), None)
+            .await
+            .unwrap();
+
+        let stats = service.get_queue_stats("custom-queue").await.unwrap();
+        assert_eq!(stats.total_items, 0);
+    }
+
+    #[tokio::test]
+    async fn test_delete_queue() {
+        let service = QueueService::new();
+        service
+            .create_queue("temp-queue".to_string(), None)
+            .await
+            .unwrap();
+
+        let queues = service.list_queues().await;
+        assert!(queues.contains(&"temp-queue".to_string()));
+
+        let result = service.delete_queue("temp-queue").await;
+        assert!(result.is_ok());
+
+        let queues = service.list_queues().await;
+        assert!(!queues.contains(&"temp-queue".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_delete_nonexistent_queue() {
+        let service = QueueService::new();
+        let result = service.delete_queue("nonexistent").await;
+
+        assert!(result.is_err());
+        match result {
+            Err(QueueError::QueueNotFound(name)) => {
+                assert_eq!(name, "nonexistent");
+            }
+            _ => panic!("Expected QueueNotFound error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_enqueue_to_nonexistent_queue() {
+        let service = QueueService::new();
+
+        let message = Message::new(
+            Location::service("test"),
+            Location::system("queue"),
+            "test".to_string(),
+        );
+        let queue_item = QueueItem::new("nonexistent".to_string(), message, None);
+
+        let result = service.enqueue("nonexistent", queue_item).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_dequeue_from_empty_queue() {
+        let service = QueueService::new();
+        service
+            .create_queue("empty-queue".to_string(), None)
+            .await
+            .unwrap();
+
+        let result = service.dequeue("empty-queue").await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_dequeue_from_nonexistent_queue() {
+        let service = QueueService::new();
+        let result = service.dequeue("nonexistent").await;
+
+        assert!(result.is_err());
+        match result {
+            Err(QueueError::QueueNotFound(_)) => {}
+            _ => panic!("Expected QueueNotFound error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_queue_full_behavior() {
+        let config = QueueConfig {
+            max_capacity: 2,
+            ..Default::default()
+        };
+
+        let service = QueueService::new();
+        service
+            .create_queue("small-queue".to_string(), Some(config))
+            .await
+            .unwrap();
+
+        // Fill the queue
+        for i in 0..2 {
+            let message = Message::new(
+                Location::service("test"),
+                Location::system("queue"),
+                format!("message {}", i),
+            );
+            let queue_item = QueueItem::new("small-queue".to_string(), message, None);
+            service.enqueue("small-queue", queue_item).await.unwrap();
+        }
+
+        // Try to add one more - should fail
+        let message = Message::new(
+            Location::service("test"),
+            Location::system("queue"),
+            "overflow".to_string(),
+        );
+        let queue_item = QueueItem::new("small-queue".to_string(), message, None);
+        let result = service.enqueue("small-queue", queue_item).await;
+
+        assert!(result.is_err());
+        match result {
+            Err(QueueError::QueueFull {
+                queue_name,
+                capacity,
+            }) => {
+                assert_eq!(queue_name, "small-queue");
+                assert_eq!(capacity, 2);
+            }
+            _ => panic!("Expected QueueFull error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_multiple_queues() {
+        let service = QueueService::new();
+
+        service
+            .create_queue("queue1".to_string(), None)
+            .await
+            .unwrap();
+        service
+            .create_queue("queue2".to_string(), None)
+            .await
+            .unwrap();
+        service
+            .create_queue("queue3".to_string(), None)
+            .await
+            .unwrap();
+
+        let queues = service.list_queues().await;
+        assert_eq!(queues.len(), 3);
+        assert!(queues.contains(&"queue1".to_string()));
+        assert!(queues.contains(&"queue2".to_string()));
+        assert!(queues.contains(&"queue3".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_fail_processing() {
+        let service = QueueService::new();
+        service
+            .create_queue("test-queue".to_string(), None)
+            .await
+            .unwrap();
+
+        let message = Message::new(
+            Location::service("test"),
+            Location::system("queue"),
+            "test".to_string(),
+        );
+        let queue_item = QueueItem::new("test-queue".to_string(), message, None);
+        service.enqueue("test-queue", queue_item).await.unwrap();
+
+        let dequeued = service.dequeue("test-queue").await.unwrap().unwrap();
+        let item_id = dequeued.id();
+
+        service
+            .start_processing("test-queue", item_id, "worker-1".to_string())
+            .await
+            .unwrap();
+
+        let result = service
+            .fail_processing("test-queue", item_id, "Test error".to_string())
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_fail_processing_nonexistent_item() {
+        let service = QueueService::new();
+        service
+            .create_queue("test-queue".to_string(), None)
+            .await
+            .unwrap();
+
+        let fake_id = Uuid::new_v4();
+        let result = service
+            .fail_processing("test-queue", fake_id, "error".to_string())
+            .await;
+
+        assert!(result.is_err());
+        match result {
+            Err(QueueError::ItemNotFound(_)) => {}
+            _ => panic!("Expected ItemNotFound error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_stats_nonexistent_queue() {
+        let service = QueueService::new();
+        let result = service.get_queue_stats("nonexistent").await;
+
+        assert!(result.is_err());
+        match result {
+            Err(QueueError::QueueNotFound(_)) => {}
+            _ => panic!("Expected QueueNotFound error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_all_queues_stats() {
+        let service = QueueService::new();
+        service
+            .create_queue("queue1".to_string(), None)
+            .await
+            .unwrap();
+        service
+            .create_queue("queue2".to_string(), None)
+            .await
+            .unwrap();
+
+        let all_stats = service.get_all_stats().await;
+        assert_eq!(all_stats.len(), 2);
+        assert!(all_stats.contains_key("queue1"));
+        assert!(all_stats.contains_key("queue2"));
+    }
+
+    #[tokio::test]
+    async fn test_queue_stats_structure() {
+        let service = QueueService::new();
+        service
+            .create_queue("stats-queue".to_string(), None)
+            .await
+            .unwrap();
+
+        let stats = service.get_queue_stats("stats-queue").await.unwrap();
+        assert_eq!(stats.name, "stats-queue");
+        assert_eq!(stats.total_items, 0);
+        assert_eq!(stats.pending_items, 0);
+        assert_eq!(stats.processing_items, 0);
+        assert_eq!(stats.completed_items, 0);
+        assert_eq!(stats.failed_items, 0);
+        assert_eq!(stats.abandoned_items, 0);
+        assert!(stats.oldest_item_age_seconds.is_none());
+        assert!(stats.average_processing_time_ms.is_none());
+        assert_eq!(stats.throughput_per_minute, 0.0);
+    }
+
+    #[tokio::test]
+    async fn test_complete_processing_nonexistent_item() {
+        let service = QueueService::new();
+        service
+            .create_queue("test-queue".to_string(), None)
+            .await
+            .unwrap();
+
+        let fake_id = Uuid::new_v4();
+        let result = service
+            .complete_processing("test-queue", fake_id, None)
+            .await;
+
+        assert!(result.is_err());
+        match result {
+            Err(QueueError::ItemNotFound(_)) => {}
+            _ => panic!("Expected ItemNotFound error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_start_processing_nonexistent_item() {
+        let service = QueueService::new();
+        service
+            .create_queue("test-queue".to_string(), None)
+            .await
+            .unwrap();
+
+        let fake_id = Uuid::new_v4();
+        let result = service
+            .start_processing("test-queue", fake_id, "worker-1".to_string())
+            .await;
+
+        assert!(result.is_err());
+        match result {
+            Err(QueueError::ItemNotFound(_)) => {}
+            _ => panic!("Expected ItemNotFound error"),
+        }
+    }
 }
