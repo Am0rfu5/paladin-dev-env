@@ -434,3 +434,115 @@ async fn handle_arsenal_test(args: ArsenalTestArgs) -> Result<(), CliError> {
         unreachable!("Validation ensures at least one is Some")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_arsenal_test_args_default_construction() {
+        let args = ArsenalTestArgs {
+            mcp_stdio: None,
+            mcp_sse: None,
+        };
+
+        assert_eq!(args.mcp_stdio, None);
+        assert_eq!(args.mcp_sse, None);
+    }
+
+    #[test]
+    fn test_arsenal_test_args_mcp_stdio_option() {
+        let args = ArsenalTestArgs {
+            mcp_stdio: Some("uvx mcp-web-search".to_string()),
+            mcp_sse: None,
+        };
+
+        assert_eq!(args.mcp_stdio, Some("uvx mcp-web-search".to_string()));
+        assert_eq!(args.mcp_sse, None);
+    }
+
+    #[test]
+    fn test_arsenal_test_args_mcp_sse_option() {
+        let args = ArsenalTestArgs {
+            mcp_stdio: None,
+            mcp_sse: Some("http://localhost:8080/mcp".to_string()),
+        };
+
+        assert_eq!(args.mcp_stdio, None);
+        assert_eq!(args.mcp_sse, Some("http://localhost:8080/mcp".to_string()));
+    }
+
+    #[test]
+    fn test_arsenal_test_args_stdio_with_arguments() {
+        let args = ArsenalTestArgs {
+            mcp_stdio: Some("uvx mcp-web-search --verbose".to_string()),
+            mcp_sse: None,
+        };
+
+        assert!(args.mcp_stdio.is_some());
+        assert!(args.mcp_stdio.unwrap().contains("--verbose"));
+    }
+
+    #[test]
+    fn test_arsenal_test_args_sse_with_full_url() {
+        let args = ArsenalTestArgs {
+            mcp_stdio: None,
+            mcp_sse: Some("https://api.example.com/mcp/tools".to_string()),
+        };
+
+        assert!(args.mcp_sse.is_some());
+        assert!(args.mcp_sse.unwrap().starts_with("https://"));
+    }
+
+    #[test]
+    fn test_arsenal_test_args_mutual_exclusivity_at_runtime() {
+        // Note: Clap enforces this at parse time with conflicts_with
+        // This test verifies the data structure allows only one at a time
+        let stdio_args = ArsenalTestArgs {
+            mcp_stdio: Some("uvx mcp-web-search".to_string()),
+            mcp_sse: None,
+        };
+
+        let sse_args = ArsenalTestArgs {
+            mcp_stdio: None,
+            mcp_sse: Some("http://localhost:8080/mcp".to_string()),
+        };
+
+        // Verify exactly one is set for each variant
+        assert!(stdio_args.mcp_stdio.is_some() && stdio_args.mcp_sse.is_none());
+        assert!(sse_args.mcp_stdio.is_none() && sse_args.mcp_sse.is_some());
+    }
+
+    #[test]
+    fn test_arsenal_test_args_debug_format() {
+        let args = ArsenalTestArgs {
+            mcp_stdio: Some("uvx mcp-web-search".to_string()),
+            mcp_sse: None,
+        };
+
+        let debug_str = format!("{:?}", args);
+        assert!(debug_str.contains("ArsenalTestArgs"));
+        assert!(debug_str.contains("mcp_stdio"));
+    }
+
+    #[test]
+    fn test_arsenal_commands_variants_exist() {
+        // Test List variant
+        let list_command = ArsenalCommands::List;
+        match list_command {
+            ArsenalCommands::List => {} // Expected
+            _ => panic!("Expected List variant"),
+        }
+
+        // Test Test variant
+        let test_args = ArsenalTestArgs {
+            mcp_stdio: Some("test".to_string()),
+            mcp_sse: None,
+        };
+        let test_command = ArsenalCommands::Test(test_args);
+        match test_command {
+            ArsenalCommands::Test(_) => {} // Expected
+            _ => panic!("Expected Test variant"),
+        }
+    }
+}

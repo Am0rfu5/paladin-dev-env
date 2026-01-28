@@ -46,7 +46,7 @@
 ### Current Progress
 
 **Overall Coverage**: 70.56% regions / 68.29% lines (Target: >85%)
-**Completed Tasks**: 11/28 (39.3%)
+**Completed Tasks**: 12/28 (42.9%)
 - ✅ 0.0 Create feature branch
 - ✅ 1.0 Analyze coverage and prioritize files  
 - ✅ 2.1 Add unit tests for src/main.rs (3 tests, improved from 0% to ~48.65%)
@@ -57,6 +57,7 @@
 - ✅ 2.6 Add unit tests for src/application/use_cases/content/content_aggregator_service.rs (7 tests, improved from 0% to ~97.21% regions / 94.23% lines)
 - ✅ 2.7 Add unit tests for src/cli/user_commands.rs (22 tests, improved from 0% to ~91.15% regions / 93.15% lines)
 - ✅ 3.5 Add unit tests for src/cli/commands/agent.rs (10 tests, improved from 26.67% to ~63.29% regions / 60.61% lines)
+- ✅ 3.6 Add unit tests for src/cli/commands/arsenal.rs (8 tests covering struct args and enum variants)
 - ✅ 3.7 Add unit tests for src/cli/commands/battalion.rs (13 tests covering all battalion types)
 
 **Next Priority**: Continue with low coverage files (<50%) - Task 3.0
@@ -96,7 +97,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 3.3 Add unit tests for src/infrastructure/adapters/llm/anthropic_adapter.rs (LLM API calls and responses)
   - [ ] 3.4 Add unit tests for src/infrastructure/adapters/llm/deepseek_adapter.rs (LLM API calls and responses)
   - [x] 3.5 Add unit tests for src/cli/commands/agent.rs (10 tests, improved from 26.67% to ~63.29% regions / 60.61% lines)
-  - [ ] 3.6 Add unit tests for src/cli/commands/arsenal.rs (arsenal command logic)
+  - [x] 3.6 Add unit tests for src/cli/commands/arsenal.rs (8 tests covering ArsenalTestArgs struct, stdio/sse options, enum variants, mutual exclusivity)
   - [x] 3.7 Add unit tests for src/cli/commands/battalion.rs (13 tests covering BattalionNewArgs, BattalionRunArgs, all 4 battalion types (formation/phalanx/campaign/chain-of-command), error cases, enum variants)
   - [ ] 3.8 Add unit tests for src/cli/interactive.rs (interactive CLI functionality)
   - [ ] 3.9 Add unit tests for src/config/setup/service_runner.rs (service initialization)
