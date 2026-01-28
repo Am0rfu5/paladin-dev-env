@@ -45,8 +45,8 @@
 
 ### Current Progress
 
-**Overall Coverage**: 70.43% regions / 68.17% lines (Target: >85%)
-**Completed Tasks**: 9/28 (32.1%)
+**Overall Coverage**: 70.56% regions / 68.29% lines (Target: >85%)
+**Completed Tasks**: 10/28 (35.7%)
 - ✅ 0.0 Create feature branch
 - ✅ 1.0 Analyze coverage and prioritize files  
 - ✅ 2.1 Add unit tests for src/main.rs (3 tests, improved from 0% to ~48.65%)
@@ -56,6 +56,7 @@
 - ✅ 2.5 Add unit tests for src/config/setup/mod.rs (2 tests, improved from 0% to ~0% - thin wrapper function tested)
 - ✅ 2.6 Add unit tests for src/application/use_cases/content/content_aggregator_service.rs (7 tests, improved from 0% to ~97.21% regions / 94.23% lines)
 - ✅ 2.7 Add unit tests for src/cli/user_commands.rs (22 tests, improved from 0% to ~91.15% regions / 93.15% lines)
+- ✅ 3.5 Add unit tests for src/cli/commands/agent.rs (10 tests, improved from 26.67% to ~63.29% regions / 60.61% lines)
 
 **Next Priority**: Continue with low coverage files (<50%) - Task 3.0
 
@@ -93,7 +94,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 3.2 Add unit tests for src/infrastructure/adapters/llm/openai_adapter.rs (LLM API calls and responses)
   - [ ] 3.3 Add unit tests for src/infrastructure/adapters/llm/anthropic_adapter.rs (LLM API calls and responses)
   - [ ] 3.4 Add unit tests for src/infrastructure/adapters/llm/deepseek_adapter.rs (LLM API calls and responses)
-  - [ ] 3.5 Add unit tests for src/cli/commands/agent.rs (agent command logic)
+  - [x] 3.5 Add unit tests for src/cli/commands/agent.rs (10 tests, improved from 26.67% to ~63.29% regions / 60.61% lines)
   - [ ] 3.6 Add unit tests for src/cli/commands/arsenal.rs (arsenal command logic)
   - [ ] 3.7 Add unit tests for src/cli/commands/battalion.rs (battalion command logic)
   - [ ] 3.8 Add unit tests for src/cli/interactive.rs (interactive CLI functionality)

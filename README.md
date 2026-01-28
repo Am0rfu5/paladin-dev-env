@@ -47,7 +47,7 @@ The project clearly defines Ports as interfaces to external systems, enabling ad
 * **Content Filtering:** Implements filtering mechanisms based on keywords or criteria.
 * **ML and NLP Analysis:** Leverages machine learning and NLP models to analyze and enrich content.
 * **Subject Tagging and Searching:** Advanced tagging, indexing, and search capabilities.
-* **Paladin Agents:** Autonomous AI agents with memory and context management.
+* **Paladin:** Autonomous AI agents with memory and context management.
 * **Garrison Memory System:** Persistent conversation history with windowing and search capabilities.
 * **Arsenal Tool System:** External tool integration via Model Context Protocol (MCP).
 * **Battalion Orchestration:** Multi-agent coordination with four orchestration patterns.

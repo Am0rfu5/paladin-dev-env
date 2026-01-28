@@ -272,3 +272,187 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_agent_new_args_creation() {
+        let args = AgentNewArgs {
+            name: "test-agent".to_string(),
+            output: PathBuf::from("test.yaml"),
+            provider: Some("openai".to_string()),
+        };
+
+        assert_eq!(args.name, "test-agent");
+        assert_eq!(args.output, PathBuf::from("test.yaml"));
+        assert_eq!(args.provider, Some("openai".to_string()));
+    }
+
+    #[test]
+    fn test_agent_run_args_creation() {
+        let args = AgentRunArgs {
+            config: PathBuf::from("config.yaml"),
+            input: Some("test input".to_string()),
+            output: Some(PathBuf::from("output.json")),
+            verbose: true,
+        };
+
+        assert_eq!(args.config, PathBuf::from("config.yaml"));
+        assert_eq!(args.input, Some("test input".to_string()));
+        assert_eq!(args.output, Some(PathBuf::from("output.json")));
+        assert!(args.verbose);
+    }
+
+    #[test]
+    fn test_handle_agent_new_success() {
+        let temp_dir = TempDir::new().unwrap();
+        let output_path = temp_dir.path().join("agent.yaml");
+
+        let args = AgentNewArgs {
+            name: "test-paladin".to_string(),
+            output: output_path.clone(),
+            provider: Some("openai".to_string()),
+        };
+
+        let result = handle_agent_new(args);
+        assert!(result.is_ok());
+        assert!(output_path.exists());
+
+        // Verify file content contains expected elements
+        let content = fs::read_to_string(&output_path).unwrap();
+        assert!(content.contains("test-paladin"));
+        assert!(content.contains("openai"));
+    }
+
+    #[test]
+    fn test_handle_agent_new_default_provider() {
+        let temp_dir = TempDir::new().unwrap();
+        let output_path = temp_dir.path().join("agent.yaml");
+
+        let args = AgentNewArgs {
+            name: "test-paladin".to_string(),
+            output: output_path.clone(),
+            provider: None, // Default to openai
+        };
+
+        let result = handle_agent_new(args);
+        assert!(result.is_ok());
+        assert!(output_path.exists());
+
+        let content = fs::read_to_string(&output_path).unwrap();
+        assert!(content.contains("openai"));
+    }
+
+    #[test]
+    fn test_handle_agent_new_invalid_provider() {
+        let temp_dir = TempDir::new().unwrap();
+        let output_path = temp_dir.path().join("agent.yaml");
+
+        let args = AgentNewArgs {
+            name: "test-paladin".to_string(),
+            output: output_path.clone(),
+            provider: Some("invalid_provider".to_string()),
+        };
+
+        let result = handle_agent_new(args);
+        assert!(result.is_err());
+
+        match result {
+            Err(CliError::InvalidFieldValue { field, message }) => {
+                assert_eq!(field, "provider");
+                assert!(message.contains("invalid_provider"));
+            }
+            _ => panic!("Expected InvalidFieldValue error"),
+        }
+    }
+
+    #[test]
+    fn test_handle_agent_new_deepseek_provider() {
+        let temp_dir = TempDir::new().unwrap();
+        let output_path = temp_dir.path().join("agent.yaml");
+
+        let args = AgentNewArgs {
+            name: "deepseek-paladin".to_string(),
+            output: output_path.clone(),
+            provider: Some("deepseek".to_string()),
+        };
+
+        let result = handle_agent_new(args);
+        assert!(result.is_ok());
+
+        let content = fs::read_to_string(&output_path).unwrap();
+        assert!(content.contains("deepseek"));
+    }
+
+    #[test]
+    fn test_handle_agent_new_anthropic_provider() {
+        let temp_dir = TempDir::new().unwrap();
+        let output_path = temp_dir.path().join("agent.yaml");
+
+        let args = AgentNewArgs {
+            name: "anthropic-paladin".to_string(),
+            output: output_path.clone(),
+            provider: Some("anthropic".to_string()),
+        };
+
+        let result = handle_agent_new(args);
+        assert!(result.is_ok());
+
+        let content = fs::read_to_string(&output_path).unwrap();
+        assert!(content.contains("anthropic"));
+    }
+
+    #[test]
+    fn test_handle_agent_new_file_write_error() {
+        // Try to write to an invalid path (directory that doesn't exist)
+        let invalid_path = PathBuf::from("/nonexistent/directory/agent.yaml");
+
+        let args = AgentNewArgs {
+            name: "test-paladin".to_string(),
+            output: invalid_path,
+            provider: Some("openai".to_string()),
+        };
+
+        let result = handle_agent_new(args);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_agent_commands_enum_new_variant() {
+        let new_args = AgentNewArgs {
+            name: "test".to_string(),
+            output: PathBuf::from("test.yaml"),
+            provider: None,
+        };
+        let command = AgentCommands::New(new_args);
+
+        match command {
+            AgentCommands::New(args) => {
+                assert_eq!(args.name, "test");
+            }
+            _ => panic!("Expected New variant"),
+        }
+    }
+
+    #[test]
+    fn test_agent_commands_enum_run_variant() {
+        let run_args = AgentRunArgs {
+            config: PathBuf::from("config.yaml"),
+            input: None,
+            output: None,
+            verbose: false,
+        };
+        let command = AgentCommands::Run(run_args);
+
+        match command {
+            AgentCommands::Run(args) => {
+                assert_eq!(args.config, PathBuf::from("config.yaml"));
+            }
+            _ => panic!("Expected Run variant"),
+        }
+    }
+}
