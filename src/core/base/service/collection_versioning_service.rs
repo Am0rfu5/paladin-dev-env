@@ -152,14 +152,14 @@ where
         change_summary: Option<String>,
     ) -> Result<CollectionVersion<T>, VersioningError> {
         // Check collection size limits
-        if let Some(max_items) = self.config.max_items_per_version {
-            if collection.items().len() > max_items as usize {
-                return Err(VersioningError::StorageError(format!(
-                    "Collection exceeds maximum items per version: {} > {}",
-                    collection.items().len(),
-                    max_items
-                )));
-            }
+        if let Some(max_items) = self.config.max_items_per_version
+            && collection.items().len() > max_items as usize
+        {
+            return Err(VersioningError::StorageError(format!(
+                "Collection exceeds maximum items per version: {} > {}",
+                collection.items().len(),
+                max_items
+            )));
         }
 
         // Get current version number
@@ -216,14 +216,13 @@ where
         self.repository.save_collection_version(&version)?;
 
         // Auto-purge if enabled
-        if self.config.auto_purge_enabled {
-            if let Some(max_versions) = self.config.max_versions_per_collection {
-                if current_version_number > max_versions {
-                    let _ = self
-                        .repository
-                        .purge_old_collection_versions(collection.uuid, max_versions);
-                }
-            }
+        if self.config.auto_purge_enabled
+            && let Some(max_versions) = self.config.max_versions_per_collection
+            && current_version_number > max_versions
+        {
+            let _ = self
+                .repository
+                .purge_old_collection_versions(collection.uuid, max_versions);
         }
 
         Ok(version)
@@ -421,9 +420,12 @@ pub struct CollectionVersionComparison<T> {
     pub detected_changes: Vec<CollectionChangeType>,
 }
 
+/// Type alias for collection version storage
+type CollectionVersionMap<T> = Arc<RwLock<HashMap<(Uuid, u32), CollectionVersion<T>>>>;
+
 /// In-memory implementation for testing and development
 pub struct InMemoryCollectionVersionRepository<T> {
-    versions: Arc<RwLock<HashMap<(Uuid, u32), CollectionVersion<T>>>>,
+    versions: CollectionVersionMap<T>,
     current_versions: Arc<RwLock<HashMap<Uuid, u32>>>,
 }
 

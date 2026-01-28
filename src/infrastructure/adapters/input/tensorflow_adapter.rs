@@ -166,10 +166,10 @@ impl TensorFlowAdapter {
         let mut models = Vec::new();
         if let Ok(entries) = std::fs::read_dir(model_dir) {
             for entry in entries.flatten() {
-                if entry.path().is_dir() {
-                    if let Some(name) = entry.file_name().to_str() {
-                        models.push(name.to_string());
-                    }
+                if entry.path().is_dir()
+                    && let Some(name) = entry.file_name().to_str()
+                {
+                    models.push(name.to_string());
                 }
             }
         }

@@ -208,7 +208,11 @@ impl LogEntryBuilder {
         Message::with_priority(source, destination.to_location(), log_message, priority)
     }
 
-    /// Create a log entry with additional context
+    /// Create a log entry with additional context using builder pattern
+    ///
+    /// # Arguments
+    /// * `context` - Context builder containing all optional fields
+    #[allow(clippy::too_many_arguments)]
     pub fn new_entry_with_context(
         source: Location,
         destination: LogDestination,

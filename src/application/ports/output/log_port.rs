@@ -99,20 +99,15 @@ pub struct LogDestinationConfig {
 }
 
 /// Log output formats
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum LogFormat {
     /// Plain text format
+    #[default]
     Text,
     /// JSON format
     Json,
     /// Structured format with custom template
     Structured(String),
-}
-
-impl Default for LogFormat {
-    fn default() -> Self {
-        Self::Text
-    }
 }
 
 /// Statistics about logging operations

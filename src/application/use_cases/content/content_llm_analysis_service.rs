@@ -168,21 +168,21 @@ impl LlmContentAnalyzer {
         };
 
         // Add metadata if configured
-        if config.include_content_metadata {
-            if let Value::Object(ref mut map) = result {
-                let metadata = serde_json::json!({
-                    "content_id": content.uuid(),
-                    "content_title": content.title().unwrap_or(&"Untitled".to_string()),
-                    "content_type": match content.content() {
-                        crate::core::platform::container::content::ContentType::Text(_) => "text",
-                        crate::core::platform::container::content::ContentType::Video(_) => "video",
-                        crate::core::platform::container::content::ContentType::Audio(_) => "audio",
-                        crate::core::platform::container::content::ContentType::Image(_) => "image",
-                    },
-                    "analysis_timestamp": chrono::Utc::now().to_rfc3339(),
-                });
-                map.insert("content_metadata".to_string(), metadata);
-            }
+        if config.include_content_metadata
+            && let Value::Object(ref mut map) = result
+        {
+            let metadata = serde_json::json!({
+                "content_id": content.uuid(),
+                "content_title": content.title().unwrap_or(&"Untitled".to_string()),
+                "content_type": match content.content() {
+                    crate::core::platform::container::content::ContentType::Text(_) => "text",
+                    crate::core::platform::container::content::ContentType::Video(_) => "video",
+                    crate::core::platform::container::content::ContentType::Audio(_) => "audio",
+                    crate::core::platform::container::content::ContentType::Image(_) => "image",
+                },
+                "analysis_timestamp": chrono::Utc::now().to_rfc3339(),
+            });
+            map.insert("content_metadata".to_string(), metadata);
         }
 
         Ok(result)

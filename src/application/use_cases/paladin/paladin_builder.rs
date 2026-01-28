@@ -528,7 +528,8 @@ impl PaladinBuilder {
     /// # Arguments
     ///
     /// * `citadel` - The Citadel port implementation to use for state persistence
-    /// Enables state persistence by attaching a Citadel adapter
+    ///
+    /// Enables state persistence by attaching a Citadel adapter.
     ///
     /// The Citadel system provides automatic state saving and restoration for
     /// Paladin agents. This enables fault tolerance, debugging, and long-running
@@ -741,16 +742,13 @@ impl PaladinBuilder {
         self.validate()?;
 
         // Initialize FileCitadel if state_dir is provided but citadel_port is not
-        if let Some(state_dir) = &self.state_dir {
-            if self.citadel_port.is_none() {
-                let file_citadel = FileCitadel::new(PathBuf::from(state_dir)).map_err(|e| {
-                    PaladinError::ConfigurationError(format!(
-                        "Failed to initialize FileCitadel: {}",
-                        e
-                    ))
-                })?;
-                self.citadel_port = Some(Arc::new(file_citadel));
-            }
+        if let Some(state_dir) = &self.state_dir
+            && self.citadel_port.is_none()
+        {
+            let file_citadel = FileCitadel::new(PathBuf::from(state_dir)).map_err(|e| {
+                PaladinError::ConfigurationError(format!("Failed to initialize FileCitadel: {}", e))
+            })?;
+            self.citadel_port = Some(Arc::new(file_citadel));
         }
 
         // Create Paladin using Node pattern with name

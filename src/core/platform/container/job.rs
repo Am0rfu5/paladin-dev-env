@@ -392,6 +392,7 @@ impl Job {
             }
         }
 
+        #[allow(clippy::type_complexity)]
         let mut futures: FuturesUnordered<
             Pin<
                 Box<

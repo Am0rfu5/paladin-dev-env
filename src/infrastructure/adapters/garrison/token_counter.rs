@@ -93,10 +93,10 @@ impl TiktokenCounter {
 impl TokenCounter for TiktokenCounter {
     fn count_tokens(&self, text: &str) -> Result<u32, GarrisonError> {
         // Check cache first
-        if let Ok(cache) = self.cache.read() {
-            if let Some(&count) = cache.get(text) {
-                return Ok(count);
-            }
+        if let Ok(cache) = self.cache.read()
+            && let Some(&count) = cache.get(text)
+        {
+            return Ok(count);
         }
 
         // Count tokens

@@ -190,12 +190,11 @@ where
         self.repository.save_version(&version)?;
 
         // Auto-purge if enabled
-        if self.config.auto_purge_enabled {
-            if let Some(max_versions) = self.config.max_versions_per_node {
-                if current_version_number > max_versions {
-                    let _ = self.repository.purge_old_versions(node.uuid, max_versions);
-                }
-            }
+        if self.config.auto_purge_enabled
+            && let Some(max_versions) = self.config.max_versions_per_node
+            && current_version_number > max_versions
+        {
+            let _ = self.repository.purge_old_versions(node.uuid, max_versions);
         }
 
         Ok(version)
@@ -336,9 +335,12 @@ pub struct VersionComparison<T> {
     pub time_diff: chrono::Duration,
 }
 
+/// Type alias for node version storage
+type NodeVersionMap<T> = Arc<RwLock<HashMap<(Uuid, u32), NodeVersion<T>>>>;
+
 /// In-memory implementation for testing and development
 pub struct InMemoryNodeVersionRepository<T> {
-    versions: Arc<RwLock<HashMap<(Uuid, u32), NodeVersion<T>>>>,
+    versions: NodeVersionMap<T>,
     current_versions: Arc<RwLock<HashMap<Uuid, u32>>>,
 }
 

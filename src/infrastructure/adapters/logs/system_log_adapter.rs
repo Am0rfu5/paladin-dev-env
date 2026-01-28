@@ -285,12 +285,12 @@ impl SystemLogAdapter {
         // Try to find the destination in our configuration
         if let Ok(destinations) = self.destinations.try_read() {
             // Convert Location to LogDestination for lookup
-            if let Ok(log_dest) = self.location_to_log_destination(destination) {
-                if let Some(destination_config) = destinations.get(&log_dest) {
-                    // Get the target from the destination settings or use default
-                    if let Some(target) = destination_config.settings.get("target") {
-                        return target.clone();
-                    }
+            if let Ok(log_dest) = self.location_to_log_destination(destination)
+                && let Some(destination_config) = destinations.get(&log_dest)
+            {
+                // Get the target from the destination settings or use default
+                if let Some(target) = destination_config.settings.get("target") {
+                    return target.clone();
                 }
             }
         }

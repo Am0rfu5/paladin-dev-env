@@ -299,10 +299,10 @@ impl FileStorageClient {
                     md.push_str(&format!("## Description\n\n{}\n\n", description));
                 }
 
-                if let ContentType::Text(text_content) = item.content() {
-                    if let Some(ref content) = text_content.content {
-                        md.push_str(&format!("## Content\n\n{}\n", content));
-                    }
+                if let ContentType::Text(text_content) = item.content()
+                    && let Some(ref content) = text_content.content
+                {
+                    md.push_str(&format!("## Content\n\n{}\n", content));
                 }
 
                 Ok(md)
@@ -331,15 +331,13 @@ impl FileStorageClient {
         }
 
         // Create directory if it doesn't exist
-        if let Some(parent) = file_path.parent() {
-            if self.create_directories && !parent.exists() {
-                fs::create_dir_all(parent).map_err(|e| {
-                    ContentDeliveryError::DeliveryFailed(format!(
-                        "Failed to create directory: {}",
-                        e
-                    ))
-                })?;
-            }
+        if let Some(parent) = file_path.parent()
+            && self.create_directories
+            && !parent.exists()
+        {
+            fs::create_dir_all(parent).map_err(|e| {
+                ContentDeliveryError::DeliveryFailed(format!("Failed to create directory: {}", e))
+            })?;
         }
 
         // Write content to file

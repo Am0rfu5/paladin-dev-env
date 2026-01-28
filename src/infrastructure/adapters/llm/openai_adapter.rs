@@ -208,12 +208,12 @@ impl OpenAIAdapter {
         match prompt.prompt_type() {
             PromptType::System(system_prompt) => {
                 let mut content = system_prompt.instructions.clone();
-                if let Some(constraints) = &system_prompt.constraints {
-                    if !constraints.is_empty() {
-                        content.push_str("\n\nConstraints:\n");
-                        for constraint in constraints {
-                            content.push_str(&format!("- {}\n", constraint));
-                        }
+                if let Some(constraints) = &system_prompt.constraints
+                    && !constraints.is_empty()
+                {
+                    content.push_str("\n\nConstraints:\n");
+                    for constraint in constraints {
+                        content.push_str(&format!("- {}\n", constraint));
                     }
                 }
                 messages.push(OpenAIMessage {
@@ -259,13 +259,13 @@ impl OpenAIAdapter {
 
         // Add content attachments
         for content in attachments {
-            if let Ok(content_text) = self.convert_content_to_text(content) {
-                if !content_text.is_empty() {
-                    messages.push(OpenAIMessage {
-                        role: "user".to_string(),
-                        content: format!("Content to analyze:\n{}", content_text),
-                    });
-                }
+            if let Ok(content_text) = self.convert_content_to_text(content)
+                && !content_text.is_empty()
+            {
+                messages.push(OpenAIMessage {
+                    role: "user".to_string(),
+                    content: format!("Content to analyze:\n{}", content_text),
+                });
             }
         }
 

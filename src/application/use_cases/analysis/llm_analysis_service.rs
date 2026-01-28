@@ -171,12 +171,11 @@ impl AnalysisService<LlmAnalysisInput, LlmAnalysisOutput, LlmAnalysisConfig>
         // Other prompt types can be added as needed
         if let crate::core::platform::container::prompt::PromptType::Text(text_prompt) =
             input.prompt.prompt_type()
+            && text_prompt.content.is_empty()
         {
-            if text_prompt.content.is_empty() {
-                return Err(AnalysisError::InvalidInput(
-                    "Prompt content cannot be empty".to_string(),
-                ));
-            }
+            return Err(AnalysisError::InvalidInput(
+                "Prompt content cannot be empty".to_string(),
+            ));
         }
         Ok(())
     }

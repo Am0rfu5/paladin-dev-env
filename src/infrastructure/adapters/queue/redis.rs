@@ -1422,10 +1422,10 @@ impl QueueManagementPort for RedisQueueAdapter {
             .map_err(|e| QueueError::OperationFailed(format!("Failed to search queue: {}", e)))?;
 
         for data in items {
-            if let Ok(item) = self.deserialize_item(&data) {
-                if item.id() == item_id {
-                    return Ok(item);
-                }
+            if let Ok(item) = self.deserialize_item(&data)
+                && item.id() == item_id
+            {
+                return Ok(item);
             }
         }
 

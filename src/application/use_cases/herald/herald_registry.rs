@@ -183,14 +183,12 @@ impl Default for HeraldRegistry {
     /// let json_herald = registry.get("json").unwrap();
     /// ```
     fn default() -> Self {
-        let registry = Self::new();
-
         // TODO: Register built-in formatters once they are implemented
         // registry.register("json", Arc::new(JsonHerald::new()));
         // registry.register("markdown", Arc::new(MarkdownHerald::new()));
         // registry.register("table", Arc::new(TableHerald::new()));
 
-        registry
+        Self::new()
     }
 }
 

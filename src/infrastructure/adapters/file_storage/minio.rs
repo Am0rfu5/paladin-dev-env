@@ -474,10 +474,10 @@ impl FileStoragePort for MinioAdapter {
             file_item.md5_hash = Some(etag.trim_matches('"').to_string());
         }
 
-        if let Some(last_modified) = &head_result.last_modified {
-            if let Ok(dt) = DateTime::parse_from_rfc2822(last_modified) {
-                file_item.modified_at = dt.with_timezone(&Utc);
-            }
+        if let Some(last_modified) = &head_result.last_modified
+            && let Ok(dt) = DateTime::parse_from_rfc2822(last_modified)
+        {
+            file_item.modified_at = dt.with_timezone(&Utc);
         }
 
         Ok(file_item)
@@ -670,15 +670,15 @@ impl MinioAdapter {
 
         // Filter by size
         let size = object.size; // Remove try_into() since object.size is already u64
-        if let Some(min_size) = options.min_size {
-            if size < min_size {
-                return false;
-            }
+        if let Some(min_size) = options.min_size
+            && size < min_size
+        {
+            return false;
         }
-        if let Some(max_size) = options.max_size {
-            if size > max_size {
-                return false;
-            }
+        if let Some(max_size) = options.max_size
+            && size > max_size
+        {
+            return false;
         }
 
         // Filter by modification date
@@ -694,15 +694,15 @@ impl MinioAdapter {
                 return true;
             };
 
-            if let Some(modified_after) = options.modified_after {
-                if parsed_date < modified_after {
-                    return false;
-                }
+            if let Some(modified_after) = options.modified_after
+                && parsed_date < modified_after
+            {
+                return false;
             }
-            if let Some(modified_before) = options.modified_before {
-                if parsed_date > modified_before {
-                    return false;
-                }
+            if let Some(modified_before) = options.modified_before
+                && parsed_date > modified_before
+            {
+                return false;
             }
         }
 

@@ -209,12 +209,11 @@ impl Scheduler {
 
         // Collect jobs that need to be executed
         for (job_id, scheduled_job) in &self.scheduled_jobs {
-            if scheduled_job.enabled {
-                if let Some(next_run) = scheduled_job.next_run {
-                    if now >= next_run {
-                        jobs_to_execute.push(*job_id);
-                    }
-                }
+            if scheduled_job.enabled
+                && let Some(next_run) = scheduled_job.next_run
+                && now >= next_run
+            {
+                jobs_to_execute.push(*job_id);
             }
         }
 

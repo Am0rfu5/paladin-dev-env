@@ -57,12 +57,11 @@ impl ContentFetchingService for HttpContentFetcher {
         content_item.set_source_url(Some(parsed_url));
 
         // Try to extract title from HTML if it's HTML content
-        if let ContentType::Text(text_content) = content_item.content() {
-            if let Some(ref html_content) = text_content.content {
-                if let Some(title) = extract_title_from_html(html_content) {
-                    content_item.set_title(Some(title));
-                }
-            }
+        if let ContentType::Text(text_content) = content_item.content()
+            && let Some(ref html_content) = text_content.content
+            && let Some(title) = extract_title_from_html(html_content)
+        {
+            content_item.set_title(Some(title));
         }
 
         content_item.set_source(Some("web".to_string()));

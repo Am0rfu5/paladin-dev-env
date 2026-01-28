@@ -23,9 +23,10 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Trigger execution status
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum TriggerStatus {
     /// Trigger has been created and is ready to be processed
+    #[default]
     Pending,
     /// Trigger is being processed
     Processing,
@@ -39,12 +40,6 @@ pub enum TriggerStatus {
     Skipped,
     /// Trigger expired before processing
     Expired,
-}
-
-impl Default for TriggerStatus {
-    fn default() -> Self {
-        Self::Pending
-    }
 }
 
 /// Trigger condition for determining when to fire
@@ -173,6 +168,7 @@ impl Trigger {
     }
 
     /// Create a trigger with custom configuration
+    #[allow(clippy::too_many_arguments)]
     pub fn with_config(
         name: String,
         description: String,
@@ -204,17 +200,17 @@ impl Trigger {
         }
 
         // Check source pattern
-        if let Some(source_pattern) = &self.condition.source_pattern {
-            if !self.matches_pattern(source_pattern, &event.source) {
-                return false;
-            }
+        if let Some(source_pattern) = &self.condition.source_pattern
+            && !self.matches_pattern(source_pattern, &event.source)
+        {
+            return false;
         }
 
         // Check time conditions
-        if let Some(time_cond) = &self.condition.time_conditions {
-            if !self.matches_time_condition(time_cond) {
-                return false;
-            }
+        if let Some(time_cond) = &self.condition.time_conditions
+            && !self.matches_time_condition(time_cond)
+        {
+            return false;
         }
 
         // TODO: Implement payload condition matching (JSONPath)

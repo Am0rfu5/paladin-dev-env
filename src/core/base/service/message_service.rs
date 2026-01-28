@@ -22,6 +22,9 @@ use uuid::Uuid;
 
 use crate::core::base::entity::message::{Location, Message, MessagePriority};
 
+/// Type alias for message handler storage
+type MessageHandlerMap = Arc<RwLock<HashMap<String, Arc<dyn MessageHandler<serde_json::Value>>>>>;
+
 /// Result type for message operations
 pub type MessageResult<T> = Result<T, MessageError>;
 
@@ -161,7 +164,7 @@ pub struct MessageService {
     /// Service configuration
     config: MessageServiceConfig,
     /// Message handlers by destination type
-    handlers: Arc<RwLock<HashMap<String, Arc<dyn MessageHandler<serde_json::Value>>>>>,
+    handlers: MessageHandlerMap,
     /// Message queues by destination
     queues: Arc<RwLock<HashMap<Location, mpsc::UnboundedSender<Message<serde_json::Value>>>>>,
     /// Service statistics
@@ -421,7 +424,7 @@ impl MessageService {
 
     /// Static version of find_handler for use in spawned tasks
     async fn find_handler_static(
-        handlers: &Arc<RwLock<HashMap<String, Arc<dyn MessageHandler<serde_json::Value>>>>>,
+        handlers: &MessageHandlerMap,
         destination: &Location,
     ) -> Option<Arc<dyn MessageHandler<serde_json::Value>>> {
         let handlers_guard = handlers.read().await;

@@ -371,10 +371,10 @@ impl UserServiceTrait for UserService {
             let email = Email::new(new_email)?;
 
             // Check if email is already taken by another user
-            if let Some(existing_user) = self.user_repository.find_by_email(email.value()).await? {
-                if existing_user.uuid != user.uuid {
-                    return Err(UserError::EmailAlreadyExists(email.value().to_string()));
-                }
+            if let Some(existing_user) = self.user_repository.find_by_email(email.value()).await?
+                && existing_user.uuid != user.uuid
+            {
+                return Err(UserError::EmailAlreadyExists(email.value().to_string()));
             }
 
             user.update_email(email)?;

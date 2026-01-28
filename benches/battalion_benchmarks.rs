@@ -340,7 +340,7 @@ fn benchmark_campaign(c: &mut Criterion) {
     // Complex graph (10 nodes, mixed topology)
     group.bench_function("complex_10_nodes", |b| {
         let mut campaign = Campaign::new();
-        
+
         // Create 10 paladins
         for i in 0..10 {
             let p = create_benchmark_paladin(&format!("p{}", i));
@@ -405,7 +405,7 @@ fn benchmark_chain_of_command(c: &mut Criterion) {
     // 3-level hierarchy (commander -> 2 lieutenants -> 4 soldiers)
     group.bench_function("3_levels_deep", |b| {
         let commander = create_benchmark_paladin("commander");
-        
+
         // Lieutenant 1 with 2 soldiers
         let soldier1 = create_benchmark_paladin("soldier1");
         let soldier2 = create_benchmark_paladin("soldier2");
@@ -456,9 +456,8 @@ criterion_group!(
     benchmark_formation,
     benchmark_phalanx,
     benchmark_aggregation_strategies,
-    benchmark_orchestration_overhead
-    // TODO: Fix Campaign and ChainOfCommand benchmarks - require API updates
-    // benchmark_campaign,
-    // benchmark_chain_of_command
+    benchmark_orchestration_overhead // TODO: Fix Campaign and ChainOfCommand benchmarks - require API updates
+                                     // benchmark_campaign,
+                                     // benchmark_chain_of_command
 );
 criterion_main!(benches);

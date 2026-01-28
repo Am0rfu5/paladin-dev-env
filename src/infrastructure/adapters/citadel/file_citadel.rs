@@ -139,17 +139,16 @@ impl FileCitadel {
     /// Parses a file name to extract UUID and state type
     fn parse_filename(filename: &str) -> Option<(Uuid, StateType)> {
         if let Some(stripped) = filename.strip_prefix("paladin-") {
-            if let Some(uuid_str) = stripped.strip_suffix(".json") {
-                if let Ok(uuid) = Uuid::parse_str(uuid_str) {
-                    return Some((uuid, StateType::Paladin));
-                }
+            if let Some(uuid_str) = stripped.strip_suffix(".json")
+                && let Ok(uuid) = Uuid::parse_str(uuid_str)
+            {
+                return Some((uuid, StateType::Paladin));
             }
-        } else if let Some(stripped) = filename.strip_prefix("battalion-") {
-            if let Some(uuid_str) = stripped.strip_suffix(".json") {
-                if let Ok(uuid) = Uuid::parse_str(uuid_str) {
-                    return Some((uuid, StateType::Battalion));
-                }
-            }
+        } else if let Some(stripped) = filename.strip_prefix("battalion-")
+            && let Some(uuid_str) = stripped.strip_suffix(".json")
+            && let Ok(uuid) = Uuid::parse_str(uuid_str)
+        {
+            return Some((uuid, StateType::Battalion));
         }
         None
     }
@@ -316,22 +315,21 @@ impl CitadelPort for FileCitadel {
             }
 
             // Parse filename
-            if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-                if let Some((id, state_type)) = Self::parse_filename(filename) {
-                    // Get file metadata for timestamps
-                    if let Ok(metadata) = fs::metadata(&path).await {
-                        if let Ok(created) = metadata.created() {
-                            if let Ok(modified) = metadata.modified() {
-                                summaries.push(StateSummary {
-                                    id,
-                                    state_type,
-                                    created_at: created.into(),
-                                    updated_at: modified.into(),
-                                    file_path: path.clone(),
-                                });
-                            }
-                        }
-                    }
+            if let Some(filename) = path.file_name().and_then(|n| n.to_str())
+                && let Some((id, state_type)) = Self::parse_filename(filename)
+            {
+                // Get file metadata for timestamps
+                if let Ok(metadata) = fs::metadata(&path).await
+                    && let Ok(created) = metadata.created()
+                    && let Ok(modified) = metadata.modified()
+                {
+                    summaries.push(StateSummary {
+                        id,
+                        state_type,
+                        created_at: created.into(),
+                        updated_at: modified.into(),
+                        file_path: path.clone(),
+                    });
                 }
             }
         }

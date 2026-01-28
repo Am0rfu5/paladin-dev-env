@@ -14,8 +14,7 @@ use paladin::core::platform::container::garrison::{
 
 /// Create a garrison with specific configuration
 fn create_garrison(max_entries: usize, eviction: EvictionStrategy) -> ConversationHistory {
-    let config = GarrisonConfig::new(max_entries, None)
-        .with_eviction_strategy(eviction);
+    let config = GarrisonConfig::new(max_entries, None).with_eviction_strategy(eviction);
     ConversationHistory::new(config)
 }
 

@@ -464,28 +464,27 @@ impl NotificationService {
                 eprintln!("Failed to send notification {}: {}", notification_id, error);
 
                 // Check if we can retry
-                if notification.can_retry() {
-                    if let Some(retry_status) =
+                if notification.can_retry()
+                    && let Some(retry_status) =
                         notification.status.next_retry(notification.max_retries)
+                {
+                    notification.update_status(retry_status)?;
+
+                    // Re-queue for retry
+                    let retry_count = notification.retry_count;
                     {
-                        notification.update_status(retry_status)?;
-
-                        // Re-queue for retry
-                        let retry_count = notification.retry_count;
-                        {
-                            let mut active = self.active_notifications.write().await;
-                            active.insert(notification.id, notification);
-                        }
-
-                        return Ok(NotificationDeliveryResult {
-                            notification_id,
-                            status: NotificationStatus::Retry(retry_count),
-                            external_id: None,
-                            processing_time_ms: 0,
-                            error_message: Some(error.to_string()),
-                            timestamp: Utc::now(),
-                        });
+                        let mut active = self.active_notifications.write().await;
+                        active.insert(notification.id, notification);
                     }
+
+                    return Ok(NotificationDeliveryResult {
+                        notification_id,
+                        status: NotificationStatus::Retry(retry_count),
+                        external_id: None,
+                        processing_time_ms: 0,
+                        error_message: Some(error.to_string()),
+                        timestamp: Utc::now(),
+                    });
                 }
 
                 // Final failure

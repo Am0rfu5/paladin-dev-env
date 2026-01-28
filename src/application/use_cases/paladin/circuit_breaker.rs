@@ -418,14 +418,14 @@ impl CircuitBreaker {
             let mut state = self.state.write().unwrap();
 
             // Double-check after acquiring write lock
-            if let CircuitState::Open { opened_at } = *state {
-                if opened_at.elapsed() >= self.timeout {
-                    *state = CircuitState::HalfOpen { successes: 0 };
-                    info!(
-                        "Circuit breaker transitioned from Open to HalfOpen (timeout_ms={})",
-                        self.timeout.as_millis()
-                    );
-                }
+            if let CircuitState::Open { opened_at } = *state
+                && opened_at.elapsed() >= self.timeout
+            {
+                *state = CircuitState::HalfOpen { successes: 0 };
+                info!(
+                    "Circuit breaker transitioned from Open to HalfOpen (timeout_ms={})",
+                    self.timeout.as_millis()
+                );
             }
         }
     }

@@ -9,9 +9,10 @@ use crate::core::platform::container::battalion::{BattalionConfig, BattalionErro
 use crate::core::platform::container::paladin::Paladin;
 
 /// Aggregation strategy for combining concurrent Paladin results
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub enum AggregationStrategy {
     /// Collect all results (wait for all Paladins to complete)
+    #[default]
     CollectAll,
 
     /// Return first successful result (early termination)
@@ -22,12 +23,6 @@ pub enum AggregationStrategy {
 
     /// Custom aggregation logic (function name for future extensibility)
     Custom(String),
-}
-
-impl Default for AggregationStrategy {
-    fn default() -> Self {
-        Self::CollectAll
-    }
 }
 
 /// Phalanx - Concurrent Paladin execution pattern
@@ -144,12 +139,12 @@ impl Phalanx {
         }
 
         // Validate Majority strategy requirements
-        if matches!(self.aggregation_strategy, AggregationStrategy::Majority) {
-            if self.paladins.len() < 3 {
-                return Err(BattalionError::ValidationError(
-                    "Majority aggregation requires at least 3 Paladins".to_string(),
-                ));
-            }
+        if matches!(self.aggregation_strategy, AggregationStrategy::Majority)
+            && self.paladins.len() < 3
+        {
+            return Err(BattalionError::ValidationError(
+                "Majority aggregation requires at least 3 Paladins".to_string(),
+            ));
         }
 
         Ok(())

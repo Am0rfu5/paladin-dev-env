@@ -243,13 +243,12 @@ impl ContentSummarizer {
         }
 
         // Add file extension if available
-        if let Some(path) = content.content().path() {
-            if let Some(extension) = std::path::Path::new(path)
+        if let Some(path) = content.content().path()
+            && let Some(extension) = std::path::Path::new(path)
                 .extension()
                 .and_then(|ext| ext.to_str())
-            {
-                keywords.push(extension.to_lowercase());
-            }
+        {
+            keywords.push(extension.to_lowercase());
         }
 
         // Add tags if available
@@ -258,21 +257,21 @@ impl ContentSummarizer {
         }
 
         // For text content, extract some key words
-        if let ContentType::Text(text_content) = content.content() {
-            if let Some(ref text) = text_content.content {
-                let words: Vec<String> = text
-                    .split_whitespace()
-                    .filter(|word| word.len() > 3) // Filter out short words
-                    .take(10) // Take first 10 significant words
-                    .map(|word| {
-                        word.to_lowercase()
-                            .trim_matches(|c: char| !c.is_alphanumeric())
-                            .to_string()
-                    })
-                    .filter(|word| !word.is_empty())
-                    .collect();
-                keywords.extend(words);
-            }
+        if let ContentType::Text(text_content) = content.content()
+            && let Some(ref text) = text_content.content
+        {
+            let words: Vec<String> = text
+                .split_whitespace()
+                .filter(|word| word.len() > 3) // Filter out short words
+                .take(10) // Take first 10 significant words
+                .map(|word| {
+                    word.to_lowercase()
+                        .trim_matches(|c: char| !c.is_alphanumeric())
+                        .to_string()
+                })
+                .filter(|word| !word.is_empty())
+                .collect();
+            keywords.extend(words);
         }
 
         keywords.dedup();

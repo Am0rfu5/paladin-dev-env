@@ -23,9 +23,10 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Queue Item processing status
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum QueueItemStatus {
     /// Item is waiting to be processed
+    #[default]
     Pending,
     /// Item is currently being processed
     Processing,
@@ -39,12 +40,6 @@ pub enum QueueItemStatus {
     Deferred,
     /// Item exceeded retry limits
     Abandoned,
-}
-
-impl Default for QueueItemStatus {
-    fn default() -> Self {
-        Self::Pending
-    }
 }
 
 /// Queue Item configuration for processing behavior

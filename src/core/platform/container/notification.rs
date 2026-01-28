@@ -62,19 +62,16 @@ pub enum NotificationDomainError {
 }
 
 /// Notification priority levels for delivery ordering
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 pub enum NotificationPriority {
     Low = 0,
+    #[default]
     Normal = 1,
     High = 2,
     Critical = 3,
     Emergency = 4,
-}
-
-impl Default for NotificationPriority {
-    fn default() -> Self {
-        Self::Normal
-    }
 }
 
 impl From<NotificationPriority> for MessagePriority {

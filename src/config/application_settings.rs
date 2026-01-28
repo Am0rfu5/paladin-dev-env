@@ -506,28 +506,28 @@ impl LlmConfig {
         }
 
         // Validate provider configs if present
-        if let Some(openai) = &self.openai {
-            if openai.api_key.is_empty() {
-                return Err(ConfigError::Message(
-                    "OpenAI API key cannot be empty".to_string(),
-                ));
-            }
+        if let Some(openai) = &self.openai
+            && openai.api_key.is_empty()
+        {
+            return Err(ConfigError::Message(
+                "OpenAI API key cannot be empty".to_string(),
+            ));
         }
 
-        if let Some(deepseek) = &self.deepseek {
-            if deepseek.api_key.is_empty() {
-                return Err(ConfigError::Message(
-                    "DeepSeek API key cannot be empty".to_string(),
-                ));
-            }
+        if let Some(deepseek) = &self.deepseek
+            && deepseek.api_key.is_empty()
+        {
+            return Err(ConfigError::Message(
+                "DeepSeek API key cannot be empty".to_string(),
+            ));
         }
 
-        if let Some(anthropic) = &self.anthropic {
-            if anthropic.api_key.is_empty() {
-                return Err(ConfigError::Message(
-                    "Anthropic API key cannot be empty".to_string(),
-                ));
-            }
+        if let Some(anthropic) = &self.anthropic
+            && anthropic.api_key.is_empty()
+        {
+            return Err(ConfigError::Message(
+                "Anthropic API key cannot be empty".to_string(),
+            ));
         }
 
         Ok(())
@@ -597,42 +597,42 @@ impl Settings {
             config.redis_host = host;
         }
 
-        if let Ok(port_str) = std::env::var("APP_REDIS_PORT") {
-            if let Ok(port) = port_str.parse::<u16>() {
-                config.redis_port = port;
-            }
+        if let Ok(port_str) = std::env::var("APP_REDIS_PORT")
+            && let Ok(port) = port_str.parse::<u16>()
+        {
+            config.redis_port = port;
         }
 
         if let Ok(password) = std::env::var("APP_REDIS_PASSWORD") {
             config.redis_password = Some(password);
         }
 
-        if let Ok(db_str) = std::env::var("APP_REDIS_DB") {
-            if let Ok(db) = db_str.parse::<u8>() {
-                config.redis_db = db;
-            }
+        if let Ok(db_str) = std::env::var("APP_REDIS_DB")
+            && let Ok(db) = db_str.parse::<u8>()
+        {
+            config.redis_db = db;
         }
 
-        if let Ok(timeout_str) = std::env::var("APP_REDIS_CONNECTION_TIMEOUT") {
-            if let Ok(timeout) = timeout_str.parse::<u64>() {
-                config.connection_timeout = Some(timeout);
-            }
+        if let Ok(timeout_str) = std::env::var("APP_REDIS_CONNECTION_TIMEOUT")
+            && let Ok(timeout) = timeout_str.parse::<u64>()
+        {
+            config.connection_timeout = Some(timeout);
         }
 
         if let Ok(prefix) = std::env::var("APP_REDIS_KEY_PREFIX") {
             config.key_prefix = Some(prefix);
         }
 
-        if let Ok(retries_str) = std::env::var("APP_REDIS_MAX_RETRIES") {
-            if let Ok(retries) = retries_str.parse::<u32>() {
-                config.max_retries = Some(retries);
-            }
+        if let Ok(retries_str) = std::env::var("APP_REDIS_MAX_RETRIES")
+            && let Ok(retries) = retries_str.parse::<u32>()
+        {
+            config.max_retries = Some(retries);
         }
 
-        if let Ok(priority_str) = std::env::var("APP_REDIS_ENABLE_PRIORITY_QUEUES") {
-            if let Ok(enable) = priority_str.parse::<bool>() {
-                config.enable_priority_queues = Some(enable);
-            }
+        if let Ok(priority_str) = std::env::var("APP_REDIS_ENABLE_PRIORITY_QUEUES")
+            && let Ok(enable) = priority_str.parse::<bool>()
+        {
+            config.enable_priority_queues = Some(enable);
         }
 
         config
@@ -663,40 +663,40 @@ impl Settings {
             config.minio_region = Some(region);
         }
 
-        if let Ok(secure_str) = std::env::var("APP_MINIO_SECURE") {
-            if let Ok(secure) = secure_str.parse::<bool>() {
-                config.minio_secure = Some(secure);
-            }
+        if let Ok(secure_str) = std::env::var("APP_MINIO_SECURE")
+            && let Ok(secure) = secure_str.parse::<bool>()
+        {
+            config.minio_secure = Some(secure);
         }
 
-        if let Ok(path_style_str) = std::env::var("APP_MINIO_PATH_STYLE") {
-            if let Ok(path_style) = path_style_str.parse::<bool>() {
-                config.minio_path_style = Some(path_style);
-            }
+        if let Ok(path_style_str) = std::env::var("APP_MINIO_PATH_STYLE")
+            && let Ok(path_style) = path_style_str.parse::<bool>()
+        {
+            config.minio_path_style = Some(path_style);
         }
 
-        if let Ok(timeout_str) = std::env::var("APP_MINIO_CONNECTION_TIMEOUT") {
-            if let Ok(timeout) = timeout_str.parse::<u64>() {
-                config.connection_timeout = Some(timeout);
-            }
+        if let Ok(timeout_str) = std::env::var("APP_MINIO_CONNECTION_TIMEOUT")
+            && let Ok(timeout) = timeout_str.parse::<u64>()
+        {
+            config.connection_timeout = Some(timeout);
         }
 
-        if let Ok(request_timeout_str) = std::env::var("APP_MINIO_REQUEST_TIMEOUT") {
-            if let Ok(timeout) = request_timeout_str.parse::<u64>() {
-                config.request_timeout = Some(timeout);
-            }
+        if let Ok(request_timeout_str) = std::env::var("APP_MINIO_REQUEST_TIMEOUT")
+            && let Ok(timeout) = request_timeout_str.parse::<u64>()
+        {
+            config.request_timeout = Some(timeout);
         }
 
-        if let Ok(max_conns_str) = std::env::var("APP_MINIO_MAX_IDLE_CONNS") {
-            if let Ok(max_conns) = max_conns_str.parse::<u32>() {
-                config.max_idle_conns = Some(max_conns);
-            }
+        if let Ok(max_conns_str) = std::env::var("APP_MINIO_MAX_IDLE_CONNS")
+            && let Ok(max_conns) = max_conns_str.parse::<u32>()
+        {
+            config.max_idle_conns = Some(max_conns);
         }
 
-        if let Ok(max_size_str) = std::env::var("APP_MINIO_MAX_FILE_SIZE") {
-            if let Ok(max_size) = max_size_str.parse::<u64>() {
-                config.max_file_size = Some(max_size);
-            }
+        if let Ok(max_size_str) = std::env::var("APP_MINIO_MAX_FILE_SIZE")
+            && let Ok(max_size) = max_size_str.parse::<u64>()
+        {
+            config.max_file_size = Some(max_size);
         }
 
         if let Ok(extensions_str) = std::env::var("APP_MINIO_ALLOWED_EXTENSIONS") {
@@ -717,10 +717,10 @@ impl Settings {
         let mut config = self.notifications.clone().unwrap_or_default();
 
         // Override with environment variables if present
-        if let Ok(enabled_str) = std::env::var("APP_NOTIFICATIONS_ENABLED") {
-            if let Ok(enabled) = enabled_str.parse::<bool>() {
-                config.enabled = enabled;
-            }
+        if let Ok(enabled_str) = std::env::var("APP_NOTIFICATIONS_ENABLED")
+            && let Ok(enabled) = enabled_str.parse::<bool>()
+        {
+            config.enabled = enabled;
         }
 
         // Email configuration overrides
@@ -728,10 +728,10 @@ impl Settings {
             if let Ok(smtp_host) = std::env::var("APP_EMAIL_SMTP_HOST") {
                 email_config.smtp_host = smtp_host;
             }
-            if let Ok(smtp_port_str) = std::env::var("APP_EMAIL_SMTP_PORT") {
-                if let Ok(smtp_port) = smtp_port_str.parse::<u16>() {
-                    email_config.smtp_port = smtp_port;
-                }
+            if let Ok(smtp_port_str) = std::env::var("APP_EMAIL_SMTP_PORT")
+                && let Ok(smtp_port) = smtp_port_str.parse::<u16>()
+            {
+                email_config.smtp_port = smtp_port;
             }
             if let Ok(username) = std::env::var("APP_EMAIL_USERNAME") {
                 email_config.username = username;
@@ -745,10 +745,10 @@ impl Settings {
             if let Ok(from_name) = std::env::var("APP_EMAIL_FROM_NAME") {
                 email_config.from_name = Some(from_name);
             }
-            if let Ok(use_tls_str) = std::env::var("APP_EMAIL_USE_TLS") {
-                if let Ok(use_tls) = use_tls_str.parse::<bool>() {
-                    email_config.use_tls = use_tls;
-                }
+            if let Ok(use_tls_str) = std::env::var("APP_EMAIL_USE_TLS")
+                && let Ok(use_tls) = use_tls_str.parse::<bool>()
+            {
+                email_config.use_tls = use_tls;
             }
         }
 
@@ -768,16 +768,16 @@ impl Settings {
             config.path = Some(path);
         }
 
-        if let Ok(max_entries_str) = std::env::var("APP_GARRISON_MAX_ENTRIES") {
-            if let Ok(max_entries) = max_entries_str.parse::<usize>() {
-                config.max_entries = max_entries;
-            }
+        if let Ok(max_entries_str) = std::env::var("APP_GARRISON_MAX_ENTRIES")
+            && let Ok(max_entries) = max_entries_str.parse::<usize>()
+        {
+            config.max_entries = max_entries;
         }
 
-        if let Ok(max_tokens_str) = std::env::var("APP_GARRISON_MAX_TOKENS") {
-            if let Ok(max_tokens) = max_tokens_str.parse::<u32>() {
-                config.max_tokens = Some(max_tokens);
-            }
+        if let Ok(max_tokens_str) = std::env::var("APP_GARRISON_MAX_TOKENS")
+            && let Ok(max_tokens) = max_tokens_str.parse::<u32>()
+        {
+            config.max_tokens = Some(max_tokens);
         }
 
         if let Ok(tokenizer) = std::env::var("APP_GARRISON_TOKENIZER") {
@@ -788,10 +788,10 @@ impl Settings {
             config.eviction_strategy = eviction_strategy;
         }
 
-        if let Ok(preserve_recent_str) = std::env::var("APP_GARRISON_PRESERVE_RECENT_COUNT") {
-            if let Ok(preserve_recent) = preserve_recent_str.parse::<usize>() {
-                config.preserve_recent_count = preserve_recent;
-            }
+        if let Ok(preserve_recent_str) = std::env::var("APP_GARRISON_PRESERVE_RECENT_COUNT")
+            && let Ok(preserve_recent) = preserve_recent_str.parse::<usize>()
+        {
+            config.preserve_recent_count = preserve_recent;
         }
 
         config
@@ -802,32 +802,32 @@ impl Settings {
         let mut config = self.citadel.clone().unwrap_or_default();
 
         // Override with environment variables if present
-        if let Ok(enabled_str) = std::env::var("APP_CITADEL_ENABLED") {
-            if let Ok(enabled) = enabled_str.parse::<bool>() {
-                config.enabled = enabled;
-            }
+        if let Ok(enabled_str) = std::env::var("APP_CITADEL_ENABLED")
+            && let Ok(enabled) = enabled_str.parse::<bool>()
+        {
+            config.enabled = enabled;
         }
 
         if let Ok(state_dir) = std::env::var("APP_CITADEL_STATE_DIR") {
             config.state_dir = state_dir;
         }
 
-        if let Ok(autosave_str) = std::env::var("APP_CITADEL_AUTOSAVE_ENABLED") {
-            if let Ok(autosave) = autosave_str.parse::<bool>() {
-                config.autosave_enabled = autosave;
-            }
+        if let Ok(autosave_str) = std::env::var("APP_CITADEL_AUTOSAVE_ENABLED")
+            && let Ok(autosave) = autosave_str.parse::<bool>()
+        {
+            config.autosave_enabled = autosave;
         }
 
-        if let Ok(cleanup_str) = std::env::var("APP_CITADEL_CLEANUP_ENABLED") {
-            if let Ok(cleanup) = cleanup_str.parse::<bool>() {
-                config.cleanup_enabled = cleanup;
-            }
+        if let Ok(cleanup_str) = std::env::var("APP_CITADEL_CLEANUP_ENABLED")
+            && let Ok(cleanup) = cleanup_str.parse::<bool>()
+        {
+            config.cleanup_enabled = cleanup;
         }
 
-        if let Ok(max_age_str) = std::env::var("APP_CITADEL_MAX_STATE_AGE_DAYS") {
-            if let Ok(max_age) = max_age_str.parse::<u32>() {
-                config.max_state_age_days = Some(max_age);
-            }
+        if let Ok(max_age_str) = std::env::var("APP_CITADEL_MAX_STATE_AGE_DAYS")
+            && let Ok(max_age) = max_age_str.parse::<u32>()
+        {
+            config.max_state_age_days = Some(max_age);
         }
 
         config
@@ -846,38 +846,36 @@ impl Settings {
         }
 
         // JSON configuration overrides
-        if let Ok(pretty_str) = std::env::var("APP_HERALD_JSON_PRETTY") {
-            if let Ok(pretty) = pretty_str.parse::<bool>() {
-                config.json.pretty = pretty;
-            }
+        if let Ok(pretty_str) = std::env::var("APP_HERALD_JSON_PRETTY")
+            && let Ok(pretty) = pretty_str.parse::<bool>()
+        {
+            config.json.pretty = pretty;
         }
-        if let Ok(include_metadata_str) = std::env::var("APP_HERALD_JSON_INCLUDE_METADATA") {
-            if let Ok(include_metadata) = include_metadata_str.parse::<bool>() {
-                config.json.include_metadata = include_metadata;
-            }
+        if let Ok(include_metadata_str) = std::env::var("APP_HERALD_JSON_INCLUDE_METADATA")
+            && let Ok(include_metadata) = include_metadata_str.parse::<bool>()
+        {
+            config.json.include_metadata = include_metadata;
         }
 
         // Markdown configuration overrides
-        if let Ok(include_colors_str) = std::env::var("APP_HERALD_MARKDOWN_INCLUDE_COLORS") {
-            if let Ok(include_colors) = include_colors_str.parse::<bool>() {
-                config.markdown.include_colors = include_colors;
-            }
+        if let Ok(include_colors_str) = std::env::var("APP_HERALD_MARKDOWN_INCLUDE_COLORS")
+            && let Ok(include_colors) = include_colors_str.parse::<bool>()
+        {
+            config.markdown.include_colors = include_colors;
         }
-        if let Ok(heading_level_str) = std::env::var("APP_HERALD_MARKDOWN_HEADING_LEVEL") {
-            if let Ok(heading_level) = heading_level_str.parse::<u8>() {
-                if (1..=6).contains(&heading_level) {
-                    config.markdown.heading_level = heading_level;
-                }
-            }
+        if let Ok(heading_level_str) = std::env::var("APP_HERALD_MARKDOWN_HEADING_LEVEL")
+            && let Ok(heading_level) = heading_level_str.parse::<u8>()
+            && (1..=6).contains(&heading_level)
+        {
+            config.markdown.heading_level = heading_level;
         }
 
         // Table configuration overrides
-        if let Ok(max_column_width_str) = std::env::var("APP_HERALD_TABLE_MAX_COLUMN_WIDTH") {
-            if let Ok(max_column_width) = max_column_width_str.parse::<usize>() {
-                if max_column_width > 0 {
-                    config.table.max_column_width = max_column_width;
-                }
-            }
+        if let Ok(max_column_width_str) = std::env::var("APP_HERALD_TABLE_MAX_COLUMN_WIDTH")
+            && let Ok(max_column_width) = max_column_width_str.parse::<usize>()
+            && max_column_width > 0
+        {
+            config.table.max_column_width = max_column_width;
         }
         if let Ok(border_style) = std::env::var("APP_HERALD_TABLE_BORDER_STYLE") {
             config.table.border_style = border_style;

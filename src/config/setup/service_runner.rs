@@ -193,40 +193,40 @@ impl ServiceRunner {
         // Override with environment variables if present
         let mut config = base_config;
 
-        if let Ok(max_queue_size) = env::var("MESSAGE_SERVICE_MAX_QUEUE_SIZE") {
-            if let Ok(size) = max_queue_size.parse::<usize>() {
-                config.max_queue_size = size;
-            }
+        if let Ok(max_queue_size) = env::var("MESSAGE_SERVICE_MAX_QUEUE_SIZE")
+            && let Ok(size) = max_queue_size.parse::<usize>()
+        {
+            config.max_queue_size = size;
         }
 
-        if let Ok(worker_threads) = env::var("MESSAGE_SERVICE_WORKER_THREADS") {
-            if let Ok(threads) = worker_threads.parse::<usize>() {
-                config.worker_threads = threads;
-            }
+        if let Ok(worker_threads) = env::var("MESSAGE_SERVICE_WORKER_THREADS")
+            && let Ok(threads) = worker_threads.parse::<usize>()
+        {
+            config.worker_threads = threads;
         }
 
-        if let Ok(enable_persistence) = env::var("MESSAGE_SERVICE_ENABLE_PERSISTENCE") {
-            if let Ok(enabled) = enable_persistence.parse::<bool>() {
-                config.enable_persistence = enabled;
-            }
+        if let Ok(enable_persistence) = env::var("MESSAGE_SERVICE_ENABLE_PERSISTENCE")
+            && let Ok(enabled) = enable_persistence.parse::<bool>()
+        {
+            config.enable_persistence = enabled;
         }
 
-        if let Ok(ttl) = env::var("MESSAGE_SERVICE_DEFAULT_TTL_SECONDS") {
-            if let Ok(ttl_val) = ttl.parse::<i64>() {
-                config.default_ttl_seconds = ttl_val;
-            }
+        if let Ok(ttl) = env::var("MESSAGE_SERVICE_DEFAULT_TTL_SECONDS")
+            && let Ok(ttl_val) = ttl.parse::<i64>()
+        {
+            config.default_ttl_seconds = ttl_val;
         }
 
-        if let Ok(retry_attempts) = env::var("MESSAGE_SERVICE_RETRY_ATTEMPTS") {
-            if let Ok(attempts) = retry_attempts.parse::<u32>() {
-                config.retry_attempts = attempts;
-            }
+        if let Ok(retry_attempts) = env::var("MESSAGE_SERVICE_RETRY_ATTEMPTS")
+            && let Ok(attempts) = retry_attempts.parse::<u32>()
+        {
+            config.retry_attempts = attempts;
         }
 
-        if let Ok(retry_delay) = env::var("MESSAGE_SERVICE_RETRY_DELAY_MS") {
-            if let Ok(delay) = retry_delay.parse::<u64>() {
-                config.retry_delay_ms = delay;
-            }
+        if let Ok(retry_delay) = env::var("MESSAGE_SERVICE_RETRY_DELAY_MS")
+            && let Ok(delay) = retry_delay.parse::<u64>()
+        {
+            config.retry_delay_ms = delay;
         }
 
         config

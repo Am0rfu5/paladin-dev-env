@@ -406,13 +406,13 @@ impl Orchestrator {
         // Find the workflow and target job if specified
         for workflow in workflows.values() {
             for listener in &workflow.listeners {
-                if listener.name == trigger.source {
-                    if let Some(target_job_id) = listener.target_job_id {
-                        // Find the specific job in the workflow
-                        if let Some(job) = workflow.jobs.iter().find(|j| j.id() == target_job_id) {
-                            target_job = Some(job.clone());
-                            break;
-                        }
+                if listener.name == trigger.source
+                    && let Some(target_job_id) = listener.target_job_id
+                {
+                    // Find the specific job in the workflow
+                    if let Some(job) = workflow.jobs.iter().find(|j| j.id() == target_job_id) {
+                        target_job = Some(job.clone());
+                        break;
                     }
                 }
             }

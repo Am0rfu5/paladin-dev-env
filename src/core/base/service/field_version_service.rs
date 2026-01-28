@@ -194,14 +194,13 @@ where
         self.repository.save_field_version(&version)?;
 
         // Auto-purge if enabled
-        if self.config.auto_purge_enabled {
-            if let Some(max_versions) = self.config.max_versions_per_field {
-                if current_version_number > max_versions {
-                    let _ = self
-                        .repository
-                        .purge_old_field_versions(field.fid, max_versions);
-                }
-            }
+        if self.config.auto_purge_enabled
+            && let Some(max_versions) = self.config.max_versions_per_field
+            && current_version_number > max_versions
+        {
+            let _ = self
+                .repository
+                .purge_old_field_versions(field.fid, max_versions);
         }
 
         Ok(version)
@@ -360,9 +359,12 @@ pub struct FieldVersionComparison<T> {
     pub time_diff: chrono::Duration,
 }
 
+/// Type alias for field version storage
+type FieldVersionMap<T> = Arc<RwLock<HashMap<(Uuid, u32), FieldVersion<T>>>>;
+
 /// In-memory implementation for testing and development
 pub struct InMemoryFieldVersionRepository<T> {
-    versions: Arc<RwLock<HashMap<(Uuid, u32), FieldVersion<T>>>>,
+    versions: FieldVersionMap<T>,
     current_versions: Arc<RwLock<HashMap<Uuid, u32>>>,
 }
 

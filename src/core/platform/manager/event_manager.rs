@@ -28,25 +28,28 @@ pub enum EventError {
     HandlerError(String),
 }
 
+/// Type alias for event handler storage
+type EventHandlerMap = Arc<RwLock<HashMap<String, Vec<Arc<dyn EventHandler>>>>>;
+
 /// Handles messages from the MessageService and routes them to event subscribers.
 struct EventMessageHandler {
-    subscribers: Arc<RwLock<HashMap<String, Vec<Arc<dyn EventHandler>>>>>,
+    subscribers: EventHandlerMap,
 }
 
 #[async_trait]
 impl MessageHandler<Event> for EventMessageHandler {
     async fn handle_message(&self, message: Message<Event>) -> MessageResult<()> {
-        if let Location::Service(name) = &message.destination {
-            if name.starts_with("event:") {
-                let event_type = name.strip_prefix("event:").unwrap_or("");
-                let subscribers = self.subscribers.read().await;
-                if let Some(handlers) = subscribers.get(event_type) {
-                    for handler in handlers {
-                        handler
-                            .handle(&message.message)
-                            .await
-                            .map_err(|e| MessageError::DeliveryFailed(e.to_string()))?;
-                    }
+        if let Location::Service(name) = &message.destination
+            && name.starts_with("event:")
+        {
+            let event_type = name.strip_prefix("event:").unwrap_or("");
+            let subscribers = self.subscribers.read().await;
+            if let Some(handlers) = subscribers.get(event_type) {
+                for handler in handlers {
+                    handler
+                        .handle(&message.message)
+                        .await
+                        .map_err(|e| MessageError::DeliveryFailed(e.to_string()))?;
                 }
             }
         }
@@ -65,7 +68,7 @@ impl MessageHandler<Event> for EventMessageHandler {
 /// and integrates with the underlying MessageService for transport.
 pub struct EventService {
     message_service: Arc<MessageService>,
-    subscribers: Arc<RwLock<HashMap<String, Vec<Arc<dyn EventHandler>>>>>,
+    subscribers: EventHandlerMap,
 }
 
 impl EventService {

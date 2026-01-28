@@ -469,9 +469,7 @@ impl LlmPort for DeepSeekAdapter {
 
                     // Parse SSE format: "data: {json}\n\n"
                     for line in text.lines() {
-                        if line.starts_with("data: ") {
-                            let json_str = &line[6..];
-
+                        if let Some(json_str) = line.strip_prefix("data: ") {
                             if json_str.trim() == "[DONE]" {
                                 return Ok(StreamingResponse {
                                     id: Uuid::new_v4(),

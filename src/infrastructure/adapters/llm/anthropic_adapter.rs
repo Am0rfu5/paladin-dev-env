@@ -436,14 +436,14 @@ impl LlmPort for AnthropicAdapter {
                             if let Ok(event) = serde_json::from_str::<ClaudeStreamEvent>(json_str) {
                                 match event.event_type.as_str() {
                                     "content_block_delta" => {
-                                        if let Some(delta) = event.delta {
-                                            if let Some(text) = delta.text {
-                                                return Ok(StreamingResponse {
-                                                    id: Uuid::new_v4(),
-                                                    delta: text,
-                                                    finish_reason: None,
-                                                });
-                                            }
+                                        if let Some(delta) = event.delta
+                                            && let Some(text) = delta.text
+                                        {
+                                            return Ok(StreamingResponse {
+                                                id: Uuid::new_v4(),
+                                                delta: text,
+                                                finish_reason: None,
+                                            });
                                         }
                                     }
                                     "message_stop" => {
