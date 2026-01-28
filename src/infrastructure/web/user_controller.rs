@@ -6,10 +6,10 @@ delegating business logic to the UserService.
 */
 
 use crate::core::platform::container::user::{UserError, UserProfile};
-use crate::core::platform::manager::user_service::{
-    UserLoginRequest, UserProfileUpdateRequest, UserRegistrationRequest, UserService,
-    UserServiceTrait,
-};
+// use crate::core::platform::manager::user_service::{
+//     UserLoginRequest, UserProfileUpdateRequest, UserRegistrationRequest, UserService,
+//     UserServiceTrait,
+// };
 use axum::{
     Router,
     extract::{Path, State},
@@ -20,6 +20,61 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
+
+/// Placeholder types for user service until implemented
+#[derive(Debug)]
+pub struct UserRegistrationRequest {
+    pub username: String,
+    pub email: String,
+    pub password: String,
+    pub profile: Option<UserProfile>,
+}
+
+#[derive(Debug)]
+pub struct UserLoginRequest {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Debug)]
+pub struct UserProfileUpdateRequest {
+    pub user_id: Uuid,
+    pub username: Option<String>,
+    pub email: Option<String>,
+    pub profile: Option<UserProfile>,
+}
+
+#[async_trait::async_trait]
+pub trait UserServiceTrait: Send + Sync {
+    async fn register_user(
+        &self,
+        request: UserRegistrationRequest,
+    ) -> Result<crate::core::platform::container::user::User, UserError>;
+    async fn login_user(&self, request: UserLoginRequest) -> Result<LoginResult, UserError>;
+    async fn get_user_by_id(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Option<crate::core::platform::container::user::User>, UserError>;
+    async fn update_user_profile(
+        &self,
+        request: UserProfileUpdateRequest,
+    ) -> Result<crate::core::platform::container::user::User, UserError>;
+    async fn activate_user(&self, user_id: Uuid) -> Result<(), UserError>;
+    async fn deactivate_user(&self, user_id: Uuid) -> Result<(), UserError>;
+    async fn verify_user(&self, user_id: Uuid) -> Result<(), UserError>;
+}
+
+#[derive(Debug, Clone)]
+pub struct LoginResult {
+    pub user_id: Uuid,
+    pub username: String,
+    pub email: String,
+    pub is_verified: bool,
+    pub success: bool,
+}
+
+/// Placeholder type for UserService until the actual service is implemented
+pub type UserService = dyn UserServiceTrait;
 
 /// User registration request DTO
 #[derive(Debug, Deserialize)]
@@ -375,4 +430,436 @@ pub fn create_user_routes(user_service: Arc<UserService>) -> Router {
         .route("/users/:id/deactivate", post(deactivate_user))
         .route("/users/:id/verify", post(verify_user))
         .with_state(user_service)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::platform::container::user::{User, UserError, UserProfile};
+    use async_trait::async_trait;
+    use chrono;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+
+    // Mock types for testing
+    #[allow(dead_code)]
+    #[derive(Debug, Clone)]
+    struct MockUser {
+        pub uuid: Uuid,
+        pub username: String,
+        pub email: String,
+        pub is_active: bool,
+        pub is_verified: bool,
+        pub profile: UserProfile,
+        pub created: chrono::DateTime<chrono::Utc>,
+        pub modified: chrono::DateTime<chrono::Utc>,
+    }
+
+    impl MockUser {
+        fn new() -> Self {
+            Self {
+                uuid: Uuid::new_v4(),
+                username: "testuser".to_string(),
+                email: "test@example.com".to_string(),
+                is_active: true,
+                is_verified: true,
+                profile: UserProfile {
+                    first_name: Some("Test".to_string()),
+                    last_name: Some("User".to_string()),
+                    bio: Some("Test bio".to_string()),
+                    avatar_url: None,
+                    timezone: Some("UTC".to_string()),
+                    locale: Some("en-US".to_string()),
+                },
+                created: chrono::Utc::now(),
+                modified: chrono::Utc::now(),
+            }
+        }
+    }
+
+    // Mock UserService for testing
+    struct MockUserService {
+        users: Mutex<HashMap<Uuid, User>>,
+        login_results: Mutex<HashMap<String, Result<super::LoginResult, UserError>>>,
+        should_fail: Mutex<bool>,
+    }
+
+    impl MockUserService {
+        fn new() -> Self {
+            Self {
+                users: Mutex::new(HashMap::new()),
+                login_results: Mutex::new(HashMap::new()),
+                should_fail: Mutex::new(false),
+            }
+        }
+
+        fn set_should_fail(&self, fail: bool) {
+            *self.should_fail.lock().unwrap() = fail;
+        }
+
+        fn add_user(&self, user: User) {
+            self.users.lock().unwrap().insert(user.uuid, user);
+        }
+
+        #[allow(dead_code)]
+        fn set_login_result(&self, email: &str, result: Result<super::LoginResult, UserError>) {
+            self.login_results
+                .lock()
+                .unwrap()
+                .insert(email.to_string(), result);
+        }
+    }
+
+    #[async_trait]
+    impl UserServiceTrait for MockUserService {
+        async fn register_user(&self, request: UserRegistrationRequest) -> Result<User, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+
+            let user = User::new_user(
+                request.username,
+                crate::core::platform::container::user::Email::new(request.email).unwrap(),
+                "mock_hash".to_string(),
+                request.profile,
+            );
+            self.add_user(user.clone());
+
+            Ok(user)
+        }
+
+        async fn login_user(
+            &self,
+            request: UserLoginRequest,
+        ) -> Result<super::LoginResult, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::AuthenticationFailed);
+            }
+
+            if let Some(result) = self.login_results.lock().unwrap().remove(&request.email) {
+                result
+            } else {
+                // Default successful login
+                Ok(super::LoginResult {
+                    user_id: Uuid::new_v4(),
+                    username: "testuser".to_string(),
+                    email: request.email,
+                    is_verified: true,
+                    success: true,
+                })
+            }
+        }
+
+        async fn get_user_by_id(&self, user_id: Uuid) -> Result<Option<User>, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+
+            if let Some(user) = self.users.lock().unwrap().get(&user_id) {
+                Ok(Some(user.clone()))
+            } else {
+                Ok(None)
+            }
+        }
+
+        async fn update_user_profile(
+            &self,
+            request: UserProfileUpdateRequest,
+        ) -> Result<User, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+
+            // Get existing user or create mock
+            let existing_user =
+                if let Some(existing) = self.users.lock().unwrap().get(&request.user_id) {
+                    existing.clone()
+                } else {
+                    User::new_user(
+                        "testuser".to_string(),
+                        crate::core::platform::container::user::Email::new(
+                            "test@example.com".to_string(),
+                        )
+                        .unwrap(),
+                        "mock_hash".to_string(),
+                        None,
+                    )
+                };
+
+            // Apply updates
+            let updated_profile = request
+                .profile
+                .unwrap_or_else(|| existing_user.profile().clone());
+            let updated_username = request
+                .username
+                .unwrap_or_else(|| existing_user.username().to_string());
+            let updated_email = request
+                .email
+                .unwrap_or_else(|| existing_user.email().value().to_string());
+
+            let updated_user = User::new_user(
+                updated_username,
+                crate::core::platform::container::user::Email::new(updated_email).unwrap(),
+                "mock_hash".to_string(),
+                Some(updated_profile),
+            );
+
+            self.add_user(updated_user.clone());
+            Ok(updated_user)
+        }
+
+        async fn activate_user(&self, _user_id: Uuid) -> Result<(), UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(())
+        }
+
+        async fn deactivate_user(&self, _user_id: Uuid) -> Result<(), UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(())
+        }
+
+        async fn verify_user(&self, _user_id: Uuid) -> Result<(), UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn test_user_error_to_response_invalid_email() {
+        let error = UserError::InvalidEmail("Invalid email".to_string());
+        let (status, response) = user_error_to_response(error);
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(!response.0.success);
+        assert_eq!(response.0.error.as_ref().unwrap().code, "INVALID_EMAIL");
+    }
+
+    #[test]
+    fn test_user_error_to_response_user_not_found() {
+        let error = UserError::UserNotFound(Uuid::new_v4());
+        let (status, response) = user_error_to_response(error);
+
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(!response.0.success);
+        assert_eq!(response.0.error.as_ref().unwrap().code, "USER_NOT_FOUND");
+    }
+
+    #[test]
+    fn test_user_error_to_response_authentication_failed() {
+        let error = UserError::AuthenticationFailed;
+        let (status, response) = user_error_to_response(error);
+
+        assert_eq!(status, StatusCode::UNAUTHORIZED);
+        assert!(!response.0.success);
+        assert_eq!(response.0.error.as_ref().unwrap().code, "AUTH_FAILED");
+    }
+
+    #[test]
+    fn test_user_to_response() {
+        let mock_user = MockUser::new();
+        let user = User::new_user(
+            mock_user.username.clone(),
+            crate::core::platform::container::user::Email::new(mock_user.email.clone()).unwrap(),
+            "mock_hash".to_string(),
+            Some(mock_user.profile.clone()),
+        );
+
+        let response = user_to_response(&user);
+
+        assert_eq!(response.username, user.username());
+        assert_eq!(response.email, user.email().value());
+        assert_eq!(response.is_active, user.is_active());
+        assert_eq!(response.is_verified, user.is_verified());
+        assert_eq!(response.profile.first_name, user.profile().first_name);
+        assert_eq!(response.profile.last_name, user.profile().last_name);
+    }
+
+    #[tokio::test]
+    async fn test_register_user_success() {
+        let user_service = Arc::new(MockUserService::new());
+        let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
+        let request = RegisterUserRequest {
+            username: "testuser".to_string(),
+            email: "test@example.com".to_string(),
+            password: "password123".to_string(),
+            first_name: Some("Test".to_string()),
+            last_name: Some("User".to_string()),
+            bio: Some("Test bio".to_string()),
+            timezone: Some("UTC".to_string()),
+            locale: Some("en-US".to_string()),
+        };
+
+        let result = register_user(State(service_ref), Json(request)).await;
+
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert!(response.0.success);
+        assert!(response.0.data.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_register_user_service_error() {
+        let user_service = Arc::new(MockUserService::new());
+        user_service.set_should_fail(true);
+        let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
+
+        let request = RegisterUserRequest {
+            username: "testuser".to_string(),
+            email: "test@example.com".to_string(),
+            password: "password123".to_string(),
+            first_name: None,
+            last_name: None,
+            bio: None,
+            timezone: None,
+            locale: None,
+        };
+
+        let result = register_user(State(service_ref), Json(request)).await;
+
+        assert!(result.is_err());
+        let (status, response) = result.err().unwrap();
+        assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+        assert!(!response.0.success);
+    }
+
+    #[tokio::test]
+    async fn test_login_user_success() {
+        let user_service = Arc::new(MockUserService::new());
+        let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
+        let request = LoginUserRequest {
+            email: "test@example.com".to_string(),
+            password: "password123".to_string(),
+        };
+
+        let result = login_user(State(service_ref), Json(request)).await;
+
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert!(response.0.success);
+        assert!(response.0.data.is_some());
+        assert_eq!(response.0.data.as_ref().unwrap().email, "test@example.com");
+        assert!(response.0.data.as_ref().unwrap().success);
+    }
+
+    #[tokio::test]
+    async fn test_login_user_auth_failed() {
+        let user_service = Arc::new(MockUserService::new());
+        user_service.set_should_fail(true);
+        let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
+
+        let request = LoginUserRequest {
+            email: "test@example.com".to_string(),
+            password: "wrongpassword".to_string(),
+        };
+
+        let result = login_user(State(service_ref), Json(request)).await;
+
+        assert!(result.is_err());
+        let (status, response) = result.err().unwrap();
+        assert_eq!(status, StatusCode::UNAUTHORIZED);
+        assert!(!response.0.success);
+    }
+
+    #[tokio::test]
+    async fn test_get_user_success() {
+        let user_service = Arc::new(MockUserService::new());
+        let mock_user = User::new_user(
+            "testuser".to_string(),
+            crate::core::platform::container::user::Email::new("test@example.com".to_string())
+                .unwrap(),
+            "mock_hash".to_string(),
+            None,
+        );
+        user_service.add_user(mock_user.clone());
+        let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
+
+        let result = get_user(State(service_ref), Path(mock_user.uuid)).await;
+
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert!(response.0.success);
+        assert!(response.0.data.is_some());
+        assert_eq!(response.0.data.as_ref().unwrap().id, mock_user.uuid);
+    }
+
+    #[tokio::test]
+    async fn test_get_user_not_found() {
+        let user_service = Arc::new(MockUserService::new());
+        let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
+        let user_id = Uuid::new_v4();
+
+        let result = get_user(State(service_ref), Path(user_id)).await;
+
+        assert!(result.is_err());
+        let (status, response) = result.err().unwrap();
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(!response.0.success);
+    }
+
+    #[tokio::test]
+    async fn test_activate_user_success() {
+        let user_service = Arc::new(MockUserService::new());
+        let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
+        let user_id = Uuid::new_v4();
+
+        let result = activate_user(State(service_ref), Path(user_id)).await;
+
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert!(response.0.success);
+    }
+
+    #[tokio::test]
+    async fn test_deactivate_user_success() {
+        let user_service = Arc::new(MockUserService::new());
+        let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
+        let user_id = Uuid::new_v4();
+
+        let result = deactivate_user(State(service_ref), Path(user_id)).await;
+
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert!(response.0.success);
+    }
+
+    #[tokio::test]
+    async fn test_verify_user_success() {
+        let user_service = Arc::new(MockUserService::new());
+        let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
+        let user_id = Uuid::new_v4();
+
+        let result = verify_user(State(service_ref), Path(user_id)).await;
+
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert!(response.0.success);
+    }
+
+    #[test]
+    fn test_api_response_success() {
+        let data = "test data".to_string();
+        let response: ApiResponse<String> = ApiResponse::success(data.clone());
+
+        assert!(response.success);
+        assert_eq!(response.data, Some(data));
+        assert!(response.error.is_none());
+    }
+
+    #[test]
+    fn test_api_response_error() {
+        let error_msg = "Test error".to_string();
+        let error_code = "TEST_ERROR".to_string();
+        let response: ApiResponse<()> = ApiResponse::error(error_msg.clone(), error_code.clone());
+
+        assert!(!response.success);
+        assert!(response.data.is_none());
+        assert_eq!(response.error.as_ref().unwrap().error, error_msg);
+        assert_eq!(response.error.as_ref().unwrap().code, error_code);
+    }
 }

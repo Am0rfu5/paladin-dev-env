@@ -1,8 +1,13 @@
 flattenrs*
-Cargo.toml
 Cargo.lock
 config.*
 tests
 notes
 .vscode
 docs
+.devcontainer
+benches
+docker
+scripts
+project
+k8s

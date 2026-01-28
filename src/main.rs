@@ -28,3 +28,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     setup_and_run(config).await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_opt_default_config() {
+        let opt = Opt::from_iter(&["test"]);
+        assert_eq!(opt.config, "config.yml");
+    }
+
+    #[test]
+    fn test_opt_custom_config() {
+        let opt = Opt::from_iter(&["test", "--config", "custom.yml"]);
+        assert_eq!(opt.config, "custom.yml");
+    }
+
+    #[test]
+    fn test_opt_short_config() {
+        let opt = Opt::from_iter(&["test", "-c", "short.yml"]);
+        assert_eq!(opt.config, "short.yml");
+    }
+}

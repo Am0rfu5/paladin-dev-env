@@ -38,6 +38,23 @@ impl SqliteUserRepository {
         Ok(repository)
     }
 
+    /// Create a new SQLite user repository with custom database URL (for testing)
+    #[cfg(test)]
+    pub async fn new_with_url(database_url: &str) -> Result<Self, UserError> {
+        let pool = SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect(database_url)
+            .await
+            .map_err(|e| {
+                UserError::RepositoryError(format!("Failed to connect to database: {}", e))
+            })?;
+
+        let repository = Self { pool };
+        repository.migrate().await?;
+
+        Ok(repository)
+    }
+
     /// Run database migrations
     async fn migrate(&self) -> Result<(), UserError> {
         sqlx::query(
@@ -342,5 +359,321 @@ impl UserRepositoryPort for SqliteUserRepository {
             .map_err(|e| UserError::RepositoryError(format!("Failed to get count: {}", e)))?;
 
         Ok(count as u64)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Helper function to create a test repository with a temporary database
+    async fn create_test_repository() -> Result<SqliteUserRepository, UserError> {
+        // Use in-memory SQLite database for testing
+        let database_url = "sqlite::memory:";
+
+        let pool = SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect(database_url)
+            .await
+            .map_err(|e| {
+                UserError::RepositoryError(format!("Failed to connect to database: {}", e))
+            })?;
+
+        let repo = SqliteUserRepository { pool };
+        repo.migrate().await?;
+
+        Ok(repo)
+    }
+
+    // Helper function to create a test user
+    fn create_test_user() -> User {
+        let email = Email::new("test@example.com".to_string()).unwrap();
+        User::new_user(
+            "testuser".to_string(),
+            email,
+            "hashed_password".to_string(),
+            Some(UserProfile {
+                first_name: Some("Test".to_string()),
+                last_name: Some("User".to_string()),
+                bio: Some("Test bio".to_string()),
+                avatar_url: Some("https://example.com/avatar.jpg".to_string()),
+                timezone: Some("UTC".to_string()),
+                locale: Some("en-US".to_string()),
+            }),
+        )
+    }
+
+    #[tokio::test]
+    async fn test_repository_creation() {
+        let result = create_test_repository().await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_save_and_find_by_id() {
+        let repo = create_test_repository().await.unwrap();
+        let user = create_test_user();
+
+        // Save the user
+        let saved_user = repo.save(user.clone()).await.unwrap();
+        assert_eq!(saved_user.uuid, user.uuid);
+
+        // Find the user by ID
+        let found_user = repo.find_by_id(user.uuid).await.unwrap();
+        assert!(found_user.is_some());
+        let found_user = found_user.unwrap();
+        assert_eq!(found_user.uuid, user.uuid);
+        assert_eq!(found_user.username(), user.username());
+        assert_eq!(found_user.email().value(), user.email().value());
+    }
+
+    #[tokio::test]
+    async fn test_find_by_email() {
+        let repo = create_test_repository().await.unwrap();
+        let user = create_test_user();
+
+        // Save the user
+        repo.save(user.clone()).await.unwrap();
+
+        // Find by email (case insensitive)
+        let found_user = repo.find_by_email("TEST@EXAMPLE.COM").await.unwrap();
+        assert!(found_user.is_some());
+        let found_user = found_user.unwrap();
+        assert_eq!(found_user.uuid, user.uuid);
+    }
+
+    #[tokio::test]
+    async fn test_find_by_username() {
+        let repo = create_test_repository().await.unwrap();
+        let user = create_test_user();
+
+        // Save the user
+        repo.save(user.clone()).await.unwrap();
+
+        // Find by username
+        let found_user = repo.find_by_username("testuser").await.unwrap();
+        assert!(found_user.is_some());
+        let found_user = found_user.unwrap();
+        assert_eq!(found_user.uuid, user.uuid);
+    }
+
+    #[tokio::test]
+    async fn test_find_nonexistent_user() {
+        let repo = create_test_repository().await.unwrap();
+        let nonexistent_id = Uuid::new_v4();
+
+        let result = repo.find_by_id(nonexistent_id).await.unwrap();
+        assert!(result.is_none());
+
+        let result = repo.find_by_email("nonexistent@example.com").await.unwrap();
+        assert!(result.is_none());
+
+        let result = repo.find_by_username("nonexistent").await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_update_user() {
+        let repo = create_test_repository().await.unwrap();
+        let mut user = create_test_user();
+
+        // Save the user
+        repo.save(user.clone()).await.unwrap();
+
+        // Update the user
+        user.update_username("updateduser".to_string()).unwrap();
+        let updated_user = repo.update(user.clone()).await.unwrap();
+        assert_eq!(updated_user.username(), "updateduser");
+
+        // Verify the update persisted
+        let found_user = repo.find_by_id(user.uuid).await.unwrap().unwrap();
+        assert_eq!(found_user.username(), "updateduser");
+    }
+
+    #[tokio::test]
+    async fn test_delete_user() {
+        let repo = create_test_repository().await.unwrap();
+        let user = create_test_user();
+
+        // Save the user
+        repo.save(user.clone()).await.unwrap();
+
+        // Verify user exists
+        let found_user = repo.find_by_id(user.uuid).await.unwrap();
+        assert!(found_user.is_some());
+
+        // Delete the user
+        repo.delete(user.uuid).await.unwrap();
+
+        // Verify user is gone
+        let found_user = repo.find_by_id(user.uuid).await.unwrap();
+        assert!(found_user.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_email_exists() {
+        let repo = create_test_repository().await.unwrap();
+        let user = create_test_user();
+
+        // Email should not exist initially
+        let exists = repo.email_exists("test@example.com").await.unwrap();
+        assert!(!exists);
+
+        // Save the user
+        repo.save(user).await.unwrap();
+
+        // Email should exist now
+        let exists = repo.email_exists("test@example.com").await.unwrap();
+        assert!(exists);
+
+        // Case insensitive check
+        let exists = repo.email_exists("TEST@EXAMPLE.COM").await.unwrap();
+        assert!(exists);
+    }
+
+    #[tokio::test]
+    async fn test_username_exists() {
+        let repo = create_test_repository().await.unwrap();
+        let user = create_test_user();
+
+        // Username should not exist initially
+        let exists = repo.username_exists("testuser").await.unwrap();
+        assert!(!exists);
+
+        // Save the user
+        repo.save(user).await.unwrap();
+
+        // Username should exist now
+        let exists = repo.username_exists("testuser").await.unwrap();
+        assert!(exists);
+    }
+
+    #[tokio::test]
+    async fn test_find_by_active_status() {
+        let repo = create_test_repository().await.unwrap();
+        let active_user = create_test_user();
+        let mut inactive_user = User::new_user(
+            "inactiveuser".to_string(),
+            Email::new("inactive@example.com".to_string()).unwrap(),
+            "hashed_password".to_string(),
+            None,
+        );
+        inactive_user.node.is_active = false;
+
+        // Save users
+        repo.save(active_user.clone()).await.unwrap();
+        repo.save(inactive_user.clone()).await.unwrap();
+
+        // Find active users
+        let active_users = repo.find_by_active_status(true).await.unwrap();
+        assert_eq!(active_users.len(), 1);
+        assert_eq!(active_users[0].uuid, active_user.uuid);
+
+        // Find inactive users
+        let inactive_users = repo.find_by_active_status(false).await.unwrap();
+        assert_eq!(inactive_users.len(), 1);
+        assert_eq!(inactive_users[0].uuid, inactive_user.uuid);
+    }
+
+    #[tokio::test]
+    async fn test_find_by_verification_status() {
+        let repo = create_test_repository().await.unwrap();
+        let mut verified_user = User::new_user(
+            "verifieduser".to_string(),
+            Email::new("verified@example.com".to_string()).unwrap(),
+            "hashed_password".to_string(),
+            None,
+        );
+        verified_user.node.is_verified = true; // Make this user verified
+
+        let unverified_user = User::new_user(
+            "unverifieduser".to_string(),
+            Email::new("unverified@example.com".to_string()).unwrap(),
+            "hashed_password".to_string(),
+            None,
+        );
+        // unverified_user is not verified by default
+
+        // Save users
+        repo.save(verified_user.clone()).await.unwrap();
+        repo.save(unverified_user.clone()).await.unwrap();
+
+        // Find verified users
+        let verified_users = repo.find_by_verification_status(true).await.unwrap();
+        assert_eq!(verified_users.len(), 1);
+        assert_eq!(verified_users[0].uuid, verified_user.uuid);
+
+        // Find unverified users
+        let unverified_users = repo.find_by_verification_status(false).await.unwrap();
+        assert_eq!(unverified_users.len(), 1);
+        assert_eq!(unverified_users[0].uuid, unverified_user.uuid);
+    }
+
+    #[tokio::test]
+    async fn test_count_users() {
+        let repo = create_test_repository().await.unwrap();
+
+        // Initially no users
+        let count = repo.count_users().await.unwrap();
+        assert_eq!(count, 0);
+
+        // Add some users
+        let user1 = create_test_user();
+        let user2 = User::new_user(
+            "user2".to_string(),
+            Email::new("user2@example.com".to_string()).unwrap(),
+            "hashed_password".to_string(),
+            None,
+        );
+
+        repo.save(user1).await.unwrap();
+        repo.save(user2).await.unwrap();
+
+        // Count should be 2
+        let count = repo.count_users().await.unwrap();
+        assert_eq!(count, 2);
+    }
+
+    #[tokio::test]
+    async fn test_migration_creates_tables() {
+        let repo = create_test_repository().await.unwrap();
+
+        // Try to query the users table - if migration worked, this should succeed
+        let result =
+            sqlx::query("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+                .fetch_one(&repo.pool)
+                .await;
+
+        assert!(result.is_ok());
+        let row = result.unwrap();
+        let table_name: String = row.try_get("name").unwrap();
+        assert_eq!(table_name, "users");
+    }
+
+    #[tokio::test]
+    async fn test_row_to_user_conversion() {
+        let repo = create_test_repository().await.unwrap();
+        let user = create_test_user();
+
+        // Save user to get a row
+        repo.save(user.clone()).await.unwrap();
+
+        // Query the row back
+        let row = sqlx::query("SELECT * FROM users WHERE uuid = ?")
+            .bind(user.uuid.to_string())
+            .fetch_one(&repo.pool)
+            .await
+            .unwrap();
+
+        // Convert row to user
+        let converted_user = repo.row_to_user(&row).unwrap();
+
+        // Verify conversion
+        assert_eq!(converted_user.uuid, user.uuid);
+        assert_eq!(converted_user.username(), user.username());
+        assert_eq!(converted_user.email().value(), user.email().value());
+        assert_eq!(converted_user.password_hash(), user.password_hash());
+        assert_eq!(converted_user.is_active(), user.is_active());
+        assert_eq!(converted_user.is_verified(), user.is_verified());
     }
 }
