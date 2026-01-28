@@ -320,4 +320,207 @@ mod tests {
         assert_eq!(response.articles[0].title, "Test Article 1");
         assert_eq!(response.articles[1].source.name, "Tech News");
     }
+
+    #[test]
+    fn test_fetcher_creation() {
+        let fetcher = NewsApiFetcher::new("my-api-key".to_string());
+        assert_eq!(fetcher.api_key, "my-api-key");
+        assert!(fetcher.content_fetcher.is_none());
+    }
+
+    #[test]
+    fn test_build_url_with_special_characters() {
+        let fetcher = NewsApiFetcher::new("key".to_string());
+        let url = fetcher.build_news_api_url("rust & python", 20, 2);
+
+        // Verify URL encoding
+        assert!(url.contains("rust%20%26%20python"));
+        assert!(url.contains("pageSize=20"));
+        assert!(url.contains("page=2"));
+    }
+
+    #[test]
+    fn test_build_url_pagination() {
+        let fetcher = NewsApiFetcher::new("key".to_string());
+
+        let url1 = fetcher.build_news_api_url("test", 50, 1);
+        let url2 = fetcher.build_news_api_url("test", 50, 5);
+
+        assert!(url1.contains("page=1"));
+        assert!(url2.contains("page=5"));
+        assert!(url1.contains("pageSize=50"));
+        assert!(url2.contains("pageSize=50"));
+    }
+
+    #[test]
+    fn test_article_without_optional_fields() {
+        let article = NewsArticle {
+            source: NewsSource {
+                id: None,
+                name: "Source".to_string(),
+            },
+            author: None,
+            title: "Title".to_string(),
+            description: None,
+            url: "https://example.com".to_string(),
+            url_to_image: None,
+            published_at: "2023-01-01T00:00:00Z".to_string(),
+            content: None,
+        };
+
+        let fetcher = NewsApiFetcher::new("key".to_string());
+        let result = fetcher.create_content_item_from_article(&article);
+
+        assert!(result.is_ok());
+        let content_item = result.unwrap();
+
+        assert_eq!(content_item.title(), Some(&"Title".to_string()));
+        assert_eq!(content_item.description(), None);
+        assert_eq!(content_item.author(), None);
+        assert!(content_item.tags().unwrap().contains(&"news".to_string()));
+    }
+
+    #[test]
+    fn test_article_with_all_fields() {
+        let article = NewsArticle {
+            source: NewsSource {
+                id: Some("src-123".to_string()),
+                name: "Full Source".to_string(),
+            },
+            author: Some("Full Author".to_string()),
+            title: "Full Title".to_string(),
+            description: Some("Full Description".to_string()),
+            url: "https://example.com/full".to_string(),
+            url_to_image: Some("https://example.com/image.jpg".to_string()),
+            published_at: "2023-12-25T18:30:00Z".to_string(),
+            content: Some("Full content text here".to_string()),
+        };
+
+        let fetcher = NewsApiFetcher::new("key".to_string());
+        let result = fetcher.create_content_item_from_article(&article);
+
+        assert!(result.is_ok());
+        let content_item = result.unwrap();
+
+        assert_eq!(content_item.title(), Some(&"Full Title".to_string()));
+        assert_eq!(
+            content_item.description(),
+            Some(&"Full Description".to_string())
+        );
+        assert_eq!(content_item.author(), Some(&"Full Author".to_string()));
+        assert_eq!(content_item.source(), Some(&"Full Source".to_string()));
+
+        let tags = content_item.tags().unwrap();
+        assert!(tags.contains(&"news".to_string()));
+        assert!(tags.contains(&"Full Source".to_string()));
+        assert!(tags.contains(&"author:Full Author".to_string()));
+    }
+
+    #[test]
+    fn test_article_with_invalid_url() {
+        let article = NewsArticle {
+            source: NewsSource {
+                id: None,
+                name: "Source".to_string(),
+            },
+            author: None,
+            title: "Title".to_string(),
+            description: None,
+            url: "not-a-valid-url".to_string(),
+            url_to_image: None,
+            published_at: "2023-01-01T00:00:00Z".to_string(),
+            content: Some("content".to_string()),
+        };
+
+        let fetcher = NewsApiFetcher::new("key".to_string());
+        let result = fetcher.create_content_item_from_article(&article);
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert!(error.contains("Invalid article URL"));
+    }
+
+    #[test]
+    fn test_news_source_structure() {
+        let source = NewsSource {
+            id: Some("test-id".to_string()),
+            name: "Test Name".to_string(),
+        };
+
+        assert_eq!(source.id, Some("test-id".to_string()));
+        assert_eq!(source.name, "Test Name");
+    }
+
+    #[test]
+    fn test_news_source_without_id() {
+        let source = NewsSource {
+            id: None,
+            name: "Name Only".to_string(),
+        };
+
+        assert_eq!(source.id, None);
+        assert_eq!(source.name, "Name Only");
+    }
+
+    #[test]
+    fn test_news_article_clone() {
+        let article = NewsArticle {
+            source: NewsSource {
+                id: Some("id".to_string()),
+                name: "Name".to_string(),
+            },
+            author: Some("Author".to_string()),
+            title: "Title".to_string(),
+            description: Some("Desc".to_string()),
+            url: "https://example.com".to_string(),
+            url_to_image: Some("https://example.com/img.jpg".to_string()),
+            published_at: "2023-01-01T00:00:00Z".to_string(),
+            content: Some("Content".to_string()),
+        };
+
+        let cloned = article.clone();
+        assert_eq!(article.title, cloned.title);
+        assert_eq!(article.author, cloned.author);
+        assert_eq!(article.source.name, cloned.source.name);
+    }
+
+    #[test]
+    fn test_api_response_deserialization() {
+        let json = r#"{
+            "status": "ok",
+            "totalResults": 1,
+            "articles": [
+                {
+                    "source": {
+                        "id": "bbc-news",
+                        "name": "BBC News"
+                    },
+                    "author": "BBC Reporter",
+                    "title": "Breaking News",
+                    "description": "Latest update",
+                    "url": "https://bbc.com/news/123",
+                    "urlToImage": "https://bbc.com/img.jpg",
+                    "publishedAt": "2023-06-15T14:20:00Z",
+                    "content": "Full article content..."
+                }
+            ]
+        }"#;
+
+        let response: Result<NewsApiResponse, _> = serde_json::from_str(json);
+        assert!(response.is_ok());
+
+        let parsed = response.unwrap();
+        assert_eq!(parsed.status, "ok");
+        assert_eq!(parsed.total_results, 1);
+        assert_eq!(parsed.articles.len(), 1);
+        assert_eq!(parsed.articles[0].source.id, Some("bbc-news".to_string()));
+    }
+
+    #[test]
+    fn test_fetcher_debug_format() {
+        let fetcher = NewsApiFetcher::new("secret-key".to_string());
+        let debug_str = format!("{:?}", fetcher);
+
+        assert!(debug_str.contains("NewsApiFetcher"));
+    }
 }
