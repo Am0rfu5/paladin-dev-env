@@ -413,4 +413,216 @@ mod tests {
         assert!(adapter.is_model_available("available_model").unwrap());
         assert!(!adapter.is_model_available("nonexistent_model").unwrap());
     }
+
+    #[test]
+    fn test_with_timeout() {
+        let temp_dir = tempdir().unwrap();
+        let adapter = TensorFlowAdapter::new(temp_dir.path())
+            .unwrap()
+            .with_timeout(60000);
+
+        assert_eq!(adapter.default_timeout_ms, 60000);
+    }
+
+    #[test]
+    fn test_default_timeout() {
+        let temp_dir = tempdir().unwrap();
+        let adapter = TensorFlowAdapter::new(temp_dir.path()).unwrap();
+
+        assert_eq!(adapter.default_timeout_ms, 30000);
+    }
+
+    #[test]
+    fn test_process_text_prediction_positive() {
+        let adapter = create_test_adapter();
+
+        let result = adapter.process_text_prediction("This is great and excellent!");
+        assert!(result.is_ok());
+
+        let predictions = result.unwrap();
+        assert!(!predictions.is_empty());
+
+        if let MlPrediction::Sentiment {
+            sentiment,
+            confidence,
+        } = &predictions[0]
+        {
+            assert_eq!(sentiment, "positive");
+            assert!(confidence > &0.8);
+        } else {
+            panic!("Expected Sentiment prediction");
+        }
+    }
+
+    #[test]
+    fn test_process_text_prediction_negative() {
+        let adapter = create_test_adapter();
+
+        let result = adapter.process_text_prediction("This is bad and terrible!");
+        assert!(result.is_ok());
+
+        let predictions = result.unwrap();
+        if let MlPrediction::Sentiment { sentiment, .. } = &predictions[0] {
+            assert_eq!(sentiment, "negative");
+        }
+    }
+
+    #[test]
+    fn test_process_text_prediction_neutral() {
+        let adapter = create_test_adapter();
+
+        let result = adapter.process_text_prediction("This is some text");
+        assert!(result.is_ok());
+
+        let predictions = result.unwrap();
+        if let MlPrediction::Sentiment { sentiment, .. } = &predictions[0] {
+            assert_eq!(sentiment, "neutral");
+        }
+    }
+
+    #[test]
+    fn test_process_image_prediction() {
+        let adapter = create_test_adapter();
+
+        let result = adapter.process_image_prediction();
+        assert!(result.is_ok());
+
+        let predictions = result.unwrap();
+        assert!(!predictions.is_empty());
+        assert!(matches!(
+            predictions[0],
+            MlPrediction::Classification { .. }
+        ));
+    }
+
+    #[test]
+    fn test_process_audio_prediction() {
+        let adapter = create_test_adapter();
+
+        let result = adapter.process_audio_prediction();
+        assert!(result.is_ok());
+
+        let predictions = result.unwrap();
+        assert_eq!(predictions.len(), 1);
+
+        if let MlPrediction::Classification { class, confidence } = &predictions[0] {
+            assert_eq!(class, "speech");
+            assert_eq!(confidence, &0.90);
+        }
+    }
+
+    #[test]
+    fn test_process_video_prediction() {
+        let adapter = create_test_adapter();
+
+        let result = adapter.process_video_prediction();
+        assert!(result.is_ok());
+
+        let predictions = result.unwrap();
+        assert!(!predictions.is_empty());
+    }
+
+    #[test]
+    fn test_process_structured_prediction() {
+        let adapter = create_test_adapter();
+
+        let result = adapter.process_structured_prediction();
+        assert!(result.is_ok());
+
+        let predictions = result.unwrap();
+        assert!(!predictions.is_empty());
+    }
+
+    #[test]
+    fn test_get_model_info_loaded() {
+        let mut adapter = create_test_adapter();
+
+        let model = TensorFlowModel {
+            name: "test_model".to_string(),
+            path: "/test/path".to_string(),
+            version: "2.0.0".to_string(),
+            input_types: vec!["tensor".to_string(), "text".to_string()],
+            output_types: vec!["classification".to_string()],
+            loaded: true,
+        };
+        adapter
+            .loaded_models
+            .insert("test_model".to_string(), model);
+
+        let info = adapter.get_model_info("test_model").unwrap();
+        assert_eq!(info.name, "test_model");
+        assert_eq!(info.version, "2.0.0");
+        assert_eq!(info.input_types.len(), 2);
+        assert_eq!(info.output_types.len(), 1);
+    }
+
+    #[test]
+    fn test_get_model_info_not_found() {
+        let adapter = create_test_adapter();
+
+        let result = adapter.get_model_info("nonexistent");
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), MlPortError::ModelNotFound(_)));
+    }
+
+    #[test]
+    fn test_execute_model_not_loaded() {
+        let adapter = create_test_adapter();
+
+        let input = MlInputData::Text("test".to_string());
+        let result = adapter.execute_model("unloaded_model", &input);
+
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), MlPortError::ModelNotFound(_)));
+    }
+
+    #[test]
+    fn test_tensorflow_model_structure() {
+        let model = TensorFlowModel {
+            name: "model".to_string(),
+            path: "/path".to_string(),
+            version: "1.0".to_string(),
+            input_types: vec!["a".to_string()],
+            output_types: vec!["b".to_string()],
+            loaded: true,
+        };
+
+        assert_eq!(model.name, "model");
+        assert_eq!(model.version, "1.0");
+        assert!(model.loaded);
+    }
+
+    #[test]
+    fn test_tensorflow_model_clone() {
+        let model = TensorFlowModel {
+            name: "model".to_string(),
+            path: "/path".to_string(),
+            version: "1.0".to_string(),
+            input_types: vec!["input".to_string()],
+            output_types: vec!["output".to_string()],
+            loaded: false,
+        };
+
+        let cloned = model.clone();
+        assert_eq!(model.name, cloned.name);
+        assert_eq!(model.version, cloned.version);
+        assert_eq!(model.loaded, cloned.loaded);
+    }
+
+    #[test]
+    fn test_text_prediction_truncation() {
+        let adapter = create_test_adapter();
+
+        let long_text = "a".repeat(200);
+        let result = adapter.process_text_prediction(&long_text);
+
+        assert!(result.is_ok());
+        let predictions = result.unwrap();
+
+        if let MlPrediction::TextGeneration { text } = &predictions[1] {
+            assert!(text.contains("Summary:"));
+            // Verify truncation to 100 chars (plus "Summary: " prefix)
+            assert!(text.len() <= 110);
+        }
+    }
 }
