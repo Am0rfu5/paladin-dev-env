@@ -155,12 +155,12 @@ pub struct VerifyUserArgs {
 }
 
 /// User command handler
-pub struct UserCommandHandler {
-    user_service: Arc<UserService>,
+pub struct UserCommandHandler<T: UserServiceTrait = UserService> {
+    user_service: Arc<T>,
 }
 
-impl UserCommandHandler {
-    pub fn new(user_service: Arc<UserService>) -> Self {
+impl<T: UserServiceTrait> UserCommandHandler<T> {
+    pub fn new(user_service: Arc<T>) -> Self {
         Self { user_service }
     }
 
@@ -396,5 +396,653 @@ impl UserCommandHandler {
         self.user_service.verify_user(user_id).await?;
         println!("✅ User verified successfully: {}", user_id);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::platform::container::user::{Email, User, UserError};
+    use crate::core::platform::manager::user_service::UserAuthenticationResult;
+    use async_trait::async_trait;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+
+    // Mock UserService for testing
+    struct MockUserService {
+        users: Mutex<HashMap<Uuid, User>>,
+        login_results: Mutex<HashMap<String, Result<UserAuthenticationResult, UserError>>>,
+        should_fail: Mutex<bool>,
+    }
+
+    impl MockUserService {
+        fn new() -> Self {
+            Self {
+                users: Mutex::new(HashMap::new()),
+                login_results: Mutex::new(HashMap::new()),
+                should_fail: Mutex::new(false),
+            }
+        }
+
+        fn add_user(&self, user: User) {
+            self.users.lock().unwrap().insert(user.uuid, user);
+        }
+
+        fn set_should_fail(&self, fail: bool) {
+            *self.should_fail.lock().unwrap() = fail;
+        }
+
+        #[allow(dead_code)]
+        fn set_login_result(
+            &self,
+            email: &str,
+            result: Result<UserAuthenticationResult, UserError>,
+        ) {
+            self.login_results
+                .lock()
+                .unwrap()
+                .insert(email.to_string(), result);
+        }
+    }
+
+    #[async_trait]
+    impl UserServiceTrait for MockUserService {
+        async fn register_user(&self, request: UserRegistrationRequest) -> Result<User, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+
+            let user = User::new_user(
+                request.username,
+                Email::new(request.email).unwrap(),
+                "mock_hash".to_string(),
+                request.profile,
+            );
+            self.add_user(user.clone());
+            Ok(user)
+        }
+
+        async fn login_user(
+            &self,
+            request: UserLoginRequest,
+        ) -> Result<UserAuthenticationResult, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::AuthenticationFailed);
+            }
+
+            if let Some(result) = self.login_results.lock().unwrap().remove(&request.email) {
+                result
+            } else {
+                Ok(UserAuthenticationResult {
+                    user_id: Uuid::new_v4(),
+                    username: "testuser".to_string(),
+                    email: request.email,
+                    is_verified: true,
+                    success: true,
+                })
+            }
+        }
+
+        async fn get_user_by_id(&self, user_id: Uuid) -> Result<Option<User>, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(self.users.lock().unwrap().get(&user_id).cloned())
+        }
+
+        async fn update_user_profile(
+            &self,
+            request: UserProfileUpdateRequest,
+        ) -> Result<User, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+
+            let existing_user = self
+                .users
+                .lock()
+                .unwrap()
+                .get(&request.user_id)
+                .cloned()
+                .ok_or(UserError::UserNotFound(request.user_id))?;
+
+            let updated_username = request
+                .username
+                .unwrap_or_else(|| existing_user.username().to_string());
+            let updated_email = request
+                .email
+                .unwrap_or_else(|| existing_user.email().value().to_string());
+            let updated_profile = request
+                .profile
+                .unwrap_or_else(|| existing_user.profile().clone());
+
+            let updated_user = User::new_user(
+                updated_username,
+                Email::new(updated_email).unwrap(),
+                "mock_hash".to_string(),
+                Some(updated_profile),
+            );
+
+            self.add_user(updated_user.clone());
+            Ok(updated_user)
+        }
+
+        async fn activate_user(&self, _user_id: Uuid) -> Result<(), UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(())
+        }
+
+        async fn deactivate_user(&self, _user_id: Uuid) -> Result<(), UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(())
+        }
+
+        async fn verify_user(&self, _user_id: Uuid) -> Result<(), UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(())
+        }
+
+        async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(self
+                .users
+                .lock()
+                .unwrap()
+                .values()
+                .find(|u| u.email().value() == email)
+                .cloned())
+        }
+
+        async fn find_by_active_status(&self, is_active: bool) -> Result<Vec<User>, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(self
+                .users
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|u| u.is_active() == is_active)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_verification_status(
+            &self,
+            is_verified: bool,
+        ) -> Result<Vec<User>, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(self
+                .users
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|u| u.is_verified() == is_verified)
+                .cloned()
+                .collect())
+        }
+
+        async fn count_users(&self) -> Result<u64, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(self.users.lock().unwrap().len() as u64)
+        }
+    }
+
+    #[tokio::test]
+    async fn test_register_user_command() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = RegisterArgs {
+            username: "testuser".to_string(),
+            email: "test@example.com".to_string(),
+            password: "password123".to_string(),
+            first_name: Some("Test".to_string()),
+            last_name: Some("User".to_string()),
+            bio: Some("Test bio".to_string()),
+            timezone: "UTC".to_string(),
+            locale: "en-US".to_string(),
+        };
+
+        let result = handler.register_user(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_register_user_command_failure() {
+        let mock_service = Arc::new(MockUserService::new());
+        mock_service.set_should_fail(true);
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = RegisterArgs {
+            username: "testuser".to_string(),
+            email: "test@example.com".to_string(),
+            password: "password123".to_string(),
+            first_name: None,
+            last_name: None,
+            bio: None,
+            timezone: "UTC".to_string(),
+            locale: "en-US".to_string(),
+        };
+
+        let result = handler.register_user(args).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_login_user_command_success() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = LoginArgs {
+            email: "test@example.com".to_string(),
+            password: "password123".to_string(),
+        };
+
+        let result = handler.login_user(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_login_user_command_failure() {
+        let mock_service = Arc::new(MockUserService::new());
+        mock_service.set_should_fail(true);
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = LoginArgs {
+            email: "test@example.com".to_string(),
+            password: "wrongpassword".to_string(),
+        };
+
+        let result = handler.login_user(args).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_get_user_by_uuid() {
+        let mock_service = Arc::new(MockUserService::new());
+        let user = User::new_user(
+            "testuser".to_string(),
+            Email::new("test@example.com".to_string()).unwrap(),
+            "mock_hash".to_string(),
+            None,
+        );
+        let user_id = user.uuid;
+        mock_service.add_user(user);
+
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = GetUserArgs {
+            identifier: user_id.to_string(),
+        };
+
+        let result = handler.get_user(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_user_by_email() {
+        let mock_service = Arc::new(MockUserService::new());
+        let user = User::new_user(
+            "testuser".to_string(),
+            Email::new("test@example.com".to_string()).unwrap(),
+            "mock_hash".to_string(),
+            None,
+        );
+        mock_service.add_user(user);
+
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = GetUserArgs {
+            identifier: "test@example.com".to_string(),
+        };
+
+        let result = handler.get_user(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_user_not_found() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = GetUserArgs {
+            identifier: Uuid::new_v4().to_string(),
+        };
+
+        let result = handler.get_user(args).await;
+        assert!(result.is_ok()); // Should not error, just print "not found"
+    }
+
+    #[tokio::test]
+    async fn test_update_user_command() {
+        let mock_service = Arc::new(MockUserService::new());
+        let user = User::new_user(
+            "testuser".to_string(),
+            Email::new("test@example.com".to_string()).unwrap(),
+            "mock_hash".to_string(),
+            None,
+        );
+        let user_id = user.uuid;
+        mock_service.add_user(user);
+
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = UpdateUserArgs {
+            user_id: user_id.to_string(),
+            username: Some("newusername".to_string()),
+            email: Some("newemail@example.com".to_string()),
+            first_name: Some("New".to_string()),
+            last_name: Some("Name".to_string()),
+            bio: Some("New bio".to_string()),
+            avatar_url: None,
+        };
+
+        let result = handler.update_user(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_update_user_invalid_uuid() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = UpdateUserArgs {
+            user_id: "invalid-uuid".to_string(),
+            username: None,
+            email: None,
+            first_name: None,
+            last_name: None,
+            bio: None,
+            avatar_url: None,
+        };
+
+        let result = handler.update_user(args).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_list_users_by_active() {
+        let mock_service = Arc::new(MockUserService::new());
+        let user1 = User::new_user(
+            "user1".to_string(),
+            Email::new("user1@example.com".to_string()).unwrap(),
+            "hash".to_string(),
+            None,
+        );
+        let user2 = User::new_user(
+            "user2".to_string(),
+            Email::new("user2@example.com".to_string()).unwrap(),
+            "hash".to_string(),
+            None,
+        );
+        mock_service.add_user(user1);
+        mock_service.add_user(user2);
+
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = ListUsersArgs {
+            active: Some(true),
+            verified: None,
+            limit: 10,
+        };
+
+        let result = handler.list_users(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_list_users_by_verified() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = ListUsersArgs {
+            active: None,
+            verified: Some(true),
+            limit: 10,
+        };
+
+        let result = handler.list_users(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_list_users_no_filter() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = ListUsersArgs {
+            active: None,
+            verified: None,
+            limit: 10,
+        };
+
+        let result = handler.list_users(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_activate_user_command() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let user_id = Uuid::new_v4();
+        let args = ActivateUserArgs {
+            user_id: user_id.to_string(),
+        };
+
+        let result = handler.activate_user(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_activate_user_invalid_uuid() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = ActivateUserArgs {
+            user_id: "invalid-uuid".to_string(),
+        };
+
+        let result = handler.activate_user(args).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_deactivate_user_command() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let user_id = Uuid::new_v4();
+        let args = DeactivateUserArgs {
+            user_id: user_id.to_string(),
+        };
+
+        let result = handler.deactivate_user(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_deactivate_user_invalid_uuid() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = DeactivateUserArgs {
+            user_id: "invalid-uuid".to_string(),
+        };
+
+        let result = handler.deactivate_user(args).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_verify_user_command() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let user_id = Uuid::new_v4();
+        let args = VerifyUserArgs {
+            user_id: user_id.to_string(),
+        };
+
+        let result = handler.verify_user(args).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_verify_user_invalid_uuid() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let args = VerifyUserArgs {
+            user_id: "invalid-uuid".to_string(),
+        };
+
+        let result = handler.verify_user(args).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_handle_command_register() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let command = UserCommands::Register(RegisterArgs {
+            username: "testuser".to_string(),
+            email: "test@example.com".to_string(),
+            password: "password123".to_string(),
+            first_name: None,
+            last_name: None,
+            bio: None,
+            timezone: "UTC".to_string(),
+            locale: "en-US".to_string(),
+        });
+
+        let result = handler.handle_command(command).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_handle_command_login() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let command = UserCommands::Login(LoginArgs {
+            email: "test@example.com".to_string(),
+            password: "password123".to_string(),
+        });
+
+        let result = handler.handle_command(command).await;
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_print_user_list() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let users = vec![
+            User::new_user(
+                "user1".to_string(),
+                Email::new("user1@example.com".to_string()).unwrap(),
+                "hash".to_string(),
+                None,
+            ),
+            User::new_user(
+                "user2".to_string(),
+                Email::new("user2@example.com".to_string()).unwrap(),
+                "hash".to_string(),
+                None,
+            ),
+        ];
+
+        // This just tests that the function doesn't panic
+        handler.print_user_list(&users, 10);
+    }
+
+    #[test]
+    fn test_print_user_list_with_limit() {
+        let mock_service = Arc::new(MockUserService::new());
+        let handler = UserCommandHandler {
+            user_service: mock_service.clone(),
+        };
+
+        let users = vec![
+            User::new_user(
+                "user1".to_string(),
+                Email::new("user1@example.com".to_string()).unwrap(),
+                "hash".to_string(),
+                None,
+            ),
+            User::new_user(
+                "user2".to_string(),
+                Email::new("user2@example.com".to_string()).unwrap(),
+                "hash".to_string(),
+                None,
+            ),
+            User::new_user(
+                "user3".to_string(),
+                Email::new("user3@example.com".to_string()).unwrap(),
+                "hash".to_string(),
+                None,
+            ),
+        ];
+
+        // Test with limit smaller than list size
+        handler.print_user_list(&users, 2);
     }
 }
