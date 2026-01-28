@@ -654,4 +654,87 @@ mod tests {
         assert_eq!(capabilities.max_context_tokens, Some(200_000));
         assert_eq!(adapter.get_provider_name(), "anthropic");
     }
+
+    #[test]
+    fn test_anthropic_config_with_custom_timeout() {
+        let mut config = AnthropicConfig::new(
+            "sk-ant-test123".to_string(),
+            "https://api.anthropic.com/v1".to_string(),
+            "claude-3-5-sonnet-20241022".to_string(),
+            4096,
+        );
+        config.timeout_seconds = 120;
+        assert_eq!(config.timeout_seconds, 120);
+    }
+
+    #[test]
+    fn test_anthropic_config_max_tokens_validation() {
+        let config = AnthropicConfig::new(
+            "sk-ant-test123".to_string(),
+            "https://api.anthropic.com/v1".to_string(),
+            "claude-3-5-sonnet-20241022".to_string(),
+            1024,
+        );
+        assert!(config.validate().is_ok());
+        assert_eq!(config.max_tokens, 1024);
+    }
+
+    #[test]
+    fn test_anthropic_config_model_field() {
+        let config = AnthropicConfig::new(
+            "sk-ant-test123".to_string(),
+            "https://api.anthropic.com/v1".to_string(),
+            "claude-3-opus-20240229".to_string(),
+            4096,
+        );
+        assert_eq!(config.model, "claude-3-opus-20240229");
+    }
+
+    #[test]
+    fn test_anthropic_config_empty_model() {
+        let config = AnthropicConfig::new(
+            "sk-ant-test123".to_string(),
+            "https://api.anthropic.com/v1".to_string(),
+            "".to_string(),
+            4096,
+        );
+        assert!(config.validate().is_err());
+    }
+
+    #[tokio::test]
+    async fn test_anthropic_adapter_provider_name() {
+        let config = AnthropicConfig::new(
+            "sk-ant-test123".to_string(),
+            "https://api.anthropic.com/v1".to_string(),
+            "claude-3-5-sonnet-20241022".to_string(),
+            4096,
+        );
+        let adapter = AnthropicAdapter::new(config).unwrap();
+        assert_eq!(adapter.get_provider_name(), "anthropic");
+    }
+
+    #[test]
+    fn test_anthropic_config_clone() {
+        let config = AnthropicConfig::new(
+            "sk-ant-test123".to_string(),
+            "https://api.anthropic.com/v1".to_string(),
+            "claude-3-5-sonnet-20241022".to_string(),
+            4096,
+        );
+        let cloned = config.clone();
+        assert_eq!(config.api_key, cloned.api_key);
+        assert_eq!(config.model, cloned.model);
+    }
+
+    #[test]
+    fn test_anthropic_config_debug_format() {
+        let config = AnthropicConfig::new(
+            "sk-ant-test123".to_string(),
+            "https://api.anthropic.com/v1".to_string(),
+            "claude-3-5-sonnet-20241022".to_string(),
+            4096,
+        );
+        let debug_str = format!("{:?}", config);
+        assert!(debug_str.contains("AnthropicConfig"));
+    }
 }

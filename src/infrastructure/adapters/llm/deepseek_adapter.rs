@@ -593,4 +593,97 @@ mod tests {
         );
         assert!(config.validate().is_err());
     }
+
+    #[test]
+    fn test_deepseek_adapter_creation() {
+        let config = DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        let adapter = DeepSeekAdapter::new(config);
+        assert!(adapter.is_ok());
+    }
+
+    #[test]
+    fn test_deepseek_provider_name() {
+        let config = DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        let adapter = DeepSeekAdapter::new(config).unwrap();
+        assert_eq!(adapter.get_provider_name(), "deepseek");
+    }
+
+    #[test]
+    fn test_deepseek_capabilities() {
+        let config = DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        let adapter = DeepSeekAdapter::new(config).unwrap();
+        let capabilities = adapter.get_capabilities();
+
+        assert!(capabilities.supports_streaming);
+        assert!(!capabilities.supports_function_calling); // DeepSeek doesn't support function calling
+        assert!(capabilities.supports_system_messages);
+        assert_eq!(capabilities.max_context_tokens, Some(64000));
+    }
+
+    #[test]
+    fn test_deepseek_config_with_custom_model() {
+        let config = DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-coder".to_string(),
+        );
+        assert_eq!(config.model, "deepseek-coder");
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_deepseek_config_empty_model() {
+        let config = DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "".to_string(),
+        );
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_deepseek_config_with_custom_timeout() {
+        let mut config = DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        config.timeout_seconds = 120;
+        assert_eq!(config.timeout_seconds, 120);
+    }
+
+    #[test]
+    fn test_deepseek_config_clone() {
+        let config = DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        let cloned = config.clone();
+        assert_eq!(config.api_key, cloned.api_key);
+        assert_eq!(config.model, cloned.model);
+    }
+
+    #[test]
+    fn test_deepseek_config_debug_format() {
+        let config = DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        let debug_str = format!("{:?}", config);
+        assert!(debug_str.contains("DeepSeekConfig"));
+    }
 }

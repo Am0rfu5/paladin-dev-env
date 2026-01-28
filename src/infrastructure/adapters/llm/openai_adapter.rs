@@ -721,4 +721,69 @@ mod tests {
         assert!(capabilities.supports_system_messages);
         assert_eq!(capabilities.max_context_tokens, Some(128000));
     }
+
+    #[test]
+    fn test_config_with_organization() {
+        let mut config = OpenAIConfig::new("test-key".to_string());
+        config.organization = Some("org-123".to_string());
+        assert_eq!(config.organization, Some("org-123".to_string()));
+    }
+
+    #[test]
+    fn test_config_with_custom_base_url() {
+        let mut config = OpenAIConfig::new("test-key".to_string());
+        config.base_url = "https://custom.api.com/v1".to_string();
+        assert_eq!(config.base_url, "https://custom.api.com/v1");
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_config_with_custom_timeout() {
+        let mut config = OpenAIConfig::new("test-key".to_string());
+        config.timeout_seconds = 600;
+        assert_eq!(config.timeout_seconds, 600);
+    }
+
+    #[test]
+    fn test_config_with_custom_retries() {
+        let mut config = OpenAIConfig::new("test-key".to_string());
+        config.max_retries = 5;
+        assert_eq!(config.max_retries, 5);
+    }
+
+    #[test]
+    fn test_config_validation_empty_base_url() {
+        let config = OpenAIConfig {
+            api_key: "test-key".to_string(),
+            base_url: String::new(),
+            organization: None,
+            timeout_seconds: 300,
+            max_retries: 3,
+        };
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_adapter_clone() {
+        let config = OpenAIConfig::new("test-key".to_string());
+        let adapter = OpenAIAdapter::new(config.clone()).unwrap();
+        let adapter2 = OpenAIAdapter::new(config).unwrap();
+        assert_eq!(adapter.get_provider_name(), adapter2.get_provider_name());
+    }
+
+    #[test]
+    fn test_capabilities_max_context_tokens() {
+        let config = OpenAIConfig::new("test-key".to_string());
+        let adapter = OpenAIAdapter::new(config).unwrap();
+        let capabilities = adapter.get_capabilities();
+        assert!(capabilities.max_context_tokens.is_some());
+        assert!(capabilities.max_context_tokens.unwrap() > 0);
+    }
+
+    #[test]
+    fn test_config_debug_format() {
+        let config = OpenAIConfig::new("test-key".to_string());
+        let debug_str = format!("{:?}", config);
+        assert!(debug_str.contains("OpenAIConfig"));
+    }
 }
