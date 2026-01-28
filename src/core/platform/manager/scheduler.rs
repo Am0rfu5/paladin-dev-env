@@ -719,4 +719,299 @@ mod tests {
         assert!(scheduled_job.enabled);
         assert!(scheduled_job.next_run.is_some());
     }
+
+    #[tokio::test]
+    async fn test_error_variants_display() {
+        let service_not_found = SchedulerError::ServiceNotFound("TestService".to_string());
+        assert_eq!(
+            service_not_found.to_string(),
+            "Service not found: TestService"
+        );
+
+        let job_not_found = SchedulerError::JobNotFound(Uuid::new_v4());
+        assert!(job_not_found.to_string().contains("Job not found"));
+
+        let invalid_schedule = SchedulerError::InvalidSchedule("bad schedule".to_string());
+        assert_eq!(
+            invalid_schedule.to_string(),
+            "Invalid schedule: bad schedule"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_remove_job() {
+        let mut scheduler = Scheduler::new();
+
+        let task = Task::new(
+            "Test Task".to_string(),
+            "A test task".to_string(),
+            "DataBackupService".to_string(),
+        );
+
+        let job = Job::new("Test Job".to_string(), "A test job".to_string(), vec![task]);
+
+        let job_id = scheduler
+            .add_job(job, Schedule::Interval(Duration::from_secs(3600)))
+            .unwrap();
+
+        assert_eq!(scheduler.scheduled_jobs.len(), 1);
+
+        // Remove the job
+        assert!(scheduler.remove_job(job_id));
+        assert_eq!(scheduler.scheduled_jobs.len(), 0);
+
+        // Try to remove again - should return false
+        assert!(!scheduler.remove_job(job_id));
+    }
+
+    #[tokio::test]
+    async fn test_enable_nonexistent_job() {
+        let mut scheduler = Scheduler::new();
+        let fake_id = Uuid::new_v4();
+
+        assert!(!scheduler.enable_job(fake_id));
+    }
+
+    #[tokio::test]
+    async fn test_disable_nonexistent_job() {
+        let mut scheduler = Scheduler::new();
+        let fake_id = Uuid::new_v4();
+
+        assert!(!scheduler.disable_job(fake_id));
+    }
+
+    #[tokio::test]
+    async fn test_add_job_with_missing_service() {
+        let mut scheduler = Scheduler::new();
+
+        let task = Task::new(
+            "Test Task".to_string(),
+            "A test task".to_string(),
+            "NonExistentService".to_string(), // This service doesn't exist
+        );
+
+        let job = Job::new("Test Job".to_string(), "A test job".to_string(), vec![task]);
+
+        let result = scheduler.add_job(job, Schedule::Interval(Duration::from_secs(3600)));
+
+        assert!(result.is_err());
+        match result {
+            Err(SchedulerError::ServiceNotFound(name)) => {
+                assert_eq!(name, "NonExistentService");
+            }
+            _ => panic!("Expected ServiceNotFound error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_scheduler_stats() {
+        let scheduler = Scheduler::new();
+        let stats = scheduler.stats();
+
+        assert_eq!(stats.total_jobs, 0);
+        assert_eq!(stats.enabled_jobs, 0);
+        assert_eq!(stats.total_runs, 0);
+        assert!(stats.total_services > 0); // Should have default services
+        assert!(stats.next_job_name.is_none());
+        assert!(stats.next_job_time.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_scheduler_stats_with_jobs() {
+        let mut scheduler = Scheduler::new();
+
+        let task = Task::new(
+            "Test Task".to_string(),
+            "A test task".to_string(),
+            "DataBackupService".to_string(),
+        );
+
+        let job = Job::new("Test Job".to_string(), "A test job".to_string(), vec![task]);
+
+        scheduler
+            .add_job(job, Schedule::Interval(Duration::from_secs(3600)))
+            .unwrap();
+
+        let stats = scheduler.stats();
+        assert_eq!(stats.total_jobs, 1);
+        assert_eq!(stats.enabled_jobs, 1);
+        assert!(stats.next_job_name.is_some());
+        assert!(stats.next_job_time.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_scheduled_job_structure() {
+        let task = Task::new(
+            "Test Task".to_string(),
+            "A test task".to_string(),
+            "DataBackupService".to_string(),
+        );
+
+        let job = Job::new("Test Job".to_string(), "A test job".to_string(), vec![task]);
+        let schedule = Schedule::Interval(Duration::from_secs(3600));
+
+        let scheduled_job = ScheduledJob {
+            job: job.clone(),
+            schedule: schedule.clone(),
+            enabled: true,
+            next_run: Some(Utc::now()),
+            last_run: None,
+            run_count: 0,
+        };
+
+        assert!(scheduled_job.enabled);
+        assert!(scheduled_job.next_run.is_some());
+        assert!(scheduled_job.last_run.is_none());
+        assert_eq!(scheduled_job.run_count, 0);
+    }
+
+    #[tokio::test]
+    async fn test_schedule_variants() {
+        // Test Interval
+        let interval = Schedule::Interval(Duration::from_secs(3600));
+        assert!(matches!(interval, Schedule::Interval(_)));
+
+        // Test Daily
+        let daily = Schedule::Daily(9, 30); // 9:30 AM
+        assert!(matches!(daily, Schedule::Daily(9, 30)));
+
+        // Test Weekly
+        let weekly = Schedule::Weekly(1, 10, 0); // Monday 10:00 AM
+        assert!(matches!(weekly, Schedule::Weekly(1, 10, 0)));
+
+        // Test Monthly
+        let monthly = Schedule::Monthly(15, 14, 30); // 15th of month, 2:30 PM
+        assert!(matches!(monthly, Schedule::Monthly(15, 14, 30)));
+
+        // Test Once
+        let once_time = Utc::now() + chrono::Duration::hours(1);
+        let once = Schedule::Once(once_time);
+        assert!(matches!(once, Schedule::Once(_)));
+
+        // Test OnStartup
+        let startup = Schedule::OnStartup;
+        assert!(matches!(startup, Schedule::OnStartup));
+    }
+
+    #[tokio::test]
+    async fn test_calculate_next_run_daily() {
+        // Daily at 9:00 AM
+        let daily_schedule = Schedule::Daily(9, 0);
+        let next_run = Scheduler::calculate_next_run(&daily_schedule);
+        assert!(next_run.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_calculate_next_run_weekly() {
+        // Weekly on Monday at 10:00 AM
+        let weekly_schedule = Schedule::Weekly(1, 10, 0);
+        let next_run = Scheduler::calculate_next_run(&weekly_schedule);
+        assert!(next_run.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_calculate_next_run_monthly() {
+        // Monthly on the 15th at 2:30 PM
+        let monthly_schedule = Schedule::Monthly(15, 14, 30);
+        let next_run = Scheduler::calculate_next_run(&monthly_schedule);
+        assert!(next_run.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_calculate_next_run_startup() {
+        let startup_schedule = Schedule::OnStartup;
+        let next_run = Scheduler::calculate_next_run(&startup_schedule);
+        // OnStartup jobs don't have a next run time
+        assert!(next_run.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_create_scheduler_with_services() {
+        #[derive(Debug)]
+        struct TestService;
+
+        #[async_trait]
+        impl crate::core::platform::container::task::TaskService for TestService {
+            fn name(&self) -> &str {
+                "TestService"
+            }
+
+            async fn execute(
+                &self,
+                _action: &crate::core::base::component::action::Action,
+            ) -> Result<Option<serde_json::Value>, crate::core::platform::container::task::TaskError>
+            {
+                Ok(Some(serde_json::json!({"test": "success"})))
+            }
+
+            fn clone_service(&self) -> Box<dyn TaskService> {
+                Box::new(TestService)
+            }
+        }
+
+        let services: Vec<Box<dyn TaskService>> = vec![Box::new(TestService)];
+        let scheduler = create_scheduler_with_services(services);
+
+        assert_eq!(scheduler.services.len(), 1);
+        assert!(scheduler.services.contains_key("TestService"));
+    }
+
+    #[tokio::test]
+    async fn test_default_scheduler_creation() {
+        let scheduler = Scheduler::default();
+        assert!(!scheduler.running);
+        assert_eq!(scheduler.scheduled_jobs.len(), 0);
+        assert_eq!(scheduler.services.len(), 3); // Default services
+    }
+
+    #[tokio::test]
+    async fn test_multiple_jobs_scheduling() {
+        let mut scheduler = Scheduler::new();
+
+        for i in 0..5 {
+            let task = Task::new(
+                format!("Task {}", i),
+                format!("Description {}", i),
+                "DataBackupService".to_string(),
+            );
+
+            let job = Job::new(
+                format!("Job {}", i),
+                format!("Job description {}", i),
+                vec![task],
+            );
+
+            scheduler
+                .add_job(job, Schedule::Interval(Duration::from_secs(3600 * (i + 1))))
+                .unwrap();
+        }
+
+        let stats = scheduler.stats();
+        assert_eq!(stats.total_jobs, 5);
+        assert_eq!(stats.enabled_jobs, 5);
+    }
+
+    #[tokio::test]
+    async fn test_job_state_after_disable() {
+        let mut scheduler = Scheduler::new();
+
+        let task = Task::new(
+            "Test Task".to_string(),
+            "A test task".to_string(),
+            "DataBackupService".to_string(),
+        );
+
+        let job = Job::new("Test Job".to_string(), "A test job".to_string(), vec![task]);
+
+        let job_id = scheduler
+            .add_job(job, Schedule::Interval(Duration::from_secs(3600)))
+            .unwrap();
+
+        // Disable and check stats
+        scheduler.disable_job(job_id);
+        let stats = scheduler.stats();
+
+        assert_eq!(stats.total_jobs, 1);
+        assert_eq!(stats.enabled_jobs, 0);
+    }
 }
