@@ -272,6 +272,7 @@ mod tests {
             file_storage: Some(crate::config::application_settings::FileStorageConfig::default()),
             notifications: Some(crate::config::application_settings::NotificationConfig::default()),
             garrison: Some(crate::config::application_settings::GarrisonSettings::default()),
+            sanctum: Some(crate::config::application_settings::SanctumConfig::default()),
             arsenal: Some(crate::config::application_settings::ArsenalConfig::default()),
             citadel: Some(crate::config::application_settings::CitadelConfig::default()),
             llm: Some(crate::config::application_settings::LlmConfig::default()),

@@ -430,6 +430,109 @@ impl GarrisonSettings {
     }
 }
 
+/// Type of Sanctum adapter to use
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum SanctumAdapterType {
+    /// In-memory storage (ephemeral, fast, for development/testing)
+    #[default]
+    InMemory,
+    /// Qdrant vector database (persistent, production-grade)
+    Qdrant,
+}
+
+/// Configuration for Qdrant vector database adapter
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QdrantSanctumConfig {
+    /// Qdrant server URL (e.g., "http://localhost:6334")
+    pub url: String,
+    /// Collection name to use for storing memories
+    pub collection_name: String,
+    /// Vector dimension (must match embedding model)
+    /// Common values: 1536 (OpenAI text-embedding-3-small), 3072 (text-embedding-3-large)
+    pub vector_dimension: usize,
+}
+
+impl Default for QdrantSanctumConfig {
+    fn default() -> Self {
+        Self {
+            url: "http://localhost:6334".to_string(),
+            collection_name: "paladin_memories".to_string(),
+            vector_dimension: 1536,
+        }
+    }
+}
+
+/// Configuration for Sanctum long-term memory system
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SanctumConfig {
+    /// Enable or disable Sanctum system
+    pub enabled: bool,
+    /// Type of adapter to use
+    pub adapter_type: SanctumAdapterType,
+    /// Qdrant-specific configuration (required if adapter_type is Qdrant)
+    pub qdrant: Option<QdrantSanctumConfig>,
+}
+
+impl Default for SanctumConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            adapter_type: SanctumAdapterType::InMemory,
+            qdrant: None,
+        }
+    }
+}
+
+impl SanctumConfig {
+    /// Validates sanctum configuration
+    pub fn validate(&self) -> Result<(), String> {
+        if !self.enabled {
+            // If disabled, no validation needed
+            return Ok(());
+        }
+
+        // Validate Qdrant configuration is present when adapter type is Qdrant
+        if self.adapter_type == SanctumAdapterType::Qdrant {
+            let qdrant = self.qdrant.as_ref().ok_or_else(|| {
+                "Qdrant adapter requires 'qdrant' configuration section".to_string()
+            })?;
+
+            // Validate URL is not empty
+            if qdrant.url.trim().is_empty() {
+                return Err("Qdrant URL cannot be empty".to_string());
+            }
+
+            // Validate collection name is not empty
+            if qdrant.collection_name.trim().is_empty() {
+                return Err("Qdrant collection_name cannot be empty".to_string());
+            }
+
+            // Validate vector dimension is reasonable (common embedding sizes)
+            if qdrant.vector_dimension == 0 {
+                return Err("Qdrant vector_dimension must be greater than 0".to_string());
+            }
+
+            if qdrant.vector_dimension > 10000 {
+                return Err(format!(
+                    "Qdrant vector_dimension {} seems unusually large (max 10000)",
+                    qdrant.vector_dimension
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get the adapter type as a string for display
+    pub fn adapter_type_str(&self) -> &str {
+        match self.adapter_type {
+            SanctumAdapterType::InMemory => "in_memory",
+            SanctumAdapterType::Qdrant => "qdrant",
+        }
+    }
+}
+
 /// Configuration for individual LLM providers
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LlmProviderConfig {
@@ -562,6 +665,7 @@ pub struct Settings {
     pub file_storage: Option<FileStorageConfig>,
     pub notifications: Option<NotificationConfig>,
     pub garrison: Option<GarrisonSettings>,
+    pub sanctum: Option<SanctumConfig>,
     pub arsenal: Option<ArsenalConfig>,
     pub citadel: Option<CitadelConfig>,
     pub llm: Option<LlmConfig>,
@@ -797,6 +901,54 @@ impl Settings {
         config
     }
 
+    /// Get sanctum configuration with environment variable overrides
+    pub fn get_sanctum_config(&self) -> SanctumConfig {
+        let mut config = self.sanctum.clone().unwrap_or_default();
+
+        // Override with environment variables if present
+        if let Ok(enabled_str) = std::env::var("APP_SANCTUM_ENABLED")
+            && let Ok(enabled) = enabled_str.parse::<bool>()
+        {
+            config.enabled = enabled;
+        }
+
+        if let Ok(adapter_type) = std::env::var("APP_SANCTUM_ADAPTER_TYPE") {
+            match adapter_type.to_lowercase().as_str() {
+                "in_memory" => config.adapter_type = SanctumAdapterType::InMemory,
+                "qdrant" => config.adapter_type = SanctumAdapterType::Qdrant,
+                _ => {
+                    log::warn!(
+                        "Invalid APP_SANCTUM_ADAPTER_TYPE '{}', using default",
+                        adapter_type
+                    );
+                }
+            }
+        }
+
+        // Qdrant-specific overrides
+        if let Ok(url) = std::env::var("APP_SANCTUM_QDRANT_URL") {
+            let mut qdrant = config.qdrant.unwrap_or_default();
+            qdrant.url = url;
+            config.qdrant = Some(qdrant);
+        }
+
+        if let Ok(collection) = std::env::var("APP_SANCTUM_QDRANT_COLLECTION_NAME") {
+            let mut qdrant = config.qdrant.unwrap_or_default();
+            qdrant.collection_name = collection;
+            config.qdrant = Some(qdrant);
+        }
+
+        if let Ok(dimension_str) = std::env::var("APP_SANCTUM_QDRANT_VECTOR_DIMENSION")
+            && let Ok(dimension) = dimension_str.parse::<usize>()
+        {
+            let mut qdrant = config.qdrant.unwrap_or_default();
+            qdrant.vector_dimension = dimension;
+            config.qdrant = Some(qdrant);
+        }
+
+        config
+    }
+
     /// Get citadel configuration with environment variable overrides
     pub fn get_citadel_config(&self) -> CitadelConfig {
         let mut config = self.citadel.clone().unwrap_or_default();
@@ -987,6 +1139,7 @@ impl Default for Settings {
             file_storage: Some(FileStorageConfig::default()),
             notifications: Some(NotificationConfig::default()),
             garrison: Some(GarrisonSettings::default()),
+            sanctum: Some(SanctumConfig::default()),
             arsenal: Some(ArsenalConfig::default()),
             citadel: Some(CitadelConfig::default()),
             llm: Some(LlmConfig::default()),
@@ -1879,5 +2032,175 @@ mod tests {
         let herald = settings.create_default_herald();
         assert!(herald.is_ok());
         // Config is passed correctly to JsonHerald (verified via unit tests)
+    }
+
+    // Sanctum Configuration Tests
+    #[test]
+    fn test_default_sanctum_config() {
+        let config = SanctumConfig::default();
+
+        assert!(!config.enabled);
+        assert_eq!(config.adapter_type, SanctumAdapterType::InMemory);
+        assert!(config.qdrant.is_none());
+    }
+
+    #[test]
+    fn test_sanctum_validation_disabled() {
+        let config = SanctumConfig {
+            enabled: false,
+            adapter_type: SanctumAdapterType::Qdrant,
+            qdrant: None,
+        };
+
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_sanctum_validation_in_memory() {
+        let config = SanctumConfig {
+            enabled: true,
+            adapter_type: SanctumAdapterType::InMemory,
+            qdrant: None,
+        };
+
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_sanctum_validation_qdrant_missing_config() {
+        let config = SanctumConfig {
+            enabled: true,
+            adapter_type: SanctumAdapterType::Qdrant,
+            qdrant: None,
+        };
+
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Qdrant adapter requires"));
+    }
+
+    #[test]
+    fn test_sanctum_validation_qdrant_valid() {
+        let config = SanctumConfig {
+            enabled: true,
+            adapter_type: SanctumAdapterType::Qdrant,
+            qdrant: Some(QdrantSanctumConfig {
+                url: "http://localhost:6334".to_string(),
+                collection_name: "test".to_string(),
+                vector_dimension: 1536,
+            }),
+        };
+
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_sanctum_validation_empty_url() {
+        let config = SanctumConfig {
+            enabled: true,
+            adapter_type: SanctumAdapterType::Qdrant,
+            qdrant: Some(QdrantSanctumConfig {
+                url: "   ".to_string(),
+                collection_name: "test".to_string(),
+                vector_dimension: 1536,
+            }),
+        };
+
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("URL cannot be empty"));
+    }
+
+    #[test]
+    fn test_sanctum_validation_zero_dimension() {
+        let config = SanctumConfig {
+            enabled: true,
+            adapter_type: SanctumAdapterType::Qdrant,
+            qdrant: Some(QdrantSanctumConfig {
+                url: "http://localhost:6334".to_string(),
+                collection_name: "test".to_string(),
+                vector_dimension: 0,
+            }),
+        };
+
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("must be greater than 0"));
+    }
+
+    #[test]
+    #[serial]
+    fn test_get_sanctum_config_env_enabled() {
+        unsafe {
+            env::set_var("APP_SANCTUM_ENABLED", "true");
+        }
+
+        let settings = Settings {
+            sanctum: Some(SanctumConfig {
+                enabled: false,
+                adapter_type: SanctumAdapterType::InMemory,
+                qdrant: None,
+            }),
+            ..Default::default()
+        };
+
+        let config = settings.get_sanctum_config();
+        assert!(config.enabled);
+
+        unsafe {
+            env::remove_var("APP_SANCTUM_ENABLED");
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_get_sanctum_config_env_adapter_type() {
+        unsafe {
+            env::set_var("APP_SANCTUM_ADAPTER_TYPE", "qdrant");
+        }
+
+        let settings = Settings {
+            sanctum: Some(SanctumConfig {
+                enabled: true,
+                adapter_type: SanctumAdapterType::InMemory,
+                qdrant: None,
+            }),
+            ..Default::default()
+        };
+
+        let config = settings.get_sanctum_config();
+        assert_eq!(config.adapter_type, SanctumAdapterType::Qdrant);
+
+        unsafe {
+            env::remove_var("APP_SANCTUM_ADAPTER_TYPE");
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_get_sanctum_config_env_qdrant_url() {
+        unsafe {
+            env::set_var("APP_SANCTUM_QDRANT_URL", "http://custom:6334");
+        }
+
+        let settings = Settings {
+            sanctum: Some(SanctumConfig {
+                enabled: true,
+                adapter_type: SanctumAdapterType::Qdrant,
+                qdrant: Some(QdrantSanctumConfig {
+                    url: "http://localhost:6334".to_string(),
+                    collection_name: "test".to_string(),
+                    vector_dimension: 1536,
+                }),
+            }),
+            ..Default::default()
+        };
+
+        let config = settings.get_sanctum_config();
+        assert_eq!(config.qdrant.unwrap().url, "http://custom:6334");
+
+        unsafe {
+            env::remove_var("APP_SANCTUM_QDRANT_URL");
+        }
     }
 }
