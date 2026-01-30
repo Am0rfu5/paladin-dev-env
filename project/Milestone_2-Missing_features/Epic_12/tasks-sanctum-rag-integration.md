@@ -134,36 +134,36 @@ Example:
 
 ### Phase 2: Retrieval & Extraction Services (Days 4-9)
 
-- [ ] 3.0 Implement RAG Retrieval Service (US-12.3)
-  - [ ] 3.1 Create `src/application/use_cases/sanctum/rag_retrieval_service.rs` file
-  - [ ] 3.2 Define `RagConfig` struct with fields: top_k (usize), min_similarity (f32), max_tokens (usize), retrieval_trigger (RetrievalTrigger)
-  - [ ] 3.3 Define `RetrievalTrigger` enum with variants: Always, KeywordBased, SemanticThreshold
-  - [ ] 3.4 Implement `Default` for `RagConfig`: top_k=5, min_similarity=0.7, max_tokens=2000, trigger=Always
-  - [ ] 3.5 Define `RagRetrievalService` struct with fields: sanctum (Arc<dyn SanctumPort>), embedding (Arc<dyn EmbeddingPort>), config (RagConfig)
-  - [ ] 3.6 Implement `RagRetrievalService::new(sanctum, embedding, config)` constructor
-  - [ ] 3.7 Implement `retrieve_context(&self, paladin_id: &str, query: &str)` async method
-  - [ ] 3.8 In `retrieve_context`: Generate query embedding using `embedding.embed_text(query)`
-  - [ ] 3.9 In `retrieve_context`: Build `SanctumQuery` with embedding, top_k, and paladin_id filter
-  - [ ] 3.10 In `retrieve_context`: Call `sanctum.search(query)` to get results
-  - [ ] 3.11 In `retrieve_context`: Filter results by `min_similarity` threshold
-  - [ ] 3.12 Implement `deduplicate_memories(memories: Vec<Memory>)` - remove memories with >0.95 similarity
-  - [ ] 3.13 Implement `rank_by_relevance(memories: Vec<Memory>)` - sort by score descending
-  - [ ] 3.14 Implement `truncate_to_token_budget(memories: Vec<Memory>, max_tokens: usize)` - estimate tokens and remove lowest-scoring
-  - [ ] 3.15 In `retrieve_context`: Apply deduplication, ranking, and truncation
-  - [ ] 3.16 Implement `format_for_prompt(&self, memories: &[Memory]) -> String` - format as "## Relevant Context" section
-  - [ ] 3.17 Add async timeout wrapper: use `tokio::time::timeout(Duration::from_secs(5), retrieve_context)`
-  - [ ] 3.18 Handle timeout gracefully: return empty Vec with warning log
-  - [ ] 3.19 Add comprehensive error handling with proper `SanctumError` propagation
-  - [ ] 3.20 Export `RagRetrievalService` and `RagConfig` from `src/application/use_cases/sanctum/mod.rs`
-  - [ ] 3.21 Write unit tests in `tests/unit/sanctum/rag_retrieval_service_test.rs` with mocked ports
-  - [ ] 3.22 Test case: successful retrieval with multiple memories
-  - [ ] 3.23 Test case: filtering by min_similarity threshold
-  - [ ] 3.24 Test case: deduplication removes near-identical memories
-  - [ ] 3.25 Test case: token budget truncation works correctly
-  - [ ] 3.26 Test case: timeout returns empty context gracefully
-  - [ ] 3.27 Run `cargo test rag_retrieval_service_test` to verify tests pass
-  - [ ] 3.28 Run `cargo clippy` and fix warnings
-  - [ ] 3.29 Run `cargo fmt` and commit RAG retrieval service
+- [x] 3.0 Implement RAG Retrieval Service (US-12.3)
+  - [x] 3.1 Create `src/application/use_cases/sanctum/rag_retrieval_service.rs` file
+  - [x] 3.2 Define `RagConfig` struct with fields: top_k (usize), min_similarity (f32), max_tokens (usize), retrieval_trigger (RetrievalTrigger)
+  - [x] 3.3 Define `RetrievalTrigger` enum with variants: Always, KeywordBased, SemanticThreshold
+  - [x] 3.4 Implement `Default` for `RagConfig`: top_k=5, min_similarity=0.7, max_tokens=2000, trigger=Always
+  - [x] 3.5 Define `RagRetrievalService` struct with fields: sanctum (Arc<dyn SanctumPort>), embedding (Arc<dyn EmbeddingPort>), config (RagConfig)
+  - [x] 3.6 Implement `RagRetrievalService::new(sanctum, embedding, config)` constructor
+  - [x] 3.7 Implement `retrieve_context(&self, paladin_id: &str, query: &str)` async method
+  - [x] 3.8 In `retrieve_context`: Generate query embedding using `embedding.embed_text(query)`
+  - [x] 3.9 In `retrieve_context`: Build `SanctumQuery` with embedding, top_k, and paladin_id filter
+  - [x] 3.10 In `retrieve_context`: Call `sanctum.search(query)` to get results
+  - [x] 3.11 In `retrieve_context`: Filter results by `min_similarity` threshold
+  - [x] 3.12 Implement `deduplicate_memories(memories: Vec<Memory>)` - remove memories with >0.95 similarity
+  - [x] 3.13 Implement `rank_by_relevance(memories: Vec<Memory>)` - sort by score descending
+  - [x] 3.14 Implement `truncate_to_token_budget(memories: Vec<Memory>, max_tokens: usize)` - estimate tokens and remove lowest-scoring
+  - [x] 3.15 In `retrieve_context`: Apply deduplication, ranking, and truncation
+  - [x] 3.16 Implement `format_for_prompt(&self, memories: &[Memory]) -> String` - format as "## Relevant Context" section
+  - [x] 3.17 Add async timeout wrapper: use `tokio::time::timeout(Duration::from_secs(5), retrieve_context)`
+  - [x] 3.18 Handle timeout gracefully: return empty Vec with warning log
+  - [x] 3.19 Add comprehensive error handling with proper `SanctumError` propagation
+  - [x] 3.20 Export `RagRetrievalService` and `RagConfig` from `src/application/use_cases/sanctum/mod.rs`
+  - [x] 3.21 Write unit tests in `tests/unit/sanctum/rag_retrieval_service_test.rs` with mocked ports
+  - [x] 3.22 Test case: successful retrieval with multiple memories
+  - [x] 3.23 Test case: filtering by min_similarity threshold
+  - [x] 3.24 Test case: deduplication removes near-identical memories
+  - [x] 3.25 Test case: token budget truncation works correctly
+  - [x] 3.26 Test case: timeout returns empty context gracefully
+  - [x] 3.27 Run `cargo test rag_retrieval_service_test` to verify tests pass
+  - [x] 3.28 Run `cargo clippy` and fix warnings
+  - [x] 3.29 Run `cargo fmt` and commit RAG retrieval service
 
 - [ ] 4.0 Implement Memory Extraction Service (US-12.4)
   - [ ] 4.1 Create `src/application/use_cases/sanctum/memory_extraction_service.rs` file
