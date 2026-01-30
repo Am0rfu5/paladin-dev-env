@@ -165,33 +165,33 @@ Example:
   - [x] 3.28 Run `cargo clippy` and fix warnings
   - [x] 3.29 Run `cargo fmt` and commit RAG retrieval service
 
-- [ ] 4.0 Implement Memory Extraction Service (US-12.4)
-  - [ ] 4.1 Create `src/application/use_cases/sanctum/memory_extraction_service.rs` file
-  - [ ] 4.2 Define `MemoryExtractionStrategy` enum: EveryTurn, OnCompletion, Manual, Threshold { importance: f32 }
-  - [ ] 4.3 Implement `Default` for `MemoryExtractionStrategy` returning `OnCompletion`
-  - [ ] 4.4 Define `MemoryExtractionService` struct with fields: llm (Arc<dyn LlmPort>), embedding (Arc<dyn EmbeddingPort>), sanctum (Arc<dyn SanctumPort>)
-  - [ ] 4.5 Implement `MemoryExtractionService::new(llm, embedding, sanctum)` constructor
-  - [ ] 4.6 Create `EXTRACTION_PROMPT` constant with prompt template for LLM to identify memorable content
-  - [ ] 4.7 Implement `extract_memories(&self, paladin_id: &str, conversation: &[GarrisonEntry])` async method
-  - [ ] 4.8 In `extract_memories`: Build extraction prompt from conversation history
-  - [ ] 4.9 In `extract_memories`: Call `llm.generate()` to get structured memory extraction response
-  - [ ] 4.10 Implement `parse_extraction_response(response: &str) -> Vec<ExtractedMemory>` to parse LLM JSON output
-  - [ ] 4.11 Define `ExtractedMemory` struct with fields: content, memory_type, importance, metadata
-  - [ ] 4.12 In `extract_memories`: Generate embeddings for each extracted memory using `embedding.embed_text()`
-  - [ ] 4.13 Implement `check_for_duplicates(&self, memory: &Memory)` - search for similar existing memories (>0.95 similarity)
-  - [ ] 4.14 In `extract_memories`: Filter out duplicate memories before storage
-  - [ ] 4.15 Implement `store_memories(&self, memories: Vec<Memory>)` to batch store via `sanctum.store()`
-  - [ ] 4.16 Add metrics logging: count, average importance, duration
-  - [ ] 4.17 Handle all errors gracefully: log but don't fail if extraction fails
-  - [ ] 4.18 Export `MemoryExtractionService` and `MemoryExtractionStrategy` from module
-  - [ ] 4.19 Write unit tests in `tests/unit/sanctum/memory_extraction_service_test.rs`
-  - [ ] 4.20 Test case: successful extraction with multiple memory types
-  - [ ] 4.21 Test case: importance scoring correctly assigned
-  - [ ] 4.22 Test case: duplicate detection prevents re-storage
-  - [ ] 4.23 Test case: LLM failure handled gracefully
-  - [ ] 4.24 Run `cargo test memory_extraction_service_test` to verify tests pass
-  - [ ] 4.25 Run `cargo clippy` and fix warnings
-  - [ ] 4.26 Run `cargo fmt` and commit memory extraction service
+- [x] 4.0 Implement Memory Extraction Service (US-12.4)
+  - [x] 4.1 Create `src/application/use_cases/sanctum/memory_extraction_service.rs` file
+  - [x] 4.2 Define `MemoryExtractionStrategy` enum: EveryTurn, OnCompletion, Manual, Threshold { importance: f32 }
+  - [x] 4.3 Implement `Default` for `MemoryExtractionStrategy` returning `OnCompletion`
+  - [x] 4.4 Define `MemoryExtractionService` struct with fields: llm (Arc<dyn LlmPort>), embedding (Arc<dyn EmbeddingPort>), sanctum (Arc<dyn SanctumPort>)
+  - [x] 4.5 Implement `MemoryExtractionService::new(llm, embedding, sanctum)` constructor
+  - [x] 4.6 Create `EXTRACTION_PROMPT` constant with prompt template for LLM to identify memorable content
+  - [x] 4.7 Implement `extract_memories(&self, paladin_id: &str, conversation: &[GarrisonEntry])` async method
+  - [x] 4.8 In `extract_memories`: Build extraction prompt from conversation history
+  - [x] 4.9 In `extract_memories`: Call `llm.generate()` to get structured memory extraction response
+  - [x] 4.10 Implement `parse_extraction_response(response: &str) -> Vec<ExtractedMemory>` to parse LLM JSON output
+  - [x] 4.11 Define `ExtractedMemory` struct with fields: content, memory_type, importance, metadata
+  - [x] 4.12 In `extract_memories`: Generate embeddings for each extracted memory using `embedding.embed_text()`
+  - [x] 4.13 Implement `check_for_duplicates(&self, memory: &Memory)` - search for similar existing memories (>0.95 similarity)
+  - [x] 4.14 In `extract_memories`: Filter out duplicate memories before storage
+  - [x] 4.15 Implement `store_memories(&self, memories: Vec<Memory>)` to batch store via `sanctum.store()`
+  - [x] 4.16 Add metrics logging: count, average importance, duration
+  - [x] 4.17 Handle all errors gracefully: log but don't fail if extraction fails
+  - [x] 4.18 Export `MemoryExtractionService` and `MemoryExtractionStrategy` from module
+  - [x] 4.19 Write unit tests in `tests/unit/sanctum/memory_extraction_service_test.rs`
+  - [x] 4.20 Test case: successful extraction with multiple memory types
+  - [x] 4.21 Test case: importance scoring correctly assigned
+  - [x] 4.22 Test case: duplicate detection prevents re-storage
+  - [x] 4.23 Test case: LLM failure handled gracefully
+  - [x] 4.24 Run `cargo test memory_extraction_service_test` to verify tests pass
+  - [x] 4.25 Run `cargo clippy` and fix warnings
+  - [x] 4.26 Run `cargo fmt` and commit memory extraction service
 
 ### Phase 3: Paladin Integration (Days 7-11)
 
