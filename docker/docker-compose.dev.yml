@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   redis:
     command: redis-server --appendonly yes --save 60 1 --loglevel debug

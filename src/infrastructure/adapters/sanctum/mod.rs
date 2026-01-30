@@ -6,4 +6,10 @@
 
 mod in_memory_adapter;
 
+#[cfg(feature = "qdrant")]
+mod qdrant_adapter;
+
 pub use in_memory_adapter::InMemorySanctum;
+
+#[cfg(feature = "qdrant")]
+pub use qdrant_adapter::QdrantSanctumAdapter;
