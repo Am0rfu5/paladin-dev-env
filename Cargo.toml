@@ -89,6 +89,10 @@ path = "tests/integration/paladin_garrison_integration_test.rs"
 name = "citadel_integration"
 path = "tests/integration/citadel_integration_test.rs"
 
+[[test]]
+name = "openai_embedding_integration"
+path = "tests/integration/openai_embedding_tests.rs"
+
 [[bin]]
 name = "paladin"
 path = "src/main.rs"
@@ -98,9 +102,10 @@ name = "paladin-cli"
 path = "src/bin/paladin-cli.rs"
 
 [features]
-default = ["redis-queue", "s3-storage"]
+default = ["redis-queue", "s3-storage", "openai-embeddings"]
 redis-queue = ["redis"]
 s3-storage = ["rust-s3"]
+openai-embeddings = []
 integration-tests = []
 
 # Performance optimizations for Redis

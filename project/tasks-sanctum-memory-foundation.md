@@ -96,27 +96,27 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.12 Run `cargo test` to verify tests pass
   - [x] 1.13 Run `cargo fmt` and `cargo clippy` to ensure code quality
 
-- [ ] 2.0 Implement OpenAI Embedding Adapter (US-11.2)
-  - [ ] 2.1 Add dependencies to `Cargo.toml`: ensure `reqwest`, `tokio`, `serde`, `serde_json`, `async-trait`
-  - [ ] 2.2 Add feature flag `openai-embeddings = []` to default features in Cargo.toml
-  - [ ] 2.3 Write integration test skeleton in `tests/integration/openai_embedding_tests.rs` with mocked HTTP
-  - [ ] 2.4 Create `src/infrastructure/adapters/llm/openai_embedding_adapter.rs` file
-  - [ ] 2.5 Define `OpenAIEmbeddingConfig` struct with fields: api_key, model, base_url, max_retries, timeout_seconds
-  - [ ] 2.6 Implement `Default` for OpenAIEmbeddingConfig (model: "text-embedding-3-small")
-  - [ ] 2.7 Define `OpenAIEmbeddingAdapter` struct with client (reqwest::Client) and config fields
-  - [ ] 2.8 Implement `new()` constructor for OpenAIEmbeddingAdapter
-  - [ ] 2.9 Implement `EmbeddingPort` trait for OpenAIEmbeddingAdapter
-  - [ ] 2.10 Implement `embed_text()` with retry logic and exponential backoff
-  - [ ] 2.11 Implement `embed_batch()` with API limit enforcement (max 2048 inputs)
-  - [ ] 2.12 Implement `dimension()` to return correct dimensions per model (1536 for small, 3072 for large)
-  - [ ] 2.13 Implement `model_name()` to return configured model
-  - [ ] 2.14 Add error handling for HTTP errors, rate limits, and invalid responses
-  - [ ] 2.15 Write unit tests for config validation and dimension mapping
-  - [ ] 2.16 Write integration tests with mocked HTTP responses (success, rate limit, error)
-  - [ ] 2.17 Add rustdoc comments for all public types and methods
-  - [ ] 2.18 Export OpenAIEmbeddingAdapter in `src/infrastructure/adapters/llm/mod.rs`
-  - [ ] 2.19 Run `cargo test` to verify all tests pass
-  - [ ] 2.20 Run `cargo fmt` and `cargo clippy`
+- [x] 2.0 Implement OpenAI Embedding Adapter (US-11.2)
+  - [x] 2.1 Add dependencies to `Cargo.toml`: ensure `reqwest`, `tokio`, `serde`, `serde_json`, `async-trait`
+  - [x] 2.2 Add feature flag `openai-embeddings = []` to default features in Cargo.toml
+  - [x] 2.3 Write integration test skeleton in `tests/integration/openai_embedding_tests.rs` with mocked HTTP
+  - [x] 2.4 Create `src/infrastructure/adapters/llm/openai_embedding_adapter.rs` file
+  - [x] 2.5 Define `OpenAIEmbeddingConfig` struct with fields: api_key, model, base_url, max_retries, timeout_seconds
+  - [x] 2.6 Implement `Default` for OpenAIEmbeddingConfig (model: "text-embedding-3-small")
+  - [x] 2.7 Define `OpenAIEmbeddingAdapter` struct with client (reqwest::Client) and config fields
+  - [x] 2.8 Implement `new()` constructor for OpenAIEmbeddingAdapter
+  - [x] 2.9 Implement `EmbeddingPort` trait for OpenAIEmbeddingAdapter
+  - [x] 2.10 Implement `embed_text()` with retry logic and exponential backoff
+  - [x] 2.11 Implement `embed_batch()` with API limit enforcement (max 2048 inputs)
+  - [x] 2.12 Implement `dimension()` to return correct dimensions per model (1536 for small, 3072 for large)
+  - [x] 2.13 Implement `model_name()` to return configured model
+  - [x] 2.14 Add error handling for HTTP errors, rate limits, and invalid responses
+  - [x] 2.15 Write unit tests for config validation and dimension mapping
+  - [x] 2.16 Write integration tests with mocked HTTP responses (success, rate limit, error)
+  - [x] 2.17 Add rustdoc comments for all public types and methods
+  - [x] 2.18 Export OpenAIEmbeddingAdapter in `src/infrastructure/adapters/llm/mod.rs`
+  - [x] 2.19 Run `cargo test` to verify all tests pass
+  - [x] 2.20 Run `cargo fmt` and `cargo clippy`
 
 - [ ] 3.0 Define SanctumPort trait and core domain models (US-11.3, US-11.6)
   - [ ] 3.1 Write unit tests for domain models in `tests/unit/sanctum_domain_tests.rs`
