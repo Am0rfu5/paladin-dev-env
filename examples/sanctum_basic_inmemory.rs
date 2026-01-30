@@ -9,9 +9,7 @@
 //!
 //! Run with: cargo run --example sanctum_basic_inmemory
 
-use paladin::application::ports::output::sanctum_port::{
-    SanctumFilter, SanctumPort, SanctumQuery,
-};
+use paladin::application::ports::output::sanctum_port::{SanctumFilter, SanctumPort, SanctumQuery};
 use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
 use paladin::infrastructure::adapters::sanctum::InMemorySanctum;
 use serde_json::json;
@@ -119,9 +117,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             result.score,
             result.entry.memory.content
         );
-        println!("      Type: {:?}, Importance: {:.2}", 
-            result.entry.memory.memory_type,
-            result.entry.memory.importance
+        println!(
+            "      Type: {:?}, Importance: {:.2}",
+            result.entry.memory.memory_type, result.entry.memory.importance
         );
     }
     println!();
@@ -135,7 +133,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let filtered_query = SanctumQuery::new(vec![0.1; 384], 5).filter(filter);
     let filtered_results = sanctum.search(filtered_query).await?;
 
-    println!("   Found {} episodic memories for paladin-123:", filtered_results.len());
+    println!(
+        "   Found {} episodic memories for paladin-123:",
+        filtered_results.len()
+    );
     for result in &filtered_results {
         println!("   - {}", result.entry.memory.content);
     }
@@ -154,7 +155,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         updated_memory.importance = 0.95; // Increase importance
         updated_memory.access_count += 1;
 
-        let updated_entry = SanctumEntry::new(updated_memory, first_result.entry.embedding.clone())?;
+        let updated_entry =
+            SanctumEntry::new(updated_memory, first_result.entry.embedding.clone())?;
         sanctum.update(updated_entry).await?;
         println!("   ✓ Memory importance updated to 0.95\n");
     }
@@ -162,7 +164,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 9: Delete a memory
     println!("9. Deleting a memory...");
     if let Some(last_result) = results.last() {
-        let deleted = sanctum.delete(&last_result.entry.memory.id.to_string()).await?;
+        let deleted = sanctum
+            .delete(&last_result.entry.memory.id.to_string())
+            .await?;
         if deleted {
             println!("   ✓ Memory deleted successfully");
         }
@@ -174,10 +178,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 10: Count by paladin
     println!("10. Memories per paladin:");
     let paladin_123_count = sanctum
-        .count(Some(SanctumFilter::new().paladin_id("paladin-123".to_string())))
+        .count(Some(
+            SanctumFilter::new().paladin_id("paladin-123".to_string()),
+        ))
         .await?;
     let paladin_456_count = sanctum
-        .count(Some(SanctumFilter::new().paladin_id("paladin-456".to_string())))
+        .count(Some(
+            SanctumFilter::new().paladin_id("paladin-456".to_string()),
+        ))
         .await?;
 
     println!("    paladin-123: {} memories", paladin_123_count);

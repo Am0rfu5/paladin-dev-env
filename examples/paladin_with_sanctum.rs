@@ -12,7 +12,7 @@
 //!
 //! Run with: cargo run --example paladin_with_sanctum
 
-use paladin::application::ports::output::sanctum_port::{SanctumPort, SanctumQuery, SanctumFilter};
+use paladin::application::ports::output::sanctum_port::{SanctumFilter, SanctumPort, SanctumQuery};
 use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
 use paladin::infrastructure::adapters::sanctum::InMemorySanctum;
 use std::sync::Arc;
@@ -36,17 +36,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   ---------------------------------------------\n");
 
     let session1_interactions = vec![
-        ("What is ownership in Rust?", 
-         "Ownership is Rust's key feature for memory safety without garbage collection. Each value has a single owner.",
-         MemoryType::Episodic, 0.9),
-        
-        ("Rust ownership ensures memory safety",
-         "Core fact: Ownership rules are enforced at compile time, preventing data races.",
-         MemoryType::Semantic, 1.0),
-        
-        ("How to transfer ownership?",
-         "Use move semantics - when assigning, the value moves unless it implements Copy trait.",
-         MemoryType::Procedural, 0.8),
+        (
+            "What is ownership in Rust?",
+            "Ownership is Rust's key feature for memory safety without garbage collection. Each value has a single owner.",
+            MemoryType::Episodic,
+            0.9,
+        ),
+        (
+            "Rust ownership ensures memory safety",
+            "Core fact: Ownership rules are enforced at compile time, preventing data races.",
+            MemoryType::Semantic,
+            1.0,
+        ),
+        (
+            "How to transfer ownership?",
+            "Use move semantics - when assigning, the value moves unless it implements Copy trait.",
+            MemoryType::Procedural,
+            0.8,
+        ),
     ];
 
     // Store memories from first session
@@ -68,13 +75,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         sanctum.store(query_entry).await?;
 
         // Store the agent's knowledge as semantic/procedural memory
-        let response_memory = MemoryBuilder::new(
-            paladin_id.to_string(),
-            agent_response.to_string(),
-        )
-        .memory_type(mem_type)
-        .importance(importance)
-        .build()?;
+        let response_memory =
+            MemoryBuilder::new(paladin_id.to_string(), agent_response.to_string())
+                .memory_type(mem_type)
+                .importance(importance)
+                .build()?;
 
         let response_entry = SanctumEntry::new(
             response_memory,
@@ -82,7 +87,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )?;
 
         sanctum.store(response_entry).await?;
-        
+
         println!("   Stored: \"{}\"", user_query);
     }
 
@@ -94,13 +99,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   -------------------------------------------\n");
 
     let session2_interactions = vec![
-        ("How does async work in Rust?",
-         "Async in Rust is zero-cost abstraction for concurrent programming using futures.",
-         MemoryType::Episodic, 0.85),
-        
-        ("Tokio is the async runtime for Rust",
-         "Tokio provides the scheduler and I/O drivers for async execution.",
-         MemoryType::Semantic, 0.9),
+        (
+            "How does async work in Rust?",
+            "Async in Rust is zero-cost abstraction for concurrent programming using futures.",
+            MemoryType::Episodic,
+            0.85,
+        ),
+        (
+            "Tokio is the async runtime for Rust",
+            "Tokio provides the scheduler and I/O drivers for async execution.",
+            MemoryType::Semantic,
+            0.9,
+        ),
     ];
 
     for (user_query, agent_response, mem_type, importance) in session2_interactions {
@@ -112,18 +122,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .importance(importance * 0.8)
         .build()?;
 
-        let response_memory = MemoryBuilder::new(
-            paladin_id.to_string(),
-            agent_response.to_string(),
-        )
-        .memory_type(mem_type)
-        .importance(importance)
-        .build()?;
+        let response_memory =
+            MemoryBuilder::new(paladin_id.to_string(), agent_response.to_string())
+                .memory_type(mem_type)
+                .importance(importance)
+                .build()?;
 
-        sanctum.store_batch(vec![
-            SanctumEntry::new(query_memory, vec![0.5; 384])?,
-            SanctumEntry::new(response_memory, vec![0.52; 384])?,
-        ]).await?;
+        sanctum
+            .store_batch(vec![
+                SanctumEntry::new(query_memory, vec![0.5; 384])?,
+                SanctumEntry::new(response_memory, vec![0.52; 384])?,
+            ])
+            .await?;
 
         println!("   Stored: \"{}\"", user_query);
     }
@@ -140,15 +150,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Retrieve relevant memories using semantic search
     println!("   Searching long-term memory for relevant context...");
     let query_embedding = vec![0.12; 384]; // Would be real embedding of user query
-    let search_query = SanctumQuery::new(query_embedding, 3)
-        .min_score(0.5);
+    let search_query = SanctumQuery::new(query_embedding, 3).min_score(0.5);
 
     let relevant_memories = sanctum.search(search_query).await?;
-    
+
     println!("   Found {} relevant memories:\n", relevant_memories.len());
-    
+
     for (i, result) in relevant_memories.iter().enumerate() {
-        println!("   {}. [Relevance: {:.2}] [Type: {:?}]",
+        println!(
+            "   {}. [Relevance: {:.2}] [Type: {:?}]",
             i + 1,
             result.score,
             result.entry.memory.memory_type
@@ -174,10 +184,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         {} ensures memory safety without garbage collection. This is achieved through \
         the ownership system where each value has a single owner, and {} for safe \
         concurrent programming.",
-        relevant_memories.get(1)
+        relevant_memories
+            .get(1)
             .map(|m| &m.entry.memory.content)
             .unwrap_or(&"Rust's ownership system".to_string()),
-        relevant_memories.get(2)
+        relevant_memories
+            .get(2)
             .map(|m| &m.entry.memory.content)
             .unwrap_or(&"async/await provides zero-cost abstractions".to_string())
     );
@@ -198,7 +210,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .count(Some(SanctumFilter::new().memory_type(MemoryType::Semantic)))
         .await?;
     let procedural = sanctum
-        .count(Some(SanctumFilter::new().memory_type(MemoryType::Procedural)))
+        .count(Some(
+            SanctumFilter::new().memory_type(MemoryType::Procedural),
+        ))
         .await?;
 
     println!("   Memory Distribution:");
@@ -236,8 +250,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )?;
 
         sanctum.update(updated_entry).await?;
-        println!("   ✓ Updated frequently accessed memory importance to {:.2}\n", 
-            updated_memory.importance);
+        println!(
+            "   ✓ Updated frequently accessed memory importance to {:.2}\n",
+            updated_memory.importance
+        );
     }
 
     // Summary

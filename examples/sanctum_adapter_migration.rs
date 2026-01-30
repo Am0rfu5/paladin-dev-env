@@ -1,7 +1,7 @@
 //! # Sanctum Adapter Migration Example
 //!
 //! **Note**: This example requires the "qdrant" feature flag for Qdrant migrations.
-//! 
+//!
 //! Run with:
 //! ```bash
 //! cargo run --example sanctum_adapter_migration --features qdrant
@@ -24,22 +24,22 @@ fn main() {
 fn main() {
     println!("Sanctum Adapter Migration Example");
     println!("==================================\n");
-    
+
     println!("For complete migration strategies and procedures,");
     println!("please refer to the migration documentation:\n");
-    
+
     println!("📚 docs/SANCTUM_MIGRATION.md");
     println!("   - Complete migration guide");
     println!("   - Export/import procedures");
     println!("   - Zero-downtime migrations");
     println!("   - Validation and verification");
     println!("   - Rollback strategies\n");
-    
+
     println!("📖 docs/SANCTUM.md");
     println!("   - Adapter configuration");
     println!("   - Compatibility matrix");
     println!("   - Best practices\n");
-    
+
     println!("Migration scenarios covered:");
     println!("  ✓ InMemory to Qdrant (development to production)");
     println!("  ✓ Qdrant to Qdrant (instance migration)");
