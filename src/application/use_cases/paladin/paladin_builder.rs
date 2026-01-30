@@ -538,7 +538,7 @@ impl PaladinBuilder {
     /// - `EveryTurn`: Extract memories after each conversation turn (most thorough but expensive)
     /// - `OnCompletion`: Extract memories only when the conversation completes (default, balanced)
     /// - `Manual`: Only extract memories when explicitly triggered
-    /// - `Threshold(n)`: Extract memories every n conversation turns
+    /// - `Threshold { importance }`: Extract memories when importance threshold is exceeded
     ///
     /// # Arguments
     ///
@@ -554,7 +554,7 @@ impl PaladinBuilder {
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
     /// let builder = PaladinBuilder::new(llm_port)
     ///     .system_prompt("You are an assistant")
-    ///     .memory_extraction_strategy(MemoryExtractionStrategy::Threshold(5));
+    ///     .memory_extraction_strategy(MemoryExtractionStrategy::Threshold { importance: 5 });
     /// # }
     /// ```
     pub fn memory_extraction_strategy(mut self, strategy: MemoryExtractionStrategy) -> Self {

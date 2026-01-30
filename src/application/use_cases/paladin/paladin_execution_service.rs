@@ -52,6 +52,10 @@ use crate::application::ports::output::llm_port::{FunctionCall, LlmPort, LlmRequ
 use crate::application::ports::output::paladin_port::{PaladinResult, StopReason};
 use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use crate::application::use_cases::paladin::error::PaladinError;
+use crate::application::use_cases::sanctum::memory_extraction_service::{
+    MemoryExtractionService, MemoryExtractionStrategy,
+};
+use crate::application::use_cases::sanctum::rag_retrieval_service::RagRetrievalService;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::arsenal::{ArmamentCall, ArsenalError};
 use crate::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
@@ -103,6 +107,12 @@ pub struct PaladinExecutionService {
 
     /// Tool result formatter for context injection
     formatter: ToolResultFormatter,
+
+    /// Optional RAG retrieval service for context augmentation
+    rag_retrieval_service: Option<Arc<RagRetrievalService>>,
+
+    /// Optional memory extraction service for storing important information
+    memory_extraction_service: Option<Arc<MemoryExtractionService>>,
 }
 
 impl PaladinExecutionService {
@@ -147,7 +157,39 @@ impl PaladinExecutionService {
             arsenal,
             herald: None,
             formatter: ToolResultFormatter::new(),
+            rag_retrieval_service: None,
+            memory_extraction_service: None,
         }
+    }
+
+    /// Sets the RAG retrieval service for context augmentation
+    ///
+    /// # Arguments
+    ///
+    /// * `service` - The RAG retrieval service to use for context retrieval
+    ///
+    /// # Returns
+    ///
+    /// Returns self for method chaining
+    pub fn with_rag_retrieval(mut self, service: Arc<RagRetrievalService>) -> Self {
+        info!("Attaching RAG retrieval service to PaladinExecutionService");
+        self.rag_retrieval_service = Some(service);
+        self
+    }
+
+    /// Sets the memory extraction service for storing important information
+    ///
+    /// # Arguments
+    ///
+    /// * `service` - The memory extraction service to use
+    ///
+    /// # Returns
+    ///
+    /// Returns self for method chaining
+    pub fn with_memory_extraction(mut self, service: Arc<MemoryExtractionService>) -> Self {
+        info!("Attaching memory extraction service to PaladinExecutionService");
+        self.memory_extraction_service = Some(service);
+        self
     }
 
     /// Sets the Herald formatter for this service
@@ -309,6 +351,51 @@ impl PaladinExecutionService {
         let start_time = Instant::now();
         let mut total_tokens = 0u32;
         let mut accumulated_output = String::new();
+        let mut _retrieval_latency_ms = 0u64;
+        let mut _memories_retrieved_count = 0usize;
+        let mut _extraction_triggered = false;
+
+        // Step 1: Retrieve relevant context from Sanctum if RAG is configured
+        let retrieved_context = if self.check_sanctum_configured() {
+            debug!(
+                "Sanctum configured, retrieving context: execution_id={}",
+                execution_id
+            );
+            let retrieval_start = Instant::now();
+
+            match self
+                .retrieve_context_with_timeout(paladin, input, execution_id)
+                .await
+            {
+                Ok(results) => {
+                    _retrieval_latency_ms = retrieval_start.elapsed().as_millis() as u64;
+                    _memories_retrieved_count = results.len();
+
+                    // Format results into context string
+                    let context = if results.is_empty() {
+                        String::new()
+                    } else {
+                        self.format_retrieved_context(&results)
+                    };
+
+                    info!(
+                        "RAG retrieval succeeded: execution_id={}, memories={}, latency_ms={}",
+                        execution_id, _memories_retrieved_count, _retrieval_latency_ms
+                    );
+                    Some(context)
+                }
+                Err(e) => {
+                    _retrieval_latency_ms = retrieval_start.elapsed().as_millis() as u64;
+                    warn!(
+                        "RAG retrieval failed: execution_id={}, error={}, latency_ms={}",
+                        execution_id, e, _retrieval_latency_ms
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        };
 
         // Store user input in garrison if available
         if let Some(garrison) = &self.garrison {
@@ -340,12 +427,13 @@ impl PaladinExecutionService {
                 execution_id, loop_num, paladin.node.max_loops
             );
 
-            // Build prompt for this iteration with conversation history
-            let prompt = self.build_prompt_with_history(
+            // Build prompt for this iteration with conversation history and RAG context
+            let prompt = self.build_prompt_with_history_and_rag(
                 paladin,
                 input,
                 &accumulated_output,
                 &conversation_history,
+                retrieved_context.as_deref(),
             );
 
             // Execute with retry and circuit breaker
@@ -433,6 +521,12 @@ impl PaladinExecutionService {
                     );
                 }
 
+                // Trigger memory extraction on completion if configured
+                if self.should_extract_memories(MemoryExtractionStrategy::OnCompletion) {
+                    _extraction_triggered = true;
+                    self.extract_memories_async(paladin, &conversation_history, execution_id);
+                }
+
                 return Ok(PaladinResult {
                     output: accumulated_output,
                     token_count: total_tokens,
@@ -451,6 +545,12 @@ impl PaladinExecutionService {
             garrison.remember(assistant_entry).await?;
         }
 
+        // Trigger memory extraction on completion if configured
+        if self.should_extract_memories(MemoryExtractionStrategy::OnCompletion) {
+            _extraction_triggered = true;
+            self.extract_memories_async(paladin, &conversation_history, execution_id);
+        }
+
         Ok(PaladinResult {
             output: accumulated_output,
             token_count: total_tokens,
@@ -462,16 +562,26 @@ impl PaladinExecutionService {
 
     /// Builds the prompt for an LLM call
     ///
-    /// Combines the system prompt, conversation history from Garrison,
+    /// Combines the system prompt, RAG context, conversation history from Garrison,
     /// user input, and accumulated output from previous loops.
-    fn build_prompt_with_history(
+    fn build_prompt_with_history_and_rag(
         &self,
         paladin: &Paladin,
         input: &str,
         accumulated_output: &str,
         conversation_history: &[GarrisonEntry],
+        rag_context: Option<&str>,
     ) -> String {
         let mut prompt = format!("{}\n\n", paladin.node.system_prompt);
+
+        // Inject RAG context if available
+        if let Some(context) = rag_context
+            && !context.is_empty()
+        {
+            prompt.push_str("## Relevant Context from Memory\n");
+            prompt.push_str(context);
+            prompt.push_str("\n\n");
+        }
 
         // Add conversation history if available
         if !conversation_history.is_empty() {
@@ -496,6 +606,136 @@ impl PaladinExecutionService {
         }
 
         prompt
+    }
+
+    /// Checks if Sanctum (RAG) is configured and ready
+    fn check_sanctum_configured(&self) -> bool {
+        self.rag_retrieval_service.is_some()
+    }
+
+    /// Retrieves context from Sanctum with timeout
+    ///
+    /// Wraps RAG retrieval in a 5-second timeout to prevent blocking execution.
+    async fn retrieve_context_with_timeout(
+        &self,
+        paladin: &Paladin,
+        query: &str,
+        execution_id: uuid::Uuid,
+    ) -> Result<
+        Vec<crate::application::ports::output::sanctum_port::SanctumSearchResult>,
+        PaladinError,
+    > {
+        if let Some(ref rag_service) = self.rag_retrieval_service {
+            let paladin_id = paladin.uuid.to_string();
+
+            match timeout(
+                Duration::from_secs(5),
+                rag_service.retrieve_context(&paladin_id, query),
+            )
+            .await
+            {
+                Ok(Ok(results)) => {
+                    debug!(
+                        "RAG retrieval completed: execution_id={}, results={}",
+                        execution_id,
+                        results.len()
+                    );
+                    Ok(results)
+                }
+                Ok(Err(e)) => {
+                    warn!(
+                        "RAG retrieval failed: execution_id={}, error={}",
+                        execution_id, e
+                    );
+                    Err(PaladinError::ExecutionError(format!(
+                        "RAG retrieval failed: {}",
+                        e
+                    )))
+                }
+                Err(_) => {
+                    warn!("RAG retrieval timed out: execution_id={}", execution_id);
+                    Err(PaladinError::Timeout(5))
+                }
+            }
+        } else {
+            Err(PaladinError::ConfigurationError(
+                "RAG retrieval service not configured".to_string(),
+            ))
+        }
+    }
+
+    /// Formats retrieved search results into a context string for injection
+    fn format_retrieved_context(
+        &self,
+        results: &[crate::application::ports::output::sanctum_port::SanctumSearchResult],
+    ) -> String {
+        if results.is_empty() {
+            return String::new();
+        }
+
+        let mut context = String::new();
+        for (i, result) in results.iter().enumerate() {
+            context.push_str(&format!(
+                "{}. [Score: {:.2}] {}\n",
+                i + 1,
+                result.score,
+                result.entry.memory.content
+            ));
+        }
+        context
+    }
+
+    /// Checks if memories should be extracted based on the strategy
+    fn should_extract_memories(&self, strategy: MemoryExtractionStrategy) -> bool {
+        self.memory_extraction_service.is_some()
+            && matches!(strategy, MemoryExtractionStrategy::OnCompletion)
+    }
+
+    /// Spawns an async task to extract memories in the background
+    ///
+    /// This runs asynchronously so it doesn't block Paladin execution completion.
+    fn extract_memories_async(
+        &self,
+        paladin: &Paladin,
+        conversation_history: &[GarrisonEntry],
+        execution_id: uuid::Uuid,
+    ) {
+        if let Some(ref extraction_service) = self.memory_extraction_service {
+            let paladin_id = paladin.uuid.to_string();
+            let conversation = conversation_history.to_vec();
+            let service = Arc::clone(extraction_service);
+
+            // Spawn background task
+            tokio::spawn(async move {
+                let start = Instant::now();
+                debug!(
+                    "Starting background memory extraction: execution_id={}, conversations={}",
+                    execution_id,
+                    conversation.len()
+                );
+
+                match service.extract_memories(&paladin_id, &conversation).await {
+                    Ok(extracted_entries) => {
+                        let elapsed = start.elapsed();
+                        info!(
+                            "Memory extraction completed: execution_id={}, memories_extracted={}, duration_ms={}",
+                            execution_id,
+                            extracted_entries.len(),
+                            elapsed.as_millis()
+                        );
+                    }
+                    Err(e) => {
+                        let elapsed = start.elapsed();
+                        warn!(
+                            "Memory extraction failed: execution_id={}, error={}, duration_ms={}",
+                            execution_id,
+                            e,
+                            elapsed.as_millis()
+                        );
+                    }
+                }
+            });
+        }
     }
 
     /// Checks if any stop words are present in the output
@@ -698,6 +938,178 @@ impl PaladinExecutionService {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::application::ports::output::llm_port::{
+        LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, StreamingResponse,
+    };
+    use crate::application::ports::output::sanctum_port::SanctumSearchResult;
+    use crate::application::use_cases::sanctum::MemoryExtractionStrategy;
+    use crate::core::base::entity::node::Node;
+    use crate::core::platform::container::{
+        paladin::PaladinData,
+        sanctum::{Memory, MemoryType, SanctumEntry},
+    };
+    use async_trait::async_trait;
+    use uuid::Uuid;
+
+    // Mock LlmPort for testing
+    struct MockLlmPort;
+
+    #[async_trait]
+    impl LlmPort for MockLlmPort {
+        async fn generate(&self, _request: LlmRequest) -> Result<LlmResponse, LlmError> {
+            unimplemented!()
+        }
+
+        async fn generate_stream(
+            &self,
+            _request: LlmRequest,
+        ) -> Result<
+            Box<dyn futures::Stream<Item = Result<StreamingResponse, LlmError>> + Send>,
+            LlmError,
+        > {
+            unimplemented!()
+        }
+
+        async fn validate_model(&self, _model: &str) -> Result<bool, LlmError> {
+            Ok(true)
+        }
+
+        async fn get_available_models(&self) -> Result<Vec<String>, LlmError> {
+            Ok(vec![])
+        }
+
+        fn get_provider_name(&self) -> &'static str {
+            "Mock"
+        }
+
+        fn get_capabilities(&self) -> ProviderCapabilities {
+            ProviderCapabilities::default()
+        }
+    }
+
+    fn create_test_paladin() -> Paladin {
+        let data = PaladinData {
+            system_prompt: "You are a helpful assistant".to_string(),
+            ..Default::default()
+        };
+
+        Node::new(data, Some("TestPaladin".to_string()))
+    }
+
+    fn create_mock_search_result(content: &str, score: f32) -> SanctumSearchResult {
+        let memory = Memory {
+            id: Uuid::new_v4(),
+            paladin_id: "test".to_string(),
+            content: content.to_string(),
+            memory_type: MemoryType::Episodic,
+            importance: 0.5,
+            access_count: 0,
+            last_accessed: chrono::Utc::now(),
+            created_at: chrono::Utc::now(),
+            metadata: std::collections::HashMap::new(),
+        };
+
+        let entry = SanctumEntry::new(memory, vec![0.1; 384]).expect("Failed to create test entry");
+
+        SanctumSearchResult { entry, score }
+    }
+
+    #[tokio::test]
+    async fn test_format_retrieved_context() {
+        // Arrange
+        let results = vec![
+            create_mock_search_result("First memory", 0.95),
+            create_mock_search_result("Second memory", 0.85),
+        ];
+
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+
+        // Act
+        let formatted = service.format_retrieved_context(&results);
+
+        // Assert
+        assert!(formatted.contains("1. [Score: 0.95] First memory"));
+        assert!(formatted.contains("2. [Score: 0.85] Second memory"));
+    }
+
+    #[tokio::test]
+    async fn test_format_retrieved_context_empty() {
+        // Arrange
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+
+        // Act
+        let formatted = service.format_retrieved_context(&[]);
+
+        // Assert
+        assert!(formatted.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_check_sanctum_configured() {
+        // Arrange
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+
+        // Act & Assert: Without RAG service
+        let service_without = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+        assert!(!service_without.check_sanctum_configured());
+    }
+
+    #[tokio::test]
+    async fn test_should_extract_memories() {
+        // Arrange
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+
+        // Act & Assert: Without extraction service
+        let service_without = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+        assert!(!service_without.should_extract_memories(MemoryExtractionStrategy::OnCompletion));
+    }
+
+    #[tokio::test]
+    async fn test_rag_context_injection() {
+        // Arrange
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+        let paladin = create_test_paladin();
+
+        // Act: Build prompt with RAG context
+        let retrieved_context = "1. [Score: 0.95] Previous conversation about Rust\n";
+        let prompt = service.build_prompt_with_history_and_rag(
+            &paladin,
+            "What is Rust?",
+            "",
+            &[],
+            Some(retrieved_context),
+        );
+
+        // Assert: Context should be injected
+        assert!(prompt.contains("## Relevant Context from Memory"));
+        assert!(prompt.contains("Previous conversation about Rust"));
+    }
+
+    #[tokio::test]
+    async fn test_rag_context_injection_empty() {
+        // Arrange
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+        let paladin = create_test_paladin();
+
+        // Act: Build prompt without RAG context
+        let prompt =
+            service.build_prompt_with_history_and_rag(&paladin, "What is Rust?", "", &[], None);
+
+        // Assert: No RAG section should be present
+        assert!(!prompt.contains("## Relevant Context from Memory"));
+    }
+
     #[test]
     fn test_build_prompt_basic() {
         // Basic test without async context
