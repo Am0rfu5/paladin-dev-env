@@ -414,7 +414,10 @@ mod tests {
             {
                 return Err(
                     crate::application::use_cases::paladin::error::PaladinError::ExecutionError(
-                        format!("Intentional failure for testing (attempt {})", current_count),
+                        format!(
+                            "Intentional failure for testing (attempt {})",
+                            current_count
+                        ),
                     ),
                 );
             }
