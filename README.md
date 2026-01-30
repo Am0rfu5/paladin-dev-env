@@ -66,11 +66,18 @@ Paladin provides a sophisticated AI agent framework with memory management and t
   * **SSE Transport**: HTTP-based remote tool services
   * **Tool Registry**: Dynamic tool discovery and registration
   * **Resource Controls**: Timeout management and concurrency limiting
+* **Sanctum Long-term Memory**: Persistent, searchable vector memory for agents
+  * **InMemory Adapter**: Fast, ephemeral storage for development (<10,000 entries)
+  * **Qdrant Adapter**: Production-ready vector database (millions of entries, <500ms search)
+  * **Semantic Search**: Find relevant memories using vector similarity
+  * **Rich Metadata**: Filter by paladin ID, memory type, importance, timestamps
+  * **Memory Types**: Episodic (events), Semantic (facts), Procedural (skills)
 * **Circuit Breaker**: Fault tolerance with automatic retry and backoff
 * **Execution Service**: Orchestrates agent execution with memory integration
 
 See [docs/GARRISON.md](docs/GARRISON.md) for detailed memory system documentation.
 See [docs/ARSENAL.md](docs/ARSENAL.md) for comprehensive tool system documentation.
+See [docs/SANCTUM.md](docs/SANCTUM.md) for long-term memory system documentation.
 
 ### Multi-Provider LLM Support
 
