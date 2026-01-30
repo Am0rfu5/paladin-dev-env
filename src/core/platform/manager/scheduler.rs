@@ -419,7 +419,8 @@ impl Scheduler {
                     }
                 }
 
-                // Move to next month
+                // Move to next month - set to day 1 first to avoid issues with month boundaries
+                target_date = target_date.with_day(1)?;
                 target_date = if target_date.month() == 12 {
                     target_date
                         .with_year(target_date.year() + 1)?
