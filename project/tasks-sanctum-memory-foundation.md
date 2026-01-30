@@ -81,20 +81,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 0.1 Create and checkout new branch: `git checkout -b feature/epic11-sanctum-memory-foundation`
   - [x] 0.2 Verify you're on the new branch: `git branch --show-current`
 
-- [ ] 1.0 Define EmbeddingPort trait and error types (US-11.1)
-  - [ ] 1.1 Write unit tests for `EmbeddingError` enum in `tests/unit/embedding_port_tests.rs`
-  - [ ] 1.2 Create `src/application/ports/output/embedding_port.rs` file
-  - [ ] 1.3 Define `EmbeddingError` enum with variants: NetworkError, RateLimited, InvalidInput, ProviderError
-  - [ ] 1.4 Add `#[derive(Debug, thiserror::Error)]` to EmbeddingError with error messages
-  - [ ] 1.5 Define `Embedding` struct with fields: vector (Vec<f32>), model (String), dimension (usize), token_count (Option<u32>)
-  - [ ] 1.6 Add `#[derive(Debug, Clone)]` and Serde traits to Embedding
-  - [ ] 1.7 Write unit tests for Embedding struct construction and serialization
-  - [ ] 1.8 Define `EmbeddingPort` trait with `#[async_trait]` and `Send + Sync` bounds
-  - [ ] 1.9 Add trait methods: `embed_text()`, `embed_batch()`, `dimension()`, `model_name()`
-  - [ ] 1.10 Write rustdoc comments for all public types and methods
-  - [ ] 1.11 Export EmbeddingPort in `src/application/ports/output/mod.rs`
-  - [ ] 1.12 Run `cargo test` to verify tests pass
-  - [ ] 1.13 Run `cargo fmt` and `cargo clippy` to ensure code quality
+- [x] 1.0 Define EmbeddingPort trait and error types (US-11.1)
+  - [x] 1.1 Write unit tests for `EmbeddingError` enum in `tests/unit/embedding_port_tests.rs`
+  - [x] 1.2 Create `src/application/ports/output/embedding_port.rs` file
+  - [x] 1.3 Define `EmbeddingError` enum with variants: NetworkError, RateLimited, InvalidInput, ProviderError
+  - [x] 1.4 Add `#[derive(Debug, thiserror::Error)]` to EmbeddingError with error messages
+  - [x] 1.5 Define `Embedding` struct with fields: vector (Vec<f32>), model (String), dimension (usize), token_count (Option<u32>)
+  - [x] 1.6 Add `#[derive(Debug, Clone)]` and Serde traits to Embedding
+  - [x] 1.7 Write unit tests for Embedding struct construction and serialization
+  - [x] 1.8 Define `EmbeddingPort` trait with `#[async_trait]` and `Send + Sync` bounds
+  - [x] 1.9 Add trait methods: `embed_text()`, `embed_batch()`, `dimension()`, `model_name()`
+  - [x] 1.10 Write rustdoc comments for all public types and methods
+  - [x] 1.11 Export EmbeddingPort in `src/application/ports/output/mod.rs`
+  - [x] 1.12 Run `cargo test` to verify tests pass
+  - [x] 1.13 Run `cargo fmt` and `cargo clippy` to ensure code quality
 
 - [ ] 2.0 Implement OpenAI Embedding Adapter (US-11.2)
   - [ ] 2.1 Add dependencies to `Cargo.toml`: ensure `reqwest`, `tokio`, `serde`, `serde_json`, `async-trait`

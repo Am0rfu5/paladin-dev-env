@@ -2,6 +2,7 @@ pub mod arsenal_port;
 pub mod battalion_port;
 pub mod citadel_port;
 pub mod content_delivery_port;
+pub mod embedding_port;
 pub mod file_storage_port;
 pub mod garrison_port;
 pub mod llm_port;
