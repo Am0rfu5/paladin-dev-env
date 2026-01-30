@@ -14,6 +14,7 @@ pub mod paladin;
 pub mod paladin_config;
 pub mod prompt;
 pub mod queue_item;
+pub mod sanctum;
 pub mod task;
 pub mod trigger;
 pub mod user;

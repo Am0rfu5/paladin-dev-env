@@ -15,3 +15,5 @@ pub mod paladin_config_test;
 pub mod paladin_entity_test;
 pub mod paladin_error_test;
 pub mod paladin_execution_service_test;
+pub mod sanctum_domain_tests;
+pub mod sanctum_port_tests;

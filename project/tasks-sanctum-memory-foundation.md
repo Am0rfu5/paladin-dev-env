@@ -118,34 +118,34 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.19 Run `cargo test` to verify all tests pass
   - [x] 2.20 Run `cargo fmt` and `cargo clippy`
 
-- [ ] 3.0 Define SanctumPort trait and core domain models (US-11.3, US-11.6)
-  - [ ] 3.1 Write unit tests for domain models in `tests/unit/sanctum_domain_tests.rs`
-  - [ ] 3.2 Create `src/core/platform/container/sanctum.rs` file
-  - [ ] 3.3 Define `MemoryType` enum: Episodic, Semantic, Procedural
-  - [ ] 3.4 Add `#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]` to MemoryType
-  - [ ] 3.5 Define `MemoryDecayStrategy` enum: NoDecay, LinearDecay, AccessBasedDecay, CustomDecay
-  - [ ] 3.6 Add derives and rustdoc to MemoryDecayStrategy
-  - [ ] 3.7 Define `Memory` struct with all fields: id, paladin_id, content, memory_type, importance, access_count, timestamps, metadata
-  - [ ] 3.8 Add builder pattern for Memory construction (MemoryBuilder struct)
-  - [ ] 3.9 Add validation methods to Memory (validate_importance range 0.0-1.0)
-  - [ ] 3.10 Define `SanctumEntry` struct: memory + embedding (Vec<f32>)
-  - [ ] 3.11 Add validation for embedding dimension matching
-  - [ ] 3.12 Write unit tests for Memory creation, validation, and serialization
-  - [ ] 3.13 Write unit tests for SanctumEntry with various embedding dimensions
-  - [ ] 3.14 Export sanctum module in `src/core/platform/container/mod.rs`
-  - [ ] 3.15 Create `src/application/ports/output/sanctum_port.rs` file
-  - [ ] 3.16 Define `SanctumError` enum: StorageError, SearchError, InvalidDimension, NotFound, ConfigError
-  - [ ] 3.17 Add thiserror derives to SanctumError
-  - [ ] 3.18 Define `SanctumFilter` struct for metadata filtering
-  - [ ] 3.19 Define `SanctumQuery` struct: embedding, top_k, filter, min_score
-  - [ ] 3.20 Define `SanctumSearchResult` struct: entry + score (f32)
-  - [ ] 3.21 Write unit tests for query and filter construction in `tests/unit/sanctum_port_tests.rs`
-  - [ ] 3.22 Define `SanctumPort` trait with `#[async_trait]` and `Send + Sync`
-  - [ ] 3.23 Add trait methods: `store()`, `store_batch()`, `search()`, `delete()`, `update()`, `count()`
-  - [ ] 3.24 Add rustdoc comments for all domain types and port methods
-  - [ ] 3.25 Export SanctumPort in `src/application/ports/output/mod.rs`
-  - [ ] 3.26 Run `cargo test` to verify domain model tests pass
-  - [ ] 3.27 Run `cargo fmt` and `cargo clippy`
+- [x] 3.0 Define SanctumPort trait and core domain models (US-11.3, US-11.6)
+  - [x] 3.1 Write unit tests for domain models in `tests/unit/sanctum_domain_tests.rs`
+  - [x] 3.2 Create `src/core/platform/container/sanctum.rs` file
+  - [x] 3.3 Define `MemoryType` enum: Episodic, Semantic, Procedural
+  - [x] 3.4 Add `#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]` to MemoryType
+  - [x] 3.5 Define `MemoryDecayStrategy` enum: NoDecay, LinearDecay, AccessBasedDecay, CustomDecay
+  - [x] 3.6 Add derives and rustdoc to MemoryDecayStrategy
+  - [x] 3.7 Define `Memory` struct with all fields: id, paladin_id, content, memory_type, importance, access_count, timestamps, metadata
+  - [x] 3.8 Add builder pattern for Memory construction (MemoryBuilder struct)
+  - [x] 3.9 Add validation methods to Memory (validate_importance range 0.0-1.0)
+  - [x] 3.10 Define `SanctumEntry` struct: memory + embedding (Vec<f32>)
+  - [x] 3.11 Add validation for embedding dimension matching
+  - [x] 3.12 Write unit tests for Memory creation, validation, and serialization
+  - [x] 3.13 Write unit tests for SanctumEntry with various embedding dimensions
+  - [x] 3.14 Export sanctum module in `src/core/platform/container/mod.rs`
+  - [x] 3.15 Create `src/application/ports/output/sanctum_port.rs` file
+  - [x] 3.16 Define `SanctumError` enum: StorageError, SearchError, InvalidDimension, NotFound, ConfigError
+  - [x] 3.17 Add thiserror derives to SanctumError
+  - [x] 3.18 Define `SanctumFilter` struct for metadata filtering
+  - [x] 3.19 Define `SanctumQuery` struct: embedding, top_k, filter, min_score
+  - [x] 3.20 Define `SanctumSearchResult` struct: entry + score (f32)
+  - [x] 3.21 Write unit tests for query and filter construction in `tests/unit/sanctum_port_tests.rs`
+  - [x] 3.22 Define `SanctumPort` trait with `#[async_trait]` and `Send + Sync`
+  - [x] 3.23 Add trait methods: `store()`, `store_batch()`, `search()`, `delete()`, `update()`, `count()`
+  - [x] 3.24 Add rustdoc comments for all domain types and port methods
+  - [x] 3.25 Export SanctumPort in `src/application/ports/output/mod.rs`
+  - [x] 3.26 Run `cargo test` to verify domain model tests pass
+  - [x] 3.27 Run `cargo fmt` and `cargo clippy`
 
 - [ ] 4.0 Implement In-Memory Sanctum adapter (US-11.5)
   - [ ] 4.1 Write integration tests in `tests/integration/in_memory_sanctum_tests.rs` (TDD)
