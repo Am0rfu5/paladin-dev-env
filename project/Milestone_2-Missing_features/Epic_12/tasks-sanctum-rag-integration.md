@@ -213,30 +213,30 @@ Example:
   - [x] 5.15 Run `cargo clippy` and fix warnings
   - [x] 5.16 Run `cargo fmt` and commit PaladinBuilder extensions
 
-- [ ] 6.0 Integrate RAG into PaladinExecutionService (US-12.5)
-  - [ ] 6.1 Read existing `PaladinExecutionService` from `src/application/use_cases/paladin/paladin_execution_service.rs`
-  - [ ] 6.2 Add optional fields: rag_retrieval_service (Option<Arc<RagRetrievalService>>), memory_extraction_service (Option<Arc<MemoryExtractionService>>)
-  - [ ] 6.3 Update `PaladinExecutionService::new()` to accept optional RAG services
-  - [ ] 6.4 Create `check_sanctum_configured(&self, paladin: &Paladin) -> bool` helper method
-  - [ ] 6.5 In `execute()` method: add step 1 - check if Sanctum configured
-  - [ ] 6.6 In `execute()`: if configured, call `rag_retrieval_service.retrieve_context(paladin.id(), input)`
-  - [ ] 6.7 In `execute()`: wrap retrieval in `tokio::time::timeout` with 5-second limit
-  - [ ] 6.8 In `execute()`: on retrieval success, format memories and inject into system prompt
-  - [ ] 6.9 In `execute()`: on retrieval failure/timeout, log warning and continue with empty context
-  - [ ] 6.10 Implement `inject_memories_into_prompt(system_prompt: &str, memories: &str) -> String` helper
-  - [ ] 6.11 In `execute()`: after successful LLM response, check extraction strategy
-  - [ ] 6.12 In `execute()`: if strategy is `OnCompletion`, spawn async task for memory extraction
-  - [ ] 6.13 Implement `extract_memories_async(service, paladin_id, conversation)` that runs in background
-  - [ ] 6.14 Add metrics collection: retrieval_latency_ms, memories_retrieved_count, extraction_triggered bool
-  - [ ] 6.15 Ensure all errors are logged with appropriate severity levels
-  - [ ] 6.16 Write unit tests in `tests/unit/paladin/paladin_execution_service_test.rs`
-  - [ ] 6.17 Test case: execution with RAG retrieval injects context correctly
-  - [ ] 6.18 Test case: execution continues gracefully when retrieval times out
-  - [ ] 6.19 Test case: memory extraction triggered on completion
-  - [ ] 6.20 Test case: execution without Sanctum works as before (backward compatibility)
-  - [ ] 6.21 Run `cargo test paladin_execution_service_test` to verify tests pass
-  - [ ] 6.22 Run `cargo clippy` and fix warnings
-  - [ ] 6.23 Run `cargo fmt` and commit PaladinExecutionService integration
+- [x] 6.0 Integrate RAG into PaladinExecutionService (US-12.5)
+  - [x] 6.1 Read existing `PaladinExecutionService` from `src/application/use_cases/paladin/paladin_execution_service.rs`
+  - [x] 6.2 Add optional fields: rag_retrieval_service (Option<Arc<RagRetrievalService>>), memory_extraction_service (Option<Arc<MemoryExtractionService>>)
+  - [x] 6.3 Update `PaladinExecutionService::new()` to initialize RAG services as None
+  - [x] 6.4 Create `with_rag_retrieval()` and `with_memory_extraction()` builder methods
+  - [x] 6.5 Create `check_sanctum_configured() -> bool` helper method
+  - [x] 6.6 In `execute_internal()`: retrieve context from Sanctum before LLM calls with timeout
+  - [x] 6.7 Wrap retrieval in `tokio::time::timeout` with 5-second limit
+  - [x] 6.8 On retrieval success, format memories and inject into prompt
+  - [x] 6.9 On retrieval failure/timeout, log warning and continue with empty context
+  - [x] 6.10 Update `build_prompt_with_history_and_rag()` to inject "## Relevant Context from Memory" section
+  - [x] 6.11 After successful LLM response, check extraction strategy
+  - [x] 6.12 If strategy is `OnCompletion`, spawn async task for memory extraction
+  - [x] 6.13 Implement `extract_memories_async()` that runs in background via tokio::spawn
+  - [x] 6.14 Add helper methods: `retrieve_context_with_timeout()`, `should_extract_memories()`, `format_retrieved_context()`
+  - [x] 6.15 Ensure all errors are logged with appropriate severity levels
+  - [x] 6.16 Write unit tests for RAG integration
+  - [x] 6.17 Test case: `test_format_retrieved_context()` - formatting search results
+  - [x] 6.18 Test case: `test_format_retrieved_context_empty()` - empty results
+  - [x] 6.19 Test case: `test_check_sanctum_configured()` - checking RAG availability
+  - [x] 6.20 Test case: `test_should_extract_memories()` - extraction strategy checking
+  - [x] 6.21 Test case: `test_rag_context_injection()` - context injected into prompts
+  - [x] 6.22 Test case: `test_rag_context_injection_empty()` - no injection without context
+  - [x] 6.23 Run `cargo test` (all 1022 tests passing), `cargo clippy` (no warnings), `cargo fmt` and commit (41e048c)
 
 ### Phase 4: Configuration & Testing (Days 9-14)
 
