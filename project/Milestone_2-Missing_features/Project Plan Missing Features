@@ -1,0 +1,1877 @@
+# Paladin Project Plan: Missing Features
+
+## Document Information
+- **Version:** 1.0
+- **Created:** January 29, 2026
+- **Status:** Draft
+- **Total Estimated Duration:** 14-18 weeks
+- **Total New Epics:** 8 (Epics 11-18)
+
+---
+
+## Executive Summary
+
+This project plan defines the work required to bring Paladin to an MVP completed state. The plan introduces 8 new epics covering long-term memory, multi-modal processing, advanced orchestration patterns, agent autonomy features, and CLI enhancements.
+
+### Timeline Overview
+
+```
+Week 1-2:   Epic 11 (Sanctum Memory Foundation)
+Week 3-4:   Epic 12 (Sanctum RAG Integration)
+Week 5-6:   Epic 13 (Sentinel Vision System)
+Week 7-8:   Epic 14 (Autonomous Agent Features)
+Week 9-10:  Epic 15 (Conclave - MixtureOfAgents)
+Week 11-12: Epic 16 (Advanced Battalion Patterns)
+Week 13-14: Epic 17 (Flow DSL & Rearrangement)
+Week 15-16: Epic 18 (CLI Enhancement & Polish)
+Week 17-18: Integration Testing & Documentation
+```
+
+---
+
+## Epic 11: Sanctum Memory Foundation
+
+**Theme:** Vector Embedding Infrastructure  
+**Duration:** 2 weeks  
+**Priority:** Critical  
+**Dependencies:** None  
+
+### Description
+Establish the foundational infrastructure for vector-based long-term memory, including embedding generation ports, vector storage traits, and the core data structures needed for semantic search.
+
+### User Stories
+
+#### US-11.1: Embedding Port Definition
+**As a** framework developer  
+**I want** a standardized port for generating vector embeddings  
+**So that** I can plug in different embedding providers
+
+**Acceptance Criteria:**
+- [ ] `EmbeddingPort` trait defined in `src/application/ports/output/embedding_port.rs`
+- [ ] Trait includes `embed_text(&str) -> Result<Vec<f32>, EmbeddingError>`
+- [ ] Trait includes `embed_batch(&[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError>`
+- [ ] Trait includes `dimension() -> usize` for vector dimension
+- [ ] `EmbeddingError` enum covers: NetworkError, RateLimited, InvalidInput, ProviderError
+- [ ] Unit tests for error handling
+
+**Definition of Done:**
+```rust
+#[async_trait]
+pub trait EmbeddingPort: Send + Sync {
+    async fn embed_text(&self, text: &str) -> Result<Embedding, EmbeddingError>;
+    async fn embed_batch(&self, texts: &[&str]) -> Result<Vec<Embedding>, EmbeddingError>;
+    fn dimension(&self) -> usize;
+    fn model_name(&self) -> &str;
+}
+
+pub struct Embedding {
+    pub vector: Vec<f32>,
+    pub model: String,
+    pub dimension: usize,
+    pub token_count: Option<u32>,
+}
+```
+
+---
+
+#### US-11.2: OpenAI Embedding Adapter
+**As a** developer  
+**I want** to generate embeddings using OpenAI's API  
+**So that** I can use industry-standard embedding models
+
+**Acceptance Criteria:**
+- [ ] `OpenAIEmbeddingAdapter` implements `EmbeddingPort`
+- [ ] Supports `text-embedding-3-small` (1536 dimensions)
+- [ ] Supports `text-embedding-3-large` (3072 dimensions)
+- [ ] Supports `text-embedding-ada-002` (1536 dimensions, legacy)
+- [ ] Configurable via `OpenAIEmbeddingConfig` struct
+- [ ] Implements retry with exponential backoff
+- [ ] Batch processing respects API limits (max 2048 inputs)
+- [ ] Integration test with mocked responses
+
+**Definition of Done:**
+```rust
+pub struct OpenAIEmbeddingAdapter {
+    client: reqwest::Client,
+    config: OpenAIEmbeddingConfig,
+}
+
+pub struct OpenAIEmbeddingConfig {
+    pub api_key: String,
+    pub model: String,  // "text-embedding-3-small" default
+    pub base_url: String,
+    pub max_retries: u32,
+    pub timeout_seconds: u64,
+}
+```
+
+---
+
+#### US-11.3: Vector Store Port Definition
+**As a** framework developer  
+**I want** a standardized port for vector storage operations  
+**So that** I can plug in different vector databases
+
+**Acceptance Criteria:**
+- [ ] `SanctumPort` trait defined in `src/application/ports/output/sanctum_port.rs`
+- [ ] Supports `store(id, vector, metadata)` operation
+- [ ] Supports `search(vector, top_k, filter)` operation
+- [ ] Supports `delete(id)` operation
+- [ ] Supports `update(id, vector, metadata)` operation
+- [ ] Filter supports metadata-based filtering
+- [ ] Returns `SanctumSearchResult` with score and metadata
+
+**Definition of Done:**
+```rust
+#[async_trait]
+pub trait SanctumPort: Send + Sync {
+    async fn store(&self, entry: SanctumEntry) -> Result<(), SanctumError>;
+    async fn store_batch(&self, entries: Vec<SanctumEntry>) -> Result<(), SanctumError>;
+    async fn search(&self, query: SanctumQuery) -> Result<Vec<SanctumSearchResult>, SanctumError>;
+    async fn delete(&self, id: &str) -> Result<bool, SanctumError>;
+    async fn update(&self, entry: SanctumEntry) -> Result<(), SanctumError>;
+    async fn count(&self) -> Result<u64, SanctumError>;
+}
+
+pub struct SanctumEntry {
+    pub id: String,
+    pub paladin_id: String,
+    pub content: String,
+    pub embedding: Vec<f32>,
+    pub metadata: HashMap<String, Value>,
+    pub timestamp: DateTime<Utc>,
+}
+
+pub struct SanctumQuery {
+    pub embedding: Vec<f32>,
+    pub top_k: usize,
+    pub filter: Option<SanctumFilter>,
+    pub min_score: Option<f32>,
+}
+
+pub struct SanctumSearchResult {
+    pub entry: SanctumEntry,
+    pub score: f32,
+}
+```
+
+---
+
+#### US-11.4: In-Memory Vector Store
+**As a** developer  
+**I want** an in-memory vector store for development and testing  
+**So that** I can prototype without external dependencies
+
+**Acceptance Criteria:**
+- [ ] `InMemorySanctum` implements `SanctumPort`
+- [ ] Uses brute-force cosine similarity for search
+- [ ] Thread-safe with `RwLock`
+- [ ] Supports all CRUD operations
+- [ ] Configurable max capacity with LRU eviction
+- [ ] Unit tests for all operations
+- [ ] Performance acceptable for < 10,000 vectors
+
+**Definition of Done:**
+```rust
+pub struct InMemorySanctum {
+    entries: Arc<RwLock<HashMap<String, SanctumEntry>>>,
+    config: InMemorySanctumConfig,
+}
+
+pub struct InMemorySanctumConfig {
+    pub max_entries: usize,
+    pub eviction_strategy: EvictionStrategy,
+}
+```
+
+---
+
+#### US-11.5: Sanctum Domain Model
+**As a** framework developer  
+**I want** domain models for long-term memory concepts  
+**So that** the system has clear bounded contexts
+
+**Acceptance Criteria:**
+- [ ] `SanctumEntry` struct in `src/core/platform/container/sanctum.rs`
+- [ ] `Memory` value object representing a stored insight
+- [ ] `MemoryType` enum: Episodic, Semantic, Procedural
+- [ ] Serialization/deserialization support
+- [ ] Validation for embedding dimensions
+
+**Definition of Done:**
+```rust
+pub struct Memory {
+    pub id: Uuid,
+    pub paladin_id: String,
+    pub content: String,
+    pub memory_type: MemoryType,
+    pub importance: f32,  // 0.0 - 1.0
+    pub access_count: u32,
+    pub last_accessed: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub metadata: HashMap<String, Value>,
+}
+
+pub enum MemoryType {
+    Episodic,    // Specific events/conversations
+    Semantic,    // Facts and knowledge
+    Procedural,  // How-to instructions
+}
+```
+
+---
+
+### Epic 11 Completion Criteria
+- [ ] All 5 user stories completed and tested
+- [ ] `EmbeddingPort` trait with OpenAI implementation
+- [ ] `SanctumPort` trait with in-memory implementation
+- [ ] Domain models for memory concepts
+- [ ] Documentation in `docs/SANCTUM.md`
+- [ ] Example: `examples/sanctum_basics.rs`
+
+---
+
+## Epic 12: Sanctum RAG Integration
+
+**Theme:** Retrieval-Augmented Generation  
+**Duration:** 2 weeks  
+**Priority:** Critical  
+**Dependencies:** Epic 11  
+
+### Description
+Integrate the Sanctum memory system with Paladin agents to enable RAG (Retrieval-Augmented Generation) capabilities, including automatic memory storage, retrieval during execution, and memory consolidation.
+
+### User Stories
+
+#### US-12.1: Qdrant Vector Store Adapter
+**As a** developer  
+**I want** to use Qdrant as a production vector database  
+**So that** I can scale to millions of memories
+
+**Acceptance Criteria:**
+- [ ] `QdrantSanctum` implements `SanctumPort`
+- [ ] Connects via `qdrant-client` crate
+- [ ] Supports collection creation with configurable settings
+- [ ] Supports payload filtering on metadata
+- [ ] Configurable connection (local, cloud, API key)
+- [ ] Health check implementation
+- [ ] Integration test with Qdrant container
+
+**Definition of Done:**
+```rust
+pub struct QdrantSanctum {
+    client: QdrantClient,
+    config: QdrantSanctumConfig,
+}
+
+pub struct QdrantSanctumConfig {
+    pub url: String,
+    pub api_key: Option<String>,
+    pub collection_name: String,
+    pub vector_size: u64,
+    pub distance: Distance,  // Cosine, Euclidean, Dot
+    pub on_disk: bool,
+}
+```
+
+---
+
+#### US-12.2: Paladin Long-Term Memory Integration
+**As a** developer  
+**I want** to configure a Paladin with long-term memory  
+**So that** it can remember across sessions
+
+**Acceptance Criteria:**
+- [ ] `PaladinBuilder::with_sanctum(sanctum)` method
+- [ ] `PaladinBuilder::with_embedding_port(port)` method
+- [ ] Paladin stores conversation insights automatically
+- [ ] Memory extraction configurable (every turn, on completion, manual)
+- [ ] Memory importance scoring based on content analysis
+
+**Definition of Done:**
+```rust
+impl PaladinBuilder {
+    pub fn with_sanctum(mut self, sanctum: Arc<dyn SanctumPort>) -> Self;
+    pub fn with_embedding_port(mut self, embedding: Arc<dyn EmbeddingPort>) -> Self;
+    pub fn memory_extraction_strategy(mut self, strategy: MemoryExtractionStrategy) -> Self;
+}
+
+pub enum MemoryExtractionStrategy {
+    EveryTurn,
+    OnCompletion,
+    Manual,
+    Threshold { importance: f32 },
+}
+```
+
+---
+
+#### US-12.3: RAG Retrieval Service
+**As a** developer  
+**I want** automatic context retrieval from long-term memory  
+**So that** Paladins have relevant historical context
+
+**Acceptance Criteria:**
+- [ ] `RagRetrievalService` in `src/application/use_cases/sanctum/`
+- [ ] Retrieves top-k relevant memories before LLM call
+- [ ] Configurable retrieval trigger (always, keyword-based, semantic threshold)
+- [ ] Formats retrieved memories for prompt injection
+- [ ] Deduplication of similar memories
+- [ ] Respects token budget for context
+
+**Definition of Done:**
+```rust
+pub struct RagRetrievalService {
+    sanctum: Arc<dyn SanctumPort>,
+    embedding: Arc<dyn EmbeddingPort>,
+    config: RagConfig,
+}
+
+pub struct RagConfig {
+    pub top_k: usize,
+    pub min_similarity: f32,
+    pub max_tokens: usize,
+    pub retrieval_trigger: RetrievalTrigger,
+}
+
+impl RagRetrievalService {
+    pub async fn retrieve_context(
+        &self,
+        paladin_id: &str,
+        query: &str,
+    ) -> Result<Vec<Memory>, SanctumError>;
+    
+    pub fn format_for_prompt(&self, memories: &[Memory]) -> String;
+}
+```
+
+---
+
+#### US-12.4: Memory Extraction Service
+**As a** developer  
+**I want** automatic extraction of memorable information from conversations  
+**So that** important insights are preserved
+
+**Acceptance Criteria:**
+- [ ] `MemoryExtractionService` in `src/application/use_cases/sanctum/`
+- [ ] Uses LLM to identify memorable content
+- [ ] Extracts: facts, preferences, events, instructions
+- [ ] Assigns importance scores
+- [ ] Categorizes by memory type
+- [ ] Deduplicates against existing memories
+
+**Definition of Done:**
+```rust
+pub struct MemoryExtractionService {
+    llm: Arc<dyn LlmPort>,
+    embedding: Arc<dyn EmbeddingPort>,
+    sanctum: Arc<dyn SanctumPort>,
+}
+
+impl MemoryExtractionService {
+    pub async fn extract_memories(
+        &self,
+        paladin_id: &str,
+        conversation: &[GarrisonEntry],
+    ) -> Result<Vec<Memory>, SanctumError>;
+    
+    pub async fn store_memories(
+        &self,
+        memories: Vec<Memory>,
+    ) -> Result<(), SanctumError>;
+}
+```
+
+---
+
+#### US-12.5: PaladinExecutionService RAG Integration
+**As a** developer  
+**I want** RAG integrated into the execution flow  
+**So that** memory retrieval is automatic
+
+**Acceptance Criteria:**
+- [ ] `PaladinExecutionService` queries Sanctum before LLM call
+- [ ] Retrieved context injected into system prompt or user message
+- [ ] New memories extracted after successful execution
+- [ ] Configurable via `PaladinConfig`
+- [ ] Metrics for retrieval latency and hit rate
+
+**Definition of Done:**
+```rust
+// Updated execution flow
+impl PaladinExecutionService {
+    pub async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult, PaladinError> {
+        // 1. Retrieve relevant memories (if sanctum configured)
+        let memories = self.retrieve_memories(paladin, input).await?;
+        
+        // 2. Build prompt with memory context
+        let enriched_prompt = self.build_prompt_with_context(paladin, input, &memories);
+        
+        // 3. Execute LLM call
+        let result = self.execute_llm(paladin, &enriched_prompt).await?;
+        
+        // 4. Extract and store new memories (if configured)
+        self.extract_and_store_memories(paladin, input, &result).await?;
+        
+        Ok(result)
+    }
+}
+```
+
+---
+
+### Epic 12 Completion Criteria
+- [ ] All 5 user stories completed and tested
+- [ ] Qdrant adapter with integration tests
+- [ ] RAG retrieval integrated into execution flow
+- [ ] Memory extraction service functional
+- [ ] Configuration via YAML supported
+- [ ] Example: `examples/paladin_with_rag.rs`
+- [ ] Example: `examples/cli_configs/paladin_rag.yaml`
+
+---
+
+## Epic 13: Sentinel Vision System
+
+**Theme:** Multi-Modal Input Processing  
+**Duration:** 2 weeks  
+**Priority:** Critical  
+**Dependencies:** Epic 6 (Provider Expansion)  
+
+### Description
+Add vision and document processing capabilities to Paladins, enabling image analysis, PDF processing, and multi-modal inputs through supported LLM providers.
+
+### User Stories
+
+#### US-13.1: Vision Request Model
+**As a** framework developer  
+**I want** data structures for multi-modal requests  
+**So that** the system can handle images and documents
+
+**Acceptance Criteria:**
+- [ ] `VisionContent` enum in `src/core/platform/container/vision.rs`
+- [ ] Supports: ImageUrl, ImageBase64, ImageFile
+- [ ] Supports multiple images in single request
+- [ ] Image metadata: format, size, dimensions (if known)
+- [ ] Validation for supported formats (PNG, JPEG, GIF, WebP)
+
+**Definition of Done:**
+```rust
+pub enum VisionContent {
+    ImageUrl {
+        url: String,
+        detail: ImageDetail,
+    },
+    ImageBase64 {
+        data: String,
+        media_type: String,
+        detail: ImageDetail,
+    },
+    ImageFile {
+        path: PathBuf,
+        detail: ImageDetail,
+    },
+}
+
+pub enum ImageDetail {
+    Auto,
+    Low,
+    High,
+}
+
+pub struct VisionRequest {
+    pub text: String,
+    pub images: Vec<VisionContent>,
+}
+```
+
+---
+
+#### US-13.2: OpenAI Vision Support
+**As a** developer  
+**I want** to send images to GPT-4 Vision  
+**So that** Paladins can analyze visual content
+
+**Acceptance Criteria:**
+- [ ] `OpenAILlmAdapter` supports vision requests
+- [ ] Handles `gpt-4-vision-preview` and `gpt-4o` models
+- [ ] Converts `VisionContent` to OpenAI message format
+- [ ] Supports image URLs and base64 encoding
+- [ ] Handles multiple images in single request
+- [ ] Respects token limits for image tokens
+- [ ] Integration test with mocked vision response
+
+**Definition of Done:**
+```rust
+impl OpenAILlmAdapter {
+    async fn generate_with_vision(
+        &self,
+        request: LlmRequest,
+        vision: VisionRequest,
+    ) -> Result<LlmResponse, LlmError>;
+}
+
+// LlmPort trait extension
+#[async_trait]
+pub trait VisionCapableLlm: LlmPort {
+    async fn generate_with_vision(
+        &self,
+        request: LlmRequest,
+        vision: VisionRequest,
+    ) -> Result<LlmResponse, LlmError>;
+    
+    fn supports_vision(&self) -> bool;
+}
+```
+
+---
+
+#### US-13.3: Anthropic Vision Support
+**As a** developer  
+**I want** to send images to Claude  
+**So that** I can use Anthropic's vision capabilities
+
+**Acceptance Criteria:**
+- [ ] `AnthropicLlmAdapter` supports vision requests
+- [ ] Handles Claude 3 models (Opus, Sonnet, Haiku)
+- [ ] Converts `VisionContent` to Anthropic message format
+- [ ] Supports base64 images (required by Anthropic)
+- [ ] Automatic URL-to-base64 conversion
+- [ ] Integration test with mocked vision response
+
+**Definition of Done:**
+```rust
+impl VisionCapableLlm for AnthropicLlmAdapter {
+    async fn generate_with_vision(
+        &self,
+        request: LlmRequest,
+        vision: VisionRequest,
+    ) -> Result<LlmResponse, LlmError> {
+        // Convert to Anthropic format with image content blocks
+    }
+    
+    fn supports_vision(&self) -> bool {
+        self.model.starts_with("claude-3")
+    }
+}
+```
+
+---
+
+#### US-13.4: Paladin Vision API
+**As a** developer  
+**I want** to run Paladins with image inputs  
+**So that** I can build vision-based agents
+
+**Acceptance Criteria:**
+- [ ] `Paladin::run_with_vision(task, images)` method
+- [ ] `PaladinBuilder::enable_vision(true)` configuration
+- [ ] Validation that LLM adapter supports vision
+- [ ] CLI support: `--image <path>` flag
+- [ ] YAML config: `images: [path1, path2]`
+
+**Definition of Done:**
+```rust
+impl Paladin {
+    pub async fn run_with_vision(
+        &self,
+        task: &str,
+        images: Vec<VisionContent>,
+    ) -> Result<PaladinResult, PaladinError>;
+}
+
+// CLI usage
+// paladin agent run --config agent.yaml --input "Describe this" --image photo.jpg
+
+// YAML config
+// task: "Analyze these charts"
+// images:
+//   - "./chart1.png"
+//   - "./chart2.png"
+```
+
+---
+
+#### US-13.5: PDF Text Extraction
+**As a** developer  
+**I want** to extract text from PDF documents  
+**So that** Paladins can process documents
+
+**Acceptance Criteria:**
+- [ ] `PdfExtractor` utility in `src/infrastructure/adapters/document/`
+- [ ] Uses `pdf-extract` or `lopdf` crate
+- [ ] Extracts text content preserving structure
+- [ ] Handles multi-page documents
+- [ ] Returns `Document` struct with pages and metadata
+- [ ] Error handling for encrypted/malformed PDFs
+
+**Definition of Done:**
+```rust
+pub struct PdfExtractor;
+
+impl PdfExtractor {
+    pub fn extract(path: &Path) -> Result<Document, DocumentError>;
+    pub fn extract_bytes(bytes: &[u8]) -> Result<Document, DocumentError>;
+}
+
+pub struct Document {
+    pub pages: Vec<Page>,
+    pub metadata: DocumentMetadata,
+    pub total_chars: usize,
+}
+
+pub struct Page {
+    pub number: usize,
+    pub content: String,
+}
+```
+
+---
+
+#### US-13.6: Document Ingestion Port
+**As a** developer  
+**I want** a standardized port for document processing  
+**So that** I can support multiple document types
+
+**Acceptance Criteria:**
+- [ ] `DocumentPort` trait in `src/application/ports/input/document_port.rs`
+- [ ] Supports: PDF, TXT, MD, DOCX (future)
+- [ ] Returns chunked content for large documents
+- [ ] Configurable chunk size and overlap
+- [ ] Metadata extraction (title, author, date)
+
+**Definition of Done:**
+```rust
+#[async_trait]
+pub trait DocumentPort: Send + Sync {
+    async fn ingest(&self, source: DocumentSource) -> Result<Document, DocumentError>;
+    async fn chunk(&self, document: &Document, config: ChunkConfig) -> Vec<DocumentChunk>;
+}
+
+pub enum DocumentSource {
+    File(PathBuf),
+    Bytes { data: Vec<u8>, format: DocumentFormat },
+    Url(String),
+}
+
+pub struct ChunkConfig {
+    pub chunk_size: usize,
+    pub chunk_overlap: usize,
+    pub separator: String,
+}
+```
+
+---
+
+### Epic 13 Completion Criteria
+- [ ] All 6 user stories completed and tested
+- [ ] OpenAI and Anthropic vision support
+- [ ] PDF extraction functional
+- [ ] Document ingestion port defined
+- [ ] CLI supports `--image` and `--document` flags
+- [ ] Documentation in `docs/SENTINEL.md`
+- [ ] Example: `examples/vision_analysis.rs`
+- [ ] Example: `examples/document_processing.rs`
+
+---
+
+## Epic 14: Autonomous Agent Features
+
+**Theme:** Agent Self-Direction and Planning  
+**Duration:** 2 weeks  
+**Priority:** Critical  
+**Dependencies:** Epic 1 (Paladin Domain)  
+
+### Description
+Implement advanced agent autonomy features including automatic planning mode, dynamic temperature adjustment, auto-generated prompts, and agent handoffs for dynamic task delegation.
+
+### User Stories
+
+#### US-14.1: Autonomous Planning Mode
+**As a** developer  
+**I want** Paladins to automatically plan and execute subtasks  
+**So that** complex tasks are handled without manual decomposition
+
+**Acceptance Criteria:**
+- [ ] `MaxLoops::Auto` enum variant supported
+- [ ] `PlanningService` decomposes tasks into subtasks
+- [ ] Subtasks executed sequentially with dependency tracking
+- [ ] Planning uses dedicated planning prompt
+- [ ] Final summary synthesizes all subtask results
+- [ ] Configurable max subtasks limit
+
+**Definition of Done:**
+```rust
+pub enum MaxLoops {
+    Fixed(u32),
+    Auto { max_subtasks: u32 },
+}
+
+pub struct PlanningService {
+    llm: Arc<dyn LlmPort>,
+}
+
+impl PlanningService {
+    pub async fn create_plan(&self, task: &str) -> Result<TaskPlan, PlanningError>;
+    pub async fn execute_plan(&self, plan: TaskPlan, paladin: &Paladin) -> Result<PlanResult, PlanningError>;
+}
+
+pub struct TaskPlan {
+    pub original_task: String,
+    pub subtasks: Vec<Subtask>,
+    pub dependencies: HashMap<usize, Vec<usize>>,
+}
+
+pub struct Subtask {
+    pub id: usize,
+    pub description: String,
+    pub expected_output: String,
+}
+```
+
+---
+
+#### US-14.2: Auto-Generate System Prompt
+**As a** developer  
+**I want** automatic system prompt generation  
+**So that** I can create agents without manual prompt engineering
+
+**Acceptance Criteria:**
+- [ ] `PaladinBuilder::auto_generate_prompt(true)` flag
+- [ ] Uses agent name and description to generate prompt
+- [ ] `PromptGenerationService` creates contextual prompts
+- [ ] Generated prompts include role, capabilities, constraints
+- [ ] Caching of generated prompts for reuse
+
+**Definition of Done:**
+```rust
+impl PaladinBuilder {
+    pub fn auto_generate_prompt(mut self, enabled: bool) -> Self;
+    pub fn agent_description(mut self, desc: impl Into<String>) -> Self;
+}
+
+pub struct PromptGenerationService {
+    llm: Arc<dyn LlmPort>,
+}
+
+impl PromptGenerationService {
+    pub async fn generate_prompt(
+        &self,
+        agent_name: &str,
+        agent_description: &str,
+        task_context: Option<&str>,
+    ) -> Result<String, PromptError>;
+}
+
+// Example generated prompt:
+// "You are {agent_name}, an AI assistant specialized in {description}.
+//  Your role is to {capabilities}. You should {constraints}."
+```
+
+---
+
+#### US-14.3: Dynamic Temperature Adjustment
+**As a** developer  
+**I want** automatic temperature adjustment based on task  
+**So that** responses are appropriately creative or precise
+
+**Acceptance Criteria:**
+- [ ] `PaladinBuilder::dynamic_temperature(true)` flag
+- [ ] `TemperatureService` analyzes task complexity
+- [ ] Lower temperature for: factual queries, code, math
+- [ ] Higher temperature for: creative writing, brainstorming
+- [ ] Temperature bounds: 0.1 - 1.0
+- [ ] Logging of temperature decisions
+
+**Definition of Done:**
+```rust
+impl PaladinBuilder {
+    pub fn dynamic_temperature(mut self, enabled: bool) -> Self;
+    pub fn temperature_bounds(mut self, min: f32, max: f32) -> Self;
+}
+
+pub struct TemperatureService;
+
+impl TemperatureService {
+    pub fn analyze_task(&self, task: &str) -> TaskType;
+    pub fn recommend_temperature(&self, task_type: TaskType) -> f32;
+}
+
+pub enum TaskType {
+    Factual,      // 0.1 - 0.3
+    Analytical,   // 0.3 - 0.5
+    Conversational, // 0.5 - 0.7
+    Creative,     // 0.7 - 1.0
+}
+```
+
+---
+
+#### US-14.4: Agent Handoff Infrastructure
+**As a** developer  
+**I want** to configure agents that can delegate to specialists  
+**So that** complex tasks route to appropriate experts
+
+**Acceptance Criteria:**
+- [ ] `PaladinBuilder::with_handoffs(agents)` method
+- [ ] `HandoffService` routes tasks to specialists
+- [ ] Handoff decision based on task analysis
+- [ ] Handoff includes context transfer
+- [ ] Maximum handoff depth to prevent loops
+- [ ] Handoff history tracked in result
+
+**Definition of Done:**
+```rust
+impl PaladinBuilder {
+    pub fn with_handoffs(mut self, agents: Vec<Arc<Paladin>>) -> Self;
+    pub fn handoff_strategy(mut self, strategy: HandoffStrategy) -> Self;
+}
+
+pub enum HandoffStrategy {
+    Automatic,  // LLM decides when to handoff
+    Explicit,   // Only handoff when tool called
+    Threshold { confidence: f32 }, // Handoff when confidence low
+}
+
+pub struct HandoffService {
+    llm: Arc<dyn LlmPort>,
+}
+
+impl HandoffService {
+    pub async fn should_handoff(
+        &self,
+        task: &str,
+        current_agent: &Paladin,
+        available_agents: &[Arc<Paladin>],
+    ) -> Option<HandoffDecision>;
+    
+    pub async fn execute_handoff(
+        &self,
+        decision: HandoffDecision,
+        context: HandoffContext,
+    ) -> Result<PaladinResult, HandoffError>;
+}
+
+pub struct HandoffDecision {
+    pub target_agent: Arc<Paladin>,
+    pub reason: String,
+    pub context_to_transfer: String,
+}
+```
+
+---
+
+#### US-14.5: Handoff Tool for Agents
+**As a** developer  
+**I want** agents to use a handoff tool  
+**So that** handoffs can happen during execution
+
+**Acceptance Criteria:**
+- [ ] `handoff_to_agent` tool registered automatically
+- [ ] Tool schema includes target agent and message
+- [ ] Tool execution triggers handoff service
+- [ ] Result returned to original agent for synthesis
+- [ ] Handoff chain visible in execution trace
+
+**Definition of Done:**
+```rust
+// Automatically registered tool when handoffs configured
+pub struct HandoffTool {
+    available_agents: Vec<AgentInfo>,
+    handoff_service: Arc<HandoffService>,
+}
+
+impl HandoffTool {
+    pub fn schema(&self) -> Armament {
+        Armament {
+            name: "handoff_to_agent".to_string(),
+            description: "Transfer this task to a specialized agent".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "agent_name": {
+                        "type": "string",
+                        "enum": self.available_agents.iter().map(|a| &a.name).collect::<Vec<_>>()
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Context and task for the target agent"
+                    }
+                },
+                "required": ["agent_name", "message"]
+            }),
+            required_params: vec!["agent_name".to_string(), "message".to_string()],
+        }
+    }
+}
+```
+
+---
+
+### Epic 14 Completion Criteria
+- [ ] All 5 user stories completed and tested
+- [ ] `max_loops="auto"` planning mode functional
+- [ ] Auto-generate prompt working
+- [ ] Dynamic temperature adjustment working
+- [ ] Handoff infrastructure complete
+- [ ] Documentation in `docs/AUTONOMOUS.md`
+- [ ] Example: `examples/autonomous_planning.rs`
+- [ ] Example: `examples/agent_handoffs.rs`
+
+---
+
+## Epic 15: Conclave - MixtureOfAgents Pattern
+
+**Theme:** Expert Synthesis Orchestration  
+**Duration:** 2 weeks  
+**Priority:** High  
+**Dependencies:** Epic 4 (Battalion Orchestration)  
+
+### Description
+Implement the MixtureOfAgents (MoA) orchestration pattern where multiple expert agents process a task in parallel, and an aggregator agent synthesizes their outputs into a final, high-quality response.
+
+### User Stories
+
+#### US-15.1: Conclave Domain Model
+**As a** framework developer  
+**I want** domain models for MoA orchestration  
+**So that** the pattern has clear structure
+
+**Acceptance Criteria:**
+- [ ] `Conclave` struct in `src/core/platform/container/battalion/conclave.rs`
+- [ ] Contains: expert agents, aggregator agent, configuration
+- [ ] `ConclaveConfig` with synthesis settings
+- [ ] `ConclaveResult` with individual and aggregated outputs
+- [ ] Validation: at least 2 experts, 1 aggregator
+
+**Definition of Done:**
+```rust
+pub struct Conclave {
+    pub name: String,
+    pub experts: Vec<Paladin>,
+    pub aggregator: Paladin,
+    pub config: ConclaveConfig,
+}
+
+pub struct ConclaveConfig {
+    pub name: String,
+    pub timeout_seconds: u64,
+    pub synthesis_prompt: Option<String>,
+    pub include_expert_names: bool,
+    pub max_expert_output_tokens: Option<usize>,
+}
+
+pub struct ConclaveResult {
+    pub expert_outputs: HashMap<String, PaladinResult>,
+    pub aggregated_output: PaladinResult,
+    pub execution_time_ms: u64,
+    pub status: ConclaveStatus,
+}
+```
+
+---
+
+#### US-15.2: Conclave Execution Service
+**As a** developer  
+**I want** to execute MoA workflows  
+**So that** I get synthesized expert outputs
+
+**Acceptance Criteria:**
+- [ ] `ConclaveExecutionService` in `src/application/use_cases/battalion/`
+- [ ] Executes all experts in parallel
+- [ ] Collects outputs with error handling
+- [ ] Formats outputs for aggregator
+- [ ] Executes aggregator with expert context
+- [ ] Returns combined result
+
+**Definition of Done:**
+```rust
+pub struct ConclaveExecutionService {
+    paladin_port: Arc<dyn PaladinPort>,
+}
+
+impl ConclaveExecutionService {
+    pub async fn execute(
+        &self,
+        conclave: &Conclave,
+        input: &str,
+    ) -> Result<ConclaveResult, BattalionError>;
+    
+    fn format_expert_outputs_for_aggregator(
+        &self,
+        outputs: &HashMap<String, PaladinResult>,
+        config: &ConclaveConfig,
+    ) -> String;
+}
+
+// Aggregator receives prompt like:
+// "You are synthesizing outputs from multiple experts.
+//  Expert 'Analyst': {output1}
+//  Expert 'Researcher': {output2}
+//  Expert 'Writer': {output3}
+//  
+//  Synthesize these into a comprehensive response."
+```
+
+---
+
+#### US-15.3: Commander Conclave Strategy
+**As a** developer  
+**I want** Commander to support Conclave strategy  
+**So that** I can use unified orchestration API
+
+**Acceptance Criteria:**
+- [ ] `BattalionStrategy::Conclave` variant added
+- [ ] Commander builds Conclave from configuration
+- [ ] Designates last agent as aggregator by default
+- [ ] Configurable aggregator selection
+- [ ] Auto-strategy considers Conclave for expert scenarios
+
+**Definition of Done:**
+```rust
+pub enum BattalionStrategy {
+    Formation,
+    Phalanx,
+    Campaign,
+    ChainOfCommand,
+    Conclave,  // NEW
+    Auto,
+}
+
+impl CommanderBuilder {
+    pub fn aggregator(mut self, paladin: Paladin) -> Self;
+}
+
+// Auto-strategy heuristics for Conclave:
+// - Multiple agents with distinct descriptions
+// - Task requires synthesis/comparison
+// - Keywords: "compare", "synthesize", "combine perspectives"
+```
+
+---
+
+#### US-15.4: Conclave CLI Support
+**As a** developer  
+**I want** to run Conclave from CLI  
+**So that** I can use MoA without code
+
+**Acceptance Criteria:**
+- [ ] `paladin battalion run --type conclave --config conclave.yaml`
+- [ ] YAML schema for Conclave configuration
+- [ ] Aggregator specified in YAML
+- [ ] Output includes expert outputs and synthesis
+- [ ] Template generation: `paladin battalion new --type conclave`
+
+**Definition of Done:**
+```yaml
+# conclave.yaml
+type: conclave
+name: "ExpertPanel"
+
+aggregator:
+  inline:
+    name: "Synthesizer"
+    system_prompt: "Combine expert opinions into comprehensive analysis"
+    model: "gpt-4"
+
+experts:
+  - inline:
+      name: "TechnicalExpert"
+      system_prompt: "Provide technical analysis"
+      model: "gpt-4"
+  
+  - inline:
+      name: "BusinessExpert"  
+      system_prompt: "Provide business perspective"
+      model: "gpt-4"
+  
+  - inline:
+      name: "RiskExpert"
+      system_prompt: "Identify risks and concerns"
+      model: "gpt-4"
+
+config:
+  timeout_seconds: 300
+  include_expert_names: true
+```
+
+---
+
+### Epic 15 Completion Criteria
+- [ ] All 4 user stories completed and tested
+- [ ] Conclave domain model and execution service
+- [ ] Commander integration with Conclave strategy
+- [ ] CLI and YAML support
+- [ ] Documentation in `docs/guides/conclave-pattern.md`
+- [ ] Example: `examples/conclave_expert_panel.rs`
+- [ ] Example: `examples/cli_configs/conclave.yaml`
+
+---
+
+## Epic 16: Advanced Battalion Patterns
+
+**Theme:** Council and Tree-based routing
+**Duration:** 2 weeks  
+**Priority:** Medium  
+**Dependencies:** Epic 4, Epic 15  
+
+### Description
+Implement additional orchestration patterns including Council for conversational collaboration and tree-based agent routing.
+
+### User Stories
+
+#### US-16.1: Council Domain Model (GroupChat)
+**As a** framework developer  
+**I want** domain models for conversational multi-agent  
+**So that** agents can discuss and reach consensus
+
+**Acceptance Criteria:**
+- [ ] `Council` struct in `src/core/platform/container/battalion/council.rs`
+- [ ] Contains: participant agents, moderator (optional), configuration
+- [ ] `CouncilConfig` with turn settings, max rounds
+- [ ] `CouncilMessage` for conversation tracking
+- [ ] Turn-taking strategies: RoundRobin, Random, Moderator
+
+**Definition of Done:**
+```rust
+pub struct Council {
+    pub name: String,
+    pub participants: Vec<Paladin>,
+    pub moderator: Option<Paladin>,
+    pub config: CouncilConfig,
+}
+
+pub struct CouncilConfig {
+    pub max_rounds: u32,
+    pub turn_strategy: TurnStrategy,
+    pub termination_condition: TerminationCondition,
+    pub include_history: bool,
+}
+
+pub enum TurnStrategy {
+    RoundRobin,
+    Random,
+    ModeratorDirected,
+    VoluntaryWithTimeout { timeout_ms: u64 },
+}
+
+pub enum TerminationCondition {
+    MaxRounds,
+    Consensus,
+    ModeratorDecision,
+    Keyword(String),
+}
+
+pub struct CouncilMessage {
+    pub speaker: String,
+    pub content: String,
+    pub round: u32,
+    pub timestamp: DateTime<Utc>,
+}
+```
+
+---
+
+#### US-16.2: Council Execution Service
+**As a** developer  
+**I want** to execute group discussions  
+**So that** agents can collaboratively solve problems
+
+**Acceptance Criteria:**
+- [ ] `CouncilExecutionService` manages conversation flow
+- [ ] Tracks conversation history
+- [ ] Implements turn-taking logic
+- [ ] Detects termination conditions
+- [ ] Returns full transcript and conclusion
+
+**Definition of Done:**
+```rust
+pub struct CouncilExecutionService {
+    paladin_port: Arc<dyn PaladinPort>,
+}
+
+impl CouncilExecutionService {
+    pub async fn convene(
+        &self,
+        council: &Council,
+        topic: &str,
+    ) -> Result<CouncilResult, BattalionError>;
+}
+
+pub struct CouncilResult {
+    pub transcript: Vec<CouncilMessage>,
+    pub conclusion: Option<String>,
+    pub rounds_completed: u32,
+    pub termination_reason: TerminationCondition,
+}
+```
+
+---
+
+#### US-16.3: Grove Domain Model
+**As a** framework developer  
+**I want** domain models for tree-based agent routing  
+**So that** tasks route to best-fit experts
+
+**Acceptance Criteria:**
+- [ ] `Grove` struct in `src/core/platform/container/battalion/grove.rs`
+- [ ] `Tree` struct containing related agents
+- [ ] Agents have expertise keywords/embeddings
+- [ ] `GroveConfig` with routing settings
+- [ ] Routing based on semantic similarity to task
+
+**Definition of Done:**
+```rust
+pub struct Grove {
+    pub name: String,
+    pub trees: Vec<Tree>,
+    pub config: GroveConfig,
+}
+
+pub struct Tree {
+    pub name: String,
+    pub agents: Vec<TreeAgent>,
+}
+
+pub struct TreeAgent {
+    pub paladin: Paladin,
+    pub expertise_keywords: Vec<String>,
+    pub expertise_embedding: Option<Vec<f32>>,
+}
+
+pub struct GroveConfig {
+    pub routing_strategy: RoutingStrategy,
+    pub fallback_tree: Option<String>,
+    pub similarity_threshold: f32,
+}
+
+pub enum RoutingStrategy {
+    KeywordMatch,
+    SemanticSimilarity,
+    LlmRouting,
+}
+```
+
+---
+
+#### US-16.4: Grove Execution Service
+**As a** developer  
+**I want** automatic routing to best-fit agents  
+**So that** tasks are handled by experts
+
+**Acceptance Criteria:**
+- [ ] `GroveExecutionService` routes tasks
+- [ ] Calculates task-to-agent similarity
+- [ ] Selects best tree, then best agent
+- [ ] Falls back if no good match
+- [ ] Returns routing decision and result
+
+**Definition of Done:**
+```rust
+pub struct GroveExecutionService {
+    paladin_port: Arc<dyn PaladinPort>,
+    embedding_port: Option<Arc<dyn EmbeddingPort>>,
+}
+
+impl GroveExecutionService {
+    pub async fn execute(
+        &self,
+        grove: &Grove,
+        task: &str,
+    ) -> Result<GroveResult, BattalionError>;
+    
+    async fn route_task(
+        &self,
+        grove: &Grove,
+        task: &str,
+    ) -> Result<RoutingDecision, BattalionError>;
+}
+
+pub struct RoutingDecision {
+    pub selected_tree: String,
+    pub selected_agent: String,
+    pub confidence: f32,
+    pub reasoning: String,
+}
+```
+
+---
+
+#### US-16.5: Commander Integration
+**As a** developer  
+**I want** Commander to support Council and Grove  
+**So that** I have unified orchestration
+
+**Acceptance Criteria:**
+- [ ] `BattalionStrategy::Council` variant
+- [ ] `BattalionStrategy::Grove` variant
+- [ ] Auto-strategy considers these patterns
+- [ ] CLI support for both types
+
+**Definition of Done:**
+```rust
+pub enum BattalionStrategy {
+    Formation,
+    Phalanx,
+    Campaign,
+    ChainOfCommand,
+    Conclave,
+    Council,  // NEW
+    Grove,    // NEW
+    Auto,
+}
+```
+
+---
+
+### Epic 16 Completion Criteria
+- [ ] All 5 user stories completed and tested
+- [ ] Council (GroupChat) fully functional
+- [ ] fully functional
+- [ ] Commander integration complete
+- [ ] Documentation for both patterns
+- [ ] Example: `examples/council_discussion.rs`
+- [ ] Example: `examples/grove_routing.rs`
+
+---
+
+## Epic 17: Flow DSL & Agent Rearrangement
+
+**Theme:** Flexible Workflow Definition  
+**Duration:** 2 weeks  
+**Priority:** Medium  
+**Dependencies:** Epic 4, Epic 15, Epic 16  
+
+### Description
+Implement the AgentRearrange pattern with a simple string-based DSL for defining complex agent relationships, enabling flexible workflow definition without verbose configuration.
+
+### User Stories
+
+#### US-17.1: Flow DSL Parser
+**As a** developer  
+**I want** to define workflows with simple string syntax  
+**So that** I can quickly express agent relationships
+
+**Acceptance Criteria:**
+- [ ] Parser for flow expressions like `"a -> b, c"` and `"a -> b -> c"`
+- [ ] Supports: sequential (`->`), parallel (`,`), groups (`()`)
+- [ ] `FlowExpression` AST representation
+- [ ] Validation of agent names against registered agents
+- [ ] Clear error messages for invalid syntax
+
+**Definition of Done:**
+```rust
+// Supported syntax:
+// "a -> b"           Sequential: a then b
+// "a -> b, c"        Fan-out: a then b and c in parallel
+// "a, b -> c"        Fan-in: a and b in parallel, then c
+// "a -> (b -> c), d" Nested: a then (b->c) and d in parallel
+// "a -> b -> c"      Chain: a then b then c
+
+pub struct FlowParser;
+
+impl FlowParser {
+    pub fn parse(expression: &str) -> Result<FlowExpression, FlowParseError>;
+}
+
+pub enum FlowExpression {
+    Agent(String),
+    Sequential(Vec<FlowExpression>),
+    Parallel(Vec<FlowExpression>),
+}
+```
+
+---
+
+#### US-17.2: Maneuver Domain Model (AgentRearrange)
+**As a** framework developer  
+**I want** domain models for flow-based orchestration  
+**So that** the pattern has clear structure
+
+**Acceptance Criteria:**
+- [ ] `Maneuver` struct in `src/core/platform/container/battalion/maneuver.rs`
+- [ ] Contains: agents map, flow expression, configuration
+- [ ] Validates flow references valid agents
+- [ ] `ManeuverConfig` with execution settings
+
+**Definition of Done:**
+```rust
+pub struct Maneuver {
+    pub name: String,
+    pub agents: HashMap<String, Paladin>,
+    pub flow: FlowExpression,
+    pub config: ManeuverConfig,
+}
+
+pub struct ManeuverConfig {
+    pub timeout_seconds: u64,
+    pub error_strategy: ErrorStrategy,
+    pub pass_output_as_input: bool,
+}
+
+impl Maneuver {
+    pub fn new(
+        name: impl Into<String>,
+        agents: Vec<Paladin>,
+        flow: &str,
+    ) -> Result<Self, ManeuverError>;
+}
+```
+
+---
+
+#### US-17.3: Maneuver Execution Service
+**As a** developer  
+**I want** to execute flow-based workflows  
+**So that** complex patterns run correctly
+
+**Acceptance Criteria:**
+- [ ] `ManeuverExecutionService` interprets flow expressions
+- [ ] Executes sequential steps in order
+- [ ] Executes parallel steps concurrently
+- [ ] Handles nested expressions recursively
+- [ ] Passes outputs between steps as configured
+
+**Definition of Done:**
+```rust
+pub struct ManeuverExecutionService {
+    paladin_port: Arc<dyn PaladinPort>,
+}
+
+impl ManeuverExecutionService {
+    pub async fn execute(
+        &self,
+        maneuver: &Maneuver,
+        input: &str,
+    ) -> Result<ManeuverResult, BattalionError>;
+    
+    async fn execute_expression(
+        &self,
+        expr: &FlowExpression,
+        agents: &HashMap<String, Paladin>,
+        input: &str,
+    ) -> Result<StepResult, BattalionError>;
+}
+
+pub struct ManeuverResult {
+    pub final_output: String,
+    pub step_outputs: HashMap<String, PaladinResult>,
+    pub execution_order: Vec<String>,
+}
+```
+
+---
+
+#### US-17.4: Commander Maneuver Strategy
+**As a** developer  
+**I want** Commander to support flow-based workflows  
+**So that** I can use the unified API
+
+**Acceptance Criteria:**
+- [ ] `BattalionStrategy::Maneuver` variant
+- [ ] CommanderBuilder accepts flow expression
+- [ ] Auto-strategy does NOT select Maneuver (explicit only)
+- [ ] CLI support with flow syntax
+
+**Definition of Done:**
+```rust
+impl CommanderBuilder {
+    pub fn flow(mut self, expression: &str) -> Self;
+}
+
+// CLI usage:
+// paladin battalion run --type maneuver --flow "researcher -> writer, editor -> reviewer"
+
+// YAML config:
+// type: maneuver
+// flow: "researcher -> writer, editor -> reviewer"
+// agents:
+//   - name: researcher
+//     ...
+```
+
+---
+
+#### US-17.5: Flow Visualization
+**As a** developer  
+**I want** to visualize flow expressions  
+**So that** I can understand and debug workflows
+
+**Acceptance Criteria:**
+- [ ] `FlowVisualizer` generates ASCII/Mermaid diagrams
+- [ ] CLI command: `paladin battalion visualize --flow "..."`
+- [ ] Shows execution order and parallelism
+- [ ] Useful for documentation
+
+**Definition of Done:**
+```rust
+pub struct FlowVisualizer;
+
+impl FlowVisualizer {
+    pub fn to_ascii(expr: &FlowExpression) -> String;
+    pub fn to_mermaid(expr: &FlowExpression) -> String;
+}
+
+// Example ASCII output for "a -> b, c -> d":
+// ┌───┐
+// │ a │
+// └─┬─┘
+//   │
+// ┌─┴─┬───┐
+// │   │   │
+// ▼   ▼   │
+// ┌───┐ ┌───┐
+// │ b │ │ c │
+// └─┬─┘ └─┬─┘
+//   │     │
+//   └──┬──┘
+//      │
+//      ▼
+//    ┌───┐
+//    │ d │
+//    └───┘
+```
+
+---
+
+### Epic 17 Completion Criteria
+- [ ] All 5 user stories completed and tested
+- [ ] Flow DSL parser complete with tests
+- [ ] Maneuver execution service functional
+- [ ] Commander integration
+- [ ] Visualization working
+- [ ] Documentation in `docs/guides/flow-dsl.md`
+- [ ] Example: `examples/maneuver_workflow.rs`
+
+---
+
+## Epic 18: CLI Enhancement & Polish
+
+**Theme:** Developer Experience  
+**Duration:** 2 weeks  
+**Priority:** Medium  
+**Dependencies:** Epics 11-17  
+
+### Description
+Enhance the Armory CLI with onboarding wizards, setup verification, feature discovery, and advanced commands for common multi-agent patterns.
+
+### User Stories
+
+#### US-18.1: Onboarding Wizard
+**As a** new developer  
+**I want** an interactive setup experience  
+**So that** I can get started quickly
+
+**Acceptance Criteria:**
+- [ ] `paladin onboarding` command
+- [ ] Guides through API key configuration
+- [ ] Creates initial `.env` file
+- [ ] Offers to create sample config files
+- [ ] Validates provider connectivity
+- [ ] Colorful, friendly CLI output
+
+**Definition of Done:**
+```bash
+$ paladin onboarding
+
+🎖️  Welcome to Paladin!
+
+Let's set up your environment...
+
+? Which LLM provider will you use primarily?
+  ❯ OpenAI
+    Anthropic
+    DeepSeek
+
+? Enter your OpenAI API key: sk-...
+
+✓ API key validated successfully!
+
+? Create sample configuration files?
+  ❯ Yes, create examples
+    No, I'll create my own
+
+✓ Created:
+  - examples/basic_paladin.yaml
+  - examples/formation.yaml
+  - .env
+
+🚀 You're all set! Try: paladin agent run --config examples/basic_paladin.yaml
+```
+
+---
+
+#### US-18.2: Setup Check Command
+**As a** developer  
+**I want** to verify my environment  
+**So that** I can troubleshoot issues
+
+**Acceptance Criteria:**
+- [ ] `paladin setup-check` command
+- [ ] Validates API keys for configured providers
+- [ ] Checks optional dependencies (Redis, etc.)
+- [ ] Reports versions of key components
+- [ ] `--verbose` for detailed output
+- [ ] Exit codes for CI/CD usage
+
+**Definition of Done:**
+```bash
+$ paladin setup-check
+
+🔍 Checking Paladin environment...
+
+Core Components:
+  ✓ Paladin CLI v0.1.0
+  ✓ Rust 1.75.0
+
+LLM Providers:
+  ✓ OpenAI: API key valid (gpt-4 accessible)
+  ✓ Anthropic: API key valid (claude-3 accessible)
+  ✗ DeepSeek: API key not configured
+
+Optional Services:
+  ⚠ Redis: Not running (Citadel caching unavailable)
+  ✓ Qdrant: Running at localhost:6333
+
+Summary: 4/5 checks passed
+```
+
+---
+
+#### US-18.3: Features Discovery Command
+**As a** developer  
+**I want** to see all available features  
+**So that** I can discover capabilities
+
+**Acceptance Criteria:**
+- [ ] `paladin features` command
+- [ ] Lists all commands with descriptions
+- [ ] Groups by category
+- [ ] Shows feature flags and optional features
+- [ ] Links to documentation
+
+**Definition of Done:**
+```bash
+$ paladin features
+
+🎖️  Paladin Features
+
+Agent Commands:
+  paladin agent new      Create agent configuration template
+  paladin agent run      Execute a single agent
+  paladin agent validate Validate agent configuration
+
+Battalion Commands:
+  paladin battalion new       Create battalion template
+  paladin battalion run       Execute multi-agent workflow
+  paladin battalion visualize Visualize workflow structure
+
+Orchestration Patterns:
+  ✓ Formation      Sequential execution
+  ✓ Phalanx        Parallel execution
+  ✓ Campaign       DAG/Graph execution
+  ✓ ChainOfCommand Hierarchical delegation
+  ✓ Conclave       Expert synthesis (MoA)
+  ✓ Council        Group discussion
+  ✓ Grove          Tree-based routing
+  ✓ Maneuver       Flow DSL
+
+Memory Systems:
+  ✓ Garrison (Short-term) In-memory, SQLite
+  ✓ Sanctum (Long-term)   Qdrant, In-memory
+
+📚 Documentation: https://docs.paladin.dev
+```
+
+---
+
+#### US-18.4: AutoBattalion Command
+**As a** developer  
+**I want** automatic battalion generation  
+**So that** I can quickly prototype workflows
+
+**Acceptance Criteria:**
+- [ ] `paladin autobattalion --task "..."` command
+- [ ] Uses LLM to analyze task and suggest 
+- [ ] Generates appropriate configuration
+- [ ] Optionally executes immediately
+- [ ] Saves config for future use
+
+**Definition of Done:**
+```bash
+$ paladin muster --task "Research and write a report on AI trends"
+
+🤖 Analyzing task...
+
+Recommended Pattern: Formation (Sequential)
+Suggested Agents:
+  1. Researcher - Gather information on AI trends
+  2. Analyst - Analyze and categorize findings
+  3. Writer - Compose final report
+
+? Execute this swarm now? [Y/n]
+
+Generated config saved to: muster_20260129.yaml
+```
+
+---
+
+#### US-18.5: Council Command
+**As a** developer  
+**I want** quick access to council discussions  
+**So that** I can run collaborative sessions
+
+**Acceptance Criteria:**
+- [ ] `paladin council --topic "..." --participants 3`
+- [ ] Quick setup for group discussions
+- [ ] Configurable number of participants
+- [ ] Default participant roles if not specified
+- [ ] Interactive output of conversation
+
+**Definition of Done:**
+```bash
+$ paladin council \
+    --topic "Should we use microservices or monolith?" \
+    --participants 3 \
+    --max-rounds 5
+
+🏛️  Council Session: Architecture Decision
+
+Participants:
+  - Advocate (Pro-Microservices)
+  - Critic (Pro-Monolith)
+  - Moderator
+
+Round 1:
+  Advocate: "Microservices offer better scalability..."
+  Critic: "However, the operational complexity..."
+  Moderator: "Both valid points. Let's explore..."
+
+[... conversation continues ...]
+
+Conclusion: The council recommends starting with a modular monolith...
+```
+
+---
+
+#### US-18.6: Rich CLI Output
+**As a** developer  
+**I want** beautiful terminal output  
+**So that** the CLI is pleasant to use
+
+**Acceptance Criteria:**
+- [ ] Progress indicators for long operations
+- [ ] Colored output (respects NO_COLOR)
+- [ ] Spinners during API calls
+- [ ] Tables for structured data
+- [ ] Box drawing for emphasis
+
+**Definition of Done:**
+```rust
+// Using indicatif for progress
+// Using console/colored for colors
+// Using comfy-table for tables
+
+// Example execution output:
+// ⠋ Executing Paladin: Researcher...
+// ✓ Researcher completed (1.2s, 450 tokens)
+// ⠋ Executing Paladin: Writer...
+// ✓ Writer completed (2.1s, 890 tokens)
+//
+// ┌──────────────────────────────────────┐
+// │ Battalion Execution Summary          │
+// ├──────────────────────────────────────┤
+// │ Total Time: 3.3s                     │
+// │ Total Tokens: 1,340                  │
+// │ Status: Success                      │
+// └──────────────────────────────────────┘
+```
+
+---
+
+### Epic 18 Completion Criteria
+- [ ] All 6 user stories completed and tested
+- [ ] Onboarding wizard functional
+- [ ] Setup check comprehensive
+- [ ] Features discovery complete
+- [ ] Muster generates valid configs
+- [ ] Council command working
+- [ ] Rich CLI output throughout
+- [ ] Updated CLI documentation
+
+---
+
+## Summary: Complete Epic List
+
+| Epic | Name | Duration | Priority | Status |
+|------|------|----------|----------|--------|
+| 1-10 | (Existing Epics) | - | - | Complete |
+| **11** | **Sanctum Memory Foundation** | 2 weeks | Critical | New |
+| **12** | **Sanctum RAG Integration** | 2 weeks | Critical | New |
+| **13** | **Sentinel Vision System** | 2 weeks | Critical | New |
+| **14** | **Autonomous Agent Features** | 2 weeks | Critical | New |
+| **15** | **Conclave (MixtureOfAgents)** | 2 weeks | High | New |
+| **16** | **Advanced Battalion Patterns** | 2 weeks | Medium | New |
+| **17** | **Flow DSL & Rearrangement** | 2 weeks | Medium | New |
+| **18** | **CLI Enhancement & Polish** | 2 weeks | Medium | New |
+
+---
+
+## Dependencies Graph
+
+```
+Epic 11 (Sanctum Foundation)
+    │
+    ▼
+Epic 12 (Sanctum RAG) ───────────────────┐
+    │                                     │
+    ▼                                     ▼
+Epic 13 (Sentinel Vision)    Epic 14 (Autonomous Features)
+    │                                     │
+    ▼                                     ▼
+Epic 15 (Conclave) ◄─────────────────────┘
+    │
+    ├──────────────────┐
+    ▼                  ▼
+Epic 16 (Council/Grove)  Epic 17 (Flow DSL)
+    │                          │
+    └──────────┬───────────────┘
+               ▼
+        Epic 18 (CLI Polish)
+```
+
+---
+
+## Risk Assessment
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| Qdrant integration complexity | Medium | Medium | Start with in-memory, add Qdrant incrementally |
+| Vision API rate limits | Low | Medium | Implement proper backoff, mock for tests |
+| Flow DSL parsing edge cases | Medium | Medium | Extensive test suite, simple syntax first |
+| Council termination detection | Low | High | Conservative defaults, explicit termination |
+| Performance with large memories | High | Medium | Pagination, caching, vector index optimization |
+
+---
+
+## Success Metrics
+
+### Feature Parity
+- [ ] All orchestration patterns implemented
+- [ ] RAG memory functional with at least one vector store
+- [ ] Vision support for OpenAI and Anthropic
+- [ ] Agent handoffs working
+- [ ] CLI feature complete
+
+### Quality Metrics
+- [ ] Unit test coverage ≥ 80%
+- [ ] Integration test coverage ≥ 70%
+- [ ] All examples compile and run
+- [ ] Documentation complete for all new features
+
+### Performance Metrics
+- [ ] Sanctum search < 100ms for 100k vectors
+- [ ] Council conversation < 5s per round
+- [ ] Grove routing decision < 500ms
+
+---
