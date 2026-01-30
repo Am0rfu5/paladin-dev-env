@@ -538,7 +538,7 @@ mod tests {
         // Verify all lines are valid JSON
         for line in &lines {
             let parsed: Value = serde_json::from_str(line)
-                .expect(&format!("Each line should be valid JSON: {}", line));
+                .unwrap_or_else(|_| panic!("Each line should be valid JSON: {}", line));
             assert!(parsed.is_object());
         }
 

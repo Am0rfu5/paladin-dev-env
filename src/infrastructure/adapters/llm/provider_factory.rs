@@ -278,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_factory_default() {
-        let factory = LlmProviderFactory::default();
+        let factory = LlmProviderFactory;
         assert!(std::mem::size_of_val(&factory) == 0);
     }
 

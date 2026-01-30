@@ -113,10 +113,12 @@ mod tests {
 
     #[test]
     fn test_calculate_retry_delay_linear() {
-        let mut policy = RetryPolicy::default();
-        policy.exponential_backoff = false;
-        policy.jitter = false;
-        policy.base_delay = Duration::from_millis(100);
+        let policy = RetryPolicy {
+            exponential_backoff: false,
+            jitter: false,
+            base_delay: Duration::from_millis(100),
+            ..Default::default()
+        };
 
         // Linear backoff should always return base_delay
         assert_eq!(
@@ -135,11 +137,13 @@ mod tests {
 
     #[test]
     fn test_calculate_retry_delay_exponential() {
-        let mut policy = RetryPolicy::default();
-        policy.exponential_backoff = true;
-        policy.jitter = false;
-        policy.base_delay = Duration::from_millis(100);
-        policy.max_delay = Duration::from_secs(10);
+        let policy = RetryPolicy {
+            exponential_backoff: true,
+            jitter: false,
+            base_delay: Duration::from_millis(100),
+            max_delay: Duration::from_secs(10),
+            ..Default::default()
+        };
 
         // Exponential: base * 2^attempt
         assert_eq!(

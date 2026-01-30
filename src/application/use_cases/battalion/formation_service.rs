@@ -409,14 +409,14 @@ mod tests {
             let current_count = *count;
             drop(count);
 
-            if let Some(fail_until) = self.fail_until_attempt {
-                if current_count <= fail_until {
-                    return Err(
-                        crate::application::use_cases::paladin::error::PaladinError::ExecutionError(
-                            format!("Mock failure on attempt {}", current_count),
-                        ),
-                    );
-                }
+            if let Some(fail_until) = self.fail_until_attempt
+                && current_count <= fail_until
+            {
+                return Err(
+                    crate::application::use_cases::paladin::error::PaladinError::ExecutionError(
+                        format!("Intentional failure for testing (attempt {})", current_count),
+                    ),
+                );
             }
 
             if self.should_fail {
@@ -480,7 +480,7 @@ mod tests {
         let mock_port = Arc::new(MockPaladinPort::new());
         let _service = FormationExecutionService::new(mock_port);
         // Service created successfully
-        assert!(true);
+        // Test passes if we reach here without panicking
     }
 
     #[tokio::test]
@@ -602,9 +602,11 @@ mod tests {
 
         let p1 = create_test_paladin("P1");
 
-        let mut retry_policy = RetryPolicy::default();
-        retry_policy.max_attempts = 3;
-        retry_policy.base_delay = Duration::from_millis(10);
+        let retry_policy = RetryPolicy {
+            max_attempts: 3,
+            base_delay: Duration::from_millis(10),
+            ..Default::default()
+        };
 
         let config = BattalionConfig::new("test_formation")
             .with_error_strategy(ErrorStrategy::RetryThenContinue)
