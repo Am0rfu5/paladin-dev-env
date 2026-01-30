@@ -93,6 +93,10 @@ path = "tests/integration/citadel_integration_test.rs"
 name = "openai_embedding_integration"
 path = "tests/integration/openai_embedding_tests.rs"
 
+[[test]]
+name = "in_memory_sanctum_integration"
+path = "tests/integration/in_memory_sanctum_tests.rs"
+
 [[bin]]
 name = "paladin"
 path = "src/main.rs"

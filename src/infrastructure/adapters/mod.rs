@@ -9,3 +9,4 @@ pub mod logs;
 pub mod notifications;
 pub mod output;
 pub mod queue;
+pub mod sanctum;

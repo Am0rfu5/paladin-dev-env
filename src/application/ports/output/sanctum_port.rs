@@ -128,10 +128,20 @@ impl SanctumQuery {
         self
     }
 
+    /// Add a filter to the query (short alias for with_filter)
+    pub fn filter(self, filter: SanctumFilter) -> Self {
+        self.with_filter(filter)
+    }
+
     /// Set minimum similarity score threshold
     pub fn with_min_score(mut self, min_score: f32) -> Self {
         self.min_score = Some(min_score);
         self
+    }
+
+    /// Set minimum similarity score threshold (short alias for with_min_score)
+    pub fn min_score(self, min_score: f32) -> Self {
+        self.with_min_score(min_score)
     }
 }
 
@@ -247,11 +257,19 @@ pub trait SanctumPort: Send + Sync {
     /// # Returns
     ///
     /// The number of entries in the database
+    /// Count total entries, optionally filtered by criteria
+    ///
+    /// # Arguments
+    /// * `filter` - Optional filter to apply
+    ///
+    /// # Returns
+    ///
+    /// Total count of entries matching the filter (or all entries if no filter)
     ///
     /// # Errors
     ///
     /// Returns `SanctumError::StorageError` if the operation fails
-    async fn count(&self) -> Result<u64, SanctumError>;
+    async fn count(&self, filter: Option<SanctumFilter>) -> Result<usize, SanctumError>;
 }
 
 #[cfg(test)]
