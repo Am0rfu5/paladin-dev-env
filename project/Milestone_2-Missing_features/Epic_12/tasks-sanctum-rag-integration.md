@@ -195,23 +195,23 @@ Example:
 
 ### Phase 3: Paladin Integration (Days 7-11)
 
-- [ ] 5.0 Extend PaladinBuilder with Sanctum integration (US-12.2)
-  - [ ] 5.1 Read existing `PaladinBuilder` from `src/application/use_cases/paladin/paladin_builder.rs`
-  - [ ] 5.2 Add optional fields to `PaladinBuilder`: sanctum (Option<Arc<dyn SanctumPort>>), embedding_port (Option<Arc<dyn EmbeddingPort>>), memory_extraction_strategy (MemoryExtractionStrategy)
-  - [ ] 5.3 Implement `with_sanctum(mut self, sanctum: Arc<dyn SanctumPort>) -> Self` method
-  - [ ] 5.4 Implement `with_embedding_port(mut self, embedding: Arc<dyn EmbeddingPort>) -> Self` method
-  - [ ] 5.5 Implement `memory_extraction_strategy(mut self, strategy: MemoryExtractionStrategy) -> Self` method
-  - [ ] 5.6 In `build()` method: validate that if sanctum is provided, embedding_port must also be provided
-  - [ ] 5.7 Read `PaladinConfig` from `src/core/platform/container/paladin_config.rs`
-  - [ ] 5.8 Add RAG-related fields to `PaladinConfig`: rag_config (Option<RagConfig>), extraction_strategy (Option<MemoryExtractionStrategy>)
-  - [ ] 5.9 Update `PaladinBuilder::build()` to store RAG configuration in `PaladinConfig`
-  - [ ] 5.10 Write unit tests for builder validation logic
-  - [ ] 5.11 Test case: building with sanctum but no embedding_port fails with clear error
-  - [ ] 5.12 Test case: building with both sanctum and embedding_port succeeds
-  - [ ] 5.13 Test case: default extraction strategy is OnCompletion
-  - [ ] 5.14 Run `cargo test paladin_builder` to verify tests pass
-  - [ ] 5.15 Run `cargo clippy` and fix warnings
-  - [ ] 5.16 Run `cargo fmt` and commit PaladinBuilder extensions
+- [x] 5.0 Extend PaladinBuilder with Sanctum integration (US-12.2)
+  - [x] 5.1 Read existing `PaladinBuilder` from `src/application/use_cases/paladin/paladin_builder.rs`
+  - [x] 5.2 Add optional fields to `PaladinBuilder`: sanctum (Option<Arc<dyn SanctumPort>>), embedding_port (Option<Arc<dyn EmbeddingPort>>), memory_extraction_strategy (MemoryExtractionStrategy)
+  - [x] 5.3 Implement `with_sanctum(mut self, sanctum: Arc<dyn SanctumPort>) -> Self` method
+  - [x] 5.4 Implement `with_embedding_port(mut self, embedding: Arc<dyn EmbeddingPort>) -> Self` method
+  - [x] 5.5 Implement `memory_extraction_strategy(mut self, strategy: MemoryExtractionStrategy) -> Self` method
+  - [x] 5.6 In `build()` method: validate that if sanctum is provided, embedding_port must also be provided
+  - [x] 5.7 Read `PaladinConfig` from `src/core/platform/container/paladin_config.rs`
+  - [x] 5.8 Add RAG-related fields to `PaladinConfig`: rag_config (Option<RagConfig>), extraction_strategy (Option<MemoryExtractionStrategy>)
+  - [x] 5.9 Update `PaladinBuilder::build()` to store RAG configuration in `PaladinConfig`
+  - [x] 5.10 Write unit tests for builder validation logic
+  - [x] 5.11 Test case: building with sanctum but no embedding_port fails with clear error
+  - [x] 5.12 Test case: building with both sanctum and embedding_port succeeds
+  - [x] 5.13 Test case: default extraction strategy is OnCompletion
+  - [x] 5.14 Run `cargo test paladin_builder` to verify tests pass
+  - [x] 5.15 Run `cargo clippy` and fix warnings
+  - [x] 5.16 Run `cargo fmt` and commit PaladinBuilder extensions
 
 - [ ] 6.0 Integrate RAG into PaladinExecutionService (US-12.5)
   - [ ] 6.1 Read existing `PaladinExecutionService` from `src/application/use_cases/paladin/paladin_execution_service.rs`

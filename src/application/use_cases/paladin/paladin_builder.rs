@@ -31,9 +31,12 @@
 
 use crate::application::ports::output::arsenal_port::ArsenalRegistry;
 use crate::application::ports::output::citadel_port::CitadelPort;
+use crate::application::ports::output::embedding_port::EmbeddingPort;
 use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::application::ports::output::llm_port::LlmPort;
+use crate::application::ports::output::sanctum_port::SanctumPort;
 use crate::application::use_cases::paladin::error::PaladinError;
+use crate::application::use_cases::sanctum::memory_extraction_service::MemoryExtractionStrategy;
 use crate::config::application_settings::MCPServerConfig;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::herald::Herald;
@@ -79,6 +82,10 @@ pub struct PaladinBuilder {
     autosave_enabled: bool,
     state_dir: Option<String>,
     herald: Option<Arc<dyn Herald>>,
+    // Sanctum RAG integration fields
+    sanctum_port: Option<Arc<dyn SanctumPort>>,
+    embedding_port: Option<Arc<dyn EmbeddingPort>>,
+    memory_extraction_strategy: MemoryExtractionStrategy,
 }
 
 impl PaladinBuilder {
@@ -110,6 +117,9 @@ impl PaladinBuilder {
             autosave_enabled: false,
             state_dir: None,
             herald: None,
+            sanctum_port: None,
+            embedding_port: None,
+            memory_extraction_strategy: MemoryExtractionStrategy::default(),
         }
     }
 
@@ -449,6 +459,109 @@ impl PaladinBuilder {
         self
     }
 
+    /// Attaches a Sanctum vector store for RAG capabilities
+    ///
+    /// Sanctum enables Retrieval-Augmented Generation by storing and retrieving
+    /// relevant context from past conversations and knowledge. When combined with
+    /// an embedding port, the Paladin can automatically:
+    /// - Retrieve relevant memories before generating responses
+    /// - Extract and store important information after conversations
+    /// - Perform semantic search over past interactions
+    ///
+    /// **Note**: Requires an `EmbeddingPort` to be set via `with_embedding_port()`
+    ///
+    /// # Arguments
+    ///
+    /// * `sanctum` - The Sanctum port implementation (e.g., Qdrant adapter)
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin::application::ports::output::sanctum_port::SanctumPort;
+    /// # use paladin::application::ports::output::embedding_port::EmbeddingPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>, sanctum: Arc<dyn SanctumPort>, embedding: Arc<dyn EmbeddingPort>) -> Result<(), Box<dyn std::error::Error>> {
+    /// let paladin = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are an assistant with RAG")
+    ///     .with_sanctum(sanctum)
+    ///     .with_embedding_port(embedding)
+    ///     .build()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn with_sanctum(mut self, sanctum: Arc<dyn SanctumPort>) -> Self {
+        self.sanctum_port = Some(sanctum);
+        self
+    }
+
+    /// Attaches an embedding port for generating vector embeddings
+    ///
+    /// The embedding port converts text into vector representations that can be
+    /// stored in Sanctum and used for semantic search. This is required when
+    /// using Sanctum for RAG capabilities.
+    ///
+    /// Supported embedding providers include:
+    /// - OpenAI (`text-embedding-ada-002`, `text-embedding-3-small`, `text-embedding-3-large`)
+    /// - Local models via transformers
+    ///
+    /// # Arguments
+    ///
+    /// * `embedding_port` - The embedding port implementation
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin::application::ports::output::embedding_port::EmbeddingPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>, embedding: Arc<dyn EmbeddingPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are a RAG-enabled assistant")
+    ///     .with_embedding_port(embedding);
+    /// # }
+    /// ```
+    pub fn with_embedding_port(mut self, embedding_port: Arc<dyn EmbeddingPort>) -> Self {
+        self.embedding_port = Some(embedding_port);
+        self
+    }
+
+    /// Sets the strategy for extracting memories from conversations
+    ///
+    /// Controls when the Paladin should analyze conversation history and extract
+    /// important information to store in Sanctum.
+    ///
+    /// # Strategies
+    ///
+    /// - `EveryTurn`: Extract memories after each conversation turn (most thorough but expensive)
+    /// - `OnCompletion`: Extract memories only when the conversation completes (default, balanced)
+    /// - `Manual`: Only extract memories when explicitly triggered
+    /// - `Threshold(n)`: Extract memories every n conversation turns
+    ///
+    /// # Arguments
+    ///
+    /// * `strategy` - The memory extraction strategy to use
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::use_cases::sanctum::memory_extraction_service::MemoryExtractionStrategy;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are an assistant")
+    ///     .memory_extraction_strategy(MemoryExtractionStrategy::Threshold(5));
+    /// # }
+    /// ```
+    pub fn memory_extraction_strategy(mut self, strategy: MemoryExtractionStrategy) -> Self {
+        self.memory_extraction_strategy = strategy;
+        self
+    }
+
     /// Adds an STDIO-based MCP server configuration
     ///
     /// STDIO servers are command-line tools that communicate via stdin/stdout
@@ -678,6 +791,7 @@ impl PaladinBuilder {
     /// - `temperature` must be in range [0.0, 1.0]
     /// - `max_loops` must be in range [1, 100]
     /// - If `autosave_enabled` is true, `state_dir` must be set or Citadel must be configured
+    /// - If `sanctum_port` is set, `embedding_port` must also be set (required for RAG)
     ///
     /// # Returns
     ///
@@ -710,6 +824,14 @@ impl PaladinBuilder {
         if self.autosave_enabled && self.citadel_port.is_none() && self.state_dir.is_none() {
             return Err(PaladinError::ConfigurationError(
                 "autosave_enabled requires either citadel_port or state_dir to be set".to_string(),
+            ));
+        }
+
+        // Validate Sanctum RAG dependencies
+        if self.sanctum_port.is_some() && self.embedding_port.is_none() {
+            return Err(PaladinError::ConfigurationError(
+                "embedding_port is required when sanctum_port is set (needed for RAG operations)"
+                    .to_string(),
             ));
         }
 
@@ -782,6 +904,9 @@ mod tests {
             autosave_enabled: false,
             state_dir: None,
             herald: None,
+            sanctum_port: None,
+            embedding_port: None,
+            memory_extraction_strategy: MemoryExtractionStrategy::default(),
         };
 
         let result = builder.validate();
@@ -806,6 +931,9 @@ mod tests {
             autosave_enabled: false,
             state_dir: None,
             herald: None,
+            sanctum_port: None,
+            embedding_port: None,
+            memory_extraction_strategy: MemoryExtractionStrategy::default(),
         };
 
         let result = builder.validate();
@@ -829,6 +957,9 @@ mod tests {
             autosave_enabled: false,
             state_dir: None,
             herald: None,
+            sanctum_port: None,
+            embedding_port: None,
+            memory_extraction_strategy: MemoryExtractionStrategy::default(),
         };
 
         let result = builder.validate();
@@ -879,6 +1010,9 @@ mod tests {
             autosave_enabled: true,
             state_dir: None,
             herald: None,
+            sanctum_port: None,
+            embedding_port: None,
+            memory_extraction_strategy: MemoryExtractionStrategy::default(),
         };
 
         let result = builder.validate();
@@ -902,6 +1036,9 @@ mod tests {
             autosave_enabled: true,
             state_dir: None,
             herald: None,
+            sanctum_port: None,
+            embedding_port: None,
+            memory_extraction_strategy: MemoryExtractionStrategy::default(),
         };
 
         let result = builder.validate();
@@ -924,6 +1061,92 @@ mod tests {
             autosave_enabled: true,
             state_dir: Some("./test".to_string()),
             herald: None,
+            sanctum_port: None,
+            embedding_port: None,
+            memory_extraction_strategy: MemoryExtractionStrategy::default(),
+        };
+
+        let result = builder.validate();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_builder_with_sanctum() {
+        let sanctum = Arc::new(MockSanctumPort);
+        let builder = PaladinBuilder::new(Arc::new(MockLlmPort))
+            .system_prompt("Test")
+            .with_sanctum(sanctum);
+
+        assert!(builder.sanctum_port.is_some());
+    }
+
+    #[test]
+    fn test_builder_with_embedding_port() {
+        let embedding = Arc::new(MockEmbeddingPort);
+        let builder = PaladinBuilder::new(Arc::new(MockLlmPort))
+            .system_prompt("Test")
+            .with_embedding_port(embedding);
+
+        assert!(builder.embedding_port.is_some());
+    }
+
+    #[test]
+    fn test_builder_memory_extraction_strategy() {
+        let builder = PaladinBuilder::new(Arc::new(MockLlmPort))
+            .system_prompt("Test")
+            .memory_extraction_strategy(MemoryExtractionStrategy::EveryTurn);
+
+        assert!(matches!(
+            builder.memory_extraction_strategy,
+            MemoryExtractionStrategy::EveryTurn
+        ));
+    }
+
+    #[test]
+    fn test_builder_validation_sanctum_without_embedding() {
+        let builder = PaladinBuilder {
+            _llm_port: Arc::new(MockLlmPort),
+            data: PaladinData {
+                system_prompt: "Test".to_string(),
+                ..Default::default()
+            },
+            config: PaladinConfig::default(),
+            garrison: None,
+            arsenal_registry: None,
+            mcp_servers: Vec::new(),
+            citadel_port: None,
+            autosave_enabled: false,
+            state_dir: None,
+            herald: None,
+            sanctum_port: Some(Arc::new(MockSanctumPort)),
+            embedding_port: None,
+            memory_extraction_strategy: MemoryExtractionStrategy::default(),
+        };
+
+        let result = builder.validate();
+        assert!(result.is_err());
+        assert!(matches!(result, Err(PaladinError::ConfigurationError(_))));
+    }
+
+    #[test]
+    fn test_builder_validation_sanctum_with_embedding() {
+        let builder = PaladinBuilder {
+            _llm_port: Arc::new(MockLlmPort),
+            data: PaladinData {
+                system_prompt: "Test".to_string(),
+                ..Default::default()
+            },
+            config: PaladinConfig::default(),
+            garrison: None,
+            arsenal_registry: None,
+            mcp_servers: Vec::new(),
+            citadel_port: None,
+            autosave_enabled: false,
+            state_dir: None,
+            herald: None,
+            sanctum_port: Some(Arc::new(MockSanctumPort)),
+            embedding_port: Some(Arc::new(MockEmbeddingPort)),
+            memory_extraction_strategy: MemoryExtractionStrategy::default(),
         };
 
         let result = builder.validate();
@@ -1144,6 +1367,108 @@ mod tests {
             crate::application::errors::citadel_error::CitadelError,
         > {
             Ok(vec![])
+        }
+    }
+
+    // Mock SanctumPort for testing
+    struct MockSanctumPort;
+
+    #[async_trait::async_trait]
+    impl crate::application::ports::output::sanctum_port::SanctumPort for MockSanctumPort {
+        async fn store(
+            &self,
+            _entry: crate::core::platform::container::sanctum::SanctumEntry,
+        ) -> Result<(), crate::application::ports::output::sanctum_port::SanctumError> {
+            Ok(())
+        }
+
+        async fn store_batch(
+            &self,
+            _entries: Vec<crate::core::platform::container::sanctum::SanctumEntry>,
+        ) -> Result<(), crate::application::ports::output::sanctum_port::SanctumError> {
+            Ok(())
+        }
+
+        async fn search(
+            &self,
+            _query: crate::application::ports::output::sanctum_port::SanctumQuery,
+        ) -> Result<
+            Vec<crate::application::ports::output::sanctum_port::SanctumSearchResult>,
+            crate::application::ports::output::sanctum_port::SanctumError,
+        > {
+            Ok(vec![])
+        }
+
+        async fn delete(
+            &self,
+            _id: &str,
+        ) -> Result<bool, crate::application::ports::output::sanctum_port::SanctumError> {
+            Ok(false)
+        }
+
+        async fn update(
+            &self,
+            _entry: crate::core::platform::container::sanctum::SanctumEntry,
+        ) -> Result<(), crate::application::ports::output::sanctum_port::SanctumError> {
+            Ok(())
+        }
+
+        async fn count(
+            &self,
+            _filter: Option<crate::application::ports::output::sanctum_port::SanctumFilter>,
+        ) -> Result<usize, crate::application::ports::output::sanctum_port::SanctumError> {
+            Ok(0)
+        }
+    }
+
+    // Mock EmbeddingPort for testing
+    struct MockEmbeddingPort;
+
+    #[async_trait::async_trait]
+    impl crate::application::ports::output::embedding_port::EmbeddingPort for MockEmbeddingPort {
+        async fn embed_text(
+            &self,
+            _text: &str,
+        ) -> Result<
+            crate::application::ports::output::embedding_port::Embedding,
+            crate::application::ports::output::embedding_port::EmbeddingError,
+        > {
+            Ok(
+                crate::application::ports::output::embedding_port::Embedding {
+                    vector: vec![0.0; 1536],
+                    model: "mock-model".to_string(),
+                    dimension: 1536,
+                    token_count: Some(10),
+                },
+            )
+        }
+
+        async fn embed_batch(
+            &self,
+            texts: &[&str],
+        ) -> Result<
+            Vec<crate::application::ports::output::embedding_port::Embedding>,
+            crate::application::ports::output::embedding_port::EmbeddingError,
+        > {
+            Ok(texts
+                .iter()
+                .map(
+                    |_| crate::application::ports::output::embedding_port::Embedding {
+                        vector: vec![0.0; 1536],
+                        model: "mock-model".to_string(),
+                        dimension: 1536,
+                        token_count: Some(10),
+                    },
+                )
+                .collect())
+        }
+
+        fn dimension(&self) -> usize {
+            1536
+        }
+
+        fn model_name(&self) -> &str {
+            "mock-model"
         }
     }
 }
