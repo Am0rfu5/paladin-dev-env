@@ -7,6 +7,7 @@ This directory contains comprehensive examples demonstrating Paladin's capabilit
 - [Getting Started](#getting-started)
 - [Basic Paladin Examples](#basic-paladin-examples)
 - [Memory & Garrison Examples](#memory--garrison-examples)
+- [Sanctum Long-term Memory Examples](#sanctum-long-term-memory-examples)
 - [Tool Integration Examples](#tool-integration-examples)
 - [Battalion Orchestration Examples](#battalion-orchestration-examples)
 - [Output Formatting Examples](#output-formatting-examples)
@@ -177,6 +178,210 @@ cargo run --example garrison_semantic_search
 - Vector similarity search
 - RAG (Retrieval-Augmented Generation)
 - Long-term knowledge
+
+## Sanctum Long-term Memory Examples
+
+### [sanctum_basic_inmemory.rs](sanctum_basic_inmemory.rs)
+**Demonstrates:** Basic Sanctum usage with InMemory adapter
+
+Shows fundamental Sanctum operations: storing, searching, filtering, updating memories.
+
+```bash
+cargo run --example sanctum_basic_inmemory
+```
+
+**Key concepts:**
+- InMemory adapter (development)
+- Memory types (Episodic, Semantic, Procedural)
+- Importance scoring (0.0-1.0)
+- Semantic search with scoring
+- Metadata filtering
+- Batch operations
+
+**Code snippet:**
+```rust
+let sanctum = InMemorySanctum::new();
+
+let memory = MemoryBuilder::new(
+    "paladin-123".to_string(),
+    "User asked about Rust programming".to_string(),
+)
+.memory_type(MemoryType::Episodic)
+.importance(0.8)
+.with_metadata("topic", json!("programming"))
+.build()?;
+
+let entry = SanctumEntry::new(memory, embedding)?;
+sanctum.store(entry).await?;
+
+// Semantic search
+let query = SanctumQuery::new(query_embedding, 5).min_score(0.7);
+let results = sanctum.search(query).await?;
+```
+
+### [sanctum_qdrant_production.rs](sanctum_qdrant_production.rs)
+**Demonstrates:** Production-ready Qdrant adapter with real embeddings
+
+Shows how to use Sanctum in production with Qdrant vector database and OpenAI embeddings.
+
+**Prerequisites:**
+```bash
+# Start Qdrant
+docker run -p 6334:6334 qdrant/qdrant:latest
+
+# Set API key
+export OPENAI_API_KEY=sk-your-key
+```
+
+```bash
+cargo run --example sanctum_qdrant_production
+```
+
+**Key concepts:**
+- Qdrant adapter (production)
+- Real vector embeddings (OpenAI)
+- Persistent storage
+- Performance benchmarking
+- Collection statistics
+- Production error handling
+
+**Code snippet:**
+```rust
+let sanctum = QdrantSanctumAdapter::new(
+    "http://localhost:6334",
+    "paladin_memories",
+    1536,  // OpenAI text-embedding-3-small dimension
+).await?;
+
+let embedding_service = OpenAIEmbeddingAdapter::new(api_key, model)?;
+
+// Generate real embeddings
+let embedding = embedding_service.embed("content").await?;
+let entry = SanctumEntry::new(memory, embedding)?;
+sanctum.store(entry).await?;
+```
+
+### [sanctum_adapter_migration.rs](sanctum_adapter_migration.rs)
+**Demonstrates:** Migrating memories between adapters
+
+Shows complete migration process from InMemory to Qdrant adapter.
+
+**Prerequisites:**
+```bash
+docker run -p 6334:6334 qdrant/qdrant:latest
+```
+
+```bash
+cargo run --example sanctum_adapter_migration
+```
+
+**Key concepts:**
+- Export to JSON format
+- Adapter-agnostic migration
+- Import in batches
+- Validation (counts, search)
+- Error handling
+- Cleanup procedures
+
+**Migration phases:**
+1. Export from source adapter
+2. Prepare target adapter
+3. Import in batches
+4. Validate migration
+5. Cleanup
+
+### [sanctum_configuration.rs](sanctum_configuration.rs)
+**Demonstrates:** Sanctum configuration patterns
+
+Shows different configuration approaches for development, staging, and production.
+
+```bash
+cargo run --example sanctum_configuration
+```
+
+**Key concepts:**
+- Development config (InMemory)
+- Production config (Qdrant)
+- Environment variable overrides
+- Runtime adapter switching
+- Configuration validation
+- Vector dimension selection
+
+**Configuration examples:**
+```yaml
+# Development
+sanctum:
+  enabled: true
+  adapter_type: "in_memory"
+
+# Production
+sanctum:
+  enabled: true
+  adapter_type: "qdrant"
+  qdrant:
+    url: "http://qdrant:6334"
+    collection_name: "paladin_production"
+    vector_dimension: 1536
+```
+
+**Environment overrides:**
+```bash
+export APP_SANCTUM_ADAPTER_TYPE=qdrant
+export APP_SANCTUM_QDRANT_URL=http://prod-qdrant:6334
+export APP_SANCTUM_QDRANT_COLLECTION_NAME=memories_v2
+```
+
+### [paladin_with_sanctum.rs](paladin_with_sanctum.rs)
+**Demonstrates:** Integrating Sanctum with Paladin agents
+
+Shows how to use Sanctum for long-term memory alongside Garrison for short-term context.
+
+```bash
+cargo run --example paladin_with_sanctum
+```
+
+**Key concepts:**
+- Garrison vs Sanctum (short-term vs long-term)
+- Storing conversation history
+- Retrieving relevant memories
+- Building agent knowledge base
+- Memory importance updates
+- Memory analytics
+
+**Use cases:**
+- Teaching assistant building knowledge
+- Customer support with history
+- Personalized agent responses
+- Cross-session continuity
+
+**Code snippet:**
+```rust
+// Store important interaction
+let memory = MemoryBuilder::new(paladin_id, content)
+    .memory_type(MemoryType::Semantic)
+    .importance(0.9)
+    .build()?;
+sanctum.store(entry).await?;
+
+// Retrieve relevant context before responding
+let query = SanctumQuery::new(query_embedding, 5).min_score(0.7);
+let relevant_memories = sanctum.search(query).await?;
+
+// Use memories to enrich agent response
+let context = relevant_memories.iter()
+    .map(|m| m.entry.memory.content.clone())
+    .collect::<Vec<_>>()
+    .join("\n");
+```
+
+**Garrison vs Sanctum:**
+| Aspect | Garrison (Short-term) | Sanctum (Long-term) |
+|--------|----------------------|---------------------|
+| Purpose | Recent conversation | Knowledge base |
+| Duration | Session-scoped | Persistent |
+| Retrieval | Sequential/windowed | Semantic search |
+| Size | Limited (e.g., 20 messages) | Unlimited |
+| Storage | In-memory/SQLite | Vector database |
 
 ## Tool Integration Examples
 
