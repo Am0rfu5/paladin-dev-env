@@ -165,19 +165,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.22 Format code: `cargo fmt`
   - [x] 2.23 Commit: `git commit -m "feat(core): add document domain models and port" -m "- Implement Document, Page, DocumentMetadata structs" -m "- Add DocumentError types" -m "- Define DocumentPort trait interface" -m "- Add DocumentSource and ChunkConfig types" -m "US-13.6 (Interface)"`
 
-- [ ] 3.0 Vision-Capable LLM Trait (FR-4)
-  - [ ] 3.1 Create `src/application/ports/output/vision_llm_port.rs` file
-  - [ ] 3.2 Import necessary types: `LlmPort`, `LlmRequest`, `LlmResponse`, `VisionRequest`, `LlmError`
-  - [ ] 3.3 Write unit test for trait bounds (Send + Sync)
-  - [ ] 3.4 Define `VisionCapableLlm` trait extending `LlmPort`:
+- [x] 3.0 Vision-Capable LLM Trait (FR-4)
+  - [x] 3.1 Create `src/application/ports/output/vision_llm_port.rs` file
+  - [x] 3.2 Import necessary types: `LlmPort`, `LlmRequest`, `LlmResponse`, `VisionRequest`, `LlmError`
+  - [x] 3.3 Write unit test for trait bounds (Send + Sync)
+  - [x] 3.4 Define `VisionCapableLlm` trait extending `LlmPort`:
     - `async fn generate_with_vision(&self, request: LlmRequest, vision: VisionRequest) -> Result<LlmResponse, LlmError>`
     - `fn supports_vision(&self) -> bool`
-  - [ ] 3.5 Add documentation comments explaining trait purpose and usage
-  - [ ] 3.6 Export VisionCapableLlm in `src/application/ports/output/mod.rs`
-  - [ ] 3.7 Run tests: `cargo test vision_llm_port`
-  - [ ] 3.8 Run clippy: `cargo clippy --tests`
-  - [ ] 3.9 Format code: `cargo fmt`
-  - [ ] 3.10 Commit: `git commit -m "feat(application): add VisionCapableLlm trait" -m "- Define trait extending LlmPort for vision support" -m "- Add generate_with_vision() method" -m "- Add supports_vision() capability check" -m "FR-4"`
+  - [x] 3.5 Add documentation comments explaining trait purpose and usage
+  - [x] 3.6 Export VisionCapableLlm in `src/application/ports/output/mod.rs`
+  - [x] 3.7 Run tests: `cargo test vision_llm_port`
+  - [x] 3.8 Run clippy: `cargo clippy --tests`
+  - [x] 3.9 Format code: `cargo fmt`
+  - [x] 3.10 Commit: `git commit -m "feat(application): add VisionCapableLlm trait" -m "- Define trait extending LlmPort for vision support" -m "- Add generate_with_vision() method" -m "- Add supports_vision() capability check" -m "FR-4"`
 
 ### Phase 2: Provider Integration (Week 1, Days 3-5)
 
