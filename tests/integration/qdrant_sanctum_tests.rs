@@ -5,6 +5,8 @@
 //!
 //! Start Qdrant: docker-compose -f docker/docker-compose.yml up -d qdrant --profile test
 
+#![cfg(feature = "qdrant")]
+
 use paladin::application::ports::output::sanctum_port::{
     SanctumError, SanctumFilter, SanctumPort, SanctumQuery,
 };
