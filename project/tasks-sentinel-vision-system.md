@@ -138,32 +138,32 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.17 Format code: `cargo fmt`
   - [x] 1.18 Commit: `git commit -m "feat(core): add vision content domain models" -m "- Implement VisionContent enum with ImageUrl, ImageBase64, ImageFile" -m "- Add ImageDetail enum for quality control" -m "- Add VisionRequest struct" -m "- Add format validation" -m "- Add VisionError types" -m "US-13.1"`
 
-- [ ] 2.0 Document Domain Models & Port Definition (US-13.6 Interface)
-  - [ ] 2.1 Create `src/core/platform/container/document.rs` file
-  - [ ] 2.2 Write unit test for `Page` struct
-  - [ ] 2.3 Implement `Page` struct with number and content fields
-  - [ ] 2.4 Write unit test for `DocumentMetadata` struct
-  - [ ] 2.5 Implement `DocumentMetadata` struct with title, author, page_count, creation_date
-  - [ ] 2.6 Write unit test for `Document` struct
-  - [ ] 2.7 Implement `Document` struct with pages, metadata, total_chars
-  - [ ] 2.8 Add `DocumentError` enum in `src/core/platform/container/document_error.rs`
-  - [ ] 2.9 Implement error variants: UnsupportedFormat, EncryptedPdf, CorruptedFile, ExtractionFailed
-  - [ ] 2.10 Export document types in `src/core/platform/container/mod.rs`
-  - [ ] 2.11 Create `src/application/ports/input/document_port.rs` file
-  - [ ] 2.12 Write unit test for `DocumentSource` enum
-  - [ ] 2.13 Implement `DocumentSource` enum: File(PathBuf), Bytes { data: Vec<u8>, format: DocumentFormat }, Url(String)
-  - [ ] 2.14 Write unit test for `ChunkConfig` struct
-  - [ ] 2.15 Implement `ChunkConfig` struct with chunk_size, chunk_overlap, separator
-  - [ ] 2.16 Write unit test for `DocumentChunk` struct
-  - [ ] 2.17 Implement `DocumentChunk` struct with content, metadata, chunk_index
-  - [ ] 2.18 Define `DocumentPort` trait with async methods:
+- [x] 2.0 Document Domain Models & Port Definition (US-13.6 Interface)
+  - [x] 2.1 Create `src/core/platform/container/document.rs` file
+  - [x] 2.2 Write unit test for `Page` struct
+  - [x] 2.3 Implement `Page` struct with number and content fields
+  - [x] 2.4 Write unit test for `DocumentMetadata` struct
+  - [x] 2.5 Implement `DocumentMetadata` struct with title, author, page_count, creation_date
+  - [x] 2.6 Write unit test for `Document` struct
+  - [x] 2.7 Implement `Document` struct with pages, metadata, total_chars
+  - [x] 2.8 Add `DocumentError` enum in `src/core/platform/container/document.rs`
+  - [x] 2.9 Implement error variants: UnsupportedFormat, EncryptedPdf, CorruptedFile, ExtractionFailed
+  - [x] 2.10 Export document types in `src/core/platform/container/mod.rs`
+  - [x] 2.11 Create `src/application/ports/input/document_port.rs` file
+  - [x] 2.12 Write unit test for `DocumentSource` enum
+  - [x] 2.13 Implement `DocumentSource` enum: File(PathBuf), Bytes { data: Vec<u8>, format: DocumentFormat }, Url(String)
+  - [x] 2.14 Write unit test for `ChunkConfig` struct
+  - [x] 2.15 Implement `ChunkConfig` struct with chunk_size, chunk_overlap, separator
+  - [x] 2.16 Write unit test for `DocumentChunk` struct
+  - [x] 2.17 Implement `DocumentChunk` struct with content, metadata, chunk_index
+  - [x] 2.18 Define `DocumentPort` trait with async methods:
     - `async fn ingest(&self, source: DocumentSource) -> Result<Document, DocumentError>`
     - `async fn chunk(&self, document: &Document, config: ChunkConfig) -> Vec<DocumentChunk>`
-  - [ ] 2.19 Export DocumentPort in `src/application/ports/input/mod.rs`
-  - [ ] 2.20 Run tests: `cargo test document`
-  - [ ] 2.21 Run clippy: `cargo clippy --tests`
-  - [ ] 2.22 Format code: `cargo fmt`
-  - [ ] 2.23 Commit: `git commit -m "feat(core): add document domain models and port" -m "- Implement Document, Page, DocumentMetadata structs" -m "- Add DocumentError types" -m "- Define DocumentPort trait interface" -m "- Add DocumentSource and ChunkConfig types" -m "US-13.6 (Interface)"`
+  - [x] 2.19 Export DocumentPort in `src/application/ports/input/mod.rs`
+  - [x] 2.20 Run tests: `cargo test document`
+  - [x] 2.21 Run clippy: `cargo clippy --tests`
+  - [x] 2.22 Format code: `cargo fmt`
+  - [x] 2.23 Commit: `git commit -m "feat(core): add document domain models and port" -m "- Implement Document, Page, DocumentMetadata structs" -m "- Add DocumentError types" -m "- Define DocumentPort trait interface" -m "- Add DocumentSource and ChunkConfig types" -m "US-13.6 (Interface)"`
 
 - [ ] 3.0 Vision-Capable LLM Trait (FR-4)
   - [ ] 3.1 Create `src/application/ports/output/vision_llm_port.rs` file

@@ -4,6 +4,7 @@ pub mod citadel;
 pub mod comment;
 pub mod content;
 pub mod content_list;
+pub mod document;
 pub mod garrison;
 pub mod herald;
 pub mod herald_error;
