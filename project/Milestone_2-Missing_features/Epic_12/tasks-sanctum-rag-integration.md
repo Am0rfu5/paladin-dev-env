@@ -310,14 +310,8 @@ Example:
   - [ ] 10.15 Verify all 66 functional requirements (FR-1 through FR-10) are implemented
   - [ ] 10.16 Check performance targets: retrieval < 500ms, extraction < 3s
   - [ ] 10.17 Update Epic 12 status document with completion details
-  - [ ] 10.18 Create PR description summarizing changes
-  - [ ] 10.19 Stage all changes: `git add .`
-  - [ ] 10.20 Commit with message: `git commit -m "feat(epic-12): complete Sanctum RAG integration" -m "- Qdrant vector store adapter" -m "- RAG retrieval service" -m "- Memory extraction service" -m "- PaladinBuilder extensions" -m "- Execution service integration" -m "- Configuration support" -m "- Comprehensive tests and examples" -m "- Documentation updates" -m "Closes Epic 12"`
-  - [ ] 10.21 Push feature branch: `git push origin feature/epic-12-sanctum-rag-integration`
-  - [ ] 10.22 Create pull request to main branch
-  - [ ] 10.23 Request code review
-  - [ ] 10.24 Address review feedback if any
-  - [ ] 10.25 Merge to main after approval
+  - [ ] 10.18 Stage all changes: `git add .`
+  - [ ] 10.19 Commit with message: `git commit -m "feat(epic-12): complete Sanctum RAG integration" -m "- Qdrant vector store adapter" -m "- RAG retrieval service" -m "- Memory extraction service" -m "- PaladinBuilder extensions" -m "- Execution service integration" -m "- Configuration support" -m "- Comprehensive tests and examples" -m "- Documentation updates" -m "Closes Epic 12"`
 
 ---
 
