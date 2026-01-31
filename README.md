@@ -79,6 +79,74 @@ See [docs/GARRISON.md](docs/GARRISON.md) for detailed memory system documentatio
 See [docs/ARSENAL.md](docs/ARSENAL.md) for comprehensive tool system documentation.
 See [docs/SANCTUM.md](docs/SANCTUM.md) for long-term memory system documentation.
 
+### RAG (Retrieval-Augmented Generation)
+
+**New in Epic 12**: Paladin now supports automatic RAG integration, enabling agents to retrieve relevant context from long-term memory and extract new memories after execution.
+
+**What is RAG?**
+- **Automatic Context Retrieval**: Fetch relevant memories before generating responses
+- **Smart Memory Extraction**: Automatically store important facts after conversations
+- **Knowledge Building**: Accumulate wisdom across multiple sessions
+- **Response Quality**: Improve accuracy with historical context
+
+**Quick Start:**
+
+```yaml
+# config.yml
+sanctum:
+  provider: in_memory  # or 'qdrant' for production
+
+rag:
+  top_k: 5                    # Retrieve top 5 relevant memories
+  min_similarity: 0.7          # 70% relevance threshold
+  max_tokens: 2000             # Context budget
+  timeout_seconds: 5           # Retrieval timeout
+
+memory_extraction:
+  enabled: true
+  strategy: on_completion     # Extract after each conversation
+```
+
+**Example Usage:**
+
+```rust
+use paladin::application::use_cases::sanctum::{
+    RagRetrievalService, MemoryExtractionService
+};
+
+// Create RAG services
+let rag_service = Arc::new(RagRetrievalService::new(
+    sanctum_port, embedding_port, rag_config
+));
+
+let extraction_service = Arc::new(MemoryExtractionService::new(
+    llm_port, embedding_port, sanctum_port
+));
+
+// Configure Paladin with RAG
+let execution_service = PaladinExecutionService::new(llm_port)
+    .with_rag_retrieval(rag_service)
+    .with_memory_extraction(extraction_service);
+
+// Execute with automatic RAG
+let result = execution_service.execute(&paladin, "user input").await?;
+// ✓ Context automatically retrieved from Sanctum
+// ✓ Response generated with historical context
+// ✓ New memories extracted and stored
+```
+
+**Benefits:**
+- 🧠 **Contextual Awareness**: Agents remember previous conversations
+- 📈 **Improved Accuracy**: Responses reference historical knowledge
+- 🔄 **Automatic**: No manual memory management needed
+- ⚙️ **Configurable**: Tune retrieval and extraction parameters
+- 🚀 **Scalable**: Works with both in-memory and Qdrant storage
+
+**Learn More:**
+- [docs/SANCTUM.md#rag-integration](docs/SANCTUM.md#rag-integration-retrieval-augmented-generation) - Complete RAG documentation
+- `examples/paladin_with_rag.rs` - Configuration guide and workflow
+- `examples/cli_configs/paladin_rag.yaml` - Full configuration example
+
 ### Multi-Provider LLM Support
 
 Paladin supports multiple LLM providers with a consistent interface, allowing you to choose the best provider for your needs:

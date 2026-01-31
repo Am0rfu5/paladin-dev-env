@@ -9,6 +9,7 @@ Sanctum is Paladin's long-term memory system that enables AI agents to store, re
 - [Adapters](#adapters)
 - [Configuration](#configuration)
 - [Usage Examples](#usage-examples)
+- [RAG Integration](#rag-integration-retrieval-augmented-generation)
 - [Performance](#performance)
 - [Deployment](#deployment)
 - [Migration Guide](#migration-guide)
@@ -581,6 +582,375 @@ match sanctum.store(entry).await {
     Err(e) => eprintln!("Unexpected error: {}", e),
 }
 ```
+
+## RAG Integration (Retrieval-Augmented Generation)
+
+> **New in Epic 12**: Automatic memory retrieval and extraction for Paladin agents
+
+Sanctum now supports seamless RAG integration, enabling Paladin agents to automatically retrieve relevant context before execution and extract memories after completion.
+
+### Overview
+
+RAG (Retrieval-Augmented Generation) enhances Paladin responses by:
+
+1. **Auto-Retrieval**: Fetch relevant memories before LLM calls
+2. **Context Injection**: Insert historical context into prompts
+3. **Auto-Extraction**: Store important facts after execution
+4. **Knowledge Building**: Accumulate wisdom across sessions
+
+### Architecture
+
+```
+User Input
+    ↓
+┌─────────────────────────────┐
+│  RagRetrievalService        │
+│  • Embed query              │
+│  • Search Sanctum (top-k)   │
+│  • Filter by similarity     │
+│  • Format as context        │
+└─────────────┬───────────────┘
+              ↓
+┌─────────────────────────────┐
+│  PaladinExecutionService    │
+│  • Inject context to prompt │
+│  • Execute LLM with context │
+│  • Return enriched response │
+└─────────────┬───────────────┘
+              ↓
+┌─────────────────────────────┐
+│  MemoryExtractionService    │
+│  • Parse response           │
+│  • Identify key facts       │
+│  • Generate embeddings      │
+│  • Store in Sanctum         │
+└─────────────────────────────┘
+    ↓
+Response
+```
+
+### Configuration
+
+Add RAG configuration to your `config.yml`:
+
+```yaml
+# Sanctum configuration (required for RAG)
+sanctum:
+  provider: qdrant  # or 'in_memory'
+  qdrant:
+    url: http://localhost:6333
+    collection_name: paladin_memories
+    vector_dimension: 1536  # Match embedding model
+    distance: cosine
+
+# RAG Retrieval settings
+rag:
+  top_k: 5                  # Number of memories to retrieve
+  min_similarity: 0.7        # Minimum similarity score (0.0-1.0)
+  max_tokens: 2000           # Max tokens for context
+  timeout_seconds: 5         # Retrieval timeout
+
+# Memory Extraction settings
+memory_extraction:
+  enabled: true
+  strategy: on_completion    # Options: on_completion, every_turn, manual, threshold
+```
+
+### RAG Retrieval Service
+
+#### Basic Usage
+
+```rust
+use paladin::application::use_cases::sanctum::rag_retrieval_service::{
+    RagRetrievalService, RagConfig
+};
+
+let rag_service = RagRetrievalService::new(
+    Arc::clone(&sanctum_port),
+    Arc::clone(&embedding_port),
+    RagConfig::default(),
+);
+
+// Retrieve relevant context
+let memories = rag_service
+    .retrieve_context("paladin-id", "user query")
+    .await?;
+
+// Format for prompt injection
+let context_text = rag_service.format_for_prompt(&memories);
+```
+
+#### Configuration Options
+
+```rust
+let rag_config = RagConfig {
+    top_k: 5,                              // Retrieve top 5 memories
+    min_similarity: 0.7,                   // Only >= 70% match
+    max_tokens: 2000,                      // Budget limit
+    retrieval_trigger: RetrievalTrigger::Always,  // When to retrieve
+};
+```
+
+**Retrieval Triggers**:
+- `Always`: Retrieve for every query (recommended)
+- `KeywordBased`: Retrieve only if keywords detected
+- `SemanticThreshold`: Retrieve if query similarity exceeds threshold
+
+#### Advanced Features
+
+**Deduplication**: Automatically removes near-identical memories (>0.95 similarity)
+
+**Ranking**: Sorts memories by relevance score (descending)
+
+**Token Budget**: Truncates context to fit within max_tokens limit
+
+**Timeout Handling**: Gracefully handles retrieval timeouts (returns empty context)
+
+### Memory Extraction Service
+
+#### Basic Usage
+
+```rust
+use paladin::application::use_cases::sanctum::memory_extraction_service::{
+    MemoryExtractionService, MemoryExtractionStrategy
+};
+
+let extraction_service = MemoryExtractionService::new(
+    Arc::clone(&llm_port),
+    Arc::clone(&embedding_port),
+    Arc::clone(&sanctum_port),
+);
+
+// Extract memories from conversation
+let conversation = vec![
+    garrison_entry_1,
+    garrison_entry_2,
+];
+
+let extracted = extraction_service
+    .extract_memories("paladin-id", &conversation)
+    .await?;
+```
+
+#### Extraction Strategies
+
+```rust
+pub enum MemoryExtractionStrategy {
+    EveryTurn,                    // Extract after each interaction
+    OnCompletion,                 // Extract when conversation ends
+    Manual,                       // Explicit extraction calls
+    Threshold { importance: f32 },  // Extract if importance >= threshold
+}
+```
+
+**Strategy Recommendations**:
+- **OnCompletion**: Best for most use cases (default)
+- **EveryTurn**: For critical interactions needing immediate storage
+- **Threshold**: For filtering low-importance content
+- **Manual**: For custom extraction logic
+
+#### Memory Quality
+
+The extraction service uses LLM-based analysis to:
+- Identify key facts and insights
+- Categorize by memory type (Episodic/Semantic/Procedural)
+- Assign importance scores (0.0-1.0)
+- Add contextual metadata
+
+### Paladin Integration
+
+#### Programmatic Setup
+
+```rust
+use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+
+// Create services
+let rag_service = Arc::new(RagRetrievalService::new(
+    sanctum_port, embedding_port, rag_config
+));
+
+let extraction_service = Arc::new(MemoryExtractionService::new(
+    llm_port, embedding_port, sanctum_port
+));
+
+// Configure execution service with RAG
+let execution_service = PaladinExecutionService::new(llm_port)
+    .with_rag_retrieval(rag_service)
+    .with_memory_extraction(extraction_service);
+
+// Execute with automatic RAG
+let result = execution_service.execute(&paladin, "user input").await?;
+// ✓ Context automatically retrieved
+// ✓ Response generated with historical context
+// ✓ New memories extracted and stored
+```
+
+#### Configuration-based Setup
+
+When using `config.yml`, RAG happens automatically:
+
+```rust
+// No code changes required!
+// RAG is configured via config.yml and happens transparently
+let result = paladin.execute("user input").await?;
+```
+
+### Performance Tuning
+
+#### Retrieval Optimization
+
+| Parameter       | Impact                  | Recommendation       |
+|----------------|-------------------------|----------------------|
+| top_k          | Context quality/cost    | Start with 5        |
+| min_similarity | Relevance threshold     | 0.6-0.8 range       |
+| max_tokens     | Context budget          | 1000-2000 tokens    |
+| timeout        | Latency tolerance       | 5 seconds           |
+
+**Trade-offs**:
+- ↑ top_k → More context but slower and more expensive
+- ↓ min_similarity → More memories but less relevant
+- ↑ max_tokens → Better context but higher token costs
+
+#### Extraction Optimization
+
+**Batch Operations**: Extract memories in batches to reduce API calls
+
+```rust
+// Batch extract from multiple conversations
+let all_conversations = vec![conv1, conv2, conv3];
+for conversation in all_conversations {
+    extraction_service.extract_memories(paladin_id, &conversation).await?;
+}
+```
+
+**Duplicate Detection**: Automatic deduplication prevents redundant storage
+
+**Importance Filtering**: Set minimum importance thresholds to reduce noise
+
+### Example Workflow
+
+#### Session 1: Building Knowledge Base
+
+```rust
+// First interaction - no prior context
+let result1 = execution_service.execute(&paladin, "What is Rust?").await?;
+// Output: "Rust is a systems programming language..."
+// Memory stored: "Rust is a systems language focused on safety"
+
+// Second interaction - retrieves first memory
+let result2 = execution_service.execute(&paladin, "Tell me about ownership").await?;
+// Context injected: Previous Rust definition
+// Output: "Building on Rust's focus on safety, ownership is..."
+// Memory stored: "Ownership prevents memory bugs"
+```
+
+#### Session 2: Using Knowledge
+
+```rust
+// New session - agent remembers previous learnings
+let result3 = execution_service.execute(&paladin, "Explain memory management").await?;
+// Context retrieved: Rust definition + ownership explanation
+// Output: "Based on our earlier discussion about Rust's ownership..."
+// ✓ Response quality improved with historical context
+```
+
+### Monitoring & Debugging
+
+#### Enable Debug Logging
+
+```rust
+env_logger::init();  // Set RUST_LOG=debug
+```
+
+Logs include:
+- Retrieval latency and result counts
+- Memory extraction statistics
+- Context injection details
+- Error conditions and fallbacks
+
+#### Metrics
+
+Track these metrics for production:
+
+```rust
+// Retrieval metrics
+- retrieval_latency_ms
+- memories_retrieved_count
+- similarity_scores_distribution
+
+// Extraction metrics
+- extraction_latency_ms
+- memories_stored_count
+- importance_scores_distribution
+
+// Quality metrics
+- context_injection_rate
+- response_improvement_score
+```
+
+### Troubleshooting
+
+#### No memories retrieved
+
+**Causes**:
+- Empty Sanctum (first interaction)
+- Similarity threshold too high
+- Embeddings not generated correctly
+
+**Solutions**:
+```yaml
+rag:
+  min_similarity: 0.5  # Lower threshold
+  top_k: 10            # Increase candidates
+```
+
+#### Irrelevant context
+
+**Causes**:
+- Similarity threshold too low
+- Poor embedding quality
+- Noisy memory storage
+
+**Solutions**:
+```yaml
+rag:
+  min_similarity: 0.8  # Stricter threshold
+  top_k: 3             # Fewer, better matches
+```
+
+#### Slow execution
+
+**Causes**:
+- Large top_k value
+- Sanctum query latency
+- Embedding generation delay
+
+**Solutions**:
+```yaml
+rag:
+  top_k: 3             # Reduce candidates
+  timeout_seconds: 3   # Stricter timeout
+```
+
+### Best Practices
+
+1. **Start Simple**: Use default configuration and adjust based on results
+2. **Monitor Quality**: Track retrieval relevance and response improvement
+3. **Tune Gradually**: Adjust one parameter at a time
+4. **Test Thresholds**: Experiment with similarity values for your use case
+5. **Production Setup**: Use Qdrant for scalability, in-memory for dev
+6. **Error Handling**: RAG degrades gracefully if Sanctum unavailable
+7. **Cost Management**: Balance top_k and max_tokens against API costs
+
+### Example Code
+
+See working examples:
+- `examples/paladin_with_rag.rs` - RAG configuration demonstration
+- `examples/paladin_with_sanctum.rs` - Memory operations
+- `examples/cli_configs/paladin_rag.yaml` - Full configuration
+- `tests/integration/rag_integration_tests.rs` - Configuration validation
+
+---
 
 ## Best Practices
 
