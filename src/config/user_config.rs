@@ -273,6 +273,10 @@ mod tests {
             notifications: Some(crate::config::application_settings::NotificationConfig::default()),
             garrison: Some(crate::config::application_settings::GarrisonSettings::default()),
             sanctum: Some(crate::config::application_settings::SanctumConfig::default()),
+            rag: Some(crate::config::application_settings::RagConfig::default()),
+            memory_extraction: Some(
+                crate::config::application_settings::MemoryExtractionConfig::default(),
+            ),
             arsenal: Some(crate::config::application_settings::ArsenalConfig::default()),
             citadel: Some(crate::config::application_settings::CitadelConfig::default()),
             llm: Some(crate::config::application_settings::LlmConfig::default()),

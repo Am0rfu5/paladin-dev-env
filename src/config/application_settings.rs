@@ -533,6 +533,112 @@ impl SanctumConfig {
     }
 }
 
+/// Configuration for RAG (Retrieval-Augmented Generation)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RagConfig {
+    /// Number of top results to retrieve from Sanctum
+    pub top_k: usize,
+    /// Minimum similarity score threshold (0.0-1.0)
+    pub min_similarity: f32,
+    /// Maximum tokens to include in RAG context
+    pub max_tokens: usize,
+    /// Timeout for RAG retrieval in seconds
+    pub timeout_seconds: u64,
+}
+
+impl Default for RagConfig {
+    fn default() -> Self {
+        Self {
+            top_k: 5,
+            min_similarity: 0.7,
+            max_tokens: 2000,
+            timeout_seconds: 5,
+        }
+    }
+}
+
+impl RagConfig {
+    /// Validates RAG configuration
+    pub fn validate(&self) -> Result<(), String> {
+        if self.top_k == 0 {
+            return Err("RAG top_k must be greater than 0".to_string());
+        }
+
+        if self.top_k > 100 {
+            return Err(format!(
+                "RAG top_k {} seems unusually large (max 100)",
+                self.top_k
+            ));
+        }
+
+        if !(0.0..=1.0).contains(&self.min_similarity) {
+            return Err(format!(
+                "RAG min_similarity {} must be between 0.0 and 1.0",
+                self.min_similarity
+            ));
+        }
+
+        if self.max_tokens == 0 {
+            return Err("RAG max_tokens must be greater than 0".to_string());
+        }
+
+        if self.timeout_seconds == 0 {
+            return Err("RAG timeout_seconds must be greater than 0".to_string());
+        }
+
+        Ok(())
+    }
+}
+
+/// Memory extraction strategy
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum MemoryExtractionStrategy {
+    /// Extract after every conversation turn
+    EveryTurn,
+    /// Extract only when conversation completes (recommended)
+    #[default]
+    OnCompletion,
+    /// Manual extraction only (user-triggered)
+    Manual,
+    /// Extract when importance threshold is exceeded
+    Threshold { importance: u8 },
+}
+
+/// Configuration for memory extraction
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemoryExtractionConfig {
+    /// Memory extraction strategy
+    pub strategy: MemoryExtractionStrategy,
+    /// Enable automatic extraction
+    pub enabled: bool,
+}
+
+impl Default for MemoryExtractionConfig {
+    fn default() -> Self {
+        Self {
+            strategy: MemoryExtractionStrategy::OnCompletion,
+            enabled: true,
+        }
+    }
+}
+
+impl MemoryExtractionConfig {
+    /// Validates memory extraction configuration
+    pub fn validate(&self) -> Result<(), String> {
+        // Validate threshold importance if using Threshold strategy
+        if let MemoryExtractionStrategy::Threshold { importance } = self.strategy
+            && importance == 0
+        {
+            return Err(
+                "Memory extraction threshold importance must be greater than 0".to_string(),
+            );
+        }
+
+        Ok(())
+    }
+}
+
 /// Configuration for individual LLM providers
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LlmProviderConfig {
@@ -666,6 +772,8 @@ pub struct Settings {
     pub notifications: Option<NotificationConfig>,
     pub garrison: Option<GarrisonSettings>,
     pub sanctum: Option<SanctumConfig>,
+    pub rag: Option<RagConfig>,
+    pub memory_extraction: Option<MemoryExtractionConfig>,
     pub arsenal: Option<ArsenalConfig>,
     pub citadel: Option<CitadelConfig>,
     pub llm: Option<LlmConfig>,
@@ -1140,6 +1248,8 @@ impl Default for Settings {
             notifications: Some(NotificationConfig::default()),
             garrison: Some(GarrisonSettings::default()),
             sanctum: Some(SanctumConfig::default()),
+            rag: Some(RagConfig::default()),
+            memory_extraction: Some(MemoryExtractionConfig::default()),
             arsenal: Some(ArsenalConfig::default()),
             citadel: Some(CitadelConfig::default()),
             llm: Some(LlmConfig::default()),
