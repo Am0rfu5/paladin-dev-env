@@ -72,7 +72,7 @@ use uuid::Uuid;
 /// # }
 /// ```
 pub struct PaladinBuilder {
-    _llm_port: Arc<dyn LlmPort>, // Stored for future use, not currently used in build()
+    llm_port: Arc<dyn LlmPort>,
     data: PaladinData,
     config: PaladinConfig,
     garrison: Option<Arc<dyn GarrisonPort>>,
@@ -107,7 +107,7 @@ impl PaladinBuilder {
     /// ```
     pub fn new(llm_port: Arc<dyn LlmPort>) -> Self {
         Self {
-            _llm_port: llm_port,
+            llm_port,
             data: PaladinData::default(),
             config: PaladinConfig::default(),
             garrison: None,
@@ -349,6 +349,37 @@ impl PaladinBuilder {
     /// ```
     pub fn enable_planning(mut self, enabled: bool) -> Self {
         self.config.enable_planning = enabled;
+        self
+    }
+
+    /// Enables or disables vision capabilities for multimodal input
+    ///
+    /// When enabled, the Paladin can process both text and images in requests.
+    /// The underlying LLM must support vision (checked during validation).
+    ///
+    /// # Arguments
+    ///
+    /// * `enabled` - Whether to enable vision (default: false)
+    ///
+    /// # Validation
+    ///
+    /// If vision is enabled, the LLM port must implement VisionCapableLlm trait,
+    /// or validation will fail during build().
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are an AI that can analyze images")
+    ///     .enable_vision(true);
+    /// # }
+    /// ```
+    pub fn enable_vision(mut self, enabled: bool) -> Self {
+        self.data.vision_enabled = enabled;
         self
     }
 
@@ -835,6 +866,19 @@ impl PaladinBuilder {
             ));
         }
 
+        // Validate vision capability
+        if self.data.vision_enabled {
+            // Check if LLM port supports vision by checking if it reports vision capability
+            let capabilities = self.llm_port.get_capabilities();
+            if !capabilities.supports_vision {
+                return Err(PaladinError::ConfigurationError(format!(
+                    "vision_enabled is true but the LLM provider '{}' does not support vision. \
+                         Enable vision support in the LLM adapter or set vision_enabled to false.",
+                    self.llm_port.get_provider_name()
+                )));
+            }
+        }
+
         Ok(())
     }
 
@@ -891,7 +935,7 @@ mod tests {
     #[test]
     fn test_builder_validation_empty_prompt() {
         let builder = PaladinBuilder {
-            _llm_port: Arc::new(MockLlmPort),
+            llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "".to_string(),
                 ..Default::default()
@@ -917,7 +961,7 @@ mod tests {
     #[test]
     fn test_builder_validation_invalid_temperature() {
         let builder = PaladinBuilder {
-            _llm_port: Arc::new(MockLlmPort),
+            llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "Test".to_string(),
                 temperature: 1.5,
@@ -943,7 +987,7 @@ mod tests {
     #[test]
     fn test_builder_validation_invalid_max_loops() {
         let builder = PaladinBuilder {
-            _llm_port: Arc::new(MockLlmPort),
+            llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "Test".to_string(),
                 max_loops: 0,
@@ -997,7 +1041,7 @@ mod tests {
     #[test]
     fn test_builder_validation_autosave_without_citadel_or_dir() {
         let builder = PaladinBuilder {
-            _llm_port: Arc::new(MockLlmPort),
+            llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "Test".to_string(),
                 ..Default::default()
@@ -1023,7 +1067,7 @@ mod tests {
     #[test]
     fn test_builder_validation_autosave_with_citadel() {
         let builder = PaladinBuilder {
-            _llm_port: Arc::new(MockLlmPort),
+            llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "Test".to_string(),
                 ..Default::default()
@@ -1048,7 +1092,7 @@ mod tests {
     #[test]
     fn test_builder_validation_autosave_with_state_dir() {
         let builder = PaladinBuilder {
-            _llm_port: Arc::new(MockLlmPort),
+            llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "Test".to_string(),
                 ..Default::default()
@@ -1105,7 +1149,7 @@ mod tests {
     #[test]
     fn test_builder_validation_sanctum_without_embedding() {
         let builder = PaladinBuilder {
-            _llm_port: Arc::new(MockLlmPort),
+            llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "Test".to_string(),
                 ..Default::default()
@@ -1131,7 +1175,7 @@ mod tests {
     #[test]
     fn test_builder_validation_sanctum_with_embedding() {
         let builder = PaladinBuilder {
-            _llm_port: Arc::new(MockLlmPort),
+            llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "Test".to_string(),
                 ..Default::default()
@@ -1323,6 +1367,7 @@ mod tests {
                     max_loops: 5,
                     stop_words: vec![],
                     status: crate::core::platform::container::citadel::PaladinStatus::Idle,
+                    vision_enabled: false,
                 };
 
                 // Create Paladin (Node<PaladinData>)

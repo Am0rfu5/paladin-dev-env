@@ -79,6 +79,7 @@
 //!     max_loops: 3,
 //!     stop_words: vec![],
 //!     status: PaladinStatus::Idle,
+//!     vision_enabled: false,
 //! };
 //!
 //! let paladin: Paladin = Node::new(data, Some("Assistant".to_string()));

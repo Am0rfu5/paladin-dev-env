@@ -57,6 +57,7 @@ pub struct PaladinData {
     pub max_loops: u32,
     pub stop_words: Vec<String>,
     pub status: PaladinStatus,
+    pub vision_enabled: bool,
 }
 
 /// Status of a Paladin agent
@@ -358,6 +359,7 @@ mod tests {
             max_loops: 3,
             stop_words: vec!["STOP".to_string()],
             status: PaladinStatus::Idle,
+            vision_enabled: false,
         }
     }
 

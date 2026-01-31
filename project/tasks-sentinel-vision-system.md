@@ -233,14 +233,14 @@ Update the file after completing each sub-task, not just after completing an ent
 ### Phase 3: Paladin Integration (Week 1, Days 6-7 & Week 2, Day 1)
 
 - [ ] 6.0 Paladin Vision API Integration (US-13.4)
-  - [ ] 6.1 Read existing `src/core/platform/container/paladin.rs` to understand structure
-  - [ ] 6.2 Write unit test for vision-enabled Paladin configuration
-  - [ ] 6.3 Add `vision_enabled: bool` field to `PaladinData` struct
-  - [ ] 6.4 Read existing `src/application/use_cases/paladin/paladin_builder.rs`
-  - [ ] 6.5 Write unit test for `enable_vision()` builder method
-  - [ ] 6.6 Implement `enable_vision(bool)` method in `PaladinBuilder`
-  - [ ] 6.7 Write unit test for builder validation (vision enabled but LLM doesn't support it)
-  - [ ] 6.8 Update `PaladinBuilder::validate()` to check vision capability
+  - [x] 6.1 Read existing `src/core/platform/container/paladin.rs` to understand structure
+  - [x] 6.2 Write unit test for vision-enabled Paladin configuration
+  - [x] 6.3 Add `vision_enabled: bool` field to `PaladinData` struct
+  - [x] 6.4 Read existing `src/application/use_cases/paladin/paladin_builder.rs`
+  - [x] 6.5 Write unit test for `enable_vision()` builder method
+  - [x] 6.6 Implement `enable_vision(bool)` method in `PaladinBuilder`
+  - [x] 6.7 Write unit test for builder validation (vision enabled but LLM doesn't support it)
+  - [x] 6.8 Update `PaladinBuilder::validate()` to check vision capability
   - [ ] 6.9 Read existing `src/application/use_cases/paladin/paladin_execution_service.rs`
   - [ ] 6.10 Write unit test for `run_with_vision()` method
   - [ ] 6.11 Add `run_with_vision()` method to Paladin implementation:

@@ -19,6 +19,7 @@
 //!     max_loops: 3,
 //!     stop_words: vec!["STOP".to_string()],
 //!     status: PaladinStatus::Idle,
+//!     vision_enabled: false,
 //! };
 //!
 //! let paladin = Node::new(data, Some("MyPaladin".to_string()));
@@ -71,6 +72,9 @@ pub struct PaladinData {
 
     /// Current execution status
     pub status: PaladinStatus,
+
+    /// Whether vision capabilities are enabled for this Paladin
+    pub vision_enabled: bool,
 }
 
 /// Type alias for a Paladin entity following the `Node<T>` pattern
@@ -90,6 +94,7 @@ pub struct PaladinData {
 ///     max_loops: 5,
 ///     stop_words: vec!["DONE".to_string()],
 ///     status: PaladinStatus::Idle,
+///     vision_enabled: false,
 /// };
 ///
 /// let paladin: Paladin = Node::new(data, Some("CodeReviewer".to_string()));
@@ -109,6 +114,7 @@ impl Default for PaladinData {
     /// - `max_loops`: 3
     /// - `stop_words`: Empty vector
     /// - `status`: Idle
+    /// - `vision_enabled`: false
     fn default() -> Self {
         Self {
             system_prompt: String::new(),
@@ -119,6 +125,7 @@ impl Default for PaladinData {
             max_loops: 3,
             stop_words: Vec::new(),
             status: PaladinStatus::Idle,
+            vision_enabled: false,
         }
     }
 }
@@ -192,5 +199,15 @@ mod tests {
         assert_eq!(data.temperature, 0.7);
         assert_eq!(data.max_loops, 3);
         assert_eq!(data.status, PaladinStatus::Idle);
+        assert!(!data.vision_enabled);
+    }
+
+    #[test]
+    fn test_vision_enabled_field() {
+        let mut data = PaladinData::default();
+        assert!(!data.vision_enabled);
+
+        data.vision_enabled = true;
+        assert!(data.vision_enabled);
     }
 }
