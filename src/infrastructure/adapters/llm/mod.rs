@@ -7,4 +7,5 @@ pub mod deepseek_adapter;
 pub mod mock_llm_adapter;
 pub mod openai_adapter;
 pub mod openai_embedding_adapter;
+pub mod openai_vision;
 pub mod provider_factory;

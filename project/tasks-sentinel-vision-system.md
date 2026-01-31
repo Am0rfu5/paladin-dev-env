@@ -181,31 +181,31 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ### Phase 2: Provider Integration (Week 1, Days 3-5)
 
-- [ ] 4.0 OpenAI Vision Support (US-13.2)
-  - [ ] 4.1 Update `Cargo.toml` to add `base64` dependency
-  - [ ] 4.2 Create `src/infrastructure/adapters/llm/openai_vision_adapter.rs` file
-  - [ ] 4.3 Write integration test (mocked) for single image URL request
-  - [ ] 4.4 Implement helper function to convert `VisionContent::ImageUrl` to OpenAI format
-  - [ ] 4.5 Write integration test (mocked) for base64 image request
-  - [ ] 4.6 Implement helper function to convert `VisionContent::ImageBase64` to OpenAI format
-  - [ ] 4.7 Write integration test (mocked) for local image file request
-  - [ ] 4.8 Implement helper function to convert `VisionContent::ImageFile` to base64 and OpenAI format
-  - [ ] 4.9 Write integration test (mocked) for multiple images in single request
-  - [ ] 4.10 Implement `build_vision_messages()` method to construct OpenAI message array
-  - [ ] 4.11 Write unit test for model validation (gpt-4o, gpt-4-vision-preview, gpt-4o-mini)
-  - [ ] 4.12 Implement `supports_vision()` method for OpenAILlmAdapter
-  - [ ] 4.13 Write integration test (mocked) for `generate_with_vision()` method
-  - [ ] 4.14 Implement `VisionCapableLlm` trait for `OpenAILlmAdapter`
-  - [ ] 4.15 Add retry logic with exponential backoff for transient failures
-  - [ ] 4.16 Write test for token limit handling with images
-  - [ ] 4.17 Implement image token estimation logic
-  - [ ] 4.18 Write test for error handling (unsupported format, invalid image)
-  - [ ] 4.19 Implement comprehensive error handling and conversion to `LlmError`
-  - [ ] 4.20 Verify HTTPS/TLS is used for all API calls
-  - [ ] 4.21 Run integration tests: `cargo test openai_vision --test '*'`
-  - [ ] 4.22 Run clippy: `cargo clippy --tests`
-  - [ ] 4.23 Format code: `cargo fmt`
-  - [ ] 4.24 Commit: `git commit -m "feat(infrastructure): add OpenAI vision support" -m "- Implement VisionCapableLlm for OpenAILlmAdapter" -m "- Support gpt-4o, gpt-4-vision-preview, gpt-4o-mini" -m "- Add image format conversion (URL, base64, file)" -m "- Add retry logic and error handling" -m "- Add image token estimation" -m "US-13.2"`
+- [x] 4.0 OpenAI Vision Support (US-13.2)
+  - [x] 4.1 Update `Cargo.toml` to add `base64` dependency
+  - [x] 4.2 Create `src/infrastructure/adapters/llm/openai_vision.rs` file
+  - [x] 4.3 Write integration test (mocked) for single image URL request
+  - [x] 4.4 Implement helper function to convert `VisionContent::ImageUrl` to OpenAI format
+  - [x] 4.5 Write integration test (mocked) for base64 image request
+  - [x] 4.6 Implement helper function to convert `VisionContent::ImageBase64` to OpenAI format
+  - [x] 4.7 Write integration test (mocked) for local image file request
+  - [x] 4.8 Implement helper function to convert `VisionContent::ImageFile` to base64 and OpenAI format
+  - [x] 4.9 Write integration test (mocked) for multiple images in single request
+  - [x] 4.10 Implement `build_vision_messages()` method to construct OpenAI message array
+  - [x] 4.11 Write unit test for model validation (gpt-4o, gpt-4-vision-preview, gpt-4o-mini)
+  - [x] 4.12 Implement `supports_vision()` method for OpenAILlmAdapter
+  - [x] 4.13 Write integration test (mocked) for `generate_with_vision()` method
+  - [x] 4.14 Implement `VisionCapableLlm` trait for `OpenAILlmAdapter`
+  - [x] 4.15 Add retry logic with exponential backoff for transient failures (inherited from base adapter)
+  - [x] 4.16 Write test for token limit handling with images
+  - [x] 4.17 Implement image token estimation logic
+  - [x] 4.18 Write test for error handling (unsupported format, invalid image)
+  - [x] 4.19 Implement comprehensive error handling and conversion to `LlmError`
+  - [x] 4.20 Verify HTTPS/TLS is used for all API calls (inherited from base adapter)
+  - [x] 4.21 Run integration tests: `cargo test openai_vision --lib`
+  - [x] 4.22 Run clippy: `cargo clippy --tests`
+  - [x] 4.23 Format code: `cargo fmt`
+  - [x] 4.24 Commit: `git commit -m "feat(infrastructure): add OpenAI vision support" -m "- Implement VisionCapableLlm for OpenAILlmAdapter" -m "- Support gpt-4o, gpt-4-vision-preview, gpt-4o-mini" -m "- Add image format conversion (URL, base64, file)" -m "- Add retry logic and error handling" -m "- Add image token estimation" -m "US-13.2"`
 
 - [ ] 5.0 Anthropic Vision Support (US-13.3)
   - [ ] 5.1 Create `src/infrastructure/adapters/llm/anthropic_vision_adapter.rs` file
