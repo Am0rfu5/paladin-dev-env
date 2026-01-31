@@ -207,28 +207,28 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.23 Format code: `cargo fmt`
   - [x] 4.24 Commit: `git commit -m "feat(infrastructure): add OpenAI vision support" -m "- Implement VisionCapableLlm for OpenAILlmAdapter" -m "- Support gpt-4o, gpt-4-vision-preview, gpt-4o-mini" -m "- Add image format conversion (URL, base64, file)" -m "- Add retry logic and error handling" -m "- Add image token estimation" -m "US-13.2"`
 
-- [ ] 5.0 Anthropic Vision Support (US-13.3)
-  - [ ] 5.1 Create `src/infrastructure/adapters/llm/anthropic_vision_adapter.rs` file
-  - [ ] 5.2 Write integration test (mocked) for base64 image request
-  - [ ] 5.3 Implement helper function to convert `VisionContent::ImageBase64` to Anthropic format
-  - [ ] 5.4 Write integration test (mocked) for URL-to-base64 conversion
-  - [ ] 5.5 Implement async function to download image from URL and convert to base64
-  - [ ] 5.6 Write integration test (mocked) for local file to base64 conversion
-  - [ ] 5.7 Implement helper function to load local file and convert to base64
-  - [ ] 5.8 Write integration test (mocked) for multiple images in content blocks
-  - [ ] 5.9 Implement `build_vision_content_blocks()` method for Anthropic message format
-  - [ ] 5.10 Write unit test for model validation (claude-3-opus, claude-3-sonnet, claude-3-haiku)
-  - [ ] 5.11 Implement `supports_vision()` method for AnthropicLlmAdapter
-  - [ ] 5.12 Write integration test (mocked) for `generate_with_vision()` method
-  - [ ] 5.13 Implement `VisionCapableLlm` trait for `AnthropicLlmAdapter`
-  - [ ] 5.14 Add rate limiting logic for Anthropic API
-  - [ ] 5.15 Write test for error handling (download failure, conversion error)
-  - [ ] 5.16 Implement comprehensive error handling and conversion to `LlmError`
-  - [ ] 5.17 Verify HTTPS/TLS is used for all API calls
-  - [ ] 5.18 Run integration tests: `cargo test anthropic_vision --test '*'`
-  - [ ] 5.19 Run clippy: `cargo clippy --tests`
-  - [ ] 5.20 Format code: `cargo fmt`
-  - [ ] 5.21 Commit: `git commit -m "feat(infrastructure): add Anthropic vision support" -m "- Implement VisionCapableLlm for AnthropicLlmAdapter" -m "- Support Claude 3 models (Opus, Sonnet, Haiku)" -m "- Auto-convert URLs to base64" -m "- Add rate limiting and error handling" -m "US-13.3"`
+- [x] 5.0 Anthropic Vision Support (US-13.3)
+  - [x] 5.1 Create `src/infrastructure/adapters/llm/anthropic_vision.rs` file
+  - [x] 5.2 Write integration test (mocked) for base64 image request
+  - [x] 5.3 Implement helper function to convert `VisionContent::ImageBase64` to Anthropic format
+  - [x] 5.4 Write integration test (mocked) for URL-to-base64 conversion
+  - [x] 5.5 Implement async function to download image from URL and convert to base64
+  - [x] 5.6 Write integration test (mocked) for local file to base64 conversion
+  - [x] 5.7 Implement helper function to load local file and convert to base64
+  - [x] 5.8 Write integration test (mocked) for multiple images in content blocks
+  - [x] 5.9 Implement `build_vision_content_blocks()` method for Anthropic message format
+  - [x] 5.10 Write unit test for model validation (claude-3-opus, claude-3-sonnet, claude-3-haiku)
+  - [x] 5.11 Implement `supports_vision()` method for AnthropicLlmAdapter
+  - [x] 5.12 Write integration test (mocked) for `generate_with_vision()` method
+  - [x] 5.13 Implement `VisionCapableLlm` trait for `AnthropicLlmAdapter`
+  - [x] 5.14 Add rate limiting logic for Anthropic API (inherited from base adapter)
+  - [x] 5.15 Write test for error handling (download failure, conversion error)
+  - [x] 5.16 Implement comprehensive error handling and conversion to `LlmError`
+  - [x] 5.17 Verify HTTPS/TLS is used for all API calls (inherited from base adapter)
+  - [x] 5.18 Run integration tests: `cargo test anthropic_vision --lib`
+  - [x] 5.19 Run clippy: `cargo clippy --tests`
+  - [x] 5.20 Format code: `cargo fmt`
+  - [x] 5.21 Commit: `git commit -m "feat(infrastructure): add Anthropic vision support" -m "- Implement VisionCapableLlm for AnthropicLlmAdapter" -m "- Support Claude 3 models (Opus, Sonnet, Haiku)" -m "- Auto-convert URLs to base64" -m "- Add rate limiting and error handling" -m "US-13.3"`
 
 ### Phase 3: Paladin Integration (Week 1, Days 6-7 & Week 2, Day 1)
 
