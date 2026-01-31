@@ -115,28 +115,28 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 0.2 Verify branch created successfully: `git branch --show-current`
   - [x] 0.3 Push branch to remote: `git push -u origin feature/epic-13-sentinel-vision-system`
 
-- [ ] 1.0 Vision Content Domain Models (US-13.1)
-  - [ ] 1.1 Create `src/core/platform/container/vision.rs` file
-  - [ ] 1.2 Write unit test for `ImageDetail` enum (Auto, Low, High)
-  - [ ] 1.3 Implement `ImageDetail` enum with Debug, Clone, Serialize, Deserialize traits
-  - [ ] 1.4 Write unit test for `VisionContent` enum validation
-  - [ ] 1.5 Implement `VisionContent` enum with three variants:
+- [x] 1.0 Vision Content Domain Models (US-13.1)
+  - [x] 1.1 Create `src/core/platform/container/vision.rs` file
+  - [x] 1.2 Write unit test for `ImageDetail` enum (Auto, Low, High)
+  - [x] 1.3 Implement `ImageDetail` enum with Debug, Clone, Serialize, Deserialize traits
+  - [x] 1.4 Write unit test for `VisionContent` enum validation
+  - [x] 1.5 Implement `VisionContent` enum with three variants:
     - ImageUrl { url: String, detail: ImageDetail }
     - ImageBase64 { data: String, media_type: String, detail: ImageDetail }
     - ImageFile { path: PathBuf, detail: ImageDetail }
-  - [ ] 1.6 Write unit test for format validation (PNG, JPEG, GIF, WebP)
-  - [ ] 1.7 Implement `validate_format()` method for `VisionContent`
-  - [ ] 1.8 Write unit test for `VisionRequest` struct
-  - [ ] 1.9 Implement `VisionRequest` struct with text and images fields
-  - [ ] 1.10 Write unit test for multiple images in single request
-  - [ ] 1.11 Implement `VisionRequest::new()` and validation methods
-  - [ ] 1.12 Add `VisionError` enum in `src/core/platform/container/vision_error.rs`
-  - [ ] 1.13 Implement error variants: UnsupportedFormat, FileTooLarge, InvalidImage, ModelNotSupported, NetworkError, EncryptionError
-  - [ ] 1.14 Export vision types in `src/core/platform/container/mod.rs`
-  - [ ] 1.15 Run tests: `cargo test vision_content`
-  - [ ] 1.16 Run clippy: `cargo clippy --tests`
-  - [ ] 1.17 Format code: `cargo fmt`
-  - [ ] 1.18 Commit: `git commit -m "feat(core): add vision content domain models" -m "- Implement VisionContent enum with ImageUrl, ImageBase64, ImageFile" -m "- Add ImageDetail enum for quality control" -m "- Add VisionRequest struct" -m "- Add format validation" -m "- Add VisionError types" -m "US-13.1"`
+  - [x] 1.6 Write unit test for format validation (PNG, JPEG, GIF, WebP)
+  - [x] 1.7 Implement `validate_format()` method for `VisionContent`
+  - [x] 1.8 Write unit test for `VisionRequest` struct
+  - [x] 1.9 Implement `VisionRequest` struct with text and images fields
+  - [x] 1.10 Write unit test for multiple images in single request
+  - [x] 1.11 Implement `VisionRequest::new()` and validation methods
+  - [x] 1.12 Add `VisionError` enum in `src/core/platform/container/vision_error.rs`
+  - [x] 1.13 Implement error variants: UnsupportedFormat, FileTooLarge, InvalidImage, ModelNotSupported, NetworkError, EncryptionError
+  - [x] 1.14 Export vision types in `src/core/platform/container/mod.rs`
+  - [x] 1.15 Run tests: `cargo test vision_content`
+  - [x] 1.16 Run clippy: `cargo clippy --tests`
+  - [x] 1.17 Format code: `cargo fmt`
+  - [x] 1.18 Commit: `git commit -m "feat(core): add vision content domain models" -m "- Implement VisionContent enum with ImageUrl, ImageBase64, ImageFile" -m "- Add ImageDetail enum for quality control" -m "- Add VisionRequest struct" -m "- Add format validation" -m "- Add VisionError types" -m "US-13.1"`
 
 - [ ] 2.0 Document Domain Models & Port Definition (US-13.6 Interface)
   - [ ] 2.1 Create `src/core/platform/container/document.rs` file

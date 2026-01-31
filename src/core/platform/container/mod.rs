@@ -19,4 +19,5 @@ pub mod task;
 pub mod trigger;
 pub mod user;
 pub mod user_group;
+pub mod vision;
 pub mod workflow;
