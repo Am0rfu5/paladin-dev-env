@@ -103,6 +103,11 @@ name = "qdrant_sanctum_integration"
 path = "tests/integration/qdrant_sanctum_tests.rs"
 required-features = ["qdrant"]
 
+[[test]]
+name = "rag_integration"
+path = "tests/integration/rag_integration_tests.rs"
+required-features = ["qdrant"]
+
 [[bin]]
 name = "paladin"
 path = "src/main.rs"

@@ -19,8 +19,8 @@ mod openai_integration_tests {
     fn create_openai_adapter() -> OpenAiAdapter {
         let api_key = env::var("OPENAI_API_KEY")
             .expect("OPENAI_API_KEY must be set for OpenAI integration tests");
-        let base_url = env::var("OPENAI_BASE_URL")
-            .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+        let base_url =
+            env::var("OPENAI_BASE_URL").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
 
         OpenAiAdapter::new(api_key, base_url)
     }
@@ -51,7 +51,10 @@ mod openai_integration_tests {
         assert!(result.is_ok(), "OpenAI API call failed: {:?}", result.err());
 
         let response = result.unwrap();
-        assert!(!response.content.is_empty(), "Response content should not be empty");
+        assert!(
+            !response.content.is_empty(),
+            "Response content should not be empty"
+        );
         assert!(
             response.content.to_lowercase().contains("hello"),
             "Response should contain 'hello'"
@@ -90,7 +93,11 @@ mod openai_integration_tests {
         };
 
         let result = adapter.generate(&request).await;
-        assert!(result.is_ok(), "OpenAI function call failed: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "OpenAI function call failed: {:?}",
+            result.err()
+        );
 
         let response = result.unwrap();
         // Function calling should return either a function call or content
@@ -132,7 +139,10 @@ mod openai_integration_tests {
         let response = adapter.generate(&request).await.unwrap();
 
         // Verify token usage tracking
-        assert!(response.usage.prompt_tokens > 0, "Prompt tokens should be tracked");
+        assert!(
+            response.usage.prompt_tokens > 0,
+            "Prompt tokens should be tracked"
+        );
         assert!(
             response.usage.completion_tokens > 0,
             "Completion tokens should be tracked"
@@ -168,10 +178,7 @@ mod openai_integration_tests {
         };
 
         let result = adapter.generate(&request).await;
-        assert!(
-            result.is_err(),
-            "Should fail with non-existent model"
-        );
+        assert!(result.is_err(), "Should fail with non-existent model");
     }
 
     #[tokio::test]
