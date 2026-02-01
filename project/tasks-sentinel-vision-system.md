@@ -285,34 +285,34 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.21 Format code: `cargo fmt`
   - [x] 7.22 Commit: `git commit -m "feat(infrastructure): add PDF text extraction" -m "- Implement PdfExtractor utility" -m "- Support file path and byte array input" -m "- Extract metadata (title, author, pages)" -m "- Handle encrypted and corrupted PDFs" -m "- Preserve text structure" -m "US-13.5"`
 
-- [ ] 8.0 Document Port Implementation (US-13.6 Implementation)
-  - [ ] 8.1 Create `src/infrastructure/adapters/document/document_adapter.rs` file
-  - [ ] 8.2 Write unit test for `DocumentAdapter` struct creation
-  - [ ] 8.3 Implement `DocumentAdapter` struct with PdfExtractor field
-  - [ ] 8.4 Write integration test for PDF ingestion via File source
-  - [ ] 8.5 Implement `ingest()` method for `DocumentSource::File`
-  - [ ] 8.6 Write integration test for PDF ingestion via Bytes source
-  - [ ] 8.7 Implement `ingest()` method for `DocumentSource::Bytes`
-  - [ ] 8.8 Write unit test for URL source (placeholder/future)
-  - [ ] 8.9 Implement `ingest()` method for `DocumentSource::Url` (return unsupported for now)
-  - [ ] 8.10 Write unit test for TXT file ingestion
-  - [ ] 8.11 Implement TXT file handling in `ingest()` method
-  - [ ] 8.12 Write unit test for MD file ingestion
-  - [ ] 8.13 Implement Markdown file handling in `ingest()` method
-  - [ ] 8.14 Write unit test for document chunking with default config
-  - [ ] 8.15 Implement `chunk()` method with basic text splitting logic
-  - [ ] 8.16 Write unit test for chunking with custom chunk_size
-  - [ ] 8.17 Implement configurable chunk_size logic
-  - [ ] 8.18 Write unit test for chunking with overlap
-  - [ ] 8.19 Implement chunk_overlap logic
-  - [ ] 8.20 Write unit test for chunking with custom separator
-  - [ ] 8.21 Implement custom separator logic
-  - [ ] 8.22 Write test for thread safety (Arc<DocumentAdapter>)
-  - [ ] 8.23 Verify thread-safe implementation
-  - [ ] 8.24 Run tests: `cargo test document_adapter`
-  - [ ] 8.25 Run clippy: `cargo clippy --tests`
-  - [ ] 8.26 Format code: `cargo fmt`
-  - [ ] 8.27 Commit: `git commit -m "feat(infrastructure): implement DocumentPort adapter" -m "- Implement DocumentAdapter with DocumentPort trait" -m "- Support PDF, TXT, MD file ingestion" -m "- Implement document chunking with configurable options" -m "- Thread-safe and async-compatible" -m "US-13.6 (Implementation)"`
+- [x] 8.0 Document Port Implementation (US-13.6 Implementation)
+  - [x] 8.1 Create `src/infrastructure/adapters/document/document_adapter.rs` file
+  - [x] 8.2 Write unit test for `DocumentAdapter` struct creation
+  - [x] 8.3 Implement `DocumentAdapter` struct with PdfExtractor field
+  - [x] 8.4 Write integration test for PDF ingestion via File source
+  - [x] 8.5 Implement `ingest()` method for `DocumentSource::File`
+  - [x] 8.6 Write integration test for PDF ingestion via Bytes source
+  - [x] 8.7 Implement `ingest()` method for `DocumentSource::Bytes`
+  - [x] 8.8 Write unit test for URL source (placeholder/future)
+  - [x] 8.9 Implement `ingest()` method for `DocumentSource::Url` (return unsupported for now)
+  - [x] 8.10 Write unit test for TXT file ingestion
+  - [x] 8.11 Implement TXT file handling in `ingest()` method
+  - [x] 8.12 Write unit test for MD file ingestion
+  - [x] 8.13 Implement Markdown file handling in `ingest()` method
+  - [x] 8.14 Write unit test for document chunking with default config
+  - [x] 8.15 Implement `chunk()` method with basic text splitting logic
+  - [x] 8.16 Write unit test for chunking with custom chunk_size
+  - [x] 8.17 Implement configurable chunk_size logic
+  - [x] 8.18 Write unit test for chunking with overlap
+  - [x] 8.19 Implement chunk_overlap logic
+  - [x] 8.20 Write unit test for chunking with custom separator
+  - [x] 8.21 Implement custom separator logic
+  - [x] 8.22 Write test for thread safety (Arc<DocumentAdapter>)
+  - [x] 8.23 Verify thread-safe implementation
+  - [x] 8.24 Run tests: `cargo test document_adapter`
+  - [x] 8.25 Run clippy: `cargo clippy --tests`
+  - [x] 8.26 Format code: `cargo fmt`
+  - [x] 8.27 Commit: `git commit -m "feat(infrastructure): implement DocumentPort adapter" -m "- Implement DocumentAdapter with DocumentPort trait" -m "- Support PDF, TXT, MD file ingestion" -m "- Implement document chunking with configurable options" -m "- Thread-safe and async-compatible" -m "US-13.6 (Implementation)"`
 
 ### Phase 5: Interface Layer (Week 2, Days 4-5)
 
