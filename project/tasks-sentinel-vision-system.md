@@ -342,28 +342,28 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 9.23 Format code: `cargo fmt`
   - [x] 9.24 Commit: `git commit -m "feat(cli): add vision and document support" -m "- Add --image flag (repeatable)" -m "- Add --document flag" -m "- Add file validation" -m "- Add clear error messages" -m "- Update output formatting" -m "FR-8"`
 
-- [ ] 10.0 YAML Configuration Support (FR-9)
-  - [ ] 10.1 Read existing YAML configuration loading code
-  - [ ] 10.2 Write unit test for `images` array field parsing
-  - [ ] 10.3 Add `images: Vec<String>` field to Paladin YAML config struct
-  - [ ] 10.4 Write unit test for `documents` array field parsing
-  - [ ] 10.5 Add `documents: Vec<String>` field to Paladin YAML config struct
-  - [ ] 10.6 Write unit test for `vision_enabled` boolean field parsing
-  - [ ] 10.7 Add `vision_enabled: bool` field to Paladin YAML config struct
-  - [ ] 10.8 Write unit test for file path validation during config loading
-  - [ ] 10.9 Implement validation logic to check all image/document paths exist
-  - [ ] 10.10 Write unit test for missing file error
-  - [ ] 10.11 Implement helpful error messages for missing/invalid files
-  - [ ] 10.12 Create example config: `examples/cli_configs/vision_agent.yaml`
-  - [ ] 10.13 Write example showing single image configuration
-  - [ ] 10.14 Write example showing multiple images configuration
-  - [ ] 10.15 Write example showing document configuration
-  - [ ] 10.16 Write example showing security settings
-  - [ ] 10.17 Update main `config.yml` with vision configuration section
-  - [ ] 10.18 Run tests: `cargo test config.*vision`
-  - [ ] 10.19 Run clippy: `cargo clippy --tests`
-  - [ ] 10.20 Format code: `cargo fmt`
-  - [ ] 10.21 Commit: `git commit -m "feat(config): add vision YAML configuration" -m "- Add images array field" -m "- Add documents array field" -m "- Add vision_enabled flag" -m "- Add file path validation" -m "- Create example configurations" -m "FR-9"`
+- [x] 10.0 YAML Configuration Support (FR-9)
+  - [x] 10.1 Read existing YAML configuration loading code
+  - [x] 10.2 Write unit test for `images` array field parsing
+  - [x] 10.3 Add `images: Vec<String>` field to Paladin YAML config struct
+  - [x] 10.4 Write unit test for `documents` array field parsing
+  - [x] 10.5 Add `documents: Vec<String>` field to Paladin YAML config struct
+  - [x] 10.6 Write unit test for `vision_enabled` boolean field parsing
+  - [x] 10.7 Add `vision_enabled: bool` field to Paladin YAML config struct
+  - [x] 10.8 Write unit test for file path validation during config loading
+  - [x] 10.9 Implement validation logic to check all image/document paths exist
+  - [x] 10.10 Write unit test for missing file error
+  - [x] 10.11 Implement helpful error messages for missing/invalid files
+  - [x] 10.12 Create example config: `examples/cli_configs/vision_agent.yaml`
+  - [x] 10.13 Write example showing single image configuration
+  - [x] 10.14 Write example showing multiple images configuration
+  - [x] 10.15 Write example showing document configuration
+  - [x] 10.16 Write example showing security settings
+  - [x] 10.17 Update main `config.yml` with vision configuration section
+  - [x] 10.18 Run tests: `cargo test config.*vision`
+  - [x] 10.19 Run clippy: `cargo clippy --tests`
+  - [x] 10.20 Format code: `cargo fmt`
+  - [x] 10.21 Commit: `git commit -m "feat(config): add vision YAML configuration" -m "- Add images array field" -m "- Add documents array field" -m "- Add vision_enabled flag" -m "- Add file path validation" -m "- Create example configurations" -m "FR-9"`
 
 ### Phase 6: Security (Week 2, Days 5-6)
 

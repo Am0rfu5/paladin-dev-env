@@ -168,4 +168,5 @@
 
 pub mod adapters;
 pub mod repositories;
+pub mod security;
 pub mod web;
