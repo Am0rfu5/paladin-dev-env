@@ -369,7 +369,7 @@ async fn test_paladin_restoration_via_builder() {
         .expect("Failed to restore from state");
 
     // Verify the builder has the restored configuration
-    let paladin = builder.build().expect("Failed to build paladin");
+    let paladin = builder.build().await.expect("Failed to build paladin");
     assert_eq!(paladin.node.system_prompt, "You are a helpful assistant");
     assert_eq!(paladin.node.name, "TestPaladin");
     assert_eq!(paladin.node.model, "gpt-4");

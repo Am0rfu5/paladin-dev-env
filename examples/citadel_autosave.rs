@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .max_loops(1)
         .with_citadel(citadel.clone()) // Enable Citadel
         .enable_autosave() // Enable automatic saving
-        .build()?;
+        .build().await?;
 
     println!("✅ Paladin created with autosave enabled!");
     println!("   Name: {}", paladin.node.name);

@@ -102,7 +102,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("You are a helpful geography assistant")
             .name("GeographyExpert")
-            .build()?;
+            .build().await?;
 
         let service = PaladinExecutionService::new(
             Arc::clone(&llm_port),
@@ -133,7 +133,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("You are a helpful geography assistant")
             .name("GeographyExpert")
-            .build()?;
+            .build().await?;
 
         let service = PaladinExecutionService::new(
             Arc::clone(&llm_port),
@@ -164,7 +164,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("You are a helpful geography assistant")
             .name("GeographyExpert")
-            .build()?;
+            .build().await?;
 
         let service = PaladinExecutionService::new(
             Arc::clone(&llm_port),
@@ -191,7 +191,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("You are a helpful geography assistant")
             .name("GeographyExpert")
-            .build()?;
+            .build().await?;
 
         let service = PaladinExecutionService::new(
             Arc::clone(&llm_port),

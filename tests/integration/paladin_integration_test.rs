@@ -31,6 +31,7 @@ async fn test_end_to_end_paladin_execution() {
         .model("mock-model")
         .max_loops(1)
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     let result = service.execute(&paladin, "How can you help me?").await;
@@ -58,6 +59,7 @@ async fn test_multi_loop_execution_with_accumulation() {
         .system_prompt("You are a helpful assistant")
         .max_loops(3)
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     let result = service.execute(&paladin, "Test input").await;
@@ -84,6 +86,7 @@ async fn test_stop_word_detection_halts_execution() {
         .max_loops(5)
         .add_stop_word("STOP")
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     let result = service.execute(&paladin, "Test input").await;
@@ -116,6 +119,7 @@ async fn test_circuit_breaker_integration() {
         .system_prompt("You are a helpful assistant")
         .max_loops(1)
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     // First failure
@@ -153,6 +157,7 @@ async fn test_retry_logic_with_exponential_backoff() {
         .system_prompt("You are a helpful assistant")
         .max_loops(3) // This controls max retry attempts: min(max_loops, 10)
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     let start = std::time::Instant::now();
@@ -189,21 +194,21 @@ async fn test_builder_validation_errors() {
     let result1 = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("")
         .build();
-    assert!(result1.is_err(), "Should fail with empty system prompt");
+    assert!(result1.await.is_err(), "Should fail with empty system prompt");
 
     // Invalid temperature should fail
     let result2 = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("Valid prompt")
         .temperature(2.0) // Out of range [0.0, 1.0]
         .build();
-    assert!(result2.is_err(), "Should fail with invalid temperature");
+    assert!(result2.await.is_err(), "Should fail with invalid temperature");
 
     // Invalid max_loops should fail
     let result3 = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("Valid prompt")
         .max_loops(0) // Must be >= 1
         .build();
-    assert!(result3.is_err(), "Should fail with zero max_loops");
+    assert!(result3.await.is_err(), "Should fail with zero max_loops");
 
     // Valid configuration should succeed
     let result4 = PaladinBuilder::new(llm_port as Arc<dyn LlmPort>)
@@ -211,7 +216,7 @@ async fn test_builder_validation_errors() {
         .temperature(0.7)
         .max_loops(3)
         .build();
-    assert!(result4.is_ok(), "Should succeed with valid configuration");
+    assert!(result4.await.is_ok(), "Should succeed with valid configuration");
 }
 
 #[tokio::test]
@@ -239,6 +244,7 @@ async fn test_concurrent_paladin_execution() {
                 .name(format!("Paladin-{}", i))
                 .max_loops(1)
                 .build()
+                .await
                 .expect("Failed to build Paladin");
 
             service_clone
@@ -278,6 +284,7 @@ async fn test_error_propagation_across_layers() {
         .system_prompt("You are a helpful assistant")
         .max_loops(1)
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     let result = service.execute(&paladin, "Test input").await;
@@ -314,6 +321,7 @@ async fn test_paladin_with_custom_configuration() {
         .add_stop_word("END")
         .add_stop_word("DONE")
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     let result = service.execute(&paladin, "Write a function").await;
@@ -351,6 +359,7 @@ async fn test_paladin_metadata_tracking() {
         .system_prompt("You are a helpful assistant")
         .max_loops(1)
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     let result = service.execute(&paladin, "Test input").await;
@@ -389,6 +398,7 @@ async fn test_circuit_breaker_recovery() {
         .system_prompt("You are a helpful assistant")
         .max_loops(1)
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     // Successful calls should work
@@ -420,6 +430,7 @@ async fn test_paladin_with_delays() {
         .system_prompt("You are a helpful assistant")
         .max_loops(1)
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     let start = std::time::Instant::now();

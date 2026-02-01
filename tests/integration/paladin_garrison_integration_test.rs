@@ -96,6 +96,7 @@ async fn test_paladin_with_garrison_stores_conversation() {
         .model("gpt-4")
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build paladin");
 
     // Create execution service WITH garrison
@@ -151,6 +152,7 @@ async fn test_paladin_without_garrison_single_turn() {
         .name("SingleTurnPaladin")
         .model("gpt-4")
         .build()
+        .await
         .expect("Failed to build paladin");
 
     // Create execution service WITHOUT garrison (None)
@@ -182,6 +184,7 @@ async fn test_paladin_multi_turn_conversation() {
         .max_loops(1) // Single loop per turn
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build paladin");
 
     // Create execution service WITH garrison
@@ -273,6 +276,7 @@ async fn test_garrison_error_handling() {
         .system_prompt("Test")
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
@@ -304,6 +308,7 @@ async fn test_garrison_token_limit_enforcement() {
         .name("TokenLimitPaladin")
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
@@ -343,6 +348,7 @@ async fn test_garrison_importance_based_eviction() {
         .system_prompt("Test")
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
@@ -384,6 +390,7 @@ async fn test_garrison_fifo_eviction() {
         .system_prompt("Test")
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
@@ -420,6 +427,7 @@ async fn test_garrison_sliding_window_eviction() {
         .system_prompt("Test")
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
@@ -458,6 +466,7 @@ async fn test_garrison_search_functionality() {
         .system_prompt("Test")
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
@@ -497,6 +506,7 @@ async fn test_garrison_forget_all() {
         .system_prompt("Test")
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
@@ -575,6 +585,7 @@ async fn test_garrison_with_circuit_breaker_interaction() {
         .system_prompt("Test")
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(1)));
@@ -605,6 +616,7 @@ async fn test_garrison_stats_accuracy() {
         .system_prompt("Test")
         .with_garrison(garrison.clone())
         .build()
+        .await
         .expect("Failed to build");
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));

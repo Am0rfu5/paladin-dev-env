@@ -121,7 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  // Use in Paladin");
     println!("  let paladin = PaladinBuilder::new(llm)");
     println!("      .with_arsenal_registry(Arc::new(registry))");
-    println!("      .build()?;");
+    println!("      .build().await?;");
     println!("  ```\n");
 
     println!("══════════════════════════════════════════════════════");

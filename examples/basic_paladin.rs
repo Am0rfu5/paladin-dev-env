@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .model("gpt-4")
         .temperature(0.7)
         .max_loops(1) // Single iteration for simplicity
-        .build()?;
+        .build().await?;
 
     println!("✅ Paladin created successfully!");
     println!("   Name: {}", paladin.node.name);

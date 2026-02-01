@@ -306,6 +306,7 @@ async fn test_tool_call_detection() {
         .system_prompt("You are a helpful calculator assistant")
         .max_loops(3)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "What is 5 + 3?").await;
@@ -380,6 +381,7 @@ async fn test_tool_invocation_and_injection() {
         .system_prompt("You are a helpful calculator assistant")
         .max_loops(3)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "What is 7 times 6?").await;
@@ -464,6 +466,7 @@ async fn test_paladin_continues_after_tool_failure() {
         .system_prompt("You are a helpful assistant")
         .max_loops(3)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "What is the weather?").await;

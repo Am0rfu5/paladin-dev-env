@@ -83,8 +83,8 @@ impl ArsenalRegistry for MockArsenalRegistry {
     }
 }
 
-#[test]
-fn test_builder_add_mcp_stdio() {
+#[tokio::test]
+async fn test_builder_add_mcp_stdio() {
     let llm_port = Arc::new(MockLlmPort);
     let builder = PaladinBuilder::new(llm_port)
         .system_prompt("Test prompt")
@@ -93,13 +93,13 @@ fn test_builder_add_mcp_stdio() {
     // Build to verify no errors
     let result = builder.build();
     assert!(
-        result.is_ok(),
+        result.await.is_ok(),
         "Builder should succeed with MCP STDIO config"
     );
 }
 
-#[test]
-fn test_builder_add_mcp_sse() {
+#[tokio::test]
+async fn test_builder_add_mcp_sse() {
     let llm_port = Arc::new(MockLlmPort);
     let builder = PaladinBuilder::new(llm_port)
         .system_prompt("Test prompt")
@@ -107,11 +107,11 @@ fn test_builder_add_mcp_sse() {
 
     // Build to verify no errors
     let result = builder.build();
-    assert!(result.is_ok(), "Builder should succeed with MCP SSE config");
+    assert!(result.await.is_ok(), "Builder should succeed with MCP SSE config");
 }
 
-#[test]
-fn test_builder_add_multiple_mcp_servers() {
+#[tokio::test]
+async fn test_builder_add_multiple_mcp_servers() {
     let llm_port = Arc::new(MockLlmPort);
     let builder = PaladinBuilder::new(llm_port)
         .system_prompt("Test prompt")
@@ -122,13 +122,13 @@ fn test_builder_add_multiple_mcp_servers() {
     // Build to verify no errors
     let result = builder.build();
     assert!(
-        result.is_ok(),
+        result.await.is_ok(),
         "Builder should succeed with multiple MCP servers"
     );
 }
 
-#[test]
-fn test_builder_with_arsenal_registry() {
+#[tokio::test]
+async fn test_builder_with_arsenal_registry() {
     let llm_port = Arc::new(MockLlmPort);
     let registry = Arc::new(MockArsenalRegistry);
 
@@ -139,13 +139,13 @@ fn test_builder_with_arsenal_registry() {
     // Build to verify no errors
     let result = builder.build();
     assert!(
-        result.is_ok(),
+        result.await.is_ok(),
         "Builder should succeed with arsenal registry"
     );
 }
 
-#[test]
-fn test_builder_full_arsenal_configuration() {
+#[tokio::test]
+async fn test_builder_full_arsenal_configuration() {
     let llm_port = Arc::new(MockLlmPort);
     let registry = Arc::new(MockArsenalRegistry);
 
@@ -162,7 +162,7 @@ fn test_builder_full_arsenal_configuration() {
     // Build to verify no errors
     let result = builder.build();
     assert!(
-        result.is_ok(),
+        result.await.is_ok(),
         "Builder should succeed with full arsenal configuration"
     );
 }

@@ -74,6 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .max_loops(1)
         .timeout_seconds(120)
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     println!(

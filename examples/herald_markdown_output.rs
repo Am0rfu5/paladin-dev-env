@@ -108,7 +108,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "You are a helpful geography assistant. Format your responses with markdown.",
             )
             .name("GeographyExpert")
-            .build()?;
+            .build().await?;
 
         let service = PaladinExecutionService::new(
             Arc::clone(&llm_port),
@@ -139,7 +139,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "You are a helpful geography assistant. Format your responses with markdown.",
             )
             .name("GeographyExpert")
-            .build()?;
+            .build().await?;
 
         let service = PaladinExecutionService::new(
             Arc::clone(&llm_port),
@@ -170,7 +170,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "You are a helpful geography assistant. Format your responses with markdown.",
             )
             .name("GeographyExpert")
-            .build()?;
+            .build().await?;
 
         let service = PaladinExecutionService::new(
             Arc::clone(&llm_port),
@@ -204,7 +204,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "You are a helpful geography assistant. Format your responses with markdown.",
                 )
                 .name(&format!("{}Guide", city))
-                .build()?;
+                .build().await?;
 
             let service = PaladinExecutionService::new(
                 Arc::clone(&llm_port),

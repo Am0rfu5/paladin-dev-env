@@ -140,5 +140,5 @@ fn show_practical_example() {
     println!("   let paladin = PaladinBuilder::new(llm_port)");
     println!("       .system_prompt(\"You are a helpful assistant\")");
     println!("       .name(\"MyPaladin\")");
-    println!("       .build()?;");
+    println!("       .build().await?;");
 }

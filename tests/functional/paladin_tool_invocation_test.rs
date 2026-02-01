@@ -347,6 +347,7 @@ async fn test_paladin_with_stdio_tool() {
         .system_prompt("You are a helpful calculator assistant")
         .max_loops(3)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "What is 12 times 8?").await;
@@ -435,6 +436,7 @@ async fn test_paladin_with_sse_tool() {
         .system_prompt("You are a helpful echo assistant")
         .max_loops(3)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service
@@ -568,6 +570,7 @@ async fn test_multiple_tool_invocations() {
         .system_prompt("You are a helpful calculator assistant")
         .max_loops(5)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "Calculate (10 + 5) * 2").await;
@@ -656,6 +659,7 @@ async fn test_tool_timeout_handling() {
         .system_prompt("You are a helpful assistant")
         .max_loops(3)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "Run slow operation").await;
@@ -743,6 +747,7 @@ async fn test_tool_failure_resilience() {
         .system_prompt("You are a helpful calculator assistant")
         .max_loops(3)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "What is 10 divided by 0?").await;

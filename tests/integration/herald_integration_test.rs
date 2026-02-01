@@ -116,6 +116,7 @@ async fn test_paladin_with_json_herald() {
         .system_prompt("You are a helpful assistant")
         .name("Test Paladin")
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     // Create execution service with Herald
@@ -175,6 +176,7 @@ async fn test_paladin_with_markdown_herald() {
         .system_prompt("You are a helpful assistant")
         .name("Markdown Paladin")
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     // Create execution service with Herald
@@ -223,6 +225,7 @@ async fn test_paladin_with_table_herald() {
         .system_prompt("You are a helpful assistant")
         .name("Table Paladin")
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     // Create execution service with Herald
@@ -272,6 +275,7 @@ async fn test_paladin_without_herald() {
         .system_prompt("You are a helpful assistant")
         .name("No Herald Paladin")
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     // Create execution service WITHOUT Herald
@@ -315,6 +319,7 @@ async fn test_herald_with_metadata() {
         .system_prompt("You are a helpful assistant")
         .name("Metadata Paladin")
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     // Create execution service
@@ -406,12 +411,14 @@ async fn test_battalion_formation_with_herald() {
         .system_prompt("You are step 1")
         .name("Paladin 1")
         .build()
+        .await
         .expect("Failed to build Paladin 1");
 
     let paladin2 = PaladinBuilder::new(Arc::clone(&llm_port))
         .system_prompt("You are step 2")
         .name("Paladin 2")
         .build()
+        .await
         .expect("Failed to build Paladin 2");
 
     // Create Formation
@@ -470,18 +477,21 @@ async fn test_battalion_phalanx_with_herald() {
         .system_prompt("You are worker 1")
         .name("Worker 1")
         .build()
+        .await
         .expect("Failed to build Worker 1");
 
     let paladin2 = PaladinBuilder::new(Arc::clone(&llm_port))
         .system_prompt("You are worker 2")
         .name("Worker 2")
         .build()
+        .await
         .expect("Failed to build Worker 2");
 
     let paladin3 = PaladinBuilder::new(Arc::clone(&llm_port))
         .system_prompt("You are worker 3")
         .name("Worker 3")
         .build()
+        .await
         .expect("Failed to build Worker 3");
 
     // Create Phalanx with CollectAll strategy
@@ -533,6 +543,7 @@ async fn test_runtime_herald_override() {
         .system_prompt("You are a helpful assistant")
         .name("Override Test Paladin")
         .build()
+        .await
         .expect("Failed to build Paladin");
 
     // Create execution service with JSON Herald

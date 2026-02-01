@@ -94,7 +94,7 @@ async fn demonstrate_formation(
         )
         .max_loops(1)
         .enable_vision(true)
-        .build()?;
+        .build().await?;
 
     // Paladin 2: Detail Extractor (Detailed analysis based on initial)
     println!("🛡️  Creating Paladin 2: Detail Extractor");
@@ -106,7 +106,7 @@ async fn demonstrate_formation(
              Format as a bulleted list.",
         )
         .max_loops(1)
-        .build()?;
+        .build().await?;
 
     // Paladin 3: Insight Generator (Generate insights from details)
     println!("🛡️  Creating Paladin 3: Insight Generator");
@@ -117,7 +117,7 @@ async fn demonstrate_formation(
              observations based on the details provided. Be thoughtful and analytical.",
         )
         .max_loops(1)
-        .build()?;
+        .build().await?;
 
     println!("✅ Formation battalion assembled: 3 Paladins\n");
 
@@ -216,7 +216,7 @@ async fn demonstrate_phalanx(
         )
         .max_loops(1)
         .enable_vision(true)
-        .build()?;
+        .build().await?;
 
     println!("✅ Phalanx battalion ready\n");
 

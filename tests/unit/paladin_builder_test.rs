@@ -63,15 +63,16 @@ impl LlmPort for MockLlmPort {
     }
 }
 
-#[test]
-fn test_paladin_builder_creates_valid_paladin() {
+#[tokio::test]
+async fn test_paladin_builder_creates_valid_paladin() {
     let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
 
     let result = PaladinBuilder::new(llm_port)
         .system_prompt("You are a helpful assistant")
         .name("TestPaladin")
         .model("gpt-4")
-        .build();
+        .build()
+        .await;
 
     assert!(result.is_ok(), "Builder should create valid Paladin");
     let paladin = result.unwrap();
@@ -81,14 +82,15 @@ fn test_paladin_builder_creates_valid_paladin() {
     assert_eq!(paladin.node.status, PaladinStatus::Idle);
 }
 
-#[test]
-fn test_paladin_builder_validates_required_fields() {
+#[tokio::test]
+async fn test_paladin_builder_validates_required_fields() {
     let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
 
     // Missing system_prompt (empty default)
     let result = PaladinBuilder::new(llm_port.clone())
         .name("TestPaladin")
-        .build();
+        .build()
+        .await;
 
     assert!(result.is_err(), "Builder should reject empty system_prompt");
     match result.unwrap_err() {
@@ -105,7 +107,8 @@ fn test_paladin_builder_validates_required_fields() {
     let result = PaladinBuilder::new(llm_port)
         .system_prompt("")
         .name("TestPaladin")
-        .build();
+        .build()
+        .await;
 
     assert!(
         result.is_err(),
@@ -113,15 +116,16 @@ fn test_paladin_builder_validates_required_fields() {
     );
 }
 
-#[test]
-fn test_paladin_builder_rejects_invalid_temperature() {
+#[tokio::test]
+async fn test_paladin_builder_rejects_invalid_temperature() {
     let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
 
     // Temperature too low
     let result = PaladinBuilder::new(llm_port.clone())
         .system_prompt("Test prompt")
         .temperature(-0.1)
-        .build();
+        .build()
+        .await;
 
     assert!(result.is_err(), "Builder should reject temperature < 0.0");
     match result.unwrap_err() {
@@ -138,7 +142,8 @@ fn test_paladin_builder_rejects_invalid_temperature() {
     let result = PaladinBuilder::new(llm_port.clone())
         .system_prompt("Test prompt")
         .temperature(1.1)
-        .build();
+        .build()
+        .await;
 
     assert!(result.is_err(), "Builder should reject temperature > 1.0");
 
@@ -146,31 +151,35 @@ fn test_paladin_builder_rejects_invalid_temperature() {
     let result = PaladinBuilder::new(llm_port.clone())
         .system_prompt("Test prompt")
         .temperature(0.0)
-        .build();
+        .build()
+        .await;
     assert!(result.is_ok(), "Builder should accept temperature = 0.0");
 
     let result = PaladinBuilder::new(llm_port.clone())
         .system_prompt("Test prompt")
         .temperature(1.0)
-        .build();
+        .build()
+        .await;
     assert!(result.is_ok(), "Builder should accept temperature = 1.0");
 
     let result = PaladinBuilder::new(llm_port)
         .system_prompt("Test prompt")
         .temperature(0.7)
-        .build();
+        .build()
+        .await;
     assert!(result.is_ok(), "Builder should accept temperature = 0.7");
 }
 
-#[test]
-fn test_paladin_builder_rejects_invalid_max_loops() {
+#[tokio::test]
+async fn test_paladin_builder_rejects_invalid_max_loops() {
     let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
 
     // max_loops too low
     let result = PaladinBuilder::new(llm_port.clone())
         .system_prompt("Test prompt")
         .max_loops(0)
-        .build();
+        .build()
+        .await;
 
     assert!(result.is_err(), "Builder should reject max_loops = 0");
     match result.unwrap_err() {
@@ -184,7 +193,8 @@ fn test_paladin_builder_rejects_invalid_max_loops() {
     let result = PaladinBuilder::new(llm_port.clone())
         .system_prompt("Test prompt")
         .max_loops(101)
-        .build();
+        .build()
+        .await;
 
     assert!(result.is_err(), "Builder should reject max_loops > 100");
 
@@ -192,29 +202,33 @@ fn test_paladin_builder_rejects_invalid_max_loops() {
     let result = PaladinBuilder::new(llm_port.clone())
         .system_prompt("Test prompt")
         .max_loops(1)
-        .build();
+        .build()
+        .await;
     assert!(result.is_ok(), "Builder should accept max_loops = 1");
 
     let result = PaladinBuilder::new(llm_port.clone())
         .system_prompt("Test prompt")
         .max_loops(100)
-        .build();
+        .build()
+        .await;
     assert!(result.is_ok(), "Builder should accept max_loops = 100");
 
     let result = PaladinBuilder::new(llm_port)
         .system_prompt("Test prompt")
         .max_loops(10)
-        .build();
+        .build()
+        .await;
     assert!(result.is_ok(), "Builder should accept max_loops = 10");
 }
 
-#[test]
-fn test_paladin_builder_sets_defaults() {
+#[tokio::test]
+async fn test_paladin_builder_sets_defaults() {
     let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
 
     let paladin = PaladinBuilder::new(llm_port)
         .system_prompt("Test prompt")
         .build()
+        .await
         .expect("Builder should succeed with minimal required fields");
 
     // Check PaladinData defaults from Default trait
@@ -228,8 +242,8 @@ fn test_paladin_builder_sets_defaults() {
     );
 }
 
-#[test]
-fn test_paladin_builder_method_chaining() {
+#[tokio::test]
+async fn test_paladin_builder_method_chaining() {
     let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
 
     // Test fluent interface with multiple chained methods
@@ -246,7 +260,8 @@ fn test_paladin_builder_method_chaining() {
         .timeout_seconds(600)
         .enable_planning(true)
         .output_format(OutputFormat::Json)
-        .build();
+        .build()
+        .await;
 
     assert!(result.is_ok(), "Builder should support method chaining");
     let paladin = result.unwrap();

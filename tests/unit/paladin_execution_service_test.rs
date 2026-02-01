@@ -133,6 +133,7 @@ async fn test_execution_service_executes_successfully() {
         .name("TestPaladin")
         .max_loops(1) // Only run one loop for this test
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "Test input").await;
@@ -173,6 +174,7 @@ async fn test_execution_service_respects_max_loops() {
         .system_prompt("You are a helpful assistant")
         .max_loops(5)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "Test input").await;
@@ -196,6 +198,7 @@ async fn test_execution_service_detects_stop_words() {
         .add_stop_word("STOP")
         .max_loops(5)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "Test input").await;
@@ -226,6 +229,7 @@ async fn test_execution_service_enforces_timeout() {
         .system_prompt("You are a helpful assistant")
         .max_loops(1)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     // The timeout is 60 seconds for 1 loop, so this test would need to simulate
@@ -248,6 +252,7 @@ async fn test_execution_service_retries_on_failure() {
         .system_prompt("You are a helpful assistant")
         .retry_attempts(3)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "Test input").await;
@@ -269,6 +274,7 @@ async fn test_execution_service_exponential_backoff() {
         .system_prompt("You are a helpful assistant")
         .retry_attempts(3)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let start = std::time::Instant::now();
@@ -295,6 +301,7 @@ async fn test_execution_service_uses_circuit_breaker() {
         .system_prompt("You are a helpful assistant")
         .retry_attempts(1)
         .build()
+        .await
         .expect("Failed to build paladin");
 
     // First attempt should fail and increment circuit breaker failure count
@@ -326,6 +333,7 @@ async fn test_execution_service_tracks_metadata() {
         .system_prompt("You are a helpful assistant")
         .max_loops(1) // Set to 1 loop for predictable testing
         .build()
+        .await
         .expect("Failed to build paladin");
 
     let result = service.execute(&paladin, "Test input").await;
