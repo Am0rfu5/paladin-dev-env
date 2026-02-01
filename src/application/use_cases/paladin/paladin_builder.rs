@@ -94,6 +94,9 @@ pub struct PaladinBuilder {
     // Auto-temperature selection fields
     auto_temperature_enabled: bool,
     manual_temperature_override: bool,
+    // Handoff/delegation fields
+    specialist_agents: Vec<Arc<Paladin>>,
+    handoff_config: Option<Arc<crate::core::platform::container::autonomous_config::HandoffConfig>>,
 }
 
 impl PaladinBuilder {
@@ -133,6 +136,8 @@ impl PaladinBuilder {
             manual_prompt_override: false,
             auto_temperature_enabled: false,
             manual_temperature_override: false,
+            specialist_agents: Vec::new(),
+            handoff_config: None,
         }
     }
 
@@ -718,6 +723,84 @@ impl PaladinBuilder {
         self
     }
 
+    /// Registers specialist agents for task delegation via handoffs
+    ///
+    /// Allows this Paladin to delegate tasks to specialist agents when confidence
+    /// is low or tasks require specific expertise. The handoff strategy determines
+    /// when delegation occurs.
+    ///
+    /// # Arguments
+    ///
+    /// * `specialists` - Vector of specialist Paladin agents available for delegation
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
+    /// // Create specialist agents
+    /// let rust_expert = PaladinBuilder::new(llm_port.clone())
+    ///     .system_prompt("You are a Rust programming expert")
+    ///     .name("RustExpert")
+    ///     .build().await?;
+    ///
+    /// let python_expert = PaladinBuilder::new(llm_port.clone())
+    ///     .system_prompt("You are a Python programming expert")
+    ///     .name("PythonExpert")
+    ///     .build().await?;
+    ///
+    /// // Coordinator can delegate to specialists
+    /// let coordinator = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are a code coordinator")
+    ///     .name("Coordinator")
+    ///     .with_handoffs(vec![Arc::new(rust_expert), Arc::new(python_expert)])
+    ///     .build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn with_handoffs(mut self, specialists: Vec<Arc<Paladin>>) -> Self {
+        self.specialist_agents = specialists;
+        self
+    }
+
+    /// Sets the handoff configuration for agent delegation
+    ///
+    /// Configures when and how this Paladin should delegate tasks to specialists.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - Handoff configuration including strategy and limits
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin::core::platform::container::autonomous_config::HandoffConfig;
+    /// # use paladin::core::platform::container::handoff::HandoffStrategy;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let config = Arc::new(HandoffConfig {
+    ///     enabled: true,
+    ///     strategy: HandoffStrategy::threshold(0.7),
+    ///     max_depth: 3,
+    /// });
+    ///
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are a coordinator")
+    ///     .handoff_config(config);
+    /// # }
+    /// ```
+    pub fn handoff_config(
+        mut self,
+        config: Arc<crate::core::platform::container::autonomous_config::HandoffConfig>,
+    ) -> Self {
+        self.handoff_config = Some(config);
+        self
+    }
+
     /// Adds an STDIO-based MCP server configuration
     ///
     /// STDIO servers are command-line tools that communicate via stdin/stdout
@@ -1150,6 +1233,8 @@ mod tests {
             manual_prompt_override: false,
             auto_temperature_enabled: false,
             manual_temperature_override: false,
+            specialist_agents: Vec::new(),
+            handoff_config: None,
         };
 
         let result = builder.validate();
@@ -1182,6 +1267,8 @@ mod tests {
             manual_prompt_override: false,
             auto_temperature_enabled: false,
             manual_temperature_override: false,
+            specialist_agents: Vec::new(),
+            handoff_config: None,
         };
 
         let result = builder.validate();
@@ -1213,6 +1300,8 @@ mod tests {
             manual_prompt_override: false,
             auto_temperature_enabled: false,
             manual_temperature_override: false,
+            specialist_agents: Vec::new(),
+            handoff_config: None,
         };
 
         let result = builder.validate();
@@ -1271,6 +1360,8 @@ mod tests {
             manual_prompt_override: false,
             auto_temperature_enabled: false,
             manual_temperature_override: false,
+            specialist_agents: Vec::new(),
+            handoff_config: None,
         };
 
         let result = builder.validate();
@@ -1302,6 +1393,8 @@ mod tests {
             manual_prompt_override: false,
             auto_temperature_enabled: false,
             manual_temperature_override: false,
+            specialist_agents: Vec::new(),
+            handoff_config: None,
         };
 
         let result = builder.validate();
@@ -1332,6 +1425,8 @@ mod tests {
             manual_prompt_override: false,
             auto_temperature_enabled: false,
             manual_temperature_override: false,
+            specialist_agents: Vec::new(),
+            handoff_config: None,
         };
 
         let result = builder.validate();
@@ -1394,6 +1489,8 @@ mod tests {
             manual_prompt_override: false,
             auto_temperature_enabled: false,
             manual_temperature_override: false,
+            specialist_agents: Vec::new(),
+            handoff_config: None,
         };
 
         let result = builder.validate();
@@ -1425,6 +1522,8 @@ mod tests {
             manual_prompt_override: false,
             auto_temperature_enabled: false,
             manual_temperature_override: false,
+            specialist_agents: Vec::new(),
+            handoff_config: None,
         };
 
         let result = builder.validate();

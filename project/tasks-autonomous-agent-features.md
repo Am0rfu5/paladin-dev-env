@@ -198,28 +198,28 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 4.23 Commit: `git commit -m "feat(temperature): implement TemperatureService for dynamic adjustment" -m "- Heuristic-based task classification (Factual/Analytical/Conversational/Creative)" -m "- Temperature recommendations by task type" -m "- Temperature bounds enforcement" -m "- Builder methods: dynamic_temperature, temperature_bounds" -m "- Fallback to builder temperature when disabled" -m "Implements US-14.3"`
 
 - [ ] 5.0 Handoff Infrastructure (US-14.4: Agent Handoff Infrastructure)
-  - [ ] 5.1 **TEST**: Write test for `HandoffService::new()` constructor
-  - [ ] 5.2 Create `src/application/use_cases/paladin/handoff_service.rs` with struct and constructor
-  - [ ] 5.3 **TEST**: Write test for `HandoffStrategy` enum (Automatic, Explicit, Threshold)
-  - [ ] 5.4 Update `src/core/platform/container/handoff.rs` to include `HandoffStrategy` enum variants
-  - [ ] 5.5 **TEST**: Write test for handoff decision logic (when to handoff vs execute locally)
-  - [ ] 5.6 Implement `HandoffService::should_handoff()` based on strategy and confidence
-  - [ ] 5.7 **TEST**: Write test for agent selection (choosing appropriate specialist)
-  - [ ] 5.8 Implement `HandoffService::select_agent()` to match task with agent capabilities
-  - [ ] 5.9 **TEST**: Write test for handoff chain tracking
-  - [ ] 5.10 Implement `HandoffContext::chain` field with `Vec<String>` of agent names in execution path
-  - [ ] 5.11 **TEST**: Write test for circular delegation prevention
-  - [ ] 5.12 Implement circular handoff check in `should_handoff()` - reject if target agent in chain
-  - [ ] 5.13 **TEST**: Write test for max depth enforcement (default: 5)
-  - [ ] 5.14 Add depth validation in `should_handoff()` to enforce configurable max_depth limit
-  - [ ] 5.15 **TEST**: Write test for context transfer mechanism
-  - [ ] 5.16 Implement `HandoffService::transfer_context()` to create `HandoffContext` with task, history, metadata
+  - [x] 5.1 **TEST**: Write test for `HandoffService::new()` constructor
+  - [x] 5.2 Create `src/application/use_cases/paladin/handoff_service.rs` with struct and constructor
+  - [x] 5.3 **TEST**: Write test for `HandoffStrategy` enum (Automatic, Explicit, Threshold)
+  - [x] 5.4 Update `src/core/platform/container/handoff.rs` to include `HandoffStrategy` enum variants
+  - [x] 5.5 **TEST**: Write test for handoff decision logic (when to handoff vs execute locally)
+  - [x] 5.6 Implement `HandoffService::should_handoff()` based on strategy and confidence
+  - [x] 5.7 **TEST**: Write test for agent selection (choosing appropriate specialist)
+  - [x] 5.8 Implement `HandoffService::select_agent()` to match task with agent capabilities
+  - [x] 5.9 **TEST**: Write test for handoff chain tracking
+  - [x] 5.10 Implement `HandoffContext::chain` field with `Vec<String>` of agent names in execution path
+  - [x] 5.11 **TEST**: Write test for circular delegation prevention
+  - [x] 5.12 Implement circular handoff check in `should_handoff()` - reject if target agent in chain
+  - [x] 5.13 **TEST**: Write test for max depth enforcement (default: 5)
+  - [x] 5.14 Add depth validation in `should_handoff()` to enforce configurable max_depth limit
+  - [x] 5.15 **TEST**: Write test for context transfer mechanism
+  - [x] 5.16 Implement `HandoffService::transfer_context()` to create `HandoffContext` with task, history, metadata
   - [ ] 5.17 **TEST**: Write test for handoff execution
   - [ ] 5.18 Implement `HandoffService::execute_handoff()` to delegate task to specialist agent
-  - [ ] 5.19 **TEST**: Write test for `PaladinBuilder::with_handoffs()` method
-  - [ ] 5.20 Add `with_handoffs(Vec<Arc<Paladin>>)` method to `src/application/use_cases/paladin/paladin_builder.rs`
-  - [ ] 5.21 **TEST**: Write test for `PaladinBuilder::handoff_strategy()` method
-  - [ ] 5.22 Add `handoff_strategy(HandoffStrategy)` method to `PaladinBuilder`
+  - [x] 5.19 **TEST**: Write test for `PaladinBuilder::with_handoffs()` method
+  - [x] 5.20 Add `with_handoffs(Vec<Arc<Paladin>>)` method to `src/application/use_cases/paladin/paladin_builder.rs`
+  - [x] 5.21 **TEST**: Write test for `PaladinBuilder::handoff_config()` method
+  - [x] 5.22 Add `handoff_config(HandoffConfig)` method to `PaladinBuilder`
   - [ ] 5.23 **TEST**: Write test for handoff history in `PaladinResult`
   - [ ] 5.24 Update `PaladinResult` struct to include `handoff_history: Vec<HandoffRecord>` field
   - [ ] 5.25 **TEST**: Write test for handoff decision logging

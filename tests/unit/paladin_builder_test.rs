@@ -276,3 +276,61 @@ async fn test_paladin_builder_method_chaining() {
     assert!(paladin.node.stop_words.contains(&"STOP".to_string()));
     assert!(paladin.node.stop_words.contains(&"END".to_string()));
 }
+
+#[tokio::test]
+async fn test_with_handoffs() {
+    let llm = Arc::new(MockLlmPort);
+
+    // Create specialist agents
+    let specialist1 = PaladinBuilder::new(llm.clone())
+        .system_prompt("Rust expert")
+        .name("RustExpert")
+        .build()
+        .await
+        .unwrap();
+
+    let specialist2 = PaladinBuilder::new(llm.clone())
+        .system_prompt("Python expert")
+        .name("PythonExpert")
+        .build()
+        .await
+        .unwrap();
+
+    // Create coordinator with specialists
+    let specialists = vec![Arc::new(specialist1), Arc::new(specialist2)];
+    let result = PaladinBuilder::new(llm)
+        .system_prompt("Coordinator")
+        .name("Coordinator")
+        .with_handoffs(specialists.clone())
+        .build()
+        .await;
+
+    assert!(result.is_ok());
+    // Note: We can't directly access specialist_agents from Paladin
+    // This would be validated in integration tests
+}
+
+#[tokio::test]
+async fn test_handoff_config() {
+    use paladin::core::platform::container::autonomous_config::HandoffConfig;
+    use paladin::core::platform::container::handoff::HandoffStrategy;
+
+    let llm = Arc::new(MockLlmPort);
+
+    let handoff_config = Arc::new(HandoffConfig {
+        enabled: true,
+        strategy: HandoffStrategy::threshold(0.7),
+        max_depth: 3,
+    });
+
+    let result = PaladinBuilder::new(llm)
+        .system_prompt("Coordinator")
+        .name("Coordinator")
+        .handoff_config(handoff_config.clone())
+        .build()
+        .await;
+
+    assert!(result.is_ok());
+    // Note: Handoff config would be stored in PaladinConfig
+    // This would be validated in integration tests
+}
