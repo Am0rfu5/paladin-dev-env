@@ -91,6 +91,9 @@ pub struct PaladinBuilder {
     auto_generate_prompt_enabled: bool,
     agent_description: Option<String>,
     manual_prompt_override: bool,
+    // Auto-temperature selection fields
+    auto_temperature_enabled: bool,
+    manual_temperature_override: bool,
 }
 
 impl PaladinBuilder {
@@ -128,6 +131,8 @@ impl PaladinBuilder {
             auto_generate_prompt_enabled: false,
             agent_description: None,
             manual_prompt_override: false,
+            auto_temperature_enabled: false,
+            manual_temperature_override: false,
         }
     }
 
@@ -243,6 +248,7 @@ impl PaladinBuilder {
     /// ```
     pub fn temperature(mut self, temperature: f32) -> Self {
         self.data.temperature = temperature;
+        self.manual_temperature_override = true;
         self
     }
 
@@ -345,6 +351,40 @@ impl PaladinBuilder {
     pub fn regenerate_prompt(self) -> Self {
         // Note: Cache invalidation will happen in build() method
         // when we have access to the PromptGenerationService
+        self
+    }
+
+    /// Enables or disables automatic temperature selection based on task type
+    ///
+    /// When enabled, the Paladin will use LLM to analyze the agent description
+    /// and task context to automatically select an optimal temperature value:
+    /// - Creative tasks (writing, brainstorming): ~0.85
+    /// - Analytical tasks (math, code, logic): ~0.2
+    /// - Standard tasks (Q&A, conversation): ~0.6
+    ///
+    /// # Arguments
+    ///
+    /// * `enabled` - Whether to enable automatic temperature selection
+    ///
+    /// # Note
+    ///
+    /// If you call `temperature()` explicitly, it will override the automatic
+    /// temperature selection, just like manual system prompts override auto-generated ones.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .agent_description("A creative writing assistant")
+    ///     .auto_temperature(true); // Will use ~0.85 for creative tasks
+    /// # }
+    /// ```
+    pub fn auto_temperature(mut self, enabled: bool) -> Self {
+        self.auto_temperature_enabled = enabled;
         self
     }
 
@@ -1026,6 +1066,38 @@ impl PaladinBuilder {
             }
         }
 
+        // Handle auto-temperature selection if enabled and no manual override
+        if self.auto_temperature_enabled && !self.manual_temperature_override {
+            if let Some(description) = &self.agent_description {
+                use crate::application::use_cases::paladin::temperature_service::TemperatureService;
+
+                let temperature_service = TemperatureService::new(self.llm_port.clone());
+
+                match temperature_service
+                    .calculate_optimal_temperature(description, None)
+                    .await
+                {
+                    Ok(optimal_temp) => {
+                        log::info!(
+                            "Auto-selected temperature {} for agent based on task type",
+                            optimal_temp
+                        );
+                        self.data.temperature = optimal_temp;
+                    }
+                    Err(e) => {
+                        return Err(PaladinError::ConfigurationError(format!(
+                            "Failed to auto-select temperature: {}",
+                            e
+                        )));
+                    }
+                }
+            } else {
+                return Err(PaladinError::ConfigurationError(
+                    "auto_temperature is enabled but agent_description is not set".to_string(),
+                ));
+            }
+        }
+
         // Validate configuration
         self.validate()?;
 
@@ -1076,6 +1148,8 @@ mod tests {
             auto_generate_prompt_enabled: false,
             agent_description: None,
             manual_prompt_override: false,
+            auto_temperature_enabled: false,
+            manual_temperature_override: false,
         };
 
         let result = builder.validate();
@@ -1106,6 +1180,8 @@ mod tests {
             auto_generate_prompt_enabled: false,
             agent_description: None,
             manual_prompt_override: false,
+            auto_temperature_enabled: false,
+            manual_temperature_override: false,
         };
 
         let result = builder.validate();
@@ -1135,6 +1211,8 @@ mod tests {
             auto_generate_prompt_enabled: false,
             agent_description: None,
             manual_prompt_override: false,
+            auto_temperature_enabled: false,
+            manual_temperature_override: false,
         };
 
         let result = builder.validate();
@@ -1191,6 +1269,8 @@ mod tests {
             auto_generate_prompt_enabled: false,
             agent_description: None,
             manual_prompt_override: false,
+            auto_temperature_enabled: false,
+            manual_temperature_override: false,
         };
 
         let result = builder.validate();
@@ -1220,6 +1300,8 @@ mod tests {
             auto_generate_prompt_enabled: false,
             agent_description: None,
             manual_prompt_override: false,
+            auto_temperature_enabled: false,
+            manual_temperature_override: false,
         };
 
         let result = builder.validate();
@@ -1248,6 +1330,8 @@ mod tests {
             auto_generate_prompt_enabled: false,
             agent_description: None,
             manual_prompt_override: false,
+            auto_temperature_enabled: false,
+            manual_temperature_override: false,
         };
 
         let result = builder.validate();
@@ -1308,6 +1392,8 @@ mod tests {
             auto_generate_prompt_enabled: false,
             agent_description: None,
             manual_prompt_override: false,
+            auto_temperature_enabled: false,
+            manual_temperature_override: false,
         };
 
         let result = builder.validate();
@@ -1337,6 +1423,8 @@ mod tests {
             auto_generate_prompt_enabled: false,
             agent_description: None,
             manual_prompt_override: false,
+            auto_temperature_enabled: false,
+            manual_temperature_override: false,
         };
 
         let result = builder.validate();
