@@ -64,6 +64,7 @@ use crate::core::platform::container::paladin::Paladin;
 use crate::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptType, UserPrompt,
 };
+use crate::core::platform::container::vision::VisionContent;
 use crate::infrastructure::adapters::arsenal::tool_result_formatter::ToolResultFormatter;
 use log::{debug, error, info, warn};
 use serde_json::Value;
@@ -339,6 +340,38 @@ impl PaladinExecutionService {
                 Err(PaladinError::Timeout(elapsed.as_secs()))
             }
         }
+    }
+
+    /// Execute a Paladin with vision capabilities
+    ///
+    /// Validates that the Paladin has vision enabled and the LLM provider supports vision.
+    /// Note: Full vision execution is not yet implemented.
+    pub async fn execute_with_vision(
+        &self,
+        paladin: &Paladin,
+        _task: &str,
+        _images: Vec<VisionContent>,
+    ) -> Result<PaladinResult, PaladinError> {
+        // Step 1: Validate vision is enabled on the Paladin
+        if !paladin.node.vision_enabled {
+            return Err(PaladinError::ConfigurationError(
+                "Vision execution requires vision_enabled=true. Use PaladinBuilder::enable_vision(true)".to_string(),
+            ));
+        }
+
+        // Step 2: Check if LLM provider supports vision
+        let capabilities = self.llm_port.get_capabilities();
+        if !capabilities.supports_vision {
+            return Err(PaladinError::ConfigurationError(format!(
+                "LLM provider '{}' does not support vision capabilities. Use a vision-capable model like gpt-4o or claude-3-opus",
+                self.llm_port.get_provider_name()
+            )));
+        }
+
+        // TODO: Implement full vision execution
+        Err(PaladinError::ExecutionError(
+            "Vision execution not yet fully implemented".to_string(),
+        ))
     }
 
     /// Internal execution logic without timeout wrapper
@@ -948,6 +981,7 @@ mod tests {
     use crate::core::platform::container::{
         paladin::PaladinData,
         sanctum::{Memory, MemoryType, SanctumEntry},
+        vision::ImageDetail,
     };
     use async_trait::async_trait;
     use uuid::Uuid;
@@ -1161,5 +1195,75 @@ mod tests {
             paladin.node.vision_enabled,
             "Paladin should have vision enabled"
         );
+    }
+
+    #[tokio::test]
+    async fn test_execute_with_vision_not_enabled() {
+        // Test that execute_with_vision fails when vision is not enabled
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+
+        // Create a paladin WITHOUT vision_enabled
+        let mut data = PaladinData::default();
+        data.vision_enabled = false;
+        let paladin = Node::new(data, Some("NormalPaladin".to_string()));
+
+        // Try to execute with vision - should fail
+        let images = vec![VisionContent::ImageUrl {
+            url: "https://example.com/image.jpg".to_string(),
+            detail: ImageDetail::Auto,
+        }];
+
+        let result = service
+            .execute_with_vision(&paladin, "What's in this image?", images)
+            .await;
+
+        assert!(result.is_err(), "Should fail when vision not enabled");
+        match result {
+            Err(PaladinError::ConfigurationError(msg)) => {
+                assert!(
+                    msg.contains("vision_enabled=true"),
+                    "Error should mention vision_enabled"
+                );
+            }
+            _ => panic!("Should return ConfigurationError"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_execute_with_vision_unsupported_provider() {
+        // Test that execute_with_vision fails when LLM provider doesn't support vision
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+
+        // Create a paladin with vision_enabled but MockLlmPort doesn't support vision
+        let mut data = PaladinData::default();
+        data.vision_enabled = true;
+        let paladin = Node::new(data, Some("VisionPaladin".to_string()));
+
+        let images = vec![VisionContent::ImageUrl {
+            url: "https://example.com/image.jpg".to_string(),
+            detail: ImageDetail::Auto,
+        }];
+
+        let result = service
+            .execute_with_vision(&paladin, "What's in this image?", images)
+            .await;
+
+        assert!(
+            result.is_err(),
+            "Should fail when provider doesn't support vision"
+        );
+        match result {
+            Err(PaladinError::ConfigurationError(msg)) => {
+                assert!(
+                    msg.contains("does not support vision"),
+                    "Error should mention lack of vision support"
+                );
+            }
+            _ => panic!("Should return ConfigurationError"),
+        }
     }
 }
