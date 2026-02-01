@@ -195,6 +195,93 @@ let paladin = PaladinBuilder::new(llm_port)
 See [docs/PROVIDER_EXPANSION.md](docs/PROVIDER_EXPANSION.md) for detailed comparison and migration guide.
 See [docs/CONTRIBUTING_PROVIDERS.md](docs/CONTRIBUTING_PROVIDERS.md) to add new providers.
 
+### Vision & Multi-Modal Processing (Sentinel)
+
+**New in Epic 13**: Paladin now supports vision capabilities, enabling agents to analyze images and documents alongside text. The **Sentinel Vision System** provides seamless integration with vision-capable LLM providers.
+
+**Key Features:**
+* 🖼️ **Image Analysis**: Process images from URLs, files, or base64-encoded data
+* 📄 **Document Processing**: Extract text from PDFs with intelligent chunking for RAG
+* 🎚️ **Quality Control**: Auto/Low/High detail levels for cost/accuracy trade-offs
+* 🔐 **Secure**: Built-in encryption (ChaCha20-Poly1305) and audit logging
+* 🏰 **Battalion-Ready**: Vision works seamlessly with all orchestration patterns
+* 🔌 **Multi-Provider**: OpenAI GPT-4o and Anthropic Claude 3 support
+
+**Quick Example:**
+
+```rust
+use paladin::core::platform::container::vision::{VisionContent, ImageDetail};
+
+// Create vision-enabled Paladin
+let paladin = PaladinBuilder::new(llm_port)
+    .system_prompt("You are a professional image analyst")
+    .enable_vision(true)
+    .build()?;
+
+// Analyze an image
+let image = VisionContent::ImageUrl {
+    url: "https://example.com/photo.jpg".to_string(),
+    detail: ImageDetail::High,
+};
+
+let result = execution_service
+    .execute_with_vision(&paladin, "What's in this image?", vec![image])
+    .await?;
+```
+
+**Supported Vision Content:**
+- **ImageUrl**: Reference publicly accessible images
+- **ImageFile**: Load images from local filesystem  
+- **ImageBase64**: Embed encoded image data directly
+
+**Document Processing:**
+
+```rust
+use paladin::application::ports::input::document_port::{DocumentPort, ChunkConfig};
+
+// Extract text from PDF
+let document = document_adapter
+    .ingest(DocumentSource::File("paper.pdf".into()))
+    .await?;
+
+// Chunk for RAG (500 chars, 100 overlap)
+let chunks = document_adapter.chunk(&document, ChunkConfig {
+    chunk_size: 500,
+    chunk_overlap: 100,
+    separator: "\n\n".to_string(),
+}).await?;
+```
+
+**CLI Usage:**
+
+```bash
+# Analyze single image
+paladin vision analyze \
+  --image photo.jpg \
+  --prompt "Describe this image" \
+  --detail high
+
+# Process PDF document
+paladin vision document \
+  --file report.pdf \
+  --chunk-size 1000 \
+  --output chunks.json
+```
+
+**Battalion Integration:**
+Vision capabilities work with all Battalion patterns:
+- **Formation**: Sequential vision analysis pipeline
+- **Phalanx**: Parallel image processing (~3x speedup)
+- **Campaign**: Complex vision workflows with branching
+- **Chain of Command**: Hierarchical image review processes
+
+**Learn More:**
+- [docs/SENTINEL.md](docs/SENTINEL.md) - Complete vision system documentation
+- [docs/BATTALION_VISION_SUPPORT.md](docs/BATTALION_VISION_SUPPORT.md) - Multi-agent vision patterns
+- `examples/vision_analysis.rs` - Single-image analysis walkthrough
+- `examples/document_processing.rs` - PDF extraction and chunking
+- `examples/vision_battalion.rs` - Formation and Phalanx patterns
+
 ### Battalion Orchestration System
 
 Battalion provides powerful multi-agent coordination capabilities with four distinct orchestration patterns:

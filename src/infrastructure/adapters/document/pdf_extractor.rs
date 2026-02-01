@@ -272,7 +272,7 @@ mod tests {
         let pages = extractor.parse_text_into_pages(text);
 
         // Should split on triple newlines
-        assert!(pages.len() >= 1);
+        assert!(!pages.is_empty());
         assert_eq!(pages[0].number, 1);
     }
 

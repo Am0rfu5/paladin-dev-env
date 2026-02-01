@@ -16,7 +16,6 @@ mod tests {
 
         // reqwest enables TLS by default and validates certificates
         // This test ensures we're using the default secure configuration
-        assert!(true, "Reqwest client created with default TLS settings");
     }
 
     #[test]
