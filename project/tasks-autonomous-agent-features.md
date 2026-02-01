@@ -98,35 +98,35 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 0.2 Push branch to remote: `git push -u origin feature/epic-14-autonomous-agent-features` (skipped - working locally)
   - [x] 0.3 Verify branch is active: `git branch --show-current`
 
-- [ ] 1.0 Foundation - Domain Models & Configuration
-  - [ ] 1.1 **TEST**: Write test for `MaxLoops::Auto` variant in `paladin.rs`
-  - [ ] 1.2 Add `MaxLoops::Auto { max_subtasks: u32 }` variant to `src/core/platform/container/paladin.rs`
-  - [ ] 1.3 **TEST**: Write tests for `TaskPlan` and `Subtask` domain types
-  - [ ] 1.4 Create `src/core/platform/container/planning.rs` with `TaskPlan`, `Subtask`, and `TaskDependency` structs
-  - [ ] 1.5 **TEST**: Write tests for `HandoffDecision` domain type
-  - [ ] 1.6 Create `src/core/platform/container/handoff.rs` with `HandoffDecision`, `HandoffStrategy`, and `HandoffContext` structs
-  - [ ] 1.7 **TEST**: Write tests for `PlanningError` enum
-  - [ ] 1.8 Create `src/core/error/planning_error.rs` with error variants (InvalidPlan, MaxSubtasksExceeded, ExecutionFailed, etc.)
-  - [ ] 1.9 **TEST**: Write tests for `PromptError` enum
-  - [ ] 1.10 Create `src/core/error/prompt_error.rs` with error variants (GenerationFailed, InvalidDescription, CacheMiss, etc.)
-  - [ ] 1.11 **TEST**: Write tests for `HandoffError` enum
-  - [ ] 1.12 Create `src/core/error/handoff_error.rs` with error variants (InvalidAgent, CircularHandoff, MaxDepthExceeded, etc.)
-  - [ ] 1.13 **TEST**: Write tests for `AutonomousConfig` structure
-  - [ ] 1.14 Create `src/core/platform/container/autonomous_config.rs` with config structs (PlanningConfig, PromptConfig, TemperatureConfig, HandoffConfig)
-  - [ ] 1.15 Add module declarations to `src/core/platform/container/mod.rs`
-  - [ ] 1.16 Add module declarations to `src/core/error/mod.rs`
-  - [ ] 1.17 Run tests: `cargo test --lib`
-  - [ ] 1.18 Run clippy: `cargo clippy -- -D warnings`
-  - [ ] 1.19 Format code: `cargo fmt`
-  - [ ] 1.20 Commit: `git commit -m "feat(core): add autonomous feature domain models" -m "- Add MaxLoops::Auto variant" -m "- Create TaskPlan, Subtask, HandoffDecision types" -m "- Create error enums for planning, prompts, handoffs" -m "- Add AutonomousConfig structures" -m "Related to US-14.1, US-14.2, US-14.3, US-14.4, US-14.5"`
+- [x] 1.0 Foundation - Domain Models & Configuration
+  - [x] 1.1 **TEST**: Write test for `MaxLoops::Auto` variant in `paladin.rs`
+  - [x] 1.2 Add `MaxLoops::Auto { max_subtasks: u32 }` variant to `src/core/platform/container/paladin.rs`
+  - [x] 1.3 **TEST**: Write tests for `TaskPlan` and `Subtask` domain types
+  - [x] 1.4 Create `src/core/platform/container/planning.rs` with `TaskPlan`, `Subtask`, and `TaskDependency` structs
+  - [x] 1.5 **TEST**: Write tests for `HandoffDecision` domain type
+  - [x] 1.6 Create `src/core/platform/container/handoff.rs` with `HandoffDecision`, `HandoffStrategy`, and `HandoffContext` structs
+  - [x] 1.7 **TEST**: Write tests for `PlanningError` enum
+  - [x] 1.8 Create `src/core/error/planning_error.rs` with error variants (InvalidPlan, MaxSubtasksExceeded, ExecutionFailed, etc.)
+  - [x] 1.9 **TEST**: Write tests for `PromptError` enum
+  - [x] 1.10 Create `src/core/error/prompt_error.rs` with error variants (GenerationFailed, InvalidDescription, CacheMiss, etc.)
+  - [x] 1.11 **TEST**: Write tests for `HandoffError` enum
+  - [x] 1.12 Create `src/core/error/handoff_error.rs` with error variants (InvalidAgent, CircularHandoff, MaxDepthExceeded, etc.)
+  - [x] 1.13 **TEST**: Write tests for `AutonomousConfig` structure
+  - [x] 1.14 Create `src/core/platform/container/autonomous_config.rs` with config structs (PlanningConfig, PromptConfig, TemperatureConfig, HandoffConfig)
+  - [x] 1.15 Add module declarations to `src/core/platform/container/mod.rs`
+  - [x] 1.16 Add module declarations to `src/core/error/mod.rs`
+  - [x] 1.17 Run tests: `cargo test --lib`
+  - [x] 1.18 Run clippy: `cargo clippy -- -D warnings`
+  - [x] 1.19 Format code: `cargo fmt`
+  - [x] 1.20 Commit: `git commit -m "feat(core): add autonomous feature domain models" -m "- Add MaxLoops::Auto variant" -m "- Create TaskPlan, Subtask, HandoffDecision types" -m "- Create error enums for planning, prompts, handoffs" -m "- Add AutonomousConfig structures" -m "Related to US-14.1, US-14.2, US-14.3, US-14.4, US-14.5"`
 
 - [ ] 2.0 Planning Service (US-14.1: Autonomous Planning Mode)
-  - [ ] 2.1 **TEST**: Write test for `PlanningService::new()` constructor
-  - [ ] 2.2 Create `src/application/use_cases/paladin/planning_service.rs` with struct and constructor
-  - [ ] 2.3 **TEST**: Write test for LLM-based task decomposition (mocked LLM response)
-  - [ ] 2.4 Implement `PlanningService::create_plan()` method that calls LLM with planning prompt template
-  - [ ] 2.5 **TEST**: Write test for parsing LLM response into TaskPlan
-  - [ ] 2.6 Implement `PlanningService::parse_plan_from_llm()` to extract subtasks from LLM JSON response
+  - [x] 2.1 **TEST**: Write test for `PlanningService::new()` constructor
+  - [x] 2.2 Create `src/application/use_cases/paladin/planning_service.rs` with struct and constructor
+  - [x] 2.3 **TEST**: Write test for LLM-based task decomposition (mocked LLM response)
+  - [x] 2.4 Implement `PlanningService::create_plan()` method that calls LLM with planning prompt template
+  - [x] 2.5 **TEST**: Write test for parsing LLM response into TaskPlan
+  - [x] 2.6 Implement `PlanningService::parse_plan_from_llm()` to extract subtasks from LLM JSON response
   - [ ] 2.7 **TEST**: Write test for subtask execution with dependency tracking
   - [ ] 2.8 Implement `PlanningService::execute_subtasks()` with sequential execution and dependency resolution
   - [ ] 2.9 **TEST**: Write test for result synthesis
