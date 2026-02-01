@@ -261,29 +261,29 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ### Phase 4: Document Processing (Week 2, Days 2-3)
 
-- [ ] 7.0 PDF Text Extraction (US-13.5)
-  - [ ] 7.1 Update `Cargo.toml` to add PDF extraction dependency (`pdf-extract` or `lopdf`)
-  - [ ] 7.2 Create `src/infrastructure/adapters/document/pdf_extractor.rs` file
-  - [ ] 7.3 Write unit test for simple PDF extraction (single page)
-  - [ ] 7.4 Implement `PdfExtractor` struct
-  - [ ] 7.5 Write unit test for `extract()` method with file path
-  - [ ] 7.6 Implement `extract(path: &Path) -> Result<Document, DocumentError>` method
-  - [ ] 7.7 Write unit test for multi-page PDF extraction
-  - [ ] 7.8 Implement page iteration and text extraction logic
-  - [ ] 7.9 Write unit test for `extract_bytes()` method
-  - [ ] 7.10 Implement `extract_bytes(bytes: &[u8]) -> Result<Document, DocumentError>` method
-  - [ ] 7.11 Write unit test for metadata extraction (title, author, page count)
-  - [ ] 7.12 Implement metadata extraction from PDF
-  - [ ] 7.13 Write unit test for encrypted PDF handling
-  - [ ] 7.14 Implement graceful error handling for encrypted PDFs (return `DocumentError::EncryptedPdf`)
-  - [ ] 7.15 Write unit test for corrupted PDF handling
-  - [ ] 7.16 Implement error handling for malformed/corrupted PDFs
-  - [ ] 7.17 Write unit test for text structure preservation (paragraphs, spacing)
-  - [ ] 7.18 Implement text formatting preservation logic
-  - [ ] 7.19 Run tests: `cargo test pdf_extractor`
-  - [ ] 7.20 Run clippy: `cargo clippy --tests`
-  - [ ] 7.21 Format code: `cargo fmt`
-  - [ ] 7.22 Commit: `git commit -m "feat(infrastructure): add PDF text extraction" -m "- Implement PdfExtractor utility" -m "- Support file path and byte array input" -m "- Extract metadata (title, author, pages)" -m "- Handle encrypted and corrupted PDFs" -m "- Preserve text structure" -m "US-13.5"`
+- [x] 7.0 PDF Text Extraction (US-13.5)
+  - [x] 7.1 Update `Cargo.toml` to add PDF extraction dependency (`pdf-extract` or `lopdf`)
+  - [x] 7.2 Create `src/infrastructure/adapters/document/pdf_extractor.rs` file
+  - [x] 7.3 Write unit test for simple PDF extraction (single page)
+  - [x] 7.4 Implement `PdfExtractor` struct
+  - [x] 7.5 Write unit test for `extract()` method with file path
+  - [x] 7.6 Implement `extract(path: &Path) -> Result<Document, DocumentError>` method
+  - [x] 7.7 Write unit test for multi-page PDF extraction
+  - [x] 7.8 Implement page iteration and text extraction logic
+  - [x] 7.9 Write unit test for `extract_bytes()` method
+  - [x] 7.10 Implement `extract_bytes(bytes: &[u8]) -> Result<Document, DocumentError>` method
+  - [x] 7.11 Write unit test for metadata extraction (title, author, page count)
+  - [x] 7.12 Implement metadata extraction from PDF
+  - [x] 7.13 Write unit test for encrypted PDF handling
+  - [x] 7.14 Implement graceful error handling for encrypted PDFs (return `DocumentError::EncryptedPdf`)
+  - [x] 7.15 Write unit test for corrupted PDF handling
+  - [x] 7.16 Implement error handling for malformed/corrupted PDFs
+  - [x] 7.17 Write unit test for text structure preservation (paragraphs, spacing)
+  - [x] 7.18 Implement text formatting preservation logic
+  - [x] 7.19 Run tests: `cargo test pdf_extractor`
+  - [x] 7.20 Run clippy: `cargo clippy --tests`
+  - [x] 7.21 Format code: `cargo fmt`
+  - [x] 7.22 Commit: `git commit -m "feat(infrastructure): add PDF text extraction" -m "- Implement PdfExtractor utility" -m "- Support file path and byte array input" -m "- Extract metadata (title, author, pages)" -m "- Handle encrypted and corrupted PDFs" -m "- Preserve text structure" -m "US-13.5"`
 
 - [ ] 8.0 Document Port Implementation (US-13.6 Implementation)
   - [ ] 8.1 Create `src/infrastructure/adapters/document/document_adapter.rs` file
