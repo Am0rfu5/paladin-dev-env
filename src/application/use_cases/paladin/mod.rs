@@ -8,3 +8,4 @@ pub mod error;
 pub mod paladin_builder;
 pub mod paladin_execution_service;
 pub mod planning_service;
+pub mod prompt_generation_service;

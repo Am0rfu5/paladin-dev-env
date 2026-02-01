@@ -305,7 +305,7 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
         }
     }
 
-    let paladin = builder.build()?;
+    let paladin = builder.build().await?;
 
     // Process document if provided
     let mut combined_input = input.clone();

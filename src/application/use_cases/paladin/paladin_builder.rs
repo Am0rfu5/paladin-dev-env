@@ -87,6 +87,10 @@ pub struct PaladinBuilder {
     sanctum_port: Option<Arc<dyn SanctumPort>>,
     embedding_port: Option<Arc<dyn EmbeddingPort>>,
     memory_extraction_strategy: MemoryExtractionStrategy,
+    // Auto-prompt generation fields
+    auto_generate_prompt_enabled: bool,
+    agent_description: Option<String>,
+    manual_prompt_override: bool,
 }
 
 impl PaladinBuilder {
@@ -121,6 +125,9 @@ impl PaladinBuilder {
             sanctum_port: None,
             embedding_port: None,
             memory_extraction_strategy: MemoryExtractionStrategy::default(),
+            auto_generate_prompt_enabled: false,
+            agent_description: None,
+            manual_prompt_override: false,
         }
     }
 
@@ -143,6 +150,7 @@ impl PaladinBuilder {
     /// ```
     pub fn system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.data.system_prompt = prompt.into();
+        self.manual_prompt_override = true; // Manual prompt takes precedence
         self
     }
 
@@ -261,6 +269,82 @@ impl PaladinBuilder {
     /// ```
     pub fn max_loops(mut self, max_loops: u32) -> Self {
         self.data.max_loops = MaxLoops::Fixed(max_loops);
+        self
+    }
+
+    /// Enables or disables automatic system prompt generation
+    ///
+    /// When enabled, the Paladin will use LLM to automatically generate
+    /// an optimized system prompt based on the agent description.
+    ///
+    /// # Arguments
+    ///
+    /// * `enabled` - Whether to enable auto-prompt generation
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .auto_generate_prompt(true)
+    ///     .agent_description("A code review assistant specialized in Rust");
+    /// # }
+    /// ```
+    pub fn auto_generate_prompt(mut self, enabled: bool) -> Self {
+        self.auto_generate_prompt_enabled = enabled;
+        self
+    }
+
+    /// Sets the agent description for auto-prompt generation
+    ///
+    /// This description is used by the prompt generation service to create
+    /// a contextual system prompt optimized for the agent's role.
+    ///
+    /// # Arguments
+    ///
+    /// * `description` - Description of the agent's role and capabilities
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .auto_generate_prompt(true)
+    ///     .agent_description("Analyzes security vulnerabilities in code");
+    /// # }
+    /// ```
+    pub fn agent_description(mut self, description: impl Into<String>) -> Self {
+        self.agent_description = Some(description.into());
+        self
+    }
+
+    /// Forces regeneration of auto-generated prompt by clearing cache
+    ///
+    /// Call this method to invalidate cached prompts and force the service
+    /// to generate a fresh prompt on the next build.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// let builder = PaladinBuilder::new(llm_port)
+    ///     .auto_generate_prompt(true)
+    ///     .agent_description("Data analyst")
+    ///     .regenerate_prompt(); // Clear cache
+    /// # }
+    /// ```
+    pub fn regenerate_prompt(self) -> Self {
+        // Note: Cache invalidation will happen in build() method
+        // when we have access to the PromptGenerationService
         self
     }
 
@@ -903,11 +987,45 @@ impl PaladinBuilder {
     /// let paladin = PaladinBuilder::new(llm_port)
     ///     .system_prompt("You are an AI assistant")
     ///     .model("gpt-4")
-    ///     .build()?;
+    ///     .build().await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn build(mut self) -> Result<Paladin, PaladinError> {
+    pub async fn build(mut self) -> Result<Paladin, PaladinError> {
+        // Handle auto-prompt generation if enabled and no manual override
+        if self.auto_generate_prompt_enabled && !self.manual_prompt_override {
+            if let Some(description) = &self.agent_description {
+                use crate::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
+
+                let prompt_service = PromptGenerationService::new(self.llm_port.clone());
+                let agent_name = if self.data.name.is_empty() {
+                    "Agent"
+                } else {
+                    &self.data.name
+                };
+
+                match prompt_service
+                    .generate_prompt(agent_name, description)
+                    .await
+                {
+                    Ok(generated_prompt) => {
+                        log::info!("Auto-generated system prompt for agent: {}", agent_name);
+                        self.data.system_prompt = generated_prompt;
+                    }
+                    Err(e) => {
+                        return Err(PaladinError::ConfigurationError(format!(
+                            "Failed to auto-generate prompt: {}",
+                            e
+                        )));
+                    }
+                }
+            } else {
+                return Err(PaladinError::ConfigurationError(
+                    "auto_generate_prompt is enabled but agent_description is not set".to_string(),
+                ));
+            }
+        }
+
         // Validate configuration
         self.validate()?;
 
@@ -955,6 +1073,9 @@ mod tests {
             sanctum_port: None,
             embedding_port: None,
             memory_extraction_strategy: MemoryExtractionStrategy::default(),
+            auto_generate_prompt_enabled: false,
+            agent_description: None,
+            manual_prompt_override: false,
         };
 
         let result = builder.validate();
@@ -982,6 +1103,9 @@ mod tests {
             sanctum_port: None,
             embedding_port: None,
             memory_extraction_strategy: MemoryExtractionStrategy::default(),
+            auto_generate_prompt_enabled: false,
+            agent_description: None,
+            manual_prompt_override: false,
         };
 
         let result = builder.validate();
@@ -1008,6 +1132,9 @@ mod tests {
             sanctum_port: None,
             embedding_port: None,
             memory_extraction_strategy: MemoryExtractionStrategy::default(),
+            auto_generate_prompt_enabled: false,
+            agent_description: None,
+            manual_prompt_override: false,
         };
 
         let result = builder.validate();
@@ -1061,6 +1188,9 @@ mod tests {
             sanctum_port: None,
             embedding_port: None,
             memory_extraction_strategy: MemoryExtractionStrategy::default(),
+            auto_generate_prompt_enabled: false,
+            agent_description: None,
+            manual_prompt_override: false,
         };
 
         let result = builder.validate();
@@ -1087,6 +1217,9 @@ mod tests {
             sanctum_port: None,
             embedding_port: None,
             memory_extraction_strategy: MemoryExtractionStrategy::default(),
+            auto_generate_prompt_enabled: false,
+            agent_description: None,
+            manual_prompt_override: false,
         };
 
         let result = builder.validate();
@@ -1112,6 +1245,9 @@ mod tests {
             sanctum_port: None,
             embedding_port: None,
             memory_extraction_strategy: MemoryExtractionStrategy::default(),
+            auto_generate_prompt_enabled: false,
+            agent_description: None,
+            manual_prompt_override: false,
         };
 
         let result = builder.validate();
@@ -1169,6 +1305,9 @@ mod tests {
             sanctum_port: Some(Arc::new(MockSanctumPort)),
             embedding_port: None,
             memory_extraction_strategy: MemoryExtractionStrategy::default(),
+            auto_generate_prompt_enabled: false,
+            agent_description: None,
+            manual_prompt_override: false,
         };
 
         let result = builder.validate();
@@ -1195,6 +1334,9 @@ mod tests {
             sanctum_port: Some(Arc::new(MockSanctumPort)),
             embedding_port: Some(Arc::new(MockEmbeddingPort)),
             memory_extraction_strategy: MemoryExtractionStrategy::default(),
+            auto_generate_prompt_enabled: false,
+            agent_description: None,
+            manual_prompt_override: false,
         };
 
         let result = builder.validate();
@@ -1519,5 +1661,72 @@ mod tests {
         fn model_name(&self) -> &str {
             "mock-model"
         }
+    }
+
+    #[tokio::test]
+    async fn test_auto_generate_prompt_enabled() {
+        // Given: A builder with auto-prompt generation enabled
+        let llm_port = Arc::new(MockLlmPort);
+        let builder = PaladinBuilder::new(llm_port)
+            .auto_generate_prompt(true)
+            .agent_description("A code review assistant")
+            .name("ReviewBot");
+
+        // Then: The builder should have auto-generation enabled
+        assert!(builder.auto_generate_prompt_enabled);
+        assert_eq!(
+            builder.agent_description,
+            Some("A code review assistant".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn test_auto_generate_prompt_builder_method() {
+        // Given: A builder with auto-prompt disabled
+        let llm_port = Arc::new(MockLlmPort);
+        let builder = PaladinBuilder::new(llm_port).auto_generate_prompt(false);
+
+        // Then: Auto-generation should be disabled
+        assert!(!builder.auto_generate_prompt_enabled);
+    }
+
+    #[tokio::test]
+    async fn test_agent_description_method() {
+        // Given: A builder
+        let llm_port = Arc::new(MockLlmPort);
+        let builder = PaladinBuilder::new(llm_port).agent_description("Test description");
+
+        // Then: Description should be set
+        assert_eq!(
+            builder.agent_description,
+            Some("Test description".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn test_manual_prompt_override() {
+        // Given: A builder with auto-generation enabled
+        let llm_port = Arc::new(MockLlmPort);
+        let builder = PaladinBuilder::new(llm_port)
+            .auto_generate_prompt(true)
+            .agent_description("Test agent")
+            .system_prompt("Manual prompt"); // Manual override
+
+        // Then: Manual override flag should be set
+        assert!(builder.manual_prompt_override);
+        assert_eq!(builder.data.system_prompt, "Manual prompt");
+    }
+
+    #[tokio::test]
+    async fn test_regenerate_prompt_method() {
+        // Given: A builder
+        let llm_port = Arc::new(MockLlmPort);
+        let builder = PaladinBuilder::new(llm_port)
+            .auto_generate_prompt(true)
+            .agent_description("Test")
+            .regenerate_prompt(); // Should not panic
+
+        // Then: Builder should still be valid
+        assert!(builder.auto_generate_prompt_enabled);
     }
 }

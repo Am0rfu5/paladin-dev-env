@@ -609,7 +609,7 @@ async fn build_paladin_from_reference(
         builder = builder.add_stop_word(word);
     }
 
-    let paladin = builder.build()?;
+    let paladin = builder.build().await?;
 
     if verbose {
         println!(
