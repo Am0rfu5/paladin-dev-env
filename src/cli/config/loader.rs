@@ -183,4 +183,83 @@ paladins:
         let config = load_battalion_config(file.path()).unwrap();
         assert_eq!(config.battalion_type(), "formation");
     }
+
+    #[test]
+    fn test_load_paladin_config_with_vision_fields() {
+        use std::io::Write;
+
+        // Create temporary image and document files
+        let mut img_file = NamedTempFile::new().unwrap();
+        img_file.write_all(b"fake image").unwrap();
+        let img_path_temp = img_file.path().to_str().unwrap().to_string();
+        let img_path = format!("{}.png", img_path_temp);
+        std::fs::copy(&img_path_temp, &img_path).unwrap();
+
+        let mut doc_file = NamedTempFile::new().unwrap();
+        doc_file.write_all(b"fake pdf").unwrap();
+        let doc_path_temp = doc_file.path().to_str().unwrap().to_string();
+        let doc_path = format!("{}.pdf", doc_path_temp);
+        std::fs::copy(&doc_path_temp, &doc_path).unwrap();
+
+        let yaml = format!(
+            r#"
+name: vision-paladin
+system_prompt: "You are a vision-capable assistant"
+model: gpt-4
+temperature: 0.7
+max_loops: 3
+timeout_seconds: 300
+vision_enabled: true
+images:
+  - {}
+documents:
+  - {}
+provider:
+  type: openai
+"#,
+            img_path, doc_path
+        );
+
+        let mut file = NamedTempFile::new().unwrap();
+        file.write_all(yaml.as_bytes()).unwrap();
+        file.flush().unwrap();
+
+        let config = load_paladin_config(file.path()).unwrap();
+        assert_eq!(config.name, "vision-paladin");
+        assert!(config.vision_enabled);
+        assert_eq!(config.images.len(), 1);
+        assert_eq!(config.documents.len(), 1);
+
+        // Cleanup
+        std::fs::remove_file(&img_path).ok();
+        std::fs::remove_file(&doc_path).ok();
+    }
+
+    #[test]
+    fn test_load_paladin_config_vision_enabled_without_files() {
+        let yaml = r#"
+name: test-paladin
+system_prompt: "You are a helpful assistant"
+model: gpt-4
+temperature: 0.7
+max_loops: 3
+timeout_seconds: 300
+vision_enabled: true
+images: []
+documents: []
+provider:
+  type: openai
+"#;
+
+        let mut file = NamedTempFile::new().unwrap();
+        file.write_all(yaml.as_bytes()).unwrap();
+        file.flush().unwrap();
+
+        let result = load_paladin_config(file.path());
+        // Should fail validation: vision_enabled true but no files
+        assert!(matches!(
+            result,
+            Err(CliError::InvalidFieldValue { field, .. }) if field == "vision_enabled"
+        ));
+    }
 }

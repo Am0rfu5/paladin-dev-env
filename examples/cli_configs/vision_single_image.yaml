@@ -1,0 +1,41 @@
+# Vision-Enabled Paladin Configuration - Single Image Analysis
+# This example shows how to configure a Paladin for analyzing a single image
+
+name: vision-analyst
+system_prompt: |
+  You are an AI assistant with advanced vision capabilities.
+  Analyze images in detail, describing what you see, identifying objects,
+  reading text, and providing insights about the content.
+
+model: gpt-4o
+temperature: 0.7
+max_loops: 3
+timeout_seconds: 300
+
+# Enable vision capabilities
+vision_enabled: true
+
+# Single image for analysis
+images:
+  - /path/to/your/image.png
+
+# Optional: Include a document for context
+# documents:
+#   - /path/to/context.pdf
+
+provider:
+  type: openai
+
+# Optional: Add memory to maintain context across requests
+# garrison:
+#   type: sqlite
+#   config:
+#     path: ./vision_memory.db
+
+# Optional: Add tools for enhanced capabilities
+# arsenal:
+#   mcp_servers:
+#     - name: web_search
+#       type: stdio
+#       command: uvx
+#       args: ["mcp-web-search"]

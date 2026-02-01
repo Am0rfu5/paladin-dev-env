@@ -72,6 +72,18 @@ pub struct PaladinYamlConfig {
     /// Optional arsenal (tools) configuration
     #[serde(skip_serializing_if = "Option::is_none")]
     pub arsenal: Option<ArsenalConfig>,
+
+    /// Enable vision capabilities
+    #[serde(default)]
+    pub vision_enabled: bool,
+
+    /// Paths to image files for vision analysis
+    #[serde(default)]
+    pub images: Vec<String>,
+
+    /// Paths to document files for processing (PDF, TXT, MD)
+    #[serde(default)]
+    pub documents: Vec<String>,
 }
 
 /// LLM provider configuration
@@ -244,6 +256,72 @@ impl Validate for PaladinYamlConfig {
             }
         }
 
+        // Validate vision configuration
+        if self.vision_enabled {
+            // If vision_enabled is true, at least one image or document should be provided
+            if self.images.is_empty() && self.documents.is_empty() {
+                return Err(CliError::InvalidFieldValue {
+                    field: "vision_enabled".to_string(),
+                    message: "vision_enabled is true but no images or documents provided"
+                        .to_string(),
+                });
+            }
+        }
+
+        // Validate image paths exist and have valid formats
+        for image_path in &self.images {
+            let path = std::path::Path::new(image_path);
+            if !path.exists() {
+                return Err(CliError::InvalidFilePath {
+                    path: image_path.clone(),
+                    message: format!("Image file not found: {}", image_path),
+                });
+            }
+
+            // Check supported image formats
+            if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                let ext_lower = ext.to_lowercase();
+                if !["png", "jpg", "jpeg", "gif", "webp"].contains(&ext_lower.as_str()) {
+                    return Err(CliError::UnsupportedFormat {
+                        format: ext.to_string(),
+                        supported: "png, jpg, jpeg, gif, webp".to_string(),
+                    });
+                }
+            } else {
+                return Err(CliError::UnsupportedFormat {
+                    format: "unknown".to_string(),
+                    supported: "png, jpg, jpeg, gif, webp".to_string(),
+                });
+            }
+        }
+
+        // Validate document paths exist and have valid formats
+        for doc_path in &self.documents {
+            let path = std::path::Path::new(doc_path);
+            if !path.exists() {
+                return Err(CliError::InvalidFilePath {
+                    path: doc_path.clone(),
+                    message: format!("Document file not found: {}", doc_path),
+                });
+            }
+
+            // Check supported document formats
+            if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                let ext_lower = ext.to_lowercase();
+                if !["pdf", "txt", "md", "markdown"].contains(&ext_lower.as_str()) {
+                    return Err(CliError::UnsupportedFormat {
+                        format: ext.to_string(),
+                        supported: "pdf, txt, md, markdown".to_string(),
+                    });
+                }
+            } else {
+                return Err(CliError::UnsupportedFormat {
+                    format: "unknown".to_string(),
+                    supported: "pdf, txt, md, markdown".to_string(),
+                });
+            }
+        }
+
         Ok(())
     }
 }
@@ -267,6 +345,9 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            vision_enabled: false,
+            images: vec![],
+            documents: vec![],
         };
 
         assert!(config.validate().is_ok());
@@ -287,6 +368,9 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            vision_enabled: false,
+            images: vec![],
+            documents: vec![],
         };
 
         assert!(matches!(
@@ -310,6 +394,9 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            vision_enabled: false,
+            images: vec![],
+            documents: vec![],
         };
 
         assert!(matches!(
@@ -333,11 +420,231 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            vision_enabled: false,
+            images: vec![],
+            documents: vec![],
         };
 
         assert!(matches!(
             config.validate(),
             Err(CliError::InvalidFieldValue { field, .. }) if field == "provider.type"
         ));
+    }
+
+    #[test]
+    fn test_vision_enabled_parsing() {
+        let config = PaladinYamlConfig {
+            name: "test".to_string(),
+            system_prompt: "You are a helpful assistant".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: 3,
+            timeout_seconds: 300,
+            stop_words: vec![],
+            provider: ProviderConfig {
+                provider_type: "openai".to_string(),
+            },
+            garrison: None,
+            arsenal: None,
+            vision_enabled: true,
+            images: vec![],
+            documents: vec![],
+        };
+
+        // Should fail because vision_enabled is true but no images/documents
+        assert!(matches!(
+            config.validate(),
+            Err(CliError::InvalidFieldValue { field, .. }) if field == "vision_enabled"
+        ));
+    }
+
+    #[test]
+    fn test_images_field_parsing() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create a temporary image file
+        let mut temp_file = NamedTempFile::new().unwrap();
+        temp_file.write_all(b"fake image data").unwrap();
+        let temp_path = temp_file.path().to_str().unwrap().to_string();
+
+        // Rename to have .png extension
+        let png_path = format!("{}.png", temp_path);
+        std::fs::copy(&temp_path, &png_path).unwrap();
+
+        let config = PaladinYamlConfig {
+            name: "test".to_string(),
+            system_prompt: "You are a helpful assistant".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: 3,
+            timeout_seconds: 300,
+            stop_words: vec![],
+            provider: ProviderConfig {
+                provider_type: "openai".to_string(),
+            },
+            garrison: None,
+            arsenal: None,
+            vision_enabled: true,
+            images: vec![png_path.clone()],
+            documents: vec![],
+        };
+
+        assert!(config.validate().is_ok());
+
+        // Cleanup
+        std::fs::remove_file(&png_path).ok();
+    }
+
+    #[test]
+    fn test_documents_field_parsing() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create a temporary PDF file
+        let mut temp_file = NamedTempFile::new().unwrap();
+        temp_file.write_all(b"fake pdf data").unwrap();
+        let temp_path = temp_file.path().to_str().unwrap().to_string();
+
+        // Rename to have .pdf extension
+        let pdf_path = format!("{}.pdf", temp_path);
+        std::fs::copy(&temp_path, &pdf_path).unwrap();
+
+        let config = PaladinYamlConfig {
+            name: "test".to_string(),
+            system_prompt: "You are a helpful assistant".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: 3,
+            timeout_seconds: 300,
+            stop_words: vec![],
+            provider: ProviderConfig {
+                provider_type: "openai".to_string(),
+            },
+            garrison: None,
+            arsenal: None,
+            vision_enabled: false,
+            images: vec![],
+            documents: vec![pdf_path.clone()],
+        };
+
+        assert!(config.validate().is_ok());
+
+        // Cleanup
+        std::fs::remove_file(&pdf_path).ok();
+    }
+
+    #[test]
+    fn test_missing_image_file() {
+        let config = PaladinYamlConfig {
+            name: "test".to_string(),
+            system_prompt: "You are a helpful assistant".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: 3,
+            timeout_seconds: 300,
+            stop_words: vec![],
+            provider: ProviderConfig {
+                provider_type: "openai".to_string(),
+            },
+            garrison: None,
+            arsenal: None,
+            vision_enabled: true,
+            images: vec!["/nonexistent/image.png".to_string()],
+            documents: vec![],
+        };
+
+        assert!(matches!(
+            config.validate(),
+            Err(CliError::InvalidFilePath { .. })
+        ));
+    }
+
+    #[test]
+    fn test_unsupported_image_format() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create a temporary file with unsupported extension
+        let mut temp_file = NamedTempFile::new().unwrap();
+        temp_file.write_all(b"fake data").unwrap();
+        let temp_path = temp_file.path().to_str().unwrap().to_string();
+
+        // Rename to have .bmp extension (unsupported)
+        let bmp_path = format!("{}.bmp", temp_path);
+        std::fs::copy(&temp_path, &bmp_path).unwrap();
+
+        let config = PaladinYamlConfig {
+            name: "test".to_string(),
+            system_prompt: "You are a helpful assistant".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: 3,
+            timeout_seconds: 300,
+            stop_words: vec![],
+            provider: ProviderConfig {
+                provider_type: "openai".to_string(),
+            },
+            garrison: None,
+            arsenal: None,
+            vision_enabled: true,
+            images: vec![bmp_path.clone()],
+            documents: vec![],
+        };
+
+        assert!(matches!(
+            config.validate(),
+            Err(CliError::UnsupportedFormat { .. })
+        ));
+
+        // Cleanup
+        std::fs::remove_file(&bmp_path).ok();
+    }
+
+    #[test]
+    fn test_multiple_images_and_documents() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create temporary files
+        let mut img1 = NamedTempFile::new().unwrap();
+        img1.write_all(b"fake image 1").unwrap();
+        let img1_path = format!("{}.png", img1.path().to_str().unwrap());
+        std::fs::copy(img1.path(), &img1_path).unwrap();
+
+        let mut img2 = NamedTempFile::new().unwrap();
+        img2.write_all(b"fake image 2").unwrap();
+        let img2_path = format!("{}.jpg", img2.path().to_str().unwrap());
+        std::fs::copy(img2.path(), &img2_path).unwrap();
+
+        let mut doc1 = NamedTempFile::new().unwrap();
+        doc1.write_all(b"fake pdf").unwrap();
+        let doc1_path = format!("{}.pdf", doc1.path().to_str().unwrap());
+        std::fs::copy(doc1.path(), &doc1_path).unwrap();
+
+        let config = PaladinYamlConfig {
+            name: "test".to_string(),
+            system_prompt: "You are a helpful assistant".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: 3,
+            timeout_seconds: 300,
+            stop_words: vec![],
+            provider: ProviderConfig {
+                provider_type: "openai".to_string(),
+            },
+            garrison: None,
+            arsenal: None,
+            vision_enabled: true,
+            images: vec![img1_path.clone(), img2_path.clone()],
+            documents: vec![doc1_path.clone()],
+        };
+
+        assert!(config.validate().is_ok());
+
+        // Cleanup
+        std::fs::remove_file(&img1_path).ok();
+        std::fs::remove_file(&img2_path).ok();
+        std::fs::remove_file(&doc1_path).ok();
     }
 }

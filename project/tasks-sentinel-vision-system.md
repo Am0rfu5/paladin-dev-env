@@ -316,31 +316,31 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ### Phase 5: Interface Layer (Week 2, Days 4-5)
 
-- [ ] 9.0 CLI Integration (FR-8)
-  - [ ] 9.1 Read existing `src/bin/paladin-cli.rs` to understand CLI structure
-  - [ ] 9.2 Read existing agent command implementation
-  - [ ] 9.3 Write unit test for `--image` flag parsing
-  - [ ] 9.4 Add `--image <path>` flag to agent run command (repeatable)
-  - [ ] 9.5 Write unit test for multiple `--image` flags
-  - [ ] 9.6 Implement collection of multiple image paths
-  - [ ] 9.7 Write unit test for `--document` flag parsing
-  - [ ] 9.8 Add `--document <path>` flag to agent run command
-  - [ ] 9.9 Write unit test for file path validation
-  - [ ] 9.10 Implement file existence validation before execution
-  - [ ] 9.11 Write unit test for unsupported format error
-  - [ ] 9.12 Implement format validation (check file extensions)
-  - [ ] 9.13 Write integration test for CLI execution with image
-  - [ ] 9.14 Update agent run logic to handle vision inputs
-  - [ ] 9.15 Write integration test for CLI execution with document
-  - [ ] 9.16 Update agent run logic to handle document inputs
-  - [ ] 9.17 Write integration test for combined image + document + text
-  - [ ] 9.18 Implement combined vision/document workflow
-  - [ ] 9.19 Update CLI output to indicate vision/document processing
-  - [ ] 9.20 Add helpful error messages for all failure scenarios
-  - [ ] 9.21 Run tests: `cargo test cli.*vision` and `cargo test cli.*document`
-  - [ ] 9.22 Run clippy: `cargo clippy --tests`
-  - [ ] 9.23 Format code: `cargo fmt`
-  - [ ] 9.24 Commit: `git commit -m "feat(cli): add vision and document support" -m "- Add --image flag (repeatable)" -m "- Add --document flag" -m "- Add file validation" -m "- Add clear error messages" -m "- Update output formatting" -m "FR-8"`
+- [x] 9.0 CLI Integration (FR-8)
+  - [x] 9.1 Read existing `src/bin/paladin-cli.rs` to understand CLI structure
+  - [x] 9.2 Read existing agent command implementation
+  - [x] 9.3 Write unit test for `--image` flag parsing
+  - [x] 9.4 Add `--image <path>` flag to agent run command (repeatable)
+  - [x] 9.5 Write unit test for multiple `--image` flags
+  - [x] 9.6 Implement collection of multiple image paths
+  - [x] 9.7 Write unit test for `--document` flag parsing
+  - [x] 9.8 Add `--document <path>` flag to agent run command
+  - [x] 9.9 Write unit test for file path validation
+  - [x] 9.10 Implement file existence validation before execution
+  - [x] 9.11 Write unit test for unsupported format error
+  - [x] 9.12 Implement format validation (check file extensions)
+  - [x] 9.13 Write integration test for CLI execution with image
+  - [x] 9.14 Update agent run logic to handle vision inputs
+  - [x] 9.15 Write integration test for CLI execution with document
+  - [x] 9.16 Update agent run logic to handle document inputs
+  - [x] 9.17 Write integration test for combined image + document + text
+  - [x] 9.18 Implement combined vision/document workflow
+  - [x] 9.19 Update CLI output to indicate vision/document processing
+  - [x] 9.20 Add helpful error messages for all failure scenarios
+  - [x] 9.21 Run tests: `cargo test cli.*vision` and `cargo test cli.*document`
+  - [x] 9.22 Run clippy: `cargo clippy --tests`
+  - [x] 9.23 Format code: `cargo fmt`
+  - [x] 9.24 Commit: `git commit -m "feat(cli): add vision and document support" -m "- Add --image flag (repeatable)" -m "- Add --document flag" -m "- Add file validation" -m "- Add clear error messages" -m "- Update output formatting" -m "FR-8"`
 
 - [ ] 10.0 YAML Configuration Support (FR-9)
   - [ ] 10.1 Read existing YAML configuration loading code

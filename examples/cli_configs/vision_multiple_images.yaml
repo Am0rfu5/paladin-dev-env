@@ -1,0 +1,30 @@
+# Vision-Enabled Paladin Configuration - Multiple Images Comparison
+# This example shows how to configure a Paladin for comparing multiple images
+
+name: image-comparator
+system_prompt: |
+  You are an AI assistant specialized in comparing and analyzing multiple images.
+  Compare images side-by-side, identify similarities and differences,
+  detect patterns, and provide comprehensive comparative analysis.
+
+model: gpt-4o
+temperature: 0.7
+max_loops: 3
+timeout_seconds: 300
+
+# Enable vision capabilities
+vision_enabled: true
+
+# Multiple images for comparison
+images:
+  - /path/to/image1.jpg
+  - /path/to/image2.jpg
+  - /path/to/image3.png
+
+provider:
+  type: openai
+
+# Optional: Process documents alongside images
+# documents:
+#   - /path/to/specifications.pdf
+#   - /path/to/reference.txt

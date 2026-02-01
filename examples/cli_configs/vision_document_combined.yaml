@@ -1,0 +1,43 @@
+# Vision + Document Combined Analysis Configuration
+# This example shows how to combine vision and document processing
+
+name: multimodal-analyst
+system_prompt: |
+  You are an advanced AI assistant with both vision and document processing capabilities.
+  Analyze images, process documents, and correlate information across multiple modalities.
+  Provide comprehensive insights by combining visual and textual information.
+
+model: gpt-4o
+temperature: 0.7
+max_loops: 5
+timeout_seconds: 600
+
+# Enable vision capabilities
+vision_enabled: true
+
+# Images for visual analysis
+images:
+  - /path/to/diagram.png
+  - /path/to/chart.jpg
+
+# Documents for textual analysis
+documents:
+  - /path/to/specification.pdf
+  - /path/to/report.md
+
+provider:
+  type: openai
+
+# Memory for maintaining context
+garrison:
+  type: sqlite
+  config:
+    path: ./multimodal_memory.db
+
+# Tools for enhanced capabilities
+arsenal:
+  mcp_servers:
+    - name: web_search
+      type: stdio
+      command: uvx
+      args: ["mcp-web-search"]
