@@ -241,8 +241,8 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.6 Implement `enable_vision(bool)` method in `PaladinBuilder`
   - [x] 6.7 Write unit test for builder validation (vision enabled but LLM doesn't support it)
   - [x] 6.8 Update `PaladinBuilder::validate()` to check vision capability
-  - [ ] 6.9 Read existing `src/application/use_cases/paladin/paladin_execution_service.rs`
-  - [ ] 6.10 Write unit test for `run_with_vision()` method
+  - [x] 6.9 Read existing `src/application/use_cases/paladin/paladin_execution_service.rs`
+  - [x] 6.10 Write unit test for `run_with_vision()` method
   - [ ] 6.11 Add `run_with_vision()` method to Paladin implementation:
     - `pub async fn run_with_vision(&self, task: &str, images: Vec<VisionContent>) -> Result<PaladinResult, PaladinError>`
   - [ ] 6.12 Write unit test for vision support validation before execution

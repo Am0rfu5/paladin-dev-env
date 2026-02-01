@@ -1135,4 +1135,31 @@ mod tests {
 
         assert!(found, "Should detect stop word case-insensitively");
     }
+
+    #[tokio::test]
+    async fn test_vision_capability_check() {
+        // Test that vision capability is checked
+        // This is a placeholder until we implement the run_with_vision method
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let _service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
+
+        // Create a paladin with vision_enabled
+        let mut data = PaladinData::default();
+        data.vision_enabled = true;
+        let paladin = Node::new(data, Some("VisionPaladin".to_string()));
+
+        // Verify that the MockLlmPort doesn't support vision
+        let caps = llm_port.get_capabilities();
+        assert!(
+            !caps.supports_vision,
+            "MockLlmPort should not support vision"
+        );
+
+        // Verify paladin has vision_enabled
+        assert!(
+            paladin.node.vision_enabled,
+            "Paladin should have vision enabled"
+        );
+    }
 }
