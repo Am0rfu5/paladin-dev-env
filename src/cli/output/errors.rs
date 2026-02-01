@@ -87,6 +87,26 @@ pub enum CliError {
     #[error("Serialization error: {message}")]
     SerializationError { message: String },
 
+    /// Invalid file path
+    #[error("Invalid file path '{path}': {message}")]
+    InvalidFilePath { path: String, message: String },
+
+    /// Unsupported file format
+    #[error("Unsupported format '{format}'. Supported formats: {supported}")]
+    UnsupportedFormat { format: String, supported: String },
+
+    /// File read error
+    #[error("Failed to read file '{path}': {message}")]
+    FileReadError { path: String, message: String },
+
+    /// Vision processing error
+    #[error("Vision processing error: {message}")]
+    VisionProcessingError { message: String },
+
+    /// Document processing error
+    #[error("Document processing error: {message}")]
+    DocumentProcessingError { message: String },
+
     /// Generic error
     #[error("{0}")]
     Other(String),
@@ -256,6 +276,57 @@ impl CliError {
                     message
                 )
             }
+            CliError::InvalidFilePath { path, message } => {
+                format!(
+                    "\n\x1b[31mError:\x1b[0m Invalid file path\n\n\
+                     \x1b[33mDetails:\x1b[0m The file '{}' is invalid:\n  {}\n\n\
+                     \x1b[32mSuggestion:\x1b[0m Check that the file exists and the path is correct.\n\n\
+                     \x1b[36mExample:\x1b[0m\n  ls -la {}\n",
+                    path, message, path
+                )
+            }
+            CliError::UnsupportedFormat { format, supported } => {
+                format!(
+                    "\n\x1b[31mError:\x1b[0m Unsupported file format\n\n\
+                     \x1b[33mDetails:\x1b[0m The format '{}' is not supported.\n\n\
+                     \x1b[32mSupported formats:\x1b[0m {}\n\n\
+                     \x1b[32mSuggestion:\x1b[0m Convert the file to a supported format or use a different file.\n",
+                    format, supported
+                )
+            }
+            CliError::FileReadError { path, message } => {
+                format!(
+                    "\n\x1b[31mError:\x1b[0m Failed to read file\n\n\
+                     \x1b[33mDetails:\x1b[0m Could not read '{}':\n  {}\n\n\
+                     \x1b[32mSuggestion:\x1b[0m Check file permissions and ensure the file is not corrupted.\n\n\
+                     \x1b[36mExample:\x1b[0m\n  chmod 644 {}\n  file {}\n",
+                    path, message, path, path
+                )
+            }
+            CliError::VisionProcessingError { message } => {
+                format!(
+                    "\n\x1b[31mError:\x1b[0m Vision processing failed\n\n\
+                     \x1b[33mDetails:\x1b[0m {}\n\n\
+                     \x1b[32mSuggestion:\x1b[0m Check that:\n\
+                     • The image file is valid and not corrupted\n\
+                     • The image format is supported (png, jpg, jpeg, gif, webp)\n\
+                     • The LLM model supports vision capabilities\n\
+                     • Vision mode is enabled in the configuration\n",
+                    message
+                )
+            }
+            CliError::DocumentProcessingError { message } => {
+                format!(
+                    "\n\x1b[31mError:\x1b[0m Document processing failed\n\n\
+                     \x1b[33mDetails:\x1b[0m {}\n\n\
+                     \x1b[32mSuggestion:\x1b[0m Check that:\n\
+                     • The document file is valid and not corrupted\n\
+                     • The document format is supported (pdf, txt, md)\n\
+                     • The file is not encrypted or password-protected\n\
+                     • The file has appropriate read permissions\n",
+                    message
+                )
+            }
             CliError::Other(message) => {
                 format!("\n\x1b[31mError:\x1b[0m {}\n", message)
             }
@@ -278,7 +349,9 @@ impl CliError {
             | CliError::MissingRequiredField { .. }
             | CliError::InvalidFieldValue { .. }
             | CliError::MissingApiKey { .. }
-            | CliError::FileAlreadyExists { .. } => 1,
+            | CliError::FileAlreadyExists { .. }
+            | CliError::InvalidFilePath { .. }
+            | CliError::UnsupportedFormat { .. } => 1,
 
             // Cancellation: exit code 130 (SIGINT)
             CliError::Cancelled => 130,
@@ -292,6 +365,9 @@ impl CliError {
             | CliError::ToolError { .. }
             | CliError::McpConnectionError { .. }
             | CliError::SerializationError { .. }
+            | CliError::FileReadError { .. }
+            | CliError::VisionProcessingError { .. }
+            | CliError::DocumentProcessingError { .. }
             | CliError::Other(_) => 2,
         }
     }

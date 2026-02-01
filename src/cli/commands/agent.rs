@@ -63,6 +63,14 @@ pub struct AgentRunArgs {
     /// Enable verbose logging
     #[arg(short, long)]
     pub verbose: bool,
+
+    /// Path to image file(s) for vision processing (repeatable)
+    #[arg(long = "image")]
+    pub images: Vec<PathBuf>,
+
+    /// Path to document file for processing (PDF, TXT, MD)
+    #[arg(long = "document")]
+    pub document: Option<PathBuf>,
 }
 
 /// Handle the `paladin agent new` command
@@ -121,15 +129,90 @@ pub fn handle_agent_new(args: AgentNewArgs) -> Result<(), CliError> {
 ///
 /// Loads a Paladin configuration and executes it with the given input
 pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
+    use crate::application::ports::input::document_port::{DocumentPort, DocumentSource};
     use crate::application::ports::output::llm_port::LlmPort;
     use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::cli::config::loader::load_paladin_config;
     use crate::cli::interactive::prompt_for_input;
+    use crate::core::platform::container::vision::{ImageDetail, VisionContent};
+    use crate::infrastructure::adapters::document::DocumentAdapter;
     use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
     use std::sync::Arc;
     use std::time::Duration;
+
+    // Validate image paths if provided
+    if !args.images.is_empty() {
+        for image_path in &args.images {
+            if !image_path.exists() {
+                return Err(CliError::InvalidFilePath {
+                    path: image_path.display().to_string(),
+                    message: "Image file does not exist".to_string(),
+                });
+            }
+
+            // Validate image format
+            let extension = image_path
+                .extension()
+                .and_then(|e| e.to_str())
+                .ok_or_else(|| CliError::InvalidFilePath {
+                    path: image_path.display().to_string(),
+                    message: "No file extension found".to_string(),
+                })?;
+
+            let valid_image_formats = ["png", "jpg", "jpeg", "gif", "webp"];
+            if !valid_image_formats.contains(&extension.to_lowercase().as_str()) {
+                return Err(CliError::UnsupportedFormat {
+                    format: extension.to_string(),
+                    supported: "png, jpg, jpeg, gif, webp".to_string(),
+                });
+            }
+        }
+
+        if args.verbose {
+            println!(
+                "{} {} image(s) provided",
+                "→".cyan().bold(),
+                args.images.len()
+            );
+        }
+    }
+
+    // Validate document path if provided
+    if let Some(doc_path) = &args.document {
+        if !doc_path.exists() {
+            return Err(CliError::InvalidFilePath {
+                path: doc_path.display().to_string(),
+                message: "Document file does not exist".to_string(),
+            });
+        }
+
+        // Validate document format
+        let extension = doc_path
+            .extension()
+            .and_then(|e| e.to_str())
+            .ok_or_else(|| CliError::InvalidFilePath {
+                path: doc_path.display().to_string(),
+                message: "No file extension found".to_string(),
+            })?;
+
+        let valid_doc_formats = ["pdf", "txt", "md", "markdown"];
+        if !valid_doc_formats.contains(&extension.to_lowercase().as_str()) {
+            return Err(CliError::UnsupportedFormat {
+                format: extension.to_string(),
+                supported: "pdf, txt, md, markdown".to_string(),
+            });
+        }
+
+        if args.verbose {
+            println!(
+                "{} Document provided: {}",
+                "→".cyan().bold(),
+                doc_path.display()
+            );
+        }
+    }
 
     // Load configuration
     let config = load_paladin_config(&args.config)?;
@@ -214,21 +297,112 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
         builder = builder.add_stop_word(word);
     }
 
+    // Enable vision if images are provided
+    if !args.images.is_empty() {
+        builder = builder.enable_vision(true);
+        if args.verbose {
+            println!("{} Vision mode enabled", "→".cyan().bold());
+        }
+    }
+
     let paladin = builder.build()?;
+
+    // Process document if provided
+    let mut combined_input = input.clone();
+    if let Some(doc_path) = &args.document {
+        if args.verbose {
+            println!(
+                "{} Processing document: {}",
+                "→".cyan().bold(),
+                doc_path.display()
+            );
+        }
+
+        let doc_adapter = DocumentAdapter::new();
+        let document = doc_adapter
+            .ingest(DocumentSource::File(doc_path.clone()))
+            .await
+            .map_err(|e| CliError::DocumentProcessingError {
+                message: e.to_string(),
+            })?;
+
+        // Extract text from all pages
+        let doc_text: String = document
+            .pages
+            .iter()
+            .map(|p| p.content.as_str())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+
+        if args.verbose {
+            println!(
+                "{} Document processed: {} pages, {} words",
+                "✓".green().bold(),
+                document.page_count(),
+                document.word_count()
+            );
+        }
+
+        // Combine input with document text
+        combined_input = format!("{}\n\nDocument content:\n{}\n", input, doc_text);
+    }
 
     if args.verbose {
         println!("{} Executing Paladin: {}", "→".cyan().bold(), config.name);
-        println!("{} Input: {}", "→".cyan().bold(), input);
+        if !args.images.is_empty() {
+            println!(
+                "{} Input: {} (with {} image(s))",
+                "→".cyan().bold(),
+                input,
+                args.images.len()
+            );
+        } else {
+            println!("{} Input: {}", "→".cyan().bold(), input);
+        }
     }
 
-    // Execute Paladin
+    // Execute Paladin with vision support if images provided
     let start = std::time::Instant::now();
-    let result = service
-        .execute(&paladin, &input)
-        .await
-        .map_err(|e| CliError::ExecutionError {
-            message: e.to_string(),
-        })?;
+    let result = if !args.images.is_empty() {
+        // Load images and convert to VisionContent
+        let mut vision_contents = Vec::new();
+        for image_path in &args.images {
+            if args.verbose {
+                println!("Loading image: {}", image_path.display());
+            }
+
+            // Create VisionContent from file path
+            let vision_content = VisionContent::ImageFile {
+                path: image_path.clone(),
+                detail: ImageDetail::Auto,
+            };
+
+            // Validate format
+            vision_content
+                .validate_format()
+                .map_err(|e| CliError::VisionProcessingError {
+                    message: e.to_string(),
+                })?;
+
+            vision_contents.push(vision_content);
+        }
+
+        // Execute with vision
+        service
+            .execute_with_vision(&paladin, &combined_input, vision_contents)
+            .await
+            .map_err(|e| CliError::ExecutionError {
+                message: e.to_string(),
+            })?
+    } else {
+        // Standard execution without vision
+        service
+            .execute(&paladin, &combined_input)
+            .await
+            .map_err(|e| CliError::ExecutionError {
+                message: e.to_string(),
+            })?
+    };
     let duration = start.elapsed();
 
     if args.verbose {
@@ -299,12 +473,46 @@ mod tests {
             input: Some("test input".to_string()),
             output: Some(PathBuf::from("output.json")),
             verbose: true,
+            images: vec![],
+            document: None,
         };
 
         assert_eq!(args.config, PathBuf::from("config.yaml"));
         assert_eq!(args.input, Some("test input".to_string()));
         assert_eq!(args.output, Some(PathBuf::from("output.json")));
         assert!(args.verbose);
+        assert!(args.images.is_empty());
+        assert!(args.document.is_none());
+    }
+
+    #[test]
+    fn test_agent_run_args_with_images() {
+        let args = AgentRunArgs {
+            config: PathBuf::from("config.yaml"),
+            input: Some("analyze these".to_string()),
+            output: None,
+            verbose: false,
+            images: vec![PathBuf::from("image1.png"), PathBuf::from("image2.jpg")],
+            document: None,
+        };
+
+        assert_eq!(args.images.len(), 2);
+        assert_eq!(args.images[0], PathBuf::from("image1.png"));
+        assert_eq!(args.images[1], PathBuf::from("image2.jpg"));
+    }
+
+    #[test]
+    fn test_agent_run_args_with_document() {
+        let args = AgentRunArgs {
+            config: PathBuf::from("config.yaml"),
+            input: Some("summarize this".to_string()),
+            output: None,
+            verbose: false,
+            images: vec![],
+            document: Some(PathBuf::from("document.pdf")),
+        };
+
+        assert_eq!(args.document, Some(PathBuf::from("document.pdf")));
     }
 
     #[test]
@@ -445,6 +653,8 @@ mod tests {
             input: None,
             output: None,
             verbose: false,
+            images: vec![],
+            document: None,
         };
         let command = AgentCommands::Run(run_args);
 

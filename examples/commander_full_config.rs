@@ -94,6 +94,7 @@ fn create_paladin(name: &str) -> Paladin {
             max_loops: 1,
             stop_words: vec![],
             status: PaladinStatus::Idle,
+            vision_enabled: false,
         },
         None,
     )
