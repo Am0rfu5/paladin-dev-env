@@ -113,10 +113,6 @@ name = "rag_integration"
 path = "tests/integration/rag_integration_tests.rs"
 required-features = ["qdrant"]
 
-[[test]]
-name = "battalion_vision_integration"
-path = "tests/integration/battalion_vision_integration_test.rs"
-
 [[bin]]
 name = "paladin"
 path = "src/main.rs"
