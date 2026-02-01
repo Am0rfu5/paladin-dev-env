@@ -601,7 +601,7 @@ async fn build_paladin_from_reference(
         .name(&paladin_config.name)
         .model(&paladin_config.model)
         .temperature(paladin_config.temperature)
-        .max_loops(paladin_config.max_loops)
+        .max_loops(paladin_config.max_loops.as_u32())
         .timeout_seconds(paladin_config.timeout_seconds);
 
     // Add stop words

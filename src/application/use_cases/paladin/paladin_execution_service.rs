@@ -314,7 +314,7 @@ impl PaladinExecutionService {
         );
 
         let start_time = Instant::now();
-        let timeout_duration = Duration::from_secs(paladin.node.max_loops as u64 * 60);
+        let timeout_duration = Duration::from_secs(paladin.node.max_loops.as_u32() as u64 * 60);
 
         // Wrap execution with timeout
         let execution_future = self.execute_internal(paladin, input, execution_id);
@@ -454,7 +454,7 @@ impl PaladinExecutionService {
         };
 
         // Execute reasoning loop
-        for loop_num in 1..=paladin.node.max_loops {
+        for loop_num in 1..=paladin.node.max_loops.as_u32() {
             debug!(
                 "Paladin loop iteration: id={}, loop={}/{}",
                 execution_id, loop_num, paladin.node.max_loops
@@ -537,7 +537,7 @@ impl PaladinExecutionService {
             }
 
             // Check if we've reached max loops
-            if loop_num == paladin.node.max_loops {
+            if loop_num == paladin.node.max_loops.as_u32() {
                 debug!(
                     "Reached max loops: id={}, loops={}",
                     execution_id, paladin.node.max_loops
@@ -588,7 +588,7 @@ impl PaladinExecutionService {
             output: accumulated_output,
             token_count: total_tokens,
             execution_time_ms: start_time.elapsed().as_millis() as u64,
-            loop_count: paladin.node.max_loops,
+            loop_count: paladin.node.max_loops.as_u32(),
             stop_reason: StopReason::Completed,
         })
     }
@@ -816,7 +816,7 @@ impl PaladinExecutionService {
         loop_num: u32,
     ) -> Result<crate::application::ports::output::llm_port::LlmResponse, PaladinError> {
         let mut attempt = 0;
-        let max_attempts = paladin.node.max_loops.min(10); // Cap retries at 10
+        let max_attempts = paladin.node.max_loops.as_u32().min(10); // Cap retries at 10
 
         loop {
             attempt += 1;

@@ -26,7 +26,94 @@
 //! ```
 
 use crate::core::base::entity::node::Node;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+
+/// Maximum iteration control for Paladin execution
+///
+/// Controls how many reasoning loops a Paladin can perform before stopping.
+/// This can be either a fixed number or an automatic planning mode that
+/// decomposes tasks into subtasks.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub enum MaxLoops {
+    /// Fixed number of reasoning iterations
+    Fixed(u32),
+    /// Automatic planning mode with LLM-driven task decomposition
+    ///
+    /// The Paladin will use an LLM to analyze the task and create a plan
+    /// with subtasks, then execute them sequentially up to `max_subtasks`.
+    Auto {
+        /// Maximum number of subtasks the planner can create
+        max_subtasks: u32,
+    },
+}
+
+// Custom deserializer to handle both old integer format and new enum format
+impl<'de> Deserialize<'de> for MaxLoops {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum MaxLoopsHelper {
+            Integer(u32),
+            Enum(MaxLoopsEnum),
+        }
+
+        #[derive(Deserialize)]
+        #[serde(rename_all = "PascalCase")]
+        enum MaxLoopsEnum {
+            Fixed(u32),
+            Auto { max_subtasks: u32 },
+        }
+
+        match MaxLoopsHelper::deserialize(deserializer)? {
+            MaxLoopsHelper::Integer(n) => Ok(MaxLoops::Fixed(n)),
+            MaxLoopsHelper::Enum(MaxLoopsEnum::Fixed(n)) => Ok(MaxLoops::Fixed(n)),
+            MaxLoopsHelper::Enum(MaxLoopsEnum::Auto { max_subtasks }) => {
+                Ok(MaxLoops::Auto { max_subtasks })
+            }
+        }
+    }
+}
+
+impl Default for MaxLoops {
+    fn default() -> Self {
+        MaxLoops::Fixed(3)
+    }
+}
+
+impl MaxLoops {
+    /// Gets the loop count for Fixed mode, or max_subtasks for Auto mode
+    ///
+    /// This provides backward compatibility with code that expects a u32.
+    pub fn as_u32(&self) -> u32 {
+        match self {
+            MaxLoops::Fixed(count) => *count,
+            MaxLoops::Auto { max_subtasks } => *max_subtasks,
+        }
+    }
+
+    /// Returns true if this is Auto planning mode
+    pub fn is_auto(&self) -> bool {
+        matches!(self, MaxLoops::Auto { .. })
+    }
+
+    /// Returns true if this is Fixed loop mode
+    pub fn is_fixed(&self) -> bool {
+        matches!(self, MaxLoops::Fixed(_))
+    }
+}
+
+impl std::fmt::Display for MaxLoops {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MaxLoops::Fixed(count) => write!(f, "{}", count),
+            MaxLoops::Auto { max_subtasks } => write!(f, "Auto({})", max_subtasks),
+        }
+    }
+}
 
 /// Status of a Paladin during its lifecycle
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -64,8 +151,8 @@ pub struct PaladinData {
     /// Response randomness (0.0 = deterministic, 1.0 = maximum randomness)
     pub temperature: f32,
 
-    /// Maximum number of reasoning iterations before stopping
-    pub max_loops: u32,
+    /// Maximum iteration control (Fixed or Auto planning mode)
+    pub max_loops: MaxLoops,
 
     /// Tokens that signal the Paladin should stop processing
     pub stop_words: Vec<String>,
@@ -111,7 +198,7 @@ impl Default for PaladinData {
     /// - `user_name`: "User"
     /// - `model`: "gpt-4"
     /// - `temperature`: 0.7
-    /// - `max_loops`: 3
+    /// - `max_loops`: MaxLoops::Fixed(3)
     /// - `stop_words`: Empty vector
     /// - `status`: Idle
     /// - `vision_enabled`: false
@@ -122,7 +209,7 @@ impl Default for PaladinData {
             user_name: "User".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::default(),
             stop_words: Vec::new(),
             status: PaladinStatus::Idle,
             vision_enabled: false,
@@ -191,15 +278,49 @@ mod tests {
     }
 
     #[test]
+    fn test_max_loops_fixed() {
+        let loops = MaxLoops::Fixed(5);
+        assert_eq!(loops, MaxLoops::Fixed(5));
+    }
+
+    #[test]
+    fn test_max_loops_auto() {
+        let loops = MaxLoops::Auto { max_subtasks: 10 };
+        if let MaxLoops::Auto { max_subtasks } = loops {
+            assert_eq!(max_subtasks, 10);
+        } else {
+            panic!("Expected MaxLoops::Auto variant");
+        }
+    }
+
+    #[test]
+    fn test_max_loops_default() {
+        let loops = MaxLoops::default();
+        assert_eq!(loops, MaxLoops::Fixed(3));
+    }
+
+    #[test]
     fn test_paladin_data_default() {
         let data = PaladinData::default();
         assert_eq!(data.name, "Paladin");
         assert_eq!(data.user_name, "User");
         assert_eq!(data.model, "gpt-4");
         assert_eq!(data.temperature, 0.7);
-        assert_eq!(data.max_loops, 3);
+        assert_eq!(data.max_loops, MaxLoops::Fixed(3));
         assert_eq!(data.status, PaladinStatus::Idle);
         assert!(!data.vision_enabled);
+    }
+
+    #[test]
+    fn test_paladin_data_with_auto_planning() {
+        let mut data = PaladinData::default();
+        data.max_loops = MaxLoops::Auto { max_subtasks: 8 };
+
+        if let MaxLoops::Auto { max_subtasks } = data.max_loops {
+            assert_eq!(max_subtasks, 8);
+        } else {
+            panic!("Expected MaxLoops::Auto variant");
+        }
     }
 
     #[test]

@@ -71,6 +71,7 @@ mod tests {
     use crate::core::platform::container::citadel::{
         BattalionConfig, CheckpointData, PaladinData, PaladinStatus,
     };
+    use crate::core::platform::container::paladin::MaxLoops;
 
     // Mock implementation for testing trait bounds
     struct MockCitadel;
@@ -108,7 +109,7 @@ mod tests {
             user_name: "test".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,

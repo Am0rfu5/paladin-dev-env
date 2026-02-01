@@ -40,6 +40,7 @@ use crate::application::use_cases::sanctum::memory_extraction_service::MemoryExt
 use crate::config::application_settings::MCPServerConfig;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::herald::Herald;
+use crate::core::platform::container::paladin::MaxLoops;
 use crate::core::platform::container::paladin::{Paladin, PaladinData};
 use crate::core::platform::container::paladin_config::{OutputFormat, PaladinConfig};
 use crate::infrastructure::adapters::citadel::file_citadel::FileCitadel;
@@ -259,7 +260,7 @@ impl PaladinBuilder {
     /// # }
     /// ```
     pub fn max_loops(mut self, max_loops: u32) -> Self {
-        self.data.max_loops = max_loops;
+        self.data.max_loops = MaxLoops::Fixed(max_loops);
         self
     }
 
@@ -844,10 +845,11 @@ impl PaladinBuilder {
         }
 
         // Validate max_loops is in [1, 100]
-        if self.data.max_loops < 1 || self.data.max_loops > 100 {
+        let loops = self.data.max_loops.as_u32();
+        if !(1..=100).contains(&loops) {
             return Err(PaladinError::ConfigurationError(format!(
                 "max_loops must be between 1 and 100, got {}",
-                self.data.max_loops
+                loops
             )));
         }
 
@@ -990,7 +992,7 @@ mod tests {
             llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
                 system_prompt: "Test".to_string(),
-                max_loops: 0,
+                max_loops: MaxLoops::Fixed(0),
                 ..Default::default()
             },
             config: PaladinConfig::default(),
@@ -1364,7 +1366,7 @@ mod tests {
                     user_name: "User".to_string(),
                     model: "gpt-4".to_string(),
                     temperature: 0.8,
-                    max_loops: 5,
+                    max_loops: MaxLoops::Fixed(5),
                     stop_words: vec![],
                     status: crate::core::platform::container::citadel::PaladinStatus::Idle,
                     vision_enabled: false,

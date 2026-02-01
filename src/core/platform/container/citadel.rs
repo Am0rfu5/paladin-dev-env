@@ -41,6 +41,7 @@ use std::path::PathBuf;
 use uuid::Uuid;
 
 use super::garrison::GarrisonEntry;
+use super::paladin::MaxLoops;
 use crate::core::base::entity::node::Node;
 
 /// Type alias for Paladin using the Node pattern
@@ -54,7 +55,7 @@ pub struct PaladinData {
     pub user_name: String,
     pub model: String,
     pub temperature: f32,
-    pub max_loops: u32,
+    pub max_loops: MaxLoops,
     pub stop_words: Vec<String>,
     pub status: PaladinStatus,
     pub vision_enabled: bool,
@@ -356,7 +357,7 @@ mod tests {
             user_name: "TestUser".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             stop_words: vec!["STOP".to_string()],
             status: PaladinStatus::Idle,
             vision_enabled: false,

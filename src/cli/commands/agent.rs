@@ -289,7 +289,7 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
         .name(&config.name)
         .model(&config.model)
         .temperature(config.temperature)
-        .max_loops(config.max_loops)
+        .max_loops(config.max_loops.as_u32())
         .timeout_seconds(config.timeout_seconds);
 
     // Add stop words

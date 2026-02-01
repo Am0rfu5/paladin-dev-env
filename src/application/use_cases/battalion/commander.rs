@@ -881,7 +881,7 @@ mod tests {
     use crate::application::use_cases::paladin::error::PaladinError;
     use crate::core::base::entity::node::Node;
     use crate::core::platform::container::battalion::{ErrorStrategy, RetryPolicy};
-    use crate::core::platform::container::paladin::{PaladinData, PaladinStatus};
+    use crate::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
     use async_trait::async_trait;
 
     /// Mock PaladinPort for testing
@@ -924,7 +924,7 @@ mod tests {
             user_name: "User".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,

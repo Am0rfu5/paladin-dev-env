@@ -32,6 +32,7 @@
 //! ```
 
 use crate::cli::output::errors::CliError;
+use crate::core::platform::container::paladin::MaxLoops;
 use serde::{Deserialize, Serialize};
 
 /// Paladin YAML configuration matching FR-15 schema
@@ -50,9 +51,9 @@ pub struct PaladinYamlConfig {
     #[serde(default = "default_temperature")]
     pub temperature: f32,
 
-    /// Maximum reasoning loops
+    /// Maximum reasoning loops (or planning subtasks in Auto mode)
     #[serde(default = "default_max_loops")]
-    pub max_loops: u32,
+    pub max_loops: MaxLoops,
 
     /// Timeout in seconds
     #[serde(default = "default_timeout")]
@@ -154,8 +155,8 @@ fn default_temperature() -> f32 {
     0.7
 }
 
-fn default_max_loops() -> u32 {
-    3
+fn default_max_loops() -> MaxLoops {
+    MaxLoops::Fixed(3)
 }
 
 fn default_timeout() -> u64 {
@@ -200,7 +201,7 @@ impl Validate for PaladinYamlConfig {
         }
 
         // Validate max_loops
-        if self.max_loops == 0 {
+        if self.max_loops.as_u32() == 0 {
             return Err(CliError::InvalidFieldValue {
                 field: "max_loops".to_string(),
                 message: "must be greater than 0".to_string(),
@@ -337,7 +338,7 @@ mod tests {
             system_prompt: "You are a helpful assistant".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             timeout_seconds: 300,
             stop_words: vec![],
             provider: ProviderConfig {
@@ -360,7 +361,7 @@ mod tests {
             system_prompt: "You are a helpful assistant".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             timeout_seconds: 300,
             stop_words: vec![],
             provider: ProviderConfig {
@@ -386,7 +387,7 @@ mod tests {
             system_prompt: "You are a helpful assistant".to_string(),
             model: "gpt-4".to_string(),
             temperature: 3.0, // Invalid: > 2.0
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             timeout_seconds: 300,
             stop_words: vec![],
             provider: ProviderConfig {
@@ -412,7 +413,7 @@ mod tests {
             system_prompt: "You are a helpful assistant".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             timeout_seconds: 300,
             stop_words: vec![],
             provider: ProviderConfig {
@@ -438,7 +439,7 @@ mod tests {
             system_prompt: "You are a helpful assistant".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             timeout_seconds: 300,
             stop_words: vec![],
             provider: ProviderConfig {
@@ -477,7 +478,7 @@ mod tests {
             system_prompt: "You are a helpful assistant".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             timeout_seconds: 300,
             stop_words: vec![],
             provider: ProviderConfig {
@@ -515,7 +516,7 @@ mod tests {
             system_prompt: "You are a helpful assistant".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             timeout_seconds: 300,
             stop_words: vec![],
             provider: ProviderConfig {
@@ -541,7 +542,7 @@ mod tests {
             system_prompt: "You are a helpful assistant".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             timeout_seconds: 300,
             stop_words: vec![],
             provider: ProviderConfig {
@@ -579,7 +580,7 @@ mod tests {
             system_prompt: "You are a helpful assistant".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             timeout_seconds: 300,
             stop_words: vec![],
             provider: ProviderConfig {
@@ -627,7 +628,7 @@ mod tests {
             system_prompt: "You are a helpful assistant".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             timeout_seconds: 300,
             stop_words: vec![],
             provider: ProviderConfig {

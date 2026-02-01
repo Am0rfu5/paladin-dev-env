@@ -306,7 +306,7 @@ impl Campaign {
 mod tests {
     use super::*;
     use crate::core::base::entity::node::Node;
-    use crate::core::platform::container::paladin::{PaladinData, PaladinStatus};
+    use crate::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
 
     fn create_test_paladin(name: &str) -> Paladin {
         let data = PaladinData {
@@ -315,7 +315,7 @@ mod tests {
             user_name: "User".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 1,
+            max_loops: MaxLoops::Fixed(1),
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,

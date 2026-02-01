@@ -433,6 +433,7 @@ mod tests {
     use super::*;
     use crate::application::ports::output::paladin_port::StopReason;
     use crate::application::use_cases::paladin::error::PaladinError;
+    use crate::core::platform::container::paladin::MaxLoops;
     use crate::core::base::entity::node::Node;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
@@ -540,7 +541,7 @@ mod tests {
             user_name: "TestUser".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 3,
+            max_loops: MaxLoops::Fixed(3),
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,
