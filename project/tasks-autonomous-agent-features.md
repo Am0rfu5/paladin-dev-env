@@ -120,7 +120,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.19 Format code: `cargo fmt`
   - [x] 1.20 Commit: `git commit -m "feat(core): add autonomous feature domain models" -m "- Add MaxLoops::Auto variant" -m "- Create TaskPlan, Subtask, HandoffDecision types" -m "- Create error enums for planning, prompts, handoffs" -m "- Add AutonomousConfig structures" -m "Related to US-14.1, US-14.2, US-14.3, US-14.4, US-14.5"`
 
-- [ ] 2.0 Planning Service (US-14.1: Autonomous Planning Mode)
+- [x] 2.0 Planning Service (US-14.1: Autonomous Planning Mode)
   - [x] 2.1 **TEST**: Write test for `PlanningService::new()` constructor
   - [x] 2.2 Create `src/application/use_cases/paladin/planning_service.rs` with struct and constructor
   - [x] 2.3 **TEST**: Write test for LLM-based task decomposition (mocked LLM response)
@@ -143,7 +143,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.20 Run tests: `cargo test planning_service`
   - [x] 2.21 Run clippy: `cargo clippy -- -D warnings`
   - [x] 2.22 Format code: `cargo fmt`
-  - [ ] 2.23 Commit: `git commit -m "feat(planning): implement PlanningService for autonomous task decomposition" -m "- LLM-based task decomposition with planning prompt" -m "- Subtask execution with dependency tracking" -m "- Result synthesis for cohesive responses" -m "- Max subtasks limit enforcement" -m "- Comprehensive logging and error handling" -m "Implements US-14.1"`
+  - [x] 2.23 Commit: `git commit -m "feat(planning): implement PlanningService for autonomous task decomposition" -m "- LLM-based task decomposition with planning prompt" -m "- Subtask execution with dependency tracking" -m "- Result synthesis for cohesive responses" -m "- Max subtasks limit enforcement" -m "- Comprehensive logging and error handling" -m "Implements US-14.1"`
 
 - [ ] 3.0 Prompt Generation Service (US-14.2: Auto-Generate System Prompt)
   - [ ] 3.1 **TEST**: Write test for `PromptGenerationService::new()` constructor
