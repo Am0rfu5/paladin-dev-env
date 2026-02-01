@@ -14,6 +14,7 @@ use paladin::core::platform::container::citadel::{
 };
 use paladin::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
 use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
+use paladin::core::platform::container::paladin::MaxLoops;
 use std::sync::Arc;
 use tempfile::TempDir;
 use uuid::Uuid;
@@ -31,7 +32,7 @@ fn create_test_paladin_data() -> PaladinData {
         user_name: "TestUser".to_string(),
         model: "gpt-4".to_string(),
         temperature: 0.7,
-        max_loops: 3,
+        max_loops: MaxLoops::Fixed(3),
         stop_words: vec!["STOP".to_string()],
         status: PaladinStatus::Idle,
         vision_enabled: false,

@@ -3,6 +3,7 @@
 //! Tests end-to-end Commander execution with all strategies, Auto mode,
 //! error handling, and telemetry validation.
 
+use paladin::core::platform::container::paladin::MaxLoops;
 use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{
     PaladinPort, PaladinResult, PaladinStream, StopReason,
@@ -133,7 +134,7 @@ fn create_test_paladin(name: &str) -> Paladin {
         user_name: "TestUser".to_string(),
         model: "test-model".to_string(),
         temperature: 0.7,
-        max_loops: 1,
+        max_loops: MaxLoops::Fixed(1),
         stop_words: vec![],
         status: PaladinStatus::Idle,
         vision_enabled: false,

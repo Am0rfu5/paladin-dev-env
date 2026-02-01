@@ -2,6 +2,7 @@
 //!
 //! Tests end-to-end Phalanx execution with concurrent scenarios
 
+use paladin::core::platform::container::paladin::MaxLoops;
 use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
@@ -127,7 +128,7 @@ fn create_paladin(name: &str, system_prompt: &str) -> Paladin {
         user_name: "TestUser".to_string(),
         model: "gpt-4".to_string(),
         temperature: 0.7,
-        max_loops: 3,
+        max_loops: MaxLoops::Fixed(3),
         stop_words: vec![],
         status: PaladinStatus::Idle,
         vision_enabled: false,

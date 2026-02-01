@@ -846,7 +846,9 @@ impl PaladinBuilder {
 
         // Validate max_loops is in [1, 100]
         let loops = self.data.max_loops.as_u32();
-        if !(1..=100).contains(&loops) {
+        if (1..=100).contains(&loops) {
+            // Valid range
+        } else {
             return Err(PaladinError::ConfigurationError(format!(
                 "max_loops must be between 1 and 100, got {}",
                 loops

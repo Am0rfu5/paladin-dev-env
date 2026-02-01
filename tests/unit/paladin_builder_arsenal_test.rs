@@ -1,5 +1,6 @@
 //! Unit tests for PaladinBuilder Arsenal integration
 
+
 use async_trait::async_trait;
 use chrono::Utc;
 use paladin::application::ports::output::arsenal_port::ArsenalRegistry;

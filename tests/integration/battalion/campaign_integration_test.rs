@@ -2,6 +2,7 @@
 //!
 //! End-to-end integration tests for Campaign pattern with real graph execution scenarios.
 
+use paladin::core::platform::container::paladin::MaxLoops;
 use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use paladin::application::use_cases::battalion::campaign_service::CampaignExecutionService;
@@ -106,7 +107,7 @@ fn create_paladin(name: &str) -> Paladin {
         user_name: "test_user".to_string(),
         model: "gpt-4".to_string(),
         temperature: 0.7,
-        max_loops: 5,
+        max_loops: MaxLoops::Fixed(5),
         stop_words: vec![],
         status: PaladinStatus::Idle,
         vision_enabled: false,

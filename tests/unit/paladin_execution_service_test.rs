@@ -1,6 +1,7 @@
 //! Unit tests for PaladinExecutionService
 //! Following TDD - these tests should fail initially
 
+use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::application::ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
 };
@@ -234,7 +235,7 @@ async fn test_execution_service_enforces_timeout() {
     // TODO: Enhance MockLlmPort to support delays and test timeout behavior
 
     // For now, just verify the Paladin can be constructed
-    assert_eq!(paladin.node.max_loops, 1);
+    assert_eq!(paladin.node.max_loops, MaxLoops::Fixed(1));
 }
 
 #[tokio::test]

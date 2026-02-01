@@ -5,7 +5,7 @@
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::{BattalionConfig, BattalionError};
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
+use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
 
 /// Helper function to create a test Paladin
 fn create_test_paladin(name: &str) -> Paladin {
@@ -15,7 +15,7 @@ fn create_test_paladin(name: &str) -> Paladin {
         user_name: "TestUser".to_string(),
         model: "gpt-4".to_string(),
         temperature: 0.7,
-        max_loops: 3,
+        max_loops: MaxLoops::Fixed(3),
         stop_words: vec![],
         status: PaladinStatus::Idle,
         vision_enabled: false,

@@ -17,7 +17,7 @@ use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use paladin::core::platform::container::battalion::{BattalionConfig, ErrorStrategy};
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
+use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
@@ -87,7 +87,7 @@ fn create_test_paladin(name: &str) -> Paladin {
             user_name: "test_user".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 1,
+            max_loops: MaxLoops::Fixed(1),
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,

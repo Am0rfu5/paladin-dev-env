@@ -3,6 +3,7 @@
 //! Tests graph-based DAG orchestration including linear workflows, branching,
 //! fan-out/fan-in, conditional routing, and error handling.
 
+use paladin::core::platform::container::paladin::MaxLoops;
 use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{
     PaladinPort, PaladinResult, PaladinStream, StopReason,
@@ -100,7 +101,7 @@ fn create_test_paladin(name: &str) -> Paladin {
         user_name: "test_user".to_string(),
         model: "gpt-4".to_string(),
         temperature: 0.7,
-        max_loops: 1,
+        max_loops: MaxLoops::Fixed(1),
         stop_words: Vec::new(),
         status: PaladinStatus::Idle,
         vision_enabled: false,

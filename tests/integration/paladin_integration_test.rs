@@ -5,6 +5,7 @@
 // Tests the complete flow from PaladinBuilder through PaladinExecutionService
 // using MockLlmAdapter, verifying all components work together correctly.
 
+use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::application::ports::output::llm_port::{LlmError, LlmPort};
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::error::PaladinError;
@@ -325,7 +326,7 @@ async fn test_paladin_with_custom_configuration() {
     assert_eq!(paladin.node.user_name, "Developer");
     assert_eq!(paladin.node.model, "mock-advanced-model");
     assert_eq!(paladin.node.temperature, 0.3);
-    assert_eq!(paladin.node.max_loops, 2);
+    assert_eq!(paladin.node.max_loops, MaxLoops::Fixed(2));
     assert_eq!(paladin.node.stop_words, vec!["END", "DONE"]);
 
     // Verify execution result

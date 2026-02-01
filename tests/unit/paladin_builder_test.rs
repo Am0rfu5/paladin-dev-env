@@ -1,6 +1,7 @@
 //! Unit tests for PaladinBuilder
 //! Following TDD - these tests should fail initially
 
+use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::application::ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
 };
@@ -218,7 +219,7 @@ fn test_paladin_builder_sets_defaults() {
 
     // Check PaladinData defaults from Default trait
     assert_eq!(paladin.node.temperature, 0.7);
-    assert_eq!(paladin.node.max_loops, 3); // Default is 3, not 1
+    assert_eq!(paladin.node.max_loops, MaxLoops::Fixed(3)); // Default is 3, not 1
     assert_eq!(paladin.node.status, PaladinStatus::Idle);
     assert!(!paladin.node.name.is_empty(), "Should have default name");
     assert!(
@@ -255,7 +256,7 @@ fn test_paladin_builder_method_chaining() {
     assert_eq!(paladin.node.user_name, "Developer");
     assert_eq!(paladin.node.model, "gpt-4-turbo");
     assert_eq!(paladin.node.temperature, 0.8);
-    assert_eq!(paladin.node.max_loops, 5);
+    assert_eq!(paladin.node.max_loops, MaxLoops::Fixed(5));
     assert_eq!(paladin.node.stop_words.len(), 2);
     assert!(paladin.node.stop_words.contains(&"STOP".to_string()));
     assert!(paladin.node.stop_words.contains(&"END".to_string()));

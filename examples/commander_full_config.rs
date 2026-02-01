@@ -20,7 +20,7 @@ use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::{
     BattalionConfig, BattalionStrategy, ErrorStrategy, RetryPolicy,
 };
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
+use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -91,7 +91,7 @@ fn create_paladin(name: &str) -> Paladin {
             user_name: "System".to_string(),
             model: "gpt-4".to_string(),
             temperature: 0.7,
-            max_loops: 1,
+            max_loops: MaxLoops::Fixed(1),
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,

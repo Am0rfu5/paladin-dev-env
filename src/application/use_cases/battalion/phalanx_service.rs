@@ -433,9 +433,9 @@ mod tests {
     use super::*;
     use crate::application::ports::output::paladin_port::StopReason;
     use crate::application::use_cases::paladin::error::PaladinError;
-    use crate::core::platform::container::paladin::MaxLoops;
     use crate::core::base::entity::node::Node;
     use crate::core::platform::container::battalion::BattalionConfig;
+    use crate::core::platform::container::paladin::MaxLoops;
     use crate::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
     use async_trait::async_trait;
     use std::sync::Mutex;

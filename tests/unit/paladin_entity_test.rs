@@ -1,5 +1,5 @@
 use paladin::core::base::entity::node::Node;
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
+use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
 
 #[test]
 fn test_paladin_status_transitions() {
@@ -40,7 +40,7 @@ fn test_paladin_data_serialization_roundtrip() {
         user_name: "TestUser".to_string(),
         model: "gpt-4".to_string(),
         temperature: 0.7,
-        max_loops: 5,
+        max_loops: MaxLoops::Fixed(5),
         stop_words: vec!["STOP".to_string(), "END".to_string()],
         status: PaladinStatus::Idle,
         vision_enabled: false,
@@ -71,7 +71,7 @@ fn test_paladin_data_clone() {
         user_name: "User".to_string(),
         model: "gpt-4".to_string(),
         temperature: 0.5,
-        max_loops: 3,
+        max_loops: MaxLoops::Fixed(3),
         stop_words: vec!["STOP".to_string()],
         status: PaladinStatus::Reasoning,
         vision_enabled: false,
@@ -93,7 +93,7 @@ fn test_paladin_node_creation() {
         user_name: "Developer".to_string(),
         model: "gpt-4".to_string(),
         temperature: 0.3,
-        max_loops: 5,
+        max_loops: MaxLoops::Fixed(5),
         stop_words: vec!["DONE".to_string()],
         status: PaladinStatus::Idle,
         vision_enabled: false,
@@ -116,7 +116,7 @@ fn test_paladin_default() {
     assert_eq!(data.user_name, "User");
     assert_eq!(data.model, "gpt-4");
     assert_eq!(data.temperature, 0.7);
-    assert_eq!(data.max_loops, 3);
+    assert_eq!(data.max_loops, MaxLoops::Fixed(3));
     assert_eq!(data.status, PaladinStatus::Idle);
     assert!(data.stop_words.is_empty());
     assert!(data.system_prompt.is_empty());
