@@ -14,7 +14,7 @@ use paladin::application::use_cases::battalion::commander::CommanderBuilder;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::{BattalionConfig, BattalionStrategy};
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
+use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 use std::sync::Arc;
 
 /// Simple mock PaladinPort for demonstration

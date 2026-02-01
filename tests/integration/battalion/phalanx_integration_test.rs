@@ -2,7 +2,6 @@
 //!
 //! Tests end-to-end Phalanx execution with concurrent scenarios
 
-use paladin::core::platform::container::paladin::MaxLoops;
 use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
@@ -10,6 +9,7 @@ use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use paladin::core::platform::container::battalion::{BattalionConfig, ErrorStrategy};
+use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

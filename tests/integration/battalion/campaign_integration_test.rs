@@ -2,7 +2,6 @@
 //!
 //! End-to-end integration tests for Campaign pattern with real graph execution scenarios.
 
-use paladin::core::platform::container::paladin::MaxLoops;
 use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use paladin::application::use_cases::battalion::campaign_service::CampaignExecutionService;
@@ -12,6 +11,7 @@ use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::campaign::{
     Campaign, CampaignEdge, EdgeCondition,
 };
+use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

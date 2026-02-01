@@ -3,7 +3,6 @@
 //! Tests graph-based DAG orchestration including linear workflows, branching,
 //! fan-out/fan-in, conditional routing, and error handling.
 
-use paladin::core::platform::container::paladin::MaxLoops;
 use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{
     PaladinPort, PaladinResult, PaladinStream, StopReason,
@@ -14,6 +13,7 @@ use paladin::core::platform::container::battalion::campaign::{
     Campaign, CampaignEdge, EdgeCondition,
 };
 use paladin::core::platform::container::battalion::{BattalionConfig, BattalionError};
+use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
 use std::sync::{Arc, Mutex};
 

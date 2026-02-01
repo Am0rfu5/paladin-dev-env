@@ -1,5 +1,5 @@
 use paladin::core::base::entity::node::Node;
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
+use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 
 #[test]
 fn test_paladin_status_transitions() {

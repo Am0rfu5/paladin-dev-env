@@ -1,12 +1,12 @@
 //! Unit tests for PaladinBuilder
 //! Following TDD - these tests should fail initially
 
-use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::application::ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
 };
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::paladin::PaladinStatus;
 use paladin::core::platform::container::paladin_config::OutputFormat;
 use std::sync::Arc;

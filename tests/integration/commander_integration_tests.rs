@@ -3,7 +3,6 @@
 //! Tests end-to-end Commander execution with all strategies, Auto mode,
 //! error handling, and telemetry validation.
 
-use paladin::core::platform::container::paladin::MaxLoops;
 use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{
     PaladinPort, PaladinResult, PaladinStream, StopReason,
@@ -14,6 +13,7 @@ use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::{
     BattalionConfig, BattalionStatus, BattalionStrategy, ErrorStrategy, RetryPolicy,
 };
+use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;

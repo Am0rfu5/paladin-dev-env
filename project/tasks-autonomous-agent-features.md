@@ -127,22 +127,22 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.4 Implement `PlanningService::create_plan()` method that calls LLM with planning prompt template
   - [x] 2.5 **TEST**: Write test for parsing LLM response into TaskPlan
   - [x] 2.6 Implement `PlanningService::parse_plan_from_llm()` to extract subtasks from LLM JSON response
-  - [ ] 2.7 **TEST**: Write test for subtask execution with dependency tracking
-  - [ ] 2.8 Implement `PlanningService::execute_subtasks()` with sequential execution and dependency resolution
-  - [ ] 2.9 **TEST**: Write test for result synthesis
-  - [ ] 2.10 Implement `PlanningService::synthesize_results()` to combine subtask outputs
-  - [ ] 2.11 **TEST**: Write test for max_subtasks limit enforcement
-  - [ ] 2.12 Add validation in `create_plan()` to enforce `max_subtasks` limit
-  - [ ] 2.13 **TEST**: Write test for planning failure scenarios (LLM error, invalid plan)
-  - [ ] 2.14 Add error handling with `PlanningError` enum
-  - [ ] 2.15 **TEST**: Write test for planning logging
-  - [ ] 2.16 Add `tracing::info!` logging for planning decisions and execution progress
-  - [ ] 2.17 **TEST**: Write integration test for full planning workflow (plan → execute → synthesize)
-  - [ ] 2.18 Create `tests/integration/autonomous_planning_test.rs` with end-to-end planning scenarios
-  - [ ] 2.19 Add module declaration to `src/application/use_cases/paladin/mod.rs`
-  - [ ] 2.20 Run tests: `cargo test planning_service`
-  - [ ] 2.21 Run clippy: `cargo clippy -- -D warnings`
-  - [ ] 2.22 Format code: `cargo fmt`
+  - [x] 2.7 **TEST**: Write test for subtask execution with dependency tracking
+  - [x] 2.8 Implement `PlanningService::execute_subtasks()` with sequential execution and dependency resolution
+  - [x] 2.9 **TEST**: Write test for result synthesis
+  - [x] 2.10 Implement `PlanningService::synthesize_results()` to combine subtask outputs
+  - [x] 2.11 **TEST**: Write test for max_subtasks limit enforcement
+  - [x] 2.12 Add validation in `create_plan()` to enforce `max_subtasks` limit
+  - [x] 2.13 **TEST**: Write test for planning failure scenarios (LLM error, invalid plan)
+  - [x] 2.14 Add error handling with `PlanningError` enum
+  - [x] 2.15 **TEST**: Write test for planning logging
+  - [x] 2.16 Add `tracing::info!` logging for planning decisions and execution progress
+  - [x] 2.17 **TEST**: Write integration test for full planning workflow (plan → execute → synthesize)
+  - [x] 2.18 Create `tests/integration/autonomous_planning_test.rs` with end-to-end planning scenarios
+  - [x] 2.19 Add module declaration to `src/application/use_cases/paladin/mod.rs`
+  - [x] 2.20 Run tests: `cargo test planning_service`
+  - [x] 2.21 Run clippy: `cargo clippy -- -D warnings`
+  - [x] 2.22 Format code: `cargo fmt`
   - [ ] 2.23 Commit: `git commit -m "feat(planning): implement PlanningService for autonomous task decomposition" -m "- LLM-based task decomposition with planning prompt" -m "- Subtask execution with dependency tracking" -m "- Result synthesis for cohesive responses" -m "- Max subtasks limit enforcement" -m "- Comprehensive logging and error handling" -m "Implements US-14.1"`
 
 - [ ] 3.0 Prompt Generation Service (US-14.2: Auto-Generate System Prompt)

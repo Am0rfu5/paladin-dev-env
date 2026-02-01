@@ -5,12 +5,12 @@
 // Tests the complete flow from PaladinBuilder through PaladinExecutionService
 // using MockLlmAdapter, verifying all components work together correctly.
 
-use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::application::ports::output::llm_port::{LlmError, LlmPort};
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::infrastructure::adapters::llm::mock_llm_adapter::MockLlmAdapter;
 use std::sync::Arc;
 use std::time::Duration;

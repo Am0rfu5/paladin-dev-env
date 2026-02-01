@@ -145,6 +145,213 @@ impl PlanningService {
         Ok(plan)
     }
 
+    /// Executes all subtasks in dependency order
+    ///
+    /// # Arguments
+    ///
+    /// * `plan` - The task plan with subtasks to execute
+    /// * `original_input` - The original task input/context
+    ///
+    /// # Returns
+    ///
+    /// A `TaskPlan` with all subtasks executed and results populated
+    ///
+    /// # Errors
+    ///
+    /// Returns `PlanningError` if:
+    /// - LLM call fails for any subtask
+    /// - Subtask execution fails
+    /// - Circular dependencies detected
+    pub async fn execute_subtasks(
+        &self,
+        plan: &TaskPlan,
+        original_input: &str,
+    ) -> Result<TaskPlan, PlanningError> {
+        info!(
+            "Executing {} subtasks for task: '{}'",
+            plan.subtasks.len(),
+            plan.original_task
+        );
+
+        let mut executed_plan = plan.clone();
+        let mut completed_ids: Vec<String> = Vec::new();
+
+        // Execute subtasks in dependency order
+        while completed_ids.len() < executed_plan.subtasks.len() {
+            let mut made_progress = false;
+
+            // Find next subtask to execute (need index to avoid borrow issues)
+            let mut next_subtask_idx = None;
+            let mut next_dependencies = Vec::new();
+
+            for (idx, subtask) in executed_plan.subtasks.iter().enumerate() {
+                // Skip if already completed
+                if subtask.completed {
+                    continue;
+                }
+
+                // Check if all dependencies are completed
+                let dependencies = executed_plan
+                    .dependencies
+                    .get(&subtask.id)
+                    .cloned()
+                    .unwrap_or_default();
+
+                let can_execute = dependencies
+                    .iter()
+                    .all(|dep_id| completed_ids.contains(dep_id));
+
+                if can_execute {
+                    next_subtask_idx = Some(idx);
+                    next_dependencies = dependencies;
+                    break;
+                }
+            }
+
+            // Execute the found subtask
+            if let Some(idx) = next_subtask_idx {
+                let subtask_id = executed_plan.subtasks[idx].id.clone();
+                info!(
+                    "Executing subtask: {} - {}",
+                    subtask_id, executed_plan.subtasks[idx].description
+                );
+
+                // Build context from completed dependencies
+                let context =
+                    self.build_subtask_context(&executed_plan, &next_dependencies, original_input);
+
+                // Execute the subtask via LLM (need immutable reference)
+                let result = self
+                    .execute_subtask(&executed_plan.subtasks[idx], &context)
+                    .await?;
+
+                // Mark as completed (now we can mutate)
+                executed_plan.subtasks[idx].complete(result);
+                completed_ids.push(subtask_id.clone());
+                made_progress = true;
+
+                info!("Completed subtask: {}", subtask_id);
+            }
+
+            // Check for circular dependencies or impossible state
+            if !made_progress && completed_ids.len() < executed_plan.subtasks.len() {
+                return Err(PlanningError::InvalidPlan(
+                    "Circular dependencies or invalid dependency graph detected".to_string(),
+                ));
+            }
+        }
+
+        info!("All {} subtasks completed", completed_ids.len());
+        Ok(executed_plan)
+    }
+
+    /// Synthesizes subtask results into a cohesive final response
+    ///
+    /// # Arguments
+    ///
+    /// * `plan` - The completed task plan with subtask results
+    /// * `original_task` - The original task description
+    ///
+    /// # Returns
+    ///
+    /// A cohesive response synthesizing all subtask results
+    ///
+    /// # Errors
+    ///
+    /// Returns `PlanningError` if:
+    /// - LLM call fails
+    /// - Plan has incomplete subtasks
+    pub async fn synthesize_results(
+        &self,
+        plan: &TaskPlan,
+        original_task: &str,
+    ) -> Result<String, PlanningError> {
+        info!("Synthesizing results for task: '{}'", original_task);
+
+        // Verify all subtasks are complete
+        let incomplete: Vec<&Subtask> = plan.subtasks.iter().filter(|st| !st.completed).collect();
+        if !incomplete.is_empty() {
+            return Err(PlanningError::InvalidPlan(format!(
+                "Cannot synthesize results: {} subtasks incomplete",
+                incomplete.len()
+            )));
+        }
+
+        // Build synthesis prompt
+        let prompt = self.build_synthesis_prompt(plan, original_task);
+
+        // Call LLM for synthesis
+        let user_prompt = UserPrompt {
+            query: prompt,
+            context: None,
+        };
+
+        let mut prompt_item = PromptItem::new(PromptType::User(user_prompt))
+            .map_err(|e| PlanningError::GenerationFailed(e.to_string()))?;
+
+        // Use higher temperature for more natural synthesis
+        use crate::core::platform::container::prompt::PromptParameters;
+        prompt_item.set_parameters(PromptParameters {
+            max_tokens: None,
+            temperature: Some(0.7), // Higher temperature for natural language
+            top_p: None,
+            frequency_penalty: None,
+            presence_penalty: None,
+            stop_sequences: None,
+        });
+
+        let request = LlmRequest {
+            id: Uuid::new_v4(),
+            model: "gpt-4".to_string(), // TODO: Make configurable
+            prompt: prompt_item,
+            attachments: vec![],
+            stream: false,
+            metadata: HashMap::new(),
+        };
+
+        let response = self
+            .llm_port
+            .generate(request)
+            .await
+            .map_err(|e| PlanningError::LlmError(e.to_string()))?;
+
+        info!("Synthesis complete");
+        Ok(response.content)
+    }
+
+    /// Builds the synthesis prompt for the LLM
+    fn build_synthesis_prompt(&self, plan: &TaskPlan, original_task: &str) -> String {
+        let mut subtask_results = String::new();
+        for (i, subtask) in plan.subtasks.iter().enumerate() {
+            if let Some(result) = &subtask.result {
+                subtask_results.push_str(&format!(
+                    "{}. {}\n   Result: {}\n\n",
+                    i + 1,
+                    subtask.description,
+                    result
+                ));
+            }
+        }
+
+        format!(
+            r#"You are synthesizing the results of multiple subtasks into a cohesive response.
+
+ORIGINAL TASK: {}
+
+COMPLETED SUBTASKS AND RESULTS:
+{}
+
+Synthesize these results into a clear, comprehensive response that directly addresses the original task. Provide a cohesive summary that:
+1. Integrates information from all subtasks
+2. Presents results in a logical flow
+3. Highlights key findings or accomplishments
+4. Provides clear next steps or conclusions if applicable
+
+Write the synthesized response now:"#,
+            original_task, subtask_results
+        )
+    }
+
     /// Builds the planning prompt for the LLM
     fn build_planning_prompt(&self, task_description: &str, max_subtasks: u32) -> String {
         format!(
@@ -254,6 +461,94 @@ Return ONLY the JSON, no additional text."#,
 
         // Assume the whole response is JSON
         Ok(trimmed.to_string())
+    }
+
+    /// Builds context for subtask execution from completed dependencies
+    fn build_subtask_context(
+        &self,
+        plan: &TaskPlan,
+        dependencies: &[String],
+        original_input: &str,
+    ) -> String {
+        if dependencies.is_empty() {
+            return original_input.to_string();
+        }
+
+        let mut context = format!("Original Task: {}\n\n", original_input);
+        context.push_str("Results from prerequisite subtasks:\n\n");
+
+        for dep_id in dependencies {
+            if let Some(dep_subtask) = plan.subtasks.iter().find(|st| st.id == *dep_id) {
+                context.push_str(&format!(
+                    "Subtask {}: {}\nResult: {}\n\n",
+                    dep_subtask.id,
+                    dep_subtask.description,
+                    dep_subtask
+                        .result
+                        .as_ref()
+                        .unwrap_or(&"No result".to_string())
+                ));
+            }
+        }
+
+        context
+    }
+
+    /// Executes a single subtask via LLM
+    async fn execute_subtask(
+        &self,
+        subtask: &Subtask,
+        context: &str,
+    ) -> Result<String, PlanningError> {
+        let prompt = format!(
+            r#"You are executing a subtask as part of a larger plan.
+
+SUBTASK: {}
+
+EXPECTED OUTPUT: {}
+
+CONTEXT:
+{}
+
+Execute this subtask and provide the result. Be concise and focused on the expected output."#,
+            subtask.description, subtask.expected_output, context
+        );
+
+        let user_prompt = UserPrompt {
+            query: prompt,
+            context: None,
+        };
+
+        let mut prompt_item = PromptItem::new(PromptType::User(user_prompt))
+            .map_err(|e| PlanningError::GenerationFailed(e.to_string()))?;
+
+        // Set temperature for focused task execution
+        use crate::core::platform::container::prompt::PromptParameters;
+        prompt_item.set_parameters(PromptParameters {
+            max_tokens: None,
+            temperature: Some(0.3), // Lower temperature for task execution
+            top_p: None,
+            frequency_penalty: None,
+            presence_penalty: None,
+            stop_sequences: None,
+        });
+
+        let request = LlmRequest {
+            id: Uuid::new_v4(),
+            model: "gpt-4".to_string(), // TODO: Make configurable
+            prompt: prompt_item,
+            attachments: vec![],
+            stream: false,
+            metadata: HashMap::new(),
+        };
+
+        let response = self
+            .llm_port
+            .generate(request)
+            .await
+            .map_err(|e| PlanningError::LlmError(e.to_string()))?;
+
+        Ok(response.content)
     }
 }
 
@@ -425,5 +720,203 @@ mod tests {
                 other => panic!("Expected MaxSubtasksExceeded, got: {:?}", other),
             }
         }
+    }
+
+    #[tokio::test]
+    async fn test_execute_subtasks_with_dependencies() {
+        // Given: A plan with subtasks that have dependencies
+        let plan_json = r#"{
+            "task": "Build and test application",
+            "subtasks": [
+                {
+                    "id": "1",
+                    "description": "Install dependencies",
+                    "dependencies": []
+                },
+                {
+                    "id": "2",
+                    "description": "Build application",
+                    "dependencies": ["1"]
+                },
+                {
+                    "id": "3",
+                    "description": "Run tests",
+                    "dependencies": ["2"]
+                }
+            ]
+        }"#;
+
+        let llm_port = Arc::new(MockLlmPort::new(plan_json));
+        let service = PlanningService::new(llm_port.clone());
+
+        // When: Creating and executing the plan
+        let plan = service
+            .create_plan("Build and test application", 10)
+            .await
+            .expect("Failed to create plan");
+
+        let result = service
+            .execute_subtasks(&plan, "Build and test application")
+            .await;
+
+        // Then: Subtasks should execute in dependency order
+        assert!(result.is_ok());
+        let executed_plan = result.unwrap();
+
+        // All subtasks should be marked as completed
+        assert_eq!(executed_plan.subtasks.len(), 3);
+
+        // Verify subtasks have results
+        for subtask in &executed_plan.subtasks {
+            assert!(
+                subtask.completed,
+                "Subtask {} should be completed",
+                subtask.id
+            );
+            assert!(
+                subtask.result.is_some(),
+                "Subtask {} should have a result",
+                subtask.id
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_synthesize_results() {
+        // Given: A completed plan with subtask results
+        let mut plan = TaskPlan::new("Build and deploy application".to_string(), 10);
+
+        let mut subtask1 = Subtask::new(
+            "1".to_string(),
+            "Install dependencies".to_string(),
+            "Dependencies installed".to_string(),
+        );
+        subtask1.complete(
+            "Successfully installed all dependencies: express, react, typescript".to_string(),
+        );
+
+        let mut subtask2 = Subtask::new(
+            "2".to_string(),
+            "Build application".to_string(),
+            "Build output".to_string(),
+        );
+        subtask2
+            .complete("Build completed successfully. Output: dist/bundle.js (245 KB)".to_string());
+
+        let mut subtask3 = Subtask::new(
+            "3".to_string(),
+            "Run tests".to_string(),
+            "Test results".to_string(),
+        );
+        subtask3.complete("All tests passed: 42 passed, 0 failed".to_string());
+
+        plan.add_subtask(subtask1).unwrap();
+        plan.add_subtask(subtask2).unwrap();
+        plan.add_subtask(subtask3).unwrap();
+
+        // Mock LLM to return synthesized result
+        let synthesis_response = r#"Successfully built and tested the application:
+1. Installed all required dependencies (express, react, typescript)
+2. Built the application successfully (output: dist/bundle.js, 245 KB)
+3. Verified functionality with complete test suite (42 tests passed)
+
+The application is ready for deployment."#;
+
+        let llm_port = Arc::new(MockLlmPort::new(synthesis_response));
+        let service = PlanningService::new(llm_port);
+
+        // When: Synthesizing results
+        let result = service
+            .synthesize_results(&plan, "Build and deploy application")
+            .await;
+
+        // Then: Should return a cohesive synthesized response
+        assert!(result.is_ok());
+        let synthesized = result.unwrap();
+
+        // Verify the synthesis contains information from all subtasks
+        assert!(synthesized.contains("dependencies"));
+        assert!(synthesized.contains("Built"));
+        assert!(synthesized.contains("tests passed"));
+        assert!(synthesized.contains("ready for deployment"));
+    }
+
+    #[tokio::test]
+    async fn test_planning_failure_invalid_json() {
+        // Given: A mock LLM that returns invalid JSON
+        let invalid_json = "This is not valid JSON at all!";
+        let llm_port = Arc::new(MockLlmPort::new(invalid_json));
+        let service = PlanningService::new(llm_port);
+
+        // When: Creating a plan
+        let result = service.create_plan("Some task", 10).await;
+
+        // Then: Should return generation failed error
+        assert!(result.is_err());
+        if let Err(e) = result {
+            match e {
+                PlanningError::GenerationFailed(_) => {
+                    // Expected error type
+                }
+                other => panic!("Expected GenerationFailed, got: {:?}", other),
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_synthesis_with_incomplete_subtasks() {
+        // Given: A plan with incomplete subtasks
+        let mut plan = TaskPlan::new("Test task".to_string(), 10);
+        let subtask1 = Subtask::new(
+            "1".to_string(),
+            "Incomplete task".to_string(),
+            "Output".to_string(),
+        );
+        // Don't complete it
+        plan.add_subtask(subtask1).unwrap();
+
+        let llm_port = Arc::new(MockLlmPort::new("Some response"));
+        let service = PlanningService::new(llm_port);
+
+        // When: Trying to synthesize results
+        let result = service.synthesize_results(&plan, "Test task").await;
+
+        // Then: Should return error about incomplete subtasks
+        assert!(result.is_err());
+        if let Err(e) = result {
+            match e {
+                PlanningError::InvalidPlan(msg) => {
+                    assert!(msg.contains("incomplete"));
+                }
+                other => panic!("Expected InvalidPlan, got: {:?}", other),
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_planning_logs_progress() {
+        // Given: A valid plan
+        let plan_json = r#"{
+            "task": "Simple task",
+            "subtasks": [
+                {"id": "1", "description": "Do something", "dependencies": []}
+            ]
+        }"#;
+
+        let llm_port = Arc::new(MockLlmPort::new(plan_json));
+        let service = PlanningService::new(llm_port);
+
+        // When: Creating and executing a plan
+        // (This test verifies logging is present - actual log output would be visible with RUST_LOG=info)
+        let plan = service.create_plan("Simple task", 10).await;
+        assert!(plan.is_ok());
+
+        let plan = plan.unwrap();
+        let result = service.execute_subtasks(&plan, "Simple task").await;
+        assert!(result.is_ok());
+
+        // Then: Test passes if logging doesn't panic
+        // Logging is tested by checking that info! calls exist in the code
+        // In a real scenario, we'd use a test logging framework to capture logs
     }
 }

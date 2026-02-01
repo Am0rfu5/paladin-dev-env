@@ -13,8 +13,8 @@ use paladin::core::platform::container::citadel::{
     PaladinState, PaladinStatus,
 };
 use paladin::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
-use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
 use paladin::core::platform::container::paladin::MaxLoops;
+use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
 use std::sync::Arc;
 use tempfile::TempDir;
 use uuid::Uuid;

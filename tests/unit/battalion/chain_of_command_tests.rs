@@ -7,7 +7,7 @@ use paladin::core::platform::container::battalion::chain_of_command::{
     ChainOfCommand, DelegationStrategy,
 };
 use paladin::core::platform::container::battalion::{BattalionConfig, BattalionError};
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
+use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 
 /// Helper function to create a test Paladin
 fn create_test_paladin(name: &str) -> Paladin {

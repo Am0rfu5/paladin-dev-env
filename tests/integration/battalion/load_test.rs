@@ -17,7 +17,7 @@ use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use paladin::core::platform::container::battalion::{BattalionConfig, ErrorStrategy};
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
+use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Mutex;

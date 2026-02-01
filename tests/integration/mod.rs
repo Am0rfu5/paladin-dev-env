@@ -8,6 +8,7 @@ use tokio::time::sleep;
 pub mod anthropic_provider_test;
 pub mod arsenal_execution_integration_test;
 pub mod arsenal_registry_integration_test;
+pub mod autonomous_planning_test;
 pub mod battalion;
 pub mod battalion_campaign_integration_test;
 pub mod battalion_chain_of_command_integration_test;

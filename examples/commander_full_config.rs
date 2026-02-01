@@ -20,7 +20,7 @@ use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::{
     BattalionConfig, BattalionStrategy, ErrorStrategy, RetryPolicy,
 };
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
+use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 use std::path::PathBuf;
 use std::sync::Arc;
 

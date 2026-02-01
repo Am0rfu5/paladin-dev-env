@@ -31,7 +31,7 @@ use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::campaign::{
     Campaign, CampaignEdge, EdgeCondition,
 };
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
+use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 use std::sync::Arc;
 
 /// Example mock implementation of PaladinPort

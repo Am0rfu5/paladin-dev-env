@@ -3,7 +3,6 @@
 //! Tests hierarchical delegation patterns including automatic specialist selection,
 //! broadcast delegation, round-robin, multi-level chains, and error handling.
 
-use paladin::core::platform::container::paladin::MaxLoops;
 use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{
     PaladinPort, PaladinResult, PaladinStream, StopReason,
@@ -14,6 +13,7 @@ use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::chain_of_command::{
     ChainOfCommand, DelegationStrategy,
 };
+use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
 use std::sync::{Arc, Mutex};
 

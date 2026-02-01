@@ -5,7 +5,7 @@
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
-use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
+use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 
 fn create_test_paladin(name: &str) -> Paladin {
     let data = PaladinData {
