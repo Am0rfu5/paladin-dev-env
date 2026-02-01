@@ -107,6 +107,7 @@ fn create_test_paladin(name: &str) -> Paladin {
         max_loops: 1,
         stop_words: Vec::new(),
         status: PaladinStatus::Idle,
+        vision_enabled: false,
     };
 
     Node::new(data, Some(name.to_string()))
