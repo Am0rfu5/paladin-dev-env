@@ -161,7 +161,7 @@ git commit -m "feat(conclave): add domain model" -m "- Implements Conclave, Conc
   - [x] 3.24 Run tests: `cargo test commander`
   - [x] 3.25 Run formatting: `cargo fmt`
   - [x] 3.26 Run linter: `cargo clippy -- -D warnings`
-  - [ ] 3.27 Commit changes: "feat(conclave): integrate with Commander and auto-strategy"
+  - [x] 3.27 Commit changes: "feat(conclave): integrate with Commander and auto-strategy"
 
 - [ ] 4.0 Add CLI and YAML Support (US-15.4)
   - [ ] 4.1 Read existing CLI structure in `src/bin/paladin-cli.rs` and `src/application/cli/battalion_commands.rs`
