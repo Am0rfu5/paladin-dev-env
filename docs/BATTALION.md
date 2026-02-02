@@ -1,6 +1,6 @@
 # Battalion Orchestration System
 
-**Multi-Paladin coordination framework with four orchestration patterns**
+**Multi-Paladin coordination framework with five orchestration patterns**
 
 ---
 
@@ -20,7 +20,7 @@
 
 ## Overview
 
-The Battalion system enables coordination of multiple Paladin agents through four distinct orchestration patterns:
+The Battalion system enables coordination of multiple Paladin agents through five distinct orchestration patterns:
 
 | Pattern | Description | Use Case | Complexity |
 |---------|-------------|----------|------------|
@@ -28,6 +28,7 @@ The Battalion system enables coordination of multiple Paladin agents through fou
 | **Phalanx** | Concurrent execution with result aggregation | Parallel analysis, consensus building | Medium |
 | **Campaign** | Graph/DAG-based conditional routing | Complex workflows, branching logic | High |
 | **Chain of Command** | Hierarchical delegation (commander + specialists) | Task routing, load distribution | Medium-High |
+| **Conclave** | Multi-expert synthesis (Mixture-of-Agents) | Expert panel decisions, comprehensive analysis | Medium |
 
 ###  Key Features
 
@@ -256,6 +257,95 @@ let result = chain_service.execute(&chain, "Query user database").await?;
 
 ---
 
+### 5. Conclave (Multi-Expert Synthesis)
+
+**Purpose**: Multiple specialized Paladins (experts) analyze input in parallel, then an aggregator synthesizes their diverse perspectives into a comprehensive response. Implements the **Mixture-of-Agents** pattern.
+
+**Architecture**:
+```
+                    ┌──────────────┐
+                    │   Input      │
+                    └──────┬───────┘
+                           │
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+         ▼                 ▼                 ▼
+  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+  │  Expert 1   │   │  Expert 2   │   │  Expert 3   │
+  │ (Technical) │   │ (Business)  │   │ (Security)  │
+  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘
+         │                 │                 │
+         └─────────────────┼─────────────────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │ Aggregator  │
+                    │  Synthesis  │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │   Final     │
+                    │  Response   │
+                    └─────────────┘
+```
+
+**When to Use**:
+- Decisions benefit from multiple expert perspectives (technical, business, security, etc.)
+- Diverse viewpoints must be intelligently synthesized
+- Quality improves through multi-perspective analysis
+- Different stakeholder concerns must all be addressed
+
+**Key Features**:
+- **Parallel Expert Execution**: All experts analyze concurrently
+- **Intelligent Synthesis**: Aggregator combines perspectives (not simple concatenation)
+- **Resilience**: Continues even if some experts fail (partial success)
+- **Retry Logic**: Exponential backoff with jitter for failed experts
+- **Token Management**: Optional truncation to prevent context overflow
+- **Observability**: Three levels (Minimal, Standard, Verbose)
+
+**Example**:
+```rust
+use paladin::core::platform::container::battalion::conclave::{Conclave, ConclaveConfig};
+
+// Create 3 experts with different perspectives
+let technical = create_paladin("TechnicalExpert", 
+    "Analyze from a technical architecture perspective");
+let business = create_paladin("BusinessExpert",
+    "Analyze from a business strategy perspective");
+let security = create_paladin("SecurityExpert",
+    "Analyze from a security and compliance perspective");
+
+// Create aggregator to synthesize expert outputs
+let aggregator = create_paladin("Aggregator",
+    "Synthesize the expert analyses into a comprehensive recommendation");
+
+// Configure Conclave
+let config = ConclaveConfig::new("expert-panel", BattalionConfig::default())
+    .with_timeout(300)
+    .with_retry_attempts(2)
+    .with_observability(ObservabilityLevel::Standard);
+
+// Build and execute
+let conclave = Conclave::new(
+    vec![technical, business, security],
+    aggregator,
+    config
+)?;
+
+let result = conclave_service.execute(&conclave, 
+    "Should we migrate to microservices?"
+).await?;
+
+println!("Final Recommendation:\n{}", result.aggregated_output.output);
+```
+
+**Performance**: O(1) with respect to expert count (concurrent execution) + O(1) for aggregation.
+
+**Learn More**: See [Conclave Pattern Guide](./guides/conclave-pattern.md) for comprehensive documentation including configuration options, YAML setup, CLI usage, best practices, and troubleshooting.
+
+---
+
 ## Commander Strategy Router
 
 **Unified interface for intelligent Battalion orchestration**
@@ -265,7 +355,7 @@ let result = chain_service.execute(&chain, "Query user database").await?;
 The Commander is a high-level abstraction that simplifies Battalion usage by:
 
 1. **Auto Mode**: Automatically selecting the optimal strategy based on input analysis
-2. **Unified API**: Single interface for all four Battalion patterns
+2. **Unified API**: Single interface for all five Battalion patterns
 3. **Simplified Configuration**: Smart defaults with optional customization
 4. **Enhanced Telemetry**: Strategy selection reasoning and detailed timing metadata
 

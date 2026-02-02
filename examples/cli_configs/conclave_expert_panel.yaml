@@ -1,0 +1,175 @@
+# Conclave Expert Panel Configuration
+# =====================================
+# Mixture-of-Agents pattern: Multiple expert Paladins analyze in parallel,
+# then an aggregator synthesizes their diverse perspectives
+
+# Battalion type (required)
+type: conclave
+
+# Conclave name - identifies this specific expert panel configuration
+name: "expert-panel-conclave"
+
+# Expert Paladins
+# ================
+# Minimum 2 experts required. Recommended 3-5 for quality synthesis.
+# Each expert should have distinct expertise to provide diverse perspectives.
+
+experts:
+  # Technical Expert - Architecture and Implementation
+  - inline:
+      name: "TechnicalExpert"
+      system_prompt: |
+        You are a senior technical architect with 15+ years of experience in 
+        distributed systems, microservices, and cloud infrastructure.
+        
+        Your analysis should focus on:
+        - System architecture and design patterns
+        - Scalability and performance considerations
+        - Technology stack recommendations
+        - Implementation complexity and technical risks
+        - Infrastructure and operational requirements
+        
+        Be specific with technical details. Cite proven patterns and best practices.
+        Consider both short-term implementation and long-term maintainability.
+      model: "gpt-4o"
+      temperature: 0.7
+      max_loops: 3
+      timeout_seconds: 300
+      stop_words: []
+      provider:
+        type: openai
+  
+  # Business Expert - Strategy and ROI
+  - inline:
+      name: "BusinessExpert"
+      system_prompt: |
+        You are a business strategist and product manager with expertise in 
+        SaaS products, market analysis, and organizational change management.
+        
+        Your analysis should focus on:
+        - Market opportunity and competitive positioning
+        - Cost-benefit analysis and ROI projections
+        - Resource requirements (team, budget, timeline)
+        - Stakeholder impact across departments
+        - Risk assessment and mitigation strategies
+        - Go-to-market implications
+        
+        Provide quantitative estimates where possible (costs, timelines, revenue impact).
+        Consider both financial and organizational factors.
+      model: "gpt-4o"
+      temperature: 0.7
+      max_loops: 3
+      timeout_seconds: 300
+      stop_words: []
+      provider:
+        type: openai
+  
+  # Security Expert - Risk and Compliance
+  - inline:
+      name: "SecurityExpert"
+      system_prompt: |
+        You are a security expert specializing in application security,
+        threat modeling, compliance, and security architecture.
+        
+        Your analysis should focus on:
+        - Threat modeling and attack surface analysis
+        - Security control recommendations (authentication, authorization, encryption)
+        - Compliance requirements (GDPR, SOC 2, HIPAA, etc.)
+        - Data protection and privacy considerations
+        - Security testing requirements (pen testing, audits, scanning)
+        - Incident response and monitoring needs
+        
+        Identify specific vulnerabilities and provide concrete mitigation strategies.
+        Reference security frameworks (OWASP, NIST) where appropriate.
+      model: "gpt-4o"
+      temperature: 0.7
+      max_loops: 3
+      timeout_seconds: 300
+      stop_words: []
+      provider:
+        type: openai
+
+# Aggregator Paladin
+# ===================
+# Synthesizes expert outputs into a coherent, comprehensive recommendation.
+# The aggregator receives all expert analyses and combines them intelligently.
+
+aggregator:
+  inline:
+    name: "SynthesisAggregator"
+    system_prompt: |
+      You are a synthesis expert who combines multiple perspectives into a 
+      coherent, comprehensive analysis. You will receive outputs from technical,
+      business, and security experts, each providing their specialized perspective
+      on the same question or proposal.
+      
+      Your synthesis should:
+      1. Create an executive summary highlighting the key recommendation
+      2. Identify common themes and points of agreement across experts
+      3. Highlight unique valuable insights from each expert perspective
+      4. Resolve any contradictions by weighing evidence and reasoning
+      5. Provide clear, prioritized action items
+      6. Outline critical success factors and risk mitigation strategies
+      7. Suggest a phased implementation approach when appropriate
+      
+      Structure your response with clear sections and bullet points.
+      Do NOT simply concatenate expert outputs - integrate them thoughtfully.
+      Ensure all critical points from each expert are represented in the synthesis.
+      
+      Final verdict format: PROCEED / PROCEED WITH CONDITIONS / DO NOT PROCEED
+    model: "gpt-4o"
+    temperature: 0.5  # Lower temperature for more consistent synthesis
+    max_loops: 3
+    timeout_seconds: 300
+    stop_words: []
+    provider:
+      type: openai
+
+# Optional Configuration
+# =======================
+# These settings fine-tune Conclave behavior. Sensible defaults are provided.
+
+# Maximum time for entire Conclave execution (seconds)
+# Includes expert execution, retries, and aggregation
+timeout_seconds: 300
+
+# Number of retry attempts for failed experts
+# Uses exponential backoff: 1s → 2s → 4s → 8s → 16s (±20% jitter)
+retry_attempts: 2
+
+# Custom synthesis prompt (optional)
+# Overrides the aggregator's system prompt for this specific execution
+# Use this to adjust synthesis focus without changing aggregator configuration
+# synthesis_prompt: |
+#   Focus your synthesis on technical feasibility only.
+#   Provide a YES/NO recommendation with brief justification.
+
+# Include expert names in aggregator input for attribution
+# When true, aggregator sees "TechnicalExpert: [output]"
+# When false, aggregator only sees the output without names
+include_expert_names: true
+
+# Truncate expert outputs to this token limit before sending to aggregator
+# Prevents token limit issues with very long expert analyses
+# Uncomment to enable (default: no truncation)
+# max_expert_output_tokens: 2000
+
+# Observability level controls logging detail during execution
+# Options: "minimal" | "standard" | "verbose"
+# - minimal: Only errors and final result
+# - standard: Progress updates, expert completion, timing (recommended)
+# - verbose: Detailed logs, individual expert outputs, retry attempts
+observability_level: "standard"
+
+# Example Usage
+# =============
+# Command line:
+#   paladin battalion run -c conclave_expert_panel.yaml -t conclave
+#
+# Interactive input will be prompted for the task/question to analyze.
+#
+# Example questions to try:
+# - "Should we migrate our monolithic application to microservices?"
+# - "Evaluate implementing real-time WebSocket notifications"
+# - "Assess the feasibility of building an in-house ML recommendation engine"
+# - "Should we adopt Kubernetes for our infrastructure?"

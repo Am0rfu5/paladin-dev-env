@@ -50,7 +50,7 @@ The project clearly defines Ports as interfaces to external systems, enabling ad
 * **Paladin:** Autonomous AI agents with memory and context management.
 * **Garrison Memory System:** Persistent conversation history with windowing and search capabilities.
 * **Arsenal Tool System:** External tool integration via Model Context Protocol (MCP).
-* **Battalion Orchestration:** Multi-agent coordination with four orchestration patterns.
+* **Battalion Orchestration:** Multi-agent coordination with five orchestration patterns.
 * **Herald Output Formatting:** Pluggable formatters (JSON, Markdown, Table) with streaming support.
 
 ### AI Agent System (Paladin)
@@ -284,7 +284,7 @@ Vision capabilities work with all Battalion patterns:
 
 ### Battalion Orchestration System
 
-Battalion provides powerful multi-agent coordination capabilities with four distinct orchestration patterns:
+Battalion provides powerful multi-agent coordination capabilities with five distinct orchestration patterns:
 
 * **Formation (Sequential)**: Execute Paladins in sequence, passing output from one to the next
   * Perfect for multi-step pipelines and data transformation workflows
@@ -298,6 +298,11 @@ Battalion provides powerful multi-agent coordination capabilities with four dist
 * **Chain of Command (Hierarchical)**: Commander analyzes input and delegates to specialists
   * Delegation strategies: Automatic (LLM-based), Broadcast, RoundRobin, Custom
   * Intelligent task routing and load distribution
+* **Conclave (Multi-Expert Synthesis)**: Multiple experts analyze in parallel, aggregator synthesizes perspectives
+  * Implements Mixture-of-Agents pattern for higher quality outputs
+  * Perfect for expert panel decisions requiring multiple perspectives (technical, business, security)
+  * Resilience: Continues even if some experts fail (partial success)
+  * Configurable retry logic with exponential backoff
 
 **Performance**: Handles 100+ concurrent Battalions with <10ms orchestration overhead
 

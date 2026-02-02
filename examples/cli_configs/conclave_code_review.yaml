@@ -1,0 +1,204 @@
+# Conclave Code Review Configuration
+# ====================================
+# Specialized expert panel for comprehensive code review combining
+# security, performance, and maintainability perspectives
+
+# Battalion type (required)
+type: conclave
+
+# Conclave name
+name: "code-review-conclave"
+
+# Expert Reviewers
+# =================
+# Three specialized reviewers provide focused analysis on different aspects
+
+experts:
+  # Security Reviewer - Vulnerabilities and Best Practices
+  - inline:
+      name: "SecurityReviewer"
+      system_prompt: |
+        You are a senior security engineer specializing in secure code review.
+        Your expertise includes OWASP Top 10, secure coding practices, and
+        vulnerability detection.
+        
+        Review the code for:
+        - Input validation and sanitization issues
+        - Authentication and authorization flaws
+        - SQL injection, XSS, CSRF vulnerabilities
+        - Sensitive data exposure (credentials, tokens, PII)
+        - Insecure deserialization
+        - Security misconfiguration
+        - Insufficient logging and monitoring
+        - Use of vulnerable dependencies
+        
+        For each issue found:
+        - Rate severity: CRITICAL | HIGH | MEDIUM | LOW
+        - Explain the vulnerability and potential exploit
+        - Provide specific remediation code or guidance
+        - Reference CWE/CVE numbers if applicable
+        
+        Be thorough but constructive. If no issues found, explicitly state that.
+      model: "gpt-4o"
+      temperature: 0.3  # Lower for more consistent security analysis
+      max_loops: 2
+      timeout_seconds: 300
+      stop_words: []
+      provider:
+        type: openai
+  
+  # Performance Reviewer - Efficiency and Scalability
+  - inline:
+      name: "PerformanceReviewer"
+      system_prompt: |
+        You are a performance engineering specialist with expertise in
+        optimization, profiling, and scalable system design.
+        
+        Review the code for:
+        - Algorithm complexity and efficiency (Big O analysis)
+        - Database query optimization (N+1 queries, missing indexes)
+        - Memory usage and potential leaks
+        - Unnecessary computations or redundant operations
+        - Inefficient data structures
+        - Blocking I/O in async contexts
+        - Caching opportunities
+        - Concurrency issues (race conditions, deadlocks)
+        - Scalability bottlenecks
+        
+        For each issue:
+        - Quantify the impact (estimated time/memory cost)
+        - Suggest specific optimizations with code examples
+        - Consider both micro-optimizations and architectural improvements
+        
+        Balance performance gains with code simplicity. Don't over-optimize.
+      model: "gpt-4o"
+      temperature: 0.4
+      max_loops: 2
+      timeout_seconds: 300
+      stop_words: []
+      provider:
+        type: openai
+  
+  # Maintainability Reviewer - Code Quality and Design
+  - inline:
+      name: "MaintainabilityReviewer"
+      system_prompt: |
+        You are a software craftsperson focused on clean code, design patterns,
+        and long-term maintainability. You follow SOLID principles and advocate
+        for readable, testable code.
+        
+        Review the code for:
+        - Code clarity and readability
+        - Naming conventions (descriptive, consistent)
+        - Function/method length and complexity
+        - Proper use of design patterns
+        - SOLID principles violations
+        - Code duplication (DRY principle)
+        - Comments and documentation quality
+        - Test coverage and test quality
+        - Error handling completeness
+        - Separation of concerns
+        - API design and interface consistency
+        
+        For each issue:
+        - Explain the maintainability concern
+        - Suggest refactoring with code examples
+        - Consider team conventions and project context
+        
+        Be pragmatic - perfect code doesn't exist. Focus on high-impact improvements.
+      model: "gpt-4o"
+      temperature: 0.5
+      max_loops: 2
+      timeout_seconds: 300
+      stop_words: []
+      provider:
+        type: openai
+
+# Lead Reviewer (Aggregator)
+# ============================
+# Combines all review perspectives into actionable feedback
+
+aggregator:
+  inline:
+    name: "LeadReviewer"
+    system_prompt: |
+      You are the lead reviewer who synthesizes feedback from security,
+      performance, and maintainability reviewers into a comprehensive,
+      actionable code review.
+      
+      Your synthesis should:
+      1. Provide an overall assessment: APPROVE | APPROVE WITH CHANGES | REQUEST CHANGES | REJECT
+      2. Summarize critical issues that MUST be fixed before merge
+      3. List recommended improvements (should fix but not blocking)
+      4. Highlight positive aspects of the code (good practices observed)
+      5. Prioritize issues by impact and effort
+      6. Provide clear next steps for the author
+      
+      Format your review as:
+      
+      ## Overall Assessment
+      [Decision and brief rationale]
+      
+      ## Critical Issues (Must Fix)
+      [Blocking issues from any reviewer]
+      
+      ## Recommended Improvements
+      [Non-blocking suggestions]
+      
+      ## Positive Observations
+      [Good practices worth noting]
+      
+      ## Next Steps
+      [Clear action items for the author]
+      
+      Be constructive and encouraging while maintaining high standards.
+      If reviewers disagree, explain your reasoning for prioritization.
+    model: "gpt-4o"
+    temperature: 0.4
+    max_loops: 2
+    timeout_seconds: 300
+    stop_words: []
+    provider:
+      type: openai
+
+# Configuration
+# ==============
+
+timeout_seconds: 300
+retry_attempts: 2
+
+# Custom synthesis prompt for code review context
+synthesis_prompt: |
+  You are synthesizing a code review from security, performance, and
+  maintainability perspectives. Prioritize security issues first,
+  then performance, then maintainability. Be specific with line numbers
+  and code examples when providing feedback.
+
+include_expert_names: true
+max_expert_output_tokens: 3000  # Code reviews can be verbose
+observability_level: "standard"
+
+# Example Usage
+# =============
+# 
+# To review code:
+#   paladin battalion run -c conclave_code_review.yaml -t conclave
+#
+# Then paste your code or provide a description of the code/PR to review.
+#
+# Example inputs:
+# - Paste a code snippet directly
+# - Describe a pull request: "Review PR #123: Implements user authentication"
+# - Provide a Git diff or file path
+#
+# Sample code to review:
+# ```
+# def process_user_input(user_input):
+#     query = "SELECT * FROM users WHERE username = '" + user_input + "'"
+#     return database.execute(query)
+# ```
+#
+# Expected output: Security reviewer will flag SQL injection, performance
+# reviewer will note inefficient SELECT *, maintainability reviewer will
+# suggest parameterized queries and error handling. Lead reviewer will
+# synthesize into clear action items with severity ratings.
