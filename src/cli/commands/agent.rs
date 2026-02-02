@@ -71,6 +71,23 @@ pub struct AgentRunArgs {
     /// Path to document file for processing (PDF, TXT, MD)
     #[arg(long = "document")]
     pub document: Option<PathBuf>,
+
+    // Autonomous feature flags (override config file)
+    /// Enable autonomous planning mode (MaxLoops::Auto)
+    #[arg(long = "auto-plan")]
+    pub auto_plan: bool,
+
+    /// Enable automatic prompt generation
+    #[arg(long = "auto-prompt")]
+    pub auto_prompt: bool,
+
+    /// Enable dynamic temperature adjustment based on task type
+    #[arg(long = "dynamic-temp")]
+    pub dynamic_temp: bool,
+
+    /// Enable agent handoff capabilities
+    #[arg(long = "enable-handoffs")]
+    pub enable_handoffs: bool,
 }
 
 /// Handle the `paladin agent new` command
@@ -475,6 +492,10 @@ mod tests {
             verbose: true,
             images: vec![],
             document: None,
+            auto_plan: false,
+            auto_prompt: false,
+            dynamic_temp: false,
+            enable_handoffs: false,
         };
 
         assert_eq!(args.config, PathBuf::from("config.yaml"));
@@ -494,6 +515,10 @@ mod tests {
             verbose: false,
             images: vec![PathBuf::from("image1.png"), PathBuf::from("image2.jpg")],
             document: None,
+            auto_plan: false,
+            auto_prompt: false,
+            dynamic_temp: false,
+            enable_handoffs: false,
         };
 
         assert_eq!(args.images.len(), 2);
@@ -510,6 +535,10 @@ mod tests {
             verbose: false,
             images: vec![],
             document: Some(PathBuf::from("document.pdf")),
+            auto_plan: false,
+            auto_prompt: false,
+            dynamic_temp: false,
+            enable_handoffs: false,
         };
 
         assert_eq!(args.document, Some(PathBuf::from("document.pdf")));
@@ -655,6 +684,10 @@ mod tests {
             verbose: false,
             images: vec![],
             document: None,
+            auto_plan: false,
+            auto_prompt: false,
+            dynamic_temp: false,
+            enable_handoffs: false,
         };
         let command = AgentCommands::Run(run_args);
 

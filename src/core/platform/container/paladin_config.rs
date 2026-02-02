@@ -5,6 +5,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::autonomous_config::AutonomousConfig;
+
 /// Output format for Paladin responses
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OutputFormat {
@@ -54,6 +56,9 @@ pub struct PaladinConfig {
 
     /// Format for output responses
     pub output_format: OutputFormat,
+
+    /// Autonomous features configuration (optional, all features disabled by default)
+    pub autonomous: Option<AutonomousConfig>,
 }
 
 impl Default for PaladinConfig {
@@ -64,6 +69,7 @@ impl Default for PaladinConfig {
             enable_planning: false,
             planning_prompt: None,
             output_format: OutputFormat::Text,
+            autonomous: None,
         }
     }
 }
@@ -97,6 +103,7 @@ pub struct PaladinConfigBuilder {
     enable_planning: Option<bool>,
     planning_prompt: Option<String>,
     output_format: Option<OutputFormat>,
+    autonomous: Option<AutonomousConfig>,
 }
 
 impl PaladinConfigBuilder {
@@ -130,15 +137,31 @@ impl PaladinConfigBuilder {
         self
     }
 
+    /// Set autonomous features configuration
+    pub fn autonomous(mut self, config: AutonomousConfig) -> Self {
+        self.autonomous = Some(config);
+        self
+    }
+
     /// Build the PaladinConfig
     pub fn build(self) -> Result<PaladinConfig, String> {
-        Ok(PaladinConfig {
+        let config = PaladinConfig {
             retry_attempts: self.retry_attempts.unwrap_or(3),
             timeout_seconds: self.timeout_seconds.unwrap_or(300),
             enable_planning: self.enable_planning.unwrap_or(false),
             planning_prompt: self.planning_prompt,
             output_format: self.output_format.unwrap_or(OutputFormat::Text),
-        })
+            autonomous: self.autonomous,
+        };
+
+        // Validate autonomous config if present
+        if let Some(ref auto_config) = config.autonomous {
+            auto_config
+                .validate()
+                .map_err(|e| format!("Autonomous config validation failed: {}", e))?;
+        }
+
+        Ok(config)
     }
 }
 
@@ -154,6 +177,7 @@ mod tests {
         assert!(!config.enable_planning);
         assert_eq!(config.planning_prompt, None);
         assert_eq!(config.output_format, OutputFormat::Text);
+        assert_eq!(config.autonomous, None);
     }
 
     #[test]
@@ -196,5 +220,40 @@ mod tests {
         assert_eq!(json, OutputFormat::Json);
         assert_eq!(structured, OutputFormat::Structured);
         assert_ne!(text, json);
+    }
+
+    #[test]
+    fn test_paladin_config_with_autonomous() {
+        use crate::core::platform::container::autonomous_config::{
+            AutonomousConfig, PlanningConfig,
+        };
+
+        let mut auto_config = AutonomousConfig::default();
+        auto_config.planning = PlanningConfig::new(15);
+
+        let config = PaladinConfig::builder()
+            .autonomous(auto_config.clone())
+            .build()
+            .unwrap();
+
+        assert!(config.autonomous.is_some());
+        let autonomous = config.autonomous.unwrap();
+        assert!(autonomous.planning.enabled);
+        assert_eq!(autonomous.planning.max_subtasks, 15);
+    }
+
+    #[test]
+    fn test_paladin_config_autonomous_validation() {
+        use crate::core::platform::container::autonomous_config::{
+            AutonomousConfig, PlanningConfig,
+        };
+
+        let mut auto_config = AutonomousConfig::default();
+        auto_config.planning = PlanningConfig::new(0); // Invalid: zero subtasks
+
+        let result = PaladinConfig::builder().autonomous(auto_config).build();
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("greater than 0"));
     }
 }
