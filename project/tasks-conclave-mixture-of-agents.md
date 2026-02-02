@@ -80,58 +80,58 @@ git commit -m "feat(conclave): add domain model" -m "- Implements Conclave, Conc
   - [x] 0.1 Create and checkout new branch: `git checkout -b feature/epic-15-conclave-pattern`
   - [x] 0.2 Verify current branch: `git branch --show-current`
 
-- [ ] 1.0 Setup Conclave Domain Model (US-15.1)
-  - [ ] 1.1 Read existing Battalion module structure in `src/core/platform/container/battalion/`
-  - [ ] 1.2 Create `src/core/platform/container/battalion/conclave.rs` file
-  - [ ] 1.3 Define `ConclaveConfig` struct with all required fields (timeout_seconds, retry_attempts, synthesis_prompt, include_expert_names, max_expert_output_tokens, observability_level)
-  - [ ] 1.4 Define `ObservabilityLevel` enum (Minimal, Standard, Verbose) with serde derives
-  - [ ] 1.5 Define `Conclave` struct (name, experts: Vec<Paladin>, aggregator: Paladin, config: ConclaveConfig)
-  - [ ] 1.6 Define `ConclaveResult` struct with expert_outputs HashMap, aggregated_output, execution metrics, status
-  - [ ] 1.7 Define `ConclaveStatus` enum (Success, PartialSuccess, Failed) with serde derives
-  - [ ] 1.8 Define `ConclaveError` enum using thiserror (AllExpertsFailed, AggregatorFailed, ConfigurationError, Timeout, ExpertError)
-  - [ ] 1.9 Implement `Conclave::validate()` method to check minimum 2 experts, 1 aggregator, no duplicate names
-  - [ ] 1.10 Add rustdoc comments for all public types and methods
-  - [ ] 1.11 Export Conclave types in `src/core/platform/container/battalion/mod.rs`
-  - [ ] 1.12 Write unit tests for domain model validation logic in `#[cfg(test)]` module
-  - [ ] 1.13 Test validation errors (duplicate names, insufficient experts, etc.)
-  - [ ] 1.14 Run tests: `cargo test conclave_domain`
-  - [ ] 1.15 Run formatting: `cargo fmt`
-  - [ ] 1.16 Run linter: `cargo clippy -- -D warnings`
-  - [ ] 1.17 Commit changes: "feat(conclave): add domain model and validation"
+- [x] 1.0 Setup Conclave Domain Model (US-15.1)
+  - [x] 1.1 Read existing Battalion module structure in `src/core/platform/container/battalion/`
+  - [x] 1.2 Create `src/core/platform/container/battalion/conclave.rs` file
+  - [x] 1.3 Define `ConclaveConfig` struct with all required fields (timeout_seconds, retry_attempts, synthesis_prompt, include_expert_names, max_expert_output_tokens, observability_level)
+  - [x] 1.4 Define `ObservabilityLevel` enum (Minimal, Standard, Verbose) with serde derives
+  - [x] 1.5 Define `Conclave` struct (name, experts: Vec<Paladin>, aggregator: Paladin, config: ConclaveConfig)
+  - [x] 1.6 Define `ConclaveResult` struct with expert_outputs HashMap, aggregated_output, execution metrics, status
+  - [x] 1.7 Define `ConclaveStatus` enum (Success, PartialSuccess, Failed) with serde derives
+  - [x] 1.8 Define `ConclaveError` enum using thiserror (AllExpertsFailed, AggregatorFailed, ConfigurationError, Timeout, ExpertError)
+  - [x] 1.9 Implement `Conclave::validate()` method to check minimum 2 experts, 1 aggregator, no duplicate names
+  - [x] 1.10 Add rustdoc comments for all public types and methods
+  - [x] 1.11 Export Conclave types in `src/core/platform/container/battalion/mod.rs`
+  - [x] 1.12 Write unit tests for domain model validation logic in `#[cfg(test)]` module
+  - [x] 1.13 Test validation errors (duplicate names, insufficient experts, etc.)
+  - [x] 1.14 Run tests: `cargo test conclave_domain`
+  - [x] 1.15 Run formatting: `cargo fmt`
+  - [x] 1.16 Run linter: `cargo clippy -- -D warnings`
+  - [x] 1.17 Commit changes: "feat(conclave): add domain model and validation"
 
-- [ ] 2.0 Implement Conclave Execution Service (US-15.2)
-  - [ ] 2.1 Read existing `PaladinPort` trait in `src/application/ports/output/paladin_port.rs`
-  - [ ] 2.2 Create `src/application/use_cases/battalion/conclave_execution_service.rs` file
-  - [ ] 2.3 Define `ConclaveExecutionService` struct with paladin_port: Arc<dyn PaladinPort>
-  - [ ] 2.4 Implement `new()` constructor for ConclaveExecutionService
-  - [ ] 2.5 Implement `execute()` method signature: `async fn execute(&self, conclave: &Conclave, input: &str) -> Result<ConclaveResult, ConclaveError>`
-  - [ ] 2.6 Implement parallel expert execution using `tokio::spawn` for each expert
-  - [ ] 2.7 Implement retry logic with exponential backoff (1s, 2s, 4s, 8s, 16s) using tokio::time::sleep
-  - [ ] 2.8 Add jitter to retry delays (±20% random variance) to avoid thundering herd
-  - [ ] 2.9 Implement retry logic that only retries transient errors (network, timeout, rate limit)
-  - [ ] 2.10 Collect successful expert outputs into HashMap<String, PaladinResult>
-  - [ ] 2.11 Implement `format_expert_outputs_for_aggregator()` method with name labels (configurable)
-  - [ ] 2.12 Implement default aggregator prompt template construction
-  - [ ] 2.13 Allow custom synthesis_prompt override from ConclaveConfig
-  - [ ] 2.14 Execute aggregator with formatted expert outputs
-  - [ ] 2.15 Implement timeout for entire Conclave execution using `tokio::time::timeout`
-  - [ ] 2.16 Calculate execution metrics (per-expert times, total time, retry counts)
-  - [ ] 2.17 Determine ConclaveStatus based on expert success/failure counts
-  - [ ] 2.18 Return ConclaveError::AllExpertsFailed if all experts fail after retries
-  - [ ] 2.19 Implement observability level handling (Minimal, Standard, Verbose) for logging
-  - [ ] 2.20 Add tracing/logging statements at appropriate levels
-  - [ ] 2.21 Add rustdoc comments for all public methods
-  - [ ] 2.22 Export ConclaveExecutionService in `src/application/use_cases/battalion/mod.rs`
-  - [ ] 2.23 Write unit tests with mocked PaladinPort (successful execution)
-  - [ ] 2.24 Write unit tests for partial failure scenarios (some experts fail, some succeed)
-  - [ ] 2.25 Write unit tests for retry logic (simulate transient failures)
-  - [ ] 2.26 Write unit tests for timeout scenarios
-  - [ ] 2.27 Write unit tests for all experts failing
-  - [ ] 2.28 Write unit tests for aggregator failure
+- [x] 2.0 Implement Conclave Execution Service (US-15.2)
+  - [x] 2.1 Read existing `PaladinPort` trait in `src/application/ports/output/paladin_port.rs`
+  - [x] 2.2 Create `src/application/use_cases/battalion/conclave_execution_service.rs` file
+  - [x] 2.3 Define `ConclaveExecutionService` struct with paladin_port: Arc<dyn PaladinPort>
+  - [x] 2.4 Implement `new()` constructor for ConclaveExecutionService
+  - [x] 2.5 Implement `execute()` method signature: `async fn execute(&self, conclave: &Conclave, input: &str) -> Result<ConclaveResult, ConclaveError>`
+  - [x] 2.6 Implement parallel expert execution using `tokio::spawn` for each expert
+  - [x] 2.7 Implement retry logic with exponential backoff (1s, 2s, 4s, 8s, 16s) using tokio::time::sleep
+  - [x] 2.8 Add jitter to retry delays (±20% random variance) to avoid thundering herd
+  - [x] 2.9 Implement retry logic that only retries transient errors (network, timeout, rate limit)
+  - [x] 2.10 Collect successful expert outputs into HashMap<String, PaladinResult>
+  - [x] 2.11 Implement `format_expert_outputs_for_aggregator()` method with name labels (configurable)
+  - [x] 2.12 Implement default aggregator prompt template construction
+  - [x] 2.13 Allow custom synthesis_prompt override from ConclaveConfig
+  - [x] 2.14 Execute aggregator with formatted expert outputs
+  - [x] 2.15 Implement timeout for entire Conclave execution using `tokio::time::timeout`
+  - [x] 2.16 Calculate execution metrics (per-expert times, total time, retry counts)
+  - [x] 2.17 Determine ConclaveStatus based on expert success/failure counts
+  - [x] 2.18 Return ConclaveError::AllExpertsFailed if all experts fail after retries
+  - [x] 2.19 Implement observability level handling (Minimal, Standard, Verbose) for logging
+  - [x] 2.20 Add tracing/logging statements at appropriate levels
+  - [x] 2.21 Add rustdoc comments for all public methods
+  - [x] 2.22 Export ConclaveExecutionService in `src/application/use_cases/battalion/mod.rs`
+  - [x] 2.23 Write unit tests with mocked PaladinPort (successful execution)
+  - [x] 2.24 Write unit tests for partial failure scenarios (some experts fail, some succeed)
+  - [x] 2.25 Write unit tests for retry logic (simulate transient failures)
+  - [x] 2.26 Write unit tests for timeout scenarios
+  - [x] 2.27 Write unit tests for all experts failing
+  - [x] 2.28 Write unit tests for aggregator failure
   - [ ] 2.29 Write integration test in `tests/integration/conclave_integration_test.rs` with real PaladinPort
-  - [ ] 2.30 Run tests: `cargo test conclave_execution`
-  - [ ] 2.31 Run formatting: `cargo fmt`
-  - [ ] 2.32 Run linter: `cargo clippy -- -D warnings`
+  - [x] 2.30 Run tests: `cargo test conclave_execution`
+  - [x] 2.31 Run formatting: `cargo fmt`
+  - [x] 2.32 Run linter: `cargo clippy -- -D warnings`
   - [ ] 2.33 Commit changes: "feat(conclave): implement execution service with retry logic"
 
 - [ ] 3.0 Integrate Conclave with Commander (US-15.3)
