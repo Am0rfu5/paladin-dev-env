@@ -81,7 +81,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .max_loops(1)
         .with_citadel(citadel.clone())
         .enable_autosave()
-        .build().await?;
+        .build()
+        .await?;
 
     println!("✅ ExtractPaladin created (ID: {})", extract_paladin.uuid);
 

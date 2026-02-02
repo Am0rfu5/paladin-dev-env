@@ -75,7 +75,8 @@ async fn multi_loop_example() -> Result<(), Box<dyn std::error::Error>> {
         .model("gpt-4")
         .max_loops(3) // Multiple iterations for reasoning
         .temperature(0.8)
-        .build().await?;
+        .build()
+        .await?;
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(5, 2, Duration::from_secs(30)));
     let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
@@ -108,7 +109,8 @@ async fn stop_word_example() -> Result<(), Box<dyn std::error::Error>> {
         .max_loops(5) // Could run up to 5 loops
         .add_stop_word("FINAL_ANSWER") // But stops when this appears
         .add_stop_word("DONE")
-        .build().await?;
+        .build()
+        .await?;
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(5, 2, Duration::from_secs(30)));
     let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
@@ -140,7 +142,8 @@ async fn retry_example() -> Result<(), Box<dyn std::error::Error>> {
         .model("gpt-4")
         .max_loops(3) // Enables retry attempts
         .retry_attempts(3) // Maximum retry attempts
-        .build().await?;
+        .build()
+        .await?;
 
     // Circuit breaker with higher threshold for retries
     let circuit_breaker = Arc::new(CircuitBreaker::new(5, 2, Duration::from_secs(30)));
@@ -183,7 +186,8 @@ async fn custom_config_example() -> Result<(), Box<dyn std::error::Error>> {
         .timeout_seconds(300)
         .enable_planning(true)
         .output_format(OutputFormat::Json)
-        .build().await?;
+        .build()
+        .await?;
 
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
     let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);

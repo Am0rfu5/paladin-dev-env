@@ -107,7 +107,10 @@ async fn test_builder_add_mcp_sse() {
 
     // Build to verify no errors
     let result = builder.build();
-    assert!(result.await.is_ok(), "Builder should succeed with MCP SSE config");
+    assert!(
+        result.await.is_ok(),
+        "Builder should succeed with MCP SSE config"
+    );
 }
 
 #[tokio::test]

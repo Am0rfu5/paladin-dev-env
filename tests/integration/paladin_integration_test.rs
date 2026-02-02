@@ -194,14 +194,20 @@ async fn test_builder_validation_errors() {
     let result1 = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("")
         .build();
-    assert!(result1.await.is_err(), "Should fail with empty system prompt");
+    assert!(
+        result1.await.is_err(),
+        "Should fail with empty system prompt"
+    );
 
     // Invalid temperature should fail
     let result2 = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("Valid prompt")
         .temperature(2.0) // Out of range [0.0, 1.0]
         .build();
-    assert!(result2.await.is_err(), "Should fail with invalid temperature");
+    assert!(
+        result2.await.is_err(),
+        "Should fail with invalid temperature"
+    );
 
     // Invalid max_loops should fail
     let result3 = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
@@ -216,7 +222,10 @@ async fn test_builder_validation_errors() {
         .temperature(0.7)
         .max_loops(3)
         .build();
-    assert!(result4.await.is_ok(), "Should succeed with valid configuration");
+    assert!(
+        result4.await.is_ok(),
+        "Should succeed with valid configuration"
+    );
 }
 
 #[tokio::test]

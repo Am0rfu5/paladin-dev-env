@@ -66,7 +66,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .max_loops(1)
         .with_citadel(citadel.clone())
         .enable_autosave() // Enable automatic state saving
-        .build().await?;
+        .build()
+        .await?;
 
     let paladin_id = paladin.uuid;
 
@@ -126,7 +127,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_citadel(citadel.clone())
         .restore_from(paladin_id)
         .await?
-        .build().await?;
+        .build()
+        .await?;
 
     println!("✅ Paladin restored successfully!");
     println!("   Name: {}", restored_paladin.node.name);
