@@ -187,9 +187,11 @@ impl PaladinPort for ExamplePaladinPort {
             _ => format!("{} analysis of: {}", paladin.node.name, input),
         };
 
+        let token_estimate = (output.len() / 4) as u32; // Calculate before move
+
         Ok(PaladinResult {
             output,
-            token_count: output.len() / 4, // Rough estimate
+            token_count: token_estimate,
             execution_time_ms: 100,
             loop_count: 1,
             stop_reason: StopReason::Completed,
