@@ -11,6 +11,7 @@ use uuid::Uuid;
 use crate::application::ports::output::paladin_port::PaladinPort;
 use crate::application::use_cases::battalion::campaign_service::CampaignExecutionService;
 use crate::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
+use crate::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
 use crate::application::use_cases::battalion::formation_service::FormationExecutionService;
 use crate::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
 use crate::core::platform::container::battalion::{
@@ -143,6 +144,9 @@ pub struct Commander {
     /// Battalion configuration
     pub config: BattalionConfig,
 
+    /// Optional aggregator Paladin for Conclave strategy
+    pub aggregator: Option<Paladin>,
+
     /// Paladin execution port
     paladin_port: Arc<dyn PaladinPort>,
 }
@@ -154,6 +158,7 @@ impl std::fmt::Debug for Commander {
             .field("strategy", &self.strategy)
             .field("paladins", &self.paladins)
             .field("config", &self.config)
+            .field("aggregator", &self.aggregator)
             .field("paladin_port", &"<dyn PaladinPort>")
             .finish()
     }
@@ -167,6 +172,7 @@ impl Commander {
     /// * `strategy` - Orchestration strategy to use
     /// * `paladins` - Vector of Paladins to orchestrate
     /// * `config` - Battalion configuration
+    /// * `aggregator` - Optional aggregator Paladin for Conclave strategy
     /// * `paladin_port` - Port for executing Paladins
     ///
     /// # Returns
@@ -176,6 +182,7 @@ impl Commander {
         strategy: BattalionStrategy,
         paladins: Vec<Paladin>,
         config: BattalionConfig,
+        aggregator: Option<Paladin>,
         paladin_port: Arc<dyn PaladinPort>,
     ) -> Self {
         let id = Uuid::new_v4();
@@ -191,6 +198,7 @@ impl Commander {
             strategy,
             paladins,
             config,
+            aggregator,
             paladin_port,
         }
     }
@@ -447,6 +455,69 @@ impl Commander {
                     paladin_failure_count: 0,
                 }
             }
+            BattalionStrategy::Conclave => {
+                debug!("Delegating to ConclaveExecutionService");
+
+                // Determine experts and aggregator
+                let aggregator = self.aggregator.as_ref().ok_or_else(|| {
+                    BattalionError::ValidationError(
+                        "Conclave strategy requires an aggregator Paladin".to_string(),
+                    )
+                })?;
+
+                // All paladins become experts
+                let experts = self.paladins.clone();
+
+                if experts.len() < 2 {
+                    return Err(BattalionError::ValidationError(
+                        "Conclave requires at least 2 experts".to_string(),
+                    ));
+                }
+
+                // Create ConclaveConfig from BattalionConfig
+                let conclave_config =
+                    crate::core::platform::container::battalion::conclave::ConclaveConfig::new(
+                        &self.config.name,
+                        self.config.clone(),
+                    )
+                    .with_timeout(self.config.timeout_seconds)
+                    .with_retry_attempts(
+                        self.config.retry_policy.max_attempts.saturating_sub(1),
+                    );
+
+                // Create Conclave instance
+                let conclave =
+                    crate::core::platform::container::battalion::conclave::Conclave::new(
+                        experts,
+                        aggregator.clone(),
+                        conclave_config,
+                    )?;
+
+                // Execute Conclave
+                let service = ConclaveExecutionService::new(Arc::clone(&self.paladin_port));
+                let conclave_result = service.execute(&conclave, input).await?;
+
+                // Convert ConclaveResult to BattalionResult
+                let total_experts = conclave.expert_count();
+                let successful_experts = conclave_result.successful_expert_count();
+                let failed_experts = total_experts.saturating_sub(successful_experts);
+
+                BattalionResult {
+                    battalion_id: Uuid::new_v4(),
+                    battalion_name: self.config.name.clone(),
+                    started_at,
+                    completed_at: chrono::Utc::now(),
+                    final_output: conclave_result.aggregated_output.output.clone(),
+                    paladin_results: vec![], // Conclave handles this internally
+                    status: crate::core::platform::container::battalion::BattalionStatus::Completed,
+                    strategy_used: BattalionStrategy::Conclave,
+                    strategy_selection_reasoning: None,
+                    strategy_selection_time_ms: 0,
+                    per_paladin_times: Vec::new(),
+                    paladin_success_count: successful_experts,
+                    paladin_failure_count: failed_experts,
+                }
+            }
             BattalionStrategy::Auto => {
                 // This should never happen as Auto is resolved above
                 return Err(BattalionError::StrategySelection(
@@ -491,19 +562,23 @@ impl Commander {
     ///
     /// # Strategy Selection Rules
     ///
-    /// 1. **Formation** - Sequential execution
+    /// 1. **Conclave** - Mixture of Agents synthesis
+    ///    - Keywords: "synthesize", "compare", "expert panel", "perspectives", "consensus", "combine"
+    ///    - 3+ Paladins with diverse expertise
+    ///
+    /// 2. **Formation** - Sequential execution
     ///    - Keywords: "sequential", "pipeline", "chain", "step by step", "one after", "in order"
     ///    - 1-3 Paladins (default for small teams)
     ///
-    /// 2. **Phalanx** - Parallel execution
+    /// 3. **Phalanx** - Parallel execution
     ///    - Keywords: "parallel", "concurrent", "all at once", "simultaneously", "together"
     ///    - 4+ Paladins with similar capabilities
     ///
-    /// 3. **Campaign** - Graph/DAG orchestration
+    /// 4. **Campaign** - Graph/DAG orchestration
     ///    - Keywords: "workflow", "graph", "conditional", "if-then", "depends on", "after"
     ///    - Complex multi-stage tasks
     ///
-    /// 4. **ChainOfCommand** - Hierarchical delegation
+    /// 5. **ChainOfCommand** - Hierarchical delegation
     ///    - Keywords: "delegate", "hierarchy", "specialist", "expert", "coordinator", "manager"
     ///    - Tasks requiring specialized expertise
     ///
@@ -512,6 +587,33 @@ impl Commander {
     /// Falls back to Formation if no clear indicators are found.
     fn analyze_and_select(&self, input: &str) -> (BattalionStrategy, String) {
         let input_lower = input.to_lowercase();
+
+        // Check for Conclave indicators (synthesis/multi-perspective analysis)
+        // Check this FIRST as it's most specific and should take precedence
+        let conclave_keywords = [
+            "synthesize",
+            "synthesis",
+            "compare",
+            "expert panel",
+            "perspectives",
+            "consensus",
+            "combine",
+            "aggregate",
+            "merge",
+            "integrate views",
+            "diverse opinions",
+            "multiple experts",
+            "comprehensive analysis",
+        ];
+        if conclave_keywords.iter().any(|kw| input_lower.contains(kw)) && self.paladins.len() >= 3 {
+            return (
+                BattalionStrategy::Conclave,
+                format!(
+                    "Input contains synthesis/multi-perspective keywords with {} Paladins, using Conclave for expert synthesis",
+                    self.paladins.len()
+                ),
+            );
+        }
 
         // Check for Formation indicators (sequential execution)
         let formation_keywords = [
@@ -727,6 +829,7 @@ pub struct CommanderBuilder {
     strategy: Option<BattalionStrategy>,
     paladins: Option<Vec<Paladin>>,
     config: Option<BattalionConfig>,
+    aggregator: Option<Paladin>,
     paladin_port: Arc<dyn PaladinPort>,
 }
 
@@ -747,6 +850,7 @@ impl CommanderBuilder {
             strategy: None,
             paladins: None,
             config: None,
+            aggregator: None,
             paladin_port,
         }
     }
@@ -799,6 +903,26 @@ impl CommanderBuilder {
         self
     }
 
+    /// Set the aggregator Paladin for Conclave strategy
+    ///
+    /// The aggregator is responsible for synthesizing expert outputs in Conclave.
+    /// If not set and using Conclave strategy, the last Paladin in the list will
+    /// be used as the aggregator.
+    ///
+    /// # Arguments
+    ///
+    /// * `paladin` - Paladin to use as aggregator
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// builder.aggregator(synthesis_paladin)
+    /// ```
+    pub fn aggregator(mut self, paladin: Paladin) -> Self {
+        self.aggregator = Some(paladin);
+        self
+    }
+
     /// Build the Commander instance with validation
     ///
     /// Validates that all required fields are present and returns a configured
@@ -842,6 +966,23 @@ impl CommanderBuilder {
             ));
         }
 
+        // Validate Conclave strategy requirements and handle aggregator
+        let aggregator = if strategy == BattalionStrategy::Conclave {
+            if paladins.len() < 2 {
+                return Err(BattalionError::CommanderValidation(
+                    "Conclave requires at least 2 Paladins (for experts)".to_string(),
+                ));
+            }
+            // If no aggregator specified, use the last Paladin as aggregator
+            let agg = self.aggregator.unwrap_or_else(|| {
+                debug!("No aggregator specified for Conclave, using last Paladin as aggregator");
+                paladins.last().cloned().unwrap()
+            });
+            Some(agg)
+        } else {
+            self.aggregator // Keep aggregator if explicitly set for other strategies
+        };
+
         // Generate default config if none provided
         let config = self.config.unwrap_or_else(|| {
             debug!("No config provided, generating default configuration");
@@ -867,6 +1008,7 @@ impl CommanderBuilder {
             strategy,
             paladins,
             config,
+            aggregator,
             self.paladin_port,
         ))
     }

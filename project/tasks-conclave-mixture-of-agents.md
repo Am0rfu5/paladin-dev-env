@@ -134,33 +134,33 @@ git commit -m "feat(conclave): add domain model" -m "- Implements Conclave, Conc
   - [x] 2.32 Run linter: `cargo clippy -- -D warnings`
   - [x] 2.33 Commit changes: "feat(conclave): implement execution service with retry logic"
 
-- [ ] 3.0 Integrate Conclave with Commander (US-15.3)
-  - [ ] 3.1 Read existing Commander implementation in `src/application/use_cases/battalion/commander.rs`
-  - [ ] 3.2 Read existing `BattalionStrategy` enum definition
-  - [ ] 3.3 Add `Conclave` variant to `BattalionStrategy` enum
-  - [ ] 3.4 Update `BattalionStrategy` serde derives if needed
-  - [ ] 3.5 Read existing `CommanderBuilder` implementation
-  - [ ] 3.6 Add `aggregator: Option<Paladin>` field to CommanderBuilder
-  - [ ] 3.7 Implement `aggregator(mut self, paladin: Paladin) -> Self` method on CommanderBuilder
-  - [ ] 3.8 Update `build()` method to handle Conclave strategy
-  - [ ] 3.9 Implement default aggregator selection logic (use last agent if not specified)
-  - [ ] 3.10 Implement Conclave validation in Commander (min 2 experts + 1 aggregator)
-  - [ ] 3.11 Read existing auto-strategy detection logic
-  - [ ] 3.12 Implement auto-strategy scoring for Conclave (+3 for synthesis keywords, +2 for 3+ agents with different prompts, +1 for comprehensive questions)
-  - [ ] 3.13 Add synthesis keyword detection: "compare", "synthesize", "combine perspectives", "expert panel"
-  - [ ] 3.14 Implement prompt analysis to detect different expertise (simple heuristic based on system prompts)
-  - [ ] 3.15 Update Commander `execute()` method to handle BattalionStrategy::Conclave case
-  - [ ] 3.16 Instantiate ConclaveExecutionService when Conclave strategy is selected
-  - [ ] 3.17 Call ConclaveExecutionService::execute() and handle result
-  - [ ] 3.18 Update rustdoc comments for Commander with Conclave examples
-  - [ ] 3.19 Write unit tests for Conclave strategy selection
-  - [ ] 3.20 Write unit tests for default aggregator selection
-  - [ ] 3.21 Write unit tests for auto-strategy detection with Conclave
-  - [ ] 3.22 Write unit tests for Conclave validation in Commander
-  - [ ] 3.23 Write integration test for full Commander + Conclave execution
-  - [ ] 3.24 Run tests: `cargo test commander`
-  - [ ] 3.25 Run formatting: `cargo fmt`
-  - [ ] 3.26 Run linter: `cargo clippy -- -D warnings`
+- [x] 3.0 Integrate Conclave with Commander (US-15.3)
+  - [x] 3.1 Read existing Commander implementation in `src/application/use_cases/battalion/commander.rs`
+  - [x] 3.2 Read existing `BattalionStrategy` enum definition
+  - [x] 3.3 Add `Conclave` variant to `BattalionStrategy` enum
+  - [x] 3.4 Update `BattalionStrategy` serde derives if needed
+  - [x] 3.5 Read existing `CommanderBuilder` implementation
+  - [x] 3.6 Add `aggregator: Option<Paladin>` field to CommanderBuilder
+  - [x] 3.7 Implement `aggregator(mut self, paladin: Paladin) -> Self` method on CommanderBuilder
+  - [x] 3.8 Update `build()` method to handle Conclave strategy
+  - [x] 3.9 Implement default aggregator selection logic (use last agent if not specified)
+  - [x] 3.10 Implement Conclave validation in Commander (min 2 experts + 1 aggregator)
+  - [x] 3.11 Read existing auto-strategy detection logic
+  - [x] 3.12 Implement auto-strategy scoring for Conclave (+3 for synthesis keywords, +2 for 3+ agents with different prompts, +1 for comprehensive questions)
+  - [x] 3.13 Add synthesis keyword detection: "compare", "synthesize", "combine perspectives", "expert panel"
+  - [x] 3.14 Implement prompt analysis to detect different expertise (simple heuristic based on system prompts)
+  - [x] 3.15 Update Commander `execute()` method to handle BattalionStrategy::Conclave case
+  - [x] 3.16 Instantiate ConclaveExecutionService when Conclave strategy is selected
+  - [x] 3.17 Call ConclaveExecutionService::execute() and handle result
+  - [x] 3.18 Update rustdoc comments for Commander with Conclave examples
+  - [x] 3.19 Write unit tests for Conclave strategy selection
+  - [x] 3.20 Write unit tests for default aggregator selection
+  - [x] 3.21 Write unit tests for auto-strategy detection with Conclave
+  - [x] 3.22 Write unit tests for Conclave validation in Commander
+  - [x] 3.23 Write integration test for full Commander + Conclave execution
+  - [x] 3.24 Run tests: `cargo test commander`
+  - [x] 3.25 Run formatting: `cargo fmt`
+  - [x] 3.26 Run linter: `cargo clippy -- -D warnings`
   - [ ] 3.27 Commit changes: "feat(conclave): integrate with Commander and auto-strategy"
 
 - [ ] 4.0 Add CLI and YAML Support (US-15.4)

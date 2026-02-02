@@ -323,6 +323,7 @@ pub enum ErrorStrategy {
 /// - Phalanx: Keywords like parallel, concurrent, simultaneously; or 4+ similar tasks
 /// - Campaign: Keywords like workflow, conditional, if-then, depends-on
 /// - ChainOfCommand: Keywords like delegate, specialist, expert, route-to
+/// - Conclave: Keywords like synthesize, compare, expert panel, consensus; or 3+ diverse experts
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BattalionStrategy {
     /// Sequential execution with output chaining (Paladin N output -> Paladin N+1 input)
@@ -345,10 +346,23 @@ pub enum BattalionStrategy {
     /// Best for dynamic routing to specialists based on task characteristics.
     ChainOfCommand,
 
+    /// Mixture of Agents pattern (multiple expert Paladins analyze in parallel, aggregator synthesizes)
+    ///
+    /// Best for complex analytical tasks requiring diverse expert perspectives with synthesis.
+    /// All expert Paladins process the input independently in parallel with retry logic,
+    /// then an aggregator Paladin synthesizes their outputs into a comprehensive response.
+    ///
+    /// Particularly effective for:
+    /// - Multi-perspective analysis (legal + technical + business review)
+    /// - Comparative evaluations (pros/cons from different viewpoints)
+    /// - Expert consensus building
+    /// - Complex decision-making requiring diverse expertise
+    Conclave,
+
     /// Automatic strategy selection based on heuristics
     ///
     /// Analyzes input and Paladin characteristics to intelligently select Formation,
-    /// Phalanx, Campaign, or ChainOfCommand. Provides reasoning for transparency.
+    /// Phalanx, Campaign, ChainOfCommand, or Conclave. Provides reasoning for transparency.
     Auto,
 }
 
