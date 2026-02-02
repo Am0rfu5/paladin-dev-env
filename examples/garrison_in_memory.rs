@@ -41,7 +41,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("✓ Stored system prompt");
 
     // User messages and assistant responses
-    let conversations = [(
+    let conversations = [
+        (
             "What is the difference between String and &str in Rust?",
             "String is an owned, heap-allocated string type, while &str is a string slice that borrows data.",
         ),
@@ -60,7 +61,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         (
             "Thanks for the explanation!",
             "You're welcome! Feel free to ask if you have more Rust questions.",
-        )];
+        ),
+    ];
 
     for (i, (user_msg, assistant_msg)) in conversations.iter().enumerate() {
         let user_entry = GarrisonEntry::new(ConversationRole::User, user_msg.to_string());
