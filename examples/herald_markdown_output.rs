@@ -206,7 +206,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .system_prompt(
                     "You are a helpful geography assistant. Format your responses with markdown.",
                 )
-                .name(&format!("{}Guide", city))
+                .name(format!("{}Guide", city))
                 .build()
                 .await?;
 

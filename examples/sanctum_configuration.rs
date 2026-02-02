@@ -92,7 +92,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let adapter_name = match environment.as_str() {
         "production" => "Qdrant (production cluster)",
         "staging" => "Qdrant (staging instance)",
-        "development" | _ => "InMemory (development)",
+        "development" => "InMemory (development)",
+        _ => "InMemory (default)",
     };
 
     println!("Recommended adapter: {}\n", adapter_name);

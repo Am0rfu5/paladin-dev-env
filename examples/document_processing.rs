@@ -95,7 +95,7 @@ async fn demonstrate_pdf_processing(
         };
 
         println!("{}", preview);
-        println!("{}", format!("└{}", "─".repeat(79)));
+        println!("└{}", "─".repeat(79));
     }
 
     // Step 4: Ingest document using adapter
@@ -273,7 +273,7 @@ fn display_chunks(
         };
 
         println!("│ Preview: {}", preview);
-        println!("{}", format!("└{}", "─".repeat(79)));
+        println!("└{}", "─".repeat(79));
         println!();
     }
 

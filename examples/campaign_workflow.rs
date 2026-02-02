@@ -72,7 +72,7 @@ impl PaladinPort for ExamplePaladinPort {
             "CleanerB" => format!("CleanerB: Normalized fields in {}", input),
             "CleanerC" => format!("CleanerC: Validated integrity of {}", input),
             "DataAggregator" => {
-                format!("Aggregated results: Combined outputs from all cleaners")
+                "Aggregated results: Combined outputs from all cleaners".to_string()
             }
             "FinalExporter" => {
                 format!("Export complete: {} ready for delivery", input)

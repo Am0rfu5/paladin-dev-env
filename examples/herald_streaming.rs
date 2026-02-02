@@ -101,15 +101,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let herald: Arc<dyn Herald> = Arc::new(TableHerald::default());
 
         println!("Simulating stream:");
-        let mut chunk_count = 0;
-        for chunk in &chunks {
+        for (chunk_count, chunk) in chunks.iter().enumerate() {
             let result = herald.format_stream_chunk(chunk)?;
             if result.is_some() {
                 println!("  Chunk {} returned content (unexpected!)", chunk_count + 1);
             } else {
                 println!("  Chunk {} buffered (returns None)", chunk_count + 1);
             }
-            chunk_count += 1;
             thread::sleep(Duration::from_millis(300)); // Simulate delay
         }
 

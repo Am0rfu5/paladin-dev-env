@@ -7,6 +7,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Epic 14: Autonomous Agent Features
+
+#### Autonomous Planning Mode
+- **Auto Loop Detection**: New `MaxLoops::Auto { max_subtasks: u32 }` variant enables intelligent loop optimization
+  - Automatic task complexity analysis
+  - Dynamic subtask decomposition for complex tasks  
+  - Optimal loop count determination (simple tasks use fewer loops)
+- **Planning Service**: New `PlanningService` with comprehensive task planning
+  - Task complexity assessment
+  - Structured plan generation with subtasks
+  - Subtask execution and synthesis
+  - Integration with Paladin execution flow
+- **Planning Configuration**: `PlanningConfig` with enabled flag, max_subtasks, and complexity threshold
+- **Domain Types**: `TaskPlan`, `Subtask`, `ComplexityLevel` for structured planning representation
+
+#### Auto-Generate System Prompts
+- **Prompt Generation Service**: New `PromptGenerationService` for LLM-powered prompt creation
+  - Generate system prompts from natural language agent descriptions
+  - Optimize prompts for specific agent roles and capabilities
+  - Cache generated prompts for reuse
+  - Support for prompt regeneration and manual overrides
+- **Prompt Configuration**: `PromptConfig` with enabled flag and optional cache control
+- **Builder Integration**: `agent_description()` method on PaladinBuilder for seamless prompt generation
+
+#### Dynamic Temperature Adjustment
+- **Temperature Service**: New `TemperatureService` with task-based temperature optimization
+  - Automatic task type classification (factual, creative, balanced)
+  - Temperature bounds configuration (min/max range)
+  - Classification heuristics based on task keywords
+  - Real-time temperature adjustment per task
+- **Temperature Configuration**: `TemperatureConfig` with enabled flag, min/max bounds, and custom keywords
+- **Task Types**: `TaskType` enum (Factual, Creative, Balanced) with appropriate temperature ranges
+
+#### Intelligent Agent Handoffs
+- **Handoff Service**: New `HandoffService` for delegation between specialist agents
+  - Specialist discovery and routing
+  - Task complexity assessment for delegation
+  - Circuit breaker integration for reliability
+  - Handoff depth limiting (prevent infinite delegation)
+- **Handoff Configuration**: `HandoffConfig` with enabled flag, strategy, and max delegation depth  
+- **Handoff Strategies**: `HandoffStrategy` enum (Automatic, ExplicitOnly) for control
+- **Domain Types**: `HandoffDecision`, `HandoffMetadata` for structured delegation tracking
+
+#### Handoff Tool Integration
+- **Arsenal Integration**: New `HandoffTool` registered in Arsenal for LLM-accessible delegation
+  - `delegate_to_specialist` function for explicit handoffs
+  - JSON schema for LLM tool use
+  - Specialist validation and routing
+  - Seamless integration with agent execution loop
+
+#### Configuration & Builder API
+- **Autonomous Configuration**: New `AutonomousConfig` aggregating all autonomous features
+  - Centralized configuration structure
+  - YAML configuration support
+  - CLI flag integration
+  - Builder pattern support via `PaladinBuilder`
+- **Builder Methods**: New autonomous feature methods on PaladinBuilder
+  - `enable_planning(bool)` - Toggle autonomous planning
+  - `agent_description(String)` - Set description for prompt generation
+  - `enable_dynamic_temperature(bool)` - Toggle temperature adjustment
+  - `enable_handoffs(bool)` - Toggle delegation capabilities
+
+#### Documentation & Examples  
+- **Comprehensive Guide**: New `docs/AUTONOMOUS.md` (400+ lines)
+  - Introduction and features overview
+  - Detailed user story documentation (all 5 features)
+  - Configuration guide (YAML, CLI, Builder)
+  - Best practices and performance considerations
+  - Error handling and troubleshooting
+  - Advanced usage patterns
+  - Complete API reference
+- **Working Examples**: 5 comprehensive example files (~1,400 lines)
+  - `autonomous_planning.rs` - Planning mode with task decomposition
+  - `autonomous_prompt_generation.rs` - Auto-prompt generation concepts
+  - `dynamic_temperature.rs` - Temperature adjustment by task type
+  - `agent_handoffs.rs` - Specialist delegation workflow
+  - `autonomous_full_config.rs` - All features combined
+- **Examples README**: Updated `examples/README.md` with autonomous section
+
+#### Testing & Quality
+- **Comprehensive Testing**: 1,280+ tests passing including autonomous features
+  - Unit tests for all services and domain logic
+  - Integration tests for Paladin with autonomous features
+  - MockLlmAdapter integration for deterministic testing
+- **Code Quality**: Zero clippy warnings in strict mode
+  - All code formatted with rustfmt
+  - Comprehensive rustdoc for all public APIs
+  - Error handling with thiserror patterns
+
+#### Security Audit Results
+- **Vulnerabilities**: 2 transitive dependency vulnerabilities identified (non-critical)
+  - `rsa 0.9.10`: Marvin Attack timing sidechannel (RUSTSEC-2023-0071) - Medium severity, no upgrade available (from sqlx-mysql)
+  - `tokio-tar 0.3.1`: PAX header parsing issue (RUSTSEC-2025-0111) - No upgrade available (from testcontainers, dev dependency only)
+- **Unmaintained Crates**: 9 warnings about unmaintained transitive dependencies
+  - All are indirect dependencies from test/dev dependencies
+  - No immediate security risk to production code
+  - Monitored for future upgrades when upstream updates available
+
 ### Added - Epic 13: Sentinel Vision System
 
 #### Vision API & Multi-Modal Processing
