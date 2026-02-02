@@ -329,35 +329,35 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 9.18 Commit: `git commit -m "docs: create comprehensive AUTONOMOUS.md guide" -m "- Introduction and autonomous features overview" -m "- Documentation for all 5 user stories with examples" -m "- Configuration guide (YAML, CLI, Builder)" -m "- Best practices and performance considerations" -m "- Error handling and troubleshooting" -m "- Advanced usage and API reference"`
 
 - [ ] 10.0 Examples Implementation
-  - [ ] 10.1 **Create** `examples/autonomous_planning.rs` with:
-    - [ ] 10.1.1 Basic planning mode example (MaxLoops::Auto)
-    - [ ] 10.1.2 Complex task decomposition example
-    - [ ] 10.1.3 Comments explaining planning workflow
-  - [ ] 10.2 **Create** `examples/autonomous_prompt_generation.rs` with:
-    - [ ] 10.2.1 Auto-generate prompt example with agent_description
-    - [ ] 10.2.2 Regenerate prompt example
-    - [ ] 10.2.3 Manual override example
-    - [ ] 10.2.4 Comments explaining prompt generation
-  - [ ] 10.3 **Create** `examples/dynamic_temperature.rs` with:
-    - [ ] 10.3.1 Dynamic temperature example with different task types
-    - [ ] 10.3.2 Temperature bounds configuration example
-    - [ ] 10.3.3 Comparison with fixed temperature
-    - [ ] 10.3.4 Comments explaining classification
-  - [ ] 10.4 **Create** `examples/agent_handoffs.rs` with:
-    - [ ] 10.4.1 Coordinator agent with multiple specialists
-    - [ ] 10.4.2 Handoff strategy configuration example
-    - [ ] 10.4.3 Task delegation flow example
-    - [ ] 10.4.4 Comments explaining handoff mechanism
-  - [ ] 10.5 **Create** `examples/autonomous_full_config.rs` with:
-    - [ ] 10.5.1 Full configuration using all autonomous features
-    - [ ] 10.5.2 Complex workflow combining planning + prompts + temperature + handoffs
-    - [ ] 10.5.3 Result inspection showing all metadata
-    - [ ] 10.5.4 Comprehensive comments
-  - [ ] 10.6 Update `examples/README.md` with autonomous examples section
-  - [ ] 10.7 Test all examples compile: `cargo build --examples`
-  - [ ] 10.8 Test all examples run successfully (with test LLM or mocks)
-  - [ ] 10.9 Run clippy on examples: `cargo clippy --examples`
-  - [ ] 10.10 Format examples: `cargo fmt`
+  - [x] 10.1 **Create** `examples/autonomous_planning.rs` with:
+    - [x] 10.1.1 Basic planning mode example (MaxLoops::Auto)
+    - [x] 10.1.2 Complex task decomposition example
+    - [x] 10.1.3 Comments explaining planning workflow
+  - [x] 10.2 **Create** `examples/autonomous_prompt_generation.rs` with:
+    - [x] 10.2.1 Auto-generate prompt example with agent_description
+    - [x] 10.2.2 Regenerate prompt example
+    - [x] 10.2.3 Manual override example
+    - [x] 10.2.4 Comments explaining prompt generation
+  - [x] 10.3 **Create** `examples/dynamic_temperature.rs` with:
+    - [x] 10.3.1 Dynamic temperature example with different task types
+    - [x] 10.3.2 Temperature bounds configuration example
+    - [x] 10.3.3 Comparison with fixed temperature
+    - [x] 10.3.4 Comments explaining classification
+  - [x] 10.4 **Create** `examples/agent_handoffs.rs` with:
+    - [x] 10.4.1 Coordinator agent with multiple specialists
+    - [x] 10.4.2 Handoff strategy configuration example
+    - [x] 10.4.3 Task delegation flow example
+    - [x] 10.4.4 Comments explaining handoff mechanism
+  - [x] 10.5 **Create** `examples/autonomous_full_config.rs` with:
+    - [x] 10.5.1 Full configuration using all autonomous features
+    - [x] 10.5.2 Complex workflow combining planning + prompts + temperature + handoffs
+    - [x] 10.5.3 Result inspection showing all metadata
+    - [x] 10.5.4 Comprehensive comments
+  - [x] 10.6 Update `examples/README.md` with autonomous examples section
+  - [x] 10.7 Test all examples compile: `cargo build --examples`
+  - [x] 10.8 Test all examples run successfully (with test LLM or mocks)
+  - [x] 10.9 Run clippy on examples: `cargo clippy --examples`
+  - [x] 10.10 Format examples: `cargo fmt`
   - [ ] 10.11 Commit: `git commit -m "docs: add autonomous features examples" -m "- autonomous_planning.rs: planning mode with task decomposition" -m "- autonomous_prompt_generation.rs: auto-prompt with regeneration" -m "- dynamic_temperature.rs: temperature adjustment by task type" -m "- agent_handoffs.rs: delegation with specialists" -m "- autonomous_full_config.rs: comprehensive example with all features" -m "- Updated examples/README.md"`
 
 - [ ] 11.0 Testing & Quality Assurance

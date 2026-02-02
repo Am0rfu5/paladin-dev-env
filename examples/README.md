@@ -6,6 +6,7 @@ This directory contains comprehensive examples demonstrating Paladin's capabilit
 
 - [Getting Started](#getting-started)
 - [Basic Paladin Examples](#basic-paladin-examples)
+- [Autonomous Agent Examples](#autonomous-agent-examples) 🆕
 - [Memory & Garrison Examples](#memory--garrison-examples)
 - [Sanctum Long-term Memory Examples](#sanctum-long-term-memory-examples)
 - [Tool Integration Examples](#tool-integration-examples)
@@ -101,6 +102,198 @@ cargo run --example llm_provider_selection
 - Model selection
 - API configuration
 - Multi-provider support
+
+## Autonomous Agent Examples
+
+### [autonomous_planning.rs](autonomous_planning.rs) 🆕
+**Demonstrates:** Autonomous planning with MaxLoops::Auto
+
+Shows how agents automatically decompose complex tasks into structured plans and execute them sequentially.
+
+```bash
+cargo run --example autonomous_planning
+```
+
+**Key concepts:**
+- MaxLoops::Auto for autonomous planning
+- Automatic task complexity analysis
+- Dynamic subtask generation
+- Intelligent loop optimization
+- Complex vs. simple task handling
+
+**Code snippet:**
+```rust
+let paladin = PaladinBuilder::new(llm_port)
+    .system_prompt("You are an expert analyst...")
+    .max_loops(MaxLoops::Auto) // Enables autonomous planning
+    .build()
+    .await?;
+
+// Agent will automatically create and execute a plan
+let result = service.execute(&paladin, complex_task).await?;
+```
+
+**Learn more:** See [docs/AUTONOMOUS.md](../docs/AUTONOMOUS.md) §1
+
+### [autonomous_prompt_generation.rs](autonomous_prompt_generation.rs) 🆕
+**Demonstrates:** Automatic system prompt generation
+
+Shows how agents generate optimized system prompts from agent descriptions, eliminating manual prompt engineering.
+
+```bash
+cargo run --example autonomous_prompt_generation
+```
+
+**Key concepts:**
+- Prompt generation from agent description
+- Automatic persona optimization
+- Role-specific prompt customization
+- Reduced configuration overhead
+- Examples: Code reviewer, technical writer
+
+**Code snippet:**
+```rust
+let config = PaladinConfig::builder()
+    .autonomous(AutonomousConfig {
+        prompt_generation: Some(PromptGenerationConfig {
+            enabled: true,
+            description: Some("A code review specialist...".to_string()),
+        }),
+        ..Default::default()
+    })
+    .build()?;
+
+let paladin = PaladinBuilder::new(llm_port)
+    .system_prompt("Default") // Will be auto-generated
+    .with_config(config)
+    .build()
+    .await?;
+```
+
+**Learn more:** See [docs/AUTONOMOUS.md](../docs/AUTONOMOUS.md) §2
+
+### [dynamic_temperature.rs](dynamic_temperature.rs) 🆕
+**Demonstrates:** Dynamic temperature adjustment by task type
+
+Shows how temperature automatically adjusts based on whether tasks are factual, creative, or balanced.
+
+```bash
+cargo run --example dynamic_temperature
+```
+
+**Key concepts:**
+- Automatic temperature adjustment
+- Task type detection (factual/creative/balanced)
+- Low temp (0.1-0.3) for precision
+- High temp (0.7-0.9) for creativity
+- Medium temp (0.4-0.6) for explanations
+- Configurable min/max bounds
+
+**Code snippet:**
+```rust
+let config = PaladinConfig::builder()
+    .autonomous(AutonomousConfig {
+        dynamic_temperature: Some(DynamicTemperatureConfig {
+            enabled: true,
+            min_temperature: 0.1,
+            max_temperature: 0.9,
+            step_size: 0.1,
+        }),
+        ..Default::default()
+    })
+    .build()?;
+
+// Temperature adjusts automatically per task
+```
+
+**Learn more:** See [docs/AUTONOMOUS.md](../docs/AUTONOMOUS.md) §3
+
+### [agent_handoffs.rs](agent_handoffs.rs) 🆕
+**Demonstrates:** Intelligent task delegation to specialist agents
+
+Shows how coordinator agents automatically delegate subtasks to specialized experts based on task requirements.
+
+```bash
+cargo run --example agent_handoffs
+```
+
+**Key concepts:**
+- Automatic delegation detection
+- Specialist agent pool
+- Hierarchical task distribution
+- Result synthesis from multiple specialists
+- Handoff strategies (automatic/manual/hybrid)
+- Max depth control
+
+**Code snippet:**
+```rust
+let config = PaladinConfig::builder()
+    .autonomous(AutonomousConfig {
+        handoffs: Some(HandoffConfig {
+            enabled: true,
+            strategy: HandoffStrategy::Automatic,
+            max_depth: 3,
+            specialist_pool: vec![
+                "DatabaseArchitect".to_string(),
+                "SecuritySpecialist".to_string(),
+                "ApiDesigner".to_string(),
+            ],
+        }),
+        ..Default::default()
+    })
+    .build()?;
+
+// Coordinator automatically delegates to specialists
+```
+
+**Learn more:** See [docs/AUTONOMOUS.md](../docs/AUTONOMOUS.md) §4
+
+### [autonomous_full_config.rs](autonomous_full_config.rs) 🆕
+**Demonstrates:** All autonomous features working together
+
+Shows the full power of autonomous agents with all features enabled: planning, prompt generation, dynamic temperature, and handoffs.
+
+```bash
+cargo run --example autonomous_full_config
+```
+
+**Key concepts:**
+- Complete autonomous configuration
+- Feature synergy and interaction
+- End-to-end complex task execution
+- Real-world system design scenario
+- Multi-specialist coordination
+- Comprehensive configuration examples
+
+**Code snippet:**
+```rust
+let autonomous_config = AutonomousConfig {
+    planning: Some(PlanningConfig {
+        enabled: true,
+        max_subtasks: 8,
+    }),
+    prompt_generation: Some(PromptGenerationConfig {
+        enabled: true,
+        description: Some("Senior software architect...".to_string()),
+    }),
+    dynamic_temperature: Some(DynamicTemperatureConfig {
+        enabled: true,
+        min_temperature: 0.1,
+        max_temperature: 0.8,
+        step_size: 0.1,
+    }),
+    handoffs: Some(HandoffConfig {
+        enabled: true,
+        strategy: HandoffStrategy::Automatic,
+        max_depth: 3,
+        specialist_pool: vec![/* ... */],
+    }),
+};
+
+// All features work together seamlessly
+```
+
+**Learn more:** See [docs/AUTONOMOUS.md](../docs/AUTONOMOUS.md) for complete documentation
 
 ## Memory & Garrison Examples
 
