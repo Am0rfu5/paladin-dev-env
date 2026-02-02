@@ -21,7 +21,7 @@
 //!     10, // max_subtasks
 //! ).await?;
 //!
-//! let result = planning_service.execute_plan(&plan, "/* code here */").await?;
+//! let result = planning_service.execute_subtasks(&plan, "/* code here */").await?;
 //! # Ok(())
 //! # }
 //! ```

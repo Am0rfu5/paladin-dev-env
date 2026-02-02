@@ -36,7 +36,7 @@
 //!     .max_loops(5)
 //!     .retry_attempts(3)
 //!     .timeout_seconds(300)
-//!     .build()?;
+//!     .build().await?;
 //!
 //! // Execute
 //! let result = service.execute(&paladin, "What is Rust?").await?;
@@ -294,7 +294,7 @@ impl PaladinExecutionService {
     /// # use std::sync::Arc;
     /// # use std::time::Duration;
     /// # async fn example(llm_port: Arc<dyn LlmPort>, service: PaladinExecutionService) -> Result<(), Box<dyn std::error::Error>> {
-    /// # let paladin = PaladinBuilder::new(llm_port).system_prompt("test").build()?;
+    /// # let paladin = PaladinBuilder::new(llm_port).system_prompt("test").build().await?;
     /// let result = service.execute(&paladin, "Explain quantum computing").await?;
     /// println!("Result: {}", result.output);
     /// # Ok(())

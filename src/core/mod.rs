@@ -67,7 +67,7 @@
 //! ## Creating a Paladin Entity
 //!
 //! ```
-//! use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
+//! use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
 //! use paladin::core::base::entity::node::Node;
 //!
 //! let data = PaladinData {
@@ -76,7 +76,7 @@
 //!     user_name: "User".to_string(),
 //!     model: "gpt-4".to_string(),
 //!     temperature: 0.7,
-//!     max_loops: 3,
+//!     max_loops: MaxLoops::Fixed(3),
 //!     stop_words: vec![],
 //!     status: PaladinStatus::Idle,
 //!     vision_enabled: false,

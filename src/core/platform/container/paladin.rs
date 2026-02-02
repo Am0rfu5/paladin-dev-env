@@ -7,7 +7,7 @@
 //! # Example
 //!
 //! ```
-//! use paladin::core::platform::container::paladin::{PaladinData, PaladinStatus};
+//! use paladin::core::platform::container::paladin::{PaladinData, PaladinStatus, MaxLoops};
 //! use paladin::core::base::entity::node::Node;
 //!
 //! let data = PaladinData {
@@ -16,7 +16,7 @@
 //!     user_name: "User".to_string(),
 //!     model: "gpt-4".to_string(),
 //!     temperature: 0.7,
-//!     max_loops: 3,
+//!     max_loops: MaxLoops::Fixed(3),
 //!     stop_words: vec!["STOP".to_string()],
 //!     status: PaladinStatus::Idle,
 //!     vision_enabled: false,
@@ -169,7 +169,7 @@ pub struct PaladinData {
 /// # Example
 ///
 /// ```
-/// use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
+/// use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
 /// use paladin::core::base::entity::node::Node;
 ///
 /// let data = PaladinData {
@@ -178,7 +178,7 @@ pub struct PaladinData {
 ///     user_name: "Developer".to_string(),
 ///     model: "gpt-4".to_string(),
 ///     temperature: 0.3,
-///     max_loops: 5,
+///     max_loops: MaxLoops::Fixed(5),
 ///     stop_words: vec!["DONE".to_string()],
 ///     status: PaladinStatus::Idle,
 ///     vision_enabled: false,

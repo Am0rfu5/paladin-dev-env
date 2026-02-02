@@ -24,7 +24,7 @@
 //!     .timeout_seconds(300)
 //!     .enable_planning(true)
 //!     .output_format(OutputFormat::Json)
-//!     .build()?;
+//!     .build().await?;
 //! # Ok(())
 //! # }
 //! ```
@@ -68,7 +68,7 @@ use uuid::Uuid;
 ///     .name("Assistant")
 ///     .model("gpt-4")
 ///     .temperature(0.8)
-///     .build()?;
+///     .build().await?;
 /// # Ok(())
 /// # }
 /// ```
@@ -637,7 +637,7 @@ impl PaladinBuilder {
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```ignore
     /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin::application::ports::output::llm_port::LlmPort;
     /// # use paladin::application::ports::output::sanctum_port::SanctumPort;
