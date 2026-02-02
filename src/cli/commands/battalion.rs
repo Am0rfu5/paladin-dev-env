@@ -78,7 +78,13 @@ pub fn handle_battalion_new(args: BattalionNewArgs) -> Result<(), CliError> {
     use crate::cli::interactive::confirm;
 
     // Validate battalion type
-    let valid_types = ["formation", "phalanx", "campaign", "chain-of-command"];
+    let valid_types = [
+        "formation",
+        "phalanx",
+        "campaign",
+        "chain-of-command",
+        "conclave",
+    ];
     if !valid_types.contains(&args.r#type.as_str()) {
         return Err(CliError::InvalidFieldValue {
             field: "type".to_string(),
@@ -137,6 +143,7 @@ pub async fn handle_battalion_run(args: BattalionRunArgs) -> Result<(), CliError
         BattalionYamlConfig::Phalanx(_) => "phalanx",
         BattalionYamlConfig::Campaign(_) => "campaign",
         BattalionYamlConfig::ChainOfCommand(_) => "chain-of-command",
+        BattalionYamlConfig::Conclave(_) => "conclave",
     };
 
     if config_type != args.r#type {
@@ -176,6 +183,9 @@ pub async fn handle_battalion_run(args: BattalionRunArgs) -> Result<(), CliError
             Err(CliError::Other(
                 "Chain of Command execution not yet implemented in CLI. See Task 7.0".to_string(),
             ))
+        }
+        BattalionYamlConfig::Conclave(config) => {
+            execute_conclave(config, args.verbose, args.output).await
         }
     }
 }
@@ -525,6 +535,212 @@ async fn execute_phalanx(
             );
             println!("   {}\n", "─".repeat(76));
             println!("   {}", paladin_result.output);
+        }
+
+        println!("\n{}", "═".repeat(80));
+    }
+
+    Ok(())
+}
+
+/// Execute a Conclave battalion (Mixture of Agents pattern)
+async fn execute_conclave(
+    config: crate::cli::config::battalion_config::ConclaveConfig,
+    verbose: bool,
+    output: Option<PathBuf>,
+) -> Result<(), CliError> {
+    use crate::application::ports::output::paladin_port::PaladinPort;
+    use crate::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
+    use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    use crate::core::platform::container::battalion::BattalionConfig;
+    use crate::core::platform::container::battalion::conclave::{
+        Conclave, ConclaveConfig as DomainConclaveConfig, ObservabilityLevel,
+    };
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    if verbose {
+        println!("{} Building Conclave: {}", "→".cyan().bold(), config.name);
+        println!("{} Experts: {}", "→".cyan().bold(), config.experts.len());
+        println!("{} Aggregator: configured", "→".cyan().bold());
+    }
+
+    // Build expert Paladins
+    let mut experts = Vec::new();
+    for (idx, expert_ref) in config.experts.iter().enumerate() {
+        let expert = build_paladin_from_reference(expert_ref, verbose, idx + 1).await?;
+        experts.push(expert);
+    }
+
+    // Build aggregator Paladin
+    let aggregator = build_paladin_from_reference(&config.aggregator, verbose, 0).await?;
+
+    if verbose {
+        println!("{} All Paladins built successfully", "✓".green().bold());
+    }
+
+    // Create Battalion configuration
+    let battalion_config = BattalionConfig::new(&config.name)
+        .with_timeout(config.timeout_seconds.unwrap_or(300))
+        .with_description(format!("Conclave with {} experts", experts.len()));
+
+    // Parse observability level
+    let observability = match config.observability_level.as_deref() {
+        Some("minimal") => ObservabilityLevel::Minimal,
+        Some("verbose") => ObservabilityLevel::Verbose,
+        _ => ObservabilityLevel::Standard,
+    };
+
+    // Create Conclave domain configuration
+    let mut conclave_config = DomainConclaveConfig::new(&config.name, battalion_config)
+        .with_timeout(config.timeout_seconds.unwrap_or(300))
+        .with_retry_attempts(config.retry_attempts.unwrap_or(2))
+        .with_observability(observability);
+
+    if let Some(ref synthesis_prompt) = config.synthesis_prompt {
+        conclave_config = conclave_config.with_synthesis_prompt(synthesis_prompt);
+    }
+
+    if let Some(include_names) = config.include_expert_names {
+        conclave_config = conclave_config.with_expert_names(include_names);
+    }
+
+    if let Some(max_tokens) = config.max_expert_output_tokens {
+        conclave_config = conclave_config.with_max_expert_tokens(max_tokens);
+    }
+
+    // Create Conclave
+    let conclave = Conclave::new(experts, aggregator, conclave_config).map_err(|e| {
+        CliError::BattalionError {
+            message: e.to_string(),
+        }
+    })?;
+
+    if verbose {
+        println!("{} Conclave built successfully", "✓".green().bold());
+    }
+
+    // Create Paladin execution service with circuit breaker
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+
+    use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    let factory = LlmProviderFactory::new();
+    let dummy_llm_port = factory
+        .create("openai")
+        .map_err(|e| CliError::LlmProviderError {
+            message: format!("Failed to create LLM port: {}", e),
+        })?;
+
+    let paladin_service = Arc::new(PaladinExecutionService::new(
+        dummy_llm_port,
+        circuit_breaker,
+        None,
+        None,
+    ));
+
+    let paladin_port = Arc::new(PaladinExecutionAdapter {
+        service: paladin_service,
+    });
+
+    // Create Conclave execution service
+    let conclave_service = ConclaveExecutionService::new(paladin_port as Arc<dyn PaladinPort>);
+
+    // Get input from user
+    println!("\n{} Enter task for expert analysis:", "?".cyan().bold());
+    use std::io::{self, BufRead};
+    let stdin = io::stdin();
+    let input = stdin
+        .lock()
+        .lines()
+        .next()
+        .ok_or_else(|| CliError::Other("No input provided".to_string()))?
+        .map_err(|e| CliError::IoError {
+            message: "Failed to read input".to_string(),
+            source: e,
+        })?;
+
+    if verbose {
+        println!(
+            "{} Executing Conclave with input: {}",
+            "→".cyan().bold(),
+            input
+        );
+    }
+
+    // Execute Conclave
+    let start = std::time::Instant::now();
+    let result = conclave_service
+        .execute(&conclave, &input)
+        .await
+        .map_err(|e| CliError::BattalionError {
+            message: e.to_string(),
+        })?;
+    let duration = start.elapsed();
+
+    if verbose {
+        println!(
+            "{} Conclave completed in {:.2}s",
+            "✓".green().bold(),
+            duration.as_secs_f64()
+        );
+        println!(
+            "{} Successful experts: {}/{}",
+            "→".cyan().bold(),
+            result.successful_expert_count(),
+            conclave.expert_count()
+        );
+    }
+
+    // Handle output
+    if let Some(output_path) = output {
+        // Write JSON to file
+        let json_output =
+            serde_json::to_string_pretty(&result).map_err(|e| CliError::SerializationError {
+                message: e.to_string(),
+            })?;
+        std::fs::write(&output_path, json_output)?;
+        println!(
+            "{} Output written to: {}",
+            "✓".green().bold(),
+            output_path.display()
+        );
+    } else {
+        // Print human-readable output to stdout
+        println!("\n{}", "═".repeat(80));
+        println!("{} Conclave Result - Synthesized Analysis", "📊".cyan());
+        println!("{}", "═".repeat(80));
+        println!("\n{} Aggregated Output:", "→".cyan().bold());
+        println!("{}\n", result.aggregated_output.output);
+
+        if verbose {
+            println!("{} Individual Expert Outputs:", "→".cyan().bold());
+            for (expert_name, expert_result) in result.expert_outputs.iter() {
+                println!(
+                    "\n  {} {} ({} loops, {} tokens):",
+                    "→".cyan(),
+                    expert_name,
+                    expert_result.loop_count,
+                    expert_result.token_count
+                );
+                println!("   {}", "─".repeat(76));
+                // Print first few lines
+                for (idx, line) in expert_result.output.lines().take(5).enumerate() {
+                    println!("   {}", line);
+                    if idx == 4 && expert_result.output.lines().count() > 5 {
+                        println!("   ... (truncated)");
+                    }
+                }
+            }
+
+            println!("\n{} Execution Summary:", "→".cyan().bold());
+            println!("   Status: {:?}", result.status);
+            println!("   Total time: {}ms", result.execution_time_ms);
+            println!(
+                "   Expert success rate: {}/{}",
+                result.successful_expert_count(),
+                conclave.expert_count()
+            );
         }
 
         println!("\n{}", "═".repeat(80));

@@ -43,6 +43,9 @@ pub enum BattalionYamlConfig {
 
     #[serde(rename = "chain-of-command")]
     ChainOfCommand(ChainOfCommandConfig),
+
+    #[serde(rename = "conclave")]
+    Conclave(ConclaveConfig),
 }
 
 impl BattalionYamlConfig {
@@ -53,6 +56,7 @@ impl BattalionYamlConfig {
             BattalionYamlConfig::Phalanx(_) => "phalanx",
             BattalionYamlConfig::Campaign(_) => "campaign",
             BattalionYamlConfig::ChainOfCommand(_) => "chain-of-command",
+            BattalionYamlConfig::Conclave(_) => "conclave",
         }
     }
 
@@ -63,6 +67,7 @@ impl BattalionYamlConfig {
             BattalionYamlConfig::Phalanx(config) => config.validate(),
             BattalionYamlConfig::Campaign(config) => config.validate(),
             BattalionYamlConfig::ChainOfCommand(config) => config.validate(),
+            BattalionYamlConfig::Conclave(config) => config.validate(),
         }
     }
 }
@@ -248,6 +253,87 @@ impl ChainOfCommandConfig {
             return Err(CliError::ValidationError {
                 message: "Chain of Command must have at least one delegate".to_string(),
             });
+        }
+
+        Ok(())
+    }
+}
+
+/// Conclave configuration - Mixture of Agents pattern
+///
+/// Multiple expert Paladins analyze the task in parallel, then an aggregator
+/// Paladin synthesizes their outputs into a comprehensive response.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConclaveConfig {
+    /// Name of the conclave
+    pub name: String,
+
+    /// Expert Paladins (minimum 2 required)
+    pub experts: Vec<PaladinReference>,
+
+    /// Aggregator Paladin for synthesis
+    pub aggregator: PaladinReference,
+
+    /// Timeout in seconds (optional, defaults to 300)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeout_seconds: Option<u64>,
+
+    /// Number of retry attempts for failed experts (optional, defaults to 2)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub retry_attempts: Option<u32>,
+
+    /// Custom synthesis prompt for aggregator (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub synthesis_prompt: Option<String>,
+
+    /// Include expert names in aggregator input (optional, defaults to true)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_expert_names: Option<bool>,
+
+    /// Max tokens per expert output before truncation (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_expert_output_tokens: Option<usize>,
+
+    /// Observability level: minimal, standard, verbose (optional, defaults to standard)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub observability_level: Option<String>,
+}
+
+impl ConclaveConfig {
+    fn validate(&self) -> Result<(), CliError> {
+        if self.name.is_empty() {
+            return Err(CliError::MissingRequiredField {
+                field: "name".to_string(),
+                message: "Conclave name is required".to_string(),
+            });
+        }
+
+        if self.experts.len() < 2 {
+            return Err(CliError::ValidationError {
+                message: "Conclave requires at least 2 expert Paladins".to_string(),
+            });
+        }
+
+        // Validate timeout if provided
+        if let Some(timeout) = self.timeout_seconds && timeout == 0 {
+            return Err(CliError::ValidationError {
+                message: "Timeout must be greater than 0".to_string(),
+            });
+        }
+
+        // Validate observability level if provided
+        if let Some(ref level) = self.observability_level {
+            let valid_levels = ["minimal", "standard", "verbose"];
+            if !valid_levels.contains(&level.as_str()) {
+                return Err(CliError::InvalidFieldValue {
+                    field: "observability_level".to_string(),
+                    message: format!(
+                        "must be one of: {}. Got: {}",
+                        valid_levels.join(", "),
+                        level
+                    ),
+                });
+            }
         }
 
         Ok(())

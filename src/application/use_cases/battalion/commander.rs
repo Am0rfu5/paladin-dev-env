@@ -481,9 +481,7 @@ impl Commander {
                         self.config.clone(),
                     )
                     .with_timeout(self.config.timeout_seconds)
-                    .with_retry_attempts(
-                        self.config.retry_policy.max_attempts.saturating_sub(1),
-                    );
+                    .with_retry_attempts(self.config.retry_policy.max_attempts.saturating_sub(1));
 
                 // Create Conclave instance
                 let conclave =

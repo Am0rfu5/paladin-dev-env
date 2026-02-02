@@ -21,10 +21,11 @@ pub fn generate_battalion_template(name: &str, battalion_type: &str) -> Result<S
         "phalanx" => Ok(generate_phalanx_template(name)),
         "campaign" => Ok(generate_campaign_template(name)),
         "chain-of-command" => Ok(generate_chain_of_command_template(name)),
+        "conclave" => Ok(generate_conclave_template(name)),
         _ => Err(CliError::InvalidFieldValue {
             field: "battalion_type".to_string(),
             message: format!(
-                "must be one of: formation, phalanx, campaign, chain-of-command. Got: {}",
+                "must be one of: formation, phalanx, campaign, chain-of-command, conclave. Got: {}",
                 battalion_type
             ),
         }),
@@ -291,6 +292,123 @@ delegates:
     )
 }
 
+/// Generate Conclave template (expert synthesis pattern)
+fn generate_conclave_template(name: &str) -> String {
+    format!(
+        r#"# Conclave Battalion Configuration
+# Mixture-of-Agents: Multiple expert Paladins analyze in parallel, then an aggregator synthesizes
+
+# Battalion type (required)
+type: conclave
+
+# Conclave name
+name: "{}"
+
+# Expert Paladins: Execute in parallel to provide diverse perspectives
+# Minimum 2 experts required, 3-5 recommended for quality synthesis
+experts:
+  - inline:
+      name: "TechnicalExpert"
+      system_prompt: |
+        You are a technical expert with deep knowledge of software architecture,
+        algorithms, and system design. Analyze the input from a technical perspective,
+        focusing on implementation details, performance, scalability, and best practices.
+        Be specific and cite technical considerations.
+      model: "gpt-4o"
+      temperature: 0.7
+      max_loops: 3
+      timeout_seconds: 300
+      stop_words: []
+      provider:
+        type: openai
+  
+  - inline:
+      name: "BusinessExpert"
+      system_prompt: |
+        You are a business strategy expert with expertise in product management,
+        market analysis, and organizational dynamics. Analyze the input from a business
+        perspective, focusing on value proposition, market fit, ROI, and strategic
+        alignment. Consider stakeholder needs and business impact.
+      model: "gpt-4o"
+      temperature: 0.7
+      max_loops: 3
+      timeout_seconds: 300
+      stop_words: []
+      provider:
+        type: openai
+  
+  - inline:
+      name: "SecurityExpert"
+      system_prompt: |
+        You are a security and risk management expert. Analyze the input from a
+        security perspective, identifying potential vulnerabilities, compliance
+        requirements, threat vectors, and risk mitigation strategies. Consider
+        both technical and organizational security aspects.
+      model: "gpt-4o"
+      temperature: 0.7
+      max_loops: 3
+      timeout_seconds: 300
+      stop_words: []
+      provider:
+        type: openai
+
+# Aggregator: Synthesizes expert outputs into a coherent final response
+aggregator:
+  inline:
+    name: "SynthesisAggregator"
+    system_prompt: |
+      You are a synthesis expert who combines multiple perspectives into a coherent,
+      comprehensive analysis. You will receive outputs from multiple expert agents,
+      each providing their specialized perspective on the same input.
+      
+      Your role is to:
+      1. Identify common themes and agreements across expert analyses
+      2. Highlight valuable unique insights from each expert
+      3. Resolve any contradictions by weighing evidence and reasoning
+      4. Synthesize a balanced, comprehensive final response
+      5. Ensure all critical points from experts are represented
+      
+      Create a well-structured synthesis that is greater than the sum of its parts.
+      Do not simply concatenate expert outputs - integrate them thoughtfully.
+    model: "gpt-4o"
+    temperature: 0.5
+    max_loops: 3
+    timeout_seconds: 300
+    stop_words: []
+    provider:
+      type: openai
+
+# Optional Configuration:
+
+# Maximum time for the entire Conclave execution (seconds)
+# timeout_seconds: 300
+
+# Number of retry attempts for failed expert executions
+# retry_attempts: 2
+
+# Custom synthesis prompt (overrides aggregator's system prompt for this execution)
+# synthesis_prompt: |
+#   Combine the following expert analyses into a unified recommendation:
+#   Focus on actionable insights and prioritize technical feasibility.
+
+# Include expert names in aggregator input for attribution
+# include_expert_names: true
+
+# Truncate individual expert outputs to this token limit before aggregation
+# max_expert_output_tokens: 2000
+
+# Observability level: minimal, standard, or verbose
+# Controls logging detail during execution
+# observability_level: "standard"
+
+# Example usage:
+# paladin battalion run -c conclave.yaml -i "Should we migrate our monolith to microservices?"
+# paladin battalion run -c conclave.yaml -i "Evaluate this proposed API design" -o result.json
+"#,
+        name
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -339,6 +457,21 @@ mod tests {
     }
 
     #[test]
+    fn test_generate_conclave_template() {
+        let template = generate_battalion_template("TestConclave", "conclave");
+        assert!(template.is_ok());
+        let yaml = template.unwrap();
+        assert!(yaml.contains("type: conclave"));
+        assert!(yaml.contains("name: \"TestConclave\""));
+        assert!(yaml.contains("experts:"));
+        assert!(yaml.contains("aggregator:"));
+        assert!(yaml.contains("TechnicalExpert"));
+        assert!(yaml.contains("BusinessExpert"));
+        assert!(yaml.contains("SecurityExpert"));
+        assert!(yaml.contains("SynthesisAggregator"));
+    }
+
+    #[test]
     fn test_invalid_battalion_type() {
         let result = generate_battalion_template("Test", "invalid");
         assert!(result.is_err());
@@ -352,7 +485,13 @@ mod tests {
 
     #[test]
     fn test_all_templates_are_valid_yaml() {
-        let types = vec!["formation", "phalanx", "campaign", "chain-of-command"];
+        let types = vec![
+            "formation",
+            "phalanx",
+            "campaign",
+            "chain-of-command",
+            "conclave",
+        ];
         for battalion_type in types {
             let template = generate_battalion_template("Test", battalion_type).unwrap();
             let parsed: Result<serde_yaml::Value, _> = serde_yaml::from_str(&template);
