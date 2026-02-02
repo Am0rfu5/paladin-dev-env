@@ -1,3 +1,4 @@
+pub mod arsenal;
 pub mod arsenal_config_test;
 pub mod arsenal_domain_test;
 pub mod arsenal_port_test;
