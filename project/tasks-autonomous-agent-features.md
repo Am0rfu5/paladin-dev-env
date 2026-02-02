@@ -227,15 +227,16 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.5-7.6 TemperatureService integration [EXISTS: Integrated in PaladinBuilder::build() when auto_temperature enabled]
   - [x] 7.7-7.8 HandoffService integration [EXISTS: HandoffService available, tool schema complete]
   - [x] 7.9-7.10 Handoff tool registration [EXISTS: HandoffTool created with dynamic schema]
-  - [ ] 7.11-7.12 PaladinResult planning metadata (Optional enhancement for future)
-  - [ ] 7.13 **TEST**: Write test for PaladinResult includes handoff metadata
-  - [ ] 7.14 Ensure `PaladinResult` includes `handoff_history: Vec<HandoffRecord>` (from Task 5.0)
-  - [ ] 7.15 **TEST**: Write test for orchestration logic - planning + prompts + temperature + handoffs
-  - [ ] 7.16 Implement orchestration in `PaladinExecutionService` to coordinate all autonomous features
-  - [ ] 7.17 **TEST**: Write integration test for full autonomous workflow
-  - [ ] 7.18 Create `tests/integration/autonomous_full_test.rs` with end-to-end scenarios using all features
-  - [ ] 7.19 **TEST**: Write test for feature interaction edge cases (e.g., planning with handoffs)
-  - [ ] 7.20 Add tests for complex scenarios where multiple autonomous features interact
+  - [ ] 7.11 **TEST**: Write test for PaladinResult includes planning metadata (DEFERRED: Requires PaladinResult struct modification which impacts existing code)
+  - [ ] 7.12 Update `PaladinResult` to include `plan: Option<TaskPlan>` field (DEFERRED: Breaking change to core result type, should be separate PR)
+  - [ ] 7.13 **TEST**: Write test for PaladinResult includes handoff metadata (DEFERRED: Requires PaladinResult struct modification)
+  - [ ] 7.14 Ensure `PaladinResult` includes `handoff_history: Vec<HandoffRecord>` (from Task 5.0) (DEFERRED: Breaking change to core result type)
+  - [ ] 7.15 **TEST**: Write test for orchestration logic - planning + prompts + temperature + handoffs (DEFERRED: Requires integration tests with full execution flow)
+  - [ ] 7.16 Implement orchestration in `PaladinExecutionService` to coordinate all autonomous features (DEFERRED: Services already integrated in builder, execution orchestration needs separate focused work)
+  - [ ] 7.17 **TEST**: Write integration test for full autonomous workflow (DEFERRED: Should be part of Task 11.0 QA)
+  - [ ] 7.18 Create `tests/integration/autonomous_full_test.rs` with end-to-end scenarios using all features (DEFERRED: Should be part of Task 11.0 QA)
+  - [ ] 7.19 **TEST**: Write test for feature interaction edge cases (e.g., planning with handoffs) (DEFERRED: Should be part of Task 11.0 QA)
+  - [ ] 7.20 Add tests for complex scenarios where multiple autonomous features interact (DEFERRED: Should be part of Task 11.0 QA)
   - [ ] 7.21 Run tests: `cargo test paladin_execution_service`
   - [ ] 7.22 Run clippy: `cargo clippy -- -D warnings`
   - [ ] 7.23 Format code: `cargo fmt`
