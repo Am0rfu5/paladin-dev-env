@@ -14,6 +14,7 @@ New to Paladin? Start here:
 
 Learn how to build with Paladin:
 
+- **[Autonomous Agent Features](AUTONOMOUS.md)** - 🆕 Auto-planning, prompt generation, dynamic temperature, and agent handoffs (Epic 14)
 - **[Paladin Configuration](guides/paladin-configuration.md)** - Configure agents, models, and behaviors
 - **[Battalion Patterns](guides/battalion-patterns.md)** - Multi-agent orchestration patterns
 - **[Tool Integration](guides/tool-integration.md)** - Integrate external tools via MCP protocol

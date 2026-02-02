@@ -78,6 +78,7 @@ fn test_paladin_config_serialization() {
         enable_planning: true,
         planning_prompt: Some("test prompt".to_string()),
         output_format: OutputFormat::Json,
+        autonomous: None,
     };
 
     // Serialize to JSON

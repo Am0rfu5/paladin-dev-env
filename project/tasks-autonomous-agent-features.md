@@ -267,65 +267,65 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 8.22 Format code: `cargo fmt` (DONE: Formatted)
   - [ ] 8.23 Commit: `git commit -m "feat(config): add YAML and CLI support for autonomous features" -m "- Autonomous section in PaladinConfig with all feature configs" -m "- YAML deserialization for planning, prompts, temperature, handoffs" -m "- CLI flags: --auto-plan, --auto-prompt, --dynamic-temp, --enable-handoffs" -m "- Configuration validation with bounds checking" -m "- Opt-in defaults (all features disabled)" -m "- Example config.yml section"`
 
-- [ ] 9.0 Documentation (AUTONOMOUS.md)
-  - [ ] 9.1 Create `docs/AUTONOMOUS.md` with document structure (11 sections minimum)
-  - [ ] 9.2 Write Introduction section explaining autonomous features overview and benefits
-  - [ ] 9.3 Write Autonomous Planning Mode section (US-14.1) with:
-    - [ ] 9.3.1 Concept explanation and use cases
-    - [ ] 9.3.2 Code example using `MaxLoops::Auto`
-    - [ ] 9.3.3 Configuration options (max_subtasks)
-    - [ ] 9.3.4 How it works (planning prompt, decomposition, execution, synthesis)
-  - [ ] 9.4 Write Auto-Generate System Prompt section (US-14.2) with:
-    - [ ] 9.4.1 Concept explanation and benefits
-    - [ ] 9.4.2 Code example with `auto_generate_prompt()` and `agent_description()`
-    - [ ] 9.4.3 Regeneration example with `regenerate_prompt()`
-    - [ ] 9.4.4 Manual override pattern
-    - [ ] 9.4.5 Caching behavior explanation
-  - [ ] 9.5 Write Dynamic Temperature Adjustment section (US-14.3) with:
-    - [ ] 9.5.1 Concept explanation and task type classification
-    - [ ] 9.5.2 Temperature ranges table (Factual/Analytical/Conversational/Creative)
-    - [ ] 9.5.3 Code example with `dynamic_temperature()` and `temperature_bounds()`
-    - [ ] 9.5.4 Classification heuristics explanation
-  - [ ] 9.6 Write Agent Handoff Infrastructure section (US-14.4) with:
-    - [ ] 9.6.1 Concept explanation and delegation patterns
-    - [ ] 9.6.2 Code example with `with_handoffs()` and `handoff_strategy()`
-    - [ ] 9.6.3 HandoffStrategy options (Automatic/Explicit/Threshold) explanation
-    - [ ] 9.6.4 Circular handoff prevention explanation
-    - [ ] 9.6.5 Max depth configuration
-    - [ ] 9.6.6 Context transfer details
-  - [ ] 9.7 Write Handoff Tool section (US-14.5) with:
-    - [ ] 9.7.1 Tool schema documentation
-    - [ ] 9.7.2 Example LLM tool call JSON
-    - [ ] 9.7.3 Auto-registration behavior
-    - [ ] 9.7.4 Error scenarios (invalid agent, circular, depth exceeded)
-  - [ ] 9.8 Write Configuration section with:
-    - [ ] 9.8.1 YAML configuration example (all features)
-    - [ ] 9.8.2 CLI flags documentation
-    - [ ] 9.8.3 Builder API reference
-    - [ ] 9.8.4 Configuration precedence explanation
-  - [ ] 9.9 Write Best Practices section with:
-    - [ ] 9.9.1 When to use each autonomous feature
-    - [ ] 9.9.2 Performance considerations
-    - [ ] 9.9.3 Token budget management
-    - [ ] 9.9.4 Combining features effectively
-  - [ ] 9.10 Write Error Handling section with:
-    - [ ] 9.10.1 PlanningError variants and handling
-    - [ ] 9.10.2 PromptError variants and handling
-    - [ ] 9.10.3 HandoffError variants and handling
-    - [ ] 9.10.4 Graceful degradation patterns
-  - [ ] 9.11 Write Troubleshooting Guide section with:
-    - [ ] 9.11.1 Common issues and solutions
-    - [ ] 9.11.2 Debugging tips (logging, tracing)
-    - [ ] 9.11.3 Performance optimization tips
-  - [ ] 9.12 Write Advanced Usage section with:
-    - [ ] 9.12.1 Combining autonomous features
-    - [ ] 9.12.2 Custom agent configurations
-    - [ ] 9.12.3 Integration with Battalion patterns
-  - [ ] 9.13 Write API Reference section with all public types and methods documented
-  - [ ] 9.14 Add code examples to each section (inline or linked to examples/)
-  - [ ] 9.15 Update `docs/README.md` to include link to AUTONOMOUS.md
-  - [ ] 9.16 Verify all links work and all code examples compile
-  - [ ] 9.17 Run spell check and grammar review
+- [x] 9.0 Documentation (AUTONOMOUS.md)
+  - [x] 9.1 Create `docs/AUTONOMOUS.md` with document structure (11 sections minimum) (DONE: 12 sections created)
+  - [x] 9.2 Write Introduction section explaining autonomous features overview and benefits (DONE)
+  - [x] 9.3 Write Autonomous Planning Mode section (US-14.1) with:
+    - [x] 9.3.1 Concept explanation and use cases (DONE)
+    - [x] 9.3.2 Code example using `MaxLoops::Auto` (DONE)
+    - [x] 9.3.3 Configuration options (max_subtasks) (DONE)
+    - [x] 9.3.4 How it works (planning prompt, decomposition, execution, synthesis) (DONE)
+  - [x] 9.4 Write Auto-Generate System Prompt section (US-14.2) with:
+    - [x] 9.4.1 Concept explanation and benefits (DONE)
+    - [x] 9.4.2 Code example with `auto_generate_prompt()` and `agent_description()` (DONE)
+    - [x] 9.4.3 Regeneration example with `regenerate_prompt()` (DONE)
+    - [x] 9.4.4 Manual override pattern (DONE)
+    - [x] 9.4.5 Caching behavior explanation (DONE)
+  - [x] 9.5 Write Dynamic Temperature Adjustment section (US-14.3) with:
+    - [x] 9.5.1 Concept explanation and task type classification (DONE)
+    - [x] 9.5.2 Temperature ranges table (Factual/Analytical/Conversational/Creative) (DONE)
+    - [x] 9.5.3 Code example with `dynamic_temperature()` and `temperature_bounds()` (DONE)
+    - [x] 9.5.4 Classification heuristics explanation (DONE)
+  - [x] 9.6 Write Agent Handoff Infrastructure section (US-14.4) with:
+    - [x] 9.6.1 Concept explanation and delegation patterns (DONE)
+    - [x] 9.6.2 Code example with `with_handoffs()` and `handoff_strategy()` (DONE)
+    - [x] 9.6.3 HandoffStrategy options (Automatic/Explicit/Threshold) explanation (DONE)
+    - [x] 9.6.4 Circular handoff prevention explanation (DONE)
+    - [x] 9.6.5 Max depth configuration (DONE)
+    - [x] 9.6.6 Context transfer details (DONE)
+  - [x] 9.7 Write Handoff Tool section (US-14.5) with:
+    - [x] 9.7.1 Tool schema documentation (DONE)
+    - [x] 9.7.2 Example LLM tool call JSON (DONE)
+    - [x] 9.7.3 Auto-registration behavior (DONE)
+    - [x] 9.7.4 Error scenarios (invalid agent, circular, depth exceeded) (DONE)
+  - [x] 9.8 Write Configuration section with:
+    - [x] 9.8.1 YAML configuration example (all features) (DONE)
+    - [x] 9.8.2 CLI flags documentation (DONE)
+    - [x] 9.8.3 Builder API reference (DONE)
+    - [x] 9.8.4 Configuration precedence explanation (DONE)
+  - [x] 9.9 Write Best Practices section with:
+    - [x] 9.9.1 When to use each autonomous feature (DONE)
+    - [x] 9.9.2 Performance considerations (DONE)
+    - [x] 9.9.3 Token budget management (DONE)
+    - [x] 9.9.4 Combining features effectively (DONE)
+  - [x] 9.10 Write Error Handling section with:
+    - [x] 9.10.1 PlanningError variants and handling (DONE)
+    - [x] 9.10.2 PromptError variants and handling (DONE)
+    - [x] 9.10.3 HandoffError variants and handling (DONE)
+    - [x] 9.10.4 Graceful degradation patterns (DONE)
+  - [x] 9.11 Write Troubleshooting Guide section with:
+    - [x] 9.11.1 Common issues and solutions (DONE)
+    - [x] 9.11.2 Debugging tips (logging, tracing) (DONE)
+    - [x] 9.11.3 Performance optimization tips (DONE)
+  - [x] 9.12 Write Advanced Usage section with:
+    - [x] 9.12.1 Combining autonomous features (DONE)
+    - [x] 9.12.2 Custom agent configurations (DONE)
+    - [x] 9.12.3 Integration with Battalion patterns (DONE)
+  - [x] 9.13 Write API Reference section with all public types and methods documented (DONE)
+  - [x] 9.14 Add code examples to each section (inline or linked to examples/) (DONE: Inline examples throughout)
+  - [x] 9.15 Update `docs/README.md` to include link to AUTONOMOUS.md (DONE)
+  - [x] 9.16 Verify all links work and all code examples compile (DONE: Doctest passing)
+  - [x] 9.17 Run spell check and grammar review (DONE: Manual review)
   - [ ] 9.18 Commit: `git commit -m "docs: create comprehensive AUTONOMOUS.md guide" -m "- Introduction and autonomous features overview" -m "- Documentation for all 5 user stories with examples" -m "- Configuration guide (YAML, CLI, Builder)" -m "- Best practices and performance considerations" -m "- Error handling and troubleshooting" -m "- Advanced usage and API reference"`
 
 - [ ] 10.0 Examples Implementation
