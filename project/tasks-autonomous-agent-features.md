@@ -145,57 +145,11 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.22 Format code: `cargo fmt`
   - [x] 2.23 Commit: `git commit -m "feat(planning): implement PlanningService for autonomous task decomposition" -m "- LLM-based task decomposition with planning prompt" -m "- Subtask execution with dependency tracking" -m "- Result synthesis for cohesive responses" -m "- Max subtasks limit enforcement" -m "- Comprehensive logging and error handling" -m "Implements US-14.1"`
 
-- [ ] 3.0 Prompt Generation Service (US-14.2: Auto-Generate System Prompt)
-  - [ ] 3.1 **TEST**: Write test for `PromptGenerationService::new()` constructor
-  - [ ] 3.2 Create `src/application/use_cases/paladin/prompt_generation_service.rs` with struct and constructor
-  - [ ] 3.3 **TEST**: Write test for LLM-based prompt generation (mocked LLM response)
-  - [ ] 3.4 Implement `PromptGenerationService::generate_prompt()` method with prompt generation template
-  - [ ] 3.5 **TEST**: Write test for prompt caching mechanism
-  - [ ] 3.6 Implement prompt caching using `HashMap<String, String>` keyed by agent name + description
-  - [ ] 3.7 **TEST**: Write test for deterministic generation (same inputs → same prompt)
-  - [ ] 3.8 Add deterministic prompt generation with fixed LLM parameters (temperature=0.0)
-  - [ ] 3.9 **TEST**: Write test for `PaladinBuilder::auto_generate_prompt()` method
-  - [ ] 3.10 Add `auto_generate_prompt(bool)` method to `src/application/use_cases/paladin/paladin_builder.rs`
-  - [ ] 3.11 **TEST**: Write test for `PaladinBuilder::agent_description()` method
-  - [ ] 3.12 Add `agent_description(impl Into<String>)` method to `PaladinBuilder`
-  - [ ] 3.13 **TEST**: Write test for `PaladinBuilder::regenerate_prompt()` method
-  - [ ] 3.14 Add `regenerate_prompt()` method to invalidate cache and force regeneration
-  - [ ] 3.15 **TEST**: Write test for manual override (system_prompt() called after auto_generate_prompt())
-  - [ ] 3.16 Implement override logic in builder where manual prompt takes precedence
-  - [ ] 3.17 **TEST**: Write test for prompt generation logging
-  - [ ] 3.18 Add `tracing::info!` logging for generated prompts (with full content at DEBUG level)
-  - [ ] 3.19 **TEST**: Write test for error handling (LLM failure, empty description)
-  - [ ] 3.20 Add error handling with `PromptError` enum
-  - [ ] 3.21 Add module declaration to `src/application/use_cases/paladin/mod.rs`
-  - [ ] 3.22 Run tests: `cargo test prompt_generation`
-  - [ ] 3.23 Run clippy: `cargo clippy -- -D warnings`
-  - [ ] 3.24 Format code: `cargo fmt`
-  - [ ] 3.25 Commit: `git commit -m "feat(prompts): implement PromptGenerationService for auto-prompt generation" -m "- LLM-based contextual prompt generation" -m "- Prompt caching for performance" -m "- Builder methods: auto_generate_prompt, agent_description, regenerate_prompt" -m "- Manual override support" -m "- Deterministic generation for testing" -m "Implements US-14.2"`
+- [x] 3.0 Prompt Generation Service (US-14.2: Auto-Generate System Prompt) [PRE-IMPLEMENTED]
+  - [x] 3.1-3.25 All subtasks completed in prior work (service exists at src/application/use_cases/paladin/prompt_generation_service.rs with full implementation, caching, builder integration, and tests)
 
-- [ ] 4.0 Temperature Service (US-14.3: Dynamic Temperature Adjustment)
-  - [ ] 4.1 **TEST**: Write test for `TemperatureService::new()` constructor
-  - [ ] 4.2 Create `src/application/use_cases/paladin/temperature_service.rs` with struct and constructor
-  - [ ] 4.3 **TEST**: Write test for task classification (Factual, Analytical, Conversational, Creative)
-  - [ ] 4.4 Implement `TemperatureService::classify_task()` using heuristic analysis (keywords, question patterns)
-  - [ ] 4.5 **TEST**: Write test for temperature recommendations by task type
-  - [ ] 4.6 Implement `TemperatureService::recommend_temperature()` with ranges: Factual (0.1-0.3), Analytical (0.3-0.5), Conversational (0.5-0.7), Creative (0.7-1.0)
-  - [ ] 4.7 **TEST**: Write test for temperature bounds enforcement
-  - [ ] 4.8 Add bounds validation in `recommend_temperature()` to respect min/max limits
-  - [ ] 4.9 **TEST**: Write test for `PaladinBuilder::dynamic_temperature()` method
-  - [ ] 4.10 Add `dynamic_temperature(bool)` method to `src/application/use_cases/paladin/paladin_builder.rs`
-  - [ ] 4.11 **TEST**: Write test for `PaladinBuilder::temperature_bounds()` method
-  - [ ] 4.12 Add `temperature_bounds(f32, f32)` method to `PaladinBuilder` with validation (min < max, range 0.0-1.0)
-  - [ ] 4.13 **TEST**: Write test for fallback to builder temperature when disabled
-  - [ ] 4.14 Implement fallback logic: if `dynamic_temperature == false`, use `PaladinBuilder::temperature()` value
-  - [ ] 4.15 **TEST**: Write test for temperature decision logging
-  - [ ] 4.16 Add `tracing::info!` logging for temperature decisions with task classification reasoning
-  - [ ] 4.17 **TEST**: Write test for edge cases (empty task, ambiguous classification)
-  - [ ] 4.18 Add error handling and default classification (Conversational) for ambiguous cases
-  - [ ] 4.19 Add module declaration to `src/application/use_cases/paladin/mod.rs`
-  - [ ] 4.20 Run tests: `cargo test temperature_service`
-  - [ ] 4.21 Run clippy: `cargo clippy -- -D warnings`
-  - [ ] 4.22 Format code: `cargo fmt`
-  - [ ] 4.23 Commit: `git commit -m "feat(temperature): implement TemperatureService for dynamic adjustment" -m "- Heuristic-based task classification (Factual/Analytical/Conversational/Creative)" -m "- Temperature recommendations by task type" -m "- Temperature bounds enforcement" -m "- Builder methods: dynamic_temperature, temperature_bounds" -m "- Fallback to builder temperature when disabled" -m "Implements US-14.3"`
+- [x] 4.0 Temperature Service (US-14.3: Dynamic Temperature Adjustment) [PRE-IMPLEMENTED]
+  - [x] 4.1-4.23 All subtasks completed in prior work (service exists at src/application/use_cases/paladin/temperature_service.rs with task classification, temperature recommendations, builder integration, and tests)
 
 - [ ] 5.0 Handoff Infrastructure (US-14.4: Agent Handoff Infrastructure)
   - [x] 5.1 **TEST**: Write test for `HandoffService::new()` constructor
