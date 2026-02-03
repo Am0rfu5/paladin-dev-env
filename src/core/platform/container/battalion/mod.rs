@@ -237,6 +237,7 @@ pub enum ErrorStrategy {
 ///     BattalionStrategy::Phalanx => println!("Parallel execution"),
 ///     BattalionStrategy::Campaign => println!("Graph workflow"),
 ///     BattalionStrategy::ChainOfCommand => println!("Hierarchical delegation"),
+///     BattalionStrategy::Conclave => println!("Multi-expert synthesis"),
 ///     BattalionStrategy::Auto => println!("Automatic selection"),
 /// }
 /// ```

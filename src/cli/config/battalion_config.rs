@@ -315,7 +315,9 @@ impl ConclaveConfig {
         }
 
         // Validate timeout if provided
-        if let Some(timeout) = self.timeout_seconds && timeout == 0 {
+        if let Some(timeout) = self.timeout_seconds
+            && timeout == 0
+        {
             return Err(CliError::ValidationError {
                 message: "Timeout must be greater than 0".to_string(),
             });

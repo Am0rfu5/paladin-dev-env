@@ -59,10 +59,10 @@ use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResu
 use paladin::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
+use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::conclave::{
     Conclave, ConclaveConfig, ObservabilityLevel,
 };
-use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 use std::sync::Arc;
 
@@ -331,7 +331,10 @@ async fn example_1_basic_expert_panel() -> Result<(), Box<dyn std::error::Error>
         conclave_config,
     )?;
 
-    println!("✅ Conclave created with {} experts\n", conclave.expert_count());
+    println!(
+        "✅ Conclave created with {} experts\n",
+        conclave.expert_count()
+    );
 
     // Step 5: Execute the Conclave
     // Create execution service and run the analysis
