@@ -119,21 +119,21 @@ When all subtasks under a parent task are complete:
   - [x] 2.24 Add rustdoc comments for all public methods
   - [x] 2.25 Update `src/application/use_cases/battalion/mod.rs` to export council_service
 
-- [ ] 3.0 Grove Domain Models (US-16.3)
-  - [ ] 3.1 Create `src/core/platform/container/battalion/grove.rs` file
-  - [ ] 3.2 Define `RoutingStrategy` enum with variants: `KeywordMatch`, `SemanticSimilarity`, `LlmRouting`
-  - [ ] 3.3 Define `TreeAgent` struct with fields: paladin_id (String), expertise_keywords (Vec<String>), expertise_embedding (Option<Vec<f32>>)
-  - [ ] 3.4 Implement `Serialize` and `Deserialize` for `TreeAgent`
-  - [ ] 3.5 Define `Tree` struct with fields: name (String), agents (Vec<TreeAgent>)
-  - [ ] 3.6 Define `GroveConfig` struct with fields: routing_strategy (RoutingStrategy), fallback_tree (Option<String>), similarity_threshold (f32)
-  - [ ] 3.7 Implement `Default` for `GroveConfig` (KeywordMatch, None, 0.7)
-  - [ ] 3.8 Define `GroveData` struct with fields: name (String), trees (Vec<Tree>), config (GroveConfig)
-  - [ ] 3.9 Create `Grove` type using `Node<GroveData>` pattern
-  - [ ] 3.10 Implement builder pattern: `GroveBuilder` struct
-  - [ ] 3.11 Implement `GroveBuilder::new()`, `name()`, `add_tree()`, `config()`, `routing_strategy()`, `similarity_threshold()`, `fallback_tree()`, `build()` methods
-  - [ ] 3.12 Add validation in `build()` method (non-empty trees, at least one agent, valid threshold range)
-  - [ ] 3.13 Add rustdoc comments for all public types and methods
-  - [ ] 3.14 Update `src/core/platform/container/battalion/mod.rs` to export grove module
+- [x] 3.0 Grove Domain Models (US-16.3)
+  - [x] 3.1 Create `src/core/platform/container/battalion/grove.rs` file
+  - [x] 3.2 Define `RoutingStrategy` enum with variants: `KeywordMatch`, `SemanticSimilarity`, `LlmRouting`
+  - [x] 3.3 Define `TreeAgent` struct with fields: paladin_id (String), expertise_keywords (Vec<String>), expertise_embedding (Option<Vec<f32>>)
+  - [x] 3.4 Implement `Serialize` and `Deserialize` for `TreeAgent`
+  - [x] 3.5 Define `Tree` struct with fields: name (String), agents (Vec<TreeAgent>)
+  - [x] 3.6 Define `GroveConfig` struct with fields: routing_strategy (RoutingStrategy), fallback_tree (Option<String>), similarity_threshold (f32)
+  - [x] 3.7 Implement `Default` for `GroveConfig` (KeywordMatch, None, 0.7)
+  - [x] 3.8 Define `GroveData` struct with fields: name (String), trees (Vec<Tree>), config (GroveConfig)
+  - [x] 3.9 Create `Grove` type using `Node<GroveData>` pattern
+  - [x] 3.10 Implement builder pattern: `GroveBuilder` struct
+  - [x] 3.11 Implement `GroveBuilder::new()`, `name()`, `add_tree()`, `config()`, `routing_strategy()`, `similarity_threshold()`, `fallback_tree()`, `build()` methods
+  - [x] 3.12 Add validation in `build()` method (non-empty trees, at least one agent, valid threshold range)
+  - [x] 3.13 Add rustdoc comments for all public types and methods
+  - [x] 3.14 Update `src/core/platform/container/battalion/mod.rs` to export grove module
 
 - [ ] 4.0 Grove Execution Service (US-16.4)
   - [ ] 4.1 Check if `src/application/ports/output/embedding_port.rs` exists

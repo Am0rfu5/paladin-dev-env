@@ -287,12 +287,9 @@ impl CouncilExecutionService {
                 // Random selection from participants
                 use rand::seq::SliceRandom;
                 let mut rng = rand::thread_rng();
-                participants
-                    .choose(&mut rng)
-                    .cloned()
-                    .ok_or_else(|| {
-                        BattalionError::ValidationError("No participants available".to_string())
-                    })
+                participants.choose(&mut rng).cloned().ok_or_else(|| {
+                    BattalionError::ValidationError("No participants available".to_string())
+                })
             }
             TurnStrategy::VoluntaryWithTimeout { timeout_ms: _ } => {
                 // For now, fallback to RoundRobin
@@ -480,6 +477,7 @@ impl CouncilExecutionService {
 mod tests {
     use super::*;
     use crate::core::platform::container::battalion::council::CouncilBuilder;
+    use crate::core::platform::container::paladin::Paladin;
 
     #[test]
     fn test_format_conversation_history() {

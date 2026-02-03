@@ -8,6 +8,7 @@ pub mod chain_of_command;
 pub mod conclave;
 pub mod council;
 pub mod formation;
+pub mod grove;
 pub mod phalanx;
 
 use chrono::{DateTime, Utc};
