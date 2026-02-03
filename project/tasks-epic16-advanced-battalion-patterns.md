@@ -92,32 +92,32 @@ When all subtasks under a parent task are complete:
   - [x] 1.14 Add rustdoc comments for all public types and methods
   - [x] 1.15 Update `src/core/platform/container/battalion/mod.rs` to export council module
 
-- [ ] 2.0 Council Execution Service (US-16.2)
-  - [ ] 2.1 Read existing execution service patterns (`src/application/use_cases/battalion/formation_service.rs`)
-  - [ ] 2.2 Create `src/application/use_cases/battalion/council_service.rs` file
-  - [ ] 2.3 Define `CouncilResult` struct with fields: transcript (Vec<CouncilMessage>), conclusion (Option<String>), rounds_completed (u32), termination_reason (TerminationCondition)
-  - [ ] 2.4 Define `CouncilExecutionService` struct with fields: paladin_port (Arc<dyn PaladinPort>), garrison_port (Option<Arc<dyn GarrisonPort>>)
-  - [ ] 2.5 Implement `CouncilExecutionService::new()` constructor
-  - [ ] 2.6 Implement `convene()` method signature: `async fn convene(&self, council: &Council, topic: &str) -> Result<CouncilResult, BattalionError>`
-  - [ ] 2.7 Implement conversation loop: initialize empty transcript
-  - [ ] 2.8 Implement `determine_next_speaker()` helper method for turn-taking logic
-  - [ ] 2.9 Implement RoundRobin strategy: cycle through participants in order
-  - [ ] 2.10 Implement ModeratorDirected strategy: moderator decides next speaker by parsing response
-  - [ ] 2.11 Implement speaker execution: call paladin_port with topic + conversation history
-  - [ ] 2.12 Implement conversation history formatting: convert transcript to readable string
-  - [ ] 2.13 Record each response as `CouncilMessage` with speaker, content, round, timestamp
-  - [ ] 2.14 Store each message in Garrison if garrison_port is available
-  - [ ] 2.15 Implement termination condition checking after each turn
-  - [ ] 2.16 Implement MaxRounds termination: check rounds_completed >= max_rounds
-  - [ ] 2.17 Implement Consensus termination: detect keywords like "agree", "consensus reached"
-  - [ ] 2.18 Implement ModeratorDecision termination: detect moderator saying "discussion concluded"
-  - [ ] 2.19 Implement Keyword termination: check for custom keyword in responses
-  - [ ] 2.20 Extract conclusion from final messages (last message or moderator summary)
-  - [ ] 2.21 Return `CouncilResult` with complete transcript and metadata
-  - [ ] 2.22 Add error handling for participant execution failures (skip to next speaker)
-  - [ ] 2.23 Add timeout handling per speaker to prevent blocking
-  - [ ] 2.24 Add rustdoc comments for all public methods
-  - [ ] 2.25 Update `src/application/use_cases/battalion/mod.rs` to export council_service
+- [x] 2.0 Council Execution Service (US-16.2)
+  - [x] 2.1 Read existing execution service patterns (`src/application/use_cases/battalion/formation_service.rs`)
+  - [x] 2.2 Create `src/application/use_cases/battalion/council_service.rs` file
+  - [x] 2.3 Define `CouncilResult` struct with fields: transcript (Vec<CouncilMessage>), conclusion (Option<String>), rounds_completed (u32), termination_reason (TerminationCondition)
+  - [x] 2.4 Define `CouncilExecutionService` struct with fields: paladin_port (Arc<dyn PaladinPort>), garrison_port (Option<Arc<dyn GarrisonPort>>)
+  - [x] 2.5 Implement `CouncilExecutionService::new()` constructor
+  - [x] 2.6 Implement `convene()` method signature: `async fn convene(&self, council: &Council, topic: &str) -> Result<CouncilResult, BattalionError>`
+  - [x] 2.7 Implement conversation loop: initialize empty transcript
+  - [x] 2.8 Implement `determine_next_speaker()` helper method for turn-taking logic
+  - [x] 2.9 Implement RoundRobin strategy: cycle through participants in order
+  - [x] 2.10 Implement ModeratorDirected strategy: moderator decides next speaker by parsing response
+  - [x] 2.11 Implement speaker execution: call paladin_port with topic + conversation history
+  - [x] 2.12 Implement conversation history formatting: convert transcript to readable string
+  - [x] 2.13 Record each response as `CouncilMessage` with speaker, content, round, timestamp
+  - [x] 2.14 Store each message in Garrison if garrison_port is available
+  - [x] 2.15 Implement termination condition checking after each turn
+  - [x] 2.16 Implement MaxRounds termination: check rounds_completed >= max_rounds
+  - [x] 2.17 Implement Consensus termination: detect keywords like "agree", "consensus reached"
+  - [x] 2.18 Implement ModeratorDecision termination: detect moderator saying "discussion concluded"
+  - [x] 2.19 Implement Keyword termination: check for custom keyword in responses
+  - [x] 2.20 Extract conclusion from final messages (last message or moderator summary)
+  - [x] 2.21 Return `CouncilResult` with complete transcript and metadata
+  - [x] 2.22 Add error handling for participant execution failures (skip to next speaker)
+  - [x] 2.23 Add timeout handling per speaker to prevent blocking
+  - [x] 2.24 Add rustdoc comments for all public methods
+  - [x] 2.25 Update `src/application/use_cases/battalion/mod.rs` to export council_service
 
 - [ ] 3.0 Grove Domain Models (US-16.3)
   - [ ] 3.1 Create `src/core/platform/container/battalion/grove.rs` file
