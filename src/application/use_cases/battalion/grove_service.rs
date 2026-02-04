@@ -62,7 +62,7 @@ pub struct GroveResult {
 /// let service = GroveExecutionService::new(
 ///     paladin_port,
 ///     Some(embedding_port),
-///     llm_port
+///     Some(llm_port)
 /// );
 /// let result = service.execute(&grove, "Fix the authentication bug").await?;
 /// println!("Routed to: {}", result.routing_decision.selected_agent);
@@ -75,9 +75,9 @@ pub struct GroveExecutionService {
     /// Optional embedding port for semantic similarity routing
     embedding_port: Option<Arc<dyn EmbeddingPort>>,
 
-    /// LLM port for LLM-based routing (placeholder until integration)
+    /// Optional LLM port for LLM-based routing (placeholder until integration)
     #[allow(dead_code)]
-    llm_port: Arc<dyn LlmPort>,
+    llm_port: Option<Arc<dyn LlmPort>>,
 }
 
 impl GroveExecutionService {
@@ -87,7 +87,7 @@ impl GroveExecutionService {
     ///
     /// * `paladin_port` - Port for executing Paladins
     /// * `embedding_port` - Optional port for generating embeddings
-    /// * `llm_port` - Port for LLM calls (used in LLM routing)
+    /// * `llm_port` - Optional port for LLM calls (used in LLM routing)
     ///
     /// # Example
     ///
@@ -95,13 +95,13 @@ impl GroveExecutionService {
     /// let service = GroveExecutionService::new(
     ///     paladin_port,
     ///     Some(embedding_port),
-    ///     llm_port
+    ///     Some(llm_port)
     /// );
     /// ```
     pub fn new(
         paladin_port: Arc<dyn PaladinPort>,
         embedding_port: Option<Arc<dyn EmbeddingPort>>,
-        llm_port: Arc<dyn LlmPort>,
+        llm_port: Option<Arc<dyn LlmPort>>,
     ) -> Self {
         Self {
             paladin_port,
@@ -280,6 +280,12 @@ impl GroveExecutionService {
         for tree in &grove.node.trees {
             for agent in &tree.agents {
                 let score = self.calculate_keyword_score(&task_tokens, agent);
+
+                // Track best score, but also track first agent as fallback
+                if best_agent.is_none() {
+                    best_tree = Some(tree);
+                    best_agent = Some(agent);
+                }
 
                 if score > best_score {
                     best_score = score;
@@ -667,7 +673,7 @@ mod tests {
         GroveExecutionService::new(
             Arc::new(MockPaladinPort),
             Some(Arc::new(MockEmbeddingPort)),
-            Arc::new(MockLlmPort),
+            Some(Arc::new(MockLlmPort)),
         )
     }
 

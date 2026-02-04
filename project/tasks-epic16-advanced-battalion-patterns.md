@@ -161,22 +161,23 @@ When all subtasks under a parent task are complete:
   - [x] 4.23 Add rustdoc comments for all public methods
   - [x] 4.24 Update `src/application/use_cases/battalion/mod.rs` to export grove_service
 
-- [ ] 5.0 Commander Integration (US-16.5)
-  - [ ] 5.1 Read current `src/application/use_cases/battalion/commander.rs` implementation
-  - [ ] 5.2 Read `BattalionStrategy` enum definition in `src/core/platform/container/battalion/mod.rs`
-  - [ ] 5.3 Add `Council` variant to `BattalionStrategy` enum
-  - [ ] 5.4 Add `Grove` variant to `BattalionStrategy` enum
-  - [ ] 5.5 Update `BattalionStrategy::from_str()` if exists to recognize "council" and "grove"
-  - [ ] 5.6 Update Commander struct to include `council_service` field
-  - [ ] 5.7 Update Commander struct to include `grove_service` field
-  - [ ] 5.8 Update Commander constructor to accept council_service and grove_service
-  - [ ] 5.9 Update Commander `execute()` method to handle `BattalionStrategy::Council`
-  - [ ] 5.10 Update Commander `execute()` method to handle `BattalionStrategy::Grove`
-  - [ ] 5.11 Implement auto-detection in `determine_strategy()`: "discuss", "debate", "collaborate" → Council
-  - [ ] 5.12 Implement auto-detection in `determine_strategy()`: "expert", "specialist", "route" → Grove
-  - [ ] 5.13 Update CLI argument parsing to support `--strategy council`
-  - [ ] 5.14 Update CLI argument parsing to support `--strategy grove`
-  - [ ] 5.15 Add rustdoc comments for new functionality
+- [x] 5.0 Commander Integration (US-16.5)
+  - [x] 5.1 Read current `src/application/use_cases/battalion/commander.rs` implementation
+  - [x] 5.2 Read `BattalionStrategy` enum definition in `src/core/platform/container/battalion/mod.rs`
+  - [x] 5.3 Add `Council` variant to `BattalionStrategy` enum
+  - [x] 5.4 Add `Grove` variant to `BattalionStrategy` enum
+  - [x] 5.5 Update Commander imports to include council_service and grove_service
+  - [x] 5.6 Update Commander `execute()` method to handle `BattalionStrategy::Council`
+  - [x] 5.7 Update Commander `execute()` method to handle `BattalionStrategy::Grove`
+  - [x] 5.8 Implement auto-detection in `analyze_and_select()`: "discuss", "debate", "collaborate" → Council
+  - [x] 5.9 Implement auto-detection in `analyze_and_select()`: "route", "expertise", "best agent" → Grove
+  - [x] 5.10 Update Commander documentation to include Council and Grove strategies
+  - [x] 5.11 Update Auto Mode heuristics documentation with Council keywords
+  - [x] 5.12 Update Auto Mode heuristics documentation with Grove keywords
+  - [x] 5.13 Remove "specialist" keyword from Grove to avoid conflict with ChainOfCommand
+  - [x] 5.14 Update GroveExecutionService to make llm_port optional (fix integration issue)
+  - [x] 5.15 Fix grove_service route_by_keywords to always select fallback agent
+  - [x] 5.16 Run tests and fix all integration issues
 
 - [ ] 6.0 Error Handling & Validation
   - [ ] 6.1 Read existing `BattalionError` definition

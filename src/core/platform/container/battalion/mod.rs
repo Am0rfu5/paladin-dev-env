@@ -362,10 +362,37 @@ pub enum BattalionStrategy {
     /// - Complex decision-making requiring diverse expertise
     Conclave,
 
+    /// Conversational multi-agent pattern (Paladins engage in turn-based discussion)
+    ///
+    /// Best for collaborative problem-solving through structured dialogue with flexible turn-taking.
+    /// Paladins take turns contributing to a shared conversation using configurable turn strategies
+    /// (RoundRobin, ModeratorDirected, Random, VoluntaryWithTimeout) until a termination condition
+    /// is met (MaxRounds, Consensus, ModeratorDecision, Keyword detection).
+    ///
+    /// Particularly effective for:
+    /// - Collaborative brainstorming and idea refinement
+    /// - Debate and deliberation with opposing viewpoints
+    /// - Consensus-building discussions
+    /// - Iterative problem-solving with feedback
+    Council,
+
+    /// Tree-based intelligent routing pattern (routes tasks to specialized agents by expertise)
+    ///
+    /// Best for dynamically routing tasks to the most qualified agent based on expertise matching.
+    /// Uses configurable routing strategies (KeywordMatch, SemanticSimilarity, LlmRouting) to
+    /// analyze task requirements and select the optimal agent from a hierarchical tree structure.
+    ///
+    /// Particularly effective for:
+    /// - Customer support routing to specialized departments
+    /// - Task assignment based on domain expertise
+    /// - Dynamic workload distribution by capability
+    /// - Intelligent delegation in complex organizations
+    Grove,
+
     /// Automatic strategy selection based on heuristics
     ///
     /// Analyzes input and Paladin characteristics to intelligently select Formation,
-    /// Phalanx, Campaign, ChainOfCommand, or Conclave. Provides reasoning for transparency.
+    /// Phalanx, Campaign, ChainOfCommand, Conclave, Council, or Grove. Provides reasoning for transparency.
     Auto,
 }
 

@@ -12,7 +12,9 @@ use crate::application::ports::output::paladin_port::PaladinPort;
 use crate::application::use_cases::battalion::campaign_service::CampaignExecutionService;
 use crate::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
 use crate::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
+use crate::application::use_cases::battalion::council_service::CouncilExecutionService;
 use crate::application::use_cases::battalion::formation_service::FormationExecutionService;
+use crate::application::use_cases::battalion::grove_service::GroveExecutionService;
 use crate::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
 use crate::core::platform::container::battalion::{
     BattalionConfig, BattalionError, BattalionResult, BattalionStrategy, ErrorStrategy,
@@ -28,7 +30,7 @@ use crate::core::platform::container::paladin::Paladin;
 /// # Features
 ///
 /// - **Auto Mode**: Automatically selects optimal strategy based on input analysis and Paladin count
-/// - **Explicit Strategy**: Manually select Formation, Phalanx, Campaign, or ChainOfCommand
+/// - **Explicit Strategy**: Manually select Formation, Phalanx, Campaign, ChainOfCommand, Conclave, Council, or Grove
 /// - **Timeout Enforcement**: Configurable execution timeouts with automatic cancellation
 /// - **Error Handling**: Supports FailFast, ContinueOnError, and RetryThenContinue strategies
 /// - **Telemetry**: Comprehensive execution metadata including timing and success/failure counts
@@ -38,19 +40,31 @@ use crate::core::platform::container::paladin::Paladin;
 ///
 /// When using `BattalionStrategy::Auto`, the Commander applies the following rules:
 ///
-/// 1. **Formation** (Sequential)
+/// 1. **Conclave** (Expert Synthesis)
+///    - 3+ Paladins with diverse expertise
+///    - Keywords: "synthesize", "compare", "expert panel", "perspectives", "consensus"
+///
+/// 2. **Council** (Collaborative Discussion)
+///    - 2+ Paladins for turn-based dialogue
+///    - Keywords: "discuss", "debate", "collaborate", "consensus", "brainstorm"
+///
+/// 3. **Grove** (Intelligent Routing)
+///    - 2+ Paladins with specialized capabilities
+///    - Keywords: "route", "best agent", "expertise", "most qualified"
+///
+/// 4. **Formation** (Sequential)
 ///    - 1-3 Paladins by default
 ///    - Keywords: "sequential", "pipeline", "step by step", "one after", "first then"
 ///
-/// 2. **Phalanx** (Parallel)
+/// 5. **Phalanx** (Parallel)
 ///    - 4+ Paladins with independent tasks
 ///    - Keywords: "parallel", "concurrent", "all at once", "simultaneously"
 ///
-/// 3. **Campaign** (Graph/Workflow)
+/// 6. **Campaign** (Graph/Workflow)
 ///    - Complex multi-stage workflows
 ///    - Keywords: "workflow", "graph", "conditional", "if-then", "depends on"
 ///
-/// 4. **ChainOfCommand** (Hierarchical)
+/// 7. **ChainOfCommand** (Hierarchical)
 ///    - Specialist delegation patterns
 ///    - Keywords: "delegate", "hierarchy", "specialist", "expert", "assign to"
 ///
@@ -516,6 +530,121 @@ impl Commander {
                     paladin_failure_count: failed_experts,
                 }
             }
+            BattalionStrategy::Council => {
+                debug!("Delegating to CouncilExecutionService");
+
+                // Validation: Council requires at least 2 Paladins for meaningful discussion
+                if self.paladins.len() < 2 {
+                    return Err(BattalionError::ValidationError(
+                        "Council requires at least 2 Paladins for discussion".to_string(),
+                    ));
+                }
+
+                // Build Council using builder pattern
+                let mut council_builder =
+                    crate::core::platform::container::battalion::council::CouncilBuilder::new()
+                        .name(self.config.name.clone())
+                        .max_rounds(10); // Default to 10 rounds
+
+                // Add all Paladins as participants using indices as IDs
+                // TODO: Council needs to be enhanced to store actual Paladins, not just IDs
+                for (idx, _paladin) in self.paladins.iter().enumerate() {
+                    let participant_id = format!("participant_{}", idx);
+                    council_builder = council_builder.add_participant(participant_id);
+                }
+
+                let council = council_builder.build()?;
+
+                // Execute Council (pass None for garrison_port - Commander doesn't have one)
+                let service = CouncilExecutionService::new(Arc::clone(&self.paladin_port), None);
+                let council_result = service.convene(&council, input).await?;
+
+                // Convert council result to BattalionResult
+                // Final output is the complete conversation history
+                let final_output = council_result
+                    .transcript
+                    .iter()
+                    .map(|msg| format!("{}: {}", msg.speaker, msg.content))
+                    .collect::<Vec<_>>()
+                    .join("\n\n");
+
+                let total_participants = self.paladins.len();
+
+                BattalionResult {
+                    battalion_id: Uuid::new_v4(),
+                    battalion_name: self.config.name.clone(),
+                    started_at,
+                    completed_at: chrono::Utc::now(),
+                    final_output,
+                    paladin_results: vec![], // Council handles this internally
+                    status: crate::core::platform::container::battalion::BattalionStatus::Completed,
+                    strategy_used: BattalionStrategy::Council,
+                    strategy_selection_reasoning: None,
+                    strategy_selection_time_ms: 0,
+                    per_paladin_times: Vec::new(),
+                    paladin_success_count: total_participants,
+                    paladin_failure_count: 0,
+                }
+            }
+            BattalionStrategy::Grove => {
+                debug!("Delegating to GroveExecutionService");
+
+                // Validation: Grove requires at least 2 agents for routing
+                if self.paladins.len() < 2 {
+                    return Err(BattalionError::ValidationError(
+                        "Grove requires at least 2 Paladins for routing".to_string(),
+                    ));
+                }
+
+                // Build Grove instance using builder pattern
+                // Create a Tree with all Paladins as agents
+                let mut tree =
+                    crate::core::platform::container::battalion::grove::Tree::new("main");
+
+                // Convert Paladins to TreeAgents using indices as IDs
+                // TODO: Grove needs to be enhanced to store actual Paladins, not just IDs
+                for (idx, _paladin) in self.paladins.iter().enumerate() {
+                    let agent_id = format!("agent_{}", idx);
+                    let tree_agent =
+                        crate::core::platform::container::battalion::grove::TreeAgent::new(
+                            agent_id,
+                        );
+                    tree = tree.add_agent(tree_agent);
+                }
+
+                let grove = crate::core::platform::container::battalion::grove::GroveBuilder::new()
+                    .name(self.config.name.clone())
+                    .routing_strategy(
+                        crate::core::platform::container::battalion::grove::RoutingStrategy::KeywordMatch,
+                    )
+                    .add_tree(tree)
+                    .build()?;
+
+                // Execute Grove (pass None for embedding_port and llm_port - not needed for KeywordMatch)
+                let service = GroveExecutionService::new(
+                    Arc::clone(&self.paladin_port),
+                    None, // embedding_port
+                    None, // llm_port
+                );
+                let grove_result = service.execute(&grove, input).await?;
+
+                // Convert grove result to BattalionResult
+                BattalionResult {
+                    battalion_id: Uuid::new_v4(),
+                    battalion_name: self.config.name.clone(),
+                    started_at,
+                    completed_at: chrono::Utc::now(),
+                    final_output: grove_result.execution_result.clone(),
+                    paladin_results: vec![], // Grove handles routing internally
+                    status: crate::core::platform::container::battalion::BattalionStatus::Completed,
+                    strategy_used: BattalionStrategy::Grove,
+                    strategy_selection_reasoning: None,
+                    strategy_selection_time_ms: 0,
+                    per_paladin_times: Vec::new(),
+                    paladin_success_count: 1,
+                    paladin_failure_count: 0,
+                }
+            }
             BattalionStrategy::Auto => {
                 // This should never happen as Auto is resolved above
                 return Err(BattalionError::StrategySelection(
@@ -564,19 +693,33 @@ impl Commander {
     ///    - Keywords: "synthesize", "compare", "expert panel", "perspectives", "consensus", "combine"
     ///    - 3+ Paladins with diverse expertise
     ///
-    /// 2. **Formation** - Sequential execution
+    /// # Strategy Selection Rules
+    ///
+    /// 1. **Conclave** - Mixture of Agents synthesis
+    ///    - Keywords: "synthesize", "compare", "expert panel", "perspectives", "consensus", "combine"
+    ///    - 3+ Paladins with diverse expertise
+    ///
+    /// 2. **Council** - Conversational multi-agent collaboration
+    ///    - Keywords: "discuss", "debate", "collaborate", "consensus", "brainstorm", "dialogue"
+    ///    - 2+ Paladins for turn-based discussion
+    ///
+    /// 3. **Grove** - Intelligent routing to specialists
+    ///    - Keywords: "route", "best agent", "expertise", "most qualified", "match to"
+    ///    - 2+ Paladins with specialized capabilities
+    ///
+    /// 4. **Formation** - Sequential execution
     ///    - Keywords: "sequential", "pipeline", "chain", "step by step", "one after", "in order"
     ///    - 1-3 Paladins (default for small teams)
     ///
-    /// 3. **Phalanx** - Parallel execution
+    /// 5. **Phalanx** - Parallel execution
     ///    - Keywords: "parallel", "concurrent", "all at once", "simultaneously", "together"
     ///    - 4+ Paladins with similar capabilities
     ///
-    /// 4. **Campaign** - Graph/DAG orchestration
+    /// 6. **Campaign** - Graph/DAG orchestration
     ///    - Keywords: "workflow", "graph", "conditional", "if-then", "depends on", "after"
     ///    - Complex multi-stage tasks
     ///
-    /// 5. **ChainOfCommand** - Hierarchical delegation
+    /// 7. **ChainOfCommand** - Hierarchical delegation
     ///    - Keywords: "delegate", "hierarchy", "specialist", "expert", "coordinator", "manager"
     ///    - Tasks requiring specialized expertise
     ///
@@ -608,6 +751,61 @@ impl Commander {
                 BattalionStrategy::Conclave,
                 format!(
                     "Input contains synthesis/multi-perspective keywords with {} Paladins, using Conclave for expert synthesis",
+                    self.paladins.len()
+                ),
+            );
+        }
+
+        // Check for Council indicators (conversational collaboration)
+        // Check this SECOND as it's also very specific
+        let council_keywords = [
+            "discuss",
+            "discussion",
+            "debate",
+            "deliberate",
+            "collaborate",
+            "conversation",
+            "dialogue",
+            "consensus",
+            "brainstorm",
+            "round table",
+            "panel discussion",
+            "town hall",
+            "collaborate on",
+            "talk through",
+        ];
+        if council_keywords.iter().any(|kw| input_lower.contains(kw)) && self.paladins.len() >= 2 {
+            return (
+                BattalionStrategy::Council,
+                format!(
+                    "Input contains discussion/collaboration keywords with {} Paladins, using Council for turn-based dialogue",
+                    self.paladins.len()
+                ),
+            );
+        }
+
+        // Check for Grove indicators (intelligent routing to specialists)
+        // Check this THIRD before other routing patterns
+        let grove_keywords = [
+            "route",
+            "routing",
+            "best agent",
+            "expertise",
+            "expert for",
+            "most qualified",
+            "match to",
+            "assign based on",
+            "specialized in",
+            "skilled in",
+            "capability match",
+            "dynamic routing",
+            "intelligent assignment",
+        ];
+        if grove_keywords.iter().any(|kw| input_lower.contains(kw)) && self.paladins.len() >= 2 {
+            return (
+                BattalionStrategy::Grove,
+                format!(
+                    "Input contains routing/expertise keywords with {} Paladins, using Grove for intelligent agent selection",
                     self.paladins.len()
                 ),
             );
