@@ -578,6 +578,10 @@ pub enum BattalionError {
     #[error("Strategy selection failed: {0}")]
     StrategySelection(String),
 
+    /// Routing error (Grove pattern)
+    #[error("Routing error: {0}")]
+    RoutingError(String),
+
     /// Timeout error
     #[error("Battalion execution timed out after {0} seconds")]
     Timeout(u64),

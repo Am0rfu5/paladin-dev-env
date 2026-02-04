@@ -135,31 +135,31 @@ When all subtasks under a parent task are complete:
   - [x] 3.13 Add rustdoc comments for all public types and methods
   - [x] 3.14 Update `src/core/platform/container/battalion/mod.rs` to export grove module
 
-- [ ] 4.0 Grove Execution Service (US-16.4)
-  - [ ] 4.1 Check if `src/application/ports/output/embedding_port.rs` exists
-  - [ ] 4.2 Create `EmbeddingPort` trait if needed with `embed()` method
-  - [ ] 4.3 Create `src/application/use_cases/battalion/grove_service.rs` file
-  - [ ] 4.4 Define `RoutingDecision` struct with fields: selected_tree (String), selected_agent (String), confidence (f32), reasoning (String)
-  - [ ] 4.5 Define `GroveResult` struct with fields: routing_decision (RoutingDecision), execution_result (String), metadata (HashMap<String, String>)
-  - [ ] 4.6 Define `GroveExecutionService` struct with fields: paladin_port, embedding_port (Option<Arc<dyn EmbeddingPort>>), llm_port (Arc<dyn LlmPort>)
-  - [ ] 4.7 Implement `GroveExecutionService::new()` constructor
-  - [ ] 4.8 Implement `execute()` method signature: `async fn execute(&self, grove: &Grove, task: &str) -> Result<GroveResult, BattalionError>`
-  - [ ] 4.9 Implement `route_task()` helper method: `async fn route_task(&self, grove: &Grove, task: &str) -> Result<RoutingDecision, BattalionError>`
-  - [ ] 4.10 Implement KeywordMatch routing: tokenize task, count matching keywords per agent, select highest score
-  - [ ] 4.11 Implement keyword scoring: case-insensitive matching, normalize task and keywords
-  - [ ] 4.12 Implement SemanticSimilarity routing: embed task using embedding_port
-  - [ ] 4.13 Calculate cosine similarity between task embedding and agent embeddings
-  - [ ] 4.14 Select agent with highest similarity score above threshold
-  - [ ] 4.15 Implement LlmRouting: create prompt with task description and agent expertise
-  - [ ] 4.16 Parse LLM JSON response for selected agent and reasoning
-  - [ ] 4.17 Implement fallback logic: use fallback_tree if no agent meets threshold
-  - [ ] 4.18 Implement default fallback: select first agent in first tree if no fallback_tree
-  - [ ] 4.19 Execute selected paladin with original task input
-  - [ ] 4.20 Build and return `GroveResult` with routing decision and execution result
-  - [ ] 4.21 Add error handling for routing failures with fallback to KeywordMatch
-  - [ ] 4.22 Add error handling for missing embeddings when SemanticSimilarity selected
-  - [ ] 4.23 Add rustdoc comments for all public methods
-  - [ ] 4.24 Update `src/application/use_cases/battalion/mod.rs` to export grove_service
+- [x] 4.0 Grove Execution Service (US-16.4)
+  - [x] 4.1 Check if `src/application/ports/output/embedding_port.rs` exists
+  - [x] 4.2 Create `EmbeddingPort` trait if needed with `embed()` method
+  - [x] 4.3 Create `src/application/use_cases/battalion/grove_service.rs` file
+  - [x] 4.4 Define `RoutingDecision` struct with fields: selected_tree (String), selected_agent (String), confidence (f32), reasoning (String)
+  - [x] 4.5 Define `GroveResult` struct with fields: routing_decision (RoutingDecision), execution_result (String), metadata (HashMap<String, String>)
+  - [x] 4.6 Define `GroveExecutionService` struct with fields: paladin_port, embedding_port (Option<Arc<dyn EmbeddingPort>>), llm_port (Arc<dyn LlmPort>)
+  - [x] 4.7 Implement `GroveExecutionService::new()` constructor
+  - [x] 4.8 Implement `execute()` method signature: `async fn execute(&self, grove: &Grove, task: &str) -> Result<GroveResult, BattalionError>`
+  - [x] 4.9 Implement `route_task()` helper method: `async fn route_task(&self, grove: &Grove, task: &str) -> Result<RoutingDecision, BattalionError>`
+  - [x] 4.10 Implement KeywordMatch routing: tokenize task, count matching keywords per agent, select highest score
+  - [x] 4.11 Implement keyword scoring: case-insensitive matching, normalize task and keywords
+  - [x] 4.12 Implement SemanticSimilarity routing: embed task using embedding_port
+  - [x] 4.13 Calculate cosine similarity between task embedding and agent embeddings
+  - [x] 4.14 Select agent with highest similarity score above threshold
+  - [x] 4.15 Implement LlmRouting: create prompt with task description and agent expertise
+  - [x] 4.16 Parse LLM JSON response for selected agent and reasoning
+  - [x] 4.17 Implement fallback logic: use fallback_tree if no agent meets threshold
+  - [x] 4.18 Implement default fallback: select first agent in first tree if no fallback_tree
+  - [x] 4.19 Execute selected paladin with original task input
+  - [x] 4.20 Build and return `GroveResult` with routing decision and execution result
+  - [x] 4.21 Add error handling for routing failures with fallback to KeywordMatch
+  - [x] 4.22 Add error handling for missing embeddings when SemanticSimilarity selected
+  - [x] 4.23 Add rustdoc comments for all public methods
+  - [x] 4.24 Update `src/application/use_cases/battalion/mod.rs` to export grove_service
 
 - [ ] 5.0 Commander Integration (US-16.5)
   - [ ] 5.1 Read current `src/application/use_cases/battalion/commander.rs` implementation

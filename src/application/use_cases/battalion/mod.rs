@@ -9,5 +9,6 @@ pub mod conclave_execution_service;
 pub mod council_service;
 pub mod error_aggregation;
 pub mod formation_service;
+pub mod grove_service;
 pub mod phalanx_service;
 pub mod retry;

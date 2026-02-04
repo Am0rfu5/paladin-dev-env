@@ -476,7 +476,6 @@ impl CouncilExecutionService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::battalion::council::CouncilBuilder;
     use crate::core::platform::container::paladin::Paladin;
 
     #[test]
