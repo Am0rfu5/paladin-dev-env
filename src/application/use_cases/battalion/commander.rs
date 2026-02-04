@@ -1913,4 +1913,130 @@ mod tests {
         assert_eq!(commander.config.error_strategy, ErrorStrategy::FailFast);
         assert_eq!(commander.config.retry_policy.max_attempts, 3);
     }
+
+    #[test]
+    fn test_auto_selects_council_for_discussion_keywords() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(); 3];
+        let config = create_test_config();
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let (strategy, reason) = commander.analyze_and_select("Let's discuss this problem");
+        assert_eq!(strategy, BattalionStrategy::Council);
+        assert!(reason.contains("discussion") || reason.contains("Council"));
+
+        let (strategy2, _) = commander.analyze_and_select("Debate the best approach");
+        assert_eq!(strategy2, BattalionStrategy::Council);
+
+        let (strategy3, _) = commander.analyze_and_select("Collaborate on a solution");
+        assert_eq!(strategy3, BattalionStrategy::Council);
+
+        let (strategy4, _) = commander.analyze_and_select("Have a dialogue about this");
+        assert_eq!(strategy4, BattalionStrategy::Council);
+
+        let (strategy5, _) = commander.analyze_and_select("Round table discussion needed");
+        assert_eq!(strategy5, BattalionStrategy::Council);
+    }
+
+    #[test]
+    fn test_auto_selects_grove_for_routing_keywords() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(); 3];
+        let config = create_test_config();
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let (strategy, reason) = commander.analyze_and_select("Route this to the best agent");
+        assert_eq!(strategy, BattalionStrategy::Grove);
+        assert!(reason.contains("routing") || reason.contains("Grove"));
+
+        let (strategy2, _) = commander.analyze_and_select("Find the expert for this task");
+        assert_eq!(strategy2, BattalionStrategy::Grove);
+
+        let (strategy3, _) = commander.analyze_and_select("Match to the most qualified agent");
+        assert_eq!(strategy3, BattalionStrategy::Grove);
+
+        let (strategy4, _) = commander.analyze_and_select("Who is skilled in this area?");
+        assert_eq!(strategy4, BattalionStrategy::Grove);
+
+        let (strategy5, _) = commander.analyze_and_select("Dynamic routing based on expertise");
+        assert_eq!(strategy5, BattalionStrategy::Grove);
+    }
+
+    #[test]
+    fn test_council_requires_multiple_paladins() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let single_paladin = vec![create_test_paladin()];
+        let config = create_test_config();
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(single_paladin)
+            .config(config)
+            .build()
+            .unwrap();
+
+        // With only 1 Paladin, "discuss" keyword should NOT select Council
+        // Should fall back to Formation instead
+        let (strategy, _) = commander.analyze_and_select("Let's discuss this");
+        assert_ne!(strategy, BattalionStrategy::Council);
+        assert_eq!(strategy, BattalionStrategy::Formation);
+    }
+
+    #[test]
+    fn test_grove_requires_multiple_paladins() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let single_paladin = vec![create_test_paladin()];
+        let config = create_test_config();
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(single_paladin)
+            .config(config)
+            .build()
+            .unwrap();
+
+        // With only 1 Paladin, "route" keyword should NOT select Grove
+        // Should fall back to Formation instead
+        let (strategy, _) = commander.analyze_and_select("Route to the best agent");
+        assert_ne!(strategy, BattalionStrategy::Grove);
+        assert_eq!(strategy, BattalionStrategy::Formation);
+    }
+
+    #[test]
+    fn test_council_and_grove_keywords_are_case_insensitive() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(); 3];
+        let config = create_test_config();
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        // Test Council with uppercase
+        let (strategy1, _) = commander.analyze_and_select("Let's DISCUSS this");
+        assert_eq!(strategy1, BattalionStrategy::Council);
+
+        // Test Grove with uppercase
+        let (strategy2, _) = commander.analyze_and_select("ROUTE to the best EXPERT");
+        assert_eq!(strategy2, BattalionStrategy::Grove);
+
+        // Test mixed case
+        let (strategy3, _) = commander.analyze_and_select("Collaborate ON this problem");
+        assert_eq!(strategy3, BattalionStrategy::Council);
+    }
 }

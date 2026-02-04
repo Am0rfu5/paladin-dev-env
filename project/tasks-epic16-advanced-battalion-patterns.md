@@ -195,46 +195,46 @@ When all subtasks under a parent task are complete:
   - [x] 6.13 Add validation for similarity threshold range (0.0-1.0) (InvalidSimilarityThreshold error)
   - [x] 6.14 Add NoAgents error when Grove has no agents across all trees
 
-- [ ] 7.0 Unit Tests
-  - [ ] 7.1 Create `tests/unit/battalion/council_tests.rs` file
-  - [ ] 7.2 Write test for `CouncilBuilder` basic construction
-  - [ ] 7.3 Write test for `CouncilBuilder` validation (empty participants should fail)
-  - [ ] 7.4 Write test for `CouncilBuilder` moderator requirement validation
-  - [ ] 7.5 Write test for `CouncilConfig` default values
-  - [ ] 7.6 Write test for `TurnStrategy` serialization/deserialization
-  - [ ] 7.7 Write test for `TerminationCondition` serialization/deserialization
-  - [ ] 7.8 Create `tests/unit/battalion/council_service_tests.rs` file
-  - [ ] 7.9 Create mock `PaladinPort` for testing
-  - [ ] 7.10 Write test for RoundRobin turn-taking logic (3 participants, 2 rounds)
-  - [ ] 7.11 Write test for ModeratorDirected turn-taking logic
-  - [ ] 7.12 Write test for MaxRounds termination condition
-  - [ ] 7.13 Write test for Consensus termination condition (keyword detection)
-  - [ ] 7.14 Write test for ModeratorDecision termination condition
-  - [ ] 7.15 Write test for Keyword termination condition
-  - [ ] 7.16 Write test for conversation history formatting
-  - [ ] 7.17 Write test for participant failure handling (should skip to next)
-  - [ ] 7.18 Create `tests/unit/battalion/grove_tests.rs` file
-  - [ ] 7.19 Write test for `GroveBuilder` basic construction
-  - [ ] 7.20 Write test for `GroveBuilder` validation (empty trees should fail)
-  - [ ] 7.21 Write test for `GroveConfig` default values
-  - [ ] 7.22 Write test for `RoutingStrategy` serialization/deserialization
-  - [ ] 7.23 Create `tests/unit/battalion/grove_service_tests.rs` file
-  - [ ] 7.24 Write test for KeywordMatch routing with exact matches
-  - [ ] 7.25 Write test for KeywordMatch routing with partial matches
-  - [ ] 7.26 Write test for KeywordMatch routing with no matches (fallback)
-  - [ ] 7.27 Write test for SemanticSimilarity routing with mock embeddings
-  - [ ] 7.28 Write test for SemanticSimilarity below threshold (fallback)
-  - [ ] 7.29 Write test for LlmRouting with mock LLM response
-  - [ ] 7.30 Write test for LlmRouting parsing JSON response
-  - [ ] 7.31 Write test for fallback_tree routing behavior
-  - [ ] 7.32 Write test for default fallback when no fallback_tree configured
-  - [ ] 7.33 Update `tests/unit/battalion/commander_tests.rs` if exists
-  - [ ] 7.34 Write test for Commander routing to Council strategy
-  - [ ] 7.35 Write test for Commander routing to Grove strategy
-  - [ ] 7.36 Write test for auto-detection of Council keywords
-  - [ ] 7.37 Write test for auto-detection of Grove keywords
-  - [ ] 7.38 Run `cargo test` to verify all unit tests pass
-  - [ ] 7.39 Check test coverage with `cargo tarpaulin` or similar (target ≥80%)
+- [x] 7.0 Unit Tests
+  - [x] 7.1 Create `tests/unit/battalion/council_tests.rs` file (embedded in council.rs)
+  - [x] 7.2 Write test for `CouncilBuilder` basic construction
+  - [x] 7.3 Write test for `CouncilBuilder` validation (empty participants should fail)
+  - [x] 7.4 Write test for `CouncilBuilder` moderator requirement validation
+  - [x] 7.5 Write test for `CouncilConfig` default values
+  - [x] 7.6 Write test for `TurnStrategy` serialization/deserialization
+  - [x] 7.7 Write test for `TerminationCondition` serialization/deserialization
+  - [x] 7.8 Create `tests/unit/battalion/council_service_tests.rs` file (embedded in council_service.rs)
+  - [x] 7.9 Create mock `PaladinPort` for testing
+  - [x] 7.10 Write test for RoundRobin turn-taking logic (3 participants, 2 rounds)
+  - [x] 7.11 Write test for ModeratorDirected turn-taking logic
+  - [x] 7.12 Write test for MaxRounds termination condition
+  - [x] 7.13 Write test for Consensus termination condition (keyword detection)
+  - [x] 7.14 Write test for ModeratorDecision termination condition
+  - [x] 7.15 Write test for Keyword termination condition
+  - [x] 7.16 Write test for conversation history formatting
+  - [x] 7.17 Write test for participant failure handling (should skip to next)
+  - [x] 7.18 Create `tests/unit/battalion/grove_tests.rs` file (embedded in grove.rs)
+  - [x] 7.19 Write test for `GroveBuilder` basic construction
+  - [x] 7.20 Write test for `GroveBuilder` validation (empty trees should fail)
+  - [x] 7.21 Write test for `GroveConfig` default values
+  - [x] 7.22 Write test for `RoutingStrategy` serialization/deserialization
+  - [x] 7.23 Create `tests/unit/battalion/grove_service_tests.rs` file (embedded in grove_service.rs)
+  - [x] 7.24 Write test for KeywordMatch routing with exact matches
+  - [x] 7.25 Write test for KeywordMatch routing with partial matches
+  - [x] 7.26 Write test for KeywordMatch routing with no matches (fallback)
+  - [x] 7.27 Write test for SemanticSimilarity routing with mock embeddings
+  - [x] 7.28 Write test for SemanticSimilarity below threshold (fallback)
+  - [x] 7.29 Write test for LlmRouting with mock LLM response
+  - [x] 7.30 Write test for LlmRouting parsing JSON response
+  - [x] 7.31 Write test for fallback_tree routing behavior
+  - [x] 7.32 Write test for default fallback when no fallback_tree configured
+  - [x] 7.33 Update `tests/unit/battalion/commander_tests.rs` if exists (embedded in commander.rs)
+  - [x] 7.34 Write test for Commander routing to Council strategy
+  - [x] 7.35 Write test for Commander routing to Grove strategy
+  - [x] 7.36 Write test for auto-detection of Council keywords
+  - [x] 7.37 Write test for auto-detection of Grove keywords
+  - [x] 7.38 Run `cargo test` to verify all unit tests pass
+  - [x] 7.39 Check test coverage with `cargo tarpaulin` or similar (target ≥80%)
 
 - [ ] 8.0 Integration Tests
   - [ ] 8.1 Create `tests/integration/battalion/council_integration_tests.rs` file
