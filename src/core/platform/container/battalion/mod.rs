@@ -566,6 +566,58 @@ impl BattalionResult {
     }
 }
 
+/// Errors specific to Council pattern operations
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum CouncilError {
+    /// No participants configured in the Council
+    #[error("No participants configured")]
+    NoParticipants,
+
+    /// Moderator required for ModeratorDirected strategy
+    #[error("Moderator required for ModeratorDirected strategy")]
+    ModeratorRequired,
+
+    /// Participant execution failed
+    #[error("Participant execution failed: {0}")]
+    ParticipantError(String),
+
+    /// Invalid turn strategy configuration
+    #[error("Invalid turn strategy configuration: {0}")]
+    InvalidStrategy(String),
+
+    /// Maximum rounds must be greater than zero
+    #[error("Maximum rounds must be greater than zero")]
+    InvalidMaxRounds,
+}
+
+/// Errors specific to Grove pattern operations
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum GroveError {
+    /// No trees configured in the Grove
+    #[error("No trees configured")]
+    NoTrees,
+
+    /// No agents available in the Grove
+    #[error("No agents in grove")]
+    NoAgents,
+
+    /// Routing operation failed
+    #[error("Routing failed: {0}")]
+    RoutingFailed(String),
+
+    /// No agent meets the similarity threshold
+    #[error("No agent meets similarity threshold {0}")]
+    NoMatchingAgent(f32),
+
+    /// Embeddings required for SemanticSimilarity strategy
+    #[error("Embeddings required for SemanticSimilarity strategy")]
+    EmbeddingsRequired,
+
+    /// Invalid similarity threshold (must be 0.0-1.0)
+    #[error("Invalid similarity threshold: {0} (must be between 0.0 and 1.0)")]
+    InvalidSimilarityThreshold(f32),
+}
+
 /// Error types for Battalion operations
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum BattalionError {
@@ -605,7 +657,15 @@ pub enum BattalionError {
     #[error("Strategy selection failed: {0}")]
     StrategySelection(String),
 
-    /// Routing error (Grove pattern)
+    /// Council pattern error
+    #[error("Council error: {0}")]
+    CouncilError(#[from] CouncilError),
+
+    /// Grove pattern error
+    #[error("Grove error: {0}")]
+    GroveError(#[from] GroveError),
+
+    /// Routing error (Grove pattern) - kept for backward compatibility
     #[error("Routing error: {0}")]
     RoutingError(String),
 

@@ -37,7 +37,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::core::base::entity::node::Node;
 
-use super::BattalionError;
+use super::{BattalionError, GroveError};
 
 /// Routing strategy for Grove request handling
 ///
@@ -432,12 +432,15 @@ impl GroveBuilder {
 
         // Validate trees
         if self.trees.is_empty() {
-            return Err(BattalionError::ValidationError(
-                "Grove must have at least one Tree".to_string(),
-            ));
+            return Err(GroveError::NoTrees.into());
         }
 
-        // Validate each tree has agents
+        // Validate each tree has agents - track total agents
+        let total_agents: usize = self.trees.iter().map(|t| t.agents.len()).sum();
+        if total_agents == 0 {
+            return Err(GroveError::NoAgents.into());
+        }
+
         for tree in &self.trees {
             if tree.agents.is_empty() {
                 return Err(BattalionError::ValidationError(format!(
@@ -449,9 +452,7 @@ impl GroveBuilder {
 
         // Validate similarity threshold
         if !(0.0..=1.0).contains(&self.similarity_threshold) {
-            return Err(BattalionError::ValidationError(
-                "Similarity threshold must be between 0.0 and 1.0".to_string(),
-            ));
+            return Err(GroveError::InvalidSimilarityThreshold(self.similarity_threshold).into());
         }
 
         // Validate fallback tree exists if specified
@@ -556,7 +557,10 @@ mod tests {
         let result = GroveBuilder::new().name("Test Grove").build();
 
         assert!(result.is_err());
-        assert!(matches!(result, Err(BattalionError::ValidationError(_))));
+        assert!(matches!(
+            result,
+            Err(BattalionError::GroveError(GroveError::NoTrees))
+        ));
     }
 
     #[test]
@@ -568,10 +572,10 @@ mod tests {
 
         assert!(result.is_err());
         match result {
-            Err(BattalionError::ValidationError(msg)) => {
-                assert!(msg.contains("must have at least one agent"));
+            Err(BattalionError::GroveError(GroveError::NoAgents)) => {
+                // Expected error type
             }
-            _ => panic!("Expected ValidationError"),
+            other => panic!("Expected GroveError::NoAgents, got {:?}", other),
         }
     }
 
@@ -585,10 +589,13 @@ mod tests {
 
         assert!(result.is_err());
         match result {
-            Err(BattalionError::ValidationError(msg)) => {
-                assert!(msg.contains("between 0.0 and 1.0"));
+            Err(BattalionError::GroveError(GroveError::InvalidSimilarityThreshold(threshold))) => {
+                assert_eq!(threshold, 1.5);
             }
-            _ => panic!("Expected ValidationError"),
+            other => panic!(
+                "Expected GroveError::InvalidSimilarityThreshold, got {:?}",
+                other
+            ),
         }
     }
 

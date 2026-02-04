@@ -33,7 +33,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use super::BattalionError;
+use super::{BattalionError, CouncilError};
 
 /// Turn-taking strategy for Council discussions
 ///
@@ -421,9 +421,7 @@ impl CouncilBuilder {
         })?;
 
         if self.participant_ids.is_empty() {
-            return Err(BattalionError::ValidationError(
-                "Council requires at least one participant".to_string(),
-            ));
+            return Err(CouncilError::NoParticipants.into());
         }
 
         if self.participant_ids.len() < 2 {
@@ -436,15 +434,11 @@ impl CouncilBuilder {
         if matches!(self.config.turn_strategy, TurnStrategy::ModeratorDirected)
             && self.moderator_id.is_none()
         {
-            return Err(BattalionError::ValidationError(
-                "Moderator is required for ModeratorDirected turn strategy".to_string(),
-            ));
+            return Err(CouncilError::ModeratorRequired.into());
         }
 
         if self.config.max_rounds == 0 {
-            return Err(BattalionError::ValidationError(
-                "max_rounds must be greater than 0".to_string(),
-            ));
+            return Err(CouncilError::InvalidMaxRounds.into());
         }
 
         // Create CouncilData
@@ -568,10 +562,10 @@ mod tests {
 
         assert!(result.is_err());
         match result {
-            Err(BattalionError::ValidationError(msg)) => {
-                assert!(msg.contains("Moderator is required"));
+            Err(BattalionError::CouncilError(CouncilError::ModeratorRequired)) => {
+                // Expected error type
             }
-            _ => panic!("Expected ValidationError for missing moderator"),
+            other => panic!("Expected CouncilError::ModeratorRequired, got {:?}", other),
         }
     }
 

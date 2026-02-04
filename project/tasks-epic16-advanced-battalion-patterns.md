@@ -179,21 +179,21 @@ When all subtasks under a parent task are complete:
   - [x] 5.15 Fix grove_service route_by_keywords to always select fallback agent
   - [x] 5.16 Run tests and fix all integration issues
 
-- [ ] 6.0 Error Handling & Validation
-  - [ ] 6.1 Read existing `BattalionError` definition
-  - [ ] 6.2 Add `CouncilError` variant to `BattalionError` enum
-  - [ ] 6.3 Add `GroveError` variant to `BattalionError` enum
-  - [ ] 6.4 Define `CouncilError` enum with variants from Appendix B in PRD
-  - [ ] 6.5 Implement `Display` trait for `CouncilError`
-  - [ ] 6.6 Implement `From<CouncilError>` for `BattalionError`
-  - [ ] 6.7 Define `GroveError` enum with variants from Appendix B in PRD
-  - [ ] 6.8 Implement `Display` trait for `GroveError`
-  - [ ] 6.9 Implement `From<GroveError>` for `BattalionError`
-  - [ ] 6.10 Add validation for empty participants in Council
-  - [ ] 6.11 Add validation for moderator requirement in ModeratorDirected strategy
-  - [ ] 6.12 Add validation for empty trees in Grove
-  - [ ] 6.13 Add validation for similarity threshold range (0.0-1.0)
-  - [ ] 6.14 Add error handling for missing embeddings in SemanticSimilarity
+- [x] 6.0 Error Handling & Validation
+  - [x] 6.1 Read existing `BattalionError` definition
+  - [x] 6.2 Add `CouncilError` variant to `BattalionError` enum
+  - [x] 6.3 Add `GroveError` variant to `BattalionError` enum
+  - [x] 6.4 Define `CouncilError` enum with variants from Appendix B in PRD
+  - [x] 6.5 Implement `Display` trait for `CouncilError` (via thiserror)
+  - [x] 6.6 Implement `From<CouncilError>` for `BattalionError` (via #[from] attribute)
+  - [x] 6.7 Define `GroveError` enum with variants from Appendix B in PRD
+  - [x] 6.8 Implement `Display` trait for `GroveError` (via thiserror)
+  - [x] 6.9 Implement `From<GroveError>` for `BattalionError` (via #[from] attribute)
+  - [x] 6.10 Add validation for empty participants in Council (NoParticipants error)
+  - [x] 6.11 Add validation for moderator requirement in ModeratorDirected strategy
+  - [x] 6.12 Add validation for empty trees in Grove (NoTrees error)
+  - [x] 6.13 Add validation for similarity threshold range (0.0-1.0) (InvalidSimilarityThreshold error)
+  - [x] 6.14 Add NoAgents error when Grove has no agents across all trees
 
 - [ ] 7.0 Unit Tests
   - [ ] 7.1 Create `tests/unit/battalion/council_tests.rs` file
