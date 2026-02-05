@@ -928,8 +928,44 @@ impl Commander {
             );
         }
 
-        // Check for Maneuver indicators (flow DSL orchestration)
-        // Check this before Formation/Phalanx since it supports mixed patterns
+        // Check for Flow DSL syntax patterns FIRST (highest priority for Maneuver)
+        // If input contains actual flow syntax, it's definitely Maneuver regardless of other keywords
+        let has_flow_pattern = input_lower.contains("->") || input_lower.contains("|");
+        if has_flow_pattern && !self.paladins.is_empty() {
+            return (
+                BattalionStrategy::Maneuver,
+                format!(
+                    "Input contains flow expression patterns (-> or |), using Maneuver for {} Paladins",
+                    self.paladins.len()
+                ),
+            );
+        }
+
+        // Check for Campaign indicators (workflow/graph orchestration)
+        // Only check if no flow syntax was found (since Campaign is conceptual, not syntax-based)
+        let campaign_keywords = [
+            "workflow",
+            "graph",
+            "conditional",
+            "if-then", // Multi-word phrase checked as a whole
+            "depends on",
+            "after",
+            "before",
+            "when",
+            "complex",
+            "multi-stage",
+        ];
+        if campaign_keywords.iter().any(|kw| input_lower.contains(kw)) {
+            return (
+                BattalionStrategy::Campaign,
+                format!(
+                    "Input contains workflow/conditional keywords, using Campaign for {} Paladins",
+                    self.paladins.len()
+                ),
+            );
+        }
+
+        // Check for Maneuver indicators (flow DSL keywords without actual syntax)
         let maneuver_keywords = [
             "flow",
             "flow dsl",
@@ -942,16 +978,12 @@ impl Commander {
             "composition",
             "declarative",
         ];
-        // Also check for flow expression patterns (arrows/pipes)
-        let has_flow_pattern = input_lower.contains("->") || input_lower.contains("|");
-
-        if (maneuver_keywords.iter().any(|kw| input_lower.contains(kw)) || has_flow_pattern)
-            && !self.paladins.is_empty()
+        if maneuver_keywords.iter().any(|kw| input_lower.contains(kw)) && !self.paladins.is_empty()
         {
             return (
                 BattalionStrategy::Maneuver,
                 format!(
-                    "Input contains flow DSL keywords or patterns, using Maneuver for {} Paladins",
+                    "Input contains flow DSL keywords, using Maneuver for {} Paladins",
                     self.paladins.len()
                 ),
             );
@@ -993,30 +1025,6 @@ impl Commander {
                 BattalionStrategy::Phalanx,
                 format!(
                     "Input contains parallel keywords, using Phalanx for {} Paladins",
-                    self.paladins.len()
-                ),
-            );
-        }
-
-        // Check for Campaign indicators (workflow/graph orchestration)
-        // Check these BEFORE ChainOfCommand since "if-then" should match Campaign
-        let campaign_keywords = [
-            "workflow",
-            "graph",
-            "conditional",
-            "if-then", // Multi-word phrase checked as a whole
-            "depends on",
-            "after",
-            "before",
-            "when",
-            "complex",
-            "multi-stage",
-        ];
-        if campaign_keywords.iter().any(|kw| input_lower.contains(kw)) {
-            return (
-                BattalionStrategy::Campaign,
-                format!(
-                    "Input contains workflow/conditional keywords, using Campaign for {} Paladins",
                     self.paladins.len()
                 ),
             );
