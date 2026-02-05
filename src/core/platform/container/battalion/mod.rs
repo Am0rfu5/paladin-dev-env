@@ -391,10 +391,23 @@ pub enum BattalionStrategy {
     /// - Intelligent delegation in complex organizations
     Grove,
 
+    /// Flow DSL-based orchestration (declarative flow expressions with sequential/parallel composition)
+    ///
+    /// Best for dynamic agent workflows defined using a declarative flow language.
+    /// Supports flow expressions like "agent1 -> agent2 -> (agent3 | agent4)" for sequential
+    /// chaining and parallel branching with flexible error handling strategies.
+    ///
+    /// Particularly effective for:
+    /// - Dynamic workflow configuration from external definitions
+    /// - Mixed sequential/parallel patterns in a single workflow
+    /// - Complex branching logic with nested parallel sections
+    /// - Runtime-defined agent orchestration patterns
+    Maneuver,
+
     /// Automatic strategy selection based on heuristics
     ///
     /// Analyzes input and Paladin characteristics to intelligently select Formation,
-    /// Phalanx, Campaign, ChainOfCommand, Conclave, Council, or Grove. Provides reasoning for transparency.
+    /// Phalanx, Campaign, ChainOfCommand, Conclave, Council, Grove, or Maneuver. Provides reasoning for transparency.
     Auto,
 }
 

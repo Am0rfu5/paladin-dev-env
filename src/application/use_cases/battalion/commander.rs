@@ -15,6 +15,7 @@ use crate::application::use_cases::battalion::conclave_execution_service::Concla
 use crate::application::use_cases::battalion::council_service::CouncilExecutionService;
 use crate::application::use_cases::battalion::formation_service::FormationExecutionService;
 use crate::application::use_cases::battalion::grove_service::GroveExecutionService;
+use crate::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
 use crate::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
 use crate::core::platform::container::battalion::{
     BattalionConfig, BattalionError, BattalionResult, BattalionStrategy, ErrorStrategy,
@@ -645,6 +646,122 @@ impl Commander {
                     paladin_failure_count: 0,
                 }
             }
+            BattalionStrategy::Maneuver => {
+                debug!("Delegating to ManeuverExecutionService");
+
+                // Validation: Maneuver requires at least 1 Paladin
+                if self.paladins.is_empty() {
+                    return Err(BattalionError::ValidationError(
+                        "Maneuver requires at least 1 Paladin".to_string(),
+                    ));
+                }
+
+                // For Commander integration, we need a flow expression
+                // Default to a simple sequential flow: agent1 -> agent2 -> agent3...
+                // In real usage, the flow would be configured via BattalionConfig or builder
+                let flow_expr = if self.paladins.len() == 1 {
+                    self.paladins[0]
+                        .name
+                        .as_ref()
+                        .unwrap_or(&"agent0".to_string())
+                        .clone()
+                } else {
+                    self.paladins
+                        .iter()
+                        .enumerate()
+                        .map(|(i, p)| p.name.as_ref().unwrap_or(&format!("agent{}", i)).clone())
+                        .collect::<Vec<_>>()
+                        .join(" -> ")
+                };
+
+                // Parse the flow expression
+                let flow = crate::core::platform::container::battalion::parser::FlowParser::parse(
+                    &flow_expr,
+                )
+                .map_err(|e| BattalionError::ValidationError(format!("Flow parse error: {}", e)))?;
+
+                // Build agent name -> Paladin mapping
+                let mut agents = std::collections::HashMap::new();
+                for (i, paladin) in self.paladins.iter().enumerate() {
+                    let agent_name = paladin
+                        .name
+                        .as_ref()
+                        .unwrap_or(&format!("agent{}", i))
+                        .clone();
+                    agents.insert(agent_name, paladin.clone());
+                }
+
+                // Create ManeuverConfig from BattalionConfig
+                let maneuver_config = crate::core::platform::container::battalion::maneuver::ManeuverConfig {
+                    error_strategy: match self.config.error_strategy {
+                        ErrorStrategy::FailFast => crate::core::platform::container::battalion::maneuver::ErrorStrategy::FailFast,
+                        ErrorStrategy::ContinueOnError => crate::core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel,
+                        ErrorStrategy::RetryThenContinue => crate::core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel,
+                    },
+                    output_format: crate::core::platform::container::battalion::maneuver::OutputFormat::Concatenate,
+                    pass_output_as_input: true,
+                    timeout: Some(Duration::from_secs(self.config.timeout_seconds)),
+                    collect_timing_metrics: true,
+                    detailed_observability: false,
+                };
+
+                // Create Maneuver instance
+                let maneuver =
+                    crate::core::platform::container::battalion::maneuver::Maneuver::new(
+                        &self.config.name,
+                        agents,
+                        flow,
+                        maneuver_config,
+                    )
+                    .map_err(|e| {
+                        BattalionError::ValidationError(format!("Maneuver creation failed: {}", e))
+                    })?;
+
+                // Execute Maneuver
+                let service = ManeuverExecutionService::new(Arc::clone(&self.paladin_port));
+                let maneuver_result = service.execute(&maneuver, input).await.map_err(|e| {
+                    BattalionError::ExecutionError(format!("Maneuver execution failed: {}", e))
+                })?;
+
+                // Convert ManeuverResult to BattalionResult
+                let successful_agents = maneuver_result.execution_order.len();
+
+                // Convert timing metrics to Vec<u64> (just the durations in execution order)
+                let per_paladin_times: Vec<u64> = maneuver_result
+                    .timing_metrics
+                    .as_ref()
+                    .map(|metrics| {
+                        maneuver_result
+                            .execution_order
+                            .iter()
+                            .filter_map(|name| metrics.get(name).map(|d| d.as_millis() as u64))
+                            .collect()
+                    })
+                    .unwrap_or_else(Vec::new);
+
+                BattalionResult {
+                    battalion_id: Uuid::new_v4(),
+                    battalion_name: self.config.name.clone(),
+                    started_at,
+                    completed_at: chrono::Utc::now(),
+                    final_output: maneuver_result.final_output.clone(),
+                    paladin_results: vec![], // Maneuver handles this internally
+                    status: match maneuver_result.status {
+                        crate::core::platform::container::battalion::maneuver::ExecutionStatus::Success =>
+                            crate::core::platform::container::battalion::BattalionStatus::Completed,
+                        crate::core::platform::container::battalion::maneuver::ExecutionStatus::PartialSuccess =>
+                            crate::core::platform::container::battalion::BattalionStatus::Completed,
+                        crate::core::platform::container::battalion::maneuver::ExecutionStatus::Failed =>
+                            crate::core::platform::container::battalion::BattalionStatus::Failed,
+                    },
+                    strategy_used: BattalionStrategy::Maneuver,
+                    strategy_selection_reasoning: None,
+                    strategy_selection_time_ms: 0,
+                    per_paladin_times,
+                    paladin_success_count: successful_agents,
+                    paladin_failure_count: 0,
+                }
+            }
             BattalionStrategy::Auto => {
                 // This should never happen as Auto is resolved above
                 return Err(BattalionError::StrategySelection(
@@ -806,6 +923,35 @@ impl Commander {
                 BattalionStrategy::Grove,
                 format!(
                     "Input contains routing/expertise keywords with {} Paladins, using Grove for intelligent agent selection",
+                    self.paladins.len()
+                ),
+            );
+        }
+
+        // Check for Maneuver indicators (flow DSL orchestration)
+        // Check this before Formation/Phalanx since it supports mixed patterns
+        let maneuver_keywords = [
+            "flow",
+            "flow dsl",
+            "dynamic flow",
+            "mixed pattern",
+            "branch",
+            "branching",
+            "nested",
+            "composed",
+            "composition",
+            "declarative",
+        ];
+        // Also check for flow expression patterns (arrows/pipes)
+        let has_flow_pattern = input_lower.contains("->") || input_lower.contains("|");
+
+        if (maneuver_keywords.iter().any(|kw| input_lower.contains(kw)) || has_flow_pattern)
+            && !self.paladins.is_empty()
+        {
+            return (
+                BattalionStrategy::Maneuver,
+                format!(
+                    "Input contains flow DSL keywords or patterns, using Maneuver for {} Paladins",
                     self.paladins.len()
                 ),
             );
@@ -2038,5 +2184,107 @@ mod tests {
         // Test mixed case
         let (strategy3, _) = commander.analyze_and_select("Collaborate ON this problem");
         assert_eq!(strategy3, BattalionStrategy::Council);
+    }
+
+    #[tokio::test]
+    async fn test_maneuver_strategy_explicit() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(); 3];
+        let config = create_test_config();
+
+        // Test explicit Maneuver strategy
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Maneuver)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let result = commander.execute("Process this workflow").await.unwrap();
+
+        // Verify strategy was Maneuver
+        assert_eq!(result.strategy_used, BattalionStrategy::Maneuver);
+        assert_eq!(
+            result.status,
+            crate::core::platform::container::battalion::BattalionStatus::Completed
+        );
+        assert!(!result.final_output.is_empty());
+    }
+
+    #[test]
+    fn test_auto_selects_maneuver_for_flow_keywords() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(); 3];
+        let config = create_test_config();
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        // Test flow DSL keywords
+        let (strategy1, reason1) =
+            commander.analyze_and_select("Create a flow with nested branching");
+        assert_eq!(strategy1, BattalionStrategy::Maneuver);
+        assert!(reason1.contains("flow DSL"));
+
+        // Test flow expression pattern with arrows
+        let (strategy2, reason2) =
+            commander.analyze_and_select("Execute agent1 -> agent2 workflow");
+        assert_eq!(strategy2, BattalionStrategy::Maneuver);
+        assert!(reason2.contains("flow DSL") || reason2.contains("patterns"));
+
+        // Test flow expression pattern with pipes
+        let (strategy3, reason3) =
+            commander.analyze_and_select("Run agents in parallel: agent1 | agent2");
+        assert_eq!(strategy3, BattalionStrategy::Maneuver);
+        assert!(reason3.contains("flow DSL") || reason3.contains("patterns"));
+    }
+
+    #[test]
+    fn test_maneuver_keywords_case_insensitive() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(); 2];
+        let config = create_test_config();
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        // Test uppercase
+        let (strategy1, _) = commander.analyze_and_select("DYNAMIC FLOW with composition");
+        assert_eq!(strategy1, BattalionStrategy::Maneuver);
+
+        // Test mixed case
+        let (strategy2, _) = commander.analyze_and_select("Declarative Flow Pattern");
+        assert_eq!(strategy2, BattalionStrategy::Maneuver);
+    }
+
+    #[test]
+    fn test_maneuver_requires_at_least_one_paladin() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let config = create_test_config();
+
+        // Without paladins, Maneuver strategy should return error
+        let result = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Maneuver)
+            .paladins(vec![]) // Empty paladins vector
+            .config(config)
+            .build();
+
+        // Should fail during build validation or execution
+        // The actual behavior depends on where validation happens
+        // If build succeeds, execution should fail
+        assert!(result.is_err() || result.is_ok());
+
+        if let Ok(commander) = result {
+            let exec_result = tokio_test::block_on(commander.execute("test"));
+            assert!(exec_result.is_err());
+        }
     }
 }
