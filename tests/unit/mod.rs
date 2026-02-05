@@ -9,6 +9,7 @@ pub mod cli_arsenal_commands_test;
 pub mod cli_battalion_commands_test;
 pub mod embedding_port_tests;
 pub mod handoff_service_test;
+pub mod maneuver_domain_tests;
 pub mod mcp_protocol_test;
 pub mod mock_llm_adapter_test;
 pub mod paladin_builder_arsenal_test;

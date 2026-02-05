@@ -117,41 +117,41 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 1.6.8 Test edge cases: whitespace variations, long agent names
     - [x] 1.6.9 Add 50+ test cases covering all syntax
 
-- [ ] 2.0 Implement Maneuver Domain Model (US-17.2)
-  - [ ] 2.1 Define ManeuverConfig struct
-    - [ ] 2.1.1 Create `ErrorStrategy` enum in `maneuver.rs`: FailFast, ContinueParallel, IgnoreErrors
-    - [ ] 2.1.2 Create `OutputFormat` enum: Concatenate, JsonArray
-    - [ ] 2.1.3 Define `ManeuverConfig` struct with all fields from PRD
-    - [ ] 2.1.4 Implement Default trait with sensible defaults
-    - [ ] 2.1.5 Add Serialize/Deserialize for YAML support
-    - [ ] 2.1.6 Add validation methods for config values
-  - [ ] 2.2 Define Maneuver struct
-    - [ ] 2.2.1 Create `Maneuver` struct with name, agents HashMap, flow, config
-    - [ ] 2.2.2 Implement validation that all flow agents exist in agents map
-    - [ ] 2.2.3 Implement validation for max depth (5 levels) and max agents (30)
-    - [ ] 2.2.4 Add builder methods or constructor
-    - [ ] 2.2.5 Implement Debug, Clone for Maneuver
-  - [ ] 2.3 Define ManeuverResult struct
-    - [ ] 2.3.1 Create `ManeuverResult` with final_output, step_outputs, execution_order
-    - [ ] 2.3.2 Add optional timing_metrics HashMap<String, Duration>
-    - [ ] 2.3.3 Add status enum: Success, PartialSuccess, Failed
-    - [ ] 2.3.4 Implement helper methods: `get_agent_output()`, `total_duration()`
-  - [ ] 2.4 Define ManeuverError types
-    - [ ] 2.4.1 Create `ManeuverError` enum using thiserror
-    - [ ] 2.4.2 Add variants: ParseError, ValidationError, ExecutionError, AgentNotFound, TimeoutError
-    - [ ] 2.4.3 Implement From<FlowParseError> for ManeuverError
-    - [ ] 2.4.4 Implement From<PaladinError> for ManeuverError
-  - [ ] 2.5 Write domain model tests
-    - [ ] 2.5.1 Test Maneuver construction with valid flow
-    - [ ] 2.5.2 Test validation catches missing agents
-    - [ ] 2.5.3 Test validation catches excessive depth
-    - [ ] 2.5.4 Test validation catches excessive agent count
-    - [ ] 2.5.5 Test ManeuverConfig defaults
-    - [ ] 2.5.6 Test serialization/deserialization
-  - [ ] 2.6 Update Battalion module exports
-    - [ ] 2.6.1 Add maneuver module to `src/core/platform/container/battalion/mod.rs`
-    - [ ] 2.6.2 Export Maneuver, ManeuverConfig, ManeuverResult, ManeuverError
-    - [ ] 2.6.3 Update documentation comments
+- [x] 2.0 Implement Maneuver Domain Model (US-17.2)
+  - [x] 2.1 Define ManeuverConfig struct
+    - [x] 2.1.1 Create `ErrorStrategy` enum in `maneuver.rs`: FailFast, ContinueParallel, IgnoreErrors
+    - [x] 2.1.2 Create `OutputFormat` enum: Concatenate, JsonArray
+    - [x] 2.1.3 Define `ManeuverConfig` struct with all fields from PRD
+    - [x] 2.1.4 Implement Default trait with sensible defaults
+    - [x] 2.1.5 Add Serialize/Deserialize for YAML support
+    - [x] 2.1.6 Add validation methods for config values
+  - [x] 2.2 Define Maneuver struct
+    - [x] 2.2.1 Create `Maneuver` struct with name, agents HashMap, flow, config
+    - [x] 2.2.2 Implement validation that all flow agents exist in agents map
+    - [x] 2.2.3 Implement validation for max depth (5 levels) and max agents (30)
+    - [x] 2.2.4 Add builder methods or constructor
+    - [x] 2.2.5 Implement Debug, Clone for Maneuver
+  - [x] 2.3 Define ManeuverResult struct
+    - [x] 2.3.1 Create `ManeuverResult` with final_output, step_outputs, execution_order
+    - [x] 2.3.2 Add optional timing_metrics HashMap<String, Duration>
+    - [x] 2.3.3 Add status enum: Success, PartialSuccess, Failed
+    - [x] 2.3.4 Implement helper methods: `get_agent_output()`, `total_duration()`
+  - [x] 2.4 Define ManeuverError types
+    - [x] 2.4.1 Create `ManeuverError` enum using thiserror
+    - [x] 2.4.2 Add variants: ParseError, ValidationError, ExecutionError, AgentNotFound, TimeoutError
+    - [x] 2.4.3 Implement From<FlowParseError> for ManeuverError
+    - [x] 2.4.4 Implement From<PaladinError> for ManeuverError
+  - [x] 2.5 Write domain model tests
+    - [x] 2.5.1 Test Maneuver construction with valid flow
+    - [x] 2.5.2 Test validation catches missing agents
+    - [x] 2.5.3 Test validation catches excessive depth
+    - [x] 2.5.4 Test validation catches excessive agent count
+    - [x] 2.5.5 Test ManeuverConfig defaults
+    - [x] 2.5.6 Test serialization/deserialization
+  - [x] 2.6 Update Battalion module exports
+    - [x] 2.6.1 Add maneuver module to `src/core/platform/container/battalion/mod.rs`
+    - [x] 2.6.2 Export Maneuver, ManeuverConfig, ManeuverResult, ManeuverError
+    - [x] 2.6.3 Update documentation comments
 
 - [ ] 3.0 Implement Maneuver Execution Service (US-17.3)
   - [ ] 3.1 Create ManeuverExecutionService struct
