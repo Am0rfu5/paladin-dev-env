@@ -113,7 +113,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   • Fallback: Backend Specialists");
     println!();
 
-    let grove1 = GroveBuilder::new()
+    let _grove1 = GroveBuilder::new()
         .name("KeywordMatch Grove")
         .add_tree(backend_tree.clone())
         .add_tree(frontend_tree.clone())
@@ -163,7 +163,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   • Fallback: Backend Specialists");
     println!();
 
-    let grove2 = GroveBuilder::new()
+    let _grove2 = GroveBuilder::new()
         .name("Semantic Grove")
         .add_tree(backend_tree.clone())
         .add_tree(frontend_tree.clone())
@@ -221,7 +221,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   • Fallback: Backend Specialists");
     println!();
 
-    let grove3 = GroveBuilder::new()
+    let _grove3 = GroveBuilder::new()
         .name("LLM-Routed Grove")
         .add_tree(backend_tree.clone())
         .add_tree(frontend_tree.clone())

@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   • Termination: MaxRounds");
     println!();
 
-    let council1 = CouncilBuilder::new()
+    let _council1 = CouncilBuilder::new()
         .name("Architecture Review Council")
         .add_participant("SecurityExpert")
         .add_participant("PerformanceExpert")
@@ -79,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   • Termination: ModeratorDecision");
     println!();
 
-    let council2 = CouncilBuilder::new()
+    let _council2 = CouncilBuilder::new()
         .name("Critical Decision Council")
         .add_participant("ChiefArchitect") // Moderator
         .add_participant("FrontendLead")
@@ -116,7 +116,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   • Termination: Consensus");
     println!();
 
-    let council3 = CouncilBuilder::new()
+    let _council3 = CouncilBuilder::new()
         .name("Decision Making Council")
         .add_participant("ProductLead")
         .add_participant("EngineeringLead")
@@ -151,7 +151,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   • Termination: Keyword(\"APPROVED\")");
     println!();
 
-    let council4 = CouncilBuilder::new()
+    let _council4 = CouncilBuilder::new()
         .name("Code Review Council")
         .add_participant("SeniorDev1")
         .add_participant("SeniorDev2")
