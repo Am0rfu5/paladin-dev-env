@@ -43,38 +43,56 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             TreeAgent::new("ApiExpert")
                 .with_keywords(vec!["api", "rest", "graphql", "endpoint", "route"]),
         )
-        .add_agent(
-            TreeAgent::new("MicroservicesExpert")
-                .with_keywords(vec!["microservices", "service", "distributed", "rpc"]),
-        );
+        .add_agent(TreeAgent::new("MicroservicesExpert").with_keywords(vec![
+            "microservices",
+            "service",
+            "distributed",
+            "rpc",
+        ]));
 
     let frontend_tree = Tree::new("Frontend Specialists")
-        .add_agent(
-            TreeAgent::new("ReactExpert")
-                .with_keywords(vec!["react", "jsx", "hooks", "component", "state"]),
-        )
-        .add_agent(
-            TreeAgent::new("CssExpert")
-                .with_keywords(vec!["css", "styling", "layout", "responsive", "design"]),
-        )
-        .add_agent(
-            TreeAgent::new("PerformanceExpert")
-                .with_keywords(vec!["performance", "optimization", "bundle", "lazy"]),
-        );
+        .add_agent(TreeAgent::new("ReactExpert").with_keywords(vec![
+            "react",
+            "jsx",
+            "hooks",
+            "component",
+            "state",
+        ]))
+        .add_agent(TreeAgent::new("CssExpert").with_keywords(vec![
+            "css",
+            "styling",
+            "layout",
+            "responsive",
+            "design",
+        ]))
+        .add_agent(TreeAgent::new("PerformanceExpert").with_keywords(vec![
+            "performance",
+            "optimization",
+            "bundle",
+            "lazy",
+        ]));
 
     let devops_tree = Tree::new("DevOps Specialists")
-        .add_agent(
-            TreeAgent::new("KubernetesExpert")
-                .with_keywords(vec!["kubernetes", "k8s", "pod", "deployment", "cluster"]),
-        )
-        .add_agent(
-            TreeAgent::new("CicdExpert")
-                .with_keywords(vec!["ci", "cd", "pipeline", "deployment", "automation"]),
-        )
-        .add_agent(
-            TreeAgent::new("MonitoringExpert")
-                .with_keywords(vec!["monitoring", "observability", "metrics", "logs"]),
-        );
+        .add_agent(TreeAgent::new("KubernetesExpert").with_keywords(vec![
+            "kubernetes",
+            "k8s",
+            "pod",
+            "deployment",
+            "cluster",
+        ]))
+        .add_agent(TreeAgent::new("CicdExpert").with_keywords(vec![
+            "ci",
+            "cd",
+            "pipeline",
+            "deployment",
+            "automation",
+        ]))
+        .add_agent(TreeAgent::new("MonitoringExpert").with_keywords(vec![
+            "monitoring",
+            "observability",
+            "metrics",
+            "logs",
+        ]));
 
     println!("🌳 Created 3 Expert Trees:");
     println!("   • Backend Specialists (3 agents)");

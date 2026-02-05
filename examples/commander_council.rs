@@ -81,7 +81,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let council2 = CouncilBuilder::new()
         .name("Critical Decision Council")
-        .add_participant("ChiefArchitect")  // Moderator
+        .add_participant("ChiefArchitect") // Moderator
         .add_participant("FrontendLead")
         .add_participant("BackendLead")
         .add_participant("DevOpsLead")
