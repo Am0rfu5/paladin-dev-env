@@ -236,43 +236,43 @@ When all subtasks under a parent task are complete:
   - [x] 7.38 Run `cargo test` to verify all unit tests pass
   - [x] 7.39 Check test coverage with `cargo tarpaulin` or similar (target ≥80%)
 
-- [ ] 8.0 Integration Tests
-  - [ ] 8.1 Create `tests/integration/battalion/council_integration_tests.rs` file
-  - [ ] 8.2 Set up test fixtures with mock LLM adapter
-  - [ ] 8.3 Write integration test: Council with 3 Paladins, RoundRobin, 2 rounds
-  - [ ] 8.4 Write integration test: Council with moderator, ModeratorDirected strategy
-  - [ ] 8.5 Write integration test: Council with Garrison integration (history storage)
-  - [ ] 8.6 Write integration test: Council with MaxRounds termination
-  - [ ] 8.7 Write integration test: Council with Consensus termination
-  - [ ] 8.8 Create `tests/integration/battalion/grove_integration_tests.rs` file
-  - [ ] 8.9 Write integration test: Grove with KeywordMatch routing
-  - [ ] 8.10 Write integration test: Grove with SemanticSimilarity routing (mock embedding service)
-  - [ ] 8.11 Write integration test: Grove with LlmRouting
-  - [ ] 8.12 Write integration test: Grove fallback behavior when no match
-  - [ ] 8.13 Write integration test: Grove with multiple trees
-  - [ ] 8.14 Create `tests/integration/battalion/commander_integration_tests.rs` or update existing
-  - [ ] 8.15 Write integration test: Commander executing Council strategy end-to-end
-  - [ ] 8.16 Write integration test: Commander executing Grove strategy end-to-end
-  - [ ] 8.17 Write integration test: Commander auto-detecting Council from input
-  - [ ] 8.18 Write integration test: Commander auto-detecting Grove from input
-  - [ ] 8.19 Write integration test: Concurrent Council and Grove execution
-  - [ ] 8.20 Run `make test-all` to verify all integration tests pass
+- [x] 8.0 Integration Tests
+  - [x] 8.1 Create `tests/integration/battalion/council_integration_tests.rs` file
+  - [x] 8.2 Set up test fixtures with mock LLM adapter
+  - [x] 8.3 Write integration test: Council with 3 Paladins, RoundRobin, 2 rounds
+  - [x] 8.4 Write integration test: Council with moderator, ModeratorDirected strategy
+  - [x] 8.5 Write integration test: Council with Garrison integration (history storage)
+  - [x] 8.6 Write integration test: Council with MaxRounds termination
+  - [x] 8.7 Write integration test: Council with Consensus termination
+  - [x] 8.8 Create `tests/integration/battalion/grove_integration_tests.rs` file
+  - [x] 8.9 Write integration test: Grove with KeywordMatch routing
+  - [x] 8.10 Write integration test: Grove with SemanticSimilarity routing (mock embedding service)
+  - [x] 8.11 Write integration test: Grove with LlmRouting
+  - [x] 8.12 Write integration test: Grove fallback behavior when no match
+  - [x] 8.13 Write integration test: Grove with multiple trees
+  - [x] 8.14 Create `tests/integration/battalion/commander_integration_tests.rs` or update existing
+  - [x] 8.15 Write integration test: Commander executing Council strategy end-to-end
+  - [x] 8.16 Write integration test: Commander executing Grove strategy end-to-end
+  - [x] 8.17 Write integration test: Commander auto-detecting Council from input
+  - [x] 8.18 Write integration test: Commander auto-detecting Grove from input
+  - [x] 8.19 Write integration test: Concurrent Council and Grove execution
+  - [x] 8.20 Run `make test-all` to verify all integration tests pass
 
 - [ ] 9.0 Example Applications
-  - [ ] 9.1 Create `examples/council_discussion.rs` file
-  - [ ] 9.2 Set up example with 3 expert Paladins (Security, Legal, Technical)
-  - [ ] 9.3 Configure Council with RoundRobin, 3 rounds, MaxRounds termination
-  - [ ] 9.4 Implement example topic: "Should we implement two-factor authentication?"
-  - [ ] 9.5 Execute council and display formatted transcript
-  - [ ] 9.6 Add comments explaining configuration options
-  - [ ] 9.7 Test example runs successfully: `cargo run --example council_discussion`
-  - [ ] 9.8 Create `examples/grove_routing.rs` file
-  - [ ] 9.9 Set up Grove with 2 trees: "Security Experts" and "Performance Experts"
-  - [ ] 9.10 Add 2-3 specialized agents per tree with expertise keywords
-  - [ ] 9.11 Configure Grove with KeywordMatch strategy
-  - [ ] 9.12 Implement example tasks: security review, performance optimization
-  - [ ] 9.13 Execute grove and display routing decisions with confidence
-  - [ ] 9.14 Test example runs successfully: `cargo run --example grove_routing`
+  - [x] 9.1 Create `examples/council_discussion.rs` file
+  - [x] 9.2 Set up example with 3 expert Paladins (Security, Legal, Technical)
+  - [x] 9.3 Configure Council with RoundRobin, 3 rounds, MaxRounds termination
+  - [x] 9.4 Implement example topic: "Should we implement two-factor authentication?"
+  - [x] 9.5 Execute council and display formatted transcript
+  - [x] 9.6 Add comments explaining configuration options
+  - [ ] 9.7 Test example runs successfully: `cargo run --example council_discussion` (Note: Requires Paladin registry implementation)
+  - [x] 9.8 Create `examples/grove_routing.rs` file
+  - [x] 9.9 Set up Grove with 2 trees: "Security Experts" and "Performance Experts"
+  - [x] 9.10 Add 2-3 specialized agents per tree with expertise keywords
+  - [x] 9.11 Configure Grove with KeywordMatch strategy
+  - [x] 9.12 Implement example tasks: security review, performance optimization
+  - [x] 9.13 Execute grove and display routing decisions with confidence
+  - [x] 9.14 Test example runs successfully: `cargo run --example grove_routing`
   - [ ] 9.15 Create `examples/commander_council.rs` file
   - [ ] 9.16 Configure Commander with Council strategy
   - [ ] 9.17 Show different turn strategies and termination conditions

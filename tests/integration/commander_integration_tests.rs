@@ -632,3 +632,225 @@ async fn test_timeout_enforcement_integration() {
     // For a real timeout test, we'd need a longer execution time
     assert!(result.is_ok(), "Should complete within timeout");
 }
+
+#[tokio::test]
+async fn test_commander_executes_council_strategy_end_to_end() {
+    // Task 8.15: Commander executing Council strategy end-to-end
+    let mock_port = Arc::new(IntegrationMockPaladinPort::new());
+
+    let security = create_test_paladin("SecurityExpert");
+    let legal = create_test_paladin("LegalExpert");
+    let technical = create_test_paladin("TechnicalExpert");
+
+    let config = BattalionConfig::new("council_e2e_test").with_timeout(30);
+
+    let commander = CommanderBuilder::new(mock_port.clone() as Arc<dyn PaladinPort>)
+        .strategy(BattalionStrategy::Council)
+        .paladins(vec![security, legal, technical])
+        .config(config)
+        .build()
+        .expect("Failed to build Commander with Council strategy");
+
+    let result = commander
+        .execute("Discuss the best approach for implementing two-factor authentication")
+        .await
+        .expect("Council execution should succeed");
+
+    // Verify Council-specific behavior
+    assert_eq!(result.strategy_used, BattalionStrategy::Council);
+    assert!(result.status == BattalionStatus::Completed);
+    assert!(!result.final_output.is_empty());
+    assert_eq!(result.paladin_success_count, 3); // All 3 experts participated
+
+    // Verify execution log shows conversational pattern
+    let log = mock_port.get_execution_log();
+    assert!(log.len() >= 3, "Should have at least 3 turns in discussion");
+}
+
+#[tokio::test]
+async fn test_commander_executes_grove_strategy_end_to_end() {
+    // Task 8.16: Commander executing Grove strategy end-to-end
+    let mock_port = Arc::new(IntegrationMockPaladinPort::new());
+
+    let security_expert = create_test_paladin("SecuritySpecialist");
+    let perf_expert = create_test_paladin("PerformanceSpecialist");
+    let data_expert = create_test_paladin("DataSpecialist");
+
+    let config = BattalionConfig::new("grove_e2e_test").with_timeout(30);
+
+    let commander = CommanderBuilder::new(mock_port.clone() as Arc<dyn PaladinPort>)
+        .strategy(BattalionStrategy::Grove)
+        .paladins(vec![security_expert, perf_expert, data_expert])
+        .config(config)
+        .build()
+        .expect("Failed to build Commander with Grove strategy");
+
+    let result = commander
+        .execute("Review security vulnerabilities in the authentication system")
+        .await
+        .expect("Grove execution should succeed");
+
+    // Verify Grove-specific behavior
+    assert_eq!(result.strategy_used, BattalionStrategy::Grove);
+    assert!(result.status == BattalionStatus::Completed);
+    assert!(!result.final_output.is_empty());
+
+    // Grove routes to best-match agent, so only 1 should execute
+    let log = mock_port.get_execution_log();
+    assert!(
+        log.len() >= 1,
+        "At least one specialist should be routed to"
+    );
+}
+
+#[tokio::test]
+async fn test_commander_auto_detects_council_from_input() {
+    // Task 8.17: Commander auto-detecting Council from input
+    let mock_port = Arc::new(IntegrationMockPaladinPort::new());
+
+    let expert1 = create_test_paladin("Expert1");
+    let expert2 = create_test_paladin("Expert2");
+    let expert3 = create_test_paladin("Expert3");
+
+    let config = BattalionConfig::new("auto_council_test").with_timeout(30);
+
+    let commander = CommanderBuilder::new(mock_port.clone() as Arc<dyn PaladinPort>)
+        .strategy(BattalionStrategy::Auto)
+        .paladins(vec![expert1, expert2, expert3])
+        .config(config)
+        .build()
+        .expect("Failed to build Commander");
+
+    // Use discussion/collaboration keywords that trigger Council
+    let result = commander
+        .execute("Let's discuss and collaborate on the best approach for this feature")
+        .await
+        .expect("Auto mode should select Council and execute");
+
+    // Verify Auto mode selected Council
+    assert_eq!(result.strategy_used, BattalionStrategy::Council);
+    assert!(result.strategy_selection_reasoning.is_some());
+    let reasoning = result.strategy_selection_reasoning.unwrap();
+    assert!(
+        reasoning.to_lowercase().contains("discussion")
+            || reasoning.to_lowercase().contains("council")
+            || reasoning.to_lowercase().contains("collaboration"),
+        "Reasoning should mention discussion/council keywords"
+    );
+
+    // Verify execution succeeded
+    assert_eq!(result.status, BattalionStatus::Completed);
+    assert!(!result.final_output.is_empty());
+}
+
+#[tokio::test]
+async fn test_commander_auto_detects_grove_from_input() {
+    // Task 8.18: Commander auto-detecting Grove from input
+    let mock_port = Arc::new(IntegrationMockPaladinPort::new());
+
+    let specialist1 = create_test_paladin("Specialist1");
+    let specialist2 = create_test_paladin("Specialist2");
+    let specialist3 = create_test_paladin("Specialist3");
+
+    let config = BattalionConfig::new("auto_grove_test").with_timeout(30);
+
+    let commander = CommanderBuilder::new(mock_port.clone() as Arc<dyn PaladinPort>)
+        .strategy(BattalionStrategy::Auto)
+        .paladins(vec![specialist1, specialist2, specialist3])
+        .config(config)
+        .build()
+        .expect("Failed to build Commander");
+
+    // Use routing/expertise keywords that trigger Grove
+    let result = commander
+        .execute("Route this task to the most qualified expert with the right expertise")
+        .await
+        .expect("Auto mode should select Grove and execute");
+
+    // Verify Auto mode selected Grove
+    assert_eq!(result.strategy_used, BattalionStrategy::Grove);
+    assert!(result.strategy_selection_reasoning.is_some());
+    let reasoning = result.strategy_selection_reasoning.unwrap();
+    assert!(
+        reasoning.to_lowercase().contains("routing")
+            || reasoning.to_lowercase().contains("grove")
+            || reasoning.to_lowercase().contains("expertise"),
+        "Reasoning should mention routing/grove keywords"
+    );
+
+    // Verify execution succeeded
+    assert_eq!(result.status, BattalionStatus::Completed);
+    assert!(!result.final_output.is_empty());
+}
+
+#[tokio::test]
+async fn test_concurrent_council_and_grove_execution() {
+    // Task 8.19: Concurrent Council and Grove execution
+    let mock_port = Arc::new(IntegrationMockPaladinPort::new());
+
+    // Create paladins for Council
+    let council_paladins = vec![
+        create_test_paladin("CouncilMember1"),
+        create_test_paladin("CouncilMember2"),
+        create_test_paladin("CouncilMember3"),
+    ];
+
+    // Create paladins for Grove
+    let grove_paladins = vec![
+        create_test_paladin("Specialist1"),
+        create_test_paladin("Specialist2"),
+        create_test_paladin("Specialist3"),
+    ];
+
+    let council_config = BattalionConfig::new("concurrent_council").with_timeout(30);
+    let grove_config = BattalionConfig::new("concurrent_grove").with_timeout(30);
+
+    // Build Council Commander
+    let council_commander = CommanderBuilder::new(mock_port.clone() as Arc<dyn PaladinPort>)
+        .strategy(BattalionStrategy::Council)
+        .paladins(council_paladins)
+        .config(council_config)
+        .build()
+        .expect("Failed to build Council Commander");
+
+    // Build Grove Commander
+    let grove_commander = CommanderBuilder::new(mock_port.clone() as Arc<dyn PaladinPort>)
+        .strategy(BattalionStrategy::Grove)
+        .paladins(grove_paladins)
+        .config(grove_config)
+        .build()
+        .expect("Failed to build Grove Commander");
+
+    // Execute both concurrently
+    let council_future = council_commander.execute("Discuss authentication approach");
+    let grove_future = grove_commander.execute("Route security audit to expert");
+
+    let (council_result, grove_result) = tokio::join!(council_future, grove_future);
+
+    // Verify both succeeded
+    assert!(
+        council_result.is_ok(),
+        "Council execution should succeed: {:?}",
+        council_result.err()
+    );
+    assert!(
+        grove_result.is_ok(),
+        "Grove execution should succeed: {:?}",
+        grove_result.err()
+    );
+
+    let council_output = council_result.unwrap();
+    let grove_output = grove_result.unwrap();
+
+    // Verify correct strategies were used
+    assert_eq!(council_output.strategy_used, BattalionStrategy::Council);
+    assert_eq!(grove_output.strategy_used, BattalionStrategy::Grove);
+
+    // Verify both completed successfully
+    assert_eq!(council_output.status, BattalionStatus::Completed);
+    assert_eq!(grove_output.status, BattalionStatus::Completed);
+
+    // Verify both produced output
+    assert!(!council_output.final_output.is_empty());
+    assert!(!grove_output.final_output.is_empty());
+}
