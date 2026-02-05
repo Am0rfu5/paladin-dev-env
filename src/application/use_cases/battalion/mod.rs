@@ -10,5 +10,6 @@ pub mod council_service;
 pub mod error_aggregation;
 pub mod formation_service;
 pub mod grove_service;
+pub mod maneuver_service;
 pub mod phalanx_service;
 pub mod retry;

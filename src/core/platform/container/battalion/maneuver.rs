@@ -150,9 +150,7 @@ impl Maneuver {
         let name = name.into();
 
         // Validate configuration
-        config
-            .validate()
-            .map_err(ManeuverError::ValidationError)?;
+        config.validate().map_err(ManeuverError::ValidationError)?;
 
         let maneuver = Maneuver {
             name,
