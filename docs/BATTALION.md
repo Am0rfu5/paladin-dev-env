@@ -20,7 +20,7 @@
 
 ## Overview
 
-The Battalion system enables coordination of multiple Paladin agents through five distinct orchestration patterns:
+The Battalion system enables coordination of multiple Paladin agents through seven distinct orchestration patterns:
 
 | Pattern | Description | Use Case | Complexity |
 |---------|-------------|----------|------------|
@@ -29,6 +29,8 @@ The Battalion system enables coordination of multiple Paladin agents through fiv
 | **Campaign** | Graph/DAG-based conditional routing | Complex workflows, branching logic | High |
 | **Chain of Command** | Hierarchical delegation (commander + specialists) | Task routing, load distribution | Medium-High |
 | **Conclave** | Multi-expert synthesis (Mixture-of-Agents) | Expert panel decisions, comprehensive analysis | Medium |
+| **Council** | Multi-agent deliberation with turn-taking | Collaborative discussion, consensus building | Medium |
+| **Grove** | Tree-based intelligent agent routing | Specialist selection, task distribution | Medium |
 
 ###  Key Features
 
@@ -343,6 +345,129 @@ println!("Final Recommendation:\n{}", result.aggregated_output.output);
 **Performance**: O(1) with respect to expert count (concurrent execution) + O(1) for aggregation.
 
 **Learn More**: See [Conclave Pattern Guide](./guides/conclave-pattern.md) for comprehensive documentation including configuration options, YAML setup, CLI usage, best practices, and troubleshooting.
+
+---
+
+### 6. Council (Deliberative Discussion)
+
+**Purpose**: Enable multi-agent deliberation with structured turn-taking and conversation flow.
+
+**Architecture**:
+```
+Topic: "Should we implement feature X?"
+
+Round 1:  [Expert1] → [Expert2] → [Expert3]
+Round 2:  [Expert1] → [Expert2] → [Expert3]
+Round 3:  [Expert1] → [Expert2] → [Expert3]
+
+→ Final Output: Synthesized recommendations
+```
+
+**Turn-Taking Strategies**:
+- **RoundRobin**: Participants speak in order, cycling through the list
+- **ModeratorDirected**: Moderator controls discussion flow, calls on relevant experts
+
+**Termination Conditions**:
+- **MaxRounds**: Fixed number of discussion rounds
+- **Consensus**: Stops when agreement detected (keyword-based)
+- **ModeratorDecision**: Moderator decides when sufficient deliberation
+- **Keyword**: Specific keyword triggers termination (e.g., "APPROVED")
+
+**When to Use**:
+- Collaborative decision-making requiring discussion
+- Consensus building among stakeholders
+- Expert panel deliberations
+- Structured debate with turn-taking
+
+**Example**:
+```rust
+use paladin::core::platform::container::battalion::council::{
+    CouncilBuilder, TurnStrategy, TerminationCondition
+};
+
+let council = CouncilBuilder::new()
+    .name("Security Review Council")
+    .add_participant(security_expert)
+    .add_participant(legal_expert)
+    .add_participant(technical_expert)
+    .turn_strategy(TurnStrategy::RoundRobin)
+    .termination_condition(TerminationCondition::MaxRounds(3))
+    .build()?;
+
+let topic = "Should we implement two-factor authentication?";
+let result = council_service.convene(&council, topic).await?;
+```
+
+**Performance**: O(P × R) where P = participants, R = rounds.
+
+**Learn More**: See [Council Pattern Documentation](COUNCIL.md) for comprehensive guide including moderated discussions, consensus building, and conversation history storage.
+
+---
+
+### 7. Grove (Intelligent Agent Routing)
+
+**Purpose**: Route tasks to specialized agents based on expertise matching.
+
+**Architecture**:
+```
+Task: "Optimize database queries"
+         │
+         ▼
+   [Routing Engine]
+         │
+    ┌────┴────┐
+    ▼         ▼
+[Backend]  [Frontend]
+[Tree]     [Tree]
+│          │
+├─ DB Expert ✓ (87% match)
+├─ API Expert
+└─ Service Expert
+```
+
+**Routing Strategies**:
+
+| Strategy | Speed | Cost | Accuracy | Requirements |
+|----------|-------|------|----------|--------------|
+| **KeywordMatch** | <10ms | Free | Good | Keywords only |
+| **SemanticSimilarity** | ~100ms | Low | Better | Embedding service |
+| **LlmRouting** | ~300ms | Medium | Best | LLM service |
+
+**When to Use**:
+- Specialized task distribution
+- Domain expert selection
+- Load balancing across specialists
+- Hierarchical agent organization
+
+**Example**:
+```rust
+use paladin::core::platform::container::battalion::grove::{
+    GroveBuilder, Tree, TreeAgent, RoutingStrategy
+};
+
+let backend_tree = Tree::new("Backend Specialists")
+    .add_agent(TreeAgent::new("DatabaseExpert")
+        .with_keywords(vec!["database", "sql", "query", "schema"]))
+    .add_agent(TreeAgent::new("ApiExpert")
+        .with_keywords(vec!["api", "rest", "graphql", "endpoint"]));
+
+let grove = GroveBuilder::new()
+    .name("Tech Support Grove")
+    .add_tree(backend_tree)
+    .config(GroveConfig {
+        routing_strategy: RoutingStrategy::KeywordMatch,
+        similarity_threshold: 0.6,
+        ..Default::default()
+    })
+    .build()?;
+
+let result = grove_service.execute(&grove, 
+    "Optimize database query performance").await?;
+```
+
+**Performance**: Routing time varies by strategy (10ms-300ms) + agent execution time.
+
+**Learn More**: See [Grove Pattern Documentation](GROVE.md) for complete guide including semantic routing, LLM-powered routing, and expertise definition strategies.
 
 ---
 

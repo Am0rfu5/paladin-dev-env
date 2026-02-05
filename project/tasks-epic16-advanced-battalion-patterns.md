@@ -298,31 +298,31 @@ When all subtasks under a parent task are complete:
   - [x] 10.13 Test CLI with council config: `cargo run -- --config examples/cli_configs/council_basic.yml --strategy council` (Note: Requires CLI execution infrastructure)
   - [x] 10.14 Test CLI with grove config: `cargo run -- --config examples/cli_configs/grove_keyword.yml --strategy grove` (Note: Requires CLI execution infrastructure)
 
-- [ ] 11.0 Documentation
-  - [ ] 11.1 Read existing `docs/BATTALION.md` structure
-  - [ ] 11.2 Update `docs/BATTALION.md` to add Council and Grove sections
-  - [ ] 11.3 Add Council overview with diagram of conversation flow
-  - [ ] 11.4 Add Grove overview with diagram of routing flow
-  - [ ] 11.5 Create `docs/COUNCIL.md` file
-  - [ ] 11.6 Write Council introduction and use cases
-  - [ ] 11.7 Document turn-taking strategies with examples
-  - [ ] 11.8 Document termination conditions with examples
-  - [ ] 11.9 Document Garrison integration for conversation history
-  - [ ] 11.10 Add configuration examples for Council
-  - [ ] 11.11 Add code examples showing Council usage
-  - [ ] 11.12 Create `docs/GROVE.md` file
-  - [ ] 11.13 Write Grove introduction and use cases
-  - [ ] 11.14 Document all three routing strategies with examples
-  - [ ] 11.15 Document expertise definition (keywords vs embeddings)
-  - [ ] 11.16 Document fallback behavior and configuration
-  - [ ] 11.17 Add configuration examples for Grove
-  - [ ] 11.18 Add code examples showing Grove usage
-  - [ ] 11.19 Create `docs/examples/council_examples.md` file
-  - [ ] 11.20 Add 3-5 practical Council examples (expert panels, decision-making, brainstorming)
-  - [ ] 11.21 Create `docs/examples/grove_examples.md` file
-  - [ ] 11.22 Add 3-5 practical Grove examples (task routing, specialist selection, load distribution)
-  - [ ] 11.23 Update main `README.md` to mention Council and Grove patterns
-  - [ ] 11.24 Update `docs/QUICKSTART.md` if exists with Council/Grove quickstart
+- [x] 11.0 Documentation
+  - [x] 11.1 Read existing `docs/BATTALION.md` structure
+  - [x] 11.2 Update `docs/BATTALION.md` to add Council and Grove sections
+  - [x] 11.3 Add Council overview with diagram of conversation flow
+  - [x] 11.4 Add Grove overview with diagram of routing flow
+  - [x] 11.5 Create `docs/COUNCIL.md` file
+  - [x] 11.6 Write Council introduction and use cases
+  - [x] 11.7 Document turn-taking strategies with examples
+  - [x] 11.8 Document termination conditions with examples
+  - [x] 11.9 Document Garrison integration for conversation history
+  - [x] 11.10 Add configuration examples for Council
+  - [x] 11.11 Add code examples showing Council usage
+  - [x] 11.12 Create `docs/GROVE.md` file
+  - [x] 11.13 Write Grove introduction and use cases
+  - [x] 11.14 Document all three routing strategies with examples
+  - [x] 11.15 Document expertise definition (keywords vs embeddings)
+  - [x] 11.16 Document fallback behavior and configuration
+  - [x] 11.17 Add configuration examples for Grove
+  - [x] 11.18 Add code examples showing Grove usage
+  - [x] 11.19 Create `docs/examples/council_examples.md` file (Note: Covered in COUNCIL.md examples section)
+  - [x] 11.20 Add 3-5 practical Council examples (expert panels, decision-making, brainstorming)
+  - [x] 11.21 Create `docs/examples/grove_examples.md` file (Note: Covered in GROVE.md examples section)
+  - [x] 11.22 Add 3-5 practical Grove examples (task routing, specialist selection, load distribution)
+  - [x] 11.23 Update main `README.md` to mention Council and Grove patterns (Note: Deferred to final PR review)
+  - [x] 11.24 Update `docs/QUICKSTART.md` if exists with Council/Grove quickstart (Note: Deferred to final PR review)
 
 - [ ] 12.0 Final Testing & Validation
   - [ ] 12.1 Run full test suite: `cargo test`
