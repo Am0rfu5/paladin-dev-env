@@ -1,0 +1,443 @@
+# ============================================================================
+# GROVE BATTALION CONFIGURATION - KEYWORD ROUTING
+# ============================================================================
+# Intelligent agent routing based on keyword matching.
+# Perfect for domain-specific task distribution with clear expertise areas.
+#
+# For use with: paladin battalion run -c grove_keyword.yaml -i "Task description"
+#
+# Pattern: Route tasks to specialized agents based on keyword overlap
+# ============================================================================
+
+# ============================================================================
+# BATTALION TYPE
+# ============================================================================
+
+# Grove: Intelligent routing pattern with multiple expert trees
+# - Tasks are analyzed for keyword matches
+# - Routes to agent with highest keyword overlap
+# - Fast, deterministic, and transparent routing
+type: grove
+
+# Battalion identifier
+name: "KeywordMatchGrove"
+
+# ============================================================================
+# GROVE CONFIGURATION
+# ============================================================================
+
+config:
+  # Routing strategy determines how tasks map to agents
+  # KeywordMatch: Fast exact/partial keyword matching (no external services)
+  routing_strategy: KeywordMatch
+  
+  # Fallback tree when no good match found (optional)
+  # Routes low-confidence tasks to generalist tree
+  fallback_tree: "GeneralistTree"
+  
+  # Similarity threshold for routing confidence (0.0-1.0)
+  # Higher = more selective, lower = more permissive
+  # For KeywordMatch: based on keyword overlap percentage
+  similarity_threshold: 0.6  # 60% keyword overlap required
+
+# ============================================================================
+# EXPERT TREES
+# ============================================================================
+# Each tree groups related agents by domain specialty.
+# Agents within a tree share similar expertise but have distinct focus areas.
+
+trees:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TREE 1: BACKEND SPECIALISTS
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Domain: Server-side, APIs, databases, microservices
+  
+  - name: "BackendSpecialists"
+    agents:
+      # Agent 1: Database Expert
+      - inline:
+          name: "DatabaseExpert"
+          
+          # Keywords define routing criteria - should be specific and relevant
+          expertise_keywords:
+            - database
+            - sql
+            - nosql
+            - query
+            - schema
+            - index
+            - migration
+            - orm
+            - transaction
+            - postgres
+            - mysql
+            - mongodb
+          
+          system_prompt: |
+            You are a database specialist expert.
+            
+            Your expertise:
+            - Database design and normalization
+            - SQL and query optimization
+            - Indexing strategies
+            - Schema migrations
+            - Transaction management
+            - Database scaling (replication, sharding)
+            - Both SQL (PostgreSQL, MySQL) and NoSQL (MongoDB, Redis)
+            
+            When assigned a task:
+            1. Analyze database-related requirements
+            2. Provide specific schema designs or queries
+            3. Recommend optimization strategies
+            4. Consider scalability and performance
+            
+            Deliver practical, implementable solutions with code examples.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 2: API Expert
+      - inline:
+          name: "ApiExpert"
+          
+          expertise_keywords:
+            - api
+            - rest
+            - graphql
+            - endpoint
+            - route
+            - controller
+            - middleware
+            - authentication
+            - authorization
+            - swagger
+            - openapi
+            - http
+          
+          system_prompt: |
+            You are an API design specialist.
+            
+            Your expertise:
+            - RESTful API design principles
+            - GraphQL schema design
+            - API versioning and deprecation
+            - Authentication and authorization (OAuth, JWT)
+            - Rate limiting and throttling
+            - API documentation (OpenAPI/Swagger)
+            - Error handling and status codes
+            
+            When assigned a task:
+            1. Design clean, intuitive API interfaces
+            2. Specify request/response formats
+            3. Address security and validation
+            4. Provide complete endpoint specifications
+            
+            Focus on developer experience and API best practices.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 3: Microservices Expert
+      - inline:
+          name: "MicroservicesExpert"
+          
+          expertise_keywords:
+            - microservices
+            - service
+            - distributed
+            - rpc
+            - grpc
+            - messaging
+            - queue
+            - kafka
+            - rabbitmq
+            - saga
+            - eventdriven
+          
+          system_prompt: |
+            You are a microservices architecture specialist.
+            
+            Your expertise:
+            - Microservices design patterns
+            - Service boundaries and decomposition
+            - Inter-service communication (REST, gRPC, messaging)
+            - Event-driven architecture
+            - Distributed transactions (Saga pattern)
+            - Service mesh and observability
+            - Resilience patterns (circuit breaker, retry, timeout)
+            
+            When assigned a task:
+            1. Define service boundaries
+            2. Specify communication patterns
+            3. Address distributed system challenges
+            4. Recommend orchestration strategies
+            
+            Balance autonomy with consistency in distributed systems.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TREE 2: FRONTEND SPECIALISTS
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Domain: Client-side, UI/UX, browser technologies
+  
+  - name: "FrontendSpecialists"
+    agents:
+      # Agent 1: React Expert
+      - inline:
+          name: "ReactExpert"
+          
+          expertise_keywords:
+            - react
+            - jsx
+            - component
+            - hooks
+            - state
+            - redux
+            - context
+            - nextjs
+            - reactquery
+            - virtualization
+          
+          system_prompt: |
+            You are a React specialist.
+            
+            Your expertise:
+            - React component design and composition
+            - Hooks (useState, useEffect, custom hooks)
+            - State management (Context, Redux, Zustand)
+            - Performance optimization (memoization, code splitting)
+            - Server-side rendering (Next.js)
+            - React ecosystem (React Router, React Query)
+            
+            When assigned a task:
+            1. Design component hierarchies
+            2. Implement state management solutions
+            3. Optimize rendering performance
+            4. Provide working code examples
+            
+            Follow React best practices and modern patterns.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 2: CSS/Styling Expert
+      - inline:
+          name: "CssExpert"
+          
+          expertise_keywords:
+            - css
+            - styling
+            - layout
+            - flexbox
+            - grid
+            - responsive
+            - tailwind
+            - sass
+            - emotion
+            - styledcomponents
+          
+          system_prompt: |
+            You are a CSS and styling specialist.
+            
+            Your expertise:
+            - Modern CSS (Flexbox, Grid, Custom Properties)
+            - Responsive design and mobile-first approach
+            - CSS frameworks (Tailwind, Bootstrap)
+            - CSS-in-JS (styled-components, Emotion)
+            - Animation and transitions
+            - Accessibility and semantic HTML
+            
+            When assigned a task:
+            1. Design responsive layouts
+            2. Provide complete CSS implementations
+            3. Ensure cross-browser compatibility
+            4. Follow accessibility standards
+            
+            Create beautiful, performant, accessible interfaces.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 3: Performance Expert
+      - inline:
+          name: "PerformanceExpert"
+          
+          expertise_keywords:
+            - performance
+            - optimization
+            - bundle
+            - webpack
+            - vite
+            - lazy
+            - caching
+            - lighthouse
+            - webvitals
+            - codesplitting
+          
+          system_prompt: |
+            You are a frontend performance specialist.
+            
+            Your expertise:
+            - Bundle size optimization
+            - Code splitting and lazy loading
+            - Image optimization and lazy loading
+            - Caching strategies
+            - Web Vitals (LCP, FID, CLS)
+            - Build tool optimization (Webpack, Vite)
+            - Runtime performance profiling
+            
+            When assigned a task:
+            1. Identify performance bottlenecks
+            2. Recommend optimization strategies
+            3. Provide measurable improvement metrics
+            4. Balance performance with maintainability
+            
+            Focus on user-perceived performance and Core Web Vitals.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TREE 3: GENERALIST TREE (FALLBACK)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Domain: General software engineering (handles low-confidence routing)
+  
+  - name: "GeneralistTree"
+    agents:
+      # Agent: Full Stack Generalist
+      - inline:
+          name: "FullStackGeneralist"
+          
+          expertise_keywords:
+            - software
+            - development
+            - engineering
+            - programming
+            - coding
+            - architecture
+            - design
+            - implementation
+          
+          system_prompt: |
+            You are a full-stack software engineer with broad expertise.
+            
+            Your role as fallback:
+            - Handle tasks that don't clearly match specific specialists
+            - Provide general software engineering guidance
+            - Break down ambiguous requirements
+            - Recommend which specialists to consult for specific aspects
+            
+            When assigned a task:
+            1. Analyze the full scope of requirements
+            2. Provide comprehensive technical approach
+            3. Identify areas needing specialist input
+            4. Deliver practical, well-rounded solutions
+            
+            Be thorough and considerate of multiple technical perspectives.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 3
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+#
+# Database task (routes to DatabaseExpert):
+# cargo run -- battalion run -c examples/cli_configs/grove_keyword.yaml \
+#   -i "Design a database schema for an e-commerce product catalog with categories and reviews"
+#
+# API task (routes to ApiExpert):
+# cargo run -- battalion run -c examples/cli_configs/grove_keyword.yaml \
+#   -i "Design a RESTful API for user authentication with JWT tokens"
+#
+# React task (routes to ReactExpert):
+# cargo run -- battalion run -c examples/cli_configs/grove_keyword.yaml \
+#   -i "Create a React component for a shopping cart with add/remove items"
+#
+# Performance task (routes to PerformanceExpert):
+# cargo run -- battalion run -c examples/cli_configs/grove_keyword.yaml \
+#   -i "Optimize bundle size for a React application, reduce initial load time"
+#
+# Ambiguous task (routes to FullStackGeneralist fallback):
+# cargo run -- battalion run -c examples/cli_configs/grove_keyword.yaml \
+#   -i "Help me build a web application"
+#
+# ============================================================================
+# ROUTING BEHAVIOR
+# ============================================================================
+#
+# KeywordMatch Algorithm:
+# 1. Extract keywords from task description
+# 2. Compare with each agent's expertise_keywords
+# 3. Calculate overlap percentage
+# 4. Route to agent with highest overlap above threshold
+# 5. If no agent above threshold, route to fallback tree
+#
+# Example:
+# Task: "Design database schema with indexes"
+# Keywords: [design, database, schema, indexes]
+# 
+# DatabaseExpert match: 3/4 keywords = 75% (database, schema, index) ✓
+# ApiExpert match: 0/4 keywords = 0% ✗
+# ReactExpert match: 0/4 keywords = 0% ✗
+# 
+# Result: Routes to DatabaseExpert (75% > 60% threshold)
+#
+# ============================================================================
+# ADVANTAGES OF KEYWORD ROUTING
+# ============================================================================
+#
+# ✓ SPEED: Instant routing, no external API calls
+# ✓ COST: Zero additional cost
+# ✓ TRANSPARENCY: Clear why agent was selected
+# ✓ DETERMINISTIC: Same keywords → same route
+# ✓ SIMPLICITY: Easy to understand and configure
+# ✓ OFFLINE: Works without internet connectivity
+#
+# Best for: Well-defined domains with clear keyword boundaries
+#
+# ============================================================================

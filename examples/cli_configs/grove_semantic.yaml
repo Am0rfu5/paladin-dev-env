@@ -1,0 +1,492 @@
+# ============================================================================
+# GROVE BATTALION CONFIGURATION - SEMANTIC SIMILARITY ROUTING
+# ============================================================================
+# Intelligent agent routing based on semantic embeddings.
+# Perfect for contextual task routing with nuanced understanding.
+#
+# For use with: paladin battalion run -c grove_semantic.yaml -i "Task description"
+#
+# Pattern: Route tasks using embedding similarity (requires embedding service)
+# ============================================================================
+
+# ============================================================================
+# BATTALION TYPE
+# ============================================================================
+
+# Grove: Intelligent routing pattern with semantic understanding
+# - Tasks are converted to embeddings
+# - Routes based on cosine similarity with agent embeddings
+# - Contextual, handles synonyms and paraphrasing
+type: grove
+
+# Battalion identifier
+name: "SemanticGrove"
+
+# ============================================================================
+# GROVE CONFIGURATION
+# ============================================================================
+
+config:
+  # SemanticSimilarity: Embedding-based contextual routing
+  # Requires: Embedding service (OpenAI, local model, etc.)
+  routing_strategy: SemanticSimilarity
+  
+  # Embedding configuration
+  embedding:
+    # Provider for embedding generation
+    provider: openai
+    # Model for embeddings (OpenAI: text-embedding-ada-002, text-embedding-3-small)
+    model: "text-embedding-3-small"
+    # Dimension (text-embedding-3-small: 1536, ada-002: 1536)
+    dimension: 1536
+  
+  # Fallback tree when similarity too low
+  fallback_tree: "GeneralSupportTree"
+  
+  # Similarity threshold for routing confidence (0.0-1.0)
+  # Cosine similarity: 1.0 = identical, 0.0 = orthogonal
+  # Typical ranges: 0.7-0.8 for strict, 0.6-0.7 for moderate, 0.5-0.6 for permissive
+  similarity_threshold: 0.72  # 72% similarity required
+
+# ============================================================================
+# EXPERT TREES
+# ============================================================================
+
+trees:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TREE 1: SECURITY SPECIALISTS
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - name: "SecuritySpecialists"
+    agents:
+      # Agent 1: Application Security Expert
+      - inline:
+          name: "AppSecExpert"
+          
+          # Expertise description for semantic embedding
+          # This text is embedded to create the agent's expertise vector
+          expertise_description: |
+            Application security specialist focusing on secure coding practices,
+            vulnerability assessment, penetration testing, OWASP Top 10,
+            SQL injection, XSS attacks, CSRF protection, authentication,
+            authorization, session management, input validation, output encoding,
+            security headers, secure API design, threat modeling for applications.
+          
+          # Keywords still used for transparency/logging
+          expertise_keywords:
+            - security
+            - vulnerability
+            - penetration
+            - owasp
+            - injection
+            - xss
+            - csrf
+            - authentication
+            - authorization
+          
+          # Embedding placeholder (computed at initialization)
+          # Format: [float, float, ...] with 1536 dimensions for text-embedding-3-small
+          expertise_embedding: ~  # Auto-computed from expertise_description
+          
+          system_prompt: |
+            You are an application security specialist.
+            
+            Your expertise:
+            - Secure coding practices and code review
+            - Vulnerability identification (OWASP Top 10)
+            - Authentication and authorization mechanisms
+            - Input validation and output encoding
+            - API security and secure communication
+            - Security testing (SAST, DAST, penetration testing)
+            
+            When assigned a task:
+            1. Identify security vulnerabilities and risks
+            2. Recommend specific security controls
+            3. Provide secure code examples
+            4. Consider defense-in-depth strategies
+            
+            Prioritize practical security without hindering usability.
+          
+          model: "gpt-4o"
+          temperature: 0.6
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 2: Infrastructure Security Expert
+      - inline:
+          name: "InfraSecExpert"
+          
+          expertise_description: |
+            Infrastructure and cloud security specialist focusing on network security,
+            firewall configuration, VPC design, security groups, IAM policies,
+            encryption at rest and in transit, key management, certificate management,
+            secrets management, cloud security posture, compliance (SOC 2, ISO 27001),
+            security monitoring, SIEM, intrusion detection, DDoS protection.
+          
+          expertise_keywords:
+            - infrastructure
+            - cloud
+            - network
+            - firewall
+            - encryption
+            - iam
+            - compliance
+            - monitoring
+          
+          expertise_embedding: ~
+          
+          system_prompt: |
+            You are an infrastructure security specialist.
+            
+            Your expertise:
+            - Network security and segmentation
+            - Cloud security (AWS, Azure, GCP)
+            - IAM and access control policies
+            - Encryption and key management
+            - Compliance frameworks (SOC 2, ISO 27001)
+            - Security monitoring and incident response
+            
+            When assigned a task:
+            1. Design secure infrastructure architectures
+            2. Specify network security controls
+            3. Define IAM policies and access controls
+            4. Address compliance requirements
+            
+            Balance security rigor with operational efficiency.
+          
+          model: "gpt-4o"
+          temperature: 0.6
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 3: Data Security Expert
+      - inline:
+          name: "DataSecExpert"
+          
+          expertise_description: |
+            Data security and privacy specialist focusing on data classification,
+            PII handling, data encryption, database security, data masking,
+            tokenization, privacy by design, GDPR compliance, CCPA compliance,
+            data retention policies, secure data deletion, data breach response,
+            privacy impact assessments, consent management, data anonymization.
+          
+          expertise_keywords:
+            - data
+            - privacy
+            - pii
+            - gdpr
+            - ccpa
+            - encryption
+            - anonymization
+            - compliance
+          
+          expertise_embedding: ~
+          
+          system_prompt: |
+            You are a data security and privacy specialist.
+            
+            Your expertise:
+            - Data classification and handling
+            - Privacy regulations (GDPR, CCPA, HIPAA)
+            - Data encryption and protection
+            - PII identification and safeguarding
+            - Privacy by design principles
+            - Data breach prevention and response
+            
+            When assigned a task:
+            1. Classify data sensitivity levels
+            2. Specify data protection mechanisms
+            3. Address privacy requirements
+            4. Ensure regulatory compliance
+            
+            Protect user privacy while enabling business functionality.
+          
+          model: "gpt-4o"
+          temperature: 0.6
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TREE 2: PERFORMANCE SPECIALISTS
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - name: "PerformanceSpecialists"
+    agents:
+      # Agent 1: Backend Performance Expert
+      - inline:
+          name: "BackendPerfExpert"
+          
+          expertise_description: |
+            Backend performance optimization specialist focusing on database query
+            optimization, indexing strategies, caching layers (Redis, Memcached),
+            connection pooling, async processing, worker queues, load balancing,
+            horizontal scaling, vertical scaling, profiling bottlenecks, API response
+            time optimization, database replication, read replicas, query planning.
+          
+          expertise_keywords:
+            - performance
+            - optimization
+            - database
+            - caching
+            - scaling
+            - latency
+            - throughput
+            - backend
+          
+          expertise_embedding: ~
+          
+          system_prompt: |
+            You are a backend performance optimization specialist.
+            
+            Your expertise:
+            - Database query optimization
+            - Caching strategies (Redis, CDN)
+            - Async processing and queues
+            - Load balancing and scaling
+            - API performance tuning
+            - Profiling and bottleneck identification
+            
+            When assigned a task:
+            1. Identify performance bottlenecks
+            2. Recommend optimization strategies
+            3. Provide measurable improvements (latency, throughput)
+            4. Consider cost-performance tradeoffs
+            
+            Focus on measurable performance gains with clear metrics.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 2: Frontend Performance Expert
+      - inline:
+          name: "FrontendPerfExpert"
+          
+          expertise_description: |
+            Frontend performance optimization specialist focusing on bundle size
+            reduction, code splitting, lazy loading, image optimization, web fonts,
+            Core Web Vitals (LCP, FID, CLS), render performance, JavaScript execution,
+            CSS optimization, caching strategies, service workers, progressive web apps,
+            lighthouse optimization, browser performance profiling.
+          
+          expertise_keywords:
+            - frontend
+            - performance
+            - bundle
+            - optimization
+            - webvitals
+            - loading
+            - rendering
+            - lighthouse
+          
+          expertise_embedding: ~
+          
+          system_prompt: |
+            You are a frontend performance optimization specialist.
+            
+            Your expertise:
+            - Bundle size optimization and code splitting
+            - Image and asset optimization
+            - Core Web Vitals (LCP, FID, CLS)
+            - Rendering performance
+            - Caching and service workers
+            - Lighthouse score optimization
+            
+            When assigned a task:
+            1. Analyze frontend performance metrics
+            2. Recommend specific optimizations
+            3. Provide implementation strategies
+            4. Target Core Web Vitals thresholds
+            
+            Optimize for user-perceived performance and engagement.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 3: Scalability Expert
+      - inline:
+          name: "ScalabilityExpert"
+          
+          expertise_description: |
+            Scalability and distributed systems specialist focusing on horizontal
+            scaling, load balancing, auto-scaling, microservices architecture,
+            distributed caching, database sharding, event-driven architecture,
+            message queues, service mesh, circuit breakers, rate limiting,
+            capacity planning, performance testing, chaos engineering, observability.
+          
+          expertise_keywords:
+            - scalability
+            - distributed
+            - microservices
+            - loadbalancing
+            - autoscaling
+            - sharding
+            - messaging
+            - resilience
+          
+          expertise_embedding: ~
+          
+          system_prompt: |
+            You are a scalability and distributed systems specialist.
+            
+            Your expertise:
+            - Horizontal scaling strategies
+            - Distributed systems architecture
+            - Load balancing and auto-scaling
+            - Microservices patterns
+            - Event-driven architecture
+            - Capacity planning and testing
+            
+            When assigned a task:
+            1. Design scalable architectures
+            2. Specify scaling strategies
+            3. Address distributed system challenges
+            4. Plan for growth and resilience
+            
+            Build systems that scale gracefully under load.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 180
+          stop_words: []
+          
+          provider:
+            type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TREE 3: GENERAL SUPPORT (FALLBACK)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - name: "GeneralSupportTree"
+    agents:
+      - inline:
+          name: "GeneralEngineer"
+          
+          expertise_description: |
+            General software engineering with broad knowledge across web development,
+            architecture, design patterns, best practices, code quality, testing,
+            documentation, project management, agile methodologies, technical leadership.
+          
+          expertise_keywords:
+            - software
+            - engineering
+            - development
+            - architecture
+            - general
+          
+          expertise_embedding: ~
+          
+          system_prompt: |
+            You are a general software engineer handling tasks without clear specialization.
+            
+            When assigned a task:
+            1. Analyze requirements comprehensively
+            2. Provide well-rounded technical approach
+            3. Recommend consulting specialists if needed
+            4. Deliver practical solutions
+            
+            Be thorough and consider multiple perspectives.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 3
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+#
+# Security task (routes to AppSecExpert):
+# cargo run -- battalion run -c examples/cli_configs/grove_semantic.yaml \
+#   -i "How do I prevent SQL injection in my login form?"
+#
+# Privacy task (routes to DataSecExpert):
+# cargo run -- battalion run -c examples/cli_configs/grove_semantic.yaml \
+#   -i "Our app collects user emails - what GDPR requirements apply?"
+#
+# Backend performance (routes to BackendPerfExpert):
+# cargo run -- battalion run -c examples/cli_configs/grove_semantic.yaml \
+#   -i "Our API is slow when fetching user profiles - how to improve?"
+#
+# Frontend performance (routes to FrontendPerfExpert):
+# cargo run -- battalion run -c examples/cli_configs/grove_semantic.yaml \
+#   -i "Page load is too slow - users are leaving before content renders"
+#
+# Paraphrased query still routes correctly:
+# cargo run -- battalion run -c examples/cli_configs/grove_semantic.yaml \
+#   -i "Visitors complain about slow website speed on mobile devices"
+# → Routes to FrontendPerfExpert based on semantic similarity
+#
+# ============================================================================
+# ROUTING BEHAVIOR
+# ============================================================================
+#
+# SemanticSimilarity Algorithm:
+# 1. Generate embedding for task description using embedding service
+# 2. Compute cosine similarity with each agent's expertise_embedding
+# 3. Route to agent with highest similarity above threshold
+# 4. If no agent above threshold, route to fallback tree
+#
+# Example:
+# Task: "Users report slow page loading times"
+# Task embedding: [0.234, -0.567, 0.891, ...] (1536 dimensions)
+#
+# FrontendPerfExpert similarity: 0.84 ✓ (above 0.72 threshold)
+# BackendPerfExpert similarity: 0.68 ✗ (below threshold)
+# SecurityExpert similarity: 0.32 ✗
+#
+# Result: Routes to FrontendPerfExpert (highest similarity above threshold)
+#
+# Advantages over KeywordMatch:
+# - Understands "slow page" ≈ "performance optimization"
+# - Handles synonyms: "sluggish" = "slow" = "laggy"
+# - Works with paraphrased queries
+# - Contextual understanding of intent
+#
+# ============================================================================
+# ADVANTAGES OF SEMANTIC ROUTING
+# ============================================================================
+#
+# ✓ CONTEXTUAL: Understands meaning, not just keywords
+# ✓ FLEXIBLE: Handles paraphrasing and synonyms
+# ✓ ROBUST: Works with natural language variations
+# ✓ QUALITY: Better routing for ambiguous tasks
+# ✓ SCALABLE: Doesn't require exhaustive keyword lists
+#
+# Requirements:
+# • Embedding service (OpenAI, local model, etc.)
+# • Pre-computed agent embeddings (done at startup)
+# • ~50-100ms additional latency per routing decision
+# • Small cost per routing (~$0.0001 with OpenAI)
+#
+# Best for: Natural language queries with contextual nuances
+#
+# ============================================================================

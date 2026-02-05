@@ -1,0 +1,687 @@
+# ============================================================================
+# GROVE BATTALION CONFIGURATION - LLM ROUTING
+# ============================================================================
+# Intelligent agent routing using LLM reasoning.
+# Perfect for complex tasks requiring deep understanding and multi-factor analysis.
+#
+# For use with: paladin battalion run -c grove_llm.yaml -i "Task description"
+#
+# Pattern: LLM analyzes task and selects best agent with reasoning
+# ============================================================================
+
+# ============================================================================
+# BATTALION TYPE
+# ============================================================================
+
+# Grove: Intelligent routing pattern with LLM-powered decision making
+# - LLM analyzes task context and requirements
+# - Considers multiple factors for optimal routing
+# - Provides explainable routing decisions
+type: grove
+
+# Battalion identifier
+name: "LlmRoutedGrove"
+
+# ============================================================================
+# GROVE CONFIGURATION
+# ============================================================================
+
+config:
+  # LlmRouting: Most intelligent routing strategy
+  # Requires: LLM service (OpenAI, Anthropic, DeepSeek, etc.)
+  routing_strategy: LlmRouting
+  
+  # LLM configuration for routing decisions
+  llm_routing:
+    # Provider for routing LLM
+    provider: openai
+    # Model for routing decisions (gpt-4o for best results, gpt-4o-mini for cost)
+    model: "gpt-4o"
+    # Temperature for routing (lower = more deterministic)
+    temperature: 0.3
+    # Max tokens for routing response
+    max_tokens: 500
+  
+  # Fallback tree when LLM can't decide or low confidence
+  fallback_tree: "UniversalSupportTree"
+  
+  # Confidence threshold for routing (0.0-1.0)
+  # LLM must express confidence above this threshold
+  similarity_threshold: 0.65  # 65% confidence required
+
+# ============================================================================
+# EXPERT TREES
+# ============================================================================
+# For LLM routing, agent descriptions are critical - they inform the LLM's decision
+
+trees:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TREE 1: BACKEND ARCHITECTURE
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - name: "BackendArchitecture"
+    agents:
+      # Agent 1: Database Architect
+      - inline:
+          name: "DatabaseArchitect"
+          
+          # Rich description helps LLM make informed routing decisions
+          agent_description: |
+            Expert database architect specializing in:
+            - Schema design and normalization (1NF through BCNF)
+            - SQL and NoSQL database selection and optimization
+            - Query performance tuning and indexing strategies
+            - Database scaling (sharding, replication, partitioning)
+            - Data modeling for various use cases (OLTP, OLAP, time-series)
+            - Migration strategies and zero-downtime deployments
+            
+            Best suited for tasks involving:
+            • Database schema design or refactoring
+            • Query optimization and performance issues
+            • Data modeling and relationship design
+            • Database technology selection
+            • Scaling database infrastructure
+            • Data migration planning
+          
+          expertise_keywords:
+            - database
+            - schema
+            - query
+            - sql
+            - nosql
+            - optimization
+          
+          system_prompt: |
+            You are an expert database architect.
+            
+            When assigned a task:
+            1. Analyze data requirements and access patterns
+            2. Design optimal schema structures
+            3. Recommend appropriate database technologies
+            4. Specify indexing and optimization strategies
+            5. Consider scalability and performance
+            6. Provide complete DDL/migrations
+            
+            Deliver production-ready database solutions with clear rationale.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 2: API Architect
+      - inline:
+          name: "ApiArchitect"
+          
+          agent_description: |
+            Expert API architect specializing in:
+            - RESTful API design following OpenAPI standards
+            - GraphQL schema design and optimization
+            - gRPC service definitions for high-performance APIs
+            - API versioning and backwards compatibility
+            - Authentication/authorization (OAuth 2.0, JWT, API keys)
+            - Rate limiting, throttling, and quota management
+            
+            Best suited for tasks involving:
+            • API design and endpoint structure
+            • Request/response format definition
+            • API security and authentication
+            • API documentation and contracts
+            • Protocol selection (REST vs GraphQL vs gRPC)
+            • API gateway and integration patterns
+          
+          expertise_keywords:
+            - api
+            - rest
+            - graphql
+            - endpoint
+            - authentication
+            - integration
+          
+          system_prompt: |
+            You are an expert API architect.
+            
+            When assigned a task:
+            1. Design clean, intuitive API interfaces
+            2. Specify complete request/response formats
+            3. Address authentication and authorization
+            4. Document endpoints thoroughly (OpenAPI)
+            5. Consider developer experience
+            6. Plan for versioning and evolution
+            
+            Create APIs that are secure, scalable, and delightful to use.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 3: Distributed Systems Expert
+      - inline:
+          name: "DistributedSystemsExpert"
+          
+          agent_description: |
+            Expert in distributed systems and microservices architecture:
+            - Microservices decomposition and boundaries
+            - Service communication patterns (sync/async, event-driven)
+            - Distributed transactions and consistency (Saga, 2PC)
+            - Service mesh and observability (Istio, Linkerd)
+            - Resilience patterns (circuit breaker, retry, timeout, bulkhead)
+            - Event sourcing and CQRS
+            
+            Best suited for tasks involving:
+            • Microservices architecture design
+            • Service boundary definition
+            • Inter-service communication
+            • Distributed transaction handling
+            • System resilience and fault tolerance
+            • Event-driven architecture
+          
+          expertise_keywords:
+            - microservices
+            - distributed
+            - eventdriven
+            - messaging
+            - resilience
+            - saga
+          
+          system_prompt: |
+            You are an expert in distributed systems.
+            
+            When assigned a task:
+            1. Design service boundaries and responsibilities
+            2. Specify communication patterns
+            3. Address consistency and transaction requirements
+            4. Recommend resilience strategies
+            5. Consider observability and debugging
+            6. Plan for failure scenarios
+            
+            Build resilient, scalable distributed architectures.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TREE 2: FRONTEND ENGINEERING
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - name: "FrontendEngineering"
+    agents:
+      # Agent 1: React Specialist
+      - inline:
+          name: "ReactSpecialist"
+          
+          agent_description: |
+            Expert React developer specializing in:
+            - Modern React patterns (hooks, context, custom hooks)
+            - State management (Context API, Redux, Zustand, Jotai)
+            - Performance optimization (memo, useMemo, useCallback, React.lazy)
+            - Server-side rendering (Next.js, Remix)
+            - React ecosystem (React Router, React Query, React Hook Form)
+            - Component architecture and design systems
+            
+            Best suited for tasks involving:
+            • React component development
+            • State management implementation
+            • React performance optimization
+            • SSR/SSG with Next.js
+            • Complex UI interactions
+            • React-specific patterns and best practices
+          
+          expertise_keywords:
+            - react
+            - jsx
+            - hooks
+            - component
+            - nextjs
+            - state
+          
+          system_prompt: |
+            You are an expert React developer.
+            
+            When assigned a task:
+            1. Design component hierarchies
+            2. Implement optimal state management
+            3. Write performant, maintainable code
+            4. Follow React best practices
+            5. Consider accessibility and UX
+            6. Provide complete working examples
+            
+            Build modern, performant React applications.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 2: UI/UX Engineer
+      - inline:
+          name: "UiUxEngineer"
+          
+          agent_description: |
+            Expert UI/UX engineer specializing in:
+            - Modern CSS (Flexbox, Grid, Custom Properties, Container Queries)
+            - Responsive design and mobile-first development
+            - CSS frameworks (Tailwind, Bootstrap, Material-UI)
+            - CSS-in-JS (styled-components, Emotion, vanilla-extract)
+            - Animation and transitions (CSS, Framer Motion)
+            - Accessibility (WCAG 2.1 AA/AAA, ARIA, semantic HTML)
+            
+            Best suited for tasks involving:
+            • UI layout and styling implementation
+            • Responsive design across devices
+            • Animation and motion design
+            • Accessibility compliance
+            • Design system implementation
+            • Visual polish and refinement
+          
+          expertise_keywords:
+            - css
+            - styling
+            - layout
+            - responsive
+            - animation
+            - accessibility
+          
+          system_prompt: |
+            You are an expert UI/UX engineer.
+            
+            When assigned a task:
+            1. Design responsive, accessible layouts
+            2. Implement pixel-perfect styling
+            3. Create smooth animations
+            4. Ensure WCAG compliance
+            5. Optimize for all screen sizes
+            6. Provide complete CSS implementations
+            
+            Create beautiful, accessible, performant interfaces.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 3: Web Performance Engineer
+      - inline:
+          name: "WebPerformanceEngineer"
+          
+          agent_description: |
+            Expert web performance engineer specializing in:
+            - Core Web Vitals optimization (LCP, INP, CLS)
+            - Bundle size reduction and code splitting
+            - Image optimization (WebP, AVIF, lazy loading, responsive images)
+            - Caching strategies (service workers, HTTP caching, CDN)
+            - Build optimization (Webpack, Vite, Rollup, esbuild)
+            - Runtime performance (JavaScript execution, rendering, painting)
+            
+            Best suited for tasks involving:
+            • Page load performance optimization
+            • Core Web Vitals improvement
+            • Bundle size reduction
+            • Asset optimization
+            • Performance monitoring and profiling
+            • Build tool configuration
+          
+          expertise_keywords:
+            - performance
+            - optimization
+            - webvitals
+            - bundle
+            - caching
+            - lighthouse
+          
+          system_prompt: |
+            You are an expert web performance engineer.
+            
+            When assigned a task:
+            1. Identify performance bottlenecks
+            2. Recommend specific optimizations
+            3. Provide measurable improvement strategies
+            4. Consider user experience impact
+            5. Balance performance with maintainability
+            6. Target Core Web Vitals thresholds
+            
+            Optimize for fast, smooth user experiences.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TREE 3: DEVOPS & INFRASTRUCTURE
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - name: "DevOpsInfrastructure"
+    agents:
+      # Agent 1: Cloud Architect
+      - inline:
+          name: "CloudArchitect"
+          
+          agent_description: |
+            Expert cloud architect specializing in:
+            - Cloud platform design (AWS, Azure, GCP)
+            - Infrastructure as Code (Terraform, CloudFormation, Pulumi)
+            - Container orchestration (Kubernetes, ECS, AKS, GKE)
+            - Serverless architecture (Lambda, Cloud Functions, Azure Functions)
+            - Cloud networking (VPC, subnets, security groups, load balancers)
+            - Cost optimization and resource management
+            
+            Best suited for tasks involving:
+            • Cloud infrastructure design
+            • Kubernetes architecture
+            • Serverless solutions
+            • Infrastructure automation
+            • Cloud cost optimization
+            • Multi-cloud strategies
+          
+          expertise_keywords:
+            - cloud
+            - aws
+            - kubernetes
+            - terraform
+            - infrastructure
+            - serverless
+          
+          system_prompt: |
+            You are an expert cloud architect.
+            
+            When assigned a task:
+            1. Design scalable cloud architectures
+            2. Specify infrastructure as code
+            3. Optimize for cost and performance
+            4. Ensure high availability and resilience
+            5. Follow cloud best practices
+            6. Provide complete IaC templates
+            
+            Build reliable, cost-effective cloud solutions.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 2: CI/CD Specialist
+      - inline:
+          name: "CiCdSpecialist"
+          
+          agent_description: |
+            Expert CI/CD specialist focusing on:
+            - CI/CD pipeline design (GitHub Actions, GitLab CI, Jenkins, CircleCI)
+            - Deployment strategies (blue-green, canary, rolling updates)
+            - Build optimization and caching
+            - Testing automation (unit, integration, e2e, performance)
+            - Artifact management and versioning
+            - GitOps and continuous delivery
+            
+            Best suited for tasks involving:
+            • CI/CD pipeline creation and optimization
+            • Deployment automation
+            • Build process improvement
+            • Testing strategy and automation
+            • Release management
+            • GitOps implementation
+          
+          expertise_keywords:
+            - cicd
+            - pipeline
+            - deployment
+            - automation
+            - testing
+            - gitops
+          
+          system_prompt: |
+            You are an expert CI/CD specialist.
+            
+            When assigned a task:
+            1. Design efficient CI/CD pipelines
+            2. Automate build and deployment processes
+            3. Implement comprehensive testing
+            4. Optimize build times
+            5. Ensure deployment safety
+            6. Provide complete pipeline configurations
+            
+            Enable fast, reliable software delivery.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+      
+      # Agent 3: SRE/Observability Expert
+      - inline:
+          name: "SreObservabilityExpert"
+          
+          agent_description: |
+            Expert SRE and observability specialist focusing on:
+            - Monitoring and alerting (Prometheus, Grafana, Datadog, New Relic)
+            - Distributed tracing (Jaeger, Zipkin, OpenTelemetry)
+            - Log aggregation (ELK, Loki, Splunk)
+            - Incident response and on-call procedures
+            - SLIs, SLOs, and error budgets
+            - Chaos engineering and resilience testing
+            
+            Best suited for tasks involving:
+            • Monitoring and observability setup
+            • Alerting strategy and configuration
+            • Incident response procedures
+            • SLO/SLI definition
+            • Performance debugging
+            • System reliability improvement
+          
+          expertise_keywords:
+            - monitoring
+            - observability
+            - sre
+            - prometheus
+            - tracing
+            - incident
+          
+          system_prompt: |
+            You are an expert SRE and observability specialist.
+            
+            When assigned a task:
+            1. Design comprehensive monitoring solutions
+            2. Define meaningful SLIs and SLOs
+            3. Create actionable alerting
+            4. Plan incident response procedures
+            5. Improve system reliability
+            6. Provide complete observability setup
+            
+            Build observable, reliable systems.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 2
+          timeout_seconds: 240
+          stop_words: []
+          
+          provider:
+            type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TREE 4: UNIVERSAL SUPPORT (FALLBACK)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - name: "UniversalSupportTree"
+    agents:
+      - inline:
+          name: "UniversalEngineer"
+          
+          agent_description: |
+            Generalist software engineer with broad expertise across:
+            - Full-stack development (frontend, backend, databases)
+            - Software architecture and design patterns
+            - Code quality and best practices
+            - Testing and documentation
+            - Project planning and technical leadership
+            
+            Best suited for tasks involving:
+            • General software engineering questions
+            • Tasks spanning multiple domains
+            • Requirements analysis and planning
+            • Technical recommendations
+            • Code review and quality assessment
+          
+          expertise_keywords:
+            - software
+            - engineering
+            - general
+            - fullstack
+          
+          system_prompt: |
+            You are a generalist software engineer.
+            
+            When assigned a task:
+            1. Analyze requirements comprehensively
+            2. Consider multiple technical perspectives
+            3. Recommend specialist consultation if needed
+            4. Provide well-rounded solutions
+            5. Balance tradeoffs thoughtfully
+            
+            Deliver thorough, practical engineering guidance.
+          
+          model: "gpt-4o"
+          temperature: 0.7
+          max_loops: 3
+          timeout_seconds: 300
+          stop_words: []
+          
+          provider:
+            type: openai
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+#
+# Complex multi-domain task (LLM analyzes and routes intelligently):
+# cargo run -- battalion run -c examples/cli_configs/grove_llm.yaml \
+#   -i "We need to reduce API latency - users complain about slow dashboard loads. \
+#       The bottleneck seems to be in data fetching but I'm not sure if it's \
+#       database queries, API design, or frontend rendering."
+# → LLM analyzes: identifies database + frontend aspects
+# → Routes to DatabaseArchitect (primary bottleneck likely in queries)
+# → Confidence: 78%
+#
+# Nuanced technical decision:
+# cargo run -- battalion run -c examples/cli_configs/grove_llm.yaml \
+#   -i "Should we use GraphQL or REST for our new mobile API? \
+#       We have 3 mobile clients, need real-time updates, and want \
+#       to minimize over-fetching."
+# → LLM analyzes: API design decision with specific requirements
+# → Routes to ApiArchitect (best equipped for protocol selection)
+# → Provides reasoning for choice
+#
+# Infrastructure + deployment task:
+# cargo run -- battalion run -c examples/cli_configs/grove_llm.yaml \
+#   -i "Set up monitoring for our Kubernetes cluster with alerting \
+#       for pod crashes, high CPU usage, and request latency spikes"
+# → LLM analyzes: observability + Kubernetes
+# → Routes to SreObservabilityExpert (monitoring focus)
+# → Confidence: 85%
+#
+# ============================================================================
+# ROUTING BEHAVIOR
+# ============================================================================
+#
+# LlmRouting Algorithm:
+# 1. LLM receives task description and all agent descriptions
+# 2. LLM analyzes task requirements, complexity, and domain
+# 3. LLM considers each agent's strengths and suitability
+# 4. LLM selects best agent with confidence score and reasoning
+# 5. If confidence below threshold, routes to fallback
+#
+# Example LLM Reasoning:
+# Task: "Users see stale data after making updates"
+# 
+# LLM Analysis:
+# - Could be frontend state management issue (React state not updating)
+# - Could be backend caching issue (stale cache entries)
+# - Could be database replication lag (read replicas out of sync)
+# - Context suggests UI problem ("users see" indicates visual issue)
+# 
+# Decision: ReactSpecialist
+# Confidence: 72%
+# Reasoning: "The phrase 'users see' suggests a UI state management issue.
+#             Likely React state not reflecting backend updates. Start with
+#             frontend state management before investigating backend."
+#
+# ============================================================================
+# ADVANTAGES OF LLM ROUTING
+# ============================================================================
+#
+# ✓ INTELLIGENT: Deep understanding of task requirements
+# ✓ CONTEXTUAL: Considers multiple factors simultaneously
+# ✓ EXPLAINABLE: Provides reasoning for routing decision
+# ✓ ADAPTIVE: Handles novel or complex scenarios
+# ✓ NUANCED: Understands subtle distinctions between agents
+# ✓ MULTI-FACTOR: Balances domain, complexity, and requirements
+#
+# Requirements:
+# • LLM service (OpenAI, Anthropic, DeepSeek, etc.)
+# • Rich agent descriptions for informed decisions
+# • ~200-500ms additional latency per routing
+# • Higher cost (~$0.001-0.005 per routing with GPT-4)
+#
+# Best for: Complex, ambiguous tasks requiring intelligent analysis
+#
+# ============================================================================
+# ROUTING STRATEGY COMPARISON
+# ============================================================================
+#
+# When to use each strategy:
+#
+# KeywordMatch:
+# ✓ Clear, well-defined domains
+# ✓ Speed critical (< 10ms routing)
+# ✓ Zero additional cost
+# ✓ Simple deployment (no external services)
+#
+# SemanticSimilarity:
+# ✓ Natural language queries
+# ✓ Paraphrasing and synonyms
+# ✓ Balanced speed/accuracy (~50-100ms)
+# ✓ Lower cost (~$0.0001 per routing)
+#
+# LlmRouting:
+# ✓ Complex, multi-faceted tasks
+# ✓ Ambiguous requirements
+# ✓ Need for explainability
+# ✓ Critical decision quality
+# ✓ Acceptable latency (~200-500ms)
+#
+# ============================================================================

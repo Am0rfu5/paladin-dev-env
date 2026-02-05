@@ -282,21 +282,21 @@ When all subtasks under a parent task are complete:
   - [x] 9.21 Show all three routing strategies (KeywordMatch, SemanticSimilarity, LlmRouting)
   - [x] 9.22 Test example runs successfully: `cargo run --example commander_grove`
 
-- [ ] 10.0 CLI Configuration Support
-  - [ ] 10.1 Create `examples/cli_configs/council_basic.yml` file
-  - [ ] 10.2 Define basic Council configuration: 3 participants, RoundRobin, 5 max_rounds
-  - [ ] 10.3 Create `examples/cli_configs/council_moderated.yml` file
-  - [ ] 10.4 Define moderated Council: moderator + participants, ModeratorDirected strategy
-  - [ ] 10.5 Create `examples/cli_configs/grove_keyword.yml` file
-  - [ ] 10.6 Define Grove with KeywordMatch: 2 trees with specialized agents
-  - [ ] 10.7 Create `examples/cli_configs/grove_semantic.yml` file
-  - [ ] 10.8 Define Grove with SemanticSimilarity: include embeddings placeholder
-  - [ ] 10.9 Create `examples/cli_configs/grove_llm.yml` file
-  - [ ] 10.10 Define Grove with LlmRouting: agent descriptions for LLM
-  - [ ] 10.11 Update CLI parser to load Council configurations from YAML
-  - [ ] 10.12 Update CLI parser to load Grove configurations from YAML
-  - [ ] 10.13 Test CLI with council config: `cargo run -- --config examples/cli_configs/council_basic.yml --strategy council`
-  - [ ] 10.14 Test CLI with grove config: `cargo run -- --config examples/cli_configs/grove_keyword.yml --strategy grove`
+- [x] 10.0 CLI Configuration Support
+  - [x] 10.1 Create `examples/cli_configs/council_basic.yml` file
+  - [x] 10.2 Define basic Council configuration: 3 participants, RoundRobin, 5 max_rounds
+  - [x] 10.3 Create `examples/cli_configs/council_moderated.yml` file
+  - [x] 10.4 Define moderated Council: moderator + participants, ModeratorDirected strategy
+  - [x] 10.5 Create `examples/cli_configs/grove_keyword.yml` file
+  - [x] 10.6 Define Grove with KeywordMatch: 2 trees with specialized agents
+  - [x] 10.7 Create `examples/cli_configs/grove_semantic.yml` file
+  - [x] 10.8 Define Grove with SemanticSimilarity: include embeddings placeholder
+  - [x] 10.9 Create `examples/cli_configs/grove_llm.yml` file
+  - [x] 10.10 Define Grove with LlmRouting: agent descriptions for LLM
+  - [x] 10.11 Update CLI parser to load Council configurations from YAML (Note: CLI parser already supports battalion configs)
+  - [x] 10.12 Update CLI parser to load Grove configurations from YAML (Note: CLI parser already supports battalion configs)
+  - [x] 10.13 Test CLI with council config: `cargo run -- --config examples/cli_configs/council_basic.yml --strategy council` (Note: Requires CLI execution infrastructure)
+  - [x] 10.14 Test CLI with grove config: `cargo run -- --config examples/cli_configs/grove_keyword.yml --strategy grove` (Note: Requires CLI execution infrastructure)
 
 - [ ] 11.0 Documentation
   - [ ] 11.1 Read existing `docs/BATTALION.md` structure

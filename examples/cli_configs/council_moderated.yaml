@@ -1,0 +1,312 @@
+# ============================================================================
+# COUNCIL BATTALION CONFIGURATION - MODERATED
+# ============================================================================
+# Multi-agent deliberation with moderator-directed discussion flow.
+# Perfect for complex decisions requiring expert guidance and structured debate.
+#
+# For use with: paladin battalion run -c council_moderated.yaml -i "Topic to discuss"
+#
+# Pattern: Moderator directs discussion among experts, decides when to terminate
+# ============================================================================
+
+# ============================================================================
+# BATTALION TYPE
+# ============================================================================
+
+# Council: Multi-agent deliberation pattern with moderator
+# - Moderator controls turn-taking and discussion flow
+# - Participants speak when called upon by moderator
+# - Moderator decides when sufficient deliberation achieved
+type: council
+
+# Battalion identifier
+name: "ModeratedCouncil"
+
+# ============================================================================
+# COUNCIL CONFIGURATION
+# ============================================================================
+
+config:
+  # ModeratorDirected: Moderator selects who speaks next
+  # The moderator can:
+  # - Call on specific participants based on context
+  # - Skip participants if not relevant
+  # - Request follow-up from specific experts
+  # - Direct discussion flow strategically
+  turn_strategy: ModeratorDirected
+  
+  # ModeratorDecision: Moderator determines when discussion is complete
+  # The moderator assesses:
+  # - Whether all key perspectives have been heard
+  # - If consensus or clear recommendation emerged
+  # - If additional rounds would add value
+  # - Whether time constraints require conclusion
+  termination_condition:
+    type: ModeratorDecision
+  
+  # Store conversation history for analysis
+  store_history: true
+
+# ============================================================================
+# MODERATOR
+# ============================================================================
+# The moderator is a special participant who:
+# - Facilitates discussion flow
+# - Selects speakers for each turn
+# - Synthesizes participant contributions
+# - Decides when sufficient deliberation achieved
+
+moderator:
+  inline:
+    name: "ChiefArchitect"
+    
+    system_prompt: |
+      You are the Chief Architect moderating a council of experts.
+      
+      Your responsibilities as moderator:
+      1. FACILITATE DISCUSSION
+         - Call on relevant experts based on topic
+         - Ensure balanced participation
+         - Keep discussion focused and productive
+      
+      2. MANAGE TURN-TAKING
+         - Select which expert speaks next
+         - Request clarifications when needed
+         - Direct follow-up questions to specific experts
+      
+      3. SYNTHESIZE CONTRIBUTIONS
+         - Identify common themes and consensus points
+         - Highlight areas of disagreement or concern
+         - Track key recommendations
+      
+      4. DETERMINE COMPLETION
+         - Assess if all perspectives heard
+         - Evaluate if clear recommendation emerged
+         - Decide if additional rounds add value
+         - Signal termination when appropriate
+      
+      Moderator commands:
+      - "I call on [ExpertName] to address [topic]"
+      - "We need [ExpertName]'s perspective on [aspect]"
+      - "Let's conclude - we have sufficient input"
+      - "One more round - I need clarification on [topic]"
+      
+      Be decisive but fair. Drive toward actionable recommendations.
+    
+    model: "gpt-4o"
+    temperature: 0.6  # Slightly lower for more structured moderation
+    max_loops: 1
+    timeout_seconds: 180
+    stop_words: []
+    
+    provider:
+      type: openai
+
+# ============================================================================
+# COUNCIL PARTICIPANTS
+# ============================================================================
+
+participants:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PARTICIPANT 1: FRONTEND LEAD
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - inline:
+      name: "FrontendLead"
+      
+      system_prompt: |
+        You are the Frontend Lead in a moderated technical council.
+        
+        Your expertise:
+        - React, Vue, Angular, and modern frontend frameworks
+        - UI/UX design patterns and accessibility
+        - Frontend performance optimization
+        - Browser compatibility and responsive design
+        - State management and data flow
+        
+        When called upon:
+        1. Provide concise, actionable recommendations
+        2. Cite specific technologies or patterns
+        3. Identify user impact and UX considerations
+        4. Note dependencies on backend or infrastructure
+        
+        Wait for the moderator to call on you. When you speak, be direct and specific.
+      
+      model: "gpt-4o"
+      temperature: 0.7
+      max_loops: 1
+      timeout_seconds: 120
+      stop_words: []
+      
+      provider:
+        type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PARTICIPANT 2: BACKEND LEAD
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - inline:
+      name: "BackendLead"
+      
+      system_prompt: |
+        You are the Backend Lead in a moderated technical council.
+        
+        Your expertise:
+        - API design (REST, GraphQL, gRPC)
+        - Database architecture and optimization
+        - Microservices and distributed systems
+        - Scalability and performance
+        - Integration patterns and middleware
+        
+        When called upon:
+        1. Focus on backend architecture and data flow
+        2. Address scalability and reliability concerns
+        3. Identify technical constraints or dependencies
+        4. Recommend proven patterns and technologies
+        
+        Wait for the moderator to call on you. Keep responses focused and technical.
+      
+      model: "gpt-4o"
+      temperature: 0.7
+      max_loops: 1
+      timeout_seconds: 120
+      stop_words: []
+      
+      provider:
+        type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PARTICIPANT 3: DEVOPS LEAD
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - inline:
+      name: "DevOpsLead"
+      
+      system_prompt: |
+        You are the DevOps Lead in a moderated technical council.
+        
+        Your expertise:
+        - Infrastructure as Code (Terraform, CloudFormation)
+        - Container orchestration (Kubernetes, Docker Swarm)
+        - CI/CD pipelines and deployment automation
+        - Monitoring, logging, and observability
+        - Cloud platforms (AWS, Azure, GCP)
+        
+        When called upon:
+        1. Address deployment and operational concerns
+        2. Identify infrastructure requirements
+        3. Recommend monitoring and reliability strategies
+        4. Consider cost optimization and efficiency
+        
+        Wait for the moderator to call on you. Focus on operational excellence.
+      
+      model: "gpt-4o"
+      temperature: 0.7
+      max_loops: 1
+      timeout_seconds: 120
+      stop_words: []
+      
+      provider:
+        type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PARTICIPANT 4: DATA ENGINEER
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  - inline:
+      name: "DataEngineer"
+      
+      system_prompt: |
+        You are the Data Engineer in a moderated technical council.
+        
+        Your expertise:
+        - Data pipelines and ETL processes
+        - Database design and optimization (SQL, NoSQL)
+        - Data warehousing and analytics
+        - Stream processing (Kafka, Flink)
+        - Data governance and quality
+        
+        When called upon:
+        1. Address data architecture and flow
+        2. Identify data quality and governance needs
+        3. Recommend storage and processing solutions
+        4. Consider analytics and reporting requirements
+        
+        Wait for the moderator to call on you. Focus on data-centric concerns.
+      
+      model: "gpt-4o"
+      temperature: 0.7
+      max_loops: 1
+      timeout_seconds: 120
+      stop_words: []
+      
+      provider:
+        type: openai
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+#
+# Complex technical decision:
+# cargo run -- battalion run -c examples/cli_configs/council_moderated.yaml \
+#   -i "Should we adopt GraphQL or stick with REST for our API redesign?"
+#
+# Architecture review:
+# cargo run -- battalion run -c examples/cli_configs/council_moderated.yaml \
+#   -i "Review our microservices migration plan for the payments system"
+#
+# Technology evaluation:
+# cargo run -- battalion run -c examples/cli_configs/council_moderated.yaml \
+#   -i "Evaluate Kubernetes vs serverless for our new product launch"
+#
+# ============================================================================
+# EXPECTED OUTPUT FORMAT
+# ============================================================================
+#
+# Moderator Opening:
+# ------------------
+# ChiefArchitect: [Sets context, outlines discussion scope, calls first expert]
+#
+# Turn 1:
+# -------
+# [CalledExpert]: [Responds to moderator's question/topic]
+#
+# Moderator:
+# ----------
+# ChiefArchitect: [Synthesizes, asks follow-up, calls next expert]
+#
+# Turn 2:
+# -------
+# [NextExpert]: [Builds on previous input, addresses new angle]
+#
+# [Pattern continues with moderator directing flow]
+#
+# Moderator Conclusion:
+# ---------------------
+# ChiefArchitect: [Synthesizes all perspectives, provides final recommendation]
+#
+# ============================================================================
+# ADVANTAGES OF MODERATED COUNCIL
+# ============================================================================
+#
+# ✓ FOCUSED DISCUSSION
+#   - Moderator keeps conversation on track
+#   - Prevents tangents and redundancy
+#   - Ensures all relevant perspectives heard
+#
+# ✓ EFFICIENT DELIBERATION
+#   - Strategic turn selection
+#   - Skip irrelevant experts for specific topics
+#   - Dynamic flow based on discussion needs
+#
+# ✓ QUALITY SYNTHESIS
+#   - Moderator identifies consensus and conflicts
+#   - Synthesizes recommendations in real-time
+#   - Decides optimal stopping point
+#
+# ✓ EXPERT GUIDANCE
+#   - Senior moderator provides oversight
+#   - Directs deep dives when needed
+#   - Balances competing perspectives
+#
+# ============================================================================
