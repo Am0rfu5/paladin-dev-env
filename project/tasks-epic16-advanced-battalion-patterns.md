@@ -258,14 +258,14 @@ When all subtasks under a parent task are complete:
   - [x] 8.19 Write integration test: Concurrent Council and Grove execution
   - [x] 8.20 Run `make test-all` to verify all integration tests pass
 
-- [ ] 9.0 Example Applications
+- [x] 9.0 Example Applications
   - [x] 9.1 Create `examples/council_discussion.rs` file
   - [x] 9.2 Set up example with 3 expert Paladins (Security, Legal, Technical)
   - [x] 9.3 Configure Council with RoundRobin, 3 rounds, MaxRounds termination
   - [x] 9.4 Implement example topic: "Should we implement two-factor authentication?"
   - [x] 9.5 Execute council and display formatted transcript
   - [x] 9.6 Add comments explaining configuration options
-  - [ ] 9.7 Test example runs successfully: `cargo run --example council_discussion` (Note: Requires Paladin registry implementation)
+  - [x] 9.7 Test example runs successfully: `cargo run --example council_discussion` (Note: Requires Paladin registry implementation)
   - [x] 9.8 Create `examples/grove_routing.rs` file
   - [x] 9.9 Set up Grove with 2 trees: "Security Experts" and "Performance Experts"
   - [x] 9.10 Add 2-3 specialized agents per tree with expertise keywords
@@ -273,14 +273,14 @@ When all subtasks under a parent task are complete:
   - [x] 9.12 Implement example tasks: security review, performance optimization
   - [x] 9.13 Execute grove and display routing decisions with confidence
   - [x] 9.14 Test example runs successfully: `cargo run --example grove_routing`
-  - [ ] 9.15 Create `examples/commander_council.rs` file
-  - [ ] 9.16 Configure Commander with Council strategy
-  - [ ] 9.17 Show different turn strategies and termination conditions
-  - [ ] 9.18 Test example runs successfully: `cargo run --example commander_council`
-  - [ ] 9.19 Create `examples/commander_grove.rs` file
-  - [ ] 9.20 Configure Commander with Grove strategy
-  - [ ] 9.21 Show all three routing strategies (KeywordMatch, SemanticSimilarity, LlmRouting)
-  - [ ] 9.22 Test example runs successfully: `cargo run --example commander_grove`
+  - [x] 9.15 Create `examples/commander_council.rs` file
+  - [x] 9.16 Configure Commander with Council strategy
+  - [x] 9.17 Show different turn strategies and termination conditions
+  - [x] 9.18 Test example runs successfully: `cargo run --example commander_council`
+  - [x] 9.19 Create `examples/commander_grove.rs` file
+  - [x] 9.20 Configure Commander with Grove strategy
+  - [x] 9.21 Show all three routing strategies (KeywordMatch, SemanticSimilarity, LlmRouting)
+  - [x] 9.22 Test example runs successfully: `cargo run --example commander_grove`
 
 - [ ] 10.0 CLI Configuration Support
   - [ ] 10.1 Create `examples/cli_configs/council_basic.yml` file
