@@ -545,7 +545,7 @@ impl Commander {
                 let mut council_builder =
                     crate::core::platform::container::battalion::council::CouncilBuilder::new()
                         .name(self.config.name.clone())
-                        .max_rounds(10); // Default to 10 rounds
+                        .max_rounds(3); // Limit to 3 rounds for reasonable execution time
 
                 // Add all Paladins as participants using indices as IDs
                 // TODO: Council needs to be enhanced to store actual Paladins, not just IDs
@@ -558,7 +558,7 @@ impl Commander {
 
                 // Execute Council (pass None for garrison_port - Commander doesn't have one)
                 let service = CouncilExecutionService::new(Arc::clone(&self.paladin_port), None);
-                let council_result = service.convene(&council, input).await?;
+                let council_result = service.convene(&council, &self.paladins, input).await?;
 
                 // Convert council result to BattalionResult
                 // Final output is the complete conversation history

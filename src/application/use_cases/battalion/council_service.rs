@@ -14,6 +14,7 @@ use crate::core::platform::container::battalion::council::{
     Council, CouncilMessage, TerminationCondition, TurnStrategy,
 };
 use crate::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
+use crate::core::platform::container::paladin::Paladin;
 
 /// Result of a Council discussion
 ///
@@ -94,6 +95,7 @@ impl CouncilExecutionService {
     /// # Arguments
     ///
     /// * `council` - The Council configuration
+    /// * `paladins` - The Paladins participating in the discussion
     /// * `topic` - The discussion topic
     ///
     /// # Returns
@@ -104,12 +106,13 @@ impl CouncilExecutionService {
     /// # Example
     ///
     /// ```ignore
-    /// let result = service.convene(&council, "Discuss security implications").await?;
+    /// let result = service.convene(&council, &paladins, "Discuss security implications").await?;
     /// println!("Discussion concluded after {} rounds", result.rounds_completed);
     /// ```
     pub async fn convene(
         &self,
         council: &Council,
+        paladins: &[Paladin],
         topic: &str,
     ) -> Result<CouncilResult, BattalionError> {
         info!(
@@ -169,7 +172,7 @@ impl CouncilExecutionService {
             let timeout_duration = Duration::from_secs(300); // 5 minutes per speaker
             let speaker_output = match timeout(
                 timeout_duration,
-                self.execute_speaker(&next_speaker_id, &context),
+                self.execute_speaker(&next_speaker_id, paladins, &context),
             )
             .await
             {
@@ -179,8 +182,8 @@ impl CouncilExecutionService {
                         "Speaker {} failed in round {}: {}",
                         next_speaker_id, current_round, e
                     );
-                    // Skip to next speaker on error
-                    speaker_index += 1;
+                    // Don't increment speaker_index - RoundRobin already did it
+                    // Just continue to next iteration
                     continue;
                 }
                 Err(_) => {
@@ -188,8 +191,8 @@ impl CouncilExecutionService {
                         "Speaker {} timed out in round {}",
                         next_speaker_id, current_round
                     );
-                    // Skip to next speaker on timeout
-                    speaker_index += 1;
+                    // Don't increment speaker_index - RoundRobin already did it
+                    // Just continue to next iteration
                     continue;
                 }
             };
@@ -220,10 +223,21 @@ impl CouncilExecutionService {
         // Extract conclusion
         let conclusion = self.extract_conclusion(&transcript, &council.node.moderator_id);
 
+        // Calculate actual rounds completed:
+        // If speaker_index > 0, we're in the middle of current_round
+        // Otherwise, we've completed current_round - 1 full rounds
+        let rounds_completed = if speaker_index > 0 {
+            current_round
+        } else if current_round > 1 {
+            current_round - 1
+        } else {
+            current_round
+        };
+
         let result = CouncilResult {
             transcript,
             conclusion,
-            rounds_completed: current_round,
+            rounds_completed,
             termination_reason: council.node.config.termination_condition.clone(),
         };
 
@@ -351,20 +365,35 @@ impl CouncilExecutionService {
     async fn execute_speaker(
         &self,
         speaker_id: &str,
-        _context: &str,
+        paladins: &[Paladin],
+        context: &str,
     ) -> Result<String, PaladinError> {
-        // TODO: Implement actual Paladin lookup and execution
-        // For now, this is a placeholder that will be completed during integration
         debug!("Executing speaker: {}", speaker_id);
 
-        // This would normally:
-        // 1. Look up Paladin from a registry/repository
-        // 2. Execute paladin_port.execute(paladin, context)
-        // 3. Return the result
+        // Parse speaker_id format: "participant_N" where N is index into paladins vec
+        let index = speaker_id
+            .strip_prefix("participant_")
+            .and_then(|s| s.parse::<usize>().ok())
+            .ok_or_else(|| {
+                PaladinError::ConfigurationError(format!(
+                    "Invalid speaker ID format: {}. Expected 'participant_N'",
+                    speaker_id
+                ))
+            })?;
 
-        Err(PaladinError::ConfigurationError(
-            "Paladin lookup not yet implemented".to_string(),
-        ))
+        // Look up Paladin by index
+        let paladin = paladins.get(index).ok_or_else(|| {
+            PaladinError::ConfigurationError(format!(
+                "Paladin index {} out of range (total: {})",
+                index,
+                paladins.len()
+            ))
+        })?;
+
+        // Execute Paladin via PaladinPort
+        let result = self.paladin_port.execute(paladin, context).await?;
+
+        Ok(result.output)
     }
 
     /// Store a message in the Garrison
