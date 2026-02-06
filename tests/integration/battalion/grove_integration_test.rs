@@ -97,31 +97,33 @@ async fn test_grove_keyword_match_routing() {
     // Task 8.9: Grove with KeywordMatch routing
     let paladin_port = Arc::new(GroveMockPaladinPort::new());
 
-    // Create Paladins
-    let _auth_paladin = create_specialist_paladin("AuthExpert", "authentication", vec!["auth"]);
-    let _enc_paladin = create_specialist_paladin("EncryptionExpert", "encryption", vec!["crypto"]);
-    let _cache_paladin = create_specialist_paladin("CachingExpert", "caching", vec!["cache"]);
-    let _db_paladin = create_specialist_paladin("DatabaseExpert", "database", vec!["database"]);
+    // Create Paladins (using agent_N format to match TreeAgent IDs)
+    let paladins = vec![
+        create_specialist_paladin("agent_0", "authentication", vec!["auth"]),
+        create_specialist_paladin("agent_1", "encryption", vec!["crypto"]),
+        create_specialist_paladin("agent_2", "caching", vec!["cache"]),
+        create_specialist_paladin("agent_3", "database", vec!["database"]),
+    ];
 
     // Create security experts tree
     let security_tree = Tree::new("Security Experts")
         .add_agent(create_tree_agent(
-            "AuthExpert",
+            "agent_0",
             vec!["auth", "authentication", "login", "oauth"],
         ))
         .add_agent(create_tree_agent(
-            "EncryptionExpert",
+            "agent_1",
             vec!["encryption", "crypto", "tls", "ssl"],
         ));
 
     // Create performance experts tree
     let performance_tree = Tree::new("Performance Experts")
         .add_agent(create_tree_agent(
-            "CachingExpert",
+            "agent_2",
             vec!["cache", "redis", "memcached"],
         ))
         .add_agent(create_tree_agent(
-            "DatabaseExpert",
+            "agent_3",
             vec!["database", "query", "index", "sql"],
         ));
 
@@ -138,30 +140,27 @@ async fn test_grove_keyword_match_routing() {
     // Test routing to security tree
     let security_task = "Review authentication implementation for vulnerabilities";
     let result = service
-        .execute(&grove, security_task)
+        .execute(&grove, &paladins, security_task)
         .await
         .expect("Security task should succeed");
 
     assert!(!result.execution_result.is_empty());
     assert!(
-        result.routing_decision.selected_agent.contains("Auth")
-            || result
-                .routing_decision
-                .selected_agent
-                .contains("Encryption"),
+        result.routing_decision.selected_agent == "agent_0"
+            || result.routing_decision.selected_agent == "agent_1",
         "Should route to security expert"
     );
 
     // Test routing to performance tree
     let performance_task = "Optimize database queries for better performance";
     let result2 = service
-        .execute(&grove, performance_task)
+        .execute(&grove, &paladins, performance_task)
         .await
         .expect("Performance task should succeed");
 
     assert!(
-        result2.routing_decision.selected_agent.contains("Caching")
-            || result2.routing_decision.selected_agent.contains("Database"),
+        result2.routing_decision.selected_agent == "agent_2"
+            || result2.routing_decision.selected_agent == "agent_3",
         "Should route to performance expert"
     );
 }
@@ -171,27 +170,26 @@ async fn test_grove_semantic_similarity_routing() {
     // Task 8.10: Grove with SemanticSimilarity routing (mock embeddings)
     let paladin_port = Arc::new(GroveMockPaladinPort::new());
 
-    // Create Paladins
-    let _react_paladin = create_specialist_paladin("ReactExpert", "React", vec!["react"]);
-    let _css_paladin = create_specialist_paladin("CSSExpert", "CSS", vec!["css"]);
-    let _api_paladin = create_specialist_paladin("APIExpert", "REST APIs", vec!["api"]);
-    let _db_paladin = create_specialist_paladin("DBExpert", "Databases", vec!["database"]);
+    // Create Paladins using agent_N format
+    let paladins = vec![
+        create_specialist_paladin("agent_0", "React", vec!["react"]),
+        create_specialist_paladin("agent_1", "CSS", vec!["css"]),
+        create_specialist_paladin("agent_2", "REST APIs", vec!["api"]),
+        create_specialist_paladin("agent_3", "Databases", vec!["database"]),
+    ];
 
     // Create trees
     let frontend_tree = Tree::new("Frontend Experts")
         .add_agent(create_tree_agent(
-            "ReactExpert",
+            "agent_0",
             vec!["react", "jsx", "frontend", "ui"],
         ))
-        .add_agent(create_tree_agent("CSSExpert", vec!["css", "styling", "ui"]));
+        .add_agent(create_tree_agent("agent_1", vec!["css", "styling", "ui"]));
 
     let backend_tree = Tree::new("Backend Experts")
+        .add_agent(create_tree_agent("agent_2", vec!["api", "rest", "backend"]))
         .add_agent(create_tree_agent(
-            "APIExpert",
-            vec!["api", "rest", "backend"],
-        ))
-        .add_agent(create_tree_agent(
-            "DBExpert",
+            "agent_3",
             vec!["database", "sql", "backend"],
         ));
 
@@ -209,7 +207,7 @@ async fn test_grove_semantic_similarity_routing() {
     // Note: In a real test with embeddings, we'd use an actual embedding service
     // For this integration test, we're just verifying the routing mechanism works
     let task = "Design a user interface for the login page";
-    let result = service.execute(&grove, task).await;
+    let result = service.execute(&grove, &paladins, task).await;
 
     // Should succeed (will use keyword fallback if embeddings not available)
     assert!(result.is_ok(), "Execution should succeed");
@@ -223,13 +221,15 @@ async fn test_grove_llm_routing() {
 
     let paladin_port = Arc::new(GroveMockPaladinPort::new());
 
-    let _dev1 = create_specialist_paladin("Dev1", "features", vec!["feature"]);
-    let _dev2 = create_specialist_paladin("Dev2", "bugs", vec!["bug"]);
+    let paladins = vec![
+        create_specialist_paladin("agent_0", "features", vec!["feature"]),
+        create_specialist_paladin("agent_1", "bugs", vec!["bug"]),
+    ];
 
     let tree1 =
-        Tree::new("Team A").add_agent(create_tree_agent("Dev1", vec!["feature", "development"]));
+        Tree::new("Team A").add_agent(create_tree_agent("agent_0", vec!["feature", "development"]));
 
-    let tree2 = Tree::new("Team B").add_agent(create_tree_agent("Dev2", vec!["bug", "fix"]));
+    let tree2 = Tree::new("Team B").add_agent(create_tree_agent("agent_1", vec!["bug", "fix"]));
 
     let grove = GroveBuilder::new()
         .name("LlmRoutingGrove")
@@ -242,7 +242,9 @@ async fn test_grove_llm_routing() {
     let service = GroveExecutionService::new(paladin_port, None, None);
 
     // Execute task - will use keyword fallback since we don't have real LLM
-    let result = service.execute(&grove, "Fix the login bug").await;
+    let result = service
+        .execute(&grove, &paladins, "Fix the login bug")
+        .await;
 
     assert!(result.is_ok(), "Execution should succeed");
 }
@@ -252,16 +254,18 @@ async fn test_grove_fallback_behavior() {
     // Task 8.12: Grove fallback behavior when no match
     let paladin_port = Arc::new(GroveMockPaladinPort::new());
 
-    let _gen1 = create_specialist_paladin("Generalist1", "general", vec!["general"]);
-    let _gen2 = create_specialist_paladin("Generalist2", "general", vec!["general"]);
-    let _rust_expert = create_specialist_paladin("RustExpert", "Rust", vec!["rust"]);
+    let paladins = vec![
+        create_specialist_paladin("agent_0", "general", vec!["general"]),
+        create_specialist_paladin("agent_1", "general", vec!["general"]),
+        create_specialist_paladin("agent_2", "Rust", vec!["rust"]),
+    ];
 
     let fallback_tree = Tree::new("Generalists")
-        .add_agent(create_tree_agent("Generalist1", vec!["general"]))
-        .add_agent(create_tree_agent("Generalist2", vec!["general"]));
+        .add_agent(create_tree_agent("agent_0", vec!["general"]))
+        .add_agent(create_tree_agent("agent_1", vec!["general"]));
 
     let specialist_tree =
-        Tree::new("Specialists").add_agent(create_tree_agent("RustExpert", vec!["rust", "cargo"]));
+        Tree::new("Specialists").add_agent(create_tree_agent("agent_2", vec!["rust", "cargo"]));
 
     let grove = GroveBuilder::new()
         .name("FallbackGrove")
@@ -277,15 +281,13 @@ async fn test_grove_fallback_behavior() {
     // Task that doesn't match any specialist keywords
     let task = "What's the weather like today?";
     let result = service
-        .execute(&grove, task)
+        .execute(&grove, &paladins, task)
         .await
         .expect("Should succeed using fallback");
 
     assert!(
-        result
-            .routing_decision
-            .selected_agent
-            .contains("Generalist"),
+        result.routing_decision.selected_agent == "agent_0"
+            || result.routing_decision.selected_agent == "agent_1",
         "Should route to fallback tree"
     );
     assert_eq!(result.routing_decision.selected_tree, "Generalists");
@@ -296,9 +298,13 @@ async fn test_grove_no_fallback_default_behavior() {
     // Test default fallback when no fallback_tree configured
     let paladin_port = Arc::new(GroveMockPaladinPort::new());
 
-    let _expert = create_specialist_paladin("Expert", "specific domain", vec!["specific"]);
+    let paladins = vec![create_specialist_paladin(
+        "agent_0",
+        "specific domain",
+        vec!["specific"],
+    )];
 
-    let tree1 = Tree::new("Specialists").add_agent(create_tree_agent("Expert", vec!["specific"]));
+    let tree1 = Tree::new("Specialists").add_agent(create_tree_agent("agent_0", vec!["specific"]));
 
     let grove = GroveBuilder::new()
         .name("NoFallbackGrove")
@@ -311,7 +317,7 @@ async fn test_grove_no_fallback_default_behavior() {
 
     // Task that doesn't match keywords
     let task = "Completely unrelated task";
-    let result = service.execute(&grove, task).await;
+    let result = service.execute(&grove, &paladins, task).await;
 
     // Should still succeed by routing to first tree as default
     assert!(result.is_ok(), "Should succeed with default fallback");
@@ -323,27 +329,29 @@ async fn test_grove_multiple_trees() {
     let paladin_port = Arc::new(GroveMockPaladinPort::new());
 
     // Create Paladins
-    let _sec = create_specialist_paladin("SecExpert", "security", vec!["security"]);
-    let _perf = create_specialist_paladin("PerfExpert", "performance", vec!["performance"]);
-    let _data = create_specialist_paladin("DataExpert", "data", vec!["data"]);
-    let _infra = create_specialist_paladin("InfraExpert", "infrastructure", vec!["infra"]);
+    let paladins = vec![
+        create_specialist_paladin("agent_0", "security", vec!["security"]),
+        create_specialist_paladin("agent_1", "performance", vec!["performance"]),
+        create_specialist_paladin("agent_2", "data", vec!["data"]),
+        create_specialist_paladin("agent_3", "infrastructure", vec!["infra"]),
+    ];
 
     // Create 4 different expert trees
     let security_tree = Tree::new("Security").add_agent(create_tree_agent(
-        "SecExpert",
+        "agent_0",
         vec!["security", "vulnerability"],
     ));
 
     let performance_tree = Tree::new("Performance").add_agent(create_tree_agent(
-        "PerfExpert",
+        "agent_1",
         vec!["performance", "optimization"],
     ));
 
     let data_tree =
-        Tree::new("Data").add_agent(create_tree_agent("DataExpert", vec!["data", "analytics"]));
+        Tree::new("Data").add_agent(create_tree_agent("agent_2", vec!["data", "analytics"]));
 
     let infrastructure_tree = Tree::new("Infrastructure").add_agent(create_tree_agent(
-        "InfraExpert",
+        "agent_3",
         vec!["infrastructure", "deployment", "kubernetes"],
     ));
 
@@ -361,26 +369,22 @@ async fn test_grove_multiple_trees() {
 
     // Test routing to each tree
     let tasks = vec![
-        ("Fix security vulnerability in auth", "SecExpert"),
-        ("Optimize query performance", "PerfExpert"),
-        ("Analyze user data trends", "DataExpert"),
-        ("Deploy to Kubernetes cluster", "InfraExpert"),
+        ("Fix security vulnerability in auth", "agent_0"),
+        ("Optimize query performance", "agent_1"),
+        ("Analyze user data trends", "agent_2"),
+        ("Deploy to Kubernetes cluster", "agent_3"),
     ];
 
     for (task, expected_expert) in tasks {
         let result = service
-            .execute(&grove, task)
+            .execute(&grove, &paladins, task)
             .await
             .expect("Task should succeed");
 
-        assert!(
-            result
-                .routing_decision
-                .selected_agent
-                .contains(expected_expert),
+        assert_eq!(
+            result.routing_decision.selected_agent, expected_expert,
             "Task '{}' should route to {}",
-            task,
-            expected_expert
+            task, expected_expert
         );
     }
 }
@@ -397,7 +401,7 @@ async fn test_grove_error_handling() {
             paladin: &Paladin,
             _input: &str,
         ) -> Result<PaladinResult, PaladinError> {
-            if paladin.node.name == "FailingAgent" {
+            if paladin.node.name == "agent_1" {
                 return Err(PaladinError::ExecutionError(
                     "Simulated failure".to_string(),
                 ));
@@ -428,12 +432,14 @@ async fn test_grove_error_handling() {
 
     let paladin_port = Arc::new(FailingMockPort);
 
-    let _good = create_specialist_paladin("GoodAgent", "good", vec!["good"]);
-    let _failing = create_specialist_paladin("FailingAgent", "failing", vec!["failing"]);
+    let paladins = vec![
+        create_specialist_paladin("agent_0", "good", vec!["good"]),
+        create_specialist_paladin("agent_1", "failing", vec!["failing"]),
+    ];
 
     let tree = Tree::new("Team")
-        .add_agent(create_tree_agent("GoodAgent", vec!["good", "team"]))
-        .add_agent(create_tree_agent("FailingAgent", vec!["failing", "team"]));
+        .add_agent(create_tree_agent("agent_0", vec!["good", "team"]))
+        .add_agent(create_tree_agent("agent_1", vec!["failing", "team"]));
 
     let grove = GroveBuilder::new()
         .name("ErrorTestGrove")
@@ -444,11 +450,11 @@ async fn test_grove_error_handling() {
 
     let service = GroveExecutionService::new(paladin_port, None, None);
 
-    // Task will route to tree, and one agent may fail
-    let result = service.execute(&grove, "team task").await;
+    // Task with "failing" keyword should route to agent_1 which will fail
+    let result = service
+        .execute(&grove, &paladins, "failing team task")
+        .await;
 
-    // Should handle error appropriately based on error strategy
-    // With default FailFast, it may propagate the error
-    // This tests that error handling is in place
-    assert!(result.is_ok() || result.is_err());
+    // Should return an error since agent_1 fails
+    assert!(result.is_err(), "Should propagate execution error");
 }

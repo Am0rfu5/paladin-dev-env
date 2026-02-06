@@ -118,6 +118,7 @@ impl GroveExecutionService {
     /// # Arguments
     ///
     /// * `grove` - The Grove configuration with trees and agents
+    /// * `paladins` - Slice of Paladins to route among (agent IDs match TreeAgent paladin_id)
     /// * `task` - The task description to route and execute
     ///
     /// # Returns
@@ -134,11 +135,16 @@ impl GroveExecutionService {
     /// # Example
     ///
     /// ```ignore
-    /// let result = service.execute(&grove, "Analyze customer feedback").await?;
+    /// let result = service.execute(&grove, &paladins, "Analyze customer feedback").await?;
     /// println!("Agent: {}", result.routing_decision.selected_agent);
     /// println!("Result: {}", result.execution_result);
     /// ```
-    pub async fn execute(&self, grove: &Grove, task: &str) -> Result<GroveResult, BattalionError> {
+    pub async fn execute(
+        &self,
+        grove: &Grove,
+        paladins: &[crate::core::platform::container::paladin::Paladin],
+        task: &str,
+    ) -> Result<GroveResult, BattalionError> {
         info!("Grove '{}' routing task: {}", grove.node.name, task);
 
         // Route the task to the appropriate agent
@@ -152,9 +158,8 @@ impl GroveExecutionService {
         );
 
         // Execute the selected Paladin
-        // TODO: This is a placeholder - actual Paladin lookup will be implemented during integration
         let execution_result = self
-            .execute_agent(&routing_decision.selected_agent, task)
+            .execute_agent(&routing_decision.selected_agent, paladins, task)
             .await
             .map_err(|e| {
                 BattalionError::ExecutionError(format!(
@@ -505,18 +510,56 @@ impl GroveExecutionService {
 
     /// Executes an agent with the given task
     ///
-    /// Placeholder for actual Paladin execution that will be implemented
-    /// during integration phase.
-    async fn execute_agent(&self, agent_id: &str, task: &str) -> Result<String, BattalionError> {
-        // TODO: Implement actual Paladin lookup and execution
+    /// Looks up the Paladin by agent_id (TreeAgent.paladin_id) and executes it.
+    ///
+    /// # Arguments
+    ///
+    /// * `agent_id` - ID of the agent to execute (matches index in paladins vec, e.g., "agent_0")
+    /// * `paladins` - Slice of available Paladins
+    /// * `task` - Task input string
+    ///
+    /// # Returns
+    ///
+    /// The output string from the Paladin execution
+    async fn execute_agent(
+        &self,
+        agent_id: &str,
+        paladins: &[crate::core::platform::container::paladin::Paladin],
+        task: &str,
+    ) -> Result<String, BattalionError> {
         debug!("Executing agent '{}' with task: {}", agent_id, task);
 
-        // Placeholder implementation
-        Err(BattalionError::ExecutionError(format!(
-            "Agent execution not yet implemented for agent '{}'. \
-            This will be completed during integration phase.",
-            agent_id
-        )))
+        // Parse agent_id (format: "agent_N" where N is the index)
+        let index = agent_id
+            .strip_prefix("agent_")
+            .and_then(|s| s.parse::<usize>().ok())
+            .ok_or_else(|| {
+                BattalionError::ValidationError(format!("Invalid agent_id format: {}", agent_id))
+            })?;
+
+        // Lookup Paladin by index
+        let paladin = paladins.get(index).ok_or_else(|| {
+            BattalionError::ValidationError(format!(
+                "Agent '{}' not found (index {} out of bounds, have {} paladins)",
+                agent_id,
+                index,
+                paladins.len()
+            ))
+        })?;
+
+        // Execute the Paladin
+        let result = self
+            .paladin_port
+            .execute(paladin, task)
+            .await
+            .map_err(|e| {
+                BattalionError::ExecutionError(format!(
+                    "Paladin '{}' execution failed: {}",
+                    paladin.node.name, e
+                ))
+            })?;
+
+        Ok(result.output)
     }
 }
 

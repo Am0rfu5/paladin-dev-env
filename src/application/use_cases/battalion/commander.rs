@@ -627,7 +627,7 @@ impl Commander {
                     None, // embedding_port
                     None, // llm_port
                 );
-                let grove_result = service.execute(&grove, input).await?;
+                let grove_result = service.execute(&grove, &self.paladins, input).await?;
 
                 // Convert grove result to BattalionResult
                 BattalionResult {
