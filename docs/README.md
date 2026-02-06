@@ -15,11 +15,12 @@ New to Paladin? Start here:
 Learn how to build with Paladin:
 
 - **[Autonomous Agent Features](AUTONOMOUS.md)** - 🆕 Auto-planning, prompt generation, dynamic temperature, and agent handoffs (Epic 14)
-- **[Paladin Configuration](guides/paladin-configuration.md)** - Configure agents, models, and behaviors
-- **[Battalion Patterns](guides/battalion-patterns.md)** - Multi-agent orchestration patterns
-- **[Tool Integration](guides/tool-integration.md)** - Integrate external tools via MCP protocol
-- **[Memory Management](guides/memory-management.md)** - Conversation context and persistence
-- **[Output Formatting](guides/output-formatting.md)** - Format and stream agent responses
+- **[Battalion Orchestration](BATTALION.md)** - Multi-agent coordination with 8 orchestration patterns
+- **[Maneuver Flow DSL](MANEUVER.md)** - 🆕 Declarative workflows with Flow DSL syntax (Epic 17)
+- **[Tool Integration (Arsenal)](ARSENAL.md)** - Integrate external tools via MCP protocol
+- **[Memory Management (Garrison)](GARRISON.md)** - Conversation context and persistence
+- **[Output Formatting (Herald)](HERALD.md)** - Format and stream agent responses
+- **[CLI Usage Guide](CLI_USAGE.md)** - Complete command-line interface reference
 
 ## 🏗️ Architecture
 
@@ -80,6 +81,7 @@ Paladin uses a consistent Medieval Military naming convention:
 | **Phalanx** | Concurrent Paladin execution |
 | **Campaign** | Graph-based orchestration |
 | **Chain of Command** | Hierarchical delegation |
+| **Maneuver** | Flow DSL declarative orchestration |
 | **Garrison** | Agent memory storage |
 | **Arsenal** | Tool and capability registry |
 | **Armament** | A single tool |

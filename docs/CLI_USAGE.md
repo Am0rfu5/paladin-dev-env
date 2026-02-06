@@ -10,6 +10,7 @@ Complete guide to using the Paladin command-line interface for running AI agents
 - [Commands Reference](#commands-reference)
   - [paladin agent](#paladin-agent)
   - [paladin battalion](#paladin-battalion)
+  - [paladin maneuver](#paladin-maneuver)
   - [paladin arsenal](#paladin-arsenal)
 - [Configuration Files](#configuration-files)
 - [Examples](#examples)
@@ -201,6 +202,94 @@ paladin battalion run -c phalanx.yaml -i "Analyze this" --verbose
 
 # Run campaign and save results
 paladin battalion run -c campaign.yaml -i "Input" -o results.json
+```
+
+---
+
+### paladin maneuver
+
+Visualize and validate Flow DSL orchestration patterns.
+
+#### `paladin maneuver visualize`
+
+Generate visual representation of a Maneuver flow expression.
+
+**Syntax:**
+```bash
+paladin maneuver visualize -c <config> [-f <format>] [-o <output>]
+```
+
+**Options:**
+- `-c, --config <PATH>` - Path to Maneuver YAML configuration (required)
+- `-f, --format <FORMAT>` - Output format (optional, default: ascii)
+  - `ascii` - ASCII tree visualization for terminal
+  - `mermaid` - Mermaid.js flowchart for documentation
+- `-o, --output <PATH>` - Save output to file instead of stdout (optional)
+
+**Examples:**
+```bash
+# ASCII tree visualization (terminal-friendly)
+paladin maneuver visualize -c workflow.yaml
+
+# Output example:
+# └─> intake
+#     ├─> [PARALLEL]
+#     │   ├─> technical
+#     │   ├─> business
+#     │   └─> security
+#     └─> synthesis
+
+# Mermaid flowchart (for documentation)
+paladin maneuver visualize -c workflow.yaml --format mermaid
+
+# Save to file
+paladin maneuver visualize -c workflow.yaml -f ascii -o flow.txt
+```
+
+#### `paladin maneuver validate`
+
+Validate a Maneuver configuration for syntax and structure errors.
+
+**Syntax:**
+```bash
+paladin maneuver validate -c <config> [-v]
+```
+
+**Options:**
+- `-c, --config <PATH>` - Path to Maneuver YAML configuration (required)
+- `-v, --verbose` - Show detailed validation output (optional)
+
+**Validation Checks:**
+- Flow expression syntax correctness
+- All agents referenced in flow exist in configuration
+- Agent configuration structure validity
+- Provider settings correctness
+
+**Examples:**
+```bash
+# Basic validation
+paladin maneuver validate -c workflow.yaml
+
+# Verbose validation with detailed output
+paladin maneuver validate -c workflow.yaml --verbose
+```
+
+**Output (Success):**
+```
+✅ Flow syntax valid: intake -> (technical, business, security) -> synthesis
+✅ All agents referenced in flow are configured
+✅ Configuration structure valid
+✅ 5 agents configured: intake, technical, business, security, synthesis
+```
+
+**Output (Error):**
+```
+❌ Flow syntax error at position 23: unexpected character '|'
+   Expected: '->' or ',' for flow operators
+   
+❌ Agent 'reviewer' referenced in flow but not found in configuration
+   Flow agents: [intake, technical, business, reviewer]
+   Configured: [intake, technical, business]
 ```
 
 ---

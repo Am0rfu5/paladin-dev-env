@@ -1,6 +1,6 @@
 # Battalion Orchestration System
 
-**Multi-Paladin coordination framework with five orchestration patterns**
+**Multi-Paladin coordination framework with eight orchestration patterns**
 
 ---
 
@@ -20,7 +20,7 @@
 
 ## Overview
 
-The Battalion system enables coordination of multiple Paladin agents through seven distinct orchestration patterns:
+The Battalion system enables coordination of multiple Paladin agents through eight distinct orchestration patterns:
 
 | Pattern | Description | Use Case | Complexity |
 |---------|-------------|----------|------------|
@@ -31,6 +31,7 @@ The Battalion system enables coordination of multiple Paladin agents through sev
 | **Conclave** | Multi-expert synthesis (Mixture-of-Agents) | Expert panel decisions, comprehensive analysis | Medium |
 | **Council** | Multi-agent deliberation with turn-taking | Collaborative discussion, consensus building | Medium |
 | **Grove** | Tree-based intelligent agent routing | Specialist selection, task distribution | Medium |
+| **Maneuver** | **Flow DSL declarative orchestration** | **Dynamic workflows, mixed patterns** | **Medium** |
 
 ###  Key Features
 
@@ -471,6 +472,89 @@ let result = grove_service.execute(&grove,
 
 ---
 
+### 8. Maneuver (Flow DSL Orchestration)
+
+**Purpose**: Define complex agent workflows declaratively using a simple text-based DSL.
+
+**Architecture**:
+```
+Flow DSL: "analyzer -> (summarizer, translator) -> reviewer"
+
+Execution:
+Input → analyzer → ┌─ summarizer ─┐
+                   └─ translator ─┘ → reviewer → Output
+```
+
+**Flow Operators**:
+- **Sequential (`->`)**: Execute agents in order, passing output as next input
+- **Parallel (`,`)**: Execute agents concurrently with same input
+- **Nested (`()`)**: Group agents for precedence and mixed patterns
+
+**When to Use**:
+- Complex workflows requiring both sequential and parallel execution
+- Dynamic workflow generation from configuration
+- Rapid prototyping of multi-agent patterns
+- Visual workflow documentation needs
+
+**Key Features**:
+- **Declarative Syntax**: Define entire workflow as text expression
+- **Mixed Patterns**: Combine sequential and parallel in single flow
+- **Visual Feedback**: ASCII tree and Mermaid flowchart generation
+- **Compile-Time Validation**: Flow expression parsing with error reporting
+- **Commander Integration**: Auto-detected via "flow" keywords or `->`/`,` operators
+
+**Example**:
+```rust
+use paladin::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
+use paladin::core::platform::container::battalion::maneuver::{Maneuver, ManeuverConfig};
+use paladin::core::platform::container::battalion::parser::FlowParser;
+
+// Parse flow expression
+let flow = FlowParser::parse("intake -> (technical, business, security) -> synthesis")?;
+
+// Create Paladins matching flow agent names
+let mut agents = HashMap::new();
+agents.insert("intake", create_paladin("intake", "Initial processing"));
+agents.insert("technical", create_paladin("technical", "Technical analysis"));
+agents.insert("business", create_paladin("business", "Business perspective"));
+agents.insert("security", create_paladin("security", "Security review"));
+agents.insert("synthesis", create_paladin("synthesis", "Combine perspectives"));
+
+// Create Maneuver
+let maneuver = Maneuver::new(
+    "review-workflow",
+    agents,
+    flow,
+    ManeuverConfig::default()
+)?;
+
+// Execute
+let result = maneuver_service.execute(&maneuver, "Proposal document").await?;
+```
+
+**CLI Visualization**:
+```bash
+# Visualize flow structure
+paladin maneuver visualize -c workflow.yaml --format ascii
+
+# Output:
+# └─> intake
+#     ├─> [PARALLEL]
+#     │   ├─> technical
+#     │   ├─> business
+#     │   └─> security
+#     └─> synthesis
+
+# Generate Mermaid flowchart
+paladin maneuver visualize -c workflow.yaml --format mermaid
+```
+
+**Performance**: Parsing overhead <1ms, execution time depends on flow structure (sequential = O(n), parallel = O(1) per stage).
+
+**Learn More**: See [Maneuver Pattern Documentation](MANEUVER.md) for complete guide including Flow DSL syntax reference, configuration options, error handling, visualization formats, and troubleshooting.
+
+---
+
 ## Commander Strategy Router
 
 **Unified interface for intelligent Battalion orchestration**
@@ -517,6 +601,7 @@ When using `BattalionStrategy::Auto`, the Commander analyzes:
 
 #### 1. **Input Keywords**
 
+- **Maneuver**: "flow", "dynamic flow", "->", "," (DSL operators in input) **[Highest Priority]**
 - **Formation**: "sequential", "pipeline", "step by step", "one after", "first then"
 - **Phalanx**: "parallel", "concurrent", "all at once", "simultaneously"
 - **Campaign**: "workflow", "graph", "conditional", "if-then", "depends on"
