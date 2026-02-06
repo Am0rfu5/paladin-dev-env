@@ -84,6 +84,7 @@ pub fn handle_battalion_new(args: BattalionNewArgs) -> Result<(), CliError> {
         "campaign",
         "chain-of-command",
         "conclave",
+        "maneuver",
     ];
     if !valid_types.contains(&args.r#type.as_str()) {
         return Err(CliError::InvalidFieldValue {
@@ -144,6 +145,7 @@ pub async fn handle_battalion_run(args: BattalionRunArgs) -> Result<(), CliError
         BattalionYamlConfig::Campaign(_) => "campaign",
         BattalionYamlConfig::ChainOfCommand(_) => "chain-of-command",
         BattalionYamlConfig::Conclave(_) => "conclave",
+        BattalionYamlConfig::Maneuver(_) => "maneuver",
     };
 
     if config_type != args.r#type {
@@ -186,6 +188,9 @@ pub async fn handle_battalion_run(args: BattalionRunArgs) -> Result<(), CliError
         }
         BattalionYamlConfig::Conclave(config) => {
             execute_conclave(config, args.verbose, args.output).await
+        }
+        BattalionYamlConfig::Maneuver(config) => {
+            execute_maneuver(config, args.verbose, args.output).await
         }
     }
 }
@@ -741,6 +746,189 @@ async fn execute_conclave(
                 result.successful_expert_count(),
                 conclave.expert_count()
             );
+        }
+
+        println!("\n{}", "═".repeat(80));
+    }
+
+    Ok(())
+}
+
+/// Execute a Maneuver battalion (Flow DSL orchestration)
+async fn execute_maneuver(
+    config: crate::cli::config::battalion_config::ManeuverConfig,
+    verbose: bool,
+    output: Option<PathBuf>,
+) -> Result<(), CliError> {
+    use crate::application::use_cases::battalion::flow_visualizer::{
+        FlowVisualizer, VisualizationFormat,
+    };
+    use crate::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
+    use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    use crate::core::platform::container::battalion::BattalionConfig;
+    use crate::core::platform::container::battalion::maneuver::Maneuver;
+    use crate::core::platform::container::battalion::parser::FlowParser;
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    if verbose {
+        println!("{} Building Maneuver: {}", "→".cyan().bold(), config.name);
+        println!("{} Flow: {}", "→".cyan().bold(), config.flow);
+        println!("{} Paladins: {}", "→".cyan().bold(), config.paladins.len());
+    }
+
+    // Parse flow expression
+    let flow = FlowParser::parse(&config.flow).map_err(|e| CliError::ValidationError {
+        message: format!("Invalid flow expression: {}", e),
+    })?;
+
+    // Show visualization if requested
+    if let Some(viz_format) = &config.visualize {
+        let visualization = match viz_format.as_str() {
+            "ascii" => FlowVisualizer::visualize(&flow, VisualizationFormat::Ascii),
+            "mermaid" => FlowVisualizer::visualize(&flow, VisualizationFormat::Mermaid),
+            _ => {
+                return Err(CliError::InvalidFieldValue {
+                    field: "visualize".to_string(),
+                    message: format!("must be 'ascii' or 'mermaid', got: {}", viz_format),
+                });
+            }
+        };
+
+        println!("\n{} Flow Visualization:", "📊".cyan().bold());
+        println!("{}", "─".repeat(80));
+        println!("{}", visualization);
+        println!("{}", "─".repeat(80));
+    }
+
+    // Build Paladins
+    let mut paladins_map = std::collections::HashMap::new();
+    for (idx, paladin_ref) in config.paladins.iter().enumerate() {
+        let paladin = build_paladin_from_reference(paladin_ref, verbose, idx + 1).await?;
+        let name = paladin.node.name.clone();
+        paladins_map.insert(name, paladin);
+    }
+
+    if verbose {
+        println!("{} All Paladins built successfully", "✓".green().bold());
+    }
+
+    // Create Battalion configuration (not currently used but kept for consistency)
+    let _battalion_config = BattalionConfig::new(&config.name)
+        .with_timeout(300)
+        .with_description(format!("Maneuver with flow: {}", config.flow));
+
+    // Create Maneuver config
+    let maneuver_config =
+        crate::core::platform::container::battalion::maneuver::ManeuverConfig::new();
+
+    // Create Maneuver
+    let maneuver = Maneuver::new(
+        config.name.clone(),
+        paladins_map.clone(),
+        flow,
+        maneuver_config,
+    )
+    .map_err(|e| CliError::BattalionError {
+        message: format!("Failed to create Maneuver: {}", e),
+    })?;
+
+    if verbose {
+        println!("{} Maneuver built successfully", "✓".green().bold());
+    }
+
+    // Create Paladin execution service with circuit breaker
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+
+    use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    let factory = LlmProviderFactory::new();
+    let dummy_llm_port = factory
+        .create("openai")
+        .map_err(|e| CliError::LlmProviderError {
+            message: format!("Failed to create LLM port: {}", e),
+        })?;
+
+    let paladin_service = Arc::new(PaladinExecutionService::new(
+        dummy_llm_port,
+        circuit_breaker,
+        None,
+        None,
+    ));
+
+    let paladin_port = Arc::new(PaladinExecutionAdapter {
+        service: paladin_service,
+    });
+
+    // Create Maneuver execution service
+    let maneuver_service = ManeuverExecutionService::new(paladin_port);
+
+    // Prompt for input
+    use crate::cli::interactive::prompt_for_input;
+    let user_input = prompt_for_input("Enter input for maneuver")?;
+
+    if verbose {
+        println!(
+            "\n{} Executing Maneuver with flow: {}",
+            "→".cyan().bold(),
+            config.flow
+        );
+        println!("{}", "─".repeat(80));
+    }
+
+    // Execute the Maneuver
+    let result = maneuver_service
+        .execute(&maneuver, &user_input)
+        .await
+        .map_err(|e| CliError::BattalionError {
+            message: format!("Maneuver execution failed: {}", e),
+        })?;
+
+    // Handle output
+    if let Some(output_path) = output {
+        // Write JSON to file
+        let json_output =
+            serde_json::to_string_pretty(&result).map_err(|e| CliError::SerializationError {
+                message: e.to_string(),
+            })?;
+        std::fs::write(&output_path, json_output)?;
+        println!(
+            "{} Output written to: {}",
+            "✓".green().bold(),
+            output_path.display()
+        );
+    } else {
+        // Print human-readable output to stdout
+        println!("\n{}", "═".repeat(80));
+        println!("{} Maneuver Result - Flow Execution", "📊".cyan());
+        println!("{}", "═".repeat(80));
+        println!("\n{} Final Output:", "→".cyan().bold());
+        println!("{}\n", result.final_output);
+
+        if verbose {
+            println!("{} Execution Summary:", "→".cyan().bold());
+            println!("   Status: {:?}", result.status);
+            println!("   Agents executed: {}", result.execution_order.len());
+
+            println!("\n{} Execution Order:", "→".cyan().bold());
+            for (idx, agent_name) in result.execution_order.iter().enumerate() {
+                let timing = result
+                    .timing_metrics
+                    .as_ref()
+                    .and_then(|metrics| metrics.get(agent_name))
+                    .map(|d| format!("{}ms", d.as_millis()))
+                    .unwrap_or_else(|| "N/A".to_string());
+
+                println!("   {}. {} ({})", idx + 1, agent_name, timing);
+
+                if let Some(output) = result.step_outputs.get(agent_name) {
+                    let preview = output.chars().take(100).collect::<String>();
+                    println!("      Output: {}", preview);
+                    if output.len() > 100 {
+                        println!("      ... (truncated)");
+                    }
+                }
+            }
         }
 
         println!("\n{}", "═".repeat(80));

@@ -22,10 +22,11 @@ pub fn generate_battalion_template(name: &str, battalion_type: &str) -> Result<S
         "campaign" => Ok(generate_campaign_template(name)),
         "chain-of-command" => Ok(generate_chain_of_command_template(name)),
         "conclave" => Ok(generate_conclave_template(name)),
+        "maneuver" => Ok(generate_maneuver_template(name)),
         _ => Err(CliError::InvalidFieldValue {
             field: "battalion_type".to_string(),
             message: format!(
-                "must be one of: formation, phalanx, campaign, chain-of-command, conclave. Got: {}",
+                "must be one of: formation, phalanx, campaign, chain-of-command, conclave, maneuver. Got: {}",
                 battalion_type
             ),
         }),
@@ -409,6 +410,84 @@ aggregator:
     )
 }
 
+/// Generate Maneuver template (Flow DSL-based orchestration)
+fn generate_maneuver_template(name: &str) -> String {
+    format!(
+        r#"# Maneuver Battalion Configuration
+# Flow DSL-based orchestration with dynamic execution patterns
+
+# Battalion type (required)
+type: maneuver
+
+# Maneuver name
+name: "{}"
+
+# Flow expression using Flow DSL syntax
+# Syntax:
+#   - Sequential: agent1 -> agent2 -> agent3
+#   - Parallel: (agent1, agent2)
+#   - Nested: agent1 -> (agent2, agent3) -> agent4
+# Note: Use commas (,) for parallel, not pipes (|)
+flow: "analyzer -> (summarizer, translator) -> reviewer"
+
+# List of available Paladins (referenced by name in flow expression)
+paladins:
+  - inline:
+      name: "analyzer"
+      system_prompt: |
+        You are an expert analyzer. Review the input and extract key insights.
+      model: "gpt-4"
+      temperature: 0.7
+      max_loops: 1
+      timeout_seconds: 300
+      provider:
+        type: openai
+
+  - inline:
+      name: "summarizer"
+      system_prompt: |
+        You are an expert summarizer. Create a concise summary from the analysis.
+      model: "gpt-4"
+      temperature: 0.5
+      max_loops: 1
+      timeout_seconds: 300
+      provider:
+        type: openai
+
+  - inline:
+      name: "translator"
+      system_prompt: |
+        You are an expert translator. Translate the analysis to simple language.
+      model: "gpt-4"
+      temperature: 0.5
+      max_loops: 1
+      timeout_seconds: 300
+      provider:
+        type: openai
+
+  - inline:
+      name: "reviewer"
+      system_prompt: |
+        You are a final reviewer. Combine and synthesize all previous outputs.
+      model: "gpt-4"
+      temperature: 0.6
+      max_loops: 1
+      timeout_seconds: 300
+      provider:
+        type: openai
+
+# Optional: Visualize the flow before execution (ascii or mermaid)
+# visualize: "ascii"
+
+# Example usage:
+# paladin battalion run -c maneuver.yaml -t maneuver -i "Analyze this document..."
+# paladin maneuver visualize -c maneuver.yaml --format ascii
+# paladin maneuver validate -c maneuver.yaml
+"#,
+        name
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -491,6 +570,7 @@ mod tests {
             "campaign",
             "chain-of-command",
             "conclave",
+            "maneuver",
         ];
         for battalion_type in types {
             let template = generate_battalion_template("Test", battalion_type).unwrap();

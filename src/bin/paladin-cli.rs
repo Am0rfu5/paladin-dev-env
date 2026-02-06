@@ -4,6 +4,7 @@ use paladin::cli::commands::{
     agent::{AgentCommands, handle_agent_new, handle_agent_run},
     arsenal::{ArsenalCommands, handle_arsenal_command},
     battalion::{BattalionCommands, handle_battalion_new, handle_battalion_run},
+    maneuver::{ManeuverCommands, handle_maneuver_command},
 };
 use std::process;
 use tokio::signal;
@@ -33,6 +34,11 @@ enum Commands {
         #[command(subcommand)]
         action: ArsenalCommands,
     },
+    /// Maneuver flow DSL operations (visualize, validate, execute)
+    Maneuver {
+        #[command(subcommand)]
+        action: ManeuverCommands,
+    },
 }
 
 #[tokio::main]
@@ -57,6 +63,7 @@ async fn main() {
             BattalionCommands::Run(args) => handle_battalion_run(args).await,
         },
         Commands::Arsenal { action } => handle_arsenal_command(action).await,
+        Commands::Maneuver { action } => handle_maneuver_command(action).await,
     };
 
     // Handle errors and exit with appropriate code per FR-21

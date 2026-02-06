@@ -46,6 +46,9 @@ pub enum BattalionYamlConfig {
 
     #[serde(rename = "conclave")]
     Conclave(ConclaveConfig),
+
+    #[serde(rename = "maneuver")]
+    Maneuver(ManeuverConfig),
 }
 
 impl BattalionYamlConfig {
@@ -57,6 +60,7 @@ impl BattalionYamlConfig {
             BattalionYamlConfig::Campaign(_) => "campaign",
             BattalionYamlConfig::ChainOfCommand(_) => "chain-of-command",
             BattalionYamlConfig::Conclave(_) => "conclave",
+            BattalionYamlConfig::Maneuver(_) => "maneuver",
         }
     }
 
@@ -68,6 +72,7 @@ impl BattalionYamlConfig {
             BattalionYamlConfig::Campaign(config) => config.validate(),
             BattalionYamlConfig::ChainOfCommand(config) => config.validate(),
             BattalionYamlConfig::Conclave(config) => config.validate(),
+            BattalionYamlConfig::Maneuver(config) => config.validate(),
         }
     }
 }
@@ -337,6 +342,55 @@ impl ConclaveConfig {
                 });
             }
         }
+
+        Ok(())
+    }
+}
+
+/// Maneuver configuration - Flow DSL-based orchestration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ManeuverConfig {
+    /// Name of the maneuver
+    pub name: String,
+
+    /// Flow expression (e.g., "agent1 -> agent2", "(a, b) -> c")
+    pub flow: String,
+
+    /// List of available Paladins for the maneuver
+    pub paladins: Vec<PaladinReference>,
+
+    /// Optional visualization format (ascii or mermaid)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub visualize: Option<String>,
+}
+
+impl ManeuverConfig {
+    fn validate(&self) -> Result<(), CliError> {
+        if self.name.is_empty() {
+            return Err(CliError::MissingRequiredField {
+                field: "name".to_string(),
+                message: "Maneuver name is required".to_string(),
+            });
+        }
+
+        if self.flow.is_empty() {
+            return Err(CliError::MissingRequiredField {
+                field: "flow".to_string(),
+                message: "Flow expression is required".to_string(),
+            });
+        }
+
+        if self.paladins.is_empty() {
+            return Err(CliError::ValidationError {
+                message: "Maneuver must have at least one Paladin".to_string(),
+            });
+        }
+
+        // Validate flow expression syntax
+        use crate::core::platform::container::battalion::parser::FlowParser;
+        FlowParser::parse(&self.flow).map_err(|e| CliError::ValidationError {
+            message: format!("Invalid flow expression: {}", e),
+        })?;
 
         Ok(())
     }
