@@ -242,6 +242,9 @@ pub enum ErrorStrategy {
 ///     BattalionStrategy::Campaign => println!("Graph workflow"),
 ///     BattalionStrategy::ChainOfCommand => println!("Hierarchical delegation"),
 ///     BattalionStrategy::Conclave => println!("Multi-expert synthesis"),
+///     BattalionStrategy::Council => println!("Discussion orchestration"),
+///     BattalionStrategy::Grove => println!("Intelligent routing"),
+///     BattalionStrategy::Maneuver => println!("Flow DSL execution"),
 ///     BattalionStrategy::Auto => println!("Automatic selection"),
 /// }
 /// ```

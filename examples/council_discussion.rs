@@ -43,9 +43,9 @@ impl MockLlmAdapter {
     fn new() -> Self {
         let mut responses = std::collections::HashMap::new();
 
-        // Security expert responses
+        // Security expert responses (participant_0)
         responses.insert(
-            "Security".to_string(),
+            "participant_0".to_string(),
             vec![
                 "From a security perspective, two-factor authentication is essential. It significantly reduces the risk of account compromise even if passwords are leaked. I recommend implementing TOTP-based 2FA with backup codes.".to_string(),
                 "I agree with the legal requirements. We should use industry-standard protocols like RFC 6238 for TOTP. Additionally, we need to ensure the 2FA secret keys are encrypted at rest.".to_string(),
@@ -53,9 +53,9 @@ impl MockLlmAdapter {
             ],
         );
 
-        // Legal expert responses
+        // Legal expert responses (participant_1)
         responses.insert(
-            "Legal".to_string(),
+            "participant_1".to_string(),
             vec![
                 "From a legal standpoint, implementing 2FA helps us comply with GDPR Article 32 regarding appropriate security measures. We should make it optional initially to avoid user friction, but strongly recommended.".to_string(),
                 "We need to ensure proper consent mechanisms for storing 2FA credentials. I'll draft the updated privacy policy and terms of service amendments.".to_string(),
@@ -63,9 +63,9 @@ impl MockLlmAdapter {
             ],
         );
 
-        // Technical expert responses
+        // Technical expert responses (participant_2)
         responses.insert(
-            "Technical".to_string(),
+            "participant_2".to_string(),
             vec![
                 "I propose using a well-tested library like Google Authenticator compatible TOTP implementation. We can integrate it with our existing authentication system in about 2 sprints.".to_string(),
                 "For backup codes, I suggest generating 10 single-use codes per user, stored with bcrypt hashing. We'll need to update our database schema and add new API endpoints.".to_string(),
@@ -158,25 +158,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_port = Arc::new(MockLlmAdapter::new());
 
     // Create expert Paladins
-    // Note: In production, these would be registered in a Paladin registry
-    let _security_expert = create_expert_paladin("Security", "cybersecurity");
-    let _legal_expert = create_expert_paladin("Legal", "legal compliance");
-    let _technical_expert = create_expert_paladin("Technical", "software engineering");
+    // Council uses participant_N naming convention for participant IDs
+    let security_expert = create_expert_paladin("participant_0", "cybersecurity");
+    let legal_expert = create_expert_paladin("participant_1", "legal compliance");
+    let technical_expert = create_expert_paladin("participant_2", "software engineering");
+
+    // Create paladins vector to pass to Council service
+    let paladins = vec![security_expert, legal_expert, technical_expert];
 
     println!("📋 Council Configuration:");
-    println!("   • Participants: Security, Legal, Technical");
+    println!("   • Participants: Security Expert, Legal Expert, Technical Expert");
     println!("   • Turn Strategy: RoundRobin (each participant speaks in order)");
     println!("   • Max Rounds: 3");
     println!("   • Termination: MaxRounds (stops after 3 complete rounds)");
     println!();
 
     // Build the Council
-    // The Council uses participant IDs (strings) rather than Paladin objects
+    // The Council uses participant IDs that correspond to indices in the paladins vector
     let council = CouncilBuilder::new()
         .name("2FA Implementation Council")
-        .add_participant("Security") // Add each participant by ID
-        .add_participant("Legal")
-        .add_participant("Technical")
+        .add_participant("participant_0") // Security expert
+        .add_participant("participant_1") // Legal expert
+        .add_participant("participant_2") // Technical expert
         .max_rounds(3) // Maximum 3 rounds of discussion
         .turn_strategy(TurnStrategy::RoundRobin) // Each participant speaks in order
         .termination_condition(TerminationCondition::MaxRounds) // Stop after max rounds
@@ -194,7 +197,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Execute the Council discussion
     let result: CouncilResult = council_service
-        .convene(&council, "Should we implement two-factor authentication for our application? Please discuss security implications, legal requirements, and implementation timeline.")
+        .convene(
+            &council,
+            &paladins,
+            "Should we implement two-factor authentication for our application? Please discuss security implications, legal requirements, and implementation timeline.",
+        )
         .await?;
 
     println!("📝 Discussion Transcript:");

@@ -97,7 +97,7 @@ impl FlowExpression {
     ///     ]),
     /// ]);
     ///
-    /// assert_eq!(expr.depth(), 2);
+    /// assert_eq!(expr.depth(), 3); // Sequential(1) + Parallel(1) + Agent(1) = 3
     /// ```
     pub fn depth(&self) -> usize {
         match self {
