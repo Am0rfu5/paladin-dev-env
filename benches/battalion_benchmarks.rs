@@ -1,21 +1,28 @@
 //! Battalion Orchestration Benchmarks
 //!
-//! Performance benchmarks for all four Battalion patterns:
+//! Performance benchmarks for all Battalion patterns:
 //! - Formation (Sequential)
 //! - Phalanx (Concurrent)
 //! - Campaign (Graph)
 //! - Chain of Command (Hierarchical)
+//! - Maneuver (Flow DSL)
 
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use paladin::application::ports::output::paladin_port::{
     PaladinPort, PaladinResult, PaladinStreamChunk, StopReason,
 };
+use paladin::application::use_cases::battalion::flow_visualizer::{
+    FlowVisualizer, VisualizationFormat,
+};
 use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
+use paladin::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
 use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::formation::Formation;
+use paladin::core::platform::container::battalion::maneuver::{Maneuver, ManeuverConfig};
+use paladin::core::platform::container::battalion::parser::FlowParser;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 use std::sync::Arc;
@@ -452,13 +459,496 @@ fn benchmark_chain_of_command(c: &mut Criterion) {
 }
 */
 
+/// Benchmark Maneuver Flow DSL parsing
+fn benchmark_maneuver_parsing(c: &mut Criterion) {
+    let mut group = c.benchmark_group("maneuver_parsing");
+
+    // Simple sequential flow
+    group.bench_function("parse_simple_sequential", |b| {
+        let flow = "agent1 -> agent2 -> agent3";
+        b.iter(|| FlowParser::parse(black_box(flow)));
+    });
+
+    // Simple parallel flow
+    group.bench_function("parse_simple_parallel", |b| {
+        let flow = "(agent1, agent2, agent3)";
+        b.iter(|| FlowParser::parse(black_box(flow)));
+    });
+
+    // Mixed nested flow
+    group.bench_function("parse_nested_mixed", |b| {
+        let flow = "intake -> (analyzer, summarizer) -> reviewer";
+        b.iter(|| FlowParser::parse(black_box(flow)));
+    });
+
+    // Complex deeply nested flow
+    group.bench_function("parse_complex_nested", |b| {
+        let flow = "intake -> (technical -> (code_review, security_scan), business, legal) -> synthesis -> approval";
+        b.iter(|| {
+            FlowParser::parse(black_box(flow))
+        });
+    });
+
+    group.finish();
+}
+
+/// Benchmark Maneuver Flow visualization
+fn benchmark_maneuver_visualization(c: &mut Criterion) {
+    let mut group = c.benchmark_group("maneuver_visualization");
+
+    let simple_flow = FlowParser::parse("agent1 -> agent2 -> agent3").unwrap();
+    let nested_flow = FlowParser::parse("intake -> (analyzer, summarizer) -> reviewer").unwrap();
+    let complex_flow = FlowParser::parse(
+        "intake -> (technical -> (code_review, security_scan), business, legal) -> synthesis",
+    )
+    .unwrap();
+
+    // ASCII visualization benchmarks
+    group.bench_function("visualize_simple_ascii", |b| {
+        b.iter(|| FlowVisualizer::visualize(black_box(&simple_flow), VisualizationFormat::Ascii));
+    });
+
+    group.bench_function("visualize_nested_ascii", |b| {
+        b.iter(|| FlowVisualizer::visualize(black_box(&nested_flow), VisualizationFormat::Ascii));
+    });
+
+    group.bench_function("visualize_complex_ascii", |b| {
+        b.iter(|| FlowVisualizer::visualize(black_box(&complex_flow), VisualizationFormat::Ascii));
+    });
+
+    // Mermaid visualization benchmarks
+    group.bench_function("visualize_simple_mermaid", |b| {
+        b.iter(|| FlowVisualizer::visualize(black_box(&simple_flow), VisualizationFormat::Mermaid));
+    });
+
+    group.bench_function("visualize_nested_mermaid", |b| {
+        b.iter(|| FlowVisualizer::visualize(black_box(&nested_flow), VisualizationFormat::Mermaid));
+    });
+
+    group.bench_function("visualize_complex_mermaid", |b| {
+        b.iter(|| {
+            FlowVisualizer::visualize(black_box(&complex_flow), VisualizationFormat::Mermaid)
+        });
+    });
+
+    group.finish();
+}
+
+/// Benchmark Maneuver validation
+fn benchmark_maneuver_validation(c: &mut Criterion) {
+    let mut group = c.benchmark_group("maneuver_validation");
+
+    // Create agent pool
+    let mut agents = std::collections::HashMap::new();
+    for i in 0..10 {
+        agents.insert(
+            format!("agent{}", i),
+            create_benchmark_paladin(&format!("agent{}", i)),
+        );
+    }
+
+    // Simple flow validation
+    group.bench_function("validate_simple", |b| {
+        let flow = FlowParser::parse("agent1 -> agent2 -> agent3").unwrap();
+        let config = ManeuverConfig::default();
+
+        b.iter(|| {
+            Maneuver::new(
+                "bench",
+                black_box(agents.clone()),
+                black_box(flow.clone()),
+                black_box(config.clone()),
+            )
+        });
+    });
+
+    // Nested flow validation
+    group.bench_function("validate_nested", |b| {
+        let flow = FlowParser::parse("agent1 -> (agent2, agent3) -> agent4").unwrap();
+        let config = ManeuverConfig::default();
+
+        b.iter(|| {
+            Maneuver::new(
+                "bench",
+                black_box(agents.clone()),
+                black_box(flow.clone()),
+                black_box(config.clone()),
+            )
+        });
+    });
+
+    // Complex flow validation
+    group.bench_function("validate_complex", |b| {
+        let flow =
+            FlowParser::parse("agent1 -> (agent2 -> (agent3, agent4), agent5, agent6) -> agent7")
+                .unwrap();
+        let config = ManeuverConfig::default();
+
+        b.iter(|| {
+            Maneuver::new(
+                "bench",
+                black_box(agents.clone()),
+                black_box(flow.clone()),
+                black_box(config.clone()),
+            )
+        });
+    });
+
+    group.finish();
+}
+
+/// Benchmark Maneuver sequential execution
+fn benchmark_maneuver_sequential(c: &mut Criterion) {
+    let mut group = c.benchmark_group("maneuver_sequential");
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let port = Arc::new(BenchmarkMockPort::new(0)); // Zero latency for overhead measurement
+    let service = ManeuverExecutionService::new(port.clone());
+
+    // Test with varying chain lengths
+    for agent_count in [3, 5, 10].iter() {
+        group.bench_with_input(
+            BenchmarkId::new("zero_latency", agent_count),
+            agent_count,
+            |b, &count| {
+                // Build flow expression: "agent0 -> agent1 -> agent2 -> ..."
+                let flow_expr = (0..count)
+                    .map(|i| format!("agent{}", i))
+                    .collect::<Vec<_>>()
+                    .join(" -> ");
+
+                let flow = FlowParser::parse(&flow_expr).unwrap();
+
+                let mut agents = std::collections::HashMap::new();
+                for i in 0..count {
+                    agents.insert(
+                        format!("agent{}", i),
+                        create_benchmark_paladin(&format!("agent{}", i)),
+                    );
+                }
+
+                let config = ManeuverConfig::default();
+                let maneuver = Maneuver::new("bench", agents, flow, config).unwrap();
+
+                b.iter(|| {
+                    runtime.block_on(async {
+                        service.execute(black_box(&maneuver), "benchmark").await
+                    })
+                });
+            },
+        );
+    }
+
+    // Test with 100μs latency
+    let port_latency = Arc::new(BenchmarkMockPort::new(100));
+    let service_latency = ManeuverExecutionService::new(port_latency);
+
+    for agent_count in [3, 5, 10].iter() {
+        group.bench_with_input(
+            BenchmarkId::new("100us_latency", agent_count),
+            agent_count,
+            |b, &count| {
+                let flow_expr = (0..count)
+                    .map(|i| format!("agent{}", i))
+                    .collect::<Vec<_>>()
+                    .join(" -> ");
+
+                let flow = FlowParser::parse(&flow_expr).unwrap();
+
+                let mut agents = std::collections::HashMap::new();
+                for i in 0..count {
+                    agents.insert(
+                        format!("agent{}", i),
+                        create_benchmark_paladin(&format!("agent{}", i)),
+                    );
+                }
+
+                let config = ManeuverConfig::default();
+                let maneuver = Maneuver::new("bench", agents, flow, config).unwrap();
+
+                b.iter(|| {
+                    runtime.block_on(async {
+                        service_latency
+                            .execute(black_box(&maneuver), "benchmark")
+                            .await
+                    })
+                });
+            },
+        );
+    }
+
+    group.finish();
+}
+
+/// Benchmark Maneuver parallel execution
+fn benchmark_maneuver_parallel(c: &mut Criterion) {
+    let mut group = c.benchmark_group("maneuver_parallel");
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let port = Arc::new(BenchmarkMockPort::new(0));
+    let service = ManeuverExecutionService::new(port.clone());
+
+    // Test with varying parallel branch counts
+    for agent_count in [3, 5, 10, 20].iter() {
+        group.bench_with_input(
+            BenchmarkId::new("zero_latency", agent_count),
+            agent_count,
+            |b, &count| {
+                // Build flow expression: "(agent0, agent1, agent2, ...)"
+                let flow_expr = format!(
+                    "({})",
+                    (0..count)
+                        .map(|i| format!("agent{}", i))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+
+                let flow = FlowParser::parse(&flow_expr).unwrap();
+
+                let mut agents = std::collections::HashMap::new();
+                for i in 0..count {
+                    agents.insert(
+                        format!("agent{}", i),
+                        create_benchmark_paladin(&format!("agent{}", i)),
+                    );
+                }
+
+                let config = ManeuverConfig::default();
+                let maneuver = Maneuver::new("bench", agents, flow, config).unwrap();
+
+                b.iter(|| {
+                    runtime.block_on(async {
+                        service.execute(black_box(&maneuver), "benchmark").await
+                    })
+                });
+            },
+        );
+    }
+
+    // Test with 100μs latency to show parallel speedup
+    let port_latency = Arc::new(BenchmarkMockPort::new(100));
+    let service_latency = ManeuverExecutionService::new(port_latency);
+
+    for agent_count in [3, 5, 10].iter() {
+        group.bench_with_input(
+            BenchmarkId::new("100us_latency", agent_count),
+            agent_count,
+            |b, &count| {
+                let flow_expr = format!(
+                    "({})",
+                    (0..count)
+                        .map(|i| format!("agent{}", i))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+
+                let flow = FlowParser::parse(&flow_expr).unwrap();
+
+                let mut agents = std::collections::HashMap::new();
+                for i in 0..count {
+                    agents.insert(
+                        format!("agent{}", i),
+                        create_benchmark_paladin(&format!("agent{}", i)),
+                    );
+                }
+
+                let config = ManeuverConfig::default();
+                let maneuver = Maneuver::new("bench", agents, flow, config).unwrap();
+
+                b.iter(|| {
+                    runtime.block_on(async {
+                        service_latency
+                            .execute(black_box(&maneuver), "benchmark")
+                            .await
+                    })
+                });
+            },
+        );
+    }
+
+    group.finish();
+}
+
+/// Benchmark Maneuver nested (mixed) execution
+fn benchmark_maneuver_nested(c: &mut Criterion) {
+    let mut group = c.benchmark_group("maneuver_nested");
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let port = Arc::new(BenchmarkMockPort::new(0));
+    let service = ManeuverExecutionService::new(port.clone());
+
+    // Simple nested: "a -> (b, c) -> d"
+    group.bench_function("simple_nested", |b| {
+        let flow = FlowParser::parse("agent0 -> (agent1, agent2) -> agent3").unwrap();
+
+        let mut agents = std::collections::HashMap::new();
+        for i in 0..4 {
+            agents.insert(
+                format!("agent{}", i),
+                create_benchmark_paladin(&format!("agent{}", i)),
+            );
+        }
+
+        let config = ManeuverConfig::default();
+        let maneuver = Maneuver::new("bench", agents, flow, config).unwrap();
+
+        b.iter(|| {
+            runtime.block_on(async { service.execute(black_box(&maneuver), "benchmark").await })
+        });
+    });
+
+    // Complex nested: "a -> (b -> (c, d), e, f) -> g"
+    group.bench_function("complex_nested", |b| {
+        let flow =
+            FlowParser::parse("agent0 -> (agent1 -> (agent2, agent3), agent4, agent5) -> agent6")
+                .unwrap();
+
+        let mut agents = std::collections::HashMap::new();
+        for i in 0..7 {
+            agents.insert(
+                format!("agent{}", i),
+                create_benchmark_paladin(&format!("agent{}", i)),
+            );
+        }
+
+        let config = ManeuverConfig::default();
+        let maneuver = Maneuver::new("bench", agents, flow, config).unwrap();
+
+        b.iter(|| {
+            runtime.block_on(async { service.execute(black_box(&maneuver), "benchmark").await })
+        });
+    });
+
+    // Very complex nested (enterprise review pipeline)
+    group.bench_function("enterprise_pipeline", |b| {
+        let flow = FlowParser::parse(
+            "intake -> (technical -> (code_review, security_scan), business, legal) -> synthesis -> approval"
+        ).unwrap();
+
+        let agent_names = vec![
+            "intake", "technical", "code_review", "security_scan",
+            "business", "legal", "synthesis", "approval"
+        ];
+
+        let mut agents = std::collections::HashMap::new();
+        for name in agent_names {
+            agents.insert(name.to_string(), create_benchmark_paladin(name));
+        }
+
+        let config = ManeuverConfig::default();
+        let maneuver = Maneuver::new("bench", agents, flow, config).unwrap();
+
+        b.iter(|| {
+            runtime.block_on(async {
+                service.execute(black_box(&maneuver), "benchmark").await
+            })
+        });
+    });
+
+    group.finish();
+}
+
+/// Benchmark Maneuver orchestration overhead vs other patterns
+fn benchmark_maneuver_overhead(c: &mut Criterion) {
+    let mut group = c.benchmark_group("maneuver_vs_patterns");
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let port = Arc::new(BenchmarkMockPort::new(0)); // Zero latency to measure pure overhead
+
+    // Compare 3-agent sequential execution
+    group.bench_function("formation_3_sequential", |b| {
+        let service = FormationExecutionService::new(port.clone());
+        let paladins = vec![
+            create_benchmark_paladin("agent0"),
+            create_benchmark_paladin("agent1"),
+            create_benchmark_paladin("agent2"),
+        ];
+        let config = BattalionConfig::default();
+        let formation = Formation::new(paladins, config).unwrap();
+
+        b.iter(|| {
+            runtime.block_on(async { service.execute(black_box(&formation), "benchmark").await })
+        });
+    });
+
+    group.bench_function("maneuver_3_sequential", |b| {
+        let service = ManeuverExecutionService::new(port.clone());
+        let flow = FlowParser::parse("agent0 -> agent1 -> agent2").unwrap();
+
+        let mut agents = std::collections::HashMap::new();
+        for i in 0..3 {
+            agents.insert(
+                format!("agent{}", i),
+                create_benchmark_paladin(&format!("agent{}", i)),
+            );
+        }
+
+        let config = ManeuverConfig::default();
+        let maneuver = Maneuver::new("bench", agents, flow, config).unwrap();
+
+        b.iter(|| {
+            runtime.block_on(async { service.execute(black_box(&maneuver), "benchmark").await })
+        });
+    });
+
+    // Compare 5-agent parallel execution
+    group.bench_function("phalanx_5_parallel", |b| {
+        let service = PhalanxExecutionService::new(port.clone());
+        let paladins = vec![
+            create_benchmark_paladin("agent0"),
+            create_benchmark_paladin("agent1"),
+            create_benchmark_paladin("agent2"),
+            create_benchmark_paladin("agent3"),
+            create_benchmark_paladin("agent4"),
+        ];
+        let config = BattalionConfig::default();
+        let phalanx = Phalanx::new(paladins, config)
+            .unwrap()
+            .with_aggregation(AggregationStrategy::CollectAll);
+
+        b.iter(|| {
+            runtime.block_on(async { service.execute(black_box(&phalanx), "benchmark").await })
+        });
+    });
+
+    group.bench_function("maneuver_5_parallel", |b| {
+        let service = ManeuverExecutionService::new(port.clone());
+        let flow = FlowParser::parse("(agent0, agent1, agent2, agent3, agent4)").unwrap();
+
+        let mut agents = std::collections::HashMap::new();
+        for i in 0..5 {
+            agents.insert(
+                format!("agent{}", i),
+                create_benchmark_paladin(&format!("agent{}", i)),
+            );
+        }
+
+        let config = ManeuverConfig::default();
+        let maneuver = Maneuver::new("bench", agents, flow, config).unwrap();
+
+        b.iter(|| {
+            runtime.block_on(async { service.execute(black_box(&maneuver), "benchmark").await })
+        });
+    });
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     benchmark_formation,
     benchmark_phalanx,
     benchmark_aggregation_strategies,
-    benchmark_orchestration_overhead // TODO: Fix Campaign and ChainOfCommand benchmarks - require API updates
-                                     // benchmark_campaign,
-                                     // benchmark_chain_of_command
+    benchmark_orchestration_overhead,
+    // Maneuver benchmarks
+    benchmark_maneuver_parsing,
+    benchmark_maneuver_visualization,
+    benchmark_maneuver_validation,
+    benchmark_maneuver_sequential,
+    benchmark_maneuver_parallel,
+    benchmark_maneuver_nested,
+    benchmark_maneuver_overhead // TODO: Fix Campaign and ChainOfCommand benchmarks - require API updates
+                                // benchmark_campaign,
+                                // benchmark_chain_of_command
 );
 criterion_main!(benches);
