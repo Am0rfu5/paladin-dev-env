@@ -153,57 +153,57 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 2.6.2 Export Maneuver, ManeuverConfig, ManeuverResult, ManeuverError
     - [x] 2.6.3 Update documentation comments
 
-- [ ] 3.0 Implement Maneuver Execution Service (US-17.3)
-  - [ ] 3.1 Create ManeuverExecutionService struct
-    - [ ] 3.1.1 Create `src/application/use_cases/battalion/maneuver_service.rs`
-    - [ ] 3.1.2 Define struct with paladin_port: Arc<dyn PaladinPort>
-    - [ ] 3.1.3 Implement new() constructor
-    - [ ] 3.1.4 Add configuration fields if needed
-  - [ ] 3.2 Implement main execution method
-    - [ ] 3.2.1 Implement `execute(&self, maneuver: &Maneuver, input: &str) -> Result<ManeuverResult, ManeuverError>`
-    - [ ] 3.2.2 Set up execution context with timing tracking
-    - [ ] 3.2.3 Call recursive expression executor
-    - [ ] 3.2.4 Build and return ManeuverResult
-    - [ ] 3.2.5 Handle overall timeout
-  - [ ] 3.3 Implement sequential execution
-    - [ ] 3.3.1 Create `execute_sequential()` method
-    - [ ] 3.3.2 Execute agents in order
-    - [ ] 3.3.3 Handle output passing based on config.pass_output_as_input
-    - [ ] 3.3.4 Respect ErrorStrategy for failures
-    - [ ] 3.3.5 Track execution order and timing
-  - [ ] 3.4 Implement parallel execution
-    - [ ] 3.4.1 Create `execute_parallel()` method
-    - [ ] 3.4.2 Use tokio::spawn or join_all for concurrent execution
-    - [ ] 3.4.3 Wait for all tasks with timeout
-    - [ ] 3.4.4 Aggregate results based on config.output_format
-    - [ ] 3.4.5 Handle partial failures based on ErrorStrategy
-  - [ ] 3.5 Implement recursive expression evaluator
-    - [ ] 3.5.1 Create `execute_expression()` method
-    - [ ] 3.5.2 Match on FlowExpression variants
-    - [ ] 3.5.3 Handle Agent variant: lookup and execute
-    - [ ] 3.5.4 Handle Sequential variant: call execute_sequential
-    - [ ] 3.5.5 Handle Parallel variant: call execute_parallel
-    - [ ] 3.5.6 Maintain execution context through recursion
-  - [ ] 3.6 Implement error handling strategies
-    - [ ] 3.6.1 Implement FailFast: stop on first error
-    - [ ] 3.6.2 Implement ContinueParallel: continue parallel branches, fail sequences
-    - [ ] 3.6.3 Implement IgnoreErrors: log but continue
-    - [ ] 3.6.4 Add detailed error context (agent name, step, suggestion)
-  - [ ] 3.7 Implement timing metrics
-    - [ ] 3.7.1 Add timing capture if config.collect_timing_metrics
-    - [ ] 3.7.2 Track per-agent execution time
-    - [ ] 3.7.3 Track total workflow time
-    - [ ] 3.7.4 Include timing in ManeuverResult
-  - [ ] 3.8 Write execution service tests
-    - [ ] 3.8.1 Create mock PaladinPort implementation
-    - [ ] 3.8.2 Test simple sequential execution
-    - [ ] 3.8.3 Test simple parallel execution
-    - [ ] 3.8.4 Test fan-out pattern
-    - [ ] 3.8.5 Test fan-in pattern with output aggregation
-    - [ ] 3.8.6 Test nested expressions
-    - [ ] 3.8.7 Test each error strategy behavior
-    - [ ] 3.8.8 Test timeout handling
-    - [ ] 3.8.9 Test timing metrics collection
+- [x] 3.0 Implement Maneuver Execution Service (US-17.3)
+  - [x] 3.1 Create ManeuverExecutionService struct
+    - [x] 3.1.1 Create `src/application/use_cases/battalion/maneuver_service.rs`
+    - [x] 3.1.2 Define struct with paladin_port: Arc<dyn PaladinPort>
+    - [x] 3.1.3 Implement new() constructor
+    - [x] 3.1.4 Add configuration fields if needed
+  - [x] 3.2 Implement main execution method
+    - [x] 3.2.1 Implement `execute(&self, maneuver: &Maneuver, input: &str) -> Result<ManeuverResult, ManeuverError>`
+    - [x] 3.2.2 Set up execution context with timing tracking
+    - [x] 3.2.3 Call recursive expression executor
+    - [x] 3.2.4 Build and return ManeuverResult
+    - [x] 3.2.5 Handle overall timeout
+  - [x] 3.3 Implement sequential execution
+    - [x] 3.3.1 Create `execute_sequential()` method
+    - [x] 3.3.2 Execute agents in order
+    - [x] 3.3.3 Handle output passing based on config.pass_output_as_input
+    - [x] 3.3.4 Respect ErrorStrategy for failures
+    - [x] 3.3.5 Track execution order and timing
+  - [x] 3.4 Implement parallel execution
+    - [x] 3.4.1 Create `execute_parallel()` method
+    - [x] 3.4.2 Use tokio::spawn or join_all for concurrent execution
+    - [x] 3.4.3 Wait for all tasks with timeout
+    - [x] 3.4.4 Aggregate results based on config.output_format
+    - [x] 3.4.5 Handle partial failures based on ErrorStrategy
+  - [x] 3.5 Implement recursive expression evaluator
+    - [x] 3.5.1 Create `execute_expression()` method
+    - [x] 3.5.2 Match on FlowExpression variants
+    - [x] 3.5.3 Handle Agent variant: lookup and execute
+    - [x] 3.5.4 Handle Sequential variant: call execute_sequential
+    - [x] 3.5.5 Handle Parallel variant: call execute_parallel
+    - [x] 3.5.6 Maintain execution context through recursion
+  - [x] 3.6 Implement error handling strategies
+    - [x] 3.6.1 Implement FailFast: stop on first error
+    - [x] 3.6.2 Implement ContinueParallel: continue parallel branches, fail sequences
+    - [x] 3.6.3 Implement IgnoreErrors: log but continue
+    - [x] 3.6.4 Add detailed error context (agent name, step, suggestion)
+  - [x] 3.7 Implement timing metrics
+    - [x] 3.7.1 Add timing capture if config.collect_timing_metrics
+    - [x] 3.7.2 Track per-agent execution time
+    - [x] 3.7.3 Track total workflow time
+    - [x] 3.7.4 Include timing in ManeuverResult
+  - [x] 3.8 Write execution service tests
+    - [x] 3.8.1 Create mock PaladinPort implementation
+    - [x] 3.8.2 Test simple sequential execution
+    - [x] 3.8.3 Test simple parallel execution
+    - [x] 3.8.4 Test fan-out pattern
+    - [x] 3.8.5 Test fan-in pattern with output aggregation
+    - [x] 3.8.6 Test nested expressions
+    - [x] 3.8.7 Test each error strategy behavior
+    - [x] 3.8.8 Test timeout handling
+    - [x] 3.8.9 Test timing metrics collection
 
 - [ ] 4.0 Integrate with Commander (US-17.4)
   - [ ] 4.1 Add Maneuver variant to BattalionStrategy

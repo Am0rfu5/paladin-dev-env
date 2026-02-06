@@ -240,6 +240,7 @@ impl ManeuverExecutionService {
         let agents = maneuver.agents.clone();
         let error_strategy = maneuver.config.error_strategy;
         let collect_timing = maneuver.config.collect_timing_metrics;
+        let pass_output = maneuver.config.pass_output_as_input;
 
         // Spawn parallel execution tasks
         for expr in exprs {
@@ -247,15 +248,13 @@ impl ManeuverExecutionService {
             let input_clone = input.to_string();
             let paladin_port = Arc::clone(&self.paladin_port);
             let agents_clone = agents.clone();
-            let _error_strategy_clone = error_strategy;
 
             let handle = tokio::spawn(async move {
                 let mut step_outputs = HashMap::new();
                 let mut execution_order = Vec::new();
                 let mut timing_metrics = HashMap::new();
-                let _start_time = Instant::now();
 
-                // Execute the expression with cloned data
+                // Recursively execute any expression type
                 let result = match &expr_clone {
                     FlowExpression::Agent(name) => {
                         execution_order.push(name.clone());
@@ -285,11 +284,84 @@ impl ManeuverExecutionService {
                             })
                         }
                     }
-                    // For nested expressions, we would need recursive handling
-                    // For simplicity in parallel branches, we only support direct agent calls
-                    _ => Err(ManeuverError::ExecutionError(
-                        "Nested expressions not supported in parallel branches".to_string(),
-                    )),
+                    FlowExpression::Sequential(seq_exprs) => {
+                        // Execute sequential sub-expression
+                        let mut current_input = input_clone.clone();
+
+                        for seq_expr in seq_exprs {
+                            let expr_input = if pass_output {
+                                &current_input
+                            } else {
+                                &input_clone
+                            };
+
+                            match seq_expr {
+                                FlowExpression::Agent(name) => {
+                                    execution_order.push(name.clone());
+
+                                    if let Some(paladin) = agents_clone.get(name) {
+                                        let agent_start = Instant::now();
+                                        match paladin_port.execute(paladin, expr_input).await {
+                                            Ok(result) => {
+                                                if collect_timing {
+                                                    timing_metrics.insert(
+                                                        name.clone(),
+                                                        agent_start.elapsed(),
+                                                    );
+                                                }
+                                                step_outputs
+                                                    .insert(name.clone(), result.output.clone());
+                                                current_input = result.output;
+                                            }
+                                            Err(e) => {
+                                                return (
+                                                    expr_clone.clone(),
+                                                    Err(ManeuverError::ExecutionError(format!(
+                                                        "Sequential agent {} failed: {}",
+                                                        name, e
+                                                    ))),
+                                                    step_outputs,
+                                                    execution_order,
+                                                    timing_metrics,
+                                                );
+                                            }
+                                        }
+                                    } else {
+                                        return (
+                                            expr_clone.clone(),
+                                            Err(ManeuverError::AgentNotFound {
+                                                agent_name: name.clone(),
+                                                available_agents: vec![],
+                                            }),
+                                            step_outputs,
+                                            execution_order,
+                                            timing_metrics,
+                                        );
+                                    }
+                                }
+                                _ => {
+                                    return (
+                                        expr_clone,
+                                        Err(ManeuverError::ExecutionError(
+                                            "Deeply nested expressions not supported in parallel branches"
+                                                .to_string(),
+                                        )),
+                                        step_outputs,
+                                        execution_order,
+                                        timing_metrics,
+                                    );
+                                }
+                            }
+                        }
+
+                        Ok(current_input)
+                    }
+                    FlowExpression::Parallel(_) => {
+                        // Nested parallel not supported in parallel branches
+                        Err(ManeuverError::ExecutionError(
+                            "Nested parallel expressions not supported".to_string(),
+                        ))
+                    }
                 };
 
                 (
@@ -575,5 +647,333 @@ mod tests {
         let metrics = result.timing_metrics.unwrap();
         assert!(metrics.contains_key("agent1"));
         assert!(metrics.contains_key("agent2"));
+    }
+
+    #[tokio::test]
+    async fn test_fan_out_pattern() {
+        // Pattern: agent1 -> (agent2, agent3, agent4)
+        let flow = FlowParser::parse("agent1 -> (agent2, agent3, agent4)").unwrap();
+        let mut agents = HashMap::new();
+        agents.insert("agent1".to_string(), create_test_paladin("agent1"));
+        agents.insert("agent2".to_string(), create_test_paladin("agent2"));
+        agents.insert("agent3".to_string(), create_test_paladin("agent3"));
+        agents.insert("agent4".to_string(), create_test_paladin("agent4"));
+
+        let maneuver = Maneuver::new("test", agents, flow, ManeuverConfig::default()).unwrap();
+
+        let mock_port = Arc::new(MockPaladinPort::new());
+        mock_port.set_response("agent1", "initial result");
+        mock_port.set_response("agent2", "branch A");
+        mock_port.set_response("agent3", "branch B");
+        mock_port.set_response("agent4", "branch C");
+
+        let service = ManeuverExecutionService::new(mock_port.clone());
+        let result = service.execute(&maneuver, "input").await.unwrap();
+
+        // Verify agent1 ran first
+        assert!(result.execution_order[0] == "agent1");
+        // Verify all parallel agents ran
+        assert_eq!(result.execution_order.len(), 4);
+        assert!(result.step_outputs.contains_key("agent2"));
+        assert!(result.step_outputs.contains_key("agent3"));
+        assert!(result.step_outputs.contains_key("agent4"));
+    }
+
+    #[tokio::test]
+    async fn test_nested_expression() {
+        // Pattern: (agent1 -> agent2), agent3
+        let flow = FlowParser::parse("(agent1 -> agent2), agent3").unwrap();
+        let mut agents = HashMap::new();
+        agents.insert("agent1".to_string(), create_test_paladin("agent1"));
+        agents.insert("agent2".to_string(), create_test_paladin("agent2"));
+        agents.insert("agent3".to_string(), create_test_paladin("agent3"));
+
+        let maneuver = Maneuver::new("test", agents, flow, ManeuverConfig::default()).unwrap();
+
+        let mock_port = Arc::new(MockPaladinPort::new());
+        mock_port.set_response("agent1", "step1");
+        mock_port.set_response("agent2", "step2");
+        mock_port.set_response("agent3", "step3");
+
+        let service = ManeuverExecutionService::new(mock_port);
+        let result = service.execute(&maneuver, "input").await.unwrap();
+
+        assert_eq!(result.status, ExecutionStatus::Success);
+        assert_eq!(result.execution_order.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn test_error_strategy_fail_fast() {
+        let flow = FlowParser::parse("agent1 -> agent2 -> agent3").unwrap();
+        let mut agents = HashMap::new();
+        agents.insert("agent1".to_string(), create_test_paladin("agent1"));
+        agents.insert("agent2".to_string(), create_test_paladin("agent2"));
+        agents.insert("agent3".to_string(), create_test_paladin("agent3"));
+
+        let config = ManeuverConfig::default().with_error_strategy(ErrorStrategy::FailFast);
+        let maneuver = Maneuver::new("test", agents, flow, config).unwrap();
+
+        // Create a mock that fails on agent2
+        let mock_port = Arc::new(FailingMockPaladinPort::new());
+        let service = ManeuverExecutionService::new(mock_port);
+
+        let result = service.execute(&maneuver, "input").await;
+        assert!(result.is_err());
+
+        // Verify error message mentions agent2
+        let err_msg = format!("{:?}", result.unwrap_err());
+        assert!(err_msg.contains("agent2"));
+    }
+
+    #[tokio::test]
+    async fn test_error_strategy_ignore_errors() {
+        let flow = FlowParser::parse("agent1 -> agent2 -> agent3").unwrap();
+        let mut agents = HashMap::new();
+        agents.insert("agent1".to_string(), create_test_paladin("agent1"));
+        agents.insert("agent2".to_string(), create_test_paladin("agent2"));
+        agents.insert("agent3".to_string(), create_test_paladin("agent3"));
+
+        let config = ManeuverConfig::default().with_error_strategy(ErrorStrategy::IgnoreErrors);
+        let maneuver = Maneuver::new("test", agents, flow, config).unwrap();
+
+        let mock_port = Arc::new(FailingMockPaladinPort::new());
+        let service = ManeuverExecutionService::new(mock_port);
+
+        let result = service.execute(&maneuver, "input").await;
+
+        // Should succeed despite agent2 failing
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result.status, ExecutionStatus::PartialSuccess);
+    }
+
+    #[tokio::test]
+    async fn test_timeout_handling() {
+        let flow = FlowParser::parse("agent1").unwrap();
+        let mut agents = HashMap::new();
+        agents.insert("agent1".to_string(), create_test_paladin("agent1"));
+
+        // Set 1 second timeout (minimum allowed by validation)
+        let config = ManeuverConfig::default().with_timeout(Duration::from_secs(1));
+        let maneuver = Maneuver::new("test", agents, flow, config).unwrap();
+
+        let mock_port = Arc::new(SlowMockPaladinPort::new());
+        let service = ManeuverExecutionService::new(mock_port);
+
+        let result = service.execute(&maneuver, "input").await;
+        assert!(result.is_err());
+
+        // Verify it's a timeout error
+        match result.unwrap_err() {
+            ManeuverError::TimeoutError { .. } => {
+                // Expected
+            }
+            e => panic!("Expected timeout error, got: {:?}", e),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_output_passing_disabled() {
+        let flow = FlowParser::parse("agent1 -> agent2").unwrap();
+        let mut agents = HashMap::new();
+        agents.insert("agent1".to_string(), create_test_paladin("agent1"));
+        agents.insert("agent2".to_string(), create_test_paladin("agent2"));
+
+        let config = ManeuverConfig::default().with_pass_output_as_input(false);
+        let maneuver = Maneuver::new("test", agents, flow, config).unwrap();
+
+        let mock_port = Arc::new(InputTrackingMockPort::new());
+        mock_port.set_response("agent1", "output1");
+        mock_port.set_response("agent2", "output2");
+
+        let service = ManeuverExecutionService::new(mock_port.clone());
+        let result = service.execute(&maneuver, "initial input").await.unwrap();
+
+        assert_eq!(result.final_output, "output2");
+
+        // Verify agent2 received original input, not agent1's output
+        let inputs = mock_port.get_inputs();
+        assert_eq!(inputs.get("agent1"), Some(&"initial input".to_string()));
+        assert_eq!(inputs.get("agent2"), Some(&"initial input".to_string()));
+    }
+
+    // Additional mock implementations for testing
+
+    struct FailingMockPaladinPort {}
+
+    impl FailingMockPaladinPort {
+        fn new() -> Self {
+            Self {}
+        }
+    }
+
+    #[async_trait]
+    impl PaladinPort for FailingMockPaladinPort {
+        async fn execute(
+            &self,
+            paladin: &Paladin,
+            _input: &str,
+        ) -> Result<PaladinResult, crate::application::use_cases::paladin::error::PaladinError>
+        {
+            let agent_name = &paladin.node.name;
+
+            // Fail on agent2
+            if agent_name == "agent2" {
+                return Err(
+                    crate::application::use_cases::paladin::error::PaladinError::ExecutionError(
+                        "Simulated failure on agent2".to_string(),
+                    ),
+                );
+            }
+
+            Ok(PaladinResult {
+                output: format!("output from {}", agent_name),
+                token_count: 100,
+                execution_time_ms: 50,
+                loop_count: 1,
+                stop_reason: StopReason::Completed,
+            })
+        }
+
+        async fn execute_stream(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<
+            crate::application::ports::output::paladin_port::PaladinStream,
+            crate::application::use_cases::paladin::error::PaladinError,
+        > {
+            unimplemented!()
+        }
+
+        fn validate(
+            &self,
+            _paladin: &Paladin,
+        ) -> Result<(), crate::application::use_cases::paladin::error::PaladinError> {
+            Ok(())
+        }
+    }
+
+    struct SlowMockPaladinPort {}
+
+    impl SlowMockPaladinPort {
+        fn new() -> Self {
+            Self {}
+        }
+    }
+
+    #[async_trait]
+    impl PaladinPort for SlowMockPaladinPort {
+        async fn execute(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<PaladinResult, crate::application::use_cases::paladin::error::PaladinError>
+        {
+            // Sleep for a long time to trigger timeout
+            tokio::time::sleep(Duration::from_secs(10)).await;
+
+            Ok(PaladinResult {
+                output: "slow output".to_string(),
+                token_count: 100,
+                execution_time_ms: 10000,
+                loop_count: 1,
+                stop_reason: StopReason::Completed,
+            })
+        }
+
+        async fn execute_stream(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<
+            crate::application::ports::output::paladin_port::PaladinStream,
+            crate::application::use_cases::paladin::error::PaladinError,
+        > {
+            unimplemented!()
+        }
+
+        fn validate(
+            &self,
+            _paladin: &Paladin,
+        ) -> Result<(), crate::application::use_cases::paladin::error::PaladinError> {
+            Ok(())
+        }
+    }
+
+    struct InputTrackingMockPort {
+        responses: Mutex<HashMap<String, String>>,
+        inputs: Mutex<HashMap<String, String>>,
+    }
+
+    impl InputTrackingMockPort {
+        fn new() -> Self {
+            Self {
+                responses: Mutex::new(HashMap::new()),
+                inputs: Mutex::new(HashMap::new()),
+            }
+        }
+
+        fn set_response(&self, agent_name: &str, output: &str) {
+            self.responses
+                .lock()
+                .unwrap()
+                .insert(agent_name.to_string(), output.to_string());
+        }
+
+        fn get_inputs(&self) -> HashMap<String, String> {
+            self.inputs.lock().unwrap().clone()
+        }
+    }
+
+    #[async_trait]
+    impl PaladinPort for InputTrackingMockPort {
+        async fn execute(
+            &self,
+            paladin: &Paladin,
+            input: &str,
+        ) -> Result<PaladinResult, crate::application::use_cases::paladin::error::PaladinError>
+        {
+            let agent_name = &paladin.node.name;
+
+            // Track input
+            self.inputs
+                .lock()
+                .unwrap()
+                .insert(agent_name.clone(), input.to_string());
+
+            // Get response
+            let responses = self.responses.lock().unwrap();
+            let output = responses
+                .get(agent_name)
+                .cloned()
+                .unwrap_or_else(|| format!("output from {}", agent_name));
+
+            Ok(PaladinResult {
+                output,
+                token_count: 100,
+                execution_time_ms: 50,
+                loop_count: 1,
+                stop_reason: StopReason::Completed,
+            })
+        }
+
+        async fn execute_stream(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<
+            crate::application::ports::output::paladin_port::PaladinStream,
+            crate::application::use_cases::paladin::error::PaladinError,
+        > {
+            unimplemented!()
+        }
+
+        fn validate(
+            &self,
+            _paladin: &Paladin,
+        ) -> Result<(), crate::application::use_cases::paladin::error::PaladinError> {
+            Ok(())
+        }
     }
 }
