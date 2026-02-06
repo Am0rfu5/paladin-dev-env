@@ -17,7 +17,7 @@
 //!
 //! ```text
 //! Flow: "intake -> (analyzer, summarizer) -> reviewer"
-//! 
+//!
 //! Execution:
 //! Input → intake → ┌─ analyzer ─┐
 //!                  └─ summarizer ─┘ → reviewer → Output
@@ -40,7 +40,9 @@ use paladin::application::use_cases::battalion::flow_visualizer::{
 use paladin::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
-use paladin::core::platform::container::battalion::maneuver::{Maneuver, ManeuverConfig, ErrorStrategy, OutputFormat};
+use paladin::core::platform::container::battalion::maneuver::{
+    ErrorStrategy, Maneuver, ManeuverConfig, OutputFormat,
+};
 use paladin::core::platform::container::battalion::parser::FlowParser;
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 use std::collections::HashMap;

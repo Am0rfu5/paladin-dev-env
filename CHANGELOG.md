@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Epic 17: Flow DSL & Agent Rearrangement (Maneuver Pattern)
+
+#### Flow DSL Parser
+- **FlowParser**: String-based workflow orchestration with intuitive syntax
+  - Sequential operator `->` for linear workflows (e.g., "A -> B -> C")
+  - Parallel operator `,` for concurrent execution (e.g., "A, B, C")
+  - Nested patterns with parentheses for complex workflows
+  - Complete lexer, AST, and parser implementation in core layer
+  - 57 comprehensive tests covering all syntax patterns
+- **Error Handling**: Detailed `FlowParseError` types with position tracking
+  - Helpful error messages for common syntax mistakes
+  - Support for debugging complex nested expressions
+  - Suggestion methods for error recovery
+
+#### Maneuver Domain Model
+- **Maneuver**: New Battalion pattern for declarative workflow definition
+  - Parse flow expressions into executable agent graphs
+  - Support for 10-30 agent workflows with automatic dependency resolution
+  - Three error strategies: FailFast, ContinueParallel, IgnoreErrors
+  - Two output formats: CombinedText, StructuredJson
+  - 21 domain tests validating configuration and behavior
+- **ManeuverConfig**: Comprehensive configuration with timeouts and validation
+  - Per-agent timeout controls
+  - Error strategy selection
+  - Output format specification
+  - Validation rules for agent count and flow complexity
+
+#### Execution Engine
+- **ManeuverExecutionService**: Async execution with dependency resolution
+  - Parallel execution of independent agents
+  - Sequential execution for dependent agents
+  - Result aggregation based on output format
+  - Error handling with configurable strategies
+  - 3 integration tests verifying execution patterns
+- **Flow Visualization**: ASCII and Mermaid diagram generation
+  - ASCII art for terminal display and documentation
+  - Mermaid diagrams for rich visualizations
+  - Support for simple, nested, and complex flows
+  - 12 tests covering all visualization scenarios
+
+#### Commander Integration
+- **Pattern Detection**: Automatic Maneuver pattern recognition
+  - Parse flow expressions from input strings
+  - Detect sequential and parallel patterns automatically
+  - Seamless integration with existing Formation and Phalanx patterns
+  - 16 tests for Commander Maneuver integration
+- **CLI Commands**: Complete CLI support for Maneuver operations
+  - `paladin maneuver create` - Generate Maneuver configurations
+  - `paladin maneuver execute` - Execute flow expressions
+  - `paladin maneuver validate` - Validate flow syntax
+  - `paladin maneuver visualize` - Generate visualizations
+  - 4 CLI command tests
+
+#### Documentation & Examples
+- **Comprehensive Documentation**: 1,349 lines of new documentation
+  - `docs/MANEUVER.md` (1,333 lines) - Complete user guide
+  - Updated `docs/BATTALION.md` with Maneuver pattern
+  - Updated `docs/CLI_USAGE.md` with Maneuver commands
+  - Updated main `README.md` with Maneuver overview
+- **Production Examples**: 3 complete working examples (958 lines)
+  - `maneuver_basic.rs` - Introduction to Flow DSL
+  - `maneuver_nested_flow.rs` - Enterprise review pipeline
+  - `maneuver_dynamic_flow.rs` - Runtime flow generation
+- **Performance Benchmarks**: 7 benchmark suites (32 test cases)
+  - Parse time benchmarks (4 complexity levels)
+  - Visualization performance (ASCII and Mermaid)
+  - Validation overhead measurement
+  - Sequential and parallel execution benchmarks
+  - Nested flow performance testing
+  - Overhead comparison vs Formation/Phalanx patterns
+
+#### Test Coverage
+- **113 Total Tests**: Comprehensive coverage across all components
+  - Parser: 57 tests (lexer, AST, error handling)
+  - Domain: 21 tests (Maneuver, ManeuverConfig)
+  - Execution: 3 tests (ManeuverExecutionService)
+  - Commander: 16 tests (pattern detection, integration)
+  - Visualization: 12 tests (ASCII, Mermaid)
+  - CLI: 4 tests (command validation)
+- **Benchmark Coverage**: 32 performance test cases
+  - Parse performance: < 1ms for complex flows
+  - Execution overhead: < 2% vs direct patterns
+  - Memory efficiency validation
+  - Scalability testing (3-20 agents)
+
 ### Added - Epic 14: Autonomous Agent Features
 
 #### Autonomous Planning Mode

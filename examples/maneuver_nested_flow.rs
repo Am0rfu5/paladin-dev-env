@@ -15,7 +15,7 @@
 //!
 //! ```text
 //! Flow: "intake -> (technical -> (code_review, security_scan), business, legal) -> synthesis -> approval"
-//! 
+//!
 //! Execution:
 //! Input → intake → ┌─ technical → ┌─ code_review ─┐
 //!                  │              └─ security_scan ─┘
@@ -41,7 +41,9 @@ use paladin::application::use_cases::battalion::flow_visualizer::{
 use paladin::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
-use paladin::core::platform::container::battalion::maneuver::{Maneuver, ManeuverConfig, ErrorStrategy, OutputFormat};
+use paladin::core::platform::container::battalion::maneuver::{
+    ErrorStrategy, Maneuver, ManeuverConfig, OutputFormat,
+};
 use paladin::core::platform::container::battalion::parser::FlowParser;
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 use std::collections::HashMap;
@@ -226,8 +228,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Step 1: Define complex nested flow
     println!("\n📝 Step 1: Define Nested Flow Expression");
-    let flow_expression =
-        "intake -> (technical -> (code_review, security_scan), business, legal) -> synthesis -> approval";
+    let flow_expression = "intake -> (technical -> (code_review, security_scan), business, legal) -> synthesis -> approval";
     println!("Flow DSL:");
     println!("  {}", flow_expression);
 
@@ -248,11 +249,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let agent_definitions = vec![
         ("intake", "Initial document intake and validation"),
         ("technical", "High-level technical feasibility assessment"),
-        ("code_review", "Detailed code quality and architecture review"),
-        ("security_scan", "Security vulnerability and compliance analysis"),
+        (
+            "code_review",
+            "Detailed code quality and architecture review",
+        ),
+        (
+            "security_scan",
+            "Security vulnerability and compliance analysis",
+        ),
         ("business", "Business case and ROI analysis"),
         ("legal", "Legal compliance and contract review"),
-        ("synthesis", "Synthesize all review outputs into recommendation"),
+        (
+            "synthesis",
+            "Synthesize all review outputs into recommendation",
+        ),
         ("approval", "Executive approval decision"),
     ];
 
@@ -343,8 +353,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Total Stages: {}", result.execution_order.len());
     println!("   Parallel Branches: 3 (technical path, business, legal)");
     println!("   Nested Levels: 3 (intake → reviews → synthesis → approval)");
-    println!("   Time Savings: ~{:.0}% vs pure sequential", 
-        (1.0 - (elapsed.as_millis() as f64) / 1130.0) * 100.0);
+    println!(
+        "   Time Savings: ~{:.0}% vs pure sequential",
+        (1.0 - (elapsed.as_millis() as f64) / 1130.0) * 100.0
+    );
 
     Ok(())
 }

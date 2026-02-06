@@ -415,9 +415,6 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 10.5 Commit and prepare for PR
     - [ ] 10.5.1 Stage all changes: `git add .`
     - [ ] 10.5.2 Commit with message: `git commit -m "feat: implement Epic 17 - Flow DSL & Maneuver pattern" -m "- Add flow DSL parser with lexer, AST, error handling" -m "- Implement Maneuver domain model and execution service" -m "- Integrate with Commander and CLI" -m "- Add ASCII and Mermaid visualization" -m "- Complete documentation and examples" -m "- All tests passing, coverage ≥80%"`
-    - [ ] 10.5.3 Push to remote: `git push origin feature/epic-16-flow-dsl-agent-rearrangement`
-    - [ ] 10.5.4 Create pull request with Epic 17 description
-    - [ ] 10.5.5 Request code review
 
 ---
 
@@ -438,6 +435,6 @@ Before marking Epic 17 as complete, verify:
 - [ ] Performance benchmarks passing (parse < 1ms, overhead < 2%)
 - [ ] Zero clippy warnings
 - [ ] All code formatted with `cargo fmt`
-- [ ] Integration tests passing in CI
+
 
 ---

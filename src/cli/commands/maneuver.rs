@@ -280,7 +280,7 @@ fn extract_agent_names(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::battalion::parser::{FlowExpression, FlowParser};
+    use crate::core::platform::container::battalion::parser::FlowParser;
 
     #[test]
     fn test_extract_agent_names_simple() {
