@@ -234,37 +234,37 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 4.5.4 Test error strategy configuration
     - [x] 4.5.5 Test auto-strategy does not select Maneuver
 
-- [ ] 5.0 Implement Flow Visualization (US-17.5)
-  - [ ] 5.1 Create FlowVisualizer struct
-    - [ ] 5.1.1 Create `src/application/use_cases/battalion/flow_visualizer.rs`
-    - [ ] 5.1.2 Define FlowVisualizer struct
-    - [ ] 5.1.3 Add configuration options (indentation, box chars, etc.)
-  - [ ] 5.2 Implement ASCII visualization
-    - [ ] 5.2.1 Implement `to_ascii(expr: &FlowExpression) -> String`
-    - [ ] 5.2.2 Handle Agent nodes: simple box with agent name
-    - [ ] 5.2.3 Handle Sequential: vertical layout with arrows
-    - [ ] 5.2.4 Handle Parallel: branching layout
-    - [ ] 5.2.5 Use box-drawing characters for clean output
-    - [ ] 5.2.6 Add indentation for nested structures
-  - [ ] 5.3 Implement Mermaid visualization
-    - [ ] 5.3.1 Implement `to_mermaid(expr: &FlowExpression) -> String`
-    - [ ] 5.3.2 Generate valid Mermaid.js flowchart syntax
-    - [ ] 5.3.3 Use appropriate node shapes and connectors
-    - [ ] 5.3.4 Handle subgraphs for parallel execution
-    - [ ] 5.3.5 Add styling hints (optional)
-  - [ ] 5.4 Add timing metrics overlay
-    - [ ] 5.4.1 Implement `with_timing(expr: &FlowExpression, metrics: &HashMap<String, Duration>) -> String`
-    - [ ] 5.4.2 Overlay execution time next to agent names
-    - [ ] 5.4.3 Highlight bottlenecks (slowest agent)
-    - [ ] 5.4.4 Show total workflow time
-    - [ ] 5.4.5 Format durations human-readably (ms, s)
-  - [ ] 5.5 Write visualization tests
-    - [ ] 5.5.1 Test ASCII output for simple sequential
-    - [ ] 5.5.2 Test ASCII output for parallel
-    - [ ] 5.5.3 Test ASCII output for nested
-    - [ ] 5.5.4 Test Mermaid output for various patterns
-    - [ ] 5.5.5 Test timing overlay
-    - [ ] 5.5.6 Verify output is valid (parseable by Mermaid)
+- [x] 5.0 Implement Flow Visualization (US-17.5)
+  - [x] 5.1 Create FlowVisualizer struct
+    - [x] 5.1.1 Create `src/application/use_cases/battalion/flow_visualizer.rs`
+    - [x] 5.1.2 Define FlowVisualizer struct
+    - [x] 5.1.3 Add configuration options (indentation, box chars, etc.)
+  - [x] 5.2 Implement ASCII visualization
+    - [x] 5.2.1 Implement `to_ascii(expr: &FlowExpression) -> String`
+    - [x] 5.2.2 Handle Agent nodes: simple box with agent name
+    - [x] 5.2.3 Handle Sequential: vertical layout with arrows
+    - [x] 5.2.4 Handle Parallel: branching layout
+    - [x] 5.2.5 Use box-drawing characters for clean output
+    - [x] 5.2.6 Add indentation for nested structures
+  - [x] 5.3 Implement Mermaid visualization
+    - [x] 5.3.1 Implement `to_mermaid(expr: &FlowExpression) -> String`
+    - [x] 5.3.2 Generate valid Mermaid.js flowchart syntax
+    - [x] 5.3.3 Use appropriate node shapes and connectors
+    - [x] 5.3.4 Handle subgraphs for parallel execution
+    - [x] 5.3.5 Add styling hints (optional)
+  - [x] 5.4 Add timing metrics overlay
+    - [x] 5.4.1 Implement `with_timing(expr: &FlowExpression, metrics: &HashMap<String, Duration>) -> String`
+    - [x] 5.4.2 Overlay execution time next to agent names
+    - [x] 5.4.3 Highlight bottlenecks (slowest agent)
+    - [x] 5.4.4 Show total workflow time
+    - [x] 5.4.5 Format durations human-readably (ms, s)
+  - [x] 5.5 Write visualization tests
+    - [x] 5.5.1 Test ASCII output for simple sequential
+    - [x] 5.5.2 Test ASCII output for parallel
+    - [x] 5.5.3 Test ASCII output for nested
+    - [x] 5.5.4 Test Mermaid output for various patterns
+    - [x] 5.5.5 Test timing overlay
+    - [x] 5.5.6 Verify output is valid (parseable by Mermaid)
 
 - [ ] 6.0 Add CLI Support
   - [ ] 6.1 Add battalion run command support
