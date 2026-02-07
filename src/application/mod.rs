@@ -133,6 +133,7 @@
 //! let result = service.execute(paladins, "input").await?;
 //! ```
 
+pub mod cli;
 pub mod errors;
 pub mod ports;
 pub mod storage;

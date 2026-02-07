@@ -1,11 +1,13 @@
 /// Paladin CLI - Command-line interface for Paladin multi-agent orchestration
 use clap::{Parser, Subcommand};
+use paladin::application::cli::commands::{council, features, muster, onboarding, setup_check};
 use paladin::cli::commands::{
     agent::{AgentCommands, handle_agent_new, handle_agent_run},
     arsenal::{ArsenalCommands, handle_arsenal_command},
     battalion::{BattalionCommands, handle_battalion_new, handle_battalion_run},
     maneuver::{ManeuverCommands, handle_maneuver_command},
 };
+use paladin::cli::output::errors::CliError;
 use std::process;
 use tokio::signal;
 
@@ -15,6 +17,14 @@ use tokio::signal;
 struct Cli {
     #[command(subcommand)]
     command: Commands,
+
+    /// Enable quiet mode (minimal output)
+    #[arg(long, global = true)]
+    quiet: bool,
+
+    /// Enable verbose mode (detailed output)
+    #[arg(long, global = true)]
+    verbose: bool,
 }
 
 #[derive(Subcommand)]
@@ -39,6 +49,68 @@ enum Commands {
         #[command(subcommand)]
         action: ManeuverCommands,
     },
+    /// Interactive onboarding wizard for initial setup
+    Onboarding,
+    /// Check environment setup and configuration
+    SetupCheck {
+        /// Show detailed diagnostic information
+        #[arg(long)]
+        verbose: bool,
+    },
+    /// Discover available features and commands
+    Features {
+        /// Filter by category
+        #[arg(long)]
+        category: Option<String>,
+        /// Output format (table, json)
+        #[arg(long)]
+        format: Option<String>,
+    },
+    /// Generate battalion configuration from task description
+    Muster {
+        /// Task description
+        #[arg(long)]
+        task: Option<String>,
+        /// Output file path
+        #[arg(long, short)]
+        output: Option<String>,
+        /// Execute immediately after generation
+        #[arg(long)]
+        execute: bool,
+        /// LLM provider to use
+        #[arg(long)]
+        provider: Option<String>,
+        /// Model to use
+        #[arg(long)]
+        model: Option<String>,
+        /// Skip review step
+        #[arg(long)]
+        no_review: bool,
+    },
+    /// Run a council discussion
+    Council {
+        /// Discussion topic
+        #[arg(long)]
+        topic: Option<String>,
+        /// Number of participants (2-10)
+        #[arg(long, default_value = "3")]
+        participants: usize,
+        /// Custom roles (comma-separated)
+        #[arg(long, value_delimiter = ',')]
+        roles: Option<Vec<String>>,
+        /// Maximum discussion rounds
+        #[arg(long, default_value = "5")]
+        max_rounds: usize,
+        /// Save transcript to file
+        #[arg(long)]
+        save: Option<String>,
+        /// Model to use
+        #[arg(long)]
+        model: Option<String>,
+        /// Temperature setting
+        #[arg(long)]
+        temperature: Option<f32>,
+    },
 }
 
 #[tokio::main]
@@ -53,6 +125,10 @@ async fn main() {
 
     let cli = Cli::parse();
 
+    // Store global flags for later use
+    let _quiet = cli.quiet;
+    let _verbose = cli.verbose;
+
     let result = match cli.command {
         Commands::Agent { action } => match action {
             AgentCommands::New(args) => handle_agent_new(args),
@@ -64,6 +140,42 @@ async fn main() {
         },
         Commands::Arsenal { action } => handle_arsenal_command(action).await,
         Commands::Maneuver { action } => handle_maneuver_command(action).await,
+        Commands::Onboarding => onboarding::run_onboarding().await,
+        Commands::SetupCheck { verbose } => match setup_check::run_setup_check(verbose).await {
+            Ok(exit_code) => process::exit(exit_code),
+            Err(e) => Err(CliError::ExecutionError {
+                message: e.to_string(),
+            }),
+        },
+        Commands::Features { category, format } => features::run_features(category, format).await,
+        Commands::Muster {
+            task,
+            output,
+            execute,
+            provider,
+            model,
+            no_review,
+        } => muster::run_muster(task, output, execute, provider, model, no_review).await,
+        Commands::Council {
+            topic,
+            participants,
+            roles,
+            max_rounds,
+            save,
+            model,
+            temperature,
+        } => {
+            council::run_council(
+                topic,
+                participants,
+                roles,
+                max_rounds,
+                save,
+                model,
+                temperature,
+            )
+            .await
+        }
     };
 
     // Handle errors and exit with appropriate code per FR-21

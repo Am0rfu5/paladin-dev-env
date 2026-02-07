@@ -3264,6 +3264,7 @@ dependencies = [
  "colored 2.2.0",
  "comfy-table",
  "config",
+ "console",
  "criterion",
  "dialoguer",
  "dotenv",
