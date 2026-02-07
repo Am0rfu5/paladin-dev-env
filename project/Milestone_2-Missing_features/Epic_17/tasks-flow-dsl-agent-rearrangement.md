@@ -266,36 +266,36 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 5.5.5 Test timing overlay
     - [x] 5.5.6 Verify output is valid (parseable by Mermaid)
 
-- [ ] 6.0 Add CLI Support
-  - [ ] 6.1 Add battalion run command support
-    - [ ] 6.1.1 Locate CLI battalion commands module
-    - [ ] 6.1.2 Add `--type maneuver` option to run command
-    - [ ] 6.1.3 Add `--flow <expression>` flag
-    - [ ] 6.1.4 Parse flow from command line or YAML config
-    - [ ] 6.1.5 Pass through to Commander with Maneuver strategy
-  - [ ] 6.2 Add visualize command
-    - [ ] 6.2.1 Add new `paladin battalion visualize` subcommand
-    - [ ] 6.2.2 Add `--flow <expression>` required argument
-    - [ ] 6.2.3 Add `--format <ascii|mermaid>` option (default: ascii)
-    - [ ] 6.2.4 Add `--output <file>` option to save to file
-    - [ ] 6.2.5 Call FlowVisualizer and print/save result
-  - [ ] 6.3 Add template generation
-    - [ ] 6.3.1 Add `paladin battalion new --type maneuver` support
-    - [ ] 6.3.2 Generate YAML template with example flow
-    - [ ] 6.3.3 Include comments explaining syntax
-    - [ ] 6.3.4 Include all config options with defaults
-  - [ ] 6.4 Update YAML schema
-    - [ ] 6.4.1 Define YAML structure for Maneuver in config
-    - [ ] 6.4.2 Add flow field parsing
-    - [ ] 6.4.3 Add error_strategy field parsing
-    - [ ] 6.4.4 Add all ManeuverConfig fields
-    - [ ] 6.4.5 Add validation for YAML structure
-  - [ ] 6.5 Write CLI integration tests
-    - [ ] 6.5.1 Test run command with inline flow
-    - [ ] 6.5.2 Test run command with YAML config
-    - [ ] 6.5.3 Test visualize command ASCII output
-    - [ ] 6.5.4 Test visualize command Mermaid output
-    - [ ] 6.5.5 Test template generation
+- [x] 6.0 Add CLI Support
+  - [x] 6.1 Add battalion run command support
+    - [x] 6.1.1 Locate CLI battalion commands module
+    - [x] 6.1.2 Add `--type maneuver` option to run command
+    - [x] 6.1.3 Add `--flow <expression>` flag
+    - [x] 6.1.4 Parse flow from command line or YAML config
+    - [x] 6.1.5 Pass through to Commander with Maneuver strategy
+  - [x] 6.2 Add visualize command
+    - [x] 6.2.1 Add new `paladin battalion visualize` subcommand
+    - [x] 6.2.2 Add `--flow <expression>` required argument
+    - [x] 6.2.3 Add `--format <ascii|mermaid>` option (default: ascii)
+    - [x] 6.2.4 Add `--output <file>` option to save to file
+    - [x] 6.2.5 Call FlowVisualizer and print/save result
+  - [x] 6.3 Add template generation
+    - [x] 6.3.1 Add `paladin battalion new --type maneuver` support
+    - [x] 6.3.2 Generate YAML template with example flow
+    - [x] 6.3.3 Include comments explaining syntax
+    - [x] 6.3.4 Include all config options with defaults
+  - [x] 6.4 Update YAML schema
+    - [x] 6.4.1 Define YAML structure for Maneuver in config
+    - [x] 6.4.2 Add flow field parsing
+    - [x] 6.4.3 Add error_strategy field parsing
+    - [x] 6.4.4 Add all ManeuverConfig fields
+    - [x] 6.4.5 Add validation for YAML structure
+  - [x] 6.5 Write CLI integration tests
+    - [x] 6.5.1 Test run command with inline flow
+    - [x] 6.5.2 Test run command with YAML config
+    - [x] 6.5.3 Test visualize command ASCII output
+    - [x] 6.5.4 Test visualize command Mermaid output
+    - [x] 6.5.5 Test template generation
 
 - [ ] 7.0 Write Documentation
   - [ ] 7.1 Create Flow DSL user guide
