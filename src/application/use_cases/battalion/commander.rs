@@ -672,14 +672,13 @@ impl Commander {
                 let flow_expr = self.flow_expression.as_deref().unwrap_or_else(|| {
                     // Generate default sequential flow
                     if self.paladins.len() == 1 {
-                        self.paladins[0]
-                            .name
-                            .as_deref()
-                            .unwrap_or("agent0")
+                        self.paladins[0].name.as_deref().unwrap_or("agent0")
                     } else {
                         // This fallback is not ideal but maintains backwards compatibility
                         // In practice, flow_expression should always be set via builder
-                        debug!("Warning: No flow expression set, generating default sequential flow");
+                        debug!(
+                            "Warning: No flow expression set, generating default sequential flow"
+                        );
                         "" // Will be handled below
                     }
                 });
