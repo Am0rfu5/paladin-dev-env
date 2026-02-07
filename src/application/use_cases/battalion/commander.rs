@@ -162,6 +162,13 @@ pub struct Commander {
     /// Optional aggregator Paladin for Conclave strategy
     pub aggregator: Option<Paladin>,
 
+    /// Optional flow expression for Maneuver strategy
+    pub flow_expression: Option<String>,
+
+    /// Optional Maneuver configuration
+    pub maneuver_config:
+        Option<crate::core::platform::container::battalion::maneuver::ManeuverConfig>,
+
     /// Paladin execution port
     paladin_port: Arc<dyn PaladinPort>,
 }
@@ -174,6 +181,8 @@ impl std::fmt::Debug for Commander {
             .field("paladins", &self.paladins)
             .field("config", &self.config)
             .field("aggregator", &self.aggregator)
+            .field("flow_expression", &self.flow_expression)
+            .field("maneuver_config", &self.maneuver_config)
             .field("paladin_port", &"<dyn PaladinPort>")
             .finish()
     }
@@ -214,6 +223,8 @@ impl Commander {
             paladins,
             config,
             aggregator,
+            flow_expression: None,
+            maneuver_config: None,
             paladin_port,
         }
     }
@@ -656,22 +667,33 @@ impl Commander {
                     ));
                 }
 
-                // For Commander integration, we need a flow expression
-                // Default to a simple sequential flow: agent1 -> agent2 -> agent3...
-                // In real usage, the flow would be configured via BattalionConfig or builder
-                let flow_expr = if self.paladins.len() == 1 {
-                    self.paladins[0]
-                        .name
-                        .as_ref()
-                        .unwrap_or(&"agent0".to_string())
-                        .clone()
-                } else {
+                // Use flow expression from Commander (set via builder)
+                // If not set, default to sequential flow for backwards compatibility
+                let flow_expr = self.flow_expression.as_deref().unwrap_or_else(|| {
+                    // Generate default sequential flow
+                    if self.paladins.len() == 1 {
+                        self.paladins[0]
+                            .name
+                            .as_deref()
+                            .unwrap_or("agent0")
+                    } else {
+                        // This fallback is not ideal but maintains backwards compatibility
+                        // In practice, flow_expression should always be set via builder
+                        debug!("Warning: No flow expression set, generating default sequential flow");
+                        "" // Will be handled below
+                    }
+                });
+
+                // If empty flow_expr from fallback, generate sequential
+                let flow_expr = if flow_expr.is_empty() {
                     self.paladins
                         .iter()
                         .enumerate()
                         .map(|(i, p)| p.name.as_ref().unwrap_or(&format!("agent{}", i)).clone())
                         .collect::<Vec<_>>()
                         .join(" -> ")
+                } else {
+                    flow_expr.to_string()
                 };
 
                 // Parse the flow expression
@@ -691,19 +713,21 @@ impl Commander {
                     agents.insert(agent_name, paladin.clone());
                 }
 
-                // Create ManeuverConfig from BattalionConfig
-                let maneuver_config = crate::core::platform::container::battalion::maneuver::ManeuverConfig {
-                    error_strategy: match self.config.error_strategy {
-                        ErrorStrategy::FailFast => crate::core::platform::container::battalion::maneuver::ErrorStrategy::FailFast,
-                        ErrorStrategy::ContinueOnError => crate::core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel,
-                        ErrorStrategy::RetryThenContinue => crate::core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel,
-                    },
-                    output_format: crate::core::platform::container::battalion::maneuver::OutputFormat::Concatenate,
-                    pass_output_as_input: true,
-                    timeout: Some(Duration::from_secs(self.config.timeout_seconds)),
-                    collect_timing_metrics: true,
-                    detailed_observability: false,
-                };
+                // Use ManeuverConfig from Commander if set, otherwise create from BattalionConfig
+                let maneuver_config = self.maneuver_config.clone().unwrap_or_else(|| {
+                    crate::core::platform::container::battalion::maneuver::ManeuverConfig {
+                        error_strategy: match self.config.error_strategy {
+                            ErrorStrategy::FailFast => crate::core::platform::container::battalion::maneuver::ErrorStrategy::FailFast,
+                            ErrorStrategy::ContinueOnError => crate::core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel,
+                            ErrorStrategy::RetryThenContinue => crate::core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel,
+                        },
+                        output_format: crate::core::platform::container::battalion::maneuver::OutputFormat::Concatenate,
+                        pass_output_as_input: true,
+                        timeout: Some(Duration::from_secs(self.config.timeout_seconds)),
+                        collect_timing_metrics: true,
+                        detailed_observability: false,
+                    }
+                });
 
                 // Create Maneuver instance
                 let maneuver =
@@ -928,18 +952,11 @@ impl Commander {
             );
         }
 
-        // Check for Flow DSL syntax patterns FIRST (highest priority for Maneuver)
-        // If input contains actual flow syntax, it's definitely Maneuver regardless of other keywords
-        let has_flow_pattern = input_lower.contains("->") || input_lower.contains("|");
-        if has_flow_pattern && !self.paladins.is_empty() {
-            return (
-                BattalionStrategy::Maneuver,
-                format!(
-                    "Input contains flow expression patterns (-> or |), using Maneuver for {} Paladins",
-                    self.paladins.len()
-                ),
-            );
-        }
+        // NOTE: Maneuver strategy is EXPLICIT-ONLY and NOT selected by Auto mode.
+        // Flow DSL patterns like "->" and "|" are now checked AFTER Campaign to avoid
+        // conflicting with natural language usage of arrows and pipes.
+        // To use Maneuver, explicitly set BattalionStrategy::Maneuver via CommanderBuilder
+        // and provide a flow expression using .flow() method.
 
         // Check for Campaign indicators (workflow/graph orchestration)
         // Only check if no flow syntax was found (since Campaign is conceptual, not syntax-based)
@@ -965,29 +982,9 @@ impl Commander {
             );
         }
 
-        // Check for Maneuver indicators (flow DSL keywords without actual syntax)
-        let maneuver_keywords = [
-            "flow",
-            "flow dsl",
-            "dynamic flow",
-            "mixed pattern",
-            "branch",
-            "branching",
-            "nested",
-            "composed",
-            "composition",
-            "declarative",
-        ];
-        if maneuver_keywords.iter().any(|kw| input_lower.contains(kw)) && !self.paladins.is_empty()
-        {
-            return (
-                BattalionStrategy::Maneuver,
-                format!(
-                    "Input contains flow DSL keywords, using Maneuver for {} Paladins",
-                    self.paladins.len()
-                ),
-            );
-        }
+        // NOTE: Maneuver keyword detection removed - Maneuver is explicit-only.
+        // Keywords like "flow", "branch", "nested" will now be handled by other strategies
+        // (Campaign for workflow/branching, Formation for nested sequences).
 
         // Check for Formation indicators (sequential execution)
         let formation_keywords = [
@@ -1180,6 +1177,8 @@ pub struct CommanderBuilder {
     paladins: Option<Vec<Paladin>>,
     config: Option<BattalionConfig>,
     aggregator: Option<Paladin>,
+    flow_expression: Option<String>,
+    maneuver_config: Option<crate::core::platform::container::battalion::maneuver::ManeuverConfig>,
     paladin_port: Arc<dyn PaladinPort>,
 }
 
@@ -1201,6 +1200,8 @@ impl CommanderBuilder {
             paladins: None,
             config: None,
             aggregator: None,
+            flow_expression: None,
+            maneuver_config: None,
             paladin_port,
         }
     }
@@ -1273,6 +1274,79 @@ impl CommanderBuilder {
         self
     }
 
+    /// Set the flow expression for Maneuver strategy
+    ///
+    /// The flow expression defines the execution pattern using Flow DSL syntax:
+    /// - `agent1 -> agent2` - Sequential execution
+    /// - `agent1, agent2` - Parallel execution
+    /// - `(agent1 -> agent2), agent3` - Nested patterns
+    ///
+    /// Required when using BattalionStrategy::Maneuver.
+    ///
+    /// # Arguments
+    ///
+    /// * `expression` - Flow DSL expression string
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// builder.flow("analyzer -> enhancer -> (reviewer, validator)")
+    /// ```
+    pub fn flow(mut self, expression: impl Into<String>) -> Self {
+        self.flow_expression = Some(expression.into());
+        self
+    }
+
+    /// Set the error strategy for Maneuver execution
+    ///
+    /// Configures how errors should be handled during Maneuver execution.
+    ///
+    /// # Arguments
+    ///
+    /// * `strategy` - ManeuverErrorStrategy to use
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paladin::core::platform::container::battalion::maneuver::ErrorStrategy;
+    /// builder.error_strategy(ErrorStrategy::ContinueParallel)
+    /// ```
+    pub fn error_strategy(
+        mut self,
+        strategy: crate::core::platform::container::battalion::maneuver::ErrorStrategy,
+    ) -> Self {
+        let mut config = self.maneuver_config.unwrap_or_default();
+        config.error_strategy = strategy;
+        self.maneuver_config = Some(config);
+        self
+    }
+
+    /// Set the complete Maneuver configuration
+    ///
+    /// Provides fine-grained control over Maneuver execution behavior including
+    /// error handling, output formatting, timing metrics, and timeouts.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - ManeuverConfig instance
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use paladin::core::platform::container::battalion::maneuver::ManeuverConfig;
+    /// let config = ManeuverConfig::default()
+    ///     .with_timeout(Duration::from_secs(60))
+    ///     .with_timing_metrics(true);
+    /// builder.maneuver_config(config)
+    /// ```
+    pub fn maneuver_config(
+        mut self,
+        config: crate::core::platform::container::battalion::maneuver::ManeuverConfig,
+    ) -> Self {
+        self.maneuver_config = Some(config);
+        self
+    }
+
     /// Build the Commander instance with validation
     ///
     /// Validates that all required fields are present and returns a configured
@@ -1333,6 +1407,26 @@ impl CommanderBuilder {
             self.aggregator // Keep aggregator if explicitly set for other strategies
         };
 
+        // Validate Maneuver strategy requirements
+        if strategy == BattalionStrategy::Maneuver {
+            if self.flow_expression.is_none() {
+                return Err(BattalionError::CommanderValidation(
+                    "Maneuver strategy requires a flow expression. Use .flow() to set it."
+                        .to_string(),
+                ));
+            }
+
+            // Validate flow expression can be parsed
+            let flow_expr = self.flow_expression.as_ref().unwrap();
+            crate::core::platform::container::battalion::parser::FlowParser::parse(flow_expr)
+                .map_err(|e| {
+                    BattalionError::CommanderValidation(format!("Invalid flow expression: {}", e))
+                })?;
+
+            // Validate all agents referenced in flow exist in paladins
+            // This will be done at execution time since we need the parsed expression
+        }
+
         // Generate default config if none provided
         let config = self.config.unwrap_or_else(|| {
             debug!("No config provided, generating default configuration");
@@ -1354,13 +1448,14 @@ impl CommanderBuilder {
             ));
         }
 
-        Ok(Commander::new(
-            strategy,
-            paladins,
-            config,
-            aggregator,
-            self.paladin_port,
-        ))
+        let mut commander =
+            Commander::new(strategy, paladins, config, aggregator, self.paladin_port);
+
+        // Set optional Maneuver fields
+        commander.flow_expression = self.flow_expression;
+        commander.maneuver_config = self.maneuver_config;
+
+        Ok(commander)
     }
 }
 
@@ -2197,12 +2292,27 @@ mod tests {
     #[tokio::test]
     async fn test_maneuver_strategy_explicit() {
         let paladin_port = Arc::new(MockPaladinPort);
-        let paladins = vec![create_test_paladin(); 3];
+        let mut paladins = vec![];
+        for i in 0..3 {
+            let data = PaladinData {
+                system_prompt: format!("Agent {}", i),
+                name: format!("agent{}", i),
+                user_name: "test".to_string(),
+                model: "gpt-4".to_string(),
+                temperature: 0.7,
+                max_loops: MaxLoops::Fixed(3),
+                stop_words: vec![],
+                status: PaladinStatus::Idle,
+                vision_enabled: false,
+            };
+            paladins.push(Node::new(data, Some(format!("agent{}", i))));
+        }
         let config = create_test_config();
 
-        // Test explicit Maneuver strategy
+        // Test explicit Maneuver strategy with flow expression
         let commander = CommanderBuilder::new(paladin_port)
             .strategy(BattalionStrategy::Maneuver)
+            .flow("agent0 -> agent1 -> agent2")
             .paladins(paladins)
             .config(config)
             .build()
@@ -2219,59 +2329,18 @@ mod tests {
         assert!(!result.final_output.is_empty());
     }
 
-    #[test]
-    fn test_auto_selects_maneuver_for_flow_keywords() {
-        let paladin_port = Arc::new(MockPaladinPort);
-        let paladins = vec![create_test_paladin(); 3];
-        let config = create_test_config();
-
-        let commander = CommanderBuilder::new(paladin_port)
-            .strategy(BattalionStrategy::Auto)
-            .paladins(paladins)
-            .config(config)
-            .build()
-            .unwrap();
-
-        // Test flow DSL keywords
-        let (strategy1, reason1) =
-            commander.analyze_and_select("Create a flow with nested branching");
-        assert_eq!(strategy1, BattalionStrategy::Maneuver);
-        assert!(reason1.contains("flow DSL"));
-
-        // Test flow expression pattern with arrows
-        let (strategy2, reason2) =
-            commander.analyze_and_select("Execute agent1 -> agent2 workflow");
-        assert_eq!(strategy2, BattalionStrategy::Maneuver);
-        assert!(reason2.contains("flow DSL") || reason2.contains("patterns"));
-
-        // Test flow expression pattern with pipes
-        let (strategy3, reason3) =
-            commander.analyze_and_select("Run agents in parallel: agent1 | agent2");
-        assert_eq!(strategy3, BattalionStrategy::Maneuver);
-        assert!(reason3.contains("flow DSL") || reason3.contains("patterns"));
-    }
-
-    #[test]
-    fn test_maneuver_keywords_case_insensitive() {
-        let paladin_port = Arc::new(MockPaladinPort);
-        let paladins = vec![create_test_paladin(); 2];
-        let config = create_test_config();
-
-        let commander = CommanderBuilder::new(paladin_port)
-            .strategy(BattalionStrategy::Auto)
-            .paladins(paladins)
-            .config(config)
-            .build()
-            .unwrap();
-
-        // Test uppercase
-        let (strategy1, _) = commander.analyze_and_select("DYNAMIC FLOW with composition");
-        assert_eq!(strategy1, BattalionStrategy::Maneuver);
-
-        // Test mixed case
-        let (strategy2, _) = commander.analyze_and_select("Declarative Flow Pattern");
-        assert_eq!(strategy2, BattalionStrategy::Maneuver);
-    }
+    // NOTE: These tests are REMOVED because Maneuver is now explicit-only per Task 4.4
+    // Maneuver should NOT be selected by Auto mode. To use Maneuver, explicitly set
+    // BattalionStrategy::Maneuver via CommanderBuilder.strategy() and provide flow expression.
+    //
+    // Previous behavior (now removed):
+    // - Auto mode would select Maneuver for "flow", "branch", "nested" keywords
+    // - Auto mode would select Maneuver for "->" or "|" patterns in input
+    //
+    // New behavior:
+    // - Auto mode will NEVER select Maneuver
+    // - Keywords like "flow" and "branch" now route to Campaign or other strategies
+    // - Patterns like "->" in natural language don't trigger Maneuver
 
     #[test]
     fn test_maneuver_requires_at_least_one_paladin() {
@@ -2281,18 +2350,330 @@ mod tests {
         // Without paladins, Maneuver strategy should return error
         let result = CommanderBuilder::new(paladin_port)
             .strategy(BattalionStrategy::Maneuver)
+            .flow("agent1")
             .paladins(vec![]) // Empty paladins vector
             .config(config)
             .build();
 
-        // Should fail during build validation or execution
-        // The actual behavior depends on where validation happens
-        // If build succeeds, execution should fail
-        assert!(result.is_err() || result.is_ok());
+        // Should fail during build validation
+        assert!(result.is_err());
+    }
 
-        if let Ok(commander) = result {
-            let exec_result = tokio_test::block_on(commander.execute("test"));
-            assert!(exec_result.is_err());
+    // Task 4.5: Commander integration tests for Maneuver strategy
+
+    #[test]
+    fn test_commander_builder_with_flow_expression() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let mut paladins = vec![];
+        for i in 0..3 {
+            let data = PaladinData {
+                system_prompt: format!("Agent {}", i),
+                name: format!("agent{}", i),
+                user_name: "test".to_string(),
+                model: "gpt-4".to_string(),
+                temperature: 0.7,
+                max_loops: MaxLoops::Fixed(3),
+                stop_words: vec![],
+                status: PaladinStatus::Idle,
+                vision_enabled: false,
+            };
+            paladins.push(Node::new(data, Some(format!("agent{}", i))));
         }
+        let config = create_test_config();
+
+        // Test CommanderBuilder with flow expression
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Maneuver)
+            .flow("agent0 -> agent1 -> agent2")
+            .paladins(paladins)
+            .config(config)
+            .build();
+
+        assert!(commander.is_ok());
+        let commander = commander.unwrap();
+        assert_eq!(commander.strategy, BattalionStrategy::Maneuver);
+        assert!(commander.flow_expression.is_some());
+        assert_eq!(
+            commander.flow_expression.unwrap(),
+            "agent0 -> agent1 -> agent2"
+        );
+    }
+
+    #[test]
+    fn test_maneuver_without_flow_expression_fails() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladin = create_test_paladin();
+        let config = create_test_config();
+
+        // Maneuver strategy requires flow expression
+        let result = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Maneuver)
+            .paladins(vec![paladin])
+            .config(config)
+            // Intentionally NOT calling .flow()
+            .build();
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            BattalionError::CommanderValidation(msg) => {
+                assert!(msg.contains("flow expression"));
+            }
+            _ => panic!("Expected CommanderValidation error for missing flow"),
+        }
+    }
+
+    #[test]
+    fn test_maneuver_with_invalid_flow_expression_fails() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladin = create_test_paladin();
+        let config = create_test_config();
+
+        // Invalid flow expression (empty parentheses)
+        let result = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Maneuver)
+            .flow("agent1 -> ()")
+            .paladins(vec![paladin])
+            .config(config)
+            .build();
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            BattalionError::CommanderValidation(msg) => {
+                assert!(msg.contains("Invalid flow expression"));
+            }
+            _ => panic!("Expected CommanderValidation error for invalid flow"),
+        }
+    }
+
+    #[test]
+    fn test_commander_builder_with_error_strategy() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladin = create_test_paladin();
+        let config = create_test_config();
+
+        // Test setting error strategy via builder
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Maneuver)
+            .flow("agent0")
+            .error_strategy(crate::core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel)
+            .paladins(vec![paladin])
+            .config(config)
+            .build();
+
+        assert!(commander.is_ok());
+        let commander = commander.unwrap();
+        assert!(commander.maneuver_config.is_some());
+        assert_eq!(
+            commander.maneuver_config.unwrap().error_strategy,
+            crate::core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel
+        );
+    }
+
+    #[test]
+    fn test_commander_builder_with_maneuver_config() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladin = create_test_paladin();
+        let config = create_test_config();
+
+        // Test setting complete ManeuverConfig
+        let maneuver_config =
+            crate::core::platform::container::battalion::maneuver::ManeuverConfig::default()
+                .with_timeout(std::time::Duration::from_secs(60))
+                .with_timing_metrics(false);
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Maneuver)
+            .flow("agent0")
+            .maneuver_config(maneuver_config.clone())
+            .paladins(vec![paladin])
+            .config(config)
+            .build();
+
+        assert!(commander.is_ok());
+        let commander = commander.unwrap();
+        assert!(commander.maneuver_config.is_some());
+        let stored_config = commander.maneuver_config.unwrap();
+        assert_eq!(
+            stored_config.timeout,
+            Some(std::time::Duration::from_secs(60))
+        );
+        assert!(!stored_config.collect_timing_metrics);
+    }
+
+    #[tokio::test]
+    async fn test_maneuver_execution_through_commander() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let mut paladins = vec![];
+        for i in 0..3 {
+            let data = PaladinData {
+                system_prompt: format!("Agent {}", i),
+                name: format!("agent{}", i),
+                user_name: "test".to_string(),
+                model: "gpt-4".to_string(),
+                temperature: 0.7,
+                max_loops: MaxLoops::Fixed(3),
+                stop_words: vec![],
+                status: PaladinStatus::Idle,
+                vision_enabled: false,
+            };
+            paladins.push(Node::new(data, Some(format!("agent{}", i))));
+        }
+        let config = create_test_config();
+
+        // Test execution through Commander with Maneuver
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Maneuver)
+            .flow("agent0 -> agent1 -> agent2")
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let result = commander.execute("test input").await;
+        assert!(result.is_ok(), "Maneuver execution should succeed");
+
+        let result = result.unwrap();
+        assert_eq!(result.strategy_used, BattalionStrategy::Maneuver);
+        assert!(!result.final_output.is_empty());
+    }
+
+    #[test]
+    fn test_auto_strategy_does_not_select_maneuver() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let mut paladins = vec![];
+        for i in 0..3 {
+            let data = PaladinData {
+                system_prompt: format!("Agent {}", i),
+                name: format!("agent{}", i),
+                user_name: "test".to_string(),
+                model: "gpt-4".to_string(),
+                temperature: 0.7,
+                max_loops: MaxLoops::Fixed(3),
+                stop_words: vec![],
+                status: PaladinStatus::Idle,
+                vision_enabled: false,
+            };
+            paladins.push(Node::new(data, Some(format!("agent{}", i))));
+        }
+        let config = create_test_config();
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Auto)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        // Test various inputs that should NOT select Maneuver
+        // Maneuver is explicit-only per Task 4.4
+
+        // Input with arrow (could be confused with flow DSL)
+        let (strategy1, _) = commander.analyze_and_select("Process step1 -> step2 -> step3");
+        assert_ne!(
+            strategy1,
+            BattalionStrategy::Maneuver,
+            "Auto should not select Maneuver even with -> in input"
+        );
+
+        // Input with "flow" keyword
+        let (strategy2, _) = commander.analyze_and_select("Create a flow for this task");
+        assert_ne!(
+            strategy2,
+            BattalionStrategy::Maneuver,
+            "Auto should not select Maneuver for 'flow' keyword"
+        );
+
+        // Input with "branch" keyword
+        let (strategy3, _) = commander.analyze_and_select("Branch execution based on results");
+        assert_ne!(
+            strategy3,
+            BattalionStrategy::Maneuver,
+            "Auto should not select Maneuver for 'branch' keyword"
+        );
+
+        // Input with pipe character
+        let (strategy4, _) = commander.analyze_and_select("Run agent1 | agent2 | agent3");
+        assert_ne!(
+            strategy4,
+            BattalionStrategy::Maneuver,
+            "Auto should not select Maneuver even with | in input"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_maneuver_with_parallel_pattern() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let mut paladins = vec![];
+        for i in 0..3 {
+            let data = PaladinData {
+                system_prompt: format!("Agent {}", i),
+                name: format!("agent{}", i),
+                user_name: "test".to_string(),
+                model: "gpt-4".to_string(),
+                temperature: 0.7,
+                max_loops: MaxLoops::Fixed(3),
+                stop_words: vec![],
+                status: PaladinStatus::Idle,
+                vision_enabled: false,
+            };
+            paladins.push(Node::new(data, Some(format!("agent{}", i))));
+        }
+        let config = create_test_config();
+
+        // Test with parallel pattern
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Maneuver)
+            .flow("agent0, agent1, agent2")
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let result = commander.execute("test input").await;
+        assert!(
+            result.is_ok(),
+            "Maneuver with parallel pattern should succeed"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_maneuver_with_nested_pattern() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let mut paladins = vec![];
+        for i in 0..4 {
+            let data = PaladinData {
+                system_prompt: format!("Agent {}", i),
+                name: format!("agent{}", i),
+                user_name: "test".to_string(),
+                model: "gpt-4".to_string(),
+                temperature: 0.7,
+                max_loops: MaxLoops::Fixed(3),
+                stop_words: vec![],
+                status: PaladinStatus::Idle,
+                vision_enabled: false,
+            };
+            paladins.push(Node::new(data, Some(format!("agent{}", i))));
+        }
+        let config = create_test_config();
+
+        // Test with nested pattern: agent0 -> (agent1 -> agent2)
+        // This creates Sequential(agent0, Sequential(agent1, agent2))
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Maneuver)
+            .flow("agent0 -> (agent1 -> agent2)")
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let result = commander.execute("test input").await;
+        if let Err(ref e) = result {
+            eprintln!("Error: {:?}", e);
+        }
+        assert!(
+            result.is_ok(),
+            "Maneuver with nested sequential pattern should succeed: {:?}",
+            result.err()
+        );
     }
 }
