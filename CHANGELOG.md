@@ -61,11 +61,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 4 CLI command tests
 
 #### Documentation & Examples
-- **Comprehensive Documentation**: 1,349 lines of new documentation
-  - `docs/MANEUVER.md` (1,333 lines) - Complete user guide
-  - Updated `docs/BATTALION.md` with Maneuver pattern
-  - Updated `docs/CLI_USAGE.md` with Maneuver commands
-  - Updated main `README.md` with Maneuver overview
+- **Comprehensive Documentation**: Complete documentation suite
+  - `docs/guides/flow-dsl.md` (800+ lines) - Complete Flow DSL user guide
+    - Syntax reference with EBNF grammar
+    - Error handling strategies (FailFast, ContinueParallel, IgnoreErrors)
+    - Visualization guide (ASCII tree, Mermaid flowcharts)
+    - 10+ practical examples and best practices
+    - Troubleshooting section with common errors
+    - Performance considerations and scalability limits
+  - Updated `docs/BATTALION.md` with Maneuver pattern section (lines 500-560)
+  - Updated `docs/CLI_USAGE.md` with Maneuver CLI commands
+  - Updated main `README.md` - Changed from 5 to 8 orchestration patterns
+    - Added Council, Grove, and Maneuver pattern descriptions
+    - Added link to Flow DSL guide
 - **Production Examples**: 3 complete working examples (958 lines)
   - `maneuver_basic.rs` - Introduction to Flow DSL
   - `maneuver_nested_flow.rs` - Enterprise review pipeline

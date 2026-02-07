@@ -50,7 +50,8 @@ The project clearly defines Ports as interfaces to external systems, enabling ad
 * **Paladin:** Autonomous AI agents with memory and context management.
 * **Garrison Memory System:** Persistent conversation history with windowing and search capabilities.
 * **Arsenal Tool System:** External tool integration via Model Context Protocol (MCP).
-* **Battalion Orchestration:** Multi-agent coordination with five orchestration patterns.
+* **Battalion Orchestration:** Multi-agent coordination with eight orchestration patterns.
+* **Maneuver Flow DSL:** String-based workflow orchestration with declarative syntax.
 * **Herald Output Formatting:** Pluggable formatters (JSON, Markdown, Table) with streaming support.
 
 ### AI Agent System (Paladin)
@@ -284,7 +285,7 @@ Vision capabilities work with all Battalion patterns:
 
 ### Battalion Orchestration System
 
-Battalion provides powerful multi-agent coordination capabilities with five distinct orchestration patterns:
+Battalion provides powerful multi-agent coordination capabilities with **eight distinct orchestration patterns**:
 
 * **Formation (Sequential)**: Execute Paladins in sequence, passing output from one to the next
   * Perfect for multi-step pipelines and data transformation workflows
@@ -303,6 +304,19 @@ Battalion provides powerful multi-agent coordination capabilities with five dist
   * Perfect for expert panel decisions requiring multiple perspectives (technical, business, security)
   * Resilience: Continues even if some experts fail (partial success)
   * Configurable retry logic with exponential backoff
+* **Council (Iterative Discussion)**: Iterative multi-round discussion pattern with turn-based dialogue
+  * Enables debate, consensus building, and deliberative decision-making
+  * Configurable turn limits, participation rules, and discussion strategies
+  * Built-in conclusion detection and summary generation
+* **Grove (Contextual Routing)**: Advanced routing with contextual analysis and LLM-based decision making
+  * Semantic routing based on input content and historical performance
+  * Fallback chains and multi-stage routing pipelines
+  * Dynamic scoring and performance-based optimization
+* **Maneuver (Flow DSL)**: String-based workflow orchestration with declarative syntax
+  * Compact syntax: `"a -> (b, c) -> d"` for sequential and parallel flows
+  * Error handling strategies: FailFast, ContinueParallel, IgnoreErrors
+  * Built-in visualization (ASCII tree, Mermaid flowcharts) and CLI tools
+  * See [Flow DSL Guide](docs/guides/flow-dsl.md) for complete syntax and examples
 
 **Performance**: Handles 100+ concurrent Battalions with <10ms orchestration overhead
 
