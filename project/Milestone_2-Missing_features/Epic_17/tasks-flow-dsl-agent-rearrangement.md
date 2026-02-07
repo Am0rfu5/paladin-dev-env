@@ -365,7 +365,7 @@ Update the file after completing each sub-task, not just after completing an ent
     - [ ] 9.1.1 Run `cargo test` for all unit tests
     - [ ] 9.1.2 Run `cargo test --test integration` for integration tests
     - [ ] 9.1.3 Verify all tests pass
-    - [ ] 9.1.4 Check test coverage with `cargo tarpaulin` (target: ≥80%)
+    - [ ] 9.1.4 Check test coverage with `cargo llvm-cov` (target: ≥80%)
   - [ ] 9.2 Performance testing
     - [ ] 9.2.1 Create benchmark for parser with 30+ agent flows
     - [ ] 9.2.2 Verify parsing < 1ms for 99% of flows

@@ -435,7 +435,7 @@ async fn test_lru_eviction() {
         })
         .collect();
 
-    let first_id = entries[0].memory.id.clone();
+    let first_id = entries[0].memory.id;
 
     sanctum
         .store_batch(entries)

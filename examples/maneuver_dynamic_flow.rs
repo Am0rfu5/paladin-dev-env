@@ -49,15 +49,15 @@ impl PaladinPort for ExamplePaladinPort {
 
         let output = match paladin.node.name.as_str() {
             "simple_processor" => format!("[Simple] Processed: {}", input),
-            "quick_check" => format!("[Quick] Basic validation passed"),
-            "validator" => format!("[Validator] Input validated and sanitized"),
-            "analyzer" => format!("[Analyzer] Deep analysis completed"),
-            "transformer" => format!("[Transformer] Data transformed"),
-            "enricher" => format!("[Enricher] Additional context added"),
-            "expert_reviewer" => format!("[Expert] Comprehensive review completed"),
-            "quality_check" => format!("[QA] Quality standards verified"),
-            "optimizer" => format!("[Optimizer] Output optimized"),
-            "finalizer" => format!("[Finalizer] Final output prepared"),
+            "quick_check" => "[Quick] Basic validation passed".to_string(),
+            "validator" => "[Validator] Input validated and sanitized".to_string(),
+            "analyzer" => "[Analyzer] Deep analysis completed".to_string(),
+            "transformer" => "[Transformer] Data transformed".to_string(),
+            "enricher" => "[Enricher] Additional context added".to_string(),
+            "expert_reviewer" => "[Expert] Comprehensive review completed".to_string(),
+            "quality_check" => "[QA] Quality standards verified".to_string(),
+            "optimizer" => "[Optimizer] Output optimized".to_string(),
+            "finalizer" => "[Finalizer] Final output prepared".to_string(),
             _ => format!("{} completed", paladin.node.name),
         };
 

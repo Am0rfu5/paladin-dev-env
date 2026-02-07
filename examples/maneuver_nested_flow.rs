@@ -97,48 +97,40 @@ impl PaladinPort for ExamplePaladinPort {
                 )
             }
             "code_review" => {
-                format!(
-                    "💻 Code Review Results\n\
-                     Files Reviewed: 47\n\
-                     Issues Found: 3 minor\n\
-                     Test Coverage: 87%\n\
-                     Code Quality: A-\n\
-                     Rust Idioms: Followed\n\
-                     ✅ APPROVED with minor recommendations"
-                )
+                "💻 Code Review Results\n\
+                 Files Reviewed: 47\n\
+                 Issues Found: 3 minor\n\
+                 Test Coverage: 87%\n\
+                 Code Quality: A-\n\
+                 Rust Idioms: Followed\n\
+                 ✅ APPROVED with minor recommendations".to_string()
             }
             "security_scan" => {
-                format!(
-                    "🔒 Security Scan Report\n\
-                     Vulnerabilities: 0 critical, 1 low\n\
-                     Dependencies: All up-to-date\n\
-                     Authentication: OAuth2 + JWT\n\
-                     Encryption: TLS 1.3\n\
-                     Compliance: SOC2, GDPR ready\n\
-                     ✅ PASSED security review"
-                )
+                "🔒 Security Scan Report\n\
+                 Vulnerabilities: 0 critical, 1 low\n\
+                 Dependencies: All up-to-date\n\
+                 Authentication: OAuth2 + JWT\n\
+                 Encryption: TLS 1.3\n\
+                 Compliance: SOC2, GDPR ready\n\
+                 ✅ PASSED security review".to_string()
             }
             "business" => {
-                format!(
-                    "💼 Business Analysis\n\
-                     Market Fit: Excellent\n\
-                     ROI Estimate: 250% over 18 months\n\
-                     Cost: $180K development + $20K/mo ops\n\
-                     Timeline: 4 months\n\
-                     Risk Level: Low-Medium\n\
-                     ✅ Business case approved"
-                )
+                "💼 Business Analysis\n\
+                 Market Fit: Excellent\n\
+                 ROI Estimate: 250% over 18 months\n\
+                 Cost: $180K development + $20K/mo ops\n\
+                 Timeline: 4 months\n\
+                 Risk Level: Low-Medium\n\
+                 ✅ Business case approved".to_string()
             }
             "legal" => {
-                format!(
-                    "⚖️  Legal Review\n\
-                     Contract Terms: Standard approved\n\
-                     IP Rights: Clear ownership\n\
-                     Liability: Covered by insurance\n\
-                     Compliance: All requirements met\n\
-                     Data Privacy: GDPR compliant\n\
-                     ✅ Legal approval granted"
-                )
+                "⚖️  Legal Review\n\
+                 Contract Terms: Standard approved\n\
+                 IP Rights: Clear ownership\n\
+                 Liability: Covered by insurance\n\
+                 Compliance: All requirements met\n\
+                 Data Privacy: GDPR compliant\n\
+                 ✅ Legal approval granted".to_string()
             }
             "synthesis" => {
                 format!(
