@@ -205,34 +205,34 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 3.8.8 Test timeout handling
     - [x] 3.8.9 Test timing metrics collection
 
-- [ ] 4.0 Integrate with Commander (US-17.4)
-  - [ ] 4.1 Add Maneuver variant to BattalionStrategy
-    - [ ] 4.1.1 Read current BattalionStrategy enum definition
-    - [ ] 4.1.2 Add `Maneuver` variant with appropriate fields
-    - [ ] 4.1.3 Update all match statements handling BattalionStrategy
-    - [ ] 4.1.4 Ensure serialization works for YAML configs
-  - [ ] 4.2 Extend CommanderBuilder
-    - [ ] 4.2.1 Add `flow(expression: &str) -> Self` method
-    - [ ] 4.2.2 Add `error_strategy(strategy: ErrorStrategy) -> Self` method
-    - [ ] 4.2.3 Add `maneuver_config(config: ManeuverConfig) -> Self` method
-    - [ ] 4.2.4 Update build() validation to handle Maneuver
-    - [ ] 4.2.5 Ensure flow references are validated against registered agents
-  - [ ] 4.3 Update Commander execution
-    - [ ] 4.3.1 Read current Commander execute() implementation
-    - [ ] 4.3.2 Add match arm for BattalionStrategy::Maneuver
-    - [ ] 4.3.3 Construct Maneuver instance from strategy
-    - [ ] 4.3.4 Call ManeuverExecutionService
-    - [ ] 4.3.5 Convert ManeuverResult to CommanderResult
-  - [ ] 4.4 Ensure auto-strategy does NOT select Maneuver
-    - [ ] 4.4.1 Review auto-strategy selection logic
-    - [ ] 4.4.2 Confirm Maneuver is explicit-only (not in auto selection)
-    - [ ] 4.4.3 Add comments explaining why Maneuver is explicit
-  - [ ] 4.5 Write Commander integration tests
-    - [ ] 4.5.1 Test CommanderBuilder with flow expression
-    - [ ] 4.5.2 Test execution through Commander API
-    - [ ] 4.5.3 Test validation of flow agent references
-    - [ ] 4.5.4 Test error strategy configuration
-    - [ ] 4.5.5 Test auto-strategy does not select Maneuver
+- [x] 4.0 Integrate with Commander (US-17.4)
+  - [x] 4.1 Add Maneuver variant to BattalionStrategy
+    - [x] 4.1.1 Read current BattalionStrategy enum definition
+    - [x] 4.1.2 Add `Maneuver` variant with appropriate fields
+    - [x] 4.1.3 Update all match statements handling BattalionStrategy
+    - [x] 4.1.4 Ensure serialization works for YAML configs
+  - [x] 4.2 Extend CommanderBuilder
+    - [x] 4.2.1 Add `flow(expression: &str) -> Self` method
+    - [x] 4.2.2 Add `error_strategy(strategy: ErrorStrategy) -> Self` method
+    - [x] 4.2.3 Add `maneuver_config(config: ManeuverConfig) -> Self` method
+    - [x] 4.2.4 Update build() validation to handle Maneuver
+    - [x] 4.2.5 Ensure flow references are validated against registered agents
+  - [x] 4.3 Update Commander execution
+    - [x] 4.3.1 Read current Commander execute() implementation
+    - [x] 4.3.2 Add match arm for BattalionStrategy::Maneuver
+    - [x] 4.3.3 Construct Maneuver instance from strategy
+    - [x] 4.3.4 Call ManeuverExecutionService
+    - [x] 4.3.5 Convert ManeuverResult to CommanderResult
+  - [x] 4.4 Ensure auto-strategy does NOT select Maneuver
+    - [x] 4.4.1 Review auto-strategy selection logic
+    - [x] 4.4.2 Confirm Maneuver is explicit-only (not in auto selection)
+    - [x] 4.4.3 Add comments explaining why Maneuver is explicit
+  - [x] 4.5 Write Commander integration tests
+    - [x] 4.5.1 Test CommanderBuilder with flow expression
+    - [x] 4.5.2 Test execution through Commander API
+    - [x] 4.5.3 Test validation of flow agent references
+    - [x] 4.5.4 Test error strategy configuration
+    - [x] 4.5.5 Test auto-strategy does not select Maneuver
 
 - [ ] 5.0 Implement Flow Visualization (US-17.5)
   - [ ] 5.1 Create FlowVisualizer struct
