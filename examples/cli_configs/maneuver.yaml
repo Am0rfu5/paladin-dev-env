@@ -1,0 +1,371 @@
+# ============================================================================
+# MANEUVER BATTALION CONFIGURATION EXAMPLE
+# ============================================================================
+# Flow DSL orchestration: Define workflows with string-based syntax.
+# Combines sequential (->) and parallel (,) execution in one expression.
+#
+# For use with: paladin battalion run -c maneuver.yaml -i "Input text"
+#
+# Flow: "intake -> (analyzer, classifier) -> reviewer -> formatter"
+#
+# Visual:
+#           Input
+#             |
+#          intake
+#         /      \
+#    analyzer  classifier (parallel)
+#         \      /
+#         reviewer
+#             |
+#         formatter
+#             |
+#          Output
+# ============================================================================
+
+# ============================================================================
+# BATTALION TYPE
+# ============================================================================
+
+# Maneuver: Flow DSL-based orchestration pattern
+# - Define workflows with intuitive string expressions
+# - Sequential operator: ->  (linear execution)
+# - Parallel operator: ,    (concurrent execution)  
+# - Nested patterns: Use parentheses for grouping
+# - Perfect for declarative workflows and dynamic flow generation
+type: maneuver
+
+# Battalion identifier
+name: "DocumentAnalysisPipeline"
+
+# ============================================================================
+# FLOW DSL EXPRESSION
+# ============================================================================
+
+# The flow expression defines the orchestration structure
+# Syntax:
+#   agent_name               - Single agent
+#   a -> b                   - Sequential (a, then b)
+#   a, b                     - Parallel (a and b concurrently)
+#   a -> (b, c) -> d         - Fan-out then fan-in
+#   (a, b) -> (c, d)         - Parallel to parallel
+#   a -> b -> c -> d         - Chain of sequential steps
+flow: "intake -> (analyzer, classifier) -> reviewer -> formatter"
+
+# ============================================================================
+# MANEUVER CONFIGURATION
+# ============================================================================
+
+config:
+  # Error handling strategy
+  # - FailFast: Stop immediately on first error (default)
+  # - ContinueParallel: Continue parallel branches even if some fail
+  # - IgnoreErrors: Continue workflow even with failures
+  error_strategy: FailFast
+  
+  # Output format
+  # - CombinedText: Concatenate all outputs as text (default)
+  # - StructuredJson: Return structured JSON with per-agent outputs
+  output_format: CombinedText
+  
+  # Pass output from one agent as input to the next in sequential flows
+  # If false, all agents receive the original input
+  pass_output_as_input: true
+  
+  # Maximum execution time for entire workflow (seconds)
+  timeout_seconds: 300
+  
+  # Collect detailed timing metrics for each agent
+  collect_timing_metrics: true
+  
+  # Separator for concatenating outputs in CombinedText format
+  output_separator: "\n\n---\n\n"
+
+# ============================================================================
+# PALADINS (AGENTS)
+# ============================================================================
+# Define all agents referenced in the flow expression
+# Each agent name in the flow must have a corresponding definition here
+
+paladins:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # INTAKE AGENT
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Role: Initial processing and validation
+  # Receives: Original user input
+  # Outputs to: analyzer AND classifier (parallel fan-out)
+  
+  - inline:
+      name: "intake"
+      
+      system_prompt: |
+        You are the intake specialist for a document analysis pipeline.
+        
+        TASK:
+        1. Validate the input is processable
+        2. Extract key metadata (length, type, language)
+        3. Perform basic cleaning and normalization
+        4. Flag any quality issues
+        5. Prepare text for downstream analysis
+        
+        OUTPUT FORMAT:
+        Return cleaned text with metadata header:
+        
+        [METADATA]
+        Length: <word count>
+        Type: <document type>
+        Language: <detected language>
+        Quality: <quality score 1-10>
+        
+        [CLEANED TEXT]
+        <normalized document text>
+      
+      model: "gpt-4"
+      temperature: 0.3  # Low temperature for consistent processing
+      max_loops: 1
+      timeout_seconds: 60
+      stop_words: []
+      
+      provider:
+        type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # ANALYZER AGENT (PARALLEL BRANCH 1)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Role: Deep content analysis
+  # Receives: Output from intake
+  # Executes: In parallel with classifier
+  # Outputs to: reviewer (fan-in)
+  
+  - inline:
+      name: "analyzer"
+      
+      system_prompt: |
+        You are a content analysis expert specializing in extracting insights.
+        
+        TASK:
+        Perform deep analysis of the document:
+        1. Main themes and topics
+        2. Key arguments and claims
+        3. Supporting evidence
+        4. Logical structure
+        5. Notable patterns or trends
+        6. Sentiment and tone
+        
+        OUTPUT FORMAT:
+        Structured analysis with sections:
+        
+        ## THEMES
+        <list main themes>
+        
+        ## KEY ARGUMENTS
+        <enumerate arguments>
+        
+        ## EVIDENCE
+        <supporting facts and data>
+        
+        ## STRUCTURE
+        <document organization>
+        
+        ## INSIGHTS
+        <notable patterns and observations>
+      
+      model: "gpt-4"
+      temperature: 0.7
+      max_loops: 2
+      timeout_seconds: 120
+      stop_words: []
+      
+      provider:
+        type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # CLASSIFIER AGENT (PARALLEL BRANCH 2)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Role: Categorization and tagging
+  # Receives: Output from intake
+  # Executes: In parallel with analyzer
+  # Outputs to: reviewer (fan-in)
+  
+  - inline:
+      name: "classifier"
+      
+      system_prompt: |
+        You are a document classification specialist.
+        
+        TASK:
+        Classify and tag the document:
+        1. Primary category (Business, Technical, Legal, Academic, etc.)
+        2. Sub-categories (up to 3)
+        3. Topic tags (5-10 relevant keywords)
+        4. Complexity level (Basic, Intermediate, Advanced, Expert)
+        5. Target audience
+        6. Content type (Report, Article, Guide, Reference, etc.)
+        
+        OUTPUT FORMAT:
+        
+        ## CLASSIFICATION
+        Primary: <category>
+        Sub-categories: <category1>, <category2>, <category3>
+        
+        ## TAGS
+        <tag1>, <tag2>, <tag3>, <tag4>, <tag5>, ...
+        
+        ## METADATA
+        Complexity: <level>
+        Audience: <target audience>
+        Type: <content type>
+        
+        ## CONFIDENCE
+        Classification Confidence: <percentage>
+      
+      model: "gpt-4"
+      temperature: 0.5
+      max_loops: 1
+      timeout_seconds: 90
+      stop_words: []
+      
+      provider:
+        type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # REVIEWER AGENT
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Role: Synthesis and quality review
+  # Receives: Combined outputs from analyzer AND classifier (fan-in)
+  # Outputs to: formatter
+  
+  - inline:
+      name: "reviewer"
+      
+      system_prompt: |
+        You are a quality reviewer synthesizing multiple analysis streams.
+        
+        CONTEXT:
+        You receive TWO inputs:
+        1. Deep content analysis (from analyzer)
+        2. Classification and tagging (from classifier)
+        
+        TASK:
+        Review and synthesize the combined analysis:
+        1. Verify consistency between analysis and classification
+        2. Identify any gaps or contradictions
+        3. Assess overall quality of analysis
+        4. Add additional insights from synthesis
+        5. Provide quality score and recommendations
+        
+        OUTPUT FORMAT:
+        
+        ## SYNTHESIS
+        <combine insights from both analyses>
+        
+        ## CONSISTENCY CHECK
+        <verify alignment between analysis and classification>
+        
+        ## QUALITY ASSESSMENT
+        Analysis Quality: <score 1-10>
+        Classification Quality: <score 1-10>
+        Overall Quality: <score 1-10>
+        
+        ## RECOMMENDATIONS
+        <suggestions for improvement or next steps>
+        
+        ## ADDITIONAL INSIGHTS
+        <unique insights from combined perspective>
+      
+      model: "gpt-4"
+      temperature: 0.6
+      max_loops: 2
+      timeout_seconds: 120
+      stop_words: []
+      
+      provider:
+        type: openai
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # FORMATTER AGENT
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Role: Final output formatting
+  # Receives: Output from reviewer
+  # Outputs: Final formatted result
+  
+  - inline:
+      name: "formatter"
+      
+      system_prompt: |
+        You are a document formatter creating the final polished output.
+        
+        TASK:
+        Format all analysis into a professional report:
+        1. Executive summary (3-5 sentences)
+        2. Document overview section
+        3. Detailed analysis section
+        4. Classification and metadata section
+        5. Quality metrics section
+        6. Recommendations section
+        
+        OUTPUT FORMAT:
+        Professional markdown report with:
+        - Clear hierarchy (# ## ### headers)
+        - Bulleted lists for readability
+        - Code blocks for structured data
+        - Horizontal rules between major sections
+        - Bold/italic emphasis for key points
+        
+        Make it scannable and visually appealing.
+      
+      model: "gpt-4"
+      temperature: 0.4
+      max_loops: 1
+      timeout_seconds: 90
+      stop_words: []
+      
+      provider:
+        type: openai
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+
+# 1. Run with default input:
+#    paladin battalion run -c maneuver.yaml -i "Analyze this document..."
+
+# 2. Visualize the flow structure:
+#    paladin maneuver visualize --flow "intake -> (analyzer, classifier) -> reviewer -> formatter"
+
+# 3. Validate configuration:
+#    paladin battalion validate -c maneuver.yaml
+
+# 4. Run with different error strategy:
+#    Edit config.error_strategy to ContinueParallel or IgnoreErrors
+
+# 5. Get structured JSON output:
+#    Edit config.output_format to StructuredJson
+
+# ============================================================================
+# FLOW VARIATIONS
+# ============================================================================
+
+# Simple sequential (no parallelism):
+# flow: "intake -> analyzer -> reviewer -> formatter"
+
+# More parallel stages:
+# flow: "intake -> (analyzer, classifier, extractor) -> (reviewer, validator) -> formatter"
+
+# Pure parallel (no dependencies):
+# flow: "analyzer, classifier, summarizer, extractor"
+
+# Complex nested:
+# flow: "intake -> (a -> b, c -> d) -> merger -> (formatter, exporter)"
+
+# ============================================================================
+# NOTES
+# ============================================================================
+
+# - All agent names in flow MUST exist in paladins list
+# - Parallel execution happens concurrently (faster)
+# - Sequential execution passes output as input (when pass_output_as_input: true)
+# - Use FailFast for critical pipelines requiring all agents to succeed
+# - Use ContinueParallel to get partial results even if some parallel agents fail
+# - Use IgnoreErrors for experimental or non-critical workflows
+# - Timing metrics help identify bottlenecks in complex flows
+# - Maximum recommended: 30 agents, 5 nesting levels

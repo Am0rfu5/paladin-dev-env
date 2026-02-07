@@ -843,6 +843,167 @@ cargo run --example commander_full_config
 - Fallback handling
 - Advanced configuration
 
+### [maneuver_basic.rs](maneuver_basic.rs) 🆕
+**Demonstrates:** Flow DSL orchestration basics
+
+Shows Maneuver pattern with string-based workflow expressions combining sequential and parallel execution.
+
+```bash
+cargo run --example maneuver_basic
+```
+
+**Key concepts:**
+- Flow DSL syntax (`->` sequential, `,` parallel)
+- Declarative workflows
+- Mixed patterns in one expression
+- Visual flow feedback
+
+**Code snippet:**
+```rust
+// Define workflow with Flow DSL
+let flow = "intake -> (analyzer, summarizer) -> reviewer";
+
+// Parse flow expression
+let parsed_flow = FlowParser::parse(flow)?;
+
+// Create Maneuver with agents
+let mut agents = HashMap::new();
+agents.insert("intake".to_string(), intake_paladin);
+agents.insert("analyzer".to_string(), analyzer_paladin);
+agents.insert("summarizer".to_string(), summarizer_paladin);
+agents.insert("reviewer".to_string(), reviewer_paladin);
+
+let maneuver = Maneuver::new("DocPipeline", agents, parsed_flow, ManeuverConfig::default());
+
+// Visualize flow
+let visualizer = FlowVisualizer::new();
+let ascii = visualizer.visualize(&parsed_flow, VisualizationFormat::AsciiTree)?;
+println!("{}", ascii);
+
+// Execute
+let result = service.execute(&maneuver, "Analyze this document...").await?;
+```
+
+### [maneuver_nested_flow.rs](maneuver_nested_flow.rs) 🆕
+**Demonstrates:** Complex nested Flow DSL patterns
+
+Shows advanced Maneuver workflows with nested groupings, fan-out/fan-in patterns, and multi-stage processing.
+
+```bash
+cargo run --example maneuver_nested_flow
+```
+
+**Key concepts:**
+- Nested flow patterns with parentheses
+- Fan-out and fan-in orchestration
+- Complex enterprise pipelines
+- Error handling strategies
+
+**Code snippet:**
+```rust
+// Complex nested flow: intake -> (analysis branch, validation branch) -> merger
+let flow = "intake -> (analyzer -> (technical, security), validator -> compliance) -> merger -> formatter";
+
+let config = ManeuverConfig {
+    error_strategy: ErrorStrategy::ContinueParallel,
+    output_format: OutputFormat::StructuredJson,
+    collect_timing_metrics: true,
+    ..Default::default()
+};
+
+let maneuver = Maneuver::new("EnterpriseReview", agents, parsed_flow, config);
+
+// Execute with timing metrics
+let result = service.execute(&maneuver, input).await?;
+
+// Inspect timing
+if let Some(metrics) = &result.timing_metrics {
+    for (agent, duration) in metrics {
+        println!("{}: {:?}", agent, duration);
+    }
+}
+```
+
+### [maneuver_dynamic_flow.rs](maneuver_dynamic_flow.rs) 🆕
+**Demonstrates:** Dynamic workflow generation
+
+Shows runtime flow creation based on task requirements with visualization and validation.
+
+```bash
+cargo run --example maneuver_dynamic_flow
+```
+
+**Key concepts:**
+- Runtime flow generation
+- Task-based workflow selection
+- Flow validation before execution
+- Adaptive orchestration
+
+**Code snippet:**
+```rust
+// Generate flow based on task type
+let flow = match task_type {
+    TaskType::Simple => "analyzer -> formatter",
+    TaskType::Review => "intake -> (technical, business) -> reviewer",
+    TaskType::Complex => "intake -> (a -> b, c -> d) -> merger -> formatter",
+};
+
+// Validate flow before execution
+let parsed = FlowParser::parse(flow)?;
+let validation = maneuver.validate()?;
+assert!(validation.is_ok(), "Flow validation failed");
+
+// Visualize with Mermaid for documentation
+let mermaid = visualizer.visualize(&parsed, VisualizationFormat::Mermaid)?;
+println!("{}", mermaid);
+```
+
+### [cli_configs/maneuver.yaml](cli_configs/maneuver.yaml) 🆕
+**Demonstrates:** Complete Maneuver YAML configuration
+
+Shows full configuration template for Maneuver Battalion with all options.
+
+**Key concepts:**
+- YAML-based flow definition
+- Error strategy configuration (FailFast, ContinueParallel, IgnoreErrors)
+- Output format options (CombinedText, StructuredJson)
+- Timing metrics collection
+- Multi-agent pipeline setup
+
+**Example configuration:**
+```yaml
+type: maneuver
+name: "DocumentAnalysisPipeline"
+
+flow: "intake -> (analyzer, classifier) -> reviewer -> formatter"
+
+config:
+  error_strategy: FailFast
+  output_format: CombinedText
+  pass_output_as_input: true
+  timeout_seconds: 300
+  collect_timing_metrics: true
+  output_separator: "\n\n---\n\n"
+
+paladins:
+  - inline:
+      name: "intake"
+      system_prompt: "Validate and prepare input..."
+      # ... agent configuration
+```
+
+**Usage:**
+```bash
+# Run with configuration
+paladin battalion run -c examples/cli_configs/maneuver.yaml -i "Input text"
+
+# Visualize flow structure
+paladin maneuver visualize --flow "intake -> (analyzer, classifier) -> reviewer"
+
+# Validate configuration
+paladin battalion validate -c examples/cli_configs/maneuver.yaml
+```
+
 ## Output Formatting Examples
 
 ### [herald_markdown_output.rs](herald_markdown_output.rs)
