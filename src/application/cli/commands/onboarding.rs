@@ -441,9 +441,7 @@ pub async fn run_onboarding() -> CliResult<()> {
         .with_resume();
 
     // Run wizard
-    wizard
-        .run()
-        .map_err(|e| crate::cli::output::errors::CliError::Other(e.to_string()))?;
+    wizard.run().map_err(|e| CliError::Other(e.to_string()))?;
 
     Ok(())
 }

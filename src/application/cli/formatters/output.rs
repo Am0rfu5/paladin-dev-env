@@ -249,7 +249,10 @@ impl OutputFormatter {
         output.push('\n');
 
         // Main output
-        output.push_str(&format!("\n{} Output:\n", self.style("→", OutputStyle::Info)));
+        output.push_str(&format!(
+            "\n{} Output:\n",
+            self.style("→", OutputStyle::Info)
+        ));
         output.push_str(&format!("{}\n", result.output));
 
         // Statistics section

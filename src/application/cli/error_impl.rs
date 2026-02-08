@@ -344,75 +344,8 @@ impl CliError {
     }
 }
 
-/// Conversion from old CliError type (src/cli/output/errors.rs)
-impl From<crate::cli::output::errors::CliError> for CliError {
-    fn from(error: crate::cli::output::errors::CliError) -> Self {
-        match error {
-            crate::cli::output::errors::CliError::ConfigFileNotFound { path } => {
-                CliError::ConfigFileNotFound { path }
-            }
-            crate::cli::output::errors::CliError::InvalidYaml { path, source } => {
-                CliError::InvalidYaml { path, source }
-            }
-            crate::cli::output::errors::CliError::ValidationError { message } => {
-                CliError::ValidationError { message }
-            }
-            crate::cli::output::errors::CliError::MissingRequiredField { field, message } => {
-                CliError::MissingRequiredField { field, message }
-            }
-            crate::cli::output::errors::CliError::InvalidFieldValue { field, message } => {
-                CliError::InvalidFieldValue { field, message }
-            }
-            crate::cli::output::errors::CliError::MissingApiKey { provider, env_var } => {
-                CliError::MissingApiKey { provider, env_var }
-            }
-            crate::cli::output::errors::CliError::FileAlreadyExists { path } => {
-                CliError::FileAlreadyExists { path }
-            }
-            crate::cli::output::errors::CliError::IoError { message, source } => {
-                CliError::IoError { message, source }
-            }
-            crate::cli::output::errors::CliError::Cancelled => CliError::Cancelled,
-            crate::cli::output::errors::CliError::LlmError { message } => {
-                CliError::LlmError { message }
-            }
-            crate::cli::output::errors::CliError::LlmProviderError { message } => {
-                CliError::LlmProviderError { message }
-            }
-            crate::cli::output::errors::CliError::ExecutionError { message } => {
-                CliError::ExecutionError { message }
-            }
-            crate::cli::output::errors::CliError::BattalionError { message } => {
-                CliError::BattalionError { message }
-            }
-            crate::cli::output::errors::CliError::ToolError { message } => {
-                CliError::ToolError { message }
-            }
-            crate::cli::output::errors::CliError::McpConnectionError { message } => {
-                CliError::McpConnectionError { message }
-            }
-            crate::cli::output::errors::CliError::SerializationError { message } => {
-                CliError::SerializationError { message }
-            }
-            crate::cli::output::errors::CliError::InvalidFilePath { path, message } => {
-                CliError::InvalidFilePath { path, message }
-            }
-            crate::cli::output::errors::CliError::UnsupportedFormat { format, supported } => {
-                CliError::UnsupportedFormat { format, supported }
-            }
-            crate::cli::output::errors::CliError::FileReadError { path, message } => {
-                CliError::FileReadError { path, message }
-            }
-            crate::cli::output::errors::CliError::VisionProcessingError { message } => {
-                CliError::VisionProcessingError { message }
-            }
-            crate::cli::output::errors::CliError::DocumentProcessingError { message } => {
-                CliError::DocumentProcessingError { message }
-            }
-            crate::cli::output::errors::CliError::Other(message) => CliError::Other(message),
-        }
-    }
-}
+// Note: Old CLI error conversion removed as src/cli/ has been deleted
+// All code now uses unified CliError from application::cli::error
 
 impl From<std::io::Error> for CliError {
     fn from(error: std::io::Error) -> Self {

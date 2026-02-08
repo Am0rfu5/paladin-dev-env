@@ -182,33 +182,33 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.10 Search for any remaining `cli::output::errors::CliError` references and replace with `application::cli::error::CliError`
   - [x] 7.11 Search for any remaining `cli::output::formatter` references and replace with `application::cli::formatters::output::OutputFormatter`
 
-- [ ] 8.0 Update binary entry point (paladin-cli.rs)
-  - [ ] 8.1 Read `src/bin/paladin-cli.rs` to understand current CLI command structure
-  - [ ] 8.2 Update all command imports to use `paladin::application::cli::commands::*`
-  - [ ] 8.3 Update error handling to use `paladin::application::cli::error::CliError`
-  - [ ] 8.4 Update formatter usage to use `paladin::application::cli::formatters::*`
-  - [ ] 8.5 Verify all command handlers (agent, battalion, arsenal, maneuver, onboarding, etc.) are properly imported
-  - [ ] 8.6 Test binary compilation: `cargo build --bin paladin-cli`
-  - [ ] 8.7 Run `cargo check` to verify binary compiles
+- [x] 8.0 Update binary entry point (paladin-cli.rs)
+  - [x] 8.1 Read `src/bin/paladin-cli.rs` to understand current CLI command structure
+  - [x] 8.2 Update all command imports to use `paladin::application::cli::commands::*`
+  - [x] 8.3 Update error handling to use `paladin::application::cli::error::CliError`
+  - [x] 8.4 Update formatter usage to use `paladin::application::cli::formatters::*`
+  - [x] 8.5 Verify all command handlers (agent, battalion, arsenal, maneuver, onboarding, etc.) are properly imported
+  - [x] 8.6 Test binary compilation: `cargo build --bin paladin-cli`
+  - [x] 8.7 Run `cargo check` to verify binary compiles
 
-- [ ] 9.0 Update module structure in src/lib.rs
-  - [ ] 9.1 Read `src/lib.rs` to see current module exports
-  - [ ] 9.2 Verify `pub mod application;` is present (should already exist)
-  - [ ] 9.3 Check if `pub mod cli;` is still exported - if yes, remove it or make it private
-  - [ ] 9.4 Add documentation comment explaining CLI is now part of application layer
-  - [ ] 9.5 Verify `src/application/mod.rs` exports `pub mod cli;`
-  - [ ] 9.6 Run `cargo check` to verify module structure is correct
-  - [ ] 9.7 Check for any external crates or examples that might import `paladin::cli::*` directly
+- [x] 9.0 Update module structure in src/lib.rs
+  - [x] 9.1 Read `src/lib.rs` to see current module exports
+  - [x] 9.2 Verify `pub mod application;` is present (should already exist)
+  - [x] 9.3 Check if `pub mod cli;` is still exported - if yes, remove it or make it private
+  - [x] 9.4 Add documentation comment explaining CLI is now part of application layer
+  - [x] 9.5 Verify `src/application/mod.rs` exports `pub mod cli;`
+  - [x] 9.6 Run `cargo check` to verify module structure is correct
+  - [x] 9.7 Check for any external crates or examples that might import `paladin::cli::*` directly
 
-- [ ] 10.0 Remove old src/cli/ directory
-  - [ ] 10.1 Run `cargo check` one final time to ensure everything compiles
-  - [ ] 10.2 Run `cargo test --lib` to ensure unit tests pass
-  - [ ] 10.3 Verify no files in the codebase still import from `paladin::cli::` (except possibly deprecated re-exports)
-  - [ ] 10.4 Create temporary backup: `cp -r src/cli /tmp/paladin-cli-backup`
-  - [ ] 10.5 Remove old CLI directory: `git rm -r src/cli`
-  - [ ] 10.6 Run `cargo check` to verify removal didn't break anything
-  - [ ] 10.7 If errors occur, restore from backup and investigate remaining dependencies
-  - [ ] 10.8 Once clean, remove backup: `rm -rf /tmp/paladin-cli-backup`
+- [x] 10.0 Remove old src/cli/ directory
+  - [x] 10.1 Run `cargo check` one final time to ensure everything compiles
+  - [x] 10.2 Run `cargo test --lib` to ensure unit tests pass
+  - [x] 10.3 Verify no files in the codebase still import from `paladin::cli::` (except possibly deprecated re-exports)
+  - [x] 10.4 Create temporary backup: `cp -r src/cli /tmp/paladin-cli-backup`
+  - [x] 10.5 Remove old CLI directory: `git rm -r src/cli`
+  - [x] 10.6 Run `cargo check` to verify removal didn't break anything
+  - [x] 10.7 If errors occur, restore from backup and investigate remaining dependencies
+  - [x] 10.8 Once clean, remove backup: `rm -rf /tmp/paladin-cli-backup`
 
 - [ ] 11.0 Run full test suite and fix any issues
   - [ ] 11.1 Run unit tests: `cargo test --lib`

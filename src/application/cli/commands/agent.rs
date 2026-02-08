@@ -146,13 +146,13 @@ pub fn handle_agent_new(args: AgentNewArgs) -> Result<(), CliError> {
 ///
 /// Loads a Paladin configuration and executes it with the given input
 pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
+    use crate::application::cli::config::loader::load_paladin_config;
+    use crate::application::cli::interactive::prompt_for_input;
     use crate::application::ports::input::document_port::{DocumentPort, DocumentSource};
     use crate::application::ports::output::llm_port::LlmPort;
     use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
-    use crate::application::cli::config::loader::load_paladin_config;
-    use crate::application::cli::interactive::prompt_for_input;
     use crate::core::platform::container::vision::{ImageDetail, VisionContent};
     use crate::infrastructure::adapters::document::DocumentAdapter;
     use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;

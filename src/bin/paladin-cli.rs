@@ -1,15 +1,12 @@
 /// Paladin CLI - Command-line interface for Paladin multi-agent orchestration
 use clap::{Parser, Subcommand};
 use paladin::application::cli::commands::{
-    agent::{handle_agent_new, handle_agent_run, AgentCommands},
-    arsenal::{handle_arsenal_command, ArsenalCommands},
-    battalion::{handle_battalion_new, handle_battalion_run, BattalionCommands},
-    council,
-    features,
-    maneuver::{handle_maneuver_command, ManeuverCommands},
-    muster,
-    onboarding,
-    setup_check,
+    agent::{AgentCommands, handle_agent_new, handle_agent_run},
+    arsenal::{ArsenalCommands, handle_arsenal_command},
+    battalion::{BattalionCommands, handle_battalion_new, handle_battalion_run},
+    council, features,
+    maneuver::{ManeuverCommands, handle_maneuver_command},
+    muster, onboarding, setup_check,
 };
 use paladin::application::cli::error::CliError;
 use std::process;
@@ -146,9 +143,11 @@ async fn main() {
         Commands::Maneuver { action } => handle_maneuver_command(action).await,
         Commands::Onboarding => onboarding::run_onboarding().await,
         Commands::SetupCheck { verbose } => {
-            setup_check::run_setup_check(verbose).await.map(|exit_code| {
-                process::exit(exit_code);
-            })
+            setup_check::run_setup_check(verbose)
+                .await
+                .map(|exit_code| {
+                    process::exit(exit_code);
+                })
         }
         Commands::Features { category, format } => features::run_features(category, format).await,
         Commands::Muster {
