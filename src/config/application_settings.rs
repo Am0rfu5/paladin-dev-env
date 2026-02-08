@@ -2070,11 +2070,13 @@ mod tests {
 
     #[test]
     fn test_create_default_herald_json() {
-        let mut settings = Settings::default();
-        settings.herald = Some(HeraldConfig {
-            default_formatter: "json".to_string(),
+        let settings = Settings {
+            herald: Some(HeraldConfig {
+                default_formatter: "json".to_string(),
+                ..Default::default()
+            }),
             ..Default::default()
-        });
+        };
 
         let herald = settings.create_default_herald();
         assert!(herald.is_ok());
@@ -2085,11 +2087,13 @@ mod tests {
 
     #[test]
     fn test_create_default_herald_markdown() {
-        let mut settings = Settings::default();
-        settings.herald = Some(HeraldConfig {
-            default_formatter: "markdown".to_string(),
+        let settings = Settings {
+            herald: Some(HeraldConfig {
+                default_formatter: "markdown".to_string(),
+                ..Default::default()
+            }),
             ..Default::default()
-        });
+        };
 
         let herald = settings.create_default_herald();
         assert!(herald.is_ok());
@@ -2100,11 +2104,13 @@ mod tests {
 
     #[test]
     fn test_create_default_herald_table() {
-        let mut settings = Settings::default();
-        settings.herald = Some(HeraldConfig {
-            default_formatter: "table".to_string(),
+        let settings = Settings {
+            herald: Some(HeraldConfig {
+                default_formatter: "table".to_string(),
+                ..Default::default()
+            }),
             ..Default::default()
-        });
+        };
 
         let herald = settings.create_default_herald();
         assert!(herald.is_ok());
@@ -2115,11 +2121,13 @@ mod tests {
 
     #[test]
     fn test_create_default_herald_invalid_formatter() {
-        let mut settings = Settings::default();
-        settings.herald = Some(HeraldConfig {
-            default_formatter: "invalid".to_string(),
+        let settings = Settings {
+            herald: Some(HeraldConfig {
+                default_formatter: "invalid".to_string(),
+                ..Default::default()
+            }),
             ..Default::default()
-        });
+        };
 
         let herald = settings.create_default_herald();
         assert!(herald.is_err());
@@ -2129,15 +2137,17 @@ mod tests {
 
     #[test]
     fn test_create_default_herald_with_custom_config() {
-        let mut settings = Settings::default();
-        settings.herald = Some(HeraldConfig {
-            default_formatter: "json".to_string(),
-            json: JsonHeraldConfig {
-                pretty: false,
-                include_metadata: false,
-            },
+        let settings = Settings {
+            herald: Some(HeraldConfig {
+                default_formatter: "json".to_string(),
+                json: JsonHeraldConfig {
+                    pretty: false,
+                    include_metadata: false,
+                },
+                ..Default::default()
+            }),
             ..Default::default()
-        });
+        };
 
         let herald = settings.create_default_herald();
         assert!(herald.is_ok());

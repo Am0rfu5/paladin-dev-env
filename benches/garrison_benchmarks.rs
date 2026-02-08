@@ -142,7 +142,7 @@ fn benchmark_eviction_strategies(c: &mut Criterion) {
             b.iter_batched(
                 || {
                     // Create garrison with capacity of 50
-                    let mut garrison = create_garrison(50, strategy.clone());
+                    let mut garrison = create_garrison(50, strategy);
                     // Fill to capacity
                     for i in 0..50 {
                         let role = if i % 2 == 0 {

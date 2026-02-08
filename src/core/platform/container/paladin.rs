@@ -313,8 +313,10 @@ mod tests {
 
     #[test]
     fn test_paladin_data_with_auto_planning() {
-        let mut data = PaladinData::default();
-        data.max_loops = MaxLoops::Auto { max_subtasks: 8 };
+        let data = PaladinData {
+            max_loops: MaxLoops::Auto { max_subtasks: 8 },
+            ..Default::default()
+        };
 
         if let MaxLoops::Auto { max_subtasks } = data.max_loops {
             assert_eq!(max_subtasks, 8);

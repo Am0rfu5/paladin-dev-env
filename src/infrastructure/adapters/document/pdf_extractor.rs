@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn test_pdf_extractor_default() {
-        let extractor = PdfExtractor::default();
+        let extractor = PdfExtractor;
         assert!(matches!(extractor, PdfExtractor));
     }
 

@@ -411,7 +411,7 @@ mod tests {
         let chunks = adapter.chunk(&document, config).await.unwrap();
 
         // Should split by period
-        assert!(chunks.len() >= 1);
+        assert!(!chunks.is_empty());
     }
 
     #[tokio::test]

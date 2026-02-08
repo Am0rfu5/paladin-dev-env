@@ -340,7 +340,7 @@ async fn test_sse_multiple_calls() {
         let result = client
             .invoke_tool("test_tool", args)
             .await
-            .expect(&format!("Failed on iteration {}", i));
+            .unwrap_or_else(|_| panic!("Failed on iteration {}", i));
 
         let text = result
             .get("text")

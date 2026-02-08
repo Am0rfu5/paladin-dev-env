@@ -1179,8 +1179,10 @@ mod tests {
         let _service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
 
         // Create a paladin with vision_enabled
-        let mut data = PaladinData::default();
-        data.vision_enabled = true;
+        let data = PaladinData {
+            vision_enabled: true,
+            ..Default::default()
+        };
         let paladin = Node::new(data, Some("VisionPaladin".to_string()));
 
         // Verify that the MockLlmPort doesn't support vision
@@ -1205,8 +1207,10 @@ mod tests {
         let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
 
         // Create a paladin WITHOUT vision_enabled
-        let mut data = PaladinData::default();
-        data.vision_enabled = false;
+        let data = PaladinData {
+            vision_enabled: false,
+            ..Default::default()
+        };
         let paladin = Node::new(data, Some("NormalPaladin".to_string()));
 
         // Try to execute with vision - should fail
@@ -1239,8 +1243,10 @@ mod tests {
         let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
 
         // Create a paladin with vision_enabled but MockLlmPort doesn't support vision
-        let mut data = PaladinData::default();
-        data.vision_enabled = true;
+        let data = PaladinData {
+            vision_enabled: true,
+            ..Default::default()
+        };
         let paladin = Node::new(data, Some("VisionPaladin".to_string()));
 
         let images = vec![VisionContent::ImageUrl {

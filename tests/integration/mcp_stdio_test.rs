@@ -202,7 +202,7 @@ async fn test_stdio_multiple_calls() {
         let result = client
             .invoke_tool("echo", args)
             .await
-            .expect(&format!("Failed to invoke echo on iteration {}", i));
+            .unwrap_or_else(|_| panic!("Failed to invoke echo on iteration {}", i));
 
         let text = result
             .get("text")

@@ -165,7 +165,7 @@ impl PaladinPort for ExamplePaladinPort {
         Ok(PaladinResult {
             output,
             token_count: 150,
-            execution_time_ms: delay as u64,
+            execution_time_ms: delay,
             loop_count: 1,
             stop_reason: StopReason::Completed,
         })

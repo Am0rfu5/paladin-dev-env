@@ -249,8 +249,10 @@ async fn test_formation_retry_then_continue() {
     let p1 = create_paladin("Step1", "First");
     let p2 = create_paladin("Step2", "Second");
 
-    let mut retry_policy = RetryPolicy::default();
-    retry_policy.max_attempts = 3;
+    let mut retry_policy = RetryPolicy {
+        max_attempts: 3,
+        ..Default::default()
+    };
     retry_policy.base_delay = Duration::from_millis(5);
 
     let config = BattalionConfig::new("retry_test")

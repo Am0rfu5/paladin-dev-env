@@ -1170,7 +1170,7 @@ mod tests {
         };
 
         let source_id = service.register_source(source).await.unwrap();
-        let _ = service.remove_source(source_id).await.unwrap();
+        service.remove_source(source_id).await.unwrap();
 
         let stats = service.get_stats().await.unwrap();
         assert_eq!(stats.total_sources, 0);

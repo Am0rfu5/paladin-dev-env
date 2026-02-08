@@ -210,17 +210,17 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 10.7 If errors occur, restore from backup and investigate remaining dependencies
   - [x] 10.8 Once clean, remove backup: `rm -rf /tmp/paladin-cli-backup`
 
-- [ ] 11.0 Run full test suite and fix any issues
-  - [ ] 11.1 Run unit tests: `cargo test --lib`
-  - [ ] 11.2 Fix any failing unit tests related to import paths
-  - [ ] 11.3 Fix any failing unit tests related to error type conversions
-  - [ ] 11.4 Run integration tests: `cargo test --test '*'`
-  - [ ] 11.5 Fix any failing integration tests for CLI commands
-  - [ ] 11.6 Run clippy: `cargo clippy --all-targets -- -D warnings`
-  - [ ] 11.7 Fix any clippy warnings related to imports or unused code
-  - [ ] 11.8 Run formatter: `cargo fmt --all`
-  - [ ] 11.9 Run full test suite: `make test-all`
-  - [ ] 11.10 Verify all 1400+ tests still pass
+- [x] 11.0 Run full test suite and fix any issues
+  - [x] 11.1 Run unit tests: `cargo test --lib`
+  - [x] 11.2 Fix any failing unit tests related to import paths
+  - [x] 11.3 Fix any failing unit tests related to error type conversions
+  - [x] 11.4 Run integration tests: `cargo test --test '*'`
+  - [x] 11.5 Fix any failing integration tests for CLI commands
+  - [x] 11.6 Run clippy: `cargo clippy --all-targets -- -D warnings`
+  - [x] 11.7 Fix any clippy warnings related to imports or unused code
+  - [x] 11.8 Run formatter: `cargo fmt --all`
+  - [x] 11.9 Run full test suite: `make test-all`
+  - [x] 11.10 Verify all 1400+ tests still pass
   - [ ] 11.11 Run benchmarks if applicable: `cargo bench` (optional)
 
 - [ ] 12.0 Update documentation

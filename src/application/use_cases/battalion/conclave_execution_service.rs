@@ -556,11 +556,11 @@ mod tests {
             let expert_name = &paladin.node.name;
 
             // Check if this expert should fail
-            if let Some(fail_count) = self.fail_attempts.lock().unwrap().get_mut(expert_name) {
-                if *fail_count > 0 {
-                    *fail_count -= 1;
-                    return Err(PaladinError::Timeout(10));
-                }
+            if let Some(fail_count) = self.fail_attempts.lock().unwrap().get_mut(expert_name)
+                && *fail_count > 0
+            {
+                *fail_count -= 1;
+                return Err(PaladinError::Timeout(10));
             }
 
             // Success case

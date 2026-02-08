@@ -541,8 +541,10 @@ async fn test_retry_then_continue_strategy_integration() {
     let paladin2 = create_test_paladin("Paladin2");
     let paladin3 = create_test_paladin("Paladin3");
 
-    let mut retry_policy = RetryPolicy::default();
-    retry_policy.max_attempts = 2; // Will retry once
+    let retry_policy = RetryPolicy {
+        max_attempts: 2, // Will retry once
+        ..Default::default()
+    };
 
     let config = BattalionConfig::new("retry_test")
         .with_timeout(30)
@@ -698,7 +700,7 @@ async fn test_commander_executes_grove_strategy_end_to_end() {
     // Grove routes to best-match agent, so only 1 should execute
     let log = mock_port.get_execution_log();
     assert!(
-        log.len() >= 1,
+        !log.is_empty(),
         "At least one specialist should be routed to"
     );
 }

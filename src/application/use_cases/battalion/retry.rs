@@ -166,11 +166,13 @@ mod tests {
 
     #[test]
     fn test_calculate_retry_delay_max_cap() {
-        let mut policy = RetryPolicy::default();
-        policy.exponential_backoff = true;
-        policy.jitter = false;
-        policy.base_delay = Duration::from_millis(100);
-        policy.max_delay = Duration::from_millis(500);
+        let policy = RetryPolicy {
+            exponential_backoff: true,
+            jitter: false,
+            base_delay: Duration::from_millis(100),
+            max_delay: Duration::from_millis(500),
+            ..Default::default()
+        };
 
         // Should be capped at max_delay
         assert_eq!(
@@ -181,10 +183,12 @@ mod tests {
 
     #[test]
     fn test_calculate_retry_delay_with_jitter() {
-        let mut policy = RetryPolicy::default();
-        policy.exponential_backoff = false;
-        policy.jitter = true;
-        policy.base_delay = Duration::from_millis(100);
+        let policy = RetryPolicy {
+            exponential_backoff: false,
+            jitter: true,
+            base_delay: Duration::from_millis(100),
+            ..Default::default()
+        };
 
         // With jitter, delay should be between 50-100ms (50% to 100% of base)
         let delay = calculate_retry_delay(&policy, 0);

@@ -228,8 +228,10 @@ mod tests {
             AutonomousConfig, PlanningConfig,
         };
 
-        let mut auto_config = AutonomousConfig::default();
-        auto_config.planning = PlanningConfig::new(15);
+        let auto_config = AutonomousConfig {
+            planning: PlanningConfig::new(15),
+            ..Default::default()
+        };
 
         let config = PaladinConfig::builder()
             .autonomous(auto_config.clone())
@@ -248,8 +250,10 @@ mod tests {
             AutonomousConfig, PlanningConfig,
         };
 
-        let mut auto_config = AutonomousConfig::default();
-        auto_config.planning = PlanningConfig::new(0); // Invalid: zero subtasks
+        let auto_config = AutonomousConfig {
+            planning: PlanningConfig::new(0), // Invalid: zero subtasks
+            ..Default::default()
+        };
 
         let result = PaladinConfig::builder().autonomous(auto_config).build();
 

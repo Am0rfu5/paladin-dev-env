@@ -40,7 +40,7 @@ fn run_cli_command(args: &[&str]) -> Result<std::process::Output, std::io::Error
     // Build the CLI binary if it doesn't exist
     if !cli_path.exists() {
         let build_output = Command::new("cargo")
-            .args(&["build", "--bin", "paladin-cli"])
+            .args(["build", "--bin", "paladin-cli"])
             .output()
             .expect("Failed to build CLI binary");
 

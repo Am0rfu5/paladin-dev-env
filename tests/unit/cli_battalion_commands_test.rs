@@ -1,7 +1,7 @@
 //! Unit tests for CLI battalion commands
 
-use paladin::cli::commands::battalion::{BattalionNewArgs, handle_battalion_new};
 use paladin::application::cli::error::CliError;
+use paladin::cli::commands::battalion::{BattalionNewArgs, handle_battalion_new};
 use std::fs;
 use tempfile::TempDir;
 
