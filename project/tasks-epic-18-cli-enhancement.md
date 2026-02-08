@@ -2,55 +2,80 @@
 
 **Based on:** PRD Epic 18 - CLI Enhancement & Polish  
 **Created:** February 7, 2026  
+**Updated:** February 8, 2026 (Post Epic 17.5 Consolidation)  
 **Epic Dependencies:** Epics 11-17 (Sanctum, Sentinel, Autonomous Agents, Conclave, Advanced Battalion Patterns, Flow DSL)
+
+## Status Summary (Post Epic 17.5)
+
+✅ **Task 1.0 COMPLETE**: CLI infrastructure, formatters, interactive utilities all in place  
+✅ **Epic 17.5 Consolidation COMPLETE**: All `src/cli/` code migrated to `src/application/cli/`  
+⚠️ **Task 2.0 ~90% Complete**: Onboarding wizard substantially implemented (~450 lines)  
+⏳ **Tasks 3.0-6.0 Pending**: setup_check, features, muster, council are placeholder files  
+⏳ **Task 7.0-9.0 Pending**: Testing, documentation, final polish
+
+**Next Priority**: Complete remaining onboarding tasks (2.5, 2.13-2.14, 2.17-2.19) then proceed to Task 3.0
 
 ---
 
 ## Relevant Files
 
-### CLI Infrastructure
-- `Cargo.toml` - Add new CLI dependencies (clap, indicatif, console, colored, comfy-table, dialoguer)
-- `src/bin/paladin-cli.rs` - Main CLI entry point, command routing
-- `src/application/cli/mod.rs` - CLI module definition
-- `src/application/cli/error.rs` - CLI-specific error types
+### CLI Infrastructure (✅ MIGRATED from Epic 17.5)
+- `Cargo.toml` - CLI dependencies already added (clap, indicatif, console, colored, comfy-table, dialoguer)
+- `src/bin/paladin-cli.rs` - Main CLI entry point, command routing (**updated in Epic 17.5**)
+- `src/application/cli/mod.rs` - CLI module definition (**updated in Epic 17.5**)
+- `src/application/cli/error.rs` - Unified CLI error types (**consolidated in Epic 17.5**)
+- `src/application/cli/error_impl.rs` - Error implementation details (**from Epic 17.5**)
 
-### Output Formatters (US-18.6)
-- `src/application/cli/formatters/mod.rs` - Formatter module definition
-- `src/application/cli/formatters/output.rs` - Core output formatting (colors, boxes, headers)
-- `src/application/cli/formatters/table.rs` - Table rendering using comfy-table
-- `src/application/cli/formatters/progress.rs` - Progress indicators (spinners, progress bars)
-- `src/application/cli/formatters/tests.rs` - Unit tests for formatters
+### Output Formatters (✅ COMPLETE - US-18.6)
+- `src/application/cli/formatters/mod.rs` - Formatter module definition (**exists**)
+- `src/application/cli/formatters/output.rs` - Core output formatting (**enhanced in Epic 17.5**)
+- `src/application/cli/formatters/table.rs` - Table rendering using comfy-table (**exists**)
+- `src/application/cli/formatters/progress.rs` - Progress indicators (**exists**)
+- `src/application/cli/formatters/tests.rs` - Unit tests for formatters (**exists**)
 
-### Interactive Utilities
-- `src/application/cli/interactive/mod.rs` - Interactive module definition
-- `src/application/cli/interactive/prompts.rs` - Reusable prompt components
-- `src/application/cli/interactive/wizard.rs` - Wizard framework for multi-step interactions
-- `src/application/cli/interactive/tests.rs` - Unit tests for interactive components
+### Interactive Utilities (✅ COMPLETE)
+- `src/application/cli/interactive/mod.rs` - Interactive module definition (**exists**)
+- `src/application/cli/interactive/prompts.rs` - Reusable prompt components (**exists**)
+- `src/application/cli/interactive/wizard.rs` - Wizard framework (**exists**)
+- `src/application/cli/interactive/utils.rs` - TTY utilities (**from Epic 17.5**)
+- `src/application/cli/interactive/tests.rs` - Unit tests (**exists**)
 
 ### Commands
-- `src/application/cli/commands/mod.rs` - Commands module definition
-- `src/application/cli/commands/onboarding.rs` - Onboarding wizard (US-18.1)
-- `src/application/cli/commands/setup_check.rs` - Setup validation (US-18.2)
-- `src/application/cli/commands/features.rs` - Feature discovery (US-18.3)
-- `src/application/cli/commands/muster.rs` - Battalion generation (US-18.4)
-- `src/application/cli/commands/council.rs` - Quick council discussions (US-18.5)
+- `src/application/cli/commands/mod.rs` - Commands module definition (**updated in Epic 17.5**)
+- `src/application/cli/commands/onboarding.rs` - Onboarding wizard (✅ **~450 lines, substantially complete**)
+- `src/application/cli/commands/setup_check.rs` - Setup validation (⚠️ **placeholder, ~11 lines**)
+- `src/application/cli/commands/features.rs` - Feature discovery (⚠️ **placeholder, ~13 lines**)
+- `src/application/cli/commands/muster.rs` - Battalion generation (⚠️ **placeholder, ~17 lines**)
+- `src/application/cli/commands/council.rs` - Quick council discussions (⚠️ **placeholder, ~26 lines**)
+- **From Epic 17.5 consolidation:**
+  - `src/application/cli/commands/agent.rs` - Agent commands (**migrated, functional**)
+  - `src/application/cli/commands/arsenal.rs` - Arsenal commands (**migrated, functional**)
+  - `src/application/cli/commands/battalion.rs` - Battalion commands (**migrated, functional**)
+  - `src/application/cli/commands/maneuver.rs` - Maneuver commands (**migrated, functional**)
+  - `src/application/cli/commands/user.rs` - User commands (**migrated, functional**)
 
-### Configuration Templates
-- `src/application/cli/templates/mod.rs` - Template module
-- `src/application/cli/templates/agent.rs` - Agent config templates
-- `src/application/cli/templates/battalion.rs` - Battalion config templates
-- `src/application/cli/templates/env.rs` - .env file template
+### Configuration (✅ MIGRATED from Epic 17.5)
+- `src/application/cli/config/mod.rs` - Config module definition (**exists**)
+- `src/application/cli/config/loader.rs` - Configuration loader from YAML (**migrated**)
+- `src/application/cli/config/paladin_config.rs` - Paladin config structures (**migrated**)
+- `src/application/cli/config/battalion_config.rs` - Battalion config structures (**migrated**)
+
+### Templates (✅ MIGRATED from Epic 17.5)
+- `src/application/cli/templates/mod.rs` - Template module (**exists**)
+- `src/application/cli/templates/agent.rs` → **renamed to** `paladin_template.rs` (**migrated**)
+- `src/application/cli/templates/battalion.rs` → **renamed to** `battalion_template.rs` (**migrated**)
+- `src/application/cli/templates/env.rs` - .env file template (**exists from Epic 18**)
 
 ### Testing
-- `src/application/cli/tests/mod.rs` - CLI unit tests module
-- `src/application/cli/tests/formatter_tests.rs` - Formatter unit tests
-- `src/application/cli/tests/command_tests.rs` - Command logic unit tests
-- `tests/cli/integration_tests.rs` - CLI integration tests
-- `tests/cli/onboarding_test.rs` - Onboarding wizard integration test
-- `tests/cli/setup_check_test.rs` - Setup check integration test
-- `tests/cli/muster_test.rs` - Muster command integration test
-- `tests/cli/council_test.rs` - Council command integration test
-- `tests/cli/snapshots/` - Snapshot test output directory
+- `src/application/cli/tests/mod.rs` - CLI unit tests module (⚠️ **needs creation**)
+- `src/application/cli/formatters/tests.rs` - Formatter unit tests (**exists**)
+- `src/application/cli/interactive/tests.rs` - Interactive unit tests (**exists**)
+- `tests/cli/integration_tests.rs` - CLI integration tests (⚠️ **needs creation**)
+- `tests/cli/onboarding_test.rs` - Onboarding integration test (⚠️ **needs creation**)
+- `tests/cli/setup_check_test.rs` - Setup check integration test (⚠️ **needs creation**)
+- `tests/cli/muster_test.rs` - Muster integration test (⚠️ **needs creation**)
+- `tests/cli/council_test.rs` - Council integration test (⚠️ **needs creation**)
+- `tests/cli/snapshots/` - Snapshot test output directory (⚠️ **needs creation**)
 
 ### Examples
 - `examples/cli_configs/basic_paladin.yaml` - Basic agent example config
@@ -67,6 +92,12 @@
 
 ### Notes
 
+- **Epic 17.5 Consolidation Complete**: All CLI code from `src/cli/` has been migrated to `src/application/cli/`
+- **Task 1.0 (Foundation) is COMPLETE**: Infrastructure, formatters, and interactive utilities are in place
+- **Onboarding command (Task 2.0) is ~90% complete**: ~450 lines, wizard framework functional
+- **Tasks 3.0-6.0 need implementation**: setup_check, features, muster, council are placeholders
+- **Config and templates migrated**: loader, paladin_config, battalion_config, templates all exist
+- **Legacy commands migrated**: agent, arsenal, battalion, maneuver, user commands functional
 - Unit tests should be placed in `src/application/cli/tests/` or alongside code files
 - Integration tests should be in `tests/cli/`
 - Snapshot tests should be in `tests/cli/snapshots/`
@@ -117,26 +148,26 @@ Update the file after completing each sub-task, not just after completing an ent
 
 - [x] **Task 1.0: Setup CLI Infrastructure (Foundation)**
 
-- [ ] 2.0 Implement onboarding wizard (US-18.1)
-  - [ ] 2.1 Create onboarding command in `src/application/cli/commands/onboarding.rs`
-  - [ ] 2.2 Implement welcome screen with emoji and formatted output
-  - [ ] 2.3 Implement provider selection prompt (OpenAI, Anthropic, DeepSeek)
-  - [ ] 2.4 Implement API key input with secure masking
-  - [ ] 2.5 Implement API key validation (actual API calls to test connectivity)
-  - [ ] 2.6 Implement .env file detection and conflict resolution (Overwrite/Skip/Merge options)
-  - [ ] 2.7 Implement .env file creation with proper formatting (FR-6)
-  - [ ] 2.8 Implement .env file merging logic (intelligent combination without duplicates)
-  - [ ] 2.9 Create templates module: `src/application/cli/templates/mod.rs`
-  - [ ] 2.10 Create .env template in `src/application/cli/templates/env.rs`
-  - [ ] 2.11 Create agent config templates in `src/application/cli/templates/agent.rs`
-  - [ ] 2.12 Create battalion config templates in `src/application/cli/templates/battalion.rs`
-  - [ ] 2.13 Implement sample config generation (basic_paladin.yaml, formation.yaml, phalanx.yaml, paladin_with_rag.yaml)
-  - [ ] 2.14 Implement resumable state tracking (save progress if interrupted)
-  - [ ] 2.15 Implement completion summary with next steps
-  - [ ] 2.16 Add command to CLI routing in `src/bin/paladin-cli.rs`
-  - [ ] 2.17 Write unit tests for onboarding logic
-  - [ ] 2.18 Create integration test in `tests/cli/onboarding_test.rs` with mocked API calls
-  - [ ] 2.19 Test interruption and resume functionality
+- [ ] 2.0 Implement onboarding wizard (US-18.1) [~90% COMPLETE]
+  - [x] 2.1 Create onboarding command in `src/application/cli/commands/onboarding.rs` (**~450 lines exist**)
+  - [x] 2.2 Implement welcome screen with emoji and formatted output (**exists**)
+  - [x] 2.3 Implement provider selection prompt (OpenAI, Anthropic, DeepSeek) (**exists**)
+  - [x] 2.4 Implement API key input with secure masking (**exists**)
+  - [ ] 2.5 Implement API key validation (actual API calls to test connectivity) (**needs verification**)
+  - [x] 2.6 Implement .env file detection and conflict resolution (Overwrite/Skip/Merge options) (**exists**)
+  - [x] 2.7 Implement .env file creation with proper formatting (FR-6) (**exists**)
+  - [x] 2.8 Implement .env file merging logic (intelligent combination without duplicates) (**exists**)
+  - [x] 2.9 Create templates module: `src/application/cli/templates/mod.rs` (**migrated from Epic 17.5**)
+  - [x] 2.10 Create .env template in `src/application/cli/templates/env.rs` (**exists**)
+  - [x] 2.11 Create agent config templates in `src/application/cli/templates/paladin_template.rs` (**migrated from Epic 17.5**)
+  - [x] 2.12 Create battalion config templates in `src/application/cli/templates/battalion_template.rs` (**migrated from Epic 17.5**)
+  - [ ] 2.13 Implement sample config generation (basic_paladin.yaml, formation.yaml, phalanx.yaml, paladin_with_rag.yaml) (**needs verification**)
+  - [ ] 2.14 Implement resumable state tracking (save progress if interrupted) (**needs verification**)
+  - [x] 2.15 Implement completion summary with next steps (**exists**)
+  - [x] 2.16 Add command to CLI routing in `src/bin/paladin-cli.rs` (**already routed**)
+  - [ ] 2.17 Write unit tests for onboarding logic (**needs implementation**)
+  - [ ] 2.18 Create integration test in `tests/cli/onboarding_test.rs` with mocked API calls (**needs creation**)
+  - [ ] 2.19 Test interruption and resume functionality (**needs testing**)
 
 - [ ] 3.0 Implement setup check command (US-18.2)
   - [ ] 3.1 Create setup-check command in `src/application/cli/commands/setup_check.rs`
