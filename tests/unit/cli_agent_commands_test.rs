@@ -1,7 +1,7 @@
 //! Unit tests for CLI agent commands
 
 use paladin::cli::commands::agent::{AgentNewArgs, handle_agent_new};
-use paladin::cli::output::errors::CliError;
+use paladin::application::cli::error::CliError;
 use std::fs;
 use tempfile::TempDir;
 
