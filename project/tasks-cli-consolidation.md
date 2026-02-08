@@ -130,22 +130,22 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.12 Update imports in `user.rs` following same pattern
   - [x] 3.13 Update `src/application/cli/commands/mod.rs` to export all new command modules
   - [x] 3.14 Add `pub mod agent;`, `pub mod battalion;`, `pub mod arsenal;`, `pub mod maneuver;`, `pub mod user;`
-  - [ ] 3.15 Run `cargo check` to verify command modules compile (blocked: needs config and templates modules migrated first)
+  - [x] 3.15 Run `cargo check` to verify command modules compile (blocked: needs config and templates modules migrated first)
 
-- [ ] 4.0 Migrate configuration modules to application/cli/config/
-  - [ ] 4.1 Create `src/application/cli/config/` directory
-  - [ ] 4.2 Create `src/application/cli/config/mod.rs` with module exports
-  - [ ] 4.3 Create `src/application/cli/config/loader.rs` by copying from `src/cli/config/loader.rs`
-  - [ ] 4.4 Update imports in `loader.rs` to use unified CliError
-  - [ ] 4.5 Update any file path handling to use consistent error conversion
-  - [ ] 4.6 Create `src/application/cli/config/paladin_config.rs` by copying from `src/cli/config/paladin_config.rs`
-  - [ ] 4.7 Update imports in `paladin_config.rs` to use `crate::application::cli::error`
-  - [ ] 4.8 Update serialization error handling to use unified CliError
-  - [ ] 4.9 Create `src/application/cli/config/battalion_config.rs` by copying from `src/cli/config/battalion_config.rs`
-  - [ ] 4.10 Update imports in `battalion_config.rs` following same pattern
-  - [ ] 4.11 Update `src/application/cli/config/mod.rs` to export: `pub mod loader;`, `pub mod paladin_config;`, `pub mod battalion_config;`
-  - [ ] 4.12 Go back to command modules (agent, battalion, arsenal, maneuver) and update config import paths
-  - [ ] 4.13 Run `cargo check` to verify config modules and commands compile together
+- [x] 4.0 Migrate configuration modules to application/cli/config/
+  - [x] 4.1 Create `src/application/cli/config/` directory
+  - [x] 4.2 Create `src/application/cli/config/mod.rs` with module exports
+  - [x] 4.3 Create `src/application/cli/config/loader.rs` by copying from `src/cli/config/loader.rs`
+  - [x] 4.4 Update imports in `loader.rs` to use unified CliError
+  - [x] 4.5 Update any file path handling to use consistent error conversion
+  - [x] 4.6 Create `src/application/cli/config/paladin_config.rs` by copying from `src/cli/config/paladin_config.rs`
+  - [x] 4.7 Update imports in `paladin_config.rs` to use `crate::application::cli::error`
+  - [x] 4.8 Update serialization error handling to use unified CliError
+  - [x] 4.9 Create `src/application/cli/config/battalion_config.rs` by copying from `src/cli/config/battalion_config.rs`
+  - [x] 4.10 Update imports in `battalion_config.rs` following same pattern
+  - [x] 4.11 Update `src/application/cli/config/mod.rs` to export: `pub mod loader;`, `pub mod paladin_config;`, `pub mod battalion_config;`
+  - [x] 4.12 Go back to command modules (agent, battalion, arsenal, maneuver) and update config import paths
+  - [x] 4.13 Run `cargo check` to verify config modules and commands compile together
 
 - [ ] 5.0 Consolidate formatters and output handling
   - [ ] 5.1 Read `src/cli/output/formatter.rs` to identify any functions not present in Epic 18 formatters
@@ -158,16 +158,16 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 5.8 Verify all progress indicators use `src/application/cli/formatters/progress.rs`
   - [ ] 5.9 Run `cargo check` to verify formatter consolidation
 
-- [ ] 6.0 Migrate templates to application/cli/templates/
-  - [ ] 6.1 Create `src/application/cli/templates/paladin_template.rs` by copying from `src/cli/templates/paladin_template.rs`
-  - [ ] 6.2 Update imports in `paladin_template.rs` to use unified CliError
-  - [ ] 6.3 Update template generation to use `crate::application::cli::config::paladin_config`
-  - [ ] 6.4 Create `src/application/cli/templates/battalion_template.rs` by copying from `src/cli/templates/battalion_template.rs`
-  - [ ] 6.5 Update imports in `battalion_template.rs` to use unified CliError
-  - [ ] 6.6 Update template generation to use `crate::application::cli::config::battalion_config`
-  - [ ] 6.7 Update `src/application/cli/templates/mod.rs` to add: `pub mod paladin_template;`, `pub mod battalion_template;`
-  - [ ] 6.8 Verify `env.rs` (Epic 18) remains functional
-  - [ ] 6.9 Run `cargo check` to verify template modules compile
+- [x] 6.0 Migrate templates to application/cli/templates/
+  - [x] 6.1 Create `src/application/cli/templates/paladin_template.rs` by copying from `src/cli/templates/paladin_template.rs`
+  - [x] 6.2 Update imports in `paladin_template.rs` to use unified CliError
+  - [x] 6.3 Update template generation to use `crate::application::cli::config::paladin_config`
+  - [x] 6.4 Create `src/application/cli/templates/battalion_template.rs` by copying from `src/cli/templates/battalion_template.rs`
+  - [x] 6.5 Update imports in `battalion_template.rs` to use unified CliError
+  - [x] 6.6 Update template generation to use `crate::application::cli::config::battalion_config`
+  - [x] 6.7 Update `src/application/cli/templates/mod.rs` to add: `pub mod paladin_template;`, `pub mod battalion_template;`
+  - [x] 6.8 Verify `env.rs` (Epic 18) remains functional
+  - [x] 6.9 Run `cargo check` to verify template modules compile
 
 - [ ] 7.0 Update all import paths throughout codebase
   - [ ] 7.1 Find all files with `use paladin::cli::` imports: `grep -r "use.*paladin::cli::" src/ tests/ --include="*.rs" -l`
