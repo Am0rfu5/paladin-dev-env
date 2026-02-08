@@ -1,6 +1,6 @@
 //! .env file template generation
 
-use crate::cli::output::errors::CliError;
+use crate::application::cli::error::CliError;
 use std::collections::HashMap;
 
 /// Template for generating .env files

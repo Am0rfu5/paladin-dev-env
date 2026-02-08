@@ -1,6 +1,6 @@
 //! Features discovery command (placeholder for Task 4.0)
 
-use crate::cli::output::errors::CliError;
+use crate::application::cli::error::CliError;
 
 /// Display available features and commands
 pub async fn run_features(

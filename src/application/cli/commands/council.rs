@@ -1,6 +1,6 @@
 //! Council command - quick group discussions (placeholder for Task 6.0)
 
-use crate::cli::output::errors::CliError;
+use crate::application::cli::error::CliError;
 
 /// Run a council discussion
 pub async fn run_council(

@@ -429,7 +429,7 @@ fn write_env_file(context: &WizardContext, merge: bool) -> CliResult<()> {
 }
 
 /// Run the onboarding wizard
-pub async fn run_onboarding() -> Result<(), crate::cli::output::errors::CliError> {
+pub async fn run_onboarding() -> CliResult<()> {
     let wizard = Wizard::new()
         .add_step(Box::new(WelcomeStep))
         .add_step(Box::new(ProviderSelectionStep))

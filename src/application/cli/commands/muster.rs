@@ -1,6 +1,6 @@
 //! Muster command - LLM-powered battalion generation (placeholder for Task 5.0)
 
-use crate::cli::output::errors::CliError;
+use crate::application::cli::error::CliError;
 
 /// Generate battalion configuration from task description
 pub async fn run_muster(

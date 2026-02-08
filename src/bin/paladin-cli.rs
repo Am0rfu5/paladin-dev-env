@@ -1,13 +1,17 @@
 /// Paladin CLI - Command-line interface for Paladin multi-agent orchestration
 use clap::{Parser, Subcommand};
-use paladin::application::cli::commands::{council, features, muster, onboarding, setup_check};
-use paladin::cli::commands::{
-    agent::{AgentCommands, handle_agent_new, handle_agent_run},
-    arsenal::{ArsenalCommands, handle_arsenal_command},
-    battalion::{BattalionCommands, handle_battalion_new, handle_battalion_run},
-    maneuver::{ManeuverCommands, handle_maneuver_command},
+use paladin::application::cli::commands::{
+    agent::{handle_agent_new, handle_agent_run, AgentCommands},
+    arsenal::{handle_arsenal_command, ArsenalCommands},
+    battalion::{handle_battalion_new, handle_battalion_run, BattalionCommands},
+    council,
+    features,
+    maneuver::{handle_maneuver_command, ManeuverCommands},
+    muster,
+    onboarding,
+    setup_check,
 };
-use paladin::cli::output::errors::CliError;
+use paladin::application::cli::error::CliError;
 use std::process;
 use tokio::signal;
 
@@ -141,12 +145,11 @@ async fn main() {
         Commands::Arsenal { action } => handle_arsenal_command(action).await,
         Commands::Maneuver { action } => handle_maneuver_command(action).await,
         Commands::Onboarding => onboarding::run_onboarding().await,
-        Commands::SetupCheck { verbose } => match setup_check::run_setup_check(verbose).await {
-            Ok(exit_code) => process::exit(exit_code),
-            Err(e) => Err(CliError::ExecutionError {
-                message: e.to_string(),
-            }),
-        },
+        Commands::SetupCheck { verbose } => {
+            setup_check::run_setup_check(verbose).await.map(|exit_code| {
+                process::exit(exit_code);
+            })
+        }
         Commands::Features { category, format } => features::run_features(category, format).await,
         Commands::Muster {
             task,
@@ -184,7 +187,8 @@ async fn main() {
     // - 2: Runtime errors (LLM, execution, tools)
     // - 130: SIGINT (handled by signal handler above)
     if let Err(e) = result {
-        eprintln!("{}", e.format_detailed());
-        process::exit(e.exit_code());
+        let error: CliError = e;
+        eprintln!("{}", error.format_detailed());
+        process::exit(error.exit_code());
     }
 }

@@ -1,6 +1,6 @@
 //! Setup check command (placeholder for Task 3.0)
 
-use crate::cli::output::errors::CliError;
+use crate::application::cli::error::CliError;
 
 /// Run environment setup checks
 pub async fn run_setup_check(verbose: bool) -> Result<i32, CliError> {

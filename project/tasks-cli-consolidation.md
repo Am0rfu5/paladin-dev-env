@@ -169,18 +169,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.8 Verify `env.rs` (Epic 18) remains functional
   - [x] 6.9 Run `cargo check` to verify template modules compile
 
-- [ ] 7.0 Update all import paths throughout codebase
-  - [ ] 7.1 Find all files with `use paladin::cli::` imports: `grep -r "use.*paladin::cli::" src/ tests/ --include="*.rs" -l`
-  - [ ] 7.2 Create Python script to systematically replace `paladin::cli::` with `paladin::application::cli::`
-  - [ ] 7.3 Update imports in `src/bin/paladin-cli.rs` first (critical path)
-  - [ ] 7.4 Update imports in all files under `src/application/use_cases/` that reference CLI
-  - [ ] 7.5 Update imports in all files under `src/infrastructure/adapters/` that reference CLI
-  - [ ] 7.6 Update imports in all test files under `tests/integration/` that test CLI commands
-  - [ ] 7.7 Update imports in all test files under `tests/functional/` that test CLI workflows
-  - [ ] 7.8 Run `cargo check` after each batch of 10-15 files to catch errors early
-  - [ ] 7.9 Fix any remaining import errors identified by compiler
-  - [ ] 7.10 Search for any remaining `cli::output::errors::CliError` references and replace with `application::cli::error::CliError`
-  - [ ] 7.11 Search for any remaining `cli::output::formatter` references and replace with `application::cli::formatters::output::OutputFormatter`
+- [x] 7.0 Update all import paths throughout codebase
+  - [x] 7.1 Find all files with `use paladin::cli::` imports: `grep -r "use.*paladin::cli::" src/ tests/ --include="*.rs" -l`
+  - [x] 7.2 Create Python script to systematically replace `paladin::cli::` with `paladin::application::cli::`
+  - [x] 7.3 Update imports in `src/bin/paladin-cli.rs` first (critical path)
+  - [x] 7.4 Update imports in all files under `src/application/use_cases/` that reference CLI
+  - [x] 7.5 Update imports in all files under `src/infrastructure/adapters/` that reference CLI
+  - [x] 7.6 Update imports in all test files under `tests/integration/` that test CLI commands
+  - [x] 7.7 Update imports in all test files under `tests/functional/` that test CLI workflows
+  - [x] 7.8 Run `cargo check` after each batch of 10-15 files to catch errors early
+  - [x] 7.9 Fix any remaining import errors identified by compiler
+  - [x] 7.10 Search for any remaining `cli::output::errors::CliError` references and replace with `application::cli::error::CliError`
+  - [x] 7.11 Search for any remaining `cli::output::formatter` references and replace with `application::cli::formatters::output::OutputFormatter`
 
 - [ ] 8.0 Update binary entry point (paladin-cli.rs)
   - [ ] 8.1 Read `src/bin/paladin-cli.rs` to understand current CLI command structure
