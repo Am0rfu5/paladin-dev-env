@@ -94,7 +94,7 @@ Files to create/update:
 - src/application/ports/output/user_repository_port.rs (new)
 - src/infrastructure/repositories/sqlite_user_repository.rs (new)
 - src/infrastructure/web/user_controller.rs (new)
-- src/cli/user_commands.rs (new)
+- src/application/cli/commands/user.rs (new)
 - src/config/user_config.rs (new)
 - Update src/config/setup/service_runner.rs
 - Update Cargo.toml with dependencies

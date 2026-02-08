@@ -223,17 +223,17 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 11.10 Verify all 1400+ tests still pass
   - [ ] 11.11 Run benchmarks if applicable: `cargo bench` (optional)
 
-- [ ] 12.0 Update documentation
-  - [ ] 12.1 Update `docs/CLI_USAGE.md` to reflect new import paths in code examples
-  - [ ] 12.2 Update any architecture diagrams in `docs/Design/` that show CLI module structure
-  - [ ] 12.3 Update `docs/CONTRIBUTING.md` if it mentions CLI development location
-  - [ ] 12.4 Add migration note to `CHANGELOG.md` explaining consolidation
-  - [ ] 12.5 Update `README.md` if it contains CLI examples with import statements
-  - [ ] 12.6 Review `docs/architecture/` for any references to old `src/cli/` structure
-  - [ ] 12.7 Update any code comments in `src/application/cli/mod.rs` explaining the consolidation
-  - [ ] 12.8 Add rustdoc comments to `src/application/cli/mod.rs` explaining the unified CLI structure
-  - [ ] 12.9 Stage documentation changes: `git add docs/ README.md CHANGELOG.md`
-  - [ ] 12.10 Commit documentation updates: `git commit -m "docs: update CLI documentation after consolidation"`
+- [x] 12.0 Update documentation
+  - [x] 12.1 Update `docs/CLI_USAGE.md` to reflect new import paths in code examples
+  - [x] 12.2 Update any architecture diagrams in `docs/Design/` that show CLI module structure
+  - [x] 12.3 Update `docs/CONTRIBUTING.md` if it mentions CLI development location
+  - [x] 12.4 Add migration note to `CHANGELOG.md` explaining consolidation
+  - [x] 12.5 Update `README.md` if it contains CLI examples with import statements
+  - [x] 12.6 Review `docs/architecture/` for any references to old `src/cli/` structure
+  - [x] 12.7 Update any code comments in `src/application/cli/mod.rs` explaining the consolidation
+  - [x] 12.8 Add rustdoc comments to `src/application/cli/mod.rs` explaining the unified CLI structure
+  - [x] 12.9 Stage documentation changes: `git add docs/ README.md CHANGELOG.md`
+  - [x] 12.10 Commit documentation updates: `git commit -m "docs: update CLI documentation after consolidation"`
 
 - [ ] 13.0 Final verification and commit
   - [ ] 13.1 Run `cargo check` one final time

@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - Epic 17.5: CLI Directory Consolidation
+
+#### CLI Module Consolidation
+- **Unified CLI Structure**: Consolidated all CLI code into `src/application/cli/`
+  - Removed legacy `src/cli/` directory (18 files)
+  - All CLI functionality now follows hexagonal architecture in application layer
+  - Commands: agent, arsenal, battalion, maneuver, user
+  - Config: paladin_config, battalion_config, loader
+  - Output: Unified `CliError` type with 25+ variants
+  - Templates: paladin_template, battalion_template
+  - Interactive: TTY utilities and prompts
+
+- **Error Handling**: Single unified error type
+  - Merged `src/cli/output/errors::CliError` and `src/application/cli::error::CliError`
+  - All CLI commands now use `CliError` and `CliResult` from `application::cli::error`
+  - Removed duplicate error conversion logic
+  - Improved error messages with detailed formatting
+
+- **Import Path Changes**: Updated all imports to new structure
+  - **Old**: `use paladin::cli::*;` (deprecated and removed)
+  - **New**: `use paladin::application::cli::*;`
+  - Binary entry point (`paladin-cli.rs`) updated
+  - All examples and tests updated
+
+- **Code Quality Improvements**:
+  - Fixed 27 clippy warnings (clone_on_copy, field_reassign_with_default, etc.)
+  - All tests passing: 1411 unit tests
+  - Zero clippy warnings with `-D warnings`
+  - Code formatted with `cargo fmt`
+
+#### Migration Guide for Developers
+
+If you have code importing from the old CLI structure, update your imports:
+
+```rust
+// OLD (removed)
+use paladin::cli::output::errors::CliError;
+use paladin::cli::commands::agent;
+use paladin::cli::config::loader::load_paladin_config;
+
+// NEW (current)
+use paladin::application::cli::error::{CliError, CliResult};
+use paladin::application::cli::commands::agent;
+use paladin::application::cli::config::loader::load_paladin_config;
+```
+
+The `src/cli/` directory has been completely removed. All CLI functionality is now properly organized in the application layer following hexagonal architecture principles.
+
 ### Added - Epic 17: Flow DSL & Agent Rearrangement (Maneuver Pattern)
 
 #### Flow DSL Parser
