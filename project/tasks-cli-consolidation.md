@@ -147,16 +147,16 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.12 Go back to command modules (agent, battalion, arsenal, maneuver) and update config import paths
   - [x] 4.13 Run `cargo check` to verify config modules and commands compile together
 
-- [ ] 5.0 Consolidate formatters and output handling
-  - [ ] 5.1 Read `src/cli/output/formatter.rs` to identify any functions not present in Epic 18 formatters
-  - [ ] 5.2 Compare with `src/application/cli/formatters/output.rs` to identify gaps
-  - [ ] 5.3 If old formatter has unique functions, migrate them to `src/application/cli/formatters/output.rs`
-  - [ ] 5.4 Add any missing color formatting functions
-  - [ ] 5.5 Add any missing table formatting functions not in `table.rs`
-  - [ ] 5.6 Ensure `OutputFormatter` in Epic 18 version has all capabilities of old formatter
-  - [ ] 5.7 Update any command files still referencing old formatter to use new `OutputFormatter`
-  - [ ] 5.8 Verify all progress indicators use `src/application/cli/formatters/progress.rs`
-  - [ ] 5.9 Run `cargo check` to verify formatter consolidation
+- [x] 5.0 Consolidate formatters and output handling
+  - [x] 5.1 Read `src/cli/output/formatter.rs` to identify any functions not present in Epic 18 formatters
+  - [x] 5.2 Compare with `src/application/cli/formatters/output.rs` to identify gaps
+  - [x] 5.3 If old formatter has unique functions, migrate them to `src/application/cli/formatters/output.rs`
+  - [x] 5.4 Add any missing color formatting functions
+  - [x] 5.5 Add any missing table formatting functions not in `table.rs`
+  - [x] 5.6 Ensure `OutputFormatter` in Epic 18 version has all capabilities of old formatter
+  - [x] 5.7 Update any command files still referencing old formatter to use new `OutputFormatter`
+  - [x] 5.8 Verify all progress indicators use `src/application/cli/formatters/progress.rs`
+  - [x] 5.9 Run `cargo check` to verify formatter consolidation
 
 - [x] 6.0 Migrate templates to application/cli/templates/
   - [x] 6.1 Create `src/application/cli/templates/paladin_template.rs` by copying from `src/cli/templates/paladin_template.rs`
