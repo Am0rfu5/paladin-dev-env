@@ -1,100 +1,128 @@
-//! CLI-specific error types
+//! Unified CLI error types with user-friendly formatting
+//!
+//! This module defines all error types used by the Paladin CLI,
+//! with Display implementations that provide helpful error messages.
+//!
+//! # Error Categories
+//!
+//! - **Validation errors**: Invalid config, missing fields
+//! - **Execution errors**: LLM failures, timeout, stop words
+//! - **I/O errors**: File not found, permission denied
+//! - **User interaction**: Cancelled operations
 
+use std::path::PathBuf;
 use thiserror::Error;
 
 /// Result type for CLI operations
 pub type CliResult<T> = Result<T, CliError>;
 
-/// Errors that can occur during CLI operations
+/// Unified CLI operation errors with actionable error messages
 #[derive(Debug, Error)]
 pub enum CliError {
-    /// Configuration error
-    #[error("Configuration error: {0}")]
-    ConfigurationError(String),
+    /// Configuration file not found
+    #[error("Configuration file not found: {path}")]
+    ConfigFileNotFound { path: PathBuf },
 
-    /// Network error
-    #[error("Network error: {0}")]
-    NetworkError(String),
+    /// Invalid YAML syntax
+    #[error("Invalid YAML syntax in configuration file")]
+    InvalidYaml {
+        path: PathBuf,
+        source: serde_yaml::Error,
+    },
 
-    /// Validation error
-    #[error("Validation error: {0}")]
-    ValidationError(String),
+    /// Configuration validation failed
+    #[error("Configuration validation failed: {message}")]
+    ValidationError { message: String },
 
-    /// User input error
-    #[error("User input error: {0}")]
-    UserInputError(String),
+    /// Missing required field
+    #[error("Missing required field: {field}. {message}")]
+    MissingRequiredField { field: String, message: String },
 
-    /// File I/O error
-    #[error("File I/O error: {0}")]
-    IoError(#[from] std::io::Error),
+    /// Invalid field value
+    #[error("Invalid value for field '{field}': {message}")]
+    InvalidFieldValue { field: String, message: String },
 
-    /// YAML parsing error
-    #[error("YAML parsing error: {0}")]
-    YamlError(#[from] serde_yaml::Error),
+    /// Missing API key
+    #[error("Missing API key for {provider}. Please set {env_var}")]
+    MissingApiKey { provider: String, env_var: String },
 
-    /// JSON parsing error
-    #[error("JSON parsing error: {0}")]
-    JsonError(#[from] serde_json::Error),
+    /// File already exists
+    #[error("File already exists: {path}")]
+    FileAlreadyExists { path: PathBuf },
 
-    /// LLM error
-    #[error("LLM error: {0}")]
-    LlmError(String),
-
-    /// Command execution error
-    #[error("Command execution error: {0}")]
-    ExecutionError(String),
+    /// IO error
+    #[error("IO error: {message}")]
+    IoError {
+        message: String,
+        #[source]
+        source: std::io::Error,
+    },
 
     /// User cancelled operation
     #[error("Operation cancelled by user")]
     Cancelled,
 
-    /// Missing required field
-    #[error("Missing required field: {0}")]
-    MissingField(String),
+    /// LLM execution error
+    #[error("LLM execution error: {message}")]
+    LlmError { message: String },
 
-    /// Invalid argument
-    #[error("Invalid argument: {0}")]
-    InvalidArgument(String),
-}
+    /// LLM provider creation error
+    #[error("LLM provider error: {message}")]
+    LlmProviderError { message: String },
 
-impl CliError {
-    /// Create a configuration error
-    pub fn configuration(msg: impl Into<String>) -> Self {
-        Self::ConfigurationError(msg.into())
-    }
+    /// Paladin execution error
+    #[error("Paladin execution error: {message}")]
+    ExecutionError { message: String },
 
-    /// Create a network error
-    pub fn network(msg: impl Into<String>) -> Self {
-        Self::NetworkError(msg.into())
-    }
+    /// Battalion execution error
+    #[error("Battalion execution error: {message}")]
+    BattalionError { message: String },
 
-    /// Create a validation error
-    pub fn validation(msg: impl Into<String>) -> Self {
-        Self::ValidationError(msg.into())
-    }
+    /// Tool execution error
+    #[error("Tool execution error: {message}")]
+    ToolError { message: String },
 
-    /// Create a user input error
-    pub fn user_input(msg: impl Into<String>) -> Self {
-        Self::UserInputError(msg.into())
-    }
+    /// MCP connection error
+    #[error("MCP connection error: {message}")]
+    McpConnectionError { message: String },
 
-    /// Create an LLM error
-    pub fn llm(msg: impl Into<String>) -> Self {
-        Self::LlmError(msg.into())
-    }
+    /// Serialization error
+    #[error("Serialization error: {message}")]
+    SerializationError { message: String },
 
-    /// Create an execution error
-    pub fn execution(msg: impl Into<String>) -> Self {
-        Self::ExecutionError(msg.into())
-    }
+    /// Invalid file path
+    #[error("Invalid file path '{path}': {message}")]
+    InvalidFilePath { path: String, message: String },
 
-    /// Create a missing field error
-    pub fn missing_field(field: impl Into<String>) -> Self {
-        Self::MissingField(field.into())
-    }
+    /// Unsupported file format
+    #[error("Unsupported format '{format}'. Supported formats: {supported}")]
+    UnsupportedFormat { format: String, supported: String },
 
-    /// Create an invalid argument error
-    pub fn invalid_argument(msg: impl Into<String>) -> Self {
-        Self::InvalidArgument(msg.into())
-    }
+    /// File read error
+    #[error("Failed to read file '{path}': {message}")]
+    FileReadError { path: String, message: String },
+
+    /// Vision processing error
+    #[error("Vision processing error: {message}")]
+    VisionProcessingError { message: String },
+
+    /// Document processing error
+    #[error("Document processing error: {message}")]
+    DocumentProcessingError { message: String },
+
+    /// Network error
+    #[error("Network error: {0}")]
+    NetworkError(String),
+
+    /// User input error
+    #[error("User input error: {0}")]
+    UserInputError(String),
+
+    /// JSON parsing error
+    #[error("JSON parsing error: {0}")]
+    JsonError(String),
+
+    /// Generic error
+    #[error("{0}")]
+    Other(String),
 }

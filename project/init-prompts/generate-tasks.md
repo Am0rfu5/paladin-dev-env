@@ -28,17 +28,16 @@ The generated task list _must_ follow this structure:
 ```markdown
 ## Relevant Files
 
-- `path/to/potential/file1.sol` - Brief description of why this file is relevant (e.g., Contains the main component for this feature).
-- `path/to/file1.test.sol` - Unit tests for `file1.sol`.
-- `path/to/another/file.sol` - Brief description (e.g., API route handler for data submission).
-- `path/to/another/file.test.sol` - Unit tests for `another/file.sol`.
-- `lib/utils/helpers.sol` - Brief description (e.g., Utility functions needed for calculations).
-- `lib/utils/helpers.test.sol` - Unit tests for `helpers.sol`.
+- `path/to/potential/file1.rs` - Brief description of why this file is relevant (e.g., Contains the main component for this feature).
+- `tests/path/to/file1_test.rs` - Unit tests for `file1.rs`.
+- `path/to/another/file.rs` - Brief description (e.g., API route handler for data submission).
+- `tests/path/to/another/file_test.rs` - tests for `another/file.rs`.
+- `src/utils/helpers.rs` - Brief description (e.g., Utility functions needed for calculations).
 
 ### Notes
 
-- Unit tests should typically be placed alongside the code files they are testing (e.g., `MyComponent.tsx` and `MyComponent.test.tsx` in the same directory).
-- Use `npx jest [optional/path/to/test/file]` to run tests. Running without a path executes all tests found by the Jest configuration.
+- Unit tests should typically be placed alongside the code they are testing in the same file.
+- Use `cargo test [optional/path/to/test/file]` to run tests. Running without a path executes all tests found by the Jest configuration.
 
 ## Instructions for Completing Tasks
 

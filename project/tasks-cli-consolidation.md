@@ -102,18 +102,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.5 Identify files using both CliError types (search for `cli::output::errors::CliError` and `application::cli::error::CliError`)
   - [x] 1.6 Document findings: create a mapping of which files need import updates
 
-- [ ] 2.0 Consolidate error handling into unified CliError
-  - [ ] 2.1 Read `src/cli/output/errors.rs` to understand old CliError structure
-  - [ ] 2.2 Read `src/application/cli/error.rs` to understand new CliError structure
-  - [ ] 2.3 Identify all unique error variants from both error types
-  - [ ] 2.4 Design unified CliError enum in `src/application/cli/error.rs` that includes all variants
-  - [ ] 2.5 Add conversion traits: `impl From<crate::cli::output::errors::CliError> for CliError`
-  - [ ] 2.6 Add conversion traits: `impl From<std::io::Error> for CliError`
-  - [ ] 2.7 Add conversion traits: `impl From<serde_yaml::Error> for CliError`
-  - [ ] 2.8 Add conversion traits for any other error types used in old CLI
-  - [ ] 2.9 Update `CliResult<T>` type alias to use unified error
-  - [ ] 2.10 Write unit tests for error conversions in `src/application/cli/error.rs`
-  - [ ] 2.11 Run `cargo test` to verify error handling tests pass
+- [x] 2.0 Consolidate error handling into unified CliError
+  - [x] 2.1 Read `src/cli/output/errors.rs` to understand old CliError structure
+  - [x] 2.2 Read `src/application/cli/error.rs` to understand new CliError structure
+  - [x] 2.3 Identify all unique error variants from both error types
+  - [x] 2.4 Design unified CliError enum in `src/application/cli/error.rs` that includes all variants
+  - [x] 2.5 Add conversion traits: `impl From<crate::cli::output::errors::CliError> for CliError`
+  - [x] 2.6 Add conversion traits: `impl From<std::io::Error> for CliError`
+  - [x] 2.7 Add conversion traits: `impl From<serde_yaml::Error> for CliError`
+  - [x] 2.8 Add conversion traits for any other error types used in old CLI
+  - [x] 2.9 Update `CliResult<T>` type alias to use unified error
+  - [x] 2.10 Write unit tests for error conversions in `src/application/cli/error.rs`
+  - [x] 2.11 Run `cargo test` to verify error handling tests pass
 
 - [ ] 3.0 Migrate command modules to application/cli/commands/
   - [ ] 3.1 Create `src/application/cli/commands/agent.rs` by copying from `src/cli/commands/agent.rs`

@@ -5,6 +5,7 @@
 
 pub mod commands;
 pub mod error;
+mod error_impl; // Implementation details
 pub mod formatters;
 pub mod interactive;
 pub mod templates;

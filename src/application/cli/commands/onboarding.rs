@@ -151,7 +151,7 @@ impl WizardStep for ApiKeyInputStep {
 
         let provider_names = context
             .get(KEY_SELECTED_PROVIDERS)
-            .ok_or_else(|| CliError::ConfigurationError("No providers selected".to_string()))?;
+            .ok_or_else(|| CliError::configuration("No providers selected".to_string()))?;
 
         let providers: Vec<Provider> = provider_names
             .split(',')
@@ -208,7 +208,7 @@ impl WizardStep for ApiValidationStep {
 
         let provider_names = context
             .get(KEY_SELECTED_PROVIDERS)
-            .ok_or_else(|| CliError::ConfigurationError("No providers selected".to_string()))?;
+            .ok_or_else(|| CliError::configuration("No providers selected".to_string()))?;
 
         let providers: Vec<Provider> = provider_names
             .split(',')
@@ -396,7 +396,7 @@ impl WizardStep for SummaryStep {
 fn write_env_file(context: &WizardContext, merge: bool) -> CliResult<()> {
     let provider_names = context
         .get(KEY_SELECTED_PROVIDERS)
-        .ok_or_else(|| CliError::ConfigurationError("No providers selected".to_string()))?;
+        .ok_or_else(|| CliError::configuration("No providers selected".to_string()))?;
 
     let providers: Vec<Provider> = provider_names
         .split(',')
@@ -421,7 +421,7 @@ fn write_env_file(context: &WizardContext, merge: bool) -> CliResult<()> {
     let template = EnvTemplate::new();
     let content = template
         .generate(&api_keys, existing_content.as_deref())
-        .map_err(|e| CliError::ConfigurationError(format!("Template error: {}", e)))?;
+        .map_err(|e| CliError::configuration(format!("Template error: {}", e)))?;
 
     std::fs::write(".env", content)?;
 
