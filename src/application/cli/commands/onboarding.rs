@@ -8,8 +8,11 @@ use crate::application::cli::formatters::progress::Spinner;
 use crate::application::cli::interactive::prompts::PromptBuilder;
 use crate::application::cli::interactive::wizard::{StepResult, Wizard, WizardContext, WizardStep};
 use crate::application::cli::templates::env::EnvTemplate;
+use reqwest::Client;
+use serde_json::json;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::time::Duration;
 
 // Constants for context keys
 const KEY_SELECTED_PROVIDERS: &str = "selected_providers";
@@ -54,6 +57,181 @@ impl Provider {
             _ => None,
         }
     }
+}
+
+// API Validation Functions
+
+/// Validate OpenAI API key by calling the models endpoint
+async fn validate_openai_key(api_key: &str) -> CliResult<()> {
+    let client = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| CliError::execution(format!("Failed to create HTTP client: {}", e)))?;
+
+    let response = client
+        .get("https://api.openai.com/v1/models")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await
+        .map_err(|e| CliError::execution(format!("API request failed: {}", e)))?;
+
+    if response.status().is_success() {
+        Ok(())
+    } else {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        Err(CliError::execution(format!(
+            "OpenAI API validation failed ({}): {}",
+            status, error_text
+        )))
+    }
+}
+
+/// Validate Anthropic API key by making a minimal request
+async fn validate_anthropic_key(api_key: &str) -> CliResult<()> {
+    let client = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| CliError::execution(format!("Failed to create HTTP client: {}", e)))?;
+
+    // Anthropic uses x-api-key header
+    let body = json!({
+        "model": "claude-3-haiku-20240307",
+        "max_tokens": 1,
+        "messages": [{"role": "user", "content": "test"}]
+    });
+
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| CliError::execution(format!("API request failed: {}", e)))?;
+
+    if response.status().is_success() {
+        Ok(())
+    } else {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        Err(CliError::execution(format!(
+            "Anthropic API validation failed ({}): {}",
+            status, error_text
+        )))
+    }
+}
+
+/// Validate DeepSeek API key by calling the models endpoint
+async fn validate_deepseek_key(api_key: &str) -> CliResult<()> {
+    let client = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| CliError::execution(format!("Failed to create HTTP client: {}", e)))?;
+
+    let response = client
+        .get("https://api.deepseek.com/v1/models")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await
+        .map_err(|e| CliError::execution(format!("API request failed: {}", e)))?;
+
+    if response.status().is_success() {
+        Ok(())
+    } else {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        Err(CliError::execution(format!(
+            "DeepSeek API validation failed ({}): {}",
+            status, error_text
+        )))
+    }
+}
+
+/// Generate sample configuration files
+fn generate_sample_configs(provider: &str) -> CliResult<()> {
+    use crate::application::cli::templates::battalion_template::generate_battalion_template;
+    use crate::application::cli::templates::paladin_template::generate_paladin_template;
+    use std::fs;
+
+    // Create examples directory if it doesn't exist
+    let examples_dir = PathBuf::from("examples");
+    fs::create_dir_all(&examples_dir)
+        .map_err(|e| CliError::execution(format!("Failed to create examples directory: {}", e)))?;
+
+    // Generate basic_paladin.yaml
+    let basic_paladin = generate_paladin_template("Assistant", provider);
+    let basic_path = examples_dir.join("basic_paladin.yaml");
+    fs::write(&basic_path, basic_paladin)
+        .map_err(|e| CliError::execution(format!("Failed to write basic_paladin.yaml: {}", e)))?;
+
+    // Generate formation.yaml
+    let formation = generate_battalion_template("AnalysisPipeline", "formation").map_err(|e| {
+        CliError::execution(format!("Failed to generate formation template: {}", e))
+    })?;
+    let formation_path = examples_dir.join("formation.yaml");
+    fs::write(&formation_path, formation)
+        .map_err(|e| CliError::execution(format!("Failed to write formation.yaml: {}", e)))?;
+
+    // Generate phalanx.yaml
+    let phalanx = generate_battalion_template("ParallelProcessors", "phalanx")
+        .map_err(|e| CliError::execution(format!("Failed to generate phalanx template: {}", e)))?;
+    let phalanx_path = examples_dir.join("phalanx.yaml");
+    fs::write(&phalanx_path, phalanx)
+        .map_err(|e| CliError::execution(format!("Failed to write phalanx.yaml: {}", e)))?;
+
+    // Generate paladin_with_rag.yaml - enhanced version with garrison
+    let rag_paladin = format!(
+        r#"# Paladin with RAG Configuration
+# This Paladin includes Garrison (memory) for context retention
+
+name: "RAGAssistant"
+
+system_prompt: |
+  You are a knowledgeable AI assistant with access to conversation history.
+  Use previous context to provide more relevant and contextual responses.
+  Reference prior information when appropriate.
+
+model: "{model}"
+
+temperature: 0.7
+max_loops: 3
+timeout_seconds: 300
+
+provider:
+  type: {provider}
+
+# Enable Garrison for context/memory
+garrison:
+  type: sqlite
+  config:
+    path: "./garrison.db"
+    max_entries: 100
+
+# Optional: Add Arsenal for tool access
+# arsenal:
+#   mcp_servers:
+#     - name: web_search
+#       type: stdio
+#       command: uvx
+#       args:
+#         - mcp-web-search
+"#,
+        model = match provider {
+            "openai" => "gpt-4",
+            "deepseek" => "deepseek-chat",
+            "anthropic" => "claude-3-5-sonnet-20241022",
+            _ => "gpt-4",
+        },
+        provider = provider
+    );
+    let rag_path = examples_dir.join("paladin_with_rag.yaml");
+    fs::write(&rag_path, rag_paladin).map_err(|e| {
+        CliError::execution(format!("Failed to write paladin_with_rag.yaml: {}", e))
+    })?;
+
+    Ok(())
 }
 
 // Welcome Step
@@ -217,14 +395,32 @@ impl WizardStep for ApiValidationStep {
 
         for provider in &providers {
             let key_name = format!("{}{}", KEY_API_KEYS_PREFIX, provider.name());
-            if context.contains(&key_name) {
+            if let Some(api_key) = context.get(&key_name) {
                 let spinner = Spinner::new(format!("Validating {}...", provider.name()));
 
-                // TODO: Implement actual API validation calls
-                // For now, simulate validation
-                std::thread::sleep(std::time::Duration::from_millis(800));
+                // Validate API key with actual API call
+                let validation_result = tokio::task::block_in_place(|| {
+                    tokio::runtime::Handle::current().block_on(async {
+                        match provider {
+                            Provider::OpenAI => validate_openai_key(api_key).await,
+                            Provider::Anthropic => validate_anthropic_key(api_key).await,
+                            Provider::DeepSeek => validate_deepseek_key(api_key).await,
+                        }
+                    })
+                });
 
-                spinner.finish_with_message(format!("{} ✓", provider.name()));
+                match validation_result {
+                    Ok(_) => {
+                        spinner.finish_with_message(format!("{} ✓", provider.name()));
+                    }
+                    Err(e) => {
+                        spinner.finish_with_message(format!("{} ✗", provider.name()));
+                        formatter.error(&format!("Validation failed: {}", e));
+                        println!();
+                        formatter.warning("You can continue setup, but verify your API key later.");
+                        println!();
+                    }
+                }
             }
         }
 
@@ -321,18 +517,34 @@ impl WizardStep for SampleConfigsStep {
         if create {
             let spinner = Spinner::new("Generating samples...");
 
-            // TODO: Implement actual sample generation
-            std::thread::sleep(std::time::Duration::from_millis(500));
+            // Get the first configured provider for sample generation
+            let provider = context
+                .get(KEY_SELECTED_PROVIDERS)
+                .and_then(|providers| providers.split(',').next().map(String::from))
+                .unwrap_or_else(|| "openai".to_string())
+                .to_lowercase();
 
-            spinner.finish_with_message("Sample files created");
+            // Generate sample configuration files
+            let result = generate_sample_configs(&provider);
 
-            println!();
-            println!("  • examples/basic_paladin.yaml");
-            println!("  • examples/formation.yaml");
-            println!("  • examples/phalanx.yaml");
-            println!("  • examples/paladin_with_rag.yaml");
+            match result {
+                Ok(_) => {
+                    spinner.finish_with_message("Sample files created");
 
-            context.set(KEY_CREATE_SAMPLES, "true");
+                    println!();
+                    println!("  • examples/basic_paladin.yaml");
+                    println!("  • examples/formation.yaml");
+                    println!("  • examples/phalanx.yaml");
+                    println!("  • examples/paladin_with_rag.yaml");
+
+                    context.set(KEY_CREATE_SAMPLES, "true");
+                }
+                Err(e) => {
+                    spinner.finish_with_message("Failed to create samples");
+                    formatter.error(&format!("Error generating samples: {}", e));
+                    formatter.warning("You can manually create configuration files later.");
+                }
+            }
         } else {
             formatter.info("Skipped sample generation");
         }
@@ -444,4 +656,113 @@ pub async fn run_onboarding() -> CliResult<()> {
     wizard.run().map_err(|e| CliError::Other(e.to_string()))?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio;
+
+    #[test]
+    fn test_provider_enum_name() {
+        assert_eq!(Provider::OpenAI.name(), "OpenAI");
+        assert_eq!(Provider::Anthropic.name(), "Anthropic");
+        assert_eq!(Provider::DeepSeek.name(), "DeepSeek");
+    }
+
+    #[test]
+    fn test_provider_env_var() {
+        assert_eq!(Provider::OpenAI.env_var(), "OPENAI_API_KEY");
+        assert_eq!(Provider::Anthropic.env_var(), "ANTHROPIC_API_KEY");
+        assert_eq!(Provider::DeepSeek.env_var(), "DEEPSEEK_API_KEY");
+    }
+
+    #[test]
+    fn test_provider_from_name() {
+        assert_eq!(Provider::from_name("OpenAI"), Some(Provider::OpenAI));
+        assert_eq!(Provider::from_name("Anthropic"), Some(Provider::Anthropic));
+        assert_eq!(Provider::from_name("DeepSeek"), Some(Provider::DeepSeek));
+        assert_eq!(Provider::from_name("Invalid"), None);
+    }
+
+    #[test]
+    fn test_provider_all() {
+        let providers = Provider::all();
+        assert_eq!(providers.len(), 3);
+        assert!(providers.contains(&Provider::OpenAI));
+        assert!(providers.contains(&Provider::Anthropic));
+        assert!(providers.contains(&Provider::DeepSeek));
+    }
+
+    #[tokio::test]
+    #[ignore] // Requires valid API key
+    async fn test_validate_openai_key_invalid() {
+        let result = validate_openai_key("invalid-key-12345").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    #[ignore] // Requires valid API key
+    async fn test_validate_anthropic_key_invalid() {
+        let result = validate_anthropic_key("invalid-key-12345").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    #[ignore] // Requires valid API key
+    async fn test_validate_deepseek_key_invalid() {
+        let result = validate_deepseek_key("invalid-key-12345").await;
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_generate_sample_configs() {
+        use std::fs;
+        use tempfile::TempDir;
+
+        // Create temporary directory for testing
+        let temp_dir = TempDir::new().unwrap();
+        let original_dir = std::env::current_dir().unwrap();
+
+        // Change to temp directory
+        std::env::set_current_dir(temp_dir.path()).unwrap();
+
+        // Test generation for each provider
+        for provider in &["openai", "anthropic", "deepseek"] {
+            let result = generate_sample_configs(provider);
+            assert!(
+                result.is_ok(),
+                "Failed to generate configs for {}",
+                provider
+            );
+
+            // Verify files were created
+            assert!(temp_dir.path().join("examples/basic_paladin.yaml").exists());
+            assert!(temp_dir.path().join("examples/formation.yaml").exists());
+            assert!(temp_dir.path().join("examples/phalanx.yaml").exists());
+            assert!(
+                temp_dir
+                    .path()
+                    .join("examples/paladin_with_rag.yaml")
+                    .exists()
+            );
+
+            // Clean up for next iteration
+            fs::remove_dir_all(temp_dir.path().join("examples")).unwrap();
+        }
+
+        // Restore original directory
+        std::env::set_current_dir(original_dir).unwrap();
+    }
+
+    #[test]
+    fn test_wizard_step_names() {
+        assert_eq!(WelcomeStep.name(), "Welcome");
+        assert_eq!(ProviderSelectionStep.name(), "Provider Selection");
+        assert_eq!(ApiKeyInputStep.name(), "API Key Input");
+        assert_eq!(ApiValidationStep.name(), "API Validation");
+        assert_eq!(EnvFileStep.name(), "Environment File");
+        assert_eq!(SampleConfigsStep.name(), "Sample Configurations");
+        assert_eq!(SummaryStep.name(), "Summary");
+    }
 }
