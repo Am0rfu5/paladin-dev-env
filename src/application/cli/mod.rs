@@ -4,6 +4,7 @@
 //! including interactive wizards, setup validation, and rich terminal output.
 
 pub mod commands;
+pub mod config;
 pub mod error;
 mod error_impl; // Implementation details
 pub mod formatters;

@@ -115,22 +115,22 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.10 Write unit tests for error conversions in `src/application/cli/error.rs`
   - [x] 2.11 Run `cargo test` to verify error handling tests pass
 
-- [ ] 3.0 Migrate command modules to application/cli/commands/
-  - [ ] 3.1 Create `src/application/cli/commands/agent.rs` by copying from `src/cli/commands/agent.rs`
-  - [ ] 3.2 Update imports in `agent.rs` to use `crate::application::cli::error::{CliError, CliResult}`
-  - [ ] 3.3 Update any formatter imports in `agent.rs` to use `crate::application::cli::formatters`
-  - [ ] 3.4 Update config imports in `agent.rs` to use `crate::application::cli::config` (will be migrated next)
-  - [ ] 3.5 Create `src/application/cli/commands/battalion.rs` by copying from `src/cli/commands/battalion.rs`
-  - [ ] 3.6 Update imports in `battalion.rs` following same pattern as agent.rs
-  - [ ] 3.7 Create `src/application/cli/commands/arsenal.rs` by copying from `src/cli/commands/arsenal.rs`
-  - [ ] 3.8 Update imports in `arsenal.rs` following same pattern
-  - [ ] 3.9 Create `src/application/cli/commands/maneuver.rs` by copying from `src/cli/commands/maneuver.rs`
-  - [ ] 3.10 Update imports in `maneuver.rs` following same pattern
-  - [ ] 3.11 Create `src/application/cli/commands/user.rs` by copying from `src/cli/user_commands.rs`
-  - [ ] 3.12 Update imports in `user.rs` following same pattern
-  - [ ] 3.13 Update `src/application/cli/commands/mod.rs` to export all new command modules
-  - [ ] 3.14 Add `pub mod agent;`, `pub mod battalion;`, `pub mod arsenal;`, `pub mod maneuver;`, `pub mod user;`
-  - [ ] 3.15 Run `cargo check` to verify command modules compile
+- [x] 3.0 Migrate command modules to application/cli/commands/
+  - [x] 3.1 Create `src/application/cli/commands/agent.rs` by copying from `src/cli/commands/agent.rs`
+  - [x] 3.2 Update imports in `agent.rs` to use `crate::application::cli::error::{CliError, CliResult}`
+  - [x] 3.3 Update any formatter imports in `agent.rs` to use `crate::application::cli::formatters`
+  - [x] 3.4 Update config imports in `agent.rs` to use `crate::application::cli::config` (will be migrated next)
+  - [x] 3.5 Create `src/application/cli/commands/battalion.rs` by copying from `src/cli/commands/battalion.rs`
+  - [x] 3.6 Update imports in `battalion.rs` following same pattern as agent.rs
+  - [x] 3.7 Create `src/application/cli/commands/arsenal.rs` by copying from `src/cli/commands/arsenal.rs`
+  - [x] 3.8 Update imports in `arsenal.rs` following same pattern
+  - [x] 3.9 Create `src/application/cli/commands/maneuver.rs` by copying from `src/cli/commands/maneuver.rs`
+  - [x] 3.10 Update imports in `maneuver.rs` following same pattern
+  - [x] 3.11 Create `src/application/cli/commands/user.rs` by copying from `src/cli/user_commands.rs`
+  - [x] 3.12 Update imports in `user.rs` following same pattern
+  - [x] 3.13 Update `src/application/cli/commands/mod.rs` to export all new command modules
+  - [x] 3.14 Add `pub mod agent;`, `pub mod battalion;`, `pub mod arsenal;`, `pub mod maneuver;`, `pub mod user;`
+  - [ ] 3.15 Run `cargo check` to verify command modules compile (blocked: needs config and templates modules migrated first)
 
 - [ ] 4.0 Migrate configuration modules to application/cli/config/
   - [ ] 4.1 Create `src/application/cli/config/` directory
