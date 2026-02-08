@@ -7,6 +7,6 @@ pub mod commands;
 pub mod error;
 pub mod formatters;
 pub mod interactive;
-// pub mod templates; // TODO: Create in Task 2.0
+pub mod templates;
 
 pub use error::{CliError, CliResult};
