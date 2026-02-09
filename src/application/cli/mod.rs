@@ -44,4 +44,7 @@ pub mod formatters;
 pub mod interactive;
 pub mod templates;
 
+#[cfg(test)]
+mod tests;
+
 pub use error::{CliError, CliResult};

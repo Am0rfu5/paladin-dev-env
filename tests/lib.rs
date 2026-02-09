@@ -60,6 +60,9 @@ pub mod integration;
 // Re-export unit test modules
 pub mod unit;
 
+// CLI integration tests
+pub mod cli;
+
 // Initialize logging once for all tests
 static INIT: Once = Once::new();
 
