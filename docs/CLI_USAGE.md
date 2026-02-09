@@ -7,9 +7,15 @@ Complete guide to using the Paladin command-line interface for running AI agents
 - [Quick Start](#quick-start)
 - [Installation](#installation)
 - [Environment Setup](#environment-setup)
+- [Getting Started](#getting-started)
+  - [paladin onboarding](#paladin-onboarding)
+  - [paladin setup-check](#paladin-setup-check)
+  - [paladin features](#paladin-features)
 - [Commands Reference](#commands-reference)
   - [paladin agent](#paladin-agent)
   - [paladin battalion](#paladin-battalion)
+  - [paladin muster](#paladin-muster)
+  - [paladin council](#paladin-council)
   - [paladin maneuver](#paladin-maneuver)
   - [paladin arsenal](#paladin-arsenal)
 - [Configuration Files](#configuration-files)
@@ -17,6 +23,25 @@ Complete guide to using the Paladin command-line interface for running AI agents
 - [Troubleshooting](#troubleshooting)
 
 ## Quick Start
+
+```bash
+# 1. Run the interactive onboarding wizard
+paladin onboarding
+
+# 2. Verify your setup
+paladin setup-check
+
+# 3. Discover available features
+paladin features
+
+# 4. Generate a battalion configuration using AI
+paladin muster --task "Analyze market trends and generate a report"
+
+# 5. Start a quick group discussion
+paladin council --topic "Best practices for AI agent design"
+```
+
+## Quick Start (Manual Setup)
 
 ```bash
 # 1. Set your API key
@@ -72,6 +97,185 @@ pip install mcp-web-search
 # Or use npx for Node-based servers
 npx -y @modelcontextprotocol/server-filesystem /path/to/dir
 ```
+
+---
+
+## Getting Started
+
+New to Paladin? Start here with these helpful commands.
+
+### paladin onboarding
+
+Interactive wizard to set up your Paladin environment.
+
+**Syntax:**
+```bash
+paladin onboarding
+```
+
+**What it does:**
+1. Welcomes you and explains Paladin capabilities
+2. Guides you through provider selection (OpenAI, Anthropic, DeepSeek)
+3. Validates your API keys with real connectivity tests
+4. Creates/updates your `.env` file with secure configuration
+5. Generates sample configuration files for quick start
+6. Provides next steps and resources
+
+**Examples:**
+```bash
+# Run the interactive onboarding wizard
+paladin onboarding
+
+# The wizard will guide you through:
+# ✓ Provider selection
+# ✓ API key input (with secure masking)
+# ✓ Connectivity validation
+# ✓ Environment file creation
+# ✓ Sample config generation
+```
+
+**Features:**
+- ✅ Secure API key input with masking
+- ✅ Real-time validation with actual API calls
+- ✅ Intelligent `.env` file merging (no duplicates)
+- ✅ Resumable state (interruption-safe)
+- ✅ Sample configuration generation
+
+**See also:** [Onboarding Guide](cli/ONBOARDING.md)
+
+---
+
+### paladin setup-check
+
+Validate your Paladin installation and environment configuration.
+
+**Syntax:**
+```bash
+paladin setup-check [OPTIONS]
+```
+
+**Options:**
+- `-v, --verbose` - Show detailed version strings and response times
+- `--quiet` - Minimal output, only show failures
+
+**What it checks:**
+1. **System**: Paladin CLI version, Rust toolchain version
+2. **Environment**: .env file existence, API key configuration
+3. **Providers**: OpenAI, Anthropic, DeepSeek connectivity
+4. **Services** (optional): Redis, Qdrant availability
+
+**Examples:**
+```bash
+# Basic check with summary
+paladin setup-check
+
+# Detailed check with timing information
+paladin setup-check --verbose
+
+# Quiet mode (CI-friendly)
+paladin setup-check --quiet
+```
+
+**Exit codes:**
+- `0` - All checks passed
+- `1` - Critical failures detected
+- `2` - Warnings present (non-critical)
+
+**Sample output:**
+```
+=== Paladin Setup Check ===
+
+System:
+  ✓ Paladin CLI: v0.1.0
+  ✓ Rust Toolchain: 1.75.0
+
+Environment:
+  ✓ .env file: Found
+  ⚠ OPENAI_API_KEY: Configured but not validated
+
+Providers:
+  ✓ OpenAI: Connected (gpt-4, gpt-3.5-turbo) [342ms]
+  ✗ Anthropic: API key not configured
+  ⚠ DeepSeek: Connection timeout
+
+Services (Optional):
+  ✓ Redis: Connected
+  - Qdrant: Not configured
+
+=== Summary ===
+✓ 5 passed
+⚠ 2 warnings
+✗ 1 failed
+
+Next Steps:
+  • Configure ANTHROPIC_API_KEY in .env
+  • Check DeepSeek API endpoint connectivity
+```
+
+**See also:** [Setup Check Guide](cli/SETUP_CHECK.md)
+
+---
+
+### paladin features
+
+Discover available Paladin features and capabilities.
+
+**Syntax:**
+```bash
+paladin features [OPTIONS]
+```
+
+**Options:**
+- `-c, --category <CATEGORY>` - Filter by category
+  - Valid values: `agent`, `battalion`, `orchestration`, `memory`, `utilities`
+- `-f, --format <FORMAT>` - Output format (default: table)
+  - Valid values: `table`, `json`
+
+**Examples:**
+```bash
+# List all features
+paladin features
+
+# Show only battalion patterns
+paladin features --category battalion
+
+# Show orchestration patterns
+paladin features --category orchestration
+
+# JSON output for scripting
+paladin features --format json
+```
+
+**Sample output:**
+```
+=== Paladin Features ===
+
+Agent:
+  • Basic Paladin         - Single autonomous AI agent
+  • Autonomous Planning   - Self-directed task planning
+  • Tool Integration      - External tool access via Arsenal
+
+Battalion:
+  • Formation            - Sequential agent execution
+  • Phalanx              - Parallel agent execution
+  • Campaign             - DAG-based workflow orchestration
+  • Chain of Command     - Hierarchical delegation
+
+Orchestration:
+  • Conclave             - Expert panel discussions
+  • Council              - Quick group discussions
+  • Grove                - Dynamic routing patterns
+  • Maneuver             - Flow-based orchestration
+
+Memory:
+  • In-Memory Garrison   - Fast, non-persistent memory
+  • Persistent Garrison  - SQLite-backed memory
+  • Sanctum (RAG)        - Vector-based retrieval
+
+[24 features total]
+```
+
+**See also:** [Architecture Documentation](Design/Design_and_Architecture.md)
 
 ---
 
@@ -203,6 +407,207 @@ paladin battalion run -c phalanx.yaml -i "Analyze this" --verbose
 # Run campaign and save results
 paladin battalion run -c campaign.yaml -i "Input" -o results.json
 ```
+
+---
+
+### paladin muster
+
+Generate battalion configurations using AI-powered task analysis.
+
+**Syntax:**
+```bash
+paladin muster [OPTIONS]
+```
+
+**Options:**
+- `-t, --task <DESCRIPTION>` - Task description (prompts if omitted)
+- `-o, --output <PATH>` - Output file path (default: muster_<name>_<timestamp>.yaml)
+- `-p, --provider <PROVIDER>` - LLM provider for analysis (default: openai)
+  - Valid values: `openai`, `deepseek`, `anthropic`
+- `-m, --model <MODEL>` - Specific model to use (optional)
+- `--no-review` - Skip interactive review (non-interactive mode)
+- `--execute` - Run the generated battalion immediately (experimental)
+
+**What it does:**
+1. Analyzes your task description using LLM
+2. Recommends appropriate battalion pattern (Formation, Phalanx, Campaign, etc.)
+3. Generates agent roles and system prompts
+4. Creates complete YAML configuration
+5. Allows interactive review and editing
+6. Saves configuration to file
+
+**Examples:**
+```bash
+# Interactive mode (wizard)
+paladin muster
+
+# With task description
+paladin muster --task "Analyze market trends and generate investment report"
+
+# Custom output path
+paladin muster --task "Code review workflow" -o code-review.yaml
+
+# Non-interactive mode (for scripting)
+paladin muster --task "Data pipeline" --no-review -o pipeline.yaml
+
+# Use specific provider and model
+paladin muster --task "Research summary" -p anthropic -m claude-3-opus
+```
+
+**Task Examples:**
+```
+"Research competitive landscape and create comparison report"
+→ Recommends: Formation (researcher -> analyzer -> writer)
+
+"Review pull request from multiple perspectives"
+→ Recommends: Phalanx (code_quality, security, performance in parallel)
+
+"Complex data processing with conditional steps"
+→ Recommends: Campaign (DAG with dependencies)
+
+"Multi-step decision making with oversight"
+→ Recommends: Chain of Command (analysts -> supervisor)
+```
+
+**Fallback Mode:**
+If LLM is unavailable, muster uses template-based fallback with keyword matching:
+- Sequential keywords (then, after, next) → Formation
+- Parallel keywords (multiple, compare, simultaneously) → Phalanx
+- Discussion keywords (discuss, consensus, perspectives) → Council
+- Default → Formation (safe fallback)
+
+**See also:** [Muster Guide](cli/MUSTER.md)
+
+---
+
+### paladin council
+
+Start a quick multi-agent discussion on a topic.
+
+**Syntax:**
+```bash
+paladin council [OPTIONS]
+```
+
+**Options:**
+- `--topic <TOPIC>` - Discussion topic (prompts if omitted)
+- `-p, --participants <COUNT>` - Number of participants (default: 3, min: 2, max: 10)
+- `--roles <ROLES>` - Custom roles (comma-separated, overrides default assignment)
+- `--max-rounds <COUNT>` - Maximum discussion rounds (default: 5)
+- `--save <PATH>` - Save transcript to file (markdown format)
+- `-m, --model <MODEL>` - LLM model to use (optional)
+- `-t, --temperature <TEMP>` - LLM temperature (optional)
+
+**Default Role Assignment:**
+- 2 participants: Advocate, Critic
+- 3 participants: + Moderator
+- 4 participants: + Synthesizer
+- 5 participants: + Subject Matter Expert
+- 6+ participants: + Expert 2, Expert 3, etc.
+
+**Examples:**
+```bash
+# Interactive mode (wizard)
+paladin council
+
+# With topic
+paladin council --topic "Best practices for microservices architecture"
+
+# Custom participant count
+paladin council --topic "AI ethics" --participants 5
+
+# Custom roles
+paladin council --topic "Product roadmap" --roles "PM,Engineer,Designer,Customer"
+
+# Save transcript
+paladin council --topic "Security review" --save security-discussion.md
+
+# Full configuration
+paladin council \
+  --topic "System design review" \
+  --participants 4 \
+  --max-rounds 3 \
+  --model gpt-4 \
+  --temperature 0.8 \
+  --save design-review.md
+```
+
+**Sample Output:**
+```
+=== Council Discussion: Best Practices for Microservices ===
+
+Participants: 3
+Roles: Advocate, Critic, Moderator
+
+──────────────────────────────────────────
+Round 1
+──────────────────────────────────────────
+
+[Advocate] (Proponent):
+Microservices offer excellent scalability and independent deployment...
+
+[Critic] (Skeptic):
+However, the operational complexity increases significantly...
+
+[Moderator] (Facilitator):
+Both perspectives raise valid points. Let's explore the trade-offs...
+
+──────────────────────────────────────────
+Round 2
+──────────────────────────────────────────
+
+[... discussion continues ...]
+
+=== Summary ===
+
+Rounds: 5
+Total Contributions: 15
+
+Key Points:
+• Scalability benefits clear for large teams
+• Operational overhead requires investment
+• Event-driven patterns recommended
+
+Consensus:
+Start with monolith, extract services as needed
+
+Conclusion:
+The council recommends a pragmatic approach: begin with a well-structured
+monolith and extract microservices only when clear boundaries emerge.
+```
+
+**Transcript Format** (when using --save):
+```markdown
+# Council Discussion: [Topic]
+
+**Started:** 2026-02-09 10:30:00  
+**Ended:** 2026-02-09 10:45:00  
+**Participants:** 3
+
+## Participants
+
+- **Alice** - Advocate (Proponent)
+- **Bob** - Critic (Skeptic)
+- **Carol** - Moderator (Facilitator)
+
+## Discussion
+
+### Round 1
+
+**Alice** (Advocate): [message]
+**Bob** (Critic): [message]
+**Carol** (Moderator): [message]
+
+### Round 2
+
+[... continues ...]
+
+## Summary
+
+[Summary content]
+```
+
+**See also:** [Council Guide](cli/COUNCIL.md), [Conclave Documentation](COUNCIL.md)
 
 ---
 
