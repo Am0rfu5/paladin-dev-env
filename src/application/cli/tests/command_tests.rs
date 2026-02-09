@@ -188,7 +188,7 @@ agents:
             let valid_max = 10;
             let invalid_low = 1;
             let invalid_high = 11;
-            
+
             // Validation logic tests
             assert!((2..=10).contains(&valid_min));
             assert!((2..=10).contains(&valid_max));

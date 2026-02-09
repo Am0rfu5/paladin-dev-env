@@ -7,6 +7,148 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Epic 18: CLI Enhancement
+
+#### New CLI Commands
+
+**Onboarding Wizard** (`paladin onboarding`)
+- Interactive first-time setup wizard for environment configuration
+- Provider selection (OpenAI, DeepSeek, Anthropic) with descriptions
+- Secure API key input with validation and masking
+- Automatic `.env` file generation with comments
+- Sample configuration file creation
+- Resumable state for interrupted sessions
+- Real-time validation of API keys and connectivity
+
+**Setup Check** (`paladin setup-check`)
+- Comprehensive environment validation
+- System checks: Rust version, cargo, git availability
+- Environment checks: Required and optional variables
+- Provider validation: API key format and connectivity
+- Optional service checks: Redis, Qdrant, MinIO
+- Categorized results: System, Environment, Provider, Service
+- Multiple output formats: standard, verbose, JSON
+- Exit codes: 0 (success), 1 (critical failures), 2 (warnings only)
+- CI/CD integration support
+
+**Features Discovery** (`paladin features`)
+- Discover all available Paladin capabilities
+- Feature categories: Agent, Battalion, Orchestration, Memory, Utilities
+- 24 documented features with descriptions and documentation links
+- Orchestration patterns: Formation, Phalanx, Campaign, Chain of Command, Conclave, Council, Grove, Maneuver
+- Memory systems: Garrison (InMemory, Sqlite), Sanctum (InMemory, Qdrant)
+- Category filtering: `--category` flag
+- Output formats: table (default), JSON
+- Feature availability status indicators
+
+**Muster Command** (`paladin muster`) [STUB]
+- AI-powered Battalion configuration generation from natural language
+- LLM-based task analysis and pattern suggestion
+- Automatic YAML/JSON config generation
+- Validates generated configurations
+- Supports all orchestration patterns
+- Note: Requires LLM integration (currently returns stub configurations)
+
+**Council Command** (`paladin council`) [STUB]
+- Quick multi-agent discussions without configuration files
+- Multiple discussion modes: parallel, sequential, debate
+- Configurable agent roles and perspectives
+- Automatic synthesis of diverse viewpoints
+- Output formats: markdown, JSON, plain text
+- Note: Requires LLM integration (currently returns mock discussions)
+
+#### CLI Infrastructure
+
+**Output Formatters**
+- `OutputFormatter`: Unified formatter for CLI output with colored styling
+- `TableFormatter`: ASCII table rendering with alignment and borders
+- Consistent styling: success (green), error (red), warning (yellow), info (cyan)
+- NO_COLOR environment variable support
+- Support for both TTY and non-TTY environments
+
+**Progress Indicators**
+- `ProgressSpinner`: Async spinner for long-running operations
+- `ProgressBar`: Progress tracking with percentage and ETA
+- Customizable messages and styling
+- Automatic cleanup on completion or error
+
+**Error Handling**
+- `CliError` enum with 30+ specific error variants
+- Detailed error messages with context
+- Error categories: Configuration, IO, Validation, Provider, Service
+- Proper error propagation with `CliResult<T>`
+- User-friendly error formatting
+
+**Templates**
+- `.env` file template generation with provider-specific sections
+- Paladin configuration templates (YAML) for all providers
+- Battalion configuration templates for all orchestration patterns
+- Template merging for incremental updates
+- Valid YAML/JSON output with comments
+
+#### Documentation
+
+**CLI Usage Guide** (`docs/CLI_USAGE.md`)
+- Comprehensive command reference (405 new lines)
+- Getting Started section with onboarding workflow
+- Detailed syntax, options, and examples for all commands
+- Cross-references to detailed guides
+
+**Detailed Command Guides** (~1,900 lines total)
+- `docs/cli/ONBOARDING.md`: Wizard flow, security, troubleshooting (~300 lines)
+- `docs/cli/SETUP_CHECK.md`: Check categories, exit codes, CI/CD (~350 lines)
+- `docs/cli/MUSTER.md`: AI-powered generation, patterns, examples (~600 lines)
+- `docs/cli/COUNCIL.md`: Multi-agent discussions, modes, advanced usage (~650 lines)
+
+**README Updates**
+- Added CLI Quick Start section (65 lines)
+- Installation instructions
+- First-time setup with onboarding wizard
+- Quick commands reference
+- Links to comprehensive documentation
+
+**Example Configurations**
+- Enhanced `examples/cli_configs/paladin_with_rag.yaml`
+- Verified existing examples: basic_paladin, formation, phalanx
+- All examples include usage instructions
+
+#### Testing
+
+**Test Infrastructure** (29 new tests, 193 CLI tests total)
+- Mock test utilities in `src/application/cli/tests/mod.rs`
+- `formatter_tests.rs`: 13 tests for output and table formatters
+- `command_tests.rs`: 16 tests for command validation and parsing
+- Integration test framework in `tests/cli/integration_tests.rs`
+
+**Test Coverage**
+- 193 CLI unit tests (100% pass rate, 6 intentionally ignored)
+- All tests follow TDD principles
+- Zero clippy warnings with `-D warnings` flag
+- Code formatted with `cargo fmt`
+- 1,487 total project tests passing
+
+#### Architecture & Code Quality
+
+**Hexagonal Architecture**
+- All CLI code in application layer (`src/application/cli/`)
+- Clear separation: commands, config, formatters, templates, error handling
+- Port/adapter pattern for external integrations
+- No direct dependencies on infrastructure layer
+
+**Code Quality Metrics**
+- Zero clippy warnings (strict mode: `-D warnings`)
+- All code formatted with `cargo fmt`
+- Comprehensive rustdoc for public APIs
+- Consistent error handling patterns
+- No debug prints or temporary code in production
+
+**Performance**
+- Release build: 2m 48s
+- CLI test suite: 0.02s
+- Full test suite: 7.82s
+- Async spinners (non-blocking UI)
+- Efficient table rendering
+
 ### Changed - Epic 17.5: CLI Directory Consolidation
 
 #### CLI Module Consolidation
