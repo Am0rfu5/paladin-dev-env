@@ -6,6 +6,71 @@ Paladin is a Rust-based, modular content processing platform built with Hexagona
 
 Key capabilities include configurable content ingestion, NLP/LLM analysis and summarization, metadata extraction and subject tagging, content filtering and lifecycle management, and flexible delivery channels (HTTP/webhooks, email, push, and queue-based adapters). Clear ports-and-adapters boundaries make integrations, testing, and replacement of components straightforward. Paladin is designed for content aggregation, monitoring, enrichment, and automated delivery workflows where extensibility, observability, and reliable storage across SQL/NoSQL/file backends are important.
 
+## Quick Start (CLI)
+
+Paladin provides a powerful command-line interface for quick agent creation and orchestration without writing code:
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/paladin.git
+cd paladin
+
+# Build the CLI
+cargo build --release
+
+# The binary will be available at target/release/paladin
+```
+
+### First-Time Setup
+
+Run the interactive onboarding wizard to configure your environment:
+
+```bash
+paladin onboarding
+```
+
+This wizard will:
+- Guide you through provider selection (OpenAI, DeepSeek, Anthropic)
+- Help you set up API keys securely
+- Validate your configuration
+- Create a `.env` file with your settings
+- Generate sample configurations to get started
+
+### Quick Commands
+
+```bash
+# Verify your setup
+paladin setup-check
+
+# List available features
+paladin features
+
+# Generate an AI workflow from description
+paladin muster "Create a 3-step data analysis pipeline" -o pipeline.yaml
+
+# Quick multi-agent discussion
+paladin council "Should we adopt microservices?" -n 5
+
+# Run a configuration
+paladin run -c examples/cli_configs/basic_paladin.yaml -i "Hello, explain Rust ownership"
+
+# Interactive mode
+paladin run -c config.yaml --interactive
+```
+
+### Documentation
+
+- **[CLI Usage Guide](docs/CLI_USAGE.md)** - Complete command reference
+- **[Onboarding Guide](docs/cli/ONBOARDING.md)** - First-time setup walkthrough
+- **[Setup Check Guide](docs/cli/SETUP_CHECK.md)** - Environment validation
+- **[Muster Command](docs/cli/MUSTER.md)** - AI-powered Battalion generation
+- **[Council Command](docs/cli/COUNCIL.md)** - Quick multi-agent discussions
+- **[Example Configs](examples/cli_configs/)** - Sample configurations
+
+See [docs/CLI_USAGE.md](docs/CLI_USAGE.md) for comprehensive CLI documentation.
+
 ## Architectural Overview
 
 Paladin is an enterprise capable AI Orchestration system designed using hexagonal architecture principles to provide robust and flexible handling of a large range of functionality including processing any type of content (structured documents, test, audio, video, images, etc), notification management (push, email, sms, etc), machine learning integrations (LLM's, ML, etc), and content delivery mechanisms (web servers, streaming, apis, etc).
