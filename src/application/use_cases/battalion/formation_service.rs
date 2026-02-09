@@ -109,32 +109,9 @@ impl FormationExecutionService {
     ) -> Result<Option<String>, BattalionError> {
         match &self.herald {
             Some(herald) => {
-                // Convert application layer BattalionResult to herald BattalionResult
-                let herald_paladin_results: Vec<
-                    crate::core::platform::container::herald::PaladinResult,
-                > = result
-                    .paladin_results
-                    .iter()
-                    .enumerate()
-                    .map(
-                        |(idx, pr)| crate::core::platform::container::herald::PaladinResult {
-                            paladin_id: format!("paladin-{}", idx),
-                            paladin_name: format!("Paladin {}", idx + 1),
-                            status: format!("{:?}", pr.stop_reason),
-                            output: pr.output.clone(),
-                        },
-                    )
-                    .collect();
-
-                let herald_result = crate::core::platform::container::herald::BattalionResult {
-                    battalion_id: result.battalion_id.to_string(),
-                    battalion_name: result.battalion_name.clone(),
-                    status: format!("{:?}", result.status),
-                    results: herald_paladin_results,
-                };
-
+                // Herald now uses actual BattalionResult directly - no conversion needed!
                 herald
-                    .format_battalion_result(&herald_result)
+                    .format_battalion_result(result)
                     .map(Some)
                     .map_err(|e| {
                         BattalionError::FormationError(format!("Herald formatting error: {}", e))

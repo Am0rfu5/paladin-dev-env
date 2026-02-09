@@ -246,21 +246,11 @@ impl PaladinExecutionService {
     pub fn format_result(
         &self,
         result: &PaladinResult,
-        paladin: &Paladin,
+        _paladin: &Paladin,
     ) -> Result<Option<String>, PaladinError> {
         if let Some(ref herald) = self.herald {
-            // Convert PaladinResult from paladin_port to herald types
-            let herald_result = crate::core::platform::container::herald::PaladinResult {
-                paladin_id: paladin.uuid.to_string(),
-                paladin_name: paladin
-                    .name
-                    .clone()
-                    .unwrap_or_else(|| "unnamed".to_string()),
-                status: format!("{:?}", result.stop_reason),
-                output: result.output.clone(),
-            };
-
-            let formatted = herald.format_paladin_result(&herald_result).map_err(|e| {
+            // Herald now uses actual PaladinResult directly - no conversion needed!
+            let formatted = herald.format_paladin_result(result).map_err(|e| {
                 PaladinError::ExecutionError(format!("Herald formatting failed: {}", e))
             })?;
             Ok(Some(formatted))

@@ -116,10 +116,11 @@ impl JsonHerald {
     /// Convert PaladinResult to JSON Value
     fn paladin_result_to_json(&self, result: &PaladinResult) -> Value {
         let mut json = json!({
-            "paladin_id": result.paladin_id,
-            "paladin_name": result.paladin_name,
-            "status": result.status,
             "output": result.output,
+            "token_count": result.token_count,
+            "execution_time_ms": result.execution_time_ms,
+            "loop_count": result.loop_count,
+            "stop_reason": format!("{:?}", result.stop_reason),
         });
 
         if self.config.include_metadata {
@@ -134,7 +135,7 @@ impl JsonHerald {
     /// Convert BattalionResult to JSON Value
     fn battalion_result_to_json(&self, result: &BattalionResult) -> Value {
         let paladin_results: Vec<Value> = result
-            .results
+            .paladin_results
             .iter()
             .map(|r| self.paladin_result_to_json(r))
             .collect();
@@ -142,13 +143,13 @@ impl JsonHerald {
         let mut json = json!({
             "battalion_id": result.battalion_id,
             "battalion_name": result.battalion_name,
-            "status": result.status,
+            "status": format!("{:?}", result.status),
             "paladin_results": paladin_results,
         });
 
         if self.config.include_metadata {
             json["metadata"] = json!({
-                "paladin_count": result.results.len(),
+                "paladin_count": result.paladin_results.len(),
                 "timestamp": chrono::Utc::now().to_rfc3339(),
             });
         }
@@ -209,13 +210,13 @@ impl Herald for JsonHerald {
     fn format_error(&self, error: &PaladinError) -> String {
         let json = json!({
             "error": true,
-            "message": error.message,
+            "message": error.to_string(),
             "timestamp": chrono::Utc::now().to_rfc3339(),
         });
 
         // Best-effort serialization, never fail
         serde_json::to_string_pretty(&json)
-            .unwrap_or_else(|_| format!(r#"{{"error": true, "message": "{}"}}"#, error.message))
+            .unwrap_or_else(|_| format!(r#"{{"error": true, "message": "{}"}}"#, error))
     }
 
     fn name(&self) -> &str {
@@ -230,30 +231,46 @@ impl Herald for JsonHerald {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::ports::output::paladin_port::StopReason;
+    use crate::core::platform::container::battalion::BattalionStatus;
+    use chrono::Utc;
+    use uuid::Uuid;
 
     fn create_test_paladin_result() -> PaladinResult {
         PaladinResult {
-            paladin_id: "test-id-123".to_string(),
-            paladin_name: "TestPaladin".to_string(),
-            status: "success".to_string(),
             output: "Test output content".to_string(),
+            token_count: 100,
+            execution_time_ms: 1500,
+            loop_count: 1,
+            stop_reason: StopReason::Completed,
         }
     }
 
     fn create_test_battalion_result() -> BattalionResult {
         BattalionResult {
-            battalion_id: "bat-id-456".to_string(),
+            battalion_id: Uuid::new_v4(),
             battalion_name: "TestBattalion".to_string(),
-            status: "success".to_string(),
-            results: vec![
+            started_at: Utc::now(),
+            completed_at: Utc::now(),
+            final_output: "Combined output".to_string(),
+            paladin_results: vec![
                 create_test_paladin_result(),
                 PaladinResult {
-                    paladin_id: "test-id-789".to_string(),
-                    paladin_name: "SecondPaladin".to_string(),
-                    status: "success".to_string(),
                     output: "Second output".to_string(),
+                    token_count: 150,
+                    execution_time_ms: 2000,
+                    loop_count: 2,
+                    stop_reason: StopReason::Completed,
                 },
             ],
+            status: BattalionStatus::Completed,
+            strategy_used:
+                crate::core::platform::container::battalion::BattalionStrategy::Formation,
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times: vec![1500, 2000],
+            paladin_success_count: 2,
+            paladin_failure_count: 0,
         }
     }
 
@@ -386,15 +403,18 @@ mod tests {
     #[test]
     fn test_format_error() {
         let herald = JsonHerald::new();
-        let error = PaladinError {
-            message: "Something went wrong".to_string(),
-        };
+        let error = PaladinError::ExecutionError("Something went wrong".to_string());
 
         let formatted = herald.format_error(&error);
 
         let parsed: Value = serde_json::from_str(&formatted).unwrap();
         assert_eq!(parsed["error"], true);
-        assert_eq!(parsed["message"], "Something went wrong");
+        assert!(
+            parsed["message"]
+                .as_str()
+                .unwrap()
+                .contains("Something went wrong")
+        );
     }
 
     #[test]
@@ -431,7 +451,7 @@ mod tests {
         // Both should parse to the same data
         let pretty_parsed: Value = serde_json::from_str(&pretty_output).unwrap();
         let compact_parsed: Value = serde_json::from_str(&compact_output).unwrap();
-        assert_eq!(pretty_parsed["paladin_id"], compact_parsed["paladin_id"]);
+        assert_eq!(pretty_parsed["output"], compact_parsed["output"]);
     }
 
     #[test]
@@ -446,13 +466,19 @@ mod tests {
         let parsed: Value = serde_json::from_str(&formatted).unwrap();
 
         // Verify key fields match
-        assert_eq!(parsed["paladin_id"].as_str().unwrap(), original.paladin_id);
-        assert_eq!(
-            parsed["paladin_name"].as_str().unwrap(),
-            original.paladin_name
-        );
-        assert_eq!(parsed["status"].as_str().unwrap(), original.status);
         assert_eq!(parsed["output"].as_str().unwrap(), original.output);
+        assert_eq!(
+            parsed["token_count"].as_u64().unwrap(),
+            original.token_count as u64
+        );
+        assert_eq!(
+            parsed["execution_time_ms"].as_u64().unwrap(),
+            original.execution_time_ms
+        );
+        assert_eq!(
+            parsed["loop_count"].as_u64().unwrap(),
+            original.loop_count as u64
+        );
     }
 
     #[test]
@@ -469,7 +495,7 @@ mod tests {
         // Verify key fields match
         assert_eq!(
             parsed["battalion_id"].as_str().unwrap(),
-            original.battalion_id
+            original.battalion_id.to_string()
         );
         assert_eq!(
             parsed["battalion_name"].as_str().unwrap(),

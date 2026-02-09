@@ -186,13 +186,11 @@ impl Herald for MarkdownHerald {
         let mut output = String::new();
 
         // Main heading
-        output.push_str(&self.heading(
-            self.config.heading_level,
-            &format!("Paladin: {}", result.paladin_name),
-        ));
+        output.push_str(&self.heading(self.config.heading_level, "Paladin Result"));
 
         // Status badge
-        output.push_str(&self.status_badge(&result.status));
+        let status_str = format!("{:?}", result.stop_reason);
+        output.push_str(&self.status_badge(&status_str));
         output.push_str("\n\n");
 
         // Output section
@@ -202,8 +200,12 @@ impl Herald for MarkdownHerald {
 
         // Metadata section
         output.push_str(&self.heading(self.config.heading_level + 1, "Metadata"));
-        output.push_str(&self.format_field("Paladin ID", &result.paladin_id));
-        output.push_str(&self.format_field("Status", &result.status));
+        output.push_str(&self.format_field("Token Count", &result.token_count.to_string()));
+        output.push_str(
+            &self.format_field("Execution Time (ms)", &result.execution_time_ms.to_string()),
+        );
+        output.push_str(&self.format_field("Loop Count", &result.loop_count.to_string()));
+        output.push_str(&self.format_field("Stop Reason", &format!("{:?}", result.stop_reason)));
         output.push_str(&self.format_field("Timestamp", &chrono::Utc::now().to_rfc3339()));
 
         Ok(output)
@@ -219,23 +221,33 @@ impl Herald for MarkdownHerald {
         ));
 
         // Status badge
-        output.push_str(&self.status_badge(&result.status));
+        let status_str = format!("{:?}", result.status);
+        output.push_str(&self.status_badge(&status_str));
         output.push_str("\n\n");
 
         // Summary
-        output.push_str(&self.format_field("Battalion ID", &result.battalion_id));
-        output.push_str(&self.format_field("Total Paladins", &result.results.len().to_string()));
+        output.push_str(&self.format_field("Battalion ID", &result.battalion_id.to_string()));
+        output.push_str(
+            &self.format_field("Total Paladins", &result.paladin_results.len().to_string()),
+        );
+        output.push_str(
+            &self.format_field("Success Count", &result.paladin_success_count.to_string()),
+        );
+        output.push_str(
+            &self.format_field("Failure Count", &result.paladin_failure_count.to_string()),
+        );
         output.push('\n');
 
         // Individual Paladin results
         output.push_str(&self.heading(self.config.heading_level + 1, "Paladin Results"));
 
-        for (idx, paladin_result) in result.results.iter().enumerate() {
+        for (idx, paladin_result) in result.paladin_results.iter().enumerate() {
             output.push_str(&self.heading(
                 self.config.heading_level + 2,
-                &format!("{}. {}", idx + 1, paladin_result.paladin_name),
+                &format!("Paladin {}", idx + 1),
             ));
-            output.push_str(&self.status_badge(&paladin_result.status));
+            let stop_str = format!("{:?}", paladin_result.stop_reason);
+            output.push_str(&self.status_badge(&stop_str));
             output.push_str("\n\n");
             output.push_str(&paladin_result.output);
             output.push_str("\n\n");
@@ -273,7 +285,7 @@ impl Herald for MarkdownHerald {
             output.push_str("**Error**\n\n");
         }
 
-        output.push_str(&self.code_block(&error.message, ""));
+        output.push_str(&self.code_block(&error.to_string(), ""));
 
         output
     }
@@ -290,30 +302,45 @@ impl Herald for MarkdownHerald {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::ports::output::paladin_port::StopReason;
+    use crate::core::platform::container::battalion::{BattalionStatus, BattalionStrategy};
+    use chrono::Utc;
+    use uuid::Uuid;
 
     fn create_test_paladin_result() -> PaladinResult {
         PaladinResult {
-            paladin_id: "test-id-123".to_string(),
-            paladin_name: "TestPaladin".to_string(),
-            status: "success".to_string(),
             output: "Test output content".to_string(),
+            token_count: 100,
+            execution_time_ms: 1500,
+            loop_count: 1,
+            stop_reason: StopReason::Completed,
         }
     }
 
     fn create_test_battalion_result() -> BattalionResult {
         BattalionResult {
-            battalion_id: "bat-id-456".to_string(),
+            battalion_id: Uuid::new_v4(),
             battalion_name: "TestBattalion".to_string(),
-            status: "success".to_string(),
-            results: vec![
+            started_at: Utc::now(),
+            completed_at: Utc::now(),
+            final_output: "Combined output".to_string(),
+            paladin_results: vec![
                 create_test_paladin_result(),
                 PaladinResult {
-                    paladin_id: "test-id-789".to_string(),
-                    paladin_name: "SecondPaladin".to_string(),
-                    status: "failed".to_string(),
                     output: "Second output".to_string(),
+                    token_count: 150,
+                    execution_time_ms: 2000,
+                    loop_count: 2,
+                    stop_reason: StopReason::MaxLoops,
                 },
             ],
+            status: BattalionStatus::Completed,
+            strategy_used: BattalionStrategy::Formation,
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times: vec![1500, 2000],
+            paladin_success_count: 1,
+            paladin_failure_count: 1,
         }
     }
 
@@ -474,9 +501,7 @@ mod tests {
             include_colors: false,
             heading_level: 2,
         });
-        let error = PaladinError {
-            message: "Something went wrong".to_string(),
-        };
+        let error = PaladinError::ExecutionError("Something went wrong".to_string());
 
         let formatted = herald.format_error(&error);
         assert!(formatted.contains("**Error**"));

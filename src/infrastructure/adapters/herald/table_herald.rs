@@ -226,13 +226,11 @@ impl Herald for TableHerald {
         ]);
 
         // Error details
-        table.add_row(vec![
-            Cell::new(format!("Type: {}", error.message)).fg(Color::Red),
-        ]);
+        table.add_row(vec![Cell::new(format!("Type: {}", error)).fg(Color::Red)]);
 
         table.add_row(vec![Cell::new(format!(
             "Message: {}",
-            self.truncate_text(&error.message)
+            self.truncate_text(&error.to_string())
         ))]);
 
         table.add_row(vec![Cell::new(format!(
@@ -285,12 +283,14 @@ mod tests {
 
     #[test]
     fn test_format_paladin_result() {
+        use crate::application::ports::output::paladin_port::StopReason;
         let herald = TableHerald::default();
         let result = crate::core::platform::container::herald::PaladinResult {
-            paladin_id: "test_id".to_string(),
-            paladin_name: "test_paladin".to_string(),
-            status: "success".to_string(),
             output: "Test output".to_string(),
+            token_count: 100,
+            execution_time_ms: 1500,
+            loop_count: 1,
+            stop_reason: StopReason::Completed,
         };
 
         let output = herald.format_paladin_result(&result);
@@ -300,17 +300,29 @@ mod tests {
         assert!(formatted.contains("Field"));
         assert!(formatted.contains("Value"));
         assert!(formatted.contains("Paladin"));
-        assert!(formatted.contains("Status"));
     }
 
     #[test]
     fn test_format_battalion_result() {
+        use crate::core::platform::container::battalion::BattalionStatus;
+        use chrono::Utc;
+        use uuid::Uuid;
         let herald = TableHerald::default();
         let result = crate::core::platform::container::herald::BattalionResult {
-            battalion_id: "test_battalion".to_string(),
+            battalion_id: Uuid::new_v4(),
             battalion_name: "Test Battalion".to_string(),
-            status: "success".to_string(),
-            results: vec![],
+            started_at: Utc::now(),
+            completed_at: Utc::now(),
+            final_output: "Combined output".to_string(),
+            paladin_results: vec![],
+            status: BattalionStatus::Completed,
+            strategy_used:
+                crate::core::platform::container::battalion::BattalionStrategy::Formation,
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times: vec![],
+            paladin_success_count: 0,
+            paladin_failure_count: 0,
         };
 
         let output = herald.format_battalion_result(&result);
@@ -357,9 +369,7 @@ mod tests {
     #[test]
     fn test_format_error() {
         let herald = TableHerald::default();
-        let error = PaladinError {
-            message: "Test error".to_string(),
-        };
+        let error = PaladinError::ExecutionError("Test error message".to_string());
 
         let formatted = herald.format_error(&error);
         assert!(formatted.contains("Error Information"));

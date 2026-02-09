@@ -78,21 +78,28 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.18 Document test expectations in comments
 
 - [ ] 2.0 Remove Placeholder Types and Add Imports
-  - [ ] 2.1 Read `src/core/platform/container/herald.rs` lines 140-195 to understand current placeholders
-  - [ ] 2.2 Read `src/core/platform/container/paladin.rs` to find actual `PaladinResult` type definition
-  - [ ] 2.3 Read `src/core/platform/container/paladin.rs` to find actual `PaladinError` type definition
-  - [ ] 2.4 Read `src/core/platform/container/battalion/mod.rs` to find actual `BattalionResult` type definition
-  - [ ] 2.5 Remove placeholder `PaladinResult` struct from `herald.rs` (around line 147)
-  - [ ] 2.6 Remove placeholder `BattalionResult` struct from `herald.rs` (around line 158)
-  - [ ] 2.7 Remove placeholder `PaladinError` enum from `herald.rs` (around line 187)
-  - [ ] 2.8 Add import at top of `herald.rs`: `use crate::core::platform::container::paladin::{PaladinResult, PaladinError};`
-  - [ ] 2.9 Add import at top of `herald.rs`: `use crate::core::platform::container::battalion::BattalionResult;`
-  - [ ] 2.10 Update all Herald trait method signatures to use imported types
-  - [ ] 2.11 Run `cargo check` to verify no compilation errors
-  - [ ] 2.12 Run type consolidation tests (should now pass)
-  - [ ] 2.13 Verify no duplicate types remain: `grep -r "struct PaladinResult" src/`
-  - [ ] 2.14 Verify no duplicate types remain: `grep -r "struct BattalionResult" src/`
-  - [ ] 2.15 Verify no duplicate types remain: `grep -r "enum PaladinError" src/`
+  - [x] 2.1 Read `src/core/platform/container/herald.rs` lines 140-195 to understand current placeholders
+  - [x] 2.2 Read `src/application/ports/output/paladin_port.rs` to find actual `PaladinResult` type definition
+  - [x] 2.3 Read `src/application/use_cases/paladin/error.rs` to find actual `PaladinError` type definition
+  - [x] 2.4 Read `src/core/platform/container/battalion/mod.rs` to find actual `BattalionResult` type definition
+  - [x] 2.5 Remove placeholder `PaladinResult` struct from `herald.rs` (around line 147)
+  - [x] 2.6 Remove placeholder `BattalionResult` struct from `herald.rs` (around line 158)
+  - [x] 2.7 Remove placeholder `PaladinError` enum from `herald.rs` (around line 187)
+  - [x] 2.8 Add public re-export: `pub use crate::application::ports::output::paladin_port::PaladinResult;`
+  - [x] 2.9 Add public re-export: `pub use crate::core::platform::container::battalion::BattalionResult;`
+  - [x] 2.10 Add public re-export: `pub use crate::application::use_cases::paladin::error::PaladinError;`
+  - [x] 2.11 Update Herald adapters to work with real type structures
+    - Update JsonHerald to use actual PaladinResult fields (output, token_count, execution_time_ms, loop_count, stop_reason)
+    - Update MarkdownHerald to use actual PaladinResult fields
+    - Update TableHerald to use actual PaladinResult fields
+    - Update all adapters to handle PaladinError as enum (match on variants)
+    - Update all adapters to use battalion.paladin_results instead of battalion.results
+    - Update all test fixtures to use correct field names and types
+  - [x] 2.12 Run `cargo check` to verify no compilation errors
+  - [x] 2.13 Run type consolidation tests (first 3 non-ignored tests confirmed passing)
+  - [x] 2.13 Verify no duplicate types remain: `grep -r "struct PaladinResult" src/`
+  - [x] 2.14 Verify no duplicate types remain: `grep -r "struct BattalionResult" src/`
+  - [x] 2.15 Verify no duplicate types remain: `grep -r "enum PaladinError" src/`
 
 - [ ] 3.0 Complete StreamChunk Structure with Full Metadata
   - [ ] 3.1 Read current `StreamChunk` definition in `herald.rs` (around line 169)

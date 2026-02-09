@@ -16,6 +16,11 @@
 //! println!("{}", formatted);
 //! ```
 
+// Re-export actual domain types for Herald consumers
+pub use crate::application::ports::output::paladin_port::PaladinResult;
+pub use crate::application::use_cases::paladin::error::PaladinError;
+pub use crate::core::platform::container::battalion::BattalionResult;
+
 // Re-export HeraldError for convenience
 pub use super::herald_error::HeraldError;
 
@@ -142,52 +147,22 @@ pub trait Herald: Send + Sync {
     fn mime_type(&self) -> &str;
 }
 
-/// Placeholder for PaladinResult (will be defined in Epic 1)
+/// Streaming chunk of output
 ///
-/// TODO: Replace with actual PaladinResult from Epic 1 implementation
-#[derive(Debug, Clone)]
-pub struct PaladinResult {
-    pub paladin_id: String,
-    pub paladin_name: String,
-    pub status: String,
-    pub output: String,
-}
-
-/// Placeholder for BattalionResult (will be defined in Epic 4)
-///
-/// TODO: Replace with actual BattalionResult from Epic 4 implementation
-#[derive(Debug, Clone)]
-pub struct BattalionResult {
-    pub battalion_id: String,
-    pub battalion_name: String,
-    pub status: String,
-    pub results: Vec<PaladinResult>,
-}
-
-/// Placeholder for StreamChunk (streaming support)
-///
-/// TODO: Define complete StreamChunk structure
+/// TODO: Define complete StreamChunk structure with full metadata
 #[derive(Debug, Clone)]
 pub struct StreamChunk {
     pub content: String,
     pub is_final: bool,
 }
 
-/// Placeholder for ExecutionMetadata (streaming support)
+/// Execution metadata for streaming
 ///
-/// TODO: Define complete ExecutionMetadata structure
+/// TODO: Define complete ExecutionMetadata structure with full telemetry
 #[derive(Debug, Clone)]
 pub struct ExecutionMetadata {
     pub execution_time_ms: u64,
     pub total_tokens: u32,
-}
-
-/// Placeholder for PaladinError (will be defined in Epic 1)
-///
-/// TODO: Replace with actual PaladinError from Epic 1 implementation
-#[derive(Debug)]
-pub struct PaladinError {
-    pub message: String,
 }
 
 #[cfg(test)]
@@ -199,7 +174,7 @@ mod tests {
 
     impl Herald for MockHerald {
         fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
-            Ok(format!("MOCK: {}", result.paladin_name))
+            Ok(format!("MOCK: {}", result.output))
         }
 
         fn format_battalion_result(&self, result: &BattalionResult) -> Result<String, HeraldError> {
@@ -219,7 +194,7 @@ mod tests {
         }
 
         fn format_error(&self, error: &PaladinError) -> String {
-            format!("ERROR: {}", error.message)
+            format!("ERROR: {}", error)
         }
 
         fn name(&self) -> &str {
@@ -240,26 +215,40 @@ mod tests {
 
     #[test]
     fn test_format_paladin_result() {
+        use crate::application::ports::output::paladin_port::StopReason;
         let herald = MockHerald;
         let result = PaladinResult {
-            paladin_id: "test-id".to_string(),
-            paladin_name: "TestPaladin".to_string(),
-            status: "success".to_string(),
             output: "Test output".to_string(),
+            token_count: 100,
+            execution_time_ms: 1500,
+            loop_count: 1,
+            stop_reason: StopReason::Completed,
         };
 
         let formatted = herald.format_paladin_result(&result).unwrap();
-        assert_eq!(formatted, "MOCK: TestPaladin");
+        assert_eq!(formatted, "MOCK: Test output");
     }
 
     #[test]
     fn test_format_battalion_result() {
+        use crate::core::platform::container::battalion::{BattalionStatus, BattalionStrategy};
+        use chrono::Utc;
+        use uuid::Uuid;
         let herald = MockHerald;
         let result = BattalionResult {
-            battalion_id: "bat-id".to_string(),
+            battalion_id: Uuid::new_v4(),
             battalion_name: "TestBattalion".to_string(),
-            status: "success".to_string(),
-            results: vec![],
+            started_at: Utc::now(),
+            completed_at: Utc::now(),
+            final_output: "Combined output".to_string(),
+            paladin_results: vec![],
+            status: BattalionStatus::Completed,
+            strategy_used: BattalionStrategy::Formation,
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times: vec![],
+            paladin_success_count: 0,
+            paladin_failure_count: 0,
         };
 
         let formatted = herald.format_battalion_result(&result).unwrap();
@@ -301,12 +290,11 @@ mod tests {
     #[test]
     fn test_format_error() {
         let herald = MockHerald;
-        let error = PaladinError {
-            message: "Something went wrong".to_string(),
-        };
+        let error = PaladinError::ExecutionError("Something went wrong".to_string());
 
         let formatted = herald.format_error(&error);
-        assert_eq!(formatted, "ERROR: Something went wrong");
+        assert!(formatted.contains("ERROR"));
+        assert!(formatted.contains("Something went wrong"));
     }
 
     #[test]
