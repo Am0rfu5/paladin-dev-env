@@ -468,10 +468,14 @@ mod tests {
     #[test]
     fn test_format_stream_chunk() {
         let herald = MarkdownHerald::new();
-        let chunk = StreamChunk {
-            content: "Streaming content".to_string(),
-            is_final: false,
-        };
+        let chunk = StreamChunk::builder()
+            .chunk_id(uuid::Uuid::new_v4())
+            .sequence_number(0)
+            .timestamp(chrono::Utc::now())
+            .content("Streaming content".to_string())
+            .is_final(false)
+            .build()
+            .unwrap();
 
         let formatted = herald.format_stream_chunk(&chunk).unwrap();
         assert!(formatted.is_some());
@@ -571,18 +575,30 @@ mod tests {
 
         // Simulate streaming chunks
         let chunks = vec![
-            StreamChunk {
-                content: "First chunk of text. ".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "Second chunk of text. ".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "Final chunk.".to_string(),
-                is_final: true,
-            },
+            StreamChunk::builder()
+                .chunk_id(uuid::Uuid::new_v4())
+                .sequence_number(0)
+                .timestamp(chrono::Utc::now())
+                .content("First chunk of text. ".to_string())
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(uuid::Uuid::new_v4())
+                .sequence_number(1)
+                .timestamp(chrono::Utc::now())
+                .content("Second chunk of text. ".to_string())
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(uuid::Uuid::new_v4())
+                .sequence_number(2)
+                .timestamp(chrono::Utc::now())
+                .content("Final chunk.".to_string())
+                .is_final(true)
+                .build()
+                .unwrap(),
         ];
 
         // Collect streamed output

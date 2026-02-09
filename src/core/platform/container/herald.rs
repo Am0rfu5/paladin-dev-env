@@ -16,6 +16,11 @@
 //! println!("{}", formatted);
 //! ```
 
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use uuid::Uuid;
+
 // Re-export actual domain types for Herald consumers
 pub use crate::application::ports::output::paladin_port::PaladinResult;
 pub use crate::application::use_cases::paladin::error::PaladinError;
@@ -149,11 +154,170 @@ pub trait Herald: Send + Sync {
 
 /// Streaming chunk of output
 ///
-/// TODO: Define complete StreamChunk structure with full metadata
-#[derive(Debug, Clone)]
+/// Represents a single chunk of output during streaming execution.
+/// Each chunk has a unique ID, sequence number, timestamp, and optional metadata
+/// for tracking and debugging purposes.
+///
+/// # Fields
+///
+/// * `chunk_id` - Unique identifier for this chunk
+/// * `sequence_number` - Order in the stream (0-indexed)
+/// * `timestamp` - When this chunk was generated
+/// * `content` - The actual content/text of this chunk
+/// * `token_count` - Approximate token count in this chunk (if available)
+/// * `is_final` - Whether this is the last chunk in the stream
+/// * `metadata` - Extensible map for provider-specific or custom metadata
+///
+/// # Examples
+///
+/// ```
+/// use paladin::core::platform::container::herald::StreamChunk;
+/// use uuid::Uuid;
+/// use chrono::Utc;
+/// use std::collections::HashMap;
+///
+/// let chunk = StreamChunk::builder()
+///     .chunk_id(Uuid::new_v4())
+///     .sequence_number(0)
+///     .timestamp(Utc::now())
+///     .content("Hello, world!".to_string())
+///     .is_final(false)
+///     .build()
+///     .unwrap();
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StreamChunk {
+    /// Unique identifier for this chunk
+    pub chunk_id: Uuid,
+
+    /// Sequence number in the stream (0-indexed)
+    pub sequence_number: u64,
+
+    /// Timestamp when chunk was generated
+    pub timestamp: DateTime<Utc>,
+
+    /// Content of this chunk
     pub content: String,
+
+    /// Approximate token count in this chunk
+    pub token_count: Option<u32>,
+
+    /// Whether this is the final chunk in the stream
     pub is_final: bool,
+
+    /// Extensible metadata for future fields
+    #[serde(flatten)]
+    pub metadata: HashMap<String, serde_json::Value>,
+}
+
+impl StreamChunk {
+    /// Create a new StreamChunkBuilder
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use paladin::core::platform::container::herald::StreamChunk;
+    /// use uuid::Uuid;
+    /// use chrono::Utc;
+    ///
+    /// let chunk = StreamChunk::builder()
+    ///     .chunk_id(Uuid::new_v4())
+    ///     .sequence_number(0)
+    ///     .timestamp(Utc::now())
+    ///     .content("chunk content".to_string())
+    ///     .is_final(false)
+    ///     .build()
+    ///     .unwrap();
+    /// ```
+    pub fn builder() -> StreamChunkBuilder {
+        StreamChunkBuilder::default()
+    }
+}
+
+/// Builder for StreamChunk
+///
+/// Provides a fluent interface for constructing StreamChunk instances
+/// with validation.
+#[derive(Default)]
+pub struct StreamChunkBuilder {
+    chunk_id: Option<Uuid>,
+    sequence_number: Option<u64>,
+    timestamp: Option<DateTime<Utc>>,
+    content: Option<String>,
+    token_count: Option<u32>,
+    is_final: Option<bool>,
+    metadata: HashMap<String, serde_json::Value>,
+}
+
+impl StreamChunkBuilder {
+    /// Set the chunk ID
+    pub fn chunk_id(mut self, chunk_id: Uuid) -> Self {
+        self.chunk_id = Some(chunk_id);
+        self
+    }
+
+    /// Set the sequence number
+    pub fn sequence_number(mut self, sequence_number: u64) -> Self {
+        self.sequence_number = Some(sequence_number);
+        self
+    }
+
+    /// Set the timestamp
+    pub fn timestamp(mut self, timestamp: DateTime<Utc>) -> Self {
+        self.timestamp = Some(timestamp);
+        self
+    }
+
+    /// Set the content
+    pub fn content(mut self, content: String) -> Self {
+        self.content = Some(content);
+        self
+    }
+
+    /// Set the token count
+    pub fn token_count(mut self, token_count: u32) -> Self {
+        self.token_count = Some(token_count);
+        self
+    }
+
+    /// Set whether this is the final chunk
+    pub fn is_final(mut self, is_final: bool) -> Self {
+        self.is_final = Some(is_final);
+        self
+    }
+
+    /// Add a metadata entry
+    pub fn add_metadata(mut self, key: String, value: serde_json::Value) -> Self {
+        self.metadata.insert(key, value);
+        self
+    }
+
+    /// Build the StreamChunk
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if required fields are missing
+    pub fn build(self) -> Result<StreamChunk, HeraldError> {
+        Ok(StreamChunk {
+            chunk_id: self
+                .chunk_id
+                .ok_or_else(|| HeraldError::InvalidResult("chunk_id is required".to_string()))?,
+            sequence_number: self.sequence_number.ok_or_else(|| {
+                HeraldError::InvalidResult("sequence_number is required".to_string())
+            })?,
+            timestamp: self
+                .timestamp
+                .ok_or_else(|| HeraldError::InvalidResult("timestamp is required".to_string()))?,
+            content: self
+                .content
+                .ok_or_else(|| HeraldError::InvalidResult("content is required".to_string()))?,
+            token_count: self.token_count,
+            is_final: self
+                .is_final
+                .ok_or_else(|| HeraldError::InvalidResult("is_final is required".to_string()))?,
+            metadata: self.metadata,
+        })
+    }
 }
 
 /// Execution metadata for streaming
@@ -258,18 +422,26 @@ mod tests {
     #[test]
     fn test_format_stream_chunk() {
         let herald = MockHerald;
-        let chunk = StreamChunk {
-            content: "partial output".to_string(),
-            is_final: false,
-        };
+        let chunk = StreamChunk::builder()
+            .chunk_id(Uuid::new_v4())
+            .sequence_number(0)
+            .timestamp(Utc::now())
+            .content("partial output".to_string())
+            .is_final(false)
+            .build()
+            .unwrap();
 
         let result = herald.format_stream_chunk(&chunk).unwrap();
         assert!(result.is_none());
 
-        let final_chunk = StreamChunk {
-            content: "final output".to_string(),
-            is_final: true,
-        };
+        let final_chunk = StreamChunk::builder()
+            .chunk_id(Uuid::new_v4())
+            .sequence_number(1)
+            .timestamp(Utc::now())
+            .content("final output".to_string())
+            .is_final(true)
+            .build()
+            .unwrap();
 
         let result = herald.format_stream_chunk(&final_chunk).unwrap();
         assert_eq!(result, Some("final output".to_string()));

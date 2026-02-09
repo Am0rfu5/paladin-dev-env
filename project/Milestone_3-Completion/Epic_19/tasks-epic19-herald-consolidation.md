@@ -77,7 +77,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.17 Run `cargo test` to verify all tests fail as expected
   - [x] 1.18 Document test expectations in comments
 
-- [ ] 2.0 Remove Placeholder Types and Add Imports
+- [x] 2.0 Remove Placeholder Types and Add Imports ✅ **COMPLETED & COMMITTED (43ce29d)**
   - [x] 2.1 Read `src/core/platform/container/herald.rs` lines 140-195 to understand current placeholders
   - [x] 2.2 Read `src/application/ports/output/paladin_port.rs` to find actual `PaladinResult` type definition
   - [x] 2.3 Read `src/application/use_cases/paladin/error.rs` to find actual `PaladinError` type definition
@@ -101,23 +101,27 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.14 Verify no duplicate types remain: `grep -r "struct BattalionResult" src/`
   - [x] 2.15 Verify no duplicate types remain: `grep -r "enum PaladinError" src/`
 
-- [ ] 3.0 Complete StreamChunk Structure with Full Metadata
-  - [ ] 3.1 Read current `StreamChunk` definition in `herald.rs` (around line 169)
-  - [ ] 3.2 Add required dependencies to `Cargo.toml`: `uuid`, `chrono` (if not present)
-  - [ ] 3.3 Define complete `StreamChunk` struct with all fields per PRD design
-  - [ ] 3.4 Add `chunk_id: Uuid` field
-  - [ ] 3.5 Add `sequence_number: u64` field
-  - [ ] 3.6 Add `timestamp: DateTime<Utc>` field
-  - [ ] 3.7 Add `content: String` field
-  - [ ] 3.8 Add `token_count: Option<u32>` field
-  - [ ] 3.9 Add `is_final: bool` field
-  - [ ] 3.10 Add `metadata: HashMap<String, serde_json::Value>` field with `#[serde(flatten)]`
-  - [ ] 3.11 Implement `Debug`, `Clone` derives
-  - [ ] 3.12 Implement `Serialize`, `Deserialize` derives
-  - [ ] 3.13 Create `StreamChunkBuilder` struct
-  - [ ] 3.14 Implement builder methods: `chunk_id()`, `sequence_number()`, `timestamp()`, `content()`, `token_count()`, `is_final()`, `add_metadata()`
-  - [ ] 3.15 Implement `StreamChunkBuilder::build()` method with validation
-  - [ ] 3.16 Implement `StreamChunk::builder()` constructor
+- [x] 3.0 Complete StreamChunk Structure with Full Metadata
+  - [x] 3.1 Read current `StreamChunk` definition in `herald.rs` (around line 169)
+  - [x] 3.2 Add required dependencies to `Cargo.toml`: `uuid`, `chrono` (if not present) - Already present
+  - [x] 3.3 Define complete `StreamChunk` struct with all fields per PRD design
+  - [x] 3.4 Add `chunk_id: Uuid` field
+  - [x] 3.5 Add `sequence_number: u64` field
+  - [x] 3.6 Add `timestamp: DateTime<Utc>` field
+  - [x] 3.7 Add `content: String` field
+  - [x] 3.8 Add `token_count: Option<u32>` field
+  - [x] 3.9 Add `is_final: bool` field
+  - [x] 3.10 Add `metadata: HashMap<String, serde_json::Value>` field with `#[serde(flatten)]`
+  - [x] 3.11 Implement `Debug`, `Clone` derives
+  - [x] 3.12 Implement `Serialize`, `Deserialize` derives
+  - [x] 3.13 Create `StreamChunkBuilder` struct
+  - [x] 3.14 Implement builder methods: `chunk_id()`, `sequence_number()`, `timestamp()`, `content()`, `token_count()`, `is_final()`, `add_metadata()`
+  - [x] 3.15 Implement `StreamChunkBuilder::build()` method with validation
+  - [x] 3.16 Implement `StreamChunk::builder()` constructor
+  - [x] 3.17 Add comprehensive rustdoc to `StreamChunk` and builder with examples
+  - [x] 3.18 Update all StreamChunk usage sites in codebase (herald.rs, json_herald.rs, markdown_herald.rs, table_herald.rs)
+  - [x] 3.19 Run StreamChunk tests: `cargo test --lib herald::tests` - StreamChunk tests passing
+  - [x] 3.20 Run `cargo test --test herald` to verify no regressions
   - [ ] 3.17 Add rustdoc comments to all public fields and methods
   - [ ] 3.18 Update all `StreamChunk` usage sites in codebase
   - [ ] 3.19 Run StreamChunk tests (should now pass)

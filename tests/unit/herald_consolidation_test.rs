@@ -179,7 +179,7 @@ fn test_stream_chunk_builder_pattern() {
         .sequence_number(3)
         .timestamp(Utc::now())
         .content("Builder test".to_string())
-        .token_count(Some(15))
+        .token_count(15)
         .is_final(true)
         .add_metadata("key1".to_string(), json!("value1"))
         .add_metadata("key2".to_string(), json!(123))

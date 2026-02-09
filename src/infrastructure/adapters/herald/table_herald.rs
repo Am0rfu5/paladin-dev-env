@@ -339,10 +339,14 @@ mod tests {
     #[test]
     fn test_format_stream_chunk_returns_none() {
         let herald = TableHerald::default();
-        let chunk = crate::core::platform::container::herald::StreamChunk {
-            content: "test content".to_string(),
-            is_final: false,
-        };
+        let chunk = crate::core::platform::container::herald::StreamChunk::builder()
+            .chunk_id(uuid::Uuid::new_v4())
+            .sequence_number(0)
+            .timestamp(chrono::Utc::now())
+            .content("test content".to_string())
+            .is_final(false)
+            .build()
+            .unwrap();
 
         let result = herald.format_stream_chunk(&chunk);
         assert!(result.is_ok());
@@ -510,18 +514,30 @@ mod tests {
 
         // TableHerald should buffer all chunks and return None during streaming
         let chunks = vec![
-            StreamChunk {
-                content: "First chunk".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "Second chunk".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "Final chunk".to_string(),
-                is_final: true,
-            },
+            StreamChunk::builder()
+                .chunk_id(uuid::Uuid::new_v4())
+                .sequence_number(0)
+                .timestamp(chrono::Utc::now())
+                .content("First chunk".to_string())
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(uuid::Uuid::new_v4())
+                .sequence_number(1)
+                .timestamp(chrono::Utc::now())
+                .content("Second chunk".to_string())
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(uuid::Uuid::new_v4())
+                .sequence_number(2)
+                .timestamp(chrono::Utc::now())
+                .content("Final chunk".to_string())
+                .is_final(true)
+                .build()
+                .unwrap(),
         ];
 
         // All chunks should return None (buffering)
