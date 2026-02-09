@@ -1,0 +1,106 @@
+# Paladin with RAG (Retrieval-Augmented Generation)
+# This demonstrates a Paladin with semantic search capabilities over a document corpus
+
+name: rag_assistant
+description: AI assistant with document retrieval and context-aware responses
+
+# Paladin configuration
+paladin:
+  system_prompt: |
+    You are an intelligent research assistant with access to a document database.
+    
+    Your workflow:
+    1. Understand the user's question
+    2. Search the document database for relevant information
+    3. Synthesize the retrieved information
+    4. Provide a comprehensive, well-cited answer
+    
+    Guidelines:
+    - Always cite sources when using retrieved information
+    - If information isn't in the database, clearly state this
+    - Combine multiple sources when relevant
+    - Provide context and explain connections
+    - Be concise but thorough
+  
+  name: rag_assistant
+  user_name: Researcher
+  model: gpt-4
+  temperature: 0.6
+  max_loops: 5
+
+# Garrison (Memory) configuration
+garrison:
+  type: semantic  # Enable semantic search
+  backend: qdrant  # Vector database
+  
+  # Qdrant configuration
+  connection:
+    url: "http://localhost:6333"
+    collection: "documents"
+  
+  # Embedding configuration
+  embeddings:
+    provider: openai
+    model: text-embedding-ada-002
+    dimensions: 1536
+  
+  # Search configuration
+  search:
+    top_k: 5  # Retrieve top 5 most relevant chunks
+    score_threshold: 0.7  # Minimum similarity score
+    
+  # Chunking strategy (for document ingestion)
+  chunking:
+    strategy: semantic  # or: fixed, sentence, paragraph
+    chunk_size: 500
+    overlap: 50
+
+# Arsenal (Tools) configuration
+arsenal:
+  tools:
+    # Document search tool
+    - name: search_documents
+      description: "Search the document database for relevant information"
+      type: builtin
+      function: garrison.search
+    
+    # Citation formatter
+    - name: format_citation
+      description: "Format a citation in a standard format"
+      type: custom
+      implementation: |
+        fn format_citation(title: str, author: str, year: str) -> str {
+          return f"{author} ({year}). {title}"
+        }
+
+# Output configuration
+output:
+  include_sources: true  # Include retrieved document sources
+  citation_style: apa    # Citation format
+
+# Example document ingestion (run separately):
+# paladin ingest -c examples/cli_configs/paladin_with_rag.yaml \
+#   --documents ./docs/ \
+#   --recursive \
+#   --file-types "md,txt,pdf"
+
+# Usage:
+# paladin run -c examples/cli_configs/paladin_with_rag.yaml \
+#   -i "What are the best practices for implementing hexagonal architecture in Rust?"
+#
+# The assistant will:
+# 1. Search the document database for relevant information about hexagonal architecture and Rust
+# 2. Retrieve the most relevant document chunks
+# 3. Synthesize the information into a comprehensive answer
+# 4. Cite the sources used
+
+# Advanced usage with conversation:
+# paladin run -c examples/cli_configs/paladin_with_rag.yaml --interactive
+# > What are the main components of Paladin?
+# > Can you elaborate on the Battalion orchestration patterns?
+# > How does the Garrison memory system work?
+
+# Note: This configuration requires:
+# - Qdrant running (docker run -p 6333:6333 qdrant/qdrant)
+# - Documents ingested into the collection
+# - OpenAI API key for embeddings
