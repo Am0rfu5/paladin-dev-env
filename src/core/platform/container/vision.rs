@@ -215,6 +215,30 @@ pub enum VisionError {
     #[error("Invalid vision request: {0}")]
     InvalidRequest(String),
 
+    /// Authentication error (401, invalid API key).
+    #[error("Authentication error: {0}")]
+    AuthenticationError(String),
+
+    /// Rate limit exceeded (429, too many requests).
+    #[error("Rate limit exceeded: {0}")]
+    RateLimitExceeded(String),
+
+    /// Provider-specific error (5xx server errors).
+    #[error("Provider error: {0}")]
+    ProviderError(String),
+
+    /// Request timeout.
+    #[error("Request timeout after {0} seconds")]
+    Timeout(u64),
+
+    /// Unsupported vision provider.
+    #[error("Unsupported vision provider: {0}")]
+    UnsupportedProvider(String),
+
+    /// Maximum retry attempts exceeded.
+    #[error("Maximum retry attempts exceeded: {0} attempts")]
+    MaxRetriesExceeded(u32),
+
     /// IO error.
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
@@ -415,5 +439,74 @@ mod tests {
             }
             _ => panic!("Expected UnsupportedFormat error"),
         }
+    }
+
+    #[test]
+    fn test_vision_error_variants() {
+        // Test AuthenticationError
+        let auth_err = VisionError::AuthenticationError("Invalid API key".to_string());
+        assert!(auth_err.to_string().contains("Authentication error"));
+        assert!(auth_err.to_string().contains("Invalid API key"));
+
+        // Test RateLimitExceeded
+        let rate_err = VisionError::RateLimitExceeded("Too many requests".to_string());
+        assert!(rate_err.to_string().contains("Rate limit exceeded"));
+        assert!(rate_err.to_string().contains("Too many requests"));
+
+        // Test ProviderError
+        let provider_err = VisionError::ProviderError("Internal server error".to_string());
+        assert!(provider_err.to_string().contains("Provider error"));
+        assert!(provider_err.to_string().contains("Internal server error"));
+
+        // Test Timeout
+        let timeout_err = VisionError::Timeout(30);
+        assert!(timeout_err.to_string().contains("timeout"));
+        assert!(timeout_err.to_string().contains("30"));
+
+        // Test UnsupportedProvider
+        let unsupported_err = VisionError::UnsupportedProvider("unknown-provider".to_string());
+        assert!(
+            unsupported_err
+                .to_string()
+                .contains("Unsupported vision provider")
+        );
+        assert!(unsupported_err.to_string().contains("unknown-provider"));
+
+        // Test MaxRetriesExceeded
+        let max_retries_err = VisionError::MaxRetriesExceeded(3);
+        assert!(
+            max_retries_err
+                .to_string()
+                .contains("Maximum retry attempts exceeded")
+        );
+        assert!(max_retries_err.to_string().contains("3"));
+    }
+
+    #[test]
+    fn test_vision_error_existing_variants() {
+        // Test InvalidImage
+        let invalid_img = VisionError::InvalidImage("Corrupted data".to_string());
+        assert!(invalid_img.to_string().contains("Invalid image data"));
+
+        // Test UnsupportedFormat
+        let unsupported_fmt = VisionError::UnsupportedFormat("BMP not supported".to_string());
+        assert!(
+            unsupported_fmt
+                .to_string()
+                .contains("Unsupported image format")
+        );
+
+        // Test NetworkError
+        let network_err = VisionError::NetworkError("Connection failed".to_string());
+        assert!(network_err.to_string().contains("Network error"));
+
+        // Test FileTooLarge
+        let large_file = VisionError::FileTooLarge {
+            size: 10_000_000,
+            max: 5_000_000,
+        };
+        assert!(large_file.to_string().contains("too large"));
+        assert!(large_file.to_string().contains("10000000"));
+        assert!(large_file.to_string().contains("5000000"));
     }
 }

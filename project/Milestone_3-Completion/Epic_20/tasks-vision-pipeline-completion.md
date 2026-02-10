@@ -84,13 +84,13 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.9 Run `cargo test` to verify config loading works
 
 - [x] 1.0 Add Vision Configuration Support
-- [ ] 2.0 Define Vision Error Types
-  - [ ] 2.1 Read `src/core/platform/container/sentinel/vision_types.rs` to locate existing types
-  - [ ] 2.2 Define `VisionError` enum with all variants from FR-5.1: InvalidImage, UnsupportedFormat, AuthenticationError, RateLimitExceeded, ProviderError, NetworkError, Timeout, UnsupportedProvider, MaxRetriesExceeded
-  - [ ] 2.3 Add `#[derive(Debug, thiserror::Error)]` attribute
-  - [ ] 2.4 Add `#[error("...")]` attributes for each variant with descriptive messages
-  - [ ] 2.5 Add `#[cfg(test)]` module with unit tests creating each error variant
-  - [ ] 2.6 Run `cargo test` to verify error types compile and tests pass
+- [x] 2.0 Define Vision Error Types
+  - [x] 2.1 Read `src/core/platform/container/sentinel/vision_types.rs` to locate existing types
+  - [x] 2.2 Define `VisionError` enum with all variants from FR-5.1: InvalidImage, UnsupportedFormat, AuthenticationError, RateLimitExceeded, ProviderError, NetworkError, Timeout, UnsupportedProvider, MaxRetriesExceeded
+  - [x] 2.3 Add `#[derive(Debug, thiserror::Error)]` attribute
+  - [x] 2.4 Add `#[error("...")]` attributes for each variant with descriptive messages
+  - [x] 2.5 Add `#[cfg(test)]` module with unit tests creating each error variant
+  - [x] 2.6 Run `cargo test` to verify error types compile and tests pass
 
 - [ ] 3.0 Implement OpenAI Vision Adapter with Retry Logic
   - [ ] 3.1 Read `src/infrastructure/adapters/llm/openai_vision.rs` (line 212) to understand TODO location
