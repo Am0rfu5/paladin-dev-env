@@ -117,29 +117,29 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.22 Write test: exponential backoff calculation
   - [x] 3.23 Run `cargo test openai_vision` to verify all tests pass
 
-- [ ] 4.0 Implement Anthropic Vision Adapter with Retry Logic
-  - [ ] 4.1 Read `src/infrastructure/adapters/llm/anthropic_vision.rs` (line 220) to understand TODO location
-  - [ ] 4.2 Add `VisionConfig` field to `AnthropicVisionAdapter` struct
-  - [ ] 4.3 Update constructor to accept and store `VisionConfig`
-  - [ ] 4.4 Implement request body construction for `/v1/messages` endpoint (FR-2.2)
-  - [ ] 4.5 Implement Anthropic content block format for images: `{"type": "image", "source": {...}}`
-  - [ ] 4.6 Implement URL-based image: `source: {type: "url", url: "..."}`
-  - [ ] 4.7 Implement base64-encoded image: `source: {type: "base64", media_type: "image/jpeg", data: "..."}`
-  - [ ] 4.8 Implement HTTP POST request with proper headers (x-api-key, anthropic-version, Content-Type)
-  - [ ] 4.9 Implement response parsing for success (200): extract content[0].text, token usage, model
-  - [ ] 4.10 Implement error handling: map status codes (400→InvalidImage, 401→AuthenticationError, 429→RateLimitExceeded, 500+→ProviderError)
-  - [ ] 4.11 Implement retry logic helper function (same pattern as OpenAI)
-  - [ ] 4.12 Implement retry loop with configurable parameters
-  - [ ] 4.13 Add `#[cfg(test)]` module for unit tests
-  - [ ] 4.14 Write test: successful API call with URL-based image (mock HTTP)
-  - [ ] 4.15 Write test: successful API call with base64-encoded image
-  - [ ] 4.16 Write test: Anthropic content block format validation
-  - [ ] 4.17 Write test: 400 error handling
-  - [ ] 4.18 Write test: 401 error handling
-  - [ ] 4.19 Write test: 429 error triggers retry
-  - [ ] 4.20 Write test: 500 error triggers retry
-  - [ ] 4.21 Write test: max retries exceeded
-  - [ ] 4.22 Run `cargo test anthropic_vision` to verify all tests pass
+- [x] 4.0 Implement Anthropic Vision Adapter with Retry Logic
+  - [x] 4.1 Read `src/infrastructure/adapters/llm/anthropic_vision.rs` (line 220) to understand TODO location
+  - [x] 4.2 Add `VisionConfig` field to `AnthropicVisionAdapter` struct
+  - [x] 4.3 Update constructor to accept and store `VisionConfig`
+  - [x] 4.4 Implement request body construction for `/v1/messages` endpoint (FR-2.2)
+  - [x] 4.5 Implement Anthropic content block format for images: `{"type": "image", "source": {...}}`
+  - [x] 4.6 Implement URL-based image: `source: {type: "url", url: "..."}`
+  - [x] 4.7 Implement base64-encoded image: `source: {type: "base64", media_type: "image/jpeg", data: "..."}`
+  - [x] 4.8 Implement HTTP POST request with proper headers (x-api-key, anthropic-version, Content-Type)
+  - [x] 4.9 Implement response parsing for success (200): extract content[0].text, token usage, model
+  - [x] 4.10 Implement error handling: map status codes (400→InvalidImage, 401→AuthenticationError, 429→RateLimitExceeded, 500+→ProviderError)
+  - [x] 4.11 Implement retry logic helper function (same pattern as OpenAI)
+  - [x] 4.12 Implement retry loop with configurable parameters
+  - [x] 4.13 Add `#[cfg(test)]` module for unit tests
+  - [x] 4.14 Write test: successful API call with URL-based image (mock HTTP)
+  - [x] 4.15 Write test: successful API call with base64-encoded image
+  - [x] 4.16 Write test: Anthropic content block format validation
+  - [x] 4.17 Write test: 400 error handling
+  - [x] 4.18 Write test: 401 error handling
+  - [x] 4.19 Write test: 429 error triggers retry
+  - [x] 4.20 Write test: 500 error triggers retry
+  - [x] 4.21 Write test: max retries exceeded
+  - [x] 4.22 Run `cargo test anthropic_vision` to verify all tests pass
 
 - [ ] 5.0 Integrate Vision Execution in PaladinExecutionService
   - [ ] 5.1 Read `src/application/use_cases/paladin/paladin_execution_service.rs` (line 371) to locate TODO

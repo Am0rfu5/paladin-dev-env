@@ -124,8 +124,8 @@ impl AnthropicConfig {
 
 /// Anthropic Claude LLM Adapter
 pub struct AnthropicAdapter {
-    client: Client,
-    config: AnthropicConfig,
+    pub(crate) client: Client,
+    pub(crate) config: AnthropicConfig,
 }
 
 impl AnthropicAdapter {
