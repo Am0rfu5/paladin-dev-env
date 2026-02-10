@@ -141,23 +141,23 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.21 Write test: max retries exceeded
   - [x] 4.22 Run `cargo test anthropic_vision` to verify all tests pass
 
-- [ ] 5.0 Integrate Vision Execution in PaladinExecutionService
-  - [ ] 5.1 Read `src/application/use_cases/paladin/paladin_execution_service.rs` (line 371) to locate TODO
-  - [ ] 5.2 Add `vision_adapters` field to `PaladinExecutionService` struct: `HashMap<String, Arc<dyn VisionPort>>`
-  - [ ] 5.3 Update constructor to accept vision adapters and store in HashMap keyed by provider name
-  - [ ] 5.4 Implement `execute_with_vision()` method signature: `async fn execute_with_vision(&self, paladin: &Paladin, prompt: &str, images: Vec<VisionImage>) -> Result<VisionResult, PaladinError>`
-  - [ ] 5.5 Implement provider selection logic: extract provider from `paladin.model()` (e.g., "gpt-4" → "openai", "claude-3" → "anthropic")
-  - [ ] 5.6 Return `VisionError::UnsupportedProvider` if provider not in vision_adapters map
-  - [ ] 5.7 Implement multimodal prompt construction: combine system prompt + user prompt + images
-  - [ ] 5.8 Retrieve vision adapter from HashMap by provider name
-  - [ ] 5.9 Call vision adapter's `analyze_image()` method with prompt and images
-  - [ ] 5.10 Parse vision response (non-streaming, complete analysis)
-  - [ ] 5.11 Check response for stop words from `paladin.stop_words()`
-  - [ ] 5.12 If garrison configured, store vision interaction: prompt, images, response, timestamp
-  - [ ] 5.13 Respect `max_loops` configuration (vision call counts as one loop iteration)
-  - [ ] 5.14 Respect `timeout_seconds` configuration (wrap call in timeout)
-  - [ ] 5.15 Construct and return `VisionResult` with analysis text, token usage, model, metadata
-  - [ ] 5.16 Convert `VisionError` to `PaladinError` at boundary
+- [x] 5.0 Integrate Vision Execution in PaladinExecutionService
+  - [x] 5.1 Read `src/application/use_cases/paladin/paladin_execution_service.rs` (line 371) to locate TODO
+  - [x] 5.2 Add `vision_adapters` field to `PaladinExecutionService` struct: `HashMap<String, Arc<dyn VisionPort>>`
+  - [x] 5.3 Update constructor to accept vision adapters and store in HashMap keyed by provider name  
+  - [x] 5.4 Implement `execute_with_vision()` method signature: `async fn execute_with_vision(&self, paladin: &Paladin, prompt: &str, images: Vec<VisionImage>) -> Result<VisionResult, PaladinError>`
+  - [x] 5.5 Implement provider selection logic: extract provider from `paladin.model()` (e.g., "gpt-4" → "openai", "claude-3" → "anthropic")
+  - [x] 5.6 Return `VisionError::UnsupportedProvider` if provider not in vision_adapters map
+  - [x] 5.7 Implement multimodal prompt construction: combine system prompt + user prompt + images
+  - [x] 5.8 Retrieve vision adapter from HashMap by provider name
+  - [x] 5.9 Call vision adapter's `analyze_image()` method with prompt and images
+  - [x] 5.10 Parse vision response (non-streaming, complete analysis)
+  - [x] 5.11 Check response for stop words from `paladin.stop_words()`
+  - [x] 5.12 If garrison configured, store vision interaction: prompt, images, response, timestamp
+  - [x] 5.13 Respect `max_loops` configuration (vision call counts as one loop iteration)
+  - [x] 5.14 Respect `timeout_seconds` configuration (wrap call in timeout)
+  - [x] 5.15 Construct and return `VisionResult` with analysis text, token usage, model, metadata
+  - [x] 5.16 Convert `VisionError` to `PaladinError` at boundary
   - [ ] 5.17 Add `#[cfg(test)]` module for unit tests
   - [ ] 5.18 Write test: provider selection for OpenAI models
   - [ ] 5.19 Write test: provider selection for Anthropic models

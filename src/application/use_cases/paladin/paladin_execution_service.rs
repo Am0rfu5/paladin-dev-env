@@ -50,6 +50,7 @@ use crate::application::ports::output::arsenal_port::ArsenalPort;
 use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::application::ports::output::llm_port::{FunctionCall, LlmPort, LlmRequest};
 use crate::application::ports::output::paladin_port::{PaladinResult, StopReason};
+use crate::application::ports::output::vision_port::VisionPort;
 use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::application::use_cases::sanctum::memory_extraction_service::{
@@ -114,6 +115,9 @@ pub struct PaladinExecutionService {
 
     /// Optional memory extraction service for storing important information
     memory_extraction_service: Option<Arc<MemoryExtractionService>>,
+
+    /// Vision adapters registry (provider name → adapter)
+    vision_adapters: HashMap<String, Arc<dyn VisionPort>>,
 }
 
 impl PaladinExecutionService {
@@ -160,6 +164,7 @@ impl PaladinExecutionService {
             formatter: ToolResultFormatter::new(),
             rag_retrieval_service: None,
             memory_extraction_service: None,
+            vision_adapters: HashMap::new(),
         }
     }
 
@@ -222,6 +227,39 @@ impl PaladinExecutionService {
     /// ```
     pub fn with_herald(mut self, herald: Arc<dyn Herald>) -> Self {
         self.herald = Some(herald);
+        self
+    }
+
+    /// Registers a vision adapter for a specific provider
+    ///
+    /// # Arguments
+    ///
+    /// * `provider` - Provider name (e.g., "openai", "anthropic")
+    /// * `adapter` - The vision adapter implementation
+    ///
+    /// # Returns
+    ///
+    /// Returns self for method chaining
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    /// use paladin::infrastructure::adapters::llm::openai_adapter::OpenAIAdapter;
+    /// use std::sync::Arc;
+    /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::time::Duration;
+    ///
+    /// # fn example(llm_port: Arc<dyn LlmPort>, openai: Arc<OpenAIAdapter>) {
+    /// # let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    /// let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None)
+    ///     .with_vision_adapter("openai".to_string(), openai);
+    /// # }
+    /// ```
+    pub fn with_vision_adapter(mut self, provider: String, adapter: Arc<dyn VisionPort>) -> Self {
+        info!("Registering vision adapter for provider: {}", provider);
+        self.vision_adapters.insert(provider, adapter);
         self
     }
 
@@ -335,12 +373,12 @@ impl PaladinExecutionService {
     /// Execute a Paladin with vision capabilities
     ///
     /// Validates that the Paladin has vision enabled and the LLM provider supports vision.
-    /// Note: Full vision execution is not yet implemented.
+    /// Executes vision analysis using the registered vision adapters.
     pub async fn execute_with_vision(
         &self,
         paladin: &Paladin,
-        _task: &str,
-        _images: Vec<VisionContent>,
+        task: &str,
+        images: Vec<VisionContent>,
     ) -> Result<PaladinResult, PaladinError> {
         // Step 1: Validate vision is enabled on the Paladin
         if !paladin.node.vision_enabled {
@@ -358,10 +396,117 @@ impl PaladinExecutionService {
             )));
         }
 
-        // TODO: Implement full vision execution
-        Err(PaladinError::ExecutionError(
-            "Vision execution not yet fully implemented".to_string(),
-        ))
+        // Step 3: Extract provider from model name
+        let model = paladin.node.model.as_str();
+        let provider = self.extract_provider_from_model(model)?;
+
+        // Step 4: Get vision adapter for provider
+        let vision_adapter = self.vision_adapters.get(&provider).ok_or_else(|| {
+            PaladinError::ExecutionError(format!(
+                "No vision adapter registered for provider: {}. Available: {:?}",
+                provider,
+                self.vision_adapters.keys().collect::<Vec<_>>()
+            ))
+        })?;
+
+        // Step 5: Determine timeout from paladin config
+        let timeout_secs = paladin.node.max_loops.as_u32() as u64 * 60;
+        let timeout_duration = Duration::from_secs(timeout_secs);
+
+        // Step 6: Execute vision analysis with timeout
+        let vision_result = timeout(timeout_duration, async {
+            vision_adapter
+                .analyze_image(
+                    task,
+                    images.clone(),
+                    model,
+                    Some(4000), // Default max tokens for vision
+                )
+                .await
+                .map_err(|e| match e {
+                    crate::core::platform::container::vision::VisionError::InvalidRequest(msg) => {
+                        PaladinError::ExecutionError(msg)
+                    }
+                    crate::core::platform::container::vision::VisionError::Timeout(secs) => {
+                        PaladinError::ExecutionError(format!(
+                            "Vision request timed out after {} seconds",
+                            secs
+                        ))
+                    }
+                    crate::core::platform::container::vision::VisionError::MaxRetriesExceeded(
+                        attempts,
+                    ) => PaladinError::ExecutionError(format!(
+                        "Max retries exceeded: {} attempts",
+                        attempts
+                    )),
+                    _ => PaladinError::ExecutionError(e.to_string()),
+                })
+        })
+        .await
+        .map_err(|_| {
+            PaladinError::ExecutionError(format!(
+                "Vision execution timed out after {} seconds",
+                timeout_secs
+            ))
+        })??;
+
+        // Step 7: Check for stop words
+        for stop_word in &paladin.node.stop_words {
+            if vision_result.content.contains(stop_word) {
+                return Err(PaladinError::ExecutionError(format!(
+                    "Stop word detected: {}",
+                    stop_word
+                )));
+            }
+        }
+
+        // Step 8: Store in garrison if configured
+        if let Some(ref garrison) = self.garrison {
+            // Store user message with task
+            let user_entry = GarrisonEntry::new(ConversationRole::User, task.to_string());
+            garrison.remember(user_entry).await.map_err(|e| {
+                warn!("Failed to store user vision message in garrison: {}", e);
+                PaladinError::ExecutionError(format!("Garrison storage failed: {}", e))
+            })?;
+
+            // Store assistant response
+            let assistant_entry =
+                GarrisonEntry::new(ConversationRole::Assistant, vision_result.content.clone());
+            garrison.remember(assistant_entry).await.map_err(|e| {
+                warn!(
+                    "Failed to store assistant vision response in garrison: {}",
+                    e
+                );
+                PaladinError::ExecutionError(format!("Garrison storage failed: {}", e))
+            })?;
+        }
+
+        // Step 9: Build and return PaladinResult
+        Ok(PaladinResult {
+            output: vision_result.content,
+            loop_count: 1, // Vision is single-shot
+            token_count: vision_result.token_usage.total_tokens,
+            stop_reason: StopReason::Completed,
+            execution_time_ms: 0, // Will be set by caller if needed
+        })
+    }
+
+    /// Extract provider name from model string
+    ///
+    /// Examples:
+    /// - "gpt-4o" → "openai"
+    /// - "claude-3-opus" → "anthropic"
+    fn extract_provider_from_model(&self, model: &str) -> Result<String, PaladinError> {
+        if model.starts_with("gpt-") || model.starts_with("o1-") {
+            Ok("openai".to_string())
+        } else if model.starts_with("claude-") {
+            Ok("anthropic".to_string())
+        } else {
+            Err(PaladinError::ConfigurationError(format!(
+                "Cannot determine provider from model: {}. Use gpt-* or claude-* models",
+                model
+            )))
+        }
     }
 
     /// Internal execution logic without timeout wrapper

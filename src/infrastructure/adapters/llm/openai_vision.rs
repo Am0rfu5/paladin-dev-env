@@ -15,6 +15,7 @@ use crate::application::ports::output::llm_port::{
     FinishReason, LlmError, LlmRequest, LlmResponse, TokenUsage,
 };
 use crate::application::ports::output::vision_llm_port::VisionCapableLlm;
+use crate::application::ports::output::vision_port::{VisionPort, VisionResult, VisionTokenUsage};
 use crate::config::application_settings::VisionConfig;
 use crate::core::platform::container::vision::{
     ImageDetail, VisionContent, VisionError, VisionRequest,
@@ -454,6 +455,98 @@ impl VisionCapableLlm for OpenAIAdapter {
 
     fn supports_vision(&self) -> bool {
         true
+    }
+}
+
+/// VisionPort implementation for OpenAI
+#[async_trait]
+impl VisionPort for OpenAIAdapter {
+    async fn analyze_image(
+        &self,
+        prompt: &str,
+        images: Vec<VisionContent>,
+        model: &str,
+        max_tokens: Option<u32>,
+    ) -> Result<VisionResult, VisionError> {
+        // Validate model supports vision
+        if !Self::is_vision_model(model) {
+            return Err(VisionError::ModelNotSupported(format!(
+                "Model {} does not support vision",
+                model
+            )));
+        }
+
+        // Validate at least one image provided
+        if images.is_empty() {
+            return Err(VisionError::InvalidRequest(
+                "At least one image must be provided".to_string(),
+            ));
+        }
+
+        // Build vision content parts
+        let mut content_parts = vec![OpenAIContentPart::Text {
+            text: prompt.to_string(),
+        }];
+
+        for image in images {
+            let image_part = self.convert_vision_content(&image).await.map_err(|e| {
+                VisionError::InvalidRequest(format!("Failed to convert image: {}", e))
+            })?;
+            content_parts.push(image_part);
+        }
+
+        // Build request
+        let vision_message = OpenAIVisionMessage {
+            role: "user".to_string(),
+            content: content_parts,
+        };
+
+        let request = OpenAIVisionApiRequest {
+            model: model.to_string(),
+            messages: vec![vision_message],
+            max_tokens: max_tokens.unwrap_or(1000) as usize,
+            temperature: None,
+        };
+
+        // Load settings for vision config
+        let settings = crate::config::application_settings::Settings::new()
+            .map_err(|e| VisionError::InvalidRequest(format!("Failed to load settings: {}", e)))?;
+        let vision_config = settings.vision.unwrap_or_default();
+
+        // Execute with retry logic
+        let response = self.execute_vision_request(request, &vision_config).await?;
+
+        // Extract content from the first choice
+        let content = response
+            .choices
+            .first()
+            .ok_or_else(|| VisionError::InvalidRequest("No choices in response".to_string()))?
+            .message
+            .content
+            .clone();
+
+        // Build VisionResult
+        let result = VisionResult {
+            content,
+            model: response.model,
+            token_usage: VisionTokenUsage {
+                prompt_tokens: response.usage.prompt_tokens,
+                completion_tokens: response.usage.completion_tokens,
+                total_tokens: response.usage.total_tokens,
+            },
+            metadata: std::collections::HashMap::new(),
+            timestamp: chrono::Utc::now(),
+        };
+
+        Ok(result)
+    }
+
+    fn is_vision_model(&self, model: &str) -> bool {
+        Self::is_vision_model(model)
+    }
+
+    fn provider_name(&self) -> &str {
+        "openai"
     }
 }
 

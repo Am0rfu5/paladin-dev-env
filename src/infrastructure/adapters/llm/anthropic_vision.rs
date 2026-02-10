@@ -18,6 +18,7 @@ use crate::application::ports::output::llm_port::{
     FinishReason, LlmError, LlmRequest, LlmResponse, TokenUsage,
 };
 use crate::application::ports::output::vision_llm_port::VisionCapableLlm;
+use crate::application::ports::output::vision_port::{VisionPort, VisionResult, VisionTokenUsage};
 use crate::config::application_settings::VisionConfig;
 use crate::core::platform::container::vision::{VisionContent, VisionError, VisionRequest};
 
@@ -475,6 +476,101 @@ impl VisionCapableLlm for AnthropicAdapter {
 
     fn supports_vision(&self) -> bool {
         true
+    }
+}
+
+/// VisionPort implementation for Anthropic Claude
+#[async_trait]
+impl VisionPort for AnthropicAdapter {
+    async fn analyze_image(
+        &self,
+        prompt: &str,
+        images: Vec<VisionContent>,
+        model: &str,
+        max_tokens: Option<u32>,
+    ) -> Result<VisionResult, VisionError> {
+        // Validate model supports vision
+        if !Self::is_vision_model(model) {
+            return Err(VisionError::ModelNotSupported(format!(
+                "Model {} does not support vision",
+                model
+            )));
+        }
+
+        // Validate at least one image provided
+        if images.is_empty() {
+            return Err(VisionError::InvalidRequest(
+                "At least one image must be provided".to_string(),
+            ));
+        }
+
+        // Build vision content blocks - text first
+        let mut content_blocks = vec![ClaudeContentBlock::Text {
+            text: prompt.to_string(),
+        }];
+
+        // Add image blocks
+        for image in images {
+            let image_block = self.convert_vision_content(&image).await.map_err(|e| {
+                VisionError::InvalidRequest(format!("Failed to convert image: {}", e))
+            })?;
+            content_blocks.push(image_block);
+        }
+
+        // Build request
+        let message = ClaudeVisionApiMessage {
+            role: "user".to_string(),
+            content: content_blocks,
+        };
+
+        let request = ClaudeVisionApiRequest {
+            model: model.to_string(),
+            messages: vec![message],
+            max_tokens: max_tokens.unwrap_or(1000) as usize,
+        };
+
+        // Load settings for vision config
+        let settings = crate::config::application_settings::Settings::new()
+            .map_err(|e| VisionError::InvalidRequest(format!("Failed to load settings: {}", e)))?;
+        let vision_config = settings.vision.unwrap_or_default();
+
+        // Execute with retry logic
+        let response = self.execute_vision_request(request, &vision_config).await?;
+
+        // Extract text content from response
+        let content = response
+            .content
+            .iter()
+            .map(|block| match block {
+                ClaudeResponseContent::Text { text } => text.clone(),
+            })
+            .next()
+            .ok_or_else(|| {
+                VisionError::InvalidRequest("No text content in response".to_string())
+            })?;
+
+        // Build VisionResult
+        let result = VisionResult {
+            content,
+            model: response.model,
+            token_usage: VisionTokenUsage {
+                prompt_tokens: response.usage.input_tokens,
+                completion_tokens: response.usage.output_tokens,
+                total_tokens: response.usage.input_tokens + response.usage.output_tokens,
+            },
+            metadata: std::collections::HashMap::new(),
+            timestamp: chrono::Utc::now(),
+        };
+
+        Ok(result)
+    }
+
+    fn is_vision_model(&self, model: &str) -> bool {
+        Self::is_vision_model(model)
+    }
+
+    fn provider_name(&self) -> &str {
+        "anthropic"
     }
 }
 

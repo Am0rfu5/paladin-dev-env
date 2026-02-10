@@ -13,3 +13,4 @@ pub mod queue_port;
 pub mod sanctum_port;
 pub mod search_engine_port;
 pub mod vision_llm_port;
+pub mod vision_port;
