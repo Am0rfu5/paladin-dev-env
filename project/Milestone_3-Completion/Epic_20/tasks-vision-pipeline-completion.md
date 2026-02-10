@@ -92,30 +92,30 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.5 Add `#[cfg(test)]` module with unit tests creating each error variant
   - [x] 2.6 Run `cargo test` to verify error types compile and tests pass
 
-- [ ] 3.0 Implement OpenAI Vision Adapter with Retry Logic
-  - [ ] 3.1 Read `src/infrastructure/adapters/llm/openai_vision.rs` (line 212) to understand TODO location
-  - [ ] 3.2 Add `VisionConfig` field to `OpenAIVisionAdapter` struct
-  - [ ] 3.3 Update constructor to accept and store `VisionConfig`
-  - [ ] 3.4 Implement request body construction for `/v1/chat/completions` endpoint (FR-1.2)
-  - [ ] 3.5 Implement URL-based image format: `{"type": "image_url", "image_url": {"url": "..."}}`
-  - [ ] 3.6 Implement base64-encoded image format: `{"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}}`
-  - [ ] 3.7 Implement HTTP POST request with proper headers (Authorization, Content-Type)
-  - [ ] 3.8 Implement response parsing for success (200): extract content, token usage, model
-  - [ ] 3.9 Implement error handling: map status codes (400→InvalidImage, 401→AuthenticationError, 429→RateLimitExceeded, 500+→ProviderError)
-  - [ ] 3.10 Implement retry logic helper function: calculate backoff delay using `initial_backoff_ms * (backoff_multiplier ^ retry_attempt)`
-  - [ ] 3.11 Implement retry loop: only retry on transient errors (429, 500, 502, 503, 504), max retries from config
-  - [ ] 3.12 Use `tokio::time::sleep` for backoff delays
-  - [ ] 3.13 Add `#[cfg(test)]` module for unit tests
-  - [ ] 3.14 Write test: successful API call with URL-based image (mock HTTP with mockito)
-  - [ ] 3.15 Write test: successful API call with base64-encoded image
-  - [ ] 3.16 Write test: multiple images in single request
-  - [ ] 3.17 Write test: 400 error handling
-  - [ ] 3.18 Write test: 401 error handling
-  - [ ] 3.19 Write test: 429 error triggers retry
-  - [ ] 3.20 Write test: 500 error triggers retry
-  - [ ] 3.21 Write test: max retries exceeded returns error
-  - [ ] 3.22 Write test: exponential backoff calculation
-  - [ ] 3.23 Run `cargo test openai_vision` to verify all tests pass
+- [x] 3.0 Implement OpenAI Vision Adapter with Retry Logic
+  - [x] 3.1 Read `src/infrastructure/adapters/llm/openai_vision.rs` (line 212) to understand TODO location
+  - [x] 3.2 Add `VisionConfig` field to `OpenAIVisionAdapter` struct
+  - [x] 3.3 Update constructor to accept and store `VisionConfig`
+  - [x] 3.4 Implement request body construction for `/v1/chat/completions` endpoint (FR-1.2)
+  - [x] 3.5 Implement URL-based image format: `{"type": "image_url", "image_url": {"url": "..."}}`
+  - [x] 3.6 Implement base64-encoded image format: `{"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}}`
+  - [x] 3.7 Implement HTTP POST request with proper headers (Authorization, Content-Type)
+  - [x] 3.8 Implement response parsing for success (200): extract content, token usage, model
+  - [x] 3.9 Implement error handling: map status codes (400→InvalidImage, 401→AuthenticationError, 429→RateLimitExceeded, 500+→ProviderError)
+  - [x] 3.10 Implement retry logic helper function: calculate backoff delay using `initial_backoff_ms * (backoff_multiplier ^ retry_attempt)`
+  - [x] 3.11 Implement retry loop: only retry on transient errors (429, 500, 502, 503, 504), max retries from config
+  - [x] 3.12 Use `tokio::time::sleep` for backoff delays
+  - [x] 3.13 Add `#[cfg(test)]` module for unit tests
+  - [x] 3.14 Write test: successful API call with URL-based image (mock HTTP with mockito)
+  - [x] 3.15 Write test: successful API call with base64-encoded image
+  - [x] 3.16 Write test: multiple images in single request
+  - [x] 3.17 Write test: 400 error handling
+  - [x] 3.18 Write test: 401 error handling
+  - [x] 3.19 Write test: 429 error triggers retry
+  - [x] 3.20 Write test: 500 error triggers retry
+  - [x] 3.21 Write test: max retries exceeded returns error
+  - [x] 3.22 Write test: exponential backoff calculation
+  - [x] 3.23 Run `cargo test openai_vision` to verify all tests pass
 
 - [ ] 4.0 Implement Anthropic Vision Adapter with Retry Logic
   - [ ] 4.1 Read `src/infrastructure/adapters/llm/anthropic_vision.rs` (line 220) to understand TODO location

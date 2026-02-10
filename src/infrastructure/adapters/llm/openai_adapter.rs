@@ -173,8 +173,8 @@ struct OpenAIStreamDelta {
 
 /// OpenAI LLM Adapter
 pub struct OpenAIAdapter {
-    config: OpenAIConfig,
-    client: Client,
+    pub(crate) config: OpenAIConfig,
+    pub(crate) client: Client,
 }
 
 impl OpenAIAdapter {
