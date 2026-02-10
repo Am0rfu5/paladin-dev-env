@@ -173,24 +173,24 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.16 Added test_new_vs_default_registry to verify new() vs default() behavior
   - [x] 5.17 Run `cargo check` and `cargo clippy` - All passed
 
-- [ ] 6.0 Update Documentation and Examples
-  - [ ] 6.1 Read existing rustdoc in `src/core/platform/container/herald.rs`
-  - [ ] 6.2 Update rustdoc for `StreamChunk` with field descriptions and usage example
-  - [ ] 6.3 Update rustdoc for `ExecutionMetadata` with field descriptions and usage example
-  - [ ] 6.4 Update rustdoc for `HeraldRegistry` documenting auto-registered formatters
-  - [ ] 6.5 Add usage example in `HeraldRegistry` rustdoc showing zero-config pattern
-  - [ ] 6.6 Add usage example showing extensible metadata pattern
-  - [ ] 6.7 Review `examples/herald_json_output.rs` and update if needed
-  - [ ] 6.8 Review `examples/herald_markdown_output.rs` and update if needed
-  - [ ] 6.9 Review `examples/herald_custom_formatter.rs` and update if needed
-  - [ ] 6.10 Update `CHANGELOG.md` with Epic 19 changes
-  - [ ] 6.11 Add section: "### Changed - Herald now uses actual domain types"
-  - [ ] 6.12 Add section: "### Added - StreamChunk extensible metadata"
-  - [ ] 6.13 Add section: "### Added - ExecutionMetadata full telemetry"
-  - [ ] 6.14 Add section: "### Added - Auto-registration of built-in formatters"
-  - [ ] 6.15 Run all Herald examples to verify they work: `cargo run --example herald_json_output`
-  - [ ] 6.16 Run `cargo run --example herald_markdown_output`
-  - [ ] 6.17 Run `cargo run --example herald_custom_formatter`
+- [x] 6.0 Update Documentation and Examples
+  - [x] 6.1 Read existing rustdoc in `src/core/platform/container/herald.rs`
+  - [x] 6.2 Update rustdoc for `StreamChunk` with field descriptions and usage example
+  - [x] 6.3 Update rustdoc for `ExecutionMetadata` with field descriptions and usage example
+  - [x] 6.4 Update rustdoc for `HeraldRegistry` documenting auto-registered formatters
+  - [x] 6.5 Add usage example in `HeraldRegistry` rustdoc showing zero-config pattern
+  - [x] 6.6 Add usage example showing extensible metadata pattern
+  - [x] 6.7 Review `examples/herald_json_output.rs` and update if needed
+  - [x] 6.8 Review `examples/herald_markdown_output.rs` and update if needed
+  - [x] 6.9 Review `examples/herald_custom_formatter.rs` and update if needed
+  - [x] 6.10 Update `CHANGELOG.md` with Epic 19 changes
+  - [x] 6.11 Add section: "### Changed - Herald now uses actual domain types"
+  - [x] 6.12 Add section: "### Added - StreamChunk extensible metadata"
+  - [x] 6.13 Add section: "### Added - ExecutionMetadata full telemetry"
+  - [x] 6.14 Add section: "### Added - Auto-registration of built-in formatters"
+  - [x] 6.15 Run all Herald examples to verify they work: `cargo run --example herald_json_output`
+  - [x] 6.16 Run `cargo run --example herald_markdown_output`
+  - [x] 6.17 Run `cargo run --example herald_custom_formatter`
 
 - [ ] 7.0 Quality Assurance and Final Testing
   - [ ] 7.1 Run full test suite: `cargo test`

@@ -156,26 +156,35 @@ pub trait Herald: Send + Sync {
 /// Streaming chunk of output
 ///
 /// Represents a single chunk of output during streaming execution.
-/// Each chunk has a unique ID, sequence number, timestamp, and optional metadata
-/// for tracking and debugging purposes.
+/// Each chunk has a unique ID, sequence number, timestamp, and extensible metadata
+/// for tracking, debugging, and custom provider-specific information.
 ///
 /// # Fields
 ///
-/// * `chunk_id` - Unique identifier for this chunk
-/// * `sequence_number` - Order in the stream (0-indexed)
-/// * `timestamp` - When this chunk was generated
+/// * `chunk_id` - Unique identifier for this specific chunk (UUID v4)
+/// * `sequence_number` - Order in the stream (0-indexed), ensures proper ordering
+/// * `timestamp` - When this chunk was generated (UTC timezone)
 /// * `content` - The actual content/text of this chunk
-/// * `token_count` - Approximate token count in this chunk (if available)
-/// * `is_final` - Whether this is the last chunk in the stream
-/// * `metadata` - Extensible map for provider-specific or custom metadata
+/// * `token_count` - Approximate token count in this chunk (if available from provider)
+/// * `is_final` - Whether this is the last chunk in the stream (enables cleanup logic)
+/// * `metadata` - Extensible HashMap for provider-specific or custom metadata
+///
+/// # Extensible Metadata
+///
+/// The `metadata` field allows adding custom information without changing the struct:
+/// - Provider-specific data (model confidence, temperature, etc.)
+/// - Performance metrics (generation time, API latency)
+/// - Debugging information (prompt hash, request ID)
+/// - Custom application data
 ///
 /// # Examples
+///
+/// ## Basic Usage
 ///
 /// ```
 /// use paladin::core::platform::container::herald::StreamChunk;
 /// use uuid::Uuid;
 /// use chrono::Utc;
-/// use std::collections::HashMap;
 ///
 /// let chunk = StreamChunk::builder()
 ///     .chunk_id(Uuid::new_v4())
@@ -183,6 +192,46 @@ pub trait Herald: Send + Sync {
 ///     .timestamp(Utc::now())
 ///     .content("Hello, world!".to_string())
 ///     .is_final(false)
+///     .build()
+///     .unwrap();
+/// ```
+///
+/// ## With Token Count
+///
+/// ```
+/// use paladin::core::platform::container::herald::StreamChunk;
+/// use uuid::Uuid;
+/// use chrono::Utc;
+///
+/// let chunk = StreamChunk::builder()
+///     .chunk_id(Uuid::new_v4())
+///     .sequence_number(5)
+///     .timestamp(Utc::now())
+///     .content("Processing data...".to_string())
+///     .token_count(15)
+///     .is_final(false)
+///     .build()
+///     .unwrap();
+/// ```
+///
+/// ## With Custom Metadata
+///
+/// ```
+/// use paladin::core::platform::container::herald::StreamChunk;
+/// use uuid::Uuid;
+/// use chrono::Utc;
+/// use serde_json::json;
+///
+/// let chunk = StreamChunk::builder()
+///     .chunk_id(Uuid::new_v4())
+///     .sequence_number(0)
+///     .timestamp(Utc::now())
+///     .content("Result: 42".to_string())
+///     .token_count(5)
+///     .is_final(true)
+///     .add_metadata("confidence".to_string(), json!(0.95))
+///     .add_metadata("model_temperature".to_string(), json!(0.7))
+///     .add_metadata("response_time_ms".to_string(), json!(350))
 ///     .build()
 ///     .unwrap();
 /// ```
@@ -324,9 +373,32 @@ impl StreamChunkBuilder {
 /// Execution metadata for streaming with complete telemetry
 ///
 /// Tracks comprehensive execution metrics including timing, token usage,
-/// costs, and errors. Supports extensible metadata via HashMap.
+/// costs, and errors. Provides complete observability for Paladin executions
+/// with support for extensible custom metadata.
+///
+/// # Fields
+///
+/// * `execution_id` - Unique identifier for this execution (UUID v4)
+/// * `start_time` - When execution started (UTC timezone)
+/// * `end_time` - When execution completed (None if still running)
+/// * `duration_ms` - Calculated execution duration in milliseconds
+/// * `model_used` - LLM model identifier (e.g., "gpt-4", "claude-3")
+/// * `token_usage` - Token consumption statistics (prompt, completion, total)
+/// * `cost_estimate` - Estimated cost in USD based on token usage and model pricing
+/// * `error_count` - Number of errors encountered during execution
+/// * `metadata` - Extensible HashMap for custom telemetry and provider-specific data
+///
+/// # Telemetry Use Cases
+///
+/// - **Performance Monitoring**: Track execution times, identify slow operations
+/// - **Cost Tracking**: Monitor token usage and estimated costs per execution
+/// - **Error Analysis**: Track error frequency and patterns
+/// - **Model Comparison**: Compare performance across different models
+/// - **Resource Planning**: Analyze token usage patterns for capacity planning
 ///
 /// # Examples
+///
+/// ## Basic Usage
 ///
 /// ```
 /// use paladin::core::platform::container::herald::ExecutionMetadata;
@@ -334,7 +406,6 @@ impl StreamChunkBuilder {
 /// use chrono::Utc;
 /// use uuid::Uuid;
 ///
-/// // Using builder pattern
 /// let metadata = ExecutionMetadata::builder()
 ///     .execution_id(Uuid::new_v4())
 ///     .start_time(Utc::now())
@@ -346,11 +417,91 @@ impl StreamChunkBuilder {
 ///     })
 ///     .build()
 ///     .expect("Valid metadata");
+/// ```
 ///
-/// // Calculate duration after completion
-/// let mut metadata = metadata;
-/// metadata.end_time = Some(Utc::now());
+/// ## Complete Execution with Duration Calculation
+///
+/// ```
+/// use paladin::core::platform::container::herald::ExecutionMetadata;
+/// use paladin::application::ports::output::llm_port::TokenUsage;
+/// use chrono::Utc;
+/// use uuid::Uuid;
+///
+/// let start = Utc::now();
+///
+/// // ... perform execution ...
+///
+/// let mut metadata = ExecutionMetadata::builder()
+///     .execution_id(Uuid::new_v4())
+///     .start_time(start)
+///     .end_time(Utc::now())
+///     .model_used("gpt-4".to_string())
+///     .token_usage(TokenUsage {
+///         prompt_tokens: 250,
+///         completion_tokens: 500,
+///         total_tokens: 750,
+///     })
+///     .build()
+///     .unwrap();
+///
+/// // Calculate duration from timestamps
 /// metadata.calculate_duration();
+/// println!("Execution took {} ms", metadata.duration_ms.unwrap());
+/// ```
+///
+/// ## With Cost Estimation and Error Tracking
+///
+/// ```
+/// use paladin::core::platform::container::herald::ExecutionMetadata;
+/// use paladin::application::ports::output::llm_port::TokenUsage;
+/// use chrono::Utc;
+/// use uuid::Uuid;
+///
+/// let metadata = ExecutionMetadata::builder()
+///     .execution_id(Uuid::new_v4())
+///     .start_time(Utc::now())
+///     .end_time(Utc::now())
+///     .duration_ms(2500)
+///     .model_used("gpt-4".to_string())
+///     .token_usage(TokenUsage {
+///         prompt_tokens: 1000,
+///         completion_tokens: 2000,
+///         total_tokens: 3000,
+///     })
+///     .cost_estimate(0.045)  // $0.045 based on GPT-4 pricing
+///     .error_count(2)        // Encountered 2 retryable errors
+///     .build()
+///     .unwrap();
+///
+/// if let Some(cost) = metadata.total_cost() {
+///     println!("Execution cost: ${:.4}", cost);
+/// }
+/// ```
+///
+/// ## With Custom Metadata
+///
+/// ```
+/// use paladin::core::platform::container::herald::ExecutionMetadata;
+/// use paladin::application::ports::output::llm_port::TokenUsage;
+/// use chrono::Utc;
+/// use uuid::Uuid;
+/// use serde_json::json;
+///
+/// let metadata = ExecutionMetadata::builder()
+///     .execution_id(Uuid::new_v4())
+///     .start_time(Utc::now())
+///     .model_used("gpt-4".to_string())
+///     .token_usage(TokenUsage {
+///         prompt_tokens: 150,
+///         completion_tokens: 300,
+///         total_tokens: 450,
+///     })
+///     .add_metadata("user_id".to_string(), json!("user_123"))
+///     .add_metadata("request_source".to_string(), json!("api"))
+///     .add_metadata("cache_hit".to_string(), json!(false))
+///     .add_metadata("model_temperature".to_string(), json!(0.7))
+///     .build()
+///     .unwrap();
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutionMetadata {

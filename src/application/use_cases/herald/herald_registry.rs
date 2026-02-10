@@ -4,17 +4,65 @@
 //! allowing registration, retrieval, and listing of available Herald implementations.
 //! The registry is thread-safe and supports concurrent access.
 //!
+//! # Auto-Registration
+//!
+//! When using `HeraldRegistry::default()`, three built-in formatters are automatically
+//! registered and ready to use:
+//!
+//! - **"json"** - Structured JSON output with metadata
+//! - **"markdown"** - Human-readable Markdown with colors and formatting
+//! - **"table"** - Formatted tables with borders and alignment
+//!
 //! # Examples
+//!
+//! ## Zero-Config Pattern (Recommended)
+//!
+//! ```rust,ignore
+//! use paladin::application::use_cases::herald::HeraldRegistry;
+//!
+//! // Built-in formatters are pre-registered
+//! let registry = HeraldRegistry::default();
+//!
+//! // Immediately use formatters without registration
+//! let json_herald = registry.get("json").unwrap();
+//! let markdown_herald = registry.get("markdown").unwrap();
+//! let table_herald = registry.get("table").unwrap();
+//!
+//! // List all available formatters
+//! let formatters = registry.list();
+//! assert_eq!(formatters.len(), 3);
+//! ```
+//!
+//! ## Manual Registration
 //!
 //! ```rust,ignore
 //! use paladin::application::use_cases::herald::HeraldRegistry;
 //! use paladin::infrastructure::adapters::herald::JsonHerald;
 //! use std::sync::Arc;
 //!
-//! let mut registry = HeraldRegistry::new();
+//! let registry = HeraldRegistry::new();  // Start with empty registry
 //! registry.register("json", Arc::new(JsonHerald::new()));
 //!
 //! let herald = registry.get("json").unwrap();
+//! ```
+//!
+//! ## Custom Formatters
+//!
+//! ```rust,ignore
+//! use paladin::application::use_cases::herald::HeraldRegistry;
+//! use paladin::core::platform::container::herald::Herald;
+//! use std::sync::Arc;
+//!
+//! // Start with built-in formatters
+//! let registry = HeraldRegistry::default();
+//!
+//! // Add custom formatter
+//! registry.register("xml", Arc::new(MyXmlHerald::new()));
+//! registry.register("csv", Arc::new(MyCsvHerald::new()));
+//!
+//! // Override built-in formatter with custom config
+//! let custom_json = JsonHerald::with_config(my_config);
+//! registry.register("json", Arc::new(custom_json));
 //! ```
 
 use crate::core::platform::container::herald::Herald;

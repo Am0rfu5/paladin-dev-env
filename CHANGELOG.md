@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Epic 19: Herald & Domain Type Consolidation
+
+#### StreamChunk Extensible Metadata
+- Complete StreamChunk structure with 7 fields including extensible metadata HashMap
+- Builder pattern with validation for safe construction
+- Fields: `chunk_id`, `sequence_number`, `timestamp`, `content`, `token_count`, `is_final`, `metadata`
+- Support for provider-specific and custom metadata without struct changes
+- JSON serialization/deserialization with flattened metadata
+- Comprehensive rustdoc with multiple usage examples
+
+#### ExecutionMetadata Full Telemetry
+- Complete ExecutionMetadata structure with 9 fields for comprehensive observability
+- Builder pattern with validation for safe construction
+- Fields: `execution_id`, `start_time`, `end_time`, `duration_ms`, `model_used`, `token_usage`, `cost_estimate`, `error_count`, `metadata`
+- Duration calculation helper method
+- Total cost estimation helper method
+- Extensible metadata for custom telemetry
+- Re-exported `TokenUsage` from llm_port with consistent field names
+- Comprehensive rustdoc with telemetry use cases and examples
+
+#### Auto-Registration of Built-in Formatters
+- `HeraldRegistry::default()` automatically registers three built-in formatters
+- Zero-config pattern: JSON, Markdown, and Table formatters available immediately
+- No manual registration required for built-in formatters
+- Custom formatters can still be added via `register()` method
+- Built-in formatters can be overridden with custom configurations
+- Updated rustdoc with zero-config and extensible patterns
+
+### Changed - Epic 19: Herald & Domain Type Consolidation
+
+#### Domain Type Consolidation
+- Removed placeholder `PaladinResult`, `BattalionResult`, and `PaladinError` types from herald.rs
+- Herald system now uses actual domain types from paladin.rs and battalion modules
+- Added public re-exports for Herald consumers: `PaladinResult`, `BattalionResult`, `PaladinError`, `TokenUsage`
+- Updated all Herald adapters (JSON, Markdown, Table) to use actual type structures
+- Fixed field access patterns: `paladin_results` instead of `results` for Battalion
+- PaladinError now handled as enum with match on variants
+
+#### Documentation Improvements
+- Enhanced StreamChunk rustdoc with detailed field descriptions and extensible metadata examples
+- Enhanced ExecutionMetadata rustdoc with telemetry use cases and comprehensive examples
+- Updated HeraldRegistry rustdoc documenting auto-registered formatters and usage patterns
+- Added examples for zero-config pattern (recommended) and manual registration
+- Updated all Herald-related documentation for consolidated types
+
 ### Added - Epic 18: CLI Enhancement
 
 #### New CLI Commands
