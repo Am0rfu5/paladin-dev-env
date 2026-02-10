@@ -1,0 +1,242 @@
+# Task List: Vision Pipeline Completion (Epic 20)
+
+## Document Information
+
+- **Feature:** Vision Pipeline Completion
+- **Epic:** Epic 20 - Milestone 3
+- **PRD:** `prd-vision-pipeline-completion.md`
+- **Estimated Duration:** 1–2 weeks
+- **Target Branch:** `feature/epic-20-vision-pipeline-completion`
+
+---
+
+## Relevant Files
+
+- `src/config/application_settings.rs` - Add VisionConfig struct and load from config.yml
+- `config.yml` - Add vision configuration section (retry, max_tokens)
+- `config.test.yml` - Add vision configuration section for tests
+- `src/core/platform/container/sentinel/vision_types.rs` - Define VisionError enum (FR-5.1)
+- `src/infrastructure/adapters/llm/openai_vision.rs` - Implement OpenAI vision API calls (FR-1)
+- `src/infrastructure/adapters/llm/anthropic_vision.rs` - Implement Anthropic vision API calls (FR-2)
+- `src/application/use_cases/paladin/paladin_execution_service.rs` - Add execute_with_vision() method (FR-3)
+- `tests/integration/vision_integration_test.rs` - Integration tests with real API calls (FR-6.4)
+- `tests/fixtures/sample_image.jpg` - Sample image for testing
+- `tests/fixtures/sample_image.png` - Sample image for testing
+- `examples/sentinel_vision.rs` - Updated example demonstrating vision capabilities (FR-7.1)
+- `docs/SENTINEL.md` - Documentation for vision capabilities (FR-7.2)
+- `Cargo.toml` - Add mockito dev dependency if not already present
+
+### Notes
+
+- Unit tests should be placed in `#[cfg(test)]` modules within the same file as the code they test
+- Integration tests go in `tests/integration/vision_integration_test.rs`
+- Use `cargo test` to run all tests, `cargo test <test_name>` for specific tests
+- Use `ENABLE_VISION_TESTS=true cargo test` to run integration tests with real API calls
+- Follow TDD: Write tests first, then implementation
+ 
+### Previous Vision Design Documents
+
+- These tasks are followups to Epic 13 - Sentinel Vision `project/Milestone_2-Missing_features/Epic_13/epic13.md`
+- Specifications for Epic 13 are in the PRD is `project/Milestone_3-Completion/Epic_20/prd-vision-pipeline-completion.md`
+- The task list from that PRD are in `project/Milestone_3-Completion/Epic_20/tasks-vision-pipeline-completion.md`
+
+---
+
+## Instructions for Completing Tasks
+
+**IMPORTANT:** As you complete each task, you must check it off in this markdown file by changing `- [ ]` to `- [x]`. This helps track progress and ensures you don't skip any steps.
+
+Example:
+- `- [ ] 1.1 Read file` → `- [x] 1.1 Read file` (after completing)
+
+Update the file after completing each sub-task, not just after completing an entire parent task.
+
+**Completion Protocol (from Rust Task List Guidelines):**
+1. When you finish a sub-task, immediately mark it as completed `[x]`
+2. If all subtasks under a parent task are `[x]`:
+   - Run `cargo test` to ensure all tests pass
+   - Run `cargo fmt --check` to ensure formatting
+   - Run `cargo clippy` to check for warnings
+   - Only if all checks pass: stage changes with `git add .`
+   - Clean up: Remove temporary files, debug prints, temporary code
+   - Commit with descriptive message using conventional commit format
+   - Mark the parent task as completed `[x]`
+3. Stop after each major task and wait for user's go-ahead
+
+---
+
+## Tasks
+
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Ensure you're on develop branch: `git checkout develop`
+  - [x] 0.2 Pull latest changes: `git pull origin develop`
+  - [x] 0.3 Create and checkout new branch: `git checkout -b feature/epic-20-vision-pipeline-completion`
+
+- [ ] 1.0 Add Vision Configuration Support
+  - [x] 1.1 Read `src/config/application_settings.rs` to understand existing config structure
+  - [x] 1.2 Define `VisionRetryConfig` struct with fields: `max_retries`, `initial_backoff_ms`, `backoff_multiplier`
+  - [x] 1.3 Define `VisionProviderConfig` struct with field: `max_tokens`
+  - [x] 1.4 Define `VisionConfig` struct with fields: `retry: VisionRetryConfig`, `openai: VisionProviderConfig`, `anthropic: VisionProviderConfig`
+  - [x] 1.5 Add `vision: VisionConfig` field to `ApplicationSettings` struct
+  - [x] 1.6 Add vision configuration section to `config.yml` with defaults from PRD Appendix B
+  - [x] 1.7 Add vision configuration section to `config.test.yml` with test-appropriate values
+  - [x] 1.8 Write unit test to verify vision config loads correctly from YAML
+  - [x] 1.9 Run `cargo test` to verify config loading works
+
+- [x] 1.0 Add Vision Configuration Support
+- [ ] 2.0 Define Vision Error Types
+  - [ ] 2.1 Read `src/core/platform/container/sentinel/vision_types.rs` to locate existing types
+  - [ ] 2.2 Define `VisionError` enum with all variants from FR-5.1: InvalidImage, UnsupportedFormat, AuthenticationError, RateLimitExceeded, ProviderError, NetworkError, Timeout, UnsupportedProvider, MaxRetriesExceeded
+  - [ ] 2.3 Add `#[derive(Debug, thiserror::Error)]` attribute
+  - [ ] 2.4 Add `#[error("...")]` attributes for each variant with descriptive messages
+  - [ ] 2.5 Add `#[cfg(test)]` module with unit tests creating each error variant
+  - [ ] 2.6 Run `cargo test` to verify error types compile and tests pass
+
+- [ ] 3.0 Implement OpenAI Vision Adapter with Retry Logic
+  - [ ] 3.1 Read `src/infrastructure/adapters/llm/openai_vision.rs` (line 212) to understand TODO location
+  - [ ] 3.2 Add `VisionConfig` field to `OpenAIVisionAdapter` struct
+  - [ ] 3.3 Update constructor to accept and store `VisionConfig`
+  - [ ] 3.4 Implement request body construction for `/v1/chat/completions` endpoint (FR-1.2)
+  - [ ] 3.5 Implement URL-based image format: `{"type": "image_url", "image_url": {"url": "..."}}`
+  - [ ] 3.6 Implement base64-encoded image format: `{"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}}`
+  - [ ] 3.7 Implement HTTP POST request with proper headers (Authorization, Content-Type)
+  - [ ] 3.8 Implement response parsing for success (200): extract content, token usage, model
+  - [ ] 3.9 Implement error handling: map status codes (400→InvalidImage, 401→AuthenticationError, 429→RateLimitExceeded, 500+→ProviderError)
+  - [ ] 3.10 Implement retry logic helper function: calculate backoff delay using `initial_backoff_ms * (backoff_multiplier ^ retry_attempt)`
+  - [ ] 3.11 Implement retry loop: only retry on transient errors (429, 500, 502, 503, 504), max retries from config
+  - [ ] 3.12 Use `tokio::time::sleep` for backoff delays
+  - [ ] 3.13 Add `#[cfg(test)]` module for unit tests
+  - [ ] 3.14 Write test: successful API call with URL-based image (mock HTTP with mockito)
+  - [ ] 3.15 Write test: successful API call with base64-encoded image
+  - [ ] 3.16 Write test: multiple images in single request
+  - [ ] 3.17 Write test: 400 error handling
+  - [ ] 3.18 Write test: 401 error handling
+  - [ ] 3.19 Write test: 429 error triggers retry
+  - [ ] 3.20 Write test: 500 error triggers retry
+  - [ ] 3.21 Write test: max retries exceeded returns error
+  - [ ] 3.22 Write test: exponential backoff calculation
+  - [ ] 3.23 Run `cargo test openai_vision` to verify all tests pass
+
+- [ ] 4.0 Implement Anthropic Vision Adapter with Retry Logic
+  - [ ] 4.1 Read `src/infrastructure/adapters/llm/anthropic_vision.rs` (line 220) to understand TODO location
+  - [ ] 4.2 Add `VisionConfig` field to `AnthropicVisionAdapter` struct
+  - [ ] 4.3 Update constructor to accept and store `VisionConfig`
+  - [ ] 4.4 Implement request body construction for `/v1/messages` endpoint (FR-2.2)
+  - [ ] 4.5 Implement Anthropic content block format for images: `{"type": "image", "source": {...}}`
+  - [ ] 4.6 Implement URL-based image: `source: {type: "url", url: "..."}`
+  - [ ] 4.7 Implement base64-encoded image: `source: {type: "base64", media_type: "image/jpeg", data: "..."}`
+  - [ ] 4.8 Implement HTTP POST request with proper headers (x-api-key, anthropic-version, Content-Type)
+  - [ ] 4.9 Implement response parsing for success (200): extract content[0].text, token usage, model
+  - [ ] 4.10 Implement error handling: map status codes (400→InvalidImage, 401→AuthenticationError, 429→RateLimitExceeded, 500+→ProviderError)
+  - [ ] 4.11 Implement retry logic helper function (same pattern as OpenAI)
+  - [ ] 4.12 Implement retry loop with configurable parameters
+  - [ ] 4.13 Add `#[cfg(test)]` module for unit tests
+  - [ ] 4.14 Write test: successful API call with URL-based image (mock HTTP)
+  - [ ] 4.15 Write test: successful API call with base64-encoded image
+  - [ ] 4.16 Write test: Anthropic content block format validation
+  - [ ] 4.17 Write test: 400 error handling
+  - [ ] 4.18 Write test: 401 error handling
+  - [ ] 4.19 Write test: 429 error triggers retry
+  - [ ] 4.20 Write test: 500 error triggers retry
+  - [ ] 4.21 Write test: max retries exceeded
+  - [ ] 4.22 Run `cargo test anthropic_vision` to verify all tests pass
+
+- [ ] 5.0 Integrate Vision Execution in PaladinExecutionService
+  - [ ] 5.1 Read `src/application/use_cases/paladin/paladin_execution_service.rs` (line 371) to locate TODO
+  - [ ] 5.2 Add `vision_adapters` field to `PaladinExecutionService` struct: `HashMap<String, Arc<dyn VisionPort>>`
+  - [ ] 5.3 Update constructor to accept vision adapters and store in HashMap keyed by provider name
+  - [ ] 5.4 Implement `execute_with_vision()` method signature: `async fn execute_with_vision(&self, paladin: &Paladin, prompt: &str, images: Vec<VisionImage>) -> Result<VisionResult, PaladinError>`
+  - [ ] 5.5 Implement provider selection logic: extract provider from `paladin.model()` (e.g., "gpt-4" → "openai", "claude-3" → "anthropic")
+  - [ ] 5.6 Return `VisionError::UnsupportedProvider` if provider not in vision_adapters map
+  - [ ] 5.7 Implement multimodal prompt construction: combine system prompt + user prompt + images
+  - [ ] 5.8 Retrieve vision adapter from HashMap by provider name
+  - [ ] 5.9 Call vision adapter's `analyze_image()` method with prompt and images
+  - [ ] 5.10 Parse vision response (non-streaming, complete analysis)
+  - [ ] 5.11 Check response for stop words from `paladin.stop_words()`
+  - [ ] 5.12 If garrison configured, store vision interaction: prompt, images, response, timestamp
+  - [ ] 5.13 Respect `max_loops` configuration (vision call counts as one loop iteration)
+  - [ ] 5.14 Respect `timeout_seconds` configuration (wrap call in timeout)
+  - [ ] 5.15 Construct and return `VisionResult` with analysis text, token usage, model, metadata
+  - [ ] 5.16 Convert `VisionError` to `PaladinError` at boundary
+  - [ ] 5.17 Add `#[cfg(test)]` module for unit tests
+  - [ ] 5.18 Write test: provider selection for OpenAI models
+  - [ ] 5.19 Write test: provider selection for Anthropic models
+  - [ ] 5.20 Write test: unsupported provider returns error
+  - [ ] 5.21 Write test: multimodal prompt construction
+  - [ ] 5.22 Write test: vision result integration
+  - [ ] 5.23 Write test: garrison storage of vision interaction (with mock garrison)
+  - [ ] 5.24 Write test: timeout enforcement
+  - [ ] 5.25 Write test: stop word detection in vision response
+  - [ ] 5.26 Run `cargo test paladin_execution_service` to verify tests pass
+
+- [ ] 6.0 Additional Edge Case Tests for Vision Adapters
+  - [ ] 6.1 Add test for OpenAI: empty image list should return error
+  - [ ] 6.2 Add test for OpenAI: network timeout error handling
+  - [ ] 6.3 Add test for OpenAI: malformed JSON response
+  - [ ] 6.4 Add test for OpenAI: missing token usage in response (should handle gracefully)
+  - [ ] 6.5 Add test for Anthropic: empty image list should return error
+  - [ ] 6.6 Add test for Anthropic: network timeout error handling
+  - [ ] 6.7 Add test for Anthropic: malformed JSON response
+  - [ ] 6.8 Add test for Anthropic: invalid media_type detection
+  - [ ] 6.9 Run `cargo test` to verify all edge case tests pass
+
+- [ ] 7.0 Additional Integration Tests for Execution Service
+  - [ ] 7.1 Add test: execute_with_vision with multiple images
+  - [ ] 7.2 Add test: execute_with_vision respects max_loops when calling vision multiple times
+  - [ ] 7.3 Add test: execute_with_vision with garrison stores all interactions
+  - [ ] 7.4 Add test: switch providers mid-execution (if applicable)
+  - [ ] 7.5 Run `cargo test paladin_execution` to verify integration tests pass
+
+- [ ] 8.0 Create Integration Tests (Environment-Gated)
+  - [ ] 8.1 Create `tests/fixtures/` directory if it doesn't exist
+  - [ ] 8.2 Add sample test image: `tests/fixtures/sample_chart.jpg` (commit a small test image)
+  - [ ] 8.3 Add sample test image: `tests/fixtures/sample_diagram.png` (commit a small test image)
+  - [ ] 8.4 Create `tests/integration/vision_integration_test.rs` file
+  - [ ] 8.5 Add test helper function to check if `ENABLE_VISION_TESTS` env var is set
+  - [ ] 8.6 Add test helper to skip test if env var not set: `if !vision_tests_enabled() { return; }`
+  - [ ] 8.7 Write integration test: OpenAI vision API call with real API key (`OPENAI_API_KEY`)
+  - [ ] 8.8 Test loads sample_chart.jpg, sends to OpenAI, verifies response structure
+  - [ ] 8.9 Write integration test: Anthropic vision API call with real API key (`ANTHROPIC_API_KEY`)
+  - [ ] 8.10 Test loads sample_diagram.png, sends to Anthropic, verifies response structure
+  - [ ] 8.11 Write integration test: end-to-end via PaladinExecutionService with OpenAI
+  - [ ] 8.12 Write integration test: end-to-end via PaladinExecutionService with Anthropic
+  - [ ] 8.13 Add documentation comment at top of file explaining how to run: `ENABLE_VISION_TESTS=true OPENAI_API_KEY=xxx ANTHROPIC_API_KEY=xxx cargo test --test vision_integration_test`
+  - [ ] 8.14 Run integration tests locally if API keys available to verify they work
+  - [ ] 8.15 Commit integration test file (tests will be skipped in CI unless env vars set)
+
+- [ ] 9.0 Update Examples and Documentation
+  - [ ] 9.1 Read existing `examples/sentinel_vision.rs` to understand current state
+  - [ ] 9.2 Update example to demonstrate building Paladin with vision-capable model
+  - [ ] 9.3 Add example: analyze single image with URL
+  - [ ] 9.4 Add example: analyze single image with base64 encoding
+  - [ ] 9.5 Add example: analyze multiple images in one request
+  - [ ] 9.6 Add example: error handling patterns (handle VisionError gracefully)
+  - [ ] 9.7 Add comments explaining each step for junior developers
+  - [ ] 9.8 Verify example compiles: `cargo check --example sentinel_vision`
+  - [ ] 9.9 Read `docs/SENTINEL.md` to understand existing documentation structure
+  - [ ] 9.10 Add section "Vision Capabilities" with overview of multi-modal support
+  - [ ] 9.11 Document supported providers and models (GPT-4 Vision, Claude 3 Vision)
+  - [ ] 9.12 Document image format requirements (JPEG, PNG, formats delegated to API)
+  - [ ] 9.13 Document configuration options (vision section in config.yml)
+  - [ ] 9.14 Document error handling patterns and common errors
+  - [ ] 9.15 Add code example showing basic vision usage
+  - [ ] 9.16 Document image size limits (reference API provider limits)
+  - [ ] 9.17 Add troubleshooting section for common vision issues
+
+- [ ] 10.0 Final Quality Checks and PR Preparation
+  - [ ] 10.1 Run full test suite: `cargo test` (ensure all tests pass)
+  - [ ] 10.2 Run clippy: `cargo clippy -- -D warnings` (fix all warnings)
+  - [ ] 10.3 Run format check: `cargo fmt --check` (format if needed)
+  - [ ] 10.4 Run format: `cargo fmt` (if check failed)
+  - [ ] 10.5 Verify no TODO comments remain in modified files related to vision
+  - [ ] 10.6 Run `cargo build --release` to ensure release build works
+  - [ ] 10.7 Review all changes: `git diff develop`
+  - [ ] 10.8 Update `CHANGELOG.md` with Epic 20 changes: vision pipeline completion, OpenAI/Anthropic adapters, configuration support
+  - [ ] 10.9 Stage all changes: `git add .`
+  - [ ] 10.10 Commit with conventional format: `git commit -m "feat: complete vision pipeline with OpenAI and Anthropic adapters" -m "- Implement OpenAI vision API integration with retry logic" -m "- Implement Anthropic vision API integration with retry logic" -m "- Add vision execution to PaladinExecutionService" -m "- Add configurable retry parameters" -m "- Add comprehensive unit and integration tests" -m "- Update examples and documentation" -m "Related to Epic 20 in Milestone 3 PRD"`
+  - [ ] 10.11 Push branch: `git push origin feature/epic-20-vision-pipeline-completion`
+  - [ ] 10.12 Create Pull Request targeting `develop` branch
+  - [ ] 10.13 Add PR description referencing Epic 20 and PRD
+  - [ ] 10.14 Request review from maintainers
+
+---

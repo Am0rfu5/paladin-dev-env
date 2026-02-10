@@ -114,6 +114,86 @@ impl HeraldConfig {
     }
 }
 
+/// Configuration for vision API retry logic
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VisionRetryConfig {
+    /// Maximum number of retry attempts for transient errors
+    pub max_retries: u32,
+    /// Initial backoff delay in milliseconds
+    pub initial_backoff_ms: u64,
+    /// Multiplier for exponential backoff (e.g., 2.0 for doubling)
+    pub backoff_multiplier: f64,
+}
+
+impl Default for VisionRetryConfig {
+    fn default() -> Self {
+        Self {
+            max_retries: 3,
+            initial_backoff_ms: 1000,
+            backoff_multiplier: 2.0,
+        }
+    }
+}
+
+impl VisionRetryConfig {
+    /// Validates retry configuration
+    pub fn validate(&self) -> Result<(), String> {
+        if self.backoff_multiplier <= 0.0 {
+            return Err("backoff_multiplier must be greater than 0".to_string());
+        }
+        if self.backoff_multiplier < 1.0 {
+            return Err(
+                "backoff_multiplier should be at least 1.0 for effective backoff".to_string(),
+            );
+        }
+        Ok(())
+    }
+}
+
+/// Configuration for a single vision provider (OpenAI or Anthropic)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VisionProviderConfig {
+    /// Maximum tokens to request in vision responses
+    pub max_tokens: usize,
+}
+
+impl Default for VisionProviderConfig {
+    fn default() -> Self {
+        Self { max_tokens: 4096 }
+    }
+}
+
+impl VisionProviderConfig {
+    /// Validates provider configuration
+    pub fn validate(&self) -> Result<(), String> {
+        if self.max_tokens == 0 {
+            return Err("max_tokens must be greater than 0".to_string());
+        }
+        Ok(())
+    }
+}
+
+/// Configuration for vision capabilities (multi-modal image analysis)
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct VisionConfig {
+    /// Retry configuration for vision API calls
+    pub retry: VisionRetryConfig,
+    /// OpenAI vision provider configuration
+    pub openai: VisionProviderConfig,
+    /// Anthropic vision provider configuration
+    pub anthropic: VisionProviderConfig,
+}
+
+impl VisionConfig {
+    /// Validates vision configuration
+    pub fn validate(&self) -> Result<(), String> {
+        self.retry.validate()?;
+        self.openai.validate()?;
+        self.anthropic.validate()?;
+        Ok(())
+    }
+}
+
 /// Configuration for a single MCP server
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MCPServerConfig {
@@ -778,6 +858,7 @@ pub struct Settings {
     pub citadel: Option<CitadelConfig>,
     pub llm: Option<LlmConfig>,
     pub herald: Option<HeraldConfig>,
+    pub vision: Option<VisionConfig>,
 }
 
 impl Settings {
@@ -1203,6 +1284,46 @@ impl Settings {
         }
     }
 
+    /// Get vision configuration with environment variable overrides
+    pub fn get_vision_config(&self) -> VisionConfig {
+        let mut config = self.vision.clone().unwrap_or_default();
+
+        // Retry configuration overrides
+        if let Ok(max_retries_str) = std::env::var("APP_VISION_RETRY_MAX_RETRIES")
+            && let Ok(max_retries) = max_retries_str.parse::<u32>()
+        {
+            config.retry.max_retries = max_retries;
+        }
+
+        if let Ok(initial_backoff_str) = std::env::var("APP_VISION_RETRY_INITIAL_BACKOFF_MS")
+            && let Ok(initial_backoff) = initial_backoff_str.parse::<u64>()
+        {
+            config.retry.initial_backoff_ms = initial_backoff;
+        }
+
+        if let Ok(backoff_multiplier_str) = std::env::var("APP_VISION_RETRY_BACKOFF_MULTIPLIER")
+            && let Ok(backoff_multiplier) = backoff_multiplier_str.parse::<f64>()
+        {
+            config.retry.backoff_multiplier = backoff_multiplier;
+        }
+
+        // OpenAI vision configuration overrides
+        if let Ok(max_tokens_str) = std::env::var("APP_VISION_OPENAI_MAX_TOKENS")
+            && let Ok(max_tokens) = max_tokens_str.parse::<usize>()
+        {
+            config.openai.max_tokens = max_tokens;
+        }
+
+        // Anthropic vision configuration overrides
+        if let Ok(max_tokens_str) = std::env::var("APP_VISION_ANTHROPIC_MAX_TOKENS")
+            && let Ok(max_tokens) = max_tokens_str.parse::<usize>()
+        {
+            config.anthropic.max_tokens = max_tokens;
+        }
+
+        config
+    }
+
     /// Convert FileStorageConfig to MinioConfig
     pub fn to_minio_config(&self) -> MinioConfig {
         let fs_config = self.get_file_storage_config();
@@ -1254,6 +1375,7 @@ impl Default for Settings {
             citadel: Some(CitadelConfig::default()),
             llm: Some(LlmConfig::default()),
             herald: Some(HeraldConfig::default()),
+            vision: Some(VisionConfig::default()),
         }
     }
 }
@@ -2322,5 +2444,141 @@ mod tests {
         unsafe {
             env::remove_var("APP_SANCTUM_QDRANT_URL");
         }
+    }
+
+    #[test]
+    fn test_vision_config_defaults() {
+        let config = VisionConfig::default();
+
+        assert_eq!(config.retry.max_retries, 3);
+        assert_eq!(config.retry.initial_backoff_ms, 1000);
+        assert_eq!(config.retry.backoff_multiplier, 2.0);
+        assert_eq!(config.openai.max_tokens, 4096);
+        assert_eq!(config.anthropic.max_tokens, 4096);
+    }
+
+    #[test]
+    fn test_vision_retry_config_validation_success() {
+        let config = VisionRetryConfig {
+            max_retries: 3,
+            initial_backoff_ms: 1000,
+            backoff_multiplier: 2.0,
+        };
+
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_vision_retry_config_validation_invalid_multiplier() {
+        let config = VisionRetryConfig {
+            max_retries: 3,
+            initial_backoff_ms: 1000,
+            backoff_multiplier: 0.0,
+        };
+
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("must be greater than 0"));
+    }
+
+    #[test]
+    fn test_vision_retry_config_validation_low_multiplier() {
+        let config = VisionRetryConfig {
+            max_retries: 3,
+            initial_backoff_ms: 1000,
+            backoff_multiplier: 0.5,
+        };
+
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("should be at least 1.0"));
+    }
+
+    #[test]
+    fn test_vision_provider_config_validation_success() {
+        let config = VisionProviderConfig { max_tokens: 4096 };
+
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_vision_provider_config_validation_zero_tokens() {
+        let config = VisionProviderConfig { max_tokens: 0 };
+
+        let result = config.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("must be greater than 0"));
+    }
+
+    #[test]
+    fn test_vision_config_validation_success() {
+        let config = VisionConfig::default();
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_get_vision_config_defaults() {
+        let settings = Settings::default();
+        let config = settings.get_vision_config();
+
+        assert_eq!(config.retry.max_retries, 3);
+        assert_eq!(config.retry.initial_backoff_ms, 1000);
+        assert_eq!(config.retry.backoff_multiplier, 2.0);
+        assert_eq!(config.openai.max_tokens, 4096);
+        assert_eq!(config.anthropic.max_tokens, 4096);
+    }
+
+    #[test]
+    #[serial]
+    fn test_get_vision_config_env_overrides() {
+        use std::env;
+
+        unsafe {
+            env::set_var("APP_VISION_RETRY_MAX_RETRIES", "5");
+            env::set_var("APP_VISION_RETRY_INITIAL_BACKOFF_MS", "2000");
+            env::set_var("APP_VISION_RETRY_BACKOFF_MULTIPLIER", "3.0");
+            env::set_var("APP_VISION_OPENAI_MAX_TOKENS", "8192");
+            env::set_var("APP_VISION_ANTHROPIC_MAX_TOKENS", "8192");
+        }
+
+        let settings = Settings::default();
+        let config = settings.get_vision_config();
+
+        assert_eq!(config.retry.max_retries, 5);
+        assert_eq!(config.retry.initial_backoff_ms, 2000);
+        assert_eq!(config.retry.backoff_multiplier, 3.0);
+        assert_eq!(config.openai.max_tokens, 8192);
+        assert_eq!(config.anthropic.max_tokens, 8192);
+
+        unsafe {
+            env::remove_var("APP_VISION_RETRY_MAX_RETRIES");
+            env::remove_var("APP_VISION_RETRY_INITIAL_BACKOFF_MS");
+            env::remove_var("APP_VISION_RETRY_BACKOFF_MULTIPLIER");
+            env::remove_var("APP_VISION_OPENAI_MAX_TOKENS");
+            env::remove_var("APP_VISION_ANTHROPIC_MAX_TOKENS");
+        }
+    }
+
+    #[test]
+    fn test_settings_with_vision_config() {
+        let settings = Settings {
+            vision: Some(VisionConfig {
+                retry: VisionRetryConfig {
+                    max_retries: 5,
+                    initial_backoff_ms: 500,
+                    backoff_multiplier: 1.5,
+                },
+                openai: VisionProviderConfig { max_tokens: 2048 },
+                anthropic: VisionProviderConfig { max_tokens: 2048 },
+            }),
+            ..Default::default()
+        };
+
+        let config = settings.get_vision_config();
+        assert_eq!(config.retry.max_retries, 5);
+        assert_eq!(config.retry.initial_backoff_ms, 500);
+        assert_eq!(config.retry.backoff_multiplier, 1.5);
+        assert_eq!(config.openai.max_tokens, 2048);
+        assert_eq!(config.anthropic.max_tokens, 2048);
     }
 }

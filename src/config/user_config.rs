@@ -281,6 +281,7 @@ mod tests {
             citadel: Some(crate::config::application_settings::CitadelConfig::default()),
             llm: Some(crate::config::application_settings::LlmConfig::default()),
             herald: Some(crate::config::application_settings::HeraldConfig::default()),
+            vision: Some(crate::config::application_settings::VisionConfig::default()),
         }
     }
 
