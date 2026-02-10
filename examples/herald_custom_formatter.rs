@@ -107,8 +107,10 @@ impl Herald for XmlHerald {
 
     fn finalize_stream(&self, metadata: &ExecutionMetadata) -> Result<String, HeraldError> {
         Ok(format!(
-            r#"<metadata execution_time_ms="{}" total_tokens="{}"/>"#,
-            metadata.execution_time_ms, metadata.total_tokens
+            r#"<metadata model="{}" duration_ms="{}" total_tokens="{}"/>"#,
+            metadata.model_used,
+            metadata.duration_ms.unwrap_or(0),
+            metadata.token_usage.total_tokens
         ))
     }
 }
@@ -187,8 +189,10 @@ impl Herald for CsvHerald {
 
     fn finalize_stream(&self, metadata: &ExecutionMetadata) -> Result<String, HeraldError> {
         Ok(format!(
-            "execution_time_ms,total_tokens\n{},{}\n",
-            metadata.execution_time_ms, metadata.total_tokens
+            "model,duration_ms,total_tokens\n{},{},{}\n",
+            metadata.model_used,
+            metadata.duration_ms.unwrap_or(0),
+            metadata.token_usage.total_tokens
         ))
     }
 }

@@ -355,11 +355,20 @@ mod tests {
 
     #[test]
     fn test_finalize_stream() {
+        use crate::application::ports::output::llm_port::TokenUsage;
         let herald = TableHerald::default();
-        let metadata = crate::core::platform::container::herald::ExecutionMetadata {
-            execution_time_ms: 1000,
-            total_tokens: 500,
-        };
+        let metadata = crate::core::platform::container::herald::ExecutionMetadata::builder()
+            .execution_id(uuid::Uuid::new_v4())
+            .start_time(chrono::Utc::now())
+            .model_used("test-model".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 300,
+                completion_tokens: 200,
+                total_tokens: 500,
+            })
+            .duration_ms(1000)
+            .build()
+            .unwrap();
 
         let output = herald.finalize_stream(&metadata);
         assert!(output.is_ok());
@@ -550,10 +559,19 @@ mod tests {
         }
 
         // Only finalize_stream should produce output
-        let metadata = ExecutionMetadata {
-            execution_time_ms: 2000,
-            total_tokens: 400,
-        };
+        use crate::application::ports::output::llm_port::TokenUsage;
+        let metadata = ExecutionMetadata::builder()
+            .execution_id(uuid::Uuid::new_v4())
+            .start_time(chrono::Utc::now())
+            .model_used("test-model".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 240,
+                completion_tokens: 160,
+                total_tokens: 400,
+            })
+            .duration_ms(2000)
+            .build()
+            .unwrap();
         let metadata_output = herald.finalize_stream(&metadata).unwrap();
 
         // Verify metadata table is generated

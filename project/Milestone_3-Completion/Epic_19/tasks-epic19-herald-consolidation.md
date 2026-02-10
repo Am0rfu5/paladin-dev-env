@@ -127,32 +127,32 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 3.19 Run StreamChunk tests (should now pass)
   - [ ] 3.20 Run `cargo test --test herald` to verify no regressions
 
-- [ ] 4.0 Complete ExecutionMetadata Structure with Full Telemetry
-  - [ ] 4.1 Read current `ExecutionMetadata` definition in `herald.rs` (around line 178)
-  - [ ] 4.2 Define complete `ExecutionMetadata` struct with all telemetry fields per PRD
-  - [ ] 4.3 Add `execution_id: Uuid` field
-  - [ ] 4.4 Add `start_time: DateTime<Utc>` field
-  - [ ] 4.5 Add `end_time: Option<DateTime<Utc>>` field
-  - [ ] 4.6 Add `duration_ms: Option<u64>` field
-  - [ ] 4.7 Add `model_used: String` field
-  - [ ] 4.8 Define `TokenUsage` struct with `input_tokens`, `output_tokens`, `total_tokens`
-  - [ ] 4.9 Add `token_usage: TokenUsage` field
-  - [ ] 4.10 Add `cost_estimate: Option<f64>` field
-  - [ ] 4.11 Add `error_count: u32` field
-  - [ ] 4.12 Add `metadata: HashMap<String, serde_json::Value>` field with `#[serde(flatten)]`
-  - [ ] 4.13 Implement `Debug`, `Clone` derives for `ExecutionMetadata`
-  - [ ] 4.14 Implement `Serialize`, `Deserialize` derives for `ExecutionMetadata`
-  - [ ] 4.15 Implement `Debug`, `Clone`, `Serialize`, `Deserialize` for `TokenUsage`
-  - [ ] 4.16 Create `ExecutionMetadataBuilder` struct
-  - [ ] 4.17 Implement all builder methods for `ExecutionMetadataBuilder`
-  - [ ] 4.18 Implement `ExecutionMetadataBuilder::build()` with validation
-  - [ ] 4.19 Implement `ExecutionMetadata::builder()` constructor
-  - [ ] 4.20 Implement `ExecutionMetadata::calculate_duration()` helper method
-  - [ ] 4.21 Add helper method: `ExecutionMetadata::total_cost()` for token usage analysis
-  - [ ] 4.22 Add rustdoc comments to all public fields and methods
-  - [ ] 4.23 Update all `ExecutionMetadata` usage sites in codebase
-  - [ ] 4.24 Run ExecutionMetadata tests (should now pass)
-  - [ ] 4.25 Run `cargo test` to verify no regressions
+- [x] 4.0 Complete ExecutionMetadata Structure with Full Telemetry
+  - [x] 4.1 Read current `ExecutionMetadata` definition in `herald.rs` (around line 178)
+  - [x] 4.2 Define complete `ExecutionMetadata` struct with all telemetry fields per PRD
+  - [x] 4.3 Add `execution_id: Uuid` field
+  - [x] 4.4 Add `start_time: DateTime<Utc>` field
+  - [x] 4.5 Add `end_time: Option<DateTime<Utc>>` field
+  - [x] 4.6 Add `duration_ms: Option<u64>` field
+  - [x] 4.7 Add `model_used: String` field
+  - [x] 4.8 Use existing `TokenUsage` struct from llm_port.rs (already has prompt_tokens, completion_tokens, total_tokens)
+  - [x] 4.9 Add `token_usage: TokenUsage` field
+  - [x] 4.10 Add `cost_estimate: Option<f64>` field
+  - [x] 4.11 Add `error_count: u32` field
+  - [x] 4.12 Add `metadata: HashMap<String, serde_json::Value>` field with `#[serde(flatten)]`
+  - [x] 4.13 Implement `Debug`, `Clone` derives for `ExecutionMetadata`
+  - [x] 4.14 Implement `Serialize`, `Deserialize` derives for `ExecutionMetadata`
+  - [x] 4.15 Re-exported existing `TokenUsage` (already has Debug, Clone, Serialize, Deserialize)
+  - [x] 4.16 Create `ExecutionMetadataBuilder` struct
+  - [x] 4.17 Implement all builder methods for `ExecutionMetadataBuilder`
+  - [x] 4.18 Implement `ExecutionMetadataBuilder::build()` with validation
+  - [x] 4.19 Implement `ExecutionMetadata::builder()` constructor
+  - [x] 4.20 Implement `ExecutionMetadata::calculate_duration()` helper method
+  - [x] 4.21 Add helper method: `ExecutionMetadata::total_cost()` for token usage analysis
+  - [x] 4.22 Add comprehensive rustdoc comments to all public fields and methods with examples
+  - [x] 4.23 Update all `ExecutionMetadata` usage sites in codebase (herald.rs, json_herald.rs, markdown_herald.rs, table_herald.rs, examples)
+  - [x] 4.24 Run ExecutionMetadata tests - Herald module tests passing (59 passed)
+  - [x] 4.25 Run `cargo check` and `cargo clippy` - All passed
 
 - [ ] 5.0 Implement Auto-Registration of Built-in Formatters
   - [ ] 5.1 Read `src/application/use_cases/herald/herald_registry.rs` to understand current implementation

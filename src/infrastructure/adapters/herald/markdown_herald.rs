@@ -267,11 +267,17 @@ impl Herald for MarkdownHerald {
 
         output.push_str("\n\n");
         output.push_str(&self.heading(self.config.heading_level + 1, "Execution Metadata"));
+        output.push_str(&self.format_field("Model", &metadata.model_used));
+        if let Some(duration) = metadata.duration_ms {
+            output.push_str(&self.format_field("Duration", &format!("{}ms", duration)));
+        }
         output.push_str(&self.format_field(
-            "Execution Time",
-            &format!("{}ms", metadata.execution_time_ms),
+            "Total Tokens",
+            &metadata.token_usage.total_tokens.to_string(),
         ));
-        output.push_str(&self.format_field("Total Tokens", &metadata.total_tokens.to_string()));
+        if let Some(cost) = metadata.cost_estimate {
+            output.push_str(&self.format_field("Cost", &format!("${:.4}", cost)));
+        }
 
         Ok(output)
     }
@@ -484,14 +490,23 @@ mod tests {
 
     #[test]
     fn test_finalize_stream() {
+        use crate::application::ports::output::llm_port::TokenUsage;
         let herald = MarkdownHerald::with_config(MarkdownHeraldConfig {
             include_colors: false,
             heading_level: 2,
         });
-        let metadata = ExecutionMetadata {
-            execution_time_ms: 1234,
-            total_tokens: 500,
-        };
+        let metadata = ExecutionMetadata::builder()
+            .execution_id(uuid::Uuid::new_v4())
+            .start_time(chrono::Utc::now())
+            .model_used("gpt-4".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 300,
+                completion_tokens: 200,
+                total_tokens: 500,
+            })
+            .duration_ms(1234)
+            .build()
+            .unwrap();
 
         let formatted = herald.finalize_stream(&metadata).unwrap();
         assert!(formatted.contains("### Execution Metadata"));
@@ -610,10 +625,19 @@ mod tests {
         }
 
         // Add metadata
-        let metadata = ExecutionMetadata {
-            execution_time_ms: 1500,
-            total_tokens: 300,
-        };
+        use crate::application::ports::output::llm_port::TokenUsage;
+        let metadata = ExecutionMetadata::builder()
+            .execution_id(uuid::Uuid::new_v4())
+            .start_time(chrono::Utc::now())
+            .model_used("gpt-4".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 180,
+                completion_tokens: 120,
+                total_tokens: 300,
+            })
+            .duration_ms(1500)
+            .build()
+            .unwrap();
         let metadata_output = herald.finalize_stream(&metadata).unwrap();
         streamed_output.push_str(&metadata_output);
 

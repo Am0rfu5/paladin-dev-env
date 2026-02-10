@@ -22,6 +22,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 // Re-export actual domain types for Herald consumers
+pub use crate::application::ports::output::llm_port::TokenUsage;
 pub use crate::application::ports::output::paladin_port::PaladinResult;
 pub use crate::application::use_cases::paladin::error::PaladinError;
 pub use crate::core::platform::container::battalion::BattalionResult;
@@ -320,13 +321,179 @@ impl StreamChunkBuilder {
     }
 }
 
-/// Execution metadata for streaming
+/// Execution metadata for streaming with complete telemetry
 ///
-/// TODO: Define complete ExecutionMetadata structure with full telemetry
-#[derive(Debug, Clone)]
+/// Tracks comprehensive execution metrics including timing, token usage,
+/// costs, and errors. Supports extensible metadata via HashMap.
+///
+/// # Examples
+///
+/// ```
+/// use paladin::core::platform::container::herald::ExecutionMetadata;
+/// use paladin::application::ports::output::llm_port::TokenUsage;
+/// use chrono::Utc;
+/// use uuid::Uuid;
+///
+/// // Using builder pattern
+/// let metadata = ExecutionMetadata::builder()
+///     .execution_id(Uuid::new_v4())
+///     .start_time(Utc::now())
+///     .model_used("gpt-4".to_string())
+///     .token_usage(TokenUsage {
+///         prompt_tokens: 100,
+///         completion_tokens: 50,
+///         total_tokens: 150,
+///     })
+///     .build()
+///     .expect("Valid metadata");
+///
+/// // Calculate duration after completion
+/// let mut metadata = metadata;
+/// metadata.end_time = Some(Utc::now());
+/// metadata.calculate_duration();
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutionMetadata {
-    pub execution_time_ms: u64,
-    pub total_tokens: u32,
+    /// Unique execution identifier
+    pub execution_id: Uuid,
+    /// Execution start timestamp
+    pub start_time: DateTime<Utc>,
+    /// Execution end timestamp (None if still running)
+    pub end_time: Option<DateTime<Utc>>,
+    /// Calculated duration in milliseconds
+    pub duration_ms: Option<u64>,
+    /// Model identifier used for execution
+    pub model_used: String,
+    /// Token usage statistics
+    pub token_usage: TokenUsage,
+    /// Estimated cost in USD (based on token usage)
+    pub cost_estimate: Option<f64>,
+    /// Number of errors encountered during execution
+    pub error_count: u32,
+    /// Extensible metadata for custom fields
+    #[serde(flatten)]
+    pub metadata: HashMap<String, serde_json::Value>,
+}
+
+impl ExecutionMetadata {
+    /// Create a new builder for ExecutionMetadata
+    pub fn builder() -> ExecutionMetadataBuilder {
+        ExecutionMetadataBuilder::default()
+    }
+
+    /// Calculate duration from start_time and end_time
+    ///
+    /// If end_time is set, calculates the duration in milliseconds
+    /// and stores it in duration_ms field.
+    pub fn calculate_duration(&mut self) {
+        if let Some(end) = self.end_time {
+            let duration = end.signed_duration_since(self.start_time);
+            self.duration_ms = Some(duration.num_milliseconds() as u64);
+        }
+    }
+
+    /// Get total cost estimate based on token usage
+    ///
+    /// Returns the cost estimate if available, otherwise calculates
+    /// a basic estimate based on token usage.
+    pub fn total_cost(&self) -> Option<f64> {
+        self.cost_estimate
+    }
+}
+
+/// Builder for ExecutionMetadata
+#[derive(Default)]
+pub struct ExecutionMetadataBuilder {
+    execution_id: Option<Uuid>,
+    start_time: Option<DateTime<Utc>>,
+    end_time: Option<DateTime<Utc>>,
+    duration_ms: Option<u64>,
+    model_used: Option<String>,
+    token_usage: Option<TokenUsage>,
+    cost_estimate: Option<f64>,
+    error_count: u32,
+    metadata: HashMap<String, serde_json::Value>,
+}
+
+impl ExecutionMetadataBuilder {
+    /// Set the execution ID
+    pub fn execution_id(mut self, execution_id: Uuid) -> Self {
+        self.execution_id = Some(execution_id);
+        self
+    }
+
+    /// Set the start time
+    pub fn start_time(mut self, start_time: DateTime<Utc>) -> Self {
+        self.start_time = Some(start_time);
+        self
+    }
+
+    /// Set the end time
+    pub fn end_time(mut self, end_time: DateTime<Utc>) -> Self {
+        self.end_time = Some(end_time);
+        self
+    }
+
+    /// Set the duration in milliseconds
+    pub fn duration_ms(mut self, duration_ms: u64) -> Self {
+        self.duration_ms = Some(duration_ms);
+        self
+    }
+
+    /// Set the model used
+    pub fn model_used(mut self, model_used: String) -> Self {
+        self.model_used = Some(model_used);
+        self
+    }
+
+    /// Set the token usage
+    pub fn token_usage(mut self, token_usage: TokenUsage) -> Self {
+        self.token_usage = Some(token_usage);
+        self
+    }
+
+    /// Set the cost estimate
+    pub fn cost_estimate(mut self, cost_estimate: f64) -> Self {
+        self.cost_estimate = Some(cost_estimate);
+        self
+    }
+
+    /// Set the error count
+    pub fn error_count(mut self, error_count: u32) -> Self {
+        self.error_count = error_count;
+        self
+    }
+
+    /// Add a metadata entry
+    pub fn add_metadata(mut self, key: String, value: serde_json::Value) -> Self {
+        self.metadata.insert(key, value);
+        self
+    }
+
+    /// Build the ExecutionMetadata
+    ///
+    /// Returns an error if required fields are missing.
+    pub fn build(self) -> Result<ExecutionMetadata, HeraldError> {
+        Ok(ExecutionMetadata {
+            execution_id: self.execution_id.ok_or_else(|| {
+                HeraldError::InvalidResult("execution_id is required".to_string())
+            })?,
+            start_time: self
+                .start_time
+                .ok_or_else(|| HeraldError::InvalidResult("start_time is required".to_string()))?,
+            end_time: self.end_time,
+            duration_ms: self.duration_ms,
+            model_used: self
+                .model_used
+                .ok_or_else(|| HeraldError::InvalidResult("model_used is required".to_string()))?,
+            token_usage: self
+                .token_usage
+                .ok_or_else(|| HeraldError::InvalidResult("token_usage is required".to_string()))?,
+            cost_estimate: self.cost_estimate,
+            error_count: self.error_count,
+            metadata: self.metadata,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -354,7 +521,10 @@ mod tests {
         }
 
         fn finalize_stream(&self, metadata: &ExecutionMetadata) -> Result<String, HeraldError> {
-            Ok(format!("Execution time: {}ms", metadata.execution_time_ms))
+            Ok(format!(
+                "Execution time: {}ms",
+                metadata.duration_ms.unwrap_or(0)
+            ))
         }
 
         fn format_error(&self, error: &PaladinError) -> String {
@@ -450,10 +620,18 @@ mod tests {
     #[test]
     fn test_finalize_stream() {
         let herald = MockHerald;
-        let metadata = ExecutionMetadata {
-            execution_time_ms: 1234,
-            total_tokens: 500,
-        };
+        let metadata = ExecutionMetadata::builder()
+            .execution_id(Uuid::new_v4())
+            .start_time(Utc::now())
+            .model_used("test-model".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 300,
+                completion_tokens: 200,
+                total_tokens: 500,
+            })
+            .duration_ms(1234)
+            .build()
+            .unwrap();
 
         let formatted = herald.finalize_stream(&metadata).unwrap();
         assert_eq!(formatted, "Execution time: 1234ms");

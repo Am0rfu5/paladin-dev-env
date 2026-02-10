@@ -195,8 +195,11 @@ impl Herald for JsonHerald {
     fn finalize_stream(&self, metadata: &ExecutionMetadata) -> Result<String, HeraldError> {
         let json = json!({
             "type": "metadata",
-            "execution_time_ms": metadata.execution_time_ms,
-            "total_tokens": metadata.total_tokens,
+            "execution_id": metadata.execution_id,
+            "duration_ms": metadata.duration_ms,
+            "model_used": metadata.model_used,
+            "total_tokens": metadata.token_usage.total_tokens,
+            "cost_estimate": metadata.cost_estimate,
             "timestamp": chrono::Utc::now().to_rfc3339(),
         });
 
@@ -388,11 +391,20 @@ mod tests {
 
     #[test]
     fn test_finalize_stream() {
+        use crate::application::ports::output::llm_port::TokenUsage;
         let herald = JsonHerald::new();
-        let metadata = ExecutionMetadata {
-            execution_time_ms: 1234,
-            total_tokens: 500,
-        };
+        let metadata = ExecutionMetadata::builder()
+            .execution_id(uuid::Uuid::new_v4())
+            .start_time(chrono::Utc::now())
+            .model_used("gpt-4".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 300,
+                completion_tokens: 200,
+                total_tokens: 500,
+            })
+            .duration_ms(1234)
+            .build()
+            .unwrap();
 
         let formatted = herald.finalize_stream(&metadata).unwrap();
         assert!(formatted.ends_with('\n'));
@@ -562,10 +574,19 @@ mod tests {
         }
 
         // Add metadata
-        let metadata = ExecutionMetadata {
-            execution_time_ms: 500,
-            total_tokens: 150,
-        };
+        use crate::application::ports::output::llm_port::TokenUsage;
+        let metadata = ExecutionMetadata::builder()
+            .execution_id(uuid::Uuid::new_v4())
+            .start_time(chrono::Utc::now())
+            .model_used("gpt-4".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 90,
+                completion_tokens: 60,
+                total_tokens: 150,
+            })
+            .duration_ms(500)
+            .build()
+            .unwrap();
         let metadata_output = herald.finalize_stream(&metadata).unwrap();
         streamed_output.push_str(&metadata_output);
 
