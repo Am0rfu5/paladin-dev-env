@@ -9,6 +9,7 @@ use paladin::application::ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
 };
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::herald::{
@@ -45,15 +46,17 @@ impl Herald for XmlHerald {
         Ok(format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
 <paladin_result>
-    <paladin_id>{}</paladin_id>
-    <paladin_name>{}</paladin_name>
-    <status>{}</status>
     <output>{}</output>
+    <token_count>{}</token_count>
+    <execution_time_ms>{}</execution_time_ms>
+    <loop_count>{}</loop_count>
+    <stop_reason>{:?}</stop_reason>
 </paladin_result>"#,
-            Self::xml_escape(&result.paladin_id),
-            Self::xml_escape(&result.paladin_name),
-            Self::xml_escape(&result.status),
             Self::xml_escape(&result.output),
+            result.token_count,
+            result.execution_time_ms,
+            result.loop_count,
+            result.stop_reason,
         ))
     }
 
@@ -63,25 +66,22 @@ impl Herald for XmlHerald {
 <battalion_result>
     <battalion_id>{}</battalion_id>
     <battalion_name>{}</battalion_name>
-    <status>{}</status>
+    <status>{:?}</status>
     <paladins>"#,
-            Self::xml_escape(&result.battalion_id),
+            result.battalion_id,
             Self::xml_escape(&result.battalion_name),
-            Self::xml_escape(&result.status),
+            result.status,
         );
 
-        for paladin in &result.results {
+        for paladin in &result.paladin_results {
             xml.push_str(&format!(
                 r#"
-        <paladin id="{}">
-            <name>{}</name>
-            <status>{}</status>
+        <paladin>
             <output>{}</output>
+            <token_count>{}</token_count>
         </paladin>"#,
-                Self::xml_escape(&paladin.paladin_id),
-                Self::xml_escape(&paladin.paladin_name),
-                Self::xml_escape(&paladin.status),
                 Self::xml_escape(&paladin.output),
+                paladin.token_count,
             ));
         }
 
@@ -89,11 +89,11 @@ impl Herald for XmlHerald {
         Ok(xml)
     }
 
-    fn format_error(&self, error: &paladin::platform::container::herald::PaladinError) -> String {
+    fn format_error(&self, error: &PaladinError) -> String {
         format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
 <error>{}</error>"#,
-            Self::xml_escape(&error.message)
+            Self::xml_escape(&error.to_string())
         )
     }
 
@@ -138,40 +138,38 @@ impl Herald for CsvHerald {
     }
 
     fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
-        let mut csv = String::from("paladin_id,paladin_name,status,output\n");
+        let mut csv = String::from("output,token_count,execution_time_ms,loop_count,stop_reason\n");
         csv.push_str(&format!(
-            "{},{},{},{}\n",
-            Self::csv_escape(&result.paladin_id),
-            Self::csv_escape(&result.paladin_name),
-            Self::csv_escape(&result.status),
+            "{},{},{},{},{:?}\n",
             Self::csv_escape(&result.output),
+            result.token_count,
+            result.execution_time_ms,
+            result.loop_count,
+            result.stop_reason,
         ));
         Ok(csv)
     }
 
     fn format_battalion_result(&self, result: &BattalionResult) -> Result<String, HeraldError> {
-        let mut csv =
-            String::from("battalion_id,battalion_name,paladin_id,paladin_name,status,output\n");
+        let mut csv = String::from("battalion_id,battalion_name,paladin_output,token_count\n");
 
-        for paladin in &result.results {
+        for paladin in &result.paladin_results {
             csv.push_str(&format!(
-                "{},{},{},{},{},{}\n",
-                Self::csv_escape(&result.battalion_id),
+                "{},{},{},{}\n",
+                result.battalion_id,
                 Self::csv_escape(&result.battalion_name),
-                Self::csv_escape(&paladin.paladin_id),
-                Self::csv_escape(&paladin.paladin_name),
-                Self::csv_escape(&paladin.status),
                 Self::csv_escape(&paladin.output),
+                paladin.token_count,
             ));
         }
 
         Ok(csv)
     }
 
-    fn format_error(&self, error: &paladin::platform::container::herald::PaladinError) -> String {
+    fn format_error(&self, error: &PaladinError) -> String {
         format!(
             "error_type,error_message\nerror,{}\n",
-            Self::csv_escape(&error.message)
+            Self::csv_escape(&error.to_string())
         )
     }
 
@@ -397,19 +395,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         println!("Simulating streaming chunks:\n");
 
+        use chrono::Utc;
+        use uuid::Uuid;
         let chunks = vec![
-            StreamChunk {
-                content: "First part ".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "Second part ".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "Final part".to_string(),
-                is_final: true,
-            },
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(0)
+                .timestamp(Utc::now())
+                .content("First part ".to_string())
+                .token_count(3)
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(1)
+                .timestamp(Utc::now())
+                .content("Second part ".to_string())
+                .token_count(3)
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(2)
+                .timestamp(Utc::now())
+                .content("Final part".to_string())
+                .token_count(3)
+                .is_final(true)
+                .build()
+                .unwrap(),
         ];
 
         for chunk in &chunks {
@@ -418,10 +433,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        let metadata = ExecutionMetadata {
-            execution_time_ms: 1500,
-            total_tokens: 85,
-        };
+        use paladin::application::ports::output::llm_port::TokenUsage;
+        let metadata = ExecutionMetadata::builder()
+            .execution_id(Uuid::new_v4())
+            .start_time(Utc::now())
+            .end_time(Utc::now())
+            .duration_ms(1500)
+            .model_used("gpt-4".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 42,
+                completion_tokens: 43,
+                total_tokens: 85,
+            })
+            .build()
+            .unwrap();
         println!("{}\n", herald.finalize_stream(&metadata)?);
     }
 

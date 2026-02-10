@@ -18,30 +18,43 @@ fn generate_paladin_result(output_size_kb: usize) -> PaladinResult {
     let repetitions = output_size_bytes / repeated_text.len();
     let output = repeated_text.repeat(repetitions);
 
+    use paladin::application::ports::output::paladin_port::StopReason;
     PaladinResult {
-        paladin_id: "paladin-123".to_string(),
-        paladin_name: "BenchmarkPaladin".to_string(),
-        status: "completed".to_string(),
         output,
+        token_count: 100,
+        execution_time_ms: 1000,
+        loop_count: 1,
+        stop_reason: StopReason::Completed,
     }
 }
 
 /// Generate a Battalion result with specified number of Paladins and output size per Paladin
 fn generate_battalion_result(paladin_count: usize, output_size_per_kb: usize) -> BattalionResult {
+    use chrono::Utc;
+    use paladin::core::platform::container::battalion::BattalionStatus;
+    use paladin::core::platform::container::battalion::BattalionStrategy;
+    use uuid::Uuid;
+
     let paladin_results: Vec<PaladinResult> = (0..paladin_count)
-        .map(|i| {
-            let mut result = generate_paladin_result(output_size_per_kb);
-            result.paladin_id = format!("paladin-{}", i);
-            result.paladin_name = format!("Paladin {}", i + 1);
-            result
-        })
+        .map(|_i| generate_paladin_result(output_size_per_kb))
         .collect();
 
+    let per_paladin_times: Vec<u64> = vec![1000; paladin_count];
+
     BattalionResult {
-        battalion_id: "battalion-456".to_string(),
+        battalion_id: Uuid::new_v4(),
         battalion_name: "BenchmarkBattalion".to_string(),
-        status: "completed".to_string(),
-        results: paladin_results,
+        started_at: Utc::now(),
+        completed_at: Utc::now(),
+        final_output: "Benchmark output".to_string(),
+        paladin_results,
+        status: BattalionStatus::Completed,
+        strategy_used: BattalionStrategy::Formation,
+        strategy_selection_reasoning: None,
+        strategy_selection_time_ms: 0,
+        per_paladin_times,
+        paladin_success_count: paladin_count,
+        paladin_failure_count: 0,
     }
 }
 
@@ -76,19 +89,38 @@ fn benchmark_json_herald(c: &mut Criterion) {
 
     // Benchmark streaming chunks
     group.bench_function("stream_chunk", |b| {
-        let chunk = StreamChunk {
-            content: "Streaming chunk content here".to_string(),
-            is_final: false,
-        };
+        use chrono::Utc;
+        use uuid::Uuid;
+        let chunk = StreamChunk::builder()
+            .chunk_id(Uuid::new_v4())
+            .sequence_number(0)
+            .timestamp(Utc::now())
+            .content("Streaming chunk content here".to_string())
+            .token_count(5)
+            .is_final(false)
+            .build()
+            .unwrap();
         b.iter(|| black_box(herald.format_stream_chunk(black_box(&chunk)).unwrap()));
     });
 
     // Benchmark finalize stream
     group.bench_function("finalize_stream", |b| {
-        let metadata = ExecutionMetadata {
-            execution_time_ms: 1000,
-            total_tokens: 500,
-        };
+        use chrono::Utc;
+        use paladin::application::ports::output::llm_port::TokenUsage;
+        use uuid::Uuid;
+        let metadata = ExecutionMetadata::builder()
+            .execution_id(Uuid::new_v4())
+            .start_time(Utc::now())
+            .end_time(Utc::now())
+            .duration_ms(1000)
+            .model_used("gpt-4".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 250,
+                completion_tokens: 250,
+                total_tokens: 500,
+            })
+            .build()
+            .unwrap();
         b.iter(|| black_box(herald.finalize_stream(black_box(&metadata)).unwrap()));
     });
 
@@ -126,19 +158,38 @@ fn benchmark_markdown_herald(c: &mut Criterion) {
 
     // Benchmark streaming chunks
     group.bench_function("stream_chunk", |b| {
-        let chunk = StreamChunk {
-            content: "Streaming chunk content here".to_string(),
-            is_final: false,
-        };
+        use chrono::Utc;
+        use uuid::Uuid;
+        let chunk = StreamChunk::builder()
+            .chunk_id(Uuid::new_v4())
+            .sequence_number(0)
+            .timestamp(Utc::now())
+            .content("Streaming chunk content here".to_string())
+            .token_count(5)
+            .is_final(false)
+            .build()
+            .unwrap();
         b.iter(|| black_box(herald.format_stream_chunk(black_box(&chunk)).unwrap()));
     });
 
     // Benchmark finalize stream
     group.bench_function("finalize_stream", |b| {
-        let metadata = ExecutionMetadata {
-            execution_time_ms: 1000,
-            total_tokens: 500,
-        };
+        use chrono::Utc;
+        use paladin::application::ports::output::llm_port::TokenUsage;
+        use uuid::Uuid;
+        let metadata = ExecutionMetadata::builder()
+            .execution_id(Uuid::new_v4())
+            .start_time(Utc::now())
+            .end_time(Utc::now())
+            .duration_ms(1000)
+            .model_used("gpt-4".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 250,
+                completion_tokens: 250,
+                total_tokens: 500,
+            })
+            .build()
+            .unwrap();
         b.iter(|| black_box(herald.finalize_stream(black_box(&metadata)).unwrap()));
     });
 
@@ -176,19 +227,38 @@ fn benchmark_table_herald(c: &mut Criterion) {
 
     // Benchmark streaming (Table buffers, so chunks return None)
     group.bench_function("stream_chunk_buffered", |b| {
-        let chunk = StreamChunk {
-            content: "Streaming chunk content here".to_string(),
-            is_final: false,
-        };
+        use chrono::Utc;
+        use uuid::Uuid;
+        let chunk = StreamChunk::builder()
+            .chunk_id(Uuid::new_v4())
+            .sequence_number(0)
+            .timestamp(Utc::now())
+            .content("Streaming chunk content here".to_string())
+            .token_count(5)
+            .is_final(false)
+            .build()
+            .unwrap();
         b.iter(|| black_box(herald.format_stream_chunk(black_box(&chunk))));
     });
 
     // Benchmark finalize stream (Table renders here)
     group.bench_function("finalize_stream_with_chunks", |b| {
-        let metadata = ExecutionMetadata {
-            execution_time_ms: 1000,
-            total_tokens: 500,
-        };
+        use chrono::Utc;
+        use paladin::application::ports::output::llm_port::TokenUsage;
+        use uuid::Uuid;
+        let metadata = ExecutionMetadata::builder()
+            .execution_id(Uuid::new_v4())
+            .start_time(Utc::now())
+            .end_time(Utc::now())
+            .duration_ms(1000)
+            .model_used("gpt-4".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 250,
+                completion_tokens: 250,
+                total_tokens: 500,
+            })
+            .build()
+            .unwrap();
         b.iter(|| black_box(herald.finalize_stream(black_box(&metadata)).unwrap()));
     });
 

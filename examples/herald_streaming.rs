@@ -12,34 +12,72 @@ use std::time::Duration;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Herald Streaming Example ===\n");
 
+    use chrono::Utc;
+    use uuid::Uuid;
+
     // Simulate streaming chunks
     let chunks = vec![
-        StreamChunk {
-            content: "The capital of France is ".to_string(),
-            is_final: false,
-        },
-        StreamChunk {
-            content: "Paris. It is known for ".to_string(),
-            is_final: false,
-        },
-        StreamChunk {
-            content: "the Eiffel Tower, ".to_string(),
-            is_final: false,
-        },
-        StreamChunk {
-            content: "the Louvre Museum, ".to_string(),
-            is_final: false,
-        },
-        StreamChunk {
-            content: "and its rich cultural heritage.".to_string(),
-            is_final: true,
-        },
+        StreamChunk::builder()
+            .chunk_id(Uuid::new_v4())
+            .sequence_number(0)
+            .timestamp(Utc::now())
+            .content("The capital of France is ".to_string())
+            .token_count(5)
+            .is_final(false)
+            .build()
+            .unwrap(),
+        StreamChunk::builder()
+            .chunk_id(Uuid::new_v4())
+            .sequence_number(1)
+            .timestamp(Utc::now())
+            .content("Paris. It is known for ".to_string())
+            .token_count(5)
+            .is_final(false)
+            .build()
+            .unwrap(),
+        StreamChunk::builder()
+            .chunk_id(Uuid::new_v4())
+            .sequence_number(2)
+            .timestamp(Utc::now())
+            .content("the Eiffel Tower, ".to_string())
+            .token_count(4)
+            .is_final(false)
+            .build()
+            .unwrap(),
+        StreamChunk::builder()
+            .chunk_id(Uuid::new_v4())
+            .sequence_number(3)
+            .timestamp(Utc::now())
+            .content("the Louvre Museum, ".to_string())
+            .token_count(4)
+            .is_final(false)
+            .build()
+            .unwrap(),
+        StreamChunk::builder()
+            .chunk_id(Uuid::new_v4())
+            .sequence_number(4)
+            .timestamp(Utc::now())
+            .content("and its rich cultural heritage.".to_string())
+            .token_count(7)
+            .is_final(true)
+            .build()
+            .unwrap(),
     ];
 
-    let metadata = ExecutionMetadata {
-        execution_time_ms: 2500,
-        total_tokens: 125,
-    };
+    use paladin::application::ports::output::llm_port::TokenUsage;
+    let metadata = ExecutionMetadata::builder()
+        .execution_id(Uuid::new_v4())
+        .start_time(Utc::now())
+        .end_time(Utc::now())
+        .duration_ms(2500)
+        .model_used("gpt-4".to_string())
+        .token_usage(TokenUsage {
+            prompt_tokens: 62,
+            completion_tokens: 63,
+            total_tokens: 125,
+        })
+        .build()
+        .unwrap();
 
     // Example 1: JSON Herald (NDJSON streaming)
     println!("--- Example 1: JSON Herald (NDJSON) ---\n");
@@ -141,31 +179,61 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let herald: Arc<dyn Herald> = Arc::new(MarkdownHerald::new());
 
         let analysis_steps = vec![
-            StreamChunk {
-                content: "## Analysis Progress\n\n".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "1. Loading data... ✓\n".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "2. Preprocessing... ✓\n".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "3. Running analysis... ✓\n".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "4. Generating insights... ✓\n\n".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "**Results:**\n- Found 15 key patterns\n- Confidence: 92%\n- Recommendations: 8\n"
-                    .to_string(),
-                is_final: true,
-            },
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(0)
+                .timestamp(Utc::now())
+                .content("## Analysis Progress\n\n".to_string())
+                .token_count(4)
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(1)
+                .timestamp(Utc::now())
+                .content("1. Loading data... ✓\n".to_string())
+                .token_count(6)
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(2)
+                .timestamp(Utc::now())
+                .content("2. Preprocessing... ✓\n".to_string())
+                .token_count(5)
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(3)
+                .timestamp(Utc::now())
+                .content("3. Running analysis... ✓\n".to_string())
+                .token_count(6)
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(4)
+                .timestamp(Utc::now())
+                .content("4. Generating insights... ✓\n\n".to_string())
+                .token_count(6)
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(5)
+                .timestamp(Utc::now())
+                .content("**Results:**\n- Found 15 key patterns\n- Confidence: 92%\n- Recommendations: 8\n"
+                    .to_string())
+                .token_count(25)
+                .is_final(true)
+                .build()
+                .unwrap(),
         ];
 
         for chunk in &analysis_steps {
@@ -175,10 +243,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        let analysis_metadata = ExecutionMetadata {
-            execution_time_ms: 8500,
-            total_tokens: 450,
-        };
+        let analysis_metadata = ExecutionMetadata::builder()
+            .execution_id(Uuid::new_v4())
+            .start_time(Utc::now())
+            .end_time(Utc::now())
+            .duration_ms(8500)
+            .model_used("gpt-4".to_string())
+            .token_usage(TokenUsage {
+                prompt_tokens: 225,
+                completion_tokens: 225,
+                total_tokens: 450,
+            })
+            .build()
+            .unwrap();
 
         println!("{}", herald.finalize_stream(&analysis_metadata)?);
     }
@@ -191,22 +268,42 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Processing chunks with potential errors:\n");
 
         let risky_chunks = vec![
-            StreamChunk {
-                content: "Processing... ".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "Warning: Unusual pattern detected. ".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "Continuing analysis... ".to_string(),
-                is_final: false,
-            },
-            StreamChunk {
-                content: "Completed successfully.".to_string(),
-                is_final: true,
-            },
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(0)
+                .timestamp(Utc::now())
+                .content("Processing... ".to_string())
+                .token_count(3)
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(1)
+                .timestamp(Utc::now())
+                .content("Warning: Unusual pattern detected. ".to_string())
+                .token_count(5)
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(2)
+                .timestamp(Utc::now())
+                .content("Continuing analysis... ".to_string())
+                .token_count(3)
+                .is_final(false)
+                .build()
+                .unwrap(),
+            StreamChunk::builder()
+                .chunk_id(Uuid::new_v4())
+                .sequence_number(3)
+                .timestamp(Utc::now())
+                .content("Completed successfully.".to_string())
+                .token_count(3)
+                .is_final(true)
+                .build()
+                .unwrap(),
         ];
 
         for chunk in &risky_chunks {

@@ -8,10 +8,11 @@
 //!
 //! Following TDD methodology: These tests are written first and expected to fail.
 
+use paladin::application::ports::output::llm_port::TokenUsage;
 use paladin::application::ports::output::paladin_port::{PaladinResult, StopReason};
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::platform::container::battalion::BattalionResult;
-use paladin::core::platform::container::herald::{ExecutionMetadata, Herald, StreamChunk};
+use paladin::core::platform::container::herald::{ExecutionMetadata, StreamChunk};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -48,7 +49,8 @@ fn test_herald_uses_real_paladin_result_type() {
 #[test]
 fn test_herald_uses_real_battalion_result_type() {
     use chrono::Utc;
-    use paladin::core::platform::container::battalion::{BattalionStatus, BattalionStrategy};
+    use paladin::core::platform::container::battalion::BattalionStatus;
+    use paladin::core::platform::container::battalion::BattalionStrategy;
 
     // Create a real BattalionResult with all actual fields
     let result = BattalionResult {
@@ -59,7 +61,7 @@ fn test_herald_uses_real_battalion_result_type() {
         final_output: "Combined output".to_string(),
         paladin_results: vec![],
         status: BattalionStatus::Completed,
-        strategy_used: BattalionStrategy::Sequential,
+        strategy_used: BattalionStrategy::Formation,
         strategy_selection_reasoning: None,
         strategy_selection_time_ms: 0,
         per_paladin_times: vec![],
@@ -218,8 +220,8 @@ fn test_execution_metadata_has_all_telemetry_fields() {
         duration_ms: Some(1500),
         model_used: "gpt-4".to_string(),
         token_usage: TokenUsage {
-            input_tokens: 100,
-            output_tokens: 50,
+            prompt_tokens: 100,
+            completion_tokens: 50,
             total_tokens: 150,
         },
         cost_estimate: Some(0.003),
@@ -248,8 +250,8 @@ fn test_execution_metadata_calculate_duration() {
         duration_ms: None, // Not set initially
         model_used: "gpt-4".to_string(),
         token_usage: TokenUsage {
-            input_tokens: 100,
-            output_tokens: 50,
+            prompt_tokens: 100,
+            completion_tokens: 50,
             total_tokens: 150,
         },
         cost_estimate: None,
@@ -285,8 +287,8 @@ fn test_execution_metadata_serialization_round_trip() {
         duration_ms: Some(1234),
         model_used: "gpt-4-turbo".to_string(),
         token_usage: TokenUsage {
-            input_tokens: 200,
-            output_tokens: 100,
+            prompt_tokens: 200,
+            completion_tokens: 100,
             total_tokens: 300,
         },
         cost_estimate: Some(0.006),
@@ -330,8 +332,8 @@ fn test_execution_metadata_builder_pattern() {
         .end_time(Utc::now())
         .model_used("gpt-4".to_string())
         .token_usage(TokenUsage {
-            input_tokens: 150,
-            output_tokens: 75,
+            prompt_tokens: 150,
+            completion_tokens: 75,
             total_tokens: 225,
         })
         .cost_estimate(0.0045)
@@ -436,7 +438,7 @@ fn test_herald_pipeline_with_consolidated_types() {
         final_output: "Battalion output".to_string(),
         paladin_results: vec![paladin_result.clone()],
         status: BattalionStatus::Completed,
-        strategy_used: BattalionStrategy::Sequential,
+        strategy_used: BattalionStrategy::Formation,
         strategy_selection_reasoning: None,
         strategy_selection_time_ms: 0,
         per_paladin_times: vec![2000],
@@ -466,12 +468,4 @@ fn test_herald_pipeline_with_consolidated_types() {
     let error = PaladinError::Timeout(60);
     let error_formatted = json_formatter.format_error(&error);
     assert!(error_formatted.contains("Timeout"));
-}
-
-/// Helper struct for testing (only used if needed after implementation)
-#[allow(dead_code)]
-struct TokenUsage {
-    input_tokens: u32,
-    output_tokens: u32,
-    total_tokens: u32,
 }
