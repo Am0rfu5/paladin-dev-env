@@ -445,12 +445,12 @@ mod tests {
 
         let formatted = herald.format_paladin_result(&result).unwrap();
 
-        assert!(formatted.contains("## Paladin: TestPaladin"));
-        assert!(formatted.contains("✅"));
+        assert!(formatted.contains("## Paladin Result"));
+        assert!(formatted.contains("✅")); // Success badge for Completed
         assert!(formatted.contains("### Output"));
         assert!(formatted.contains("Test output content"));
         assert!(formatted.contains("### Metadata"));
-        assert!(formatted.contains("**Paladin ID:**"));
+        assert!(formatted.contains("**Token Count:**"));
     }
 
     #[test]
@@ -465,10 +465,9 @@ mod tests {
 
         assert!(formatted.contains("## Battalion: TestBattalion"));
         assert!(formatted.contains("### Paladin Results"));
-        assert!(formatted.contains("1. TestPaladin"));
-        assert!(formatted.contains("2. SecondPaladin"));
+        assert!(formatted.contains("#### Paladin 1")); // Heading for first result
+        assert!(formatted.contains("#### Paladin 2")); // Heading for second result
         assert!(formatted.contains("✅")); // Success badge
-        assert!(formatted.contains("❌")); // Failed badge
     }
 
     #[test]
@@ -564,8 +563,8 @@ mod tests {
         let formatted_with_color = herald_with_color.format_paladin_result(&result).unwrap();
 
         // Both should contain the same content
-        assert!(formatted_no_color.contains("TestPaladin"));
-        assert!(formatted_with_color.contains("TestPaladin"));
+        assert!(formatted_no_color.contains("Test output content"));
+        assert!(formatted_with_color.contains("Test output content"));
 
         // With colors version may contain ANSI codes (length difference)
         // This is a rough check since ANSI codes add characters

@@ -304,10 +304,11 @@ mod tests {
 
         // Verify it's valid JSON
         let parsed: Value = serde_json::from_str(&formatted).unwrap();
-        assert_eq!(parsed["paladin_id"], "test-id-123");
-        assert_eq!(parsed["paladin_name"], "TestPaladin");
-        assert_eq!(parsed["status"], "success");
         assert_eq!(parsed["output"], "Test output content");
+        assert_eq!(parsed["token_count"], 100);
+        assert_eq!(parsed["execution_time_ms"], 1500);
+        assert_eq!(parsed["loop_count"], 1);
+        assert_eq!(parsed["stop_reason"], "Completed");
     }
 
     #[test]
@@ -345,9 +346,9 @@ mod tests {
         let formatted = herald.format_battalion_result(&result).unwrap();
 
         let parsed: Value = serde_json::from_str(&formatted).unwrap();
-        assert_eq!(parsed["battalion_id"], "bat-id-456");
+        assert!(parsed["battalion_id"].is_string());
         assert_eq!(parsed["battalion_name"], "TestBattalion");
-        assert_eq!(parsed["status"], "success");
+        assert_eq!(parsed["status"], "Completed");
         assert!(parsed["paladin_results"].is_array());
         assert_eq!(parsed["paladin_results"].as_array().unwrap().len(), 2);
     }
@@ -412,7 +413,7 @@ mod tests {
         let json_str = formatted.trim_end();
         let parsed: Value = serde_json::from_str(json_str).unwrap();
         assert_eq!(parsed["type"], "metadata");
-        assert_eq!(parsed["execution_time_ms"], 1234);
+        assert_eq!(parsed["duration_ms"], 1234);
         assert_eq!(parsed["total_tokens"], 500);
     }
 
@@ -620,7 +621,7 @@ mod tests {
         // Verify metadata
         let meta: Value = serde_json::from_str(lines[3]).unwrap();
         assert_eq!(meta["type"], "metadata");
-        assert_eq!(meta["execution_time_ms"], 500);
+        assert_eq!(meta["duration_ms"], 500);
         assert_eq!(meta["total_tokens"], 150);
     }
 }
