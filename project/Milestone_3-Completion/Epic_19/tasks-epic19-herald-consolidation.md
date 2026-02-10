@@ -213,22 +213,6 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.18 Verify all acceptance criteria from US-19.1 are met
   - [x] 7.19 Verify all acceptance criteria from US-19.2 are met
 
-- [ ] 8.0 Final Code Review and Merge
-  - [ ] 8.1 Review all changes in git: `git diff main`
-  - [ ] 8.2 Ensure commit messages follow conventional format
-  - [ ] 8.3 Stage all changes: `git add .`
-  - [ ] 8.4 Commit with descriptive message: `git commit -m "feat: consolidate Herald domain types" -m "- Remove placeholder PaladinResult, BattalionResult, PaladinError" -m "- Import actual types from paladin.rs and battalion/" -m "- Complete StreamChunk with extensible metadata" -m "- Complete ExecutionMetadata with full telemetry" -m "- Auto-register built-in formatters in HeraldRegistry" -m "- Update all documentation and examples" -m "Related to Epic 19 in Milestone 3"`
-  - [ ] 8.5 Push branch: `git push -u origin feature/epic-19-herald-consolidation`
-  - [ ] 8.6 Create pull request on GitHub
-  - [ ] 8.7 Run CI/CD pipeline and verify all checks pass
-  - [ ] 8.8 Request code review from team
-  - [ ] 8.9 Address any review feedback
-  - [ ] 8.10 Squash commits if needed for clean history
-  - [ ] 8.11 Merge to main branch
-  - [ ] 8.12 Delete feature branch after successful merge
-  - [ ] 8.13 Mark Epic 19 as complete in project plan
-  - [ ] 8.14 Update project tracking board/issues
-
 ---
 
 **Status:** All sub-tasks generated. Ready to begin implementation following TDD methodology.
