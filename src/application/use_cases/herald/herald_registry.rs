@@ -18,6 +18,7 @@
 //! ```
 
 use crate::core::platform::container::herald::Herald;
+use crate::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -167,28 +168,40 @@ impl HeraldRegistry {
 impl Default for HeraldRegistry {
     /// Create a new registry with built-in formatters pre-registered
     ///
-    /// The default registry includes:
-    /// - "json" - JSON formatter (when available)
-    /// - "markdown" - Markdown formatter (when available)
-    /// - "table" - Table formatter (when available)
+    /// The default registry automatically includes three built-in formatters:
+    /// - **"json"** - JSON formatter with default configuration (pretty-printed, includes metadata)
+    /// - **"markdown"** - Markdown formatter with default configuration (colors enabled, H2 headings)
+    /// - **"table"** - Table formatter with default configuration (rounded borders, auto-width)
     ///
-    /// Note: Built-in formatters will be registered once they are implemented
-    /// in the infrastructure layer.
+    /// These formatters are immediately available for use without manual registration.
+    /// Custom formatters can still be registered using the `register()` method,
+    /// and built-in formatters can be overridden by registering with the same name.
     ///
     /// # Examples
     ///
     /// ```rust,ignore
+    /// // Built-in formatters are pre-registered
     /// let registry = HeraldRegistry::default();
-    /// // Built-in formatters are already registered
+    ///
+    /// // Immediately use built-in formatters
     /// let json_herald = registry.get("json").unwrap();
+    /// let formatted = json_herald.format_paladin_result(&result)?;
+    ///
+    /// // Can still add custom formatters
+    /// registry.register("custom", Arc::new(MyCustomHerald::new()));
+    ///
+    /// // Can override built-in formatters
+    /// registry.register("json", Arc::new(JsonHerald::with_config(custom_config)));
     /// ```
     fn default() -> Self {
-        // TODO: Register built-in formatters once they are implemented
-        // registry.register("json", Arc::new(JsonHerald::new()));
-        // registry.register("markdown", Arc::new(MarkdownHerald::new()));
-        // registry.register("table", Arc::new(TableHerald::new()));
+        let registry = Self::new();
 
-        Self::new()
+        // Auto-register built-in formatters with default configurations
+        registry.register("json", Arc::new(JsonHerald::new()));
+        registry.register("markdown", Arc::new(MarkdownHerald::new()));
+        registry.register("table", Arc::new(TableHerald::default()));
+
+        registry
     }
 }
 
@@ -363,8 +376,86 @@ mod tests {
     #[test]
     fn test_default_registry() {
         let registry = HeraldRegistry::default();
-        // Default registry is empty until built-in formatters are implemented
-        assert!(registry.is_empty());
+
+        // Default registry should have 3 built-in formatters
+        assert_eq!(registry.len(), 3);
+        assert!(!registry.is_empty());
+
+        // Verify all built-in formatters are registered
+        assert!(registry.contains("json"));
+        assert!(registry.contains("markdown"));
+        assert!(registry.contains("table"));
+
+        // Verify formatters are retrievable
+        assert!(registry.get("json").is_some());
+        assert!(registry.get("markdown").is_some());
+        assert!(registry.get("table").is_some());
+
+        // Verify formatter names match
+        assert_eq!(registry.get("json").unwrap().name(), "json");
+        assert_eq!(registry.get("markdown").unwrap().name(), "markdown");
+        assert_eq!(registry.get("table").unwrap().name(), "table");
+    }
+
+    #[test]
+    fn test_default_registry_can_add_custom_formatters() {
+        let registry = HeraldRegistry::default();
+
+        // Start with 3 built-in formatters
+        assert_eq!(registry.len(), 3);
+
+        // Add custom formatter
+        registry.register("custom", Arc::new(MockHerald::new("custom")));
+
+        // Should now have 4 formatters
+        assert_eq!(registry.len(), 4);
+        assert!(registry.contains("custom"));
+
+        // Built-in formatters should still be present
+        assert!(registry.contains("json"));
+        assert!(registry.contains("markdown"));
+        assert!(registry.contains("table"));
+    }
+
+    #[test]
+    fn test_default_registry_can_override_builtin_formatters() {
+        let registry = HeraldRegistry::default();
+
+        // Verify json formatter is built-in
+        let original_json = registry.get("json").unwrap();
+        assert_eq!(original_json.name(), "json");
+
+        // Override json formatter with mock
+        registry.register("json", Arc::new(MockHerald::new("custom-json")));
+
+        // Should still have 3 formatters (replaced, not added)
+        assert_eq!(registry.len(), 3);
+
+        // Verify formatter was replaced
+        let new_json = registry.get("json").unwrap();
+        assert_eq!(new_json.name(), "custom-json");
+
+        // Other built-in formatters should still be present
+        assert_eq!(registry.get("markdown").unwrap().name(), "markdown");
+        assert_eq!(registry.get("table").unwrap().name(), "table");
+    }
+
+    #[test]
+    fn test_new_vs_default_registry() {
+        let new_registry = HeraldRegistry::new();
+        let default_registry = HeraldRegistry::default();
+
+        // new() creates empty registry
+        assert!(new_registry.is_empty());
+        assert_eq!(new_registry.len(), 0);
+
+        // default() creates registry with built-in formatters
+        assert!(!default_registry.is_empty());
+        assert_eq!(default_registry.len(), 3);
+
+        // Can still register formatters in new() registry
+        new_registry.register("json", Arc::new(MockHerald::new("json")));
+        assert_eq!(new_registry.len(), 1);
     }
 
     #[test]

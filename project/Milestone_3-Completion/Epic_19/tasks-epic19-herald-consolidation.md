@@ -154,22 +154,24 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.24 Run ExecutionMetadata tests - Herald module tests passing (59 passed)
   - [x] 4.25 Run `cargo check` and `cargo clippy` - All passed
 
-- [ ] 5.0 Implement Auto-Registration of Built-in Formatters
-  - [ ] 5.1 Read `src/application/use_cases/herald/herald_registry.rs` to understand current implementation
-  - [ ] 5.2 Read TODO comment at line 186
-  - [ ] 5.3 Implement `Default` trait for `HeraldRegistry`
-  - [ ] 5.4 In `Default::default()`, create new registry with `Self::new()`
-  - [ ] 5.5 Auto-register `JsonHerald` with key "json"
-  - [ ] 5.6 Auto-register `MarkdownHerald` with key "markdown"
-  - [ ] 5.7 Auto-register `TableHerald` with key "table"
-  - [ ] 5.8 Add imports for all built-in formatter types
-  - [ ] 5.9 Ensure existing manual registration API still works
-  - [ ] 5.10 Add rustdoc comment documenting auto-registered formatters
-  - [ ] 5.11 Update `HeraldRegistry::new()` if needed to support both patterns
-  - [ ] 5.12 Run auto-registration tests (should now pass)
-  - [ ] 5.13 Test that custom formatters can still be added
-  - [ ] 5.14 Test duplicate key handling behavior
-  - [ ] 5.15 Run `cargo test --lib herald_registry` to verify
+- [x] 5.0 Implement Auto-Registration of Built-in Formatters
+  - [x] 5.1 Read `src/application/use_cases/herald/herald_registry.rs` to understand current implementation
+  - [x] 5.2 Read TODO comment at line 186
+  - [x] 5.3 Implement `Default` trait for `HeraldRegistry` with auto-registration
+  - [x] 5.4 In `Default::default()`, create new registry with `Self::new()`
+  - [x] 5.5 Auto-register `JsonHerald` with key "json"
+  - [x] 5.6 Auto-register `MarkdownHerald` with key "markdown"
+  - [x] 5.7 Auto-register `TableHerald` with key "table"
+  - [x] 5.8 Add imports for all built-in formatter types (JsonHerald, MarkdownHerald, TableHerald)
+  - [x] 5.9 Ensure existing manual registration API still works - Verified in tests
+  - [x] 5.10 Add comprehensive rustdoc comment documenting auto-registered formatters with examples
+  - [x] 5.11 `HeraldRegistry::new()` unchanged - supports both empty and default patterns
+  - [x] 5.12 Run auto-registration tests - All 14 tests passed (100% success rate)
+  - [x] 5.13 Test that custom formatters can still be added - test_default_registry_can_add_custom_formatters passed
+  - [x] 5.14 Test duplicate key handling behavior - test_default_registry_can_override_builtin_formatters passed
+  - [x] 5.15 Run `cargo test --lib herald_registry` - All 14 tests passed
+  - [x] 5.16 Added test_new_vs_default_registry to verify new() vs default() behavior
+  - [x] 5.17 Run `cargo check` and `cargo clippy` - All passed
 
 - [ ] 6.0 Update Documentation and Examples
   - [ ] 6.1 Read existing rustdoc in `src/core/platform/container/herald.rs`
