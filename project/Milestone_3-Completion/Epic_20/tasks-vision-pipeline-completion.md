@@ -21,9 +21,11 @@
 - `src/application/use_cases/paladin/paladin_execution_service.rs` - Add execute_with_vision() method (FR-3)
 - `tests/integration/vision_integration_test.rs` - Integration tests with real API calls (FR-6.4)
 - `tests/fixtures/sample_image.jpg` - Sample image for testing
-- `tests/fixtures/sample_image.png` - Sample image for testing
-- `examples/sentinel_vision.rs` - Updated example demonstrating vision capabilities (FR-7.1)
-- `docs/SENTINEL.md` - Documentation for vision capabilities (FR-7.2)
+- `tests/fixtures/sample_diagram.png` - Sample diagram for testing
+- `tests/fixtures/README.md` - Fixture documentation
+- `examples/vision_analysis.rs` - Updated comprehensive vision example with base64, multiple images, error handling (FR-7.1)
+- `examples/vision_battalion.rs` - Battalion vision orchestration examples (existing)
+- `docs/SENTINEL.md` - Documentation for vision capabilities with retry configuration (FR-7.2)
 - `Cargo.toml` - Add mockito dev dependency if not already present
 
 ### Notes
@@ -204,24 +206,24 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 8.14 Integration tests compile successfully (verified with cargo test --test vision_integration --no-run)
   - [x] 8.15 Integration test: High detail image processing (test_high_detail_image_openai)
 
-- [ ] 9.0 Update Examples and Documentation
-  - [ ] 9.1 Read existing `examples/sentinel_vision.rs` to understand current state
-  - [ ] 9.2 Update example to demonstrate building Paladin with vision-capable model
-  - [ ] 9.3 Add example: analyze single image with URL
-  - [ ] 9.4 Add example: analyze single image with base64 encoding
-  - [ ] 9.5 Add example: analyze multiple images in one request
-  - [ ] 9.6 Add example: error handling patterns (handle VisionError gracefully)
-  - [ ] 9.7 Add comments explaining each step for junior developers
-  - [ ] 9.8 Verify example compiles: `cargo check --example sentinel_vision`
-  - [ ] 9.9 Read `docs/SENTINEL.md` to understand existing documentation structure
-  - [ ] 9.10 Add section "Vision Capabilities" with overview of multi-modal support
-  - [ ] 9.11 Document supported providers and models (GPT-4 Vision, Claude 3 Vision)
-  - [ ] 9.12 Document image format requirements (JPEG, PNG, formats delegated to API)
-  - [ ] 9.13 Document configuration options (vision section in config.yml)
-  - [ ] 9.14 Document error handling patterns and common errors
-  - [ ] 9.15 Add code example showing basic vision usage
-  - [ ] 9.16 Document image size limits (reference API provider limits)
-  - [ ] 9.17 Add troubleshooting section for common vision issues
+- [x] 9.0 Update Examples and Documentation
+  - [x] 9.1 Read existing `examples/sentinel_vision.rs` to understand current state
+  - [x] 9.2 Update example to demonstrate building Paladin with vision-capable model
+  - [x] 9.3 Add example: analyze single image with URL
+  - [x] 9.4 Add example: analyze single image with base64 encoding
+  - [x] 9.5 Add example: analyze multiple images in one request
+  - [x] 9.6 Add example: error handling patterns (handle VisionError gracefully)
+  - [x] 9.7 Add comments explaining each step for junior developers
+  - [x] 9.8 Verify example compiles: `cargo check --example sentinel_vision`
+  - [x] 9.9 Read `docs/SENTINEL.md` to understand existing documentation structure
+  - [x] 9.10 Add section "Vision Capabilities" with overview of multi-modal support
+  - [x] 9.11 Document supported providers and models (GPT-4 Vision, Claude 3 Vision)
+  - [x] 9.12 Document image format requirements (JPEG, PNG, formats delegated to API)
+  - [x] 9.13 Document configuration options (vision section in config.yml)
+  - [x] 9.14 Document error handling patterns and common errors
+  - [x] 9.15 Add code example showing basic vision usage
+  - [x] 9.16 Document image size limits (reference API provider limits)
+  - [x] 9.17 Add troubleshooting section for common vision issues
 
 - [ ] 10.0 Final Quality Checks and PR Preparation
   - [ ] 10.1 Run full test suite: `cargo test` (ensure all tests pass)

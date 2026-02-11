@@ -554,6 +554,58 @@ images:
   - "./input/image.jpg"
 ```
 
+### Vision Configuration (Retry & Limits)
+
+Epic 20 introduced comprehensive vision configuration for retry logic and token limits:
+
+```yaml
+# config.yml
+vision:
+  # Retry configuration for failed vision API calls
+  retry:
+    max_retries: 3                # Maximum retry attempts
+    initial_backoff_ms: 1000      # Initial backoff delay (1 second)
+    backoff_multiplier: 2.0       # Exponential backoff multiplier
+  
+  # Provider-specific limits
+  openai:
+    max_tokens: 4096              # Maximum tokens for OpenAI vision requests
+  
+  anthropic:
+    max_tokens: 4096              # Maximum tokens for Anthropic vision requests
+```
+
+**Retry Behavior**:
+- Automatic retry on transient failures (network errors, rate limits, timeouts)
+- Exponential backoff: delay increases as `initial_backoff_ms * (backoff_multiplier ^ attempt)`
+- Example delays: 1s → 2s → 4s for 3 retries with 2.0 multiplier
+- Non-retryable errors (authentication, invalid format) fail immediately
+
+**Using Configuration in Code**:
+
+```rust
+use paladin::config::application_settings::ApplicationSettings;
+
+let settings = ApplicationSettings::load("config.yml")?;
+
+// Configuration is automatically applied to vision adapters
+let openai_adapter = OpenAIAdapter::new_with_vision_config(
+    openai_config,
+    settings.vision.clone()
+)?;
+
+let anthropic_adapter = AnthropicAdapter::new_with_vision_config(
+    anthropic_config,
+    settings.vision.clone()
+)?;
+```
+
+**Best Practices**:
+- **Development**: Lower `max_retries` (1-2) for faster feedback
+- **Production**: Higher `max_retries` (3-5) for reliability
+- **High Traffic**: Lower `backoff_multiplier` (1.5) to reduce total wait time
+- **Rate Limited APIs**: Higher `backoff_multiplier` (3.0) to respect limits
+
 ## Security
 
 ### Encryption at Rest
@@ -740,10 +792,16 @@ match paladin.execute_with_vision(task, images).await {
 
 ### Image Size Optimization
 
+**Provider Image Size Limits**:
+- **OpenAI**: Maximum 20MB per image
+- **Anthropic**: Maximum 5MB per image (base64-encoded)
+- **Recommended**: Keep images under 2MB for optimal performance
+
 **Recommendations**:
 - Maximum size: 20MB (OpenAI), 5MB (Anthropic)
 - Optimal resolution: 1024x1024 for most tasks
 - Use `ImageDetail::Low` for faster processing
+- Compress images before upload to reduce latency
 
 ```rust
 // Fast processing (low detail)

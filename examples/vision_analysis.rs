@@ -12,7 +12,7 @@ use paladin::application::ports::output::llm_port::LlmPort;
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
-use paladin::core::platform::container::vision::{ImageDetail, VisionContent};
+use paladin::core::platform::container::vision::{ImageDetail, VisionContent, VisionError};
 use paladin::infrastructure::adapters::llm::openai_adapter::{OpenAIAdapter, OpenAIConfig};
 use std::env;
 use std::path::PathBuf;
@@ -172,6 +172,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
+    // Step 7: Demonstrate base64-encoded image processing
+    println!();
+    println!("{}", "=".repeat(80));
+    println!("📦 Demonstrating Base64-Encoded Image Processing");
+    println!("{}", "=".repeat(80));
+    println!();
+
+    demonstrate_base64_image(&execution_service, &paladin).await?;
+
+    // Step 8: Demonstrate multiple images in a single request
+    println!();
+    println!("{}", "=".repeat(80));
+    println!("🖼️  Demonstrating Multiple Images in One Request");
+    println!("{}", "=".repeat(80));
+    println!();
+
+    demonstrate_multiple_images(&execution_service, &paladin).await?;
+
+    // Step 9: Demonstrate error handling patterns
+    println!();
+    println!("{}", "=".repeat(80));
+    println!("⚠️  Demonstrating Error Handling Patterns");
+    println!("{}", "=".repeat(80));
+    println!();
+
+    demonstrate_error_handling(&execution_service, &paladin).await;
+
     println!();
     println!("{}", "=".repeat(80));
     println!("✅ Vision analysis example completed successfully!");
@@ -212,4 +239,163 @@ async fn analyze_image(
     println!("{}", "─".repeat(80));
 
     Ok(())
+}
+
+/// Demonstrate processing a base64-encoded image
+///
+/// Base64 encoding is useful when:
+/// - Images are generated dynamically in memory
+/// - You need to embed images in API requests
+/// - Working with images from databases or data streams
+async fn demonstrate_base64_image(
+    service: &PaladinExecutionService,
+    paladin: &paladin::core::platform::container::paladin::Paladin,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Base64 encoding is ideal for dynamically generated or in-memory images.");
+    println!("This example creates a small image and encodes it as base64.\n");
+
+    // Create a minimal valid PNG image (1x1 red pixel)
+    // This is a base64-encoded PNG image
+    let base64_data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==".to_string();
+
+    let vision_content = vec![VisionContent::ImageBase64 {
+        data: base64_data,
+        media_type: "image/png".to_string(),
+        detail: ImageDetail::Low, // Small image, so low detail is fine
+    }];
+
+    println!("📦 Image Format: Base64-encoded PNG");
+    println!("🔍 Detail Level: Low");
+    println!("💭 Task: Analyze this base64-encoded image\n");
+
+    analyze_image(
+        service,
+        paladin,
+        vision_content,
+        "What color is this image?",
+    )
+    .await?;
+
+    println!("\n💡 Tip: Base64 encoding is handled automatically by the vision adapter.");
+    println!("   Just provide the data and media_type, and the adapter handles the rest.\n");
+
+    Ok(())
+}
+
+/// Demonstrate analyzing multiple images in a single request
+///
+/// Multi-image analysis is useful for:
+/// - Comparing multiple images
+/// - Analyzing image sequences
+/// - Processing related visual content together
+async fn demonstrate_multiple_images(
+    service: &PaladinExecutionService,
+    paladin: &paladin::core::platform::container::paladin::Paladin,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("You can analyze multiple images in a single request for comparison");
+    println!("or sequential analysis.\n");
+
+    // Two different images for comparison
+    let images = vec![
+        VisionContent::ImageUrl {
+            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/400px-Cat03.jpg".to_string(),
+            detail: ImageDetail::Low,
+        },
+        VisionContent::ImageUrl {
+            url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Cat_November_2010-1a.jpg/400px-Cat_November_2010-1a.jpg".to_string(),
+            detail: ImageDetail::Low,
+        },
+    ];
+
+    println!("📸 Number of Images: {}", images.len());
+    println!("💭 Task: Compare and describe the differences\n");
+
+    analyze_image(
+        service,
+        paladin,
+        images,
+        "Compare these two images. What are the key differences between them?",
+    )
+    .await?;
+
+    println!("\n💡 Tip: Multiple image support varies by provider.");
+    println!("   OpenAI GPT-4o and Anthropic Claude 3 both support multiple images per request.\n");
+
+    Ok(())
+}
+
+/// Demonstrate error handling patterns for vision operations
+///
+/// Common errors include:
+/// - Invalid image URLs (404, unreachable)
+/// - Unsupported formats
+/// - Authentication failures
+/// - Rate limits exceeded
+/// - Network timeouts
+async fn demonstrate_error_handling(
+    service: &PaladinExecutionService,
+    paladin: &paladin::core::platform::container::paladin::Paladin,
+) {
+    println!("Vision operations can fail for various reasons. Here's how to handle them:\n");
+
+    // Example 1: Invalid URL (likely to fail)
+    println!("1️⃣  Handling Invalid Image URL");
+    let invalid_url = vec![VisionContent::ImageUrl {
+        url: "https://example.com/nonexistent-image-12345.jpg".to_string(),
+        detail: ImageDetail::Auto,
+    }];
+
+    match service
+        .execute_with_vision(paladin, "Describe this image", invalid_url)
+        .await
+    {
+        Ok(_) => println!("   ✅ Unexpectedly succeeded"),
+        Err(e) => {
+            println!("   ❌ Error handled gracefully: {}", e);
+            println!("   💡 Tip: Always validate URLs before processing");
+        }
+    }
+    println!();
+
+    // Example 2: Validate format before processing
+    println!("2️⃣  Format Validation (Unsupported Format)");
+    let unsupported = VisionContent::ImageBase64 {
+        data: "invalid_base64".to_string(),
+        media_type: "image/bmp".to_string(), // BMP not supported
+        detail: ImageDetail::Auto,
+    };
+
+    match unsupported.validate_format() {
+        Ok(_) => println!("   ✅ Format is valid"),
+        Err(VisionError::UnsupportedFormat(msg)) => {
+            println!("   ❌ Format validation failed: {}", msg);
+            println!("   💡 Tip: Supported formats are PNG, JPEG, GIF, and WebP");
+        }
+        Err(e) => println!("   ❌ Validation error: {:?}", e),
+    }
+    println!();
+
+    // Example 3: Demonstrate proper error handling pattern
+    println!("3️⃣  Recommended Error Handling Pattern");
+    println!("   ```rust");
+    println!("   match service.execute_with_vision(paladin, task, images).await {{");
+    println!("       Ok(result) => {{");
+    println!("           // Process successful result");
+    println!(r#"           println!("Analysis: {{}}", result.output);"#);
+    println!("       }}");
+    println!("       Err(e) => {{");
+    println!("           // Log and handle error gracefully");
+    println!(r#"           eprintln!("Vision error: {{}}", e);"#);
+    println!("           // Optionally retry or use fallback strategy");
+    println!("       }}");
+    println!("   }}");
+    println!("   ```\n");
+
+    println!("💡 Best Practices:");
+    println!("   • Validate image formats before sending to API");
+    println!("   • Use circuit breaker for fault tolerance");
+    println!("   • Implement retry logic with exponential backoff");
+    println!("   • Set appropriate timeouts for large images");
+    println!("   • Monitor token usage to stay within limits");
+    println!("   • Handle rate limits gracefully\n");
 }
