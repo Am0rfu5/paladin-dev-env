@@ -152,7 +152,7 @@ async fn test_full_planning_workflow_simple_linear() {
     // When: Executing the full planning workflow
     // Step 1: Create plan
     let plan = service
-        .create_plan("Write a blog post about Rust", 10)
+        .create_plan("Write a blog post about Rust", 10, "gpt-4")
         .await
         .expect("Plan creation should succeed");
 
@@ -161,7 +161,7 @@ async fn test_full_planning_workflow_simple_linear() {
 
     // Step 2: Execute subtasks
     let executed_plan = service
-        .execute_subtasks(&plan, "Write a blog post about Rust")
+        .execute_subtasks(&plan, "Write a blog post about Rust", "gpt-4")
         .await
         .expect("Subtask execution should succeed");
 
@@ -169,7 +169,7 @@ async fn test_full_planning_workflow_simple_linear() {
 
     // Step 3: Synthesize results
     let final_result = service
-        .synthesize_results(&executed_plan, "Write a blog post about Rust")
+        .synthesize_results(&executed_plan, "Write a blog post about Rust", "gpt-4")
         .await
         .expect("Synthesis should succeed");
 
@@ -234,17 +234,17 @@ async fn test_full_planning_workflow_with_parallel_tasks() {
 
     // When: Executing workflow with parallel subtasks
     let plan = service
-        .create_plan("Prepare for product launch", 10)
+        .create_plan("Prepare for product launch", 10, "gpt-4")
         .await
         .expect("Plan creation should succeed");
 
     let executed_plan = service
-        .execute_subtasks(&plan, "Prepare for product launch")
+        .execute_subtasks(&plan, "Prepare for product launch", "gpt-4")
         .await
         .expect("Subtask execution should succeed");
 
     let final_result = service
-        .synthesize_results(&executed_plan, "Prepare for product launch")
+        .synthesize_results(&executed_plan, "Prepare for product launch", "gpt-4")
         .await
         .expect("Synthesis should succeed");
 
@@ -278,7 +278,7 @@ async fn test_planning_workflow_with_max_subtasks_enforcement() {
     let service = PlanningService::new(llm_port);
 
     // When: Creating a plan with max_subtasks=3
-    let result = service.create_plan("Large project", 3).await;
+    let result = service.create_plan("Large project", 3, "gpt-4").await;
 
     // Then: Should reject the plan
     assert!(result.is_err());

@@ -234,8 +234,8 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 10.6 Run `cargo build --release` to ensure release build works
   - [x] 10.7 Review all changes: `git diff develop`
   - [x] 10.8 Update `CHANGELOG.md` with Epic 20 changes: vision pipeline completion, OpenAI/Anthropic adapters, configuration support
-  - [ ] 10.9 Stage all changes: `git add .`
-  - [ ] 10.10 Commit with conventional format: `git commit -m "feat: complete vision pipeline with OpenAI and Anthropic adapters" -m "- Implement OpenAI vision API integration with retry logic" -m "- Implement Anthropic vision API integration with retry logic" -m "- Add vision execution to PaladinExecutionService" -m "- Add configurable retry parameters" -m "- Add comprehensive unit and integration tests" -m "- Update examples and documentation" -m "Related to Epic 20 in Milestone 3 PRD"`
+  - [x] 10.9 Stage all changes: `git add .`
+  - [x] 10.10 Commit with conventional format: `git commit -m "feat: complete vision pipeline with OpenAI and Anthropic adapters" -m "- Implement OpenAI vision API integration with retry logic" -m "- Implement Anthropic vision API integration with retry logic" -m "- Add vision execution to PaladinExecutionService" -m "- Add configurable retry parameters" -m "- Add comprehensive unit and integration tests" -m "- Update examples and documentation" -m "Related to Epic 20 in Milestone 3 PRD"`
   - [ ] 10.11 Push branch: `git push origin feature/epic-20-vision-pipeline-completion`
   - [ ] 10.12 Create Pull Request targeting `develop` branch
   - [ ] 10.13 Add PR description referencing Epic 20 and PRD

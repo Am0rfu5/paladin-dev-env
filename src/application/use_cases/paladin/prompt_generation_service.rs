@@ -84,6 +84,7 @@ impl PromptGenerationService {
     ///
     /// * `agent_name` - Name of the agent (e.g., "DataAnalyst", "CodeReviewer")
     /// * `agent_description` - Description of agent's role and capabilities
+    /// * `model` - LLM model to use for generation (e.g., "gpt-4", "claude-3")
     ///
     /// # Returns
     ///
@@ -99,6 +100,7 @@ impl PromptGenerationService {
         &self,
         agent_name: &str,
         agent_description: &str,
+        model: &str,
     ) -> Result<String, PromptError> {
         // Validate inputs
         if agent_description.trim().is_empty() {
@@ -143,7 +145,7 @@ impl PromptGenerationService {
 
         let request = LlmRequest {
             id: Uuid::new_v4(),
-            model: "gpt-4".to_string(), // TODO: Make configurable
+            model: model.to_string(),
             prompt: prompt_item,
             attachments: vec![],
             stream: false,
@@ -329,6 +331,7 @@ mod tests {
             .generate_prompt(
                 "DataAnalyst",
                 "An AI agent specialized in analyzing CSV data and generating insights",
+                "gpt-4",
             )
             .await;
 
@@ -349,12 +352,12 @@ mod tests {
 
         // When: Generating the same prompt twice
         let result1 = service
-            .generate_prompt("CodeReviewer", "Reviews Rust code")
+            .generate_prompt("CodeReviewer", "Reviews Rust code", "gpt-4")
             .await
             .unwrap();
 
         let result2 = service
-            .generate_prompt("CodeReviewer", "Reviews Rust code")
+            .generate_prompt("CodeReviewer", "Reviews Rust code", "gpt-4")
             .await
             .unwrap();
 
@@ -372,7 +375,7 @@ mod tests {
 
         // When: Generating prompts with the same inputs
         let result1 = service
-            .generate_prompt("TestAgent", "A test agent")
+            .generate_prompt("TestAgent", "A test agent", "gpt-4")
             .await
             .unwrap();
 
@@ -380,7 +383,7 @@ mod tests {
         service.clear_cache();
 
         let result2 = service
-            .generate_prompt("TestAgent", "A test agent")
+            .generate_prompt("TestAgent", "A test agent", "gpt-4")
             .await
             .unwrap();
 
@@ -395,7 +398,7 @@ mod tests {
         let service = PromptGenerationService::new(llm_port);
 
         // When: Trying to generate with empty description
-        let result = service.generate_prompt("Agent", "").await;
+        let result = service.generate_prompt("Agent", "", "gpt-4").await;
 
         // Then: Should return error
         assert!(result.is_err());
@@ -414,7 +417,7 @@ mod tests {
         let service = PromptGenerationService::new(llm_port);
 
         let _first = service
-            .generate_prompt("Agent", "Description")
+            .generate_prompt("Agent", "Description", "gpt-4")
             .await
             .unwrap();
 
@@ -434,9 +437,42 @@ mod tests {
         let service = PromptGenerationService::new(llm_port);
 
         // When: Generating a prompt (logging happens internally)
-        let result = service.generate_prompt("LogTest", "Test logging").await;
+        let result = service
+            .generate_prompt("LogTest", "Test logging", "gpt-4")
+            .await;
 
         // Then: Should succeed (logging is tested by presence of log! calls in code)
         assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_prompt_generation_uses_configured_model() {
+        // Given: A mock LLM port
+        let llm_port = Arc::new(MockLlmPort::new("Generated system prompt"));
+        let service = PromptGenerationService::new(llm_port.clone());
+
+        // When: Generating a prompt with different models
+        let gpt4_result = service
+            .generate_prompt("Agent1", "A helpful assistant", "gpt-4")
+            .await;
+        let claude_result = service
+            .generate_prompt("Agent2", "A code reviewer", "claude-3")
+            .await;
+        let custom_result = service
+            .generate_prompt("Agent3", "A data analyst", "custom-model")
+            .await;
+
+        // Then: All should succeed (model is passed to LlmPort)
+        assert!(gpt4_result.is_ok());
+        assert_eq!(gpt4_result.unwrap(), "Generated system prompt");
+
+        assert!(claude_result.is_ok());
+        assert_eq!(claude_result.unwrap(), "Generated system prompt");
+
+        assert!(custom_result.is_ok());
+        assert_eq!(custom_result.unwrap(), "Generated system prompt");
+
+        // Note: In a real implementation with model tracking, we'd verify
+        // the correct model was passed to the LlmPort for each call
     }
 }

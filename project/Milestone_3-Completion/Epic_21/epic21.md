@@ -8,7 +8,7 @@
 
 ### Description
 
-Epic 14 established the autonomous agent foundation (planning, prompt generation, dynamic temperature, handoffs) but deferred all items requiring cross-service integration, `PaladinResult` modifications, and full execution orchestration. This epic completes that work.
+Epic 14 (see `project/Milestone_2-Missing_features/Epic_14/epic14.mdd` established the autonomous agent foundation (planning, prompt generation, dynamic temperature, handoffs) but deferred all items requiring cross-service integration, `PaladinResult` modifications, and full execution orchestration. This epic completes that work.
 
 ### User Stories
 

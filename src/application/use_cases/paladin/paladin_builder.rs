@@ -1128,7 +1128,7 @@ impl PaladinBuilder {
                 };
 
                 match prompt_service
-                    .generate_prompt(agent_name, description)
+                    .generate_prompt(agent_name, description, &self.data.model)
                     .await
                 {
                     Ok(generated_prompt) => {
