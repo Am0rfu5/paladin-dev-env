@@ -129,23 +129,23 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 2.18 Run `cargo clippy` to check for warnings
   - [ ] 2.19 Commit Phase 2 changes with conventional commit message
 
-- [ ] 3.0 Phase 3: Handoff Tool Auto-Registration (US-21.2) - Week 1, Days 5-7
-  - [ ] 3.1 Read `src/application/use_cases/paladin/paladin_builder.rs` to understand current builder pattern
-  - [ ] 3.2 Add boolean flag `handoffs_configured: bool` to `PaladinBuilder` struct (tracks if `with_handoffs()` was called)
-  - [ ] 3.3 Update `with_handoffs()` method to set `handoffs_configured = true`
-  - [ ] 3.4 In `PaladinBuilder::build()`, check if `handoffs_configured` is true
-  - [ ] 3.5 If configured, generate handoff tool JSON schema with specialist names from handoff config
-  - [ ] 3.6 Define handoff tool schema with parameters: `specialist_name` (enum), `task_description` (string)
-  - [ ] 3.7 Auto-register handoff tool in arsenal using `arsenal.register_tool(handoff_tool)`
-  - [ ] 3.8 Ensure auto-registration is idempotent (check if tool already exists before adding)
-  - [ ] 3.9 Write unit test: `test_builder_auto_registers_handoff_tool_when_configured()`
-  - [ ] 3.10 Write unit test: `test_builder_does_not_register_handoff_tool_when_not_configured()`
-  - [ ] 3.11 Write unit test: `test_handoff_tool_schema_includes_all_specialists()`
-  - [ ] 3.12 Write unit test: `test_handoff_tool_auto_registration_is_idempotent()`
-  - [ ] 3.13 Write unit test: `test_handoff_tool_schema_validation()`
-  - [ ] 3.14 Run `cargo test` to verify auto-registration works
-  - [ ] 3.15 Run `cargo clippy` to check for warnings
-  - [ ] 3.16 Commit Phase 3 changes with conventional commit message
+- [x] 3.0 Phase 3: Handoff Tool Auto-Registration (US-21.2) - Week 1, Days 5-7
+  - [x] 3.1 Read `src/application/use_cases/paladin/paladin_builder.rs` to understand current builder pattern
+  - [x] 3.2 Add boolean flag `handoffs_configured: bool` to `PaladinBuilder` struct (tracks if `with_handoffs()` was called)
+  - [x] 3.3 Update `with_handoffs()` method to set `handoffs_configured = true`
+  - [x] 3.4 In `PaladinBuilder::build()`, check if `handoffs_configured` is true
+  - [x] 3.5 If configured, generate handoff tool JSON schema with specialist names from handoff config
+  - [x] 3.6 Define handoff tool schema with parameters: `specialist_name` (enum), `task_description` (string)
+  - [x] 3.7 Auto-register handoff tool in arsenal using `arsenal.register_tool(handoff_tool)`
+  - [x] 3.8 Ensure auto-registration is idempotent (check if tool already exists before adding)
+  - [x] 3.9 Write unit test: `test_builder_auto_registers_handoff_tool_when_configured()`
+  - [x] 3.10 Write unit test: `test_builder_does_not_register_handoff_tool_when_not_configured()`
+  - [x] 3.11 Write unit test: `test_handoff_tool_schema_includes_all_specialists()`
+  - [x] 3.12 Write unit test: `test_handoff_tool_auto_registration_is_idempotent()`
+  - [x] 3.13 Write unit test: `test_handoff_tool_schema_validation()`
+  - [x] 3.14 Run `cargo test` to verify auto-registration works
+  - [x] 3.15 Run `cargo clippy` to check for warnings
+  - [x] 3.16 Commit Phase 3 changes with conventional commit message
 
 - [ ] 4.0 Phase 4: Autonomous Execution Orchestration (US-21.4) - Week 2, Days 1-4
   - [ ] 4.1 Read `src/application/use_cases/paladin/paladin_execution_service.rs` to understand current execution flow

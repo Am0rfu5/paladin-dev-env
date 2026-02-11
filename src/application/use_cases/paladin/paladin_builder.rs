@@ -39,6 +39,7 @@ use crate::application::use_cases::paladin::error::PaladinError;
 use crate::application::use_cases::sanctum::memory_extraction_service::MemoryExtractionStrategy;
 use crate::config::application_settings::MCPServerConfig;
 use crate::core::base::entity::node::Node;
+use crate::core::platform::container::arsenal::Armament;
 use crate::core::platform::container::herald::Herald;
 use crate::core::platform::container::paladin::MaxLoops;
 use crate::core::platform::container::paladin::{Paladin, PaladinData};
@@ -97,6 +98,7 @@ pub struct PaladinBuilder {
     // Handoff/delegation fields
     specialist_agents: Vec<Arc<Paladin>>,
     handoff_config: Option<Arc<crate::core::platform::container::autonomous_config::HandoffConfig>>,
+    handoffs_configured: bool,
 }
 
 impl PaladinBuilder {
@@ -137,6 +139,7 @@ impl PaladinBuilder {
             auto_temperature_enabled: false,
             manual_temperature_override: false,
             specialist_agents: Vec::new(),
+            handoffs_configured: false,
             handoff_config: None,
         }
     }
@@ -762,6 +765,7 @@ impl PaladinBuilder {
     /// ```
     pub fn with_handoffs(mut self, specialists: Vec<Arc<Paladin>>) -> Self {
         self.specialist_agents = specialists;
+        self.handoffs_configured = !self.specialist_agents.is_empty();
         self
     }
 
@@ -1093,6 +1097,56 @@ impl PaladinBuilder {
         Ok(())
     }
 
+    /// Generates the handoff tool schema with specialist names
+    ///
+    /// Creates an Armament (tool definition) for the handoff functionality
+    /// that includes all configured specialist agent names as an enum parameter.
+    ///
+    /// # Returns
+    ///
+    /// An `Armament` instance representing the handoff tool
+    fn generate_handoff_tool(&self) -> Armament {
+        use serde_json::json;
+
+        // Extract specialist names from the configured specialist agents
+        let specialist_names: Vec<String> = self
+            .specialist_agents
+            .iter()
+            .map(|p| p.node.name.clone())
+            .collect();
+
+        // Create JSON schema for handoff tool with specialist names as enum
+        let parameters = json!({
+            "type": "object",
+            "properties": {
+                "specialist_name": {
+                    "type": "string",
+                    "description": "Name of the specialist agent to delegate the task to",
+                    "enum": specialist_names
+                },
+                "task_description": {
+                    "type": "string",
+                    "description": "Clear description of the task to delegate to the specialist"
+                }
+            },
+            "required": ["specialist_name", "task_description"]
+        });
+
+        Armament {
+            name: "handoff_to_specialist".to_string(),
+            description: format!(
+                "Delegate a task to one of {} specialist agents: {}",
+                specialist_names.len(),
+                specialist_names.join(", ")
+            ),
+            parameters,
+            required_params: vec![
+                "specialist_name".to_string(),
+                "task_description".to_string(),
+            ],
+        }
+    }
+
     /// Builds and returns a validated Paladin instance
     ///
     /// # Returns
@@ -1181,6 +1235,22 @@ impl PaladinBuilder {
             }
         }
 
+        // Auto-register handoff tool if handoffs are configured
+        if self.handoffs_configured {
+            if let Some(arsenal) = &self.arsenal_registry {
+                let handoff_tool = self.generate_handoff_tool();
+                arsenal.register(handoff_tool).await;
+                log::info!(
+                    "Auto-registered handoff tool with {} specialists",
+                    self.specialist_agents.len()
+                );
+            } else {
+                log::warn!(
+                    "Handoffs configured but no arsenal registry provided - handoff tool not registered"
+                );
+            }
+        }
+
         // Validate configuration
         self.validate()?;
 
@@ -1208,6 +1278,7 @@ impl PaladinBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use futures::FutureExt;
 
     #[test]
     fn test_builder_validation_empty_prompt() {
@@ -1234,6 +1305,7 @@ mod tests {
             auto_temperature_enabled: false,
             manual_temperature_override: false,
             specialist_agents: Vec::new(),
+            handoffs_configured: false,
             handoff_config: None,
         };
 
@@ -1268,6 +1340,7 @@ mod tests {
             auto_temperature_enabled: false,
             manual_temperature_override: false,
             specialist_agents: Vec::new(),
+            handoffs_configured: false,
             handoff_config: None,
         };
 
@@ -1301,6 +1374,7 @@ mod tests {
             auto_temperature_enabled: false,
             manual_temperature_override: false,
             specialist_agents: Vec::new(),
+            handoffs_configured: false,
             handoff_config: None,
         };
 
@@ -1361,6 +1435,7 @@ mod tests {
             auto_temperature_enabled: false,
             manual_temperature_override: false,
             specialist_agents: Vec::new(),
+            handoffs_configured: false,
             handoff_config: None,
         };
 
@@ -1394,6 +1469,7 @@ mod tests {
             auto_temperature_enabled: false,
             manual_temperature_override: false,
             specialist_agents: Vec::new(),
+            handoffs_configured: false,
             handoff_config: None,
         };
 
@@ -1426,6 +1502,7 @@ mod tests {
             auto_temperature_enabled: false,
             manual_temperature_override: false,
             specialist_agents: Vec::new(),
+            handoffs_configured: false,
             handoff_config: None,
         };
 
@@ -1490,6 +1567,7 @@ mod tests {
             auto_temperature_enabled: false,
             manual_temperature_override: false,
             specialist_agents: Vec::new(),
+            handoffs_configured: false,
             handoff_config: None,
         };
 
@@ -1523,6 +1601,7 @@ mod tests {
             auto_temperature_enabled: false,
             manual_temperature_override: false,
             specialist_agents: Vec::new(),
+            handoffs_configured: false,
             handoff_config: None,
         };
 
@@ -1915,5 +1994,245 @@ mod tests {
 
         // Then: Builder should still be valid
         assert!(builder.auto_generate_prompt_enabled);
+    }
+
+    // Mock ArsenalRegistry for testing
+    struct MockArsenalRegistry {
+        registered_tools: Arc<tokio::sync::Mutex<Vec<Armament>>>,
+    }
+
+    impl MockArsenalRegistry {
+        fn new() -> Self {
+            Self {
+                registered_tools: Arc::new(tokio::sync::Mutex::new(Vec::new())),
+            }
+        }
+
+        async fn get_registered_tools(&self) -> Vec<Armament> {
+            self.registered_tools.lock().await.clone()
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl ArsenalRegistry for MockArsenalRegistry {
+        async fn register(&self, armament: Armament) {
+            self.registered_tools.lock().await.push(armament);
+        }
+
+        async fn unregister(&self, name: &str) -> Option<Armament> {
+            let mut tools = self.registered_tools.lock().await;
+            if let Some(pos) = tools.iter().position(|t| t.name == name) {
+                Some(tools.remove(pos))
+            } else {
+                None
+            }
+        }
+
+        async fn get(&self, name: &str) -> Option<Armament> {
+            self.registered_tools
+                .lock()
+                .await
+                .iter()
+                .find(|t| t.name == name)
+                .cloned()
+        }
+    }
+
+    #[tokio::test]
+    async fn test_builder_auto_registers_handoff_tool_when_configured() {
+        // Given: A Paladin with specialist agents configured
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let arsenal = Arc::new(MockArsenalRegistry::new());
+
+        let specialist1 = PaladinBuilder::new(Arc::clone(&llm_port))
+            .system_prompt("Rust expert")
+            .name("RustExpert")
+            .build()
+            .await
+            .unwrap();
+
+        let specialist2 = PaladinBuilder::new(Arc::clone(&llm_port))
+            .system_prompt("Python expert")
+            .name("PythonExpert")
+            .build()
+            .await
+            .unwrap();
+
+        // When: Building a coordinator with handoffs configured
+        let _coordinator = PaladinBuilder::new(Arc::clone(&llm_port))
+            .system_prompt("Coordinator")
+            .name("Coordinator")
+            .with_arsenal_registry(Arc::clone(&arsenal) as Arc<dyn ArsenalRegistry>)
+            .with_handoffs(vec![Arc::new(specialist1), Arc::new(specialist2)])
+            .build()
+            .await
+            .unwrap();
+
+        // Then: Handoff tool should be auto-registered
+        let tools = arsenal.get_registered_tools().await;
+        assert_eq!(tools.len(), 1);
+        assert_eq!(tools[0].name, "handoff_to_specialist");
+        assert!(tools[0].description.contains("2 specialist agents"));
+    }
+
+    #[tokio::test]
+    async fn test_builder_does_not_register_handoff_tool_when_not_configured() {
+        // Given: A Paladin without handoffs
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let arsenal = Arc::new(MockArsenalRegistry::new());
+
+        // When: Building without handoffs
+        let _paladin = PaladinBuilder::new(Arc::clone(&llm_port))
+            .system_prompt("Regular agent")
+            .name("Agent")
+            .with_arsenal_registry(Arc::clone(&arsenal) as Arc<dyn ArsenalRegistry>)
+            .build()
+            .await
+            .unwrap();
+
+        // Then: No tools should be registered
+        let tools = arsenal.get_registered_tools().await;
+        assert_eq!(tools.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_handoff_tool_schema_includes_all_specialists() {
+        // Given: A builder with 3 specialists
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let arsenal = Arc::new(MockArsenalRegistry::new());
+
+        let specialists: Vec<Arc<Paladin>> = vec!["Expert1", "Expert2", "Expert3"]
+            .into_iter()
+            .map(|name| {
+                Arc::new(
+                    PaladinBuilder::new(Arc::clone(&llm_port))
+                        .system_prompt(format!("{} system prompt", name))
+                        .name(name)
+                        .build()
+                        .now_or_never()
+                        .unwrap()
+                        .unwrap(),
+                )
+            })
+            .collect();
+
+        // When: Building coordinator
+        let _coordinator = PaladinBuilder::new(Arc::clone(&llm_port))
+            .system_prompt("Coordinator")
+            .name("Coordinator")
+            .with_arsenal_registry(Arc::clone(&arsenal) as Arc<dyn ArsenalRegistry>)
+            .with_handoffs(specialists)
+            .build()
+            .await
+            .unwrap();
+
+        // Then: Tool schema should include all 3 specialist names in enum
+        let tools = arsenal.get_registered_tools().await;
+        let handoff_tool = &tools[0];
+
+        let specialist_param = handoff_tool.parameters["properties"]["specialist_name"].clone();
+        let enum_values = specialist_param["enum"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_str().unwrap())
+            .collect::<Vec<_>>();
+
+        assert_eq!(enum_values.len(), 3);
+        assert!(enum_values.contains(&"Expert1"));
+        assert!(enum_values.contains(&"Expert2"));
+        assert!(enum_values.contains(&"Expert3"));
+    }
+
+    #[tokio::test]
+    async fn test_handoff_tool_auto_registration_is_idempotent() {
+        // Given: Arsenal with handoff tool already registered
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let arsenal = Arc::new(MockArsenalRegistry::new());
+
+        let specialist = Arc::new(
+            PaladinBuilder::new(Arc::clone(&llm_port))
+                .system_prompt("Expert")
+                .name("Expert")
+                .build()
+                .await
+                .unwrap(),
+        );
+
+        // When: Building multiple coordinators with same specialists
+        for _ in 0..3 {
+            let _coordinator = PaladinBuilder::new(Arc::clone(&llm_port))
+                .system_prompt("Coordinator")
+                .name("Coordinator")
+                .with_arsenal_registry(Arc::clone(&arsenal) as Arc<dyn ArsenalRegistry>)
+                .with_handoffs(vec![Arc::clone(&specialist)])
+                .build()
+                .await
+                .unwrap();
+        }
+
+        // Then: Only one (or multiple with same name) tool should be registered
+        // Note: ArsenalRegistry's register() replaces tools with same name, so we'll have 3 identical ones
+        let tools = arsenal.get_registered_tools().await;
+        assert_eq!(tools.len(), 3); // Each build() registers one
+        assert!(tools.iter().all(|t| t.name == "handoff_to_specialist"));
+    }
+
+    #[tokio::test]
+    async fn test_handoff_tool_schema_validation() {
+        // Given: A builder with specialists
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let arsenal = Arc::new(MockArsenalRegistry::new());
+
+        let specialist = Arc::new(
+            PaladinBuilder::new(Arc::clone(&llm_port))
+                .system_prompt("Expert")
+                .name("TestExpert")
+                .build()
+                .await
+                .unwrap(),
+        );
+
+        // When: Building coordinator
+        let _coordinator = PaladinBuilder::new(Arc::clone(&llm_port))
+            .system_prompt("Coordinator")
+            .name("Coordinator")
+            .with_arsenal_registry(Arc::clone(&arsenal) as Arc<dyn ArsenalRegistry>)
+            .with_handoffs(vec![specialist])
+            .build()
+            .await
+            .unwrap();
+
+        // Then: Tool schema should be valid JSON Schema with correct structure
+        let tools = arsenal.get_registered_tools().await;
+        let handoff_tool = &tools[0];
+
+        // Validate required fields
+        assert!(
+            handoff_tool
+                .required_params
+                .contains(&"specialist_name".to_string())
+        );
+        assert!(
+            handoff_tool
+                .required_params
+                .contains(&"task_description".to_string())
+        );
+
+        // Validate schema structure
+        assert_eq!(handoff_tool.parameters["type"], "object");
+        assert!(handoff_tool.parameters["properties"].is_object());
+        assert!(handoff_tool.parameters["properties"]["specialist_name"].is_object());
+        assert!(handoff_tool.parameters["properties"]["task_description"].is_object());
+
+        // Validate parameter types
+        assert_eq!(
+            handoff_tool.parameters["properties"]["specialist_name"]["type"],
+            "string"
+        );
+        assert_eq!(
+            handoff_tool.parameters["properties"]["task_description"]["type"],
+            "string"
+        );
     }
 }
