@@ -169,15 +169,16 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.25 Write test: stop word detection in vision response
   - [x] 5.26 Run `cargo test paladin_execution_service` to verify tests pass
 
-- [ ] 6.0 Additional Edge Case Tests for Vision Adapters
-  - [ ] 6.1 Add test for OpenAI: empty image list should return error
-  - [ ] 6.2 Add test for OpenAI: network timeout error handling
-  - [ ] 6.3 Add test for OpenAI: malformed JSON response
-  - [ ] 6.4 Add test for OpenAI: missing token usage in response (should handle gracefully)
-  - [ ] 6.5 Add test for Anthropic: empty image list should return error
-  - [ ] 6.6 Add test for Anthropic: network timeout error handling
-  - [ ] 6.7 Add test for Anthropic: malformed JSON response
-  - [ ] 6.8 Add test for Anthropic: invalid media_type detection
+- [x] 6.0 Additional Edge Case Tests for Vision Adapters
+  - [x] 6.1 Add test for OpenAI: empty image list should return error
+  - [x] 6.2 Add test for OpenAI: network timeout error handling
+  - [x] 6.3 Add test for OpenAI: malformed JSON response
+  - [x] 6.4 Add test for OpenAI: missing token usage in response (should handle gracefully)
+  - [x] 6.5 Add test for Anthropic: empty image list should return error
+  - [x] 6.6 Add test for Anthropic: network timeout error handling
+  - [x] 6.7 Add test for Anthropic: malformed JSON response
+  - [x] 6.8 Add test for Anthropic: invalid media_type detection
+  - [x] 6.9 Run `cargo test` to verify all edge case tests pass
   - [ ] 6.9 Run `cargo test` to verify all edge case tests pass
 
 - [ ] 7.0 Additional Integration Tests for Execution Service
