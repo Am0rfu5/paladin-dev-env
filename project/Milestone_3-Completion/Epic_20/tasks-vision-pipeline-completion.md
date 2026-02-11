@@ -225,15 +225,15 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 9.16 Document image size limits (reference API provider limits)
   - [x] 9.17 Add troubleshooting section for common vision issues
 
-- [ ] 10.0 Final Quality Checks and PR Preparation
-  - [ ] 10.1 Run full test suite: `cargo test` (ensure all tests pass)
-  - [ ] 10.2 Run clippy: `cargo clippy -- -D warnings` (fix all warnings)
-  - [ ] 10.3 Run format check: `cargo fmt --check` (format if needed)
-  - [ ] 10.4 Run format: `cargo fmt` (if check failed)
-  - [ ] 10.5 Verify no TODO comments remain in modified files related to vision
-  - [ ] 10.6 Run `cargo build --release` to ensure release build works
-  - [ ] 10.7 Review all changes: `git diff develop`
-  - [ ] 10.8 Update `CHANGELOG.md` with Epic 20 changes: vision pipeline completion, OpenAI/Anthropic adapters, configuration support
+- [x] 10.0 Final Quality Checks and PR Preparation
+  - [x] 10.1 Run full test suite: `cargo test` (ensure all tests pass)
+  - [x] 10.2 Run clippy: `cargo clippy -- -D warnings` (fix all warnings)
+  - [x] 10.3 Run format check: `cargo fmt --check` (format if needed)
+  - [x] 10.4 Run format: `cargo fmt` (if check failed)
+  - [x] 10.5 Verify no TODO comments remain in modified files related to vision
+  - [x] 10.6 Run `cargo build --release` to ensure release build works
+  - [x] 10.7 Review all changes: `git diff develop`
+  - [x] 10.8 Update `CHANGELOG.md` with Epic 20 changes: vision pipeline completion, OpenAI/Anthropic adapters, configuration support
   - [ ] 10.9 Stage all changes: `git add .`
   - [ ] 10.10 Commit with conventional format: `git commit -m "feat: complete vision pipeline with OpenAI and Anthropic adapters" -m "- Implement OpenAI vision API integration with retry logic" -m "- Implement Anthropic vision API integration with retry logic" -m "- Add vision execution to PaladinExecutionService" -m "- Add configurable retry parameters" -m "- Add comprehensive unit and integration tests" -m "- Update examples and documentation" -m "Related to Epic 20 in Milestone 3 PRD"`
   - [ ] 10.11 Push branch: `git push origin feature/epic-20-vision-pipeline-completion`

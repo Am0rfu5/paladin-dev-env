@@ -7,6 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Epic 20: Vision Pipeline Completion
+
+#### Vision Configuration System
+- Complete vision configuration support with retry logic and token limits
+- `VisionConfig` struct with configurable retry parameters: `max_retries`, `initial_backoff_ms`, `backoff_multiplier`
+- Provider-specific token limits for OpenAI and Anthropic
+- Exponential backoff for transient failures (network errors, rate limits, timeouts)
+- Configuration loaded from `config.yml` with sensible defaults
+- Test configuration support in `config.test.yml`
+
+#### Vision Error Handling
+- Comprehensive `VisionError` enum with 10 error variants
+- Error types: `InvalidImage`, `UnsupportedFormat`, `AuthenticationError`, `RateLimitExceeded`, `ProviderError`, `NetworkError`, `Timeout`, `UnsupportedProvider`, `MaxRetriesExceeded`, `FileTooLarge`
+- Detailed error messages with context for debugging
+- Integration with existing error handling patterns via `thiserror`
+
+#### OpenAI Vision Adapter
+- Full OpenAI vision API integration with retry logic
+- Support for URL-based and base64-encoded images
+- Image detail levels: Auto, Low (512x512), High (2048x2048)
+- Multiple images per request (up to 10)
+- Token estimation: ~85 tokens (low), ~170 tokens per tile (high)
+- Models supported: `gpt-4o`, `gpt-4o-mini`, `gpt-4-vision-preview`
+- Automatic retry with exponential backoff on transient failures
+- Comprehensive unit tests with mock server validation
+
+#### Anthropic Vision Adapter
+- Full Anthropic vision API integration with retry logic
+- Support for URL-based images (auto-converted to base64) and base64-encoded images
+- Image detail levels with automatic conversion
+- Multiple images per request (up to 20)
+- Models supported: `claude-3-opus`, `claude-3-sonnet`, `claude-3-haiku`
+- Automatic base64 encoding for all image types
+- Automatic retry with exponential backoff on transient failures
+- Comprehensive unit tests with mock server validation
+
+#### Paladin Vision Execution
+- `execute_with_vision()` method added to `PaladinExecutionService`
+- Seamless integration with existing Paladin execution flow
+- Support for vision-capable LLM providers through trait abstraction
+- Vision content validation before API calls
+- Memory (Garrison) integration for vision analysis history
+- Tool (Arsenal) integration for vision-augmented agents
+- Circuit breaker support for fault tolerance
+
+#### Vision Integration Tests
+- Environment-gated integration tests with real API calls
+- Tests controlled by `ENABLE_VISION_TESTS` environment variable
+- OpenAI vision integration tests with multiple scenarios
+- Anthropic vision integration tests with multiple scenarios
+- Multiple images test, image URL test, high detail processing test
+- Test fixtures: sample images for integration testing
+- Comprehensive documentation for running tests with API keys
+
+#### Examples and Documentation
+- Updated `vision_analysis.rs` example with comprehensive demonstrations
+- Base64-encoded image processing example
+- Multiple images comparison example
+- Error handling patterns and best practices
+- Added vision retry configuration documentation to `SENTINEL.md`
+- Image size limits documentation (OpenAI: 20MB, Anthropic: 5MB)
+- Troubleshooting section for common vision issues
+- Configuration examples and best practices for different environments
+
+### Changed - Epic 20: Vision Pipeline Completion
+
+#### Configuration Structure
+- Enhanced `ApplicationSettings` with `vision: VisionConfig` field
+- Vision configuration loaded from YAML with proper deserialization
+- Backward-compatible configuration loading (vision section optional)
+
+#### LLM Adapters Enhancement
+- OpenAI adapter constructor updated to accept `VisionConfig`
+- Anthropic adapter constructor updated to accept `VisionConfig`
+- Vision-specific retry logic separated from general LLM retries
+- Provider capabilities detection for vision support
+
 ### Added - Epic 19: Herald & Domain Type Consolidation
 
 #### StreamChunk Extensible Metadata

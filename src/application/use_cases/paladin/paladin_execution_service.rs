@@ -1424,6 +1424,7 @@ mod tests {
             }
         }
 
+        #[allow(dead_code)]
         fn with_failure(mut self) -> Self {
             self.should_fail = true;
             self
@@ -1448,22 +1449,26 @@ mod tests {
             crate::core::platform::container::vision::VisionError,
         > {
             if self.should_fail {
-                return Err(crate::core::platform::container::vision::VisionError::InvalidRequest(
-                    "Mock failure".to_string(),
-                ));
+                return Err(
+                    crate::core::platform::container::vision::VisionError::InvalidRequest(
+                        "Mock failure".to_string(),
+                    ),
+                );
             }
 
-            Ok(crate::application::ports::output::vision_port::VisionResult {
-                content: self.response_content.clone(),
-                model: "mock-model".to_string(),
-                token_usage: crate::application::ports::output::vision_port::VisionTokenUsage {
-                    prompt_tokens: 100,
-                    completion_tokens: 50,
-                    total_tokens: 150,
+            Ok(
+                crate::application::ports::output::vision_port::VisionResult {
+                    content: self.response_content.clone(),
+                    model: "mock-model".to_string(),
+                    token_usage: crate::application::ports::output::vision_port::VisionTokenUsage {
+                        prompt_tokens: 100,
+                        completion_tokens: 50,
+                        total_tokens: 150,
+                    },
+                    metadata: std::collections::HashMap::new(),
+                    timestamp: chrono::Utc::now(),
                 },
-                metadata: std::collections::HashMap::new(),
-                timestamp: chrono::Utc::now(),
-            })
+            )
         }
 
         fn is_vision_model(&self, _model: &str) -> bool {
@@ -1491,7 +1496,9 @@ mod tests {
             "openai"
         );
         assert_eq!(
-            service.extract_provider_from_model("gpt-3.5-turbo").unwrap(),
+            service
+                .extract_provider_from_model("gpt-3.5-turbo")
+                .unwrap(),
             "openai"
         );
         assert_eq!(
@@ -1548,9 +1555,9 @@ mod tests {
     async fn test_with_vision_adapter() {
         let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
         let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
-        
+
         let mock_vision = Arc::new(MockVisionPort::new("openai"));
-        
+
         let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None)
             .with_vision_adapter("openai".to_string(), mock_vision.clone());
 
@@ -1563,7 +1570,7 @@ mod tests {
     async fn test_vision_execution_with_stop_word() {
         // Create mock LLM port with vision support
         struct VisionCapableMockLlmPort;
-        
+
         #[async_trait]
         impl LlmPort for VisionCapableMockLlmPort {
             async fn generate(&self, _request: LlmRequest) -> Result<LlmResponse, LlmError> {
@@ -1607,13 +1614,12 @@ mod tests {
 
         let llm_port: Arc<dyn LlmPort> = Arc::new(VisionCapableMockLlmPort);
         let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
-        
+
         // Create mock vision adapter that returns content with stop word
         let mock_vision = Arc::new(
-            MockVisionPort::new("openai")
-                .with_response("This is a STOP word test".to_string())
+            MockVisionPort::new("openai").with_response("This is a STOP word test".to_string()),
         );
-        
+
         let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None)
             .with_vision_adapter("openai".to_string(), mock_vision);
 
@@ -1653,7 +1659,7 @@ mod tests {
     async fn test_vision_execution_missing_adapter() {
         // Create mock LLM port with vision support
         struct VisionCapableMockLlmPort;
-        
+
         #[async_trait]
         impl LlmPort for VisionCapableMockLlmPort {
             async fn generate(&self, _request: LlmRequest) -> Result<LlmResponse, LlmError> {
@@ -1697,7 +1703,7 @@ mod tests {
 
         let llm_port: Arc<dyn LlmPort> = Arc::new(VisionCapableMockLlmPort);
         let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
-        
+
         // Create service WITHOUT registering vision adapter
         let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
 
@@ -1736,7 +1742,7 @@ mod tests {
     async fn test_vision_execution_successful() {
         // Create mock LLM port with vision support
         struct VisionCapableMockLlmPort;
-        
+
         #[async_trait]
         impl LlmPort for VisionCapableMockLlmPort {
             async fn generate(&self, _request: LlmRequest) -> Result<LlmResponse, LlmError> {
@@ -1780,9 +1786,9 @@ mod tests {
 
         let llm_port: Arc<dyn LlmPort> = Arc::new(VisionCapableMockLlmPort);
         let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
-        
+
         let mock_vision = Arc::new(MockVisionPort::new("openai"));
-        
+
         let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None)
             .with_vision_adapter("openai".to_string(), mock_vision);
 

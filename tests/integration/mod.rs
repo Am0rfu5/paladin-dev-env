@@ -33,6 +33,7 @@ pub mod rag_integration_tests;
 pub mod redis_queue_integration_test;
 pub mod sqlite_garrison_integration_test;
 pub mod system_log_integration_test;
+pub mod vision_integration_test;
 
 static INIT: Once = Once::new();
 
