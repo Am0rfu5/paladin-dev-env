@@ -168,6 +168,7 @@ impl PaladinPort for ExamplePaladinPort {
             execution_time_ms: delay,
             loop_count: 1,
             stop_reason: StopReason::Completed,
+            ..Default::default()
         })
     }
 

@@ -72,6 +72,8 @@ impl PaladinPort for IntegrationMockPort {
             execution_time_ms: 50,
             loop_count: 1,
             stop_reason: StopReason::Completed,
+            ..Default::default(),
+            ..Default::default()
         })
     }
 

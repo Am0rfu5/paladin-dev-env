@@ -570,6 +570,7 @@ mod tests {
                 execution_time_ms: 50,
                 loop_count: 1,
                 stop_reason: StopReason::Completed,
+                ..Default::default()
             })
         }
 
@@ -744,7 +745,8 @@ mod tests {
                 execution_time_ms: 100,
                 loop_count: 1,
                 stop_reason: StopReason::Completed,
-            },
+                ..Default::default()
+            }
         );
         expert_outputs.insert(
             "Expert2".to_string(),
@@ -754,6 +756,7 @@ mod tests {
                 execution_time_ms: 100,
                 loop_count: 1,
                 stop_reason: StopReason::Completed,
+                ..Default::default()
             },
         );
 

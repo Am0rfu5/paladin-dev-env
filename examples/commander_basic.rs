@@ -40,6 +40,7 @@ impl PaladinPort for MockPaladinPort {
             execution_time_ms: 300,
             loop_count: 1,
             stop_reason: StopReason::Completed,
+            ..Default::default()
         })
     }
 

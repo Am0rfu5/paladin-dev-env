@@ -30,6 +30,8 @@ fn test_herald_uses_real_paladin_result_type() {
         execution_time_ms: 1250,
         loop_count: 2,
         stop_reason: StopReason::Completed,
+            ..Default::default(),
+            ..Default::default()
     };
 
     // This should compile if Herald uses the real type
@@ -427,6 +429,8 @@ fn test_herald_pipeline_with_consolidated_types() {
         execution_time_ms: 2000,
         loop_count: 3,
         stop_reason: StopReason::Completed,
+            ..Default::default(),
+            ..Default::default()
     };
 
     // Create a real BattalionResult

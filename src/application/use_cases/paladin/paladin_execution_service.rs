@@ -488,6 +488,7 @@ impl PaladinExecutionService {
             token_count: vision_result.token_usage.total_tokens,
             stop_reason: StopReason::Completed,
             execution_time_ms: 0, // Will be set by caller if needed
+            ..Default::default()
         })
     }
 
@@ -701,6 +702,7 @@ impl PaladinExecutionService {
                     execution_time_ms: start_time.elapsed().as_millis() as u64,
                     loop_count: loop_num,
                     stop_reason: StopReason::MaxLoops,
+                    ..Default::default()
                 });
             }
         }
@@ -725,6 +727,7 @@ impl PaladinExecutionService {
             execution_time_ms: start_time.elapsed().as_millis() as u64,
             loop_count: paladin.node.max_loops.as_u32(),
             stop_reason: StopReason::Completed,
+            ..Default::default()
         })
     }
 

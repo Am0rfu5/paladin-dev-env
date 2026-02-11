@@ -9,11 +9,14 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 
 use crate::application::use_cases::paladin::error::PaladinError;
+use crate::core::platform::container::handoff::HandoffRecord;
 use crate::core::platform::container::paladin::Paladin;
+use crate::core::platform::container::planning::TaskPlan;
 
 /// Result of a Paladin execution
 ///
 /// Contains the output, metadata about execution, and the reason for completion.
+/// Optionally includes autonomous execution metadata like task plans and handoff history.
 ///
 /// # Example
 ///
@@ -26,6 +29,8 @@ use crate::core::platform::container::paladin::Paladin;
 ///     execution_time_ms: 1250,
 ///     loop_count: 1,
 ///     stop_reason: StopReason::Completed,
+///     plan: None,
+///     handoff_history: Vec::new(),
 /// };
 ///
 /// assert_eq!(result.loop_count, 1);
@@ -47,6 +52,22 @@ pub struct PaladinResult {
 
     /// Reason why execution stopped
     pub stop_reason: StopReason,
+
+    /// Task plan generated during autonomous planning mode
+    ///
+    /// When a Paladin runs in autonomous planning mode (MaxLoops::Auto),
+    /// this field contains the decomposed task plan with subtasks and their results.
+    /// This provides transparency into how the Paladin broke down the task.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<TaskPlan>,
+
+    /// History of agent handoffs during execution
+    ///
+    /// When a Paladin delegates tasks to specialist agents, each handoff
+    /// is recorded here for transparency and debugging. The records include
+    /// which agent handled what task and at what depth in the delegation chain.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub handoff_history: Vec<HandoffRecord>,
 }
 
 /// Reason why Paladin execution stopped
@@ -77,6 +98,73 @@ impl StopReason {
     /// Check if this represents a limit being reached
     pub fn is_limit(&self) -> bool {
         matches!(self, StopReason::MaxLoops | StopReason::Timeout)
+    }
+}
+
+impl Default for PaladinResult {
+    /// Creates a PaladinResult with default values
+    ///
+    /// Useful for testing and as a base for builder patterns.
+    fn default() -> Self {
+        Self {
+            output: String::new(),
+            token_count: 0,
+            execution_time_ms: 0,
+            loop_count: 0,
+            stop_reason: StopReason::Completed,
+            plan: None,
+            handoff_history: Vec::new(),
+        }
+    }
+}
+
+impl PaladinResult {
+    /// Creates a new PaladinResult with required fields
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use paladin::application::ports::output::paladin_port::{PaladinResult, StopReason};
+    ///
+    /// let result = PaladinResult::new(
+    ///     "Response text".to_string(),
+    ///     100,
+    ///     500,
+    ///     1,
+    ///     StopReason::Completed
+    /// );
+    /// ```
+    pub fn new(
+        output: String,
+        token_count: u32,
+        execution_time_ms: u64,
+        loop_count: u32,
+        stop_reason: StopReason,
+    ) -> Self {
+        Self {
+            output,
+            token_count,
+            execution_time_ms,
+            loop_count,
+            stop_reason,
+            plan: None,
+            handoff_history: Vec::new(),
+        }
+    }
+
+    /// Checks if this result includes autonomous planning metadata
+    pub fn has_plan(&self) -> bool {
+        self.plan.is_some()
+    }
+
+    /// Checks if this result includes handoff history
+    pub fn has_handoffs(&self) -> bool {
+        !self.handoff_history.is_empty()
+    }
+
+    /// Returns the number of handoffs in the history
+    pub fn handoff_count(&self) -> usize {
+        self.handoff_history.len()
     }
 }
 
@@ -232,11 +320,15 @@ mod tests {
             execution_time_ms: 500,
             loop_count: 2,
             stop_reason: StopReason::Completed,
+            plan: None,
+            handoff_history: Vec::new(),
         };
 
         assert_eq!(result.output, "Test output");
         assert_eq!(result.token_count, 100);
         assert_eq!(result.loop_count, 2);
+        assert!(!result.has_plan());
+        assert!(!result.has_handoffs());
     }
 
     #[test]
@@ -301,6 +393,8 @@ mod tests {
             execution_time_ms: 250,
             loop_count: 1,
             stop_reason: StopReason::Completed,
+            plan: None,
+            handoff_history: Vec::new(),
         };
 
         let json = serde_json::to_string(&result).expect("Failed to serialize");
@@ -310,5 +404,182 @@ mod tests {
         assert_eq!(result.output, deserialized.output);
         assert_eq!(result.token_count, deserialized.token_count);
         assert_eq!(result.stop_reason, deserialized.stop_reason);
+    }
+
+    #[test]
+    fn test_paladin_result_default_values() {
+        let result = PaladinResult::default();
+        
+        assert_eq!(result.output, "");
+        assert_eq!(result.token_count, 0);
+        assert_eq!(result.execution_time_ms, 0);
+        assert_eq!(result.loop_count, 0);
+        assert_eq!(result.stop_reason, StopReason::Completed);
+        assert!(result.plan.is_none());
+        assert!(result.handoff_history.is_empty());
+        assert!(!result.has_plan());
+        assert!(!result.has_handoffs());
+    }
+
+    #[test]
+    fn test_paladin_result_with_plan_metadata() {
+        use crate::core::platform::container::planning::{Subtask, TaskPlan};
+
+        let mut plan = TaskPlan::new("Test task".to_string(), 5);
+        plan.add_subtask(Subtask::new(
+            "st-1".to_string(),
+            "First subtask".to_string(),
+            "Expected output".to_string(),
+        ))
+        .expect("Failed to add subtask");
+
+        let result = PaladinResult {
+            output: "Task completed".to_string(),
+            token_count: 200,
+            execution_time_ms: 1000,
+            loop_count: 3,
+            stop_reason: StopReason::Completed,
+            plan: Some(plan.clone()),
+            handoff_history: Vec::new(),
+        };
+
+        assert!(result.has_plan());
+        assert_eq!(result.plan.as_ref().unwrap().original_task, "Test task");
+        assert_eq!(result.plan.as_ref().unwrap().subtask_count(), 1);
+        assert!(!result.has_handoffs());
+    }
+
+    #[test]
+    fn test_paladin_result_with_handoff_history() {
+        use crate::core::platform::container::handoff::HandoffRecord;
+
+        let mut record1 = HandoffRecord::new(
+            "Coordinator".to_string(),
+            "RustExpert".to_string(),
+            "Debug Rust code".to_string(),
+            1,
+        );
+        record1.set_result("Code debugged successfully".to_string());
+
+        let record2 = HandoffRecord::new(
+            "RustExpert".to_string(),
+            "TestExpert".to_string(),
+            "Write unit tests".to_string(),
+            2,
+        );
+
+        let result = PaladinResult {
+            output: "All tasks completed".to_string(),
+            token_count: 500,
+            execution_time_ms: 3000,
+            loop_count: 5,
+            stop_reason: StopReason::Completed,
+            plan: None,
+            handoff_history: vec![record1, record2],
+        };
+
+        assert!(!result.has_plan());
+        assert!(result.has_handoffs());
+        assert_eq!(result.handoff_count(), 2);
+        assert_eq!(result.handoff_history[0].from_agent, "Coordinator");
+        assert_eq!(result.handoff_history[0].to_agent, "RustExpert");
+        assert_eq!(
+            result.handoff_history[0].result.as_ref().unwrap(),
+            "Code debugged successfully"
+        );
+        assert_eq!(result.handoff_history[1].depth, 2);
+    }
+
+    #[test]
+    fn test_paladin_result_serialization_with_new_fields() {
+        use crate::core::platform::container::handoff::HandoffRecord;
+        use crate::core::platform::container::planning::{Subtask, TaskPlan};
+
+        let mut plan = TaskPlan::new("Complex task".to_string(), 3);
+        plan.add_subtask(Subtask::new(
+            "st-1".to_string(),
+            "Step 1".to_string(),
+            "Output 1".to_string(),
+        ))
+        .expect("Failed to add subtask");
+
+        let record = HandoffRecord::new(
+            "Agent1".to_string(),
+            "Agent2".to_string(),
+            "Subtask".to_string(),
+            1,
+        );
+
+        let result = PaladinResult {
+            output: "Final output".to_string(),
+            token_count: 300,
+            execution_time_ms: 2000,
+            loop_count: 4,
+            stop_reason: StopReason::Completed,
+            plan: Some(plan),
+            handoff_history: vec![record],
+        };
+
+        // Serialize
+        let json = serde_json::to_string(&result).expect("Failed to serialize");
+        assert!(json.contains("\"plan\""));
+        assert!(json.contains("\"handoff_history\""));
+        assert!(json.contains("Complex task"));
+        assert!(json.contains("Agent1"));
+
+        // Deserialize
+        let deserialized: PaladinResult =
+            serde_json::from_str(&json).expect("Failed to deserialize");
+        assert_eq!(deserialized.output, "Final output");
+        assert!(deserialized.has_plan());
+        assert!(deserialized.has_handoffs());
+        assert_eq!(deserialized.handoff_count(), 1);
+    }
+
+    #[test]
+    fn test_paladin_result_deserialization_backward_compatibility() {
+        // Old JSON format without plan and handoff_history fields
+        let old_json = r#"{
+            "output": "Old result",
+            "token_count": 150,
+            "execution_time_ms": 800,
+            "loop_count": 2,
+            "stop_reason": "Completed"
+        }"#;
+
+        // Should deserialize successfully with default values for new fields
+        let result: PaladinResult =
+            serde_json::from_str(old_json).expect("Failed to deserialize old format");
+
+        assert_eq!(result.output, "Old result");
+        assert_eq!(result.token_count, 150);
+        assert_eq!(result.execution_time_ms, 800);
+        assert_eq!(result.loop_count, 2);
+        assert_eq!(result.stop_reason, StopReason::Completed);
+        
+        // New fields should have default values
+        assert!(result.plan.is_none());
+        assert!(result.handoff_history.is_empty());
+        assert!(!result.has_plan());
+        assert!(!result.has_handoffs());
+    }
+
+    #[test]
+    fn test_paladin_result_new_constructor() {
+        let result = PaladinResult::new(
+            "Constructor test".to_string(),
+            250,
+            1500,
+            3,
+            StopReason::MaxLoops,
+        );
+
+        assert_eq!(result.output, "Constructor test");
+        assert_eq!(result.token_count, 250);
+        assert_eq!(result.execution_time_ms, 1500);
+        assert_eq!(result.loop_count, 3);
+        assert_eq!(result.stop_reason, StopReason::MaxLoops);
+        assert!(result.plan.is_none());
+        assert!(result.handoff_history.is_empty());
     }
 }

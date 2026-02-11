@@ -394,6 +394,7 @@ mod tests {
                     execution_time_ms: 0,
                     loop_count: 1,
                     stop_reason: StopReason::Completed,
+                    ..Default::default()
                 })
             }
 

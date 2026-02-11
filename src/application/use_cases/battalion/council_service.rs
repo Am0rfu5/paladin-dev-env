@@ -651,8 +651,8 @@ mod tests {
                     token_count: 100,
                     execution_time_ms: 1000,
                     loop_count: 1,
-                    stop_reason:
-                        crate::application::ports::output::paladin_port::StopReason::Completed,
+                    stop_reason: crate::application::ports::output::paladin_port::StopReason::Completed,
+                    ..Default::default()
                 },
             )
         }
