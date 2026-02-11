@@ -85,7 +85,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 0.2 Pull latest changes: `git pull origin develop`
   - [x] 0.3 Create and checkout new branch: `git checkout -b feature/epic-21-autonomous-agent-completion`
 
-- [ ] 1.0 Phase 1: Configurable Model Selection (US-21.5) - Week 1, Days 1-2
+- [x] 1.0 Phase 1: Configurable Model Selection (US-21.5) - Week 1, Days 1-2
   - [x] 1.1 Read `src/application/use_cases/paladin/planning_service.rs` to locate hardcoded "gpt-4" references (lines 128, 305, 426, 538)
   - [x] 1.2 Update `PlanningService::generate_plan()` to read model from `paladin.config.model` instead of hardcoded "gpt-4"
   - [x] 1.3 Update `PlanningService::refine_plan()` to use configured model
@@ -101,7 +101,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.13 Add warning logs for fallback scenarios - SKIPPED: Fallback handled by LlmPort layer
   - [x] 1.14 Run `cargo test` to verify all tests pass
   - [x] 1.15 Run `cargo clippy` to check for warnings
-  - [ ] 1.16 Commit Phase 1 changes with conventional commit message
+  - [x] 1.16 Commit Phase 1 changes with conventional commit message
 
 - [ ] 2.0 Phase 2: PaladinResult Metadata Enhancement (US-21.3) - Week 1, Days 3-4
   - [ ] 2.1 Read `src/core/platform/container/paladin.rs` to understand current PaladinResult structure
