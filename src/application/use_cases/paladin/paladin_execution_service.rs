@@ -1407,4 +1407,408 @@ mod tests {
             _ => panic!("Should return ConfigurationError"),
         }
     }
+
+    // Mock VisionPort for testing
+    struct MockVisionPort {
+        provider: String,
+        should_fail: bool,
+        response_content: String,
+    }
+
+    impl MockVisionPort {
+        fn new(provider: &str) -> Self {
+            Self {
+                provider: provider.to_string(),
+                should_fail: false,
+                response_content: "Mock vision analysis result".to_string(),
+            }
+        }
+
+        fn with_failure(mut self) -> Self {
+            self.should_fail = true;
+            self
+        }
+
+        fn with_response(mut self, content: String) -> Self {
+            self.response_content = content;
+            self
+        }
+    }
+
+    #[async_trait]
+    impl crate::application::ports::output::vision_port::VisionPort for MockVisionPort {
+        async fn analyze_image(
+            &self,
+            _prompt: &str,
+            _images: Vec<VisionContent>,
+            _model: &str,
+            _max_tokens: Option<u32>,
+        ) -> Result<
+            crate::application::ports::output::vision_port::VisionResult,
+            crate::core::platform::container::vision::VisionError,
+        > {
+            if self.should_fail {
+                return Err(crate::core::platform::container::vision::VisionError::InvalidRequest(
+                    "Mock failure".to_string(),
+                ));
+            }
+
+            Ok(crate::application::ports::output::vision_port::VisionResult {
+                content: self.response_content.clone(),
+                model: "mock-model".to_string(),
+                token_usage: crate::application::ports::output::vision_port::VisionTokenUsage {
+                    prompt_tokens: 100,
+                    completion_tokens: 50,
+                    total_tokens: 150,
+                },
+                metadata: std::collections::HashMap::new(),
+                timestamp: chrono::Utc::now(),
+            })
+        }
+
+        fn is_vision_model(&self, _model: &str) -> bool {
+            true
+        }
+
+        fn provider_name(&self) -> &str {
+            &self.provider
+        }
+    }
+
+    #[tokio::test]
+    async fn test_extract_provider_from_openai_model() {
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+
+        // Test OpenAI models
+        assert_eq!(
+            service.extract_provider_from_model("gpt-4o").unwrap(),
+            "openai"
+        );
+        assert_eq!(
+            service.extract_provider_from_model("gpt-4-turbo").unwrap(),
+            "openai"
+        );
+        assert_eq!(
+            service.extract_provider_from_model("gpt-3.5-turbo").unwrap(),
+            "openai"
+        );
+        assert_eq!(
+            service.extract_provider_from_model("o1-preview").unwrap(),
+            "openai"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_extract_provider_from_anthropic_model() {
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+
+        // Test Anthropic models
+        assert_eq!(
+            service
+                .extract_provider_from_model("claude-3-opus-20240229")
+                .unwrap(),
+            "anthropic"
+        );
+        assert_eq!(
+            service
+                .extract_provider_from_model("claude-3-sonnet")
+                .unwrap(),
+            "anthropic"
+        );
+        assert_eq!(
+            service
+                .extract_provider_from_model("claude-3-5-sonnet")
+                .unwrap(),
+            "anthropic"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_extract_provider_from_unsupported_model() {
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+
+        // Test unsupported model
+        let result = service.extract_provider_from_model("llama-2-70b");
+        assert!(result.is_err());
+        match result {
+            Err(PaladinError::ConfigurationError(msg)) => {
+                assert!(msg.contains("Cannot determine provider"));
+            }
+            _ => panic!("Should return ConfigurationError"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_with_vision_adapter() {
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        
+        let mock_vision = Arc::new(MockVisionPort::new("openai"));
+        
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None)
+            .with_vision_adapter("openai".to_string(), mock_vision.clone());
+
+        // Verify adapter was registered
+        assert!(service.vision_adapters.contains_key("openai"));
+        assert_eq!(service.vision_adapters.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_vision_execution_with_stop_word() {
+        // Create mock LLM port with vision support
+        struct VisionCapableMockLlmPort;
+        
+        #[async_trait]
+        impl LlmPort for VisionCapableMockLlmPort {
+            async fn generate(&self, _request: LlmRequest) -> Result<LlmResponse, LlmError> {
+                unimplemented!()
+            }
+
+            async fn generate_stream(
+                &self,
+                _request: LlmRequest,
+            ) -> Result<
+                Box<dyn futures::Stream<Item = Result<StreamingResponse, LlmError>> + Send>,
+                LlmError,
+            > {
+                unimplemented!()
+            }
+
+            async fn validate_model(&self, _model: &str) -> Result<bool, LlmError> {
+                Ok(true)
+            }
+
+            async fn get_available_models(&self) -> Result<Vec<String>, LlmError> {
+                Ok(vec![])
+            }
+
+            fn get_provider_name(&self) -> &'static str {
+                "MockWithVision"
+            }
+
+            fn get_capabilities(&self) -> ProviderCapabilities {
+                ProviderCapabilities {
+                    supports_streaming: false,
+                    supports_function_calling: false,
+                    supports_tool_calling: false,
+                    supports_vision: true,
+                    supports_embeddings: false,
+                    max_context_tokens: Some(4096),
+                    supports_system_messages: true,
+                }
+            }
+        }
+
+        let llm_port: Arc<dyn LlmPort> = Arc::new(VisionCapableMockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        
+        // Create mock vision adapter that returns content with stop word
+        let mock_vision = Arc::new(
+            MockVisionPort::new("openai")
+                .with_response("This is a STOP word test".to_string())
+        );
+        
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None)
+            .with_vision_adapter("openai".to_string(), mock_vision);
+
+        // Create paladin with vision enabled and stop word
+        let data = PaladinData {
+            vision_enabled: true,
+            model: "gpt-4o".to_string(),
+            stop_words: vec!["STOP".to_string()],
+            ..Default::default()
+        };
+        let paladin = Node::new(data, Some("VisionPaladin".to_string()));
+
+        let images = vec![VisionContent::ImageUrl {
+            url: "https://example.com/image.jpg".to_string(),
+            detail: ImageDetail::Auto,
+        }];
+
+        let result = service
+            .execute_with_vision(&paladin, "What's in this image?", images)
+            .await;
+
+        // Should detect stop word and return error
+        assert!(result.is_err());
+        match result {
+            Err(PaladinError::ExecutionError(msg)) => {
+                assert!(
+                    msg.contains("Stop word detected") || msg.contains("STOP"),
+                    "Error should mention stop word: {}",
+                    msg
+                );
+            }
+            _ => panic!("Should return ExecutionError with stop word message"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_vision_execution_missing_adapter() {
+        // Create mock LLM port with vision support
+        struct VisionCapableMockLlmPort;
+        
+        #[async_trait]
+        impl LlmPort for VisionCapableMockLlmPort {
+            async fn generate(&self, _request: LlmRequest) -> Result<LlmResponse, LlmError> {
+                unimplemented!()
+            }
+
+            async fn generate_stream(
+                &self,
+                _request: LlmRequest,
+            ) -> Result<
+                Box<dyn futures::Stream<Item = Result<StreamingResponse, LlmError>> + Send>,
+                LlmError,
+            > {
+                unimplemented!()
+            }
+
+            async fn validate_model(&self, _model: &str) -> Result<bool, LlmError> {
+                Ok(true)
+            }
+
+            async fn get_available_models(&self) -> Result<Vec<String>, LlmError> {
+                Ok(vec![])
+            }
+
+            fn get_provider_name(&self) -> &'static str {
+                "MockWithVision"
+            }
+
+            fn get_capabilities(&self) -> ProviderCapabilities {
+                ProviderCapabilities {
+                    supports_streaming: false,
+                    supports_function_calling: false,
+                    supports_tool_calling: false,
+                    supports_vision: true,
+                    supports_embeddings: false,
+                    max_context_tokens: Some(4096),
+                    supports_system_messages: true,
+                }
+            }
+        }
+
+        let llm_port: Arc<dyn LlmPort> = Arc::new(VisionCapableMockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        
+        // Create service WITHOUT registering vision adapter
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+
+        // Create paladin with OpenAI model (requires openai adapter)
+        let data = PaladinData {
+            vision_enabled: true,
+            model: "gpt-4o".to_string(),
+            ..Default::default()
+        };
+        let paladin = Node::new(data, Some("VisionPaladin".to_string()));
+
+        let images = vec![VisionContent::ImageUrl {
+            url: "https://example.com/image.jpg".to_string(),
+            detail: ImageDetail::Auto,
+        }];
+
+        let result = service
+            .execute_with_vision(&paladin, "What's in this image?", images)
+            .await;
+
+        // Should fail because no vision adapter registered
+        assert!(result.is_err());
+        match result {
+            Err(PaladinError::ExecutionError(msg)) => {
+                assert!(
+                    msg.contains("No vision adapter registered"),
+                    "Error should mention missing adapter: {}",
+                    msg
+                );
+            }
+            _ => panic!("Should return ExecutionError about missing adapter"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_vision_execution_successful() {
+        // Create mock LLM port with vision support
+        struct VisionCapableMockLlmPort;
+        
+        #[async_trait]
+        impl LlmPort for VisionCapableMockLlmPort {
+            async fn generate(&self, _request: LlmRequest) -> Result<LlmResponse, LlmError> {
+                unimplemented!()
+            }
+
+            async fn generate_stream(
+                &self,
+                _request: LlmRequest,
+            ) -> Result<
+                Box<dyn futures::Stream<Item = Result<StreamingResponse, LlmError>> + Send>,
+                LlmError,
+            > {
+                unimplemented!()
+            }
+
+            async fn validate_model(&self, _model: &str) -> Result<bool, LlmError> {
+                Ok(true)
+            }
+
+            async fn get_available_models(&self) -> Result<Vec<String>, LlmError> {
+                Ok(vec![])
+            }
+
+            fn get_provider_name(&self) -> &'static str {
+                "MockWithVision"
+            }
+
+            fn get_capabilities(&self) -> ProviderCapabilities {
+                ProviderCapabilities {
+                    supports_streaming: false,
+                    supports_function_calling: false,
+                    supports_tool_calling: false,
+                    supports_vision: true,
+                    supports_embeddings: false,
+                    max_context_tokens: Some(4096),
+                    supports_system_messages: true,
+                }
+            }
+        }
+
+        let llm_port: Arc<dyn LlmPort> = Arc::new(VisionCapableMockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        
+        let mock_vision = Arc::new(MockVisionPort::new("openai"));
+        
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None)
+            .with_vision_adapter("openai".to_string(), mock_vision);
+
+        // Create paladin with vision enabled
+        let data = PaladinData {
+            vision_enabled: true,
+            model: "gpt-4o".to_string(),
+            ..Default::default()
+        };
+        let paladin = Node::new(data, Some("VisionPaladin".to_string()));
+
+        let images = vec![VisionContent::ImageUrl {
+            url: "https://example.com/image.jpg".to_string(),
+            detail: ImageDetail::Auto,
+        }];
+
+        let result = service
+            .execute_with_vision(&paladin, "What's in this image?", images)
+            .await;
+
+        // Should succeed
+        assert!(result.is_ok());
+        let paladin_result = result.unwrap();
+        assert_eq!(paladin_result.output, "Mock vision analysis result");
+        assert_eq!(paladin_result.token_count, 150);
+        assert_eq!(paladin_result.loop_count, 1);
+        assert_eq!(paladin_result.stop_reason, StopReason::Completed);
+    }
 }

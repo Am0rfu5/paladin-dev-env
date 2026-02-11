@@ -158,16 +158,16 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.14 Respect `timeout_seconds` configuration (wrap call in timeout)
   - [x] 5.15 Construct and return `VisionResult` with analysis text, token usage, model, metadata
   - [x] 5.16 Convert `VisionError` to `PaladinError` at boundary
-  - [ ] 5.17 Add `#[cfg(test)]` module for unit tests
-  - [ ] 5.18 Write test: provider selection for OpenAI models
-  - [ ] 5.19 Write test: provider selection for Anthropic models
-  - [ ] 5.20 Write test: unsupported provider returns error
-  - [ ] 5.21 Write test: multimodal prompt construction
-  - [ ] 5.22 Write test: vision result integration
-  - [ ] 5.23 Write test: garrison storage of vision interaction (with mock garrison)
-  - [ ] 5.24 Write test: timeout enforcement
-  - [ ] 5.25 Write test: stop word detection in vision response
-  - [ ] 5.26 Run `cargo test paladin_execution_service` to verify tests pass
+  - [x] 5.17 Add `#[cfg(test)]` module for unit tests
+  - [x] 5.18 Write test: provider selection for OpenAI models
+  - [x] 5.19 Write test: provider selection for Anthropic models
+  - [x] 5.20 Write test: unsupported provider returns error
+  - [x] 5.21 Write test: multimodal prompt construction
+  - [x] 5.22 Write test: vision result integration
+  - [x] 5.23 Write test: garrison storage of vision interaction (with mock garrison)
+  - [x] 5.24 Write test: timeout enforcement
+  - [x] 5.25 Write test: stop word detection in vision response
+  - [x] 5.26 Run `cargo test paladin_execution_service` to verify tests pass
 
 - [ ] 6.0 Additional Edge Case Tests for Vision Adapters
   - [ ] 6.1 Add test for OpenAI: empty image list should return error
