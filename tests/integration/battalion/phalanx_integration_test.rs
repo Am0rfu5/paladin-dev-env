@@ -96,7 +96,6 @@ impl PaladinPort for IntegrationMockPaladinPort {
             execution_time_ms: self.delay_ms,
             loop_count: 1,
             stop_reason: StopReason::Completed,
-            ..Default::default(),
             ..Default::default()
         })
     }

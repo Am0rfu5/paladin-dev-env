@@ -746,7 +746,7 @@ mod tests {
                 loop_count: 1,
                 stop_reason: StopReason::Completed,
                 ..Default::default()
-            }
+            },
         );
         expert_outputs.insert(
             "Expert2".to_string(),

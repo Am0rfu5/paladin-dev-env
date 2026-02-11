@@ -409,7 +409,7 @@ mod tests {
     #[test]
     fn test_paladin_result_default_values() {
         let result = PaladinResult::default();
-        
+
         assert_eq!(result.output, "");
         assert_eq!(result.token_count, 0);
         assert_eq!(result.execution_time_ms, 0);
@@ -556,7 +556,7 @@ mod tests {
         assert_eq!(result.execution_time_ms, 800);
         assert_eq!(result.loop_count, 2);
         assert_eq!(result.stop_reason, StopReason::Completed);
-        
+
         // New fields should have default values
         assert!(result.plan.is_none());
         assert!(result.handoff_history.is_empty());

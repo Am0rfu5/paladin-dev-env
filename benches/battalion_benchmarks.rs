@@ -57,7 +57,6 @@ impl PaladinPort for BenchmarkMockPort {
             execution_time_ms: (self.latency_micros as f64 / 1000.0) as u64,
             loop_count: 1,
             stop_reason: StopReason::Completed,
-            ..Default::default(),
             ..Default::default()
         })
     }

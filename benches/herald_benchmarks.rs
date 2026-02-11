@@ -25,8 +25,7 @@ fn generate_paladin_result(output_size_kb: usize) -> PaladinResult {
         execution_time_ms: 1000,
         loop_count: 1,
         stop_reason: StopReason::Completed,
-            ..Default::default(),
-            ..Default::default()
+        ..Default::default()
     }
 }
 

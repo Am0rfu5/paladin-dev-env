@@ -60,7 +60,8 @@ mod helpers {
                 token_count: 0,
                 execution_time_ms: 100,
                 loop_count: 1,
-                stop_reason: paladin::application::ports::output::paladin_port::StopReason::Completed,
+                stop_reason:
+                    paladin::application::ports::output::paladin_port::StopReason::Completed,
                 ..Default::default()
             })
         }
