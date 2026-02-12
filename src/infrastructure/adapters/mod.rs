@@ -9,5 +9,6 @@ pub mod llm;
 pub mod logs;
 pub mod notifications;
 pub mod output;
+pub mod paladin_registry;
 pub mod queue;
 pub mod sanctum;

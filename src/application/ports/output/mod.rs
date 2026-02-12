@@ -10,6 +10,7 @@ pub mod log_port;
 pub mod notification_port;
 pub mod paladin_executor_port;
 pub mod paladin_port;
+pub mod paladin_registry;
 pub mod queue_port;
 pub mod sanctum_port;
 pub mod search_engine_port;
