@@ -147,11 +147,27 @@ async fn test_paladin_with_json_herald() {
     let parsed: serde_json::Value =
         serde_json::from_str(&json_output).expect("Output should be valid JSON");
 
-    // Verify JSON contains expected fields
-    assert!(parsed.get("paladin_id").is_some());
-    assert!(parsed.get("paladin_name").is_some());
-    assert!(parsed.get("status").is_some());
-    assert!(parsed.get("output").is_some());
+    // Verify JSON contains expected fields from PaladinResult
+    assert!(
+        parsed.get("output").is_some(),
+        "JSON should contain 'output' field"
+    );
+    assert!(
+        parsed.get("token_count").is_some(),
+        "JSON should contain 'token_count' field"
+    );
+    assert!(
+        parsed.get("execution_time_ms").is_some(),
+        "JSON should contain 'execution_time_ms' field"
+    );
+    assert!(
+        parsed.get("loop_count").is_some(),
+        "JSON should contain 'loop_count' field"
+    );
+    assert!(
+        parsed.get("stop_reason").is_some(),
+        "JSON should contain 'stop_reason' field"
+    );
 
     println!("JSON Herald output:\n{}", json_output);
 }
@@ -198,9 +214,27 @@ async fn test_paladin_with_markdown_herald() {
 
     let markdown_output = formatted.unwrap();
 
-    // Verify Markdown content
-    assert!(markdown_output.contains("##") || markdown_output.contains("**"));
-    assert!(markdown_output.contains("Markdown Paladin"));
+    // Verify Markdown content structure
+    assert!(
+        markdown_output.contains("##") || markdown_output.contains("**"),
+        "Markdown should contain heading markers (##) or bold markers (**)"
+    );
+    assert!(
+        markdown_output.contains("Paladin Result"),
+        "Markdown should contain 'Paladin Result' heading"
+    );
+    assert!(
+        markdown_output.contains("Output"),
+        "Markdown should contain 'Output' section"
+    );
+    assert!(
+        markdown_output.contains("Metadata"),
+        "Markdown should contain 'Metadata' section"
+    );
+    assert!(
+        markdown_output.contains("Token Count"),
+        "Markdown should contain 'Token Count' field"
+    );
 
     println!("Markdown Herald output:\n{}", markdown_output);
 }

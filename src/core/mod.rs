@@ -80,6 +80,10 @@
 //!     stop_words: vec![],
 //!     status: PaladinStatus::Idle,
 //!     vision_enabled: false,
+//!     autonomous_planning: false,
+//!     autonomous_prompts: false,
+//!     agent_description: String::new(),
+//!     dynamic_temperature: false,
 //! };
 //!
 //! let paladin: Paladin = Node::new(data, Some("Assistant".to_string()));

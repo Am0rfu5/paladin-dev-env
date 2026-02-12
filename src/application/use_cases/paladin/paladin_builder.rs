@@ -874,7 +874,7 @@ impl PaladinBuilder {
     /// ```rust,no_run
     /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin::application::ports::output::llm_port::LlmPort;
-    /// # use paladin::core::platform::container::autonomous_config::HandoffConfig;
+    /// # use paladin::core::platform::container::autonomous_config::{HandoffConfig, HandoffRetryConfig};
     /// # use paladin::core::platform::container::handoff::HandoffStrategy;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -882,6 +882,7 @@ impl PaladinBuilder {
     ///     enabled: true,
     ///     strategy: HandoffStrategy::threshold(0.7),
     ///     max_depth: 3,
+    ///     retry: HandoffRetryConfig::default(),
     /// });
     ///
     /// let builder = PaladinBuilder::new(llm_port)

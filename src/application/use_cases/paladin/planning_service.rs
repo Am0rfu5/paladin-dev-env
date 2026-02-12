@@ -19,9 +19,10 @@
 //! let plan = planning_service.create_plan(
 //!     "Analyze the security vulnerabilities in this codebase",
 //!     10, // max_subtasks
+//!     "gpt-4o", // model
 //! ).await?;
 //!
-//! let result = planning_service.execute_subtasks(&plan, "/* code here */").await?;
+//! let result = planning_service.execute_subtasks(&plan, "/* code here */", "gpt-4o").await?;
 //! # Ok(())
 //! # }
 //! ```

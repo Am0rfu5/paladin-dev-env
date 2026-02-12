@@ -24,7 +24,8 @@
 //! // Generate a system prompt
 //! let prompt = service.generate_prompt(
 //!     "DataAnalyst",
-//!     "An AI agent specialized in analyzing CSV data and generating insights"
+//!     "An AI agent specialized in analyzing CSV data and generating insights",
+//!     "gpt-4o", // model
 //! ).await?;
 //! # Ok(())
 //! # }
