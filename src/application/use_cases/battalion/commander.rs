@@ -3,7 +3,7 @@
 //! Provides unified interface for selecting and executing Battalion orchestration patterns.
 //! Supports both manual strategy selection and Auto mode with rule-based heuristics.
 
-use log::{debug, info};
+use log::{debug, info, warn};
 use std::sync::Arc;
 use tokio::time::{Duration, timeout};
 use uuid::Uuid;
@@ -848,7 +848,55 @@ impl Commander {
             debug!("Auto-selection reasoning: {}", reason);
         }
 
+        // Export metadata to file if configured
+        self.export_metadata(&result);
+
         Ok(result)
+    }
+
+    /// Export execution metadata to a JSON file, if `metadata_output_dir` is configured.
+    ///
+    /// This method is non-fatal: errors are logged as warnings but do not cause
+    /// the overall execution to fail.
+    ///
+    /// # File naming convention
+    ///
+    /// `{strategy}_{timestamp}_{uuid_short}.json`
+    ///
+    /// For example: `formation_20250715_143022_a1b2c3d4.json`
+    fn export_metadata(&self, result: &BattalionResult) {
+        let Some(dir) = &self.config.metadata_output_dir else {
+            return;
+        };
+
+        let strategy_name = format!("{:?}", result.strategy_used).to_lowercase();
+        let timestamp = result.started_at.format("%Y%m%d_%H%M%S");
+        let uuid_short = &result.battalion_id.to_string()[..8];
+        let filename = format!("{}_{timestamp}_{uuid_short}.json", strategy_name);
+        let path = dir.join(&filename);
+
+        // Ensure directory exists
+        if let Err(e) = std::fs::create_dir_all(dir) {
+            warn!(
+                "Failed to create metadata output directory '{}': {}",
+                dir.display(),
+                e
+            );
+            return;
+        }
+
+        match serde_json::to_string_pretty(result) {
+            Ok(json) => {
+                if let Err(e) = std::fs::write(&path, &json) {
+                    warn!("Failed to write metadata to '{}': {}", path.display(), e);
+                } else {
+                    info!("Metadata exported to {}", path.display());
+                }
+            }
+            Err(e) => {
+                warn!("Failed to serialize metadata: {}", e);
+            }
+        }
     }
 
     /// Analyze input and Paladins to select optimal strategy
@@ -2768,5 +2816,184 @@ mod tests {
             .build();
 
         assert!(result.is_ok(), "Build should succeed without metadata dir");
+    }
+
+    // ── Task 9.0: Commander metadata export logic tests ──
+
+    #[tokio::test]
+    async fn test_metadata_export_creates_file() {
+        let dir = std::env::temp_dir().join("paladin_meta_export_9_0");
+        let _ = std::fs::remove_dir_all(&dir);
+
+        let paladin_port: Arc<dyn PaladinPort> = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(), create_test_paladin()];
+        let config = BattalionConfig::new("export_test")
+            .with_timeout(120)
+            .with_metadata_dir(dir.clone());
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Formation)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let result = commander.execute("test input").await;
+        assert!(result.is_ok(), "Execute should succeed");
+
+        // Verify a JSON file was created in the metadata dir
+        let entries: Vec<_> = std::fs::read_dir(&dir)
+            .expect("metadata dir should exist")
+            .filter_map(|e| e.ok())
+            .collect();
+        assert_eq!(entries.len(), 1, "Exactly one metadata file should exist");
+        assert!(
+            entries[0]
+                .path()
+                .extension()
+                .is_some_and(|ext| ext == "json"),
+            "File should have .json extension"
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_metadata_export_correct_naming() {
+        let dir = std::env::temp_dir().join("paladin_meta_naming_9_0");
+        let _ = std::fs::remove_dir_all(&dir);
+
+        let paladin_port: Arc<dyn PaladinPort> = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(), create_test_paladin()];
+        let config = BattalionConfig::new("naming_test")
+            .with_timeout(120)
+            .with_metadata_dir(dir.clone());
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Formation)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let _ = commander.execute("test input").await;
+
+        let entries: Vec<_> = std::fs::read_dir(&dir)
+            .expect("metadata dir should exist")
+            .filter_map(|e| e.ok())
+            .collect();
+        assert_eq!(entries.len(), 1);
+
+        let filename = entries[0].file_name().to_string_lossy().to_string();
+        // Format: {strategy}_{timestamp}_{uuid_short}.json
+        assert!(
+            filename.starts_with("formation_"),
+            "Filename should start with strategy name, got: {}",
+            filename
+        );
+        assert!(
+            filename.ends_with(".json"),
+            "Filename should end with .json, got: {}",
+            filename
+        );
+        // Check timestamp portion (YYYYMMDD_HHMMSS)
+        let parts: Vec<&str> = filename.trim_end_matches(".json").splitn(3, '_').collect();
+        assert!(
+            parts.len() >= 3,
+            "Filename should have strategy_date_time_uuid parts"
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_metadata_export_json_structure() {
+        let dir = std::env::temp_dir().join("paladin_meta_json_9_0");
+        let _ = std::fs::remove_dir_all(&dir);
+
+        let paladin_port: Arc<dyn PaladinPort> = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(), create_test_paladin()];
+        let config = BattalionConfig::new("json_test")
+            .with_timeout(120)
+            .with_metadata_dir(dir.clone());
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Formation)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let _ = commander.execute("test input").await;
+
+        let entries: Vec<_> = std::fs::read_dir(&dir)
+            .expect("metadata dir should exist")
+            .filter_map(|e| e.ok())
+            .collect();
+        assert_eq!(entries.len(), 1);
+
+        let content = std::fs::read_to_string(entries[0].path()).unwrap();
+        let parsed: serde_json::Value =
+            serde_json::from_str(&content).expect("Metadata file should be valid JSON");
+
+        // Verify key fields are present
+        assert!(
+            parsed.get("battalion_id").is_some(),
+            "Should have battalion_id"
+        );
+        assert!(
+            parsed.get("battalion_name").is_some(),
+            "Should have battalion_name"
+        );
+        assert!(parsed.get("started_at").is_some(), "Should have started_at");
+        assert!(
+            parsed.get("completed_at").is_some(),
+            "Should have completed_at"
+        );
+        assert!(
+            parsed.get("final_output").is_some(),
+            "Should have final_output"
+        );
+        assert!(
+            parsed.get("strategy_used").is_some(),
+            "Should have strategy_used"
+        );
+        assert!(
+            parsed.get("per_paladin_times").is_some(),
+            "Should have per_paladin_times"
+        );
+        assert!(
+            parsed.get("per_paladin_tokens").is_some(),
+            "Should have per_paladin_tokens"
+        );
+        assert!(
+            parsed.get("total_tokens").is_some(),
+            "Should have total_tokens"
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_metadata_export_no_dir_configured() {
+        // When no metadata_output_dir is configured, execute should still succeed
+        // and no files should be written
+        let paladin_port: Arc<dyn PaladinPort> = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin(), create_test_paladin()];
+        let config = BattalionConfig::new("no_export_test").with_timeout(120);
+
+        let commander = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Formation)
+            .paladins(paladins)
+            .config(config)
+            .build()
+            .unwrap();
+
+        let result = commander.execute("test input").await;
+        assert!(
+            result.is_ok(),
+            "Execute should succeed without metadata dir: {:?}",
+            result.err()
+        );
     }
 }
