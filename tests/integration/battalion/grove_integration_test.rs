@@ -270,9 +270,7 @@ async fn test_grove_llm_routing() {
     let service = GroveExecutionService::new(paladin_port, None, None, Arc::new(registry));
 
     // Execute task - will use keyword fallback since we don't have real LLM
-    let result = service
-        .execute(&grove, "Fix the login bug")
-        .await;
+    let result = service.execute(&grove, "Fix the login bug").await;
 
     assert!(result.is_ok(), "Execution should succeed");
 }
@@ -512,10 +510,215 @@ async fn test_grove_error_handling() {
     let service = GroveExecutionService::new(paladin_port, None, None, Arc::new(registry));
 
     // Task with "failing" keyword should route to agent_1 which will fail
-    let result = service
-        .execute(&grove, "failing team task")
-        .await;
+    let result = service.execute(&grove, "failing team task").await;
 
     // Should return an error since agent_1 fails
     assert!(result.is_err(), "Should propagate execution error");
+}
+
+#[tokio::test]
+async fn test_grove_llm_routing_end_to_end() {
+    use paladin::application::ports::output::llm_port::{
+        FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, TokenUsage,
+    };
+    use uuid::Uuid;
+
+    /// Mock LLM port that returns routing decisions
+    struct RoutingLlmMock;
+
+    #[async_trait]
+    impl LlmPort for RoutingLlmMock {
+        async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError> {
+            // Extract the prompt to determine which agent to route to
+            let prompt_text = match &request.prompt.node.node.prompt_type {
+                paladin::core::platform::container::prompt::PromptType::User(user_prompt) => {
+                    &user_prompt.query
+                }
+                _ => "",
+            };
+
+            // Extract just the task line from the prompt
+            let task_line = prompt_text
+                .lines()
+                .find(|line| line.starts_with("Task:"))
+                .unwrap_or("");
+
+            // Route based on task keywords
+            let response_json = if task_line.to_lowercase().contains("rust")
+                || task_line.to_lowercase().contains("backend")
+            {
+                r#"{
+                    "tree_name": "engineering",
+                    "agent_id": "backend_expert",
+                    "confidence": 0.95,
+                    "reasoning": "Task mentions rust and backend development, backend_expert has strong expertise in these areas"
+                }"#
+            } else if task_line.to_lowercase().contains("react")
+                || task_line.to_lowercase().contains("dashboard")
+                || task_line.to_lowercase().contains("ui")
+            {
+                r#"{
+                    "tree_name": "engineering",
+                    "agent_id": "frontend_expert",
+                    "confidence": 0.90,
+                    "reasoning": "Task is about react and UI, frontend_expert is the best match"
+                }"#
+            } else {
+                r#"{
+                    "tree_name": "engineering",
+                    "agent_id": "backend_expert",
+                    "confidence": 0.60,
+                    "reasoning": "Default routing to backend_expert for unclear tasks"
+                }"#
+            };
+
+            Ok(LlmResponse {
+                id: Uuid::new_v4(),
+                request_id: request.id,
+                model: request.model,
+                content: response_json.to_string(),
+                finish_reason: FinishReason::Stop,
+                usage: TokenUsage {
+                    prompt_tokens: 150,
+                    completion_tokens: 80,
+                    total_tokens: 230,
+                },
+                created_at: chrono::Utc::now(),
+                metadata: std::collections::HashMap::new(),
+                function_call: None,
+            })
+        }
+
+        async fn generate_stream(
+            &self,
+            _request: LlmRequest,
+        ) -> Result<
+            Box<
+                dyn futures::Stream<
+                        Item = Result<
+                            paladin::application::ports::output::llm_port::StreamingResponse,
+                            LlmError,
+                        >,
+                    > + Send,
+            >,
+            LlmError,
+        > {
+            unimplemented!()
+        }
+
+        async fn validate_model(&self, _model: &str) -> Result<bool, LlmError> {
+            Ok(true)
+        }
+
+        async fn get_available_models(&self) -> Result<Vec<String>, LlmError> {
+            Ok(vec!["gpt-4".to_string()])
+        }
+
+        fn get_provider_name(&self) -> &'static str {
+            "mock-routing"
+        }
+
+        fn get_capabilities(&self) -> ProviderCapabilities {
+            ProviderCapabilities::default()
+        }
+    }
+
+    // Setup
+    let paladin_port = Arc::new(GroveMockPaladinPort::new());
+    let llm_port = Arc::new(RoutingLlmMock);
+
+    let paladins = vec![
+        create_specialist_paladin(
+            "backend_expert",
+            "Rust backend development",
+            vec!["rust", "backend", "api"],
+        ),
+        create_specialist_paladin(
+            "frontend_expert",
+            "React frontend development",
+            vec!["react", "frontend", "ui"],
+        ),
+    ];
+
+    let tree = Tree::new("engineering")
+        .add_agent(create_tree_agent(
+            "backend_expert",
+            vec!["rust", "backend", "api"],
+        ))
+        .add_agent(create_tree_agent(
+            "frontend_expert",
+            vec!["react", "frontend", "ui"],
+        ));
+
+    let grove = GroveBuilder::new()
+        .name("LLMRoutingGrove")
+        .add_tree(tree)
+        .routing_strategy(RoutingStrategy::LlmRouting)
+        .min_confidence(0.5)
+        .routing_fallback("error")
+        .build()
+        .expect("Grove build should succeed");
+
+    // Create registry and register paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service =
+        GroveExecutionService::new(paladin_port, None, Some(llm_port), Arc::new(registry));
+
+    // Test 1: Backend task should route to backend_expert
+    let result = service
+        .execute(&grove, "Build a rust backend API service")
+        .await;
+
+    assert!(result.is_ok(), "LLM routing should succeed");
+    let grove_result = result.unwrap();
+    assert_eq!(
+        grove_result.routing_decision.selected_agent, "backend_expert",
+        "Should route to backend_expert for rust task"
+    );
+    assert!(
+        grove_result.routing_decision.confidence >= 0.9,
+        "Should have high confidence for clear task"
+    );
+    assert!(grove_result.execution_result.contains("backend_expert"));
+
+    // Test 2: Frontend task should route to frontend_expert
+    let result = service.execute(&grove, "Create a react dashboard UI").await;
+
+    assert!(result.is_ok(), "LLM routing should succeed");
+    let grove_result = result.unwrap();
+    assert_eq!(
+        grove_result.routing_decision.selected_agent, "frontend_expert",
+        "Should route to frontend_expert for react task"
+    );
+    assert!(
+        grove_result.routing_decision.confidence >= 0.9,
+        "Should have high confidence for clear task"
+    );
+    assert!(grove_result.execution_result.contains("frontend_expert"));
+
+    // Test 3: Ambiguous task gets lower confidence but still routes
+    let result = service
+        .execute(&grove, "Do something with the system")
+        .await;
+
+    assert!(
+        result.is_ok(),
+        "LLM routing should succeed even with low confidence"
+    );
+    let grove_result = result.unwrap();
+    // Should route to backend_expert as default
+    assert_eq!(
+        grove_result.routing_decision.selected_agent,
+        "backend_expert"
+    );
+    assert!(
+        grove_result.routing_decision.confidence >= 0.5,
+        "Should meet minimum confidence threshold"
+    );
 }

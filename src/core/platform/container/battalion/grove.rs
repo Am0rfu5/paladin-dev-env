@@ -221,6 +221,23 @@ pub struct GroveConfig {
     /// When using SemanticSimilarity routing, agents must meet this threshold
     /// to be considered. Default: 0.7
     pub similarity_threshold: f32,
+
+    /// Fallback behavior when LLM routing fails
+    ///
+    /// Controls what happens when LLM routing fails (network error, invalid JSON, etc.)
+    /// or confidence is below threshold:
+    /// - "keyword": Fall back to keyword matching
+    /// - "error": Return error, do not attempt fallback
+    ///
+    /// Default: "keyword"
+    pub routing_fallback: String,
+
+    /// Minimum confidence threshold for LLM routing (0.0 to 1.0)
+    ///
+    /// When using LlmRouting, the LLM returns a confidence score. If the score
+    /// is below this threshold, it's treated as a routing failure and fallback
+    /// behavior is triggered. Default: 0.5
+    pub min_confidence: f32,
 }
 
 impl Default for GroveConfig {
@@ -229,6 +246,8 @@ impl Default for GroveConfig {
             routing_strategy: RoutingStrategy::default(),
             fallback_tree: None,
             similarity_threshold: 0.7,
+            routing_fallback: "keyword".to_string(),
+            min_confidence: 0.5,
         }
     }
 }
@@ -278,6 +297,8 @@ pub struct GroveBuilder {
     routing_strategy: RoutingStrategy,
     fallback_tree: Option<String>,
     similarity_threshold: f32,
+    routing_fallback: String,
+    min_confidence: f32,
 }
 
 impl GroveBuilder {
@@ -295,6 +316,8 @@ impl GroveBuilder {
             routing_strategy: RoutingStrategy::default(),
             fallback_tree: None,
             similarity_threshold: 0.7,
+            routing_fallback: "keyword".to_string(),
+            min_confidence: 0.5,
         }
     }
 
@@ -383,6 +406,40 @@ impl GroveBuilder {
         self
     }
 
+    /// Sets the routing fallback strategy
+    ///
+    /// # Arguments
+    ///
+    /// * `fallback` - "keyword" to fallback to keyword matching, "error" to return error
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let builder = GroveBuilder::new()
+    ///     .routing_fallback("error");
+    /// ```
+    pub fn routing_fallback(mut self, fallback: impl Into<String>) -> Self {
+        self.routing_fallback = fallback.into();
+        self
+    }
+
+    /// Sets the minimum confidence threshold for LLM routing
+    ///
+    /// # Arguments
+    ///
+    /// * `threshold` - Float between 0.0 and 1.0
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let builder = GroveBuilder::new()
+    ///     .min_confidence(0.7);
+    /// ```
+    pub fn min_confidence(mut self, threshold: f32) -> Self {
+        self.min_confidence = threshold;
+        self
+    }
+
     /// Sets the complete configuration
     ///
     /// # Arguments
@@ -400,6 +457,8 @@ impl GroveBuilder {
         self.routing_strategy = config.routing_strategy;
         self.fallback_tree = config.fallback_tree;
         self.similarity_threshold = config.similarity_threshold;
+        self.routing_fallback = config.routing_fallback;
+        self.min_confidence = config.min_confidence;
         self
     }
 
@@ -455,6 +514,22 @@ impl GroveBuilder {
             return Err(GroveError::InvalidSimilarityThreshold(self.similarity_threshold).into());
         }
 
+        // Validate routing_fallback
+        if self.routing_fallback != "keyword" && self.routing_fallback != "error" {
+            return Err(BattalionError::ValidationError(format!(
+                "routing_fallback must be 'keyword' or 'error', got '{}'",
+                self.routing_fallback
+            )));
+        }
+
+        // Validate min_confidence
+        if !(0.0..=1.0).contains(&self.min_confidence) {
+            return Err(BattalionError::ValidationError(format!(
+                "min_confidence must be between 0.0 and 1.0, got {}",
+                self.min_confidence
+            )));
+        }
+
         // Validate fallback tree exists if specified
         if let Some(ref fallback) = self.fallback_tree
             && !self.trees.iter().any(|t| &t.name == fallback)
@@ -473,6 +548,8 @@ impl GroveBuilder {
                 routing_strategy: self.routing_strategy,
                 fallback_tree: self.fallback_tree,
                 similarity_threshold: self.similarity_threshold,
+                routing_fallback: self.routing_fallback,
+                min_confidence: self.min_confidence,
             },
         };
 
@@ -678,5 +755,96 @@ mod tests {
 
         assert_eq!(deserialized.name, "Serialization Test");
         assert_eq!(deserialized.trees.len(), 1);
+    }
+
+    #[test]
+    fn test_grove_config_validation_routing_fallback() {
+        // Valid "keyword" fallback
+        let result = GroveBuilder::new()
+            .name("Test Grove")
+            .add_tree(Tree::new("support").add_agent(TreeAgent::new("agent1")))
+            .routing_fallback("keyword")
+            .build();
+        assert!(result.is_ok());
+
+        // Valid "error" fallback
+        let result = GroveBuilder::new()
+            .name("Test Grove")
+            .add_tree(Tree::new("support").add_agent(TreeAgent::new("agent1")))
+            .routing_fallback("error")
+            .build();
+        assert!(result.is_ok());
+
+        // Invalid fallback value
+        let result = GroveBuilder::new()
+            .name("Test Grove")
+            .add_tree(Tree::new("support").add_agent(TreeAgent::new("agent1")))
+            .routing_fallback("invalid")
+            .build();
+        assert!(result.is_err());
+        match result {
+            Err(BattalionError::ValidationError(msg)) => {
+                assert!(msg.contains("routing_fallback"));
+                assert!(msg.contains("'keyword' or 'error'"));
+            }
+            _ => panic!("Expected ValidationError for invalid routing_fallback"),
+        }
+    }
+
+    #[test]
+    fn test_grove_config_validation_min_confidence() {
+        // Valid min_confidence at lower bound
+        let result = GroveBuilder::new()
+            .name("Test Grove")
+            .add_tree(Tree::new("support").add_agent(TreeAgent::new("agent1")))
+            .min_confidence(0.0)
+            .build();
+        assert!(result.is_ok());
+
+        // Valid min_confidence at upper bound
+        let result = GroveBuilder::new()
+            .name("Test Grove")
+            .add_tree(Tree::new("support").add_agent(TreeAgent::new("agent1")))
+            .min_confidence(1.0)
+            .build();
+        assert!(result.is_ok());
+
+        // Valid min_confidence in middle
+        let result = GroveBuilder::new()
+            .name("Test Grove")
+            .add_tree(Tree::new("support").add_agent(TreeAgent::new("agent1")))
+            .min_confidence(0.5)
+            .build();
+        assert!(result.is_ok());
+
+        // Invalid min_confidence too low
+        let result = GroveBuilder::new()
+            .name("Test Grove")
+            .add_tree(Tree::new("support").add_agent(TreeAgent::new("agent1")))
+            .min_confidence(-0.1)
+            .build();
+        assert!(result.is_err());
+        match result {
+            Err(BattalionError::ValidationError(msg)) => {
+                assert!(msg.contains("min_confidence"));
+                assert!(msg.contains("between 0.0 and 1.0"));
+            }
+            _ => panic!("Expected ValidationError for negative min_confidence"),
+        }
+
+        // Invalid min_confidence too high
+        let result = GroveBuilder::new()
+            .name("Test Grove")
+            .add_tree(Tree::new("support").add_agent(TreeAgent::new("agent1")))
+            .min_confidence(1.5)
+            .build();
+        assert!(result.is_err());
+        match result {
+            Err(BattalionError::ValidationError(msg)) => {
+                assert!(msg.contains("min_confidence"));
+                assert!(msg.contains("between 0.0 and 1.0"));
+            }
+            _ => panic!("Expected ValidationError for min_confidence > 1.0"),
+        }
     }
 }

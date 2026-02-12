@@ -4,15 +4,17 @@
 //! directing tasks to specialized Paladins based on expertise matching.
 
 use log::{debug, info, warn};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::application::ports::output::embedding_port::EmbeddingPort;
-use crate::application::ports::output::llm_port::LlmPort;
+use crate::application::ports::output::llm_port::{LlmPort, LlmRequest};
 use crate::application::ports::output::paladin_port::PaladinPort;
 use crate::application::ports::output::paladin_registry::PaladinRegistry;
 use crate::core::platform::container::battalion::BattalionError;
 use crate::core::platform::container::battalion::grove::{Grove, RoutingStrategy, Tree, TreeAgent};
+use crate::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
 
 /// Decision made by the Grove routing system
 ///
@@ -47,6 +49,24 @@ pub struct GroveResult {
 
     /// Additional metadata about the execution
     pub metadata: HashMap<String, String>,
+}
+
+/// LLM routing response structure
+///
+/// Expected JSON structure from LLM when performing routing decisions.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct RoutingResponse {
+    /// Name of the selected tree
+    tree_name: String,
+
+    /// ID of the selected agent
+    agent_id: String,
+
+    /// Confidence score (0.0 to 1.0)
+    confidence: f32,
+
+    /// Reasoning for the selection
+    reasoning: String,
 }
 
 /// Service for executing Grove patterns
@@ -445,12 +465,28 @@ impl GroveExecutionService {
     ///
     /// Provides the LLM with task description and agent expertise,
     /// asking it to select the best agent with reasoning.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BattalionError::RoutingError` if:
+    /// - LLM is not configured (None)
+    /// - LLM call fails
+    /// - JSON parsing fails
+    /// - Confidence is below threshold and routing_fallback is "error"
+    /// - Unknown agent_id in response
     async fn route_by_llm(
         &self,
         grove: &Grove,
         task: &str,
     ) -> Result<RoutingDecision, BattalionError> {
         debug!("Routing by LLM analysis");
+
+        // Check if LLM port is available
+        let llm_port = self.llm_port.as_ref().ok_or_else(|| {
+            BattalionError::RoutingError(
+                "LLM port not configured for LLM-based routing".to_string(),
+            )
+        })?;
 
         // Build prompt with agent information
         let mut prompt = format!(
@@ -482,13 +518,147 @@ impl GroveExecutionService {
             }\n",
         );
 
-        // TODO: Call LLM with prompt
-        // For now, this is a placeholder that will be implemented during integration
-        debug!("LLM routing prompt prepared (placeholder implementation)");
+        debug!("LLM routing prompt prepared: {} characters", prompt.len());
 
-        // Placeholder: fallback to keyword matching
-        warn!("LLM routing not yet fully implemented, falling back to keyword matching");
-        self.route_by_keywords(grove, task)
+        // Create prompt item
+        let user_prompt = UserPrompt {
+            query: prompt,
+            context: None,
+        };
+
+        let prompt_item = PromptItem::new(PromptType::User(user_prompt))
+            .map_err(|e| BattalionError::RoutingError(format!("Failed to create prompt: {}", e)))?;
+
+        // Call LLM
+        let llm_request = LlmRequest {
+            id: uuid::Uuid::new_v4(),
+            model: "gpt-4".to_string(), // TODO: Make configurable
+            prompt: prompt_item,
+            attachments: vec![],
+            stream: false,
+            metadata: HashMap::new(),
+        };
+
+        let llm_response = llm_port.generate(llm_request).await.map_err(|e| {
+            let msg = format!("LLM call failed: {}", e);
+            warn!("{}", msg);
+            e // Return the LLM error, will be handled below
+        });
+
+        let llm_response = match llm_response {
+            Ok(resp) => resp,
+            Err(_) => {
+                return self.handle_routing_failure(grove, task, "LLM call failed");
+            }
+        };
+
+        debug!(
+            "LLM response received: {} characters",
+            llm_response.content.len()
+        );
+
+        // Parse JSON response
+        let routing_response: RoutingResponse = match serde_json::from_str(&llm_response.content) {
+            Ok(resp) => resp,
+            Err(e) => {
+                warn!("Failed to parse LLM JSON response: {}", e);
+                return self.handle_routing_failure(
+                    grove,
+                    task,
+                    &format!("Failed to parse JSON: {}", e),
+                );
+            }
+        };
+
+        debug!(
+            "Parsed routing response: agent={}, confidence={}",
+            routing_response.agent_id, routing_response.confidence
+        );
+
+        // Validate confidence threshold
+        if routing_response.confidence < grove.node.config.min_confidence {
+            warn!(
+                "Confidence {} below threshold {}",
+                routing_response.confidence, grove.node.config.min_confidence
+            );
+            return self.handle_routing_failure(
+                grove,
+                task,
+                &format!(
+                    "Confidence {} below threshold {}",
+                    routing_response.confidence, grove.node.config.min_confidence
+                ),
+            );
+        }
+
+        // Validate agent_id exists in Grove
+        let agent_exists = grove.node.trees.iter().any(|tree| {
+            tree.agents
+                .iter()
+                .any(|agent| agent.paladin_id == routing_response.agent_id)
+        });
+
+        if !agent_exists {
+            warn!(
+                "Unknown agent_id in LLM response: {}",
+                routing_response.agent_id
+            );
+            return self.handle_routing_failure(
+                grove,
+                task,
+                &format!("Unknown agent_id: {}", routing_response.agent_id),
+            );
+        }
+
+        info!(
+            "LLM routing successful: {} (confidence: {})",
+            routing_response.agent_id, routing_response.confidence
+        );
+
+        Ok(RoutingDecision {
+            selected_tree: routing_response.tree_name,
+            selected_agent: routing_response.agent_id,
+            confidence: routing_response.confidence,
+            reasoning: routing_response.reasoning,
+        })
+    }
+
+    /// Handles routing failures based on the configured fallback strategy
+    ///
+    /// If `routing_fallback` is "keyword", attempts keyword matching.
+    /// If "error", returns an error.
+    fn handle_routing_failure(
+        &self,
+        grove: &Grove,
+        task: &str,
+        reason: &str,
+    ) -> Result<RoutingDecision, BattalionError> {
+        match grove.node.config.routing_fallback.as_str() {
+            "keyword" => {
+                warn!("Falling back to keyword matching: {}", reason);
+                self.route_by_keywords(grove, task).map(|mut decision| {
+                    decision.reasoning = format!(
+                        "LLM routing failed ({}), fell back to keyword matching: {}",
+                        reason, decision.reasoning
+                    );
+                    decision
+                })
+            }
+            "error" => Err(BattalionError::RoutingError(format!(
+                "LLM routing failed: {}",
+                reason
+            ))),
+            other => {
+                warn!(
+                    "Unknown routing_fallback value '{}', treating as 'error'",
+                    other
+                );
+                Err(BattalionError::RoutingError(format!(
+                    "LLM routing failed: {}",
+                    reason
+                )))
+            }
+        }
     }
 
     /// Selects the first agent from a tree
@@ -947,5 +1117,429 @@ mod tests {
                 supports_system_messages: true,
             }
         }
+    }
+
+    // Task 5.0: LLM-based routing tests (TDD - these should fail until implementation)
+
+    #[tokio::test]
+    async fn test_route_with_llm_successful() {
+        // Mock LLM that returns valid high-confidence routing decision
+        struct SuccessfulLlmMock;
+
+        #[async_trait::async_trait]
+        impl LlmPort for SuccessfulLlmMock {
+            async fn generate(
+                &self,
+                _request: crate::application::ports::output::llm_port::LlmRequest,
+            ) -> Result<
+                crate::application::ports::output::llm_port::LlmResponse,
+                crate::application::ports::output::llm_port::LlmError,
+            > {
+                let response_json = r#"{
+                    "tree_name": "engineering",
+                    "agent_id": "backend_expert",
+                    "confidence": 0.85,
+                    "reasoning": "Task mentions rust and backend, which are backend expert's core skills"
+                }"#;
+
+                Ok(crate::application::ports::output::llm_port::LlmResponse {
+                    id: uuid::Uuid::new_v4(),
+                    request_id: uuid::Uuid::new_v4(),
+                    model: "mock-model".to_string(),
+                    content: response_json.to_string(),
+                    finish_reason: crate::application::ports::output::llm_port::FinishReason::Stop,
+                    usage: crate::application::ports::output::llm_port::TokenUsage {
+                        prompt_tokens: 100,
+                        completion_tokens: 50,
+                        total_tokens: 150,
+                    },
+                    created_at: chrono::Utc::now(),
+                    metadata: std::collections::HashMap::new(),
+                    function_call: None,
+                })
+            }
+
+            async fn generate_stream(
+                &self,
+                _request: crate::application::ports::output::llm_port::LlmRequest,
+            ) -> Result<
+                Box<
+                    dyn futures::Stream<
+                            Item = Result<
+                                crate::application::ports::output::llm_port::StreamingResponse,
+                                crate::application::ports::output::llm_port::LlmError,
+                            >,
+                        > + Send,
+                >,
+                crate::application::ports::output::llm_port::LlmError,
+            > {
+                unimplemented!()
+            }
+
+            async fn validate_model(
+                &self,
+                _model: &str,
+            ) -> Result<bool, crate::application::ports::output::llm_port::LlmError> {
+                Ok(true)
+            }
+
+            async fn get_available_models(
+                &self,
+            ) -> Result<Vec<String>, crate::application::ports::output::llm_port::LlmError>
+            {
+                Ok(vec!["mock-model".to_string()])
+            }
+
+            fn get_provider_name(&self) -> &'static str {
+                "mock"
+            }
+
+            fn get_capabilities(
+                &self,
+            ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
+                crate::application::ports::output::llm_port::ProviderCapabilities::default()
+            }
+        }
+
+        use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
+        let service = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(Arc::new(SuccessfulLlmMock)),
+            Arc::new(registry),
+        );
+
+        let grove = create_test_grove();
+
+        let result = service
+            .route_by_llm(&grove, "rust backend development task")
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "Should route successfully with high confidence"
+        );
+        let decision = result.unwrap();
+        assert_eq!(decision.selected_tree, "engineering");
+        assert_eq!(decision.selected_agent, "backend_expert");
+        assert!(decision.confidence >= 0.85);
+        assert!(decision.reasoning.contains("rust"));
+    }
+
+    #[tokio::test]
+    async fn test_route_with_llm_low_confidence() {
+        // Mock LLM that returns valid but low-confidence routing decision
+        struct LowConfidenceLlmMock;
+
+        #[async_trait::async_trait]
+        impl LlmPort for LowConfidenceLlmMock {
+            async fn generate(
+                &self,
+                _request: crate::application::ports::output::llm_port::LlmRequest,
+            ) -> Result<
+                crate::application::ports::output::llm_port::LlmResponse,
+                crate::application::ports::output::llm_port::LlmError,
+            > {
+                let response_json = r#"{
+                    "tree_name": "engineering",
+                    "agent_id": "backend_expert",
+                    "confidence": 0.3,
+                    "reasoning": "Unclear task, best guess is backend"
+                }"#;
+
+                Ok(crate::application::ports::output::llm_port::LlmResponse {
+                    id: uuid::Uuid::new_v4(),
+                    request_id: uuid::Uuid::new_v4(),
+                    model: "mock-model".to_string(),
+                    content: response_json.to_string(),
+                    finish_reason: crate::application::ports::output::llm_port::FinishReason::Stop,
+                    usage: crate::application::ports::output::llm_port::TokenUsage {
+                        prompt_tokens: 100,
+                        completion_tokens: 50,
+                        total_tokens: 150,
+                    },
+                    created_at: chrono::Utc::now(),
+                    metadata: std::collections::HashMap::new(),
+                    function_call: None,
+                })
+            }
+
+            async fn generate_stream(
+                &self,
+                _request: crate::application::ports::output::llm_port::LlmRequest,
+            ) -> Result<
+                Box<
+                    dyn futures::Stream<
+                            Item = Result<
+                                crate::application::ports::output::llm_port::StreamingResponse,
+                                crate::application::ports::output::llm_port::LlmError,
+                            >,
+                        > + Send,
+                >,
+                crate::application::ports::output::llm_port::LlmError,
+            > {
+                unimplemented!()
+            }
+
+            async fn validate_model(
+                &self,
+                _model: &str,
+            ) -> Result<bool, crate::application::ports::output::llm_port::LlmError> {
+                Ok(true)
+            }
+
+            async fn get_available_models(
+                &self,
+            ) -> Result<Vec<String>, crate::application::ports::output::llm_port::LlmError>
+            {
+                Ok(vec!["mock-model".to_string()])
+            }
+
+            fn get_provider_name(&self) -> &'static str {
+                "mock"
+            }
+
+            fn get_capabilities(
+                &self,
+            ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
+                crate::application::ports::output::llm_port::ProviderCapabilities::default()
+            }
+        }
+
+        use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
+        let mut grove = create_test_grove();
+        // Set routing_fallback to "error" to test that low confidence triggers fallback logic
+        grove.node.config.routing_fallback = "error".to_string();
+        grove.node.config.min_confidence = 0.5;
+
+        let service = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(Arc::new(LowConfidenceLlmMock)),
+            Arc::new(registry),
+        );
+
+        let result = service.route_by_llm(&grove, "ambiguous task").await;
+
+        // With routing_fallback="error" and confidence below threshold, should return error
+        assert!(
+            result.is_err(),
+            "Should return error when confidence below threshold and fallback is 'error'"
+        );
+        match result {
+            Err(BattalionError::RoutingError(msg)) => {
+                assert!(msg.contains("confidence") || msg.contains("threshold"));
+            }
+            _ => panic!("Expected RoutingError for low confidence with error fallback"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_route_with_llm_invalid_json() {
+        // Mock LLM that returns invalid JSON
+        struct InvalidJsonLlmMock;
+
+        #[async_trait::async_trait]
+        impl LlmPort for InvalidJsonLlmMock {
+            async fn generate(
+                &self,
+                _request: crate::application::ports::output::llm_port::LlmRequest,
+            ) -> Result<
+                crate::application::ports::output::llm_port::LlmResponse,
+                crate::application::ports::output::llm_port::LlmError,
+            > {
+                let response_json = "This is not JSON at all!";
+
+                Ok(crate::application::ports::output::llm_port::LlmResponse {
+                    id: uuid::Uuid::new_v4(),
+                    request_id: uuid::Uuid::new_v4(),
+                    model: "mock-model".to_string(),
+                    content: response_json.to_string(),
+                    finish_reason: crate::application::ports::output::llm_port::FinishReason::Stop,
+                    usage: crate::application::ports::output::llm_port::TokenUsage {
+                        prompt_tokens: 100,
+                        completion_tokens: 50,
+                        total_tokens: 150,
+                    },
+                    created_at: chrono::Utc::now(),
+                    metadata: std::collections::HashMap::new(),
+                    function_call: None,
+                })
+            }
+
+            async fn generate_stream(
+                &self,
+                _request: crate::application::ports::output::llm_port::LlmRequest,
+            ) -> Result<
+                Box<
+                    dyn futures::Stream<
+                            Item = Result<
+                                crate::application::ports::output::llm_port::StreamingResponse,
+                                crate::application::ports::output::llm_port::LlmError,
+                            >,
+                        > + Send,
+                >,
+                crate::application::ports::output::llm_port::LlmError,
+            > {
+                unimplemented!()
+            }
+
+            async fn validate_model(
+                &self,
+                _model: &str,
+            ) -> Result<bool, crate::application::ports::output::llm_port::LlmError> {
+                Ok(true)
+            }
+
+            async fn get_available_models(
+                &self,
+            ) -> Result<Vec<String>, crate::application::ports::output::llm_port::LlmError>
+            {
+                Ok(vec!["mock-model".to_string()])
+            }
+
+            fn get_provider_name(&self) -> &'static str {
+                "mock"
+            }
+
+            fn get_capabilities(
+                &self,
+            ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
+                crate::application::ports::output::llm_port::ProviderCapabilities::default()
+            }
+        }
+
+        use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
+        let mut grove = create_test_grove();
+        grove.node.config.routing_fallback = "error".to_string();
+
+        let service = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(Arc::new(InvalidJsonLlmMock)),
+            Arc::new(registry),
+        );
+
+        let result = service.route_by_llm(&grove, "test task").await;
+
+        // Invalid JSON should trigger error when routing_fallback="error"
+        assert!(result.is_err(), "Should return error for invalid JSON");
+        match result {
+            Err(BattalionError::RoutingError(_)) => {} // Expected
+            _ => panic!("Expected RoutingError for invalid JSON"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_route_with_llm_fallback_to_keyword() {
+        // Mock LLM that returns low confidence
+        struct LowConfidenceFallbackMock;
+
+        #[async_trait::async_trait]
+        impl LlmPort for LowConfidenceFallbackMock {
+            async fn generate(
+                &self,
+                _request: crate::application::ports::output::llm_port::LlmRequest,
+            ) -> Result<
+                crate::application::ports::output::llm_port::LlmResponse,
+                crate::application::ports::output::llm_port::LlmError,
+            > {
+                let response_json = r#"{
+                    "tree_name": "engineering",
+                    "agent_id": "backend_expert",
+                    "confidence": 0.2,
+                    "reasoning": "Very uncertain"
+                }"#;
+
+                Ok(crate::application::ports::output::llm_port::LlmResponse {
+                    id: uuid::Uuid::new_v4(),
+                    request_id: uuid::Uuid::new_v4(),
+                    model: "mock-model".to_string(),
+                    content: response_json.to_string(),
+                    finish_reason: crate::application::ports::output::llm_port::FinishReason::Stop,
+                    usage: crate::application::ports::output::llm_port::TokenUsage {
+                        prompt_tokens: 100,
+                        completion_tokens: 50,
+                        total_tokens: 150,
+                    },
+                    created_at: chrono::Utc::now(),
+                    metadata: std::collections::HashMap::new(),
+                    function_call: None,
+                })
+            }
+
+            async fn generate_stream(
+                &self,
+                _request: crate::application::ports::output::llm_port::LlmRequest,
+            ) -> Result<
+                Box<
+                    dyn futures::Stream<
+                            Item = Result<
+                                crate::application::ports::output::llm_port::StreamingResponse,
+                                crate::application::ports::output::llm_port::LlmError,
+                            >,
+                        > + Send,
+                >,
+                crate::application::ports::output::llm_port::LlmError,
+            > {
+                unimplemented!()
+            }
+
+            async fn validate_model(
+                &self,
+                _model: &str,
+            ) -> Result<bool, crate::application::ports::output::llm_port::LlmError> {
+                Ok(true)
+            }
+
+            async fn get_available_models(
+                &self,
+            ) -> Result<Vec<String>, crate::application::ports::output::llm_port::LlmError>
+            {
+                Ok(vec!["mock-model".to_string()])
+            }
+
+            fn get_provider_name(&self) -> &'static str {
+                "mock"
+            }
+
+            fn get_capabilities(
+                &self,
+            ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
+                crate::application::ports::output::llm_port::ProviderCapabilities::default()
+            }
+        }
+
+        use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
+        let mut grove = create_test_grove();
+        // Set routing_fallback to "keyword" to test fallback to keyword matching
+        grove.node.config.routing_fallback = "keyword".to_string();
+        grove.node.config.min_confidence = 0.5;
+
+        let service = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(Arc::new(LowConfidenceFallbackMock)),
+            Arc::new(registry),
+        );
+
+        let result = service
+            .route_by_llm(&grove, "rust backend development")
+            .await;
+
+        // With routing_fallback="keyword", should fallback and succeed
+        assert!(
+            result.is_ok(),
+            "Should fallback to keyword matching when confidence below threshold"
+        );
+        let decision = result.unwrap();
+        // Should have been routed by keyword matching (backend_expert has "rust" keyword)
+        assert_eq!(decision.selected_agent, "backend_expert");
+        // The reasoning should indicate fallback occurred
+        assert!(decision.reasoning.contains("keyword") || decision.reasoning.contains("fallback"));
     }
 }
