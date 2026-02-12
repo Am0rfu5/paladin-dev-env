@@ -105,18 +105,18 @@ Update the file after completing each sub-task, not just after completing parent
   - [x] 1.23 Run clippy: `cargo clippy -- -D warnings`
   - [x] 1.24 Format code: `cargo fmt`
 
-- [ ] 2.0 Extend error types for Battalion operations
-  - [ ] 2.1 Open `src/core/platform/container/battalion/error.rs`
-  - [ ] 2.2 Add `PaladinNotFound(String)` variant to `BattalionError`
-  - [ ] 2.3 Add `GroveRoutingFailed(String)` variant to `BattalionError`
-  - [ ] 2.4 Add `MetadataExportFailed(String)` variant to `BattalionError`
-  - [ ] 2.5 Implement `Display` and error messages for new variants
-  - [ ] 2.6 Add `From<RegistryError>` conversion for `BattalionError`
-  - [ ] 2.7 Write unit test: test error messages format correctly
-  - [ ] 2.8 Write unit test: test RegistryError converts to BattalionError
-  - [ ] 2.9 Run tests: `cargo test battalion::error`
-  - [ ] 2.10 Run clippy: `cargo clippy -- -D warnings`
-  - [ ] 2.11 Format code: `cargo fmt`
+- [x] 2.0 Extend error types for Battalion operations
+  - [x] 2.1 Open `src/core/platform/container/battalion/mod.rs`
+  - [x] 2.2 Add `PaladinNotFound(String)` variant to `BattalionError`
+  - [x] 2.3 Add `GroveRoutingFailed(String)` variant to `BattalionError`
+  - [x] 2.4 Add `MetadataExportFailed(String)` variant to `BattalionError`
+  - [x] 2.5 Implement `Display` and error messages for new variants
+  - [x] 2.6 Add `From<RegistryError>` conversion for `BattalionError`
+  - [x] 2.7 Write unit test: test error messages format correctly
+  - [x] 2.8 Write unit test: test RegistryError converts to BattalionError
+  - [x] 2.9 Run tests: `cargo test battalion::error`
+  - [x] 2.10 Run clippy: `cargo clippy -- -D warnings`
+  - [x] 2.11 Format code: `cargo fmt`
 
 ### Phase 2: Registry Integration & Routing (Days 4-6)
 

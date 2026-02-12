@@ -23,6 +23,8 @@ use uuid::Uuid;
 // for the domain result type. This is acceptable as Battalion results contain
 // references to execution outcomes.
 use crate::application::ports::output::paladin_port::PaladinResult;
+// Note: RegistryError conversion needed for Council and Grove operations
+use crate::application::ports::output::paladin_registry::RegistryError;
 
 /// Configuration for Battalion operations
 ///
@@ -687,6 +689,18 @@ pub enum BattalionError {
     #[error("Routing error: {0}")]
     RoutingError(String),
 
+    /// Paladin not found in registry
+    #[error("Paladin not found in registry: {0}")]
+    PaladinNotFound(String),
+
+    /// Grove routing failed
+    #[error("Grove routing failed: {0}")]
+    GroveRoutingFailed(String),
+
+    /// Metadata export failed (non-fatal)
+    #[error("Metadata export failed: {0}")]
+    MetadataExportFailed(String),
+
     /// Timeout error
     #[error("Battalion execution timed out after {0} seconds")]
     Timeout(u64),
@@ -706,6 +720,27 @@ pub enum BattalionError {
     /// General execution error
     #[error("Execution error: {0}")]
     ExecutionError(String),
+}
+
+/// Convert RegistryError to BattalionError
+///
+/// This conversion allows registry errors to be propagated as Battalion errors,
+/// particularly useful for Council and Grove operations that need to resolve
+/// Paladin IDs from the registry.
+impl From<RegistryError> for BattalionError {
+    fn from(error: RegistryError) -> Self {
+        match error {
+            RegistryError::DuplicateId(id) => {
+                BattalionError::ConfigurationError(format!("Duplicate Paladin ID: {}", id))
+            }
+            RegistryError::InvalidId(id) => {
+                BattalionError::ValidationError(format!("Invalid Paladin ID: {}", id))
+            }
+            RegistryError::AccessFailed(msg) => {
+                BattalionError::ExecutionError(format!("Registry access failed: {}", msg))
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -893,6 +928,9 @@ mod tests {
             BattalionError::Timeout(300),
             BattalionError::ValidationError("test".to_string()),
             BattalionError::AggregationError("test".to_string()),
+            BattalionError::PaladinNotFound("paladin123".to_string()),
+            BattalionError::GroveRoutingFailed("no matching agent".to_string()),
+            BattalionError::MetadataExportFailed("disk full".to_string()),
         ];
 
         // Verify error messages
@@ -900,6 +938,67 @@ mod tests {
             let msg = error.to_string();
             assert!(!msg.is_empty());
         }
+    }
+
+    #[test]
+    fn test_new_error_messages_format() {
+        // Test PaladinNotFound error message
+        let error = BattalionError::PaladinNotFound("test_paladin".to_string());
+        assert_eq!(
+            error.to_string(),
+            "Paladin not found in registry: test_paladin"
+        );
+
+        // Test GroveRoutingFailed error message
+        let error = BattalionError::GroveRoutingFailed("confidence too low".to_string());
+        assert_eq!(
+            error.to_string(),
+            "Grove routing failed: confidence too low"
+        );
+
+        // Test MetadataExportFailed error message
+        let error = BattalionError::MetadataExportFailed("permission denied".to_string());
+        assert_eq!(
+            error.to_string(),
+            "Metadata export failed: permission denied"
+        );
+    }
+
+    #[test]
+    fn test_registry_error_conversion() {
+        use crate::application::ports::output::paladin_registry::RegistryError;
+
+        // Test DuplicateId conversion
+        let registry_error = RegistryError::DuplicateId("duplicate_id".to_string());
+        let battalion_error: BattalionError = registry_error.into();
+        assert!(matches!(
+            battalion_error,
+            BattalionError::ConfigurationError(_)
+        ));
+        assert!(
+            battalion_error
+                .to_string()
+                .contains("Duplicate Paladin ID: duplicate_id")
+        );
+
+        // Test InvalidId conversion
+        let registry_error = RegistryError::InvalidId("".to_string());
+        let battalion_error: BattalionError = registry_error.into();
+        assert!(matches!(
+            battalion_error,
+            BattalionError::ValidationError(_)
+        ));
+        assert!(battalion_error.to_string().contains("Invalid Paladin ID"));
+
+        // Test AccessFailed conversion
+        let registry_error = RegistryError::AccessFailed("lock poisoned".to_string());
+        let battalion_error: BattalionError = registry_error.into();
+        assert!(matches!(battalion_error, BattalionError::ExecutionError(_)));
+        assert!(
+            battalion_error
+                .to_string()
+                .contains("Registry access failed")
+        );
     }
 }
 
