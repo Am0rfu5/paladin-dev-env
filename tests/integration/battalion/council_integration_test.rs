@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{
     PaladinPort, PaladinResult, PaladinStream, StopReason,
 };
+use paladin::application::ports::output::paladin_registry::PaladinRegistry;
 use paladin::application::use_cases::battalion::council_service::CouncilExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
@@ -13,6 +14,7 @@ use paladin::core::platform::container::battalion::council::{
     CouncilBuilder, TerminationCondition, TurnStrategy,
 };
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
+use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::time::Duration;
@@ -203,12 +205,19 @@ async fn test_council_roundrobin_three_paladins_two_rounds() {
         .build()
         .expect("Council build should succeed");
 
-    let service = CouncilExecutionService::new(paladin_port.clone(), None);
+    // Create registry from paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = CouncilExecutionService::new(paladin_port.clone(), None, Arc::new(registry));
 
     let result = service
         .convene(
             &council,
-            &paladins,
             "Should we implement two-factor authentication?",
         )
         .await
@@ -270,10 +279,18 @@ async fn test_council_moderator_directed_strategy() {
         .build()
         .expect("Council build should succeed");
 
-    let service = CouncilExecutionService::new(paladin_port.clone(), None);
+    // Create registry from paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = CouncilExecutionService::new(paladin_port.clone(), None, Arc::new(registry));
 
     let result = service
-        .convene(&council, &paladins, "Plan the authentication system")
+        .convene(&council, "Plan the authentication system")
         .await
         .expect("Council execution should succeed");
 
@@ -317,10 +334,18 @@ async fn test_council_consensus_termination() {
         .build()
         .expect("Council build should succeed");
 
-    let service = CouncilExecutionService::new(paladin_port, None);
+    // Create registry from paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = CouncilExecutionService::new(paladin_port, None, Arc::new(registry));
 
     let result = service
-        .convene(&council, &paladins, "What authentication method?")
+        .convene(&council, "What authentication method?")
         .await
         .expect("Council execution should succeed");
 
@@ -357,10 +382,18 @@ async fn test_council_error_handling() {
         .build()
         .expect("Council build should succeed");
 
-    let service = CouncilExecutionService::new(paladin_port.clone(), None);
+    // Create registry from paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = CouncilExecutionService::new(paladin_port.clone(), None, Arc::new(registry));
 
     // Should handle error gracefully and continue with available participants
-    let result = service.convene(&council, &paladins, "Test topic").await;
+    let result = service.convene(&council, "Test topic").await;
 
     // Should succeed - participant_1 continues despite participant_0 failing
     assert!(result.is_ok(), "Should handle errors gracefully");
@@ -397,10 +430,18 @@ async fn test_council_timeout_enforcement() {
         .build()
         .expect("Council build should succeed");
 
-    let service = CouncilExecutionService::new(paladin_port, None);
+    // Create registry from paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = CouncilExecutionService::new(paladin_port, None, Arc::new(registry));
 
     let start = tokio::time::Instant::now();
-    let result = service.convene(&council, &paladins, "Quick topic").await;
+    let result = service.convene(&council, "Quick topic").await;
     let elapsed = start.elapsed();
 
     // Should complete quickly
