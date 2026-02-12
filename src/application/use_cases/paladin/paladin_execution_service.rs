@@ -49,10 +49,12 @@
 use crate::application::ports::output::arsenal_port::ArsenalPort;
 use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::application::ports::output::llm_port::{FunctionCall, LlmPort, LlmRequest};
+use crate::application::ports::output::paladin_executor_port::PaladinExecutorPort;
 use crate::application::ports::output::paladin_port::{PaladinResult, StopReason};
 use crate::application::ports::output::vision_port::VisionPort;
 use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use crate::application::use_cases::paladin::error::PaladinError;
+use crate::application::use_cases::paladin::handoff_service::HandoffService;
 use crate::application::use_cases::paladin::planning_service::PlanningService;
 use crate::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
 use crate::application::use_cases::sanctum::memory_extraction_service::{
@@ -126,6 +128,9 @@ pub struct PaladinExecutionService {
 
     /// Optional prompt generation service for dynamic system prompts (Layer 1)
     prompt_generation_service: Option<Arc<PromptGenerationService>>,
+
+    /// Optional handoff service for agent delegation (Layer 3)
+    handoff_service: Option<Arc<HandoffService>>,
 }
 
 impl PaladinExecutionService {
@@ -175,6 +180,7 @@ impl PaladinExecutionService {
             vision_adapters: HashMap::new(),
             planning_service: None,
             prompt_generation_service: None,
+            handoff_service: None,
         }
     }
 
@@ -336,6 +342,24 @@ impl PaladinExecutionService {
     pub fn with_prompt_generation_service(mut self, service: Arc<PromptGenerationService>) -> Self {
         info!("Attaching prompt generation service to PaladinExecutionService");
         self.prompt_generation_service = Some(service);
+        self
+    }
+
+    /// Sets the handoff service for agent delegation (Layer 3)
+    ///
+    /// When configured, the execution service can delegate tasks to specialist
+    /// Paladins when a `handoff_to_specialist` tool call is detected.
+    ///
+    /// # Arguments
+    ///
+    /// * `service` - The HandoffService for managing delegations
+    ///
+    /// # Returns
+    ///
+    /// Returns self for method chaining
+    pub fn with_handoff_service(mut self, service: Arc<HandoffService>) -> Self {
+        info!("Attaching handoff service to PaladinExecutionService (Layer 3)");
+        self.handoff_service = Some(service);
         self
     }
 
@@ -599,6 +623,7 @@ impl PaladinExecutionService {
         let mut _retrieval_latency_ms = 0u64;
         let mut _memories_retrieved_count = 0usize;
         let mut _extraction_triggered = false;
+        let mut handoff_history = Vec::new();
 
         // =======================================================================
         // LAYER 1: Autonomous Planning & Prompt Generation (Optional, Pre-Exec)
@@ -738,9 +763,9 @@ impl PaladinExecutionService {
                         execution_id, function_call.name, loop_num
                     );
 
-                    // Execute handoff (Phase 5 will implement full delegation)
+                    // Execute handoff via HandoffService with retry logic
                     match self
-                        .execute_handoff(function_call, paladin, execution_id)
+                        .execute_handoff(function_call, paladin, execution_id, &mut handoff_history)
                         .await
                     {
                         Ok(handoff_result) => {
@@ -851,8 +876,8 @@ impl PaladinExecutionService {
                     execution_time_ms: start_time.elapsed().as_millis() as u64,
                     loop_count: loop_num,
                     stop_reason: StopReason::MaxLoops,
-                    plan: task_plan,         // Layer 1 metadata
-                    handoff_history: vec![], // Layer 3 metadata (Phase 5 will populate)
+                    plan: task_plan, // Layer 1 metadata
+                    handoff_history, // Layer 3 metadata
                 });
             }
         }
@@ -877,8 +902,8 @@ impl PaladinExecutionService {
             execution_time_ms: start_time.elapsed().as_millis() as u64,
             loop_count: paladin.node.max_loops.as_u32(),
             stop_reason: StopReason::Completed,
-            plan: task_plan,         // Layer 1 metadata
-            handoff_history: vec![], // Layer 3 metadata (Phase 5 will populate)
+            plan: task_plan, // Layer 1 metadata
+            handoff_history, // Layer 3 metadata
         })
     }
 
@@ -1351,37 +1376,97 @@ impl PaladinExecutionService {
         function_call.name == "handoff_to_specialist"
     }
 
-    /// Layer 3: Placeholder for handoff execution (Phase 5)
+    /// Layer 3: Execute a handoff to a specialist Paladin
     ///
-    /// In Phase 5, this will delegate execution to a specialist Paladin
-    /// and return the result. For now, it returns a placeholder message.
+    /// Parses the handoff tool call arguments, validates the specialist,
+    /// and delegates execution via `HandoffService`. If no `HandoffService`
+    /// is configured, returns a placeholder message.
     ///
     /// # Arguments
     ///
     /// * `function_call` - The handoff tool call from LLM
     /// * `paladin` - The current Paladin (coordinator)
     /// * `execution_id` - Unique execution ID for logging
+    /// * `handoff_history` - Mutable reference to accumulate handoff records
     ///
     /// # Returns
     ///
     /// Formatted handoff result to inject into conversation
-    #[allow(unused_variables)]
     async fn execute_handoff(
         &self,
         function_call: &FunctionCall,
         paladin: &Paladin,
         execution_id: uuid::Uuid,
+        handoff_history: &mut Vec<crate::core::platform::container::handoff::HandoffRecord>,
     ) -> Result<String, PaladinError> {
-        warn!(
-            "Handoff detected but execution not yet implemented: execution_id={}, tool={}",
-            execution_id, function_call.name
+        // Parse specialist name and task from function call arguments
+        let args: Value = serde_json::from_str(&function_call.arguments).unwrap_or_default();
+        let specialist_name = args["specialist_name"]
+            .as_str()
+            .unwrap_or("unknown")
+            .to_string();
+        let task_description = args["task_description"].as_str().unwrap_or("").to_string();
+
+        info!(
+            "Handoff execution: id={}, specialist={}, task_len={}",
+            execution_id,
+            specialist_name,
+            task_description.len()
         );
 
-        // Phase 5 will implement actual handoff execution via HandoffService
-        Ok(format!(
-            "\n\n🤝 Handoff Tool Call: {}\nStatus: PLACEHOLDER (Phase 5 implementation pending)\nNote: Handoff execution will be implemented in Epic 21, Phase 5\n",
-            function_call.name
-        ))
+        // Check if HandoffService is configured
+        let handoff_service = match &self.handoff_service {
+            Some(service) => service,
+            None => {
+                warn!(
+                    "Handoff detected but no HandoffService configured: id={}",
+                    execution_id
+                );
+                return Ok(format!(
+                    "\n\n\u{1f91d} Handoff to '{}': No HandoffService configured. \
+                     Configure with_handoff_service() on PaladinExecutionService.\n",
+                    specialist_name
+                ));
+            }
+        };
+
+        // Create handoff context from the coordinator
+        let context = crate::core::platform::container::handoff::HandoffContext::new(
+            task_description.clone(),
+            paladin.node.name.clone(),
+        );
+
+        // Execute the handoff via HandoffService with retry logic
+        // Note: In a full implementation, specialist Paladins would be looked up
+        // from a registry. For Phase 5, we use the coordinator as a stand-in.
+        match handoff_service
+            .execute_handoff(&specialist_name, &task_description, &context, paladin, self)
+            .await
+        {
+            Ok((result, record)) => {
+                info!(
+                    "Handoff completed: id={}, specialist={}, result_len={}",
+                    execution_id,
+                    specialist_name,
+                    result.len()
+                );
+                handoff_history.push(record);
+                Ok(format!(
+                    "\n\n\u{1f91d} Handoff to '{}':\n{}\n",
+                    specialist_name, result
+                ))
+            }
+            Err(handoff_err) => {
+                warn!(
+                    "Handoff failed: id={}, specialist={}, error={}",
+                    execution_id, specialist_name, handoff_err
+                );
+                Err(PaladinError::ExecutionError(format!(
+                    "Handoff to '{}' failed: {}",
+                    specialist_name, handoff_err
+                )))
+            }
+        }
     }
 
     //
@@ -1695,6 +1780,20 @@ impl PaladinExecutionService {
         let formatted = self.formatter.format_result(&call, &result);
 
         Ok(formatted)
+    }
+}
+
+/// Implementation of `PaladinExecutorPort` for `PaladinExecutionService`
+///
+/// This enables `HandoffService` to delegate specialist execution back to
+/// `PaladinExecutionService` without a circular compile-time dependency.
+/// The `HandoffService` depends on `Arc<dyn PaladinExecutorPort>`, while
+/// `PaladinExecutionService` provides the concrete implementation.
+#[async_trait::async_trait]
+impl PaladinExecutorPort for PaladinExecutionService {
+    async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult, PaladinError> {
+        // Delegate to the existing public execute method
+        self.execute(paladin, input).await
     }
 }
 

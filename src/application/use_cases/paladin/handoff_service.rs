@@ -5,10 +5,13 @@
 //! safeguards against circular delegation and excessive depth.
 
 use crate::application::errors::handoff_error::HandoffError;
+use crate::application::ports::output::paladin_executor_port::PaladinExecutorPort;
 use crate::core::platform::container::autonomous_config::HandoffConfig;
-use crate::core::platform::container::handoff::{HandoffContext, HandoffStrategy};
-use log::{debug, info};
+use crate::core::platform::container::handoff::{HandoffContext, HandoffRecord, HandoffStrategy};
+use crate::core::platform::container::paladin::Paladin;
+use log::{debug, info, warn};
 use std::sync::Arc;
+use tokio::time::{Duration, sleep};
 
 /// Service for managing agent handoffs and delegation
 ///
@@ -30,6 +33,7 @@ use std::sync::Arc;
 ///     enabled: true,
 ///     strategy: HandoffStrategy::Automatic,
 ///     max_depth: 5,
+///     retry: Default::default(),
 /// });
 ///
 /// let service = HandoffService::new(config);
@@ -97,6 +101,7 @@ impl HandoffService {
     ///     enabled: true,
     ///     strategy: HandoffStrategy::threshold(0.7),
     ///     max_depth: 3,
+    ///     retry: Default::default(),
     /// });
     /// let service = HandoffService::new(config).unwrap();
     /// let context = HandoffContext::new("Task".to_string(), "Agent1".to_string());
@@ -212,6 +217,7 @@ impl HandoffService {
     ///     enabled: true,
     ///     strategy: HandoffStrategy::Automatic,
     ///     max_depth: 3,
+    ///     retry: Default::default(),
     /// });
     /// let service = HandoffService::new(config).unwrap();
     ///
@@ -302,6 +308,7 @@ impl HandoffService {
     ///     enabled: true,
     ///     strategy: HandoffStrategy::Automatic,
     ///     max_depth: 3,
+    ///     retry: Default::default(),
     /// });
     /// let service = HandoffService::new(config).unwrap();
     /// let context = HandoffContext::new("Task".to_string(), "Agent1".to_string());
@@ -381,6 +388,7 @@ impl HandoffService {
     ///     enabled: true,
     ///     strategy: HandoffStrategy::Automatic,
     ///     max_depth: 3,
+    ///     retry: Default::default(),
     /// });
     /// let service = HandoffService::new(config).unwrap();
     /// let context = HandoffContext::new("Original task".to_string(), "Agent1".to_string());
@@ -431,6 +439,128 @@ impl HandoffService {
             }
             _ => false,
         }
+    }
+
+    /// Executes a handoff to a specialist Paladin with retry logic
+    ///
+    /// This method delegates a task to a specialist agent, handling:
+    /// - Validation (circular delegation, max depth)
+    /// - Context transfer to the specialist
+    /// - Execution via `PaladinExecutorPort` (dependency-inverted)
+    /// - Retry with exponential backoff for transient errors
+    /// - Fail-fast for permanent errors
+    /// - `HandoffRecord` creation for traceability
+    ///
+    /// # Arguments
+    ///
+    /// * `specialist_name` - Name of the specialist agent
+    /// * `task` - Task description to delegate
+    /// * `context` - Current handoff context (depth, chain, history)
+    /// * `specialist` - The specialist Paladin to execute
+    /// * `executor` - Execution port for running the specialist
+    ///
+    /// # Returns
+    ///
+    /// * `Ok((String, HandoffRecord))` - The specialist's output and a record of the handoff
+    /// * `Err(HandoffError)` - If validation fails or execution exhausts retries
+    pub async fn execute_handoff(
+        &self,
+        specialist_name: &str,
+        task: &str,
+        context: &HandoffContext,
+        specialist: &Paladin,
+        executor: &dyn PaladinExecutorPort,
+    ) -> Result<(String, HandoffRecord), HandoffError> {
+        info!(
+            "Executing handoff: from_chain={:?}, to={}, task_len={}, depth={}",
+            context.chain,
+            specialist_name,
+            task.len(),
+            context.depth
+        );
+
+        // Step 1: Validate the handoff (permanent errors → fail immediately)
+        self.validate_handoff(specialist_name, context)?;
+
+        // Step 2: Transfer context to the specialist
+        let new_context = self.transfer_context(task, context, specialist_name);
+        debug!(
+            "Context transferred: new_depth={}, chain={:?}",
+            new_context.depth, new_context.chain
+        );
+
+        // Step 3: Create handoff record (result will be filled after execution)
+        let from_agent = context
+            .chain
+            .last()
+            .cloned()
+            .unwrap_or_else(|| "unknown".to_string());
+        let mut record = HandoffRecord::new(
+            from_agent.clone(),
+            specialist_name.to_string(),
+            task.to_string(),
+            new_context.depth,
+        );
+
+        // Step 4: Execute with retry logic
+        let max_retries = self.config.retry.max_retries;
+        let mut last_error: Option<HandoffError> = None;
+
+        for attempt in 0..=max_retries {
+            if attempt > 0 {
+                let backoff_ms = self.config.retry.calculate_backoff(attempt - 1);
+                info!(
+                    "Handoff retry: attempt={}/{}, backoff={}ms, specialist={}",
+                    attempt, max_retries, backoff_ms, specialist_name
+                );
+                sleep(Duration::from_millis(backoff_ms)).await;
+            }
+
+            match executor.execute(specialist, task).await {
+                Ok(result) => {
+                    info!(
+                        "Handoff succeeded: specialist={}, tokens={}, loops={}, time={}ms",
+                        specialist_name,
+                        result.token_count,
+                        result.loop_count,
+                        result.execution_time_ms
+                    );
+                    record.set_result(result.output.clone());
+                    return Ok((result.output, record));
+                }
+                Err(paladin_err) => {
+                    // Convert PaladinError → HandoffError for classification
+                    let handoff_err = HandoffError::ExecutionFailed {
+                        from_agent: from_agent.clone(),
+                        to_agent: specialist_name.to_string(),
+                        reason: paladin_err.to_string(),
+                    };
+
+                    // Check if this is a permanent error → fail immediately
+                    if !Self::is_transient_error(&handoff_err) {
+                        warn!(
+                            "Handoff permanent failure: specialist={}, error={}",
+                            specialist_name, handoff_err
+                        );
+                        return Err(handoff_err);
+                    }
+
+                    // Transient error → retry (if attempts remain)
+                    warn!(
+                        "Handoff transient failure: specialist={}, attempt={}/{}, error={}",
+                        specialist_name, attempt, max_retries, handoff_err
+                    );
+                    last_error = Some(handoff_err);
+                }
+            }
+        }
+
+        // All retries exhausted
+        Err(last_error.unwrap_or_else(|| HandoffError::ExecutionFailed {
+            from_agent,
+            to_agent: specialist_name.to_string(),
+            reason: "All retry attempts exhausted".to_string(),
+        }))
     }
 }
 

@@ -16,10 +16,10 @@ use super::handoff::HandoffStrategy;
 pub struct HandoffRetryConfig {
     /// Maximum number of retry attempts
     pub max_retries: u32,
-    
+
     /// Initial backoff delay in milliseconds
     pub initial_backoff_ms: u64,
-    
+
     /// Backoff multiplier for exponential backoff
     pub backoff_multiplier: f64,
 }
@@ -43,7 +43,7 @@ impl HandoffRetryConfig {
             backoff_multiplier,
         }
     }
-    
+
     /// Calculates the backoff delay for a given attempt
     ///
     /// Formula: `initial_backoff_ms * (backoff_multiplier ^ attempt)`
@@ -268,7 +268,7 @@ pub struct HandoffConfig {
 
     /// Maximum depth of handoff chain
     pub max_depth: u32,
-    
+
     /// Retry configuration for handoff execution
     pub retry: HandoffRetryConfig,
 }
@@ -319,7 +319,7 @@ impl HandoffConfig {
         self.max_depth = max_depth;
         self
     }
-    
+
     /// Sets the retry configuration
     pub fn with_retry(mut self, retry: HandoffRetryConfig) -> Self {
         self.retry = retry;
