@@ -406,6 +406,32 @@ impl HandoffService {
             depth: current_context.depth + 1,
         }
     }
+
+    /// Classifies whether an error is transient (retriable) or permanent (fail-fast)
+    ///
+    /// Transient errors include:
+    /// - Timeouts
+    /// - Network-related errors (temp unavailable)
+    /// - Rate limits (implicit in network errors)
+    ///
+    /// Permanent errors include:
+    /// - Invalid agent (not found)
+    /// - Circular handoff
+    /// - Max depth exceeded
+    /// - Configuration errors
+    fn is_transient_error(error: &HandoffError) -> bool {
+        match error {
+            HandoffError::Timeout(_) => true,
+            HandoffError::ExecutionFailed { reason, .. } => {
+                let reason_lower = reason.to_lowercase();
+                reason_lower.contains("network")
+                    || reason_lower.contains("temporary")
+                    || reason_lower.contains("unavailable")
+                    || reason_lower.contains("timeout")
+            }
+            _ => false,
+        }
+    }
 }
 
 #[cfg(test)]
