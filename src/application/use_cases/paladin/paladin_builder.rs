@@ -334,7 +334,9 @@ impl PaladinBuilder {
     /// # }
     /// ```
     pub fn agent_description(mut self, description: impl Into<String>) -> Self {
-        self.agent_description = Some(description.into());
+        let desc = description.into();
+        self.agent_description = Some(desc.clone());
+        self.data.agent_description = desc; // Also set in PaladinData for autonomous features
         self
     }
 
@@ -513,6 +515,96 @@ impl PaladinBuilder {
     /// ```
     pub fn enable_vision(mut self, enabled: bool) -> Self {
         self.data.vision_enabled = enabled;
+        self
+    }
+
+    /// Enables autonomous planning mode (Layer 1)
+    ///
+    /// When enabled, the Paladin will use PlanningService to decompose complex
+    /// tasks into subtasks before execution. Requires planning service to be
+    /// configured via `with_planning_service` in the execution service.
+    ///
+    /// # Arguments
+    ///
+    /// * `enabled` - Whether to enable autonomous planning
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
+    /// let paladin = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are an AI assistant")
+    ///     .enable_autonomous_planning(true)
+    ///     .build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn enable_autonomous_planning(mut self, enabled: bool) -> Self {
+        self.data.autonomous_planning = enabled;
+        self
+    }
+
+    /// Enables autonomous prompt generation (Layer 1)
+    ///
+    /// When enabled, the Paladin will use PromptGenerationService to generate
+    /// a contextual system prompt based on agent_description. Requires prompt
+    /// generation service to be configured via `with_prompt_generation_service`
+    /// in the execution service.
+    ///
+    /// # Arguments
+    ///
+    /// * `enabled` - Whether to enable autonomous prompt generation
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
+    /// let paladin = PaladinBuilder::new(llm_port)
+    ///     .agent_description("An AI specialized in code review")
+    ///     .enable_autonomous_prompts(true)
+    ///     .build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn enable_autonomous_prompts(mut self, enabled: bool) -> Self {
+        self.data.autonomous_prompts = enabled;
+        self
+    }
+
+    /// Enables dynamic temperature adjustment (Layer 2)
+    ///
+    /// When enabled, temperature increases linearly from the configured base
+    /// value to 1.0 over the course of max_loops iterations. This encourages
+    /// exploration in later loops when the agent might be stuck.
+    ///
+    /// # Arguments
+    ///
+    /// * `enabled` - Whether to enable dynamic temperature
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::sync::Arc;
+    /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
+    /// let paladin = PaladinBuilder::new(llm_port)
+    ///     .system_prompt("You are an AI assistant")
+    ///     .temperature(0.5)  // Starting temperature
+    ///     .max_loops(5)
+    ///     .enable_dynamic_temperature(true)  // Will increase to 1.0 by loop 5
+    ///     .build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn enable_dynamic_temperature(mut self, enabled: bool) -> Self {
+        self.data.dynamic_temperature = enabled;
         self
     }
 
@@ -1780,6 +1872,7 @@ mod tests {
                     stop_words: vec![],
                     status: crate::core::platform::container::citadel::PaladinStatus::Idle,
                     vision_enabled: false,
+                    ..Default::default()
                 };
 
                 // Create Paladin (Node<PaladinData>)
@@ -2044,14 +2137,14 @@ mod tests {
         let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
         let arsenal = Arc::new(MockArsenalRegistry::new());
 
-        let specialist1 = PaladinBuilder::new(Arc::clone(&llm_port))
+        let specialist1: Paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("Rust expert")
             .name("RustExpert")
             .build()
             .await
             .unwrap();
 
-        let specialist2 = PaladinBuilder::new(Arc::clone(&llm_port))
+        let specialist2: Paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("Python expert")
             .name("PythonExpert")
             .build()
@@ -2059,7 +2152,7 @@ mod tests {
             .unwrap();
 
         // When: Building a coordinator with handoffs configured
-        let _coordinator = PaladinBuilder::new(Arc::clone(&llm_port))
+        let _coordinator: Paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("Coordinator")
             .name("Coordinator")
             .with_arsenal_registry(Arc::clone(&arsenal) as Arc<dyn ArsenalRegistry>)
@@ -2082,7 +2175,7 @@ mod tests {
         let arsenal = Arc::new(MockArsenalRegistry::new());
 
         // When: Building without handoffs
-        let _paladin = PaladinBuilder::new(Arc::clone(&llm_port))
+        let _paladin: Paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("Regular agent")
             .name("Agent")
             .with_arsenal_registry(Arc::clone(&arsenal) as Arc<dyn ArsenalRegistry>)
@@ -2117,7 +2210,7 @@ mod tests {
             .collect();
 
         // When: Building coordinator
-        let _coordinator = PaladinBuilder::new(Arc::clone(&llm_port))
+        let _coordinator: Paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("Coordinator")
             .name("Coordinator")
             .with_arsenal_registry(Arc::clone(&arsenal) as Arc<dyn ArsenalRegistry>)
@@ -2150,7 +2243,7 @@ mod tests {
         let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
         let arsenal = Arc::new(MockArsenalRegistry::new());
 
-        let specialist = Arc::new(
+        let specialist: Arc<Paladin> = Arc::new(
             PaladinBuilder::new(Arc::clone(&llm_port))
                 .system_prompt("Expert")
                 .name("Expert")
@@ -2161,7 +2254,7 @@ mod tests {
 
         // When: Building multiple coordinators with same specialists
         for _ in 0..3 {
-            let _coordinator = PaladinBuilder::new(Arc::clone(&llm_port))
+            let _coordinator: Paladin = PaladinBuilder::new(Arc::clone(&llm_port))
                 .system_prompt("Coordinator")
                 .name("Coordinator")
                 .with_arsenal_registry(Arc::clone(&arsenal) as Arc<dyn ArsenalRegistry>)
@@ -2184,7 +2277,7 @@ mod tests {
         let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
         let arsenal = Arc::new(MockArsenalRegistry::new());
 
-        let specialist = Arc::new(
+        let specialist: Arc<Paladin> = Arc::new(
             PaladinBuilder::new(Arc::clone(&llm_port))
                 .system_prompt("Expert")
                 .name("TestExpert")
@@ -2194,7 +2287,7 @@ mod tests {
         );
 
         // When: Building coordinator
-        let _coordinator = PaladinBuilder::new(Arc::clone(&llm_port))
+        let _coordinator: Paladin = PaladinBuilder::new(Arc::clone(&llm_port))
             .system_prompt("Coordinator")
             .name("Coordinator")
             .with_arsenal_registry(Arc::clone(&arsenal) as Arc<dyn ArsenalRegistry>)

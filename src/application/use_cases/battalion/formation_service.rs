@@ -453,6 +453,7 @@ mod tests {
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,
+            ..Default::default()
         };
         Node::new(data, Some(name.to_string()))
     }

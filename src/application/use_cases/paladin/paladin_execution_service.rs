@@ -53,6 +53,8 @@ use crate::application::ports::output::paladin_port::{PaladinResult, StopReason}
 use crate::application::ports::output::vision_port::VisionPort;
 use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use crate::application::use_cases::paladin::error::PaladinError;
+use crate::application::use_cases::paladin::planning_service::PlanningService;
+use crate::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
 use crate::application::use_cases::sanctum::memory_extraction_service::{
     MemoryExtractionService, MemoryExtractionStrategy,
 };
@@ -118,6 +120,12 @@ pub struct PaladinExecutionService {
 
     /// Vision adapters registry (provider name → adapter)
     vision_adapters: HashMap<String, Arc<dyn VisionPort>>,
+
+    /// Optional planning service for autonomous task decomposition (Layer 1)
+    planning_service: Option<Arc<PlanningService>>,
+
+    /// Optional prompt generation service for dynamic system prompts (Layer 1)
+    prompt_generation_service: Option<Arc<PromptGenerationService>>,
 }
 
 impl PaladinExecutionService {
@@ -165,6 +173,8 @@ impl PaladinExecutionService {
             rag_retrieval_service: None,
             memory_extraction_service: None,
             vision_adapters: HashMap::new(),
+            planning_service: None,
+            prompt_generation_service: None,
         }
     }
 
@@ -260,6 +270,72 @@ impl PaladinExecutionService {
     pub fn with_vision_adapter(mut self, provider: String, adapter: Arc<dyn VisionPort>) -> Self {
         info!("Registering vision adapter for provider: {}", provider);
         self.vision_adapters.insert(provider, adapter);
+        self
+    }
+
+    /// Sets the planning service for autonomous task decomposition (Layer 1)
+    ///
+    /// # Arguments
+    ///
+    /// * `service` - The planning service to use for task decomposition
+    ///
+    /// # Returns
+    ///
+    /// Returns self for method chaining
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    /// use paladin::application::use_cases::paladin::planning_service::PlanningService;
+    /// use std::sync::Arc;
+    /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::time::Duration;
+    ///
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// # let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    /// let planning_service = Arc::new(PlanningService::new(llm_port.clone()));
+    /// let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None)
+    ///     .with_planning_service(planning_service);
+    /// # }
+    /// ```
+    pub fn with_planning_service(mut self, service: Arc<PlanningService>) -> Self {
+        info!("Attaching planning service to PaladinExecutionService");
+        self.planning_service = Some(service);
+        self
+    }
+
+    /// Sets the prompt generation service for dynamic system prompts (Layer 1)
+    ///
+    /// # Arguments
+    ///
+    /// * `service` - The prompt generation service to use
+    ///
+    /// # Returns
+    ///
+    /// Returns self for method chaining
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    /// use paladin::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
+    /// use std::sync::Arc;
+    /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use std::time::Duration;
+    ///
+    /// # fn example(llm_port: Arc<dyn LlmPort>) {
+    /// # let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    /// let prompt_service = Arc::new(PromptGenerationService::new(llm_port.clone()));
+    /// let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None)
+    ///     .with_prompt_generation_service(prompt_service);
+    /// # }
+    /// ```
+    pub fn with_prompt_generation_service(mut self, service: Arc<PromptGenerationService>) -> Self {
+        info!("Attaching prompt generation service to PaladinExecutionService");
+        self.prompt_generation_service = Some(service);
         self
     }
 
@@ -524,6 +600,29 @@ impl PaladinExecutionService {
         let mut _memories_retrieved_count = 0usize;
         let mut _extraction_triggered = false;
 
+        // =======================================================================
+        // LAYER 1: Autonomous Planning & Prompt Generation (Optional, Pre-Exec)
+        // =======================================================================
+
+        // Apply Layer 1a: Planning (if enabled)
+        let task_plan = self
+            .apply_layer1_planning(paladin, input, execution_id)
+            .await;
+
+        // Apply Layer 1b: Prompt Generation (if enabled)
+        let generated_prompt = self
+            .apply_layer1_prompt_generation(paladin, execution_id)
+            .await;
+
+        // Use generated prompt if available, otherwise use configured prompt
+        let effective_system_prompt = generated_prompt
+            .as_ref()
+            .unwrap_or(&paladin.node.system_prompt);
+
+        // =======================================================================
+        // CORE LAYER 0: Standard Execution (Always Runs)
+        // =======================================================================
+
         // Step 1: Retrieve relevant context from Sanctum if RAG is configured
         let retrieved_context = if self.check_sanctum_configured() {
             debug!(
@@ -596,27 +695,79 @@ impl PaladinExecutionService {
                 execution_id, loop_num, paladin.node.max_loops
             );
 
+            // =======================================================================
+            // LAYER 2: Dynamic Temperature (Optional, Per-Loop)
+            // =======================================================================
+            let effective_temperature = self.apply_layer2_dynamic_temperature(paladin, loop_num);
+
             // Build prompt for this iteration with conversation history and RAG context
-            let prompt = self.build_prompt_with_history_and_rag(
-                paladin,
+            // Use effective_system_prompt from Layer 1 (generated or original)
+            let prompt = self.build_prompt_with_custom_system(
+                effective_system_prompt,
                 input,
                 &accumulated_output,
                 &conversation_history,
                 retrieved_context.as_deref(),
             );
 
-            // Execute with retry and circuit breaker
+            // Execute with retry and circuit breaker (using effective temperature)
             let response = self
-                .execute_with_retry(paladin, &prompt, execution_id, loop_num)
+                .execute_with_retry_and_temperature(
+                    paladin,
+                    &prompt,
+                    effective_temperature,
+                    execution_id,
+                    loop_num,
+                )
                 .await?;
 
             // Update accumulated output and token count
             accumulated_output = response.content.clone();
             total_tokens += response.usage.total_tokens;
 
+            // =======================================================================
+            // LAYER 3: Handoff Detection & Execution (Optional, Post-LLM)
+            // =======================================================================
+
             // Check for tool calls and execute them if arsenal is available
             if let Some(ref function_call) = response.function_call {
-                if let Some(ref arsenal) = self.arsenal {
+                // Check if this is a handoff tool call (Layer 3)
+                if self.is_handoff_tool_call(function_call) {
+                    info!(
+                        "Handoff tool call detected: id={}, tool={}, loop={}",
+                        execution_id, function_call.name, loop_num
+                    );
+
+                    // Execute handoff (Phase 5 will implement full delegation)
+                    match self
+                        .execute_handoff(function_call, paladin, execution_id)
+                        .await
+                    {
+                        Ok(handoff_result) => {
+                            accumulated_output.push_str("\n\n");
+                            accumulated_output.push_str(&handoff_result);
+
+                            // Store handoff result in garrison if available
+                            if let Some(garrison) = &self.garrison {
+                                let tool_entry =
+                                    GarrisonEntry::new(ConversationRole::Tool, handoff_result);
+                                garrison.remember(tool_entry).await?;
+                            }
+                        }
+                        Err(e) => {
+                            warn!(
+                                "Handoff execution failed: id={}, error={}",
+                                execution_id, e
+                            );
+                            let error_message = format!(
+                                "\n\n🤝 Handoff Execution: {}\nResult: FAILED\nError: {}\n",
+                                function_call.name, e
+                            );
+                            accumulated_output.push_str(&error_message);
+                        }
+                    }
+                } else if let Some(ref arsenal) = self.arsenal {
+                    // Regular tool execution (not a handoff)
                     debug!(
                         "Tool call detected: id={}, tool={}, loop={}",
                         execution_id, function_call.name, loop_num
@@ -696,13 +847,15 @@ impl PaladinExecutionService {
                     self.extract_memories_async(paladin, &conversation_history, execution_id);
                 }
 
+                // Return result with autonomous metadata (Phase 2 enhancement)
                 return Ok(PaladinResult {
                     output: accumulated_output,
                     token_count: total_tokens,
                     execution_time_ms: start_time.elapsed().as_millis() as u64,
                     loop_count: loop_num,
                     stop_reason: StopReason::MaxLoops,
-                    ..Default::default()
+                    plan: task_plan,             // Layer 1 metadata
+                    handoff_history: vec![]     // Layer 3 metadata (Phase 5 will populate)
                 });
             }
         }
@@ -727,7 +880,8 @@ impl PaladinExecutionService {
             execution_time_ms: start_time.elapsed().as_millis() as u64,
             loop_count: paladin.node.max_loops.as_u32(),
             stop_reason: StopReason::Completed,
-            ..Default::default()
+            plan: task_plan,            // Layer 1 metadata
+            handoff_history: vec![]     // Layer 3 metadata (Phase 5 will populate)
         })
     }
 
@@ -735,6 +889,7 @@ impl PaladinExecutionService {
     ///
     /// Combines the system prompt, RAG context, conversation history from Garrison,
     /// user input, and accumulated output from previous loops.
+    #[allow(dead_code)]
     fn build_prompt_with_history_and_rag(
         &self,
         paladin: &Paladin,
@@ -744,6 +899,62 @@ impl PaladinExecutionService {
         rag_context: Option<&str>,
     ) -> String {
         let mut prompt = format!("{}\n\n", paladin.node.system_prompt);
+
+        // Inject RAG context if available
+        if let Some(context) = rag_context
+            && !context.is_empty()
+        {
+            prompt.push_str("## Relevant Context from Memory\n");
+            prompt.push_str(context);
+            prompt.push_str("\n\n");
+        }
+
+        // Add conversation history if available
+        if !conversation_history.is_empty() {
+            prompt.push_str("Previous conversation:\n");
+            for entry in conversation_history.iter().rev().take(10).rev() {
+                // Most recent 10 entries
+                let role_str = match entry.role {
+                    ConversationRole::System => "System",
+                    ConversationRole::User => "User",
+                    ConversationRole::Assistant => "Assistant",
+                    ConversationRole::Tool => "Tool",
+                };
+                prompt.push_str(&format!("{}: {}\n", role_str, entry.content));
+            }
+            prompt.push('\n');
+        }
+
+        prompt.push_str(&format!("User: {}\n", input));
+
+        if !accumulated_output.is_empty() {
+            prompt.push_str(&format!("Previous output: {}\n", accumulated_output));
+        }
+
+        prompt
+    }
+
+    /// Builds the prompt for an LLM call with custom system prompt
+    ///
+    /// This variant supports Layer 1 (prompt generation) by accepting a custom
+    /// system prompt parameter instead of using paladin.node.system_prompt.
+    ///
+    /// # Arguments
+    ///
+    /// * `system_prompt` - The system prompt to use (generated or original)
+    /// * `input` - User input for this execution
+    /// * `accumulated_output` - Output accumulated from previous loops
+    /// * `conversation_history` - Recent conversation from Garrison
+    /// * `rag_context` - Optional RAG context from Sanctum
+    fn build_prompt_with_custom_system(
+        &self,
+        system_prompt: &str,
+        input: &str,
+        accumulated_output: &str,
+        conversation_history: &[GarrisonEntry],
+        rag_context: Option<&str>,
+    ) -> String {
+        let mut prompt = format!("{}\n\n", system_prompt);
 
         // Inject RAG context if available
         if let Some(context) = rag_context
@@ -920,7 +1131,7 @@ impl PaladinExecutionService {
     fn check_stop_words(&self, paladin: &Paladin, output: &str) -> Option<String> {
         let output_lower = output.to_lowercase();
 
-        for stop_word in &paladin.node.stop_words {
+        for stop_word in paladin.node.stop_words.iter() {
             let stop_word_lower = stop_word.to_lowercase();
 
             // Check for exact word match (case-insensitive)
@@ -930,6 +1141,388 @@ impl PaladinExecutionService {
         }
 
         None
+    }
+
+    //
+    // ==================== AUTONOMOUS ORCHESTRATION LAYERS ====================
+    // Phase 4 (Epic 21): Layered autonomous feature execution
+    // Layer 0: Core execution (always runs)
+    // Layer 1: Planning & Prompts (optional, pre-execution)
+    // Layer 2: Dynamic Temperature (optional, per-loop)
+    // Layer 3: Handoff Detection (optional, post-LLM)
+    // =========================================================================
+    //
+
+    /// Layer 1: Apply planning if autonomous_planning is enabled
+    ///
+    /// Generates a task plan before execution begins. If planning fails,
+    /// logs a warning and continues with core execution (graceful degradation).
+    ///
+    /// # Arguments
+    ///
+    /// * `paladin` - The Paladin configuration
+    /// * `input` - User input/task description
+    /// * `execution_id` - Unique execution ID for logging
+    ///
+    /// # Returns
+    ///
+    /// `Some(TaskPlan)` if planning succeeds, `None` if disabled or failed
+    async fn apply_layer1_planning(
+        &self,
+        paladin: &Paladin,
+        input: &str,
+        execution_id: uuid::Uuid,
+    ) -> Option<crate::core::platform::container::planning::TaskPlan> {
+        // Check if planning is enabled
+        if !paladin.node.autonomous_planning {
+            debug!(
+                "Planning disabled: execution_id={}, autonomous_planning=false",
+                execution_id
+            );
+            return None;
+        }
+
+        // Check if planning service is available
+        let planning_service = match &self.planning_service {
+            Some(service) => service,
+            None => {
+                warn!(
+                    "Planning enabled but no planning service configured: execution_id={}",
+                    execution_id
+                );
+                return None;
+            }
+        };
+
+        info!(
+            "Generating task plan: execution_id={}, input_len={}",
+            execution_id,
+            input.len()
+        );
+
+        // Use model from paladin config (Phase 1 enhancement)
+        let model = paladin.node.model.as_str();
+
+        // Attempt to generate plan with graceful degradation
+        match planning_service.create_plan(input, 10, model).await {
+            Ok(plan) => {
+                info!(
+                    "Planning succeeded: execution_id={}, subtasks={}",
+                    execution_id,
+                    plan.subtasks.len()
+                );
+                Some(plan)
+            }
+            Err(e) => {
+                warn!(
+                    "Planning failed, continuing with core execution: execution_id={}, error={}",
+                    execution_id, e
+                );
+                None
+            }
+        }
+    }
+
+    /// Layer 1: Apply prompt generation if autonomous_prompts is enabled
+    ///
+    /// Generates a dynamic system prompt based on agent description. If generation
+    /// fails, logs a warning and uses the existing system prompt (graceful degradation).
+    ///
+    /// # Arguments
+    ///
+    /// * `paladin` - The Paladin configuration (may be mutated if prompt generation succeeds)
+    /// * `execution_id` - Unique execution ID for logging
+    ///
+    /// # Returns
+    ///
+    /// `Some(String)` with the generated prompt if successful, `None` if disabled or failed
+    async fn apply_layer1_prompt_generation(
+        &self,
+        paladin: &Paladin,
+        execution_id: uuid::Uuid,
+    ) -> Option<String> {
+        // Check if prompt generation is enabled
+        if !paladin.node.autonomous_prompts {
+            debug!(
+                "Prompt generation disabled: execution_id={}, autonomous_prompts=false",
+                execution_id
+            );
+            return None;
+        }
+
+        // Check if prompt generation service is available
+        let prompt_service = match &self.prompt_generation_service {
+            Some(service) => service,
+            None => {
+                warn!(
+                    "Prompt generation enabled but no prompt service configured: execution_id={}",
+                    execution_id
+                );
+                return None;
+            }
+        };
+
+        // Check if agent has a description (required for prompt generation)
+        if paladin.node.agent_description.is_empty() {
+            warn!(
+                "Prompt generation enabled but agent_description is empty: execution_id={}",
+                execution_id
+            );
+            return None;
+        }
+
+        info!(
+            "Generating system prompt: execution_id={}, agent={}",
+            execution_id, paladin.node.name
+        );
+
+        // Use model from paladin config (Phase 1 enhancement)
+        let model = paladin.node.model.as_str();
+
+        // Attempt to generate prompt with graceful degradation
+        match prompt_service
+            .generate_prompt(&paladin.node.name, &paladin.node.agent_description, model)
+            .await
+        {
+            Ok(generated_prompt) => {
+                info!(
+                    "Prompt generation succeeded: execution_id={}, prompt_len={}",
+                    execution_id,
+                    generated_prompt.len()
+                );
+                Some(generated_prompt)
+            }
+            Err(e) => {
+                warn!(
+                    "Prompt generation failed, using original prompt: execution_id={}, error={}",
+                    execution_id, e
+                );
+                None
+            }
+        }
+    }
+
+    /// Layer 2: Calculate dynamic temperature for current loop iteration
+    ///
+    /// Applies temperature adjustment based on loop progress if dynamic_temperature is enabled.
+    /// Temperature increases linearly from configured base to 1.0 over max_loops.
+    ///
+    /// # Arguments
+    ///
+    /// * `paladin` - The Paladin configuration
+    /// * `loop_num` - Current loop iteration (1-indexed)
+    ///
+    /// # Returns
+    ///
+    /// Adjusted temperature value (base_temp + progress * (1.0 - base_temp))
+    fn apply_layer2_dynamic_temperature(&self, paladin: &Paladin, loop_num: u32) -> f32 {
+        // If dynamic temperature is disabled, return configured temperature
+        if !paladin.node.dynamic_temperature {
+            return paladin.node.temperature;
+        }
+
+        let base_temp = paladin.node.temperature;
+        let max_loops = paladin.node.max_loops.as_u32() as f32;
+        let current_loop = loop_num as f32;
+
+        // Linear interpolation: temp = base + progress * (1.0 - base)
+        // Loop 1: base_temp, Loop max: 1.0
+        let progress = (current_loop - 1.0) / (max_loops - 1.0).max(1.0);
+        let adjusted_temp = base_temp + progress * (1.0 - base_temp);
+
+        debug!(
+            "Dynamic temperature: loop={}/{}, base={}, adjusted={}",
+            loop_num, paladin.node.max_loops, base_temp, adjusted_temp
+        );
+
+        adjusted_temp.clamp(0.0, 1.0)
+    }
+
+    /// Layer 3: Check if response contains handoff tool call
+    ///
+    /// Examines the LLM function call to determine if it's a handoff request.
+    /// Handoff execution will be implemented in Phase 5.
+    ///
+    /// # Arguments
+    ///
+    /// * `function_call` - The function call from LLM response
+    ///
+    /// # Returns
+    ///
+    /// `true` if this is a handoff tool call, `false` otherwise
+    fn is_handoff_tool_call(&self, function_call: &FunctionCall) -> bool {
+        function_call.name == "handoff_to_specialist"
+    }
+
+    /// Layer 3: Placeholder for handoff execution (Phase 5)
+    ///
+    /// In Phase 5, this will delegate execution to a specialist Paladin
+    /// and return the result. For now, it returns a placeholder message.
+    ///
+    /// # Arguments
+    ///
+    /// * `function_call` - The handoff tool call from LLM
+    /// * `paladin` - The current Paladin (coordinator)
+    /// * `execution_id` - Unique execution ID for logging
+    ///
+    /// # Returns
+    ///
+    /// Formatted handoff result to inject into conversation
+    #[allow(unused_variables)]
+    async fn execute_handoff(
+        &self,
+        function_call: &FunctionCall,
+        paladin: &Paladin,
+        execution_id: uuid::Uuid,
+    ) -> Result<String, PaladinError> {
+        warn!(
+            "Handoff detected but execution not yet implemented: execution_id={}, tool={}",
+            execution_id, function_call.name
+        );
+
+        // Phase 5 will implement actual handoff execution via HandoffService
+        Ok(format!(
+            "\n\n🤝 Handoff Tool Call: {}\nStatus: PLACEHOLDER (Phase 5 implementation pending)\nNote: Handoff execution will be implemented in Epic 21, Phase 5\n",
+            function_call.name
+        ))
+    }
+
+    //
+    // ==================== END AUTONOMOUS LAYERS ====================
+    //
+
+    /// Executes an LLM call with retry logic, circuit breaker, and custom temperature
+    ///
+    /// This variant supports Layer 2 (dynamic temperature) by accepting a temperature
+    /// parameter instead of using paladin.node.temperature.
+    ///
+    /// Implements exponential backoff: 100ms, 200ms, 400ms, etc.
+    ///
+    /// # Arguments
+    ///
+    /// * `paladin` - The Paladin configuration
+    /// * `prompt` - The prompt to send to the LLM
+    /// * `temperature` - The temperature value to use for this call
+    /// * `execution_id` - Unique ID for this execution (for logging)
+    /// * `loop_num` - Current loop iteration number
+    ///
+    /// # Returns
+    ///
+    /// LLM response on success
+    ///
+    /// # Errors
+    ///
+    /// Returns `PaladinError` if:
+    /// - Circuit breaker is open
+    /// - All retry attempts are exhausted
+    /// - LLM call fails with a non-retryable error
+    async fn execute_with_retry_and_temperature(
+        &self,
+        paladin: &Paladin,
+        prompt: &str,
+        temperature: f32,
+        execution_id: uuid::Uuid,
+        loop_num: u32,
+    ) -> Result<crate::application::ports::output::llm_port::LlmResponse, PaladinError> {
+        let mut attempt = 0;
+        let max_attempts = paladin.node.max_loops.as_u32().min(10); // Cap retries at 10
+
+        loop {
+            attempt += 1;
+
+            debug!(
+                "LLM call attempt: id={}, loop={}, attempt={}/{}, temperature={}",
+                execution_id, loop_num, attempt, max_attempts, temperature
+            );
+
+            // Create prompt item with custom temperature
+            let prompt_data = PromptData {
+                prompt_type: PromptType::User(UserPrompt {
+                    query: prompt.to_string(),
+                    context: None,
+                }),
+                content_attachments: vec![],
+                parameters: PromptParameters {
+                    max_tokens: None,
+                    temperature: Some(temperature), // Use provided temperature
+                    top_p: None,
+                    frequency_penalty: None,
+                    presence_penalty: None,
+                    stop_sequences: if paladin.node.stop_words.is_empty() {
+                        None
+                    } else {
+                        Some(paladin.node.stop_words.clone())
+                    },
+                },
+                context: None,
+                expected_output: None,
+                tags: None,
+                category: None,
+                author: None,
+                metadata: BTreeMap::new(),
+            };
+
+            let prompt_item = PromptItem {
+                node: Node::new(prompt_data, Some(format!("execution-{}", execution_id))),
+            };
+
+            // Create LLM request
+            let request = LlmRequest {
+                id: uuid::Uuid::new_v4(),
+                model: paladin.node.model.clone(),
+                prompt: prompt_item,
+                attachments: vec![],
+                stream: false,
+                metadata: std::collections::HashMap::new(),
+            };
+
+            // Wrap LLM call with circuit breaker (async version)
+            let llm_port = Arc::clone(&self.llm_port);
+            let result = self
+                .circuit_breaker
+                .call_async(async move {
+                    match llm_port.generate(request).await {
+                        Ok(response) => Ok(response),
+                        Err(e) => Err(PaladinError::LlmError(e.to_string())),
+                    }
+                })
+                .await;
+
+            match result {
+                Ok(response) => {
+                    debug!(
+                        "LLM call succeeded: id={}, loop={}, attempt={}",
+                        execution_id, loop_num, attempt
+                    );
+                    return Ok(response);
+                }
+                Err(PaladinError::CircuitBreakerOpen) => {
+                    // Circuit breaker is open, fail fast
+                    error!(
+                        "Circuit breaker open: id={}, loop={}",
+                        execution_id, loop_num
+                    );
+                    return Err(PaladinError::CircuitBreakerOpen);
+                }
+                Err(_e) if attempt >= max_attempts => {
+                    // Exhausted retries
+                    error!(
+                        "Max retries exhausted: id={}, loop={}, attempts={}",
+                        execution_id, loop_num, attempt
+                    );
+                    return Err(PaladinError::MaxRetriesExceeded(attempt));
+                }
+                Err(e) => {
+                    // Retry with exponential backoff
+                    let backoff_ms = 100 * 2u64.pow(attempt - 1); // 100ms, 200ms, 400ms, ...
+                    warn!(
+                        "LLM call failed, retrying: id={}, loop={}, attempt={}, backoff_ms={}, error={}",
+                        execution_id, loop_num, attempt, backoff_ms, e
+                    );
+                    sleep(Duration::from_millis(backoff_ms)).await;
+                }
+            }
+        }
     }
 
     /// Executes an LLM call with retry logic and circuit breaker
@@ -946,6 +1539,7 @@ impl PaladinExecutionService {
     /// # Returns
     ///
     /// The LLM response or an error after exhausting retries
+    #[allow(dead_code)]
     async fn execute_with_retry(
         &self,
         paladin: &Paladin,

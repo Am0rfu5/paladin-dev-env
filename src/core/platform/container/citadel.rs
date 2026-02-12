@@ -59,6 +59,30 @@ pub struct PaladinData {
     pub stop_words: Vec<String>,
     pub status: PaladinStatus,
     pub vision_enabled: bool,
+    pub autonomous_planning: bool,
+    pub autonomous_prompts: bool,
+    pub agent_description: String,
+    pub dynamic_temperature: bool,
+}
+
+impl Default for PaladinData {
+    fn default() -> Self {
+        Self {
+            system_prompt: String::new(),
+            name: String::new(),
+            user_name: String::new(),
+            model: String::new(),
+            temperature: 0.7,
+            max_loops: MaxLoops::Fixed(3),
+            stop_words: Vec::new(),
+            status: PaladinStatus::Idle,
+            vision_enabled: false,
+            autonomous_planning: false,
+            autonomous_prompts: false,
+            agent_description: String::new(),
+            dynamic_temperature: false,
+        }
+    }
 }
 
 /// Status of a Paladin agent
@@ -361,6 +385,7 @@ mod tests {
             stop_words: vec!["STOP".to_string()],
             status: PaladinStatus::Idle,
             vision_enabled: false,
+            ..Default::default()
         }
     }
 

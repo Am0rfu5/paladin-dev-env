@@ -219,7 +219,7 @@ impl ConclaveExecutionService {
             let retry_attempts = conclave.config.retry_attempts;
             let observability = conclave.config.observability_level;
 
-            let task = tokio::spawn(async move {
+            let task: tokio::task::JoinHandle<Result<(PaladinResult, u64, u32), PaladinError>> = tokio::spawn(async move {
                 Self::execute_expert_with_retry(
                     paladin_port,
                     &expert_clone,
@@ -242,8 +242,9 @@ impl ConclaveExecutionService {
                         "Expert '{}' succeeded after {} retries in {}ms",
                         expert_name, retries, execution_time
                     );
-                    expert_outputs.insert(expert_name.clone(), result);
-                    expert_times.insert(expert_name.clone(), execution_time);
+                    let expert_name_string: String = expert_name.clone();
+                    expert_outputs.insert(expert_name_string.clone(), result);
+                    expert_times.insert(expert_name_string.clone(), execution_time);
                     retry_counts.insert(expert_name, retries);
                 }
                 Ok(Err(e)) => {
@@ -602,6 +603,7 @@ mod tests {
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,
+            ..Default::default()
         };
 
         Node::new(data, Some(name.to_string()))

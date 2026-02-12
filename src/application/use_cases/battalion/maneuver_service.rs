@@ -581,6 +581,7 @@ mod tests {
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,
+            ..Default::default()
         };
         Paladin::new(data, None)
     }

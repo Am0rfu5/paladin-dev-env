@@ -69,6 +69,7 @@ fn create_paladin(name: &str) -> Paladin {
         stop_words: vec![],
         status: PaladinStatus::Idle,
         vision_enabled: false,
+        ..Default::default()
     };
     Node::new(data, None)
 }

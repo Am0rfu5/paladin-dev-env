@@ -44,6 +44,7 @@ fn test_paladin_data_serialization_roundtrip() {
         stop_words: vec!["STOP".to_string(), "END".to_string()],
         status: PaladinStatus::Idle,
         vision_enabled: false,
+            ..Default::default()
     };
 
     // Serialize to JSON
@@ -75,6 +76,7 @@ fn test_paladin_data_clone() {
         stop_words: vec!["STOP".to_string()],
         status: PaladinStatus::Reasoning,
         vision_enabled: false,
+            ..Default::default()
     };
 
     let cloned = original.clone();
@@ -97,6 +99,7 @@ fn test_paladin_node_creation() {
         stop_words: vec!["DONE".to_string()],
         status: PaladinStatus::Idle,
         vision_enabled: false,
+            ..Default::default()
     };
 
     let paladin: Paladin = Node::new(data.clone(), Some("CodeReviewer".to_string()));

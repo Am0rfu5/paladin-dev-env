@@ -416,9 +416,10 @@ impl Commander {
                     );
 
                 // Add all Paladins to the campaign
-                let mut paladin_ids = Vec::new();
+                let mut paladin_ids: Vec<uuid::Uuid> = Vec::new();
                 for paladin in &self.paladins {
-                    let id = campaign.add_paladin(paladin.clone());
+                    let paladin_clone: crate::core::platform::container::paladin::Paladin = paladin.clone();
+                    let id = campaign.add_paladin(paladin_clone);
                     paladin_ids.push(id);
                 }
 
@@ -1515,6 +1516,7 @@ mod tests {
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,
+            ..Default::default()
         };
         Node::new(data, Some("TestPaladin".to_string()))
     }
@@ -2305,6 +2307,7 @@ mod tests {
                 stop_words: vec![],
                 status: PaladinStatus::Idle,
                 vision_enabled: false,
+                ..Default::default()
             };
             paladins.push(Node::new(data, Some(format!("agent{}", i))));
         }
@@ -2377,6 +2380,7 @@ mod tests {
                 stop_words: vec![],
                 status: PaladinStatus::Idle,
                 vision_enabled: false,
+                ..Default::default()
             };
             paladins.push(Node::new(data, Some(format!("agent{}", i))));
         }
@@ -2516,6 +2520,7 @@ mod tests {
                 stop_words: vec![],
                 status: PaladinStatus::Idle,
                 vision_enabled: false,
+                ..Default::default()
             };
             paladins.push(Node::new(data, Some(format!("agent{}", i))));
         }
@@ -2553,6 +2558,7 @@ mod tests {
                 stop_words: vec![],
                 status: PaladinStatus::Idle,
                 vision_enabled: false,
+                ..Default::default()
             };
             paladins.push(Node::new(data, Some(format!("agent{}", i))));
         }
@@ -2616,6 +2622,7 @@ mod tests {
                 stop_words: vec![],
                 status: PaladinStatus::Idle,
                 vision_enabled: false,
+                ..Default::default()
             };
             paladins.push(Node::new(data, Some(format!("agent{}", i))));
         }
@@ -2652,6 +2659,7 @@ mod tests {
                 stop_words: vec![],
                 status: PaladinStatus::Idle,
                 vision_enabled: false,
+                ..Default::default()
             };
             paladins.push(Node::new(data, Some(format!("agent{}", i))));
         }

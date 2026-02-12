@@ -34,7 +34,7 @@
 //! # }
 //! ```
 
-use crate::application::ports::output::paladin_port::PaladinPort;
+use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult};
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::platform::container::battalion::BattalionError;
 use crate::core::platform::container::battalion::chain_of_command::{
@@ -305,12 +305,12 @@ Important: Use the exact specialist names shown above. Separate multiple special
 
         // Spawn concurrent execution for all specialists
         for specialist in chain.specialists() {
-            let specialist_clone = specialist.clone();
+            let specialist_clone: crate::core::platform::container::paladin::Paladin = specialist.clone();
             let input_clone = input.to_string();
             let port_clone = Arc::clone(&self.paladin_port);
 
             join_set.spawn(async move {
-                let result = port_clone.execute(&specialist_clone, &input_clone).await;
+                let result: Result<PaladinResult, PaladinError> = port_clone.execute(&specialist_clone, &input_clone).await;
                 (specialist_clone.node.name.clone(), result)
             });
         }

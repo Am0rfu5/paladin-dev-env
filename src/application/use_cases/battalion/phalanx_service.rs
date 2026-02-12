@@ -13,6 +13,7 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult};
+use crate::application::use_cases::paladin::error::PaladinError;
 use crate::application::use_cases::battalion::error_aggregation::AggregatedError;
 use crate::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use crate::core::platform::container::battalion::{BattalionError, BattalionResult, ErrorStrategy};
@@ -277,12 +278,12 @@ impl PhalanxExecutionService {
         let mut tasks = Vec::new();
 
         for paladin in phalanx.paladins() {
-            let paladin_clone = paladin.clone();
+            let paladin_clone: crate::core::platform::container::paladin::Paladin = paladin.clone();
             let input_clone = input.to_string();
             let port = self.paladin_port.clone();
             let semaphore_clone = semaphore.clone();
 
-            let task = tokio::spawn(async move {
+            let task: tokio::task::JoinHandle<Result<PaladinResult, PaladinError>> = tokio::spawn(async move {
                 // Acquire semaphore permit if concurrency limiting is enabled
                 let _permit = if let Some(sem) = &semaphore_clone {
                     Some(sem.acquire().await.unwrap())
@@ -327,11 +328,11 @@ impl PhalanxExecutionService {
         let mut futures: Vec<BoxFuture<Result<PaladinResult, BattalionError>>> = Vec::new();
 
         for paladin in phalanx.paladins() {
-            let paladin_clone = paladin.clone();
+            let paladin_clone: crate::core::platform::container::paladin::Paladin = paladin.clone();
             let input_clone = input.to_string();
             let port = self.paladin_port.clone();
 
-            let fut = async move {
+            let fut: BoxFuture<Result<PaladinResult, BattalionError>> = async move {
                 port.execute(&paladin_clone, &input_clone)
                     .await
                     .map_err(|e| BattalionError::PaladinError(e.to_string()))
@@ -523,6 +524,7 @@ mod tests {
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,
+            ..Default::default()
         };
         Node::new(data, Some(name.to_string()))
     }

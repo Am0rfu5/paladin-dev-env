@@ -144,6 +144,7 @@ fn create_expert_paladin(name: &str, expertise: &str) -> Paladin {
         stop_words: vec![],
         status: PaladinStatus::Idle,
         vision_enabled: false,
+        ..Default::default()
     };
     Node::new(data, Some(name.to_string()))
 }

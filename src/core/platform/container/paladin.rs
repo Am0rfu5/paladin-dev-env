@@ -20,6 +20,10 @@
 //!     stop_words: vec!["STOP".to_string()],
 //!     status: PaladinStatus::Idle,
 //!     vision_enabled: false,
+//!     autonomous_planning: false,
+//!     autonomous_prompts: false,
+//!     agent_description: String::new(),
+//!     dynamic_temperature: false,
 //! };
 //!
 //! let paladin = Node::new(data, Some("MyPaladin".to_string()));
@@ -162,6 +166,37 @@ pub struct PaladinData {
 
     /// Whether vision capabilities are enabled for this Paladin
     pub vision_enabled: bool,
+
+    /// Whether autonomous planning mode is enabled (Layer 1)
+    ///
+    /// When true, the Paladin will use PlanningService to decompose complex
+    /// tasks into subtasks before execution. Requires planning service to be
+    /// configured in PaladinExecutionService.
+    #[serde(default)]
+    pub autonomous_planning: bool,
+
+    /// Whether auto-generate system prompt is enabled (Layer 1)
+    ///
+    /// When true, the Paladin will use PromptGenerationService to generate
+    /// a contextual system prompt based on agent_description. Requires prompt
+    /// generation service to be configured in PaladinExecutionService.
+    #[serde(default)]
+    pub autonomous_prompts: bool,
+
+    /// Agent description used for autonomous prompt generation
+    ///
+    /// Provides context for generating system prompts when autonomous_prompts
+    /// is enabled. Should describe the agent's role and capabilities.
+    #[serde(default)]
+    pub agent_description: String,
+
+    /// Whether dynamic temperature adjustment is enabled (Layer 2)
+    ///
+    /// When true, temperature increases linearly from the configured base
+    /// value to 1.0 over the course of max_loops iterations. This encourages
+    /// exploration in later loops when the agent might be stuck.
+    #[serde(default)]
+    pub dynamic_temperature: bool,
 }
 
 /// Type alias for a Paladin entity following the `Node<T>` pattern
@@ -182,6 +217,10 @@ pub struct PaladinData {
 ///     stop_words: vec!["DONE".to_string()],
 ///     status: PaladinStatus::Idle,
 ///     vision_enabled: false,
+///     autonomous_planning: false,
+///     autonomous_prompts: false,
+///     agent_description: String::new(),
+///     dynamic_temperature: false,
 /// };
 ///
 /// let paladin: Paladin = Node::new(data, Some("CodeReviewer".to_string()));
@@ -202,6 +241,10 @@ impl Default for PaladinData {
     /// - `stop_words`: Empty vector
     /// - `status`: Idle
     /// - `vision_enabled`: false
+    /// - `autonomous_planning`: false
+    /// - `autonomous_prompts`: false
+    /// - `agent_description`: Empty string
+    /// - `dynamic_temperature`: false
     fn default() -> Self {
         Self {
             system_prompt: String::new(),
@@ -213,6 +256,10 @@ impl Default for PaladinData {
             stop_words: Vec::new(),
             status: PaladinStatus::Idle,
             vision_enabled: false,
+            autonomous_planning: false,
+            autonomous_prompts: false,
+            agent_description: String::new(),
+            dynamic_temperature: false,
         }
     }
 }

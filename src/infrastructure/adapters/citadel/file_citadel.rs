@@ -361,6 +361,7 @@ mod tests {
             stop_words: vec![],
             status: PaladinStatus::Idle,
             vision_enabled: false,
+            ..Default::default()
         };
         let paladin = Node::new(paladin_data, Some("test".to_string()));
         PaladinState::new(paladin, vec![], vec![])
