@@ -115,6 +115,47 @@ impl BattalionConfig {
         self.metadata_output_dir = Some(dir);
         self
     }
+
+    /// Validate the metadata output directory, if configured
+    ///
+    /// Checks that the directory exists and is writable. If `metadata_output_dir`
+    /// is `None`, validation passes trivially.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the directory is valid or not configured
+    /// * `Err(String)` with a description of the validation failure
+    pub fn validate_metadata_dir(&self) -> Result<(), String> {
+        if let Some(dir) = &self.metadata_output_dir {
+            if !dir.exists() {
+                // Attempt to create the directory
+                std::fs::create_dir_all(dir).map_err(|e| {
+                    format!(
+                        "Metadata output directory '{}' does not exist and could not be created: {}",
+                        dir.display(),
+                        e
+                    )
+                })?;
+            }
+            if !dir.is_dir() {
+                return Err(format!(
+                    "Metadata output path '{}' is not a directory",
+                    dir.display()
+                ));
+            }
+            // Check writability by attempting to create a temp file
+            let test_path = dir.join(".paladin_write_test");
+            std::fs::write(&test_path, b"test").map_err(|e| {
+                format!(
+                    "Metadata output directory '{}' is not writable: {}",
+                    dir.display(),
+                    e
+                )
+            })?;
+            let _ = std::fs::remove_file(&test_path);
+        }
+        Ok(())
+    }
 }
 
 impl Default for BattalionConfig {
@@ -1237,4 +1278,66 @@ fn test_battalion_strategy_serialization() {
     let serialized = serde_json::to_string(&auto).unwrap();
     let deserialized: BattalionStrategy = serde_json::from_str(&serialized).unwrap();
     assert_eq!(auto, deserialized);
+}
+
+// ── Task 8.0: Commander metadata export configuration tests ──
+
+#[test]
+fn test_battalion_config_with_metadata_dir() {
+    let dir = std::env::temp_dir().join("paladin_test_metadata_8_0");
+    let config = BattalionConfig::new("meta_test")
+        .with_timeout(120)
+        .with_metadata_dir(dir.clone());
+
+    assert_eq!(config.metadata_output_dir, Some(dir.clone()));
+    assert!(config.validate_metadata_dir().is_ok());
+
+    // Cleanup
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn test_battalion_config_without_metadata_dir() {
+    let config = BattalionConfig::new("no_meta_test").with_timeout(120);
+
+    assert_eq!(config.metadata_output_dir, None);
+    assert!(config.validate_metadata_dir().is_ok());
+}
+
+#[test]
+fn test_battalion_config_metadata_dir_not_a_directory() {
+    let file_path = std::env::temp_dir().join("paladin_test_not_a_dir_8_0");
+    // Create a file (not a directory)
+    std::fs::write(&file_path, b"not a directory").unwrap();
+
+    let config = BattalionConfig::new("not_dir_test")
+        .with_timeout(120)
+        .with_metadata_dir(file_path.clone());
+
+    let result = config.validate_metadata_dir();
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("is not a directory"));
+
+    // Cleanup
+    let _ = std::fs::remove_file(&file_path);
+}
+
+#[test]
+fn test_battalion_config_metadata_dir_auto_creates() {
+    let dir = std::env::temp_dir().join("paladin_test_auto_create_8_0");
+    // Ensure it doesn't exist
+    let _ = std::fs::remove_dir_all(&dir);
+    assert!(!dir.exists());
+
+    let config = BattalionConfig::new("auto_create_test")
+        .with_timeout(120)
+        .with_metadata_dir(dir.clone());
+
+    // validate_metadata_dir should auto-create
+    assert!(config.validate_metadata_dir().is_ok());
+    assert!(dir.exists());
+    assert!(dir.is_dir());
+
+    // Cleanup
+    let _ = std::fs::remove_dir_all(&dir);
 }

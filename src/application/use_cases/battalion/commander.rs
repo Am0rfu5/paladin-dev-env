@@ -1484,6 +1484,11 @@ impl CommanderBuilder {
             ));
         }
 
+        // Validate metadata output directory if configured
+        config.validate_metadata_dir().map_err(|e| {
+            BattalionError::CommanderValidation(format!("Metadata directory error: {}", e))
+        })?;
+
         let mut commander =
             Commander::new(strategy, paladins, config, aggregator, self.paladin_port);
 
@@ -2720,5 +2725,48 @@ mod tests {
             "Maneuver with nested sequential pattern should succeed: {:?}",
             result.err()
         );
+    }
+
+    // ── Task 8.0: Commander metadata export configuration tests ──
+
+    #[tokio::test]
+    async fn test_commander_build_with_valid_metadata_dir() {
+        let dir = std::env::temp_dir().join("paladin_cmd_meta_valid_8_0");
+        let _ = std::fs::remove_dir_all(&dir);
+
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin()];
+        let config = BattalionConfig::new("meta_test")
+            .with_timeout(120)
+            .with_metadata_dir(dir.clone());
+
+        let result = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Formation)
+            .paladins(paladins)
+            .config(config)
+            .build();
+
+        assert!(
+            result.is_ok(),
+            "Build should succeed with valid metadata dir"
+        );
+        assert!(dir.exists(), "Metadata dir should be auto-created");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_commander_build_without_metadata_dir() {
+        let paladin_port = Arc::new(MockPaladinPort);
+        let paladins = vec![create_test_paladin()];
+        let config = BattalionConfig::new("no_meta_test").with_timeout(120);
+
+        let result = CommanderBuilder::new(paladin_port)
+            .strategy(BattalionStrategy::Formation)
+            .paladins(paladins)
+            .config(config)
+            .build();
+
+        assert!(result.is_ok(), "Build should succeed without metadata dir");
     }
 }
