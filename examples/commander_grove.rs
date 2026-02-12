@@ -122,6 +122,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             routing_strategy: RoutingStrategy::KeywordMatch,
             fallback_tree: Some("Backend Specialists".to_string()),
             similarity_threshold: 0.7,
+            routing_fallback: "keyword".to_string(),
+            min_confidence: 0.5,
         })
         .build()?;
 
@@ -172,6 +174,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             routing_strategy: RoutingStrategy::SemanticSimilarity,
             fallback_tree: Some("Backend Specialists".to_string()),
             similarity_threshold: 0.75,
+            routing_fallback: "keyword".to_string(),
+            min_confidence: 0.5,
         })
         .build()?;
 
@@ -230,6 +234,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             routing_strategy: RoutingStrategy::LlmRouting,
             fallback_tree: Some("Backend Specialists".to_string()),
             similarity_threshold: 0.7,
+            routing_fallback: "keyword".to_string(),
+            min_confidence: 0.7,
         })
         .build()?;
 

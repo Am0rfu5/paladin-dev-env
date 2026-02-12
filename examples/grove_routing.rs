@@ -94,6 +94,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         routing_strategy: RoutingStrategy::KeywordMatch,
         fallback_tree: Some("Security Experts".to_string()),
         similarity_threshold: 0.7,
+        routing_fallback: "keyword".to_string(),
+        min_confidence: 0.5,
     };
 
     // Build the Grove

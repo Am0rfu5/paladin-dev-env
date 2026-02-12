@@ -474,9 +474,11 @@ impl OutputFormatter {
             output.push('\n');
 
             for (idx, paladin_result) in result.paladin_results.iter().enumerate() {
+                // Try to find timing from per_paladin_times HashMap by index-based name,
+                // fall back to the PaladinResult's own execution_time_ms
                 let timing = result
                     .per_paladin_times
-                    .get(idx)
+                    .get(&format!("paladin_{}", idx))
                     .copied()
                     .unwrap_or(paladin_result.execution_time_ms);
 
@@ -540,7 +542,7 @@ impl OutputFormatter {
             "strategy_selection_reasoning": result.strategy_selection_reasoning,
             "strategy_selection_time_ms": result.strategy_selection_time_ms,
             "paladin_results": result.paladin_results.iter().enumerate().map(|(idx, r)| {
-                let timing = result.per_paladin_times.get(idx).copied().unwrap_or(r.execution_time_ms);
+                let timing = result.per_paladin_times.get(&format!("paladin_{}", idx)).copied().unwrap_or(r.execution_time_ms);
                 json!({
                     "index": idx,
                     "output": r.output,

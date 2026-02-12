@@ -346,7 +346,14 @@ mod tests {
             strategy_used: BattalionStrategy::Formation,
             strategy_selection_reasoning: None,
             strategy_selection_time_ms: 0,
-            per_paladin_times: vec![1500, 2000],
+            per_paladin_times: [
+                ("paladin_1".to_string(), 1500u64),
+                ("paladin_2".to_string(), 2000u64),
+            ]
+            .into_iter()
+            .collect(),
+            per_paladin_tokens: std::collections::HashMap::new(),
+            total_tokens: 0,
             paladin_success_count: 1,
             paladin_failure_count: 1,
         }

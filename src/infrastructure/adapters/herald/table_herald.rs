@@ -321,7 +321,9 @@ mod tests {
                 crate::core::platform::container::battalion::BattalionStrategy::Formation,
             strategy_selection_reasoning: None,
             strategy_selection_time_ms: 0,
-            per_paladin_times: vec![],
+            per_paladin_times: std::collections::HashMap::new(),
+            per_paladin_tokens: std::collections::HashMap::new(),
+            total_tokens: 0,
             paladin_success_count: 0,
             paladin_failure_count: 0,
         };

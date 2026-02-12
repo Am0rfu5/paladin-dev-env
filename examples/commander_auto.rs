@@ -131,8 +131,8 @@ async fn run_auto_example(
     // Show per-Paladin timing if available
     if !result.per_paladin_times.is_empty() {
         println!("\n   🕐 Per-Paladin Times:");
-        for (i, time_ms) in result.per_paladin_times.iter().enumerate() {
-            println!("      Paladin {} - {}ms", i + 1, time_ms);
+        for (name, time_ms) in &result.per_paladin_times {
+            println!("      {} - {}ms", name, time_ms);
         }
     }
 

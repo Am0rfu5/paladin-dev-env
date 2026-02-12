@@ -245,9 +245,11 @@ impl PhalanxExecutionService {
             strategy_used: crate::core::platform::container::battalion::BattalionStrategy::Phalanx,
             strategy_selection_reasoning: None,
             strategy_selection_time_ms: 0,
-            per_paladin_times: Vec::new(), // TODO: Track individual execution times
-            paladin_success_count: 0,      // Will be calculated from paladin_results
-            paladin_failure_count: 0,      // Will be calculated from paladin_results
+            per_paladin_times: std::collections::HashMap::new(), // TODO: Track individual execution times
+            per_paladin_tokens: std::collections::HashMap::new(),
+            total_tokens: 0,
+            paladin_success_count: 0, // Will be calculated from paladin_results
+            paladin_failure_count: 0, // Will be calculated from paladin_results
         })
     }
 

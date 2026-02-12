@@ -199,20 +199,20 @@ Update the file after completing each sub-task, not just after completing parent
 
 ### Phase 3: Metrics & Export (Days 7-8)
 
-- [ ] 6.0 Extend BattalionMetadata for enhanced metrics (US-22.3)
-  - [ ] 6.1 Open `src/core/platform/container/battalion/battalion_result.rs`
-  - [ ] 6.2 Define `TokenUsage` struct with fields: prompt_tokens, completion_tokens, total_tokens
-  - [ ] 6.3 Derive `Debug, Clone, Serialize, Deserialize` for `TokenUsage`
-  - [ ] 6.4 Add `per_paladin_times: HashMap<String, Duration>` to `BattalionMetadata`
-  - [ ] 6.5 Add `per_paladin_tokens: HashMap<String, TokenUsage>` to `BattalionMetadata`
-  - [ ] 6.6 Add `total_tokens: u64` to `BattalionMetadata`
-  - [ ] 6.7 Update `BattalionMetadata::new()` to initialize new fields as empty/zero
-  - [ ] 6.8 Ensure all fields derive `Serialize, Deserialize` for JSON export
-  - [ ] 6.9 Write test: test_battalion_metadata_serialization
-  - [ ] 6.10 Write test: test_token_usage_aggregation_calculation
-  - [ ] 6.11 Run tests: `cargo test battalion_metadata`
-  - [ ] 6.12 Run clippy: `cargo clippy -- -D warnings`
-  - [ ] 6.13 Format code: `cargo fmt`
+- [x] 6.0 Extend BattalionMetadata for enhanced metrics (US-22.3)
+  - [x] 6.1 Open `src/core/platform/container/battalion/battalion_result.rs`
+  - [x] 6.2 Define `TokenUsage` struct with fields: prompt_tokens, completion_tokens, total_tokens
+  - [x] 6.3 Derive `Debug, Clone, Serialize, Deserialize` for `TokenUsage`
+  - [x] 6.4 Add `per_paladin_times: HashMap<String, Duration>` to `BattalionMetadata`
+  - [x] 6.5 Add `per_paladin_tokens: HashMap<String, TokenUsage>` to `BattalionMetadata`
+  - [x] 6.6 Add `total_tokens: u64` to `BattalionMetadata`
+  - [x] 6.7 Update `BattalionMetadata::new()` to initialize new fields as empty/zero
+  - [x] 6.8 Ensure all fields derive `Serialize, Deserialize` for JSON export
+  - [x] 6.9 Write test: test_battalion_metadata_serialization
+  - [x] 6.10 Write test: test_token_usage_aggregation_calculation
+  - [x] 6.11 Run tests: `cargo test battalion_metadata`
+  - [x] 6.12 Run clippy: `cargo clippy -- -D warnings`
+  - [x] 6.13 Format code: `cargo fmt`
 
 - [ ] 7.0 Implement Phalanx per-paladin metrics collection (US-22.3)
   - [ ] 7.1 Open `src/application/use_cases/battalion/phalanx_service.rs`

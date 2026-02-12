@@ -15,6 +15,7 @@ pub mod phalanx;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
 use uuid::Uuid;
@@ -452,6 +453,40 @@ pub enum BattalionStatus {
     Cancelled,
 }
 
+/// Token usage metrics for a single Paladin execution
+///
+/// Tracks prompt and completion token counts to enable cost analysis
+/// and resource monitoring at the Battalion level.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct TokenUsage {
+    /// Number of tokens in the input prompt
+    pub prompt_tokens: u32,
+    /// Number of tokens in the completion response
+    pub completion_tokens: u32,
+    /// Total tokens used (prompt + completion)
+    pub total_tokens: u32,
+}
+
+impl TokenUsage {
+    /// Create a new `TokenUsage` with specified counts
+    pub fn new(prompt_tokens: u32, completion_tokens: u32) -> Self {
+        Self {
+            prompt_tokens,
+            completion_tokens,
+            total_tokens: prompt_tokens + completion_tokens,
+        }
+    }
+
+    /// Create a `TokenUsage` from a total count only (no prompt/completion breakdown)
+    pub fn from_total(total_tokens: u32) -> Self {
+        Self {
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            total_tokens,
+        }
+    }
+}
+
 /// Result of a Battalion execution
 ///
 /// Contains the final output, individual Paladin results, and execution metadata.
@@ -488,8 +523,14 @@ pub struct BattalionResult {
     /// Time spent on strategy selection in milliseconds
     pub strategy_selection_time_ms: u64,
 
-    /// Execution time for each Paladin in milliseconds
-    pub per_paladin_times: Vec<u64>,
+    /// Execution time for each Paladin in milliseconds, keyed by Paladin name
+    pub per_paladin_times: HashMap<String, u64>,
+
+    /// Token usage metrics for each Paladin, keyed by Paladin name
+    pub per_paladin_tokens: HashMap<String, TokenUsage>,
+
+    /// Total tokens consumed across all Paladin executions
+    pub total_tokens: u64,
 
     /// Count of Paladins that completed successfully
     pub paladin_success_count: usize,
@@ -530,7 +571,9 @@ impl BattalionResult {
             strategy_used: BattalionStrategy::Formation, // Default to Formation
             strategy_selection_reasoning: None,
             strategy_selection_time_ms: 0,
-            per_paladin_times: Vec::new(),
+            per_paladin_times: HashMap::new(),
+            per_paladin_tokens: HashMap::new(),
+            total_tokens: 0,
             paladin_success_count,
             paladin_failure_count,
         }
@@ -579,9 +622,21 @@ impl BattalionResult {
         self
     }
 
-    /// Set the per-Paladin execution times
-    pub fn with_paladin_times(mut self, times: Vec<u64>) -> Self {
+    /// Set the per-Paladin execution times (keyed by Paladin name, values in milliseconds)
+    pub fn with_paladin_times(mut self, times: HashMap<String, u64>) -> Self {
         self.per_paladin_times = times;
+        self
+    }
+
+    /// Set the per-Paladin token usage metrics (keyed by Paladin name)
+    pub fn with_paladin_tokens(mut self, tokens: HashMap<String, TokenUsage>) -> Self {
+        self.per_paladin_tokens = tokens;
+        self
+    }
+
+    /// Set the total token count across all Paladin executions
+    pub fn with_total_tokens(mut self, total_tokens: u64) -> Self {
+        self.total_tokens = total_tokens;
         self
     }
 }
@@ -999,6 +1054,159 @@ mod tests {
                 .to_string()
                 .contains("Registry access failed")
         );
+    }
+
+    #[test]
+    fn test_token_usage_new() {
+        let usage = TokenUsage::new(100, 50);
+        assert_eq!(usage.prompt_tokens, 100);
+        assert_eq!(usage.completion_tokens, 50);
+        assert_eq!(usage.total_tokens, 150);
+    }
+
+    #[test]
+    fn test_token_usage_from_total() {
+        let usage = TokenUsage::from_total(200);
+        assert_eq!(usage.prompt_tokens, 0);
+        assert_eq!(usage.completion_tokens, 0);
+        assert_eq!(usage.total_tokens, 200);
+    }
+
+    #[test]
+    fn test_token_usage_default() {
+        let usage = TokenUsage::default();
+        assert_eq!(usage.prompt_tokens, 0);
+        assert_eq!(usage.completion_tokens, 0);
+        assert_eq!(usage.total_tokens, 0);
+    }
+
+    #[test]
+    fn test_token_usage_serialization() {
+        let usage = TokenUsage::new(100, 50);
+        let json = serde_json::to_string(&usage).unwrap();
+        let deserialized: TokenUsage = serde_json::from_str(&json).unwrap();
+        assert_eq!(usage, deserialized);
+    }
+
+    #[test]
+    fn test_battalion_metadata_serialization() {
+        let mut per_paladin_times = HashMap::new();
+        per_paladin_times.insert("analyst".to_string(), 1500u64);
+        per_paladin_times.insert("reviewer".to_string(), 2300u64);
+
+        let mut per_paladin_tokens = HashMap::new();
+        per_paladin_tokens.insert("analyst".to_string(), TokenUsage::new(500, 200));
+        per_paladin_tokens.insert("reviewer".to_string(), TokenUsage::new(300, 150));
+
+        let result = BattalionResult::new(
+            Uuid::new_v4(),
+            "metadata_test".to_string(),
+            Utc::now(),
+            "output".to_string(),
+            vec![],
+        )
+        .with_paladin_times(per_paladin_times.clone())
+        .with_paladin_tokens(per_paladin_tokens.clone())
+        .with_total_tokens(1150);
+
+        let json = serde_json::to_string(&result).unwrap();
+        let deserialized: BattalionResult = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.per_paladin_times.len(), 2);
+        assert_eq!(
+            deserialized.per_paladin_times.get("analyst"),
+            Some(&1500u64)
+        );
+        assert_eq!(
+            deserialized.per_paladin_times.get("reviewer"),
+            Some(&2300u64)
+        );
+        assert_eq!(deserialized.per_paladin_tokens.len(), 2);
+        assert_eq!(
+            deserialized.per_paladin_tokens.get("analyst"),
+            Some(&TokenUsage::new(500, 200))
+        );
+        assert_eq!(deserialized.total_tokens, 1150);
+    }
+
+    #[test]
+    fn test_token_usage_aggregation_calculation() {
+        let mut per_paladin_tokens = HashMap::new();
+        per_paladin_tokens.insert("agent_a".to_string(), TokenUsage::new(500, 200));
+        per_paladin_tokens.insert("agent_b".to_string(), TokenUsage::new(300, 150));
+        per_paladin_tokens.insert("agent_c".to_string(), TokenUsage::from_total(100));
+
+        // Calculate total from individual token usages
+        let total_tokens: u64 = per_paladin_tokens
+            .values()
+            .map(|t| u64::from(t.total_tokens))
+            .sum();
+
+        assert_eq!(total_tokens, 1250); // 700 + 450 + 100
+
+        let result = BattalionResult::new(
+            Uuid::new_v4(),
+            "aggregation_test".to_string(),
+            Utc::now(),
+            "output".to_string(),
+            vec![],
+        )
+        .with_paladin_tokens(per_paladin_tokens)
+        .with_total_tokens(total_tokens);
+
+        assert_eq!(result.total_tokens, 1250);
+        assert_eq!(result.per_paladin_tokens.len(), 3);
+
+        // Verify individual breakdowns
+        let agent_a = result.per_paladin_tokens.get("agent_a").unwrap();
+        assert_eq!(agent_a.prompt_tokens, 500);
+        assert_eq!(agent_a.completion_tokens, 200);
+        assert_eq!(agent_a.total_tokens, 700);
+
+        let agent_b = result.per_paladin_tokens.get("agent_b").unwrap();
+        assert_eq!(agent_b.prompt_tokens, 300);
+        assert_eq!(agent_b.completion_tokens, 150);
+        assert_eq!(agent_b.total_tokens, 450);
+    }
+
+    #[test]
+    fn test_battalion_result_new_initializes_empty_metrics() {
+        let result = BattalionResult::new(
+            Uuid::new_v4(),
+            "test".to_string(),
+            Utc::now(),
+            "output".to_string(),
+            vec![],
+        );
+
+        assert!(result.per_paladin_times.is_empty());
+        assert!(result.per_paladin_tokens.is_empty());
+        assert_eq!(result.total_tokens, 0);
+    }
+
+    #[test]
+    fn test_battalion_result_builder_methods() {
+        let mut times = HashMap::new();
+        times.insert("paladin_1".to_string(), 1000u64);
+
+        let mut tokens = HashMap::new();
+        tokens.insert("paladin_1".to_string(), TokenUsage::new(100, 50));
+
+        let result = BattalionResult::new(
+            Uuid::new_v4(),
+            "builder_test".to_string(),
+            Utc::now(),
+            "output".to_string(),
+            vec![],
+        )
+        .with_paladin_times(times)
+        .with_paladin_tokens(tokens)
+        .with_total_tokens(150);
+
+        assert_eq!(result.per_paladin_times.len(), 1);
+        assert_eq!(result.per_paladin_times.get("paladin_1"), Some(&1000u64));
+        assert_eq!(result.per_paladin_tokens.len(), 1);
+        assert_eq!(result.total_tokens, 150);
     }
 }
 

@@ -480,7 +480,9 @@ impl Commander {
                     strategy_used: BattalionStrategy::ChainOfCommand,
                     strategy_selection_reasoning: None,
                     strategy_selection_time_ms: 0,
-                    per_paladin_times: Vec::new(),
+                    per_paladin_times: std::collections::HashMap::new(),
+                    per_paladin_tokens: std::collections::HashMap::new(),
+                    total_tokens: 0,
                     paladin_success_count: 0,
                     paladin_failure_count: 0,
                 }
@@ -541,7 +543,9 @@ impl Commander {
                     strategy_used: BattalionStrategy::Conclave,
                     strategy_selection_reasoning: None,
                     strategy_selection_time_ms: 0,
-                    per_paladin_times: Vec::new(),
+                    per_paladin_times: std::collections::HashMap::new(),
+                    per_paladin_tokens: std::collections::HashMap::new(),
+                    total_tokens: 0,
                     paladin_success_count: successful_experts,
                     paladin_failure_count: failed_experts,
                 }
@@ -608,7 +612,9 @@ impl Commander {
                     strategy_used: BattalionStrategy::Council,
                     strategy_selection_reasoning: None,
                     strategy_selection_time_ms: 0,
-                    per_paladin_times: Vec::new(),
+                    per_paladin_times: std::collections::HashMap::new(),
+                    per_paladin_tokens: std::collections::HashMap::new(),
+                    total_tokens: 0,
                     paladin_success_count: total_participants,
                     paladin_failure_count: 0,
                 }
@@ -680,7 +686,9 @@ impl Commander {
                     strategy_used: BattalionStrategy::Grove,
                     strategy_selection_reasoning: None,
                     strategy_selection_time_ms: 0,
-                    per_paladin_times: Vec::new(),
+                    per_paladin_times: std::collections::HashMap::new(),
+                    per_paladin_tokens: std::collections::HashMap::new(),
+                    total_tokens: 0,
                     paladin_success_count: 1,
                     paladin_failure_count: 0,
                 }
@@ -777,18 +785,17 @@ impl Commander {
                 // Convert ManeuverResult to BattalionResult
                 let successful_agents = maneuver_result.execution_order.len();
 
-                // Convert timing metrics to Vec<u64> (just the durations in execution order)
-                let per_paladin_times: Vec<u64> = maneuver_result
+                // Convert timing metrics to HashMap<String, u64> keyed by Paladin name
+                let per_paladin_times: std::collections::HashMap<String, u64> = maneuver_result
                     .timing_metrics
                     .as_ref()
                     .map(|metrics| {
-                        maneuver_result
-                            .execution_order
+                        metrics
                             .iter()
-                            .filter_map(|name| metrics.get(name).map(|d| d.as_millis() as u64))
+                            .map(|(name, d)| (name.clone(), d.as_millis() as u64))
                             .collect()
                     })
-                    .unwrap_or_else(Vec::new);
+                    .unwrap_or_default();
 
                 BattalionResult {
                     battalion_id: Uuid::new_v4(),
@@ -809,6 +816,8 @@ impl Commander {
                     strategy_selection_reasoning: None,
                     strategy_selection_time_ms: 0,
                     per_paladin_times,
+                    per_paladin_tokens: std::collections::HashMap::new(),
+                    total_tokens: 0,
                     paladin_success_count: successful_agents,
                     paladin_failure_count: 0,
                 }
