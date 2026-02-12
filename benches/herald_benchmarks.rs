@@ -40,7 +40,9 @@ fn generate_battalion_result(paladin_count: usize, output_size_per_kb: usize) ->
         .map(|_i| generate_paladin_result(output_size_per_kb))
         .collect();
 
-    let per_paladin_times: Vec<u64> = vec![1000; paladin_count];
+    let per_paladin_times: std::collections::HashMap<String, u64> = (0..paladin_count)
+        .map(|i| (format!("paladin_{}", i), 1000u64))
+        .collect();
 
     BattalionResult {
         battalion_id: Uuid::new_v4(),
@@ -54,6 +56,8 @@ fn generate_battalion_result(paladin_count: usize, output_size_per_kb: usize) ->
         strategy_selection_reasoning: None,
         strategy_selection_time_ms: 0,
         per_paladin_times,
+        per_paladin_tokens: std::collections::HashMap::new(),
+        total_tokens: 0,
         paladin_success_count: paladin_count,
         paladin_failure_count: 0,
     }

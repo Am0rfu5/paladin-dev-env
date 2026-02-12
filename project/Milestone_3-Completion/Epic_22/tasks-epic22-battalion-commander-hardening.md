@@ -214,34 +214,34 @@ Update the file after completing each sub-task, not just after completing parent
   - [x] 6.12 Run clippy: `cargo clippy -- -D warnings`
   - [x] 6.13 Format code: `cargo fmt`
 
-- [ ] 7.0 Implement Phalanx per-paladin metrics collection (US-22.3)
-  - [ ] 7.1 Open `src/application/use_cases/battalion/phalanx_service.rs`
-  - [ ] 7.2 Locate TODO comment at line 270
-  - [ ] 7.3 Write failing test: test_phalanx_per_paladin_timing (TDD)
-  - [ ] 7.4 Write failing test: test_phalanx_per_paladin_tokens (TDD)
-  - [ ] 7.5 Write failing test: test_phalanx_metrics_with_partial_failures (TDD)
-  - [ ] 7.6 In `execute()` method's parallel execution loop
-  - [ ] 7.7 Record start time: `let start = Instant::now()` before each Paladin execution
-  - [ ] 7.8 Execute Paladin and capture result
-  - [ ] 7.9 Record end time and calculate duration: `start.elapsed()`
-  - [ ] 7.10 Store duration in HashMap: `per_paladin_times.insert(paladin_id, duration)`
-  - [ ] 7.11 Extract token usage from `PaladinResult::metadata` if available
-  - [ ] 7.12 Parse token usage into `TokenUsage` struct
-  - [ ] 7.13 Store in HashMap: `per_paladin_tokens.insert(paladin_id, token_usage)`
-  - [ ] 7.14 Track success/failure counts during execution
-  - [ ] 7.15 Calculate `paladin_success_count` from successful results
-  - [ ] 7.16 Calculate `paladin_failure_count` from error results
-  - [ ] 7.17 Calculate `total_tokens` as sum of all token_usage.total_tokens
-  - [ ] 7.18 Populate `metadata.per_paladin_times` with collected HashMap
-  - [ ] 7.19 Populate `metadata.per_paladin_tokens` with collected HashMap
-  - [ ] 7.20 Populate `metadata.total_tokens` with calculated sum
-  - [ ] 7.21 Ensure metrics survive error conditions (use `unwrap_or_default()`)
-  - [ ] 7.22 Run test: `cargo test test_phalanx_per_paladin_timing`
-  - [ ] 7.23 Run test: `cargo test test_phalanx_per_paladin_tokens`
-  - [ ] 7.24 Run test: `cargo test test_phalanx_metrics_with_partial_failures`
-  - [ ] 7.25 Run all Phalanx tests: `cargo test phalanx`
-  - [ ] 7.26 Run clippy: `cargo clippy -- -D warnings`
-  - [ ] 7.27 Format code: `cargo fmt`
+- [x] 7.0 Implement Phalanx per-paladin metrics collection (US-22.3)
+  - [x] 7.1 Open `src/application/use_cases/battalion/phalanx_service.rs`
+  - [x] 7.2 Locate TODO comment at line 270
+  - [x] 7.3 Write failing test: test_phalanx_per_paladin_timing (TDD)
+  - [x] 7.4 Write failing test: test_phalanx_per_paladin_tokens (TDD)
+  - [x] 7.5 Write failing test: test_phalanx_metrics_with_partial_failures (TDD)
+  - [x] 7.6 In `execute()` method's parallel execution loop
+  - [x] 7.7 Record start time: `let start = Instant::now()` before each Paladin execution
+  - [x] 7.8 Execute Paladin and capture result
+  - [x] 7.9 Record end time and calculate duration: `start.elapsed()`
+  - [x] 7.10 Store duration in HashMap: `per_paladin_times.insert(paladin_id, duration)`
+  - [x] 7.11 Extract token usage from `PaladinResult::metadata` if available
+  - [x] 7.12 Parse token usage into `TokenUsage` struct
+  - [x] 7.13 Store in HashMap: `per_paladin_tokens.insert(paladin_id, token_usage)`
+  - [x] 7.14 Track success/failure counts during execution
+  - [x] 7.15 Calculate `paladin_success_count` from successful results
+  - [x] 7.16 Calculate `paladin_failure_count` from error results
+  - [x] 7.17 Calculate `total_tokens` as sum of all token_usage.total_tokens
+  - [x] 7.18 Populate `metadata.per_paladin_times` with collected HashMap
+  - [x] 7.19 Populate `metadata.per_paladin_tokens` with collected HashMap
+  - [x] 7.20 Populate `metadata.total_tokens` with calculated sum
+  - [x] 7.21 Ensure metrics survive error conditions (use `unwrap_or_default()`)
+  - [x] 7.22 Run test: `cargo test test_phalanx_per_paladin_timing`
+  - [x] 7.23 Run test: `cargo test test_phalanx_per_paladin_tokens`
+  - [x] 7.24 Run test: `cargo test test_phalanx_metrics_with_partial_failures`
+  - [x] 7.25 Run all Phalanx tests: `cargo test phalanx`
+  - [x] 7.26 Run clippy: `cargo clippy -- -D warnings`
+  - [x] 7.27 Format code: `cargo fmt`
 
 - [ ] 8.0 Add Commander metadata export configuration (US-22.4)
   - [ ] 8.1 Open `src/core/platform/container/battalion/commander_config.rs`

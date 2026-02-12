@@ -16,7 +16,9 @@ use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult
 use crate::application::use_cases::battalion::error_aggregation::AggregatedError;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
-use crate::core::platform::container::battalion::{BattalionError, BattalionResult, ErrorStrategy};
+use crate::core::platform::container::battalion::{
+    BattalionError, BattalionResult, ErrorStrategy, TokenUsage,
+};
 use crate::core::platform::container::herald::Herald;
 
 #[cfg(test)]
@@ -182,6 +184,13 @@ impl PhalanxExecutionService {
         // Validate aggregation strategy
         self.validate_aggregation_strategy(phalanx)?;
 
+        // Get paladin names for metrics tracking
+        let paladin_names: Vec<String> = phalanx
+            .paladins()
+            .iter()
+            .map(|p| p.node.name.clone())
+            .collect();
+
         // Execute based on aggregation strategy
         let (paladin_results, errors) = match phalanx.aggregation_strategy() {
             AggregationStrategy::CollectAll => self.execute_collect_all(phalanx, input).await?,
@@ -233,6 +242,35 @@ impl PhalanxExecutionService {
             paladin_results.last().unwrap().output.clone()
         };
 
+        // Build per-paladin metrics from execution results
+        let failed_names: Vec<String> = errors
+            .iter()
+            .filter_map(|e| e.split(':').next().map(|s| s.trim().to_string()))
+            .collect();
+
+        let mut per_paladin_times = HashMap::new();
+        let mut per_paladin_tokens = HashMap::new();
+        let mut total_tokens: u64 = 0;
+
+        // Track which successful results map to which paladin names
+        // Results are returned in order matching successful paladins
+        let successful_names: Vec<&String> = paladin_names
+            .iter()
+            .filter(|name| !failed_names.contains(name))
+            .collect();
+
+        for (i, result) in paladin_results.iter().enumerate() {
+            if let Some(name) = successful_names.get(i) {
+                per_paladin_times.insert((*name).clone(), result.execution_time_ms);
+                per_paladin_tokens
+                    .insert((*name).clone(), TokenUsage::from_total(result.token_count));
+                total_tokens += u64::from(result.token_count);
+            }
+        }
+
+        let paladin_success_count = paladin_results.len();
+        let paladin_failure_count = errors.len();
+
         let completed_at = Utc::now();
         Ok(BattalionResult {
             battalion_id,
@@ -245,11 +283,11 @@ impl PhalanxExecutionService {
             strategy_used: crate::core::platform::container::battalion::BattalionStrategy::Phalanx,
             strategy_selection_reasoning: None,
             strategy_selection_time_ms: 0,
-            per_paladin_times: std::collections::HashMap::new(), // TODO: Track individual execution times
-            per_paladin_tokens: std::collections::HashMap::new(),
-            total_tokens: 0,
-            paladin_success_count: 0, // Will be calculated from paladin_results
-            paladin_failure_count: 0, // Will be calculated from paladin_results
+            per_paladin_times,
+            per_paladin_tokens,
+            total_tokens,
+            paladin_success_count,
+            paladin_failure_count,
         })
     }
 
@@ -723,5 +761,107 @@ mod tests {
             BattalionError::Cancelled => {}
             _ => panic!("Expected Cancelled error"),
         }
+    }
+
+    #[tokio::test]
+    async fn test_phalanx_per_paladin_timing() {
+        let p1 = create_paladin("Analyst");
+        let p2 = create_paladin("Reviewer");
+        let p3 = create_paladin("Editor");
+
+        let phalanx = Phalanx::new(vec![p1, p2, p3], BattalionConfig::new("timing_test")).unwrap();
+
+        let mock_port = Arc::new(MockPaladinPort::new());
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await.unwrap();
+
+        // per_paladin_times should be populated with entries for each Paladin
+        assert_eq!(result.per_paladin_times.len(), 3);
+        assert!(result.per_paladin_times.contains_key("Analyst"));
+        assert!(result.per_paladin_times.contains_key("Reviewer"));
+        assert!(result.per_paladin_times.contains_key("Editor"));
+
+        // All times should be > 0 (mock has 10ms delay)
+        for (_name, time_ms) in &result.per_paladin_times {
+            assert!(*time_ms > 0, "Paladin execution time should be > 0");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_phalanx_per_paladin_tokens() {
+        let p1 = create_paladin("Analyst");
+        let p2 = create_paladin("Reviewer");
+
+        let phalanx = Phalanx::new(vec![p1, p2], BattalionConfig::new("tokens_test")).unwrap();
+
+        let mock_port = Arc::new(MockPaladinPort::new());
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await.unwrap();
+
+        // per_paladin_tokens should be populated from PaladinResult.token_count
+        assert_eq!(result.per_paladin_tokens.len(), 2);
+        assert!(result.per_paladin_tokens.contains_key("Analyst"));
+        assert!(result.per_paladin_tokens.contains_key("Reviewer"));
+
+        // Mock returns token_count=50, so total_tokens for each should be 50
+        let analyst_tokens = result.per_paladin_tokens.get("Analyst").unwrap();
+        assert_eq!(analyst_tokens.total_tokens, 50);
+
+        // total_tokens should be the sum across all paladins
+        assert_eq!(result.total_tokens, 100); // 50 + 50
+    }
+
+    #[tokio::test]
+    async fn test_phalanx_metrics_with_partial_failures() {
+        let p1 = create_paladin("Success1");
+        let p2 = create_paladin("Failure1");
+        let p3 = create_paladin("Success2");
+
+        let config = BattalionConfig::new("partial_metrics")
+            .with_error_strategy(ErrorStrategy::ContinueOnError);
+
+        let phalanx = Phalanx::new(vec![p1, p2, p3], config).unwrap();
+
+        let mock_port =
+            Arc::new(MockPaladinPort::new().with_failures(vec!["Failure1".to_string()]));
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await.unwrap();
+
+        // Only successful paladins should have timing and token entries
+        assert_eq!(result.per_paladin_times.len(), 2);
+        assert!(result.per_paladin_times.contains_key("Success1"));
+        assert!(result.per_paladin_times.contains_key("Success2"));
+        assert!(!result.per_paladin_times.contains_key("Failure1"));
+
+        assert_eq!(result.per_paladin_tokens.len(), 2);
+        assert!(!result.per_paladin_tokens.contains_key("Failure1"));
+
+        // total_tokens should only count successful paladins
+        assert_eq!(result.total_tokens, 100); // 50 + 50
+
+        // Success/failure counts should be accurate
+        assert_eq!(result.paladin_success_count, 2);
+        assert_eq!(result.paladin_failure_count, 1);
+    }
+
+    #[tokio::test]
+    async fn test_phalanx_metrics_success_failure_counts() {
+        let p1 = create_paladin("Agent1");
+        let p2 = create_paladin("Agent2");
+        let p3 = create_paladin("Agent3");
+
+        let phalanx = Phalanx::new(vec![p1, p2, p3], BattalionConfig::new("count_test")).unwrap();
+
+        let mock_port = Arc::new(MockPaladinPort::new());
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await.unwrap();
+
+        // All succeed
+        assert_eq!(result.paladin_success_count, 3);
+        assert_eq!(result.paladin_failure_count, 0);
     }
 }
