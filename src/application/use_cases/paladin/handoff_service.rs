@@ -418,6 +418,7 @@ mod tests {
             enabled: true,
             strategy: HandoffStrategy::Explicit,
             max_depth: 3,
+            retry: Default::default(),
         });
 
         let service = HandoffService::new(config).unwrap();
@@ -430,6 +431,7 @@ mod tests {
             enabled: true,
             strategy: HandoffStrategy::Automatic,
             max_depth: 7,
+            retry: Default::default(),
         });
 
         let service = HandoffService::new(config).unwrap();
@@ -442,6 +444,7 @@ mod tests {
             enabled: true,
             strategy: HandoffStrategy::threshold(0.85),
             max_depth: 5,
+            retry: Default::default(),
         });
 
         let service = HandoffService::new(config).unwrap();

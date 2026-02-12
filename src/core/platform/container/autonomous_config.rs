@@ -8,6 +8,51 @@ use serde::{Deserialize, Serialize};
 
 use super::handoff::HandoffStrategy;
 
+/// Retry configuration for handoff execution
+///
+/// Controls how handoffs are retried when transient errors occur.
+/// Uses exponential backoff: `delay = initial_backoff_ms * (multiplier ^ attempt)`
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct HandoffRetryConfig {
+    /// Maximum number of retry attempts
+    pub max_retries: u32,
+    
+    /// Initial backoff delay in milliseconds
+    pub initial_backoff_ms: u64,
+    
+    /// Backoff multiplier for exponential backoff
+    pub backoff_multiplier: f64,
+}
+
+impl Default for HandoffRetryConfig {
+    fn default() -> Self {
+        Self {
+            max_retries: 3,
+            initial_backoff_ms: 1000,
+            backoff_multiplier: 2.0,
+        }
+    }
+}
+
+impl HandoffRetryConfig {
+    /// Creates a new retry configuration
+    pub fn new(max_retries: u32, initial_backoff_ms: u64, backoff_multiplier: f64) -> Self {
+        Self {
+            max_retries,
+            initial_backoff_ms,
+            backoff_multiplier,
+        }
+    }
+    
+    /// Calculates the backoff delay for a given attempt
+    ///
+    /// Formula: `initial_backoff_ms * (backoff_multiplier ^ attempt)`
+    pub fn calculate_backoff(&self, attempt: u32) -> u64 {
+        let multiplier = self.backoff_multiplier.powi(attempt as i32);
+        (self.initial_backoff_ms as f64 * multiplier) as u64
+    }
+}
+
 /// Complete configuration for all autonomous features
 ///
 /// All features are opt-in (disabled by default) to maintain backward compatibility.
@@ -223,6 +268,9 @@ pub struct HandoffConfig {
 
     /// Maximum depth of handoff chain
     pub max_depth: u32,
+    
+    /// Retry configuration for handoff execution
+    pub retry: HandoffRetryConfig,
 }
 
 impl Default for HandoffConfig {
@@ -231,6 +279,7 @@ impl Default for HandoffConfig {
             enabled: false,
             strategy: HandoffStrategy::default(),
             max_depth: 5,
+            retry: HandoffRetryConfig::default(),
         }
     }
 }
@@ -247,6 +296,7 @@ impl HandoffConfig {
             enabled: true,
             strategy,
             max_depth,
+            retry: HandoffRetryConfig::default(),
         }
     }
 
@@ -267,6 +317,12 @@ impl HandoffConfig {
     /// Sets the maximum handoff depth
     pub fn with_max_depth(mut self, max_depth: u32) -> Self {
         self.max_depth = max_depth;
+        self
+    }
+    
+    /// Sets the retry configuration
+    pub fn with_retry(mut self, retry: HandoffRetryConfig) -> Self {
+        self.retry = retry;
         self
     }
 }
