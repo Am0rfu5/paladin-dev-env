@@ -9,6 +9,7 @@ use tokio::time::{Duration, timeout};
 use uuid::Uuid;
 
 use crate::application::ports::output::paladin_port::PaladinPort;
+use crate::application::ports::output::paladin_registry::PaladinRegistry;
 use crate::application::use_cases::battalion::campaign_service::CampaignExecutionService;
 use crate::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
 use crate::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
@@ -21,6 +22,7 @@ use crate::core::platform::container::battalion::{
     BattalionConfig, BattalionError, BattalionResult, BattalionStrategy, ErrorStrategy,
 };
 use crate::core::platform::container::paladin::Paladin;
+use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
 
 /// Commander for routing Battalion execution to appropriate strategies.
 ///
@@ -560,11 +562,9 @@ impl Commander {
                         .name(self.config.name.clone())
                         .max_rounds(3); // Limit to 3 rounds for reasonable execution time
 
-                // Add all Paladins as participants using indices as IDs
-                // TODO: Council needs to be enhanced to store actual Paladins, not just IDs
-                for (idx, _paladin) in self.paladins.iter().enumerate() {
-                    let participant_id = format!("participant_{}", idx);
-                    council_builder = council_builder.add_participant(participant_id);
+                // Add all Paladins as participants using their actual names as IDs
+                for paladin in &self.paladins {
+                    council_builder = council_builder.add_participant(paladin.node.name.clone());
                 }
 
                 let council = council_builder.build()?;
@@ -623,18 +623,30 @@ impl Commander {
                     ));
                 }
 
+                // Create a temporary registry from self.paladins
+                let registry = HashMapPaladinRegistry::new();
+
                 // Build Grove instance using builder pattern
                 // Create a Tree with all Paladins as agents
                 let mut tree =
                     crate::core::platform::container::battalion::grove::Tree::new("main");
 
-                // Convert Paladins to TreeAgents using indices as IDs
-                // TODO: Grove needs to be enhanced to store actual Paladins, not just IDs
-                for (idx, _paladin) in self.paladins.iter().enumerate() {
-                    let agent_id = format!("agent_{}", idx);
+                // Convert Paladins to TreeAgents using Paladin names as IDs
+                for paladin in &self.paladins {
+                    // Register paladin in registry
+                    registry
+                        .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+                        .map_err(|e| {
+                            BattalionError::ExecutionError(format!(
+                                "Failed to register paladin '{}': {}",
+                                paladin.node.name, e
+                            ))
+                        })?;
+
+                    // Create TreeAgent with paladin ID matching registry
                     let tree_agent =
                         crate::core::platform::container::battalion::grove::TreeAgent::new(
-                            agent_id,
+                            paladin.node.name.clone(),
                         );
                     tree = tree.add_agent(tree_agent);
                 }
@@ -647,13 +659,14 @@ impl Commander {
                     .add_tree(tree)
                     .build()?;
 
-                // Execute Grove (pass None for embedding_port and llm_port - not needed for KeywordMatch)
+                // Execute Grove with registry (no longer passes paladins directly)
                 let service = GroveExecutionService::new(
                     Arc::clone(&self.paladin_port),
                     None, // embedding_port
                     None, // llm_port
+                    Arc::new(registry),
                 );
-                let grove_result = service.execute(&grove, &self.paladins, input).await?;
+                let grove_result = service.execute(&grove, input).await?;
 
                 // Convert grove result to BattalionResult
                 BattalionResult {

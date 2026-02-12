@@ -197,7 +197,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create Council execution service
     let council_service = CouncilExecutionService::new(
-        llm_port, 
+        llm_port,
         None, // No Garrison (history storage) for this simple example
         Arc::new(registry),
     );

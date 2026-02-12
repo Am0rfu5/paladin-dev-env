@@ -10,6 +10,7 @@ use std::sync::Arc;
 use crate::application::ports::output::embedding_port::EmbeddingPort;
 use crate::application::ports::output::llm_port::LlmPort;
 use crate::application::ports::output::paladin_port::PaladinPort;
+use crate::application::ports::output::paladin_registry::PaladinRegistry;
 use crate::core::platform::container::battalion::BattalionError;
 use crate::core::platform::container::battalion::grove::{Grove, RoutingStrategy, Tree, TreeAgent};
 
@@ -68,16 +69,18 @@ pub struct GroveResult {
 /// println!("Routed to: {}", result.routing_decision.selected_agent);
 /// ```
 pub struct GroveExecutionService {
-    /// Paladin execution port (placeholder until integration)
-    #[allow(dead_code)]
+    /// Paladin execution port
     paladin_port: Arc<dyn PaladinPort>,
 
     /// Optional embedding port for semantic similarity routing
     embedding_port: Option<Arc<dyn EmbeddingPort>>,
 
-    /// Optional LLM port for LLM-based routing (placeholder until integration)
+    /// Optional LLM port for LLM-based routing (will be used in Task 5.0)
     #[allow(dead_code)]
     llm_port: Option<Arc<dyn LlmPort>>,
+
+    /// Paladin registry for resolving routed agents
+    registry: Arc<dyn PaladinRegistry>,
 }
 
 impl GroveExecutionService {
@@ -88,6 +91,7 @@ impl GroveExecutionService {
     /// * `paladin_port` - Port for executing Paladins
     /// * `embedding_port` - Optional port for generating embeddings
     /// * `llm_port` - Optional port for LLM calls (used in LLM routing)
+    /// * `registry` - Paladin registry for resolving agent IDs to Paladin instances
     ///
     /// # Example
     ///
@@ -95,18 +99,21 @@ impl GroveExecutionService {
     /// let service = GroveExecutionService::new(
     ///     paladin_port,
     ///     Some(embedding_port),
-    ///     Some(llm_port)
+    ///     Some(llm_port),
+    ///     registry
     /// );
     /// ```
     pub fn new(
         paladin_port: Arc<dyn PaladinPort>,
         embedding_port: Option<Arc<dyn EmbeddingPort>>,
         llm_port: Option<Arc<dyn LlmPort>>,
+        registry: Arc<dyn PaladinRegistry>,
     ) -> Self {
         Self {
             paladin_port,
             embedding_port,
             llm_port,
+            registry,
         }
     }
 
@@ -118,7 +125,6 @@ impl GroveExecutionService {
     /// # Arguments
     ///
     /// * `grove` - The Grove configuration with trees and agents
-    /// * `paladins` - Slice of Paladins to route among (agent IDs match TreeAgent paladin_id)
     /// * `task` - The task description to route and execute
     ///
     /// # Returns
@@ -130,21 +136,17 @@ impl GroveExecutionService {
     /// Returns `BattalionError` if:
     /// - Routing fails and no fallback is available
     /// - Required embedding port is missing for SemanticSimilarity strategy
+    /// - Agent not found in registry (`PaladinNotFound`)
     /// - Paladin execution fails
     ///
     /// # Example
     ///
     /// ```ignore
-    /// let result = service.execute(&grove, &paladins, "Analyze customer feedback").await?;
+    /// let result = service.execute(&grove, "Analyze customer feedback").await?;
     /// println!("Agent: {}", result.routing_decision.selected_agent);
     /// println!("Result: {}", result.execution_result);
     /// ```
-    pub async fn execute(
-        &self,
-        grove: &Grove,
-        paladins: &[crate::core::platform::container::paladin::Paladin],
-        task: &str,
-    ) -> Result<GroveResult, BattalionError> {
+    pub async fn execute(&self, grove: &Grove, task: &str) -> Result<GroveResult, BattalionError> {
         info!("Grove '{}' routing task: {}", grove.node.name, task);
 
         // Route the task to the appropriate agent
@@ -157,16 +159,24 @@ impl GroveExecutionService {
             routing_decision.confidence
         );
 
-        // Execute the selected Paladin
-        let execution_result = self
-            .execute_agent(&routing_decision.selected_agent, paladins, task)
-            .await
-            .map_err(|e| {
-                BattalionError::ExecutionError(format!(
-                    "Failed to execute agent '{}': {}",
-                    routing_decision.selected_agent, e
+        // Resolve the selected Paladin from registry
+        let paladin = self
+            .registry
+            .get(&routing_decision.selected_agent)
+            .ok_or_else(|| {
+                BattalionError::PaladinNotFound(format!(
+                    "Agent '{}' not found in registry",
+                    routing_decision.selected_agent
                 ))
             })?;
+
+        // Execute the selected Paladin
+        let execution_result = self.execute_agent(&paladin, task).await.map_err(|e| {
+            BattalionError::ExecutionError(format!(
+                "Failed to execute agent '{}': {}",
+                routing_decision.selected_agent, e
+            ))
+        })?;
 
         // Build metadata
         let mut metadata = HashMap::new();
@@ -523,29 +533,13 @@ impl GroveExecutionService {
     /// The output string from the Paladin execution
     async fn execute_agent(
         &self,
-        agent_id: &str,
-        paladins: &[crate::core::platform::container::paladin::Paladin],
+        paladin: &crate::core::platform::container::paladin::Paladin,
         task: &str,
     ) -> Result<String, BattalionError> {
-        debug!("Executing agent '{}' with task: {}", agent_id, task);
-
-        // Parse agent_id (format: "agent_N" where N is the index)
-        let index = agent_id
-            .strip_prefix("agent_")
-            .and_then(|s| s.parse::<usize>().ok())
-            .ok_or_else(|| {
-                BattalionError::ValidationError(format!("Invalid agent_id format: {}", agent_id))
-            })?;
-
-        // Lookup Paladin by index
-        let paladin = paladins.get(index).ok_or_else(|| {
-            BattalionError::ValidationError(format!(
-                "Agent '{}' not found (index {} out of bounds, have {} paladins)",
-                agent_id,
-                index,
-                paladins.len()
-            ))
-        })?;
+        debug!(
+            "Executing agent '{}' with task: {}",
+            paladin.node.name, task
+        );
 
         // Execute the Paladin
         let result = self
@@ -711,12 +705,129 @@ mod tests {
         assert!(decision.confidence <= 0.5);
     }
 
+    #[tokio::test]
+    async fn test_grove_resolves_routed_agent() {
+        // Task 4.1: Grove resolves routed agent from registry
+        use crate::application::ports::output::paladin_port::PaladinResult;
+        use crate::application::ports::output::paladin_registry::PaladinRegistry;
+        use crate::core::base::entity::node::Node;
+        use crate::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
+        use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+
+        // Create test Paladins with names matching TreeAgent paladin_ids
+        let backend_paladin = Node::new(
+            PaladinData {
+                system_prompt: "Backend expert".to_string(),
+                name: "backend_expert".to_string(),
+                user_name: "User".to_string(),
+                model: "gpt-4".to_string(),
+                temperature: 0.7,
+                max_loops: MaxLoops::Fixed(3),
+                stop_words: vec![],
+                status: PaladinStatus::Idle,
+                vision_enabled: false,
+                ..Default::default()
+            },
+            Some("backend_expert".to_string()),
+        );
+
+        // Create registry and register paladins
+        let registry = HashMapPaladinRegistry::new();
+        registry
+            .register("backend_expert".to_string(), Arc::new(backend_paladin))
+            .expect("Should register backend_expert");
+
+        // Create mock that returns a result
+        struct ExecutingMockPort;
+        #[async_trait::async_trait]
+        impl PaladinPort for ExecutingMockPort {
+            async fn execute(
+                &self,
+                paladin: &crate::core::platform::container::paladin::Paladin,
+                input: &str,
+            ) -> Result<PaladinResult, crate::application::use_cases::paladin::error::PaladinError>
+            {
+                Ok(PaladinResult {
+                    output: format!("[{}] Analyzed: {}", paladin.node.name, input),
+                    token_count: 100,
+                    execution_time_ms: 10,
+                    loop_count: 1,
+                    ..Default::default()
+                })
+            }
+
+            async fn execute_stream(
+                &self,
+                _paladin: &crate::core::platform::container::paladin::Paladin,
+                _input: &str,
+            ) -> Result<
+                crate::application::ports::output::paladin_port::PaladinStream,
+                crate::application::use_cases::paladin::error::PaladinError,
+            > {
+                let (_tx, rx) = tokio::sync::mpsc::channel(1);
+                Ok(rx)
+            }
+
+            fn validate(
+                &self,
+                _paladin: &crate::core::platform::container::paladin::Paladin,
+            ) -> Result<(), crate::application::use_cases::paladin::error::PaladinError>
+            {
+                Ok(())
+            }
+        }
+
+        let service =
+            GroveExecutionService::new(Arc::new(ExecutingMockPort), None, None, Arc::new(registry));
+
+        let grove = create_test_grove();
+
+        // Execute - should resolve "backend_expert" from registry
+        let result = service.execute(&grove, "rust backend task").await;
+
+        assert!(result.is_ok(), "Grove should resolve and execute agent");
+        let grove_result = result.unwrap();
+        assert_eq!(
+            grove_result.routing_decision.selected_agent,
+            "backend_expert"
+        );
+        assert!(grove_result.execution_result.contains("backend_expert"));
+    }
+
+    #[tokio::test]
+    async fn test_grove_paladin_not_found_error() {
+        // Task 4.2: Grove returns PaladinNotFound when agent missing from registry
+        use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+
+        // Create empty registry (no paladins registered)
+        let registry = HashMapPaladinRegistry::new();
+
+        let service =
+            GroveExecutionService::new(Arc::new(MockPaladinPort), None, None, Arc::new(registry));
+
+        let grove = create_test_grove();
+
+        // Execute - routing will select "backend_expert" but it won't be in registry
+        let result = service.execute(&grove, "rust backend task").await;
+
+        assert!(result.is_err(), "Should return error when agent not found");
+        match result {
+            Err(BattalionError::PaladinNotFound(msg)) => {
+                assert!(msg.contains("backend_expert"));
+            }
+            _ => panic!("Expected PaladinNotFound error"),
+        }
+    }
+
     // Helper functions
     fn create_test_service() -> GroveExecutionService {
+        use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
         GroveExecutionService::new(
             Arc::new(MockPaladinPort),
             Some(Arc::new(MockEmbeddingPort)),
             Some(Arc::new(MockLlmPort)),
+            Arc::new(registry),
         )
     }
 

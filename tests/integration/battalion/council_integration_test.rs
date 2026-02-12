@@ -216,10 +216,7 @@ async fn test_council_roundrobin_three_paladins_two_rounds() {
     let service = CouncilExecutionService::new(paladin_port.clone(), None, Arc::new(registry));
 
     let result = service
-        .convene(
-            &council,
-            "Should we implement two-factor authentication?",
-        )
+        .convene(&council, "Should we implement two-factor authentication?")
         .await
         .expect("Council execution should succeed");
 

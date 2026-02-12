@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use paladin::application::ports::output::paladin_port::{
     PaladinPort, PaladinResult, PaladinStream, StopReason,
 };
+use paladin::application::ports::output::paladin_registry::PaladinRegistry;
 use paladin::application::use_cases::battalion::grove_service::GroveExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
@@ -13,6 +14,7 @@ use paladin::core::platform::container::battalion::grove::{
     GroveBuilder, RoutingStrategy, Tree, TreeAgent,
 };
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
+use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -137,12 +139,20 @@ async fn test_grove_keyword_match_routing() {
         .build()
         .expect("Grove build should succeed");
 
-    let service = GroveExecutionService::new(paladin_port.clone(), None, None);
+    // Create registry and register paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = GroveExecutionService::new(paladin_port.clone(), None, None, Arc::new(registry));
 
     // Test routing to security tree
     let security_task = "Review authentication implementation for vulnerabilities";
     let result = service
-        .execute(&grove, &paladins, security_task)
+        .execute(&grove, security_task)
         .await
         .expect("Security task should succeed");
 
@@ -156,7 +166,7 @@ async fn test_grove_keyword_match_routing() {
     // Test routing to performance tree
     let performance_task = "Optimize database queries for better performance";
     let result2 = service
-        .execute(&grove, &paladins, performance_task)
+        .execute(&grove, performance_task)
         .await
         .expect("Performance task should succeed");
 
@@ -204,12 +214,20 @@ async fn test_grove_semantic_similarity_routing() {
         .build()
         .expect("Grove build should succeed");
 
-    let service = GroveExecutionService::new(paladin_port.clone(), None, None);
+    // Create registry and register paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = GroveExecutionService::new(paladin_port.clone(), None, None, Arc::new(registry));
 
     // Note: In a real test with embeddings, we'd use an actual embedding service
     // For this integration test, we're just verifying the routing mechanism works
     let task = "Design a user interface for the login page";
-    let result = service.execute(&grove, &paladins, task).await;
+    let result = service.execute(&grove, task).await;
 
     // Should succeed (will use keyword fallback if embeddings not available)
     assert!(result.is_ok(), "Execution should succeed");
@@ -241,11 +259,19 @@ async fn test_grove_llm_routing() {
         .build()
         .expect("Grove build should succeed");
 
-    let service = GroveExecutionService::new(paladin_port, None, None);
+    // Create registry and register paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = GroveExecutionService::new(paladin_port, None, None, Arc::new(registry));
 
     // Execute task - will use keyword fallback since we don't have real LLM
     let result = service
-        .execute(&grove, &paladins, "Fix the login bug")
+        .execute(&grove, "Fix the login bug")
         .await;
 
     assert!(result.is_ok(), "Execution should succeed");
@@ -278,12 +304,20 @@ async fn test_grove_fallback_behavior() {
         .build()
         .expect("Grove build should succeed");
 
-    let service = GroveExecutionService::new(paladin_port.clone(), None, None);
+    // Create registry and register paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = GroveExecutionService::new(paladin_port.clone(), None, None, Arc::new(registry));
 
     // Task that doesn't match any specialist keywords
     let task = "What's the weather like today?";
     let result = service
-        .execute(&grove, &paladins, task)
+        .execute(&grove, task)
         .await
         .expect("Should succeed using fallback");
 
@@ -315,11 +349,19 @@ async fn test_grove_no_fallback_default_behavior() {
         .build()
         .expect("Grove build should succeed");
 
-    let service = GroveExecutionService::new(paladin_port, None, None);
+    // Create registry and register paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = GroveExecutionService::new(paladin_port, None, None, Arc::new(registry));
 
     // Task that doesn't match keywords
     let task = "Completely unrelated task";
-    let result = service.execute(&grove, &paladins, task).await;
+    let result = service.execute(&grove, task).await;
 
     // Should still succeed by routing to first tree as default
     assert!(result.is_ok(), "Should succeed with default fallback");
@@ -367,7 +409,15 @@ async fn test_grove_multiple_trees() {
         .build()
         .expect("Grove build should succeed");
 
-    let service = GroveExecutionService::new(paladin_port.clone(), None, None);
+    // Create registry and register paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = GroveExecutionService::new(paladin_port.clone(), None, None, Arc::new(registry));
 
     // Test routing to each tree
     let tasks = vec![
@@ -379,7 +429,7 @@ async fn test_grove_multiple_trees() {
 
     for (task, expected_expert) in tasks {
         let result = service
-            .execute(&grove, &paladins, task)
+            .execute(&grove, task)
             .await
             .expect("Task should succeed");
 
@@ -451,11 +501,19 @@ async fn test_grove_error_handling() {
         .build()
         .expect("Grove build should succeed");
 
-    let service = GroveExecutionService::new(paladin_port, None, None);
+    // Create registry and register paladins
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let service = GroveExecutionService::new(paladin_port, None, None, Arc::new(registry));
 
     // Task with "failing" keyword should route to agent_1 which will fail
     let result = service
-        .execute(&grove, &paladins, "failing team task")
+        .execute(&grove, "failing team task")
         .await;
 
     // Should return an error since agent_1 fails
