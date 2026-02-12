@@ -153,6 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 3,
+        retry: Default::default(),
     };
 
     // Note: Specialist pool would be managed by HandoffService

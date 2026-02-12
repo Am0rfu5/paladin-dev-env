@@ -19,6 +19,7 @@ fn test_handoff_service_new() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 5,
+        retry: Default::default(),
     };
 
     let service = HandoffService::new(Arc::new(config));
@@ -33,6 +34,7 @@ fn test_handoff_service_new_with_disabled_config() {
         enabled: false,
         strategy: HandoffStrategy::Automatic,
         max_depth: 5,
+        retry: Default::default(),
     };
 
     let service = HandoffService::new(Arc::new(config));
@@ -49,6 +51,7 @@ fn test_should_handoff_automatic_high_confidence() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
     let context = HandoffContext::new("Simple task".to_string(), "Agent1".to_string());
@@ -63,6 +66,7 @@ fn test_should_handoff_automatic_low_confidence() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
     let context = HandoffContext::new("Complex task".to_string(), "Agent1".to_string());
@@ -77,6 +81,7 @@ fn test_should_handoff_explicit_never() {
         enabled: true,
         strategy: HandoffStrategy::Explicit,
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
     let context = HandoffContext::new("Task".to_string(), "Agent1".to_string());
@@ -92,6 +97,7 @@ fn test_should_handoff_threshold_below() {
         enabled: true,
         strategy: HandoffStrategy::threshold(0.7),
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
     let context = HandoffContext::new("Task".to_string(), "Agent1".to_string());
@@ -106,6 +112,7 @@ fn test_should_handoff_threshold_above() {
         enabled: true,
         strategy: HandoffStrategy::threshold(0.7),
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
     let context = HandoffContext::new("Task".to_string(), "Agent1".to_string());
@@ -120,6 +127,7 @@ fn test_should_handoff_max_depth_exceeded() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 2,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 
@@ -137,6 +145,7 @@ fn test_select_agent_with_matching_specialist() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 
@@ -167,6 +176,7 @@ fn test_select_agent_with_multiple_matches() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 
@@ -199,6 +209,7 @@ fn test_select_agent_no_matches() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 
@@ -225,6 +236,7 @@ fn test_select_agent_empty_list() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 
@@ -239,6 +251,7 @@ fn test_validate_handoff_success() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 
@@ -253,6 +266,7 @@ fn test_validate_handoff_circular_delegation() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 5,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 
@@ -274,6 +288,7 @@ fn test_validate_handoff_max_depth() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 3,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 
@@ -292,6 +307,7 @@ fn test_can_handoff_to_agent_not_in_chain() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 5,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 
@@ -312,6 +328,7 @@ fn test_transfer_context_creates_new_context() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 5,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 
@@ -331,6 +348,7 @@ fn test_transfer_context_preserves_chain() {
         enabled: true,
         strategy: HandoffStrategy::Automatic,
         max_depth: 5,
+        retry: Default::default(),
     });
     let service = HandoffService::new(config).unwrap();
 

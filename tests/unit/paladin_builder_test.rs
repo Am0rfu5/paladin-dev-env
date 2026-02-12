@@ -321,6 +321,7 @@ async fn test_handoff_config() {
         enabled: true,
         strategy: HandoffStrategy::threshold(0.7),
         max_depth: 3,
+        retry: Default::default(),
     });
 
     let result = PaladinBuilder::new(llm)
