@@ -569,9 +569,22 @@ impl Commander {
 
                 let council = council_builder.build()?;
 
+                // Create temporary registry from paladins for Council execution
+                use crate::application::ports::output::paladin_registry::PaladinRegistry;
+                use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+                let registry = HashMapPaladinRegistry::new();
+                for paladin in &self.paladins {
+                    // Use paladin name as ID
+                    registry.register(paladin.node.name.clone(), Arc::new(paladin.clone()))?;
+                }
+
                 // Execute Council (pass None for garrison_port - Commander doesn't have one)
-                let service = CouncilExecutionService::new(Arc::clone(&self.paladin_port), None);
-                let council_result = service.convene(&council, &self.paladins, input).await?;
+                let service = CouncilExecutionService::new(
+                    Arc::clone(&self.paladin_port),
+                    None,
+                    Arc::new(registry),
+                );
+                let council_result = service.convene(&council, input).await?;
 
                 // Convert council result to BattalionResult
                 // Final output is the complete conversation history

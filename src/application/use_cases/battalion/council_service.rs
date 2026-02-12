@@ -8,6 +8,7 @@ use tokio::time::{Duration, timeout};
 
 use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::application::ports::output::paladin_port::PaladinPort;
+use crate::application::ports::output::paladin_registry::PaladinRegistry;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::platform::container::battalion::BattalionError;
 use crate::core::platform::container::battalion::council::{
@@ -60,6 +61,9 @@ pub struct CouncilExecutionService {
 
     /// Optional Garrison for storing conversation history
     garrison_port: Option<Arc<dyn GarrisonPort>>,
+
+    /// Paladin Registry for resolving participant IDs
+    registry: Arc<dyn PaladinRegistry>,
 }
 
 impl CouncilExecutionService {
@@ -69,20 +73,23 @@ impl CouncilExecutionService {
     ///
     /// * `paladin_port` - Port for executing individual Paladins
     /// * `garrison_port` - Optional port for storing conversation history
+    /// * `registry` - Paladin registry for resolving participant IDs
     ///
     /// # Example
     ///
     /// ```ignore
-    /// let service = CouncilExecutionService::new(paladin_port, Some(garrison_port));
+    /// let service = CouncilExecutionService::new(paladin_port, Some(garrison_port), registry);
     /// ```
     pub fn new(
         paladin_port: Arc<dyn PaladinPort>,
         garrison_port: Option<Arc<dyn GarrisonPort>>,
+        registry: Arc<dyn PaladinRegistry>,
     ) -> Self {
         info!("Creating CouncilExecutionService");
         Self {
             paladin_port,
             garrison_port,
+            registry,
         }
     }
 
@@ -95,7 +102,6 @@ impl CouncilExecutionService {
     /// # Arguments
     ///
     /// * `council` - The Council configuration
-    /// * `paladins` - The Paladins participating in the discussion
     /// * `topic` - The discussion topic
     ///
     /// # Returns
@@ -106,13 +112,12 @@ impl CouncilExecutionService {
     /// # Example
     ///
     /// ```ignore
-    /// let result = service.convene(&council, &paladins, "Discuss security implications").await?;
+    /// let result = service.convene(&council, "Discuss security implications").await?;
     /// println!("Discussion concluded after {} rounds", result.rounds_completed);
     /// ```
     pub async fn convene(
         &self,
         council: &Council,
-        paladins: &[Paladin],
         topic: &str,
     ) -> Result<CouncilResult, BattalionError> {
         info!(
@@ -121,6 +126,39 @@ impl CouncilExecutionService {
             council.node.participant_ids.len(),
             topic
         );
+
+        // Resolve all participant IDs from registry before starting discussion
+        let mut resolved_paladins = std::collections::HashMap::new();
+        for participant_id in &council.node.participant_ids {
+            match self.registry.get(participant_id) {
+                Some(paladin) => {
+                    resolved_paladins.insert(participant_id.clone(), paladin);
+                }
+                None => {
+                    return Err(BattalionError::PaladinNotFound(format!(
+                        "Participant '{}' not found in registry",
+                        participant_id
+                    )));
+                }
+            }
+        }
+
+        // Also resolve moderator if present
+        if let Some(ref moderator_id) = council.node.moderator_id
+            && !resolved_paladins.contains_key(moderator_id)
+        {
+            match self.registry.get(moderator_id) {
+                Some(paladin) => {
+                    resolved_paladins.insert(moderator_id.clone(), paladin);
+                }
+                None => {
+                    return Err(BattalionError::PaladinNotFound(format!(
+                        "Moderator '{}' not found in registry",
+                        moderator_id
+                    )));
+                }
+            }
+        }
 
         // Initialize conversation state
         let mut transcript: Vec<CouncilMessage> = Vec::new();
@@ -157,9 +195,13 @@ impl CouncilExecutionService {
                 current_round, next_speaker_id
             );
 
-            // TODO: Get actual Paladin from registry/repository
-            // For now, we'll need to receive Paladins as part of the Council or use a registry
-            // This is a placeholder that will be addressed in integration
+            // Get Paladin from resolved paladins
+            let paladin = resolved_paladins.get(&next_speaker_id).ok_or_else(|| {
+                BattalionError::PaladinNotFound(format!(
+                    "Speaker '{}' not found in resolved paladins",
+                    next_speaker_id
+                ))
+            })?;
 
             // Build context with conversation history
             let context = if council.node.config.include_history {
@@ -170,32 +212,28 @@ impl CouncilExecutionService {
 
             // Execute speaker with timeout
             let timeout_duration = Duration::from_secs(300); // 5 minutes per speaker
-            let speaker_output = match timeout(
-                timeout_duration,
-                self.execute_speaker(&next_speaker_id, paladins, &context),
-            )
-            .await
-            {
-                Ok(Ok(output)) => output,
-                Ok(Err(e)) => {
-                    warn!(
-                        "Speaker {} failed in round {}: {}",
-                        next_speaker_id, current_round, e
-                    );
-                    // Don't increment speaker_index - RoundRobin already did it
-                    // Just continue to next iteration
-                    continue;
-                }
-                Err(_) => {
-                    warn!(
-                        "Speaker {} timed out in round {}",
-                        next_speaker_id, current_round
-                    );
-                    // Don't increment speaker_index - RoundRobin already did it
-                    // Just continue to next iteration
-                    continue;
-                }
-            };
+            let speaker_output =
+                match timeout(timeout_duration, self.execute_speaker(paladin, &context)).await {
+                    Ok(Ok(output)) => output,
+                    Ok(Err(e)) => {
+                        warn!(
+                            "Speaker {} failed in round {}: {}",
+                            next_speaker_id, current_round, e
+                        );
+                        // Don't increment speaker_index - RoundRobin already did it
+                        // Just continue to next iteration
+                        continue;
+                    }
+                    Err(_) => {
+                        warn!(
+                            "Speaker {} timed out in round {}",
+                            next_speaker_id, current_round
+                        );
+                        // Don't increment speaker_index - RoundRobin already did it
+                        // Just continue to next iteration
+                        continue;
+                    }
+                };
 
             // Record the message
             let message =
@@ -360,35 +398,13 @@ impl CouncilExecutionService {
 
     /// Execute a single speaker turn
     ///
-    /// This is a placeholder for actual Paladin execution.
-    /// In a real implementation, this would look up the Paladin and execute it.
+    /// Executes the given Paladin with the provided context and returns the output.
     async fn execute_speaker(
         &self,
-        speaker_id: &str,
-        paladins: &[Paladin],
+        paladin: &Paladin,
         context: &str,
     ) -> Result<String, PaladinError> {
-        debug!("Executing speaker: {}", speaker_id);
-
-        // Parse speaker_id format: "participant_N" where N is index into paladins vec
-        let index = speaker_id
-            .strip_prefix("participant_")
-            .and_then(|s| s.parse::<usize>().ok())
-            .ok_or_else(|| {
-                PaladinError::ConfigurationError(format!(
-                    "Invalid speaker ID format: {}. Expected 'participant_N'",
-                    speaker_id
-                ))
-            })?;
-
-        // Look up Paladin by index
-        let paladin = paladins.get(index).ok_or_else(|| {
-            PaladinError::ConfigurationError(format!(
-                "Paladin index {} out of range (total: {})",
-                index,
-                paladins.len()
-            ))
-        })?;
+        debug!("Executing speaker: {:?}", paladin.node.name);
 
         // Execute Paladin via PaladinPort
         let result = self.paladin_port.execute(paladin, context).await?;
@@ -509,7 +525,11 @@ mod tests {
 
     #[test]
     fn test_format_conversation_history() {
-        let service = CouncilExecutionService::new(Arc::new(MockPaladinPort), None);
+        let service = CouncilExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Arc::new(MockPaladinRegistry::new()),
+        );
 
         let messages = vec![
             CouncilMessage::new("expert_1", "I think we should proceed", 1),
@@ -526,7 +546,11 @@ mod tests {
 
     #[test]
     fn test_detect_consensus() {
-        let service = CouncilExecutionService::new(Arc::new(MockPaladinPort), None);
+        let service = CouncilExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Arc::new(MockPaladinRegistry::new()),
+        );
 
         let messages = vec![
             CouncilMessage::new("expert_1", "I think option A is best", 1),
@@ -539,7 +563,11 @@ mod tests {
 
     #[test]
     fn test_detect_consensus_negative() {
-        let service = CouncilExecutionService::new(Arc::new(MockPaladinPort), None);
+        let service = CouncilExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Arc::new(MockPaladinRegistry::new()),
+        );
 
         let messages = vec![
             CouncilMessage::new("expert_1", "I think option A is best", 1),
@@ -552,7 +580,11 @@ mod tests {
 
     #[test]
     fn test_detect_moderator_conclusion() {
-        let service = CouncilExecutionService::new(Arc::new(MockPaladinPort), None);
+        let service = CouncilExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Arc::new(MockPaladinRegistry::new()),
+        );
 
         let messages = vec![
             CouncilMessage::new("expert_1", "My opinion is X", 1),
@@ -564,7 +596,11 @@ mod tests {
 
     #[test]
     fn test_detect_keyword() {
-        let service = CouncilExecutionService::new(Arc::new(MockPaladinPort), None);
+        let service = CouncilExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Arc::new(MockPaladinRegistry::new()),
+        );
 
         let messages = vec![
             CouncilMessage::new("expert_1", "Let's discuss more", 1),
@@ -577,7 +613,11 @@ mod tests {
 
     #[test]
     fn test_parse_next_speaker() {
-        let service = CouncilExecutionService::new(Arc::new(MockPaladinPort), None);
+        let service = CouncilExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Arc::new(MockPaladinRegistry::new()),
+        );
 
         let participants = vec![
             "alice".to_string(),
@@ -609,7 +649,11 @@ mod tests {
 
     #[test]
     fn test_extract_conclusion_with_moderator() {
-        let service = CouncilExecutionService::new(Arc::new(MockPaladinPort), None);
+        let service = CouncilExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Arc::new(MockPaladinRegistry::new()),
+        );
 
         let messages = vec![
             CouncilMessage::new("expert_1", "I think A", 1),
@@ -623,7 +667,11 @@ mod tests {
 
     #[test]
     fn test_extract_conclusion_without_moderator() {
-        let service = CouncilExecutionService::new(Arc::new(MockPaladinPort), None);
+        let service = CouncilExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Arc::new(MockPaladinRegistry::new()),
+        );
 
         let messages = vec![
             CouncilMessage::new("expert_1", "First message", 1),
@@ -632,6 +680,84 @@ mod tests {
 
         let conclusion = service.extract_conclusion(&messages, &None);
         assert_eq!(conclusion, Some("Last message".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_council_resolves_participants() {
+        use crate::core::base::entity::node::Node;
+        use crate::core::platform::container::battalion::council::CouncilConfig;
+
+        // Create test Paladins and registry
+        let service = CouncilExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Arc::new(MockPaladinRegistry::new()),
+        );
+
+        // Create Council with participant IDs
+        let config = CouncilConfig {
+            turn_strategy: TurnStrategy::RoundRobin,
+            termination_condition: TerminationCondition::MaxRounds,
+            max_rounds: 1,
+            include_history: true,
+        };
+
+        let council_data = crate::core::platform::container::battalion::council::CouncilData {
+            name: "test_council".to_string(),
+            participant_ids: vec!["paladin_1".to_string(), "paladin_2".to_string()],
+            moderator_id: None,
+            config,
+        };
+        let council = Node::new(council_data, Some("test_council".to_string()));
+
+        // Execute Council - should resolve participant IDs from registry
+        let result = service.convene(&council, "Test topic").await;
+
+        // Should succeed because MockPaladinRegistry has paladin_1 and paladin_2
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert!(result.rounds_completed >= 1);
+    }
+
+    #[tokio::test]
+    async fn test_council_paladin_not_found_error() {
+        use crate::core::base::entity::node::Node;
+        use crate::core::platform::container::battalion::council::CouncilConfig;
+
+        // Create registry with limited Paladins
+        let service = CouncilExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Arc::new(MockPaladinRegistry::new()),
+        );
+        // TODO: Add registry parameter to service constructor
+
+        // Create Council with a non-existent participant ID
+        let config = CouncilConfig {
+            turn_strategy: TurnStrategy::RoundRobin,
+            termination_condition: TerminationCondition::MaxRounds,
+            max_rounds: 1,
+            include_history: true,
+        };
+
+        let council_data = crate::core::platform::container::battalion::council::CouncilData {
+            name: "test_council".to_string(),
+            participant_ids: vec!["nonexistent_paladin".to_string()],
+            moderator_id: None,
+            config,
+        };
+        let council = Node::new(council_data, Some("test_council".to_string()));
+
+        // Execute Council - should fail with PaladinNotFound error
+        let result = service.convene(&council, "Test topic").await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            BattalionError::PaladinNotFound(msg) => {
+                assert!(msg.contains("nonexistent_paladin"));
+            }
+            _ => panic!("Expected PaladinNotFound error"),
+        }
     }
 
     // Mock PaladinPort for testing
@@ -669,6 +795,80 @@ mod tests {
 
         fn validate(&self, _paladin: &Paladin) -> Result<(), PaladinError> {
             Ok(())
+        }
+    }
+
+    // Mock PaladinRegistry for testing
+    struct MockPaladinRegistry {
+        paladins: std::sync::RwLock<std::collections::HashMap<String, Arc<Paladin>>>,
+    }
+
+    impl MockPaladinRegistry {
+        fn new() -> Self {
+            use crate::core::base::entity::node::Node;
+            use crate::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
+
+            let mut paladins = std::collections::HashMap::new();
+
+            // Create test Paladins
+            for i in 1..=2 {
+                let data = PaladinData {
+                    system_prompt: format!("Test Paladin {}", i),
+                    name: format!("paladin_{}", i),
+                    user_name: "test_user".to_string(),
+                    model: "gpt-4".to_string(),
+                    temperature: 0.7,
+                    max_loops: MaxLoops::Fixed(3),
+                    stop_words: vec![],
+                    status: PaladinStatus::Idle,
+                    vision_enabled: false,
+                    autonomous_planning: false,
+                    autonomous_prompts: false,
+                    agent_description: String::new(),
+                    dynamic_temperature: false,
+                };
+                let paladin = Node::new(data, Some(format!("paladin_{}", i)));
+                paladins.insert(format!("paladin_{}", i), Arc::new(paladin));
+            }
+
+            Self {
+                paladins: std::sync::RwLock::new(paladins),
+            }
+        }
+    }
+
+    impl crate::application::ports::output::paladin_registry::PaladinRegistry for MockPaladinRegistry {
+        fn register(
+            &self,
+            id: String,
+            paladin: Arc<Paladin>,
+        ) -> Result<(), crate::application::ports::output::paladin_registry::RegistryError>
+        {
+            let mut paladins = self.paladins.write().unwrap();
+            if paladins.contains_key(&id) {
+                return Err(
+                    crate::application::ports::output::paladin_registry::RegistryError::DuplicateId(
+                        id,
+                    ),
+                );
+            }
+            paladins.insert(id, paladin);
+            Ok(())
+        }
+
+        fn get(&self, id: &str) -> Option<Arc<Paladin>> {
+            let paladins = self.paladins.read().unwrap();
+            paladins.get(id).cloned()
+        }
+
+        fn contains(&self, id: &str) -> bool {
+            let paladins = self.paladins.read().unwrap();
+            paladins.contains_key(id)
+        }
+
+        fn list_ids(&self) -> Vec<String> {
+            let paladins = self.paladins.read().unwrap();
+            paladins.keys().cloned().collect()
         }
     }
 }

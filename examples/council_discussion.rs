@@ -187,9 +187,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .termination_condition(TerminationCondition::MaxRounds) // Stop after max rounds
         .build()?;
 
+    // Create Paladin registry from paladins
+    use paladin::application::ports::output::paladin_registry::PaladinRegistry;
+    use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+    let registry = HashMapPaladinRegistry::new();
+    for (idx, paladin) in paladins.iter().enumerate() {
+        registry.register(format!("participant_{}", idx), Arc::new(paladin.clone()))?;
+    }
+
     // Create Council execution service
     let council_service = CouncilExecutionService::new(
-        llm_port, None, // No Garrison (history storage) for this simple example
+        llm_port, 
+        None, // No Garrison (history storage) for this simple example
+        Arc::new(registry),
     );
 
     println!("🎯 Discussion Topic: \"Should we implement two-factor authentication?\"");
@@ -201,7 +211,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result: CouncilResult = council_service
         .convene(
             &council,
-            &paladins,
             "Should we implement two-factor authentication for our application? Please discuss security implications, legal requirements, and implementation timeline.",
         )
         .await?;
