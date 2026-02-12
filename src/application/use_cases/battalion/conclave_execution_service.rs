@@ -219,17 +219,18 @@ impl ConclaveExecutionService {
             let retry_attempts = conclave.config.retry_attempts;
             let observability = conclave.config.observability_level;
 
-            let task: tokio::task::JoinHandle<Result<(PaladinResult, u64, u32), PaladinError>> = tokio::spawn(async move {
-                Self::execute_expert_with_retry(
-                    paladin_port,
-                    &expert_clone,
-                    &expert_name_for_task,
-                    &input_clone,
-                    retry_attempts,
-                    observability,
-                )
-                .await
-            });
+            let task: tokio::task::JoinHandle<Result<(PaladinResult, u64, u32), PaladinError>> =
+                tokio::spawn(async move {
+                    Self::execute_expert_with_retry(
+                        paladin_port,
+                        &expert_clone,
+                        &expert_name_for_task,
+                        &input_clone,
+                        retry_attempts,
+                        observability,
+                    )
+                    .await
+                });
 
             expert_tasks.push((expert_name, task));
         }

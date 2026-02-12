@@ -418,7 +418,8 @@ impl Commander {
                 // Add all Paladins to the campaign
                 let mut paladin_ids: Vec<uuid::Uuid> = Vec::new();
                 for paladin in &self.paladins {
-                    let paladin_clone: crate::core::platform::container::paladin::Paladin = paladin.clone();
+                    let paladin_clone: crate::core::platform::container::paladin::Paladin =
+                        paladin.clone();
                     let id = campaign.add_paladin(paladin_clone);
                     paladin_ids.push(id);
                 }

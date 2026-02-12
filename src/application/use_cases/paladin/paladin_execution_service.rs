@@ -755,10 +755,7 @@ impl PaladinExecutionService {
                             }
                         }
                         Err(e) => {
-                            warn!(
-                                "Handoff execution failed: id={}, error={}",
-                                execution_id, e
-                            );
+                            warn!("Handoff execution failed: id={}, error={}", execution_id, e);
                             let error_message = format!(
                                 "\n\n🤝 Handoff Execution: {}\nResult: FAILED\nError: {}\n",
                                 function_call.name, e
@@ -854,8 +851,8 @@ impl PaladinExecutionService {
                     execution_time_ms: start_time.elapsed().as_millis() as u64,
                     loop_count: loop_num,
                     stop_reason: StopReason::MaxLoops,
-                    plan: task_plan,             // Layer 1 metadata
-                    handoff_history: vec![]     // Layer 3 metadata (Phase 5 will populate)
+                    plan: task_plan,         // Layer 1 metadata
+                    handoff_history: vec![], // Layer 3 metadata (Phase 5 will populate)
                 });
             }
         }
@@ -880,8 +877,8 @@ impl PaladinExecutionService {
             execution_time_ms: start_time.elapsed().as_millis() as u64,
             loop_count: paladin.node.max_loops.as_u32(),
             stop_reason: StopReason::Completed,
-            plan: task_plan,            // Layer 1 metadata
-            handoff_history: vec![]     // Layer 3 metadata (Phase 5 will populate)
+            plan: task_plan,         // Layer 1 metadata
+            handoff_history: vec![], // Layer 3 metadata (Phase 5 will populate)
         })
     }
 

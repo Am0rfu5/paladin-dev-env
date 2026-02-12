@@ -84,7 +84,7 @@ fn create_specialist_paladin(name: &str, expertise: &str, _keywords: Vec<&str>) 
         stop_words: vec![],
         status: PaladinStatus::Idle,
         vision_enabled: false,
-            ..Default::default()
+        ..Default::default()
     };
     Node::new(data, Some(name.to_string()))
 }

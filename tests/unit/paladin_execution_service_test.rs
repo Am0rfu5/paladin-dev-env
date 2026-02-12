@@ -353,3 +353,241 @@ async fn test_execution_service_tracks_metadata() {
         "Output should be captured"
     );
 }
+
+// ==================== PHASE 4: AUTONOMOUS ORCHESTRATION TESTS ====================
+// Tests for Epic 21 - Layered execution with graceful degradation
+// ==============================================================================
+
+#[tokio::test]
+async fn test_layer0_core_execution_always_runs() {
+    // Layer 0 (Core) should always execute, even with all autonomous features disabled
+    let llm_port = Arc::new(MockLlmPort::simple_success());
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
+
+    let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
+        .system_prompt("You are a helpful assistant")
+        .max_loops(1)
+        // All autonomous features disabled (default)
+        .build()
+        .await
+        .expect("Failed to build paladin");
+
+    let result = service.execute(&paladin, "Test input").await;
+
+    assert!(result.is_ok(), "Core execution should always succeed");
+    let paladin_result = result.unwrap();
+    assert!(
+        !paladin_result.output.is_empty(),
+        "Core execution should produce output"
+    );
+    assert!(
+        paladin_result.plan.is_none(),
+        "No planning service, so plan should be None"
+    );
+    assert!(
+        paladin_result.handoff_history.is_empty(),
+        "No handoffs without agent_description"
+    );
+}
+
+#[tokio::test]
+async fn test_layer2_dynamic_temperature_disabled() {
+    // When dynamic_temperature is false, temperature should remain constant
+    let llm_port = Arc::new(MockLlmPort::simple_success());
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
+
+    let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
+        .system_prompt("You are a helpful assistant")
+        .temperature(0.7)
+        .max_loops(3)
+        // dynamic_temperature = false (default)
+        .build()
+        .await
+        .expect("Failed to build paladin");
+
+    let result = service.execute(&paladin, "Test input").await;
+
+    assert!(result.is_ok(), "Execution should succeed");
+    // Note: We can't directly verify temperature was constant in the mock,
+    // but the test validates the code path runs without dynamic temperature
+}
+
+#[tokio::test]
+async fn test_layer2_dynamic_temperature_enabled() {
+    // When dynamic_temperature is true, temperature should increase per loop
+    let llm_port = Arc::new(MockLlmPort::new(vec![
+        Ok("Loop 1".to_string()),
+        Ok("Loop 2".to_string()),
+        Ok("Loop 3".to_string()),
+    ]));
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
+
+    let mut paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
+        .system_prompt("You are a helpful assistant")
+        .temperature(0.5)
+        .max_loops(3)
+        .build()
+        .await
+        .expect("Failed to build paladin");
+
+    // Enable dynamic temperature
+    paladin.node.dynamic_temperature = true;
+
+    let result = service.execute(&paladin, "Test input").await;
+
+    assert!(result.is_ok(), "Execution should succeed");
+    let paladin_result = result.unwrap();
+    assert_eq!(paladin_result.loop_count, 3, "Should run all loops");
+    // Note: Mock doesn't capture temperature values, but validates the code path
+}
+
+#[tokio::test]
+async fn test_autonomous_metadata_population() {
+    // Verify PaladinResult metadata fields are populated correctly
+    let llm_port = Arc::new(MockLlmPort::simple_success());
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
+
+    let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
+        .system_prompt("You are a helpful assistant")
+        .max_loops(1)
+        .build()
+        .await
+        .expect("Failed to build paladin");
+
+    let result = service.execute(&paladin, "Test input").await;
+
+    assert!(result.is_ok(), "Execution should succeed");
+    let paladin_result = result.unwrap();
+
+    // Phase 2 enhancements: PaladinResult now has plan and handoff_history
+    assert!(
+        paladin_result.plan.is_none(),
+        "No planning service configured"
+    );
+    assert!(
+        paladin_result.handoff_history.is_empty(),
+        "No handoffs executed"
+    );
+    assert!(paladin_result.token_count > 0, "Token count tracked");
+    // execution_time_ms is u64, always >= 0, no need to check
+    assert_eq!(paladin_result.loop_count, 1, "Loop count tracked");
+}
+
+#[tokio::test]
+async fn test_graceful_degradation_no_planning_service() {
+    // With autonomous_planning=true but no PlanningService, execution should continue
+    let llm_port = Arc::new(MockLlmPort::simple_success());
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
+
+    let mut paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
+        .system_prompt("You are a helpful assistant")
+        .max_loops(1)
+        .build()
+        .await
+        .expect("Failed to build paladin");
+
+    // Enable planning without service (graceful degradation test)
+    paladin.node.autonomous_planning = true;
+
+    let result = service.execute(&paladin, "Test input").await;
+
+    assert!(
+        result.is_ok(),
+        "Should gracefully degrade when planning service missing"
+    );
+    let paladin_result = result.unwrap();
+    assert!(paladin_result.plan.is_none(), "No plan without service");
+    assert!(
+        !paladin_result.output.is_empty(),
+        "Core execution should still work"
+    );
+}
+
+#[tokio::test]
+async fn test_graceful_degradation_no_prompt_service() {
+    // With autonomous_prompts=true but no PromptGenerationService, execution should continue
+    let llm_port = Arc::new(MockLlmPort::simple_success());
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
+
+    let mut paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
+        .system_prompt("You are a helpful assistant")
+        .agent_description("A test agent") // Required for prompt generation
+        .max_loops(1)
+        .build()
+        .await
+        .expect("Failed to build paladin");
+
+    // Enable prompt generation without service (graceful degradation test)
+    paladin.node.autonomous_prompts = true;
+
+    let result = service.execute(&paladin, "Test input").await;
+
+    assert!(
+        result.is_ok(),
+        "Should gracefully degrade when prompt service missing"
+    );
+    let paladin_result = result.unwrap();
+    assert!(
+        !paladin_result.output.is_empty(),
+        "Core execution should still work"
+    );
+}
+
+#[tokio::test]
+async fn test_all_autonomous_features_disabled() {
+    // Baseline test: all autonomous features off, pure Layer 0 execution
+    let llm_port = Arc::new(MockLlmPort::simple_success());
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
+
+    let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
+        .system_prompt("You are a helpful assistant")
+        .max_loops(2)
+        // All defaults: autonomous_planning=false, autonomous_prompts=false, dynamic_temperature=false
+        .build()
+        .await
+        .expect("Failed to build paladin");
+
+    let result = service.execute(&paladin, "Test input").await;
+
+    assert!(result.is_ok(), "Pure Layer 0 execution should work");
+    let paladin_result = result.unwrap();
+    assert!(!paladin_result.output.is_empty(), "Should have output");
+    assert!(paladin_result.plan.is_none(), "No planning");
+    assert!(paladin_result.handoff_history.is_empty(), "No handoffs");
+}
+
+#[tokio::test]
+async fn test_mixed_autonomous_features() {
+    // Enable some features but not others to test independent layer execution
+    let llm_port = Arc::new(MockLlmPort::simple_success());
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    let service = PaladinExecutionService::new(llm_port.clone(), circuit_breaker, None, None);
+
+    let mut paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
+        .system_prompt("You are a helpful assistant")
+        .temperature(0.6)
+        .max_loops(2)
+        .build()
+        .await
+        .expect("Failed to build paladin");
+
+    // Enable only dynamic_temperature (Layer 2)
+    paladin.node.dynamic_temperature = true;
+
+    let result = service.execute(&paladin, "Test input").await;
+
+    assert!(
+        result.is_ok(),
+        "Should work with partial feature enablement"
+    );
+    let paladin_result = result.unwrap();
+    assert!(!paladin_result.output.is_empty(), "Core execution works");
+    assert!(paladin_result.plan.is_none(), "Planning not enabled");
+}

@@ -13,8 +13,8 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult};
-use crate::application::use_cases::paladin::error::PaladinError;
 use crate::application::use_cases::battalion::error_aggregation::AggregatedError;
+use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use crate::core::platform::container::battalion::{BattalionError, BattalionResult, ErrorStrategy};
 use crate::core::platform::container::herald::Herald;
@@ -283,17 +283,18 @@ impl PhalanxExecutionService {
             let port = self.paladin_port.clone();
             let semaphore_clone = semaphore.clone();
 
-            let task: tokio::task::JoinHandle<Result<PaladinResult, PaladinError>> = tokio::spawn(async move {
-                // Acquire semaphore permit if concurrency limiting is enabled
-                let _permit = if let Some(sem) = &semaphore_clone {
-                    Some(sem.acquire().await.unwrap())
-                } else {
-                    None
-                };
+            let task: tokio::task::JoinHandle<Result<PaladinResult, PaladinError>> =
+                tokio::spawn(async move {
+                    // Acquire semaphore permit if concurrency limiting is enabled
+                    let _permit = if let Some(sem) = &semaphore_clone {
+                        Some(sem.acquire().await.unwrap())
+                    } else {
+                        None
+                    };
 
-                debug!("Executing Paladin: {}", paladin_clone.node.name);
-                port.execute(&paladin_clone, &input_clone).await
-            });
+                    debug!("Executing Paladin: {}", paladin_clone.node.name);
+                    port.execute(&paladin_clone, &input_clone).await
+                });
 
             tasks.push(task);
         }

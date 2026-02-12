@@ -36,7 +36,7 @@ fn create_test_paladin_data() -> PaladinData {
         stop_words: vec!["STOP".to_string()],
         status: PaladinStatus::Idle,
         vision_enabled: false,
-            ..Default::default()
+        ..Default::default()
     }
 }
 
