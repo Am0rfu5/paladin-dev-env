@@ -2115,11 +2115,10 @@ mod tests {
 
         async fn unregister(&self, name: &str) -> Option<Armament> {
             let mut tools = self.registered_tools.lock().await;
-            if let Some(pos) = tools.iter().position(|t| t.name == name) {
-                Some(tools.remove(pos))
-            } else {
-                None
-            }
+            tools
+                .iter()
+                .position(|t| t.name == name)
+                .map(|pos| tools.remove(pos))
         }
 
         async fn get(&self, name: &str) -> Option<Armament> {

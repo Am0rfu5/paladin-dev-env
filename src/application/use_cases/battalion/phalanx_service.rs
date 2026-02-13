@@ -783,7 +783,7 @@ mod tests {
         assert!(result.per_paladin_times.contains_key("Editor"));
 
         // All times should be > 0 (mock has 10ms delay)
-        for (_name, time_ms) in &result.per_paladin_times {
+        for time_ms in result.per_paladin_times.values() {
             assert!(*time_ms > 0, "Paladin execution time should be > 0");
         }
     }
