@@ -1,6 +1,9 @@
 ---
 description: 'Rust programming language coding conventions and best practices'
 applyTo: '**/*.rs'
+alwaysApply: true
+always_on: true
+trigger: always_on
 ---
 
 # Rust Coding Conventions and Best Practices
