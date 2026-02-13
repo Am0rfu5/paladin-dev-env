@@ -141,82 +141,83 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 1.8.2 Add sqlite garrison example to same file
   - [x] 1.9 Run tests: `cargo test garrison_config` and verify all pass
 
-- [ ] 2.0 Implement arsenal/MCP configuration wiring (US-23.2)
-  - [ ] 2.1 Read `src/application/cli/commands/agent.rs` and locate TODO at line 296
-  - [ ] 2.2 Extend `src/application/cli/config/paladin_config.rs` with arsenal configuration schema
-    - [ ] 2.2.1 Add `McpServerConfig` struct with fields: name, type, command, args, url, auth_token
-    - [ ] 2.2.2 Add `ArsenalConfig` struct with field: mcp_servers (Vec<McpServerConfig>)
-    - [ ] 2.2.3 Add serde derives and validation attributes
-    - [ ] 2.2.4 Add to main `PaladinYamlConfig` struct
-  - [ ] 2.3 Implement arsenal configuration parsing in `src/application/cli/config/loader.rs`
-    - [ ] 2.3.1 Add `load_arsenal_config()` method to `ConfigLoader`
-    - [ ] 2.3.2 Implement validation logic (name/type required, command for stdio, url for sse)
-    - [ ] 2.3.3 Add URL validation for SSE servers
-    - [ ] 2.3.4 Add environment variable resolution for auth tokens and other fields
-  - [ ] 2.4 Implement MCP adapter instantiation logic
-    - [ ] 2.4.1 Iterate over mcp_servers and match on type
-    - [ ] 2.4.2 Create MCPStdioAdapter for stdio type with command and args
-    - [ ] 2.4.3 Create MCPSseAdapter for sse type with url and auth_token
-    - [ ] 2.4.4 Handle adapter connection errors gracefully
-  - [ ] 2.5 Implement tool registration in arsenal registry
-    - [ ] 2.5.1 Query each MCP adapter for available tools
-    - [ ] 2.5.2 Register tools in ArsenalRegistry with name, description, and capability mapping
-    - [ ] 2.5.3 Store server reference for tool invocation
-  - [ ] 2.6 Add actionable error messages to `src/application/cli/error.rs`
+- [x] 2.0 Implement arsenal/MCP configuration wiring (US-23.2)
+  - [x] 2.1 Read `src/application/cli/commands/agent.rs` and locate TODO at line 296
+  - [x] 2.2 Extend `src/application/cli/config/paladin_config.rs` with arsenal configuration schema
+    - [x] 2.2.1 Add `McpServerConfig` struct with fields: name, type, command, args, url, auth_token
+    - [x] 2.2.2 Add `ArsenalConfig` struct with field: mcp_servers (Vec<McpServerConfig>)
+    - [x] 2.2.3 Add serde derives and validation attributes
+    - [x] 2.2.4 Add to main `PaladinYamlConfig` struct
+  - [x] 2.3 Implement arsenal configuration parsing in `src/application/cli/config/loader.rs`
+    - [x] 2.3.1 Add `load_arsenal_config()` method to `ConfigLoader`
+    - [x] 2.3.2 Implement validation logic (name/type required, command for stdio, url for sse)
+    - [x] 2.3.3 Add URL validation for SSE servers
+    - [x] 2.3.4 Add environment variable resolution for auth tokens and other fields
+  - [x] 2.4 Implement MCP adapter instantiation logic
+    - [x] 2.4.1 Iterate over mcp_servers and match on type
+    - [x] 2.4.2 Create MCPStdioAdapter for stdio type with command and args
+    - [x] 2.4.3 Create MCPSseAdapter for sse type with url and auth_token
+    - [x] 2.4.4 Handle adapter connection errors gracefully
+  - [x] 2.5 Implement tool registration in arsenal registry
+    - [x] 2.5.1 Query each MCP adapter for available tools
+    - [x] 2.5.2 Register tools in ArsenalRegistry with name, description, and capability mapping
+    - [x] 2.5.3 Store server reference for tool invocation
+  - [x] 2.6 Add actionable error messages to `src/application/cli/error.rs`
     - [x] 2.6.1 Add `ArsenalConfigError` variant with descriptive messages
     - [x] 2.6.2 Implement error formatting per FR-23.2.5 requirements
-  - [ ] 2.7 Wire arsenal to PaladinBuilder in `agent.rs` (replace TODO at line 296)
-    - [ ] 2.7.1 Load arsenal config from YAML
-    - [ ] 2.7.2 Instantiate MCP adapters and create arsenal registry
-    - [ ] 2.7.3 Pass arsenal registry to `PaladinBuilder::with_arsenal()`
-  - [ ] 2.8 Write unit tests in `tests/cli/arsenal_config_test.rs`
-    - [ ] 2.8.1 Test parsing valid stdio MCP server config
-    - [ ] 2.8.2 Test parsing valid sse MCP server config
-    - [ ] 2.8.3 Test parsing multiple MCP servers
-    - [ ] 2.8.4 Test validation errors (missing name, missing type, invalid type)
-    - [ ] 2.8.5 Test validation errors (missing command for stdio, missing url for sse)
-    - [ ] 2.8.6 Test URL validation for SSE servers
-    - [ ] 2.8.7 Test environment variable resolution
-  - [ ] 2.9 Create example YAML configurations
-    - [ ] 2.9.1 Create `examples/cli_configs/paladin_with_arsenal.yaml` with stdio example
-    - [ ] 2.9.2 Add sse MCP server example to same file
-    - [ ] 2.9.3 Create `examples/cli_configs/paladin_full_config.yaml` with garrison + arsenal
-  - [ ] 2.10 Run tests: `cargo test arsenal_config` and verify all pass
+  - [x] 2.7 Wire arsenal to PaladinBuilder in `agent.rs` (replace TODO at line 296)
+    - [x] 2.7.1 Load arsenal config from YAML
+    - [x] 2.7.2 Instantiate MCP adapters and create arsenal registry
+    - [x] 2.7.3 Pass arsenal registry to `PaladinBuilder::with_arsenal()`
+  - [x] 2.8 Write unit tests in `tests/cli/arsenal_config_test.rs`
+    - [x] 2.8.1 Test parsing valid stdio MCP server config
+    - [x] 2.8.2 Test parsing valid sse MCP server config
+    - [x] 2.8.3 Test parsing multiple MCP servers
+    - [x] 2.8.4 Test validation errors (missing name, missing type, invalid type)
+    - [x] 2.8.5 Test validation errors (missing command for stdio, missing url for sse)
+    - [x] 2.8.6 Test URL validation for SSE servers
+    - [x] 2.8.7 Test environment variable resolution
+  - [x] 2.9 Create example YAML configurations
+    - [x] 2.9.1 Create `examples/cli_configs/paladin_with_arsenal.yaml` with stdio example
+    - [x] 2.9.2 Add sse MCP server example to same file
+    - [x] 2.9.3 Create `examples/cli_configs/paladin_full_config.yaml` with garrison + arsenal
+  - [x] 2.10 Run tests: `cargo test arsenal_config` and verify all pass
 
-- [ ] 3.0 Implement mock LLM provider infrastructure (US-23.3)
-  - [ ] 3.1 Design MockLlmAdapter structure in `tests/common/mock_llm.rs`
-    - [ ] 3.1.1 Define `MockResponse` enum (Text, ToolCall, Streaming, Error)
-    - [ ] 3.1.2 Define `Invocation` struct to record calls (prompt, model, timestamp)
-    - [ ] 3.1.3 Define `MockLlmAdapter` struct with responses, index, invocations
-  - [ ] 3.2 Implement LlmPort trait for MockLlmAdapter
-    - [ ] 3.2.1 Implement `generate()` method to return configured responses
-    - [ ] 3.2.2 Implement `generate_stream()` method for streaming simulation
-    - [ ] 3.2.3 Implement `validate_model()` method (always succeeds for mock)
-    - [ ] 3.2.4 Record each invocation for test assertions
-  - [ ] 3.3 Implement builder pattern for configurable responses
-    - [ ] 3.3.1 Add `MockLlmAdapter::new()` constructor
-    - [ ] 3.3.2 Add `with_response(text)` method for simple text responses
-    - [ ] 3.3.3 Add `with_tool_call(name, args)` method for tool invocation responses
-    - [ ] 3.3.4 Add `with_streaming(chunks)` method for streaming responses
-    - [ ] 3.3.5 Add `with_error(error)` method to simulate API failures
-  - [ ] 3.4 Implement invocation recording and query methods
-    - [ ] 3.4.1 Add `invocations()` method to get all recorded calls
-    - [ ] 3.4.2 Add `call_count()` method
-    - [ ] 3.4.3 Add `last_prompt()` method for assertions
-    - [ ] 3.4.4 Add `reset()` method to clear invocations
-  - [ ] 3.5 Write unit tests for MockLlmAdapter
-    - [ ] 3.5.1 Test simple text response
-    - [ ] 3.5.2 Test tool call response
-    - [ ] 3.5.3 Test streaming response
-    - [ ] 3.5.4 Test error simulation (rate limit, timeout, API error)
-    - [ ] 3.5.5 Test invocation recording
-    - [ ] 3.5.6 Test multiple sequential responses
-  - [ ] 3.6 Create test utilities and helper functions
-    - [ ] 3.6.1 Add `create_mock_paladin()` helper in `tests/common/mod.rs`
-    - [ ] 3.6.2 Add `create_mock_battalion()` helper
-    - [ ] 3.6.3 Add common test fixtures
-  - [ ] 3.7 Document MockLlmAdapter usage in code comments
-  - [ ] 3.8 Run tests: `cargo test mock_llm` and verify all pass
+- [x] 3.0 Implement mock LLM provider infrastructure (US-23.3)
+  - [x] 3.1 Design MockLlmAdapter structure in `tests/common/mock_llm.rs`
+    - [x] 3.1.1 Define `MockResponse` enum (Text, ToolCall, Streaming, Error)
+    - [x] 3.1.2 Define `Invocation` struct to record calls (prompt, model, timestamp)
+    - [x] 3.1.3 Define `MockLlmAdapter` struct with responses, index, invocations
+  - [x] 3.2 Implement LlmPort trait for MockLlmAdapter
+    - [x] 3.2.1 Implement `generate()` method to return configured responses
+    - [x] 3.2.2 Implement `generate_stream()` method for streaming simulation
+    - [x] 3.2.3 Implement `validate_model()` method (always succeeds for mock)
+    - [x] 3.2.4 Record each invocation for test assertions
+  - [x] 3.3 Implement builder pattern for configurable responses
+    - [x] 3.3.1 Add `MockLlmAdapter::new()` constructor
+    - [x] 3.3.2 Add `add_success(text)` method for simple text responses
+    - [x] 3.3.3 Add `add_tool_call(name, args)` method for tool invocation responses
+    - [x] 3.3.4 Add `add_streaming(chunks)` method for streaming responses
+    - [x] 3.3.5 Add `add_failure(error)` method to simulate API failures
+  - [x] 3.4 Implement invocation recording and query methods
+    - [x] 3.4.1 Add `invocations()` method to get all recorded calls
+    - [x] 3.4.2 Add `call_count()` method
+    - [x] 3.4.3 Add `last_prompt()` method for assertions
+    - [x] 3.4.4 Add `reset()` method to clear invocations
+  - [x] 3.5 Write unit tests for MockLlmAdapter
+    - [x] 3.5.1 Test simple text response
+    - [x] 3.5.2 Test tool call response
+    - [x] 3.5.3 Test streaming response
+    - [x] 3.5.4 Test error simulation (rate limit, timeout, API error)
+    - [x] 3.5.5 Test invocation recording
+    - [x] 3.5.6 Test multiple sequential responses
+  - [x] 3.6 Create test utilities and helper functions
+    - [x] 3.6.1 Add `create_test_paladin_with_mock()` helper in `tests/helpers/mod.rs`
+    - [x] 3.6.2 Add `create_mock_with_responses()` helper
+    - [x] 3.6.3 Add `create_mock_with_tool_calls()` helper
+    - [x] 3.6.4 Add `create_mock_with_mixed_responses()` helper
+  - [x] 3.7 Document MockLlmAdapter usage in code comments
+  - [x] 3.8 Run tests: `cargo test mock_llm` and verify all pass
 
 - [ ] 4.0 Implement CLI integration tests with mock provider (US-23.3)
   - [ ] 4.1 Set up test infrastructure in `tests/cli/`
