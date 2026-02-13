@@ -14,9 +14,9 @@
 //! paladin agent run --config agent.yaml --input "What is Rust?"
 //! ```
 
+use crate::application::cli::config::loader::instantiate_garrison;
 use crate::application::cli::error::CliError;
 use crate::application::cli::templates::paladin_template::generate_paladin_template;
-use crate::application::cli::config::loader::instantiate_garrison;
 use clap::Subcommand;
 use colored::Colorize;
 use std::path::PathBuf;

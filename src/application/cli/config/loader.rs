@@ -1,11 +1,13 @@
 //! Configuration file loading utilities
 
 use crate::application::cli::config::battalion_config::BattalionYamlConfig;
-use crate::application::cli::config::paladin_config::{GarrisonConfig, PaladinYamlConfig, Validate};
+use crate::application::cli::config::paladin_config::{
+    GarrisonConfig, PaladinYamlConfig, Validate,
+};
 use crate::application::cli::error::CliError;
 use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::core::platform::container::garrison::{
-    GarrisonConfig as CoreGarrisonConfig, EvictionStrategy,
+    EvictionStrategy, GarrisonConfig as CoreGarrisonConfig,
 };
 use crate::infrastructure::adapters::garrison::in_memory_garrison::InMemoryGarrison;
 use crate::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarrison;
@@ -153,17 +155,15 @@ pub async fn instantiate_garrison(
                 })?;
 
             // Validate path is writable (check parent directory exists)
-            if let Some(parent) = Path::new(path).parent() {
-                if !parent.exists() {
-                    // Try to create parent directory
-                    std::fs::create_dir_all(parent).map_err(|e| CliError::GarrisonConfigError {
-                        message: format!(
-                            "garrison.config.path parent directory does not exist and could not be created: {} - {}",
-                            parent.display(),
-                            e
-                        ),
-                    })?;
-                }
+            if let Some(parent) = Path::new(path).parent() && !parent.exists() {
+                // Try to create parent directory
+                std::fs::create_dir_all(parent).map_err(|e| CliError::GarrisonConfigError {
+                    message: format!(
+                        "garrison.config.path parent directory does not exist and could not be created: {} - {}",
+                        parent.display(),
+                        e
+                    ),
+                })?;
             }
 
             // Connect to SQLite garrison

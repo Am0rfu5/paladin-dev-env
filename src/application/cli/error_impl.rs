@@ -287,7 +287,7 @@ impl CliError {
                     message
                 )
             }
-             CliError::JsonError(message) => {
+            CliError::JsonError(message) => {
                 format!(
                     "\n\x1b[31mError:\x1b[0m JSON parsing error\n\n\
                      \x1b[33mDetails:\x1b[0m {}\n\n\

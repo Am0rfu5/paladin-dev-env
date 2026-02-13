@@ -109,37 +109,37 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 0.1 Create and checkout new branch: `git checkout -b feature/epic-23-cli-config-infrastructure-completion`
   - [x] 0.2 Verify clean working directory with `git status`
 
-- [ ] 1.0 Implement garrison configuration wiring (US-23.1)
+- [x] 1.0 Implement garrison configuration wiring (US-23.1)
   - [x] 1.1 Read `src/application/cli/commands/agent.rs` and locate TODO at line 293
-  - [ ] 1.2 Extend `src/application/cli/config/paladin_config.rs` with garrison configuration schema
+  - [x] 1.2 Extend `src/application/cli/config/paladin_config.rs` with garrison configuration schema
     - [x] 1.2.1 Add `GarrisonConfig` struct with fields: type, path, max_entries, ttl_seconds
     - [x] 1.2.2 Add serde derives and validation attributes
     - [x] 1.2.3 Add to main `PaladinYamlConfig` struct
-  - [ ] 1.3 Implement garrison configuration parsing in `src/application/cli/config/loader.rs`
+  - [x] 1.3 Implement garrison configuration parsing in `src/application/cli/config/loader.rs`
     - [x] 1.3.1 Add `load_garrison_config()` method to `ConfigLoader`
     - [x] 1.3.2 Implement validation logic (type present, path for sqlite, positive values)
     - [x] 1.3.3 Add environment variable resolution if needed
-  - [ ] 1.4 Implement garrison adapter instantiation logic
+  - [x] 1.4 Implement garrison adapter instantiation logic
     - [x] 1.4.1 Match on garrison type and create appropriate adapter (InMemory or SQLite)
     - [x] 1.4.2 Pass configuration parameters (path, max_entries, ttl_seconds) to adapter constructors
     - [x] 1.4.3 Handle adapter initialization errors
-  - [ ] 1.5 Add actionable error messages to `src/application/cli/error.rs`
+  - [x] 1.5 Add actionable error messages to `src/application/cli/error.rs`
     - [x] 1.5.1 Add `GarrisonConfigError` variant with descriptive messages
     - [x] 1.5.2 Implement error formatting per FR-23.1.4 requirements
-  - [ ] 1.6 Wire garrison to PaladinBuilder in `agent.rs` (replace TODO at line 293)
+  - [x] 1.6 Wire garrison to PaladinBuilder in `agent.rs` (replace TODO at line 293)
     - [x] 1.6.1 Load garrison config from YAML
     - [x] 1.6.2 Instantiate garrison adapter
     - [x] 1.6.3 Pass garrison to `PaladinBuilder::with_garrison()`
-  - [ ] 1.7 Write unit tests in `tests/cli/garrison_config_test.rs`
-    - [ ] 1.7.1 Test parsing valid in_memory garrison config
-    - [ ] 1.7.2 Test parsing valid sqlite garrison config  
-    - [ ] 1.7.3 Test validation errors (missing type, invalid type, missing path for sqlite)
-    - [ ] 1.7.4 Test validation errors (invalid max_entries, invalid ttl_seconds)
-    - [ ] 1.7.5 Test garrison adapter instantiation for both types
-  - [ ] 1.8 Create example YAML configurations
-    - [ ] 1.8.1 Create `examples/cli_configs/paladin_with_garrison.yaml` with in_memory example
-    - [ ] 1.8.2 Add sqlite garrison example to same file
-  - [ ] 1.9 Run tests: `cargo test garrison_config` and verify all pass
+  - [x] 1.7 Write unit tests in `tests/cli/garrison_config_test.rs`
+    - [x] 1.7.1 Test parsing valid in_memory garrison config
+    - [x] 1.7.2 Test parsing valid sqlite garrison config  
+    - [x] 1.7.3 Test validation errors (missing type, invalid type, missing path for sqlite)
+    - [x] 1.7.4 Test validation errors (invalid max_entries, invalid ttl_seconds)
+    - [x] 1.7.5 Test garrison adapter instantiation for both types
+  - [x] 1.8 Create example YAML configurations
+    - [x] 1.8.1 Create `examples/cli_configs/paladin_with_garrison.yaml` with in_memory example
+    - [x] 1.8.2 Add sqlite garrison example to same file
+  - [x] 1.9 Run tests: `cargo test garrison_config` and verify all pass
 
 - [ ] 2.0 Implement arsenal/MCP configuration wiring (US-23.2)
   - [ ] 2.1 Read `src/application/cli/commands/agent.rs` and locate TODO at line 296

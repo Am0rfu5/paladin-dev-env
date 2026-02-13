@@ -1,0 +1,216 @@
+# ============================================================================
+# PALADIN WITH GARRISON (MEMORY) CONFIGURATION EXAMPLES
+# ============================================================================
+# This configuration demonstrates how to enable memory/context retention
+# for your Paladin using the Garrison system.
+#
+# For use with: paladin agent run -c paladin_with_garrison.yaml -i "Your question"
+#
+# Learn more:
+# - Garrison documentation: docs/GARRISON.md
+# - CLI usage: docs/CLI_USAGE.md
+# ============================================================================
+
+# ============================================================================
+# IDENTITY
+# ============================================================================
+
+name: "MemoryPaladin"
+user_name: "User"
+
+# ============================================================================
+# SYSTEM PROMPT
+# ============================================================================
+
+system_prompt: |
+  You are an AI assistant with memory capabilities. You can remember previous
+  interactions and build context over multiple conversations.
+  
+  When users ask questions, check your memory (garrison) for relevant context
+  from previous interactions. Use this context to provide more personalized
+  and contextually aware responses.
+  
+  Always acknowledge when you're using information from previous conversations.
+
+# ============================================================================
+# LLM CONFIGURATION
+# ============================================================================
+
+model: "gpt-4"
+temperature: 0.7
+max_loops: 3
+timeout_seconds: 300
+stop_words: ["TERMINATE"]
+
+# ============================================================================
+# PROVIDER CONFIGURATION
+# ============================================================================
+
+provider:
+  type: openai
+
+# ============================================================================
+# GARRISON CONFIGURATION: IN-MEMORY (EXAMPLE 1)
+# ============================================================================
+# Use in-memory garrison for fast, temporary memory storage.
+# Memory is lost when the process ends.
+# Best for: Development, testing, short-lived sessions
+
+garrison:
+  # Garrison type: "in_memory" or "sqlite"
+  garrison_type: in_memory
+  
+  # Optional configuration
+  config:
+    # Maximum number of memory entries to store
+    # Older entries are evicted when limit is reached
+    # Default: 100
+    max_entries: 500
+
+# ============================================================================
+# GARRISON CONFIGURATION: SQLITE (EXAMPLE 2)
+# ============================================================================
+# Use SQLite garrison for persistent memory storage.
+# Memory persists across sessions and process restarts.
+# Best for: Production, long-term memory, multi-session agents
+
+# Uncomment to use persistent SQLite storage:
+# garrison:
+#   garrison_type: sqlite
+#   
+#   config:
+#     # Database file path (will be created if doesn't exist)
+#     # Relative paths are from working directory
+#     path: ./garrison_memory.db
+#     
+#     # Or use absolute path:
+#     # path: /var/lib/paladin/garrison/memory.db
+#     
+#     # Maximum entries (optional, default: 100)
+#     max_entries: 1000
+#     
+#     # Maximum tokens (same as in-memory)
+#     max_tokens: 16000
+#     
+#     # Eviction strategy (same as in-memory)
+#     eviction_strategy: lru
+
+# ============================================================================
+# GARRISON CONFIGURATION: MINIMAL (EXAMPLE 3)
+# ============================================================================
+# Garrison with default settings - no config block needed
+
+# Minimal in-memory garrison (uses all defaults):
+# garrison:
+#   garrison_type: in_memory
+
+# Minimal SQLite garrison (only path required):
+# garrison:
+#   garrison_type: sqlite
+#   config:
+#     path: ./garrison.db
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+
+# First conversation (stores in garrison):
+#   paladin agent run -c paladin_with_garrison.yaml -i "My favorite color is blue"
+#   Response: "I'll remember that your favorite color is blue!"
+
+# Second conversation (retrieves from garrison):
+#   paladin agent run -c paladin_with_garrison.yaml -i "What's my favorite color?"
+#   Response: "Based on our previous conversation, your favorite color is blue."
+
+# Verbose mode (see garrison operations):
+#   paladin agent run -c paladin_with_garrison.yaml -i "Query" --verbose
+
+# ============================================================================
+# GARRISON BEHAVIOR NOTES
+# ============================================================================
+
+# Storage Location:
+# - In-memory: RAM (fast, temporary)
+# - SQLite: Disk (persistent, slightly slower)
+
+# When to Use Each Type:
+# 
+# In-Memory Garrison:
+# ✓ Development and testing
+# ✓ Short-lived conversational sessions
+# ✓ When memory doesn't need to persist
+# ✓ Faster performance (no disk I/O)
+# ✗ Lost on process restart
+# ✗ Not shared across multiple processes
+#
+# SQLite Garrison:
+# ✓ Production deployments
+# ✓ Long-term memory requirements
+# ✓ Multi-session continuity
+# ✓ Audit trail / conversation history
+# ✗ Slightly slower (disk I/O)
+# ✗ Requires disk space management
+
+# Memory Eviction:
+# When max_entries limit is reached, older entries are automatically removed
+# based on an importance-based eviction strategy (configured internally).
+# The garrison keeps the most recent and important memories.
+
+# Internal Configuration:
+# The following are set internally and not configurable via YAML:
+# - max_tokens: 4000 (controls total token usage)
+# - eviction_strategy: ImportanceBased (keeps important memories)
+# - preserve_recent_count: 10 (always keeps 10 most recent entries)
+
+# ============================================================================
+# COMBINING WITH ARSENAL
+# ============================================================================
+
+# You can combine garrison memory with arsenal tools for powerful agents.
+# See paladin_with_rag.yaml for a complete example with both.
+
+# arsenal:
+#   mcp_servers:
+#     - name: web_search
+#       type: stdio
+#       command: uvx
+#       args:
+#         - mcp-web-search
+
+# ============================================================================
+# TROUBLESHOOTING
+# ============================================================================
+
+# Error: "path is required for sqlite garrison"
+# → Add config.path when using garrison_type: sqlite
+
+# Error: "garrison.type must be 'in_memory' or 'sqlite'"
+# → Check garrison_type is exactly "in_memory" or "sqlite" (case-sensitive)
+
+# Warning: "Garrison eviction threshold reached"
+# → Increase max_entries, or this is normal behavior
+
+# SQLite file not found:
+# → Double-check path, ensure parent directories exist
+
+# ============================================================================
+# ADVANCED: DIRECTORY AUTO-CREATION
+# ============================================================================
+
+# Parent directories are automatically created for SQLite databases:
+
+# garrison:
+#   garrison_type: sqlite
+#   config:
+#     # This will create ./data/paladins/ if it doesn't exist:
+#     path: ./data/paladins/memory.db
+
+# ============================================================================
+# NEXT STEPS
+# ============================================================================
+
+# 1. Choose garrison type (in_memory or sqlite)
+# 2. Configure max_entries based on memory needs
+# 3. Run and test memory retention across interactions
+# 4. Monitor garrison operations with --verbose flag
+# 5. Adjust max_entries based on performance and memory usage
