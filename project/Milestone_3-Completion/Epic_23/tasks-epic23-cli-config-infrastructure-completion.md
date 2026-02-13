@@ -220,18 +220,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.8 Run tests: `cargo test mock_llm` and verify all pass
 
 - [ ] 4.0 Implement CLI integration tests with mock provider (US-23.3)
-  - [ ] 4.1 Set up test infrastructure in `tests/cli/`
-    - [ ] 4.1.1 Create test module structure
-    - [ ] 4.1.2 Import MockLlmAdapter and test utilities
-    - [ ] 4.1.3 Set up test data directory for YAML configs
-  - [ ] 4.2 Implement Paladin execution test in `tests/cli/paladin_execution_test.rs`
-    - [ ] 4.2.1 Create test YAML config for single Paladin
-    - [ ] 4.2.2 Set up MockLlmAdapter with expected response
-    - [ ] 4.2.3 Load config and execute Paladin via CLI command handler
-    - [ ] 4.2.4 Assert correct response returned
-    - [ ] 4.2.5 Assert mock was called with correct prompt
-    - [ ] 4.2.6 Test with garrison configured
-    - [ ] 4.2.7 Test with arsenal configured
+  - [x] 4.1 Set up test infrastructure in `tests/cli/`
+    - [x] 4.1.1 Create test module structure
+    - [x] 4.1.2 Import MockLlmAdapter and test utilities
+    - [x] 4.1.3 Set up test data directory for YAML configs
+  - [x] 4.2 Implement Paladin execution test in `tests/cli/paladin_execution_test.rs`
+    - [x] 4.2.1 Create test YAML config for single Paladin
+    - [x] 4.2.2 Set up MockLlmAdapter with expected response
+    - [x] 4.2.3 Load config and execute Paladin via CLI command handler
+    - [x] 4.2.4 Assert correct response returned
+    - [x] 4.2.5 Assert mock was called with correct prompt
+    - [x] 4.2.6 Test with garrison configured
+    - [x] 4.2.7 Test with arsenal configured
   - [ ] 4.3 Implement Formation execution test in `tests/cli/formation_execution_test.rs`
     - [ ] 4.3.1 Create test YAML config for Formation with 3 Paladins
     - [ ] 4.3.2 Set up MockLlmAdapter with sequential responses
@@ -245,12 +245,12 @@ Update the file after completing each sub-task, not just after completing an ent
     - [ ] 4.4.3 Execute Phalanx via CLI command handler
     - [ ] 4.4.4 Assert parallel execution (all Paladins run concurrently)
     - [ ] 4.4.5 Assert results are aggregated correctly
-  - [ ] 4.5 Implement error handling tests
-    - [ ] 4.5.1 Test LLM error propagation (rate limit)
-    - [ ] 4.5.2 Test timeout handling
-    - [ ] 4.5.3 Test invalid config error handling
-    - [ ] 4.5.4 Test missing config file error
-    - [ ] 4.5.5 Test graceful failure and cleanup
+  - [x] 4.5 Implement error handling tests
+    - [x] 4.5.1 Test LLM error propagation (rate limit)
+    - [x] 4.5.2 Test timeout handling
+    - [x] 4.5.3 Test invalid config error handling
+    - [x] 4.5.4 Test missing config file error
+    - [x] 4.5.5 Test graceful failure and cleanup
   - [ ] 4.6 Implement tool integration tests
     - [ ] 4.6.1 Set up mock MCP server (or stub)
     - [ ] 4.6.2 Configure Paladin with arsenal
