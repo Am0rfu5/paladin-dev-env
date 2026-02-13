@@ -1594,6 +1594,48 @@ mod tests {
         }
     }
 
+    /// Mock PaladinPort for ChainOfCommand testing  
+    /// Returns proper SELECT/REASON format when executed on commander
+    struct MockChainOfCommandPort;
+
+    #[async_trait]
+    impl PaladinPort for MockChainOfCommandPort {
+        async fn execute(
+            &self,
+            paladin: &Paladin,
+            _input: &str,
+        ) -> Result<PaladinResult, PaladinError> {
+            // Commander returns specialist selection, others return normal output
+            let output = if paladin.node.name == "Commander" {
+                "SELECT: Specialist_1, Specialist_2\nREASON: Both specialists are needed for this task".to_string()
+            } else {
+                format!("{} completed the task", paladin.node.name)
+            };
+
+            Ok(PaladinResult {
+                output,
+                token_count: 100,
+                execution_time_ms: 100,
+                loop_count: 1,
+                stop_reason: StopReason::Completed,
+                ..Default::default()
+            })
+        }
+
+        async fn execute_stream(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<PaladinStream, PaladinError> {
+            let (_tx, rx) = tokio::sync::mpsc::channel(1);
+            Ok(rx)
+        }
+
+        fn validate(&self, _paladin: &Paladin) -> Result<(), PaladinError> {
+            Ok(())
+        }
+    }
+
     fn create_test_paladin() -> Paladin {
         let data = PaladinData {
             system_prompt: "Test prompt".to_string(),
@@ -1608,6 +1650,22 @@ mod tests {
             ..Default::default()
         };
         Node::new(data, Some("TestPaladin".to_string()))
+    }
+
+    fn create_test_paladin_with_name(name: &str) -> Paladin {
+        let data = PaladinData {
+            system_prompt: format!("{} prompt", name),
+            name: name.to_string(),
+            user_name: "User".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: MaxLoops::Fixed(3),
+            stop_words: vec![],
+            status: PaladinStatus::Idle,
+            vision_enabled: false,
+            ..Default::default()
+        };
+        Node::new(data, Some(name.to_string()))
     }
 
     fn create_test_config() -> BattalionConfig {
@@ -1939,10 +1997,14 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // TODO: Requires proper Campaign DAG setup with mock data - move to integration tests
     async fn test_execute_routes_to_campaign_service() {
         let paladin_port = Arc::new(MockPaladinPort);
-        let paladins = vec![create_test_paladin(); 3];
+        let paladins = vec![
+            create_test_paladin_with_name("Agent_A"),
+            create_test_paladin_with_name("Agent_B"),
+            create_test_paladin_with_name("Agent_C"),
+            create_test_paladin_with_name("Agent_D"),
+        ];
         let config = create_test_config();
 
         let commander = CommanderBuilder::new(paladin_port)
@@ -1964,10 +2026,13 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // TODO: Requires proper ChainOfCommand setup with mock delegation - move to integration tests  
     async fn test_execute_routes_to_chain_service() {
-        let paladin_port = Arc::new(MockPaladinPort);
-        let paladins = vec![create_test_paladin(); 3];
+        let paladin_port = Arc::new(MockChainOfCommandPort);
+        let paladins = vec![
+            create_test_paladin_with_name("Commander"),
+            create_test_paladin_with_name("Specialist_1"),
+            create_test_paladin_with_name("Specialist_2"),
+        ];
         let config = create_test_config();
 
         let commander = CommanderBuilder::new(paladin_port)
