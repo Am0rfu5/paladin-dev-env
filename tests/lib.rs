@@ -9,6 +9,9 @@
 
 use std::sync::Once;
 
+// Test helpers and mocks
+pub mod helpers;
+
 // Conditional compilation for different test environments
 #[cfg(test)]
 mod test_config {

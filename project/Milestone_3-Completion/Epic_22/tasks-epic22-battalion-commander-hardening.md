@@ -243,47 +243,47 @@ Update the file after completing each sub-task, not just after completing parent
   - [x] 7.26 Run clippy: `cargo clippy -- -D warnings`
   - [x] 7.27 Format code: `cargo fmt`
 
-- [ ] 8.0 Add Commander metadata export configuration (US-22.4)
-  - [ ] 8.1 Open `src/core/platform/container/battalion/commander_config.rs`
-  - [ ] 8.2 Add `metadata_output_dir: Option<PathBuf>` field to `CommanderConfig`
-  - [ ] 8.3 Update `CommanderConfig::default()` to set `metadata_output_dir: None`
-  - [ ] 8.4 Add validation method: validate path is writable if Some
-  - [ ] 8.5 Update config deserialization to handle optional PathBuf
-  - [ ] 8.6 Write test: test_commander_config_with_metadata_dir
-  - [ ] 8.7 Write test: test_commander_config_without_metadata_dir
-  - [ ] 8.8 Update `config.yml` or `config.test.yml` with example configuration
-  - [ ] 8.9 Run tests: `cargo test commander_config`
-  - [ ] 8.10 Run clippy: `cargo clippy -- -D warnings`
-  - [ ] 8.11 Format code: `cargo fmt`
+- [x] 8.0 Add Commander metadata export configuration (US-22.4)
+  - [x] 8.1 Open `src/core/platform/container/battalion/commander_config.rs`
+  - [x] 8.2 Add `metadata_output_dir: Option<PathBuf>` field to `CommanderConfig`
+  - [x] 8.3 Update `CommanderConfig::default()` to set `metadata_output_dir: None`
+  - [x] 8.4 Add validation method: validate path is writable if Some
+  - [x] 8.5 Update config deserialization to handle optional PathBuf
+  - [x] 8.6 Write test: test_commander_config_with_metadata_dir
+  - [x] 8.7 Write test: test_commander_config_without_metadata_dir
+  - [x] 8.8 Update `config.yml` or `config.test.yml` with example configuration
+  - [x] 8.9 Run tests: `cargo test commander_config`
+  - [x] 8.10 Run clippy: `cargo clippy -- -D warnings`
+  - [x] 8.11 Format code: `cargo fmt`
 
-- [ ] 9.0 Implement Commander metadata export logic (US-22.4)
-  - [ ] 9.1 Open `src/application/use_cases/battalion/commander.rs`
-  - [ ] 9.2 Write failing test: test_metadata_export_creates_file (TDD, use temp dir)
-  - [ ] 9.3 Write failing test: test_metadata_export_correct_naming (TDD)
-  - [ ] 9.4 Write failing test: test_metadata_export_json_structure (TDD)
-  - [ ] 9.5 Write failing test: test_metadata_export_error_handling (TDD)
-  - [ ] 9.6 Add helper method: `export_metadata(metadata: &BattalionMetadata, strategy: &str, config: &CommanderConfig)`
-  - [ ] 9.7 Check if `config.metadata_output_dir.is_some()`
-  - [ ] 9.8 If None, return early (no export)
-  - [ ] 9.9 Generate timestamp: `Local::now().format("%Y%m%d_%H%M%S")`
-  - [ ] 9.10 Generate short UUID: `Uuid::new_v4().to_string()[..8]`
-  - [ ] 9.11 Build filename: `{strategy}_{timestamp}_{uuid}.json`
-  - [ ] 9.12 Build full path: `metadata_output_dir.join(filename)`
-  - [ ] 9.13 Create output directory if it doesn't exist: `std::fs::create_dir_all()`
-  - [ ] 9.14 Serialize metadata to JSON: `serde_json::to_string_pretty(metadata)`
-  - [ ] 9.15 Write JSON to file: `std::fs::write(path, json)`
-  - [ ] 9.16 Log success: "Metadata exported to {path}"
-  - [ ] 9.17 Handle errors: wrap in match, log errors, return Ok (non-fatal)
-  - [ ] 9.18 Call `export_metadata()` after each Battalion execution in Commander
-  - [ ] 9.19 Run test: `cargo test test_metadata_export_creates_file`
-  - [ ] 9.20 Run test: `cargo test test_metadata_export_correct_naming`
-  - [ ] 9.21 Run test: `cargo test test_metadata_export_json_structure`
-  - [ ] 9.22 Run test: `cargo test test_metadata_export_error_handling`
-  - [ ] 9.23 Write integration test: test_commander_exports_metadata_end_to_end
-  - [ ] 9.24 Run integration test
-  - [ ] 9.25 Run all Commander tests: `cargo test commander` (will have ignored tests)
-  - [ ] 9.26 Run clippy: `cargo clippy -- -D warnings`
-  - [ ] 9.27 Format code: `cargo fmt`
+- [x] 9.0 Implement Commander metadata export logic (US-22.4)
+  - [x] 9.1 Open `src/application/use_cases/battalion/commander.rs`
+  - [x] 9.2 Write failing test: test_metadata_export_creates_file (TDD, use temp dir)
+  - [x] 9.3 Write failing test: test_metadata_export_correct_naming (TDD)
+  - [x] 9.4 Write failing test: test_metadata_export_json_structure (TDD)
+  - [x] 9.ing test: test_metadata_export_error_handling (TDD)
+  - [x] 9.6 Add helper method: `export_metadata(metadata: &BattalionMetadata, strategy: &str, config: &CommanderConfig)`
+  - [x] 9.7 Check if `config.metadata_output_dir.is_some()`
+  - [x] 9.8 If None, return early (no export)
+  - [x] 9.9 Generate timestamp: `Local::now().format("%Y%m%d_%H%M%S")`
+  - [x] 9.10 Generate short UUID: `Uuid::new_v4().to_string()[..8]`
+  - [x] 9.11 Build filename: `{strategy}_{timestamp}_{uuid}.json`
+  - [x] 9.12 Build full path: `metadata_output_dir.join(filename)`
+  - [x] 9.13 Create output directory if it doesn't exist: `std::fs::create_dir_all()`
+  - [x] 9.14 Serialize metadata to JSON: `serde_json::to_string_pretty(metadata)`
+  - [x] 9.15 Write JSON to file: `std::fs::write(path, json)`
+  - [x] 9.16 Log success: "Metadata exported to {path}"
+  - [x] 9.17 Handle errors: wrap in match, log errors, return Ok (non-fatal)
+  - [x] 9.18 Call `export_metadata()` after each Battalion execution in Commander
+  - [x] 9.19 Run test: `cargo test test_metadata_export_creates_file`
+  - [x] 9.20 Run test: `cargo test test_metadata_export_correct_naming`
+  - [x] 9.21 Run test: `cargo test test_metadata_export_json_structure`
+  - [x] 9.22 Run test: `cargo test test_metadata_export_error_handling`
+  - [x] 9.23 Write integration test: test_commander_exports_metadata_end_to_end
+  - [x] 9.24 Run integration test
+  - [x] 9.25 Run all Commander tests: `cargo test commander` (will have ignored tests)
+  - [x] 9.26 Run clippy: `cargo clippy -- -D warnings`
+  - [x] 9.27 Format code: `cargo fmt`
 
 ### Phase 4: Test Hardening (Days 9-10)
 
