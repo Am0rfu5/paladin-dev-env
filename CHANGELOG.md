@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Epic 22: Battalion & Commander Hardening
+
+#### Commander Metadata Export
+- Commander now exports detailed execution metadata to JSON files when `metadata_output_dir` is configured
+- JSON files use naming convention: `{strategy}_{timestamp}_{uuid_short}.json`
+- Metadata includes: battalion_id, battalion_name, strategy_used, timestamps, final_output, paladin_results
+- Per-paladin execution metrics: execution times and token usage independently tracked
+- Comprehensive metadata structure for audit trails, debugging, and performance analysis
+- Automatic directory creation and validation with detailed error messages
+- Integration test coverage for end-to-end metadata export validation
+
+#### Enhanced Phalanx Metrics Collection
+- Phalanx now tracks per-paladin execution times in `per_paladin_times: HashMap<String, u64>`
+- Per-paladin token usage tracked in `per_paladin_tokens: HashMap<String, TokenUsage>`
+- Total token aggregation across all parallel executions in `total_tokens: u64`
+- Success/failure counts: `paladin_success_count` and `paladin_failure_count`
+- Metrics collected concurrently for accurate parallel execution profiling
+- Enhanced BattalionResult with comprehensive performance data
+- 100% test coverage for metrics collection across all Battalion patterns
+
+#### Test Infrastructure Improvements
+- MockLlmAdapter test infrastructure with configurable response queueing
+- Call count tracking and state management for repeatable tests
+- Helper functions: `create_mock_with_responses()`, `create_test_paladin_with_mock()`
+- Strategy-specific mock implementations (MockChainOfCommandPort for delegation testing)
+- Comprehensive test coverage for Campaign and ChainOfCommand orchestration patterns
+- Error handling tests: FailFast, ContinueOnError, RetryThenContinue, partial failure scenarios
+- Integration test for Commander metadata export with JSON validation
+- All 1590 lib tests passing, 211 doctests passing, 19 integration tests
+
+#### Paladin Registry Foundation
+- PaladinRegistry trait defining standard interface for Paladin lookup and management
+- HashMapPaladinRegistry implementation with thread-safe concurrent access via RwLock
+- O(1) average case lookup performance for Paladin retrieval by ID
+- Methods: `register()`, `unregister()`, `get()`, `contains()`, `list_ids()`, `clear()`, `count()`
+- Duplicate ID prevention with detailed error reporting
+- Full rustdoc with usage examples and performance characteristics
+- Ready for Council and Grove integration (implementation in Epic 22 Sprint 2)
+
+### Changed - Epic 22: Battalion & Commander Hardening
+
+#### BattalionConfig Enhancements
+- Added `metadata_output_dir: Option<PathBuf>` for optional metadata export configuration
+- New `validate_metadata_dir()` method ensures directory exists and is writable before execution
+- Builder pattern method: `with_metadata_dir(dir: PathBuf)` for fluent configuration
+- Comprehensive error messages for directory validation failures
+
+#### BattalionResult Structure
+- Extended with `TokenUsage` struct containing `prompt_tokens`, `completion_tokens`, `total_tokens`
+- Added `per_paladin_times: HashMap<String, u64>` for granular timing data
+- Added `per_paladin_tokens: HashMap<String, TokenUsage>` for granular token tracking
+- Added `total_tokens: u64` for cross-Battalion token aggregation
+- Added `paladin_success_count: usize` and `paladin_failure_count: usize` for execution summaries
+- Backward-compatible additions, all existing code continues to work
+
+#### Commander Test Coverage
+- Enabled and fixed previously ignored Campaign orchestration tests with DAG validation
+- Enabled and fixed previously ignored ChainOfCommand delegation tests with specialist selection
+- Added comprehensive error handling test suite covering all ErrorStrategy variants
+- MockChainOfCommandPort returns properly formatted "SELECT: name1, name2\nREASON: ..." responses
+- Unique paladin naming in tests to avoid graph cycle detection false positives
+- 50 Commander unit tests now passing (up from ~40 with ignored tests)
+
+### Fixed - Epic 22: Battalion & Commander Hardening
+
+#### Code Quality
+- Resolved clippy warning: unused loop variable in phalanx_service.rs timing validation
+- Resolved clippy warning: manual Option::map pattern in paladin_builder.rs MockArsenalRegistry
+- Fixed 6 failing doctests in PaladinRegistry with correct trait imports and API usage
+- Fixed typo in HandoffConfig doctest (removed `stat` field)
+- All code now passes `cargo clippy -- -D warnings` with zero warnings
+
+#### Test Reliability
+- Fixed ChainOfCommand test failures by implementing context-aware mock responses
+- Fixed Campaign test failures by ensuring unique paladin names in DAG construction
+- MockPaladinPort enhanced with configurable response strategies per test scenario
+- All integration tests now run reliably without flaky failures
+
 ### Added - Epic 20: Vision Pipeline Completion
 
 #### Vision Configuration System

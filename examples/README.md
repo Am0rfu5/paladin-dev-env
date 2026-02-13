@@ -843,6 +843,48 @@ cargo run --example commander_full_config
 - Fallback handling
 - Advanced configuration
 
+### [commander_with_metadata_export.rs](commander_with_metadata_export.rs) 🆕
+**Demonstrates:** Battalion execution metadata export
+
+Shows how to enable and use comprehensive JSON metadata export for audit trails, performance analysis, and cost tracking.
+
+```bash
+cargo run --example commander_with_metadata_export
+```
+
+**Key concepts:**
+- Metadata export configuration
+- JSON file structure and naming
+- Per-Paladin metrics collection
+- Performance profiling
+- Cost tracking
+- Audit trail generation
+
+**Code snippet:**
+```rust
+// Enable metadata export
+let config = BattalionConfig::new("audited_battalion")
+    .with_metadata_dir(PathBuf::from("./battalion_metadata"));
+
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Phalanx)
+    .paladins(paladins)
+    .config(config)
+    .build()?;
+
+// Execute and get detailed metrics
+let result = commander.execute("Analyze quarterly sales data").await?;
+
+// Access per-Paladin metrics
+for (name, time_ms) in &result.per_paladin_times {
+    let tokens = result.per_paladin_tokens.get(name).unwrap();
+    println!("{}: {}ms, {} tokens", name, time_ms, tokens.total_tokens);
+}
+
+// Metadata automatically written to:
+// ./battalion_metadata/{strategy}_{timestamp}_{uuid}.json
+```
+
 ### [maneuver_basic.rs](maneuver_basic.rs) 🆕
 **Demonstrates:** Flow DSL orchestration basics
 

@@ -155,6 +155,51 @@ let phalanx = Phalanx::new(paladins, config)?
 let result = phalanx_service.execute(&phalanx, question).await?;
 ```
 
+**Per-Paladin Metrics**:
+
+Phalanx provides detailed execution metrics for each Paladin, enabling fine-grained performance analysis:
+
+```rust
+let result = phalanx_service.execute(&phalanx, question).await?;
+
+// Access execution times per Paladin by name
+println!("Execution Times:");
+for (paladin_name, time_ms) in &result.per_paladin_times {
+    println!("  {}: {}ms", paladin_name, time_ms);
+}
+
+// Access token usage per Paladin
+println!("\nToken Usage:");
+for (paladin_name, tokens) in &result.per_paladin_tokens {
+    println!("  {}: {} tokens (prompt: {}, completion: {})",
+        paladin_name,
+        tokens.total_tokens,
+        tokens.prompt_tokens,
+        tokens.completion_tokens
+    );
+}
+
+// Calculate metrics
+let avg_time: u64 = result.per_paladin_times.values().sum::<u64>() 
+    / result.per_paladin_times.len() as u64;
+let max_time = result.per_paladin_times.values().max().unwrap_or(&0);
+let total_tokens: usize = result.per_paladin_tokens.values()
+    .map(|t| t.total_tokens)
+    .sum();
+
+println!("\nAggregate Metrics:");
+println!("  Average time: {}ms", avg_time);
+println!("  Slowest Paladin: {}ms", max_time);
+println!("  Total tokens: {}", total_tokens);
+```
+
+**Metrics Use Cases**:
+
+- **Performance Profiling**: Identify slow Paladins for optimization
+- **Cost Analysis**: Track token consumption per model/Paladin
+- **Load Balancing**: Adjust Paladin assignments based on execution patterns
+- **SLA Monitoring**: Verify all Paladins meet latency requirements
+
 **Performance**: Constant time O(1) with respect to Paladin count (concurrent execution).
 
 ---
@@ -769,8 +814,139 @@ pub struct BattalionResult {
 
 - `strategy_selection_time_ms`: Overhead for Auto mode (typically 0-5ms)
 - `paladin_success_count` / `paladin_failure_count`: Execution statistics
-- `per_paladin_times`: Individual Paladin execution times
+- `per_paladin_times`: Individual Paladin execution times for each Paladin by name
+- `per_paladin_tokens`: Token usage breakdown (prompt_tokens, completion_tokens, total_tokens) per Paladin
 - `strategy_selection_reasoning`: Transparency for Auto mode decisions
+
+#### Metadata Export (JSON Files)
+
+Commander can automatically export comprehensive execution metadata to JSON files for:
+
+- **Performance Analysis**: Track execution times, token usage, and bottlenecks
+- **Audit Trails**: Complete execution history for compliance and debugging
+- **Cost Tracking**: Per-Paladin token consumption for billing and optimization
+- **Troubleshooting**: Detailed error context and failure analysis
+
+**Enable Metadata Export:**
+
+```rust
+use std::path::PathBuf;
+
+let config = BattalionConfig::new("audited_battalion")
+    .with_metadata_dir(PathBuf::from("./battalion_metadata"));
+
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Auto)
+    .paladins(paladins)
+    .config(config)
+    .build()?;
+
+let result = commander.execute(input).await?;
+// Metadata automatically written to: ./battalion_metadata/{strategy}_{timestamp}_{uuid}.json
+```
+
+**Metadata File Naming Convention:**
+
+- Format: `{strategy}_{timestamp}_{uuid}.json`
+- Example: `Formation_20240315_143022_a1b2c3d4.json`
+- Components:
+  - `strategy`: Battalion strategy used (Formation, Phalanx, Campaign, etc.)
+  - `timestamp`: ISO 8601 format (YYYYMMDD_HHMMSS)
+  - `uuid`: Unique identifier (first 8 characters of Battalion ID)
+
+**JSON Structure:**
+
+```json
+{
+  "battalion_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "battalion_name": "audited_battalion",
+  "strategy_used": "Formation",
+  "started_at": "2024-03-15T14:30:22.123Z",
+  "completed_at": "2024-03-15T14:31:15.456Z",
+  "duration_ms": 53333,
+  "status": "Completed",
+  "paladin_success_count": 3,
+  "paladin_failure_count": 0,
+  "total_tokens": 1520,
+  "paladin_results": [
+    {
+      "paladin_name": "Analyzer",
+      "status": "Success",
+      "output": "Analysis complete: ...",
+      "execution_time_ms": 1500,
+      "token_count": 450,
+      "loop_count": 1
+    }
+  ],
+  "per_paladin_times": {
+    "Analyzer": 1500,
+    "Enhancer": 1800,
+    "Reviewer": 1200
+  },
+  "per_paladin_tokens": {
+    "Analyzer": {
+      "prompt_tokens": 150,
+      "completion_tokens": 300,
+      "total_tokens": 450
+    }
+  },
+  "strategy_selection_reasoning": "Input contains 'sequential' keyword",
+  "strategy_selection_time_ms": 2
+}
+```
+
+**Field Descriptions:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `battalion_id` | UUID | Unique identifier for this execution |
+| `battalion_name` | String | Configuration name from BattalionConfig |
+| `strategy_used` | String | Actual strategy executed (may differ from requested in Auto mode) |
+| `started_at` / `completed_at` | ISO 8601 | Execution timestamps with millisecond precision |
+| `duration_ms` | Integer | Total execution time in milliseconds |
+| `status` | String | "Completed", "Failed", "PartialSuccess", "Timeout" |
+| `paladin_success_count` | Integer | Number of Paladins that completed successfully |
+| `paladin_failure_count` | Integer | Number of Paladins that failed |
+| `total_tokens` | Integer | Sum of all token usage across all Paladins |
+| `paladin_results` | Array | Detailed results for each Paladin execution |
+| `per_paladin_times` | Object | Execution time (ms) per Paladin by name |
+| `per_paladin_tokens` | Object | Token breakdown per Paladin (prompt, completion, total) |
+| `strategy_selection_reasoning` | String | Auto mode decision explanation (null for explicit strategies) |
+| `strategy_selection_time_ms` | Integer | Overhead for strategy selection (0 for explicit) |
+
+**Use Cases:**
+
+```rust
+// Production audit trail
+let config = BattalionConfig::new("production_api_handler")
+    .with_metadata_dir(PathBuf::from("/var/log/battalion"))
+    .with_timeout(60);
+
+// Cost optimization analysis
+let config = BattalionConfig::new("cost_tracking")
+    .with_metadata_dir(PathBuf::from("./cost_analysis"));
+
+// Performance profiling
+let config = BattalionConfig::new("profiling_run")
+    .with_metadata_dir(PathBuf::from("./performance_data"));
+```
+
+**Configuration via YAML:**
+
+```yaml
+battalion:
+  metadata_output_dir: "./battalion_metadata"
+  default_timeout: 300
+  error_strategy: "RetryThenContinue"
+```
+
+**Benefits:**
+
+- ✅ **Zero Performance Impact**: Async file I/O, non-blocking
+- ✅ **Complete Audit Trail**: Every execution fully documented
+- ✅ **Cost Transparency**: Per-Paladin token tracking for billing
+- ✅ **Debugging Aid**: Capture execution state before failures
+- ✅ **Compliance Ready**: Tamper-evident JSON with timestamps
 
 ### Best Practices
 

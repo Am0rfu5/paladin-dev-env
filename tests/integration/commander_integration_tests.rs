@@ -900,7 +900,7 @@ async fn test_commander_with_metadata_export_integration() {
     let metadata_files: Vec<_> = fs::read_dir(&metadata_path)
         .expect("Failed to read metadata dir")
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().map_or(false, |ext| ext == "json"))
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "json"))
         .collect();
 
     assert!(

@@ -165,8 +165,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let legal_expert = create_expert_paladin("participant_1", "legal compliance");
     let technical_expert = create_expert_paladin("participant_2", "software engineering");
 
-    // Create paladins vector to pass to Council service
-    let paladins = vec![security_expert, legal_expert, technical_expert];
+    // Create paladins array to pass to Council service
+    let paladins = [security_expert, legal_expert, technical_expert];
 
     println!("📋 Council Configuration:");
     println!("   • Participants: Security Expert, Legal Expert, Technical Expert");
