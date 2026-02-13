@@ -858,3 +858,99 @@ async fn test_concurrent_council_and_grove_execution() {
     assert!(!council_output.final_output.is_empty());
     assert!(!grove_output.final_output.is_empty());
 }
+
+#[tokio::test]
+async fn test_commander_with_metadata_export_integration() {
+    use std::fs;
+    use tempfile::TempDir;
+
+    let mock_port = Arc::new(IntegrationMockPaladinPort::new());
+
+    let paladin1 = create_test_paladin("DataCollector");
+    let paladin2 = create_test_paladin("DataAnalyzer");
+    let paladin3 = create_test_paladin("ReportGenerator");
+
+    // Create temporary directory for metadata export
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let metadata_path = temp_dir.path().to_path_buf();
+
+    let config = BattalionConfig::new("metadata_export_test")
+        .with_timeout(60)
+        .with_metadata_dir(metadata_path.clone());
+
+    let commander = CommanderBuilder::new(mock_port.clone() as Arc<dyn PaladinPort>)
+        .strategy(BattalionStrategy::Phalanx)
+        .paladins(vec![paladin1, paladin2, paladin3])
+        .config(config)
+        .build()
+        .expect("Failed to build Commander");
+
+    let result = commander
+        .execute("Generate comprehensive analysis report")
+        .await
+        .expect("Execution should succeed");
+
+    // Verify execution completed successfully
+    assert_eq!(result.status, BattalionStatus::Completed);
+    assert_eq!(result.strategy_used, BattalionStrategy::Phalanx);
+    assert_eq!(result.paladin_success_count, 3);
+    assert_eq!(result.paladin_failure_count, 0);
+
+    // Verify metadata file was created
+    let metadata_files: Vec<_> = fs::read_dir(&metadata_path)
+        .expect("Failed to read metadata dir")
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "json"))
+        .collect();
+
+    assert!(
+        !metadata_files.is_empty(),
+        "Metadata JSON file should be created"
+    );
+
+    // Verify JSON file naming convention: {strategy}_{timestamp}_{uuid_short}.json
+    let metadata_file = metadata_files[0].path();
+    let filename = metadata_file.file_name().unwrap().to_str().unwrap();
+
+    assert!(
+        filename.starts_with("phalanx_"),
+        "Filename should start with strategy name: {}",
+        filename
+    );
+    assert!(
+        filename.ends_with(".json"),
+        "Filename should end with .json"
+    );
+
+    // Verify JSON can be parsed and contains expected structure
+    let json_content = fs::read_to_string(&metadata_file).expect("Failed to read metadata file");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&json_content).expect("Failed to parse JSON");
+
+    // Verify key fields exist in metadata
+    assert!(parsed.get("battalion_id").is_some());
+    assert!(parsed.get("battalion_name").is_some());
+    assert!(parsed.get("strategy_used").is_some());
+    assert!(parsed.get("started_at").is_some());
+    assert!(parsed.get("completed_at").is_some());
+    assert!(parsed.get("final_output").is_some());
+    assert!(parsed.get("paladin_results").is_some());
+    assert!(parsed.get("per_paladin_times").is_some());
+    assert!(parsed.get("per_paladin_tokens").is_some());
+    assert!(parsed.get("total_tokens").is_some());
+    assert!(parsed.get("paladin_success_count").is_some());
+    assert!(parsed.get("paladin_failure_count").is_some());
+
+    // Verify arrays/objects have expected sizes
+    let paladin_results = parsed["paladin_results"].as_array().unwrap();
+    assert_eq!(paladin_results.len(), 3, "Should have 3 Paladin results");
+
+    let per_paladin_times = parsed["per_paladin_times"].as_object().unwrap();
+    assert_eq!(
+        per_paladin_times.len(),
+        3,
+        "Should have timing for 3 Paladins"
+    );
+
+    // Clean up will happen automatically when TempDir drops
+}

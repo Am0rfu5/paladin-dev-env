@@ -25,7 +25,7 @@
 //!
 //! // Retrieve a Paladin
 //! if let Some(paladin) = registry.get("analyzer") {
-//!     println!("Found paladin: {:?}", paladin.id());
+//!     println!("Found paladin: {:?}", paladin.name);
 //! }
 //!
 //! // Check if Paladin exists
@@ -155,7 +155,7 @@ pub trait PaladinRegistry: Send + Sync {
     /// # use paladin::application::ports::output::paladin_registry::PaladinRegistry;
     /// # fn example(registry: impl PaladinRegistry) {
     /// if let Some(paladin) = registry.get("analyzer") {
-    ///     println!("Found: {:?}", paladin.id());
+    ///     println!("Found: {:?}", paladin.name);
     /// } else {
     ///     println!("Paladin not found");
     /// }

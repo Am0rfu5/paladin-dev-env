@@ -28,7 +28,7 @@
 //!
 //! // Retrieve it
 //! let retrieved = registry.get("analyzer").expect("Paladin should exist");
-//! assert_eq!(retrieved.id(), Some("analyzer".to_string()));
+//! assert_eq!(retrieved.name, Some("analyzer".to_string()));
 //! ```
 
 use crate::application::ports::output::paladin_registry::{PaladinRegistry, RegistryError};
@@ -67,6 +67,7 @@ impl HashMapPaladinRegistry {
     ///
     /// ```rust
     /// use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+    /// use paladin::application::ports::output::paladin_registry::PaladinRegistry;
     ///
     /// let registry = HashMapPaladinRegistry::new();
     /// assert!(registry.list_ids().is_empty());
@@ -89,6 +90,7 @@ impl HashMapPaladinRegistry {
     ///
     /// ```rust
     /// use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+    /// use paladin::application::ports::output::paladin_registry::PaladinRegistry;
     /// use paladin::core::platform::container::paladin::{PaladinData, Paladin};
     /// use paladin::core::base::entity::node::Node;
     /// use std::collections::HashMap;

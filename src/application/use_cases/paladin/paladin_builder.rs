@@ -882,7 +882,7 @@ impl PaladinBuilder {
     ///     enabled: true,
     ///     strategy: HandoffStrategy::threshold(0.7),
     ///     max_depth: 3,
-    ///     retry: HandoffRetryConfig::default(),stat
+    ///     retry: HandoffRetryConfig::default(),
     /// });
     ///
     /// let builder = PaladinBuilder::new(llm_port)
