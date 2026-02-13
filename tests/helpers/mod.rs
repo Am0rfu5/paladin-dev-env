@@ -5,5 +5,6 @@
 pub mod mock_llm_adapter;
 
 pub use mock_llm_adapter::{
-    MockLlmAdapter, create_mock_with_responses, create_test_paladin_with_mock,
+    Invocation, MockLlmAdapter, MockResponse, create_mock_with_mixed_responses,
+    create_mock_with_responses, create_mock_with_tool_calls, create_test_paladin_with_mock,
 };
