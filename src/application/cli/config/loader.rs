@@ -2,13 +2,19 @@
 
 use crate::application::cli::config::battalion_config::BattalionYamlConfig;
 use crate::application::cli::config::paladin_config::{
-    GarrisonConfig, PaladinYamlConfig, Validate,
+    ArsenalConfig, GarrisonConfig, PaladinYamlConfig, Validate,
 };
 use crate::application::cli::error::CliError;
+use crate::application::ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
 use crate::application::ports::output::garrison_port::GarrisonPort;
+use crate::application::use_cases::arsenal::arsenal_execution_service::ArsenalExecutionService;
+use crate::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
 use crate::core::platform::container::garrison::{
     EvictionStrategy, GarrisonConfig as CoreGarrisonConfig,
 };
+use crate::infrastructure::adapters::arsenal::mcp_protocol::MCPClient;
+use crate::infrastructure::adapters::arsenal::mcp_sse_adapter::MCPSseAdapter;
+use crate::infrastructure::adapters::arsenal::mcp_stdio_adapter::MCPStdioAdapter;
 use crate::infrastructure::adapters::garrison::in_memory_garrison::InMemoryGarrison;
 use crate::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarrison;
 use std::fs;
@@ -155,7 +161,9 @@ pub async fn instantiate_garrison(
                 })?;
 
             // Validate path is writable (check parent directory exists)
-            if let Some(parent) = Path::new(path).parent() && !parent.exists() {
+            if let Some(parent) = Path::new(path).parent()
+                && !parent.exists()
+            {
                 // Try to create parent directory
                 std::fs::create_dir_all(parent).map_err(|e| CliError::GarrisonConfigError {
                     message: format!(
@@ -177,6 +185,164 @@ pub async fn instantiate_garrison(
         }
         _ => unreachable!("Garrison type already validated"),
     }
+}
+
+/// Instantiate an arsenal from YAML configuration
+///
+/// # Arguments
+/// * `config` - Optional arsenal configuration from YAML
+///
+/// # Returns
+/// * `Ok(Some(Arc<dyn ArsenalPort>))` - If arsenal config is provided and valid
+/// * `Ok(None)` - If no arsenal config is provided
+/// * `Err(CliError)` - If arsenal instantiation fails
+///
+/// # Configuration Schema
+///
+/// ```yaml
+/// arsenal:
+///   mcp_servers:
+///     - name: "web_search"
+///       type: "stdio"
+///       command: "uvx"
+///       args:
+///         - "mcp-web-search"
+///     - name: "api_service"
+///       type: "sse"
+///       endpoint: "http://localhost:8080/mcp"
+/// ```
+pub async fn instantiate_arsenal(
+    config: &Option<ArsenalConfig>,
+) -> Result<Option<Arc<dyn ArsenalPort>>, CliError> {
+    let Some(arsenal_config) = config else {
+        return Ok(None);
+    };
+
+    // Create registry service
+    let registry = ArsenalRegistryService::new();
+
+    // If no MCP servers configured, return empty arsenal
+    if arsenal_config.mcp_servers.is_empty() {
+        let service = ArsenalExecutionService::new(Arc::new(registry));
+        return Ok(Some(Arc::new(service) as Arc<dyn ArsenalPort>));
+    }
+
+    // Process each MCP server
+    for server_config in &arsenal_config.mcp_servers {
+        // Validate server type
+        if server_config.server_type != "stdio" && server_config.server_type != "sse" {
+            return Err(CliError::ArsenalConfigError {
+                message: format!(
+                    "arsenal.mcp_servers[{}].type must be 'stdio' or 'sse', got: '{}'",
+                    server_config.name, server_config.server_type
+                ),
+            });
+        }
+
+        match server_config.server_type.as_str() {
+            "stdio" => {
+                // Validate required fields for stdio
+                let command =
+                    server_config
+                        .command
+                        .as_ref()
+                        .ok_or_else(|| CliError::ArsenalConfigError {
+                            message: format!(
+                                "arsenal.mcp_servers[{}].command is required for stdio type",
+                                server_config.name
+                            ),
+                        })?;
+
+                let args = server_config.args.clone().unwrap_or_default();
+
+                // Create and connect STDIO adapter
+                let mut adapter = MCPStdioAdapter::new(command, args);
+                adapter
+                    .connect()
+                    .await
+                    .map_err(|e| CliError::ArsenalConfigError {
+                        message: format!(
+                            "Failed to connect to STDIO MCP server '{}': {}",
+                            server_config.name, e
+                        ),
+                    })?;
+
+                // Create MCP client and discover tools
+                let client = MCPClient::new(Box::new(adapter));
+                let tools =
+                    client
+                        .discover_tools()
+                        .await
+                        .map_err(|e| CliError::ArsenalConfigError {
+                            message: format!(
+                                "Failed to discover tools from MCP server '{}': {}",
+                                server_config.name, e
+                            ),
+                        })?;
+
+                // Register all tools
+                for tool in tools {
+                    registry.register(tool).await;
+                }
+            }
+            "sse" => {
+                // Validate required fields for sse
+                let endpoint = server_config.endpoint.as_ref().ok_or_else(|| {
+                    CliError::ArsenalConfigError {
+                        message: format!(
+                            "arsenal.mcp_servers[{}].endpoint is required for sse type",
+                            server_config.name
+                        ),
+                    }
+                })?;
+
+                // Validate URL format
+                if !endpoint.starts_with("http://") && !endpoint.starts_with("https://") {
+                    return Err(CliError::ArsenalConfigError {
+                        message: format!(
+                            "arsenal.mcp_servers[{}].endpoint must start with 'http://' or 'https://', got: '{}'",
+                            server_config.name, endpoint
+                        ),
+                    });
+                }
+
+                // Create and connect SSE adapter
+                let mut adapter = MCPSseAdapter::new(endpoint);
+                adapter
+                    .connect()
+                    .await
+                    .map_err(|e| CliError::ArsenalConfigError {
+                        message: format!(
+                            "Failed to connect to SSE MCP server '{}': {}",
+                            server_config.name, e
+                        ),
+                    })?;
+
+                // Create MCP client and discover tools
+                let client = MCPClient::new(Box::new(adapter));
+                let tools =
+                    client
+                        .discover_tools()
+                        .await
+                        .map_err(|e| CliError::ArsenalConfigError {
+                            message: format!(
+                                "Failed to discover tools from MCP server '{}': {}",
+                                server_config.name, e
+                            ),
+                        })?;
+
+                // Register all tools
+                for tool in tools {
+                    registry.register(tool).await;
+                }
+            }
+            _ => unreachable!("Server type already validated"),
+        }
+    }
+
+    // Wrap registry in execution service
+    let service = ArsenalExecutionService::new(Arc::new(registry));
+    Ok(Some(Arc::new(service) as Arc<dyn ArsenalPort>))
 }
 
 #[cfg(test)]

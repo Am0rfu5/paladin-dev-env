@@ -14,7 +14,7 @@
 //! paladin agent run --config agent.yaml --input "What is Rust?"
 //! ```
 
-use crate::application::cli::config::loader::instantiate_garrison;
+use crate::application::cli::config::loader::{instantiate_arsenal, instantiate_garrison};
 use crate::application::cli::error::CliError;
 use crate::application::cli::templates::paladin_template::generate_paladin_template;
 use clap::Subcommand;
@@ -294,8 +294,8 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     // Configure garrison if specified in config (Task 5.8)
     let garrison = instantiate_garrison(&config.garrison, &config.name).await?;
 
-    // TODO: Task 5.9 - Configure arsenal/MCP servers if specified in config
-    let arsenal = None; // Stub for now
+    // Configure arsenal/MCP servers if specified in config (Task 5.9)
+    let arsenal = instantiate_arsenal(&config.arsenal).await?;
 
     // Create Paladin execution service
     let service =
