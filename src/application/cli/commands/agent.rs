@@ -16,6 +16,7 @@
 
 use crate::application::cli::error::CliError;
 use crate::application::cli::templates::paladin_template::generate_paladin_template;
+use crate::application::cli::config::loader::instantiate_garrison;
 use clap::Subcommand;
 use colored::Colorize;
 use std::path::PathBuf;
@@ -290,8 +291,8 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
         Duration::from_secs(30), // timeout_duration
     ));
 
-    // TODO: Task 5.8 - Configure garrison if specified in config
-    let garrison = None; // Stub for now
+    // Configure garrison if specified in config (Task 5.8)
+    let garrison = instantiate_garrison(&config.garrison, &config.name).await?;
 
     // TODO: Task 5.9 - Configure arsenal/MCP servers if specified in config
     let arsenal = None; // Stub for now

@@ -110,6 +110,14 @@ pub enum CliError {
     #[error("Document processing error: {message}")]
     DocumentProcessingError { message: String },
 
+    /// Garrison configuration error
+    #[error("Garrison configuration error: {message}")]
+    GarrisonConfigError { message: String },
+
+    /// Arsenal configuration error
+    #[error("Arsenal configuration error: {message}")]
+    ArsenalConfigError { message: String },
+
     /// Network error
     #[error("Network error: {0}")]
     NetworkError(String),

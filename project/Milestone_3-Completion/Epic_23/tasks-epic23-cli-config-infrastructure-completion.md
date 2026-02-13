@@ -105,31 +105,31 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Create and checkout new branch: `git checkout -b feature/epic-23-cli-config-infrastructure-completion`
-  - [ ] 0.2 Verify clean working directory with `git status`
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Create and checkout new branch: `git checkout -b feature/epic-23-cli-config-infrastructure-completion`
+  - [x] 0.2 Verify clean working directory with `git status`
 
 - [ ] 1.0 Implement garrison configuration wiring (US-23.1)
-  - [ ] 1.1 Read `src/application/cli/commands/agent.rs` and locate TODO at line 293
+  - [x] 1.1 Read `src/application/cli/commands/agent.rs` and locate TODO at line 293
   - [ ] 1.2 Extend `src/application/cli/config/paladin_config.rs` with garrison configuration schema
-    - [ ] 1.2.1 Add `GarrisonConfig` struct with fields: type, path, max_entries, ttl_seconds
-    - [ ] 1.2.2 Add serde derives and validation attributes
-    - [ ] 1.2.3 Add to main `PaladinYamlConfig` struct
+    - [x] 1.2.1 Add `GarrisonConfig` struct with fields: type, path, max_entries, ttl_seconds
+    - [x] 1.2.2 Add serde derives and validation attributes
+    - [x] 1.2.3 Add to main `PaladinYamlConfig` struct
   - [ ] 1.3 Implement garrison configuration parsing in `src/application/cli/config/loader.rs`
-    - [ ] 1.3.1 Add `load_garrison_config()` method to `ConfigLoader`
-    - [ ] 1.3.2 Implement validation logic (type present, path for sqlite, positive values)
-    - [ ] 1.3.3 Add environment variable resolution if needed
+    - [x] 1.3.1 Add `load_garrison_config()` method to `ConfigLoader`
+    - [x] 1.3.2 Implement validation logic (type present, path for sqlite, positive values)
+    - [x] 1.3.3 Add environment variable resolution if needed
   - [ ] 1.4 Implement garrison adapter instantiation logic
-    - [ ] 1.4.1 Match on garrison type and create appropriate adapter (InMemory or SQLite)
-    - [ ] 1.4.2 Pass configuration parameters (path, max_entries, ttl_seconds) to adapter constructors
-    - [ ] 1.4.3 Handle adapter initialization errors
+    - [x] 1.4.1 Match on garrison type and create appropriate adapter (InMemory or SQLite)
+    - [x] 1.4.2 Pass configuration parameters (path, max_entries, ttl_seconds) to adapter constructors
+    - [x] 1.4.3 Handle adapter initialization errors
   - [ ] 1.5 Add actionable error messages to `src/application/cli/error.rs`
-    - [ ] 1.5.1 Add `GarrisonConfigError` variant with descriptive messages
-    - [ ] 1.5.2 Implement error formatting per FR-23.1.4 requirements
+    - [x] 1.5.1 Add `GarrisonConfigError` variant with descriptive messages
+    - [x] 1.5.2 Implement error formatting per FR-23.1.4 requirements
   - [ ] 1.6 Wire garrison to PaladinBuilder in `agent.rs` (replace TODO at line 293)
-    - [ ] 1.6.1 Load garrison config from YAML
-    - [ ] 1.6.2 Instantiate garrison adapter
-    - [ ] 1.6.3 Pass garrison to `PaladinBuilder::with_garrison()`
+    - [x] 1.6.1 Load garrison config from YAML
+    - [x] 1.6.2 Instantiate garrison adapter
+    - [x] 1.6.3 Pass garrison to `PaladinBuilder::with_garrison()`
   - [ ] 1.7 Write unit tests in `tests/cli/garrison_config_test.rs`
     - [ ] 1.7.1 Test parsing valid in_memory garrison config
     - [ ] 1.7.2 Test parsing valid sqlite garrison config  
@@ -163,8 +163,8 @@ Update the file after completing each sub-task, not just after completing an ent
     - [ ] 2.5.2 Register tools in ArsenalRegistry with name, description, and capability mapping
     - [ ] 2.5.3 Store server reference for tool invocation
   - [ ] 2.6 Add actionable error messages to `src/application/cli/error.rs`
-    - [ ] 2.6.1 Add `ArsenalConfigError` variant with descriptive messages
-    - [ ] 2.6.2 Implement error formatting per FR-23.2.5 requirements
+    - [x] 2.6.1 Add `ArsenalConfigError` variant with descriptive messages
+    - [x] 2.6.2 Implement error formatting per FR-23.2.5 requirements
   - [ ] 2.7 Wire arsenal to PaladinBuilder in `agent.rs` (replace TODO at line 296)
     - [ ] 2.7.1 Load arsenal config from YAML
     - [ ] 2.7.2 Instantiate MCP adapters and create arsenal registry

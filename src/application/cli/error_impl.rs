@@ -287,11 +287,27 @@ impl CliError {
                     message
                 )
             }
-            CliError::JsonError(message) => {
+             CliError::JsonError(message) => {
                 format!(
                     "\n\x1b[31mError:\x1b[0m JSON parsing error\n\n\
                      \x1b[33mDetails:\x1b[0m {}\n\n\
                      \x1b[32mSuggestion:\x1b[0m Check the JSON format and ensure it's valid.\n",
+                    message
+                )
+            }
+            CliError::GarrisonConfigError { message } => {
+                format!(
+                    "\n\x1b[31mError:\x1b[0m Garrison configuration error\n\n\
+                     \x1b[33mDetails:\x1b[0m {}\n\n\
+                     \x1b[32mSuggestion:\x1b[0m Check your garrison configuration in the YAML file.\n",
+                    message
+                )
+            }
+            CliError::ArsenalConfigError { message } => {
+                format!(
+                    "\n\x1b[31mError:\x1b[0m Arsenal configuration error\n\n\
+                     \x1b[33mDetails:\x1b[0m {}\n\n\
+                     \x1b[32mSuggestion:\x1b[0m Check your arsenal/MCP server configuration in the YAML file.\n",
                     message
                 )
             }
@@ -337,6 +353,8 @@ impl CliError {
             | CliError::FileReadError { .. }
             | CliError::VisionProcessingError { .. }
             | CliError::DocumentProcessingError { .. }
+            | CliError::GarrisonConfigError { .. }
+            | CliError::ArsenalConfigError { .. }
             | CliError::NetworkError(_)
             | CliError::JsonError(_)
             | CliError::Other(_) => 2,

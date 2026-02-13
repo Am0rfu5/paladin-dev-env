@@ -1,10 +1,17 @@
 //! Configuration file loading utilities
 
 use crate::application::cli::config::battalion_config::BattalionYamlConfig;
-use crate::application::cli::config::paladin_config::{PaladinYamlConfig, Validate};
+use crate::application::cli::config::paladin_config::{GarrisonConfig, PaladinYamlConfig, Validate};
 use crate::application::cli::error::CliError;
+use crate::application::ports::output::garrison_port::GarrisonPort;
+use crate::core::platform::container::garrison::{
+    GarrisonConfig as CoreGarrisonConfig, EvictionStrategy,
+};
+use crate::infrastructure::adapters::garrison::in_memory_garrison::InMemoryGarrison;
+use crate::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarrison;
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 
 /// Load Paladin configuration from YAML file
 ///
@@ -74,6 +81,102 @@ pub fn load_battalion_config(path: &Path) -> Result<BattalionYamlConfig, CliErro
     config.validate()?;
 
     Ok(config)
+}
+
+/// Instantiate a garrison adapter from YAML configuration
+///
+/// # Arguments
+/// * `config` - Optional garrison configuration from YAML
+/// * `paladin_name` - Name of the paladin (used as ID for SQLite garrison)
+///
+/// # Returns
+/// * `Ok(Some(Arc<dyn GarrisonPort>))` - If garrison config is provided and valid
+/// * `Ok(None)` - If no garrison config is provided
+/// * `Err(CliError)` - If garrison instantiation fails
+///
+/// # Configuration Schema
+///
+/// ```yaml
+/// garrison:
+///   type: "in_memory"  # or "sqlite"
+///   config:
+///     max_entries: 100
+///     path: "./garrison.db"  # Required for sqlite type
+/// ```
+pub async fn instantiate_garrison(
+    config: &Option<GarrisonConfig>,
+    paladin_name: &str,
+) -> Result<Option<Arc<dyn GarrisonPort>>, CliError> {
+    let Some(garrison_config) = config else {
+        return Ok(None);
+    };
+
+    // Validate garrison type
+    if garrison_config.garrison_type != "in_memory" && garrison_config.garrison_type != "sqlite" {
+        return Err(CliError::GarrisonConfigError {
+            message: format!(
+                "garrison.type must be 'in_memory' or 'sqlite', got: '{}'",
+                garrison_config.garrison_type
+            ),
+        });
+    }
+
+    // Extract configuration parameters with defaults
+    let max_entries = garrison_config
+        .config
+        .as_ref()
+        .and_then(|c| c.max_entries)
+        .unwrap_or(100);
+
+    // Create core garrison configuration
+    let core_config = CoreGarrisonConfig {
+        max_entries,
+        max_tokens: Some(4000),
+        eviction_strategy: EvictionStrategy::ImportanceBased,
+        preserve_recent_count: 10,
+    };
+
+    // Instantiate the appropriate garrison type
+    match garrison_config.garrison_type.as_str() {
+        "in_memory" => {
+            let garrison = InMemoryGarrison::new(core_config);
+            Ok(Some(Arc::new(garrison) as Arc<dyn GarrisonPort>))
+        }
+        "sqlite" => {
+            // Extract path from config
+            let path = garrison_config
+                .config
+                .as_ref()
+                .and_then(|c| c.path.as_ref())
+                .ok_or_else(|| CliError::GarrisonConfigError {
+                    message: "garrison.config.path is required for type: sqlite".to_string(),
+                })?;
+
+            // Validate path is writable (check parent directory exists)
+            if let Some(parent) = Path::new(path).parent() {
+                if !parent.exists() {
+                    // Try to create parent directory
+                    std::fs::create_dir_all(parent).map_err(|e| CliError::GarrisonConfigError {
+                        message: format!(
+                            "garrison.config.path parent directory does not exist and could not be created: {} - {}",
+                            parent.display(),
+                            e
+                        ),
+                    })?;
+                }
+            }
+
+            // Connect to SQLite garrison
+            let garrison = SqliteGarrison::connect(path, core_config, paladin_name)
+                .await
+                .map_err(|e| CliError::GarrisonConfigError {
+                    message: format!("Failed to connect to SQLite garrison at '{}': {}", path, e),
+                })?;
+
+            Ok(Some(Arc::new(garrison) as Arc<dyn GarrisonPort>))
+        }
+        _ => unreachable!("Garrison type already validated"),
+    }
 }
 
 #[cfg(test)]
