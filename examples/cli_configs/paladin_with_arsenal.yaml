@@ -1,0 +1,272 @@
+# ============================================================================
+# PALADIN WITH ARSENAL (TOOLS) CONFIGURATION EXAMPLES
+# ============================================================================
+# This configuration demonstrates how to equip your Paladin with external
+# tools using the Arsenal system via MCP (Model Context Protocol) servers.
+#
+# For use with: paladin agent run -c paladin_with_arsenal.yaml -i "Your question"
+#
+# Learn more:
+# - Arsenal documentation: docs/ARSENAL.md
+# - MCP Protocol: https://modelcontextprotocol.io
+# - CLI usage: docs/CLI_USAGE.md
+# ============================================================================
+
+# ============================================================================
+# IDENTITY
+# ============================================================================
+
+name: "ArsenalPaladin"
+user_name: "User"
+
+# ============================================================================
+# SYSTEM PROMPT
+# ============================================================================
+
+system_prompt: |
+  You are an AI assistant with access to external tools via the Arsenal system.
+  
+  You can use the following types of tools:
+  - Web search for finding current information
+  - File system operations for reading/writing files
+  - API calls to external services
+  - Data processing and analysis tools
+  
+  When a user asks a question that requires external information or actions:
+  1. Identify which tool would be most helpful
+  2. Use the tool by making a function call
+  3. Process the tool's output
+  4. Provide a comprehensive answer based on the results
+  
+  Always explain what tool you're using and why.
+
+# ============================================================================
+# LLM CONFIGURATION
+# ============================================================================
+
+model: "gpt-4"
+temperature: 0.7
+max_loops: 5
+timeout_seconds: 300
+stop_words: ["TERMINATE"]
+
+# ============================================================================
+# PROVIDER CONFIGURATION
+# ============================================================================
+
+provider:
+  type: openai
+
+# ============================================================================
+# ARSENAL CONFIGURATION: STDIO MCP SERVERS (EXAMPLE 1)
+# ============================================================================
+# STDIO servers are command-line programs that communicate via stdin/stdout.
+# Best for: Python scripts, Node.js tools, CLI programs, local tools
+
+arsenal:
+  mcp_servers:
+    # Web Search Tool (using MCP web search server)
+    - name: "web_search"
+      type: "stdio"
+      command: "uvx"
+      args:
+        - "mcp-web-search"
+    
+    # File System Access (⚠️ Use with caution - limit to safe directories)
+    # Uncomment to enable:
+    # - name: "filesystem"
+    #   type: "stdio"
+    #   command: "npx"
+    #   args:
+    #     - "-y"
+    #     - "@modelcontextprotocol/server-filesystem"
+    #     - "/path/to/safe/directory"
+    
+    # GitHub Integration (requires GITHUB_TOKEN environment variable)
+    # Uncomment to enable:
+    # - name: "github"
+    #   type: "stdio"
+    #   command: "npx"
+    #   args:
+    #     - "-y"
+    #     - "@modelcontextprotocol/server-github"
+    
+    # Database Query Tool (example with SQLite)
+    # Uncomment to enable:
+    # - name: "database"
+    #   type: "stdio"
+    #   command: "python3"
+    #   args:
+    #     - "-u"
+    #     - "mcp_sqlite_server.py"
+    #     - "/path/to/database.db"
+
+# ============================================================================
+# ARSENAL CONFIGURATION: SSE MCP SERVERS (EXAMPLE 2)
+# ============================================================================
+# SSE (Server-Sent Events) servers are HTTP-based services.
+# Best for: Web services, cloud APIs, remote tools, shared infrastructure
+
+# Uncomment to use SSE-based MCP servers:
+# arsenal:
+#   mcp_servers:
+#     # Custom API Service
+#     - name: "api_service"
+#       type: "sse"
+#       endpoint: "http://localhost:8080/mcp"
+#     
+#     # Cloud-based Tool Service
+#     - name: "cloud_tools"
+#       type: "sse"
+#       endpoint: "https://tools.example.com/mcp"
+
+# ============================================================================
+# ARSENAL CONFIGURATION: MIXED SERVERS (EXAMPLE 3)
+# ============================================================================
+# You can use both STDIO and SSE servers together
+
+# arsenal:
+#   mcp_servers:
+#     # Local STDIO server
+#     - name: "local_tools"
+#       type: "stdio"
+#       command: "python3"
+#       args:
+#         - "local_server.py"
+#     
+#     # Remote SSE server
+#     - name: "remote_tools"
+#       type: "sse"
+#       endpoint: "https://tools.example.com/mcp"
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+
+# Basic usage with web search:
+#   paladin agent run -c paladin_with_arsenal.yaml -i "What's the current weather in Tokyo?"
+
+# File operations (if filesystem tool enabled):
+#   paladin agent run -c paladin_with_arsenal.yaml -i "Read the contents of README.md"
+
+# GitHub operations (if github tool enabled):
+#   paladin agent run -c paladin_with_arsenal.yaml -i "List issues in DF3NDR/paladin-dev-env"
+
+# Verbose mode (see tool invocations):
+#   paladin agent run -c paladin_with_arsenal.yaml -i "Query" --verbose
+
+# ============================================================================
+# ARSENAL BEHAVIOR NOTES
+# ============================================================================
+
+# Tool Discovery:
+# - When Arsenal is configured, all MCP servers are connected at startup
+# - Available tools are discovered automatically via MCP protocol
+# - Tools are registered in the Arsenal registry
+# - The Paladin can see all available tools in its context
+
+# Tool Invocation:
+# - The LLM decides when to use tools based on the query
+# - Tool calls are JSON function calls in the LLM response
+# - Arsenal executes the tool via the appropriate MCP server
+# - Results are formatted and injected back into the conversation
+
+# Server Types:
+#
+# STDIO (stdin/stdout):
+# ✓ Easy to develop (any language that can read/write JSON)
+# ✓ Runs locally with full system access
+# ✓ No network latency
+# ✓ Process isolation and security
+# ✗ Must be installed on local machine
+# ✗ Not shareable across team without deployment
+#
+# SSE (Server-Sent Events):
+# ✓ Centralized deployment (share across team)
+# ✓ Remote execution (no local dependencies)
+# ✓ Scalable (load balancing, horizontal scaling)
+# ✓ Easy updates (deploy once, all clients benefit)
+# ✗ Network latency
+# ✗ Requires HTTP server infrastructure
+
+# Security Considerations:
+# - STDIO servers run with your user permissions
+# - Limit filesystem access to specific directories
+# - Use environment variables for sensitive credentials
+# - SSE servers should use HTTPS in production
+# - Review tool capabilities before enabling
+
+# ============================================================================
+# TROUBLESHOOTING
+# ============================================================================
+
+# Error: "command is required for stdio type"
+# → Add 'command' field to STDIO server config
+
+# Error: "endpoint is required for sse type"
+# → Add 'endpoint' field to SSE server config
+
+# Error: "must start with 'http://' or 'https://'"
+# → Check SSE endpoint URL format
+
+# Error: "Failed to connect to MCP server"
+# → Verify server is installed and can be executed
+# → Check command path and arguments
+# → For SSE, verify endpoint is accessible
+
+# Error: "Failed to discover tools"
+# → Check MCP server implements tools/list endpoint
+# → Verify server is responding to MCP protocol requests
+
+# Tools not appearing in context:
+# → Check --verbose output for tool discovery logs
+# → Verify MCP server is advertising tools correctly
+
+# ============================================================================
+# INSTALLING MCP SERVERS
+# ============================================================================
+
+# Python-based servers:
+#   pip install mcp-server-package
+
+# Node.js-based servers (via uvx):
+#   uvx mcp-web-search
+
+# Node.js-based servers (via npx):
+#   npx -y @modelcontextprotocol/server-filesystem
+
+# Custom servers:
+#   Write a script that implements MCP protocol (JSON-RPC 2.0)
+#   See: https://modelcontextprotocol.io/docs
+
+# ============================================================================
+# COMBINING WITH GARRISON
+# ============================================================================
+
+# You can use both Arsenal (tools) and Garrison (memory) together.
+# See paladin_full_config.yaml for a complete example.
+
+# arsenal:
+#   mcp_servers:
+#     - name: "web_search"
+#       type: "stdio"
+#       command: "uvx"
+#       args:
+#         - "mcp-web-search"
+
+# garrison:
+#   garrison_type: "sqlite"
+#   config:
+#     path: "./garrison.db"
+#     max_entries: 1000
+
+# ============================================================================
+# NEXT STEPS
+# ============================================================================
+
+# 1. Choose the tools you need (web search, filesystem, APIs, etc.)
+# 2. Install the required MCP servers
+# 3. Configure arsenal in this file
+# 4. Test with a simple query: "Search for Rust tutorials"
+# 5. Monitor tool usage with --verbose flag
+# 6. Expand to more tools as needed

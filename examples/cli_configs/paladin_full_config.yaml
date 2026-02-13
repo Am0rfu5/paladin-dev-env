@@ -1,0 +1,343 @@
+# ============================================================================
+# COMPLETE PALADIN CONFIGURATION EXAMPLE
+# ============================================================================
+# This is a comprehensive configuration showing all available Paladin features:
+# - Identity and behavior configuration
+# - LLM provider settings
+# - Garrison (memory system)
+# - Arsenal (external tools via MCP)
+#
+# For use with: paladin agent run -c paladin_full_config.yaml -i "Your question"
+#
+# Learn more:
+# - Full documentation: docs/QUICKSTART.md
+# - CLI usage: docs/CLI_USAGE.md
+# - Garrison: docs/GARRISON.md
+# - Arsenal: docs/ARSENAL.md
+# ============================================================================
+
+# ============================================================================
+# IDENTITY & BEHAVIOR
+# ============================================================================
+
+# Unique name for this Paladin instance
+name: "FullStackPaladin"
+
+# User name shown in conversation context
+user_name: "Developer"
+
+# System prompt defines the Paladin's personality and capabilities
+system_prompt: |
+  You are FullStackPaladin, an advanced AI assistant with both memory and tool access.
+  
+  CAPABILITIES:
+  
+  1. MEMORY (Garrison):
+     - You have persistent memory across conversations
+     - You can recall previous interactions and build context over time
+     - Always acknowledge when you're using information from past conversations
+  
+  2. TOOLS (Arsenal):
+     - You have access to external tools via the Arsenal system
+     - Available tools include web search, file operations, and APIs
+     - Use tools when queries require current information or external actions
+  
+  3. REASONING:
+     - Break down complex problems into steps
+     - Use tools strategically to gather information
+     - Store important insights in garrison for future reference
+     - Provide comprehensive, well-reasoned answers
+  
+  WORKFLOW:
+  1. Check garrison for relevant context from previous conversations
+  2. If current information needed, use web search or other tools
+  3. Analyze and synthesize information from multiple sources
+  4. Provide clear, actionable answers
+  5. Store key learnings for future interactions
+
+# ============================================================================
+# LLM CONFIGURATION
+# ============================================================================
+
+# Model selection
+# - gpt-4: Most capable (recommended for complex reasoning)
+# - gpt-3.5-turbo: Faster, lower cost
+# - deepseek-chat: Cost-effective alternative
+model: "gpt-4"
+
+# Temperature controls creativity (0.0-1.0)
+# - 0.0: Deterministic, factual
+# - 0.7: Balanced (recommended)
+# - 1.0: Creative, varied
+temperature: 0.7
+
+# Maximum reasoning loops before stopping
+# Higher = more complex multi-step reasoning
+max_loops: 5
+
+# Timeout in seconds
+timeout_seconds: 300
+
+# Stop words for immediate termination
+stop_words: ["TERMINATE", "STOP"]
+
+# ============================================================================
+# PROVIDER CONFIGURATION
+# ============================================================================
+
+provider:
+  type: openai
+  # API key loaded from environment variable OPENAI_API_KEY
+
+# Alternative providers (uncomment to use):
+# provider:
+#   type: deepseek
+#   # Requires DEEPSEEK_API_KEY environment variable
+#
+# provider:
+#   type: anthropic
+#   # Requires ANTHROPIC_API_KEY environment variable
+
+# ============================================================================
+# GARRISON CONFIGURATION (MEMORY SYSTEM)
+# ============================================================================
+# Persistent memory that survives across sessions
+
+garrison:
+  # Type: "in_memory" (temporary) or "sqlite" (persistent)
+  garrison_type: sqlite
+  
+  config:
+    # Database path for persistent storage
+    path: ./paladin_memory.db
+    
+    # Maximum memory entries
+    # Older entries evicted when limit reached
+    max_entries: 1000
+
+# In-memory garrison alternative (faster, not persistent):
+# garrison:
+#   garrison_type: in_memory
+#   config:
+#     max_entries: 500
+
+# ============================================================================
+# ARSENAL CONFIGURATION (EXTERNAL TOOLS)
+# ============================================================================
+# Tools accessible via Model Context Protocol (MCP)
+
+arsenal:
+  mcp_servers:
+    # ========================================================================
+    # WEB SEARCH TOOL
+    # ========================================================================
+    # Enables real-time web searches for current information
+    - name: "web_search"
+      type: "stdio"
+      command: "uvx"
+      args:
+        - "mcp-web-search"
+    
+    # ========================================================================
+    # FILE SYSTEM TOOL (⚠️ USE WITH CAUTION)
+    # ========================================================================
+    # Provides read/write access to specified directory
+    # Uncomment and configure path to enable:
+    #
+    # - name: "filesystem"
+    #   type: "stdio"
+    #   command: "npx"
+    #   args:
+    #     - "-y"
+    #     - "@modelcontextprotocol/server-filesystem"
+    #     - "/path/to/safe/directory"  # ⚠️ LIMIT TO SPECIFIC DIRECTORY
+    
+    # ========================================================================
+    # GITHUB INTEGRATION
+    # ========================================================================
+    # Access GitHub repos, issues, PRs
+    # Requires: GITHUB_TOKEN environment variable
+    # Uncomment to enable:
+    #
+    # - name: "github"
+    #   type: "stdio"
+    #   command: "npx"
+    #   args:
+    #     - "-y"
+    #     - "@modelcontextprotocol/server-github"
+    
+    # ========================================================================
+    # CUSTOM API SERVICE (SSE EXAMPLE)
+    # ========================================================================
+    # Remote tools via HTTP/SSE
+    # Uncomment and configure endpoint:
+    #
+    # - name: "api_service"
+    #   type: "sse"
+    #   endpoint: "https://tools.example.com/mcp"
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+
+# Basic query with memory and tools:
+#   paladin agent run -c paladin_full_config.yaml -i "What did we discuss last time?"
+
+# Current information lookup:
+#   paladin agent run -c paladin_full_config.yaml -i "What are the latest Rust features?"
+
+# Multi-step reasoning with tools:
+#   paladin agent run -c paladin_full_config.yaml -i "Compare Go and Rust for web services"
+
+# Verbose mode (see all operations):
+#   paladin agent run -c paladin_full_config.yaml -i "Query" --verbose
+
+# Save output to file:
+#   paladin agent run -c paladin_full_config.yaml -i "Query" -o result.json
+
+# ============================================================================
+# WORKFLOW EXAMPLE
+# ============================================================================
+
+# Session 1:
+#   Input: "I'm building a web scraper in Rust. What libraries should I use?"
+#   
+#   Paladin will:
+#   1. Search web for current Rust scraping libraries
+#   2. Compare options (reqwest, scraper, tokio, etc.)
+#   3. Store recommendation in garrison
+#   4. Provide comprehensive answer
+
+# Session 2 (later):
+#   Input: "Remember the web scraper project? Show me an example."
+#   
+#   Paladin will:
+#   1. Retrieve context from garrison (previous discussion)
+#   2. Search for up-to-date examples
+#   3. Generate code using recommended libraries
+#   4. Store example in garrison for future reference
+
+# ============================================================================
+# ARCHITECTURE DIAGRAM
+# ============================================================================
+
+# ┌─────────────────────────────────────────────────────────────────┐
+# │                        PALADIN AGENT                            │
+# │                                                                 │
+# │  ┌───────────┐     ┌──────────┐     ┌────────────┐            │
+# │  │           │     │          │     │            │            │
+# │  │    LLM    │────▶│ Garrison │     │  Arsenal   │            │
+# │  │ (GPT-4)   │     │ (Memory) │     │  (Tools)   │            │
+# │  │           │◀────│          │     │            │            │
+# │  └───────────┘     └──────────┘     └────────────┘            │
+# │       │                 │                  │                   │
+# └───────┼─────────────────┼──────────────────┼───────────────────┘
+#         │                 │                  │
+#         ▼                 ▼                  ▼
+#   ┌──────────┐     ┌──────────┐      ┌──────────┐
+#   │  OpenAI  │     │ SQLite   │      │   MCP    │
+#   │   API    │     │ Database │      │ Servers  │
+#   └──────────┘     └──────────┘      └──────────┘
+
+# ============================================================================
+# CONFIGURATION BEST PRACTICES
+# ============================================================================
+
+# 1. START SIMPLE:
+#    - Begin with just LLM configuration
+#    - Add garrison for memory
+#    - Add arsenal for specific tools you need
+
+# 2. SECURITY:
+#    - Use environment variables for API keys
+#    - Limit filesystem access to specific directories
+#    - Review tool capabilities before enabling
+
+# 3. PERFORMANCE:
+#    - Use in_memory garrison for development
+#    - Use sqlite garrison for production
+#    - Limit max_entries based on expected usage
+
+# 4. COST OPTIMIZATION:
+#    - Start with gpt-3.5-turbo for testing
+#    - Use gpt-4 for production/complex reasoning
+#    - Consider deepseek for cost-sensitive applications
+
+# 5. DEBUGGING:
+#    - Use --verbose flag to see all operations
+#    - Check garrison database with SQLite browser
+#    - Monitor tool invocations in verbose output
+
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+
+# Required:
+#   OPENAI_API_KEY=sk-...        # For OpenAI models
+#
+# Optional (if using alternative providers):
+#   DEEPSEEK_API_KEY=...         # For DeepSeek models
+#   ANTHROPIC_API_KEY=...        # For Claude models
+#   GITHUB_TOKEN=...             # For GitHub tool
+#
+# Development:
+#   RUST_LOG=debug               # Enable debug logging
+#   PALADIN_CONFIG_PATH=...      # Override config file path
+
+# ============================================================================
+# RESOURCE MANAGEMENT
+# ============================================================================
+
+# Garrison Storage:
+# - SQLite database grows with usage
+# - Monitor disk space for production deployments
+# - Tune max_entries based on available storage
+# - Consider periodic cleanup of old entries
+
+# Arsenal Performance:
+# - STDIO servers: One process per server (low overhead)
+# - SSE servers: HTTP client pool (configurable)
+# - Tool calls add latency to responses
+# - Consider caching frequently used tool results
+
+# LLM Usage:
+# - Each max_loop iteration = 1 LLM call
+# - Tool calls involve additional LLM calls for reasoning
+# - Garrison context increases token usage
+# - Monitor API costs in production
+
+# ============================================================================
+# TROUBLESHOOTING
+# ============================================================================
+
+# "Failed to connect to SQLite garrison":
+# → Check path is writable
+# → Verify parent directories exist
+
+# "Failed to connect to MCP server":
+# → Verify command/endpoint is correct
+# → Check server is installed (uvx, npx)
+# → For SSE, verify endpoint is accessible
+
+# "Memory not persisting across sessions":
+# → Check using sqlite (not in_memory)
+# → Verify database path is consistent
+# → Check file permissions
+
+# "Tools not being used":
+# → Verify tools registered (--verbose)
+# → Check system prompt encourages tool use
+# → Confirm max_loops > 1 for reasoning
+
+# ============================================================================
+# NEXT STEPS
+# ============================================================================
+
+# 1. Set environment variables (OPENAI_API_KEY)
+# 2. Install MCP servers you want to use
+# 3. Run with: paladin agent run -c paladin_full_config.yaml -i "Hello!"
+# 4. Test memory: Ask something, then ask about it later
+# 5. Test tools: Ask for current information requiring web search
+# 6. Monitor with --verbose to understand behavior
+# 7. Customize system prompt for your use case
+# 8. Deploy with appropriate security measures
