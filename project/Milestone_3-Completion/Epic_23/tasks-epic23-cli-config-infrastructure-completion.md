@@ -12,14 +12,25 @@
 
 ## Status Summary
 
-✅ **Phase 2 - Sub-Tasks Generated**: Detailed implementation steps complete, ready to begin work
+✅ **Task 0.0 COMPLETE**: Feature branch setup  
+✅ **Task 1.0 COMPLETE**: Garrison configuration wiring (Commit: 1322f5e)  
+✅ **Task 2.0 COMPLETE**: Arsenal/MCP configuration wiring  
+✅ **Task 3.0 COMPLETE**: Mock LLM provider implementation (Commit: 981f026)  
+✅ **Task 4.0 COMPLETE**: CLI integration tests (Commits: 86be22c, 0f8e542)
+
+**Progress:**
+- ✅ 4 of 8 major tasks complete (50%)
+- ✅ 50 CLI tests passing (all with MockLlmAdapter, CI-ready)
+- ✅ 1,590 library tests passing
+- ✅ Formation & Phalanx Battalion patterns tested
+- Task 4.6 deferred (requires MCP infrastructure)
 
 **Task Breakdown:**
-- Task 0.0: Feature branch setup (2 sub-tasks)
-- Task 1.0: Garrison configuration (9 sub-tasks, 28 detailed steps)
-- Task 2.0: Arsenal/MCP configuration (10 sub-tasks, 34 detailed steps)
-- Task 3.0: Mock LLM provider (8 sub-tasks, 25 detailed steps)
-- Task 4.0: CLI integration tests (8 sub-tasks, 30 detailed steps)
+- Task 0.0: ✅ Feature branch setup (2 sub-tasks)
+- Task 1.0: ✅ Garrison configuration (9 sub-tasks, 28 detailed steps)
+- Task 2.0: ✅ Arsenal/MCP configuration (10 sub-tasks, 34 detailed steps)
+- Task 3.0: ✅ Mock LLM provider (8 sub-tasks, 25 detailed steps)
+- Task 4.0: ✅ CLI integration tests (7 of 8 sub-tasks, 1 deferred)
 - Task 5.0: Environment testing (8 sub-tasks, 37 detailed steps)
 - Task 6.0: Scheduler integration (9 sub-tasks, 38 detailed steps)
 - Task 7.0: Final validation (10 sub-tasks, 29 detailed steps)
@@ -48,8 +59,9 @@
 - `src/application/use_cases/arsenal/arsenal_registry.rs` - Arsenal registry for tool management
 
 ### Mock Provider Files
-- `tests/common/mock_llm.rs` - Mock LLM adapter for testing (to be created)
-- `tests/common/mod.rs` - Test utilities module
+- `tests/helpers/mock_llm_adapter.rs` - ✅ Mock LLM adapter for testing (COMPLETE)
+- `tests/helpers/mock_paladin_port.rs` - ✅ Mock PaladinPort implementation for Battalion testing (COMPLETE)
+- `tests/helpers/mod.rs` - ✅ Test utilities module (exports MockLlmAdapter and MockPaladinPort)
 
 ### Scheduler Files
 - `src/application/ports/output/scheduler_port.rs` - Scheduler port trait (to be created)
@@ -58,11 +70,15 @@
 - `src/infrastructure/adapters/output/api_content_deliverer.rs` - Content deliverer with scheduler stub at line 297
 
 ### Test Files
-- `tests/cli/garrison_config_test.rs` - Garrison configuration unit tests (to be created)
-- `tests/cli/arsenal_config_test.rs` - Arsenal configuration unit tests (to be created)
-- `tests/cli/paladin_execution_test.rs` - Paladin execution integration test (to be created)
-- `tests/cli/formation_execution_test.rs` - Formation execution integration test (to be created)
-- `tests/cli/phalanx_execution_test.rs` - Phalanx execution integration test (to be created)
+- `tests/cli/garrison_config_test.rs` - ✅ Garrison configuration unit tests (9 tests - COMPLETE)
+- `tests/cli/arsenal_config_test.rs` - ✅ Arsenal configuration unit tests (8 tests - COMPLETE)
+- `tests/cli/error_handling_test.rs` - ✅ Error handling integration tests (14 tests - COMPLETE)
+- `tests/cli/integration_tests.rs` - ✅ CLI integration tests (3 tests - COMPLETE)
+- `tests/cli/paladin_execution_test.rs` - ✅ Paladin execution integration tests (6 tests - COMPLETE)
+- `tests/cli/formation_execution_test.rs` - ✅ Formation execution integration tests (4 tests - COMPLETE)
+- `tests/cli/phalanx_execution_test.rs` - ✅ Phalanx execution integration tests (5 tests - COMPLETE)
+- `tests/helpers/mock_llm_adapter.rs` - ✅ Mock LLM adapter for testing (COMPLETE)
+- `tests/helpers/mock_paladin_port.rs` - ✅ Mock Paladin port for Battalion testing (COMPLETE)
 - `tests/cli/environment_tests.rs` - Environment-specific tests (to be created)
 - `tests/integration/cli_real_services_test.rs` - Docker-gated service tests (to be created)
 - `tests/integration/cli_real_providers_test.rs` - API-key-gated provider tests (to be created)
@@ -219,7 +235,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.7 Document MockLlmAdapter usage in code comments
   - [x] 3.8 Run tests: `cargo test mock_llm` and verify all pass
 
-- [ ] 4.0 Implement CLI integration tests with mock provider (US-23.3)
+- [x] 4.0 Implement CLI integration tests with mock provider (US-23.3)
   - [x] 4.1 Set up test infrastructure in `tests/cli/`
     - [x] 4.1.1 Create test module structure
     - [x] 4.1.2 Import MockLlmAdapter and test utilities
@@ -232,36 +248,36 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 4.2.5 Assert mock was called with correct prompt
     - [x] 4.2.6 Test with garrison configured
     - [x] 4.2.7 Test with arsenal configured
-  - [ ] 4.3 Implement Formation execution test in `tests/cli/formation_execution_test.rs`
-    - [ ] 4.3.1 Create test YAML config for Formation with 3 Paladins
-    - [ ] 4.3.2 Set up MockLlmAdapter with sequential responses
-    - [ ] 4.3.3 Execute Formation via CLI command handler
-    - [ ] 4.3.4 Assert sequential execution (output chaining)
-    - [ ] 4.3.5 Assert all 3 Paladins were invoked
-    - [ ] 4.3.6 Verify correct input/output flow between Paladins
-  - [ ] 4.4 Implement Phalanx execution test in `tests/cli/phalanx_execution_test.rs`
-    - [ ] 4.4.1 Create test YAML config for Phalanx with 3 Paladins
-    - [ ] 4.4.2 Set up MockLlmAdapter with parallel responses
-    - [ ] 4.4.3 Execute Phalanx via CLI command handler
-    - [ ] 4.4.4 Assert parallel execution (all Paladins run concurrently)
-    - [ ] 4.4.5 Assert results are aggregated correctly
+  - [x] 4.3 Implement Formation execution test in `tests/cli/formation_execution_test.rs`
+    - [x] 4.3.1 Create test YAML config for Formation with 3 Paladins
+    - [x] 4.3.2 Set up MockLlmAdapter with sequential responses
+    - [x] 4.3.3 Execute Formation via CLI command handler
+    - [x] 4.3.4 Assert sequential execution (output chaining)
+    - [x] 4.3.5 Assert all 3 Paladins were invoked
+    - [x] 4.3.6 Verify correct input/output flow between Paladins
+  - [x] 4.4 Implement Phalanx execution test in `tests/cli/phalanx_execution_test.rs`
+    - [x] 4.4.1 Create test YAML config for Phalanx with 3 Paladins
+    - [x] 4.4.2 Set up MockLlmAdapter with parallel responses
+    - [x] 4.4.3 Execute Phalanx via CLI command handler
+    - [x] 4.4.4 Assert parallel execution (all Paladins run concurrently)
+    - [x] 4.4.5 Assert results are aggregated correctly
   - [x] 4.5 Implement error handling tests
     - [x] 4.5.1 Test LLM error propagation (rate limit)
     - [x] 4.5.2 Test timeout handling
     - [x] 4.5.3 Test invalid config error handling
     - [x] 4.5.4 Test missing config file error
     - [x] 4.5.5 Test graceful failure and cleanup
-  - [ ] 4.6 Implement tool integration tests
-    - [ ] 4.6.1 Set up mock MCP server (or stub)
-    - [ ] 4.6.2 Configure Paladin with arsenal
-    - [ ] 4.6.3 Set up MockLlmAdapter to request tool call
-    - [ ] 4.6.4 Execute and verify tool was invoked
-    - [ ] 4.6.5 Verify tool result returned to Paladin
-  - [ ] 4.7 Verify CI compatibility
-    - [ ] 4.7.1 Run tests in CI environment: `cargo test --test cli_*`
-    - [ ] 4.7.2 Verify no API keys required
-    - [ ] 4.7.3 Verify no external network dependencies
-  - [ ] 4.8 Run all CLI integration tests and verify pass
+  - [-] 4.6 Implement tool integration tests (DEFERRED - requires MCP infrastructure from future tasks)
+    - [-] 4.6.1 Set up mock MCP server (or stub)
+    - [-] 4.6.2 Configure Paladin with arsenal
+    - [-] 4.6.3 Set up MockLlmAdapter to request tool call
+    - [-] 4.6.4 Execute and verify tool was invoked
+    - [-] 4.6.5 Verify tool result returned to Paladin
+  - [x] 4.7 Verify CI compatibility
+    - [x] 4.7.1 Run tests in CI environment: `cargo test --test cli_*`
+    - [x] 4.7.2 Verify no API keys required
+    - [x] 4.7.3 Verify no external network dependencies
+  - [x] 4.8 Run all CLI integration tests and verify pass
 
 - [ ] 5.0 Implement environment and end-to-end testing (US-23.4)
   - [ ] 5.1 Implement Tier 1 tests (core functionality) in `tests/cli/environment_tests.rs`
