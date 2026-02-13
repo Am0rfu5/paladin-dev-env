@@ -1,6 +1,7 @@
 //! CLI integration tests
 
 mod arsenal_config_test;
+mod environment_tests;
 mod error_handling_test;
 mod formation_execution_test;
 mod garrison_config_test;

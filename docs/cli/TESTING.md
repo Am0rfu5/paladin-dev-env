@@ -1,0 +1,119 @@
+# CLI Test Guide
+
+This document describes the CLI test infrastructure, how tests are organized into tiers, and how to run them.
+
+## Test Tiers
+
+### Tier 1: Core Functionality (No External Dependencies)
+
+Tests that run with `cargo test` and require no external services, API keys, or Docker.
+
+**Location:** `tests/cli/environment_tests.rs`
+
+**What's tested:**
+- Config file loading (valid, invalid, missing)
+- YAML parsing and validation (syntax errors, duplicate keys, tabs)
+- Edge cases (empty fields, large inputs, concurrent loading)
+- Non-interactive mode (all commands work via flags, no hanging prompts)
+- Environment variation (NO_COLOR, quiet/verbose modes, formatter behavior)
+- Full user journey (template generation → config load → output formatting)
+
+**Run:**
+```bash
+cargo test cli::environment_tests::
+```
+
+### Tier 2: Docker-Gated Service Tests
+
+Tests that require Docker services (Redis, MinIO) to be running. Skipped automatically when services are unavailable.
+
+**Location:** `tests/integration/cli_real_services_test.rs`
+
+**What's tested:**
+- Redis connectivity and health checks
+- MinIO connectivity and health checks
+- Service unavailability detection
+- Connection error handling
+
+**Prerequisites:**
+```bash
+make services-up   # Start Redis, MinIO, MySQL via Docker Compose
+```
+
+**Run:**
+```bash
+cargo test --test lib cli_real_services -- --ignored
+```
+
+**Skip message:** Tests print a clear message when Docker services are not available.
+
+### Tier 3: API-Key-Gated Provider Tests
+
+Tests that require real LLM API keys. Behind the `integration-tests` feature flag and `#[ignore]`.
+
+**Location:** `tests/integration/cli_real_providers_test.rs`
+
+**What's tested:**
+- OpenAI provider connection and streaming
+- Anthropic provider connection
+- DeepSeek provider connection
+- End-to-end agent config with real providers
+
+**Prerequisites:**
+```bash
+export OPENAI_API_KEY="sk-..."
+export ANTHROPIC_API_KEY="sk-ant-..."
+export DEEPSEEK_API_KEY="sk-..."
+```
+
+**Run:**
+```bash
+cargo test --features integration-tests --test lib cli_real_providers -- --ignored
+```
+
+## Running Tests
+
+### Quick Check (Tier 1 only — no dependencies)
+```bash
+cargo test cli::environment_tests::
+```
+
+### All CLI Tests (Tier 1)
+```bash
+cargo test --test lib cli::
+```
+
+### With Docker Services (Tier 1 + 2)
+```bash
+make services-up
+cargo test --test lib cli:: -- --include-ignored
+```
+
+### Full Suite (Tier 1 + 2 + 3)
+```bash
+make services-up
+export OPENAI_API_KEY="sk-..."
+cargo test --features integration-tests --test lib -- --include-ignored
+```
+
+## Test Counts
+
+| Tier | Count | Gate |
+|------|-------|------|
+| Tier 1 (Core) | 45 | None |
+| Tier 2 (Docker) | 6 | `#[ignore]` + service check |
+| Tier 3 (API keys) | 5 | Feature flag + `#[ignore]` + env var |
+
+## CI/CD Notes
+
+- **Tier 1** tests run in every CI pipeline with no setup required
+- **Non-interactive safety:** All Tier 1 tests verify that CLI operations never block on stdin. The `ensure_tty()` guard detects non-TTY environments (CI runners) and returns a clear `ValidationError` instead of hanging
+- **NO_COLOR:** Formatters respect the `NO_COLOR` environment variable. Set `NO_COLOR=1` in CI to suppress ANSI escape codes
+- **Line buffering:** All output uses `println!`/`eprintln!` which flush per-line — safe for CI log capture
+
+## Adding New Tests
+
+1. **Pure logic / config tests** → Add to `tests/cli/environment_tests.rs` (Tier 1)
+2. **Requires Docker services** → Add to `tests/integration/cli_real_services_test.rs` with `#[ignore]`
+3. **Requires API keys** → Add to `tests/integration/cli_real_providers_test.rs` with feature gate + `#[ignore]`
+4. Always run `cargo test cli::environment_tests::` after changes to verify Tier 1 passes

@@ -279,55 +279,55 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 4.7.3 Verify no external network dependencies
   - [x] 4.8 Run all CLI integration tests and verify pass
 
-- [ ] 5.0 Implement environment and end-to-end testing (US-23.4)
-  - [ ] 5.1 Implement Tier 1 tests (core functionality) in `tests/cli/environment_tests.rs`
-    - [ ] 5.1.1 Test happy path for `agent run` command
-    - [ ] 5.1.2 Test happy path for `battalion run` command
-    - [ ] 5.1.3 Test error handling: missing required arguments
-    - [ ] 5.1.4 Test error handling: invalid YAML config
-    - [ ] 5.1.5 Test error handling: connection failures (simulated)
-    - [ ] 5.1.6 Test edge case: empty input
-    - [ ] 5.1.7 Test edge case: very large input (>10KB)
-    - [ ] 5.1.8 Test edge case: malformed YAML (syntax errors)
-    - [ ] 5.1.9 Test edge case: concurrent operations (if applicable)
-  - [ ] 5.2 Implement Tier 2 tests (Docker-gated) in `tests/integration/cli_real_services_test.rs`
-    - [ ] 5.2.1 Add test gating: skip if Docker services not available
-    - [ ] 5.2.2 Test `setup-check` command with real Redis connection
-    - [ ] 5.2.3 Test `setup-check` command with real Qdrant connection
-    - [ ] 5.2.4 Test `setup-check` command with real MinIO connection
-    - [ ] 5.2.5 Test service health validation
-    - [ ] 5.2.6 Test connection error handling when service unavailable
-    - [ ] 5.2.7 Add clear skip message: "requires Docker services: run 'make services-up'"
-  - [ ] 5.3 Implement Tier 3 tests (API-key-gated) in `tests/integration/cli_real_providers_test.rs`
-    - [ ] 5.3.1 Add test gating: skip if OPENAI_API_KEY not set
-    - [ ] 5.3.2 Test `muster` command with real OpenAI API
-    - [ ] 5.3.3 Add test gating: skip if ANTHROPIC_API_KEY not set
-    - [ ] 5.3.4 Test `muster` command with real Anthropic API
-    - [ ] 5.3.5 Add test gating: skip if DEEPSEEK_API_KEY not set
-    - [ ] 5.3.6 Test `muster` command with real DeepSeek API
-    - [ ] 5.3.7 Test `council` command end-to-end (requires API keys)
-    - [ ] 5.3.8 Test streaming response handling
-    - [ ] 5.3.9 Add clear skip messages for each gated test
-  - [ ] 5.4 Implement non-interactive mode tests
-    - [ ] 5.4.1 Test all commands work with `--non-interactive` flag
-    - [ ] 5.4.2 Test commands accept all required arguments via flags
-    - [ ] 5.4.3 Test missing arguments result in clear error (not hanging prompt)
-    - [ ] 5.4.4 Verify no interactive prompts in CI/CD mode
-  - [ ] 5.5 Implement environment variation tests
-    - [ ] 5.5.1 Test with `NO_COLOR` environment variable (no ANSI codes)
-    - [ ] 5.5.2 Test in basic terminal environment (no fancy Unicode)
-    - [ ] 5.5.3 Test proper line buffering in CI/CD environments
-    - [ ] 5.5.4 Test with different `TERM` environment variable values
-  - [ ] 5.6 Implement full user journey test (with mock provider)
-    - [ ] 5.6.1 Simulate new user experience: onboarding → config generation
-    - [ ] 5.6.2 Run first agent with generated config
-    - [ ] 5.6.3 Verify end-to-end flow completes successfully
-  - [ ] 5.7 Document test execution requirements
-    - [ ] 5.7.1 Update `docs/cli/TESTING.md` with test tier descriptions
-    - [ ] 5.7.2 Document Docker requirements for Tier 2 tests
-    - [ ] 5.7.3 Document API key requirements for Tier 3 tests
-    - [ ] 5.7.4 Document how to run specific test tiers
-  - [ ] 5.8 Run all environment tests: `cargo test environment_tests` and verify pass
+- [x] 5.0 Implement environment and end-to-end testing (US-23.4)
+  - [x] 5.1 Implement Tier 1 tests (core functionality) in `tests/cli/environment_tests.rs`
+    - [x] 5.1.1 Test happy path for `agent run` command
+    - [x] 5.1.2 Test happy path for `battalion run` command
+    - [x] 5.1.3 Test error handling: missing required arguments
+    - [x] 5.1.4 Test error handling: invalid YAML config
+    - [x] 5.1.5 Test error handling: connection failures (simulated)
+    - [x] 5.1.6 Test edge case: empty input
+    - [x] 5.1.7 Test edge case: very large input (>10KB)
+    - [x] 5.1.8 Test edge case: malformed YAML (syntax errors)
+    - [x] 5.1.9 Test edge case: concurrent operations (if applicable)
+  - [x] 5.2 Implement Tier 2 tests (Docker-gated) in `tests/integration/cli_real_services_test.rs`
+    - [x] 5.2.1 Add test gating: skip if Docker services not available
+    - [x] 5.2.2 Test `setup-check` command with real Redis connection
+    - [x] 5.2.3 Test `setup-check` command with real Qdrant connection
+    - [x] 5.2.4 Test `setup-check` command with real MinIO connection
+    - [x] 5.2.5 Test service health validation
+    - [x] 5.2.6 Test connection error handling when service unavailable
+    - [x] 5.2.7 Add clear skip message: "requires Docker services: run 'make services-up'"
+  - [x] 5.3 Implement Tier 3 tests (API-key-gated) in `tests/integration/cli_real_providers_test.rs`
+    - [x] 5.3.1 Add test gating: skip if OPENAI_API_KEY not set
+    - [x] 5.3.2 Test `muster` command with real OpenAI API
+    - [x] 5.3.3 Add test gating: skip if ANTHROPIC_API_KEY not set
+    - [x] 5.3.4 Test `muster` command with real Anthropic API
+    - [x] 5.3.5 Add test gating: skip if DEEPSEEK_API_KEY not set
+    - [x] 5.3.6 Test `muster` command with real DeepSeek API
+    - [x] 5.3.7 Test `council` command end-to-end (requires API keys)
+    - [x] 5.3.8 Test streaming response handling
+    - [x] 5.3.9 Add clear skip messages for each gated test
+  - [x] 5.4 Implement non-interactive mode tests
+    - [x] 5.4.1 Test all commands work with `--non-interactive` flag
+    - [x] 5.4.2 Test commands accept all required arguments via flags
+    - [x] 5.4.3 Test missing arguments result in clear error (not hanging prompt)
+    - [x] 5.4.4 Verify no interactive prompts in CI/CD mode
+  - [x] 5.5 Implement environment variation tests
+    - [x] 5.5.1 Test with `NO_COLOR` environment variable (no ANSI codes)
+    - [x] 5.5.2 Test in basic terminal environment (no fancy Unicode)
+    - [x] 5.5.3 Test proper line buffering in CI/CD environments
+    - [x] 5.5.4 Test with different `TERM` environment variable values
+  - [x] 5.6 Implement full user journey test (with mock provider)
+    - [x] 5.6.1 Simulate new user experience: onboarding → config generation
+    - [x] 5.6.2 Run first agent with generated config
+    - [x] 5.6.3 Verify end-to-end flow completes successfully
+  - [x] 5.7 Document test execution requirements
+    - [x] 5.7.1 Update `docs/cli/TESTING.md` with test tier descriptions
+    - [x] 5.7.2 Document Docker requirements for Tier 2 tests
+    - [x] 5.7.3 Document API key requirements for Tier 3 tests
+    - [x] 5.7.4 Document how to run specific test tiers
+  - [x] 5.8 Run all environment tests: `cargo test environment_tests` and verify pass
 
 - [ ] 6.0 Implement scheduler integration (US-23.5)
   - [ ] 6.1 Add tokio-cron-scheduler dependency to Cargo.toml

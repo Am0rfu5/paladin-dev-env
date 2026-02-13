@@ -14,6 +14,8 @@ pub mod battalion_campaign_integration_test;
 pub mod battalion_chain_of_command_integration_test;
 pub mod citadel_integration_test;
 pub mod cli_integration_test;
+pub mod cli_real_providers_test;
+pub mod cli_real_services_test;
 pub mod commander_integration_tests;
 pub mod context_injection_test;
 pub mod deepseek_provider_test;
