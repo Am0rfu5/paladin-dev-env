@@ -22,6 +22,8 @@ Complete guide to using the Paladin command-line interface for running AI agents
 - [Examples](#examples)
 - [Troubleshooting](#troubleshooting)
 
+> 📖 **For comprehensive configuration documentation**, see the [CLI Configuration Guide](cli/CONFIGURATION.md) - covers garrison (memory), arsenal (tools), and scheduler configuration with complete examples.
+
 ## Quick Start
 
 ```bash
@@ -1051,10 +1053,15 @@ paladin agent run -c config.yaml -i "Query" --stream
 
 ## See Also
 
+### Documentation
+- [CLI Configuration Guide](cli/CONFIGURATION.md) - Complete reference for garrison, arsenal, and scheduler configuration
+- [CLI Testing Guide](cli/TESTING.md) - Guide for testing CLI commands
+- [Main README](../README.md)
+
+### Configuration Examples
 - [Basic Paladin Example](../examples/cli_configs/basic_paladin.yaml)
 - [Advanced Paladin Example](../examples/cli_configs/advanced_paladin.yaml)
 - [Formation Example](../examples/cli_configs/formation.yaml)
 - [Phalanx Example](../examples/cli_configs/phalanx.yaml)
 - [Campaign Example](../examples/cli_configs/campaign.yaml)
 - [Chain of Command Example](../examples/cli_configs/chain_of_command.yaml)
-- [Main README](../README.md)

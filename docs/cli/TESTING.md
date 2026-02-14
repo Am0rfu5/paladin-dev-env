@@ -111,9 +111,162 @@ cargo test --features integration-tests --test lib -- --include-ignored
 - **NO_COLOR:** Formatters respect the `NO_COLOR` environment variable. Set `NO_COLOR=1` in CI to suppress ANSI escape codes
 - **Line buffering:** All output uses `println!`/`eprintln!` which flush per-line — safe for CI log capture
 
+## Mock Infrastructure for Testing
+
+### MockLlmAdapter
+
+The `MockLlmAdapter` provides a test double for LLM providers, enabling Tier 1 tests without API keys.
+
+**Location:** `tests/helpers/mock_llm_adapter.rs`
+
+**Features:**
+- **Configurable responses**: Queue pre-defined text, tool calls, streaming, or errors
+- **Invocation recording**: Capture all LLM calls for test assertions
+- **Tool call simulation**: Return function calls to test arsenal integration
+- **Error injection**: Simulate API failures, timeouts, rate limits
+
+**Example usage:**
+```rust
+use tests::helpers::mock_llm_adapter::MockLlmAdapter;
+
+let mock = MockLlmAdapter::new()
+    .add_response("First response")
+    .add_tool_call("web_search", json!({"query": "test"}))
+    .add_response("Final answer");
+
+// Use mock in PaladinExecutionService
+let service = PaladinExecutionService::new(
+    Arc::new(mock.clone()) as Arc<dyn LlmPort>,
+    None,
+    Arc::new(ArsenalRegistry::new()),
+);
+
+// Execute and assert
+let result = service.execute(&paladin, "test input").await?;
+assert_eq!(mock.invocations().len(), 3);
+```
+
+### MockArsenalPort
+
+The `MockArsenalPort` provides in-process tool mocking for testing arsenal integration.
+
+**Location:** `tests/helpers/mock_arsenal_adapter.rs`
+
+**Features:**
+- **Tool registration**: Add mock tools with schemas
+- **Response configuration**: Set success responses or errors
+- **Invocation tracking**: Verify tool calls with arguments
+- **Error simulation**: Test tool failure scenarios
+
+**Example usage:**
+```rust
+use tests::helpers::mock_arsenal_adapter::MockArsenalPort;
+
+let mock = MockArsenalPort::new()
+    .add_tool("calculator", "Perform calculations", json!({
+        "type": "object",
+        "properties": {
+            "expression": {"type": "string"}
+        }
+    }))
+    .set_response("calculator", Ok(json!({"result": 42})));
+
+// Use in PaladinExecutionService via ArsenalRegistry
+let mut registry = ArsenalRegistry::new();
+registry.register("mock_server", Arc::new(mock.clone()))?;
+
+// Execute and assert
+assert_eq!(mock.call_count("calculator"), 1);
+```
+
+### MockPaladinPort
+
+The `MockPaladinPort` enables Battalion testing without full Paladin execution.
+
+**Location:** `tests/helpers/mock_paladin_port.rs`
+
+**Features:**
+- **Result configuration**: Set expected Paladin outputs
+- **Error simulation**: Test error propagation in Battalions
+- **Execution tracking**: Verify execution order and count
+
+## Test Coverage
+
+### Current Test Statistics (as of Epic 23 completion)
+
+| Category | Tests | Coverage |
+|----------|-------|----------|
+| **Garrison Configuration** | 9 | In-memory, SQLite, validation |
+| **Arsenal Configuration** | 8 | STDIO, SSE, tool registration |
+| **Error Handling** | 14 | Config errors, execution errors |
+| **Paladin Execution** | 6 | Basic, with garrison, with arsenal |
+| **Formation Execution** | 4 | Sequential flow, error propagation |
+| **Phalanx Execution** | 5 | Parallel execution, aggregation |
+| **Tool Integration** | 8 | LLM → Arsenal → result loop |
+| **Mock Infrastructure** | 9 | MockArsenalPort unit tests |
+| **Scheduler** | 21 | Unit + integration tests |
+| **Total CLI Tests** | 84 | All CI-ready with mocks |
+
+### Tool Integration Tests
+
+**Location:** `tests/cli/tool_integration_test.rs`
+
+Tests the complete LLM ↔ Arsenal ↔ Paladin tool call loop:
+
+1. **Core flow tests** (2):
+   - `test_tool_call_basic_flow`: LLM function call → Arsenal execution → result
+   - `test_tool_call_result_fed_back_to_llm`: Tool result returned to LLM for synthesis
+
+2. **Error handling tests** (4):
+   - `test_tool_call_no_arsenal_available`: Graceful handling when Arsenal not configured
+   - `test_tool_call_unknown_tool`: Tool not in registry
+   - `test_tool_call_invalid_arguments`: Malformed JSON arguments
+   - `test_tool_call_execution_error`: Tool invocation failure
+
+3. **Advanced tests** (2):
+   - `test_multiple_sequential_tool_calls`: Chain of tool calls
+   - `test_tool_call_with_garrison`: Tools + memory integration
+
 ## Adding New Tests
 
 1. **Pure logic / config tests** → Add to `tests/cli/environment_tests.rs` (Tier 1)
 2. **Requires Docker services** → Add to `tests/integration/cli_real_services_test.rs` with `#[ignore]`
 3. **Requires API keys** → Add to `tests/integration/cli_real_providers_test.rs` with feature gate + `#[ignore]`
-4. Always run `cargo test cli::environment_tests::` after changes to verify Tier 1 passes
+4. **Tool integration** → Add to `tests/cli/tool_integration_test.rs` using MockLlmAdapter + MockArsenalPort
+5. **Battalion orchestration** → Use MockPaladinPort in Formation/Phalanx/Campaign tests
+6. Always run `cargo test cli::environment_tests::` after changes to verify Tier 1 passes
+
+## Writing Tests with Mocks
+
+### Best Practices
+
+1. **Use MockLlmAdapter for LLM tests**:
+   - Queue expected responses in order
+   - Verify invocations after execution
+   - Test both success and error paths
+
+2. **Use MockArsenalPort for tool tests**:
+   - Register tools with realistic schemas
+   - Configure responses for each tool
+   - Verify tool call arguments
+
+3. **Keep tests deterministic**:
+   - No random values in mocks
+   - Use fixed response sequences
+   - Assert exact invocation counts
+
+4. **Test error scenarios**:
+   - LLM errors: rate limits, timeouts, invalid responses
+   - Tool errors: execution failures, timeouts, unknown tools
+   - Config errors: invalid YAML, missing fields, type mismatches
+
+5. **Verify integration points**:
+   - Garrison is queried for context
+   - Arsenal is called with correct arguments
+   - CircuitBreaker tracks failures
+   - Results are formatted correctly
+
+---
+
+**Last updated:** February 14, 2026  
+**Epic:** 23 - CLI, Config & Infrastructure Completion

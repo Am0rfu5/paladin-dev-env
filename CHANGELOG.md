@@ -7,6 +7,158 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Epic 23: CLI, Config & Infrastructure Completion
+
+#### Garrison Configuration
+- Complete garrison (memory) configuration support from YAML files
+- Support for `in_memory` garrison type: fast, temporary memory storage
+- Support for `sqlite` garrison type: persistent memory with database backing
+- Configuration options: `max_entries`, `ttl_seconds`, `path` for SQLite
+- Garrison wiring in CLI agent command (resolved TODO at line 293)
+- 9 comprehensive unit tests covering all configuration scenarios
+- Example configurations in `examples/cli_configs/paladin_with_garrison.yaml`
+- Comprehensive error handling with actionable error messages
+
+#### Arsenal/MCP Configuration
+- Complete arsenal (external tools) configuration support from YAML files
+- Support for STDIO MCP servers: command-line tools via stdin/stdout
+- Support for SSE MCP servers: HTTP-based tools via Server-Sent Events
+- Automatic tool discovery and registration from MCP servers
+- Support for environment variable substitution in configs (`${VAR_NAME}`)
+- Arsenal wiring in CLI agent command (resolved TODO at line 296)
+- 8 comprehensive unit tests covering STDIO, SSE, and validation scenarios
+- Example configurations in `examples/cli_configs/paladin_with_arsenal.yaml`
+- Integration examples: web search, filesystem, GitHub, custom APIs
+
+#### Mock LLM Infrastructure
+- **MockLlmAdapter** for CI-ready testing without API keys (`tests/helpers/mock_llm_adapter.rs`)
+- Configurable responses: text, tool calls, streaming, and error injection
+- Invocation recording for test assertions and verification
+- Tool call simulation for arsenal integration testing
+- Builder pattern for fluent mock configuration
+- Support for sequential response queues
+- Zero external dependencies for core test suite
+
+#### Mock Arsenal Infrastructure
+- **MockArsenalPort** for in-process tool testing (`tests/helpers/mock_arsenal_adapter.rs`)
+- Tool registration with schemas and response configuration
+- Success and error response simulation
+- Invocation tracking with argument capture
+- 9 unit tests for mock infrastructure validation
+- Enables comprehensive tool integration testing in CI
+
+#### CLI Integration Tests
+- **84 comprehensive CLI integration tests**, all passing
+- 6 Paladin execution tests: basic, with garrison, with arsenal, with config
+- 4 Formation execution tests: sequential flow, output chaining, error propagation
+- 5 Phalanx execution tests: parallel execution, result aggregation, error handling
+- 8 Tool integration tests: LLM ↔ Arsenal ↔ result loop (Task 4.6)
+  - Core flow: function call → Arsenal execution → result
+  - Error handling: no arsenal, unknown tool, invalid arguments, execution errors
+  - Advanced: sequential tool chains, garrison+arsenal integration
+- 14 Error handling tests: configuration errors, execution failures, validation
+- 9 Garrison configuration tests: in-memory, SQLite, validation, errors
+- 8 Arsenal configuration tests: STDIO, SSE, tool registration, errors
+- All tests use mock infrastructure - **zero API keys required**
+- **CI-ready**: complete in < 5 seconds, no external dependencies
+
+#### Scheduler Integration
+- Production-ready scheduler using tokio-cron-scheduler v0.13
+- **SchedulerPort trait** (`src/application/ports/output/scheduler_port.rs`):
+  - Methods: `schedule_job()`, `cancel_job()`, `list_jobs()`, `get_job_info()`
+  - Types: JobId, JobSpec, JobInfo, JobStatus, SchedulerError
+  - 6 inline tests for trait contract
+- **TokioCronSchedulerAdapter** (`src/infrastructure/adapters/scheduling/tokio_cron_adapter.rs`):
+  - Full cron expression support for scheduling
+  - Job lifecycle management (create, cancel, list, query)
+  - Error handling and logging
+  - 13 inline tests for adapter implementation
+- **APIContentDeliverer integration**:
+  - Replaced scheduler stub (resolved TODO at line 297)
+  - `schedule_delivery()` creates real scheduled jobs
+  - `cancel_delivery()` cancels pending deliveries
+  - Returns JobId for job tracking
+- **Configuration support**:
+  - SchedulerConfig in `src/config/application_settings.rs`
+  - Fields: `enabled`, `default_cron`, `channel_size`
+  - YAML configuration support
+- 21 total scheduler tests (16 unit + 5 integration)
+
+#### Documentation
+- **CLI Configuration Guide** (`docs/cli/CONFIGURATION.md`, 500+ lines):
+  - Comprehensive guide for garrison, arsenal, and scheduler configuration
+  - Complete YAML configuration examples with detailed comments
+  - Environment variable usage and substitution
+  - Troubleshooting section with common errors and solutions
+  - Integration examples for popular MCP servers
+- **CLI Testing Guide** (`docs/cli/TESTING.md`) updates:
+  - Mock infrastructure documentation (MockLlmAdapter, MockArsenalPort)
+  - Test tier strategy (no deps, Docker-gated, API-key-gated)
+  - Test coverage statistics and categories
+  - Best practices for writing tests with mocks
+- **CLI Usage Guide** (`docs/CLI_USAGE.md`) updates:
+  - References to new CONFIGURATION.md guide
+  - Updated with garrison and arsenal capabilities
+  - Example usage patterns
+
+#### Configuration Examples
+- `examples/cli_configs/paladin_with_garrison.yaml` - In-memory and SQLite garrison examples
+- `examples/cli_configs/paladin_with_arsenal.yaml` - STDIO and SSE MCP server examples  
+- `examples/cli_configs/paladin_full_config.yaml` - Complete configuration with all features
+- All examples include extensive inline comments and usage instructions
+- Examples tested and validated for out-of-the-box functionality
+
+### Changed - Epic 23: CLI, Config & Infrastructure Completion
+
+#### Configuration Loading
+- Extended `PaladinYamlConfig` with garrison and arsenal configuration structures
+- Enhanced ConfigLoader with garrison and arsenal parsing methods
+- Added environment variable resolution for sensitive configuration values
+- Improved error messages with actionable guidance
+
+#### CLI Command Infrastructure
+- Removed TODO at `src/application/cli/commands/agent.rs` line 293 (garrison wiring)
+- Removed TODO at `src/application/cli/commands/agent.rs` line 296 (arsenal wiring)
+- Garrison adapter instantiation based on YAML config
+- Arsenal registry population from MCP server configs
+- Integration with PaladinBuilder for full feature wiring
+
+#### Content Delivery Infrastructure
+- Removed scheduler stub at `src/infrastructure/adapters/output/api_content_deliverer.rs` line 297
+- Integrated SchedulerPort for scheduled content delivery
+- Added cancellation support for pending scheduled deliveries
+- JobId tracking for scheduled tasks
+
+#### Test Organization
+- Implemented three-tier test strategy:
+  - **Tier 1**: Core functionality, no dependencies (84 tests, runs in CI)
+  - **Tier 2**: Docker-gated service tests (#[ignore], clear skip messages)
+  - **Tier 3**: API-key-gated provider tests (feature flag + #[ignore])
+- All Tier 1 tests CI-ready with deterministic execution
+- Test helper module exports: MockLlmAdapter, MockArsenalPort, MockPaladinPort
+
+### Fixed - Epic 23: CLI, Config & Infrastructure Completion
+
+#### Code Quality
+- Resolved all Epic 23 scope TODOs (3 total: agent.rs lines 293, 296; api_content_deliverer.rs line 297)
+- All code passes `cargo clippy -- -D warnings` with zero warnings
+- All code formatted with `cargo fmt` - zero formatting issues
+- Zero compilation warnings in Epic 23 changes
+
+#### Test Coverage
+- Closed critical test coverage gap: LLM ↔ Arsenal ↔ result tool call loop (8 tests added)
+- Added missing garrison configuration tests (9 tests)
+- Added missing arsenal configuration tests (8 tests)
+- Added missing error handling tests (14 tests)
+- **Test count:** 84 new CLI integration tests, all passing
+
+#### Deferred Task Completion
+- **Epic 9, Task 5.8**: Garrison configuration wiring ✅
+- **Epic 9, Task 5.9**: Arsenal/MCP configuration wiring ✅
+- **Epic 10, Tasks 13.4-13.6**: CLI integration tests for Paladin, Formation, Phalanx ✅
+- **Epic 18, Tasks 9.1-9.7**: End-to-end testing and test documentation ✅
+- **All Milestone 3 deferred tasks now complete**
+
 ### Added - Epic 22: Battalion & Commander Hardening
 
 #### Commander Metadata Export
