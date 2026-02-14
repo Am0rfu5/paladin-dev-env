@@ -6,12 +6,15 @@
 //! external dependencies.
 
 use paladin::application::ports::output::arsenal_port::ArsenalPort;
+use paladin::application::ports::output::garrison_port::GarrisonPort;
 use paladin::application::ports::output::llm_port::LlmPort;
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::arsenal::ArmamentResult;
+use paladin::core::platform::container::garrison::{ConversationRole, GarrisonConfig};
 use paladin::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
+use paladin::infrastructure::adapters::garrison::InMemoryGarrison;
 use serde_json::json;
 use std::sync::Arc;
 use std::time::Duration;
@@ -205,9 +208,7 @@ async fn test_tool_call_no_arsenal_available() {
     let service = create_service(mock_llm.clone() as Arc<dyn LlmPort>, None);
 
     // Act: Execute
-    let result = service
-        .execute(&paladin, "What is 1 + 2?")
-        .await;
+    let result = service.execute(&paladin, "What is 1 + 2?").await;
 
     // Assert: Should not crash, execution completes gracefully
     assert!(
@@ -235,10 +236,7 @@ async fn test_tool_call_unknown_tool() {
 
     // Arrange: Mock LLM calling a nonexistent tool
     let mock_llm = Arc::new(MockLlmAdapter::new());
-    mock_llm.add_tool_call(
-        "nonexistent_tool",
-        r#"{"arg":"value"}"#.to_string(),
-    );
+    mock_llm.add_tool_call("nonexistent_tool", r#"{"arg":"value"}"#.to_string());
     mock_llm.add_success("Proceeding anyway".to_string());
 
     // Mock Arsenal with NO tools registered (invoke will return ToolNotFound)
@@ -246,12 +244,13 @@ async fn test_tool_call_unknown_tool() {
     // Don't add any tools - leaving it empty
 
     let paladin = create_test_paladin(MaxLoops::Fixed(2));
-    let service = create_service(mock_llm.clone() as Arc<dyn LlmPort>, Some(mock_arsenal.clone()));
+    let service = create_service(
+        mock_llm.clone() as Arc<dyn LlmPort>,
+        Some(mock_arsenal.clone()),
+    );
 
     // Act
-    let result = service
-        .execute(&paladin, "Use the nonexistent tool")
-        .await;
+    let result = service.execute(&paladin, "Use the nonexistent tool").await;
 
     // Assert: Execution succeeds with graceful error handling
     assert!(result.is_ok(), "Should handle unknown tool gracefully");
@@ -289,26 +288,20 @@ async fn test_tool_call_invalid_arguments() {
     let mock_arsenal = Arc::new(mock_arsenal_raw);
     mock_arsenal.set_response(
         "calculator",
-        ArmamentResult::success(
-            Uuid::new_v4(),
-            json!("Should not reach here"),
-            10
-        ),
+        ArmamentResult::success(Uuid::new_v4(), json!("Should not reach here"), 10),
     );
 
     let paladin = create_test_paladin(MaxLoops::Fixed(2));
-    let service = create_service(mock_llm.clone() as Arc<dyn LlmPort>, Some(mock_arsenal.clone()));
+    let service = create_service(
+        mock_llm.clone() as Arc<dyn LlmPort>,
+        Some(mock_arsenal.clone()),
+    );
 
     // Act
-    let result = service
-        .execute(&paladin, "Calculate with bad args")
-        .await;
+    let result = service.execute(&paladin, "Calculate with bad args").await;
 
     // Assert: Graceful degradation
-    assert!(
-        result.is_ok(),
-        "Should handle invalid arguments gracefully"
-    );
+    assert!(result.is_ok(), "Should handle invalid arguments gracefully");
 
     let output = result.unwrap();
     println!("  Output: {}", output.output);
@@ -340,12 +333,13 @@ async fn test_tool_call_execution_error() {
     mock_arsenal.set_error("failing_tool", "Simulated execution failure");
 
     let paladin = create_test_paladin(MaxLoops::Fixed(2));
-    let service = create_service(mock_llm.clone() as Arc<dyn LlmPort>, Some(mock_arsenal.clone()));
+    let service = create_service(
+        mock_llm.clone() as Arc<dyn LlmPort>,
+        Some(mock_arsenal.clone()),
+    );
 
     // Act
-    let result = service
-        .execute(&paladin, "Use the failing tool")
-        .await;
+    let result = service.execute(&paladin, "Use the failing tool").await;
 
     // Assert: Execution succeeds, error is handled gracefully
     assert!(result.is_ok(), "Should handle tool execution error");
@@ -375,3 +369,160 @@ async fn test_tool_call_execution_error() {
     println!("✓ Execution error test passed");
 }
 
+// ========================================================================================
+// Advanced Tests (Task 4.0 - FR-2.8 to FR-2.9)
+// ========================================================================================
+
+/// Helper function to create service with garrison enabled
+fn create_service_with_garrison(
+    llm: Arc<dyn LlmPort>,
+    arsenal: Option<Arc<dyn ArsenalPort>>,
+    garrison: Arc<dyn GarrisonPort>,
+) -> PaladinExecutionService {
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    PaladinExecutionService::new(llm, circuit_breaker, Some(garrison), arsenal)
+}
+
+/// FR-2.8: Test multiple sequential tool calls
+#[tokio::test]
+async fn test_multiple_sequential_tool_calls() {
+    println!("\n▶ Testing multiple sequential tool calls...");
+
+    // Arrange: Mock LLM that calls two tools then gives final answer
+    let mock_llm = Arc::new(MockLlmAdapter::new());
+    mock_llm.add_tool_call("tool_a", r#"{"param":"value_a"}"#.to_string());
+    mock_llm.add_tool_call("tool_b", r#"{"param":"value_b"}"#.to_string());
+    mock_llm.add_success("Final answer after using both tools".to_string());
+
+    // Mock Arsenal with both tools
+    let mut mock_arsenal_raw = MockArsenalPort::new();
+    mock_arsenal_raw.add_tool("tool_a", "First tool");
+    mock_arsenal_raw.add_tool("tool_b", "Second tool");
+    let mock_arsenal = Arc::new(mock_arsenal_raw);
+
+    mock_arsenal.set_response(
+        "tool_a",
+        ArmamentResult::success(Uuid::new_v4(), json!("Result from tool A"), 10),
+    );
+    mock_arsenal.set_response(
+        "tool_b",
+        ArmamentResult::success(Uuid::new_v4(), json!("Result from tool B"), 10),
+    );
+
+    // Paladin with enough loops for 3 LLM calls (tool_a, tool_b, final)
+    let paladin = create_test_paladin(MaxLoops::Fixed(3));
+    let service = create_service(
+        mock_llm.clone() as Arc<dyn LlmPort>,
+        Some(mock_arsenal.clone()),
+    );
+
+    // Act
+    let result = service.execute(&paladin, "Use both tools").await;
+
+    // Assert
+    assert!(result.is_ok(), "Should handle multiple tool calls");
+
+    let output = result.unwrap();
+    println!("  Output: {}", output.output);
+
+    // Should have 3 LLM invocations: tool_a call, tool_b call, final response
+    assert_eq!(
+        mock_llm.call_count(),
+        3,
+        "Should have 3 LLM calls (tool_a + tool_b + final)"
+    );
+
+    // Should have 2 arsenal invocations
+    assert_eq!(
+        mock_arsenal.call_count(),
+        2,
+        "Should have 2 tool invocations"
+    );
+
+    // Verify execution completed successfully with both tools used
+    assert!(
+        output.output.contains("Final answer"),
+        "Output should contain final answer. Got: {}",
+        output.output
+    );
+
+    println!("✓ Multiple sequential tool calls test passed");
+}
+
+/// FR-2.9: Test tool call with garrison (memory) integration
+#[tokio::test]
+async fn test_tool_call_with_garrison() {
+    println!("\n▶ Testing tool call with garrison integration...");
+
+    // Arrange: Create garrison
+    let garrison =
+        Arc::new(InMemoryGarrison::new(GarrisonConfig::default())) as Arc<dyn GarrisonPort>;
+
+    // Mock LLM calling a tool
+    let mock_llm = Arc::new(MockLlmAdapter::new());
+    mock_llm.add_tool_call(
+        "calculator",
+        r#"{"operation":"multiply","a":6,"b":7}"#.to_string(),
+    );
+    mock_llm.add_success("The calculation is complete".to_string());
+
+    // Mock Arsenal with calculator
+    let mut mock_arsenal_raw = MockArsenalPort::new();
+    mock_arsenal_raw.add_tool("calculator", "A calculator tool");
+    let mock_arsenal = Arc::new(mock_arsenal_raw);
+
+    mock_arsenal.set_response(
+        "calculator",
+        ArmamentResult::success(Uuid::new_v4(), json!(42), 5),
+    );
+
+    let paladin = create_test_paladin(MaxLoops::Fixed(2));
+    let service = create_service_with_garrison(
+        mock_llm.clone() as Arc<dyn LlmPort>,
+        Some(mock_arsenal.clone()),
+        garrison.clone(),
+    );
+
+    // Act
+    let result = service.execute(&paladin, "What is 6 times 7?").await;
+
+    // Assert: Execution succeeds
+    assert!(result.is_ok(), "Should execute successfully with garrison");
+
+    let output = result.unwrap();
+    println!("  Output: {}", output.output);
+
+    // Verify garrison contains tool entry
+    let entries = garrison
+        .recall_recent(100)
+        .await
+        .expect("Failed to get entries from garrison");
+    println!("  Garrison has {} entries", entries.len());
+
+    // Should have at least one Tool role entry (for the tool result)
+    let tool_entries: Vec<_> = entries
+        .iter()
+        .filter(|e| matches!(e.role, ConversationRole::Tool))
+        .collect();
+
+    assert!(
+        !tool_entries.is_empty(),
+        "Garrison should contain at least one Tool role entry"
+    );
+
+    println!("  Tool entries in garrison: {}", tool_entries.len());
+
+    // The tool entry should contain information about the calculator call
+    let tool_entry_text = &tool_entries[0].content;
+    let has_calculator_ref = tool_entry_text.contains("calculator")
+        || tool_entry_text.contains("42")
+        || tool_entry_text.contains("Tool Execution");
+
+    assert!(
+        has_calculator_ref,
+        "Tool entry should reference the calculator or its result. Got: {}",
+        tool_entry_text
+    );
+
+    println!("✓ Garrison integration test passed");
+}
