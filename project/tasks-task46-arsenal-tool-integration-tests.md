@@ -47,46 +47,46 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Ensure on `develop` branch with latest changes: `git checkout develop && git pull`
-  - [ ] 0.2 Create and checkout feature branch: `git checkout -b feature/epic-23-task46-tool-integration-tests`
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Ensure on `develop` branch with latest changes: `git checkout develop && git pull`
+  - [x] 0.2 Create and checkout feature branch: `git checkout -b feature/epic-23-task46-tool-integration-tests`
 
-- [ ] 1.0 Implement MockArsenalPort test helper (FR-1)
-  - [ ] 1.1 Create `tests/helpers/mock_arsenal_adapter.rs` with module doc comment explaining purpose
-  - [ ] 1.2 Add required imports: `ArsenalPort`, `Armament`, `ArmamentCall`, `ArmamentResult`, `ArsenalError`, `async_trait`, `Arc`, `Mutex`, `HashMap`
-  - [ ] 1.3 Define `MockArsenalPort` struct with fields: `armaments: Vec<Armament>`, `responses: Arc<Mutex<HashMap<String, Result<ArmamentResult, ArsenalError>>>>`, `invocations: Arc<Mutex<Vec<ArmamentCall>>>`
-  - [ ] 1.4 Implement `MockArsenalPort::new()` constructor returning empty mock
-  - [ ] 1.5 Implement builder method `add_tool(&mut self, name: &str, description: &str) -> &mut Self` that adds an `Armament` to the armaments list
-  - [ ] 1.6 Implement `set_response(&self, tool_name: &str, result: ArmamentResult)` to pre-configure success response for a tool name
-  - [ ] 1.7 Implement `set_error(&self, tool_name: &str, error: ArsenalError)` to pre-configure error response for a tool name
-  - [ ] 1.8 Implement assertion helpers: `call_count(&self) -> usize`, `invocations(&self) -> Vec<ArmamentCall>`, `last_invocation(&self) -> Option<ArmamentCall>`
-  - [ ] 1.9 Implement `ArsenalPort` trait for `MockArsenalPort`:
+- [x] 1.0 Implement MockArsenalPort test helper (FR-1)
+  - [x] 1.1 Create `tests/helpers/mock_arsenal_adapter.rs` with module doc comment explaining purpose
+  - [x] 1.2 Add required imports: `ArsenalPort`, `Armament`, `ArmamentCall`, `ArmamentResult`, `ArsenalError`, `async_trait`, `Arc`, `Mutex`, `HashMap`
+  - [x] 1.3 Define `MockArsenalPort` struct with fields: `armaments: Vec<Armament>`, `responses: Arc<Mutex<HashMap<String, Result<ArmamentResult, ArsenalError>>>>`, `invocations: Arc<Mutex<Vec<ArmamentCall>>>`
+  - [x] 1.4 Implement `MockArsenalPort::new()` constructor returning empty mock
+  - [x] 1.5 Implement builder method `add_tool(&mut self, name: &str, description: &str) -> &mut Self` that adds an `Armament` to the armaments list
+  - [x] 1.6 Implement `set_response(&self, tool_name: &str, result: ArmamentResult)` to pre-configure success response for a tool name
+  - [x] 1.7 Implement `set_error(&self, tool_name: &str, error: ArsenalError)` to pre-configure error response for a tool name
+  - [x] 1.8 Implement assertion helpers: `call_count(&self) -> usize`, `invocations(&self) -> Vec<ArmamentCall>`, `last_invocation(&self) -> Option<ArmamentCall>`
+  - [x] 1.9 Implement `ArsenalPort` trait for `MockArsenalPort`:
     - `list_armaments()` returns cloned `self.armaments`
     - `invoke()` records call in `invocations`, looks up response by `call.tool_name`, returns it (or `ArsenalError::ToolNotFound` if not configured)
     - `validate_call()` checks tool exists in armaments list
-  - [ ] 1.10 Implement `Default` trait for `MockArsenalPort`
-  - [ ] 1.11 Update `tests/helpers/mod.rs` to add `pub mod mock_arsenal_adapter;` and `pub use mock_arsenal_adapter::MockArsenalPort;`
-  - [ ] 1.12 Run `cargo check --tests` to verify MockArsenalPort compiles
-  - [ ] 1.13 Run `cargo clippy -- -D warnings` and fix any issues
-  - [ ] 1.14 Run `cargo fmt`
+  - [x] 1.10 Implement `Default` trait for `MockArsenalPort`
+  - [x] 1.11 Update `tests/helpers/mod.rs` to add `pub mod mock_arsenal_adapter;` and `pub use mock_arsenal_adapter::MockArsenalPort;`
+  - [x] 1.12 Run `cargo check --tests` to verify MockArsenalPort compiles
+  - [x] 1.13 Run `cargo clippy -- -D warnings` and fix any issues
+  - [x] 1.14 Run `cargo fmt`
 
-- [ ] 2.0 Implement core tool call flow tests (FR-2.1–FR-2.3, US-1, US-2)
-  - [ ] 2.1 Create `tests/cli/tool_integration_test.rs` with module doc comment
-  - [ ] 2.2 Add required imports: `MockLlmAdapter`, `MockArsenalPort`, `PaladinExecutionService`, `CircuitBreaker`, `LlmPort`, `ArsenalPort`, `PaladinData`, `MaxLoops`, `Node`, `ArmamentResult`, `Arc`, `Duration`, `serde_json::json`, `uuid::Uuid`
-  - [ ] 2.3 Create helper function `create_test_paladin(max_loops: MaxLoops) -> Node<PaladinData>` that builds a minimal Paladin config for tests
-  - [ ] 2.4 Create helper function `create_service(llm: Arc<dyn LlmPort>, arsenal: Option<Arc<dyn ArsenalPort>>) -> PaladinExecutionService` that wires up a `CircuitBreaker` and returns the service
-  - [ ] 2.5 Update `tests/cli/mod.rs` to add `mod tool_integration_test;`
-  - [ ] 2.6 Implement `test_tool_call_basic_flow` (FR-2.2):
+- [x] 2.0 Implement core tool call flow tests (FR-2.1–FR-2.3, US-1, US-2)
+  - [x] 2.1 Create `tests/cli/tool_integration_test.rs` with module doc comment
+  - [x] 2.2 Add required imports: `MockLlmAdapter`, `MockArsenalPort`, `PaladinExecutionService`, `CircuitBreaker`, `LlmPort`, `ArsenalPort`, `PaladinData`, `MaxLoops`, `Node`, `ArmamentResult`, `Arc`, `Duration`, `serde_json::json`, `uuid::Uuid`
+  - [x] 2.3 Create helper function `create_test_paladin(max_loops: MaxLoops) -> Node<PaladinData>` that builds a minimal Paladin config for tests
+  - [x] 2.4 Create helper function `create_service(llm: Arc<dyn LlmPort>, arsenal: Option<Arc<dyn ArsenalPort>>) -> PaladinExecutionService` that wires up a `CircuitBreaker` and returns the service
+  - [x] 2.5 Update `tests/cli/mod.rs` to add `mod tool_integration_test;`
+  - [x] 2.6 Implement `test_tool_call_basic_flow` (FR-2.2):
     - MockLlmAdapter: `add_tool_call("calculator", r#"{"operation":"add","a":1,"b":2}"#)` then `add_success("The result is 3")`
     - MockArsenalPort: `add_tool("calculator", "A calculator")`, `set_response("calculator", ArmamentResult::success(...))`
     - Execute via `service.execute(&paladin, "What is 1 + 2?")`
     - Assert: `result.is_ok()`, output contains tool result content, `mock_llm.call_count() == 2`, `mock_arsenal.call_count() == 1`
-  - [ ] 2.7 Implement `test_tool_call_result_fed_back_to_llm` (FR-2.3):
+  - [x] 2.7 Implement `test_tool_call_result_fed_back_to_llm` (FR-2.3):
     - Same setup as basic flow
     - After execution, inspect `mock_llm.invocations()` — the second invocation's prompt should contain the formatted tool result (e.g., "Tool Execution: calculator" or the tool output value)
     - Assert: second prompt contains tool result content
-  - [ ] 2.8 Run `cargo test tool_integration` and verify both tests pass
-  - [ ] 2.9 Run `cargo clippy -- -D warnings` and `cargo fmt`
+  - [x] 2.8 Run `cargo test tool_integration` and verify both tests pass
+  - [x] 2.9 Run `cargo clippy -- -D warnings` and `cargo fmt`
 
 - [ ] 3.0 Implement tool call error handling tests (FR-2.4–FR-2.7, US-3)
   - [ ] 3.1 Implement `test_tool_call_no_arsenal_available` (FR-2.4):
