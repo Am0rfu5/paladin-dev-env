@@ -76,22 +76,22 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.10 Document benchmark results in `docs/BATTALION_BENCHMARKS.md` (append new results)
   - [x] 1.11 Commit changes: `git commit -m "fix: update Campaign and ChainOfCommand benchmarks to current API"`
 
-- [ ] 2.0 Enable Deferred Test Modules (US-24.2, US-24.3)
-  - [ ] 2.1 Read `tests/unit/mod.rs` line 22 to see commented prompt generation test module
-  - [ ] 2.2 Read `src/application/ports/output/llm_port.rs` to understand current `LlmPort` trait signature
-  - [ ] 2.3 Create or update `MockLlmPort` in `tests/unit/mod.rs` to match current trait (add missing methods)
-  - [ ] 2.4 Uncomment the `prompt_generation_service_test` module in `tests/unit/mod.rs`
-  - [ ] 2.5 Read `tests/unit/prompt_generation_service_test.rs` to identify failing tests
-  - [ ] 2.6 Fix compilation errors in prompt generation tests (update mock usage)
-  - [ ] 2.7 Run `cargo test prompt_generation` to verify tests pass
-  - [ ] 2.8 Read `tests/unit/paladin_execution_service_test.rs` lines 237-239 to see ignored timeout test
-  - [ ] 2.9 Enhance `MockLlmPort` to support configurable delays (add delay field/method)
-  - [ ] 2.10 Implement timeout test logic that verifies 60-second timeout behavior
-  - [ ] 2.11 Remove `#[ignore]` attribute from timeout test
-  - [ ] 2.12 Add additional timeout edge case tests (0s timeout, timeout > max_duration)
-  - [ ] 2.13 Run `cargo test timeout` multiple times to verify no flakiness
-  - [ ] 2.14 Run full test suite: `cargo test` to ensure no regressions
-  - [ ] 2.15 Commit changes: `git commit -m "test: enable prompt generation and timeout tests"`
+- [x] 2.0 Enable Deferred Test Modules (US-24.2, US-24.3)
+  - [x] 2.1 Read `tests/unit/mod.rs` line 22 to see commented prompt generation test module
+  - [x] 2.2 Read `src/application/ports/output/llm_port.rs` to understand current `LlmPort` trait signature
+  - [x] 2.3 Create or update `MockLlmPort` in `tests/unit/mod.rs` to match current trait (add missing methods)
+  - [x] 2.4 Uncomment the `prompt_generation_service_test` module in `tests/unit/mod.rs`
+  - [x] 2.5 Read `tests/unit/prompt_generation_service_test.rs` to identify failing tests
+  - [x] 2.6 Fix compilation errors in prompt generation tests (update mock usage)
+  - [x] 2.7 Run `cargo test prompt_generation` to verify tests pass
+  - [x] 2.8 Read `tests/unit/paladin_execution_service_test.rs` lines 237-239 to see ignored timeout test
+  - [x] 2.9 Enhance `MockLlmPort` to support configurable delays (add delay field/method)
+  - [x] 2.10 Implement timeout test logic that verifies 60-second timeout behavior
+  - [x] 2.11 Remove `#[ignore]` attribute from timeout test
+  - [x] 2.12 Add additional timeout edge case tests (0s timeout, timeout > max_duration)
+  - [x] 2.13 Run `cargo test timeout` multiple times to verify no flakiness
+  - [x] 2.14 Run full test suite: `cargo test` to ensure no regressions
+  - [x] 2.15 Commit changes: `git commit -m "test: enable prompt generation and timeout tests"`
 
 - [ ] 3.0 Implement Qdrant Integration Tests (US-24.4)
   - [ ] 3.1 Read existing `tests/integration/rag_integration_tests.rs` line 147 to see placeholder
