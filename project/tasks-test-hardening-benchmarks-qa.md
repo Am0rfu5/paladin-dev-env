@@ -93,26 +93,26 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.14 Run full test suite: `cargo test` to ensure no regressions
   - [x] 2.15 Commit changes: `git commit -m "test: enable prompt generation and timeout tests"`
 
-- [ ] 3.0 Implement Qdrant Integration Tests (US-24.4)
-  - [ ] 3.1 Read existing `tests/integration/rag_integration_tests.rs` line 147 to see placeholder
-  - [ ] 3.2 Read `src/infrastructure/adapters/sanctum/qdrant_sanctum.rs` to understand Qdrant adapter API
-  - [ ] 3.3 Create helper function to check Qdrant availability (connect to localhost:6333)
-  - [ ] 3.4 Implement test setup: create test collection with unique name (e.g., `test_paladin_{uuid}`)
-  - [ ] 3.5 Implement test teardown: delete test collection after test completes
-  - [ ] 3.6 Write integration test for store operation (insert documents with embeddings)
-  - [ ] 3.7 Write integration test for search operation (semantic search with query)
-  - [ ] 3.8 Write integration test for delete operation (remove documents)
-  - [ ] 3.9 Write integration test for update operation (modify existing documents)
-  - [ ] 3.10 Write integration test for vector search with different similarity metrics (cosine, dot product)
-  - [ ] 3.11 Write end-to-end test: create RAG-enabled Paladin → execute with context retrieval
-  - [ ] 3.12 Write test for token budget limiting (verify context truncation)
-  - [ ] 3.13 Write test for context formatting (verify prompt construction with retrieved docs)
-  - [ ] 3.14 Add test attribute to skip if Qdrant unavailable: check connection, skip with warning
-  - [ ] 3.15 Read `tests/unit/sanctum/qdrant_sanctum_test.rs` line 62 for incomplete unit tests
-  - [ ] 3.16 Expand unit tests for Qdrant adapter (mock HTTP responses)
-  - [ ] 3.17 Run integration tests: `cargo test --test rag_integration_tests` (requires Docker/Qdrant)
-  - [ ] 3.18 Verify integration test coverage ≥70% for RAG workflow
-  - [ ] 3.19 Commit changes: `git commit -m "test: implement comprehensive Qdrant integration tests"`
+- [x] 3.0 Implement Qdrant Integration Tests (US-24.4)
+  - [x] 3.1 Read existing `tests/integration/rag_integration_tests.rs` line 147 to see placeholder
+  - [x] 3.2 Read `src/infrastructure/adapters/sanctum/qdrant_sanctum.rs` to understand Qdrant adapter API
+  - [x] 3.3 Create helper function to check Qdrant availability (connect to localhost:6333)
+  - [x] 3.4 Implement test setup: create test collection with unique name (e.g., `test_paladin_{uuid}`)
+  - [x] 3.5 Implement test teardown: delete test collection after test completes
+  - [x] 3.6 Write integration test for store operation (insert documents with embeddings)
+  - [x] 3.7 Write integration test for search operation (semantic search with query)
+  - [x] 3.8 Write integration test for delete operation (remove documents)
+  - [x] 3.9 Write integration test for update operation (modify existing documents)
+  - [x] 3.10 Write integration test for vector search with different similarity metrics (cosine, dot product)
+  - [x] 3.11 Write end-to-end test: create RAG-enabled Paladin → execute with context retrieval
+  - [x] 3.12 Write test for token budget limiting (verify context truncation)
+  - [x] 3.13 Write test for context formatting (verify prompt construction with retrieved docs)
+  - [x] 3.14 Add test attribute to skip if Qdrant unavailable: check connection, skip with warning
+  - [x] 3.15 Read `tests/unit/sanctum/qdrant_sanctum_test.rs` line 62 for incomplete unit tests
+  - [x] 3.16 Expand unit tests for Qdrant adapter (mock HTTP responses)
+  - [x] 3.17 Run integration tests: `cargo test --test rag_integration_tests` (requires Docker/Qdrant)
+  - [x] 3.18 Verify integration test coverage ≥70% for RAG workflow
+  - [x] 3.19 Commit changes: `git commit -m "test: implement comprehensive Qdrant integration tests"`
 
 - [ ] 4.0 Add CLI Snapshot Testing Infrastructure (US-24.6)
   - [ ] 4.1 Add `insta = "1.34"` dependency to `Cargo.toml` under `[dev-dependencies]`
