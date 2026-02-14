@@ -2,8 +2,11 @@
 //!
 //! Common test infrastructure including mocks, fixtures, and helper functions.
 
+pub mod mock_arsenal_adapter;
 pub mod mock_llm_adapter;
 pub mod mock_paladin_port;
+
+pub use mock_arsenal_adapter::MockArsenalPort;
 
 pub use mock_llm_adapter::{
     Invocation, MockLlmAdapter, MockResponse, create_mock_with_mixed_responses,

@@ -8,3 +8,4 @@ mod garrison_config_test;
 mod integration_tests;
 mod paladin_execution_test;
 mod phalanx_execution_test;
+mod tool_integration_test;
