@@ -12,3 +12,4 @@ pub mod output;
 pub mod paladin_registry;
 pub mod queue;
 pub mod sanctum;
+pub mod scheduling;

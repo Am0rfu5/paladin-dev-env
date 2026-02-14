@@ -33,6 +33,7 @@ pub mod paladin_integration_test;
 pub mod qdrant_sanctum_tests;
 pub mod rag_integration_tests;
 pub mod redis_queue_integration_test;
+pub mod scheduler_integration_test;
 pub mod sqlite_garrison_integration_test;
 pub mod system_log_integration_test;
 pub mod vision_integration_test;

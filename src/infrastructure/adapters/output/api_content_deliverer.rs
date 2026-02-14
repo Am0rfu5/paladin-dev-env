@@ -2,6 +2,7 @@ use crate::application::ports::output::content_delivery_port::{
     BatchContentDeliveryService, ContentDeliveryError, ContentDeliveryService, ContentPayload,
     DeliveryMethod, DeliveryRequest, DeliveryResponse, DeliveryStats, DeliveryStatus,
 };
+use crate::application::ports::output::scheduler_port::{JobId, JobSpec, SchedulerPort};
 use actix_web::{HttpResponse, Result as ActixResult, web};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -10,12 +11,25 @@ use std::sync::{Arc, Mutex};
 use tokio::time::{Duration, sleep};
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ApiContentDeliverer {
     http_client: reqwest::Client,
     delivery_history: Arc<Mutex<HashMap<Uuid, DeliveryResponse>>>,
+    /// Maps delivery UUIDs to scheduler `JobId`s for cancellation.
+    scheduled_jobs: Arc<Mutex<HashMap<Uuid, JobId>>>,
+    scheduler: Option<Arc<dyn SchedulerPort>>,
     max_retries: u32,
     retry_delay_ms: u64,
+}
+
+impl std::fmt::Debug for ApiContentDeliverer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ApiContentDeliverer")
+            .field("max_retries", &self.max_retries)
+            .field("retry_delay_ms", &self.retry_delay_ms)
+            .field("has_scheduler", &self.scheduler.is_some())
+            .finish_non_exhaustive()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -40,9 +54,17 @@ impl ApiContentDeliverer {
                 .build()
                 .expect("Failed to create HTTP client"),
             delivery_history: Arc::new(Mutex::new(HashMap::new())),
+            scheduled_jobs: Arc::new(Mutex::new(HashMap::new())),
+            scheduler: None,
             max_retries: 3,
             retry_delay_ms: 1000,
         }
+    }
+
+    /// Attach a scheduler adapter to enable cron-based delivery scheduling.
+    pub fn with_scheduler(mut self, scheduler: Arc<dyn SchedulerPort>) -> Self {
+        self.scheduler = Some(scheduler);
+        self
     }
 
     pub fn with_retry_config(mut self, max_retries: u32, retry_delay_ms: u64) -> Self {
@@ -284,21 +306,127 @@ impl ContentDeliveryService for ApiContentDeliverer {
 
     fn schedule_delivery(
         &self,
-        _request: DeliveryRequest,
+        request: DeliveryRequest,
     ) -> Result<DeliveryResponse, ContentDeliveryError> {
         let delivery_id = Uuid::new_v4();
 
-        // For demo purposes, we'll just mark it as scheduled
-        // In a real implementation, you'd integrate with a job scheduler
+        // If a scheduler is configured, register the delivery as a cron job.
+        if let Some(ref scheduler) = self.scheduler {
+            // Build a cron schedule from the request's scheduled_time metadata
+            // or fall back to a one-shot-style expression.
+            let cron_expr = request
+                .metadata
+                .as_ref()
+                .and_then(|m| m.get("cron_schedule").and_then(|v| v.as_str()))
+                .unwrap_or("0 0 * * * *") // default: top of every hour
+                .to_string();
+
+            let mut spec = JobSpec::new(format!("delivery-{}", delivery_id), cron_expr);
+            spec = spec.with_metadata("delivery_id", delivery_id.to_string());
+            spec = spec.with_metadata("recipient_id", request.recipient_id.clone());
+
+            let scheduler = scheduler.clone();
+            let scheduled_jobs = self.scheduled_jobs.clone();
+            let delivery_id_copy = delivery_id;
+
+            // Bridge sync → async.
+            let schedule_result = match tokio::runtime::Handle::try_current() {
+                Ok(_handle) => std::thread::spawn(move || {
+                    let rt = tokio::runtime::Runtime::new()
+                        .map_err(|_| ContentDeliveryError::ServiceUnavailable)?;
+                    rt.block_on(async {
+                        scheduler.schedule_job(spec).await.map_err(|e| {
+                            ContentDeliveryError::DeliveryFailed(format!("Scheduler error: {}", e))
+                        })
+                    })
+                })
+                .join()
+                .map_err(|_| ContentDeliveryError::ServiceUnavailable)?,
+                Err(_) => {
+                    let rt = tokio::runtime::Runtime::new()
+                        .map_err(|_| ContentDeliveryError::ServiceUnavailable)?;
+                    rt.block_on(async {
+                        scheduler.schedule_job(spec).await.map_err(|e| {
+                            ContentDeliveryError::DeliveryFailed(format!("Scheduler error: {}", e))
+                        })
+                    })
+                }
+            };
+
+            if let Ok(job_id) = &schedule_result
+                && let Ok(mut jobs) = scheduled_jobs.lock()
+            {
+                jobs.insert(delivery_id_copy, job_id.clone());
+            }
+
+            // If scheduling failed, propagate the error.
+            schedule_result?;
+        }
+
         let response =
             self.create_delivery_response(delivery_id, DeliveryStatus::Scheduled, 0, None);
         self.store_delivery_history(response.clone());
 
-        // TODO: Integrate with actual scheduler (e.g., tokio-cron-scheduler)
         Ok(response)
     }
 
     fn cancel_delivery(&self, delivery_id: Uuid) -> Result<(), ContentDeliveryError> {
+        // If this delivery was scheduler-managed, cancel the underlying job.
+        if let Some(ref scheduler) = self.scheduler {
+            let job_id = self
+                .scheduled_jobs
+                .lock()
+                .ok()
+                .and_then(|jobs| jobs.get(&delivery_id).cloned());
+
+            if let Some(job_id) = job_id {
+                let scheduler = scheduler.clone();
+                let cancel_result = match tokio::runtime::Handle::try_current() {
+                    Ok(_) => std::thread::spawn(move || {
+                        let rt = tokio::runtime::Runtime::new()
+                            .map_err(|_| ContentDeliveryError::ServiceUnavailable)?;
+                        rt.block_on(async {
+                            scheduler.cancel_job(&job_id).await.map_err(|e| {
+                                ContentDeliveryError::DeliveryFailed(format!(
+                                    "Scheduler cancel error: {}",
+                                    e
+                                ))
+                            })
+                        })
+                    })
+                    .join()
+                    .map_err(|_| ContentDeliveryError::ServiceUnavailable)?,
+                    Err(_) => {
+                        let rt = tokio::runtime::Runtime::new()
+                            .map_err(|_| ContentDeliveryError::ServiceUnavailable)?;
+                        rt.block_on(async {
+                            scheduler.cancel_job(&job_id).await.map_err(|e| {
+                                ContentDeliveryError::DeliveryFailed(format!(
+                                    "Scheduler cancel error: {}",
+                                    e
+                                ))
+                            })
+                        })
+                    }
+                };
+
+                // Log but don't fail if scheduler cancel fails
+                // (the job may have already fired)
+                if let Err(e) = cancel_result {
+                    log::warn!(
+                        "Failed to cancel scheduler job for delivery {}: {}",
+                        delivery_id,
+                        e
+                    );
+                }
+
+                // Remove from tracking
+                if let Ok(mut jobs) = self.scheduled_jobs.lock() {
+                    jobs.remove(&delivery_id);
+                }
+            }
+        }
+
         if let Ok(mut history) = self.delivery_history.lock() {
             if let Some(mut delivery) = history.get(&delivery_id).cloned() {
                 delivery.status = DeliveryStatus::Cancelled;
