@@ -8,7 +8,8 @@
         "cargo build": true,
         "cargo llvm-cov": true,
         "timeout": true,
-        "git checkout": true
+        "git checkout": true,
+        "cargo bench": true
     },
     "snyk.advanced.organization": "5c9bb8c8-b249-4d5c-a37e-68169c8c06d3",
     "snyk.advanced.autoSelectOrganization": true

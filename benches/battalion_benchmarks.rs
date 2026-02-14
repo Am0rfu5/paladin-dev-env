@@ -11,6 +11,8 @@ use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_ma
 use paladin::application::ports::output::paladin_port::{
     PaladinPort, PaladinResult, PaladinStreamChunk, StopReason,
 };
+use paladin::application::use_cases::battalion::campaign_service::CampaignExecutionService;
+use paladin::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
 use paladin::application::use_cases::battalion::flow_visualizer::{
     FlowVisualizer, VisualizationFormat,
 };
@@ -20,6 +22,10 @@ use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutio
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;
+use paladin::core::platform::container::battalion::campaign::{
+    Campaign, CampaignEdge, EdgeCondition,
+};
+use paladin::core::platform::container::battalion::chain_of_command::ChainOfCommand;
 use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::maneuver::{Maneuver, ManeuverConfig};
 use paladin::core::platform::container::battalion::parser::FlowParser;
@@ -294,14 +300,11 @@ fn benchmark_orchestration_overhead(c: &mut Criterion) {
     group.finish();
 }
 
-/*
 /// Benchmark Campaign (graph-based) orchestration
-/// TODO: Fix Campaign API - add_node/add_edge methods don't match actual implementation
 fn benchmark_campaign(c: &mut Criterion) {
-    let runtime = Runtime::new().unwrap();
+    let runtime = tokio::runtime::Runtime::new().unwrap();
     let port = Arc::new(BenchmarkMockPort::new(10_000)); // 10ms latency
-    let service = PaladinExecutionService::new(port.clone());
-    let battalion_service = BattalionExecutionService::new(service);
+    let service = CampaignExecutionService::new(port);
 
     let mut group = c.benchmark_group("campaign");
 
@@ -311,16 +314,21 @@ fn benchmark_campaign(c: &mut Criterion) {
         let p2 = create_benchmark_paladin("p2");
         let p3 = create_benchmark_paladin("p3");
 
-        let mut campaign = Campaign::new();
-        campaign.add_node("p1", p1).unwrap();
-        campaign.add_node("p2", p2).unwrap();
-        campaign.add_node("p3", p3).unwrap();
-        campaign.add_edge("p1", "p2").unwrap();
-        campaign.add_edge("p2", "p3").unwrap();
-        campaign.set_entry_node("p1").unwrap();
+        let config = BattalionConfig::default();
+        let mut campaign = Campaign::new(config);
+        let id1 = campaign.add_paladin(p1);
+        let id2 = campaign.add_paladin(p2);
+        let id3 = campaign.add_paladin(p3);
+        campaign
+            .add_edge(CampaignEdge::new(id1, id2, EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(id2, id3, EdgeCondition::Always))
+            .unwrap();
+        campaign.set_entry_point(id1).unwrap();
 
         b.iter(|| {
-            runtime.block_on(async { battalion_service.execute(black_box(&campaign), "benchmark").await })
+            runtime.block_on(async { service.execute(black_box(&campaign), "benchmark").await })
         });
     });
 
@@ -331,31 +339,43 @@ fn benchmark_campaign(c: &mut Criterion) {
         let p3 = create_benchmark_paladin("p3");
         let p4 = create_benchmark_paladin("p4");
 
-        let mut campaign = Campaign::new();
-        campaign.add_node("p1", p1).unwrap();
-        campaign.add_node("p2", p2).unwrap();
-        campaign.add_node("p3", p3).unwrap();
-        campaign.add_node("p4", p4).unwrap();
-        campaign.add_edge("p1", "p2").unwrap();
-        campaign.add_edge("p1", "p3").unwrap();
-        campaign.add_edge("p2", "p4").unwrap();
-        campaign.add_edge("p3", "p4").unwrap();
-        campaign.set_entry_node("p1").unwrap();
+        let config = BattalionConfig::default();
+        let mut campaign = Campaign::new(config);
+        let id1 = campaign.add_paladin(p1);
+        let id2 = campaign.add_paladin(p2);
+        let id3 = campaign.add_paladin(p3);
+        let id4 = campaign.add_paladin(p4);
+        campaign
+            .add_edge(CampaignEdge::new(id1, id2, EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(id1, id3, EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(id2, id4, EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(id3, id4, EdgeCondition::Always))
+            .unwrap();
+        campaign.set_entry_point(id1).unwrap();
 
         b.iter(|| {
-            runtime.block_on(async { battalion_service.execute(black_box(&campaign), "benchmark").await })
+            runtime.block_on(async { service.execute(black_box(&campaign), "benchmark").await })
         });
     });
 
     // Complex graph (10 nodes, mixed topology)
     group.bench_function("complex_10_nodes", |b| {
-        let mut campaign = Campaign::new();
+        let config = BattalionConfig::default();
+        let mut campaign = Campaign::new(config);
 
-        // Create 10 paladins
-        for i in 0..10 {
-            let p = create_benchmark_paladin(&format!("p{}", i));
-            campaign.add_node(&format!("p{}", i), p).unwrap();
-        }
+        // Create 10 paladins and store their UUIDs
+        let ids: Vec<_> = (0..10)
+            .map(|i| {
+                let p = create_benchmark_paladin(&format!("p{}", i));
+                campaign.add_paladin(p)
+            })
+            .collect();
 
         // Create a mixed topology:
         // p0 -> p1, p2
@@ -364,37 +384,57 @@ fn benchmark_campaign(c: &mut Criterion) {
         // p3, p4, p5 -> p7
         // p6 -> p8
         // p7, p8 -> p9
-        campaign.add_edge("p0", "p1").unwrap();
-        campaign.add_edge("p0", "p2").unwrap();
-        campaign.add_edge("p1", "p3").unwrap();
-        campaign.add_edge("p1", "p4").unwrap();
-        campaign.add_edge("p2", "p5").unwrap();
-        campaign.add_edge("p2", "p6").unwrap();
-        campaign.add_edge("p3", "p7").unwrap();
-        campaign.add_edge("p4", "p7").unwrap();
-        campaign.add_edge("p5", "p7").unwrap();
-        campaign.add_edge("p6", "p8").unwrap();
-        campaign.add_edge("p7", "p9").unwrap();
-        campaign.add_edge("p8", "p9").unwrap();
-        campaign.set_entry_node("p0").unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[0], ids[1], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[0], ids[2], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[1], ids[3], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[1], ids[4], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[2], ids[5], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[2], ids[6], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[3], ids[7], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[4], ids[7], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[5], ids[7], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[6], ids[8], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[7], ids[9], EdgeCondition::Always))
+            .unwrap();
+        campaign
+            .add_edge(CampaignEdge::new(ids[8], ids[9], EdgeCondition::Always))
+            .unwrap();
+        campaign.set_entry_point(ids[0]).unwrap();
 
         b.iter(|| {
-            runtime.block_on(async { battalion_service.execute(black_box(&campaign), "benchmark").await })
+            runtime.block_on(async { service.execute(black_box(&campaign), "benchmark").await })
         });
     });
 
     group.finish();
 }
-*/
 
-/*
 /// Benchmark ChainOfCommand (hierarchical delegation)
-/// TODO: Fix ChainOfCommand API - constructor signature doesn't match
 fn benchmark_chain_of_command(c: &mut Criterion) {
-    let runtime = Runtime::new().unwrap();
+    let runtime = tokio::runtime::Runtime::new().unwrap();
     let port = Arc::new(BenchmarkMockPort::new(10_000)); // 10ms latency
-    let service = PaladinExecutionService::new(port.clone());
-    let battalion_service = BattalionExecutionService::new(service);
+    let service = ChainOfCommandExecutionService::new(port);
 
     let mut group = c.benchmark_group("chain_of_command");
 
@@ -405,41 +445,26 @@ fn benchmark_chain_of_command(c: &mut Criterion) {
         let sub2 = create_benchmark_paladin("sub2");
         let sub3 = create_benchmark_paladin("sub3");
 
-        let chain = ChainOfCommand::new(commander, vec![sub1, sub2, sub3]);
+        let config = BattalionConfig::default();
+        let chain = ChainOfCommand::new(commander, vec![sub1, sub2, sub3], config).unwrap();
 
         b.iter(|| {
-            runtime.block_on(async { battalion_service.execute(black_box(&chain), "benchmark").await })
+            runtime.block_on(async { service.execute(black_box(&chain), "benchmark").await })
         });
     });
 
-    // 3-level hierarchy (commander -> 2 lieutenants -> 4 soldiers)
-    group.bench_function("3_levels_deep", |b| {
+    // 2-level hierarchy with more subordinates
+    group.bench_function("2_levels_5_subordinates", |b| {
         let commander = create_benchmark_paladin("commander");
+        let subordinates: Vec<Paladin> = (0..5)
+            .map(|i| create_benchmark_paladin(&format!("sub{}", i)))
+            .collect();
 
-        // Lieutenant 1 with 2 soldiers
-        let soldier1 = create_benchmark_paladin("soldier1");
-        let soldier2 = create_benchmark_paladin("soldier2");
-        let lieutenant1 = ChainOfCommand::new(
-            create_benchmark_paladin("lieutenant1"),
-            vec![soldier1, soldier2],
-        );
-
-        // Lieutenant 2 with 2 soldiers
-        let soldier3 = create_benchmark_paladin("soldier3");
-        let soldier4 = create_benchmark_paladin("soldier4");
-        let lieutenant2 = ChainOfCommand::new(
-            create_benchmark_paladin("lieutenant2"),
-            vec![soldier3, soldier4],
-        );
-
-        // Top-level chain
-        let chain = ChainOfCommand::new_with_subchains(
-            commander,
-            vec![Box::new(lieutenant1), Box::new(lieutenant2)],
-        );
+        let config = BattalionConfig::default();
+        let chain = ChainOfCommand::new(commander, subordinates, config).unwrap();
 
         b.iter(|| {
-            runtime.block_on(async { battalion_service.execute(black_box(&chain), "benchmark").await })
+            runtime.block_on(async { service.execute(black_box(&chain), "benchmark").await })
         });
     });
 
@@ -450,16 +475,16 @@ fn benchmark_chain_of_command(c: &mut Criterion) {
             .map(|i| create_benchmark_paladin(&format!("sub{}", i)))
             .collect();
 
-        let chain = ChainOfCommand::new(commander, subordinates);
+        let config = BattalionConfig::default();
+        let chain = ChainOfCommand::new(commander, subordinates, config).unwrap();
 
         b.iter(|| {
-            runtime.block_on(async { battalion_service.execute(black_box(&chain), "benchmark").await })
+            runtime.block_on(async { service.execute(black_box(&chain), "benchmark").await })
         });
     });
 
     group.finish();
 }
-*/
 
 /// Benchmark Maneuver Flow DSL parsing
 fn benchmark_maneuver_parsing(c: &mut Criterion) {
@@ -949,8 +974,9 @@ criterion_group!(
     benchmark_maneuver_sequential,
     benchmark_maneuver_parallel,
     benchmark_maneuver_nested,
-    benchmark_maneuver_overhead // TODO: Fix Campaign and ChainOfCommand benchmarks - require API updates
-                                // benchmark_campaign,
-                                // benchmark_chain_of_command
+    benchmark_maneuver_overhead,
+    // Battalion pattern benchmarks
+    benchmark_campaign,
+    benchmark_chain_of_command
 );
 criterion_main!(benches);

@@ -186,8 +186,52 @@ open target/criterion/report/index.html
 
 ---
 
+## Updates - Epic 24: Test Hardening & Benchmarks
+
+### Benchmark API Fixes (February 14, 2026)
+
+**Campaign and ChainOfCommand benchmarks have been fixed and re-enabled** after Epic 13-18 introduced API changes.
+
+#### Changes Made:
+1. **Campaign Benchmark**:
+   - Updated to use `Campaign::new(config)` constructor with `BattalionConfig`
+   - Changed from string-based node IDs to UUID-based system: `add_paladin(paladin)` returns `Uuid`
+   - Updated edge creation to use `CampaignEdge::new(source_uuid, target_uuid, EdgeCondition::Always)`
+   - Changed entry point method from `set_entry_node(string)` to `set_entry_point(uuid)`
+   - Now uses dedicated `CampaignExecutionService` instead of generic `BattalionExecutionService`
+
+2. **ChainOfCommand Benchmark**:
+   - Updated constructor signature to `ChainOfCommand::new(commander, specialists, config)` which returns `Result`
+   - Simplified test cases (removed nested 3-level hierarchy that is not supported by current API)
+   - Added `2_levels_5_subordinates` test for better coverage
+   - Now uses dedicated `ChainOfCommandExecutionService` instead of generic `BattalionExecutionService`
+
+3. **Service Architecture**:
+   - Each Battalion pattern now has its own dedicated execution service:
+     - `FormationExecutionService` for Formation
+     - `PhalanxExecutionService` for Phalanx
+     - `CampaignExecutionService` for Campaign
+     - `ChainOfCommandExecutionService` for ChainOfCommand
+     - `ManeuverExecutionService` for Maneuver (Flow DSL)
+
+#### Benchmark Status:
+- ✅ **Campaign Benchmarks**: Compiling and enabled
+  - `linear_3_nodes`: 3-node linear graph (equivalent to Formation)
+  - `diamond_4_nodes`: 4-node diamond pattern (parallel + merge)
+  - `complex_10_nodes`: 10-node mixed topology with fan-out/fan-in
+
+- ✅ **ChainOfCommand Benchmarks**: Compiling and enabled
+  - `2_levels_3_subordinates`: Commander with 3 specialists
+  - `2_levels_5_subordinates`: Commander with 5 specialists
+  - `wide_10_subordinates`: Commander with 10 specialists
+
+**Note**: Full benchmark performance metrics will be collected and documented when running `cargo bench` for proper performance baseline tracking. The focus of Epic 24 was to ensure all benchmarks compile and execute correctly.
+
+---
+
 ## Conclusion
 
 All Battalion orchestration patterns meet or exceed performance targets. The framework adds **negligible overhead** (<10μs for Formation, <60μs for Phalanx) while enabling sophisticated multi-agent coordination patterns. Concurrency benefits are clearly demonstrated in Phalanx benchmarks with constant execution time across varying Paladin counts.
 
-**Status**: ✅ **All Performance Targets Achieved**
+**Status**: ✅ **All Performance Targets Achieved**  
+**Epic 24 Update**: ✅ **Campaign and ChainOfCommand Benchmarks Fixed and Re-enabled**
