@@ -40,7 +40,7 @@ A professional, production-ready DevContainer configuration for the Paladin proj
 - rust-analyzer - LSP for Rust
 - vadimcn.vscode-lldb - Debugging
 - tamasfe.even-better-toml - TOML support
--  - Cargo.toml management
+- Cargo.toml management
 - eamodio.gitlens - Git integration
 - ms-azuretools.vscode-docker - Docker support
 - GitHub Copilot (if available)
