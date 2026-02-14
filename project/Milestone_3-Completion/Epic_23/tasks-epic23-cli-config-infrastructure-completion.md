@@ -32,7 +32,7 @@
 - Task 3.0: ✅ Mock LLM provider (8 sub-tasks, 25 detailed steps)
 - Task 4.0: ✅ CLI integration tests (7 of 8 sub-tasks, 1 deferred)
 - Task 5.0: Environment testing (8 sub-tasks, 37 detailed steps)
-- Task 6.0: Scheduler integration (9 sub-tasks, 38 detailed steps)
+- Task 6.0: ✅ Scheduler integration (9 sub-tasks, 38 detailed steps)
 - Task 7.0: Final validation (10 sub-tasks, 29 detailed steps)
 
 **Total:** 64 parent sub-tasks, 221 detailed implementation steps
@@ -64,10 +64,11 @@
 - `tests/helpers/mod.rs` - ✅ Test utilities module (exports MockLlmAdapter and MockPaladinPort)
 
 ### Scheduler Files
-- `src/application/ports/output/scheduler_port.rs` - Scheduler port trait (to be created)
-- `src/infrastructure/adapters/scheduling/tokio_cron_adapter.rs` - Tokio-cron scheduler adapter (to be created)
-- `src/infrastructure/adapters/scheduling/mod.rs` - Scheduling module (to be created)
-- `src/infrastructure/adapters/output/api_content_deliverer.rs` - Content deliverer with scheduler stub at line 297
+- `src/application/ports/output/scheduler_port.rs` - ✅ SchedulerPort trait with JobId, JobSpec, JobInfo, JobStatus, SchedulerError (6 inline tests - COMPLETE)
+- `src/infrastructure/adapters/scheduling/tokio_cron_adapter.rs` - ✅ TokioCronSchedulerAdapter using tokio-cron-scheduler v0.13 (13 inline tests - COMPLETE)
+- `src/infrastructure/adapters/scheduling/mod.rs` - ✅ Scheduling module (COMPLETE)
+- `src/infrastructure/adapters/output/api_content_deliverer.rs` - ✅ Content deliverer with scheduler integration for schedule_delivery and cancel_delivery (COMPLETE)
+- `src/config/application_settings.rs` - ✅ SchedulerConfig struct added (enabled, default_cron, channel_size - COMPLETE)
 
 ### Test Files
 - `tests/cli/garrison_config_test.rs` - ✅ Garrison configuration unit tests (9 tests - COMPLETE)
@@ -82,8 +83,8 @@
 - `tests/cli/environment_tests.rs` - Environment-specific tests (to be created)
 - `tests/integration/cli_real_services_test.rs` - Docker-gated service tests (to be created)
 - `tests/integration/cli_real_providers_test.rs` - API-key-gated provider tests (to be created)
-- `tests/unit/scheduler_tests.rs` - Scheduler unit tests (to be created)
-- `tests/integration/scheduler_integration_test.rs` - Scheduler integration test (to be created)
+- `tests/unit/scheduler_tests.rs` - ✅ Scheduler unit tests (16 tests - COMPLETE)
+- `tests/integration/scheduler_integration_test.rs` - ✅ Scheduler integration tests (5 tests - COMPLETE)
 
 ### Configuration Examples
 - `examples/cli_configs/paladin_with_garrison.yaml` - Example config with garrison (to be created)
@@ -329,59 +330,59 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 5.7.4 Document how to run specific test tiers
   - [x] 5.8 Run all environment tests: `cargo test environment_tests` and verify pass
 
-- [ ] 6.0 Implement scheduler integration (US-23.5)
-  - [ ] 6.1 Add tokio-cron-scheduler dependency to Cargo.toml
-    - [ ] 6.1.1 Add `tokio-cron-scheduler = "0.9"` to dependencies
-    - [ ] 6.1.2 Run `cargo build` to fetch dependency
-  - [ ] 6.2 Design and implement SchedulerPort trait in `src/application/ports/output/scheduler_port.rs`
-    - [ ] 6.2.1 Create file and module structure
-    - [ ] 6.2.2 Define `JobSpec` struct (schedule, job_fn, metadata)
-    - [ ] 6.2.3 Define `JobId`, `JobStatus` types
-    - [ ] 6.2.4 Define `SchedulerPort` trait with async_trait
-    - [ ] 6.2.5 Add methods: schedule_job, cancel_job, get_job_status
-    - [ ] 6.2.6 Define `SchedulerError` enum
-  - [ ] 6.3 Implement TokioCronSchedulerAdapter in `src/infrastructure/adapters/scheduling/tokio_cron_adapter.rs`
-    - [ ] 6.3.1 Create module structure: `src/infrastructure/adapters/scheduling/`
-    - [ ] 6.3.2 Define `TokioCronSchedulerAdapter` struct with JobScheduler and job_tracker
-    - [ ] 6.3.3 Implement `new()` constructor
-    - [ ] 6.3.4 Implement `schedule_job()` - create job from spec, add to scheduler
-    - [ ] 6.3.5 Implement `cancel_job()` - remove job from scheduler
-    - [ ] 6.3.6 Implement `get_job_status()` - query job state
-    - [ ] 6.3.7 Add job state tracking (scheduled, running, completed, failed)
-    - [ ] 6.3.8 Add error handling and retry logic
-  - [ ] 6.4 Replace scheduler stub in api_content_deliverer.rs
-    - [ ] 6.4.1 Read current stub at line 297 in `src/infrastructure/adapters/output/api_content_deliverer.rs`
-    - [ ] 6.4.2 Add `SchedulerPort` field to `APIContentDeliverer` struct
-    - [ ] 6.4.3 Update constructor to accept scheduler adapter
-    - [ ] 6.4.4 Replace `schedule_delivery()` stub with real implementation
-    - [ ] 6.4.5 Create JobSpec from content_id and schedule
-    - [ ] 6.4.6 Call `scheduler.schedule_job()` and handle errors
-    - [ ] 6.4.7 Update return type to return `JobId`
-  - [ ] 6.5 Implement cancellation support
-    - [ ] 6.5.1 Add `cancel_delivery()` method to `APIContentDeliverer`
-    - [ ] 6.5.2 Track scheduled job IDs internally
-    - [ ] 6.5.3 Call `scheduler.cancel_job()` when canceling
-  - [ ] 6.6 Write unit tests in `tests/unit/scheduler_tests.rs`
-    - [ ] 6.6.1 Create mock SchedulerPort implementation
-    - [ ] 6.6.2 Test job creation and scheduling
-    - [ ] 6.6.3 Test job cancellation
-    - [ ] 6.6.4 Test job execution with success
-    - [ ] 6.6.5 Test job execution with failure and retry
-    - [ ] 6.6.6 Test state transitions (scheduled → running → completed)
-    - [ ] 6.6.7 Test error handling
-  - [ ] 6.7 Write integration test in `tests/integration/scheduler_integration_test.rs`
-    - [ ] 6.7.1 Create test with real TokioCronSchedulerAdapter
-    - [ ] 6.7.2 Schedule job with short delay (2 seconds)
-    - [ ] 6.7.3 Use tokio::time::sleep to wait for execution
-    - [ ] 6.7.4 Verify job executes at expected time (with tolerance)
-    - [ ] 6.7.5 Verify job state updates correctly
-    - [ ] 6.7.6 Test job cancellation before execution
-  - [ ] 6.8 Add scheduler configuration schema
-    - [ ] 6.8.1 Add `SchedulerConfig` struct to application config
-    - [ ] 6.8.2 Add fields: max_concurrent_jobs, retry_failed_jobs, max_retries, retry_delay_seconds
-    - [ ] 6.8.3 Add to YAML config structure
-    - [ ] 6.8.4 Document configuration options
-  - [ ] 6.9 Run scheduler tests: `cargo test scheduler` and verify all pass
+- [x] 6.0 Implement scheduler integration (US-23.5)
+  - [x] 6.1 Add tokio-cron-scheduler dependency to Cargo.toml
+    - [x] 6.1.1 Add `tokio-cron-scheduler = "0.13"` to dependencies
+    - [x] 6.1.2 Run `cargo build` to fetch dependency
+  - [x] 6.2 Design and implement SchedulerPort trait in `src/application/ports/output/scheduler_port.rs`
+    - [x] 6.2.1 Create file and module structure
+    - [x] 6.2.2 Define `JobSpec` struct (schedule, job_fn, metadata)
+    - [x] 6.2.3 Define `JobId`, `JobStatus` types
+    - [x] 6.2.4 Define `SchedulerPort` trait with async_trait
+    - [x] 6.2.5 Add methods: schedule_job, cancel_job, get_job_status
+    - [x] 6.2.6 Define `SchedulerError` enum
+  - [x] 6.3 Implement TokioCronSchedulerAdapter in `src/infrastructure/adapters/scheduling/tokio_cron_adapter.rs`
+    - [x] 6.3.1 Create module structure: `src/infrastructure/adapters/scheduling/`
+    - [x] 6.3.2 Define `TokioCronSchedulerAdapter` struct with JobScheduler and job_tracker
+    - [x] 6.3.3 Implement `new()` constructor
+    - [x] 6.3.4 Implement `schedule_job()` - create job from spec, add to scheduler
+    - [x] 6.3.5 Implement `cancel_job()` - remove job from scheduler
+    - [x] 6.3.6 Implement `get_job_status()` - query job state
+    - [x] 6.3.7 Add job state tracking (scheduled, running, completed, failed)
+    - [x] 6.3.8 Add error handling and retry logic
+  - [x] 6.4 Replace scheduler stub in api_content_deliverer.rs
+    - [x] 6.4.1 Read current stub at line 297 in `src/infrastructure/adapters/output/api_content_deliverer.rs`
+    - [x] 6.4.2 Add `SchedulerPort` field to `APIContentDeliverer` struct
+    - [x] 6.4.3 Update constructor to accept scheduler adapter
+    - [x] 6.4.4 Replace `schedule_delivery()` stub with real implementation
+    - [x] 6.4.5 Create JobSpec from content_id and schedule
+    - [x] 6.4.6 Call `scheduler.schedule_job()` and handle errors
+    - [x] 6.4.7 Update return type to return `JobId`
+  - [x] 6.5 Implement cancellation support
+    - [x] 6.5.1 Add `cancel_delivery()` method to `APIContentDeliverer`
+    - [x] 6.5.2 Track scheduled job IDs internally
+    - [x] 6.5.3 Call `scheduler.cancel_job()` when canceling
+  - [x] 6.6 Write unit tests in `tests/unit/scheduler_tests.rs`
+    - [x] 6.6.1 Create mock SchedulerPort implementation
+    - [x] 6.6.2 Test job creation and scheduling
+    - [x] 6.6.3 Test job cancellation
+    - [x] 6.6.4 Test job execution with success
+    - [x] 6.6.5 Test job execution with failure and retry
+    - [x] 6.6.6 Test state transitions (scheduled → running → completed)
+    - [x] 6.6.7 Test error handling
+  - [x] 6.7 Write integration test in `tests/integration/scheduler_integration_test.rs`
+    - [x] 6.7.1 Create test with real TokioCronSchedulerAdapter
+    - [x] 6.7.2 Schedule job with short delay (2 seconds)
+    - [x] 6.7.3 Use tokio::time::sleep to wait for execution
+    - [x] 6.7.4 Verify job executes at expected time (with tolerance)
+    - [x] 6.7.5 Verify job state updates correctly
+    - [x] 6.7.6 Test job cancellation before execution
+  - [x] 6.8 Add scheduler configuration schema
+    - [x] 6.8.1 Add `SchedulerConfig` struct to application config
+    - [x] 6.8.2 Add fields: enabled, default_cron, channel_size
+    - [x] 6.8.3 Add to YAML config structure
+    - [x] 6.8.4 Document configuration options
+  - [x] 6.9 Run scheduler tests: `cargo test scheduler` and verify all pass
 
 - [ ] 7.0 Final validation and documentation
   - [ ] 7.1 Run full test suite
