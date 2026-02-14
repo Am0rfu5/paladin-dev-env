@@ -1,5 +1,4 @@
 use paladin::application::errors::prompt_error::PromptError;
-use paladin::application::ports::output::llm_port::LlmPort;
 use paladin::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
 use paladin::infrastructure::adapters::llm::mock_llm_adapter::MockLlmAdapter;
 use std::sync::Arc;
