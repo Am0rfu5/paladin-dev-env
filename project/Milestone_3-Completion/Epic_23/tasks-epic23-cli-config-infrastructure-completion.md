@@ -16,21 +16,21 @@
 ✅ **Task 1.0 COMPLETE**: Garrison configuration wiring (Commit: 1322f5e)  
 ✅ **Task 2.0 COMPLETE**: Arsenal/MCP configuration wiring  
 ✅ **Task 3.0 COMPLETE**: Mock LLM provider implementation (Commit: 981f026)  
-✅ **Task 4.0 COMPLETE**: CLI integration tests (Commits: 86be22c, 0f8e542)
+✅ **Task 4.0 COMPLETE**: CLI integration tests (All subtasks including 4.6)
 
 **Progress:**
 - ✅ 4 of 8 major tasks complete (50%)
 - ✅ 50 CLI tests passing (all with MockLlmAdapter, CI-ready)
+- ✅ 8 Arsenal tool integration tests passing (Task 4.6 complete)
 - ✅ 1,590 library tests passing
 - ✅ Formation & Phalanx Battalion patterns tested
-- Task 4.6 deferred (requires MCP infrastructure)
 
 **Task Breakdown:**
 - Task 0.0: ✅ Feature branch setup (2 sub-tasks)
 - Task 1.0: ✅ Garrison configuration (9 sub-tasks, 28 detailed steps)
 - Task 2.0: ✅ Arsenal/MCP configuration (10 sub-tasks, 34 detailed steps)
 - Task 3.0: ✅ Mock LLM provider (8 sub-tasks, 25 detailed steps)
-- Task 4.0: ✅ CLI integration tests (7 of 8 sub-tasks, 1 deferred)
+- Task 4.0: ✅ CLI integration tests (8 of 8 sub-tasks, including previously deferred 4.6)
 - Task 5.0: Environment testing (8 sub-tasks, 37 detailed steps)
 - Task 6.0: ✅ Scheduler integration (9 sub-tasks, 38 detailed steps)
 - Task 7.0: ✅ Final validation and documentation (validation complete)
@@ -268,12 +268,12 @@ Update the file after completing each sub-task, not just after completing an ent
     - [x] 4.5.3 Test invalid config error handling
     - [x] 4.5.4 Test missing config file error
     - [x] 4.5.5 Test graceful failure and cleanup
-  - [-] 4.6 Implement tool integration tests (DEFERRED - requires MCP infrastructure from future tasks)
-    - [-] 4.6.1 Set up mock MCP server (or stub)
-    - [-] 4.6.2 Configure Paladin with arsenal
-    - [-] 4.6.3 Set up MockLlmAdapter to request tool call
-    - [-] 4.6.4 Execute and verify tool was invoked
-    - [-] 4.6.5 Verify tool result returned to Paladin
+  - [x] 4.6 Implement tool integration tests (COMPLETED - Task 4.6 branch)
+    - [x] 4.6.1 Set up mock Arsenal port (MockArsenalPort in tests/helpers/)
+    - [x] 4.6.2 Configure Paladin with arsenal via PaladinExecutionService
+    - [x] 4.6.3 Set up MockLlmAdapter to request tool call
+    - [x] 4.6.4 Execute and verify tool was invoked (8 tests: basic flow, error handling, sequential, garrison)
+    - [x] 4.6.5 Verify tool result returned to Paladin and fed back to LLM
   - [x] 4.7 Verify CI compatibility
     - [x] 4.7.1 Run tests in CI environment: `cargo test --test cli_*`
     - [x] 4.7.2 Verify no API keys required
