@@ -136,10 +136,10 @@ Update the file after completing each sub-task, not just after completing an ent
   - [-] 5.9 Run clippy and fmt - deferred
   - [-] 5.10 Commit - deferred
 
-- [ ] 6.0 Update Epic 23 task tracker and final verification
-  - [ ] 6.1 Run full test suite: `cargo test` — verify no regressions
-  - [ ] 6.2 Run `cargo fmt --check` — verify formatting
-  - [ ] 6.3 Run `cargo clippy -- -D warnings` — verify no warnings
-  - [ ] 6.4 Update `project/Milestone_3-Completion/Epic_23/tasks-epic23-cli-config-infrastructure-completion.md`: change Task 4.6 and subtasks 4.6.1–4.6.5 from `[-]` to `[x]`
-  - [ ] 6.5 Commit task tracker update: `git add . && git commit -m "docs: mark Task 4.6 complete in Epic 23 tracker" -m "- All 5 subtasks completed" -m "- US-23.3 tool integration acceptance criterion satisfied"`
-  - [ ] 6.6 Push branch: `git push -u origin feature/epic-23-task46-tool-integration-tests`
+- [x] 6.0 Update Epic 23 task tracker and final verification
+  - [x] 6.1 Run full test suite: `cargo test` — verify no regressions
+  - [x] 6.2 Run `cargo fmt --check` — verify formatting
+  - [x] 6.3 Run `cargo clippy -- -D warnings` — verify no warnings
+  - [x] 6.4 Update `project/Milestone_3-Completion/Epic_23/tasks-epic23-cli-config-infrastructure-completion.md`: change Task 4.6 and subtasks 4.6.1–4.6.5 from `[-]` to `[x]`
+  - [x] 6.5 Commit task tracker update: `git add . && git commit -m "docs: mark Task 4.6 complete in Epic 23 tracker" -m "- All 5 subtasks completed" -m "- US-23.3 tool integration acceptance criterion satisfied"`
+  - [x] 6.6 Push branch: `git push -u origin feature/epic-23-task46-tool-integration-tests`
