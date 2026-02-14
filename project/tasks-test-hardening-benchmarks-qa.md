@@ -63,7 +63,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 0.1 Create and checkout new branch from develop: `git checkout -b feature/epic-24-test-hardening-benchmarks-qa`
   - [x] 0.2 Verify branch created successfully
 
-- [ ] 1.0 Fix Campaign & ChainOfCommand Benchmarks (US-24.1)
+- [x] 1.0 Fix Campaign & ChainOfCommand Benchmarks (US-24.1)
   - [x] 1.1 Read `benches/battalion_benchmarks.rs` to understand current benchmark implementation
   - [x] 1.2 Examine Campaign API in `src/core/platform/container/battalion/campaign.rs` to identify correct method signatures
   - [x] 1.3 Update `benchmark_campaign` function (line ~297) to use current API (add_node/add_edge methods)
@@ -74,7 +74,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.8 Run `cargo clippy` on benchmark file to ensure no warnings
   - [x] 1.9 Run actual benchmarks with `cargo bench` to verify they produce metrics
   - [x] 1.10 Document benchmark results in `docs/BATTALION_BENCHMARKS.md` (append new results)
-  - [ ] 1.11 Commit changes: `git commit -m "fix: update Campaign and ChainOfCommand benchmarks to current API"`
+  - [x] 1.11 Commit changes: `git commit -m "fix: update Campaign and ChainOfCommand benchmarks to current API"`
 
 - [ ] 2.0 Enable Deferred Test Modules (US-24.2, US-24.3)
   - [ ] 2.1 Read `tests/unit/mod.rs` line 22 to see commented prompt generation test module
