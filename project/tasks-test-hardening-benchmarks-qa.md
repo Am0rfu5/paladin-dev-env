@@ -114,27 +114,27 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.18 Verify integration test coverage ≥70% for RAG workflow
   - [x] 3.19 Commit changes: `git commit -m "test: implement comprehensive Qdrant integration tests"`
 
-- [ ] 4.0 Add CLI Snapshot Testing Infrastructure (US-24.6)
-  - [ ] 4.1 Add `insta = "1.34"` dependency to `Cargo.toml` under `[dev-dependencies]`
-  - [ ] 4.2 Run `cargo build` to verify dependency resolves correctly
-  - [ ] 4.3 Create directory `tests/cli/` for CLI-specific tests
-  - [ ] 4.4 Create directory `tests/cli/snapshots/` for insta snapshots
-  - [ ] 4.5 Examine CLI table rendering code in `src/` to identify table formatting functions
-  - [ ] 4.6 Create `tests/cli/table_output_test.rs` with snapshot tests for all table formats
-  - [ ] 4.7 Create `tests/cli/progress_output_test.rs` with snapshot tests for progress indicators/spinners
-  - [ ] 4.8 Create `tests/cli/error_output_test.rs` with snapshot tests for error messages (formatted/colored)
-  - [ ] 4.9 Create `tests/cli/help_output_test.rs` with snapshot tests for command help output
-  - [ ] 4.10 Run `cargo test --test table_output_test` to generate initial snapshots
-  - [ ] 4.11 Review snapshots with `cargo insta review` and accept if correct
-  - [ ] 4.12 Run all CLI tests: `cargo test --test '*_output_test'` to verify they pass
-  - [ ] 4.13 Read CLI source files and identify all public functions/types
-  - [ ] 4.14 Add rustdoc comments to all public CLI functions (use `///` with examples)
-  - [ ] 4.15 Add rustdoc comments to all public CLI types (structs, enums)
-  - [ ] 4.16 Update `docs/QUICKSTART.md` with CLI usage examples (add new section)
-  - [ ] 4.17 Update `docs/INSTALLATION.md` with CLI installation and setup instructions
-  - [ ] 4.18 Update `docs/cli/README.md` with comprehensive CLI documentation
-  - [ ] 4.19 Run `cargo doc --open` to verify CLI documentation renders correctly
-  - [ ] 4.20 Commit changes: `git commit -m "test: add CLI snapshot testing infrastructure" -m "docs: document CLI usage and API"`
+- [x] 4.0 Add CLI Snapshot Testing Infrastructure (US-24.6)
+  - [x] 4.1 Add `insta = "1.34"` dependency to `Cargo.toml` under `[dev-dependencies]`
+  - [x] 4.2 Run `cargo build` to verify dependency resolves correctly
+  - [x] 4.3 Create directory `tests/cli/` for CLI-specific tests
+  - [x] 4.4 Create directory `tests/cli/snapshots/` for insta snapshots
+  - [x] 4.5 Examine CLI table rendering code in `src/` to identify table formatting functions
+  - [x] 4.6 Create `tests/cli/table_output_test.rs` with snapshot tests for all table formats
+  - [x] 4.7 Create `tests/cli/progress_output_test.rs` with snapshot tests for progress indicators/spinners
+  - [x] 4.8 Create `tests/cli/error_output_test.rs` with snapshot tests for error messages (formatted/colored)
+  - [x] 4.9 Create `tests/cli/help_output_test.rs` with snapshot tests for command help output
+  - [x] 4.10 Run `cargo test --test table_output_test` to generate initial snapshots
+  - [x] 4.11 Review snapshots with `cargo insta review` and accept if correct
+  - [x] 4.12 Run all CLI tests: `cargo test --test '*_output_test'` to verify they pass
+  - [x] 4.13 Read CLI source files and identify all public functions/types
+  - [x] 4.14 Add rustdoc comments to all public CLI functions (use `///` with examples)
+  - [x] 4.15 Add rustdoc comments to all public CLI types (structs, enums)
+  - [x] 4.16 Update `docs/QUICKSTART.md` with CLI usage examples (add new section)
+  - [x] 4.17 Update `docs/INSTALLATION.md` with CLI installation and setup instructions
+  - [x] 4.18 Update `docs/cli/TESTING.md` with comprehensive CLI snapshot testing documentation
+  - [x] 4.19 Run `cargo doc --open` to verify CLI documentation renders correctly
+  - [x] 4.20 Commit changes: `git commit -m "test: add CLI snapshot testing infrastructure" -m "docs: document CLI usage and API"`
 
 - [ ] 5.0 Implement Live API Integration Tests (US-24.7)
   - [ ] 5.1 Add `live-api-tests` feature flag to `Cargo.toml` under `[features]`
