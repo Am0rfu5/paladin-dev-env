@@ -180,32 +180,32 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.14 Commit changes: Document deferred coverage decision for platform services
 
 - [ ] 7.0 Update Documentation and Create Demo Assets (US-24.8)
-  - [ ] 7.1 Read existing `README.md` to understand current structure
-  - [ ] 7.2 Add Council pattern examples to README (multi-agent discussion scenario)
-  - [ ] 7.3 Add Grove pattern examples to README (dynamic routing scenario)
-  - [ ] 7.4 Update feature list in README to include all Milestone 3 features
-  - [ ] 7.5 Read `docs/QUICKSTART.md` and identify where to add Council/Grove sections
-  - [ ] 7.6 Add Council quickstart guide to QUICKSTART.md (step-by-step example)
-  - [ ] 7.7 Add Grove quickstart guide to QUICKSTART.md (step-by-step example)
-  - [ ] 7.8 Create directory `docs/assets/` for demo assets
-  - [ ] 7.9 Install asciinema if not available: check/install terminal recorder
-  - [ ] 7.10 Record demo: basic Paladin execution with CLI
-  - [ ] 7.11 Record demo: Battalion Formation workflow
-  - [ ] 7.12 Record demo: Council discussion pattern
-  - [ ] 7.13 Record demo: Grove routing with conditions
-  - [ ] 7.14 Save recordings to `docs/assets/` directory (e.g., `demo-basic.cast`, `demo-council.cast`)
-  - [ ] 7.15 Update README to link to demo assets
-  - [ ] 7.16 Read `docs/Design/Design_and_Architecture.md` thoroughly
-  - [ ] 7.17 Update architecture doc with any changes from Milestone 3 (Council, Grove, Maneuver)
-  - [ ] 7.18 Read `CONTRIBUTING.md` to understand current structure
-  - [ ] 7.19 Add "Testing Guidelines" section to CONTRIBUTING.md (TDD, coverage, snapshot tests)
-  - [ ] 7.20 Document how to run different test types (unit, integration, live API, benchmarks)
-  - [ ] 7.21 Document snapshot test review process (cargo insta review)
-  - [ ] 7.22 Create `RELEASE_NOTES_MILESTONE_3.md` file
-  - [ ] 7.23 Draft release notes: summarize all Milestone 3 features (Epics 19-24)
-  - [ ] 7.24 List breaking changes (if any) in release notes
-  - [ ] 7.25 List deprecations (if any) in release notes
-  - [ ] 7.26 Add migration guide to release notes (how to upgrade from Milestone 2)
+  - [x] 7.1 Read existing `README.md` to understand current structure
+  - [x] 7.2 Add Council pattern examples to README (multi-agent discussion scenario)
+  - [x] 7.3 Add Grove pattern examples to README (dynamic routing scenario)
+  - [x] 7.4 Update feature list in README (already complete, all 8 patterns documented)
+  - [x] 7.5 Read `docs/QUICKSTART.md` and identify where to add Council/Grove sections
+  - [x] 7.6 Add Council quickstart guide to QUICKSTART.md (step-by-step example)
+  - [x] 7.7 Add Grove quickstart guide to QUICKSTART.md (step-by-step example)
+  - [x] 7.8 Create directory `docs/assets/` for demo assets
+  - [ ] 7.9 ~~Install asciinema~~ (DEFERRED - requires live environment)
+  - [ ] 7.10 ~~Record demo: basic Paladin execution~~ (DEFERRED - requires API keys)
+  - [ ] 7.11 ~~Record demo: Battalion Formation~~ (DEFERRED - requires API keys)
+  - [ ] 7.12 ~~Record demo: Council discussion~~ (DEFERRED - requires API keys)
+  - [ ] 7.13 ~~Record demo: Grove routing~~ (DEFERRED - requires API keys)
+  - [ ] 7.14 ~~Save recordings to docs/assets/~~ (DEFERRED - no recordings)
+  - [ ] 7.15 ~~Update README to link to demo assets~~ (DEFERRED - no recordings)
+  - [ ] 7.16 ~~Read Design_and_Architecture.md~~ (DEFERRED - extensive update needed)
+  - [ ] 7.17 ~~Update architecture doc with Milestone 3~~ (DEFERRED - separate epic recommended)
+  - [x] 7.18 Read `CONTRIBUTING.md` (created new file with comprehensive guidelines)
+  - [x] 7.19 Add "Testing Guidelines" section to CONTRIBUTING.md (comprehensive section included)
+  - [x] 7.20 Document how to run different test types (unit, integration, live API, benchmarks)
+  - [x] 7.21 Document snapshot test review process (cargo insta review)
+  - [x] 7.22 Create `RELEASE_NOTES_MILESTONE_3.md` file
+  - [x] 7.23 Draft release notes: summarize all Milestone 3 features (Epics 19-24)
+  - [x] 7.24 List breaking changes (none) in release notes
+  - [x] 7.25 List deprecations (none) in release notes
+  - [x] 7.26 Add migration guide to release notes (included with examples)
   - [ ] 7.27 Run `cargo doc --open` to verify all documentation generates cleanly
   - [ ] 7.28 Check for any rustdoc warnings and fix them
   - [ ] 7.29 Verify all public APIs have documentation with examples

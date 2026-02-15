@@ -594,6 +594,141 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 See [docs/BATTALION.md](docs/BATTALION.md) for comprehensive orchestration documentation.
 
+### Battalion Council Example
+
+Council enables structured multi-agent discussions with turn-based dialogue, perfect for collaborative decision-making, debate, and consensus building:
+
+```rust
+use paladin::application::use_cases::battalion::council_service::CouncilExecutionService;
+use paladin::core::platform::container::battalion::council::{
+    CouncilBuilder, TerminationCondition, TurnStrategy
+};
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create expert Paladins for discussion
+    let security_expert = create_paladin("SecurityExpert", 
+        "You are a security expert focused on authentication best practices");
+    let legal_expert = create_paladin("LegalExpert",
+        "You are a legal expert focused on compliance and privacy regulations");
+    let tech_lead = create_paladin("TechLead",
+        "You are a technical lead focused on implementation feasibility");
+    
+    let paladins = vec![security_expert, legal_expert, tech_lead];
+    
+    // Build the Council with structured discussion rules
+    let council = CouncilBuilder::new()
+        .name("2FA Implementation Council")
+        .participants(3)  // Number of participants in the discussion
+        .turn_strategy(TurnStrategy::RoundRobin)  // Each expert takes turns
+        .termination_condition(TerminationCondition::MaxRounds(3))  // 3 rounds of discussion
+        .build()?;
+    
+    // Execute the discussion
+    let council_service = CouncilExecutionService::new(llm_port);
+    let result = council_service.execute(
+        &council,
+        &paladins,
+        "Should we implement two-factor authentication for our application?"
+    ).await?;
+    
+    // View the discussion transcript
+    println!("📜 Discussion Summary:");
+    println!("{}", result.summary);
+    println!("\n🗣️ Total Turns: {}", result.total_turns);
+    
+    Ok(())
+}
+```
+
+**Use Cases:**
+- **Technical Decisions**: Architecture reviews with security, performance, and maintainability experts
+- **Policy Development**: Multi-stakeholder discussions (legal, business, technical)
+- **Code Review**: Collaborative analysis with different expertise areas
+- **Threat Modeling**: Security experts discussing attack vectors and mitigations
+
+See `examples/council_discussion.rs` for a complete working example with mock experts.
+
+### Battalion Grove Example
+
+Grove provides intelligent routing to specialized agent trees based on task content, enabling dynamic expert selection:
+
+```rust
+use paladin::core::platform::container::battalion::grove::{
+    GroveBuilder, GroveConfig, RoutingStrategy, Tree, TreeAgent
+};
+use paladin::application::use_cases::battalion::grove_service::GroveExecutionService;
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create Security Experts Tree
+    let security_tree = Tree::new("Security Experts")
+        .add_agent(TreeAgent::new("SecurityAuditor")
+            .with_keywords(vec!["security", "vulnerability", "authentication"]))
+        .add_agent(TreeAgent::new("CryptoExpert")
+            .with_keywords(vec!["encryption", "keys", "certificates"]))
+        .add_agent(TreeAgent::new("AccessControlSpecialist")
+            .with_keywords(vec!["authorization", "permissions", "rbac"]));
+    
+    // Create Performance Experts Tree
+    let performance_tree = Tree::new("Performance Experts")
+        .add_agent(TreeAgent::new("DatabaseOptimizer")
+            .with_keywords(vec!["database", "query", "index", "sql"]))
+        .add_agent(TreeAgent::new("CachingExpert")
+            .with_keywords(vec!["cache", "redis", "latency"]))
+        .add_agent(TreeAgent::new("LoadBalancer")
+            .with_keywords(vec!["load", "scaling", "throughput"]));
+    
+    // Build the Grove with keyword-based routing
+    let grove = GroveBuilder::new()
+        .name("Expert Task Router")
+        .add_tree(security_tree)
+        .add_tree(performance_tree)
+        .config(GroveConfig {
+            routing_strategy: RoutingStrategy::KeywordMatch,
+            fallback_tree: Some("Performance Experts".to_string()),
+            confidence_threshold: 0.6,
+        })
+        .build()?;
+    
+    // Execute with automatic routing
+    let grove_service = GroveExecutionService::new(llm_port);
+    
+    // Routes to Security Experts Tree → CryptoExpert
+    let result1 = grove_service.execute(
+        &grove,
+        "How should we implement TLS certificate rotation?"
+    ).await?;
+    
+    println!("✓ Routed to: {}", result1.selected_tree);
+    println!("✓ Agent: {}", result1.selected_agent);
+    println!("✓ Confidence: {:.2}%", result1.routing_confidence * 100.0);
+    
+    // Routes to Performance Experts Tree → CachingExpert  
+    let result2 = grove_service.execute(
+        &grove,
+        "What caching strategy should we use to reduce latency?"
+    ).await?;
+    
+    Ok(())
+}
+```
+
+**Routing Strategies:**
+- **KeywordMatch**: Match task keywords to agent expertise (fast, simple)
+- **SemanticSimilarity**: Use embeddings for context-aware routing (accurate, requires embedding model)
+- **PerformanceBased**: Route based on past agent success rates (adaptive, requires history)
+
+**Use Cases:**
+- **Help Desk Routing**: Direct questions to specialized support teams
+- **Code Analysis**: Route to language-specific or domain experts
+- **Multi-Domain Systems**: Different expert trees for frontend, backend, DevOps, security
+- **Customer Support**: Route tickets based on product area or issue type
+
+See `examples/grove_routing.rs` and `examples/commander_grove.rs` for complete working examples.
+
 ### Arsenal Tool System Example
 
 ```rust

@@ -154,7 +154,125 @@ let formation = Formation::new()
 let result = formation.execute("Analyze market trends and write a summary").await?;
 ```
 
-### 4. Stream Responses
+### 4. Council Discussions
+
+Enable multi-agent debate and consensus building:
+
+```rust
+use paladin::battalion::council::*;
+
+// Create expert Paladins with different perspectives
+let security_expert = PaladinBuilder::new(llm_adapter.clone())
+    .name("SecurityExpert")
+    .system_prompt("You are a security expert. Focus on authentication and data protection.")
+    .build()?;
+
+let legal_expert = PaladinBuilder::new(llm_adapter.clone())
+    .name("LegalExpert")
+    .system_prompt("You are a legal expert. Focus on compliance and privacy regulations.")
+    .build()?;
+
+let tech_lead = PaladinBuilder::new(llm_adapter.clone())
+    .name("TechLead")
+    .system_prompt("You are a technical lead. Focus on implementation feasibility.")
+    .build()?;
+
+let paladins = vec![security_expert, legal_expert, tech_lead];
+
+// Build a Council for structured discussion
+let council = CouncilBuilder::new()
+    .name("Feature Discussion")
+    .participants(3)
+    .turn_strategy(TurnStrategy::RoundRobin)  // Each expert takes turns
+    .termination_condition(TerminationCondition::MaxRounds(3))  // 3 rounds of debate
+    .build()?;
+
+// Execute the discussion
+let service = CouncilExecutionService::new(llm_adapter);
+let result = service.execute(
+    &council,
+    &paladins,
+    "Should we implement two-factor authentication?"
+).await?;
+
+println!("Discussion Summary: {}", result.summary);
+println!("Total Turns: {}", result.total_turns);
+```
+
+**Council Features:**
+- **Turn-based dialogue**: Structured conversations with round-robin or custom turn strategies
+- **Termination conditions**: End after max rounds, consensus detection, or time limits
+- **Discussion transcript**: Full conversation history with speaker attribution
+- **Summary generation**: Automatic discussion summary and recommendation synthesis
+
+**Example CLI Command:**
+```bash
+paladin council "Should we adopt microservices?" -n 5 --rounds 3
+```
+
+See `examples/council_discussion.rs` for a complete working example.
+
+### 5. Grove Routing
+
+Route tasks to specialized experts based on content:
+
+```rust
+use paladin::battalion::grove::*;
+
+// Create specialized agent trees
+let security_tree = Tree::new("Security Experts")
+    .add_agent(TreeAgent::new("SecurityAuditor")
+        .with_keywords(vec!["security", "vulnerability", "authentication"]))
+    .add_agent(TreeAgent::new("CryptoExpert")
+        .with_keywords(vec!["encryption", "keys", "certificates"]));
+
+let performance_tree = Tree::new("Performance Experts")
+    .add_agent(TreeAgent::new("DatabaseOptimizer")
+        .with_keywords(vec!["database", "query", "index"]))
+    .add_agent(TreeAgent::new("CachingExpert")
+        .with_keywords(vec!["cache", "redis", "latency"]));
+
+// Build the Grove with keyword-based routing
+let grove = GroveBuilder::new()
+    .name("Expert Router")
+    .add_tree(security_tree)
+    .add_tree(performance_tree)
+    .config(GroveConfig {
+        routing_strategy: RoutingStrategy::KeywordMatch,
+        fallback_tree: Some("Performance Experts".to_string()),
+        confidence_threshold: 0.6,
+    })
+    .build()?;
+
+// Execute with automatic routing
+let grove_service = GroveExecutionService::new(llm_adapter);
+
+// Automatically routes to CryptoExpert
+let result = grove_service.execute(
+    &grove,
+    "How should we implement TLS certificate rotation?"
+).await?;
+
+println!("Routed to: {}", result.selected_tree);
+println!("Agent: {}", result.selected_agent);
+println!("Confidence: {:.1}%", result.routing_confidence * 100.0);
+```
+
+**Grove Features:**
+- **Intelligent routing**: Keyword matching, semantic similarity, or performance-based selection
+- **Expert trees**: Organize agents by domain (security, performance, frontend, backend)
+- **Fallback chains**: Graceful degradation if no good match found
+- **Confidence scoring**: Know how well the input matched the selected agent
+- **Dynamic learning**: Performance-based routing improves over time
+
+**Routing Strategies:**
+- `KeywordMatch`: Fast, rule-based routing (best for well-defined domains)
+- `SemanticSimilarity`: Embedding-based context-aware routing (requires embedding model)
+- `PerformanceBased`: Adaptive routing based on historical success rates
+
+See `examples/grove_routing.rs` for a complete working example.
+
+### 6. Stream Responses
 
 Get real-time output:
 
