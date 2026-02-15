@@ -1,0 +1,10 @@
+---
+source: tests/cli/progress_output_test.rs
+assertion_line: 127
+expression: output
+---
+0%: 0 of 100
+25%: 25 of 100
+50%: 50 of 100
+75%: 75 of 100
+100%: 100 of 100

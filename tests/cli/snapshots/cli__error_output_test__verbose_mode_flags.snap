@@ -1,0 +1,7 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 235
+expression: output
+---
+Quiet: false
+Verbose: true

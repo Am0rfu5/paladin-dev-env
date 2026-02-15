@@ -1,0 +1,14 @@
+---
+source: tests/cli/table_output_test.rs
+assertion_line: 19
+expression: output
+---
+┌─────────┬─────┬─────────────┐
+│ Name    ┆ Age ┆ City        │
+╞═════════╪═════╪═════════════╡
+│ Alice   ┆ 30  ┆ New York    │
+├╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Bob     ┆ 25  ┆ Los Angeles │
+├╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Charlie ┆ 35  ┆ Chicago     │
+└─────────┴─────┴─────────────┘

@@ -1,0 +1,7 @@
+---
+source: tests/cli/table_output_test.rs
+assertion_line: 88
+expression: output
+---
+┌┐
+└┘

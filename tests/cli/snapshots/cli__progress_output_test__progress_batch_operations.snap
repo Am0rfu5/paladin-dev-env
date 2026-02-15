@@ -1,0 +1,10 @@
+---
+source: tests/cli/progress_output_test.rs
+assertion_line: 178
+expression: output
+---
+Batch 1/5: 20/100 items (20%)
+Batch 2/5: 40/100 items (40%)
+Batch 3/5: 60/100 items (60%)
+Batch 4/5: 80/100 items (80%)
+Batch 5/5: 100/100 items (100%)

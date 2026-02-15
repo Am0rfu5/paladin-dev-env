@@ -1,0 +1,9 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 34
+expression: output
+---
+Deprecated API usage
+Resource limit approaching
+Unverified certificate
+Memory usage high

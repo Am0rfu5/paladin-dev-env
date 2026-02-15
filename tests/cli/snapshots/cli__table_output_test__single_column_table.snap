@@ -1,0 +1,14 @@
+---
+source: tests/cli/table_output_test.rs
+assertion_line: 102
+expression: output
+---
+┌──────────────────────┐
+│ Task                 │
+╞══════════════════════╡
+│ Complete setup       │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Run tests            │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Deploy to production │
+└──────────────────────┘

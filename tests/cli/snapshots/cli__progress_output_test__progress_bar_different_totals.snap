@@ -1,0 +1,8 @@
+---
+source: tests/cli/progress_output_test.rs
+assertion_line: 71
+expression: output
+---
+Small: 10 items
+Medium: 100 items
+Large: 10000 items

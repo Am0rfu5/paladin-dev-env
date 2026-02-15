@@ -1,0 +1,12 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 199
+expression: output
+---
+Available Features:
+
+  redis-queue          Enable Redis queue support          [Enabled]
+  s3-storage           Enable S3 file storage              [Enabled]
+  openai-embeddings    OpenAI embedding support            [Enabled]
+  qdrant               Qdrant vector database              [Optional]
+  integration-tests    Integration test suite              [Optional]

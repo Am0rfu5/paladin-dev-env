@@ -1,0 +1,8 @@
+---
+source: tests/cli/progress_output_test.rs
+assertion_line: 25
+expression: output
+---
+Message: Processing items
+Length: 100
+Position: 0

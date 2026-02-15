@@ -1,0 +1,21 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 274
+expression: output
+---
+Troubleshooting:
+
+Common Issues:
+
+1. API Key not found
+   Run: export OPENAI_API_KEY=your-key-here
+
+2. Configuration file missing
+   Run: paladin init to create default config
+
+3. Redis connection failed
+   Check: docker-compose up -d redis
+
+For more help:
+  Documentation: https://docs.paladin.rs
+  Issues: https://github.com/DF3NDR/paladin/issues

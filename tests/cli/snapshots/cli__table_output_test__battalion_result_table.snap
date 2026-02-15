@@ -1,0 +1,14 @@
+---
+source: tests/cli/table_output_test.rs
+assertion_line: 170
+expression: output
+---
+┌─────────────────┬───────────┬──────┬────────┬────────────────────────────────────────┐
+│ Paladin         ┆ Status    ┆ Time ┆ Tokens ┆ Output Preview                         │
+╞═════════════════╪═══════════╪══════╪════════╪════════════════════════════════════════╡
+│ DataAnalyzer    ┆ ✓ Success ┆ 1.2s ┆ 450    ┆ Analysis complete: 3 insights found... │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ReportGenerator ┆ ✓ Success ┆ 0.8s ┆ 320    ┆ Generated report in Markdown format... │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ DataValidator   ┆ ⚠ Timeout ┆ 5.0s ┆ 120    ┆ Partial validation completed...        │
+└─────────────────┴───────────┴──────┴────────┴────────────────────────────────────────┘

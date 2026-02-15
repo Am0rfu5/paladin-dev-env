@@ -1,0 +1,12 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 280
+expression: output
+---
+Error: Failed to execute Paladin
+Caused by:
+  0: LLM API error
+  1: HTTP request timeout
+  2: Connection refused: https://api.openai.com
+
+Suggestion: Check network connectivity and API key

@@ -1,0 +1,22 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 98
+expression: output
+---
+Configuration Options:
+
+  -c, --config <FILE>       Configuration file path
+  -e, --env <ENV>           Environment (dev/staging/prod)
+
+LLM Options:
+
+  -m, --model <MODEL>       LLM model name
+  -t, --temperature <T>     Temperature (0.0-2.0)
+  -p, --max-tokens <N>      Maximum tokens
+
+Output Options:
+
+  -o, --output <FILE>       Output file path
+  -f, --format <FMT>        Output format (json/markdown/table)
+  -v, --verbose             Verbose output
+  -q, --quiet               Quiet mode

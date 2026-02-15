@@ -1,0 +1,11 @@
+---
+source: tests/cli/progress_output_test.rs
+assertion_line: 95
+expression: output
+---
+1: Length=100
+2: Length=100
+3: Length=100
+4: Length=100
+5: Length=100
+6: Length=100

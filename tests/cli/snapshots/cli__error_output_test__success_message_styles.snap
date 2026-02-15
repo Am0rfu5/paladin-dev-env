@@ -1,0 +1,9 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 64
+expression: output
+---
+✓ Connection established
+✓ Tests passed
+✓ Deployment successful
+✓ Backup completed

@@ -1,0 +1,26 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 224
+expression: output
+---
+Environment Variables:
+
+  PALADIN_CONFIG
+      Configuration file path
+      Default: config.yml
+
+  PALADIN_LOG_LEVEL
+      Logging level
+      Default: info
+
+  OPENAI_API_KEY
+      OpenAI API key
+      Default: (required)
+
+  REDIS_URL
+      Redis connection URL
+      Default: redis://localhost:6379
+
+  NO_COLOR
+      Disable colored output
+      Default: 0

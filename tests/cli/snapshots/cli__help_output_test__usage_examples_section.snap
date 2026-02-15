@@ -1,0 +1,21 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 150
+expression: output
+---
+Common Usage Examples
+
+1. Initialize a new project:
+   $ paladin init --config my-config.yml
+
+2. Execute a simple Paladin:
+   $ paladin execute "Analyze the quarterly sales data"
+
+3. Run a Battalion (multiple Paladins):
+   $ paladin battalion --formation sequential --config battalion.yml
+
+4. Check configuration:
+   $ paladin config validate
+
+5. Export results as JSON:
+   $ paladin execute -f json -o results.json "Generate report"

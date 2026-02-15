@@ -1,0 +1,15 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 167
+expression: output
+---
+✗ Invalid command
+
+Command 'pal execute' is not recognized.
+
+Did you mean?
+  • paladin execute
+  • paladin battalion
+
+For help, run:
+  paladin --help

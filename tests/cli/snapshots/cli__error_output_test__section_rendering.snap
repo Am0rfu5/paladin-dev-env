@@ -1,0 +1,12 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 127
+expression: output
+---
+━━ Database Connection ━━
+
+━━ API Endpoints ━━
+
+━━ Background Jobs ━━
+
+━━ Metrics ━━

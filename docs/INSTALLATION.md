@@ -264,7 +264,23 @@ cargo install cargo-watch      # Auto-rebuild on changes
 cargo install cargo-edit        # cargo add/rm commands
 cargo install cargo-audit       # Security vulnerability scanning
 cargo install cargo-llvm-cov    # Code coverage
+cargo install cargo-insta       # Snapshot testing (for CLI output tests)
 ```
+
+**cargo-insta** is used for CLI snapshot testing. It allows you to capture and verify terminal output:
+
+```bash
+# Run snapshot tests
+cargo test --test cli
+
+# Review new snapshots
+cargo insta review
+
+# Accept all pending snapshots
+cargo insta accept
+```
+
+See [`tests/cli/`](../tests/cli/) for snapshot test examples.
 
 ### 3. Start Docker Services (Optional)
 

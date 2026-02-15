@@ -234,7 +234,184 @@ Tests the complete LLM ↔ Arsenal ↔ Paladin tool call loop:
 3. **Requires API keys** → Add to `tests/integration/cli_real_providers_test.rs` with feature gate + `#[ignore]`
 4. **Tool integration** → Add to `tests/cli/tool_integration_test.rs` using MockLlmAdapter + MockArsenalPort
 5. **Battalion orchestration** → Use MockPaladinPort in Formation/Phalanx/Campaign tests
-6. Always run `cargo test cli::environment_tests::` after changes to verify Tier 1 passes
+6. **CLI output formatting** → Add snapshot tests to `tests/cli/` (see [CLI Snapshot Testing](#cli-snapshot-testing))
+7. Always run `cargo test cli::environment_tests::` after changes to verify Tier 1 passes
+
+## CLI Snapshot Testing
+
+CLI snapshot testing ensures output consistency across code changes using the [`insta`](https://insta.rs/) library.
+
+### Overview
+
+**Location:** `tests/cli/`
+
+**Test Files:**
+- `table_output_test.rs` - Table formatting with comfy-table
+- `progress_output_test.rs` - Progress indicators and bars
+- `error_output_test.rs` - Error messages and styled output
+- `help_output_test.rs` - Help text and documentation
+
+**Snapshot Location:** `tests/cli/snapshots/`
+
+### Running Snapshot Tests
+
+```bash
+# Run all CLI snapshot tests
+cargo test --test cli
+
+# Review new/changed snapshots
+cargo insta review
+
+# Accept all new snapshots
+cargo insta accept
+
+# Reject all pending snapshots
+cargo insta reject
+```
+
+### Writing Snapshot Tests
+
+Snapshot tests capture CLI output and compare against saved baselines:
+
+```rust
+use paladin::application::cli::formatters::table::TableFormatter;
+
+#[test]
+fn test_execution_summary() {
+    let mut table = TableFormatter::new();
+    table
+        .set_header(vec!["Agent", "Status", "Time"])
+        .add_row(vec!["DataAnalyzer", "Success", "1.2s"]);
+
+    let output = table.render();
+    
+    // Compare against saved snapshot
+    insta::assert_snapshot!("execution_summary", output);
+}
+```
+
+**First Run:** Creates `tests/cli/snapshots/cli__table_output_test__execution_summary.snap`
+
+**Subsequent Runs:** Compares output against snapshot, fails if different
+
+### Best Practices
+
+1. **Disable colors in tests:**
+   ```bash
+   NO_COLOR=1 cargo test --test cli
+   ```
+
+2. **Use descriptive snapshot names:**
+   ```rust
+   insta::assert_snapshot!("table_with_styled_cells", output);  // Good
+   insta::assert_snapshot!("test1", output);                     // Bad
+   ```
+
+3. **Test edge cases:**
+   - Empty tables
+   - Long content requiring truncation
+   - Unicode/special characters
+   - Multi-line output
+
+4. **Review snapshots carefully:**
+   - Verify output is correct before accepting
+   - Use `cargo insta review` for interactive approval
+   - Inspect snapshot files in `tests/cli/snapshots/`
+
+5. **Group related tests:**
+   - Table tests → `table_output_test.rs`
+   - Error tests → `error_output_test.rs`
+   - Keep test files focused and organized
+
+### Snapshot File Format
+
+Snapshots are stored as `.snap` files:
+
+```snap
+---
+source: tests/cli/table_output_test.rs
+expression: output
+---
+┌────────┬─────────┬──────┐
+│ Agent  ┆ Status  ┆ Time │
+╞════════╪═════════╪══════╡
+│ DataA… ┆ Success ┆ 1.2s │
+└────────┴─────────┴──────┘
+```
+
+**Fields:**
+- `source`: Test file location
+- `expression`: Rust expression being tested
+- Content: Actual snapshot data
+
+### CI/CD Integration
+
+Snapshot tests run automatically in CI:
+
+```yaml
+# .github/workflows/test.yml
+- name: Run snapshot tests
+  run: NO_COLOR=1 cargo test --test cli
+  
+- name: Check for pending snapshots
+  run: cargo insta test --test cli --check
+```
+
+**Note:** CI will fail if snapshots need review. Use `cargo insta accept` locally and commit changes.
+
+### Example Test Categories
+
+#### Table Output Tests (8 tests)
+- Simple tables
+- Long content
+- Styled cells (success/error/warning/info)
+- Empty tables
+- Single column
+- Numeric data
+- Special characters
+- Battalion results
+
+#### Progress Output Tests (8 tests)
+- Default progress bar template
+- Custom template
+- Different totals
+- Message variations
+- Progress states (0%, 25%, 50%, 75%, 100%)
+- Builder pattern
+- Batch operations
+- File size formatting
+
+#### Error Output Tests (15 tests)
+- Error message styles
+- Warning message styles
+- Info message styles
+- Success message styles
+- Link styles
+- Header rendering
+- Section rendering
+- Box message rendering
+- Key-value formatting
+- Emoji fallback
+- Separator lines
+- Quiet/verbose mode flags
+- Combined error scenarios
+- Multi-line error formatting
+
+#### Help Output Tests (12 tests)
+- Basic command help
+- Command help with examples
+- Subcommand lists
+- Option groups
+- Help header
+- Usage examples section
+- Error help messages
+- Feature flags help
+- Environment variables help
+- Configuration help
+- Troubleshooting help
+- Version output
+
+### Total Snapshot Tests: 43
 
 ## Writing Tests with Mocks
 

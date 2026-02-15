@@ -1,0 +1,8 @@
+---
+source: tests/cli/progress_output_test.rs
+assertion_line: 200
+expression: output
+---
+small.txt: 1024 bytes
+medium.pdf: 1048576 bytes
+large.zip: 104857600 bytes

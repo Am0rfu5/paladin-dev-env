@@ -192,6 +192,41 @@ match paladin.execute(input).await {
 }
 ```
 
+### Testing CLI Output
+
+Paladin provides snapshot testing for CLI output consistency using [`insta`](https://insta.rs/):
+
+```rust
+use paladin::application::cli::formatters::table::TableFormatter;
+
+#[test]
+fn test_result_table() {
+    let mut table = TableFormatter::new();
+    table
+        .set_header(vec!["Agent", "Status", "Time"])
+        .add_row(vec!["Analyzer", "Success", "1.2s"])
+        .add_row(vec!["Generator", "Success", "0.8s"]);
+
+    let output = table.render();
+    insta::assert_snapshot!("result_table", output);
+}
+```
+
+Run tests and review snapshots:
+
+```bash
+# Run all tests
+cargo test
+
+# Review new/changed snapshots
+cargo insta review
+
+# Accept all snapshots
+cargo insta accept
+```
+
+**Snapshot testing** ensures CLI output remains consistent across changes. See [`tests/cli/`](../tests/cli/) for examples.
+
 ### Async Context
 
 Always run Paladins in an async context:

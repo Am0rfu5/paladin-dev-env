@@ -1,0 +1,16 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 22
+expression: output
+---
+paladin init
+
+Initialize a new Paladin configuration
+
+USAGE:
+    paladin init [OPTIONS]
+
+OPTIONS:
+    -c, --config <FILE>    Configuration file path [default: config.yml]
+    -f, --force            Overwrite existing configuration
+    -h, --help             Print help information
