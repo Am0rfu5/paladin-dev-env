@@ -71,6 +71,81 @@ export DEEPSEEK_API_KEY="sk-..."
 cargo test --features integration-tests --test lib cli_real_providers -- --ignored
 ```
 
+### Tier 4: Live LLM API Integration Tests
+
+Direct adapter-level tests that make real API calls to LLM providers. These tests validate the low-level integration of OpenAI, DeepSeek, and Anthropic adapters with their respective APIs. **These tests incur API costs and should be run sparingly.**
+
+**Location:** `tests/integration/llm_live_api_tests.rs`
+
+**Feature Flag:** `live-api-tests`
+
+**What's tested:**
+
+Each provider (OpenAI, DeepSeek, Anthropic) has 4 dedicated tests:
+
+1. **Basic completion** - Validates `generate()` method with real API
+2. **Streaming completion** - Validates `generate_stream()` method with chunked responses
+3. **Error handling** - Tests invalid model detection and error mapping
+4. **Capabilities** - Validates provider capabilities reporting
+
+**Total:** 12 tests (4 per provider × 3 providers)
+
+**Test Characteristics:**
+- All tests are marked with `#[ignore]` - they don't run by default
+- Tests skip gracefully if API keys are not present
+- Each test makes a real API call (costs apply)
+- Validates response structure, token usage, and finish reasons
+- Tests both success and error paths
+
+**Prerequisites:**
+```bash
+# Set one or more API keys
+export OPENAI_API_KEY="sk-..."
+export DEEPSEEK_API_KEY="sk-..."
+export ANTHROPIC_API_KEY="sk-..."
+```
+
+**Run all live API tests:**
+```bash
+cargo test --features live-api-tests -- --ignored
+```
+
+**Run specific provider tests:**
+```bash
+# OpenAI only (4 tests)
+cargo test --features live-api-tests test_openai -- --ignored
+
+# DeepSeek only (4 tests)
+cargo test --features live-api-tests test_deepseek -- --ignored
+
+# Anthropic only (4 tests)
+cargo test --features live-api-tests test_anthropic -- --ignored
+```
+
+**Example output when API key is missing:**
+```
+test test_openai_basic_completion ... ok (SKIPPED: OpenAI API key not found. Set OPENAI_API_KEY environment variable to run OpenAI live API tests.)
+```
+
+**Example output when test passes:**
+```
+test test_openai_basic_completion ... ok
+✓ OpenAI basic completion: Hello from OpenAI
+```
+
+**Cost Considerations:**
+- Each test makes 1 API call (except error handling tests, which may fail fast)
+- Use small prompts (< 100 tokens) to minimize costs
+- Recommended models: `gpt-3.5-turbo`, `deepseek-chat`, `claude-3-5-sonnet-20241022`
+- Estimated cost per full test run: < $0.10 USD
+
+**When to run these tests:**
+- Before releasing a new version
+- After modifying adapter implementations
+- When troubleshooting provider-specific issues
+- For validating API key configuration during setup
+- **Not recommended in CI/CD pipelines** (use mocks instead)
+
 ## Running Tests
 
 ### Quick Check (Tier 1 only — no dependencies)
@@ -102,7 +177,8 @@ cargo test --features integration-tests --test lib -- --include-ignored
 |------|-------|------|
 | Tier 1 (Core) | 45 | None |
 | Tier 2 (Docker) | 6 | `#[ignore]` + service check |
-| Tier 3 (API keys) | 5 | Feature flag + `#[ignore]` + env var |
+| Tier 3 (API keys) | 5 | `integration-tests` feature + `#[ignore]` + env var |
+| Tier 4 (Live API) | 12 | `live-api-tests` feature + `#[ignore]` + env var |
 
 ## CI/CD Notes
 
@@ -235,7 +311,8 @@ Tests the complete LLM ↔ Arsenal ↔ Paladin tool call loop:
 4. **Tool integration** → Add to `tests/cli/tool_integration_test.rs` using MockLlmAdapter + MockArsenalPort
 5. **Battalion orchestration** → Use MockPaladinPort in Formation/Phalanx/Campaign tests
 6. **CLI output formatting** → Add snapshot tests to `tests/cli/` (see [CLI Snapshot Testing](#cli-snapshot-testing))
-7. Always run `cargo test cli::environment_tests::` after changes to verify Tier 1 passes
+7. **Live LLM adapter tests** → Add to `tests/integration/llm_live_api_tests.rs` with `#[cfg(feature = "live-api-tests")]` and `#[ignore]`
+8. Always run `cargo test cli::environment_tests::` after changes to verify Tier 1 passes
 
 ## CLI Snapshot Testing
 

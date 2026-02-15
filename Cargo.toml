@@ -143,6 +143,7 @@ s3-storage = ["rust-s3"]
 openai-embeddings = []
 qdrant = ["qdrant-client"]
 integration-tests = []
+live-api-tests = []  # Tests requiring real API keys (OpenAI, DeepSeek, Anthropic)
 
 # Performance optimizations for Redis
 [profile.release]

@@ -22,6 +22,8 @@ pub mod deepseek_provider_test;
 pub mod file_storage_integration_tests;
 pub mod herald_integration_test;
 pub mod in_memory_sanctum_tests;
+#[cfg(feature = "live-api-tests")]
+pub mod llm_live_api_tests;
 pub mod mcp_sse_test;
 pub mod mcp_stdio_test;
 pub mod notification_system_integration_test;
