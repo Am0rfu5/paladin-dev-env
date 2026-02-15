@@ -1,0 +1,10 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 193
+expression: output
+---
+✓ Success
+✗ Error
+⚠ Warning
+ℹ Info
+⚙ Processing

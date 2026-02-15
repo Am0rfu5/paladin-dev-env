@@ -1,0 +1,20 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 109
+expression: output
+---
+┌══════════════════┐
+│ System Startup │
+└══════════════════┘
+
+┌═════════════════┐
+│ Configuration │
+└═════════════════┘
+
+┌════════════════┐
+│ Test Results │
+└════════════════┘
+
+┌═════════════════════┐
+│ Deployment Status │
+└═════════════════════┘

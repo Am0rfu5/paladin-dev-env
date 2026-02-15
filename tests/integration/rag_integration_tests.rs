@@ -153,8 +153,12 @@ mod qdrant_rag_tests {
     use super::*;
     use paladin::application::ports::output::embedding_port::EmbeddingPort;
     use paladin::application::ports::output::llm_port::LlmPort;
-    use paladin::application::ports::output::sanctum_port::{SanctumPort, SanctumFilter, SanctumQuery};
-    use paladin::application::use_cases::sanctum::rag_retrieval_service::{RagRetrievalService, RagConfig, RetrievalTrigger};
+    use paladin::application::ports::output::sanctum_port::{
+        SanctumFilter, SanctumPort, SanctumQuery,
+    };
+    use paladin::application::use_cases::sanctum::rag_retrieval_service::{
+        RagConfig, RagRetrievalService, RetrievalTrigger,
+    };
     use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
     use paladin::infrastructure::adapters::sanctum::QdrantSanctumAdapter;
     use std::sync::Arc;
@@ -182,7 +186,9 @@ mod qdrant_rag_tests {
     async fn setup_qdrant_or_skip() -> Option<Arc<QdrantSanctumAdapter>> {
         if !is_qdrant_available().await {
             eprintln!("⚠️  Skipping test: Qdrant not available on localhost:6334");
-            eprintln!("   Start with: docker-compose -f docker/docker-compose.yml up -d qdrant --profile test");
+            eprintln!(
+                "   Start with: docker-compose -f docker/docker-compose.yml up -d qdrant --profile test"
+            );
             return None;
         }
 
@@ -207,8 +213,10 @@ mod qdrant_rag_tests {
         async fn embed_text(
             &self,
             _text: &str,
-        ) -> Result<paladin::application::ports::output::embedding_port::Embedding, paladin::application::ports::output::embedding_port::EmbeddingError>
-        {
+        ) -> Result<
+            paladin::application::ports::output::embedding_port::Embedding,
+            paladin::application::ports::output::embedding_port::EmbeddingError,
+        > {
             // Return fixed embedding for testing
             use rand::Rng;
             let mut rng = rand::thread_rng();
@@ -216,18 +224,23 @@ mod qdrant_rag_tests {
             let magnitude: f32 = vec.iter().map(|x| x * x).sum::<f32>().sqrt();
             let normalized: Vec<f32> = vec.iter().map(|x| x / magnitude).collect();
 
-            Ok(paladin::application::ports::output::embedding_port::Embedding {
-                vector: normalized,
-                model: "mock-embedding".to_string(),
-                dimension: 1536,
-                token_count: Some(10),
-            })
+            Ok(
+                paladin::application::ports::output::embedding_port::Embedding {
+                    vector: normalized,
+                    model: "mock-embedding".to_string(),
+                    dimension: 1536,
+                    token_count: Some(10),
+                },
+            )
         }
 
         async fn embed_batch(
             &self,
             texts: &[&str],
-        ) -> Result<Vec<paladin::application::ports::output::embedding_port::Embedding>, paladin::application::ports::output::embedding_port::EmbeddingError> {
+        ) -> Result<
+            Vec<paladin::application::ports::output::embedding_port::Embedding>,
+            paladin::application::ports::output::embedding_port::EmbeddingError,
+        > {
             let mut embeddings = Vec::new();
             for text in texts {
                 let result = self.embed_text(text).await?;
@@ -257,25 +270,39 @@ mod qdrant_rag_tests {
         };
 
         // Store test memories
-        let memory1 = MemoryBuilder::new("paladin-1".to_string(), "Rust is a systems programming language".to_string())
-            .memory_type(MemoryType::Episodic)
-            .importance(0.8)
-            .build()
-            .expect("Failed to build memory");
-        
+        let memory1 = MemoryBuilder::new(
+            "paladin-1".to_string(),
+            "Rust is a systems programming language".to_string(),
+        )
+        .memory_type(MemoryType::Episodic)
+        .importance(0.8)
+        .build()
+        .expect("Failed to build memory");
+
         let embedding = Arc::new(MockEmbeddingPort);
-        let embed_result1 = embedding.embed_text(&memory1.content).await.expect("Failed to embed");
-        let entry1 = SanctumEntry::new(memory1, embed_result1.vector.clone()).expect("Failed to create entry");
+        let embed_result1 = embedding
+            .embed_text(&memory1.content)
+            .await
+            .expect("Failed to embed");
+        let entry1 = SanctumEntry::new(memory1, embed_result1.vector.clone())
+            .expect("Failed to create entry");
         sanctum.store(entry1).await.expect("Failed to store entry1");
 
-        let memory2 = MemoryBuilder::new("paladin-1".to_string(), "Memory safety is a key feature of Rust".to_string())
-            .memory_type(MemoryType::Semantic)
-            .importance(0.9)
-            .build()
-            .expect("Failed to build memory");
-        
-        let embed_result2 = embedding.embed_text(&memory2.content).await.expect("Failed to embed");
-        let entry2 = SanctumEntry::new(memory2, embed_result2.vector.clone()).expect("Failed to create entry");
+        let memory2 = MemoryBuilder::new(
+            "paladin-1".to_string(),
+            "Memory safety is a key feature of Rust".to_string(),
+        )
+        .memory_type(MemoryType::Semantic)
+        .importance(0.9)
+        .build()
+        .expect("Failed to build memory");
+
+        let embed_result2 = embedding
+            .embed_text(&memory2.content)
+            .await
+            .expect("Failed to embed");
+        let entry2 = SanctumEntry::new(memory2, embed_result2.vector.clone())
+            .expect("Failed to create entry");
         sanctum.store(entry2).await.expect("Failed to store entry2");
 
         // Wait for indexing
@@ -298,7 +325,9 @@ mod qdrant_rag_tests {
         // Assert: Should retrieve both memories
         assert!(results.len() >= 1, "Should retrieve at least one memory");
         assert!(
-            results.iter().any(|r| r.entry.memory.content.contains("Rust")),
+            results
+                .iter()
+                .any(|r| r.entry.memory.content.contains("Rust")),
             "Retrieved memories should mention Rust"
         );
     }
@@ -309,19 +338,26 @@ mod qdrant_rag_tests {
         let Some(sanctum) = setup_qdrant_or_skip().await else {
             return;
         };
-        
+
         // Store multiple memories with varying sizes
         let embedding = Arc::new(MockEmbeddingPort);
         for i in 0..5 {
-            let content = format!("This is test memory number {}. It contains important information about the system that should be retrieved during RAG.", i);
+            let content = format!(
+                "This is test memory number {}. It contains important information about the system that should be retrieved during RAG.",
+                i
+            );
             let memory = MemoryBuilder::new("paladin-1".to_string(), content.clone())
                 .memory_type(MemoryType::Episodic)
                 .importance(0.8)
                 .build()
                 .expect("Failed to build memory");
-            
-            let embed_result = embedding.embed_text(&content).await.expect("Failed to embed");
-            let entry = SanctumEntry::new(memory, embed_result.vector).expect("Failed to create entry");
+
+            let embed_result = embedding
+                .embed_text(&content)
+                .await
+                .expect("Failed to embed");
+            let entry =
+                SanctumEntry::new(memory, embed_result.vector).expect("Failed to create entry");
             sanctum.store(entry).await.expect("Failed to store entry");
         }
 
@@ -343,7 +379,10 @@ mod qdrant_rag_tests {
             .expect("Failed to retrieve context");
 
         // Assert: Should truncate to fit token budget
-        assert!(results.len() < 5, "Should truncate results to fit token budget");
+        assert!(
+            results.len() < 5,
+            "Should truncate results to fit token budget"
+        );
 
         // Format for prompt and verify size constraint
         let formatted = rag_service.format_for_prompt(&results);
@@ -363,14 +402,20 @@ mod qdrant_rag_tests {
         };
 
         // Store test memory
-        let memory = MemoryBuilder::new("paladin-1".to_string(), "Paladin is a multi-agent orchestration framework".to_string())
-            .memory_type(MemoryType::Semantic)
-            .importance(0.9)
-            .build()
-            .expect("Failed to build memory");
-        
+        let memory = MemoryBuilder::new(
+            "paladin-1".to_string(),
+            "Paladin is a multi-agent orchestration framework".to_string(),
+        )
+        .memory_type(MemoryType::Semantic)
+        .importance(0.9)
+        .build()
+        .expect("Failed to build memory");
+
         let embedding = Arc::new(MockEmbeddingPort);
-        let embed_result = embedding.embed_text(&memory.content).await.expect("Failed to embed");
+        let embed_result = embedding
+            .embed_text(&memory.content)
+            .await
+            .expect("Failed to embed");
         let entry = SanctumEntry::new(memory, embed_result.vector).expect("Failed to create entry");
         sanctum.store(entry).await.expect("Failed to store entry");
 
@@ -389,9 +434,18 @@ mod qdrant_rag_tests {
         let formatted = rag_service.format_for_prompt(&results);
 
         // Assert: Formatted context has expected structure
-        assert!(formatted.contains("## Relevant Context"), "Should have section header");
-        assert!(formatted.contains("multi-agent orchestration"), "Should contain retrieved content");
-        assert!(formatted.contains("Score:"), "Should include relevance scores");
+        assert!(
+            formatted.contains("## Relevant Context"),
+            "Should have section header"
+        );
+        assert!(
+            formatted.contains("multi-agent orchestration"),
+            "Should contain retrieved content"
+        );
+        assert!(
+            formatted.contains("Score:"),
+            "Should include relevance scores"
+        );
     }
 
     // Note: Additional complex e2e tests (MemoryExtractionService, PaladinExecutionService with RAG)

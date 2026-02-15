@@ -1,0 +1,19 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 305
+expression: output
+---
+=== Configuration Error ===
+✗ Failed to load config.yml
+  File not found: /etc/paladin/config.yml
+  Suggestion: Run 'paladin init' to create default config
+
+=== Connection Error ===
+✗ Database connection failed
+  Could not connect to localhost:5432
+  Check database status: systemctl status postgresql
+
+=== Validation Warning ===
+⚠ Deprecated configuration detected
+  Field 'llm.model' should be 'llm.default_model'
+  Support will be removed in v2.0

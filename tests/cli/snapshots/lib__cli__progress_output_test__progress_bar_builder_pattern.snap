@@ -1,0 +1,8 @@
+---
+source: tests/cli/progress_output_test.rs
+assertion_line: 165
+expression: output
+---
+Builder 1: total=50
+Builder 2: total=100
+Builder 3: total=200

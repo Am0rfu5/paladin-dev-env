@@ -8,7 +8,7 @@ use paladin::application::cli::formatters::output::{OutputFormatter, OutputStyle
 fn test_error_message_styles() {
     // Test different error message styles
     let formatter = OutputFormatter::new();
-    
+
     let mut outputs = Vec::new();
     outputs.push(formatter.style("Fatal error occurred", OutputStyle::Error));
     outputs.push(formatter.style("Configuration file not found", OutputStyle::Error));
@@ -23,7 +23,7 @@ fn test_error_message_styles() {
 fn test_warning_message_styles() {
     // Test warning message styles
     let formatter = OutputFormatter::new();
-    
+
     let mut outputs = Vec::new();
     outputs.push(formatter.style("Deprecated API usage", OutputStyle::Warning));
     outputs.push(formatter.style("Resource limit approaching", OutputStyle::Warning));
@@ -38,7 +38,7 @@ fn test_warning_message_styles() {
 fn test_info_message_styles() {
     // Test informational message styles
     let formatter = OutputFormatter::new();
-    
+
     let mut outputs = Vec::new();
     outputs.push(formatter.style("Loading configuration...", OutputStyle::Info));
     outputs.push(formatter.style("Connecting to server...", OutputStyle::Info));
@@ -53,7 +53,7 @@ fn test_info_message_styles() {
 fn test_success_message_styles() {
     // Test success message styles
     let formatter = OutputFormatter::new();
-    
+
     let mut outputs = Vec::new();
     outputs.push(formatter.style("✓ Connection established", OutputStyle::Success));
     outputs.push(formatter.style("✓ Tests passed", OutputStyle::Success));
@@ -68,7 +68,7 @@ fn test_success_message_styles() {
 fn test_link_style() {
     // Test link/reference styling
     let formatter = OutputFormatter::new();
-    
+
     let mut outputs = Vec::new();
     outputs.push(formatter.style("https://docs.paladin.rs", OutputStyle::Link));
     outputs.push(formatter.style("See CONTRIBUTING.md", OutputStyle::Link));
@@ -83,9 +83,9 @@ fn test_link_style() {
 fn test_header_rendering() {
     // Test header box rendering
     let formatter = OutputFormatter::new();
-    
+
     let mut output = String::new();
-    
+
     // Capture header output by using a test helper
     // Note: header() prints to stdout, so we test the underlying format
     let test_headers = vec![
@@ -99,7 +99,10 @@ fn test_header_rendering() {
         let width = title.len() + 4;
         let border = "═".repeat(width);
         output.push_str(&format!("┌{}┐\n", border));
-        output.push_str(&format!("│ {} │\n", formatter.style(title, OutputStyle::Info)));
+        output.push_str(&format!(
+            "│ {} │\n",
+            formatter.style(title, OutputStyle::Info)
+        ));
         output.push_str(&format!("└{}┘\n\n", border));
     }
 
@@ -110,7 +113,7 @@ fn test_header_rendering() {
 fn test_section_rendering() {
     // Test section header rendering
     let formatter = OutputFormatter::new();
-    
+
     let sections = vec![
         "Database Connection",
         "API Endpoints",
@@ -131,7 +134,7 @@ fn test_section_rendering() {
 fn test_box_message_rendering() {
     // Test box message rendering
     let _formatter = OutputFormatter::new();
-    
+
     let content = vec![
         "Important Information",
         "  • Configuration loaded successfully",
@@ -156,7 +159,7 @@ fn test_box_message_rendering() {
 fn test_key_value_formatting() {
     // Test key-value pair formatting
     let formatter = OutputFormatter::new();
-    
+
     let kvs = vec![
         ("Version", "1.0.0"),
         ("Environment", "production"),
@@ -178,7 +181,7 @@ fn test_key_value_formatting() {
 fn test_emoji_fallback() {
     // Test emoji vs text fallback
     let formatter = OutputFormatter::new();
-    
+
     let mut outputs = Vec::new();
     outputs.push(format!("{} Success", formatter.emoji_or("✓", "[OK]")));
     outputs.push(format!("{} Error", formatter.emoji_or("✗", "[ERR]")));
@@ -194,10 +197,10 @@ fn test_emoji_fallback() {
 fn test_separator_line() {
     // Test separator line rendering
     let _formatter = OutputFormatter::new();
-    
+
     // Separator is 64 '=' characters
     let separator = "═".repeat(64);
-    
+
     insta::assert_snapshot!("separator_line", separator);
 }
 
@@ -205,16 +208,16 @@ fn test_separator_line() {
 fn test_quiet_mode() {
     // Test quiet mode (should suppress most output)
     let formatter = OutputFormatter::quiet();
-    
+
     assert!(formatter.is_quiet());
     assert!(!formatter.is_verbose());
-    
+
     let output = format!(
         "Quiet: {}\nVerbose: {}",
         formatter.is_quiet(),
         formatter.is_verbose()
     );
-    
+
     insta::assert_snapshot!("quiet_mode_flags", output);
 }
 
@@ -222,16 +225,16 @@ fn test_quiet_mode() {
 fn test_verbose_mode() {
     // Test verbose mode
     let formatter = OutputFormatter::with_verbose();
-    
+
     assert!(!formatter.is_quiet());
     assert!(formatter.is_verbose());
-    
+
     let output = format!(
         "Quiet: {}\nVerbose: {}",
         formatter.is_quiet(),
         formatter.is_verbose()
     );
-    
+
     insta::assert_snapshot!("verbose_mode_flags", output);
 }
 
@@ -239,26 +242,65 @@ fn test_verbose_mode() {
 fn test_combined_error_scenarios() {
     // Test realistic error scenarios
     let formatter = OutputFormatter::new();
-    
+
     let mut output = String::new();
-    
+
     // Scenario 1: Configuration error
     output.push_str("=== Configuration Error ===\n");
-    output.push_str(&format!("{}\n", formatter.style("✗ Failed to load config.yml", OutputStyle::Error)));
-    output.push_str(&format!("  {}\n", formatter.style("File not found: /etc/paladin/config.yml", OutputStyle::Error)));
-    output.push_str(&format!("  {}\n\n", formatter.style("Suggestion: Run 'paladin init' to create default config", OutputStyle::Info)));
-    
+    output.push_str(&format!(
+        "{}\n",
+        formatter.style("✗ Failed to load config.yml", OutputStyle::Error)
+    ));
+    output.push_str(&format!(
+        "  {}\n",
+        formatter.style(
+            "File not found: /etc/paladin/config.yml",
+            OutputStyle::Error
+        )
+    ));
+    output.push_str(&format!(
+        "  {}\n\n",
+        formatter.style(
+            "Suggestion: Run 'paladin init' to create default config",
+            OutputStyle::Info
+        )
+    ));
+
     // Scenario 2: Connection error
     output.push_str("=== Connection Error ===\n");
-    output.push_str(&format!("{}\n", formatter.style("✗ Database connection failed", OutputStyle::Error)));
-    output.push_str(&format!("  {}\n", formatter.style("Could not connect to localhost:5432", OutputStyle::Error)));
-    output.push_str(&format!("  {}\n\n", formatter.style("Check database status: systemctl status postgresql", OutputStyle::Info)));
-    
+    output.push_str(&format!(
+        "{}\n",
+        formatter.style("✗ Database connection failed", OutputStyle::Error)
+    ));
+    output.push_str(&format!(
+        "  {}\n",
+        formatter.style("Could not connect to localhost:5432", OutputStyle::Error)
+    ));
+    output.push_str(&format!(
+        "  {}\n\n",
+        formatter.style(
+            "Check database status: systemctl status postgresql",
+            OutputStyle::Info
+        )
+    ));
+
     // Scenario 3: Validation warning
     output.push_str("=== Validation Warning ===\n");
-    output.push_str(&format!("{}\n", formatter.style("⚠ Deprecated configuration detected", OutputStyle::Warning)));
-    output.push_str(&format!("  {}\n", formatter.style("Field 'llm.model' should be 'llm.default_model'", OutputStyle::Warning)));
-    output.push_str(&format!("  {}\n", formatter.style("Support will be removed in v2.0", OutputStyle::Warning)));
+    output.push_str(&format!(
+        "{}\n",
+        formatter.style("⚠ Deprecated configuration detected", OutputStyle::Warning)
+    ));
+    output.push_str(&format!(
+        "  {}\n",
+        formatter.style(
+            "Field 'llm.model' should be 'llm.default_model'",
+            OutputStyle::Warning
+        )
+    ));
+    output.push_str(&format!(
+        "  {}\n",
+        formatter.style("Support will be removed in v2.0", OutputStyle::Warning)
+    ));
 
     insta::assert_snapshot!("combined_error_scenarios", output);
 }
@@ -267,15 +309,36 @@ fn test_combined_error_scenarios() {
 fn test_multi_line_error_formatting() {
     // Test multi-line error with stack trace style
     let formatter = OutputFormatter::new();
-    
+
     let mut output = String::new();
-    output.push_str(&format!("{}\n", formatter.style("Error: Failed to execute Paladin", OutputStyle::Error)));
+    output.push_str(&format!(
+        "{}\n",
+        formatter.style("Error: Failed to execute Paladin", OutputStyle::Error)
+    ));
     output.push_str("Caused by:\n");
-    output.push_str(&format!("  0: {}\n", formatter.style("LLM API error", OutputStyle::Error)));
-    output.push_str(&format!("  1: {}\n", formatter.style("HTTP request timeout", OutputStyle::Error)));
-    output.push_str(&format!("  2: {}\n", formatter.style("Connection refused: https://api.openai.com", OutputStyle::Error)));
+    output.push_str(&format!(
+        "  0: {}\n",
+        formatter.style("LLM API error", OutputStyle::Error)
+    ));
+    output.push_str(&format!(
+        "  1: {}\n",
+        formatter.style("HTTP request timeout", OutputStyle::Error)
+    ));
+    output.push_str(&format!(
+        "  2: {}\n",
+        formatter.style(
+            "Connection refused: https://api.openai.com",
+            OutputStyle::Error
+        )
+    ));
     output.push_str("\n");
-    output.push_str(&format!("{}\n", formatter.style("Suggestion: Check network connectivity and API key", OutputStyle::Info)));
+    output.push_str(&format!(
+        "{}\n",
+        formatter.style(
+            "Suggestion: Check network connectivity and API key",
+            OutputStyle::Info
+        )
+    ));
 
     insta::assert_snapshot!("multi_line_error_formatting", output);
 }

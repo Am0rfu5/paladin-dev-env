@@ -1,0 +1,14 @@
+---
+source: tests/cli/table_output_test.rs
+assertion_line: 68
+expression: output
+---
+┌────────────┬───────────────┬───────────────────────┐
+│ Component  ┆ Status        ┆ Details               │
+╞════════════╪═══════════════╪═══════════════════════╡
+│ API Server ┆ ✓ Operational ┆ All systems normal    │
+├╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Database   ┆ ⚠ Degraded    ┆ High latency detected │
+├╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ Cache      ┆ ✗ Down        ┆ Connection refused    │
+└────────────┴───────────────┴───────────────────────┘

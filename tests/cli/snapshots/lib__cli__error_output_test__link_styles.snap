@@ -1,0 +1,9 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 79
+expression: output
+---
+https://docs.paladin.rs
+See CONTRIBUTING.md
+API Reference: /api/v1
+GitHub: DF3NDR/paladin

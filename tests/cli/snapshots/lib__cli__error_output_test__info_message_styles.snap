@@ -1,0 +1,9 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 49
+expression: output
+---
+Loading configuration...
+Connecting to server...
+Processing request...
+Operation completed

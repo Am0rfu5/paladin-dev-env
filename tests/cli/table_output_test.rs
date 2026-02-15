@@ -54,27 +54,15 @@ fn test_styled_cells() {
     // Add rows with different styled cells
     let success_cell = table.success_cell("✓ Operational");
     let info_cell = table.info_cell("All systems normal");
-    table.add_styled_row(vec![
-        "API Server".into(),
-        success_cell,
-        info_cell,
-    ]);
+    table.add_styled_row(vec!["API Server".into(), success_cell, info_cell]);
 
     let warning_cell = table.warning_cell("⚠ Degraded");
     let warning_info = table.warning_cell("High latency detected");
-    table.add_styled_row(vec![
-        "Database".into(),
-        warning_cell,
-        warning_info,
-    ]);
+    table.add_styled_row(vec!["Database".into(), warning_cell, warning_info]);
 
     let error_cell = table.error_cell("✗ Down");
     let error_info = table.error_cell("Connection refused");
-    table.add_styled_row(vec![
-        "Cache".into(),
-        error_cell,
-        error_info,
-    ]);
+    table.add_styled_row(vec!["Cache".into(), error_cell, error_info]);
 
     let output = table.render();
     insta::assert_snapshot!("styled_cells_table", output);
@@ -136,8 +124,13 @@ fn test_table_with_special_characters() {
 fn test_battalion_result_table() {
     // Test table format for Battalion execution results
     let mut table = TableFormatter::new();
-    table
-        .set_header(vec!["Paladin", "Status", "Time", "Tokens", "Output Preview"]);
+    table.set_header(vec![
+        "Paladin",
+        "Status",
+        "Time",
+        "Tokens",
+        "Output Preview",
+    ]);
 
     let success = table.success_cell("✓ Success");
     table.add_styled_row(vec![

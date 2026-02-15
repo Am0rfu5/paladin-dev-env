@@ -1,0 +1,13 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 99
+expression: output
+---
+Available Commands:
+
+  init            Initialize configuration
+  execute         Execute a Paladin
+  battalion       Run multiple Paladins
+  config          Manage configuration
+  version         Show version information
+  help            Print help information

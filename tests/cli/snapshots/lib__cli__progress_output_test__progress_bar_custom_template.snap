@@ -1,0 +1,9 @@
+---
+source: tests/cli/progress_output_test.rs
+assertion_line: 46
+expression: output
+---
+Custom Template Test
+Message: Downloading files
+Length: 200
+Position: 0

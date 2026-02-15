@@ -1,0 +1,12 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 165
+expression: output
+---
+┌═══════════════════════════════════════════════┐
+│ Paladin Multi-Agent Orchestration Framework │
+└═══════════════════════════════════════════════┘
+
+Version: v1.0.0
+Repository: https://github.com/DF3NDR/paladin
+Documentation: https://docs.paladin.rs

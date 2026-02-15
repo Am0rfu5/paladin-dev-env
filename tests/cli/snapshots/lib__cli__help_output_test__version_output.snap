@@ -1,0 +1,13 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 419
+expression: output
+---
+Paladin v1.0.0
+Rust Edition: 2024
+Target: x86_64-unknown-linux-gnu
+
+Enabled Features:
+  • redis-queue
+  • s3-storage
+  • openai-embeddings

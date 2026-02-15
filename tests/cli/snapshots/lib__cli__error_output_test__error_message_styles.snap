@@ -1,0 +1,9 @@
+---
+source: tests/cli/error_output_test.rs
+assertion_line: 19
+expression: output
+---
+Fatal error occurred
+Configuration file not found
+Connection timeout
+Authentication failed

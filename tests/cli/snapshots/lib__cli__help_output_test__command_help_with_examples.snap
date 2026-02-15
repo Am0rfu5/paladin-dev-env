@@ -1,0 +1,26 @@
+---
+source: tests/cli/help_output_test.rs
+assertion_line: 68
+expression: output
+---
+paladin execute
+
+Execute a Paladin with a prompt
+
+USAGE:
+    paladin execute [OPTIONS] <PROMPT>
+
+OPTIONS:
+    -m, --model <MODEL>      LLM model to use [default: gpt-4]
+    -t, --temperature <T>    Temperature (0.0-2.0) [default: 0.7]
+    -v, --verbose            Enable verbose output
+
+EXAMPLES:
+    # Execute with default settings
+    paladin execute "Analyze this data"
+
+    # Use specific model and temperature
+    paladin execute -m gpt-3.5-turbo -t 0.3 "Write a poem"
+
+    # Verbose mode for debugging
+    paladin execute -v "Complex task"

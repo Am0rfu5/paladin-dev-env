@@ -16,12 +16,12 @@ fn test_progress_bar_template_default() {
     let message = pb.message();
     let length = pb.length().unwrap_or(0);
     let position = pb.position();
-    
+
     let output = format!(
         "Message: {}\nLength: {}\nPosition: {}",
         message, length, position
     );
-    
+
     insta::assert_snapshot!("progress_bar_default_template", output);
 }
 
@@ -37,12 +37,12 @@ fn test_progress_bar_template_custom() {
     let message = pb.message();
     let length = pb.length().unwrap_or(0);
     let position = pb.position();
-    
+
     let output = format!(
         "Custom Template Test\nMessage: {}\nLength: {}\nPosition: {}",
         message, length, position
     );
-    
+
     insta::assert_snapshot!("progress_bar_custom_template", output);
 }
 
@@ -85,9 +85,7 @@ fn test_progress_bar_messages() {
 
     let mut outputs = Vec::new();
     for (i, msg) in messages.iter().enumerate() {
-        let pb = ProgressBarBuilder::new(100)
-            .with_message(*msg)
-            .build();
+        let pb = ProgressBarBuilder::new(100).with_message(*msg).build();
         outputs.push(format!("{}: Length={}", i + 1, pb.length().unwrap_or(0)));
     }
 
@@ -98,30 +96,48 @@ fn test_progress_bar_messages() {
 #[test]
 fn test_progress_states() {
     // Test snapshot of what progress states look like
-    let pb = ProgressBarBuilder::new(100)
-        .with_message("Testing")
-        .build();
+    let pb = ProgressBarBuilder::new(100).with_message("Testing").build();
 
     let mut states = Vec::new();
-    
+
     // Initial state (0%)
-    states.push(format!("0%: {} of {}", pb.position(), pb.length().unwrap_or(0)));
-    
+    states.push(format!(
+        "0%: {} of {}",
+        pb.position(),
+        pb.length().unwrap_or(0)
+    ));
+
     // 25% complete
     pb.set_position(25);
-    states.push(format!("25%: {} of {}", pb.position(), pb.length().unwrap_or(0)));
-    
+    states.push(format!(
+        "25%: {} of {}",
+        pb.position(),
+        pb.length().unwrap_or(0)
+    ));
+
     // 50% complete
     pb.set_position(50);
-    states.push(format!("50%: {} of {}", pb.position(), pb.length().unwrap_or(0)));
-    
+    states.push(format!(
+        "50%: {} of {}",
+        pb.position(),
+        pb.length().unwrap_or(0)
+    ));
+
     // 75% complete
     pb.set_position(75);
-    states.push(format!("75%: {} of {}", pb.position(), pb.length().unwrap_or(0)));
-    
+    states.push(format!(
+        "75%: {} of {}",
+        pb.position(),
+        pb.length().unwrap_or(0)
+    ));
+
     // 100% complete
     pb.set_position(100);
-    states.push(format!("100%: {} of {}", pb.position(), pb.length().unwrap_or(0)));
+    states.push(format!(
+        "100%: {} of {}",
+        pb.position(),
+        pb.length().unwrap_or(0)
+    ));
 
     let output = states.join("\n");
     insta::assert_snapshot!("progress_states", output);
@@ -182,8 +198,8 @@ fn test_progress_bar_batch_operations() {
 fn test_progress_bar_file_sizes() {
     // Test progress bar with file size formatting
     let file_sizes = vec![
-        ("small.txt", 1024),          // 1 KB
-        ("medium.pdf", 1024 * 1024),  // 1 MB  
+        ("small.txt", 1024),              // 1 KB
+        ("medium.pdf", 1024 * 1024),      // 1 MB
         ("large.zip", 100 * 1024 * 1024), // 100 MB
     ];
 
@@ -192,7 +208,7 @@ fn test_progress_bar_file_sizes() {
         let pb = ProgressBarBuilder::new(size)
             .with_message(format!("Downloading {}", filename))
             .build();
-        
+
         outputs.push(format!("{}: {} bytes", filename, pb.length().unwrap_or(0)));
     }
 
