@@ -4,8 +4,11 @@
 
 use paladin::application::cli::formatters::output::{OutputFormatter, OutputStyle};
 
+use super::ensure_no_color;
+
 #[test]
 fn test_command_help_basic() {
+    ensure_no_color();
     // Test basic command help format
     let formatter = OutputFormatter::new();
 
@@ -33,6 +36,7 @@ fn test_command_help_basic() {
 
 #[test]
 fn test_command_help_with_examples() {
+    ensure_no_color();
     // Test command help with examples section
     let formatter = OutputFormatter::new();
 
@@ -70,6 +74,7 @@ fn test_command_help_with_examples() {
 
 #[test]
 fn test_subcommand_list() {
+    ensure_no_color();
     // Test subcommand listing format
     let formatter = OutputFormatter::new();
 
@@ -101,6 +106,7 @@ fn test_subcommand_list() {
 
 #[test]
 fn test_option_groups() {
+    ensure_no_color();
     // Test grouped options display
     let formatter = OutputFormatter::new();
 
@@ -134,6 +140,7 @@ fn test_option_groups() {
 
 #[test]
 fn test_help_header() {
+    ensure_no_color();
     // Test main help header
     let formatter = OutputFormatter::new();
 
@@ -167,6 +174,7 @@ fn test_help_header() {
 
 #[test]
 fn test_usage_examples_section() {
+    ensure_no_color();
     // Test detailed usage examples
     let formatter = OutputFormatter::new();
 
@@ -219,6 +227,7 @@ fn test_usage_examples_section() {
 
 #[test]
 fn test_error_help_message() {
+    ensure_no_color();
     // Test error message with help suggestion
     let formatter = OutputFormatter::new();
 
@@ -245,6 +254,7 @@ fn test_error_help_message() {
 
 #[test]
 fn test_feature_flags_help() {
+    ensure_no_color();
     // Test feature flags documentation
     let formatter = OutputFormatter::new();
 
@@ -281,6 +291,7 @@ fn test_feature_flags_help() {
 
 #[test]
 fn test_environment_variables_help() {
+    ensure_no_color();
     // Test environment variables documentation
     let formatter = OutputFormatter::new();
 
@@ -319,6 +330,7 @@ fn test_environment_variables_help() {
 
 #[test]
 fn test_configuration_help() {
+    ensure_no_color();
     // Test configuration file help
     let formatter = OutputFormatter::new();
 
@@ -347,6 +359,7 @@ fn test_configuration_help() {
 
 #[test]
 fn test_troubleshooting_help() {
+    ensure_no_color();
     // Test troubleshooting section
     let formatter = OutputFormatter::new();
 
@@ -390,6 +403,7 @@ fn test_troubleshooting_help() {
 
 #[test]
 fn test_version_output() {
+    ensure_no_color();
     // Test version information output
     let formatter = OutputFormatter::new();
 

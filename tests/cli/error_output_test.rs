@@ -4,8 +4,11 @@
 
 use paladin::application::cli::formatters::output::{OutputFormatter, OutputStyle};
 
+use super::ensure_no_color;
+
 #[test]
 fn test_error_message_styles() {
+    ensure_no_color();
     // Test different error message styles
     let formatter = OutputFormatter::new();
 
@@ -21,6 +24,7 @@ fn test_error_message_styles() {
 
 #[test]
 fn test_warning_message_styles() {
+    ensure_no_color();
     // Test warning message styles
     let formatter = OutputFormatter::new();
 
@@ -36,6 +40,7 @@ fn test_warning_message_styles() {
 
 #[test]
 fn test_info_message_styles() {
+    ensure_no_color();
     // Test informational message styles
     let formatter = OutputFormatter::new();
 
@@ -51,6 +56,7 @@ fn test_info_message_styles() {
 
 #[test]
 fn test_success_message_styles() {
+    ensure_no_color();
     // Test success message styles
     let formatter = OutputFormatter::new();
 
@@ -66,6 +72,7 @@ fn test_success_message_styles() {
 
 #[test]
 fn test_link_style() {
+    ensure_no_color();
     // Test link/reference styling
     let formatter = OutputFormatter::new();
 
@@ -81,6 +88,7 @@ fn test_link_style() {
 
 #[test]
 fn test_header_rendering() {
+    ensure_no_color();
     // Test header box rendering
     let formatter = OutputFormatter::new();
 
@@ -111,6 +119,7 @@ fn test_header_rendering() {
 
 #[test]
 fn test_section_rendering() {
+    ensure_no_color();
     // Test section header rendering
     let formatter = OutputFormatter::new();
 
@@ -132,6 +141,7 @@ fn test_section_rendering() {
 
 #[test]
 fn test_box_message_rendering() {
+    ensure_no_color();
     // Test box message rendering
     let _formatter = OutputFormatter::new();
 
@@ -157,6 +167,7 @@ fn test_box_message_rendering() {
 
 #[test]
 fn test_key_value_formatting() {
+    ensure_no_color();
     // Test key-value pair formatting
     let formatter = OutputFormatter::new();
 
@@ -179,6 +190,7 @@ fn test_key_value_formatting() {
 
 #[test]
 fn test_emoji_fallback() {
+    ensure_no_color();
     // Test emoji vs text fallback
     let formatter = OutputFormatter::new();
 
@@ -195,6 +207,7 @@ fn test_emoji_fallback() {
 
 #[test]
 fn test_separator_line() {
+    ensure_no_color();
     // Test separator line rendering
     let _formatter = OutputFormatter::new();
 
@@ -206,6 +219,7 @@ fn test_separator_line() {
 
 #[test]
 fn test_quiet_mode() {
+    ensure_no_color();
     // Test quiet mode (should suppress most output)
     let formatter = OutputFormatter::quiet();
 
@@ -223,6 +237,7 @@ fn test_quiet_mode() {
 
 #[test]
 fn test_verbose_mode() {
+    ensure_no_color();
     // Test verbose mode
     let formatter = OutputFormatter::with_verbose();
 
@@ -240,6 +255,7 @@ fn test_verbose_mode() {
 
 #[test]
 fn test_combined_error_scenarios() {
+    ensure_no_color();
     // Test realistic error scenarios
     let formatter = OutputFormatter::new();
 
@@ -307,6 +323,7 @@ fn test_combined_error_scenarios() {
 
 #[test]
 fn test_multi_line_error_formatting() {
+    ensure_no_color();
     // Test multi-line error with stack trace style
     let formatter = OutputFormatter::new();
 

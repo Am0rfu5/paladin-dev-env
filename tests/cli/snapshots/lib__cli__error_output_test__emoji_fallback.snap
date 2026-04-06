@@ -1,10 +1,10 @@
 ---
 source: tests/cli/error_output_test.rs
-assertion_line: 193
+assertion_line: 205
 expression: output
 ---
-✓ Success
-✗ Error
-⚠ Warning
-ℹ Info
-⚙ Processing
+[OK] Success
+[ERR] Error
+[WARN] Warning
+[INFO] Info
+[PROC] Processing

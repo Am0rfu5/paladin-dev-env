@@ -5,8 +5,11 @@
 
 use paladin::application::cli::formatters::table::TableFormatter;
 
+use super::ensure_no_color;
+
 #[test]
 fn test_simple_table() {
+    ensure_no_color();
     // Test basic table with headers and rows
     let mut table = TableFormatter::new();
     table
@@ -21,6 +24,7 @@ fn test_simple_table() {
 
 #[test]
 fn test_table_with_long_content() {
+    ensure_no_color();
     // Test table with longer content that may wrap
     let mut table = TableFormatter::new();
     table
@@ -47,6 +51,7 @@ fn test_table_with_long_content() {
 
 #[test]
 fn test_styled_cells() {
+    ensure_no_color();
     // Test table with styled cells (success, error, warning, info)
     let mut table = TableFormatter::new();
     table.set_header(vec!["Component", "Status", "Details"]);
@@ -70,6 +75,7 @@ fn test_styled_cells() {
 
 #[test]
 fn test_empty_table() {
+    ensure_no_color();
     // Test empty table (only structure, no rows)
     let table = TableFormatter::new();
     let output = table.render();
@@ -78,6 +84,7 @@ fn test_empty_table() {
 
 #[test]
 fn test_single_column_table() {
+    ensure_no_color();
     // Test table with single column
     let mut table = TableFormatter::new();
     table
@@ -92,6 +99,7 @@ fn test_single_column_table() {
 
 #[test]
 fn test_table_with_numbers() {
+    ensure_no_color();
     // Test table with numeric data (good for alignment testing)
     let mut table = TableFormatter::new();
     table
@@ -107,6 +115,7 @@ fn test_table_with_numbers() {
 
 #[test]
 fn test_table_with_special_characters() {
+    ensure_no_color();
     // Test table with unicode and special characters
     let mut table = TableFormatter::new();
     table
@@ -122,6 +131,7 @@ fn test_table_with_special_characters() {
 
 #[test]
 fn test_battalion_result_table() {
+    ensure_no_color();
     // Test table format for Battalion execution results
     let mut table = TableFormatter::new();
     table.set_header(vec![
