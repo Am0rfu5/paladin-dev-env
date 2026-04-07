@@ -150,12 +150,8 @@ async fn test_rag_config_boundary_values() {
 
 #[cfg(feature = "qdrant")]
 mod qdrant_rag_tests {
-    use super::*;
     use paladin::application::ports::output::embedding_port::EmbeddingPort;
-    use paladin::application::ports::output::llm_port::LlmPort;
-    use paladin::application::ports::output::sanctum_port::{
-        SanctumFilter, SanctumPort, SanctumQuery,
-    };
+    use paladin::application::ports::output::sanctum_port::SanctumPort;
     use paladin::application::use_cases::sanctum::rag_retrieval_service::{
         RagConfig, RagRetrievalService, RetrievalTrigger,
     };
@@ -323,7 +319,7 @@ mod qdrant_rag_tests {
             .expect("Failed to retrieve context");
 
         // Assert: Should retrieve both memories
-        assert!(results.len() >= 1, "Should retrieve at least one memory");
+        assert!(!results.is_empty(), "Should retrieve at least one memory");
         assert!(
             results
                 .iter()

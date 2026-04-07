@@ -47,11 +47,6 @@ use paladin::infrastructure::adapters::llm::{
 // Helper Functions
 // ============================================================================
 
-/// Check if an API key is present in environment
-fn has_api_key(env_var: &str) -> bool {
-    env::var(env_var).is_ok()
-}
-
 /// Skip test if API key is not present, otherwise return the key
 fn require_api_key(env_var: &str, provider: &str) -> Result<String, String> {
     env::var(env_var).map_err(|_| {
