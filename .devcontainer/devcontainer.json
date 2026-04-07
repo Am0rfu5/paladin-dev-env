@@ -1,14 +1,12 @@
 {
   "name": "Paladin Development Container",
   "dockerFile": "Dockerfile.dev",
-  
   // Container configuration
   "runArgs": [
     "--cap-add=SYS_PTRACE",
     "--security-opt",
     "seccomp=unconfined"
   ],
-
   // Set environment variables
   "containerEnv": {
     "RUST_BACKTRACE": "1",
@@ -16,16 +14,14 @@
     "CARGO_HOME": "/usr/local/cargo",
     "RUSTUP_HOME": "/usr/local/rustup"
   },
-
   // Forward ports
   "forwardPorts": [
-    8080,  // Main application
-    9090,  // Metrics/monitoring
-    6379,  // Redis
-    9000,  // MinIO API
-    9001   // MinIO Console
+    8080, // Main application
+    9090, // Metrics/monitoring
+    6379, // Redis
+    9000, // MinIO API
+    9001 // MinIO Console
   ],
-
   "portsAttributes": {
     "8080": {
       "label": "Paladin API",
@@ -48,7 +44,6 @@
       "onAutoForward": "notify"
     }
   },
-
   // VS Code customizations
   "customizations": {
     "vscode": {
@@ -58,43 +53,34 @@
         "vadimcn.vscode-lldb",
         "tamasfe.even-better-toml",
         "serayuzgur.crates",
-        
         // Git and version control
         "eamodio.gitlens",
         "mhutchie.git-graph",
-        
         // Testing and debugging
         "swellaby.vscode-rust-test-adapter",
         "hbenl.vscode-test-explorer",
-        
         // Code quality
         "usernamehw.errorlens",
         "streetsidesoftware.code-spell-checker",
-        
         // Docker and containers
         "ms-azuretools.vscode-docker",
-        
         // YAML and config files
         "redhat.vscode-yaml",
-        
         // Markdown
         "yzhang.markdown-all-in-one",
         "davidanson.vscode-markdownlint",
-        
         // GitHub Copilot (if available)
         "github.copilot",
         "github.copilot-chat",
-        
         // Additional utilities
         "gruntfuggly.todo-tree",
         "christian-kohler.path-intellisense",
         "wayou.vscode-todo-highlight",
         "shardulm94.trailing-spaces"
       ],
-      
       "settings": {
         // Rust analyzer settings
-        "rust-analyzer.checkOnSave.command": "clippy",
+        "rust-analyzer.checkOnSave.command": true,
         "rust-analyzer.cargo.features": "all",
         "rust-analyzer.diagnostics.enable": true,
         "rust-analyzer.diagnostics.experimental.enable": true,
@@ -104,31 +90,28 @@
         "rust-analyzer.lens.enable": true,
         "rust-analyzer.lens.run.enable": true,
         "rust-analyzer.lens.debug.enable": true,
-        
         // Editor settings
         "editor.formatOnSave": true,
         "editor.formatOnPaste": true,
-        "editor.rulers": [100],
+        "editor.rulers": [
+          100
+        ],
         "editor.tabSize": 4,
         "editor.insertSpaces": true,
         "editor.trimAutoWhitespace": true,
         "files.trimTrailingWhitespace": true,
         "files.insertFinalNewline": true,
         "files.trimFinalNewlines": true,
-        
         // Rust formatting
         "[rust]": {
           "editor.defaultFormatter": "rust-lang.rust-analyzer",
           "editor.formatOnSave": true,
           "editor.tabSize": 4
         },
-        
         // TOML formatting
         "[toml]": {
-          "editor.defaultFormatter": "tamasfe.even-better-toml",
           "editor.formatOnSave": true
         },
-        
         // Terminal settings
         "terminal.integrated.defaultProfile.linux": "bash",
         "terminal.integrated.profiles.linux": {
@@ -137,67 +120,55 @@
             "icon": "terminal-bash"
           }
         },
-        
         // File associations
         "files.associations": {
           "*.rs": "rust",
           "Dockerfile*": "dockerfile",
           "*.toml": "toml"
         },
-        
         // Search exclusions
         "search.exclude": {
           "**/target": true,
           "**/node_modules": true,
           "**/.git": true
         },
-        
         // File exclusions
         "files.exclude": {
           "**/.git": true,
           "**/target/debug": true,
           "**/target/release": true
         },
-        
         // Git settings
         "git.autofetch": true,
         "git.confirmSync": false,
         "git.enableSmartCommit": true,
-        
         // Error lens
         "errorLens.enabledDiagnosticLevels": [
           "error",
           "warning",
           "info"
         ],
-        
         // Testing
         "rust-analyzer.runnables.command": "cargo test -- --nocapture"
       }
     }
   },
-
   // Lifecycle scripts
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "postStartCommand": "bash .devcontainer/post-start.sh",
-
   // Mount the workspace
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
-
   // Additional mounts
   "mounts": [
     "source=${localWorkspaceFolder}/.env,target=/workspace/.env,type=bind,consistency=cached",
     "source=paladin-cargo-cache,target=/usr/local/cargo/registry,type=volume",
     "source=paladin-target-cache,target=/workspace/target,type=volume"
   ],
-
   // Remote user
   "remoteUser": "vscode",
-
   // Update remote user UID/GID
   "updateRemoteUserUID": true,
-
   // Shutdown action
   "shutdownAction": "stopContainer"
 }
