@@ -32,8 +32,6 @@
 // 3. Error handling (invalid model)
 // 4. Provider capabilities
 
-#![cfg(feature = "live-api-tests")]
-
 use futures::StreamExt;
 use std::env;
 
