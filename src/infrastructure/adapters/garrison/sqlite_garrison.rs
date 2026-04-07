@@ -65,7 +65,9 @@ impl SqliteGarrison {
 
         let options = SqliteConnectOptions::from_str(&format!("sqlite://{}", path_str))
             .map_err(|e| GarrisonError::StorageError(format!("Connection options error: {}", e)))?
-            .create_if_missing(true);
+            .create_if_missing(true)
+            .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
+            .busy_timeout(std::time::Duration::from_secs(30));
 
         let pool = SqlitePoolOptions::new()
             .max_connections(5)

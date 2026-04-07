@@ -13,6 +13,16 @@ NC='\033[0m' # No Color
 
 cd /workspace
 
+# Fix ownership of target directory if needed (common issue with Docker volumes)
+if [ -d "target" ]; then
+    TARGET_OWNER=$(stat -c '%U' target)
+    if [ "$TARGET_OWNER" != "vscode" ]; then
+        echo -e "${BLUE}🔧 Fixing target directory ownership...${NC}"
+        sudo chown -R vscode:vscode target
+        echo "  ✅ Target directory ownership fixed"
+    fi
+fi
+
 # Check if we're in a git repository
 if [ -d ".git" ]; then
     echo -e "${BLUE}📊 Git status:${NC}"

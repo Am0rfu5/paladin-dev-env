@@ -11,6 +11,10 @@ services:
       - paladin-cargo-cache:/usr/local/cargo/registry
       - paladin-target-cache:/workspace/target
     command: /bin/sh -c "while sleep 1000; do :; done"
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
     environment:
       - RUST_BACKTRACE=1
       - RUST_LOG=debug
@@ -26,7 +30,7 @@ services:
       - paladin-dev-network
     ports:
       - "8080:8080"
-      - "9090:9090"
+      - "9092:9090"
 
   # Redis for queue management
   redis:

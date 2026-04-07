@@ -42,6 +42,9 @@ mod queue_integration_tests {
 
     impl TestContext {
         async fn new() -> Result<Self, Box<dyn std::error::Error>> {
+            // Generate unique key prefix for test isolation
+            let test_id = Uuid::new_v4();
+
             // Try to use existing Redis service from environment first (docker-compose scenario)
             let source = if let Ok(redis_url) = std::env::var("REDIS_URL") {
                 // Parse redis://redis:6379 format
@@ -50,7 +53,10 @@ mod queue_integration_tests {
                     if parts.len() == 2 {
                         let host = parts[0].to_string();
                         let port = parts[1].parse::<u16>().unwrap_or(6379);
-                        println!("Using existing Redis service at {}:{}", host, port);
+                        println!(
+                            "Using existing Redis service at {}:{} with test_id: {}",
+                            host, port, test_id
+                        );
                         RedisSource::Existing { host, port }
                     } else {
                         return Err("Invalid REDIS_URL format".into());
@@ -93,13 +99,29 @@ mod queue_integration_tests {
                 redis_password: None,
                 redis_db: 0,
                 connection_timeout: 10,
-                key_prefix: "test:queue".to_string(),
+                key_prefix: format!("test:queue:{}", test_id), // Unique prefix per test
                 max_retries: 5,
             };
 
             let adapter = Arc::new(RedisQueueAdapter::new(redis_config, Some(log_adapter)).await?);
 
             Ok(TestContext { adapter, source })
+        }
+
+        /// Ensure a queue exists with fresh state (delete if exists, then create)
+        async fn ensure_clean_queue(
+            &self,
+            queue_name: &str,
+            config: Option<QueueConfig>,
+        ) -> Result<(), Box<dyn std::error::Error>> {
+            // Try to delete the queue if it exists (ignore errors if it doesn't exist)
+            let _ = self.adapter.delete_queue(queue_name).await;
+
+            // Now create the queue
+            self.adapter
+                .create_queue(queue_name.to_string(), config)
+                .await?;
+            Ok(())
         }
 
         fn create_test_queue_item(
@@ -196,8 +218,7 @@ mod queue_integration_tests {
             ..Default::default()
         };
 
-        ctx.adapter
-            .create_queue("test-queue".to_string(), Some(queue_config.clone()))
+        ctx.ensure_clean_queue("test-queue", Some(queue_config.clone()))
             .await?;
 
         let queues = ctx.adapter.list_queues().await;
@@ -219,9 +240,7 @@ mod queue_integration_tests {
     async fn test_enqueue_and_dequeue_operations() -> Result<(), Box<dyn std::error::Error>> {
         let ctx = TestContext::new().await?;
 
-        ctx.adapter
-            .create_queue("test-queue".to_string(), None)
-            .await?;
+        ctx.ensure_clean_queue("test-queue", None).await?;
 
         let test_payload = json!({"message": "Hello, Redis!", "timestamp": 12345});
         let queue_item = ctx.create_test_queue_item(test_payload.clone());
@@ -259,9 +278,7 @@ mod queue_integration_tests {
     async fn test_processing_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
         let ctx = TestContext::new().await?;
 
-        ctx.adapter
-            .create_queue("test-queue".to_string(), None)
-            .await?;
+        ctx.ensure_clean_queue("test-queue", None).await?;
 
         let test_payload = json!({"task": "process_data", "data": [1, 2, 3]});
         let queue_item = ctx.create_test_queue_item(test_payload.clone());
@@ -300,9 +317,7 @@ mod queue_integration_tests {
     async fn test_processing_failure_and_retry() -> Result<(), Box<dyn std::error::Error>> {
         let ctx = TestContext::new().await?;
 
-        ctx.adapter
-            .create_queue("test-queue".to_string(), None)
-            .await?;
+        ctx.ensure_clean_queue("test-queue", None).await?;
 
         let test_payload = json!({"task": "failing_task", "attempts": 0});
         let mut queue_item = ctx.create_test_queue_item(test_payload.clone());
