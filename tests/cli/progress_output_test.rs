@@ -74,7 +74,7 @@ fn test_progress_bar_different_totals() {
 #[test]
 fn test_progress_bar_messages() {
     // Test different progress bar messages
-    let messages = vec![
+    let messages = [
         "Initializing...",
         "Loading configuration",
         "Connecting to database",

@@ -12,11 +12,12 @@ fn test_error_message_styles() {
     // Test different error message styles
     let formatter = OutputFormatter::new();
 
-    let mut outputs = Vec::new();
-    outputs.push(formatter.style("Fatal error occurred", OutputStyle::Error));
-    outputs.push(formatter.style("Configuration file not found", OutputStyle::Error));
-    outputs.push(formatter.style("Connection timeout", OutputStyle::Error));
-    outputs.push(formatter.style("Authentication failed", OutputStyle::Error));
+    let outputs = [
+        formatter.style("Fatal error occurred", OutputStyle::Error),
+        formatter.style("Configuration file not found", OutputStyle::Error),
+        formatter.style("Connection timeout", OutputStyle::Error),
+        formatter.style("Authentication failed", OutputStyle::Error),
+    ];
 
     let output = outputs.join("\n");
     insta::assert_snapshot!("error_message_styles", output);
@@ -28,11 +29,12 @@ fn test_warning_message_styles() {
     // Test warning message styles
     let formatter = OutputFormatter::new();
 
-    let mut outputs = Vec::new();
-    outputs.push(formatter.style("Deprecated API usage", OutputStyle::Warning));
-    outputs.push(formatter.style("Resource limit approaching", OutputStyle::Warning));
-    outputs.push(formatter.style("Unverified certificate", OutputStyle::Warning));
-    outputs.push(formatter.style("Memory usage high", OutputStyle::Warning));
+    let outputs = [
+        formatter.style("Deprecated API usage", OutputStyle::Warning),
+        formatter.style("Resource limit approaching", OutputStyle::Warning),
+        formatter.style("Unverified certificate", OutputStyle::Warning),
+        formatter.style("Memory usage high", OutputStyle::Warning),
+    ];
 
     let output = outputs.join("\n");
     insta::assert_snapshot!("warning_message_styles", output);
@@ -44,11 +46,12 @@ fn test_info_message_styles() {
     // Test informational message styles
     let formatter = OutputFormatter::new();
 
-    let mut outputs = Vec::new();
-    outputs.push(formatter.style("Loading configuration...", OutputStyle::Info));
-    outputs.push(formatter.style("Connecting to server...", OutputStyle::Info));
-    outputs.push(formatter.style("Processing request...", OutputStyle::Info));
-    outputs.push(formatter.style("Operation completed", OutputStyle::Info));
+    let outputs = [
+        formatter.style("Loading configuration...", OutputStyle::Info),
+        formatter.style("Connecting to server...", OutputStyle::Info),
+        formatter.style("Processing request...", OutputStyle::Info),
+        formatter.style("Operation completed", OutputStyle::Info),
+    ];
 
     let output = outputs.join("\n");
     insta::assert_snapshot!("info_message_styles", output);
@@ -60,11 +63,12 @@ fn test_success_message_styles() {
     // Test success message styles
     let formatter = OutputFormatter::new();
 
-    let mut outputs = Vec::new();
-    outputs.push(formatter.style("✓ Connection established", OutputStyle::Success));
-    outputs.push(formatter.style("✓ Tests passed", OutputStyle::Success));
-    outputs.push(formatter.style("✓ Deployment successful", OutputStyle::Success));
-    outputs.push(formatter.style("✓ Backup completed", OutputStyle::Success));
+    let outputs = [
+        formatter.style("✓ Connection established", OutputStyle::Success),
+        formatter.style("✓ Tests passed", OutputStyle::Success),
+        formatter.style("✓ Deployment successful", OutputStyle::Success),
+        formatter.style("✓ Backup completed", OutputStyle::Success),
+    ];
 
     let output = outputs.join("\n");
     insta::assert_snapshot!("success_message_styles", output);
@@ -76,11 +80,12 @@ fn test_link_style() {
     // Test link/reference styling
     let formatter = OutputFormatter::new();
 
-    let mut outputs = Vec::new();
-    outputs.push(formatter.style("https://docs.paladin.rs", OutputStyle::Link));
-    outputs.push(formatter.style("See CONTRIBUTING.md", OutputStyle::Link));
-    outputs.push(formatter.style("API Reference: /api/v1", OutputStyle::Link));
-    outputs.push(formatter.style("GitHub: DF3NDR/paladin", OutputStyle::Link));
+    let outputs = [
+        formatter.style("https://docs.paladin.rs", OutputStyle::Link),
+        formatter.style("See CONTRIBUTING.md", OutputStyle::Link),
+        formatter.style("API Reference: /api/v1", OutputStyle::Link),
+        formatter.style("GitHub: DF3NDR/paladin", OutputStyle::Link),
+    ];
 
     let output = outputs.join("\n");
     insta::assert_snapshot!("link_styles", output);
@@ -123,7 +128,7 @@ fn test_section_rendering() {
     // Test section header rendering
     let formatter = OutputFormatter::new();
 
-    let sections = vec![
+    let sections = [
         "Database Connection",
         "API Endpoints",
         "Background Jobs",
@@ -171,7 +176,7 @@ fn test_key_value_formatting() {
     // Test key-value pair formatting
     let formatter = OutputFormatter::new();
 
-    let kvs = vec![
+    let kvs = [
         ("Version", "1.0.0"),
         ("Environment", "production"),
         ("Database", "PostgreSQL 14.5"),
@@ -348,7 +353,7 @@ fn test_multi_line_error_formatting() {
             OutputStyle::Error
         )
     ));
-    output.push_str("\n");
+    output.push('\n');
     output.push_str(&format!(
         "{}\n",
         formatter.style(
