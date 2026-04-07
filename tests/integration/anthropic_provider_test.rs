@@ -6,11 +6,12 @@
 #[cfg(all(test, feature = "integration-tests"))]
 mod anthropic_integration_tests {
     use paladin::application::ports::output::llm_port::{FinishReason, LlmPort, LlmRequest};
-    use paladin::core::platform::container::prompt::PromptItem;
-    use paladin::infrastructure::adapters::llm::anthropic_adapter::AnthropicAdapter;
+    use paladin::core::platform::container::prompt::{PromptItem, PromptType, SystemPrompt};
+    use paladin::infrastructure::adapters::llm::anthropic_adapter::{
+        AnthropicAdapter, AnthropicConfig,
+    };
     use std::collections::HashMap;
     use std::env;
-    use uuid::Uuid;
 
     /// Helper to create Anthropic adapter from environment
     fn create_anthropic_adapter() -> AnthropicAdapter {
@@ -19,7 +20,13 @@ mod anthropic_integration_tests {
         let base_url = env::var("ANTHROPIC_BASE_URL")
             .unwrap_or_else(|_| "https://api.anthropic.com/v1".to_string());
 
-        AnthropicAdapter::new(api_key, base_url)
+        let config = AnthropicConfig::new(
+            api_key,
+            base_url,
+            "claude-3-5-sonnet-20241022".to_string(),
+            4096,
+        );
+        AnthropicAdapter::new(config).expect("Failed to create Anthropic adapter")
     }
 
     #[tokio::test]
@@ -27,24 +34,23 @@ mod anthropic_integration_tests {
     async fn test_anthropic_simple_completion() {
         let adapter = create_anthropic_adapter();
 
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content: "Say 'Hello from Claude!' and nothing else.".to_string(),
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: "Say 'Hello from Claude!' and nothing else.".to_string(),
+            constraints: None,
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
-            model: "claude-3-sonnet-20240229".to_string(),
+            id: prompt.uuid(),
+            model: "claude-3-5-sonnet-20241022".to_string(),
             prompt,
             attachments: vec![],
             stream: false,
             metadata: HashMap::new(),
         };
 
-        let result = adapter.generate(&request).await;
+        let request_id = request.id;
+        let result = adapter.generate(request).await;
         assert!(
             result.is_ok(),
             "Anthropic API call failed: {:?}",
@@ -60,7 +66,7 @@ mod anthropic_integration_tests {
             response.content.to_lowercase().contains("hello"),
             "Response should contain 'hello'"
         );
-        assert_eq!(response.request_id, request.id);
+        assert_eq!(response.request_id, request_id);
         assert!(matches!(response.finish_reason, FinishReason::Stop));
     }
 
@@ -70,30 +76,28 @@ mod anthropic_integration_tests {
         let adapter = create_anthropic_adapter();
 
         // Claude models support long context windows
-        let long_content = "Context: ".to_string() + &"word ".repeat(1000);
+        let long_content = format!("Context: {}", "word ".repeat(1000));
         let question = format!(
             "{}\n\nHow many times does 'word' appear in the context?",
             long_content
         );
 
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content: question,
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: question,
+            constraints: None,
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
-            model: "claude-3-sonnet-20240229".to_string(),
+            id: prompt.uuid(),
+            model: "claude-3-5-sonnet-20241022".to_string(),
             prompt,
             attachments: vec![],
             stream: false,
             metadata: HashMap::new(),
         };
 
-        let response = adapter.generate(&request).await.unwrap();
+        let response = adapter.generate(request).await.unwrap();
         assert!(!response.content.is_empty());
         // Claude should be able to handle and count the words
         assert!(
@@ -107,26 +111,24 @@ mod anthropic_integration_tests {
     async fn test_anthropic_reasoning_quality() {
         let adapter = create_anthropic_adapter();
 
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content:
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions:
                 "Explain the benefits of hexagonal architecture in software design. Be concise."
                     .to_string(),
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
+            constraints: None,
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
-            model: "claude-3-sonnet-20240229".to_string(),
+            id: prompt.uuid(),
+            model: "claude-3-5-sonnet-20241022".to_string(),
             prompt,
             attachments: vec![],
             stream: false,
             metadata: HashMap::new(),
         };
 
-        let response = adapter.generate(&request).await.unwrap();
+        let response = adapter.generate(request).await.unwrap();
         assert!(!response.content.is_empty());
 
         let content_lower = response.content.to_lowercase();
@@ -148,24 +150,22 @@ mod anthropic_integration_tests {
     async fn test_anthropic_token_usage() {
         let adapter = create_anthropic_adapter();
 
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content: "Write the word 'test' three times.".to_string(),
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: "Write the word 'test' three times.".to_string(),
+            constraints: None,
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
-            model: "claude-3-sonnet-20240229".to_string(),
+            id: prompt.uuid(),
+            model: "claude-3-5-sonnet-20241022".to_string(),
             prompt,
             attachments: vec![],
             stream: false,
             metadata: HashMap::new(),
         };
 
-        let response = adapter.generate(&request).await.unwrap();
+        let response = adapter.generate(request).await.unwrap();
 
         // Verify token usage tracking
         assert!(
@@ -188,30 +188,22 @@ mod anthropic_integration_tests {
     async fn test_anthropic_with_system_message() {
         let adapter = create_anthropic_adapter();
 
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content: "What should I know about your capabilities?".to_string(),
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
-
-        let mut metadata = HashMap::new();
-        metadata.insert(
-            "system_message".to_string(),
-            "You are Claude, an AI assistant created by Anthropic. You should be helpful, harmless, and honest.".to_string(),
-        );
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: "What should I know about your capabilities?".to_string(),
+            constraints: Some(vec!["You are Claude, an AI assistant created by Anthropic. You should be helpful, harmless, and honest.".to_string()]),
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
-            model: "claude-3-sonnet-20240229".to_string(),
+            id: prompt.uuid(),
+            model: "claude-3-5-sonnet-20241022".to_string(),
             prompt,
             attachments: vec![],
             stream: false,
-            metadata,
+            metadata: HashMap::new(),
         };
 
-        let response = adapter.generate(&request).await.unwrap();
+        let response = adapter.generate(request).await.unwrap();
         assert!(!response.content.is_empty());
         // Response should acknowledge being Claude/AI assistant
         let content_lower = response.content.to_lowercase();
@@ -227,16 +219,14 @@ mod anthropic_integration_tests {
         let adapter = create_anthropic_adapter();
 
         // Test with Claude Haiku (faster, cheaper model)
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content: "What is Rust?".to_string(),
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: "What is Rust?".to_string(),
+            constraints: None,
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
+            id: prompt.uuid(),
             model: "claude-3-haiku-20240307".to_string(),
             prompt,
             attachments: vec![],
@@ -244,7 +234,7 @@ mod anthropic_integration_tests {
             metadata: HashMap::new(),
         };
 
-        let response = adapter.generate(&request).await.unwrap();
+        let response = adapter.generate(request).await.unwrap();
         assert!(!response.content.is_empty());
         assert!(
             response.content.to_lowercase().contains("rust")

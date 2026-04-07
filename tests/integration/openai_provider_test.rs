@@ -5,24 +5,19 @@
 
 #[cfg(all(test, feature = "integration-tests"))]
 mod openai_integration_tests {
-    use paladin::application::ports::output::llm_port::{
-        FinishReason, FunctionCall, LlmPort, LlmRequest, LlmResponse, TokenUsage,
-    };
-    use paladin::core::platform::container::content::ContentItem;
-    use paladin::core::platform::container::prompt::PromptItem;
-    use paladin::infrastructure::adapters::llm::openai_adapter::OpenAiAdapter;
+    use paladin::application::ports::output::llm_port::{FinishReason, LlmPort, LlmRequest};
+    use paladin::core::platform::container::prompt::{PromptItem, PromptType, SystemPrompt};
+    use paladin::infrastructure::adapters::llm::openai_adapter::{OpenAIAdapter, OpenAIConfig};
     use std::collections::HashMap;
     use std::env;
-    use uuid::Uuid;
 
     /// Helper to create OpenAI adapter from environment
-    fn create_openai_adapter() -> OpenAiAdapter {
+    fn create_openai_adapter() -> OpenAIAdapter {
         let api_key = env::var("OPENAI_API_KEY")
             .expect("OPENAI_API_KEY must be set for OpenAI integration tests");
-        let base_url =
-            env::var("OPENAI_BASE_URL").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
 
-        OpenAiAdapter::new(api_key, base_url)
+        let config = OpenAIConfig::new(api_key);
+        OpenAIAdapter::new(config).expect("Failed to create OpenAI adapter")
     }
 
     #[tokio::test]
@@ -30,16 +25,14 @@ mod openai_integration_tests {
     async fn test_openai_simple_completion() {
         let adapter = create_openai_adapter();
 
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content: "Say 'Hello, Paladin!' and nothing else.".to_string(),
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: "Say 'Hello, Paladin!' and nothing else.".to_string(),
+            constraints: None,
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
+            id: prompt.uuid(),
             model: "gpt-3.5-turbo".to_string(),
             prompt,
             attachments: vec![],
@@ -47,7 +40,8 @@ mod openai_integration_tests {
             metadata: HashMap::new(),
         };
 
-        let result = adapter.generate(&request).await;
+        let request_id = request.id;
+        let result = adapter.generate(request).await;
         assert!(result.is_ok(), "OpenAI API call failed: {:?}", result.err());
 
         let response = result.unwrap();
@@ -59,7 +53,7 @@ mod openai_integration_tests {
             response.content.to_lowercase().contains("hello"),
             "Response should contain 'hello'"
         );
-        assert_eq!(response.request_id, request.id);
+        assert_eq!(response.request_id, request_id);
         assert!(matches!(response.finish_reason, FinishReason::Stop));
     }
 
@@ -68,16 +62,14 @@ mod openai_integration_tests {
     async fn test_openai_function_calling() {
         let adapter = create_openai_adapter();
 
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content: "What's the weather in San Francisco?".to_string(),
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: "What's the weather in San Francisco?".to_string(),
+            constraints: None,
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
+            id: prompt.uuid(),
             model: "gpt-3.5-turbo".to_string(),
             prompt,
             attachments: vec![],
@@ -92,7 +84,7 @@ mod openai_integration_tests {
             },
         };
 
-        let result = adapter.generate(&request).await;
+        let result = adapter.generate(request).await;
         assert!(
             result.is_ok(),
             "OpenAI function call failed: {:?}",
@@ -119,16 +111,14 @@ mod openai_integration_tests {
     async fn test_openai_token_usage() {
         let adapter = create_openai_adapter();
 
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content: "Count to 5.".to_string(),
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: "Count to 5.".to_string(),
+            constraints: None,
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
+            id: prompt.uuid(),
             model: "gpt-3.5-turbo".to_string(),
             prompt,
             attachments: vec![],
@@ -136,7 +126,7 @@ mod openai_integration_tests {
             metadata: HashMap::new(),
         };
 
-        let response = adapter.generate(&request).await.unwrap();
+        let response = adapter.generate(request).await.unwrap();
 
         // Verify token usage tracking
         assert!(
@@ -160,16 +150,14 @@ mod openai_integration_tests {
         let adapter = create_openai_adapter();
 
         // Test with an invalid/non-existent model
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content: "Test".to_string(),
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: "Test".to_string(),
+            constraints: None,
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
+            id: prompt.uuid(),
             model: "gpt-nonexistent-model".to_string(),
             prompt,
             attachments: vec![],
@@ -177,7 +165,7 @@ mod openai_integration_tests {
             metadata: HashMap::new(),
         };
 
-        let result = adapter.generate(&request).await;
+        let result = adapter.generate(request).await;
         assert!(result.is_err(), "Should fail with non-existent model");
     }
 
@@ -186,30 +174,24 @@ mod openai_integration_tests {
     async fn test_openai_with_system_message() {
         let adapter = create_openai_adapter();
 
-        let prompt = PromptItem {
-            id: Uuid::new_v4(),
-            role: "user".to_string(),
-            content: "What is your purpose?".to_string(),
-            template_name: None,
-            template_vars: HashMap::new(),
-        };
-
-        let mut metadata = HashMap::new();
-        metadata.insert(
-            "system_message".to_string(),
-            "You are a helpful AI assistant specializing in Rust programming.".to_string(),
-        );
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: "What is your purpose?".to_string(),
+            constraints: Some(vec![
+                "You are a helpful AI assistant specializing in Rust programming.".to_string(),
+            ]),
+        });
+        let prompt = PromptItem::new(prompt_type).expect("Failed to create prompt");
 
         let request = LlmRequest {
-            id: Uuid::new_v4(),
+            id: prompt.uuid(),
             model: "gpt-3.5-turbo".to_string(),
             prompt,
             attachments: vec![],
             stream: false,
-            metadata,
+            metadata: HashMap::new(),
         };
 
-        let response = adapter.generate(&request).await.unwrap();
+        let response = adapter.generate(request).await.unwrap();
         assert!(!response.content.is_empty());
         // The response might reference being an assistant or helping with Rust
         // but we can't guarantee exact content, so just verify we got a response

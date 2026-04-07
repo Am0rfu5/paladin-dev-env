@@ -11,9 +11,12 @@
 
 #[cfg(all(test, feature = "integration-tests"))]
 mod provider_tests {
+    use futures::StreamExt;
     use paladin::application::cli::config::loader::load_paladin_config;
-    use paladin::application::ports::output::llm_port::LlmPort;
+    use paladin::application::ports::output::llm_port::LlmRequest;
+    use paladin::core::platform::container::prompt::{PromptItem, PromptType, SystemPrompt};
     use paladin::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    use std::collections::HashMap;
     use std::env;
     use std::fs;
     use tempfile::TempDir;
@@ -23,6 +26,27 @@ mod provider_tests {
         let path = dir.path().join(format!("{}.yaml", name));
         fs::write(&path, content).expect("Failed to write config");
         path
+    }
+
+    /// Helper to create a test prompt
+    fn create_test_prompt(content: &str) -> PromptItem {
+        let prompt_type = PromptType::System(SystemPrompt {
+            instructions: content.to_string(),
+            constraints: None,
+        });
+        PromptItem::new(prompt_type).expect("Failed to create prompt")
+    }
+
+    /// Helper to create a test request
+    fn create_test_request(prompt: PromptItem, model: &str) -> LlmRequest {
+        LlmRequest {
+            id: prompt.uuid(),
+            model: model.to_string(),
+            prompt,
+            attachments: Vec::new(),
+            stream: false,
+            metadata: HashMap::new(),
+        }
     }
 
     // =========================================================================
@@ -37,7 +61,8 @@ mod provider_tests {
         assert!(!api_key.is_empty(), "OPENAI_API_KEY must not be empty");
 
         // Create provider via factory
-        let provider = LlmProviderFactory::create("openai", &api_key, None);
+        let factory = LlmProviderFactory::new();
+        let provider = factory.create("openai");
         assert!(
             provider.is_ok(),
             "OpenAI provider should be created successfully"
@@ -45,9 +70,10 @@ mod provider_tests {
 
         // Validate connection with a simple request
         let provider = provider.unwrap();
-        let result = provider
-            .generate("gpt-4", "Say 'hello' and nothing else.", 0.1.into(), None)
-            .await;
+        let prompt = create_test_prompt("Say 'hello' and nothing else.");
+        let request = create_test_request(prompt, "gpt-3.5-turbo");
+
+        let result = provider.generate(request).await;
 
         assert!(
             result.is_ok(),
@@ -66,7 +92,8 @@ mod provider_tests {
     #[tokio::test]
     #[ignore = "Requires OPENAI_API_KEY environment variable"]
     async fn test_openai_agent_config_end_to_end() {
-        let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set for this test");
+        let _api_key =
+            env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set for this test");
 
         let temp_dir = TempDir::new().unwrap();
         let config_path = write_config(
@@ -75,7 +102,7 @@ mod provider_tests {
             r#"
 name: "test-openai-agent"
 system_prompt: "You are a concise test assistant. Respond in one word."
-model: "gpt-4"
+model: "gpt-3.5-turbo"
 temperature: 0.1
 max_loops: 1
 
@@ -91,17 +118,15 @@ provider:
         assert_eq!(config.provider.provider_type, "openai");
 
         // Create provider and verify it can generate
-        let provider = LlmProviderFactory::create("openai", &api_key, None)
+        let factory = LlmProviderFactory::new();
+        let provider = factory
+            .create("openai")
             .expect("Provider should be created");
 
-        let result = provider
-            .generate(
-                &config.model,
-                &format!("{}\n\nUser: What is 2+2?", config.system_prompt),
-                config.temperature.into(),
-                None,
-            )
-            .await;
+        let prompt = create_test_prompt(&format!("{}\n\nUser: What is 2+2?", config.system_prompt));
+        let request = create_test_request(prompt, &config.model);
+
+        let result = provider.generate(request).await;
 
         assert!(result.is_ok(), "End-to-end agent execution should succeed");
     }
@@ -118,21 +143,18 @@ provider:
 
         assert!(!api_key.is_empty(), "ANTHROPIC_API_KEY must not be empty");
 
-        let provider = LlmProviderFactory::create("anthropic", &api_key, None);
+        let factory = LlmProviderFactory::new();
+        let provider = factory.create("anthropic");
         assert!(
             provider.is_ok(),
             "Anthropic provider should be created successfully"
         );
 
         let provider = provider.unwrap();
-        let result = provider
-            .generate(
-                "claude-sonnet-4-20250514",
-                "Say 'hello' and nothing else.",
-                0.1.into(),
-                None,
-            )
-            .await;
+        let prompt = create_test_prompt("Say 'hello' and nothing else.");
+        let request = create_test_request(prompt, "claude-3-5-sonnet-20241022");
+
+        let result = provider.generate(request).await;
 
         assert!(
             result.is_ok(),
@@ -160,21 +182,18 @@ provider:
 
         assert!(!api_key.is_empty(), "DEEPSEEK_API_KEY must not be empty");
 
-        let provider = LlmProviderFactory::create("deepseek", &api_key, None);
+        let factory = LlmProviderFactory::new();
+        let provider = factory.create("deepseek");
         assert!(
             provider.is_ok(),
             "DeepSeek provider should be created successfully"
         );
 
         let provider = provider.unwrap();
-        let result = provider
-            .generate(
-                "deepseek-chat",
-                "Say 'hello' and nothing else.",
-                0.1.into(),
-                None,
-            )
-            .await;
+        let prompt = create_test_prompt("Say 'hello' and nothing else.");
+        let request = create_test_request(prompt, "deepseek-chat");
+
+        let result = provider.generate(request).await;
 
         assert!(
             result.is_ok(),
@@ -197,19 +216,19 @@ provider:
     #[tokio::test]
     #[ignore = "Requires OPENAI_API_KEY environment variable"]
     async fn test_openai_streaming_response() {
-        let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set for this test");
+        let _api_key =
+            env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set for this test");
 
-        let provider = LlmProviderFactory::create("openai", &api_key, None)
+        let factory = LlmProviderFactory::new();
+        let provider = factory
+            .create("openai")
             .expect("Provider should be created");
 
-        let result = provider
-            .generate_stream(
-                "gpt-4",
-                "Count from 1 to 5, separated by commas.",
-                0.1.into(),
-                None,
-            )
-            .await;
+        let prompt = create_test_prompt("Count from 1 to 5, separated by commas.");
+        let mut request = create_test_request(prompt, "gpt-3.5-turbo");
+        request.stream = true;
+
+        let result = provider.generate_stream(request).await;
 
         assert!(
             result.is_ok(),
@@ -221,11 +240,17 @@ provider:
         let mut collected = String::new();
         let mut chunk_count = 0;
 
-        while let Some(chunk) = stream.recv().await {
-            match chunk {
-                Ok(text) => {
-                    collected.push_str(&text);
-                    chunk_count += 1;
+        // SAFETY: The boxed stream is never moved after this point
+        while let Some(chunk_result) = unsafe { std::pin::Pin::new_unchecked(&mut *stream) }
+            .next()
+            .await
+        {
+            match chunk_result {
+                Ok(chunk) => {
+                    if !chunk.delta.is_empty() {
+                        collected.push_str(&chunk.delta);
+                        chunk_count += 1;
+                    }
                 }
                 Err(e) => {
                     panic!("Stream error: {:?}", e);
