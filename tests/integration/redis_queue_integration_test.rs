@@ -23,8 +23,15 @@ mod queue_integration_tests {
     use paladin::infrastructure::adapters::queue::redis::{RedisQueueAdapter, RedisQueueConfig};
 
     enum RedisSource {
-        Existing { host: String, port: u16 },
-        Testcontainer(Box<testcontainers::ContainerAsync<GenericImage>>, u16),
+        Existing {
+            host: String,
+            port: u16,
+        },
+        Testcontainer {
+            #[allow(dead_code)]
+            container: Box<testcontainers::ContainerAsync<GenericImage>>,
+            port: u16,
+        },
     }
 
     struct TestContext {
@@ -66,12 +73,15 @@ mod queue_integration_tests {
                 // Wait a bit for Redis to start
                 sleep(Duration::from_millis(500)).await;
 
-                RedisSource::Testcontainer(Box::new(container), port)
+                RedisSource::Testcontainer {
+                    container: Box::new(container),
+                    port,
+                }
             };
 
             let (redis_host, redis_port) = match &source {
                 RedisSource::Existing { host, port } => (host.clone(), *port),
-                RedisSource::Testcontainer(_, port) => ("localhost".to_string(), *port),
+                RedisSource::Testcontainer { port, .. } => ("localhost".to_string(), *port),
             };
 
             let log_adapter =
