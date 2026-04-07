@@ -1,19 +1,9 @@
 {
   "name": "Paladin Development Container",
-  "dockerFile": "Dockerfile.dev",
-  // Container configuration
-  "runArgs": [
-    "--cap-add=SYS_PTRACE",
-    "--security-opt",
-    "seccomp=unconfined"
-  ],
-  // Set environment variables
-  "containerEnv": {
-    "RUST_BACKTRACE": "1",
-    "RUST_LOG": "debug",
-    "CARGO_HOME": "/usr/local/cargo",
-    "RUSTUP_HOME": "/usr/local/rustup"
-  },
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "paladin-dev",
+  "workspaceFolder": "/workspace",
+  
   // Forward ports
   "forwardPorts": [
     8080, // Main application
@@ -83,7 +73,7 @@
         "rust-analyzer.checkOnSave.command": true,
         "rust-analyzer.cargo.features": "all",
         "rust-analyzer.diagnostics.enable": true,
-        "rust-analyzer.diagnostics.experiment"clippy"nable": true,
+        "rust-analyzer.diagnostics.experimental.enable": true,
         "rust-analyzer.cargo.loadOutDirsFromCheck": true,
         "rust-analyzer.procMacro.enable": true,
         "rust-analyzer.inlayHints.enable": true,
@@ -156,19 +146,8 @@
   // Lifecycle scripts
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "postStartCommand": "bash .devcontainer/post-start.sh",
-  // Mount the workspace
-  "workspaceFolder": "/workspace",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
-  // Additional mounts
-  "mounts": [
-    "source=${localWorkspaceFolder}/.env,target=/workspace/.env,type=bind,consistency=cached",
-    "source=paladin-cargo-cache,target=/usr/local/cargo/registry,type=volume",
-    "source=paladin-target-cache,target=/workspace/target,type=volume"
-  ],
   // Remote user
   "remoteUser": "vscode",
-  // Update remote user UID/GID
-  "updateRemoteUserUID": true,
   // Shutdown action
-  "shutdownAction": "stopContainer"
+  "shutdownAction": "stopCompose"
 }
