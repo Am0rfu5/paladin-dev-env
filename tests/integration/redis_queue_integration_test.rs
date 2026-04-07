@@ -22,34 +22,64 @@ mod queue_integration_tests {
     use paladin::infrastructure::adapters::logs::system_log_adapter::SystemLogAdapter;
     use paladin::infrastructure::adapters::queue::redis::{RedisQueueAdapter, RedisQueueConfig};
 
+    enum RedisSource {
+        Existing { host: String, port: u16 },
+        Testcontainer(Box<testcontainers::ContainerAsync<GenericImage>>, u16),
+    }
+
     struct TestContext {
         adapter: Arc<RedisQueueAdapter>,
         #[allow(dead_code)]
-        container: testcontainers::ContainerAsync<GenericImage>,
-        #[allow(dead_code)]
-        port: u16,
+        source: RedisSource,
     }
 
     impl TestContext {
         async fn new() -> Result<Self, Box<dyn std::error::Error>> {
-            let container = GenericImage::new("redis", "7.2.4")
-                .with_exposed_port(6379.tcp())
-                .with_wait_for(WaitFor::message_on_stdout("Ready to accept connections"))
-                .start()
-                .await
-                .expect("Failed to start Redis");
+            // Try to use existing Redis service from environment first (docker-compose scenario)
+            let source = if let Ok(redis_url) = std::env::var("REDIS_URL") {
+                // Parse redis://redis:6379 format
+                if let Some(host_port) = redis_url.strip_prefix("redis://") {
+                    let parts: Vec<&str> = host_port.split(':').collect();
+                    if parts.len() == 2 {
+                        let host = parts[0].to_string();
+                        let port = parts[1].parse::<u16>().unwrap_or(6379);
+                        println!("Using existing Redis service at {}:{}", host, port);
+                        RedisSource::Existing { host, port }
+                    } else {
+                        return Err("Invalid REDIS_URL format".into());
+                    }
+                } else {
+                    return Err("REDIS_URL must start with redis://".into());
+                }
+            } else {
+                // Fall back to testcontainers for local development
+                println!("REDIS_URL not set, starting Redis container via testcontainers");
+                let container = GenericImage::new("redis", "7.2.4")
+                    .with_exposed_port(6379.tcp())
+                    .with_wait_for(WaitFor::message_on_stdout("Ready to accept connections"))
+                    .start()
+                    .await
+                    .expect("Failed to start Redis");
 
-            let port = container.get_host_port_ipv4(6379).await?;
+                let port = container.get_host_port_ipv4(6379).await?;
 
-            // Wait a bit for Redis to start
-            sleep(Duration::from_millis(500)).await;
+                // Wait a bit for Redis to start
+                sleep(Duration::from_millis(500)).await;
+
+                RedisSource::Testcontainer(Box::new(container), port)
+            };
+
+            let (redis_host, redis_port) = match &source {
+                RedisSource::Existing { host, port } => (host.clone(), *port),
+                RedisSource::Testcontainer(_, port) => ("localhost".to_string(), *port),
+            };
 
             let log_adapter =
                 Arc::new(SystemLogAdapter::new(Default::default()).unwrap()) as Arc<dyn LogPort>;
 
             let redis_config = RedisQueueConfig {
-                redis_host: "localhost".to_string(),
-                redis_port: port,
+                redis_host,
+                redis_port,
                 redis_password: None,
                 redis_db: 0,
                 connection_timeout: 10,
@@ -59,11 +89,7 @@ mod queue_integration_tests {
 
             let adapter = Arc::new(RedisQueueAdapter::new(redis_config, Some(log_adapter)).await?);
 
-            Ok(TestContext {
-                adapter,
-                container,
-                port,
-            })
+            Ok(TestContext { adapter, source })
         }
 
         fn create_test_queue_item(
