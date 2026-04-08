@@ -109,9 +109,9 @@ struct OpenAIMessage {
 /// OpenAI API response structures
 #[derive(Debug, Deserialize)]
 struct OpenAIResponse {
-    _id: String,
-    _object: String,
-    _created: u64,
+    id: String,
+    object: String,
+    created: u64,
     model: String,
     choices: Vec<OpenAIChoice>,
     usage: OpenAIUsage,
@@ -119,7 +119,7 @@ struct OpenAIResponse {
 
 #[derive(Debug, Deserialize)]
 struct OpenAIChoice {
-    _index: u32,
+    index: u32,
     message: OpenAIMessage,
     finish_reason: Option<String>,
 }
@@ -136,26 +136,26 @@ struct OpenAIUsage {
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct OpenAIStreamResponse {
-    _id: String,
-    _object: String,
-    _created: u64,
-    _model: String,
-    _choices: Vec<OpenAIStreamChoice>,
+    id: String,
+    object: String,
+    created: u64,
+    model: String,
+    choices: Vec<OpenAIStreamChoice>,
 }
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct OpenAIStreamChoice {
-    _index: u32,
-    _delta: OpenAIStreamDelta,
-    _finish_reason: Option<String>,
+    index: u32,
+    delta: OpenAIStreamDelta,
+    finish_reason: Option<String>,
 }
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct OpenAIStreamDelta {
-    _role: Option<String>,
-    _content: Option<String>,
+    role: Option<String>,
+    content: Option<String>,
 }
 
 /// OpenAI LLM Adapter

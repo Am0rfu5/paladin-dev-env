@@ -163,7 +163,7 @@ mod tests {
             .system_prompt("Test prompt")
             .build()
             .expect("Should build successfully");
-        
+
         assert_eq!(paladin.data.name, "TestAgent");
     }
 
@@ -196,10 +196,10 @@ Test interactions between multiple components, including external services (data
 #[tokio::test]
 async fn test_sqlite_garrison_persistence() {
     let garrison = SqliteGarrison::new("test.db").await.unwrap();
-    
+
     garrison.store_message("paladin1", Message::User("Hello".into())).await.unwrap();
     let history = garrison.get_history("paladin1", 10).await.unwrap();
-    
+
     assert_eq!(history.len(), 1);
 }
 ```
@@ -249,19 +249,38 @@ Test real LLM provider integrations (optional, requires API keys).
 
 **Feature flag**: `live-api-tests`
 
-**Run with API keys**:
-```bash
-export OPENAI_API_KEY="sk-..."
-export DEEPSEEK_API_KEY="..."
-export ANTHROPIC_API_KEY="..."
+**Recommended in DevContainer (persistent workflow)**:
 
-cargo test --features live-api-tests -- --nocapture
+```bash
+cp .env.example .env
+# Edit .env and set one or more keys:
+# OPENAI_API_KEY=sk-...
+# DEEPSEEK_API_KEY=...
+# ANTHROPIC_API_KEY=...
+
+# Load .env for current terminal session
+set -a
+. /workspace/.env
+set +a
 ```
 
-**Without API keys, tests gracefully skip**:
+**Run live API tests**:
+```bash
+cargo test --features live-api-tests -- --ignored --nocapture
+```
+
+**Run only one provider**:
+
+```bash
+cargo test --features live-api-tests test_openai -- --ignored --nocapture
+cargo test --features live-api-tests test_deepseek -- --ignored --nocapture
+cargo test --features live-api-tests test_anthropic -- --ignored --nocapture
+```
+
+**Without API keys, tests will be ignored/skipped**:
 ```bash
 cargo test --features live-api-tests
-# Tests will show as "ignored" without keys
+# Tests remain ignored unless --ignored is supplied
 ```
 
 #### 5. Benchmark Tests
@@ -423,7 +442,7 @@ All public items must have documentation:
 ///
 /// ```
 /// use paladin::prelude::*;
-/// 
+///
 /// let builder = PaladinBuilder::new(llm_port)
 ///     .name("Assistant")
 ///     .system_prompt("You are helpful");

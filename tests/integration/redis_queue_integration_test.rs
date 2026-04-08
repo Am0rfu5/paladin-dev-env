@@ -12,14 +12,12 @@ mod queue_integration_tests {
         runners::AsyncRunner,
     };
 
-    use paladin::application::ports::output::log_port::LogPort;
     use paladin::application::ports::output::queue_port::{
         BatchQueuePort, PriorityQueuePort, QueueManagementPort, QueuePort,
     };
     use paladin::core::base::entity::message::{Location, Message, MessagePriority};
     use paladin::core::platform::container::queue_item::{QueueItem, QueueItemConfig};
     use paladin::core::platform::manager::queue_service::{QueueConfig, QueueError};
-    use paladin::infrastructure::adapters::logs::system_log_adapter::SystemLogAdapter;
     use paladin::infrastructure::adapters::queue::redis::{RedisQueueAdapter, RedisQueueConfig};
 
     enum RedisSource {
@@ -90,9 +88,6 @@ mod queue_integration_tests {
                 RedisSource::Testcontainer { port, .. } => ("localhost".to_string(), *port),
             };
 
-            let log_adapter =
-                Arc::new(SystemLogAdapter::new(Default::default()).unwrap()) as Arc<dyn LogPort>;
-
             let redis_config = RedisQueueConfig {
                 redis_host,
                 redis_port,
@@ -103,7 +98,7 @@ mod queue_integration_tests {
                 max_retries: 5,
             };
 
-            let adapter = Arc::new(RedisQueueAdapter::new(redis_config, Some(log_adapter)).await?);
+            let adapter = Arc::new(RedisQueueAdapter::new(redis_config, None).await?);
 
             Ok(TestContext { adapter, source })
         }

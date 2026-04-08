@@ -88,7 +88,9 @@ impl SqliteGarrison {
     /// Initialize the database schema and metadata
     async fn initialize(&self) -> Result<(), GarrisonError> {
         // Run migrations
-        sqlx::migrate!("./migrations")
+        sqlx::migrate::Migrator::new(std::path::Path::new("./migrations"))
+            .await
+            .map_err(|e| GarrisonError::StorageError(format!("Migration setup failed: {}", e)))?
             .run(&self.pool)
             .await
             .map_err(|e| GarrisonError::StorageError(format!("Migration failed: {}", e)))?;
@@ -96,7 +98,7 @@ impl SqliteGarrison {
         // Initialize metadata for this paladin if not exists
         sqlx::query(
             r#"
-            INSERT OR IGNORE INTO garrison_metadata 
+            INSERT OR IGNORE INTO garrison_metadata
             (paladin_id, max_entries, max_tokens, eviction_strategy, preserve_recent_count)
             VALUES (?, ?, ?, ?, ?)
             "#,
@@ -217,7 +219,7 @@ impl SqliteGarrison {
         // Calculate stats inline to avoid circular dependency
         let row = sqlx::query(
             r#"
-            SELECT 
+            SELECT
                 COUNT(*) as entry_count,
                 COALESCE(SUM(token_count), 0) as total_tokens
             FROM garrison_entries
@@ -268,7 +270,7 @@ impl GarrisonPort for SqliteGarrison {
         // Insert entry
         sqlx::query(
             r#"
-            INSERT INTO garrison_entries 
+            INSERT INTO garrison_entries
             (id, paladin_id, role, content, timestamp, token_count, metadata, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
             "#,
@@ -440,7 +442,7 @@ impl GarrisonPort for SqliteGarrison {
     async fn stats(&self) -> Result<GarrisonStats, GarrisonError> {
         let row = sqlx::query(
             r#"
-            SELECT 
+            SELECT
                 COUNT(*) as entry_count,
                 COALESCE(SUM(token_count), 0) as total_tokens
             FROM garrison_entries

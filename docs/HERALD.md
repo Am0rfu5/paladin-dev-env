@@ -54,17 +54,17 @@ Core (Domain)                   Application (Ports)              Infrastructure 
 herald:
   default_formatter: "json"  # or "markdown", "table"
   include_metadata: true
-  
+
   # JSON-specific options
   json:
     pretty_print: true
     include_timestamps: true
-  
+
   # Markdown-specific options
   markdown:
     use_colors: true
     heading_level: 2
-  
+
   # Table-specific options
   table:
     max_column_width: 60
@@ -83,19 +83,20 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load settings
     let settings = Settings::new()?;
-    
+
     // Create Herald from config
     let herald = settings.create_default_herald()?;
-    
+
     // Create LLM port (example with OpenAI)
-    let llm_port = Arc::new(OpenAiLlmAdapter::from_settings(&settings.llm.openai)?);
-    
+    let config = OpenAIConfig::from_env()?;
+    let llm_port = Arc::new(OpenAIAdapter::new(config)?);
+
     // Build Paladin
     let paladin = PaladinBuilder::new(llm_port.clone())
         .system_prompt("You are a helpful assistant")
         .name("MyPaladin")
         .build()?;
-    
+
     // Create execution service with Herald
     let service = PaladinExecutionService::new(
         llm_port,
@@ -103,13 +104,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,  // garrison
         None,  // arsenal
     ).with_herald(herald);
-    
+
     // Execute and format
     let result = service.execute(&paladin, "Hello!").await?;
     if let Some(formatted) = service.format_result(&result, &paladin)? {
         println!("{}", formatted);
     }
-    
+
     Ok(())
 }
 ```
@@ -165,7 +166,7 @@ let herald = Arc::new(JsonHerald::new().with_config(JsonHeraldConfig {
 ```markdown
 ## ✅ Paladin: DataAnalyst
 
-**Status:** completed  
+**Status:** completed
 **Output:**
 Analysis results here...
 
@@ -238,17 +239,17 @@ herald:
   # Global settings
   default_formatter: "json"        # Default formatter to use
   include_metadata: true            # Include execution metadata
-  
+
   # JSON formatter configuration
   json:
     pretty_print: true              # Pretty-print JSON (vs compact)
     include_timestamps: true        # Add ISO 8601 timestamps
-  
+
   # Markdown formatter configuration
   markdown:
     use_colors: true                # Use ANSI colors in output
     heading_level: 2                # Heading level (1-6)
-  
+
   # Table formatter configuration
   table:
     max_column_width: 60            # Max chars per column
@@ -478,11 +479,11 @@ impl Herald for XmlHerald {
     fn name(&self) -> &str {
         "xml"
     }
-    
+
     fn mime_type(&self) -> &str {
         "application/xml"
     }
-    
+
     fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
         Ok(format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -498,7 +499,7 @@ impl Herald for XmlHerald {
             xml_escape(&result.output),
         ))
     }
-    
+
     fn format_battalion_result(&self, result: &BattalionResult) -> Result<String, HeraldError> {
         let mut xml = format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -511,7 +512,7 @@ impl Herald for XmlHerald {
             result.battalion_name,
             result.status,
         );
-        
+
         for paladin in &result.results {
             xml.push_str(&format!(
                 r#"
@@ -526,11 +527,11 @@ impl Herald for XmlHerald {
                 xml_escape(&paladin.output),
             ));
         }
-        
+
         xml.push_str("\n    </paladins>\n</battalion_result>");
         Ok(xml)
     }
-    
+
     fn format_error(&self, error: &str) -> Result<String, HeraldError> {
         Ok(format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -538,7 +539,7 @@ impl Herald for XmlHerald {
             xml_escape(error)
         ))
     }
-    
+
     fn format_stream_chunk(&self, chunk: &StreamChunk) -> Result<Option<String>, HeraldError> {
         // XML streaming: wrap each chunk
         Ok(Some(format!(
@@ -547,7 +548,7 @@ impl Herald for XmlHerald {
             xml_escape(&chunk.content)
         )))
     }
-    
+
     fn finalize_stream(&self, metadata: &ExecutionMetadata) -> Result<String, HeraldError> {
         Ok(format!(
             r#"<metadata execution_time_ms="{}" total_tokens="{}"/>"#,
@@ -666,13 +667,13 @@ pub struct ExecutionMetadata {
 pub enum HeraldError {
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
-    
+
     #[error("Formatting error: {0}")]
     FormattingError(String),
-    
+
     #[error("Invalid result: {0}")]
     InvalidResult(String),
-    
+
     #[error("Serialization error: {0}")]
     SerializationError(String),
 }
@@ -753,7 +754,7 @@ let service = PaladinExecutionService::new(...).with_herald(herald);
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_custom_formatter() {
         let herald = XmlHerald;
@@ -763,7 +764,7 @@ mod tests {
             status: "completed".to_string(),
             output: "Test output".to_string(),
         };
-        
+
         let formatted = herald.format_paladin_result(&result).unwrap();
         assert!(formatted.contains("<paladin_result>"));
         assert!(formatted.contains("test-1"));

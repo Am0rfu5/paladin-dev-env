@@ -13,6 +13,14 @@ struct Opt {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Load .env file in development (debug builds only)
+    // Production deployments should use proper secrets management
+    #[cfg(debug_assertions)]
+    {
+        // Silently ignore if .env doesn't exist - not all dev setups need it
+        let _ = dotenv::dotenv();
+    }
+
     env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
 
     let opt = Opt::from_args();

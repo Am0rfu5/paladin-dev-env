@@ -544,7 +544,8 @@ struct ClaudeMessage {
 
 #[derive(Debug, Deserialize)]
 struct ClaudeResponse {
-    _id: String,
+    #[allow(dead_code)]
+    id: String,
     model: String,
     content: Vec<ClaudeContent>,
     stop_reason: Option<String>,
@@ -554,7 +555,8 @@ struct ClaudeResponse {
 #[derive(Debug, Deserialize)]
 struct ClaudeContent {
     #[serde(rename = "type")]
-    _content_type: String,
+    #[allow(dead_code)]
+    content_type: String,
     text: String,
 }
 

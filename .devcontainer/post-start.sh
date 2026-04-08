@@ -73,6 +73,15 @@ fi
 # Check for .env file
 if [ -f ".env" ]; then
     echo "  ✅ .env file exists"
+
+    # Configure shell to auto-load workspace .env for interactive terminals
+    ENV_LOADER_LINE='[ -f /workspace/.env ] && set -a && . /workspace/.env && set +a'
+    if ! grep -Fq "$ENV_LOADER_LINE" /home/vscode/.bashrc; then
+        echo "" >> /home/vscode/.bashrc
+        echo "# Load Paladin workspace env vars" >> /home/vscode/.bashrc
+        echo "$ENV_LOADER_LINE" >> /home/vscode/.bashrc
+        echo "  ✅ Added .env auto-load hook to ~/.bashrc"
+    fi
 else
     echo "  ⚠️  .env file missing (use .env.example as template)"
 fi

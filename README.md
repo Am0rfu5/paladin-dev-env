@@ -232,15 +232,15 @@ Paladin supports multiple LLM providers with a consistent interface, allowing yo
 ```yaml
 llm:
   default_provider: "openai"  # or "deepseek", "anthropic"
-  
+
   openai:
     api_key: "${OPENAI_API_KEY}"
     model: "gpt-4"
-  
+
   deepseek:
     api_key: "${DEEPSEEK_API_KEY}"
     model: "deepseek-chat"
-  
+
   anthropic:
     api_key: "${ANTHROPIC_API_KEY}"
     model: "claude-3-5-sonnet-20241022"
@@ -297,7 +297,7 @@ let result = execution_service
 
 **Supported Vision Content:**
 - **ImageUrl**: Reference publicly accessible images
-- **ImageFile**: Load images from local filesystem  
+- **ImageFile**: Load images from local filesystem
 - **ImageBase64**: Embed encoded image data directly
 
 **Document Processing:**
@@ -471,12 +471,78 @@ To build the project, run:
 cargo build
 ```
 
+### Configuration
+
+Paladin uses a dual-path configuration system:
+- **YAML files** (`config.yml`) for structural/behavioral settings
+- **Environment variables** for secrets and deployment-specific overrides
+
+For detailed configuration instructions, see **[Configuration Guide](docs/CONFIGURATION.md)**.
+
+**Quick setup for development:**
+
+```bash
+# 1. Copy the example environment file
+cp .env.example .env
+
+# 2. Edit .env and add your API keys
+# OPENAI_API_KEY=sk-your-key-here
+# DEEPSEEK_API_KEY=your-deepseek-key
+# ANTHROPIC_API_KEY=your-anthropic-key
+
+# 3. The .env file is automatically loaded in debug builds
+cargo run
+```
+
+**Configuration sources (in priority order):**
+1. `config.yml` - Base configuration (committed to git)
+2. `APP_*` environment variables - Override any YAML value
+3. Direct environment variables - LLM API keys (never in YAML)
+
+For production deployments, CI/CD, and advanced configuration patterns, see the [Configuration Guide](docs/CONFIGURATION.md).
+
 ### Running Tests
 
 Run unit tests to ensure functionality:
 
 ```sh
 cargo test
+```
+
+### Live LLM API Tests In DevContainer
+
+Use a workspace `.env` file as the single source of truth instead of one-off `export` commands.
+
+```bash
+cp .env.example .env
+```
+
+Set at least one provider key in `.env`:
+
+```bash
+OPENAI_API_KEY=sk-...
+DEEPSEEK_API_KEY=
+ANTHROPIC_API_KEY=
+```
+
+Load `.env` in your current terminal session:
+
+```bash
+set -a
+. /workspace/.env
+set +a
+```
+
+Run live API tests (feature-gated and ignored by default):
+
+```bash
+cargo test --features live-api-tests -- --ignored --nocapture
+```
+
+Run one provider only:
+
+```bash
+cargo test --features live-api-tests test_openai -- --ignored --nocapture
 ```
 
 ### CLI Tools (Armory)
@@ -533,21 +599,21 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create memory system
     let garrison = Arc::new(InMemoryGarrison::new(GarrisonConfig::default()));
-    
+
     // Build agent
     let paladin = PaladinBuilder::new(llm_port)
         .name("Assistant")
         .system_prompt("You are a helpful AI assistant.")
         .with_garrison(garrison.clone())
         .build()?;
-    
+
     // Execute with memory
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, 30000));
     let service = PaladinExecutionService::new(llm_port, circuit_breaker, Some(garrison));
-    
+
     let result = service.execute(&paladin, "What is Rust?").await?;
     println!("Response: {}", result.content);
-    
+
     Ok(())
 }
 ```
@@ -579,14 +645,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         create_paladin("processor", "Process the analyzed data"),
         create_paladin("summarizer", "Create a summary"),
     ];
-    
+
     let config = BattalionConfig::default();
     let formation = Formation::new(paladins, config)?;
-    
+
     // Execute: output from each Paladin flows to the next
     let service = FormationExecutionService::new(llm_port);
     let result = service.execute(&formation, "Process this data").await?;
-    
+
     println!("Final result: {:?}", result);
     Ok(())
 }
@@ -608,15 +674,15 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create expert Paladins for discussion
-    let security_expert = create_paladin("SecurityExpert", 
+    let security_expert = create_paladin("SecurityExpert",
         "You are a security expert focused on authentication best practices");
     let legal_expert = create_paladin("LegalExpert",
         "You are a legal expert focused on compliance and privacy regulations");
     let tech_lead = create_paladin("TechLead",
         "You are a technical lead focused on implementation feasibility");
-    
+
     let paladins = vec![security_expert, legal_expert, tech_lead];
-    
+
     // Build the Council with structured discussion rules
     let council = CouncilBuilder::new()
         .name("2FA Implementation Council")
@@ -624,7 +690,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .turn_strategy(TurnStrategy::RoundRobin)  // Each expert takes turns
         .termination_condition(TerminationCondition::MaxRounds(3))  // 3 rounds of discussion
         .build()?;
-    
+
     // Execute the discussion
     let council_service = CouncilExecutionService::new(llm_port);
     let result = council_service.execute(
@@ -632,12 +698,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &paladins,
         "Should we implement two-factor authentication for our application?"
     ).await?;
-    
+
     // View the discussion transcript
     println!("📜 Discussion Summary:");
     println!("{}", result.summary);
     println!("\n🗣️ Total Turns: {}", result.total_turns);
-    
+
     Ok(())
 }
 ```
@@ -671,7 +737,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_keywords(vec!["encryption", "keys", "certificates"]))
         .add_agent(TreeAgent::new("AccessControlSpecialist")
             .with_keywords(vec!["authorization", "permissions", "rbac"]));
-    
+
     // Create Performance Experts Tree
     let performance_tree = Tree::new("Performance Experts")
         .add_agent(TreeAgent::new("DatabaseOptimizer")
@@ -680,7 +746,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_keywords(vec!["cache", "redis", "latency"]))
         .add_agent(TreeAgent::new("LoadBalancer")
             .with_keywords(vec!["load", "scaling", "throughput"]));
-    
+
     // Build the Grove with keyword-based routing
     let grove = GroveBuilder::new()
         .name("Expert Task Router")
@@ -692,26 +758,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             confidence_threshold: 0.6,
         })
         .build()?;
-    
+
     // Execute with automatic routing
     let grove_service = GroveExecutionService::new(llm_port);
-    
+
     // Routes to Security Experts Tree → CryptoExpert
     let result1 = grove_service.execute(
         &grove,
         "How should we implement TLS certificate rotation?"
     ).await?;
-    
+
     println!("✓ Routed to: {}", result1.selected_tree);
     println!("✓ Agent: {}", result1.selected_agent);
     println!("✓ Confidence: {:.2}%", result1.routing_confidence * 100.0);
-    
-    // Routes to Performance Experts Tree → CachingExpert  
+
+    // Routes to Performance Experts Tree → CachingExpert
     let result2 = grove_service.execute(
         &grove,
         "What caching strategy should we use to reduce latency?"
     ).await?;
-    
+
     Ok(())
 }
 ```

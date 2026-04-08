@@ -5,9 +5,7 @@ use uuid::Uuid;
 use paladin::application::ports::output::llm_port::{LlmError, LlmPort, LlmRequest};
 use paladin::core::platform::container::content::{ContentItem, ContentType, TextContent};
 use paladin::core::platform::container::prompt::{PromptItem, PromptRole, PromptType, TextPrompt};
-use paladin::infrastructure::adapters::output::openai_llm_adapter::{
-    OpenAIConfig, OpenAILlmAdapter,
-};
+use paladin::infrastructure::adapters::llm::openai_adapter::{OpenAIAdapter, OpenAIConfig};
 
 #[tokio::test]
 #[ignore] // Use `cargo test openai_content_analysis_integration::test_openai_integration -- --ignored` to run this test
@@ -22,7 +20,7 @@ async fn test_openai_integration() {
     }
 
     let adapter =
-        OpenAILlmAdapter::from_env().expect("Failed to create OpenAI adapter from environment");
+        OpenAIAdapter::from_env().expect("Failed to create OpenAI adapter from environment");
 
     // Create a simple test prompt
     let prompt = PromptItem::new_with_title(
@@ -106,39 +104,27 @@ async fn test_openai_integration() {
 #[tokio::test]
 async fn test_adapter_configuration() {
     // Test config validation without making API calls
-    let config = OpenAIConfig::new(
-        "test-key".to_string(),
-        "https://api.openai.com/v1".to_string(),
-    );
+    let config = OpenAIConfig::new("test-key".to_string());
 
     assert!(config.validate().is_ok(), "Config should be valid");
 
     // Test invalid configs
-    let invalid_config = OpenAIConfig::new("".to_string(), "https://api.openai.com/v1".to_string());
+    let invalid_config = OpenAIConfig::new("".to_string());
     assert!(
         invalid_config.validate().is_err(),
         "Empty API key should be invalid"
-    );
-
-    let invalid_url_config = OpenAIConfig::new("test-key".to_string(), "not-a-url".to_string());
-    assert!(
-        invalid_url_config.validate().is_err(),
-        "Invalid URL should be invalid"
     );
 }
 
 #[tokio::test]
 async fn test_model_mapping() {
     // Test the adapter's model mapping without API calls
-    let config = OpenAIConfig::new(
-        "test-key".to_string(),
-        "https://api.openai.com/v1".to_string(),
-    );
+    let config = OpenAIConfig::new("test-key".to_string());
 
-    let adapter = OpenAILlmAdapter::new(config).expect("Should create adapter");
+    let adapter = OpenAIAdapter::new(config).expect("Should create adapter");
 
     // Test that the adapter can be created (validates our implementation)
-    assert_eq!(adapter.get_provider_name(), "OpenAI");
+    assert_eq!(adapter.get_provider_name(), "openai");
 }
 
 #[tokio::test]
@@ -153,7 +139,7 @@ async fn test_openai_models() {
     }
 
     let adapter =
-        OpenAILlmAdapter::from_env().expect("Failed to create OpenAI adapter from environment");
+        OpenAIAdapter::from_env().expect("Failed to create OpenAI adapter from environment");
 
     match adapter.get_available_models().await {
         Ok(models) => {

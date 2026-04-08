@@ -24,13 +24,25 @@ All examples require:
 - API keys for LLM providers (OpenAI, DeepSeek, or Anthropic)
 - Docker (for examples using Redis/MinIO)
 
-Set your API key:
+Set API keys (recommended: keep them in `/workspace/.env`):
 ```bash
 export OPENAI_API_KEY="your-api-key-here"
 # or
 export DEEPSEEK_API_KEY="your-api-key-here"
 # or
 export ANTHROPIC_API_KEY="your-api-key-here"
+```
+
+Or use a persistent file in this DevContainer:
+
+```bash
+cp .env.example .env
+# edit .env and set OPENAI_API_KEY / DEEPSEEK_API_KEY / ANTHROPIC_API_KEY
+
+# load for current terminal
+set -a
+. /workspace/.env
+set +a
 ```
 
 ## Basic Paladin Examples
@@ -1243,23 +1255,23 @@ use paladin::prelude::*;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load configuration
     let config = load_config()?;
-    
+
     // Initialize adapters with fallback
     let llm_adapter = create_llm_adapter(&config)
         .or_else(|_| create_fallback_adapter())?;
-    
+
     // Create Paladin with retries
     let paladin = PaladinBuilder::new(llm_adapter)
         .max_retries(3)
         .retry_delay(Duration::from_secs(1))
         .build()?;
-    
+
     // Execute with timeout
     let result = tokio::time::timeout(
         Duration::from_secs(60),
         paladin.execute(input)
     ).await??;
-    
+
     Ok(())
 }
 ```
@@ -1278,17 +1290,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
         .init();
-    
+
     info!("Starting Paladin execution");
-    
+
     let response = paladin.execute(input).await?;
-    
+
     info!(
         tokens = response.token_usage.total_tokens,
         duration = ?response.execution_time,
         "Execution completed"
     );
-    
+
     Ok(())
 }
 ```
@@ -1372,7 +1384,7 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load API key
     let api_key = std::env::var("OPENAI_API_KEY")?;
-    
+
     // Create LLM adapter
     let llm_adapter = Arc::new(
         OpenAiAdapter::new()
@@ -1380,17 +1392,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .model("gpt-4")
             .build()?
     );
-    
+
     // Create Paladin
     let paladin = PaladinBuilder::new(llm_adapter)
         .name("MyPaladin")
         .system_prompt("You are a helpful assistant.")
         .build()?;
-    
+
     // Execute
     let response = paladin.execute("Hello!").await?;
     println!("{}", response.content);
-    
+
     Ok(())
 }
 ```
@@ -1416,13 +1428,16 @@ cargo check --example basic_paladin
 ### Missing API Key
 
 ```bash
-# Set in environment
-export OPENAI_API_KEY="sk-..."
+# Preferred: use .env in workspace
+cp .env.example .env
+# set OPENAI_API_KEY=sk-... in .env
 
-# Or create .env file
-echo "OPENAI_API_KEY=sk-..." > .env
+# Load into current terminal
+set -a
+. /workspace/.env
+set +a
 
-# Then run with dotenv
+# Then run example
 cargo run --example basic_paladin
 ```
 

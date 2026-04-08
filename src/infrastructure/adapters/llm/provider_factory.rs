@@ -299,25 +299,25 @@ mod tests {
     fn test_case_insensitive_provider_names() {
         let factory = LlmProviderFactory::new();
 
-        // All these should fail with configuration missing (not unknown provider)
-        // because the provider names are recognized
+        // All these should work case-insensitively
+        // If API keys are present in env, they succeed; if not, they fail with ConfigurationMissing
+        // But they should NEVER fail with UnknownProvider (case sensitivity is working)
         let result1 = factory.create("DeepSeek");
         let result2 = factory.create("DEEPSEEK");
         let result3 = factory.create("deepseek");
 
-        // All should be configuration errors, not unknown provider errors
-        assert!(matches!(
-            result1.err().unwrap(),
-            ProviderFactoryError::ConfigurationMissing(_)
-        ));
-        assert!(matches!(
-            result2.err().unwrap(),
-            ProviderFactoryError::ConfigurationMissing(_)
-        ));
-        assert!(matches!(
-            result3.err().unwrap(),
-            ProviderFactoryError::ConfigurationMissing(_)
-        ));
+        // All should either succeed (if DEEPSEEK_API_KEY is set) or fail with ConfigurationMissing
+        // None should fail with UnknownProvider (which would indicate case sensitivity issue)
+        for result in [result1, result2, result3] {
+            match result {
+                Ok(_) => {} // Success is fine if API key is present
+                Err(ProviderFactoryError::ConfigurationMissing(_)) => {} // Expected without API key
+                Err(ProviderFactoryError::UnknownProvider(_)) => {
+                    panic!("Provider name not recognized - case insensitivity not working");
+                }
+                Err(e) => panic!("Unexpected error: {:?}", e),
+            }
+        }
     }
 
     #[test]

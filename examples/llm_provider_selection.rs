@@ -111,11 +111,15 @@ fn show_anthropic_config() {
 fn show_openai_config() {
     println!("📝 OpenAI Configuration:");
     println!();
-    println!("   let adapter = OpenAILlmAdapter::new(");
+    println!("   // Option 1: From environment");
+    println!("   let adapter = OpenAIAdapter::from_env()?;");
+    println!();
+    println!("   // Option 2: Custom configuration");
+    println!("   let config = OpenAIConfig::new(");
     println!("       api_key,");
-    println!("       None, // Use default base URL");
-    println!("       Some(Duration::from_secs(30))");
-    println!("   )?;");
+    println!("       \"https://api.openai.com/v1\".to_string()");
+    println!("   );");
+    println!("   let adapter = OpenAIAdapter::new(config)?;");
     println!();
 }
 
@@ -129,11 +133,8 @@ fn show_practical_example() {
     println!("           Arc::new(AnthropicAdapter::new(config)?)");
     println!("       }} else {{");
     println!("           // Fallback to OpenAI");
-    println!("           Arc::new(OpenAILlmAdapter::new(");
-    println!("               std::env::var(\"OPENAI_API_KEY\")?,");
-    println!("               None,");
-    println!("               Some(Duration::from_secs(30))");
-    println!("           )?)");
+    println!("           let config = OpenAIConfig::from_env()?;");
+    println!("           Arc::new(OpenAIAdapter::new(config)?)");
     println!("       }};");
     println!();
     println!("   // Use with Paladin builder");
