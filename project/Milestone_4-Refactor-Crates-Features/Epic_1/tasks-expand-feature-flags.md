@@ -129,17 +129,17 @@ git commit -m "..."
   - [x] 6.7 Run `cargo check --no-default-features --features "vision,llm-openai"` to confirm vision+openai compiles
   - [x] 6.8 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
-- [ ] 7.0 Implement MCP Arsenal feature flag (`mcp-arsenal`)
-  - [ ] 7.1 In `Cargo.toml` `[features]`, add: `mcp-arsenal = []` (all MCP deps are pure Rust; no external crate to mark optional)
-  - [ ] 7.2 In `src/infrastructure/adapters/arsenal/mod.rs`, wrap `pub mod mcp_protocol;`, `pub mod mcp_sse_adapter;`, `pub mod mcp_stdio_adapter;`, `pub mod resource_controls;`, and `pub mod tool_result_formatter;` with `#[cfg(feature = "mcp-arsenal")]`
-  - [ ] 7.3 In `src/infrastructure/adapters/mod.rs`, wrap `pub mod arsenal;` with `#[cfg(feature = "mcp-arsenal")]`
-  - [ ] 7.4 Run `cargo check --no-default-features` to confirm arsenal is excluded
-  - [ ] 7.5 Run `cargo check --no-default-features --features mcp-arsenal` to confirm arsenal compiles
-  - [ ] 7.6 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
+- ~~[ ] 7.0 Implement MCP Arsenal feature flag (`mcp-arsenal`)~~ **ELIMINATED** — Deemed unnecessary complexity; Arsenal remains unconditionally compiled as a core framework component
+  - ~~[ ] 7.1 In `Cargo.toml` `[features]`, add: `mcp-arsenal = []` (all MCP deps are pure Rust; no external crate to mark optional)~~
+  - ~~[ ] 7.2 In `src/infrastructure/adapters/arsenal/mod.rs`, wrap `pub mod mcp_protocol;`, `pub mod mcp_sse_adapter;`, `pub mod mcp_stdio_adapter;`, `pub mod resource_controls;`, and `pub mod tool_result_formatter;` with `#[cfg(feature = "mcp-arsenal")]`~~
+  - ~~[ ] 7.3 In `src/infrastructure/adapters/mod.rs`, wrap `pub mod arsenal;` with `#[cfg(feature = "mcp-arsenal")]`~~
+  - ~~[ ] 7.4 Run `cargo check --no-default-features` to confirm arsenal is excluded~~
+  - ~~[ ] 7.5 Run `cargo check --no-default-features --features mcp-arsenal` to confirm arsenal compiles~~
+  - ~~[ ] 7.6 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit~~
 
 - [ ] 8.0 Revise default feature set and add `full` convenience flag
   - [ ] 8.1 In `Cargo.toml` `[features]`, change `default = ["redis-queue", "s3-storage", "openai-embeddings"]` to `default = ["llm-openai"]`
-  - [ ] 8.2 Add `full = ["llm-all", "content-processing", "web-server", "notifications", "vision", "mcp-arsenal", "redis-queue", "s3-storage", "openai-embeddings", "qdrant"]`
+  - [ ] 8.2 Add `full = ["llm-all", "content-processing", "web-server", "notifications", "vision", "redis-queue", "s3-storage", "openai-embeddings", "qdrant"]`
   - [ ] 8.3 Run `cargo build` (default features) and confirm it compiles cleanly with only `llm-openai`
   - [ ] 8.4 Run `cargo build --no-default-features` and confirm the core-only build succeeds
   - [ ] 8.5 Run `cargo build --all-features` and confirm the full build succeeds

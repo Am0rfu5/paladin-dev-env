@@ -12,6 +12,8 @@ The Paladin framework currently compiles approximately 60 direct dependencies un
 
 This PRD defines the expansion of Cargo feature flags from the current 5 thin flags to a comprehensive gating surface that allows consumers to compile **only what they use**. The implementation is phased by subsystem to minimize integration risk and allow incremental testing.
 
+**NOTE (2026-04-15):** The originally planned `mcp-arsenal` feature flag (Task 7.0) has been **eliminated from scope**. Arsenal and its MCP transport adapters will remain unconditionally compiled as core framework components. The complexity of gating the Arsenal subsystem was deemed unnecessary given its pervasive use throughout the framework and minimal dependency overhead (pure Rust implementation).
+
 ---
 
 ## Problem Statement
@@ -111,7 +113,7 @@ The following feature flags **must** be implemented:
 - `web-server` — Gates both `actix-web` and `axum` frameworks and all HTTP/API infrastructure (both are present in Cargo.toml)
 - `notifications` — Gates Lettre and notification publisher adapters
 - `vision` — Gates vision pipeline, vision adapters (`openai_vision.rs`, `anthropic_vision.rs`), Sentinel Vision encryption deps (`chacha20poly1305`, `zeroize`), and `VisionPort`/`VisionCapableLlm` trait implementations
-- `mcp-arsenal` — Gates MCP (Model Context Protocol) tool integration adapters
+- ~~`mcp-arsenal`~~ — **ELIMINATED:** Arsenal remains unconditionally compiled
 
 #### Existing Flags (Retained)
 - `redis-queue` — Existing, unchanged
@@ -121,7 +123,7 @@ The following feature flags **must** be implemented:
 - `integration-tests` — Existing, unchanged
 
 #### Convenience Flags
-- `full` — Enables all optional features: all LLM providers, content-processing, web-server, notifications, vision, mcp-arsenal, redis-queue, s3-storage, openai-embeddings, qdrant
+- `full` — Enables all optional features: all LLM providers, content-processing, web-server, notifications, vision, redis-queue, s3-storage, openai-embeddings, qdrant
 
 ### FR2: Default Feature Set
 
@@ -286,9 +288,10 @@ This work is **phased by subsystem** to allow incremental testing and reduce ris
 **Deliverable:** `web-server` and `notifications` flags implemented
 **Estimated Duration:** 1-2 weeks
 
-### Phase 4: Vision & MCP Arsenal Flags
-**Deliverable:** `vision` and `mcp-arsenal` flags implemented
+### Phase 4: Vision Flag
+**Deliverable:** `vision` flag implemented
 **Estimated Duration:** 1 week
+**Note:** `mcp-arsenal` flag originally planned for this phase has been eliminated from scope.
 
 ### Phase 5: Default Features & CI Integration
 **Deliverable:** Default features updated, CI matrix configured, documentation complete

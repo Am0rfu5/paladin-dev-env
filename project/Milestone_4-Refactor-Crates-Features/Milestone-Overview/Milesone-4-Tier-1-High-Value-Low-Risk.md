@@ -87,7 +87,7 @@ The existing feature flag pattern for `redis` and `rust-s3` is correct and well-
    - **Vision Pipeline:** `vision` (gates vision-related adapters and the Sentinel Vision System).
    - **Web Server:** `web-server` (gates `actix-web` and all web/API infrastructure).
    - **Notification Adapters:** `notifications` (gates `lettre` and notification publisher adapters).
-   - **MCP Arsenal:** `mcp-arsenal` (gates MCP tool integration adapters).
+   - **MCP Transports:** `mcp-stdio`, `mcp-sse` (or combined `mcp-transports`) — gates the concrete MCP transport adapters (`MCPStdioAdapter`, `MCPSseAdapter`) and their infrastructure dependencies. The Arsenal domain types (`Armament`, `ArmamentCall`, `ArsenalPort`, `ArsenalRegistry`) and application services (`ArsenalExecutionService`, `ArsenalRegistryService`) remain unconditionally compiled as core framework components.
    - **Existing flags retained:** `redis-queue`, `s3-storage`, `openai-embeddings`, `qdrant`.
 2. A new `full` convenience feature enables all optional features.
 3. The `default` feature set is revised to include only the minimal viable surface for agent orchestration (core + battalion + one LLM provider).
@@ -143,13 +143,16 @@ The existing feature flag pattern for `redis` and `rust-s3` is correct and well-
 
 **Estimated Effort:** Medium
 
-#### Task 1.5: Implement Notification and Vision Feature Flags
+#### Task 1.5: Implement Notification, Vision, and MCP Transport Feature Flags
 
-**Description:** Gate notification adapters (`lettre`, email/SMS/push publishers) behind `notifications` and vision pipeline adapters behind `vision`. Gate MCP Arsenal tool integration behind `mcp-arsenal`.
+**Description:** Gate notification adapters (`lettre`, email/SMS/push publishers) behind `notifications` and vision pipeline adapters behind `vision`. Gate the concrete MCP transport adapters behind `mcp-transports` (or split as `mcp-stdio` / `mcp-sse`).
+
+**Important distinction:** The Arsenal domain types (`Armament`, `ArmamentCall`, `ArmamentResult`, `ArsenalError`), port traits (`ArsenalPort`, `ArsenalRegistry`), and application services (`ArsenalExecutionService`, `ArsenalRegistryService`) are **not gated** — they are core framework components used pervasively by `PaladinBuilder`, `PaladinExecutionService`, all battalion execution services, and the CLI. The Arsenal is the agent's toolkit abstraction (tools, skills, prompts, instructions, and future extensions beyond MCP), not merely an MCP integration layer. Gating it would require `#[cfg]` guards across every execution path in the framework for negligible dependency savings (the Arsenal core depends only on `serde`, `serde_json`, `uuid`, and `async-trait`). Only the **infrastructure transport adapters** that connect to external MCP servers via subprocess (STDIO) or HTTP (SSE) — and their dependencies (`tokio::process`, protocol serialization, HTTP client configuration) — are gated.
 
 **Deliverables:**
-- Three new feature flags: `notifications`, `vision`, `mcp-arsenal`.
-- `#[cfg]` guards on all affected modules and their downstream registrations.
+- Three new feature flags: `notifications`, `vision`, `mcp-transports`.
+- `#[cfg]` guards on notification adapters, vision adapters, and MCP transport adapter modules.
+- Arsenal domain types, port traits, and application services compile unconditionally.
 - Dependency isolation verified for each flag independently.
 
 **Estimated Effort:** Medium
@@ -444,7 +447,11 @@ openai-embeddings = []
 qdrant = ["qdrant-client"]
 content-processing = ["pdf-extract", "scraper", "tiktoken-rs", "rss"]
 vision = []
-mcp-arsenal = []
+
+# MCP Transport Adapters (Arsenal domain types are always compiled)
+mcp-transports = ["mcp-stdio", "mcp-sse"]
+mcp-stdio = []
+mcp-sse = []
 
 # CLI (binary-only)
 cli = ["clap", "dialoguer", "indicatif", "comfy-table", "colored", "console"]
@@ -453,7 +460,7 @@ cli = ["clap", "dialoguer", "indicatif", "comfy-table", "colored", "console"]
 full = [
     "llm-all", "redis-queue", "s3-storage", "web-server",
     "notifications", "openai-embeddings", "qdrant",
-    "content-processing", "vision", "mcp-arsenal", "cli"
+    "content-processing", "vision", "mcp-transports", "cli"
 ]
 
 # Testing
@@ -471,7 +478,7 @@ live-api-tests = []
 | `EmbeddingPort` | `ports::output::embedding_port` | Output | Text embedding generation |
 | `QueuePort` | `ports::output::queue_port` | Output | Distributed task queue |
 | `NotificationPort` | `ports::output::notification_port` | Output | Notification publishing |
-| `ArsenalPort` | `ports::output::arsenal_port` | Output | MCP tool integration |
+| `ArsenalPort` | `ports::output::arsenal_port` | Output | Tool execution (core — always compiled) |
 | `LogPort` | `ports::output::log_port` | Output | Structured logging |
 | `SearchPort` | `ports::output::search_port` | Output | Search engine integration |
 | `FileStoragePort` | `ports::output::file_storage_port` | Output | Object/file storage |
