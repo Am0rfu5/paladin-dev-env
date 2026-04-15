@@ -1,8 +1,9 @@
 # =============================================================================
 # Development Container for Paladin
 # Optimized for development with all tools and debugging capabilities
+# Note: Using Bookworm (Debian 12) for OpenSSL 3.x support required by cargo-public-api
 # =============================================================================
-FROM rust:1.93-slim-bullseye
+FROM rust:1.93-slim-bookworm
 
 # Set working directory
 WORKDIR /workspace

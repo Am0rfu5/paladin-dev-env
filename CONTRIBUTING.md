@@ -496,6 +496,156 @@ cargo doc --no-deps --open
 - Use proper markdown formatting
 - Add diagrams where helpful
 
+## API Change Process
+
+Paladin maintains a **stable public API contract** defined in [STABLE_API.md](STABLE_API.md). Changes to the public API must follow this process.
+
+### What is Considered a Public API Change?
+
+Changes to any of the following require the API change process:
+
+- **Port traits** (all traits in `src/application/ports/`)
+- **Domain entities** (types in `src/core/platform/container/`)
+- **Builders** (PaladinBuilder, CommanderBuilder, etc.)
+- **Configuration types** (ApplicationSettings, etc.)
+- **Error types** (all public error enums)
+- **Public exports** from `src/lib.rs`
+
+### Process for Non-Breaking API Changes
+
+**Non-breaking changes** include:
+- Adding new methods with default implementations to traits
+- Adding new types/modules
+- Adding new optional parameters with defaults
+- Expanding enum variants (with `#[non_exhaustive]`)
+
+**Steps:**
+1. Make the changes
+2. Add comprehensive rustdoc with examples
+3. Run API tracking: `./scripts/extract-public-api.sh`
+4. Review the diff: `./scripts/check-api-surface.sh`
+5. Update `CHANGELOG.md` under "Added" section
+6. Submit PR with "feat:" prefix
+7. After approval, update baseline: `./scripts/extract-public-api.sh project/current-exports.txt`
+
+### Process for Breaking API Changes
+
+**Breaking changes** include:
+- Removing public types, traits, or methods
+- Changing method signatures
+- Removing trait methods
+- Changing error types
+- Renaming public items
+
+**Steps:**
+1. **Open an Issue First**
+   - Describe the breaking change
+   - Explain the motivation
+   - Propose the migration path
+   - Get consensus from maintainers
+
+2. **Add Deprecation Warning (for removals)**
+   ```rust
+   #[deprecated(since = "0.2.0", note = "Use `NewType` instead. See MIGRATION.md for details.")]
+   pub struct OldType { /* ... */ }
+   ```
+
+3. **Update Documentation**
+   - Add migration guide to `docs/MIGRATION.md`
+   - Update `STABLE_API.md` with new API
+   - Update all examples
+   - Update rustdoc with examples
+
+4. **Run Deprecation Checks**
+   ```bash
+   ./scripts/check-deprecations.sh
+   ```
+
+5. **Update CHANGELOG**
+   - Add entry under "Breaking Changes" section
+   - Link to migration guide
+
+6. **Submit PR**
+   - Use "feat!:" or "fix!:" prefix (note the `!`)
+   - Include breaking change details in PR description
+   - Reference the tracking issue
+
+7. **After Approval**
+   - Update API baseline: `./scripts/extract-public-api.sh project/current-exports.txt`
+   - Version will be bumped according to semver (0.x.0 → 0.y.0 or x.0.0 → y.0.0)
+
+### API Tracking Scripts
+
+```bash
+# Extract current public API surface
+./scripts/extract-public-api.sh project/current-exports.txt
+
+# Check for API changes (CI uses this)
+./scripts/check-api-surface.sh project/current-exports.txt
+
+# Verify deprecation warnings compile correctly
+./scripts/check-deprecations.sh
+```
+
+### CI Enforcement
+
+The CI pipeline automatically:
+- Checks for API surface changes
+- Fails if API changed without updating baseline
+- Validates deprecation warnings compile
+- Ensures all public items have rustdoc
+
+If CI fails due to API changes:
+1. Review the diff shown in CI output
+2. Verify changes are intentional
+3. Follow the appropriate process above
+4. Update the baseline if approved
+
+### Examples of API Changes
+
+**✅ Non-Breaking - Adding Optional Method**:
+```rust
+pub trait LlmPort: Send + Sync {
+    async fn generate(&self, request: &LlmRequest) -> Result<LlmResponse, LlmError>;
+
+    // New method with default implementation
+    async fn generate_with_retry(&self, request: &LlmRequest, retries: u32) -> Result<LlmResponse, LlmError> {
+        // Default implementation
+        self.generate(request).await
+    }
+}
+```
+
+**❌ Breaking - Changing Method Signature**:
+```rust
+// Old
+async fn generate(&self, prompt: &str) -> Result<String, LlmError>;
+
+// New (BREAKING!)
+async fn generate(&self, request: &LlmRequest) -> Result<LlmResponse, LlmError>;
+```
+
+**✅ Correct Way - Deprecate Then Remove**:
+```rust
+// Version 0.1.0 - Original
+async fn generate(&self, prompt: &str) -> Result<String, LlmError>;
+
+// Version 0.2.0 - Add new, deprecate old
+#[deprecated(since = "0.2.0", note = "Use `generate_with_request` instead")]
+async fn generate(&self, prompt: &str) -> Result<String, LlmError>;
+async fn generate_with_request(&self, request: &LlmRequest) -> Result<LlmResponse, LlmError>;
+
+// Version 1.0.0 - Remove deprecated
+async fn generate_with_request(&self, request: &LlmRequest) -> Result<LlmResponse, LlmError>;
+```
+
+### Questions?
+
+For questions about API changes:
+- Review [STABLE_API.md](STABLE_API.md)
+- Open an issue with the `api-stability` label
+- Ask in GitHub Discussions
+
 ## Pull Request Process
 
 ### Before Submitting

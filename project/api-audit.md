@@ -1,7 +1,7 @@
 # Public API Surface Audit - Epic 2: Harden Port Traits
 
-**Created:** 2026-04-15  
-**Epic:** Epic 2 - Milestone 4, Tier 1  
+**Created:** 2026-04-15
+**Epic:** Epic 2 - Milestone 4, Tier 1
 **Purpose:** Classify all currently exported types to determine the stable public API surface
 
 ---

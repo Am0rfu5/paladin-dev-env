@@ -5,8 +5,9 @@
 # =============================================================================
 # Stage 1: Build Dependencies (Chef)
 # Caches Rust dependencies separately from application code
+# Note: Using Bookworm (Debian 12) for OpenSSL 3.x support
 # =============================================================================
-FROM rust:1.93-slim-bullseye AS chef
+FROM rust:1.93-slim-bookworm AS chef
 WORKDIR /app
 
 # Install cargo-chef for dependency caching

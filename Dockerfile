@@ -5,8 +5,9 @@
 # =============================================================================
 # Stage 1: Builder
 # Builds the application with all dependencies
+# Note: Using Bookworm (Debian 12) for OpenSSL 3.x support
 # =============================================================================
-FROM rust:1.93-slim-bullseye AS builder
+FROM rust:1.93-slim-bookworm AS builder
 WORKDIR /app
 
 # Install required build dependencies
@@ -38,7 +39,7 @@ WORKDIR /app
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
-    libssl1.1 \
+    libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder

@@ -54,6 +54,57 @@ jobs:
       - name: Check documentation
         run: cargo doc --no-deps --document-private-items
 
+  # API surface tracking
+  api-surface:
+    name: API Surface Tracking
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install nightly toolchain
+        run: rustup toolchain install nightly
+
+      - name: Install cargo-public-api
+        run: cargo install cargo-public-api
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-api-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+
+      - name: Check API surface changes
+        run: ./scripts/check-api-surface.sh project/current-exports.txt
+
+      - name: Check deprecation warnings
+        run: ./scripts/check-deprecations.sh
+
+      - name: Generate API diff on failure
+        if: failure()
+        run: |
+          echo "API surface has changed. Generating diff..."
+          ./scripts/extract-public-api.sh /tmp/current-api.txt
+          diff -u project/current-exports.txt /tmp/current-api.txt || true
+          echo ""
+          echo "If this change is intentional:"
+          echo "  1. Review the changes carefully"
+          echo "  2. Update CHANGELOG.md with breaking changes"
+          echo "  3. Update the baseline: ./scripts/extract-public-api.sh project/current-exports.txt"
+          echo "  4. Commit the updated baseline"
+
   # Unit tests
   test:
     name: Unit Tests
@@ -158,7 +209,7 @@ jobs:
             fi
             sleep 1
           done
-          
+
           echo "Waiting for MinIO..."
           for i in {1..30}; do
             if curl -f http://localhost:9010/minio/health/live; then
@@ -180,7 +231,7 @@ jobs:
         run: |
           echo "Running Redis integration tests..."
           cargo test redis_queue_integration_tests --release -- --ignored --nocapture
-          
+
           echo "Running file storage integration tests..."
           cargo test file_storage_integration_tests --release -- --ignored --nocapture
 
@@ -272,10 +323,10 @@ jobs:
         run: |
           # Check Redis
           docker-compose exec -T redis redis-cli ping
-          
+
           # Check MinIO
           curl -f http://localhost:9000/minio/health/live
-          
+
           # Check application (if health endpoint exists)
           timeout 60 bash -c 'until curl -f http://localhost:8080/health 2>/dev/null; do sleep 2; done' || echo "App health check skipped"
 
