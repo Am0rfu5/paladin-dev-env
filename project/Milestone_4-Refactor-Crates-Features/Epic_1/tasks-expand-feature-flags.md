@@ -102,14 +102,14 @@ git commit -m "..."
   - [x] 3.8 Run `cargo check --no-default-features --features content-processing` and confirm it compiles
   - [x] 3.9 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
-- [ ] 4.0 Implement Web Server feature flag (`web-server`)
-  - [ ] 4.1 In `Cargo.toml` `[dependencies]`, mark `actix-web` and `axum` as `optional = true`
-  - [ ] 4.2 In `Cargo.toml` `[features]`, add: `web-server = ["actix-web", "axum"]`
-  - [ ] 4.3 In `src/infrastructure/mod.rs`, wrap the `pub mod web;` declaration with `#[cfg(feature = "web-server")]`
-  - [ ] 4.4 In `src/infrastructure/adapters/output/mod.rs`, wrap `pub mod api_content_deliverer;` with `#[cfg(feature = "web-server")]`
-  - [ ] 4.5 Run `cargo check --no-default-features` to confirm actix-web and axum are excluded
-  - [ ] 4.6 Run `cargo check --no-default-features --features web-server` to confirm the module compiles with the flag
-  - [ ] 4.7 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
+- [x] 4.0 Implement Web Server feature flag (`web-server`)
+  - [x] 4.1 In `Cargo.toml` `[dependencies]`, mark `actix-web` and `axum` as `optional = true`
+  - [x] 4.2 In `Cargo.toml` `[features]`, add: `web-server = ["actix-web", "axum"]`
+  - [x] 4.3 In `src/infrastructure/mod.rs`, wrap the `pub mod web;` declaration with `#[cfg(feature = "web-server")]`
+  - [x] 4.4 In `src/infrastructure/adapters/output/mod.rs`, wrap `pub mod api_content_deliverer;` with `#[cfg(feature = "web-server")]`
+  - [x] 4.5 Run `cargo check --no-default-features` to confirm actix-web and axum are excluded
+  - [x] 4.6 Run `cargo check --no-default-features --features web-server` to confirm the module compiles with the flag
+  - [x] 4.7 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
 - [ ] 5.0 Implement Notifications feature flag (`notifications`)
   - [ ] 5.1 In `Cargo.toml` `[dependencies]`, mark `lettre` as `optional = true`; assess whether `handlebars` is also exclusively used for notifications (if so, mark it optional too)

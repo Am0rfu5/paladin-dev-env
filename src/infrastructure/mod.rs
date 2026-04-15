@@ -169,4 +169,5 @@
 pub mod adapters;
 pub mod repositories;
 pub mod security;
+#[cfg(feature = "web-server")]
 pub mod web;

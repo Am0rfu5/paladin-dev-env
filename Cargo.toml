@@ -18,7 +18,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
 rss = { version = "2.0", optional = true }
 scraper = { version = "0.23.1", optional = true }
-actix-web = "4.0"
+actix-web = { version = "4.0", optional = true }
 structopt = "0.3"
 tokio = { version = "1", features = ["full"] }
 tokio-util = "0.7"
@@ -55,7 +55,7 @@ rust-s3 = { version = "0.35.1", optional = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 testcontainers-modules = { version = "0.12.1", features = ["minio"]}
 argon2 = "0.5.3"
-axum = "0.8.4"
+axum = { version = "0.8.4", optional = true }
 clap = { version = "4.5.40", features = ["derive", "cargo", "env"] }
 petgraph = "0.6"
 rand = "0.8"
@@ -169,6 +169,7 @@ llm-deepseek = []
 llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]
 vision = []
 content-processing = ["pdf-extract", "scraper", "tiktoken-rs", "rss"]
+web-server = ["actix-web", "axum"]
 
 # Performance optimizations for Redis
 [profile.release]

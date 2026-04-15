@@ -5,6 +5,8 @@
 //! - Integration with `ApiContentDeliverer` via `with_scheduler()`
 //! - Multiple concurrent jobs
 
+#![cfg(feature = "web-server")]
+
 use async_trait::async_trait;
 use chrono::Utc;
 use paladin::application::ports::output::content_delivery_port::{
