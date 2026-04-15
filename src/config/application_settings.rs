@@ -1,4 +1,5 @@
 use crate::core::platform::container::garrison::EvictionStrategy;
+#[cfg(feature = "s3-storage")]
 use crate::infrastructure::adapters::file_storage::minio::MinioConfig;
 use crate::infrastructure::adapters::notifications::{EmailAdapterConfig, SystemAdapterConfig};
 use config::{Config, ConfigError, Environment, File};
@@ -1364,6 +1365,7 @@ impl Settings {
         config
     }
 
+    #[cfg(feature = "s3-storage")]
     /// Convert FileStorageConfig to MinioConfig
     pub fn to_minio_config(&self) -> MinioConfig {
         let fs_config = self.get_file_storage_config();
@@ -1532,6 +1534,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "s3-storage")]
     fn test_to_minio_config_conversion() {
         let settings = Settings::default();
         let minio_config = settings.to_minio_config();

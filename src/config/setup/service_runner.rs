@@ -10,8 +10,10 @@ use crate::core::platform::manager::event_manager::EventService;
 use crate::core::platform::manager::notification_service::NotificationService;
 use crate::core::platform::manager::scheduler::Scheduler;
 use crate::core::platform::manager::user_service::UserService;
+#[cfg(feature = "s3-storage")]
 use crate::infrastructure::adapters::file_storage::minio::MinioAdapter;
 use crate::infrastructure::adapters::logs::system_log_adapter::SystemLogAdapter;
+#[cfg(feature = "redis-queue")]
 use crate::infrastructure::adapters::queue::redis::RedisQueueAdapter;
 use crate::infrastructure::repositories::sqlite_content_repository::SqliteStore;
 use std::env;
@@ -28,7 +30,9 @@ pub struct ServiceRunner {
     notification_service: Option<Arc<NotificationService>>,
     user_service: Option<Arc<UserService>>,
     database: Option<SqliteStore>,
+    #[cfg(feature = "redis-queue")]
     queue_adapter: Option<Arc<RedisQueueAdapter>>,
+    #[cfg(feature = "s3-storage")]
     file_storage_adapter: Option<Arc<MinioAdapter>>,
     log_adapter: Option<Arc<SystemLogAdapter>>,
 }
@@ -42,7 +46,9 @@ impl ServiceRunner {
             event_service: None,
             user_service: None,
             database: None,
+            #[cfg(feature = "redis-queue")]
             queue_adapter: None,
+            #[cfg(feature = "s3-storage")]
             file_storage_adapter: None,
             log_adapter: None,
             notification_service: None,
@@ -67,48 +73,51 @@ impl ServiceRunner {
         println!("Log adapter initialized successfully");
 
         // Initialize Redis Queue Adapter
-        let queue_config = config.get_queue_config();
-        let redis_config = crate::infrastructure::adapters::queue::redis::RedisQueueConfig {
-            redis_host: queue_config.redis_host,
-            redis_port: queue_config.redis_port,
-            redis_password: queue_config.redis_password,
-            redis_db: queue_config.redis_db,
-            connection_timeout: queue_config.connection_timeout.unwrap_or(30),
-            key_prefix: queue_config
-                .key_prefix
-                .unwrap_or_else(|| "paladin:queue".to_string()),
-            max_retries: queue_config.max_retries.unwrap_or(3),
+        #[cfg(feature = "redis-queue")]
+        let queue_adapter = {
+            let queue_config = config.get_queue_config();
+            let redis_config = crate::infrastructure::adapters::queue::redis::RedisQueueConfig {
+                redis_host: queue_config.redis_host,
+                redis_port: queue_config.redis_port,
+                redis_password: queue_config.redis_password,
+                redis_db: queue_config.redis_db,
+                connection_timeout: queue_config.connection_timeout.unwrap_or(30),
+                key_prefix: queue_config
+                    .key_prefix
+                    .unwrap_or_else(|| "paladin:queue".to_string()),
+                max_retries: queue_config.max_retries.unwrap_or(3),
+            };
+            let qa = Arc::new(
+                RedisQueueAdapter::new(redis_config, Some(log_adapter.clone() as Arc<dyn LogPort>))
+                    .await
+                    .map_err(|e| format!("Failed to initialize Redis queue adapter: {}", e))?,
+            );
+            self.queue_adapter = Some(qa.clone());
+            qa.health_check()
+                .await
+                .map_err(|e| format!("Redis queue adapter health check failed: {}", e))?;
+            println!("Redis queue adapter initialized successfully");
+            qa
         };
 
-        let queue_adapter = Arc::new(
-            RedisQueueAdapter::new(redis_config, Some(log_adapter.clone() as Arc<dyn LogPort>))
-                .await
-                .map_err(|e| format!("Failed to initialize Redis queue adapter: {}", e))?,
-        );
-        self.queue_adapter = Some(queue_adapter.clone());
-
-        // Test Redis connection
-        queue_adapter
-            .health_check()
-            .await
-            .map_err(|e| format!("Redis queue adapter health check failed: {}", e))?;
-        println!("Redis queue adapter initialized successfully");
-
         // Initialize MinIO File Storage Adapter
-        let minio_config = config.to_minio_config();
-        let file_storage_adapter = Arc::new(
-            MinioAdapter::new(minio_config, Some(log_adapter.clone() as Arc<dyn LogPort>))
+        #[cfg(feature = "s3-storage")]
+        let file_storage_adapter = {
+            let minio_config = config.to_minio_config();
+            let fsa = Arc::new(
+                MinioAdapter::new(minio_config, Some(log_adapter.clone() as Arc<dyn LogPort>))
+                    .await
+                    .map_err(|e| {
+                        format!("Failed to initialize MinIO file storage adapter: {}", e)
+                    })?,
+            );
+            self.file_storage_adapter = Some(fsa.clone());
+            fsa.health_check()
                 .await
-                .map_err(|e| format!("Failed to initialize MinIO file storage adapter: {}", e))?,
-        );
-        self.file_storage_adapter = Some(file_storage_adapter.clone());
-
-        // Test MinIO connection
-        file_storage_adapter
-            .health_check()
-            .await
-            .map_err(|e| format!("MinIO file storage adapter health check failed: {}", e))?;
-        println!("MinIO file storage adapter initialized successfully");
+                .map_err(|e| format!("MinIO file storage adapter health check failed: {}", e))?;
+            println!("MinIO file storage adapter initialized successfully");
+            fsa
+        };
 
         // Initialize MessageService
         let message_service_config = Self::create_message_service_config(&config);
@@ -157,7 +166,9 @@ impl ServiceRunner {
 
         println!("Scheduler started successfully");
         println!("All services started successfully!");
+        #[cfg(feature = "redis-queue")]
         println!("Queue adapter: {}", queue_adapter.get_connection_info());
+        #[cfg(feature = "s3-storage")]
         println!(
             "File storage adapter: {}",
             file_storage_adapter.get_connection_info()
@@ -273,6 +284,7 @@ impl ServiceRunner {
         }
 
         // Shutdown file storage adapter
+        #[cfg(feature = "s3-storage")]
         if let Some(file_storage_adapter) = &self.file_storage_adapter {
             file_storage_adapter
                 .shutdown()
@@ -282,6 +294,7 @@ impl ServiceRunner {
         }
 
         // Shutdown queue adapter
+        #[cfg(feature = "redis-queue")]
         if let Some(queue_adapter) = &self.queue_adapter {
             queue_adapter
                 .shutdown()
@@ -301,11 +314,13 @@ impl ServiceRunner {
     }
 
     /// Get queue adapter reference for use by other services
+    #[cfg(feature = "redis-queue")]
     pub fn get_queue_adapter(&self) -> Option<Arc<RedisQueueAdapter>> {
         self.queue_adapter.clone()
     }
 
     /// Get file storage adapter reference for use by other services
+    #[cfg(feature = "s3-storage")]
     pub fn get_file_storage_adapter(&self) -> Option<Arc<MinioAdapter>> {
         self.file_storage_adapter.clone()
     }
@@ -351,6 +366,7 @@ impl ServiceRunner {
         }
 
         // Check queue adapter health
+        #[cfg(feature = "redis-queue")]
         if let Some(queue_adapter) = &self.queue_adapter {
             match queue_adapter.health_check().await {
                 Ok(true) => {
@@ -365,6 +381,7 @@ impl ServiceRunner {
         }
 
         // Check file storage adapter health
+        #[cfg(feature = "s3-storage")]
         if let Some(file_storage_adapter) = &self.file_storage_adapter {
             match file_storage_adapter.health_check().await {
                 Ok(storage_health) => {
@@ -383,6 +400,7 @@ impl ServiceRunner {
 
     /// Initialize a sample file for testing file storage
     pub async fn initialize_sample_files(&self) -> Result<(), Box<dyn std::error::Error>> {
+        #[cfg(feature = "s3-storage")]
         if let Some(file_storage) = &self.file_storage_adapter {
             use crate::application::ports::output::file_storage_port::{
                 FileStoragePort, UploadOptions,
@@ -565,7 +583,9 @@ mod tests {
         assert!(runner.database.is_none());
         assert!(runner.message_service.is_none());
         assert!(runner.event_service.is_none());
+        #[cfg(feature = "redis-queue")]
         assert!(runner.queue_adapter.is_none());
+        #[cfg(feature = "s3-storage")]
         assert!(runner.file_storage_adapter.is_none());
         assert!(runner.log_adapter.is_none());
     }
@@ -621,7 +641,9 @@ mod tests {
         let runner = ServiceRunner::new();
 
         // Initially no adapters
+        #[cfg(feature = "redis-queue")]
         assert!(runner.get_queue_adapter().is_none());
+        #[cfg(feature = "s3-storage")]
         assert!(runner.get_file_storage_adapter().is_none());
         assert!(runner.get_log_adapter().is_none());
 
@@ -646,12 +668,14 @@ mod tests {
         assert!(runner.scheduler_handle.is_none());
     }
 
+    #[cfg(feature = "redis-queue")]
     #[tokio::test]
     async fn test_get_queue_adapter_initially_none() {
         let runner = ServiceRunner::new();
         assert!(runner.get_queue_adapter().is_none());
     }
 
+    #[cfg(feature = "s3-storage")]
     #[tokio::test]
     async fn test_get_file_storage_adapter_initially_none() {
         let runner = ServiceRunner::new();

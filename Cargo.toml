@@ -105,6 +105,7 @@ path = "tests/integration/citadel_integration_test.rs"
 [[test]]
 name = "openai_embedding_integration"
 path = "tests/integration/openai_embedding_tests.rs"
+required-features = ["openai-embeddings"]
 
 [[test]]
 name = "in_memory_sanctum_integration"
@@ -123,10 +124,21 @@ required-features = ["qdrant"]
 [[test]]
 name = "vision_integration"
 path = "tests/integration/vision_integration_test.rs"
+required-features = ["vision", "llm-openai", "llm-anthropic"]
 
 [[test]]
 name = "cli"
 path = "tests/cli/mod.rs"
+
+[[example]]
+name = "vision_analysis"
+path = "examples/vision_analysis.rs"
+required-features = ["vision", "llm-openai"]
+
+[[example]]
+name = "vision_battalion"
+path = "examples/vision_battalion.rs"
+required-features = ["vision", "llm-openai"]
 
 [[bin]]
 name = "paladin"
@@ -144,6 +156,13 @@ openai-embeddings = []
 qdrant = ["qdrant-client"]
 integration-tests = []
 live-api-tests = []  # Tests requiring real API keys (OpenAI, DeepSeek, Anthropic)
+
+# LLM provider feature flags
+llm-openai = []
+llm-anthropic = []
+llm-deepseek = []
+llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]
+vision = []
 
 # Performance optimizations for Redis
 [profile.release]

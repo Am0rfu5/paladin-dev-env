@@ -259,7 +259,7 @@ impl PaladinExecutionService {
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     /// use paladin::infrastructure::adapters::llm::openai_adapter::OpenAIAdapter;
     /// use std::sync::Arc;

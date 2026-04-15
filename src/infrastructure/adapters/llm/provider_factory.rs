@@ -9,8 +9,11 @@
 use std::sync::Arc;
 use thiserror::Error;
 
+#[cfg(feature = "llm-anthropic")]
 use super::anthropic_adapter::{AnthropicAdapter, AnthropicConfig};
+#[cfg(feature = "llm-deepseek")]
 use super::deepseek_adapter::{DeepSeekAdapter, DeepSeekConfig};
+#[cfg(feature = "llm-openai")]
 use super::openai_adapter::{OpenAIAdapter, OpenAIConfig};
 use crate::application::ports::output::llm_port::LlmPort;
 
@@ -90,6 +93,7 @@ impl LlmProviderFactory {
     /// ```
     pub fn create(&self, provider_name: &str) -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
         match provider_name.to_lowercase().as_str() {
+            #[cfg(feature = "llm-openai")]
             "openai" => {
                 let config = OpenAIConfig::from_env().map_err(|e| {
                     ProviderFactoryError::ConfigurationMissing(format!(
@@ -107,6 +111,7 @@ impl LlmProviderFactory {
 
                 Ok(Arc::new(adapter))
             }
+            #[cfg(feature = "llm-deepseek")]
             "deepseek" => {
                 let config = DeepSeekConfig::from_env().map_err(|e| {
                     ProviderFactoryError::ConfigurationMissing(format!(
@@ -124,6 +129,7 @@ impl LlmProviderFactory {
 
                 Ok(Arc::new(adapter))
             }
+            #[cfg(feature = "llm-anthropic")]
             "anthropic" => {
                 let config = AnthropicConfig::from_env().map_err(|e| {
                     ProviderFactoryError::ConfigurationMissing(format!(
@@ -166,6 +172,7 @@ impl LlmProviderFactory {
         config: ProviderConfig,
     ) -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
         match (provider_name.to_lowercase().as_str(), config) {
+            #[cfg(feature = "llm-openai")]
             ("openai", ProviderConfig::OpenAI(config)) => {
                 let adapter = OpenAIAdapter::new(config).map_err(|e| {
                     ProviderFactoryError::AdapterCreationFailed(format!(
@@ -175,6 +182,7 @@ impl LlmProviderFactory {
                 })?;
                 Ok(Arc::new(adapter))
             }
+            #[cfg(feature = "llm-deepseek")]
             ("deepseek", ProviderConfig::DeepSeek(config)) => {
                 let adapter = DeepSeekAdapter::new(config).map_err(|e| {
                     ProviderFactoryError::AdapterCreationFailed(format!(
@@ -184,6 +192,7 @@ impl LlmProviderFactory {
                 })?;
                 Ok(Arc::new(adapter))
             }
+            #[cfg(feature = "llm-anthropic")]
             ("anthropic", ProviderConfig::Anthropic(config)) => {
                 let adapter = AnthropicAdapter::new(config).map_err(|e| {
                     ProviderFactoryError::AdapterCreationFailed(format!(
@@ -261,8 +270,11 @@ impl Default for LlmProviderFactory {
 /// allowing type-safe configuration passing.
 #[derive(Debug, Clone)]
 pub enum ProviderConfig {
+    #[cfg(feature = "llm-openai")]
     OpenAI(OpenAIConfig),
+    #[cfg(feature = "llm-deepseek")]
     DeepSeek(DeepSeekConfig),
+    #[cfg(feature = "llm-anthropic")]
     Anthropic(AnthropicConfig),
 }
 
@@ -295,6 +307,11 @@ mod tests {
         }
     }
 
+    #[cfg(all(
+        feature = "llm-openai",
+        feature = "llm-deepseek",
+        feature = "llm-anthropic"
+    ))]
     #[test]
     fn test_case_insensitive_provider_names() {
         let factory = LlmProviderFactory::new();
@@ -351,6 +368,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "llm-deepseek")]
     #[test]
     fn test_error_messages_are_actionable() {
         let factory = LlmProviderFactory::new();
@@ -376,6 +394,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "llm-openai")]
     #[test]
     fn test_create_with_config_openai() {
         let factory = LlmProviderFactory::new();
@@ -391,6 +410,7 @@ mod tests {
         assert!(result.is_ok(), "Should create OpenAI adapter with config");
     }
 
+    #[cfg(feature = "llm-deepseek")]
     #[test]
     fn test_create_with_config_deepseek() {
         let factory = LlmProviderFactory::new();
@@ -405,6 +425,7 @@ mod tests {
         assert!(result.is_ok(), "Should create DeepSeek adapter with config");
     }
 
+    #[cfg(feature = "llm-anthropic")]
     #[test]
     fn test_create_with_config_anthropic() {
         let factory = LlmProviderFactory::new();
@@ -423,6 +444,7 @@ mod tests {
         );
     }
 
+    #[cfg(all(feature = "llm-openai", feature = "llm-deepseek"))]
     #[test]
     fn test_create_with_config_mismatched_provider_and_config() {
         let factory = LlmProviderFactory::new();
@@ -446,6 +468,7 @@ mod tests {
         ));
     }
 
+    #[cfg(feature = "llm-openai")]
     #[test]
     fn test_create_with_config_unknown_provider() {
         let factory = LlmProviderFactory::new();
@@ -465,6 +488,7 @@ mod tests {
         ));
     }
 
+    #[cfg(feature = "llm-openai")]
     #[test]
     fn test_create_with_config_case_insensitive() {
         let factory = LlmProviderFactory::new();
@@ -486,6 +510,11 @@ mod tests {
         assert!(result3.is_ok());
     }
 
+    #[cfg(all(
+        feature = "llm-openai",
+        feature = "llm-deepseek",
+        feature = "llm-anthropic"
+    ))]
     #[test]
     fn test_provider_config_enum_variants() {
         // Test that ProviderConfig enum can hold different config types
@@ -518,6 +547,7 @@ mod tests {
         assert!(matches!(anthropic_config, ProviderConfig::Anthropic(_)));
     }
 
+    #[cfg(feature = "llm-openai")]
     #[test]
     fn test_provider_config_debug_format() {
         let config = ProviderConfig::OpenAI(OpenAIConfig {
@@ -532,6 +562,7 @@ mod tests {
         assert!(debug_str.contains("OpenAI"));
     }
 
+    #[cfg(feature = "llm-deepseek")]
     #[test]
     fn test_provider_config_clone() {
         let config = ProviderConfig::DeepSeek(DeepSeekConfig {
@@ -557,6 +588,7 @@ mod tests {
         assert!(format!("{:?}", err3).contains("AdapterCreationFailed"));
     }
 
+    #[cfg(feature = "llm-openai")]
     #[test]
     fn test_create_openai_without_env() {
         // Ensure OPENAI_API_KEY is not set for this test
@@ -574,6 +606,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "llm-anthropic")]
     #[test]
     fn test_create_anthropic_without_env() {
         // Ensure ANTHROPIC_API_KEY is not set for this test
@@ -612,6 +645,11 @@ mod tests {
         assert!(result.is_err());
     }
 
+    #[cfg(all(
+        feature = "llm-openai",
+        feature = "llm-deepseek",
+        feature = "llm-anthropic"
+    ))]
     #[test]
     fn test_get_default_provider_priority() {
         // This test verifies the priority logic exists
@@ -669,6 +707,11 @@ mod tests {
         }
     }
 
+    #[cfg(all(
+        feature = "llm-openai",
+        feature = "llm-deepseek",
+        feature = "llm-anthropic"
+    ))]
     #[test]
     fn test_list_available_providers_comprehensive() {
         // Save current env state

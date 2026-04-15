@@ -12,12 +12,17 @@
 - `Cargo.toml` — Add `optional = true` to gated deps; update `[features]` section with all new flags
 - `src/infrastructure/adapters/llm/mod.rs` — Add `#[cfg]` guards on OpenAI, Anthropic, DeepSeek, and vision adapter module declarations
 - `src/infrastructure/adapters/llm/provider_factory.rs` — Gate each provider import and factory `match` arm behind its feature flag
-- `src/infrastructure/adapters/output/openai_llm_adapter.rs` — Gate behind `llm-openai` (legacy adapter in `output/` submodule)
+- `src/infrastructure/adapters/output/openai_llm_adapter.rs` — **Removed** (legacy adapter superseded by `llm/openai_adapter.rs`; `#[cfg]` gate in `output/mod.rs` also removed)
 - `src/infrastructure/adapters/mod.rs` — Gate `document`, `notifications`, and `arsenal` module declarations
 - `src/infrastructure/adapters/output/mod.rs` — Gate `api_content_deliverer` module (uses `actix-web`) behind `web-server`
 - `src/infrastructure/mod.rs` — Gate `web` module declaration behind `web-server`
 - `src/infrastructure/adapters/garrison/token_counter.rs` — Gate `tiktoken_rs` import behind `content-processing`
 - `src/application/ports/output/mod.rs` — Gate `vision_port` and `vision_llm_port` module declarations behind `vision`
+- `src/config/application_settings.rs` — Gate `MinioConfig` import and `to_minio_config()` behind `s3-storage`
+- `src/config/setup/service_runner.rs` — Gate `RedisQueueAdapter`/`MinioAdapter` imports, struct fields, init blocks, and accessor methods behind `redis-queue`/`s3-storage`
+- `src/infrastructure/adapters/llm/provider_factory.rs` (tests) — Gate provider-specific tests behind their respective LLM feature flags
+- `tests/integration/mod.rs` — Gate provider/storage/vision integration test module declarations behind their feature flags
+- `src/application/use_cases/paladin/paladin_execution_service.rs` — Change vision doctest from `no_run` to `ignore` (depends on gated `openai_adapter`)
 
 ### New Files
 - `docs/FEATURE_FLAGS.md` — Comprehensive documentation for all feature flags with usage examples
@@ -36,6 +41,9 @@
 - `reqwest` stays as a **core** (always-compiled) dependency because all LLM providers share it.
 - `chacha20poly1305` and `zeroize` are used in `src/infrastructure/security/encryption.rs` for general encryption, **not** vision — they remain core dependencies.
 - The `openai_embedding_adapter.rs` is controlled by the existing `openai-embeddings` flag, not `llm-openai`.
+- `vision = []` was added to `[features]` early (pulled forward from Task 6.1) to avoid `unexpected_cfgs` warnings since vision guards were applied in Task 2.
+- Integration test modules in `tests/integration/mod.rs` must also be gated when they import from feature-gated adapter modules.
+- Vision examples (`vision_analysis`, `vision_battalion`) and test targets that depend on gated adapters need `required-features` in `Cargo.toml`.
 
 ---
 
@@ -68,19 +76,19 @@ git commit -m "..."
   - [x] 1.3 Confirm the following deps will be marked `optional = true` in Cargo.toml: `actix-web`, `axum`, `lettre`, `pdf-extract`, `scraper`, `tiktoken-rs`, `rss`
   - [x] 1.4 Note that `reqwest`, `chacha20poly1305`, and `zeroize` remain core (unconditional) and document the rationale in the matrix
 
-- [ ] 2.0 Implement LLM Provider feature flags (`llm-openai`, `llm-anthropic`, `llm-deepseek`, `llm-all`)
-  - [ ] 2.1 In `Cargo.toml` `[features]`, add: `llm-openai = []`, `llm-anthropic = []`, `llm-deepseek = []`, `llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]`
-  - [ ] 2.2 In `src/infrastructure/adapters/llm/mod.rs`, wrap the `openai_adapter`, `openai_vision`, and `openai_embedding_adapter` module declarations with `#[cfg(feature = "llm-openai")]`
-  - [ ] 2.3 In `src/infrastructure/adapters/llm/mod.rs`, wrap the `anthropic_adapter` and `anthropic_vision` module declarations with `#[cfg(feature = "llm-anthropic")]`
-  - [ ] 2.4 In `src/infrastructure/adapters/llm/mod.rs`, wrap the `deepseek_adapter` module declaration with `#[cfg(feature = "llm-deepseek")]`
-  - [ ] 2.5 In `src/infrastructure/adapters/llm/provider_factory.rs`, add `#[cfg(feature = "llm-openai")]` guards around the `use super::openai_adapter::...` import and the `"openai"` match arm; repeat for anthropic and deepseek
-  - [ ] 2.6 Add a fallback `_ => Err(ProviderFactoryError::UnknownProvider(...))` in `provider_factory.rs` so the match is exhaustive when one or more providers are compiled out
-  - [ ] 2.7 In `src/infrastructure/adapters/output/mod.rs`, wrap the `openai_llm_adapter` module declaration with `#[cfg(feature = "llm-openai")]`
-  - [ ] 2.8 Run `cargo check --no-default-features --features llm-openai` and fix any errors
-  - [ ] 2.9 Run `cargo check --no-default-features --features llm-anthropic` and fix any errors
-  - [ ] 2.10 Run `cargo check --no-default-features --features llm-deepseek` and fix any errors
-  - [ ] 2.11 Run `cargo check --no-default-features` (no LLM provider) and confirm it passes
-  - [ ] 2.12 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
+- [x] 2.0 Implement LLM Provider feature flags (`llm-openai`, `llm-anthropic`, `llm-deepseek`, `llm-all`)
+  - [x] 2.1 In `Cargo.toml` `[features]`, add: `llm-openai = []`, `llm-anthropic = []`, `llm-deepseek = []`, `llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]`
+  - [x] 2.2 In `src/infrastructure/adapters/llm/mod.rs`, wrap the `openai_adapter`, `openai_vision`, and `openai_embedding_adapter` module declarations with `#[cfg(feature = "llm-openai")]`
+  - [x] 2.3 In `src/infrastructure/adapters/llm/mod.rs`, wrap the `anthropic_adapter` and `anthropic_vision` module declarations with `#[cfg(feature = "llm-anthropic")]`
+  - [x] 2.4 In `src/infrastructure/adapters/llm/mod.rs`, wrap the `deepseek_adapter` module declaration with `#[cfg(feature = "llm-deepseek")]`
+  - [x] 2.5 In `src/infrastructure/adapters/llm/provider_factory.rs`, add `#[cfg(feature = "llm-openai")]` guards around the `use super::openai_adapter::...` import and the `"openai"` match arm; repeat for anthropic and deepseek
+  - [x] 2.6 Add a fallback `_ => Err(ProviderFactoryError::UnknownProvider(...))` in `provider_factory.rs` so the match is exhaustive when one or more providers are compiled out
+  - [x] 2.7 ~~In `src/infrastructure/adapters/output/mod.rs`, wrap the `openai_llm_adapter` module declaration with `#[cfg(feature = "llm-openai")]`~~ — **N/A:** `openai_llm_adapter.rs` was removed (superseded by `llm/openai_adapter.rs`); `#[cfg]` gate in `output/mod.rs` also removed
+  - [x] 2.8 Run `cargo check --no-default-features --features llm-openai` and fix any errors
+  - [x] 2.9 Run `cargo check --no-default-features --features llm-anthropic` and fix any errors
+  - [x] 2.10 Run `cargo check --no-default-features --features llm-deepseek` and fix any errors
+  - [x] 2.11 Run `cargo check --no-default-features` (no LLM provider) and confirm it passes
+  - [x] 2.12 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
 - [ ] 3.0 Implement Content Processing feature flag (`content-processing`)
   - [ ] 3.1 In `Cargo.toml` `[dependencies]`, mark `pdf-extract`, `scraper`, `tiktoken-rs`, and `rss` as `optional = true`

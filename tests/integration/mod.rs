@@ -5,6 +5,7 @@ use std::sync::Once;
 use std::time::Duration;
 use tokio::time::sleep;
 
+#[cfg(feature = "llm-anthropic")]
 pub mod anthropic_provider_test;
 pub mod arsenal_execution_integration_test;
 pub mod arsenal_registry_integration_test;
@@ -18,7 +19,9 @@ pub mod cli_real_providers_test;
 pub mod cli_real_services_test;
 pub mod commander_integration_tests;
 pub mod context_injection_test;
+#[cfg(feature = "llm-deepseek")]
 pub mod deepseek_provider_test;
+#[cfg(feature = "s3-storage")]
 pub mod file_storage_integration_tests;
 pub mod herald_integration_test;
 pub mod in_memory_sanctum_tests;
@@ -27,17 +30,24 @@ pub mod llm_live_api_tests;
 pub mod mcp_sse_test;
 pub mod mcp_stdio_test;
 pub mod notification_system_integration_test;
+#[cfg(feature = "llm-openai")]
 pub mod openai_content_analysis_integration_test;
+#[cfg(feature = "openai-embeddings")]
 pub mod openai_embedding_tests;
+#[cfg(feature = "llm-openai")]
 pub mod openai_provider_test;
 pub mod paladin_garrison_integration_test;
 pub mod paladin_integration_test;
+#[cfg(feature = "qdrant")]
 pub mod qdrant_sanctum_tests;
+#[cfg(feature = "qdrant")]
 pub mod rag_integration_tests;
+#[cfg(feature = "redis-queue")]
 pub mod redis_queue_integration_test;
 pub mod scheduler_integration_test;
 pub mod sqlite_garrison_integration_test;
 pub mod system_log_integration_test;
+#[cfg(all(feature = "vision", feature = "llm-openai", feature = "llm-anthropic"))]
 pub mod vision_integration_test;
 
 static INIT: Once = Once::new();
