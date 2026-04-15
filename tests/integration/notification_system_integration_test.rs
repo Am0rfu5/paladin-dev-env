@@ -12,6 +12,8 @@ The test covers the full flow from notification creation to delivery
 across multiple channels following DDD and Hexagonal Architecture patterns.
 */
 
+#![cfg(feature = "notifications")]
+
 use std::collections::HashMap;
 
 use paladin::application::ports::output::notification_port::{

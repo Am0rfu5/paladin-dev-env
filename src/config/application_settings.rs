@@ -1,6 +1,7 @@
 use crate::core::platform::container::garrison::EvictionStrategy;
 #[cfg(feature = "s3-storage")]
 use crate::infrastructure::adapters::file_storage::minio::MinioConfig;
+#[cfg(feature = "notifications")]
 use crate::infrastructure::adapters::notifications::{EmailAdapterConfig, SystemAdapterConfig};
 use config::{Config, ConfigError, Environment, File};
 use serde::{Deserialize, Serialize};
@@ -431,13 +432,14 @@ impl Default for FileStorageConfig {
 }
 
 /// Configuration for notification system
+#[cfg(feature = "notifications")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NotificationConfig {
     /// Enable/disable notification system
     pub enabled: bool,
     /// Email notification configuration
     pub email: Option<EmailAdapterConfig>,
-    /// System notification configuration  
+    /// System notification configuration
     pub system: Option<SystemAdapterConfig>,
     /// Global notification settings
     pub max_retries: u32,
@@ -447,6 +449,7 @@ pub struct NotificationConfig {
     pub global_rate_limit_per_minute: Option<u32>,
 }
 
+#[cfg(feature = "notifications")]
 impl Default for NotificationConfig {
     fn default() -> Self {
         Self {
@@ -889,6 +892,7 @@ pub struct Settings {
     pub message_service: Option<MessageServiceSettings>,
     pub queue: Option<QueueConfig>,
     pub file_storage: Option<FileStorageConfig>,
+    #[cfg(feature = "notifications")]
     pub notifications: Option<NotificationConfig>,
     pub garrison: Option<GarrisonSettings>,
     pub sanctum: Option<SanctumConfig>,
@@ -1047,6 +1051,7 @@ impl Settings {
     }
 
     /// Get notification configuration with environment variable overrides
+    #[cfg(feature = "notifications")]
     pub fn get_notification_config(&self) -> NotificationConfig {
         let mut config = self.notifications.clone().unwrap_or_default();
 
@@ -1408,6 +1413,7 @@ impl Default for Settings {
             }),
             queue: Some(QueueConfig::default()),
             file_storage: Some(FileStorageConfig::default()),
+            #[cfg(feature = "notifications")]
             notifications: Some(NotificationConfig::default()),
             garrison: Some(GarrisonSettings::default()),
             sanctum: Some(SanctumConfig::default()),

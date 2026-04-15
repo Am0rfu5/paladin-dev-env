@@ -38,8 +38,8 @@ lock_api = "0.4.12"
 once_cell = "1.19.0"
 regex = "1.11.1"
 urlencoding = "2.1.3"
-lettre = { version = "0.11.17", features = ["smtp-transport", "pool", "hostname", "builder"] }
-handlebars = "6.3.2"
+lettre = { version = "0.11.17", features = ["smtp-transport", "pool", "hostname", "builder"], optional = true }
+handlebars = { version = "6.3.2", optional = true }
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "mysql", "sqlite", "chrono", "uuid", "json"] }
 sha2 = "0.10.9"
 blake3 = "1.8.2"
@@ -170,6 +170,7 @@ llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]
 vision = []
 content-processing = ["pdf-extract", "scraper", "tiktoken-rs", "rss"]
 web-server = ["actix-web", "axum"]
+notifications = ["lettre", "handlebars"]
 
 # Performance optimizations for Redis
 [profile.release]

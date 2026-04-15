@@ -111,13 +111,13 @@ git commit -m "..."
   - [x] 4.6 Run `cargo check --no-default-features --features web-server` to confirm the module compiles with the flag
   - [x] 4.7 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
-- [ ] 5.0 Implement Notifications feature flag (`notifications`)
-  - [ ] 5.1 In `Cargo.toml` `[dependencies]`, mark `lettre` as `optional = true`; assess whether `handlebars` is also exclusively used for notifications (if so, mark it optional too)
-  - [ ] 5.2 In `Cargo.toml` `[features]`, add: `notifications = ["lettre"]` (add `"handlebars"` if applicable)
-  - [ ] 5.3 In `src/infrastructure/adapters/mod.rs`, wrap `pub mod notifications;` with `#[cfg(feature = "notifications")]`
-  - [ ] 5.4 Run `cargo check --no-default-features` to confirm lettre is excluded
-  - [ ] 5.5 Run `cargo check --no-default-features --features notifications` to confirm notifications compile
-  - [ ] 5.6 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
+- [x] 5.0 Implement Notifications feature flag (`notifications`)
+  - [x] 5.1 In `Cargo.toml` `[dependencies]`, mark `lettre` as `optional = true`; assess whether `handlebars` is also exclusively used for notifications (if so, mark it optional too)
+  - [x] 5.2 In `Cargo.toml` `[features]`, add: `notifications = ["lettre"]` (add `"handlebars"` if applicable)
+  - [x] 5.3 In `src/infrastructure/adapters/mod.rs`, wrap `pub mod notifications;` with `#[cfg(feature = "notifications")]`
+  - [x] 5.4 Run `cargo check --no-default-features` to confirm lettre is excluded
+  - [x] 5.5 Run `cargo check --no-default-features --features notifications` to confirm notifications compile
+  - [x] 5.6 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
 - [ ] 6.0 Implement Vision feature flag (`vision`)
   - [ ] 6.1 In `Cargo.toml` `[features]`, add: `vision = []` (no additional deps needed; vision adapters use reqwest which is core)

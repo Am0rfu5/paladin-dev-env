@@ -270,6 +270,7 @@ mod tests {
             ),
             queue: Some(crate::config::application_settings::QueueConfig::default()),
             file_storage: Some(crate::config::application_settings::FileStorageConfig::default()),
+            #[cfg(feature = "notifications")]
             notifications: Some(crate::config::application_settings::NotificationConfig::default()),
             garrison: Some(crate::config::application_settings::GarrisonSettings::default()),
             sanctum: Some(crate::config::application_settings::SanctumConfig::default()),

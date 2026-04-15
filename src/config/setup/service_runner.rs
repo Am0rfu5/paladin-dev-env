@@ -141,10 +141,13 @@ impl ServiceRunner {
         self.event_service = Some(event_service.clone());
 
         // Initialize Notification Service
-        let notification_service =
-            Self::init_notification_service(&config, message_service.clone()).await?;
-        self.notification_service = Some(notification_service);
-        println!("Notification service initialized successfully");
+        #[cfg(feature = "notifications")]
+        {
+            let notification_service =
+                Self::init_notification_service(&config, message_service.clone()).await?;
+            self.notification_service = Some(notification_service);
+            println!("Notification service initialized successfully");
+        }
 
         // Initialize User Service
         self.init_user_service(config.clone()).await?;
@@ -325,7 +328,7 @@ impl ServiceRunner {
         self.file_storage_adapter.clone()
     }
 
-    /// Get log adapter reference for use by other services  
+    /// Get log adapter reference for use by other services
     pub fn get_log_adapter(&self) -> Option<Arc<SystemLogAdapter>> {
         self.log_adapter.clone()
     }
@@ -497,6 +500,7 @@ impl ServiceRunner {
         self.user_service.clone()
     }
 
+    #[cfg(feature = "notifications")]
     async fn init_notification_service(
         config: &Settings,
         message_service: Arc<MessageService>,
@@ -546,7 +550,7 @@ pub struct SchedulerJobStatus {
     pub status: crate::core::base::component::action::ActionStatus,
 }
 
-/// Overall service health status  
+/// Overall service health status
 #[derive(Debug, Clone)]
 pub struct ServiceHealthStatus {
     pub database_connected: bool,
