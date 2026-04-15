@@ -72,6 +72,7 @@ RUN cargo install cargo-edit
 RUN cargo install cargo-audit
 RUN cargo install cargo-expand
 RUN cargo install cargo-insta
+RUN cargo install cargo-public-api
 
 # Install sqlx-cli for database migrations
 RUN cargo install --locked sqlx-cli --no-default-features --features sqlite,mysql
