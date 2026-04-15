@@ -1,0 +1,423 @@
+# Migration Guide: Feature Flag Changes
+
+This guide helps you migrate from Paladin versions before the feature flag reorganization (pre-v0.1.0) to the current version.
+
+## Table of Contents
+
+- [Breaking Change Summary](#breaking-change-summary)
+- [Quick Fix](#quick-fix)
+- [Migration Scenarios](#migration-scenarios)
+- [What Changed](#what-changed)
+- [Why This Change](#why-this-change)
+- [Testing Your Migration](#testing-your-migration)
+
+## Breaking Change Summary
+
+### The Change
+
+**Old Default Features** (pre-v0.1.0):
+```toml
+default = ["redis-queue", "s3-storage", "openai-embeddings"]
+```
+
+**New Default Features** (v0.1.0+):
+```toml
+default = ["llm-openai"]
+```
+
+### Impact
+
+If you were relying on **default features** to provide:
+- ❌ Redis queue adapter (`redis-queue`)
+- ❌ S3/MinIO storage adapter (`s3-storage`)
+- ❌ OpenAI embeddings (`openai-embeddings`)
+
+These are **no longer enabled by default** and must be explicitly added to your `Cargo.toml`.
+
+### Who Is Affected?
+
+You are affected if:
+
+1. **You use Redis queues** in your code
+2. **You use S3/MinIO file storage** in your code
+3. **You use OpenAI embeddings** in your code
+4. **Your `Cargo.toml` does NOT explicitly list features**, relying only on:
+   ```toml
+   [dependencies]
+   paladin = "0.x"  # No features = default features
+   ```
+
+You are **NOT** affected if:
+
+- ✅ You already explicitly list all required features in `Cargo.toml`
+- ✅ You only use core Paladin orchestration (agents, battalions)
+- ✅ You use `features = ["full"]` for development
+
+## Quick Fix
+
+### Option 1: Restore Old Behavior (Recommended for Migration)
+
+Add the old default features explicitly:
+
+```toml
+[dependencies]
+paladin = { version = "0.1", features = ["llm-openai", "redis-queue", "s3-storage", "openai-embeddings"] }
+```
+
+This maintains exact functionality while being explicit about requirements.
+
+### Option 2: Use the `full` Feature (Development/Testing)
+
+Enable all features:
+
+```toml
+[dependencies]
+paladin = { version = "0.1", features = ["full"] }
+```
+
+**Warning**: This includes ALL optional features. For production, explicitly list only what you need.
+
+### Option 3: Minimal Migration (Production Recommended)
+
+Add only the features you actually use:
+
+```toml
+[dependencies]
+# Example: Only need Redis queue
+paladin = { version = "0.1", features = ["redis-queue"] }
+
+# Example: Only need S3 storage
+paladin = { version = "0.1", features = ["s3-storage"] }
+
+# Example: Need both
+paladin = { version = "0.1", features = ["redis-queue", "s3-storage"] }
+```
+
+## Migration Scenarios
+
+### Scenario 1: Production API Server with Storage
+
+**Before:**
+```toml
+[dependencies]
+paladin = "0.x"  # Implicitly got redis-queue, s3-storage, openai-embeddings
+```
+
+**After:**
+```toml
+[dependencies]
+paladin = { version = "0.1", features = ["llm-openai", "redis-queue", "s3-storage", "web-server"] }
+```
+
+**Why**: Explicitly declares infrastructure dependencies. Adds `web-server` if you use REST APIs.
+
+### Scenario 2: Content Processing Pipeline
+
+**Before:**
+```toml
+[dependencies]
+paladin = "0.x"
+```
+
+**Your code** uses:
+- PDF extraction
+- Web scraping
+- S3 storage
+- Redis queues
+
+**After:**
+```toml
+[dependencies]
+paladin = { version = "0.1", features = [
+    "llm-openai",           # Default LLM provider
+    "content-processing",   # PDF, scraping, RSS, tokenization
+    "redis-queue",          # Async job queue
+    "s3-storage"            # File storage
+] }
+```
+
+### Scenario 3: Multi-Provider Agent Orchestration
+
+**Before:**
+```toml
+[dependencies]
+paladin = "0.x"
+```
+
+**Your code** uses:
+- Multiple LLM providers (OpenAI, Anthropic, DeepSeek)
+- No storage or queues
+
+**After:**
+```toml
+[dependencies]
+paladin = { version = "0.1", default-features = false, features = ["llm-all"] }
+```
+
+**Why**: `default-features = false` removes the default `llm-openai`, then `llm-all` adds all providers.
+
+### Scenario 4: Microservice with Notifications
+
+**Before:**
+```toml
+[dependencies]
+paladin = "0.x"
+```
+
+**Your code** uses:
+- Email notifications
+- Web API
+- S3 storage
+
+**After:**
+```toml
+[dependencies]
+paladin = { version = "0.1", features = [
+    "llm-openai",      # LLM provider
+    "web-server",      # REST API
+    "notifications",   # Email with templates
+    "s3-storage"       # File storage
+] }
+```
+
+### Scenario 5: Development Environment
+
+**Before:**
+```toml
+[dependencies]
+paladin = "0.x"
+
+[dev-dependencies]
+# Additional test deps...
+```
+
+**After:**
+```toml
+[dependencies]
+# Production - minimal features
+paladin = { version = "0.1", features = ["llm-openai", "redis-queue"] }
+
+[dev-dependencies]
+# Development - all features for testing
+paladin = { version = "0.1", features = ["full"] }
+```
+
+## What Changed
+
+### Feature Flag Reorganization
+
+| Category | Old Behavior | New Behavior |
+|----------|-------------|--------------|
+| **Default Features** | `redis-queue`, `s3-storage`, `openai-embeddings` | `llm-openai` only |
+| **LLM Providers** | Implicit (always included) | Explicit flags: `llm-openai`, `llm-anthropic`, `llm-deepseek` |
+| **Content Processing** | Always included | `content-processing` flag gates `pdf-extract`, `scraper`, etc. |
+| **Web Server** | Always included | `web-server` flag gates `actix-web`, `axum` |
+| **Notifications** | Always included | `notifications` flag gates `lettre`, `handlebars` |
+| **Vision** | Implicit | `vision` flag for multimodal capabilities |
+
+### New Convenience Flags
+
+| Flag | Equivalent To | Purpose |
+|------|---------------|---------|
+| `llm-all` | `llm-openai` + `llm-anthropic` + `llm-deepseek` | All LLM providers |
+| `full` | All optional features | Development/testing |
+
+## Why This Change
+
+### Benefits
+
+1. **Smaller Binaries** - Default build is ~40% smaller (10-14 MB vs 25-35 MB)
+2. **Faster Compile Times** - Default build compiles ~60% faster (40-60s vs 3-5 min)
+3. **Clearer Dependencies** - Explicit about what your application actually uses
+4. **Better Modularity** - Pick only the LLM providers you need
+5. **Security** - Smaller attack surface by excluding unused dependencies
+
+### Philosophy
+
+**Old Approach**: "Include everything by default, users opt-out if needed"
+- ❌ Slow compilation for simple use cases
+- ❌ Large binaries even for minimal deployments
+- ❌ Unclear what features are actually required
+
+**New Approach**: "Start minimal, opt-in to what you need"
+- ✅ Fast iteration for core orchestration development
+- ✅ Explicit about infrastructure dependencies
+- ✅ Production builds include only necessary code
+
+## Testing Your Migration
+
+### Step 1: Update Cargo.toml
+
+Apply one of the migration scenarios above.
+
+### Step 2: Verify Compilation
+
+```bash
+# Clean build to ensure no cached artifacts
+cargo clean
+
+# Build with your new features
+cargo build
+
+# Check for missing features (look for errors like):
+# error[E0433]: failed to resolve: use of undeclared crate or module `redis`
+```
+
+### Step 3: Run Tests
+
+```bash
+# Run all tests with your feature set
+cargo test
+
+# If you have integration tests requiring services:
+cargo test --features integration-tests
+```
+
+### Step 4: Check for Warnings
+
+```bash
+# Ensure no clippy warnings about unused dependencies
+cargo clippy --all-targets -- -D warnings
+```
+
+### Step 5: Verify Runtime Behavior
+
+Test critical paths that use:
+- Redis queues (if using `redis-queue`)
+- S3 storage (if using `s3-storage`)
+- Email notifications (if using `notifications`)
+- Web APIs (if using `web-server`)
+
+## Common Migration Errors
+
+### Error 1: Unresolved Import
+
+```
+error[E0432]: unresolved import `paladin::infrastructure::adapters::queue::redis`
+```
+
+**Cause**: Missing `redis-queue` feature
+
+**Fix**:
+```toml
+paladin = { version = "0.1", features = ["redis-queue"] }
+```
+
+### Error 2: Missing Adapter Struct
+
+```
+error[E0433]: failed to resolve: use of undeclared type `MinioAdapter`
+```
+
+**Cause**: Missing `s3-storage` feature
+
+**Fix**:
+```toml
+paladin = { version = "0.1", features = ["s3-storage"] }
+```
+
+### Error 3: Content Type Detection Missing
+
+```
+error[E0425]: cannot find function `detect_content_type` in this scope
+```
+
+**Cause**: Missing `s3-storage` feature (function is feature-gated)
+
+**Fix**:
+```toml
+paladin = { version = "0.1", features = ["s3-storage"] }
+```
+
+### Error 4: PDF Extraction Failed
+
+```
+error[E0433]: failed to resolve: use of undeclared crate `pdf_extract`
+```
+
+**Cause**: Missing `content-processing` feature
+
+**Fix**:
+```toml
+paladin = { version = "0.1", features = ["content-processing"] }
+```
+
+## Rollback Plan
+
+If you need to temporarily revert to old behavior while planning migration:
+
+### Option 1: Pin to Old Version
+
+```toml
+[dependencies]
+paladin = "0.0.x"  # Use specific pre-v0.1.0 version
+```
+
+Check available versions:
+```bash
+cargo search paladin
+```
+
+### Option 2: Use Full Features
+
+```toml
+[dependencies]
+paladin = { version = "0.1", features = ["full"] }
+```
+
+This includes everything and more, allowing time for proper migration planning.
+
+## Getting Help
+
+### Documentation
+
+- **Feature Flags Reference**: [docs/FEATURE_FLAGS.md](FEATURE_FLAGS.md)
+- **Configuration Guide**: [docs/CONFIGURATION.md](CONFIGURATION.md)
+- **Changelog**: [CHANGELOG.md](../CHANGELOG.md)
+
+### Support Channels
+
+- **GitHub Issues**: [Report migration problems](https://github.com/yourusername/paladin/issues)
+- **GitHub Discussions**: [Ask migration questions](https://github.com/yourusername/paladin/discussions)
+- **Examples**: Check [examples/](../examples/) for feature-annotated examples
+
+### Example Migration PRs
+
+See these example PRs for migration patterns:
+- [Example: API Server Migration](#) (TODO: Add link)
+- [Example: Content Pipeline Migration](#) (TODO: Add link)
+- [Example: Minimal Orchestration Migration](#) (TODO: Add link)
+
+## Checklist
+
+Use this checklist to track your migration:
+
+- [ ] Read this migration guide
+- [ ] Identify which features your code uses
+- [ ] Update `Cargo.toml` with explicit features
+- [ ] Run `cargo clean && cargo build`
+- [ ] Run `cargo test`
+- [ ] Run `cargo clippy --all-targets -- -D warnings`
+- [ ] Test critical runtime paths
+- [ ] Update CI/CD workflows if needed
+- [ ] Document feature requirements in your README
+- [ ] Deploy to staging and verify
+- [ ] Deploy to production
+
+## Timeline
+
+| Version | Status | Default Features |
+|---------|--------|------------------|
+| < 0.1.0 | Old | `redis-queue`, `s3-storage`, `openai-embeddings` |
+| 0.1.0 | **Current** | `llm-openai` only |
+| Future | Planned | May add more granular LLM provider features |
+
+## Feedback
+
+This migration guide is a living document. If you encounter migration scenarios not covered here, please:
+
+1. Open a GitHub issue describing your use case
+2. Submit a PR to add your scenario to this guide
+3. Share your experience in GitHub Discussions
+
+Your feedback helps improve Paladin for everyone! 🛡️

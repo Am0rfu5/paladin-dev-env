@@ -9,6 +9,7 @@ This guide explains how Paladin's configuration system works, best practices for
 - [Configuration Sources](#configuration-sources)
 - [Environment Variables Reference](#environment-variables-reference)
 - [Environment-Specific Setup](#environment-specific-setup)
+- [Feature Flags](#feature-flags)
 - [Security Best Practices](#security-best-practices)
 - [Advanced Topics](#advanced-topics)
 
@@ -387,6 +388,84 @@ spec:
 - ✅ Automatic rotation with Secrets Manager
 - ✅ Audit trail of all secret access
 - ✅ Fine-grained IAM permissions
+
+## Feature Flags
+
+Paladin uses Cargo feature flags to control which dependencies and subsystems are compiled into your application. This enables:
+
+- **Smaller binaries** - Include only what you need
+- **Faster compilation** - Skip unused dependencies
+- **Clear dependencies** - Explicit about infrastructure requirements
+- **Provider choice** - Select specific LLM providers (OpenAI, Anthropic, DeepSeek)
+
+### Quick Reference
+
+**Default build** (minimal):
+```toml
+[dependencies]
+paladin = "0.1"  # Only llm-openai enabled
+```
+
+**Full featured build** (development):
+```toml
+[dependencies]
+paladin = { version = "0.1", features = ["full"] }
+```
+
+**Custom feature selection** (production):
+```toml
+[dependencies]
+paladin = { version = "0.1", features = [
+    "llm-anthropic",      # Anthropic Claude provider
+    "redis-queue",        # Redis queue adapter
+    "s3-storage",         # S3/MinIO storage
+    "web-server"          # REST API server
+] }
+```
+
+### Available Features
+
+| Category | Flags | Description |
+|----------|-------|-------------|
+| **LLM Providers** | `llm-openai`, `llm-anthropic`, `llm-deepseek`, `llm-all` | Choose which LLM providers to support |
+| **Subsystems** | `vision`, `content-processing`, `web-server`, `notifications` | Optional functional subsystems |
+| **Infrastructure** | `redis-queue`, `s3-storage`, `openai-embeddings`, `qdrant` | Storage and queue adapters |
+| **Convenience** | `full` | All optional features for development |
+
+### Configuration Integration
+
+Feature flags affect which adapters are available at runtime. Your `config.yml` should only reference adapters enabled by your feature flags:
+
+**Example with `llm-anthropic` feature:**
+```yaml
+llm:
+  default_provider: "anthropic"  # ✅ OK - anthropic adapter compiled
+  anthropic:
+    default_model: "claude-3-sonnet-20240229"
+```
+
+**Example WITHOUT `redis-queue` feature:**
+```yaml
+redis:
+  host: "localhost"
+  port: 6379
+  # ❌ Error at runtime - Redis adapter not compiled
+```
+
+### Detailed Documentation
+
+For complete feature flag documentation, see:
+- **[Feature Flags Guide](FEATURE_FLAGS.md)** - Comprehensive reference
+- **[Migration Guide](MIGRATION.md)** - Breaking changes and migration help
+
+### Breaking Change Note
+
+**⚠️ Default features changed in v0.1.0**
+
+- **Old default**: `redis-queue`, `s3-storage`, `openai-embeddings`
+- **New default**: `llm-openai` only
+
+If you were relying on default features to provide Redis, S3, or embeddings, you must now explicitly add these features to your `Cargo.toml`. See [MIGRATION.md](MIGRATION.md) for details.
 
 ## Security Best Practices
 

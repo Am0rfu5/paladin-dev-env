@@ -23,6 +23,52 @@ cargo build --release
 # The binary will be available at target/release/paladin
 ```
 
+### Feature Flags
+
+Paladin uses Cargo feature flags to control which dependencies and functionality are compiled. This enables minimal builds for specific use cases.
+
+**Default Build** (minimal):
+```toml
+[dependencies]
+paladin = "0.1"  # Only llm-openai enabled
+```
+
+**Full Build** (all features):
+```toml
+[dependencies]
+paladin = { version = "0.1", features = ["full"] }
+```
+
+**Custom Build** (production):
+```toml
+[dependencies]
+paladin = { version = "0.1", features = ["llm-anthropic", "redis-queue", "s3-storage", "web-server"] }
+```
+
+#### Available Features
+
+| Flag | Purpose | Dependencies |
+|------|---------|--------------|
+| **LLM Providers** | | |
+| `llm-openai` | OpenAI GPT models (default) | `reqwest` |
+| `llm-anthropic` | Anthropic Claude models | `reqwest` |
+| `llm-deepseek` | DeepSeek models | `reqwest` |
+| `llm-all` | All LLM providers | All of above |
+| **Subsystems** | | |
+| `vision` | Multimodal AI capabilities | None |
+| `content-processing` | PDF, web scraping, RSS, tokenization | `pdf-extract`, `scraper`, `tiktoken-rs`, `rss` |
+| `web-server` | REST API server | `actix-web`, `axum` |
+| `notifications` | Email with templates | `lettre`, `handlebars` |
+| **Infrastructure** | | |
+| `redis-queue` | Redis async queue adapter | `redis` |
+| `s3-storage` | S3/MinIO file storage | `rust-s3` |
+| `openai-embeddings` | OpenAI embedding support | None |
+| `qdrant` | Vector database adapter | `qdrant-client` |
+| **Convenience** | | |
+| `full` | All optional features | All of above |
+
+**📖 Documentation**: See [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md) for detailed feature documentation and [docs/MIGRATION.md](docs/MIGRATION.md) for breaking changes.
+
 ### First-Time Setup
 
 Run the interactive onboarding wizard to configure your environment:

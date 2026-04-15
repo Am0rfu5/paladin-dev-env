@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - BREAKING
+- **Default Feature Flags Revised**: Default features changed from `["redis-queue", "s3-storage", "openai-embeddings"]` to `["llm-openai"]` only
+  - **Impact**: Applications relying on Redis queue, S3 storage, or OpenAI embeddings in default builds must now explicitly enable these features
+  - **Migration**: Add required features to `Cargo.toml`: `paladin = { version = "0.1", features = ["redis-queue", "s3-storage"] }`
+  - **Reason**: Enables minimal builds for pure orchestration use cases, reduces compile times and binary sizes
+  - See [docs/MIGRATION.md](docs/MIGRATION.md) for complete migration guide
+
+### Added
+- **Feature Flag System**: Comprehensive feature flags for controlling compiled dependencies
+  - LLM Provider Flags: `llm-openai`, `llm-anthropic`, `llm-deepseek`, `llm-all`
+  - Subsystem Flags: `vision`, `content-processing`, `web-server`, `notifications`
+  - Infrastructure Flags: `redis-queue`, `s3-storage`, `openai-embeddings`, `qdrant`
+  - Convenience Flag: `full` (enables all optional features)
+  - See [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md) for complete reference
+- **CI Feature Matrix**: GitHub Actions workflow testing 15 feature combinations
+  - Tests: no-default, default, all-features, full, individual providers and subsystems
+  - Ensures all feature combinations compile and pass tests
+  - See [.github/workflows/feature-flags.yml](.github/workflows/feature-flags.yml)
+
 ### Fixed
 - **Live API Tests**: All OpenAI and Anthropic live API tests now passing (10/10 essential tests)
   - OpenAI: Fixed model assertion to handle versioned models (e.g., "gpt-3.5-turbo-0125")

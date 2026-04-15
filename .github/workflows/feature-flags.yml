@@ -22,59 +22,59 @@ jobs:
           - name: "no-default-features"
             flags: "--no-default-features"
             description: "Core only (no optional features)"
-          
+
           - name: "default"
             flags: ""
             description: "Default features (llm-openai)"
-          
+
           - name: "all-features"
             flags: "--all-features"
             description: "All features enabled"
-          
+
           - name: "full"
             flags: "--features full"
             description: "Full convenience flag"
-          
+
           - name: "llm-openai"
             flags: "--no-default-features --features llm-openai"
             description: "OpenAI provider only"
-          
+
           - name: "llm-anthropic"
             flags: "--no-default-features --features llm-anthropic"
             description: "Anthropic provider only"
-          
+
           - name: "llm-deepseek"
             flags: "--no-default-features --features llm-deepseek"
             description: "DeepSeek provider only"
-          
+
           - name: "llm-all"
             flags: "--no-default-features --features llm-all"
             description: "All LLM providers"
-          
+
           - name: "web-server"
             flags: "--no-default-features --features web-server"
             description: "Web server subsystem"
-          
+
           - name: "content-processing"
             flags: "--no-default-features --features content-processing"
             description: "Content processing subsystem"
-          
+
           - name: "notifications"
             flags: "--no-default-features --features notifications"
             description: "Notifications subsystem"
-          
+
           - name: "vision"
             flags: "--no-default-features --features vision"
             description: "Vision capabilities"
-          
+
           - name: "redis-queue"
             flags: "--no-default-features --features redis-queue"
             description: "Redis queue adapter"
-          
+
           - name: "s3-storage"
             flags: "--no-default-features --features s3-storage"
             description: "S3/MinIO storage adapter"
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

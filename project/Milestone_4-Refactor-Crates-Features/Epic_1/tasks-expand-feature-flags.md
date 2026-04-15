@@ -154,11 +154,11 @@ git commit -m "..."
   - [x] 9.4 Verify the YAML file is syntactically valid (use `yamllint` or the GitHub Actions schema)
   - [x] 9.5 Commit and confirm the workflow appears in the `.github/workflows/` directory
 
-- [ ] 10.0 Update documentation and examples
-  - [ ] 10.1 Create `docs/FEATURE_FLAGS.md` with: a table of all flags, their gated dependencies, their gated modules, example `Cargo.toml` snippets, and a "minimal build" vs "full build" comparison
-  - [ ] 10.2 Create `docs/MIGRATION.md` explaining the breaking change: old default was `["redis-queue", "s3-storage", "openai-embeddings"]`, new default is `["llm-openai"]`; provide the exact line to add to `Cargo.toml` to restore old behavior
-  - [ ] 10.3 Update `docs/CONFIGURATION.md` — add a "Feature Flags" section linking to `FEATURE_FLAGS.md` and summarizing the available flags
-  - [ ] 10.4 Update `CHANGELOG.md` at the top with a `## [Unreleased]` section noting the breaking change in default features
-  - [ ] 10.5 Update `README.md` — add a "Feature Flags" table after the installation section listing each flag and its purpose
-  - [ ] 10.6 Review `/examples/` — update any examples that relied on `redis-queue` or `s3-storage` being default by adding explicit feature annotations in their doc comments
-  - [ ] 10.7 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
+- [x] 10.0 Update documentation and examples
+  - [x] 10.1 Create `docs/FEATURE_FLAGS.md` with: a table of all flags, their gated dependencies, their gated modules, example `Cargo.toml` snippets, and a "minimal build" vs "full build" comparison
+  - [x] 10.2 Create `docs/MIGRATION.md` explaining the breaking change: old default was `["redis-queue", "s3-storage", "openai-embeddings"]`, new default is `["llm-openai"]`; provide the exact line to add to `Cargo.toml` to restore old behavior
+  - [x] 10.3 Update `docs/CONFIGURATION.md` — add a "Feature Flags" section linking to `FEATURE_FLAGS.md` and summarizing the available flags
+  - [x] 10.4 Update `CHANGELOG.md` at the top with a `## [Unreleased]` section noting the breaking change in default features
+  - [x] 10.5 Update `README.md` — add a "Feature Flags" table after the installation section listing each flag and its purpose
+  - [x] 10.6 Review `/examples/` — update any examples that relied on `redis-queue` or `s3-storage` being default by adding explicit feature annotations in their doc comments
+  - [x] 10.7 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
