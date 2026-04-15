@@ -119,15 +119,15 @@ git commit -m "..."
   - [x] 5.5 Run `cargo check --no-default-features --features notifications` to confirm notifications compile
   - [x] 5.6 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
-- [ ] 6.0 Implement Vision feature flag (`vision`)
-  - [ ] 6.1 In `Cargo.toml` `[features]`, add: `vision = []` (no additional deps needed; vision adapters use reqwest which is core)
-  - [ ] 6.2 In `src/infrastructure/adapters/llm/mod.rs`, wrap `pub mod openai_vision;` with `#[cfg(all(feature = "vision", feature = "llm-openai"))]` (requires both flags)
-  - [ ] 6.3 In `src/infrastructure/adapters/llm/mod.rs`, wrap `pub mod anthropic_vision;` with `#[cfg(all(feature = "vision", feature = "llm-anthropic"))]`
-  - [ ] 6.4 In `src/application/ports/output/mod.rs`, wrap `pub mod vision_llm_port;` and `pub mod vision_port;` with `#[cfg(feature = "vision")]`
-  - [ ] 6.5 In `Cargo.toml` `[[test]]` for `vision_integration`, add `required-features = ["vision", "llm-openai"]`
-  - [ ] 6.6 Run `cargo check --no-default-features` to confirm vision is excluded
-  - [ ] 6.7 Run `cargo check --no-default-features --features "vision,llm-openai"` to confirm vision+openai compiles
-  - [ ] 6.8 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
+- [x] 6.0 Implement Vision feature flag (`vision`)
+  - [x] 6.1 In `Cargo.toml` `[features]`, add: `vision = []` (no additional deps needed; vision adapters use reqwest which is core)
+  - [x] 6.2 In `src/infrastructure/adapters/llm/mod.rs`, wrap `pub mod openai_vision;` with `#[cfg(all(feature = "vision", feature = "llm-openai"))]` (requires both flags)
+  - [x] 6.3 In `src/infrastructure/adapters/llm/mod.rs`, wrap `pub mod anthropic_vision;` with `#[cfg(all(feature = "vision", feature = "llm-anthropic"))]`
+  - [x] 6.4 In `src/application/ports/output/mod.rs`, wrap `pub mod vision_llm_port;` and `pub mod vision_port;` with `#[cfg(feature = "vision")]`
+  - [x] 6.5 In `Cargo.toml` `[[test]]` for `vision_integration`, add `required-features = ["vision", "llm-openai"]`
+  - [x] 6.6 Run `cargo check --no-default-features` to confirm vision is excluded
+  - [x] 6.7 Run `cargo check --no-default-features --features "vision,llm-openai"` to confirm vision+openai compiles
+  - [x] 6.8 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
 - [ ] 7.0 Implement MCP Arsenal feature flag (`mcp-arsenal`)
   - [ ] 7.1 In `Cargo.toml` `[features]`, add: `mcp-arsenal = []` (all MCP deps are pure Rust; no external crate to mark optional)

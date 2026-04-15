@@ -15,5 +15,7 @@ pub mod queue_port;
 pub mod sanctum_port;
 pub mod scheduler_port;
 pub mod search_engine_port;
+#[cfg(feature = "vision")]
 pub mod vision_llm_port;
+#[cfg(feature = "vision")]
 pub mod vision_port;

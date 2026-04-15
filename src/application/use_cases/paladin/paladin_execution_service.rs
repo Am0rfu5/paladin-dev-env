@@ -51,6 +51,7 @@ use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::application::ports::output::llm_port::{FunctionCall, LlmPort, LlmRequest};
 use crate::application::ports::output::paladin_executor_port::PaladinExecutorPort;
 use crate::application::ports::output::paladin_port::{PaladinResult, StopReason};
+#[cfg(feature = "vision")]
 use crate::application::ports::output::vision_port::VisionPort;
 use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use crate::application::use_cases::paladin::error::PaladinError;
@@ -69,6 +70,7 @@ use crate::core::platform::container::paladin::Paladin;
 use crate::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptType, UserPrompt,
 };
+#[cfg(feature = "vision")]
 use crate::core::platform::container::vision::VisionContent;
 use crate::infrastructure::adapters::arsenal::tool_result_formatter::ToolResultFormatter;
 use log::{debug, error, info, warn};
@@ -121,6 +123,7 @@ pub struct PaladinExecutionService {
     memory_extraction_service: Option<Arc<MemoryExtractionService>>,
 
     /// Vision adapters registry (provider name → adapter)
+    #[cfg(feature = "vision")]
     vision_adapters: HashMap<String, Arc<dyn VisionPort>>,
 
     /// Optional planning service for autonomous task decomposition (Layer 1)
@@ -177,6 +180,7 @@ impl PaladinExecutionService {
             formatter: ToolResultFormatter::new(),
             rag_retrieval_service: None,
             memory_extraction_service: None,
+            #[cfg(feature = "vision")]
             vision_adapters: HashMap::new(),
             planning_service: None,
             prompt_generation_service: None,
@@ -273,6 +277,7 @@ impl PaladinExecutionService {
     ///     .with_vision_adapter("openai".to_string(), openai);
     /// # }
     /// ```
+    #[cfg(feature = "vision")]
     pub fn with_vision_adapter(mut self, provider: String, adapter: Arc<dyn VisionPort>) -> Self {
         info!("Registering vision adapter for provider: {}", provider);
         self.vision_adapters.insert(provider, adapter);
@@ -474,6 +479,7 @@ impl PaladinExecutionService {
     ///
     /// Validates that the Paladin has vision enabled and the LLM provider supports vision.
     /// Executes vision analysis using the registered vision adapters.
+    #[cfg(feature = "vision")]
     pub async fn execute_with_vision(
         &self,
         paladin: &Paladin,
@@ -597,6 +603,7 @@ impl PaladinExecutionService {
     /// Examples:
     /// - "gpt-4o" → "openai"
     /// - "claude-3-opus" → "anthropic"
+    #[cfg(feature = "vision")]
     fn extract_provider_from_model(&self, model: &str) -> Result<String, PaladinError> {
         if model.starts_with("gpt-") || model.starts_with("o1-") {
             Ok("openai".to_string())
@@ -1806,10 +1813,11 @@ mod tests {
     use crate::application::ports::output::sanctum_port::SanctumSearchResult;
     use crate::application::use_cases::sanctum::MemoryExtractionStrategy;
     use crate::core::base::entity::node::Node;
+    #[cfg(feature = "vision")]
+    use crate::core::platform::container::vision::{ImageDetail, VisionContent};
     use crate::core::platform::container::{
         paladin::PaladinData,
         sanctum::{Memory, MemoryType, SanctumEntry},
-        vision::ImageDetail,
     };
     use async_trait::async_trait;
     use uuid::Uuid;
@@ -1999,6 +2007,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "vision")]
     async fn test_vision_capability_check() {
         // Test that vision capability is checked
         // This is a placeholder until we implement the run_with_vision method
@@ -2028,6 +2037,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "vision")]
     async fn test_execute_with_vision_not_enabled() {
         // Test that execute_with_vision fails when vision is not enabled
         let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
@@ -2064,6 +2074,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "vision")]
     async fn test_execute_with_vision_unsupported_provider() {
         // Test that execute_with_vision fails when LLM provider doesn't support vision
         let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
@@ -2102,12 +2113,14 @@ mod tests {
     }
 
     // Mock VisionPort for testing
+    #[cfg(feature = "vision")]
     struct MockVisionPort {
         provider: String,
         should_fail: bool,
         response_content: String,
     }
 
+    #[cfg(feature = "vision")]
     impl MockVisionPort {
         fn new(provider: &str) -> Self {
             Self {
@@ -2129,6 +2142,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "vision")]
     #[async_trait]
     impl crate::application::ports::output::vision_port::VisionPort for MockVisionPort {
         async fn analyze_image(
@@ -2174,6 +2188,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "vision")]
     async fn test_extract_provider_from_openai_model() {
         let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
         let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
@@ -2201,6 +2216,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "vision")]
     async fn test_extract_provider_from_anthropic_model() {
         let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
         let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
@@ -2228,6 +2244,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "vision")]
     async fn test_extract_provider_from_unsupported_model() {
         let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
         let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
@@ -2245,6 +2262,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "vision")]
     async fn test_with_vision_adapter() {
         let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
         let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
@@ -2260,6 +2278,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "vision")]
     async fn test_vision_execution_with_stop_word() {
         // Create mock LLM port with vision support
         struct VisionCapableMockLlmPort;
@@ -2349,6 +2368,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "vision")]
     async fn test_vision_execution_missing_adapter() {
         // Create mock LLM port with vision support
         struct VisionCapableMockLlmPort;
@@ -2432,6 +2452,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "vision")]
     async fn test_vision_execution_successful() {
         // Create mock LLM port with vision support
         struct VisionCapableMockLlmPort;

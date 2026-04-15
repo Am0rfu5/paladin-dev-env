@@ -1,6 +1,5 @@
 ---
 source: tests/cli/table_output_test.rs
-assertion_line: 49
 expression: output
 ---
 ┌────────────────┬───────────────────────────────────────────────────────────────┬─────────────┐

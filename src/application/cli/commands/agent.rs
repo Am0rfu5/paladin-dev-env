@@ -66,6 +66,7 @@ pub struct AgentRunArgs {
     pub verbose: bool,
 
     /// Path to image file(s) for vision processing (repeatable)
+    #[cfg(feature = "vision")]
     #[arg(long = "image")]
     pub images: Vec<PathBuf>,
 
@@ -155,6 +156,7 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    #[cfg(feature = "vision")]
     use crate::core::platform::container::vision::{ImageDetail, VisionContent};
     #[cfg(feature = "content-processing")]
     use crate::infrastructure::adapters::document::DocumentAdapter;
@@ -163,6 +165,7 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     use std::time::Duration;
 
     // Validate image paths if provided
+    #[cfg(feature = "vision")]
     if !args.images.is_empty() {
         for image_path in &args.images {
             if !image_path.exists() {
@@ -318,6 +321,7 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     }
 
     // Enable vision if images are provided
+    #[cfg(feature = "vision")]
     if !args.images.is_empty() {
         builder = builder.enable_vision(true);
         if args.verbose {
@@ -382,6 +386,7 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
 
     if args.verbose {
         println!("{} Executing Paladin: {}", "→".cyan().bold(), config.name);
+        #[cfg(feature = "vision")]
         if !args.images.is_empty() {
             println!(
                 "{} Input: {} (with {} image(s))",
@@ -396,45 +401,60 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
 
     // Execute Paladin with vision support if images provided
     let start = std::time::Instant::now();
-    let result = if !args.images.is_empty() {
-        // Load images and convert to VisionContent
-        let mut vision_contents = Vec::new();
-        for image_path in &args.images {
-            if args.verbose {
-                println!("Loading image: {}", image_path.display());
+    let result = {
+        #[cfg(feature = "vision")]
+        {
+            if !args.images.is_empty() {
+                // Load images and convert to VisionContent
+                let mut vision_contents = Vec::new();
+                for image_path in &args.images {
+                    if args.verbose {
+                        println!("Loading image: {}", image_path.display());
+                    }
+
+                    // Create VisionContent from file path
+                    let vision_content = VisionContent::ImageFile {
+                        path: image_path.clone(),
+                        detail: ImageDetail::Auto,
+                    };
+
+                    // Validate format
+                    vision_content.validate_format().map_err(|e| {
+                        CliError::VisionProcessingError {
+                            message: e.to_string(),
+                        }
+                    })?;
+
+                    vision_contents.push(vision_content);
+                }
+
+                // Execute with vision
+                service
+                    .execute_with_vision(&paladin, &combined_input, vision_contents)
+                    .await
+                    .map_err(|e| CliError::ExecutionError {
+                        message: e.to_string(),
+                    })?
+            } else {
+                // Standard execution without vision
+                service
+                    .execute(&paladin, &combined_input)
+                    .await
+                    .map_err(|e| CliError::ExecutionError {
+                        message: e.to_string(),
+                    })?
             }
-
-            // Create VisionContent from file path
-            let vision_content = VisionContent::ImageFile {
-                path: image_path.clone(),
-                detail: ImageDetail::Auto,
-            };
-
-            // Validate format
-            vision_content
-                .validate_format()
-                .map_err(|e| CliError::VisionProcessingError {
-                    message: e.to_string(),
-                })?;
-
-            vision_contents.push(vision_content);
         }
-
-        // Execute with vision
-        service
-            .execute_with_vision(&paladin, &combined_input, vision_contents)
-            .await
-            .map_err(|e| CliError::ExecutionError {
-                message: e.to_string(),
-            })?
-    } else {
-        // Standard execution without vision
-        service
-            .execute(&paladin, &combined_input)
-            .await
-            .map_err(|e| CliError::ExecutionError {
-                message: e.to_string(),
-            })?
+        #[cfg(not(feature = "vision"))]
+        {
+            // Standard execution without vision
+            service
+                .execute(&paladin, &combined_input)
+                .await
+                .map_err(|e| CliError::ExecutionError {
+                    message: e.to_string(),
+                })?
+        }
     };
     let duration = start.elapsed();
 
@@ -506,6 +526,7 @@ mod tests {
             input: Some("test input".to_string()),
             output: Some(PathBuf::from("output.json")),
             verbose: true,
+            #[cfg(feature = "vision")]
             images: vec![],
             document: None,
             auto_plan: false,
@@ -518,17 +539,20 @@ mod tests {
         assert_eq!(args.input, Some("test input".to_string()));
         assert_eq!(args.output, Some(PathBuf::from("output.json")));
         assert!(args.verbose);
+        #[cfg(feature = "vision")]
         assert!(args.images.is_empty());
         assert!(args.document.is_none());
     }
 
     #[test]
+    #[cfg(feature = "vision")]
     fn test_agent_run_args_with_images() {
         let args = AgentRunArgs {
             config: PathBuf::from("config.yaml"),
             input: Some("analyze these".to_string()),
             output: None,
             verbose: false,
+            #[cfg(feature = "vision")]
             images: vec![PathBuf::from("image1.png"), PathBuf::from("image2.jpg")],
             document: None,
             auto_plan: false,
@@ -549,6 +573,7 @@ mod tests {
             input: Some("summarize this".to_string()),
             output: None,
             verbose: false,
+            #[cfg(feature = "vision")]
             images: vec![],
             document: Some(PathBuf::from("document.pdf")),
             auto_plan: false,
@@ -698,6 +723,7 @@ mod tests {
             input: None,
             output: None,
             verbose: false,
+            #[cfg(feature = "vision")]
             images: vec![],
             document: None,
             auto_plan: false,
