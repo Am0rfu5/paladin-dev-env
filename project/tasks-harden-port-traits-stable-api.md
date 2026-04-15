@@ -1,8 +1,8 @@
 # Task List: Harden Port Traits as the Stable Public API Contract
 
-**Epic:** Epic 2 - Milestone 4, Tier 1  
-**Created:** 2026-04-15  
-**Status:** Planning  
+**Epic:** Epic 2 - Milestone 4, Tier 1
+**Created:** 2026-04-15
+**Status:** Planning
 **Related PRD:** [prd-harden-port-traits-stable-api.md](./prd-harden-port-traits-stable-api.md)
 
 ---
@@ -51,12 +51,12 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 0.2 Create and checkout new feature branch (`git checkout -b feature/milestone_4-epic_2-api-hardening`)
   - [x] 0.3 Verify branch creation (`git branch --show-current`)
 
-- [ ] 1.0 Audit Current Public API Surface
-  - [ ] 1.1 Read `src/lib.rs` and document all current glob re-exports
-  - [ ] 1.2 Generate list of all publicly exported types using `cargo public-api --simplified > current-exports.txt` (install if needed: `cargo install cargo-public-api`)
-  - [ ] 1.3 Review `src/application/ports/output/` directory and list all port traits
-  - [ ] 1.4 Review `src/application/ports/input/` directory and list all input port traits
-  - [ ] 1.5 Create `project/api-audit.md` document classifying all exported items into:
+- [x] 1.0 Audit Current Public API Surface
+  - [x] 1.1 Read `src/lib.rs` and document all current glob re-exports
+  - [x] 1.2 Generate list of all publicly exported types using `cargo public-api --simplified > current-exports.txt` (install if needed: `cargo install cargo-public-api`) - NOTE: Tool installation failed due to OpenSSL issue; proceeding with manual audit
+  - [x] 1.3 Review `src/application/ports/output/` directory and list all port traits
+  - [x] 1.4 Review `src/application/ports/input/` directory and list all input port traits
+  - [x] 1.5 Create `project/api-audit.md` document classifying all exported items into:
     - Port Traits (should remain public)
     - Essential Domain Entities (should remain public)
     - Builders (should remain public)
@@ -66,10 +66,10 @@ Update the file after completing each sub-task, not just after completing an ent
     - Internal Repositories (should be restricted)
     - Internal Managers (should be restricted)
     - Needs Discussion (ambiguous cases)
-  - [ ] 1.6 Scan `examples/` directory for commonly used types to ensure we don't break examples
-  - [ ] 1.7 Scan `tests/integration/` for commonly used types in integration tests
-  - [ ] 1.8 Count total exported items (baseline metric for success criteria)
-  - [ ] 1.9 Identify types that need deprecation warnings vs immediate restriction
+  - [x] 1.6 Scan `examples/` directory for commonly used types to ensure we don't break examples
+  - [x] 1.7 Scan `tests/integration/` for commonly used types in integration tests
+  - [x] 1.8 Count total exported items (baseline metric for success criteria) - Estimated ~200+ currently, target ~104-124 after Epic
+  - [x] 1.9 Identify types that need deprecation warnings vs immediate restriction - Documented in api-audit.md
 
 - [ ] 2.0 Install and Configure API Tracking Tools
   - [ ] 2.1 Verify `cargo-public-api` is installed (`cargo install cargo-public-api` if not)
