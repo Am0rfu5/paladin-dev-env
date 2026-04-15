@@ -68,9 +68,10 @@ RUN rustup component add \
 
 # Install essential Rust tools
 RUN cargo install cargo-watch
-RUN cargo install cargo-edit  
+RUN cargo install cargo-edit
 RUN cargo install cargo-audit
 RUN cargo install cargo-expand
+RUN cargo install cargo-insta
 
 # Install sqlx-cli for database migrations
 RUN cargo install --locked sqlx-cli --no-default-features --features sqlite,mysql
