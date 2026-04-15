@@ -147,12 +147,12 @@ git commit -m "..."
   - [x] 8.7 Run `cargo test` under each of the three main combinations (default, no-default, all-features)
   - [x] 8.8 Run `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
-- [ ] 9.0 Configure CI feature flag matrix
-  - [ ] 9.1 Create `.github/workflows/feature-flags.yml`
-  - [ ] 9.2 Define a `strategy.matrix` with entries for: `--no-default-features`, default (no flags arg), `--all-features`, `--features llm-openai`, `--features llm-anthropic`, `--features llm-deepseek`, `--features web-server`, `--features content-processing`
-  - [ ] 9.3 Each matrix entry should run: `cargo check`, `cargo build`, and `cargo test` (use `cargo test --no-run` for expensive test builds if needed)
-  - [ ] 9.4 Verify the YAML file is syntactically valid (use `yamllint` or the GitHub Actions schema)
-  - [ ] 9.5 Commit and confirm the workflow appears in the `.github/workflows/` directory
+- [x] 9.0 Configure CI feature flag matrix
+  - [x] 9.1 Create `.github/workflows/feature-flags.yml`
+  - [x] 9.2 Define a `strategy.matrix` with entries for: `--no-default-features`, default (no flags arg), `--all-features`, `--features llm-openai`, `--features llm-anthropic`, `--features llm-deepseek`, `--features web-server`, `--features content-processing`
+  - [x] 9.3 Each matrix entry should run: `cargo check`, `cargo build`, and `cargo test` (use `cargo test --no-run` for expensive test builds if needed)
+  - [x] 9.4 Verify the YAML file is syntactically valid (use `yamllint` or the GitHub Actions schema)
+  - [x] 9.5 Commit and confirm the workflow appears in the `.github/workflows/` directory
 
 - [ ] 10.0 Update documentation and examples
   - [ ] 10.1 Create `docs/FEATURE_FLAGS.md` with: a table of all flags, their gated dependencies, their gated modules, example `Cargo.toml` snippets, and a "minimal build" vs "full build" comparison
