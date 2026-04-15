@@ -154,7 +154,7 @@ name = "paladin-cli"
 path = "src/bin/paladin-cli.rs"
 
 [features]
-default = ["redis-queue", "s3-storage", "openai-embeddings"]
+default = ["llm-openai"]
 redis-queue = ["redis"]
 s3-storage = ["rust-s3"]
 openai-embeddings = []
@@ -167,10 +167,15 @@ llm-openai = []
 llm-anthropic = []
 llm-deepseek = []
 llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]
+
+# Subsystem feature flags
 vision = []
 content-processing = ["pdf-extract", "scraper", "tiktoken-rs", "rss"]
 web-server = ["actix-web", "axum"]
 notifications = ["lettre", "handlebars"]
+
+# Convenience flag for enabling all optional features
+full = ["llm-all", "content-processing", "web-server", "notifications", "vision", "redis-queue", "s3-storage", "openai-embeddings", "qdrant"]
 
 # Performance optimizations for Redis
 [profile.release]

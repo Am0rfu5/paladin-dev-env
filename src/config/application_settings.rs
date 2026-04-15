@@ -6,6 +6,7 @@ use crate::infrastructure::adapters::notifications::{EmailAdapterConfig, SystemA
 use config::{Config, ConfigError, Environment, File};
 use serde::{Deserialize, Serialize};
 use std::fs;
+#[cfg(feature = "s3-storage")]
 use std::time::Duration;
 
 /// Configuration for JSON Herald formatter

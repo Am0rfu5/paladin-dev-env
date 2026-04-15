@@ -1,6 +1,10 @@
+#[cfg(feature = "s3-storage")]
 use crate::application::ports::output::file_storage_port::FileStoragePort;
+#[cfg(feature = "s3-storage")]
 use crate::application::ports::output::file_storage_port::FileStorageUtils;
+#[cfg(any(feature = "redis-queue", feature = "s3-storage"))]
 use crate::application::ports::output::log_port::LogPort;
+#[cfg(feature = "redis-queue")]
 use crate::application::ports::output::queue_port::QueuePort;
 use crate::application::storage::sql_store::MigrationManager;
 use crate::config::application_settings::Settings;
@@ -17,6 +21,7 @@ use crate::infrastructure::adapters::logs::system_log_adapter::SystemLogAdapter;
 use crate::infrastructure::adapters::queue::redis::RedisQueueAdapter;
 use crate::infrastructure::repositories::sqlite_content_repository::SqliteStore;
 use std::env;
+#[cfg(feature = "s3-storage")]
 use std::path::Path;
 use std::sync::Arc;
 use tokio::signal;
@@ -463,6 +468,7 @@ impl ServiceRunner {
     }
 
     /// Helper method to detect content type from file extension
+    #[cfg(feature = "s3-storage")]
     fn detect_content_type(path: &Path) -> String {
         <() as FileStorageUtils>::detect_content_type(path)
             .unwrap_or_else(|| "application/octet-stream".to_string())
@@ -619,6 +625,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "s3-storage")]
     fn test_content_type_detection() {
         use std::path::PathBuf;
 
@@ -693,6 +700,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "s3-storage")]
     fn test_content_type_txt() {
         use std::path::PathBuf;
         assert_eq!(
@@ -702,6 +710,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "s3-storage")]
     fn test_content_type_html() {
         use std::path::PathBuf;
         assert_eq!(
@@ -711,6 +720,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "s3-storage")]
     fn test_content_type_unknown() {
         use std::path::PathBuf;
         // mime_guess defaults to text/plain for unknown extensions (first_or_text_plain)
@@ -749,6 +759,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "s3-storage")]
     fn test_content_type_case_insensitive() {
         use std::path::PathBuf;
         assert_eq!(

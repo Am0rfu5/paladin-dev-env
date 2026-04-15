@@ -137,15 +137,15 @@ git commit -m "..."
   - ~~[ ] 7.5 Run `cargo check --no-default-features --features mcp-arsenal` to confirm arsenal compiles~~
   - ~~[ ] 7.6 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit~~
 
-- [ ] 8.0 Revise default feature set and add `full` convenience flag
-  - [ ] 8.1 In `Cargo.toml` `[features]`, change `default = ["redis-queue", "s3-storage", "openai-embeddings"]` to `default = ["llm-openai"]`
-  - [ ] 8.2 Add `full = ["llm-all", "content-processing", "web-server", "notifications", "vision", "redis-queue", "s3-storage", "openai-embeddings", "qdrant"]`
-  - [ ] 8.3 Run `cargo build` (default features) and confirm it compiles cleanly with only `llm-openai`
-  - [ ] 8.4 Run `cargo build --no-default-features` and confirm the core-only build succeeds
-  - [ ] 8.5 Run `cargo build --all-features` and confirm the full build succeeds
-  - [ ] 8.6 Run `cargo build --features full` and confirm the `full` convenience flag also works
-  - [ ] 8.7 Run `cargo test` under each of the three main combinations (default, no-default, all-features)
-  - [ ] 8.8 Run `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
+- [x] 8.0 Revise default feature set and add `full` convenience flag
+  - [x] 8.1 In `Cargo.toml` `[features]`, change `default = ["redis-queue", "s3-storage", "openai-embeddings"]` to `default = ["llm-openai"]`
+  - [x] 8.2 Add `full = ["llm-all", "content-processing", "web-server", "notifications", "vision", "redis-queue", "s3-storage", "openai-embeddings", "qdrant"]`
+  - [x] 8.3 Run `cargo build` (default features) and confirm it compiles cleanly with only `llm-openai`
+  - [x] 8.4 Run `cargo build --no-default-features` and confirm the core-only build succeeds
+  - [x] 8.5 Run `cargo build --all-features` and confirm the full build succeeds
+  - [x] 8.6 Run `cargo build --features full` and confirm the `full` convenience flag also works
+  - [x] 8.7 Run `cargo test` under each of the three main combinations (default, no-default, all-features)
+  - [x] 8.8 Run `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
 - [ ] 9.0 Configure CI feature flag matrix
   - [ ] 9.1 Create `.github/workflows/feature-flags.yml`
