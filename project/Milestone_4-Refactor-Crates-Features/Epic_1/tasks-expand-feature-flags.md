@@ -23,6 +23,7 @@
 - `src/infrastructure/adapters/llm/provider_factory.rs` (tests) — Gate provider-specific tests behind their respective LLM feature flags
 - `tests/integration/mod.rs` — Gate provider/storage/vision integration test module declarations behind their feature flags
 - `src/application/use_cases/paladin/paladin_execution_service.rs` — Change vision doctest from `no_run` to `ignore` (depends on gated `openai_adapter`)
+- `src/application/cli/commands/agent.rs` — Gate `DocumentAdapter` import and document processing block behind `content-processing`
 
 ### New Files
 - `docs/FEATURE_FLAGS.md` — Comprehensive documentation for all feature flags with usage examples
@@ -90,16 +91,16 @@ git commit -m "..."
   - [x] 2.11 Run `cargo check --no-default-features` (no LLM provider) and confirm it passes
   - [x] 2.12 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
-- [ ] 3.0 Implement Content Processing feature flag (`content-processing`)
-  - [ ] 3.1 In `Cargo.toml` `[dependencies]`, mark `pdf-extract`, `scraper`, `tiktoken-rs`, and `rss` as `optional = true`
-  - [ ] 3.2 In `Cargo.toml` `[features]`, add: `content-processing = ["pdf-extract", "scraper", "tiktoken-rs", "rss"]`
-  - [ ] 3.3 In `src/infrastructure/adapters/mod.rs`, wrap the `document` module declaration with `#[cfg(feature = "content-processing")]`
-  - [ ] 3.4 In `src/infrastructure/adapters/garrison/token_counter.rs`, wrap the `use tiktoken_rs::...` import and the `TokenCounter` implementation in `#[cfg(feature = "content-processing")]`
-  - [ ] 3.5 In `src/infrastructure/adapters/garrison/mod.rs`, gate the `token_counter` module declaration with `#[cfg(feature = "content-processing")]`
-  - [ ] 3.6 Search for any other files referencing `pdf_extract::`, `scraper::`, or `rss::` with `grep -r "pdf_extract\|scraper::\|rss::" src/` and add appropriate `#[cfg]` guards
-  - [ ] 3.7 Run `cargo check --no-default-features` and confirm content processing deps are not included
-  - [ ] 3.8 Run `cargo check --no-default-features --features content-processing` and confirm it compiles
-  - [ ] 3.9 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
+- [x] 3.0 Implement Content Processing feature flag (`content-processing`)
+  - [x] 3.1 In `Cargo.toml` `[dependencies]`, mark `pdf-extract`, `scraper`, `tiktoken-rs`, and `rss` as `optional = true`
+  - [x] 3.2 In `Cargo.toml` `[features]`, add: `content-processing = ["pdf-extract", "scraper", "tiktoken-rs", "rss"]`
+  - [x] 3.3 In `src/infrastructure/adapters/mod.rs`, wrap the `document` module declaration with `#[cfg(feature = "content-processing")]`
+  - [x] 3.4 In `src/infrastructure/adapters/garrison/token_counter.rs`, wrap the `use tiktoken_rs::...` import and the `TokenCounter` implementation in `#[cfg(feature = "content-processing")]`
+  - [x] 3.5 In `src/infrastructure/adapters/garrison/mod.rs`, gate the `token_counter` module declaration with `#[cfg(feature = "content-processing")]`
+  - [x] 3.6 Search for any other files referencing `pdf_extract::`, `scraper::`, or `rss::` with `grep -r "pdf_extract\|scraper::\|rss::" src/` and add appropriate `#[cfg]` guards
+  - [x] 3.7 Run `cargo check --no-default-features` and confirm content processing deps are not included
+  - [x] 3.8 Run `cargo check --no-default-features --features content-processing` and confirm it compiles
+  - [x] 3.9 Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`; commit
 
 - [ ] 4.0 Implement Web Server feature flag (`web-server`)
   - [ ] 4.1 In `Cargo.toml` `[dependencies]`, mark `actix-web` and `axum` as `optional = true`

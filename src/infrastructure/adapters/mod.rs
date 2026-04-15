@@ -1,5 +1,6 @@
 pub mod arsenal;
 pub mod citadel;
+#[cfg(feature = "content-processing")]
 pub mod document;
 pub mod file_storage;
 pub mod garrison;

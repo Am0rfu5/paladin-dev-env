@@ -149,12 +149,14 @@ pub fn handle_agent_new(args: AgentNewArgs) -> Result<(), CliError> {
 pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     use crate::application::cli::config::loader::load_paladin_config;
     use crate::application::cli::interactive::prompt_for_input;
+    #[cfg(feature = "content-processing")]
     use crate::application::ports::input::document_port::{DocumentPort, DocumentSource};
     use crate::application::ports::output::llm_port::LlmPort;
     use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::vision::{ImageDetail, VisionContent};
+    #[cfg(feature = "content-processing")]
     use crate::infrastructure::adapters::document::DocumentAdapter;
     use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
     use std::sync::Arc;
@@ -326,43 +328,56 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     let paladin = builder.build().await?;
 
     // Process document if provided
+    #[allow(unused_mut)]
     let mut combined_input = input.clone();
-    if let Some(doc_path) = &args.document {
-        if args.verbose {
-            println!(
-                "{} Processing document: {}",
-                "→".cyan().bold(),
-                doc_path.display()
-            );
+    #[cfg(feature = "content-processing")]
+    {
+        if let Some(doc_path) = &args.document {
+            if args.verbose {
+                println!(
+                    "{} Processing document: {}",
+                    "→".cyan().bold(),
+                    doc_path.display()
+                );
+            }
+
+            let doc_adapter = DocumentAdapter::new();
+            let document = doc_adapter
+                .ingest(DocumentSource::File(doc_path.clone()))
+                .await
+                .map_err(|e| CliError::DocumentProcessingError {
+                    message: e.to_string(),
+                })?;
+
+            // Extract text from all pages
+            let doc_text: String = document
+                .pages
+                .iter()
+                .map(|p| p.content.as_str())
+                .collect::<Vec<_>>()
+                .join("\n\n");
+
+            if args.verbose {
+                println!(
+                    "{} Document processed: {} pages, {} words",
+                    "✓".green().bold(),
+                    document.page_count(),
+                    document.word_count()
+                );
+            }
+
+            // Combine input with document text
+            combined_input = format!("{}\n\nDocument content:\n{}\n", input, doc_text);
         }
-
-        let doc_adapter = DocumentAdapter::new();
-        let document = doc_adapter
-            .ingest(DocumentSource::File(doc_path.clone()))
-            .await
-            .map_err(|e| CliError::DocumentProcessingError {
-                message: e.to_string(),
-            })?;
-
-        // Extract text from all pages
-        let doc_text: String = document
-            .pages
-            .iter()
-            .map(|p| p.content.as_str())
-            .collect::<Vec<_>>()
-            .join("\n\n");
-
-        if args.verbose {
-            println!(
-                "{} Document processed: {} pages, {} words",
-                "✓".green().bold(),
-                document.page_count(),
-                document.word_count()
-            );
+    }
+    #[cfg(not(feature = "content-processing"))]
+    {
+        if args.document.is_some() {
+            return Err(CliError::DocumentProcessingError {
+                message: "Document processing requires the 'content-processing' feature flag"
+                    .to_string(),
+            });
         }
-
-        // Combine input with document text
-        combined_input = format!("{}\n\nDocument content:\n{}\n", input, doc_text);
     }
 
     if args.verbose {
