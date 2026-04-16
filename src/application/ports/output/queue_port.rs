@@ -1,22 +1,342 @@
-//! Queue Port Module
+//! # Queue Port - Async Task Queue and Job Processing Interface
 //!
-//! This module defines the Queue Port, which is an interface for the Queue Manager Service.
-//! It is used to abstract the Queue Manager Service from the Application Layer, allowing for
-//! different implementations of the Queue Manager Service to be used without changing the
-//! Application Layer code.
+//! This module defines the port trait for asynchronous task queue operations, enabling
+//! distributed job processing, work distribution, and background task execution across
+//! Paladin and Battalion operations.
 //!
-//! The Queue Port defines the methods that the Application Layer can use to interact with the
-//! Queue Manager Service, such as adding items to the queue, retrieving items from the queue,
-//! and checking the status of the queue.
+//! ## Purpose
 //!
-//! This allows for a clean separation of concerns and makes it easier to test the Application Layer
-//! without relying on the actual Queue Manager Service implementation.
+//! The Queue port provides a standardized interface for:
+//! - **Task Distribution**: Enqueue work items for async processing
+//! - **Job Processing**: Dequeue and process items with worker coordination
+//! - **Priority Management**: Handle items based on urgency (Critical → High → Normal → Low)
+//! - **Retry Handling**: Automatic retry with exponential backoff for failed items
+//! - **Queue Lifecycle**: Create, pause, resume, and monitor multiple queues
 //!
-//! The Queue Port is part of the Application Layer in our Hexagonal Architecture, sitting above
-//! the Platform Layer it allows for Queue Adapters to be implemented in the Infrastructure Layer.
-//! It is designed to be flexible and extensible, allowing for different queue implementations
-//! to be with specific Queues developed within the Application Layer code. The external queue
-//! implementation is specified by the adapter.
+//! Following hexagonal architecture, this trait abstracts queue operations from their
+//! implementations (in-memory, Redis, RabbitMQ, AWS SQS).
+//!
+//! ## Hexagonal Architecture Context
+//!
+//! ```text
+//! ┌─────────────────────────────────────────────────────┐
+//! │               Application Layer                      │
+//! │  ┌──────────────────────────────────────────────┐  │
+//! │  │  PaladinExecutionService                      │  │
+//! │  │    - Queues Paladin execution tasks           │  │
+//! │  │  BattalionServices                            │  │
+//! │  │    - Distributes sub-tasks to workers         │  │
+//! │  │  ContentIngestionService                      │  │
+//! │  │    - Queues documents for processing          │  │
+//! │  └──────────────────────────────────────────────┘  │
+//! │                         │                            │
+//! │                         ▼                            │
+//! │  ┌──────────────────────────────────────────────┐  │
+//! │  │  QueuePort (this module)                      │  │
+//! │  │    - Task queue interface                     │  │
+//! │  └──────────────────────────────────────────────┘  │
+//! └─────────────────────────────────────────────────────┘
+//!                          │
+//!                          ▼
+//! ┌─────────────────────────────────────────────────────┐
+//! │            Infrastructure Layer                      │
+//! │  ┌──────────────────────────────────────────────┐  │
+//! │  │  InMemoryQueue (Local processing)            │  │
+//! │  │  RedisQueueAdapter (Distributed)             │  │
+//! │  │  RabbitMQAdapter (Message broker)            │  │
+//! │  │  SqsAdapter (AWS SQS)                        │  │
+//! │  └──────────────────────────────────────────────┘  │
+//! └─────────────────────────────────────────────────────┘
+//! ```
+//!
+//! ## Thread Safety
+//!
+//! All implementations must be `Send + Sync`:
+//! - **Send**: Queue operations may happen across threads
+//! - **Sync**: Multiple workers access the queue concurrently
+//! - Implementations must handle concurrent enqueue/dequeue safely
+//!
+//! ## Error Handling
+//!
+//! Queue operations can fail for several reasons:
+//! - **Queue Not Found**: Requested queue doesn't exist
+//! - **Queue Full**: Maximum capacity reached (configurable)
+//! - **Item Not Found**: Item ID doesn't exist or already processed
+//! - **Serialization Error**: Item payload cannot be serialized/deserialized
+//! - **Operation Failed**: Backend-specific errors (network, Redis down, etc.)
+//!
+//! All errors are represented via [`QueueError`](crate::core::platform::manager::queue_service::QueueError)
+//! with detailed context for debugging and recovery.
+//!
+//! ## Common Use Cases
+//!
+//! ### 1. Async Paladin Execution
+//!
+//! ```rust,ignore
+//! use paladin::application::ports::output::queue_port::QueuePort;
+//! use paladin::core::platform::container::queue_item::{QueueItem, QueueItemConfig};
+//! use paladin::core::base::entity::message::Message;
+//! use serde::{Serialize, Deserialize};
+//!
+//! #[derive(Debug, Clone, Serialize, Deserialize)]
+//! struct PaladinTask {
+//!     paladin_id: String,
+//!     input: String,
+//! }
+//!
+//! async fn queue_paladin_execution(
+//!     queue: &dyn QueuePort,
+//!     task: PaladinTask,
+//! ) -> Result<(), Box<dyn std::error::Error>> {
+//!     // Create message with task payload
+//!     let message = Message::new(
+//!         task,
+//!         "paladin-service".to_string(),
+//!         paladin::core::base::entity::message::Location::Local,
+//!     );
+//!     
+//!     // Create queue item with retry config
+//!     let config = QueueItemConfig {
+//!         max_retries: 3,
+//!         timeout_seconds: 300,
+//!         ..Default::default()
+//!     };
+//!     
+//!     let item = QueueItem::new(
+//!         "paladin-executions".to_string(),
+//!         message,
+//!         Some(config),
+//!     );
+//!     
+//!     // Enqueue for async processing
+//!     let item_id = queue.enqueue("paladin-executions", item).await?;
+//!     println!("Queued Paladin task: {}", item_id);
+//!     
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ### 2. Worker Processing Loop
+//!
+//! ```rust,ignore
+//! use paladin::application::ports::output::queue_port::QueuePort;
+//! use serde::{Serialize, Deserialize};
+//!
+//! #[derive(Debug, Clone, Serialize, Deserialize)]
+//! struct DocumentTask {
+//!     document_id: String,
+//!     operation: String,
+//! }
+//!
+//! async fn worker_process_loop(
+//!     queue: &dyn QueuePort,
+//!     worker_id: String,
+//! ) -> Result<(), Box<dyn std::error::Error>> {
+//!     loop {
+//!         // Dequeue next item
+//!         if let Some(item) = queue.dequeue("document-processing").await? {
+//!             let item_id = item.action.id;
+//!             
+//!             // Mark as processing
+//!             queue.start_processing("document-processing", item_id, worker_id.clone()).await?;
+//!             
+//!             // Process the task
+//!             match process_document(&item).await {
+//!                 Ok(result) => {
+//!                     // Mark as complete
+//!                     queue.complete_processing(
+//!                         "document-processing",
+//!                         item_id,
+//!                         Some(result),
+//!                     ).await?;
+//!                     println!("Completed task: {}", item_id);
+//!                 }
+//!                 Err(e) => {
+//!                     // Mark as failed (will retry if configured)
+//!                     let should_retry = queue.fail_processing(
+//!                         "document-processing",
+//!                         item_id,
+//!                         e.to_string(),
+//!                     ).await?;
+//!                     
+//!                     if should_retry {
+//!                         println!("Task {} will retry", item_id);
+//!                     } else {
+//!                         println!("Task {} failed permanently", item_id);
+//!                     }
+//!                 }
+//!             }
+//!         } else {
+//!             // No items available, wait before polling again
+//!             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+//!         }
+//!     }
+//! }
+//!
+//! async fn process_document(
+//!     item: &paladin::core::platform::container::queue_item::QueueItem<serde_json::Value>,
+//! ) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+//!     // Simulate document processing
+//!     Ok(serde_json::json!({"status": "processed"}))
+//! }
+//! ```
+//!
+//! ### 3. Priority-Based Processing
+//!
+//! ```rust,ignore
+//! use paladin::application::ports::output::queue_port::QueuePort;
+//! use paladin::core::platform::container::queue_item::{QueueItem, QueueItemConfig};
+//! use paladin::core::base::entity::message::{Message, MessagePriority};
+//! use serde::{Serialize, Deserialize};
+//!
+//! #[derive(Debug, Clone, Serialize, Deserialize)]
+//! struct AlertTask {
+//!     alert_type: String,
+//!     severity: String,
+//! }
+//!
+//! async fn queue_critical_alert(
+//!     queue: &dyn QueuePort,
+//!     alert: AlertTask,
+//! ) -> Result<(), Box<dyn std::error::Error>> {
+//!     // Create message with Critical priority
+//!     let mut message = Message::new(
+//!         alert,
+//!         "alert-service".to_string(),
+//!         paladin::core::base::entity::message::Location::Local,
+//!     );
+//!     message.priority = MessagePriority::Critical;
+//!     
+//!     let item = QueueItem::new(
+//!         "alerts".to_string(),
+//!         message,
+//!         Some(QueueItemConfig::default()),
+//!     );
+//!     
+//!     // Will be processed before Normal/Low priority items
+//!     queue.enqueue("alerts", item).await?;
+//!     
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ### 4. Queue Monitoring and Stats
+//!
+//! ```rust,ignore
+//! use paladin::application::ports::output::queue_port::QueuePort;
+//!
+//! async fn monitor_queue_health(
+//!     queue: &dyn QueuePort,
+//! ) -> Result<(), Box<dyn std::error::Error>> {
+//!     // Get all queue names
+//!     let queues = queue.list_queues().await;
+//!     
+//!     for queue_name in queues {
+//!         let stats = queue.get_queue_stats(&queue_name).await?;
+//!         
+//!         println!("Queue: {}", stats.name);
+//!         println!("  Total items: {}", stats.total_items);
+//!         println!("  Pending: {}", stats.pending_items);
+//!         println!("  Processing: {}", stats.processing_items);
+//!         println!("  Completed: {}", stats.completed_items);
+//!         println!("  Failed: {}", stats.failed_items);
+//!         println!("  Throughput: {:.2}/min", stats.throughput_per_minute);
+//!         
+//!         if let Some(avg_time) = stats.average_processing_time_ms {
+//!             println!("  Avg processing time: {}ms", avg_time);
+//!         }
+//!         
+//!         // Alert if queue is growing too large
+//!         if stats.pending_items > 1000 {
+//!             println!("⚠️  Queue {} has {} pending items!", queue_name, stats.pending_items);
+//!         }
+//!     }
+//!     
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ## Implementation Notes
+//!
+//! ### Queue Backend Selection
+//!
+//! Choose based on deployment requirements:
+//!
+//! - **InMemoryQueue**: Best for development, single-instance deployments
+//!   - Fastest performance
+//!   - No external dependencies
+//!   - Lost on process restart
+//!
+//! - **RedisQueue**: Distributed, persistent, high performance
+//!   - Sub-millisecond latency
+//!   - Supports clustering
+//!   - Survives process restarts
+//!
+//! - **RabbitMQ**: Message broker with advanced routing
+//!   - Guaranteed delivery
+//!   - Complex routing patterns
+//!   - Higher latency
+//!
+//! - **AWS SQS**: Fully managed, infinite scale
+//!   - No infrastructure management
+//!   - Higher cost
+//!   - ~1 second minimum latency
+//!
+//! ### Performance Optimization
+//!
+//! 1. **Batch Operations**: Use `enqueue_batch()` / `dequeue_batch()` for bulk work
+//! 2. **Priority Queues**: Enable `priority_based: true` only when needed
+//! 3. **Worker Scaling**: Run multiple workers per queue for parallelism
+//! 4. **Polling Strategy**: Use exponential backoff when queue is empty
+//! 5. **Cleanup**: Run `cleanup_expired()` periodically to reclaim memory
+//!
+//! ### Retry Strategy
+//!
+//! Configure retry behavior via `QueueItemConfig`:
+//!
+//! ```rust,ignore
+//! let config = QueueItemConfig {
+//!     max_retries: 3,              // Number of retry attempts
+//!     retry_delay_seconds: 60,     // Initial delay between retries
+//!     retry_backoff_multiplier: 2.0, // Exponential backoff (60s → 120s → 240s)
+//!     timeout_seconds: 300,        // Max processing time per attempt
+//!     ..Default::default()
+//! };
+//! ```
+//!
+//! ### Best Practices
+//!
+//! 1. **Idempotent Operations**: Design tasks to be safely retried
+//! 2. **Timeouts**: Set reasonable `timeout_seconds` for long-running tasks
+//! 3. **Dead Letter Queues**: Move permanently failed items to DLQ for investigation
+//! 4. **Monitoring**: Track `throughput_per_minute` and `pending_items` metrics
+//! 5. **Graceful Shutdown**: Finish processing current items before stopping workers
+//! 6. **Queue Naming**: Use descriptive names (e.g., `paladin-executions`, `document-processing`)
+//!
+//! ## Common Pitfalls
+//!
+//! - Not handling `QueueEmpty` gracefully (use polling loop with backoff)
+//! - Forgetting to call `start_processing()` before processing (breaks visibility timeout)
+//! - Not calling `complete_processing()` or `fail_processing()` (items stay "stuck")
+//! - Setting `max_retries` too high (wastes resources on truly broken tasks)
+//! - Using priority queues when not needed (adds overhead)
+//! - Not monitoring queue depth (can lead to memory exhaustion)
+//!
+//! ## Related Modules
+//!
+//! - [`QueueItem`](crate::core::platform::container::queue_item::QueueItem) - Queue item structure
+//! - [`QueueItemConfig`](crate::core::platform::container::queue_item::QueueItemConfig) - Item configuration
+//! - [`QueueConfig`](crate::core::platform::manager::queue_service::QueueConfig) - Queue configuration
+//! - [`QueueStats`](crate::core::platform::manager::queue_service::QueueStats) - Queue statistics
+//! - [`QueueError`](crate::core::platform::manager::queue_service::QueueError) - Error types
+//! - [`Message`](crate::core::base::entity::message::Message) - Message wrapper
+//! - [`MessagePriority`](crate::core::base::entity::message::MessagePriority) - Priority levels
+//!
+//! ## See Also
+//!
+//! - `examples/async_paladin_queue.rs` - Async execution example
+//! - `examples/worker_pool.rs` - Worker processing example
+//! - `examples/priority_queue.rs` - Priority-based processing example
 
 use crate::core::base::entity::message::{Location, MessagePriority};
 use crate::core::platform::container::queue_item::{QueueItem, QueueItemConfig, QueueItemSummary};
@@ -26,8 +346,148 @@ use serde::{Serialize, de::DeserializeOwned};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-/// Queue Port trait - defines the interface for queue operations
-/// This trait abstracts the queue service implementation from the application layer
+/// Port trait for core queue operations.
+///
+/// Provides the primary interface for async task queue management with support for:
+/// - Queue lifecycle (create, delete)
+/// - Item operations (enqueue, dequeue)
+/// - Processing state management (start, complete, fail)
+/// - Monitoring (stats, health)
+///
+/// # Capabilities
+///
+/// - **Queue Management**: Create/delete queues with custom configurations
+/// - **Item Enqueue**: Add tasks to queues with serializable payloads
+/// - **Item Dequeue**: Retrieve next item for processing (FIFO or priority-based)
+/// - **Processing Lifecycle**: Track item states (pending → processing → complete/failed)
+/// - **Automatic Retry**: Failed items retry based on `QueueItemConfig`
+/// - **Statistics**: Monitor queue depth, throughput, and processing times
+/// - **Health Check**: Verify queue backend connectivity
+///
+/// # Thread Safety
+///
+/// All implementations must be `Send + Sync` to support:
+/// - Concurrent enqueue operations from multiple threads
+/// - Safe dequeue by multiple workers
+/// - Thread-safe state transitions
+///
+/// # Implementation Requirements
+///
+/// Implementations should:
+/// 1. Use atomic operations for state transitions (pending → processing)
+/// 2. Implement visibility timeout for processing items
+/// 3. Support automatic retry with exponential backoff
+/// 4. Handle serialization/deserialization gracefully
+/// 5. Return `QueueEmpty` (not an error) when queue has no items
+/// 6. Preserve completed/failed items based on `QueueConfig`
+///
+/// # Examples
+///
+/// ## Basic Queue Operations
+///
+/// ```rust,ignore
+/// use paladin::application::ports::output::queue_port::QueuePort;
+/// use paladin::core::platform::manager::queue_service::QueueConfig;
+/// use paladin::core::platform::container::queue_item::{QueueItem, QueueItemConfig};
+/// use paladin::core::base::entity::message::Message;
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Debug, Clone, Serialize, Deserialize)]
+/// struct MyTask {
+///     task_id: String,
+///     data: String,
+/// }
+///
+/// async fn basic_queue_usage(
+///     queue: &dyn QueuePort,
+/// ) -> Result<(), Box<dyn std::error::Error>> {
+///     // Create a new queue
+///     let config = QueueConfig {
+///         max_capacity: 10000,
+///         priority_based: true,
+///         ..Default::default()
+///     };
+///     queue.create_queue("my-tasks".to_string(), Some(config)).await?;
+///     
+///     // Enqueue a task
+///     let task = MyTask {
+///         task_id: "task-001".to_string(),
+///         data: "process this".to_string(),
+///     };
+///     
+///     let message = Message::new(
+///         task,
+///         "my-service".to_string(),
+///         paladin::core::base::entity::message::Location::Local,
+///     );
+///     
+///     let item = QueueItem::new(
+///         "my-tasks".to_string(),
+///         message,
+///         Some(QueueItemConfig::default()),
+///     );
+///     
+///     let item_id = queue.enqueue("my-tasks", item).await?;
+///     println!("Enqueued task: {}", item_id);
+///     
+///     // Check queue stats
+///     let stats = queue.get_queue_stats("my-tasks").await?;
+///     println!("Pending items: {}", stats.pending_items);
+///     
+///     Ok(())
+///     }
+/// ```
+///
+/// ## Worker Processing with Retry
+///
+/// ```rust,ignore
+/// use paladin::application::ports::output::queue_port::QueuePort;
+///
+/// async fn worker_with_retry(
+///     queue: &dyn QueuePort,
+///     worker_id: String,
+/// ) -> Result<(), Box<dyn std::error::Error>> {
+///     loop {
+///         // Dequeue next item
+///         let item = match queue.dequeue("tasks").await? {
+///             Some(i) => i,
+///             None => {
+///                 // Queue empty, wait before polling again
+///                 tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+///                 continue;
+///             }
+///         };
+///         
+///         let item_id = item.action.id;
+///         
+///         // Mark as processing
+///         queue.start_processing("tasks", item_id, worker_id.clone()).await?;
+///         
+///         // Process (simulate work)
+///         match process_task(&item).await {
+///             Ok(result) => {
+///                 queue.complete_processing("tasks", item_id, Some(result)).await?;
+///                 println!("✅ Task {} completed", item_id);
+///             }
+///             Err(e) => {
+///                 let will_retry = queue.fail_processing("tasks", item_id, e.to_string()).await?;
+///                 if will_retry {
+///                     println!("🔄 Task {} will retry", item_id);
+///                 } else {
+///                     println!("❌ Task {} failed permanently", item_id);
+///                 }
+///             }
+///         }
+///     }
+/// }
+///
+/// async fn process_task(
+///     item: &paladin::core::platform::container::queue_item::QueueItem<serde_json::Value>,
+/// ) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+///     // Simulate processing
+///     Ok(serde_json::json!({"status": "done"}))
+/// }
+/// ```
 #[async_trait]
 pub trait QueuePort: Send + Sync {
     /// Create a new queue with optional configuration
