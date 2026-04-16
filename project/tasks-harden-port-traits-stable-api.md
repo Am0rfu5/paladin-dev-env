@@ -93,13 +93,14 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.7 Run tests to ensure strategy doesn't break functionality: `cargo test --lib` - ✅ 1,426 tests passed
 
 - [ ] 4.0 Document Port Traits with Reference-Grade Rustdoc
-  - [ ] 4.1 Create documentation template file `docs/port-trait-doc-template.md` with the standard rustdoc structure
-  - [ ] 4.2 Document `LlmPort` trait in `src/application/ports/output/llm_port.rs`:
-    - Add module-level documentation
-    - Add trait-level documentation (purpose, thread safety, async model)
-    - Add method documentation with parameters, returns, errors
-    - Add 2+ examples (basic usage, custom implementation)
-    - Add implementation notes and best practices
+  - [x] 4.1 Create documentation template file `docs/port-trait-doc-template.md` with the standard rustdoc structure
+  - [x] 4.2 Document `LlmPort` trait in `src/application/ports/output/llm_port.rs`:
+    - Added comprehensive module-level documentation with architecture context
+    - Added detailed trait-level documentation (purpose, thread safety, async model)
+    - Added method documentation with parameters, returns, errors, examples
+    - Added 5+ examples (basic usage, streaming, custom implementation, error handling)
+    - Added implementation notes and best practices
+    - All 241 doc tests passing ✅
   - [ ] 4.3 Document `GarrisonPort` trait with comprehensive rustdoc
   - [ ] 4.4 Document `SanctumPort` trait with comprehensive rustdoc
   - [ ] 4.5 Document `EmbeddingPort` trait with comprehensive rustdoc
