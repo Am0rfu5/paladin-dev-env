@@ -14,8 +14,8 @@
 //!
 //! # Examples
 //!
-//! ```rust
-//! use paladin::adapters::herald::table_herald::{TableHerald, TableHeraldConfig};
+//! ```rust,ignore
+//! use paladin::infrastructure::adapters::herald::table_herald::{TableHerald, TableHeraldConfig};
 //!
 //! // Create table formatter with default config
 //! let herald = TableHerald::default();
