@@ -133,8 +133,14 @@
 //! let result = service.execute(paladins, "input").await?;
 //! ```
 
+// Internal modules (public for testing, not part of stable API)
+#[allow(missing_docs)]
 pub mod cli;
+#[allow(missing_docs)]
 pub mod errors;
+#[allow(missing_docs)]
 pub mod ports;
+#[allow(missing_docs)]
 pub mod storage;
+#[allow(missing_docs)]
 pub mod use_cases;

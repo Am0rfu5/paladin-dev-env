@@ -8,8 +8,7 @@
 //! - config.yml - Application configuration file
 
 use paladin::{
-    config::application_settings::Settings,
-    infrastructure::adapters::sanctum::InMemorySanctum,
+    config::application_settings::Settings, infrastructure::adapters::sanctum::InMemorySanctum,
 };
 use std::env;
 

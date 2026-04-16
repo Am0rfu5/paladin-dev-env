@@ -105,5 +105,7 @@
 //! ));
 //! ```
 
+#[allow(missing_docs)]
 pub mod base;
+#[allow(missing_docs)]
 pub mod platform;

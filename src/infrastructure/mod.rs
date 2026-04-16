@@ -166,8 +166,13 @@
 //! }
 //! ```
 
+// Internal modules (public for testing, not part of stable API)
+#[allow(missing_docs)]
 pub mod adapters;
+#[allow(missing_docs)]
 pub mod repositories;
+#[allow(missing_docs)]
 pub mod security;
 #[cfg(feature = "web-server")]
+#[allow(missing_docs)]
 pub mod web;
