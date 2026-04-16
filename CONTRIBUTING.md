@@ -10,6 +10,7 @@ Thank you for your interest in contributing to Paladin! This document provides g
 - [Testing Guidelines](#testing-guidelines)
 - [Code Quality Standards](#code-quality-standards)
 - [Documentation](#documentation)
+- [API Change Process](#api-change-process)
 - [Pull Request Process](#pull-request-process)
 - [Community](#community)
 
@@ -498,7 +499,16 @@ cargo doc --no-deps --open
 
 ## API Change Process
 
-Paladin maintains a **stable public API contract** defined in [STABLE_API.md](STABLE_API.md). Changes to the public API must follow this process.
+Paladin maintains a **stable public API contract** defined in **[STABLE_API.md](STABLE_API.md)**. This document defines:
+
+- **Stability guarantees** for all public types and traits
+- **Versioning policy** (semantic versioning interpretation)
+- **Stability tiers** (Stable 🟢, Unstable 🟡, Experimental 🔵, Deprecated 🔴)
+- **Catalog of stable APIs** with fully qualified paths
+- **Change approval process** for breaking changes
+- **Migration guides** and deprecation lifecycle
+
+**All changes to the public API must follow the process below.** See [STABLE_API.md](STABLE_API.md) for complete details on API stability and the catalog of stable types.
 
 ### What is Considered a Public API Change?
 

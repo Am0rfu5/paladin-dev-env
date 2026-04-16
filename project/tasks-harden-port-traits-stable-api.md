@@ -184,7 +184,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.15 Verify all code examples compile with `cargo test --doc --all-features` (Complete - 298 passed, 0 failed, 203 ignored)
   - [x] 4.16 Review documentation for consistency, clarity, and completeness (Complete - all 12 ports have comprehensive module docs with 150-466 lines each)
 
-- [ ] 5.0 Create STABLE_API.md Reference Document
+- [x] 5.0 Create STABLE_API.md Reference Document
   - [x] 5.1 Create `docs/STABLE_API.md` file with template structure
   - [x] 5.2 Write Introduction section explaining purpose and scope of stable API
   - [x] 5.3 Write Versioning Policy section defining breaking changes and SemVer interpretation
@@ -204,7 +204,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.17 Write FAQ section addressing common API stability questions
   - [x] 5.18 Add table of contents with internal links
   - [x] 5.19 Add last-updated date and version number
-  - [ ] 5.20 Update `CONTRIBUTING.md` to reference `STABLE_API.md` and API change process
+  - [x] 5.20 Update `CONTRIBUTING.md` to reference `STABLE_API.md` and API change process
 
 - [ ] 6.0 Replace Glob Re-Exports with Curated Exports
   - [ ] 6.1 Back up current `src/lib.rs` file
