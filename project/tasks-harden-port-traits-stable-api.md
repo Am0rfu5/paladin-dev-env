@@ -135,13 +135,22 @@ Update the file after completing each sub-task, not just after completing an ent
     - Added timeout management and performance optimization strategies
     - Added storage backend comparison (in-memory, persistent, distributed)
     - All 12 doc tests passing ✅
-  - [ ] 4.7 Document `CitadelPort` trait with comprehensive rustdoc
+  - [x] 4.7 Document `CitadelPort` trait in `src/application/ports/output/citadel_port.rs`:
+    - Enhanced module-level documentation (250+ lines) with architecture context, use cases, examples
+    - Enhanced CitadelPort trait with capabilities, requirements, comprehensive examples
+    - Added 4+ working examples (autosave, state recovery, battalion checkpoints, listing states)
+    - Added storage backend comparison (FileCitadel, SQLite, S3, Redis)
+    - Added state schema versioning guide with migration patterns
+    - Added autosave strategy guide (after execution, periodic, manual, on shutdown)
+    - Added performance optimization guide (async I/O, batching, compression, incremental saves)
+    - Added implementation requirements and best practices
+    - All 8 doc tests passing ✅
   - [ ] 4.8 Document `QueuePort` trait with comprehensive rustdoc
   - [ ] 4.9 Document `NotificationPort` trait with comprehensive rustdoc
   - [ ] 4.10 Document `FileStoragePort` trait with comprehensive rustdoc
   - [ ] 4.11 Document `PaladinPort` trait (if exists) with comprehensive rustdoc
   - [ ] 4.12 Document `BattalionPort` trait (if exists) with comprehensive rustdoc
-  - [ ] 4.13 Document all input ports in `src/application/ports/input/` with comprehensive rustdoc
+  - [ ] 4.13 Document all input ports in `src/application/ports/input/` with comprehensive rustdoc (Deferred)
   - [ ] 4.14 Add cross-references between related port traits using intra-doc links
   - [ ] 4.15 Verify all code examples compile with `cargo test --doc --all-features`
   - [ ] 4.16 Review documentation for consistency, clarity, and completeness
