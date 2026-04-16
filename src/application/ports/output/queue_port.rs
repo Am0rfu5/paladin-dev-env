@@ -94,24 +94,24 @@
 //!         "paladin-service".to_string(),
 //!         paladin::core::base::entity::message::Location::Local,
 //!     );
-//!     
+//!
 //!     // Create queue item with retry config
 //!     let config = QueueItemConfig {
 //!         max_retries: 3,
 //!         timeout_seconds: 300,
 //!         ..Default::default()
 //!     };
-//!     
+//!
 //!     let item = QueueItem::new(
 //!         "paladin-executions".to_string(),
 //!         message,
 //!         Some(config),
 //!     );
-//!     
+//!
 //!     // Enqueue for async processing
 //!     let item_id = queue.enqueue("paladin-executions", item).await?;
 //!     println!("Queued Paladin task: {}", item_id);
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -136,10 +136,10 @@
 //!         // Dequeue next item
 //!         if let Some(item) = queue.dequeue("document-processing").await? {
 //!             let item_id = item.action.id;
-//!             
+//!
 //!             // Mark as processing
 //!             queue.start_processing("document-processing", item_id, worker_id.clone()).await?;
-//!             
+//!
 //!             // Process the task
 //!             match process_document(&item).await {
 //!                 Ok(result) => {
@@ -158,7 +158,7 @@
 //!                         item_id,
 //!                         e.to_string(),
 //!                     ).await?;
-//!                     
+//!
 //!                     if should_retry {
 //!                         println!("Task {} will retry", item_id);
 //!                     } else {
@@ -206,16 +206,16 @@
 //!         paladin::core::base::entity::message::Location::Local,
 //!     );
 //!     message.priority = MessagePriority::Critical;
-//!     
+//!
 //!     let item = QueueItem::new(
 //!         "alerts".to_string(),
 //!         message,
 //!         Some(QueueItemConfig::default()),
 //!     );
-//!     
+//!
 //!     // Will be processed before Normal/Low priority items
 //!     queue.enqueue("alerts", item).await?;
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -230,10 +230,10 @@
 //! ) -> Result<(), Box<dyn std::error::Error>> {
 //!     // Get all queue names
 //!     let queues = queue.list_queues().await;
-//!     
+//!
 //!     for queue_name in queues {
 //!         let stats = queue.get_queue_stats(&queue_name).await?;
-//!         
+//!
 //!         println!("Queue: {}", stats.name);
 //!         println!("  Total items: {}", stats.total_items);
 //!         println!("  Pending: {}", stats.pending_items);
@@ -241,17 +241,17 @@
 //!         println!("  Completed: {}", stats.completed_items);
 //!         println!("  Failed: {}", stats.failed_items);
 //!         println!("  Throughput: {:.2}/min", stats.throughput_per_minute);
-//!         
+//!
 //!         if let Some(avg_time) = stats.average_processing_time_ms {
 //!             println!("  Avg processing time: {}ms", avg_time);
 //!         }
-//!         
+//!
 //!         // Alert if queue is growing too large
 //!         if stats.pending_items > 1000 {
 //!             println!("⚠️  Queue {} has {} pending items!", queue_name, stats.pending_items);
 //!         }
 //!     }
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -408,32 +408,32 @@ use uuid::Uuid;
 ///         ..Default::default()
 ///     };
 ///     queue.create_queue("my-tasks".to_string(), Some(config)).await?;
-///     
+///
 ///     // Enqueue a task
 ///     let task = MyTask {
 ///         task_id: "task-001".to_string(),
 ///         data: "process this".to_string(),
 ///     };
-///     
+///
 ///     let message = Message::new(
 ///         task,
 ///         "my-service".to_string(),
 ///         paladin::core::base::entity::message::Location::Local,
 ///     );
-///     
+///
 ///     let item = QueueItem::new(
 ///         "my-tasks".to_string(),
 ///         message,
 ///         Some(QueueItemConfig::default()),
 ///     );
-///     
+///
 ///     let item_id = queue.enqueue("my-tasks", item).await?;
 ///     println!("Enqueued task: {}", item_id);
-///     
+///
 ///     // Check queue stats
 ///     let stats = queue.get_queue_stats("my-tasks").await?;
 ///     println!("Pending items: {}", stats.pending_items);
-///     
+///
 ///     Ok(())
 ///     }
 /// ```
@@ -457,12 +457,12 @@ use uuid::Uuid;
 ///                 continue;
 ///             }
 ///         };
-///         
+///
 ///         let item_id = item.action.id;
-///         
+///
 ///         // Mark as processing
 ///         queue.start_processing("tasks", item_id, worker_id.clone()).await?;
-///         
+///
 ///         // Process (simulate work)
 ///         match process_task(&item).await {
 ///             Ok(result) => {

@@ -185,25 +185,25 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.16 Review documentation for consistency, clarity, and completeness (Complete - all 12 ports have comprehensive module docs with 150-466 lines each)
 
 - [ ] 5.0 Create STABLE_API.md Reference Document
-  - [ ] 5.1 Create `docs/STABLE_API.md` file with template structure
-  - [ ] 5.2 Write Introduction section explaining purpose and scope of stable API
-  - [ ] 5.3 Write Versioning Policy section defining breaking changes and SemVer interpretation
-  - [ ] 5.4 Write Stability Tiers section (Stable, Unstable/Experimental, Deprecated)
-  - [ ] 5.5 Create Port Traits (Output Ports) catalog table with all ~20 port traits
-  - [ ] 5.6 Create Input Ports catalog table (if applicable)
-  - [ ] 5.7 Create Domain Entities catalog table (Paladin, Battalion types, Garrison, Arsenal, etc.)
-  - [ ] 5.8 Create Builders catalog table (PaladinBuilder, etc.)
-  - [ ] 5.9 Create Configuration Types catalog table (ApplicationSettings, etc.)
-  - [ ] 5.10 Create Error Types catalog table (PaladinError, BattalionError, etc.)
-  - [ ] 5.11 Create Base Types catalog table (Node, Collection, Field, Message)
-  - [ ] 5.12 Add fully qualified paths for each type in all tables
-  - [ ] 5.13 Add stability tier classification for each type
-  - [ ] 5.14 Add one-sentence descriptions for each type
-  - [ ] 5.15 Add rustdoc links for each type
-  - [ ] 5.16 Write Change Process section explaining how API changes are proposed
-  - [ ] 5.17 Write FAQ section addressing common API stability questions
-  - [ ] 5.18 Add table of contents with internal links
-  - [ ] 5.19 Add last-updated date and version number
+  - [x] 5.1 Create `docs/STABLE_API.md` file with template structure
+  - [x] 5.2 Write Introduction section explaining purpose and scope of stable API
+  - [x] 5.3 Write Versioning Policy section defining breaking changes and SemVer interpretation
+  - [x] 5.4 Write Stability Tiers section (Stable, Unstable/Experimental, Deprecated)
+  - [x] 5.5 Create Port Traits (Output Ports) catalog table with all ~20 port traits
+  - [x] 5.6 Create Input Ports catalog table (if applicable)
+  - [x] 5.7 Create Domain Entities catalog table (Paladin, Battalion types, Garrison, Arsenal, etc.)
+  - [x] 5.8 Create Builders catalog table (PaladinBuilder, etc.)
+  - [x] 5.9 Create Configuration Types catalog table (ApplicationSettings, etc.)
+  - [x] 5.10 Create Error Types catalog table (PaladinError, BattalionError, etc.)
+  - [x] 5.11 Create Base Types catalog table (Node, Collection, Field, Message)
+  - [x] 5.12 Add fully qualified paths for each type in all tables
+  - [x] 5.13 Add stability tier classification for each type
+  - [x] 5.14 Add one-sentence descriptions for each type
+  - [x] 5.15 Add rustdoc links for each type
+  - [x] 5.16 Write Change Process section explaining how API changes are proposed
+  - [x] 5.17 Write FAQ section addressing common API stability questions
+  - [x] 5.18 Add table of contents with internal links
+  - [x] 5.19 Add last-updated date and version number
   - [ ] 5.20 Update `CONTRIBUTING.md` to reference `STABLE_API.md` and API change process
 
 - [ ] 6.0 Replace Glob Re-Exports with Curated Exports

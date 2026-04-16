@@ -1,7 +1,7 @@
 # Deprecation Tracking - Epic 2: API Hardening
 
-**Created:** 2026-04-15  
-**Epic:** Epic 2 - Milestone 4, Tier 1  
+**Created:** 2026-04-15
+**Epic:** Epic 2 - Milestone 4, Tier 1
 **Purpose:** Track all deprecation warnings for API transition
 
 ---
@@ -92,7 +92,7 @@ None identified yet - managers are currently pub(crate) or will be moved to appl
 
 ---
 
-#### Category: Repository Implementations  
+#### Category: Repository Implementations
 **Status:** Change to `pub(crate)` (internal-only, no deprecation needed)
 
 **List:**
@@ -122,7 +122,7 @@ Types that should never have been public.
 
 **Types:**
 - All CLI command handlers
-- All CLI formatters  
+- All CLI formatters
 - All CLI utilities
 - Progress bars, prompts, etc.
 

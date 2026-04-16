@@ -63,11 +63,11 @@
 //! async fn embed_query(embedder: &dyn EmbeddingPort) -> Result<(), Box<dyn std::error::Error>> {
 //!     let query = "What is the capital of France?";
 //!     let embedding = embedder.embed_text(query).await?;
-//!     
+//!
 //!     println!("Generated {}-dimensional embedding", embedding.dimension);
 //!     println!("Using model: {}", embedding.model);
 //!     println!("Vector preview: {:?}", &embedding.vector[..5]);
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -83,19 +83,19 @@
 //! ) -> Result<(), Box<dyn std::error::Error>> {
 //!     // Convert to &str for batch API
 //!     let doc_refs: Vec<&str> = documents.iter().map(|s| s.as_str()).collect();
-//!     
+//!
 //!     // Batch embedding (10-100x faster than individual calls)
 //!     let embeddings = embedder.embed_batch(&doc_refs).await?;
-//!     
+//!
 //!     println!("Embedded {} documents in one API call", embeddings.len());
-//!     
+//!
 //!     // Process embeddings
 //!     for (doc, emb) in documents.iter().zip(embeddings.iter()) {
 //!         println!("Doc: {}... -> {}-dim vector",
 //!             &doc.chars().take(30).collect::<String>(),
 //!             emb.dimension);
 //!     }
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -113,19 +113,19 @@
 //!     // Generate embeddings
 //!     let emb1 = embedder.embed_text(text1).await?;
 //!     let emb2 = embedder.embed_text(text2).await?;
-//!     
+//!
 //!     // Calculate cosine similarity
 //!     let dot_product: f32 = emb1.vector.iter()
 //!         .zip(emb2.vector.iter())
 //!         .map(|(a, b)| a * b)
 //!         .sum();
-//!     
+//!
 //!     let norm1: f32 = emb1.vector.iter().map(|x| x * x).sum::<f32>().sqrt();
 //!     let norm2: f32 = emb2.vector.iter().map(|x| x * x).sum::<f32>().sqrt();
-//!     
+//!
 //!     let similarity = dot_product / (norm1 * norm2);
 //!     println!("Similarity: {:.3}", similarity);
-//!     
+//!
 //!     Ok(similarity)
 //! }
 //! ```
@@ -226,14 +226,14 @@
 ///     if text.trim().is_empty() {
 ///         return Err(EmbeddingError::InvalidInput("Text is empty".to_string()));
 ///     }
-///     
+///
 ///     let token_count = text.split_whitespace().count();
 ///     if token_count > 8000 {
 ///         return Err(EmbeddingError::InvalidInput(
 ///             format!("Text too long: {} tokens (max 8000)", token_count)
 ///         ));
 ///     }
-///     
+///
 ///     embedder.embed_text(text).await
 /// }
 /// ```

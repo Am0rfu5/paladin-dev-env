@@ -476,7 +476,7 @@ pub enum GarrisonError {
 /// async fn search_context(garrison: &dyn GarrisonPort) -> Result<(), Box<dyn std::error::Error>> {
 ///     // Find past discussions about specific topics
 ///     let results = garrison.search("deployment", 5).await?;
-///     
+///
 ///     if results.is_empty() {
 ///         println!("No prior discussions about deployment");
 ///     } else {
@@ -686,10 +686,10 @@ pub trait GarrisonPort: Send + Sync {
 /// ) -> Result<(), Box<dyn std::error::Error>> {
 ///     // Generate query embedding
 ///     let embedding = embedder.embed_text(query).await?;
-///     
+///
 ///     // Find semantically similar past conversations
 ///     let similar = garrison.search_similar(embedding.vector, 5).await?;
-///     
+///
 ///     println!("Found {} related discussions:", similar.len());
 ///     for entry in similar {
 ///         println!("  {:?}: {}...", entry.role,
@@ -712,19 +712,19 @@ pub trait GarrisonPort: Send + Sync {
 ///     embedder: &dyn EmbeddingPort,
 /// ) -> Result<(), Box<dyn std::error::Error>> {
 ///     let content = "How do I deploy a Rust application to production?";
-///     
+///
 ///     // Create entry
 ///     let entry = GarrisonEntry::new(
 ///         ConversationRole::User,
 ///         content.to_string()
 ///     );
-///     
+///
 ///     // Generate embedding
 ///     let embedding = embedder.embed_text(content).await?;
-///     
+///
 ///     // Store with semantic searchability
 ///     garrison.remember_with_embedding(entry, embedding.vector.clone()).await?;
-///     
+///
 ///     println!("Stored entry with {}-dimensional embedding", embedding.vector.len());
 ///     Ok(())
 /// }
@@ -744,15 +744,15 @@ pub trait GarrisonPort: Send + Sync {
 /// ) -> Result<Vec<GarrisonEntry>, Box<dyn std::error::Error>> {
 ///     // Text-based search (fast, exact matches)
 ///     let text_results = garrison.search(query, 10).await?;
-///     
+///
 ///     // Semantic search (slower, conceptual matches)
 ///     let embedding = embedder.embed_text(query).await?;
 ///     let semantic_results = garrison.search_similar(embedding.vector, 10).await?;
-///     
+///
 ///     // Combine results (deduplicate by ID if applicable)
 ///     let mut combined = text_results;
 ///     combined.extend(semantic_results);
-///     
+///
 ///     Ok(combined)
 /// }
 /// ```

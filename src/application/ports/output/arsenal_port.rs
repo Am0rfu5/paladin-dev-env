@@ -80,12 +80,12 @@
 //! ) -> Result<String, Box<dyn std::error::Error>> {
 //!     let mut args = HashMap::new();
 //!     args.insert("query".to_string(), json!(query));
-//!     
+//!
 //!     let call = ArmamentCall::new("web_search", args);
 //!     arsenal.validate_call(&call)?;
-//!     
+//!
 //!     let result = arsenal.invoke(call).await?;
-//!     
+//!
 //!     if result.success {
 //!         Ok(result.output.unwrap().to_string())
 //!     } else {
@@ -108,10 +108,10 @@
 //! ) -> Result<String, Box<dyn std::error::Error>> {
 //!     let mut args = HashMap::new();
 //!     args.insert("path".to_string(), json!(file_path));
-//!     
+//!
 //!     let call = ArmamentCall::new("read_file", args);
 //!     let result = arsenal.invoke(call).await?;
-//!     
+//!
 //!     Ok(serde_json::from_value(result.output.unwrap())?)
 //! }
 //! ```
@@ -140,14 +140,14 @@
 //!         }),
 //!         required_params: vec!["operation".to_string(), "x".to_string(), "y".to_string()],
 //!     };
-//!     
+//!
 //!     registry.register(calculator).await;
-//!     
+//!
 //!     // Verify registration
 //!     if let Some(tool) = registry.get("calculator").await {
 //!         println!("Registered: {} - {}", tool.name, tool.description);
 //!     }
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -159,7 +159,7 @@
 //!
 //! async fn list_available_tools(arsenal: &dyn ArsenalPort) {
 //!     let tools = arsenal.list_armaments().await;
-//!     
+//!
 //!     println!("Available tools: {}", tools.len());
 //!     for tool in tools {
 //!         println!("  • {} - {}", tool.name, tool.description);
@@ -298,21 +298,21 @@ use async_trait::async_trait;
 ///     args.insert("operation".to_string(), json!("add"));
 ///     args.insert("x".to_string(), json!(10));
 ///     args.insert("y".to_string(), json!(5));
-///     
+///
 ///     let call = ArmamentCall::new("calculator", args);
-///     
+///
 ///     // Validate before invoking
 ///     arsenal.validate_call(&call)?;
-///     
+///
 ///     // Execute tool
 ///     let result = arsenal.invoke(call).await?;
-///     
+///
 ///     if result.success {
 ///         println!("Result: {:?}", result.output);
 ///     } else {
 ///         eprintln!("Tool failed: {:?}", result.error);
 ///     }
-///     
+///
 ///     Ok(())
 /// }
 /// ```
@@ -329,7 +329,7 @@ use async_trait::async_trait;
 ///     max_retries: u32,
 /// ) -> Result<String, ArsenalError> {
 ///     let mut attempts = 0;
-///     
+///
 ///     loop {
 ///         match arsenal.invoke(call.clone()).await {
 ///             Ok(result) if result.success => {
@@ -358,7 +358,7 @@ use async_trait::async_trait;
 ///
 /// async fn discover_tools(arsenal: &dyn ArsenalPort) {
 ///     let tools = arsenal.list_armaments().await;
-///     
+///
 ///     println!("Available tools: {}", tools.len());
 ///     for tool in tools {
 ///         println!("  • {} - {}", tool.name, tool.description);
@@ -389,20 +389,20 @@ use async_trait::async_trait;
 ///     async fn list_armaments(&self) -> Vec<Armament> {
 ///         self.tools.read().unwrap().values().cloned().collect()
 ///     }
-///     
+///
 ///     async fn invoke(&self, call: ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
 ///         // Simulate tool execution
 ///         if !self.tools.read().unwrap().contains_key(&call.tool_name) {
 ///             return Err(ArsenalError::ToolNotFound(call.tool_name));
 ///         }
-///         
+///
 ///         Ok(ArmamentResult::success(
 ///             call.call_id,
 ///             json!({"result": "mock success"}),
 ///             100, // execution time ms
 ///         ))
 ///     }
-///     
+///
 ///     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
 ///         if !self.tools.read().unwrap().contains_key(&call.tool_name) {
 ///             return Err(ArsenalError::ToolNotFound(call.tool_name.clone()));
@@ -607,14 +607,14 @@ pub trait ArsenalPort: Send + Sync {
 ///         }),
 ///         required_params: vec!["operation".to_string(), "x".to_string(), "y".to_string()],
 ///     };
-///     
+///
 ///     registry.register(calculator).await;
-///     
+///
 ///     // Verify registration
 ///     if let Some(tool) = registry.get("calculator").await {
 ///         println!("Registered: {} - {}", tool.name, tool.description);
 ///     }
-///     
+///
 ///     Ok(())
 /// }
 /// ```
@@ -630,12 +630,12 @@ pub trait ArsenalPort: Send + Sync {
 ///     tools: Vec<Armament>,
 /// ) {
 ///     println!("Registering {} tools from MCP discovery", tools.len());
-///     
+///
 ///     for tool in tools {
 ///         println!("  • Registering: {}", tool.name);
 ///         registry.register(tool).await;
 ///     }
-///     
+///
 ///     println!("Registration complete");
 /// }
 /// ```
@@ -654,7 +654,7 @@ pub trait ArsenalPort: Send + Sync {
 ///     if let Some(old) = registry.unregister(tool_name).await {
 ///         println!("Unregistered old version: {}", old.description);
 ///     }
-///     
+///
 ///     // Register new version
 ///     registry.register(new_tool).await;
 ///     println!("Registered new version");
@@ -688,12 +688,12 @@ pub trait ArsenalPort: Send + Sync {
 ///         let mut tools = self.tools.write().unwrap();
 ///         tools.insert(armament.name.clone(), armament);
 ///     }
-///     
+///
 ///     async fn unregister(&self, name: &str) -> Option<Armament> {
 ///         let mut tools = self.tools.write().unwrap();
 ///         tools.remove(name)
 ///     }
-///     
+///
 ///     async fn get(&self, name: &str) -> Option<Armament> {
 ///         let tools = self.tools.read().unwrap();
 ///         tools.get(name).cloned()

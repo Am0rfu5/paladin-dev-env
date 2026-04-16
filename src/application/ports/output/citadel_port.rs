@@ -365,18 +365,18 @@ use crate::core::platform::container::citadel::{BattalionState, PaladinState, St
 ///     let mut checkpoint = CheckpointData::new();
 ///     checkpoint.last_completed_index = Some(4);
 ///     checkpoint.completed_paladins = vec![Uuid::new_v4(), Uuid::new_v4()];
-///     
+///
 ///     let battalion_state = BattalionState::new(
 ///         "Formation",
 ///         BattalionConfig::default(),
 ///         vec![],  // paladin_states would be here
 ///         Some(checkpoint),
 ///     );
-///     
+///
 ///     // Save checkpoint
 ///     citadel.save_battalion(&battalion_state).await?;
 ///     println!("Battalion checkpoint saved: {}", battalion_state.id);
-///     
+///
 ///     // Resume from checkpoint
 ///     if let Some(loaded) = citadel.load_battalion(battalion_state.id).await? {
 ///         if let Some(cp) = loaded.checkpoint {
@@ -384,7 +384,7 @@ use crate::core::platform::container::citadel::{BattalionState, PaladinState, St
 ///             println!("Completed: {} Paladins", cp.completed_paladins.len());
 ///         }
 ///     }
-///     
+///
 ///     Ok(())
 /// }
 /// ```

@@ -82,31 +82,31 @@
 //!     // Store a memory with embedding
 //!     let content = "Rust is a systems programming language focused on safety and performance.";
 //!     let embedding = embedder.embed_text(content).await?;
-//!     
+//!
 //!     let memory = MemoryBuilder::new("paladin-123".to_string(), content.to_string())
 //!         .memory_type(MemoryType::Semantic)
 //!         .importance(0.8)
 //!         .add_metadata("topic".to_string(), serde_json::json!("programming"))
 //!         .build()?;
-//!     
+//!
 //!     let entry = SanctumEntry {
 //!         memory,
 //!         embedding: embedding.vector.clone(),
 //!         dimension: embedding.vector.len(),
 //!     };
-//!     
+//!
 //!     sanctum.store(entry).await?;
-//!     
+//!
 //!     // Search for similar memories
 //!     let query_embedding = embedder.embed_text("Tell me about programming languages").await?;
 //!     let query = SanctumQuery::new(query_embedding.vector, 5);
 //!     let results = sanctum.search(query).await?;
-//!     
+//!
 //!     println!("Found {} similar memories", results.len());
 //!     for result in results {
 //!         println!("Score: {:.3} - {}", result.score, result.entry.memory.content);
 //!     }
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -126,15 +126,15 @@
 //!         .paladin_id("paladin-123".to_string())
 //!         .memory_type(MemoryType::Episodic)
 //!         .min_importance(0.7);
-//!     
+//!
 //!     // Search with filter
 //!     let query = SanctumQuery::new(query_embedding, 10)
 //!         .filter(filter)
 //!         .min_score(0.5);
-//!     
+//!
 //!     let results = sanctum.search(query).await?;
 //!     println!("Found {} high-importance episodic memories", results.len());
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -150,13 +150,13 @@
 //!     documents: Vec<(String, Vec<f32>)>, // (content, embedding) pairs
 //! ) -> Result<(), Box<dyn std::error::Error>> {
 //!     let mut entries = Vec::new();
-//!     
+//!
 //!     for (content, embedding) in documents {
 //!         let memory = MemoryBuilder::new("batch-paladin".to_string(), content)
 //!             .memory_type(MemoryType::Semantic)
 //!             .importance(0.5)
 //!             .build()?;
-//!         
+//!
 //!         let entry = SanctumEntry {
 //!             memory,
 //!             embedding: embedding.clone(),
@@ -164,11 +164,11 @@
 //!         };
 //!         entries.push(entry);
 //!     }
-//!     
+//!
 //!     // Store all at once (much faster than individual stores)
 //!     sanctum.store_batch(entries).await?;
 //!     println!("Batch storage complete");
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -275,7 +275,7 @@ use crate::core::platform::container::sanctum::{MemoryType, SanctumEntry};
 ///             format!("Expected {} dimensions, got {}", expected_dim, entry.embedding.len())
 ///         )));
 ///     }
-///     
+///
 ///     sanctum.store(entry).await?;
 ///     Ok(())
 /// }
