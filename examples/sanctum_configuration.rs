@@ -7,7 +7,10 @@
 //! - docs/SANCTUM.md - Configuration guide
 //! - config.yml - Application configuration file
 
-use paladin::{application_settings::Settings, infrastructure::adapters::sanctum::InMemorySanctum};
+use paladin::{
+    config::application_settings::Settings,
+    infrastructure::adapters::sanctum::InMemorySanctum,
+};
 use std::env;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -39,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let sanctum_config = settings.get_sanctum_config();
             println!("\nSanctum Configuration:");
             println!("  Enabled: {}", sanctum_config.enabled);
-            println!("  Adapter: {}", sanctum_config.adapter_type_str());
+            println!("  Adapter: {:?}", sanctum_config.adapter_type);
 
             if let Some(qdrant_config) = &sanctum_config.qdrant {
                 println!("  Qdrant URL: {}", qdrant_config.url);

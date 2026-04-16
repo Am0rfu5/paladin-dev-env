@@ -79,20 +79,34 @@
 #![doc(html_root_url = "https://docs.rs/paladin/0.1.0")]
 
 // ============================================================================
-// Module Declarations (pub(crate) - internal use only, curated exports below)
+// Module Declarations
 // ============================================================================
+//
+// Modules are public to support tests, examples, and advanced use cases,
+// but the **curated exports below** define the stable public API.
+// Users should prefer the root-level re-exports over direct module access.
 
-// Application layer: Use cases and port trait definitions
-pub(crate) mod application;
+/// Application layer: Use cases and port trait definitions
+pub mod application;
 
-// Configuration management
-pub(crate) mod config;
+/// Configuration management
+pub mod config;
 
-// Core domain layer: Pure business logic
-pub(crate) mod core;
+/// Core domain layer: Pure business logic
+pub mod core;
 
-// Infrastructure layer: Adapter implementations
-pub(crate) mod infrastructure;
+/// Infrastructure layer: Adapter implementations
+pub mod infrastructure;
+
+// ============================================================================
+// CLI Module (Internal/Testing Support)
+// ============================================================================
+//
+// Re-export CLI module for testing and internal tooling.
+// This is NOT part of the stable public API.
+
+/// CLI module for internal tooling (not part of stable API)
+pub use application::cli;
 
 // ============================================================================
 // Port Traits - Primary Stable API

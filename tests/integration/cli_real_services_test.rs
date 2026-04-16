@@ -78,7 +78,7 @@ async fn test_setup_check_redis_connection() {
     );
 
     let client = client.unwrap();
-    let conn = client.get_multiplexed_async_connection().await;
+    let conn: Result<redis::aio::MultiplexedConnection, redis::RedisError> = client.get_multiplexed_async_connection().await;
     assert!(
         conn.is_ok(),
         "Redis connection should be established. Error: {:?}",
@@ -170,7 +170,7 @@ async fn test_connection_error_on_wrong_port() {
     );
 
     let client = client.unwrap();
-    let conn = client.get_multiplexed_async_connection().await;
+    let conn: Result<redis::aio::MultiplexedConnection, redis::RedisError> = client.get_multiplexed_async_connection().await;
     assert!(
         conn.is_err(),
         "Connection to non-existent service should fail gracefully"
