@@ -259,7 +259,7 @@ impl Default for TableHerald {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::platform::container::herald::{ExecutionMetadata, StreamChunk};
+    use crate::core::platform::container::herald::{ExecutionMetadata, StreamChunk};
 
     #[test]
     fn test_table_herald_creation() {

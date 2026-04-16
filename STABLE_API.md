@@ -1,8 +1,8 @@
 # Stable Public API Contract
 
-**Version:** 0.1.0  
-**Last Updated:** 2026-04-16  
-**Epic:** Milestone 4, Epic 2 - Harden Port Traits as Stable Public API  
+**Version:** 0.1.0
+**Last Updated:** 2026-04-16
+**Epic:** Milestone 4, Epic 2 - Harden Port Traits as Stable Public API
 **Status:** Active
 
 ---
@@ -756,7 +756,7 @@ For questions about API stability:
 
 ---
 
-**Last Updated**: 2026-04-16  
-**Document Version**: 1.1  
-**Paladin Version**: 0.1.0  
+**Last Updated**: 2026-04-16
+**Document Version**: 1.1
+**Paladin Version**: 0.1.0
 **Maintainers**: @DF3NDR
