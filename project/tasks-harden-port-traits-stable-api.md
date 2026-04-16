@@ -101,7 +101,13 @@ Update the file after completing each sub-task, not just after completing an ent
     - Added 5+ examples (basic usage, streaming, custom implementation, error handling)
     - Added implementation notes and best practices
     - All 241 doc tests passing ✅
-  - [ ] 4.3 Document `GarrisonPort` trait with comprehensive rustdoc
+  - [x] 4.3 Document `GarrisonPort` and `LongTermGarrisonPort` traits in `src/application/ports/output/garrison_port.rs`:
+    - Enhanced module-level documentation (200+ lines) with architecture, use cases, examples
+    - Documented GarrisonStats and GarrisonError with comprehensive details and recovery strategies
+    - Enhanced GarrisonPort trait with capabilities, requirements, 3+ examples, implementation notes
+    - Enhanced LongTermGarrisonPort trait with semantic search guide, embedding model info, performance tips
+    - Added 6+ working examples (conversation storage, memory management, search, semantic context, hybrid search)
+    - All 19 doc tests passing ✅
   - [ ] 4.4 Document `SanctumPort` trait with comprehensive rustdoc
   - [ ] 4.5 Document `EmbeddingPort` trait with comprehensive rustdoc
   - [ ] 4.6 Document `ArsenalPort` and `ArsenalRegistry` traits with comprehensive rustdoc
