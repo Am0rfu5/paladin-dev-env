@@ -166,7 +166,17 @@ Update the file after completing each sub-task, not just after completing an ent
     - Added implementation checklist and performance tips
     - Added testing strategy with mock implementation example
     - All 19 doc examples documented (marked as ignore), 2 examples executed successfully
-  - [ ] 4.10 Document `FileStoragePort` trait with comprehensive rustdoc
+  - [x] 4.10 Document `FileStoragePort` traits in `src/application/ports/output/file_storage_port.rs`:
+    - Enhanced module-level documentation (550+ lines) with architecture context, use cases, examples
+    - Enhanced FileStorageError enum with comprehensive error documentation (retryability, recovery strategies)
+    - Enhanced FileStoragePort trait with capabilities, requirements, comprehensive method examples
+    - Added 7+ working examples (upload/download, pre-signed URLs, multipart uploads, batch operations, filtering)
+    - Added storage backend comparison (Local FS, MinIO, AWS S3, GCS, Azure Blob)
+    - Added error handling guide with retryability matrix
+    - Added implementation checklist (path validation, content type detection, MD5 hashing)
+    - Added performance tips (streaming, connection pooling, multipart for large files)
+    - Added testing strategy with mock implementation example
+    - All 22 doc examples documented (marked as ignore), 2 examples executed successfully
   - [ ] 4.11 Document `PaladinPort` trait (if exists) with comprehensive rustdoc
   - [ ] 4.12 Document `BattalionPort` trait (if exists) with comprehensive rustdoc
   - [ ] 4.13 Document all input ports in `src/application/ports/input/` with comprehensive rustdoc (Deferred? )

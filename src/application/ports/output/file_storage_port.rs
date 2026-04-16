@@ -1,14 +1,469 @@
-//! File Storage Port
+//! File Storage Ports - Cloud & Local File Storage Abstraction
 //!
-//! A port that defines how the application interacts with file storage systems.
-//! This port provides an abstraction layer that allows the application to store and retrieve files
-//! without being tightly coupled to the specific file storage implementation.
+//! This module defines the output ports (interfaces) for file storage systems following
+//! Hexagonal Architecture principles. These ports provide clean abstractions that allow
+//! the application layer to store, retrieve, and manage files across different storage
+//! backends (local filesystem, AWS S3, MinIO, Google Cloud Storage, Azure Blob Storage)
+//! without being coupled to their implementation details.
 //!
-//! Typical implementations of this port would include local file systems, cloud storage services
-//! like AWS S3, MinIO, Google Cloud Storage, or Azure Blob Storage.
+//! # Purpose
 //!
-//! The port handles common file operations like upload, download, delete, and listing files,
-//! along with metadata management and error handling.
+//! File storage ports enable Paladin agents to persist and retrieve files (documents, artifacts,
+//! state snapshots, logs, embeddings, etc.) while maintaining a clean separation between the
+//! core business logic and specific storage mechanisms. This allows you to:
+//!
+//! - Store and retrieve files across multiple storage backends
+//! - Switch between providers without changing application code
+//! - Test file operations without real storage systems
+//! - Implement versioning and multipart uploads
+//! - Generate pre-signed URLs for direct client uploads/downloads
+//! - Track storage usage and health
+//!
+//! # Hexagonal Architecture (Ports & Adapters)
+//!
+//! ```text
+//! ┌──────────────────────────────────────────────────────────────┐
+//! │                    Application Layer                          │
+//! │  ┌────────────────────────────────────────────────────────┐  │
+//! │  │  Paladin Agent Execution                                │  │
+//! │  │  - Store execution artifacts                            │  │
+//! │  │  - Save/load agent state (Citadel)                      │  │
+//! │  │  - Store document embeddings (Sanctum)                  │  │
+//! │  │  - Archive conversation history (Garrison)              │  │
+//! │  └─────────────────────┬────────────────────────────────────┘  │
+//! │                        │                                       │
+//! │                        ↓                                       │
+//! │  ┌────────────────────────────────────────────────────────┐  │
+//! │  │  FileStoragePort (trait)                                │  │
+//! │  │  BatchFileStoragePort (trait)                           │  │
+//! │  │  AdvancedFileStoragePort (trait)                        │  │
+//! │  │  - upload_file(), download_file()                       │  │
+//! │  │  - generate_upload_url(), multipart uploads             │  │
+//! │  └────────────────────┬───────────────────────────────────┘  │
+//! └─────────────────────────┼────────────────────────────────────┘
+//!                          │
+//!          ┌───────────────┼───────────────┐
+//!          │               │               │
+//!          ↓               ↓               ↓
+//!   ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+//!   │ MinIO       │ │ AWS S3      │ │ Local FS    │
+//!   │ Adapter     │ │ Adapter     │ │ Adapter     │
+//!   └─────────────┘ └─────────────┘ └─────────────┘
+//! ```
+//!
+//! # Port Segregation (Interface Segregation Principle)
+//!
+//! The file storage system is split into focused interfaces:
+//!
+//! - **FileStoragePort**: Core CRUD operations (upload, download, delete, list)
+//! - **BatchFileStoragePort**: Bulk operations for efficiency
+//! - **AdvancedFileStoragePort**: Pre-signed URLs, multipart uploads
+//! - **FileVersioningPort**: File versioning and history
+//! - **FullFileStoragePort**: Combined interface with all capabilities
+//! - **FileStorageUtils**: Helper functions for content type detection, validation
+//!
+//! Implement only the ports your adapter supports. Most adapters implement `FileStoragePort`
+//! at minimum, with `AdvancedFileStoragePort` for cloud providers that support pre-signed URLs.
+//!
+//! # Common Use Cases
+//!
+//! ## 1. Upload and Download Files
+//!
+//! ```ignore
+//! use paladin::application::ports::output::file_storage_port::{
+//!     FileStoragePort, UploadOptions, FileStorageError
+//! };
+//! use std::path::Path;
+//! use std::sync::Arc;
+//!
+//! async fn store_artifact(
+//!     storage: Arc<dyn FileStoragePort>,
+//!     content: Vec<u8>,
+//! ) -> Result<(), FileStorageError> {
+//!     // Upload file
+//!     let path = Path::new("artifacts/result.json");
+//!     let options = UploadOptions {
+//!         content_type: Some("application/json".into()),
+//!         overwrite: false,
+//!         ..Default::default()
+//!     };
+//!
+//!     let file_item = storage.upload_file(path, &content, Some(options)).await?;
+//!     println!("Uploaded: {} ({} bytes)", file_item.path.display(), file_item.size);
+//!
+//!     // Download file
+//!     let downloaded = storage.download_file(path, None).await?;
+//!     println!("Downloaded {} bytes", downloaded.len());
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ## 2. Generate Pre-Signed Upload URL (Direct Client Upload)
+//!
+//! ```ignore
+//! use paladin::application::ports::output::file_storage_port::{
+//!     AdvancedFileStoragePort, UploadOptions, FileStorageError
+//! };
+//! use std::path::Path;
+//! use std::time::Duration;
+//! use std::sync::Arc;
+//!
+//! async fn direct_upload_url(
+//!     storage: Arc<dyn AdvancedFileStoragePort>,
+//! ) -> Result<String, FileStorageError> {
+//!     let path = Path::new("uploads/document.pdf");
+//!     let expires_in = Duration::from_secs(3600); // 1 hour
+//!
+//!     let url = storage
+//!         .generate_upload_url(path, expires_in, None)
+//!         .await?;
+//!
+//!     println!("Share this URL with client: {}", url);
+//!     Ok(url)
+//! }
+//! ```
+//!
+//! ## 3. List and Filter Files
+//!
+//! ```ignore
+//! use paladin::application::ports::output::file_storage_port::{
+//!     FileStoragePort, ListOptions, FileStorageError
+//! };
+//! use std::sync::Arc;
+//!
+//! async fn list_recent_artifacts(
+//!     storage: Arc<dyn FileStoragePort>,
+//! ) -> Result<(), FileStorageError> {
+//!     let options = ListOptions {
+//!         prefix: Some("artifacts/".into()),
+//!         limit: Some(100),
+//!         extensions: vec!["json".into(), "txt".into()],
+//!         min_size: Some(1024), // At least 1KB
+//!         ..Default::default()
+//!     };
+//!
+//!     let result = storage.list_files(Some(options)).await?;
+//!     for file in result.files {
+//!         println!("{}: {} bytes", file.path.display(), file.size);
+//!     }
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ## 4. Multipart Upload for Large Files
+//!
+//! ```ignore
+//! use paladin::application::ports::output::file_storage_port::{
+//!     AdvancedFileStoragePort, UploadOptions, FileStorageError
+//! };
+//! use std::path::Path;
+//! use std::sync::Arc;
+//!
+//! async fn upload_large_file(
+//!     storage: Arc<dyn AdvancedFileStoragePort>,
+//!     file_data: Vec<u8>,
+//! ) -> Result<(), FileStorageError> {
+//!     let path = Path::new("large-files/model.bin");
+//!     let chunk_size = 5 * 1024 * 1024; // 5MB chunks
+//!
+//!     // Create multipart upload
+//!     let upload_id = storage
+//!         .create_multipart_upload(path, None)
+//!         .await?;
+//!
+//!     // Upload parts
+//!     let mut parts = Vec::new();
+//!     for (i, chunk) in file_data.chunks(chunk_size).enumerate() {
+//!         let part_number = (i + 1) as u32;
+//!         let etag = storage
+//!             .upload_part(&upload_id, part_number, chunk)
+//!             .await?;
+//!         parts.push((part_number, etag));
+//!     }
+//!
+//!     // Complete upload
+//!     let file_item = storage
+//!         .complete_multipart_upload(&upload_id, parts)
+//!         .await?;
+//!
+//!     println!("Uploaded {} bytes in {} parts", file_item.size, file_data.chunks(chunk_size).count());
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ## 5. Batch Operations
+//!
+//! ```ignore
+//! use paladin::application::ports::output::file_storage_port::{
+//!     BatchFileStoragePort, FileStorageError
+//! };
+//! use std::path::PathBuf;
+//! use std::sync::Arc;
+//!
+//! async fn batch_upload(
+//!     storage: Arc<dyn BatchFileStoragePort>,
+//!     files: Vec<(String, Vec<u8>)>,
+//! ) -> Result<(), FileStorageError> {
+//!     let uploads: Vec<_> = files
+//!         .into_iter()
+//!         .map(|(name, content)| (PathBuf::from(name), content, None))
+//!         .collect();
+//!
+//!     let results = storage.upload_files(uploads).await?;
+//!     println!("Uploaded {} files", results.len());
+//!     Ok(())
+//! }
+//! ```
+//!
+//! # Storage Backend Comparison
+//!
+//! | Backend | Best For | Pros | Cons | Adapter |
+//! |---------|----------|------|------|---------|
+//! | **Local FS** | Development, testing | Simple, fast, no setup | No redundancy, single server | `LocalFileStorageAdapter` |
+//! | **MinIO** | Self-hosted S3 | S3-compatible, self-hosted, cost-effective | Requires infrastructure | `MinioAdapter` |
+//! | **AWS S3** | Production cloud | Highly available, durable (11 9's), global | Cost scales with usage | `S3Adapter` |
+//! | **Google Cloud Storage** | Google Cloud ecosystem | Global CDN, strong consistency | Google Cloud lock-in | `GcsAdapter` |
+//! | **Azure Blob Storage** | Azure ecosystem | Azure integration, hot/cool tiers | Azure lock-in | `AzureBlobAdapter` |
+//!
+//! # Error Handling & Retryability
+//!
+//! FileStorageError variants indicate whether operations should be retried:
+//!
+//! | Error | Retryable? | Recovery Strategy |
+//! |-------|------------|-------------------|
+//! | FileNotFound | No | Check path, create file |
+//! | PermissionDenied | No | Fix credentials/IAM permissions |
+//! | QuotaExceeded | No | Increase quota or delete old files |
+//! | FileTooLarge | No | Split file or increase size limit |
+//! | InvalidPath | No | Validate and sanitize path |
+//! | BucketNotFound | No | Create bucket or fix configuration |
+//! | ConnectionError | Yes | Retry with exponential backoff |
+//! | AuthenticationError | No | Fix credentials |
+//! | SerializationError | No | Fix data format |
+//! | IoError | Maybe | Retry, check disk/network |
+//! | ConfigurationError | No | Fix configuration |
+//! | Timeout | Yes | Retry with longer timeout |
+//! | ServiceUnavailable | Yes | Exponential backoff, circuit breaker |
+//!
+//! ## Retry Pattern Example
+//!
+//! ```ignore
+//! use paladin::application::ports::output::file_storage_port::{
+//!     FileStoragePort, FileStorageError
+//! };
+//! use std::path::Path;
+//! use std::sync::Arc;
+//! use std::time::Duration;
+//! use tokio::time::sleep;
+//!
+//! async fn download_with_retry(
+//!     storage: Arc<dyn FileStoragePort>,
+//!     path: &Path,
+//!     max_retries: u32,
+//! ) -> Result<Vec<u8>, FileStorageError> {
+//!     let mut attempts = 0;
+//!     let mut backoff = Duration::from_millis(100);
+//!
+//!     loop {
+//!         match storage.download_file(path, None).await {
+//!             Ok(data) => return Ok(data),
+//!             Err(e) if attempts >= max_retries => return Err(e),
+//!             Err(FileStorageError::ConnectionError(_)) => {
+//!                 sleep(backoff).await;
+//!                 backoff *= 2;
+//!             }
+//!             Err(FileStorageError::ServiceUnavailable) => {
+//!                 sleep(backoff).await;
+//!                 backoff *= 2;
+//!             }
+//!             Err(e) => return Err(e), // Non-retryable
+//!         }
+//!         attempts += 1;
+//!     }
+//! }
+//! ```
+//!
+//! # Thread Safety
+//!
+//! All file storage ports are `Send + Sync`, allowing safe use across async task boundaries.
+//! This is critical for Paladin's concurrent agent execution where multiple agents may
+//! read/write files simultaneously.
+//!
+//! # Implementation Notes
+//!
+//! ## Adapter Implementation Checklist
+//!
+//! When implementing a file storage adapter:
+//!
+//! 1. **Path Validation**: Use `FileStorageUtils::validate_path()` to prevent directory traversal
+//! 2. **Content Type Detection**: Auto-detect MIME types from file extensions
+//! 3. **MD5 Hashing**: Calculate and verify MD5 hashes for data integrity
+//! 4. **Error Mapping**: Map provider errors to appropriate `FileStorageError` variants
+//! 5. **Metadata**: Preserve user metadata across operations
+//! 6. **Health Checks**: Implement `health_check()` for monitoring
+//! 7. **Timeouts**: Set reasonable operation timeouts (30s upload, 60s download typical)
+//! 8. **Connection Pooling**: Reuse connections to cloud providers
+//! 9. **Logging**: Log operations with file paths, sizes, errors for debugging
+//! 10. **Security**: Never log file content, sanitize paths, validate content types
+//!
+//! ## Performance Considerations
+//!
+//! - **Streaming**: Use streaming APIs for large files instead of loading into memory
+//! - **Batch Operations**: Implement `BatchFileStoragePort` for bulk operations
+//! - **Multipart Upload**: Use multipart for files > 5MB to improve reliability
+//! - **Async I/O**: Use non-blocking I/O for all storage operations
+//! - **Connection Pooling**: Reuse HTTP clients and connections
+//! - **Compression**: Compress before upload when appropriate
+//! - **CDN**: Use CloudFront/CDN for frequently accessed files
+//! - **Lifecycle Policies**: Auto-delete or archive old files
+//!
+//! ## Testing Strategy
+//!
+//! ```ignore
+//! use paladin::application::ports::output::file_storage_port::{
+//!     FileStoragePort, FileItem, FileStorageResult, FileStorageError,
+//!     ListOptions, FileListResult, UploadOptions, DownloadOptions,
+//!     StorageStats, StorageHealth
+//! };
+//! use async_trait::async_trait;
+//! use std::path::Path;
+//! use std::collections::HashMap;
+//!
+//! /// Mock file storage for testing
+//! struct MockFileStorage {
+//!     files: std::sync::RwLock<HashMap<String, Vec<u8>>>,
+//!     should_fail: bool,
+//! }
+//!
+//! #[async_trait]
+//! impl FileStoragePort for MockFileStorage {
+//!     async fn upload_file(
+//!         &self,
+//!         path: &Path,
+//!         content: &[u8],
+//!         options: Option<UploadOptions>,
+//!     ) -> FileStorageResult<FileItem> {
+//!         if self.should_fail {
+//!             return Err(FileStorageError::ServiceUnavailable);
+//!         }
+//!
+//!         let mut files = self.files.write().unwrap();
+//!         files.insert(path.to_string_lossy().to_string(), content.to_vec());
+//!
+//!         Ok(FileItem::new(path.to_path_buf(), content.len() as u64))
+//!     }
+//!
+//!     async fn download_file(
+//!         &self,
+//!         path: &Path,
+//!         options: Option<DownloadOptions>,
+//!     ) -> FileStorageResult<Vec<u8>> {
+//!         let files = self.files.read().unwrap();
+//!         files
+//!             .get(&path.to_string_lossy().to_string())
+//!             .cloned()
+//!             .ok_or_else(|| FileStorageError::FileNotFound(path.to_string_lossy().to_string()))
+//!     }
+//!
+//!     async fn delete_file(&self, path: &Path) -> FileStorageResult<()> {
+//!         let mut files = self.files.write().unwrap();
+//!         files.remove(&path.to_string_lossy().to_string());
+//!         Ok(())
+//!     }
+//!
+//!     async fn file_exists(&self, path: &Path) -> FileStorageResult<bool> {
+//!         let files = self.files.read().unwrap();
+//!         Ok(files.contains_key(&path.to_string_lossy().to_string()))
+//!     }
+//!
+//!     async fn get_file_info(&self, path: &Path) -> FileStorageResult<FileItem> {
+//!         let files = self.files.read().unwrap();
+//!         let content = files
+//!             .get(&path.to_string_lossy().to_string())
+//!             .ok_or_else(|| FileStorageError::FileNotFound(path.to_string_lossy().to_string()))?;
+//!
+//!         Ok(FileItem::new(path.to_path_buf(), content.len() as u64))
+//!     }
+//!
+//!     async fn list_files(&self, options: Option<ListOptions>) -> FileStorageResult<FileListResult> {
+//!         let files = self.files.read().unwrap();
+//!         let file_items: Vec<FileItem> = files
+//!             .iter()
+//!             .map(|(path, content)| {
+//!                 FileItem::new(std::path::PathBuf::from(path), content.len() as u64)
+//!             })
+//!             .collect();
+//!
+//!         Ok(FileListResult {
+//!             files: file_items,
+//!             continuation_token: None,
+//!             has_more: false,
+//!             total_count: Some(files.len() as u64),
+//!         })
+//!     }
+//!
+//!     async fn copy_file(
+//!         &self,
+//!         source_path: &Path,
+//!         destination_path: &Path,
+//!     ) -> FileStorageResult<FileItem> {
+//!         let content = self.download_file(source_path, None).await?;
+//!         self.upload_file(destination_path, &content, None).await
+//!     }
+//!
+//!     async fn move_file(
+//!         &self,
+//!         source_path: &Path,
+//!         destination_path: &Path,
+//!     ) -> FileStorageResult<FileItem> {
+//!         let file_item = self.copy_file(source_path, destination_path).await?;
+//!         self.delete_file(source_path).await?;
+//!         Ok(file_item)
+//!     }
+//!
+//!     async fn get_storage_stats(&self) -> FileStorageResult<StorageStats> {
+//!         let files = self.files.read().unwrap();
+//!         Ok(StorageStats {
+//!             total_files: files.len() as u64,
+//!             total_size: files.values().map(|v| v.len() as u64).sum(),
+//!             files_by_type: HashMap::new(),
+//!             size_by_type: HashMap::new(),
+//!             last_updated: chrono::Utc::now(),
+//!         })
+//!     }
+//!
+//!     async fn health_check(&self) -> FileStorageResult<StorageHealth> {
+//!         Ok(StorageHealth {
+//!             is_available: !self.should_fail,
+//!             response_time_ms: Some(5),
+//!             error: if self.should_fail {
+//!                 Some("Mock failure".into())
+//!             } else {
+//!                 None
+//!             },
+//!             checked_at: chrono::Utc::now(),
+//!         })
+//!     }
+//! }
+//! ```
+//!
+//! # Common Pitfalls
+//!
+//! 1. **Not Validating Paths**: Always validate paths to prevent directory traversal attacks
+//! 2. **Loading Large Files**: Stream files instead of loading entire content into memory
+//! 3. **Ignoring Errors**: Handle `FileNotFound`, `PermissionDenied` errors appropriately
+//! 4. **Missing Content Types**: Always set content type for proper browser handling
+//! 5. **No Rate Limiting**: Implement rate limiting for uploads to prevent abuse
+//! 6. **Insecure Pre-Signed URLs**: Set short expiration times on pre-signed URLs
+//! 7. **Not Using Multipart**: Use multipart uploads for files > 5MB for reliability
+//! 8. **Blocking Operations**: All storage operations must be async to avoid blocking agents
+//!
+//! # Related Modules
+//!
+//! - [`crate::application::ports::output::citadel_port`] - State persistence (uses FileStoragePort)
+//! - [`crate::application::ports::output::sanctum_port`] - Vector storage (stores embeddings)
+//! - [`crate::application::ports::output::garrison_port`] - Conversation memory (may use file storage)
+//! - [`crate::infrastructure::adapters::file_storage`] - Concrete file storage adapters (MinIO, S3, Local)
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -24,47 +479,160 @@ use uuid::Uuid;
 pub type FileStorageResult<T> = Result<T, FileStorageError>;
 
 /// Errors that can occur during file storage operations
+///
+/// This enum represents all possible error conditions when interacting with file storage
+/// systems. Each variant indicates a specific failure mode and provides guidance on
+/// whether the operation should be retried.
+///
+/// # Error Categories
+///
+/// - **Transient Errors**: Can be retried (ConnectionError, ServiceUnavailable, Timeout)
+/// - **Permanent Errors**: Should not be retried (FileNotFound, PermissionDenied, QuotaExceeded)
+/// - **Contextual Errors**: Retry depends on context (IoError)
+///
+/// # Examples
+///
+/// ```
+/// use paladin::application::ports::output::file_storage_port::FileStorageError;
+///
+/// // Check if an error should be retried
+/// fn should_retry(error: &FileStorageError) -> bool {
+///     matches!(
+///         error,
+///         FileStorageError::ConnectionError(_)
+///             | FileStorageError::ServiceUnavailable
+///             | FileStorageError::Timeout
+///     )
+/// }
+/// ```
 #[derive(Debug, Clone, Error)]
 pub enum FileStorageError {
+    /// File not found at specified path
+    ///
+    /// **Retryable**: No - Check path or create file
+    ///
+    /// **Recovery**: Verify path exists, create file, or handle missing file gracefully
     #[error("File not found: {0}")]
     FileNotFound(String),
 
+    /// Permission denied for storage operation
+    ///
+    /// **Retryable**: No - Fix credentials or IAM permissions
+    ///
+    /// **Recovery**: Check bucket policies, IAM roles, access keys
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
 
+    /// Storage quota exceeded
+    ///
+    /// **Retryable**: No - Increase quota or delete old files
+    ///
+    /// **Recovery**: Delete unused files, increase storage quota, implement lifecycle policies
     #[error("Storage quota exceeded")]
     QuotaExceeded,
 
+    /// File size exceeds maximum allowed
+    ///
+    /// **Retryable**: No - Split file or increase size limit
+    ///
+    /// **Recovery**: Use multipart upload, compress file, or increase size limit
+    ///
+    /// # Example
+    /// ```
+    /// use paladin::application::ports::output::file_storage_port::FileStorageError;
+    ///
+    /// fn handle_file_size(error: &FileStorageError) {
+    ///     if let FileStorageError::FileTooLarge { size, max_size } = error {
+    ///         println!("File {} bytes exceeds max {} bytes", size, max_size);
+    ///         // Consider using multipart upload
+    ///     }
+    /// }
+    /// ```
     #[error("File too large: {size} bytes (max: {max_size} bytes)")]
-    FileTooLarge { size: u64, max_size: u64 },
+    FileTooLarge {
+        /// Actual file size
+        size: u64,
+        /// Maximum allowed size
+        max_size: u64,
+    },
 
+    /// Invalid file path (contains .., starts with /, too long, etc.)
+    ///
+    /// **Retryable**: No - Validate and sanitize path
+    ///
+    /// **Recovery**: Use `FileStorageUtils::validate_path()` before operations
     #[error("Invalid file path: {0}")]
     InvalidPath(String),
 
+    /// Storage bucket/container not found
+    ///
+    /// **Retryable**: No - Create bucket or fix configuration
+    ///
+    /// **Recovery**: Verify bucket name in configuration, create bucket if needed
     #[error("Bucket not found: {0}")]
     BucketNotFound(String),
 
+    /// Network connection error
+    ///
+    /// **Retryable**: Yes - Retry with exponential backoff
+    ///
+    /// **Recovery**: Check network connectivity, DNS resolution, firewall rules
     #[error("Connection error: {0}")]
     ConnectionError(String),
 
+    /// Authentication or authorization failed
+    ///
+    /// **Retryable**: No - Fix credentials
+    ///
+    /// **Recovery**: Verify access keys, OAuth tokens, or credential configuration
     #[error("Authentication failed: {0}")]
     AuthenticationError(String),
 
+    /// Failed to serialize/deserialize data
+    ///
+    /// **Retryable**: No - Fix data format
+    ///
+    /// **Recovery**: Validate data structure before storage operations
     #[error("Serialization error: {0}")]
     SerializationError(String),
 
+    /// I/O operation failed
+    ///
+    /// **Retryable**: Maybe - Depends on error details
+    ///
+    /// **Recovery**: Check disk space, permissions, network for network-backed filesystems
     #[error("IO error: {0}")]
     IoError(String),
 
+    /// Configuration error (invalid settings)
+    ///
+    /// **Retryable**: No - Fix configuration
+    ///
+    /// **Recovery**: Validate storage configuration at startup
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
 
+    /// Operation timed out
+    ///
+    /// **Retryable**: Yes - Retry with longer timeout
+    ///
+    /// **Recovery**: Increase timeout, check network latency, use multipart for large files
     #[error("Operation timeout")]
     Timeout,
 
+    /// Storage service temporarily unavailable
+    ///
+    /// **Retryable**: Yes - Use circuit breaker pattern
+    ///
+    /// **Recovery**: Exponential backoff, circuit breaker, health checks
     #[error("Service unavailable")]
     ServiceUnavailable,
 
+    /// Unknown or unexpected error
+    ///
+    /// **Retryable**: Maybe - Depends on context
+    ///
+    /// **Recovery**: Log error details, investigate root cause
     #[error("Unknown error: {0}")]
     Unknown(String),
 }
@@ -256,9 +824,192 @@ pub struct StorageHealth {
 }
 
 /// Main file storage port trait
+///
+/// This port defines the core file storage functionality that all storage adapters must
+/// implement. It provides CRUD operations for files along with metadata management,
+/// health checks, and storage statistics.
+///
+/// # Capabilities
+///
+/// - **Upload/Download**: Store and retrieve files with metadata
+/// - **Delete**: Remove files from storage
+/// - **Existence Check**: Verify if file exists before operations
+/// - **Metadata Queries**: Get file info without downloading content
+/// - **Listing**: Browse files with filtering and pagination
+/// - **Copy/Move**: Duplicate or relocate files within storage
+/// - **Statistics**: Track storage usage and file counts
+/// - **Health Monitoring**: Check storage availability
+///
+/// # Requirements
+///
+/// Implementations must:
+/// - Be `Send + Sync` for safe concurrent use across async tasks
+/// - Validate paths using `FileStorageUtils::validate_path()` to prevent traversal attacks
+/// - Calculate MD5 hashes for uploaded files
+/// - Auto-detect content types from file extensions
+/// - Handle metadata preservation across operations
+/// - Implement timeouts for all operations (30-60s typical)
+/// - Return detailed error context in `FileStorageError`
+///
+/// # Examples
+///
+/// ## Basic File Upload and Download
+///
+/// ```ignore
+/// use paladin::application::ports::output::file_storage_port::{
+///     FileStoragePort, UploadOptions, FileStorageError
+/// };
+/// use std::path::Path;
+/// use std::sync::Arc;
+///
+/// async fn store_and_retrieve(
+///     storage: Arc<dyn FileStoragePort>,
+/// ) -> Result<(), FileStorageError> {
+///     // Upload file
+///     let path = Path::new("documents/report.pdf");
+///     let content = b"PDF content here...";
+///
+///     let options = UploadOptions {
+///         content_type: Some("application/pdf".into()),
+///         overwrite: false,
+///         ..Default::default()
+///     };
+///
+///     let file_item = storage.upload_file(path, content, Some(options)).await?;
+///     println!("Uploaded: {} ({} bytes)", file_item.path.display(), file_item.size);
+///
+///     // Download file
+///     let downloaded = storage.download_file(path, None).await?;
+///     assert_eq!(downloaded, content);
+///     Ok(())
+/// }
+/// ```
+///
+/// ## List Files with Filtering
+///
+/// ```ignore
+/// use paladin::application::ports::output::file_storage_port::{
+///     FileStoragePort, ListOptions
+/// };
+/// use std::sync::Arc;
+///
+/// async fn list_json_files(storage: Arc<dyn FileStoragePort>) {
+///     let options = ListOptions {
+///         prefix: Some("data/".into()),
+///         extensions: vec!["json".into()],
+///         limit: Some(100),
+///         ..Default::default()
+///     };
+///
+///     let result = storage.list_files(Some(options)).await.unwrap();
+///     for file in result.files {
+///         println!("{}: {} bytes", file.path.display(), file.size);
+///     }
+/// }
+/// ```
+///
+/// ## Copy and Move Files
+///
+/// ```ignore
+/// use paladin::application::ports::output::file_storage_port::FileStoragePort;
+/// use std::path::Path;
+/// use std::sync::Arc;
+///
+/// async fn organize_files(storage: Arc<dyn FileStoragePort>) {
+///     let source = Path::new("uploads/temp.txt");
+///     let backup = Path::new("backups/temp.txt");
+///     let final_dest = Path::new("archived/document.txt");
+///
+///     // Create backup copy
+///     storage.copy_file(source, backup).await.unwrap();
+///
+///     // Move to final location
+///     storage.move_file(source, final_dest).await.unwrap();
+/// }
+/// ```
+///
+/// # Implementation Notes
+///
+/// ## Path Security
+///
+/// Always validate paths to prevent directory traversal:
+/// ```ignore
+/// use paladin::application::ports::output::file_storage_port::FileStorageUtils;
+/// use std::path::Path;
+///
+/// fn validate_upload_path(path: &Path) -> Result<(), String> {
+///     FileStorageUtils::validate_path(path)
+///         .map_err(|e| format!("Invalid path: {}", e))
+/// }
+/// ```
+///
+/// ## Content Type Detection
+///
+/// Auto-detect MIME types from extensions:
+/// ```ignore
+/// use paladin::application::ports::output::file_storage_port::FileStorageUtils;
+/// use std::path::Path;
+///
+/// let path = Path::new("document.pdf");
+/// let content_type = FileStorageUtils::detect_content_type(path);
+/// assert_eq!(content_type, Some("application/pdf".to_string()));
+/// ```
+///
+/// ## Error Handling
+///
+/// Map provider errors appropriately:
+/// - S3 NoSuchKey → `FileNotFound`
+/// - S3 AccessDenied → `PermissionDenied`
+/// - Network errors → `ConnectionError`
+/// - Timeout → `Timeout`
+///
+/// # Performance Tips
+///
+/// 1. **Streaming**: Use streaming APIs for large files (don't load into memory)
+/// 2. **Batch Operations**: Implement `BatchFileStoragePort` for bulk uploads
+/// 3. **Connection Pooling**: Reuse HTTP clients for cloud storage
+/// 4. **Async I/O**: All operations must be non-blocking
+/// 5. **Health Checks**: Cache health check results for 30-60 seconds
 #[async_trait]
 pub trait FileStoragePort: Send + Sync {
     /// Upload a file to storage
+    ///
+    /// Stores file content at the specified path with optional metadata and upload options.
+    /// Calculates MD5 hash and detects content type automatically if not provided.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Relative path where file should be stored (e.g., "documents/report.pdf")
+    /// * `content` - File content as bytes
+    /// * `options` - Optional upload configuration (content type, metadata, tags, overwrite)
+    ///
+    /// # Returns
+    ///
+    /// `FileItem` with metadata including ID, size, MD5 hash, upload timestamp
+    ///
+    /// # Errors
+    ///
+    /// - `InvalidPath`: Path contains .., starts with /, or is too long
+    /// - `FileTooLarge`: Content exceeds storage limits
+    /// - `PermissionDenied`: No write permission for path
+    /// - `QuotaExceeded`: Storage quota exceeded
+    /// - `ConnectionError`: Network issue
+    /// - `ServiceUnavailable`: Storage backend down
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let content = b"Hello, world!";
+    /// let options = UploadOptions {
+    ///     content_type: Some("text/plain".into()),
+    ///     metadata: [("author".into(), "Alice".into())].into(),
+    ///     overwrite: true,
+    ///     ..Default::default()
+    /// };
+    ///
+    /// let file = storage.upload_file(Path::new("greeting.txt"), content, Some(options)).await?;
+    /// println!("Uploaded: {}", file.id);
+    /// ```
     async fn upload_file(
         &self,
         path: &Path,
@@ -267,6 +1018,38 @@ pub trait FileStoragePort: Send + Sync {
     ) -> FileStorageResult<FileItem>;
 
     /// Download a file from storage
+    ///
+    /// Retrieves file content from storage. Supports range downloads for large files.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Path to file (e.g., "documents/report.pdf")
+    /// * `options` - Optional download configuration (range, conditional headers)
+    ///
+    /// # Returns
+    ///
+    /// File content as bytes
+    ///
+    /// # Errors
+    ///
+    /// - `FileNotFound`: File doesn't exist at path
+    /// - `PermissionDenied`: No read permission
+    /// - `ConnectionError`: Network issue
+    /// - `Timeout`: Download took too long
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// // Full download
+    /// let content = storage.download_file(Path::new("data.json"), None).await?;
+    ///
+    /// // Range download (first 1KB)
+    /// let options = DownloadOptions {
+    ///     range: Some((0, Some(1024))),
+    ///     ..Default::default()
+    /// };
+    /// let chunk = storage.download_file(Path::new("large.bin"), Some(options)).await?;
+    /// ```
     async fn download_file(
         &self,
         path: &Path,
@@ -274,18 +1057,112 @@ pub trait FileStoragePort: Send + Sync {
     ) -> FileStorageResult<Vec<u8>>;
 
     /// Delete a file from storage
+    ///
+    /// Removes the file at the specified path. This operation cannot be undone.
+    ///
+    /// # Errors
+    ///
+    /// - `FileNotFound`: File doesn't exist (may be OK depending on use case)
+    /// - `PermissionDenied`: No delete permission
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// storage.delete_file(Path::new("temp/old.txt")).await?;
+    /// ```
     async fn delete_file(&self, path: &Path) -> FileStorageResult<()>;
 
     /// Check if a file exists
+    ///
+    /// Verifies file existence without downloading content. Useful before operations.
+    ///
+    /// # Returns
+    ///
+    /// `true` if file exists, `false` otherwise
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// if storage.file_exists(Path::new("config.json")).await? {
+    ///     println!("Config file found");
+    /// } else {
+    ///     println!("Creating default config");
+    /// }
+    /// ```
     async fn file_exists(&self, path: &Path) -> FileStorageResult<bool>;
 
     /// Get file metadata without downloading content
+    ///
+    /// Retrieves file information (size, content type, upload time) without transferring
+    /// the file content. Much faster than downloading for large files.
+    ///
+    /// # Returns
+    ///
+    /// `FileItem` with metadata
+    ///
+    /// # Errors
+    ///
+    /// - `FileNotFound`: File doesn't exist
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let info = storage.get_file_info(Path::new("video.mp4")).await?;
+    /// println!("Size: {} MB", info.size / 1024 / 1024);
+    /// println!("Type: {}", info.content_type.unwrap_or_default());
+    /// ```
     async fn get_file_info(&self, path: &Path) -> FileStorageResult<FileItem>;
 
     /// List files in storage
+    ///
+    /// Returns a list of files matching the specified filters with pagination support.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional filters (prefix, limit, extensions, size range, date range)
+    ///
+    /// # Returns
+    ///
+    /// `FileListResult` with files and pagination token
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// // List all files
+    /// let all_files = storage.list_files(None).await?;
+    ///
+    /// // List PDFs in documents/ folder
+    /// let options = ListOptions {
+    ///     prefix: Some("documents/".into()),
+    ///     extensions: vec!["pdf".into()],
+    ///     limit: Some(50),
+    ///     ..Default::default()
+    /// };
+    /// let pdfs = storage.list_files(Some(options)).await?;
+    /// ```
     async fn list_files(&self, options: Option<ListOptions>) -> FileStorageResult<FileListResult>;
 
     /// Copy a file within storage
+    ///
+    /// Creates a copy of the file at a new path. More efficient than download+upload
+    /// for cloud storage (server-side copy).
+    ///
+    /// # Returns
+    ///
+    /// `FileItem` for the copied file
+    ///
+    /// # Errors
+    ///
+    /// - `FileNotFound`: Source file doesn't exist
+    /// - `PermissionDenied`: No copy permission
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let copy = storage
+    ///     .copy_file(Path::new("data.json"), Path::new("data-backup.json"))
+    ///     .await?;
+    /// ```
     async fn copy_file(
         &self,
         source_path: &Path,
@@ -293,6 +1170,26 @@ pub trait FileStoragePort: Send + Sync {
     ) -> FileStorageResult<FileItem>;
 
     /// Move/rename a file within storage
+    ///
+    /// Moves the file to a new path, removing it from the original location.
+    /// More efficient than copy+delete for cloud storage.
+    ///
+    /// # Returns
+    ///
+    /// `FileItem` for the moved file
+    ///
+    /// # Errors
+    ///
+    /// - `FileNotFound`: Source file doesn't exist
+    /// - `PermissionDenied`: No move/delete permission
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let moved = storage
+    ///     .move_file(Path::new("temp/upload.pdf"), Path::new("documents/report.pdf"))
+    ///     .await?;
+    /// ```
     async fn move_file(
         &self,
         source_path: &Path,
@@ -300,9 +1197,36 @@ pub trait FileStoragePort: Send + Sync {
     ) -> FileStorageResult<FileItem>;
 
     /// Get storage statistics
+    ///
+    /// Returns aggregated statistics about storage usage including total files,
+    /// total size, and breakdowns by file type.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let stats = storage.get_storage_stats().await?;
+    /// println!("Total files: {}", stats.total_files);
+    /// println!("Total size: {} GB", stats.total_size / 1024 / 1024 / 1024);
+    /// ```
     async fn get_storage_stats(&self) -> FileStorageResult<StorageStats>;
 
     /// Health check for storage service
+    ///
+    /// Performs a lightweight check to verify storage is accessible and responsive.
+    /// Used for monitoring, circuit breakers, and readiness probes.
+    ///
+    /// # Returns
+    ///
+    /// `StorageHealth` with availability status and response time
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let health = storage.health_check().await?;
+    /// if !health.is_available {
+    ///     eprintln!("Storage unavailable: {}", health.error.unwrap_or_default());
+    /// }
+    /// ```
     async fn health_check(&self) -> FileStorageResult<StorageHealth>;
 }
 
