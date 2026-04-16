@@ -126,7 +126,15 @@ Update the file after completing each sub-task, not just after completing an ent
     - Added performance optimization guide (batching, chunking, caching patterns)
     - Added token limits by provider and cost estimation examples
     - All 8 doc tests passing ✅
-  - [ ] 4.6 Document `ArsenalPort` and `ArsenalRegistry` traits with comprehensive rustdoc
+  - [x] 4.6 Document `ArsenalPort` and `ArsenalRegistry` traits in `src/application/ports/output/arsenal_port.rs`:
+    - Enhanced module-level documentation (200+ lines) with MCP protocol context, architecture, use cases
+    - Enhanced ArsenalPort trait with capabilities, requirements, comprehensive examples
+    - Enhanced ArsenalRegistry trait with lifecycle management, concurrency patterns
+    - Added 5+ working examples (tool invocation, retry logic, discovery, lifecycle, custom implementations)
+    - Added MCP protocol integration guide (STDIO, SSE transports)
+    - Added timeout management and performance optimization strategies
+    - Added storage backend comparison (in-memory, persistent, distributed)
+    - All 12 doc tests passing ✅
   - [ ] 4.7 Document `CitadelPort` trait with comprehensive rustdoc
   - [ ] 4.8 Document `QueuePort` trait with comprehensive rustdoc
   - [ ] 4.9 Document `NotificationPort` trait with comprehensive rustdoc
