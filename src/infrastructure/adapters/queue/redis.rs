@@ -17,6 +17,7 @@ use crate::core::platform::container::queue_item::{QueueItem, QueueItemStatus, Q
 use crate::core::platform::manager::queue_service::{QueueConfig, QueueError, QueueStats};
 
 /// Configuration for Redis connection
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RedisQueueConfig {
     pub redis_host: String,
@@ -43,6 +44,7 @@ impl Default for RedisQueueConfig {
 }
 
 /// Redis queue adapter that implements all queue port traits
+#[doc(hidden)]
 pub struct RedisQueueAdapter {
     #[allow(dead_code)]
     client: Client,

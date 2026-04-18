@@ -36,6 +36,7 @@ use uuid::Uuid;
 /// Qdrant adapter for production vector storage
 ///
 /// Provides high-performance semantic search with automatic collection management.
+#[doc(hidden)]
 pub struct QdrantSanctumAdapter {
     client: Qdrant,
     collection_name: String,

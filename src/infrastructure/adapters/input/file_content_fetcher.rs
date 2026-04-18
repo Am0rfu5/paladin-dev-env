@@ -12,6 +12,7 @@ use std::fs;
 use std::io::Read;
 use std::path::Path;
 
+#[doc(hidden)]
 pub struct FileContentFetcher;
 
 impl FileContentFetcher {

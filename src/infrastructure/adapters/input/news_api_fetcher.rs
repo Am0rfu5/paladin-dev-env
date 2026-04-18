@@ -7,6 +7,7 @@ use serde::Deserialize;
 use url::Url;
 use urlencoding;
 
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct NewsApiFetcher {
     api_key: String,

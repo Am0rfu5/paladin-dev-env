@@ -12,6 +12,7 @@ use std::fs;
 use std::path::Path;
 use url::Url;
 
+#[doc(hidden)]
 pub struct FileContentListFetcher;
 
 impl FileContentListFetcher {

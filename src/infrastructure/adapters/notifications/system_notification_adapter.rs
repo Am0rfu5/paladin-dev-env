@@ -26,6 +26,7 @@ use std::sync::{Arc, RwLock};
 use std::time::Instant;
 
 /// System notification configuration
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemAdapterConfig {
     /// Maximum number of notifications to store in memory
@@ -44,6 +45,7 @@ impl Default for SystemAdapterConfig {
 }
 
 /// System notification adapter
+#[doc(hidden)]
 #[derive(Debug)]
 pub struct SystemNotificationAdapter {
     config: SystemAdapterConfig,

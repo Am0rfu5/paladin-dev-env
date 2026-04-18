@@ -24,6 +24,7 @@ use std::str::FromStr;
 /// - Automatic eviction based on configured strategy
 /// - Connection pooling for performance
 /// - Optional vector embeddings
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct SqliteGarrison {
     pool: SqlitePool,

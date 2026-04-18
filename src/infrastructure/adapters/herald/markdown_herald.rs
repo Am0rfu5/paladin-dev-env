@@ -22,6 +22,7 @@ use colored::*;
 use serde::{Deserialize, Serialize};
 
 /// Configuration for Markdown Herald formatter
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MarkdownHeraldConfig {
     /// Enable ANSI color codes for terminal output
@@ -99,6 +100,7 @@ impl MarkdownHeraldConfig {
 /// };
 /// let herald = MarkdownHerald::with_config(config);
 /// ```
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct MarkdownHerald {
     config: MarkdownHeraldConfig,

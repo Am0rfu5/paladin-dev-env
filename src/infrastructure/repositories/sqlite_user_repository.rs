@@ -14,6 +14,7 @@ use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
 use std::str::FromStr;
 use uuid::Uuid;
 
+#[doc(hidden)]
 pub struct SqliteUserRepository {
     pool: SqlitePool,
 }

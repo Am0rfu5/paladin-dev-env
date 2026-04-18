@@ -67,6 +67,7 @@ fn map_scheduler_error(err: JobSchedulerError) -> SchedulerError {
 /// Internally tracks job metadata in a `HashMap` so that callers can
 /// query status, run counts, and next-run times without reaching
 /// directly into the underlying scheduler.
+#[doc(hidden)]
 pub struct TokioCronSchedulerAdapter {
     /// The underlying `tokio-cron-scheduler` instance.
     ///

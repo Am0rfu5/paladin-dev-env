@@ -15,11 +15,14 @@ use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
 use url::Url;
 use uuid::Uuid;
 
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct SqliteStore {
     pool: SqlitePool,
 }
 
+#[allow(dead_code)]
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct SqliteConfig {
     pub database_url: String,
@@ -41,6 +44,7 @@ impl Default for SqliteConfig {
     }
 }
 
+#[allow(dead_code)]
 impl SqliteStore {
     pub async fn new(database_url: &str) -> Result<Self, RepositoryError> {
         let pool = SqlitePool::connect(database_url)

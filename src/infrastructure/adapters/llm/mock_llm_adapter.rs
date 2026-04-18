@@ -86,6 +86,7 @@ impl Default for MockConfig {
 ///     ])
 ///     .with_delay(Duration::from_millis(100));
 /// ```
+#[doc(hidden)]
 #[derive(Debug)]
 pub struct MockLlmAdapter {
     config: Arc<Mutex<MockConfig>>,

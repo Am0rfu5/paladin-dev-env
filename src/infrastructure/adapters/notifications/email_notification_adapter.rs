@@ -36,6 +36,7 @@ use std::sync::{Arc, RwLock};
 use std::time::Instant;
 
 /// Email delivery configuration
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmailAdapterConfig {
     /// SMTP server hostname
@@ -78,6 +79,7 @@ impl Default for EmailAdapterConfig {
 }
 
 /// Email notification adapter
+#[doc(hidden)]
 #[derive(Debug)]
 pub struct EmailNotificationAdapter {
     config: EmailAdapterConfig,

@@ -38,6 +38,7 @@ pub trait TokenCounter: Send + Sync {
 /// let count = counter.count_tokens("Hello, world!").unwrap();
 /// assert!(count > 0);
 /// ```
+#[doc(hidden)]
 pub struct TiktokenCounter {
     bpe: CoreBPE,
     model_name: String,
@@ -121,6 +122,7 @@ impl TokenCounter for TiktokenCounter {
 }
 
 /// Factory for creating token counters
+#[doc(hidden)]
 pub struct TokenCounterFactory;
 
 impl TokenCounterFactory {

@@ -10,6 +10,7 @@ use std::time::Instant;
 /// TensorFlow Adapter
 /// An implementation of the ML Port using TensorFlow.
 /// This adapter translates ML port calls into TensorFlow operations.
+#[doc(hidden)]
 pub struct TensorFlowAdapter {
     model_path: String,
     loaded_models: HashMap<String, TensorFlowModel>,

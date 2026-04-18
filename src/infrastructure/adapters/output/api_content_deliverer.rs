@@ -11,6 +11,7 @@ use std::sync::{Arc, Mutex};
 use tokio::time::{Duration, sleep};
 use uuid::Uuid;
 
+#[doc(hidden)]
 #[derive(Clone)]
 pub struct ApiContentDeliverer {
     http_client: reqwest::Client,
@@ -32,6 +33,7 @@ impl std::fmt::Debug for ApiContentDeliverer {
     }
 }
 
+#[doc(hidden)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ApiDeliveryRequest {
     pub content: serde_json::Value,
@@ -39,6 +41,7 @@ pub struct ApiDeliveryRequest {
     pub priority: String,
 }
 
+#[doc(hidden)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ApiDeliveryResponse {
     pub success: bool,

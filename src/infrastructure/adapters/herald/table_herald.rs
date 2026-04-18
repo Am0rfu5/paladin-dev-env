@@ -36,6 +36,7 @@ use std::fmt::Write as FmtWrite;
 /// Configuration for TableHerald formatter.
 ///
 /// Controls table rendering behavior, including column widths and border styles.
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TableHeraldConfig {
     /// Maximum width for table columns (characters)
@@ -58,6 +59,7 @@ impl Default for TableHeraldConfig {
 ///
 /// Formats execution results as structured ASCII tables with configurable
 /// borders and column widths. Suitable for terminal output and plain text logs.
+#[doc(hidden)]
 pub struct TableHerald {
     config: TableHeraldConfig,
 }

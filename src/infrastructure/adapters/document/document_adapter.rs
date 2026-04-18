@@ -14,6 +14,7 @@ use std::path::Path;
 /// Document adapter for ingestion and chunking.
 ///
 /// Handles PDF, TXT, and MD file formats with configurable chunking strategies.
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct DocumentAdapter {
     pdf_extractor: PdfExtractor,

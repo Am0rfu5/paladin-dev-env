@@ -30,6 +30,7 @@ use tokio::time::sleep;
 ///
 /// Communicates with HTTP-based MCP servers using request/response pattern.
 /// Supports retry logic with exponential backoff.
+#[doc(hidden)]
 pub struct MCPSseAdapter {
     /// Server endpoint URL
     endpoint: String,

@@ -15,11 +15,15 @@ use sqlx::{MySqlPool, Row, mysql::MySqlPoolOptions};
 use url::Url;
 use uuid::Uuid;
 
+#[allow(dead_code)]
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct MySqlContentRepository {
     pool: MySqlPool,
 }
 
+#[allow(dead_code)]
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct MySqlConfig {
     pub database_url: String,
@@ -41,6 +45,7 @@ impl Default for MySqlConfig {
     }
 }
 
+#[allow(dead_code)]
 impl MySqlContentRepository {
     pub async fn new(config: MySqlConfig) -> Result<Self, RepositoryError> {
         let pool = MySqlPoolOptions::new()

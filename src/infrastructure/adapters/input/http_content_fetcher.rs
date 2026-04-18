@@ -2,6 +2,7 @@ use crate::application::use_cases::content::content_fetching_service::ContentFet
 use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
 use url::Url;
 
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct HttpContentFetcher {
     client: reqwest::blocking::Client,

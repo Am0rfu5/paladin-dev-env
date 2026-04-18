@@ -30,6 +30,7 @@ use tokio::sync::Mutex;
 ///
 /// Spawns a subprocess and communicates via stdin/stdout using
 /// newline-delimited JSON messages.
+#[doc(hidden)]
 pub struct MCPStdioAdapter {
     /// Command to execute (e.g., "python3", "node", "uvx")
     command: String,

@@ -50,6 +50,7 @@ use crate::core::platform::container::citadel::{
 /// let citadel = FileCitadel::new("./my-app/state")
 ///     .expect("Failed to create citadel");
 /// ```
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct FileCitadel {
     state_dir: PathBuf,

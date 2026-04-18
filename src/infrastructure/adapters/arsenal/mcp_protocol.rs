@@ -33,6 +33,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 /// JSON-RPC 2.0 message types
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MCPMessage {
@@ -47,6 +48,7 @@ pub enum MCPMessage {
 /// JSON-RPC 2.0 request message
 ///
 /// Represents a client request to invoke a method on the server.
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MCPRequest {
     /// JSON-RPC protocol version (always "2.0")
@@ -90,6 +92,7 @@ impl MCPRequest {
 /// JSON-RPC 2.0 response message
 ///
 /// Represents a server response to a client request.
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MCPResponse {
     /// JSON-RPC protocol version (always "2.0")
@@ -107,6 +110,7 @@ pub struct MCPResponse {
 /// JSON-RPC 2.0 error object
 ///
 /// Represents an error that occurred during request processing.
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MCPError {
     /// Error code (standard JSON-RPC codes or application-specific)
@@ -148,6 +152,7 @@ impl MCPError {
 /// JSON-RPC 2.0 notification message
 ///
 /// One-way message that doesn't expect a response.
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MCPNotification {
     /// JSON-RPC protocol version (always "2.0")
@@ -162,6 +167,7 @@ pub struct MCPNotification {
 /// MCP server capabilities
 ///
 /// Describes what features and tools the server supports.
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MCPCapabilities {
     /// Server name and version
@@ -176,6 +182,7 @@ pub struct MCPCapabilities {
 }
 
 /// Server information
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerInfo {
     /// Server name
@@ -185,6 +192,7 @@ pub struct ServerInfo {
 }
 
 /// Tool information from MCP server
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolInfo {
     /// Tool name
@@ -219,6 +227,7 @@ pub trait MCPTransport: Send + Sync {
 /// MCP client for interacting with tool servers
 ///
 /// Provides high-level methods for tool discovery and invocation.
+#[doc(hidden)]
 pub struct MCPClient {
     /// Transport implementation (STDIO, SSE, etc.)
     transport: Arc<tokio::sync::Mutex<Box<dyn MCPTransport>>>,

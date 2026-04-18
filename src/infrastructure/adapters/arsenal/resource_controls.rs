@@ -48,6 +48,7 @@ use crate::core::platform::container::arsenal::ArsenalError;
 /// }).await;
 /// # }
 /// ```
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct TimeoutWrapper {
     /// Maximum duration for tool execution
@@ -154,6 +155,7 @@ impl TimeoutWrapper {
 /// // Permit is automatically released when dropped
 /// # }
 /// ```
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct ConcurrencyLimiter {
     /// Semaphore for controlling concurrent access

@@ -28,6 +28,7 @@ use crate::core::platform::container::log::{LogDestination, LogEntry, LogEntryEx
 static INIT: Once = Once::new();
 
 /// Configuration for the system log adapter
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct SystemLogAdapterConfig {
     /// Log level filter
@@ -76,6 +77,7 @@ impl SystemLogAdapterConfig {
 }
 
 /// System log adapter using env_logger
+#[doc(hidden)]
 pub struct SystemLogAdapter {
     /// Configuration
     config: SystemLogAdapterConfig,

@@ -25,6 +25,7 @@ use crate::application::ports::output::llm_port::{
 use crate::core::platform::container::prompt::{PromptItem, PromptType};
 
 /// Configuration for DeepSeek LLM adapter
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct DeepSeekConfig {
     /// API key for DeepSeek authentication
@@ -186,6 +187,7 @@ struct DeepSeekStreamDelta {
 /// # Ok(())
 /// # }
 /// ```
+#[doc(hidden)]
 pub struct DeepSeekAdapter {
     client: Client,
     config: DeepSeekConfig,

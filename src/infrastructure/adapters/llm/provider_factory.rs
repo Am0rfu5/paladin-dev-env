@@ -17,6 +17,7 @@ use super::deepseek_adapter::{DeepSeekAdapter, DeepSeekConfig};
 use super::openai_adapter::{OpenAIAdapter, OpenAIConfig};
 use crate::application::ports::output::llm_port::LlmPort;
 
+#[doc(hidden)]
 #[derive(Debug, Error)]
 pub enum ProviderFactoryError {
     #[error("Unknown provider: {0}. Supported providers: openai, deepseek, anthropic")]
@@ -50,6 +51,7 @@ pub enum ProviderFactoryError {
 /// # Ok(())
 /// # }
 /// ```
+#[doc(hidden)]
 pub struct LlmProviderFactory;
 
 impl LlmProviderFactory {
@@ -268,6 +270,7 @@ impl Default for LlmProviderFactory {
 ///
 /// This enum wraps the different configuration types for each provider,
 /// allowing type-safe configuration passing.
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub enum ProviderConfig {
     #[cfg(feature = "llm-openai")]

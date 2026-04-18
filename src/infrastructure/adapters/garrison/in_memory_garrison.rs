@@ -56,6 +56,7 @@ use std::sync::RwLock;
 ///     assert_eq!(recent.len(), 1);
 /// }
 /// ```
+#[doc(hidden)]
 pub struct InMemoryGarrison {
     entries: RwLock<VecDeque<GarrisonEntry>>,
     config: GarrisonConfig,

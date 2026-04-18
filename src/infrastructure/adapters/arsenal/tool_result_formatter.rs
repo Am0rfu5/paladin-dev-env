@@ -61,6 +61,7 @@ use serde_json::Value;
 ///
 /// Execution Time: 75ms
 /// ```
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct ToolResultFormatter {
     /// Whether to include execution time in formatted output

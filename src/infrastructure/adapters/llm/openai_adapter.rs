@@ -26,6 +26,7 @@ use crate::core::platform::container::content::{ContentItem, ContentType};
 use crate::core::platform::container::prompt::{PromptItem, PromptType};
 
 /// Configuration for OpenAI adapter
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct OpenAIConfig {
     /// OpenAI API key
@@ -177,6 +178,7 @@ struct OpenAIStreamDelta {
 }
 
 /// OpenAI LLM Adapter
+#[doc(hidden)]
 pub struct OpenAIAdapter {
     pub(crate) config: OpenAIConfig,
     pub(crate) client: Client,

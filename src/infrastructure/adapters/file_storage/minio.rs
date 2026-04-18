@@ -24,6 +24,7 @@ use crate::core::base::entity::message::{Location, MessagePriority};
 use crate::core::platform::container::log::{LogEntry, LogLevel, LogMessage};
 
 /// Configuration for MinIO connection using rust-s3
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MinioConfig {
     pub endpoint: String,
@@ -58,6 +59,7 @@ impl Default for MinioConfig {
 }
 
 /// MinIO adapter using rust-s3 crate
+#[doc(hidden)]
 pub struct MinioAdapter {
     bucket: Box<Bucket>,
     config: MinioConfig,

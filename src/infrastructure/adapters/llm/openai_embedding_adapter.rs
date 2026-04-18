@@ -16,6 +16,7 @@ use std::time::Duration;
 use crate::application::ports::output::embedding_port::{Embedding, EmbeddingError, EmbeddingPort};
 
 /// Configuration for OpenAI Embedding Adapter
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct OpenAIEmbeddingConfig {
     /// OpenAI API key
@@ -48,6 +49,7 @@ impl Default for OpenAIEmbeddingConfig {
 }
 
 /// OpenAI Embedding Adapter
+#[doc(hidden)]
 pub struct OpenAIEmbeddingAdapter {
     client: Client,
     config: OpenAIEmbeddingConfig,

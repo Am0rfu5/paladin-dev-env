@@ -27,6 +27,7 @@ use crate::application::ports::output::llm_port::{
 use crate::core::platform::container::prompt::PromptType;
 
 /// Configuration for Anthropic Claude LLM adapter
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct AnthropicConfig {
     /// API key for Anthropic authentication
@@ -123,6 +124,7 @@ impl AnthropicConfig {
 }
 
 /// Anthropic Claude LLM Adapter
+#[doc(hidden)]
 pub struct AnthropicAdapter {
     pub(crate) client: Client,
     pub(crate) config: AnthropicConfig,

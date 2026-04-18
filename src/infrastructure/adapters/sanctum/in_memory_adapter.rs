@@ -27,6 +27,7 @@ use std::sync::{Arc, RwLock};
 use uuid::Uuid;
 
 /// Configuration for InMemorySanctum
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct InMemorySanctumConfig {
     /// Maximum number of entries to store (LRU eviction when exceeded)
@@ -45,6 +46,7 @@ impl Default for InMemorySanctumConfig {
 ///
 /// Thread-safe storage with LRU eviction and brute-force semantic search.
 /// Suitable for development, testing, and small-scale production (< 10K vectors).
+#[doc(hidden)]
 pub struct InMemorySanctum {
     /// Entry storage keyed by memory ID (Uuid)
     storage: Arc<RwLock<HashMap<Uuid, SanctumEntry>>>,

@@ -22,6 +22,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 /// Configuration for JSON Herald formatter
+#[doc(hidden)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonHeraldConfig {
     /// Enable pretty-printing (formatted with indentation)
@@ -67,6 +68,7 @@ impl Default for JsonHeraldConfig {
 /// };
 /// let herald = JsonHerald::with_config(config);
 /// ```
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct JsonHerald {
     config: JsonHeraldConfig,

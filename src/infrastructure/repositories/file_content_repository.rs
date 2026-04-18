@@ -27,6 +27,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
+#[allow(dead_code)]
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct FileStorageClient {
     base_path: PathBuf,
@@ -37,6 +39,8 @@ pub struct FileStorageClient {
     create_directories: bool,
 }
 
+#[allow(dead_code)]
+#[doc(hidden)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FileFormat {
     Json,
@@ -46,6 +50,8 @@ pub enum FileFormat {
     Markdown,
 }
 
+#[allow(dead_code)]
+#[doc(hidden)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum NamingStrategy {
     Timestamp,
@@ -55,6 +61,8 @@ pub enum NamingStrategy {
     Custom(String),
 }
 
+#[allow(dead_code)]
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct FileStorageConfig {
     pub base_path: PathBuf,
@@ -76,6 +84,7 @@ impl Default for FileStorageConfig {
     }
 }
 
+#[allow(dead_code)]
 impl FileStorageClient {
     pub fn new(config: FileStorageConfig) -> Result<Self, ContentDeliveryError> {
         let base_path = config.base_path;

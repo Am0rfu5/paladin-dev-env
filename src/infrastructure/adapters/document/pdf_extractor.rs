@@ -10,6 +10,7 @@ use std::path::Path;
 ///
 /// Handles extraction of text content and metadata from PDF files.
 /// Supports both file path and byte array input.
+#[doc(hidden)]
 #[derive(Debug, Clone, Default)]
 pub struct PdfExtractor;
 
