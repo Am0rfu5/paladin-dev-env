@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Reason**: Enables minimal builds for pure orchestration use cases, reduces compile times and binary sizes
   - See [docs/MIGRATION.md](docs/MIGRATION.md) for complete migration guide
 
+### Changed
+- **Internal Type Visibility**: Applied `#[doc(hidden)]` to ~60 adapter and repository types (Milestone 4, Epic 2, Task 7.0)
+  - **Affected Types**: All LLM adapters, Garrison adapters, Sanctum adapters, Arsenal adapters, Herald formatters, Repository implementations, and infrastructure adapters
+  - **Impact**: No breaking changes - types remain accessible but hidden from documentation
+  - **Strategy**: Used `#[doc(hidden)]` instead of `pub(crate)` to maintain compatibility with examples/tests/benchmarks (separate crates)
+  - **User Guidance**: Consumers should use port traits (e.g., `LlmPort`, `GarrisonPort`) instead of concrete adapter types
+  - **No import path changes required** - all existing code continues to work unchanged
+  - See [project/DEPRECATIONS.md](project/DEPRECATIONS.md) for API transition strategy
+
 ### Added
 - **Feature Flag System**: Comprehensive feature flags for controlling compiled dependencies
   - LLM Provider Flags: `llm-openai`, `llm-anthropic`, `llm-deepseek`, `llm-all`
