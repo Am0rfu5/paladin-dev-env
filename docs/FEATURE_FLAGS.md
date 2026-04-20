@@ -61,6 +61,17 @@ Feature flags in Paladin follow these principles:
 | `openai-embeddings` | None | Embedding generation utilities | OpenAI embedding model support |
 | `qdrant` | `qdrant-client` | Qdrant vector database adapter | Vector database for semantic search |
 
+### CLI Flags
+
+| Flag | Dependencies | Modules Gated | Description |
+|------|--------------|---------------|-------------|
+| `cli` | `clap`, `dialoguer`, `indicatif`, `console`, `serde_yaml` | `application::cli` | Command-line tooling for the `paladin-cli` binary |
+
+Build the `paladin-cli` binary with:
+```bash
+cargo build --bin paladin-cli --features cli
+```
+
 ### Testing Flags
 
 | Flag | Dependencies | Modules Gated | Description |
@@ -72,7 +83,7 @@ Feature flags in Paladin follow these principles:
 
 | Flag | Enables | Description |
 |------|---------|-------------|
-| `full` | `llm-all`, `content-processing`, `web-server`, `notifications`, `vision`, `redis-queue`, `s3-storage`, `openai-embeddings`, `qdrant` | All optional features for development/testing |
+| `full` | `llm-all`, `content-processing`, `web-server`, `notifications`, `vision`, `redis-queue`, `s3-storage`, `openai-embeddings`, `qdrant`, `cli` | All optional features for development/testing |
 
 ## Default Configuration
 

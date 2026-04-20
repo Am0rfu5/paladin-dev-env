@@ -421,3 +421,50 @@ This migration guide is a living document. If you encounter migration scenarios 
 3. Share your experience in GitHub Discussions
 
 Your feedback helps improve Paladin for everyone! 🛡️
+
+---
+
+## CLI Feature Isolation (Milestone 4 — Epic 3)
+
+### What Changed
+
+The `application::cli` module and the `paladin-cli` binary are now gated behind the `cli` feature flag. The following dependencies are now **optional** and only compiled when `cli` is enabled:
+
+- `clap` (CLI argument parsing)
+- `dialoguer` (interactive prompts)
+- `indicatif` (progress bars)
+- `console` (terminal styling)
+- `serde_yaml` (YAML config parsing)
+
+### Who Is Affected?
+
+**Library consumers**: No impact. The `cli` feature was never part of the `default` feature set. Library builds are unaffected.
+
+**`paladin-cli` binary users**: The binary now requires `--features cli` to compile:
+
+```bash
+# Before (always compiled):
+cargo build --bin paladin-cli
+
+# After (requires cli feature):
+cargo build --bin paladin-cli --features cli
+```
+
+**`full` feature users**: No change — `full` already includes `cli`.
+
+### Migration
+
+If you directly import from `paladin::application::cli` (uncommon — internal use only):
+
+```toml
+# Cargo.toml — add the cli feature
+[dependencies]
+paladin = { version = "0.1", features = ["cli"] }
+```
+
+Or add `cli` to your own feature re-export:
+
+```toml
+[features]
+my-cli = ["paladin/cli"]
+```

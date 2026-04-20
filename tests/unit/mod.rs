@@ -4,8 +4,11 @@ pub mod arsenal_domain_test;
 pub mod arsenal_port_test;
 pub mod battalion;
 pub mod circuit_breaker_test;
+#[cfg(feature = "cli")]
 pub mod cli_agent_commands_test;
+#[cfg(feature = "cli")]
 pub mod cli_arsenal_commands_test;
+#[cfg(feature = "cli")]
 pub mod cli_battalion_commands_test;
 pub mod embedding_port_tests;
 pub mod handoff_service_test;

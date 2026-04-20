@@ -134,6 +134,7 @@
 //! ```
 
 // Internal modules (public for testing, not part of stable API)
+#[cfg(feature = "cli")]
 #[allow(missing_docs)]
 pub mod cli;
 #[allow(missing_docs)]

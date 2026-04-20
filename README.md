@@ -64,6 +64,8 @@ paladin = { version = "0.1", features = ["llm-anthropic", "redis-queue", "s3-sto
 | `s3-storage` | S3/MinIO file storage | `rust-s3` |
 | `openai-embeddings` | OpenAI embedding support | None |
 | `qdrant` | Vector database adapter | `qdrant-client` |
+| **CLI** | | |
+| `cli` | Command-line tooling (`paladin-cli` binary) | `clap`, `dialoguer`, `indicatif`, `console`, `serde_yaml` |
 | **Convenience** | | |
 | `full` | All optional features | All of above |
 

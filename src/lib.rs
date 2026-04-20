@@ -103,9 +103,12 @@ pub mod infrastructure;
 // ============================================================================
 //
 // Re-export CLI module for testing and internal tooling.
+// Only available when the `cli` feature is enabled.
 // This is NOT part of the stable public API.
 
-/// CLI module for internal tooling (not part of stable API)
+/// CLI module for internal tooling (not part of stable API).
+/// Requires the `cli` feature flag.
+#[cfg(feature = "cli")]
 pub use application::cli;
 
 // ============================================================================

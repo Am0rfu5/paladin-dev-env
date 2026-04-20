@@ -63,7 +63,8 @@ pub mod integration;
 // Re-export unit test modules
 pub mod unit;
 
-// CLI integration tests
+// CLI integration tests (requires cli feature)
+#[cfg(feature = "cli")]
 pub mod cli;
 
 // Initialize logging once for all tests

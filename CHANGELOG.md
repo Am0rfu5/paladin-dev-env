@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **CLI Feature Flag** (Milestone 4, Epic 3): Gate the `paladin-cli` binary and `application::cli` module behind the new `cli` feature flag
+  - New feature: `cli = ["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml"]`
+  - CLI-only dependencies (`clap`, `dialoguer`, `indicatif`, `console`, `serde_yaml`) are now `optional = true`
+  - The `application::cli` module is now `#[cfg(feature = "cli")]`-gated in both `src/application/mod.rs` and `src/lib.rs`
+  - The `paladin-cli` binary now requires `required-features = ["cli"]` in Cargo.toml
+  - The `full` convenience flag includes `cli`
+  - New integration test suite: `tests/cli_isolation_test.rs` — 9 regression tests verifying library compiles without CLI deps
+  - Dedicated `cli-isolation` CI job verifies library-only and CLI-enabled builds
+  - **Benefit**: Library consumers who don't use the CLI avoid compiling `clap` and associated TUI dependencies
+
 ### Changed - BREAKING
 - **Default Feature Flags Revised**: Default features changed from `["redis-queue", "s3-storage", "openai-embeddings"]` to `["llm-openai"]` only
   - **Impact**: Applications relying on Redis queue, S3 storage, or OpenAI embeddings in default builds must now explicitly enable these features
