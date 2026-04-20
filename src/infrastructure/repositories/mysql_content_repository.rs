@@ -404,9 +404,9 @@ impl ContentRepository for MySqlContentRepository {
 
         let result = sqlx::query(
             r#"
-            UPDATE content_items SET 
+            UPDATE content_items SET
                 modified = ?, content_type = ?, content_data = ?, url = ?, hash = ?,
-                source_url = ?, title = ?, description = ?, tags = ?, 
+                source_url = ?, title = ?, description = ?, tags = ?,
                 source = ?, author = ?, source_id = ?, pub_date = ?, mod_date = ?, version = ?
             WHERE uuid = ?
         "#,

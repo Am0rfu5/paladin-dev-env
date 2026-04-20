@@ -19,9 +19,9 @@ for example in "$EXAMPLES_DIR"/*.rs; do
     if [ -f "$example" ]; then
         TOTAL_COUNT=$((TOTAL_COUNT + 1))
         example_name=$(basename "$example" .rs)
-        
+
         echo -n "[$TOTAL_COUNT] Checking $example_name... "
-        
+
         # Try to compile the example
         if cargo check --example "$example_name" --all-features 2>&1 | grep -q "error"; then
             echo "❌ FAILED"
