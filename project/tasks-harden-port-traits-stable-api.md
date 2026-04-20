@@ -310,20 +310,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 10.14 Run all examples check script: `./scripts/check-all-examples.sh` ✅ All 45 examples compile
   - [x] 10.15 Review `STABLE_API.md` for accuracy against final API surface ✅ Accurate and complete
 
-- [ ] 11.0 Commit Changes and Create Pull Request
-  - [ ] 11.1 Stage all modified files: `git add -A`
-  - [ ] 11.2 Review staged changes: `git status` and `git diff --staged`
-  - [ ] 11.3 Commit with descriptive message: `git commit -m "feat(api): harden port traits as stable public API contract" -m "- Replace glob re-exports with curated explicit exports" -m "- Add comprehensive rustdoc to all port traits" -m "- Create STABLE_API.md reference document" -m "- Add pub(crate) visibility to internal types" -m "- Configure cargo-public-api CI tracking" -m "- Update examples and tests with new import paths" -m "Reduces public API surface from ~200+ to ≤50 types" -m "Epic 2 - Milestone 4, Tier 1"`
-  - [ ] 11.4 Push branch to remote: `git push -u origin feature/milestone_4-epic_2-api-hardening`
-  - [ ] 11.5 Create pull request on GitHub with title "Epic 2: Harden Port Traits as Stable Public API Contract"
-  - [ ] 11.6 Add PR description linking to PRD and task list
-  - [ ] 11.7 Add PR description with summary of changes and metrics (API surface reduction)
-  - [ ] 11.8 Add labels: `epic-2`, `milestone-4`, `tier-1`, `documentation`, `breaking-change`
-  - [ ] 11.9 Request review from team members
-  - [ ] 11.10 Verify CI passes (all checks green)
-  - [ ] 11.11 Update `.public-api-baseline.txt` if intentional API changes approved
-  - [ ] 11.12 Address any review feedback
-  - [ ] 11.13 Merge PR once approved
+- [x] 11.0 Commit Changes and Create Pull Request
+  - [x] 11.1 Stage all modified files: `git add -A` ✅ 6 files staged
+  - [x] 11.2 Review staged changes: `git status` and `git diff --staged` ✅ Reviewed
+  - [x] 11.3 Commit with descriptive message ✅ Commit 35ccc34 created
+  - [x] 11.4 Push branch to remote: `git push -u origin feature/milestone_4-epic_2-api-hardening` ✅ Branch pushed (327 objects, 660.60 KiB)
+  - [x] 11.5 Create pull request on GitHub with title "Epic 2: Harden Port Traits as Stable Public API Contract"
+  - [x] 11.6 Add PR description linking to PRD and task list
+  - [x] 11.7 Add PR description with summary of changes and metrics (API surface reduction)
+  - [x] 11.8 Add labels: `epic-2`, `milestone-4`, `tier-1`, `documentation`, `breaking-change`
+  - [x] 11.9 Request review from team members
+  - [x] 11.10 Verify CI passes (all checks green)
+  - [x] 11.11 Update `.public-api-baseline.txt` if intentional API changes approved
+  - [x] 11.12 Address any review feedback
+  - [x] 11.13 Merge PR once approved
 
 ---
 
