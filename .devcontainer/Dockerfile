@@ -49,6 +49,7 @@ RUN apt-get update \
     openssl \
     # Shell enhancements
     zsh \
+    bash-completion \
     # Documentation
     man-db \
     # Clean up

@@ -52,6 +52,7 @@ RUN apt-get update \
     zsh \
     # Documentation
     man-db \
+    bash-completion \
     # Clean up
     && apt-get autoremove -y \
     && apt-get clean -y \
