@@ -14,28 +14,28 @@
 //!
 //! # Modules
 //!
-//! ## [`base`]
+//! ## [base]
 //!
 //! Foundation types and patterns used throughout the core domain:
-//! - [`Node<T>`](base::entity::node::Node) - Entity wrapper with UUID, timestamps, versioning
+//! - [`Node<T>`](crate::core::base::entity::node::Node) - Entity wrapper with UUID, timestamps, versioning
 //! - Collection management utilities
 //! - Field definitions and message types
 //!
-//! ## [`platform`]
+//! ## [platform]
 //!
 //! Domain entities representing the Paladin multi-agent system:
 //!
-//! ### [`platform::container`](platform::container)
+//! ### [platform::container](crate::core::platform::container)
 //!
-//! - **[`Paladin`](platform::container::paladin::Paladin)** - Autonomous AI agent entity
-//! - **[`Battalion`](platform::container::battalion)** - Multi-Paladin orchestration patterns:
-//!   - [`Formation`](platform::container::battalion::formation) - Sequential execution
-//!   - [`Phalanx`](platform::container::battalion::phalanx) - Parallel execution
-//!   - [`Campaign`](platform::container::battalion::campaign) - Graph-based workflows
-//!   - [`ChainOfCommand`](platform::container::battalion::chain_of_command) - Hierarchical delegation
-//! - **[`Garrison`](platform::container::garrison)** - Memory and conversation history
-//! - **[`Arsenal`](platform::container::arsenal)** - Tool system (Armaments)
-//! - **[`Citadel`](platform::container::citadel)** - State persistence
+//! - **[`Paladin`](crate::core::platform::container::paladin::Paladin)** - Autonomous AI agent entity
+//! - **[`Battalion`](crate::core::platform::container::battalion)** - Multi-Paladin orchestration patterns:
+//!   - [`Formation`](crate::core::platform::container::battalion::formation) - Sequential execution
+//!   - [`Phalanx`](crate::core::platform::container::battalion::phalanx) - Parallel execution
+//!   - [`Campaign`](crate::core::platform::container::battalion::campaign) - Graph-based workflows
+//!   - [`ChainOfCommand`](crate::core::platform::container::battalion::chain_of_command) - Hierarchical delegation
+//! - **[`Garrison`](crate::core::platform::container::garrison)** - Memory and conversation history
+//! - **[`Arsenal`](crate::core::platform::container::arsenal)** - Tool system (Armaments)
+//! - **[`Citadel`](crate::core::platform::container::citadel)** - State persistence
 //!
 //! # Design Principles
 //!

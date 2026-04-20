@@ -22,59 +22,59 @@
 //!
 //! # Modules
 //!
-//! ## [`adapters`]
+//! ## [adapters]
 //!
 //! Concrete implementations of application ports for external systems:
 //!
-//! ### LLM Provider Adapters ([`adapters::llm`](adapters::llm))
+//! ### LLM Provider Adapters ([adapters::llm])
 //!
-//! - **OpenAiAdapter** - OpenAI GPT models (in `adapters::llm::openai_adapter`)
+//! - **OpenAiAdapter** - OpenAI GPT models (hidden from docs, use via [`LlmPort`](crate::application::ports::output::llm_port::LlmPort))
 //!   - Models: gpt-4, gpt-3.5-turbo, etc.
 //!   - Features: Streaming, function calling, vision
-//! - **DeepSeekAdapter** - DeepSeek models (in `adapters::llm::deepseek_adapter`)
+//! - **DeepSeekAdapter** - DeepSeek models (hidden from docs, use via [`LlmPort`](crate::application::ports::output::llm_port::LlmPort))
 //!   - Cost-effective alternative with competitive performance
-//! - **AnthropicAdapter** - Claude models (in `adapters::llm::anthropic_adapter`)
+//! - **AnthropicAdapter** - Claude models (hidden from docs, use via [`LlmPort`](crate::application::ports::output::llm_port::LlmPort))
 //!   - Models: claude-3-opus, claude-3-sonnet
 //!
-//! ### Memory Storage Adapters ([`adapters::garrison`](adapters::garrison))
+//! ### Memory Storage Adapters ([adapters::garrison])
 //!
-//! - **InMemoryGarrison** - In-process memory storage
+//! - **InMemoryGarrison** - In-process memory storage (hidden from docs, use via [`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort))
 //!   - Fast, ephemeral, suitable for development
-//! - **SqliteGarrison** - SQLite-backed persistent memory
+//! - **SqliteGarrison** - SQLite-backed persistent memory (hidden from docs, use via [`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort))
 //!   - Local file storage, full-text search support
 //!
-//! ### Tool System Adapters ([`adapters::arsenal`](adapters::arsenal))
+//! ### Tool System Adapters ([adapters::arsenal])
 //!
-//! - **McpStdioAdapter** - MCP (Model Context Protocol) STDIO tools
+//! - **McpStdioAdapter** - MCP (Model Context Protocol) STDIO tools (hidden from docs, use via [`ArsenalPort`](crate::application::ports::output::arsenal_port::ArsenalPort))
 //!   - Command-line tool integration
-//! - **McpSseAdapter** - MCP SSE (Server-Sent Events) tools
+//! - **McpSseAdapter** - MCP SSE (Server-Sent Events) tools (hidden from docs, use via [`ArsenalPort`](crate::application::ports::output::arsenal_port::ArsenalPort))
 //!   - Web-based tool integration
 //!
-//! ### State Persistence Adapters ([`adapters::citadel`](adapters::citadel))
+//! ### State Persistence Adapters ([adapters::citadel])
 //!
-//! - **FileCitadel** - File-based state persistence
+//! - **FileCitadel** - File-based state persistence (hidden from docs, use via [`CitadelPort`](crate::application::ports::output::citadel_port::CitadelPort))
 //!   - Local filesystem storage
 //!
-//! ### Queue Adapters ([`adapters::queue`](adapters::queue))
+//! ### Queue Adapters ([adapters::queue])
 //!
-//! - **RedisQueueAdapter** - Redis-backed queue (in `adapters::queue::redis_adapter`)
+//! - **RedisQueueAdapter** - Redis-backed queue (hidden from docs, use via port trait)
 //!   - Distributed task queue
 //!   - Feature flag: `redis-queue`
 //!
-//! ### File Storage Adapters ([`adapters::file_storage`](adapters::file_storage))
+//! ### File Storage Adapters ([adapters::file_storage])
 //!
-//! - **MinioAdapter** - S3-compatible storage (in `adapters::file_storage::minio_adapter`)
+//! - **MinioAdapter** - S3-compatible storage (hidden from docs, use via port trait)
 //!   - Object storage for large files
 //!   - Feature flag: `s3-storage`
 //!
-//! ## [`repositories`]
+//! ## [repositories]
 //!
 //! Database repository implementations for data persistence:
 //!
-//! - **MySQL repositories** - Production database storage
-//! - **SQLite repositories** - Development and testing
+//! - **MySQL repositories** - Production database storage (hidden from docs, use via repository ports)
+//! - **SQLite repositories** - Development and testing (hidden from docs, use via repository ports)
 //!
-//! ## [`web`]
+//! ## [web]
 //!
 //! Web server and API implementations:
 //!

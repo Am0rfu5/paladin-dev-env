@@ -23,48 +23,48 @@
 //!
 //! # Modules
 //!
-//! ## [`ports`]
+//! ## [ports]
 //!
 //! Port definitions (trait interfaces) that define contracts for external systems:
 //!
 //! ### Output Ports (implemented by infrastructure adapters)
 //!
-//! - **[`LlmPort`](ports::output::llm_port::LlmPort)** - LLM provider abstraction
+//! - **[`LlmPort`](crate::application::ports::output::llm_port::LlmPort)** - LLM provider abstraction
 //!   - Implementations: OpenAI, DeepSeek, Anthropic adapters
-//! - **[`GarrisonPort`](ports::output::garrison_port::GarrisonPort)** - Memory storage
+//! - **[`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort)** - Memory storage
 //!   - Implementations: InMemory, SQLite, Redis adapters
-//! - **[`ArsenalPort`](ports::output::arsenal_port::ArsenalPort)** - Tool execution
+//! - **[`ArsenalPort`](crate::application::ports::output::arsenal_port::ArsenalPort)** - Tool execution
 //!   - Implementations: MCP STDIO, MCP SSE adapters
-//! - **[`CitadelPort`](ports::output::citadel_port::CitadelPort)** - State persistence
+//! - **[`CitadelPort`](crate::application::ports::output::citadel_port::CitadelPort)** - State persistence
 //!   - Implementations: File, S3 adapters
-//! - **[`PaladinPort`](ports::output::paladin_port::PaladinPort)** - Paladin execution
-//! - **[`BattalionPort`](ports::output::battalion_port::BattalionPort)** - Battalion orchestration
+//! - **[`PaladinPort`](crate::application::ports::output::paladin_port::PaladinPort)** - Paladin execution
+//! - **[`BattalionPort`](crate::application::ports::output::battalion_port::BattalionPort)** - Battalion orchestration
 //!
 //! ### Input Ports (API boundaries)
 //!
 //! - Content ingestion interfaces
 //! - RPC service interfaces
 //!
-//! ## [`use_cases`]
+//! ## [use_cases]
 //!
 //! Application services that implement business workflows:
 //!
 //! - **Paladin Services**:
-//!   - [`PaladinBuilder`](use_cases::paladin::paladin_builder) - Fluent builder for Paladin creation
-//!   - [`PaladinExecutionService`](use_cases::paladin::paladin_execution_service) - Execution orchestration
+//!   - [`PaladinBuilder`](crate::application::use_cases::paladin::paladin_builder::PaladinBuilder) - Fluent builder for Paladin creation
+//!   - [`PaladinExecutionService`](crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService) - Execution orchestration
 //!
 //! - **Battalion Services**:
-//!   - [`FormationService`](use_cases::battalion::formation_service) - Sequential execution
-//!   - [`PhalanxService`](use_cases::battalion::phalanx_service) - Parallel execution
-//!   - [`CampaignService`](use_cases::battalion::campaign_service) - Graph orchestration
-//!   - [`ChainOfCommandService`](use_cases::battalion::chain_of_command_service) - Hierarchical delegation
-//!   - [`Commander`](use_cases::battalion::commander) - Automatic strategy selection
+//!   - [`FormationExecutionService`](crate::application::use_cases::battalion::formation_service::FormationExecutionService) - Sequential execution
+//!   - [`PhalanxExecutionService`](crate::application::use_cases::battalion::phalanx_service::PhalanxExecutionService) - Parallel execution
+//!   - [`CampaignExecutionService`](crate::application::use_cases::battalion::campaign_service::CampaignExecutionService) - Graph orchestration
+//!   - [`ChainOfCommandExecutionService`](crate::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService) - Hierarchical delegation
+//!   - [`Commander`](crate::application::use_cases::battalion::commander::Commander) - Automatic strategy selection
 //!
-//! ## [`storage`]
+//! ## [storage]
 //!
 //! Repository trait definitions for data persistence.
 //!
-//! ## [`errors`]
+//! ## [errors]
 //!
 //! Application-level error types.
 //!

@@ -197,10 +197,10 @@
 //!
 //! ## Related Ports
 //!
-//! - [`GarrisonPort`] - Short-term conversation memory (basic CRUD)
-//! - [`LongTermGarrisonPort`] - Garrison with embedding support (hybrid)
-//! - [`EmbeddingPort`] - Generate vector embeddings for storage
-//! - [`LlmPort`] - LLM integration (uses Sanctum for knowledge retrieval)
+//! - [`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort) - Short-term conversation memory (basic CRUD)
+//! - [`LongTermGarrisonPort`](crate::application::ports::output::garrison_port::LongTermGarrisonPort) - Garrison with embedding support (hybrid)
+//! - [`EmbeddingPort`](crate::application::ports::output::embedding_port::EmbeddingPort) - Generate vector embeddings for storage
+//! - [`LlmPort`](crate::application::ports::output::llm_port::LlmPort) - LLM integration (uses Sanctum for knowledge retrieval)
 //!
 //! ## See Also
 //!

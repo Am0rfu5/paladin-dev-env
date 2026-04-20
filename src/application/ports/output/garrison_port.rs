@@ -184,10 +184,10 @@
 //!
 //! ## Related Ports
 //!
-//! - [`SanctumPort`] - Long-term persistent memory with vector embeddings (superset of LongTermGarrisonPort)
-//! - [`EmbeddingPort`] - Generate vector embeddings for semantic search
-//! - [`LlmPort`] - LLM integration (uses Garrison for conversation context)
-//! - [`CitadelPort`] - State persistence for entire Paladin agents
+//! - [`SanctumPort`](crate::application::ports::output::sanctum_port::SanctumPort) - Long-term persistent memory with vector embeddings (superset of LongTermGarrisonPort)
+//! - [`EmbeddingPort`](crate::application::ports::output::embedding_port::EmbeddingPort) - Generate vector embeddings for semantic search
+//! - [`LlmPort`](crate::application::ports::output::llm_port::LlmPort) - LLM integration (uses Garrison for conversation context)
+//! - [`CitadelPort`](crate::application::ports::output::citadel_port::CitadelPort) - State persistence for entire Paladin agents
 //!
 //! ## See Also
 //!

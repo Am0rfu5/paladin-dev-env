@@ -222,10 +222,10 @@
 //!
 //! ## Related Ports
 //!
-//! - [`VisionLlmPort`] - Extended LLM port with vision/image understanding
-//! - [`EmbeddingPort`] - Generate vector embeddings from text
-//! - [`GarrisonPort`] - Store conversation history for context
-//! - [`ArsenalPort`] - Provide tools for function calling
+//! - [`VisionLlmPort`](crate::application::ports::output::vision_llm_port::VisionLlmPort) - Extended LLM port with vision/image understanding
+//! - [`EmbeddingPort`](crate::application::ports::output::embedding_port::EmbeddingPort) - Generate vector embeddings from text
+//! - [`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort) - Store conversation history for context
+//! - [`ArsenalPort`](crate::application::ports::output::arsenal_port::ArsenalPort) - Provide tools for function calling
 //!
 //! ## See Also
 //!

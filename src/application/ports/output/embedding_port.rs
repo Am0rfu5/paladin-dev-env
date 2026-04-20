@@ -155,9 +155,9 @@
 //!
 //! ## Related Ports
 //!
-//! - [`SanctumPort`] - Vector storage (stores embeddings from this port)
-//! - [`LongTermGarrisonPort`] - Garrison with embeddings (uses this port)
-//! - [`LlmPort`] - LLM integration (complementary for RAG systems)
+//! - [`SanctumPort`](crate::application::ports::output::sanctum_port::SanctumPort) - Vector storage (stores embeddings from this port)
+//! - [`LongTermGarrisonPort`](crate::application::ports::output::garrison_port::LongTermGarrisonPort) - Garrison with embeddings (uses this port)
+//! - [`LlmPort`](crate::application::ports::output::llm_port::LlmPort) - LLM integration (complementary for RAG systems)
 //!
 //! ## See Also
 //!
