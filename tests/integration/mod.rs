@@ -88,7 +88,7 @@ impl TestEnvironment {
     /// Detect if external services are available (CI/CD environment)
     fn detect_external_services() -> bool {
         // Check for CI environment variables
-        env::var("CI").is_ok() 
+        env::var("CI").is_ok()
             || env::var("GITHUB_ACTIONS").is_ok()
             || env::var("GITLAB_CI").is_ok()
             || env::var("JENKINS_URL").is_ok()

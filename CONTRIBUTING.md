@@ -242,7 +242,50 @@ cargo insta accept  # Accept all snapshot changes
 - Review snapshot changes carefully before accepting
 - Commit snapshot files (`.snap`) to version control
 
-#### 4. Live API Integration Tests
+#### 4. CLI-Enabled and Library-Only Tests
+
+The `cli` feature gates the `application::cli` module and the `paladin-cli` binary. Tests must reflect this boundary.
+
+**Library-only regression tests** (`tests/cli_isolation_test.rs`): always run, no feature flag needed.
+Verify that core types (Paladin, Battalion, MaxLoops, …) compile and work without `cli` deps:
+
+```bash
+# Run library-only isolation tests (default features, no cli)
+cargo test --test cli_isolation
+
+# Confirm library compiles with zero optional features
+cargo check --lib --no-default-features
+```
+
+**CLI feature tests** (only compile with `--features cli`):
+
+```bash
+# Run all tests with cli feature enabled (includes snapshot tests in tests/cli/)
+cargo test --features cli
+
+# Build the paladin-cli binary
+cargo build --bin paladin-cli --features cli
+
+# Run only the CLI snapshot tests
+cargo test --test cli --features cli
+
+# Run CLI unit tests
+cargo test --test unit --features cli
+```
+
+**Both surfaces together**:
+
+```bash
+# Run everything (default features + cli feature enabled)
+cargo test --features cli
+```
+
+> **Note**: If you add code to `application::cli`, wrap any new test modules in
+> `#[cfg(feature = "cli")]` when referencing them from `tests/unit/mod.rs` or
+> `tests/integration/mod.rs`. Tests that live entirely inside the `src/application/cli/`
+> module tree are automatically gated and need no extra attribute.
+
+#### 5. Live API Integration Tests
 
 Test real LLM provider integrations (optional, requires API keys).
 
@@ -331,6 +374,12 @@ cargo test --test garrison_tests
 
 # With output
 cargo test -- --nocapture
+
+# CLI-enabled tests (requires cli feature)
+cargo test --features cli
+
+# Library-only isolation tests (no cli feature)
+cargo test --test cli_isolation
 
 # Live API tests (requires API keys)
 cargo test --features live-api-tests
