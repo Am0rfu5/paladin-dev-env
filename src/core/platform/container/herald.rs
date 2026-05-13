@@ -22,10 +22,10 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 // Re-export actual domain types for Herald consumers
-pub use crate::application::ports::output::llm_port::TokenUsage;
-pub use crate::application::ports::output::paladin_port::PaladinResult;
 pub use crate::application::use_cases::paladin::error::PaladinError;
 pub use crate::core::platform::container::battalion::BattalionResult;
+pub use crate::core::platform::container::execution_result::PaladinResult;
+pub use crate::core::platform::container::token_usage::TokenUsage;
 
 // Re-export HeraldError for convenience
 pub use super::herald_error::HeraldError;
@@ -700,7 +700,7 @@ mod tests {
 
     #[test]
     fn test_format_paladin_result() {
-        use crate::application::ports::output::paladin_port::StopReason;
+        use crate::core::platform::container::execution_result::StopReason;
         let herald = MockHerald;
         let result = PaladinResult {
             output: "Test output".to_string(),

@@ -37,23 +37,9 @@
 
 use crate::core::platform::container::paladin::Paladin;
 use std::sync::Arc;
-use thiserror::Error;
 
-/// Errors that can occur during Paladin registry operations
-#[derive(Debug, Error, Clone)]
-pub enum RegistryError {
-    /// Attempted to register a Paladin with an ID that already exists
-    #[error("Paladin ID already registered: {0}")]
-    DuplicateId(String),
-
-    /// Invalid Paladin ID provided (e.g., empty string)
-    #[error("Invalid Paladin ID: {0}")]
-    InvalidId(String),
-
-    /// Failed to access the registry (internal error)
-    #[error("Registry access failed: {0}")]
-    AccessFailed(String),
-}
+// Re-export pure domain error type from core
+pub use crate::core::platform::container::registry_error::RegistryError;
 
 /// Port for Paladin registry operations
 ///

@@ -1,0 +1,15 @@
+[package]
+name = "paladin-core"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Pure domain types for the Paladin framework — zero infrastructure dependencies"
+repository = "https://github.com/DF3NDR/paladin-dev-env"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }

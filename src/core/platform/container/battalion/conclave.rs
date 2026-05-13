@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use super::{BattalionConfig, BattalionError};
-use crate::application::ports::output::paladin_port::PaladinResult;
+use crate::core::platform::container::execution_result::PaladinResult;
 use crate::core::platform::container::paladin::Paladin;
 
 /// Observability level for Conclave execution

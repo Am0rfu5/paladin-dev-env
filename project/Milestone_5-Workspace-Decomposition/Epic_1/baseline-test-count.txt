@@ -1,0 +1,26 @@
+Pre-epic baseline captured: 2026-05-13
+Branch: feature/milestone_5-epic_1-paladin-core-extraction
+
+Command: cargo test --workspace
+TOTAL: 2610 passed; 0 failed; 232 ignored; 0 measured
+
+Individual suite breakdown:
+  1234 passed;  4 ignored  (main unit tests)
+     3 passed;  0 ignored
+    11 passed;  0 ignored
+     9 passed;  0 ignored
+    22 passed;  0 ignored
+    17 passed;  0 ignored
+   628 passed; 13 ignored
+    12 passed;  0 ignored
+     9 passed;  1 ignored
+     8 passed;  0 ignored
+   384 passed; 11 ignored
+     0 passed;  0 ignored
+   273 passed; 203 ignored
+     0 passed;  0 ignored
+
+Note: `cargo test --all-features` intentionally fails (1 test) because
+`tests/cli_isolation_test.rs::test_cli_feature_is_not_default` asserts
+that the `cli` feature is NOT enabled in a library-only test run.
+The canonical baseline command is `cargo test --workspace`.

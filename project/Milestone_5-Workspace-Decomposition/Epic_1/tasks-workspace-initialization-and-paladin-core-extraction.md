@@ -32,36 +32,45 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Confirm the current branch is `feature/milestone_5` (the milestone integration branch) via `git status` / `git branch --show-current`
-  - [ ] 0.2 From `feature/milestone_5`, create and checkout a new feature branch: `git checkout -b feature/milestone_5-epic_1-paladin-core-extraction`
-  - [ ] 0.3 Push the branch to origin to establish the upstream: `git push -u origin feature/milestone_5-epic_1-paladin-core-extraction`
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Confirm the current branch is `feature/milestone_5` (the milestone integration branch) via `git status` / `git branch --show-current`
+  - [x] 0.2 From `feature/milestone_5`, create and checkout a new feature branch: `git checkout -b feature/milestone_5-epic_1-paladin-core-extraction`
+  - [x] 0.3 Push the branch to origin to establish the upstream: `git push -u origin feature/milestone_5-epic_1-paladin-core-extraction`
 
-- [ ] 1.0 Initialize Cargo workspace root and shared dependency configuration
-  - [ ] 1.1 Capture the pre-epic baseline: run `cargo test --all-features` and record the passing test count in `project/Milestone_5-Workspace-Decomposition/Epic_1/baseline-test-count.txt`
-  - [ ] 1.2 Capture the pre-epic build baseline: run `cargo clean && cargo build --timings` and save the `target/cargo-timings/` HTML report path alongside the baseline
-  - [ ] 1.3 Edit the root `Cargo.toml`: add a `[workspace]` section with `members = ["crates/*"]` and retain the existing `paladin` package in `.` (member via `members = [".", "crates/*"]` or equivalent depending on facade-crate strategy)
-  - [ ] 1.4 Add a `[workspace.dependencies]` section declaring shared versions for: `serde` (features `["derive"]`), `uuid` (features `["v4", "serde"]`), `chrono` (features `["serde"]`), `thiserror`, `tokio` (features `["full"]`), `async-trait`, `serde_json`, `reqwest`, and `log` (FR-2)
-  - [ ] 1.5 Convert the root `paladin` crate's `[dependencies]` entries for the above packages to use `dep = { workspace = true }` syntax so versions are centralized
-  - [ ] 1.6 Run `cargo build` from the workspace root and confirm it succeeds without source moves (FR-3)
-  - [ ] 1.7 Run `cargo test --workspace` and confirm the baseline test count still passes
+- [x] 1.0 Initialize Cargo workspace root and shared dependency configuration
+  - [x] 1.1 Capture the pre-epic baseline: run `cargo test --all-features` and record the passing test count in `project/Milestone_5-Workspace-Decomposition/Epic_1/baseline-test-count.txt`
+  - [x] 1.2 Capture the pre-epic build baseline: run `cargo clean && cargo build --timings` and save the `target/cargo-timings/` HTML report path alongside the baseline
+  - [x] 1.3 Edit the root `Cargo.toml`: add a `[workspace]` section with `members = ["crates/*"]` and retain the existing `paladin` package in `.` (member via `members = [".", "crates/*"]` or equivalent depending on facade-crate strategy)
+  - [x] 1.4 Add a `[workspace.dependencies]` section declaring shared versions for: `serde` (features `["derive"]`), `uuid` (features `["v4", "serde"]`), `chrono` (features `["serde"]`), `thiserror`, `tokio` (features `["full"]`), `async-trait`, `serde_json`, `reqwest`, and `log` (FR-2)
+  - [x] 1.5 Convert the root `paladin` crate's `[dependencies]` entries for the above packages to use `dep = { workspace = true }` syntax so versions are centralized
+  - [x] 1.6 Run `cargo build` from the workspace root and confirm it succeeds without source moves (FR-3)
+  - [x] 1.7 Run `cargo test --workspace` and confirm the baseline test count still passes
 
-- [ ] 2.0 Scaffold the `paladin-core` crate skeleton
-  - [ ] 2.1 Create the directory `crates/paladin-core/src/`
-  - [ ] 2.2 Create `crates/paladin-core/Cargo.toml` with `name = "paladin-core"`, `version` matching the workspace, `edition = "2021"`, and `license` consistent with the root crate (FR-5)
-  - [ ] 2.3 Add the minimal `[dependencies]` block to `crates/paladin-core/Cargo.toml` using workspace references: `serde`, `uuid`, `chrono`, `thiserror`, `async-trait`, `serde_json` — and only these (FR-6)
-  - [ ] 2.4 Create `crates/paladin-core/src/lib.rs` with crate-level doc comment, `#![deny(...)]` lints consistent with the root crate, and empty `pub mod base;` / `pub mod platform;` placeholders (commented out until Tasks 4.0 / 5.0)
-  - [ ] 2.5 Run `cargo build -p paladin-core` and confirm the empty crate compiles in isolation (FR-7)
-  - [ ] 2.6 Run `cargo build --workspace` and confirm both the empty `paladin-core` and the existing `paladin` crate still build together
+- [x] 2.0 Scaffold the `paladin-core` crate skeleton
+  - [x] 2.1 Create the directory `crates/paladin-core/src/`
+  - [x] 2.2 Create `crates/paladin-core/Cargo.toml` with `name = "paladin-core"`, `version` matching the workspace, `edition = "2021"`, and `license` consistent with the root crate (FR-5)
+  - [x] 2.3 Add the minimal `[dependencies]` block to `crates/paladin-core/Cargo.toml` using workspace references: `serde`, `uuid`, `chrono`, `thiserror`, `async-trait`, `serde_json` — and only these (FR-6)
+  - [x] 2.4 Create `crates/paladin-core/src/lib.rs` with crate-level doc comment, `#![deny(...)]` lints consistent with the root crate, and empty `pub mod base;` / `pub mod platform;` placeholders (commented out until Tasks 4.0 / 5.0)
+  - [x] 2.5 Run `cargo build -p paladin-core` and confirm the empty crate compiles in isolation (FR-7)
+  - [x] 2.6 Run `cargo build --workspace` and confirm both the empty `paladin-core` and the existing `paladin` crate still build together
 
-- [ ] 3.0 Resolve the `battalion/mod.rs` upward dependency on the application layer (decision + implementation)
-  - [ ] 3.1 Map the full upward coupling: run `grep -rn "application::" src/core/` and record every file and symbol (notably `PaladinResult` from `application::ports::output::paladin_port` and `RegistryError` from `application::ports::output::paladin_registry`)
-  - [ ] 3.2 Author the options-analysis artifact at `project/Milestone_5-Workspace-Decomposition/Epic_1/decisions/battalion-result-upward-dependency-options.md` covering at least the three Milestone-2 Option A/B/C paths, each with: definition, files touched, pros, cons, downstream/breaking-change impact, and test-migration impact
-  - [ ] 3.3 Conduct the implementer decision interview: walk through each option's trade-offs, answer outstanding questions, and select the chosen approach — **do not write implementation code before this step**
-  - [ ] 3.4 Record the decision at `project/Milestone_5-Workspace-Decomposition/Epic_1/decisions/battalion-result-upward-dependency-decision.md` including: chosen option, rationale, rejected-option reasoning, and a concrete implementation checklist derived from the decision
-  - [ ] 3.5 Update this task-list file by appending implementation sub-tasks (3.6, 3.7, ...) generated from the decision checklist in step 3.4 before executing them
-  - [ ] 3.6 Execute the implementation sub-tasks appended in step 3.5 so that `src/core/platform/container/battalion/mod.rs` and any peer files no longer contain `use` statements referencing `application::` (FR-17)
-  - [ ] 3.7 Run `cargo build` and `cargo test --workspace` to confirm the refactor preserves behavior with zero regressions
+- [x] 3.0 Resolve the `battalion/mod.rs` upward dependency on the application layer (decision + implementation)
+  - [x] 3.1 Map the full upward coupling: run `grep -rn "application::" src/core/` and record every file and symbol (notably `PaladinResult` from `application::ports::output::paladin_port` and `RegistryError` from `application::ports::output::paladin_registry`)
+  - [x] 3.2 Author the options-analysis artifact at `project/Milestone_5-Workspace-Decomposition/Epic_1/decisions/battalion-result-upward-dependency-options.md` covering at least the three Milestone-2 Option A/B/C paths, each with: definition, files touched, pros, cons, downstream/breaking-change impact, and test-migration impact
+  - [x] 3.3 Conduct the implementer decision interview: walk through each option's trade-offs, answer outstanding questions, and select the chosen approach — **do not write implementation code before this step**
+  - [x] 3.4 Record the decision at `project/Milestone_5-Workspace-Decomposition/Epic_1/decisions/battalion-result-upward-dependency-decision.md` including: chosen option, rationale, rejected-option reasoning, and a concrete implementation checklist derived from the decision
+  - [x] 3.5 Update this task-list file by appending implementation sub-tasks (3.6a–3.6k) generated from the decision checklist in step 3.4 before executing them
+  - [x] 3.6a Create `src/core/platform/container/execution_result.rs` — move `PaladinResult` struct and `StopReason` enum from `src/application/ports/output/paladin_port.rs`; update imports to use `crate::core::platform::container::` paths
+  - [x] 3.6b Create `src/core/platform/container/token_usage.rs` — move `TokenUsage` struct from `src/application/ports/output/llm_port.rs`
+  - [x] 3.6c Create `src/core/platform/container/registry_error.rs` — move `RegistryError` enum from `src/application/ports/output/paladin_registry.rs`
+  - [x] 3.6d Move `HandoffError` to `src/core/platform/container/arsenal/handoff_error.rs` (copy content from `src/application/errors/handoff_error.rs`)
+  - [x] 3.6e Register new modules: add `pub mod execution_result; pub mod token_usage; pub mod registry_error;` to `src/core/platform/container/mod.rs` and `pub mod handoff_error;` to `src/core/platform/container/arsenal/mod.rs`
+  - [x] 3.6f Update `src/application/ports/output/paladin_port.rs` — remove `PaladinResult`/`StopReason` struct/enum bodies; add `pub use crate::core::platform::container::execution_result::{PaladinResult, StopReason};`
+  - [x] 3.6g Update `src/application/ports/output/llm_port.rs` — remove `TokenUsage` struct body; add `pub use crate::core::platform::container::token_usage::TokenUsage;`
+  - [x] 3.6h Update `src/application/ports/output/paladin_registry.rs` — remove `RegistryError` enum body; add `pub use crate::core::platform::container::registry_error::RegistryError;`
+  - [x] 3.6i Replace `src/application/errors/handoff_error.rs` content with `pub use crate::core::platform::container::arsenal::handoff_error::HandoffError;`
+  - [x] 3.6j Update core internal imports: `battalion/mod.rs`, `battalion/conclave.rs`, `herald.rs` (also remove `pub use PaladinError`), `arsenal/handoff_tool.rs` — replace all `application::` import paths with `crate::core::platform::container::` paths
+  - [x] 3.7 Run `cargo build --workspace` and `cargo test --workspace` to confirm the refactor preserves behavior with zero regressions
 
 - [ ] 4.0 Extract `src/core/base/` into `paladin-core`
   - [ ] 4.1 Verify `src/core/base/` is free of `application::` / `infrastructure::` imports (run `grep -rn "application::\|infrastructure::" src/core/base/`) — fix any stragglers before moving

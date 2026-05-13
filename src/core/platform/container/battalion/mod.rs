@@ -20,12 +20,8 @@ use std::path::PathBuf;
 use std::time::Duration;
 use uuid::Uuid;
 
-// Note: PaladinResult is defined in application layer, but we reference it here
-// for the domain result type. This is acceptable as Battalion results contain
-// references to execution outcomes.
-use crate::application::ports::output::paladin_port::PaladinResult;
-// Note: RegistryError conversion needed for Council and Grove operations
-use crate::application::ports::output::paladin_registry::RegistryError;
+use crate::core::platform::container::execution_result::PaladinResult;
+use crate::core::platform::container::registry_error::RegistryError;
 
 /// Configuration for Battalion operations
 ///
@@ -595,7 +591,7 @@ impl BattalionResult {
             .filter(|r| {
                 matches!(
                     r.stop_reason,
-                    crate::application::ports::output::paladin_port::StopReason::Completed
+                    crate::core::platform::container::execution_result::StopReason::Completed
                 )
             })
             .count();
@@ -1062,7 +1058,7 @@ mod tests {
 
     #[test]
     fn test_registry_error_conversion() {
-        use crate::application::ports::output::paladin_registry::RegistryError;
+        use crate::core::platform::container::registry_error::RegistryError;
 
         // Test DuplicateId conversion
         let registry_error = RegistryError::DuplicateId("duplicate_id".to_string());

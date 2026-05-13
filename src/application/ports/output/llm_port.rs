@@ -638,15 +638,8 @@ pub enum FinishReason {
 /// println!("Total cost: ${:.4}", total_cost);
 /// assert_eq!(usage.total_tokens, usage.prompt_tokens + usage.completion_tokens);
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TokenUsage {
-    /// Number of tokens in the input prompt
-    pub prompt_tokens: u32,
-    /// Number of tokens in the generated completion
-    pub completion_tokens: u32,
-    /// Total tokens (prompt + completion)
-    pub total_tokens: u32,
-}
+// Re-export pure domain type from core
+pub use crate::core::platform::container::token_usage::TokenUsage;
 
 /// Incremental response chunk for streaming operations
 ///
