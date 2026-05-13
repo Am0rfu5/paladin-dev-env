@@ -3359,11 +3359,16 @@ dependencies = [
  "async-trait",
  "blake3",
  "chrono",
+ "fasthash",
+ "futures",
+ "petgraph",
+ "regex",
  "serde",
  "serde_json",
  "sha2",
  "thiserror 2.0.12",
  "tokio",
+ "url",
  "uuid",
 ]
 

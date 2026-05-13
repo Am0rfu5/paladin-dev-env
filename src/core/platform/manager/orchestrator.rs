@@ -14,6 +14,7 @@ use crate::core::base::component::event::Event;
 use crate::core::base::entity::message::{Location, Message, MessagePriority};
 use crate::core::platform::container::content::ContentItem;
 use crate::core::platform::container::job::{Job, JobError};
+pub use crate::core::platform::container::orchestration_context::OrchestrationContext;
 use crate::core::platform::container::queue_item::QueueItem;
 use crate::core::platform::container::task::{Task, TaskError, TaskService};
 use crate::core::platform::container::trigger::{Trigger, TriggerCondition};
@@ -27,59 +28,13 @@ use crate::core::platform::manager::queue_service::{QueueError, QueueService};
 use crate::core::platform::manager::scheduler::{Schedule, Scheduler, SchedulerError};
 
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::{Mutex, RwLock};
 use uuid::Uuid;
-
-/// Orchestrator execution context
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OrchestrationContext {
-    /// Unique identifier for the orchestration session
-    pub session_id: Uuid,
-    /// User or system that initiated the orchestration
-    pub initiator: String,
-    /// Environment context (dev, staging, prod)
-    pub environment: String,
-    /// Correlation ID for tracking related operations
-    pub correlation_id: Option<Uuid>,
-    /// Session metadata
-    pub metadata: HashMap<String, serde_json::Value>,
-    /// Session start time
-    pub started_at: DateTime<Utc>,
-}
-
-impl OrchestrationContext {
-    pub fn new(initiator: String, environment: String) -> Self {
-        Self {
-            session_id: Uuid::new_v4(),
-            initiator,
-            environment,
-            correlation_id: None,
-            metadata: HashMap::new(),
-            started_at: Utc::now(),
-        }
-    }
-
-    pub fn with_correlation(mut self, correlation_id: Uuid) -> Self {
-        self.correlation_id = Some(correlation_id);
-        self
-    }
-
-    pub fn add_metadata<T: Serialize>(
-        &mut self,
-        key: String,
-        value: T,
-    ) -> Result<(), OrchestratorError> {
-        let json_value = serde_json::to_value(value)
-            .map_err(|e| OrchestratorError::SerializationError(e.to_string()))?;
-        self.metadata.insert(key, json_value);
-        Ok(())
-    }
-}
 
 /// Main Orchestrator service
 pub struct Orchestrator {

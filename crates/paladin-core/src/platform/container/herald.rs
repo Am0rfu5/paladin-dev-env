@@ -22,10 +22,10 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 // Re-export actual domain types for Herald consumers
-pub use crate::core::platform::container::battalion::BattalionResult;
-pub use crate::core::platform::container::execution_result::PaladinResult;
-pub use crate::core::platform::container::paladin_error::PaladinError;
-pub use crate::core::platform::container::token_usage::TokenUsage;
+pub use crate::platform::container::battalion::BattalionResult;
+pub use crate::platform::container::execution_result::PaladinResult;
+pub use crate::platform::container::paladin_error::PaladinError;
+pub use crate::platform::container::token_usage::TokenUsage;
 
 // Re-export HeraldError for convenience
 pub use super::herald_error::HeraldError;
@@ -700,7 +700,7 @@ mod tests {
 
     #[test]
     fn test_format_paladin_result() {
-        use crate::core::platform::container::execution_result::StopReason;
+        use crate::platform::container::execution_result::StopReason;
         let herald = MockHerald;
         let result = PaladinResult {
             output: "Test output".to_string(),
@@ -717,7 +717,7 @@ mod tests {
 
     #[test]
     fn test_format_battalion_result() {
-        use crate::core::platform::container::battalion::{BattalionStatus, BattalionStrategy};
+        use crate::platform::container::battalion::{BattalionStatus, BattalionStrategy};
         use chrono::Utc;
         use uuid::Uuid;
         let herald = MockHerald;

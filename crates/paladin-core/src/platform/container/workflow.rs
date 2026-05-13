@@ -8,10 +8,10 @@ event-driven processing.
 They can also define custom execution orders and stages, enabling sophisticated
 orchestration patterns.
 */
-use crate::core::platform::container::job::{Job, JobExecutionMode};
-use crate::core::platform::container::orchestration_context::OrchestrationContext;
-use crate::core::platform::container::queue_config::QueueConfig;
-use crate::core::platform::container::trigger::TriggerCondition;
+use crate::platform::container::job::{Job, JobExecutionMode};
+use crate::platform::container::orchestration_context::OrchestrationContext;
+use crate::platform::container::queue_config::QueueConfig;
+use crate::platform::container::trigger::TriggerCondition;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

@@ -198,7 +198,8 @@
 use crate::core::platform::container::garrison::GarrisonEntry;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
+
+pub use crate::core::platform::container::garrison_error::GarrisonError;
 
 /// Statistics about a Garrison's current state.
 ///
@@ -240,153 +241,7 @@ pub struct GarrisonStats {
     pub size_bytes: Option<usize>,
 }
 
-/// Errors that can occur during Garrison operations.
-///
-/// All Garrison operations return `Result<T, GarrisonError>`. These errors cover
-/// storage failures, data integrity issues, and operational constraints.
-///
-/// # Error Categories
-///
-/// ## Transient Errors (Retryable)
-/// - [`StorageError`](Self::StorageError) - May succeed on retry (network issues, timeouts)
-///
-/// ## Permanent Errors (Non-Retryable)
-/// - [`SerializationError`](Self::SerializationError) - Data format issues
-/// - [`NotFound`](Self::NotFound) - Entry doesn't exist
-/// - [`ConfigurationError`](Self::ConfigurationError) - Invalid setup
-///
-/// ## Operational Errors
-/// - [`TokenizationError`](Self::TokenizationError) - Token counting failures
-/// - [`Custom`](Self::Custom) - Implementation-specific errors
-///
-/// # Examples
-///
-/// ## Error Handling with Retry
-///
-/// ```rust,no_run
-/// use paladin::application::ports::output::garrison_port::{GarrisonPort, GarrisonError};
-/// use paladin::core::platform::container::garrison::{GarrisonEntry, ConversationRole};
-///
-/// async fn store_with_retry(
-///     garrison: &dyn GarrisonPort,
-///     entry: GarrisonEntry,
-///     max_retries: u32,
-/// ) -> Result<(), GarrisonError> {
-///     let mut attempts = 0;
-///     loop {
-///         match garrison.remember(entry.clone()).await {
-///             Ok(_) => return Ok(()),
-///             Err(GarrisonError::StorageError(e)) if attempts < max_retries => {
-///                 attempts += 1;
-///                 eprintln!("Retry {}/{}: {}", attempts, max_retries, e);
-///                 tokio::time::sleep(tokio::time::Duration::from_millis(100 * attempts as u64)).await;
-///             }
-///             Err(e) => return Err(e),
-///         }
-///     }
-/// }
-/// ```
-///
-/// ## Graceful Degradation
-///
-/// ```rust,no_run
-/// use paladin::application::ports::output::garrison_port::{GarrisonPort, GarrisonError};
-///
-/// async fn recall_with_fallback(
-///     garrison: &dyn GarrisonPort,
-///     limit: usize,
-/// ) -> Vec<paladin::core::platform::container::garrison::GarrisonEntry> {
-///     match garrison.recall_recent(limit).await {
-///         Ok(entries) => entries,
-///         Err(GarrisonError::StorageError(e)) => {
-///             eprintln!("Storage error, using empty context: {}", e);
-///             vec![] // Degrade gracefully
-///         }
-///         Err(e) => {
-///             eprintln!("Garrison error: {}", e);
-///             vec![]
-///         }
-///     }
-/// }
-/// ```
-#[derive(Debug, Error)]
-pub enum GarrisonError {
-    /// Error occurred in underlying storage (database, file system, network, etc.).
-    ///
-    /// **Retryable**: Yes (may be transient network/database issue)
-    ///
-    /// **Common Causes**:
-    /// - Database connection timeout
-    /// - Disk I/O failure
-    /// - Network partition
-    /// - Resource exhaustion (connections, memory)
-    ///
-    /// **Recovery**: Retry with exponential backoff. If persistent, check storage health.
-    #[error("Storage error: {0}")]
-    StorageError(String),
-
-    /// Failed to serialize or deserialize data.
-    ///
-    /// **Retryable**: No (data format issue)
-    ///
-    /// **Common Causes**:
-    /// - Incompatible data schema versions
-    /// - Corrupted storage data
-    /// - Invalid UTF-8 encoding
-    /// - Missing required fields
-    ///
-    /// **Recovery**: Fix data format, migrate schema, or discard corrupted entry.
-    #[error("Serialization error: {0}")]
-    SerializationError(String),
-
-    /// Failed to calculate token count.
-    ///
-    /// **Retryable**: Yes (if using external tokenizer service)
-    ///
-    /// **Common Causes**:
-    /// - Tokenizer service unavailable
-    /// - Invalid text encoding
-    /// - Unsupported language/character set
-    ///
-    /// **Recovery**: Use approximate token count (word count * 1.3) or retry.
-    #[error("Tokenization error: {0}")]
-    TokenizationError(String),
-
-    /// Requested entry was not found.
-    ///
-    /// **Retryable**: No (entry doesn't exist)
-    ///
-    /// **Common Causes**:
-    /// - Entry was deleted
-    /// - Incorrect entry ID
-    /// - Garrison was cleared
-    ///
-    /// **Recovery**: Handle missing entry case (e.g., use empty context).
-    #[error("Entry not found: {0}")]
-    NotFound(String),
-
-    /// Configuration is invalid.
-    ///
-    /// **Retryable**: No (requires configuration fix)
-    ///
-    /// **Common Causes**:
-    /// - Missing connection string
-    /// - Invalid storage path
-    /// - Unsupported embedding dimensions
-    ///
-    /// **Recovery**: Fix configuration and reinitialize Garrison.
-    #[error("Configuration error: {0}")]
-    ConfigurationError(String),
-
-    /// Generic error with custom message.
-    ///
-    /// **Retryable**: Implementation-specific
-    ///
-    /// **Usage**: Use only when error doesn't fit other categories.
-    /// Consider adding specific error variant if pattern emerges.
-    #[error("{0}")]
-    Custom(String),
-}
+// GarrisonError is re-exported from core for API compatibility.
 
 /// Port for basic Garrison memory operations.
 ///
