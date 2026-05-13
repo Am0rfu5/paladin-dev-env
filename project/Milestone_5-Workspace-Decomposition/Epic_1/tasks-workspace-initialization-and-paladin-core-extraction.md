@@ -72,16 +72,16 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.6j Update core internal imports: `battalion/mod.rs`, `battalion/conclave.rs`, `herald.rs` (also remove `pub use PaladinError`), `arsenal/handoff_tool.rs` — replace all `application::` import paths with `crate::core::platform::container::` paths
   - [x] 3.7 Run `cargo build --workspace` and `cargo test --workspace` to confirm the refactor preserves behavior with zero regressions
 
-- [ ] 4.0 Extract `src/core/base/` into `paladin-core`
-  - [ ] 4.1 Verify `src/core/base/` is free of `application::` / `infrastructure::` imports (run `grep -rn "application::\|infrastructure::" src/core/base/`) — fix any stragglers before moving
-  - [ ] 4.2 Move all files from `src/core/base/` to `crates/paladin-core/src/base/` preserving sub-module structure and `mod.rs` declarations (FR-8)
-  - [ ] 4.3 Update every `use` statement inside the moved files to use crate-local paths (replace `crate::core::base::...` with `crate::base::...` and `crate::core::...` with the equivalent `paladin-core` path) (FR-10)
-  - [ ] 4.4 Enable `pub mod base;` in `crates/paladin-core/src/lib.rs`
-  - [ ] 4.5 Confirm no moved file contains `use` statements referencing `application::`, `infrastructure::`, or any path outside `paladin-core` (FR-11)
-  - [ ] 4.6 Run `cargo build -p paladin-core` and confirm successful isolated build
-  - [ ] 4.7 Run `cargo test -p paladin-core` and confirm all base unit tests (inside `#[cfg(test)]` modules) pass (FR-12)
-  - [ ] 4.8 In the root `paladin` crate, add a temporary `pub use paladin_core::base;` re-export under `src/core/mod.rs` (or equivalent shim) so unmoved code that still imports `crate::core::base::...` continues to compile
-  - [ ] 4.9 Run `cargo build --workspace` and `cargo test --workspace` to confirm end-to-end compilation and no test regressions
+- [x] 4.0 Extract `src/core/base/` into `paladin-core`
+  - [x] 4.1 Verify `src/core/base/` is free of `application::` / `infrastructure::` imports (run `grep -rn "application::\|infrastructure::" src/core/base/`) — fix any stragglers before moving
+  - [x] 4.2 Move all files from `src/core/base/` to `crates/paladin-core/src/base/` preserving sub-module structure and `mod.rs` declarations (FR-8)
+  - [x] 4.3 Update every `use` statement inside the moved files to use crate-local paths (replace `crate::core::base::...` with `crate::base::...` and `crate::core::...` with the equivalent `paladin-core` path) (FR-10)
+  - [x] 4.4 Enable `pub mod base;` in `crates/paladin-core/src/lib.rs`
+  - [x] 4.5 Confirm no moved file contains `use` statements referencing `application::`, `infrastructure::`, or any path outside `paladin-core` (FR-11)
+  - [x] 4.6 Run `cargo build -p paladin-core` and confirm successful isolated build
+  - [x] 4.7 Run `cargo test -p paladin-core` and confirm all base unit tests (inside `#[cfg(test)]` modules) pass (FR-12)
+  - [x] 4.8 In the root `paladin` crate, add `paladin-core = { path = "crates/paladin-core" }` to `[dependencies]`; note: `src/core/base/` source files remain in root crate (orphan rule prevents inherent `impl` on foreign `Node<T>`); they will be removed when container/ moves to paladin-core in Task 5.0
+  - [x] 4.9 Run `cargo build --workspace` and `cargo test --workspace` to confirm end-to-end compilation and no test regressions (50 new paladin-core tests added to baseline)
 
 - [ ] 5.0 Extract `src/core/platform/container/` into `paladin-core`
   - [ ] 5.1 Verify `src/core/platform/container/` has zero `application::` / `infrastructure::` imports (Task 3.0 must be complete); re-run `grep -rn "application::\|infrastructure::" src/core/platform/`

@@ -12,4 +12,5 @@
 //! - [`platform`] — Domain entities: `Paladin`, Battalion types, `Garrison`, `Arsenal`, `Citadel`, `Herald`, `Sanctum`
 
 // pub mod base;
+pub mod base;
 // pub mod platform;
