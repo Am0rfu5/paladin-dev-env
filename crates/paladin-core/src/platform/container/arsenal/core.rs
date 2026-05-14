@@ -55,7 +55,7 @@ impl ArmamentCall {
     /// # Examples
     ///
     /// ```
-    /// use paladin::core::platform::container::arsenal::ArmamentCall;
+    /// use paladin_core::platform::container::arsenal::ArmamentCall;
     /// use std::collections::HashMap;
     /// use serde_json::json;
     ///

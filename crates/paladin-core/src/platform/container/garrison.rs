@@ -64,7 +64,7 @@ impl GarrisonEntry {
     /// # Examples
     ///
     /// ```
-    /// use paladin::core::platform::container::garrison::{GarrisonEntry, ConversationRole};
+    /// use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole};
     ///
     /// let entry = GarrisonEntry::new(
     ///     ConversationRole::User,
@@ -141,7 +141,7 @@ impl GarrisonEntry {
 /// # Examples
 ///
 /// ```
-/// use paladin::core::platform::container::garrison::GarrisonType;
+/// use paladin_core::platform::container::garrison::GarrisonType;
 ///
 /// let memory_type = GarrisonType::ShortTerm;
 /// assert_eq!(memory_type, GarrisonType::ShortTerm);
@@ -163,7 +163,7 @@ pub enum GarrisonType {
 /// # Examples
 ///
 /// ```
-/// use paladin::core::platform::container::garrison::EvictionStrategy;
+/// use paladin_core::platform::container::garrison::EvictionStrategy;
 ///
 /// let strategy = EvictionStrategy::ImportanceBased;
 /// // This strategy preserves system prompts and recent messages
@@ -185,7 +185,7 @@ pub enum EvictionStrategy {
 /// # Examples
 ///
 /// ```
-/// use paladin::core::platform::container::garrison::{GarrisonConfig, EvictionStrategy};
+/// use paladin_core::platform::container::garrison::{GarrisonConfig, EvictionStrategy};
 ///
 /// let config = GarrisonConfig::new(50, Some(2000))
 ///     .with_eviction_strategy(EvictionStrategy::SlidingWindow)
@@ -282,7 +282,7 @@ impl ConversationHistory {
     /// # Examples
     ///
     /// ```
-    /// use paladin::core::platform::container::garrison::{ConversationHistory, GarrisonConfig};
+    /// use paladin_core::platform::container::garrison::{ConversationHistory, GarrisonConfig};
     ///
     /// let config = GarrisonConfig::default();
     /// let history = ConversationHistory::new(config);

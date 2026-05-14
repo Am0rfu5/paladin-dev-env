@@ -466,6 +466,7 @@ impl Default for QueueService {
 mod tests {
     use super::*;
     use crate::core::base::entity::message::{Location, Message};
+    use crate::core::platform::container::queue_item::QueueItemConfig;
 
     #[tokio::test]
     async fn test_queue_creation() {

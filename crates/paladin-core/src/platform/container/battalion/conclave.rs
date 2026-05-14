@@ -14,8 +14,8 @@
 //! # Example
 //!
 //! ```ignore
-//! use paladin::core::platform::container::battalion::conclave::{Conclave, ConclaveConfig};
-//! use paladin::core::platform::container::battalion::BattalionConfig;
+//! use paladin_core::platform::container::battalion::conclave::{Conclave, ConclaveConfig};
+//! use paladin_core::platform::container::battalion::BattalionConfig;
 //!
 //! let battalion_config = BattalionConfig::new("expert_panel");
 //! let conclave_config = ConclaveConfig::new("TechnicalAnalysis", battalion_config);
@@ -70,8 +70,8 @@ pub enum ObservabilityLevel {
 /// # Examples
 ///
 /// ```
-/// use paladin::core::platform::container::battalion::conclave::{ConclaveConfig, ObservabilityLevel};
-/// use paladin::core::platform::container::battalion::BattalionConfig;
+/// use paladin_core::platform::container::battalion::conclave::{ConclaveConfig, ObservabilityLevel};
+/// use paladin_core::platform::container::battalion::BattalionConfig;
 ///
 /// let battalion_config = BattalionConfig::new("expert_panel");
 /// let mut config = ConclaveConfig::new("Analysis", battalion_config);
@@ -198,7 +198,7 @@ impl ConclaveConfig {
 /// # Example
 ///
 /// ```ignore
-/// use paladin::core::platform::container::battalion::conclave::Conclave;
+/// use paladin_core::platform::container::battalion::conclave::Conclave;
 ///
 /// let conclave = Conclave::new(
 ///     vec![expert1, expert2, expert3],

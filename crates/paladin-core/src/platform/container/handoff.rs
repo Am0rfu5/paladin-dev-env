@@ -33,7 +33,7 @@ impl HandoffStrategy {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::handoff::HandoffStrategy;
+    /// use paladin_core::platform::container::handoff::HandoffStrategy;
     ///
     /// let strategy = HandoffStrategy::threshold(0.7);
     /// ```
@@ -89,7 +89,7 @@ impl HandoffContext {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::handoff::HandoffContext;
+    /// use paladin_core::platform::container::handoff::HandoffContext;
     ///
     /// let context = HandoffContext::new(
     ///     "Debug this code".to_string(),

@@ -13,7 +13,7 @@ use std::collections::HashSet;
 /// # Examples
 ///
 /// ```
-/// use paladin::core::platform::container::battalion::parser::FlowExpression;
+/// use paladin_core::platform::container::battalion::parser::FlowExpression;
 ///
 /// // Agent node
 /// let agent = FlowExpression::Agent("researcher".to_string());
@@ -46,7 +46,7 @@ impl FlowExpression {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::battalion::parser::FlowExpression;
+    /// use paladin_core::platform::container::battalion::parser::FlowExpression;
     ///
     /// let expr = FlowExpression::Sequential(vec![
     ///     FlowExpression::Agent("a".to_string()),
@@ -87,7 +87,7 @@ impl FlowExpression {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::battalion::parser::FlowExpression;
+    /// use paladin_core::platform::container::battalion::parser::FlowExpression;
     ///
     /// let expr = FlowExpression::Sequential(vec![
     ///     FlowExpression::Agent("a".to_string()), // depth 1
@@ -115,7 +115,7 @@ impl FlowExpression {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::battalion::parser::FlowExpression;
+    /// use paladin_core::platform::container::battalion::parser::FlowExpression;
     ///
     /// let expr = FlowExpression::Parallel(vec![
     ///     FlowExpression::Agent("a".to_string()),
@@ -141,7 +141,7 @@ impl FlowExpression {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::battalion::parser::FlowExpression;
+    /// use paladin_core::platform::container::battalion::parser::FlowExpression;
     ///
     /// let expr = FlowExpression::Sequential(vec![
     ///     FlowExpression::Agent("a".to_string()),

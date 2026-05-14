@@ -23,8 +23,8 @@ use crate::platform::container::paladin::Paladin;
 /// # Example
 ///
 /// ```ignore
-/// use paladin::core::platform::container::battalion::formation::Formation;
-/// use paladin::core::platform::container::battalion::BattalionConfig;
+/// use paladin_core::platform::container::battalion::formation::Formation;
+/// use paladin_core::platform::container::battalion::BattalionConfig;
 ///
 /// let config = BattalionConfig::new("research_pipeline");
 /// let paladins = vec![researcher, analyst, summarizer];

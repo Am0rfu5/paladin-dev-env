@@ -60,7 +60,7 @@ impl HandoffRetryConfig {
 /// # Example
 ///
 /// ```
-/// use paladin::core::platform::container::autonomous_config::AutonomousConfig;
+/// use paladin_core::platform::container::autonomous_config::AutonomousConfig;
 ///
 /// let config = AutonomousConfig::default();
 /// assert!(!config.planning.enabled);

@@ -43,13 +43,6 @@ use crate::core::platform::container::battalion::chain_of_command::{
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-/// Convert PaladinError to BattalionError
-impl From<PaladinError> for BattalionError {
-    fn from(err: PaladinError) -> Self {
-        BattalionError::PaladinError(err.to_string())
-    }
-}
-
 /// Result of executing a Chain of Command delegation
 #[derive(Debug, Clone)]
 pub struct DelegationResult {

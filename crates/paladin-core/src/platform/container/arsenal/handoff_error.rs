@@ -16,7 +16,7 @@ use thiserror::Error;
 /// # Examples
 ///
 /// ```
-/// use paladin::application::errors::handoff_error::HandoffError;
+/// use paladin_core::platform::container::arsenal::handoff_error::HandoffError;
 ///
 /// let error = HandoffError::InvalidAgent {
 ///     agent_name: "UnknownAgent".to_string(),

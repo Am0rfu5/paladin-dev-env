@@ -6,8 +6,8 @@
 //! # Examples
 //!
 //! ```no_run
-//! use paladin::core::platform::container::battalion::chain_of_command::{ChainOfCommand, DelegationStrategy};
-//! use paladin::core::platform::container::battalion::BattalionConfig;
+//! use paladin_core::platform::container::battalion::chain_of_command::{ChainOfCommand, DelegationStrategy};
+//! use paladin_core::platform::container::battalion::BattalionConfig;
 //!
 //! // Create a chain with commander and specialists
 //! let config = BattalionConfig::new("research_team");
@@ -92,8 +92,8 @@ impl ChainOfCommand {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::core::platform::container::battalion::chain_of_command::ChainOfCommand;
-    /// # use paladin::core::platform::container::battalion::BattalionConfig;
+    /// # use paladin_core::platform::container::battalion::chain_of_command::ChainOfCommand;
+    /// # use paladin_core::platform::container::battalion::BattalionConfig;
     /// # let commander = todo!();
     /// # let specialist1 = todo!();
     /// # let specialist2 = todo!();
@@ -103,7 +103,7 @@ impl ChainOfCommand {
     ///     vec![specialist1, specialist2],
     ///     config
     /// )?;
-    /// # Ok::<(), paladin::core::platform::container::battalion::BattalionError>(())
+    /// # Ok::<(), paladin_core::platform::container::battalion::BattalionError>(())
     /// ```
     pub fn new(
         commander: Paladin,
@@ -129,14 +129,14 @@ impl ChainOfCommand {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::core::platform::container::battalion::chain_of_command::{ChainOfCommand, DelegationStrategy};
-    /// # use paladin::core::platform::container::battalion::BattalionConfig;
+    /// # use paladin_core::platform::container::battalion::chain_of_command::{ChainOfCommand, DelegationStrategy};
+    /// # use paladin_core::platform::container::battalion::BattalionConfig;
     /// # let commander = todo!();
     /// # let specialist = todo!();
     /// # let config = BattalionConfig::new("chain");
     /// let chain = ChainOfCommand::new(commander, vec![specialist], config)?
     ///     .with_strategy(DelegationStrategy::Broadcast);
-    /// # Ok::<(), paladin::core::platform::container::battalion::BattalionError>(())
+    /// # Ok::<(), paladin_core::platform::container::battalion::BattalionError>(())
     /// ```
     pub fn with_strategy(mut self, strategy: DelegationStrategy) -> Self {
         self.delegation_strategy = strategy;

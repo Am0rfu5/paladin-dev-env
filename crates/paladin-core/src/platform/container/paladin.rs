@@ -7,8 +7,8 @@
 //! # Example
 //!
 //! ```
-//! use paladin::core::platform::container::paladin::{PaladinData, PaladinStatus, MaxLoops};
-//! use paladin::core::base::entity::node::Node;
+//! use paladin_core::platform::container::paladin::{PaladinData, PaladinStatus, MaxLoops};
+//! use paladin_core::base::entity::node::Node;
 //!
 //! let data = PaladinData {
 //!     system_prompt: "You are a helpful assistant".to_string(),
@@ -204,8 +204,8 @@ pub struct PaladinData {
 /// # Example
 ///
 /// ```
-/// use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
-/// use paladin::core::base::entity::node::Node;
+/// use paladin_core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus, MaxLoops};
+/// use paladin_core::base::entity::node::Node;
 ///
 /// let data = PaladinData {
 ///     system_prompt: "You are a code reviewer".to_string(),
@@ -273,7 +273,7 @@ impl PaladinStatus {
     /// # Examples
     ///
     /// ```
-    /// use paladin::core::platform::container::paladin::PaladinStatus;
+    /// use paladin_core::platform::container::paladin::PaladinStatus;
     ///
     /// assert!(PaladinStatus::Completed.is_terminal());
     /// assert!(PaladinStatus::Failed("error".to_string()).is_terminal());
@@ -291,7 +291,7 @@ impl PaladinStatus {
     /// # Examples
     ///
     /// ```
-    /// use paladin::core::platform::container::paladin::PaladinStatus;
+    /// use paladin_core::platform::container::paladin::PaladinStatus;
     ///
     /// assert!(PaladinStatus::Reasoning.is_active());
     /// assert!(PaladinStatus::Executing.is_active());

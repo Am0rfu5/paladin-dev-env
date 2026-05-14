@@ -21,6 +21,7 @@ use std::time::Duration;
 use uuid::Uuid;
 
 use crate::platform::container::execution_result::PaladinResult;
+use crate::platform::container::paladin_error::PaladinError;
 use crate::platform::container::registry_error::RegistryError;
 
 /// Configuration for Battalion operations
@@ -28,7 +29,7 @@ use crate::platform::container::registry_error::RegistryError;
 /// # Examples
 ///
 /// ```
-/// use paladin::core::platform::container::battalion::{BattalionConfig, ErrorStrategy};
+/// use paladin_core::platform::container::battalion::{BattalionConfig, ErrorStrategy};
 ///
 /// let config = BattalionConfig::new("research_battalion")
 ///     .with_timeout(300)
@@ -175,7 +176,7 @@ impl Default for BattalionConfig {
 /// # Examples
 ///
 /// ```
-/// use paladin::core::platform::container::battalion::RetryPolicy;
+/// use paladin_core::platform::container::battalion::RetryPolicy;
 /// use std::time::Duration;
 ///
 /// let policy = RetryPolicy {
@@ -231,7 +232,7 @@ impl Default for RetryPolicy {
 /// # Examples
 ///
 /// ```
-/// use paladin::core::platform::container::battalion::ErrorStrategy;
+/// use paladin_core::platform::container::battalion::ErrorStrategy;
 ///
 /// let fail_fast = ErrorStrategy::FailFast; // Stop on first error
 /// let continue_on_error = ErrorStrategy::ContinueOnError; // Collect all errors
@@ -257,7 +258,7 @@ pub enum ErrorStrategy {
 /// # Examples
 ///
 /// ```
-/// use paladin::core::platform::container::battalion::BattalionStrategy;
+/// use paladin_core::platform::container::battalion::BattalionStrategy;
 ///
 /// let strategy = BattalionStrategy::Formation;
 /// assert_eq!(strategy, BattalionStrategy::Formation);
@@ -461,7 +462,7 @@ pub enum BattalionStrategy {
 /// # Examples
 ///
 /// ```
-/// use paladin::core::platform::container::battalion::BattalionStatus;
+/// use paladin_core::platform::container::battalion::BattalionStatus;
 ///
 /// let mut status = BattalionStatus::Idle;
 /// status = BattalionStatus::Running;
@@ -832,6 +833,16 @@ impl From<RegistryError> for BattalionError {
                 BattalionError::ExecutionError(format!("Registry access failed: {}", msg))
             }
         }
+    }
+}
+
+/// Convert PaladinError to BattalionError
+///
+/// Allows Paladin execution errors to be propagated as Battalion errors
+/// in multi-agent orchestration patterns such as Chain of Command.
+impl From<PaladinError> for BattalionError {
+    fn from(err: PaladinError) -> Self {
+        BattalionError::PaladinError(err.to_string())
     }
 }
 

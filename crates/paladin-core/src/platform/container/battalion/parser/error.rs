@@ -48,7 +48,7 @@ impl FlowParseError {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::battalion::parser::FlowParseError;
+    /// use paladin_core::platform::container::battalion::parser::FlowParseError;
     ///
     /// let error = FlowParseError::EmptyExpression;
     /// let suggestion = error.suggestion();
@@ -107,7 +107,7 @@ impl FlowParseError {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::battalion::parser::FlowParseError;
+    /// use paladin_core::platform::container::battalion::parser::FlowParseError;
     ///
     /// let error = FlowParseError::InvalidCharacter {
     ///     position: 5,

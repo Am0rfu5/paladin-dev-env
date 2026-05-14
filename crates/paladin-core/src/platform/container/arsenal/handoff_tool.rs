@@ -13,7 +13,7 @@ use std::sync::Arc;
 /// # Example
 ///
 /// ```rust,no_run
-/// use paladin::core::platform::container::arsenal::handoff_tool::HandoffTool;
+/// use paladin_core::platform::container::arsenal::handoff_tool::HandoffTool;
 /// use std::sync::Arc;
 ///
 /// // Create tool with no specialists (simplified example)
@@ -99,7 +99,7 @@ impl HandoffTool {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::core::platform::container::arsenal::handoff_tool::HandoffTool;
+    /// # use paladin_core::platform::container::arsenal::handoff_tool::HandoffTool;
     /// # use std::collections::HashMap;
     /// # use serde_json::json;
     /// # let tool = HandoffTool::new(vec![]);

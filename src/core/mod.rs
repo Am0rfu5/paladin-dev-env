@@ -105,7 +105,7 @@
 //! ));
 //! ```
 
-#[allow(missing_docs)]
-pub mod base;
+// Re-export base from paladin-core crate (the extracted domain crate)
+pub use paladin_core::base;
 #[allow(missing_docs)]
 pub mod platform;

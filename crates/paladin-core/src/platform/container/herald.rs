@@ -8,7 +8,7 @@
 //! # Examples
 //!
 //! ```rust,ignore
-//! use paladin::core::platform::container::herald::Herald;
+//! use paladin_core::platform::container::herald::Herald;
 //! use paladin::infrastructure::adapters::herald::JsonHerald;
 //!
 //! let herald = JsonHerald::new();
@@ -182,7 +182,7 @@ pub trait Herald: Send + Sync {
 /// ## Basic Usage
 ///
 /// ```
-/// use paladin::core::platform::container::herald::StreamChunk;
+/// use paladin_core::platform::container::herald::StreamChunk;
 /// use uuid::Uuid;
 /// use chrono::Utc;
 ///
@@ -199,7 +199,7 @@ pub trait Herald: Send + Sync {
 /// ## With Token Count
 ///
 /// ```
-/// use paladin::core::platform::container::herald::StreamChunk;
+/// use paladin_core::platform::container::herald::StreamChunk;
 /// use uuid::Uuid;
 /// use chrono::Utc;
 ///
@@ -217,7 +217,7 @@ pub trait Herald: Send + Sync {
 /// ## With Custom Metadata
 ///
 /// ```
-/// use paladin::core::platform::container::herald::StreamChunk;
+/// use paladin_core::platform::container::herald::StreamChunk;
 /// use uuid::Uuid;
 /// use chrono::Utc;
 /// use serde_json::json;
@@ -266,7 +266,7 @@ impl StreamChunk {
     /// # Examples
     ///
     /// ```
-    /// use paladin::core::platform::container::herald::StreamChunk;
+    /// use paladin_core::platform::container::herald::StreamChunk;
     /// use uuid::Uuid;
     /// use chrono::Utc;
     ///
@@ -401,8 +401,8 @@ impl StreamChunkBuilder {
 /// ## Basic Usage
 ///
 /// ```
-/// use paladin::core::platform::container::herald::ExecutionMetadata;
-/// use paladin::application::ports::output::llm_port::TokenUsage;
+/// use paladin_core::platform::container::herald::ExecutionMetadata;
+/// use paladin_core::platform::container::token_usage::TokenUsage;
 /// use chrono::Utc;
 /// use uuid::Uuid;
 ///
@@ -422,8 +422,8 @@ impl StreamChunkBuilder {
 /// ## Complete Execution with Duration Calculation
 ///
 /// ```
-/// use paladin::core::platform::container::herald::ExecutionMetadata;
-/// use paladin::application::ports::output::llm_port::TokenUsage;
+/// use paladin_core::platform::container::herald::ExecutionMetadata;
+/// use paladin_core::platform::container::token_usage::TokenUsage;
 /// use chrono::Utc;
 /// use uuid::Uuid;
 ///
@@ -452,8 +452,8 @@ impl StreamChunkBuilder {
 /// ## With Cost Estimation and Error Tracking
 ///
 /// ```
-/// use paladin::core::platform::container::herald::ExecutionMetadata;
-/// use paladin::application::ports::output::llm_port::TokenUsage;
+/// use paladin_core::platform::container::herald::ExecutionMetadata;
+/// use paladin_core::platform::container::token_usage::TokenUsage;
 /// use chrono::Utc;
 /// use uuid::Uuid;
 ///
@@ -481,8 +481,8 @@ impl StreamChunkBuilder {
 /// ## With Custom Metadata
 ///
 /// ```
-/// use paladin::core::platform::container::herald::ExecutionMetadata;
-/// use paladin::application::ports::output::llm_port::TokenUsage;
+/// use paladin_core::platform::container::herald::ExecutionMetadata;
+/// use paladin_core::platform::container::token_usage::TokenUsage;
 /// use chrono::Utc;
 /// use uuid::Uuid;
 /// use serde_json::json;

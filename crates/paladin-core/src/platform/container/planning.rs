@@ -37,7 +37,7 @@ impl TaskPlan {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::planning::TaskPlan;
+    /// use paladin_core::platform::container::planning::TaskPlan;
     ///
     /// let plan = TaskPlan::new("Create a marketing strategy".to_string(), 10);
     /// assert_eq!(plan.subtasks.len(), 0);
@@ -145,7 +145,7 @@ impl Subtask {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::planning::Subtask;
+    /// use paladin_core::platform::container::planning::Subtask;
     ///
     /// let subtask = Subtask::new(
     ///     "st-1".to_string(),

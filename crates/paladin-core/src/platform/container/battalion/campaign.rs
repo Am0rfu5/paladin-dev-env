@@ -6,8 +6,8 @@
 //! # Examples
 //!
 //! ```no_run
-//! use paladin::core::platform::container::battalion::campaign::{Campaign, CampaignEdge, EdgeCondition};
-//! use paladin::core::platform::container::battalion::BattalionConfig;
+//! use paladin_core::platform::container::battalion::campaign::{Campaign, CampaignEdge, EdgeCondition};
+//! use paladin_core::platform::container::battalion::BattalionConfig;
 //!
 //! // Create a campaign
 //! let config = BattalionConfig::new("research_campaign");
@@ -107,8 +107,8 @@ impl Campaign {
     /// # Examples
     ///
     /// ```
-    /// use paladin::core::platform::container::battalion::campaign::Campaign;
-    /// use paladin::core::platform::container::battalion::BattalionConfig;
+    /// use paladin_core::platform::container::battalion::campaign::Campaign;
+    /// use paladin_core::platform::container::battalion::BattalionConfig;
     ///
     /// let config = BattalionConfig::new("my_campaign");
     /// let campaign = Campaign::new(config);
@@ -130,8 +130,8 @@ impl Campaign {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::core::platform::container::battalion::campaign::Campaign;
-    /// # use paladin::core::platform::container::battalion::BattalionConfig;
+    /// # use paladin_core::platform::container::battalion::campaign::Campaign;
+    /// # use paladin_core::platform::container::battalion::BattalionConfig;
     /// # let config = BattalionConfig::new("campaign");
     /// # let mut campaign = Campaign::new(config);
     /// # let paladin = todo!();
@@ -155,15 +155,15 @@ impl Campaign {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::core::platform::container::battalion::campaign::{Campaign, CampaignEdge, EdgeCondition};
-    /// # use paladin::core::platform::container::battalion::BattalionConfig;
+    /// # use paladin_core::platform::container::battalion::campaign::{Campaign, CampaignEdge, EdgeCondition};
+    /// # use paladin_core::platform::container::battalion::BattalionConfig;
     /// # let config = BattalionConfig::new("campaign");
     /// # let mut campaign = Campaign::new(config);
     /// # let id1 = uuid::Uuid::new_v4();
     /// # let id2 = uuid::Uuid::new_v4();
     /// let edge = CampaignEdge::new(id1, id2, EdgeCondition::Always);
     /// campaign.add_edge(edge)?;
-    /// # Ok::<(), paladin::core::platform::container::battalion::BattalionError>(())
+    /// # Ok::<(), paladin_core::platform::container::battalion::BattalionError>(())
     /// ```
     pub fn add_edge(&mut self, edge: CampaignEdge) -> Result<(), BattalionError> {
         // Validate source and target exist

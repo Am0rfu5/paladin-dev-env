@@ -16,7 +16,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use paladin::core::platform::container::battalion::grove::{
+//! use paladin_core::platform::container::battalion::grove::{
 //!     GroveBuilder, RoutingStrategy, Tree, TreeAgent
 //! };
 //!

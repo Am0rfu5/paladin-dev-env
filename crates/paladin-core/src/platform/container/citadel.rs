@@ -20,7 +20,7 @@
 //! # Example
 //!
 //! ```rust,no_run
-//! use paladin::core::platform::container::citadel::PaladinState;
+//! use paladin_core::platform::container::citadel::PaladinState;
 //! use chrono::Utc;
 //!
 //! // Create a Paladin state for persistence
@@ -111,7 +111,7 @@ pub enum PaladinStatus {
 /// # Example
 ///
 /// ```rust,no_run
-/// use paladin::core::platform::container::citadel::PaladinState;
+/// use paladin_core::platform::container::citadel::PaladinState;
 /// use chrono::Utc;
 ///
 /// // States are typically created by the persistence system

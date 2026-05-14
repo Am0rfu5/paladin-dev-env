@@ -108,7 +108,7 @@ impl Memory {
 /// # Examples
 ///
 /// ```ignore
-/// use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType};
+/// use paladin_core::platform::container::sanctum::{MemoryBuilder, MemoryType};
 ///
 /// let memory = MemoryBuilder::new("paladin-123".to_string(), "Rust is awesome".to_string())
 ///     .memory_type(MemoryType::Semantic)

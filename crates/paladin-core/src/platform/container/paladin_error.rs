@@ -10,7 +10,7 @@ use thiserror::Error;
 /// # Example
 ///
 /// ```
-/// use paladin::core::platform::container::paladin_error::PaladinError;
+/// use paladin_core::platform::container::paladin_error::PaladinError;
 ///
 /// let error = PaladinError::ConfigurationError("Invalid temperature".to_string());
 /// assert_eq!(error.to_string(), "Configuration error: Invalid temperature");

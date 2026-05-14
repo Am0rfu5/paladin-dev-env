@@ -19,7 +19,7 @@ use crate::platform::container::planning::TaskPlan;
 /// # Example
 ///
 /// ```
-/// use paladin::application::ports::output::paladin_port::{PaladinResult, StopReason};
+/// use paladin_core::platform::container::execution_result::{PaladinResult, StopReason};
 ///
 /// let result = PaladinResult {
 ///     output: "The answer is 42".to_string(),
@@ -122,7 +122,7 @@ impl PaladinResult {
     /// # Example
     ///
     /// ```
-    /// use paladin::application::ports::output::paladin_port::{PaladinResult, StopReason};
+    /// use paladin_core::platform::container::execution_result::{PaladinResult, StopReason};
     ///
     /// let result = PaladinResult::new(
     ///     "Response text".to_string(),

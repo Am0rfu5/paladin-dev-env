@@ -26,7 +26,7 @@ pub enum OutputFormat {
 /// # Example
 ///
 /// ```
-/// use paladin::core::platform::container::paladin_config::{PaladinConfig, OutputFormat};
+/// use paladin_core::platform::container::paladin_config::{PaladinConfig, OutputFormat};
 ///
 /// let config = PaladinConfig::builder()
 ///     .retry_attempts(5)
@@ -88,7 +88,7 @@ impl PaladinConfig {
 /// # Example
 ///
 /// ```
-/// use paladin::core::platform::container::paladin_config::{PaladinConfig, OutputFormat};
+/// use paladin_core::platform::container::paladin_config::{PaladinConfig, OutputFormat};
 ///
 /// let config = PaladinConfig::builder()
 ///     .retry_attempts(3)

@@ -15,7 +15,7 @@
 //! # Example
 //!
 //! ```ignore
-//! use paladin::core::platform::container::battalion::council::{
+//! use paladin_core::platform::container::battalion::council::{
 //!     CouncilBuilder, TurnStrategy, TerminationCondition
 //! };
 //!
@@ -171,7 +171,7 @@ impl CouncilMessage {
 /// # Example
 ///
 /// ```
-/// use paladin::core::platform::container::battalion::council::{
+/// use paladin_core::platform::container::battalion::council::{
 ///     CouncilConfig, TurnStrategy, TerminationCondition
 /// };
 ///
@@ -255,7 +255,7 @@ pub struct CouncilData {
 /// # Example
 ///
 /// ```ignore
-/// use paladin::core::platform::container::battalion::council::CouncilBuilder;
+/// use paladin_core::platform::container::battalion::council::CouncilBuilder;
 ///
 /// let council = CouncilBuilder::new()
 ///     .name("Expert Panel")
@@ -298,7 +298,7 @@ impl CouncilBuilder {
     /// # Example
     ///
     /// ```
-    /// use paladin::core::platform::container::battalion::council::CouncilBuilder;
+    /// use paladin_core::platform::container::battalion::council::CouncilBuilder;
     ///
     /// let builder = CouncilBuilder::new();
     /// ```
