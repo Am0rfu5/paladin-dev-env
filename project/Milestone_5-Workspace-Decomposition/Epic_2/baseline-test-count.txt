@@ -1,0 +1,30 @@
+Baseline test count captured before Epic 2 (paladin-ports extraction) began.
+Branch: feature/milestone_5-epic_2-paladin-ports-extraction
+Date: 2026-05-15
+Command: cargo test --workspace
+
+Results (all passing, 0 failures):
+  test result: ok. 861 passed; 0 failed; 4 ignored
+  test result: ok. 3 passed; 0 failed; 0 ignored
+  test result: ok. 11 passed; 0 failed; 0 ignored
+  test result: ok. 9 passed; 0 failed; 0 ignored
+  test result: ok. 22 passed; 0 failed; 0 ignored
+  test result: ok. 17 passed; 0 failed; 0 ignored
+  test result: ok. 628 passed; 0 failed; 13 ignored
+  test result: ok. 12 passed; 0 failed; 0 ignored
+  test result: ok. 9 passed; 0 failed; 1 ignored
+  test result: ok. 8 passed; 0 failed; 0 ignored
+  test result: ok. 384 passed; 0 failed; 11 ignored
+  test result: ok. 369 passed; 0 failed; 0 ignored
+  test result: ok. 213 passed; 0 failed; 166 ignored
+  test result: ok. 58 passed; 0 failed; 37 ignored
+
+Total passed: 2604
+Total failed: 0
+Total ignored: 232
+
+Note: `cargo test --workspace --all-features` produces 1 known failure in
+tests/cli_isolation_test.rs::test_cli_feature_is_not_default — this is a
+sentinel test that explicitly asserts the `cli` feature is NOT included in
+the default feature set. It fails only when --all-features forces it on.
+This is expected behavior and is not a regression.

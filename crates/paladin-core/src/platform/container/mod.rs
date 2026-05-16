@@ -2,6 +2,7 @@ pub mod arsenal;
 pub mod autonomous_config;
 pub mod battalion;
 pub mod citadel;
+pub mod citadel_error;
 pub mod comment;
 pub mod content;
 pub mod content_list;

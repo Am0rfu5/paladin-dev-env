@@ -1,0 +1,26 @@
+[package]
+name = "paladin-ports"
+version = "0.1.0"
+edition = "2021"
+description = "Port trait definitions (hexagonal architecture contracts) for the Paladin framework"
+license = "MIT"
+repository = "https://github.com/DF3NDR/paladin-dev-env"
+
+[lib]
+# Doctests in copied port files reference `paladin::` (root crate) which would
+# require a circular dev-dependency.  Re-enable in Task 7.0 after rewriting
+# examples to use `paladin_ports::` / `paladin_core::` paths.
+doctest = false
+
+[dependencies]
+paladin-core = { path = "../paladin-core" }
+async-trait = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+futures = "0.3"
+md5 = "0.7"
+mime_guess = "2"

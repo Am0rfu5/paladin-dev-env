@@ -1,0 +1,22 @@
+// Output port modules — populated in Task 2.0
+pub mod arsenal_port;
+pub mod battalion_port;
+pub mod citadel_port;
+pub mod content_delivery_port;
+pub mod embedding_port;
+pub mod file_storage_port;
+pub mod garrison_port;
+pub mod llm_port;
+pub mod log_port;
+pub mod notification_port;
+pub mod paladin_executor_port;
+pub mod paladin_port;
+pub mod paladin_registry;
+pub mod queue_port;
+pub mod sanctum_port;
+pub mod scheduler_port;
+pub mod search_engine_port;
+// Vision ports are unconditional in paladin-ports; the root `paladin` crate
+// gates re-exports with #[cfg(feature = "vision")].
+pub mod vision_llm_port;
+pub mod vision_port;
