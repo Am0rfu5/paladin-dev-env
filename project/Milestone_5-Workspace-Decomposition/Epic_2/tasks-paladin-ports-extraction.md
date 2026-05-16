@@ -107,9 +107,9 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.7 Run `cargo test -p paladin-ports` to confirm all unit tests from the moved port files pass (FR-27)
   - [x] 3.8 Run `cargo build --workspace` to confirm zero regressions
 
-- [ ] 4.0 Wire `paladin-ports` into the root `paladin` crate
-  - [ ] 4.1 Add `paladin-ports = { path = "crates/paladin-ports" }` to the root `Cargo.toml` `[dependencies]` section (FR-15)
-  - [ ] 4.2 Run `cargo build --workspace` to confirm the new dependency resolves and the workspace still compiles cleanly before any import changes are made
+- [x] 4.0 Wire `paladin-ports` into the root `paladin` crate
+  - [x] 4.1 Add `paladin-ports = { path = "crates/paladin-ports" }` to the root `Cargo.toml` `[dependencies]` section (FR-15)
+  - [x] 4.2 Run `cargo build --workspace` to confirm the new dependency resolves and the workspace still compiles cleanly before any import changes are made
 
 - [ ] 5.0 Migrate all import sites and delete `src/application/ports/`
   - [ ] 5.1 Confirm migration scope: run `grep -rn "application::ports::" src/ --include="*.rs" | wc -l` and record the count (expected ~314)
