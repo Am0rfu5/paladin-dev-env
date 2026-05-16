@@ -97,15 +97,15 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.9 Run `cargo build -p paladin-ports` and fix all compilation errors in the copied output port files until the crate builds cleanly in isolation
   - [x] 2.10 Run `cargo build --workspace` to confirm zero regressions in the root crate (which still uses `src/application/ports/` — this is expected)
 
-- [ ] 3.0 Extract all input port traits into `paladin-ports`
-  - [ ] 3.1 Copy all 6 input port files from `src/application/ports/input/` into `crates/paladin-ports/src/input/` — **do NOT delete the originals yet**: `content_input_port.rs`, `document_port.rs`, `listener_port.rs`, `ml_port.rs`, `nlp_port.rs`, `rpc_port.rs`
-  - [ ] 3.2 In each copied input port file, replace all `use crate::core::platform::container::` import paths with `use paladin_core::platform::container::` (FR-13, FR-14)
-  - [ ] 3.3 In each copied input port file, remove or update any remaining `crate::application::`, `crate::infrastructure::`, or `crate::core::` references — none should remain after the substitution (FR-13)
-  - [ ] 3.4 Update `crates/paladin-ports/src/input/mod.rs` to declare all 6 modules with `pub mod <module_name>;`
-  - [ ] 3.5 Uncomment `pub mod input;` in `crates/paladin-ports/src/lib.rs`
-  - [ ] 3.6 Run `cargo build -p paladin-ports` and fix any remaining compilation errors until the crate builds cleanly (FR-4)
-  - [ ] 3.7 Run `cargo test -p paladin-ports` to confirm all unit tests from the moved port files pass (FR-27)
-  - [ ] 3.8 Run `cargo build --workspace` to confirm zero regressions
+- [x] 3.0 Extract all input port traits into `paladin-ports`
+  - [x] 3.1 Copy all 6 input port files from `src/application/ports/input/` into `crates/paladin-ports/src/input/` — **do NOT delete the originals yet**: `content_input_port.rs`, `document_port.rs`, `listener_port.rs`, `ml_port.rs`, `nlp_port.rs`, `rpc_port.rs`
+  - [x] 3.2 In each copied input port file, replace all `use crate::core::platform::container::` import paths with `use paladin_core::platform::container::` (FR-13, FR-14)
+  - [x] 3.3 In each copied input port file, remove or update any remaining `crate::application::`, `crate::infrastructure::`, or `crate::core::` references — none should remain after the substitution (FR-13)
+  - [x] 3.4 Update `crates/paladin-ports/src/input/mod.rs` to declare all 6 modules with `pub mod <module_name>;`
+  - [x] 3.5 Uncomment `pub mod input;` in `crates/paladin-ports/src/lib.rs`
+  - [x] 3.6 Run `cargo build -p paladin-ports` and fix any remaining compilation errors until the crate builds cleanly (FR-4)
+  - [x] 3.7 Run `cargo test -p paladin-ports` to confirm all unit tests from the moved port files pass (FR-27)
+  - [x] 3.8 Run `cargo build --workspace` to confirm zero regressions
 
 - [ ] 4.0 Wire `paladin-ports` into the root `paladin` crate
   - [ ] 4.1 Add `paladin-ports = { path = "crates/paladin-ports" }` to the root `Cargo.toml` `[dependencies]` section (FR-15)
