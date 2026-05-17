@@ -111,34 +111,34 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.1 Add `paladin-ports = { path = "crates/paladin-ports" }` to the root `Cargo.toml` `[dependencies]` section (FR-15)
   - [x] 4.2 Run `cargo build --workspace` to confirm the new dependency resolves and the workspace still compiles cleanly before any import changes are made
 
-- [ ] 5.0 Migrate all import sites and delete `src/application/ports/`
-  - [ ] 5.1 Confirm migration scope: run `grep -rn "application::ports::" src/ --include="*.rs" | wc -l` and record the count (expected ~314)
-  - [ ] 5.2 Run a scripted bulk substitution for output port imports across all non-ports source files: `find src -name "*.rs" ! -path "*/application/ports/*" | xargs sed -i 's|crate::application::ports::output::|paladin_ports::output::|g'`
-  - [ ] 5.3 Run a scripted bulk substitution for input port imports: `find src -name "*.rs" ! -path "*/application/ports/*" | xargs sed -i 's|crate::application::ports::input::|paladin_ports::input::|g'`
-  - [ ] 5.4 Update `src/lib.rs` output port re-exports: replace each `pub use application::ports::output::<module>::{...}` with `pub use paladin_ports::output::<module>::{...}` for all output ports (FR-17)
-  - [ ] 5.5 Update `src/lib.rs` input port re-exports: replace each `pub use application::ports::input::<module>::{...}` with `pub use paladin_ports::input::<module>::{...}` (FR-17)
-  - [ ] 5.6 Update the `#[cfg(feature = "vision")]` conditional re-exports in `src/lib.rs` to reference `paladin_ports::output::vision_llm_port` and `paladin_ports::output::vision_port` (FR-6)
-  - [ ] 5.7 Replace the body of `src/application/errors/citadel_error.rs` with a single re-export line: `pub use paladin_core::platform::container::citadel_error::CitadelError;` so that all existing callers of `application::errors::citadel_error::CitadelError` continue to compile without changes
-  - [ ] 5.8 Delete the entire `src/application/ports/` directory: `rm -rf src/application/ports/` (FR-16)
-  - [ ] 5.9 Remove `pub mod ports;` from `src/application/mod.rs` and update the module-level doc comment in that file to remove the `ports` section description (FR-18)
-  - [ ] 5.10 Run `cargo build --workspace` to surface any remaining import errors missed by the bulk substitution; manually fix every reported error
-  - [ ] 5.11 Verify migration completeness: run `grep -rn "application::ports::" src/ --include="*.rs"` and confirm zero remaining occurrences (FR-19 complete)
-  - [ ] 5.12 Run `cargo test --workspace` to confirm zero regressions — the passing test count must match the baseline recorded in Task 1.1 (FR-28)
-  - [ ] 5.13 Identify and update all `application::ports::` references in docs Markdown files: run `grep -rn "application::ports::" docs/` to locate them across the 14 affected files, then update each reference to reflect the new `paladin_ports::` import paths (FR-22)
+- [x] 5.0 Migrate all import sites and delete `src/application/ports/`
+  - [x] 5.1 Confirm migration scope: run `grep -rn "application::ports::" src/ --include="*.rs" | wc -l` and record the count (expected ~314)
+  - [x] 5.2 Run a scripted bulk substitution for output port imports across all non-ports source files: `find src -name "*.rs" ! -path "*/application/ports/*" | xargs sed -i 's|crate::application::ports::output::|paladin_ports::output::|g'`
+  - [x] 5.3 Run a scripted bulk substitution for input port imports: `find src -name "*.rs" ! -path "*/application/ports/*" | xargs sed -i 's|crate::application::ports::input::|paladin_ports::input::|g'`
+  - [x] 5.4 Update `src/lib.rs` output port re-exports: replace each `pub use application::ports::output::<module>::{...}` with `pub use paladin_ports::output::<module>::{...}` for all output ports (FR-17)
+  - [x] 5.5 Update `src/lib.rs` input port re-exports: replace each `pub use application::ports::input::<module>::{...}` with `pub use paladin_ports::input::<module>::{...}` (FR-17)
+  - [x] 5.6 Update the `#[cfg(feature = "vision")]` conditional re-exports in `src/lib.rs` to reference `paladin_ports::output::vision_llm_port` and `paladin_ports::output::vision_port` (FR-6)
+  - [x] 5.7 Replace the body of `src/application/errors/citadel_error.rs` with a single re-export line: `pub use paladin_core::platform::container::citadel_error::CitadelError;` so that all existing callers of `application::errors::citadel_error::CitadelError` continue to compile without changes
+  - [x] 5.8 Delete the entire `src/application/ports/` directory: `rm -rf src/application/ports/` (FR-16)
+  - [x] 5.9 Remove `pub mod ports;` from `src/application/mod.rs` and update the module-level doc comment in that file to remove the `ports` section description (FR-18)
+  - [x] 5.10 Run `cargo build --workspace` to surface any remaining import errors missed by the bulk substitution; manually fix every reported error
+  - [x] 5.11 Verify migration completeness: run `grep -rn "application::ports::" src/ --include="*.rs"` and confirm zero remaining occurrences (FR-19 complete)
+  - [x] 5.12 Run `cargo test --workspace` to confirm zero regressions — the passing test count must match the baseline recorded in Task 1.1 (FR-28)
+  - [x] 5.13 Identify and update all `application::ports::` references in docs Markdown files: run `grep -rn "application::ports::" docs/` to locate them across the 14 affected files, then update each reference to reflect the new `paladin_ports::` import paths (FR-22)
 
-- [ ] 6.0 Validate dependency layering and save artifacts
-  - [ ] 6.1 Run `cargo build -p paladin-ports` in isolation and confirm it succeeds; save the full terminal output to `project/Milestone_5-Workspace-Decomposition/Epic_2/paladin-ports-isolation-build.txt` (FR-25)
-  - [ ] 6.2 Run `cargo tree -p paladin-ports` and save the full output to `project/Milestone_5-Workspace-Decomposition/Epic_2/paladin-ports-dependency-tree.txt` (FR-26)
-  - [ ] 6.3 Inspect `paladin-ports-dependency-tree.txt`: confirm `paladin-core` appears as the only workspace-internal direct dependency, and that there are zero entries for `redis`, `sqlx`, `aws-sdk-s3`, `reqwest` (storage client context), `openai`, `anthropic`, or any LLM provider SDK (FR-23, FR-24)
-  - [ ] 6.4 Run `cargo doc -p paladin-ports --no-deps` and confirm zero broken intra-doc link errors (FR-30)
-  - [ ] 6.5 Spot-check three existing examples with `cargo check --example basic_paladin`, `cargo check --example formation_sequential`, and `cargo check --example garrison_in_memory` to confirm no public import path broke
+- [x] 6.0 Validate dependency layering and save artifacts
+  - [x] 6.1 Run `cargo build -p paladin-ports` in isolation and confirm it succeeds; save the full terminal output to `project/Milestone_5-Workspace-Decomposition/Epic_2/paladin-ports-isolation-build.txt` (FR-25)
+  - [x] 6.2 Run `cargo tree -p paladin-ports` and save the full output to `project/Milestone_5-Workspace-Decomposition/Epic_2/paladin-ports-dependency-tree.txt` (FR-26)
+  - [x] 6.3 Inspect `paladin-ports-dependency-tree.txt`: confirm `paladin-core` appears as the only workspace-internal direct dependency, and that there are zero entries for `redis`, `sqlx`, `aws-sdk-s3`, `reqwest` (storage client context), `openai`, `anthropic`, or any LLM provider SDK (FR-23, FR-24)
+  - [x] 6.4 Run `cargo doc -p paladin-ports --no-deps` and confirm zero broken intra-doc link errors (FR-30)
+  - [x] 6.5 Spot-check three existing examples with `cargo check --example basic_paladin`, `cargo check --example formation_sequential`, and `cargo check --example garrison_in_memory` to confirm no public import path broke
 
-- [ ] 7.0 Run full quality gates, commit, and open PR
-  - [ ] 7.1 Run `cargo fmt --all` to format all code, then `cargo fmt --all --check` to confirm zero formatting issues
-  - [ ] 7.2 Run `cargo clippy --workspace -- -D warnings` and fix all warnings
-  - [ ] 7.3 Run `cargo test --workspace` one final time and confirm the passing count matches the Task 1.1 baseline (FR-28)
-  - [ ] 7.4 Remove any temporary debug prints or scratch files; confirm `git status` shows only intentional changes
-  - [ ] 7.5 Stage all changes: `git add .`
-  - [ ] 7.6 Commit using conventional commit format: `git commit -m "refactor(milestone-5/epic-2): extract paladin-ports as dedicated workspace crate" -m "- Scaffold crates/paladin-ports with Cargo.toml and src/lib.rs" -m "- Move all 19 output port traits and 6 input port traits to paladin-ports" -m "- Move CitadelError to paladin-core/platform/container/citadel_error.rs (consistent with garrison_error, registry_error)" -m "- Shim src/application/errors/citadel_error.rs to re-export from paladin_core::" -m "- Migrate ~314 import-path occurrences across 76 .rs files to paladin_ports::" -m "- Delete src/application/ports/ entirely (FR-16)" -m "- Update src/lib.rs re-exports and 14 docs/ Markdown files" -m "- Verified: cargo build -p paladin-ports isolates cleanly; no LLM/DB/storage transitive deps" -m "Resolves Epic 2 of Milestone 5 PRD"`
-  - [ ] 7.7 Push the branch: `git push`
-  - [ ] 7.8 Open a pull request targeting `feature/milestone_5` titled `refactor(milestone-5/epic-2): extract paladin-ports as dedicated workspace crate`, linking this task list and `project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md` in the description
+- [x] 7.0 Run full quality gates, commit, and open PR
+  - [x] 7.1 Run `cargo fmt --all` to format all code, then `cargo fmt --all --check` to confirm zero formatting issues
+  - [x] 7.2 Run `cargo clippy --workspace -- -D warnings` and fix all warnings
+  - [x] 7.3 Run `cargo test --workspace` one final time and confirm the passing count matches the Task 1.1 baseline (FR-28)
+  - [x] 7.4 Remove any temporary debug prints or scratch files; confirm `git status` shows only intentional changes
+  - [x] 7.5 Stage all changes: `git add .`
+  - [x] 7.6 Commit using conventional commit format: `git commit -m "refactor(milestone-5/epic-2): extract paladin-ports as dedicated workspace crate" -m "- Scaffold crates/paladin-ports with Cargo.toml and src/lib.rs" -m "- Move all 19 output port traits and 6 input port traits to paladin-ports" -m "- Move CitadelError to paladin-core/platform/container/citadel_error.rs (consistent with garrison_error, registry_error)" -m "- Shim src/application/errors/citadel_error.rs to re-export from paladin_core::" -m "- Migrate ~314 import-path occurrences across 76 .rs files to paladin_ports::" -m "- Delete src/application/ports/ entirely (FR-16)" -m "- Update src/lib.rs re-exports and 14 docs/ Markdown files" -m "- Verified: cargo build -p paladin-ports isolates cleanly; no LLM/DB/storage transitive deps" -m "Resolves Epic 2 of Milestone 5 PRD"`
+  - [x] 7.7 Push the branch: `git push`
+  - [X] 7.8 Open a pull request targeting `feature/milestone_5` titled `refactor(milestone-5/epic-2): extract paladin-ports as dedicated workspace crate`, linking this task list and `project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md` in the description
