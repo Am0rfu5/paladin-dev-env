@@ -4,9 +4,6 @@
 //! fan-out/fan-in, conditional routing, and error handling.
 
 use async_trait::async_trait;
-use paladin::application::ports::output::paladin_port::{
-    PaladinPort, PaladinResult, PaladinStream, StopReason,
-};
 use paladin::application::use_cases::battalion::campaign_service::CampaignExecutionService;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::campaign::{
@@ -15,6 +12,7 @@ use paladin::core::platform::container::battalion::campaign::{
 use paladin::core::platform::container::battalion::{BattalionConfig, BattalionError};
 use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, PaladinStream, StopReason};
 use std::sync::{Arc, Mutex};
 
 /// Mock Paladin port for testing

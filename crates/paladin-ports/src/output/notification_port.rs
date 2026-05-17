@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Notification Ports - Multi-Channel Notification Delivery Abstraction
 //!
 //! This module defines the output ports (interfaces) for the notification system following

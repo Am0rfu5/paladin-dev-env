@@ -150,13 +150,13 @@ async fn test_rag_config_boundary_values() {
 
 #[cfg(feature = "qdrant")]
 mod qdrant_rag_tests {
-    use paladin::application::ports::output::embedding_port::EmbeddingPort;
-    use paladin::application::ports::output::sanctum_port::SanctumPort;
     use paladin::application::use_cases::sanctum::rag_retrieval_service::{
         RagConfig, RagRetrievalService, RetrievalTrigger,
     };
     use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
     use paladin::infrastructure::adapters::sanctum::QdrantSanctumAdapter;
+    use paladin_ports::output::embedding_port::EmbeddingPort;
+    use paladin_ports::output::sanctum_port::SanctumPort;
     use std::sync::Arc;
     use std::time::Duration;
     use uuid::Uuid;
@@ -210,8 +210,8 @@ mod qdrant_rag_tests {
             &self,
             _text: &str,
         ) -> Result<
-            paladin::application::ports::output::embedding_port::Embedding,
-            paladin::application::ports::output::embedding_port::EmbeddingError,
+            paladin_ports::output::embedding_port::Embedding,
+            paladin_ports::output::embedding_port::EmbeddingError,
         > {
             // Return fixed embedding for testing
             use rand::Rng;
@@ -220,22 +220,20 @@ mod qdrant_rag_tests {
             let magnitude: f32 = vec.iter().map(|x| x * x).sum::<f32>().sqrt();
             let normalized: Vec<f32> = vec.iter().map(|x| x / magnitude).collect();
 
-            Ok(
-                paladin::application::ports::output::embedding_port::Embedding {
-                    vector: normalized,
-                    model: "mock-embedding".to_string(),
-                    dimension: 1536,
-                    token_count: Some(10),
-                },
-            )
+            Ok(paladin_ports::output::embedding_port::Embedding {
+                vector: normalized,
+                model: "mock-embedding".to_string(),
+                dimension: 1536,
+                token_count: Some(10),
+            })
         }
 
         async fn embed_batch(
             &self,
             texts: &[&str],
         ) -> Result<
-            Vec<paladin::application::ports::output::embedding_port::Embedding>,
-            paladin::application::ports::output::embedding_port::EmbeddingError,
+            Vec<paladin_ports::output::embedding_port::Embedding>,
+            paladin_ports::output::embedding_port::EmbeddingError,
         > {
             let mut embeddings = Vec::new();
             for text in texts {

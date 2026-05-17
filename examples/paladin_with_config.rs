@@ -14,12 +14,12 @@
 // cargo run --example paladin_with_config
 // ```
 
-use paladin::application::ports::output::llm_port::{LlmError, LlmPort};
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::paladin_config::OutputFormat;
 use paladin::infrastructure::adapters::llm::mock_llm_adapter::MockLlmAdapter;
+use paladin_ports::output::llm_port::{LlmError, LlmPort};
 use std::sync::Arc;
 use std::time::Duration;
 

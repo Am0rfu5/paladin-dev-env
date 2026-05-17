@@ -95,7 +95,7 @@ enable_priority_queues = true
 
 ```rust
 use paladin::infrastructure::adapters::queue::redis::RedisQueueAdapter;
-use paladin::application::ports::output::queue_port::QueuePort;
+use paladin::paladin_ports::output::queue_port::QueuePort;
 
 // Initialize the adapter
 let config = RedisQueueConfig::default();

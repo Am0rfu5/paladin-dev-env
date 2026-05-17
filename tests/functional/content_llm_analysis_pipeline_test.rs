@@ -15,9 +15,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use paladin::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
-};
 use paladin::application::use_cases::analysis::llm_analysis_service::{
     LlmAnalysisConfig, LlmAnalysisService,
 };
@@ -28,6 +25,9 @@ use paladin::core::platform::container::content::{
     AudioContent, ContentItem, ContentType, ImageContent, TextContent, VideoContent,
 };
 use paladin::core::platform::container::prompt::{PromptItem, PromptRole, PromptType, TextPrompt};
+use paladin_ports::output::llm_port::{
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
+};
 
 /// Mock LLM Port for testing
 struct MockLlmPort {
@@ -246,10 +246,8 @@ impl LlmPort for MockLlmPort {
     fn get_provider_name(&self) -> &'static str {
         "MockLLM"
     }
-    fn get_capabilities(
-        &self,
-    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
-        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+        paladin_ports::output::llm_port::ProviderCapabilities::default()
     }
 }
 

@@ -11,15 +11,15 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 use tokio::fs;
 
-use crate::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmRequest, LlmResponse, TokenUsage,
-};
-use crate::application::ports::output::vision_llm_port::VisionCapableLlm;
-use crate::application::ports::output::vision_port::{VisionPort, VisionResult, VisionTokenUsage};
 use crate::config::application_settings::VisionConfig;
 use crate::core::platform::container::vision::{
     ImageDetail, VisionContent, VisionError, VisionRequest,
 };
+use paladin_ports::output::llm_port::{
+    FinishReason, LlmError, LlmRequest, LlmResponse, TokenUsage,
+};
+use paladin_ports::output::vision_llm_port::VisionCapableLlm;
+use paladin_ports::output::vision_port::{VisionPort, VisionResult, VisionTokenUsage};
 
 use super::openai_adapter::OpenAIAdapter;
 

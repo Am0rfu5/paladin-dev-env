@@ -12,7 +12,6 @@ use tokio::time::{Duration, timeout};
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
-use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult};
 use crate::application::use_cases::battalion::error_aggregation::AggregatedError;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
@@ -20,6 +19,7 @@ use crate::core::platform::container::battalion::{
     BattalionError, BattalionResult, ErrorStrategy, TokenUsage,
 };
 use crate::core::platform::container::herald::Herald;
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
 
 #[cfg(test)]
 use crate::core::platform::container::battalion::BattalionStatus;
@@ -450,13 +450,13 @@ impl PhalanxExecutionService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::paladin_port::StopReason;
     use crate::application::use_cases::paladin::error::PaladinError;
     use crate::core::base::entity::node::Node;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::paladin::MaxLoops;
     use crate::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
     use async_trait::async_trait;
+    use paladin_ports::output::paladin_port::StopReason;
     use std::sync::Mutex;
 
     /// Mock PaladinPort for testing
@@ -538,10 +538,7 @@ mod tests {
             _input: &str,
         ) -> Result<
             tokio::sync::mpsc::Receiver<
-                Result<
-                    crate::application::ports::output::paladin_port::PaladinStreamChunk,
-                    PaladinError,
-                >,
+                Result<paladin_ports::output::paladin_port::PaladinStreamChunk, PaladinError>,
             >,
             PaladinError,
         > {

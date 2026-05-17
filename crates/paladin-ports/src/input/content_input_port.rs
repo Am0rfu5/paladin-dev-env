@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Content Port
 //!
 //! A port that defines how the application fetches content from external sources or

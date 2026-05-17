@@ -4,9 +4,6 @@
 //! broadcast delegation, round-robin, multi-level chains, and error handling.
 
 use async_trait::async_trait;
-use paladin::application::ports::output::paladin_port::{
-    PaladinPort, PaladinResult, PaladinStream, StopReason,
-};
 use paladin::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;
@@ -15,6 +12,7 @@ use paladin::core::platform::container::battalion::chain_of_command::{
 };
 use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, PaladinStream, StopReason};
 use std::sync::{Arc, Mutex};
 
 /// Mock Paladin port for testing

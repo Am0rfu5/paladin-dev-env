@@ -8,14 +8,14 @@
 //! ENABLE_VISION_TESTS=true OPENAI_API_KEY=your_key ANTHROPIC_API_KEY=your_key cargo test --test vision_integration
 //! ```
 
-use paladin::application::ports::output::llm_port::{LlmPort, LlmRequest};
-use paladin::application::ports::output::vision_llm_port::VisionCapableLlm;
 use paladin::core::platform::container::prompt::{PromptItem, PromptRole, PromptType, TextPrompt};
 use paladin::core::platform::container::vision::{ImageDetail, VisionContent, VisionRequest};
 use paladin::infrastructure::adapters::llm::anthropic_adapter::{
     AnthropicAdapter, AnthropicConfig,
 };
 use paladin::infrastructure::adapters::llm::openai_adapter::{OpenAIAdapter, OpenAIConfig};
+use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
+use paladin_ports::output::vision_llm_port::VisionCapableLlm;
 use std::collections::HashMap;
 use std::env;
 use std::fs;

@@ -17,11 +17,11 @@
 //! - Search: O(n) brute-force comparison (suitable for < 10K vectors)
 //! - Memory overhead: All vectors kept in RAM
 
-use crate::application::ports::output::sanctum_port::{
-    SanctumError, SanctumFilter, SanctumPort, SanctumQuery, SanctumSearchResult,
-};
 use crate::core::platform::container::sanctum::SanctumEntry;
 use async_trait::async_trait;
+use paladin_ports::output::sanctum_port::{
+    SanctumError, SanctumFilter, SanctumPort, SanctumQuery, SanctumSearchResult,
+};
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, RwLock};
 use uuid::Uuid;

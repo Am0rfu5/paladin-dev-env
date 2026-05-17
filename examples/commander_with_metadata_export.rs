@@ -13,9 +13,6 @@
 //! Run with: cargo run --example commander_with_metadata_export
 
 use async_trait::async_trait;
-use paladin::application::ports::output::paladin_port::{
-    PaladinPort, PaladinResult, PaladinStream, StopReason,
-};
 use paladin::application::use_cases::battalion::commander::CommanderBuilder;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
@@ -23,6 +20,7 @@ use paladin::core::platform::container::battalion::{
     BattalionConfig, BattalionStrategy, ErrorStrategy,
 };
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, PaladinStream, StopReason};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{fs, io};

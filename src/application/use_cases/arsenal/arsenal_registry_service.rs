@@ -2,9 +2,9 @@
 //!
 //! Provides in-memory storage and management of tool (Armament) registrations.
 
-use crate::application::ports::output::arsenal_port::ArsenalRegistry;
 use crate::core::platform::container::arsenal::Armament;
 use async_trait::async_trait;
+use paladin_ports::output::arsenal_port::ArsenalRegistry;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -19,7 +19,7 @@ use tokio::sync::RwLock;
 ///
 /// ```rust
 /// use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
-/// use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
+/// use paladin_ports::output::arsenal_port::ArsenalRegistry;
 /// use paladin::core::platform::container::arsenal::Armament;
 /// use serde_json::json;
 ///
@@ -82,7 +82,7 @@ impl ArsenalRegistryService {
     ///
     /// ```rust
     /// # use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
-    /// # use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
+    /// # use paladin_ports::output::arsenal_port::ArsenalRegistry;
     /// # use paladin::core::platform::container::arsenal::Armament;
     /// # use serde_json::json;
     /// # #[tokio::main]

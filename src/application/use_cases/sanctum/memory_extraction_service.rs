@@ -13,14 +13,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::application::ports::output::embedding_port::EmbeddingPort;
-use crate::application::ports::output::llm_port::{LlmPort, LlmRequest};
-use crate::application::ports::output::sanctum_port::{
-    SanctumError, SanctumFilter, SanctumPort, SanctumQuery,
-};
 use crate::core::platform::container::garrison::GarrisonEntry;
 use crate::core::platform::container::prompt::{PromptItem, PromptRole, PromptType, TextPrompt};
 use crate::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
+use paladin_ports::output::embedding_port::EmbeddingPort;
+use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
+use paladin_ports::output::sanctum_port::{SanctumError, SanctumFilter, SanctumPort, SanctumQuery};
 use serde_json::Value;
 
 /// Strategy for when to extract memories from conversations

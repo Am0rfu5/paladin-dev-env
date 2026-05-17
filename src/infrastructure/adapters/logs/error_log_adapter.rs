@@ -18,7 +18,7 @@
 // use log::{info, warn, error, debug, trace};
 // use serde_json::json;
 
-// use crate::application::ports::output::log_port::{
+// use paladin_ports::output::log_port::{
 //     LogPort, LogResult, LogQuery, LogDestinationConfig, LogStats, 
 //     LogHealthCheck, LogFormat, BatchWriteRequest
 // };

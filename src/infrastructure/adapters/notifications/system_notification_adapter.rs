@@ -13,13 +13,13 @@ Features:
 This is useful for alerts, confirmations, and status updates within the application.
 */
 
-use crate::application::ports::output::notification_port::{
+use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use paladin_ports::output::notification_port::{
     BasicNotificationPort, DeliveryCapabilities, Notification, NotificationChannel,
     NotificationDeliveryPort, NotificationDeliveryResult, NotificationPortError,
     NotificationPortResult, NotificationRecipient, NotificationStatus,
 };
-use async_trait::async_trait;
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};

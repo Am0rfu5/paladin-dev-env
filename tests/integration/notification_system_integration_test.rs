@@ -16,9 +16,6 @@ across multiple channels following DDD and Hexagonal Architecture patterns.
 
 use std::collections::HashMap;
 
-use paladin::application::ports::output::notification_port::{
-    NotificationDeliveryPort, NotificationTemplatePort,
-};
 use paladin::config::application_settings::NotificationConfig;
 use paladin::core::platform::container::notification::{
     Notification, NotificationChannel, NotificationContent, NotificationPriority,
@@ -26,6 +23,9 @@ use paladin::core::platform::container::notification::{
 };
 use paladin::infrastructure::adapters::notifications::{
     EmailAdapterConfig, EmailNotificationAdapter, SystemAdapterConfig, SystemNotificationAdapter,
+};
+use paladin_ports::output::notification_port::{
+    NotificationDeliveryPort, NotificationTemplatePort,
 };
 
 /// Integration test for email notification flow

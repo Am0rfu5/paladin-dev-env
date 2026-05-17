@@ -3,6 +3,6 @@
 //! Provides concrete implementations of the [`SchedulerPort`] trait using
 //! external scheduling libraries.
 //!
-//! [`SchedulerPort`]: crate::application::ports::output::scheduler_port::SchedulerPort
+//! [`SchedulerPort`]: paladin_ports::output::scheduler_port::SchedulerPort
 
 pub mod tokio_cron_adapter;

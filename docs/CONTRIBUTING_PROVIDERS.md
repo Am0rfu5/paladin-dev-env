@@ -102,7 +102,7 @@ impl MyProviderConfig {
 ### Step 3: Implement Adapter Struct
 
 ```rust
-use crate::application::ports::output::llm_port::{
+use crate::paladin_ports::output::llm_port::{
     LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities
 };
 use async_trait::async_trait;

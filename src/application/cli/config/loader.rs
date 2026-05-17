@@ -5,8 +5,6 @@ use crate::application::cli::config::paladin_config::{
     ArsenalConfig, GarrisonConfig, PaladinYamlConfig, Validate,
 };
 use crate::application::cli::error::CliError;
-use crate::application::ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
-use crate::application::ports::output::garrison_port::GarrisonPort;
 use crate::application::use_cases::arsenal::arsenal_execution_service::ArsenalExecutionService;
 use crate::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
 use crate::core::platform::container::garrison::{
@@ -17,6 +15,8 @@ use crate::infrastructure::adapters::arsenal::mcp_sse_adapter::MCPSseAdapter;
 use crate::infrastructure::adapters::arsenal::mcp_stdio_adapter::MCPStdioAdapter;
 use crate::infrastructure::adapters::garrison::in_memory_garrison::InMemoryGarrison;
 use crate::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarrison;
+use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
+use paladin_ports::output::garrison_port::GarrisonPort;
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;

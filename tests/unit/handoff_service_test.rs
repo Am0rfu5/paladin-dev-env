@@ -9,14 +9,14 @@
 //! - Handoff execution with retry logic (Phase 5)
 
 use paladin::application::errors::handoff_error::HandoffError;
-use paladin::application::ports::output::paladin_executor_port::PaladinExecutorPort;
-use paladin::application::ports::output::paladin_port::{PaladinResult, StopReason};
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::application::use_cases::paladin::handoff_service::HandoffService;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::autonomous_config::{HandoffConfig, HandoffRetryConfig};
 use paladin::core::platform::container::handoff::{HandoffContext, HandoffStrategy};
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
+use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
+use paladin_ports::output::paladin_port::{PaladinResult, StopReason};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 

@@ -44,7 +44,7 @@ Create an export utility:
 
 ```rust
 // src/bin/export_sanctum.rs
-use paladin::application::ports::output::sanctum_port::{SanctumPort, SanctumFilter};
+use paladin::paladin_ports::output::sanctum_port::{SanctumPort, SanctumFilter};
 use paladin::core::platform::container::sanctum::SanctumEntry;
 use std::fs::File;
 use std::io::Write;
@@ -238,7 +238,7 @@ Run validation checks:
 ```rust
 // src/bin/validate_migration.rs
 use paladin::infrastructure::adapters::sanctum::QdrantSanctumAdapter;
-use paladin::application::ports::output::sanctum_port::{SanctumPort, SanctumQuery};
+use paladin::paladin_ports::output::sanctum_port::{SanctumPort, SanctumQuery};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -383,7 +383,7 @@ Upgrading embedding model (e.g., 384 → 1536 dimensions) requires re-embedding 
 ```rust
 // src/bin/reembed_memories.rs
 use paladin::infrastructure::adapters::sanctum::QdrantSanctumAdapter;
-use paladin::application::ports::output::{SanctumPort, EmbeddingPort};
+use paladin::paladin_ports::output::{SanctumPort, EmbeddingPort};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

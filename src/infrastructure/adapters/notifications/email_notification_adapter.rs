@@ -16,12 +16,6 @@ Features:
 This implementation uses lettre for SMTP email sending and Handlebars for template rendering.
 */
 
-use crate::application::ports::output::notification_port::{
-    BasicNotificationPort, DeliveryCapabilities, Notification, NotificationChannel,
-    NotificationContent, NotificationDeliveryPort, NotificationDeliveryResult,
-    NotificationPortError, NotificationPortResult, NotificationRecipient, NotificationStatus,
-    NotificationTemplate, NotificationTemplatePort,
-};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use handlebars::Handlebars;
@@ -29,6 +23,12 @@ use lettre::{
     Message, SmtpTransport, Transport,
     message::{Attachment, MultiPart, SinglePart, header::ContentType},
     transport::smtp::authentication::Credentials,
+};
+use paladin_ports::output::notification_port::{
+    BasicNotificationPort, DeliveryCapabilities, Notification, NotificationChannel,
+    NotificationContent, NotificationDeliveryPort, NotificationDeliveryResult,
+    NotificationPortError, NotificationPortResult, NotificationRecipient, NotificationStatus,
+    NotificationTemplate, NotificationTemplatePort,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

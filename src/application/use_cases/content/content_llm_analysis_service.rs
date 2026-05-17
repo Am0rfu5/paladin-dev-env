@@ -263,13 +263,13 @@ impl ContentAnalysisService for DefaultPromptContentAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::llm_port::{
-        FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
-    };
     use crate::core::platform::container::content::{ContentType, TextContent};
     use crate::core::platform::container::prompt::{PromptRole, PromptType, TextPrompt};
     use async_trait::async_trait;
     use chrono::Utc;
+    use paladin_ports::output::llm_port::{
+        FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
+    };
     use std::collections::HashMap;
     use uuid::Uuid;
 
@@ -302,10 +302,7 @@ mod tests {
         ) -> Result<
             Box<
                 dyn futures::Stream<
-                        Item = Result<
-                            crate::application::ports::output::llm_port::StreamingResponse,
-                            LlmError,
-                        >,
+                        Item = Result<paladin_ports::output::llm_port::StreamingResponse, LlmError>,
                     > + Send,
             >,
             LlmError,
@@ -325,10 +322,8 @@ mod tests {
             "test"
         }
 
-        fn get_capabilities(
-            &self,
-        ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
-            crate::application::ports::output::llm_port::ProviderCapabilities::default()
+        fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+            paladin_ports::output::llm_port::ProviderCapabilities::default()
         }
     }
 

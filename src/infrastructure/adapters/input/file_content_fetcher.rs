@@ -4,10 +4,10 @@ File Content Fetcher Adapter
 This adapter fetches content from an external file system location and creates a ContentItem object from it.
 It implements the ContentIngestionPort trait and handles different content types based on file extensions.
 */
-use crate::application::ports::input::content_input_port::ContentIngestionPort;
 use crate::core::platform::container::content::{
     AudioContent, ContentItem, ContentType, ImageContent, TextContent, VideoContent,
 };
+use paladin_ports::input::content_input_port::ContentIngestionPort;
 use std::fs;
 use std::io::Read;
 use std::path::Path;

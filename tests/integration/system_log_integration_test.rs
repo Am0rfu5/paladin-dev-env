@@ -9,7 +9,6 @@ use std::time::Duration;
 use tokio::time::sleep;
 use uuid::Uuid;
 
-use paladin::application::ports::output::log_port::{LogFormat, LogPort};
 use paladin::core::base::entity::message::Location;
 use paladin::core::platform::container::log::{
     LogDestination, LogEntry, LogEntryBuilder, LogLevel,
@@ -17,6 +16,7 @@ use paladin::core::platform::container::log::{
 use paladin::infrastructure::adapters::logs::system_log_adapter::{
     SystemLogAdapter, SystemLogAdapterConfig,
 };
+use paladin_ports::output::log_port::{LogFormat, LogPort};
 
 /// Test that the adapter can be created and write entries
 #[tokio::test]

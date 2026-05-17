@@ -15,7 +15,7 @@ use super::anthropic_adapter::{AnthropicAdapter, AnthropicConfig};
 use super::deepseek_adapter::{DeepSeekAdapter, DeepSeekConfig};
 #[cfg(feature = "llm-openai")]
 use super::openai_adapter::{OpenAIAdapter, OpenAIConfig};
-use crate::application::ports::output::llm_port::LlmPort;
+use paladin_ports::output::llm_port::LlmPort;
 
 #[doc(hidden)]
 #[derive(Debug, Error)]

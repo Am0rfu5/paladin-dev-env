@@ -8,11 +8,11 @@
 //!
 //! Following TDD methodology: These tests are written first and expected to fail.
 
-use paladin::application::ports::output::llm_port::TokenUsage;
-use paladin::application::ports::output::paladin_port::{PaladinResult, StopReason};
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::platform::container::battalion::BattalionResult;
 use paladin::core::platform::container::herald::{ExecutionMetadata, StreamChunk};
+use paladin_ports::output::llm_port::TokenUsage;
+use paladin_ports::output::paladin_port::{PaladinResult, StopReason};
 use std::collections::HashMap;
 use uuid::Uuid;
 

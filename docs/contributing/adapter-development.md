@@ -80,7 +80,7 @@ All ports must be:
 // src/infrastructure/adapters/llm/custom_llm_adapter.rs
 
 use async_trait::async_trait;
-use crate::application::ports::output::llm_port::{LlmPort, Message, LlmResponse};
+use crate::paladin_ports::output::llm_port::{LlmPort, Message, LlmResponse};
 use crate::core::platform::container::paladin::PaladinError;
 
 pub struct CustomLlmAdapter {
@@ -251,7 +251,7 @@ pub fn create_llm_adapter(config: &LlmConfig) -> Result<Arc<dyn LlmPort>> {
 
 use async_trait::async_trait;
 use redis::AsyncCommands;
-use crate::application::ports::output::garrison_port::GarrisonPort;
+use crate::paladin_ports::output::garrison_port::GarrisonPort;
 
 pub struct RedisGarrison {
     client: redis::Client,
@@ -387,7 +387,7 @@ impl GarrisonPort for VectorGarrison {
 // src/infrastructure/adapters/arsenal/weather_tool.rs
 
 use async_trait::async_trait;
-use crate::application::ports::output::arsenal_port::{ArsenalPort, ToolDefinition};
+use crate::paladin_ports::output::arsenal_port::{ArsenalPort, ToolDefinition};
 
 pub struct WeatherTool {
     api_key: String,
@@ -500,7 +500,7 @@ impl ArsenalPort for McpToolWrapper {
 // src/infrastructure/adapters/citadel/s3_citadel.rs
 
 use async_trait::async_trait;
-use crate::application::ports::output::citadel_port::CitadelPort;
+use crate::paladin_ports::output::citadel_port::CitadelPort;
 
 pub struct S3Citadel {
     bucket: String,

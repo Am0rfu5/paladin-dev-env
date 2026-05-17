@@ -310,9 +310,9 @@ impl Herald for MarkdownHerald {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::paladin_port::StopReason;
     use crate::core::platform::container::battalion::{BattalionStatus, BattalionStrategy};
     use chrono::Utc;
+    use paladin_ports::output::paladin_port::StopReason;
     use uuid::Uuid;
 
     fn create_test_paladin_result() -> PaladinResult {
@@ -500,7 +500,7 @@ mod tests {
 
     #[test]
     fn test_finalize_stream() {
-        use crate::application::ports::output::llm_port::TokenUsage;
+        use paladin_ports::output::llm_port::TokenUsage;
         let herald = MarkdownHerald::with_config(MarkdownHeraldConfig {
             include_colors: false,
             heading_level: 2,
@@ -635,7 +635,7 @@ mod tests {
         }
 
         // Add metadata
-        use crate::application::ports::output::llm_port::TokenUsage;
+        use paladin_ports::output::llm_port::TokenUsage;
         let metadata = ExecutionMetadata::builder()
             .execution_id(uuid::Uuid::new_v4())
             .start_time(chrono::Utc::now())

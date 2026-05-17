@@ -5,7 +5,6 @@
 //! 2. Implement minimal code to pass (Green)
 //! 3. Refactor while keeping tests green
 
-use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResult};
 use paladin::application::use_cases::battalion::chain_of_command_service::{
     ChainOfCommandExecutionService, DelegationResult,
 };
@@ -13,6 +12,7 @@ use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::chain_of_command::ChainOfCommand;
 use paladin::core::platform::container::paladin::{Paladin, PaladinData};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
 use std::sync::Arc;
 
 // Test helpers
@@ -60,8 +60,7 @@ mod helpers {
                 token_count: 0,
                 execution_time_ms: 100,
                 loop_count: 1,
-                stop_reason:
-                    paladin::application::ports::output::paladin_port::StopReason::Completed,
+                stop_reason: paladin_ports::output::paladin_port::StopReason::Completed,
                 ..Default::default()
             })
         }
@@ -70,8 +69,7 @@ mod helpers {
             &self,
             _paladin: &Paladin,
             _input: &str,
-        ) -> Result<paladin::application::ports::output::paladin_port::PaladinStream, PaladinError>
-        {
+        ) -> Result<paladin_ports::output::paladin_port::PaladinStream, PaladinError> {
             unimplemented!("streaming not needed for tests")
         }
 

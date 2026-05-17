@@ -12,9 +12,9 @@
 //!
 //! Run with: cargo run --example paladin_with_sanctum
 
-use paladin::application::ports::output::sanctum_port::{SanctumFilter, SanctumPort, SanctumQuery};
 use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
 use paladin::infrastructure::adapters::sanctum::InMemorySanctum;
+use paladin_ports::output::sanctum_port::{SanctumFilter, SanctumPort, SanctumQuery};
 use std::sync::Arc;
 
 #[tokio::main]

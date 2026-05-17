@@ -5,12 +5,6 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
-};
-use paladin::application::ports::output::paladin_port::{
-    PaladinPort, PaladinResult, PaladinStream,
-};
 use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
 use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
@@ -23,6 +17,10 @@ use paladin::core::platform::container::battalion::phalanx::Phalanx;
 use paladin::core::platform::container::herald::Herald;
 use paladin::core::platform::container::paladin::Paladin;
 use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
+use paladin_ports::output::llm_port::{
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
+};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, PaladinStream};
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -66,10 +64,7 @@ impl LlmPort for MockLlmPort {
     ) -> Result<
         Box<
             dyn futures::Stream<
-                    Item = Result<
-                        paladin::application::ports::output::llm_port::StreamingResponse,
-                        LlmError,
-                    >,
+                    Item = Result<paladin_ports::output::llm_port::StreamingResponse, LlmError>,
                 > + Send,
         >,
         LlmError,
@@ -89,10 +84,8 @@ impl LlmPort for MockLlmPort {
         "mock"
     }
 
-    fn get_capabilities(
-        &self,
-    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
-        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+        paladin_ports::output::llm_port::ProviderCapabilities::default()
     }
 }
 
@@ -401,7 +394,7 @@ impl MockPaladinPort {
 #[async_trait]
 impl PaladinPort for MockPaladinPort {
     async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult, PaladinError> {
-        use paladin::application::ports::output::paladin_port::StopReason;
+        use paladin_ports::output::paladin_port::StopReason;
 
         Ok(PaladinResult {
             output: format!(

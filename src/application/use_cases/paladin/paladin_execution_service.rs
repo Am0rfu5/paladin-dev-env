@@ -19,7 +19,7 @@
 //! use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 //! use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 //! use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
-//! use paladin::application::ports::output::llm_port::LlmPort;
+//! use paladin_ports::output::llm_port::LlmPort;
 //! use std::sync::Arc;
 //! use std::time::Duration;
 //!
@@ -46,13 +46,6 @@
 //! # }
 //! ```
 
-use crate::application::ports::output::arsenal_port::ArsenalPort;
-use crate::application::ports::output::garrison_port::GarrisonPort;
-use crate::application::ports::output::llm_port::{FunctionCall, LlmPort, LlmRequest};
-use crate::application::ports::output::paladin_executor_port::PaladinExecutorPort;
-use crate::application::ports::output::paladin_port::{PaladinResult, StopReason};
-#[cfg(feature = "vision")]
-use crate::application::ports::output::vision_port::VisionPort;
 use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::application::use_cases::paladin::handoff_service::HandoffService;
@@ -74,6 +67,13 @@ use crate::core::platform::container::prompt::{
 use crate::core::platform::container::vision::VisionContent;
 use crate::infrastructure::adapters::arsenal::tool_result_formatter::ToolResultFormatter;
 use log::{debug, error, info, warn};
+use paladin_ports::output::arsenal_port::ArsenalPort;
+use paladin_ports::output::garrison_port::GarrisonPort;
+use paladin_ports::output::llm_port::{FunctionCall, LlmPort, LlmRequest};
+use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
+use paladin_ports::output::paladin_port::{PaladinResult, StopReason};
+#[cfg(feature = "vision")]
+use paladin_ports::output::vision_port::VisionPort;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -151,7 +151,7 @@ impl PaladinExecutionService {
     /// ```rust,no_run
     /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     /// use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
-    /// use paladin::application::ports::output::llm_port::LlmPort;
+    /// use paladin_ports::output::llm_port::LlmPort;
     /// use std::sync::Arc;
     /// use std::time::Duration;
     ///
@@ -235,7 +235,7 @@ impl PaladinExecutionService {
     /// use paladin::infrastructure::adapters::herald::JsonHerald;
     /// use std::sync::Arc;
     /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
-    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::time::Duration;
     ///
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -268,7 +268,7 @@ impl PaladinExecutionService {
     /// use paladin::infrastructure::adapters::llm::openai_adapter::OpenAIAdapter;
     /// use std::sync::Arc;
     /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
-    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::time::Duration;
     ///
     /// # fn example(llm_port: Arc<dyn LlmPort>, openai: Arc<OpenAIAdapter>) {
@@ -301,7 +301,7 @@ impl PaladinExecutionService {
     /// use paladin::application::use_cases::paladin::planning_service::PlanningService;
     /// use std::sync::Arc;
     /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
-    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::time::Duration;
     ///
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -334,7 +334,7 @@ impl PaladinExecutionService {
     /// use paladin::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
     /// use std::sync::Arc;
     /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
-    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::time::Duration;
     ///
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -423,7 +423,7 @@ impl PaladinExecutionService {
     /// # use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
-    /// # use paladin::application::ports::output::llm_port::LlmPort;
+    /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # use std::time::Duration;
     /// # async fn example(llm_port: Arc<dyn LlmPort>, service: PaladinExecutionService) -> Result<(), Box<dyn std::error::Error>> {
@@ -1032,10 +1032,7 @@ impl PaladinExecutionService {
         paladin: &Paladin,
         query: &str,
         execution_id: uuid::Uuid,
-    ) -> Result<
-        Vec<crate::application::ports::output::sanctum_port::SanctumSearchResult>,
-        PaladinError,
-    > {
+    ) -> Result<Vec<paladin_ports::output::sanctum_port::SanctumSearchResult>, PaladinError> {
         if let Some(ref rag_service) = self.rag_retrieval_service {
             let paladin_id = paladin.uuid.to_string();
 
@@ -1078,7 +1075,7 @@ impl PaladinExecutionService {
     /// Formats retrieved search results into a context string for injection
     fn format_retrieved_context(
         &self,
-        results: &[crate::application::ports::output::sanctum_port::SanctumSearchResult],
+        results: &[paladin_ports::output::sanctum_port::SanctumSearchResult],
     ) -> String {
         if results.is_empty() {
             return String::new();
@@ -1512,7 +1509,7 @@ impl PaladinExecutionService {
         temperature: f32,
         execution_id: uuid::Uuid,
         loop_num: u32,
-    ) -> Result<crate::application::ports::output::llm_port::LlmResponse, PaladinError> {
+    ) -> Result<paladin_ports::output::llm_port::LlmResponse, PaladinError> {
         let mut attempt = 0;
         let max_attempts = paladin.node.max_loops.as_u32().min(10); // Cap retries at 10
 
@@ -1635,7 +1632,7 @@ impl PaladinExecutionService {
         prompt: &str,
         execution_id: uuid::Uuid,
         loop_num: u32,
-    ) -> Result<crate::application::ports::output::llm_port::LlmResponse, PaladinError> {
+    ) -> Result<paladin_ports::output::llm_port::LlmResponse, PaladinError> {
         let mut attempt = 0;
         let max_attempts = paladin.node.max_loops.as_u32().min(10); // Cap retries at 10
 
@@ -1807,10 +1804,6 @@ impl PaladinExecutorPort for PaladinExecutionService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::llm_port::{
-        LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, StreamingResponse,
-    };
-    use crate::application::ports::output::sanctum_port::SanctumSearchResult;
     use crate::application::use_cases::sanctum::MemoryExtractionStrategy;
     use crate::core::base::entity::node::Node;
     #[cfg(feature = "vision")]
@@ -1820,6 +1813,10 @@ mod tests {
         sanctum::{Memory, MemoryType, SanctumEntry},
     };
     use async_trait::async_trait;
+    use paladin_ports::output::llm_port::{
+        LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, StreamingResponse,
+    };
+    use paladin_ports::output::sanctum_port::SanctumSearchResult;
     use uuid::Uuid;
 
     // Mock LlmPort for testing
@@ -2144,7 +2141,7 @@ mod tests {
 
     #[cfg(feature = "vision")]
     #[async_trait]
-    impl crate::application::ports::output::vision_port::VisionPort for MockVisionPort {
+    impl paladin_ports::output::vision_port::VisionPort for MockVisionPort {
         async fn analyze_image(
             &self,
             _prompt: &str,
@@ -2152,7 +2149,7 @@ mod tests {
             _model: &str,
             _max_tokens: Option<u32>,
         ) -> Result<
-            crate::application::ports::output::vision_port::VisionResult,
+            paladin_ports::output::vision_port::VisionResult,
             crate::core::platform::container::vision::VisionError,
         > {
             if self.should_fail {
@@ -2163,19 +2160,17 @@ mod tests {
                 );
             }
 
-            Ok(
-                crate::application::ports::output::vision_port::VisionResult {
-                    content: self.response_content.clone(),
-                    model: "mock-model".to_string(),
-                    token_usage: crate::application::ports::output::vision_port::VisionTokenUsage {
-                        prompt_tokens: 100,
-                        completion_tokens: 50,
-                        total_tokens: 150,
-                    },
-                    metadata: std::collections::HashMap::new(),
-                    timestamp: chrono::Utc::now(),
+            Ok(paladin_ports::output::vision_port::VisionResult {
+                content: self.response_content.clone(),
+                model: "mock-model".to_string(),
+                token_usage: paladin_ports::output::vision_port::VisionTokenUsage {
+                    prompt_tokens: 100,
+                    completion_tokens: 50,
+                    total_tokens: 150,
                 },
-            )
+                metadata: std::collections::HashMap::new(),
+                timestamp: chrono::Utc::now(),
+            })
         }
 
         fn is_vision_model(&self, _model: &str) -> bool {

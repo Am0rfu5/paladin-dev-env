@@ -9,11 +9,9 @@
 //!
 //! Run with: `cargo run --example document_processing`
 
-use paladin::application::ports::input::document_port::{
-    ChunkConfig, DocumentPort, DocumentSource,
-};
 use paladin::infrastructure::adapters::document::document_adapter::DocumentAdapter;
 use paladin::infrastructure::adapters::document::pdf_extractor::PdfExtractor;
+use paladin_ports::input::document_port::{ChunkConfig, DocumentPort, DocumentSource};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -257,7 +255,7 @@ async fn demonstrate_chunking(
 
 /// Helper function to display chunks
 fn display_chunks(
-    chunks: &[paladin::application::ports::input::document_port::DocumentChunk],
+    chunks: &[paladin_ports::input::document_port::DocumentChunk],
     max_display: usize,
 ) {
     for (i, chunk) in chunks.iter().take(max_display).enumerate() {

@@ -2,13 +2,13 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
-use paladin::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
-};
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::config::application_settings::MCPServerConfig;
 use paladin::core::platform::container::arsenal::Armament;
+use paladin_ports::output::arsenal_port::ArsenalRegistry;
+use paladin_ports::output::llm_port::{
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
+};
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -58,10 +58,8 @@ impl LlmPort for MockLlmPort {
         "Mock"
     }
 
-    fn get_capabilities(
-        &self,
-    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
-        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+        paladin_ports::output::llm_port::ProviderCapabilities::default()
     }
 }
 

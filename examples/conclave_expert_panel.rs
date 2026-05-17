@@ -55,7 +55,6 @@
 //! Run with: `cargo run --example conclave_expert_panel`
 
 use async_trait::async_trait;
-use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use paladin::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
@@ -64,6 +63,7 @@ use paladin::core::platform::container::battalion::conclave::{
     Conclave, ConclaveConfig, ObservabilityLevel,
 };
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use std::sync::Arc;
 
 /// Example mock implementation of PaladinPort
@@ -205,10 +205,7 @@ impl PaladinPort for ExamplePaladinPort {
         _input: &str,
     ) -> Result<
         tokio::sync::mpsc::Receiver<
-            Result<
-                paladin::application::ports::output::paladin_port::PaladinStreamChunk,
-                PaladinError,
-            >,
+            Result<paladin_ports::output::paladin_port::PaladinStreamChunk, PaladinError>,
         >,
         PaladinError,
     > {

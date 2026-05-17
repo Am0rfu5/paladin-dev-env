@@ -9,14 +9,14 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::ports::output::content_delivery_port::{
-    ContentDeliveryService, ContentPayload, DeliveryMethod, DeliveryPriority, DeliveryRequest,
-    DeliveryStatus,
-};
-use paladin::application::ports::output::scheduler_port::*;
 use paladin::core::platform::container::content::{ContentItem, ContentType, TextContent};
 use paladin::infrastructure::adapters::output::api_content_deliverer::ApiContentDeliverer;
 use paladin::infrastructure::adapters::scheduling::tokio_cron_adapter::TokioCronSchedulerAdapter;
+use paladin_ports::output::content_delivery_port::{
+    ContentDeliveryService, ContentPayload, DeliveryMethod, DeliveryPriority, DeliveryRequest,
+    DeliveryStatus,
+};
+use paladin_ports::output::scheduler_port::*;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 

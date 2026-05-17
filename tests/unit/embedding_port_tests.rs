@@ -1,4 +1,4 @@
-use paladin::application::ports::output::embedding_port::{Embedding, EmbeddingError};
+use paladin_ports::output::embedding_port::{Embedding, EmbeddingError};
 
 #[cfg(test)]
 mod embedding_error_tests {

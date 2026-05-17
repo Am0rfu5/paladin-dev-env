@@ -1236,7 +1236,7 @@ let api_campaign = Campaign::new(BattalionConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use paladin::application::ports::output::paladin_port::PaladinPort;
+    use paladin::paladin_ports::output::paladin_port::PaladinPort;
     
     // Create mock PaladinPort for testing
     struct MockPort;

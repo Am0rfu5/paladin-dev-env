@@ -1,8 +1,8 @@
-use paladin::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, TokenUsage,
-};
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::core::platform::container::arsenal::handoff_tool::HandoffTool;
+use paladin_ports::output::llm_port::{
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, TokenUsage,
+};
 use serde_json::json;
 use std::sync::Arc;
 
@@ -35,10 +35,7 @@ impl LlmPort for MockLlmPort {
     ) -> Result<
         Box<
             dyn futures::Stream<
-                    Item = Result<
-                        paladin::application::ports::output::llm_port::StreamingResponse,
-                        LlmError,
-                    >,
+                    Item = Result<paladin_ports::output::llm_port::StreamingResponse, LlmError>,
                 > + Send,
         >,
         LlmError,

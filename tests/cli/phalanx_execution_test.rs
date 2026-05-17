@@ -348,7 +348,7 @@ async fn test_phalanx_error_handling() {
     // First Paladin succeeds, second fails
     mock_llm.add_success("Success from first");
     mock_llm.add_failure(
-        paladin::application::ports::output::llm_port::LlmError::NetworkError(
+        paladin_ports::output::llm_port::LlmError::NetworkError(
             "Network failure".to_string(),
         ),
     );

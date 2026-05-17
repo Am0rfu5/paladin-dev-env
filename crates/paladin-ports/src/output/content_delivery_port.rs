@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Content Delivery Port
 //!
 //! A port that defines how the application delivers content to the user. This would

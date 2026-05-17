@@ -15,8 +15,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use crate::application::ports::output::embedding_port::EmbeddingPort;
-use crate::application::ports::output::sanctum_port::{
+use paladin_ports::output::embedding_port::EmbeddingPort;
+use paladin_ports::output::sanctum_port::{
     SanctumError, SanctumFilter, SanctumPort, SanctumQuery, SanctumSearchResult,
 };
 

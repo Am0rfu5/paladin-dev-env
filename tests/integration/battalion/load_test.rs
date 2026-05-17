@@ -7,9 +7,6 @@
 //! - Error handling at scale
 
 use async_trait::async_trait;
-use paladin::application::ports::output::paladin_port::{
-    PaladinPort, PaladinResult, PaladinStreamChunk, StopReason,
-};
 use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
 use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
@@ -18,6 +15,9 @@ use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use paladin::core::platform::container::battalion::{BattalionConfig, ErrorStrategy};
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
+use paladin_ports::output::paladin_port::{
+    PaladinPort, PaladinResult, PaladinStreamChunk, StopReason,
+};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Mutex;

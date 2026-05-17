@@ -13,9 +13,9 @@
 mod provider_tests {
     use futures::StreamExt;
     use paladin::application::cli::config::loader::load_paladin_config;
-    use paladin::application::ports::output::llm_port::LlmRequest;
     use paladin::core::platform::container::prompt::{PromptItem, PromptType, SystemPrompt};
     use paladin::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    use paladin_ports::output::llm_port::LlmRequest;
     use std::collections::HashMap;
     use std::env;
     use std::fs;

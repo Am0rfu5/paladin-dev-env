@@ -6,7 +6,6 @@ and profile management. This service coordinates between domain entities and
 infrastructure adapters.
 */
 
-use crate::application::ports::output::log_port::LogPort;
 use crate::application::storage::user_store::UserRepositoryPort;
 use crate::core::base::entity::message::Location;
 use crate::core::platform::container::log::{LogDestination, LogEntryBuilder, LogLevel};
@@ -15,6 +14,7 @@ use crate::core::platform::manager::notification_service::NotificationService;
 use argon2::password_hash::{SaltString, rand_core::OsRng};
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use async_trait::async_trait;
+use paladin_ports::output::log_port::LogPort;
 use std::sync::Arc;
 use uuid::Uuid;
 

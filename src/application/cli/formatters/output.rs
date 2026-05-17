@@ -233,10 +233,10 @@ impl OutputFormatter {
     /// ```
     pub fn format_paladin_result(
         &self,
-        result: &crate::application::ports::output::paladin_port::PaladinResult,
+        result: &paladin_ports::output::paladin_port::PaladinResult,
         verbose: bool,
     ) -> String {
-        use crate::application::ports::output::paladin_port::StopReason;
+        use paladin_ports::output::paladin_port::StopReason;
 
         let mut output = String::new();
 
@@ -325,7 +325,7 @@ impl OutputFormatter {
     ///
     /// Includes comprehensive metadata, timing information, and execution details.
     pub fn format_paladin_result_json(
-        result: &crate::application::ports::output::paladin_port::PaladinResult,
+        result: &paladin_ports::output::paladin_port::PaladinResult,
     ) -> serde_json::Value {
         use serde_json::json;
 
@@ -355,8 +355,8 @@ impl OutputFormatter {
         result: &crate::core::platform::container::battalion::BattalionResult,
         verbose: bool,
     ) -> String {
-        use crate::application::ports::output::paladin_port::StopReason;
         use crate::core::platform::container::battalion::BattalionStatus;
+        use paladin_ports::output::paladin_port::StopReason;
 
         let mut output = String::new();
 

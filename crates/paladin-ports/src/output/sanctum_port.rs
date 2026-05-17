@@ -393,6 +393,7 @@ pub struct SanctumFilter {
 
     /// Filter by creation date range
     pub created_after: Option<DateTime<Utc>>,
+    /// Upper bound of the creation date range filter.
     pub created_before: Option<DateTime<Utc>>,
 
     /// Filter by importance threshold

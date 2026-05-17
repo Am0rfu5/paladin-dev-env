@@ -5,9 +5,9 @@
 
 #[cfg(all(test, feature = "integration-tests"))]
 mod openai_integration_tests {
-    use paladin::application::ports::output::llm_port::{FinishReason, LlmPort, LlmRequest};
     use paladin::core::platform::container::prompt::{PromptItem, PromptType, SystemPrompt};
     use paladin::infrastructure::adapters::llm::openai_adapter::{OpenAIAdapter, OpenAIConfig};
+    use paladin_ports::output::llm_port::{FinishReason, LlmPort, LlmRequest};
     use std::collections::HashMap;
     use std::env;
 

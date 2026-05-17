@@ -150,9 +150,6 @@ pub fn handle_agent_new(args: AgentNewArgs) -> Result<(), CliError> {
 pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     use crate::application::cli::config::loader::load_paladin_config;
     use crate::application::cli::interactive::prompt_for_input;
-    #[cfg(feature = "content-processing")]
-    use crate::application::ports::input::document_port::{DocumentPort, DocumentSource};
-    use crate::application::ports::output::llm_port::LlmPort;
     use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
@@ -161,6 +158,9 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     #[cfg(feature = "content-processing")]
     use crate::infrastructure::adapters::document::DocumentAdapter;
     use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    #[cfg(feature = "content-processing")]
+    use paladin_ports::input::document_port::{DocumentPort, DocumentSource};
+    use paladin_ports::output::llm_port::LlmPort;
     use std::sync::Arc;
     use std::time::Duration;
 

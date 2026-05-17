@@ -356,7 +356,12 @@ pub enum QueueError {
     ItemNotFound(Uuid),
     /// Queue is full
     #[error("Queue is full: {queue_name} (capacity: {capacity})")]
-    QueueFull { queue_name: String, capacity: usize },
+    QueueFull {
+        /// Name of the queue that is full.
+        queue_name: String,
+        /// Maximum capacity of the queue.
+        capacity: usize,
+    },
     /// Queue is empty
     #[error("Queue is empty: {0}")]
     QueueEmpty(String),

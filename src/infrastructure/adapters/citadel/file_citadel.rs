@@ -15,7 +15,7 @@
 //!
 //! ```rust,no_run
 //! use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
-//! use paladin::application::ports::output::citadel_port::CitadelPort;
+//! use paladin_ports::output::citadel_port::CitadelPort;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -32,10 +32,10 @@ use tokio::fs;
 use uuid::Uuid;
 
 use crate::application::errors::citadel_error::CitadelError;
-use crate::application::ports::output::citadel_port::CitadelPort;
 use crate::core::platform::container::citadel::{
     BattalionState, PaladinState, StateSummary, StateType,
 };
+use paladin_ports::output::citadel_port::CitadelPort;
 
 /// File system-based Citadel adapter
 ///

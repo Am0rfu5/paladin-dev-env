@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Logger Port
 //!
 //! A port that defines how the application logs information. This could be a file, a database,

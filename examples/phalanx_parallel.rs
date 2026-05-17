@@ -23,13 +23,13 @@
 //! Run with: `cargo run --example phalanx_parallel`
 
 use async_trait::async_trait;
-use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use paladin::core::platform::container::battalion::{BattalionConfig, ErrorStrategy};
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use std::sync::Arc;
 
 /// Example mock implementation of PaladinPort
@@ -78,10 +78,7 @@ impl PaladinPort for ExamplePaladinPort {
         _input: &str,
     ) -> Result<
         tokio::sync::mpsc::Receiver<
-            Result<
-                paladin::application::ports::output::paladin_port::PaladinStreamChunk,
-                PaladinError,
-            >,
+            Result<paladin_ports::output::paladin_port::PaladinStreamChunk, PaladinError>,
         >,
         PaladinError,
     > {

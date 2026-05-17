@@ -8,16 +8,16 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::ports::output::arsenal_port::ArsenalPort;
-use paladin::application::ports::output::llm_port::{
-    FinishReason, FunctionCall, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse,
-    TokenUsage,
-};
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::arsenal::{
     Armament, ArmamentCall, ArmamentResult, ArsenalError,
+};
+use paladin_ports::output::arsenal_port::ArsenalPort;
+use paladin_ports::output::llm_port::{
+    FinishReason, FunctionCall, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse,
+    TokenUsage,
 };
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -90,10 +90,8 @@ impl LlmPort for MockToolLlm {
         "mock"
     }
 
-    fn get_capabilities(
-        &self,
-    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
-        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+        paladin_ports::output::llm_port::ProviderCapabilities::default()
     }
 }
 

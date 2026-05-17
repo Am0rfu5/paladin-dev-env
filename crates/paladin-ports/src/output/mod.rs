@@ -13,8 +13,11 @@ pub mod paladin_executor_port;
 pub mod paladin_port;
 pub mod paladin_registry;
 pub mod queue_port;
+/// Sanctum (vector store / RAG) port.
 pub mod sanctum_port;
+/// Scheduler port.
 pub mod scheduler_port;
+/// Search engine port.
 pub mod search_engine_port;
 // Vision ports are unconditional in paladin-ports; the root `paladin` crate
 // gates re-exports with #[cfg(feature = "vision")].

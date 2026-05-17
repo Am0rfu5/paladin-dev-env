@@ -203,13 +203,13 @@ struct PaladinExecutionAdapter {
 }
 
 #[async_trait::async_trait]
-impl crate::application::ports::output::paladin_port::PaladinPort for PaladinExecutionAdapter {
+impl paladin_ports::output::paladin_port::PaladinPort for PaladinExecutionAdapter {
     async fn execute(
         &self,
         paladin: &crate::core::platform::container::paladin::Paladin,
         input: &str,
     ) -> Result<
-        crate::application::ports::output::paladin_port::PaladinResult,
+        paladin_ports::output::paladin_port::PaladinResult,
         crate::application::use_cases::paladin::error::PaladinError,
     > {
         self.service.execute(paladin, input).await
@@ -220,7 +220,7 @@ impl crate::application::ports::output::paladin_port::PaladinPort for PaladinExe
         _paladin: &crate::core::platform::container::paladin::Paladin,
         _input: &str,
     ) -> Result<
-        crate::application::ports::output::paladin_port::PaladinStream,
+        paladin_ports::output::paladin_port::PaladinStream,
         crate::application::use_cases::paladin::error::PaladinError,
     > {
         Err(
@@ -244,11 +244,11 @@ async fn execute_formation(
     verbose: bool,
     output: Option<PathBuf>,
 ) -> Result<(), CliError> {
-    use crate::application::ports::output::paladin_port::PaladinPort;
     use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::formation::Formation;
+    use paladin_ports::output::paladin_port::PaladinPort;
     use std::sync::Arc;
     use std::time::Duration;
 
@@ -404,11 +404,11 @@ async fn execute_phalanx(
     verbose: bool,
     output: Option<PathBuf>,
 ) -> Result<(), CliError> {
-    use crate::application::ports::output::paladin_port::PaladinPort;
     use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::phalanx::Phalanx;
+    use paladin_ports::output::paladin_port::PaladinPort;
     use std::sync::Arc;
     use std::time::Duration;
 
@@ -554,7 +554,6 @@ async fn execute_conclave(
     verbose: bool,
     output: Option<PathBuf>,
 ) -> Result<(), CliError> {
-    use crate::application::ports::output::paladin_port::PaladinPort;
     use crate::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
     use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
@@ -562,6 +561,7 @@ async fn execute_conclave(
     use crate::core::platform::container::battalion::conclave::{
         Conclave, ConclaveConfig as DomainConclaveConfig, ObservabilityLevel,
     };
+    use paladin_ports::output::paladin_port::PaladinPort;
     use std::sync::Arc;
     use std::time::Duration;
 

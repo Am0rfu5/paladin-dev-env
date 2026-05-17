@@ -118,7 +118,7 @@ allowed_extensions = ["txt", "md", "json", "pdf", "doc", "rs", "py"]
 
 ```rust
 use paladin::infrastructure::adapters::file_storage::minio::MinioAdapter;
-use paladin::application::ports::output::file_storage_port::{FileStoragePort, UploadOptions};
+use paladin::paladin_ports::output::file_storage_port::{FileStoragePort, UploadOptions};
 use std::path::PathBuf;
 
 // Initialize the adapter (uses rust-s3 internally)
@@ -258,7 +258,7 @@ let config = MinioConfig {
 ### Uploading Code for Analysis
 
 ```rust
-use paladin::application::ports::output::file_storage_port::*;
+use paladin::paladin_ports::output::file_storage_port::*;
 
 // Upload source code files with rust-s3
 let rust_files = vec!["main.rs", "lib.rs", "security.rs"];
@@ -567,7 +567,7 @@ allowed_extensions = ["txt", "md", "json", "pdf", "doc", "rs", "py"]
 
 ```rust
 use paladin::infrastructure::adapters::file_storage::minio::MinioAdapter;
-use paladin::application::ports::output::file_storage_port::{FileStoragePort, UploadOptions};
+use paladin::paladin_ports::output::file_storage_port::{FileStoragePort, UploadOptions};
 use std::path::PathBuf;
 
 // Initialize the adapter
@@ -631,7 +631,7 @@ let versions = adapter.list_file_versions(&file_path).await?;
 ### Uploading Code for Analysis
 
 ```rust
-use paladin::application::ports::output::file_storage_port::*;
+use paladin::paladin_ports::output::file_storage_port::*;
 
 // Upload source code files
 let rust_files = vec!["main.rs", "lib.rs", "security.rs"];
@@ -711,7 +711,7 @@ if health.is_available {
 
 ```rust
 use paladin::infrastructure::adapters::queue::redis::RedisQueueAdapter;
-use paladin::application::ports::output::queue_port::QueuePort;
+use paladin::paladin_ports::output::queue_port::QueuePort;
 
 // Upload file and queue analysis task
 let file_item = storage_adapter.upload_file(&file_path, &content, None).await?;
@@ -751,7 +751,7 @@ paladin-files/
 The adapter provides comprehensive error handling:
 
 ```rust
-use paladin::application::ports::output::file_storage_port::FileStorageError;
+use paladin::paladin_ports::output::file_storage_port::FileStorageError;
 
 match adapter.upload_file(&path, &content, None).await {
     Ok(file_item) => println!("Uploaded: {}", file_item.path.display()),

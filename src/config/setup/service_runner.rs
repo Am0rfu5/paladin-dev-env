@@ -1,11 +1,3 @@
-#[cfg(feature = "s3-storage")]
-use crate::application::ports::output::file_storage_port::FileStoragePort;
-#[cfg(feature = "s3-storage")]
-use crate::application::ports::output::file_storage_port::FileStorageUtils;
-#[cfg(any(feature = "redis-queue", feature = "s3-storage"))]
-use crate::application::ports::output::log_port::LogPort;
-#[cfg(feature = "redis-queue")]
-use crate::application::ports::output::queue_port::QueuePort;
 use crate::application::storage::sql_store::MigrationManager;
 use crate::config::application_settings::Settings;
 use crate::config::user_config::UserServiceFactory;
@@ -20,6 +12,14 @@ use crate::infrastructure::adapters::logs::system_log_adapter::SystemLogAdapter;
 #[cfg(feature = "redis-queue")]
 use crate::infrastructure::adapters::queue::redis::RedisQueueAdapter;
 use crate::infrastructure::repositories::sqlite_content_repository::SqliteStore;
+#[cfg(feature = "s3-storage")]
+use paladin_ports::output::file_storage_port::FileStoragePort;
+#[cfg(feature = "s3-storage")]
+use paladin_ports::output::file_storage_port::FileStorageUtils;
+#[cfg(any(feature = "redis-queue", feature = "s3-storage"))]
+use paladin_ports::output::log_port::LogPort;
+#[cfg(feature = "redis-queue")]
+use paladin_ports::output::queue_port::QueuePort;
 use std::env;
 #[cfg(feature = "s3-storage")]
 use std::path::Path;
@@ -410,9 +410,7 @@ impl ServiceRunner {
     pub async fn initialize_sample_files(&self) -> Result<(), Box<dyn std::error::Error>> {
         #[cfg(feature = "s3-storage")]
         if let Some(file_storage) = &self.file_storage_adapter {
-            use crate::application::ports::output::file_storage_port::{
-                FileStoragePort, UploadOptions,
-            };
+            use paladin_ports::output::file_storage_port::{FileStoragePort, UploadOptions};
             use std::path::PathBuf;
 
             // Create a sample analysis directory structure

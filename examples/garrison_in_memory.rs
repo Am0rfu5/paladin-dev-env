@@ -5,11 +5,11 @@
 //!
 //! Run with: `cargo run --example garrison_in_memory`
 
-use paladin::application::ports::output::garrison_port::GarrisonPort;
 use paladin::core::platform::container::garrison::{
     ConversationRole, EvictionStrategy, GarrisonConfig, GarrisonEntry,
 };
 use paladin::infrastructure::adapters::garrison::InMemoryGarrison;
+use paladin_ports::output::garrison_port::GarrisonPort;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

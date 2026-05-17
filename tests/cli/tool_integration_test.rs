@@ -5,9 +5,9 @@
 //! mocks (MockLlmAdapter + MockArsenalPort) for CI-friendly testing without
 //! external dependencies.
 
-use paladin::application::ports::output::arsenal_port::ArsenalPort;
-use paladin::application::ports::output::garrison_port::GarrisonPort;
-use paladin::application::ports::output::llm_port::LlmPort;
+use paladin_ports::output::arsenal_port::ArsenalPort;
+use paladin_ports::output::garrison_port::GarrisonPort;
+use paladin_ports::output::llm_port::LlmPort;
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::base::entity::node::Node;

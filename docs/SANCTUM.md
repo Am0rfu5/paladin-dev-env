@@ -268,7 +268,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust
 use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
-use paladin::application::ports::output::sanctum_port::SanctumPort;
+use paladin::paladin_ports::output::sanctum_port::SanctumPort;
 
 async fn store_memory(
     sanctum: &dyn SanctumPort,
@@ -313,7 +313,7 @@ async fn store_batch(
 ### Semantic Search
 
 ```rust
-use paladin::application::ports::output::sanctum_port::SanctumQuery;
+use paladin::paladin_ports::output::sanctum_port::SanctumQuery;
 
 async fn search_memories(
     sanctum: &dyn SanctumPort,
@@ -337,7 +337,7 @@ async fn search_memories(
 ### Filtered Search
 
 ```rust
-use paladin::application::ports::output::sanctum_port::SanctumFilter;
+use paladin::paladin_ports::output::sanctum_port::SanctumFilter;
 
 async fn filtered_search(
     sanctum: &dyn SanctumPort,

@@ -358,7 +358,7 @@ for page in &document.pages {
 ### DocumentPort Interface
 
 ```rust
-use paladin::application::ports::input::document_port::{
+use paladin::paladin_ports::input::document_port::{
     DocumentPort, DocumentSource, ChunkConfig
 };
 use paladin::infrastructure::adapters::document::DocumentAdapter;

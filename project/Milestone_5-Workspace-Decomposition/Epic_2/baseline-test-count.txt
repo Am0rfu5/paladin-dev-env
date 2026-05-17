@@ -28,3 +28,19 @@ tests/cli_isolation_test.rs::test_cli_feature_is_not_default — this is a
 sentinel test that explicitly asserts the `cli` feature is NOT included in
 the default feature set. It fails only when --all-features forces it on.
 This is expected behavior and is not a regression.
+
+--- POST-EPIC-2 RESULTS ---
+Date: 2026-05-15
+Command: cargo test --workspace
+
+Total passed: 2519
+Total failed: 0
+Total ignored: 139
+
+Delta from baseline: -85 tests
+Reason: The 85 doc tests that existed inside src/application/ports/**/*.rs are no
+longer present after those files were moved to crates/paladin-ports/ with
+`doctest = false`. These doc tests reference concrete implementations (e.g.,
+InMemoryGarrison, OpenAiAdapter) that are not available within paladin-ports
+itself, so they cannot run in isolation. All pre-existing non-doc tests continue
+to pass with 0 failures.

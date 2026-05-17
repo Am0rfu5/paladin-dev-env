@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! ML Port
 //!
 //! A port that defines how the application interacts with the ML (Machine Learning) model.

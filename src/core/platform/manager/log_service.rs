@@ -14,15 +14,15 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::application::ports::output::log_port::{
-    LogError, LogHealthCheck, LogPort, LogQuery, LogResult, LogStats,
-};
 use crate::core::base::entity::message::Location;
 use crate::core::base::service::message_service::{
     MessageError, MessageHandler, MessageResult, MessageService, MessageServiceConfig,
 };
 use crate::core::platform::container::log::{
     Log, LogContainer, LogDestination, LogEntry, LogEntryExt, LogLevel, LogMessage,
+};
+use paladin_ports::output::log_port::{
+    LogError, LogHealthCheck, LogPort, LogQuery, LogResult, LogStats,
 };
 
 /// Configuration for the log service
@@ -584,7 +584,7 @@ mod tests {
 
         async fn batch_write(
             &self,
-            _request: crate::application::ports::output::log_port::BatchWriteRequest,
+            _request: paladin_ports::output::log_port::BatchWriteRequest,
         ) -> LogResult<()> {
             Ok(())
         }
@@ -595,7 +595,7 @@ mod tests {
 
         async fn configure_destination(
             &self,
-            _config: crate::application::ports::output::log_port::LogDestinationConfig,
+            _config: paladin_ports::output::log_port::LogDestinationConfig,
         ) -> LogResult<()> {
             Ok(())
         }
@@ -665,7 +665,7 @@ mod tests {
             Ok("mock-archive-path".to_string())
         }
 
-        fn supported_formats(&self) -> Vec<crate::application::ports::output::log_port::LogFormat> {
+        fn supported_formats(&self) -> Vec<paladin_ports::output::log_port::LogFormat> {
             vec![]
         }
         // --- End missing trait methods ---

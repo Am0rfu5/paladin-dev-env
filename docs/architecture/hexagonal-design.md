@@ -541,7 +541,7 @@ let garrison: Arc<dyn GarrisonPort> = if persistent {
 ```rust
 // ❌ WRONG - Core importing from Application
 // src/core/platform/container/paladin.rs
-use crate::application::ports::output::llm_port::LlmPort; // ERROR!
+use crate::paladin_ports::output::llm_port::LlmPort; // ERROR!
 
 pub struct Paladin {
     llm: Arc<dyn LlmPort>, // Core shouldn't know about LlmPort
@@ -550,7 +550,7 @@ pub struct Paladin {
 // ✅ CORRECT - Application uses Core
 // src/application/use_cases/paladin/paladin_execution_service.rs
 use crate::core::platform::container::paladin::Paladin;
-use crate::application::ports::output::llm_port::LlmPort;
+use crate::paladin_ports::output::llm_port::LlmPort;
 
 pub struct PaladinExecutionService {
     llm_port: Arc<dyn LlmPort>,
@@ -564,7 +564,7 @@ impl PaladinExecutionService {
 
 // ✅ CORRECT - Infrastructure implements Application ports
 // src/infrastructure/adapters/llm/openai_adapter.rs
-use crate::application::ports::output::llm_port::LlmPort;
+use crate::paladin_ports::output::llm_port::LlmPort;
 
 pub struct OpenAiAdapter {
     // ...

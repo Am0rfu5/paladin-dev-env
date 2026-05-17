@@ -11,13 +11,13 @@
 // - Token usage configuration
 // - Streaming support
 
-use crate::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities,
-    StreamingResponse, TokenUsage,
-};
 use async_trait::async_trait;
 use chrono::Utc;
 use futures::stream;
+use paladin_ports::output::llm_port::{
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities,
+    StreamingResponse, TokenUsage,
+};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -76,7 +76,7 @@ impl Default for MockConfig {
 ///
 /// ```rust,no_run
 /// use paladin::infrastructure::adapters::llm::mock_llm_adapter::MockLlmAdapter;
-/// use paladin::application::ports::output::llm_port::LlmError;
+/// use paladin_ports::output::llm_port::LlmError;
 /// use std::time::Duration;
 ///
 /// let adapter = MockLlmAdapter::new()

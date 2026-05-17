@@ -29,16 +29,16 @@
 //!
 //! ### Output Ports (implemented by infrastructure adapters)
 //!
-//! - **[`LlmPort`](crate::application::ports::output::llm_port::LlmPort)** - LLM provider abstraction
+//! - **[`LlmPort`](paladin_ports::output::llm_port::LlmPort)** - LLM provider abstraction
 //!   - Implementations: OpenAI, DeepSeek, Anthropic adapters
-//! - **[`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort)** - Memory storage
+//! - **[`GarrisonPort`](paladin_ports::output::garrison_port::GarrisonPort)** - Memory storage
 //!   - Implementations: InMemory, SQLite, Redis adapters
-//! - **[`ArsenalPort`](crate::application::ports::output::arsenal_port::ArsenalPort)** - Tool execution
+//! - **[`ArsenalPort`](paladin_ports::output::arsenal_port::ArsenalPort)** - Tool execution
 //!   - Implementations: MCP STDIO, MCP SSE adapters
-//! - **[`CitadelPort`](crate::application::ports::output::citadel_port::CitadelPort)** - State persistence
+//! - **[`CitadelPort`](paladin_ports::output::citadel_port::CitadelPort)** - State persistence
 //!   - Implementations: File, S3 adapters
-//! - **[`PaladinPort`](crate::application::ports::output::paladin_port::PaladinPort)** - Paladin execution
-//! - **[`BattalionPort`](crate::application::ports::output::battalion_port::BattalionPort)** - Battalion orchestration
+//! - **[`PaladinPort`](paladin_ports::output::paladin_port::PaladinPort)** - Paladin execution
+//! - **[`BattalionPort`](paladin_ports::output::battalion_port::BattalionPort)** - Battalion orchestration
 //!
 //! ### Input Ports (API boundaries)
 //!
@@ -139,8 +139,6 @@
 pub mod cli;
 #[allow(missing_docs)]
 pub mod errors;
-#[allow(missing_docs)]
-pub mod ports;
 #[allow(missing_docs)]
 pub mod storage;
 #[allow(missing_docs)]

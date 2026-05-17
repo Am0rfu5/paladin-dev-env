@@ -64,7 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap(),
     ];
 
-    use paladin::application::ports::output::llm_port::TokenUsage;
+    use paladin_ports::output::llm_port::TokenUsage;
     let metadata = ExecutionMetadata::builder()
         .execution_id(Uuid::new_v4())
         .start_time(Utc::now())

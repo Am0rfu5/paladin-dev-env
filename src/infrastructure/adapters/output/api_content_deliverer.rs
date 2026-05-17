@@ -1,10 +1,10 @@
-use crate::application::ports::output::content_delivery_port::{
+use actix_web::{HttpResponse, Result as ActixResult, web};
+use chrono::Utc;
+use paladin_ports::output::content_delivery_port::{
     BatchContentDeliveryService, ContentDeliveryError, ContentDeliveryService, ContentPayload,
     DeliveryMethod, DeliveryRequest, DeliveryResponse, DeliveryStats, DeliveryStatus,
 };
-use crate::application::ports::output::scheduler_port::{JobId, JobSpec, SchedulerPort};
-use actix_web::{HttpResponse, Result as ActixResult, web};
-use chrono::Utc;
+use paladin_ports::output::scheduler_port::{JobId, JobSpec, SchedulerPort};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -655,9 +655,9 @@ async fn get_delivery_stats_handler(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::content_delivery_port::DeliveryPriority;
     use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
     use mockito::Server;
+    use paladin_ports::output::content_delivery_port::DeliveryPriority;
 
     #[tokio::test]
     async fn test_http_delivery_success() {

@@ -5,11 +5,11 @@
 //! safeguards against circular delegation and excessive depth.
 
 use crate::application::errors::handoff_error::HandoffError;
-use crate::application::ports::output::paladin_executor_port::PaladinExecutorPort;
 use crate::core::platform::container::autonomous_config::HandoffConfig;
 use crate::core::platform::container::handoff::{HandoffContext, HandoffRecord, HandoffStrategy};
 use crate::core::platform::container::paladin::Paladin;
 use log::{debug, info, warn};
+use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
 use std::sync::Arc;
 use tokio::time::{Duration, sleep};
 

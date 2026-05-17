@@ -35,9 +35,9 @@ use std::sync::Arc;
 use tokio::time::{Duration, timeout};
 use uuid::Uuid;
 
-use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult};
 use crate::core::platform::container::battalion::campaign::{Campaign, EdgeCondition};
 use crate::core::platform::container::battalion::{BattalionError, BattalionResult};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
 
 /// Service for executing Campaign patterns
 ///
@@ -375,9 +375,9 @@ mod tests {
 
     #[test]
     fn test_service_creation() {
-        use crate::application::ports::output::paladin_port::StopReason;
         use crate::application::use_cases::paladin::error::PaladinError;
         use async_trait::async_trait;
+        use paladin_ports::output::paladin_port::StopReason;
 
         struct MockPort;
 
@@ -404,10 +404,7 @@ mod tests {
                 _input: &str,
             ) -> Result<
                 tokio::sync::mpsc::Receiver<
-                    Result<
-                        crate::application::ports::output::paladin_port::PaladinStreamChunk,
-                        PaladinError,
-                    >,
+                    Result<paladin_ports::output::paladin_port::PaladinStreamChunk, PaladinError>,
                 >,
                 PaladinError,
             > {

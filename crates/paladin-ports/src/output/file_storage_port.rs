@@ -775,9 +775,15 @@ pub enum EncryptionOptions {
     /// Server-side encryption with service-managed keys
     ServerSideEncryption,
     /// Server-side encryption with customer-provided keys
-    ServerSideEncryptionCustomerKey { key: String },
+    ServerSideEncryptionCustomerKey {
+        /// Customer-provided encryption key.
+        key: String,
+    },
     /// Server-side encryption with KMS
-    ServerSideEncryptionKms { key_id: String },
+    ServerSideEncryptionKms {
+        /// KMS key identifier.
+        key_id: String,
+    },
 }
 
 /// Download options
@@ -1342,8 +1348,10 @@ pub trait FileStorageUtils {
     /// Detect content type from file extension
     fn detect_content_type(path: &Path) -> Option<String>;
 
+    /// Detect content type from file extension with a fallback value.
     fn detect_content_type_with_fallback(path: &Path, fallback: &str) -> String;
 
+    /// Validate that the content type at `path` matches one of the expected MIME types.
     fn validate_content_type_for_domain(
         path: &Path,
         expected_types: &[&str],

@@ -7,13 +7,11 @@
 //! - LRU eviction when capacity is reached
 //! - Thread-safety with concurrent operations
 
-use paladin::application::ports::output::sanctum_port::{
-    SanctumError, SanctumFilter, SanctumPort, SanctumQuery,
-};
 use paladin::core::platform::container::sanctum::{
     Memory, MemoryBuilder, MemoryType, SanctumEntry,
 };
 use paladin::infrastructure::adapters::sanctum::InMemorySanctum;
+use paladin_ports::output::sanctum_port::{SanctumError, SanctumFilter, SanctumPort, SanctumQuery};
 use std::sync::Arc;
 use tokio::task;
 

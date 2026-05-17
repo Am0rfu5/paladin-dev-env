@@ -5,10 +5,6 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::ports::output::garrison_port::{GarrisonPort, GarrisonStats};
-use paladin::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
-};
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
@@ -17,6 +13,10 @@ use paladin::core::platform::container::garrison::{
     ConversationRole, GarrisonConfig, GarrisonEntry,
 };
 use paladin::infrastructure::adapters::garrison::in_memory_garrison::InMemoryGarrison;
+use paladin_ports::output::garrison_port::{GarrisonPort, GarrisonStats};
+use paladin_ports::output::llm_port::{
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
+};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -73,10 +73,8 @@ impl LlmPort for MockLlmPort {
     fn get_provider_name(&self) -> &'static str {
         "Mock"
     }
-    fn get_capabilities(
-        &self,
-    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
-        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+        paladin_ports::output::llm_port::ProviderCapabilities::default()
     }
 }
 
@@ -222,9 +220,9 @@ async fn test_garrison_error_handling() {
         async fn remember(
             &self,
             _entry: GarrisonEntry,
-        ) -> Result<(), paladin::application::ports::output::garrison_port::GarrisonError> {
+        ) -> Result<(), paladin_ports::output::garrison_port::GarrisonError> {
             Err(
-                paladin::application::ports::output::garrison_port::GarrisonError::StorageError(
+                paladin_ports::output::garrison_port::GarrisonError::StorageError(
                     "Mock storage failure".to_string(),
                 ),
             )
@@ -233,10 +231,8 @@ async fn test_garrison_error_handling() {
         async fn recall_recent(
             &self,
             _limit: usize,
-        ) -> Result<
-            Vec<GarrisonEntry>,
-            paladin::application::ports::output::garrison_port::GarrisonError,
-        > {
+        ) -> Result<Vec<GarrisonEntry>, paladin_ports::output::garrison_port::GarrisonError>
+        {
             Ok(vec![])
         }
 
@@ -244,23 +240,20 @@ async fn test_garrison_error_handling() {
             &self,
             _query: &str,
             _limit: usize,
-        ) -> Result<
-            Vec<GarrisonEntry>,
-            paladin::application::ports::output::garrison_port::GarrisonError,
-        > {
+        ) -> Result<Vec<GarrisonEntry>, paladin_ports::output::garrison_port::GarrisonError>
+        {
             Ok(vec![])
         }
 
         async fn forget_all(
             &self,
-        ) -> Result<(), paladin::application::ports::output::garrison_port::GarrisonError> {
+        ) -> Result<(), paladin_ports::output::garrison_port::GarrisonError> {
             Ok(())
         }
 
         async fn stats(
             &self,
-        ) -> Result<GarrisonStats, paladin::application::ports::output::garrison_port::GarrisonError>
-        {
+        ) -> Result<GarrisonStats, paladin_ports::output::garrison_port::GarrisonError> {
             Ok(GarrisonStats {
                 entry_count: 0,
                 total_tokens: 0,
@@ -572,10 +565,8 @@ async fn test_garrison_with_circuit_breaker_interaction() {
             "Failing"
         }
 
-        fn get_capabilities(
-            &self,
-        ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
-            paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+        fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+            paladin_ports::output::llm_port::ProviderCapabilities::default()
         }
     }
 

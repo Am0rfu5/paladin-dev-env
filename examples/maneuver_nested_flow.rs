@@ -34,7 +34,6 @@
 //! Run with: `cargo run --example maneuver_nested_flow`
 
 use async_trait::async_trait;
-use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use paladin::application::use_cases::battalion::flow_visualizer::{
     FlowVisualizer, VisualizationFormat,
 };
@@ -46,6 +45,7 @@ use paladin::core::platform::container::battalion::maneuver::{
 };
 use paladin::core::platform::container::battalion::parser::FlowParser;
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -178,10 +178,7 @@ impl PaladinPort for ExamplePaladinPort {
         _input: &str,
     ) -> Result<
         tokio::sync::mpsc::Receiver<
-            Result<
-                paladin::application::ports::output::paladin_port::PaladinStreamChunk,
-                PaladinError,
-            >,
+            Result<paladin_ports::output::paladin_port::PaladinStreamChunk, PaladinError>,
         >,
         PaladinError,
     > {

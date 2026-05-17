@@ -13,7 +13,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-use crate::application::ports::output::embedding_port::{Embedding, EmbeddingError, EmbeddingPort};
+use paladin_ports::output::embedding_port::{Embedding, EmbeddingError, EmbeddingPort};
 
 /// Configuration for OpenAI Embedding Adapter
 #[doc(hidden)]

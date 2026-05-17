@@ -15,7 +15,7 @@
 //!
 //! ```rust,no_run
 //! use paladin::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
-//! use paladin::application::ports::output::llm_port::LlmPort;
+//! use paladin_ports::output::llm_port::LlmPort;
 //! use std::sync::Arc;
 //!
 //! # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
@@ -32,11 +32,11 @@
 //! ```
 
 use crate::application::errors::prompt_error::PromptError;
-use crate::application::ports::output::llm_port::{LlmPort, LlmRequest};
 use crate::core::platform::container::prompt::{
     PromptItem, PromptParameters, PromptType, UserPrompt,
 };
 use log::{debug, info};
+use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
@@ -64,7 +64,7 @@ impl PromptGenerationService {
     ///
     /// ```rust,no_run
     /// use paladin::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
-    /// use paladin::application::ports::output::llm_port::LlmPort;
+    /// use paladin_ports::output::llm_port::LlmPort;
     /// use std::sync::Arc;
     ///
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -227,11 +227,11 @@ Generate only the system prompt text, without any additional explanation or form
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::llm_port::{
-        FinishReason, LlmError, LlmResponse, ProviderCapabilities, TokenUsage,
-    };
     use async_trait::async_trait;
     use chrono::Utc;
+    use paladin_ports::output::llm_port::{
+        FinishReason, LlmError, LlmResponse, ProviderCapabilities, TokenUsage,
+    };
 
     /// Mock LLM port for testing
     struct MockLlmPort {
@@ -272,10 +272,7 @@ mod tests {
         ) -> Result<
             Box<
                 dyn futures::Stream<
-                        Item = Result<
-                            crate::application::ports::output::llm_port::StreamingResponse,
-                            LlmError,
-                        >,
+                        Item = Result<paladin_ports::output::llm_port::StreamingResponse, LlmError>,
                     > + Send,
             >,
             LlmError,
