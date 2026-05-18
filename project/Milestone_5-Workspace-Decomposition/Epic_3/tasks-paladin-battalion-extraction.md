@@ -87,12 +87,12 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.5 Run `cargo test -p paladin-battalion` — confirm inline `#[cfg(test)]` unit tests in the extracted files pass (there are 12 test modules spread across the service files)
   - [x] 3.6 Run `cargo build --workspace` to confirm zero regressions in the root crate
 
-- [ ] 4.0 Verify dependency isolation of `paladin-battalion`
-  - [ ] 4.1 Run `cargo tree -p paladin-battalion` and inspect the full dependency tree
-  - [ ] 4.2 Confirm none of the following crates appear in the tree: `reqwest`, `hyper`, `actix-web`, `actix-http`, `sqlx`, `redis`, `qdrant-client`, `lettre`, `aws-sdk`, `minio`
-  - [ ] 4.3 If any forbidden crate appears, identify the path in the dependency chain, resolve it (by removing the dep or replacing it with a pure-Rust alternative), and re-run `cargo tree -p paladin-battalion`
-  - [ ] 4.4 Save the clean `cargo tree -p paladin-battalion` output to `project/Milestone_5-Workspace-Decomposition/Epic_3/paladin-battalion-dependency-tree.txt`
-  - [ ] 4.5 Save the `cargo build -p paladin-battalion` stdout + stderr to `project/Milestone_5-Workspace-Decomposition/Epic_3/paladin-battalion-isolation-build.txt`
+- [x] 4.0 Verify dependency isolation of `paladin-battalion`
+  - [x] 4.1 Run `cargo tree -p paladin-battalion` and inspect the full dependency tree
+  - [x] 4.2 Confirm none of the following crates appear in the tree: `reqwest`, `hyper`, `actix-web`, `actix-http`, `sqlx`, `redis`, `qdrant-client`, `lettre`, `aws-sdk`, `minio`
+  - [x] 4.3 If any forbidden crate appears, identify the path in the dependency chain, resolve it (by removing the dep or replacing it with a pure-Rust alternative), and re-run `cargo tree -p paladin-battalion`
+  - [x] 4.4 Save the clean `cargo tree -p paladin-battalion` output to `project/Milestone_5-Workspace-Decomposition/Epic_3/paladin-battalion-dependency-tree.txt`
+  - [x] 4.5 Save the `cargo build -p paladin-battalion` stdout + stderr to `project/Milestone_5-Workspace-Decomposition/Epic_3/paladin-battalion-isolation-build.txt`
 
 - [ ] 5.0 Wire `paladin-battalion` into the root `paladin` facade crate
   - [ ] 5.1 Add `paladin-battalion = { workspace = true }` to the `[dependencies]` section of the root `paladin` crate's `Cargo.toml`
