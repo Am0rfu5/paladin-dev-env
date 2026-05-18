@@ -68,24 +68,24 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.9 Run `cargo build -p paladin-battalion` and confirm the empty skeleton crate compiles in isolation
   - [x] 1.10 Run `cargo build --workspace` and confirm both the empty `paladin-battalion` and the existing `paladin` crate still build together with zero regressions
 
-- [ ] 2.0 Copy execution service files into `paladin-battalion`
-  - [ ] 2.1 Copy all 9 execution service files from `src/application/use_cases/battalion/` into `crates/paladin-battalion/src/` — **do NOT delete the originals yet** (they are removed in Task 5.0): `formation_service.rs`, `phalanx_service.rs`, `campaign_service.rs`, `chain_of_command_service.rs`, `conclave_execution_service.rs`, `council_service.rs`, `grove_service.rs`, `maneuver_service.rs`, `commander.rs`
-  - [ ] 2.2 Enable the 9 corresponding `pub mod` declarations in `crates/paladin-battalion/src/lib.rs`
-  - [ ] 2.3 Run the import migration `sed` pass on the copied execution service files (see Technical Considerations §6):
+- [x] 2.0 Copy execution service files into `paladin-battalion`
+  - [x] 2.1 Copy all 9 execution service files from `src/application/use_cases/battalion/` into `crates/paladin-battalion/src/` — **do NOT delete the originals yet** (they are removed in Task 5.0): `formation_service.rs`, `phalanx_service.rs`, `campaign_service.rs`, `chain_of_command_service.rs`, `conclave_execution_service.rs`, `council_service.rs`, `grove_service.rs`, `maneuver_service.rs`, `commander.rs`
+  - [x] 2.2 Enable the 9 corresponding `pub mod` declarations in `crates/paladin-battalion/src/lib.rs`
+  - [x] 2.3 Run the import migration `sed` pass on the copied execution service files (see Technical Considerations §6):
     - Replace `crate::application::ports::` → `paladin_ports::`
     - Replace `crate::application::use_cases::battalion::` → `crate::`
     - Replace `crate::core::` → `paladin_core::`
-  - [ ] 2.4 Add `use paladin_ports;` and `use paladin_core;` extern crate references if needed (verify compiler error messages guide this)
-  - [ ] 2.5 Run `cargo build -p paladin-battalion` — fix any remaining unresolved path errors introduced by the migration; document each fix with a comment noting the original path for traceability
-  - [ ] 2.6 Run `cargo build --workspace` to confirm the root crate (still using `src/application/use_cases/battalion/`) compiles with zero regressions — this is expected at this stage
+  - [x] 2.4 Add `use paladin_ports;` and `use paladin_core;` extern crate references if needed (verify compiler error messages guide this)
+  - [x] 2.5 Run `cargo build -p paladin-battalion` — fix any remaining unresolved path errors introduced by the migration; document each fix with a comment noting the original path for traceability
+  - [x] 2.6 Run `cargo build --workspace` to confirm the root crate (still using `src/application/use_cases/battalion/`) compiles with zero regressions — this is expected at this stage
 
-- [ ] 3.0 Copy utility/support files into `paladin-battalion`
-  - [ ] 3.1 Copy the 3 utility files from `src/application/use_cases/battalion/` into `crates/paladin-battalion/src/`: `error_aggregation.rs`, `flow_visualizer.rs`, `retry.rs`
-  - [ ] 3.2 Enable the 3 corresponding `pub mod` declarations in `crates/paladin-battalion/src/lib.rs`
-  - [ ] 3.3 Run the import migration `sed` pass on the copied utility files (same substitutions as Task 2.3)
-  - [ ] 3.4 Run `cargo build -p paladin-battalion` — fix any path errors; all 13 modules must compile cleanly in isolation
-  - [ ] 3.5 Run `cargo test -p paladin-battalion` — confirm inline `#[cfg(test)]` unit tests in the extracted files pass (there are 12 test modules spread across the service files)
-  - [ ] 3.6 Run `cargo build --workspace` to confirm zero regressions in the root crate
+- [x] 3.0 Copy utility/support files into `paladin-battalion`
+  - [x] 3.1 Copy the 3 utility files from `src/application/use_cases/battalion/` into `crates/paladin-battalion/src/`: `error_aggregation.rs`, `flow_visualizer.rs`, `retry.rs`
+  - [x] 3.2 Enable the 3 corresponding `pub mod` declarations in `crates/paladin-battalion/src/lib.rs`
+  - [x] 3.3 Run the import migration `sed` pass on the copied utility files (same substitutions as Task 2.3)
+  - [x] 3.4 Run `cargo build -p paladin-battalion` — fix any path errors; all 13 modules must compile cleanly in isolation
+  - [x] 3.5 Run `cargo test -p paladin-battalion` — confirm inline `#[cfg(test)]` unit tests in the extracted files pass (there are 12 test modules spread across the service files)
+  - [x] 3.6 Run `cargo build --workspace` to confirm zero regressions in the root crate
 
 - [ ] 4.0 Verify dependency isolation of `paladin-battalion`
   - [ ] 4.1 Run `cargo tree -p paladin-battalion` and inspect the full dependency tree
