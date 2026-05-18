@@ -117,7 +117,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.4 Run `cargo test --workspace` one final time and confirm all tests pass; record final count
   - [x] 7.5 Confirm `crates/paladin-battalion/Cargo.toml` `[dependencies]` contains no forbidden infrastructure crates (manual review)
 
-- [ ] 8.0 Commit and open pull request
+- [x] 8.0 Commit and open pull request
   - [ ] 8.1 Stage all changes: `git add .`
   - [ ] 8.2 Commit using conventional commit format:
     ```bash
