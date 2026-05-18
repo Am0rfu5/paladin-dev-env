@@ -5,11 +5,11 @@
 //!
 //! Run with: `cargo run --example garrison_persistent`
 
-use paladin::application::ports::output::garrison_port::GarrisonPort;
 use paladin::core::platform::container::garrison::{
     ConversationRole, EvictionStrategy, GarrisonConfig, GarrisonEntry,
 };
 use paladin::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarrison;
+use paladin_ports::output::garrison_port::GarrisonPort;
 use tempfile::tempdir;
 
 #[tokio::main]

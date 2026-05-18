@@ -115,17 +115,17 @@ Application ────────────CANNOT IMPORT──────�
 ```rust
 // ✅ ALLOWED: Infrastructure imports application and core
 // src/infrastructure/adapters/llm/openai_adapter.rs
-use crate::application::ports::output::llm_port::LlmPort;  // ✅
+use crate::paladin_ports::output::llm_port::LlmPort;  // ✅
 use crate::core::platform::container::paladin::Paladin;    // ✅
 
 // ✅ ALLOWED: Application imports core
 // src/application/use_cases/paladin/paladin_execution_service.rs
 use crate::core::platform::container::paladin::Paladin;    // ✅
-use crate::application::ports::output::llm_port::LlmPort;  // ✅
+use crate::paladin_ports::output::llm_port::LlmPort;  // ✅
 
 // ❌ FORBIDDEN: Core imports application
 // src/core/platform/container/paladin.rs
-use crate::application::ports::output::llm_port::LlmPort;  // ❌ FORBIDDEN!
+use crate::paladin_ports::output::llm_port::LlmPort;  // ❌ FORBIDDEN!
 
 // ❌ FORBIDDEN: Core imports infrastructure
 // src/core/platform/container/paladin.rs

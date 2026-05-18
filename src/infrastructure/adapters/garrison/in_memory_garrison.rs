@@ -16,13 +16,11 @@
 //! - Search: O(N) linear scan
 //! - Memory: Entries stored in RAM, lost on shutdown
 
-use crate::application::ports::output::garrison_port::{
-    GarrisonError, GarrisonPort, GarrisonStats,
-};
 use crate::core::platform::container::garrison::{
     ConversationRole, EvictionStrategy, GarrisonConfig, GarrisonEntry,
 };
 use async_trait::async_trait;
+use paladin_ports::output::garrison_port::{GarrisonError, GarrisonPort, GarrisonStats};
 use std::collections::VecDeque;
 use std::sync::RwLock;
 
@@ -36,7 +34,7 @@ use std::sync::RwLock;
 /// ```
 /// use paladin::infrastructure::adapters::garrison::InMemoryGarrison;
 /// use paladin::core::platform::container::garrison::GarrisonConfig;
-/// use paladin::application::ports::output::garrison_port::GarrisonPort;
+/// use paladin_ports::output::garrison_port::GarrisonPort;
 /// use paladin::core::platform::container::garrison::{GarrisonEntry, ConversationRole};
 ///
 /// #[tokio::main]

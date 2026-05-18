@@ -13,12 +13,12 @@ This is designed to be used as a backup storage solution, content archival syste
 or for debugging and auditing purposes in the information gathering and delivery pipeline.
 */
 
-use crate::application::ports::output::content_delivery_port::{
+use crate::core::platform::container::content::ContentType;
+use chrono::Utc;
+use paladin_ports::output::content_delivery_port::{
     BatchContentDeliveryService, ContentDeliveryError, ContentDeliveryService, ContentPayload,
     DeliveryMethod, DeliveryRequest, DeliveryResponse, DeliveryStats, DeliveryStatus,
 };
-use crate::core::platform::container::content::ContentType;
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -605,9 +605,9 @@ impl BatchContentDeliveryService for FileStorageClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::content_delivery_port::DeliveryPriority;
     use crate::core::platform::container::content::ContentItem;
     use crate::core::platform::container::content::{ContentType, TextContent};
+    use paladin_ports::output::content_delivery_port::DeliveryPriority;
     use tempfile::tempdir;
 
     fn create_test_config() -> FileStorageConfig {

@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! ML Port
 //!
 //! A port that defines how the application interacts with the ML (Machine Learning) model.
@@ -16,7 +17,7 @@
 //!
 //! See: <https://github.com/tensorflow/rust>
 
-use crate::core::platform::container::content::ContentItem;
+use paladin_core::platform::container::content::ContentItem;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
@@ -127,7 +128,7 @@ pub struct MlModelInfo {
 /// Helper functions to convert ContentItem to ML input data
 impl MlInputData {
     pub fn from_content_item(content_item: &ContentItem) -> Result<Self, MlPortError> {
-        use crate::core::platform::container::content::ContentType;
+        use paladin_core::platform::container::content::ContentType;
 
         match content_item.content() {
             ContentType::Text(text_content) => {
@@ -188,7 +189,7 @@ impl MlInputData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::content::{ContentType, TextContent};
+    use paladin_core::platform::container::content::{ContentType, TextContent};
 
     #[test]
     fn test_ml_input_data_from_text_content() {

@@ -5,11 +5,11 @@ Configuration setup for user-related services, including dependency injection
 and service initialization.
 */
 
-use crate::application::ports::output::log_port::LogPort;
 use crate::config::application_settings::Settings;
 use crate::core::platform::manager::notification_service::NotificationService;
 use crate::core::platform::manager::user_service::UserService;
 use crate::infrastructure::repositories::sqlite_user_repository::SqliteUserRepository;
+use paladin_ports::output::log_port::LogPort;
 use std::sync::Arc;
 
 /// User service configuration and factory
@@ -60,14 +60,14 @@ impl UserServiceFactory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::log_port::{
-        LogDestinationConfig, LogFormat, LogHealthCheck, LogQuery, LogResult, LogStats,
-    };
     use crate::core::base::service::message_service::MessageService;
     use crate::core::platform::container::log::{LogDestination, LogEntry};
     use crate::core::platform::manager::notification_service::NotificationServiceConfig;
     use async_trait::async_trait;
     use chrono::DateTime;
+    use paladin_ports::output::log_port::{
+        LogDestinationConfig, LogFormat, LogHealthCheck, LogQuery, LogResult, LogStats,
+    };
     use std::sync::Mutex;
 
     // Mock LogPort for testing
@@ -102,11 +102,9 @@ mod tests {
             *count += 1;
 
             if *self.should_fail.lock().unwrap() {
-                Err(
-                    crate::application::ports::output::log_port::LogError::IoError(
-                        "Mock log error".to_string(),
-                    ),
-                )
+                Err(paladin_ports::output::log_port::LogError::IoError(
+                    "Mock log error".to_string(),
+                ))
             } else {
                 Ok(())
             }
@@ -117,11 +115,9 @@ mod tests {
             *count += entries.len();
 
             if *self.should_fail.lock().unwrap() {
-                Err(
-                    crate::application::ports::output::log_port::LogError::IoError(
-                        "Mock log error".to_string(),
-                    ),
-                )
+                Err(paladin_ports::output::log_port::LogError::IoError(
+                    "Mock log error".to_string(),
+                ))
             } else {
                 Ok(())
             }
@@ -129,17 +125,15 @@ mod tests {
 
         async fn batch_write(
             &self,
-            _request: crate::application::ports::output::log_port::BatchWriteRequest,
+            _request: paladin_ports::output::log_port::BatchWriteRequest,
         ) -> LogResult<()> {
             let mut count = self.call_count.lock().unwrap();
             *count += 1;
 
             if *self.should_fail.lock().unwrap() {
-                Err(
-                    crate::application::ports::output::log_port::LogError::IoError(
-                        "Mock log error".to_string(),
-                    ),
-                )
+                Err(paladin_ports::output::log_port::LogError::IoError(
+                    "Mock log error".to_string(),
+                ))
             } else {
                 Ok(())
             }

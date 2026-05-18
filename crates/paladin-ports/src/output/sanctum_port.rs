@@ -197,15 +197,15 @@
 //!
 //! ## Related Ports
 //!
-//! - [`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort) - Short-term conversation memory (basic CRUD)
-//! - [`LongTermGarrisonPort`](crate::application::ports::output::garrison_port::LongTermGarrisonPort) - Garrison with embedding support (hybrid)
-//! - [`EmbeddingPort`](crate::application::ports::output::embedding_port::EmbeddingPort) - Generate vector embeddings for storage
-//! - [`LlmPort`](crate::application::ports::output::llm_port::LlmPort) - LLM integration (uses Sanctum for knowledge retrieval)
+//! - [`GarrisonPort`](crate::output::garrison_port::GarrisonPort) - Short-term conversation memory (basic CRUD)
+//! - [`LongTermGarrisonPort`](crate::output::garrison_port::LongTermGarrisonPort) - Garrison with embedding support (hybrid)
+//! - [`EmbeddingPort`](crate::output::embedding_port::EmbeddingPort) - Generate vector embeddings for storage
+//! - [`LlmPort`](crate::output::llm_port::LlmPort) - LLM integration (uses Sanctum for knowledge retrieval)
 //!
 //! ## See Also
 //!
 //! - [Application Ports](crate::application::ports)
-//! - [Sanctum Domain](crate::core::platform::container::sanctum)
+//! - [Sanctum Domain](paladin_core::platform::container::sanctum)
 //! - [Infrastructure Adapters](crate::infrastructure::adapters::sanctum)
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -213,7 +213,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-use crate::core::platform::container::sanctum::{MemoryType, SanctumEntry};
+use paladin_core::platform::container::sanctum::{MemoryType, SanctumEntry};
 
 /// Errors that can occur during Sanctum vector storage operations.
 ///
@@ -393,6 +393,7 @@ pub struct SanctumFilter {
 
     /// Filter by creation date range
     pub created_after: Option<DateTime<Utc>>,
+    /// Upper bound of the creation date range filter.
     pub created_before: Option<DateTime<Utc>>,
 
     /// Filter by importance threshold

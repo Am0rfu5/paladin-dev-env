@@ -65,7 +65,7 @@
 //! - **Serialization Error**: Item payload cannot be serialized/deserialized
 //! - **Operation Failed**: Backend-specific errors (network, Redis down, etc.)
 //!
-//! All errors are represented via [`QueueError`](crate::core::platform::manager::queue_service::QueueError)
+//! All errors are represented via [`QueueError`]
 //! with detailed context for debugging and recovery.
 //!
 //! ## Common Use Cases
@@ -324,13 +324,13 @@
 //!
 //! ## Related Modules
 //!
-//! - [`QueueItem`](crate::core::platform::container::queue_item::QueueItem) - Queue item structure
-//! - [`QueueItemConfig`](crate::core::platform::container::queue_item::QueueItemConfig) - Item configuration
-//! - [`QueueConfig`](crate::core::platform::manager::queue_service::QueueConfig) - Queue configuration
-//! - [`QueueStats`](crate::core::platform::manager::queue_service::QueueStats) - Queue statistics
-//! - [`QueueError`](crate::core::platform::manager::queue_service::QueueError) - Error types
-//! - [`Message`](crate::core::base::entity::message::Message) - Message wrapper
-//! - [`MessagePriority`](crate::core::base::entity::message::MessagePriority) - Priority levels
+//! - [`QueueItem`](paladin_core::platform::container::queue_item::QueueItem) - Queue item structure
+//! - [`QueueItemConfig`](paladin_core::platform::container::queue_item::QueueItemConfig) - Item configuration
+//! - [`QueueConfig`](paladin_core::platform::container::queue_config::QueueConfig) - Queue configuration
+//! - [`QueueStats`] - Queue statistics
+//! - [`QueueError`] - Error types
+//! - [`Message`](paladin_core::base::entity::message::Message) - Message wrapper
+//! - [`MessagePriority`](paladin_core::base::entity::message::MessagePriority) - Priority levels
 //!
 //! ## See Also
 //!
@@ -338,11 +338,68 @@
 //! - `examples/worker_pool.rs` - Worker processing example
 //! - `examples/priority_queue.rs` - Priority-based processing example
 
-use crate::core::base::entity::message::{Location, MessagePriority};
-use crate::core::platform::container::queue_item::{QueueItem, QueueItemConfig, QueueItemSummary};
-use crate::core::platform::manager::queue_service::{QueueConfig, QueueError, QueueStats};
 use async_trait::async_trait;
-use serde::{Serialize, de::DeserializeOwned};
+use paladin_core::base::entity::message::{Location, MessagePriority};
+use paladin_core::platform::container::queue_config::QueueConfig;
+use paladin_core::platform::container::queue_item::{QueueItem, QueueItemConfig, QueueItemSummary};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use thiserror::Error;
+
+/// Queue service errors
+#[derive(Debug, Error)]
+pub enum QueueError {
+    /// Queue not found
+    #[error("Queue not found: {0}")]
+    QueueNotFound(String),
+    /// Queue item not found
+    #[error("Queue item not found: {0}")]
+    ItemNotFound(Uuid),
+    /// Queue is full
+    #[error("Queue is full: {queue_name} (capacity: {capacity})")]
+    QueueFull {
+        /// Name of the queue that is full.
+        queue_name: String,
+        /// Maximum capacity of the queue.
+        capacity: usize,
+    },
+    /// Queue is empty
+    #[error("Queue is empty: {0}")]
+    QueueEmpty(String),
+    /// Invalid queue configuration
+    #[error("Invalid queue configuration: {0}")]
+    InvalidConfiguration(String),
+    /// Queue operation failed
+    #[error("Queue operation failed: {0}")]
+    OperationFailed(String),
+    /// Serialization error
+    #[error("Serialization error: {0}")]
+    SerializationError(String),
+}
+
+/// Queue statistics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueueStats {
+    /// Queue name
+    pub name: String,
+    /// Total items ever enqueued
+    pub total_items: usize,
+    /// Items waiting to be processed
+    pub pending_items: usize,
+    /// Items currently being processed
+    pub processing_items: usize,
+    /// Items successfully completed
+    pub completed_items: usize,
+    /// Items that failed processing
+    pub failed_items: usize,
+    /// Items abandoned due to timeout
+    pub abandoned_items: usize,
+    /// Age of oldest pending item in seconds
+    pub oldest_item_age_seconds: Option<i64>,
+    /// Average processing time in milliseconds
+    pub average_processing_time_ms: Option<u64>,
+    /// Queue throughput per minute
+    pub throughput_per_minute: f64,
+}
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -563,7 +620,7 @@ where
 {
     /// Enqueue a strongly-typed item
     async fn enqueue_typed(&self, queue_name: &str, item: QueueItem<T>)
-    -> Result<Uuid, QueueError>;
+        -> Result<Uuid, QueueError>;
 
     /// Dequeue a strongly-typed item
     async fn dequeue_typed(&self, queue_name: &str) -> Result<Option<QueueItem<T>>, QueueError>;
@@ -710,7 +767,7 @@ pub trait QueueItemFactory {
         payload: T,
         source: Location,
         destination: Location,
-        priority: crate::core::base::entity::message::MessagePriority,
+        priority: paladin_core::base::entity::message::MessagePriority,
         config: Option<QueueItemConfig>,
     ) -> QueueItem<T>
     where
@@ -733,7 +790,7 @@ impl QueueItemFactory for DefaultQueueItemFactory {
         T: Clone + Serialize + DeserializeOwned,
     {
         let message =
-            crate::core::base::entity::message::Message::new(source, destination, payload);
+            paladin_core::base::entity::message::Message::new(source, destination, payload);
         QueueItem::new(queue_name, message, config)
     }
 
@@ -743,13 +800,13 @@ impl QueueItemFactory for DefaultQueueItemFactory {
         payload: T,
         source: Location,
         destination: Location,
-        priority: crate::core::base::entity::message::MessagePriority,
+        priority: paladin_core::base::entity::message::MessagePriority,
         config: Option<QueueItemConfig>,
     ) -> QueueItem<T>
     where
         T: Clone + Serialize + DeserializeOwned,
     {
-        let message = crate::core::base::entity::message::Message::with_priority(
+        let message = paladin_core::base::entity::message::Message::with_priority(
             source,
             destination,
             payload,
@@ -789,13 +846,13 @@ mod tests {
             "urgent task".to_string(),
             Location::service("test-service"),
             Location::system("queue-system"),
-            crate::core::base::entity::message::MessagePriority::Critical,
+            paladin_core::base::entity::message::MessagePriority::Critical,
             None,
         );
 
         assert_eq!(
             item.message.priority,
-            crate::core::base::entity::message::MessagePriority::Critical
+            paladin_core::base::entity::message::MessagePriority::Critical
         );
     }
 }

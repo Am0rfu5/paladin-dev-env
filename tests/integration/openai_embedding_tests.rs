@@ -1,8 +1,8 @@
 use mockito::Server;
-use paladin::application::ports::output::embedding_port::{EmbeddingError, EmbeddingPort};
 use paladin::infrastructure::adapters::llm::openai_embedding_adapter::{
     OpenAIEmbeddingAdapter, OpenAIEmbeddingConfig,
 };
+use paladin_ports::output::embedding_port::{EmbeddingError, EmbeddingPort};
 use serde_json::json;
 
 #[cfg(test)]

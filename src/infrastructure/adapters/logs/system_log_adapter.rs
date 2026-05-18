@@ -18,11 +18,11 @@ use std::sync::Arc;
 use std::sync::Once;
 use tokio::sync::RwLock;
 
-use crate::application::ports::output::log_port::{
+use crate::core::platform::container::log::{LogDestination, LogEntry, LogEntryExt, LogLevel};
+use paladin_ports::output::log_port::{
     BatchWriteRequest, LogDestinationConfig, LogError, LogFormat, LogHealthCheck, LogPort,
     LogQuery, LogResult, LogStats,
 };
-use crate::core::platform::container::log::{LogDestination, LogEntry, LogEntryExt, LogLevel};
 
 /// Ensure env_logger is only initialized once
 static INIT: Once = Once::new();

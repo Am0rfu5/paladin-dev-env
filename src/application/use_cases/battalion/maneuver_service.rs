@@ -3,11 +3,11 @@
 //! Executes Maneuver workflows by orchestrating multiple Paladin agents according to
 //! the flow expression with support for sequential, parallel, and nested execution patterns.
 
-use crate::application::ports::output::paladin_port::PaladinPort;
 use crate::core::platform::container::battalion::maneuver::{
     ErrorStrategy, ExecutionStatus, Maneuver, ManeuverError, ManeuverResult,
 };
 use crate::core::platform::container::battalion::parser::FlowExpression;
+use paladin_ports::output::paladin_port::PaladinPort;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -479,13 +479,13 @@ impl ExecutionContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::paladin_port::{PaladinResult, StopReason};
     use crate::core::platform::container::battalion::maneuver::ManeuverConfig;
     use crate::core::platform::container::battalion::parser::FlowParser;
     use crate::core::platform::container::paladin::{
         MaxLoops, Paladin, PaladinData, PaladinStatus,
     };
     use async_trait::async_trait;
+    use paladin_ports::output::paladin_port::{PaladinResult, StopReason};
     use std::sync::Mutex;
 
     // Mock PaladinPort for testing
@@ -556,7 +556,7 @@ mod tests {
             _paladin: &Paladin,
             _input: &str,
         ) -> Result<
-            crate::application::ports::output::paladin_port::PaladinStream,
+            paladin_ports::output::paladin_port::PaladinStream,
             crate::application::use_cases::paladin::error::PaladinError,
         > {
             unimplemented!("Streaming not needed for tests")
@@ -843,7 +843,7 @@ mod tests {
             _paladin: &Paladin,
             _input: &str,
         ) -> Result<
-            crate::application::ports::output::paladin_port::PaladinStream,
+            paladin_ports::output::paladin_port::PaladinStream,
             crate::application::use_cases::paladin::error::PaladinError,
         > {
             unimplemented!()
@@ -891,7 +891,7 @@ mod tests {
             _paladin: &Paladin,
             _input: &str,
         ) -> Result<
-            crate::application::ports::output::paladin_port::PaladinStream,
+            paladin_ports::output::paladin_port::PaladinStream,
             crate::application::use_cases::paladin::error::PaladinError,
         > {
             unimplemented!()
@@ -968,7 +968,7 @@ mod tests {
             _paladin: &Paladin,
             _input: &str,
         ) -> Result<
-            crate::application::ports::output::paladin_port::PaladinStream,
+            paladin_ports::output::paladin_port::PaladinStream,
             crate::application::use_cases::paladin::error::PaladinError,
         > {
             unimplemented!()

@@ -3,7 +3,7 @@
 //! Provides token counting capabilities for different LLM providers.
 //! Uses tiktoken for OpenAI models and provides a trait for extensibility.
 
-use crate::application::ports::output::garrison_port::GarrisonError;
+use paladin_ports::output::garrison_port::GarrisonError;
 use std::collections::HashMap;
 use std::sync::RwLock;
 use tiktoken_rs::{CoreBPE, get_bpe_from_model};

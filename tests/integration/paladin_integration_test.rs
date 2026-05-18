@@ -5,13 +5,13 @@
 // Tests the complete flow from PaladinBuilder through PaladinExecutionService
 // using MockLlmAdapter, verifying all components work together correctly.
 
-use paladin::application::ports::output::llm_port::{LlmError, LlmPort};
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::infrastructure::adapters::llm::mock_llm_adapter::MockLlmAdapter;
+use paladin_ports::output::llm_port::{LlmError, LlmPort};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -383,7 +383,7 @@ async fn test_paladin_metadata_tracking() {
     // Execution time should be reasonable (not checking specific value due to timing variability)
 
     // Verify stop reason
-    use paladin::application::ports::output::paladin_port::StopReason;
+    use paladin_ports::output::paladin_port::StopReason;
     assert!(matches!(paladin_result.stop_reason, StopReason::MaxLoops));
 }
 

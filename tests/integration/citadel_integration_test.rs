@@ -4,8 +4,6 @@
 //! Paladin and Battalion states to/from the file system.
 
 use paladin::application::errors::citadel_error::CitadelError;
-use paladin::application::ports::output::citadel_port::CitadelPort;
-use paladin::application::ports::output::llm_port::LlmPort;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::citadel::{
@@ -15,6 +13,8 @@ use paladin::core::platform::container::citadel::{
 use paladin::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
 use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
+use paladin_ports::output::citadel_port::CitadelPort;
+use paladin_ports::output::llm_port::LlmPort;
 use std::sync::Arc;
 use tempfile::TempDir;
 use uuid::Uuid;
@@ -425,27 +425,27 @@ struct MockLlmPort;
 impl LlmPort for MockLlmPort {
     async fn generate(
         &self,
-        _request: paladin::application::ports::output::llm_port::LlmRequest,
+        _request: paladin_ports::output::llm_port::LlmRequest,
     ) -> Result<
-        paladin::application::ports::output::llm_port::LlmResponse,
-        paladin::application::ports::output::llm_port::LlmError,
+        paladin_ports::output::llm_port::LlmResponse,
+        paladin_ports::output::llm_port::LlmError,
     > {
         unimplemented!("Not needed for this test")
     }
 
     async fn generate_stream(
         &self,
-        _request: paladin::application::ports::output::llm_port::LlmRequest,
+        _request: paladin_ports::output::llm_port::LlmRequest,
     ) -> Result<
         Box<
             dyn futures::Stream<
                     Item = Result<
-                        paladin::application::ports::output::llm_port::StreamingResponse,
-                        paladin::application::ports::output::llm_port::LlmError,
+                        paladin_ports::output::llm_port::StreamingResponse,
+                        paladin_ports::output::llm_port::LlmError,
                     >,
                 > + Send,
         >,
-        paladin::application::ports::output::llm_port::LlmError,
+        paladin_ports::output::llm_port::LlmError,
     > {
         unimplemented!("Not needed for this test")
     }
@@ -453,13 +453,13 @@ impl LlmPort for MockLlmPort {
     async fn validate_model(
         &self,
         _model: &str,
-    ) -> Result<bool, paladin::application::ports::output::llm_port::LlmError> {
+    ) -> Result<bool, paladin_ports::output::llm_port::LlmError> {
         Ok(true)
     }
 
     async fn get_available_models(
         &self,
-    ) -> Result<Vec<String>, paladin::application::ports::output::llm_port::LlmError> {
+    ) -> Result<Vec<String>, paladin_ports::output::llm_port::LlmError> {
         Ok(vec![])
     }
 
@@ -467,9 +467,7 @@ impl LlmPort for MockLlmPort {
         "Mock"
     }
 
-    fn get_capabilities(
-        &self,
-    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
-        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+        paladin_ports::output::llm_port::ProviderCapabilities::default()
     }
 }

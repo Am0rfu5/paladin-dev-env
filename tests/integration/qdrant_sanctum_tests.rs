@@ -5,11 +5,9 @@
 //!
 //! Start Qdrant: docker-compose -f docker/docker-compose.yml up -d qdrant --profile test
 
-use paladin::application::ports::output::sanctum_port::{
-    SanctumError, SanctumFilter, SanctumPort, SanctumQuery,
-};
 use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
 use paladin::infrastructure::adapters::sanctum::QdrantSanctumAdapter;
+use paladin_ports::output::sanctum_port::{SanctumError, SanctumFilter, SanctumPort, SanctumQuery};
 use std::time::Duration;
 use tokio::time::sleep;
 use uuid::Uuid;

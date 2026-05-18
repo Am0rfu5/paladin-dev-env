@@ -4,10 +4,10 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use paladin::application::ports::output::embedding_port::{EmbeddingError, EmbeddingPort, Embedding};
-use paladin::application::ports::output::garrison_port::GarrisonEntry;
-use paladin::application::ports::output::llm_port::{LlmError, LlmPort, LlmRequest, LlmResponse, FinishReason, TokenUsage};
-use paladin::application::ports::output::sanctum_port::{
+use paladin_ports::output::embedding_port::{EmbeddingError, EmbeddingPort, Embedding};
+use paladin_ports::output::garrison_port::GarrisonEntry;
+use paladin_ports::output::llm_port::{LlmError, LlmPort, LlmRequest, LlmResponse, FinishReason, TokenUsage};
+use paladin_ports::output::sanctum_port::{
     SanctumEntry, SanctumError, SanctumPort, SanctumQuery, SanctumSearchResult,
 };
 use paladin::application::use_cases::sanctum::{

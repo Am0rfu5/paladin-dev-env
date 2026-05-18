@@ -376,16 +376,16 @@
 //!
 //! # Related Modules
 //!
-//! - [`crate::core::platform::container::battalion`] - Battalion domain entities
+//! - [`paladin_core::platform::container::battalion`] - Battalion domain entities
 //! - [`crate::application::use_cases::battalion`] - Battalion execution services (adapters)
-//! - [`crate::application::ports::output::paladin_port`] - Individual agent execution
+//! - [`crate::output::paladin_port`] - Individual agent execution
 //! - [`crate::application::use_cases::commander`] - Strategic pattern routing
-//! - [`crate::core::platform::container::citadel`] - Checkpointing and recovery
+//! - [`paladin_core::platform::container::citadel`] - Checkpointing and recovery
 
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::core::platform::container::battalion::{
+use paladin_core::platform::container::battalion::{
     BattalionError, BattalionResult, BattalionStatus,
 };
 
@@ -808,7 +808,7 @@ pub trait BattalionPort: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::battalion::BattalionStatus;
+    use paladin_core::platform::container::battalion::BattalionStatus;
 
     // Mock implementation for testing
     struct MockBattalionPort {

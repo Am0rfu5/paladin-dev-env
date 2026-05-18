@@ -10,9 +10,9 @@
 //! - `src/infrastructure/adapters/arsenal/mcp_stdio_adapter.rs`
 //! - `tests/integration/mcp_stdio_test.rs`
 
-use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
 use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
 use paladin::core::platform::container::arsenal::Armament;
+use paladin_ports::output::arsenal_port::ArsenalRegistry;
 use serde_json::json;
 
 #[tokio::main]

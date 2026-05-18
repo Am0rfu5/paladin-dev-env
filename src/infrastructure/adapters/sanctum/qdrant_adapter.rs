@@ -17,11 +17,11 @@
 //! - Collection is auto-created if it doesn't exist
 //! - Supports both HTTP and gRPC protocols
 
-use crate::application::ports::output::sanctum_port::{
-    SanctumError, SanctumFilter, SanctumPort, SanctumQuery, SanctumSearchResult,
-};
 use crate::core::platform::container::sanctum::{Memory, MemoryType, SanctumEntry};
 use async_trait::async_trait;
+use paladin_ports::output::sanctum_port::{
+    SanctumError, SanctumFilter, SanctumPort, SanctumQuery, SanctumSearchResult,
+};
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::r#match::MatchValue;
 use qdrant_client::qdrant::vectors_config::Config;

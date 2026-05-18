@@ -15,7 +15,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
-use crate::application::ports::output::notification_port::{
+use paladin_ports::output::notification_port::{
     NotificationDeliveryPort, NotificationTemplatePort, NotificationPortResult, 
     NotificationDeliveryResult, BulkDeliveryResult, DeliveryCapabilities,
     NotificationPortError,

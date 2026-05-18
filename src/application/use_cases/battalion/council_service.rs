@@ -6,9 +6,6 @@ use log::{debug, info, warn};
 use std::sync::Arc;
 use tokio::time::{Duration, timeout};
 
-use crate::application::ports::output::garrison_port::GarrisonPort;
-use crate::application::ports::output::paladin_port::PaladinPort;
-use crate::application::ports::output::paladin_registry::PaladinRegistry;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::platform::container::battalion::BattalionError;
 use crate::core::platform::container::battalion::council::{
@@ -16,6 +13,9 @@ use crate::core::platform::container::battalion::council::{
 };
 use crate::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
 use crate::core::platform::container::paladin::Paladin;
+use paladin_ports::output::garrison_port::GarrisonPort;
+use paladin_ports::output::paladin_port::PaladinPort;
+use paladin_ports::output::paladin_registry::PaladinRegistry;
 
 /// Result of a Council discussion
 ///
@@ -769,27 +769,22 @@ mod tests {
             &self,
             _paladin: &Paladin,
             _input: &str,
-        ) -> Result<crate::application::ports::output::paladin_port::PaladinResult, PaladinError>
-        {
-            Ok(
-                crate::application::ports::output::paladin_port::PaladinResult {
-                    output: "Mock response".to_string(),
-                    token_count: 100,
-                    execution_time_ms: 1000,
-                    loop_count: 1,
-                    stop_reason:
-                        crate::application::ports::output::paladin_port::StopReason::Completed,
-                    ..Default::default()
-                },
-            )
+        ) -> Result<paladin_ports::output::paladin_port::PaladinResult, PaladinError> {
+            Ok(paladin_ports::output::paladin_port::PaladinResult {
+                output: "Mock response".to_string(),
+                token_count: 100,
+                execution_time_ms: 1000,
+                loop_count: 1,
+                stop_reason: paladin_ports::output::paladin_port::StopReason::Completed,
+                ..Default::default()
+            })
         }
 
         async fn execute_stream(
             &self,
             _paladin: &Paladin,
             _input: &str,
-        ) -> Result<crate::application::ports::output::paladin_port::PaladinStream, PaladinError>
-        {
+        ) -> Result<paladin_ports::output::paladin_port::PaladinStream, PaladinError> {
             unimplemented!("Streaming not needed for Council tests")
         }
 
@@ -837,19 +832,16 @@ mod tests {
         }
     }
 
-    impl crate::application::ports::output::paladin_registry::PaladinRegistry for MockPaladinRegistry {
+    impl paladin_ports::output::paladin_registry::PaladinRegistry for MockPaladinRegistry {
         fn register(
             &self,
             id: String,
             paladin: Arc<Paladin>,
-        ) -> Result<(), crate::application::ports::output::paladin_registry::RegistryError>
-        {
+        ) -> Result<(), paladin_ports::output::paladin_registry::RegistryError> {
             let mut paladins = self.paladins.write().unwrap();
             if paladins.contains_key(&id) {
                 return Err(
-                    crate::application::ports::output::paladin_registry::RegistryError::DuplicateId(
-                        id,
-                    ),
+                    paladin_ports::output::paladin_registry::RegistryError::DuplicateId(id),
                 );
             }
             paladins.insert(id, paladin);

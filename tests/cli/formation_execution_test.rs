@@ -249,7 +249,7 @@ async fn test_formation_error_propagation() {
     // First Paladin succeeds, second fails
     mock_llm.add_success("First step succeeded");
     mock_llm
-        .add_failure(paladin::application::ports::output::llm_port::LlmError::RateLimitExceeded);
+        .add_failure(paladin_ports::output::llm_port::LlmError::RateLimitExceeded);
 
     // Create 2 Paladins
     let paladin1_data = PaladinData {

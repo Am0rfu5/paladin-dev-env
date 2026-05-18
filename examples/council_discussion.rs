@@ -16,9 +16,6 @@
 //! ```
 
 use async_trait::async_trait;
-use paladin::application::ports::output::paladin_port::{
-    PaladinPort, PaladinResult, PaladinStream, StopReason,
-};
 use paladin::application::use_cases::battalion::council_service::{
     CouncilExecutionService, CouncilResult,
 };
@@ -28,6 +25,7 @@ use paladin::core::platform::container::battalion::council::{
     CouncilBuilder, TerminationCondition, TurnStrategy,
 };
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, PaladinStream, StopReason};
 use std::sync::Arc;
 
 /// Simple mock LLM adapter for demonstration purposes.
@@ -188,8 +186,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     // Create Paladin registry from paladins
-    use paladin::application::ports::output::paladin_registry::PaladinRegistry;
     use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+    use paladin_ports::output::paladin_registry::PaladinRegistry;
     let registry = HashMapPaladinRegistry::new();
     for (idx, paladin) in paladins.iter().enumerate() {
         registry.register(format!("participant_{}", idx), Arc::new(paladin.clone()))?;

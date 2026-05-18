@@ -7,12 +7,12 @@
 //!
 //! Run with: `cargo run --example vision_battalion`
 
-use paladin::application::ports::output::llm_port::LlmPort;
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::vision::{ImageDetail, VisionContent};
 use paladin::infrastructure::adapters::llm::openai_adapter::{OpenAIAdapter, OpenAIConfig};
+use paladin_ports::output::llm_port::LlmPort;
 use std::sync::Arc;
 use std::time::Instant;
 

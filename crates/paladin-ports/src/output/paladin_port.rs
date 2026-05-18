@@ -371,22 +371,22 @@
 //!
 //! # Related Modules
 //!
-//! - [`crate::core::platform::container::paladin`] - Paladin domain entity
+//! - [`paladin_core::platform::container::paladin`] - Paladin domain entity
 //! - [`crate::application::use_cases::paladin`] - Paladin execution service (adapter)
-//! - [`crate::application::ports::output::llm_port`] - LLM provider integration
-//! - [`crate::application::ports::output::garrison_port`] - Conversation memory
-//! - [`crate::application::ports::output::arsenal_port`] - Tool execution
+//! - [`crate::output::llm_port`] - LLM provider integration
+//! - [`crate::output::garrison_port`] - Conversation memory
+//! - [`crate::output::arsenal_port`] - Tool execution
 //! - [`crate::application::use_cases::battalion`] - Multi-agent orchestration
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 
-use crate::application::use_cases::paladin::error::PaladinError;
-use crate::core::platform::container::paladin::Paladin;
+use paladin_core::platform::container::paladin::Paladin;
+use paladin_core::platform::container::paladin_error::PaladinError;
 
 // Re-export pure domain result types from core
-pub use crate::core::platform::container::execution_result::{PaladinResult, StopReason};
+pub use paladin_core::platform::container::execution_result::{PaladinResult, StopReason};
 
 /// Streaming chunk from Paladin execution
 ///
@@ -925,7 +925,7 @@ mod tests {
 
     #[test]
     fn test_paladin_result_with_plan_metadata() {
-        use crate::core::platform::container::planning::{Subtask, TaskPlan};
+        use paladin_core::platform::container::planning::{Subtask, TaskPlan};
 
         let mut plan = TaskPlan::new("Test task".to_string(), 5);
         plan.add_subtask(Subtask::new(
@@ -953,7 +953,7 @@ mod tests {
 
     #[test]
     fn test_paladin_result_with_handoff_history() {
-        use crate::core::platform::container::handoff::HandoffRecord;
+        use paladin_core::platform::container::handoff::HandoffRecord;
 
         let mut record1 = HandoffRecord::new(
             "Coordinator".to_string(),
@@ -994,8 +994,8 @@ mod tests {
 
     #[test]
     fn test_paladin_result_serialization_with_new_fields() {
-        use crate::core::platform::container::handoff::HandoffRecord;
-        use crate::core::platform::container::planning::{Subtask, TaskPlan};
+        use paladin_core::platform::container::handoff::HandoffRecord;
+        use paladin_core::platform::container::planning::{Subtask, TaskPlan};
 
         let mut plan = TaskPlan::new("Complex task".to_string(), 3);
         plan.add_subtask(Subtask::new(

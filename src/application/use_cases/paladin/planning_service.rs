@@ -9,7 +9,7 @@
 //!
 //! ```rust,no_run
 //! use paladin::application::use_cases::paladin::planning_service::PlanningService;
-//! use paladin::application::ports::output::llm_port::LlmPort;
+//! use paladin_ports::output::llm_port::LlmPort;
 //! use std::sync::Arc;
 //!
 //! # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
@@ -28,10 +28,10 @@
 //! ```
 
 use crate::application::errors::planning_error::PlanningError;
-use crate::application::ports::output::llm_port::{LlmPort, LlmRequest};
 use crate::core::platform::container::planning::{Subtask, TaskPlan};
 use crate::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
 use log::info;
+use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -73,7 +73,7 @@ impl PlanningService {
     ///
     /// ```rust,no_run
     /// use paladin::application::use_cases::paladin::planning_service::PlanningService;
-    /// use paladin::application::ports::output::llm_port::LlmPort;
+    /// use paladin_ports::output::llm_port::LlmPort;
     /// use std::sync::Arc;
     ///
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -569,11 +569,11 @@ Execute this subtask and provide the result. Be concise and focused on the expec
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::llm_port::{
-        FinishReason, LlmError, LlmResponse, ProviderCapabilities, TokenUsage,
-    };
     use async_trait::async_trait;
     use chrono::Utc;
+    use paladin_ports::output::llm_port::{
+        FinishReason, LlmError, LlmResponse, ProviderCapabilities, TokenUsage,
+    };
 
     /// Mock LLM port for testing
     struct MockLlmPort {
@@ -614,10 +614,7 @@ mod tests {
         ) -> Result<
             Box<
                 dyn futures::Stream<
-                        Item = Result<
-                            crate::application::ports::output::llm_port::StreamingResponse,
-                            LlmError,
-                        >,
+                        Item = Result<paladin_ports::output::llm_port::StreamingResponse, LlmError>,
                     > + Send,
             >,
             LlmError,

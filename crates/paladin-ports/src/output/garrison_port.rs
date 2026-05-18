@@ -184,22 +184,22 @@
 //!
 //! ## Related Ports
 //!
-//! - [`SanctumPort`](crate::application::ports::output::sanctum_port::SanctumPort) - Long-term persistent memory with vector embeddings (superset of LongTermGarrisonPort)
-//! - [`EmbeddingPort`](crate::application::ports::output::embedding_port::EmbeddingPort) - Generate vector embeddings for semantic search
-//! - [`LlmPort`](crate::application::ports::output::llm_port::LlmPort) - LLM integration (uses Garrison for conversation context)
-//! - [`CitadelPort`](crate::application::ports::output::citadel_port::CitadelPort) - State persistence for entire Paladin agents
+//! - [`SanctumPort`](crate::output::sanctum_port::SanctumPort) - Long-term persistent memory with vector embeddings (superset of LongTermGarrisonPort)
+//! - [`EmbeddingPort`](crate::output::embedding_port::EmbeddingPort) - Generate vector embeddings for semantic search
+//! - [`LlmPort`](crate::output::llm_port::LlmPort) - LLM integration (uses Garrison for conversation context)
+//! - [`CitadelPort`](crate::output::citadel_port::CitadelPort) - State persistence for entire Paladin agents
 //!
 //! ## See Also
 //!
 //! - [Application Ports](crate::application::ports)
-//! - [Garrison Domain](crate::core::platform::container::garrison)
+//! - [Garrison Domain](paladin_core::platform::container::garrison)
 //! - [Infrastructure Adapters](crate::infrastructure::adapters::garrison)
 
-use crate::core::platform::container::garrison::GarrisonEntry;
 use async_trait::async_trait;
+use paladin_core::platform::container::garrison::GarrisonEntry;
 use serde::{Deserialize, Serialize};
 
-pub use crate::core::platform::container::garrison_error::GarrisonError;
+pub use paladin_core::platform::container::garrison_error::GarrisonError;
 
 /// Statistics about a Garrison's current state.
 ///
@@ -375,7 +375,7 @@ pub struct GarrisonStats {
 ///
 /// - [`LongTermGarrisonPort`] - Extended trait with vector embedding support
 /// - [`SanctumPort`] - Long-term persistent memory (alternative/superset)
-/// - [`GarrisonEntry`](crate::core::platform::container::garrison::GarrisonEntry) - Entry data structure
+/// - [`GarrisonEntry`](paladin_core::platform::container::garrison::GarrisonEntry) - Entry data structure
 #[async_trait]
 pub trait GarrisonPort: Send + Sync {
     /// Stores a new entry in the Garrison

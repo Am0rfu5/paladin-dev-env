@@ -4,8 +4,8 @@
 //! This trait abstracts vision analysis operations, allowing different
 //! providers (OpenAI, Anthropic) to implement their specific vision APIs.
 
-use crate::core::platform::container::vision::{VisionContent, VisionError};
 use async_trait::async_trait;
+use paladin_core::platform::container::vision::{VisionContent, VisionError};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

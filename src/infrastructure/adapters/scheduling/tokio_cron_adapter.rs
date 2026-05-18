@@ -21,7 +21,7 @@
 //!
 //! ```rust,no_run
 //! use paladin::infrastructure::adapters::scheduling::tokio_cron_adapter::TokioCronSchedulerAdapter;
-//! use paladin::application::ports::output::scheduler_port::{SchedulerPort, JobSpec};
+//! use paladin_ports::output::scheduler_port::{SchedulerPort, JobSpec};
 //!
 //! async fn example() {
 //!     let adapter = TokioCronSchedulerAdapter::new().await.unwrap();
@@ -35,12 +35,12 @@
 //! }
 //! ```
 
-use crate::application::ports::output::scheduler_port::{
-    JobId, JobInfo, JobSpec, JobStatus, SchedulerError, SchedulerPort,
-};
 use async_trait::async_trait;
 use chrono::Utc;
 use log::{debug, info};
+use paladin_ports::output::scheduler_port::{
+    JobId, JobInfo, JobSpec, JobStatus, SchedulerError, SchedulerPort,
+};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -261,7 +261,7 @@ impl SchedulerPort for TokioCronSchedulerAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::scheduler_port::{JobSpec, SchedulerPort};
+    use paladin_ports::output::scheduler_port::{JobSpec, SchedulerPort};
 
     #[tokio::test]
     async fn test_new_adapter_is_not_running() {

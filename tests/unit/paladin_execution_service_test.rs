@@ -1,13 +1,13 @@
 //! Unit tests for PaladinExecutionService
 //! Following TDD - these tests should fail initially
 
-use paladin::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
-};
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin_ports::output::llm_port::{
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
+};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -126,10 +126,8 @@ impl LlmPort for MockLlmPort {
         "MockProvider"
     }
 
-    fn get_capabilities(
-        &self,
-    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
-        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+        paladin_ports::output::llm_port::ProviderCapabilities::default()
     }
 }
 

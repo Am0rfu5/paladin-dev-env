@@ -222,15 +222,15 @@
 //!
 //! ## Related Ports
 //!
-//! - [`VisionLlmPort`](crate::application::ports::output::vision_llm_port::VisionLlmPort) - Extended LLM port with vision/image understanding
-//! - [`EmbeddingPort`](crate::application::ports::output::embedding_port::EmbeddingPort) - Generate vector embeddings from text
-//! - [`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort) - Store conversation history for context
-//! - [`ArsenalPort`](crate::application::ports::output::arsenal_port::ArsenalPort) - Provide tools for function calling
+//! - [`VisionLlmPort`](crate::output::vision_llm_port::VisionLlmPort) - Extended LLM port with vision/image understanding
+//! - [`EmbeddingPort`](crate::output::embedding_port::EmbeddingPort) - Generate vector embeddings from text
+//! - [`GarrisonPort`](crate::output::garrison_port::GarrisonPort) - Store conversation history for context
+//! - [`ArsenalPort`](crate::output::arsenal_port::ArsenalPort) - Provide tools for function calling
 //!
 //! ## See Also
 //!
 //! - [Application Ports](crate::application::ports)
-//! - [Paladin Domain](crate::core::platform::container::paladin)
+//! - [Paladin Domain](paladin_core::platform::container::paladin)
 //! - [Infrastructure Adapters](crate::infrastructure::adapters::llm)
 
 use async_trait::async_trait;
@@ -240,8 +240,8 @@ use std::collections::HashMap;
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::core::platform::container::content::ContentItem;
-use crate::core::platform::container::prompt::PromptItem;
+use paladin_core::platform::container::content::ContentItem;
+use paladin_core::platform::container::prompt::PromptItem;
 
 /// Errors that can occur during LLM operations
 ///
@@ -639,7 +639,7 @@ pub enum FinishReason {
 /// assert_eq!(usage.total_tokens, usage.prompt_tokens + usage.completion_tokens);
 /// ```
 // Re-export pure domain type from core
-pub use crate::core::platform::container::token_usage::TokenUsage;
+pub use paladin_core::platform::container::token_usage::TokenUsage;
 
 /// Incremental response chunk for streaming operations
 ///

@@ -45,7 +45,7 @@ This template defines the standard rustdoc structure for all Port Traits in the 
 //! ### Basic Usage
 //!
 //! ```rust
-//! use paladin::application::ports::output::port_name::PortTrait;
+//! use paladin::paladin_ports::output::port_name::PortTrait;
 //!
 //! async fn example(port: &dyn PortTrait) -> Result<(), Box<dyn std::error::Error>> {
 //!     // Example showing the most common use case
@@ -57,7 +57,7 @@ This template defines the standard rustdoc structure for all Port Traits in the 
 //! ### Custom Implementation
 //!
 //! ```rust
-//! use paladin::application::ports::output::port_name::{PortTrait, ErrorType};
+//! use paladin::paladin_ports::output::port_name::{PortTrait, ErrorType};
 //! use async_trait::async_trait;
 //!
 //! struct CustomAdapter {
@@ -149,7 +149,7 @@ pub enum ErrorType {
 /// # Examples
 ///
 /// ```
-/// use paladin::application::ports::output::port_name::RequestType;
+/// use paladin::paladin_ports::output::port_name::RequestType;
 ///
 /// let request = RequestType {
 ///     field1: value,
@@ -232,7 +232,7 @@ pub trait PortTrait: Send + Sync {
     /// # Examples
     ///
     /// ```rust
-    /// use paladin::application::ports::output::port_name::PortTrait;
+    /// use paladin::paladin_ports::output::port_name::PortTrait;
     ///
     /// async fn example(port: &dyn PortTrait) -> Result<(), Box<dyn std::error::Error>> {
     ///     let result = port.method_name(args).await?;
@@ -357,7 +357,7 @@ All code examples must compile:
 cargo test --doc --all-features
 
 # Test specific module's docs
-cargo test --doc --package paladin --lib application::ports::output::llm_port
+cargo test --doc --package paladin --lib paladin_ports::output::llm_port
 ```
 
 ---

@@ -3,7 +3,7 @@
 // Unit tests for Anthropic adapter with mocked HTTP responses
 
 use mockito::{Mock, Server, ServerGuard};
-use paladin::application::ports::output::llm_port::{LlmPort, LlmRequest};
+use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
 use paladin::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptType, SystemPrompt, UserPrompt,
 };
@@ -210,7 +210,7 @@ async fn test_anthropic_max_tokens_enforcement() {
     // Verify that max_tokens stop reason is properly handled
     assert!(matches!(
         response.finish_reason,
-        paladin::application::ports::output::llm_port::FinishReason::Length
+        paladin_ports::output::llm_port::FinishReason::Length
     ));
 }
 
@@ -240,7 +240,7 @@ async fn test_anthropic_auth_failure_401() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::AuthenticationError(_)
+        paladin_ports::output::llm_port::LlmError::AuthenticationError(_)
     ));
 }
 
@@ -270,7 +270,7 @@ async fn test_anthropic_rate_limit_429() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::RateLimitExceeded
+        paladin_ports::output::llm_port::LlmError::RateLimitExceeded
     ));
 }
 
@@ -300,7 +300,7 @@ async fn test_anthropic_invalid_request_400() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::InvalidPrompt(_)
+        paladin_ports::output::llm_port::LlmError::InvalidPrompt(_)
     ));
 }
 
@@ -330,7 +330,7 @@ async fn test_anthropic_server_error_500() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::ProcessingError(_)
+        paladin_ports::output::llm_port::LlmError::ProcessingError(_)
     ));
 }
 
@@ -354,6 +354,6 @@ async fn test_anthropic_malformed_response() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::ProcessingError(_)
+        paladin_ports::output::llm_port::LlmError::ProcessingError(_)
     ));
 }

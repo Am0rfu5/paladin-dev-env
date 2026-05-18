@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Logger Port
 //!
 //! A port that defines how the application logs information. This could be a file, a database,
@@ -21,7 +22,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
-use crate::core::platform::container::log::{LogDestination, LogEntry, LogLevel};
+use paladin_core::platform::container::log::{LogDestination, LogEntry, LogLevel};
 
 /// Result type for logging operations
 pub type LogResult<T> = Result<T, LogError>;
@@ -340,8 +341,8 @@ impl LogFormatter for JsonLogFormatter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::base::entity::message::Location;
-    use crate::core::platform::container::log::{LogDestination, LogEntryBuilder, LogLevel};
+    use paladin_core::base::entity::message::Location;
+    use paladin_core::platform::container::log::{LogDestination, LogEntryBuilder, LogLevel};
 
     #[test]
     fn test_log_query_default() {

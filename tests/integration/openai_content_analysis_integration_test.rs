@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::time::Duration;
 use uuid::Uuid;
 
-use paladin::application::ports::output::llm_port::{LlmError, LlmPort, LlmRequest};
 use paladin::core::platform::container::content::{ContentItem, ContentType, TextContent};
 use paladin::core::platform::container::prompt::{PromptItem, PromptRole, PromptType, TextPrompt};
 use paladin::infrastructure::adapters::llm::openai_adapter::{OpenAIAdapter, OpenAIConfig};
+use paladin_ports::output::llm_port::{LlmError, LlmPort, LlmRequest};
 
 #[tokio::test]
 #[ignore] // Use `cargo test openai_content_analysis_integration::test_openai_integration -- --ignored` to run this test

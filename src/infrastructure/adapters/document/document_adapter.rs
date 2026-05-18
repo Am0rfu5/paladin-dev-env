@@ -3,12 +3,12 @@
 //! This adapter provides document ingestion and chunking capabilities,
 //! supporting PDF, TXT, and MD file formats.
 
-use crate::application::ports::input::document_port::{
-    ChunkConfig, ChunkMetadata, DocumentChunk, DocumentFormat, DocumentPort, DocumentSource,
-};
 use crate::core::platform::container::document::{Document, DocumentError, DocumentMetadata, Page};
 use crate::infrastructure::adapters::document::PdfExtractor;
 use async_trait::async_trait;
+use paladin_ports::input::document_port::{
+    ChunkConfig, ChunkMetadata, DocumentChunk, DocumentFormat, DocumentPort, DocumentSource,
+};
 use std::path::Path;
 
 /// Document adapter for ingestion and chunking.

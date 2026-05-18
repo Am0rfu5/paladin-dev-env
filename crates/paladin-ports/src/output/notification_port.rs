@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Notification Ports - Multi-Channel Notification Delivery Abstraction
 //!
 //! This module defines the output ports (interfaces) for the notification system following
@@ -360,9 +361,9 @@
 //!
 //! # Related Modules
 //!
-//! - [`crate::core::platform::container::notification`] - Domain types for notifications
-//! - [`crate::application::ports::output::queue_port`] - Async notification delivery queue
-//! - [`crate::application::ports::output::llm_port`] - LLM integration for generating notification content
+//! - [`paladin_core::platform::container::notification`] - Domain types for notifications
+//! - [`crate::output::queue_port`] - Async notification delivery queue
+//! - [`crate::output::llm_port`] - LLM integration for generating notification content
 //! - [`crate::infrastructure::adapters::notification`] - Concrete notification adapters (SMTP, Twilio, etc.)
 
 use async_trait::async_trait;
@@ -372,7 +373,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 // Re-export domain types for convenience
-pub use crate::core::platform::container::notification::{
+pub use paladin_core::platform::container::notification::{
     Notification, NotificationAttachment, NotificationChannel, NotificationContent,
     NotificationDomainError, NotificationEvent, NotificationPriority, NotificationRecipient,
     NotificationStatus, NotificationTemplate,
@@ -1166,7 +1167,7 @@ pub trait NotificationTemplatePort: Send + Sync {
     /// - `ValidationError`: Template not found
     /// - `StorageError`: Failed to retrieve template
     async fn get_template(&self, template_id: &str)
-    -> NotificationPortResult<NotificationTemplate>;
+        -> NotificationPortResult<NotificationTemplate>;
 
     /// List templates with optional filtering
     ///

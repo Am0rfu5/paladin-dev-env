@@ -61,7 +61,7 @@
 //! - **Protocol Error**: MCP communication failure
 //! - **Transport Error**: Network/process communication failure
 //!
-//! All errors are represented via [`ArsenalError`](crate::core::platform::container::arsenal::ArsenalError)
+//! All errors are represented via [`ArsenalError`](paladin_core::platform::container::arsenal::ArsenalError)
 //! with context for debugging and recovery strategies.
 //!
 //! ## Common Use Cases
@@ -235,11 +235,11 @@
 //!
 //! ## Related Modules
 //!
-//! - [`Armament`](crate::core::platform::container::arsenal::Armament) - Tool metadata
-//! - [`ArmamentCall`](crate::core::platform::container::arsenal::ArmamentCall) - Tool invocation request
-//! - [`ArmamentResult`](crate::core::platform::container::arsenal::ArmamentResult) - Tool execution result
-//! - [`ArsenalError`](crate::core::platform::container::arsenal::ArsenalError) - Error types
-//! - [`LlmPort`](crate::application::ports::output::llm_port::LlmPort) - LLM integration (generates tool calls)
+//! - [`Armament`](paladin_core::platform::container::arsenal::Armament) - Tool metadata
+//! - [`ArmamentCall`](paladin_core::platform::container::arsenal::ArmamentCall) - Tool invocation request
+//! - [`ArmamentResult`](paladin_core::platform::container::arsenal::ArmamentResult) - Tool execution result
+//! - [`ArsenalError`](paladin_core::platform::container::arsenal::ArsenalError) - Error types
+//! - [`LlmPort`](crate::output::llm_port::LlmPort) - LLM integration (generates tool calls)
 //!
 //! ## See Also
 //!
@@ -248,10 +248,10 @@
 //! - `examples/arsenal_stdio_tools.rs` - STDIO MCP example
 //! - `examples/arsenal_sse_tools.rs` - SSE MCP example
 
-use crate::core::platform::container::arsenal::{
+use async_trait::async_trait;
+use paladin_core::platform::container::arsenal::{
     Armament, ArmamentCall, ArmamentResult, ArsenalError,
 };
-use async_trait::async_trait;
 
 /// Port trait for executing external tools via the Arsenal system.
 ///
@@ -465,10 +465,10 @@ use async_trait::async_trait;
 /// # See Also
 ///
 /// - [`ArsenalRegistry`] - Tool registration and lifecycle management
-/// - [`Armament`](crate::core::platform::container::arsenal::Armament) - Tool metadata structure
-/// - [`ArmamentCall`](crate::core::platform::container::arsenal::ArmamentCall) - Invocation request
-/// - [`ArmamentResult`](crate::core::platform::container::arsenal::ArmamentResult) - Execution result
-/// - [`ArsenalError`](crate::core::platform::container::arsenal::ArsenalError) - Error types
+/// - [`Armament`](paladin_core::platform::container::arsenal::Armament) - Tool metadata structure
+/// - [`ArmamentCall`](paladin_core::platform::container::arsenal::ArmamentCall) - Invocation request
+/// - [`ArmamentResult`](paladin_core::platform::container::arsenal::ArmamentResult) - Execution result
+/// - [`ArsenalError`](paladin_core::platform::container::arsenal::ArsenalError) - Error types
 #[async_trait]
 pub trait ArsenalPort: Send + Sync {
     /// Lists all available tools in the Arsenal.
@@ -785,7 +785,7 @@ pub trait ArsenalPort: Send + Sync {
 /// # See Also
 ///
 /// - [`ArsenalPort`] - Tool execution interface
-/// - [`Armament`](crate::core::platform::container::arsenal::Armament) - Tool metadata structure
+/// - [`Armament`](paladin_core::platform::container::arsenal::Armament) - Tool metadata structure
 /// - [ARSENAL.md](https://github.com/DF3NDR/paladin-dev-env/blob/main/docs/ARSENAL.md) - Comprehensive guide
 #[async_trait]
 pub trait ArsenalRegistry: Send + Sync {

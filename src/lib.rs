@@ -117,60 +117,60 @@ pub use application::cli;
 
 // Output Ports (External System Integration)
 
-pub use application::ports::output::llm_port::{
+pub use paladin_ports::output::llm_port::{
     LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, TokenUsage,
 };
 
 // Re-export PromptItem from core for LLM usage
 pub use core::platform::container::prompt::PromptItem;
 
-pub use application::ports::output::garrison_port::{
+pub use paladin_ports::output::garrison_port::{
     GarrisonError, GarrisonPort, GarrisonStats, LongTermGarrisonPort,
 };
 
-pub use application::ports::output::sanctum_port::{
+pub use paladin_ports::output::sanctum_port::{
     SanctumError, SanctumFilter, SanctumPort, SanctumQuery, SanctumSearchResult,
 };
 
 // Re-export SanctumEntry from core for Sanctum usage
 pub use core::platform::container::sanctum::SanctumEntry;
 
-pub use application::ports::output::embedding_port::{Embedding, EmbeddingError, EmbeddingPort};
+pub use paladin_ports::output::embedding_port::{Embedding, EmbeddingError, EmbeddingPort};
 
-pub use application::ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
+pub use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
 
 // Re-export ArsenalError from core for Arsenal usage
 pub use core::platform::container::arsenal::ArsenalError;
 
-pub use application::ports::output::citadel_port::CitadelPort;
+pub use paladin_ports::output::citadel_port::CitadelPort;
 
 // Re-export CitadelError from application errors
 pub use application::errors::citadel_error::CitadelError;
 
-pub use application::ports::output::queue_port::QueuePort;
+pub use paladin_ports::output::queue_port::QueuePort;
 
 // Re-export QueueError from core for Queue usage
 pub use core::platform::manager::queue_service::QueueError;
 
-pub use application::ports::output::notification_port::{
+pub use paladin_ports::output::notification_port::{
     Notification, NotificationChannel, NotificationDeliveryPort, NotificationPortError,
     NotificationPriority, NotificationStatus, NotificationTemplate, NotificationTemplatePort,
 };
 
-pub use application::ports::output::file_storage_port::{FileStorageError, FileStoragePort};
+pub use paladin_ports::output::file_storage_port::{FileStorageError, FileStoragePort};
 
-pub use application::ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
+pub use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 
-pub use application::ports::output::battalion_port::BattalionPort;
+pub use paladin_ports::output::battalion_port::BattalionPort;
 
 // Re-export Battalion types from core
 pub use core::platform::container::battalion::{BattalionResult, BattalionStatus};
 
 // Input Ports (Use Case Interfaces)
 
-pub use application::ports::input::content_input_port::ContentIngestionPort;
-pub use application::ports::input::document_port::DocumentPort;
-pub use application::ports::input::ml_port::MlPort;
+pub use paladin_ports::input::content_input_port::ContentIngestionPort;
+pub use paladin_ports::input::document_port::DocumentPort;
+pub use paladin_ports::input::ml_port::MlPort;
 
 // ============================================================================
 // Domain Entities

@@ -48,13 +48,13 @@ fn init_test_env() {
     });
 }
 
-use paladin::application::ports::output::llm_port::{FinishReason, LlmError, LlmPort, LlmRequest};
 use paladin::core::platform::container::prompt::{PromptItem, PromptType};
 use paladin::infrastructure::adapters::llm::{
     anthropic_adapter::{AnthropicAdapter, AnthropicConfig},
     deepseek_adapter::{DeepSeekAdapter, DeepSeekConfig},
     openai_adapter::{OpenAIAdapter, OpenAIConfig},
 };
+use paladin_ports::output::llm_port::{FinishReason, LlmError, LlmPort, LlmRequest};
 
 // ============================================================================
 // Helper Functions

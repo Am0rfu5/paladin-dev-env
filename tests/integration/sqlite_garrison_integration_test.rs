@@ -7,11 +7,11 @@
 //! - Connection pooling
 //! - Full-text search
 
-use paladin::application::ports::output::garrison_port::GarrisonPort;
 use paladin::core::platform::container::garrison::{
     ConversationRole, GarrisonConfig, GarrisonEntry,
 };
 use paladin::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarrison;
+use paladin_ports::output::garrison_port::GarrisonPort;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
 use tokio::task::JoinSet;

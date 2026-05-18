@@ -3,10 +3,6 @@
 //! Tests end-to-end Grove execution with intelligent agent routing
 
 use async_trait::async_trait;
-use paladin::application::ports::output::paladin_port::{
-    PaladinPort, PaladinResult, PaladinStream, StopReason,
-};
-use paladin::application::ports::output::paladin_registry::PaladinRegistry;
 use paladin::application::use_cases::battalion::grove_service::GroveExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
@@ -15,6 +11,8 @@ use paladin::core::platform::container::battalion::grove::{
 };
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
 use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, PaladinStream, StopReason};
+use paladin_ports::output::paladin_registry::PaladinRegistry;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -518,7 +516,7 @@ async fn test_grove_error_handling() {
 
 #[tokio::test]
 async fn test_grove_llm_routing_end_to_end() {
-    use paladin::application::ports::output::llm_port::{
+    use paladin_ports::output::llm_port::{
         FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, TokenUsage,
     };
     use uuid::Uuid;
@@ -595,10 +593,7 @@ async fn test_grove_llm_routing_end_to_end() {
         ) -> Result<
             Box<
                 dyn futures::Stream<
-                        Item = Result<
-                            paladin::application::ports::output::llm_port::StreamingResponse,
-                            LlmError,
-                        >,
+                        Item = Result<paladin_ports::output::llm_port::StreamingResponse, LlmError>,
                     > + Send,
             >,
             LlmError,

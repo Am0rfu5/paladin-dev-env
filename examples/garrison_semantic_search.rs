@@ -8,11 +8,11 @@
 //!
 //! Run with: `cargo run --example garrison_semantic_search` (when implemented)
 
-use paladin::application::ports::output::garrison_port::GarrisonPort;
 use paladin::core::platform::container::garrison::{
     ConversationRole, GarrisonConfig, GarrisonEntry,
 };
 use paladin::infrastructure::adapters::garrison::InMemoryGarrison;
+use paladin_ports::output::garrison_port::GarrisonPort;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

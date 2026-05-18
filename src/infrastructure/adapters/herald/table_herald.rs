@@ -285,7 +285,7 @@ mod tests {
 
     #[test]
     fn test_format_paladin_result() {
-        use crate::application::ports::output::paladin_port::StopReason;
+        use paladin_ports::output::paladin_port::StopReason;
         let herald = TableHerald::default();
         let result = crate::core::platform::container::herald::PaladinResult {
             output: "Test output".to_string(),
@@ -360,7 +360,7 @@ mod tests {
 
     #[test]
     fn test_finalize_stream() {
-        use crate::application::ports::output::llm_port::TokenUsage;
+        use paladin_ports::output::llm_port::TokenUsage;
         let herald = TableHerald::default();
         let metadata = crate::core::platform::container::herald::ExecutionMetadata::builder()
             .execution_id(uuid::Uuid::new_v4())
@@ -564,7 +564,7 @@ mod tests {
         }
 
         // Only finalize_stream should produce output
-        use crate::application::ports::output::llm_port::TokenUsage;
+        use paladin_ports::output::llm_port::TokenUsage;
         let metadata = ExecutionMetadata::builder()
             .execution_id(uuid::Uuid::new_v4())
             .start_time(chrono::Utc::now())

@@ -12,11 +12,11 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::{sleep, timeout};
 
-use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult};
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::platform::container::battalion::conclave::{
     Conclave, ConclaveError, ConclaveResult, ConclaveStatus, ObservabilityLevel,
 };
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
 
 /// Service for executing Conclave patterns
 ///
@@ -512,12 +512,12 @@ impl ConclaveExecutionService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::paladin_port::StopReason;
     use crate::core::base::entity::node::Node;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::conclave::ConclaveConfig;
     use crate::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
     use async_trait::async_trait;
+    use paladin_ports::output::paladin_port::StopReason;
     use std::sync::Mutex;
 
     // Mock PaladinPort for testing
@@ -580,8 +580,7 @@ mod tests {
             &self,
             _paladin: &crate::core::platform::container::paladin::Paladin,
             _input: &str,
-        ) -> Result<crate::application::ports::output::paladin_port::PaladinStream, PaladinError>
-        {
+        ) -> Result<paladin_ports::output::paladin_port::PaladinStream, PaladinError> {
             unimplemented!("Stream not needed for tests")
         }
 

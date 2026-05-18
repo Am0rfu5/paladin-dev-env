@@ -3,7 +3,7 @@
 // Unit tests for DeepSeek adapter with mocked HTTP responses
 
 use mockito::{Mock, Server, ServerGuard};
-use paladin::application::ports::output::llm_port::{LlmPort, LlmRequest};
+use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
 use paladin::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptRole, PromptType, SystemPrompt, TextPrompt,
     UserPrompt,
@@ -141,7 +141,7 @@ async fn test_deepseek_auth_failure_401() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::AuthenticationError(_)
+        paladin_ports::output::llm_port::LlmError::AuthenticationError(_)
     ));
 }
 
@@ -170,7 +170,7 @@ async fn test_deepseek_rate_limit_429() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::RateLimitExceeded
+        paladin_ports::output::llm_port::LlmError::RateLimitExceeded
     ));
 }
 
@@ -195,7 +195,7 @@ async fn test_deepseek_timeout() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::NetworkError(_)
+        paladin_ports::output::llm_port::LlmError::NetworkError(_)
     ));
 }
 
@@ -225,7 +225,7 @@ async fn test_deepseek_invalid_model_error() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::InvalidPrompt(_)
+        paladin_ports::output::llm_port::LlmError::InvalidPrompt(_)
     ));
 }
 
@@ -254,7 +254,7 @@ async fn test_deepseek_server_error_500() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::ProcessingError(_)
+        paladin_ports::output::llm_port::LlmError::ProcessingError(_)
     ));
 }
 
@@ -278,6 +278,6 @@ async fn test_deepseek_malformed_response() {
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin::application::ports::output::llm_port::LlmError::ProcessingError(_)
+        paladin_ports::output::llm_port::LlmError::ProcessingError(_)
     ));
 }

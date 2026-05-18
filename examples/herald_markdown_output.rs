@@ -5,15 +5,15 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::ports::output::llm_port::{
-    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
-};
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::herald::Herald;
 use paladin::infrastructure::adapters::herald::MarkdownHerald;
 use paladin::infrastructure::adapters::herald::markdown_herald::MarkdownHeraldConfig;
+use paladin_ports::output::llm_port::{
+    FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
+};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -50,10 +50,7 @@ impl LlmPort for MockLlmPort {
     ) -> Result<
         Box<
             dyn futures::Stream<
-                    Item = Result<
-                        paladin::application::ports::output::llm_port::StreamingResponse,
-                        LlmError,
-                    >,
+                    Item = Result<paladin_ports::output::llm_port::StreamingResponse, LlmError>,
                 > + Send,
         >,
         LlmError,
@@ -73,10 +70,8 @@ impl LlmPort for MockLlmPort {
         "mock"
     }
 
-    fn get_capabilities(
-        &self,
-    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
-        paladin::application::ports::output::llm_port::ProviderCapabilities::default()
+    fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+        paladin_ports::output::llm_port::ProviderCapabilities::default()
     }
 }
 

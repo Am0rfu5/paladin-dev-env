@@ -25,10 +25,10 @@
 //! ```
 
 use async_trait::async_trait;
-use paladin::application::ports::output::arsenal_port::ArsenalPort;
 use paladin::core::platform::container::arsenal::{
     Armament, ArmamentCall, ArmamentResult, ArsenalError,
 };
+use paladin_ports::output::arsenal_port::ArsenalPort;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

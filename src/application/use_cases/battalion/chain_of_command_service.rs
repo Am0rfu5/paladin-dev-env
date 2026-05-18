@@ -34,12 +34,12 @@
 //! # }
 //! ```
 
-use crate::application::ports::output::paladin_port::{PaladinPort, PaladinResult};
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::platform::container::battalion::BattalionError;
 use crate::core::platform::container::battalion::chain_of_command::{
     ChainOfCommand, DelegationStrategy,
 };
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -452,9 +452,9 @@ Important: Use the exact specialist names shown above. Separate multiple special
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::paladin_port::PaladinResult;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::paladin::{Paladin, PaladinData};
+    use paladin_ports::output::paladin_port::PaladinResult;
 
     fn create_test_paladin(name: &str) -> Paladin {
         let data = PaladinData {
@@ -468,8 +468,8 @@ mod tests {
 
     #[test]
     fn test_service_construction() {
-        use crate::application::ports::output::paladin_port::StopReason;
         use async_trait::async_trait;
+        use paladin_ports::output::paladin_port::StopReason;
 
         struct MockPort;
 
@@ -496,7 +496,7 @@ mod tests {
                 _paladin: &Paladin,
                 _input: &str,
             ) -> Result<
-                crate::application::ports::output::paladin_port::PaladinStream,
+                paladin_ports::output::paladin_port::PaladinStream,
                 crate::application::use_cases::paladin::error::PaladinError,
             > {
                 unimplemented!()
@@ -518,8 +518,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_valid_chain() {
-        use crate::application::ports::output::paladin_port::StopReason;
         use async_trait::async_trait;
+        use paladin_ports::output::paladin_port::StopReason;
 
         struct MockPort;
 
@@ -546,7 +546,7 @@ mod tests {
                 _paladin: &Paladin,
                 _input: &str,
             ) -> Result<
-                crate::application::ports::output::paladin_port::PaladinStream,
+                paladin_ports::output::paladin_port::PaladinStream,
                 crate::application::use_cases::paladin::error::PaladinError,
             > {
                 unimplemented!()

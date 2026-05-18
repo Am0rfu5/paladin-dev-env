@@ -5,11 +5,11 @@
 
 #[cfg(all(test, feature = "integration-tests"))]
 mod anthropic_integration_tests {
-    use paladin::application::ports::output::llm_port::{FinishReason, LlmPort, LlmRequest};
     use paladin::core::platform::container::prompt::{PromptItem, PromptType, SystemPrompt};
     use paladin::infrastructure::adapters::llm::anthropic_adapter::{
         AnthropicAdapter, AnthropicConfig,
     };
+    use paladin_ports::output::llm_port::{FinishReason, LlmPort, LlmRequest};
     use std::collections::HashMap;
     use std::env;
 

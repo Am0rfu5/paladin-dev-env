@@ -325,7 +325,7 @@ let paladin = PaladinBuilder::new(llm_port)
 Implement graceful fallback for higher reliability:
 
 ```rust
-use paladin::application::ports::output::llm_port::LlmPort;
+use paladin::paladin_ports::output::llm_port::LlmPort;
 use std::sync::Arc;
 
 fn create_llm_provider() -> Result<Arc<dyn LlmPort>, Box<dyn std::error::Error>> {

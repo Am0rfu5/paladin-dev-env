@@ -6,7 +6,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::application::ports::output::sanctum_port::{
+use paladin_ports::output::sanctum_port::{
     SanctumError, SanctumFilter, SanctumPort, SanctumQuery,
 };
 use crate::core::platform::container::sanctum::{Memory, MemoryBuilder, MemoryType, SanctumEntry};

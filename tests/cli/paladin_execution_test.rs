@@ -3,7 +3,7 @@
 //! Tests the full execution flow of Paladin agents via CLI configuration,
 //! using MockLlmAdapter to avoid external API dependencies.
 
-use paladin::application::ports::output::llm_port::LlmPort;
+use paladin_ports::output::llm_port::LlmPort;
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::base::entity::node::Node;
@@ -167,7 +167,7 @@ async fn test_paladin_error_handling() {
     // Arrange: Create mock that simulates an error
     let mock_llm = Arc::new(MockLlmAdapter::new());
     mock_llm
-        .add_failure(paladin::application::ports::output::llm_port::LlmError::RateLimitExceeded);
+        .add_failure(paladin_ports::output::llm_port::LlmError::RateLimitExceeded);
 
     let paladin_data = PaladinData {
         system_prompt: "You are a test assistant.".to_string(),

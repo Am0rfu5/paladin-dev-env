@@ -1,10 +1,10 @@
-use crate::application::ports::output::llm_port::{LlmPort, LlmRequest};
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptType, UserPrompt,
 };
 use log::{debug, info};
+use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -286,13 +286,13 @@ Respond with ONLY one word: CREATIVE, ANALYTICAL, or STANDARD"#,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::llm_port::{
-        FinishReason, LlmError, LlmPort, LlmResponse, ProviderCapabilities, StreamingResponse,
-        TokenUsage,
-    };
     use async_trait::async_trait;
     use chrono::Utc;
     use futures::stream;
+    use paladin_ports::output::llm_port::{
+        FinishReason, LlmError, LlmPort, LlmResponse, ProviderCapabilities, StreamingResponse,
+        TokenUsage,
+    };
     use std::sync::Mutex;
 
     /// Mock LLM port for testing

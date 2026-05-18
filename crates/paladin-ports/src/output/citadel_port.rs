@@ -64,7 +64,7 @@
 //! - **I/O Error**: File system or network error
 //! - **Permission Denied**: Insufficient permissions for storage access
 //!
-//! All errors are represented via [`CitadelError`](crate::application::errors::citadel_error::CitadelError)
+//! All errors are represented via [`CitadelError`](paladin_core::platform::container::citadel_error::CitadelError)
 //! with detailed context for debugging and recovery.
 //!
 //! ## Common Use Cases
@@ -259,11 +259,11 @@
 ///
 /// ## Related Modules
 ///
-/// - [`PaladinState`](crate::core::platform::container::citadel::PaladinState) - Paladin state structure
-/// - [`BattalionState`](crate::core::platform::container::citadel::BattalionState) - Battalion state structure
-/// - [`StateSummary`](crate::core::platform::container::citadel::StateSummary) - State metadata
-/// - [`CitadelError`](crate::application::errors::citadel_error::CitadelError) - Error types
-/// - [`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort) - Memory storage
+/// - [`PaladinState`](paladin_core::platform::container::citadel::PaladinState) - Paladin state structure
+/// - [`BattalionState`](paladin_core::platform::container::citadel::BattalionState) - Battalion state structure
+/// - [`StateSummary`](paladin_core::platform::container::citadel::StateSummary) - State metadata
+/// - [`CitadelError`](paladin_core::platform::container::citadel_error::CitadelError) - Error types
+/// - [`GarrisonPort`](crate::output::garrison_port::GarrisonPort) - Memory storage
 ///
 /// ## See Also
 ///
@@ -274,8 +274,8 @@
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::application::errors::citadel_error::CitadelError;
-use crate::core::platform::container::citadel::{BattalionState, PaladinState, StateSummary};
+use paladin_core::platform::container::citadel::{BattalionState, PaladinState, StateSummary};
+use paladin_core::platform::container::citadel_error::CitadelError;
 
 /// Port trait for Citadel state persistence operations.
 ///
@@ -559,10 +559,10 @@ use crate::core::platform::container::citadel::{BattalionState, PaladinState, St
 ///
 /// # See Also
 ///
-/// - [`PaladinState`](crate::core::platform::container::citadel::PaladinState) - Paladin state structure
-/// - [`BattalionState`](crate::core::platform::container::citadel::BattalionState) - Battalion state structure
-/// - [`StateSummary`](crate::core::platform::container::citadel::StateSummary) - State metadata
-/// - [`CitadelError`](crate::application::errors::citadel_error::CitadelError) - Error types
+/// - [`PaladinState`](paladin_core::platform::container::citadel::PaladinState) - Paladin state structure
+/// - [`BattalionState`](paladin_core::platform::container::citadel::BattalionState) - Battalion state structure
+/// - [`StateSummary`](paladin_core::platform::container::citadel::StateSummary) - State metadata
+/// - [`CitadelError`](paladin_core::platform::container::citadel_error::CitadelError) - Error types
 #[async_trait]
 pub trait CitadelPort: Send + Sync {
     /// Saves a Paladin state to persistent storage
@@ -588,11 +588,11 @@ pub trait CitadelPort: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::base::entity::node::Node;
-    use crate::core::platform::container::citadel::{
+    use paladin_core::base::entity::node::Node;
+    use paladin_core::platform::container::citadel::{
         BattalionConfig, CheckpointData, PaladinData, PaladinStatus,
     };
-    use crate::core::platform::container::paladin::MaxLoops;
+    use paladin_core::platform::container::paladin::MaxLoops;
 
     // Mock implementation for testing trait bounds
     struct MockCitadel;

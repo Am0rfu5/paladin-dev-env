@@ -5,10 +5,10 @@
 use std::sync::Arc;
 use chrono::Utc;
 
-use crate::application::ports::output::sanctum_port::{
+use paladin_ports::output::sanctum_port::{
     SanctumPort, SanctumQuery, SanctumSearchResult, SanctumError, SanctumFilter,
 };
-use crate::application::ports::output::embedding_port::{EmbeddingPort, Embedding, EmbeddingError};
+use paladin_ports::output::embedding_port::{EmbeddingPort, Embedding, EmbeddingError};
 use crate::application::use_cases::sanctum::rag_retrieval_service::{
     RagRetrievalService, RagConfig, RetrievalTrigger,
 };

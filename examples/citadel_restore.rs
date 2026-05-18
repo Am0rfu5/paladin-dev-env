@@ -20,12 +20,12 @@
 // cargo run --example citadel_restore
 // ```
 
-use paladin::application::ports::output::llm_port::LlmPort;
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
 use paladin::infrastructure::adapters::llm::mock_llm_adapter::MockLlmAdapter;
+use paladin_ports::output::llm_port::LlmPort;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Step 1: Setup - Create state directory and Citadel
     let state_dir = "./example-states";
-    let citadel: Arc<dyn paladin::application::ports::output::citadel_port::CitadelPort> =
+    let citadel: Arc<dyn paladin_ports::output::citadel_port::CitadelPort> =
         Arc::new(FileCitadel::new(state_dir)?);
     println!("✅ Citadel initialized at: {}", state_dir);
     println!();

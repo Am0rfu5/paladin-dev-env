@@ -6,7 +6,6 @@
 //! Run with: cargo run --example chain_of_command_delegation
 
 use async_trait::async_trait;
-use paladin::application::ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use paladin::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::core::platform::container::battalion::BattalionConfig;
@@ -14,6 +13,7 @@ use paladin::core::platform::container::battalion::chain_of_command::{
     ChainOfCommand, DelegationStrategy,
 };
 use paladin::core::platform::container::paladin::{Paladin, PaladinData};
+use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
 use std::sync::Arc;
 
 /// Mock Paladin Port that simulates specialist responses
@@ -76,8 +76,7 @@ impl PaladinPort for ExampleMockPort {
         &self,
         _paladin: &Paladin,
         _input: &str,
-    ) -> Result<paladin::application::ports::output::paladin_port::PaladinStream, PaladinError>
-    {
+    ) -> Result<paladin_ports::output::paladin_port::PaladinStream, PaladinError> {
         unimplemented!("Streaming not used in example")
     }
 

@@ -2,11 +2,11 @@
 //!
 //! Provides tool validation and execution coordination.
 
-use crate::application::ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
 use crate::core::platform::container::arsenal::{
     Armament, ArmamentCall, ArmamentResult, ArsenalError,
 };
 use async_trait::async_trait;
+use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
 use serde_json::Value;
 use std::sync::Arc;
 

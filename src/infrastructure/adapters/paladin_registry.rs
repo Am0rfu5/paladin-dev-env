@@ -14,7 +14,7 @@
 //!
 //! ```rust
 //! use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
-//! use paladin::application::ports::output::paladin_registry::PaladinRegistry;
+//! use paladin_ports::output::paladin_registry::PaladinRegistry;
 //! use paladin::core::platform::container::paladin::{PaladinData, Paladin};
 //! use paladin::core::base::entity::node::Node;
 //! use std::sync::Arc;
@@ -31,8 +31,8 @@
 //! assert_eq!(retrieved.name, Some("analyzer".to_string()));
 //! ```
 
-use crate::application::ports::output::paladin_registry::{PaladinRegistry, RegistryError};
 use crate::core::platform::container::paladin::Paladin;
+use paladin_ports::output::paladin_registry::{PaladinRegistry, RegistryError};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -67,7 +67,7 @@ impl HashMapPaladinRegistry {
     ///
     /// ```rust
     /// use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
-    /// use paladin::application::ports::output::paladin_registry::PaladinRegistry;
+    /// use paladin_ports::output::paladin_registry::PaladinRegistry;
     ///
     /// let registry = HashMapPaladinRegistry::new();
     /// assert!(registry.list_ids().is_empty());
@@ -90,7 +90,7 @@ impl HashMapPaladinRegistry {
     ///
     /// ```rust
     /// use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
-    /// use paladin::application::ports::output::paladin_registry::PaladinRegistry;
+    /// use paladin_ports::output::paladin_registry::PaladinRegistry;
     /// use paladin::core::platform::container::paladin::{PaladinData, Paladin};
     /// use paladin::core::base::entity::node::Node;
     /// use std::collections::HashMap;
@@ -120,7 +120,7 @@ impl HashMapPaladinRegistry {
     ///
     /// ```rust
     /// use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
-    /// use paladin::application::ports::output::paladin_registry::PaladinRegistry;
+    /// use paladin_ports::output::paladin_registry::PaladinRegistry;
     /// use paladin::core::platform::container::paladin::{PaladinData, Paladin};
     /// use paladin::core::base::entity::node::Node;
     /// use std::sync::Arc;
@@ -146,7 +146,7 @@ impl HashMapPaladinRegistry {
     ///
     /// ```rust
     /// use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
-    /// use paladin::application::ports::output::paladin_registry::PaladinRegistry;
+    /// use paladin_ports::output::paladin_registry::PaladinRegistry;
     /// use paladin::core::platform::container::paladin::{PaladinData, Paladin};
     /// use paladin::core::base::entity::node::Node;
     /// use std::sync::Arc;

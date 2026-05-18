@@ -7,11 +7,9 @@
 //! - Optional vector embeddings support
 //! - Eviction strategies with persistence
 
-use crate::application::ports::output::garrison_port::{
-    GarrisonError, GarrisonPort, GarrisonStats,
-};
 use crate::core::platform::container::garrison::{ConversationRole, GarrisonConfig, GarrisonEntry};
 use async_trait::async_trait;
+use paladin_ports::output::garrison_port::{GarrisonError, GarrisonPort, GarrisonStats};
 use sqlx::Row;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use std::path::Path;

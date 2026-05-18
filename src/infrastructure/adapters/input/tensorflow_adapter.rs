@@ -1,8 +1,8 @@
-use crate::application::ports::input::ml_port::{
+use crate::core::platform::container::content::ContentItem;
+use paladin_ports::input::ml_port::{
     MlInputData, MlModelInfo, MlPort, MlPortError, MlPrediction, MlPredictionRequest,
     MlPredictionResponse,
 };
-use crate::core::platform::container::content::ContentItem;
 use std::collections::HashMap;
 use std::path::Path;
 use std::time::Instant;

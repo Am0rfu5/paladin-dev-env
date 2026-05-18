@@ -147,7 +147,7 @@ let config = GarrisonConfig::new(50, Some(2000))
 
 ```rust
 use paladin::infrastructure::adapters::garrison::InMemoryGarrison;
-use paladin::application::ports::output::garrison_port::GarrisonPort;
+use paladin::paladin_ports::output::garrison_port::GarrisonPort;
 use paladin::core::platform::container::garrison::{
     GarrisonConfig, GarrisonEntry, ConversationRole
 };
@@ -189,7 +189,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust
 use paladin::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarrison;
-use paladin::application::ports::output::garrison_port::GarrisonPort;
+use paladin::paladin_ports::output::garrison_port::GarrisonPort;
 use paladin::core::platform::container::garrison::GarrisonConfig;
 
 #[tokio::main]

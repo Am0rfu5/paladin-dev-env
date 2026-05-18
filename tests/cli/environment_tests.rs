@@ -1149,7 +1149,7 @@ provider:
 fn test_user_journey_output_formatting() {
     // Simulate: user runs agent, results are formatted for display
     // We can't run a real LLM call, but we test the formatting pipeline
-    use paladin::application::ports::output::paladin_port::{PaladinResult, StopReason};
+    use paladin_ports::output::paladin_port::{PaladinResult, StopReason};
 
     let formatter = OutputFormatter::new();
 
@@ -1193,7 +1193,7 @@ fn test_user_journey_output_formatting() {
 #[test]
 fn test_user_journey_verbose_output_shows_details() {
     // When verbose mode is used, the formatter shows extra details
-    use paladin::application::ports::output::paladin_port::{PaladinResult, StopReason};
+    use paladin_ports::output::paladin_port::{PaladinResult, StopReason};
 
     let formatter = OutputFormatter::with_verbose();
 

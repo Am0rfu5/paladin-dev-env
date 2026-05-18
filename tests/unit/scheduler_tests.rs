@@ -7,7 +7,7 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::ports::output::scheduler_port::*;
+use paladin_ports::output::scheduler_port::*;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 

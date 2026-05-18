@@ -25,7 +25,7 @@
 use async_trait::async_trait;
 
 use super::llm_port::{LlmError, LlmPort, LlmRequest, LlmResponse};
-use crate::core::platform::container::vision::VisionRequest;
+use paladin_core::platform::container::vision::VisionRequest;
 
 /// Trait for LLM providers that support vision/image inputs.
 ///

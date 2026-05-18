@@ -236,9 +236,9 @@ impl Herald for JsonHerald {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::paladin_port::StopReason;
     use crate::core::platform::container::battalion::BattalionStatus;
     use chrono::Utc;
+    use paladin_ports::output::paladin_port::StopReason;
     use uuid::Uuid;
 
     fn create_test_paladin_result() -> PaladinResult {
@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn test_finalize_stream() {
-        use crate::application::ports::output::llm_port::TokenUsage;
+        use paladin_ports::output::llm_port::TokenUsage;
         let herald = JsonHerald::new();
         let metadata = ExecutionMetadata::builder()
             .execution_id(uuid::Uuid::new_v4())
@@ -586,7 +586,7 @@ mod tests {
         }
 
         // Add metadata
-        use crate::application::ports::output::llm_port::TokenUsage;
+        use paladin_ports::output::llm_port::TokenUsage;
         let metadata = ExecutionMetadata::builder()
             .execution_id(uuid::Uuid::new_v4())
             .start_time(chrono::Utc::now())

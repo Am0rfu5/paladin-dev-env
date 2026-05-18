@@ -28,31 +28,31 @@
 //!
 //! ### LLM Provider Adapters ([adapters::llm])
 //!
-//! - **OpenAiAdapter** - OpenAI GPT models (hidden from docs, use via [`LlmPort`](crate::application::ports::output::llm_port::LlmPort))
+//! - **OpenAiAdapter** - OpenAI GPT models (hidden from docs, use via [`LlmPort`](paladin_ports::output::llm_port::LlmPort))
 //!   - Models: gpt-4, gpt-3.5-turbo, etc.
 //!   - Features: Streaming, function calling, vision
-//! - **DeepSeekAdapter** - DeepSeek models (hidden from docs, use via [`LlmPort`](crate::application::ports::output::llm_port::LlmPort))
+//! - **DeepSeekAdapter** - DeepSeek models (hidden from docs, use via [`LlmPort`](paladin_ports::output::llm_port::LlmPort))
 //!   - Cost-effective alternative with competitive performance
-//! - **AnthropicAdapter** - Claude models (hidden from docs, use via [`LlmPort`](crate::application::ports::output::llm_port::LlmPort))
+//! - **AnthropicAdapter** - Claude models (hidden from docs, use via [`LlmPort`](paladin_ports::output::llm_port::LlmPort))
 //!   - Models: claude-3-opus, claude-3-sonnet
 //!
 //! ### Memory Storage Adapters ([adapters::garrison])
 //!
-//! - **InMemoryGarrison** - In-process memory storage (hidden from docs, use via [`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort))
+//! - **InMemoryGarrison** - In-process memory storage (hidden from docs, use via [`GarrisonPort`](paladin_ports::output::garrison_port::GarrisonPort))
 //!   - Fast, ephemeral, suitable for development
-//! - **SqliteGarrison** - SQLite-backed persistent memory (hidden from docs, use via [`GarrisonPort`](crate::application::ports::output::garrison_port::GarrisonPort))
+//! - **SqliteGarrison** - SQLite-backed persistent memory (hidden from docs, use via [`GarrisonPort`](paladin_ports::output::garrison_port::GarrisonPort))
 //!   - Local file storage, full-text search support
 //!
 //! ### Tool System Adapters ([adapters::arsenal])
 //!
-//! - **McpStdioAdapter** - MCP (Model Context Protocol) STDIO tools (hidden from docs, use via [`ArsenalPort`](crate::application::ports::output::arsenal_port::ArsenalPort))
+//! - **McpStdioAdapter** - MCP (Model Context Protocol) STDIO tools (hidden from docs, use via [`ArsenalPort`](paladin_ports::output::arsenal_port::ArsenalPort))
 //!   - Command-line tool integration
-//! - **McpSseAdapter** - MCP SSE (Server-Sent Events) tools (hidden from docs, use via [`ArsenalPort`](crate::application::ports::output::arsenal_port::ArsenalPort))
+//! - **McpSseAdapter** - MCP SSE (Server-Sent Events) tools (hidden from docs, use via [`ArsenalPort`](paladin_ports::output::arsenal_port::ArsenalPort))
 //!   - Web-based tool integration
 //!
 //! ### State Persistence Adapters ([adapters::citadel])
 //!
-//! - **FileCitadel** - File-based state persistence (hidden from docs, use via [`CitadelPort`](crate::application::ports::output::citadel_port::CitadelPort))
+//! - **FileCitadel** - File-based state persistence (hidden from docs, use via [`CitadelPort`](paladin_ports::output::citadel_port::CitadelPort))
 //!   - Local filesystem storage
 //!
 //! ### Queue Adapters ([adapters::queue])
@@ -128,7 +128,7 @@
 //!
 //! ```ignore
 //! use paladin::infrastructure::adapters::llm::openai_adapter::OpenAiAdapter;
-//! use paladin::application::ports::output::llm_port::LlmPort;
+//! use paladin_ports::output::llm_port::LlmPort;
 //!
 //! let adapter = OpenAiAdapter::new(
 //!     std::env::var("OPENAI_API_KEY").unwrap(),
@@ -151,7 +151,7 @@
 //! ## Testing with Mock Adapters
 //!
 //! ```ignore
-//! use paladin::application::ports::output::llm_port::LlmPort;
+//! use paladin_ports::output::llm_port::LlmPort;
 //!
 //! struct MockLlmAdapter;
 //!

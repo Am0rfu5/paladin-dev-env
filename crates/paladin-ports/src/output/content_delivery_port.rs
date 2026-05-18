@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Content Delivery Port
 //!
 //! A port that defines how the application delivers content to the user. This would
@@ -14,9 +15,9 @@
 //! into application use cases. This allows the application to interact with the user through
 //! an HTTP API without being tightly coupled to the details of how that API is implemented.
 
-use crate::core::platform::container::content::ContentItem;
-use crate::core::platform::container::content_list::ContentList;
 use chrono::{DateTime, Utc};
+use paladin_core::platform::container::content::ContentItem;
+use paladin_core::platform::container::content_list::ContentList;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
@@ -189,7 +190,7 @@ pub trait ContentDeliveryService {
 
     /// Validate delivery method configuration
     fn validate_delivery_method(&self, method: &DeliveryMethod)
-    -> Result<(), ContentDeliveryError>;
+        -> Result<(), ContentDeliveryError>;
 }
 
 /// Batch Content Delivery Service

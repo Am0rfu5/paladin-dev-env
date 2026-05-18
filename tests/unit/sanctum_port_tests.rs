@@ -1,7 +1,7 @@
-use paladin::application::ports::output::sanctum_port::{
+use paladin::core::platform::container::sanctum::MemoryType;
+use paladin_ports::output::sanctum_port::{
     SanctumError, SanctumFilter, SanctumQuery, SanctumSearchResult,
 };
-use paladin::core::platform::container::sanctum::MemoryType;
 
 #[cfg(test)]
 mod sanctum_error_tests {

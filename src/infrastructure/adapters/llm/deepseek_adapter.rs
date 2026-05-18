@@ -18,11 +18,11 @@ use std::env;
 use std::time::Duration;
 use uuid::Uuid;
 
-use crate::application::ports::output::llm_port::{
+use crate::core::platform::container::prompt::{PromptItem, PromptType};
+use paladin_ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities,
     StreamingResponse, TokenUsage,
 };
-use crate::core::platform::container::prompt::{PromptItem, PromptType};
 
 /// Configuration for DeepSeek LLM adapter
 #[doc(hidden)]

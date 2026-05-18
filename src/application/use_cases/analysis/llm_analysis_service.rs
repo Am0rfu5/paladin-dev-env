@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::application::ports::output::llm_port::{LlmPort, LlmRequest};
 use crate::core::base::service::analysis_service::{
     AnalysisConfig, AnalysisError, AnalysisResult, AnalysisService,
 };
 use crate::core::platform::container::content::ContentItem;
 use crate::core::platform::container::prompt::PromptItem;
+use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
 
 #[derive(Debug, Clone)]
 pub struct LlmAnalysisConfig {

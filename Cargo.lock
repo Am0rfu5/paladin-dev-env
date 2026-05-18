@@ -3316,6 +3316,7 @@ dependencies = [
  "murmur3",
  "once_cell",
  "paladin-core",
+ "paladin-ports",
  "pdf-extract",
  "petgraph",
  "proptest",
@@ -3369,6 +3370,23 @@ dependencies = [
  "thiserror 2.0.12",
  "tokio",
  "url",
+ "uuid",
+]
+
+[[package]]
+name = "paladin-ports"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "md5 0.7.0",
+ "mime_guess",
+ "paladin-core",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "tokio",
  "uuid",
 ]
 

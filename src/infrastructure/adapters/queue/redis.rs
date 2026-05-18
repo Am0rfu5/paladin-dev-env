@@ -7,14 +7,14 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::application::ports::output::log_port::LogPort;
-use crate::application::ports::output::queue_port::{
-    BatchQueuePort, FullQueuePort, PriorityQueuePort, QueueManagementPort, QueuePort,
-};
 use crate::core::base::entity::message::{Location, MessagePriority};
 use crate::core::platform::container::log::{LogEntry, LogLevel, LogMessage};
 use crate::core::platform::container::queue_item::{QueueItem, QueueItemStatus, QueueItemSummary};
 use crate::core::platform::manager::queue_service::{QueueConfig, QueueError, QueueStats};
+use paladin_ports::output::log_port::LogPort;
+use paladin_ports::output::queue_port::{
+    BatchQueuePort, FullQueuePort, PriorityQueuePort, QueueManagementPort, QueuePort,
+};
 
 /// Configuration for Redis connection
 #[doc(hidden)]

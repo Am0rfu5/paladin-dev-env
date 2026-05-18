@@ -7,7 +7,7 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use futures::stream;
-use paladin::application::ports::output::llm_port::{
+use paladin_ports::output::llm_port::{
     FinishReason, FunctionCall, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse,
     TokenUsage,
 };
@@ -313,10 +313,8 @@ impl LlmPort for MockLlmAdapter {
         "mock"
     }
 
-    fn get_capabilities(
-        &self,
-    ) -> paladin::application::ports::output::llm_port::ProviderCapabilities {
-        paladin::application::ports::output::llm_port::ProviderCapabilities {
+    fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+        paladin_ports::output::llm_port::ProviderCapabilities {
             supports_streaming: true,
             supports_tool_calling: true,
             supports_function_calling: true,

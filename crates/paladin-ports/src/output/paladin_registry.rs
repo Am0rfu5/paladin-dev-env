@@ -35,11 +35,11 @@
 //! # }
 //! ```
 
-use crate::core::platform::container::paladin::Paladin;
+use paladin_core::platform::container::paladin::Paladin;
 use std::sync::Arc;
 
 // Re-export pure domain error type from core
-pub use crate::core::platform::container::registry_error::RegistryError;
+pub use paladin_core::platform::container::registry_error::RegistryError;
 
 /// Port for Paladin registry operations
 ///

@@ -26,9 +26,9 @@
 
 use async_trait::async_trait;
 
-use crate::application::ports::output::paladin_port::PaladinResult;
-use crate::application::use_cases::paladin::error::PaladinError;
-use crate::core::platform::container::paladin::Paladin;
+use crate::output::paladin_port::PaladinResult;
+use paladin_core::platform::container::paladin::Paladin;
+use paladin_core::platform::container::paladin_error::PaladinError;
 
 /// Port trait for executing a Paladin agent
 ///

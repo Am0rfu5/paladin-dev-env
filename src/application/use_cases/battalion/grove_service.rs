@@ -8,13 +8,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::application::ports::output::embedding_port::EmbeddingPort;
-use crate::application::ports::output::llm_port::{LlmPort, LlmRequest};
-use crate::application::ports::output::paladin_port::PaladinPort;
-use crate::application::ports::output::paladin_registry::PaladinRegistry;
 use crate::core::platform::container::battalion::BattalionError;
 use crate::core::platform::container::battalion::grove::{Grove, RoutingStrategy, Tree, TreeAgent};
 use crate::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
+use paladin_ports::output::embedding_port::EmbeddingPort;
+use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
+use paladin_ports::output::paladin_port::PaladinPort;
+use paladin_ports::output::paladin_registry::PaladinRegistry;
 
 /// Decision made by the Grove routing system
 ///
@@ -730,8 +730,8 @@ impl GroveExecutionService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::embedding_port::Embedding;
     use crate::core::platform::container::battalion::grove::{GroveBuilder, Tree, TreeAgent};
+    use paladin_ports::output::embedding_port::Embedding;
 
     /// Mock embedding port for testing
     struct MockEmbeddingPort;
@@ -741,8 +741,7 @@ mod tests {
         async fn embed_text(
             &self,
             text: &str,
-        ) -> Result<Embedding, crate::application::ports::output::embedding_port::EmbeddingError>
-        {
+        ) -> Result<Embedding, paladin_ports::output::embedding_port::EmbeddingError> {
             // Simple mock: return embedding based on text length
             let vector = vec![text.len() as f32 / 100.0; 128];
             Ok(Embedding {
@@ -756,8 +755,7 @@ mod tests {
         async fn embed_batch(
             &self,
             texts: &[&str],
-        ) -> Result<Vec<Embedding>, crate::application::ports::output::embedding_port::EmbeddingError>
-        {
+        ) -> Result<Vec<Embedding>, paladin_ports::output::embedding_port::EmbeddingError> {
             let mut embeddings = Vec::new();
             for text in texts {
                 embeddings.push(self.embed_text(text).await?);
@@ -878,11 +876,11 @@ mod tests {
     #[tokio::test]
     async fn test_grove_resolves_routed_agent() {
         // Task 4.1: Grove resolves routed agent from registry
-        use crate::application::ports::output::paladin_port::PaladinResult;
-        use crate::application::ports::output::paladin_registry::PaladinRegistry;
         use crate::core::base::entity::node::Node;
         use crate::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
         use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+        use paladin_ports::output::paladin_port::PaladinResult;
+        use paladin_ports::output::paladin_registry::PaladinRegistry;
 
         // Create test Paladins with names matching TreeAgent paladin_ids
         let backend_paladin = Node::new(
@@ -931,7 +929,7 @@ mod tests {
                 _paladin: &crate::core::platform::container::paladin::Paladin,
                 _input: &str,
             ) -> Result<
-                crate::application::ports::output::paladin_port::PaladinStream,
+                paladin_ports::output::paladin_port::PaladinStream,
                 crate::application::use_cases::paladin::error::PaladinError,
             > {
                 let (_tx, rx) = tokio::sync::mpsc::channel(1);
@@ -1032,7 +1030,7 @@ mod tests {
             _paladin: &crate::core::platform::container::paladin::Paladin,
             _input: &str,
         ) -> Result<
-            crate::application::ports::output::paladin_port::PaladinResult,
+            paladin_ports::output::paladin_port::PaladinResult,
             crate::application::use_cases::paladin::error::PaladinError,
         > {
             unimplemented!("Mock not needed for these tests")
@@ -1043,7 +1041,7 @@ mod tests {
             _paladin: &crate::core::platform::container::paladin::Paladin,
             _input: &str,
         ) -> Result<
-            crate::application::ports::output::paladin_port::PaladinStream,
+            paladin_ports::output::paladin_port::PaladinStream,
             crate::application::use_cases::paladin::error::PaladinError,
         > {
             unimplemented!("Mock not needed for these tests")
@@ -1061,27 +1059,27 @@ mod tests {
     impl LlmPort for MockLlmPort {
         async fn generate(
             &self,
-            _request: crate::application::ports::output::llm_port::LlmRequest,
+            _request: paladin_ports::output::llm_port::LlmRequest,
         ) -> Result<
-            crate::application::ports::output::llm_port::LlmResponse,
-            crate::application::ports::output::llm_port::LlmError,
+            paladin_ports::output::llm_port::LlmResponse,
+            paladin_ports::output::llm_port::LlmError,
         > {
             unimplemented!("Mock not needed for these tests")
         }
 
         async fn generate_stream(
             &self,
-            _request: crate::application::ports::output::llm_port::LlmRequest,
+            _request: paladin_ports::output::llm_port::LlmRequest,
         ) -> Result<
             Box<
                 dyn futures::Stream<
                         Item = Result<
-                            crate::application::ports::output::llm_port::StreamingResponse,
-                            crate::application::ports::output::llm_port::LlmError,
+                            paladin_ports::output::llm_port::StreamingResponse,
+                            paladin_ports::output::llm_port::LlmError,
                         >,
                     > + Send,
             >,
-            crate::application::ports::output::llm_port::LlmError,
+            paladin_ports::output::llm_port::LlmError,
         > {
             unimplemented!("Mock not needed for these tests")
         }
@@ -1089,13 +1087,13 @@ mod tests {
         async fn validate_model(
             &self,
             _model: &str,
-        ) -> Result<bool, crate::application::ports::output::llm_port::LlmError> {
+        ) -> Result<bool, paladin_ports::output::llm_port::LlmError> {
             Ok(true)
         }
 
         async fn get_available_models(
             &self,
-        ) -> Result<Vec<String>, crate::application::ports::output::llm_port::LlmError> {
+        ) -> Result<Vec<String>, paladin_ports::output::llm_port::LlmError> {
             Ok(vec!["mock-model".to_string()])
         }
 
@@ -1103,10 +1101,8 @@ mod tests {
             "mock"
         }
 
-        fn get_capabilities(
-            &self,
-        ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
-            use crate::application::ports::output::llm_port::ProviderCapabilities;
+        fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+            use paladin_ports::output::llm_port::ProviderCapabilities;
             ProviderCapabilities {
                 supports_streaming: false,
                 supports_tool_calling: false,
@@ -1130,10 +1126,10 @@ mod tests {
         impl LlmPort for SuccessfulLlmMock {
             async fn generate(
                 &self,
-                _request: crate::application::ports::output::llm_port::LlmRequest,
+                _request: paladin_ports::output::llm_port::LlmRequest,
             ) -> Result<
-                crate::application::ports::output::llm_port::LlmResponse,
-                crate::application::ports::output::llm_port::LlmError,
+                paladin_ports::output::llm_port::LlmResponse,
+                paladin_ports::output::llm_port::LlmError,
             > {
                 let response_json = r#"{
                     "tree_name": "engineering",
@@ -1142,13 +1138,13 @@ mod tests {
                     "reasoning": "Task mentions rust and backend, which are backend expert's core skills"
                 }"#;
 
-                Ok(crate::application::ports::output::llm_port::LlmResponse {
+                Ok(paladin_ports::output::llm_port::LlmResponse {
                     id: uuid::Uuid::new_v4(),
                     request_id: uuid::Uuid::new_v4(),
                     model: "mock-model".to_string(),
                     content: response_json.to_string(),
-                    finish_reason: crate::application::ports::output::llm_port::FinishReason::Stop,
-                    usage: crate::application::ports::output::llm_port::TokenUsage {
+                    finish_reason: paladin_ports::output::llm_port::FinishReason::Stop,
+                    usage: paladin_ports::output::llm_port::TokenUsage {
                         prompt_tokens: 100,
                         completion_tokens: 50,
                         total_tokens: 150,
@@ -1161,17 +1157,17 @@ mod tests {
 
             async fn generate_stream(
                 &self,
-                _request: crate::application::ports::output::llm_port::LlmRequest,
+                _request: paladin_ports::output::llm_port::LlmRequest,
             ) -> Result<
                 Box<
                     dyn futures::Stream<
                             Item = Result<
-                                crate::application::ports::output::llm_port::StreamingResponse,
-                                crate::application::ports::output::llm_port::LlmError,
+                                paladin_ports::output::llm_port::StreamingResponse,
+                                paladin_ports::output::llm_port::LlmError,
                             >,
                         > + Send,
                 >,
-                crate::application::ports::output::llm_port::LlmError,
+                paladin_ports::output::llm_port::LlmError,
             > {
                 unimplemented!()
             }
@@ -1179,14 +1175,13 @@ mod tests {
             async fn validate_model(
                 &self,
                 _model: &str,
-            ) -> Result<bool, crate::application::ports::output::llm_port::LlmError> {
+            ) -> Result<bool, paladin_ports::output::llm_port::LlmError> {
                 Ok(true)
             }
 
             async fn get_available_models(
                 &self,
-            ) -> Result<Vec<String>, crate::application::ports::output::llm_port::LlmError>
-            {
+            ) -> Result<Vec<String>, paladin_ports::output::llm_port::LlmError> {
                 Ok(vec!["mock-model".to_string()])
             }
 
@@ -1194,10 +1189,8 @@ mod tests {
                 "mock"
             }
 
-            fn get_capabilities(
-                &self,
-            ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
-                crate::application::ports::output::llm_port::ProviderCapabilities::default()
+            fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+                paladin_ports::output::llm_port::ProviderCapabilities::default()
             }
         }
 
@@ -1236,10 +1229,10 @@ mod tests {
         impl LlmPort for LowConfidenceLlmMock {
             async fn generate(
                 &self,
-                _request: crate::application::ports::output::llm_port::LlmRequest,
+                _request: paladin_ports::output::llm_port::LlmRequest,
             ) -> Result<
-                crate::application::ports::output::llm_port::LlmResponse,
-                crate::application::ports::output::llm_port::LlmError,
+                paladin_ports::output::llm_port::LlmResponse,
+                paladin_ports::output::llm_port::LlmError,
             > {
                 let response_json = r#"{
                     "tree_name": "engineering",
@@ -1248,13 +1241,13 @@ mod tests {
                     "reasoning": "Unclear task, best guess is backend"
                 }"#;
 
-                Ok(crate::application::ports::output::llm_port::LlmResponse {
+                Ok(paladin_ports::output::llm_port::LlmResponse {
                     id: uuid::Uuid::new_v4(),
                     request_id: uuid::Uuid::new_v4(),
                     model: "mock-model".to_string(),
                     content: response_json.to_string(),
-                    finish_reason: crate::application::ports::output::llm_port::FinishReason::Stop,
-                    usage: crate::application::ports::output::llm_port::TokenUsage {
+                    finish_reason: paladin_ports::output::llm_port::FinishReason::Stop,
+                    usage: paladin_ports::output::llm_port::TokenUsage {
                         prompt_tokens: 100,
                         completion_tokens: 50,
                         total_tokens: 150,
@@ -1267,17 +1260,17 @@ mod tests {
 
             async fn generate_stream(
                 &self,
-                _request: crate::application::ports::output::llm_port::LlmRequest,
+                _request: paladin_ports::output::llm_port::LlmRequest,
             ) -> Result<
                 Box<
                     dyn futures::Stream<
                             Item = Result<
-                                crate::application::ports::output::llm_port::StreamingResponse,
-                                crate::application::ports::output::llm_port::LlmError,
+                                paladin_ports::output::llm_port::StreamingResponse,
+                                paladin_ports::output::llm_port::LlmError,
                             >,
                         > + Send,
                 >,
-                crate::application::ports::output::llm_port::LlmError,
+                paladin_ports::output::llm_port::LlmError,
             > {
                 unimplemented!()
             }
@@ -1285,14 +1278,13 @@ mod tests {
             async fn validate_model(
                 &self,
                 _model: &str,
-            ) -> Result<bool, crate::application::ports::output::llm_port::LlmError> {
+            ) -> Result<bool, paladin_ports::output::llm_port::LlmError> {
                 Ok(true)
             }
 
             async fn get_available_models(
                 &self,
-            ) -> Result<Vec<String>, crate::application::ports::output::llm_port::LlmError>
-            {
+            ) -> Result<Vec<String>, paladin_ports::output::llm_port::LlmError> {
                 Ok(vec!["mock-model".to_string()])
             }
 
@@ -1300,10 +1292,8 @@ mod tests {
                 "mock"
             }
 
-            fn get_capabilities(
-                &self,
-            ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
-                crate::application::ports::output::llm_port::ProviderCapabilities::default()
+            fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+                paladin_ports::output::llm_port::ProviderCapabilities::default()
             }
         }
 
@@ -1345,20 +1335,20 @@ mod tests {
         impl LlmPort for InvalidJsonLlmMock {
             async fn generate(
                 &self,
-                _request: crate::application::ports::output::llm_port::LlmRequest,
+                _request: paladin_ports::output::llm_port::LlmRequest,
             ) -> Result<
-                crate::application::ports::output::llm_port::LlmResponse,
-                crate::application::ports::output::llm_port::LlmError,
+                paladin_ports::output::llm_port::LlmResponse,
+                paladin_ports::output::llm_port::LlmError,
             > {
                 let response_json = "This is not JSON at all!";
 
-                Ok(crate::application::ports::output::llm_port::LlmResponse {
+                Ok(paladin_ports::output::llm_port::LlmResponse {
                     id: uuid::Uuid::new_v4(),
                     request_id: uuid::Uuid::new_v4(),
                     model: "mock-model".to_string(),
                     content: response_json.to_string(),
-                    finish_reason: crate::application::ports::output::llm_port::FinishReason::Stop,
-                    usage: crate::application::ports::output::llm_port::TokenUsage {
+                    finish_reason: paladin_ports::output::llm_port::FinishReason::Stop,
+                    usage: paladin_ports::output::llm_port::TokenUsage {
                         prompt_tokens: 100,
                         completion_tokens: 50,
                         total_tokens: 150,
@@ -1371,17 +1361,17 @@ mod tests {
 
             async fn generate_stream(
                 &self,
-                _request: crate::application::ports::output::llm_port::LlmRequest,
+                _request: paladin_ports::output::llm_port::LlmRequest,
             ) -> Result<
                 Box<
                     dyn futures::Stream<
                             Item = Result<
-                                crate::application::ports::output::llm_port::StreamingResponse,
-                                crate::application::ports::output::llm_port::LlmError,
+                                paladin_ports::output::llm_port::StreamingResponse,
+                                paladin_ports::output::llm_port::LlmError,
                             >,
                         > + Send,
                 >,
-                crate::application::ports::output::llm_port::LlmError,
+                paladin_ports::output::llm_port::LlmError,
             > {
                 unimplemented!()
             }
@@ -1389,14 +1379,13 @@ mod tests {
             async fn validate_model(
                 &self,
                 _model: &str,
-            ) -> Result<bool, crate::application::ports::output::llm_port::LlmError> {
+            ) -> Result<bool, paladin_ports::output::llm_port::LlmError> {
                 Ok(true)
             }
 
             async fn get_available_models(
                 &self,
-            ) -> Result<Vec<String>, crate::application::ports::output::llm_port::LlmError>
-            {
+            ) -> Result<Vec<String>, paladin_ports::output::llm_port::LlmError> {
                 Ok(vec!["mock-model".to_string()])
             }
 
@@ -1404,10 +1393,8 @@ mod tests {
                 "mock"
             }
 
-            fn get_capabilities(
-                &self,
-            ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
-                crate::application::ports::output::llm_port::ProviderCapabilities::default()
+            fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+                paladin_ports::output::llm_port::ProviderCapabilities::default()
             }
         }
 
@@ -1442,10 +1429,10 @@ mod tests {
         impl LlmPort for LowConfidenceFallbackMock {
             async fn generate(
                 &self,
-                _request: crate::application::ports::output::llm_port::LlmRequest,
+                _request: paladin_ports::output::llm_port::LlmRequest,
             ) -> Result<
-                crate::application::ports::output::llm_port::LlmResponse,
-                crate::application::ports::output::llm_port::LlmError,
+                paladin_ports::output::llm_port::LlmResponse,
+                paladin_ports::output::llm_port::LlmError,
             > {
                 let response_json = r#"{
                     "tree_name": "engineering",
@@ -1454,13 +1441,13 @@ mod tests {
                     "reasoning": "Very uncertain"
                 }"#;
 
-                Ok(crate::application::ports::output::llm_port::LlmResponse {
+                Ok(paladin_ports::output::llm_port::LlmResponse {
                     id: uuid::Uuid::new_v4(),
                     request_id: uuid::Uuid::new_v4(),
                     model: "mock-model".to_string(),
                     content: response_json.to_string(),
-                    finish_reason: crate::application::ports::output::llm_port::FinishReason::Stop,
-                    usage: crate::application::ports::output::llm_port::TokenUsage {
+                    finish_reason: paladin_ports::output::llm_port::FinishReason::Stop,
+                    usage: paladin_ports::output::llm_port::TokenUsage {
                         prompt_tokens: 100,
                         completion_tokens: 50,
                         total_tokens: 150,
@@ -1473,17 +1460,17 @@ mod tests {
 
             async fn generate_stream(
                 &self,
-                _request: crate::application::ports::output::llm_port::LlmRequest,
+                _request: paladin_ports::output::llm_port::LlmRequest,
             ) -> Result<
                 Box<
                     dyn futures::Stream<
                             Item = Result<
-                                crate::application::ports::output::llm_port::StreamingResponse,
-                                crate::application::ports::output::llm_port::LlmError,
+                                paladin_ports::output::llm_port::StreamingResponse,
+                                paladin_ports::output::llm_port::LlmError,
                             >,
                         > + Send,
                 >,
-                crate::application::ports::output::llm_port::LlmError,
+                paladin_ports::output::llm_port::LlmError,
             > {
                 unimplemented!()
             }
@@ -1491,14 +1478,13 @@ mod tests {
             async fn validate_model(
                 &self,
                 _model: &str,
-            ) -> Result<bool, crate::application::ports::output::llm_port::LlmError> {
+            ) -> Result<bool, paladin_ports::output::llm_port::LlmError> {
                 Ok(true)
             }
 
             async fn get_available_models(
                 &self,
-            ) -> Result<Vec<String>, crate::application::ports::output::llm_port::LlmError>
-            {
+            ) -> Result<Vec<String>, paladin_ports::output::llm_port::LlmError> {
                 Ok(vec!["mock-model".to_string()])
             }
 
@@ -1506,10 +1492,8 @@ mod tests {
                 "mock"
             }
 
-            fn get_capabilities(
-                &self,
-            ) -> crate::application::ports::output::llm_port::ProviderCapabilities {
-                crate::application::ports::output::llm_port::ProviderCapabilities::default()
+            fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+                paladin_ports::output::llm_port::ProviderCapabilities::default()
             }
         }
 

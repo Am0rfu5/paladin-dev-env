@@ -8,8 +8,6 @@ use std::sync::Arc;
 use tokio::time::{Duration, timeout};
 use uuid::Uuid;
 
-use crate::application::ports::output::paladin_port::PaladinPort;
-use crate::application::ports::output::paladin_registry::PaladinRegistry;
 use crate::application::use_cases::battalion::campaign_service::CampaignExecutionService;
 use crate::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
 use crate::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
@@ -23,6 +21,8 @@ use crate::core::platform::container::battalion::{
 };
 use crate::core::platform::container::paladin::Paladin;
 use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+use paladin_ports::output::paladin_port::PaladinPort;
+use paladin_ports::output::paladin_registry::PaladinRegistry;
 
 /// Commander for routing Battalion execution to appropriate strategies.
 ///
@@ -574,8 +574,8 @@ impl Commander {
                 let council = council_builder.build()?;
 
                 // Create temporary registry from paladins for Council execution
-                use crate::application::ports::output::paladin_registry::PaladinRegistry;
                 use crate::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+                use paladin_ports::output::paladin_registry::PaladinRegistry;
                 let registry = HashMapPaladinRegistry::new();
                 for paladin in &self.paladins {
                     // Use paladin name as ID
@@ -1551,9 +1551,6 @@ impl CommanderBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::output::paladin_port::{
-        PaladinResult, PaladinStream, StopReason,
-    };
     use crate::application::use_cases::paladin::error::PaladinError;
     use crate::core::base::entity::node::Node;
     use crate::core::platform::container::battalion::{
@@ -1561,6 +1558,7 @@ mod tests {
     };
     use crate::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
     use async_trait::async_trait;
+    use paladin_ports::output::paladin_port::{PaladinResult, PaladinStream, StopReason};
 
     /// Mock PaladinPort for testing
     struct MockPaladinPort;

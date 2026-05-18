@@ -3,8 +3,8 @@
 //! This port defines the interface for document processing operations,
 //! supporting various document sources and chunking strategies.
 
-use crate::core::platform::container::document::{Document, DocumentError};
 use async_trait::async_trait;
+use paladin_core::platform::container::document::{Document, DocumentError};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 

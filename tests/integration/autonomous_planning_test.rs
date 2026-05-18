@@ -9,10 +9,10 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::ports::output::llm_port::{
+use paladin::application::use_cases::paladin::planning_service::PlanningService;
+use paladin_ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, TokenUsage,
 };
-use paladin::application::use_cases::paladin::planning_service::PlanningService;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
@@ -75,10 +75,7 @@ impl LlmPort for MultiStepMockLlmPort {
     ) -> Result<
         Box<
             dyn futures::Stream<
-                    Item = Result<
-                        paladin::application::ports::output::llm_port::StreamingResponse,
-                        LlmError,
-                    >,
+                    Item = Result<paladin_ports::output::llm_port::StreamingResponse, LlmError>,
                 > + Send,
         >,
         LlmError,
