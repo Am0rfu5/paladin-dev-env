@@ -11,9 +11,9 @@
 //! - Qdrant adapter: < 500ms search at 100K vectors
 
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
-use paladin::application::ports::output::sanctum_port::{SanctumFilter, SanctumPort, SanctumQuery};
 use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
 use paladin::infrastructure::adapters::sanctum::InMemorySanctum;
+use paladin_ports::output::sanctum_port::{SanctumFilter, SanctumPort, SanctumQuery};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 

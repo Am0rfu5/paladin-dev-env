@@ -6,10 +6,10 @@
 //! - Table Herald: Target < 2ms for 10KB results
 
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
-use paladin::core::platform::container::herald::{
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
+use paladin_core::platform::container::herald::{
     BattalionResult, ExecutionMetadata, Herald, PaladinResult, StreamChunk,
 };
-use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 
 /// Generate a Paladin result with specified output size
 fn generate_paladin_result(output_size_kb: usize) -> PaladinResult {
@@ -18,7 +18,7 @@ fn generate_paladin_result(output_size_kb: usize) -> PaladinResult {
     let repetitions = output_size_bytes / repeated_text.len();
     let output = repeated_text.repeat(repetitions);
 
-    use paladin::application::ports::output::paladin_port::StopReason;
+    use paladin_ports::output::paladin_port::StopReason;
     PaladinResult {
         output,
         token_count: 100,
@@ -111,7 +111,7 @@ fn benchmark_json_herald(c: &mut Criterion) {
     // Benchmark finalize stream
     group.bench_function("finalize_stream", |b| {
         use chrono::Utc;
-        use paladin::application::ports::output::llm_port::TokenUsage;
+        use paladin_ports::output::llm_port::TokenUsage;
         use uuid::Uuid;
         let metadata = ExecutionMetadata::builder()
             .execution_id(Uuid::new_v4())
@@ -180,7 +180,7 @@ fn benchmark_markdown_herald(c: &mut Criterion) {
     // Benchmark finalize stream
     group.bench_function("finalize_stream", |b| {
         use chrono::Utc;
-        use paladin::application::ports::output::llm_port::TokenUsage;
+        use paladin_ports::output::llm_port::TokenUsage;
         use uuid::Uuid;
         let metadata = ExecutionMetadata::builder()
             .execution_id(Uuid::new_v4())
@@ -249,7 +249,7 @@ fn benchmark_table_herald(c: &mut Criterion) {
     // Benchmark finalize stream (Table renders here)
     group.bench_function("finalize_stream_with_chunks", |b| {
         use chrono::Utc;
-        use paladin::application::ports::output::llm_port::TokenUsage;
+        use paladin_ports::output::llm_port::TokenUsage;
         use uuid::Uuid;
         let metadata = ExecutionMetadata::builder()
             .execution_id(Uuid::new_v4())

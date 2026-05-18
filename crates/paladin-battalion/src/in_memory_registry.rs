@@ -28,7 +28,6 @@ impl HashMapPaladinRegistry {
             paladins: RwLock::new(HashMap::new()),
         }
     }
-
 }
 
 impl PaladinRegistry for HashMapPaladinRegistry {

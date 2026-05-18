@@ -8,9 +8,6 @@
 //! - Maneuver (Flow DSL)
 
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
-use paladin::application::ports::output::paladin_port::{
-    PaladinPort, PaladinResult, PaladinStreamChunk, StopReason,
-};
 use paladin::application::use_cases::battalion::campaign_service::CampaignExecutionService;
 use paladin::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
 use paladin::application::use_cases::battalion::flow_visualizer::{
@@ -31,6 +28,9 @@ use paladin::core::platform::container::battalion::maneuver::{Maneuver, Maneuver
 use paladin::core::platform::container::battalion::parser::FlowParser;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
+use paladin_ports::output::paladin_port::{
+    PaladinPort, PaladinResult, PaladinStreamChunk, StopReason,
+};
 use std::sync::Arc;
 use std::time::Duration;
 
