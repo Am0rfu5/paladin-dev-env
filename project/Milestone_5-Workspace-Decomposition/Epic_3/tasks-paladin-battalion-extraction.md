@@ -103,19 +103,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.6 Run `cargo build --workspace` and confirm zero compilation errors after deletion of originals
   - [x] 5.7 Run `cargo test --workspace` and confirm the full test suite passes at or above the pre-epic baseline count recorded in Task 1.1
 
-- [ ] 6.0 Verify existing examples and integration tests compile
-  - [ ] 6.1 Spot-check at least four battalion-related examples: `cargo check --example formation_sequential`, `cargo check --example campaign_workflow`, `cargo check --example chain_of_command_delegation`, `cargo check --example commander_basic`
-  - [ ] 6.2 Spot-check at least two examples using Commander auto-detection: `cargo check --example commander_auto`, `cargo check --example commander_full_config`
-  - [ ] 6.3 Run `cargo test --test integration` to confirm all workspace-level integration tests pass (covers `tests/integration/battalion/`)
-  - [ ] 6.4 Run `cargo test --test unit` to confirm all workspace-level unit tests pass (covers `tests/unit/battalion/`)
-  - [ ] 6.5 Confirm the two top-level battalion integration test files compile: `cargo check --test battalion_campaign_integration_test`, `cargo check --test battalion_chain_of_command_integration_test`
+- [x] 6.0 Verify existing examples and integration tests compile
+  - [x] 6.1 Spot-check at least four battalion-related examples: `cargo check --example formation_sequential`, `cargo check --example campaign_workflow`, `cargo check --example chain_of_command_delegation`, `cargo check --example commander_basic`
+  - [x] 6.2 Spot-check at least two examples using Commander auto-detection: `cargo check --example commander_auto`, `cargo check --example commander_full_config`
+  - [x] 6.3 Run `cargo test --test integration` to confirm all workspace-level integration tests pass (covers `tests/integration/battalion/`)
+  - [x] 6.4 Run `cargo test --test unit` to confirm all workspace-level unit tests pass (covers `tests/unit/battalion/`)
+  - [x] 6.5 Confirm the two top-level battalion integration test files compile: `cargo check --test battalion_campaign_integration_test`, `cargo check --test battalion_chain_of_command_integration_test`
 
-- [ ] 7.0 Run full workspace quality gates
-  - [ ] 7.1 Run `cargo fmt --all --check` — if it fails, run `cargo fmt --all` and re-check; commit the formatting diff separately
-  - [ ] 7.2 Run `cargo clippy --workspace -- -D warnings` — fix all warnings before proceeding
-  - [ ] 7.3 Run `cargo doc -p paladin-battalion --no-deps` — fix any broken intra-doc links or missing doc warnings
-  - [ ] 7.4 Run `cargo test --workspace` one final time and confirm all tests pass; record final count
-  - [ ] 7.5 Confirm `crates/paladin-battalion/Cargo.toml` `[dependencies]` contains no forbidden infrastructure crates (manual review)
+- [x] 7.0 Run full workspace quality gates
+  - [x] 7.1 Run `cargo fmt --all --check` — if it fails, run `cargo fmt --all` and re-check; commit the formatting diff separately
+  - [x] 7.2 Run `cargo clippy --workspace -- -D warnings` — fix all warnings before proceeding
+  - [x] 7.3 Run `cargo doc -p paladin-battalion --no-deps` — fix any broken intra-doc links or missing doc warnings
+  - [x] 7.4 Run `cargo test --workspace` one final time and confirm all tests pass; record final count
+  - [x] 7.5 Confirm `crates/paladin-battalion/Cargo.toml` `[dependencies]` contains no forbidden infrastructure crates (manual review)
 
 - [ ] 8.0 Commit and open pull request
   - [ ] 8.1 Stage all changes: `git add .`

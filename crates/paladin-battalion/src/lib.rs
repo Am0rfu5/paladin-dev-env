@@ -3,8 +3,8 @@
 //! Multi-agent orchestration runtime for the Paladin framework.
 //!
 //! This crate provides all eight Battalion execution patterns and the Commander
-//! strategy router. It depends only on [`paladin-core`] (domain types) and
-//! [`paladin-ports`] (port trait contracts) — never on infrastructure SDKs,
+//! strategy router. It depends only on `paladin-core` (domain types) and
+//! `paladin-ports` (port trait contracts) — never on infrastructure SDKs,
 //! database drivers, or LLM provider libraries.
 //!
 //! ## Patterns
