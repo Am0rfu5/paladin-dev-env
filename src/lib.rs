@@ -166,6 +166,9 @@ pub use paladin_ports::output::battalion_port::BattalionPort;
 // Re-export Battalion types from core
 pub use core::platform::container::battalion::{BattalionResult, BattalionStatus};
 
+/// Re-export of the `paladin-battalion` crate for convenience.
+pub use paladin_battalion;
+
 // Input Ports (Use Case Interfaces)
 
 pub use paladin_ports::input::content_input_port::ContentIngestionPort;

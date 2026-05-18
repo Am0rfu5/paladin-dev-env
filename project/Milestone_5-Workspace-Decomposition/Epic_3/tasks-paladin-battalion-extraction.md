@@ -94,14 +94,14 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.4 Save the clean `cargo tree -p paladin-battalion` output to `project/Milestone_5-Workspace-Decomposition/Epic_3/paladin-battalion-dependency-tree.txt`
   - [x] 4.5 Save the `cargo build -p paladin-battalion` stdout + stderr to `project/Milestone_5-Workspace-Decomposition/Epic_3/paladin-battalion-isolation-build.txt`
 
-- [ ] 5.0 Wire `paladin-battalion` into the root `paladin` facade crate
-  - [ ] 5.1 Add `paladin-battalion = { workspace = true }` to the `[dependencies]` section of the root `paladin` crate's `Cargo.toml`
-  - [ ] 5.2 Add `pub use paladin_battalion;` to `src/lib.rs` so the crate is re-exported at the crate root
-  - [ ] 5.3 Convert `src/application/use_cases/battalion/mod.rs` to a re-export shim: replace its contents with `pub use paladin_battalion::*;` sub-module re-exports so existing `use paladin::application::use_cases::battalion::formation_service::FormationExecutionService` paths continue to resolve
-  - [ ] 5.4 Run `cargo build --workspace` — fix any path resolution errors; the CLI commands and any other external consumers of battalion paths must compile cleanly
-  - [ ] 5.5 Remove the original source files from `src/application/use_cases/battalion/` (all except `mod.rs` which is now the re-export shim): `formation_service.rs`, `phalanx_service.rs`, `campaign_service.rs`, `chain_of_command_service.rs`, `conclave_execution_service.rs`, `council_service.rs`, `grove_service.rs`, `maneuver_service.rs`, `commander.rs`, `error_aggregation.rs`, `flow_visualizer.rs`, `retry.rs`
-  - [ ] 5.6 Run `cargo build --workspace` and confirm zero compilation errors after deletion of originals
-  - [ ] 5.7 Run `cargo test --workspace` and confirm the full test suite passes at or above the pre-epic baseline count recorded in Task 1.1
+- [x] 5.0 Wire `paladin-battalion` into the root `paladin` facade crate
+  - [x] 5.1 Add `paladin-battalion = { workspace = true }` to the `[dependencies]` section of the root `paladin` crate's `Cargo.toml`
+  - [x] 5.2 Add `pub use paladin_battalion;` to `src/lib.rs` so the crate is re-exported at the crate root
+  - [x] 5.3 Convert `src/application/use_cases/battalion/mod.rs` to a re-export shim: replace its contents with `pub use paladin_battalion::*;` sub-module re-exports so existing `use paladin::application::use_cases::battalion::formation_service::FormationExecutionService` paths continue to resolve
+  - [x] 5.4 Run `cargo build --workspace` — fix any path resolution errors; the CLI commands and any other external consumers of battalion paths must compile cleanly
+  - [x] 5.5 Remove the original source files from `src/application/use_cases/battalion/` (all except `mod.rs` which is now the re-export shim): `formation_service.rs`, `phalanx_service.rs`, `campaign_service.rs`, `chain_of_command_service.rs`, `conclave_execution_service.rs`, `council_service.rs`, `grove_service.rs`, `maneuver_service.rs`, `commander.rs`, `error_aggregation.rs`, `flow_visualizer.rs`, `retry.rs`
+  - [x] 5.6 Run `cargo build --workspace` and confirm zero compilation errors after deletion of originals
+  - [x] 5.7 Run `cargo test --workspace` and confirm the full test suite passes at or above the pre-epic baseline count recorded in Task 1.1
 
 - [ ] 6.0 Verify existing examples and integration tests compile
   - [ ] 6.1 Spot-check at least four battalion-related examples: `cargo check --example formation_sequential`, `cargo check --example campaign_workflow`, `cargo check --example chain_of_command_delegation`, `cargo check --example commander_basic`
