@@ -1,0 +1,23 @@
+[package]
+name = "paladin-battalion"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Multi-agent orchestration runtime for the Paladin framework — Formation, Phalanx, Campaign, Chain of Command, Conclave, Council, Grove, Maneuver, Commander"
+repository = "https://github.com/DF3NDR/paladin-dev-env"
+
+[dependencies]
+paladin-core  = { path = "../paladin-core" }
+paladin-ports = { path = "../paladin-ports" }
+tokio         = { workspace = true }
+async-trait   = { workspace = true }
+serde         = { workspace = true }
+serde_json    = { workspace = true }
+uuid          = { workspace = true }
+log           = { workspace = true }
+chrono        = { workspace = true }
+futures       = "0.3.31"
+rand          = "0.8"
+tokio-util    = "0.7"
+petgraph      = "0.6"
+regex         = "1.11.1"

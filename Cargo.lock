@@ -3354,6 +3354,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "paladin-battalion"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "log",
+ "paladin-core",
+ "paladin-ports",
+ "petgraph",
+ "rand 0.8.5",
+ "regex",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+ "uuid",
+]
+
+[[package]]
 name = "paladin-core"
 version = "0.1.0"
 dependencies = [

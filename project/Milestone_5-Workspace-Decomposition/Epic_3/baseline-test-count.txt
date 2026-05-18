@@ -1,0 +1,13 @@
+Branch: feature/milestone_5-epic_3-battalion-extraction
+Date: 2026-05-18
+Command: cargo test --workspace
+
+Total passing tests: 2519
+Failed: 0
+Ignored: (some ignored tests exist in paladin-core doc-tests)
+
+Note: This baseline was captured after merging Epic 2 (paladin-ports extraction) into
+feature/milestone_5 and then into this branch. The count dropped from the pre-Epic-2
+value of 2604 because paladin-ports has doctest = false (port-file doctests previously
+ran under the root crate and now do not). Zero test failures; the reduction is expected
+and correct.

@@ -51,22 +51,22 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Confirm the current branch is `feature/milestone_5` via `git branch --show-current`
-  - [ ] 0.2 From `feature/milestone_5`, create and checkout a new feature branch: `git checkout -b feature/milestone_5-epic_3-battalion-extraction`
-  - [ ] 0.3 Push the branch to origin to establish the upstream: `git push -u origin feature/milestone_5-epic_3-battalion-extraction`
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Confirm the current branch is `feature/milestone_5` via `git branch --show-current`
+  - [x] 0.2 From `feature/milestone_5`, create and checkout a new feature branch: `git checkout -b feature/milestone_5-epic_3-battalion-extraction`
+  - [x] 0.3 Push the branch to origin to establish the upstream: `git push -u origin feature/milestone_5-epic_3-battalion-extraction`
 
-- [ ] 1.0 Capture baseline and scaffold `paladin-battalion` crate skeleton
-  - [ ] 1.1 Capture the pre-epic baseline: run `cargo test --workspace` and record the passing test count in `project/Milestone_5-Workspace-Decomposition/Epic_3/baseline-test-count.txt` (include branch name and date)
-  - [ ] 1.2 Audit feature-flag guards: run `grep -rn "#\[cfg(feature" src/application/use_cases/battalion/` and record any feature gates that must be carried into `paladin-battalion/Cargo.toml`
-  - [ ] 1.3 Audit `PaladinError` usage: run `grep -rn "use_cases::paladin::error\|PaladinError" src/application/use_cases/battalion/` and confirm `PaladinError` is accessible via `paladin_ports::` or a path resolvable in `paladin-battalion`
-  - [ ] 1.4 Create the directory `crates/paladin-battalion/src/`
-  - [ ] 1.5 Create `crates/paladin-battalion/Cargo.toml` with `name = "paladin-battalion"`, `version` matching the workspace `[workspace.package]` version, `edition = "2021"`, and `license` consistent with the root crate
-  - [ ] 1.6 Add `[dependencies]` to `crates/paladin-battalion/Cargo.toml` using workspace references for all deps listed in FR-2: `paladin-core`, `paladin-ports`, `tokio`, `async-trait`, `serde`, `serde_json`, `uuid`, `log`, `futures`, `chrono`, `rand`, `tokio-util`, `petgraph`, `regex` — and only these
-  - [ ] 1.7 Create `crates/paladin-battalion/src/lib.rs` with crate-level `//!` doc comment, `#![deny(unused_imports, dead_code)]` lint attributes consistent with the root crate, and empty `pub mod` placeholders (commented out) for all 13 modules
-  - [ ] 1.8 Add `paladin-battalion = { path = "crates/paladin-battalion" }` to the `[workspace.dependencies]` section of the root `Cargo.toml`
-  - [ ] 1.9 Run `cargo build -p paladin-battalion` and confirm the empty skeleton crate compiles in isolation
-  - [ ] 1.10 Run `cargo build --workspace` and confirm both the empty `paladin-battalion` and the existing `paladin` crate still build together with zero regressions
+- [x] 1.0 Capture baseline and scaffold `paladin-battalion` crate skeleton
+  - [x] 1.1 Capture the pre-epic baseline: run `cargo test --workspace` and record the passing test count in `project/Milestone_5-Workspace-Decomposition/Epic_3/baseline-test-count.txt` (include branch name and date)
+  - [x] 1.2 Audit feature-flag guards: run `grep -rn "#\[cfg(feature" src/application/use_cases/battalion/` and record any feature gates that must be carried into `paladin-battalion/Cargo.toml`
+  - [x] 1.3 Audit `PaladinError` usage: run `grep -rn "use_cases::paladin::error\|PaladinError" src/application/use_cases/battalion/` and confirm `PaladinError` is accessible via `paladin_ports::` or a path resolvable in `paladin-battalion`
+  - [x] 1.4 Create the directory `crates/paladin-battalion/src/`
+  - [x] 1.5 Create `crates/paladin-battalion/Cargo.toml` with `name = "paladin-battalion"`, `version` matching the workspace `[workspace.package]` version, `edition = "2021"`, and `license` consistent with the root crate
+  - [x] 1.6 Add `[dependencies]` to `crates/paladin-battalion/Cargo.toml` using workspace references for all deps listed in FR-2: `paladin-core`, `paladin-ports`, `tokio`, `async-trait`, `serde`, `serde_json`, `uuid`, `log`, `futures`, `chrono`, `rand`, `tokio-util`, `petgraph`, `regex` — and only these
+  - [x] 1.7 Create `crates/paladin-battalion/src/lib.rs` with crate-level `//!` doc comment, `#![deny(unused_imports, dead_code)]` lint attributes consistent with the root crate, and empty `pub mod` placeholders (commented out) for all 13 modules
+  - [x] 1.8 Add `paladin-battalion = { path = "crates/paladin-battalion" }` to the `[workspace.dependencies]` section of the root `Cargo.toml`
+  - [x] 1.9 Run `cargo build -p paladin-battalion` and confirm the empty skeleton crate compiles in isolation
+  - [x] 1.10 Run `cargo build --workspace` and confirm both the empty `paladin-battalion` and the existing `paladin` crate still build together with zero regressions
 
 - [ ] 2.0 Copy execution service files into `paladin-battalion`
   - [ ] 2.1 Copy all 9 execution service files from `src/application/use_cases/battalion/` into `crates/paladin-battalion/src/` — **do NOT delete the originals yet** (they are removed in Task 5.0): `formation_service.rs`, `phalanx_service.rs`, `campaign_service.rs`, `chain_of_command_service.rs`, `conclave_execution_service.rs`, `council_service.rs`, `grove_service.rs`, `maneuver_service.rs`, `commander.rs`

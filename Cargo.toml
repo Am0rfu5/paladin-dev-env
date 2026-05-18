@@ -12,6 +12,7 @@ tokio = { version = "1", features = ["full"] }
 async-trait = "0.1.88"
 reqwest = { version = "0.12.4", features = ["json"] }
 log = "0.4.21"
+paladin-battalion = { path = "crates/paladin-battalion" }
 
 [package]
 name = "paladin"
