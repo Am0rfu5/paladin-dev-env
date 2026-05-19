@@ -135,38 +135,38 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 8.8 Run `cargo build --workspace` and confirm no circular dependency error (FR-31); the build must not reference `crate::config::application_settings` from within `paladin-llm`
   - [x] 8.9 Run `cargo test --workspace` and confirm no regressions
 
-- [ ] 9.0 Wire `paladin-llm` into the root facade crate and `paladin::prelude`
-  - [ ] 9.1 Add `paladin-llm` to the root `paladin` crate's `Cargo.toml` `[dependencies]` with `default-features = false` and `features` matching the full set of LLM feature flags the root crate exposes (e.g., `["openai", "anthropic", "deepseek", "mock", "vision"]`) (FR-37)
-  - [ ] 9.2 Locate the root crate's `prelude` module (typically `src/prelude.rs` or inline in `src/lib.rs`) and add feature-gated re-exports for: `paladin_llm::OpenAIAdapter`, `paladin_llm::openai::embedding::OpenAIEmbeddingAdapter`, `paladin_llm::AnthropicAdapter`, `paladin_llm::DeepSeekAdapter`, `paladin_llm::mock::MockLlmPort`, `paladin_llm::mock::MultiStepMockLlmPort`, `paladin_llm::LlmProviderFactory`, `paladin_llm::LlmProviderError` (FR-38)
-  - [ ] 9.3 Delete the original source files that have now been fully replaced: `src/infrastructure/adapters/llm/openai_adapter.rs`, `src/infrastructure/adapters/llm/openai_embedding_adapter.rs`, `src/infrastructure/adapters/llm/openai_vision.rs`, `src/infrastructure/adapters/llm/anthropic_adapter.rs`, `src/infrastructure/adapters/llm/anthropic_vision.rs`, `src/infrastructure/adapters/llm/deepseek_adapter.rs`, `src/infrastructure/adapters/llm/mock_llm_adapter.rs`, `src/infrastructure/adapters/llm/provider_factory.rs` (FR-40)
-  - [ ] 9.4 Update `src/infrastructure/adapters/llm/mod.rs` — remove all `pub mod` declarations for deleted files; if `config_bridge` is the only remaining module, leave only `pub mod config_bridge;`; add a tombstone comment explaining that adapter implementations moved to `paladin-llm` (FR-40)
-  - [ ] 9.5 Run `cargo build --workspace` and fix any broken imports in the root crate that still referenced the deleted files (FR-46)
-  - [ ] 9.6 Run the isolated feature-flag build matrix to confirm all six FR-41–FR-46 builds pass:
+- [x] 9.0 Wire `paladin-llm` into the root facade crate and `paladin::prelude`
+  - [x] 9.1 Add `paladin-llm` to the root `paladin` crate's `Cargo.toml` `[dependencies]` with `default-features = false` and `features` matching the full set of LLM feature flags the root crate exposes (e.g., `["openai", "anthropic", "deepseek", "mock", "vision"]`) (FR-37)
+  - [x] 9.2 Locate the root crate's `prelude` module (typically `src/prelude.rs` or inline in `src/lib.rs`) and add feature-gated re-exports for: `paladin_llm::OpenAIAdapter`, `paladin_llm::openai::embedding::OpenAIEmbeddingAdapter`, `paladin_llm::AnthropicAdapter`, `paladin_llm::DeepSeekAdapter`, `paladin_llm::mock::MockLlmPort`, `paladin_llm::mock::MultiStepMockLlmPort`, `paladin_llm::LlmProviderFactory`, `paladin_llm::LlmProviderError` (FR-38)
+  - [x] 9.3 Delete the original source files that have now been fully replaced: `src/infrastructure/adapters/llm/openai_adapter.rs`, `src/infrastructure/adapters/llm/openai_embedding_adapter.rs`, `src/infrastructure/adapters/llm/openai_vision.rs`, `src/infrastructure/adapters/llm/anthropic_adapter.rs`, `src/infrastructure/adapters/llm/anthropic_vision.rs`, `src/infrastructure/adapters/llm/deepseek_adapter.rs`, `src/infrastructure/adapters/llm/mock_llm_adapter.rs`, `src/infrastructure/adapters/llm/provider_factory.rs` (FR-40)
+  - [x] 9.4 Update `src/infrastructure/adapters/llm/mod.rs` — remove all `pub mod` declarations for deleted files; if `config_bridge` is the only remaining module, leave only `pub mod config_bridge;`; add a tombstone comment explaining that adapter implementations moved to `paladin-llm` (FR-40)
+  - [x] 9.5 Run `cargo build --workspace` and fix any broken imports in the root crate that still referenced the deleted files (FR-46)
+  - [x] 9.6 Run the isolated feature-flag build matrix to confirm all six FR-41–FR-46 builds pass:
         `cargo build -p paladin-llm --no-default-features`
         `cargo build -p paladin-llm --features openai`
         `cargo build -p paladin-llm --features anthropic`
         `cargo build -p paladin-llm --features deepseek`
         `cargo build -p paladin-llm --features mock`
         `cargo build -p paladin-llm --all-features`
-  - [ ] 9.7 Run `cargo test --workspace` and confirm the test count matches or exceeds the pre-epic baseline captured in Task 1.1 (FR-47)
+  - [x] 9.7 Run `cargo test --workspace` and confirm the test count matches or exceeds the pre-epic baseline captured in Task 1.1 (FR-47)
 
-- [ ] 10.0 Import path sweep — update all workspace examples, tests, and benchmarks
-  - [ ] 10.1 Run `grep -rn "infrastructure::adapters::llm\|adapters::llm::\|openai_adapter\|anthropic_adapter\|deepseek_adapter\|mock_llm_adapter\|provider_factory" --include="*.rs" examples/ tests/ benches/` and record every hit
-  - [ ] 10.2 For each file found in 10.1: replace old deep import paths with `use paladin::prelude::*;` or the direct `use paladin_llm::...;` path as appropriate; ensure every file compiles (FR-39)
-  - [ ] 10.3 Run `grep -rn "infrastructure::adapters::llm\|adapters::llm::" --include="*.rs" src/` to catch any remaining references inside the root crate itself (e.g., in integration glue code, web handlers, or CLI); update each
-  - [ ] 10.4 Run `cargo check --workspace --all-targets` and confirm zero compile errors across all targets (examples, tests, benchmarks, bins)
-  - [ ] 10.5 Run `cargo test --workspace` and confirm zero test regressions (FR-47)
+- [x] 10.0 Import path sweep — update all workspace examples, tests, and benchmarks
+  - [x] 10.1 Run `grep -rn "infrastructure::adapters::llm\|adapters::llm::\|openai_adapter\|anthropic_adapter\|deepseek_adapter\|mock_llm_adapter\|provider_factory" --include="*.rs" examples/ tests/ benches/` and record every hit
+  - [x] 10.2 For each file found in 10.1: replace old deep import paths with `use paladin::prelude::*;` or the direct `use paladin_llm::...;` path as appropriate; ensure every file compiles (FR-39)
+  - [x] 10.3 Run `grep -rn "infrastructure::adapters::llm\|adapters::llm::" --include="*.rs" src/` to catch any remaining references inside the root crate itself (e.g., in integration glue code, web handlers, or CLI); update each
+  - [x] 10.4 Run `cargo check --workspace --all-targets` and confirm zero compile errors across all targets (examples, tests, benchmarks, bins)
+  - [x] 10.5 Run `cargo test --workspace` and confirm zero test regressions (FR-47)
 
-- [ ] 11.0 Workspace build validation and quality gates
-  - [ ] 11.1 Run `cargo clippy -p paladin-llm --all-features -- -D warnings` and fix every warning to zero (FR-48)
-  - [ ] 11.2 Run `cargo fmt --check -p paladin-llm`; if it fails run `cargo fmt -p paladin-llm` then re-check until clean (FR-49)
-  - [ ] 11.3 Run `cargo doc -p paladin-llm --all-features --no-deps 2>&1 | grep -i "warning\|error"` and resolve all broken intra-doc links and missing doc warnings
-  - [ ] 11.4 Run `cargo test --workspace --all-features` and confirm all tests pass; record the final test count
-  - [ ] 11.5 Run `cargo tree -p paladin-llm --features openai 2>&1 | grep -i "anthropic\|deepseek"` — the output must be empty, confirming provider isolation
-  - [ ] 11.6 Run `cargo tree -p paladin-llm --no-default-features --features mock 2>&1 | grep "reqwest"` — the output must be empty, confirming `reqwest` is not pulled in for mock-only builds (FR-26)
-  - [ ] 11.7 Run `make clean-code` (format + lint + check) and `make audit` to confirm no new security advisories were introduced by the new dependencies
-  - [ ] 11.8 Remove any temporary debug output (`dbg!`, `println!`, stray `// TODO` or `// TEMP` comments) from all files touched in this epic
-  - [ ] 11.9 Stage all changes: `git add .`
-  - [ ] 11.10 Commit with a conventional-commit message: `git commit -m "refactor: extract paladin-llm as workspace crate with per-provider feature flags" -m "- Add crates/paladin-llm with openai/anthropic/deepseek/mock/vision features" -m "- Define LlmProviderError with From<LlmProviderError> for LlmError conversion" -m "- Relocate all LLM adapter source from src/infrastructure/adapters/llm/" -m "- Extract provider factory; add config bridge in root paladin crate" -m "- Wire adapters into paladin::prelude; remove old deep import paths" -m "Implements Milestone 5 Epic 4 (FR-1 through FR-49)"`
-  - [ ] 11.11 Push the branch: `git push`
+- [x] 11.0 Workspace build validation and quality gates
+  - [x] 11.1 Run `cargo clippy -p paladin-llm --all-features -- -D warnings` and fix every warning to zero (FR-48)
+  - [x] 11.2 Run `cargo fmt --check -p paladin-llm`; if it fails run `cargo fmt -p paladin-llm` then re-check until clean (FR-49)
+  - [x] 11.3 Run `cargo doc -p paladin-llm --all-features --no-deps 2>&1 | grep -i "warning\|error"` and resolve all broken intra-doc links and missing doc warnings
+  - [x] 11.4 Run `cargo test --workspace --all-features` and confirm all tests pass; record the final test count
+  - [x] 11.5 Run `cargo tree -p paladin-llm --features openai 2>&1 | grep -i "anthropic\|deepseek"` — the output must be empty, confirming provider isolation
+  - [x] 11.6 Run `cargo tree -p paladin-llm --no-default-features --features mock 2>&1 | grep "reqwest"` — the output must be empty, confirming `reqwest` is not pulled in for mock-only builds (FR-26)
+  - [x] 11.7 Run `make clean-code` (format + lint + check) and `make audit` to confirm no new security advisories were introduced by the new dependencies
+  - [x] 11.8 Remove any temporary debug output (`dbg!`, `println!`, stray `// TODO` or `// TEMP` comments) from all files touched in this epic
+  - [x] 11.9 Stage all changes: `git add .`
+  - [x] 11.10 Commit with a conventional-commit message: `git commit -m "refactor: extract paladin-llm as workspace crate with per-provider feature flags" -m "- Add crates/paladin-llm with openai/anthropic/deepseek/mock/vision features" -m "- Define LlmProviderError with From<LlmProviderError> for LlmError conversion" -m "- Relocate all LLM adapter source from src/infrastructure/adapters/llm/" -m "- Extract provider factory; add config bridge in root paladin crate" -m "- Wire adapters into paladin::prelude; remove old deep import paths" -m "Implements Milestone 5 Epic 4 (FR-1 through FR-49)"`
+  - [x] 11.11 Push the branch: `git push`
   - [ ] 11.12 Open a pull request targeting the milestone integration branch titled `refactor(milestone-5/epic-4): extract paladin-llm crate`, linking this task list and the PRD in the description

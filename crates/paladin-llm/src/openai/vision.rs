@@ -5,8 +5,8 @@
 //!
 //! # Configuration
 //!
-//! Vision behaviour is controlled by [`VisionConfig`] which can be set via
-//! [`OpenAIAdapter::with_vision_config`] or falls back to [`VisionConfig::default`].
+//! Vision behaviour is controlled by [`VisionConfig`], which falls back to
+//! [`VisionConfig::default`] when not explicitly provided.
 
 use async_trait::async_trait;
 use base64::{Engine as _, engine::general_purpose};

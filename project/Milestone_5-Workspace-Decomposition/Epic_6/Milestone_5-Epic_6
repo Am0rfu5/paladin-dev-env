@@ -1,0 +1,100 @@
+
+## Epic 6: Facade Crate, CI Pipeline, and Workspace Finalization
+
+**Epic Owner:** TBD
+**Priority:** Critical
+**Estimated Effort:** Medium
+**Dependencies:** Epics 1–5
+
+### Objective
+
+Finalize the `paladin` root facade crate as the backward-compatible entry point, configure workspace-level CI, produce a comprehensive migration guide, and validate the complete workspace against all quality gates.
+
+### Background & Rationale
+
+After Epics 1–5, the source code is distributed across six crates. The facade crate must provide a seamless migration path for existing consumers: the same `use paladin::...` import paths should work without modification. Additionally, CI must test the workspace holistically (all crates together) and individually (each crate in isolation) to catch dependency leaks.
+
+### Acceptance Criteria
+
+1. `use paladin::core::*`, `use paladin::application::ports::*`, and all existing import paths continue to work via facade re-exports.
+2. A `paladin::prelude` module provides the most commonly used types for convenient import.
+3. CI tests: workspace build, per-crate isolated build, per-crate tests, feature-flag matrix, documentation build.
+4. `cargo clippy --workspace -- -D warnings` passes.
+5. `cargo fmt --all -- --check` passes.
+6. `cargo doc --workspace --no-deps` produces clean documentation.
+7. Build time benchmarks show measurable improvement over monolithic baseline.
+8. Migration guide documents all changes with before/after examples.
+9. `CHANGELOG.md` updated with comprehensive workspace refactor entry.
+
+### Tasks
+
+#### Task 6.1: Finalize Facade Crate Re-Exports
+
+**Description:** Audit all existing `use paladin::...` statements across examples, tests, integration tests, and documented code. Ensure the facade crate re-exports cover every path. Add a `prelude` module with the most commonly used types.
+
+**Deliverables:**
+- Complete re-export mapping in `src/lib.rs`.
+- `paladin::prelude` module with curated types.
+- All examples compile without import path changes.
+
+**Estimated Effort:** Medium
+
+#### Task 6.2: Configure Workspace CI Pipeline
+
+**Description:** Update the CI configuration to:
+- Build the full workspace (`cargo build --workspace`).
+- Build each crate in isolation (`cargo build -p paladin-core`, etc.).
+- Test the full workspace (`cargo test --workspace`).
+- Test each crate in isolation.
+- Run the feature-flag matrix from Milestone 1 at the workspace level.
+- Run `cargo clippy --workspace -- -D warnings` and `cargo fmt --all -- --check`.
+- Build documentation (`cargo doc --workspace --no-deps`).
+
+**Deliverables:**
+- Updated CI configuration files.
+- All pipeline stages green.
+- Per-crate isolated build verification passing.
+
+**Estimated Effort:** Medium
+
+#### Task 6.3: Benchmark Build Times
+
+**Description:** Measure and compare build times across the key scenarios:
+- Clean workspace build vs. monolithic clean build.
+- Incremental rebuild after changing a single file in `paladin-core`.
+- Incremental rebuild after changing a single LLM adapter.
+- Incremental rebuild after changing a battalion execution service.
+- `paladin-core` + `paladin-ports` + `paladin-battalion` only (no infrastructure).
+
+**Deliverables:**
+- Build time comparison report with before/after measurements.
+- Identification of any regressions (e.g., linker overhead on cold builds).
+- Recommendations for further optimization if needed.
+
+**Estimated Effort:** Small
+
+#### Task 6.4: Migration Guide and Documentation
+
+**Description:** Produce a comprehensive migration guide covering the workspace transition. Update all project documentation to reflect the new structure.
+
+**Deliverables:**
+- `docs/MIGRATION_WORKSPACE.md` with step-by-step upgrade instructions.
+- Updated `README.md` with workspace structure, crate descriptions, and dependency diagram.
+- Updated `CONTRIBUTING.md` with workspace development workflow (how to add code to the right crate, how to run per-crate tests).
+- Updated `STABLE_API.md` with crate-level API surface.
+- `CHANGELOG.md` entry for the workspace refactor.
+
+**Estimated Effort:** Medium
+
+#### Task 6.5: Workspace Retrospective and Tier 3 Preparation
+
+**Description:** Conduct a team retrospective on the workspace extraction. Document lessons learned, identify any remaining coupling concerns, and prepare a handoff assessment for Milestone 3 (Tier 3 architectural refinements).
+
+**Deliverables:**
+- Retrospective notes document.
+- Known issues or technical debt list carried forward to Tier 3.
+- Tier 3 readiness assessment.
+
+**Estimated Effort:** Small
+
+---
