@@ -1,0 +1,38 @@
+[package]
+name = "paladin-llm"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "LLM provider adapters for the Paladin framework — OpenAI, Anthropic, DeepSeek, and mock"
+repository = "https://github.com/DF3NDR/paladin-dev-env"
+
+[lib]
+doctest = false
+
+[features]
+default = ["openai", "mock"]
+openai = ["dep:reqwest", "dep:rand"]
+anthropic = ["dep:reqwest", "dep:rand"]
+deepseek = ["dep:reqwest", "dep:rand"]
+mock = []
+vision = ["openai", "dep:base64"]
+openai-embeddings = ["openai"]
+
+[dependencies]
+paladin-core = { path = "../paladin-core" }
+paladin-ports = { path = "../paladin-ports" }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+log = { workspace = true }
+reqwest = { workspace = true, features = ["json", "stream"], optional = true }
+rand = { workspace = true, optional = true }
+base64 = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
