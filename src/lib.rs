@@ -121,6 +121,24 @@ pub use paladin_ports::output::llm_port::{
     LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, TokenUsage,
 };
 
+// LLM adapter implementations (from paladin-llm crate)
+pub use paladin_llm::error::LlmProviderError;
+pub use paladin_llm::provider_factory::LlmProviderFactory;
+
+#[cfg(feature = "llm-openai")]
+pub use paladin_llm::openai::{OpenAIAdapter, OpenAIConfig};
+
+#[cfg(feature = "openai-embeddings")]
+pub use paladin_llm::openai::embedding::{OpenAIEmbeddingAdapter, OpenAIEmbeddingConfig};
+
+#[cfg(feature = "llm-anthropic")]
+pub use paladin_llm::anthropic::{AnthropicAdapter, AnthropicConfig};
+
+#[cfg(feature = "llm-deepseek")]
+pub use paladin_llm::deepseek::{DeepSeekAdapter, DeepSeekConfig};
+
+pub use paladin_llm::mock::{MockLlmAdapter, MultiStepMockLlmPort};
+
 // Re-export PromptItem from core for LLM usage
 pub use core::platform::container::prompt::PromptItem;
 

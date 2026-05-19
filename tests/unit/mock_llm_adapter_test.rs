@@ -2,11 +2,11 @@
 //
 // Comprehensive unit tests for MockLlmAdapter following TDD methodology
 
+use paladin::MockLlmAdapter;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptType, UserPrompt,
 };
-use paladin::infrastructure::adapters::llm::mock_llm_adapter::MockLlmAdapter;
 use paladin_ports::output::llm_port::{FinishReason, LlmError, LlmPort, LlmRequest};
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;

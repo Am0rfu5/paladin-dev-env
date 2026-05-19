@@ -8,7 +8,7 @@ use paladin::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptRole, PromptType, SystemPrompt, TextPrompt,
     UserPrompt,
 };
-use paladin::infrastructure::adapters::llm::deepseek_adapter::{DeepSeekAdapter, DeepSeekConfig};
+use paladin::{DeepSeekAdapter, DeepSeekConfig};
 use uuid::Uuid;
 
 /// Helper to create a mock server and adapter configured to use it

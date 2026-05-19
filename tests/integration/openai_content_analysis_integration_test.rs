@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use paladin::core::platform::container::content::{ContentItem, ContentType, TextContent};
 use paladin::core::platform::container::prompt::{PromptItem, PromptRole, PromptType, TextPrompt};
-use paladin::infrastructure::adapters::llm::openai_adapter::{OpenAIAdapter, OpenAIConfig};
+use paladin::{OpenAIAdapter, OpenAIConfig};
 use paladin_ports::output::llm_port::{LlmError, LlmPort, LlmRequest};
 
 #[tokio::test]

@@ -7,7 +7,7 @@ use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
 use paladin::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptType, SystemPrompt, UserPrompt,
 };
-use paladin::infrastructure::adapters::llm::anthropic_adapter::{
+use paladin::{
     AnthropicAdapter, AnthropicConfig,
 };
 use uuid::Uuid;

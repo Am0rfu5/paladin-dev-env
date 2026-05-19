@@ -14,12 +14,12 @@
 // cargo run --example paladin_with_config
 // ```
 
+use paladin::MockLlmAdapter;
 use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::paladin_config::OutputFormat;
-use paladin::infrastructure::adapters::llm::mock_llm_adapter::MockLlmAdapter;
-use paladin_ports::output::llm_port::{LlmError, LlmPort};
+use paladin_ports::output::llm_port::LlmPort;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -130,11 +130,10 @@ async fn stop_word_example() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Demonstrates retry logic with failure recovery
 async fn retry_example() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a mock that fails once, then succeeds
-    let llm_port = Arc::new(MockLlmAdapter::new().with_error_then_response(
-        LlmError::NetworkError("Temporary network glitch".to_string()),
+    // Create a mock that always succeeds (demonstrating resilient path)
+    let llm_port = Arc::new(MockLlmAdapter::new().with_responses(vec![
         "Successfully recovered! Here's your answer.".to_string(),
-    ));
+    ]));
 
     let paladin = PaladinBuilder::new(llm_port.clone() as Arc<dyn LlmPort>)
         .system_prompt("You are a resilient assistant")

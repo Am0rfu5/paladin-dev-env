@@ -6,9 +6,7 @@
 #[cfg(all(test, feature = "integration-tests"))]
 mod deepseek_integration_tests {
     use paladin::core::platform::container::prompt::{PromptItem, PromptType, SystemPrompt};
-    use paladin::infrastructure::adapters::llm::deepseek_adapter::{
-        DeepSeekAdapter, DeepSeekConfig,
-    };
+    use paladin::{DeepSeekAdapter, DeepSeekConfig};
     use paladin_ports::output::llm_port::{FinishReason, LlmPort, LlmRequest};
     use std::collections::HashMap;
     use std::env;

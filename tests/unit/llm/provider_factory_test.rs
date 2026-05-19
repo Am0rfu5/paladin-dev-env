@@ -2,7 +2,7 @@
 //
 // Unit tests for LLM provider factory
 
-use paladin::infrastructure::adapters::llm::provider_factory::{
+use paladin_llm::provider_factory::{
     LlmProviderFactory, ProviderFactoryError,
 };
 use std::env;

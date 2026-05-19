@@ -157,7 +157,7 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     use crate::core::platform::container::vision::{ImageDetail, VisionContent};
     #[cfg(feature = "content-processing")]
     use crate::infrastructure::adapters::document::DocumentAdapter;
-    use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    use paladin_llm::provider_factory::LlmProviderFactory;
     #[cfg(feature = "content-processing")]
     use paladin_ports::input::document_port::{DocumentPort, DocumentSource};
     use paladin_ports::output::llm_port::LlmPort;

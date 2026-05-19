@@ -1,20 +1,12 @@
 // src/infrastructure/adapters/llm/mod.rs
 //
 // LLM adapters module
+//
+// NOTE: All LLM provider adapter implementations have been relocated to the
+// `paladin-llm` workspace crate (`crates/paladin-llm`).  The root `paladin`
+// crate depends on `paladin-llm` and re-exports the adapter types through
+// `src/lib.rs`.  Only the configuration bridge remains here to keep the
+// `ApplicationSettings` ↔ adapter-config conversions inside the root crate
+// where `ApplicationSettings` is defined.
 
 pub mod config_bridge;
-
-#[cfg(feature = "llm-anthropic")]
-pub mod anthropic_adapter;
-#[cfg(all(feature = "vision", feature = "llm-anthropic"))]
-pub mod anthropic_vision;
-#[cfg(feature = "llm-deepseek")]
-pub mod deepseek_adapter;
-pub mod mock_llm_adapter;
-#[cfg(feature = "llm-openai")]
-pub mod openai_adapter;
-#[cfg(feature = "openai-embeddings")]
-pub mod openai_embedding_adapter;
-#[cfg(all(feature = "vision", feature = "llm-openai"))]
-pub mod openai_vision;
-pub mod provider_factory;

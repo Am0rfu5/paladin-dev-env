@@ -111,15 +111,65 @@ impl MockLlmAdapter {
         self
     }
 
-    /// Configure the token usage returned with each response.
-    pub fn with_token_usage(self, usage: TokenUsage) -> Self {
+    /// Configure the token usage returned with each response using a `TokenUsage` struct.
+    pub fn with_token_usage_struct(self, usage: TokenUsage) -> Self {
         self.state.lock().unwrap().token_usage = usage;
+        self
+    }
+
+    /// Configure the token usage returned with each response (prompt, completion, total).
+    pub fn with_token_usage(
+        self,
+        prompt_tokens: u32,
+        completion_tokens: u32,
+        total_tokens: u32,
+    ) -> Self {
+        self.state.lock().unwrap().token_usage = TokenUsage {
+            prompt_tokens,
+            completion_tokens,
+            total_tokens,
+        };
+        self
+    }
+
+    /// Configure the `FinishReason` returned with each successful response.
+    pub fn with_finish_reason(self, reason: FinishReason) -> Self {
+        self.state.lock().unwrap().finish_reason = reason;
+        self
+    }
+
+    /// Configure the list of models reported as available.
+    pub fn with_available_models(self, models: Vec<String>) -> Self {
+        self.state.lock().unwrap().available_models = models;
+        self
+    }
+
+    /// Queue an error response followed by a success response.
+    ///
+    /// Useful for testing retry / recovery logic.
+    pub fn with_error_then_response(self, error: LlmError, response: impl Into<String>) -> Self {
+        let mut state = self.state.lock().unwrap();
+        state.responses = vec![MockEntry::Error(error), MockEntry::Success(response.into())];
+        state.response_index = 0;
+        drop(state);
         self
     }
 
     /// Return the number of times [`LlmPort::generate`] has been called.
     pub fn call_count(&self) -> usize {
         self.state.lock().unwrap().call_count
+    }
+
+    /// Alias for [`call_count`](Self::call_count) for compatibility.
+    pub fn get_call_count(&self) -> usize {
+        self.call_count()
+    }
+
+    /// Reset the call counter and response index to zero.
+    pub fn reset(&self) {
+        let mut state = self.state.lock().unwrap();
+        state.call_count = 0;
+        state.response_index = 0;
     }
 
     /// Return `true` if the adapter was called at least once.
@@ -208,7 +258,7 @@ impl LlmPort for MockLlmAdapter {
     }
 
     fn get_provider_name(&self) -> &'static str {
-        "mock"
+        "MockLLM"
     }
 
     fn get_capabilities(&self) -> ProviderCapabilities {

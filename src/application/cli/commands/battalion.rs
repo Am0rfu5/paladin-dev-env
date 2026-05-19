@@ -283,7 +283,7 @@ async fn execute_formation(
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
 
     // Create a dummy LLM port (each Paladin already has its own configured)
-    use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    use paladin_llm::provider_factory::LlmProviderFactory;
     let factory = LlmProviderFactory::new();
     let dummy_llm_port = factory
         .create("openai")
@@ -445,7 +445,7 @@ async fn execute_phalanx(
 
     // Create Paladin execution service
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
-    use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    use paladin_llm::provider_factory::LlmProviderFactory;
     let factory = LlmProviderFactory::new();
     let dummy_llm_port = factory
         .create("openai")
@@ -629,7 +629,7 @@ async fn execute_conclave(
     // Create Paladin execution service with circuit breaker
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
 
-    use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    use paladin_llm::provider_factory::LlmProviderFactory;
     let factory = LlmProviderFactory::new();
     let dummy_llm_port = factory
         .create("openai")
@@ -841,7 +841,7 @@ async fn execute_maneuver(
     // Create Paladin execution service with circuit breaker
     let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
 
-    use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    use paladin_llm::provider_factory::LlmProviderFactory;
     let factory = LlmProviderFactory::new();
     let dummy_llm_port = factory
         .create("openai")
@@ -946,7 +946,7 @@ async fn build_paladin_from_reference(
     use crate::application::cli::config::battalion_config::PaladinReference;
     use crate::application::cli::config::loader::load_paladin_config;
     use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
-    use crate::infrastructure::adapters::llm::provider_factory::LlmProviderFactory;
+    use paladin_llm::provider_factory::LlmProviderFactory;
 
     let paladin_config = match reference {
         PaladinReference::File { file } => {
