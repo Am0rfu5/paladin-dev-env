@@ -36,6 +36,7 @@ categories = ["development-tools", "asynchronous", "api-bindings"]
 paladin-core = { path = "crates/paladin-core" }
 paladin-ports = { path = "crates/paladin-ports" }
 paladin-battalion = { path = "crates/paladin-battalion" }
+paladin-llm = { path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
 reqwest = { workspace = true, features = ["blocking", "stream"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

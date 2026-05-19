@@ -124,16 +124,16 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.8 Create `crates/paladin-llm/tests/provider_factory_test.rs`; write tests: (a) `create("unknown_provider")` returns `Err(LlmProviderError::Configuration(...))`, (b) under `#[cfg(feature = "openai")]`, `create("openai")` returns `Ok(...)` when `OPENAI_API_KEY` is set in the environment (use `#[ignore]` if env is not guaranteed), (c) requesting a disabled provider at runtime returns `Err` not a compile failure (FR-35)
   - [x] 7.9 Run `cargo test -p paladin-llm --all-features` and confirm all provider factory tests pass
 
-- [ ] 8.0 Implement the configuration bridge in the root `paladin` crate
-  - [ ] 8.1 Create `src/infrastructure/adapters/llm/config_bridge.rs` in the root `paladin` crate
-  - [ ] 8.2 Implement `From<&crate::config::application_settings::LlmProviderConfig> for paladin_llm::openai::adapter::OpenAIConfig` — map `api_key`, `base_url`, `timeout_seconds`, `max_retries`; default `organization` to `None` (FR-32)
-  - [ ] 8.3 Implement the equivalent `From<&LlmProviderConfig>` conversions for `paladin_llm::anthropic::adapter::AnthropicConfig` and `paladin_llm::deepseek::*::DeepSeekConfig` (FR-32)
-  - [ ] 8.4 Implement vision config conversions — `From<&crate::config::application_settings::VisionConfig> for` the vision adapter config types (one per provider), using the field mapping gaps identified in Task 3.2 (PRD Section 6.5)
-  - [ ] 8.5 Add `pub mod config_bridge;` to `src/infrastructure/adapters/llm/mod.rs` (or equivalent location that makes the bridge visible to the root crate's bootstrap code)
-  - [ ] 8.6 Update any bootstrap / factory wiring code in the root `paladin` crate that previously constructed LLM adapters directly to use the `config_bridge` conversions (this includes any code in `src/infrastructure/` or `src/application/` that reads `ApplicationSettings.llm.openai` etc. and creates adapters)
-  - [ ] 8.7 Write unit tests in `config_bridge.rs` inside a `#[cfg(test)]` block: (a) a typical `LlmProviderConfig` converts to `OpenAIConfig` with all fields correctly mapped, (b) a `LlmProviderConfig` with a non-standard `base_url` correctly overrides the default (FR-34)
-  - [ ] 8.8 Run `cargo build --workspace` and confirm no circular dependency error (FR-31); the build must not reference `crate::config::application_settings` from within `paladin-llm`
-  - [ ] 8.9 Run `cargo test --workspace` and confirm no regressions
+- [x] 8.0 Implement the configuration bridge in the root `paladin` crate
+  - [x] 8.1 Create `src/infrastructure/adapters/llm/config_bridge.rs` in the root `paladin` crate
+  - [x] 8.2 Implement `From<&crate::config::application_settings::LlmProviderConfig> for paladin_llm::openai::adapter::OpenAIConfig` — map `api_key`, `base_url`, `timeout_seconds`, `max_retries`; default `organization` to `None` (FR-32)
+  - [x] 8.3 Implement the equivalent `From<&LlmProviderConfig>` conversions for `paladin_llm::anthropic::adapter::AnthropicConfig` and `paladin_llm::deepseek::*::DeepSeekConfig` (FR-32)
+  - [x] 8.4 Implement vision config conversions — `From<&crate::config::application_settings::VisionConfig> for` the vision adapter config types (one per provider), using the field mapping gaps identified in Task 3.2 (PRD Section 6.5)
+  - [x] 8.5 Add `pub mod config_bridge;` to `src/infrastructure/adapters/llm/mod.rs` (or equivalent location that makes the bridge visible to the root crate's bootstrap code)
+  - [x] 8.6 Update any bootstrap / factory wiring code in the root `paladin` crate that previously constructed LLM adapters directly to use the `config_bridge` conversions (this includes any code in `src/infrastructure/` or `src/application/` that reads `ApplicationSettings.llm.openai` etc. and creates adapters)
+  - [x] 8.7 Write unit tests in `config_bridge.rs` inside a `#[cfg(test)]` block: (a) a typical `LlmProviderConfig` converts to `OpenAIConfig` with all fields correctly mapped, (b) a `LlmProviderConfig` with a non-standard `base_url` correctly overrides the default (FR-34)
+  - [x] 8.8 Run `cargo build --workspace` and confirm no circular dependency error (FR-31); the build must not reference `crate::config::application_settings` from within `paladin-llm`
+  - [x] 8.9 Run `cargo test --workspace` and confirm no regressions
 
 - [ ] 9.0 Wire `paladin-llm` into the root facade crate and `paladin::prelude`
   - [ ] 9.1 Add `paladin-llm` to the root `paladin` crate's `Cargo.toml` `[dependencies]` with `default-features = false` and `features` matching the full set of LLM feature flags the root crate exposes (e.g., `["openai", "anthropic", "deepseek", "mock", "vision"]`) (FR-37)

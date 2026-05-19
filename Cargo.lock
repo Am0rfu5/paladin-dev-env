@@ -3317,6 +3317,7 @@ dependencies = [
  "once_cell",
  "paladin-battalion",
  "paladin-core",
+ "paladin-llm",
  "paladin-ports",
  "pdf-extract",
  "petgraph",

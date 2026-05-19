@@ -2,6 +2,8 @@
 //
 // LLM adapters module
 
+pub mod config_bridge;
+
 #[cfg(feature = "llm-anthropic")]
 pub mod anthropic_adapter;
 #[cfg(all(feature = "vision", feature = "llm-anthropic"))]
