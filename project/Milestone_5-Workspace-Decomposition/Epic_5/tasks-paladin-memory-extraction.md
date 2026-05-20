@@ -105,17 +105,17 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.14 Run `cargo build -p paladin-memory --features content-processing` and confirm the token counter module compiles.
   - [x] 3.15 Run `cargo clippy -p paladin-memory --all-features -- -D warnings` and resolve any warnings before proceeding.
 
-- [ ] 4.0 Extract sanctum adapters
-  - [ ] 4.1 Copy `src/infrastructure/adapters/sanctum/in_memory_adapter.rs` to `crates/paladin-memory/src/sanctum/in_memory_adapter.rs`.
-  - [ ] 4.2 Update all `use crate::core::platform::container::sanctum::*` imports to `use paladin_core::platform::container::sanctum::*`. Verify no other `crate::` references remain.
-  - [ ] 4.3 Remove the `#[doc(hidden)]` attribute from both `InMemorySanctum` and `InMemorySanctumConfig`. Add `///` rustdoc to `InMemorySanctumConfig` explaining its `max_entries` field and the LRU eviction behaviour that kicks in when the limit is reached. Ensure both types are `pub` (FR-4.1).
-  - [ ] 4.4 Declare `pub mod in_memory_adapter;` in `crates/paladin-memory/src/sanctum/mod.rs` and add `pub use in_memory_adapter::{InMemorySanctum, InMemorySanctumConfig};` (FR-2.3, FR-4.1).
-  - [ ] 4.5 Run `cargo build -p paladin-memory --no-default-features` and confirm `InMemorySanctum` and `InMemorySanctumConfig` compile.
-  - [ ] 4.6 Copy `src/infrastructure/adapters/sanctum/qdrant_adapter.rs` to `crates/paladin-memory/src/sanctum/qdrant_adapter.rs`.
-  - [ ] 4.7 Update all `use crate::core::...` imports to `use paladin_core::...`. Confirm no non-`qdrant_client` external references need feature gating.
-  - [ ] 4.8 Add to `sanctum/mod.rs`: `#[cfg(feature = "qdrant")] pub mod qdrant_adapter;` and `#[cfg(feature = "qdrant")] pub use qdrant_adapter::QdrantSanctumAdapter;` (FR-2.3, FR-4.2).
-  - [ ] 4.9 Run `cargo build -p paladin-memory --features qdrant` and confirm `QdrantSanctumAdapter` compiles. Run `cargo build -p paladin-memory --no-default-features` and confirm it compiles without `qdrant-client`.
-  - [ ] 4.10 Run `cargo clippy -p paladin-memory --all-features -- -D warnings` and resolve any warnings.
+- [x] 4.0 Extract sanctum adapters
+  - [x] 4.1 Copy `src/infrastructure/adapters/sanctum/in_memory_adapter.rs` to `crates/paladin-memory/src/sanctum/in_memory_adapter.rs`.
+  - [x] 4.2 Update all `use crate::core::platform::container::sanctum::*` imports to `use paladin_core::platform::container::sanctum::*`. Verify no other `crate::` references remain.
+  - [x] 4.3 Remove the `#[doc(hidden)]` attribute from both `InMemorySanctum` and `InMemorySanctumConfig`. Add `///` rustdoc to `InMemorySanctumConfig` explaining its `max_entries` field and the LRU eviction behaviour that kicks in when the limit is reached. Ensure both types are `pub` (FR-4.1).
+  - [x] 4.4 Declare `pub mod in_memory_adapter;` in `crates/paladin-memory/src/sanctum/mod.rs` and add `pub use in_memory_adapter::{InMemorySanctum, InMemorySanctumConfig};` (FR-2.3, FR-4.1).
+  - [x] 4.5 Run `cargo build -p paladin-memory --no-default-features` and confirm `InMemorySanctum` and `InMemorySanctumConfig` compile.
+  - [x] 4.6 Copy `src/infrastructure/adapters/sanctum/qdrant_adapter.rs` to `crates/paladin-memory/src/sanctum/qdrant_adapter.rs`.
+  - [x] 4.7 Update all `use crate::core::...` imports to `use paladin_core::...`. Confirm no non-`qdrant_client` external references need feature gating.
+  - [x] 4.8 Add to `sanctum/mod.rs`: `#[cfg(feature = "qdrant")] pub mod qdrant_adapter;` and `#[cfg(feature = "qdrant")] pub use qdrant_adapter::QdrantSanctumAdapter;` (FR-2.3, FR-4.2).
+  - [x] 4.9 Run `cargo build -p paladin-memory --features qdrant` and confirm `QdrantSanctumAdapter` compiles. Run `cargo build -p paladin-memory --no-default-features` and confirm it compiles without `qdrant-client`.
+  - [x] 4.10 Run `cargo clippy -p paladin-memory --all-features -- -D warnings` and resolve any warnings.
 
 - [ ] 5.0 Extract memory services
   - [ ] 5.1 Copy `src/application/use_cases/sanctum/memory_extraction_service.rs` to `crates/paladin-memory/src/services/memory_extraction_service.rs`.
