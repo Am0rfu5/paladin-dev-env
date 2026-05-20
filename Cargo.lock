@@ -3417,6 +3417,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "paladin-memory"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "log",
+ "paladin-core",
+ "paladin-ports",
+ "qdrant-client",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tempfile",
+ "thiserror 2.0.12",
+ "tiktoken-rs",
+ "tokio",
+ "tokio-test",
+ "uuid",
+]
+
+[[package]]
 name = "paladin-ports"
 version = "0.1.0"
 dependencies = [
