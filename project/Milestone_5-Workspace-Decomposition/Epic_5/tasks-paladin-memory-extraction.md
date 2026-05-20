@@ -117,17 +117,17 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.9 Run `cargo build -p paladin-memory --features qdrant` and confirm `QdrantSanctumAdapter` compiles. Run `cargo build -p paladin-memory --no-default-features` and confirm it compiles without `qdrant-client`.
   - [x] 4.10 Run `cargo clippy -p paladin-memory --all-features -- -D warnings` and resolve any warnings.
 
-- [ ] 5.0 Extract memory services
-  - [ ] 5.1 Copy `src/application/use_cases/sanctum/memory_extraction_service.rs` to `crates/paladin-memory/src/services/memory_extraction_service.rs`.
-  - [ ] 5.2 Update all `use crate::core::platform::container::*` imports to `use paladin_core::platform::container::*`. Verify the file contains zero `crate::infrastructure::` or `crate::application::` references (FR-5.3, FR-5.4).
-  - [ ] 5.3 Confirm that all dependencies are port traits only (`LlmPort`, `SanctumPort`, `EmbeddingPort`) with no references to `InMemorySanctum`, `QdrantSanctumAdapter`, or any concrete adapter type — if any exist, remove them (FR-5.3).
-  - [ ] 5.4 Declare `pub mod memory_extraction_service;` in `crates/paladin-memory/src/services/mod.rs` and add `pub use memory_extraction_service::{ExtractedMemory, MemoryExtractionService, MemoryExtractionStrategy};` (FR-2.4).
-  - [ ] 5.5 Copy `src/application/use_cases/sanctum/rag_retrieval_service.rs` to `crates/paladin-memory/src/services/rag_retrieval_service.rs`.
-  - [ ] 5.6 Update all `use crate::core::...` imports to `use paladin_core::...`. Verify zero concrete adapter references (FR-5.2, FR-5.3, FR-5.4).
-  - [ ] 5.7 Add to `services/mod.rs`: `pub mod rag_retrieval_service;` and `pub use rag_retrieval_service::{RagConfig, RagRetrievalService, RetrievalTrigger, retrieve_context_with_timeout};` (FR-2.4).
-  - [ ] 5.8 Run `cargo build -p paladin-memory --no-default-features` and confirm both services compile without any optional features.
-  - [ ] 5.9 Populate `crates/paladin-memory/src/prelude.rs` with unconditional re-exports: `pub use crate::garrison::InMemoryGarrison;`, `pub use crate::sanctum::{InMemorySanctum, InMemorySanctumConfig};`, `pub use crate::services::{MemoryExtractionService, RagRetrievalService, RagConfig};` (FR-2.5).
-  - [ ] 5.10 Run `cargo clippy -p paladin-memory --no-default-features -- -D warnings` and resolve any warnings.
+- [x] 5.0 Extract memory services
+  - [x] 5.1 Copy `src/application/use_cases/sanctum/memory_extraction_service.rs` to `crates/paladin-memory/src/services/memory_extraction_service.rs`.
+  - [x] 5.2 Update all `use crate::core::platform::container::*` imports to `use paladin_core::platform::container::*`. Verify the file contains zero `crate::infrastructure::` or `crate::application::` references (FR-5.3, FR-5.4).
+  - [x] 5.3 Confirm that all dependencies are port traits only (`LlmPort`, `SanctumPort`, `EmbeddingPort`) with no references to `InMemorySanctum`, `QdrantSanctumAdapter`, or any concrete adapter type — if any exist, remove them (FR-5.3).
+  - [x] 5.4 Declare `pub mod memory_extraction_service;` in `crates/paladin-memory/src/services/mod.rs` and add `pub use memory_extraction_service::{ExtractedMemory, MemoryExtractionService, MemoryExtractionStrategy};` (FR-2.4).
+  - [x] 5.5 Copy `src/application/use_cases/sanctum/rag_retrieval_service.rs` to `crates/paladin-memory/src/services/rag_retrieval_service.rs`.
+  - [x] 5.6 Update all `use crate::core::...` imports to `use paladin_core::...`. Verify zero concrete adapter references (FR-5.2, FR-5.3, FR-5.4).
+  - [x] 5.7 Add to `services/mod.rs`: `pub mod rag_retrieval_service;` and `pub use rag_retrieval_service::{RagConfig, RagRetrievalService, RetrievalTrigger, retrieve_context_with_timeout};` (FR-2.4).
+  - [x] 5.8 Run `cargo build -p paladin-memory --no-default-features` and confirm both services compile without any optional features.
+  - [x] 5.9 Populate `crates/paladin-memory/src/prelude.rs` with unconditional re-exports: `pub use crate::garrison::InMemoryGarrison;`, `pub use crate::sanctum::{InMemorySanctum, InMemorySanctumConfig};`, `pub use crate::services::{MemoryExtractionService, RagRetrievalService, RagConfig};` (FR-2.5).
+  - [x] 5.10 Run `cargo clippy -p paladin-memory --no-default-features -- -D warnings` and resolve any warnings.
 
 - [ ] 6.0 Migrate and write unit tests
   - [ ] 6.1 Check for existing `TokenCounterFactory` tests: run `grep -rn "TokenCounterFactory" tests/` — if no tests are found, proceed to write them in step 6.5.

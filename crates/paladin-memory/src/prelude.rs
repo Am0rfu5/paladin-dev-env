@@ -1,5 +1,18 @@
 //! Convenience re-exports for the most commonly used types in `paladin-memory`.
 //!
 //! Import everything at once with `use paladin_memory::prelude::*;`.
-//!
-//! Re-exports are populated as modules are extracted (Tasks 3–5).
+
+// Garrison
+pub use crate::garrison::InMemoryGarrison;
+#[cfg(feature = "sqlite")]
+pub use crate::garrison::SqliteGarrison;
+#[cfg(feature = "content-processing")]
+pub use crate::garrison::{TiktokenCounter, TokenCounter, TokenCounterFactory};
+
+// Sanctum
+#[cfg(feature = "qdrant")]
+pub use crate::sanctum::QdrantSanctumAdapter;
+pub use crate::sanctum::{InMemorySanctum, InMemorySanctumConfig};
+
+// Services
+pub use crate::services::{MemoryExtractionService, RagConfig, RagRetrievalService};
