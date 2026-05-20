@@ -139,20 +139,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.7 Delete the now-migrated workspace unit test files: `tests/unit/sanctum/memory_extraction_service_test.rs`, `tests/unit/sanctum/rag_retrieval_service_test.rs`, `tests/unit/sanctum/qdrant_sanctum_test.rs`, and `tests/unit/sanctum/mod.rs`. Do **not** delete `tests/unit/sanctum_domain_tests.rs` or `tests/unit/sanctum_port_tests.rs` — those stay at workspace level.
   - [x] 6.8 Run `cargo test --workspace --all-features 2>&1 | tail -10` and confirm no test regressions versus the baseline recorded in step 1.1.
 
-- [ ] 7.0 Delete originals and configure facade re-exports
-  - [ ] 7.1 Add `paladin-memory` as a direct dependency in the root `Cargo.toml` `[dependencies]` section: `paladin-memory = { workspace = true }`. If specific features need to be forwarded (e.g., for `qdrant` or `sqlite` integration tests), add them as feature-forwarding entries in `[features]` (e.g., `qdrant = ["paladin-memory/qdrant", ...]`) (FR-1.7).
-  - [ ] 7.2 Run `cargo build --workspace` before any deletions to confirm the facade compiles with the new dependency in place.
-  - [ ] 7.3 Delete the original garrison source files: `src/infrastructure/adapters/garrison/in_memory_garrison.rs`, `src/infrastructure/adapters/garrison/sqlite_garrison.rs`, `src/infrastructure/adapters/garrison/token_counter.rs`.
-  - [ ] 7.4 Update `src/infrastructure/adapters/garrison/mod.rs`: remove all `pub mod` and `pub use` declarations for the deleted files; either delete the file if empty or replace its contents with a tombstone comment pointing to `paladin_memory::garrison`.
-  - [ ] 7.5 Delete the original sanctum adapter source files: `src/infrastructure/adapters/sanctum/in_memory_adapter.rs`, `src/infrastructure/adapters/sanctum/qdrant_adapter.rs`.
-  - [ ] 7.6 Update `src/infrastructure/adapters/sanctum/mod.rs`: remove all `pub mod` and `pub use` declarations for the deleted files; replace with a tombstone comment or delete the file if it is now empty.
-  - [ ] 7.7 Delete the original sanctum use case source files: `src/application/use_cases/sanctum/memory_extraction_service.rs`, `src/application/use_cases/sanctum/rag_retrieval_service.rs`.
-  - [ ] 7.8 Update `src/application/use_cases/sanctum/mod.rs`: remove `pub mod memory_extraction_service;`, `pub mod rag_retrieval_service;`, and the corresponding `pub use` lines; replace with a tombstone comment or delete if empty.
-  - [ ] 7.9 Remove `pub mod garrison;` from `src/infrastructure/adapters/mod.rs` and `pub mod sanctum;` from both `src/infrastructure/adapters/mod.rs` and `src/application/use_cases/mod.rs` if those entries now point to empty/deleted modules (FR-6.2).
-  - [ ] 7.10 Audit existing `use paladin::...` paths for all garrison, sanctum, and services types: run `grep -rn "infrastructure::adapters::garrison\|infrastructure::adapters::sanctum\|use_cases::sanctum" --include="*.rs" examples/ tests/ src/` and list every match.
-  - [ ] 7.11 Add `pub use paladin_memory::...` re-export statements to `src/lib.rs` covering every path found in step 7.10 per the mapping table in PRD FR-7. Group them under a clearly labelled comment block (e.g., `// Memory Adapters (re-exported from paladin-memory)`).
-  - [ ] 7.12 Run `cargo build --workspace` and confirm everything compiles after the deletions and re-exports.
-  - [ ] 7.13 Run `cargo test --workspace --all-features 2>&1 | tail -10` and confirm zero regressions.
+- [x] 7.0 Delete originals and configure facade re-exports
+  - [x] 7.1 Add `paladin-memory` as a direct dependency in the root `Cargo.toml` `[dependencies]` section: `paladin-memory = { workspace = true }`. If specific features need to be forwarded (e.g., for `qdrant` or `sqlite` integration tests), add them as feature-forwarding entries in `[features]` (e.g., `qdrant = ["paladin-memory/qdrant", ...]`) (FR-1.7).
+  - [x] 7.2 Run `cargo build --workspace` before any deletions to confirm the facade compiles with the new dependency in place.
+  - [x] 7.3 Delete the original garrison source files: `src/infrastructure/adapters/garrison/in_memory_garrison.rs`, `src/infrastructure/adapters/garrison/sqlite_garrison.rs`, `src/infrastructure/adapters/garrison/token_counter.rs`.
+  - [x] 7.4 Update `src/infrastructure/adapters/garrison/mod.rs`: remove all `pub mod` and `pub use` declarations for the deleted files; either delete the file if empty or replace its contents with a tombstone comment pointing to `paladin_memory::garrison`.
+  - [x] 7.5 Delete the original sanctum adapter source files: `src/infrastructure/adapters/sanctum/in_memory_adapter.rs`, `src/infrastructure/adapters/sanctum/qdrant_adapter.rs`.
+  - [x] 7.6 Update `src/infrastructure/adapters/sanctum/mod.rs`: remove all `pub mod` and `pub use` declarations for the deleted files; replace with a tombstone comment or delete the file if it is now empty.
+  - [x] 7.7 Delete the original sanctum use case source files: `src/application/use_cases/sanctum/memory_extraction_service.rs`, `src/application/use_cases/sanctum/rag_retrieval_service.rs`.
+  - [x] 7.8 Update `src/application/use_cases/sanctum/mod.rs`: remove `pub mod memory_extraction_service;`, `pub mod rag_retrieval_service;`, and the corresponding `pub use` lines; replace with a tombstone comment or delete if empty.
+  - [x] 7.9 Remove `pub mod garrison;` from `src/infrastructure/adapters/mod.rs` and `pub mod sanctum;` from both `src/infrastructure/adapters/mod.rs` and `src/application/use_cases/mod.rs` if those entries now point to empty/deleted modules (FR-6.2).
+  - [x] 7.10 Audit existing `use paladin::...` paths for all garrison, sanctum, and services types: run `grep -rn "infrastructure::adapters::garrison\|infrastructure::adapters::sanctum\|use_cases::sanctum" --include="*.rs" examples/ tests/ src/` and list every match.
+  - [x] 7.11 Add `pub use paladin_memory::...` re-export statements to `src/lib.rs` covering every path found in step 7.10 per the mapping table in PRD FR-7. Group them under a clearly labelled comment block (e.g., `// Memory Adapters (re-exported from paladin-memory)`).
+  - [x] 7.12 Run `cargo build --workspace` and confirm everything compiles after the deletions and re-exports.
+  - [x] 7.13 Run `cargo test --workspace --all-features 2>&1 | tail -10` and confirm zero regressions.
 
 - [ ] 8.0 Final quality gates and workspace verification
   - [ ] 8.1 Run `cargo build -p paladin-memory --no-default-features` and then `cargo tree -p paladin-memory --no-default-features | grep -E "sqlx|qdrant|tiktoken"` — confirm no matches (FR-9, Story 1).

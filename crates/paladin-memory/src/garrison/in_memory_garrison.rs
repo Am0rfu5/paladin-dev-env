@@ -28,7 +28,7 @@ use std::sync::RwLock;
 ///
 /// Stores all entries in memory using a `VecDeque` protected by an `RwLock`
 /// for concurrent access.  All data is lost when the process terminates;
-/// use [`crate::garrison::SqliteGarrison`] when persistence is required.
+/// use `SqliteGarrison` (feature `sqlite`) when persistence is required.
 ///
 /// # Examples
 ///

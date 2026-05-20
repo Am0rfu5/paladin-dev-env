@@ -61,7 +61,7 @@ impl Default for InMemorySanctumConfig {
 /// search. Suitable for development, testing, and small-scale production
 /// deployments with fewer than ~10 000 vectors.
 ///
-/// For larger workloads prefer [`QdrantSanctumAdapter`] (requires the `qdrant`
+/// For larger workloads prefer `QdrantSanctumAdapter` (requires the `qdrant`
 /// feature).
 ///
 /// # Example

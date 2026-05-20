@@ -6,13 +6,13 @@
 //!
 //! - **Garrison** (`garrison` module): Conversation history storage adapters.
 //!   - [`garrison::InMemoryGarrison`] — always available, zero-dependency in-process store.
-//!   - [`garrison::SqliteGarrison`] — persistent SQLite-backed store (requires feature `sqlite`).
-//!   - [`garrison::TiktokenCounter`] / [`garrison::TokenCounter`] — token counting utilities
+//!   - `garrison::SqliteGarrison` — persistent SQLite-backed store (requires feature `sqlite`).
+//!   - `garrison::TiktokenCounter` / `garrison::TokenCounter` — token counting utilities
 //!     (requires feature `content-processing`).
 //!
 //! - **Sanctum** (`sanctum` module): Vector / semantic memory adapters.
 //!   - [`sanctum::InMemorySanctum`] — always available, in-process vector store.
-//!   - [`sanctum::QdrantSanctumAdapter`] — production-grade Qdrant-backed store (requires feature `qdrant`).
+//!   - `sanctum::QdrantSanctumAdapter` — production-grade Qdrant-backed store (requires feature `qdrant`).
 //!
 //! - **Services** (`services` module): Application-layer memory orchestration.
 //!   - [`services::MemoryExtractionService`] — extracts and persists memories from conversations.
