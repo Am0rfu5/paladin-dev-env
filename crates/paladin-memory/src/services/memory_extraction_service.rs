@@ -286,7 +286,7 @@ For each memory, provide:
 
 Memory Types:
 - Episodic: Specific events, conversations, or experiences
-- Semantic: Facts, knowledge, preferences, and general information  
+- Semantic: Facts, knowledge, preferences, and general information
 - Procedural: How-to instructions, procedures, and workflows
 
 Rules:

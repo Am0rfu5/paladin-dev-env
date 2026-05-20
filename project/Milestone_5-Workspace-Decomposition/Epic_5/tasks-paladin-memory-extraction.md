@@ -154,19 +154,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.12 Run `cargo build --workspace` and confirm everything compiles after the deletions and re-exports.
   - [x] 7.13 Run `cargo test --workspace --all-features 2>&1 | tail -10` and confirm zero regressions.
 
-- [ ] 8.0 Final quality gates and workspace verification
-  - [ ] 8.1 Run `cargo build -p paladin-memory --no-default-features` and then `cargo tree -p paladin-memory --no-default-features | grep -E "sqlx|qdrant|tiktoken"` — confirm no matches (FR-9, Story 1).
-  - [ ] 8.2 Run `cargo build -p paladin-memory --features sqlite` — confirm it succeeds and `SqliteGarrison` is compiled (FR-9).
-  - [ ] 8.3 Run `cargo build -p paladin-memory --features qdrant` — confirm it succeeds and `QdrantSanctumAdapter` is compiled (FR-9).
-  - [ ] 8.4 Run `cargo build -p paladin-memory --features content-processing` — confirm it succeeds and `TiktokenCounter` is compiled (FR-9).
-  - [ ] 8.5 Run `cargo build -p paladin-memory --all-features` — confirm all components compile together (FR-9).
-  - [ ] 8.6 Run `cargo build --workspace` — confirm full workspace build succeeds (FR-9).
-  - [ ] 8.7 Run `cargo test -p paladin-memory --all-features` — confirm all crate-level unit tests pass (FR-8.3).
-  - [ ] 8.8 Run `cargo test --workspace --all-features` — confirm all workspace tests pass with zero regressions versus the baseline from step 1.1 (FR-8.4, FR-9).
-  - [ ] 8.9 Run `cargo clippy -p paladin-memory --all-features -- -D warnings` — confirm zero warnings (FR-9).
-  - [ ] 8.10 Run `cargo clippy --workspace -- -D warnings` — confirm zero warnings across all crates.
-  - [ ] 8.11 Run `cargo fmt --all -- --check` — confirm all code is properly formatted; run `cargo fmt --all` to fix any issues, then re-check.
-  - [ ] 8.12 Run `cargo doc -p paladin-memory --no-deps 2>&1 | grep -i "warn\|error"` — confirm no broken intra-doc links or missing documentation warnings (FR-9).
-  - [ ] 8.13 Smoke-run the garrison and sanctum examples to confirm they compile without import path changes: `cargo build --example garrison_in_memory`, `cargo build --example garrison_persistent`, `cargo build --example garrison_semantic_search` (add `--features` as needed).
-  - [ ] 8.14 Compare the final test count from step 8.8 against the baseline from step 1.1 and confirm the count is equal or higher (migrated unit tests now run via `cargo test -p paladin-memory` in addition to the workspace run).
-  - [ ] 8.15 Stage all changes and commit: `git add .` then `git commit -m "feat: extract paladin-memory crate from monolith" -m "- Scaffold crates/paladin-memory with sqlite, qdrant, content-processing feature flags" -m "- Extract InMemoryGarrison, SqliteGarrison, TokenCounter/TiktokenCounter" -m "- Extract InMemorySanctum, QdrantSanctumAdapter" -m "- Extract MemoryExtractionService, RagRetrievalService" -m "- Migrate unit tests to inline #[cfg(test)] modules" -m "- Delete original source files; add facade re-exports in src/lib.rs" -m "- Hoist sqlx and qdrant-client to [workspace.dependencies]" -m "Closes Epic 5 — Milestone 5 Workspace Decomposition"`
+- [x] 8.0 Final quality gates and workspace verification
+  - [x] 8.1 Run `cargo build -p paladin-memory --no-default-features` and then `cargo tree -p paladin-memory --no-default-features | grep -E "sqlx|qdrant|tiktoken"` — confirm no matches (FR-9, Story 1).
+  - [x] 8.2 Run `cargo build -p paladin-memory --features sqlite` — confirm it succeeds and `SqliteGarrison` is compiled (FR-9).
+  - [x] 8.3 Run `cargo build -p paladin-memory --features qdrant` — confirm it succeeds and `QdrantSanctumAdapter` is compiled (FR-9).
+  - [x] 8.4 Run `cargo build -p paladin-memory --features content-processing` — confirm it succeeds and `TiktokenCounter` is compiled (FR-9).
+  - [x] 8.5 Run `cargo build -p paladin-memory --all-features` — confirm all components compile together (FR-9).
+  - [x] 8.6 Run `cargo build --workspace` — confirm full workspace build succeeds (FR-9).
+  - [x] 8.7 Run `cargo test -p paladin-memory --all-features` — confirm all crate-level unit tests pass (FR-8.3).
+  - [x] 8.8 Run `cargo test --workspace --all-features` — confirm all workspace tests pass with zero regressions versus the baseline from step 1.1 (FR-8.4, FR-9).
+  - [x] 8.9 Run `cargo clippy -p paladin-memory --all-features -- -D warnings` — confirm zero warnings (FR-9).
+  - [x] 8.10 Run `cargo clippy --workspace -- -D warnings` — confirm zero warnings across all crates.
+  - [x] 8.11 Run `cargo fmt --all -- --check` — confirm all code is properly formatted; run `cargo fmt --all` to fix any issues, then re-check.
+  - [x] 8.12 Run `cargo doc -p paladin-memory --no-deps 2>&1 | grep -i "warn\|error"` — confirm no broken intra-doc links or missing documentation warnings (FR-9).
+  - [x] 8.13 Smoke-run the garrison and sanctum examples to confirm they compile without import path changes: `cargo build --example garrison_in_memory`, `cargo build --example garrison_persistent`, `cargo build --example garrison_semantic_search` (add `--features` as needed).
+  - [x] 8.14 Compare the final test count from step 8.8 against the baseline from step 1.1 and confirm the count is equal or higher (migrated unit tests now run via `cargo test -p paladin-memory` in addition to the workspace run).
+  - [x] 8.15 Stage all changes and commit: `git add .` then `git commit -m "feat: extract paladin-memory crate from monolith" -m "- Scaffold crates/paladin-memory with sqlite, qdrant, content-processing feature flags" -m "- Extract InMemoryGarrison, SqliteGarrison, TokenCounter/TiktokenCounter" -m "- Extract InMemorySanctum, QdrantSanctumAdapter" -m "- Extract MemoryExtractionService, RagRetrievalService" -m "- Migrate unit tests to inline #[cfg(test)] modules" -m "- Delete original source files; add facade re-exports in src/lib.rs" -m "- Hoist sqlx and qdrant-client to [workspace.dependencies]" -m "Closes Epic 5 — Milestone 5 Workspace Decomposition"`
