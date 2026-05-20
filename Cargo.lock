@@ -3318,6 +3318,7 @@ dependencies = [
  "paladin-battalion",
  "paladin-core",
  "paladin-llm",
+ "paladin-memory",
  "paladin-ports",
  "pdf-extract",
  "petgraph",

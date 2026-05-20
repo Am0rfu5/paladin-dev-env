@@ -1,15 +1,9 @@
-//! Sanctum (long-term memory) adapter implementations
+//! Sanctum Adapters — re-exported from `paladin-memory`.
 //!
-//! This module contains different storage backend implementations for the Sanctum system:
-//! - InMemorySanctum: Fast, ephemeral storage for development and testing
-//! - QdrantSanctum: Production-grade vector database storage (optional feature)
+//! All sanctum implementations have been extracted into the `paladin-memory`
+//! crate. This module provides backward-compatible re-exports.
 
-mod in_memory_adapter;
-
-#[cfg(feature = "qdrant")]
-mod qdrant_adapter;
-
-pub use in_memory_adapter::InMemorySanctum;
+pub use paladin_memory::sanctum::InMemorySanctum;
 
 #[cfg(feature = "qdrant")]
-pub use qdrant_adapter::QdrantSanctumAdapter;
+pub use paladin_memory::sanctum::QdrantSanctumAdapter;

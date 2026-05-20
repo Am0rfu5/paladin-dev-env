@@ -40,6 +40,7 @@ paladin-core = { path = "crates/paladin-core" }
 paladin-ports = { path = "crates/paladin-ports" }
 paladin-battalion = { path = "crates/paladin-battalion" }
 paladin-llm = { path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
+paladin-memory = { workspace = true, features = ["sqlite"] }
 reqwest = { workspace = true, features = ["blocking", "stream"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -192,7 +193,7 @@ default = ["llm-openai"]
 redis-queue = ["redis"]
 s3-storage = ["rust-s3"]
 openai-embeddings = ["paladin-llm/openai-embeddings"]
-qdrant = ["qdrant-client"]
+qdrant = ["qdrant-client", "paladin-memory/qdrant"]
 integration-tests = []
 live-api-tests = []  # Tests requiring real API keys (OpenAI, DeepSeek, Anthropic)
 
@@ -204,7 +205,7 @@ llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]
 
 # Subsystem feature flags
 vision = []
-content-processing = ["pdf-extract", "scraper", "tiktoken-rs", "rss"]
+content-processing = ["pdf-extract", "scraper", "tiktoken-rs", "rss", "paladin-memory/content-processing"]
 web-server = ["actix-web", "axum"]
 notifications = ["lettre", "handlebars"]
 

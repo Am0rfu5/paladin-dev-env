@@ -1,14 +1,25 @@
-//! Garrison Adapters - Storage Implementations
+//! Garrison Adapters — re-exported from `paladin-memory`.
 //!
-//! This module contains concrete implementations of the GarrisonPort trait
-//! for different storage backends.
+//! All garrison implementations have been extracted into the `paladin-memory`
+//! crate. This module provides backward-compatible re-exports.
 
-pub mod in_memory_garrison;
-pub mod sqlite_garrison;
+pub use paladin_memory::garrison::InMemoryGarrison;
+pub use paladin_memory::garrison::SqliteGarrison;
 #[cfg(feature = "content-processing")]
-pub mod token_counter;
+pub use paladin_memory::garrison::{TiktokenCounter, TokenCounter, TokenCounterFactory};
 
-pub use in_memory_garrison::InMemoryGarrison;
-pub use sqlite_garrison::SqliteGarrison;
+/// In-memory garrison (backward-compatible sub-module path).
+pub mod in_memory_garrison {
+    pub use paladin_memory::garrison::InMemoryGarrison;
+}
+
+/// SQLite garrison (backward-compatible sub-module path).
+pub mod sqlite_garrison {
+    pub use paladin_memory::garrison::SqliteGarrison;
+}
+
+/// Token counter utilities (backward-compatible sub-module path).
 #[cfg(feature = "content-processing")]
-pub use token_counter::{TiktokenCounter, TokenCounter, TokenCounterFactory};
+pub mod token_counter {
+    pub use paladin_memory::garrison::{TiktokenCounter, TokenCounter, TokenCounterFactory};
+}

@@ -153,6 +153,17 @@ pub use paladin_ports::output::sanctum_port::{
 // Re-export SanctumEntry from core for Sanctum usage
 pub use core::platform::container::sanctum::SanctumEntry;
 
+// Memory Adapters (re-exported from paladin-memory)
+pub use paladin_memory::garrison::InMemoryGarrison;
+pub use paladin_memory::garrison::SqliteGarrison;
+pub use paladin_memory::sanctum::InMemorySanctum;
+#[cfg(feature = "qdrant")]
+pub use paladin_memory::sanctum::QdrantSanctumAdapter;
+pub use paladin_memory::services::{
+    ExtractedMemory, MemoryExtractionService, MemoryExtractionStrategy, RagConfig,
+    RagRetrievalService, RetrievalTrigger,
+};
+
 pub use paladin_ports::output::embedding_port::{Embedding, EmbeddingError, EmbeddingPort};
 
 pub use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};

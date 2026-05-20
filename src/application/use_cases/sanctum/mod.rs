@@ -1,14 +1,23 @@
-/// Sanctum Use Cases - RAG and Memory Management
-///
-/// This module contains use cases for the Sanctum long-term memory system,
-/// including RAG (Retrieval-Augmented Generation) and memory extraction services.
-pub mod memory_extraction_service;
-pub mod rag_retrieval_service;
+//! Sanctum Use Cases — re-exported from `paladin-memory`.
+//!
+//! Memory extraction and RAG retrieval services have been extracted into the
+//! `paladin-memory` crate. This module provides backward-compatible re-exports.
 
-// Re-exports
-pub use memory_extraction_service::{
-    ExtractedMemory, MemoryExtractionService, MemoryExtractionStrategy,
+pub use paladin_memory::services::{
+    ExtractedMemory, MemoryExtractionService, MemoryExtractionStrategy, RagConfig,
+    RagRetrievalService, RetrievalTrigger, retrieve_context_with_timeout,
 };
-pub use rag_retrieval_service::{
-    RagConfig, RagRetrievalService, RetrievalTrigger, retrieve_context_with_timeout,
-};
+
+/// Memory extraction service (backward-compatible sub-module path).
+pub mod memory_extraction_service {
+    pub use paladin_memory::services::{
+        ExtractedMemory, MemoryExtractionService, MemoryExtractionStrategy,
+    };
+}
+
+/// RAG retrieval service (backward-compatible sub-module path).
+pub mod rag_retrieval_service {
+    pub use paladin_memory::services::{
+        RagConfig, RagRetrievalService, RetrievalTrigger, retrieve_context_with_timeout,
+    };
+}
