@@ -428,8 +428,3 @@ jobs:
         with:
           name: benchmark-results
           path: target/criterion/
-
-# Schedule weekly dependency updates and security checks
-on:
-  schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday
