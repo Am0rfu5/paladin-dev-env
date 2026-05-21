@@ -34,7 +34,7 @@ RUN strip target/release/paladin
 # Stage 2: Runtime
 # Minimal runtime image with only the binary
 # =============================================================================
-FROM debian:11-slim
+FROM debian:12-slim
 WORKDIR /app
 
 # Install only runtime dependencies
