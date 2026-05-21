@@ -332,7 +332,7 @@ jobs:
       - name: Test Docker Compose
         run: |
           cp .env.example .env
-          docker-compose -f docker/docker-compose.yml -f docker/docker-compose.test.yml config
+          docker compose -f docker/docker-compose.yml -f docker/docker-compose.test.yml config
           echo "Docker Compose configuration validated"
 
   # End-to-end tests with full Docker stack
@@ -356,13 +356,13 @@ jobs:
 
       - name: Start full stack
         run: |
-          docker-compose -f docker/docker-compose.yml up -d
+          docker compose -f docker/docker-compose.yml up -d
           sleep 30
 
       - name: Check service health
         run: |
           # Check Redis
-          docker-compose exec -T redis redis-cli ping
+          docker compose exec -T redis redis-cli ping
 
           # Check MinIO
           curl -f http://localhost:9000/minio/health/live
@@ -373,13 +373,13 @@ jobs:
       - name: Run end-to-end tests
         run: |
           # Run comprehensive workflow tests
-          docker-compose -f docker/docker-compose.test.yml run --rm test-runner \
+          docker compose -f docker/docker-compose.test.yml run --rm test-runner \
             cargo test end_to_end --release -- --ignored --nocapture
 
       - name: Collect logs
         if: failure()
         run: |
-          docker-compose logs > docker-logs.txt
+          docker compose logs > docker-logs.txt
 
       - name: Upload logs
         if: failure()
@@ -390,7 +390,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v
 
   # Benchmark tests (optional, on schedule)
   benchmark:
