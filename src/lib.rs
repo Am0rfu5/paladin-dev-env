@@ -98,6 +98,9 @@ pub mod core;
 /// Infrastructure layer: Adapter implementations
 pub mod infrastructure;
 
+/// Prelude: convenient re-exports of the most commonly used types.
+pub mod prelude;
+
 // ============================================================================
 // CLI Module (Internal/Testing Support)
 // ============================================================================

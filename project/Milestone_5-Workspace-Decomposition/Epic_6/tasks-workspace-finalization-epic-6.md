@@ -51,38 +51,44 @@ Update the file after completing each sub-task, not just after completing an ent
     ```
   - [ ] 1.3 Rebuild the devcontainer: open the VS Code Command Palette (`Ctrl+Shift+P`), select **"Dev Containers: Rebuild Container"**, and wait for the build to complete.
   - [ ] 1.4 Verify installation inside the container: `gh --version` — confirm it prints a version string (e.g., `gh version 2.x.x`).
-  - [ ] 1.5 Create a GitHub Personal Access Token (PAT) for devcontainer use:
-    - Go to **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)** → "Generate new token (classic)".
-    - Give it a descriptive name (e.g., `paladin-devcontainer`).
-    - Select the following scopes: **`repo`** (full), **`workflow`**, **`read:org`**.
+  - [ ] 1.5 Create a GitHub **Fine-Grained Personal Access Token** for devcontainer use:
+    - Go to **GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens** → "Generate new token".
+    - Give it a descriptive name (e.g., `paladin-devcontainer-gh-cli`).
+    - Set **Resource owner** to your personal account (`DF3NDR`).
+    - Set **Repository access** to **"Only select repositories"** → choose `paladin-dev-env`.
+    - Under **Repository permissions**, grant:
+      - **Actions: Read and Write** — covers triggering workflows (`gh workflow run`) and reading run status/logs (`gh run watch`, `gh run list`, `gh run view --log-failed`).
+      - **Metadata: Read** — automatically included; required for `gh repo view`.
+    - No other permissions are needed. `read:org` is a classic PAT scope only — it does not exist in fine-grained tokens and is not required for this repository.
     - Set an expiration appropriate for your team's security policy (90 days is a reasonable default).
     - Copy the generated token — it will only be shown once.
   - [ ] 1.6 Authenticate `gh` inside the container using the PAT. **Type this command in the terminal and paste the token when prompted — do not paste the token into any other tool or text field:**
     ```bash
     gh auth login --hostname github.com --git-protocol https --with-token
     ```
-    After running the command, paste the PAT at the prompt and press Enter. The token is piped directly to `gh` and is not stored in shell history.
-    > **Alternative (environment variable):** If your team uses a secrets manager or `.env` injection, set `GH_TOKEN=<your-pat>` in the shell environment before running any `gh` commands. The CLI automatically reads `GH_TOKEN` and requires no interactive login step. This is the recommended approach for CI-like devcontainer setups where interactive prompts are impractical.
+    The command gives **no prompt** — it silently waits for stdin. Paste your PAT and press **Enter**, then **Ctrl+D** to signal end-of-input. It will authenticate and exit.
+
+    > **Note on `--with-token` hanging:** The command blocks waiting for stdin input because it expects the token to be piped. It is not frozen — it is waiting. Pasting the token + Enter + Ctrl+D always unblocks it.
   - [ ] 1.7 Confirm authentication: run `gh auth status` — confirm it shows `Logged in to github.com` with the correct username and the `repo`, `workflow`, and `read:org` scopes listed.
   - [ ] 1.8 Smoke-test the CLI: run `gh repo view DF3NDR/paladin-dev-env` and confirm it returns the repository description without errors.
 
-- [ ] 2.0 Facade crate re-export audit and gap fill
-  - [ ] 2.1 Run the following command to collect every top-level `use paladin::<Symbol>` reference (single-segment names only) used in `examples/` and `tests/`:
+- [x] 2.0 Facade crate re-export audit and gap fill
+  - [x] 2.1 Run the following command to collect every top-level `use paladin::<Symbol>` reference (single-segment names only) used in `examples/` and `tests/`:
     ```bash
     grep -rh "use paladin::" examples/ tests/ --include="*.rs" \
       | grep -oP "use paladin::\K[A-Z][A-Za-z]+" | sort -u
     ```
     This reveals all short-name symbols that consumers reference directly from the `paladin` crate root.
-  - [ ] 2.2 Open `src/lib.rs` and verify that every symbol found in step 2.1 appears in a `pub use …` statement at the crate root. Produce a checklist (can be a temporary scratch file or terminal output) with each symbol marked as covered or missing.
-  - [ ] 2.3 For any missing top-level symbol, add the appropriate `pub use <source_path>::<Symbol>;` line to `src/lib.rs` in the relevant section (Port Traits, Domain Entities, Builder Types, Error Types, etc.). Keep the existing section groupings.
-  - [ ] 2.4 Verify that `pub mod core`, `pub mod application`, and `pub mod infrastructure` are still declared in `src/lib.rs` — these are what make deep module paths like `use paladin::core::platform::container::paladin::Paladin` resolve correctly. Do not remove them.
-  - [ ] 2.5 Add `paladin-core` and `paladin-ports` to `[workspace.dependencies]` in the root `Cargo.toml` (e.g., `paladin-core = { path = "crates/paladin-core" }` and `paladin-ports = { path = "crates/paladin-ports" }`). This resolves OQ-1 from the PRD.
-  - [ ] 2.6 Run `cargo build --workspace` and confirm zero errors. Fix any compilation errors caused by the new re-exports before proceeding.
-  - [ ] 2.7 Run `cargo test --workspace 2>&1 | grep -E "^test result:|FAILED"` and confirm all results show `0 failed`. The total passing count must be ≥ 2533 (the baseline from Epics 1–5).
-  - [ ] 2.8 Run `cargo doc -p paladin --no-deps 2>&1 | grep -iE "warn|error"` — confirm no output (zero broken links or missing doc warnings).
+  - [x] 2.2 Open `src/lib.rs` and verify that every symbol found in step 2.1 appears in a `pub use …` statement at the crate root. Produce a checklist (can be a temporary scratch file or terminal output) with each symbol marked as covered or missing.
+  - [x] 2.3 For any missing top-level symbol, add the appropriate `pub use <source_path>::<Symbol>;` line to `src/lib.rs` in the relevant section (Port Traits, Domain Entities, Builder Types, Error Types, etc.). Keep the existing section groupings.
+  - [x] 2.4 Verify that `pub mod core`, `pub mod application`, and `pub mod infrastructure` are still declared in `src/lib.rs` — these are what make deep module paths like `use paladin::core::platform::container::paladin::Paladin` resolve correctly. Do not remove them.
+  - [x] 2.5 Add `paladin-core` and `paladin-ports` to `[workspace.dependencies]` in the root `Cargo.toml` (e.g., `paladin-core = { path = "crates/paladin-core" }` and `paladin-ports = { path = "crates/paladin-ports" }`). This resolves OQ-1 from the PRD.
+  - [x] 2.6 Run `cargo build --workspace` and confirm zero errors. Fix any compilation errors caused by the new re-exports before proceeding.
+  - [x] 2.7 Run `cargo test --workspace 2>&1 | grep -E "^test result:|FAILED"` and confirm all results show `0 failed`. The total passing count must be ≥ 2533 (the baseline from Epics 1–5).
+  - [x] 2.8 Run `cargo doc -p paladin --no-deps 2>&1 | grep -iE "warn|error"` — confirm no output (zero broken links or missing doc warnings).
 
-- [ ] 3.0 Create `paladin::prelude` convenience module
-  - [ ] 3.1 Create `src/prelude.rs` with the following structure. All types must be re-exported via `pub use crate::…` (not direct crate paths) so the prelude stays in sync with `src/lib.rs` automatically:
+- [x] 3.0 Create `paladin::prelude` convenience module
+  - [x] 3.1 Create `src/prelude.rs` with the following structure. All types must be re-exported via `pub use crate::…` (not direct crate paths) so the prelude stays in sync with `src/lib.rs` automatically:
     ```rust
     //! Convenient re-exports of the most commonly used Paladin types.
     //!
@@ -115,9 +121,9 @@ Update the file after completing each sub-task, not just after completing an ent
         PaladinResult, StopReason,
     };
     ```
-  - [ ] 3.2 Add `pub mod prelude;` to `src/lib.rs` in the module declarations section, immediately after the `pub mod infrastructure;` declaration.
-  - [ ] 3.3 Run `cargo build -p paladin` and confirm zero errors. If any type in the prelude is not yet exported at the `paladin` crate root, add the missing `pub use` line to `src/lib.rs` first (back to Task 2.3).
-  - [ ] 3.4 Write a compile-check doc test inside `src/prelude.rs` that uses `use paladin::prelude::*` and constructs at least one type (e.g., verifies `PaladinStatus::Idle` is accessible). Mark it `no_run` since it requires a live LLM port:
+  - [x] 3.2 Add `pub mod prelude;` to `src/lib.rs` in the module declarations section, immediately after the `pub mod infrastructure;` declaration.
+  - [x] 3.3 Run `cargo build -p paladin` and confirm zero errors. If any type in the prelude is not yet exported at the `paladin` crate root, add the missing `pub use` line to `src/lib.rs` first (back to Task 2.3).
+  - [x] 3.4 Write a compile-check doc test inside `src/prelude.rs` that uses `use paladin::prelude::*` and constructs at least one type (e.g., verifies `PaladinStatus::Idle` is accessible). Mark it `no_run` since it requires a live LLM port:
     ```rust
     //! ```rust,no_run
     //! use paladin::prelude::*;
@@ -125,10 +131,10 @@ Update the file after completing each sub-task, not just after completing an ent
     //! let _status = PaladinStatus::Idle;
     //! ```
     ```
-  - [ ] 3.5 Run `cargo doc -p paladin --no-deps 2>&1 | grep -iE "warn|error"` and confirm no output.
-  - [ ] 3.6 Run `cargo fmt --all -- --check` and run `cargo fmt --all` to fix any formatting differences introduced by the new file.
-  - [ ] 3.7 Run `cargo clippy -p paladin -- -D warnings` and resolve any warnings in the new prelude module.
-  - [ ] 3.8 Stage and commit: `git add src/lib.rs src/prelude.rs Cargo.toml` then commit with message `feat: add paladin::prelude module and fill facade re-export gaps (Task 2.0 & 3.0)`.
+  - [x] 3.5 Run `cargo doc -p paladin --no-deps 2>&1 | grep -iE "warn|error"` and confirm no output.
+  - [x] 3.6 Run `cargo fmt --all -- --check` and run `cargo fmt --all` to fix any formatting differences introduced by the new file.
+  - [x] 3.7 Run `cargo clippy -p paladin -- -D warnings` and resolve any warnings in the new prelude module.
+  - [x] 3.8 Stage and commit: `git add src/lib.rs src/prelude.rs Cargo.toml` then commit with message `feat: add paladin::prelude module and fill facade re-export gaps (Task 2.0 & 3.0)`.
 
 - [ ] 4.0 Upgrade GitHub Actions CI workflows for workspace
   - [ ] 4.1 Open `.github/workflows/ci.yml`. In the `lint` job, replace the `cargo clippy` step command from `cargo clippy --all-targets --all-features -- -D warnings` with `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
