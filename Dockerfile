@@ -20,8 +20,9 @@ RUN apt-get update && apt-get install -y \
 # Copy all source files
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
+COPY crates ./crates
 COPY migrations ./migrations
-COPY config.yml ./
+# config.yml is gitignored (env-specific); provide at runtime via volume mount
 
 # Build the application in release mode
 RUN cargo build --release --bin paladin
@@ -45,8 +46,7 @@ RUN apt-get update && apt-get install -y \
 # Copy the binary from builder
 COPY --from=builder /app/target/release/paladin /usr/local/bin/paladin
 
-# Copy configuration and migrations
-COPY --from=builder /app/config.yml /app/config.yml
+# Copy migrations (config.yml must be provided at runtime via volume mount)
 COPY --from=builder /app/migrations /app/migrations
 
 # Create non-root user
