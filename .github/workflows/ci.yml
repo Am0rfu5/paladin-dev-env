@@ -115,7 +115,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@${{ matrix.rust-version }}
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust-version }}
 
       - name: Cache dependencies
         uses: actions/cache@v3
