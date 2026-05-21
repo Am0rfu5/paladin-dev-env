@@ -512,7 +512,7 @@ impl FileStoragePort for MinioAdapter {
         }
 
         // Sort files by modification date (newest first)
-        files.sort_by(|a, b| b.modified_at.cmp(&a.modified_at));
+        files.sort_by_key(|b| std::cmp::Reverse(b.modified_at));
 
         // For simplicity, we'll assume no more results for now
         let has_more = false;

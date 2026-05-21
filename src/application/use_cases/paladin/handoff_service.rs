@@ -253,7 +253,7 @@ impl HandoffService {
             .collect();
 
         // Sort by score (descending)
-        scored_agents.sort_by(|a, b| b.2.cmp(&a.2));
+        scored_agents.sort_by_key(|b| std::cmp::Reverse(b.2));
 
         // Return the best match if it has a meaningful score
         if let Some((name, desc, score)) = scored_agents.first().filter(|(_, _, s)| *s > 0) {
