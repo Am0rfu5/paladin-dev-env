@@ -281,7 +281,7 @@ jobs:
 
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-logs
           path: |
@@ -383,7 +383,7 @@ jobs:
 
       - name: Upload logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-logs
           path: docker-logs.txt
@@ -420,7 +420,7 @@ jobs:
         run: cargo bench
 
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: target/criterion/

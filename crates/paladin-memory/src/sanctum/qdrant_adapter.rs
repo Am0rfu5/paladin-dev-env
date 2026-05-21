@@ -665,9 +665,8 @@ mod tests {
             .importance(1.5)
             .build();
 
-        match memory {
-            Ok(m) => assert!(m.importance <= 1.0, "Importance should be clamped to 1.0"),
-            Err(_) => (),
+        if let Ok(m) = memory {
+            assert!(m.importance <= 1.0, "Importance should be clamped to 1.0")
         }
     }
 
@@ -730,9 +729,8 @@ mod tests {
         assert!(memory.is_ok());
 
         let memory = MemoryBuilder::new("paladin-1".to_string(), "".to_string()).build();
-        match memory {
-            Ok(m) => assert!(m.content.is_empty()),
-            Err(_) => (),
+        if let Ok(m) = memory {
+            assert!(m.content.is_empty())
         }
     }
 

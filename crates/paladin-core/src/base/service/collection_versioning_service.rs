@@ -524,7 +524,7 @@ where
             .map(|(_, version)| version.clone())
             .collect();
 
-        collection_versions.sort_by(|a, b| a.version_number.cmp(&b.version_number));
+        collection_versions.sort_by_key(|a| a.version_number);
 
         let current_version = current_versions.get(&collection_id).copied().unwrap_or(0);
         let total_versions = collection_versions.len() as u32;

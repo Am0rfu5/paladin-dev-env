@@ -455,7 +455,7 @@ where
             .map(|(_, version)| version.clone())
             .collect();
 
-        field_versions.sort_by(|a, b| a.version_number.cmp(&b.version_number));
+        field_versions.sort_by_key(|a| a.version_number);
 
         let current_version = current_versions.get(&field_id).copied().unwrap_or(0);
         let total_versions = field_versions.len() as u32;
