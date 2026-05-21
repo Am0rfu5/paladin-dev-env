@@ -323,7 +323,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: docker/Dockerfile
+          file: Dockerfile
           push: false
           tags: paladin:test
           cache-from: type=gha
