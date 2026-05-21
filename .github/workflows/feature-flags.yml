@@ -111,10 +111,10 @@ jobs:
         run: cargo check ${{ matrix.flags }}
 
       - name: Build (${{ matrix.description }})
-        run: cargo build ${{ matrix.flags }}
+        run: cargo build --workspace ${{ matrix.flags }}
 
       - name: Test (${{ matrix.description }})
-        run: cargo test --lib ${{ matrix.flags }}
+        run: cargo test --workspace --lib ${{ matrix.flags }}
 
   # Dedicated job: verify that the library compiles and tests pass WITHOUT cli deps
   cli-isolation:

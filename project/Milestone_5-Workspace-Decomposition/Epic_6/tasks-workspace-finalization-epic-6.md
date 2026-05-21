@@ -136,11 +136,11 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.7 Run `cargo clippy -p paladin -- -D warnings` and resolve any warnings in the new prelude module.
   - [x] 3.8 Stage and commit: `git add src/lib.rs src/prelude.rs Cargo.toml` then commit with message `feat: add paladin::prelude module and fill facade re-export gaps (Task 2.0 & 3.0)`.
 
-- [ ] 4.0 Upgrade GitHub Actions CI workflows for workspace
-  - [ ] 4.1 Open `.github/workflows/ci.yml`. In the `lint` job, replace the `cargo clippy` step command from `cargo clippy --all-targets --all-features -- -D warnings` with `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
-  - [ ] 4.2 In the `lint` job, replace the `cargo doc` step command from `cargo doc --no-deps --document-private-items` with `cargo doc --workspace --no-deps 2>&1 | tee /tmp/doc-output.txt && ! grep -q "warning:" /tmp/doc-output.txt`.
-  - [ ] 4.3 In the `test` job, replace `cargo test --lib --bins` with `cargo test --workspace --lib --bins` and replace `cargo test --doc` with `cargo test --workspace --doc`.
-  - [ ] 4.4 In both the `lint` and `test` jobs, replace the `actions-rs/toolchain@v1` step with the modern equivalent:
+- [x] 4.0 Upgrade GitHub Actions CI workflows for workspace
+  - [x] 4.1 Open `.github/workflows/ci.yml`. In the `lint` job, replace the `cargo clippy` step command from `cargo clippy --all-targets --all-features -- -D warnings` with `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
+  - [x] 4.2 In the `lint` job, replace the `cargo doc` step command from `cargo doc --no-deps --document-private-items` with `cargo doc --workspace --no-deps 2>&1 | tee /tmp/doc-output.txt && ! grep -q "warning:" /tmp/doc-output.txt`.
+  - [x] 4.3 In the `test` job, replace `cargo test --lib --bins` with `cargo test --workspace --lib --bins` and replace `cargo test --doc` with `cargo test --workspace --doc`.
+  - [x] 4.4 In both the `lint` and `test` jobs, replace the `actions-rs/toolchain@v1` step with the modern equivalent:
     ```yaml
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -148,7 +148,7 @@ Update the file after completing each sub-task, not just after completing an ent
         components: rustfmt, clippy
     ```
     For the `test` job matrix, replace with `dtolnay/rust-toolchain@${{ matrix.rust-version }}` (no `components` needed there).
-  - [ ] 4.5 Add a new `crate-isolation` job to `ci.yml` using a matrix strategy. Place it after the `test` job definition. The job must:
+  - [x] 4.5 Add a new `crate-isolation` job to `ci.yml` using a matrix strategy. Place it after the `test` job definition. The job must:
     - Check out code with `actions/checkout@v4`
     - Install the Rust toolchain with `dtolnay/rust-toolchain@stable`
     - Restore the Cargo cache (copy the same `actions/cache@v3` block used in the `test` job)
@@ -174,10 +174,10 @@ Update the file after completing each sub-task, not just after completing an ent
             - crate: paladin
               extra_flags: ""
       ```
-  - [ ] 4.6 Open `.github/workflows/feature-flags.yml`. In the `feature-matrix` job steps, find the `cargo build` and `cargo test` commands and add `--workspace` to both so that feature flag combinations are validated against all workspace members, not just the root crate.
-  - [ ] 4.7 Validate the workflow YAML syntax locally: run `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"` and `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/feature-flags.yml'))"`. Both must exit with code 0.
-  - [ ] 4.8 Stage the workflow changes: `git add .github/workflows/ci.yml .github/workflows/feature-flags.yml`
-  - [ ] 4.9 Commit: `git commit -m "ci: upgrade GitHub Actions workflows for workspace multi-crate support (Task 4.0)"` — then push the branch: `git push`.
+  - [x] 4.6 Open `.github/workflows/feature-flags.yml`. In the `feature-matrix` job steps, find the `cargo build` and `cargo test` commands and add `--workspace` to both so that feature flag combinations are validated against all workspace members, not just the root crate.
+  - [x] 4.7 Validate the workflow YAML syntax locally: run `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"` and `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/feature-flags.yml'))"`. Both must exit with code 0.
+  - [x] 4.8 Stage the workflow changes: `git add .github/workflows/ci.yml .github/workflows/feature-flags.yml`
+  - [x] 4.9 Commit: `git commit -m "ci: upgrade GitHub Actions workflows for workspace multi-crate support (Task 4.0)"` — then push the branch: `git push`.
   - [ ] 4.10 Trigger the CI pipeline from inside the devcontainer: `gh workflow run ci.yml --ref feature/milestone_5-epic_6-workspace-finalization`. Then watch the run: `gh run watch --exit-status` (the `--exit-status` flag makes the command exit non-zero if any job fails).
   - [ ] 4.11 Check the results: `gh run list --workflow=ci.yml --limit=1`. Confirm all jobs (`lint`, `api-surface`, `test`, `integration-tests`, `crate-isolation`) show a `✓` (completed/success) status. If any job fails, inspect the logs with `gh run view <run-id> --log-failed` and fix the issue before proceeding.
   - [ ] 4.12 Trigger the feature-flags matrix: `gh workflow run feature-flags.yml --ref feature/milestone_5-epic_6-workspace-finalization` and confirm all matrix permutations pass with `gh run watch --exit-status`.
