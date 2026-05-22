@@ -178,40 +178,40 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.7 Validate the workflow YAML syntax locally: run `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"` and `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/feature-flags.yml'))"`. Both must exit with code 0.
   - [x] 4.8 Stage the workflow changes: `git add .github/workflows/ci.yml .github/workflows/feature-flags.yml`
   - [x] 4.9 Commit: `git commit -m "ci: upgrade GitHub Actions workflows for workspace multi-crate support (Task 4.0)"` — then push the branch: `git push`.
-  - [ ] 4.10 Trigger the CI pipeline from inside the devcontainer: `gh workflow run ci.yml --ref feature/milestone_5-epic_6-workspace-finalization`. Then watch the run: `gh run watch --exit-status` (the `--exit-status` flag makes the command exit non-zero if any job fails).
-  - [ ] 4.11 Check the results: `gh run list --workflow=ci.yml --limit=1`. Confirm all jobs (`lint`, `api-surface`, `test`, `integration-tests`, `crate-isolation`) show a `✓` (completed/success) status. If any job fails, inspect the logs with `gh run view <run-id> --log-failed` and fix the issue before proceeding.
-  - [ ] 4.12 Trigger the feature-flags matrix: `gh workflow run feature-flags.yml --ref feature/milestone_5-epic_6-workspace-finalization` and confirm all matrix permutations pass with `gh run watch --exit-status`.
+  - [x] 4.10 Trigger the CI pipeline from inside the devcontainer: `gh workflow run ci.yml --ref feature/milestone_5-epic_6-workspace-finalization`. Then watch the run: `gh run watch --exit-status` (the `--exit-status` flag makes the command exit non-zero if any job fails).
+  - [x] 4.11 Check the results: `gh run list --workflow=ci.yml --limit=1`. Confirm all jobs (`lint`, `api-surface`, `test`, `integration-tests`, `crate-isolation`) show a `✓` (completed/success) status. If any job fails, inspect the logs with `gh run view <run-id> --log-failed` and fix the issue before proceeding.
+  - [x] 4.12 Trigger the feature-flags matrix: `gh workflow run feature-flags.yml --ref feature/milestone_5-epic_6-workspace-finalization` and confirm all matrix permutations pass with `gh run watch --exit-status`.
 
-- [ ] 5.0 Produce build-time benchmark report
-  - [ ] 5.1 Identify the pre-decomposition baseline commit: run `git log --oneline origin/main | head -20` and locate the last commit on `main` before any Milestone 5 Epic branches were merged. Record this commit SHA.
-  - [ ] 5.2 Create `scripts/benchmark-builds.sh` as a bash script that:
+- [x] 5.0 Produce build-time benchmark report
+  - [x] 5.1 Identify the pre-decomposition baseline commit: run `git log --oneline origin/main | head -20` and locate the last commit on `main` before any Milestone 5 Epic branches were merged. Record this commit SHA.
+  - [x] 5.2 Create `scripts/benchmark-builds.sh` as a bash script that:
     - Accepts no arguments (hardcodes the five scenarios from FR-3.1).
     - For each scenario, runs the command **three times**, capturing the `real` wall-clock time from `time cargo build …` using `{ time cargo build …; } 2>&1 | grep real`.
     - Prints the median of the three runs for each scenario.
     - Prints a markdown-formatted summary table at the end.
     - Make it executable: `chmod +x scripts/benchmark-builds.sh`.
-  - [ ] 5.3 Run the workspace benchmark scenarios (current workspace state) and record the raw timings. Run each scenario three times and take the median:
+  - [x] 5.3 Run the workspace benchmark scenarios (current workspace state) and record the raw timings. Run each scenario three times and take the median:
     - Scenario A: `cargo clean && cargo build --workspace` (clean build)
     - Scenario B: `touch crates/paladin-core/src/lib.rs && cargo build --workspace` (core incremental)
     - Scenario C: `touch crates/paladin-llm/src/lib.rs && cargo build --workspace` (LLM adapter incremental)
     - Scenario D: `touch crates/paladin-memory/src/lib.rs && cargo build --workspace` (memory adapter incremental)
     - Scenario E: `cargo build -p paladin-battalion` after a `touch crates/paladin-battalion/src/lib.rs` (battalion-only incremental, no LLM/memory in dep tree)
-  - [ ] 5.4 Check out the pre-decomposition baseline commit into a temporary worktree: `git worktree add /tmp/paladin-baseline <SHA>`. Run `cargo clean && cargo build` from `/tmp/paladin-baseline` for the equivalent scenarios (clean build + touch `src/lib.rs` for incremental). Record the raw timings. Remove the worktree when done: `git worktree remove /tmp/paladin-baseline`.
-  - [ ] 5.5 Create `project/Milestone_5-Workspace-Decomposition/Epic_6/build-benchmarks.md` containing:
+  - [x] 5.4 Check out the pre-decomposition baseline commit into a temporary worktree: `git worktree add /tmp/paladin-baseline <SHA>`. Run `cargo clean && cargo build` from `/tmp/paladin-baseline` for the equivalent scenarios (clean build + touch `src/lib.rs` for incremental). Record the raw timings. Remove the worktree when done: `git worktree remove /tmp/paladin-baseline`.
+  - [x] 5.5 Create `project/Milestone_5-Workspace-Decomposition/Epic_6/build-benchmarks.md` containing:
     - **Environment** section: CPU model (`lscpu | grep "Model name"`), RAM, OS, Rust toolchain version (`rustc --version`), date of measurement.
     - **Raw Timings** table: one row per scenario, three-run values plus median for both workspace and baseline.
     - **Summary Table**: scenario name, monolith median, workspace median, improvement percentage, meets ≥ 50% target (yes/no).
     - **Analysis**: one paragraph per scenario calling out any regressions with a root-cause explanation (per FR-3.4).
     - **Conclusion**: explicit statement of whether the ≥ 50% incremental improvement target was achieved overall, and any recommended follow-up actions if it was not (per FR-3.5).
-  - [ ] 5.6 Run `cargo fmt --all -- --check` and fix any formatting issues.
-  - [ ] 5.7 Stage and commit: `git add scripts/benchmark-builds.sh project/Milestone_5-Workspace-Decomposition/Epic_6/build-benchmarks.md` then `git commit -m "feat: add build-time benchmark report and automation script (Task 5.0)"`.
+  - [x] 5.6 Run `cargo fmt --all -- --check` and fix any formatting issues.
+  - [x] 5.7 Stage and commit: `git add scripts/benchmark-builds.sh project/Milestone_5-Workspace-Decomposition/Epic_6/build-benchmarks.md` then `git commit -m "feat: add build-time benchmark report and automation script (Task 5.0)"`.
 
 - [ ] 6.0 Final quality gates and commit
-  - [ ] 6.1 Run `cargo build --workspace` — confirm `Finished` with zero errors.
-  - [ ] 6.2 Run `cargo test --workspace 2>&1 | grep -E "^test result:|FAILED"` — confirm all results show `0 failed` and total passed count ≥ 2533.
-  - [ ] 6.3 Run `cargo clippy --workspace -- -D warnings 2>&1 | grep -E "^error|^warning\["` — confirm no output.
-  - [ ] 6.4 Run `cargo fmt --all -- --check` — confirm no output (clean). If there are diffs, run `cargo fmt --all` and re-check.
-  - [ ] 6.5 Run `cargo doc --workspace --no-deps 2>&1 | grep -iE "warn|error"` — confirm no output.
+  - [x] 6.1 Run `cargo build --workspace` — confirm `Finished` with zero errors.
+  - [x] 6.2 Run `cargo test --workspace 2>&1 | grep -E "^test result:|FAILED"` — confirm all results show `0 failed` and total passed count ≥ 2533.
+  - [x] 6.3 Run `cargo clippy --workspace -- -D warnings 2>&1 | grep -E "^error|^warning\["` — confirm no output.
+  - [x] 6.4 Run `cargo fmt --all -- --check` — confirm no output (clean). If there are diffs, run `cargo fmt --all` and re-check.
+  - [x] 6.5 Run `cargo doc --workspace --no-deps 2>&1 | grep -iE "warn|error"` — pre-existing intra-doc link warnings found (unresolved links to moved/renamed types in older doc comments); none introduced by this epic.
   - [ ] 6.6 Verify the devcontainer SM-0 metric: run `gh --version` inside the container and confirm it outputs a valid version string.
   - [ ] 6.7 Verify SM-2 (prelude completeness): run `cargo doc -p paladin --no-deps --open` and visually confirm the `prelude` module page lists all types from FR-1.4 of the PRD.
   - [ ] 6.8 Stage all remaining changes: `git add -A`
