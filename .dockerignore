@@ -23,7 +23,6 @@ notes/
 !README.md
 
 # Test files
-tests/
 benches/
 examples/
 

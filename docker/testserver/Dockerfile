@@ -83,6 +83,7 @@ RUN apt-get update && apt-get install -y \
 # Copy everything needed for tests
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
+COPY crates ./crates
 COPY tests ./tests
 
 # Pre-build dependencies
