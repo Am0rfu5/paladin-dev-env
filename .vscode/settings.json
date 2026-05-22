@@ -13,5 +13,6 @@
         "cargo doc": true
     },
     "snyk.advanced.organization": "5c9bb8c8-b249-4d5c-a37e-68169c8c06d3",
-    "snyk.advanced.autoSelectOrganization": true
+    "snyk.advanced.autoSelectOrganization": true,
+    "git.ignoreLimitWarning": true
 }

@@ -69,7 +69,7 @@
       ],
       "settings": {
         // Rust analyzer settings
-        "rust-analyzer.checkOnSave.overrideCommand": "clippy",
+        // "rust-analyzer.checkOnSave.overrideCommand": "clippy",
         "rust-analyzer.cargo.features": "all",
         "rust-analyzer.diagnostics.enable": true,
         "rust-analyzer.diagnostics.experimental.enable": true,
