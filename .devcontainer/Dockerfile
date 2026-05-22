@@ -2,7 +2,7 @@
 # Development Container for Paladin
 # Optimized for development with all tools and debugging capabilities
 # =============================================================================
-FROM rust:1.93-slim-bullseye
+FROM rust:1.95-slim-bullseye
 
 # Set working directory
 WORKDIR /workspace
