@@ -1,7 +1,7 @@
 # Build-Time Benchmark Report — Milestone 5 Workspace Decomposition
 
-**Task:** 5.0 — Produce build-time benchmark report (FR-3.1 through FR-3.5)  
-**Date:** 2026-05-21  
+**Task:** 5.0 — Produce build-time benchmark report (FR-3.1 through FR-3.5)
+**Date:** 2026-05-21
 **Branch:** `feature/milestone_5-epic_6-workspace-finalization`
 
 ---
