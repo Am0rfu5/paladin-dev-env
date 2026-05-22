@@ -372,9 +372,10 @@ jobs:
 
       - name: Run end-to-end tests
         run: |
-          # Run comprehensive workflow tests
+          # Run integration tests against the deployed test services (MinIO + Redis)
+          # Tests are marked #[ignore] to skip in unit-test runs; --ignored opts them in here
           docker compose -f docker/docker-compose.test.yml run --rm integration-tests \
-            cargo test end_to_end --release -- --ignored --nocapture
+            cargo test file_storage_integration_tests --test integration -- --ignored --test-threads=1 --nocapture
 
       - name: Collect logs
         if: failure()
