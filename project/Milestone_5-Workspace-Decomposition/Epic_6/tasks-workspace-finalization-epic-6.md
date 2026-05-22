@@ -206,7 +206,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.6 Run `cargo fmt --all -- --check` and fix any formatting issues.
   - [x] 5.7 Stage and commit: `git add scripts/benchmark-builds.sh project/Milestone_5-Workspace-Decomposition/Epic_6/build-benchmarks.md` then `git commit -m "feat: add build-time benchmark report and automation script (Task 5.0)"`.
 
-- [ ] 6.0 Final quality gates and commit
+- [x] 6.0 Final quality gates and commit
   - [x] 6.1 Run `cargo build --workspace` — confirm `Finished` with zero errors.
   - [x] 6.2 Run `cargo test --workspace 2>&1 | grep -E "^test result:|FAILED"` — confirm all results show `0 failed` and total passed count ≥ 2533.
   - [x] 6.3 Run `cargo clippy --workspace -- -D warnings 2>&1 | grep -E "^error|^warning\["` — confirm no output.
@@ -224,5 +224,5 @@ Update the file after completing each sub-task, not just after completing an ent
     - `-m "- Commit build-time benchmark report to Epic_6/build-benchmarks.md"`
     - `-m "- Add paladin-core and paladin-ports to [workspace.dependencies]"`
     - `-m "Closes Epic 6 — Milestone 5 Workspace Decomposition complete"`
-  - [ ] 6.10 Push the branch: `git push`
-  - [ ] 6.11 Trigger one final full CI run: `gh workflow run ci.yml --ref feature/milestone_5-epic_6-workspace-finalization && gh run watch --exit-status` — confirm all jobs green before considering this Epic complete.
+  - [x] 6.10 Push the branch: `git push`
+  - [x] 6.11 Trigger one final full CI run: `gh workflow run ci.yml --ref feature/milestone_5-epic_6-workspace-finalization && gh run watch --exit-status` — confirm all jobs green before considering this Epic complete.
