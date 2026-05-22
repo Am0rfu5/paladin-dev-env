@@ -212,10 +212,10 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.3 Run `cargo clippy --workspace -- -D warnings 2>&1 | grep -E "^error|^warning\["` — confirm no output.
   - [x] 6.4 Run `cargo fmt --all -- --check` — confirm no output (clean). If there are diffs, run `cargo fmt --all` and re-check.
   - [x] 6.5 Run `cargo doc --workspace --no-deps 2>&1 | grep -iE "warn|error"` — pre-existing intra-doc link warnings found (unresolved links to moved/renamed types in older doc comments); none introduced by this epic.
-  - [ ] 6.6 Verify the devcontainer SM-0 metric: run `gh --version` inside the container and confirm it outputs a valid version string.
-  - [ ] 6.7 Verify SM-2 (prelude completeness): run `cargo doc -p paladin --no-deps --open` and visually confirm the `prelude` module page lists all types from FR-1.4 of the PRD.
-  - [ ] 6.8 Stage all remaining changes: `git add -A`
-  - [ ] 6.9 Final commit: `git commit -m "feat: workspace finalization — facade audit, prelude, CI upgrade, benchmarks (Epic 6)"` with the following body lines:
+  - [x] 6.6 Verify the devcontainer SM-0 metric: run `gh --version` inside the container and confirm it outputs a valid version string.
+  - [x] 6.7 Verify SM-2 (prelude completeness): run `cargo doc -p paladin --no-deps --open` and visually confirm the `prelude` module page lists all types from FR-1.4 of the PRD.
+  - [x] 6.8 Stage all remaining changes: `git add -A`
+  - [x] 6.9 Final commit: `git commit -m "feat: workspace finalization — facade audit, prelude, CI upgrade, benchmarks (Epic 6)"` with the following body lines:
     - `-m "- Facade re-export audit: all use paladin::... paths verified and gaps filled"`
     - `-m "- Add paladin::prelude with 20+ commonly used types (FR-1.4)"`
     - `-m "- Install gh CLI in .devcontainer/Dockerfile.dev (FR-2.0)"`
