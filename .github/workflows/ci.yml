@@ -379,7 +379,7 @@ jobs:
       - name: Collect logs
         if: failure()
         run: |
-          docker compose logs > docker-logs.txt
+          docker compose -f docker/docker-compose.yml logs > docker-logs.txt
 
       - name: Upload logs
         if: failure()
@@ -390,7 +390,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: docker compose down -v
+        run: docker compose -f docker/docker-compose.yml down -v
 
   # Benchmark tests (optional, on schedule)
   benchmark:

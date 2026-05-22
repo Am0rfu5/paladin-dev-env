@@ -75,7 +75,7 @@ services:
   paladin-app:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     container_name: paladin-app
     ports:
       - "8080:8080"
