@@ -2568,6 +2568,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_get_vision_config_defaults() {
         let settings = Settings::default();
         let config = settings.get_vision_config();

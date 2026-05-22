@@ -576,10 +576,9 @@ mod tests {
         // Both should contain the same content
         assert!(formatted_no_color.contains("Test output content"));
         assert!(formatted_with_color.contains("Test output content"));
-
-        // With colors version may contain ANSI codes (length difference)
-        // This is a rough check since ANSI codes add characters
-        assert!(formatted_with_color.len() >= formatted_no_color.len());
+        // Note: length comparison is omitted — the timestamp inside format_paladin_result
+        // uses chrono::Utc::now() which can produce variable-length rfc3339 strings
+        // (sub-second precision), making length comparisons non-deterministic in CI.
     }
 
     #[test]
