@@ -347,7 +347,7 @@ jobs:
 
       - name: Create environment file
         run: |
-          cat > .env << EOF
+          cat > docker/.env << 'EOF'
           MINIO_ROOT_USER=e2euser
           MINIO_ROOT_PASSWORD=e2epassword123
           REDIS_PASSWORD=e2eredispass
@@ -362,7 +362,7 @@ jobs:
       - name: Check service health
         run: |
           # Check Redis
-          docker compose exec -T redis redis-cli ping
+          docker compose -f docker/docker-compose.yml exec -T redis redis-cli -a "${REDIS_PASSWORD:-changeme}" --no-auth-warning ping
 
           # Check MinIO
           curl -f http://localhost:9000/minio/health/live
