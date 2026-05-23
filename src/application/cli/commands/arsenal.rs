@@ -56,7 +56,7 @@ pub async fn handle_arsenal_command(command: ArsenalCommands) -> Result<(), CliE
 
 /// List available MCP tools from configured servers
 pub async fn handle_arsenal_list() -> Result<(), CliError> {
-    use crate::config::application_settings::Settings;
+    use crate::config::Settings;
 
     println!("{} Discovering MCP tools...\n", "→".cyan().bold());
 

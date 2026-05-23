@@ -5,7 +5,7 @@ Configuration setup for user-related services, including dependency injection
 and service initialization.
 */
 
-use crate::config::application_settings::Settings;
+use crate::config::Settings;
 use crate::core::platform::manager::notification_service::NotificationService;
 use crate::core::platform::manager::user_service::UserService;
 use crate::infrastructure::repositories::sqlite_user_repository::SqliteUserRepository;
@@ -246,38 +246,34 @@ mod tests {
             llm_type: "openai".to_string(),
             llm_url: "https://api.openai.com/v1".to_string(),
             llm_api_key: "test_key".to_string(),
-            server: crate::config::application_settings::ServerConfig {
+            server: crate::config::ServerConfig {
                 host: "127.0.0.1".to_string(),
                 port: 8080,
             },
             sources: vec![],
             max_file_size: 100 * 1024 * 1024, // 100MB
-            message_service: Some(
-                crate::config::application_settings::MessageServiceSettings {
-                    max_queue_size: Some(1000),
-                    default_ttl_seconds: Some(3600),
-                    enable_persistence: Some(false),
-                    worker_threads: Some(4),
-                    retry_attempts: Some(3),
-                    retry_delay_ms: Some(1000),
-                },
-            ),
-            queue: Some(crate::config::application_settings::QueueConfig::default()),
-            file_storage: Some(crate::config::application_settings::FileStorageConfig::default()),
+            message_service: Some(crate::config::MessageServiceSettings {
+                max_queue_size: Some(1000),
+                default_ttl_seconds: Some(3600),
+                enable_persistence: Some(false),
+                worker_threads: Some(4),
+                retry_attempts: Some(3),
+                retry_delay_ms: Some(1000),
+            }),
+            queue: Some(crate::config::QueueConfig::default()),
+            file_storage: Some(crate::config::FileStorageConfig::default()),
             #[cfg(feature = "notifications")]
-            notifications: Some(crate::config::application_settings::NotificationConfig::default()),
-            garrison: Some(crate::config::application_settings::GarrisonSettings::default()),
-            sanctum: Some(crate::config::application_settings::SanctumConfig::default()),
-            rag: Some(crate::config::application_settings::RagConfig::default()),
-            memory_extraction: Some(
-                crate::config::application_settings::MemoryExtractionConfig::default(),
-            ),
-            arsenal: Some(crate::config::application_settings::ArsenalConfig::default()),
-            citadel: Some(crate::config::application_settings::CitadelConfig::default()),
-            llm: Some(crate::config::application_settings::LlmConfig::default()),
-            herald: Some(crate::config::application_settings::HeraldConfig::default()),
-            vision: Some(crate::config::application_settings::VisionConfig::default()),
-            scheduler: Some(crate::config::application_settings::SchedulerConfig::default()),
+            notifications: Some(crate::config::NotificationConfig::default()),
+            garrison: Some(crate::config::GarrisonSettings::default()),
+            sanctum: Some(crate::config::SanctumConfig::default()),
+            rag: Some(crate::config::RagConfig::default()),
+            memory_extraction: Some(crate::config::MemoryExtractionConfig::default()),
+            arsenal: Some(crate::config::ArsenalConfig::default()),
+            citadel: Some(crate::config::CitadelConfig::default()),
+            llm: Some(crate::config::LlmConfig::default()),
+            herald: Some(crate::config::HeraldConfig::default()),
+            vision: Some(crate::config::VisionConfig::default()),
+            scheduler: Some(crate::config::SchedulerConfig::default()),
         }
     }
 

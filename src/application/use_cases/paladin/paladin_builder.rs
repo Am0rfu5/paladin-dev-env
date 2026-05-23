@@ -31,7 +31,7 @@
 
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::application::use_cases::sanctum::memory_extraction_service::MemoryExtractionStrategy;
-use crate::config::application_settings::MCPServerConfig;
+use crate::config::arsenal::MCPServerConfig;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::arsenal::Armament;
 use crate::core::platform::container::herald::Herald;

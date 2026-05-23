@@ -6,7 +6,7 @@ This adapter handles the actual database operations for user persistence.
 */
 
 use crate::application::storage::user_store::UserRepositoryPort;
-use crate::config::application_settings::Settings;
+use crate::config::Settings;
 use crate::core::platform::container::user::{Email, User, UserData, UserError, UserProfile};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};

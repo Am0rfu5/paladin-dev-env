@@ -1,5 +1,5 @@
 use crate::application::storage::sql_store::MigrationManager;
-use crate::config::application_settings::Settings;
+use crate::config::Settings;
 use crate::config::user_config::UserServiceFactory;
 use crate::core::base::service::message_service::{MessageService, MessageServiceConfig};
 use crate::core::platform::manager::event_manager::EventService;

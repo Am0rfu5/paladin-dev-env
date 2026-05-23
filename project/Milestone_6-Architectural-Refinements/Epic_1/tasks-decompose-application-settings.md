@@ -129,18 +129,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.10 Add `serial_test` as a dev-dependency to `crates/paladin-memory/Cargo.toml` (needed for migrated env-var tests that use `#[serial]`). Move Garrison, Sanctum, and RAG tests from `application_settings.rs` to the new files.
   - [x] 6.11 Run `cargo test --workspace` — all tests must pass.
 
-- [ ] 7.0 Migrate all consumer files to new import paths
-  - [ ] 7.1 Update `src/main.rs`: change `use paladin::config::application_settings::Settings;` to `use paladin::config::Settings;`.
-  - [ ] 7.2 Update `src/application/cli/commands/arsenal.rs`: update the `Settings` import to `use crate::config::Settings;`.
-  - [ ] 7.3 Update `src/application/use_cases/paladin/paladin_builder.rs`: update `MCPServerConfig` import to `use crate::config::arsenal::MCPServerConfig;`.
-  - [ ] 7.4 Update `src/infrastructure/repositories/sqlite_user_repository.rs`: update `Settings` import to `use crate::config::Settings;`.
-  - [ ] 7.5 Update `src/infrastructure/adapters/llm/config_bridge.rs`: confirm imports updated in Task 5.7; if not done, update now.
-  - [ ] 7.6 Update `src/infrastructure/adapters/input/local_file_fetcher.rs`: remove or update the commented-out import; if no longer needed, delete it.
-  - [ ] 7.7 Update `src/config/setup/mod.rs`: update `Settings` import to `use crate::config::Settings;`.
-  - [ ] 7.8 Update `src/config/setup/service_runner.rs`: update `Settings` import to `use crate::config::Settings;`.
-  - [ ] 7.9 Update `src/config/user_config.rs` (highest-risk): replace all 15+ occurrences of `crate::config::application_settings::XxxConfig` with the new module paths (e.g., `crate::config::queue::QueueConfig`, `crate::config::garrison::GarrisonSettings`). Verify the `UserServiceFactory` struct still compiles and its inline `Settings` construction still produces correct defaults.
-  - [ ] 7.10 Update `src/config/mod.rs`: add `pub use` re-exports so that external consumers using the path `paladin::config::XxxConfig` continue to work (e.g., `pub use crate::config::queue::QueueConfig;`). Remove the `pub use` re-exports from `application_settings.rs` now that consumers import directly.
-  - [ ] 7.11 Run `cargo build --workspace` — must compile cleanly with zero errors.
+- [x] 7.0 Migrate all consumer files to new import paths
+  - [x] 7.1 Update `src/main.rs`: change `use paladin::config::application_settings::Settings;` to `use paladin::config::Settings;`.
+  - [x] 7.2 Update `src/application/cli/commands/arsenal.rs`: update the `Settings` import to `use crate::config::Settings;`.
+  - [x] 7.3 Update `src/application/use_cases/paladin/paladin_builder.rs`: update `MCPServerConfig` import to `use crate::config::arsenal::MCPServerConfig;`.
+  - [x] 7.4 Update `src/infrastructure/repositories/sqlite_user_repository.rs`: update `Settings` import to `use crate::config::Settings;`.
+  - [x] 7.5 Update `src/infrastructure/adapters/llm/config_bridge.rs`: confirm imports updated in Task 5.7; if not done, update now.
+  - [x] 7.6 Update `src/infrastructure/adapters/input/local_file_fetcher.rs`: remove or update the commented-out import; if no longer needed, delete it.
+  - [x] 7.7 Update `src/config/setup/mod.rs`: update `Settings` import to `use crate::config::Settings;`.
+  - [x] 7.8 Update `src/config/setup/service_runner.rs`: update `Settings` import to `use crate::config::Settings;`.
+  - [x] 7.9 Update `src/config/user_config.rs` (highest-risk): replace all 15+ occurrences of `crate::config::application_settings::XxxConfig` with the new module paths (e.g., `crate::config::queue::QueueConfig`, `crate::config::garrison::GarrisonSettings`). Verify the `UserServiceFactory` struct still compiles and its inline `Settings` construction still produces correct defaults.
+  - [x] 7.10 Update `src/config/mod.rs`: add `pub use` re-exports so that external consumers using the path `paladin::config::XxxConfig` continue to work (e.g., `pub use crate::config::queue::QueueConfig;`). Remove the `pub use` re-exports from `application_settings.rs` now that consumers import directly.
+  - [x] 7.11 Run `cargo build --workspace` — must compile cleanly with zero errors.
 
 - [ ] 8.0 Delete `application_settings.rs` and finalize `config/mod.rs`
   - [ ] 8.1 Verify `application_settings.rs` now contains **only** the `Settings` struct and its `impl` blocks (`new()`, `load_from_file()`, and `get_*_config()` methods). Run `grep "^pub struct" src/config/application_settings.rs` — it must return only `pub struct Settings`.

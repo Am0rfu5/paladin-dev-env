@@ -1,6 +1,6 @@
 pub mod service_runner;
 
-use crate::config::application_settings::Settings;
+use crate::config::Settings;
 use std::sync::Arc;
 
 pub async fn setup_and_run(config: Settings) -> Result<(), Box<dyn std::error::Error>> {
@@ -13,7 +13,7 @@ pub async fn setup_and_run(config: Settings) -> Result<(), Box<dyn std::error::E
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::application_settings::Settings;
+    use crate::config::Settings;
 
     #[tokio::test]
     async fn test_setup_and_run_with_default_config() {

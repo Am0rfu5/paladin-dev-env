@@ -1,6 +1,6 @@
 use env_logger::Env;
 use log::info;
-use paladin::config::application_settings::Settings;
+use paladin::config::Settings;
 use paladin::config::setup::setup_and_run;
 use structopt::StructOpt;
 
