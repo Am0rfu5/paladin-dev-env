@@ -1,9 +1,9 @@
-# Milestone 3: Architectural Refinements
+# Milestone 6: Architectural Refinements
 
 **Project:** Paladin Framework Refactoring Initiative
-**Milestone:** Tier 3 — Architectural Refinements Within the Existing Structure
+**Milestone:** 6 (Refactoring Tier 3 — Architectural Refinements Within the Existing Structure
 **Status:** Planning
-**Target Start:** Upon completion of Milestone 2 (Tier 2)
+**Target Start:** Upon completion of Milestone 5 (Refactoring Tier 2)
 **Target Completion:** TBD
 **Document Version:** 1.0
 **Last Updated:** 2026-04-14
@@ -12,9 +12,9 @@
 
 ## Executive Summary
 
-Milestone 3 addresses the internal architectural inconsistencies identified in the refactoring analysis that were deliberately deferred while the high-value structural changes (feature flags, workspace decomposition) took priority. These are refinements that correct genuine architectural violations in the hexagonal layering, improve long-term maintainability, and reduce cognitive load for developers navigating the codebase.
+Milestone 6 addresses the internal architectural inconsistencies identified in the refactoring analysis that were deliberately deferred while the high-value structural changes (feature flags, workspace decomposition) took priority. These are refinements that correct genuine architectural violations in the hexagonal layering, improve long-term maintainability, and reduce cognitive load for developers navigating the codebase.
 
-With the workspace decomposition complete (Milestone 2), each refinement now occurs within a well-scoped crate with enforced dependency boundaries. This makes the changes safer — a misplaced type or a layering violation is caught at compile time by the crate dependency graph rather than relying on module-level discipline alone.
+With the workspace decomposition complete (Milestone 5), each refinement now occurs within a well-scoped crate with enforced dependency boundaries. This makes the changes safer — a misplaced type or a layering violation is caught at compile time by the crate dependency graph rather than relying on module-level discipline alone.
 
 The four Epics in this Milestone are:
 
@@ -28,8 +28,8 @@ The four Epics in this Milestone are:
 - Feature flags expanded and CI matrix testing in place (Milestone 1).
 - Port traits hardened as stable API contracts (Milestone 1).
 - CLI isolated from library compilation (Milestone 1).
-- Cargo workspace decomposed into `paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory`, and the `paladin` facade crate (Milestone 2).
-- Backward-compatible facade re-exports verified (Milestone 2).
+- Cargo workspace decomposed into `paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory`, and the `paladin` facade crate (Milestone 5).
+- Backward-compatible facade re-exports verified (Milestone 5).
 
 ### Success Criteria
 
@@ -57,7 +57,7 @@ The four Epics in this Milestone are:
 
 ### Out of Scope
 
-- Further workspace crate extractions beyond those completed in Milestone 2.
+- Further workspace crate extractions beyond those completed in Milestone 5.
 - New feature development or new orchestration patterns.
 - Performance optimization of the relocated components.
 - Refactoring the notification service domain model (it was rebuilt as a prior Epic and is architecturally sound).
@@ -65,7 +65,7 @@ The four Epics in this Milestone are:
 
 ### Dependencies & Assumptions
 
-- Milestone 2 is fully completed: workspace crates exist and CI passes at the workspace level.
+- Milestone 5 is fully completed: workspace crates exist and CI passes at the workspace level.
 - The facade crate re-export paths are stable and will absorb internal relocations transparently.
 - No concurrent feature development is modifying the same files targeted by these Epics.
 
@@ -75,9 +75,9 @@ The four Epics in this Milestone are:
 |------|-----------|--------|------------|
 | Settings decomposition introduces runtime config loading regressions | Medium | High | Maintain identical deserialization behavior; property-level integration tests comparing old vs. new config loading |
 | Manager service relocation creates circular dependencies between crates | Medium | High | Dependency analysis before each move; the workspace crate boundaries enforce direction at compile time |
-| Maneuver DSL co-location decision conflicts with Milestone 2 crate boundaries | Low | Medium | The parser is already in `paladin-core` (Epic 1.4 of Milestone 2); the service is in `paladin-battalion`; co-location means moving parser to battalion, which is the correct direction |
+| Maneuver DSL co-location decision conflicts with Milestone 5 crate boundaries | Low | Medium | The parser is already in `paladin-core` (Epic 1.4 of Milestone 5); the service is in `paladin-battalion`; co-location means moving parser to battalion, which is the correct direction |
 | CircuitBreaker relocation breaks `PaladinExecutionService` import paths | Low | Low | Facade crate re-exports absorb the change; update internal imports in `paladin-battalion` |
-| Team velocity reduced by Milestone 2 fatigue | Medium | Medium | Tier 3 Epics are independent and can be tackled incrementally with lower urgency |
+| Team velocity reduced by Milestone 5 fatigue | Medium | Medium | Tier 3 Epics are independent and can be tackled incrementally with lower urgency |
 
 ---
 
@@ -86,7 +86,7 @@ The four Epics in this Milestone are:
 **Epic Owner:** TBD
 **Priority:** High
 **Estimated Effort:** Medium
-**Dependencies:** None (can begin immediately after Milestone 2)
+**Dependencies:** None (can begin immediately after Milestone 5)
 
 ### Objective
 
@@ -308,7 +308,7 @@ Evaluate whether `listener_service.rs` and `scheduler.rs` should also relocate o
 **Epic Owner:** TBD
 **Priority:** Medium
 **Estimated Effort:** Medium
-**Dependencies:** Milestone 2 Epic 1 (paladin-core) and Epic 3 (paladin-battalion) must be complete
+**Dependencies:** Milestone 5 Epic 1 (paladin-core) and Epic 3 (paladin-battalion) must be complete
 
 ### Objective
 
@@ -411,7 +411,7 @@ paladin-battalion/src/
 **Epic Owner:** TBD
 **Priority:** Medium
 **Estimated Effort:** Small
-**Dependencies:** Milestone 2 complete (workspace crates exist)
+**Dependencies:** Milestone 5 complete (workspace crates exist)
 
 ### Objective
 
@@ -498,8 +498,8 @@ Upon completion of all four Epics, produce a comprehensive architecture complian
 
 Produce a final technical debt inventory documenting:
 
-- Any remaining architectural concerns not addressed in Tiers 1–3.
-- Candidate improvements for a future Tier 4 (if warranted).
+- Any remaining architectural concerns not addressed in Refactoring Tiers 1–3.
+- Candidate improvements for a future Refactoring Tier 4 (if warranted).
 - Performance optimization opportunities identified during the refactoring.
 - Areas where additional test coverage would be valuable.
 
@@ -509,10 +509,10 @@ Produce a final technical debt inventory documenting:
 
 | Phase | Epic | Estimated Duration | Predecessors |
 |-------|------|--------------------|--------------|
-| Phase 1 | Epic 1: Settings Decomposition | 1–2 sprints | Milestone 2 complete |
+| Phase 1 | Epic 1: Settings Decomposition | 1–2 sprints | Milestone 5 complete |
 | Phase 2A | Epic 2: Manager Service Relocation | 2–3 sprints | Epic 1 recommended |
-| Phase 2B | Epic 3: Maneuver DSL Co-location (parallel with Epic 2) | 1–2 sprints | Milestone 2 complete |
-| Phase 2B | Epic 4: CircuitBreaker Relocation (parallel with Epics 2, 3) | 0.5–1 sprint | Milestone 2 complete |
+| Phase 2B | Epic 3: Maneuver DSL Co-location (parallel with Epic 2) | 1–2 sprints | Milestone 5 complete |
+| Phase 2B | Epic 4: CircuitBreaker Relocation (parallel with Epics 2, 3) | 0.5–1 sprint | Milestone 5 complete |
 | Wrap-up | Cross-Epic Deliverables | 1 sprint | Epics 1–4 |
 
 **Total Estimated Duration:** 3–5 sprints (Epics 2, 3, 4 can be parallelized)
@@ -582,7 +582,7 @@ src/config/                     (or within the appropriate workspace crate)
     └── service_runner.rs       # ServiceRunner (unchanged)
 ```
 
-## Appendix C: Hexagonal Layer Rules (Post-Milestone 3)
+## Appendix C: Hexagonal Layer Rules (Post-Milestone 6)
 
 ```
 ┌─────────────────────────────────────────────────────────┐

@@ -1,9 +1,9 @@
 # Task List: Herald Output Formatting System
 
-**Epic:** Epic 8  
-**Priority:** Low  
-**Effort:** 1-2 weeks  
-**Dependencies:** Epic 1 (Paladin Domain Foundation)  
+**Epic:** Epic 8
+**Priority:** Low
+**Effort:** 1-2 weeks
+**Dependencies:** Epic 1 (Paladin Domain Foundation)
 **Created:** January 26, 2026
 
 ---
@@ -76,7 +76,7 @@ Update the file after completing each sub-task, not just after completing an ent
 ## Tasks
 
 - [x] 0.0 Create feature branch
-  - [x] 0.1 Create and checkout new branch `git checkout -b epic-8/herald-output-formatting`
+  - [x] 0.1 Create and checkout new branch `git checkout -b feature/milestone_6-epic_1-herald-output-formatting`
 
 - [x] 1.0 Set up core Herald infrastructure (trait, errors, types)
   - [x] 1.1 Create `src/core/platform/container/herald_error.rs` with HeraldError enum

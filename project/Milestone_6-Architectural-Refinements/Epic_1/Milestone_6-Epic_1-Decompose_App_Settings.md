@@ -1,9 +1,10 @@
+
 ## Epic 1: Decompose `application_settings.rs` into Per-Domain Configuration Modules
 
 **Epic Owner:** TBD
 **Priority:** High
 **Estimated Effort:** Medium
-**Dependencies:** None (can begin immediately after Milestone 2)
+**Dependencies:** None (can begin immediately after Milestone 5)
 
 ### Objective
 

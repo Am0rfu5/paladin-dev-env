@@ -4,7 +4,7 @@
 **Epic Owner:** TBD
 **Priority:** Medium
 **Estimated Effort:** Medium
-**Dependencies:** Milestone 2 Epic 1 (paladin-core) and Epic 3 (paladin-battalion) must be complete
+**Dependencies:** Milestone 5 Epic 1 (paladin-core) and Epic 3 (paladin-battalion) must be complete
 
 ### Objective
 

@@ -4,7 +4,7 @@
 **Epic Owner:** TBD
 **Priority:** Medium
 **Estimated Effort:** Small
-**Dependencies:** Milestone 2 complete (workspace crates exist)
+**Dependencies:** Milestone 5 complete (workspace crates exist)
 
 ### Objective
 
