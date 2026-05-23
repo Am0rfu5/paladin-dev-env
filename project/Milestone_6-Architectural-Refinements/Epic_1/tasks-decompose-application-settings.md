@@ -86,12 +86,12 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.4 Add `pub mod env_utils;` to `src/config/mod.rs`.
   - [x] 2.5 Run `cargo test config::env_utils` — all new tests must pass.
 
-- [ ] 3.0 Initialize `config` modules in `paladin-memory` and `paladin-llm` workspace crates
-  - [ ] 3.1 Create `crates/paladin-memory/src/config/mod.rs` as an empty file with a single doc comment: `//! Per-domain configuration types for the paladin-memory crate.`
-  - [ ] 3.2 Add `pub mod config;` to `crates/paladin-memory/src/lib.rs` (after the existing `pub mod garrison;` line).
-  - [ ] 3.3 Create `crates/paladin-llm/src/config/mod.rs` as an empty file with a single doc comment: `//! Per-domain configuration types for the paladin-llm crate.`
-  - [ ] 3.4 Add `pub mod config;` to `crates/paladin-llm/src/lib.rs` (after the existing `pub mod error;` line).
-  - [ ] 3.5 Run `cargo build --workspace` — must compile with zero errors before proceeding.
+- [x] 3.0 Initialize `config` modules in `paladin-memory` and `paladin-llm` workspace crates
+  - [x] 3.1 Create `crates/paladin-memory/src/config/mod.rs` as an empty file with a single doc comment: `//! Per-domain configuration types for the paladin-memory crate.`
+  - [x] 3.2 Add `pub mod config;` to `crates/paladin-memory/src/lib.rs` (after the existing `pub mod garrison;` line).
+  - [x] 3.3 Create `crates/paladin-llm/src/config/mod.rs` as an empty file with a single doc comment: `//! Per-domain configuration types for the paladin-llm crate.`
+  - [x] 3.4 Add `pub mod config;` to `crates/paladin-llm/src/lib.rs` (after the existing `pub mod error;` line).
+  - [x] 3.5 Run `cargo build --workspace` — must compile with zero errors before proceeding.
 
 - [ ] 4.0 Extract facade-crate config modules (Herald, Scheduler, Citadel, Arsenal, Queue, FileStorage, Notifications, WebServer)
   - [ ] 4.1 **Herald:** Create `src/config/herald.rs`; move `JsonHeraldConfig`, `MarkdownHeraldConfig`, `TableHeraldConfig`, and `HeraldConfig` (with all `impl Default` blocks) from `application_settings.rs`. Replace the four struct definitions in `application_settings.rs` with `pub use crate::config::herald::{HeraldConfig, JsonHeraldConfig, MarkdownHeraldConfig, TableHeraldConfig};`. Run `cargo build`.

@@ -30,6 +30,7 @@
 
 #![deny(unsafe_code)]
 
+pub mod config;
 pub mod garrison;
 pub mod prelude;
 pub mod sanctum;
