@@ -68,22 +68,23 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Create and checkout a new branch: `git checkout -b feature/milestone_6-epic_1-decompose-app-settings`
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Checkout branch feature/milestone_6: `git checkout feature/milestone_6`
+  - [x] 0.2 Create and checkout a new branch: `git checkout -b feature/milestone_6-epic_1-decompose-app-settings`
 
-- [ ] 1.0 Audit and map all configuration domains
-  - [ ] 1.1 Read `src/config/application_settings.rs` in full; note the line range of every struct definition.
-  - [ ] 1.2 For each struct, record its target crate (`paladin-memory`, `paladin-llm`, or facade `paladin`) and target file path (use the mapping table in the PRD Section 4.1 as the authoritative guide).
-  - [ ] 1.3 List every `Settings::get_*_config()` method and identify which struct's `apply_env_overrides()` should absorb its env-var override logic.
-  - [ ] 1.4 For each of the 10 consumer files (`src/main.rs`, `src/application/cli/commands/arsenal.rs`, `src/application/use_cases/paladin/paladin_builder.rs`, `src/infrastructure/repositories/sqlite_user_repository.rs`, `src/infrastructure/adapters/llm/config_bridge.rs`, `src/infrastructure/adapters/input/local_file_fetcher.rs`, `src/config/setup/mod.rs`, `src/config/setup/service_runner.rs`, `src/config/user_config.rs`, `src/config/mod.rs`), list which structs each imports from `application_settings`.
-  - [ ] 1.5 Compare the `RagConfig` struct definition in `application_settings.rs` with the one in `crates/paladin-memory/src/services/rag_retrieval_service.rs` field-by-field; document any differences that must be reconciled before deduplication.
+- [x] 1.0 Audit and map all configuration domains
+  - [x] 1.1 Read `src/config/application_settings.rs` in full; note the line range of every struct definition.
+  - [x] 1.2 For each struct, record its target crate (`paladin-memory`, `paladin-llm`, or facade `paladin`) and target file path (use the mapping table in the PRD Section 4.1 as the authoritative guide).
+  - [x] 1.3 List every `Settings::get_*_config()` method and identify which struct's `apply_env_overrides()` should absorb its env-var override logic.
+  - [x] 1.4 For each of the 10 consumer files (`src/main.rs`, `src/application/cli/commands/arsenal.rs`, `src/application/use_cases/paladin/paladin_builder.rs`, `src/infrastructure/repositories/sqlite_user_repository.rs`, `src/infrastructure/adapters/llm/config_bridge.rs`, `src/infrastructure/adapters/input/local_file_fetcher.rs`, `src/config/setup/mod.rs`, `src/config/setup/service_runner.rs`, `src/config/user_config.rs`, `src/config/mod.rs`), list which structs each imports from `application_settings`.
+  - [x] 1.5 Compare the `RagConfig` struct definition in `application_settings.rs` with the one in `crates/paladin-memory/src/services/rag_retrieval_service.rs` field-by-field; document any differences that must be reconciled before deduplication.
 
-- [ ] 2.0 Create `EnvOverridable` trait and `read_env` helper
-  - [ ] 2.1 Create `src/config/env_utils.rs` with the `EnvOverridable` trait: a single required method `fn apply_env_overrides(&mut self)`.
-  - [ ] 2.2 Add the `read_env::<T: std::str::FromStr>(var_name: &str) -> Option<T>` free function to the same file; it reads an env var with `std::env::var`, then parses with `.parse::<T>().ok()`.
-  - [ ] 2.3 Write unit tests for `read_env` covering: `String` (set and unset), `u16` (valid and invalid value), `u64`, `bool` ("true"/"false"), and `Option<String>` (unset returns `None`). Use `#[serial]` from `serial_test` for all env-var tests to prevent inter-test pollution.
-  - [ ] 2.4 Add `pub mod env_utils;` to `src/config/mod.rs`.
-  - [ ] 2.5 Run `cargo test config::env_utils` — all new tests must pass.
+- [x] 2.0 Create `EnvOverridable` trait and `read_env` helper
+  - [x] 2.1 Create `src/config/env_utils.rs` with the `EnvOverridable` trait: a single required method `fn apply_env_overrides(&mut self)`.
+  - [x] 2.2 Add the `read_env::<T: std::str::FromStr>(var_name: &str) -> Option<T>` free function to the same file; it reads an env var with `std::env::var`, then parses with `.parse::<T>().ok()`.
+  - [x] 2.3 Write unit tests for `read_env` covering: `String` (set and unset), `u16` (valid and invalid value), `u64`, `bool` ("true"/"false"), and `Option<String>` (unset returns `None`). Use `#[serial]` from `serial_test` for all env-var tests to prevent inter-test pollution.
+  - [x] 2.4 Add `pub mod env_utils;` to `src/config/mod.rs`.
+  - [x] 2.5 Run `cargo test config::env_utils` — all new tests must pass.
 
 - [ ] 3.0 Initialize `config` modules in `paladin-memory` and `paladin-llm` workspace crates
   - [ ] 3.1 Create `crates/paladin-memory/src/config/mod.rs` as an empty file with a single doc comment: `//! Per-domain configuration types for the paladin-memory crate.`
