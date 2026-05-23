@@ -11,7 +11,6 @@
 /// - Ranks by relevance
 /// - Truncates to fit token budget
 /// - Formats memories for prompt injection
-use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 
@@ -20,45 +19,8 @@ use paladin_ports::output::sanctum_port::{
     SanctumError, SanctumFilter, SanctumPort, SanctumQuery, SanctumSearchResult,
 };
 
-/// Configuration for RAG retrieval.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RagConfig {
-    /// Maximum number of memories to retrieve.
-    pub top_k: usize,
-
-    /// Minimum similarity score threshold (0.0 – 1.0).
-    pub min_similarity: f32,
-
-    /// Maximum tokens to include in context.
-    pub max_tokens: usize,
-
-    /// When to trigger memory retrieval.
-    pub retrieval_trigger: RetrievalTrigger,
-}
-
-impl Default for RagConfig {
-    fn default() -> Self {
-        Self {
-            top_k: 5,
-            min_similarity: 0.7,
-            max_tokens: 2000,
-            retrieval_trigger: RetrievalTrigger::Always,
-        }
-    }
-}
-
-/// When to trigger memory retrieval.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum RetrievalTrigger {
-    /// Always retrieve memories for every query.
-    Always,
-
-    /// Retrieve only when specific keywords are detected.
-    KeywordBased,
-
-    /// Retrieve when semantic similarity exceeds threshold.
-    SemanticThreshold,
-}
+// RagConfig and RetrievalTrigger moved to crates/paladin-memory/src/config/rag.rs (Task 6.0)
+pub use crate::config::rag::{RagConfig, RetrievalTrigger};
 
 /// Service for retrieving relevant memories using RAG.
 ///
@@ -404,6 +366,7 @@ mod tests {
             top_k: 10,
             min_similarity: 0.8,
             max_tokens: 3000,
+            timeout_seconds: 5,
             retrieval_trigger: RetrievalTrigger::KeywordBased,
         };
 

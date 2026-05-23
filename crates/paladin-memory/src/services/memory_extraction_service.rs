@@ -22,21 +22,8 @@ use paladin_ports::output::sanctum_port::{SanctumError, SanctumFilter, SanctumPo
 use serde_json::Value;
 
 /// Strategy for when to extract memories from conversations.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub enum MemoryExtractionStrategy {
-    /// Extract after every conversation turn.
-    EveryTurn,
-
-    /// Extract only when conversation completes (recommended).
-    #[default]
-    OnCompletion,
-
-    /// Manual extraction only (user-triggered).
-    Manual,
-
-    /// Extract when importance threshold is exceeded.
-    Threshold { importance: u8 },
-}
+// MemoryExtractionStrategy moved to crates/paladin-memory/src/config/rag.rs (Task 6.0)
+pub use crate::config::rag::MemoryExtractionStrategy;
 
 /// Intermediate representation of extracted memory before storage.
 #[derive(Debug, Clone, Serialize, Deserialize)]

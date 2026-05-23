@@ -116,18 +116,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.7 Update `src/infrastructure/adapters/llm/config_bridge.rs` to import `LlmProviderConfig` and `VisionConfig` from their new locations (`paladin_llm::config::llm::LlmProviderConfig`, `paladin_llm::config::vision::VisionConfig`). Also created `crates/paladin-llm/src/config/bridge.rs` with `From` impls (orphan rule fix).
   - [x] 5.8 Run `cargo test --workspace` — all tests must pass.
 
-- [ ] 6.0 Extract `paladin-memory` config modules (Garrison, Sanctum, RAG) and deduplicate `RagConfig`
-  - [ ] 6.1 **Garrison:** Create `crates/paladin-memory/src/config/garrison.rs`; move `GarrisonSettings` with all `impl` blocks including `get_eviction_strategy()` and `validate()`. Implement `EnvOverridable` by moving the env-var override logic from `Settings::get_garrison_config()`. Add `pub mod garrison;` to `crates/paladin-memory/src/config/mod.rs` with re-exports.
-  - [ ] 6.2 In `application_settings.rs`, replace `GarrisonSettings` with a cross-crate re-export: `pub use paladin_memory::config::garrison::GarrisonSettings;`. Run `cargo build`.
-  - [ ] 6.3 **Sanctum:** Create `crates/paladin-memory/src/config/sanctum.rs`; move `QdrantSanctumConfig` and `SanctumConfig` with all `impl` blocks including `validate()` and `adapter_type_str()`. Implement `EnvOverridable` by moving the logic from `Settings::get_sanctum_config()`. Add `pub mod sanctum;` to `crates/paladin-memory/src/config/mod.rs` with re-exports.
-  - [ ] 6.4 In `application_settings.rs`, replace the two Sanctum struct definitions with cross-crate re-exports. Run `cargo build`.
-  - [ ] 6.5 **RagConfig deduplication:** Create `crates/paladin-memory/src/config/rag.rs`. Move `MemoryExtractionConfig` from `application_settings.rs` to this file. Reconcile the two `RagConfig` definitions (using the diff from Task 1.5); define the unified `RagConfig` in this file with all fields from both sources.
-  - [ ] 6.6 Update `crates/paladin-memory/src/services/rag_retrieval_service.rs` to import `RagConfig` from `crate::config::rag::RagConfig` instead of defining it locally. Remove the old struct definition from `rag_retrieval_service.rs`.
-  - [ ] 6.7 Add `pub mod rag;` to `crates/paladin-memory/src/config/mod.rs` with re-exports for `RagConfig` and `MemoryExtractionConfig`.
-  - [ ] 6.8 In `application_settings.rs`, replace the RAG struct definitions with cross-crate re-exports: `pub use paladin_memory::config::rag::{RagConfig, MemoryExtractionConfig};`. Run `cargo build`.
-  - [ ] 6.9 Update `crates/paladin-memory/src/prelude.rs` to re-export the new config types: add `pub use crate::config::{garrison::GarrisonSettings, sanctum::SanctumConfig, rag::{RagConfig, MemoryExtractionConfig}};`.
-  - [ ] 6.10 Add `serial_test` as a dev-dependency to `crates/paladin-memory/Cargo.toml` (needed for migrated env-var tests that use `#[serial]`). Move Garrison, Sanctum, and RAG tests from `application_settings.rs` to the new files.
-  - [ ] 6.11 Run `cargo test --workspace` — all tests must pass.
+- [x] 6.0 Extract `paladin-memory` config modules (Garrison, Sanctum, RAG) and deduplicate `RagConfig`
+  - [x] 6.1 **Garrison:** Create `crates/paladin-memory/src/config/garrison.rs`; move `GarrisonSettings` with all `impl` blocks including `get_eviction_strategy()` and `validate()`. Implement `EnvOverridable` by moving the env-var override logic from `Settings::get_garrison_config()`. Add `pub mod garrison;` to `crates/paladin-memory/src/config/mod.rs` with re-exports.
+  - [x] 6.2 In `application_settings.rs`, replace `GarrisonSettings` with a cross-crate re-export: `pub use paladin_memory::config::garrison::GarrisonSettings;`. Run `cargo build`.
+  - [x] 6.3 **Sanctum:** Create `crates/paladin-memory/src/config/sanctum.rs`; move `QdrantSanctumConfig` and `SanctumConfig` with all `impl` blocks including `validate()` and `adapter_type_str()`. Implement `EnvOverridable` by moving the logic from `Settings::get_sanctum_config()`. Add `pub mod sanctum;` to `crates/paladin-memory/src/config/mod.rs` with re-exports.
+  - [x] 6.4 In `application_settings.rs`, replace the two Sanctum struct definitions with cross-crate re-exports. Run `cargo build`.
+  - [x] 6.5 **RagConfig deduplication:** Create `crates/paladin-memory/src/config/rag.rs`. Move `MemoryExtractionConfig` from `application_settings.rs` to this file. Reconcile the two `RagConfig` definitions (using the diff from Task 1.5); define the unified `RagConfig` in this file with all fields from both sources.
+  - [x] 6.6 Update `crates/paladin-memory/src/services/rag_retrieval_service.rs` to import `RagConfig` from `crate::config::rag::RagConfig` instead of defining it locally. Remove the old struct definition from `rag_retrieval_service.rs`.
+  - [x] 6.7 Add `pub mod rag;` to `crates/paladin-memory/src/config/mod.rs` with re-exports for `RagConfig` and `MemoryExtractionConfig`.
+  - [x] 6.8 In `application_settings.rs`, replace the RAG struct definitions with cross-crate re-exports: `pub use paladin_memory::config::rag::{RagConfig, MemoryExtractionConfig};`. Run `cargo build`.
+  - [x] 6.9 Update `crates/paladin-memory/src/prelude.rs` to re-export the new config types: add `pub use crate::config::{garrison::GarrisonSettings, sanctum::SanctumConfig, rag::{RagConfig, MemoryExtractionConfig}};`.
+  - [x] 6.10 Add `serial_test` as a dev-dependency to `crates/paladin-memory/Cargo.toml` (needed for migrated env-var tests that use `#[serial]`). Move Garrison, Sanctum, and RAG tests from `application_settings.rs` to the new files.
+  - [x] 6.11 Run `cargo test --workspace` — all tests must pass.
 
 - [ ] 7.0 Migrate all consumer files to new import paths
   - [ ] 7.1 Update `src/main.rs`: change `use paladin::config::application_settings::Settings;` to `use paladin::config::Settings;`.

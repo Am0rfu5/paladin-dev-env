@@ -15,4 +15,12 @@ pub use crate::sanctum::QdrantSanctumAdapter;
 pub use crate::sanctum::{InMemorySanctum, InMemorySanctumConfig};
 
 // Services
-pub use crate::services::{MemoryExtractionService, RagConfig, RagRetrievalService};
+pub use crate::services::{
+    MemoryExtractionService, MemoryExtractionStrategy, RagConfig, RagRetrievalService,
+};
+
+// Config types
+pub use crate::config::{
+    GarrisonSettings, MemoryExtractionConfig, QdrantSanctumConfig, SanctumAdapterType,
+    SanctumConfig,
+};
