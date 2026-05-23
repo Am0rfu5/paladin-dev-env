@@ -106,15 +106,15 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.10 Move each struct's existing tests from `application_settings.rs` to its new file (inside a `#[cfg(test)] mod tests { use super::*; }` block). Add `serial_test` as a workspace dev-dependency in sub-crates only if needed — these tests stay in the facade crate where `serial_test` is already available via the workspace `Cargo.toml`.
   - [x] 4.11 Run `cargo test` — all tests must pass before proceeding.
 
-- [ ] 5.0 Extract `paladin-llm` config modules (Vision, LLM providers)
-  - [ ] 5.1 **Vision:** Create `crates/paladin-llm/src/config/vision.rs`; move `VisionRetryConfig`, `VisionProviderConfig`, and `VisionConfig` with all `impl Default` and `validate()` blocks. Add `pub mod vision;` to `crates/paladin-llm/src/config/mod.rs`. Add `pub use crate::config::vision::*;` re-exports to `crates/paladin-llm/src/config/mod.rs`.
-  - [ ] 5.2 In `application_settings.rs`, replace the three Vision struct definitions with cross-crate re-exports: `pub use paladin_llm::config::vision::{VisionRetryConfig, VisionProviderConfig, VisionConfig};`. Run `cargo build`.
-  - [ ] 5.3 **LLM:** Create `crates/paladin-llm/src/config/llm.rs`; move `LlmProviderConfig` and `LlmConfig` with all `impl` blocks including `get_provider_config()`, `get_default_provider_name()`, and `validate()`. Implement `EnvOverridable` for `LlmConfig` if it has env-var override logic. Add `pub mod llm;` to `crates/paladin-llm/src/config/mod.rs` and re-export types.
-  - [ ] 5.4 In `application_settings.rs`, replace the two LLM struct definitions with cross-crate re-exports: `pub use paladin_llm::config::llm::{LlmProviderConfig, LlmConfig};`. Run `cargo build`.
-  - [ ] 5.5 Add `pub mod config;` re-export visibility: ensure `paladin-llm`'s `lib.rs` exposes config types publicly so the facade can use `paladin_llm::config::llm::LlmConfig`.
-  - [ ] 5.6 Add `serial_test` as a dev-dependency to `crates/paladin-llm/Cargo.toml` if any migrated tests use `#[serial]`. Then move Vision and LLM tests from `application_settings.rs` to the new files.
-  - [ ] 5.7 Update `src/infrastructure/adapters/llm/config_bridge.rs` to import `LlmProviderConfig` and `VisionConfig` from their new locations (`paladin_llm::config::llm::LlmProviderConfig`, `paladin_llm::config::vision::VisionConfig`).
-  - [ ] 5.8 Run `cargo test --workspace` — all tests must pass.
+- [x] 5.0 Extract `paladin-llm` config modules (Vision, LLM providers)
+  - [x] 5.1 **Vision:** Create `crates/paladin-llm/src/config/vision.rs`; move `VisionRetryConfig`, `VisionProviderConfig`, and `VisionConfig` with all `impl Default` and `validate()` blocks. Add `pub mod vision;` to `crates/paladin-llm/src/config/mod.rs`. Add `pub use crate::config::vision::*;` re-exports to `crates/paladin-llm/src/config/mod.rs`.
+  - [x] 5.2 In `application_settings.rs`, replace the three Vision struct definitions with cross-crate re-exports: `pub use paladin_llm::config::vision::{VisionRetryConfig, VisionProviderConfig, VisionConfig};`. Run `cargo build`.
+  - [x] 5.3 **LLM:** Create `crates/paladin-llm/src/config/llm.rs`; move `LlmProviderConfig` and `LlmConfig` with all `impl` blocks including `get_provider_config()`, `get_default_provider_name()`, and `validate()`. Implement `EnvOverridable` for `LlmConfig` if it has env-var override logic. Add `pub mod llm;` to `crates/paladin-llm/src/config/mod.rs` and re-export types.
+  - [x] 5.4 In `application_settings.rs`, replace the two LLM struct definitions with cross-crate re-exports: `pub use paladin_llm::config::llm::{LlmProviderConfig, LlmConfig};`. Run `cargo build`.
+  - [x] 5.5 Add `pub mod config;` re-export visibility: ensure `paladin-llm`'s `lib.rs` exposes config types publicly so the facade can use `paladin_llm::config::llm::LlmConfig`.
+  - [x] 5.6 Add `serial_test` as a dev-dependency to `crates/paladin-llm/Cargo.toml` if any migrated tests use `#[serial]`. Then move Vision and LLM tests from `application_settings.rs` to the new files.
+  - [x] 5.7 Update `src/infrastructure/adapters/llm/config_bridge.rs` to import `LlmProviderConfig` and `VisionConfig` from their new locations (`paladin_llm::config::llm::LlmProviderConfig`, `paladin_llm::config::vision::VisionConfig`). Also created `crates/paladin-llm/src/config/bridge.rs` with `From` impls (orphan rule fix).
+  - [x] 5.8 Run `cargo test --workspace` — all tests must pass.
 
 - [ ] 6.0 Extract `paladin-memory` config modules (Garrison, Sanctum, RAG) and deduplicate `RagConfig`
   - [ ] 6.1 **Garrison:** Create `crates/paladin-memory/src/config/garrison.rs`; move `GarrisonSettings` with all `impl` blocks including `get_eviction_strategy()` and `validate()`. Implement `EnvOverridable` by moving the env-var override logic from `Settings::get_garrison_config()`. Add `pub mod garrison;` to `crates/paladin-memory/src/config/mod.rs` with re-exports.
