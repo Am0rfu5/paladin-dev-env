@@ -10,7 +10,7 @@ services:
     environment:
       - REDIS_REPLICATION_MODE=master
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "--no-auth-warning", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "--no-auth-warning", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
