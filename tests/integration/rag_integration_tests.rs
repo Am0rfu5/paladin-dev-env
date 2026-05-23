@@ -3,9 +3,7 @@
 //! Tests RAG and Memory Extraction configuration validation.
 //! Full end-to-end integration tests with Qdrant will be added in a follow-up task.
 
-use paladin::config::application_settings::{
-    MemoryExtractionConfig, MemoryExtractionStrategy, RagConfig,
-};
+use paladin::config::{MemoryExtractionConfig, MemoryExtractionStrategy, RagConfig};
 
 #[tokio::test]
 async fn test_rag_config_validation() {

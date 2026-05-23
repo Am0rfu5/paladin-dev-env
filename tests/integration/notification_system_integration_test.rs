@@ -16,7 +16,7 @@ across multiple channels following DDD and Hexagonal Architecture patterns.
 
 use std::collections::HashMap;
 
-use paladin::config::application_settings::NotificationConfig;
+use paladin::config::NotificationConfig;
 use paladin::core::platform::container::notification::{
     Notification, NotificationChannel, NotificationContent, NotificationPriority,
     NotificationRecipient, NotificationTemplate,

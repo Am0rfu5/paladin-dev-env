@@ -1,6 +1,6 @@
 //! Unit tests for Arsenal configuration loading
 
-use paladin::config::application_settings::{ArsenalConfig, MCPServerConfig};
+use paladin::config::{ArsenalConfig, MCPServerConfig};
 use serde_json;
 
 #[test]

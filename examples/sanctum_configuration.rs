@@ -7,9 +7,7 @@
 //! - docs/SANCTUM.md - Configuration guide
 //! - config.yml - Application configuration file
 
-use paladin::{
-    config::application_settings::Settings, infrastructure::adapters::sanctum::InMemorySanctum,
-};
+use paladin::{config::Settings, infrastructure::adapters::sanctum::InMemorySanctum};
 use std::env;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
