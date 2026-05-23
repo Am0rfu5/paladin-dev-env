@@ -1,121 +1,17 @@
 use crate::core::platform::container::garrison::EvictionStrategy;
 #[cfg(feature = "s3-storage")]
 use crate::infrastructure::adapters::file_storage::minio::MinioConfig;
-#[cfg(feature = "notifications")]
-use crate::infrastructure::adapters::notifications::{EmailAdapterConfig, SystemAdapterConfig};
+
 use config::{Config, ConfigError, Environment, File};
 use serde::{Deserialize, Serialize};
 use std::fs;
 #[cfg(feature = "s3-storage")]
 use std::time::Duration;
 
-/// Configuration for JSON Herald formatter
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct JsonHeraldConfig {
-    /// Enable pretty-printing (formatted with indentation)
-    pub pretty: bool,
-    /// Include metadata fields in output
-    pub include_metadata: bool,
-}
-
-impl Default for JsonHeraldConfig {
-    fn default() -> Self {
-        Self {
-            pretty: true,
-            include_metadata: true,
-        }
-    }
-}
-
-/// Configuration for Markdown Herald formatter
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MarkdownHeraldConfig {
-    /// Enable ANSI color codes for terminal output
-    pub include_colors: bool,
-    /// Heading level for main sections (1-6)
-    pub heading_level: u8,
-}
-
-impl Default for MarkdownHeraldConfig {
-    fn default() -> Self {
-        Self {
-            include_colors: true,
-            heading_level: 2,
-        }
-    }
-}
-
-/// Configuration for Table Herald formatter
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TableHeraldConfig {
-    /// Maximum width for table columns (characters)
-    pub max_column_width: usize,
-    /// Border style preset: "ascii", "rounded", "modern", "sharp", "none"
-    pub border_style: String,
-}
-
-impl Default for TableHeraldConfig {
-    fn default() -> Self {
-        Self {
-            max_column_width: 60,
-            border_style: "rounded".to_string(),
-        }
-    }
-}
-
-/// Configuration for Herald output formatting system
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HeraldConfig {
-    /// Default formatter to use: "json", "markdown", "table"
-    pub default_formatter: String,
-    /// JSON formatter configuration
-    pub json: JsonHeraldConfig,
-    /// Markdown formatter configuration
-    pub markdown: MarkdownHeraldConfig,
-    /// Table formatter configuration
-    pub table: TableHeraldConfig,
-}
-
-impl Default for HeraldConfig {
-    fn default() -> Self {
-        Self {
-            default_formatter: "json".to_string(),
-            json: JsonHeraldConfig::default(),
-            markdown: MarkdownHeraldConfig::default(),
-            table: TableHeraldConfig::default(),
-        }
-    }
-}
-
-impl HeraldConfig {
-    /// Validates herald configuration
-    pub fn validate(&self) -> Result<(), String> {
-        // Validate default_formatter
-        let valid_formatters = ["json", "markdown", "table"];
-        if !valid_formatters.contains(&self.default_formatter.as_str()) {
-            return Err(format!(
-                "Invalid default_formatter '{}'. Must be one of: {}",
-                self.default_formatter,
-                valid_formatters.join(", ")
-            ));
-        }
-
-        // Validate markdown heading_level
-        if !(1..=6).contains(&self.markdown.heading_level) {
-            return Err(format!(
-                "Invalid markdown heading_level {}. Must be between 1 and 6",
-                self.markdown.heading_level
-            ));
-        }
-
-        // Validate table max_column_width
-        if self.table.max_column_width == 0 {
-            return Err("table max_column_width must be greater than 0".to_string());
-        }
-
-        Ok(())
-    }
-}
+// Facade config re-exports (moved to dedicated modules in Task 4.0)
+pub use crate::config::herald::{
+    HeraldConfig, JsonHeraldConfig, MarkdownHeraldConfig, TableHeraldConfig,
+};
 
 /// Configuration for vision API retry logic
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -197,273 +93,14 @@ impl VisionConfig {
     }
 }
 
-/// Configuration for a single MCP server
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MCPServerConfig {
-    /// Name/identifier for the server
-    pub name: String,
-    /// Type of server: "stdio" or "sse"
-    pub server_type: String,
-    /// Command to execute (for STDIO servers)
-    pub command: Option<String>,
-    /// Arguments for the command (for STDIO servers)
-    pub args: Option<Vec<String>>,
-    /// HTTP endpoint URL (for SSE servers)
-    pub endpoint: Option<String>,
-}
-
-/// Configuration for Arsenal tool system
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ArsenalConfig {
-    /// Default timeout for tool execution in seconds
-    pub default_timeout_seconds: u64,
-    /// Maximum number of concurrent tool executions
-    pub max_concurrent_tools: usize,
-    /// List of MCP servers to connect to
-    pub mcp_servers: Vec<MCPServerConfig>,
-}
-
-/// Configuration for Citadel state persistence system
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CitadelConfig {
-    /// Enable or disable state persistence
-    pub enabled: bool,
-    /// Directory where state files will be saved
-    pub state_dir: String,
-    /// Enable automatic saving after Paladin execution
-    pub autosave_enabled: bool,
-    /// Enable automatic state cleanup (remove old states)
-    pub cleanup_enabled: bool,
-    /// Maximum age of state files in days before cleanup (if cleanup_enabled is true)
-    pub max_state_age_days: Option<u32>,
-}
-
-impl Default for ArsenalConfig {
-    fn default() -> Self {
-        Self {
-            default_timeout_seconds: 30,
-            max_concurrent_tools: 5,
-            mcp_servers: Vec::new(),
-        }
-    }
-}
-
-impl Default for CitadelConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            state_dir: "./paladin-states".to_string(),
-            autosave_enabled: false,
-            cleanup_enabled: false,
-            max_state_age_days: Some(30),
-        }
-    }
-}
-
-impl CitadelConfig {
-    /// Validates citadel configuration
-    pub fn validate(&self) -> Result<(), String> {
-        // Validate state_dir is not empty when enabled
-        if self.enabled && self.state_dir.trim().is_empty() {
-            return Err("state_dir cannot be empty when citadel is enabled".to_string());
-        }
-
-        // Validate max_state_age_days if cleanup is enabled
-        if self.cleanup_enabled {
-            if let Some(max_age) = self.max_state_age_days {
-                if max_age == 0 {
-                    return Err(
-                        "max_state_age_days must be greater than 0 when cleanup is enabled"
-                            .to_string(),
-                    );
-                }
-            } else {
-                return Err(
-                    "max_state_age_days must be specified when cleanup_enabled is true".to_string(),
-                );
-            }
-        }
-
-        Ok(())
-    }
-}
-
-/// Configuration for the job scheduler system.
-///
-/// Controls whether scheduled job execution is enabled and the
-/// cron scheduler's runtime parameters.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SchedulerConfig {
-    /// Enable or disable the scheduler subsystem.
-    pub enabled: bool,
-    /// Default cron expression for scheduled deliveries when none is
-    /// provided in the request metadata (6-field: sec min hour day month weekday).
-    pub default_cron: String,
-    /// Internal channel buffer size for the tokio-cron-scheduler.
-    /// Higher values reduce back-pressure at the cost of memory.
-    pub channel_size: usize,
-}
-
-impl Default for SchedulerConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            default_cron: "0 0 * * * *".to_string(), // top of every hour
-            channel_size: 200,
-        }
-    }
-}
-
-impl SchedulerConfig {
-    /// Validates scheduler configuration.
-    pub fn validate(&self) -> Result<(), String> {
-        if self.enabled && self.default_cron.trim().is_empty() {
-            return Err("default_cron must not be empty when scheduler is enabled".to_string());
-        }
-        if self.channel_size == 0 {
-            return Err("channel_size must be greater than 0".to_string());
-        }
-        Ok(())
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SourceConfig {
-    pub name: String,
-    pub source_type: String,
-    pub url: String,
-    pub prompt: String,
-    pub tags: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ServerConfig {
-    pub host: String,
-    pub port: u16,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MessageServiceSettings {
-    pub max_queue_size: Option<usize>,
-    pub default_ttl_seconds: Option<i64>,
-    pub enable_persistence: Option<bool>,
-    pub worker_threads: Option<usize>,
-    pub retry_attempts: Option<u32>,
-    pub retry_delay_ms: Option<u64>,
-}
-
-/// Configuration for Redis queue
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QueueConfig {
-    pub redis_host: String,
-    pub redis_port: u16,
-    pub redis_password: Option<String>,
-    pub redis_db: u8,
-    pub connection_timeout: Option<u64>,
-    pub key_prefix: Option<String>,
-    pub max_retries: Option<u32>,
-    pub enable_priority_queues: Option<bool>,
-}
-
-impl Default for QueueConfig {
-    fn default() -> Self {
-        Self {
-            redis_host: "localhost".to_string(),
-            redis_port: 6379,
-            redis_password: None,
-            redis_db: 0,
-            connection_timeout: Some(30),
-            key_prefix: Some("paladin:queue".to_string()),
-            max_retries: Some(3),
-            enable_priority_queues: Some(true),
-        }
-    }
-}
-
-/// Configuration for MinIO file storage
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FileStorageConfig {
-    pub minio_endpoint: String,
-    pub minio_access_key: String,
-    pub minio_secret_key: String,
-    pub minio_bucket: String,
-    pub minio_region: Option<String>,
-    pub minio_secure: Option<bool>,
-    pub minio_path_style: Option<bool>,
-    pub connection_timeout: Option<u64>,
-    pub request_timeout: Option<u64>,
-    pub max_idle_conns: Option<u32>,
-    pub max_file_size: Option<u64>,
-    pub allowed_extensions: Option<Vec<String>>,
-}
-
-impl Default for FileStorageConfig {
-    fn default() -> Self {
-        Self {
-            minio_endpoint: "localhost:9000".to_string(),
-            minio_access_key: "minioadmin".to_string(),
-            minio_secret_key: "minioadmin".to_string(),
-            minio_bucket: "paladin-files".to_string(),
-            minio_region: None,
-            minio_secure: Some(false),
-            minio_path_style: Some(true),
-            connection_timeout: Some(30),
-            request_timeout: Some(300),
-            max_idle_conns: Some(10),
-            max_file_size: Some(100 * 1024 * 1024), // 100MB
-            allowed_extensions: Some(vec![
-                "txt".to_string(),
-                "md".to_string(),
-                "json".to_string(),
-                "pdf".to_string(),
-                "doc".to_string(),
-                "docx".to_string(),
-                "jpg".to_string(),
-                "png".to_string(),
-                "gif".to_string(),
-                "rs".to_string(),
-                "py".to_string(),
-                "js".to_string(),
-                "html".to_string(),
-                "css".to_string(),
-                "xml".to_string(),
-            ]),
-        }
-    }
-}
-
-/// Configuration for notification system
+pub use crate::config::arsenal::{ArsenalConfig, MCPServerConfig};
+pub use crate::config::citadel::CitadelConfig;
+pub use crate::config::file_storage::FileStorageConfig;
 #[cfg(feature = "notifications")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NotificationConfig {
-    /// Enable/disable notification system
-    pub enabled: bool,
-    /// Email notification configuration
-    pub email: Option<EmailAdapterConfig>,
-    /// System notification configuration
-    pub system: Option<SystemAdapterConfig>,
-    /// Global notification settings
-    pub max_retries: u32,
-    pub retry_delay_seconds: u64,
-    pub enable_delivery_tracking: bool,
-    /// Rate limiting settings
-    pub global_rate_limit_per_minute: Option<u32>,
-}
-
-#[cfg(feature = "notifications")]
-impl Default for NotificationConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            email: Some(EmailAdapterConfig::default()),
-            system: Some(SystemAdapterConfig::default()),
-            max_retries: 3,
-            retry_delay_seconds: 60,
-            enable_delivery_tracking: true,
-            global_rate_limit_per_minute: Some(100),
-        }
-    }
-}
+pub use crate::config::notifications::NotificationConfig;
+pub use crate::config::queue::QueueConfig;
+pub use crate::config::scheduler::SchedulerConfig;
+pub use crate::config::web_server::{MessageServiceSettings, ServerConfig, SourceConfig};
 
 /// Configuration for Garrison memory system
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1437,83 +1074,34 @@ mod tests {
     use std::env;
 
     #[test]
-    fn test_default_file_storage_config() {
-        let config = FileStorageConfig::default();
-        assert_eq!(config.minio_endpoint, "localhost:9000");
-        assert_eq!(config.minio_access_key, "minioadmin");
-        assert_eq!(config.minio_secret_key, "minioadmin");
-        assert_eq!(config.minio_bucket, "paladin-files");
-        assert_eq!(config.minio_secure, Some(false));
-        assert_eq!(config.minio_path_style, Some(true));
-        assert_eq!(config.connection_timeout, Some(30));
-        assert_eq!(config.request_timeout, Some(300));
-        assert_eq!(config.max_idle_conns, Some(10));
-        assert_eq!(config.max_file_size, Some(100 * 1024 * 1024));
-        assert!(config.allowed_extensions.is_some());
-    }
-
-    #[test]
     #[serial]
-    fn test_file_storage_config_env_override() {
-        // Set environment variables
-        unsafe {
-            env::set_var("APP_MINIO_ENDPOINT", "minio-server:9000");
-            env::set_var("APP_MINIO_ACCESS_KEY", "testuser");
-            env::set_var("APP_MINIO_SECRET_KEY", "testpass");
-            env::set_var("APP_MINIO_BUCKET", "test-bucket");
-            env::set_var("APP_MINIO_REGION", "us-east-1");
-            env::set_var("APP_MINIO_SECURE", "true");
-            env::set_var("APP_MINIO_PATH_STYLE", "false");
-            env::set_var("APP_MINIO_CONNECTION_TIMEOUT", "60");
-            env::set_var("APP_MINIO_REQUEST_TIMEOUT", "600");
-            env::set_var("APP_MINIO_MAX_IDLE_CONNS", "20");
-            env::set_var("APP_MINIO_MAX_FILE_SIZE", "209715200"); // 200MB
-            env::set_var("APP_MINIO_ALLOWED_EXTENSIONS", "pdf,doc,docx,jpg,png");
-        }
-        let settings = Settings::default();
-        let config = settings.get_file_storage_config();
-
-        assert_eq!(config.minio_endpoint, "minio-server:9000");
-        assert_eq!(config.minio_access_key, "testuser");
-        assert_eq!(config.minio_secret_key, "testpass");
-        assert_eq!(config.minio_bucket, "test-bucket");
-        assert_eq!(config.minio_region, Some("us-east-1".to_string()));
-        assert_eq!(config.minio_secure, Some(true));
-        assert_eq!(config.minio_path_style, Some(false));
-        assert_eq!(config.connection_timeout, Some(60));
-        assert_eq!(config.request_timeout, Some(600));
-        assert_eq!(config.max_idle_conns, Some(20));
-        assert_eq!(config.max_file_size, Some(209715200));
-        assert_eq!(
-            config.allowed_extensions,
-            Some(vec![
-                "pdf".to_string(),
-                "doc".to_string(),
-                "docx".to_string(),
-                "jpg".to_string(),
-                "png".to_string()
-            ])
-        );
-
-        // Clean up
-        unsafe {
-            env::remove_var("APP_MINIO_ENDPOINT");
-            env::remove_var("APP_MINIO_ACCESS_KEY");
-            env::remove_var("APP_MINIO_SECRET_KEY");
-            env::remove_var("APP_MINIO_BUCKET");
-            env::remove_var("APP_MINIO_REGION");
-            env::remove_var("APP_MINIO_SECURE");
-            env::remove_var("APP_MINIO_PATH_STYLE");
-            env::remove_var("APP_MINIO_CONNECTION_TIMEOUT");
-            env::remove_var("APP_MINIO_REQUEST_TIMEOUT");
-            env::remove_var("APP_MINIO_MAX_IDLE_CONNS");
-            env::remove_var("APP_MINIO_MAX_FILE_SIZE");
-            env::remove_var("APP_MINIO_ALLOWED_EXTENSIONS");
-        }
-    }
-
-    #[test]
     fn test_settings_with_file_storage_config() {
+        // Temporarily remove devcontainer APP_MINIO_* env vars so they don't
+        // override the values we set explicitly on the Settings struct.
+        let minio_vars = [
+            "APP_MINIO_ENDPOINT",
+            "APP_MINIO_ACCESS_KEY",
+            "APP_MINIO_SECRET_KEY",
+            "APP_MINIO_BUCKET",
+            "APP_MINIO_REGION",
+            "APP_MINIO_SECURE",
+            "APP_MINIO_PATH_STYLE",
+            "APP_MINIO_CONNECTION_TIMEOUT",
+            "APP_MINIO_REQUEST_TIMEOUT",
+            "APP_MINIO_MAX_IDLE_CONNS",
+            "APP_MINIO_MAX_FILE_SIZE",
+            "APP_MINIO_ALLOWED_EXTENSIONS",
+        ];
+        let saved: Vec<(&str, Option<String>)> = minio_vars
+            .iter()
+            .map(|k| (*k, std::env::var(k).ok()))
+            .collect();
+        unsafe {
+            for k in &minio_vars {
+                env::remove_var(k);
+            }
+        }
+
         let settings = Settings {
             file_storage: Some(FileStorageConfig {
                 minio_endpoint: "custom-minio:9000".to_string(),
@@ -1538,6 +1126,16 @@ mod tests {
         assert_eq!(config.minio_secret_key, "custom-secret");
         assert_eq!(config.minio_bucket, "custom-bucket");
         assert_eq!(config.minio_region, Some("eu-west-1".to_string()));
+
+        // Restore env vars
+        unsafe {
+            for (k, v) in saved {
+                match v {
+                    Some(val) => env::set_var(k, val),
+                    None => env::remove_var(k),
+                }
+            }
+        }
     }
 
     #[test]
@@ -1555,17 +1153,6 @@ mod tests {
         assert_eq!(minio_config.connection_timeout, Duration::from_secs(30));
         assert_eq!(minio_config.request_timeout, Duration::from_secs(300));
         assert_eq!(minio_config.max_idle_conns, 10);
-    }
-
-    #[test]
-    fn test_queue_config_compatibility() {
-        // Ensure existing queue config functionality still works
-        let settings = Settings::default();
-        let queue_config = settings.get_queue_config();
-
-        assert_eq!(queue_config.redis_host, "localhost");
-        assert_eq!(queue_config.redis_port, 6379);
-        assert_eq!(queue_config.redis_db, 0);
     }
 
     #[test]
@@ -1939,307 +1526,7 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_citadel_config_default() {
-        let config = CitadelConfig::default();
-        assert!(!config.enabled);
-        assert_eq!(config.state_dir, "./paladin-states");
-        assert!(!config.autosave_enabled);
-        assert!(!config.cleanup_enabled);
-        assert_eq!(config.max_state_age_days, Some(30));
-    }
-
-    #[test]
-    fn test_citadel_config_validate_valid() {
-        let config = CitadelConfig {
-            enabled: true,
-            state_dir: "./states".to_string(),
-            autosave_enabled: true,
-            cleanup_enabled: true,
-            max_state_age_days: Some(7),
-        };
-        assert!(config.validate().is_ok());
-    }
-
-    #[test]
-    fn test_citadel_config_validate_empty_state_dir_when_enabled() {
-        let config = CitadelConfig {
-            enabled: true,
-            state_dir: "   ".to_string(), // Empty after trim
-            autosave_enabled: false,
-            cleanup_enabled: false,
-            max_state_age_days: Some(30),
-        };
-        let result = config.validate();
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .contains("state_dir cannot be empty when citadel is enabled")
-        );
-    }
-
-    #[test]
-    fn test_citadel_config_validate_cleanup_no_max_age() {
-        let config = CitadelConfig {
-            enabled: true,
-            state_dir: "./states".to_string(),
-            autosave_enabled: false,
-            cleanup_enabled: true,
-            max_state_age_days: None,
-        };
-        let result = config.validate();
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .contains("max_state_age_days must be specified when cleanup_enabled is true")
-        );
-    }
-
-    #[test]
-    fn test_citadel_config_validate_cleanup_zero_max_age() {
-        let config = CitadelConfig {
-            enabled: true,
-            state_dir: "./states".to_string(),
-            autosave_enabled: false,
-            cleanup_enabled: true,
-            max_state_age_days: Some(0),
-        };
-        let result = config.validate();
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .contains("max_state_age_days must be greater than 0 when cleanup is enabled")
-        );
-    }
-
-    #[test]
-    #[serial]
-    fn test_citadel_config_env_override() {
-        unsafe {
-            env::set_var("APP_CITADEL_ENABLED", "true");
-            env::set_var("APP_CITADEL_STATE_DIR", "/custom/states");
-            env::set_var("APP_CITADEL_AUTOSAVE_ENABLED", "true");
-            env::set_var("APP_CITADEL_CLEANUP_ENABLED", "true");
-            env::set_var("APP_CITADEL_MAX_STATE_AGE_DAYS", "60");
-        }
-
-        let settings = Settings::default();
-        let config = settings.get_citadel_config();
-
-        assert!(config.enabled);
-        assert_eq!(config.state_dir, "/custom/states");
-        assert!(config.autosave_enabled);
-        assert!(config.cleanup_enabled);
-        assert_eq!(config.max_state_age_days, Some(60));
-
-        unsafe {
-            env::remove_var("APP_CITADEL_ENABLED");
-            env::remove_var("APP_CITADEL_STATE_DIR");
-            env::remove_var("APP_CITADEL_AUTOSAVE_ENABLED");
-            env::remove_var("APP_CITADEL_CLEANUP_ENABLED");
-            env::remove_var("APP_CITADEL_MAX_STATE_AGE_DAYS");
-        }
-    }
-
-    #[test]
-    fn test_citadel_config_deserialization_from_yml() {
-        // Test that CitadelConfig can be deserialized with all fields
-        let config = CitadelConfig {
-            enabled: true,
-            state_dir: "./test-states".to_string(),
-            autosave_enabled: true,
-            cleanup_enabled: false,
-            max_state_age_days: Some(14),
-        };
-
-        assert!(config.enabled);
-        assert_eq!(config.state_dir, "./test-states");
-        assert!(config.autosave_enabled);
-        assert!(!config.cleanup_enabled);
-        assert_eq!(config.max_state_age_days, Some(14));
-    }
-
-    #[test]
-    fn test_herald_config_default() {
-        let config = HeraldConfig::default();
-        assert_eq!(config.default_formatter, "json");
-        assert!(config.json.pretty);
-        assert!(config.json.include_metadata);
-        assert!(config.markdown.include_colors);
-        assert_eq!(config.markdown.heading_level, 2);
-        assert_eq!(config.table.max_column_width, 60);
-        assert_eq!(config.table.border_style, "rounded");
-    }
-
-    #[test]
-    fn test_herald_config_validate_valid() {
-        let config = HeraldConfig {
-            default_formatter: "markdown".to_string(),
-            json: JsonHeraldConfig {
-                pretty: true,
-                include_metadata: true,
-            },
-            markdown: MarkdownHeraldConfig {
-                include_colors: true,
-                heading_level: 3,
-            },
-            table: TableHeraldConfig {
-                max_column_width: 80,
-                border_style: "ascii".to_string(),
-            },
-        };
-        assert!(config.validate().is_ok());
-    }
-
-    #[test]
-    fn test_herald_config_validate_invalid_formatter() {
-        let config = HeraldConfig {
-            default_formatter: "invalid".to_string(),
-            ..Default::default()
-        };
-        let result = config.validate();
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid default_formatter"));
-    }
-
-    #[test]
-    fn test_herald_config_validate_invalid_heading_level_low() {
-        let config = HeraldConfig {
-            default_formatter: "markdown".to_string(),
-            markdown: MarkdownHeraldConfig {
-                include_colors: true,
-                heading_level: 0,
-            },
-            ..Default::default()
-        };
-        let result = config.validate();
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .contains("Invalid markdown heading_level")
-        );
-    }
-
-    #[test]
-    fn test_herald_config_validate_invalid_heading_level_high() {
-        let config = HeraldConfig {
-            default_formatter: "markdown".to_string(),
-            markdown: MarkdownHeraldConfig {
-                include_colors: true,
-                heading_level: 7,
-            },
-            ..Default::default()
-        };
-        let result = config.validate();
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .contains("Invalid markdown heading_level")
-        );
-    }
-
-    #[test]
-    fn test_herald_config_validate_zero_column_width() {
-        let config = HeraldConfig {
-            default_formatter: "table".to_string(),
-            table: TableHeraldConfig {
-                max_column_width: 0,
-                border_style: "rounded".to_string(),
-            },
-            ..Default::default()
-        };
-        let result = config.validate();
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .contains("table max_column_width must be greater than 0")
-        );
-    }
-
-    #[test]
-    #[serial]
-    fn test_herald_config_env_override() {
-        unsafe {
-            env::set_var("HERALD_DEFAULT_FORMATTER", "markdown");
-            env::set_var("APP_HERALD_JSON_PRETTY", "false");
-            env::set_var("APP_HERALD_JSON_INCLUDE_METADATA", "false");
-            env::set_var("APP_HERALD_MARKDOWN_INCLUDE_COLORS", "false");
-            env::set_var("APP_HERALD_MARKDOWN_HEADING_LEVEL", "4");
-            env::set_var("APP_HERALD_TABLE_MAX_COLUMN_WIDTH", "100");
-            env::set_var("APP_HERALD_TABLE_BORDER_STYLE", "modern");
-        }
-
-        let settings = Settings::default();
-        let config = settings.get_herald_config();
-
-        assert_eq!(config.default_formatter, "markdown");
-        assert!(!config.json.pretty);
-        assert!(!config.json.include_metadata);
-        assert!(!config.markdown.include_colors);
-        assert_eq!(config.markdown.heading_level, 4);
-        assert_eq!(config.table.max_column_width, 100);
-        assert_eq!(config.table.border_style, "modern");
-
-        unsafe {
-            env::remove_var("HERALD_DEFAULT_FORMATTER");
-            env::remove_var("APP_HERALD_JSON_PRETTY");
-            env::remove_var("APP_HERALD_JSON_INCLUDE_METADATA");
-            env::remove_var("APP_HERALD_MARKDOWN_INCLUDE_COLORS");
-            env::remove_var("APP_HERALD_MARKDOWN_HEADING_LEVEL");
-            env::remove_var("APP_HERALD_TABLE_MAX_COLUMN_WIDTH");
-            env::remove_var("APP_HERALD_TABLE_BORDER_STYLE");
-        }
-    }
-
-    #[test]
-    #[serial]
-    fn test_herald_config_app_prefix_override() {
-        unsafe {
-            env::set_var("APP_HERALD_DEFAULT_FORMATTER", "table");
-        }
-
-        let settings = Settings::default();
-        let config = settings.get_herald_config();
-
-        assert_eq!(config.default_formatter, "table");
-
-        unsafe {
-            env::remove_var("APP_HERALD_DEFAULT_FORMATTER");
-        }
-    }
-
-    #[test]
-    fn test_herald_config_deserialization() {
-        let config = HeraldConfig {
-            default_formatter: "json".to_string(),
-            json: JsonHeraldConfig {
-                pretty: false,
-                include_metadata: false,
-            },
-            markdown: MarkdownHeraldConfig {
-                include_colors: false,
-                heading_level: 1,
-            },
-            table: TableHeraldConfig {
-                max_column_width: 120,
-                border_style: "sharp".to_string(),
-            },
-        };
-
-        assert_eq!(config.default_formatter, "json");
-        assert!(!config.json.pretty);
-        assert!(!config.json.include_metadata);
-        assert!(!config.markdown.include_colors);
-        assert_eq!(config.markdown.heading_level, 1);
-        assert_eq!(config.table.max_column_width, 120);
-        assert_eq!(config.table.border_style, "sharp");
-    }
+    // Herald tests moved to src/config/herald.rs (Task 4.0)
 
     #[test]
     fn test_create_default_herald_json() {
