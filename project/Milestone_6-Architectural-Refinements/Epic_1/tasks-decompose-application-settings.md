@@ -142,17 +142,17 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.10 Update `src/config/mod.rs`: add `pub use` re-exports so that external consumers using the path `paladin::config::XxxConfig` continue to work (e.g., `pub use crate::config::queue::QueueConfig;`). Remove the `pub use` re-exports from `application_settings.rs` now that consumers import directly.
   - [x] 7.11 Run `cargo build --workspace` — must compile cleanly with zero errors.
 
-- [ ] 8.0 Delete `application_settings.rs` and finalize `config/mod.rs`
-  - [ ] 8.1 Verify `application_settings.rs` now contains **only** the `Settings` struct and its `impl` blocks (`new()`, `load_from_file()`, and `get_*_config()` methods). Run `grep "^pub struct" src/config/application_settings.rs` — it must return only `pub struct Settings`.
-  - [ ] 8.2 Move the `Settings` struct definition and all its `impl` blocks from `application_settings.rs` into `src/config/mod.rs`.
-  - [ ] 8.3 Update each `Settings::get_*_config()` method body to call `apply_env_overrides()` on the cloned sub-struct, replacing the manual field-override logic. Example: `pub fn get_queue_config(&self) -> QueueConfig { let mut cfg = self.queue.clone().unwrap_or_default(); cfg.apply_env_overrides(); cfg }`.
-  - [ ] 8.4 Remove `pub mod application_settings;` from `src/config/mod.rs`.
-  - [ ] 8.5 Delete `src/config/application_settings.rs`.
-  - [ ] 8.6 Run `cargo build --workspace` — must compile cleanly.
-  - [ ] 8.7 Verify deletion: `grep -r "application_settings" src/` must return zero results.
-  - [ ] 8.8 Run `cargo test --workspace` — all tests must pass.
-  - [ ] 8.9 Run `cargo clippy --workspace -- -D warnings` — must be clean with zero warnings.
-  - [ ] 8.10 Run `cargo fmt --all -- --check` — must be clean; run `cargo fmt --all` to fix any formatting issues, then re-check.
+- [x] 8.0 Delete `application_settings.rs` and finalize `config/mod.rs`
+  - [x] 8.1 Verify `application_settings.rs` now contains **only** the `Settings` struct and its `impl` blocks (`new()`, `load_from_file()`, and `get_*_config()` methods). Run `grep "^pub struct" src/config/application_settings.rs` — it must return only `pub struct Settings`.
+  - [x] 8.2 Move the `Settings` struct definition and all its `impl` blocks from `application_settings.rs` into `src/config/mod.rs`.
+  - [x] 8.3 Update each `Settings::get_*_config()` method body to call `apply_env_overrides()` on the cloned sub-struct, replacing the manual field-override logic. Example: `pub fn get_queue_config(&self) -> QueueConfig { let mut cfg = self.queue.clone().unwrap_or_default(); cfg.apply_env_overrides(); cfg }`.
+  - [x] 8.4 Remove `pub mod application_settings;` from `src/config/mod.rs`.
+  - [x] 8.5 Delete `src/config/application_settings.rs`.
+  - [x] 8.6 Run `cargo build --workspace` — must compile cleanly.
+  - [x] 8.7 Verify deletion: `grep -r "application_settings" src/` must return zero results.
+  - [x] 8.8 Run `cargo test --workspace` — all tests must pass.
+  - [x] 8.9 Run `cargo clippy --workspace -- -D warnings` — must be clean with zero warnings.
+  - [x] 8.10 Run `cargo fmt --all -- --check` — must be clean; run `cargo fmt --all` to fix any formatting issues, then re-check.
 
 - [ ] 9.0 Add regression tests and verify success metrics
   - [ ] 9.1 In `src/config/mod.rs`, add a `#[cfg(test)] mod tests` block with a regression test that calls `Settings::load_from_file("config.test.yml")` and asserts at least one field per domain (e.g., assert `settings.queue.unwrap().host` equals the value in `config.test.yml`).
