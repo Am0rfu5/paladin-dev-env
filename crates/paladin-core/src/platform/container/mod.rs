@@ -26,6 +26,7 @@ pub mod queue_config;
 pub mod queue_item;
 pub mod registry_error;
 pub mod sanctum;
+pub mod schedule;
 pub mod task;
 pub mod token_usage;
 pub mod trigger;

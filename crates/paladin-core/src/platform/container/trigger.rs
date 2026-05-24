@@ -413,6 +413,63 @@ impl Trigger {
     }
 }
 
+/// Configuration for an event listener.
+///
+/// Plain config struct with `Default` impl and no port references.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ListenerConfig {
+    /// Whether the listener is active
+    pub enabled: bool,
+    /// Maximum number of triggers to create per time window
+    pub max_triggers_per_window: usize,
+    /// Time window duration in seconds
+    pub time_window_seconds: u64,
+    /// Default trigger configuration
+    pub default_trigger_config: TriggerConfig,
+    /// Batch processing settings
+    pub batch_size: usize,
+    /// Processing timeout in seconds
+    pub processing_timeout_seconds: u64,
+}
+
+impl Default for ListenerConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            max_triggers_per_window: 1000,
+            time_window_seconds: 60,
+            default_trigger_config: TriggerConfig::default(),
+            batch_size: 10,
+            processing_timeout_seconds: 30,
+        }
+    }
+}
+
+/// Runtime statistics for an event listener.
+///
+/// Plain data type with `Serialize`/`Deserialize` — suitable for core container layer.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ListenerStats {
+    /// Listener name
+    pub name: String,
+    /// Whether the listener is currently enabled
+    pub enabled: bool,
+    /// Total events processed
+    pub events_processed: u64,
+    /// Total triggers created
+    pub triggers_created: u64,
+    /// Triggers successfully completed
+    pub triggers_completed: u64,
+    /// Triggers that failed
+    pub triggers_failed: u64,
+    /// Average event-to-trigger processing time
+    pub average_processing_time_ms: Option<u64>,
+    /// Timestamp of the last processed event
+    pub last_event_processed: Option<DateTime<Utc>>,
+    /// Timestamp of the last created trigger
+    pub last_trigger_created: Option<DateTime<Utc>>,
+}
+
 /// Summary information for trigger monitoring
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TriggerSummary {
@@ -577,5 +634,48 @@ mod tests {
         // Test exact matching
         assert!(trigger.matches_pattern("exact_match", "exact_match"));
         assert!(!trigger.matches_pattern("exact_match", "different"));
+    }
+
+    #[test]
+    fn test_listener_config_default() {
+        let config = ListenerConfig::default();
+        assert!(config.enabled);
+        assert_eq!(config.max_triggers_per_window, 1000);
+        assert_eq!(config.time_window_seconds, 60);
+        assert_eq!(config.batch_size, 10);
+        assert_eq!(config.processing_timeout_seconds, 30);
+    }
+
+    #[test]
+    fn test_listener_config_serde_round_trip() {
+        let config = ListenerConfig::default();
+        let json = serde_json::to_string(&config).unwrap();
+        let restored: ListenerConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.enabled, config.enabled);
+        assert_eq!(
+            restored.max_triggers_per_window,
+            config.max_triggers_per_window
+        );
+        assert_eq!(restored.batch_size, config.batch_size);
+    }
+
+    #[test]
+    fn test_listener_stats_serde_round_trip() {
+        let stats = ListenerStats {
+            name: "test-listener".to_string(),
+            enabled: true,
+            events_processed: 42,
+            triggers_created: 10,
+            triggers_completed: 8,
+            triggers_failed: 2,
+            average_processing_time_ms: Some(150),
+            last_event_processed: None,
+            last_trigger_created: None,
+        };
+        let json = serde_json::to_string(&stats).unwrap();
+        let restored: ListenerStats = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.name, stats.name);
+        assert_eq!(restored.events_processed, stats.events_processed);
+        assert_eq!(restored.triggers_completed, stats.triggers_completed);
     }
 }

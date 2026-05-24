@@ -798,6 +798,66 @@ impl NotificationEvent {
     }
 }
 
+/// Statistics for notification service orchestration operations.
+///
+/// Plain data type with no port fields — suitable for core container layer.
+#[derive(Debug, Clone, Default)]
+pub struct NotificationServiceStats {
+    /// Total notifications created
+    pub notifications_created: u64,
+    /// Total notifications sent
+    pub notifications_sent: u64,
+    /// Total notifications delivered
+    pub notifications_delivered: u64,
+    /// Total notifications failed
+    pub notifications_failed: u64,
+    /// Notifications by channel
+    pub channel_stats: HashMap<NotificationChannel, u64>,
+    /// Notifications by priority
+    pub priority_stats: HashMap<NotificationPriority, u64>,
+    /// Average delivery time in milliseconds
+    pub avg_delivery_time_ms: Option<u64>,
+    /// Last activity timestamp
+    pub last_activity: Option<DateTime<Utc>>,
+    /// Active notifications count
+    pub active_notifications: u64,
+}
+
+/// Configuration for the notification orchestrator.
+///
+/// Plain config struct with `Default` impl and no port references.
+#[derive(Debug, Clone)]
+pub struct NotificationServiceConfig {
+    /// Default maximum retries for failed notifications
+    pub default_max_retries: u32,
+    /// Default expiry time for notifications in seconds
+    pub default_expiry_seconds: i64,
+    /// Enable notification persistence
+    pub enable_persistence: bool,
+    /// Maximum notifications to process per batch
+    pub batch_size: usize,
+    /// Processing interval in milliseconds
+    pub processing_interval_ms: u64,
+    /// Template cache size
+    pub template_cache_size: usize,
+    /// Maximum attachment size in bytes
+    pub max_attachment_size: usize,
+}
+
+impl Default for NotificationServiceConfig {
+    fn default() -> Self {
+        Self {
+            default_max_retries: 3,
+            default_expiry_seconds: 86400, // 24 hours
+            enable_persistence: true,
+            batch_size: 100,
+            processing_interval_ms: 1000,
+            template_cache_size: 1000,
+            max_attachment_size: 25 * 1024 * 1024, // 25MB
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -898,5 +958,29 @@ mod tests {
 
         assert!(notification.is_expired());
         assert!(!notification.should_send_now());
+    }
+
+    #[test]
+    fn test_notification_service_stats_default() {
+        let stats = NotificationServiceStats::default();
+        assert_eq!(stats.notifications_created, 0);
+        assert_eq!(stats.notifications_sent, 0);
+        assert_eq!(stats.active_notifications, 0);
+        assert!(stats.channel_stats.is_empty());
+        assert!(stats.priority_stats.is_empty());
+        assert!(stats.avg_delivery_time_ms.is_none());
+        assert!(stats.last_activity.is_none());
+    }
+
+    #[test]
+    fn test_notification_service_config_default() {
+        let config = NotificationServiceConfig::default();
+        assert_eq!(config.default_max_retries, 3);
+        assert_eq!(config.default_expiry_seconds, 86400);
+        assert!(config.enable_persistence);
+        assert_eq!(config.batch_size, 100);
+        assert_eq!(config.processing_interval_ms, 1000);
+        assert_eq!(config.template_cache_size, 1000);
+        assert_eq!(config.max_attachment_size, 25 * 1024 * 1024);
     }
 }
