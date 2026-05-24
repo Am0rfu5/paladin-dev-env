@@ -2,7 +2,6 @@ pub mod content_service;
 pub mod event_manager;
 pub mod listener_service;
 pub mod log_service;
-pub mod notification_service;
 pub mod orchestrator;
 pub mod queue_service;
 pub mod scheduler;

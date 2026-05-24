@@ -1,9 +1,9 @@
 use crate::application::storage::sql_store::MigrationManager;
+use crate::application::use_cases::notification_orchestrator::NotificationService;
 use crate::config::Settings;
 use crate::config::user_config::UserServiceFactory;
 use crate::core::base::service::message_service::{MessageService, MessageServiceConfig};
 use crate::core::platform::manager::event_manager::EventService;
-use crate::core::platform::manager::notification_service::NotificationService;
 use crate::core::platform::manager::scheduler::Scheduler;
 use crate::core::platform::manager::user_service::UserService;
 #[cfg(feature = "s3-storage")]
@@ -513,7 +513,7 @@ impl ServiceRunner {
 
         // Create service config from notification config
         let service_config =
-            crate::core::platform::manager::notification_service::NotificationServiceConfig {
+            paladin_core::platform::container::notification::NotificationServiceConfig {
                 default_max_retries: notification_config.max_retries,
                 default_expiry_seconds: 86400, // 24 hours
                 enable_persistence: true,

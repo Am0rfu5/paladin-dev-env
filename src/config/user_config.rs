@@ -5,8 +5,8 @@ Configuration setup for user-related services, including dependency injection
 and service initialization.
 */
 
+use crate::application::use_cases::notification_orchestrator::NotificationService;
 use crate::config::Settings;
-use crate::core::platform::manager::notification_service::NotificationService;
 use crate::core::platform::manager::user_service::UserService;
 use crate::infrastructure::repositories::sqlite_user_repository::SqliteUserRepository;
 use paladin_ports::output::log_port::LogPort;
@@ -62,9 +62,9 @@ mod tests {
     use super::*;
     use crate::core::base::service::message_service::MessageService;
     use crate::core::platform::container::log::{LogDestination, LogEntry};
-    use crate::core::platform::manager::notification_service::NotificationServiceConfig;
     use async_trait::async_trait;
     use chrono::DateTime;
+    use paladin_core::platform::container::notification::NotificationServiceConfig;
     use paladin_ports::output::log_port::{
         LogDestinationConfig, LogFormat, LogHealthCheck, LogQuery, LogResult, LogStats,
     };

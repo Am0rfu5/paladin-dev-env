@@ -7,10 +7,10 @@ infrastructure adapters.
 */
 
 use crate::application::storage::user_store::UserRepositoryPort;
+use crate::application::use_cases::notification_orchestrator::NotificationService;
 use crate::core::base::entity::message::Location;
 use crate::core::platform::container::log::{LogDestination, LogEntryBuilder, LogLevel};
 use crate::core::platform::container::user::{Email, User, UserError, UserProfile};
-use crate::core::platform::manager::notification_service::NotificationService;
 use argon2::password_hash::{SaltString, rand_core::OsRng};
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use async_trait::async_trait;

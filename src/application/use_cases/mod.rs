@@ -3,6 +3,7 @@ pub mod arsenal;
 pub mod battalion;
 pub mod content;
 pub mod herald;
+pub mod notification_orchestrator;
 pub mod paladin;
 pub mod sanctum;
 pub mod subject;

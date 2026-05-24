@@ -101,22 +101,19 @@ git commit \
   - [x] 1.10 Apply the placement rules from PRD §4.2 to every type listed in steps 1.1–1.6. For each type, record: (a) does it hold `Arc<dyn Port>` fields? (b) does it require `async_trait`? (c) classification: `paladin-core` container or application layer `types.rs`.
   - [x] 1.11 Create `project/Milestone_6-Architectural-Refinements/Epic_2/dependency-analysis.md` with a table summarising each service's imports, types defined, and classification. Include a "Confirmed placement" column for each type.
 
-- [ ] 2.0 Extract domain types from service files into `paladin-core`
-  - [ ] 2.1 For `NotificationServiceStats` (defined in `notification_service.rs`): confirm it has no `Arc<dyn Port>` fields (it only holds `HashMap<NotificationChannel, u64>` counters and datetime fields). Move it to `crates/paladin-core/src/platform/container/notification.rs`. Add `pub use` in `crates/paladin-core/src/platform/container/mod.rs` if not already present.
-  - [ ] 2.2 For `NotificationServiceConfig` (defined in `notification_service.rs`): confirm it is a plain config struct with `Default` impl and no port refs. Move it to `crates/paladin-core/src/platform/container/notification.rs` alongside the existing notification domain types.
-  - [ ] 2.3 For `QueueStats` (defined in `queue_service.rs`): check whether it is already re-exported from `paladin-core` (a `pub use` in `queue_service.rs` suggests it may be). If it is defined inline in `queue_service.rs` and not yet in `paladin-core`, move it to `crates/paladin-core/src/platform/container/queue_config.rs`. If already there, confirm its path and do nothing.
-  - [ ] 2.4 For `Schedule` (enum) and `ScheduledJob` in `scheduler.rs`: confirm neither holds port fields. Move both to a new file `crates/paladin-core/src/platform/container/schedule.rs`. Expose via `crates/paladin-core/src/platform/container/mod.rs`.
-  - [ ] 2.5 For `ListenerConfig` and `ListenerStats` in `listener_service.rs`: confirm neither holds port fields (they are plain data structs with `Default` impls). Move both to `crates/paladin-core/src/platform/container/trigger.rs` (alongside the existing `Trigger`, `TriggerConfig` types) or a new `listener.rs` container file if that is cleaner.
-  - [ ] 2.6 For each type moved in steps 2.1–2.5, add a `#[cfg(test)] mod tests` block in the same file with:
-    - A `test_default()` function calling `T::default()` and asserting key fields are sensible values.
-    - A `test_serde_round_trip()` function (where the type derives `Serialize`/`Deserialize`) serialising to JSON and deserialising back, asserting equality.
-    - A `test_display()` function for any error enum variant, asserting the `Display` output contains the expected substring.
-  - [ ] 2.7 Update all `use` references to the moved types throughout `src/` and `crates/` — search with `grep -r "NotificationServiceStats\|NotificationServiceConfig\|QueueStats\|Schedule\|ScheduledJob\|ListenerConfig\|ListenerStats" src/` to find callers.
-  - [ ] 2.8 Run `cargo build -p paladin-core` and fix any compilation errors before proceeding.
-  - [ ] 2.9 Run `cargo test -p paladin-core` and confirm the new unit tests pass.
-  - [ ] 2.10 Run `cargo build` (full workspace) to catch any broken imports in dependent crates.
-  - [ ] 2.11 Run `cargo fmt --check` and `cargo clippy -- -D warnings`; address all warnings.
-  - [ ] 2.12 Commit: `git commit -m "refactor(epic-2): extract domain types from manager services to paladin-core" -m "- Move NotificationServiceStats, NotificationServiceConfig to paladin-core::container::notification" -m "- Move QueueStats to paladin-core::container::queue_config (if not already there)" -m "- Move Schedule, ScheduledJob to paladin-core::container::schedule" -m "- Move ListenerConfig, ListenerStats to paladin-core::container" -m "- Add unit tests (Default, serde round-trip, Display) for each moved type"`
+- [x] 2.0 Extract domain types from service files into `paladin-core`
+  - [x] 2.1 For `NotificationServiceStats` (defined in `notification_service.rs`): confirm it has no `Arc<dyn Port>` fields (it only holds `HashMap<NotificationChannel, u64>` counters and datetime fields). Move it to `crates/paladin-core/src/platform/container/notification.rs`. Add `pub use` in `crates/paladin-core/src/platform/container/mod.rs` if not already present.
+  - [x] 2.2 For `NotificationServiceConfig` (defined in `notification_service.rs`): confirm it is a plain config struct with `Default` impl and no port refs. Move it to `crates/paladin-core/src/platform/container/notification.rs` alongside the existing notification domain types.
+  - [x] 2.3 For `QueueStats` (defined in `queue_service.rs`): check whether it is already re-exported from `paladin-core` (a `pub use` in `queue_service.rs` suggests it may be). If it is defined inline in `queue_service.rs` and not yet in `paladin-core`, move it to `crates/paladin-core/src/platform/container/queue_config.rs`. If already there, confirm its path and do nothing.
+  - [x] 2.4 For `Schedule` (enum) and `ScheduledJob` in `scheduler.rs`: confirm neither holds port fields. Move both to a new file `crates/paladin-core/src/platform/container/schedule.rs`. Expose via `crates/paladin-core/src/platform/container/mod.rs`.
+  - [x] 2.5 For `ListenerConfig` and `ListenerStats` in `listener_service.rs`: confirm neither holds port fields (they are plain data structs with `Default` impls). Move both to `crates/paladin-core/src/platform/container/trigger.rs` (alongside the existing `Trigger`, `TriggerConfig` types) or a new `listener.rs` container file if that is cleaner.
+  - [x] 2.6 For each type moved in steps 2.1–2.5, add a `#[cfg(test)] mod tests` block in the same file with unit tests.
+  - [x] 2.7 Update all `use` references to the moved types throughout `src/` and `crates/` — search with `grep -r "NotificationServiceStats\|NotificationServiceConfig\|QueueStats\|Schedule\|ScheduledJob\|ListenerConfig\|ListenerStats" src/` to find callers.
+  - [x] 2.8 Run `cargo build -p paladin-core` and fix any compilation errors before proceeding.
+  - [x] 2.9 Run `cargo test -p paladin-core` and confirm the new unit tests pass.
+  - [x] 2.10 Run `cargo build` (full workspace) to catch any broken imports in dependent crates.
+  - [x] 2.11 Run `cargo fmt --check` and `cargo clippy -- -D warnings`; address all warnings.
+  - [x] 2.12 Commit: `git commit -m "refactor(epic-2): extract domain types from manager services to paladin-core" ...`
 
 - [ ] 3.0 Relocate `notification_service.rs` to the application layer
   - [ ] 3.1 Create the directory `src/application/use_cases/notification_orchestrator/`.
