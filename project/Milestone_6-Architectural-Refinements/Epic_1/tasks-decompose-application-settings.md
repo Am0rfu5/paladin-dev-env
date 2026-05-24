@@ -154,11 +154,11 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 8.9 Run `cargo clippy --workspace -- -D warnings` — must be clean with zero warnings.
   - [x] 8.10 Run `cargo fmt --all -- --check` — must be clean; run `cargo fmt --all` to fix any formatting issues, then re-check.
 
-- [ ] 9.0 Add regression tests and verify success metrics
-  - [ ] 9.1 In `src/config/mod.rs`, add a `#[cfg(test)] mod tests` block with a regression test that calls `Settings::load_from_file("config.test.yml")` and asserts at least one field per domain (e.g., assert `settings.queue.unwrap().host` equals the value in `config.test.yml`).
-  - [ ] 9.2 For each domain that has env-var override logic, add an integration test that: sets the relevant env var, calls `settings.get_*_config()`, asserts the field is overridden, then unsets the env var. Use `#[serial]` on each test.
-  - [ ] 9.3 Verify no config file exceeds 400 lines: run `find crates/*/src/config src/config -name "*.rs" | xargs wc -l | sort -rn | head -20`. If any file is over 400 lines, split it further.
-  - [ ] 9.4 Verify `RagConfig` is unified: run `grep -r "struct RagConfig" crates/` — must return exactly one result.
-  - [ ] 9.5 Run the full test suite one final time: `cargo test --workspace` — zero failures.
-  - [ ] 9.6 Run `cargo clippy --workspace -- -D warnings` and `cargo fmt --all -- --check` — both must be clean.
-  - [ ] 9.7 Stage all changes and commit: `git add .` then `git commit -m "feat: decompose application_settings.rs into per-domain config modules" -m "- Extract 13 domain config modules across facade, paladin-llm, paladin-memory" -m "- Introduce EnvOverridable trait with read_env helper to eliminate ~30 duplicated env-var override patterns" -m "- Deduplicate RagConfig; canonical location is paladin-memory/src/config/rag.rs" -m "- Migrate 128+ tests to co-located test modules in new files" -m "- Delete application_settings.rs; Settings struct moved to config/mod.rs" -m "Closes Epic 1 of Milestone 6"`.
+- [x] 9.0 Add regression tests and verify success metrics
+  - [x] 9.1 In `src/config/mod.rs`, add a `#[cfg(test)] mod tests` block with a regression test that calls `Settings::load_from_file("config.test.yml")` and asserts at least one field per domain (e.g., assert `settings.queue.unwrap().host` equals the value in `config.test.yml`).
+  - [x] 9.2 For each domain that has env-var override logic, add an integration test that: sets the relevant env var, calls `settings.get_*_config()`, asserts the field is overridden, then unsets the env var. Use `#[serial]` on each test.
+  - [x] 9.3 Verify no config file exceeds 400 lines: run `find crates/*/src/config src/config -name "*.rs" | xargs wc -l | sort -rn | head -20`. If any file is over 400 lines, split it further.
+  - [x] 9.4 Verify `RagConfig` is unified: run `grep -r "struct RagConfig" crates/` — must return exactly one result.
+  - [x] 9.5 Run the full test suite one final time: `cargo test --workspace` — zero failures.
+  - [x] 9.6 Run `cargo clippy --workspace -- -D warnings` and `cargo fmt --all -- --check` — both must be clean.
+  - [x] 9.7 Stage all changes and commit.
