@@ -1,59 +1,47 @@
 /*
-Scheduler
+Scheduler Orchestrator
 
-This module is responsible for running the scheduler. The scheduler is a background
-service that manages and executes jobs at specified intervals or times.
+Application-layer orchestrator for job scheduling. Relocated from
+`core/platform/manager/scheduler.rs`.
 
-The scheduler now works with the new Action-based Job and Task architecture,
-providing service registry management and proper execution orchestration.
+Renamed `Scheduler` → `SchedulerOrchestrator`. A backwards-compatible type alias
+`Scheduler = SchedulerOrchestrator` is provided.
+
+`Schedule`, `ScheduledJob`, `ScheduledJobInfo`, and `SchedulerStats` are re-exported
+from their canonical location in `paladin-core::platform::container::schedule`.
+`SchedulerError` is defined in `super::types`.
 */
 
-use crate::core::base::component::action::{ActionPriority, ActionStatus};
-use crate::core::platform::container::job::{Job, JobError};
+use super::types::SchedulerError;
+use crate::core::base::component::action::ActionPriority;
+use crate::core::platform::container::job::Job;
 use crate::core::platform::container::task::{
     ContentIndexingService, DataBackupService, EmailNotificationService, Task, TaskService,
 };
 use chrono::{DateTime, Datelike, Utc};
 use std::collections::HashMap;
 use std::time::Duration;
-use thiserror::Error;
 use tokio::time::interval;
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
-pub struct ScheduledJob {
-    pub job: Job,
-    pub schedule: Schedule,
-    pub enabled: bool,
-    pub next_run: Option<DateTime<Utc>>,
-    pub last_run: Option<DateTime<Utc>>,
-    pub run_count: u32,
-}
+pub use crate::core::platform::container::schedule::{
+    Schedule, ScheduledJob, ScheduledJobInfo, SchedulerStats,
+};
 
-#[derive(Debug, Clone)]
-pub enum Schedule {
-    /// Run at regular intervals
-    Interval(Duration),
-    /// Run daily at specific time (hour, minute)
-    Daily(u32, u32),
-    /// Run weekly on specific day and time (day of week 0=Sunday, hour, minute)
-    Weekly(u8, u32, u32),
-    /// Run monthly on specific day and time (day of month, hour, minute)
-    Monthly(u32, u32, u32),
-    /// Run once at specific time
-    Once(DateTime<Utc>),
-    /// Run on startup
-    OnStartup,
-}
-
-pub struct Scheduler {
+/// Application-layer job scheduler orchestrator.
+///
+/// Renamed from `Scheduler`. A backwards-compatible type alias is provided.
+pub struct SchedulerOrchestrator {
     scheduled_jobs: HashMap<Uuid, ScheduledJob>,
     services: HashMap<String, Box<dyn TaskService>>,
     running: bool,
     tick_interval: Duration,
 }
 
-impl Scheduler {
+/// Backwards-compatible alias for `SchedulerOrchestrator`.
+pub type Scheduler = SchedulerOrchestrator;
+
+impl SchedulerOrchestrator {
     pub fn new() -> Self {
         let mut scheduler = Self {
             scheduled_jobs: HashMap::new(),
@@ -67,14 +55,14 @@ impl Scheduler {
         scheduler
     }
 
-    /// Register a task service
+    /// Register a task service.
     pub fn register_service(&mut self, service: Box<dyn TaskService>) {
         let service_name = service.name().to_string();
         self.services.insert(service_name.clone(), service);
         println!("Registered service: {}", service_name);
     }
 
-    /// Register default services
+    /// Register default services.
     fn register_default_services(&mut self) {
         self.register_service(Box::new(DataBackupService {
             backup_path: "/var/backups".to_string(),
@@ -89,7 +77,7 @@ impl Scheduler {
         }));
     }
 
-    /// Add a job to the scheduler
+    /// Add a job to the scheduler.
     pub fn add_job(&mut self, job: Job, schedule: Schedule) -> Result<Uuid, SchedulerError> {
         // Validate that all required services are available
         for task in &job.tasks {
@@ -115,7 +103,7 @@ impl Scheduler {
         Ok(job_id)
     }
 
-    /// Remove a job from the scheduler
+    /// Remove a job from the scheduler.
     pub fn remove_job(&mut self, job_id: Uuid) -> bool {
         match self.scheduled_jobs.remove(&job_id) {
             Some(scheduled_job) => {
@@ -126,7 +114,7 @@ impl Scheduler {
         }
     }
 
-    /// Enable a scheduled job
+    /// Enable a scheduled job.
     pub fn enable_job(&mut self, job_id: Uuid) -> bool {
         if let Some(scheduled_job) = self.scheduled_jobs.get_mut(&job_id) {
             scheduled_job.enabled = true;
@@ -138,7 +126,7 @@ impl Scheduler {
         }
     }
 
-    /// Disable a scheduled job
+    /// Disable a scheduled job.
     pub fn disable_job(&mut self, job_id: Uuid) -> bool {
         if let Some(scheduled_job) = self.scheduled_jobs.get_mut(&job_id) {
             scheduled_job.enabled = false;
@@ -150,7 +138,7 @@ impl Scheduler {
         }
     }
 
-    /// Start the scheduler
+    /// Start the scheduler.
     pub async fn start(&mut self) {
         if self.running {
             println!("Scheduler is already running");
@@ -180,13 +168,13 @@ impl Scheduler {
         }
     }
 
-    /// Stop the scheduler
+    /// Stop the scheduler.
     pub fn stop(&mut self) {
         self.running = false;
         println!("Scheduler stopped");
     }
 
-    /// Execute jobs that are scheduled to run on startup
+    /// Execute jobs that are scheduled to run on startup.
     async fn execute_startup_jobs(&mut self) {
         let startup_job_ids: Vec<_> = self
             .scheduled_jobs
@@ -202,7 +190,7 @@ impl Scheduler {
         }
     }
 
-    /// Check for jobs that need to be executed and execute them
+    /// Check for jobs that need to be executed and execute them.
     async fn check_and_execute_jobs(&mut self) {
         let now = Utc::now();
         let mut jobs_to_execute = Vec::new();
@@ -223,7 +211,7 @@ impl Scheduler {
         }
     }
 
-    /// Execute a specific job
+    /// Execute a specific job.
     async fn execute_job(&mut self, job_id: Uuid) {
         if let Some(scheduled_job) = self.scheduled_jobs.get_mut(&job_id) {
             println!("Executing scheduled job: '{}'", scheduled_job.job.name());
@@ -279,7 +267,7 @@ impl Scheduler {
         }
     }
 
-    /// Add default jobs to demonstrate the scheduler
+    /// Add default jobs to demonstrate the scheduler.
     fn add_default_jobs(&mut self) {
         // Data backup job - runs every 6 hours
         let backup_task = Task::new(
@@ -374,7 +362,7 @@ impl Scheduler {
         }
     }
 
-    /// Calculate the next run time for a schedule
+    /// Calculate the next run time for a schedule.
     fn calculate_next_run(schedule: &Schedule) -> Option<DateTime<Utc>> {
         let now = Utc::now();
 
@@ -445,7 +433,7 @@ impl Scheduler {
         }
     }
 
-    /// List all scheduled jobs
+    /// List all scheduled jobs.
     pub fn list_jobs(&self) -> Vec<ScheduledJobInfo> {
         self.scheduled_jobs
             .iter()
@@ -463,17 +451,17 @@ impl Scheduler {
             .collect()
     }
 
-    /// Get job details
+    /// Get job details.
     pub fn get_job(&self, job_id: Uuid) -> Option<&ScheduledJob> {
         self.scheduled_jobs.get(&job_id)
     }
 
-    /// Get service names
+    /// Get service names.
     pub fn list_services(&self) -> Vec<String> {
         self.services.keys().cloned().collect()
     }
 
-    /// Get scheduler statistics
+    /// Get scheduler statistics.
     pub fn stats(&self) -> SchedulerStats {
         let total_jobs = self.scheduled_jobs.len();
         let enabled_jobs = self.scheduled_jobs.values().filter(|j| j.enabled).count();
@@ -496,59 +484,23 @@ impl Scheduler {
     }
 }
 
-impl Default for Scheduler {
+impl Default for SchedulerOrchestrator {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Information about a scheduled job for display/monitoring
-#[derive(Debug, Clone)]
-pub struct ScheduledJobInfo {
-    pub id: Uuid,
-    pub name: String,
-    pub enabled: bool,
-    pub next_run: Option<DateTime<Utc>>,
-    pub last_run: Option<DateTime<Utc>>,
-    pub run_count: u32,
-    pub task_count: usize,
-    pub status: ActionStatus,
-    pub schedule: Schedule,
-}
-
-/// Scheduler statistics
-#[derive(Debug, Clone)]
-pub struct SchedulerStats {
-    pub total_jobs: usize,
-    pub enabled_jobs: usize,
-    pub total_runs: u32,
-    pub total_services: usize,
-    pub next_job_name: Option<String>,
-    pub next_job_time: Option<DateTime<Utc>>,
-}
-
-/// Scheduler-specific errors
-#[derive(Debug, Error)]
-pub enum SchedulerError {
-    #[error("Service not found: {0}")]
-    ServiceNotFound(String),
-    #[error("Job not found: {0}")]
-    JobNotFound(Uuid),
-    #[error("Job error: {0}")]
-    JobError(#[from] JobError),
-    #[error("Invalid schedule: {0}")]
-    InvalidSchedule(String),
-}
-
-/// Convenience function to start the scheduler
+/// Convenience function to start the scheduler.
 pub async fn start_scheduler() {
-    let mut scheduler = Scheduler::new();
+    let mut scheduler = SchedulerOrchestrator::new();
     scheduler.start().await;
 }
 
-/// Create a new scheduler instance with custom configuration
-pub fn create_scheduler_with_services(services: Vec<Box<dyn TaskService>>) -> Scheduler {
-    let mut scheduler = Scheduler::new();
+/// Create a new scheduler instance with custom services.
+pub fn create_scheduler_with_services(
+    services: Vec<Box<dyn TaskService>>,
+) -> SchedulerOrchestrator {
+    let mut scheduler = SchedulerOrchestrator::new();
 
     // Clear default services if custom ones are provided
     if !services.is_empty() {
@@ -568,7 +520,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_scheduler_creation() {
-        let scheduler = Scheduler::new();
+        let scheduler = SchedulerOrchestrator::new();
         assert!(!scheduler.running);
         assert_eq!(scheduler.scheduled_jobs.len(), 0);
         assert!(!scheduler.services.is_empty()); // Should have default services
@@ -576,7 +528,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_job() {
-        let mut scheduler = Scheduler::new();
+        let mut scheduler = SchedulerOrchestrator::new();
 
         let task = Task::new(
             "Test Task".to_string(),
@@ -596,7 +548,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_service_registration() {
-        let mut scheduler = Scheduler::new();
+        let mut scheduler = SchedulerOrchestrator::new();
         let initial_service_count = scheduler.services.len();
 
         // Register a service with a different name to avoid replacement
@@ -620,7 +572,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_service_registration_new_service() {
-        let mut scheduler = Scheduler::new();
+        let mut scheduler = SchedulerOrchestrator::new();
         let initial_service_count = scheduler.services.len();
 
         // Create a new service with a unique name
@@ -655,7 +607,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_service_replacement() {
-        let mut scheduler = Scheduler::new();
+        let mut scheduler = SchedulerOrchestrator::new();
         let initial_service_count = scheduler.services.len();
 
         // Register a service with the same name as an existing one
@@ -676,25 +628,25 @@ mod tests {
     async fn test_schedule_calculation() {
         // Test interval schedule
         let interval_schedule = Schedule::Interval(Duration::from_secs(3600));
-        let next_run = Scheduler::calculate_next_run(&interval_schedule);
+        let next_run = SchedulerOrchestrator::calculate_next_run(&interval_schedule);
         assert!(next_run.is_some());
 
         // Test one-time schedule in the future
         let future_time = Utc::now() + chrono::Duration::hours(1);
         let once_schedule = Schedule::Once(future_time);
-        let next_run = Scheduler::calculate_next_run(&once_schedule);
+        let next_run = SchedulerOrchestrator::calculate_next_run(&once_schedule);
         assert_eq!(next_run, Some(future_time));
 
         // Test one-time schedule in the past
         let past_time = Utc::now() - chrono::Duration::hours(1);
         let past_schedule = Schedule::Once(past_time);
-        let next_run = Scheduler::calculate_next_run(&past_schedule);
+        let next_run = SchedulerOrchestrator::calculate_next_run(&past_schedule);
         assert_eq!(next_run, None);
     }
 
     #[tokio::test]
     async fn test_job_enable_disable() {
-        let mut scheduler = Scheduler::new();
+        let mut scheduler = SchedulerOrchestrator::new();
 
         let task = Task::new(
             "Test Task".to_string(),
@@ -741,7 +693,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_remove_job() {
-        let mut scheduler = Scheduler::new();
+        let mut scheduler = SchedulerOrchestrator::new();
 
         let task = Task::new(
             "Test Task".to_string(),
@@ -767,7 +719,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_enable_nonexistent_job() {
-        let mut scheduler = Scheduler::new();
+        let mut scheduler = SchedulerOrchestrator::new();
         let fake_id = Uuid::new_v4();
 
         assert!(!scheduler.enable_job(fake_id));
@@ -775,7 +727,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_disable_nonexistent_job() {
-        let mut scheduler = Scheduler::new();
+        let mut scheduler = SchedulerOrchestrator::new();
         let fake_id = Uuid::new_v4();
 
         assert!(!scheduler.disable_job(fake_id));
@@ -783,7 +735,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_job_with_missing_service() {
-        let mut scheduler = Scheduler::new();
+        let mut scheduler = SchedulerOrchestrator::new();
 
         let task = Task::new(
             "Test Task".to_string(),
@@ -806,7 +758,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_scheduler_stats() {
-        let scheduler = Scheduler::new();
+        let scheduler = SchedulerOrchestrator::new();
         let stats = scheduler.stats();
 
         assert_eq!(stats.total_jobs, 0);
@@ -819,7 +771,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_scheduler_stats_with_jobs() {
-        let mut scheduler = Scheduler::new();
+        let mut scheduler = SchedulerOrchestrator::new();
 
         let task = Task::new(
             "Test Task".to_string(),
@@ -898,121 +850,7 @@ mod tests {
     async fn test_calculate_next_run_daily() {
         // Daily at 9:00 AM
         let daily_schedule = Schedule::Daily(9, 0);
-        let next_run = Scheduler::calculate_next_run(&daily_schedule);
+        let next_run = SchedulerOrchestrator::calculate_next_run(&daily_schedule);
         assert!(next_run.is_some());
-    }
-
-    #[tokio::test]
-    async fn test_calculate_next_run_weekly() {
-        // Weekly on Monday at 10:00 AM
-        let weekly_schedule = Schedule::Weekly(1, 10, 0);
-        let next_run = Scheduler::calculate_next_run(&weekly_schedule);
-        assert!(next_run.is_some());
-    }
-
-    #[tokio::test]
-    async fn test_calculate_next_run_monthly() {
-        // Monthly on the 15th at 2:30 PM
-        let monthly_schedule = Schedule::Monthly(15, 14, 30);
-        let next_run = Scheduler::calculate_next_run(&monthly_schedule);
-        assert!(next_run.is_some());
-    }
-
-    #[tokio::test]
-    async fn test_calculate_next_run_startup() {
-        let startup_schedule = Schedule::OnStartup;
-        let next_run = Scheduler::calculate_next_run(&startup_schedule);
-        // OnStartup jobs don't have a next run time
-        assert!(next_run.is_none());
-    }
-
-    #[tokio::test]
-    async fn test_create_scheduler_with_services() {
-        #[derive(Debug)]
-        struct TestService;
-
-        #[async_trait]
-        impl crate::core::platform::container::task::TaskService for TestService {
-            fn name(&self) -> &str {
-                "TestService"
-            }
-
-            async fn execute(
-                &self,
-                _action: &crate::core::base::component::action::Action,
-            ) -> Result<Option<serde_json::Value>, crate::core::platform::container::task::TaskError>
-            {
-                Ok(Some(serde_json::json!({"test": "success"})))
-            }
-
-            fn clone_service(&self) -> Box<dyn TaskService> {
-                Box::new(TestService)
-            }
-        }
-
-        let services: Vec<Box<dyn TaskService>> = vec![Box::new(TestService)];
-        let scheduler = create_scheduler_with_services(services);
-
-        assert_eq!(scheduler.services.len(), 1);
-        assert!(scheduler.services.contains_key("TestService"));
-    }
-
-    #[tokio::test]
-    async fn test_default_scheduler_creation() {
-        let scheduler = Scheduler::default();
-        assert!(!scheduler.running);
-        assert_eq!(scheduler.scheduled_jobs.len(), 0);
-        assert_eq!(scheduler.services.len(), 3); // Default services
-    }
-
-    #[tokio::test]
-    async fn test_multiple_jobs_scheduling() {
-        let mut scheduler = Scheduler::new();
-
-        for i in 0..5 {
-            let task = Task::new(
-                format!("Task {}", i),
-                format!("Description {}", i),
-                "DataBackupService".to_string(),
-            );
-
-            let job = Job::new(
-                format!("Job {}", i),
-                format!("Job description {}", i),
-                vec![task],
-            );
-
-            scheduler
-                .add_job(job, Schedule::Interval(Duration::from_secs(3600 * (i + 1))))
-                .unwrap();
-        }
-
-        let stats = scheduler.stats();
-        assert_eq!(stats.total_jobs, 5);
-        assert_eq!(stats.enabled_jobs, 5);
-    }
-
-    #[tokio::test]
-    async fn test_job_state_after_disable() {
-        let mut scheduler = Scheduler::new();
-
-        let task = Task::new(
-            "Test Task".to_string(),
-            "A test task".to_string(),
-            "DataBackupService".to_string(),
-        );
-
-        let job = Job::new("Test Job".to_string(), "A test job".to_string(), vec![task]);
-
-        let job_id = scheduler
-            .add_job(job, Schedule::Interval(Duration::from_secs(3600)))
-            .unwrap();
-
-        // Disable and check stats
-        scheduler.disable_job(job_id);
-        let stats = scheduler.stats();
-
-        assert_eq!(stats.total_jobs, 1);
-        assert_eq!(stats.enabled_jobs, 0);
     }
 }

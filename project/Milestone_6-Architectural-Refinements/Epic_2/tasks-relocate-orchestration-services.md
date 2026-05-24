@@ -145,19 +145,19 @@ git commit \
   - [x] 4.11 Run `cargo fmt --check` and `cargo clippy -- -D warnings`; address all warnings.
   - [x] 4.12 Commit `e3b21fe`.
 
-- [ ] 5.0 Relocate `log_service.rs` to the application layer
-  - [ ] 5.1 Create the directory `src/application/use_cases/log_orchestrator/`.
-  - [ ] 5.2 Create `src/application/use_cases/log_orchestrator/types.rs`. Move `LogServiceConfig` (config struct) and `LogMessageHandler` (struct with its `impl`) into this file. These are coordination types — `LogMessageHandler` holds `Arc<dyn LogPort>` (a port reference).
-  - [ ] 5.3 Create `src/application/use_cases/log_orchestrator/mod.rs`. Move the `LogService` struct and all its `impl` blocks into this file. Rename `LogService` to `LogOrchestrator` throughout. Add `pub mod types;` at the top. Update `use` statements: `LogLevel`, `LogDestination`, `LogMessage`, `LogEntry` are imported from `paladin-core::platform::container::log` — verify these paths are correct.
-  - [ ] 5.4 Add `pub mod log_orchestrator;` to `src/application/use_cases/mod.rs`.
-  - [ ] 5.5 Search for consumers: `grep -r "core::platform::manager::log_service" src/` — update any import paths found (expected: `service_runner.rs` if it uses `LogService` directly).
-  - [ ] 5.6 Check `src/lib.rs` for any `pub use` referencing `log_service` — update if found.
-  - [ ] 5.7 Delete `src/core/platform/manager/log_service.rs`.
-  - [ ] 5.8 Remove `pub mod log_service;` from `src/core/platform/manager/mod.rs`.
-  - [ ] 5.9 Run `cargo build` — fix all compilation errors before proceeding.
-  - [ ] 5.10 Run `cargo test` — all tests must pass.
-  - [ ] 5.11 Run `cargo fmt --check` and `cargo clippy -- -D warnings`; address all warnings.
-  - [ ] 5.12 Commit: `git commit -m "refactor(epic-2): relocate log_service to application layer" -m "- Move LogService → LogOrchestrator in use_cases/log_orchestrator/" -m "- LogLevel/LogDestination/LogMessage/LogEntry remain in paladin-core::container::log" -m "- Remove log_service from core/platform/manager/"`
+- [x] 5.0 Relocate `log_service.rs` to the application layer
+  - [x] 5.1 Create the directory `src/application/use_cases/log_orchestrator/`.
+  - [x] 5.2 Create `src/application/use_cases/log_orchestrator/types.rs`. Move `LogServiceConfig` (config struct) and `LogMessageHandler` (struct with its `impl`) into this file. These are coordination types — `LogMessageHandler` holds `Arc<dyn LogPort>` (a port reference).
+  - [x] 5.3 Create `src/application/use_cases/log_orchestrator/mod.rs`. Move the `LogService` struct and all its `impl` blocks into this file. Rename `LogService` to `LogOrchestrator` throughout. Add `pub mod types;` at the top. Update `use` statements: `LogLevel`, `LogDestination`, `LogMessage`, `LogEntry` are imported from `paladin-core::platform::container::log` — verify these paths are correct.
+  - [x] 5.4 Add `pub mod log_orchestrator;` to `src/application/use_cases/mod.rs`.
+  - [x] 5.5 Search for consumers: `grep -r "core::platform::manager::log_service" src/` — update any import paths found (expected: `service_runner.rs` if it uses `LogService` directly).
+  - [x] 5.6 Check `src/lib.rs` for any `pub use` referencing `log_service` — update if found.
+  - [x] 5.7 Delete `src/core/platform/manager/log_service.rs`.
+  - [x] 5.8 Remove `pub mod log_service;` from `src/core/platform/manager/mod.rs`.
+  - [x] 5.9 Run `cargo build` — fix all compilation errors before proceeding.
+  - [x] 5.10 Run `cargo test` — all tests must pass.
+  - [x] 5.11 Run `cargo fmt --check` and `cargo clippy -- -D warnings`; address all warnings.
+  - [x] 5.12 Commit: `git commit -m "refactor(epic-2): relocate log_service to application layer" -m "- Move LogService → LogOrchestrator in use_cases/log_orchestrator/" -m "- LogLevel/LogDestination/LogMessage/LogEntry remain in paladin-core::container::log" -m "- Remove log_service from core/platform/manager/"`
 
 - [ ] 6.0 Relocate `orchestrator.rs`, `listener_service.rs`, and `scheduler.rs` to the application layer
   - [ ] 6.1 Create the directory `src/application/use_cases/orchestration/`.

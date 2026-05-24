@@ -5,6 +5,7 @@ pub mod content;
 pub mod herald;
 pub mod log_orchestrator;
 pub mod notification_orchestrator;
+pub mod orchestration;
 pub mod paladin;
 pub mod queue_orchestrator;
 pub mod sanctum;

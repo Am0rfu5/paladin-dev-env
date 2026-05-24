@@ -1,127 +1,59 @@
 /*
-Listener Manager Service
+Listener Orchestrator
 
-This is the Listener Manager Service, responsible for managing event listeners and trigger generation.
-This module contains the Listener Manager Service, its related traits and implementations.
+Application-layer orchestrator for event listener management. Relocated from
+`core/platform/manager/listener_service.rs`.
 
-Within our Hexagonal Architecture, the Listener Manager Service is at the Platform Layer,
-above the Domain Layer and below the Application layer. It manages the registration and
-execution of event listeners that create triggers in response to events.
+Renamed `ListenerService` → `ListenerOrchestrator`. A backwards-compatible type
+alias `ListenerService = ListenerOrchestrator` is provided.
 
-The Listener Service coordinates between:
-- Event detection and filtering
-- Trigger creation and validation
-- Listener lifecycle management
-- Event-to-action mapping
-
-Ports for external Event Adapters are at the Infrastructure Layer.
+`ListenerConfig` and `ListenerStats` are re-exported from their canonical location
+in `paladin-core::platform::container::trigger`.
 */
 
+use super::types::ListenerError;
 use crate::core::base::component::event::Event;
 use crate::core::platform::container::trigger::{
-    Trigger, TriggerCondition, TriggerConfig, TriggerStatus, TriggerSummary,
+    Trigger, TriggerCondition, TriggerStatus, TriggerSummary,
 };
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
-use thiserror::Error;
 use tokio::sync::{Mutex, RwLock};
 use uuid::Uuid;
 
-/// Listener service errors
-#[derive(Debug, Error)]
-pub enum ListenerError {
-    #[error("Listener not found: {0}")]
-    ListenerNotFound(String),
-    #[error("Trigger not found: {0}")]
-    TriggerNotFound(Uuid),
-    #[error("Invalid listener configuration: {0}")]
-    InvalidConfiguration(String),
-    #[error("Event processing failed: {0}")]
-    EventProcessingFailed(String),
-    #[error("Trigger creation failed: {0}")]
-    TriggerCreationFailed(String),
-    #[error("Listener operation failed: {0}")]
-    OperationFailed(String),
-    #[error("Serialization error: {0}")]
-    SerializationError(String),
-}
+pub use crate::core::platform::container::trigger::{ListenerConfig, ListenerStats};
 
-/// Listener configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ListenerConfig {
-    /// Whether the listener is active
-    pub enabled: bool,
-    /// Maximum number of triggers to create per time window
-    pub max_triggers_per_window: usize,
-    /// Time window duration in seconds
-    pub time_window_seconds: u64,
-    /// Default trigger configuration
-    pub default_trigger_config: TriggerConfig,
-    /// Batch processing settings
-    pub batch_size: usize,
-    /// Processing timeout in seconds
-    pub processing_timeout_seconds: u64,
-}
-
-impl Default for ListenerConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            max_triggers_per_window: 1000,
-            time_window_seconds: 60,
-            default_trigger_config: TriggerConfig::default(),
-            batch_size: 10,
-            processing_timeout_seconds: 30,
-        }
-    }
-}
-
-/// Listener statistics
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ListenerStats {
-    pub name: String,
-    pub enabled: bool,
-    pub events_processed: u64,
-    pub triggers_created: u64,
-    pub triggers_completed: u64,
-    pub triggers_failed: u64,
-    pub average_processing_time_ms: Option<u64>,
-    pub last_event_processed: Option<DateTime<Utc>>,
-    pub last_trigger_created: Option<DateTime<Utc>>,
-}
-
-/// Event listener trait
+/// Event listener trait.
 #[async_trait]
 pub trait EventListener: Send + Sync {
-    /// Get the listener name
+    /// Get the listener name.
     fn name(&self) -> &str;
 
-    /// Get the listener description
+    /// Get the listener description.
     fn description(&self) -> &str;
 
-    /// Get the trigger conditions this listener matches
+    /// Get the trigger conditions this listener matches.
     fn conditions(&self) -> &[TriggerCondition];
 
-    /// Check if this listener should process the given event
+    /// Check if this listener should process the given event.
     async fn should_process(&self, event: &Event) -> bool;
 
-    /// Create a trigger for the given event
+    /// Create a trigger for the given event.
     async fn create_trigger(&self, event: Event) -> Result<Trigger, ListenerError>;
 
-    /// Get listener configuration
+    /// Get listener configuration.
     fn config(&self) -> &ListenerConfig;
 
-    /// Update listener configuration
+    /// Update listener configuration.
     fn update_config(&mut self, config: ListenerConfig);
 
-    /// Health check for the listener
+    /// Health check for the listener.
     async fn health_check(&self) -> Result<bool, ListenerError>;
 }
 
-/// Internal listener wrapper
+/// Internal listener wrapper.
 struct ListenerWrapper {
     listener: Box<dyn EventListener>,
     stats: ListenerStats,
@@ -202,16 +134,21 @@ impl ListenerWrapper {
     }
 }
 
-/// Main Listener Service
+/// Application-layer orchestrator for event listeners.
+///
+/// Renamed from `ListenerService`. A backwards-compatible type alias is provided.
 #[derive(Debug)]
-pub struct ListenerService {
+pub struct ListenerOrchestrator {
     listeners: Arc<RwLock<HashMap<String, Arc<Mutex<ListenerWrapper>>>>>,
     triggers: Arc<RwLock<HashMap<Uuid, Trigger>>>,
     trigger_queue: Arc<Mutex<VecDeque<Uuid>>>,
 }
 
-impl ListenerService {
-    /// Create a new listener service
+/// Backwards-compatible alias for `ListenerOrchestrator`.
+pub type ListenerService = ListenerOrchestrator;
+
+impl ListenerOrchestrator {
+    /// Create a new listener orchestrator.
     pub fn new() -> Self {
         Self {
             listeners: Arc::new(RwLock::new(HashMap::new())),
@@ -220,7 +157,7 @@ impl ListenerService {
         }
     }
 
-    /// Create a listener service with custom default configuration
+    /// Create a listener orchestrator with a custom default configuration.
     pub fn with_default_config(_config: ListenerConfig) -> Self {
         Self {
             listeners: Arc::new(RwLock::new(HashMap::new())),
@@ -229,7 +166,7 @@ impl ListenerService {
         }
     }
 
-    /// Register a new event listener
+    /// Register a new event listener.
     pub async fn register_listener(
         &self,
         listener: Box<dyn EventListener>,
@@ -242,7 +179,7 @@ impl ListenerService {
         Ok(())
     }
 
-    /// Unregister an event listener
+    /// Unregister an event listener.
     pub async fn unregister_listener(&self, name: &str) -> Result<(), ListenerError> {
         let mut listeners = self.listeners.write().await;
         listeners
@@ -251,7 +188,7 @@ impl ListenerService {
         Ok(())
     }
 
-    /// Process an event through all registered listeners
+    /// Process an event through all registered listeners.
     pub async fn process_event(&self, event: Event) -> Result<Vec<Uuid>, ListenerError> {
         let mut created_triggers = Vec::new();
         let listeners = self.listeners.read().await;
@@ -307,7 +244,7 @@ impl ListenerService {
         Ok(created_triggers)
     }
 
-    /// Get the next trigger to process
+    /// Get the next trigger to process.
     pub async fn get_next_trigger(&self) -> Option<Trigger> {
         let trigger_id = {
             let mut queue = self.trigger_queue.lock().await;
@@ -318,7 +255,7 @@ impl ListenerService {
         triggers.remove(&trigger_id)
     }
 
-    /// Get a specific trigger
+    /// Get a specific trigger.
     pub async fn get_trigger(&self, trigger_id: Uuid) -> Result<Trigger, ListenerError> {
         let triggers = self.triggers.read().await;
         triggers
@@ -327,7 +264,7 @@ impl ListenerService {
             .ok_or(ListenerError::TriggerNotFound(trigger_id))
     }
 
-    /// Update trigger status
+    /// Update trigger status.
     pub async fn update_trigger_status(
         &self,
         trigger_id: Uuid,
@@ -355,7 +292,7 @@ impl ListenerService {
         Ok(())
     }
 
-    /// Get listener statistics
+    /// Get listener statistics.
     pub async fn get_listener_stats(&self, name: &str) -> Result<ListenerStats, ListenerError> {
         let listeners = self.listeners.read().await;
         let wrapper = listeners
@@ -366,13 +303,13 @@ impl ListenerService {
         Ok(wrapper_guard.stats.clone())
     }
 
-    /// List all registered listeners
+    /// List all registered listeners.
     pub async fn list_listeners(&self) -> Vec<String> {
         let listeners = self.listeners.read().await;
         listeners.keys().cloned().collect()
     }
 
-    /// Get all listener statistics
+    /// Get all listener statistics.
     pub async fn get_all_stats(&self) -> HashMap<String, ListenerStats> {
         let listeners = self.listeners.read().await;
         let mut stats = HashMap::new();
@@ -385,7 +322,7 @@ impl ListenerService {
         stats
     }
 
-    /// Enable or disable a listener
+    /// Enable or disable a listener.
     pub async fn set_listener_enabled(
         &self,
         name: &str,
@@ -406,19 +343,19 @@ impl ListenerService {
         Ok(())
     }
 
-    /// Get trigger queue length
+    /// Get trigger queue length.
     pub async fn trigger_queue_length(&self) -> usize {
         let queue = self.trigger_queue.lock().await;
         queue.len()
     }
 
-    /// Get trigger summaries for monitoring
+    /// Get trigger summaries for monitoring.
     pub async fn get_trigger_summaries(&self) -> Vec<TriggerSummary> {
         let triggers = self.triggers.read().await;
         triggers.values().map(|t| t.summary()).collect()
     }
 
-    /// Cleanup expired triggers
+    /// Cleanup expired triggers.
     pub async fn cleanup_expired_triggers(&self) {
         let mut triggers = self.triggers.write().await;
         let expired_ids: Vec<_> = triggers
@@ -432,7 +369,7 @@ impl ListenerService {
         }
     }
 
-    /// Health check for all listeners
+    /// Health check for all listeners.
     pub async fn health_check(&self) -> Result<HashMap<String, bool>, ListenerError> {
         let listeners = self.listeners.read().await;
         let mut health_status = HashMap::new();
@@ -453,7 +390,7 @@ impl ListenerService {
     }
 }
 
-impl Default for ListenerService {
+impl Default for ListenerOrchestrator {
     fn default() -> Self {
         Self::new()
     }
@@ -533,7 +470,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_listener_registration() {
-        let service = ListenerService::new();
+        let service = ListenerOrchestrator::new();
 
         let listener = Box::new(MockEventListener {
             name: "test_listener".to_string(),
@@ -550,7 +487,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_event_processing() {
-        let service = ListenerService::new();
+        let service = ListenerOrchestrator::new();
 
         let listener = Box::new(MockEventListener {
             name: "test_listener".to_string(),
@@ -576,7 +513,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_listener_stats() {
-        let service = ListenerService::new();
+        let service = ListenerOrchestrator::new();
 
         let listener = Box::new(MockEventListener {
             name: "test_listener".to_string(),

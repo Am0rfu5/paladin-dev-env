@@ -1,10 +1,10 @@
 use crate::application::storage::sql_store::MigrationManager;
 use crate::application::use_cases::notification_orchestrator::NotificationService;
+use crate::application::use_cases::orchestration::scheduler::Scheduler;
 use crate::config::Settings;
 use crate::config::user_config::UserServiceFactory;
 use crate::core::base::service::message_service::{MessageService, MessageServiceConfig};
 use crate::core::platform::manager::event_manager::EventService;
-use crate::core::platform::manager::scheduler::Scheduler;
 use crate::core::platform::manager::user_service::UserService;
 #[cfg(feature = "s3-storage")]
 use crate::infrastructure::adapters::file_storage::minio::MinioAdapter;

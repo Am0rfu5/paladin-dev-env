@@ -356,7 +356,7 @@ impl LogOrchestrator {
 mod tests {
     use super::*;
     use crate::core::base::entity::message::Location;
-    use crate::core::platform::container::log::LogEntryBuilder;
+    use crate::core::platform::container::log::{LogEntryBuilder, LogLevel, LogMessage};
     use async_trait::async_trait;
     use paladin_ports::output::log_port::{
         BatchWriteRequest, LogDestinationConfig, LogFormat, LogQuery,

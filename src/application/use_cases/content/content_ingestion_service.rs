@@ -19,10 +19,10 @@ use tokio::sync::RwLock;
 use url::Url;
 use uuid::Uuid;
 
-use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
-use crate::core::platform::manager::orchestrator::{
+use crate::application::use_cases::orchestration::{
     ContentAnalysisType, OrchestrationContext, Orchestrator,
 };
+use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
 
 /// Content repository trait that must be thread-safe
 #[async_trait]

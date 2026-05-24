@@ -1,46 +1,54 @@
 /*
-Orchestrator
+Orchestration Use Cases
 
-The Orchestrator is responsible for managing the execution of tasks and jobs within the system.
-It coordinates the execution of tasks, manages their dependencies, and ensures that they are executed in the
-correct order.
-It also handles the scheduling or queueing of jobs and tasks, allowing for both immediate execution and scheduled execution.
-It is designed to be flexible and extensible, allowing for the addition of new task types,
-job types, and scheduling strategies as needed.
+Application-layer orchestration module. Relocated from
+`core/platform/manager/orchestrator.rs`, `listener_service.rs`, and `scheduler.rs`.
+
+This module exposes:
+- `Orchestrator` — coordinates jobs, workflows, events, and content processing
+- `listener` sub-module — `ListenerOrchestrator` (renamed from `ListenerService`)
+- `scheduler` sub-module — `SchedulerOrchestrator` (renamed from `Scheduler`)
+- `types` sub-module — coordination error/stats/trait types
+- `OrchestrationContext` re-exported from paladin-core for callers
 */
 
-use crate::application::use_cases::queue_orchestrator::{QueueError, QueueService};
+pub mod listener;
+pub mod scheduler;
+pub mod types;
+
+pub use crate::core::platform::container::orchestration_context::OrchestrationContext;
+pub use listener::{EventListener, ListenerConfig, ListenerService, ListenerStats};
+pub use scheduler::{Schedule, Scheduler, SchedulerStats};
+pub use types::{
+    ContentAnalysisType, ContentProcessingResult, ContentProcessor, DefaultContentProcessor,
+    ListenerError, OrchestratorError, OrchestratorStats, SchedulerError,
+};
+
+use crate::application::use_cases::queue_orchestrator::QueueService;
 use crate::core::base::component::action::{Action, ActionPriority};
 use crate::core::base::component::event::Event;
 use crate::core::base::entity::message::{Location, Message, MessagePriority};
 use crate::core::platform::container::content::ContentItem;
-use crate::core::platform::container::job::{Job, JobError};
-pub use crate::core::platform::container::orchestration_context::OrchestrationContext;
+use crate::core::platform::container::job::Job;
 use crate::core::platform::container::queue_item::QueueItem;
 use crate::core::platform::container::task::{Task, TaskError, TaskService};
 use crate::core::platform::container::trigger::{Trigger, TriggerCondition};
 use crate::core::platform::container::workflow::{
     Workflow, WorkflowExecutionOrder, WorkflowListener,
 };
-use crate::core::platform::manager::listener_service::{
-    EventListener, ListenerError, ListenerService,
-};
-use crate::core::platform::manager::scheduler::{Schedule, Scheduler, SchedulerError};
-
-use async_trait::async_trait;
 use chrono::Utc;
-use serde::{Deserialize, Serialize};
+use listener::ListenerOrchestrator;
+use scheduler::SchedulerOrchestrator;
 use std::collections::HashMap;
 use std::sync::Arc;
-use thiserror::Error;
 use tokio::sync::{Mutex, RwLock};
 use uuid::Uuid;
 
-/// Main Orchestrator service
+/// Main Orchestrator service.
 pub struct Orchestrator {
-    scheduler: Arc<Mutex<Scheduler>>,
+    scheduler: Arc<Mutex<SchedulerOrchestrator>>,
     queue_service: Arc<QueueService>,
-    listener_service: Arc<ListenerService>,
+    listener_service: Arc<ListenerOrchestrator>,
     task_services: Arc<RwLock<HashMap<String, Box<dyn TaskService>>>>,
     workflows: Arc<RwLock<HashMap<Uuid, Workflow>>>,
     active_sessions: Arc<RwLock<HashMap<Uuid, OrchestrationContext>>>,
@@ -48,12 +56,12 @@ pub struct Orchestrator {
 }
 
 impl Orchestrator {
-    /// Create a new Orchestrator
+    /// Create a new Orchestrator.
     pub fn new() -> Self {
         Self {
-            scheduler: Arc::new(Mutex::new(Scheduler::new())),
+            scheduler: Arc::new(Mutex::new(SchedulerOrchestrator::new())),
             queue_service: Arc::new(QueueService::new()),
-            listener_service: Arc::new(ListenerService::new()),
+            listener_service: Arc::new(ListenerOrchestrator::new()),
             task_services: Arc::new(RwLock::new(HashMap::new())),
             workflows: Arc::new(RwLock::new(HashMap::new())),
             active_sessions: Arc::new(RwLock::new(HashMap::new())),
@@ -61,7 +69,7 @@ impl Orchestrator {
         }
     }
 
-    /// Start the orchestrator and all its services
+    /// Start the orchestrator and all its services.
     pub async fn start(&self) -> Result<(), OrchestratorError> {
         // Initialize default services
         self.initialize_default_services().await?;
@@ -77,7 +85,7 @@ impl Orchestrator {
         Ok(())
     }
 
-    /// Register a task service
+    /// Register a task service.
     pub async fn register_task_service(
         &self,
         service: Box<dyn TaskService>,
@@ -100,7 +108,7 @@ impl Orchestrator {
         Ok(())
     }
 
-    /// Register an event listener
+    /// Register an event listener.
     pub async fn register_event_listener(
         &self,
         listener: Box<dyn EventListener>,
@@ -112,7 +120,7 @@ impl Orchestrator {
         Ok(())
     }
 
-    /// Register a content processor
+    /// Register a content processor.
     pub async fn register_content_processor(
         &self,
         processor: Box<dyn ContentProcessor>,
@@ -124,7 +132,7 @@ impl Orchestrator {
         Ok(())
     }
 
-    /// Create and execute a simple job immediately
+    /// Create and execute a simple job immediately.
     pub async fn execute_job(
         &self,
         job: Job,
@@ -159,7 +167,7 @@ impl Orchestrator {
         }
     }
 
-    /// Schedule a job for recurring execution
+    /// Schedule a job for recurring execution.
     pub async fn schedule_job(
         &self,
         job: Job,
@@ -183,7 +191,7 @@ impl Orchestrator {
         Ok(job_id)
     }
 
-    /// Queue a job for asynchronous execution
+    /// Queue a job for asynchronous execution.
     pub async fn queue_job(
         &self,
         job: Job,
@@ -217,7 +225,7 @@ impl Orchestrator {
         Ok(item_id)
     }
 
-    /// Process content through a content analysis workflow
+    /// Process content through a content analysis workflow.
     pub async fn process_content(
         &self,
         content: ContentItem,
@@ -245,7 +253,7 @@ impl Orchestrator {
         Ok(result)
     }
 
-    /// Create and register a complete workflow
+    /// Create and register a complete workflow.
     pub async fn create_workflow(&self, mut workflow: Workflow) -> Result<Uuid, OrchestratorError> {
         let workflow_id = workflow.id;
 
@@ -330,7 +338,7 @@ impl Orchestrator {
         Ok(workflow_id)
     }
 
-    /// Process an event through the listener system
+    /// Process an event through the listener system.
     pub async fn process_event(&self, event: Event) -> Result<Vec<Uuid>, OrchestratorError> {
         let trigger_ids = self
             .listener_service
@@ -352,7 +360,7 @@ impl Orchestrator {
         Ok(trigger_ids)
     }
 
-    /// Execute a trigger (convert to job and execute)
+    /// Execute a trigger (convert to job and execute).
     async fn execute_trigger(&self, trigger: Trigger) -> Result<(), OrchestratorError> {
         // Check if this is a workflow trigger with a specific target job
         let workflows = self.workflows.read().await;
@@ -405,7 +413,7 @@ impl Orchestrator {
         Ok(())
     }
 
-    /// Create a content analysis workflow
+    /// Create a content analysis workflow.
     pub async fn create_content_analysis_workflow(
         &self,
         content_items: Vec<ContentItem>,
@@ -466,7 +474,7 @@ impl Orchestrator {
         Ok(workflow_id)
     }
 
-    /// Start an orchestration session
+    /// Start an orchestration session.
     async fn start_session(&self, context: OrchestrationContext) -> Result<(), OrchestratorError> {
         let mut sessions = self.active_sessions.write().await;
         sessions.insert(context.session_id, context.clone());
@@ -474,7 +482,7 @@ impl Orchestrator {
         Ok(())
     }
 
-    /// End an orchestration session
+    /// End an orchestration session.
     async fn end_session(&self, session_id: Uuid) -> Result<(), OrchestratorError> {
         let mut sessions = self.active_sessions.write().await;
         if let Some(context) = sessions.remove(&session_id) {
@@ -487,7 +495,7 @@ impl Orchestrator {
         Ok(())
     }
 
-    /// Get orchestrator statistics
+    /// Get orchestrator statistics.
     pub async fn get_stats(&self) -> OrchestratorStats {
         let scheduler_stats = {
             let scheduler = self.scheduler.lock().await;
@@ -528,7 +536,7 @@ impl Orchestrator {
         }
     }
 
-    /// Initialize default services
+    /// Initialize default services.
     async fn initialize_default_services(&self) -> Result<(), OrchestratorError> {
         // Register default task services
         self.register_task_service(Box::new(
@@ -559,7 +567,7 @@ impl Orchestrator {
         Ok(())
     }
 
-    /// Create a workflow listener
+    /// Create a workflow listener.
     async fn create_workflow_listener(
         &self,
         workflow_listener: WorkflowListener,
@@ -571,11 +579,11 @@ impl Orchestrator {
             target_job_id: workflow_listener.target_job_id,
             target_queue: workflow_listener.target_queue,
             workflow_id,
-            config: crate::core::platform::manager::listener_service::ListenerConfig::default(),
+            config: ListenerConfig::default(),
         }))
     }
 
-    /// Create a content analysis task
+    /// Create a content analysis task.
     async fn create_content_analysis_task(
         &self,
         content_item: ContentItem,
@@ -601,105 +609,23 @@ impl Orchestrator {
     }
 }
 
-/// Content analysis types
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ContentAnalysisType {
-    Summarization,
-    SentimentAnalysis,
-    KeywordExtraction,
-    TopicModeling,
-    LanguageDetection,
-    Custom(String),
-}
-
-impl ContentAnalysisType {
-    pub fn name(&self) -> &str {
-        match self {
-            Self::Summarization => "Summarization",
-            Self::SentimentAnalysis => "Sentiment Analysis",
-            Self::KeywordExtraction => "Keyword Extraction",
-            Self::TopicModeling => "Topic Modeling",
-            Self::LanguageDetection => "Language Detection",
-            Self::Custom(name) => name,
-        }
+impl Default for Orchestrator {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
-/// Content processing result
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContentProcessingResult {
-    pub content_id: Uuid,
-    pub processor_name: String,
-    pub processing_time_ms: u64,
-    pub success: bool,
-    pub result_data: Option<serde_json::Value>,
-    pub error: Option<String>,
-    pub metadata: HashMap<String, serde_json::Value>,
-}
-
-/// Trait for content processors
-#[async_trait]
-pub trait ContentProcessor: Send + Sync {
-    fn name(&self) -> &str;
-    async fn process_content(
-        &self,
-        content: ContentItem,
-        context: OrchestrationContext,
-    ) -> Result<ContentProcessingResult, OrchestratorError>;
-    fn clone_box(&self) -> Result<Box<dyn ContentProcessor>, OrchestratorError>;
-}
-
-/// Default content processor implementation
-#[derive(Debug, Clone)]
-pub struct DefaultContentProcessor;
-
-#[async_trait]
-impl ContentProcessor for DefaultContentProcessor {
-    fn name(&self) -> &str {
-        "DefaultContentProcessor"
-    }
-
-    async fn process_content(
-        &self,
-        content: ContentItem,
-        context: OrchestrationContext,
-    ) -> Result<ContentProcessingResult, OrchestratorError> {
-        let start_time = std::time::Instant::now();
-
-        // Simulate content processing
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-
-        let processing_time_ms = start_time.elapsed().as_millis() as u64;
-
-        Ok(ContentProcessingResult {
-            content_id: content.uuid(),
-            processor_name: self.name().to_string(),
-            processing_time_ms,
-            success: true,
-            result_data: Some(serde_json::json!({
-                "processed": true,
-                "content_type": format!("{:?}", content.content()),
-                "session_id": context.session_id
-            })),
-            error: None,
-            metadata: HashMap::new(),
-        })
-    }
-
-    fn clone_box(&self) -> Result<Box<dyn ContentProcessor>, OrchestratorError> {
-        Ok(Box::new(self.clone()))
-    }
-}
-
-/// Workflow event listener implementation
+/// Workflow event listener implementation.
 struct WorkflowEventListener {
     name: String,
     conditions: Vec<TriggerCondition>,
     target_job_id: Option<Uuid>,
     target_queue: Option<String>,
     workflow_id: Uuid,
-    config: crate::core::platform::manager::listener_service::ListenerConfig,
+    config: ListenerConfig,
 }
+
+use async_trait::async_trait;
 
 #[async_trait]
 impl EventListener for WorkflowEventListener {
@@ -770,14 +696,11 @@ impl EventListener for WorkflowEventListener {
         ))
     }
 
-    fn config(&self) -> &crate::core::platform::manager::listener_service::ListenerConfig {
+    fn config(&self) -> &ListenerConfig {
         &self.config
     }
 
-    fn update_config(
-        &mut self,
-        config: crate::core::platform::manager::listener_service::ListenerConfig,
-    ) {
+    fn update_config(&mut self, config: ListenerConfig) {
         self.config = config;
     }
 
@@ -786,55 +709,10 @@ impl EventListener for WorkflowEventListener {
     }
 }
 
-/// Orchestrator statistics
-#[derive(Debug, Clone)]
-pub struct OrchestratorStats {
-    pub active_sessions: usize,
-    pub total_workflows: usize,
-    pub total_services: usize,
-    pub total_processors: usize,
-    pub scheduler_stats: crate::core::platform::manager::scheduler::SchedulerStats,
-    pub queue_stats: HashMap<String, paladin_core::platform::container::queue_config::QueueStats>,
-    pub listener_stats:
-        HashMap<String, crate::core::platform::manager::listener_service::ListenerStats>,
-}
-
-/// Orchestrator errors
-#[derive(Debug, Error)]
-pub enum OrchestratorError {
-    #[error("Scheduler error: {0}")]
-    SchedulerError(#[from] SchedulerError),
-    #[error("Queue error: {0}")]
-    QueueError(#[from] QueueError),
-    #[error("Listener error: {0}")]
-    ListenerError(#[from] ListenerError),
-    #[error("Job error: {0}")]
-    JobError(#[from] JobError),
-    #[error("Task error: {0}")]
-    TaskError(#[from] TaskError),
-    #[error("Processor not found: {0}")]
-    ProcessorNotFound(String),
-    #[error("Workflow not found: {0}")]
-    WorkflowNotFound(Uuid),
-    #[error("Session not found: {0}")]
-    SessionNotFound(Uuid),
-    #[error("Serialization error: {0}")]
-    SerializationError(String),
-    #[error("Configuration error: {0}")]
-    ConfigurationError(String),
-    #[error("Service error: {0}")]
-    ServiceError(String),
-}
-
-impl Default for Orchestrator {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::use_cases::queue_orchestrator::QueueError;
     use crate::core::platform::container::content::{ContentType, TextContent};
 
     #[tokio::test]
