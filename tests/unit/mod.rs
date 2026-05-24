@@ -27,3 +27,4 @@ pub mod prompt_generation_service_test;
 pub mod sanctum_domain_tests;
 pub mod sanctum_port_tests;
 pub mod scheduler_tests;
+pub mod settings_config_test;
