@@ -9,6 +9,7 @@ It is designed to be flexible and extensible, allowing for the addition of new t
 job types, and scheduling strategies as needed.
 */
 
+use crate::application::use_cases::queue_orchestrator::{QueueError, QueueService};
 use crate::core::base::component::action::{Action, ActionPriority};
 use crate::core::base::component::event::Event;
 use crate::core::base::entity::message::{Location, Message, MessagePriority};
@@ -24,7 +25,6 @@ use crate::core::platform::container::workflow::{
 use crate::core::platform::manager::listener_service::{
     EventListener, ListenerError, ListenerService,
 };
-use crate::core::platform::manager::queue_service::{QueueError, QueueService};
 use crate::core::platform::manager::scheduler::{Schedule, Scheduler, SchedulerError};
 
 use async_trait::async_trait;
@@ -794,7 +794,7 @@ pub struct OrchestratorStats {
     pub total_services: usize,
     pub total_processors: usize,
     pub scheduler_stats: crate::core::platform::manager::scheduler::SchedulerStats,
-    pub queue_stats: HashMap<String, crate::core::platform::manager::queue_service::QueueStats>,
+    pub queue_stats: HashMap<String, paladin_core::platform::container::queue_config::QueueStats>,
     pub listener_stats:
         HashMap<String, crate::core::platform::manager::listener_service::ListenerStats>,
 }

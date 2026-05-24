@@ -5,5 +5,6 @@ pub mod content;
 pub mod herald;
 pub mod notification_orchestrator;
 pub mod paladin;
+pub mod queue_orchestrator;
 pub mod sanctum;
 pub mod subject;

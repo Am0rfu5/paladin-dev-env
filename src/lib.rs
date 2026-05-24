@@ -181,8 +181,8 @@ pub use application::errors::citadel_error::CitadelError;
 
 pub use paladin_ports::output::queue_port::QueuePort;
 
-// Re-export QueueError from core for Queue usage
-pub use core::platform::manager::queue_service::QueueError;
+// Re-export QueueError from application layer orchestrator
+pub use application::use_cases::queue_orchestrator::QueueError;
 
 pub use paladin_ports::output::notification_port::{
     Notification, NotificationChannel, NotificationDeliveryPort, NotificationPortError,

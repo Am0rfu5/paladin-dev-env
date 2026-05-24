@@ -115,29 +115,21 @@ git commit \
   - [x] 2.11 Run `cargo fmt --check` and `cargo clippy -- -D warnings`; address all warnings.
   - [x] 2.12 Commit: `git commit -m "refactor(epic-2): extract domain types from manager services to paladin-core" ...`
 
-- [ ] 3.0 Relocate `notification_service.rs` to the application layer
-  - [ ] 3.1 Create the directory `src/application/use_cases/notification_orchestrator/`.
-  - [ ] 3.2 Create `src/application/use_cases/notification_orchestrator/types.rs`. Move the following from `notification_service.rs` into it: `NotificationServiceError` (error enum), `NotificationChannelHandler` (trait), `NotificationTemplateProcessor` (trait), `NotificationDeliveryResult` (if defined inline). Update all intra-file references to use `super::types::` or `crate::application::use_cases::notification_orchestrator::types::`.
-  - [ ] 3.3 Create `src/application/use_cases/notification_orchestrator/mod.rs`. Copy the remaining content of `notification_service.rs` (the `NotificationService` struct and all its `impl` blocks) into this file. Rename the struct from `NotificationService` to `NotificationOrchestrator` throughout. Update `use` statements: replace `crate::core::platform::manager::notification_service::` self-references with `crate::application::use_cases::notification_orchestrator::`. Add `pub mod types;` at the top.
-  - [ ] 3.4 Add `pub mod notification_orchestrator;` to `src/application/use_cases/mod.rs`.
-  - [ ] 3.5 Update `src/config/setup/service_runner.rs`:
-    - Replace `use crate::core::platform::manager::notification_service::NotificationService;` with `use crate::application::use_cases::notification_orchestrator::NotificationOrchestrator;`.
-    - Replace every occurrence of `NotificationService` in this file with `NotificationOrchestrator`.
-    - Replace the inline `crate::core::platform::manager::notification_service::NotificationServiceConfig { ... }` struct literal (line 516) with `crate::application::use_cases::notification_orchestrator::types::NotificationServiceConfig { ... }`.
-  - [ ] 3.6 Update `src/config/user_config.rs`:
-    - Replace `use crate::core::platform::manager::notification_service::NotificationService;` with `use crate::application::use_cases::notification_orchestrator::NotificationOrchestrator;`.
-    - Replace `use crate::core::platform::manager::notification_service::NotificationServiceConfig;` with `use crate::application::use_cases::notification_orchestrator::types::NotificationServiceConfig;`.
-    - Replace `Arc<NotificationService>` with `Arc<NotificationOrchestrator>` throughout.
-  - [ ] 3.7 Update `src/core/platform/manager/user_service.rs`:
-    - Replace `use crate::core::platform::manager::notification_service::NotificationService;` with `use crate::application::use_cases::notification_orchestrator::NotificationOrchestrator;`.
-    - Replace `Arc<NotificationService>` with `Arc<NotificationOrchestrator>` throughout.
-  - [ ] 3.8 Check `src/lib.rs` for any `pub use` referencing `notification_service` — update the path if found.
-  - [ ] 3.9 Delete `src/core/platform/manager/notification_service.rs`.
-  - [ ] 3.10 Remove `pub mod notification_service;` from `src/core/platform/manager/mod.rs`.
-  - [ ] 3.11 Run `cargo build` — fix all compilation errors before proceeding.
-  - [ ] 3.12 Run `cargo test` — all tests must pass.
-  - [ ] 3.13 Run `cargo fmt --check` and `cargo clippy -- -D warnings`; address all warnings.
-  - [ ] 3.14 Commit: `git commit -m "refactor(epic-2): relocate notification_service to application layer" -m "- Move NotificationService → NotificationOrchestrator in use_cases/notification_orchestrator/" -m "- Update service_runner.rs, user_config.rs, user_service.rs import paths" -m "- Remove notification_service from core/platform/manager/"`
+- [x] 3.0 Relocate `notification_service.rs` to the application layer
+  - [x] 3.1 Create the directory `src/application/use_cases/notification_orchestrator/`.
+  - [x] 3.2 Create `src/application/use_cases/notification_orchestrator/types.rs`. Move the following from `notification_service.rs` into it: `NotificationServiceError` (error enum), `NotificationChannelHandler` (trait), `NotificationTemplateProcessor` (trait), `NotificationDeliveryResult` (if defined inline). Update all intra-file references to use `super::types::` or `crate::application::use_cases::notification_orchestrator::types::`.
+  - [x] 3.3 Create `src/application/use_cases/notification_orchestrator/mod.rs`. Copy the remaining content of `notification_service.rs` (the `NotificationService` struct and all its `impl` blocks) into this file. Rename the struct from `NotificationService` to `NotificationOrchestrator` throughout. Update `use` statements: replace `crate::core::platform::manager::notification_service::` self-references with `crate::application::use_cases::notification_orchestrator::`. Add `pub mod types;` at the top.
+  - [x] 3.4 Add `pub mod notification_orchestrator;` to `src/application/use_cases/mod.rs`.
+  - [x] 3.5 Update `src/config/setup/service_runner.rs`.
+  - [x] 3.6 Update `src/config/user_config.rs`.
+  - [x] 3.7 Update `src/core/platform/manager/user_service.rs`.
+  - [x] 3.8 Check `src/lib.rs` for any `pub use` referencing `notification_service` — none found.
+  - [x] 3.9 Delete `src/core/platform/manager/notification_service.rs`.
+  - [x] 3.10 Remove `pub mod notification_service;` from `src/core/platform/manager/mod.rs`.
+  - [x] 3.11 Run `cargo build` — zero errors.
+  - [x] 3.12 Run `cargo test` — 1777 tests, 0 failures.
+  - [x] 3.13 Run `cargo fmt --check` and `cargo clippy -- -D warnings` — clean.
+  - [x] 3.14 Commit `07e51ff`.
 
 - [ ] 4.0 Relocate `queue_service.rs` to the application layer
   - [ ] 4.1 Create the directory `src/application/use_cases/queue_orchestrator/`.
