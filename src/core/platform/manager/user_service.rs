@@ -90,7 +90,7 @@ pub trait UserServiceTrait: Send + Sync {
     /// Find users by active status
     async fn find_by_active_status(&self, is_active: bool) -> Result<Vec<User>, UserError>;
 
-    /// Find users by verification status  
+    /// Find users by verification status
     async fn find_by_verification_status(&self, is_verified: bool) -> Result<Vec<User>, UserError>;
 
     /// Count total users
@@ -473,7 +473,7 @@ impl UserServiceTrait for UserService {
         self.user_repository.find_by_active_status(is_active).await
     }
 
-    /// Find users by verification status  
+    /// Find users by verification status
     async fn find_by_verification_status(&self, is_verified: bool) -> Result<Vec<User>, UserError> {
         self.user_repository
             .find_by_verification_status(is_verified)

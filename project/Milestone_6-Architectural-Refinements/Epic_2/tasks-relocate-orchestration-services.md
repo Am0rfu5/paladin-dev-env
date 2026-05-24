@@ -131,19 +131,19 @@ git commit \
   - [x] 3.13 Run `cargo fmt --check` and `cargo clippy -- -D warnings` — clean.
   - [x] 3.14 Commit `07e51ff`.
 
-- [ ] 4.0 Relocate `queue_service.rs` to the application layer
-  - [ ] 4.1 Create the directory `src/application/use_cases/queue_orchestrator/`.
-  - [ ] 4.2 Create `src/application/use_cases/queue_orchestrator/types.rs`. Move `QueueError` (error enum) and the internal `Queue` struct (with its `impl`) into this file. These are coordination types — `Queue` manages in-memory queue state and is not a domain value object.
-  - [ ] 4.3 Create `src/application/use_cases/queue_orchestrator/mod.rs`. Move the `QueueService` struct and all its `impl` blocks into this file. Rename `QueueService` to `QueueOrchestrator` throughout. Add `pub mod types;` at the top. Update `use` statements to remove `crate::core::platform::manager::queue_service::` self-references and import `QueueStats` from its new `paladin-core` location (confirmed in Task 2.3).
-  - [ ] 4.4 Add `pub mod queue_orchestrator;` to `src/application/use_cases/mod.rs`.
-  - [ ] 4.5 Update `src/lib.rs`: change `pub use core::platform::manager::queue_service::QueueError;` to `pub use crate::application::use_cases::queue_orchestrator::types::QueueError;`.
-  - [ ] 4.6 Search for any other consumers of `queue_service`: `grep -r "core::platform::manager::queue_service" src/` — update any remaining import paths found.
-  - [ ] 4.7 Delete `src/core/platform/manager/queue_service.rs`.
-  - [ ] 4.8 Remove `pub mod queue_service;` from `src/core/platform/manager/mod.rs`.
-  - [ ] 4.9 Run `cargo build` — fix all compilation errors before proceeding.
-  - [ ] 4.10 Run `cargo test` — all tests must pass.
-  - [ ] 4.11 Run `cargo fmt --check` and `cargo clippy -- -D warnings`; address all warnings.
-  - [ ] 4.12 Commit: `git commit -m "refactor(epic-2): relocate queue_service to application layer" -m "- Move QueueService → QueueOrchestrator in use_cases/queue_orchestrator/" -m "- Update src/lib.rs pub use path for QueueError" -m "- Remove queue_service from core/platform/manager/"`
+- [x] 4.0 Relocate `queue_service.rs` to the application layer
+  - [x] 4.1 Create the directory `src/application/use_cases/queue_orchestrator/`.
+  - [x] 4.2 Create `src/application/use_cases/queue_orchestrator/types.rs`. Move `QueueError` (error enum) and the internal `Queue` struct (with its `impl`) into this file. These are coordination types — `Queue` manages in-memory queue state and is not a domain value object.
+  - [x] 4.3 Create `src/application/use_cases/queue_orchestrator/mod.rs`. Move the `QueueService` struct and all its `impl` blocks into this file. Rename `QueueService` to `QueueOrchestrator` throughout. Add `pub mod types;` at the top. Update `use` statements to remove `crate::core::platform::manager::queue_service::` self-references and import `QueueStats` from its new `paladin-core` location (confirmed in Task 2.3).
+  - [x] 4.4 Add `pub mod queue_orchestrator;` to `src/application/use_cases/mod.rs`.
+  - [x] 4.5 Update `src/lib.rs`: change `pub use core::platform::manager::queue_service::QueueError;` to `pub use crate::application::use_cases::queue_orchestrator::types::QueueError;`.
+  - [x] 4.6 Search for any other consumers of `queue_service`: `grep -r "core::platform::manager::queue_service" src/` — update any remaining import paths found.
+  - [x] 4.7 Delete `src/core/platform/manager/queue_service.rs`.
+  - [x] 4.8 Remove `pub mod queue_service;` from `src/core/platform/manager/mod.rs`.
+  - [x] 4.9 Run `cargo build` — fix all compilation errors before proceeding.
+  - [x] 4.10 Run `cargo test` — all tests must pass.
+  - [x] 4.11 Run `cargo fmt --check` and `cargo clippy -- -D warnings`; address all warnings.
+  - [x] 4.12 Commit `e3b21fe`.
 
 - [ ] 5.0 Relocate `log_service.rs` to the application layer
   - [ ] 5.1 Create the directory `src/application/use_cases/log_orchestrator/`.

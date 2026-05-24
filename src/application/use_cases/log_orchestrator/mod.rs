@@ -1,164 +1,50 @@
 /*
-Log Service
+Log Orchestrator
 
-The core platform log service that manages log operations across the system.
-This service is built on top of the base Message Service and coordinates between
-different log destinations, handling routing of log entries based on their
-destinations and levels.
+Application-layer orchestrator for log management.  Relocated from
+`core::platform::manager::log_service` as part of Milestone 6 Epic 2 to enforce
+hexagonal architecture boundaries.
 
-This service extends the Message Service to provide specialized logging functionality.
+This module wraps the base Message Service to provide specialised logging
+functionality: destination routing, level filtering, in-memory storage, and
+optional forwarding to a persistent `LogPort`.
 */
-use async_trait::async_trait;
-use chrono::Utc;
+
+pub mod types;
+
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::core::base::entity::message::Location;
-use crate::core::base::service::message_service::{
-    MessageError, MessageHandler, MessageResult, MessageService, MessageServiceConfig,
-};
+use chrono::Utc;
+
+use crate::core::base::service::message_service::MessageService;
 use crate::core::platform::container::log::{
-    Log, LogContainer, LogDestination, LogEntry, LogEntryExt, LogLevel, LogMessage,
+    Log, LogContainer, LogDestination, LogEntry, LogEntryExt,
 };
-use paladin_ports::output::log_port::{
-    LogError, LogHealthCheck, LogPort, LogQuery, LogResult, LogStats,
-};
+use paladin_ports::output::log_port::{LogError, LogHealthCheck, LogQuery, LogResult, LogStats};
 
-/// Configuration for the log service
-#[derive(Debug, Clone)]
-pub struct LogServiceConfig {
-    /// Default minimum log level
-    pub default_min_level: LogLevel,
-    /// Maximum number of in-memory log entries per destination
-    pub max_memory_entries: usize,
-    /// Whether to enable async logging
-    pub async_logging: bool,
-    /// Buffer size for async logging
-    pub buffer_size: usize,
-    /// Flush interval for buffered entries
-    pub flush_interval: std::time::Duration,
-    /// Message service configuration
-    pub message_config: MessageServiceConfig,
-}
+use types::{LogMessageHandler, LogServiceConfig};
 
-impl Default for LogServiceConfig {
-    fn default() -> Self {
-        Self {
-            default_min_level: LogLevel::Info,
-            max_memory_entries: 1000,
-            async_logging: true,
-            buffer_size: 100,
-            flush_interval: std::time::Duration::from_secs(5),
-            message_config: MessageServiceConfig::default(),
-        }
-    }
-}
+pub use types::{LogPort, LogServiceConfig as LogOrchestratorConfig};
 
-/// Log message handler for processing log entries
-struct LogMessageHandler {
-    logs: Arc<RwLock<HashMap<LogDestination, Log>>>,
-    log_port: Option<Arc<dyn LogPort>>,
-    #[allow(dead_code)]
-    config: LogServiceConfig,
-}
+// ---------------------------------------------------------------------------
+// Backwards-compatibility alias
+// ---------------------------------------------------------------------------
 
-impl LogMessageHandler {
-    fn extract_destination(
-        &self,
-        entry: &crate::core::base::entity::message::Message<LogMessage>,
-    ) -> LogResult<LogDestination> {
-        match &entry.destination {
-            Location::Service(name) => {
-                if name.contains("system-log") {
-                    Ok(LogDestination::System)
-                } else if name.contains("access-log") {
-                    Ok(LogDestination::Access)
-                } else if name.contains("error-log") {
-                    Ok(LogDestination::Error)
-                } else if name.contains("security-log") {
-                    Ok(LogDestination::Security)
-                } else if name.contains("performance-log") {
-                    Ok(LogDestination::Performance)
-                } else if name.starts_with("custom-log-") {
-                    let custom_name = name.strip_prefix("custom-log-").unwrap_or("unknown");
-                    Ok(LogDestination::Custom(custom_name.to_string()))
-                } else {
-                    // For unrecognized log service names, default to System instead of returning an error
-                    // This provides a fallback behavior for any service that might want to log
-                    Ok(LogDestination::System)
-                }
-            }
-            _ => {
-                // Only handle Service() destinations
-                Err(LogError::DestinationNotFound(format!(
-                    "{:?}",
-                    entry.destination
-                )))
-            }
-        }
-    }
-}
+/// Alias kept so call-sites that still use the old `LogService` name compile
+/// without changes.
+pub type LogService = LogOrchestrator;
 
-#[async_trait]
-impl MessageHandler<LogMessage> for LogMessageHandler {
-    async fn handle_message(
-        &self,
-        message: crate::core::base::entity::message::Message<LogMessage>,
-    ) -> MessageResult<()> {
-        // Only handle log service destinations
-        let destination = match self.extract_destination(&message) {
-            Ok(dest) => dest,
-            Err(_) => {
-                // Not a log message, ignore silently
-                return Ok(());
-            }
-        };
+// ---------------------------------------------------------------------------
+// LogOrchestrator
+// ---------------------------------------------------------------------------
 
-        // Rest of the implementation stays the same...
-        let normalized_destination = destination.to_location();
-
-        let log_entry = LogEntry {
-            id: message.id,
-            source: message.source,
-            destination: normalized_destination.clone(),
-            timestamp: message.timestamp,
-            message: message.message,
-            correlation_id: message.correlation_id,
-            priority: message.priority,
-        };
-
-        // Add to in-memory log
-        {
-            let mut logs = self.logs.write().await;
-            if let Some(log) = logs.get_mut(&destination) {
-                log.node.add_entry(log_entry.clone());
-            }
-        }
-
-        // Forward to persistent storage if available
-        if let Some(port) = &self.log_port {
-            port.write_entry(log_entry)
-                .await
-                .map_err(|e| MessageError::DeliveryFailed(e.to_string()))?;
-        }
-
-        Ok(())
-    }
-
-    fn supported_destinations(&self) -> Vec<Location> {
-        vec![
-            LogDestination::System.to_location(),
-            LogDestination::Access.to_location(),
-            LogDestination::Error.to_location(),
-            LogDestination::Security.to_location(),
-            LogDestination::Performance.to_location(),
-        ]
-    }
-}
-
-/// The core log service implementation built on Message Service
-pub struct LogService {
+/// Application-layer log orchestrator.
+///
+/// Manages log destinations, entry routing, level filtering, and optional
+/// persistent storage via a `LogPort`.  Previously named `LogService`.
+pub struct LogOrchestrator {
     /// Underlying message service
     message_service: Arc<MessageService>,
     /// Configuration
@@ -171,8 +57,8 @@ pub struct LogService {
     stats: Arc<RwLock<LogStats>>,
 }
 
-impl LogService {
-    /// Create a new log service
+impl LogOrchestrator {
+    /// Create a new log orchestrator.
     pub fn new(config: LogServiceConfig) -> Self {
         let message_service = Arc::new(MessageService::new(config.message_config.clone()));
 
@@ -185,28 +71,25 @@ impl LogService {
         }
     }
 
-    /// Create with log port
+    /// Attach a persistent log port.
     pub fn with_port(mut self, port: Arc<dyn LogPort>) -> Self {
         self.log_port = Some(port);
         self
     }
 
+    /// Initialize the orchestrator.
     pub async fn initialize(&self) -> LogResult<()> {
-        // Start the underlying message service
         self.message_service
             .start()
             .await
             .map_err(|e| LogError::ConfigError(e.to_string()))?;
 
-        // Register log message handler for service-type destinations
         let handler = Arc::new(LogMessageHandler {
             logs: self.logs.clone(),
             log_port: self.log_port.clone(),
             config: self.config.clone(),
         });
 
-        // Register for "service" destination type - this will catch all Service() destinations
-        // Also register for "log" for backward compatibility and clearer intent
         self.message_service
             .register_handler("service".to_string(), handler.clone())
             .await
@@ -217,13 +100,12 @@ impl LogService {
             .await
             .map_err(|e| LogError::ConfigError(e.to_string()))?;
 
-        // Initialize default log destinations
         self.initialize_default_logs().await?;
 
         Ok(())
     }
 
-    /// Initialize default log destinations
+    /// Initialize default log destinations.
     pub async fn initialize_default_logs(&self) -> LogResult<()> {
         let destinations = vec![
             (LogDestination::System, "system-log"),
@@ -250,9 +132,8 @@ impl LogService {
         Ok(())
     }
 
-    /// Write a log entry using the message service
+    /// Write a log entry using the message service.
     pub async fn write_entry(&self, entry: LogEntry) -> LogResult<()> {
-        // Update statistics
         {
             let mut stats = self.stats.write().await;
             stats.entries_written += 1;
@@ -260,7 +141,6 @@ impl LogService {
             stats.last_write = Some(Utc::now());
         }
 
-        // Send as message through the message service
         let message = crate::core::base::entity::message::Message {
             id: entry.id,
             source: entry.source,
@@ -290,7 +170,7 @@ impl LogService {
         Ok(())
     }
 
-    /// Write multiple entries
+    /// Write multiple entries.
     pub async fn write_entries(&self, entries: Vec<LogEntry>) -> LogResult<()> {
         let messages: Vec<_> = entries
             .into_iter()
@@ -311,7 +191,6 @@ impl LogService {
             .await
             .map_err(|e| LogError::IoError(e.to_string()))?;
 
-        // Update statistics
         {
             let mut stats = self.stats.write().await;
             for receipt in &receipts {
@@ -327,7 +206,7 @@ impl LogService {
         Ok(())
     }
 
-    /// Read entries from in-memory logs
+    /// Read entries from in-memory logs.
     pub async fn read_entries(
         &self,
         destination: LogDestination,
@@ -337,24 +216,17 @@ impl LogService {
 
         if let Some(log) = logs.get(&destination) {
             let entries = log.node.get_entries(query.min_level);
-
-            // Apply additional filters
             let mut filtered: Vec<LogEntry> = entries.into_iter().cloned().collect();
 
-            // Filter by time range
             if let Some(start) = query.start_time {
                 filtered.retain(|e| e.timestamp >= start);
             }
             if let Some(end) = query.end_time {
                 filtered.retain(|e| e.timestamp <= end);
             }
-
-            // Filter by source
             if let Some(source) = &query.source {
                 filtered.retain(|e| e.source.to_string().contains(source));
             }
-
-            // Filter by module
             if let Some(module) = &query.module {
                 filtered.retain(|e| {
                     e.message
@@ -363,13 +235,9 @@ impl LogService {
                         .is_some_and(|m| m.contains(module))
                 });
             }
-
-            // Filter by message content
             if let Some(content) = &query.message_contains {
                 filtered.retain(|e| e.message.message.contains(content));
             }
-
-            // Apply pagination
             if let Some(offset) = query.offset {
                 if offset < filtered.len() {
                     filtered.drain(0..offset);
@@ -377,7 +245,6 @@ impl LogService {
                     filtered.clear();
                 }
             }
-
             if let Some(limit) = query.limit {
                 filtered.truncate(limit);
             }
@@ -388,13 +255,13 @@ impl LogService {
         }
     }
 
-    /// Get log statistics
+    /// Get log statistics.
     pub async fn get_stats(&self) -> LogResult<LogStats> {
         let stats = self.stats.read().await;
         Ok(stats.clone())
     }
 
-    /// Get statistics for a specific destination
+    /// Get statistics for a specific destination.
     pub async fn get_destination_stats(&self, destination: LogDestination) -> LogResult<LogStats> {
         let logs = self.logs.read().await;
 
@@ -419,7 +286,7 @@ impl LogService {
         }
     }
 
-    /// Flush buffered entries
+    /// Flush buffered entries.
     pub async fn flush(&self) -> LogResult<()> {
         if let Some(port) = &self.log_port {
             port.flush().await?;
@@ -427,7 +294,7 @@ impl LogService {
         Ok(())
     }
 
-    /// Clear logs for a destination
+    /// Clear logs for a destination.
     pub async fn clear_logs(&self, destination: LogDestination) -> LogResult<()> {
         let mut logs = self.logs.write().await;
 
@@ -442,18 +309,17 @@ impl LogService {
         Ok(())
     }
 
-    /// Get list of configured destinations
+    /// Get list of configured destinations.
     pub async fn list_destinations(&self) -> Vec<LogDestination> {
         let logs = self.logs.read().await;
         logs.keys().cloned().collect()
     }
 
-    /// Health check
+    /// Health check.
     pub async fn health_check(&self) -> LogResult<Vec<LogHealthCheck>> {
         if let Some(port) = &self.log_port {
             port.health_check().await
         } else {
-            // Return health check for in-memory logs only
             let logs = self.logs.read().await;
             let mut checks = Vec::new();
 
@@ -472,7 +338,7 @@ impl LogService {
         }
     }
 
-    /// Stop the log service
+    /// Stop the log orchestrator.
     pub async fn stop(&self) -> LogResult<()> {
         self.message_service
             .stop()
@@ -482,14 +348,26 @@ impl LogService {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::base::entity::message::Location;
     use crate::core::platform::container::log::LogEntryBuilder;
+    use async_trait::async_trait;
+    use paladin_ports::output::log_port::{
+        BatchWriteRequest, LogDestinationConfig, LogFormat, LogQuery,
+    };
     use std::sync::atomic::{AtomicUsize, Ordering};
     use tokio::time::{Duration, sleep};
 
-    // Mock LogPort for testing persistent storage
+    // -----------------------------------------------------------------------
+    // Mock LogPort
+    // -----------------------------------------------------------------------
+
     #[derive(Debug)]
     struct MockLogPort {
         entries: Arc<RwLock<Vec<LogEntry>>>,
@@ -530,7 +408,6 @@ mod tests {
             if self.should_fail {
                 return Err(LogError::IoError("Mock failure".to_string()));
             }
-
             let mut entries = self.entries.write().await;
             entries.push(entry);
             self.write_count.fetch_add(1, Ordering::SeqCst);
@@ -541,10 +418,9 @@ mod tests {
             if self.should_fail {
                 return Err(LogError::IoError("Mock failure".to_string()));
             }
-
-            let mut stored_entries = self.entries.write().await;
+            let mut stored = self.entries.write().await;
             self.write_count.fetch_add(entries.len(), Ordering::SeqCst);
-            stored_entries.extend(entries);
+            stored.extend(entries);
             Ok(())
         }
 
@@ -553,8 +429,7 @@ mod tests {
         }
 
         async fn clear_logs(&self, _destination: LogDestination) -> LogResult<()> {
-            let mut entries = self.entries.write().await;
-            entries.clear();
+            self.entries.write().await.clear();
             Ok(())
         }
 
@@ -580,12 +455,7 @@ mod tests {
             Ok(())
         }
 
-        // --- Begin missing trait methods ---
-
-        async fn batch_write(
-            &self,
-            _request: paladin_ports::output::log_port::BatchWriteRequest,
-        ) -> LogResult<()> {
+        async fn batch_write(&self, _request: BatchWriteRequest) -> LogResult<()> {
             Ok(())
         }
 
@@ -593,10 +463,7 @@ mod tests {
             Ok(self.entries.read().await.len() as u64)
         }
 
-        async fn configure_destination(
-            &self,
-            _config: paladin_ports::output::log_port::LogDestinationConfig,
-        ) -> LogResult<()> {
+        async fn configure_destination(&self, _config: LogDestinationConfig) -> LogResult<()> {
             Ok(())
         }
 
@@ -665,23 +532,23 @@ mod tests {
             Ok("mock-archive-path".to_string())
         }
 
-        fn supported_formats(&self) -> Vec<paladin_ports::output::log_port::LogFormat> {
+        fn supported_formats(&self) -> Vec<LogFormat> {
             vec![]
         }
-        // --- End missing trait methods ---
     }
+
+    // -----------------------------------------------------------------------
+    // Tests
+    // -----------------------------------------------------------------------
 
     #[tokio::test]
     async fn test_log_service_creation() {
         let config = LogServiceConfig::default();
-        let service = LogService::new(config);
-
+        let service = LogOrchestrator::new(config);
         service.initialize().await.unwrap();
 
         let destinations = service.list_destinations().await;
         assert_eq!(destinations.len(), 5);
-
-        // Verify all expected destinations are present
         assert!(destinations.contains(&LogDestination::System));
         assert!(destinations.contains(&LogDestination::Access));
         assert!(destinations.contains(&LogDestination::Error));
@@ -691,10 +558,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_write_and_read_entry_debug() {
-        let service = LogService::new(LogServiceConfig::default());
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         service.initialize().await.unwrap();
 
-        // Create entry with explicit destination that matches log routing
         let entry = LogEntryBuilder::new_entry(
             Location::service("test-service"),
             LogDestination::System,
@@ -702,10 +568,6 @@ mod tests {
             "Debug test message".to_string(),
         );
 
-        println!("Original entry destination: {:?}", entry.destination);
-        println!("Entry message: {:?}", entry.message);
-
-        // Write entry
         let write_result = service.write_entry(entry.clone()).await;
         assert!(
             write_result.is_ok(),
@@ -713,56 +575,22 @@ mod tests {
             write_result
         );
 
-        // Wait longer for async processing
         sleep(Duration::from_millis(500)).await;
 
-        // Debug: Check what's in the in-memory logs
-        {
-            let logs = service.logs.read().await;
-            println!(
-                "Available destinations: {:?}",
-                logs.keys().collect::<Vec<_>>()
-            );
-
-            if let Some(system_log) = logs.get(&LogDestination::System) {
-                println!(
-                    "System log entries count: {}",
-                    system_log.node.entry_count()
-                );
-                let entries = system_log.node.get_entries(None);
-                for (i, entry) in entries.iter().enumerate() {
-                    println!("In-memory entry {}: {:?}", i, entry.message.message);
-                }
-            } else {
-                println!("System log not found!");
-            }
-        }
-
-        // Try reading entries
         let query = LogQuery::default();
-        let entries = service.read_entries(LogDestination::System, query).await;
-
-        match entries {
-            Ok(entries) => {
-                println!("Read {} entries", entries.len());
-                for (i, entry) in entries.iter().enumerate() {
-                    println!("Read entry {}: {:?}", i, entry.message.message);
-                }
-                assert_eq!(entries.len(), 1, "Expected 1 entry, got {}", entries.len());
-                assert_eq!(entries[0].message.message, "Debug test message");
-            }
-            Err(e) => {
-                panic!("Failed to read entries: {:?}", e);
-            }
-        }
+        let entries = service
+            .read_entries(LogDestination::System, query)
+            .await
+            .unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].message.message, "Debug test message");
     }
 
     #[tokio::test]
     async fn test_destination_routing() {
-        let service = LogService::new(LogServiceConfig::default());
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         service.initialize().await.unwrap();
 
-        // Test that different destinations route correctly
         let test_cases = vec![
             (LogDestination::System, "System message"),
             (LogDestination::Access, "Access message"),
@@ -778,13 +606,11 @@ mod tests {
                 LogLevel::Info,
                 message.to_string(),
             );
-
             service.write_entry(entry).await.unwrap();
         }
 
         sleep(Duration::from_millis(200)).await;
 
-        // Verify each destination has its entry
         for (destination, expected_message) in [
             (LogDestination::System, "System message"),
             (LogDestination::Access, "Access message"),
@@ -811,7 +637,6 @@ mod tests {
             config,
         };
 
-        // Test destination extraction logic
         let test_cases = vec![
             ("system-log", LogDestination::System),
             ("access-log", LogDestination::Access),
@@ -822,8 +647,8 @@ mod tests {
                 "custom-log-mylog",
                 LogDestination::Custom("mylog".to_string()),
             ),
-            ("unknown", LogDestination::System), // fallback to System
-            ("some-other-service", LogDestination::System), // fallback to System
+            ("unknown", LogDestination::System),
+            ("some-other-service", LogDestination::System),
         ];
 
         for (service_name, expected_dest) in test_cases {
@@ -832,7 +657,6 @@ mod tests {
                 Location::service(service_name),
                 LogMessage::new(LogLevel::Info, "test".to_string()),
             );
-
             let result = handler.extract_destination(&message);
             assert!(result.is_ok(), "Failed for service: {}", service_name);
             assert_eq!(
@@ -843,66 +667,49 @@ mod tests {
             );
         }
 
-        // Test non-Service destinations (should fail)
-        let non_service_cases = vec![Location::system("test"), Location::user("test")];
-
-        for location in non_service_cases {
+        for location in [Location::system("test"), Location::user("test")] {
             let message = crate::core::base::entity::message::Message::new(
                 Location::service("test"),
                 location.clone(),
                 LogMessage::new(LogLevel::Info, "test".to_string()),
             );
-
-            let result = handler.extract_destination(&message);
-            assert!(
-                result.is_err(),
-                "Should have failed for non-service destination: {:?}",
-                location
-            );
+            assert!(handler.extract_destination(&message).is_err());
         }
     }
 
     #[tokio::test]
     async fn test_log_level_filtering() {
         let config = LogServiceConfig {
-            default_min_level: LogLevel::Warn, // Only Warn and above
+            default_min_level: LogLevel::Warn,
             ..Default::default()
         };
 
-        let service = LogService::new(config);
+        let service = LogOrchestrator::new(config);
         service.initialize().await.unwrap();
 
-        // Write entries with different levels
-        let levels = vec![
+        for (level, message) in [
             (LogLevel::Debug, "Debug message"),
             (LogLevel::Info, "Info message"),
             (LogLevel::Warn, "Warning message"),
             (LogLevel::Error, "Error message"),
             (LogLevel::Fatal, "Fatal message"),
-        ];
-
-        for (level, message) in levels {
+        ] {
             let entry = LogEntryBuilder::new_entry(
                 Location::service("test"),
                 LogDestination::System,
                 level,
                 message.to_string(),
             );
-
             service.write_entry(entry).await.unwrap();
         }
 
         sleep(Duration::from_millis(200)).await;
 
-        let query = LogQuery::default();
         let entries = service
-            .read_entries(LogDestination::System, query)
+            .read_entries(LogDestination::System, LogQuery::default())
             .await
             .unwrap();
-
-        // Should only have Warn, Error, and Fatal (3 entries)
         assert_eq!(entries.len(), 3);
-
         let levels: Vec<LogLevel> = entries.iter().map(|e| e.level()).collect();
         assert!(levels.contains(&LogLevel::Warn));
         assert!(levels.contains(&LogLevel::Error));
@@ -913,7 +720,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_batch_write_entries() {
-        let service = LogService::new(LogServiceConfig::default());
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         service.initialize().await.unwrap();
 
         let entries: Vec<LogEntry> = (0..5)
@@ -928,95 +735,87 @@ mod tests {
             .collect();
 
         service.write_entries(entries).await.unwrap();
-
         sleep(Duration::from_millis(200)).await;
 
-        let query = LogQuery::default();
         let read_entries = service
-            .read_entries(LogDestination::System, query)
+            .read_entries(LogDestination::System, LogQuery::default())
             .await
             .unwrap();
         assert_eq!(read_entries.len(), 5);
-
-        // Verify all messages are present
         for i in 0..5 {
-            let expected_message = format!("Batch message {}", i);
             assert!(
                 read_entries
                     .iter()
-                    .any(|e| e.message.message == expected_message)
+                    .any(|e| e.message.message == format!("Batch message {}", i))
             );
         }
     }
 
     #[tokio::test]
     async fn test_query_filtering() {
-        let service = LogService::new(LogServiceConfig::default());
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         service.initialize().await.unwrap();
 
-        // Write entries with different characteristics
-        let test_entries = vec![
+        for (module, message, level) in [
             ("module1", "error occurred", LogLevel::Error),
             ("module2", "info message", LogLevel::Info),
             ("module1", "warning issued", LogLevel::Warn),
-            ("module3", "debug info", LogLevel::Debug), // Will be filtered by min level
-        ];
-
-        for (module, message, level) in test_entries {
+            ("module3", "debug info", LogLevel::Debug),
+        ] {
             let log_msg =
                 LogMessage::new(level, message.to_string()).with_module(module.to_string());
-
             let entry = crate::core::base::entity::message::Message::new(
                 Location::service("test"),
                 LogDestination::System.to_location(),
                 log_msg,
             );
-
             service.write_entry(entry).await.unwrap();
         }
 
         sleep(Duration::from_millis(200)).await;
 
-        // Test module filtering
-        let query = LogQuery {
-            module: Some("module1".to_string()),
-            ..Default::default()
-        };
         let filtered = service
-            .read_entries(LogDestination::System, query)
+            .read_entries(
+                LogDestination::System,
+                LogQuery {
+                    module: Some("module1".to_string()),
+                    ..Default::default()
+                },
+            )
             .await
             .unwrap();
-        assert_eq!(filtered.len(), 2); // Error and Warn from module1
+        assert_eq!(filtered.len(), 2);
 
-        // Test message content filtering
-        let query = LogQuery {
-            message_contains: Some("error".to_string()),
-            ..Default::default()
-        };
         let filtered = service
-            .read_entries(LogDestination::System, query)
+            .read_entries(
+                LogDestination::System,
+                LogQuery {
+                    message_contains: Some("error".to_string()),
+                    ..Default::default()
+                },
+            )
             .await
             .unwrap();
         assert_eq!(filtered.len(), 1);
 
-        // Test level filtering
-        let query = LogQuery {
-            min_level: Some(LogLevel::Warn),
-            ..Default::default()
-        };
         let filtered = service
-            .read_entries(LogDestination::System, query)
+            .read_entries(
+                LogDestination::System,
+                LogQuery {
+                    min_level: Some(LogLevel::Warn),
+                    ..Default::default()
+                },
+            )
             .await
             .unwrap();
-        assert_eq!(filtered.len(), 2); // Error and Warn
+        assert_eq!(filtered.len(), 2);
     }
 
     #[tokio::test]
     async fn test_pagination() {
-        let service = LogService::new(LogServiceConfig::default());
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         service.initialize().await.unwrap();
 
-        // Write 10 entries
         for i in 0..10 {
             let entry = LogEntryBuilder::new_entry(
                 Location::service("paginate-test"),
@@ -1029,25 +828,27 @@ mod tests {
 
         sleep(Duration::from_millis(300)).await;
 
-        // Test limit
-        let query = LogQuery {
-            limit: Some(5),
-            ..Default::default()
-        };
         let limited = service
-            .read_entries(LogDestination::System, query)
+            .read_entries(
+                LogDestination::System,
+                LogQuery {
+                    limit: Some(5),
+                    ..Default::default()
+                },
+            )
             .await
             .unwrap();
         assert_eq!(limited.len(), 5);
 
-        // Test offset
-        let query = LogQuery {
-            offset: Some(3),
-            limit: Some(4),
-            ..Default::default()
-        };
         let paginated = service
-            .read_entries(LogDestination::System, query)
+            .read_entries(
+                LogDestination::System,
+                LogQuery {
+                    offset: Some(3),
+                    limit: Some(4),
+                    ..Default::default()
+                },
+            )
             .await
             .unwrap();
         assert_eq!(paginated.len(), 4);
@@ -1056,8 +857,8 @@ mod tests {
     #[tokio::test]
     async fn test_with_log_port() {
         let mock_port = Arc::new(MockLogPort::new());
-        let service = LogService::new(LogServiceConfig::default()).with_port(mock_port.clone());
-
+        let service =
+            LogOrchestrator::new(LogServiceConfig::default()).with_port(mock_port.clone());
         service.initialize().await.unwrap();
 
         let entry = LogEntryBuilder::new_entry(
@@ -1066,38 +867,31 @@ mod tests {
             LogLevel::Info,
             "Test with port".to_string(),
         );
-
         service.write_entry(entry).await.unwrap();
-
-        // Wait for async processing
         sleep(Duration::from_millis(200)).await;
 
-        // Verify entry was written to port
         assert_eq!(mock_port.write_count(), 1);
         assert_eq!(mock_port.entry_count().await, 1);
-
-        let port_entries = mock_port.get_entries().await;
-        assert_eq!(port_entries[0].message.message, "Test with port");
+        assert_eq!(
+            mock_port.get_entries().await[0].message.message,
+            "Test with port"
+        );
     }
 
     #[tokio::test]
     async fn test_error_handling_with_failing_port() {
         let failing_port = Arc::new(MockLogPort::new().with_failure());
-        let service = LogService::new(LogServiceConfig::default()).with_port(failing_port);
-
+        let service = LogOrchestrator::new(LogServiceConfig::default()).with_port(failing_port);
         service.initialize().await.unwrap();
 
         let entry = LogEntryBuilder::new_entry(
             Location::service("error-test"),
-            LogDestination::System,
+            LogDestination::Error,
             LogLevel::Error,
             "This should fail".to_string(),
         );
-
-        // Writing should fail due to port failure
         let result = service.write_entry(entry).await;
         assert!(result.is_err());
-
         if let Err(LogError::IoError(msg)) = result {
             assert!(msg.contains("Message delivery failed"));
         } else {
@@ -1107,14 +901,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_statistics() {
-        let service = LogService::new(LogServiceConfig::default());
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         service.initialize().await.unwrap();
 
-        // Initial stats should be empty
         let stats = service.get_stats().await.unwrap();
         assert_eq!(stats.entries_written, 0);
 
-        // Write some entries
         for level in [LogLevel::Info, LogLevel::Warn, LogLevel::Error] {
             let entry = LogEntryBuilder::new_entry(
                 Location::service("stats-test"),
@@ -1131,7 +923,6 @@ mod tests {
         assert_eq!(stats.entries_written, 3);
         assert!(stats.last_write.is_some());
 
-        // Check per-destination stats
         let dest_stats = service
             .get_destination_stats(LogDestination::System)
             .await
@@ -1141,10 +932,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_clear_logs() {
-        let service = LogService::new(LogServiceConfig::default());
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         service.initialize().await.unwrap();
 
-        // Write some entries
         for i in 0..3 {
             let entry = LogEntryBuilder::new_entry(
                 Location::service("clear-test"),
@@ -1157,21 +947,16 @@ mod tests {
 
         sleep(Duration::from_millis(100)).await;
 
-        // Verify entries exist
-        let query = LogQuery::default();
         let entries = service
-            .read_entries(LogDestination::System, query)
+            .read_entries(LogDestination::System, LogQuery::default())
             .await
             .unwrap();
         assert_eq!(entries.len(), 3);
 
-        // Clear logs
         service.clear_logs(LogDestination::System).await.unwrap();
 
-        // Verify logs are cleared
-        let query = LogQuery::default();
         let entries = service
-            .read_entries(LogDestination::System, query)
+            .read_entries(LogDestination::System, LogQuery::default())
             .await
             .unwrap();
         assert_eq!(entries.len(), 0);
@@ -1179,12 +964,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_health_check() {
-        let service = LogService::new(LogServiceConfig::default());
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         service.initialize().await.unwrap();
 
         let health = service.health_check().await.unwrap();
-        assert_eq!(health.len(), 5); // One for each destination
-
+        assert_eq!(health.len(), 5);
         for check in health {
             assert!(check.healthy);
             assert!(check.error_message.is_none());
@@ -1193,36 +977,31 @@ mod tests {
 
     #[tokio::test]
     async fn test_concurrent_access() {
-        let service = Arc::new(LogService::new(LogServiceConfig::default()));
+        let service = Arc::new(LogOrchestrator::new(LogServiceConfig::default()));
         service.initialize().await.unwrap();
 
         let mut handles = vec![];
-
-        // Spawn multiple concurrent writers
         for i in 0..10 {
-            let service_clone = service.clone();
-            let handle = tokio::spawn(async move {
+            let svc = service.clone();
+            handles.push(tokio::spawn(async move {
                 let entry = LogEntryBuilder::new_entry(
                     Location::service(&format!("concurrent-{}", i)),
                     LogDestination::System,
                     LogLevel::Info,
                     format!("Concurrent message {}", i),
                 );
-                service_clone.write_entry(entry).await
-            });
-            handles.push(handle);
+                svc.write_entry(entry).await
+            }));
         }
 
-        // Wait for all writers to complete
         for handle in handles {
             handle.await.unwrap().unwrap();
         }
 
         sleep(Duration::from_millis(300)).await;
 
-        let query = LogQuery::default();
         let entries = service
-            .read_entries(LogDestination::System, query)
+            .read_entries(LogDestination::System, LogQuery::default())
             .await
             .unwrap();
         assert_eq!(entries.len(), 10);
@@ -1230,12 +1009,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_service_lifecycle() {
-        let service = LogService::new(LogServiceConfig::default());
-
-        // Initialize
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         assert!(service.initialize().await.is_ok());
 
-        // Use service
         let entry = LogEntryBuilder::new_entry(
             Location::service("lifecycle-test"),
             LogDestination::System,
@@ -1243,17 +1019,14 @@ mod tests {
             "Lifecycle test".to_string(),
         );
         assert!(service.write_entry(entry).await.is_ok());
-
-        // Stop service
         assert!(service.stop().await.is_ok());
     }
 
     #[tokio::test]
     async fn test_custom_destination() {
-        let service = LogService::new(LogServiceConfig::default());
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         service.initialize().await.unwrap();
 
-        // Create a custom destination entry
         let custom_dest = LogDestination::Custom("test-custom".to_string());
         let entry = LogEntryBuilder::new_entry(
             Location::service("test"),
@@ -1262,26 +1035,18 @@ mod tests {
             "Custom destination message".to_string(),
         );
 
-        // This should still work even though we don't have the custom destination initialized
-        // The service should handle it gracefully
-        let result = service.write_entry(entry).await;
-        // This might fail since custom destinations aren't auto-initialized
-        // but we should test the behavior
-        println!("Custom destination result: {:?}", result);
+        // Custom destinations are not auto-initialised — result may be ok or err; just ensure no panic.
+        let _result = service.write_entry(entry).await;
     }
 
     #[tokio::test]
     async fn test_message_service_integration() {
-        let service = LogService::new(LogServiceConfig::default());
+        let service = LogOrchestrator::new(LogServiceConfig::default());
         service.initialize().await.unwrap();
 
-        // Wait a moment for initialization to complete
         sleep(Duration::from_millis(50)).await;
 
-        // Verify that the message service was properly initialized
         let destinations = service.message_service.list_destinations().await;
-
-        // Should have both "service" and "log" handlers registered
         assert!(
             destinations.contains(&"service".to_string())
                 || destinations.contains(&"log".to_string()),
@@ -1289,7 +1054,6 @@ mod tests {
             destinations
         );
 
-        // Test that we can send messages directly to the message service
         let log_message = LogMessage::new(LogLevel::Info, "Direct message test".to_string());
         let message = crate::core::base::entity::message::Message::new(
             Location::service("test"),
