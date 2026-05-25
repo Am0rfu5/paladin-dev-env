@@ -181,13 +181,13 @@ git commit \
   - [x] 6.14 Run `cargo fmt --check` and `cargo clippy -- -D warnings`; address all warnings.
   - [x] 6.15 Commit: `git commit -m "refactor(epic-2): relocate orchestrator, listener_service, and scheduler to application layer" -m "- Orchestrator → use_cases/orchestration/mod.rs" -m "- ListenerService → ListenerOrchestrator in orchestration/listener.rs" -m "- Scheduler → SchedulerOrchestrator in orchestration/scheduler.rs" -m "- Update content_ingestion_service.rs and service_runner.rs import paths" -m "- Remove all three services from core/platform/manager/"`
 
-- [ ] 7.0 Verify core layer purity and finalize `core/platform/manager/`
-  - [ ] 7.1 Run `cargo build -p paladin-core` in isolation. Confirm zero errors and zero warnings.
-  - [ ] 7.2 Run `cargo tree -p paladin-core --edges normal` and inspect the output. Confirm that `paladin-ports` does **not** appear as a dependency edge. If it does, open `crates/paladin-core/Cargo.toml` and remove the `paladin-ports` dependency entry, then re-run `cargo build -p paladin-core`.
-  - [ ] 7.3 Search for any remaining `core::platform::manager::` references to relocated services across the entire workspace: `grep -r "core::platform::manager::\(notification_service\|queue_service\|log_service\|orchestrator\|listener_service\|scheduler\)" src/ crates/` — fix any that remain.
-  - [ ] 7.4 Verify `src/core/platform/manager/mod.rs` contains `pub mod` declarations for only the remaining services: `content_service`, `event_manager`, `user_service`, `admin`, `user`. Confirm no relocated services appear.
-  - [ ] 7.5 Verify `src/application/use_cases/mod.rs` exposes all four new sub-modules: `notification_orchestrator`, `queue_orchestrator`, `log_orchestrator`, `orchestration`.
-  - [ ] 7.6 Run the full workspace test suite: `cargo test`. All tests must pass.
-  - [ ] 7.7 Run `cargo clippy -- -D warnings` across the workspace; fix any warnings.
-  - [ ] 7.8 Run `cargo fmt`; commit any formatting changes.
-  - [ ] 7.9 Commit: `git commit -m "refactor(epic-2): verify core layer purity and finalize manager mod.rs" -m "- paladin-core builds in isolation with zero paladin-ports dependency" -m "- core/platform/manager/ retains only content_service, event_manager, user_service, admin/, user/" -m "- All 4 new orchestrator sub-modules registered in use_cases/mod.rs" -m "- Full test suite green"`
+- [x] 7.0 Verify core layer purity and finalize `core/platform/manager/`
+  - [x] 7.1 Run `cargo build -p paladin-core` in isolation. Confirm zero errors and zero warnings.
+  - [x] 7.2 Run `cargo tree -p paladin-core --edges normal` and inspect the output. Confirm that `paladin-ports` does **not** appear as a dependency edge. If it does, open `crates/paladin-core/Cargo.toml` and remove the `paladin-ports` dependency entry, then re-run `cargo build -p paladin-core`.
+  - [x] 7.3 Search for any remaining `core::platform::manager::` references to relocated services across the entire workspace: `grep -r "core::platform::manager::\(notification_service\|queue_service\|log_service\|orchestrator\|listener_service\|scheduler\)" src/ crates/` — fix any that remain.
+  - [x] 7.4 Verify `src/core/platform/manager/mod.rs` contains `pub mod` declarations for only the remaining services: `content_service`, `event_manager`, `user_service`, `admin`, `user`. Confirm no relocated services appear.
+  - [x] 7.5 Verify `src/application/use_cases/mod.rs` exposes all four new sub-modules: `notification_orchestrator`, `queue_orchestrator`, `log_orchestrator`, `orchestration`.
+  - [x] 7.6 Run the full workspace test suite: `cargo test`. All tests must pass.
+  - [x] 7.7 Run `cargo clippy -- -D warnings` across the workspace; fix any warnings.
+  - [x] 7.8 Run `cargo fmt`; commit any formatting changes.
+  - [x] 7.9 Commit: `git commit -m "refactor(epic-2): verify core layer purity and finalize manager mod.rs" -m "- paladin-core builds in isolation with zero paladin-ports dependency" -m "- core/platform/manager/ retains only content_service, event_manager, user_service, admin/, user/" -m "- All 4 new orchestrator sub-modules registered in use_cases/mod.rs" -m "- Full test suite green"`
