@@ -97,50 +97,50 @@ When all sub-tasks under a parent task are complete:
   - [x] 2.8 Add `pub mod maneuver;` to `crates/paladin-battalion/src/lib.rs` (temporarily alongside the existing `maneuver_service` and `flow_visualizer` entries)
   - [x] 2.9 Run `cargo check -p paladin-battalion` — fix any compilation errors in the newly copied files before proceeding
 
-- [ ] 3.0 Relocate `maneuver_service.rs` and `flow_visualizer.rs` into `maneuver/`
-  - [ ] 3.1 Run `git mv crates/paladin-battalion/src/maneuver_service.rs crates/paladin-battalion/src/maneuver/service.rs`
-  - [ ] 3.2 Run `git mv crates/paladin-battalion/src/flow_visualizer.rs crates/paladin-battalion/src/maneuver/visualizer.rs`
-  - [ ] 3.3 Add `pub mod service;` and `pub mod visualizer;` to `crates/paladin-battalion/src/maneuver/mod.rs`
-  - [ ] 3.4 Remove `pub mod maneuver_service;` and `pub mod flow_visualizer;` from `crates/paladin-battalion/src/lib.rs`
-  - [ ] 3.5 Run `cargo check -p paladin-battalion` (compilation errors from broken import paths are expected here — proceed to Task 4.0)
+- [x] 3.0 Relocate `maneuver_service.rs` and `flow_visualizer.rs` into `maneuver/`
+  - [x] 3.1 Run `git mv crates/paladin-battalion/src/maneuver_service.rs crates/paladin-battalion/src/maneuver/service.rs`
+  - [x] 3.2 Run `git mv crates/paladin-battalion/src/flow_visualizer.rs crates/paladin-battalion/src/maneuver/visualizer.rs`
+  - [x] 3.3 Add `pub mod service;` and `pub mod visualizer;` to `crates/paladin-battalion/src/maneuver/mod.rs`
+  - [x] 3.4 Remove `pub mod maneuver_service;` and `pub mod flow_visualizer;` from `crates/paladin-battalion/src/lib.rs`
+  - [x] 3.5 Run `cargo check -p paladin-battalion` (compilation errors from broken import paths are expected here — proceed to Task 4.0)
 
-- [ ] 4.0 Update all import paths within `paladin-battalion`
-  - [ ] 4.1 Update `use` statements in `crates/paladin-battalion/src/maneuver/service.rs`: replace any `crate::maneuver_service` self-references and update imports of `Maneuver`, parser types, etc. to use `super::` or `crate::maneuver::`
-  - [ ] 4.2 Update `use` statements in `crates/paladin-battalion/src/maneuver/visualizer.rs`: update any import paths that referenced the old flat module locations
-  - [ ] 4.3 Update `use` statement imports at the top of `crates/paladin-battalion/src/commander.rs` to reference `crate::maneuver::` instead of `paladin_core::platform::container::battalion::maneuver::` and `paladin_core::platform::container::battalion::parser::`
-  - [ ] 4.4 Update inline FQPs inside function bodies of `commander.rs` identified in Task 1.5 (e.g., `paladin_core::platform::container::battalion::maneuver::ErrorStrategy::FailFast` → `crate::maneuver::ErrorStrategy::FailFast`)
-  - [ ] 4.5 Run `cargo build -p paladin-battalion` — resolve all remaining compilation errors
-  - [ ] 4.6 Run `cargo test -p paladin-battalion` — all inline tests must pass before proceeding
+- [x] 4.0 Update all import paths within `paladin-battalion`
+  - [x] 4.1 Update `use` statements in `crates/paladin-battalion/src/maneuver/service.rs`: replace any `crate::maneuver_service` self-references and update imports of `Maneuver`, parser types, etc. to use `super::` or `crate::maneuver::`
+  - [x] 4.2 Update `use` statements in `crates/paladin-battalion/src/maneuver/visualizer.rs`: update any import paths that referenced the old flat module locations
+  - [x] 4.3 Update `use` statement imports at the top of `crates/paladin-battalion/src/commander.rs` to reference `crate::maneuver::` instead of `paladin_core::platform::container::battalion::maneuver::` and `paladin_core::platform::container::battalion::parser::`
+  - [x] 4.4 Update inline FQPs inside function bodies of `commander.rs` identified in Task 1.5 (e.g., `paladin_core::platform::container::battalion::maneuver::ErrorStrategy::FailFast` → `crate::maneuver::ErrorStrategy::FailFast`)
+  - [x] 4.5 Run `cargo build -p paladin-battalion` — resolve all remaining compilation errors
+  - [x] 4.6 Run `cargo test -p paladin-battalion` — all inline tests must pass before proceeding
 
-- [ ] 5.0 Clean up `paladin-core`
-  - [ ] 5.1 Remove `pub mod maneuver;` line from `crates/paladin-core/src/platform/container/battalion/mod.rs`
-  - [ ] 5.2 Remove `pub mod parser;` line from `crates/paladin-core/src/platform/container/battalion/mod.rs`
-  - [ ] 5.3 Delete `crates/paladin-core/src/platform/container/battalion/maneuver.rs`
-  - [ ] 5.4 Delete `crates/paladin-core/src/platform/container/battalion/parser/error.rs`
-  - [ ] 5.5 Delete `crates/paladin-core/src/platform/container/battalion/parser/lexer.rs`
-  - [ ] 5.6 Delete `crates/paladin-core/src/platform/container/battalion/parser/ast.rs`
-  - [ ] 5.7 Delete `crates/paladin-core/src/platform/container/battalion/parser/mod.rs`
-  - [ ] 5.8 Run `cargo build -p paladin-core` in isolation to confirm the core crate compiles cleanly without parser or maneuver code
-  - [ ] 5.9 Run `cargo build --workspace` — the facade (`src/core/platform/mod.rs`) will break here because it re-exports the now-removed `container::battalion::parser` and `container::battalion::maneuver`; this is expected and resolved in Task 6.0
+- [x] 5.0 Clean up `paladin-core`
+  - [x] 5.1 Remove `pub mod maneuver;` line from `crates/paladin-core/src/platform/container/battalion/mod.rs`
+  - [x] 5.2 Remove `pub mod parser;` line from `crates/paladin-core/src/platform/container/battalion/mod.rs`
+  - [x] 5.3 Delete `crates/paladin-core/src/platform/container/battalion/maneuver.rs`
+  - [x] 5.4 Delete `crates/paladin-core/src/platform/container/battalion/parser/error.rs`
+  - [x] 5.5 Delete `crates/paladin-core/src/platform/container/battalion/parser/lexer.rs`
+  - [x] 5.6 Delete `crates/paladin-core/src/platform/container/battalion/parser/ast.rs`
+  - [x] 5.7 Delete `crates/paladin-core/src/platform/container/battalion/parser/mod.rs`
+  - [x] 5.8 Run `cargo build -p paladin-core` in isolation to confirm the core crate compiles cleanly without parser or maneuver code
+  - [x] 5.9 Run `cargo build --workspace` — the facade (`src/core/platform/mod.rs`) will break here because it re-exports the now-removed `container::battalion::parser` and `container::battalion::maneuver`; this is expected and resolved in Task 6.0
 
-- [ ] 6.0 Add facade backward-compatibility re-exports
-  - [ ] 6.1 Open `src/core/platform/mod.rs` and read the current single-line re-export (`pub use paladin_core::platform::container;`)
-  - [ ] 6.2 Replace the wholesale re-export with a `pub mod container { ... }` block that:
+- [x] 6.0 Add facade backward-compatibility re-exports
+  - [x] 6.1 Open `src/core/platform/mod.rs` and read the current single-line re-export (`pub use paladin_core::platform::container;`)
+  - [x] 6.2 Replace the wholesale re-export with a `pub mod container { ... }` block that:
     - Re-exports each of the 27 non-battalion `paladin-core` container sub-modules explicitly with `pub use paladin_core::platform::container::<module>::*;`
     - Declares `pub mod battalion { pub use paladin_battalion::*; pub mod maneuver { pub use paladin_battalion::maneuver::*; pub mod parser { pub use paladin_battalion::maneuver::parser::*; } } }` to restore the `container::battalion::maneuver` and `container::battalion::parser` paths for all existing consumers
-  - [ ] 6.3 Run `cargo build --workspace` — resolve any remaining compilation errors in the facade
-  - [ ] 6.4 Run `cargo test --workspace` — all tests must pass
-  - [ ] 6.5 Confirm `tests/unit/parser_tests.rs` and `tests/unit/maneuver_domain_tests.rs` pass without any source changes to those files
+  - [x] 6.3 Run `cargo build --workspace` — resolve any remaining compilation errors in the facade
+  - [x] 6.4 Run `cargo test --workspace` — all tests must pass
+  - [x] 6.5 Confirm `tests/unit/parser_tests.rs` and `tests/unit/maneuver_domain_tests.rs` pass without any source changes to those files
 
-- [ ] 7.0 Verification pass and commit
-  - [ ] 7.1 Run `grep -rc "#\[test\]" crates/paladin-battalion/src/maneuver/` and verify the total matches the sum of inline test counts from the source files (recorded in Task 1.8 plus Task 1.4)
-  - [ ] 7.2 Confirm `crates/paladin-core/src/platform/container/battalion/parser/` directory no longer exists: `ls crates/paladin-core/src/platform/container/battalion/`
-  - [ ] 7.3 Run `cargo clippy --workspace -- -D warnings` and fix any new warnings
-  - [ ] 7.4 Run `cargo fmt --all` and verify no diffs (`cargo fmt --all --check`)
-  - [ ] 7.5 Run `cargo doc -p paladin-battalion --no-deps` and verify no documentation build errors
-  - [ ] 7.6 Run `cargo build -p paladin-core` one final time to confirm core compiles cleanly in isolation
-  - [ ] 7.7 Stage all changes: `git add .`
-  - [ ] 7.8 Commit with message: `git commit -m "feat(maneuver): co-locate Maneuver DSL with paladin-battalion" -m "- Move parser/ (ast, lexer, error, mod) from paladin-core to paladin-battalion/src/maneuver/parser/" -m "- Move maneuver.rs to paladin-battalion/src/maneuver/mod.rs" -m "- Rename maneuver_service.rs -> maneuver/service.rs, flow_visualizer.rs -> maneuver/visualizer.rs" -m "- Update commander.rs use statements and inline FQPs" -m "- Remove parser/ and maneuver.rs from paladin-core/src/platform/container/battalion/" -m "- Add facade re-exports in src/core/platform/mod.rs to preserve all consumer import paths" -m "Closes Epic 3 (Milestone 6)"`
+- [x] 7.0 Verification pass and commit
+  - [x] 7.1 Run `grep -rc "#\[test\]" crates/paladin-battalion/src/maneuver/` and verify the total matches the sum of inline test counts from the source files (recorded in Task 1.8 plus Task 1.4)
+  - [x] 7.2 Confirm `crates/paladin-core/src/platform/container/battalion/parser/` directory no longer exists: `ls crates/paladin-core/src/platform/container/battalion/`
+  - [x] 7.3 Run `cargo clippy --workspace -- -D warnings` and fix any new warnings
+  - [x] 7.4 Run `cargo fmt --all` and verify no diffs (`cargo fmt --all --check`)
+  - [x] 7.5 Run `cargo doc -p paladin-battalion --no-deps` and verify no documentation build errors
+  - [x] 7.6 Run `cargo build -p paladin-core` one final time to confirm core compiles cleanly in isolation
+  - [x] 7.7 Stage all changes: `git add .`
+  - [x] 7.8 Commit with message: see actual commit `98ffd27`
 
 ---
 
