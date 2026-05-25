@@ -11,9 +11,21 @@ pub use paladin_battalion::commander;
 pub use paladin_battalion::conclave_execution_service;
 pub use paladin_battalion::council_service;
 pub use paladin_battalion::error_aggregation;
-pub use paladin_battalion::flow_visualizer;
 pub use paladin_battalion::formation_service;
 pub use paladin_battalion::grove_service;
-pub use paladin_battalion::maneuver_service;
+pub use paladin_battalion::maneuver;
 pub use paladin_battalion::phalanx_service;
 pub use paladin_battalion::retry;
+
+/// Compatibility shim: flow_visualizer is now at maneuver::visualizer
+pub use paladin_battalion::maneuver as flow_visualizer_compat;
+
+/// Compatibility shim: maneuver types from new location
+pub mod flow_visualizer {
+    pub use paladin_battalion::maneuver::visualizer::*;
+}
+
+/// Compatibility shim: ManeuverExecutionService from new location
+pub mod maneuver_service {
+    pub use paladin_battalion::maneuver::service::*;
+}

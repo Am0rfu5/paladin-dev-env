@@ -86,16 +86,16 @@ When all sub-tasks under a parent task are complete:
   - [x] 1.7 Run `grep -n "^pub mod" crates/paladin-core/src/platform/container/mod.rs` to confirm the full list of 27 container sub-modules for the Task 6.0 facade rewrite
   - [x] 1.8 Record the test counts from 1.4 in a comment at the bottom of this file for verification in Task 7.0
 
-- [ ] 2.0 Create `maneuver/` sub-module skeleton and move parser files
-  - [ ] 2.1 Create directory `crates/paladin-battalion/src/maneuver/parser/` (e.g., `mkdir -p`)
-  - [ ] 2.2 Copy `crates/paladin-core/src/platform/container/battalion/parser/ast.rs` → `crates/paladin-battalion/src/maneuver/parser/ast.rs`
-  - [ ] 2.3 Copy `crates/paladin-core/src/platform/container/battalion/parser/lexer.rs` → `crates/paladin-battalion/src/maneuver/parser/lexer.rs`
-  - [ ] 2.4 Copy `crates/paladin-core/src/platform/container/battalion/parser/error.rs` → `crates/paladin-battalion/src/maneuver/parser/error.rs`
-  - [ ] 2.5 Copy `crates/paladin-core/src/platform/container/battalion/parser/mod.rs` → `crates/paladin-battalion/src/maneuver/parser/mod.rs`
-  - [ ] 2.6 Copy `crates/paladin-core/src/platform/container/battalion/maneuver.rs` → `crates/paladin-battalion/src/maneuver/mod.rs`
-  - [ ] 2.7 Add `pub mod parser;` to the top of `crates/paladin-battalion/src/maneuver/mod.rs` (the parser sub-module now lives under maneuver)
-  - [ ] 2.8 Add `pub mod maneuver;` to `crates/paladin-battalion/src/lib.rs` (temporarily alongside the existing `maneuver_service` and `flow_visualizer` entries)
-  - [ ] 2.9 Run `cargo check -p paladin-battalion` — fix any compilation errors in the newly copied files before proceeding
+- [x] 2.0 Create `maneuver/` sub-module skeleton and move parser files
+  - [x] 2.1 Create directory `crates/paladin-battalion/src/maneuver/parser/` (e.g., `mkdir -p`)
+  - [x] 2.2 Copy `crates/paladin-core/src/platform/container/battalion/parser/ast.rs` → `crates/paladin-battalion/src/maneuver/parser/ast.rs`
+  - [x] 2.3 Copy `crates/paladin-core/src/platform/container/battalion/parser/lexer.rs` → `crates/paladin-battalion/src/maneuver/parser/lexer.rs`
+  - [x] 2.4 Copy `crates/paladin-core/src/platform/container/battalion/parser/error.rs` → `crates/paladin-battalion/src/maneuver/parser/error.rs`
+  - [x] 2.5 Copy `crates/paladin-core/src/platform/container/battalion/parser/mod.rs` → `crates/paladin-battalion/src/maneuver/parser/mod.rs`
+  - [x] 2.6 Copy `crates/paladin-core/src/platform/container/battalion/maneuver.rs` → `crates/paladin-battalion/src/maneuver/mod.rs`
+  - [x] 2.7 Add `pub mod parser;` to the top of `crates/paladin-battalion/src/maneuver/mod.rs` (the parser sub-module now lives under maneuver)
+  - [x] 2.8 Add `pub mod maneuver;` to `crates/paladin-battalion/src/lib.rs` (temporarily alongside the existing `maneuver_service` and `flow_visualizer` entries)
+  - [x] 2.9 Run `cargo check -p paladin-battalion` — fix any compilation errors in the newly copied files before proceeding
 
 - [ ] 3.0 Relocate `maneuver_service.rs` and `flow_visualizer.rs` into `maneuver/`
   - [ ] 3.1 Run `git mv crates/paladin-battalion/src/maneuver_service.rs crates/paladin-battalion/src/maneuver/service.rs`

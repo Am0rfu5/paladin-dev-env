@@ -3,8 +3,12 @@
 //! The Maneuver pattern provides string-based workflow orchestration for Battalion agents.
 //! It uses a simple DSL with `->` for sequential and `,` for parallel execution.
 
-use crate::platform::container::battalion::parser::FlowExpression;
-use crate::platform::container::paladin::Paladin;
+pub mod parser;
+pub mod service;
+pub mod visualizer;
+
+use paladin_core::platform::container::paladin::Paladin;
+use parser::FlowExpression;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
@@ -299,24 +303,35 @@ impl ManeuverResult {
 /// Errors that can occur during Maneuver operations
 #[derive(Debug, thiserror::Error)]
 pub enum ManeuverError {
+    /// A flow expression failed to parse
     #[error("Parse error: {0}")]
-    ParseError(#[from] crate::platform::container::battalion::parser::FlowParseError),
+    ParseError(#[from] parser::FlowParseError),
 
+    /// The maneuver configuration is invalid
     #[error("Validation error: {0}")]
     ValidationError(String),
 
+    /// An error occurred during execution
     #[error("Execution error: {0}")]
     ExecutionError(String),
 
+    /// A referenced agent was not registered in the executor
     #[error("Agent '{agent_name}' not found. Available agents: {}", available_agents.join(", "))]
     AgentNotFound {
+        /// Name of the missing agent
         agent_name: String,
+        /// Names of agents that are available
         available_agents: Vec<String>,
     },
 
+    /// Execution exceeded the configured time limit
     #[error("Timeout after {duration:?}")]
-    TimeoutError { duration: Duration },
+    TimeoutError {
+        /// Duration that was exceeded
+        duration: Duration,
+    },
 
+    /// An underlying Paladin agent returned an error
     #[error("Paladin error: {0}")]
     PaladinError(String),
 }

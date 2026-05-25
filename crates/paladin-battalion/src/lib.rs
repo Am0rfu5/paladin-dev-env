@@ -16,13 +16,12 @@
 //! - [`conclave_execution_service`] — Mixture-of-experts synthesis
 //! - [`council_service`] — Multi-agent discussion and consensus
 //! - [`grove_service`] — Intelligent semantic routing
-//! - [`maneuver_service`] — Flow DSL execution
+//! - [`maneuver`] — Flow DSL execution (domain types, parser, service, visualizer)
 //! - [`commander`] — Strategy auto-detection router
 //!
 //! ## Utilities
 //!
 //! - [`error_aggregation`] — Collect and summarise errors across parallel agent runs
-//! - [`flow_visualizer`] — Generate visual representations of battalion execution flows
 //! - [`retry`] — Exponential back-off retry helper
 
 #![warn(missing_docs)]
@@ -33,14 +32,11 @@ pub mod chain_of_command_service;
 pub mod commander;
 pub mod conclave_execution_service;
 pub mod council_service;
+pub mod error_aggregation;
 pub mod formation_service;
 pub mod grove_service;
-pub mod maneuver_service;
+pub mod maneuver;
 pub mod phalanx_service;
-
-// Utility / support
-pub mod error_aggregation;
-pub mod flow_visualizer;
 pub mod retry;
 
 // Internal helpers

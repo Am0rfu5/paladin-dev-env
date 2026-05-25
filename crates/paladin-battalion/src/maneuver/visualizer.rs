@@ -3,7 +3,7 @@
 //! Provides ASCII and Mermaid visualization for Maneuver flow expressions.
 //! Converts FlowExpression AST into human-readable graph formats.
 
-use paladin_core::platform::container::battalion::parser::FlowExpression;
+use super::parser::FlowExpression;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -26,8 +26,8 @@ pub enum VisualizationFormat {
 /// ## ASCII Visualization
 ///
 /// ```ignore
-/// use paladin_battalion::flow_visualizer::FlowVisualizer;
-/// use paladin_core::platform::container::battalion::parser::FlowParser;
+/// use paladin_battalion::maneuver::visualizer::FlowVisualizer;
+/// use paladin_battalion::maneuver::parser::FlowParser;
 ///
 /// let flow = FlowParser::parse("agent1 -> agent2 -> (agent3 | agent4)").unwrap();
 /// let ascii = FlowVisualizer::to_ascii(&flow);
@@ -71,8 +71,8 @@ impl FlowVisualizer {
     /// # Examples
     ///
     /// ```
-    /// use paladin_battalion::flow_visualizer::FlowVisualizer;
-    /// use paladin_core::platform::container::battalion::parser::FlowParser;
+    /// use paladin_battalion::maneuver::visualizer::FlowVisualizer;
+    /// use paladin_battalion::maneuver::parser::FlowParser;
     ///
     /// let flow = FlowParser::parse("a -> b").unwrap();
     /// let ascii = FlowVisualizer::to_ascii(&flow);
@@ -101,8 +101,8 @@ impl FlowVisualizer {
     /// # Examples
     ///
     /// ```
-    /// use paladin_battalion::flow_visualizer::FlowVisualizer;
-    /// use paladin_core::platform::container::battalion::parser::FlowParser;
+    /// use paladin_battalion::maneuver::visualizer::FlowVisualizer;
+    /// use paladin_battalion::maneuver::parser::FlowParser;
     ///
     /// let flow = FlowParser::parse("a -> b").unwrap();
     /// let mermaid = FlowVisualizer::to_mermaid(&flow);
@@ -251,8 +251,8 @@ impl FlowVisualizer {
     /// # Examples
     ///
     /// ```
-    /// use paladin_battalion::flow_visualizer::FlowVisualizer;
-    /// use paladin_core::platform::container::battalion::parser::FlowParser;
+    /// use paladin_battalion::maneuver::visualizer::FlowVisualizer;
+    /// use paladin_battalion::maneuver::parser::FlowParser;
     /// use std::collections::HashMap;
     /// use std::time::Duration;
     ///
@@ -377,7 +377,7 @@ impl FlowVisualizer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use paladin_core::platform::container::battalion::parser::FlowParser;
+    use crate::maneuver::parser::FlowParser;
 
     #[test]
     fn test_ascii_simple_agent() {

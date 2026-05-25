@@ -13,7 +13,7 @@
 //! # Examples
 //!
 //! ```
-//! use paladin_core::platform::container::battalion::parser::FlowParser;
+//! use paladin_battalion::maneuver::parser::FlowParser;
 //!
 //! // Simple sequential
 //! let expr = FlowParser::parse("agent1 -> agent2").unwrap();
@@ -41,7 +41,7 @@ pub use lexer::{Lexer, Token};
 /// # Example
 ///
 /// ```
-/// use paladin_core::platform::container::battalion::parser::FlowParser;
+/// use paladin_battalion::maneuver::parser::FlowParser;
 ///
 /// let result = FlowParser::parse("planner -> (coder -> tester), docs");
 /// assert!(result.is_ok());
@@ -71,7 +71,7 @@ impl FlowParser {
     /// # Example
     ///
     /// ```
-    /// use paladin_core::platform::container::battalion::parser::FlowParser;
+    /// use paladin_battalion::maneuver::parser::FlowParser;
     ///
     /// let expr = FlowParser::parse("agent1 -> agent2").unwrap();
     /// ```

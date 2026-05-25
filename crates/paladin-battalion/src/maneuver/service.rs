@@ -3,10 +3,8 @@
 //! Executes Maneuver workflows by orchestrating multiple Paladin agents according to
 //! the flow expression with support for sequential, parallel, and nested execution patterns.
 
-use paladin_core::platform::container::battalion::maneuver::{
-    ErrorStrategy, ExecutionStatus, Maneuver, ManeuverError, ManeuverResult,
-};
-use paladin_core::platform::container::battalion::parser::FlowExpression;
+use super::parser::FlowExpression;
+use super::{ErrorStrategy, ExecutionStatus, Maneuver, ManeuverError, ManeuverResult};
 use paladin_ports::output::paladin_port::PaladinPort;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -479,9 +477,9 @@ impl ExecutionContext {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::maneuver::ManeuverConfig;
+    use crate::maneuver::parser::FlowParser;
     use async_trait::async_trait;
-    use paladin_core::platform::container::battalion::maneuver::ManeuverConfig;
-    use paladin_core::platform::container::battalion::parser::FlowParser;
     use paladin_core::platform::container::paladin::{
         MaxLoops, Paladin, PaladinData, PaladinStatus,
     };

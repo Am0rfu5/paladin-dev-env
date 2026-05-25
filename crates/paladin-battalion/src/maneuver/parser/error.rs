@@ -8,14 +8,22 @@ pub enum FlowParseError {
     /// Unexpected token encountered
     #[error("Unexpected token at position {position}: found '{found}', expected {expected}")]
     UnexpectedToken {
+        /// Byte offset in the input string where the error occurred
         position: usize,
+        /// The token that was found
         found: String,
+        /// Description of what was expected instead
         expected: String,
     },
 
     /// Unbalanced parentheses
     #[error("Unbalanced parentheses at position {position}: {message}")]
-    UnbalancedParentheses { position: usize, message: String },
+    UnbalancedParentheses {
+        /// Byte offset in the input string where the error occurred
+        position: usize,
+        /// Human-readable description of the imbalance
+        message: String,
+    },
 
     /// Empty expression
     #[error("Empty expression")]
@@ -24,22 +32,38 @@ pub enum FlowParseError {
     /// Invalid agent identifier
     #[error("Invalid identifier at position {position}: '{identifier}' - {message}")]
     InvalidIdentifier {
+        /// Byte offset in the input string where the error occurred
         position: usize,
+        /// The identifier string that was invalid
         identifier: String,
+        /// Human-readable description of why it is invalid
         message: String,
     },
 
     /// Consecutive operators without operand
     #[error("Consecutive operators at position {position}: operator '{operator}' without operand")]
-    ConsecutiveOperators { position: usize, operator: String },
+    ConsecutiveOperators {
+        /// Byte offset in the input string where the error occurred
+        position: usize,
+        /// The operator that appeared consecutively
+        operator: String,
+    },
 
     /// Invalid character in input
     #[error("Invalid character '{character}' at position {position}")]
-    InvalidCharacter { position: usize, character: char },
+    InvalidCharacter {
+        /// Byte offset in the input string where the error occurred
+        position: usize,
+        /// The character that was not allowed
+        character: char,
+    },
 
     /// Unexpected end of input
     #[error("Unexpected end of input at position {position}")]
-    UnexpectedEndOfInput { position: usize },
+    UnexpectedEndOfInput {
+        /// Byte offset where the input ended unexpectedly
+        position: usize,
+    },
 }
 
 impl FlowParseError {
@@ -48,7 +72,7 @@ impl FlowParseError {
     /// # Example
     ///
     /// ```
-    /// use paladin_core::platform::container::battalion::parser::FlowParseError;
+    /// use paladin_battalion::maneuver::parser::FlowParseError;
     ///
     /// let error = FlowParseError::EmptyExpression;
     /// let suggestion = error.suggestion();
@@ -107,7 +131,7 @@ impl FlowParseError {
     /// # Example
     ///
     /// ```
-    /// use paladin_core::platform::container::battalion::parser::FlowParseError;
+    /// use paladin_battalion::maneuver::parser::FlowParseError;
     ///
     /// let error = FlowParseError::InvalidCharacter {
     ///     position: 5,

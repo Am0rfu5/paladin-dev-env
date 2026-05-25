@@ -15,7 +15,7 @@ use crate::council_service::CouncilExecutionService;
 use crate::formation_service::FormationExecutionService;
 use crate::grove_service::GroveExecutionService;
 use crate::in_memory_registry::HashMapPaladinRegistry;
-use crate::maneuver_service::ManeuverExecutionService;
+use crate::maneuver::service::ManeuverExecutionService;
 use crate::phalanx_service::PhalanxExecutionService;
 use paladin_core::platform::container::battalion::{
     BattalionConfig, BattalionError, BattalionResult, BattalionStrategy, ErrorStrategy,
@@ -168,8 +168,7 @@ pub struct Commander {
     pub flow_expression: Option<String>,
 
     /// Optional Maneuver configuration
-    pub maneuver_config:
-        Option<paladin_core::platform::container::battalion::maneuver::ManeuverConfig>,
+    pub maneuver_config: Option<crate::maneuver::ManeuverConfig>,
 
     /// Paladin execution port
     paladin_port: Arc<dyn PaladinPort>,
@@ -736,10 +735,9 @@ impl Commander {
                 };
 
                 // Parse the flow expression
-                let flow = paladin_core::platform::container::battalion::parser::FlowParser::parse(
-                    &flow_expr,
-                )
-                .map_err(|e| BattalionError::ValidationError(format!("Flow parse error: {}", e)))?;
+                let flow = crate::maneuver::parser::FlowParser::parse(&flow_expr).map_err(|e| {
+                    BattalionError::ValidationError(format!("Flow parse error: {}", e))
+                })?;
 
                 // Build agent name -> Paladin mapping
                 let mut agents = std::collections::HashMap::new();
@@ -754,13 +752,17 @@ impl Commander {
 
                 // Use ManeuverConfig from Commander if set, otherwise create from BattalionConfig
                 let maneuver_config = self.maneuver_config.clone().unwrap_or_else(|| {
-                    paladin_core::platform::container::battalion::maneuver::ManeuverConfig {
+                    crate::maneuver::ManeuverConfig {
                         error_strategy: match self.config.error_strategy {
-                            ErrorStrategy::FailFast => paladin_core::platform::container::battalion::maneuver::ErrorStrategy::FailFast,
-                            ErrorStrategy::ContinueOnError => paladin_core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel,
-                            ErrorStrategy::RetryThenContinue => paladin_core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel,
+                            ErrorStrategy::FailFast => crate::maneuver::ErrorStrategy::FailFast,
+                            ErrorStrategy::ContinueOnError => {
+                                crate::maneuver::ErrorStrategy::ContinueParallel
+                            }
+                            ErrorStrategy::RetryThenContinue => {
+                                crate::maneuver::ErrorStrategy::ContinueParallel
+                            }
                         },
-                        output_format: paladin_core::platform::container::battalion::maneuver::OutputFormat::Concatenate,
+                        output_format: crate::maneuver::OutputFormat::Concatenate,
                         pass_output_as_input: true,
                         timeout: Some(Duration::from_secs(self.config.timeout_seconds)),
                         collect_timing_metrics: true,
@@ -769,16 +771,15 @@ impl Commander {
                 });
 
                 // Create Maneuver instance
-                let maneuver =
-                    paladin_core::platform::container::battalion::maneuver::Maneuver::new(
-                        &self.config.name,
-                        agents,
-                        flow,
-                        maneuver_config,
-                    )
-                    .map_err(|e| {
-                        BattalionError::ValidationError(format!("Maneuver creation failed: {}", e))
-                    })?;
+                let maneuver = crate::maneuver::Maneuver::new(
+                    &self.config.name,
+                    agents,
+                    flow,
+                    maneuver_config,
+                )
+                .map_err(|e| {
+                    BattalionError::ValidationError(format!("Maneuver creation failed: {}", e))
+                })?;
 
                 // Execute Maneuver
                 let service = ManeuverExecutionService::new(Arc::clone(&self.paladin_port));
@@ -809,12 +810,15 @@ impl Commander {
                     final_output: maneuver_result.final_output.clone(),
                     paladin_results: vec![], // Maneuver handles this internally
                     status: match maneuver_result.status {
-                        paladin_core::platform::container::battalion::maneuver::ExecutionStatus::Success =>
-                            paladin_core::platform::container::battalion::BattalionStatus::Completed,
-                        paladin_core::platform::container::battalion::maneuver::ExecutionStatus::PartialSuccess =>
-                            paladin_core::platform::container::battalion::BattalionStatus::Completed,
-                        paladin_core::platform::container::battalion::maneuver::ExecutionStatus::Failed =>
-                            paladin_core::platform::container::battalion::BattalionStatus::Failed,
+                        crate::maneuver::ExecutionStatus::Success => {
+                            paladin_core::platform::container::battalion::BattalionStatus::Completed
+                        }
+                        crate::maneuver::ExecutionStatus::PartialSuccess => {
+                            paladin_core::platform::container::battalion::BattalionStatus::Completed
+                        }
+                        crate::maneuver::ExecutionStatus::Failed => {
+                            paladin_core::platform::container::battalion::BattalionStatus::Failed
+                        }
                     },
                     strategy_used: BattalionStrategy::Maneuver,
                     strategy_selection_reasoning: None,
@@ -1266,7 +1270,7 @@ pub struct CommanderBuilder {
     config: Option<BattalionConfig>,
     aggregator: Option<Paladin>,
     flow_expression: Option<String>,
-    maneuver_config: Option<paladin_core::platform::container::battalion::maneuver::ManeuverConfig>,
+    maneuver_config: Option<crate::maneuver::ManeuverConfig>,
     paladin_port: Arc<dyn PaladinPort>,
 }
 
@@ -1399,10 +1403,7 @@ impl CommanderBuilder {
     /// use paladin_core::platform::container::battalion::maneuver::ErrorStrategy;
     /// builder.error_strategy(ErrorStrategy::ContinueParallel)
     /// ```
-    pub fn error_strategy(
-        mut self,
-        strategy: paladin_core::platform::container::battalion::maneuver::ErrorStrategy,
-    ) -> Self {
+    pub fn error_strategy(mut self, strategy: crate::maneuver::ErrorStrategy) -> Self {
         let mut config = self.maneuver_config.unwrap_or_default();
         config.error_strategy = strategy;
         self.maneuver_config = Some(config);
@@ -1427,10 +1428,7 @@ impl CommanderBuilder {
     ///     .with_timing_metrics(true);
     /// builder.maneuver_config(config)
     /// ```
-    pub fn maneuver_config(
-        mut self,
-        config: paladin_core::platform::container::battalion::maneuver::ManeuverConfig,
-    ) -> Self {
+    pub fn maneuver_config(mut self, config: crate::maneuver::ManeuverConfig) -> Self {
         self.maneuver_config = Some(config);
         self
     }
@@ -1506,10 +1504,9 @@ impl CommanderBuilder {
 
             // Validate flow expression can be parsed
             let flow_expr = self.flow_expression.as_ref().unwrap();
-            paladin_core::platform::container::battalion::parser::FlowParser::parse(flow_expr)
-                .map_err(|e| {
-                    BattalionError::CommanderValidation(format!("Invalid flow expression: {}", e))
-                })?;
+            crate::maneuver::parser::FlowParser::parse(flow_expr).map_err(|e| {
+                BattalionError::CommanderValidation(format!("Invalid flow expression: {}", e))
+            })?;
 
             // Validate all agents referenced in flow exist in paladins
             // This will be done at execution time since we need the parsed expression
@@ -2618,7 +2615,7 @@ mod tests {
         let commander = CommanderBuilder::new(paladin_port)
             .strategy(BattalionStrategy::Maneuver)
             .flow("agent0")
-            .error_strategy(paladin_core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel)
+            .error_strategy(crate::maneuver::ErrorStrategy::ContinueParallel)
             .paladins(vec![paladin])
             .config(config)
             .build();
@@ -2628,7 +2625,7 @@ mod tests {
         assert!(commander.maneuver_config.is_some());
         assert_eq!(
             commander.maneuver_config.unwrap().error_strategy,
-            paladin_core::platform::container::battalion::maneuver::ErrorStrategy::ContinueParallel
+            crate::maneuver::ErrorStrategy::ContinueParallel
         );
     }
 
@@ -2639,10 +2636,9 @@ mod tests {
         let config = create_test_config();
 
         // Test setting complete ManeuverConfig
-        let maneuver_config =
-            paladin_core::platform::container::battalion::maneuver::ManeuverConfig::default()
-                .with_timeout(std::time::Duration::from_secs(60))
-                .with_timing_metrics(false);
+        let maneuver_config = crate::maneuver::ManeuverConfig::default()
+            .with_timeout(std::time::Duration::from_secs(60))
+            .with_timing_metrics(false);
 
         let commander = CommanderBuilder::new(paladin_port)
             .strategy(BattalionStrategy::Maneuver)
