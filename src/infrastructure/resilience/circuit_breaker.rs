@@ -22,7 +22,7 @@
 //! # Example
 //!
 //! ```rust,no_run
-//! use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+//! use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 //! use paladin::application::use_cases::paladin::error::PaladinError;
 //! use std::time::Duration;
 //!
@@ -93,7 +93,7 @@ pub enum CircuitState {
 /// # Example
 ///
 /// ```rust,no_run
-/// use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+/// use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 /// use paladin::application::use_cases::paladin::error::PaladinError;
 /// use std::sync::Arc;
 /// use std::time::Duration;
@@ -132,7 +132,7 @@ impl CircuitBreaker {
     /// # Example
     ///
     /// ```rust
-    /// use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// use std::time::Duration;
     ///
     /// let cb = CircuitBreaker::new(
@@ -181,7 +181,7 @@ impl CircuitBreaker {
     /// # Example
     ///
     /// ```rust
-    /// use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// use paladin::application::use_cases::paladin::error::PaladinError;
     /// use std::time::Duration;
     ///
@@ -295,7 +295,7 @@ impl CircuitBreaker {
     /// # Example
     ///
     /// ```rust
-    /// use paladin::application::use_cases::paladin::circuit_breaker::{CircuitBreaker, CircuitState};
+    /// use paladin::infrastructure::resilience::circuit_breaker::{CircuitBreaker, CircuitState};
     /// use std::time::Duration;
     ///
     /// let cb = CircuitBreaker::new(3, 2, Duration::from_secs(30));

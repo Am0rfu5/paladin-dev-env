@@ -6,10 +6,10 @@
 use async_trait::async_trait;
 use std::sync::Arc;
 
-use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::paladin::Paladin;
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin_ports::output::llm_port::LlmPort;
 use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, PaladinStreamChunk};
 

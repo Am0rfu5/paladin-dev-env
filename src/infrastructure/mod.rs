@@ -171,6 +171,7 @@
 pub mod adapters;
 #[allow(missing_docs)]
 pub mod repositories;
+pub mod resilience;
 #[allow(missing_docs)]
 pub mod security;
 #[cfg(feature = "web-server")]

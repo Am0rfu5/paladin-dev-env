@@ -1,10 +1,10 @@
 //! Unit tests for PaladinExecutionService
 //! Following TDD - these tests should fail initially
 
-use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::error::PaladinError;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin_ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse, TokenUsage,
 };

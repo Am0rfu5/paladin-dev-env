@@ -5,12 +5,12 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::herald::Herald;
 use paladin::infrastructure::adapters::herald::JsonHerald;
 use paladin::infrastructure::adapters::herald::json_herald::JsonHeraldConfig;
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin_ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
 };

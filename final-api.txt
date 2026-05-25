@@ -5927,41 +5927,41 @@ impl core::marker::UnsafeUnpin for paladin::application::use_cases::herald::hera
 impl core::panic::unwind_safe::RefUnwindSafe for paladin::application::use_cases::herald::herald_registry::HeraldRegistry
 impl core::panic::unwind_safe::UnwindSafe for paladin::application::use_cases::herald::herald_registry::HeraldRegistry
 pub mod paladin::application::use_cases::paladin
-pub mod paladin::application::use_cases::paladin::circuit_breaker
-pub enum paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Closed
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Closed::failures: u32
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::HalfOpen
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::HalfOpen::successes: u32
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Open
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Open::opened_at: std::time::Instant
-impl core::clone::Clone for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::clone(&self) -> paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::cmp::PartialEq for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::eq(&self, other: &paladin::application::use_cases::paladin::circuit_breaker::CircuitState) -> bool
-impl core::fmt::Debug for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::marker::StructuralPartialEq for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::marker::Freeze for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::marker::Send for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::marker::Sync for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::marker::Unpin for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::marker::UnsafeUnpin for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::panic::unwind_safe::RefUnwindSafe for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::panic::unwind_safe::UnwindSafe for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub struct paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::call<F, T>(&self, f: F) -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError> where F: core::ops::function::FnOnce() -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError>
-pub async fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::call_async<F, T>(&self, f: F) -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError> where F: core::future::future::Future<Output = core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError>>
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::get_state(&self) -> paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::new(failure_threshold: u32, success_threshold: u32, timeout: core::time::Duration) -> Self
-impl !core::marker::Freeze for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::marker::Send for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::marker::Sync for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::marker::Unpin for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::marker::UnsafeUnpin for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::panic::unwind_safe::RefUnwindSafe for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::panic::unwind_safe::UnwindSafe for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
+pub mod paladin::infrastructure::resilience::circuit_breaker
+pub enum paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::Closed
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::Closed::failures: u32
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::HalfOpen
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::HalfOpen::successes: u32
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::Open
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::Open::opened_at: std::time::Instant
+impl core::clone::Clone for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::clone(&self) -> paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::cmp::PartialEq for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::eq(&self, other: &paladin::infrastructure::resilience::circuit_breaker::CircuitState) -> bool
+impl core::fmt::Debug for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::marker::Freeze for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::marker::Send for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::marker::Sync for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::marker::Unpin for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::marker::UnsafeUnpin for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::panic::unwind_safe::RefUnwindSafe for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::panic::unwind_safe::UnwindSafe for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub struct paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::call<F, T>(&self, f: F) -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError> where F: core::ops::function::FnOnce() -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError>
+pub async fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::call_async<F, T>(&self, f: F) -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError> where F: core::future::future::Future<Output = core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError>>
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::get_state(&self) -> paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::new(failure_threshold: u32, success_threshold: u32, timeout: core::time::Duration) -> Self
+impl !core::marker::Freeze for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::marker::Send for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::marker::Sync for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::marker::Unpin for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::marker::UnsafeUnpin for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::panic::unwind_safe::RefUnwindSafe for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::panic::unwind_safe::UnwindSafe for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
 pub mod paladin::application::use_cases::paladin::error
 pub enum paladin::application::use_cases::paladin::error::PaladinError
 pub paladin::application::use_cases::paladin::error::PaladinError::ArsenalError(paladin::core::platform::container::arsenal::ArsenalError)
@@ -6067,7 +6067,7 @@ pub struct paladin::application::use_cases::paladin::paladin_execution_service::
 impl paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService
 pub async fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::execute(&self, paladin: &paladin::core::platform::container::paladin::Paladin, input: &str) -> core::result::Result<paladin::application::ports::output::paladin_port::PaladinResult, paladin::application::use_cases::paladin::error::PaladinError>
 pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::format_result(&self, result: &paladin::application::ports::output::paladin_port::PaladinResult, _paladin: &paladin::core::platform::container::paladin::Paladin) -> core::result::Result<core::option::Option<alloc::string::String>, paladin::application::use_cases::paladin::error::PaladinError>
-pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::new(llm_port: alloc::sync::Arc<dyn paladin::application::ports::output::llm_port::LlmPort>, circuit_breaker: alloc::sync::Arc<paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker>, garrison: core::option::Option<alloc::sync::Arc<dyn paladin::application::ports::output::garrison_port::GarrisonPort>>, arsenal: core::option::Option<alloc::sync::Arc<dyn paladin::application::ports::output::arsenal_port::ArsenalPort>>) -> Self
+pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::new(llm_port: alloc::sync::Arc<dyn paladin::application::ports::output::llm_port::LlmPort>, circuit_breaker: alloc::sync::Arc<paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker>, garrison: core::option::Option<alloc::sync::Arc<dyn paladin::application::ports::output::garrison_port::GarrisonPort>>, arsenal: core::option::Option<alloc::sync::Arc<dyn paladin::application::ports::output::arsenal_port::ArsenalPort>>) -> Self
 pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::with_handoff_service(self, service: alloc::sync::Arc<paladin::application::use_cases::paladin::handoff_service::HandoffService>) -> Self
 pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::with_herald(self, herald: alloc::sync::Arc<dyn paladin::core::platform::container::herald::Herald>) -> Self
 pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::with_memory_extraction(self, service: alloc::sync::Arc<paladin::application::use_cases::sanctum::memory_extraction_service::MemoryExtractionService>) -> Self

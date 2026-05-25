@@ -8,7 +8,7 @@
 use paladin_ports::output::arsenal_port::ArsenalPort;
 use paladin_ports::output::garrison_port::GarrisonPort;
 use paladin_ports::output::llm_port::LlmPort;
-use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::arsenal::ArmamentResult;

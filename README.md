@@ -638,7 +638,8 @@ cargo build --release
 ### Paladin Agent with Memory
 
 ```rust
-use paladin::application::use_cases::paladin::{PaladinBuilder, PaladinExecutionService, CircuitBreaker};
+use paladin::application::use_cases::paladin::{PaladinBuilder, PaladinExecutionService};
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::infrastructure::adapters::garrison::InMemoryGarrison;
 use paladin::core::platform::container::garrison::GarrisonConfig;
 use std::sync::Arc;

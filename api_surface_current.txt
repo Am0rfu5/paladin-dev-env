@@ -13023,101 +13023,101 @@ impl<T> yoke::erased::ErasedDestructor for paladin::application::use_cases::hera
 impl<V, T> ppv_lite86::types::VZip<V> for paladin::application::use_cases::herald::herald_registry::HeraldRegistry where V: ppv_lite86::types::MultiLane<T>
 pub fn paladin::application::use_cases::herald::herald_registry::HeraldRegistry::vzip(self) -> V
 pub mod paladin::application::use_cases::paladin
-pub mod paladin::application::use_cases::paladin::circuit_breaker
-pub enum paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Closed
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Closed::failures: u32
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::HalfOpen
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::HalfOpen::successes: u32
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Open
-pub paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Open::opened_at: std::time::Instant
-impl core::clone::Clone for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::clone(&self) -> paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::cmp::PartialEq for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::eq(&self, other: &paladin::application::use_cases::paladin::circuit_breaker::CircuitState) -> bool
-impl core::fmt::Debug for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl core::marker::StructuralPartialEq for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::marker::Freeze for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::marker::Send for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::marker::Sync for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::marker::Unpin for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::marker::UnsafeUnpin for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::panic::unwind_safe::RefUnwindSafe for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl core::panic::unwind_safe::UnwindSafe for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl<T, U> core::convert::Into<U> for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where U: core::convert::From<T>
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::into(self) -> U
-impl<T, U> core::convert::TryFrom<U> for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where U: core::convert::Into<T>
-pub type paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Error = core::convert::Infallible
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where U: core::convert::TryFrom<T>
-pub type paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> alloc::borrow::ToOwned for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where T: core::clone::Clone
-pub type paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Owned = T
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::clone_into(&self, target: &mut T)
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::to_owned(&self) -> T
-impl<T> core::any::Any for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where T: 'static + ?core::marker::Sized
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where T: ?core::marker::Sized
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where T: ?core::marker::Sized
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::borrow_mut(&mut self) -> &mut T
-impl<T> core::clone::CloneToUninit for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where T: core::clone::Clone
-pub unsafe fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::clone_to_uninit(&self, dest: *mut u8)
-impl<T> core::convert::From<T> for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::from(t: T) -> T
-impl<T> either::into_either::IntoEither for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl<T> tower_http::follow_redirect::policy::PolicyExt for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where T: ?core::marker::Sized
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::and<P, B, E>(self, other: P) -> tower_http::follow_redirect::policy::and::And<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::or<P, B, E>(self, other: P) -> tower_http::follow_redirect::policy::or::Or<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
-impl<T> tracing::instrument::Instrument for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl<T> tracing::instrument::WithSubscriber for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-impl<T> typenum::type_operators::Same for paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub type paladin::application::use_cases::paladin::circuit_breaker::CircuitState::Output = T
-impl<T> yoke::erased::ErasedDestructor for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where T: 'static
-impl<V, T> ppv_lite86::types::VZip<V> for paladin::application::use_cases::paladin::circuit_breaker::CircuitState where V: ppv_lite86::types::MultiLane<T>
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitState::vzip(self) -> V
-pub struct paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::call<F, T>(&self, f: F) -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError> where F: core::ops::function::FnOnce() -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError>
-pub async fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::call_async<F, T>(&self, f: F) -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError> where F: core::future::future::Future<Output = core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError>>
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::get_state(&self) -> paladin::application::use_cases::paladin::circuit_breaker::CircuitState
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::new(failure_threshold: u32, success_threshold: u32, timeout: core::time::Duration) -> Self
-impl !core::marker::Freeze for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::marker::Send for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::marker::Sync for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::marker::Unpin for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::marker::UnsafeUnpin for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::panic::unwind_safe::RefUnwindSafe for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl core::panic::unwind_safe::UnwindSafe for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl<T, U> core::convert::Into<U> for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker where U: core::convert::From<T>
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::into(self) -> U
-impl<T, U> core::convert::TryFrom<U> for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker where U: core::convert::Into<T>
-pub type paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::Error = core::convert::Infallible
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
-impl<T, U> core::convert::TryInto<U> for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker where U: core::convert::TryFrom<T>
-pub type paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::Error = <U as core::convert::TryFrom<T>>::Error
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
-impl<T> core::any::Any for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker where T: 'static + ?core::marker::Sized
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::type_id(&self) -> core::any::TypeId
-impl<T> core::borrow::Borrow<T> for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker where T: ?core::marker::Sized
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::borrow(&self) -> &T
-impl<T> core::borrow::BorrowMut<T> for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker where T: ?core::marker::Sized
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::borrow_mut(&mut self) -> &mut T
-impl<T> core::convert::From<T> for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::from(t: T) -> T
-impl<T> either::into_either::IntoEither for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl<T> tower_http::follow_redirect::policy::PolicyExt for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker where T: ?core::marker::Sized
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::and<P, B, E>(self, other: P) -> tower_http::follow_redirect::policy::and::And<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::or<P, B, E>(self, other: P) -> tower_http::follow_redirect::policy::or::Or<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
-impl<T> tracing::instrument::Instrument for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl<T> tracing::instrument::WithSubscriber for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-impl<T> typenum::type_operators::Same for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker
-pub type paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::Output = T
-impl<T> yoke::erased::ErasedDestructor for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker where T: 'static
-impl<V, T> ppv_lite86::types::VZip<V> for paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker where V: ppv_lite86::types::MultiLane<T>
-pub fn paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker::vzip(self) -> V
+pub mod paladin::infrastructure::resilience::circuit_breaker
+pub enum paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::Closed
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::Closed::failures: u32
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::HalfOpen
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::HalfOpen::successes: u32
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::Open
+pub paladin::infrastructure::resilience::circuit_breaker::CircuitState::Open::opened_at: std::time::Instant
+impl core::clone::Clone for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::clone(&self) -> paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::cmp::PartialEq for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::eq(&self, other: &paladin::infrastructure::resilience::circuit_breaker::CircuitState) -> bool
+impl core::fmt::Debug for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::marker::Freeze for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::marker::Send for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::marker::Sync for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::marker::Unpin for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::marker::UnsafeUnpin for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::panic::unwind_safe::RefUnwindSafe for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl core::panic::unwind_safe::UnwindSafe for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl<T, U> core::convert::Into<U> for paladin::infrastructure::resilience::circuit_breaker::CircuitState where U: core::convert::From<T>
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for paladin::infrastructure::resilience::circuit_breaker::CircuitState where U: core::convert::Into<T>
+pub type paladin::infrastructure::resilience::circuit_breaker::CircuitState::Error = core::convert::Infallible
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for paladin::infrastructure::resilience::circuit_breaker::CircuitState where U: core::convert::TryFrom<T>
+pub type paladin::infrastructure::resilience::circuit_breaker::CircuitState::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> alloc::borrow::ToOwned for paladin::infrastructure::resilience::circuit_breaker::CircuitState where T: core::clone::Clone
+pub type paladin::infrastructure::resilience::circuit_breaker::CircuitState::Owned = T
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::clone_into(&self, target: &mut T)
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::to_owned(&self) -> T
+impl<T> core::any::Any for paladin::infrastructure::resilience::circuit_breaker::CircuitState where T: 'static + ?core::marker::Sized
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for paladin::infrastructure::resilience::circuit_breaker::CircuitState where T: ?core::marker::Sized
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for paladin::infrastructure::resilience::circuit_breaker::CircuitState where T: ?core::marker::Sized
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::borrow_mut(&mut self) -> &mut T
+impl<T> core::clone::CloneToUninit for paladin::infrastructure::resilience::circuit_breaker::CircuitState where T: core::clone::Clone
+pub unsafe fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::clone_to_uninit(&self, dest: *mut u8)
+impl<T> core::convert::From<T> for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::from(t: T) -> T
+impl<T> either::into_either::IntoEither for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl<T> tower_http::follow_redirect::policy::PolicyExt for paladin::infrastructure::resilience::circuit_breaker::CircuitState where T: ?core::marker::Sized
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::and<P, B, E>(self, other: P) -> tower_http::follow_redirect::policy::and::And<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::or<P, B, E>(self, other: P) -> tower_http::follow_redirect::policy::or::Or<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+impl<T> tracing::instrument::Instrument for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl<T> tracing::instrument::WithSubscriber for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+impl<T> typenum::type_operators::Same for paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub type paladin::infrastructure::resilience::circuit_breaker::CircuitState::Output = T
+impl<T> yoke::erased::ErasedDestructor for paladin::infrastructure::resilience::circuit_breaker::CircuitState where T: 'static
+impl<V, T> ppv_lite86::types::VZip<V> for paladin::infrastructure::resilience::circuit_breaker::CircuitState where V: ppv_lite86::types::MultiLane<T>
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitState::vzip(self) -> V
+pub struct paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::call<F, T>(&self, f: F) -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError> where F: core::ops::function::FnOnce() -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError>
+pub async fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::call_async<F, T>(&self, f: F) -> core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError> where F: core::future::future::Future<Output = core::result::Result<T, paladin::application::use_cases::paladin::error::PaladinError>>
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::get_state(&self) -> paladin::infrastructure::resilience::circuit_breaker::CircuitState
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::new(failure_threshold: u32, success_threshold: u32, timeout: core::time::Duration) -> Self
+impl !core::marker::Freeze for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::marker::Send for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::marker::Sync for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::marker::Unpin for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::marker::UnsafeUnpin for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::panic::unwind_safe::RefUnwindSafe for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl core::panic::unwind_safe::UnwindSafe for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl<T, U> core::convert::Into<U> for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker where U: core::convert::From<T>
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::into(self) -> U
+impl<T, U> core::convert::TryFrom<U> for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker where U: core::convert::Into<T>
+pub type paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::Error = core::convert::Infallible
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::try_from(value: U) -> core::result::Result<T, <T as core::convert::TryFrom<U>>::Error>
+impl<T, U> core::convert::TryInto<U> for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker where U: core::convert::TryFrom<T>
+pub type paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::Error = <U as core::convert::TryFrom<T>>::Error
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::try_into(self) -> core::result::Result<U, <U as core::convert::TryFrom<T>>::Error>
+impl<T> core::any::Any for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker where T: 'static + ?core::marker::Sized
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::type_id(&self) -> core::any::TypeId
+impl<T> core::borrow::Borrow<T> for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker where T: ?core::marker::Sized
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::borrow(&self) -> &T
+impl<T> core::borrow::BorrowMut<T> for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker where T: ?core::marker::Sized
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::borrow_mut(&mut self) -> &mut T
+impl<T> core::convert::From<T> for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::from(t: T) -> T
+impl<T> either::into_either::IntoEither for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl<T> tower_http::follow_redirect::policy::PolicyExt for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker where T: ?core::marker::Sized
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::and<P, B, E>(self, other: P) -> tower_http::follow_redirect::policy::and::And<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::or<P, B, E>(self, other: P) -> tower_http::follow_redirect::policy::or::Or<T, P> where T: tower_http::follow_redirect::policy::Policy<B, E>, P: tower_http::follow_redirect::policy::Policy<B, E>
+impl<T> tracing::instrument::Instrument for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl<T> tracing::instrument::WithSubscriber for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+impl<T> typenum::type_operators::Same for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker
+pub type paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::Output = T
+impl<T> yoke::erased::ErasedDestructor for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker where T: 'static
+impl<V, T> ppv_lite86::types::VZip<V> for paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker where V: ppv_lite86::types::MultiLane<T>
+pub fn paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker::vzip(self) -> V
 pub mod paladin::application::use_cases::paladin::error
 pub enum paladin::application::use_cases::paladin::error::PaladinError
 pub paladin::application::use_cases::paladin::error::PaladinError::ArsenalError(paladin::core::platform::container::arsenal::ArsenalError)
@@ -13308,7 +13308,7 @@ pub struct paladin::application::use_cases::paladin::paladin_execution_service::
 impl paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService
 pub async fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::execute(&self, paladin: &paladin::core::platform::container::paladin::Paladin, input: &str) -> core::result::Result<paladin::application::ports::output::paladin_port::PaladinResult, paladin::application::use_cases::paladin::error::PaladinError>
 pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::format_result(&self, result: &paladin::application::ports::output::paladin_port::PaladinResult, _paladin: &paladin::core::platform::container::paladin::Paladin) -> core::result::Result<core::option::Option<alloc::string::String>, paladin::application::use_cases::paladin::error::PaladinError>
-pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::new(llm_port: alloc::sync::Arc<dyn paladin::application::ports::output::llm_port::LlmPort>, circuit_breaker: alloc::sync::Arc<paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker>, garrison: core::option::Option<alloc::sync::Arc<dyn paladin::application::ports::output::garrison_port::GarrisonPort>>, arsenal: core::option::Option<alloc::sync::Arc<dyn paladin::application::ports::output::arsenal_port::ArsenalPort>>) -> Self
+pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::new(llm_port: alloc::sync::Arc<dyn paladin::application::ports::output::llm_port::LlmPort>, circuit_breaker: alloc::sync::Arc<paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker>, garrison: core::option::Option<alloc::sync::Arc<dyn paladin::application::ports::output::garrison_port::GarrisonPort>>, arsenal: core::option::Option<alloc::sync::Arc<dyn paladin::application::ports::output::arsenal_port::ArsenalPort>>) -> Self
 pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::with_handoff_service(self, service: alloc::sync::Arc<paladin::application::use_cases::paladin::handoff_service::HandoffService>) -> Self
 pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::with_herald(self, herald: alloc::sync::Arc<dyn paladin::core::platform::container::herald::Herald>) -> Self
 pub fn paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService::with_memory_extraction(self, service: alloc::sync::Arc<paladin::application::use_cases::sanctum::memory_extraction_service::MemoryExtractionService>) -> Self

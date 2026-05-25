@@ -244,10 +244,10 @@ async fn execute_formation(
     verbose: bool,
     output: Option<PathBuf>,
 ) -> Result<(), CliError> {
-    use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::formation::Formation;
+    use crate::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     use paladin_ports::output::paladin_port::PaladinPort;
     use std::sync::Arc;
     use std::time::Duration;
@@ -404,10 +404,10 @@ async fn execute_phalanx(
     verbose: bool,
     output: Option<PathBuf>,
 ) -> Result<(), CliError> {
-    use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::phalanx::Phalanx;
+    use crate::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     use paladin_ports::output::paladin_port::PaladinPort;
     use std::sync::Arc;
     use std::time::Duration;
@@ -555,12 +555,12 @@ async fn execute_conclave(
     output: Option<PathBuf>,
 ) -> Result<(), CliError> {
     use crate::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
-    use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::conclave::{
         Conclave, ConclaveConfig as DomainConclaveConfig, ObservabilityLevel,
     };
+    use crate::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     use paladin_ports::output::paladin_port::PaladinPort;
     use std::sync::Arc;
     use std::time::Duration;
@@ -764,11 +764,11 @@ async fn execute_maneuver(
         FlowVisualizer, VisualizationFormat,
     };
     use crate::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
-    use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
     use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::maneuver::Maneuver;
     use crate::core::platform::container::battalion::parser::FlowParser;
+    use crate::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     use std::sync::Arc;
     use std::time::Duration;
 

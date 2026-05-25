@@ -499,6 +499,19 @@ Generic framework primitives and patterns. Located in `src/core/base/`.
 | `Field` | `paladin::core::base::entity::field::Field` | 🟢 Stable | Field definition with type information | [Docs](https://docs.rs/paladin/latest/paladin/core/base/entity/field/struct.Field.html) |
 | `Message<T>` | `paladin::core::base::entity::message::Message` | 🟢 Stable | Generic message wrapper for events | [Docs](https://docs.rs/paladin/latest/paladin/core/base/entity/message/struct.Message.html) |
 
+### Resilience Types
+
+Fault-tolerance primitives for hardening agent execution. Located in `src/infrastructure/resilience/`.
+
+> **Canonical path change (Milestone 6, Epic 4):** `CircuitBreaker` and `CircuitState` were relocated from
+> `paladin::application::use_cases::paladin::circuit_breaker` to `paladin::infrastructure::resilience::circuit_breaker`.
+> The old path is retired and no longer resolves.
+
+| Type | Fully Qualified Path | Tier | Description | Documentation |
+|------|---------------------|------|-------------|---------------|
+| `CircuitBreaker` | `paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker` | 🟢 Stable | Thread-safe circuit breaker for fault tolerance | [Docs](https://docs.rs/paladin/latest/paladin/infrastructure/resilience/circuit_breaker/struct.CircuitBreaker.html) |
+| `CircuitState` | `paladin::infrastructure::resilience::circuit_breaker::CircuitState` | 🟢 Stable | Circuit breaker state (`Closed`, `Open`, `HalfOpen`) | [Docs](https://docs.rs/paladin/latest/paladin/infrastructure/resilience/circuit_breaker/enum.CircuitState.html) |
+
 ---
 
 ## Internal Implementation Details (Not Stable)

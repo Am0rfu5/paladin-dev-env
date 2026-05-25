@@ -18,7 +18,7 @@
 //! ```rust,no_run
 //! use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 //! use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
-//! use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+//! use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 //! use paladin_ports::output::llm_port::LlmPort;
 //! use std::sync::Arc;
 //! use std::time::Duration;
@@ -46,7 +46,6 @@
 //! # }
 //! ```
 
-use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use crate::application::use_cases::paladin::error::PaladinError;
 use crate::application::use_cases::paladin::handoff_service::HandoffService;
 use crate::application::use_cases::paladin::planning_service::PlanningService;
@@ -66,6 +65,7 @@ use crate::core::platform::container::prompt::{
 #[cfg(feature = "vision")]
 use crate::core::platform::container::vision::VisionContent;
 use crate::infrastructure::adapters::arsenal::tool_result_formatter::ToolResultFormatter;
+use crate::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use log::{debug, error, info, warn};
 use paladin_ports::output::arsenal_port::ArsenalPort;
 use paladin_ports::output::garrison_port::GarrisonPort;
@@ -150,7 +150,7 @@ impl PaladinExecutionService {
     ///
     /// ```rust,no_run
     /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
-    /// use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// use paladin_ports::output::llm_port::LlmPort;
     /// use std::sync::Arc;
     /// use std::time::Duration;
@@ -234,7 +234,7 @@ impl PaladinExecutionService {
     /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     /// use paladin::infrastructure::adapters::herald::JsonHerald;
     /// use std::sync::Arc;
-    /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// # use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::time::Duration;
     ///
@@ -267,7 +267,7 @@ impl PaladinExecutionService {
     /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     /// use paladin::infrastructure::adapters::llm::openai_adapter::OpenAIAdapter;
     /// use std::sync::Arc;
-    /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// # use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::time::Duration;
     ///
@@ -300,7 +300,7 @@ impl PaladinExecutionService {
     /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     /// use paladin::application::use_cases::paladin::planning_service::PlanningService;
     /// use std::sync::Arc;
-    /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// # use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::time::Duration;
     ///
@@ -333,7 +333,7 @@ impl PaladinExecutionService {
     /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     /// use paladin::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
     /// use std::sync::Arc;
-    /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// # use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::time::Duration;
     ///
@@ -422,7 +422,7 @@ impl PaladinExecutionService {
     /// ```rust,no_run
     /// # use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
     /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
-    /// # use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+    /// # use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # use std::time::Duration;

@@ -26,9 +26,9 @@
 // ```
 
 use paladin::MockLlmAdapter;
-use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin_ports::output::llm_port::LlmPort;
 use std::sync::Arc;
 use std::time::Duration;

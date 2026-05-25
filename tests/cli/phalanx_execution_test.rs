@@ -4,7 +4,7 @@
 //! to verify proper concurrent execution and result aggregation.
 
 use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
-use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};

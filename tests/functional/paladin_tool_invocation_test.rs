@@ -8,12 +8,12 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;
 use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::arsenal::{
     Armament, ArmamentCall, ArmamentResult, ArsenalError,
 };
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin_ports::output::arsenal_port::ArsenalPort;
 use paladin_ports::output::llm_port::{
     FinishReason, FunctionCall, LlmError, LlmPort, LlmRequest, LlmResponse, StreamingResponse,

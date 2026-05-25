@@ -1,8 +1,8 @@
 //! Unit tests for CircuitBreaker
 //! Following TDD - these tests should fail initially
 
-use paladin::application::use_cases::paladin::circuit_breaker::{CircuitBreaker, CircuitState};
 use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::infrastructure::resilience::circuit_breaker::{CircuitBreaker, CircuitState};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::thread;
