@@ -3293,6 +3293,7 @@ dependencies = [
  "paladin-llm",
  "paladin-memory",
  "paladin-ports",
+ "paladin-storage",
  "pdf-extract",
  "petgraph",
  "proptest",
@@ -3427,6 +3428,23 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.12",
  "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "paladin-storage"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "paladin-core",
+ "paladin-ports",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.12",
+ "tokio",
+ "url",
  "uuid",
 ]
 

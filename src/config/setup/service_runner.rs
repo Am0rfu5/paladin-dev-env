@@ -11,6 +11,7 @@ use crate::infrastructure::adapters::file_storage::minio::MinioAdapter;
 use crate::infrastructure::adapters::logs::system_log_adapter::SystemLogAdapter;
 #[cfg(feature = "redis-queue")]
 use crate::infrastructure::adapters::queue::redis::RedisQueueAdapter;
+#[cfg(not(feature = "storage-sqlite"))]
 use crate::infrastructure::repositories::sqlite_content_repository::SqliteStore;
 #[cfg(feature = "s3-storage")]
 use paladin_ports::output::file_storage_port::FileStoragePort;
@@ -20,6 +21,8 @@ use paladin_ports::output::file_storage_port::FileStorageUtils;
 use paladin_ports::output::log_port::LogPort;
 #[cfg(feature = "redis-queue")]
 use paladin_ports::output::queue_port::QueuePort;
+#[cfg(feature = "storage-sqlite")]
+use paladin_storage::sqlite_content_repository::SqliteStore;
 use std::env;
 #[cfg(feature = "s3-storage")]
 use std::path::Path;

@@ -20,7 +20,8 @@ paladin-ports = { path = "crates/paladin-ports" }
 paladin-battalion = { path = "crates/paladin-battalion" }
 paladin-llm = { path = "crates/paladin-llm" }
 paladin-memory = { path = "crates/paladin-memory" }
-sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid", "json"] }
+paladin-storage = { path = "crates/paladin-storage" }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "mysql", "chrono", "uuid", "json"] }
 qdrant-client = { version = "1.14" }
 
 [package]
@@ -43,6 +44,7 @@ paladin-ports = { path = "crates/paladin-ports" }
 paladin-battalion = { path = "crates/paladin-battalion" }
 paladin-llm = { path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
 paladin-memory = { workspace = true, features = ["sqlite"] }
+paladin-storage = { workspace = true, optional = true }
 reqwest = { workspace = true, features = ["blocking", "stream"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -210,6 +212,9 @@ vision = []
 content-processing = ["pdf-extract", "scraper", "tiktoken-rs", "rss", "paladin-memory/content-processing"]
 web-server = ["actix-web", "axum"]
 notifications = ["lettre", "handlebars"]
+storage-sqlite = ["dep:paladin-storage", "paladin-storage/sqlite"]
+storage-mysql = ["dep:paladin-storage", "paladin-storage/mysql"]
+storage = ["storage-sqlite", "storage-mysql"]
 
 # CLI (binary and test tooling only — not compiled into the library)
 cli = ["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml"]

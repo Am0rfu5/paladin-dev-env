@@ -18,12 +18,12 @@ pub struct UserServiceFactory;
 impl UserServiceFactory {
     /// Create a new UserService with all dependencies
     pub async fn create_user_service(
-        settings: &Settings,
+        _settings: &Settings,
         log_port: Arc<dyn LogPort>,
         notification_service: Arc<NotificationService>,
     ) -> Result<Arc<UserService>, Box<dyn std::error::Error>> {
         // Create user repository
-        let user_repository = Arc::new(SqliteUserRepository::new(settings).await?);
+        let user_repository = Arc::new(SqliteUserRepository::new("sqlite:database.db").await?);
 
         // Create user service with dependencies
         let user_service = Arc::new(UserService::new(

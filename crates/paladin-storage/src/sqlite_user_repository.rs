@@ -5,11 +5,11 @@ Concrete implementation of UserRepositoryPort using SQLite database.
 This adapter handles the actual database operations for user persistence.
 */
 
-use crate::application::storage::user_store::UserRepositoryPort;
-use crate::core::platform::container::user::{Email, User, UserData, UserError, UserProfile};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
+use paladin_core::platform::container::user::{Email, User, UserData, UserError, UserProfile};
+use paladin_ports::output::user_repository_port::UserRepositoryPort;
+use sqlx::{sqlite::SqlitePoolOptions, Row, SqlitePool};
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -19,7 +19,7 @@ pub struct SqliteUserRepository {
 }
 
 impl SqliteUserRepository {
-    /// Create a new SQLite user repository
+    /// Create a new SQLite user repository.
     pub async fn new(database_url: &str) -> Result<Self, UserError> {
         let pool = SqlitePoolOptions::new()
             .max_connections(10)

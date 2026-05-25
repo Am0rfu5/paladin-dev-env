@@ -4,9 +4,7 @@ use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::content::{
     ContentData, ContentItem, ContentType, TextContent,
 };
-use paladin::infrastructure::repositories::mysql_content_repository::{
-    MySqlConfig, MySqlContentRepository,
-};
+use paladin_storage::mysql_content_repository::{MySqlConfig, MySqlContentRepository};
 use uuid::Uuid;
 
 // Helper function to create a test ContentItem (moved outside modules so it can be shared)
