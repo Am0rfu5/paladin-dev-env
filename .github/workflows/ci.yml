@@ -152,6 +152,14 @@ jobs:
             extra_flags: "--all-features"
           - crate: paladin-memory
             extra_flags: "--all-features"
+          - crate: paladin-storage
+            extra_flags: ""
+          - crate: paladin-notifications
+            extra_flags: ""
+          - crate: paladin-content
+            extra_flags: ""
+          - crate: paladin-web
+            extra_flags: ""
           - crate: paladin
             extra_flags: ""
     steps:
@@ -428,3 +436,55 @@ jobs:
         with:
           name: benchmark-results
           path: target/criterion/
+
+  # Publish dry-run: verify all crates are publishable (main branch only)
+  publish-dry-run:
+    name: Publish Dry Run
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-publish-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Dry run publish paladin-core
+        run: cargo publish --dry-run -p paladin-core
+
+      - name: Dry run publish paladin-ports
+        run: cargo publish --dry-run -p paladin-ports
+
+      - name: Dry run publish paladin-battalion
+        run: cargo publish --dry-run -p paladin-battalion
+
+      - name: Dry run publish paladin-llm
+        run: cargo publish --dry-run -p paladin-llm
+
+      - name: Dry run publish paladin-memory
+        run: cargo publish --dry-run -p paladin-memory
+
+      - name: Dry run publish paladin-storage
+        run: cargo publish --dry-run -p paladin-storage
+
+      - name: Dry run publish paladin-notifications
+        run: cargo publish --dry-run -p paladin-notifications
+
+      - name: Dry run publish paladin-content
+        run: cargo publish --dry-run -p paladin-content
+
+      - name: Dry run publish paladin-web
+        run: cargo publish --dry-run -p paladin-web
+
+      - name: Dry run publish paladin (facade)
+        run: cargo publish --dry-run -p paladin
