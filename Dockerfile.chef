@@ -10,16 +10,30 @@
 FROM rust:1.93-slim-bookworm AS chef
 WORKDIR /app
 
-# Install cargo-chef for dependency caching
-RUN cargo install cargo-chef
+# Install cargo-chef for dependency caching (pinned for reproducible builds)
+RUN cargo install cargo-chef --version 0.1.77 --locked
 
 # =============================================================================
 # Stage 2: Prepare Recipe (Planner)
 # Analyzes the project and generates a recipe for dependencies
 # =============================================================================
 FROM chef AS planner
+# Copy manifests first (changes rarely) to maximise layer cache reuse.
+# Each crate Cargo.toml is copied individually so the recipe layer only
+# invalidates when a manifest — not source — changes.
 COPY Cargo.toml Cargo.lock ./
+COPY crates/paladin-core/Cargo.toml          crates/paladin-core/Cargo.toml
+COPY crates/paladin-ports/Cargo.toml         crates/paladin-ports/Cargo.toml
+COPY crates/paladin-battalion/Cargo.toml     crates/paladin-battalion/Cargo.toml
+COPY crates/paladin-llm/Cargo.toml           crates/paladin-llm/Cargo.toml
+COPY crates/paladin-memory/Cargo.toml        crates/paladin-memory/Cargo.toml
+COPY crates/paladin-storage/Cargo.toml       crates/paladin-storage/Cargo.toml
+COPY crates/paladin-notifications/Cargo.toml crates/paladin-notifications/Cargo.toml
+COPY crates/paladin-content/Cargo.toml       crates/paladin-content/Cargo.toml
+COPY crates/paladin-web/Cargo.toml           crates/paladin-web/Cargo.toml
+# Copy source trees so cargo-chef can resolve workspace member paths
 COPY src ./src
+COPY crates ./crates
 RUN cargo chef prepare --recipe-path recipe.json
 
 # =============================================================================
@@ -36,7 +50,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copy the recipe and build dependencies
 COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
+# --workspace ensures all crate dependencies are pre-built and cached
+RUN cargo chef cook --release --workspace --recipe-path recipe.json
 
 # =============================================================================
 # Stage 4: Build Application
@@ -48,13 +63,14 @@ WORKDIR /app
 # Copy application source
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
+COPY crates ./crates
 # COPY benches ./benches  # Optional - excluded via .dockerignore
 COPY migrations ./migrations
-COPY config.yml ./
+# Note: config.yml is NOT baked into the image; provide at runtime via volume mount.
 
 # Build the application in release mode
-# Dependencies are already cached from previous stage
-RUN cargo build --release --bin paladin
+# Dependencies are already cached from the chef cook stage
+RUN cargo build --release --workspace --bin paladin
 
 # Strip debug symbols to reduce binary size
 RUN strip target/release/paladin
@@ -76,8 +92,8 @@ LABEL org.opencontainers.image.licenses="MIT"
 # Copy binary from builder
 COPY --from=app-builder /app/target/release/paladin /usr/local/bin/paladin
 
-# Copy configuration
-COPY --from=app-builder /app/config.yml /etc/paladin/config.yml
+# Note: config.yml must be provided at runtime via a volume mount or ConfigMap.
+# Example: docker run -v /path/to/config.yml:/etc/paladin/config.yml paladin:latest
 
 # Copy migrations (if needed at runtime)
 COPY --from=app-builder /app/migrations /etc/paladin/migrations

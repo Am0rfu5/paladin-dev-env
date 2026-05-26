@@ -25,7 +25,8 @@ COPY migrations ./migrations
 # config.yml is gitignored (env-specific); provide at runtime via volume mount
 
 # Build the application in release mode
-RUN cargo build --release --bin paladin
+# --workspace ensures all crates are resolved correctly
+RUN cargo build --release --workspace --bin paladin
 
 # Strip debug symbols to reduce binary size
 RUN strip target/release/paladin
