@@ -173,18 +173,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 6.6 Cross-check `STABLE_API.md` and `api_surface_current.txt` against current public paths. Confirm no public paths have been silently removed.
   - [x] 6.7 Run `cargo doc --workspace --no-deps` and fix any errors or warnings.
 
-- [ ] 7.0 Final workspace validation
-  - [ ] 7.1 Run `cargo build --workspace` (default features) — must pass.
-  - [ ] 7.2 Run `cargo build --workspace --all-features` — must pass.
-  - [ ] 7.3 Run `cargo build --workspace --no-default-features` — must pass (verifies no accidental unconditional deps were introduced).
-  - [ ] 7.4 Run `cargo test --workspace` — must pass with no regressions.
-  - [ ] 7.5 Run `cargo clippy --workspace -- -D warnings` — must pass with zero warnings.
-  - [ ] 7.6 Run `cargo fmt --check` — must pass.
-  - [ ] 7.7 Run `cargo tree -p paladin-core --all-features` and verify output does **not** contain `actix-web`, `axum`, `lettre`, `pdf-extract`, `scraper`, or `sqlx`.
-  - [ ] 7.8 Run `cargo tree -p paladin-battalion --all-features` and verify the same set of crates is absent.
-  - [ ] 7.9 Run `cargo doc --workspace --no-deps` — zero errors, zero warnings.
-  - [ ] 7.10 Stage all changes: `git add .`
-  - [ ] 7.11 Commit using conventional commit format:
+- [x] 7.0 Final workspace validation
+  - [x] 7.1 Run `cargo build --workspace` (default features) — must pass.
+  - [x] 7.2 Run `cargo build --workspace --all-features` — must pass.
+  - [x] 7.3 Run `cargo build --workspace --no-default-features` — must pass (verifies no accidental unconditional deps were introduced).
+  - [x] 7.4 Run `cargo test --workspace` — must pass with no regressions.
+  - [x] 7.5 Run `cargo clippy --workspace -- -D warnings` — must pass with zero warnings.
+  - [x] 7.6 Run `cargo fmt --check` — must pass.
+  - [x] 7.7 Run `cargo tree -p paladin-core --all-features` and verify output does **not** contain `actix-web`, `axum`, `lettre`, `pdf-extract`, `scraper`, or `sqlx`.
+  - [x] 7.8 Run `cargo tree -p paladin-battalion --all-features` and verify the same set of crates is absent.
+  - [x] 7.9 Run `cargo doc --workspace --no-deps` — zero errors, zero warnings.
+  - [x] 7.10 Stage all changes: `git add .`
+  - [x] 7.11 Commit using conventional commit format:
         ```
         git commit \
           -m "feat: extract paladin-storage, paladin-notifications, paladin-content, paladin-web crates" \
