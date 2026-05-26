@@ -164,14 +164,14 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.12 Remove temporary re-exports from `src/infrastructure/web/mod.rs` and `src/infrastructure/adapters/output/mod.rs` once all internal consumers are updated.
   - [x] 5.13 Run `cargo test --workspace` and confirm all tests pass.
 
-- [ ] 6.0 Update facade crate and workspace metadata
-  - [ ] 6.1 Confirm all four new crates appear in `[workspace.members]` in root `Cargo.toml` (added incrementally in Tasks 2–5; verify completeness now).
-  - [ ] 6.2 Confirm all four new crates appear in `[workspace.dependencies]` with correct paths.
-  - [ ] 6.3 Update the facade's `full` convenience feature to enable all four new crates alongside existing capabilities: `full = [..., "storage", "notifications", "content-processing", "web-server", ...]`.
-  - [ ] 6.4 Audit facade `[dependencies]` for any remaining third-party packages that are now owned exclusively by an extracted crate. Remove them (e.g. verify `lettre`, `handlebars`, `pdf-extract`, `scraper`, `tiktoken-rs`, `rss`, `actix-web`, `axum` are gone).
-  - [ ] 6.5 Verify all public re-exports in `src/lib.rs` still resolve correctly. Add `#[cfg(feature = "...")]` guards around re-exports for types in optional crates.
-  - [ ] 6.6 Cross-check `STABLE_API.md` and `api_surface_current.txt` against current public paths. Confirm no public paths have been silently removed.
-  - [ ] 6.7 Run `cargo doc --workspace --no-deps` and fix any errors or warnings.
+- [x] 6.0 Update facade crate and workspace metadata
+  - [x] 6.1 Confirm all four new crates appear in `[workspace.members]` in root `Cargo.toml` (added incrementally in Tasks 2–5; verify completeness now).
+  - [x] 6.2 Confirm all four new crates appear in `[workspace.dependencies]` with correct paths.
+  - [x] 6.3 Update the facade's `full` convenience feature to enable all four new crates alongside existing capabilities: `full = [..., "storage", "notifications", "content-processing", "web-server", ...]`.
+  - [x] 6.4 Audit facade `[dependencies]` for any remaining third-party packages that are now owned exclusively by an extracted crate. Remove them (e.g. verify `lettre`, `handlebars`, `pdf-extract`, `scraper`, `tiktoken-rs`, `rss`, `actix-web`, `axum` are gone).
+  - [x] 6.5 Verify all public re-exports in `src/lib.rs` still resolve correctly. Add `#[cfg(feature = "...")]` guards around re-exports for types in optional crates.
+  - [x] 6.6 Cross-check `STABLE_API.md` and `api_surface_current.txt` against current public paths. Confirm no public paths have been silently removed.
+  - [x] 6.7 Run `cargo doc --workspace --no-deps` and fix any errors or warnings.
 
 - [ ] 7.0 Final workspace validation
   - [ ] 7.1 Run `cargo build --workspace` (default features) — must pass.

@@ -55,8 +55,6 @@ paladin-web = { workspace = true, optional = true }
 reqwest = { workspace = true, features = ["blocking", "stream"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
-rss = { version = "2.0", optional = true }
-scraper = { version = "0.23.1", optional = true }
 
 structopt = "0.3"
 tokio = { workspace = true }
@@ -222,7 +220,7 @@ storage = ["storage-sqlite", "storage-mysql"]
 cli = ["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml"]
 
 # Convenience flag for enabling all optional features
-full = ["llm-all", "content-processing", "web-server", "notifications", "vision", "redis-queue", "s3-storage", "openai-embeddings", "qdrant", "cli"]
+full = ["llm-all", "content-processing", "web-server", "notifications", "storage", "vision", "redis-queue", "s3-storage", "openai-embeddings", "qdrant", "cli"]
 
 # Performance optimizations for Redis
 [profile.release]
