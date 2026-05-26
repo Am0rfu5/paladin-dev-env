@@ -25,7 +25,7 @@ NC := \033[0m
 
 .PHONY: help
 help: ## Show this help message
-	@awk 'BEGIN {FS = ":.*##"; printf "\n$(CYAN)Usage:$(NC)\n  make $(YELLOW)<target>$(NC)\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  $(GREEN)%-20s$(NC) %s\n", $1, $2 } /^##@/ { printf "\n$(CYAN)%s$(NC)\n", substr($0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\n$(CYAN)Usage:$(NC)\n  make $(YELLOW)<target>$(NC)\n"} /^[a-zA-Z_0-9-]+:[^#]*##/ { printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(CYAN)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 .PHONY: examples
 examples: ## Show common usage examples
@@ -105,12 +105,12 @@ watch: ## Watch for file changes and run tests
 .PHONY: test
 test: ## Run unit tests
 	@echo "$(CYAN)Running unit tests...$(NC)"
-	@$(CARGO) test --lib --bins
+	@$(CARGO) test --workspace --lib --bins
 
 .PHONY: test-doc
 test-doc: ## Run documentation tests
 	@echo "$(CYAN)Running documentation tests...$(NC)"
-	@$(CARGO) test --doc
+	@$(CARGO) test --workspace --doc
 
 .PHONY: test-integration
 test-integration: ## Run integration tests (local mode)
@@ -141,6 +141,58 @@ test-ci: ## Run tests in CI mode
 	@echo "$(CYAN)Running tests in CI mode...$(NC)"
 	@./scripts/run_integration_tests.sh -m ci
 
+##@ Per-Crate Testing
+
+.PHONY: test-core
+test-core: ## Run tests for paladin-core
+	@echo "$(CYAN)Running tests for paladin-core...$(NC)"
+	@$(CARGO) test -p paladin-core
+
+.PHONY: test-ports
+test-ports: ## Run tests for paladin-ports
+	@echo "$(CYAN)Running tests for paladin-ports...$(NC)"
+	@$(CARGO) test -p paladin-ports
+
+.PHONY: test-battalion
+test-battalion: ## Run tests for paladin-battalion
+	@echo "$(CYAN)Running tests for paladin-battalion...$(NC)"
+	@$(CARGO) test -p paladin-battalion
+
+.PHONY: test-llm
+test-llm: ## Run tests for paladin-llm
+	@echo "$(CYAN)Running tests for paladin-llm...$(NC)"
+	@$(CARGO) test -p paladin-llm
+
+.PHONY: test-memory
+test-memory: ## Run tests for paladin-memory
+	@echo "$(CYAN)Running tests for paladin-memory...$(NC)"
+	@$(CARGO) test -p paladin-memory
+
+.PHONY: test-storage
+test-storage: ## Run tests for paladin-storage
+	@echo "$(CYAN)Running tests for paladin-storage...$(NC)"
+	@$(CARGO) test -p paladin-storage
+
+.PHONY: test-notifications
+test-notifications: ## Run tests for paladin-notifications
+	@echo "$(CYAN)Running tests for paladin-notifications...$(NC)"
+	@$(CARGO) test -p paladin-notifications
+
+.PHONY: test-content
+test-content: ## Run tests for paladin-content
+	@echo "$(CYAN)Running tests for paladin-content...$(NC)"
+	@$(CARGO) test -p paladin-content
+
+.PHONY: test-web
+test-web: ## Run tests for paladin-web
+	@echo "$(CYAN)Running tests for paladin-web...$(NC)"
+	@$(CARGO) test -p paladin-web
+
+.PHONY: test-facade
+test-facade: ## Run tests for paladin facade crate
+	@echo "$(CYAN)Running tests for paladin (facade)...$(NC)"
+	@$(CARGO) test -p paladin
+
 ##@ Code Quality
 
 .PHONY: fmt
@@ -151,12 +203,12 @@ fmt: ## Format code
 .PHONY: lint
 lint: ## Run linter
 	@echo "$(CYAN)Running linter...$(NC)"
-	@$(CARGO) clippy --all-targets --all-features -- -D warnings
+	@$(CARGO) clippy --workspace --all-targets --all-features -- -D warnings
 
 .PHONY: check
 check: ## Check code without building
 	@echo "$(CYAN)Checking code...$(NC)"
-	@$(CARGO) check --all-targets
+	@$(CARGO) check --workspace --all-targets
 
 .PHONY: audit
 audit: ## Run security audit
@@ -166,7 +218,7 @@ audit: ## Run security audit
 .PHONY: doc
 doc: ## Generate documentation
 	@echo "$(CYAN)Generating documentation...$(NC)"
-	@$(CARGO) doc --no-deps --document-private-items --open
+	@$(CARGO) doc --workspace --no-deps --open
 
 .PHONY: clean-code
 clean-code: fmt lint check ## Format, lint, and check code
@@ -176,12 +228,12 @@ clean-code: fmt lint check ## Format, lint, and check code
 .PHONY: build
 build: ## Build the project
 	@echo "$(CYAN)Building project...$(NC)"
-	@$(CARGO) build
+	@$(CARGO) build --workspace
 
 .PHONY: build-release
 build-release: ## Build release version
 	@echo "$(CYAN)Building release version...$(NC)"
-	@$(CARGO) build --release
+	@$(CARGO) build --release --workspace
 
 .PHONY: build-docker
 build-docker: ## Build Docker image
@@ -310,7 +362,7 @@ health: ## Check service health
 .PHONY: bench
 bench: ## Run benchmarks
 	@echo "$(CYAN)Running benchmarks...$(NC)"
-	@$(CARGO) bench
+	@$(CARGO) bench --workspace
 
 .PHONY: profile
 profile: ## Profile the application
