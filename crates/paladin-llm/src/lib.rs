@@ -41,6 +41,7 @@
 
 pub mod config;
 pub mod error;
+pub mod llm_analysis_service;
 pub mod provider_factory;
 
 #[cfg(feature = "openai")]

@@ -127,25 +127,25 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.12 Remove temporary re-exports from `src/infrastructure/adapters/notifications/mod.rs` once all internal consumers are updated.
   - [x] 3.13 Run `cargo test --workspace` and confirm all tests pass.
 
-- [ ] 4.0 Extract `paladin-content` crate
-  - [ ] 4.1 Create `crates/paladin-content/Cargo.toml` with version `0.1.0`, feature flags `pdf = ["dep:pdf-extract"]`, `web-scraping = ["dep:scraper"]`, `rss = ["dep:rss"]`, `news-api`, `tiktoken = ["dep:tiktoken-rs"]`, and dependencies: `paladin-ports = { workspace = true }`, `paladin-core = { workspace = true }`, `paladin-llm = { workspace = true, optional = true }` (needed for LLM analysis services), `reqwest`, `tokio`, `async-trait`, `serde`, `serde_json`, `thiserror`, `chrono`, `pdf-extract`, `scraper`, `rss`, `tiktoken-rs` (all optional, workspace or versioned).
-  - [ ] 4.2 Create directory structure: `crates/paladin-content/src/adapters/document/`, `crates/paladin-content/src/adapters/input/`, `crates/paladin-content/src/use_cases/`.
-  - [ ] 4.3 Move document adapter files: `pdf_extractor.rs`, `document_adapter.rs` → `crates/paladin-content/src/adapters/document/`. Create `crates/paladin-content/src/adapters/document/mod.rs` re-exporting them.
-  - [ ] 4.4 Move input adapter files (excluding `tensorflow_adapter.rs`): `file_content_fetcher.rs`, `file_content_list_fetcher.rs`, `http_content_fetcher.rs`, `local_file_fetcher.rs`, `news_api_fetcher.rs` → `crates/paladin-content/src/adapters/input/`. Create `crates/paladin-content/src/adapters/input/mod.rs`.
-  - [ ] 4.5 Verify `tensorflow_adapter.rs` remains at `src/infrastructure/adapters/input/tensorflow_adapter.rs`. If it has no `ml` feature flag gate yet, add `#[cfg(feature = "ml")]` and add `ml` to the facade's `[features]` table.
-  - [ ] 4.6 Move all 13 content use-case services and `mod.rs` from `src/application/use_cases/content/` → `crates/paladin-content/src/use_cases/`. Update all `crate::` imports to use `paladin_ports`, `paladin_core`, or `paladin_llm` as appropriate.
-  - [ ] 4.7 Create `crates/paladin-content/src/adapters/mod.rs` (re-exports `document` and `input` sub-modules) and `crates/paladin-content/src/lib.rs` (re-exports `adapters` and `use_cases`, all gated on relevant feature flags).
-  - [ ] 4.8 Add temporary re-exports in the original facade locations:
+- [x] 4.0 Extract `paladin-content` crate
+  - [x] 4.1 Create `crates/paladin-content/Cargo.toml` with version `0.1.0`, feature flags `pdf = ["dep:pdf-extract"]`, `web-scraping = ["dep:scraper"]`, `rss = ["dep:rss"]`, `news-api`, `tiktoken = ["dep:tiktoken-rs"]`, and dependencies: `paladin-ports = { workspace = true }`, `paladin-core = { workspace = true }`, `paladin-llm = { workspace = true, optional = true }` (needed for LLM analysis services), `reqwest`, `tokio`, `async-trait`, `serde`, `serde_json`, `thiserror`, `chrono`, `pdf-extract`, `scraper`, `rss`, `tiktoken-rs` (all optional, workspace or versioned).
+  - [x] 4.2 Create directory structure: `crates/paladin-content/src/adapters/document/`, `crates/paladin-content/src/adapters/input/`, `crates/paladin-content/src/use_cases/`.
+  - [x] 4.3 Move document adapter files: `pdf_extractor.rs`, `document_adapter.rs` → `crates/paladin-content/src/adapters/document/`. Create `crates/paladin-content/src/adapters/document/mod.rs` re-exporting them.
+  - [x] 4.4 Move input adapter files (excluding `tensorflow_adapter.rs`): `file_content_fetcher.rs`, `file_content_list_fetcher.rs`, `http_content_fetcher.rs`, `local_file_fetcher.rs`, `news_api_fetcher.rs` → `crates/paladin-content/src/adapters/input/`. Create `crates/paladin-content/src/adapters/input/mod.rs`.
+  - [x] 4.5 Verify `tensorflow_adapter.rs` remains at `src/infrastructure/adapters/input/tensorflow_adapter.rs`. If it has no `ml` feature flag gate yet, add `#[cfg(feature = "ml")]` and add `ml` to the facade's `[features]` table.
+  - [x] 4.6 Move all 13 content use-case services and `mod.rs` from `src/application/use_cases/content/` → `crates/paladin-content/src/use_cases/`. Update all `crate::` imports to use `paladin_ports`, `paladin_core`, or `paladin_llm` as appropriate.
+  - [x] 4.7 Create `crates/paladin-content/src/adapters/mod.rs` (re-exports `document` and `input` sub-modules) and `crates/paladin-content/src/lib.rs` (re-exports `adapters` and `use_cases`, all gated on relevant feature flags).
+  - [x] 4.8 Add temporary re-exports in the original facade locations:
         - `src/infrastructure/adapters/document/mod.rs` → `pub use paladin_content::adapters::document::*;`
         - `src/infrastructure/adapters/input/mod.rs` → add `pub use paladin_content::adapters::input::*;` (keep `pub mod tensorflow_adapter;` in place)
         - `src/application/use_cases/content/mod.rs` → `pub use paladin_content::use_cases::*;`
-  - [ ] 4.9 Verify `cargo build -p paladin-content --no-default-features` succeeds.
-  - [ ] 4.10 Verify `cargo build -p paladin-content --all-features` succeeds.
-  - [ ] 4.11 Add `paladin-content = { path = "crates/paladin-content" }` to `[workspace.dependencies]`. Add `"crates/paladin-content"` to `[workspace.members]`.
-  - [ ] 4.12 Update facade `Cargo.toml`: add `paladin-content = { workspace = true, optional = true }`. Redefine `content-processing` feature: `content-processing = ["dep:paladin-content", "paladin-content/pdf", "paladin-content/web-scraping", "paladin-content/rss", "paladin-content/news-api", "paladin-content/tiktoken"]`. Remove `pdf-extract`, `scraper`, `tiktoken-rs`, and `rss` from facade `[dependencies]`.
-  - [ ] 4.13 Update `tests/functional/content_fetching_pipeline_test.rs`, `tests/functional/content_lifecycle_test.rs`, `tests/functional/content_llm_analysis_pipeline_test.rs`, and `tests/integration/openai_content_analysis_integration_test.rs` to import from `paladin_content`.
-  - [ ] 4.14 Remove temporary re-exports from `src/infrastructure/adapters/document/mod.rs`, `src/infrastructure/adapters/input/mod.rs` (content entries only), and `src/application/use_cases/content/mod.rs` once all internal consumers are updated.
-  - [ ] 4.15 Run `cargo test --workspace` and confirm all tests pass.
+  - [x] 4.9 Verify `cargo build -p paladin-content --no-default-features` succeeds.
+  - [x] 4.10 Verify `cargo build -p paladin-content --all-features` succeeds.
+  - [x] 4.11 Add `paladin-content = { path = "crates/paladin-content" }` to `[workspace.dependencies]`. Add `"crates/paladin-content"` to `[workspace.members]`.
+  - [x] 4.12 Update facade `Cargo.toml`: add `paladin-content = { workspace = true, optional = true }`. Redefine `content-processing` feature: `content-processing = ["dep:paladin-content", "paladin-content/pdf", "paladin-content/web-scraping", "paladin-content/rss", "paladin-content/news-api", "paladin-content/tiktoken"]`. Remove `pdf-extract`, `scraper`, `tiktoken-rs`, and `rss` from facade `[dependencies]`.
+  - [x] 4.13 Update `tests/functional/content_fetching_pipeline_test.rs`, `tests/functional/content_lifecycle_test.rs`, `tests/functional/content_llm_analysis_pipeline_test.rs`, and `tests/integration/openai_content_analysis_integration_test.rs` to import from `paladin_content`.
+  - [x] 4.14 Remove temporary re-exports from `src/infrastructure/adapters/document/mod.rs`, `src/infrastructure/adapters/input/mod.rs` (content entries only), and `src/application/use_cases/content/mod.rs` once all internal consumers are updated.
+  - [x] 4.15 Run `cargo test --workspace` and confirm all tests pass.
 
 - [ ] 5.0 Extract `paladin-web` crate
   - [ ] 5.1 Create `crates/paladin-web/Cargo.toml` with version `0.1.0` and direct (non-optional) dependencies: `actix-web = "4.0"`, `axum = "0.8.4"`, `paladin-ports = { workspace = true }`, `paladin-core = { workspace = true }`, `tokio`, `serde`, `serde_json`, `thiserror` (workspace).

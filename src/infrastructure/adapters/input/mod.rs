@@ -1,6 +1,11 @@
-pub mod file_content_fetcher;
-pub mod file_content_list_fetcher;
-pub mod http_content_fetcher;
-pub mod local_file_fetcher;
-pub mod news_api_fetcher;
+#[cfg(feature = "content-processing")]
+pub use paladin_content::adapters::input::file_content_fetcher;
+#[cfg(feature = "content-processing")]
+pub use paladin_content::adapters::input::file_content_list_fetcher;
+#[cfg(feature = "content-processing")]
+pub use paladin_content::adapters::input::http_content_fetcher;
+#[cfg(feature = "content-processing")]
+pub use paladin_content::adapters::input::local_file_fetcher;
+#[cfg(feature = "content-processing")]
+pub use paladin_content::adapters::input::news_api_fetcher;
 pub mod tensorflow_adapter;

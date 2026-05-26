@@ -1,7 +1,4 @@
-//! Document processing adapters for PDF and other formats.
+//! Document processing adapters — re-exported from `paladin-content`.
 
-pub mod document_adapter;
-pub mod pdf_extractor;
-
-pub use document_adapter::DocumentAdapter;
-pub use pdf_extractor::PdfExtractor;
+pub use paladin_content::adapters::document::DocumentAdapter;
+pub use paladin_content::adapters::document::PdfExtractor;

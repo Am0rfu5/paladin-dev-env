@@ -1,13 +1,14 @@
-pub mod content_aggregator_service;
-pub mod content_analysis_service;
 pub mod content_ingestion_service;
-pub mod content_summarizer_service;
-// pub mod content_delivery_service;
-pub mod content_fetching_service;
-// pub mod content_filtering_service;
-pub mod content_llm_analysis_service;
-// pub mod content_summarizer_service;
-// pub mod content_filtering_service;
-// pub mod content_tagging_service;
-// pub mod content_translation_service;
-pub mod content_list_fetching_service;
+
+#[cfg(feature = "content-processing")]
+pub use paladin_content::use_cases::content_aggregator_service;
+#[cfg(feature = "content-processing")]
+pub use paladin_content::use_cases::content_analysis_service;
+#[cfg(feature = "content-processing")]
+pub use paladin_content::use_cases::content_fetching_service;
+#[cfg(feature = "content-processing")]
+pub use paladin_content::use_cases::content_list_fetching_service;
+#[cfg(feature = "content-processing")]
+pub use paladin_content::use_cases::content_llm_analysis_service;
+#[cfg(feature = "content-processing")]
+pub use paladin_content::use_cases::content_summarizer_service;

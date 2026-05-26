@@ -9,8 +9,8 @@
 //!
 //! Run with: `cargo run --example document_processing`
 
-use paladin::infrastructure::adapters::document::document_adapter::DocumentAdapter;
-use paladin::infrastructure::adapters::document::pdf_extractor::PdfExtractor;
+use paladin::infrastructure::adapters::document::DocumentAdapter;
+use paladin::infrastructure::adapters::document::PdfExtractor;
 use paladin_ports::input::document_port::{ChunkConfig, DocumentPort, DocumentSource};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
