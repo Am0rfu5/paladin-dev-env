@@ -1,3 +1,4 @@
+#![cfg(feature = "content-processing")]
 /*
 Content LLM Analysis Pipeline Test
 

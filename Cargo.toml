@@ -24,6 +24,7 @@ paladin-memory = { path = "crates/paladin-memory" }
 paladin-storage = { path = "crates/paladin-storage" }
 paladin-notifications = { path = "crates/paladin-notifications" }
 paladin-content = { path = "crates/paladin-content" }
+paladin-web = { path = "crates/paladin-web" }
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "mysql", "chrono", "uuid", "json"] }
 qdrant-client = { version = "1.14" }
 
@@ -50,12 +51,13 @@ paladin-memory = { workspace = true, features = ["sqlite"] }
 paladin-storage = { workspace = true, optional = true }
 paladin-notifications = { workspace = true, optional = true }
 paladin-content = { workspace = true, optional = true }
+paladin-web = { workspace = true, optional = true }
 reqwest = { workspace = true, features = ["blocking", "stream"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 rss = { version = "2.0", optional = true }
 scraper = { version = "0.23.1", optional = true }
-actix-web = { version = "4.0", optional = true }
+
 structopt = "0.3"
 tokio = { workspace = true }
 tokio-util = "0.7"
@@ -89,7 +91,6 @@ rust-s3 = { version = "0.35.1", optional = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 testcontainers-modules = { version = "0.12.1", features = ["minio"]}
 argon2 = "0.5.3"
-axum = { version = "0.8.4", optional = true }
 clap = { version = "4.5.40", features = ["derive", "cargo", "env"], optional = true }
 petgraph = "0.6"
 rand = "0.8"
@@ -211,7 +212,7 @@ llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]
 # Subsystem feature flags
 vision = []
 content-processing = ["dep:paladin-content", "paladin-content/web-scraping", "paladin-content/rss", "paladin-content/news-api", "paladin-content/tiktoken", "paladin-content/llm", "paladin-memory/content-processing"]
-web-server = ["actix-web", "axum"]
+web-server = ["dep:paladin-web"]
 notifications = ["dep:paladin-notifications", "paladin-notifications/email", "paladin-notifications/push", "paladin-notifications/system"]
 storage-sqlite = ["dep:paladin-storage", "paladin-storage/sqlite"]
 storage-mysql = ["dep:paladin-storage", "paladin-storage/mysql"]

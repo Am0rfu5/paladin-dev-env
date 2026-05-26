@@ -147,22 +147,22 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.14 Remove temporary re-exports from `src/infrastructure/adapters/document/mod.rs`, `src/infrastructure/adapters/input/mod.rs` (content entries only), and `src/application/use_cases/content/mod.rs` once all internal consumers are updated.
   - [x] 4.15 Run `cargo test --workspace` and confirm all tests pass.
 
-- [ ] 5.0 Extract `paladin-web` crate
-  - [ ] 5.1 Create `crates/paladin-web/Cargo.toml` with version `0.1.0` and direct (non-optional) dependencies: `actix-web = "4.0"`, `axum = "0.8.4"`, `paladin-ports = { workspace = true }`, `paladin-core = { workspace = true }`, `tokio`, `serde`, `serde_json`, `thiserror` (workspace).
-  - [ ] 5.2 Create directory structure: `crates/paladin-web/src/adapters/`.
-  - [ ] 5.3 Move `src/infrastructure/web/user_controller.rs` → `crates/paladin-web/src/user_controller.rs`. Update `crate::` imports.
-  - [ ] 5.4 Move `src/infrastructure/adapters/output/api_content_deliverer.rs` → `crates/paladin-web/src/adapters/api_content_deliverer.rs`. Update imports (port traits come from `paladin_ports`).
-  - [ ] 5.5 Create `crates/paladin-web/src/lib.rs` from the contents of `src/infrastructure/web/mod.rs`. Add `pub mod user_controller;` and `pub mod adapters;`. Update `crate::` imports.
-  - [ ] 5.6 Create `crates/paladin-web/src/adapters/mod.rs` re-exporting `api_content_deliverer`.
-  - [ ] 5.7 Add temporary re-exports:
+- [x] 5.0 Extract `paladin-web` crate
+  - [x] 5.1 Create `crates/paladin-web/Cargo.toml` with version `0.1.0` and direct (non-optional) dependencies: `actix-web = "4.0"`, `axum = "0.8.4"`, `paladin-ports = { workspace = true }`, `paladin-core = { workspace = true }`, `tokio`, `serde`, `serde_json`, `thiserror` (workspace).
+  - [x] 5.2 Create directory structure: `crates/paladin-web/src/adapters/`.
+  - [x] 5.3 Move `src/infrastructure/web/user_controller.rs` → `crates/paladin-web/src/user_controller.rs`. Update `crate::` imports.
+  - [x] 5.4 Move `src/infrastructure/adapters/output/api_content_deliverer.rs` → `crates/paladin-web/src/adapters/api_content_deliverer.rs`. Update imports (port traits come from `paladin_ports`).
+  - [x] 5.5 Create `crates/paladin-web/src/lib.rs` from the contents of `src/infrastructure/web/mod.rs`. Add `pub mod user_controller;` and `pub mod adapters;`. Update `crate::` imports.
+  - [x] 5.6 Create `crates/paladin-web/src/adapters/mod.rs` re-exporting `api_content_deliverer`.
+  - [x] 5.7 Add temporary re-exports:
         - `src/infrastructure/web/mod.rs` → `pub use paladin_web::*;`
         - `src/infrastructure/adapters/output/mod.rs` → `#[cfg(feature = "web-server")] pub use paladin_web::adapters::*;`
-  - [ ] 5.8 Verify `cargo build -p paladin-web` succeeds in isolation.
-  - [ ] 5.9 Update `src/config/setup/service_runner.rs`: wrap all web-related imports and fields with `#[cfg(feature = "web-server")]`; update import paths to use `paladin_web`.
-  - [ ] 5.10 Add `paladin-web = { path = "crates/paladin-web" }` to `[workspace.dependencies]`. Add `"crates/paladin-web"` to `[workspace.members]`.
-  - [ ] 5.11 Update facade `Cargo.toml`: add `paladin-web = { workspace = true, optional = true }`. Redefine `web-server` feature: `web-server = ["dep:paladin-web"]`. Remove `actix-web` and `axum` from facade `[dependencies]`.
-  - [ ] 5.12 Remove temporary re-exports from `src/infrastructure/web/mod.rs` and `src/infrastructure/adapters/output/mod.rs` once all internal consumers are updated.
-  - [ ] 5.13 Run `cargo test --workspace` and confirm all tests pass.
+  - [x] 5.8 Verify `cargo build -p paladin-web` succeeds in isolation.
+  - [x] 5.9 Update `src/config/setup/service_runner.rs`: wrap all web-related imports and fields with `#[cfg(feature = "web-server")]`; update import paths to use `paladin_web`.
+  - [x] 5.10 Add `paladin-web = { path = "crates/paladin-web" }` to `[workspace.dependencies]`. Add `"crates/paladin-web"` to `[workspace.members]`.
+  - [x] 5.11 Update facade `Cargo.toml`: add `paladin-web = { workspace = true, optional = true }`. Redefine `web-server` feature: `web-server = ["dep:paladin-web"]`. Remove `actix-web` and `axum` from facade `[dependencies]`.
+  - [x] 5.12 Remove temporary re-exports from `src/infrastructure/web/mod.rs` and `src/infrastructure/adapters/output/mod.rs` once all internal consumers are updated.
+  - [x] 5.13 Run `cargo test --workspace` and confirm all tests pass.
 
 - [ ] 6.0 Update facade crate and workspace metadata
   - [ ] 6.1 Confirm all four new crates appear in `[workspace.members]` in root `Cargo.toml` (added incrementally in Tasks 2–5; verify completeness now).

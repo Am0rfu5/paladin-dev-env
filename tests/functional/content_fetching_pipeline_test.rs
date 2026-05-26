@@ -1,3 +1,4 @@
+#![cfg(feature = "content-processing")]
 use std::sync::Arc;
 use uuid::Uuid;
 

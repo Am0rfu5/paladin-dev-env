@@ -10,7 +10,7 @@ use crate::application::storage::user_store::UserRepositoryPort;
 use crate::application::use_cases::notification_orchestrator::NotificationService;
 use crate::core::base::entity::message::Location;
 use crate::core::platform::container::log::{LogDestination, LogEntryBuilder, LogLevel};
-use crate::core::platform::container::user::{Email, User, UserError, UserProfile};
+use crate::core::platform::container::user::{Email, User, UserError};
 use argon2::password_hash::{SaltString, rand_core::OsRng};
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use async_trait::async_trait;
@@ -18,84 +18,11 @@ use paladin_ports::output::log_port::LogPort;
 use std::sync::Arc;
 use uuid::Uuid;
 
-/// User registration request
-#[derive(Debug, Clone)]
-pub struct UserRegistrationRequest {
-    pub username: String,
-    pub email: String,
-    pub password: String,
-    pub profile: Option<UserProfile>,
-}
-
-/// User login request
-#[derive(Debug, Clone)]
-pub struct UserLoginRequest {
-    pub email: String,
-    pub password: String,
-}
-
-/// User profile update request
-#[derive(Debug, Clone)]
-pub struct UserProfileUpdateRequest {
-    pub user_id: Uuid,
-    pub username: Option<String>,
-    pub email: Option<String>,
-    pub profile: Option<UserProfile>,
-}
-
-/// User login response
-#[derive(Debug, Clone)]
-pub struct UserAuthenticationResult {
-    pub user_id: Uuid,
-    pub username: String,
-    pub email: String,
-    pub is_verified: bool,
-    pub success: bool,
-}
-
-/// User Service trait defining business operations
-#[async_trait]
-pub trait UserServiceTrait: Send + Sync {
-    /// Register a new user
-    async fn register_user(&self, request: UserRegistrationRequest) -> Result<User, UserError>;
-
-    /// Authenticate a user login
-    async fn login_user(
-        &self,
-        request: UserLoginRequest,
-    ) -> Result<UserAuthenticationResult, UserError>;
-
-    /// Update user profile
-    async fn update_user_profile(
-        &self,
-        request: UserProfileUpdateRequest,
-    ) -> Result<User, UserError>;
-
-    /// Get user by ID
-    async fn get_user_by_id(&self, user_id: Uuid) -> Result<Option<User>, UserError>;
-
-    /// Get user by email
-    async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, UserError>;
-
-    /// Activate user account
-    async fn activate_user(&self, user_id: Uuid) -> Result<(), UserError>;
-
-    /// Deactivate user account
-    async fn deactivate_user(&self, user_id: Uuid) -> Result<(), UserError>;
-
-    /// Verify user email
-    async fn verify_user(&self, user_id: Uuid) -> Result<(), UserError>;
-
-    /// CLI support methods
-    /// Find users by active status
-    async fn find_by_active_status(&self, is_active: bool) -> Result<Vec<User>, UserError>;
-
-    /// Find users by verification status
-    async fn find_by_verification_status(&self, is_verified: bool) -> Result<Vec<User>, UserError>;
-
-    /// Count total users
-    async fn count_users(&self) -> Result<u64, UserError>;
-}
+// Re-export trait + DTOs from paladin-core so existing consumers keep working.
+pub use paladin_core::platform::manager::user_service::{
+    UserAuthenticationResult, UserLoginRequest, UserProfileUpdateRequest, UserRegistrationRequest,
+    UserServiceTrait,
+};
 
 /// Concrete implementation of UserService
 pub struct UserService {

@@ -1,2 +1,2 @@
 #[cfg(feature = "web-server")]
-pub mod api_content_deliverer;
+pub use paladin_web::adapters::api_content_deliverer;
