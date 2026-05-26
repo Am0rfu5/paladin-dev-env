@@ -197,3 +197,27 @@ Update the file after completing each sub-task, not just after completing an ent
           -m "- All four new crates are opt-in; paladin-core/paladin-battalion no longer transitively pull heavy deps" \
           -m "Closes Epic 1, Milestone 7"
         ```
+
+NOTE: a followup correction run was needed because of errors caught by VS Code Problems
+
+Ran terminal command:  cd /workspace && git add . && git commit \
+  -m "fix: resolve VS Code IDE compiler errors in feature-gated code paths" \
+  -m "- paladin-storage: fix stale crate::core:: imports in mysql/sqlite test modules" \
+  -m "- paladin-storage: remove #[cfg(test)] from new_with_url (needed by facade test code via re-export)" \
+  -m "- paladin-content: add missing futures workspace dep (used in content_llm_analysis_service)" \
+  -m "- rag_integration_tests: add missing retrieval_trigger/timeout_seconds fields to RagConfig literals" \
+  -m "- redis_queue_integration_test: fix QueueConfig import (manager::queue_service -> container::queue_config)" \
+  -m "All errors were in feature-gated paths not exercised by default cargo test --workspace"
+
+Completed: *Validate all fixes compile cleanly* (6/6)
+
+All 6 errors fixed and committed (`85dc4db`). Here's a summary of each fix:
+
+| File | Error | Fix |
+|------|-------|-----|
+| mysql_content_repository.rs | `crate::core` doesn't exist in `paladin-storage` | Changed to `paladin_core::platform::container::content::TextContent` |
+| sqlite_content_repository.rs | Same stale `crate::core` import | Same fix |
+| sqlite_user_repository.rs | `new_with_url` was `#[cfg(test)]` but called from facade's test code via re-export | Removed `#[cfg(test)]` — the method is valid public API |
+| Cargo.toml | `futures` crate used in `content_llm_analysis_service` but not declared | Added `futures = { workspace = true }` |
+| rag_integration_tests.rs | 4 `RagConfig` literals missing `retrieval_trigger` or `timeout_seconds` | Added missing fields (`..RagConfig::default()` for the outer tests, explicit `timeout_seconds: 5` for inner module tests) |
+| redis_queue_integration_test.rs | `paladin::core::platform::manager::queue_service` doesn't exist | Changed to correct path: `paladin::core::platform::container::queue_config::QueueConfig` |

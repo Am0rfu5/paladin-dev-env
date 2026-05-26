@@ -111,7 +111,7 @@ impl MockLlmPort {
                 "Seasonal patterns visible"
             ],
             "sentiment": "neutral",
-            "tone": "analytical", 
+            "tone": "analytical",
             "quality_score": 9.0,
             "visual_analysis": {
                 "composition": "well-balanced",
@@ -303,7 +303,7 @@ fn create_test_prompts() -> Vec<PromptItem> {
                 content: r#"Please analyze the attached content and provide comprehensive insights in JSON format:
 {
   "main_topics": ["topic1", "topic2"],
-  "key_information": ["fact1", "fact2"], 
+  "key_information": ["fact1", "fact2"],
   "sentiment": "positive/negative/neutral",
   "tone": "formal/informal/technical/etc",
   "quality_score": 0.8,

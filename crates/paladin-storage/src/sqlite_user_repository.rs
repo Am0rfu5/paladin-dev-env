@@ -36,7 +36,6 @@ impl SqliteUserRepository {
     }
 
     /// Create a new SQLite user repository with custom database URL (for testing)
-    #[cfg(test)]
     pub async fn new_with_url(database_url: &str) -> Result<Self, UserError> {
         let pool = SqlitePoolOptions::new()
             .max_connections(5)

@@ -742,7 +742,7 @@ impl SqlStore for SqliteStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::content::TextContent;
+    use paladin_core::platform::container::content::TextContent;
 
     #[tokio::test]
     async fn test_sqlite_repository_creation() {

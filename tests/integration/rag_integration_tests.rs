@@ -13,6 +13,7 @@ async fn test_rag_config_validation() {
         min_similarity: 0.7,
         max_tokens: 2000,
         timeout_seconds: 5,
+        ..RagConfig::default()
     };
 
     assert!(config.validate().is_ok());
@@ -117,6 +118,7 @@ async fn test_rag_config_boundary_values() {
         min_similarity: 0.0,
         max_tokens: 1,
         timeout_seconds: 1,
+        ..RagConfig::default()
     };
     assert!(min_config.validate().is_ok());
 
@@ -305,6 +307,7 @@ mod qdrant_rag_tests {
             top_k: 2,
             min_similarity: 0.0,
             max_tokens: 2000,
+            timeout_seconds: 5,
             retrieval_trigger: RetrievalTrigger::Always,
         };
         let rag_service = RagRetrievalService::new(sanctum, embedding, rag_config);
@@ -361,6 +364,7 @@ mod qdrant_rag_tests {
             top_k: 5,
             min_similarity: 0.0,
             max_tokens: 100, // Small budget - should truncate results
+            timeout_seconds: 5,
             retrieval_trigger: RetrievalTrigger::Always,
         };
         let rag_service = RagRetrievalService::new(sanctum, embedding, rag_config);

@@ -13,8 +13,8 @@ mod queue_integration_tests {
     };
 
     use paladin::core::base::entity::message::{Location, Message, MessagePriority};
+    use paladin::core::platform::container::queue_config::QueueConfig;
     use paladin::core::platform::container::queue_item::{QueueItem, QueueItemConfig};
-    use paladin::core::platform::manager::queue_service::QueueConfig;
     use paladin::infrastructure::adapters::queue::redis::{RedisQueueAdapter, RedisQueueConfig};
     use paladin_ports::output::queue_port::{
         BatchQueuePort, PriorityQueuePort, QueueError, QueueManagementPort, QueuePort,

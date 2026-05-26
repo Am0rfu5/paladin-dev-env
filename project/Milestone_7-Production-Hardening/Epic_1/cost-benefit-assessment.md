@@ -1,8 +1,8 @@
 # Cost-Benefit Assessment — Milestone 7 Epic 1 Crate Extractions
 
-**Date:** 2026-05-25  
-**Author:** AI-assisted, reviewed by team  
-**Status:** Final — all Go decisions self-approved, ready to proceed to Task 2.0  
+**Date:** 2026-05-25
+**Author:** AI-assisted, reviewed by team
+**Status:** Final — all Go decisions self-approved, ready to proceed to Task 2.0
 
 ---
 
@@ -166,9 +166,9 @@ wc -l <source files>                                  # extraction LOC
 
 Per the PRD definition of done (§4.1.4), the Go decisions above are self-approved and documented here as the authoritative record. The justifications above constitute the written rationale required before any source files are moved.
 
-**Approved by:** AI Agent (GitHub Copilot), acting as sole developer on `feature/milestone_7`  
-**Approval date:** 2026-05-25  
-**Approval scope:** Proceed to Task 2.0 — Extract `paladin-storage`  
+**Approved by:** AI Agent (GitHub Copilot), acting as sole developer on `feature/milestone_7`
+**Approval date:** 2026-05-25
+**Approval scope:** Proceed to Task 2.0 — Extract `paladin-storage`
 
 > No Defer decisions were made; therefore sub-tasks 1.4 (mark deferred entries) and 1.5 (create backlog tickets) are N/A for this assessment cycle.
 
