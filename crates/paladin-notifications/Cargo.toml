@@ -1,0 +1,28 @@
+[package]
+name = "paladin-notifications"
+version = "0.1.0"
+edition = "2021"
+description = "Notification adapter implementations for the Paladin framework (email, push, system)"
+license = "MIT"
+repository = "https://github.com/DF3NDR/paladin-dev-env"
+
+[lib]
+doctest = false
+
+[features]
+email  = ["dep:lettre", "dep:handlebars"]
+push   = []
+system = []
+
+[dependencies]
+paladin-core  = { workspace = true }
+paladin-ports = { workspace = true }
+async-trait   = { workspace = true }
+chrono        = { workspace = true }
+serde         = { workspace = true }
+thiserror     = { workspace = true }
+uuid          = { workspace = true }
+tokio        = { workspace = true }
+serde_json   = { workspace = true }
+lettre = { version = "0.11.17", features = ["smtp-transport", "pool", "hostname", "builder"], optional = true }
+handlebars = { version = "6.3.2", optional = true }

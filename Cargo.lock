@@ -3276,11 +3276,9 @@ dependencies = [
  "env_logger",
  "fasthash",
  "futures",
- "handlebars",
  "indicatif",
  "insta",
  "lazy_static",
- "lettre",
  "lock_api",
  "log",
  "md5 0.8.0",
@@ -3292,6 +3290,7 @@ dependencies = [
  "paladin-core",
  "paladin-llm",
  "paladin-memory",
+ "paladin-notifications",
  "paladin-ports",
  "paladin-storage",
  "pdf-extract",
@@ -3411,6 +3410,23 @@ dependencies = [
  "tiktoken-rs",
  "tokio",
  "tokio-test",
+ "uuid",
+]
+
+[[package]]
+name = "paladin-notifications"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "handlebars",
+ "lettre",
+ "paladin-core",
+ "paladin-ports",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "tokio",
  "uuid",
 ]
 

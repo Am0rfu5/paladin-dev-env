@@ -43,19 +43,21 @@ impl Default for NotificationConfig {
 #[cfg(feature = "notifications")]
 impl EnvOverridable for NotificationConfig {
     fn apply_env_overrides(&mut self) {
-        if let Ok(v) = std::env::var("APP_NOTIFICATIONS_ENABLED") {
-            if let Ok(b) = v.parse::<bool>() {
-                self.enabled = b;
-            }
+        if let Some(b) = std::env::var("APP_NOTIFICATIONS_ENABLED")
+            .ok()
+            .and_then(|v| v.parse::<bool>().ok())
+        {
+            self.enabled = b;
         }
         if let Some(ref mut email_config) = self.email {
             if let Ok(v) = std::env::var("APP_EMAIL_SMTP_HOST") {
                 email_config.smtp_host = v;
             }
-            if let Ok(v) = std::env::var("APP_EMAIL_SMTP_PORT") {
-                if let Ok(p) = v.parse::<u16>() {
-                    email_config.smtp_port = p;
-                }
+            if let Some(p) = std::env::var("APP_EMAIL_SMTP_PORT")
+                .ok()
+                .and_then(|v| v.parse::<u16>().ok())
+            {
+                email_config.smtp_port = p;
             }
             if let Ok(v) = std::env::var("APP_EMAIL_USERNAME") {
                 email_config.username = v;
@@ -69,10 +71,11 @@ impl EnvOverridable for NotificationConfig {
             if let Ok(v) = std::env::var("APP_EMAIL_FROM_NAME") {
                 email_config.from_name = Some(v);
             }
-            if let Ok(v) = std::env::var("APP_EMAIL_USE_TLS") {
-                if let Ok(b) = v.parse::<bool>() {
-                    email_config.use_tls = b;
-                }
+            if let Some(b) = std::env::var("APP_EMAIL_USE_TLS")
+                .ok()
+                .and_then(|v| v.parse::<bool>().ok())
+            {
+                email_config.use_tls = b;
             }
         }
     }

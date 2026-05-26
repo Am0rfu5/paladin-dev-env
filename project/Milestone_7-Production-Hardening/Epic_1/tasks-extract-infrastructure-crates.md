@@ -93,39 +93,39 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.5 For each **Defer** decision: create a backlog ticket titled `Extract paladin-{name} crate` tagged `milestone-8+-candidate` with a link to `cost-benefit-assessment.md`. _(N/A — no Defer decisions)_
   - [x] 1.6 Confirm all Go decisions with the team lead or via documented self-approval before proceeding to Task 2.0. _(Self-approved in `cost-benefit-assessment.md`, 2026-05-25)_
 
-- [ ] 2.0 Extract `paladin-storage` crate
-  - [ ] 2.1 **Prerequisite — move repository port traits to `paladin-ports`:** Create `crates/paladin-ports/src/output/repository_port.rs`. Move the following from `src/application/storage/sql_store.rs`: `RepositoryError`, `RepositoryStats`, `ContentRepository`, `ContentListRepository`, `TransactionManager`, `MigrationManager`, `SqlStore`. Update `crates/paladin-ports/src/output/mod.rs` to add `pub mod repository_port;`. Update `crates/paladin-ports/src/lib.rs` with re-exports. Replace the original definitions in `sql_store.rs` with `pub use paladin_ports::output::repository_port::*;`.
-  - [ ] 2.2 Verify `cargo build --workspace` still passes after the port trait move (no regressions before any file is moved).
-  - [ ] 2.3 Create `crates/paladin-storage/Cargo.toml` with `[package]` at version `0.1.0`, `[features]` (`sqlite`, `mysql`), and dependencies: `paladin-ports = { workspace = true }`, `paladin-core = { workspace = true }`, `sqlx = { workspace = true, optional = true }`, `tokio`, `thiserror`, `serde`, `uuid`, `chrono` (all `{ workspace = true }`).
-  - [ ] 2.4 Create `crates/paladin-storage/src/lib.rs` with `#[cfg(feature = "sqlite")] pub mod sqlite_content_repository;`, `#[cfg(feature = "sqlite")] pub mod sqlite_user_repository;`, `#[cfg(feature = "mysql")] pub mod mysql_content_repository;`.
-  - [ ] 2.5 Move `src/infrastructure/repositories/sqlite_content_repository.rs` → `crates/paladin-storage/src/sqlite_content_repository.rs`. Update all `crate::` imports to use `paladin_ports::output::repository_port::` for the trait types.
-  - [ ] 2.6 Move `src/infrastructure/repositories/sqlite_user_repository.rs` → `crates/paladin-storage/src/sqlite_user_repository.rs`. Update `crate::` imports similarly.
-  - [ ] 2.7 Move `src/infrastructure/repositories/mysql_content_repository.rs` → `crates/paladin-storage/src/mysql_content_repository.rs`. Update `crate::` imports similarly.
-  - [ ] 2.8 Add temporary re-exports in `src/infrastructure/repositories/mod.rs`: `#[cfg(feature = "storage-sqlite")] pub use paladin_storage::sqlite_content_repository::*;` etc. This keeps existing consumers compiling during the transition.
-  - [ ] 2.9 Verify `cargo build -p paladin-storage --features sqlite` succeeds in isolation.
-  - [ ] 2.10 Verify `cargo build -p paladin-storage --features mysql` succeeds in isolation.
-  - [ ] 2.11 Update `[workspace.dependencies]` in root `Cargo.toml` to add `mysql` to the `sqlx` features list: `sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "mysql", "chrono", "uuid", "json"] }`.
-  - [ ] 2.12 Add `paladin-storage = { path = "crates/paladin-storage" }` to `[workspace.dependencies]`. Add `"crates/paladin-storage"` to `[workspace.members]`.
-  - [ ] 2.13 Add to facade `[dependencies]`: `paladin-storage = { workspace = true, optional = true }`. Add to facade `[features]`: `storage-sqlite = ["dep:paladin-storage", "paladin-storage/sqlite"]`, `storage-mysql = ["dep:paladin-storage", "paladin-storage/mysql"]`, `storage = ["storage-sqlite", "storage-mysql"]`.
-  - [ ] 2.14 Update `src/config/setup/service_runner.rs`: gate the `SqliteStore` import with `#[cfg(feature = "storage-sqlite")]`; update import path to `paladin_storage::sqlite_content_repository::SqliteStore`.
-  - [ ] 2.15 Update workspace-root `tests/repository/mysql_content_repository_test.rs` and `tests/repository.rs` to import from `paladin_storage` instead of the facade.
-  - [ ] 2.16 Remove the temporary re-exports from `src/infrastructure/repositories/mod.rs` once all internal consumers have been updated to import from `paladin_storage` directly.
-  - [ ] 2.17 Run `cargo test --workspace` and confirm all tests pass.
+- [x] 2.0 Extract `paladin-storage` crate
+  - [x] 2.1 **Prerequisite — move repository port traits to `paladin-ports`:** Create `crates/paladin-ports/src/output/repository_port.rs`. Move the following from `src/application/storage/sql_store.rs`: `RepositoryError`, `RepositoryStats`, `ContentRepository`, `ContentListRepository`, `TransactionManager`, `MigrationManager`, `SqlStore`. Update `crates/paladin-ports/src/output/mod.rs` to add `pub mod repository_port;`. Update `crates/paladin-ports/src/lib.rs` with re-exports. Replace the original definitions in `sql_store.rs` with `pub use paladin_ports::output::repository_port::*;`.
+  - [x] 2.2 Verify `cargo build --workspace` still passes after the port trait move (no regressions before any file is moved).
+  - [x] 2.3 Create `crates/paladin-storage/Cargo.toml` with `[package]` at version `0.1.0`, `[features]` (`sqlite`, `mysql`), and dependencies: `paladin-ports = { workspace = true }`, `paladin-core = { workspace = true }`, `sqlx = { workspace = true, optional = true }`, `tokio`, `thiserror`, `serde`, `uuid`, `chrono` (all `{ workspace = true }`).
+  - [x] 2.4 Create `crates/paladin-storage/src/lib.rs` with `#[cfg(feature = "sqlite")] pub mod sqlite_content_repository;`, `#[cfg(feature = "sqlite")] pub mod sqlite_user_repository;`, `#[cfg(feature = "mysql")] pub mod mysql_content_repository;`.
+  - [x] 2.5 Move `src/infrastructure/repositories/sqlite_content_repository.rs` → `crates/paladin-storage/src/sqlite_content_repository.rs`. Update all `crate::` imports to use `paladin_ports::output::repository_port::` for the trait types.
+  - [x] 2.6 Move `src/infrastructure/repositories/sqlite_user_repository.rs` → `crates/paladin-storage/src/sqlite_user_repository.rs`. Update `crate::` imports similarly.
+  - [x] 2.7 Move `src/infrastructure/repositories/mysql_content_repository.rs` → `crates/paladin-storage/src/mysql_content_repository.rs`. Update `crate::` imports similarly.
+  - [x] 2.8 Add temporary re-exports in `src/infrastructure/repositories/mod.rs`: `#[cfg(feature = "storage-sqlite")] pub use paladin_storage::sqlite_content_repository::*;` etc. This keeps existing consumers compiling during the transition.
+  - [x] 2.9 Verify `cargo build -p paladin-storage --features sqlite` succeeds in isolation.
+  - [x] 2.10 Verify `cargo build -p paladin-storage --features mysql` succeeds in isolation.
+  - [x] 2.11 Update `[workspace.dependencies]` in root `Cargo.toml` to add `mysql` to the `sqlx` features list: `sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "mysql", "chrono", "uuid", "json"] }`.
+  - [x] 2.12 Add `paladin-storage = { path = "crates/paladin-storage" }` to `[workspace.dependencies]`. Add `"crates/paladin-storage"` to `[workspace.members]`.
+  - [x] 2.13 Add to facade `[dependencies]`: `paladin-storage = { workspace = true, optional = true }`. Add to facade `[features]`: `storage-sqlite = ["dep:paladin-storage", "paladin-storage/sqlite"]`, `storage-mysql = ["dep:paladin-storage", "paladin-storage/mysql"]`, `storage = ["storage-sqlite", "storage-mysql"]`.
+  - [x] 2.14 Update `src/config/setup/service_runner.rs`: gate the `SqliteStore` import with `#[cfg(feature = "storage-sqlite")]`; update import path to `paladin_storage::sqlite_content_repository::SqliteStore`.
+  - [x] 2.15 Update workspace-root `tests/repository/mysql_content_repository_test.rs` and `tests/repository.rs` to import from `paladin_storage` instead of the facade.
+  - [x] 2.16 Remove the temporary re-exports from `src/infrastructure/repositories/mod.rs` once all internal consumers have been updated to import from `paladin_storage` directly.
+  - [x] 2.17 Run `cargo test --workspace` and confirm all tests pass.
 
-- [ ] 3.0 Extract `paladin-notifications` crate
-  - [ ] 3.1 Create `crates/paladin-notifications/Cargo.toml` with version `0.1.0`, feature flags `email = ["dep:lettre", "dep:handlebars"]`, `push`, `system`, and dependencies: `paladin-ports = { workspace = true }`, `paladin-core = { workspace = true }`, `lettre = { version = "0.11.17", ..., optional = true }`, `handlebars = { version = "6.3.2", optional = true }`, `async-trait`, `thiserror`, `serde` (workspace).
-  - [ ] 3.2 Create `crates/paladin-notifications/src/lib.rs` with conditional `pub mod` declarations for each adapter, gated by their respective feature flags.
-  - [ ] 3.3 Move `src/infrastructure/adapters/notifications/email_notification_adapter.rs` → `crates/paladin-notifications/src/email_notification_adapter.rs`. Update `crate::` imports to use `paladin_ports`.
-  - [ ] 3.4 Move `src/infrastructure/adapters/notifications/push_notification_adapter.rs` → `crates/paladin-notifications/src/push_notification_adapter.rs`. Update imports.
-  - [ ] 3.5 Move `src/infrastructure/adapters/notifications/system_notification_adapter.rs` → `crates/paladin-notifications/src/system_notification_adapter.rs`. Update imports.
-  - [ ] 3.6 Add temporary re-exports in `src/infrastructure/adapters/notifications/mod.rs`: `pub use paladin_notifications::*;` (gated on `notifications` feature). Keep the file in place as a bridge.
-  - [ ] 3.7 Verify `cargo build -p paladin-notifications --no-default-features` succeeds (crate skeleton compiles without adapters).
-  - [ ] 3.8 Verify `cargo build -p paladin-notifications --all-features` succeeds.
-  - [ ] 3.9 Add `paladin-notifications = { path = "crates/paladin-notifications" }` to `[workspace.dependencies]`. Add `"crates/paladin-notifications"` to `[workspace.members]`.
-  - [ ] 3.10 Update facade `Cargo.toml`: add `paladin-notifications = { workspace = true, optional = true }` to `[dependencies]`. Redefine `notifications` feature: `notifications = ["dep:paladin-notifications", "paladin-notifications/email", "paladin-notifications/push", "paladin-notifications/system"]`. Remove `lettre` and `handlebars` from facade `[dependencies]`.
-  - [ ] 3.11 Update `tests/integration/notification_system_integration_test.rs` imports to reference `paladin_notifications` types directly.
-  - [ ] 3.12 Remove temporary re-exports from `src/infrastructure/adapters/notifications/mod.rs` once all internal consumers are updated.
-  - [ ] 3.13 Run `cargo test --workspace` and confirm all tests pass.
+- [x] 3.0 Extract `paladin-notifications` crate
+  - [x] 3.1 Create `crates/paladin-notifications/Cargo.toml` with version `0.1.0`, feature flags `email = ["dep:lettre", "dep:handlebars"]`, `push`, `system`, and dependencies: `paladin-ports = { workspace = true }`, `paladin-core = { workspace = true }`, `lettre = { version = "0.11.17", ..., optional = true }`, `handlebars = { version = "6.3.2", optional = true }`, `async-trait`, `thiserror`, `serde` (workspace).
+  - [x] 3.2 Create `crates/paladin-notifications/src/lib.rs` with conditional `pub mod` declarations for each adapter, gated by their respective feature flags.
+  - [x] 3.3 Move `src/infrastructure/adapters/notifications/email_notification_adapter.rs` → `crates/paladin-notifications/src/email_notification_adapter.rs`. Update `crate::` imports to use `paladin_ports`.
+  - [x] 3.4 Move `src/infrastructure/adapters/notifications/push_notification_adapter.rs` → `crates/paladin-notifications/src/push_notification_adapter.rs`. Update imports.
+  - [x] 3.5 Move `src/infrastructure/adapters/notifications/system_notification_adapter.rs` → `crates/paladin-notifications/src/system_notification_adapter.rs`. Update imports.
+  - [x] 3.6 Add temporary re-exports in `src/infrastructure/adapters/notifications/mod.rs`: `pub use paladin_notifications::*;` (gated on `notifications` feature). Keep the file in place as a bridge.
+  - [x] 3.7 Verify `cargo build -p paladin-notifications --no-default-features` succeeds (crate skeleton compiles without adapters).
+  - [x] 3.8 Verify `cargo build -p paladin-notifications --all-features` succeeds.
+  - [x] 3.9 Add `paladin-notifications = { path = "crates/paladin-notifications" }` to `[workspace.dependencies]`. Add `"crates/paladin-notifications"` to `[workspace.members]`.
+  - [x] 3.10 Update facade `Cargo.toml`: add `paladin-notifications = { workspace = true, optional = true }` to `[dependencies]`. Redefine `notifications` feature: `notifications = ["dep:paladin-notifications", "paladin-notifications/email", "paladin-notifications/push", "paladin-notifications/system"]`. Remove `lettre` and `handlebars` from facade `[dependencies]`.
+  - [x] 3.11 Update `tests/integration/notification_system_integration_test.rs` imports to reference `paladin_notifications` types directly.
+  - [x] 3.12 Remove temporary re-exports from `src/infrastructure/adapters/notifications/mod.rs` once all internal consumers are updated.
+  - [x] 3.13 Run `cargo test --workspace` and confirm all tests pass.
 
 - [ ] 4.0 Extract `paladin-content` crate
   - [ ] 4.1 Create `crates/paladin-content/Cargo.toml` with version `0.1.0`, feature flags `pdf = ["dep:pdf-extract"]`, `web-scraping = ["dep:scraper"]`, `rss = ["dep:rss"]`, `news-api`, `tiktoken = ["dep:tiktoken-rs"]`, and dependencies: `paladin-ports = { workspace = true }`, `paladin-core = { workspace = true }`, `paladin-llm = { workspace = true, optional = true }` (needed for LLM analysis services), `reqwest`, `tokio`, `async-trait`, `serde`, `serde_json`, `thiserror`, `chrono`, `pdf-extract`, `scraper`, `rss`, `tiktoken-rs` (all optional, workspace or versioned).
