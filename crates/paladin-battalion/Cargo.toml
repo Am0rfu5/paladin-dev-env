@@ -22,3 +22,10 @@ rand          = "0.8"
 tokio-util    = "0.7"
 petgraph      = "0.6"
 regex         = "1.11.1"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["async_tokio"] }
+
+[[bench]]
+name = "battalion_benchmarks"
+harness = false

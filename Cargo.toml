@@ -192,6 +192,10 @@ name = "paladin-cli"
 path = "src/bin/paladin-cli.rs"
 required-features = ["cli"]
 
+[[bench]]
+name = "config_benchmarks"
+harness = false
+
 [features]
 default = ["llm-openai"]
 redis-queue = ["redis"]

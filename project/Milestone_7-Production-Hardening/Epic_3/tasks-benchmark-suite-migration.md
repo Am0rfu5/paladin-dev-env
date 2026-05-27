@@ -69,14 +69,14 @@ Update the file after completing each sub-task, not just after completing an ent
 	- [x] 3.6 For each reviewed benchmark, document one final disposition in `benchmark-assessment.md`: reactivate in owning crate or remove with rationale.
 	- [x] 3.7 Remove any benchmark files that are formally deprecated and update `CHANGELOG.md` or milestone documentation with the removal reason.
 	- [x] 3.8 Relocate any benchmarks that are being restored into the `benches/` directory of their owning crate and update the owning crate manifest accordingly.
-- [ ] 4.0 Implement new critical-path benchmarks for battalion, LLM, garrison, and config loading
-	- [ ] 4.1 Create `crates/paladin-battalion/benches/` and add `battalion_benchmarks.rs` covering Formation with 3 agents, Phalanx with 5 agents, and Campaign with a branching DAG.
-	- [ ] 4.2 Implement or reuse mock `PaladinPort` support inside the battalion benchmark so the measurement isolates orchestration overhead rather than model latency.
-	- [ ] 4.3 Create `crates/paladin-memory/benches/garrison_benchmarks.rs` covering in-memory read and write performance at 100, 1000, and 10000 history entries.
-	- [ ] 4.4 Create `crates/paladin-llm/benches/` and add `llm_serialization_benchmarks.rs` covering request/response serialization overhead without live HTTP calls.
-	- [ ] 4.5 Implement a config benchmark that measures `Settings::new()` and the current per-domain config loading path at the crate that owns that code.
-	- [ ] 4.6 Update each owning crate `Cargo.toml` so all new benchmark files are registered and buildable.
-	- [ ] 4.7 Run `cargo bench -p paladin-battalion --no-run`, `cargo bench -p paladin-memory --no-run`, and `cargo bench -p paladin-llm --no-run` to verify the new benchmark targets compile.
+- [x] 4.0 Implement new critical-path benchmarks for battalion, LLM, garrison, and config loading
+	- [x] 4.1 Create `crates/paladin-battalion/benches/` and add `battalion_benchmarks.rs` covering Formation with 3 agents, Phalanx with 5 agents, and Campaign with a branching DAG.
+	- [x] 4.2 Implement or reuse mock `PaladinPort` support inside the battalion benchmark so the measurement isolates orchestration overhead rather than model latency.
+	- [x] 4.3 Create `crates/paladin-memory/benches/garrison_benchmarks.rs` covering in-memory read and write performance at 100, 1000, and 10000 history entries.
+	- [x] 4.4 Create `crates/paladin-llm/benches/` and add `llm_serialization_benchmarks.rs` covering request/response serialization overhead without live HTTP calls.
+	- [x] 4.5 Implement a config benchmark that measures `Settings::new()` and the current per-domain config loading path at the crate that owns that code.
+	- [x] 4.6 Update each owning crate `Cargo.toml` so all new benchmark files are registered and buildable.
+	- [x] 4.7 Run `cargo bench -p paladin-battalion --no-run`, `cargo bench -p paladin-memory --no-run`, and `cargo bench -p paladin-llm --no-run` to verify the new benchmark targets compile.
 - [ ] 5.0 Update workspace benchmark manifests and execution flow
 	- [ ] 5.1 Review the root `Cargo.toml` and remove obsolete `[[bench]]` entries or commented placeholders that no longer belong at workspace root.
 	- [ ] 5.2 Add any missing Criterion dev-dependencies to owning crate manifests if the benchmarks are no longer inherited adequately from the root.
