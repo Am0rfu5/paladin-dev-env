@@ -83,13 +83,13 @@ Update the file after completing each sub-task, not just after completing an ent
 	- [x] 5.3 Ensure each owning crate manifest lists its benchmark targets consistently and does not rely on root-only benchmark registration.
 	- [x] 5.4 Run `cargo bench --workspace --no-run` and fix manifest or feature-flag issues until the full workspace benchmark suite builds from the workspace entry point.
 	- [x] 5.5 Document any required feature flags or benchmark preconditions in crate-level notes or in the baseline methodology plan.
-- [ ] 6.0 Produce the baseline performance report
-	- [ ] 6.1 Decide on the benchmark execution environment and record hardware, OS, Rust toolchain, and commit SHA to use in the baseline report.
-	- [ ] 6.2 Run the full active benchmark suite and capture results for all migrated and newly added benchmarks.
-	- [ ] 6.3 Compare post-migration sanctum results with pre-migration results and record the comparison method and observed variance.
-	- [ ] 6.4 Identify any trustworthy historical benchmark data for comparison; explicitly mark areas with no prior comparable baseline.
-	- [ ] 6.5 Create `docs/PERFORMANCE_BASELINE.md` with methodology, environment, measured results, comparison notes, and interpretation separated clearly from raw results.
-	- [ ] 6.6 Cross-check that every active benchmark is represented in the baseline document.
+- [x] 6.0 Produce the baseline performance report
+	- [x] 6.1 Decide on the benchmark execution environment and record hardware, OS, Rust toolchain, and commit SHA to use in the baseline report.
+	- [x] 6.2 Run the full active benchmark suite and capture results for all migrated and newly added benchmarks.
+	- [x] 6.3 Compare post-migration sanctum results with pre-migration results and record the comparison method and observed variance.
+	- [x] 6.4 Identify any trustworthy historical benchmark data for comparison; explicitly mark areas with no prior comparable baseline.
+	- [x] 6.5 Create `docs/PERFORMANCE_BASELINE.md` with methodology, environment, measured results, comparison notes, and interpretation separated clearly from raw results.
+	- [x] 6.6 Cross-check that every active benchmark is represented in the baseline document.
 - [ ] 7.0 Add optional CI regression signaling and complete end-to-end validation
 	- [ ] 7.1 Review `.github/workflows/ci.yml` and determine whether benchmark reporting can be added without blocking merges.
 	- [ ] 7.2 If implemented, add a non-blocking benchmark regression step or job that surfaces regressions above a documented threshold without failing the required pipeline.

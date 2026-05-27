@@ -126,40 +126,36 @@ fn benchmark_search_scale(c: &mut Criterion) {
     group.sample_size(50);
 
     for vector_count in &[100, 1_000, 5_000, 10_000] {
+        let adapter = Arc::new(InMemorySanctum::new(*vector_count + 1000));
+        let entries: Vec<SanctumEntry> = (0..*vector_count)
+            .map(|i| {
+                create_memory_entry(
+                    &format!("paladin-{}", i % 100),
+                    &format!("Memory content {}", i),
+                    MemoryType::Semantic,
+                    0.7,
+                    384,
+                )
+            })
+            .collect();
+
+        rt.block_on(async {
+            adapter.store_batch(entries).await.unwrap();
+        });
+
         group.bench_with_input(
             BenchmarkId::new("vector_count", vector_count),
             vector_count,
-            |b, &count| {
-                b.to_async(&rt).iter_batched(
-                    || {
-                        let adapter = Arc::new(InMemorySanctum::new(count + 1000));
-
-                        let entries: Vec<SanctumEntry> = (0..count)
-                            .map(|i| {
-                                create_memory_entry(
-                                    &format!("paladin-{}", i % 100),
-                                    &format!("Memory content {}", i),
-                                    MemoryType::Semantic,
-                                    0.7,
-                                    384,
-                                )
-                            })
-                            .collect();
-
-                        rt.block_on(async {
-                            adapter.store_batch(entries).await.unwrap();
-                        });
-
+            |b, _| {
+                let adapter = adapter.clone();
+                b.to_async(&rt).iter(|| {
+                    let adapter = adapter.clone();
+                    async move {
                         let query_embedding = create_embedding(384);
                         let query = SanctumQuery::new(query_embedding, 10);
-
-                        (adapter, query)
-                    },
-                    |(adapter, query)| async move {
                         adapter.search(black_box(query)).await.unwrap();
-                    },
-                    criterion::BatchSize::SmallInput,
-                );
+                    }
+                });
             },
         );
     }
@@ -350,13 +346,10 @@ fn benchmark_delete(c: &mut Criterion) {
 
                 let entry_id = entries[0].memory.id.to_string();
 
-                rt.block_on(async {
-                    adapter.store_batch(entries).await.unwrap();
-                });
-
-                (adapter, entry_id)
+                (adapter, entries, entry_id)
             },
-            |(adapter, entry_id)| async move {
+            |(adapter, entries, entry_id)| async move {
+                adapter.store_batch(entries).await.unwrap();
                 adapter.delete(black_box(&entry_id)).await.unwrap();
             },
             criterion::BatchSize::SmallInput,
