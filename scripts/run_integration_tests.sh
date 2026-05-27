@@ -167,7 +167,7 @@ setup_environment() {
 setup_local_environment() {
     log_info "Local mode: Using testcontainers"
     export USE_EXTERNAL_TEST_SERVICES="false"
-    
+
     # Check if Docker is running (needed for testcontainers)
     if ! docker info &> /dev/null; then
         log_error "Docker is not running. Testcontainers require Docker"
@@ -177,7 +177,7 @@ setup_local_environment() {
 
 setup_docker_environment() {
     log_info "Docker mode: Starting services with docker-compose"
-    
+
     # Create .env file if it doesn't exist
     if [[ ! -f "$PROJECT_ROOT/.env" ]]; then
         log_info "Creating .env file from example"
@@ -201,7 +201,7 @@ setup_docker_environment() {
 
 setup_ci_environment() {
     log_info "CI mode: Using pre-configured services"
-    
+
     export USE_EXTERNAL_TEST_SERVICES="true"
     export TEST_REDIS_HOST="${TEST_REDIS_HOST:-localhost}"
     export TEST_REDIS_PORT="${TEST_REDIS_PORT:-6380}"
@@ -228,19 +228,19 @@ wait_for_services() {
                 log_success "Redis port is open"
                 break
             fi
-            
+
             if [[ $i -eq 30 ]]; then
                 log_error "Redis not available after 30 attempts"
                 exit 1
             fi
-            
+
             sleep 1
         done
 
         # Wait for MinIO
         local minio_host=$(echo "$TEST_MINIO_ENDPOINT" | cut -d: -f1)
         local minio_port=$(echo "$TEST_MINIO_ENDPOINT" | cut -d: -f2)
-        
+
         log_info "Checking MinIO at $TEST_MINIO_ENDPOINT"
         for i in {1..30}; do
             if curl -f "http://$TEST_MINIO_ENDPOINT/minio/health/live" &> /dev/null; then
@@ -249,12 +249,12 @@ wait_for_services() {
             elif nc -z "$minio_host" "$minio_port" &> /dev/null; then
                 log_info "MinIO port is open, waiting for service..."
             fi
-            
+
             if [[ $i -eq 30 ]]; then
                 log_error "MinIO not available after 30 attempts"
                 exit 1
             fi
-            
+
             sleep 1
         done
 
@@ -265,7 +265,7 @@ wait_for_services() {
 # Build the project
 build_project() {
     log_step "Building project..."
-    
+
     local build_flags="--release"
     if [[ "$VERBOSE" == "true" ]]; then
         build_flags="$build_flags --verbose"

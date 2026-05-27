@@ -150,12 +150,12 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.6 Create `docs/BUILD_BASELINES.md` using the Milestone 5 `build-benchmarks.md` as a structural template. Include: environment table (CPU, RAM, OS, Rust toolchain, date, commit SHA), raw timings table with medians, summary table, and a brief analysis note. Reference the M5 benchmark file for historical comparison. ✅ Created.
   - [x] 5.7 Commit: `git commit -m "docs: add BUILD_BASELINES.md with 10-crate workspace build and Docker image measurements"`.
 
-- [ ] 6.0 End-to-end verification
-  - [ ] 6.1 Run `cargo build --workspace` — confirm exit `0`.
-  - [ ] 6.2 Run `cargo test --workspace` — confirm exit `0`.
-  - [ ] 6.3 Run `make clean-code` — confirm exit `0`.
-  - [ ] 6.4 Run all 10 per-crate targets sequentially (`make test-core test-ports test-battalion test-llm test-memory test-storage test-notifications test-content test-web test-facade`) — confirm all exit `0`.
-  - [ ] 6.5 Run `make test-integration-docker` — confirm exit `0`.
-  - [ ] 6.6 Run `cargo publish --dry-run -p paladin-core` — confirm exit `0` (spot-check; the full ordered sequence runs in CI).
-  - [ ] 6.7 Review the success metrics table in Section 8 of the PRD and confirm every "Required" row is green.
-  - [ ] 6.8 Commit final state: `git commit -m "chore: milestone 7 epic 2 complete — production build infrastructure adapted for workspace"`.
+- [x] 6.0 End-to-end verification
+  - [x] 6.1 Run `cargo build --workspace` — confirm exit `0`. ✅ Finished in 15.79s
+  - [x] 6.2 Run `cargo test --workspace` — confirm exit `0`. ✅
+  - [x] 6.3 Run `make clean-code` — confirm exit `0`. ✅ Finished in 1m 21s
+  - [x] 6.4 Run all 10 per-crate targets sequentially (`make test-core test-ports test-battalion test-llm test-memory test-storage test-notifications test-content test-web test-facade`) — confirm all exit `0`. ✅ 0 failures across all crates
+  - [x] 6.5 Run `make test-integration-docker` — confirm exit `0`. ✅ N/A in dev container — verified via CI run 26517771343 (644 passed, 0 failed)
+  - [x] 6.6 Run `cargo publish --dry-run -p paladin-core` — confirm exit `0` (spot-check; the full ordered sequence runs in CI). ✅
+  - [x] 6.7 Review the success metrics table in Section 8 of the PRD and confirm every "Required" row is green. ✅ All Required metrics green; Docker metrics N/A (CI-verified).
+  - [x] 6.8 Commit final state: `git commit -m "chore: milestone 7 epic 2 complete — production build infrastructure adapted for workspace"`. ✅
