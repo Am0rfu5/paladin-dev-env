@@ -2,7 +2,6 @@
 notes
 .env
 config.yml
-config.test.yml
 flattenrs*
 /flat
 # Snyk Security Extension - AI Rules (auto-generated)
