@@ -90,10 +90,10 @@ Update the file after completing each sub-task, not just after completing an ent
 	- [x] 6.4 Identify any trustworthy historical benchmark data for comparison; explicitly mark areas with no prior comparable baseline.
 	- [x] 6.5 Create `docs/PERFORMANCE_BASELINE.md` with methodology, environment, measured results, comparison notes, and interpretation separated clearly from raw results.
 	- [x] 6.6 Cross-check that every active benchmark is represented in the baseline document.
-- [ ] 7.0 Add optional CI regression signaling and complete end-to-end validation
-	- [ ] 7.1 Review `.github/workflows/ci.yml` and determine whether benchmark reporting can be added without blocking merges.
-	- [ ] 7.2 If implemented, add a non-blocking benchmark regression step or job that surfaces regressions above a documented threshold without failing the required pipeline.
-	- [ ] 7.3 Run `cargo bench --workspace --no-run` as the final structural validation of the benchmark suite.
-	- [ ] 7.4 Run the narrow benchmark commands for each owning crate to confirm benchmark discovery works from crate scope as well as workspace scope.
-	- [ ] 7.5 Review the Epic 3 PRD success metrics and confirm each required benchmark, documentation, and disposition outcome is satisfied.
-	- [ ] 7.6 Update this task file as work completes, marking parent tasks done only after all child subtasks are complete and validation has passed.
+- [x] 7.0 Add optional CI regression signaling and complete end-to-end validation
+	- [x] 7.1 Review `.github/workflows/ci.yml` and determine whether benchmark reporting can be added without blocking merges.
+	- [x] 7.2 If implemented, add a non-blocking benchmark regression step or job that surfaces regressions above a documented threshold without failing the required pipeline.
+	- [x] 7.3 Run `cargo bench --workspace --no-run` as the final structural validation of the benchmark suite.
+	- [x] 7.4 Run the narrow benchmark commands for each owning crate to confirm benchmark discovery works from crate scope as well as workspace scope.
+	- [x] 7.5 Review the Epic 3 PRD success metrics and confirm each required benchmark, documentation, and disposition outcome is satisfied.
+	- [x] 7.6 Update this task file as work completes, marking parent tasks done only after all child subtasks are complete and validation has passed.

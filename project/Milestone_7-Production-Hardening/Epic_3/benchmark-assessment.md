@@ -136,3 +136,41 @@ The current benchmark suite compiles and discovers from both crate scope and wor
 - `paladin-memory` includes optional `sqlite` and `qdrant` features, but benchmark compile validation for this Epic uses default features.
 - `paladin-llm` default features include `openai` and `mock`; the serialization benchmark uses shared request/response types and does not require external API calls.
 - Root benchmark placeholders for legacy root-owned battalion, herald, and garrison entries have been removed to avoid ownership ambiguity.
+
+---
+
+## Task 7 CI and Success Metrics Review
+
+### CI Regression Signaling Decision
+
+- `.github/workflows/ci.yml` now includes `benchmark-regression-signal`, an optional non-blocking job.
+- Trigger scope: pull requests and manual workflow dispatch.
+- Signal threshold: more than 3 Criterion `Performance has regressed.` notices in one run.
+- Critical-path benchmark coverage in signal job:
+	- `config_benchmarks`
+	- `battalion_benchmarks`
+	- `garrison_benchmarks`
+	- `llm_serialization_benchmarks`
+- Non-blocking behavior is enforced with `continue-on-error: true` at the job level, so regression signals are visible but do not fail required pipeline gates.
+
+### Final Validation Commands (Task 7)
+
+- `cargo bench --workspace --no-run`
+- `cargo bench --bench config_benchmarks --no-run`
+- `cargo bench -p paladin-battalion --bench battalion_benchmarks --no-run`
+- `cargo bench -p paladin-memory --bench sanctum_benchmarks --no-run`
+- `cargo bench -p paladin-memory --bench garrison_benchmarks --no-run`
+- `cargo bench -p paladin-llm --bench llm_serialization_benchmarks --no-run`
+
+All commands completed successfully.
+
+### PRD Success Metrics Status
+
+| PRD Success Metric | Status | Evidence |
+|---|---|---|
+| 1. `cargo bench --workspace` completes and runs active benchmarks | Satisfied | Workspace benchmark compile and executable discovery validated; full baseline run captured in Task 6 artifact log. |
+| 2. `sanctum_benchmarks` runs from `paladin-memory` | Satisfied | `cargo bench -p paladin-memory --bench sanctum_benchmarks` executed in baseline and no-run validation workflows. |
+| 3. Disabled benchmarks reactivated or removed with rationale | Satisfied | Final disposition matrix documented above in this file; deprecated legacy benchmarks removed. |
+| 4. New benchmarks exist for required critical-path categories | Satisfied | Battalion, LLM serialization, garrison, and config benchmarks implemented and registered in owning manifests. |
+| 5. `docs/PERFORMANCE_BASELINE.md` published with methodology and results | Satisfied | Baseline document created and populated with environment, methods, results, and variance notes. |
+| 6. CI regression check reports without blocking merges (if added) | Satisfied | `benchmark-regression-signal` job added as optional and non-blocking with explicit threshold reporting. |
