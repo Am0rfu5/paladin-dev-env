@@ -85,7 +85,7 @@ services:
       - APP_MINIO_SECRET_KEY=testpass123
       - APP_MINIO_BUCKET=test-bucket
       - APP_MINIO_SECURE=false
-    command: cargo test file_storage_integration_tests --test integration -- --test-threads=1 --nocapture
+    command: cargo test --features integration-tests -- --test-threads=1 --nocapture
     networks:
       - paladin-test-network
 
