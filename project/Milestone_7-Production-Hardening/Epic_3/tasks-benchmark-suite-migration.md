@@ -17,13 +17,13 @@
 
 ### Files to Create
 
+- `project/Milestone_7-Production-Hardening/Epic_3/benchmark-assessment.md` - Initial audit of benchmark inventory, root manifest state, target ownership, and open questions for Epic 3.
 - `crates/paladin-memory/benches/sanctum_benchmarks.rs` - Migrated sanctum benchmark owned by `paladin-memory`.
 - `crates/paladin-memory/benches/garrison_benchmarks.rs` - In-memory read/write benchmark coverage for garrison history sizes.
 - `crates/paladin-battalion/benches/battalion_benchmarks.rs` - Formation, Phalanx, and Campaign orchestration benchmarks.
 - `crates/paladin-llm/benches/llm_serialization_benchmarks.rs` - Request/response serialization overhead benchmarks excluding network calls.
 - `docs/PERFORMANCE_BASELINE.md` - Single performance baseline report with methodology, environment, and results.
 - `.github/workflows/ci.yml` - Optional non-blocking benchmark regression reporting if current CI is extended for this Epic.
-- `project/Milestone_7-Production-Hardening/Epic_3/benchmark-assessment.md` - Assessment log for disabled benchmark reactivation or deprecation decisions.
 
 ### Reference Files
 
@@ -56,13 +56,13 @@ Update the file after completing each sub-task, not just after completing an ent
 
 - [x] 0.0 Create feature branch
 	- [x] 0.1 Create and checkout a new branch for this Epic 3 work (for example `git checkout -b feature/milestone_7-epic_3-benchmarks`).
-- [ ] 1.0 Audit the current benchmark suite and benchmark ownership
-	- [ ] 1.1 Read `project/Milestone_7-Production-Hardening/Epic_3/prd-benchmark-suite-migration.md` in full and map each functional requirement to an implementation area.
-	- [ ] 1.2 Inventory all files in `benches/` and classify them as active, disabled, or unclear based on the manifest and file naming.
-	- [ ] 1.3 Read the current root `Cargo.toml` benchmark-related sections and record how benchmarks are currently enabled, disabled, or commented out.
-	- [ ] 1.4 Identify the owning crate for each benchmark area: sanctum and garrison -> `paladin-memory`, battalion -> `paladin-battalion`, LLM serialization -> `paladin-llm`, config loading -> current settings owner.
-	- [ ] 1.5 Read `src/config/settings.rs` and confirm whether the config-loading benchmark should live in the root crate or another crate based on the actual `Settings::new()` ownership.
-	- [ ] 1.6 Create `project/Milestone_7-Production-Hardening/Epic_3/benchmark-assessment.md` and record the initial inventory, target ownership, and open questions.
+- [x] 1.0 Audit the current benchmark suite and benchmark ownership
+	- [x] 1.1 Read `project/Milestone_7-Production-Hardening/Epic_3/prd-benchmark-suite-migration.md` in full and map each functional requirement to an implementation area.
+	- [x] 1.2 Inventory all files in `benches/` and classify them as active, disabled, or unclear based on the manifest and file naming.
+	- [x] 1.3 Read the current root `Cargo.toml` benchmark-related sections and record how benchmarks are currently enabled, disabled, or commented out.
+	- [x] 1.4 Identify the owning crate for each benchmark area: sanctum and garrison -> `paladin-memory`, battalion -> `paladin-battalion`, LLM serialization -> `paladin-llm`, config loading -> current settings owner.
+	- [x] 1.5 Read `src/config/settings.rs` and confirm whether the config-loading benchmark should live in the root crate or another crate based on the actual `Settings::new()` ownership.
+	- [x] 1.6 Create `project/Milestone_7-Production-Hardening/Epic_3/benchmark-assessment.md` and record the initial inventory, target ownership, and open questions.
 - [ ] 2.0 Migrate active workspace benchmarks into their owning crates
 	- [ ] 2.1 Create `crates/paladin-memory/benches/` if it does not already exist.
 	- [ ] 2.2 Move `benches/sanctum_benchmarks.rs` to `crates/paladin-memory/benches/sanctum_benchmarks.rs`.
