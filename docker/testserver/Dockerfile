@@ -85,6 +85,8 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY crates ./crates
 COPY tests ./tests
+COPY migrations ./migrations
+COPY config.test.yml ./
 
 # Pre-build dependencies
 RUN cargo build --tests
