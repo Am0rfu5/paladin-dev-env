@@ -63,6 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated code examples in `examples/llm_provider_selection.rs`
   - Zero functional impact - adapter had no actual usage in codebase
   - See **Milestone 3: Post-Epic 24 Completion** section below for complete cleanup details
+- **Legacy Root Benchmark Files**: Removed obsolete root-level benchmark files that no longer match the workspace benchmark ownership model
+  - Removed `benches/battalion_benchmarks.rs` and `benches/garrison_benchmarks.rs` in favor of planned crate-local replacements under `paladin-battalion` and `paladin-memory`
+  - Removed `benches/herald_benchmarks.rs` because Herald formatting is outside Epic 3's approved critical-path benchmark scope
+  - Removed `benches/paladin_benchmarks.rs.disabled` and `benches/arsenal_benchmarks.rs.disabled` because they target outdated architectural boundaries and would require out-of-scope rewrites
+  - Benchmark migration continues under Milestone 7 Epic 3 with crate-owned replacements
 
 ---
 

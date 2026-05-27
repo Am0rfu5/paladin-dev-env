@@ -4,11 +4,6 @@
 
 - `Cargo.toml` - Workspace benchmark configuration may need updates so root-owned benchmark entries are removed or adjusted after per-crate migration.
 - `crates/paladin-memory/benches/sanctum_benchmarks.rs` - Migrated sanctum benchmark now owned by `paladin-memory`.
-- `benches/battalion_benchmarks.rs` - Existing battalion benchmark candidate to restore, relocate, or replace.
-- `benches/garrison_benchmarks.rs` - Existing garrison benchmark candidate to restore, relocate, or replace.
-- `benches/herald_benchmarks.rs` - Existing herald benchmark candidate to assess for deprecation or rewrite.
-- `benches/paladin_benchmarks.rs.disabled` - Existing disabled benchmark candidate to assess for deprecation or rewrite.
-- `benches/arsenal_benchmarks.rs.disabled` - Existing disabled benchmark candidate to assess for deprecation or rewrite.
 - `crates/paladin-memory/Cargo.toml` - Register migrated sanctum benchmark and any new garrison-related benchmarks.
 - `crates/paladin-battalion/Cargo.toml` - Register battalion orchestration benchmarks.
 - `crates/paladin-llm/Cargo.toml` - Register adapter serialization benchmarks.
@@ -28,11 +23,6 @@
 
 - `project/Milestone_7-Production-Hardening/Epic_3/prd-benchmark-suite-migration.md` - Source of truth for Epic 3 requirements.
 - `project/Milestone_7-Production-Hardening/Epic_3/Milestone_7-Epic_3-Benchmark_Suite_Migration.md` - Epic overview and acceptance criteria.
-- `benches/battalion_benchmarks.rs` - Existing disabled battalion benchmark candidate for evaluation.
-- `benches/garrison_benchmarks.rs` - Existing disabled garrison benchmark candidate for evaluation.
-- `benches/herald_benchmarks.rs` - Existing disabled herald benchmark candidate for evaluation.
-- `benches/paladin_benchmarks.rs.disabled` - Existing disabled paladin benchmark candidate for evaluation.
-- `benches/arsenal_benchmarks.rs.disabled` - Existing disabled arsenal benchmark candidate for evaluation.
 
 ### Notes
 
@@ -70,15 +60,15 @@ Update the file after completing each sub-task, not just after completing an ent
 	- [x] 2.5 Remove or disable the root benchmark entry for sanctum in `Cargo.toml` so the workspace no longer treats it as a root-owned benchmark.
 	- [x] 2.6 Run `cargo bench -p paladin-memory --bench sanctum_benchmarks --no-run` to confirm the migrated benchmark builds.
 	- [x] 2.7 Record the migration result and any API adjustments in `benchmark-assessment.md`.
-- [ ] 3.0 Evaluate disabled benchmarks and decide reactivation or deprecation
-	- [ ] 3.1 Review `benches/battalion_benchmarks.rs` against the current battalion APIs and decide whether it can be restored directly, requires rewrite, or should be superseded by a new benchmark file.
-	- [ ] 3.2 Review `benches/garrison_benchmarks.rs` against the current garrison APIs and decide whether it can be restored directly, requires rewrite, or should be superseded by a new benchmark file.
-	- [ ] 3.3 Review `benches/herald_benchmarks.rs` against the current herald APIs and determine whether it still represents a meaningful benchmark target.
-	- [ ] 3.4 Review `benches/paladin_benchmarks.rs.disabled` and determine whether the benchmark still maps to a valid architectural boundary after the workspace split.
-	- [ ] 3.5 Review `benches/arsenal_benchmarks.rs.disabled` and determine whether the benchmark should be rewritten around current armament types or formally deprecated.
-	- [ ] 3.6 For each reviewed benchmark, document one final disposition in `benchmark-assessment.md`: reactivate in owning crate or remove with rationale.
-	- [ ] 3.7 Remove any benchmark files that are formally deprecated and update `CHANGELOG.md` or milestone documentation with the removal reason.
-	- [ ] 3.8 Relocate any benchmarks that are being restored into the `benches/` directory of their owning crate and update the owning crate manifest accordingly.
+- [x] 3.0 Evaluate disabled benchmarks and decide reactivation or deprecation
+	- [x] 3.1 Review `benches/battalion_benchmarks.rs` against the current battalion APIs and decide whether it can be restored directly, requires rewrite, or should be superseded by a new benchmark file.
+	- [x] 3.2 Review `benches/garrison_benchmarks.rs` against the current garrison APIs and decide whether it can be restored directly, requires rewrite, or should be superseded by a new benchmark file.
+	- [x] 3.3 Review `benches/herald_benchmarks.rs` against the current herald APIs and determine whether it still represents a meaningful benchmark target.
+	- [x] 3.4 Review `benches/paladin_benchmarks.rs.disabled` and determine whether the benchmark still maps to a valid architectural boundary after the workspace split.
+	- [x] 3.5 Review `benches/arsenal_benchmarks.rs.disabled` and determine whether the benchmark should be rewritten around current armament types or formally deprecated.
+	- [x] 3.6 For each reviewed benchmark, document one final disposition in `benchmark-assessment.md`: reactivate in owning crate or remove with rationale.
+	- [x] 3.7 Remove any benchmark files that are formally deprecated and update `CHANGELOG.md` or milestone documentation with the removal reason.
+	- [x] 3.8 Relocate any benchmarks that are being restored into the `benches/` directory of their owning crate and update the owning crate manifest accordingly.
 - [ ] 4.0 Implement new critical-path benchmarks for battalion, LLM, garrison, and config loading
 	- [ ] 4.1 Create `crates/paladin-battalion/benches/` and add `battalion_benchmarks.rs` covering Formation with 3 agents, Phalanx with 5 agents, and Campaign with a branching DAG.
 	- [ ] 4.2 Implement or reuse mock `PaladinPort` support inside the battalion benchmark so the measurement isolates orchestration overhead rather than model latency.

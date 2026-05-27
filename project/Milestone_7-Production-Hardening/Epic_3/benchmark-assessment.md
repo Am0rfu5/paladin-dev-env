@@ -100,3 +100,15 @@ Initial conclusion: the configuration-loading benchmark should be implemented in
 - `crates/paladin-memory/Cargo.toml` now owns the Criterion registration for `sanctum_benchmarks` and includes a local `criterion` dev-dependency.
 - The stale root `sanctum_benchmarks` placeholder was removed from `Cargo.toml` so the workspace no longer treats sanctum as a root-owned benchmark target.
 - Validation result: `cargo bench -p paladin-memory --bench sanctum_benchmarks --no-run` completed successfully and produced the benchmark executable.
+
+### Disabled Benchmark Dispositions
+
+| Benchmark | Final Disposition | Rationale |
+|---|---|---|
+| `battalion_benchmarks.rs` | Remove and replace in Task 4 | The file targets a broad root-level orchestration surface including Formation, Phalanx, Campaign, Chain of Command, Maneuver parsing, and visualization. Epic 3's accepted scope requires narrower crate-local battalion benchmarks focused on Formation, Phalanx, and Campaign execution overhead. A direct restore would preserve the wrong ownership and benchmark scope. |
+| `garrison_benchmarks.rs` | Remove and replace in Task 4 | The file benchmarks a root-level `ConversationHistory` surface with broad mixed operations. Epic 3 requires new `paladin-memory` crate-local garrison benchmarks focused on in-memory read/write behavior at specific history sizes of 100, 1000, and 10000 entries. A direct restore would keep the old root ownership and the wrong measurement shape. |
+| `herald_benchmarks.rs` | Deprecate and remove | Herald formatting is not part of the confirmed critical-path benchmark set for Epic 3. Keeping this benchmark would expand scope beyond the approved battalion, LLM serialization, garrison, and config-loading areas. |
+| `paladin_benchmarks.rs.disabled` | Deprecate and remove | The file is already documented as requiring `LlmPort` trait implementation work and benchmarks the old aggregate execution boundary rather than a crate-local performance surface. That makes it a poor fit for the refactored workspace and for Epic 3's narrower benchmark plan. |
+| `arsenal_benchmarks.rs.disabled` | Deprecate and remove | The file is already documented as needing a rewrite around current armament domain types. Arsenal performance is not part of the confirmed critical-path benchmark set for this Epic, so rewriting it now would be out of scope. |
+
+No disabled benchmark file is being directly restored in Task 3. The battalion and garrison areas are intentionally being replaced with new crate-local benchmark files in Task 4 rather than reactivated from the legacy root-owned implementations.
