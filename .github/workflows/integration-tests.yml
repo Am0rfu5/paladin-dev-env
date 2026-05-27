@@ -52,6 +52,14 @@ jobs:
         command: server /data
 
     steps:
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          df -h
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -106,7 +114,8 @@ jobs:
           cargo llvm-cov --features integration-tests --lcov --output-path integration-lcov.info
 
       - name: Upload integration coverage
-        if: success()
+        if: always()
+        continue-on-error: true
         uses: codecov/codecov-action@v3
         with:
           files: integration-lcov.info
