@@ -131,18 +131,18 @@ Update the file after completing each sub-task, not just after completing an ent
     ```
   - [x] 3.9 Commit: `git commit -m "ci: update workflows for 10-crate workspace"`. ✅ `f5766a8`
 
-- [ ] 4.0 Adapt integration test infrastructure
-  - [ ] 4.1 Read `tests/integration/mod.rs` and scan the list of test files in `tests/integration/` to understand what's currently there.
-  - [ ] 4.2 Audit each integration test file's imports: identify which tests import from a single crate (candidate for relocation to `crates/<name>/tests/`) vs. which import from multiple crates and must stay in `tests/integration/`. Record findings — most tests are expected to span multiple crates and stay at workspace root.
-  - [ ] 4.3 Audit service dependencies: for each test file, identify whether it needs Redis, MinIO, MySQL, or none (look for `testcontainers`, `redis`, `minio`, or `mysql` env vars / imports). This information feeds `docs/INTEGRATION_TESTS.md`.
-  - [ ] 4.4 Read `scripts/run_integration_tests.sh` fully. Identify every `cargo test` invocation and update each to use `--workspace` or `-p paladin` as appropriate so no tests are missed.
-  - [ ] 4.5 Verify `docker/docker-compose.test.yml` can be brought up from the workspace root: `docker-compose -f docker/docker-compose.test.yml up -d && docker-compose -f docker/docker-compose.test.yml ps`. Document any path-related issues found (even if no changes are needed, note "verified OK").
-  - [ ] 4.6 Run `make test-integration-docker` from the workspace root and confirm it exits `0`. Fix any failures before proceeding.
-  - [ ] 4.7 Create `docs/INTEGRATION_TESTS.md` with three sections: (1) Test ownership table (file → crate or workspace-root, services required), (2) How to run integration tests locally (commands), (3) How services are started in CI.
-  - [ ] 4.8 Commit: `git commit -m "ci: adapt integration test infrastructure for workspace; add INTEGRATION_TESTS.md"`.
+- [x] 4.0 Adapt integration test infrastructure
+  - [x] 4.1 Read `tests/integration/mod.rs` and scan the list of test files in `tests/integration/` to understand what's currently there.
+  - [x] 4.2 Audit each integration test file's imports: identify which tests import from a single crate (candidate for relocation to `crates/<name>/tests/`) vs. which import from multiple crates and must stay in `tests/integration/`. Record findings — most tests are expected to span multiple crates and stay at workspace root.
+  - [x] 4.3 Audit service dependencies: for each test file, identify whether it needs Redis, MinIO, MySQL, or none (look for `testcontainers`, `redis`, `minio`, or `mysql` env vars / imports). This information feeds `docs/INTEGRATION_TESTS.md`.
+  - [x] 4.4 Read `scripts/run_integration_tests.sh` fully. Identify every `cargo test` invocation and update each to use `--workspace` or `-p paladin` as appropriate so no tests are missed.
+  - [x] 4.5 Verify `docker/docker-compose.test.yml` can be brought up from the workspace root: `docker-compose -f docker/docker-compose.test.yml up -d && docker-compose -f docker/docker-compose.test.yml ps`. Document any path-related issues found (even if no changes are needed, note "verified OK"). ⚠️ Docker not available in dev container — verified via CI run `26517771343` (Docker Integration Tests job: all steps green).
+  - [x] 4.6 Run `make test-integration-docker` from the workspace root and confirm it exits `0`. Fix any failures before proceeding. ⚠️ Docker not available in dev container — verified via CI run `26517771343` (Docker Integration Tests job passed).
+  - [x] 4.7 Create `docs/INTEGRATION_TESTS.md` with three sections: (1) Test ownership table (file → crate or workspace-root, services required), (2) How to run integration tests locally (commands), (3) How services are started in CI.
+  - [x] 4.8 Commit: `git commit -m "ci: adapt integration test infrastructure for workspace; add INTEGRATION_TESTS.md"`.
 
 - [ ] 5.0 Measure and document build baselines
-  - [ ] 5.1 Run a clean workspace build 3 times and record each duration: `cargo clean && time cargo build --workspace` × 3. Record results.
+  - [ ] 5.1 Run a clean workspace build 3 times and record each duration: `cargo clean && time cargo build --workspace` × 3. Record results. (Note: a helper script may already exist at `scripts/bendmark-builds.sh` but we are not clear on how usef this will b)
   - [ ] 5.2 Measure per-crate incremental build times (3 runs each) by touching the crate's `lib.rs` and rebuilding: `touch crates/<name>/src/lib.rs && time cargo build -p <name>`. Measure for: `paladin-core`, `paladin-llm`, `paladin-battalion`, `paladin-storage`, `paladin-web`.
   - [ ] 5.3 Measure `docker build -f Dockerfile.chef .` cold-cache time (3 runs after `docker builder prune -af` between each): record each duration.
   - [ ] 5.4 Measure `docker build -f Dockerfile.chef .` warm-cache time with a source-only change (touch `src/main.rs` or equivalent, rebuild 3 times without pruning): record each duration.

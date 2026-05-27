@@ -134,8 +134,8 @@ check_prerequisites() {
             exit 1
         fi
 
-        if ! command -v docker-compose &> /dev/null; then
-            log_error "Docker Compose not found but required for $MODE mode"
+        if ! docker compose version &> /dev/null; then
+            log_error "Docker Compose (v2 plugin) not found but required for $MODE mode"
             exit 1
         fi
     fi
@@ -186,7 +186,7 @@ setup_docker_environment() {
 
     # Start test services
     log_step "Starting test services..."
-    docker-compose -f "$DOCKER_COMPOSE_TEST_FILE" up -d redis-test minio-test minio-test-init
+    docker compose -f "$DOCKER_COMPOSE_TEST_FILE" up -d redis-test minio-test minio-test-init
 
     # Wait for services
     wait_for_services
@@ -271,7 +271,7 @@ build_project() {
         build_flags="$build_flags --verbose"
     fi
 
-    if ! cargo build $build_flags; then
+    if ! cargo build --workspace $build_flags; then
         log_error "Build failed"
         exit 1
     fi
@@ -301,7 +301,7 @@ run_integration_tests() {
     # Run Redis queue tests
     if [[ -z "$SPECIFIC_TESTS" || "$SPECIFIC_TESTS" == *"redis"* || "$SPECIFIC_TESTS" == *"queue"* ]]; then
         log_info "Running Redis queue integration tests..."
-        if ! env $test_env cargo test redis_queue_integration_tests $test_flags; then
+        if ! env $test_env cargo test --workspace --features integration-tests redis_queue_integration_tests $test_flags; then
             log_error "Redis queue integration tests failed"
             return 1
         fi
@@ -311,7 +311,7 @@ run_integration_tests() {
     # Run file storage tests
     if [[ -z "$SPECIFIC_TESTS" || "$SPECIFIC_TESTS" == *"file"* || "$SPECIFIC_TESTS" == *"storage"* || "$SPECIFIC_TESTS" == *"minio"* ]]; then
         log_info "Running file storage integration tests..."
-        if ! env $test_env cargo test file_storage_integration_tests $test_flags; then
+        if ! env $test_env cargo test --workspace --features integration-tests,s3-storage file_storage_integration_tests $test_flags; then
             log_error "File storage integration tests failed"
             return 1
         fi
@@ -321,7 +321,7 @@ run_integration_tests() {
     # Run end-to-end tests
     if [[ -z "$SPECIFIC_TESTS" || "$SPECIFIC_TESTS" == *"e2e"* || "$SPECIFIC_TESTS" == *"end_to_end"* ]]; then
         log_info "Running end-to-end tests..."
-        if ! env $test_env cargo test end_to_end $test_flags; then
+        if ! env $test_env cargo test --workspace end_to_end $test_flags; then
             log_warning "End-to-end tests failed or not found (this may be expected)"
         else
             log_success "End-to-end tests passed"
@@ -339,7 +339,7 @@ cleanup() {
         case "$MODE" in
             "docker")
                 log_info "Stopping docker-compose services..."
-                docker-compose -f "$DOCKER_COMPOSE_TEST_FILE" down -v 2>/dev/null || true
+                docker compose -f "$DOCKER_COMPOSE_TEST_FILE" down -v 2>/dev/null || true
                 ;;
             "local")
                 log_info "Testcontainers will auto-cleanup"
