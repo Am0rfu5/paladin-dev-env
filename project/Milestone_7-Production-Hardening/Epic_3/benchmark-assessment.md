@@ -112,3 +112,27 @@ Initial conclusion: the configuration-loading benchmark should be implemented in
 | `arsenal_benchmarks.rs.disabled` | Deprecate and remove | The file is already documented as needing a rewrite around current armament domain types. Arsenal performance is not part of the confirmed critical-path benchmark set for this Epic, so rewriting it now would be out of scope. |
 
 No disabled benchmark file is being directly restored in Task 3. The battalion and garrison areas are intentionally being replaced with new crate-local benchmark files in Task 4 rather than reactivated from the legacy root-owned implementations.
+
+---
+
+## Benchmark Preconditions and Feature Flags
+
+The current benchmark suite compiles and discovers from both crate scope and workspace scope with default features.
+
+### Benchmark Targets and Ownership
+
+| Target | Owner | Manifest Registration |
+|---|---|---|
+| `config_benchmarks` | Root `paladin` crate | Root `Cargo.toml` `[[bench]]` |
+| `battalion_benchmarks` | `paladin-battalion` | `crates/paladin-battalion/Cargo.toml` `[[bench]]` |
+| `sanctum_benchmarks` | `paladin-memory` | `crates/paladin-memory/Cargo.toml` `[[bench]]` |
+| `garrison_benchmarks` | `paladin-memory` | `crates/paladin-memory/Cargo.toml` `[[bench]]` |
+| `llm_serialization_benchmarks` | `paladin-llm` | `crates/paladin-llm/Cargo.toml` `[[bench]]` |
+
+### Feature and Environment Notes
+
+- `cargo bench --workspace --no-run` should be used as the structural compile validation command.
+- Active benchmark targets are intentionally no-network and should not require live provider credentials.
+- `paladin-memory` includes optional `sqlite` and `qdrant` features, but benchmark compile validation for this Epic uses default features.
+- `paladin-llm` default features include `openai` and `mock`; the serialization benchmark uses shared request/response types and does not require external API calls.
+- Root benchmark placeholders for legacy root-owned battalion, herald, and garrison entries have been removed to avoid ownership ambiguity.

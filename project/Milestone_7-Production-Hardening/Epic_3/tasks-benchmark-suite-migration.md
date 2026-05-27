@@ -77,12 +77,12 @@ Update the file after completing each sub-task, not just after completing an ent
 	- [x] 4.5 Implement a config benchmark that measures `Settings::new()` and the current per-domain config loading path at the crate that owns that code.
 	- [x] 4.6 Update each owning crate `Cargo.toml` so all new benchmark files are registered and buildable.
 	- [x] 4.7 Run `cargo bench -p paladin-battalion --no-run`, `cargo bench -p paladin-memory --no-run`, and `cargo bench -p paladin-llm --no-run` to verify the new benchmark targets compile.
-- [ ] 5.0 Update workspace benchmark manifests and execution flow
-	- [ ] 5.1 Review the root `Cargo.toml` and remove obsolete `[[bench]]` entries or commented placeholders that no longer belong at workspace root.
-	- [ ] 5.2 Add any missing Criterion dev-dependencies to owning crate manifests if the benchmarks are no longer inherited adequately from the root.
-	- [ ] 5.3 Ensure each owning crate manifest lists its benchmark targets consistently and does not rely on root-only benchmark registration.
-	- [ ] 5.4 Run `cargo bench --workspace --no-run` and fix manifest or feature-flag issues until the full workspace benchmark suite builds from the workspace entry point.
-	- [ ] 5.5 Document any required feature flags or benchmark preconditions in crate-level notes or in the baseline methodology plan.
+- [x] 5.0 Update workspace benchmark manifests and execution flow
+	- [x] 5.1 Review the root `Cargo.toml` and remove obsolete `[[bench]]` entries or commented placeholders that no longer belong at workspace root.
+	- [x] 5.2 Add any missing Criterion dev-dependencies to owning crate manifests if the benchmarks are no longer inherited adequately from the root.
+	- [x] 5.3 Ensure each owning crate manifest lists its benchmark targets consistently and does not rely on root-only benchmark registration.
+	- [x] 5.4 Run `cargo bench --workspace --no-run` and fix manifest or feature-flag issues until the full workspace benchmark suite builds from the workspace entry point.
+	- [x] 5.5 Document any required feature flags or benchmark preconditions in crate-level notes or in the baseline methodology plan.
 - [ ] 6.0 Produce the baseline performance report
 	- [ ] 6.1 Decide on the benchmark execution environment and record hardware, OS, Rust toolchain, and commit SHA to use in the baseline report.
 	- [ ] 6.2 Run the full active benchmark suite and capture results for all migrated and newly added benchmarks.
