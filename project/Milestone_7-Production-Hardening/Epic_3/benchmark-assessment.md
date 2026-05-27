@@ -85,3 +85,18 @@ Initial conclusion: the configuration-loading benchmark should be implemented in
 1. Should `herald_benchmarks` survive this Epic if herald performance is not part of the confirmed critical-path benchmark set?
 2. Is there any historical sanctum benchmark output already checked into docs or CI artifacts that can serve as the pre-migration comparison point?
 3. If the team decides to keep a `paladin` aggregate benchmark, what is the correct architectural boundary now that most major subsystems have crate-level ownership?
+
+---
+
+## Migration Notes
+
+### Sanctum Benchmark Migration
+
+- `benches/sanctum_benchmarks.rs` was moved to `crates/paladin-memory/benches/sanctum_benchmarks.rs`.
+- Benchmark imports were updated from the root `paladin` facade crate to the current crate-aligned paths:
+	- `paladin_core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry}`
+	- `paladin_memory::sanctum::InMemorySanctum`
+	- `paladin_ports::output::sanctum_port::{SanctumFilter, SanctumPort, SanctumQuery}`
+- `crates/paladin-memory/Cargo.toml` now owns the Criterion registration for `sanctum_benchmarks` and includes a local `criterion` dev-dependency.
+- The stale root `sanctum_benchmarks` placeholder was removed from `Cargo.toml` so the workspace no longer treats sanctum as a root-owned benchmark target.
+- Validation result: `cargo bench -p paladin-memory --bench sanctum_benchmarks --no-run` completed successfully and produced the benchmark executable.

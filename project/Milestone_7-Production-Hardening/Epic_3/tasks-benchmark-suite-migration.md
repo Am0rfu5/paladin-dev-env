@@ -3,7 +3,7 @@
 ### Files to Modify
 
 - `Cargo.toml` - Workspace benchmark configuration may need updates so root-owned benchmark entries are removed or adjusted after per-crate migration.
-- `benches/sanctum_benchmarks.rs` - Existing active benchmark to migrate out of the workspace root.
+- `crates/paladin-memory/benches/sanctum_benchmarks.rs` - Migrated sanctum benchmark now owned by `paladin-memory`.
 - `benches/battalion_benchmarks.rs` - Existing battalion benchmark candidate to restore, relocate, or replace.
 - `benches/garrison_benchmarks.rs` - Existing garrison benchmark candidate to restore, relocate, or replace.
 - `benches/herald_benchmarks.rs` - Existing herald benchmark candidate to assess for deprecation or rewrite.
@@ -18,7 +18,6 @@
 ### Files to Create
 
 - `project/Milestone_7-Production-Hardening/Epic_3/benchmark-assessment.md` - Initial audit of benchmark inventory, root manifest state, target ownership, and open questions for Epic 3.
-- `crates/paladin-memory/benches/sanctum_benchmarks.rs` - Migrated sanctum benchmark owned by `paladin-memory`.
 - `crates/paladin-memory/benches/garrison_benchmarks.rs` - In-memory read/write benchmark coverage for garrison history sizes.
 - `crates/paladin-battalion/benches/battalion_benchmarks.rs` - Formation, Phalanx, and Campaign orchestration benchmarks.
 - `crates/paladin-llm/benches/llm_serialization_benchmarks.rs` - Request/response serialization overhead benchmarks excluding network calls.
@@ -63,14 +62,14 @@ Update the file after completing each sub-task, not just after completing an ent
 	- [x] 1.4 Identify the owning crate for each benchmark area: sanctum and garrison -> `paladin-memory`, battalion -> `paladin-battalion`, LLM serialization -> `paladin-llm`, config loading -> current settings owner.
 	- [x] 1.5 Read `src/config/settings.rs` and confirm whether the config-loading benchmark should live in the root crate or another crate based on the actual `Settings::new()` ownership.
 	- [x] 1.6 Create `project/Milestone_7-Production-Hardening/Epic_3/benchmark-assessment.md` and record the initial inventory, target ownership, and open questions.
-- [ ] 2.0 Migrate active workspace benchmarks into their owning crates
-	- [ ] 2.1 Create `crates/paladin-memory/benches/` if it does not already exist.
-	- [ ] 2.2 Move `benches/sanctum_benchmarks.rs` to `crates/paladin-memory/benches/sanctum_benchmarks.rs`.
-	- [ ] 2.3 Update imports, helper paths, and crate references inside the migrated sanctum benchmark so it compiles against `paladin-memory` from its new location.
-	- [ ] 2.4 Update `crates/paladin-memory/Cargo.toml` to register the migrated sanctum benchmark with `harness = false` if Criterion is used.
-	- [ ] 2.5 Remove or disable the root benchmark entry for sanctum in `Cargo.toml` so the workspace no longer treats it as a root-owned benchmark.
-	- [ ] 2.6 Run `cargo bench -p paladin-memory --bench sanctum_benchmarks --no-run` to confirm the migrated benchmark builds.
-	- [ ] 2.7 Record the migration result and any API adjustments in `benchmark-assessment.md`.
+- [x] 2.0 Migrate active workspace benchmarks into their owning crates
+	- [x] 2.1 Create `crates/paladin-memory/benches/` if it does not already exist.
+	- [x] 2.2 Move `benches/sanctum_benchmarks.rs` to `crates/paladin-memory/benches/sanctum_benchmarks.rs`.
+	- [x] 2.3 Update imports, helper paths, and crate references inside the migrated sanctum benchmark so it compiles against `paladin-memory` from its new location.
+	- [x] 2.4 Update `crates/paladin-memory/Cargo.toml` to register the migrated sanctum benchmark with `harness = false` if Criterion is used.
+	- [x] 2.5 Remove or disable the root benchmark entry for sanctum in `Cargo.toml` so the workspace no longer treats it as a root-owned benchmark.
+	- [x] 2.6 Run `cargo bench -p paladin-memory --bench sanctum_benchmarks --no-run` to confirm the migrated benchmark builds.
+	- [x] 2.7 Record the migration result and any API adjustments in `benchmark-assessment.md`.
 - [ ] 3.0 Evaluate disabled benchmarks and decide reactivation or deprecation
 	- [ ] 3.1 Review `benches/battalion_benchmarks.rs` against the current battalion APIs and decide whether it can be restored directly, requires rewrite, or should be superseded by a new benchmark file.
 	- [ ] 3.2 Review `benches/garrison_benchmarks.rs` against the current garrison APIs and decide whether it can be restored directly, requires rewrite, or should be superseded by a new benchmark file.

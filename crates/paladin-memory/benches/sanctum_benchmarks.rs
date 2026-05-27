@@ -11,18 +11,18 @@
 //! - Qdrant adapter: < 500ms search at 100K vectors
 
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
-use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
-use paladin::infrastructure::adapters::sanctum::InMemorySanctum;
+use paladin_core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};
+use paladin_memory::sanctum::InMemorySanctum;
 use paladin_ports::output::sanctum_port::{SanctumFilter, SanctumPort, SanctumQuery};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
-/// Create embedding vector of specified dimension
+/// Create embedding vector of specified dimension.
 fn create_embedding(dimension: usize) -> Vec<f32> {
     (0..dimension).map(|i| (i as f32) * 0.01).collect()
 }
 
-/// Create a test memory entry
+/// Create a test memory entry.
 fn create_memory_entry(
     paladin_id: &str,
     content: &str,
@@ -40,12 +40,12 @@ fn create_memory_entry(
     SanctumEntry::new(memory, embedding).expect("Failed to create SanctumEntry")
 }
 
-/// Benchmark single store operation
+/// Benchmark single store operation.
 fn benchmark_store_single(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
     let mut group = c.benchmark_group("sanctum_store_single");
 
-    for dimension in [384, 768, 1536].iter() {
+    for dimension in &[384, 768, 1536] {
         group.bench_with_input(
             BenchmarkId::new("dimension", dimension),
             dimension,
@@ -74,12 +74,12 @@ fn benchmark_store_single(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark batch store operations
+/// Benchmark batch store operations.
 fn benchmark_store_batch(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
     let mut group = c.benchmark_group("sanctum_store_batch");
 
-    for batch_size in [10, 50, 100, 500].iter() {
+    for batch_size in &[10, 50, 100, 500] {
         group.bench_with_input(
             BenchmarkId::new("batch_size", batch_size),
             batch_size,
@@ -118,15 +118,14 @@ fn benchmark_store_batch(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark vector search at various scales
+/// Benchmark vector search at various scales.
 fn benchmark_search_scale(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
     let mut group = c.benchmark_group("sanctum_search_scale");
 
-    // Configure longer measurement time for accurate results
     group.sample_size(50);
 
-    for vector_count in [100, 1_000, 5_000, 10_000].iter() {
+    for vector_count in &[100, 1_000, 5_000, 10_000] {
         group.bench_with_input(
             BenchmarkId::new("vector_count", vector_count),
             vector_count,
@@ -135,7 +134,6 @@ fn benchmark_search_scale(c: &mut Criterion) {
                     || {
                         let adapter = Arc::new(InMemorySanctum::new(count + 1000));
 
-                        // Pre-populate with vectors
                         let entries: Vec<SanctumEntry> = (0..count)
                             .map(|i| {
                                 create_memory_entry(
@@ -152,7 +150,6 @@ fn benchmark_search_scale(c: &mut Criterion) {
                             adapter.store_batch(entries).await.unwrap();
                         });
 
-                        // Create query
                         let query_embedding = create_embedding(384);
                         let query = SanctumQuery::new(query_embedding, 10);
 
@@ -170,12 +167,11 @@ fn benchmark_search_scale(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark search with different top_k values
+/// Benchmark search with different top_k values.
 fn benchmark_search_topk(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
     let mut group = c.benchmark_group("sanctum_search_topk");
 
-    // Pre-create adapter with 5000 vectors
     let adapter = Arc::new(InMemorySanctum::new(10000));
     let entries: Vec<SanctumEntry> = (0..5000)
         .map(|i| {
@@ -193,7 +189,7 @@ fn benchmark_search_topk(c: &mut Criterion) {
         adapter.store_batch(entries).await.unwrap();
     });
 
-    for top_k in [1, 5, 10, 50, 100].iter() {
+    for top_k in &[1, 5, 10, 50, 100] {
         group.bench_with_input(BenchmarkId::new("top_k", top_k), top_k, |b, &k| {
             b.to_async(&rt).iter(|| async {
                 let query_embedding = create_embedding(384);
@@ -206,17 +202,16 @@ fn benchmark_search_topk(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark search with filters
+/// Benchmark search with filters.
 fn benchmark_search_with_filters(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
     let mut group = c.benchmark_group("sanctum_search_filters");
 
-    // Pre-create adapter with 5000 vectors
     let adapter = Arc::new(InMemorySanctum::new(10000));
     let entries: Vec<SanctumEntry> = (0..5000)
         .map(|i| {
             create_memory_entry(
-                &format!("paladin-{}", i % 10), // 10 different paladins
+                &format!("paladin-{}", i % 10),
                 &format!("Test content {}", i),
                 if i % 3 == 0 {
                     MemoryType::Episodic
@@ -235,7 +230,6 @@ fn benchmark_search_with_filters(c: &mut Criterion) {
         adapter.store_batch(entries).await.unwrap();
     });
 
-    // Benchmark: No filter
     group.bench_function("no_filter", |b| {
         b.to_async(&rt).iter(|| async {
             let query_embedding = create_embedding(384);
@@ -244,7 +238,6 @@ fn benchmark_search_with_filters(c: &mut Criterion) {
         });
     });
 
-    // Benchmark: Filter by paladin_id
     group.bench_function("filter_paladin_id", |b| {
         b.to_async(&rt).iter(|| async {
             let query_embedding = create_embedding(384);
@@ -254,7 +247,6 @@ fn benchmark_search_with_filters(c: &mut Criterion) {
         });
     });
 
-    // Benchmark: Filter by memory_type
     group.bench_function("filter_memory_type", |b| {
         b.to_async(&rt).iter(|| async {
             let query_embedding = create_embedding(384);
@@ -264,7 +256,6 @@ fn benchmark_search_with_filters(c: &mut Criterion) {
         });
     });
 
-    // Benchmark: Filter by importance
     group.bench_function("filter_importance", |b| {
         b.to_async(&rt).iter(|| async {
             let query_embedding = create_embedding(384);
@@ -274,7 +265,6 @@ fn benchmark_search_with_filters(c: &mut Criterion) {
         });
     });
 
-    // Benchmark: Multiple filters combined
     group.bench_function("filter_combined", |b| {
         b.to_async(&rt).iter(|| async {
             let query_embedding = create_embedding(384);
@@ -290,12 +280,11 @@ fn benchmark_search_with_filters(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark update operations
+/// Benchmark update operations.
 fn benchmark_update(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
     let mut group = c.benchmark_group("sanctum_update");
 
-    // Pre-create adapter with 1000 vectors
     let adapter = Arc::new(InMemorySanctum::new(10000));
     let entries: Vec<SanctumEntry> = (0..1000)
         .map(|i| {
@@ -320,7 +309,6 @@ fn benchmark_update(c: &mut Criterion) {
             let adapter = adapter.clone();
             let entry_id = entry_ids[0].clone();
             async move {
-                // Create updated entry with same ID
                 let mut updated_memory = create_memory_entry(
                     "paladin-updated",
                     "Updated content",
@@ -338,7 +326,7 @@ fn benchmark_update(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark delete operations
+/// Benchmark delete operations.
 fn benchmark_delete(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
     let mut group = c.benchmark_group("sanctum_delete");
@@ -348,7 +336,6 @@ fn benchmark_delete(c: &mut Criterion) {
             || {
                 let adapter = Arc::new(InMemorySanctum::new(10000));
 
-                // Add entries
                 let entries: Vec<SanctumEntry> = (0..100)
                     .map(|i| {
                         create_memory_entry(
@@ -379,12 +366,11 @@ fn benchmark_delete(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark count operations
+/// Benchmark count operations.
 fn benchmark_count(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
     let mut group = c.benchmark_group("sanctum_count");
 
-    // Pre-create adapter with 5000 vectors
     let adapter = Arc::new(InMemorySanctum::new(10000));
     let entries: Vec<SanctumEntry> = (0..5000)
         .map(|i| {
@@ -406,14 +392,12 @@ fn benchmark_count(c: &mut Criterion) {
         adapter.store_batch(entries).await.unwrap();
     });
 
-    // Benchmark: Count all
     group.bench_function("count_all", |b| {
         b.to_async(&rt).iter(|| async {
             adapter.count(None).await.unwrap();
         });
     });
 
-    // Benchmark: Count with filter
     group.bench_function("count_with_filter", |b| {
         b.to_async(&rt).iter(|| async {
             let filter = SanctumFilter::new()
