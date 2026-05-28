@@ -99,13 +99,13 @@ Keep the task list aligned with the Milestone 7 epic structure and the completed
   - [x] 3.5 Verify `STABLE_API.md` entries match the actual exported APIs and crate decomposition delivered in Epics 1-3.
   - [x] 3.6 Produce a docs coverage summary per crate showing documented public item percentage and confirm target exceeds 90%.
 
-- [ ] 4.0 Prepare per-crate release artifacts
-  - [ ] 4.1 Create or update crate-level README files for each public crate with purpose, key types, usage examples, and feature flags.
-  - [ ] 4.2 Ensure root `README.md` links to all per-crate README files and reflects current workspace layout.
-  - [ ] 4.3 Create or initialize crate-level CHANGELOG files using Keep a Changelog structure.
-  - [ ] 4.4 Backfill each crate changelog using relevant entries from root `CHANGELOG.md` and milestone extraction history.
-  - [ ] 4.5 Update `CONTRIBUTING.md` with rules for ongoing per-crate changelog maintenance.
-  - [ ] 4.6 Verify crate READMEs and changelogs are internally consistent with versioning policy and API stability documentation.
+- [x] 4.0 Prepare per-crate release artifacts
+  - [x] 4.1 Create or update crate-level README files for each public crate with purpose, key types, usage examples, and feature flags.
+  - [x] 4.2 Ensure root `README.md` links to all per-crate README files and reflects current workspace layout.
+  - [x] 4.3 Create or initialize crate-level CHANGELOG files using Keep a Changelog structure.
+  - [x] 4.4 Backfill each crate changelog using relevant entries from root `CHANGELOG.md` and milestone extraction history.
+  - [x] 4.5 Update `CONTRIBUTING.md` with rules for ongoing per-crate changelog maintenance.
+  - [x] 4.6 Verify crate READMEs and changelogs are internally consistent with versioning policy and API stability documentation.
 
 - [ ] 5.0 Run release readiness audit
   - [ ] 5.1 Run `cargo test --workspace` and resolve failures.

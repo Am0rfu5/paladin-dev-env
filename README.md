@@ -14,7 +14,7 @@ Paladin provides a powerful command-line interface for quick agent creation and 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/paladin.git
+git clone https://github.com/DF3NDR/paladin-dev-env.git
 cd paladin
 
 # Build the CLI
@@ -30,19 +30,19 @@ Paladin uses Cargo feature flags to control which dependencies and functionality
 **Default Build** (minimal):
 ```toml
 [dependencies]
-paladin = "0.1"  # Only llm-openai enabled
+paladin = "0.2.0"  # Only llm-openai enabled
 ```
 
 **Full Build** (all features):
 ```toml
 [dependencies]
-paladin = { version = "0.1", features = ["full"] }
+paladin = { version = "0.2.0", features = ["full"] }
 ```
 
 **Custom Build** (production):
 ```toml
 [dependencies]
-paladin = { version = "0.1", features = ["llm-anthropic", "redis-queue", "s3-storage", "web-server"] }
+paladin = { version = "0.2.0", features = ["llm-anthropic", "redis-queue", "s3-storage", "web-server"] }
 ```
 
 #### Available Features
@@ -118,6 +118,22 @@ paladin run -c config.yaml --interactive
 - **[Versioning Policy](docs/VERSIONING_POLICY.md)** - Lockstep versioning rules and breaking-change policy
 - **[Release Checklist](docs/RELEASE_CHECKLIST.md)** - End-to-end release workflow and publish order
 - **[Example Configs](examples/cli_configs/)** - Sample configurations
+
+## Workspace Crates
+
+The public crates live under `crates/`.
+
+| Crate | Purpose | Docs |
+|------|---------|------|
+| `paladin-core` | Pure domain types and aggregate roots | [README](crates/paladin-core/README.md), [CHANGELOG](crates/paladin-core/CHANGELOG.md) |
+| `paladin-ports` | Hexagonal architecture contracts | [README](crates/paladin-ports/README.md), [CHANGELOG](crates/paladin-ports/CHANGELOG.md) |
+| `paladin-battalion` | Multi-agent orchestration runtime | [README](crates/paladin-battalion/README.md), [CHANGELOG](crates/paladin-battalion/CHANGELOG.md) |
+| `paladin-llm` | LLM provider adapters | [README](crates/paladin-llm/README.md), [CHANGELOG](crates/paladin-llm/CHANGELOG.md) |
+| `paladin-memory` | Garrison and Sanctum memory adapters | [README](crates/paladin-memory/README.md), [CHANGELOG](crates/paladin-memory/CHANGELOG.md) |
+| `paladin-web` | Web server adapters | [README](crates/paladin-web/README.md), [CHANGELOG](crates/paladin-web/CHANGELOG.md) |
+| `paladin-notifications` | Notification adapters | [README](crates/paladin-notifications/README.md), [CHANGELOG](crates/paladin-notifications/CHANGELOG.md) |
+| `paladin-content` | Content ingestion and processing adapters | [README](crates/paladin-content/README.md), [CHANGELOG](crates/paladin-content/CHANGELOG.md) |
+| `paladin-storage` | SQL repository adapters | [README](crates/paladin-storage/README.md), [CHANGELOG](crates/paladin-storage/CHANGELOG.md) |
 
 See [docs/CLI_USAGE.md](docs/CLI_USAGE.md) for comprehensive CLI documentation.
 

@@ -546,6 +546,15 @@ cargo doc --no-deps --open
 - Use proper markdown formatting
 - Add diagrams where helpful
 
+### Per-Crate Changelog Maintenance
+
+Each public crate under `crates/` must keep a `CHANGELOG.md` following Keep a Changelog format.
+
+- Update the crate changelog whenever public API, feature flags, or release-facing behavior changes.
+- Keep crate entries aligned with the workspace lockstep versioning policy in `docs/VERSIONING_POLICY.md`.
+- When creating a crate changelog for the first time, backfill relevant items from the root `CHANGELOG.md`.
+- Keep crate README and changelog updates together so release artifacts remain consistent.
+
 ## API Change Process
 
 Paladin maintains a **stable public API contract** defined in **[STABLE_API.md](STABLE_API.md)**. This document defines:
