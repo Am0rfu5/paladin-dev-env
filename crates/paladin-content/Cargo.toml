@@ -2,9 +2,14 @@
 name = "paladin-content"
 version = "0.1.0"
 edition = "2024"
+authors = ["Am0rfu5"]
 description = "Content processing adapters and use-case services for the Paladin framework"
+readme = "README.md"
 license = "MIT"
 repository = "https://github.com/DF3NDR/paladin-dev-env"
+keywords = ["ai", "content", "ingestion", "analysis", "processing"]
+categories = ["development-tools", "asynchronous", "api-bindings"]
+documentation = "https://docs.rs/paladin-content"
 
 [lib]
 doctest = false
@@ -18,9 +23,9 @@ tiktoken     = ["dep:tiktoken-rs"]
 llm          = ["dep:paladin-llm"]
 
 [dependencies]
-paladin-core  = { workspace = true }
-paladin-ports = { workspace = true }
-paladin-llm   = { workspace = true, optional = true }
+paladin-core  = { version = "0.1.0", path = "../paladin-core" }
+paladin-ports = { version = "0.1.0", path = "../paladin-ports" }
+paladin-llm   = { version = "0.1.0", path = "../paladin-llm", optional = true }
 async-trait   = { workspace = true }
 chrono        = { workspace = true }
 futures       = { workspace = true }

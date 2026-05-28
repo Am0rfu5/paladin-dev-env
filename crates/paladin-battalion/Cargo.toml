@@ -2,13 +2,18 @@
 name = "paladin-battalion"
 version = "0.1.0"
 edition = "2024"
+authors = ["Am0rfu5"]
 license = "MIT"
 description = "Multi-agent orchestration runtime for the Paladin framework — Formation, Phalanx, Campaign, Chain of Command, Conclave, Council, Grove, Maneuver, Commander"
+readme = "README.md"
 repository = "https://github.com/DF3NDR/paladin-dev-env"
+keywords = ["ai", "agents", "orchestration", "multi-agent", "workflow"]
+categories = ["development-tools", "asynchronous", "api-bindings"]
+documentation = "https://docs.rs/paladin-battalion"
 
 [dependencies]
-paladin-core  = { path = "../paladin-core" }
-paladin-ports = { path = "../paladin-ports" }
+paladin-core  = { version = "0.1.0", path = "../paladin-core" }
+paladin-ports = { version = "0.1.0", path = "../paladin-ports" }
 tokio         = { workspace = true }
 async-trait   = { workspace = true }
 serde         = { workspace = true }

@@ -2,9 +2,14 @@
 name = "paladin-ports"
 version = "0.1.0"
 edition = "2021"
+authors = ["Am0rfu5"]
 description = "Port trait definitions (hexagonal architecture contracts) for the Paladin framework"
+readme = "README.md"
 license = "MIT"
 repository = "https://github.com/DF3NDR/paladin-dev-env"
+keywords = ["ai", "agents", "hexagonal", "ports", "traits"]
+categories = ["development-tools", "asynchronous", "api-bindings"]
+documentation = "https://docs.rs/paladin-ports"
 
 [lib]
 # Doctests in copied port files reference `paladin::` (root crate) which would
@@ -13,7 +18,7 @@ repository = "https://github.com/DF3NDR/paladin-dev-env"
 doctest = false
 
 [dependencies]
-paladin-core = { path = "../paladin-core" }
+paladin-core = { version = "0.1.0", path = "../paladin-core" }
 async-trait = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }

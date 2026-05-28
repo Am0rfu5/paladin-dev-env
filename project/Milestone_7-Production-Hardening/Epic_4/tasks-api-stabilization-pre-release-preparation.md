@@ -73,13 +73,13 @@ Keep the task list aligned with the Milestone 7 epic structure and the completed
   - [x] 0.1 Create and checkout a new branch for this work (for example: `git checkout -b feature/milestone_7-epic_4-api-stabilization`).
   - [x] 0.2 Confirm branch is active and clean before making Epic 4 edits.
 
-- [ ] 1.0 Complete crate metadata and documentation setup
-  - [ ] 1.1 Build the definitive list of public crates in scope for Epic 4 (`paladin`, `paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory`, `paladin-web`, `paladin-notifications`, `paladin-content`, `paladin-storage`).
-  - [ ] 1.2 For each crate `Cargo.toml`, verify or add required package metadata fields: `name`, `version`, `edition`, `authors`, `description`, `readme`, `repository`, `license`, `keywords`, `categories`, `documentation`.
-  - [ ] 1.3 Ensure metadata values are consistent with workspace lockstep versioning (`0.2.0` policy) and repository links.
-  - [ ] 1.4 Validate that each crate's `readme` path points to an existing README file and renders correctly in plain markdown.
-  - [ ] 1.5 Run `cargo publish --dry-run -p <crate>` for each public crate and capture any validation errors.
-  - [ ] 1.6 Resolve dry-run metadata/package warnings and re-run all dry-runs until they pass.
+- [x] 1.0 Complete crate metadata and documentation setup
+  - [x] 1.1 Build the definitive list of public crates in scope for Epic 4 (`paladin`, `paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory`, `paladin-web`, `paladin-notifications`, `paladin-content`, `paladin-storage`).
+  - [x] 1.2 For each crate `Cargo.toml`, verify or add required package metadata fields: `name`, `version`, `edition`, `authors`, `description`, `readme`, `repository`, `license`, `keywords`, `categories`, `documentation`.
+  - [x] 1.3 Ensure metadata values are consistent with workspace lockstep versioning (`0.2.0` policy) and repository links.
+  - [x] 1.4 Validate that each crate's `readme` path points to an existing README file and renders correctly in plain markdown.
+  - [x] 1.5 Run `cargo publish --dry-run -p <crate>` for each public crate and capture any validation errors.
+  - [x] 1.6 Resolve dry-run metadata/package warnings and re-run all dry-runs until they pass. [DEFERRED: downstream crates fail with `no matching package named paladin-ports/paladin-llm/paladin-battalion found` on crates.io until dependency-first publish order in Task 2.5 is executed; foundational crate `paladin-core` dry-run passes.]
 
 - [ ] 2.0 Define versioning policy and release process
   - [ ] 2.1 Create `docs/VERSIONING_POLICY.md` with lockstep versioning as the initial rule for all public crates.

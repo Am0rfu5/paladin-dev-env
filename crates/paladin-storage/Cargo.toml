@@ -2,9 +2,14 @@
 name = "paladin-storage"
 version = "0.1.0"
 edition = "2021"
+authors = ["Am0rfu5"]
 description = "SQL-backed repository adapters for the Paladin framework (SQLite and MySQL)"
+readme = "README.md"
 license = "MIT"
 repository = "https://github.com/DF3NDR/paladin-dev-env"
+keywords = ["ai", "storage", "sqlite", "mysql", "sqlx"]
+categories = ["development-tools", "asynchronous", "api-bindings"]
+documentation = "https://docs.rs/paladin-storage"
 
 [lib]
 doctest = false
@@ -16,8 +21,8 @@ sqlite = ["dep:sqlx", "sqlx/sqlite"]
 mysql = ["dep:sqlx", "sqlx/mysql"]
 
 [dependencies]
-paladin-core = { path = "../paladin-core" }
-paladin-ports = { path = "../paladin-ports" }
+paladin-core = { version = "0.1.0", path = "../paladin-core" }
+paladin-ports = { version = "0.1.0", path = "../paladin-ports" }
 
 async-trait = { workspace = true }
 chrono     = { workspace = true }

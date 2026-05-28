@@ -2,9 +2,14 @@
 name = "paladin-core"
 version = "0.1.0"
 edition = "2024"
+authors = ["Am0rfu5"]
 license = "MIT"
 description = "Pure domain types for the Paladin framework — zero infrastructure dependencies"
+readme = "README.md"
 repository = "https://github.com/DF3NDR/paladin-dev-env"
+keywords = ["ai", "agents", "framework", "orchestration", "domain"]
+categories = ["development-tools", "asynchronous", "api-bindings"]
+documentation = "https://docs.rs/paladin-core"
 
 [dependencies]
 serde = { workspace = true }

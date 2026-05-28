@@ -16,15 +16,15 @@ rand = "0.8"
 base64 = "0.22"
 futures = "0.3"
 regex = "1.11.1"
-paladin-core = { path = "crates/paladin-core" }
-paladin-ports = { path = "crates/paladin-ports" }
-paladin-battalion = { path = "crates/paladin-battalion" }
-paladin-llm = { path = "crates/paladin-llm" }
-paladin-memory = { path = "crates/paladin-memory" }
-paladin-storage = { path = "crates/paladin-storage" }
-paladin-notifications = { path = "crates/paladin-notifications" }
-paladin-content = { path = "crates/paladin-content" }
-paladin-web = { path = "crates/paladin-web" }
+paladin-core = { version = "0.1.0", path = "crates/paladin-core" }
+paladin-ports = { version = "0.1.0", path = "crates/paladin-ports" }
+paladin-battalion = { version = "0.1.0", path = "crates/paladin-battalion" }
+paladin-llm = { version = "0.1.0", path = "crates/paladin-llm" }
+paladin-memory = { version = "0.1.0", path = "crates/paladin-memory" }
+paladin-storage = { version = "0.1.0", path = "crates/paladin-storage" }
+paladin-notifications = { version = "0.1.0", path = "crates/paladin-notifications" }
+paladin-content = { version = "0.1.0", path = "crates/paladin-content" }
+paladin-web = { version = "0.1.0", path = "crates/paladin-web" }
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "mysql", "chrono", "uuid", "json"] }
 qdrant-client = { version = "1.14" }
 
@@ -39,14 +39,15 @@ repository = "https://github.com/DF3NDR/paladin-dev-env"
 license = "MIT"
 keywords = ["ai", "agents", "orchestration", "llm", "multi-agent"]
 categories = ["development-tools", "asynchronous", "api-bindings"]
+documentation = "https://docs.rs/paladin"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-paladin-core = { path = "crates/paladin-core" }
-paladin-ports = { path = "crates/paladin-ports" }
-paladin-battalion = { path = "crates/paladin-battalion" }
-paladin-llm = { path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
+paladin-core = { workspace = true }
+paladin-ports = { workspace = true }
+paladin-battalion = { workspace = true }
+paladin-llm = { version = "0.1.0", path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
 paladin-memory = { workspace = true, features = ["sqlite"] }
 paladin-storage = { workspace = true, optional = true }
 paladin-notifications = { workspace = true, optional = true }

@@ -2,12 +2,18 @@
 name = "paladin-web"
 version = "0.1.0"
 edition = "2024"
+authors = ["Am0rfu5"]
 description = "Web server adapters for the Paladin AI orchestration framework (actix-web / axum)"
+readme = "README.md"
 license = "MIT"
+repository = "https://github.com/DF3NDR/paladin-dev-env"
+keywords = ["ai", "web", "actix", "axum", "orchestration"]
+categories = ["development-tools", "asynchronous", "api-bindings"]
+documentation = "https://docs.rs/paladin-web"
 
 [dependencies]
-paladin-ports = { workspace = true }
-paladin-core = { workspace = true }
+paladin-ports = { version = "0.1.0", path = "../paladin-ports" }
+paladin-core = { version = "0.1.0", path = "../paladin-core" }
 actix-web = { version = "4.0" }
 axum = { version = "0.8.4" }
 serde = { workspace = true }

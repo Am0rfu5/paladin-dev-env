@@ -2,9 +2,14 @@
 name = "paladin-notifications"
 version = "0.1.0"
 edition = "2021"
+authors = ["Am0rfu5"]
 description = "Notification adapter implementations for the Paladin framework (email, push, system)"
+readme = "README.md"
 license = "MIT"
 repository = "https://github.com/DF3NDR/paladin-dev-env"
+keywords = ["ai", "notifications", "email", "push", "system"]
+categories = ["development-tools", "asynchronous", "api-bindings"]
+documentation = "https://docs.rs/paladin-notifications"
 
 [lib]
 doctest = false
@@ -15,8 +20,8 @@ push   = []
 system = []
 
 [dependencies]
-paladin-core  = { workspace = true }
-paladin-ports = { workspace = true }
+paladin-core  = { version = "0.1.0", path = "../paladin-core" }
+paladin-ports = { version = "0.1.0", path = "../paladin-ports" }
 async-trait   = { workspace = true }
 chrono        = { workspace = true }
 serde         = { workspace = true }
