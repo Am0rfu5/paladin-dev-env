@@ -120,7 +120,7 @@ Keep the task list aligned with the Milestone 7 epic structure and the completed
   - [x] 5.4 Run `cargo doc --workspace --no-deps` and resolve documentation build issues.
   - [ ] 5.5 Re-run `cargo publish --dry-run -p <crate>` for every public crate and confirm all succeed. [DEFERRED: `paladin-ports` verify-time compile mismatch is tracked in `deferred-paladin-ports-publish-verification.md`; downstream crates remain blocked by dependency publish order until this is resolved.]
   - [x] 5.6 Run `cargo audit` and address any blocking vulnerabilities. [POLICY-MANAGED: dependency-scope hardening completed; approved exceptions enforced in `make audit` and CI for `RUSTSEC-2023-0071` and `RUSTSEC-2025-0111` with owner/review window documented in `rustsec-remediation-plan.md`.]
-  - [ ] 5.7 Perform license compatibility check for transitive dependencies against MIT OR Apache-2.0 policy. [BLOCKED: inventory completed and permissive SPDX alternatives are acceptable under policy; remaining decisions are MPL-2.0 acceptance and one `UNKNOWN` license verification, tracked in `license-compatibility-decision-checklist.md`.]
+  - [ ] 5.7 Perform license compatibility check for transitive dependencies against MIT OR Apache-2.0 policy. [BLOCKED: inventory completed and permissive SPDX alternatives are acceptable under policy; `UNKNOWN` entry (`fuchsia-cprng 0.1.1`) has been verified as BSD-3-Clause-style and cleared; remaining decision is MPL-2.0 acceptance/replacement, tracked in `license-compatibility-decision-checklist.md`.]
   - [x] 5.8 Review dependency tree and binary-size impact for unexpected bloat and record findings.
   - [x] 5.9 Write a release readiness audit report in the Epic 4 folder summarizing pass/fail status and blockers.
 

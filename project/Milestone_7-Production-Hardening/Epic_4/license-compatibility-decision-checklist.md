@@ -14,9 +14,14 @@ Approval rule:
 ## Current Inventory Summary
 
 - Total inventoried packages: 551
-- Unknown license entries: 1 (`fuchsia-cprng 0.1.1`)
+- Unknown license entries: 0 (resolved)
 - MPL-2.0 entries observed: `colored 2.2.0`, `colored 3.0.0`
 - SPDX alternative expression noted: `r-efi 5.3.0` (`MIT OR Apache-2.0 OR LGPL-2.1-or-later`)
+
+Resolved verification:
+- `fuchsia-cprng 0.1.1` is no longer treated as unknown after artifact inspection.
+- Evidence: crates.io package `fuchsia-cprng-0.1.1.crate` includes `LICENSE` and `Cargo.toml` with `license-file = "LICENSE"`.
+- Effective classification: BSD-3-Clause-style permissive license text.
 
 ## Decision Checklist
 
@@ -30,7 +35,7 @@ Approval rule:
 
 - [ ] B1. Decide whether `MPL-2.0` dependencies are acceptable in this project policy context.
 - [ ] B2. If `MPL-2.0` is not acceptable, assign replacement task for `colored` dependency chain.
-- [ ] B3. Verify `fuchsia-cprng 0.1.1` effective license from upstream source and update inventory status.
+- [x] B3. Verify `fuchsia-cprng 0.1.1` effective license from upstream source and update inventory status.
 
 ### C. Evidence and Traceability
 
@@ -43,5 +48,5 @@ Approval rule:
 Task 5.7 can be marked complete when:
 1. MIT OR Apache-2.0 policy approval is recorded.
 2. MPL-2.0 has an explicit accept-or-replace decision.
-3. Unknown license entry is resolved or replaced.
+3. Unknown license entries are resolved or replaced.
 4. Epic 4 report and task list are updated with sign-off evidence.
