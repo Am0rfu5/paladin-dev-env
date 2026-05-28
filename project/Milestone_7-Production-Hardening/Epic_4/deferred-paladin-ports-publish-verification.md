@@ -14,11 +14,15 @@ Deferred item:
 ## Current Failure
 
 Observed during dry-run verification:
-- `E0433`: unresolved `paladin_core` module/crate references in `src/output/queue_port.rs`.
-- Representative symbols:
-  - `paladin_core::base::entity::message::MessagePriority`
-  - `paladin_core::base::entity::message::Message::new`
-  - `paladin_core::base::entity::message::Message::with_priority`
+- `cargo publish --dry-run --allow-dirty -p paladin-ports --manifest-path /workspace/Cargo.toml` fails before verify with:
+  - `no matching package named 'paladin-dev-core' found`
+  - `location searched: crates.io index`
+  - `required by package 'paladin-ports v0.1.0'`
+
+Resolved root cause that led to prior verify-time compile mismatch:
+- `paladin-ports` was previously binding to an unrelated crates.io `paladin-core` package.
+- Workspace manifests now remap internal dependencies to package `paladin-dev-core`.
+- `cargo publish --dry-run --allow-dirty -p paladin-dev-core --manifest-path /workspace/Cargo.toml` passes.
 
 Downstream impact:
 - Public crates depending on `paladin-ports` cannot complete dry-run publish verification.
@@ -26,16 +30,16 @@ Downstream impact:
 ## Why Deferred
 
 Epic 4 focus is release readiness documentation and audit closure.
-The unresolved verify-time compile mismatch for `paladin-ports` requires targeted dependency/path investigation and likely source adjustments that are out-of-scope for the current partial-progress docs checkpoint.
+`paladin-ports` dry-run verification now depends on crates.io availability of `paladin-dev-core`, which requires executing the publish order documented in Task 2.5.
 
 ## Deferral Exit Criteria
 
-1. Reproduce failure in a packaged-tarball verification context.
-2. Implement a fix so `paladin-ports` verifies under `cargo publish --dry-run -p paladin-ports`.
+1. Publish `paladin-dev-core` to crates.io (non-dry-run).
+2. Re-run `cargo publish --dry-run -p paladin-ports` and confirm verification passes.
 3. Re-run dry-run for all public crates in dependency order and capture successful evidence.
 4. Update Epic 4 Task 5.5 from deferred to complete.
 
 ## Proposed Follow-up
 
-- Open a focused follow-up work item under Epic 4 or Epic 5 for publish verification hardening.
-- Add a CI guard that runs `cargo package --allow-dirty` plus verification for `paladin-ports` to prevent regressions.
+- Execute a release-sequenced publish run: `paladin-dev-core` first, then `paladin-ports`, then dependents.
+- Add a CI guard that validates internal dependency package-name collisions against crates.io before release.

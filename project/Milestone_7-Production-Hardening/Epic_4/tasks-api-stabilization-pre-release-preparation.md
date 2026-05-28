@@ -118,7 +118,7 @@ Keep the task list aligned with the Milestone 7 epic structure and the completed
   - [x] 5.2 Run `cargo clippy --workspace -- -D warnings` and resolve warnings.
   - [x] 5.3 Run `cargo fmt --all -- --check` and resolve formatting issues.
   - [x] 5.4 Run `cargo doc --workspace --no-deps` and resolve documentation build issues.
-  - [ ] 5.5 Re-run `cargo publish --dry-run -p <crate>` for every public crate and confirm all succeed. [DEFERRED: `paladin-ports` verify-time compile mismatch is tracked in `deferred-paladin-ports-publish-verification.md`; downstream crates remain blocked by dependency publish order until this is resolved.]
+  - [ ] 5.5 Re-run `cargo publish --dry-run -p <crate>` for every public crate and confirm all succeed. [DEFERRED: `paladin-core` collision on crates.io was remediated by renaming internal package to `paladin-dev-core`; `paladin-dev-core` dry-run now passes, while `paladin-ports` dry-run requires `paladin-dev-core` to exist on crates.io first per dependency-aware publish order (Task 2.5).]
   - [x] 5.6 Run `cargo audit` and address any blocking vulnerabilities. [POLICY-MANAGED: dependency-scope hardening completed; approved exceptions enforced in `make audit` and CI for `RUSTSEC-2023-0071` and `RUSTSEC-2025-0111` with owner/review window documented in `rustsec-remediation-plan.md`.]
   - [x] 5.7 Perform license compatibility check for transitive dependencies against MIT OR Apache-2.0 policy. [COMPLETED: permissive SPDX alternatives accepted under policy; `fuchsia-cprng 0.1.1` unknown resolved; MPL-2.0 explicitly accepted for unmodified use with sign-off captured in `license-compatibility-decision-checklist.md`.]
   - [x] 5.8 Review dependency tree and binary-size impact for unexpected bloat and record findings.
