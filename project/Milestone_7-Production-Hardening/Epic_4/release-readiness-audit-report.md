@@ -1,96 +1,67 @@
 # Epic 4 Release Readiness Audit Report
 
 Date: 2026-05-28
-Scope: Milestone 7, Epic 4 (`API Stabilization & Pre-Release Preparation`)
+Scope: Milestone 7, Epic 4 (API Stabilization and Pre-Release Preparation)
 
 ## Summary
 
-Release recommendation: **NO-GO**
+Release recommendation: GO
 
-The workspace passes core quality gates (`test`, `fmt`, `clippy`, `doc`) but fails release readiness due to crates.io dry-run publish blockers, unresolved security advisories, and license-policy exceptions.
+All Epic 4 release gates are now passing. Previously deferred publish-verification blockers are resolved, dependency-order publishing has been executed, and the public crate set is successfully published and dry-run validated.
 
 ## Audit Results
 
 | Check | Status | Evidence |
 |---|---|---|
-| `cargo test --workspace` | PASS | Command completed with exit code 0. |
-| `cargo clippy --workspace -- -D warnings` | PASS | Completed successfully for all workspace crates. |
-| `cargo fmt --all -- --check` | PASS | No formatting issues reported. |
-| `cargo doc --workspace --no-deps` | PASS | Docs generated for all workspace crates with no warnings. |
-| `cargo publish --dry-run` for all public crates | FAIL | See Publish Dry-Run section for crate-by-crate failures. |
-| `cargo audit` | PASS (policy-managed) | Audit enforced with approved exceptions for `RUSTSEC-2023-0071` and `RUSTSEC-2025-0111`; new vulnerabilities still fail the gate. |
-| License compatibility against MIT OR Apache-2.0 policy | PASS (sign-off complete) | MPL-2.0 accepted for unmodified use; unknown-license item resolved; evidence recorded in Epic 4 checklist. |
-| Dependency tree / binary size review | PASS (informational) | 1320 dependency-tree lines; release binary `target/release/paladin` is 6.6M. |
+| cargo test --workspace | PASS | Full workspace test suite passes after stabilizing env-sensitive settings tests. |
+| cargo clippy --workspace -- -D warnings | PASS | Workspace lint check passes with warnings denied. |
+| cargo fmt --all -- --check | PASS | Formatting check passes. |
+| cargo doc --workspace --no-deps | PASS | Documentation build succeeds. |
+| cargo publish --dry-run for all public crates | PASS | All public crates now pass dry-run verification. |
+| cargo audit | PASS (policy-managed) | Approved exceptions enforced in Makefile and CI for RUSTSEC-2023-0071 and RUSTSEC-2025-0111; no unapproved blocking advisories. |
+| License compatibility (MIT OR Apache-2.0 policy) | PASS | Checklist completed, MPL-2.0 accepted for unmodified use, unknown-license item resolved. |
+| Dependency tree / binary-size review | PASS (informational) | Dependency and binary-size review captured during Task 5.8. |
 
-## Publish Dry-Run Details
+## Public Crate Publish and Dry-Run Status
 
-### Passing
-- `paladin-core`: dry-run packaging and verification passed.
+Published to crates.io:
+- paladin-ai-core 0.1.0
+- paladin-ports 0.1.0
+- paladin-battalion 0.1.0
+- paladin-llm 0.1.0
+- paladin-memory 0.1.0
+- paladin-storage 0.1.0
+- paladin-notifications 0.1.0
+- paladin-content 0.1.0
+- paladin-web 0.1.0
+- paladin-ai 0.1.0
 
-### Failing
-- `paladin-ports`: fails verification with unresolved `paladin_core` references during dry-run compile (`E0433` unresolved crate/module path).
-- `paladin-battalion`: missing `paladin-ports` on crates.io.
-- `paladin-llm`: missing `paladin-ports` on crates.io.
-- `paladin-memory`: missing `paladin-ports` on crates.io.
-- `paladin-web`: missing `paladin-ports` on crates.io.
-- `paladin-notifications`: missing `paladin-ports` on crates.io.
-- `paladin-content`: missing `paladin-llm` on crates.io.
-- `paladin-storage`: missing `paladin-ports` on crates.io.
-- `paladin` facade: missing `paladin-battalion` on crates.io.
+Dry-run verified:
+- paladin-ai-core
+- paladin-ports
+- paladin-battalion
+- paladin-llm
+- paladin-memory
+- paladin-storage
+- paladin-notifications
+- paladin-content
+- paladin-web
+- paladin-ai
 
-## Security Audit Findings
+## Blocker Closure Notes
 
-`cargo audit` originally reported:
-- Vulnerabilities: 2
-- Allowed warnings: 11
-
-Blocking vulnerabilities:
-- `RUSTSEC-2023-0071` (`rsa 0.9.10`) via `sqlx-mysql`.
-- `RUSTSEC-2025-0111` (`tokio-tar 0.3.1`) via `testcontainers`.
-
-Remediation completion state:
-- Dependency-scope hardening completed to reduce runtime exposure.
-- Enforcement implemented in local and CI audit commands using explicit exception IDs.
-- Exceptions are owner-bound and time-boxed per `rustsec-remediation-plan.md`.
-
-Additional warnings include unmaintained/unsound dependencies (`ansi_term`, `atty`, `dotenv`, `fxhash`, `gcc`, `number_prefix`, `proc-macro-error`, `rustls-pemfile`, `rand` advisories).
-
-## License Compatibility Findings
-
-Method:
-- Generated license inventory via `cargo metadata` + `jq`.
-
-Results:
-- Total packages inventoried: 551
-- Unknown license entries: 0 (after artifact verification of `fuchsia-cprng 0.1.1`)
-- Policy-relevant findings under MIT OR Apache-2.0:
-  - `colored 2.2.0` -> `MPL-2.0`
-  - `colored 3.0.0` -> `MPL-2.0`
-  - `r-efi 5.3.0` -> `MIT OR Apache-2.0 OR LGPL-2.1-or-later`
-
-Interpretation:
-- `r-efi` is not a blocker under MIT OR Apache-2.0 policy because a permissive SPDX branch is available.
-- `fuchsia-cprng 0.1.1` is no longer unknown after crates.io artifact inspection (`license-file = "LICENSE"`, BSD-3-Clause-style text).
-- `MPL-2.0` (`colored`) is accepted for unmodified use via explicit project sign-off.
-
-## Dependency / Binary Size Findings
-
-- Dependency tree footprint (`cargo tree --workspace --edges normal`): 1320 lines.
-- Release binary size (`target/release/paladin`): 6.6M.
-- Build completed successfully in release mode.
-
-## Blocking Items Before GO
-
-1. Fix `paladin-ports` dry-run compile failure caused by unresolved `paladin_core` references.
-2. Execute dependency-first publish sequence once dry-run compilation blockers are resolved.
-3. Resolve or formally accept-with-policy the 2 `cargo audit` vulnerabilities.
-4. License compatibility sign-off complete for Task 5.7 under MIT OR Apache-2.0 policy.
-
-Related follow-up artifacts:
-- `deferred-paladin-ports-publish-verification.md`
-- `rustsec-remediation-plan.md`
-- `license-compatibility-decision-checklist.md`
+Resolved blockers from prior NO-GO state:
+1. crates.io package collision on paladin-core:
+   - Resolved by renaming internal package to paladin-ai-core while preserving crate import compatibility via lib target name.
+2. paladin-ports packaged verification failure:
+   - Resolved after dependency remap and publishing paladin-ai-core before paladin-ports.
+3. root facade crate name conflict on crates.io:
+   - Resolved by renaming package to paladin-ai and preserving code imports with lib name paladin.
+4. crates.io publish rate limits:
+   - Handled by retrying at the documented unlock times and continuing dependency-order publishing.
 
 ## Recommendation
 
-Current release candidate status is **NO-GO** until the blockers above are resolved and audit checks are re-run to produce a clean report.
+GO for release candidate tagging.
+
+No Epic 4 release-readiness blockers remain. Proceed with final release-candidate sign-off and tag workflow per docs/RELEASE_CHECKLIST.md.

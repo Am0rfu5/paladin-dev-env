@@ -12,6 +12,8 @@
 - `docs/RELEASE_CHECKLIST.md` - New release execution checklist.
 - `docs/DOC_COVERAGE_REPORT.md` - Documentation coverage summary report per crate.
 - `project/Milestone_7-Production-Hardening/Epic_4/release-readiness-audit-report.md` - Release readiness audit status with pass/fail checks and blockers.
+- `project/Milestone_7-Production-Hardening/Epic_4/epic-4-completion-summary.md` - Final consolidated Epic 4 completion summary and acceptance-criteria traceability matrix.
+- `project/Milestone_7-Production-Hardening/Epic_4/release-candidate-signoff-checklist.md` - Final release-candidate sign-off checklist and GO/NO-GO decision record.
 - `project/Milestone_7-Production-Hardening/Epic_4/deferred-paladin-ports-publish-verification.md` - Deferred record for the `paladin-ports` dry-run verification blocker.
 - `project/Milestone_7-Production-Hardening/Epic_4/rustsec-remediation-plan.md` - Remediation strategy and action plan for RustSec vulnerabilities.
 - `project/Milestone_7-Production-Hardening/Epic_4/license-compatibility-decision-checklist.md` - Approval checklist for MIT OR Apache-2.0 license compatibility decisions.
@@ -124,9 +126,9 @@ Keep the task list aligned with the Milestone 7 epic structure and the completed
   - [x] 5.8 Review dependency tree and binary-size impact for unexpected bloat and record findings.
   - [x] 5.9 Write a release readiness audit report in the Epic 4 folder summarizing pass/fail status and blockers.
 
-- [ ] 6.0 Finalize release candidate checklist
-  - [ ] 6.1 Consolidate outputs from tasks 1.0-5.0 into a final Epic 4 completion summary.
-  - [ ] 6.2 Confirm all Epic 4 acceptance criteria are traceable to completed artifacts and checks.
-  - [ ] 6.3 Create final sign-off checklist for release candidate tag readiness.
-  - [ ] 6.4 Stage all Epic 4 deliverables and commit with a conventional commit message referencing Milestone 7 Epic 4.
-  - [ ] 6.5 Share final status update with explicit go/no-go recommendation for release candidate tagging.
+- [x] 6.0 Finalize release candidate checklist
+  - [x] 6.1 Consolidate outputs from tasks 1.0-5.0 into a final Epic 4 completion summary.
+  - [x] 6.2 Confirm all Epic 4 acceptance criteria are traceable to completed artifacts and checks.
+  - [x] 6.3 Create final sign-off checklist for release candidate tag readiness.
+  - [x] 6.4 Stage all Epic 4 deliverables and commit with a conventional commit message referencing Milestone 7 Epic 4.
+  - [x] 6.5 Share final status update with explicit go/no-go recommendation for release candidate tagging.
