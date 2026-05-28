@@ -21,6 +21,18 @@ Address or formally risk-accept the two blocking RustSec vulnerabilities before 
 
 ## Remediation Strategy
 
+## Progress Update (2026-05-28)
+
+Completed initial hardening actions:
+- Moved `testcontainers-modules` from normal dependencies to `dev-dependencies` in the root manifest.
+- Tightened MySQL repository compilation in `src/infrastructure/repositories/mod.rs` so MySQL module paths are only present when `storage-mysql` is enabled.
+- Disabled `sqlx` default features at workspace level and explicitly listed required features (`sqlite`, `migrate`, etc.) to reduce implicit backend activation.
+
+Validation snapshot:
+- `cargo check` passes after the changes.
+- `cargo tree -i tokio-tar` now shows only dev-dependency paths through `testcontainers`.
+- `cargo audit` still reports both RustSec advisories because Cargo.lock includes dev/optional dependency graphs and no fixed upstream versions are available.
+
 ### Track A: Immediate Risk Reduction
 
 1. Constrain feature/build surface for release artifacts.

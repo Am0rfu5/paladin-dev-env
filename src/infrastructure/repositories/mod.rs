@@ -9,9 +9,8 @@ pub mod sqlite_content_repository;
 pub use paladin_storage::sqlite_user_repository;
 #[cfg(not(feature = "storage-sqlite"))]
 pub mod sqlite_user_repository;
-/// MySQL content repository: re-exported from `paladin-storage` when the
-/// `storage-mysql` feature is active; falls back to the facade-local copy otherwise.
+/// MySQL content repository: available only when the `storage-mysql` feature is active.
 #[cfg(feature = "storage-mysql")]
 pub use paladin_storage::mysql_content_repository;
-#[cfg(not(feature = "storage-mysql"))]
+#[cfg(feature = "storage-mysql")]
 pub mod mysql_content_repository;
