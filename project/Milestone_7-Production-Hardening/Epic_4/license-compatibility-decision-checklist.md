@@ -27,21 +27,32 @@ Resolved verification:
 
 ### A. Policy Alignment
 
-- [ ] A1. Confirm formal project policy is MIT OR Apache-2.0 for release decisions.
-- [ ] A2. Confirm SPDX-alternative handling rule: if MIT or Apache branch exists, dependency is acceptable.
-- [ ] A3. Record policy approver (name/team) and approval date.
+- [x] A1. Confirm formal project policy is MIT OR Apache-2.0 for release decisions.
+- [x] A2. Confirm SPDX-alternative handling rule: if MIT or Apache branch exists, dependency is acceptable.
+- [x] A3. Record policy approver (name/team) and approval date.
+
+Policy approver:
+- `DF3NDR` (repository owner)
+- Approval date: 2026-05-28
+- Decision: Explicit acceptance of MPL-2.0 dependencies for unmodified use in this project.
 
 ### B. Blocking Decisions
 
-- [ ] B1. Decide whether `MPL-2.0` dependencies are acceptable in this project policy context.
-- [ ] B2. If `MPL-2.0` is not acceptable, assign replacement task for `colored` dependency chain.
+- [x] B1. Decide whether `MPL-2.0` dependencies are acceptable in this project policy context.
+- [x] B2. If `MPL-2.0` is not acceptable, assign replacement task for `colored` dependency chain. [N/A: MPL-2.0 accepted for unmodified use.]
 - [x] B3. Verify `fuchsia-cprng 0.1.1` effective license from upstream source and update inventory status.
 
 ### C. Evidence and Traceability
 
-- [ ] C1. Attach final license inventory evidence used for sign-off.
-- [ ] C2. Update `release-readiness-audit-report.md` with final pass/fail for Task 5.7.
-- [ ] C3. Update Task 5.7 status in `tasks-api-stabilization-pre-release-preparation.md`.
+- [x] C1. Attach final license inventory evidence used for sign-off.
+- [x] C2. Update `release-readiness-audit-report.md` with final pass/fail for Task 5.7.
+- [x] C3. Update Task 5.7 status in `tasks-api-stabilization-pre-release-preparation.md`.
+
+Sign-off evidence summary:
+- Transitive license inventory reviewed (`cargo metadata` + `jq`).
+- `fuchsia-cprng 0.1.1` verified from crates.io artifact as BSD-3-Clause-style (`license-file = "LICENSE"`).
+- `r-efi` expression accepted via permissive MIT/Apache branch under policy.
+- `colored` (`MPL-2.0`) explicitly accepted for unmodified use.
 
 ## Go/No-Go Gate for Task 5.7
 
@@ -50,3 +61,5 @@ Task 5.7 can be marked complete when:
 2. MPL-2.0 has an explicit accept-or-replace decision.
 3. Unknown license entries are resolved or replaced.
 4. Epic 4 report and task list are updated with sign-off evidence.
+
+Status: COMPLETE

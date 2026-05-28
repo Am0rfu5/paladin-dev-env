@@ -19,7 +19,7 @@ The workspace passes core quality gates (`test`, `fmt`, `clippy`, `doc`) but fai
 | `cargo doc --workspace --no-deps` | PASS | Docs generated for all workspace crates with no warnings. |
 | `cargo publish --dry-run` for all public crates | FAIL | See Publish Dry-Run section for crate-by-crate failures. |
 | `cargo audit` | PASS (policy-managed) | Audit enforced with approved exceptions for `RUSTSEC-2023-0071` and `RUSTSEC-2025-0111`; new vulnerabilities still fail the gate. |
-| License compatibility against MIT OR Apache-2.0 policy | FAIL | Policy mostly satisfied; remaining blocker is `MPL-2.0` acceptance/replacement decision. |
+| License compatibility against MIT OR Apache-2.0 policy | PASS (sign-off complete) | MPL-2.0 accepted for unmodified use; unknown-license item resolved; evidence recorded in Epic 4 checklist. |
 | Dependency tree / binary size review | PASS (informational) | 1320 dependency-tree lines; release binary `target/release/paladin` is 6.6M. |
 
 ## Publish Dry-Run Details
@@ -71,7 +71,7 @@ Results:
 Interpretation:
 - `r-efi` is not a blocker under MIT OR Apache-2.0 policy because a permissive SPDX branch is available.
 - `fuchsia-cprng 0.1.1` is no longer unknown after crates.io artifact inspection (`license-file = "LICENSE"`, BSD-3-Clause-style text).
-- Remaining blocker is `MPL-2.0` policy acceptance/replacement decision.
+- `MPL-2.0` (`colored`) is accepted for unmodified use via explicit project sign-off.
 
 ## Dependency / Binary Size Findings
 
@@ -84,7 +84,7 @@ Interpretation:
 1. Fix `paladin-ports` dry-run compile failure caused by unresolved `paladin_core` references.
 2. Execute dependency-first publish sequence once dry-run compilation blockers are resolved.
 3. Resolve or formally accept-with-policy the 2 `cargo audit` vulnerabilities.
-4. Resolve license-policy exception (`MPL-2.0` acceptance/replacement decision) with legal/compliance sign-off.
+4. License compatibility sign-off complete for Task 5.7 under MIT OR Apache-2.0 policy.
 
 Related follow-up artifacts:
 - `deferred-paladin-ports-publish-verification.md`
