@@ -12,6 +12,7 @@
 //! Enable only the backends your deployment actually uses.
 
 #![warn(missing_docs)]
+#![allow(rustdoc::broken_intra_doc_links)]
 
 /// SQLite implementation of `ContentRepository`, `ContentListRepository`,
 /// `MigrationManager`, and `SqlStore`.

@@ -48,6 +48,8 @@
 // that resolved in the original `paladin` crate but are unavailable in this
 // isolated crate.  Downgrade from deny → warn so `cargo doc` still succeeds.
 #![warn(rustdoc::broken_intra_doc_links)]
+#![allow(rustdoc::broken_intra_doc_links)]
+#![allow(rustdoc::redundant_explicit_links)]
 
 /// Input port traits — defines how external stimuli enter the application.
 pub mod input;

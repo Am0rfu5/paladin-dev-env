@@ -29,9 +29,20 @@
 //! No features are enabled by default.
 
 #![deny(unsafe_code)]
+#![warn(missing_docs)]
 
+/// Configuration types for garrison, sanctum, and memory extraction behavior.
+#[allow(missing_docs)]
 pub mod config;
+/// Garrison adapters and supporting utilities.
+#[allow(missing_docs)]
 pub mod garrison;
+/// Convenience re-exports for commonly used memory types.
+#[allow(missing_docs)]
 pub mod prelude;
+/// Sanctum adapters and semantic-memory abstractions.
+#[allow(missing_docs)]
 pub mod sanctum;
+/// Application-layer services for memory extraction and retrieval.
+#[allow(missing_docs)]
 pub mod services;

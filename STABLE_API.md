@@ -13,6 +13,7 @@
 - [API Stability Guarantee](#api-stability-guarantee)
 - [Versioning Policy](#versioning-policy)
 - [Stability Tiers](#stability-tiers)
+- [Per-Crate API Surface and Stability](#per-crate-api-surface-and-stability)
 - [Stable Public API Catalog](#stable-public-api-catalog)
   - [Port Traits (Output Ports)](#port-traits-output-ports)
   - [Port Traits (Input Ports)](#port-traits-input-ports)
@@ -193,6 +194,95 @@ Experimental → Unstable → Stable → Deprecated → Removed
                    ↓          ↓
                 Removed   (Maintained)
 ```
+
+---
+
+## Per-Crate API Surface and Stability
+
+This section documents the public API contract per crate, aligned with the
+workspace decomposition completed in Milestone 7.
+
+### Stability Legend
+
+- **Stable**: Backward-compatible under normal semver rules.
+- **Unstable**: Public but expected to evolve; avoid strict coupling.
+- **Experimental**: Feature-gated or early-stage APIs, not guaranteed stable.
+
+### `paladin-core`
+
+- **Stable**: Domain entities, value objects, and core container/base types.
+- **Unstable**: None declared.
+- **Experimental**: Feature-gated additions, if introduced later.
+
+### `paladin-ports`
+
+- **Stable**: Input and output port traits used as architectural contracts.
+- **Unstable**: Traits explicitly documented as in-progress, if any.
+- **Experimental**: Feature-gated ports only.
+
+### `paladin-battalion`
+
+- **Stable**: Battalion orchestration surface (Formation, Phalanx, Campaign,
+   Chain of Command, Conclave, Council, Grove, Maneuver, Commander).
+- **Unstable**: New orchestration APIs marked as in-progress.
+- **Experimental**: Feature-gated orchestration behaviors.
+
+### `paladin-llm`
+
+- **Stable**: Provider-agnostic request/response contracts and adapter entrypoints.
+- **Unstable**: Provider-specific extensions pending stabilization.
+- **Experimental**: Feature-gated or preview provider capabilities.
+
+### `paladin-memory`
+
+- **Stable**: Garrison and Sanctum public service/adapter contracts.
+- **Unstable**: New retrieval and extraction options under evaluation.
+- **Experimental**: Feature-gated memory backends or indexing variants.
+
+### `paladin-web`
+
+- **Stable**: Public web adapter integration surface used by the facade/composition root.
+- **Unstable**: Handler contracts in active iteration.
+- **Experimental**: Feature-gated web extensions.
+
+### `paladin-notifications`
+
+- **Stable**: Notification adapter contracts and channel abstractions.
+- **Unstable**: Provider-specific channel enhancements.
+- **Experimental**: New feature-gated notification channels.
+
+### `paladin-content`
+
+- **Stable**: Content adapter and use-case service entrypoints.
+- **Unstable**: Rapidly iterating analysis and ingestion specializations.
+- **Experimental**: Feature-gated parsing and enrichment capabilities.
+
+### `paladin-storage`
+
+- **Stable**: Repository adapter contracts and storage entrypoints.
+- **Unstable**: Backend-specific tuning hooks and migration internals.
+- **Experimental**: Feature-gated storage backends.
+
+### `paladin` (facade crate)
+
+- **Stable**: Curated top-level re-exports and extension points listed in this
+   stable API document.
+- **Unstable**: Convenience exports marked as transitional.
+- **Experimental**: Feature-gated facade exports.
+
+### Cross-Crate Dependency Contract
+
+The public dependency chain is intentionally layered:
+
+1. `paladin-core` (domain foundation)
+2. `paladin-ports` (contracts on top of core)
+3. leaf crates (`paladin-battalion`, `paladin-llm`, `paladin-memory`,
+    `paladin-web`, `paladin-notifications`, `paladin-content`, `paladin-storage`)
+4. `paladin` facade (curated re-exports)
+
+Breaking changes to lower layers can cascade upward. Therefore, compatibility
+reviews must start at `paladin-core` and `paladin-ports` before assessing leaf
+crate or facade impacts.
 
 ---
 

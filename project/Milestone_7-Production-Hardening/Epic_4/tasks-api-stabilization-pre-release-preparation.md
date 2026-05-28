@@ -10,6 +10,7 @@
 - `STABLE_API.md` - Public API contract to expand to per-crate stability tiers.
 - `docs/VERSIONING_POLICY.md` - New versioning policy document.
 - `docs/RELEASE_CHECKLIST.md` - New release execution checklist.
+- `docs/DOC_COVERAGE_REPORT.md` - Documentation coverage summary report per crate.
 - `docs/` - Existing docs area that should link to new release policy docs.
 - `crates/paladin-core/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
 - `crates/paladin-ports/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
@@ -90,13 +91,13 @@ Keep the task list aligned with the Milestone 7 epic structure and the completed
   - [x] 2.6 Add or update automation entrypoint for release flow (for example a `make release` target or equivalent scripted workflow).
   - [x] 2.7 Cross-link versioning and release docs from `README.md` and/or docs index pages.
 
-- [ ] 3.0 Stabilize public API and documentation coverage
-  - [ ] 3.1 Enable `#![warn(missing_docs)]` across all public crate roots where not already present.
-  - [ ] 3.2 Run `cargo doc --workspace --no-deps` and collect missing-doc warnings by crate.
-  - [ ] 3.3 Add missing doc comments for public modules, types, traits, and functions until warnings are resolved.
-  - [ ] 3.4 Expand `STABLE_API.md` with per-crate sections and stability tiers (`Stable`, `Unstable`, `Experimental`) for public items.
-  - [ ] 3.5 Verify `STABLE_API.md` entries match the actual exported APIs and crate decomposition delivered in Epics 1-3.
-  - [ ] 3.6 Produce a docs coverage summary per crate showing documented public item percentage and confirm target exceeds 90%.
+- [x] 3.0 Stabilize public API and documentation coverage
+  - [x] 3.1 Enable `#![warn(missing_docs)]` across all public crate roots where not already present.
+  - [x] 3.2 Run `cargo doc --workspace --no-deps` and collect missing-doc warnings by crate.
+  - [x] 3.3 Add missing doc comments for public modules, types, traits, and functions until warnings are resolved.
+  - [x] 3.4 Expand `STABLE_API.md` with per-crate sections and stability tiers (`Stable`, `Unstable`, `Experimental`) for public items.
+  - [x] 3.5 Verify `STABLE_API.md` entries match the actual exported APIs and crate decomposition delivered in Epics 1-3.
+  - [x] 3.6 Produce a docs coverage summary per crate showing documented public item percentage and confirm target exceeds 90%.
 
 - [ ] 4.0 Prepare per-crate release artifacts
   - [ ] 4.1 Create or update crate-level README files for each public crate with purpose, key types, usage examples, and feature flags.

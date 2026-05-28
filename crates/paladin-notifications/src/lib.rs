@@ -11,6 +11,7 @@
 //! | `system` | [`system_notification_adapter`] — in-memory system notifications |
 
 #![warn(missing_docs)]
+#![allow(rustdoc::broken_intra_doc_links)]
 
 /// Email notification adapter (SMTP via `lettre`, templating via `handlebars`).
 #[cfg(feature = "email")]

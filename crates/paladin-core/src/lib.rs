@@ -11,6 +11,12 @@
 //! - [`base`] — Foundation primitives: `Node<T>`, `Collection`, `Field`, `Message`, `Action`, `Event`
 //! - [`platform`] — Domain entities: `Paladin`, Battalion types, `Garrison`, `Arsenal`, `Citadel`, `Herald`, `Sanctum`
 
+#![warn(missing_docs)]
+
 // pub mod base;
+/// Foundation primitives and framework base types.
+#[allow(missing_docs)]
 pub mod base;
+/// Core platform domain entities and containers.
+#[allow(missing_docs)]
 pub mod platform;

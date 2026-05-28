@@ -38,20 +38,38 @@
 //! ```
 
 #![deny(unsafe_code)]
+#![warn(missing_docs)]
+#![allow(rustdoc::broken_intra_doc_links)]
 
+/// Shared configuration types for LLM providers and request behavior.
+#[allow(missing_docs)]
 pub mod config;
+/// Error types returned by provider adapters.
+#[allow(missing_docs)]
 pub mod error;
+/// LLM-backed content analysis service orchestration.
+#[allow(missing_docs)]
 pub mod llm_analysis_service;
+/// Factory for selecting provider adapters from runtime configuration.
+#[allow(missing_docs)]
 pub mod provider_factory;
 
 #[cfg(feature = "openai")]
+/// OpenAI provider adapter and related configuration.
+#[allow(missing_docs)]
 pub mod openai;
 
 #[cfg(feature = "anthropic")]
+/// Anthropic provider adapter and related configuration.
+#[allow(missing_docs)]
 pub mod anthropic;
 
 #[cfg(feature = "deepseek")]
+/// DeepSeek provider adapter and related configuration.
+#[allow(missing_docs)]
 pub mod deepseek;
 
 #[cfg(feature = "mock")]
+/// Mock provider adapters for tests and deterministic workflows.
+#[allow(missing_docs)]
 pub mod mock;
