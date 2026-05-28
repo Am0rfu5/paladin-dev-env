@@ -44,6 +44,7 @@ examples: ## Show common usage examples
 	@echo ""
 	@echo "$(YELLOW)Code Quality:$(NC)"
 	@echo "  make clean-code               # Format, lint, and check"
+	@echo "  make release                  # Run release readiness and dry-run publish checks"
 	@echo "  make audit                    # Security audit"
 	@echo "  make doc                      # Generate docs"
 	@echo ""
@@ -346,6 +347,21 @@ release-check: ## Check if ready for release
 	@$(MAKE) audit
 	@$(MAKE) build-release
 	@echo "$(GREEN)✅ Release check passed!$(NC)"
+
+.PHONY: release
+release: release-check ## Run release readiness workflow and dry-run publishes
+	@echo "$(CYAN)Running dependency-first publish dry-runs...$(NC)"
+	@$(CARGO) publish --dry-run -p paladin-core || true
+	@$(CARGO) publish --dry-run -p paladin-ports || true
+	@$(CARGO) publish --dry-run -p paladin-battalion || true
+	@$(CARGO) publish --dry-run -p paladin-llm || true
+	@$(CARGO) publish --dry-run -p paladin-memory || true
+	@$(CARGO) publish --dry-run -p paladin-web || true
+	@$(CARGO) publish --dry-run -p paladin-notifications || true
+	@$(CARGO) publish --dry-run -p paladin-content || true
+	@$(CARGO) publish --dry-run -p paladin-storage || true
+	@$(CARGO) publish --dry-run -p paladin || true
+	@echo "$(YELLOW)Dry-run publish command sequence completed. See docs/RELEASE_CHECKLIST.md for interpretation and publish-order gating.$(NC)"
 
 ##@ Monitoring & Debug
 

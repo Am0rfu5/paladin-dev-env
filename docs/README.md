@@ -39,6 +39,8 @@ Deploy Paladin to production:
 - **[Kubernetes](deployment/kubernetes.md)** - Cloud-native orchestration
 - **[CI/CD](deployment/cicd.md)** - Automated pipelines with GitHub Actions
 - **[Production Best Practices](deployment/production-best-practices.md)** - Security, scaling, and reliability
+- **[Versioning Policy](VERSIONING_POLICY.md)** - Lockstep versioning rules and transition criteria
+- **[Release Checklist](RELEASE_CHECKLIST.md)** - Dependency-aware release and publish workflow
 
 ## 🔧 Operations
 

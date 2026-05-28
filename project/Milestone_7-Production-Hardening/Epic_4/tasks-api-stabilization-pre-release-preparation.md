@@ -82,13 +82,13 @@ Keep the task list aligned with the Milestone 7 epic structure and the completed
   - [x] 1.6 Resolve dry-run metadata/package warnings and re-run all dry-runs until they pass. [DEFERRED: downstream crates fail with `no matching package named paladin-ports/paladin-llm/paladin-battalion found` on crates.io until dependency-first publish order in Task 2.5 is executed; foundational crate `paladin-core` dry-run passes.]
 
 - [ ] 2.0 Define versioning policy and release process
-  - [ ] 2.1 Create `docs/VERSIONING_POLICY.md` with lockstep versioning as the initial rule for all public crates.
-  - [ ] 2.2 Define explicit criteria for moving from lockstep to independent crate versioning.
-  - [ ] 2.3 Document crate-family-specific breaking-change definitions and compatibility expectations.
-  - [ ] 2.4 Create `docs/RELEASE_CHECKLIST.md` covering code freeze -> changelog finalization -> version bump -> CI green -> docs validation -> dry-run publish -> publish -> tag -> announcement.
-  - [ ] 2.5 Document dependency-aware publishing order (`paladin-core`, `paladin-ports`, leaf crates, then `paladin` facade).
-  - [ ] 2.6 Add or update automation entrypoint for release flow (for example a `make release` target or equivalent scripted workflow).
-  - [ ] 2.7 Cross-link versioning and release docs from `README.md` and/or docs index pages.
+  - [x] 2.1 Create `docs/VERSIONING_POLICY.md` with lockstep versioning as the initial rule for all public crates.
+  - [x] 2.2 Define explicit criteria for moving from lockstep to independent crate versioning.
+  - [x] 2.3 Document crate-family-specific breaking-change definitions and compatibility expectations.
+  - [x] 2.4 Create `docs/RELEASE_CHECKLIST.md` covering code freeze -> changelog finalization -> version bump -> CI green -> docs validation -> dry-run publish -> publish -> tag -> announcement.
+  - [x] 2.5 Document dependency-aware publishing order (`paladin-core`, `paladin-ports`, leaf crates, then `paladin` facade).
+  - [x] 2.6 Add or update automation entrypoint for release flow (for example a `make release` target or equivalent scripted workflow).
+  - [x] 2.7 Cross-link versioning and release docs from `README.md` and/or docs index pages.
 
 - [ ] 3.0 Stabilize public API and documentation coverage
   - [ ] 3.1 Enable `#![warn(missing_docs)]` across all public crate roots where not already present.

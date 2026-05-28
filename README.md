@@ -115,6 +115,8 @@ paladin run -c config.yaml --interactive
 - **[Setup Check Guide](docs/cli/SETUP_CHECK.md)** - Environment validation
 - **[Muster Command](docs/cli/MUSTER.md)** - AI-powered Battalion generation
 - **[Council Command](docs/cli/COUNCIL.md)** - Quick multi-agent discussions
+- **[Versioning Policy](docs/VERSIONING_POLICY.md)** - Lockstep versioning rules and breaking-change policy
+- **[Release Checklist](docs/RELEASE_CHECKLIST.md)** - End-to-end release workflow and publish order
 - **[Example Configs](examples/cli_configs/)** - Sample configurations
 
 See [docs/CLI_USAGE.md](docs/CLI_USAGE.md) for comprehensive CLI documentation.
