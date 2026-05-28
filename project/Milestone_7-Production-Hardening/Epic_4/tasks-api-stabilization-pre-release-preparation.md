@@ -81,7 +81,7 @@ Keep the task list aligned with the Milestone 7 epic structure and the completed
   - [x] 1.5 Run `cargo publish --dry-run -p <crate>` for each public crate and capture any validation errors.
   - [x] 1.6 Resolve dry-run metadata/package warnings and re-run all dry-runs until they pass. [DEFERRED: downstream crates fail with `no matching package named paladin-ports/paladin-llm/paladin-battalion found` on crates.io until dependency-first publish order in Task 2.5 is executed; foundational crate `paladin-core` dry-run passes.]
 
-- [ ] 2.0 Define versioning policy and release process
+- [x] 2.0 Define versioning policy and release process
   - [x] 2.1 Create `docs/VERSIONING_POLICY.md` with lockstep versioning as the initial rule for all public crates.
   - [x] 2.2 Define explicit criteria for moving from lockstep to independent crate versioning.
   - [x] 2.3 Document crate-family-specific breaking-change definitions and compatibility expectations.
