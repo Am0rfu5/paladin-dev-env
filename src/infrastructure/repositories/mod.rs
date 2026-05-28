@@ -12,5 +12,3 @@ pub mod sqlite_user_repository;
 /// MySQL content repository: available only when the `storage-mysql` feature is active.
 #[cfg(feature = "storage-mysql")]
 pub use paladin_storage::mysql_content_repository;
-#[cfg(feature = "storage-mysql")]
-pub mod mysql_content_repository;
