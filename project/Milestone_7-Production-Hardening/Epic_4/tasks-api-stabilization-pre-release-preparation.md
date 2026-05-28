@@ -14,6 +14,7 @@
 - `project/Milestone_7-Production-Hardening/Epic_4/release-readiness-audit-report.md` - Release readiness audit status with pass/fail checks and blockers.
 - `project/Milestone_7-Production-Hardening/Epic_4/deferred-paladin-ports-publish-verification.md` - Deferred record for the `paladin-ports` dry-run verification blocker.
 - `project/Milestone_7-Production-Hardening/Epic_4/rustsec-remediation-plan.md` - Remediation strategy and action plan for RustSec vulnerabilities.
+- `project/Milestone_7-Production-Hardening/Epic_4/license-compatibility-decision-checklist.md` - Approval checklist for MIT OR Apache-2.0 license compatibility decisions.
 - `.github/workflows/ci.yml` - CI enforcement for RustSec audit with approved exception IDs.
 - `Makefile` - Local `make audit` policy-managed RustSec command used by release readiness checks.
 - `docs/` - Existing docs area that should link to new release policy docs.
@@ -119,7 +120,7 @@ Keep the task list aligned with the Milestone 7 epic structure and the completed
   - [x] 5.4 Run `cargo doc --workspace --no-deps` and resolve documentation build issues.
   - [ ] 5.5 Re-run `cargo publish --dry-run -p <crate>` for every public crate and confirm all succeed. [DEFERRED: `paladin-ports` verify-time compile mismatch is tracked in `deferred-paladin-ports-publish-verification.md`; downstream crates remain blocked by dependency publish order until this is resolved.]
   - [x] 5.6 Run `cargo audit` and address any blocking vulnerabilities. [POLICY-MANAGED: dependency-scope hardening completed; approved exceptions enforced in `make audit` and CI for `RUSTSEC-2023-0071` and `RUSTSEC-2025-0111` with owner/review window documented in `rustsec-remediation-plan.md`.]
-  - [ ] 5.7 Perform license compatibility check for transitive dependencies against MIT policy. [BLOCKED: inventory completed, but `MPL-2.0`, `LGPL-2.1-or-later` expression, and one `UNKNOWN` license entry need policy resolution.]
+  - [ ] 5.7 Perform license compatibility check for transitive dependencies against MIT OR Apache-2.0 policy. [BLOCKED: inventory completed and permissive SPDX alternatives are acceptable under policy; remaining decisions are MPL-2.0 acceptance and one `UNKNOWN` license verification, tracked in `license-compatibility-decision-checklist.md`.]
   - [x] 5.8 Review dependency tree and binary-size impact for unexpected bloat and record findings.
   - [x] 5.9 Write a release readiness audit report in the Epic 4 folder summarizing pass/fail status and blockers.
 
