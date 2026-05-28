@@ -1,0 +1,125 @@
+## Relevant Files
+
+- `project/Milestone_7-Production-Hardening/Epic_4/prd-api-stabilization-pre-release-preparation.md` - Source requirements for scope, acceptance criteria, and release gates.
+- `project/Milestone_7-Production-Hardening/Epic_4/Milestone_7-Epic_4-API_Stabilization_Pre-Release_Preparation.md` - Epic-level planning context and deliverables.
+- `Cargo.toml` - Workspace package metadata, lockstep version source, and workspace members/dependencies.
+- `src/lib.rs` - Facade crate root where public API docs and re-exports must remain consistent.
+- `README.md` - Root crate README and umbrella docs entrypoint.
+- `CHANGELOG.md` - Root changelog source for backfilling per-crate changelogs.
+- `CONTRIBUTING.md` - Contribution guidance to update with per-crate changelog maintenance rules.
+- `STABLE_API.md` - Public API contract to expand to per-crate stability tiers.
+- `docs/VERSIONING_POLICY.md` - New versioning policy document.
+- `docs/RELEASE_CHECKLIST.md` - New release execution checklist.
+- `docs/` - Existing docs area that should link to new release policy docs.
+- `crates/paladin-core/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
+- `crates/paladin-ports/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
+- `crates/paladin-battalion/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
+- `crates/paladin-llm/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
+- `crates/paladin-memory/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
+- `crates/paladin-web/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
+- `crates/paladin-notifications/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
+- `crates/paladin-content/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
+- `crates/paladin-storage/Cargo.toml` - Crate metadata verification and crates.io dry-run readiness.
+- `crates/paladin-core/README.md` - Crate-level usage and feature documentation.
+- `crates/paladin-ports/README.md` - Crate-level usage and feature documentation.
+- `crates/paladin-battalion/README.md` - Crate-level usage and feature documentation.
+- `crates/paladin-llm/README.md` - Crate-level usage and feature documentation.
+- `crates/paladin-memory/README.md` - Crate-level usage and feature documentation.
+- `crates/paladin-web/README.md` - Crate-level usage and feature documentation.
+- `crates/paladin-notifications/README.md` - Crate-level usage and feature documentation.
+- `crates/paladin-content/README.md` - Crate-level usage and feature documentation.
+- `crates/paladin-storage/README.md` - Crate-level usage and feature documentation.
+- `crates/paladin-core/CHANGELOG.md` - Per-crate release notes history.
+- `crates/paladin-ports/CHANGELOG.md` - Per-crate release notes history.
+- `crates/paladin-battalion/CHANGELOG.md` - Per-crate release notes history.
+- `crates/paladin-llm/CHANGELOG.md` - Per-crate release notes history.
+- `crates/paladin-memory/CHANGELOG.md` - Per-crate release notes history.
+- `crates/paladin-web/CHANGELOG.md` - Per-crate release notes history.
+- `crates/paladin-notifications/CHANGELOG.md` - Per-crate release notes history.
+- `crates/paladin-content/CHANGELOG.md` - Per-crate release notes history.
+- `crates/paladin-storage/CHANGELOG.md` - Per-crate release notes history.
+- `tests/` - Workspace-level validation and integration tests used in release readiness checks.
+
+
+### Notes
+- Unit tests in Rust should remain co-located in source files under `#[cfg(test)]` where possible; cross-crate behavior stays in workspace integration tests.
+- Use `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`, `cargo fmt --all -- --check`, and `cargo doc --workspace --no-deps` as the baseline quality gates.
+- Use `cargo publish --dry-run -p <crate>` for each publishable crate before release sign-off.
+- The release plan assumes lockstep versioning at `0.2.0`, all public crates in scope, and hard gates for docs, tests, lint, audit, and dry-run publish.
+- If crate extraction scope changes, update this file and the PRD crate list before marking release tasks complete.
+
+## Instructions for Completing Tasks
+
+IMPORTANT: As you complete each task, you must check it off in this markdown file by changing `- [ ]` to `- [x]`.
+
+Example:
+
+- `- [ ] 1.1 Read file` -> `- [x] 1.1 Read file` (after completing)
+
+Update the file after completing each sub-task, not just after completing an entire parent task.
+
+Completion protocol for each parent task:
+
+1. Mark each completed sub-task as `[x]` immediately.
+2. When all sub-tasks under a parent are completed, run `cargo test`, `cargo fmt --check`, and `cargo clippy -- -D warnings`.
+3. If checks pass, stage changes and commit with a conventional commit message summarizing that parent task.
+4. Then mark the parent task itself as `[x]`.
+
+Keep the task list aligned with the Milestone 7 epic structure and the completed work from Epics 1-3.
+
+## Tasks
+
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Create and checkout a new branch for this work (for example: `git checkout -b feature/milestone_7-epic_4-api-stabilization`).
+  - [x] 0.2 Confirm branch is active and clean before making Epic 4 edits.
+
+- [ ] 1.0 Complete crate metadata and documentation setup
+  - [ ] 1.1 Build the definitive list of public crates in scope for Epic 4 (`paladin`, `paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory`, `paladin-web`, `paladin-notifications`, `paladin-content`, `paladin-storage`).
+  - [ ] 1.2 For each crate `Cargo.toml`, verify or add required package metadata fields: `name`, `version`, `edition`, `authors`, `description`, `readme`, `repository`, `license`, `keywords`, `categories`, `documentation`.
+  - [ ] 1.3 Ensure metadata values are consistent with workspace lockstep versioning (`0.2.0` policy) and repository links.
+  - [ ] 1.4 Validate that each crate's `readme` path points to an existing README file and renders correctly in plain markdown.
+  - [ ] 1.5 Run `cargo publish --dry-run -p <crate>` for each public crate and capture any validation errors.
+  - [ ] 1.6 Resolve dry-run metadata/package warnings and re-run all dry-runs until they pass.
+
+- [ ] 2.0 Define versioning policy and release process
+  - [ ] 2.1 Create `docs/VERSIONING_POLICY.md` with lockstep versioning as the initial rule for all public crates.
+  - [ ] 2.2 Define explicit criteria for moving from lockstep to independent crate versioning.
+  - [ ] 2.3 Document crate-family-specific breaking-change definitions and compatibility expectations.
+  - [ ] 2.4 Create `docs/RELEASE_CHECKLIST.md` covering code freeze -> changelog finalization -> version bump -> CI green -> docs validation -> dry-run publish -> publish -> tag -> announcement.
+  - [ ] 2.5 Document dependency-aware publishing order (`paladin-core`, `paladin-ports`, leaf crates, then `paladin` facade).
+  - [ ] 2.6 Add or update automation entrypoint for release flow (for example a `make release` target or equivalent scripted workflow).
+  - [ ] 2.7 Cross-link versioning and release docs from `README.md` and/or docs index pages.
+
+- [ ] 3.0 Stabilize public API and documentation coverage
+  - [ ] 3.1 Enable `#![warn(missing_docs)]` across all public crate roots where not already present.
+  - [ ] 3.2 Run `cargo doc --workspace --no-deps` and collect missing-doc warnings by crate.
+  - [ ] 3.3 Add missing doc comments for public modules, types, traits, and functions until warnings are resolved.
+  - [ ] 3.4 Expand `STABLE_API.md` with per-crate sections and stability tiers (`Stable`, `Unstable`, `Experimental`) for public items.
+  - [ ] 3.5 Verify `STABLE_API.md` entries match the actual exported APIs and crate decomposition delivered in Epics 1-3.
+  - [ ] 3.6 Produce a docs coverage summary per crate showing documented public item percentage and confirm target exceeds 90%.
+
+- [ ] 4.0 Prepare per-crate release artifacts
+  - [ ] 4.1 Create or update crate-level README files for each public crate with purpose, key types, usage examples, and feature flags.
+  - [ ] 4.2 Ensure root `README.md` links to all per-crate README files and reflects current workspace layout.
+  - [ ] 4.3 Create or initialize crate-level CHANGELOG files using Keep a Changelog structure.
+  - [ ] 4.4 Backfill each crate changelog using relevant entries from root `CHANGELOG.md` and milestone extraction history.
+  - [ ] 4.5 Update `CONTRIBUTING.md` with rules for ongoing per-crate changelog maintenance.
+  - [ ] 4.6 Verify crate READMEs and changelogs are internally consistent with versioning policy and API stability documentation.
+
+- [ ] 5.0 Run release readiness audit
+  - [ ] 5.1 Run `cargo test --workspace` and resolve failures.
+  - [ ] 5.2 Run `cargo clippy --workspace -- -D warnings` and resolve warnings.
+  - [ ] 5.3 Run `cargo fmt --all -- --check` and resolve formatting issues.
+  - [ ] 5.4 Run `cargo doc --workspace --no-deps` and resolve documentation build issues.
+  - [ ] 5.5 Re-run `cargo publish --dry-run -p <crate>` for every public crate and confirm all succeed.
+  - [ ] 5.6 Run `cargo audit` and address any blocking vulnerabilities.
+  - [ ] 5.7 Perform license compatibility check for transitive dependencies against MIT policy.
+  - [ ] 5.8 Review dependency tree and binary-size impact for unexpected bloat and record findings.
+  - [ ] 5.9 Write a release readiness audit report in the Epic 4 folder summarizing pass/fail status and blockers.
+
+- [ ] 6.0 Finalize release candidate checklist
+  - [ ] 6.1 Consolidate outputs from tasks 1.0-5.0 into a final Epic 4 completion summary.
+  - [ ] 6.2 Confirm all Epic 4 acceptance criteria are traceable to completed artifacts and checks.
+  - [ ] 6.3 Create final sign-off checklist for release candidate tag readiness.
+  - [ ] 6.4 Stage all Epic 4 deliverables and commit with a conventional commit message referencing Milestone 7 Epic 4.
+  - [ ] 6.5 Share final status update with explicit go/no-go recommendation for release candidate tagging.

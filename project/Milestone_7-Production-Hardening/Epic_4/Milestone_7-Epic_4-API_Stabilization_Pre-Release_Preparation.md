@@ -38,7 +38,7 @@ The public API was hardened in Milestone 1 (Epic 2) and documented in `STABLE_AP
 
 #### Task 4.1: Prepare Crate Metadata
 
-**Description:** For each public crate, add or update the `[package]` section in `Cargo.toml` with: `name`, `version` (from `workspace.package`), `edition`, `authors`, `description`, `readme`, `repository`, `license`, `keywords`, `categories`, `documentation`.
+**Description:** For each public crate, add or update the `[pgit ackage]` section in `Cargo.toml` with: `name`, `version` (from `workspace.package`), `edition`, `authors`, `description`, `readme`, `repository`, `license`, `keywords`, `categories`, `documentation`.
 
 **Deliverables:**
 - All crate `Cargo.toml` files updated with complete metadata.
