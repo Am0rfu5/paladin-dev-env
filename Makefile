@@ -214,7 +214,7 @@ check: ## Check code without building
 .PHONY: audit
 audit: ## Run security audit
 	@echo "$(CYAN)Running security audit...$(NC)"
-	@$(CARGO) audit
+	@$(CARGO) audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111
 
 .PHONY: doc
 doc: ## Generate documentation

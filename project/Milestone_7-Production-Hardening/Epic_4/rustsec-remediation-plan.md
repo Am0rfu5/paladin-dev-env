@@ -33,6 +33,12 @@ Validation snapshot:
 - `cargo tree -i tokio-tar` now shows only dev-dependency paths through `testcontainers`.
 - `cargo audit` still reports both RustSec advisories because Cargo.lock includes dev/optional dependency graphs and no fixed upstream versions are available.
 
+Exception governance now enforced:
+- Local audit target (`make audit`) runs `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111`.
+- CI security job enforces the same command to block newly introduced vulnerabilities while allowing only approved exceptions.
+- Exception owner: Platform Security (Milestone 7).
+- Exception review/expiry target: 2026-09-30 (or earlier if upstream fixes become available).
+
 ### Track A: Immediate Risk Reduction
 
 1. Constrain feature/build surface for release artifacts.
@@ -82,3 +88,4 @@ Validation snapshot:
 - Updated audit output.
 - Updated Epic 4 release readiness report.
 - Task list status updated for Task 5.6.
+- CI workflow now enforces RustSec checks with explicit exception IDs.

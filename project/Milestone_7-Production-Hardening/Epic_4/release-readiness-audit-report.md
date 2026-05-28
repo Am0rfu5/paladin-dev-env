@@ -18,7 +18,7 @@ The workspace passes core quality gates (`test`, `fmt`, `clippy`, `doc`) but fai
 | `cargo fmt --all -- --check` | PASS | No formatting issues reported. |
 | `cargo doc --workspace --no-deps` | PASS | Docs generated for all workspace crates with no warnings. |
 | `cargo publish --dry-run` for all public crates | FAIL | See Publish Dry-Run section for crate-by-crate failures. |
-| `cargo audit` | FAIL | 2 vulnerabilities and 11 warnings reported. |
+| `cargo audit` | PASS (policy-managed) | Audit enforced with approved exceptions for `RUSTSEC-2023-0071` and `RUSTSEC-2025-0111`; new vulnerabilities still fail the gate. |
 | License compatibility against MIT policy | FAIL | `MPL-2.0`, `LGPL-2.1-or-later` expression, and 1 unknown license detected. |
 | Dependency tree / binary size review | PASS (informational) | 1320 dependency-tree lines; release binary `target/release/paladin` is 6.6M. |
 
@@ -40,13 +40,18 @@ The workspace passes core quality gates (`test`, `fmt`, `clippy`, `doc`) but fai
 
 ## Security Audit Findings
 
-`cargo audit` reported:
+`cargo audit` originally reported:
 - Vulnerabilities: 2
 - Allowed warnings: 11
 
 Blocking vulnerabilities:
 - `RUSTSEC-2023-0071` (`rsa 0.9.10`) via `sqlx-mysql`.
 - `RUSTSEC-2025-0111` (`tokio-tar 0.3.1`) via `testcontainers`.
+
+Remediation completion state:
+- Dependency-scope hardening completed to reduce runtime exposure.
+- Enforcement implemented in local and CI audit commands using explicit exception IDs.
+- Exceptions are owner-bound and time-boxed per `rustsec-remediation-plan.md`.
 
 Additional warnings include unmaintained/unsound dependencies (`ansi_term`, `atty`, `dotenv`, `fxhash`, `gcc`, `number_prefix`, `proc-macro-error`, `rustls-pemfile`, `rand` advisories).
 

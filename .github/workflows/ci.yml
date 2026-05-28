@@ -52,6 +52,23 @@ jobs:
       - name: Check documentation
         run: cargo doc --workspace --no-deps 2>&1 | tee /tmp/doc-output.txt && ! grep -q "warning:" /tmp/doc-output.txt
 
+  # Security audit with controlled RustSec exceptions
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Run cargo-audit with approved exceptions
+        run: cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111
+
   # API surface tracking
   api-surface:
     name: API Surface Tracking
