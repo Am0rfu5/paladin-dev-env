@@ -3470,7 +3470,7 @@ dependencies = [
  "once_cell",
  "paladin-battalion",
  "paladin-content",
- "paladin-core",
+ "paladin-dev-core",
  "paladin-llm",
  "paladin-memory",
  "paladin-notifications",
@@ -3518,7 +3518,7 @@ dependencies = [
  "criterion",
  "futures",
  "log",
- "paladin-core",
+ "paladin-dev-core",
  "paladin-ports",
  "petgraph",
  "rand 0.8.6",
@@ -3539,7 +3539,7 @@ dependencies = [
  "chrono",
  "futures",
  "mockito",
- "paladin-core",
+ "paladin-dev-core",
  "paladin-llm",
  "paladin-ports",
  "pdf-extract",
@@ -3559,7 +3559,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "paladin-core"
+name = "paladin-dev-core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -3588,7 +3588,7 @@ dependencies = [
  "criterion",
  "futures",
  "log",
- "paladin-core",
+ "paladin-dev-core",
  "paladin-ports",
  "rand 0.8.6",
  "reqwest",
@@ -3609,7 +3609,7 @@ dependencies = [
  "criterion",
  "futures",
  "log",
- "paladin-core",
+ "paladin-dev-core",
  "paladin-ports",
  "qdrant-client",
  "serde",
@@ -3631,7 +3631,7 @@ dependencies = [
  "chrono",
  "handlebars",
  "lettre",
- "paladin-core",
+ "paladin-dev-core",
  "paladin-ports",
  "serde",
  "serde_json",
@@ -3649,7 +3649,7 @@ dependencies = [
  "futures",
  "md5 0.7.0",
  "mime_guess",
- "paladin-core",
+ "paladin-dev-core",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -3663,7 +3663,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "paladin-core",
+ "paladin-dev-core",
  "paladin-ports",
  "serde",
  "serde_json",
@@ -3684,7 +3684,7 @@ dependencies = [
  "chrono",
  "log",
  "mockito",
- "paladin-core",
+ "paladin-dev-core",
  "paladin-ports",
  "reqwest",
  "serde",

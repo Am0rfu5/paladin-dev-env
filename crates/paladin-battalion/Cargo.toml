@@ -12,7 +12,7 @@ categories = ["development-tools", "asynchronous", "api-bindings"]
 documentation = "https://docs.rs/paladin-battalion"
 
 [dependencies]
-paladin-core  = { version = "0.1.0", path = "../paladin-core" }
+paladin-core  = { package = "paladin-dev-core", version = "0.1.0", path = "../paladin-core" }
 paladin-ports = { version = "0.1.0", path = "../paladin-ports" }
 tokio         = { workspace = true }
 async-trait   = { workspace = true }

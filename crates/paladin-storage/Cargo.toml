@@ -21,7 +21,7 @@ sqlite = ["dep:sqlx", "sqlx/sqlite"]
 mysql = ["dep:sqlx", "sqlx/mysql"]
 
 [dependencies]
-paladin-core = { version = "0.1.0", path = "../paladin-core" }
+paladin-core = { package = "paladin-dev-core", version = "0.1.0", path = "../paladin-core" }
 paladin-ports = { version = "0.1.0", path = "../paladin-ports" }
 
 async-trait = { workspace = true }

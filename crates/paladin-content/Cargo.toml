@@ -23,7 +23,7 @@ tiktoken     = ["dep:tiktoken-rs"]
 llm          = ["dep:paladin-llm"]
 
 [dependencies]
-paladin-core  = { version = "0.1.0", path = "../paladin-core" }
+paladin-core  = { package = "paladin-dev-core", version = "0.1.0", path = "../paladin-core" }
 paladin-ports = { version = "0.1.0", path = "../paladin-ports" }
 paladin-llm   = { version = "0.1.0", path = "../paladin-llm", optional = true }
 async-trait   = { workspace = true }
