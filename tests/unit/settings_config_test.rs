@@ -382,6 +382,7 @@ fn test_get_vision_config_env_overrides() {
 }
 
 #[test]
+#[serial]
 fn test_settings_with_vision_config() {
     let settings = Settings {
         vision: Some(VisionConfig {
@@ -409,6 +410,7 @@ fn test_settings_with_vision_config() {
 /// Verify Settings::load_from_file round-trips config.test.yml and that every
 /// domain's get_*_config() method returns sensible values.
 #[test]
+#[serial]
 fn test_load_from_file_regression() {
     let settings =
         Settings::load_from_file("config.test.yml").expect("config.test.yml should load");

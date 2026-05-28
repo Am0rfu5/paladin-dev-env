@@ -113,12 +113,12 @@ Keep the task list aligned with the Milestone 7 epic structure and the completed
   - [x] 4.5 Update `CONTRIBUTING.md` with rules for ongoing per-crate changelog maintenance.
   - [x] 4.6 Verify crate READMEs and changelogs are internally consistent with versioning policy and API stability documentation.
 
-- [ ] 5.0 Run release readiness audit
+- [x] 5.0 Run release readiness audit
   - [x] 5.1 Run `cargo test --workspace` and resolve failures.
   - [x] 5.2 Run `cargo clippy --workspace -- -D warnings` and resolve warnings.
   - [x] 5.3 Run `cargo fmt --all -- --check` and resolve formatting issues.
   - [x] 5.4 Run `cargo doc --workspace --no-deps` and resolve documentation build issues.
-  - [ ] 5.5 Re-run `cargo publish --dry-run -p <crate>` for every public crate and confirm all succeed. [DEFERRED: `paladin-core` collision on crates.io was remediated by renaming internal package to `paladin-ai-core`; `paladin-ai-core` dry-run now passes, while `paladin-ports` dry-run requires `paladin-ai-core` to exist on crates.io first per dependency-aware publish order (Task 2.5).]
+  - [x] 5.5 Re-run `cargo publish --dry-run -p <crate>` for every public crate and confirm all succeed. [COMPLETED: all public crates now pass dry-run verification (`paladin-ai-core`, `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory`, `paladin-storage`, `paladin-notifications`, `paladin-content`, `paladin-web`, `paladin-ai`) after dependency-order publication sequence.]
   - [x] 5.6 Run `cargo audit` and address any blocking vulnerabilities. [POLICY-MANAGED: dependency-scope hardening completed; approved exceptions enforced in `make audit` and CI for `RUSTSEC-2023-0071` and `RUSTSEC-2025-0111` with owner/review window documented in `rustsec-remediation-plan.md`.]
   - [x] 5.7 Perform license compatibility check for transitive dependencies against MIT OR Apache-2.0 policy. [COMPLETED: permissive SPDX alternatives accepted under policy; `fuchsia-cprng 0.1.1` unknown resolved; MPL-2.0 explicitly accepted for unmodified use with sign-off captured in `license-compatibility-decision-checklist.md`.]
   - [x] 5.8 Review dependency tree and binary-size impact for unexpected bloat and record findings.
