@@ -21,7 +21,7 @@ qdrant = ["dep:qdrant-client"]
 content-processing = ["dep:tiktoken-rs"]
 
 [dependencies]
-paladin-core = { package = "paladin-dev-core", version = "0.1.0", path = "../paladin-core" }
+paladin-core = { package = "paladin-ai-core", version = "0.1.0", path = "../paladin-core" }
 paladin-ports = { version = "0.1.0", path = "../paladin-ports" }
 async-trait = { workspace = true }
 serde = { workspace = true }

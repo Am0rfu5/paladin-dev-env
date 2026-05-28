@@ -16,7 +16,7 @@ rand = "0.8"
 base64 = "0.22"
 futures = "0.3"
 regex = "1.11.1"
-paladin-core = { package = "paladin-dev-core", version = "0.1.0", path = "crates/paladin-core" }
+paladin-core = { package = "paladin-ai-core", version = "0.1.0", path = "crates/paladin-core" }
 paladin-ports = { version = "0.1.0", path = "crates/paladin-ports" }
 paladin-battalion = { version = "0.1.0", path = "crates/paladin-battalion" }
 paladin-llm = { version = "0.1.0", path = "crates/paladin-llm" }

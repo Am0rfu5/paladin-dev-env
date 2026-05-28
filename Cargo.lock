@@ -3468,9 +3468,9 @@ dependencies = [
  "mockito",
  "murmur3",
  "once_cell",
+ "paladin-ai-core",
  "paladin-battalion",
  "paladin-content",
- "paladin-dev-core",
  "paladin-llm",
  "paladin-memory",
  "paladin-notifications",
@@ -3510,6 +3510,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "paladin-ai-core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "blake3",
+ "chrono",
+ "fasthash",
+ "futures",
+ "petgraph",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.18",
+ "tokio",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "paladin-battalion"
 version = "0.1.0"
 dependencies = [
@@ -3518,7 +3538,7 @@ dependencies = [
  "criterion",
  "futures",
  "log",
- "paladin-dev-core",
+ "paladin-ai-core",
  "paladin-ports",
  "petgraph",
  "rand 0.8.6",
@@ -3539,7 +3559,7 @@ dependencies = [
  "chrono",
  "futures",
  "mockito",
- "paladin-dev-core",
+ "paladin-ai-core",
  "paladin-llm",
  "paladin-ports",
  "pdf-extract",
@@ -3559,26 +3579,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "paladin-dev-core"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "blake3",
- "chrono",
- "fasthash",
- "futures",
- "petgraph",
- "regex",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 2.0.18",
- "tokio",
- "url",
- "uuid",
-]
-
-[[package]]
 name = "paladin-llm"
 version = "0.1.0"
 dependencies = [
@@ -3588,7 +3588,7 @@ dependencies = [
  "criterion",
  "futures",
  "log",
- "paladin-dev-core",
+ "paladin-ai-core",
  "paladin-ports",
  "rand 0.8.6",
  "reqwest",
@@ -3609,7 +3609,7 @@ dependencies = [
  "criterion",
  "futures",
  "log",
- "paladin-dev-core",
+ "paladin-ai-core",
  "paladin-ports",
  "qdrant-client",
  "serde",
@@ -3631,7 +3631,7 @@ dependencies = [
  "chrono",
  "handlebars",
  "lettre",
- "paladin-dev-core",
+ "paladin-ai-core",
  "paladin-ports",
  "serde",
  "serde_json",
@@ -3649,7 +3649,7 @@ dependencies = [
  "futures",
  "md5 0.7.0",
  "mime_guess",
- "paladin-dev-core",
+ "paladin-ai-core",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -3663,7 +3663,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "paladin-dev-core",
+ "paladin-ai-core",
  "paladin-ports",
  "serde",
  "serde_json",
@@ -3684,7 +3684,7 @@ dependencies = [
  "chrono",
  "log",
  "mockito",
- "paladin-dev-core",
+ "paladin-ai-core",
  "paladin-ports",
  "reqwest",
  "serde",
