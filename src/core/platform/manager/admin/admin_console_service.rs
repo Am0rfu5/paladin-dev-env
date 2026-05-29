@@ -1,5 +1,0 @@
-/*
-Admin Console Service
-
-This service provides an interface for the admin console.
-*/

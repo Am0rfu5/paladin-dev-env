@@ -83,25 +83,26 @@ Update the file after completing each sub-task, not just after completing an ent
        Epic 3 should evaluate whether to move the application service to paladin-notifications alongside
        the infrastructure adapter, or house it in a separate application-layer module. -->
 
-- [ ] 2.0 Delete application-layer dead files (Batches 1–4) and verify build after each
-  - [ ] 2.1 **Batch 1** — Delete 3 orphaned notification files: `rm src/application/notifications/email_notifications.rs src/application/notifications/push_notifications.rs src/application/notifications/system_notifications.rs`
-  - [ ] 2.2 **Batch 1** — Delete now-empty directory: `rmdir src/application/notifications/` (no `application/mod.rs` update needed — it never declared this dir)
-  - [ ] 2.3 **Batch 1** — `cargo build --workspace` — confirm exit code 0 and no new errors
-  - [ ] 2.4 **Batch 1** — `git add -A && git commit -m "refactor(m8-e2): delete orphaned src/application/notifications/ directory"`
-  - [ ] 2.5 **Batch 2** — Delete 4 comment-only storage stubs: `rm src/application/storage/file_store.rs src/application/storage/key_store.rs src/application/storage/key_value_store.rs src/application/storage/nosql_store.rs`
-  - [ ] 2.6 **Batch 2** — Update `src/application/storage/mod.rs`: remove the `pub mod file_store;`, `pub mod key_store;`, `pub mod key_value_store;`, and `pub mod nosql_store;` declaration lines (keep `sql_store` and `user_store`)
-  - [ ] 2.7 **Batch 2** — `cargo build --workspace` — confirm exit code 0 and no new errors
-  - [ ] 2.8 **Batch 2** — `git add -A && git commit -m "refactor(m8-e2): delete comment-only storage stubs"`
-  - [ ] 2.9 **Batch 3** — Delete 3 empty content use-case files: `rm src/application/use_cases/content/content_list_ingestion_service.rs src/application/use_cases/content/content_list_service.rs src/application/use_cases/content/content_ml_analysis_service.rs`
-  - [ ] 2.10 **Batch 3** — Update `src/application/use_cases/content/mod.rs`: remove the `pub mod content_list_ingestion_service;`, `pub mod content_list_service;`, and `pub mod content_ml_analysis_service;` lines (all other `pub mod` lines stay)
-  - [ ] 2.11 **Batch 3** — `cargo build --workspace` — confirm exit code 0 and no new errors
-  - [ ] 2.12 **Batch 3** — `git add -A && git commit -m "refactor(m8-e2): delete empty content use_case placeholders"`
-  - [ ] 2.13 **Batch 4** — Delete 5 subject stubs: `rm src/application/use_cases/subject/subject.rs src/application/use_cases/subject/subject_build_service.rs src/application/use_cases/subject/subject_search_service.rs src/application/use_cases/subject/subject_service.rs src/application/use_cases/subject/subject_tagging_service.rs`
-  - [ ] 2.14 **Batch 4 (cascade)** — Delete `src/application/use_cases/subject/mod.rs` (now childless): `rm src/application/use_cases/subject/mod.rs`
-  - [ ] 2.15 **Batch 4 (cascade)** — Remove the empty directory: `rmdir src/application/use_cases/subject/`
-  - [ ] 2.16 **Batch 4 (cascade)** — Update `src/application/use_cases/mod.rs`: remove the `pub mod subject;` line (**must be done before the build check**)
-  - [ ] 2.17 **Batch 4** — `cargo build --workspace` — confirm exit code 0 and no new errors
-  - [ ] 2.18 **Batch 4** — `git add -A && git commit -m "refactor(m8-e2): delete empty subject use_case stubs and cascade mod.rs"`
+- [x] 2.0 Delete application-layer dead files (Batches 1–4) and verify build after each
+  - [x] 2.1 **Batch 1** — Delete 3 orphaned notification files: `rm src/application/notifications/email_notifications.rs src/application/notifications/push_notifications.rs src/application/notifications/system_notifications.rs`
+  - [x] 2.2 **Batch 1** — Delete now-empty directory: `rmdir src/application/notifications/` (no `application/mod.rs` update needed — it never declared this dir)
+  - [x] 2.3 **Batch 1** — `cargo build --workspace` — confirm exit code 0 and no new errors
+  - [x] 2.4 **Batch 1** — `git add -A && git commit -m "refactor(m8-e2): delete orphaned src/application/notifications/ directory"`
+  - [x] 2.5 **Batch 2** — Delete 4 comment-only storage stubs: `rm src/application/storage/file_store.rs src/application/storage/key_store.rs src/application/storage/key_value_store.rs src/application/storage/nosql_store.rs`
+  - [x] 2.6 **Batch 2** — Update `src/application/storage/mod.rs`: remove the `pub mod file_store;`, `pub mod key_store;`, `pub mod key_value_store;`, and `pub mod nosql_store;` declaration lines (keep `sql_store` and `user_store`)
+  - [x] 2.7 **Batch 2** — `cargo build --workspace` — confirm exit code 0 and no new errors
+  - [x] 2.8 **Batch 2** — `git add -A && git commit -m "refactor(m8-e2): delete comment-only storage stubs"`
+  - [x] 2.9 **Batch 3** — Delete 3 empty content use-case files: `rm src/application/use_cases/content/content_list_ingestion_service.rs src/application/use_cases/content/content_list_service.rs src/application/use_cases/content/content_ml_analysis_service.rs`
+  - [x] 2.10 **Batch 3** — Update `src/application/use_cases/content/mod.rs`: remove the `pub mod content_list_ingestion_service;`, `pub mod content_list_service;`, and `pub mod content_ml_analysis_service;` lines (all other `pub mod` lines stay)
+  <!-- NOTE: Batch 3 files were NOT declared in content/mod.rs — they were also orphans (never had pub mod entries). No mod.rs update was required. -->
+  - [x] 2.11 **Batch 3** — `cargo build --workspace` — confirm exit code 0 and no new errors
+  - [x] 2.12 **Batch 3** — `git add -A && git commit -m "refactor(m8-e2): delete empty content use_case placeholders"`
+  - [x] 2.13 **Batch 4** — Delete 5 subject stubs: `rm src/application/use_cases/subject/subject.rs src/application/use_cases/subject/subject_build_service.rs src/application/use_cases/subject/subject_search_service.rs src/application/use_cases/subject/subject_service.rs src/application/use_cases/subject/subject_tagging_service.rs`
+  - [x] 2.14 **Batch 4 (cascade)** — Delete `src/application/use_cases/subject/mod.rs` (now childless): `rm src/application/use_cases/subject/mod.rs`
+  - [x] 2.15 **Batch 4 (cascade)** — Remove the empty directory: `rmdir src/application/use_cases/subject/`
+  - [x] 2.16 **Batch 4 (cascade)** — Update `src/application/use_cases/mod.rs`: remove the `pub mod subject;` line (**must be done before the build check**)
+  - [x] 2.17 **Batch 4** — `cargo build --workspace` — confirm exit code 0 and no new errors
+  - [x] 2.18 **Batch 4** — `git add -A && git commit -m "refactor(m8-e2): delete empty subject use_case stubs and cascade mod.rs"`
 
 - [ ] 3.0 Delete orphaned `core/platform/manager/admin/` and `user/` directories (Batches 5–6) and verify build
   - [ ] 3.1 **Batch 5** — Delete the entire `admin/` directory: `rm -r src/core/platform/manager/admin/` (no `manager/mod.rs` update needed — it never declared `pub mod admin;`)
