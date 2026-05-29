@@ -136,11 +136,15 @@ Update the file after completing each sub-task, not just after completing an ent
        No code changes required. cargo build --workspace already green from Batch 7. -->
   - [x] 5.5 `git add -A && git commit -m "refactor(m8-e2): audit and clean stale application::ports:: references"`
 
-- [ ] 6.0 Verify `src/core/` is reduced to its minimum 6-file structure
-  - [ ] 6.1 Run `find src/core/ -name "*.rs" | sort` — confirm output contains exactly these 6 files: `src/core/mod.rs`, `src/core/platform/mod.rs`, `src/core/platform/manager/mod.rs`, `src/core/platform/manager/content_service.rs`, `src/core/platform/manager/event_manager.rs`, `src/core/platform/manager/user_service.rs`
-  - [ ] 6.2 Read `src/core/platform/manager/mod.rs` — confirm it declares exactly 3 modules (`content_service`, `event_manager`, `user_service`) and nothing else
-  - [ ] 6.3 Run `cargo test --workspace` — confirm all previously-passing tests still pass with zero new failures
-  - [ ] 6.4 Document verification result in this task's notes; `git add -A && git commit -m "refactor(m8-e2): verify src/core/ minimum structure"` (even if only the task file is updated)
+- [x] 6.0 Verify `src/core/` is reduced to its minimum 6-file structure
+  - [x] 6.1 Run `find src/core/ -name "*.rs" | sort` — confirm output contains exactly these 6 files: `src/core/mod.rs`, `src/core/platform/mod.rs`, `src/core/platform/manager/mod.rs`, `src/core/platform/manager/content_service.rs`, `src/core/platform/manager/event_manager.rs`, `src/core/platform/manager/user_service.rs`
+  - [x] 6.2 Read `src/core/platform/manager/mod.rs` — confirm it declares exactly 3 modules (`content_service`, `event_manager`, `user_service`) and nothing else
+  - [x] 6.3 Run `cargo test --workspace` — confirm all previously-passing tests still pass with zero new failures
+  <!-- RESULT: Verification passed.
+       - find src/core/ -name "*.rs" | sort → exactly 6 files as expected
+       - manager/mod.rs → exactly 3 pub mod declarations (content_service, event_manager, user_service)
+       - cargo test --workspace → all 2393 tests pass across all crates, zero failures -->
+  - [x] 6.4 Document verification result in this task's notes; `git add -A && git commit -m "refactor(m8-e2): verify src/core/ minimum structure"` (even if only the task file is updated)
 
 - [ ] 7.0 Remove dead `pub use` lines from `src/lib.rs` and update STABLE_API.md / CHANGELOG.md
   - [ ] 7.1 Open `src/lib.rs` alongside `facade-audit.md` Appendix B Section 2 (the consumer reference matrix)
