@@ -9,4 +9,3 @@ pub mod orchestration;
 pub mod paladin;
 pub mod queue_orchestrator;
 pub mod sanctum;
-pub mod subject;
