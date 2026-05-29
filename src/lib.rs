@@ -118,17 +118,14 @@ pub mod prelude;
 pub use application::cli;
 
 // ============================================================================
-// Port Traits - Primary Stable API
+// Stable Public API — Short-path Aliases
 // ============================================================================
-
-// Output Ports (External System Integration)
-
-pub use paladin_ports::output::llm_port::{
-    LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, TokenUsage,
-};
+//
+// Only exports with confirmed workspace consumers are listed here.
+// All other types should be accessed via their full crate paths
+// (e.g. `paladin_ports::`, `paladin_memory::`, `paladin_battalion::`, etc.).
 
 // LLM adapter implementations (from paladin-llm crate)
-pub use paladin_llm::error::LlmProviderError;
 pub use paladin_llm::provider_factory::LlmProviderFactory;
 
 #[cfg(feature = "llm-openai")]
@@ -145,123 +142,9 @@ pub use paladin_llm::deepseek::{DeepSeekAdapter, DeepSeekConfig};
 
 pub use paladin_llm::mock::{MockLlmAdapter, MultiStepMockLlmPort};
 
-// Re-export PromptItem from core for LLM usage
-pub use core::platform::container::prompt::PromptItem;
-
-pub use paladin_ports::output::garrison_port::{
-    GarrisonError, GarrisonPort, GarrisonStats, LongTermGarrisonPort,
-};
-
-pub use paladin_ports::output::sanctum_port::{
-    SanctumError, SanctumFilter, SanctumPort, SanctumQuery, SanctumSearchResult,
-};
-
-// Re-export SanctumEntry from core for Sanctum usage
-pub use core::platform::container::sanctum::SanctumEntry;
-
-// Memory Adapters (re-exported from paladin-memory)
-pub use paladin_memory::garrison::InMemoryGarrison;
-pub use paladin_memory::garrison::SqliteGarrison;
-pub use paladin_memory::sanctum::InMemorySanctum;
-#[cfg(feature = "qdrant")]
-pub use paladin_memory::sanctum::QdrantSanctumAdapter;
-pub use paladin_memory::services::{
-    ExtractedMemory, MemoryExtractionService, MemoryExtractionStrategy, RagConfig,
-    RagRetrievalService, RetrievalTrigger,
-};
-
-pub use paladin_ports::output::embedding_port::{Embedding, EmbeddingError, EmbeddingPort};
-
-pub use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
-
-// Re-export ArsenalError from core for Arsenal usage
-pub use core::platform::container::arsenal::ArsenalError;
-
-pub use paladin_ports::output::citadel_port::CitadelPort;
-
-// Re-export CitadelError from application errors
-pub use application::errors::citadel_error::CitadelError;
-
-pub use paladin_ports::output::queue_port::QueuePort;
-
-// Re-export QueueError from application layer orchestrator
-pub use application::use_cases::queue_orchestrator::QueueError;
-
-pub use paladin_ports::output::notification_port::{
-    Notification, NotificationChannel, NotificationDeliveryPort, NotificationPortError,
-    NotificationPriority, NotificationStatus, NotificationTemplate, NotificationTemplatePort,
-};
-
-pub use paladin_ports::output::file_storage_port::{FileStorageError, FileStoragePort};
-
-pub use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, StopReason};
-
-pub use paladin_ports::output::battalion_port::BattalionPort;
-
-// Re-export Battalion types from core
-pub use core::platform::container::battalion::{BattalionResult, BattalionStatus};
-
-/// Re-export of the `paladin-battalion` crate for convenience.
-pub use paladin_battalion;
-
-// Input Ports (Use Case Interfaces)
-
-pub use paladin_ports::input::content_input_port::ContentIngestionPort;
-pub use paladin_ports::input::document_port::DocumentPort;
-pub use paladin_ports::input::ml_port::MlPort;
-
-// ============================================================================
-// Domain Entities
-// ============================================================================
-
 // Paladin (Agent) Types
 pub use core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};
-
 pub use core::platform::container::paladin_config::PaladinConfig;
 
 // Battalion (Multi-Agent) Types
 pub use core::platform::container::battalion::{BattalionConfig, BattalionError};
-
-pub use core::platform::container::battalion::campaign::Campaign;
-pub use core::platform::container::battalion::chain_of_command::ChainOfCommand;
-pub use core::platform::container::battalion::formation::Formation;
-pub use core::platform::container::battalion::phalanx::Phalanx;
-
-// Memory (Garrison) Types - Not exported as domain entities yet, use ports
-
-// Tool (Arsenal) Types
-pub use core::platform::container::arsenal::{Armament, ArmamentCall, ArmamentResult};
-
-// State (Citadel) Types - Not exported as domain entities yet, use ports
-
-// ============================================================================
-// Builder Types
-// ============================================================================
-
-pub use application::use_cases::battalion::commander::CommanderBuilder;
-pub use application::use_cases::paladin::paladin_builder::PaladinBuilder;
-pub use core::platform::container::battalion::council::CouncilBuilder;
-pub use core::platform::container::battalion::grove::GroveBuilder;
-
-// ============================================================================
-// Configuration Types
-// ============================================================================
-
-// Configuration types are currently not exported as stable API
-// Users should use builder patterns and port traits instead
-
-// ============================================================================
-// Error Types
-// ============================================================================
-
-pub use application::errors::citadel_error::CitadelError as CitadelServiceError;
-pub use application::use_cases::paladin::error::PaladinError;
-
-// ============================================================================
-// Base Types (Framework Primitives)
-// ============================================================================
-
-pub use core::base::entity::collection::CollectionType;
-pub use core::base::entity::field::Field;
-pub use core::base::entity::message::Message;
-pub use core::base::entity::node::Node;

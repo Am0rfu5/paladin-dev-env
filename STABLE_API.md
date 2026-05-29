@@ -1,9 +1,14 @@
 # Stable Public API Contract
 
-**Version:** 0.1.0
-**Last Updated:** 2026-04-16
-**Epic:** Milestone 4, Epic 2 - Harden Port Traits as Stable Public API
+**Version:** 0.2.0
+**Last Updated:** 2026-05-28
+**Epic:** Milestone 8, Epic 2 - Remove Dead Shims and Empty Modules
 **Status:** Active
+
+> **Breaking Change in v0.2.0**: Zero-consumer `pub use` short-path aliases have been removed
+> from `src/lib.rs`. Port traits, memory adapters, builder types, and base types that previously
+> had `paladin::<Type>` short aliases now require crate-level import paths.
+> See [CHANGELOG.md](CHANGELOG.md) for the complete migration table.
 
 ---
 
@@ -468,20 +473,20 @@ Port traits are the **primary stable API** and define extension points for integ
 
 | Type | Fully Qualified Path | Tier | Description | Documentation |
 |------|---------------------|------|-------------|---------------|
-| `LlmPort` | `paladin::application::ports::output::llm_port::LlmPort` | 🟢 Stable | LLM provider abstraction (OpenAI, DeepSeek, Anthropic) | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/llm_port/trait.LlmPort.html) |
-| `GarrisonPort` | `paladin::application::ports::output::garrison_port::GarrisonPort` | 🟢 Stable | Short-term conversation memory storage | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/garrison_port/trait.GarrisonPort.html) |
-| `LongTermGarrisonPort` | `paladin::application::ports::output::garrison_port::LongTermGarrisonPort` | 🟢 Stable | Long-term memory with semantic search | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/garrison_port/trait.LongTermGarrisonPort.html) |
-| `SanctumPort` | `paladin::application::ports::output::sanctum_port::SanctumPort` | 🟢 Stable | Vector storage and similarity search | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/sanctum_port/trait.SanctumPort.html) |
-| `EmbeddingPort` | `paladin::application::ports::output::embedding_port::EmbeddingPort` | 🟢 Stable | Text-to-vector embedding generation | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/embedding_port/trait.EmbeddingPort.html) |
-| `ArsenalPort` | `paladin::application::ports::output::arsenal_port::ArsenalPort` | 🟢 Stable | External tool execution via MCP | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/arsenal_port/trait.ArsenalPort.html) |
-| `ArsenalRegistry` | `paladin::application::ports::output::arsenal_port::ArsenalRegistry` | 🟢 Stable | Tool discovery and registration | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/arsenal_port/trait.ArsenalRegistry.html) |
-| `CitadelPort` | `paladin::application::ports::output::citadel_port::CitadelPort` | 🟢 Stable | State persistence and recovery | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/citadel_port/trait.CitadelPort.html) |
-| `QueuePort` | `paladin::application::ports::output::queue_port::QueuePort` | 🟢 Stable | Async task queue and job processing | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/queue_port/trait.QueuePort.html) |
-| `NotificationDeliveryPort` | `paladin::application::ports::output::notification_port::NotificationDeliveryPort` | 🟢 Stable | Multi-channel notification delivery | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/notification_port/trait.NotificationDeliveryPort.html) |
-| `NotificationTemplatePort` | `paladin::application::ports::output::notification_port::NotificationTemplatePort` | 🟢 Stable | Notification template management | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/notification_port/trait.NotificationTemplatePort.html) |
-| `FileStoragePort` | `paladin::application::ports::output::file_storage_port::FileStoragePort` | 🟢 Stable | Cloud and local file storage | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/file_storage_port/trait.FileStoragePort.html) |
-| `PaladinPort` | `paladin::application::ports::output::paladin_port::PaladinPort` | 🟢 Stable | AI agent execution abstraction | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/paladin_port/trait.PaladinPort.html) |
-| `BattalionPort` | `paladin::application::ports::output::battalion_port::BattalionPort` | 🟢 Stable | Multi-agent orchestration | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/battalion_port/trait.BattalionPort.html) |
+| `LlmPort` | `paladin_ports::output::llm_port::LlmPort` | 🟢 Stable | LLM provider abstraction (OpenAI, DeepSeek, Anthropic) | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/llm_port/trait.LlmPort.html) |
+| `GarrisonPort` | `paladin_ports::output::garrison_port::GarrisonPort` | 🟢 Stable | Short-term conversation memory storage | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/garrison_port/trait.GarrisonPort.html) |
+| `LongTermGarrisonPort` | `paladin_ports::output::garrison_port::LongTermGarrisonPort` | 🟢 Stable | Long-term memory with semantic search | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/garrison_port/trait.LongTermGarrisonPort.html) |
+| `SanctumPort` | `paladin_ports::output::sanctum_port::SanctumPort` | 🟢 Stable | Vector storage and similarity search | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/sanctum_port/trait.SanctumPort.html) |
+| `EmbeddingPort` | `paladin_ports::output::embedding_port::EmbeddingPort` | 🟢 Stable | Text-to-vector embedding generation | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/embedding_port/trait.EmbeddingPort.html) |
+| `ArsenalPort` | `paladin_ports::output::arsenal_port::ArsenalPort` | 🟢 Stable | External tool execution via MCP | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/arsenal_port/trait.ArsenalPort.html) |
+| `ArsenalRegistry` | `paladin_ports::output::arsenal_port::ArsenalRegistry` | 🟢 Stable | Tool discovery and registration | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/arsenal_port/trait.ArsenalRegistry.html) |
+| `CitadelPort` | `paladin_ports::output::citadel_port::CitadelPort` | 🟢 Stable | State persistence and recovery | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/citadel_port/trait.CitadelPort.html) |
+| `QueuePort` | `paladin_ports::output::queue_port::QueuePort` | 🟢 Stable | Async task queue and job processing | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/queue_port/trait.QueuePort.html) |
+| `NotificationDeliveryPort` | `paladin_ports::output::notification_port::NotificationDeliveryPort` | 🟢 Stable | Multi-channel notification delivery | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/notification_port/trait.NotificationDeliveryPort.html) |
+| `NotificationTemplatePort` | `paladin_ports::output::notification_port::NotificationTemplatePort` | 🟢 Stable | Notification template management | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/notification_port/trait.NotificationTemplatePort.html) |
+| `FileStoragePort` | `paladin_ports::output::file_storage_port::FileStoragePort` | 🟢 Stable | Cloud and local file storage | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/file_storage_port/trait.FileStoragePort.html) |
+| `PaladinPort` | `paladin_ports::output::paladin_port::PaladinPort` | 🟢 Stable | AI agent execution abstraction | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/paladin_port/trait.PaladinPort.html) |
+| `BattalionPort` | `paladin_ports::output::battalion_port::BattalionPort` | 🟢 Stable | Multi-agent orchestration | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/battalion_port/trait.BattalionPort.html) |
 
 ### Port Traits (Input Ports)
 
@@ -489,9 +494,9 @@ Input ports define use case interfaces for application entry points. Located in 
 
 | Type | Fully Qualified Path | Tier | Description | Documentation |
 |------|---------------------|------|-------------|---------------|
-| `ContentIngestionPort` | `paladin::application::ports::input::content_input_port::ContentIngestionPort` | 🟡 Unstable | Content ingestion use cases | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/input/content_input_port/trait.ContentIngestionPort.html) |
-| `DocumentPort` | `paladin::application::ports::input::document_port::DocumentPort` | 🟢 Stable | Document processing use cases | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/input/document_port/trait.DocumentPort.html) |
-| `MlPort` | `paladin::application::ports::input::ml_port::MlPort` | 🟡 Unstable | Machine learning use cases | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/input/ml_port/trait.MlPort.html) |
+| `ContentIngestionPort` | `paladin_ports::input::content_input_port::ContentIngestionPort` | 🟡 Unstable | Content ingestion use cases | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/input/content_input_port/trait.ContentIngestionPort.html) |
+| `DocumentPort` | `paladin_ports::input::document_port::DocumentPort` | 🟢 Stable | Document processing use cases | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/input/document_port/trait.DocumentPort.html) |
+| `MlPort` | `paladin_ports::input::ml_port::MlPort` | 🟡 Unstable | Machine learning use cases | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/input/ml_port/trait.MlPort.html) |
 
 ### Domain Entities
 
@@ -505,8 +510,8 @@ Core business domain types that represent the framework's entities. Located in `
 | `PaladinData` | `paladin::core::platform::container::paladin::PaladinData` | 🟢 Stable | Paladin configuration and state data | [Docs](https://docs.rs/paladin/latest/paladin/core/platform/container/paladin/struct.PaladinData.html) |
 | `PaladinConfig` | `paladin::core::platform::container::paladin::PaladinConfig` | 🟢 Stable | Runtime execution configuration | [Docs](https://docs.rs/paladin/latest/paladin/core/platform/container/paladin/struct.PaladinConfig.html) |
 | `PaladinStatus` | `paladin::core::platform::container::paladin::PaladinStatus` | 🟢 Stable | Agent execution status enum | [Docs](https://docs.rs/paladin/latest/paladin/core/platform/container/paladin/enum.PaladinStatus.html) |
-| `PaladinResult` | `paladin::application::ports::output::paladin_port::PaladinResult` | 🟢 Stable | Agent execution result with metadata | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/paladin_port/struct.PaladinResult.html) |
-| `StopReason` | `paladin::application::ports::output::paladin_port::StopReason` | 🟢 Stable | Why agent execution terminated | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/paladin_port/enum.StopReason.html) |
+| `PaladinResult` | `paladin_ports::output::paladin_port::PaladinResult` | 🟢 Stable | Agent execution result with metadata | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/paladin_port/struct.PaladinResult.html) |
+| `StopReason` | `paladin_ports::output::paladin_port::StopReason` | 🟢 Stable | Why agent execution terminated | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/paladin_port/enum.StopReason.html) |
 
 #### Battalion (Multi-Agent) Types
 
@@ -527,7 +532,7 @@ Core business domain types that represent the framework's entities. Located in `
 |------|---------------------|------|-------------|---------------|
 | `Garrison` | `paladin::core::platform::container::garrison::Garrison` | 🟢 Stable | Memory storage entity | [Docs](https://docs.rs/paladin/latest/paladin/core/platform/container/garrison/type.Garrison.html) |
 | `Memory` | `paladin::core::platform::container::garrison::Memory` | 🟢 Stable | Individual memory record | [Docs](https://docs.rs/paladin/latest/paladin/core/platform/container/garrison/struct.Memory.html) |
-| `GarrisonStats` | `paladin::application::ports::output::garrison_port::GarrisonStats` | 🟢 Stable | Memory storage statistics | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/garrison_port/struct.GarrisonStats.html) |
+| `GarrisonStats` | `paladin_ports::output::garrison_port::GarrisonStats` | 🟢 Stable | Memory storage statistics | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/garrison_port/struct.GarrisonStats.html) |
 
 #### Tool (Arsenal) Types
 
@@ -568,14 +573,14 @@ All error enums follow `thiserror` patterns for consistent error handling. Locat
 |------|---------------------|------|-------------|---------------|
 | `PaladinError` | `paladin::application::use_cases::paladin::error::PaladinError` | 🟢 Stable | Paladin execution errors | [Docs](https://docs.rs/paladin/latest/paladin/application/use_cases/paladin/error/enum.PaladinError.html) |
 | `BattalionError` | `paladin::core::platform::container::battalion::BattalionError` | 🟢 Stable | Battalion orchestration errors | [Docs](https://docs.rs/paladin/latest/paladin/core/platform/container/battalion/enum.BattalionError.html) |
-| `GarrisonError` | `paladin::application::ports::output::garrison_port::GarrisonError` | 🟢 Stable | Memory storage errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/garrison_port/enum.GarrisonError.html) |
+| `GarrisonError` | `paladin_ports::output::garrison_port::GarrisonError` | 🟢 Stable | Memory storage errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/garrison_port/enum.GarrisonError.html) |
 | `ArsenalError` | `paladin::core::platform::container::arsenal::ArsenalError` | 🟢 Stable | Tool execution errors | [Docs](https://docs.rs/paladin/latest/paladin/core/platform/container/arsenal/enum.ArsenalError.html) |
 | `CitadelError` | `paladin::application::errors::citadel_error::CitadelError` | 🟢 Stable | State persistence errors | [Docs](https://docs.rs/paladin/latest/paladin/application/errors/citadel_error/enum.CitadelError.html) |
-| `LlmError` | `paladin::application::ports::output::llm_port::LlmError` | 🟢 Stable | LLM provider errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/llm_port/enum.LlmError.html) |
-| `EmbeddingError` | `paladin::application::ports::output::embedding_port::EmbeddingError` | 🟢 Stable | Embedding generation errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/embedding_port/enum.EmbeddingError.html) |
-| `SanctumError` | `paladin::application::ports::output::sanctum_port::SanctumError` | 🟢 Stable | Vector storage errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/sanctum_port/enum.SanctumError.html) |
-| `FileStorageError` | `paladin::application::ports::output::file_storage_port::FileStorageError` | 🟢 Stable | File storage errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/file_storage_port/enum.FileStorageError.html) |
-| `NotificationPortError` | `paladin::application::ports::output::notification_port::NotificationPortError` | 🟢 Stable | Notification delivery errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/notification_port/enum.NotificationPortError.html) |
+| `LlmError` | `paladin_ports::output::llm_port::LlmError` | 🟢 Stable | LLM provider errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/llm_port/enum.LlmError.html) |
+| `EmbeddingError` | `paladin_ports::output::embedding_port::EmbeddingError` | 🟢 Stable | Embedding generation errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/embedding_port/enum.EmbeddingError.html) |
+| `SanctumError` | `paladin_ports::output::sanctum_port::SanctumError` | 🟢 Stable | Vector storage errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/sanctum_port/enum.SanctumError.html) |
+| `FileStorageError` | `paladin_ports::output::file_storage_port::FileStorageError` | 🟢 Stable | File storage errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/file_storage_port/enum.FileStorageError.html) |
+| `NotificationPortError` | `paladin_ports::output::notification_port::NotificationPortError` | 🟢 Stable | Notification delivery errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/notification_port/enum.NotificationPortError.html) |
 | `ConfigError` | `paladin::config::error::ConfigError` | 🟢 Stable | Configuration loading errors | [Docs](https://docs.rs/paladin/latest/paladin/config/error/enum.ConfigError.html) |
 
 ### Base Types

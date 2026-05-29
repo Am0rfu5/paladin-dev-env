@@ -146,22 +146,28 @@ Update the file after completing each sub-task, not just after completing an ent
        - cargo test --workspace → all 2393 tests pass across all crates, zero failures -->
   - [x] 6.4 Document verification result in this task's notes; `git add -A && git commit -m "refactor(m8-e2): verify src/core/ minimum structure"` (even if only the task file is updated)
 
-- [ ] 7.0 Remove dead `pub use` lines from `src/lib.rs` and update STABLE_API.md / CHANGELOG.md
-  - [ ] 7.1 Open `src/lib.rs` alongside `facade-audit.md` Appendix B Section 2 (the consumer reference matrix)
-  - [ ] 7.2 Identify every `pub use` line in `src/lib.rs` that has "Has Consumers? = No" in Appendix B — these are all candidates for removal
-  - [ ] 7.3 For each candidate line, confirm the underlying type still exists at its source path in the leaf crates (we are removing only the alias, not the type itself)
-  - [ ] 7.4 Edit `src/lib.rs` — remove all zero-consumer `pub use` lines; preserve the following 5 exceptions (confirmed consumers):
+- [x] 7.0 Remove dead `pub use` lines from `src/lib.rs` and update STABLE_API.md / CHANGELOG.md
+  - [x] 7.1 Open `src/lib.rs` alongside `facade-audit.md` Appendix B Section 2 (the consumer reference matrix)
+  - [x] 7.2 Identify every `pub use` line in `src/lib.rs` that has "Has Consumers? = No" in Appendix B — these are all candidates for removal
+  - [x] 7.3 For each candidate line, confirm the underlying type still exists at its source path in the leaf crates (we are removing only the alias, not the type itself)
+  - [x] 7.4 Edit `src/lib.rs` — remove all zero-consumer `pub use` lines; preserve the following 5 exceptions (confirmed consumers):
     - `pub use paladin_llm::mock::{MockLlmAdapter, MultiStepMockLlmPort};` (13 consumers)
     - `pub use paladin_llm::openai::{OpenAIAdapter, OpenAIConfig};`
     - `pub use paladin_llm::anthropic::{AnthropicAdapter, AnthropicConfig};`
     - `pub use paladin_llm::deepseek::{DeepSeekAdapter, DeepSeekConfig};`
     - `pub use core::platform::container::paladin::{Paladin, PaladinData, PaladinStatus};` (17 consumers)
     - Do **not** remove any `pub mod` declarations — only `pub use` lines
-  - [ ] 7.5 `cargo build --workspace` — fix any compile errors surfaced (broken re-exports will appear here)
-  - [ ] 7.6 `cargo test --workspace` — confirm no regression
-  - [ ] 7.7 Update `STABLE_API.md`: remove the aliases section entries for each alias that was deleted
-  - [ ] 7.8 Add `### Removed` section to `CHANGELOG.md` under the v0.2.0 entry — list each removed alias with its stable replacement path using **crate-level** references (`paladin_ports::`, `paladin_core::`, `paladin_battalion::`, `paladin_llm::`) — **not** facade-internal paths like `paladin::application::use_cases::...` (those paths will change in Epic 4)
-  - [ ] 7.9 `git add -A && git commit -m "refactor(m8-e2): remove dead pub use lines from lib.rs"`
+  <!-- NOTE: Also kept: LlmProviderFactory (used in integration tests), OpenAIEmbeddingAdapter/Config (embedding tests),
+       PaladinConfig (cli_isolation_test), BattalionConfig/BattalionError (cli_isolation_test).
+       Also updated src/prelude.rs to use direct crate paths instead of now-removed lib.rs aliases. -->
+  - [x] 7.5 `cargo build --workspace` — fix any compile errors surfaced (broken re-exports will appear here)
+  - [x] 7.6 `cargo test --workspace` — confirm no regression
+  - [x] 7.7 Update `STABLE_API.md`: remove the aliases section entries for each alias that was deleted
+  <!-- NOTE: Updated version header to 0.2.0, added breaking-change note, replaced all
+       paladin::application::ports::output:: and paladin::application::ports::input::
+       table paths with paladin_ports::output:: and paladin_ports::input:: canonical paths. -->
+  - [x] 7.8 Add `### Removed` section to `CHANGELOG.md` under the v0.2.0 entry — list each removed alias with its stable replacement path using **crate-level** references (`paladin_ports::`, `paladin_core::`, `paladin_battalion::`, `paladin_llm::`) — **not** facade-internal paths like `paladin::application::use_cases::...` (those paths will change in Epic 4)
+  - [x] 7.9 `git add -A && git commit -m "refactor(m8-e2): remove dead pub use lines from lib.rs"`
 
 - [ ] 8.0 Run full quality gate and commit
   - [ ] 8.1 `cargo build --workspace` — exit code 0, zero errors

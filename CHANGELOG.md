@@ -18,6 +18,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Dedicated `cli-isolation` CI job verifies library-only and CLI-enabled builds
   - **Benefit**: Library consumers who don't use the CLI avoid compiling `clap` and associated TUI dependencies
 
+### Removed
+- **Facade Short-path Aliases** (Milestone 8, Epic 2): Removed zero-consumer `pub use` re-export aliases
+  from `src/lib.rs`. These aliases had no workspace consumers; the underlying types are unchanged and
+  remain accessible via their canonical crate paths.
+
+  The following short-path aliases (`paladin::<Type>`) have been removed. Use the crate-level paths shown instead:
+
+  | Removed short-path alias | Replacement canonical path |
+  |--------------------------|---------------------------|
+  | `paladin::LlmError` | `paladin_ports::output::llm_port::LlmError` |
+  | `paladin::LlmPort` | `paladin_ports::output::llm_port::LlmPort` |
+  | `paladin::LlmRequest` | `paladin_ports::output::llm_port::LlmRequest` |
+  | `paladin::LlmResponse` | `paladin_ports::output::llm_port::LlmResponse` |
+  | `paladin::ProviderCapabilities` | `paladin_ports::output::llm_port::ProviderCapabilities` |
+  | `paladin::TokenUsage` | `paladin_ports::output::llm_port::TokenUsage` |
+  | `paladin::LlmProviderError` | `paladin_llm::error::LlmProviderError` |
+  | `paladin::PromptItem` | `paladin_core::platform::container::prompt::PromptItem` |
+  | `paladin::GarrisonError` | `paladin_ports::output::garrison_port::GarrisonError` |
+  | `paladin::GarrisonPort` | `paladin_ports::output::garrison_port::GarrisonPort` |
+  | `paladin::GarrisonStats` | `paladin_ports::output::garrison_port::GarrisonStats` |
+  | `paladin::LongTermGarrisonPort` | `paladin_ports::output::garrison_port::LongTermGarrisonPort` |
+  | `paladin::SanctumError` | `paladin_ports::output::sanctum_port::SanctumError` |
+  | `paladin::SanctumFilter` | `paladin_ports::output::sanctum_port::SanctumFilter` |
+  | `paladin::SanctumPort` | `paladin_ports::output::sanctum_port::SanctumPort` |
+  | `paladin::SanctumQuery` | `paladin_ports::output::sanctum_port::SanctumQuery` |
+  | `paladin::SanctumSearchResult` | `paladin_ports::output::sanctum_port::SanctumSearchResult` |
+  | `paladin::SanctumEntry` | `paladin_core::platform::container::sanctum::SanctumEntry` |
+  | `paladin::InMemoryGarrison` | `paladin_memory::garrison::InMemoryGarrison` |
+  | `paladin::SqliteGarrison` | `paladin_memory::garrison::SqliteGarrison` |
+  | `paladin::InMemorySanctum` | `paladin_memory::sanctum::InMemorySanctum` |
+  | `paladin::QdrantSanctumAdapter` | `paladin_memory::sanctum::QdrantSanctumAdapter` |
+  | `paladin::ExtractedMemory` | `paladin_memory::services::ExtractedMemory` |
+  | `paladin::MemoryExtractionService` | `paladin_memory::services::MemoryExtractionService` |
+  | `paladin::MemoryExtractionStrategy` | `paladin_memory::services::MemoryExtractionStrategy` |
+  | `paladin::RagConfig` | `paladin_memory::services::RagConfig` |
+  | `paladin::RagRetrievalService` | `paladin_memory::services::RagRetrievalService` |
+  | `paladin::RetrievalTrigger` | `paladin_memory::services::RetrievalTrigger` |
+  | `paladin::Embedding` | `paladin_ports::output::embedding_port::Embedding` |
+  | `paladin::EmbeddingError` | `paladin_ports::output::embedding_port::EmbeddingError` |
+  | `paladin::EmbeddingPort` | `paladin_ports::output::embedding_port::EmbeddingPort` |
+  | `paladin::ArsenalPort` | `paladin_ports::output::arsenal_port::ArsenalPort` |
+  | `paladin::ArsenalRegistry` | `paladin_ports::output::arsenal_port::ArsenalRegistry` |
+  | `paladin::ArsenalError` | `paladin_core::platform::container::arsenal::ArsenalError` |
+  | `paladin::CitadelPort` | `paladin_ports::output::citadel_port::CitadelPort` |
+  | `paladin::CitadelError` | `paladin_core::application::errors::citadel_error::CitadelError` |
+  | `paladin::CitadelServiceError` | `paladin_core::application::errors::citadel_error::CitadelError` |
+  | `paladin::QueuePort` | `paladin_ports::output::queue_port::QueuePort` |
+  | `paladin::QueueError` | `paladin_core::application::use_cases::queue_orchestrator::QueueError` |
+  | `paladin::NotificationDeliveryPort` | `paladin_ports::output::notification_port::NotificationDeliveryPort` |
+  | `paladin::NotificationTemplatePort` | `paladin_ports::output::notification_port::NotificationTemplatePort` |
+  | `paladin::Notification` | `paladin_ports::output::notification_port::Notification` |
+  | `paladin::NotificationChannel` | `paladin_ports::output::notification_port::NotificationChannel` |
+  | `paladin::NotificationPortError` | `paladin_ports::output::notification_port::NotificationPortError` |
+  | `paladin::NotificationPriority` | `paladin_ports::output::notification_port::NotificationPriority` |
+  | `paladin::NotificationStatus` | `paladin_ports::output::notification_port::NotificationStatus` |
+  | `paladin::NotificationTemplate` | `paladin_ports::output::notification_port::NotificationTemplate` |
+  | `paladin::FileStorageError` | `paladin_ports::output::file_storage_port::FileStorageError` |
+  | `paladin::FileStoragePort` | `paladin_ports::output::file_storage_port::FileStoragePort` |
+  | `paladin::PaladinPort` | `paladin_ports::output::paladin_port::PaladinPort` |
+  | `paladin::PaladinResult` | `paladin_ports::output::paladin_port::PaladinResult` |
+  | `paladin::StopReason` | `paladin_ports::output::paladin_port::StopReason` |
+  | `paladin::BattalionPort` | `paladin_ports::output::battalion_port::BattalionPort` |
+  | `paladin::BattalionResult` | `paladin_core::platform::container::battalion::BattalionResult` |
+  | `paladin::BattalionStatus` | `paladin_core::platform::container::battalion::BattalionStatus` |
+  | `paladin::paladin_battalion` | `paladin_battalion` (direct crate dependency) |
+  | `paladin::ContentIngestionPort` | `paladin_ports::input::content_input_port::ContentIngestionPort` |
+  | `paladin::DocumentPort` | `paladin_ports::input::document_port::DocumentPort` |
+  | `paladin::MlPort` | `paladin_ports::input::ml_port::MlPort` |
+  | `paladin::Campaign` | `paladin_battalion::campaign::Campaign` |
+  | `paladin::ChainOfCommand` | `paladin_battalion::chain_of_command::ChainOfCommand` |
+  | `paladin::Formation` | `paladin_battalion::formation::Formation` |
+  | `paladin::Phalanx` | `paladin_battalion::phalanx::Phalanx` |
+  | `paladin::Armament` | `paladin_core::platform::container::arsenal::Armament` |
+  | `paladin::ArmamentCall` | `paladin_core::platform::container::arsenal::ArmamentCall` |
+  | `paladin::ArmamentResult` | `paladin_core::platform::container::arsenal::ArmamentResult` |
+  | `paladin::CommanderBuilder` | `paladin_battalion::commander::CommanderBuilder` |
+  | `paladin::PaladinBuilder` | `paladin_core::application::use_cases::paladin::PaladinBuilder` |
+  | `paladin::CouncilBuilder` | `paladin_battalion::council::CouncilBuilder` |
+  | `paladin::GroveBuilder` | `paladin_battalion::grove::GroveBuilder` |
+  | `paladin::PaladinError` | `paladin_core::application::use_cases::paladin::error::PaladinError` |
+  | `paladin::CollectionType` | `paladin_core::base::entity::collection::CollectionType` |
+  | `paladin::Field` | `paladin_core::base::entity::field::Field` |
+  | `paladin::Message` | `paladin_core::base::entity::message::Message` |
+  | `paladin::Node` | `paladin_core::base::entity::node::Node` |
+
+  **Still exported as short-path aliases** (confirmed workspace consumers):
+  - `paladin::MockLlmAdapter`, `paladin::MultiStepMockLlmPort` — used in 13+ tests and examples
+  - `paladin::OpenAIAdapter`, `paladin::OpenAIConfig` — used in examples and integration tests
+  - `paladin::AnthropicAdapter`, `paladin::AnthropicConfig` — used in examples and integration tests
+  - `paladin::DeepSeekAdapter`, `paladin::DeepSeekConfig` — used in integration tests
+  - `paladin::OpenAIEmbeddingAdapter`, `paladin::OpenAIEmbeddingConfig` — used in embedding tests
+  - `paladin::LlmProviderFactory` — used in integration tests
+  - `paladin::Paladin`, `paladin::PaladinData`, `paladin::PaladinStatus` — used in 17+ consumers
+  - `paladin::PaladinConfig`, `paladin::BattalionConfig`, `paladin::BattalionError` — used in `cli_isolation_test`
+
+  **Also removed** — 26 empty/orphaned source files from `src/` (Milestone 8, Epic 2, Tasks 2.0–4.0):
+  - Application layer: `notifications/` directory (3 files), `storage/` stubs (4 files),
+    `use_cases/content/` empties (3 files), `use_cases/subject/` directory (5 files + mod.rs)
+  - Core layer: `core/platform/manager/admin/` (4 files), `core/platform/manager/user/` (4 files)
+  - Infrastructure layer: `adapters/logs/access_log_adapter.rs`, `adapters/notifications/push_notification_adapter.rs`
+
 ### Changed - BREAKING
 - **Default Feature Flags Revised**: Default features changed from `["redis-queue", "s3-storage", "openai-embeddings"]` to `["llm-openai"]` only
   - **Impact**: Applications relying on Redis queue, S3 storage, or OpenAI embeddings in default builds must now explicitly enable these features
