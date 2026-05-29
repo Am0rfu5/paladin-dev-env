@@ -104,13 +104,13 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.17 **Batch 4** — `cargo build --workspace` — confirm exit code 0 and no new errors
   - [x] 2.18 **Batch 4** — `git add -A && git commit -m "refactor(m8-e2): delete empty subject use_case stubs and cascade mod.rs"`
 
-- [ ] 3.0 Delete orphaned `core/platform/manager/admin/` and `user/` directories (Batches 5–6) and verify build
-  - [ ] 3.1 **Batch 5** — Delete the entire `admin/` directory: `rm -r src/core/platform/manager/admin/` (no `manager/mod.rs` update needed — it never declared `pub mod admin;`)
-  - [ ] 3.2 **Batch 5** — `cargo build --workspace` — confirm exit code 0 and no new errors
-  - [ ] 3.3 **Batch 5** — `git add -A && git commit -m "refactor(m8-e2): delete orphaned core/platform/manager/admin/ directory"`
-  - [ ] 3.4 **Batch 6** — Delete the entire `user/` directory: `rm -r src/core/platform/manager/user/` (no `manager/mod.rs` update needed — it never declared `pub mod user;`)
-  - [ ] 3.5 **Batch 6** — `cargo build --workspace` — confirm exit code 0 and no new errors
-  - [ ] 3.6 **Batch 6** — `git add -A && git commit -m "refactor(m8-e2): delete orphaned core/platform/manager/user/ directory"`
+- [x] 3.0 Delete orphaned `core/platform/manager/admin/` and `user/` directories (Batches 5–6) and verify build
+  - [x] 3.1 **Batch 5** — Delete the entire `admin/` directory: `rm -r src/core/platform/manager/admin/` (no `manager/mod.rs` update needed — it never declared `pub mod admin;`)
+  - [x] 3.2 **Batch 5** — `cargo build --workspace` — confirm exit code 0 and no new errors
+  - [x] 3.3 **Batch 5** — `git add -A && git commit -m "refactor(m8-e2): delete orphaned core/platform/manager/admin/ directory"`
+  - [x] 3.4 **Batch 6** — Delete the entire `user/` directory: `rm -r src/core/platform/manager/user/` (no `manager/mod.rs` update needed — it never declared `pub mod user;`)
+  - [x] 3.5 **Batch 6** — `cargo build --workspace` — confirm exit code 0 and no new errors
+  - [x] 3.6 **Batch 6** — `git add -A && git commit -m "refactor(m8-e2): delete orphaned core/platform/manager/user/ directory"`
 
 - [ ] 4.0 Delete infrastructure empty stubs (Batch 7) and verify build
   - [ ] 4.1 **Batch 7** — Delete empty log adapter stub: `rm src/infrastructure/adapters/logs/access_log_adapter.rs`
