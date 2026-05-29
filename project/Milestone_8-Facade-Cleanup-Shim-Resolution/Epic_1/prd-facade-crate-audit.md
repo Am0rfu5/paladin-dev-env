@@ -6,7 +6,7 @@
 **Priority:** Critical
 **Status:** Ready for Implementation
 **Created:** 2026-05-29
-**Document Version:** 1.0
+**Document Version:** 1.1
 
 ---
 
@@ -79,6 +79,7 @@ The Paladin facade crate (`src/`) is the application assembly point — it wires
    - `src/application/storage/file_store.rs`
    - `src/application/storage/user_store.rs`
    - All files under `src/application/ports/` (expected: re-export shims pointing to `paladin-ports`)
+   - All files under `src/application/errors/` (confirmed: re-export shims — see Section 7)
    - All files under `src/core/` (expected: re-export shims pointing to `paladin-core`)
    - All files under `src/infrastructure/` (expected mix: some adapters not yet extracted in Milestone 7)
 
@@ -90,7 +91,7 @@ The Paladin facade crate (`src/`) is the application assembly point — it wires
 ### Task 1.3 — Consumer Reference Validation
 
 10. For every file classified as a `re-export shim`, the developer **must** search the entire workspace for usages of the re-exported path using `grep -r` (or equivalent) across `src/`, `crates/`, `tests/`, `examples/`, and `benches/`.
-11. The search **must** look for the *re-exported path* as it would appear at the call site. For example, for a shim at `src/application/ports/llm_port.rs` that does `pub use paladin_ports::LlmPort;`, search for `crate::application::ports::LlmPort` and `paladin::application::ports::LlmPort`.
+11. The search **must** look for the *re-exported path* as it would appear at the call site. For shims inside modules (e.g., `src/application/errors/citadel_error.rs` which does `pub use paladin_core::...::CitadelError;`), search for the module-qualified path: `crate::application::errors::citadel_error::CitadelError` and `paladin::application::errors::citadel_error::CitadelError`. For re-exports in `src/lib.rs` that elevate types to the crate root (e.g., `pub use ...::CitadelError;`), also search for `paladin::CitadelError` as a top-level import — consumers may use the short crate-root path rather than the fully-qualified module path.
 12. The developer **must** record the result in Appendix B of `facade-audit.md` as a consumer reference matrix:
 
     | Shim File | Re-exported Path | Consumers (file:line) | Has Consumers? |
@@ -177,14 +178,24 @@ grep -rl "^pub use\|^    pub use" src/ | sort
 # Find consumers of a specific re-exported path (workspace-wide)
 grep -r "application::ports" src/ crates/ tests/ examples/ benches/
 
+# Find consumers of a crate-root re-export (e.g., paladin::CitadelError)
+grep -r "paladin::CitadelError" src/ crates/ tests/ examples/ benches/
+
 # Find all use_cases references (used in Epic 4 planning)
 grep -r "use_cases" src/ crates/ tests/ examples/ benches/
 ```
 
-### Known Areas Likely to Contain Shims (from Milestone 5–6 history)
+### `src/lib.rs` — Special Case
 
-- `src/application/ports/` — Port traits were extracted to `paladin-ports` in Milestone 5. This directory is expected to be all shims.
-- `src/core/` — Core domain types were extracted to `paladin-core` in Milestone 5. This directory is expected to be mostly shims plus the `platform/mod.rs` re-export structure added in Milestone 6.
+`src/lib.rs` is the facade crate root and must stay. However, it contains 30+ individual `pub use` re-export lines (e.g., `pub use core::platform::container::arsenal::ArsenalError;`, `pub use paladin_ports::output::citadel_port::CitadelPort;`, `pub use application::use_cases::queue_orchestrator::QueueError;`). During Task 1.3, **each re-export line must be individually checked for consumers**, not just the file as a whole. Dead re-export lines within `lib.rs` should be flagged for removal in Epic 2 even though the file itself stays.
+
+In Appendix B, each `lib.rs` re-export line should appear as a separate row in the consumer reference matrix, with the re-exported path being the crate-root form (e.g., `paladin::ArsenalError`, `paladin::CitadelPort`).
+
+### Known Areas Confirmed to Contain Shims
+
+- **`src/application/ports/`** — Port traits were extracted to `paladin-ports` in Milestone 5. This directory is expected to be all shims.
+- **`src/application/errors/`** — Error types were moved to `paladin-core` during Milestones 5–6. Contains four files: `citadel_error.rs` (confirmed: single-line re-export of `paladin_core::...::CitadelError`), `handoff_error.rs` (confirmed: single-line re-export of `HandoffError` from `paladin-core`'s arsenal module), `planning_error.rs`, and `prompt_error.rs` (both expected to follow the same pattern). Task 1.3 must verify consumers for all four.
+- **`src/core/`** — Core domain types were extracted to `paladin-core` in Milestone 5. This directory is expected to be mostly shims plus the `platform/mod.rs` re-export structure added in Milestone 6 Epic 3 (the `pub mod container` block that injects battalion Maneuver paths from `paladin-battalion`).
 
 ### Known Areas Likely to Contain Real Logic (should stay)
 
@@ -209,6 +220,7 @@ Epic 1 is complete when **all** of the following are true:
 - [ ] Every `.rs` file in `src/` appears in Appendix A with a non-empty disposition.
 - [ ] The total count in Appendix A matches the output of `find src/ -name "*.rs" | wc -l`.
 - [ ] Every file classified as `re-export shim` appears in Appendix B with a consumer search result.
+- [ ] Every individual `pub use` re-export line in `src/lib.rs` appears as a separate row in Appendix B with a consumer search result.
 - [ ] List A (delete), List B (move), and List C (stay) are complete, non-overlapping, and together account for all files.
 - [ ] The Summary section totals are arithmetically consistent with the three lists.
 - [ ] No file has been deleted, moved, or modified as part of this Epic (verified with `git status` — should be clean or only show the new `facade-audit.md`).
@@ -219,11 +231,9 @@ Epic 1 is complete when **all** of the following are true:
 
 1. **`src/infrastructure/` depth:** Several subdirectories exist under `src/infrastructure/adapters/` (arsenal, citadel, document, garrison, herald, llm, logs, notifications, queue, sanctum, scheduling, security, web). Some may have been partially extracted in Milestone 7. Confirm with the Milestone 7 commit history which adapters are confirmed-extracted vs. still live in facade.
 
-2. **`src/application/errors/` module:** This directory is not mentioned in the Milestone 8 plan. Determine whether it contains facade-specific error types (stays) or duplicates error types now in leaf crates (delete/move).
+2. **`src/infrastructure/resilience/` and `src/infrastructure/security/`:** Not mentioned as extraction candidates. Classify during Task 1.1; if they contain concrete adapters, flag for Epic 3 or Milestone 9. Note: `src/infrastructure/resilience/circuit_breaker.rs` was relocated here in Milestone 6 Epic 4 and is confirmed as a staying application-layer utility — not a shim.
 
-3. **`src/infrastructure/resilience/` and `src/infrastructure/security/`:** Not mentioned as extraction candidates. Classify during Task 1.1; if they contain concrete adapters, flag for Epic 3 or Milestone 9.
-
-4. **Benchmark files:** `benches/` exists at the workspace root. Verify whether any bench file imports from shim paths that would break after Epic 2 deletions.
+3. **Benchmark files:** `benches/` exists at the workspace root. Verify whether any bench file imports from shim paths that would break after Epic 2 deletions.
 
 ---
 
@@ -242,8 +252,10 @@ Epic 1 is complete when **all** of the following are true:
 - [ ] Update Summary section with counts
 
 ### Task 1.3 — Validate Shim Consumer References
-- [ ] For each `re-export shim` in Appendix A, run workspace-wide `grep` for the re-exported path
+- [ ] For each `re-export shim` in Appendix A, run workspace-wide `grep` for the re-exported path across `src/`, `crates/`, `tests/`, `examples/`, and `benches/`
+- [ ] For each `pub use` re-export line in `src/lib.rs`, run workspace-wide `grep` for the crate-root path (e.g., `paladin::TypeName`)
 - [ ] Populate Appendix B with results
 - [ ] Move zero-consumer shims from List C to List A
+- [ ] Flag zero-consumer `lib.rs` re-export lines for Epic 2 removal (note: the file stays, individual lines are flagged)
 - [ ] Finalize `facade-audit.md`
 - [ ] Verify `git status` shows no source file changes
