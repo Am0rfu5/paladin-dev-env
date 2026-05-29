@@ -6,7 +6,7 @@
 **Priority:** High
 **Status:** Ready
 **Created:** 2026-05-29
-**Document Version:** 1.1
+**Document Version:** 1.2
 **Depends On:** Epic 1 (`facade-audit.md` completed)
 
 ---
@@ -47,10 +47,13 @@ Delete all 25 files from `facade-audit.md` List A, grouped by module area. After
 1. `rm` the listed files.
 2. Update any `mod.rs` that declared the deleted file with `pub mod <name>;` — remove that declaration.
 3. Run `cargo build --workspace` and confirm it succeeds before proceeding to the next batch.
+4. Commit the batch with a descriptive message (e.g., `refactor(m8-e2): delete orphaned admin/ directory`). Each batch must be a separate commit so that `git bisect` can isolate regressions to a specific deletion group.
 
 After all batches: run `cargo test --workspace` and confirm all tests pass.
 
 **No deprecation stubs are required.** Epic 1 confirmed zero workspace consumers for all 25 files.
+
+**File count verification:** The 7 batches below total exactly 25 files to delete (3 + 4 + 3 + 5 + 4 + 4 + 2 = 25). Batch 4 additionally cascade-deletes `subject/mod.rs`, which is not in the 25-file List A count because it is not itself dead code — it becomes empty only after its children are deleted. The cascade deletion is a consequence of Batch 4, not an independent List A item. After all batches complete, the net file reduction is 26 (25 List A files + 1 cascade `mod.rs`). The Success Metrics section reflects both counts.
 
 ---
 
@@ -119,7 +122,7 @@ The four service stub files are declared in `subject/mod.rs` but are completely 
 | `src/application/use_cases/subject/subject_tagging_service.rs` | 1 | Empty (single newline) |
 
 **Post-deletion cascade:**
-1. Delete `src/application/use_cases/subject/mod.rs` (now an empty declaration file with no live children).
+1. Delete `src/application/use_cases/subject/mod.rs` (now an empty declaration file with no live children — this is a cascade deletion, not a List A item).
 2. Delete the now-empty `src/application/use_cases/subject/` directory.
 3. Update `src/application/use_cases/mod.rs` — remove `pub mod subject;`.
 
@@ -239,6 +242,17 @@ All other zero-consumer `pub use` lines are candidates for removal. The types th
 6. Run `cargo test --workspace` to confirm no regression.
 7. Update `STABLE_API.md` to reflect the removed aliases (this is a v0.2.0 breaking change, document it in `CHANGELOG.md` under "Removed" for v0.2.0).
 
+**CHANGELOG example format:**
+
+```markdown
+### Removed (v0.2.0)
+- `paladin::LlmPort` — use `paladin_ports::output::llm_port::LlmPort`
+- `paladin::GarrisonPort` — use `paladin_ports::output::garrison_port::GarrisonPort`
+- `paladin::ArsenalError` — use `paladin_core::platform::container::arsenal::ArsenalError`
+```
+
+Note: Use replacement paths that reference stable crate locations (`paladin_ports::`, `paladin_core::`, `paladin_battalion::`) rather than facade-internal paths (`paladin::application::use_cases::...`). Facade-internal paths will change in Epic 4 (`use_cases` → `services` rename) and should not appear as recommended replacements in the CHANGELOG.
+
 ---
 
 ## 5. Non-Goals (Out of Scope)
@@ -248,7 +262,7 @@ All other zero-consumer `pub use` lines are candidates for removal. The types th
 - **Adding new documentation** beyond STABLE_API.md and CHANGELOG.md updates in Task 2.4.
 - **Modifying any List C file's logic** — this Epic only touches `mod.rs` declarations and `lib.rs` re-export lines within List C files; no business logic changes.
 - **Adding `#[deprecated]` stubs** — Epic 1 confirmed zero consumers; no backward compatibility shims are needed.
-- **Touching any file under `crates/`** — this Epic is facade-crate-only.
+- **Touching any file under `crates/`** — this Epic is facade-crate-only (except Task 2.2 which may fix stale imports in `crates/` if found).
 
 ---
 
@@ -264,6 +278,22 @@ Finished `dev` profile [unoptimized + debuginfo] target(s) in N.Ns
 ```
 
 with no errors and no new warnings introduced by the deletions.
+
+### Git Commit Strategy
+
+Each batch must be committed separately before starting the next batch. This provides clean `git bisect` points if a regression is discovered later, and ensures a failed batch in the middle does not require re-doing successful earlier batches. Commit messages should follow the pattern: `refactor(m8-e2): delete <description>`.
+
+Recommended commit sequence:
+1. `refactor(m8-e2): delete orphaned src/application/notifications/ directory`
+2. `refactor(m8-e2): delete comment-only storage stubs`
+3. `refactor(m8-e2): delete empty content use_case placeholders`
+4. `refactor(m8-e2): delete empty subject use_case stubs and cascade mod.rs`
+5. `refactor(m8-e2): delete orphaned core/platform/manager/admin/ directory`
+6. `refactor(m8-e2): delete orphaned core/platform/manager/user/ directory`
+7. `refactor(m8-e2): delete empty infrastructure adapter stubs`
+8. `refactor(m8-e2): audit and clean stale application::ports:: references` (Task 2.2)
+9. `refactor(m8-e2): verify src/core/ minimum structure` (Task 2.3)
+10. `refactor(m8-e2): remove dead pub use lines from lib.rs` (Task 2.4)
 
 ### `mod.rs` Declaration Cleanup Rules
 
@@ -281,13 +311,9 @@ After deleting the four service stubs, `subject/mod.rs` still compiles (it decla
 
 ### Task 2.4 and `STABLE_API.md`
 
-The removed `lib.rs` aliases represent the first intentional public API contraction for the project. `CHANGELOG.md` must have a `### Removed` section under the v0.2.0 entry that lists each removed alias and its replacement full path. Example:
+The removed `lib.rs` aliases represent the first intentional public API contraction for the project. `CHANGELOG.md` must have a `### Removed` section under the v0.2.0 entry that lists each removed alias and its replacement full path.
 
-```markdown
-### Removed (v0.2.0)
-- `paladin::PaladinBuilder` — use `paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder`
-- `paladin::LlmPort` — use `paladin_ports::output::llm_port::LlmPort`
-```
+Replacement paths in the CHANGELOG must reference stable crate-level locations (`paladin_ports::`, `paladin_core::`, `paladin_battalion::`, `paladin_llm::`) rather than facade-internal module paths (`paladin::application::use_cases::...`). The facade-internal paths will change in Epic 4 when `use_cases` is renamed to `services`, and listing them as recommended replacements would make the CHANGELOG stale one Epic later.
 
 ---
 
@@ -295,14 +321,17 @@ The removed `lib.rs` aliases represent the first intentional public API contract
 
 | Metric | Target |
 |--------|--------|
-| Files deleted | Exactly 25 (matching `facade-audit.md` List A) |
+| List A files deleted | Exactly 25 (matching `facade-audit.md` List A) |
+| Cascade `mod.rs` deletions | 1 (`subject/mod.rs` — consequence of Batch 4, not a List A item) |
+| Total files removed | 26 (25 List A + 1 cascade) |
+| `find src/ -name "*.rs" \| wc -l` after all deletions | 163 (189 − 26) |
 | `cargo build --workspace` after each batch | Exit code 0, zero new errors |
 | `cargo test --workspace` after all batches | All previously-passing tests pass; zero new failures |
 | `cargo clippy --workspace -- -D warnings` | Zero new warnings introduced |
 | `grep -r "application::ports::" src/` (Task 2.2) | Zero matches remaining |
-| `find src/ -name "*.rs" | wc -l` after all deletions | 164 (189 − 25) |
 | Dangling `pub mod` declarations | Zero — every deleted file has its declaration removed |
 | `src/lib.rs` dead `pub use` lines removed | All zero-consumer aliases removed per Appendix B Section 2 |
+| Git commits | One commit per batch (7) + one per task (Tasks 2.2, 2.3, 2.4) = 10 commits |
 
 ---
 
@@ -313,3 +342,47 @@ The removed `lib.rs` aliases represent the first intentional public API contract
 2. **`src/lib.rs` module-level `pub mod` declarations:** Task 2.4 removes `pub use` lines but does not remove `pub mod` declarations. After this Epic, `src/lib.rs` will still declare `pub mod application`, `pub mod core`, `pub mod infrastructure`, etc. Epic 5 (documentation finalization) should re-evaluate whether all top-level `pub mod` declarations in `lib.rs` remain appropriate.
 
 3. **`prelude.rs` dead exports:** `src/prelude.rs` has zero workspace consumers but is explicitly preserved as a public API convenience module. This Epic does not touch it. Epic 5 should decide whether to populate it with the types that survive Task 2.4 or remove it.
+
+---
+
+## Task Checklist
+
+### Task 2.1 — Delete Dead Files in Module-Area Batches
+- [ ] Batch 1: Delete `src/application/notifications/` (3 files), delete directory, commit
+- [ ] `cargo build --workspace` — green
+- [ ] Batch 2: Delete 4 storage stubs, update `storage/mod.rs`, commit
+- [ ] `cargo build --workspace` — green
+- [ ] Batch 3: Delete 3 content empty files, update `content/mod.rs`, commit
+- [ ] `cargo build --workspace` — green
+- [ ] Batch 4: Delete 5 subject stubs + cascade `subject/mod.rs`, update `use_cases/mod.rs`, delete directory, commit
+- [ ] `cargo build --workspace` — green
+- [ ] Batch 5: Delete `src/core/platform/manager/admin/` (4 files), delete directory, commit
+- [ ] `cargo build --workspace` — green
+- [ ] Batch 6: Delete `src/core/platform/manager/user/` (4 files), delete directory, commit
+- [ ] `cargo build --workspace` — green
+- [ ] Batch 7: Delete 2 infrastructure stubs, update respective `mod.rs` files, commit
+- [ ] `cargo build --workspace` — green
+- [ ] Run `cargo test --workspace` — all tests pass
+
+### Task 2.2 — Audit Remaining `crate::application::ports::` References
+- [ ] Run workspace-wide grep for `application::ports::`
+- [ ] Fix any matches found (update imports to `paladin_ports::`)
+- [ ] `cargo build --workspace` — green (if changes were made)
+- [ ] Document result, commit
+
+### Task 2.3 — Verify `src/core/` Minimum Re-Export Structure
+- [ ] Run `find src/core/ -name "*.rs" | sort` — confirm exactly 6 files
+- [ ] Verify `core/mod.rs` compiles and re-exports are valid
+- [ ] Verify `manager/mod.rs` declares exactly 3 modules
+- [ ] `cargo test --workspace` — green
+- [ ] Document result, commit
+
+### Task 2.4 — Remove Dead `pub use` Lines from `src/lib.rs`
+- [ ] Identify all zero-consumer `pub use` lines from Appendix B Section 2
+- [ ] Confirm each type still exists at its source path
+- [ ] Remove dead lines (keep 5 exceptions)
+- [ ] `cargo build --workspace` — green
+- [ ] `cargo test --workspace` — green
+- [ ] Update `STABLE_API.md` with removed aliases
+- [ ] Add `### Removed` section to `CHANGELOG.md` for v0.2.0 (use crate-level replacement paths, not facade-internal paths)
+- [ ] Commit
