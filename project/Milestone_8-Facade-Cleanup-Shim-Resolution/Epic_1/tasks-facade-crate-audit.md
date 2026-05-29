@@ -98,7 +98,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.7 PRD open questions answered: `resilience/` stays (no target crate); `security/` stays (facade utilities); `errors/` correction documented in Summary
   - [x] 5.8 Checked `benches/` — no imports of List A paths found; no bench dependencies on dead-code paths
 
-- [ ] 6.0 Verify no source files were modified
-  - [ ] 6.1 Run `git status` and confirm the only new/modified file is `project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/facade-audit.md` (and this task list)
-  - [ ] 6.2 Run `git diff --stat src/` and confirm zero changes to any `src/` file
-  - [ ] 6.3 Stage and commit: `git add project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/` and commit with message `docs(milestone-8): complete Epic 1 facade crate audit`
+- [x] 6.0 Verify no source files were modified
+  - [x] 6.1 `git status` confirmed: only `project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/` files created/modified; zero `src/` changes
+  - [x] 6.2 `git diff --stat src/` confirmed empty — no source files touched
+  - [x] 6.3 Staged and committed: `59e4f6c docs(milestone-8): complete Epic 1 facade crate audit` — 612 insertions, 3 files
