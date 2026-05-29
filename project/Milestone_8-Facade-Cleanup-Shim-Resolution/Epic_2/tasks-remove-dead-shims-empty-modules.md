@@ -169,11 +169,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.8 Add `### Removed` section to `CHANGELOG.md` under the v0.2.0 entry — list each removed alias with its stable replacement path using **crate-level** references (`paladin_ports::`, `paladin_core::`, `paladin_battalion::`, `paladin_llm::`) — **not** facade-internal paths like `paladin::application::use_cases::...` (those paths will change in Epic 4)
   - [x] 7.9 `git add -A && git commit -m "refactor(m8-e2): remove dead pub use lines from lib.rs"`
 
-- [ ] 8.0 Run full quality gate and commit
-  - [ ] 8.1 `cargo build --workspace` — exit code 0, zero errors
-  - [ ] 8.2 `cargo test --workspace` — all tests pass, zero failures
-  - [ ] 8.3 `cargo clippy --workspace -- -D warnings` — zero warnings
-  - [ ] 8.4 `cargo fmt --all -- --check` — exit code 0 (no formatting drift)
-  - [ ] 8.5 `find src/ -name "*.rs" | wc -l` — confirm output is **163** (189 − 26: 25 List A files + 1 cascade `subject/mod.rs`)
+- [x] 8.0 Run full quality gate and commit
+  - [x] 8.1 `cargo build --workspace` — exit code 0, zero errors
+  - [x] 8.2 `cargo test --workspace` — all tests pass, zero failures
+  - [x] 8.3 `cargo clippy --workspace -- -D warnings` — zero warnings
+  - [x] 8.4 `cargo fmt --all -- --check` — exit code 0 (no formatting drift)
+  - [x] 8.5 `find src/ -name "*.rs" | wc -l` — confirm output is **163** (189 − 26: 25 List A files + 1 cascade `subject/mod.rs`)
+  <!-- RESULT: All quality gate checks passed.
+       - cargo build --workspace: exit 0, zero errors
+       - cargo test --workspace: all tests pass (459+644+400+352+194+... across all crates), zero failures
+       - cargo clippy --workspace -- -D warnings: zero warnings
+       - cargo fmt --all -- --check: exit 0
+       - find src/ -name "*.rs" | wc -l: 163 (target confirmed) -->
+  - [x] 8.6 Mark all tasks `[x]` in this file
+  - [x] 8.7 `git add project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_2/ && git commit -m "docs(m8-e2): mark all Epic 2 tasks complete"`
   - [ ] 8.6 Mark all tasks `[x]` in this file
   - [ ] 8.7 `git add project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_2/ && git commit -m "docs(m8-e2): mark all Epic 2 tasks complete"`
