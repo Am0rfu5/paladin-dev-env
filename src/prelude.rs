@@ -30,15 +30,13 @@ pub use crate::{
 
 // Types no longer re-exported as short-path aliases — import from crate roots directly
 pub use crate::core::platform::container::arsenal::{Armament, ArsenalError};
-pub use crate::core::platform::container::battalion::{
-    BattalionResult, BattalionStatus,
-};
 pub use crate::core::platform::container::battalion::campaign::Campaign;
 pub use crate::core::platform::container::battalion::chain_of_command::ChainOfCommand;
 pub use crate::core::platform::container::battalion::council::CouncilBuilder;
 pub use crate::core::platform::container::battalion::formation::Formation;
 pub use crate::core::platform::container::battalion::grove::GroveBuilder;
 pub use crate::core::platform::container::battalion::phalanx::Phalanx;
+pub use crate::core::platform::container::battalion::{BattalionResult, BattalionStatus};
 
 pub use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
 pub use paladin_ports::output::garrison_port::{GarrisonError, GarrisonPort};
@@ -50,5 +48,5 @@ pub use paladin_memory::garrison::InMemoryGarrison;
 pub use paladin_memory::sanctum::InMemorySanctum;
 
 pub use crate::application::use_cases::battalion::commander::CommanderBuilder;
-pub use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
 pub use crate::application::use_cases::paladin::error::PaladinError;
+pub use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
