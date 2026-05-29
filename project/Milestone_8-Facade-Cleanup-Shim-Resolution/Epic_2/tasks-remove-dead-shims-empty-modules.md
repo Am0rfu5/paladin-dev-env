@@ -112,20 +112,29 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.5 **Batch 6** — `cargo build --workspace` — confirm exit code 0 and no new errors
   - [x] 3.6 **Batch 6** — `git add -A && git commit -m "refactor(m8-e2): delete orphaned core/platform/manager/user/ directory"`
 
-- [ ] 4.0 Delete infrastructure empty stubs (Batch 7) and verify build
-  - [ ] 4.1 **Batch 7** — Delete empty log adapter stub: `rm src/infrastructure/adapters/logs/access_log_adapter.rs`
-  - [ ] 4.2 **Batch 7** — Update `src/infrastructure/adapters/logs/mod.rs`: remove the `pub mod access_log_adapter;` line
-  - [ ] 4.3 **Batch 7** — Delete empty push notification adapter stub: `rm src/infrastructure/adapters/notifications/push_notification_adapter.rs`
-  - [ ] 4.4 **Batch 7** — Update `src/infrastructure/adapters/notifications/mod.rs`: remove the declaration line for `push_notification_adapter`
-  - [ ] 4.5 **Batch 7** — `cargo build --workspace` — confirm exit code 0 and no new errors
-  - [ ] 4.6 **Batch 7** — `git add -A && git commit -m "refactor(m8-e2): delete empty infrastructure adapter stubs"`
+- [x] 4.0 Delete infrastructure empty stubs (Batch 7) and verify build
+  - [x] 4.1 **Batch 7** — Delete empty log adapter stub: `rm src/infrastructure/adapters/logs/access_log_adapter.rs`
+  - [x] 4.2 **Batch 7** — Update `src/infrastructure/adapters/logs/mod.rs`: remove the `pub mod access_log_adapter;` line
+  - [x] 4.3 **Batch 7** — Delete empty push notification adapter stub: `rm src/infrastructure/adapters/notifications/push_notification_adapter.rs`
+  - [x] 4.4 **Batch 7** — Update `src/infrastructure/adapters/notifications/mod.rs`: remove the declaration line for `push_notification_adapter`
+  <!-- NOTE: Only the #[cfg(not(feature="notifications"))] pub mod push_notification_adapter; line was removed.
+       The #[cfg(feature="notifications")] pub use paladin_notifications::push_notification_adapter;
+       re-export was kept as it references the paladin-notifications crate, not the deleted local file. -->
+  - [x] 4.5 **Batch 7** — `cargo build --workspace` — confirm exit code 0 and no new errors
+  - [x] 4.6 **Batch 7** — `git add -A && git commit -m "refactor(m8-e2): delete empty infrastructure adapter stubs"`
 
-- [ ] 5.0 Audit and remediate stale `crate::application::ports::` import references
-  - [ ] 5.1 Run `grep -rn "application::ports::" src/ crates/ tests/ examples/ benches/ --include="*.rs"` from the workspace root
-  - [ ] 5.2 For each match found, update the import to the correct path — typically `paladin_ports::` for port trait references, or the appropriate full module path
-  - [ ] 5.3 If any changes were made, run `cargo build --workspace` — confirm exit code 0
-  - [ ] 5.4 Document result in this task's notes: either "Zero stale `application::ports::` references found" or list the files changed
-  - [ ] 5.5 `git add -A && git commit -m "refactor(m8-e2): audit and clean stale application::ports:: references"`
+- [x] 5.0 Audit and remediate stale `crate::application::ports::` import references
+  - [x] 5.1 Run `grep -rn "application::ports::" src/ crates/ tests/ examples/ benches/ --include="*.rs"` from the workspace root
+  - [x] 5.2 For each match found, update the import to the correct path — typically `paladin_ports::` for port trait references, or the appropriate full module path
+  - [x] 5.3 If any changes were made, run `cargo build --workspace` — confirm exit code 0
+  - [x] 5.4 Document result in this task's notes: either "Zero stale `application::ports::` references found" or list the files changed
+  <!-- RESULT: Zero live stale references found.
+       All matches were in doc comments (/// or //!) — not live use/import statements:
+       - crates/paladin-ports/src/output/arsenal_port.rs: doc comment examples (30+ occurrences)
+       - crates/paladin-ports/src/output/sanctum_port.rs: doc comment examples
+       - tests/unit/herald_consolidation_test.rs:22: single /// doc comment
+       No code changes required. cargo build --workspace already green from Batch 7. -->
+  - [x] 5.5 `git add -A && git commit -m "refactor(m8-e2): audit and clean stale application::ports:: references"`
 
 - [ ] 6.0 Verify `src/core/` is reduced to its minimum 6-file structure
   - [ ] 6.1 Run `find src/core/ -name "*.rs" | sort` — confirm output contains exactly these 6 files: `src/core/mod.rs`, `src/core/platform/mod.rs`, `src/core/platform/manager/mod.rs`, `src/core/platform/manager/content_service.rs`, `src/core/platform/manager/event_manager.rs`, `src/core/platform/manager/user_service.rs`
