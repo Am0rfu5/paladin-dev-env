@@ -4,7 +4,7 @@
 //! broadcast delegation, round-robin, multi-level chains, and error handling.
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
+use paladin::application::services::battalion::chain_of_command_service::ChainOfCommandExecutionService;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::chain_of_command::{
@@ -54,7 +54,7 @@ impl PaladinPort for MockPaladinPort {
         &self,
         paladin: &Paladin,
         input: &str,
-    ) -> Result<PaladinResult, paladin::application::use_cases::paladin::error::PaladinError> {
+    ) -> Result<PaladinResult, paladin::application::services::paladin::error::PaladinError> {
         // Log execution
         self.execution_log
             .lock()
@@ -84,14 +84,14 @@ impl PaladinPort for MockPaladinPort {
         &self,
         _paladin: &Paladin,
         _input: &str,
-    ) -> Result<PaladinStream, paladin::application::use_cases::paladin::error::PaladinError> {
+    ) -> Result<PaladinStream, paladin::application::services::paladin::error::PaladinError> {
         unimplemented!("Streaming not needed for tests")
     }
 
     fn validate(
         &self,
         _paladin: &Paladin,
-    ) -> Result<(), paladin::application::use_cases::paladin::error::PaladinError> {
+    ) -> Result<(), paladin::application::services::paladin::error::PaladinError> {
         Ok(())
     }
 }

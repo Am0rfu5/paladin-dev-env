@@ -18,8 +18,8 @@ use std::sync::Arc;
 /// # Example
 ///
 /// ```rust,ignore
-/// use paladin::application::use_cases::arsenal::arsenal_execution_service::ArsenalExecutionService;
-/// use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
+/// use paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService;
+/// use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
 ///
 /// let registry = Arc::new(ArsenalRegistryService::new());
 /// let service = ArsenalExecutionService::new(registry);
@@ -39,8 +39,8 @@ impl ArsenalExecutionService {
     /// # Example
     ///
     /// ```rust
-    /// use paladin::application::use_cases::arsenal::arsenal_execution_service::ArsenalExecutionService;
-    /// use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
+    /// use paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService;
+    /// use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
     /// use std::sync::Arc;
     ///
     /// let registry = Arc::new(ArsenalRegistryService::new());

@@ -18,7 +18,7 @@
 //! ## Zero-Config Pattern (Recommended)
 //!
 //! ```rust,ignore
-//! use paladin::application::use_cases::herald::HeraldRegistry;
+//! use paladin::application::services::herald::HeraldRegistry;
 //!
 //! // Built-in formatters are pre-registered
 //! let registry = HeraldRegistry::default();
@@ -36,7 +36,7 @@
 //! ## Manual Registration
 //!
 //! ```rust,ignore
-//! use paladin::application::use_cases::herald::HeraldRegistry;
+//! use paladin::application::services::herald::HeraldRegistry;
 //! use paladin::infrastructure::adapters::herald::JsonHerald;
 //! use std::sync::Arc;
 //!
@@ -49,7 +49,7 @@
 //! ## Custom Formatters
 //!
 //! ```rust,ignore
-//! use paladin::application::use_cases::herald::HeraldRegistry;
+//! use paladin::application::services::herald::HeraldRegistry;
 //! use paladin::core::platform::container::herald::Herald;
 //! use std::sync::Arc;
 //!

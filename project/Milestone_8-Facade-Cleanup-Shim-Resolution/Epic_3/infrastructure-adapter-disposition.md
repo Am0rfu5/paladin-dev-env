@@ -1,8 +1,8 @@
 # Infrastructure Adapter Disposition Record — Epic 3
 
-**Milestone:** 8 — Facade Cleanup & Shim Resolution  
-**Epic:** 3 — Relocate Remaining Misplaced Modules  
-**Branch:** `feature/milestone_8-epic_3-relocate-misplaced-modules`  
+**Milestone:** 8 — Facade Cleanup & Shim Resolution
+**Epic:** 3 — Relocate Remaining Misplaced Modules
+**Branch:** `feature/milestone_8-epic_3-relocate-misplaced-modules`
 **Date:** 2025-01
 
 ## Purpose

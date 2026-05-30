@@ -3,7 +3,7 @@
 //! Tests the sequential execution of Formation patterns using MockLlmAdapter
 //! to verify proper output chaining and orchestration.
 
-use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
+use paladin::application::services::battalion::formation_service::FormationExecutionService;
 use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;

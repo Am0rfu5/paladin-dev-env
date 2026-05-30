@@ -6,7 +6,7 @@ and profile management. This service coordinates between domain entities and
 infrastructure adapters.
 */
 
-use crate::application::use_cases::notification_orchestrator::NotificationService;
+use crate::application::services::notification_orchestrator::NotificationService;
 use crate::core::base::entity::message::Location;
 use crate::core::platform::container::log::{LogDestination, LogEntryBuilder, LogLevel};
 use crate::core::platform::container::user::{Email, User, UserError};

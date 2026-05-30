@@ -1,7 +1,7 @@
 //! Unit tests for Arsenal port implementations
 
-use paladin::application::use_cases::arsenal::arsenal_execution_service::ArsenalExecutionService;
-use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
+use paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService;
+use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
 use paladin::core::platform::container::arsenal::{Armament, ArmamentCall};
 use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
 use serde_json::{Value, json};

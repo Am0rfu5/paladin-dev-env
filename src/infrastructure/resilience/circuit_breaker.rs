@@ -23,7 +23,7 @@
 //!
 //! ```rust,no_run
 //! use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
-//! use paladin::application::use_cases::paladin::error::PaladinError;
+//! use paladin::application::services::paladin::error::PaladinError;
 //! use std::time::Duration;
 //!
 //! let circuit_breaker = CircuitBreaker::new(
@@ -47,7 +47,7 @@
 //! }
 //! ```
 
-use crate::application::use_cases::paladin::error::PaladinError;
+use crate::application::services::paladin::error::PaladinError;
 use log::{debug, info, warn};
 use std::sync::RwLock;
 use std::time::{Duration, Instant};
@@ -94,7 +94,7 @@ pub enum CircuitState {
 ///
 /// ```rust,no_run
 /// use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
-/// use paladin::application::use_cases::paladin::error::PaladinError;
+/// use paladin::application::services::paladin::error::PaladinError;
 /// use std::sync::Arc;
 /// use std::time::Duration;
 ///
@@ -182,7 +182,7 @@ impl CircuitBreaker {
     ///
     /// ```rust
     /// use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
-    /// use paladin::application::use_cases::paladin::error::PaladinError;
+    /// use paladin::application::services::paladin::error::PaladinError;
     /// use std::time::Duration;
     ///
     /// let cb = CircuitBreaker::new(3, 2, Duration::from_secs(30));

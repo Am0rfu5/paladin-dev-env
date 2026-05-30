@@ -6,7 +6,7 @@
 //! # Examples
 //!
 //! ```rust,no_run
-//! use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+//! use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 //! use paladin_ports::output::llm_port::LlmPort;
 //! use paladin::core::platform::container::paladin_config::OutputFormat;
 //! use std::sync::Arc;
@@ -29,8 +29,8 @@
 //! # }
 //! ```
 
-use crate::application::use_cases::paladin::error::PaladinError;
-use crate::application::use_cases::sanctum::memory_extraction_service::MemoryExtractionStrategy;
+use crate::application::services::paladin::error::PaladinError;
+use crate::application::services::sanctum::memory_extraction_service::MemoryExtractionStrategy;
 use crate::config::arsenal::MCPServerConfig;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::arsenal::Armament;
@@ -60,7 +60,7 @@ use uuid::Uuid;
 /// # Example
 ///
 /// ```rust,no_run
-/// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+/// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 /// # use paladin_ports::output::llm_port::LlmPort;
 /// # use std::sync::Arc;
 /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
@@ -111,7 +111,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -153,7 +153,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -176,7 +176,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -198,7 +198,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -220,7 +220,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -246,7 +246,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -273,7 +273,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -298,7 +298,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -324,7 +324,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -348,7 +348,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -384,7 +384,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -407,7 +407,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -430,7 +430,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -452,7 +452,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -474,7 +474,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -504,7 +504,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -531,7 +531,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
@@ -561,7 +561,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
@@ -590,7 +590,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
@@ -617,7 +617,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use paladin::core::platform::container::paladin_config::OutputFormat;
     /// # use std::sync::Arc;
@@ -644,7 +644,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use paladin_ports::output::garrison_port::GarrisonPort;
     /// # use std::sync::Arc;
@@ -672,7 +672,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use paladin_ports::output::arsenal_port::ArsenalRegistry;
     /// # use std::sync::Arc;
@@ -699,7 +699,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin::infrastructure::adapters::herald::JsonHerald;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
@@ -733,7 +733,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```ignore
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use paladin_ports::output::sanctum_port::SanctumPort;
     /// # use paladin_ports::output::embedding_port::EmbeddingPort;
@@ -769,7 +769,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use paladin_ports::output::embedding_port::EmbeddingPort;
     /// # use std::sync::Arc;
@@ -803,8 +803,8 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
-    /// # use paladin::application::use_cases::sanctum::memory_extraction_service::MemoryExtractionStrategy;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::sanctum::memory_extraction_service::MemoryExtractionStrategy;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -831,7 +831,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
@@ -872,7 +872,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use paladin::core::platform::container::autonomous_config::{HandoffConfig, HandoffRetryConfig};
     /// # use paladin::core::platform::container::handoff::HandoffStrategy;
@@ -912,7 +912,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -949,7 +949,7 @@ impl PaladinBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -991,7 +991,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
     /// # use std::sync::Arc;
@@ -1019,7 +1019,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -1045,7 +1045,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # fn example(llm_port: Arc<dyn LlmPort>) {
@@ -1076,7 +1076,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use paladin_ports::output::citadel_port::CitadelPort;
     /// # use uuid::Uuid;
@@ -1250,7 +1250,7 @@ impl PaladinBuilder {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
     /// # async fn example(llm_port: Arc<dyn LlmPort>) -> Result<(), Box<dyn std::error::Error>> {
@@ -1265,7 +1265,7 @@ impl PaladinBuilder {
         // Handle auto-prompt generation if enabled and no manual override
         if self.auto_generate_prompt_enabled && !self.manual_prompt_override {
             if let Some(description) = &self.agent_description {
-                use crate::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
+                use crate::application::services::paladin::prompt_generation_service::PromptGenerationService;
 
                 let prompt_service = PromptGenerationService::new(self.llm_port.clone());
                 let agent_name = if self.data.name.is_empty() {
@@ -1299,7 +1299,7 @@ impl PaladinBuilder {
         // Handle auto-temperature selection if enabled and no manual override
         if self.auto_temperature_enabled && !self.manual_temperature_override {
             if let Some(description) = &self.agent_description {
-                use crate::application::use_cases::paladin::temperature_service::TemperatureService;
+                use crate::application::services::paladin::temperature_service::TemperatureService;
 
                 let temperature_service = TemperatureService::new(self.llm_port.clone());
 

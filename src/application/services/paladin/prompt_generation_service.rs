@@ -14,7 +14,7 @@
 //! # Examples
 //!
 //! ```rust,no_run
-//! use paladin::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
+//! use paladin::application::services::paladin::prompt_generation_service::PromptGenerationService;
 //! use paladin_ports::output::llm_port::LlmPort;
 //! use std::sync::Arc;
 //!
@@ -63,7 +63,7 @@ impl PromptGenerationService {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use paladin::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
+    /// use paladin::application::services::paladin::prompt_generation_service::PromptGenerationService;
     /// use paladin_ports::output::llm_port::LlmPort;
     /// use std::sync::Arc;
     ///

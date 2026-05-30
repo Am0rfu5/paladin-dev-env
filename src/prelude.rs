@@ -47,6 +47,6 @@ pub use paladin_ports::output::sanctum_port::{SanctumError, SanctumPort};
 pub use paladin_memory::garrison::InMemoryGarrison;
 pub use paladin_memory::sanctum::InMemorySanctum;
 
-pub use crate::application::use_cases::battalion::commander::CommanderBuilder;
-pub use crate::application::use_cases::paladin::error::PaladinError;
-pub use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+pub use crate::application::services::battalion::commander::CommanderBuilder;
+pub use crate::application::services::paladin::error::PaladinError;
+pub use crate::application::services::paladin::paladin_builder::PaladinBuilder;

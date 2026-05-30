@@ -2,7 +2,7 @@
 //!
 //! This module re-exports all battalion orchestration types from the
 //! `paladin-battalion` crate.  It is kept as a thin shim so that existing
-//! `use paladin::application::use_cases::battalion::*` import paths continue
+//! `use paladin::application::services::battalion::*` import paths continue
 //! to resolve without modification.
 
 pub use paladin_battalion::campaign_service;

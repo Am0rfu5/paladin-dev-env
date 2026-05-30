@@ -4,7 +4,7 @@
 //! Paladin and Battalion states to/from the file system.
 
 use paladin::application::errors::citadel_error::CitadelError;
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::citadel::{
     BattalionConfig, BattalionState, CheckpointData, ExecutionRecord, ExecutionStatus, PaladinData,

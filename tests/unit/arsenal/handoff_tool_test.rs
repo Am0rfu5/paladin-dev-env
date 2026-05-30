@@ -1,4 +1,4 @@
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::core::platform::container::arsenal::handoff_tool::HandoffTool;
 use paladin_ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, TokenUsage,

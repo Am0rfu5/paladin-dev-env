@@ -1,6 +1,6 @@
 use paladin::MockLlmAdapter;
 use paladin::application::errors::prompt_error::PromptError;
-use paladin::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
+use paladin::application::services::paladin::prompt_generation_service::PromptGenerationService;
 use std::sync::Arc;
 
 #[test]

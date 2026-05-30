@@ -1,5 +1,5 @@
-use crate::application::use_cases::notification_orchestrator::NotificationService;
-use crate::application::use_cases::orchestration::scheduler::Scheduler;
+use crate::application::services::notification_orchestrator::NotificationService;
+use crate::application::services::orchestration::scheduler::Scheduler;
 use crate::config::Settings;
 use crate::config::user_config::UserServiceFactory;
 use crate::core::base::service::message_service::{MessageService, MessageServiceConfig};

@@ -19,7 +19,7 @@ use tokio::sync::RwLock;
 use url::Url;
 use uuid::Uuid;
 
-use crate::application::use_cases::orchestration::{
+use crate::application::services::orchestration::{
     ContentAnalysisType, OrchestrationContext, Orchestrator,
 };
 use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};

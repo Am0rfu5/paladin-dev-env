@@ -1,4 +1,4 @@
-use crate::application::use_cases::content::content_fetching_service::ContentFetchingService;
+use crate::application::services::content::content_fetching_service::ContentFetchingService;
 use crate::core::platform::container::content::{ContentItem, ContentType, TextContent};
 use url::Url;
 

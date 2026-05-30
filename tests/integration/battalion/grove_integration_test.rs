@@ -3,8 +3,8 @@
 //! Tests end-to-end Grove execution with intelligent agent routing
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::grove_service::GroveExecutionService;
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::battalion::grove_service::GroveExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::grove::{
     GroveBuilder, RoutingStrategy, Tree, TreeAgent,

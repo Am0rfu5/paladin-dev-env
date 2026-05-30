@@ -1,4 +1,4 @@
-use crate::application::use_cases::paladin::error::PaladinError;
+use crate::application::services::paladin::error::PaladinError;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::prompt::{
     PromptData, PromptItem, PromptParameters, PromptType, UserPrompt,

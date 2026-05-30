@@ -16,8 +16,8 @@
 //! # Example
 //!
 //! ```rust,no_run
-//! use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
-//! use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+//! use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
+//! use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 //! use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 //! use paladin_ports::output::llm_port::LlmPort;
 //! use std::sync::Arc;
@@ -46,14 +46,14 @@
 //! # }
 //! ```
 
-use crate::application::use_cases::paladin::error::PaladinError;
-use crate::application::use_cases::paladin::handoff_service::HandoffService;
-use crate::application::use_cases::paladin::planning_service::PlanningService;
-use crate::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
-use crate::application::use_cases::sanctum::memory_extraction_service::{
+use crate::application::services::paladin::error::PaladinError;
+use crate::application::services::paladin::handoff_service::HandoffService;
+use crate::application::services::paladin::planning_service::PlanningService;
+use crate::application::services::paladin::prompt_generation_service::PromptGenerationService;
+use crate::application::services::sanctum::memory_extraction_service::{
     MemoryExtractionService, MemoryExtractionStrategy,
 };
-use crate::application::use_cases::sanctum::rag_retrieval_service::RagRetrievalService;
+use crate::application::services::sanctum::rag_retrieval_service::RagRetrievalService;
 use crate::core::base::entity::node::Node;
 use crate::core::platform::container::arsenal::{ArmamentCall, ArsenalError};
 use crate::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
@@ -149,7 +149,7 @@ impl PaladinExecutionService {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    /// use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
     /// use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// use paladin_ports::output::llm_port::LlmPort;
     /// use std::sync::Arc;
@@ -231,7 +231,7 @@ impl PaladinExecutionService {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    /// use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
     /// use paladin::infrastructure::adapters::herald::JsonHerald;
     /// use std::sync::Arc;
     /// # use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
@@ -264,7 +264,7 @@ impl PaladinExecutionService {
     /// # Example
     ///
     /// ```rust,ignore
-    /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    /// use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
     /// use paladin::infrastructure::adapters::llm::openai_adapter::OpenAIAdapter;
     /// use std::sync::Arc;
     /// # use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
@@ -297,8 +297,8 @@ impl PaladinExecutionService {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
-    /// use paladin::application::use_cases::paladin::planning_service::PlanningService;
+    /// use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
+    /// use paladin::application::services::paladin::planning_service::PlanningService;
     /// use std::sync::Arc;
     /// # use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// # use paladin_ports::output::llm_port::LlmPort;
@@ -330,8 +330,8 @@ impl PaladinExecutionService {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
-    /// use paladin::application::use_cases::paladin::prompt_generation_service::PromptGenerationService;
+    /// use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
+    /// use paladin::application::services::paladin::prompt_generation_service::PromptGenerationService;
     /// use std::sync::Arc;
     /// # use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// # use paladin_ports::output::llm_port::LlmPort;
@@ -420,8 +420,8 @@ impl PaladinExecutionService {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
-    /// # use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    /// # use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
+    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
     /// # use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
     /// # use paladin_ports::output::llm_port::LlmPort;
     /// # use std::sync::Arc;
@@ -1804,7 +1804,7 @@ impl PaladinExecutorPort for PaladinExecutionService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::use_cases::sanctum::MemoryExtractionStrategy;
+    use crate::application::services::sanctum::MemoryExtractionStrategy;
     use crate::core::base::entity::node::Node;
     #[cfg(feature = "vision")]
     use crate::core::platform::container::vision::{ImageDetail, VisionContent};

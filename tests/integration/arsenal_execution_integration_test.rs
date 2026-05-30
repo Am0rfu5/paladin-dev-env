@@ -2,8 +2,8 @@
 //!
 //! Tests tool discovery, invocation, error handling, timeouts, and resource limits.
 
-use paladin::application::use_cases::arsenal::arsenal_execution_service::ArsenalExecutionService;
-use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
+use paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService;
+use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
 use paladin::core::platform::container::arsenal::{Armament, ArmamentCall, ArsenalError};
 use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
 use serde_json::{Value, json};

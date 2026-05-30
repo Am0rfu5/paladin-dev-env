@@ -5,11 +5,11 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
-use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
-use paladin::application::use_cases::paladin::error::PaladinError;
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
-use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::application::services::battalion::formation_service::FormationExecutionService;
+use paladin::application::services::battalion::phalanx_service::PhalanxExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::phalanx::Phalanx;

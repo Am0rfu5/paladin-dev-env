@@ -24,7 +24,7 @@ pub use types::{
     ListenerError, OrchestratorError, OrchestratorStats, SchedulerError,
 };
 
-use crate::application::use_cases::queue_orchestrator::QueueService;
+use crate::application::services::queue_orchestrator::QueueService;
 use crate::core::base::component::action::{Action, ActionPriority};
 use crate::core::base::component::event::Event;
 use crate::core::base::entity::message::{Location, Message, MessagePriority};
@@ -712,7 +712,7 @@ impl EventListener for WorkflowEventListener {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::use_cases::queue_orchestrator::QueueError;
+    use crate::application::services::queue_orchestrator::QueueError;
     use crate::core::platform::container::content::{ContentType, TextContent};
 
     #[tokio::test]

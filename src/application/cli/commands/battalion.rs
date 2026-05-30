@@ -198,7 +198,7 @@ pub async fn handle_battalion_run(args: BattalionRunArgs) -> Result<(), CliError
 /// Simple adapter to make PaladinExecutionService compatible with PaladinPort
 struct PaladinExecutionAdapter {
     service: Arc<
-        crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService,
+        crate::application::services::paladin::paladin_execution_service::PaladinExecutionService,
     >,
 }
 
@@ -210,7 +210,7 @@ impl paladin_ports::output::paladin_port::PaladinPort for PaladinExecutionAdapte
         input: &str,
     ) -> Result<
         paladin_ports::output::paladin_port::PaladinResult,
-        crate::application::use_cases::paladin::error::PaladinError,
+        crate::application::services::paladin::error::PaladinError,
     > {
         self.service.execute(paladin, input).await
     }
@@ -221,10 +221,10 @@ impl paladin_ports::output::paladin_port::PaladinPort for PaladinExecutionAdapte
         _input: &str,
     ) -> Result<
         paladin_ports::output::paladin_port::PaladinStream,
-        crate::application::use_cases::paladin::error::PaladinError,
+        crate::application::services::paladin::error::PaladinError,
     > {
         Err(
-            crate::application::use_cases::paladin::error::PaladinError::ExecutionError(
+            crate::application::services::paladin::error::PaladinError::ExecutionError(
                 "Streaming not supported in CLI adapter".to_string(),
             ),
         )
@@ -233,7 +233,7 @@ impl paladin_ports::output::paladin_port::PaladinPort for PaladinExecutionAdapte
     fn validate(
         &self,
         _paladin: &crate::core::platform::container::paladin::Paladin,
-    ) -> Result<(), crate::application::use_cases::paladin::error::PaladinError> {
+    ) -> Result<(), crate::application::services::paladin::error::PaladinError> {
         Ok(())
     }
 }
@@ -244,7 +244,7 @@ async fn execute_formation(
     verbose: bool,
     output: Option<PathBuf>,
 ) -> Result<(), CliError> {
-    use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    use crate::application::services::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::formation::Formation;
     use crate::infrastructure::resilience::circuit_breaker::CircuitBreaker;
@@ -305,7 +305,7 @@ async fn execute_formation(
 
     // Create Formation execution service
     let formation_service =
-        crate::application::use_cases::battalion::formation_service::FormationExecutionService::new(
+        crate::application::services::battalion::formation_service::FormationExecutionService::new(
             paladin_port as Arc<dyn PaladinPort>,
         );
 
@@ -404,7 +404,7 @@ async fn execute_phalanx(
     verbose: bool,
     output: Option<PathBuf>,
 ) -> Result<(), CliError> {
-    use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    use crate::application::services::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::phalanx::Phalanx;
     use crate::infrastructure::resilience::circuit_breaker::CircuitBreaker;
@@ -467,7 +467,7 @@ async fn execute_phalanx(
 
     // Create Phalanx execution service
     let phalanx_service =
-        crate::application::use_cases::battalion::phalanx_service::PhalanxExecutionService::new(
+        crate::application::services::battalion::phalanx_service::PhalanxExecutionService::new(
             paladin_port as Arc<dyn PaladinPort>,
         );
 
@@ -554,8 +554,8 @@ async fn execute_conclave(
     verbose: bool,
     output: Option<PathBuf>,
 ) -> Result<(), CliError> {
-    use crate::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
-    use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    use crate::application::services::battalion::conclave_execution_service::ConclaveExecutionService;
+    use crate::application::services::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::conclave::{
         Conclave, ConclaveConfig as DomainConclaveConfig, ObservabilityLevel,
@@ -760,11 +760,11 @@ async fn execute_maneuver(
     verbose: bool,
     output: Option<PathBuf>,
 ) -> Result<(), CliError> {
-    use crate::application::use_cases::battalion::flow_visualizer::{
+    use crate::application::services::battalion::flow_visualizer::{
         FlowVisualizer, VisualizationFormat,
     };
-    use crate::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
-    use crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+    use crate::application::services::battalion::maneuver_service::ManeuverExecutionService;
+    use crate::application::services::paladin::paladin_execution_service::PaladinExecutionService;
     use crate::core::platform::container::battalion::BattalionConfig;
     use crate::core::platform::container::battalion::maneuver::Maneuver;
     use crate::core::platform::container::battalion::parser::FlowParser;
@@ -945,7 +945,7 @@ async fn build_paladin_from_reference(
 ) -> Result<crate::core::platform::container::paladin::Paladin, CliError> {
     use crate::application::cli::config::battalion_config::PaladinReference;
     use crate::application::cli::config::loader::load_paladin_config;
-    use crate::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+    use crate::application::services::paladin::paladin_builder::PaladinBuilder;
     use paladin_llm::provider_factory::LlmProviderFactory;
 
     let paladin_config = match reference {

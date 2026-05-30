@@ -3,7 +3,7 @@
 //! Tests the concurrent/parallel execution of Phalanx patterns using MockLlmAdapter
 //! to verify proper concurrent execution and result aggregation.
 
-use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
+use paladin::application::services::battalion::phalanx_service::PhalanxExecutionService;
 use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;

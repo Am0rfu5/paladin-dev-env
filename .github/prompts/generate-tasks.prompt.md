@@ -53,7 +53,7 @@ Update the file after completing each sub-task, not just after completing an ent
 ## Tasks
 
 - [ ] 0.0 Create feature branch
-  - [ ] 0.1 Create and checkout a new branch for this feature (e.g., `git checkout -b feature/[feature-name]`)
+  - [ ] 0.1 Create and checkout a new branch for this feature (e.g., `git checkout -b feature/[milestone-name]-[epic-number]-[feature-name]`)
 - [ ] 1.0 Parent Task Title
   - [ ] 1.1 [Sub-task description 1.1]
   - [ ] 1.2 [Sub-task description 1.2]
@@ -61,10 +61,6 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 2.1 [Sub-task description 2.1]
 - [ ] 3.0 Parent Task Title (may not require sub-tasks if purely structural or configuration)
 ```
-
-## Interaction Model
-
-The process explicitly requires a pause after generating parent tasks to get user confirmation ("Go") before proceeding to generate the detailed sub-tasks. This ensures the high-level plan aligns with user expectations before diving into details.
 
 ## Target Audience
 

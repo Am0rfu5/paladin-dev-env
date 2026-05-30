@@ -8,8 +8,8 @@
 //!
 //! Run with: `cargo run --example vision_analysis`
 
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
-use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::vision::{ImageDetail, VisionContent, VisionError};
 use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::{OpenAIAdapter, OpenAIConfig};

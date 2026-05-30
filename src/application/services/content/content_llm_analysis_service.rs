@@ -4,10 +4,10 @@ use std::sync::Arc;
 use crate::core::platform::container::content::ContentItem;
 use crate::core::platform::container::prompt::PromptItem;
 
-use crate::application::use_cases::analysis::llm_analysis_service::{
+use crate::application::services::analysis::llm_analysis_service::{
     LlmAnalysisConfig, LlmAnalysisInput, LlmAnalysisService,
 };
-use crate::application::use_cases::content::content_analysis_service::ContentAnalysisService;
+use crate::application::services::content::content_analysis_service::ContentAnalysisService;
 
 /// Input for LLM-based content analysis
 #[derive(Debug, Clone)]

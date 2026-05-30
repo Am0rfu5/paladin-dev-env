@@ -55,8 +55,8 @@
 //! Run with: `cargo run --example conclave_expert_panel`
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::conclave_execution_service::ConclaveExecutionService;
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::battalion::conclave_execution_service::ConclaveExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::conclave::{

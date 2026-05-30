@@ -18,7 +18,7 @@ use tokio::sync::RwLock;
 /// # Example
 ///
 /// ```rust
-/// use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
+/// use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
 /// use paladin_ports::output::arsenal_port::ArsenalRegistry;
 /// use paladin::core::platform::container::arsenal::Armament;
 /// use serde_json::json;
@@ -50,7 +50,7 @@ impl ArsenalRegistryService {
     /// # Example
     ///
     /// ```rust
-    /// use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
+    /// use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
     ///
     /// let registry = ArsenalRegistryService::new();
     /// ```
@@ -65,7 +65,7 @@ impl ArsenalRegistryService {
     /// # Example
     ///
     /// ```rust
-    /// # use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
+    /// # use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
     /// # #[tokio::main]
     /// # async fn main() {
     /// let registry = ArsenalRegistryService::new();
@@ -81,7 +81,7 @@ impl ArsenalRegistryService {
     /// # Example
     ///
     /// ```rust
-    /// # use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
+    /// # use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
     /// # use paladin_ports::output::arsenal_port::ArsenalRegistry;
     /// # use paladin::core::platform::container::arsenal::Armament;
     /// # use serde_json::json;

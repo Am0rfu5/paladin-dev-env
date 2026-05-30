@@ -9,8 +9,8 @@
 //! - Handoff execution with retry logic (Phase 5)
 
 use paladin::application::errors::handoff_error::HandoffError;
-use paladin::application::use_cases::paladin::error::PaladinError;
-use paladin::application::use_cases::paladin::handoff_service::HandoffService;
+use paladin::application::services::paladin::error::PaladinError;
+use paladin::application::services::paladin::handoff_service::HandoffService;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::autonomous_config::{HandoffConfig, HandoffRetryConfig};
 use paladin::core::platform::container::handoff::{HandoffContext, HandoffStrategy};

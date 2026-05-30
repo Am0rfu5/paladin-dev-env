@@ -3,8 +3,8 @@
 //! End-to-end integration tests for Campaign pattern with real graph execution scenarios.
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::campaign_service::CampaignExecutionService;
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::battalion::campaign_service::CampaignExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::campaign::{

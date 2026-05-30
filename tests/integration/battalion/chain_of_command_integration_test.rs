@@ -4,8 +4,8 @@
 //! delegation pattern with realistic scenarios.
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService;
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::battalion::chain_of_command_service::ChainOfCommandExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::chain_of_command::{
     ChainOfCommand, DelegationStrategy,

@@ -23,8 +23,8 @@
 //! Run with: `cargo run --example phalanx_parallel`
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::battalion::phalanx_service::PhalanxExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use paladin::core::platform::container::battalion::{BattalionConfig, ErrorStrategy};

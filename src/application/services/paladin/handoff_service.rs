@@ -24,7 +24,7 @@ use tokio::time::{Duration, sleep};
 ///
 /// # Example
 /// ```
-/// use paladin::application::use_cases::paladin::handoff_service::HandoffService;
+/// use paladin::application::services::paladin::handoff_service::HandoffService;
 /// use paladin::core::platform::container::autonomous_config::HandoffConfig;
 /// use paladin::core::platform::container::handoff::HandoffStrategy;
 /// use std::sync::Arc;
@@ -92,7 +92,7 @@ impl HandoffService {
     ///
     /// # Example
     /// ```
-    /// use paladin::application::use_cases::paladin::handoff_service::HandoffService;
+    /// use paladin::application::services::paladin::handoff_service::HandoffService;
     /// use paladin::core::platform::container::autonomous_config::HandoffConfig;
     /// use paladin::core::platform::container::handoff::{HandoffStrategy, HandoffContext};
     /// use std::sync::Arc;
@@ -208,7 +208,7 @@ impl HandoffService {
     ///
     /// # Example
     /// ```
-    /// use paladin::application::use_cases::paladin::handoff_service::HandoffService;
+    /// use paladin::application::services::paladin::handoff_service::HandoffService;
     /// use paladin::core::platform::container::autonomous_config::HandoffConfig;
     /// use paladin::core::platform::container::handoff::HandoffStrategy;
     /// use std::sync::Arc;
@@ -299,7 +299,7 @@ impl HandoffService {
     ///
     /// # Example
     /// ```
-    /// use paladin::application::use_cases::paladin::handoff_service::HandoffService;
+    /// use paladin::application::services::paladin::handoff_service::HandoffService;
     /// use paladin::core::platform::container::autonomous_config::HandoffConfig;
     /// use paladin::core::platform::container::handoff::{HandoffStrategy, HandoffContext};
     /// use std::sync::Arc;
@@ -379,7 +379,7 @@ impl HandoffService {
     ///
     /// # Example
     /// ```
-    /// use paladin::application::use_cases::paladin::handoff_service::HandoffService;
+    /// use paladin::application::services::paladin::handoff_service::HandoffService;
     /// use paladin::core::platform::container::autonomous_config::HandoffConfig;
     /// use paladin::core::platform::container::handoff::{HandoffStrategy, HandoffContext};
     /// use std::sync::Arc;

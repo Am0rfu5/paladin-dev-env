@@ -386,8 +386,8 @@ impl From<serde_json::Error> for CliError {
     }
 }
 
-impl From<crate::application::use_cases::paladin::error::PaladinError> for CliError {
-    fn from(error: crate::application::use_cases::paladin::error::PaladinError) -> Self {
+impl From<crate::application::services::paladin::error::PaladinError> for CliError {
+    fn from(error: crate::application::services::paladin::error::PaladinError) -> Self {
         CliError::ExecutionError {
             message: error.to_string(),
         }

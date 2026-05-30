@@ -12,7 +12,7 @@ Types moved here from:
 - `core/platform/manager/scheduler.rs`: SchedulerError
 */
 
-use crate::application::use_cases::queue_orchestrator::QueueError;
+use crate::application::services::queue_orchestrator::QueueError;
 use crate::core::platform::container::content::ContentItem;
 use crate::core::platform::container::job::JobError;
 use crate::core::platform::container::orchestration_context::OrchestrationContext;

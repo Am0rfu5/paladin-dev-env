@@ -8,7 +8,7 @@
 //! # Examples
 //!
 //! ```rust,no_run
-//! use paladin::application::use_cases::paladin::planning_service::PlanningService;
+//! use paladin::application::services::paladin::planning_service::PlanningService;
 //! use paladin_ports::output::llm_port::LlmPort;
 //! use std::sync::Arc;
 //!
@@ -72,7 +72,7 @@ impl PlanningService {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use paladin::application::use_cases::paladin::planning_service::PlanningService;
+    /// use paladin::application::services::paladin::planning_service::PlanningService;
     /// use paladin_ports::output::llm_port::LlmPort;
     /// use std::sync::Arc;
     ///

@@ -16,10 +16,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use paladin::application::use_cases::analysis::llm_analysis_service::{
+use paladin::application::services::analysis::llm_analysis_service::{
     LlmAnalysisConfig, LlmAnalysisService,
 };
-use paladin::application::use_cases::content::content_llm_analysis_service::{
+use paladin::application::services::content::content_llm_analysis_service::{
     LlmContentAnalysisConfig, LlmContentAnalysisInput, LlmContentAnalyzer,
 };
 use paladin::core::platform::container::content::{

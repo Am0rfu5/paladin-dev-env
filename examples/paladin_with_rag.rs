@@ -114,7 +114,7 @@ fn main() {
     println!("   Pattern 2: Programmatic Configuration");
     println!("   ──────────────────────────────────────");
     println!("   ```rust");
-    println!("   use paladin::application::use_cases::sanctum::{{");
+    println!("   use paladin::application::services::sanctum::{{");
     println!("       RagRetrievalService, MemoryExtractionService");
     println!("   }};");
     println!();
