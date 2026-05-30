@@ -39,6 +39,9 @@ use crate::core::platform::container::workflow::{
 };
 use chrono::Utc;
 use listener::ListenerOrchestrator;
+use paladin_ports::output::workflow_repository_port::{
+    PersistedWorkflow, WorkflowPersistenceStatus, WorkflowRepositoryPort,
+};
 use scheduler::SchedulerOrchestrator;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -56,6 +59,7 @@ pub struct Orchestrator {
     workflow_results: Arc<RwLock<HashMap<Uuid, WorkflowExecutionResult>>>,
     active_sessions: Arc<RwLock<HashMap<Uuid, OrchestrationContext>>>,
     content_processors: Arc<RwLock<HashMap<String, Box<dyn ContentProcessor>>>>,
+    workflow_repository: Option<Arc<dyn WorkflowRepositoryPort>>,
 }
 
 impl Orchestrator {
@@ -70,13 +74,28 @@ impl Orchestrator {
             workflow_results: Arc::new(RwLock::new(HashMap::new())),
             active_sessions: Arc::new(RwLock::new(HashMap::new())),
             content_processors: Arc::new(RwLock::new(HashMap::new())),
+            workflow_repository: None,
         }
+    }
+
+    /// Attach a workflow repository so execution progress is persisted and
+    /// incomplete workflows can be resumed after a restart.
+    ///
+    /// Persistence is entirely opt-in: an Orchestrator created with
+    /// [`Orchestrator::new`] keeps all state in memory and behaves identically
+    /// to before this method existed.
+    pub fn with_workflow_repository(mut self, repository: Arc<dyn WorkflowRepositoryPort>) -> Self {
+        self.workflow_repository = Some(repository);
+        self
     }
 
     /// Start the orchestrator and all its services.
     pub async fn start(&self) -> Result<(), OrchestratorError> {
         // Initialize default services
         self.initialize_default_services().await?;
+
+        // Recover any workflows interrupted by a previous shutdown/crash.
+        self.resume_incomplete_workflows().await?;
 
         // Start scheduler in background
         let scheduler_clone = Arc::clone(&self.scheduler);
@@ -349,9 +368,28 @@ impl Orchestrator {
                 .ok_or(OrchestratorError::WorkflowNotFound(workflow_id))?
         };
 
+        self.execute_workflow_inner(workflow, Vec::new()).await
+    }
+
+    /// Execute (or resume) a workflow definition, skipping any jobs whose ids
+    /// appear in `completed_job_ids`.
+    ///
+    /// When a workflow repository is attached, progress is persisted on start,
+    /// after each completed job, and on terminal state so a crash can be
+    /// recovered without re-running already-completed work.
+    async fn execute_workflow_inner(
+        &self,
+        workflow: Workflow,
+        completed_job_ids: Vec<Uuid>,
+    ) -> Result<WorkflowExecutionResult, OrchestratorError> {
+        let workflow_id = workflow.id;
+        let mut completed: Vec<Uuid> = completed_job_ids;
+
         let mut result = WorkflowExecutionResult::new(workflow_id);
         result.start();
         self.store_workflow_result(result.clone()).await;
+        self.persist_state(&workflow, WorkflowPersistenceStatus::Running, &completed)
+            .await?;
 
         let services = self.snapshot_services().await;
 
@@ -359,6 +397,10 @@ impl Orchestrator {
             WorkflowExecutionOrder::Sequential => {
                 let mut context = workflow.context.clone();
                 for job in &workflow.jobs {
+                    // Skip jobs already completed in a previous (interrupted) run.
+                    if completed.contains(&job.id()) {
+                        continue;
+                    }
                     let outcome = Self::run_single_job(job.clone(), &services).await;
                     let succeeded = outcome.succeeded();
                     // Thread this job's output into the context for the next job.
@@ -371,8 +413,17 @@ impl Orchestrator {
                     if !succeeded {
                         result.mark_failed();
                         self.store_workflow_result(result.clone()).await;
+                        self.persist_state(
+                            &workflow,
+                            WorkflowPersistenceStatus::Failed,
+                            &completed,
+                        )
+                        .await?;
                         return Ok(result);
                     }
+                    completed.push(job.id());
+                    self.persist_state(&workflow, WorkflowPersistenceStatus::Running, &completed)
+                        .await?;
                 }
                 result.mark_completed();
             }
@@ -417,7 +468,68 @@ impl Orchestrator {
         }
 
         self.store_workflow_result(result.clone()).await;
+        let final_status = if result.completed() {
+            WorkflowPersistenceStatus::Completed
+        } else {
+            WorkflowPersistenceStatus::Failed
+        };
+        self.persist_state(&workflow, final_status, &completed)
+            .await?;
         Ok(result)
+    }
+
+    /// Persist the current workflow state when a repository is configured.
+    ///
+    /// This is a no-op when persistence is not enabled.
+    async fn persist_state(
+        &self,
+        workflow: &Workflow,
+        status: WorkflowPersistenceStatus,
+        completed_job_ids: &[Uuid],
+    ) -> Result<(), OrchestratorError> {
+        if let Some(repository) = &self.workflow_repository {
+            let record = PersistedWorkflow {
+                workflow_id: workflow.id,
+                status,
+                completed_job_ids: completed_job_ids.to_vec(),
+                definition: workflow.clone(),
+                updated_at: Utc::now(),
+            };
+            repository
+                .save(&record)
+                .await
+                .map_err(|e| OrchestratorError::PersistenceError(e.to_string()))?;
+        }
+        Ok(())
+    }
+
+    /// Resume every incomplete workflow found in the attached repository.
+    ///
+    /// Each recovered workflow is re-registered and execution continues from the
+    /// last persisted completed job. Returns the ids of the workflows resumed.
+    /// Without a repository this is a no-op returning an empty list.
+    pub async fn resume_incomplete_workflows(&self) -> Result<Vec<Uuid>, OrchestratorError> {
+        let Some(repository) = &self.workflow_repository else {
+            return Ok(Vec::new());
+        };
+
+        let incomplete = repository
+            .list_incomplete()
+            .await
+            .map_err(|e| OrchestratorError::PersistenceError(e.to_string()))?;
+
+        let mut resumed = Vec::with_capacity(incomplete.len());
+        for record in incomplete {
+            {
+                let mut workflows = self.workflows.write().await;
+                workflows.insert(record.workflow_id, record.definition.clone());
+            }
+            self.execute_workflow_inner(record.definition, record.completed_job_ids)
+                .await?;
+            resumed.push(record.workflow_id);
+        }
+
+        Ok(resumed)
     }
 
     /// Retrieve the most recent execution result for a workflow, if any.
@@ -1586,5 +1698,118 @@ mod tests {
         assert!(outcome.output.is_none());
         let error = outcome.error.as_ref().expect("partial failure error");
         assert!(error.contains("MissingService"));
+    }
+
+    // --- Workflow state persistence tests (Milestone 9, Epic 1, Task 4.0) ---
+
+    /// In-memory fake [`WorkflowRepositoryPort`] for exercising persistence and
+    /// crash-recovery without a real datastore.
+    #[derive(Default)]
+    struct FakeWorkflowRepository {
+        records: std::sync::Mutex<HashMap<Uuid, PersistedWorkflow>>,
+    }
+
+    #[async_trait]
+    impl WorkflowRepositoryPort for FakeWorkflowRepository {
+        async fn save(
+            &self,
+            record: &PersistedWorkflow,
+        ) -> Result<(), paladin_ports::output::workflow_repository_port::WorkflowRepositoryError>
+        {
+            self.records
+                .lock()
+                .unwrap()
+                .insert(record.workflow_id, record.clone());
+            Ok(())
+        }
+
+        async fn load(
+            &self,
+            workflow_id: Uuid,
+        ) -> Result<
+            Option<PersistedWorkflow>,
+            paladin_ports::output::workflow_repository_port::WorkflowRepositoryError,
+        > {
+            Ok(self.records.lock().unwrap().get(&workflow_id).cloned())
+        }
+
+        async fn list_incomplete(
+            &self,
+        ) -> Result<
+            Vec<PersistedWorkflow>,
+            paladin_ports::output::workflow_repository_port::WorkflowRepositoryError,
+        > {
+            Ok(self
+                .records
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|r| !r.status.is_terminal())
+                .cloned()
+                .collect())
+        }
+    }
+
+    #[tokio::test]
+    async fn test_execute_workflow_persists_completed_state() {
+        let repo = Arc::new(FakeWorkflowRepository::default());
+        let orchestrator = Orchestrator::new().with_workflow_repository(repo.clone());
+        orchestrator.start().await.unwrap();
+
+        let jobs = vec![
+            job_for_service("p-1", "DataBackupService"),
+            job_for_service("p-2", "DataBackupService"),
+        ];
+        let workflow = workflow_with(jobs, WorkflowExecutionOrder::Sequential);
+        let workflow_id = orchestrator.create_workflow(workflow).await.unwrap();
+
+        let result = orchestrator.execute_workflow(workflow_id).await.unwrap();
+        assert!(result.completed());
+
+        let persisted = repo.load(workflow_id).await.unwrap().unwrap();
+        assert_eq!(persisted.status, WorkflowPersistenceStatus::Completed);
+        assert_eq!(persisted.completed_job_ids.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_crash_recovery_resumes_remaining_jobs_to_completion() {
+        let repo = Arc::new(FakeWorkflowRepository::default());
+
+        // Build a three-job sequential workflow and simulate a crash after the
+        // first two jobs already completed in a previous run.
+        let job1 = job_for_service("recover-1", "DataBackupService");
+        let job2 = job_for_service("recover-2", "DataBackupService");
+        let job3 = job_for_service("recover-3", "DataBackupService");
+        let (id1, id2, id3) = (job1.id(), job2.id(), job3.id());
+        let workflow = workflow_with(vec![job1, job2, job3], WorkflowExecutionOrder::Sequential);
+        let workflow_id = workflow.id;
+
+        repo.save(&PersistedWorkflow {
+            workflow_id,
+            status: WorkflowPersistenceStatus::Running,
+            completed_job_ids: vec![id1, id2],
+            definition: workflow,
+            updated_at: Utc::now(),
+        })
+        .await
+        .unwrap();
+
+        // A fresh orchestrator recovers on start(): default services are
+        // registered first, then incomplete workflows resume automatically.
+        let orchestrator = Orchestrator::new().with_workflow_repository(repo.clone());
+        orchestrator.start().await.unwrap();
+
+        let result = orchestrator
+            .workflow_execution_result(workflow_id)
+            .await
+            .expect("recovered workflow must have a result");
+        assert!(result.completed(), "resumed workflow should complete");
+        // Only the outstanding third job runs; the first two are skipped.
+        assert_eq!(result.job_outcomes.len(), 1);
+        assert_eq!(result.job_outcomes[0].job_id, id3);
+
+        let persisted = repo.load(workflow_id).await.unwrap().unwrap();
+        assert_eq!(persisted.status, WorkflowPersistenceStatus::Completed);
+        assert_eq!(persisted.completed_job_ids.len(), 3);
     }
 }

@@ -83,6 +83,8 @@ pub enum OrchestratorError {
     ConfigurationError(String),
     #[error("Service error: {0}")]
     ServiceError(String),
+    #[error("Persistence error: {0}")]
+    PersistenceError(String),
 }
 
 /// Orchestrator statistics.

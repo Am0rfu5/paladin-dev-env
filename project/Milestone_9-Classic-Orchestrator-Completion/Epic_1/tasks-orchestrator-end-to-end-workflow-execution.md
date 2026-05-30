@@ -59,14 +59,14 @@
   - [x] 3.6 Fix any existing tests/examples that relied on the old simulated behavior
 
 - [ ] 4.0 Workflow state persistence (PRD Task 1.3)
-  - [ ] 4.1 Define `WorkflowRepositoryPort` in `paladin-ports/src/output/workflow_repository_port.rs` (`#[async_trait]`, `Send + Sync`): save/update state, load by id, list incomplete
-  - [ ] 4.2 Register the port module in `paladin-ports/src/output/mod.rs`
-  - [ ] 4.3 Implement `SqliteWorkflowRepository` in `paladin-storage` with `sqlx` + bound parameters + migration
-  - [ ] 4.4 Register the adapter module in `paladin-storage/src/lib.rs`
-  - [ ] 4.5 Add optional `Option<Arc<dyn WorkflowRepositoryPort>>` to `Orchestrator`; keep `new()` in-memory-only working
-  - [ ] 4.6 Persist workflow/job state transitions during `execute_workflow()` when a repository is configured
-  - [ ] 4.7 On `start()`, load incomplete workflows and resume from last completed job/stage without re-running completed jobs
-  - [ ] 4.8 Unit/integration test: crash-recovery resumes correctly to `Completed`
+  - [x] 4.1 Define `WorkflowRepositoryPort` in `paladin-ports/src/output/workflow_repository_port.rs` (`#[async_trait]`, `Send + Sync`): save/update state, load by id, list incomplete
+  - [x] 4.2 Register the port module in `paladin-ports/src/output/mod.rs`
+  - [x] 4.3 Implement `SqliteWorkflowRepository` in `paladin-storage` with `sqlx` + bound parameters + migration
+  - [x] 4.4 Register the adapter module in `paladin-storage/src/lib.rs`
+  - [x] 4.5 Add optional `Option<Arc<dyn WorkflowRepositoryPort>>` to `Orchestrator`; keep `new()` in-memory-only working
+  - [x] 4.6 Persist workflow/job state transitions during `execute_workflow()` when a repository is configured
+  - [x] 4.7 On `start()`, load incomplete workflows and resume from last completed job/stage without re-running completed jobs
+  - [x] 4.8 Unit/integration test: crash-recovery resumes correctly to `Completed`
 
 - [ ] 5.0 Full-lifecycle integration test (PRD Task 1.4)
   - [ ] 5.1 Add mock `TaskService` impls with observable, synchronized side effects (ordered record)

@@ -23,6 +23,8 @@ pub mod scheduler_port;
 pub mod search_engine_port;
 /// User persistence repository port.
 pub mod user_repository_port;
+/// Workflow persistence repository port.
+pub mod workflow_repository_port;
 // Vision ports are unconditional in paladin-ports; the root `paladin` crate
 // gates re-exports with #[cfg(feature = "vision")].
 pub mod vision_llm_port;
