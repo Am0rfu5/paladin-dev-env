@@ -1,9 +1,9 @@
 # PRD: `use_cases` → `services` Rename
 
-**Milestone:** 8 — Facade Cleanup & Shim Resolution  
-**Epic:** 4  
-**Status:** Draft  
-**Date:** 2026-05-30  
+**Milestone:** 8 — Facade Cleanup & Shim Resolution
+**Epic:** 4
+**Status:** Draft
+**Date:** 2026-05-30
 
 ---
 
