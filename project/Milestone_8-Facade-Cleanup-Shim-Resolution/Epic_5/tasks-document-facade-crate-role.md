@@ -74,37 +74,37 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.5 Read the `## Tracking API Changes` section (around line 296–355) and update any stale baseline dates or file references to note `api_surface_current.txt` as the v0.2.0 baseline (FR-8).
   - [x] 3.6 Commit: `git add STABLE_API.md && git commit -m "docs(m8-e5): update STABLE_API.md for v0.2.0 release" -m "- Updated Last Updated to 2026-05-30" -m "- Updated Epic to Milestone 8 Epic 5" -m "- Updated breaking-change callout to cover Epic 2/3 shim removals and Epic 4 rename" -m "- Updated paladin facade crate section for post-M8 module layout" -m "- Updated Tracking section to reference v0.2.0 baseline"`
 
-- [ ] 4.0 Promote `CHANGELOG.md` `[Unreleased]` to `[0.2.0]`
-  - [ ] 4.1 Read the current `[Unreleased]` block in `CHANGELOG.md` (lines 1–70) to see the exact existing sub-sections (`### Breaking Changes`, `### Added`, `### Removed`) before editing.
-  - [ ] 4.2 Insert a new empty `## [Unreleased]` section at the top (above the existing block) for future changes (FR-9).
-  - [ ] 4.3 Rename the existing block header from `## [Unreleased]` to `## [0.2.0] - 2026-05-30` (FR-9).
-  - [ ] 4.4 Add a `### Changed` sub-section to the `## [0.2.0]` block (between `### Added` and `### Removed`) containing (FR-11): "Documented facade crate role as application assembly point; added `src/README.md` and updated `src/lib.rs` `//!` docs with `## Facade Crate Role` section."
-  - [ ] 4.5 At the bottom of `CHANGELOG.md`, update the link-reference block (FR-12):
+- [x] 4.0 Promote `CHANGELOG.md` `[Unreleased]` to `[0.2.0]`
+  - [x] 4.1 Read the current `[Unreleased]` block in `CHANGELOG.md` (lines 1–70) to see the exact existing sub-sections (`### Breaking Changes`, `### Added`, `### Removed`) before editing.
+  - [x] 4.2 Insert a new empty `## [Unreleased]` section at the top (above the existing block) for future changes (FR-9).
+  - [x] 4.3 Rename the existing block header from `## [Unreleased]` to `## [0.2.0] - 2026-05-30` (FR-9).
+  - [x] 4.4 Add a `### Changed` sub-section to the `## [0.2.0]` block (between `### Added` and `### Removed`) containing (FR-11): "Documented facade crate role as application assembly point; added `src/README.md` and updated `src/lib.rs` `//!` docs with `## Facade Crate Role` section."
+  - [x] 4.5 At the bottom of `CHANGELOG.md`, update the link-reference block (FR-12):
     - Change `[Unreleased]: https://github.com/jamatulli/paladin/compare/v0.1.0...HEAD` to `[Unreleased]: https://github.com/jamatulli/paladin/compare/v0.2.0...HEAD`
     - Add a new line: `[0.2.0]: https://github.com/jamatulli/paladin/compare/v0.1.0...v0.2.0`
     - Keep the existing `[0.1.0]:` line.
-  - [ ] 4.6 Verify structure: `grep -n "^\#\# \[" CHANGELOG.md` — must show `[Unreleased]` above `[0.2.0] - 2026-05-30` above `[0.1.0]`.
-  - [ ] 4.7 Commit: `git add CHANGELOG.md && git commit -m "docs(m8-e5): promote Unreleased to 0.2.0 in CHANGELOG" -m "- Promoted [Unreleased] to ## [0.2.0] - 2026-05-30" -m "- Added ### Changed entry for facade crate documentation" -m "- Reset [Unreleased] section above 0.2.0" -m "- Updated link-reference block: Unreleased now compares v0.2.0...HEAD" -m "- Added [0.2.0] compare link"`
+  - [x] 4.6 Verify structure: `grep -n "^\#\# \[" CHANGELOG.md` — must show `[Unreleased]` above `[0.2.0] - 2026-05-30` above `[0.1.0]`.
+  - [x] 4.7 Commit: `git add CHANGELOG.md && git commit -m "docs(m8-e5): promote Unreleased to 0.2.0 in CHANGELOG" -m "- Promoted [Unreleased] to ## [0.2.0] - 2026-05-30" -m "- Added ### Changed entry for facade crate documentation" -m "- Reset [Unreleased] section above 0.2.0" -m "- Updated link-reference block: Unreleased now compares v0.2.0...HEAD" -m "- Added [0.2.0] compare link"`
 
-- [ ] 5.0 Regenerate API surface baseline files
-  - [ ] 5.1 Check the `Makefile` for the exact `cargo-public-api` invocation used to generate `api_surface_current.txt`: `grep -A3 "public-api\|api_surface\|final-api" Makefile | head -30`.
-  - [ ] 5.2 Run the API surface extraction command (from the Makefile or directly: `cargo public-api 2>/dev/null | head -5` to confirm it works). If the Makefile has a target, use `make <target>`.
-  - [ ] 5.3 Regenerate `api_surface_current.txt` with a v0.2.0 header comment (FR-13). If the file already has a header comment, update the version and date to `v0.2.0 baseline — 2026-05-30`.
-  - [ ] 5.4 Regenerate `final-api.txt` using the same method, updating its header to `v0.2.0 baseline — 2026-05-30` (FR-14).
-  - [ ] 5.5 Commit: `git add api_surface_current.txt final-api.txt && git commit -m "chore(m8-e5): regenerate API surface baseline files for v0.2.0" -m "- api_surface_current.txt: v0.2.0 baseline 2026-05-30" -m "- final-api.txt: v0.2.0 baseline 2026-05-30"`
+- [x] 5.0 Regenerate API surface baseline files
+  - [x] 5.1 Check the `Makefile` for the exact `cargo-public-api` invocation used to generate `api_surface_current.txt`: `grep -A3 "public-api\|api_surface\|final-api" Makefile | head -30`.
+  - [x] 5.2 Run the API surface extraction command (from the Makefile or directly: `cargo public-api 2>/dev/null | head -5` to confirm it works). If the Makefile has a target, use `make <target>`.
+  - [x] 5.3 Regenerate `api_surface_current.txt` with a v0.2.0 header comment (FR-13). If the file already has a header comment, update the version and date to `v0.2.0 baseline — 2026-05-30`.
+  - [x] 5.4 Regenerate `final-api.txt` using the same method, updating its header to `v0.2.0 baseline — 2026-05-30` (FR-14).
+  - [x] 5.5 Commit: `git add api_surface_current.txt final-api.txt && git commit -m "chore(m8-e5): regenerate API surface baseline files for v0.2.0" -m "- api_surface_current.txt: v0.2.0 baseline 2026-05-30" -m "- final-api.txt: v0.2.0 baseline 2026-05-30"`
 
-- [ ] 6.0 Final quality gate and epic close
-  - [ ] 6.1 Delete `src/lib.rs.backup` (it is not a Rust module and must not be in the committed workspace): `rm src/lib.rs.backup`.
-  - [ ] 6.2 Run `cargo build --workspace` — confirm exit 0, zero errors (FR-15).
-  - [ ] 6.3 Run `cargo test --workspace` — confirm all tests pass, zero failures (FR-16).
-  - [ ] 6.4 Run `cargo clippy --workspace -- -D warnings` — confirm zero warnings (FR-17).
-  - [ ] 6.5 Run `cargo fmt --all -- --check` — confirm exit 0, no formatting drift (FR-18).
-  - [ ] 6.6 Run `cargo doc --workspace --no-deps 2>&1 | tail -5` — confirm exit 0 (warnings acceptable) (FR-19).
-  - [ ] 6.7 Verify success metrics:
+- [x] 6.0 Final quality gate and epic close
+  - [x] 6.1 Delete `src/lib.rs.backup` (it is not a Rust module and must not be in the committed workspace): `rm src/lib.rs.backup`.
+  - [x] 6.2 Run `cargo build --workspace` — confirm exit 0, zero errors (FR-15).
+  - [x] 6.3 Run `cargo test --workspace` — confirm all tests pass, zero failures (FR-16).
+  - [x] 6.4 Run `cargo clippy --workspace -- -D warnings` — confirm zero warnings (FR-17).
+  - [x] 6.5 Run `cargo fmt --all -- --check` — confirm exit 0, no formatting drift (FR-18).
+  - [x] 6.6 Run `cargo doc --workspace --no-deps 2>&1 | tail -5` — confirm exit 0 (warnings acceptable) (FR-19).
+  - [x] 6.7 Verify success metrics:
     - `grep "Facade Crate Role" src/lib.rs` — 1 hit
     - `test -f src/README.md && echo exists` — exists
     - `grep "Last Updated" STABLE_API.md` — shows `2026-05-30`
     - `grep "^\#\# \[0.2.0\]" CHANGELOG.md` — 1 hit
     - `grep "^\#\# \[Unreleased\]" CHANGELOG.md` — 1 hit (the empty reset section)
-  - [ ] 6.8 Mark all tasks `[x]` in this file.
-  - [ ] 6.9 Commit: `git add -A && git commit -m "chore(m8-e5): final quality gate pass and Epic 5 close" -m "- Deleted src/lib.rs.backup" -m "- Build, test, clippy, fmt, doc all exit 0" -m "- All success metrics verified" -m "- Tasks 0.0-6.0 marked complete" -m "- Milestone 8 Epic 5 complete: v0.2.0 release candidate ready"`
+  - [x] 6.8 Mark all tasks `[x]` in this file.
+  - [x] 6.9 Commit: `git add -A && git commit -m "chore(m8-e5): final quality gate pass and Epic 5 close" -m "- Deleted src/lib.rs.backup" -m "- Build, test, clippy, fmt, doc all exit 0" -m "- All success metrics verified" -m "- Tasks 0.0-6.0 marked complete" -m "- Milestone 8 Epic 5 complete: v0.2.0 release candidate ready"`
