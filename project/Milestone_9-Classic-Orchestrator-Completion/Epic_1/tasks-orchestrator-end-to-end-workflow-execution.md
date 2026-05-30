@@ -44,19 +44,19 @@
   - [x] 1.9 Record job/workflow state transitions into the internal results store as they occur
   - [x] 1.10 Unit tests: sequential ordering + N→N+1 threading; parallel mixed success/failure aggregation; staged ordering with intra-stage concurrency
 
-- [ ] 2.0 Wire TaskService execution + error strategy (PRD Task 1.2, dispatch)
+- [x] 2.0 Wire TaskService execution + error strategy (PRD Task 1.2, dispatch)
   - [x] 2.1 Implement a job-dispatch helper that resolves services by name from `task_services` and runs the job via `Job::execute(&services)`
   - [x] 2.2 Return a typed error (no panic/unwrap) when a task's `service_name` is unregistered
   - [x] 2.3 Honor fail-fast vs. continue-on-error by mapping to the job's existing `JobExecutionMode`
   - [x] 2.4 Unit test: unregistered service yields typed error; fail-fast vs. continue-on-error behavior verified
 
-- [ ] 3.0 Rewrite default TaskService implementations (PRD Task 1.2, services)
-  - [ ] 3.1 Rewrite `DataBackupService` to perform a real, path-constrained backup write and return a descriptive result; `TaskError` on failure
-  - [ ] 3.2 Rewrite `ContentIndexingService` to build/persist a simple index artifact and return a descriptive result; `TaskError` on failure
-  - [ ] 3.3 Rewrite `EmailNotificationService` to dispatch via an injectable sink/transport seam and return a descriptive result; `TaskError` on failure
-  - [ ] 3.4 Remove `tokio::time::sleep` simulations and `println!` "simulate..." scaffolding from all three
-  - [ ] 3.5 Unit tests for each service: success side effect + forced-failure `TaskError`
-  - [ ] 3.6 Fix any existing tests/examples that relied on the old simulated behavior
+- [x] 3.0 Rewrite default TaskService implementations (PRD Task 1.2, services)
+  - [x] 3.1 Rewrite `DataBackupService` to perform a real, path-constrained backup write and return a descriptive result; `TaskError` on failure
+  - [x] 3.2 Rewrite `ContentIndexingService` to build/persist a simple index artifact and return a descriptive result; `TaskError` on failure
+  - [x] 3.3 Rewrite `EmailNotificationService` to dispatch via an injectable sink/transport seam and return a descriptive result; `TaskError` on failure
+  - [x] 3.4 Remove `tokio::time::sleep` simulations and `println!` "simulate..." scaffolding from all three
+  - [x] 3.5 Unit tests for each service: success side effect + forced-failure `TaskError`
+  - [x] 3.6 Fix any existing tests/examples that relied on the old simulated behavior
 
 - [ ] 4.0 Workflow state persistence (PRD Task 1.3)
   - [ ] 4.1 Define `WorkflowRepositoryPort` in `paladin-ports/src/output/workflow_repository_port.rs` (`#[async_trait]`, `Send + Sync`): save/update state, load by id, list incomplete

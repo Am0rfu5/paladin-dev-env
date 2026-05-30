@@ -17,7 +17,10 @@ and executed through various platform services.
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::fmt::Debug;
+use std::path::{Component, Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -296,10 +299,49 @@ pub trait TaskService: Debug + Send + Sync {
     fn clone_service(&self) -> Box<dyn TaskService>;
 }
 
-// Example task services
+// ---------------------------------------------------------------------------
+// Default task services
+// ---------------------------------------------------------------------------
+
+/// Validates a caller-supplied relative artifact name and guards against
+/// path-traversal (OWASP A01). Absolute paths and any `..`/root components are
+/// rejected so writes can never escape their configured base directory.
+fn safe_relative_name(name: &str) -> Result<PathBuf, TaskError> {
+    let candidate = Path::new(name);
+    if candidate.as_os_str().is_empty() {
+        return Err(TaskError::ExecutionFailed(
+            "artifact name must not be empty".to_string(),
+        ));
+    }
+    if candidate.is_absolute() {
+        return Err(TaskError::ExecutionFailed(
+            "artifact name must be relative".to_string(),
+        ));
+    }
+    for component in candidate.components() {
+        if !matches!(component, Component::Normal(_)) {
+            return Err(TaskError::ExecutionFailed(
+                "artifact name must not traverse directories".to_string(),
+            ));
+        }
+    }
+    Ok(candidate.to_path_buf())
+}
+
+/// Persists a backup artifact into a configured, path-constrained directory.
 #[derive(Debug, Clone)]
 pub struct DataBackupService {
+    /// Base directory that all backups are written beneath.
     pub backup_path: String,
+}
+
+impl DataBackupService {
+    /// Creates a new backup service rooted at `backup_path`.
+    pub fn new(backup_path: impl Into<String>) -> Self {
+        Self {
+            backup_path: backup_path.into(),
+        }
+    }
 }
 
 #[async_trait]
@@ -309,20 +351,41 @@ impl TaskService for DataBackupService {
     }
 
     async fn execute(&self, action: &Action) -> Result<Option<serde_json::Value>, TaskError> {
-        println!(
-            "Running data backup to: {} for task: {}",
-            self.backup_path, action.name
-        );
+        let base = Path::new(&self.backup_path);
+        tokio::fs::create_dir_all(base).await.map_err(|e| {
+            TaskError::ExecutionFailed(format!("failed to prepare backup dir: {e}"))
+        })?;
 
-        // Simulate backup work
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        // Resolve the target file name, guarding against path traversal.
+        let file_name = match action.get_argument("backup_name").and_then(|v| v.as_str()) {
+            Some(name) => safe_relative_name(name)?,
+            None => PathBuf::from(format!("{}.backup.json", action.id)),
+        };
+        let target = base.join(&file_name);
+
+        // Use an explicit payload when provided, otherwise persist a manifest
+        // derived from the task itself.
+        let payload = match action.get_argument("payload") {
+            Some(value) => serde_json::to_vec_pretty(value),
+            None => serde_json::to_vec_pretty(&serde_json::json!({
+                "task_id": action.id,
+                "task_name": action.name,
+                "description": action.description,
+                "backed_up_at": chrono::Utc::now(),
+            })),
+        }
+        .map_err(|e| TaskError::SerializationError(e.to_string()))?;
+
+        let bytes_written = payload.len();
+        tokio::fs::write(&target, &payload)
+            .await
+            .map_err(|e| TaskError::ExecutionFailed(format!("backup write failed: {e}")))?;
 
         Ok(Some(serde_json::json!({
-            "backup_path": self.backup_path,
-            // "documents_indexed": 500,
-            // "index_size_mb": 256,
+            "backup_path": target.to_string_lossy(),
+            "bytes_written": bytes_written,
             "status": "completed",
-            "timestamp": chrono::Utc::now()
+            "timestamp": chrono::Utc::now(),
         })))
     }
 
@@ -331,9 +394,25 @@ impl TaskService for DataBackupService {
     }
 }
 
+/// Builds and persists a simple term-frequency index artifact.
 #[derive(Debug, Clone)]
 pub struct ContentIndexingService {
+    /// Logical name of the index this service maintains.
     pub index_name: String,
+}
+
+impl ContentIndexingService {
+    /// Creates a new indexing service for the given `index_name`.
+    pub fn new(index_name: impl Into<String>) -> Self {
+        Self {
+            index_name: index_name.into(),
+        }
+    }
+
+    /// Base directory where index artifacts are persisted.
+    fn index_dir() -> PathBuf {
+        std::env::temp_dir().join("paladin_index")
+    }
 }
 
 #[async_trait]
@@ -343,25 +422,48 @@ impl TaskService for ContentIndexingService {
     }
 
     async fn execute(&self, action: &Action) -> Result<Option<serde_json::Value>, TaskError> {
-        println!(
-            "Running content indexing for index: {} for task: {}",
-            self.index_name, action.name
-        );
-        println!("Action: {} - {}", action.name, action.description);
+        // The index name doubles as part of the artifact file name, so guard it.
+        let safe_name = safe_relative_name(&self.index_name)?;
+        let dir = Self::index_dir();
+        tokio::fs::create_dir_all(&dir)
+            .await
+            .map_err(|e| TaskError::ExecutionFailed(format!("failed to prepare index dir: {e}")))?;
 
-        // Simulate indexing work
-        tokio::time::sleep(std::time::Duration::from_millis(800)).await;
+        // Index either explicit content or the task description as a fallback.
+        let content = action
+            .get_argument("content")
+            .and_then(|v| v.as_str())
+            .unwrap_or(action.description.as_str());
 
-        let result = serde_json::json!({
+        let mut term_counts: BTreeMap<String, usize> = BTreeMap::new();
+        for term in content.split_whitespace() {
+            *term_counts.entry(term.to_lowercase()).or_insert(0) += 1;
+        }
+
+        let artifact = serde_json::json!({
             "index_name": self.index_name,
-            // "documents_indexed": 500,
-            // "index_size_mb": 256,
-            "status": "indexed",
-            "timestamp": chrono::Utc::now()
+            "task_id": action.id,
+            "terms": term_counts,
+            "indexed_at": chrono::Utc::now(),
         });
+        let bytes = serde_json::to_vec_pretty(&artifact)
+            .map_err(|e| TaskError::SerializationError(e.to_string()))?;
+        let target = dir.join(format!(
+            "{}-{}.index.json",
+            safe_name.to_string_lossy(),
+            action.id
+        ));
+        tokio::fs::write(&target, &bytes)
+            .await
+            .map_err(|e| TaskError::ExecutionFailed(format!("index write failed: {e}")))?;
 
-        println!("Content indexing completed for task: {}", action.name);
-        Ok(Some(result))
+        Ok(Some(serde_json::json!({
+            "index_name": self.index_name,
+            "index_path": target.to_string_lossy(),
+            "terms_indexed": term_counts.len(),
+            "status": "indexed",
+            "timestamp": chrono::Utc::now(),
+        })))
     }
 
     fn clone_service(&self) -> Box<dyn TaskService> {
@@ -369,9 +471,90 @@ impl TaskService for ContentIndexingService {
     }
 }
 
+/// A captured outbound email message.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EmailMessage {
+    /// Recipient address.
+    pub to: String,
+    /// Message subject line.
+    pub subject: String,
+    /// Message body.
+    pub body: String,
+}
+
+/// Injectable transport seam for delivering email notifications. Production
+/// deployments supply a real SMTP transport; tests supply observable or
+/// failing sinks without touching the network.
+#[async_trait]
+pub trait EmailSink: Debug + Send + Sync {
+    /// Delivers a single message, returning a `TaskError` on failure.
+    async fn deliver(&self, message: &EmailMessage) -> Result<(), TaskError>;
+
+    /// Clones the sink behind a shared pointer for reuse.
+    fn clone_sink(&self) -> Arc<dyn EmailSink>;
+}
+
+/// Default in-process sink that records delivered messages for inspection.
+#[derive(Debug, Clone, Default)]
+pub struct InMemoryEmailSink {
+    delivered: Arc<Mutex<Vec<EmailMessage>>>,
+}
+
+impl InMemoryEmailSink {
+    /// Creates an empty in-memory sink.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Returns a snapshot of all messages delivered so far.
+    pub fn delivered(&self) -> Vec<EmailMessage> {
+        self.delivered
+            .lock()
+            .map(|guard| guard.clone())
+            .unwrap_or_default()
+    }
+}
+
+#[async_trait]
+impl EmailSink for InMemoryEmailSink {
+    async fn deliver(&self, message: &EmailMessage) -> Result<(), TaskError> {
+        self.delivered
+            .lock()
+            .map_err(|e| TaskError::ExecutionFailed(format!("sink poisoned: {e}")))?
+            .push(message.clone());
+        Ok(())
+    }
+
+    fn clone_sink(&self) -> Arc<dyn EmailSink> {
+        Arc::new(self.clone())
+    }
+}
+
+/// Dispatches email notifications through an injectable [`EmailSink`].
 #[derive(Debug, Clone)]
 pub struct EmailNotificationService {
+    /// SMTP server identifier recorded with each dispatch.
     pub smtp_server: String,
+    /// Transport seam used to actually deliver messages.
+    sink: Arc<dyn EmailSink>,
+}
+
+impl EmailNotificationService {
+    /// Creates a service that records messages in an in-memory sink.
+    pub fn new(smtp_server: impl Into<String>) -> Self {
+        Self {
+            smtp_server: smtp_server.into(),
+            sink: Arc::new(InMemoryEmailSink::new()),
+        }
+    }
+
+    /// Creates a service backed by a caller-supplied transport sink.
+    pub fn with_sink(smtp_server: impl Into<String>, sink: Arc<dyn EmailSink>) -> Self {
+        Self {
+            smtp_server: smtp_server.into(),
+            sink,
+        }
+    }
 }
 
 #[async_trait]
@@ -381,32 +564,35 @@ impl TaskService for EmailNotificationService {
     }
 
     async fn execute(&self, action: &Action) -> Result<Option<serde_json::Value>, TaskError> {
-        println!(
-            "Sending email notification via: {} for task: {}",
-            self.smtp_server, action.name
-        );
-
-        // Get email details from action arguments
-        let to_email = action
+        let to = action
             .get_argument("to_email")
             .and_then(|v| v.as_str())
-            .unwrap_or("unknown@example.com");
+            .unwrap_or("unknown@example.com")
+            .to_string();
+        let subject = action
+            .get_argument("subject")
+            .and_then(|v| v.as_str())
+            .unwrap_or("(no subject)")
+            .to_string();
+        let body = action
+            .get_argument("body")
+            .and_then(|v| v.as_str())
+            .unwrap_or(action.description.as_str())
+            .to_string();
 
-        // Simulate email sending
-        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        let message = EmailMessage {
+            to: to.clone(),
+            subject,
+            body,
+        };
+        self.sink.deliver(&message).await?;
 
-        let result = serde_json::json!({
+        Ok(Some(serde_json::json!({
             "smtp_server": self.smtp_server,
-            "to_email": to_email,
+            "to_email": to,
             "status": "sent",
-            "timestamp": chrono::Utc::now()
-        });
-
-        println!(
-            "Email notification sent to: {} for task: {}",
-            to_email, action.name
-        );
-        Ok(Some(result))
+            "timestamp": chrono::Utc::now(),
+        })))
     }
 
     fn clone_service(&self) -> Box<dyn TaskService> {
@@ -441,9 +627,8 @@ mod tests {
             "DataBackupService".to_string(),
         );
 
-        let service = DataBackupService {
-            backup_path: "/tmp/backup".to_string(),
-        };
+        let temp = std::env::temp_dir().join(format!("paladin_backup_test_{}", Uuid::new_v4()));
+        let service = DataBackupService::new(temp.to_string_lossy().to_string());
 
         let result = task.execute(&service).await;
         assert!(result.is_ok());
@@ -552,12 +737,124 @@ mod tests {
             .add_argument("subject".to_string(), "Test Subject")
             .unwrap();
 
-        let service = EmailNotificationService {
-            smtp_server: "smtp.example.com".to_string(),
-        };
+        let service = EmailNotificationService::new("smtp.example.com");
 
         let result = task.execute(&service).await;
         assert!(result.is_ok());
         assert_eq!(task.status(), &ActionStatus::Completed);
+    }
+
+    #[tokio::test]
+    async fn test_data_backup_service_writes_artifact() {
+        let dir = std::env::temp_dir().join(format!("paladin_backup_{}", Uuid::new_v4()));
+        let service = DataBackupService::new(dir.to_string_lossy().to_string());
+
+        let action = Action::new(
+            "backup".to_string(),
+            "nightly backup".to_string(),
+            "task_manager".to_string(),
+            "DataBackupService".to_string(),
+        );
+        let result = service.execute(&action).await.unwrap().unwrap();
+
+        let path = result["backup_path"].as_str().unwrap();
+        assert!(
+            std::path::Path::new(path).exists(),
+            "backup file must exist"
+        );
+        assert!(result["bytes_written"].as_u64().unwrap() > 0);
+        assert_eq!(result["status"], "completed");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_data_backup_service_rejects_path_traversal() {
+        let dir = std::env::temp_dir().join(format!("paladin_backup_{}", Uuid::new_v4()));
+        let service = DataBackupService::new(dir.to_string_lossy().to_string());
+
+        let mut action = Action::new(
+            "backup".to_string(),
+            "malicious backup".to_string(),
+            "task_manager".to_string(),
+            "DataBackupService".to_string(),
+        );
+        action
+            .add_argument("backup_name".to_string(), "../escape.json")
+            .unwrap();
+
+        let result = service.execute(&action).await;
+        assert!(matches!(result, Err(TaskError::ExecutionFailed(_))));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_content_indexing_service_builds_index() {
+        let service = ContentIndexingService::new(format!("idx_{}", Uuid::new_v4()));
+        let mut action = Action::new(
+            "index".to_string(),
+            "index this".to_string(),
+            "task_manager".to_string(),
+            "ContentIndexingService".to_string(),
+        );
+        action
+            .add_argument("content".to_string(), "alpha beta beta gamma")
+            .unwrap();
+
+        let result = service.execute(&action).await.unwrap().unwrap();
+        let path = result["index_path"].as_str().unwrap();
+        assert!(std::path::Path::new(path).exists());
+        assert_eq!(result["terms_indexed"].as_u64().unwrap(), 3);
+        assert_eq!(result["status"], "indexed");
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[tokio::test]
+    async fn test_email_service_delivers_to_sink() {
+        let sink = InMemoryEmailSink::new();
+        let service = EmailNotificationService::with_sink("smtp.test", sink.clone_sink());
+
+        let mut action = Action::new(
+            "email".to_string(),
+            "hello body".to_string(),
+            "task_manager".to_string(),
+            "EmailNotificationService".to_string(),
+        );
+        action
+            .add_argument("to_email".to_string(), "a@b.com")
+            .unwrap();
+        action.add_argument("subject".to_string(), "Hi").unwrap();
+
+        let result = service.execute(&action).await.unwrap().unwrap();
+        assert_eq!(result["status"], "sent");
+        let delivered = sink.delivered();
+        assert_eq!(delivered.len(), 1);
+        assert_eq!(delivered[0].to, "a@b.com");
+        assert_eq!(delivered[0].subject, "Hi");
+    }
+
+    #[tokio::test]
+    async fn test_email_service_propagates_sink_failure() {
+        #[derive(Debug, Clone)]
+        struct FailingSink;
+        #[async_trait]
+        impl EmailSink for FailingSink {
+            async fn deliver(&self, _message: &EmailMessage) -> Result<(), TaskError> {
+                Err(TaskError::ServiceUnavailable("transport down".to_string()))
+            }
+            fn clone_sink(&self) -> Arc<dyn EmailSink> {
+                Arc::new(self.clone())
+            }
+        }
+
+        let service = EmailNotificationService::with_sink("smtp.test", Arc::new(FailingSink));
+        let action = Action::new(
+            "email".to_string(),
+            "body".to_string(),
+            "task_manager".to_string(),
+            "EmailNotificationService".to_string(),
+        );
+
+        let result = service.execute(&action).await;
+        assert!(matches!(result, Err(TaskError::ServiceUnavailable(_))));
     }
 }

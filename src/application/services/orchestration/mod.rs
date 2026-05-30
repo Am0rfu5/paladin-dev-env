@@ -720,23 +720,22 @@ impl Orchestrator {
     async fn initialize_default_services(&self) -> Result<(), OrchestratorError> {
         // Register default task services
         self.register_task_service(Box::new(
-            crate::core::platform::container::task::DataBackupService {
-                backup_path: "/var/backups".to_string(),
-            },
+            crate::core::platform::container::task::DataBackupService::new(
+                std::env::temp_dir()
+                    .join("paladin_backups")
+                    .to_string_lossy()
+                    .to_string(),
+            ),
         ))
         .await?;
 
         self.register_task_service(Box::new(
-            crate::core::platform::container::task::ContentIndexingService {
-                index_name: "main_index".to_string(),
-            },
+            crate::core::platform::container::task::ContentIndexingService::new("main_index"),
         ))
         .await?;
 
         self.register_task_service(Box::new(
-            crate::core::platform::container::task::EmailNotificationService {
-                smtp_server: "localhost:587".to_string(),
-            },
+            crate::core::platform::container::task::EmailNotificationService::new("localhost:587"),
         ))
         .await?;
 

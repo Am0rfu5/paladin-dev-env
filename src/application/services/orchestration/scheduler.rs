@@ -64,17 +64,16 @@ impl SchedulerOrchestrator {
 
     /// Register default services.
     fn register_default_services(&mut self) {
-        self.register_service(Box::new(DataBackupService {
-            backup_path: "/var/backups".to_string(),
-        }));
+        self.register_service(Box::new(DataBackupService::new(
+            std::env::temp_dir()
+                .join("paladin_backups")
+                .to_string_lossy()
+                .to_string(),
+        )));
 
-        self.register_service(Box::new(ContentIndexingService {
-            index_name: "main_index".to_string(),
-        }));
+        self.register_service(Box::new(ContentIndexingService::new("main_index")));
 
-        self.register_service(Box::new(EmailNotificationService {
-            smtp_server: "localhost:587".to_string(),
-        }));
+        self.register_service(Box::new(EmailNotificationService::new("localhost:587")));
     }
 
     /// Add a job to the scheduler.
