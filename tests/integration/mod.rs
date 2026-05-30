@@ -39,6 +39,7 @@ pub mod openai_content_analysis_integration_test;
 pub mod openai_embedding_tests;
 #[cfg(feature = "llm-openai")]
 pub mod openai_provider_test;
+pub mod orchestrator_workflow_lifecycle_test;
 pub mod paladin_garrison_integration_test;
 pub mod paladin_integration_test;
 #[cfg(feature = "qdrant")]

@@ -58,7 +58,7 @@
   - [x] 3.5 Unit tests for each service: success side effect + forced-failure `TaskError`
   - [x] 3.6 Fix any existing tests/examples that relied on the old simulated behavior
 
-- [ ] 4.0 Workflow state persistence (PRD Task 1.3)
+- [x] 4.0 Workflow state persistence (PRD Task 1.3)
   - [x] 4.1 Define `WorkflowRepositoryPort` in `paladin-ports/src/output/workflow_repository_port.rs` (`#[async_trait]`, `Send + Sync`): save/update state, load by id, list incomplete
   - [x] 4.2 Register the port module in `paladin-ports/src/output/mod.rs`
   - [x] 4.3 Implement `SqliteWorkflowRepository` in `paladin-storage` with `sqlx` + bound parameters + migration
@@ -68,11 +68,11 @@
   - [x] 4.7 On `start()`, load incomplete workflows and resume from last completed job/stage without re-running completed jobs
   - [x] 4.8 Unit/integration test: crash-recovery resumes correctly to `Completed`
 
-- [ ] 5.0 Full-lifecycle integration test (PRD Task 1.4)
-  - [ ] 5.1 Add mock `TaskService` impls with observable, synchronized side effects (ordered record)
-  - [ ] 5.2 Create a 3-sequential-job workflow; start orchestrator; execute it
-  - [ ] 5.3 Assert ordered execution, `Completed` terminal state, retrievable per-job results; ensure determinism
-  - [ ] 5.4 Wire the test into the integration harness so it runs under `cargo test`
+- [x] 5.0 Full-lifecycle integration test (PRD Task 1.4)
+  - [x] 5.1 Add mock `TaskService` impls with observable, synchronized side effects (ordered record)
+  - [x] 5.2 Create a 3-sequential-job workflow; start orchestrator; execute it
+  - [x] 5.3 Assert ordered execution, `Completed` terminal state, retrievable per-job results; ensure determinism
+  - [x] 5.4 Wire the test into the integration harness so it runs under `cargo test`
 
 - [ ] 6.0 Quality gate & finalize
   - [ ] 6.1 `cargo build --workspace`
