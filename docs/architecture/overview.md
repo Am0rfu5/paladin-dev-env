@@ -213,7 +213,7 @@ src/application/
 │       ├── llm_port.rs            # LLM providers
 │       ├── file_storage_port.rs   # File storage
 │       └── notification_port.rs   # Notifications
-├── use_cases/
+├── services/
 │   ├── paladin/
 │   │   ├── paladin_builder.rs
 │   │   └── paladin_execution_service.rs

@@ -44,7 +44,7 @@ Paladin's autonomous agent features enable AI agents to intelligently handle com
 ### Quick Start
 
 ```rust
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::autonomous_config::*;
 use std::sync::Arc;
@@ -764,7 +764,7 @@ paladin agent run \
 ### Builder API
 
 ```rust
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::autonomous_config::*;
 
@@ -1312,7 +1312,7 @@ let paladin = PaladinBuilder::new(llm_port)
 #### Enable Logging
 
 ```bash
-export RUST_LOG=paladin=debug,paladin::application::use_cases::paladin=trace
+export RUST_LOG=paladin=debug,paladin::application::services::paladin=trace
 
 # Run with verbose output
 paladin agent run --config agent.yaml --input "Task" --verbose
@@ -1572,7 +1572,7 @@ impl AdaptiveAgent {
 #### Formation with Autonomous Agents
 
 ```rust
-use paladin::application::use_cases::battalion::formation_service::FormationService;
+use paladin::application::services::battalion::formation_service::FormationService;
 
 // Create autonomous agents
 let agent1 = PaladinBuilder::new(llm_port.clone())
@@ -1607,7 +1607,7 @@ let result = formation.execute(
 #### Phalanx with Handoffs
 
 ```rust
-use paladin::application::use_cases::battalion::phalanx_service::PhalanxService;
+use paladin::application::services::battalion::phalanx_service::PhalanxService;
 
 // Create agents with handoff capabilities
 let agents: Vec<Paladin> = vec![

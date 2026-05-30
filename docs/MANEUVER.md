@@ -59,7 +59,7 @@ tokio = { version = "1.0", features = ["full"] }
 ### Basic Example
 
 ```rust
-use paladin::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
+use paladin::application::services::battalion::maneuver_service::ManeuverExecutionService;
 use paladin::core::platform::container::battalion::maneuver::Maneuver;
 use paladin::core::platform::container::battalion::parser::FlowParser;
 use std::collections::HashMap;
@@ -529,7 +529,7 @@ flowchart LR
 ### Programmatic Visualization
 
 ```rust
-use paladin::application::use_cases::battalion::flow_visualizer::{
+use paladin::application::services::battalion::flow_visualizer::{
     FlowVisualizer, VisualizationFormat
 };
 
@@ -1129,7 +1129,7 @@ let config = ManeuverConfig::new()
 Commander automatically detects Maneuver patterns:
 
 ```rust
-use paladin::application::use_cases::battalion::commander::Commander;
+use paladin::application::services::battalion::commander::Commander;
 
 let commander = Commander::new(paladin_port)
     .with_strategy(BattalionStrategy::Auto)

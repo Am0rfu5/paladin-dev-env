@@ -545,14 +545,14 @@ Core business domain types that represent the framework's entities. Located in `
 
 ### Builder Types
 
-Fluent builder patterns for complex object construction. Located in `src/application/use_cases/`.
+Fluent builder patterns for complex object construction. Located in `src/application/services/`.
 
 | Type | Fully Qualified Path | Tier | Description | Documentation |
 |------|---------------------|------|-------------|---------------|
-| `PaladinBuilder` | `paladin::application::use_cases::paladin::PaladinBuilder` | 🟢 Stable | Fluent builder for Paladin agents | [Docs](https://docs.rs/paladin/latest/paladin/application/use_cases/paladin/struct.PaladinBuilder.html) |
-| `CommanderBuilder` | `paladin::application::use_cases::commander::CommanderBuilder` | 🟢 Stable | Fluent builder for Commander routers | [Docs](https://docs.rs/paladin/latest/paladin/application/use_cases/commander/struct.CommanderBuilder.html) |
-| `CouncilBuilder` | `paladin::application::use_cases::council::CouncilBuilder` | 🟢 Stable | Fluent builder for Council discussions | [Docs](https://docs.rs/paladin/latest/paladin/application/use_cases/council/struct.CouncilBuilder.html) |
-| `GroveBuilder` | `paladin::application::use_cases::grove::GroveBuilder` | 🟢 Stable | Fluent builder for Grove routing | [Docs](https://docs.rs/paladin/latest/paladin/application/use_cases/grove/struct.GroveBuilder.html) |
+| `PaladinBuilder` | `paladin::application::services::paladin::PaladinBuilder` | 🟢 Stable | Fluent builder for Paladin agents | [Docs](https://docs.rs/paladin/latest/paladin/application/services/paladin/struct.PaladinBuilder.html) |
+| `CommanderBuilder` | `paladin::application::services::commander::CommanderBuilder` | 🟢 Stable | Fluent builder for Commander routers | [Docs](https://docs.rs/paladin/latest/paladin/application/services/commander/struct.CommanderBuilder.html) |
+| `CouncilBuilder` | `paladin::application::services::council::CouncilBuilder` | 🟢 Stable | Fluent builder for Council discussions | [Docs](https://docs.rs/paladin/latest/paladin/application/services/council/struct.CouncilBuilder.html) |
+| `GroveBuilder` | `paladin::application::services::grove::GroveBuilder` | 🟢 Stable | Fluent builder for Grove routing | [Docs](https://docs.rs/paladin/latest/paladin/application/services/grove/struct.GroveBuilder.html) |
 
 ### Configuration Types
 
@@ -571,7 +571,7 @@ All error enums follow `thiserror` patterns for consistent error handling. Locat
 
 | Type | Fully Qualified Path | Tier | Description | Documentation |
 |------|---------------------|------|-------------|---------------|
-| `PaladinError` | `paladin::application::use_cases::paladin::error::PaladinError` | 🟢 Stable | Paladin execution errors | [Docs](https://docs.rs/paladin/latest/paladin/application/use_cases/paladin/error/enum.PaladinError.html) |
+| `PaladinError` | `paladin::application::services::paladin::error::PaladinError` | 🟢 Stable | Paladin execution errors | [Docs](https://docs.rs/paladin/latest/paladin/application/services/paladin/error/enum.PaladinError.html) |
 | `BattalionError` | `paladin::core::platform::container::battalion::BattalionError` | 🟢 Stable | Battalion orchestration errors | [Docs](https://docs.rs/paladin/latest/paladin/core/platform/container/battalion/enum.BattalionError.html) |
 | `GarrisonError` | `paladin_ports::output::garrison_port::GarrisonError` | 🟢 Stable | Memory storage errors | [Docs](https://docs.rs/paladin/latest/paladin/application/ports/output/garrison_port/enum.GarrisonError.html) |
 | `ArsenalError` | `paladin::core::platform::container::arsenal::ArsenalError` | 🟢 Stable | Tool execution errors | [Docs](https://docs.rs/paladin/latest/paladin/core/platform/container/arsenal/enum.ArsenalError.html) |
@@ -599,7 +599,7 @@ Generic framework primitives and patterns. Located in `src/core/base/`.
 Fault-tolerance primitives for hardening agent execution. Located in `src/infrastructure/resilience/`.
 
 > **Canonical path change (Milestone 6, Epic 4):** `CircuitBreaker` and `CircuitState` were relocated from
-> `paladin::application::use_cases::paladin::circuit_breaker` to `paladin::infrastructure::resilience::circuit_breaker`.
+> `paladin::application::services::paladin::circuit_breaker` to `paladin::infrastructure::resilience::circuit_breaker`.
 > The old path is retired and no longer resolves.
 
 | Type | Fully Qualified Path | Tier | Description | Documentation |

@@ -237,7 +237,7 @@ let exact_results = garrison.search("\"memory safety\"", 5).await?;
 ### Pattern 4: Integrating with PaladinExecutionService
 
 ```rust
-use paladin::application::use_cases::paladin::{
+use paladin::application::services::paladin::{
     PaladinBuilder, PaladinExecutionService, CircuitBreaker
 };
 use std::sync::Arc;

@@ -70,7 +70,7 @@ tokio = { version = "1", features = ["full"] }
 ### Quick Example
 
 ```rust
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::infrastructure::adapters::llm::OpenAiAdapter;
 use paladin::infrastructure::config::OpenAiConfig;
 use std::sync::Arc;
@@ -250,7 +250,7 @@ if capabilities.supports_vision {
 ### Building Vision-Enabled Paladins
 
 ```rust
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 
 let paladin = PaladinBuilder::new(llm_port)
     .name("VisionPaladin")
@@ -316,7 +316,7 @@ let paladin = PaladinBuilder::new(llm_port)
 
 ```rust
 use paladin::infrastructure::adapters::sanctum::QdrantSanctum;
-use paladin::application::use_cases::sanctum::rag_retrieval_service::RagRetrievalService;
+use paladin::application::services::sanctum::rag_retrieval_service::RagRetrievalService;
 
 let sanctum = Arc::new(QdrantSanctum::new(config)?);
 let rag_service = Arc::new(RagRetrievalService::new(sanctum));
@@ -676,7 +676,7 @@ All Battalion patterns work seamlessly with vision-enabled Paladins. See [BATTAL
 ### Formation: Sequential Vision Processing
 
 ```rust
-use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
+use paladin::application::services::battalion::formation_service::FormationExecutionService;
 use paladin::core::platform::container::battalion::formation::Formation;
 
 let detector = create_vision_paladin("object_detector");
@@ -695,7 +695,7 @@ let result = service.execute(&formation, "Analyze image.jpg").await?;
 ### Phalanx: Parallel Vision Processing
 
 ```rust
-use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
+use paladin::application::services::battalion::phalanx_service::PhalanxExecutionService;
 use paladin::core::platform::container::battalion::phalanx::Phalanx;
 
 let paladins = vec![
@@ -767,7 +767,7 @@ match document_result {
 ### PaladinError Integration
 
 ```rust
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::paladin::error::PaladinError;
 
 match paladin.execute_with_vision(task, images).await {
     Err(PaladinError::ConfigurationError(msg)) => {

@@ -74,8 +74,8 @@ herald:
 ### 2. Use Herald with Paladin
 
 ```rust
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
-use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::config::Settings;
 use std::sync::Arc;
 
@@ -285,7 +285,7 @@ Invalid configurations will return a `HeraldError::ConfigurationError`.
 ### Paladin Execution
 
 ```rust
-use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 
 // Create service with Herald
 let service = PaladinExecutionService::new(llm_port, cb, None, None)
@@ -305,7 +305,7 @@ match service.format_result(&result, &paladin)? {
 
 **Formation (Sequential):**
 ```rust
-use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
+use paladin::application::services::battalion::formation_service::FormationExecutionService;
 
 let service = FormationExecutionService::new(llm_port, cb, None, None)
     .with_herald(herald);
@@ -320,7 +320,7 @@ if let Some(formatted) = service.format_result(&result)? {
 
 **Phalanx (Concurrent):**
 ```rust
-use paladin::application::use_cases::battalion::phalanx_service::PhalanxExecutionService;
+use paladin::application::services::battalion::phalanx_service::PhalanxExecutionService;
 
 let service = PhalanxExecutionService::new(
     llm_port,
@@ -570,7 +570,7 @@ fn xml_escape(s: &str) -> String {
 ### Register Custom Herald
 
 ```rust
-use paladin::application::use_cases::herald::herald_registry::HeraldRegistry;
+use paladin::application::services::herald::herald_registry::HeraldRegistry;
 
 // Create registry
 let mut registry = HeraldRegistry::default();

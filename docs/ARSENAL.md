@@ -42,7 +42,7 @@ The **Arsenal Tool System** enables Paladins (AI agents) to interact with extern
 ### Basic Usage
 
 ```rust
-use paladin::application::use_cases::paladin::PaladinBuilder;
+use paladin::application::services::paladin::PaladinBuilder;
 use paladin::paladin_ports::output::llm_port::LlmPort;
 use paladin::infrastructure::adapters::llm::MockLlmAdapter;
 use std::sync::Arc;
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### With STDIO MCP Server
 
 ```rust
-use paladin::application::use_cases::arsenal::ArsenalRegistryService;
+use paladin::application::services::arsenal::ArsenalRegistryService;
 use paladin::paladin_ports::output::arsenal_port::ArsenalRegistry;
 use paladin::infrastructure::adapters::arsenal::Armament;
 use std::sync::Arc;
@@ -751,7 +751,7 @@ cargo doc --no-deps --open
 Key modules:
 - `paladin::core::platform::container::arsenal` - Domain types
 - `paladin::paladin_ports::output::arsenal_port` - Port traits
-- `paladin::application::use_cases::arsenal` - Use case services
+- `paladin::application::services::arsenal` - Use case services
 - `paladin::infrastructure::adapters::arsenal` - MCP adapters
 
 ## Contributing

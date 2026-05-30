@@ -262,7 +262,7 @@ full
 ```rust
 // Always available (core framework)
 use paladin::core::platform::container::paladin::Paladin;
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 
 // Conditionally compiled
 #[cfg(feature = "llm-openai")]

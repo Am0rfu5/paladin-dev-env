@@ -119,7 +119,7 @@ use crate::paladin_ports::output::llm_port::LlmPort;  // ✅
 use crate::core::platform::container::paladin::Paladin;    // ✅
 
 // ✅ ALLOWED: Application imports core
-// src/application/use_cases/paladin/paladin_execution_service.rs
+// src/application/services/paladin/paladin_execution_service.rs
 use crate::core::platform::container::paladin::Paladin;    // ✅
 use crate::paladin_ports::output::llm_port::LlmPort;  // ✅
 
@@ -132,7 +132,7 @@ use crate::paladin_ports::output::llm_port::LlmPort;  // ❌ FORBIDDEN!
 use crate::infrastructure::adapters::llm::OpenAiAdapter;   // ❌ FORBIDDEN!
 
 // ❌ FORBIDDEN: Application imports infrastructure
-// src/application/use_cases/paladin/paladin_execution_service.rs
+// src/application/services/paladin/paladin_execution_service.rs
 use crate::infrastructure::adapters::llm::OpenAiAdapter;   // ❌ FORBIDDEN!
 ```
 
@@ -464,7 +464,7 @@ application/
 │       ├── arsenal_port.rs (depends on: core)
 │       └── citadel_port.rs (depends on: core)
 │
-└── use_cases/
+└── services/
     ├── paladin/            (depends on: core, ports)
     │   ├── paladin_builder.rs
     │   └── paladin_execution_service.rs

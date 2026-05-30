@@ -58,7 +58,7 @@ tokio = { version = "1.0", features = ["full"] }
 ### Basic Formation Example
 
 ```rust
-use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
+use paladin::application::services::battalion::formation_service::FormationExecutionService;
 use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use std::sync::Arc;
@@ -550,7 +550,7 @@ Input → analyzer → ┌─ summarizer ─┐
 
 **Example**:
 ```rust
-use paladin::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
+use paladin::application::services::battalion::maneuver_service::ManeuverExecutionService;
 use paladin::core::platform::container::battalion::maneuver::{Maneuver, ManeuverConfig};
 use paladin::core::platform::container::battalion::parser::FlowParser;
 
@@ -616,7 +616,7 @@ The Commander is a high-level abstraction that simplifies Battalion usage by:
 ### Quick Start with Commander
 
 ```rust
-use paladin::application::use_cases::battalion::commander::CommanderBuilder;
+use paladin::application::services::battalion::commander::CommanderBuilder;
 use paladin::core::platform::container::battalion::BattalionStrategy;
 use std::sync::Arc;
 
@@ -1288,7 +1288,7 @@ pub enum BattalionStatus { Idle, Running, Paused, Completed, Failed, Cancelled }
 pub struct BattalionResult { /* ... */ }
 pub enum BattalionError { /* ... */ }
 
-// Application layer (src/application/use_cases/battalion/)
+// Application layer (src/application/services/battalion/)
 pub struct FormationExecutionService { /* ... */ }
 pub struct PhalanxExecutionService { /* ... */ }
 pub struct CampaignExecutionService { /* ... */ }
@@ -1421,7 +1421,7 @@ cargo run --example chain_of_command_delegation
 When adding new Battalion patterns:
 
 1. **Domain Layer**: Define entity in `src/core/platform/container/battalion/`
-2. **Application Layer**: Create service in `src/application/use_cases/battalion/`
+2. **Application Layer**: Create service in `src/application/services/battalion/`
 3. **Tests**: Write unit tests (TDD), integration tests, examples
 4. **Documentation**: Update this file, add rustdoc
 5. **Performance**: Add load test, verify <1s overhead

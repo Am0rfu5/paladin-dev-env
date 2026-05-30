@@ -61,7 +61,7 @@ The Commander is a high-level abstraction that simplifies Battalion usage by pro
 ### Auto Mode (Recommended for Dynamic Workflows)
 
 ```rust
-use paladin::application::use_cases::battalion::commander::CommanderBuilder;
+use paladin::application::services::battalion::commander::CommanderBuilder;
 use paladin::core::platform::container::battalion::BattalionStrategy;
 use std::sync::Arc;
 
