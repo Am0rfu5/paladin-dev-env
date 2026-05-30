@@ -21,7 +21,8 @@ pub use listener::{EventListener, ListenerConfig, ListenerService, ListenerStats
 pub use scheduler::{Schedule, Scheduler, SchedulerStats};
 pub use types::{
     ContentAnalysisType, ContentProcessingResult, ContentProcessor, DefaultContentProcessor,
-    ListenerError, OrchestratorError, OrchestratorStats, SchedulerError,
+    JobExecutionOutcome, ListenerError, OrchestratorError, OrchestratorStats, SchedulerError,
+    WorkflowExecutionResult,
 };
 
 use crate::application::services::queue_orchestrator::QueueService;
@@ -42,6 +43,7 @@ use scheduler::SchedulerOrchestrator;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
+use tokio::task::JoinSet;
 use uuid::Uuid;
 
 /// Main Orchestrator service.
@@ -51,6 +53,7 @@ pub struct Orchestrator {
     listener_service: Arc<ListenerOrchestrator>,
     task_services: Arc<RwLock<HashMap<String, Box<dyn TaskService>>>>,
     workflows: Arc<RwLock<HashMap<Uuid, Workflow>>>,
+    workflow_results: Arc<RwLock<HashMap<Uuid, WorkflowExecutionResult>>>,
     active_sessions: Arc<RwLock<HashMap<Uuid, OrchestrationContext>>>,
     content_processors: Arc<RwLock<HashMap<String, Box<dyn ContentProcessor>>>>,
 }
@@ -64,6 +67,7 @@ impl Orchestrator {
             listener_service: Arc::new(ListenerOrchestrator::new()),
             task_services: Arc::new(RwLock::new(HashMap::new())),
             workflows: Arc::new(RwLock::new(HashMap::new())),
+            workflow_results: Arc::new(RwLock::new(HashMap::new())),
             active_sessions: Arc::new(RwLock::new(HashMap::new())),
             content_processors: Arc::new(RwLock::new(HashMap::new())),
         }
@@ -292,36 +296,19 @@ impl Orchestrator {
             }
         }
 
-        // Schedule or queue jobs based on execution order
+        // Validate the configured execution order. Jobs are executed on demand
+        // via `execute_workflow` (Sequential/Parallel/Custom) or via event
+        // triggers (EventDriven); no scheduling side effects happen at creation.
         match &workflow.execution_order {
-            WorkflowExecutionOrder::Sequential => {
-                // For testing, just store the workflow without complex scheduling
-                println!(
-                    "Sequential execution order configured for workflow {}",
-                    workflow_id
-                );
-            }
-            WorkflowExecutionOrder::Parallel => {
-                // For testing, just store the workflow without complex scheduling
-                println!(
-                    "Parallel execution order configured for workflow {}",
-                    workflow_id
-                );
-            }
-            WorkflowExecutionOrder::EventDriven => {
-                // Jobs are triggered by events through listeners
-                println!(
-                    "Event-driven execution order configured for workflow {}",
-                    workflow_id
-                );
-            }
+            WorkflowExecutionOrder::Sequential
+            | WorkflowExecutionOrder::Parallel
+            | WorkflowExecutionOrder::EventDriven => {}
             WorkflowExecutionOrder::Custom(stages) => {
-                // Complex multi-stage execution
-                println!(
-                    "Custom execution order with {} stages configured for workflow {}",
-                    stages.len(),
-                    workflow_id
-                );
+                if stages.is_empty() {
+                    return Err(OrchestratorError::ConfigurationError(
+                        "Custom workflow execution order requires at least one stage".to_string(),
+                    ));
+                }
             }
         }
 
@@ -329,13 +316,206 @@ impl Orchestrator {
         workflow.updated_at = Utc::now();
         let mut workflows = self.workflows.write().await;
         workflows.insert(workflow_id, workflow);
+        drop(workflows);
 
-        println!(
-            "Workflow '{}' created with ID: {}",
-            workflows.get(&workflow_id).unwrap().name,
-            workflow_id
-        );
         Ok(workflow_id)
+    }
+
+    /// Execute a previously-created workflow end-to-end.
+    ///
+    /// Runs the workflow's jobs according to its
+    /// [`WorkflowExecutionOrder`](crate::core::platform::container::workflow::WorkflowExecutionOrder):
+    ///
+    /// - `Sequential`: jobs run in order; output of job `N` is threaded into the
+    ///   context consumed by job `N+1`. Execution stops at the first failure.
+    /// - `Parallel`: all jobs run concurrently; every result is collected (no
+    ///   sibling cancellation on failure).
+    /// - `Custom(stages)`: stages run in order with a barrier between them; jobs
+    ///   within a stage run concurrently. Execution stops after a failed stage.
+    /// - `EventDriven`: jobs are driven by event triggers, so this call performs
+    ///   no synchronous job execution and returns a completed (empty) result.
+    ///
+    /// Returns the aggregated [`WorkflowExecutionResult`], which is also retained
+    /// internally and retrievable via [`Orchestrator::workflow_execution_result`].
+    pub async fn execute_workflow(
+        &self,
+        workflow_id: Uuid,
+    ) -> Result<WorkflowExecutionResult, OrchestratorError> {
+        let workflow = {
+            let workflows = self.workflows.read().await;
+            workflows
+                .get(&workflow_id)
+                .cloned()
+                .ok_or(OrchestratorError::WorkflowNotFound(workflow_id))?
+        };
+
+        let mut result = WorkflowExecutionResult::new(workflow_id);
+        result.start();
+        self.store_workflow_result(result.clone()).await;
+
+        let services = self.snapshot_services().await;
+
+        match &workflow.execution_order {
+            WorkflowExecutionOrder::Sequential => {
+                let mut context = workflow.context.clone();
+                for job in &workflow.jobs {
+                    let outcome = Self::run_single_job(job.clone(), &services).await;
+                    let succeeded = outcome.succeeded();
+                    // Thread this job's output into the context for the next job.
+                    if let Some(output) = &outcome.output {
+                        let _ = context
+                            .add_metadata(format!("job_{}_output", outcome.job_id), output.clone());
+                    }
+                    result.record_outcome(outcome);
+                    self.store_workflow_result(result.clone()).await;
+                    if !succeeded {
+                        result.mark_failed();
+                        self.store_workflow_result(result.clone()).await;
+                        return Ok(result);
+                    }
+                }
+                result.mark_completed();
+            }
+            WorkflowExecutionOrder::Parallel => {
+                let outcomes = Self::run_jobs_concurrently(&workflow.jobs, &services).await;
+                Self::record_ordered(&mut result, outcomes, &workflow.jobs);
+                if result.job_outcomes.iter().all(|o| o.succeeded()) {
+                    result.mark_completed();
+                } else {
+                    result.mark_failed();
+                }
+            }
+            WorkflowExecutionOrder::Custom(stages) => {
+                let mut workflow_failed = false;
+                for stage in stages {
+                    let stage_jobs: Vec<Job> = stage
+                        .job_ids
+                        .iter()
+                        .filter_map(|id| workflow.jobs.iter().find(|j| j.id() == *id).cloned())
+                        .collect();
+
+                    let outcomes = Self::run_jobs_concurrently(&stage_jobs, &services).await;
+                    let stage_failed = outcomes.iter().any(|o| !o.succeeded());
+                    Self::record_ordered(&mut result, outcomes, &stage_jobs);
+                    self.store_workflow_result(result.clone()).await;
+
+                    if stage_failed {
+                        workflow_failed = true;
+                        break;
+                    }
+                }
+                if workflow_failed {
+                    result.mark_failed();
+                } else {
+                    result.mark_completed();
+                }
+            }
+            WorkflowExecutionOrder::EventDriven => {
+                // Jobs are executed via event triggers, not synchronously here.
+                result.mark_completed();
+            }
+        }
+
+        self.store_workflow_result(result.clone()).await;
+        Ok(result)
+    }
+
+    /// Retrieve the most recent execution result for a workflow, if any.
+    pub async fn workflow_execution_result(
+        &self,
+        workflow_id: Uuid,
+    ) -> Option<WorkflowExecutionResult> {
+        let results = self.workflow_results.read().await;
+        results.get(&workflow_id).cloned()
+    }
+
+    /// Snapshot the registered task services into an owned map.
+    async fn snapshot_services(&self) -> HashMap<String, Box<dyn TaskService>> {
+        let services_guard = self.task_services.read().await;
+        services_guard
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone_service()))
+            .collect()
+    }
+
+    /// Store or overwrite the execution result for a workflow.
+    async fn store_workflow_result(&self, result: WorkflowExecutionResult) {
+        let mut results = self.workflow_results.write().await;
+        results.insert(result.workflow_id, result);
+    }
+
+    /// Execute a single job against the provided services and capture its outcome.
+    async fn run_single_job(
+        mut job: Job,
+        services: &HashMap<String, Box<dyn TaskService>>,
+    ) -> JobExecutionOutcome {
+        let job_id = job.id();
+        let job_name = job.name().to_string();
+        match job.execute(services).await {
+            Ok(_) => {
+                let stats = job.job_stats();
+                let output = serde_json::json!({
+                    "total_tasks": stats.total_tasks,
+                    "completed_tasks": stats.completed_tasks,
+                    "failed_tasks": stats.failed_tasks,
+                    "success_rate": stats.success_rate,
+                });
+                JobExecutionOutcome::success(job_id, job_name, Some(output))
+            }
+            Err(e) => JobExecutionOutcome::failure(job_id, job_name, e.to_string()),
+        }
+    }
+
+    /// Run a set of jobs concurrently, returning their outcomes (unordered).
+    async fn run_jobs_concurrently(
+        jobs: &[Job],
+        services: &HashMap<String, Box<dyn TaskService>>,
+    ) -> Vec<JobExecutionOutcome> {
+        let mut set: JoinSet<JobExecutionOutcome> = JoinSet::new();
+        for job in jobs {
+            let job = job.clone();
+            let job_services = Self::clone_service_map(services);
+            set.spawn(async move { Self::run_single_job(job, &job_services).await });
+        }
+
+        let mut outcomes = Vec::with_capacity(jobs.len());
+        while let Some(joined) = set.join_next().await {
+            match joined {
+                Ok(outcome) => outcomes.push(outcome),
+                Err(join_err) => outcomes.push(JobExecutionOutcome::failure(
+                    Uuid::nil(),
+                    "<join-error>".to_string(),
+                    join_err.to_string(),
+                )),
+            }
+        }
+        outcomes
+    }
+
+    /// Record `outcomes` onto `result`, ordered to match the order of `jobs`.
+    fn record_ordered(
+        result: &mut WorkflowExecutionResult,
+        mut outcomes: Vec<JobExecutionOutcome>,
+        jobs: &[Job],
+    ) {
+        outcomes.sort_by_key(|o| {
+            jobs.iter()
+                .position(|j| j.id() == o.job_id)
+                .unwrap_or(usize::MAX)
+        });
+        for outcome in outcomes {
+            result.record_outcome(outcome);
+        }
+    }
+
+    /// Deep-clone a service map so each concurrent job gets its own instances.
+    fn clone_service_map(
+        services: &HashMap<String, Box<dyn TaskService>>,
+    ) -> HashMap<String, Box<dyn TaskService>> {
+        services
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone_service()))
+            .collect()
     }
 
     /// Process an event through the listener system.
@@ -1152,5 +1332,189 @@ mod tests {
         assert!(result.result_data.is_some());
         assert!(result.error.is_none());
         assert!(result.metadata.is_empty());
+    }
+
+    // --- Workflow execution loop tests (Milestone 9, Epic 1, Task 1.0) ---
+
+    /// Build a single-task job bound to `service_name`.
+    fn job_for_service(job_name: &str, service_name: &str) -> Job {
+        let task = Task::new(
+            format!("{job_name} task"),
+            "workflow execution test task".to_string(),
+            service_name.to_string(),
+        );
+        Job::new(
+            job_name.to_string(),
+            "workflow test job".to_string(),
+            vec![task],
+        )
+    }
+
+    /// Build a workflow from jobs and an execution order.
+    fn workflow_with(jobs: Vec<Job>, order: WorkflowExecutionOrder) -> Workflow {
+        let context = OrchestrationContext::new("test_user".to_string(), "test".to_string());
+        Workflow {
+            id: Uuid::new_v4(),
+            name: "Execution Test Workflow".to_string(),
+            description: "Workflow execution loop test".to_string(),
+            jobs,
+            listeners: Vec::new(),
+            queues: Vec::new(),
+            execution_order: order,
+            context,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_execute_workflow_not_found() {
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        let missing = Uuid::new_v4();
+        let result = orchestrator.execute_workflow(missing).await;
+
+        match result {
+            Err(OrchestratorError::WorkflowNotFound(id)) => assert_eq!(id, missing),
+            other => panic!("expected WorkflowNotFound, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_execute_sequential_workflow_orders_and_threads_output() {
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        let jobs = vec![
+            job_for_service("job-1", "DataBackupService"),
+            job_for_service("job-2", "DataBackupService"),
+            job_for_service("job-3", "DataBackupService"),
+        ];
+        let expected_order: Vec<Uuid> = jobs.iter().map(|j| j.id()).collect();
+        let workflow = workflow_with(jobs, WorkflowExecutionOrder::Sequential);
+        let workflow_id = orchestrator.create_workflow(workflow).await.unwrap();
+
+        let result = orchestrator.execute_workflow(workflow_id).await.unwrap();
+
+        assert!(result.completed());
+        assert!(!result.failed());
+        let actual_order: Vec<Uuid> = result.job_outcomes.iter().map(|o| o.job_id).collect();
+        assert_eq!(
+            actual_order, expected_order,
+            "jobs must run in workflow order"
+        );
+        for outcome in &result.job_outcomes {
+            assert!(outcome.succeeded());
+            assert!(outcome.output.is_some(), "output must be threaded forward");
+        }
+
+        // Result is retained and retrievable.
+        let stored = orchestrator
+            .workflow_execution_result(workflow_id)
+            .await
+            .unwrap();
+        assert!(stored.completed());
+    }
+
+    #[tokio::test]
+    async fn test_execute_sequential_workflow_fail_fast_stops() {
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        let jobs = vec![
+            job_for_service("ok-1", "DataBackupService"),
+            job_for_service("boom", "UnregisteredService"),
+            job_for_service("never", "DataBackupService"),
+        ];
+        let workflow = workflow_with(jobs, WorkflowExecutionOrder::Sequential);
+        let workflow_id = orchestrator.create_workflow(workflow).await.unwrap();
+
+        let result = orchestrator.execute_workflow(workflow_id).await.unwrap();
+
+        assert!(result.failed());
+        assert!(!result.completed());
+        // Stops at the failing job: third job must not have run.
+        assert_eq!(result.job_outcomes.len(), 2);
+        assert!(result.job_outcomes[0].succeeded());
+        assert!(!result.job_outcomes[1].succeeded());
+        assert!(result.job_outcomes[1].error.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_execute_parallel_workflow_aggregates_all() {
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        let jobs = vec![
+            job_for_service("ok", "DataBackupService"),
+            job_for_service("fail", "UnregisteredService"),
+        ];
+        let expected_order: Vec<Uuid> = jobs.iter().map(|j| j.id()).collect();
+        let workflow = workflow_with(jobs, WorkflowExecutionOrder::Parallel);
+        let workflow_id = orchestrator.create_workflow(workflow).await.unwrap();
+
+        let result = orchestrator.execute_workflow(workflow_id).await.unwrap();
+
+        // Every job result is collected even though one failed.
+        assert_eq!(result.job_outcomes.len(), 2);
+        assert!(result.failed());
+        assert!(!result.completed());
+        let actual_order: Vec<Uuid> = result.job_outcomes.iter().map(|o| o.job_id).collect();
+        assert_eq!(
+            actual_order, expected_order,
+            "parallel results must be deterministically ordered"
+        );
+        assert!(result.job_outcomes[0].succeeded());
+        assert!(!result.job_outcomes[1].succeeded());
+    }
+
+    #[tokio::test]
+    async fn test_execute_staged_workflow_orders_stages() {
+        use crate::core::platform::container::job::JobExecutionMode;
+        use crate::core::platform::container::workflow::WorkflowStage;
+
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        let job_a = job_for_service("stage1-a", "DataBackupService");
+        let job_b = job_for_service("stage1-b", "ContentIndexingService");
+        let job_c = job_for_service("stage2-c", "DataBackupService");
+        let (id_a, id_b, id_c) = (job_a.id(), job_b.id(), job_c.id());
+
+        let stages = vec![
+            WorkflowStage {
+                name: "stage-1".to_string(),
+                job_ids: vec![id_a, id_b],
+                dependencies: Vec::new(),
+                execution_mode: JobExecutionMode::Parallel,
+            },
+            WorkflowStage {
+                name: "stage-2".to_string(),
+                job_ids: vec![id_c],
+                dependencies: vec!["stage-1".to_string()],
+                execution_mode: JobExecutionMode::Sequential,
+            },
+        ];
+
+        let workflow = workflow_with(
+            vec![job_a, job_b, job_c],
+            WorkflowExecutionOrder::Custom(stages),
+        );
+        let workflow_id = orchestrator.create_workflow(workflow).await.unwrap();
+
+        let result = orchestrator.execute_workflow(workflow_id).await.unwrap();
+
+        assert!(result.completed());
+        assert_eq!(result.job_outcomes.len(), 3);
+        // Stage 2's job must come after both stage 1 jobs (barrier).
+        let positions: HashMap<Uuid, usize> = result
+            .job_outcomes
+            .iter()
+            .enumerate()
+            .map(|(i, o)| (o.job_id, i))
+            .collect();
+        assert!(positions[&id_c] > positions[&id_a]);
+        assert!(positions[&id_c] > positions[&id_b]);
     }
 }

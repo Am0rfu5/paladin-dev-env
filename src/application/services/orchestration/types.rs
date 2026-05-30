@@ -186,3 +186,138 @@ impl ContentProcessor for DefaultContentProcessor {
         Ok(Box::new(self.clone()))
     }
 }
+
+/// Internal, crate-private terminal state of a single job within a workflow run.
+///
+/// Not part of the public API: callers observe results via
+/// [`WorkflowExecutionResult`] and [`JobExecutionOutcome`] instead.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum JobRunState {
+    /// The job finished successfully.
+    Completed,
+    /// The job finished with a failure.
+    Failed,
+}
+
+/// Internal, crate-private lifecycle state of a whole workflow run.
+///
+/// Not part of the public API: callers observe results via
+/// [`WorkflowExecutionResult`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum WorkflowRunState {
+    /// The workflow run has been created but not started.
+    Pending,
+    /// The workflow run is in progress.
+    Running,
+    /// All jobs completed successfully.
+    Completed,
+    /// At least one job failed (and the workflow stopped per its error strategy).
+    Failed,
+}
+
+/// Result data for a single job executed as part of a workflow.
+///
+/// The job's success/failure is derived from the crate-private lifecycle state
+/// ([`JobRunState`]); no public state enum is exposed.
+#[derive(Debug, Clone)]
+pub struct JobExecutionOutcome {
+    /// Identifier of the job.
+    pub job_id: Uuid,
+    /// Human-readable job name.
+    pub job_name: String,
+    /// Summary output produced by the job, if any.
+    pub output: Option<serde_json::Value>,
+    /// Error description when the job failed.
+    pub error: Option<String>,
+    /// Internal lifecycle state (crate-private, source of truth).
+    state: JobRunState,
+}
+
+impl JobExecutionOutcome {
+    /// Build an outcome for a successful job.
+    pub(crate) fn success(
+        job_id: Uuid,
+        job_name: String,
+        output: Option<serde_json::Value>,
+    ) -> Self {
+        Self {
+            job_id,
+            job_name,
+            output,
+            error: None,
+            state: JobRunState::Completed,
+        }
+    }
+
+    /// Build an outcome for a failed job.
+    pub(crate) fn failure(job_id: Uuid, job_name: String, error: String) -> Self {
+        Self {
+            job_id,
+            job_name,
+            output: None,
+            error: Some(error),
+            state: JobRunState::Failed,
+        }
+    }
+
+    /// Whether the job completed successfully.
+    pub fn succeeded(&self) -> bool {
+        matches!(self.state, JobRunState::Completed)
+    }
+}
+
+/// Aggregated result of executing a workflow end-to-end.
+///
+/// Exposes result/reporting data only; the terminal status is derived from the
+/// crate-private lifecycle state ([`WorkflowRunState`]) so no new public state
+/// enum is added.
+#[derive(Debug, Clone)]
+pub struct WorkflowExecutionResult {
+    /// Identifier of the workflow that was executed.
+    pub workflow_id: Uuid,
+    /// Per-job outcomes, ordered by execution order.
+    pub job_outcomes: Vec<JobExecutionOutcome>,
+    /// Internal lifecycle state (crate-private, source of truth).
+    state: WorkflowRunState,
+}
+
+impl WorkflowExecutionResult {
+    /// Create a new result in the pending state for `workflow_id`.
+    pub(crate) fn new(workflow_id: Uuid) -> Self {
+        Self {
+            workflow_id,
+            job_outcomes: Vec::new(),
+            state: WorkflowRunState::Pending,
+        }
+    }
+
+    /// Transition the workflow into the running state.
+    pub(crate) fn start(&mut self) {
+        self.state = WorkflowRunState::Running;
+    }
+
+    /// Record a job outcome onto the result.
+    pub(crate) fn record_outcome(&mut self, outcome: JobExecutionOutcome) {
+        self.job_outcomes.push(outcome);
+    }
+
+    /// Transition the workflow to the completed state.
+    pub(crate) fn mark_completed(&mut self) {
+        self.state = WorkflowRunState::Completed;
+    }
+
+    /// Transition the workflow to the failed state.
+    pub(crate) fn mark_failed(&mut self) {
+        self.state = WorkflowRunState::Failed;
+    }
+
+    /// Whether the workflow reached a successful terminal state.
+    pub fn completed(&self) -> bool {
+        matches!(self.state, WorkflowRunState::Completed)
+    }
+
+    /// Whether the workflow terminated due to a job failure.
+    pub fn failed(&self) -> bool {
+        matches!(self.state, WorkflowRunState::Failed)
+    }
+}
