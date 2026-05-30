@@ -1517,4 +1517,75 @@ mod tests {
         assert!(positions[&id_c] > positions[&id_a]);
         assert!(positions[&id_c] > positions[&id_b]);
     }
+
+    #[tokio::test]
+    async fn test_unregistered_service_surfaces_typed_error() {
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        let jobs = vec![job_for_service("lonely", "NoSuchService")];
+        let workflow = workflow_with(jobs, WorkflowExecutionOrder::Sequential);
+        let workflow_id = orchestrator.create_workflow(workflow).await.unwrap();
+
+        let result = orchestrator.execute_workflow(workflow_id).await.unwrap();
+
+        assert!(result.failed());
+        assert_eq!(result.job_outcomes.len(), 1);
+        let outcome = &result.job_outcomes[0];
+        assert!(!outcome.succeeded());
+        let error = outcome
+            .error
+            .as_ref()
+            .expect("failed job must record an error");
+        // The typed JobError::ServiceNotFound message names the missing service,
+        // proving service resolution failed without panicking/unwrapping.
+        assert!(
+            error.contains("NoSuchService"),
+            "error should name the unregistered service, got: {error}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_continue_on_error_job_runs_all_tasks() {
+        use crate::core::platform::container::job::JobExecutionMode;
+
+        let orchestrator = Orchestrator::new();
+        orchestrator.start().await.unwrap();
+
+        // A single job whose first task targets a missing service and whose
+        // second task targets a registered one. With continue-on-error the job
+        // attempts both tasks before reporting the partial failure.
+        let bad_task = Task::new(
+            "bad task".to_string(),
+            "targets a missing service".to_string(),
+            "MissingService".to_string(),
+        );
+        let good_task = Task::new(
+            "good task".to_string(),
+            "targets a registered service".to_string(),
+            "DataBackupService".to_string(),
+        );
+        let job = Job::new(
+            "resilient-job".to_string(),
+            "continue-on-error job".to_string(),
+            vec![bad_task, good_task],
+        )
+        .with_execution_mode(JobExecutionMode::SequentialContinueOnError);
+
+        let workflow = workflow_with(vec![job], WorkflowExecutionOrder::Sequential);
+        let workflow_id = orchestrator.create_workflow(workflow).await.unwrap();
+
+        let result = orchestrator.execute_workflow(workflow_id).await.unwrap();
+
+        // The job partially failed (one task could not resolve its service), so
+        // the workflow is marked failed, but the registered task still ran.
+        assert!(result.failed());
+        assert_eq!(result.job_outcomes.len(), 1);
+        let outcome = &result.job_outcomes[0];
+        assert!(!outcome.succeeded());
+        // Failure outcomes carry the error rather than output stats.
+        assert!(outcome.output.is_none());
+        let error = outcome.error.as_ref().expect("partial failure error");
+        assert!(error.contains("MissingService"));
+    }
 }

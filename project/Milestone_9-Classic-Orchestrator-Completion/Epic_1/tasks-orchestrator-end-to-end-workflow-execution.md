@@ -45,10 +45,10 @@
   - [x] 1.10 Unit tests: sequential ordering + N→N+1 threading; parallel mixed success/failure aggregation; staged ordering with intra-stage concurrency
 
 - [ ] 2.0 Wire TaskService execution + error strategy (PRD Task 1.2, dispatch)
-  - [ ] 2.1 Implement a job-dispatch helper that resolves services by name from `task_services` and runs the job via `Job::execute(&services)`
-  - [ ] 2.2 Return a typed error (no panic/unwrap) when a task's `service_name` is unregistered
-  - [ ] 2.3 Honor fail-fast vs. continue-on-error by mapping to the job's existing `JobExecutionMode`
-  - [ ] 2.4 Unit test: unregistered service yields typed error; fail-fast vs. continue-on-error behavior verified
+  - [x] 2.1 Implement a job-dispatch helper that resolves services by name from `task_services` and runs the job via `Job::execute(&services)`
+  - [x] 2.2 Return a typed error (no panic/unwrap) when a task's `service_name` is unregistered
+  - [x] 2.3 Honor fail-fast vs. continue-on-error by mapping to the job's existing `JobExecutionMode`
+  - [x] 2.4 Unit test: unregistered service yields typed error; fail-fast vs. continue-on-error behavior verified
 
 - [ ] 3.0 Rewrite default TaskService implementations (PRD Task 1.2, services)
   - [ ] 3.1 Rewrite `DataBackupService` to perform a real, path-constrained backup write and return a descriptive result; `TaskError` on failure
