@@ -1,4 +1,4 @@
-use crate::use_cases::content_fetching_service::ContentFetchingService;
+use crate::services::content_fetching_service::ContentFetchingService;
 use paladin_core::platform::container::content::{ContentItem, ContentType, TextContent};
 use url::Url;
 

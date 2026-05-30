@@ -4,7 +4,7 @@ use std::sync::Arc;
 use paladin_core::platform::container::content::ContentItem;
 use paladin_core::platform::container::prompt::PromptItem;
 
-use crate::use_cases::content_analysis_service::ContentAnalysisService;
+use crate::services::content_analysis_service::ContentAnalysisService;
 use paladin_llm::llm_analysis_service::{LlmAnalysisConfig, LlmAnalysisInput, LlmAnalysisService};
 
 /// Input for LLM-based content analysis

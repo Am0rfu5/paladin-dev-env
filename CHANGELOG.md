@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`paladin-content` module rename** (Milestone 8, Epic 6): Renamed `use_cases` → `services`
+  inside the `paladin-content` leaf crate to align with the naming convention established by
+  Epic 4. The directory `crates/paladin-content/src/use_cases/` is now
+  `crates/paladin-content/src/services/`; `lib.rs` now declares `pub mod services;`.
+- **Resolved six latent `E0432` unresolved import errors** in the facade re-export bridge
+  (`src/application/services/content/mod.rs`). The bridge already referenced
+  `paladin_content::services::*` (correct post-Epic-4 path), but the leaf crate had not been
+  updated. The errors were previously masked by the `content-processing` feature gate and did
+  not surface in default `cargo test` runs.
+
 ---
 
 ## [0.2.0] - 2026-05-30

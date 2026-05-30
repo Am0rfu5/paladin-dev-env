@@ -1,6 +1,6 @@
 //! # paladin-content
 //!
-//! Content processing adapters and use-case services for the Paladin framework.
+//! Content processing adapters and application services for the Paladin framework.
 //! Provides document parsing, HTTP/file fetching, RSS/news ingestion, and
 //! content analysis pipelines.
 
@@ -11,4 +11,4 @@
 pub mod adapters;
 /// Application services for content processing workflows.
 #[allow(missing_docs)]
-pub mod use_cases;
+pub mod services;

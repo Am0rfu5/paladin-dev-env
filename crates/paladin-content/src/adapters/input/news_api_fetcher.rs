@@ -1,6 +1,6 @@
 use crate::adapters::input::http_content_fetcher::HttpContentFetcher;
-use crate::use_cases::content_fetching_service::ContentFetchingService;
-use crate::use_cases::content_list_fetching_service::ContentListFetchingService;
+use crate::services::content_fetching_service::ContentFetchingService;
+use crate::services::content_list_fetching_service::ContentListFetchingService;
 use paladin_core::platform::container::content::{ContentItem, ContentType, TextContent};
 use paladin_core::platform::container::content_list::ContentList;
 use serde::Deserialize;
