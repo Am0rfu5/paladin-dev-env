@@ -20,7 +20,7 @@ To guide an AI assistant in creating a detailed, step-by-step task list in Markd
 6.  **Generate Final Output:** Combine the parent tasks, sub-tasks, relevant files, and notes into the final Markdown structure.
 7.  **Save Task List:** Save the generated document in the `/project/` directory with the filename `tasks-[feature-name].md`, where `[feature-name]` describes the main feature or task being implemented (e.g., if the request was about user profile editing, the output is `tasks-user-profile-editing.md`).
 
-## Output Format
+## Output Formatgit merge featuer/
 
 The generated task list _must_ follow this structure:
 

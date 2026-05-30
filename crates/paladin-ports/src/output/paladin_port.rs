@@ -183,7 +183,7 @@
 //! use paladin::application::ports::output::paladin_port::{
 //!     PaladinPort, PaladinResult, StopReason
 //! };
-//! use paladin::application::use_cases::paladin::error::PaladinError;
+//! use paladin_core::platform::container::paladin_error::PaladinError;
 //! use std::sync::Arc;
 //! use std::time::Duration;
 //! use tokio::time::sleep;
@@ -281,7 +281,7 @@
 //! use paladin::application::ports::output::paladin_port::{
 //!     PaladinPort, PaladinResult, PaladinStream, StopReason
 //! };
-//! use paladin::application::use_cases::paladin::error::PaladinError;
+//! use paladin_core::platform::container::paladin_error::PaladinError;
 //! use paladin::core::platform::container::paladin::Paladin;
 //! use async_trait::async_trait;
 //!
@@ -372,11 +372,11 @@
 //! # Related Modules
 //!
 //! - [`paladin_core::platform::container::paladin`] - Paladin domain entity
-//! - [`crate::application::use_cases::paladin`] - Paladin execution service (adapter)
-//! - [`crate::output::llm_port`] - LLM provider integration
-//! - [`crate::output::garrison_port`] - Conversation memory
-//! - [`crate::output::arsenal_port`] - Tool execution
-//! - [`crate::application::use_cases::battalion`] - Multi-agent orchestration
+//! - [`paladin_battalion::paladin`] - Paladin execution service (adapter)
+//! - [`paladin_ports::output::llm_port`] - LLM provider integration
+//! - [`paladin_ports::output::garrison_port`] - Conversation memory
+//! - [`paladin_ports::output::arsenal_port`] - Tool execution
+//! - [`paladin_battalion::battalion`] - Multi-agent orchestration
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -456,7 +456,7 @@ pub type PaladinStream = mpsc::Receiver<Result<PaladinStreamChunk, PaladinError>
 ///     PaladinPort, PaladinResult, PaladinStream, StopReason
 /// };
 /// use paladin::core::platform::container::paladin::Paladin;
-/// use paladin::application::use_cases::paladin::error::PaladinError;
+/// use paladin::core::platform::container::paladin_error::PaladinError;
 /// use paladin::application::ports::output::llm_port::LlmPort;
 /// use std::sync::Arc;
 ///

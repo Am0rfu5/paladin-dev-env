@@ -19,8 +19,46 @@
 //! The framework follows hexagonal architecture with three layers:
 //!
 //! - **Core Layer** (`core`): Pure business logic with zero external dependencies
-//! - **Application Layer** (`application`): Use cases and port trait definitions
+//! - **Application Layer** (`application`): Application services and coordination logic
 //! - **Infrastructure Layer** (`infrastructure`): Adapter implementations for external systems
+//!
+//! ## Facade Crate Role
+//!
+//! The `paladin` crate is the **application assembly point and composition root** for the
+//! Paladin workspace. It wires together all leaf crates into a runnable application.
+//!
+//! ### What this crate contains
+//!
+//! - **`ServiceRunner`** — the composition root that assembles and starts all services
+//! - **Application services** (`src/application/services/`) — coordination logic for
+//!   agents, battalions, arsenals, orchestration, herald, sanctum, and more
+//! - **Configuration** (`src/config/`) — settings types and multi-source config loading
+//! - **CLI modules** (`src/application/cli/`) — command implementations (requires
+//!   `cli` feature flag)
+//! - **Binary entry points** — `main.rs` (default binary) and `bin/paladin-cli.rs`
+//!   (requires `cli` feature flag)
+//!
+//! ### What this crate does NOT contain
+//!
+//! Business logic, port trait definitions, and infrastructure adapter implementations
+//! live exclusively in the leaf crates. The facade only assembles them.
+//!
+//! ### Leaf crates
+//!
+//! | Crate | Capability |
+//! |-------|------------|
+//! | `paladin-core` | Domain entities, base types, pure business logic |
+//! | `paladin-ports` | Port trait definitions (output and input ports) |
+//! | `paladin-battalion` | Multi-agent coordination patterns |
+//! | `paladin-llm` | LLM provider adapters (OpenAI, Anthropic, DeepSeek) |
+//! | `paladin-memory` | Garrison memory adapters (in-memory, SQLite, vector) |
+//! | `paladin-notifications` | Notification channel adapters |
+//! | `paladin-storage` | Storage adapters (SQLite, MySQL, MinIO/S3) |
+//! | `paladin-content` | Content processing and ingestion |
+//! | `paladin-web` | Web API adapter (Axum-based REST server) |
+//!
+//! **Dependency direction:** facade → leaf crates (one direction only). Leaf crates
+//! must never import from the facade.
 //!
 //! ## Stable Public API
 //!

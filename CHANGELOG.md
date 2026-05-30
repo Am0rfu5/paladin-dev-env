@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.2.0] - 2026-05-30
+
 ### Breaking Changes
 
 - **Services Directory Rename** (Milestone 8, Epic 4): `src/application/use_cases/` renamed to
@@ -37,6 +41,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New integration test suite: `tests/cli_isolation_test.rs` — 9 regression tests verifying library compiles without CLI deps
   - Dedicated `cli-isolation` CI job verifies library-only and CLI-enabled builds
   - **Benefit**: Library consumers who don't use the CLI avoid compiling `clap` and associated TUI dependencies
+
+### Changed
+- **Facade Crate Documentation** (Milestone 8, Epic 5): Documented facade crate role as the
+  application assembly point and composition root. Added `src/README.md` with full module layout
+  reference. Updated `src/lib.rs` `//!` docs with a new `## Facade Crate Role` section explaining
+  what the facade contains (ServiceRunner, services, config, CLI, binaries), what it does not
+  contain (business logic, port traits, adapters), and the dependency-flow rule (facade → leaf
+  crates; one direction only).
 
 ### Removed
 - **Storage Re-export Shims** (Milestone 8, Epic 3): Deleted `src/application/storage/` (3 files:
@@ -1374,5 +1386,6 @@ let result = service.execute_with_vision(&paladin, "Describe this image", conten
 - Comprehensive test suite (1146+ tests)
 - Continuous integration ready
 
-[Unreleased]: https://github.com/jamatulli/paladin/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/jamatulli/paladin/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/jamatulli/paladin/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jamatulli/paladin/releases/tag/v0.1.0
