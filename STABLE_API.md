@@ -1,14 +1,21 @@
 # Stable Public API Contract
 
 **Version:** 0.2.0
-**Last Updated:** 2026-05-28
-**Epic:** Milestone 8, Epic 2 - Remove Dead Shims and Empty Modules
+**Last Updated:** 2026-05-30
+**Epic:** Milestone 8, Epic 5 - Document Facade Crate Role and Finalize
 **Status:** Active
 
-> **Breaking Change in v0.2.0**: Zero-consumer `pub use` short-path aliases have been removed
-> from `src/lib.rs`. Port traits, memory adapters, builder types, and base types that previously
-> had `paladin::<Type>` short aliases now require crate-level import paths.
-> See [CHANGELOG.md](CHANGELOG.md) for the complete migration table.
+> **Breaking Changes in v0.2.0**: This release includes two categories of breaking changes:
+>
+> 1. **Removed short-path aliases** (Epics 2 & 3): Zero-consumer `pub use` short-path aliases
+>    have been removed from `src/lib.rs`. Port traits, memory adapters, builder types, and base
+>    types that previously had `paladin::<Type>` short aliases now require crate-level import paths.
+>
+> 2. **Module rename** (Epic 4): The `application::use_cases` module path has been renamed to
+>    `application::services`. Any import path containing `::use_cases::` must be updated to
+>    `::services::`.
+>
+> See [CHANGELOG.md](CHANGELOG.md) for the complete migration tables.
 
 ---
 
@@ -269,6 +276,23 @@ workspace decomposition completed in Milestone 7.
 - **Experimental**: Feature-gated storage backends.
 
 ### `paladin` (facade crate)
+
+The facade crate is the **application assembly point and composition root**. It wires leaf
+crates together into a runnable application via `ServiceRunner`. It does not contain business
+logic, port trait definitions, or infrastructure adapter implementations — those live exclusively
+in the leaf crates.
+
+Module layout (post-Milestone 8):
+
+- `application/services/` — Application coordination services (11 sub-modules)
+- `application/cli/` — CLI command implementations (feature-gated: `cli`)
+- `config/` — Multi-source configuration loading and settings types
+- `infrastructure/` — Infrastructure adapter implementations not yet extracted to a leaf crate
+- `core/` — Minimal re-export bridge to `paladin-core`
+- `bin/paladin-cli.rs` — CLI binary entry point (feature-gated: `cli`)
+- `main.rs` — Default binary entry point
+
+Stability tiers:
 
 - **Stable**: Curated top-level re-exports and extension points listed in this
    stable API document.
