@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- **Services Directory Rename** (Milestone 8, Epic 4): `src/application/use_cases/` renamed to
+  `src/application/services/`. All module paths under `paladin::application::use_cases` are now at
+  `paladin::application::services`. No logic was changed; this is a pure path rename.
+
+  | Old path | New path |
+  |----------|----------|
+  | `paladin::application::use_cases::paladin::*` | `paladin::application::services::paladin::*` |
+  | `paladin::application::use_cases::battalion::*` | `paladin::application::services::battalion::*` |
+  | `paladin::application::use_cases::arsenal::*` | `paladin::application::services::arsenal::*` |
+  | `paladin::application::use_cases::content::*` | `paladin::application::services::content::*` |
+  | `paladin::application::use_cases::herald::*` | `paladin::application::services::herald::*` |
+  | `paladin::application::use_cases::orchestration::*` | `paladin::application::services::orchestration::*` |
+  | `paladin::application::use_cases::log_orchestrator::*` | `paladin::application::services::log_orchestrator::*` |
+  | `paladin::application::use_cases::notification_orchestrator::*` | `paladin::application::services::notification_orchestrator::*` |
+  | `paladin::application::use_cases::queue_orchestrator::*` | `paladin::application::services::queue_orchestrator::*` |
+  | `paladin::application::use_cases::sanctum::*` | `paladin::application::services::sanctum::*` |
+  | `paladin::application::use_cases::analysis::*` | `paladin::application::services::analysis::*` |
+
 ### Added
 - **CLI Feature Flag** (Milestone 4, Epic 3): Gate the `paladin-cli` binary and `application::cli` module behind the new `cli` feature flag
   - New feature: `cli = ["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml"]`
