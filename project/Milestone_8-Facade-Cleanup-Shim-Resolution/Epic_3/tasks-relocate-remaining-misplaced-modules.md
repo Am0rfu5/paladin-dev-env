@@ -69,30 +69,30 @@ Update the file after completing each sub-task, not just after completing an ent
     - `paladin::application::storage::user_store::UserRepositoryPort` → `paladin_ports::output::user_repository_port::UserRepositoryPort`
   - [x] 2.14 Commit: `git add -A && git commit -m "refactor(m8-e3): delete storage re-export shims, update 6 consumers to paladin_ports" -m "- Deleted src/application/storage/ (sql_store.rs, user_store.rs, mod.rs)" -m "- Updated 6 consumers to import directly from paladin_ports::output::repository_port and user_repository_port" -m "- Removed pub mod storage from application/mod.rs" -m "- Updated CHANGELOG.md with migration paths"`
 
-- [ ] 3.0 Apply `ml` feature gate to `tensorflow_adapter.rs`
+- [x] 3.0 Apply `ml` feature gate to `tensorflow_adapter.rs`
   - [x] 3.1 Read `src/infrastructure/adapters/input/mod.rs` (line 11) and `src/infrastructure/adapters/input/tensorflow_adapter.rs` (first 20 lines) to understand the current declaration and any existing cfg attributes.
   - [x] 3.2 Add `ml = []` to the `[features]` section of `Cargo.toml`, grouped with the other subsystem feature flags (after the `vision = []` line). Do not add it to the `full` convenience flag — ML is an explicit opt-in.
   - [x] 3.3 In `src/infrastructure/adapters/input/mod.rs`, wrap `pub mod tensorflow_adapter;` (line 11) with `#[cfg(feature = "ml")]`.
   - [x] 3.4 Add a module-level doc comment to `src/infrastructure/adapters/input/tensorflow_adapter.rs` stating: "Requires the `ml` feature flag. Placeholder for a future `paladin-ml` crate (Milestone 9+). Enable with `paladin = { features = [\"ml\"] }`."
   - [x] 3.5 Run `cargo build --workspace` (without `--features ml`) — confirm `tensorflow_adapter.rs` is not compiled and exit is 0.
   - [x] 3.6 Run `cargo build --workspace --features ml` — confirm the adapter compiles cleanly with the flag on.
-  - [ ] 3.7 Run `cargo test --workspace` — confirm all tests pass.
-  - [ ] 3.8 Run `cargo fmt --all -- --check` and `cargo clippy --workspace -- -D warnings` — confirm both pass clean.
-  - [ ] 3.9 Commit: `git add -A && git commit -m "refactor(m8-e3): gate tensorflow_adapter.rs behind ml feature flag" -m "- Added ml = [] to Cargo.toml features (opt-in, not in full)" -m "- Wrapped pub mod tensorflow_adapter in cfg(feature = ml) in input/mod.rs" -m "- Added doc comment flagging it as Milestone 9+ paladin-ml placeholder"`
+  - [x] 3.7 Run `cargo test --workspace` — confirm all tests pass.
+  - [x] 3.8 Run `cargo fmt --all -- --check` and `cargo clippy --workspace -- -D warnings` — confirm both pass clean.
+  - [x] 3.9 Commit: `git add -A && git commit -m "refactor(m8-e3): gate tensorflow_adapter.rs behind ml feature flag" -m "- Added ml = [] to Cargo.toml features (opt-in, not in full)" -m "- Wrapped pub mod tensorflow_adapter in cfg(feature = ml) in input/mod.rs" -m "- Added doc comment flagging it as Milestone 9+ paladin-ml placeholder"`
 
-- [ ] 4.0 Write infrastructure adapter disposition record
-  - [ ] 4.1 Create `project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/infrastructure-adapter-disposition.md` with a header, date, and a table covering all 16 adapter groups from PRD §4.3. For each group include: adapter path, epic-3 decision (stays/feature-gated/etc.), one-sentence rationale, M9 extraction candidate (yes with target crate / no), and any action taken in Epic 3.
-  - [ ] 4.2 Verify the garrison and sanctum entries explicitly include: consumer evidence (mention examples/ and tests/ consumers), "stays — active bridge" decision, and optional-consolidation note for M9 `paladin-memory` work.
-  - [ ] 4.3 Verify the `output/api_content_deliverer.rs` entry explicitly flags it as an M9 extraction candidate to `paladin-web` and notes the dual-pattern groundwork already in `output/mod.rs`.
-  - [ ] 4.4 Verify the TensorFlow entry reflects the feature gate applied in Task 3.0 and the Milestone 9+ `paladin-ml` target.
-  - [ ] 4.5 Verify the List B cross-references are present for: `citadel/file_citadel.rs` → `paladin-memory`; `file_storage/minio.rs` → `paladin-storage`; `queue/redis.rs` → `paladin-storage`; `document/` → `paladin-content`.
-  - [ ] 4.6 Commit: `git add project/ && git commit -m "docs(m8-e3): add infrastructure adapter disposition record" -m "- Covers all 16 adapter groups under src/infrastructure/adapters/" -m "- Flags M9 extraction candidates with target crates and List B cross-references" -m "- Documents garrison/sanctum bridge shim rationale and optional M9 consolidation"`
+- [x] 4.0 Write infrastructure adapter disposition record
+  - [x] 4.1 Create `project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/infrastructure-adapter-disposition.md` with a header, date, and a table covering all 16 adapter groups from PRD §4.3. For each group include: adapter path, epic-3 decision (stays/feature-gated/etc.), one-sentence rationale, M9 extraction candidate (yes with target crate / no), and any action taken in Epic 3.
+  - [x] 4.2 Verify the garrison and sanctum entries explicitly include: consumer evidence (mention examples/ and tests/ consumers), "stays — active bridge" decision, and optional-consolidation note for M9 `paladin-memory` work.
+  - [x] 4.3 Verify the `output/api_content_deliverer.rs` entry explicitly flags it as an M9 extraction candidate to `paladin-web` and notes the dual-pattern groundwork already in `output/mod.rs`.
+  - [x] 4.4 Verify the TensorFlow entry reflects the feature gate applied in Task 3.0 and the Milestone 9+ `paladin-ml` target.
+  - [x] 4.5 Verify the List B cross-references are present for: `citadel/file_citadel.rs` → `paladin-memory`; `file_storage/minio.rs` → `paladin-storage`; `queue/redis.rs` → `paladin-storage`; `document/` → `paladin-content`.
+  - [x] 4.6 Commit: `git add project/ && git commit -m "docs(m8-e3): add infrastructure adapter disposition record" -m "- Covers all 16 adapter groups under src/infrastructure/adapters/" -m "- Flags M9 extraction candidates with target crates and List B cross-references" -m "- Documents garrison/sanctum bridge shim rationale and optional M9 consolidation"`
 
-- [ ] 5.0 Run full quality gate and final commit
-  - [ ] 5.1 `cargo build --workspace` — exit code 0, zero errors
-  - [ ] 5.2 `cargo test --workspace` — all tests pass, zero failures
-  - [ ] 5.3 `cargo clippy --workspace -- -D warnings` — zero warnings
-  - [ ] 5.4 `cargo fmt --all -- --check` — exit code 0 (no formatting drift)
-  - [ ] 5.5 `find src/ -name "*.rs" | wc -l` — confirm file count decreased by 3 from Epic 2 baseline (163 → 160)
-  - [ ] 5.6 Mark all tasks `[x]` in this file (all parent tasks and sub-tasks)
+- [x] 5.0 Run full quality gate and final commit
+  - [x] 5.1 `cargo build --workspace` — exit code 0, zero errors
+  - [x] 5.2 `cargo test --workspace` — all tests pass, zero failures
+  - [x] 5.3 `cargo clippy --workspace -- -D warnings` — zero warnings
+  - [x] 5.4 `cargo fmt --all -- --check` — exit code 0 (no formatting drift)
+  - [x] 5.5 `find src/ -name "*.rs" | wc -l` — confirm file count decreased by 3 from Epic 2 baseline (163 → 160)
+  - [x] 5.6 Mark all tasks `[x]` in this file (all parent tasks and sub-tasks)
   - [ ] 5.7 Commit: `git add project/ && git commit -m "docs(m8-e3): mark all Epic 3 tasks complete" -m "- Tasks 0.0-5.0 complete" -m "- Storage shims deleted, 6 consumers updated, ml feature gate applied" -m "- Disposition record written for all 16 infra adapter groups" -m "- Quality gate passed: build, test, clippy, fmt, file count 160"`
