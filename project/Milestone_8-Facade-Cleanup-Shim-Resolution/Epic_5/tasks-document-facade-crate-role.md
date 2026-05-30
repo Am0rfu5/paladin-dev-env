@@ -29,29 +29,29 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ## Tasks
 
-- [ ] 0.0 Confirm active branch and resolve pre-flight open questions
-  - [ ] 0.1 Confirm the working branch is `feature/milestone_8-epic_4-use_cases-services-rename`: `git branch --show-current`. No new branch is needed — Epic 5 continues on the same branch.
-  - [ ] 0.2 Confirm `cargo-public-api` is available: `which cargo-public-api` — it is installed at `/usr/local/cargo/bin/cargo-public-api`.
-  - [ ] 0.3 Confirm the `v0.1.0` tag exists for the CHANGELOG compare URL: `git tag` — tag `v0.1.0-rc.1` exists; use the existing link-reference pattern already in `CHANGELOG.md` (`https://github.com/jamatulli/paladin/compare/...`).
-  - [ ] 0.4 Confirm `src/lib.rs.backup` exists and schedule it for deletion in Task 6: `ls src/lib.rs.backup`.
-  - [ ] 0.5 Note: `STABLE_API.md` has **zero** `use_cases` references (already clean from Epic 4). The audit in Task 3 only needs to update the header metadata and facade crate section.
+- [x] 0.0 Confirm active branch and resolve pre-flight open questions
+  - [x] 0.1 Confirm the working branch is `feature/milestone_8-epic_4-use_cases-services-rename`: `git branch --show-current`. No new branch is needed — Epic 5 continues on the same branch.
+  - [x] 0.2 Confirm `cargo-public-api` is available: `which cargo-public-api` — it is installed at `/usr/local/cargo/bin/cargo-public-api`.
+  - [x] 0.3 Confirm the `v0.1.0` tag exists for the CHANGELOG compare URL: `git tag` — tag `v0.1.0-rc.1` exists; use the existing link-reference pattern already in `CHANGELOG.md` (`https://github.com/jamatulli/paladin/compare/...`).
+  - [x] 0.4 Confirm `src/lib.rs.backup` exists and schedule it for deletion in Task 6: `ls src/lib.rs.backup`.
+  - [x] 0.5 Note: `STABLE_API.md` has **zero** `use_cases` references (already clean from Epic 4). The audit in Task 3 only needs to update the header metadata and facade crate section.
 
-- [ ] 1.0 Update `src/lib.rs` facade crate documentation
-  - [ ] 1.1 Read the current `//!` block in `src/lib.rs` (lines 1–80) to understand the exact existing text before editing.
-  - [ ] 1.2 In `src/lib.rs`, update the `## Architecture` section: change the `Application Layer` bullet from `"Use cases and port trait definitions"` to `"Application services and coordination logic"` (FR-3).
-  - [ ] 1.3 Insert a new `## Facade Crate Role` section into the `//!` block **between** the `## Architecture` section and the `## Stable Public API` section. The new section must contain (FR-1):
+- [x] 1.0 Update `src/lib.rs` facade crate documentation
+  - [x] 1.1 Read the current `//!` block in `src/lib.rs` (lines 1–80) to understand the exact existing text before editing.
+  - [x] 1.2 In `src/lib.rs`, update the `## Architecture` section: change the `Application Layer` bullet from `"Use cases and port trait definitions"` to `"Application services and coordination logic"` (FR-3).
+  - [x] 1.3 Insert a new `## Facade Crate Role` section into the `//!` block **between** the `## Architecture` section and the `## Stable Public API` section. The new section must contain (FR-1):
     - A paragraph explaining this crate is the **application assembly point and composition root**.
     - What the facade **contains**: `ServiceRunner` (composition root), application-layer coordination services (`src/application/services/`), configuration loading (`src/config/`), CLI modules (`src/application/cli/`, `cli` feature-gated), and binary entry points (`main.rs`, `bin/paladin-cli.rs`).
     - What the facade does **not** contain: business logic, port trait definitions, or infrastructure adapter implementations (those live in the leaf crates).
     - A bulleted list of the 9 leaf crates: `paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory`, `paladin-notifications`, `paladin-storage`, `paladin-content`, `paladin-web`.
-  - [ ] 1.4 Run `cargo fmt` then `cargo fmt --all -- --check` to confirm the `lib.rs` edit has no formatting drift.
-  - [ ] 1.5 Run `cargo doc --workspace --no-deps 2>&1 | tail -5` — confirm exit 0 (warnings OK, must not error).
-  - [ ] 1.6 Commit: `git add src/lib.rs && git commit -m "docs(m8-e5): add Facade Crate Role section to lib.rs doc comment" -m "- New ## Facade Crate Role section between ## Architecture and ## Stable Public API" -m "- Lists what facade contains (ServiceRunner, services, config, cli, binaries)" -m "- Lists what facade does not contain (business logic, port traits, adapters)" -m "- Lists all 9 leaf crates" -m "- Updated Application Layer description: use cases -> application services"`
+  - [x] 1.4 Run `cargo fmt` then `cargo fmt --all -- --check` to confirm the `lib.rs` edit has no formatting drift.
+  - [x] 1.5 Run `cargo doc --workspace --no-deps 2>&1 | tail -5` — confirm exit 0 (warnings OK, must not error).
+  - [x] 1.6 Commit: `git add src/lib.rs && git commit -m "docs(m8-e5): add Facade Crate Role section to lib.rs doc comment" -m "- New ## Facade Crate Role section between ## Architecture and ## Stable Public API" -m "- Lists what facade contains (ServiceRunner, services, config, cli, binaries)" -m "- Lists what facade does not contain (business logic, port traits, adapters)" -m "- Lists all 9 leaf crates" -m "- Updated Application Layer description: use cases -> application services"`
 
-- [ ] 2.0 Create `src/README.md` facade crate reference file
-  - [ ] 2.1 Create `src/README.md` with the heading `# Paladin Facade Crate` (FR-2).
-  - [ ] 2.2 Add a prose section explaining the facade-crate role: application assembly point, composition root, `ServiceRunner`, application services, CLI, binaries, dependency-flow rule (facade → leaf crates; one direction only).
-  - [ ] 2.3 Add the "What lives here" table with columns **Path**, **Purpose**, **Notes**, covering at minimum these 7 rows:
+- [x] 2.0 Create `src/README.md` facade crate reference file
+  - [x] 2.1 Create `src/README.md` with the heading `# Paladin Facade Crate` (FR-2).
+  - [x] 2.2 Add a prose section explaining the facade-crate role: application assembly point, composition root, `ServiceRunner`, application services, CLI, binaries, dependency-flow rule (facade → leaf crates; one direction only).
+  - [x] 2.3 Add the "What lives here" table with columns **Path**, **Purpose**, **Notes**, covering at minimum these 7 rows:
     - `src/application/services/` — Application coordination services — 11 sub-modules, 39 `.rs` files
     - `src/application/cli/` — CLI command implementations — Feature-gated (`cli` flag)
     - `src/config/` — Configuration loading & settings types — Composition root needs config
@@ -59,20 +59,20 @@ Update the file after completing each sub-task, not just after completing an ent
     - `src/core/` — Re-export bridge to `paladin-core` — Minimal structure; real logic in `paladin-core`
     - `src/bin/` — Binary entry points — `paladin-cli.rs` (feature-gated)
     - `src/main.rs` — Default binary entry point — Thin wrapper; bootstraps `ServiceRunner`
-  - [ ] 2.4 Add a "Leaf Crates" section listing the 9 leaf crates with a one-line description each, and a note that leaf crates must not import from the facade.
-  - [ ] 2.5 Add a footer line: "See [STABLE_API.md](../STABLE_API.md) for the public API contract."
-  - [ ] 2.6 Commit: `git add src/README.md && git commit -m "docs(m8-e5): create src/README.md documenting facade crate role" -m "- Assembly point and composition root description" -m "- What lives here table: 7 paths with purpose and notes" -m "- Leaf crate list with dependency-flow rule" -m "- Reference to STABLE_API.md"`
+  - [x] 2.4 Add a "Leaf Crates" section listing the 9 leaf crates with a one-line description each, and a note that leaf crates must not import from the facade.
+  - [x] 2.5 Add a footer line: "See [STABLE_API.md](../STABLE_API.md) for the public API contract."
+  - [x] 2.6 Commit: `git add src/README.md && git commit -m "docs(m8-e5): create src/README.md documenting facade crate role" -m "- Assembly point and composition root description" -m "- What lives here table: 7 paths with purpose and notes" -m "- Leaf crate list with dependency-flow rule" -m "- Reference to STABLE_API.md"`
 
-- [ ] 3.0 Audit and update `STABLE_API.md`
-  - [ ] 3.1 Read the `STABLE_API.md` header block (lines 1–15) to see the current `Version`, `Last Updated`, and `Epic` fields, and the breaking-change callout box.
-  - [ ] 3.2 Update the header block (FR-4):
+- [x] 3.0 Audit and update `STABLE_API.md`
+  - [x] 3.1 Read the `STABLE_API.md` header block (lines 1–15) to see the current `Version`, `Last Updated`, and `Epic` fields, and the breaking-change callout box.
+  - [x] 3.2 Update the header block (FR-4):
     - `Last Updated:` → `2026-05-30`
     - `Epic:` → `Milestone 8, Epic 5 - Document Facade Crate Role and Finalize`
     - Update the breaking-change callout box to mention **both** the shim removals (Epic 2/3) **and** the `use_cases` → `services` rename (Epic 4) as the v0.2.0 breaking changes.
-  - [ ] 3.3 Read the `### paladin (facade crate)` section (around line 271) and update it to reflect the post-Milestone-8 module layout (FR-5): remove any references to `application/ports/`, `application/storage/`, or `application/use_cases/`; add `application/services/`.
-  - [ ] 3.4 Verify `grep "use_cases\|application::storage\|application::ports" STABLE_API.md` returns 0 hits (catalog is already clean; this confirms no regressions from the header edit).
-  - [ ] 3.5 Read the `## Tracking API Changes` section (around line 296–355) and update any stale baseline dates or file references to note `api_surface_current.txt` as the v0.2.0 baseline (FR-8).
-  - [ ] 3.6 Commit: `git add STABLE_API.md && git commit -m "docs(m8-e5): update STABLE_API.md for v0.2.0 release" -m "- Updated Last Updated to 2026-05-30" -m "- Updated Epic to Milestone 8 Epic 5" -m "- Updated breaking-change callout to cover Epic 2/3 shim removals and Epic 4 rename" -m "- Updated paladin facade crate section for post-M8 module layout" -m "- Updated Tracking section to reference v0.2.0 baseline"`
+  - [x] 3.3 Read the `### paladin (facade crate)` section (around line 271) and update it to reflect the post-Milestone-8 module layout (FR-5): remove any references to `application/ports/`, `application/storage/`, or `application/use_cases/`; add `application/services/`.
+  - [x] 3.4 Verify `grep "use_cases\|application::storage\|application::ports" STABLE_API.md` returns 0 hits (catalog is already clean; this confirms no regressions from the header edit).
+  - [x] 3.5 Read the `## Tracking API Changes` section (around line 296–355) and update any stale baseline dates or file references to note `api_surface_current.txt` as the v0.2.0 baseline (FR-8).
+  - [x] 3.6 Commit: `git add STABLE_API.md && git commit -m "docs(m8-e5): update STABLE_API.md for v0.2.0 release" -m "- Updated Last Updated to 2026-05-30" -m "- Updated Epic to Milestone 8 Epic 5" -m "- Updated breaking-change callout to cover Epic 2/3 shim removals and Epic 4 rename" -m "- Updated paladin facade crate section for post-M8 module layout" -m "- Updated Tracking section to reference v0.2.0 baseline"`
 
 - [ ] 4.0 Promote `CHANGELOG.md` `[Unreleased]` to `[0.2.0]`
   - [ ] 4.1 Read the current `[Unreleased]` block in `CHANGELOG.md` (lines 1–70) to see the exact existing sub-sections (`### Breaking Changes`, `### Added`, `### Removed`) before editing.
