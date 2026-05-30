@@ -51,7 +51,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.2 Mark this task `[x]` with the inline comment: "Resolved — `src/application/notifications/` was deleted in Epic 2. The infrastructure adapter at `src/infrastructure/adapters/notifications/mod.rs` correctly implements a dual re-export pattern: `paladin-notifications` crate when `notifications` feature is enabled, local fallback adapters otherwise. No file moves required."
   - [x] 1.3 Commit the task file update: `git add project/ && git commit -m "docs(m8-e3): close Task 3.1 notifications as already resolved"`
 
-- [ ] 2.0 Delete storage re-export shims and update all 6 consumers
+- [x] 2.0 Delete storage re-export shims and update all 6 consumers
   - [x] 2.1 Read the current contents of all 3 storage shim files (`sql_store.rs`, `user_store.rs`, `mod.rs`) and all 6 consumer files to understand the exact import lines that need updating before making any changes.
   - [x] 2.2 Update `src/infrastructure/repositories/sqlite_content_repository.rs`: replace `use crate::application::storage::sql_store::{...}` with `use paladin_ports::output::repository_port::{...}` (keep the exact same imported names).
   - [x] 2.3 Update `src/infrastructure/repositories/mysql_content_repository.rs`: same replacement as 2.2.
@@ -62,20 +62,20 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.8 Remove `pub mod storage;` from `src/application/mod.rs` (line 143).
   - [x] 2.9 Delete the three storage shim files: `rm src/application/storage/sql_store.rs src/application/storage/user_store.rs src/application/storage/mod.rs && rmdir src/application/storage/`
   - [x] 2.10 Run `cargo build --workspace` — confirm exit 0 with zero errors.
-  - [ ] 2.11 Run `cargo test --workspace` — confirm all tests pass, zero failures.
-  - [ ] 2.12 Run `cargo fmt --all -- --check` and `cargo clippy --workspace -- -D warnings` — confirm both pass clean.
+  - [x] 2.11 Run `cargo test --workspace` — confirm all tests pass, zero failures.
+  - [x] 2.12 Run `cargo fmt --all -- --check` and `cargo clippy --workspace -- -D warnings` — confirm both pass clean.
   - [x] 2.13 Add a `### Removed` entry to `CHANGELOG.md` under `[Unreleased]` documenting the deletion of `src/application/storage/` with the migration table:
     - `paladin::application::storage::sql_store::*` → `paladin_ports::output::repository_port::*`
     - `paladin::application::storage::user_store::UserRepositoryPort` → `paladin_ports::output::user_repository_port::UserRepositoryPort`
-  - [ ] 2.14 Commit: `git add -A && git commit -m "refactor(m8-e3): delete storage re-export shims, update 6 consumers to paladin_ports" -m "- Deleted src/application/storage/ (sql_store.rs, user_store.rs, mod.rs)" -m "- Updated 6 consumers to import directly from paladin_ports::output::repository_port and user_repository_port" -m "- Removed pub mod storage from application/mod.rs" -m "- Updated CHANGELOG.md with migration paths"`
+  - [x] 2.14 Commit: `git add -A && git commit -m "refactor(m8-e3): delete storage re-export shims, update 6 consumers to paladin_ports" -m "- Deleted src/application/storage/ (sql_store.rs, user_store.rs, mod.rs)" -m "- Updated 6 consumers to import directly from paladin_ports::output::repository_port and user_repository_port" -m "- Removed pub mod storage from application/mod.rs" -m "- Updated CHANGELOG.md with migration paths"`
 
 - [ ] 3.0 Apply `ml` feature gate to `tensorflow_adapter.rs`
-  - [ ] 3.1 Read `src/infrastructure/adapters/input/mod.rs` (line 11) and `src/infrastructure/adapters/input/tensorflow_adapter.rs` (first 20 lines) to understand the current declaration and any existing cfg attributes.
-  - [ ] 3.2 Add `ml = []` to the `[features]` section of `Cargo.toml`, grouped with the other subsystem feature flags (after the `vision = []` line). Do not add it to the `full` convenience flag — ML is an explicit opt-in.
-  - [ ] 3.3 In `src/infrastructure/adapters/input/mod.rs`, wrap `pub mod tensorflow_adapter;` (line 11) with `#[cfg(feature = "ml")]`.
-  - [ ] 3.4 Add a module-level doc comment to `src/infrastructure/adapters/input/tensorflow_adapter.rs` stating: "Requires the `ml` feature flag. Placeholder for a future `paladin-ml` crate (Milestone 9+). Enable with `paladin = { features = [\"ml\"] }`."
-  - [ ] 3.5 Run `cargo build --workspace` (without `--features ml`) — confirm `tensorflow_adapter.rs` is not compiled and exit is 0.
-  - [ ] 3.6 Run `cargo build --workspace --features ml` — confirm the adapter compiles cleanly with the flag on.
+  - [x] 3.1 Read `src/infrastructure/adapters/input/mod.rs` (line 11) and `src/infrastructure/adapters/input/tensorflow_adapter.rs` (first 20 lines) to understand the current declaration and any existing cfg attributes.
+  - [x] 3.2 Add `ml = []` to the `[features]` section of `Cargo.toml`, grouped with the other subsystem feature flags (after the `vision = []` line). Do not add it to the `full` convenience flag — ML is an explicit opt-in.
+  - [x] 3.3 In `src/infrastructure/adapters/input/mod.rs`, wrap `pub mod tensorflow_adapter;` (line 11) with `#[cfg(feature = "ml")]`.
+  - [x] 3.4 Add a module-level doc comment to `src/infrastructure/adapters/input/tensorflow_adapter.rs` stating: "Requires the `ml` feature flag. Placeholder for a future `paladin-ml` crate (Milestone 9+). Enable with `paladin = { features = [\"ml\"] }`."
+  - [x] 3.5 Run `cargo build --workspace` (without `--features ml`) — confirm `tensorflow_adapter.rs` is not compiled and exit is 0.
+  - [x] 3.6 Run `cargo build --workspace --features ml` — confirm the adapter compiles cleanly with the flag on.
   - [ ] 3.7 Run `cargo test --workspace` — confirm all tests pass.
   - [ ] 3.8 Run `cargo fmt --all -- --check` and `cargo clippy --workspace -- -D warnings` — confirm both pass clean.
   - [ ] 3.9 Commit: `git add -A && git commit -m "refactor(m8-e3): gate tensorflow_adapter.rs behind ml feature flag" -m "- Added ml = [] to Cargo.toml features (opt-in, not in full)" -m "- Wrapped pub mod tensorflow_adapter in cfg(feature = ml) in input/mod.rs" -m "- Added doc comment flagging it as Milestone 9+ paladin-ml placeholder"`

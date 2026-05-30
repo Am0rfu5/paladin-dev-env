@@ -217,6 +217,7 @@ llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]
 
 # Subsystem feature flags
 vision = []
+ml = []
 content-processing = ["dep:paladin-content", "paladin-content/web-scraping", "paladin-content/rss", "paladin-content/news-api", "paladin-content/tiktoken", "paladin-content/llm", "paladin-memory/content-processing"]
 web-server = ["dep:paladin-web"]
 notifications = ["dep:paladin-notifications", "paladin-notifications/email", "paladin-notifications/push", "paladin-notifications/system"]

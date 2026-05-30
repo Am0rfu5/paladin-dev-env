@@ -1,3 +1,10 @@
+//! TensorFlow ML adapter for the Paladin framework.
+//!
+//! **Requires the `ml` feature flag.** This is a placeholder for a future `paladin-ml` crate
+//! (Milestone 9+). Enable with:
+//! ```toml
+//! paladin = { version = "0.1", features = ["ml"] }
+//! ```
 use crate::core::platform::container::content::ContentItem;
 use paladin_ports::input::ml_port::{
     MlInputData, MlModelInfo, MlPort, MlPortError, MlPrediction, MlPredictionRequest,
