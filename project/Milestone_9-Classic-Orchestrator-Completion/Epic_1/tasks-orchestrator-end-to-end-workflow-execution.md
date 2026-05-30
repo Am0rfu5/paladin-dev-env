@@ -6,18 +6,18 @@
 
 ## Relevant Files
 
-- `src/application/services/orchestration/mod.rs` - `Orchestrator`; add `execute_workflow()`, dispatch path, persistence wiring, recovery on `start()`.
-- `src/application/services/orchestration/types.rs` - Coordination types; add internal `WorkflowState`/`JobState` + execution-result structures.
-- `src/application/services/orchestration/scheduler.rs` - `SchedulerOrchestrator` (referenced; minimal/no change expected).
-- `crates/paladin-core/src/platform/container/workflow.rs` - `Workflow`, `WorkflowStage`, `WorkflowExecutionOrder` (read; possibly helper accessors).
+- `src/application/services/orchestration/mod.rs` - `Orchestrator`; added `execute_workflow()` + crate-private `execute_workflow_inner()`, dispatch path, optional `WorkflowRepositoryPort` field with `with_workflow_repository()`, `persist_state()`, and `resume_incomplete_workflows()` invoked on `start()`.
+- `src/application/services/orchestration/types.rs` - Coordination types; internal `WorkflowRunState`/`JobRunState` + execution-result structures; added `OrchestratorError::PersistenceError`.
+- `src/application/services/orchestration/scheduler.rs` - `SchedulerOrchestrator`; default-service registration uses temp-path constructors.
+- `crates/paladin-core/src/platform/container/workflow.rs` - `Workflow`, `WorkflowStage`, `WorkflowExecutionOrder` (read; Serialize/Deserialize used for persistence).
 - `crates/paladin-core/src/platform/container/job.rs` - `Job::execute`, `JobExecutionMode` (reused for error strategy).
 - `crates/paladin-core/src/platform/container/task.rs` - `TaskService` trait + `DataBackupService`/`ContentIndexingService`/`EmailNotificationService` rewrites + unit tests.
-- `crates/paladin-ports/src/output/workflow_repository_port.rs` - **New** `WorkflowRepositoryPort` trait.
-- `crates/paladin-ports/src/output/mod.rs` - Register the new port module.
-- `crates/paladin-storage/src/sqlite_workflow_repository.rs` - **New** SQLite adapter implementing the port.
-- `crates/paladin-storage/src/lib.rs` - Register the new adapter module.
+- `crates/paladin-ports/src/output/workflow_repository_port.rs` - **New** `WorkflowRepositoryPort` trait + `PersistedWorkflow` DTO + `WorkflowPersistenceStatus` + `WorkflowRepositoryError`.
+- `crates/paladin-ports/src/output/mod.rs` - Registers the new port module.
+- `crates/paladin-storage/src/sqlite_workflow_repository.rs` - **New** `SqliteWorkflowRepository` adapter (sqlx, bound params, upsert, migration) + unit tests.
+- `crates/paladin-storage/src/lib.rs` - Registers the new adapter module (gated by `sqlite` feature).
 - `tests/integration/orchestrator_workflow_lifecycle_test.rs` - **New** full-lifecycle integration test.
-- `tests/integration.rs` (or `tests/integration/mod.rs`) - Wire the new integration test if required by harness.
+- `tests/integration/mod.rs` - Registers the new integration test module.
 
 ### Notes
 
@@ -74,9 +74,9 @@
   - [x] 5.3 Assert ordered execution, `Completed` terminal state, retrievable per-job results; ensure determinism
   - [x] 5.4 Wire the test into the integration harness so it runs under `cargo test`
 
-- [ ] 6.0 Quality gate & finalize
-  - [ ] 6.1 `cargo build --workspace`
-  - [ ] 6.2 `cargo test --workspace`
-  - [ ] 6.3 `cargo clippy --workspace -- -D warnings`
-  - [ ] 6.4 `cargo fmt --all -- --check`
-  - [ ] 6.5 Remove temporary debug prints; update PRD checklist; update Relevant Files
+- [x] 6.0 Quality gate & finalize
+  - [x] 6.1 `cargo build --workspace`
+  - [x] 6.2 `cargo test --workspace`
+  - [x] 6.3 `cargo clippy --workspace -- -D warnings`
+  - [x] 6.4 `cargo fmt --all -- --check`
+  - [x] 6.5 Remove temporary debug prints; update PRD checklist; update Relevant Files

@@ -307,27 +307,27 @@ per_job: { job_id, state, result_json, error }, error_history
 
 Epic 1 is complete when **all** of the following are true:
 
-- [ ] `execute_workflow()` exists and correctly executes Sequential, Parallel, and Custom/staged
+- [x] `execute_workflow()` exists and correctly executes Sequential, Parallel, and Custom/staged
       workflows; EventDriven workflows route triggered jobs through the real dispatch path.
-- [ ] The four `println!`-only arms in `create_workflow()` are removed/replaced.
-- [ ] Sequential execution threads job N output into job N+1 context (proven by a unit test).
-- [ ] Parallel execution runs jobs concurrently and aggregates a mixed success/failure set (proven
+- [x] The four `println!`-only arms in `create_workflow()` are removed/replaced.
+- [x] Sequential execution threads job N output into job N+1 context (proven by a unit test).
+- [x] Parallel execution runs jobs concurrently and aggregates a mixed success/failure set (proven
       by a unit test).
-- [ ] Custom/staged execution runs stages in order with intra-stage concurrency (proven by a unit
+- [x] Custom/staged execution runs stages in order with intra-stage concurrency (proven by a unit
       test).
-- [ ] `TaskService` dispatch resolves services by name, honors fail-fast vs. continue-on-error, and
+- [x] `TaskService` dispatch resolves services by name, honors fail-fast vs. continue-on-error, and
       returns a typed error for an unregistered service (no panics).
-- [ ] `DataBackupService`, `ContentIndexingService`, and `EmailNotificationService` perform real,
+- [x] `DataBackupService`, `ContentIndexingService`, and `EmailNotificationService` perform real,
       observable work, return `TaskError` on failure, and have passing unit tests for both success
       and failure.
-- [ ] A `WorkflowRepository` port exists in `paladin-ports` with a SQLite-backed adapter using
+- [x] A `WorkflowRepository` port exists in `paladin-ports` with a SQLite-backed adapter using
       parameterized queries.
-- [ ] Workflow state persists and an interrupted workflow resumes on `start()` from the last
+- [x] Workflow state persists and an interrupted workflow resumes on `start()` from the last
       completed job/stage without re-running completed jobs (proven by a crash-recovery test).
-- [ ] A deterministic full-lifecycle integration test (3 sequential jobs → Completed → results
+- [x] A deterministic full-lifecycle integration test (3 sequential jobs → Completed → results
       readable) passes in CI.
-- [ ] No new public `WorkflowState`/`JobState` API is introduced.
-- [ ] `cargo build --workspace`, `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`,
+- [x] No new public `WorkflowState`/`JobState` API is introduced.
+- [x] `cargo build --workspace`, `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`,
       and `cargo fmt --all -- --check` all pass.
 
 ---
@@ -353,39 +353,39 @@ Epic 1 is complete when **all** of the following are true:
 ## Task Checklist
 
 ### Task 1.1 — Implement Workflow Execution Loop
-- [ ] Add `execute_workflow()` with workflow lookup + `WorkflowNotFound` handling
-- [ ] Implement Sequential execution with N→N+1 context threading
-- [ ] Implement Parallel execution with `JoinSet`/`join_all` + full result aggregation
-- [ ] Implement Custom/staged execution (stage ordering, intra-stage concurrency)
-- [ ] Route EventDriven triggered jobs through the real dispatch path
-- [ ] Remove the four `println!`-only arms in `create_workflow()`
-- [ ] Add internal `WorkflowState`/`JobState` transition tracking (non-public)
-- [ ] Unit tests: sequential, parallel (mixed success/failure), staged
+- [x] Add `execute_workflow()` with workflow lookup + `WorkflowNotFound` handling
+- [x] Implement Sequential execution with N→N+1 context threading
+- [x] Implement Parallel execution with `JoinSet`/`join_all` + full result aggregation
+- [x] Implement Custom/staged execution (stage ordering, intra-stage concurrency)
+- [x] Route EventDriven triggered jobs through the real dispatch path
+- [x] Remove the four `println!`-only arms in `create_workflow()`
+- [x] Add internal `WorkflowState`/`JobState` transition tracking (non-public)
+- [x] Unit tests: sequential, parallel (mixed success/failure), staged
 
 ### Task 1.2 — Wire TaskService Execution
-- [ ] Implement service-by-name resolution + typed error on missing service
-- [ ] Honor fail-fast vs. continue-on-error via existing `Job`/`JobExecutionMode`
-- [ ] Rewrite `DataBackupService` with real backup logic + `TaskError` on failure
-- [ ] Rewrite `ContentIndexingService` with real indexing logic + `TaskError` on failure
-- [ ] Rewrite `EmailNotificationService` with real dispatch (injectable sink) + `TaskError`
-- [ ] Unit tests for each default service (success side effect + forced failure)
+- [x] Implement service-by-name resolution + typed error on missing service
+- [x] Honor fail-fast vs. continue-on-error via existing `Job`/`JobExecutionMode`
+- [x] Rewrite `DataBackupService` with real backup logic + `TaskError` on failure
+- [x] Rewrite `ContentIndexingService` with real indexing logic + `TaskError` on failure
+- [x] Rewrite `EmailNotificationService` with real dispatch (injectable sink) + `TaskError`
+- [x] Unit tests for each default service (success side effect + forced failure)
 
 ### Task 1.3 — Implement Workflow State Persistence
-- [ ] Define `WorkflowRepository` output port in `paladin-ports` (`#[async_trait]`, `Send + Sync`)
-- [ ] Implement SQLite-backed adapter (parameterized queries only)
-- [ ] Add optional repository to `Orchestrator` (in-memory remains default)
-- [ ] Persist workflow/job state transitions during `execute_workflow()`
-- [ ] Resume incomplete workflows on `start()` without re-running completed jobs
-- [ ] Crash-recovery test
+- [x] Define `WorkflowRepository` output port in `paladin-ports` (`#[async_trait]`, `Send + Sync`)
+- [x] Implement SQLite-backed adapter (parameterized queries only)
+- [x] Add optional repository to `Orchestrator` (in-memory remains default)
+- [x] Persist workflow/job state transitions during `execute_workflow()`
+- [x] Resume incomplete workflows on `start()` without re-running completed jobs
+- [x] Crash-recovery test
 
 ### Task 1.4 — Integration Test: Full Workflow Lifecycle
-- [ ] Mock `TaskService` impls with observable side effects
-- [ ] 3-sequential-job workflow: create → start → execute
-- [ ] Assert ordered execution, `Completed` terminal state, retrievable results
-- [ ] Deterministic; passes under `cargo test` in CI
+- [x] Mock `TaskService` impls with observable side effects
+- [x] 3-sequential-job workflow: create → start → execute
+- [x] Assert ordered execution, `Completed` terminal state, retrievable results
+- [x] Deterministic; passes under `cargo test` in CI
 
 ### Quality Gate
-- [ ] `cargo build --workspace`
-- [ ] `cargo test --workspace`
-- [ ] `cargo clippy --workspace -- -D warnings`
-- [ ] `cargo fmt --all -- --check`
+- [x] `cargo build --workspace`
+- [x] `cargo test --workspace`
+- [x] `cargo clippy --workspace -- -D warnings`
+- [x] `cargo fmt --all -- --check`
