@@ -5,10 +5,10 @@ Concrete implementation of UserRepositoryPort using SQLite database.
 This adapter handles the actual database operations for user persistence.
 */
 
-use crate::application::storage::user_store::UserRepositoryPort;
 use crate::core::platform::container::user::{Email, User, UserData, UserError, UserProfile};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use paladin_ports::output::user_repository_port::UserRepositoryPort;
 use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
 use std::str::FromStr;
 use uuid::Uuid;

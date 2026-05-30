@@ -19,6 +19,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Benefit**: Library consumers who don't use the CLI avoid compiling `clap` and associated TUI dependencies
 
 ### Removed
+- **Storage Re-export Shims** (Milestone 8, Epic 3): Deleted `src/application/storage/` (3 files:
+  `sql_store.rs`, `user_store.rs`, `mod.rs`). These files contained only `pub use` re-exports of port
+  traits that already live in `paladin_ports`. Six internal consumers were updated to import directly
+  from the canonical crate paths.
+
+  | Removed shim path | Replacement canonical path |
+  |-------------------|---------------------------|
+  | `paladin::application::storage::sql_store::ContentRepository` | `paladin_ports::output::repository_port::ContentRepository` |
+  | `paladin::application::storage::sql_store::ContentListRepository` | `paladin_ports::output::repository_port::ContentListRepository` |
+  | `paladin::application::storage::sql_store::MigrationManager` | `paladin_ports::output::repository_port::MigrationManager` |
+  | `paladin::application::storage::sql_store::RepositoryError` | `paladin_ports::output::repository_port::RepositoryError` |
+  | `paladin::application::storage::sql_store::RepositoryStats` | `paladin_ports::output::repository_port::RepositoryStats` |
+  | `paladin::application::storage::sql_store::SqlStore` | `paladin_ports::output::repository_port::SqlStore` |
+  | `paladin::application::storage::sql_store::TransactionManager` | `paladin_ports::output::repository_port::TransactionManager` |
+  | `paladin::application::storage::user_store::UserRepositoryPort` | `paladin_ports::output::user_repository_port::UserRepositoryPort` |
+
 - **Facade Short-path Aliases** (Milestone 8, Epic 2): Removed zero-consumer `pub use` re-export aliases
   from `src/lib.rs`. These aliases had no workspace consumers; the underlying types are unchanged and
   remain accessible via their canonical crate paths.

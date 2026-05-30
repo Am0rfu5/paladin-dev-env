@@ -52,19 +52,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.3 Commit the task file update: `git add project/ && git commit -m "docs(m8-e3): close Task 3.1 notifications as already resolved"`
 
 - [ ] 2.0 Delete storage re-export shims and update all 6 consumers
-  - [ ] 2.1 Read the current contents of all 3 storage shim files (`sql_store.rs`, `user_store.rs`, `mod.rs`) and all 6 consumer files to understand the exact import lines that need updating before making any changes.
-  - [ ] 2.2 Update `src/infrastructure/repositories/sqlite_content_repository.rs`: replace `use crate::application::storage::sql_store::{...}` with `use paladin_ports::output::repository_port::{...}` (keep the exact same imported names).
-  - [ ] 2.3 Update `src/infrastructure/repositories/mysql_content_repository.rs`: same replacement as 2.2.
-  - [ ] 2.4 Update `src/infrastructure/repositories/sqlite_user_repository.rs`: replace `use crate::application::storage::user_store::UserRepositoryPort` with `use paladin_ports::output::user_repository_port::UserRepositoryPort`.
-  - [ ] 2.5 Update `src/core/platform/manager/user_service.rs`: replace `use crate::application::storage::user_store::UserRepositoryPort` with `use paladin_ports::output::user_repository_port::UserRepositoryPort`.
-  - [ ] 2.6 Update `src/config/setup/service_runner.rs`: replace `use crate::application::storage::sql_store::MigrationManager` with `use paladin_ports::output::repository_port::MigrationManager`.
-  - [ ] 2.7 Update `tests/repository/mysql_content_repository_test.rs`: replace `use paladin::application::storage::sql_store::ContentRepository` with `use paladin_ports::output::repository_port::ContentRepository`.
-  - [ ] 2.8 Remove `pub mod storage;` from `src/application/mod.rs` (line 143).
-  - [ ] 2.9 Delete the three storage shim files: `rm src/application/storage/sql_store.rs src/application/storage/user_store.rs src/application/storage/mod.rs && rmdir src/application/storage/`
-  - [ ] 2.10 Run `cargo build --workspace` — confirm exit 0 with zero errors.
+  - [x] 2.1 Read the current contents of all 3 storage shim files (`sql_store.rs`, `user_store.rs`, `mod.rs`) and all 6 consumer files to understand the exact import lines that need updating before making any changes.
+  - [x] 2.2 Update `src/infrastructure/repositories/sqlite_content_repository.rs`: replace `use crate::application::storage::sql_store::{...}` with `use paladin_ports::output::repository_port::{...}` (keep the exact same imported names).
+  - [x] 2.3 Update `src/infrastructure/repositories/mysql_content_repository.rs`: same replacement as 2.2.
+  - [x] 2.4 Update `src/infrastructure/repositories/sqlite_user_repository.rs`: replace `use crate::application::storage::user_store::UserRepositoryPort` with `use paladin_ports::output::user_repository_port::UserRepositoryPort`.
+  - [x] 2.5 Update `src/core/platform/manager/user_service.rs`: replace `use crate::application::storage::user_store::UserRepositoryPort` with `use paladin_ports::output::user_repository_port::UserRepositoryPort`.
+  - [x] 2.6 Update `src/config/setup/service_runner.rs`: replace `use crate::application::storage::sql_store::MigrationManager` with `use paladin_ports::output::repository_port::MigrationManager`.
+  - [x] 2.7 Update `tests/repository/mysql_content_repository_test.rs`: replace `use paladin::application::storage::sql_store::ContentRepository` with `use paladin_ports::output::repository_port::ContentRepository`.
+  - [x] 2.8 Remove `pub mod storage;` from `src/application/mod.rs` (line 143).
+  - [x] 2.9 Delete the three storage shim files: `rm src/application/storage/sql_store.rs src/application/storage/user_store.rs src/application/storage/mod.rs && rmdir src/application/storage/`
+  - [x] 2.10 Run `cargo build --workspace` — confirm exit 0 with zero errors.
   - [ ] 2.11 Run `cargo test --workspace` — confirm all tests pass, zero failures.
   - [ ] 2.12 Run `cargo fmt --all -- --check` and `cargo clippy --workspace -- -D warnings` — confirm both pass clean.
-  - [ ] 2.13 Add a `### Removed` entry to `CHANGELOG.md` under `[Unreleased]` documenting the deletion of `src/application/storage/` with the migration table:
+  - [x] 2.13 Add a `### Removed` entry to `CHANGELOG.md` under `[Unreleased]` documenting the deletion of `src/application/storage/` with the migration table:
     - `paladin::application::storage::sql_store::*` → `paladin_ports::output::repository_port::*`
     - `paladin::application::storage::user_store::UserRepositoryPort` → `paladin_ports::output::user_repository_port::UserRepositoryPort`
   - [ ] 2.14 Commit: `git add -A && git commit -m "refactor(m8-e3): delete storage re-export shims, update 6 consumers to paladin_ports" -m "- Deleted src/application/storage/ (sql_store.rs, user_store.rs, mod.rs)" -m "- Updated 6 consumers to import directly from paladin_ports::output::repository_port and user_repository_port" -m "- Removed pub mod storage from application/mod.rs" -m "- Updated CHANGELOG.md with migration paths"`

@@ -1,4 +1,4 @@
-use crate::application::storage::sql_store::{
+use paladin_ports::output::repository_port::{
     ContentListRepository, ContentRepository, MigrationManager, RepositoryError, RepositoryStats,
     SqlStore, TransactionManager,
 };

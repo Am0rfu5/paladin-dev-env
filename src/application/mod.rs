@@ -140,6 +140,4 @@ pub mod cli;
 #[allow(missing_docs)]
 pub mod errors;
 #[allow(missing_docs)]
-pub mod storage;
-#[allow(missing_docs)]
 pub mod use_cases;
