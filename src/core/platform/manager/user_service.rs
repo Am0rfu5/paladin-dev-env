@@ -13,6 +13,7 @@ use crate::core::platform::container::user::{Email, User, UserError};
 use argon2::password_hash::{SaltString, rand_core::OsRng};
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use async_trait::async_trait;
+use paladin_ports::output::auth_port::AuthPort;
 use paladin_ports::output::log_port::LogPort;
 use paladin_ports::output::user_repository_port::UserRepositoryPort;
 use std::sync::Arc;
@@ -30,6 +31,7 @@ pub struct UserService {
     log_port: Arc<dyn LogPort>,
     notification_service: Arc<NotificationService>,
     argon2: Argon2<'static>,
+    auth_port: Option<Arc<dyn AuthPort>>,
 }
 
 impl UserService {
@@ -44,7 +46,15 @@ impl UserService {
             log_port,
             notification_service,
             argon2: Argon2::default(),
+            auth_port: None,
         }
+    }
+
+    /// Attaches an authentication provider so that successful logins issue a
+    /// bearer token. Without it, `login_user` succeeds but returns no token.
+    pub fn with_auth_port(mut self, auth_port: Arc<dyn AuthPort>) -> Self {
+        self.auth_port = Some(auth_port);
+        self
     }
 
     /// Hash password using Argon2
@@ -268,12 +278,26 @@ impl UserServiceTrait for UserService {
         )
         .await;
 
+        // Issue a bearer token when an auth provider is configured.
+        let (token, token_expires_at) = match &self.auth_port {
+            Some(auth_port) => {
+                let issued = auth_port
+                    .issue_token(user.uuid, user.role())
+                    .await
+                    .map_err(|e| UserError::HashError(format!("token issuance failed: {e}")))?;
+                (Some(issued.token), Some(issued.expires_at))
+            }
+            None => (None, None),
+        };
+
         Ok(UserAuthenticationResult {
             user_id: user.uuid,
             username: user.username().to_string(),
             email: user.email().value().to_string(),
             is_verified: user.is_verified(),
             success: true,
+            token,
+            token_expires_at,
         })
     }
 
@@ -332,6 +356,33 @@ impl UserServiceTrait for UserService {
 
     async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, UserError> {
         self.user_repository.find_by_email(email).await
+    }
+
+    async fn delete_user(&self, user_id: Uuid) -> Result<(), UserError> {
+        // Ensure the user exists so callers get a clear not-found error.
+        if self.user_repository.find_by_id(user_id).await?.is_none() {
+            return Err(UserError::UserNotFound(user_id));
+        }
+
+        self.user_repository.delete(user_id).await?;
+
+        self.log_action(
+            LogLevel::Info,
+            "User account deleted".to_string(),
+            Some(user_id),
+        )
+        .await;
+
+        Ok(())
+    }
+
+    async fn list_users(&self) -> Result<Vec<User>, UserError> {
+        // The repository exposes status-scoped queries; combine both active
+        // states to enumerate every user without a dedicated `find_all` method.
+        let mut users = self.user_repository.find_by_active_status(true).await?;
+        let inactive = self.user_repository.find_by_active_status(false).await?;
+        users.extend(inactive);
+        Ok(users)
     }
 
     async fn activate_user(&self, user_id: Uuid) -> Result<(), UserError> {
@@ -410,5 +461,123 @@ impl UserServiceTrait for UserService {
     /// Count total users
     async fn count_users(&self) -> Result<u64, UserError> {
         self.user_repository.count_users().await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::base::service::message_service::{MessageService, MessageServiceConfig};
+    use crate::infrastructure::adapters::auth::InMemoryTokenAuthAdapter;
+    use crate::infrastructure::adapters::logs::system_log_adapter::{
+        SystemLogAdapter, SystemLogAdapterConfig,
+    };
+    use crate::infrastructure::repositories::sqlite_user_repository::SqliteUserRepository;
+    use paladin_core::platform::container::notification::NotificationServiceConfig;
+
+    async fn build_service(with_auth: bool) -> UserService {
+        let repo = Arc::new(SqliteUserRepository::new("sqlite::memory:").await.unwrap());
+        let log_port =
+            Arc::new(SystemLogAdapter::new_for_test(SystemLogAdapterConfig::default()).unwrap());
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let notification_service = Arc::new(NotificationService::new(
+            NotificationServiceConfig::default(),
+            message_service,
+        ));
+        let service = UserService::new(repo, log_port, notification_service);
+        if with_auth {
+            service.with_auth_port(Arc::new(InMemoryTokenAuthAdapter::new()))
+        } else {
+            service
+        }
+    }
+
+    fn registration(username: &str, email: &str) -> UserRegistrationRequest {
+        UserRegistrationRequest {
+            username: username.to_string(),
+            email: email.to_string(),
+            password: "password123".to_string(),
+            profile: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn delete_user_removes_the_user() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("alice", "alice@example.com"))
+            .await
+            .unwrap();
+
+        service.delete_user(user.uuid).await.unwrap();
+
+        assert!(service.get_user_by_id(user.uuid).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn delete_unknown_user_is_not_found() {
+        let service = build_service(false).await;
+        let err = service.delete_user(Uuid::new_v4()).await.unwrap_err();
+        assert!(matches!(err, UserError::UserNotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn list_users_returns_all_users() {
+        let service = build_service(false).await;
+        service
+            .register_user(registration("bob", "bob@example.com"))
+            .await
+            .unwrap();
+        service
+            .register_user(registration("carol", "carol@example.com"))
+            .await
+            .unwrap();
+
+        let users = service.list_users().await.unwrap();
+        assert_eq!(users.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn login_issues_token_when_auth_port_configured() {
+        let service = build_service(true).await;
+        service
+            .register_user(registration("dave", "dave@example.com"))
+            .await
+            .unwrap();
+
+        let result = service
+            .login_user(UserLoginRequest {
+                email: "dave@example.com".to_string(),
+                password: "password123".to_string(),
+            })
+            .await
+            .unwrap();
+
+        assert!(result.success);
+        let token = result.token.expect("token should be issued");
+        assert!(!token.is_empty());
+        let expires_at = result.token_expires_at.expect("expiry should be set");
+        assert!(expires_at > chrono::Utc::now());
+    }
+
+    #[tokio::test]
+    async fn login_without_auth_port_has_no_token() {
+        let service = build_service(false).await;
+        service
+            .register_user(registration("erin", "erin@example.com"))
+            .await
+            .unwrap();
+
+        let result = service
+            .login_user(UserLoginRequest {
+                email: "erin@example.com".to_string(),
+                password: "password123".to_string(),
+            })
+            .await
+            .unwrap();
+
+        assert!(result.success);
+        assert!(result.token.is_none());
+        assert!(result.token_expires_at.is_none());
     }
 }

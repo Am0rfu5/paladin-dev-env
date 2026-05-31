@@ -497,6 +497,8 @@ mod tests {
                     email: request.email,
                     is_verified: true,
                     success: true,
+                    token: None,
+                    token_expires_at: None,
                 })
             }
         }
@@ -592,6 +594,21 @@ mod tests {
                 .values()
                 .find(|u| u.email().value() == email)
                 .cloned())
+        }
+
+        async fn delete_user(&self, user_id: Uuid) -> Result<(), UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            self.users.lock().unwrap().remove(&user_id);
+            Ok(())
+        }
+
+        async fn list_users(&self) -> Result<Vec<User>, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(self.users.lock().unwrap().values().cloned().collect())
         }
 
         async fn find_by_active_status(&self, is_active: bool) -> Result<Vec<User>, UserError> {

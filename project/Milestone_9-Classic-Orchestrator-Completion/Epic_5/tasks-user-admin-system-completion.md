@@ -75,13 +75,13 @@ each sub-task, not just each parent task.
   - [x] 3.5 Unit tests: issue→verify round-trip; expired token rejected (`Expired`); revoked token rejected; unknown token rejected (`InvalidToken`).
   - [x] 3.6 Quality gate, then commit.
 
-- [ ] 4.0 Complete user CRUD + token-issuing login on the service surface (Task 5.1; FR 12, 18–20)
-  - [ ] 4.1 Extend `UserServiceTrait` (in `paladin-core`) with `delete_user(user_id)` and `list_users()` (backed by existing repository methods).
-  - [ ] 4.2 Add token fields to the login result (or a new `login_with_token` path) so a successful login returns a token + expiry; keep the existing method working for backward compatibility.
-  - [ ] 4.3 Implement the new trait methods on the concrete `UserService` (root crate), delegating delete/list to the repository and issuing the token via `AuthPort` (injected as `Arc<dyn AuthPort>`).
-  - [ ] 4.4 Ensure all user responses/DTOs continue to omit the password hash.
-  - [ ] 4.5 Unit tests: delete removes a user; list returns users; login returns a non-empty token with future expiry.
-  - [ ] 4.6 Quality gate, then commit.
+- [x] 4.0 Complete user CRUD + token-issuing login on the service surface (Task 5.1; FR 12, 18–20)
+  - [x] 4.1 Extend `UserServiceTrait` (in `paladin-core`) with `delete_user(user_id)` and `list_users()` (backed by existing repository methods).
+  - [x] 4.2 Add token fields to the login result (or a new `login_with_token` path) so a successful login returns a token + expiry; keep the existing method working for backward compatibility.
+  - [x] 4.3 Implement the new trait methods on the concrete `UserService` (root crate), delegating delete/list to the repository and issuing the token via `AuthPort` (injected as `Arc<dyn AuthPort>`).
+  - [x] 4.4 Ensure all user responses/DTOs continue to omit the password hash.
+  - [x] 4.5 Unit tests: delete removes a user; list returns users; login returns a non-empty token with future expiry.
+  - [x] 4.6 Quality gate, then commit.
 
 - [ ] 5.0 Add Axum auth middleware + RBAC guard in `paladin-web` (Tasks 5.2–5.3; FR 13–17)
   - [ ] 5.1 Create `crates/paladin-web/src/auth_middleware.rs`: an extractor/middleware that reads `Authorization: Bearer <token>`, calls `AuthPort::verify_token`, injects `AuthClaims` into request extensions, and returns `401` (JSON body, non-revealing) on missing/invalid/expired.
