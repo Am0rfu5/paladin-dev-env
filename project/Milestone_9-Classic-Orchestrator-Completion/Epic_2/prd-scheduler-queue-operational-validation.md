@@ -249,39 +249,43 @@ and leaves the time/event entry points trustworthy for Epics 3 and 4.
 
 ## 8. Success Metrics
 
-- [ ] Each `Schedule` variant computes the correct `next_run` (unit tests green).
-- [ ] A due job dispatches through `TaskService::execute()` on a tick, and `last_run` / `run_count`
+- [x] Each `Schedule` variant computes the correct `next_run` (unit tests green).
+- [x] A due job dispatches through `TaskService::execute()` on a tick, and `last_run` / `run_count`
       / `next_run` update correctly.
-- [ ] Disabled jobs are skipped without advancing `run_count`.
-- [ ] A `Schedule::Once` job fires exactly once and does not re-fire.
-- [ ] A job scheduled a short interval in the future executes (scheduler integration test green).
-- [ ] `TokioCronSchedulerAdapter`: a cron job fires; invalid cron is rejected; not-running and
+- [x] Disabled jobs are skipped without advancing `run_count`.
+- [x] A `Schedule::Once` job fires exactly once and does not re-fire.
+- [x] A job scheduled a short interval in the future executes (scheduler integration test green).
+- [x] `TokioCronSchedulerAdapter`: a cron job fires; invalid cron is rejected; not-running and
       lifecycle paths behave correctly.
-- [ ] The `QueuePort` contract passes against the in-memory `QueueOrchestrator`.
-- [ ] The `QueuePort` contract passes against the `RedisQueueAdapter` with the `redis-queue` feature
+- [x] The `QueuePort` contract passes against the in-memory `QueueOrchestrator`.
+- [x] The `QueuePort` contract passes against the `RedisQueueAdapter` with the `redis-queue` feature
       (against docker-compose Redis, or correctly skipped when absent).
-- [ ] An item failing up to `max_retries` is retried, then dead-lettered — for both adapters.
-- [ ] In-memory queue is verified as the working fallback; health checks reflect availability.
-- [ ] A matching event creates exactly one trigger per matching listener; a non-matching event
+- [x] An item failing up to `max_retries` is retried, then dead-lettered — for both adapters.
+- [x] In-memory queue is verified as the working fallback; health checks reflect availability.
+- [x] A matching event creates exactly one trigger per matching listener; a non-matching event
       creates none; the trigger runs a job via the Epic 1 dispatch path.
-- [ ] A rate-limited listener does not create excess triggers.
-- [ ] `cargo build`, `cargo test` (incl. `redis-queue`), `cargo clippy -- -D warnings`, and `cargo
+- [x] A rate-limited listener does not create excess triggers.
+- [x] `cargo build`, `cargo test` (incl. `redis-queue`), `cargo clippy -- -D warnings`, and `cargo
       fmt --check` all pass.
 
 ## Task Checklist
 
-- [ ] **Task 2.1** — Scheduler tick loop + cron adapter validated.
-- [ ] **Task 2.2** — `QueuePort` contract validated for in-memory and Redis, incl. retry/dead-letter.
-- [ ] **Task 2.3** — Event → trigger → job pipeline validated, incl. edge cases.
-- [ ] **Quality Gate** — build, test (with `redis-queue`), clippy, and fmt all pass.
+- [x] **Task 2.1** — Scheduler tick loop + cron adapter validated.
+- [x] **Task 2.2** — `QueuePort` contract validated for in-memory and Redis, incl. retry/dead-letter.
+- [x] **Task 2.3** — Event → trigger → job pipeline validated, incl. edge cases.
+- [x] **Quality Gate** — build, test (with `redis-queue`), clippy, and fmt all pass.
 
 ---
 
 ## 9. Open Questions
 
-1. Does the existing docker-compose test stack expose Redis on a well-known host/port that the test
-   config already points to, or does the Redis contract test need a new env var? (Resolve during
-   Task 2.2 by inspecting `docker/docker-compose.test.yml` and the test config.)
-2. Is there existing glue from `ListenerOrchestrator`'s `trigger_queue` into `execute_job`, or must
-   a created trigger be manually pulled and dispatched in the test? (Resolve during Task 2.3 by
-   inspecting the listener → orchestrator path.)
+1. ~~Does the existing docker-compose test stack expose Redis on a well-known host/port that the test
+   config already points to, or does the Redis contract test need a new env var?~~ **Resolved:**
+   `docker/docker-compose.test.yml` exposes the `redis-test` service on host port **6380**. The
+   contract test tries `PALADIN_TEST_REDIS_PORT`, then 6380, then 6379, and skips gracefully (with
+   a short bounded timeout) when none is reachable.
+2. ~~Is there existing glue from `ListenerOrchestrator`'s `trigger_queue` into `execute_job`, or must
+   a created trigger be manually pulled and dispatched in the test?~~ **Resolved:** the glue already
+   exists — `Orchestrator::process_event()` drains created triggers via
+   `ListenerOrchestrator::get_next_trigger()` and dispatches each through `execute_trigger()` →
+   `execute_job()`. No new glue was required; the existing path is validated as-is.

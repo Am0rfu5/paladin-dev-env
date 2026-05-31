@@ -335,10 +335,22 @@ mod redis_contract {
             let config = RedisQueueConfig {
                 redis_port: port,
                 key_prefix: format!("paladin:test:{}", Uuid::new_v4()),
+                connection_timeout: 2,
                 ..Default::default()
             };
-            if let Ok(adapter) = RedisQueueAdapter::new(config, None).await
-                && QueuePort::health_check(&adapter).await.unwrap_or(false)
+            // `ConnectionManager` applies its own retry/backoff and ignores
+            // `connection_timeout`, so bound the whole connect + health check in
+            // an explicit timeout to skip quickly when no Redis is reachable.
+            let connect = async {
+                let adapter = RedisQueueAdapter::new(config, None).await.ok()?;
+                if QueuePort::health_check(&adapter).await.unwrap_or(false) {
+                    Some(adapter)
+                } else {
+                    None
+                }
+            };
+            if let Ok(Some(adapter)) =
+                tokio::time::timeout(std::time::Duration::from_secs(3), connect).await
             {
                 return Some(adapter);
             }

@@ -61,10 +61,10 @@
   - [x] 3.6 Rate-limit test: exceeding a listener's `max_triggers_per_window` does not create excess triggers (count capped at window limit)
   - [x] 3.7 Add only minimal glue if needed to route a created trigger into the dispatch path (no new listener subsystem)
 
-- [ ] 4.0 Quality gate & finalize
-  - [ ] 4.1 `cargo build --workspace`
-  - [ ] 4.2 `cargo test --workspace`
-  - [ ] 4.3 `cargo test --workspace --features redis-queue` (Redis contract passes or is correctly skipped)
-  - [ ] 4.4 `cargo clippy --workspace --all-targets -- -D warnings`
-  - [ ] 4.5 `cargo fmt --all -- --check`
-  - [ ] 4.6 Remove temporary debug prints; update PRD Success Metrics + Task Checklist; update Relevant Files
+- [x] 4.0 Quality gate & finalize
+  - [x] 4.1 `cargo build --workspace`
+  - [x] 4.2 `cargo test --workspace`
+  - [x] 4.3 `cargo test --workspace --features redis-queue` (Redis contract passes or is correctly skipped)
+  - [x] 4.4 `cargo clippy --workspace --all-targets -- -D warnings`
+  - [x] 4.5 `cargo fmt --all -- --check`
+  - [x] 4.6 Remove temporary debug prints; update PRD Success Metrics + Task Checklist; update Relevant Files
