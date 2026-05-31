@@ -1,6 +1,6 @@
 [package]
 name = "paladin-storage"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 authors = ["Am0rfu5"]
 description = "SQL-backed repository adapters for the Paladin framework (SQLite and MySQL)"
@@ -21,8 +21,8 @@ sqlite = ["dep:sqlx", "sqlx/sqlite"]
 mysql = ["dep:sqlx", "sqlx/mysql"]
 
 [dependencies]
-paladin-core = { package = "paladin-ai-core", version = "0.4.0", path = "../paladin-core" }
-paladin-ports = { version = "0.4.0", path = "../paladin-ports" }
+paladin-core = { package = "paladin-ai-core", version = "0.4.1", path = "../paladin-core" }
+paladin-ports = { version = "0.4.1", path = "../paladin-ports" }
 
 async-trait = { workspace = true }
 chrono     = { workspace = true }
