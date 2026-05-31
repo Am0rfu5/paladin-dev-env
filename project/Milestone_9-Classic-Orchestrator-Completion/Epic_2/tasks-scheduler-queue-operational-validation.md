@@ -16,6 +16,7 @@
 - `src/application/services/orchestration/mod.rs` - `Orchestrator`; `register_event_listener()`/`process_event()` and the trigger → `execute_job` dispatch path used by event tests.
 - `tests/integration/scheduler_queue_event_validation_test.rs` - **New** integration tests: scheduler fire-on-time, `QueuePort` contract (in-memory + feature-gated Redis), event → trigger → job pipeline.
 - `tests/queue_port_contract.rs` - **New** integration tests validating the queue contract (enqueue → dequeue → process lifecycle, retry, dead-letter) for the in-memory `QueueOrchestrator` (always-on) and the feature-gated `RedisQueueAdapter` (skips when Redis unreachable).
+- `tests/event_trigger_pipeline.rs` - **New** integration tests validating the event → trigger → job pipeline: matching/non-matching events, multi-listener fan-out, per-listener rate limiting, and trigger → job dispatch through the `Orchestrator` (observed via a `TaskService` test double).
 - `tests/integration/mod.rs` - Registers the new integration test module.
 - `docker/docker-compose.test.yml` - Reference for Redis host/port used by the feature-gated queue contract test.
 
@@ -51,14 +52,14 @@
   - [x] 2.7 Fallback/health test: in-memory queue succeeds at the same call sites; health check reflects availability per adapter
   - [x] 2.8 Inspect `docker/docker-compose.test.yml` + test config to confirm the Redis host/port the test uses (resolves Open Question 1)
 
-- [ ] 3.0 Validate event → trigger → job pipeline (PRD Task 2.3)
-  - [ ] 3.1 Inspect the `ListenerOrchestrator` `trigger_queue` → `Orchestrator` dispatch path to confirm how a created trigger reaches `execute_job` (resolves Open Question 2)
-  - [ ] 3.2 Test: register an `EventListener` with a `TriggerCondition`, fire a matching event, assert exactly one `Trigger` is created
-  - [ ] 3.3 Test: fire a non-matching event, assert no trigger is created
-  - [ ] 3.4 Fan-out test: multiple matching listeners → exactly one trigger per matching listener
-  - [ ] 3.5 Test: created trigger is converted to a job and executed via the Epic 1 dispatch path (observed by a `TaskService` test double)
-  - [ ] 3.6 Rate-limit test: exceeding a listener's `max_triggers_per_window` does not create excess triggers (count capped at window limit)
-  - [ ] 3.7 Add only minimal glue if needed to route a created trigger into the dispatch path (no new listener subsystem)
+- [x] 3.0 Validate event → trigger → job pipeline (PRD Task 2.3)
+  - [x] 3.1 Inspect the `ListenerOrchestrator` `trigger_queue` → `Orchestrator` dispatch path to confirm how a created trigger reaches `execute_job` (resolves Open Question 2)
+  - [x] 3.2 Test: register an `EventListener` with a `TriggerCondition`, fire a matching event, assert exactly one `Trigger` is created
+  - [x] 3.3 Test: fire a non-matching event, assert no trigger is created
+  - [x] 3.4 Fan-out test: multiple matching listeners → exactly one trigger per matching listener
+  - [x] 3.5 Test: created trigger is converted to a job and executed via the Epic 1 dispatch path (observed by a `TaskService` test double)
+  - [x] 3.6 Rate-limit test: exceeding a listener's `max_triggers_per_window` does not create excess triggers (count capped at window limit)
+  - [x] 3.7 Add only minimal glue if needed to route a created trigger into the dispatch path (no new listener subsystem)
 
 - [ ] 4.0 Quality gate & finalize
   - [ ] 4.1 `cargo build --workspace`
