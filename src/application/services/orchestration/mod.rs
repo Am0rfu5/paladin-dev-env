@@ -13,12 +13,14 @@ This module exposes:
 */
 
 pub mod listener;
+pub mod orchestrator_bridge;
 pub mod processors;
 pub mod scheduler;
 pub mod types;
 
 pub use crate::core::platform::container::orchestration_context::OrchestrationContext;
 pub use listener::{EventListener, ListenerConfig, ListenerService, ListenerStats};
+pub use orchestrator_bridge::OrchestratorBridgeAdapter;
 pub use scheduler::{Schedule, Scheduler, SchedulerStats};
 pub use types::{
     ContentAnalysisType, ContentProcessingResult, ContentProcessor, DefaultContentProcessor,
@@ -213,6 +215,24 @@ impl Orchestrator {
 
         println!("Job scheduled with ID: {}", job_id);
         Ok(job_id)
+    }
+
+    /// Ensure a named queue exists, creating it with the default configuration
+    /// if it is not already present.
+    ///
+    /// This is idempotent: calling it for an existing queue leaves that queue
+    /// (and its contents) untouched. It exists so that callers such as the
+    /// agent → orchestrator bridge can enqueue items without first having to
+    /// register the target queue out of band.
+    pub async fn ensure_queue(&self, queue_name: &str) -> Result<(), OrchestratorError> {
+        let existing = self.queue_service.get_all_stats().await;
+        if !existing.contains_key(queue_name) {
+            self.queue_service
+                .create_queue(queue_name.to_string(), None)
+                .await
+                .map_err(OrchestratorError::QueueError)?;
+        }
+        Ok(())
     }
 
     /// Queue a job for asynchronous execution.

@@ -41,16 +41,16 @@ Epic spec: [Milestone_9-Epic_4-agent-orchestrator-bridge.md](Milestone_9-Epic_4-
   - [x] 1.8 Unit tests in the module: `BridgePolicy::default` contents, allow-list checks, and cap accounting helpers.
   - [x] 1.9 Quality gate (`cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`), then commit.
 
-- [ ] 2.0 Implement the concrete bridge adapter in the root crate (Task 4.2; FR 12–18)
-  - [ ] 2.1 Create `src/application/services/orchestration/orchestrator_bridge.rs` with module-level docs explaining root-crate placement (depends on `Orchestrator`).
-  - [ ] 2.2 Define `OrchestratorBridgeAdapter { orchestrator: Arc<Orchestrator>, policy: BridgePolicy, notification: Option<Arc<dyn NotificationDeliveryPort>>, counters }` with a constructor; thread-safe per-execution counters.
-  - [ ] 2.3 Implement `schedule_job`: enforce policy → build `Job::new` → call `Orchestrator::schedule_job` → return `Uuid`; map errors.
-  - [ ] 2.4 Implement `queue_item`: enforce policy → enqueue via orchestrator queue capability → return item `Uuid`; map errors.
-  - [ ] 2.5 Implement `fire_event`: enforce policy → build `Event::new` → dispatch via listener `process_event` → return `EventDispatchResult`; map errors.
-  - [ ] 2.6 Implement `send_notification`: enforce policy + require `NotificationDeliveryPort` → build `Notification` → `deliver_notification` → return `Uuid`; map errors.
-  - [ ] 2.7 Declare `pub mod orchestrator_bridge;` and re-export `OrchestratorBridgeAdapter` in `src/application/services/orchestration/mod.rs`.
-  - [ ] 2.8 Unit tests for all four actions: success path + `ActionNotAllowed` + `QuotaExceeded`, using mock collaborators (mock orchestrator port or mock notification port).
-  - [ ] 2.9 Quality gate, then commit.
+- [x] 2.0 Implement the concrete bridge adapter in the root crate (Task 4.2; FR 12–18)
+  - [x] 2.1 Create `src/application/services/orchestration/orchestrator_bridge.rs` with module-level docs explaining root-crate placement (depends on `Orchestrator`).
+  - [x] 2.2 Define `OrchestratorBridgeAdapter { orchestrator: Arc<Orchestrator>, policy: BridgePolicy, notification: Option<Arc<dyn NotificationDeliveryPort>>, counters }` with a constructor; thread-safe per-execution counters.
+  - [x] 2.3 Implement `schedule_job`: enforce policy → build `Job::new` → call `Orchestrator::schedule_job` → return `Uuid`; map errors.
+  - [x] 2.4 Implement `queue_item`: enforce policy → enqueue via orchestrator queue capability → return item `Uuid`; map errors.
+  - [x] 2.5 Implement `fire_event`: enforce policy → build `Event::new` → dispatch via listener `process_event` → return `EventDispatchResult`; map errors.
+  - [x] 2.6 Implement `send_notification`: enforce policy + require `NotificationDeliveryPort` → build `Notification` → `deliver_notification` → return `Uuid`; map errors.
+  - [x] 2.7 Declare `pub mod orchestrator_bridge;` and re-export `OrchestratorBridgeAdapter` in `src/application/services/orchestration/mod.rs`.
+  - [x] 2.8 Unit tests for all four actions: success path + `ActionNotAllowed` + `QuotaExceeded`, using mock collaborators (mock orchestrator port or mock notification port).
+  - [x] 2.9 Quality gate, then commit.
 
 - [ ] 3.0 Wire the bridge into `PaladinExecutionService` (Task 4.2; FR 19–21)
   - [ ] 3.1 Add `orchestrator_port: Option<Arc<dyn OrchestratorPort>>` field; initialize to `None` in existing `new(...)` so current call sites keep compiling.
