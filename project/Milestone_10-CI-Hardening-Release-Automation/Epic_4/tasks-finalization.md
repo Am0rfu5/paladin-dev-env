@@ -5,7 +5,7 @@
 **Epic:** 4 of 4
 **PRD:** `project/Milestone_10-CI-Hardening-Release-Automation/Epic_4/prd-milestone10-finalization.md`
 **Target Version:** v0.4.0
-**Status:** In Progress
+**Status:** Complete
 
 ---
 
@@ -13,7 +13,7 @@
 
 ### Task 0.0: Create feature branch
 
-- [ ] Checkout a new branch `feature/milestone_10-epic_4-finalization` from the current
+- [x] Checkout a new branch `feature/milestone_10-epic_4-finalization` from the current
   `feature/milestone_10-epic_3-release-automation` branch so all Epic 3 tooling (hooks, CI,
   `make release`) is available.
 
@@ -42,11 +42,11 @@ The following sections already exist and need **no changes**:
 | Security (### subsection under Code Quality Standards) | Epic 2 | n/a — subsection |
 | Releasing | Epic 3 | ✗ — **needs ToC entry** |
 
-- [ ] Add `[Releasing](#releasing)` to the Table of Contents in `CONTRIBUTING.md` (between
+- [x] Add `[Releasing](#releasing)` to the Table of Contents in `CONTRIBUTING.md` (between
   `[Documentation]` and `[API Change Process]`).
-- [ ] Add `[Adding a New Dependency](#adding-a-new-dependency)` to the Table of Contents
+- [x] Add `[Adding a New Dependency](#adding-a-new-dependency)` to the Table of Contents
   (between `[Releasing]` and `[API Change Process]`).
-- [ ] Write the `## Adding a New Dependency` section in `CONTRIBUTING.md` (after the
+- [x] Write the `## Adding a New Dependency` section in `CONTRIBUTING.md` (after the
   `## Releasing` section, before `## API Change Process`) covering:
   - Step 1: `cargo add <crate>` (or manually edit `Cargo.toml`)
   - Step 2: Run `make deny` — verify license is in the allowed list in `deny.toml`
@@ -113,7 +113,7 @@ Add subsections documenting:
 - Fixed `CONTRIBUTING.md` Table of Contents (added `Releasing` entry).
 - Bumped all workspace crates from `0.3.0` to `0.4.0` in lockstep.
 
-- [ ] Append the Milestone 10 Epic 1–4 `### Added` entries to the `## [Unreleased]` block in
+- [x] Append the Milestone 10 Epic 1–4 `### Added` entries to the `## [Unreleased]` block in
   `CHANGELOG.md`.
 
 **Acceptance criteria:**
@@ -138,11 +138,11 @@ Add subsections documenting:
 7. Creates annotated tag `v0.4.0`.
 8. Pushes branch and tag — triggering the Epic 3 CI pipeline.
 
-- [ ] Verify `cargo-release` is installed: `cargo release --version` (expect `1.1.2`).
-- [ ] Run `make release VERSION=0.4.0` — monitor output for errors.
-- [ ] Verify the tag was created: `git tag -l "v0.4.0"`.
-- [ ] Verify all Cargo.toml version fields are `0.4.0`: `grep -r '"0\.3\.0"' Cargo.toml crates/*/Cargo.toml` should return empty.
-- [ ] Confirm push succeeded and tag appears on remote: `git log --oneline -3`.
+- [x] Verify `cargo-release` is installed: `cargo release --version` (expect `1.1.2`).
+- [x] Run `make release VERSION=0.4.0` — monitor output for errors.
+- [x] Verify the tag was created: `git tag -l "v0.4.0"`.
+- [x] Verify all Cargo.toml version fields are `0.4.0`: `grep -r '"0\.3\.0"' Cargo.toml crates/*/Cargo.toml` should return empty.
+- [x] Confirm push succeeded and tag appears on remote: `git log --oneline -3`.
 
 **Acceptance criteria:**
 - All quality gates pass during `make release-check`.
@@ -156,24 +156,24 @@ Add subsections documenting:
 
 **Description:** Verify the final state of the branch and mark the task file complete.
 
-- [ ] Run `cargo fmt --check` — must pass.
-- [ ] Run `cargo clippy --workspace --all-targets -- -D warnings` — must pass.
-- [ ] Run `cargo test --workspace` — must pass.
-- [ ] Run `cargo audit` — must exit 0.
-- [ ] Run `pre-commit run --all-files` — must pass (or only auto-fixed files if hooks self-fix).
-- [ ] Mark all subtasks `[x]` in this file.
-- [ ] Commit this task file.
+- [x] Run `cargo fmt --check` — must pass.
+- [x] Run `cargo clippy --workspace --all-targets -- -D warnings` — must pass.
+- [x] Run `cargo test --workspace` — must pass.
+- [x] Run `cargo audit` — must exit 0.
+- [x] Run `pre-commit run --all-files` — must pass (or only auto-fixed files if hooks self-fix).
+- [x] Mark all subtasks `[x]` in this file.
+- [x] Commit this task file.
 
 ---
 
 ## Definition of Done
 
-- [ ] `CONTRIBUTING.md` Table of Contents includes `Releasing` and `Adding a New Dependency`.
-- [ ] `CONTRIBUTING.md` contains the `## Adding a New Dependency` section with numbered steps.
-- [ ] `CHANGELOG.md` `## [0.4.0] - 2026-05-31` entry covers all Milestone 10 epics.
-- [ ] All workspace crates are at version `0.4.0` (no stale `0.3.0` references).
-- [ ] Annotated tag `v0.4.0` exists and has been pushed to remote.
-- [ ] All conformance gates pass: `cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`, `cargo audit`.
+- [x] `CONTRIBUTING.md` Table of Contents includes `Releasing` and `Adding a New Dependency`.
+- [x] `CONTRIBUTING.md` contains the `## Adding a New Dependency` section with numbered steps.
+- [x] `CHANGELOG.md` `## [0.4.0] - 2026-05-31` entry covers all Milestone 10 epics.
+- [x] All workspace crates are at version `0.4.0` (no stale `0.3.0` references).
+- [x] Annotated tag `v0.4.0` exists and has been pushed to remote.
+- [x] All conformance gates pass: `cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`, `cargo audit`.
 
 ---
 
