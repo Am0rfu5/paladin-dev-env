@@ -58,11 +58,11 @@ Epic spec: [Milestone_9-Epic_4-agent-orchestrator-bridge.md](Milestone_9-Epic_4-
   - [x] 3.3 Confirm no behavioral change when `None` (existing tests still pass); add a small unit test asserting attach/detach wiring.
   - [x] 3.4 Quality gate, then commit.
 
-- [ ] 4.0 Integration test — agent triggers orchestration (Task 4.3; FR 23–24)
-  - [ ] 4.1 Create `tests/agent_orchestrator_bridge.rs`; build a real `Orchestrator` + `OrchestratorBridgeAdapter` + `PaladinExecutionService` with a scripted mock LLM emitting a tool/function call for `schedule_job`.
-  - [ ] 4.2 Execute the agent; assert the scheduled job is observable in the orchestrator scheduler state (deterministic, no network).
-  - [ ] 4.3 Add an assertion that policy is honored (e.g., a disallowed action path returns the typed error) if cheaply expressible at integration level; otherwise rely on unit coverage.
-  - [ ] 4.4 Quality gate, then commit.
+- [x] 4.0 Integration test — agent triggers orchestration (Task 4.3; FR 23–24)
+  - [x] 4.1 Create `tests/agent_orchestrator_bridge.rs`; build a real `Orchestrator` + `OrchestratorBridgeAdapter` + `PaladinExecutionService` with a scripted mock LLM emitting a tool/function call for `schedule_job`.
+  - [x] 4.2 Execute the agent; assert the scheduled job is observable in the orchestrator scheduler state (deterministic, no network).
+  - [x] 4.3 Add an assertion that policy is honored (e.g., a disallowed action path returns the typed error) if cheaply expressible at integration level; otherwise rely on unit coverage.
+  - [x] 4.4 Quality gate, then commit.
 
 - [ ] 5.0 Final verification & Epic close-out (FR 25)
   - [ ] 5.1 Run full quality gate: `cargo build`, `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt --check`.
