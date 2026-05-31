@@ -9,6 +9,8 @@ pub mod garrison_port;
 pub mod llm_port;
 pub mod log_port;
 pub mod notification_port;
+/// Agent → Orchestrator bridge port.
+pub mod orchestrator_port;
 pub mod paladin_executor_port;
 pub mod paladin_port;
 pub mod paladin_registry;
