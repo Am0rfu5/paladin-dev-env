@@ -10,6 +10,11 @@ on:
         description: 'Tag to release'
         required: true
         type: string
+      dry_run:
+        description: 'Dry run: validate publishing with `cargo publish --dry-run` and do not publish to crates.io'
+        required: false
+        default: false
+        type: boolean
 
 env:
   CARGO_TERM_COLOR: always
@@ -17,6 +22,29 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # Full test suite — gates crates.io publishing (a release must not publish if
+  # tests fail).
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-release-test-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run test suite
+        run: cargo test --workspace
+
   # Create GitHub release
   create-release:
     name: Create Release
@@ -249,3 +277,83 @@ jobs:
           asset_path: paladin-${{ needs.create-release.outputs.version }}.cdx.json
           asset_name: paladin-${{ needs.create-release.outputs.version }}.cdx.json
           asset_content_type: application/json
+
+  # Publish workspace crates to crates.io in dependency order (Milestone 10
+  # Epic 3). Gated on the test suite passing and on the release being created.
+  # When the workflow is dispatched with `dry_run=true`, this runs
+  # `cargo publish --dry-run` for each crate instead of a real publish and does
+  # not require the registry token.
+  publish-crates:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    needs: [test, create-release]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Determine publish mode
+        id: mode
+        env:
+          # Repository secret with crates.io publish scope. Empty if unset.
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "dry_run=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dry-run mode — will run 'cargo publish --dry-run' and NOT publish."
+          elif [ -n "$CARGO_REGISTRY_TOKEN" ]; then
+            echo "dry_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "dry_run=skip" >> "$GITHUB_OUTPUT"
+            echo "::warning::CARGO_REGISTRY_TOKEN is not set — skipping crates.io publish."
+          fi
+
+      - name: Publish crates in dependency order
+        if: steps.mode.outputs.dry_run != 'skip'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          DRY_RUN: ${{ steps.mode.outputs.dry_run }}
+        run: |
+          set -euo pipefail
+          # Canonical dependency-first publish order (package names):
+          #   core -> ports -> leaf tier -> facade.
+          CRATES=(
+            paladin-ai-core
+            paladin-ports
+            paladin-battalion
+            paladin-llm
+            paladin-memory
+            paladin-web
+            paladin-notifications
+            paladin-content
+            paladin-storage
+            paladin-ai
+          )
+          publish_one() {
+            local crate="$1"
+            echo "::group::Publishing ${crate}"
+            if [ "$DRY_RUN" = "true" ]; then
+              cargo publish --dry-run -p "$crate"
+            else
+              # Tolerate an already-published version so the job is re-runnable.
+              if cargo publish -p "$crate" 2>&1 | tee /tmp/publish.log; then
+                echo "${crate} published."
+              elif grep -qiE "already (exists|uploaded)|is already uploaded|already published" /tmp/publish.log; then
+                echo "::warning::${crate} version already published — continuing."
+              else
+                echo "::error::Failed to publish ${crate}."
+                exit 1
+              fi
+              # Allow the crates.io index to update before publishing dependents.
+              sleep 20
+            fi
+            echo "::endgroup::"
+          }
+          for c in "${CRATES[@]}"; do
+            publish_one "$c"
+          done

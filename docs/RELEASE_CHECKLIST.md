@@ -2,6 +2,12 @@
 
 This checklist defines the required release path from code freeze through publish and announcement.
 
+> **Automation:** Most of this checklist is automated by `make release VERSION=x.y.z` and the
+> tag-triggered `.github/workflows/release.yml` pipeline. See
+> [RELEASE_AUTOMATION.md](RELEASE_AUTOMATION.md) for the tooling decision (`cargo-release`) and the
+> operator guide. This checklist remains the authoritative description of the end-to-end process and
+> the manual verification steps.
+
 ## 1. Code Freeze
 
 - Confirm release branch and freeze window.

@@ -44,7 +44,8 @@ examples: ## Show common usage examples
 	@echo ""
 	@echo "$(YELLOW)Code Quality:$(NC)"
 	@echo "  make clean-code               # Format, lint, and check"
-	@echo "  make release                  # Run release readiness and dry-run publish checks"
+	@echo "  make release VERSION=0.4.0    # Cut a release (bump, changelog, tag, push)"
+	@echo "  make publish-dry-run          # Dependency-first cargo publish --dry-run"
 	@echo "  make audit                    # Security audit"
 	@echo "  make doc                      # Generate docs"
 	@echo ""
@@ -378,8 +379,8 @@ release-check: ## Check if ready for release
 	@$(MAKE) build-release
 	@echo "$(GREEN)✅ Release check passed!$(NC)"
 
-.PHONY: release
-release: release-check ## Run release readiness workflow and dry-run publishes
+.PHONY: publish-dry-run
+publish-dry-run: release-check ## Run dependency-first `cargo publish --dry-run` for all crates
 	@echo "$(CYAN)Running dependency-first publish dry-runs...$(NC)"
 	@$(CARGO) publish --dry-run -p paladin-core || true
 	@$(CARGO) publish --dry-run -p paladin-ports || true
@@ -392,6 +393,35 @@ release: release-check ## Run release readiness workflow and dry-run publishes
 	@$(CARGO) publish --dry-run -p paladin-storage || true
 	@$(CARGO) publish --dry-run -p paladin || true
 	@echo "$(YELLOW)Dry-run publish command sequence completed. See docs/RELEASE_CHECKLIST.md for interpretation and publish-order gating.$(NC)"
+
+.PHONY: release
+release: ## Cut a release: bump version (lockstep), finalize changelog, commit, tag, push. Usage: make release VERSION=0.4.0
+	@if [ -z "$(VERSION)" ]; then \
+		echo "$(RED)❌ VERSION is required. Usage: make release VERSION=0.4.0$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(VERSION)" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$$' || { \
+		echo "$(RED)❌ VERSION '$(VERSION)' is not a valid semver string (e.g. 0.4.0 or 0.4.0-rc.1).$(NC)"; \
+		exit 1; \
+	}
+	@command -v cargo-release >/dev/null 2>&1 || { \
+		echo "$(RED)❌ cargo-release not found. Install with 'cargo install --locked cargo-release'.$(NC)"; \
+		exit 1; \
+	}
+	@echo "$(CYAN)Cutting release v$(VERSION)...$(NC)"
+	@$(MAKE) release-check
+	@echo "$(CYAN)Bumping all crates to $(VERSION) (lockstep)...$(NC)"
+	@$(CARGO) release version "$(VERSION)" --execute --no-confirm --workspace
+	@echo "$(CYAN)Finalizing CHANGELOG.md...$(NC)"
+	@DATE=$$(date +%Y-%m-%d); \
+		perl -0pi -e "s/## \\[Unreleased\\]/## [Unreleased]\n\n## [$(VERSION)] - $$DATE/" CHANGELOG.md
+	@echo "$(CYAN)Committing, tagging, and pushing...$(NC)"
+	@git add -u
+	@git commit -m "chore(release): version $(VERSION)"
+	@git tag -a "v$(VERSION)" -m "Release $(VERSION)"
+	@git push origin HEAD
+	@git push origin "v$(VERSION)"
+	@echo "$(GREEN)✅ Release v$(VERSION) tagged and pushed. CI (release.yml) will publish to crates.io.$(NC)"
 
 ##@ Monitoring & Debug
 

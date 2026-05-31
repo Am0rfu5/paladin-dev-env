@@ -1,0 +1,39 @@
+# cargo-release configuration for the Paladin workspace.
+# See: https://github.com/crate-ci/cargo-release
+#
+# Selected tooling: cargo-release (see docs/RELEASE_AUTOMATION.md).
+#
+# Model:
+#   - Lockstep versioning: every publishable crate shares one version, bumped
+#     together. Internal `workspace.dependencies` pins are updated to match.
+#   - `make release VERSION=x.y.z` performs the local bump + changelog finalize +
+#     commit + tag + push. Pushing the `v*.*.*` tag triggers
+#     `.github/workflows/release.yml`, which publishes the crates to crates.io in
+#     dependency order. Therefore local `cargo release` does NOT publish.
+#   - cargo-release publishes workspace members in topological dependency order
+#     automatically: paladin-core -> paladin-ports -> leaf tier -> paladin.
+
+# Keep all publishable crates on a single shared version (lockstep).
+shared-version = true
+
+# Single workspace tag of the form the release pipeline listens for (`v*.*.*`).
+tag-name = "v{{version}}"
+tag-message = "Release {{version}}"
+
+# One consolidated commit + tag for the whole workspace bump.
+consolidate-commits = true
+pre-release-commit-message = "chore(release): version {{version}}"
+
+# Publishing is delegated to CI (release.yml) on the pushed tag, so the local
+# `cargo release version` flow used by `make release` does not publish here.
+publish = false
+
+# `make release` controls pushing explicitly; do not let cargo-release push.
+push = false
+
+# NOTE: The curated CHANGELOG.md is finalized by the `make release` target
+# (moving the "## [Unreleased]" heading under a new dated version section) rather
+# than via cargo-release `pre-release-replacements`. In a lockstep multi-crate
+# workspace a root-level replacement would run once per crate and duplicate the
+# heading, so the bump is driven by `cargo release version` (versions only) and
+# the changelog/commit/tag/push are orchestrated by the Makefile.

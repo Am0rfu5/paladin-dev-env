@@ -622,6 +622,59 @@ Each public crate under `crates/` must keep a `CHANGELOG.md` following Keep a Ch
 - When creating a crate changelog for the first time, backfill relevant items from the root `CHANGELOG.md`.
 - Keep crate README and changelog updates together so release artifacts remain consistent.
 
+## Releasing
+
+Releases are automated with [`cargo-release`](https://github.com/crate-ci/cargo-release) and the
+tag-triggered `.github/workflows/release.yml` pipeline. The full evaluation, decision, and operator
+guide live in **[docs/RELEASE_AUTOMATION.md](docs/RELEASE_AUTOMATION.md)**; the manual checklist is in
+**[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)**.
+
+### Cutting a release
+
+A release is cut locally with a single command (CI does the publishing):
+
+```bash
+# Bumps all crates in lockstep, finalizes CHANGELOG.md, commits, tags v<version>, and pushes.
+make release VERSION=0.4.0
+```
+
+`make release`:
+
+1. Validates `VERSION` is valid semver (fails fast otherwise).
+2. Runs `make release-check` (format, lint, full tests, audit, release build).
+3. Bumps every public crate to `VERSION` in lockstep via `cargo release version` and updates
+   internal dependency pins.
+4. Moves the `## [Unreleased]` changelog section under a new `## [VERSION] - <date>` heading.
+5. Commits, creates the `v VERSION` tag, and pushes the branch and tag.
+
+Pushing the `v*.*.*` tag triggers the release pipeline, which runs the test suite and then publishes
+the crates to crates.io in dependency order (`paladin-core` → `paladin-ports` → leaf crates →
+`paladin`), builds Docker images and binaries, generates the SBOM, and creates the GitHub release.
+
+Install the tool once with:
+
+```bash
+cargo install --locked cargo-release
+```
+
+### Required secret
+
+crates.io publishing requires a repository secret **`CARGO_REGISTRY_TOKEN`** (a crates.io API token
+with publish scope). If it is not set, the publish job is skipped with a warning and the rest of the
+release still runs.
+
+### Dry run (no live publish)
+
+Validate publishing without releasing to crates.io:
+
+```bash
+# Local: dependency-first `cargo publish --dry-run` for every crate.
+make publish-dry-run
+
+# CI: exercise the whole pipeline with no real publish.
+gh workflow run release.yml -f tag=v0.4.0-rc.1 -f dry_run=true
+```
+
 ## API Change Process
 
 Paladin maintains a **stable public API contract** defined in **[STABLE_API.md](STABLE_API.md)**. This document defines:
