@@ -61,11 +61,11 @@
   - [x] 3.4 Integration test (`tests/content_agent_bridge.rs`): register a `PaladinContentProcessor` (mock LLM), drive a `ContentItem` through `process_content()`, assert enriched result + metadata
   - [x] 3.5 Integration test: assert referencing an unregistered processor name returns `ProcessorNotFound`
 
-- [ ] 4.0 Content ingestion pipeline validation (PRD Task 3.4)
-  - [ ] 4.1 Add a deterministic end-to-end test (`tests/content_ingestion_pipeline.rs`) gated by `content-processing`: local fixture / `FileContentListFetcher` → extract/aggregate → content processor (mock LLM) → enriched result, with no network
-  - [ ] 4.2 Assert the full chain preserves content id, includes enrichment, and reports success
-  - [ ] 4.3 Add a separate live end-to-end test (real `HttpContentFetcher` + real LLM) marked `#[ignore]` and/or credential-gated, with run instructions documented in the test
-  - [ ] 4.4 Run the suite with `--features content-processing` and confirm the deterministic path passes offline
+- [x] 4.0 Content ingestion pipeline validation (PRD Task 3.4)
+  - [x] 4.1 Add a deterministic end-to-end test (`tests/content_ingestion_pipeline.rs`) gated by `content-processing`: local fixture / `FileContentListFetcher` → extract/aggregate → content processor (mock LLM) → enriched result, with no network
+  - [x] 4.2 Assert the full chain preserves content id, includes enrichment, and reports success
+  - [x] 4.3 Add a separate live end-to-end test (real `HttpContentFetcher` + real LLM) marked `#[ignore]` and/or credential-gated, with run instructions documented in the test
+  - [x] 4.4 Run the suite with `--features content-processing` and confirm the deterministic path passes offline
 
 - [ ] 5.0 Quality gate
   - [ ] 5.1 `cargo fmt --check`

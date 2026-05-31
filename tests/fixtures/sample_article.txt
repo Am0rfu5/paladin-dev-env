@@ -1,0 +1,11 @@
+Rust: Memory Safety Without a Garbage Collector
+
+Rust is a systems programming language focused on safety, speed, and
+concurrency. Its ownership model enforces memory safety at compile time,
+eliminating entire classes of bugs such as use-after-free and data races
+without relying on a garbage collector.
+
+Ownership, borrowing, and lifetimes are the three pillars of this model.
+Together they let the compiler prove that references are always valid, so
+programs can run with the performance of C and C++ while remaining memory
+safe by construction.
