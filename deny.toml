@@ -1,0 +1,141 @@
+# cargo-deny configuration
+# See: https://embarkstudios.github.io/cargo-deny/
+#
+# Enforces dependency license compliance, bans, duplicate-version detection, and
+# advisory checks across the Paladin workspace dependency graph.
+#
+# Run locally with:  cargo deny check
+# (or `make security` to run cargo-audit + cargo-deny together)
+
+# ---------------------------------------------------------------------------
+# Graph: which parts of the dependency tree to consider.
+# ---------------------------------------------------------------------------
+[graph]
+# Check the dependency graph for all target triples (don't filter by host).
+all-features = true
+
+# ---------------------------------------------------------------------------
+# Licenses: enforce a permissive-only allow-list (Milestone 10 Epic 2 FR 11).
+# Copyleft licenses (GPL-*, AGPL-*, LGPL-*) are intentionally NOT allowed.
+# Add a specific SPDX id here (with justification) only if a required crate
+# uses a license outside this set.
+# ---------------------------------------------------------------------------
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    # Unicode-3.0: the Unicode License v3 is a permissive, MIT-equivalent license
+    # (no copyleft). Used by the `icu_*`, `unicode-ident`, `zerovec`, `yoke`,
+    # `tinystr`, etc. crates pulled transitively via `idna`/`url`. Added per
+    # Epic 2 FR 14(a) with justification.
+    "Unicode-3.0",
+    # 0BSD: the "zero-clause BSD" / public-domain-equivalent license (permissive,
+    # no attribution requirement). Used by `quoted_printable`. Non-copyleft.
+    "0BSD",
+    # CC0-1.0: public-domain dedication (permissive, no copyleft). Used by
+    # `tiny-keccak` (and dual-licensed in `blake3`/`constant_time_eq`).
+    "CC0-1.0",
+    # CDLA-Permissive-2.0: Community Data License Agreement – Permissive 2.0,
+    # a permissive (non-copyleft) data license used by `webpki-roots` for the
+    # bundled Mozilla CA certificate set.
+    "CDLA-Permissive-2.0",
+]
+# Minimum confidence the license detector must have before accepting a match.
+confidence-threshold = 0.8
+
+# Per-crate license exceptions (Epic 2 FR 14(b)): MPL-2.0 is a *weak*, file-level
+# copyleft license — its obligations apply only to modifications of the MPL crate's
+# own source files and impose no copyleft on the larger work that merely depends on
+# it. To keep the global allow-list permissive-only, MPL-2.0 is NOT added there;
+# instead each MPL crate in the tree is granted a narrowly-scoped exception below.
+[[licenses.exceptions]]
+crate = "colored" # MPL-2.0
+allow = ["MPL-2.0"]
+[[licenses.exceptions]]
+crate = "attohttpc" # MPL-2.0
+allow = ["MPL-2.0"]
+[[licenses.exceptions]]
+crate = "cssparser" # MPL-2.0 (Servo)
+allow = ["MPL-2.0"]
+[[licenses.exceptions]]
+crate = "cssparser-macros" # MPL-2.0 (Servo)
+allow = ["MPL-2.0"]
+[[licenses.exceptions]]
+crate = "dtoa-short" # MPL-2.0
+allow = ["MPL-2.0"]
+[[licenses.exceptions]]
+crate = "minidom" # MPL-2.0
+allow = ["MPL-2.0"]
+[[licenses.exceptions]]
+crate = "selectors" # MPL-2.0 (Servo)
+allow = ["MPL-2.0"]
+[[licenses.exceptions]]
+crate = "smartstring" # MPL-2.0+
+allow = ["MPL-2.0"]
+
+# Per-crate clarifications for crates whose license metadata is ambiguous or
+# expressed only in a license file. Add entries here (with a comment) instead of
+# weakening the global allow-list.
+# Example:
+# [[licenses.clarify]]
+# crate = "some-crate"
+# expression = "MIT"
+# license-files = [{ path = "LICENSE", hash = 0x00000000 }]
+
+# ---------------------------------------------------------------------------
+# Bans: ban specific crates and surface duplicate versions.
+# Start with no banned crates; add as needed. Duplicate versions are a warning
+# (not an error) since most duplicates come from transitive deps we don't
+# control (FR 12 / Open Question 4).
+# ---------------------------------------------------------------------------
+[bans]
+multiple-versions = "warn"
+wildcards = "warn"
+# deny = []   # add { crate = "name", reason = "..." } entries here as needed.
+
+# ---------------------------------------------------------------------------
+# Advisories: RustSec advisory database checks. The authoritative ignore-list
+# lives in `.cargo/audit.toml` (auto-read by cargo-audit); the same advisory
+# IDs are mirrored here so cargo-deny and cargo-audit do not contradict each
+# other. Keep these two files in sync when adding/removing an exception.
+# ---------------------------------------------------------------------------
+[advisories]
+ignore = [
+    # --- Vulnerability advisories (mirrored from .cargo/audit.toml) ---
+    # RUSTSEC-2023-0071: RSA timing side-channel via rsa 0.9.x.
+    #   rsa is a transitive dev/test dependency of sqlx-mysql. No upstream fix
+    #   available; revisit when sqlx upgrades rsa. (Mirrors .cargo/audit.toml.)
+    "RUSTSEC-2023-0071",
+    # RUSTSEC-2025-0111: tokio-tar path-traversal via tokio-tar 0.3.x.
+    #   Transitive dev/test dependency of testcontainers. No upstream fix
+    #   available; revisit when testcontainers upgrades. (Mirrors .cargo/audit.toml.)
+    "RUSTSEC-2025-0111",
+
+    # --- Unmaintained advisories (cargo-deny only) ---
+    # These are informational "unmaintained" notices, NOT vulnerabilities.
+    # cargo-audit (the primary advisory gate) does not fail on unmaintained
+    # crates; these are ignored here so cargo-deny does not contradict it
+    # (Epic 2 FR 6). All are transitive with no drop-in maintained replacement
+    # available without an upstream dependency upgrade. Revisit when the
+    # respective parent crates upgrade.
+    "RUSTSEC-2021-0139", # ansi_term (unmaintained) — transitive
+    "RUSTSEC-2021-0141", # dotenv (unmaintained) — replace with dotenvy later
+    "RUSTSEC-2024-0370", # proc-macro-error (unmaintained) — via structopt
+    "RUSTSEC-2024-0375", # atty (unmaintained) — transitive
+    "RUSTSEC-2025-0057", # fxhash (unmaintained) — transitive
+    "RUSTSEC-2025-0119", # number_prefix (unmaintained) — transitive
+    "RUSTSEC-2025-0121", # gcc (unmaintained) — transitive build dep
+    "RUSTSEC-2025-0134", # rustls-pemfile (unmaintained) — via tonic/testcontainers
+]
+
+# ---------------------------------------------------------------------------
+# Sources: restrict where crates may be fetched from. Only crates.io is allowed
+# by default; add explicit allow-lists here if git/registry sources are needed.
+# ---------------------------------------------------------------------------
+[sources]
+unknown-registry = "warn"
+unknown-git = "warn"

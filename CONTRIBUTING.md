@@ -571,7 +571,15 @@ cargo doc --no-deps --open
 - **Never commit API keys or secrets**
 - Use environment variables for configuration
 - Add sensitive values to `.gitignore`
-- Run security audits: `cargo audit`
+- Run dependency security & license checks: `make security`
+  (runs `cargo audit` + `cargo deny check`)
+- Generate a Software Bill of Materials: `make sbom`
+
+Vulnerability advisory exceptions live in `.cargo/audit.toml` (and are mirrored
+in `deny.toml`). Never disable a security or license check to make CI pass —
+follow the documented exception process instead. See
+[docs/SECURITY_SCANNING.md](docs/SECURITY_SCANNING.md) for the full tooling
+overview, license policy, and advisory exception process.
 
 ## Documentation
 

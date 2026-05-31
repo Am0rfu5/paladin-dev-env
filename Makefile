@@ -212,9 +212,28 @@ check: ## Check code without building
 	@$(CARGO) check --workspace --all-targets
 
 .PHONY: audit
-audit: ## Run security audit
+audit: ## Run security audit (vulnerability advisories)
 	@echo "$(CYAN)Running security audit...$(NC)"
-	@$(CARGO) audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111
+	@# Exceptions are sourced from .cargo/audit.toml (single source of truth).
+	@$(CARGO) audit
+
+.PHONY: deny
+deny: ## Run cargo-deny (licenses, bans, advisories, sources)
+	@echo "$(CYAN)Running cargo-deny check...$(NC)"
+	@$(CARGO) deny check
+
+.PHONY: security
+security: audit deny ## Run all dependency security & license checks
+
+.PHONY: sbom
+sbom: ## Generate a CycloneDX SBOM (paladin.cdx.json)
+	@echo "$(CYAN)Generating CycloneDX SBOM...$(NC)"
+	@command -v cargo-cyclonedx >/dev/null 2>&1 || { \
+		echo "$(RED)cargo-cyclonedx not found. Install with 'cargo install --locked cargo-cyclonedx'.$(NC)"; \
+		exit 1; \
+	}
+	@$(CARGO) cyclonedx --all --format json
+	@echo "$(GREEN)✅ SBOM generated (see bom.json / <crate>.cdx.json)$(NC)"
 
 .PHONY: doc
 doc: ## Generate documentation

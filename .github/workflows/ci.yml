@@ -66,8 +66,70 @@ jobs:
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
 
-      - name: Run cargo-audit with approved exceptions
-        run: cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111
+      # Exceptions are the single source of truth in `.cargo/audit.toml` (see its
+      # `[advisories].ignore` list). cargo-audit auto-discovers `.cargo/audit.toml`
+      # from the repo, so no inline `--ignore` flags are used here.
+      - name: Run cargo-audit (exceptions from .cargo/audit.toml)
+        run: cargo audit
+
+  # License compliance and dependency bans
+  cargo-deny:
+    name: License & Dependency Policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-deny-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+
+      # Policy lives in the version-controlled `deny.toml` (licenses, bans,
+      # advisories, sources). Fails on disallowed licenses or advisories not
+      # excepted in deny.toml/.cargo/audit.toml.
+      - name: Run cargo-deny check
+        run: cargo deny check
+
+  # Supplementary vulnerability scanning via Google's OSV database.
+  # Annotate-only (non-blocking) initially to avoid contradicting the
+  # cargo-audit gate; results surface as PR annotations via SARIF upload.
+  osv-scanner:
+    name: OSV Scanner
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Run OSV-Scanner
+        # Pinned official reusable workflow action; scans Cargo.lock and emits SARIF.
+        uses: google/osv-scanner-action/osv-scanner-action@v1.9.1
+        continue-on-error: true
+        with:
+          scan-args: |-
+            --lockfile=Cargo.lock
+            --format=sarif
+            --output=osv-results.sarif
+
+      - name: Upload OSV-Scanner results (PR annotations)
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: osv-results.sarif
+        continue-on-error: true
 
   # API surface tracking
   api-surface:
