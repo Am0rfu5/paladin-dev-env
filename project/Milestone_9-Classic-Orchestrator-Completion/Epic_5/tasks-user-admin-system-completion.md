@@ -67,13 +67,13 @@ each sub-task, not just each parent task.
   - [x] 2.6 Unit tests for value-object/`AuthError` basics expressible in the port crate.
   - [x] 2.7 Quality gate, then commit.
 
-- [ ] 3.0 Implement the token auth adapter in the root crate (Task 5.2; FR 8–11)
-  - [ ] 3.1 Create `src/infrastructure/adapters/auth/in_memory_token_auth_adapter.rs` with module docs; register `mod.rs`.
-  - [ ] 3.2 Implement opaque token generation (`rand`, 32 random bytes hex), a hashed in-memory store (`sha2`, `RwLock<HashMap<hash, AuthClaims>>`), and a configurable TTL (default 24h).
-  - [ ] 3.3 Implement `AuthPort`: `issue_token` (store hash → claims), `verify_token` (hash lookup, reject missing/invalid/expired), `revoke_token` (remove entry).
-  - [ ] 3.4 Wire the module into the infrastructure adapters tree and re-export the adapter type.
-  - [ ] 3.5 Unit tests: issue→verify round-trip; expired token rejected (`Expired`); revoked token rejected; unknown token rejected (`InvalidToken`).
-  - [ ] 3.6 Quality gate, then commit.
+- [x] 3.0 Implement the token auth adapter in the root crate (Task 5.2; FR 8–11)
+  - [x] 3.1 Create `src/infrastructure/adapters/auth/in_memory_token_auth_adapter.rs` with module docs; register `mod.rs`.
+  - [x] 3.2 Implement opaque token generation (`rand`, 32 random bytes hex), a hashed in-memory store (`sha2`, `RwLock<HashMap<hash, AuthClaims>>`), and a configurable TTL (default 24h).
+  - [x] 3.3 Implement `AuthPort`: `issue_token` (store hash → claims), `verify_token` (hash lookup, reject missing/invalid/expired), `revoke_token` (remove entry).
+  - [x] 3.4 Wire the module into the infrastructure adapters tree and re-export the adapter type.
+  - [x] 3.5 Unit tests: issue→verify round-trip; expired token rejected (`Expired`); revoked token rejected; unknown token rejected (`InvalidToken`).
+  - [x] 3.6 Quality gate, then commit.
 
 - [ ] 4.0 Complete user CRUD + token-issuing login on the service surface (Task 5.1; FR 12, 18–20)
   - [ ] 4.1 Extend `UserServiceTrait` (in `paladin-core`) with `delete_user(user_id)` and `list_users()` (backed by existing repository methods).

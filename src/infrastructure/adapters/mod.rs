@@ -1,4 +1,5 @@
 pub mod arsenal;
+pub mod auth;
 pub mod citadel;
 #[cfg(feature = "content-processing")]
 pub mod document;
