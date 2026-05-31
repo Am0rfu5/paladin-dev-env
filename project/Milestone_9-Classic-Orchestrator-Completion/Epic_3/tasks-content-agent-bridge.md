@@ -67,8 +67,8 @@
   - [x] 4.3 Add a separate live end-to-end test (real `HttpContentFetcher` + real LLM) marked `#[ignore]` and/or credential-gated, with run instructions documented in the test
   - [x] 4.4 Run the suite with `--features content-processing` and confirm the deterministic path passes offline
 
-- [ ] 5.0 Quality gate
-  - [ ] 5.1 `cargo fmt --check`
-  - [ ] 5.2 `cargo clippy -- -D warnings` (and with `--features content-processing`)
-  - [ ] 5.3 `cargo test` (and at least once with `--features content-processing`)
-  - [ ] 5.4 `cargo build` clean; mark PRD success metrics and checklist complete
+- [x] 5.0 Quality gate
+  - [x] 5.1 `cargo fmt --check`
+  - [x] 5.2 `cargo clippy -- -D warnings` (and with `--features content-processing`)
+  - [x] 5.3 `cargo test` (and at least once with `--features content-processing`)
+  - [x] 5.4 `cargo build` clean; mark PRD success metrics and checklist complete

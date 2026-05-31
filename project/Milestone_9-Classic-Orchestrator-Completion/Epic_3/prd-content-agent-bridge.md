@@ -252,32 +252,32 @@ bridge between the content pipeline (`paladin-content`) and the agent runtime (`
 
 ## 8. Success Metrics
 
-- [ ] `PaladinContentProcessor` converts a `ContentItem` → prompt → agent execution → parsed
+- [x] `PaladinContentProcessor` converts a `ContentItem` → prompt → agent execution → parsed
       `ContentProcessingResult` with enrichment metadata (unit tests green).
-- [ ] Raw-text strategy stores the agent response verbatim; JSON strategy parses well-formed JSON.
-- [ ] A malformed agent response under the JSON strategy yields the defined degraded result (asserted
+- [x] Raw-text strategy stores the agent response verbatim; JSON strategy parses well-formed JSON.
+- [x] A malformed agent response under the JSON strategy yields the defined degraded result (asserted
       in a test) without panicking or losing the raw text.
-- [ ] `BattalionContentProcessor` runs a Formation sequentially and threads outputs into one result.
-- [ ] `BattalionContentProcessor` runs a Phalanx in parallel and merges outputs into one result.
-- [ ] Both processors register via `Orchestrator::register_content_processor()` and run through
+- [x] `BattalionContentProcessor` runs a Formation sequentially and threads outputs into one result.
+- [x] `BattalionContentProcessor` runs a Phalanx in parallel and merges outputs into one result.
+- [x] Both processors register via `Orchestrator::register_content_processor()` and run through
       `Orchestrator::process_content()`.
-- [ ] Referencing an unregistered processor returns `OrchestratorError::ProcessorNotFound`.
-- [ ] A deterministic end-to-end ingestion path (local fixture + mock LLM) passes under
+- [x] Referencing an unregistered processor returns `OrchestratorError::ProcessorNotFound`.
+- [x] A deterministic end-to-end ingestion path (local fixture + mock LLM) passes under
       `content-processing` with no network.
-- [ ] A live end-to-end test exists, is `#[ignore]`/gated, and is documented.
-- [ ] `cargo build`, `cargo test`, `cargo clippy -- -D warnings`, and `cargo fmt --check` all pass.
+- [x] A live end-to-end test exists, is `#[ignore]`/gated, and is documented.
+- [x] `cargo build`, `cargo test`, `cargo clippy -- -D warnings`, and `cargo fmt --check` all pass.
 
 ## Task Checklist
 
-- [ ] **Task 3.1** — `PaladinContentProcessor` implemented, configurable prompt + parsing, degraded
+- [x] **Task 3.1** — `PaladinContentProcessor` implemented, configurable prompt + parsing, degraded
       handling, unit tested with mock LLM.
-- [ ] **Task 3.2** — `BattalionContentProcessor` implemented for Formation + Phalanx with a defined
+- [x] **Task 3.2** — `BattalionContentProcessor` implemented for Formation + Phalanx with a defined
       merge strategy, unit tested with mock agents.
-- [ ] **Task 3.3** — Processors wired into `Orchestrator::process_content()`; unregistered-name error
+- [x] **Task 3.3** — Processors wired into `Orchestrator::process_content()`; unregistered-name error
       path validated; integration test green.
-- [ ] **Task 3.4** — Deterministic end-to-end ingestion path validated under `content-processing`;
+- [x] **Task 3.4** — Deterministic end-to-end ingestion path validated under `content-processing`;
       live path added behind `#[ignore]`/gating.
-- [ ] **Quality Gate** — build, test (incl. `content-processing`), clippy `-D warnings`, and fmt all
+- [x] **Quality Gate** — build, test (incl. `content-processing`), clippy `-D warnings`, and fmt all
       pass.
 
 ---
