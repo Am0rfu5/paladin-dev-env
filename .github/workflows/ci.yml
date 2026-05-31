@@ -221,7 +221,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - crate: paladin-core
+          - crate: paladin-ai-core
             extra_flags: ""
           - crate: paladin-ports
             extra_flags: ""
@@ -239,7 +239,7 @@ jobs:
             extra_flags: ""
           - crate: paladin-web
             extra_flags: ""
-          - crate: paladin
+          - crate: paladin-ai
             extra_flags: ""
     steps:
       - name: Checkout code
