@@ -8,8 +8,8 @@ Epic spec: [Milestone_9-Epic_4-agent-orchestrator-bridge.md](Milestone_9-Epic_4-
 - `crates/paladin-ports/src/output/orchestrator_port.rs` - New: `OrchestratorPort` trait, request/result value objects, `OrchestratorBridgeError`, `BridgePolicy`, `BridgeAction`.
 - `crates/paladin-ports/src/output/mod.rs` - Modified: register and re-export the new `orchestrator_port` module.
 - `src/application/services/orchestration/orchestrator_bridge.rs` - New: concrete `OrchestratorBridgeAdapter` (root crate) implementing `OrchestratorPort` over `Orchestrator` + `NotificationDeliveryPort`.
-- `src/application/services/orchestration/mod.rs` - Modified: declare/re-export the `orchestrator_bridge` module.
-- `src/application/services/paladin/paladin_execution_service.rs` - Modified: add optional `orchestrator_port: Option<Arc<dyn OrchestratorPort>>` field + backward-compatible setter.
+- `src/application/services/orchestration/mod.rs` - Modified: declare/re-export the `orchestrator_bridge` module; add idempotent `Orchestrator::ensure_queue` so `queue_item` works without out-of-band queue registration.
+- `src/application/services/paladin/paladin_execution_service.rs` - Modified: add optional `orchestrator_port: Option<Arc<dyn OrchestratorPort>>` field + backward-compatible `with_orchestrator_port` setter + `orchestrator_port()` accessor + wiring unit test.
 - `tests/agent_orchestrator_bridge.rs` - New: integration test driving a scripted agent tool-call → `schedule_job` → assert observable in orchestrator state.
 
 ### Notes
@@ -64,8 +64,8 @@ Epic spec: [Milestone_9-Epic_4-agent-orchestrator-bridge.md](Milestone_9-Epic_4-
   - [x] 4.3 Add an assertion that policy is honored (e.g., a disallowed action path returns the typed error) if cheaply expressible at integration level; otherwise rely on unit coverage.
   - [x] 4.4 Quality gate, then commit.
 
-- [ ] 5.0 Final verification & Epic close-out (FR 25)
-  - [ ] 5.1 Run full quality gate: `cargo build`, `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt --check`.
-  - [ ] 5.2 Run `snyk_code_scan` on new first-party code; fix and rescan until clean.
-  - [ ] 5.3 Mark PRD Task Checklist items complete; ensure "Relevant Files" above is accurate.
-  - [ ] 5.4 Final commit if any cleanup remains.
+- [x] 5.0 Final verification & Epic close-out (FR 25)
+  - [x] 5.1 Run full quality gate: `cargo build`, `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt --check`.
+  - [x] 5.2 Run `snyk_code_scan` on new first-party code; fix and rescan until clean. (Snyk tool unavailable in this environment; substituted compiler/clippy/`get_errors` static checks — no issues found.)
+  - [x] 5.3 Mark PRD Task Checklist items complete; ensure "Relevant Files" above is accurate.
+  - [x] 5.4 Final commit if any cleanup remains.

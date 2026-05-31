@@ -306,14 +306,14 @@ RBAC — but sufficient to bound a misbehaving or prompt-injected agent.
 High-level mapping to the Epic's tasks (detailed sub-tasks are produced in the companion
 `tasks-agent-orchestrator-bridge.md`).
 
-- [ ] **Task 4.1 — Design & interface.** Document the Option A vs B trade-off and the decision;
+- [x] **Task 4.1 — Design & interface.** Document the Option A vs B trade-off and the decision;
   fully specify the `OrchestratorPort` trait, request/result types, `OrchestratorBridgeError`,
   `BridgePolicy`, and `BridgeAction` in `paladin-ports`. (FR 1–11)
-- [ ] **Task 4.2 — Implement the bridge.** Implement `OrchestratorBridgeAdapter` in the root crate;
+- [x] **Task 4.2 — Implement the bridge.** Implement `OrchestratorBridgeAdapter` in the root crate;
   enforce `BridgePolicy`; wire `Option<Arc<dyn OrchestratorPort>>` into `PaladinExecutionService`;
   unit-test all four actions (success + `ActionNotAllowed` + `QuotaExceeded`) against the mock.
   (FR 12–22, 24)
-- [ ] **Task 4.3 — Integration test.** `tests/agent_orchestrator_bridge.rs`: scripted LLM tool-call →
+- [x] **Task 4.3 — Integration test.** `tests/agent_orchestrator_bridge.rs`: scripted LLM tool-call →
   `schedule_job` → assert job observable in orchestrator scheduler state. (FR 23)
-- [ ] **Quality gate.** `cargo build`, `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt --check`
+- [x] **Quality gate.** `cargo build`, `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt --check`
   all pass. (FR 25)
