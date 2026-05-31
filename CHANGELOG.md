@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### CI Hardening: Pre-commit / Pre-push Hook Framework (Milestone 10, Epic 1)
+
+- **`.pre-commit-config.yaml`** — commit-stage hooks: `cargo fmt --check`, `cargo clippy`,
+  `gitleaks` secret detection, TOML/YAML/JSON validation, large-file and merge-conflict checks,
+  trailing-whitespace and end-of-file normalization.
+- **Pre-push stage** — `cargo build --workspace` and `cargo test --workspace --lib` run
+  automatically on every `git push`.
+- **`make hooks`** Makefile target — installs both the commit and push hook stages in one command.
+- Provisioned `pre-commit` (4.6.0) and `gitleaks` in `.devcontainer/Dockerfile.dev`; hooks are
+  available immediately when the dev container is (re)built.
+- Normalized trailing-whitespace and end-of-file markers across all source files.
+- Added pre-commit hook instructions to `CONTRIBUTING.md` (Git Hooks section).
+
+#### Dependency Security and License Compliance (Milestone 10, Epic 2)
+
+- **`.cargo/audit.toml`** — exception list for known advisories; `cargo audit` exits 0 with all
+  exceptions documented (rationale and affected crates recorded inline).
+- **`deny.toml`** — `cargo-deny` configuration with a license allow-list
+  (MIT / Apache-2.0 / BSD-2-Clause / BSD-3-Clause / ISC / Zlib) and per-crate exceptions for
+  MPL-2.0, CC0-1.0, CDLA-Permissive-2.0, and 0BSD; advisory ignore list mirrors `audit.toml`.
+- **CycloneDX SBOM** — `release.yml` now generates a JSON SBOM artifact via
+  `cargo cyclonedx --all --format json` on every tagged release.
+- **OSV-Scanner** — annotate-only job in `ci.yml` surfaces new advisories without blocking CI.
+- **`make security`** / **`make audit`** / **`make deny`** / **`make sbom`** Makefile targets.
+- **`docs/SECURITY_SCANNING.md`** — full tooling overview, license policy, and advisory
+  exception process.
+- Updated `CONTRIBUTING.md` with Security subsection and cross-references.
+
+#### Release Automation (Milestone 10, Epic 3)
+
+- **`release.toml`** — `cargo-release` workspace config: `shared-version = true`,
+  `publish = false`, `push = false` for lockstep workspace versioning.
+- **Tag-triggered `publish-crates` CI job** in `release.yml` — publishes in dependency order
+  (paladin-ai-core → paladin-ports → leaf crates → paladin); supports dry-run and skip modes;
+  20 s gaps between publishes to avoid crates.io index propagation races.
+- **`workflow_dispatch` `dry_run` input** added to `release.yml` for manual pipeline exercises.
+- **`make release VERSION=`** Makefile target — validates semver, runs the full quality gate
+  (`fmt`, `clippy`, tests, audit, release build), bumps all crates lockstep via
+  `cargo release version`, finalizes `CHANGELOG.md`, commits, tags, and pushes.
+- **`make publish-dry-run`** target — runs `cargo publish --dry-run` for every crate in
+  dependency order.
+- **`docs/RELEASE_AUTOMATION.md`** — tooling decision document and operator guide (cargo-release
+  vs release-plz comparison, install instructions, publish order, required secrets).
+- Updated `docs/RELEASE_CHECKLIST.md` with a cross-reference to `RELEASE_AUTOMATION.md`.
+- Updated `CONTRIBUTING.md` with `## Releasing` section covering the `make release` workflow.
+- Provisioned `cargo-release` (1.1.2), `cargo-deny` (0.19.8), and `cargo-cyclonedx` (0.5.9) in
+  `.devcontainer/Dockerfile.dev` and `make setup` so rebuilt dev images ship the tools locally.
+
+#### Finalization (Milestone 10, Epic 4)
+
+- **`CONTRIBUTING.md` — "Adding a New Dependency" section** — step-by-step guide: `cargo add`,
+  license check (`make deny`), vulnerability check (`make audit`), exception documentation in
+  `deny.toml` / `.cargo/audit.toml`, `CHANGELOG.md` update, CI gate expectations.
+- **`CONTRIBUTING.md` Table of Contents** — added missing `Releasing` and
+  `Adding a New Dependency` entries.
+- **Lockstep version bump** — all workspace crates bumped from `0.3.0` to `0.4.0`.
+
 ### Fixed
 
 - **`paladin-content` module rename** (Milestone 8, Epic 6): Renamed `use_cases` → `services`

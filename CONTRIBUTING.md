@@ -11,6 +11,8 @@ Thank you for your interest in contributing to Paladin! This document provides g
 - [Testing Guidelines](#testing-guidelines)
 - [Code Quality Standards](#code-quality-standards)
 - [Documentation](#documentation)
+- [Releasing](#releasing)
+- [Adding a New Dependency](#adding-a-new-dependency)
 - [API Change Process](#api-change-process)
 - [Pull Request Process](#pull-request-process)
 - [Community](#community)
@@ -674,6 +676,67 @@ make publish-dry-run
 # CI: exercise the whole pipeline with no real publish.
 gh workflow run release.yml -f tag=v0.4.0-rc.1 -f dry_run=true
 ```
+
+## Adding a New Dependency
+
+Before adding any new crate to a `Cargo.toml`, follow these steps to keep the project's
+license policy and security posture clean.
+
+1. **Add the crate** using `cargo add <crate>` (or edit `Cargo.toml` directly and run
+   `cargo fetch`). Prefer crates with MIT, Apache-2.0, or BSD-class licenses.
+
+2. **Check the license** — run `make deny` (or `cargo deny check`) locally:
+
+   ```bash
+   make deny
+   # equivalent to: cargo deny check
+   ```
+
+   If `cargo-deny` rejects the license, the crate is not permitted under the current policy
+   in `deny.toml`. **Do not add a license exception without team discussion.** Open an issue
+   or PR comment explaining why the crate is necessary and what the licensing implications are.
+
+3. **Check for vulnerabilities** — run `make audit` (or `cargo audit`):
+
+   ```bash
+   make audit
+   # equivalent to: cargo audit
+   ```
+
+   A new dependency must introduce **zero new vulnerability errors**. If `cargo audit` reports
+   a vulnerability advisory for the crate, choose a patched version or an alternative crate.
+
+4. **Handle unmaintained advisories** — if `cargo-deny` or `cargo audit` surfaces an
+   *unmaintained* advisory (not a CVE) for the new dependency:
+
+   - Evaluate whether the crate is still safe to use.
+   - If acceptable, add a scoped ignore entry in `deny.toml` **with a comment** explaining
+     the rationale and a review date:
+
+     ```toml
+     # [deny.toml]
+     [advisories]
+     ignore = [
+         # RUSTSEC-XXXX-XXXX: <crate> is unmaintained but has no known exploit paths
+         # and is only used for <purpose>. Review at next minor version bump.
+         { id = "RUSTSEC-XXXX-XXXX", reason = "<rationale>" },
+     ]
+     ```
+
+   - Mirror the entry in `.cargo/audit.toml` so both tools agree.
+
+5. **Update `CHANGELOG.md`** — if the new dependency enables a user-visible feature or
+   behavioral change, add a line to the `## [Unreleased]` block describing what changed.
+
+6. **CI is the final gate** — the `cargo-deny` and `security-audit` CI jobs run on every push
+   and are required to pass before merging. Do not bypass them with `SKIP` or `--no-verify`.
+
+> **Quick reference:**
+> ```bash
+> cargo add <crate>          # add the dependency
+> make deny                  # verify license compliance
+> make audit                 # verify no new CVEs
+> ```
 
 ## API Change Process
 
