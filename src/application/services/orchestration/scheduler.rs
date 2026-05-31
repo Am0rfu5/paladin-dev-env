@@ -852,4 +852,217 @@ mod tests {
         let next_run = SchedulerOrchestrator::calculate_next_run(&daily_schedule);
         assert!(next_run.is_some());
     }
+
+    // ───────────────────────── Epic 2 (Task 2.1) validation ─────────────────────────
+
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    /// Test double `TaskService` that records how many times it is executed.
+    #[derive(Debug, Clone)]
+    struct RecordingService {
+        service_name: String,
+        calls: Arc<AtomicUsize>,
+    }
+
+    #[async_trait]
+    impl TaskService for RecordingService {
+        fn name(&self) -> &str {
+            &self.service_name
+        }
+
+        async fn execute(
+            &self,
+            _action: &crate::core::base::component::action::Action,
+        ) -> Result<Option<serde_json::Value>, crate::core::platform::container::task::TaskError>
+        {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Ok(Some(serde_json::json!({ "executed": true })))
+        }
+
+        fn clone_service(&self) -> Box<dyn TaskService> {
+            Box::new(self.clone())
+        }
+    }
+
+    /// Build a scheduler whose only service is a `RecordingService`, returning the
+    /// scheduler and a shared call counter.
+    fn scheduler_with_recording_service() -> (SchedulerOrchestrator, Arc<AtomicUsize>) {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut scheduler = SchedulerOrchestrator::new();
+        scheduler.services.clear();
+        scheduler.register_service(Box::new(RecordingService {
+            service_name: "RecordingService".to_string(),
+            calls: calls.clone(),
+        }));
+        (scheduler, calls)
+    }
+
+    fn recording_job() -> Job {
+        let task = Task::new(
+            "Recording Task".to_string(),
+            "Records execution".to_string(),
+            "RecordingService".to_string(),
+        );
+        Job::new(
+            "Recording Job".to_string(),
+            "A job that records execution".to_string(),
+            vec![task],
+        )
+    }
+
+    #[tokio::test]
+    async fn test_calculate_next_run_all_variants() {
+        // Interval → some
+        assert!(
+            SchedulerOrchestrator::calculate_next_run(&Schedule::Interval(Duration::from_secs(60)))
+                .is_some()
+        );
+        // Daily → some
+        assert!(SchedulerOrchestrator::calculate_next_run(&Schedule::Daily(9, 0)).is_some());
+        // Weekly → some
+        assert!(SchedulerOrchestrator::calculate_next_run(&Schedule::Weekly(1, 10, 0)).is_some());
+        // Monthly → some
+        assert!(
+            SchedulerOrchestrator::calculate_next_run(&Schedule::Monthly(15, 14, 30)).is_some()
+        );
+        // Once in the future → Some(exact)
+        let future = Utc::now() + chrono::Duration::hours(1);
+        assert_eq!(
+            SchedulerOrchestrator::calculate_next_run(&Schedule::Once(future)),
+            Some(future)
+        );
+        // Once in the past → None
+        let past = Utc::now() - chrono::Duration::hours(1);
+        assert_eq!(
+            SchedulerOrchestrator::calculate_next_run(&Schedule::Once(past)),
+            None
+        );
+        // OnStartup → None
+        assert_eq!(
+            SchedulerOrchestrator::calculate_next_run(&Schedule::OnStartup),
+            None
+        );
+    }
+
+    #[tokio::test]
+    async fn test_tick_dispatches_due_job_and_updates_bookkeeping() {
+        let (mut scheduler, calls) = scheduler_with_recording_service();
+        let job_id = scheduler
+            .add_job(
+                recording_job(),
+                Schedule::Interval(Duration::from_secs(3600)),
+            )
+            .unwrap();
+
+        // Force the job to be due in the past so a single tick dispatches it.
+        scheduler.scheduled_jobs.get_mut(&job_id).unwrap().next_run =
+            Some(Utc::now() - chrono::Duration::seconds(1));
+
+        scheduler.check_and_execute_jobs().await;
+
+        assert_eq!(calls.load(Ordering::SeqCst), 1, "service should run once");
+        let sj = scheduler.scheduled_jobs.get(&job_id).unwrap();
+        assert!(sj.last_run.is_some(), "last_run should be set");
+        assert_eq!(sj.run_count, 1, "run_count should increment");
+        assert!(
+            sj.next_run.is_some(),
+            "recurring job should have a recomputed next_run"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_tick_skips_disabled_job() {
+        let (mut scheduler, calls) = scheduler_with_recording_service();
+        let job_id = scheduler
+            .add_job(
+                recording_job(),
+                Schedule::Interval(Duration::from_secs(3600)),
+            )
+            .unwrap();
+
+        // Make the job due but disabled — it must be skipped.
+        {
+            let sj = scheduler.scheduled_jobs.get_mut(&job_id).unwrap();
+            sj.enabled = false;
+            sj.next_run = Some(Utc::now() - chrono::Duration::seconds(1));
+        }
+
+        scheduler.check_and_execute_jobs().await;
+
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            0,
+            "disabled job must not execute"
+        );
+        let sj = scheduler.scheduled_jobs.get(&job_id).unwrap();
+        assert_eq!(sj.run_count, 0, "disabled job must not advance run_count");
+    }
+
+    #[tokio::test]
+    async fn test_once_job_fires_once_then_not_again() {
+        let (mut scheduler, calls) = scheduler_with_recording_service();
+        let future = Utc::now() + chrono::Duration::hours(1);
+        let job_id = scheduler
+            .add_job(recording_job(), Schedule::Once(future))
+            .unwrap();
+
+        // Force it due now.
+        scheduler.scheduled_jobs.get_mut(&job_id).unwrap().next_run =
+            Some(Utc::now() - chrono::Duration::seconds(1));
+
+        // First tick fires it once.
+        scheduler.check_and_execute_jobs().await;
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        let sj = scheduler.scheduled_jobs.get(&job_id).unwrap();
+        assert_eq!(sj.run_count, 1);
+        assert!(
+            sj.next_run.is_none(),
+            "Once job must not have a next_run after firing"
+        );
+
+        // Second tick must not fire it again.
+        scheduler.check_and_execute_jobs().await;
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            1,
+            "Once job must fire exactly once"
+        );
+        assert_eq!(scheduler.scheduled_jobs.get(&job_id).unwrap().run_count, 1);
+    }
+
+    #[tokio::test]
+    async fn test_scheduler_fires_job_scheduled_in_near_future() {
+        let (mut scheduler, calls) = scheduler_with_recording_service();
+        // Drive ticks quickly so the test stays fast and deterministic.
+        scheduler.tick_interval = Duration::from_millis(25);
+
+        let job_id = scheduler
+            .add_job(
+                recording_job(),
+                Schedule::Interval(Duration::from_secs(3600)),
+            )
+            .unwrap();
+        // Due shortly after start.
+        scheduler.scheduled_jobs.get_mut(&job_id).unwrap().next_run =
+            Some(Utc::now() + chrono::Duration::milliseconds(150));
+
+        tokio::spawn(async move {
+            scheduler.start().await;
+        });
+
+        // Poll the shared counter with a generous bound to avoid flakiness.
+        let mut fired = false;
+        for _ in 0..80 {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            if calls.load(Ordering::SeqCst) >= 1 {
+                fired = true;
+                break;
+            }
+        }
+        assert!(
+            fired,
+            "scheduled job did not fire within the timeout window"
+        );
+    }
 }

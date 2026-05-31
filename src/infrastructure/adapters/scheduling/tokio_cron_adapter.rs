@@ -417,4 +417,49 @@ mod tests {
 
         adapter.shutdown().await.unwrap();
     }
+
+    /// Validates that a cron expression scheduled to fire every second actually
+    /// fires, observed through a shared atomic counter incremented by the job
+    /// closure. This exercises the same `Job::new_async` mechanism the adapter
+    /// uses in `schedule_job`.
+    ///
+    /// Note: `tokio-cron-scheduler` evaluates cron expressions in **UTC**.
+    #[tokio::test]
+    async fn test_cron_job_fires_on_schedule() {
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
+
+        let adapter = TokioCronSchedulerAdapter::new().await.unwrap();
+        adapter.start().await.unwrap();
+
+        let counter = Arc::new(AtomicUsize::new(0));
+        let counter_in_job = counter.clone();
+
+        // Fire every second (6-field cron, UTC).
+        let job = Job::new_async("* * * * * *", move |_uuid, _lock| {
+            let counter = counter_in_job.clone();
+            Box::pin(async move {
+                counter.fetch_add(1, AtomicOrdering::SeqCst);
+            })
+        })
+        .unwrap();
+
+        {
+            let sched = adapter.inner.lock().await;
+            sched.add(job).await.unwrap();
+        }
+
+        // Wait up to ~3s for at least one fire; generous bound avoids flakiness.
+        let mut fired = false;
+        for _ in 0..30 {
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            if counter.load(AtomicOrdering::SeqCst) >= 1 {
+                fired = true;
+                break;
+            }
+        }
+        assert!(fired, "cron job did not fire within the timeout window");
+
+        adapter.shutdown().await.unwrap();
+    }
 }
