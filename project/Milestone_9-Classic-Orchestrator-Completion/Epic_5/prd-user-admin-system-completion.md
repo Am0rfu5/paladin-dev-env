@@ -230,13 +230,13 @@ endpoints or requiring network access at test time.
 High-level mapping to the Epic's tasks (detailed sub-tasks live in the companion
 `tasks-user-admin-system-completion.md`).
 
-- [ ] **Task 5.1 — User CRUD via API.** Add `delete`/`list` to the service surface and admin-only
+- [x] **Task 5.1 — User CRUD via API.** Add `delete`/`list` to the service surface and admin-only
   routes; keep Argon2 hashing; ensure responses omit password hashes. (FR 18–20)
-- [ ] **Task 5.2 — Authentication flow.** Define `AuthPort` + value objects in `paladin-ports`;
+- [x] **Task 5.2 — Authentication flow.** Define `AuthPort` + value objects in `paladin-ports`;
   implement the opaque-token adapter in the root crate; issue a token on login; add Axum auth
   middleware returning `401`. (FR 5–14)
-- [ ] **Task 5.3 — Role-based access control.** Add `UserRole` to the domain + persistence; add the
+- [x] **Task 5.3 — Role-based access control.** Add `UserRole` to the domain + persistence; add the
   admin role guard returning `403`; protect admin-only and self-service routes; compose the app
   router. (FR 1–4, 15–17, 21)
-- [ ] **Tests & quality gate.** Unit + offline integration tests for auth and RBAC; full quality
+- [x] **Tests & quality gate.** Unit + offline integration tests for auth and RBAC; full quality
   gate green. (FR 22–24)

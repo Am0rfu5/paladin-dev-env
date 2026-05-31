@@ -103,8 +103,24 @@ each sub-task, not just each parent task.
   - [x] 7.4 Assert: admin-only route with `user`-role token → `403`; with `admin`-role token → success.
   - [x] 7.5 Quality gate, then commit.
 
-- [ ] 8.0 Final verification & Epic close-out (FR 24)
-  - [ ] 8.1 Run full quality gate: `cargo build`, `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt --check` (including the `web-server` feature path).
-  - [ ] 8.2 Run `snyk_code_scan` on new first-party code; fix and rescan until clean (or substitute static compiler/clippy checks if the tool is unavailable, and note it).
-  - [ ] 8.3 Mark the PRD Task Checklist items complete; ensure "Relevant Files" above is accurate.
-  - [ ] 8.4 Final commit if any cleanup remains.
+- [x] 8.0 Final verification & Epic close-out (FR 24)
+  - [x] 8.1 Run full quality gate: `cargo build`, `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt --check` (including the `web-server` feature path).
+  - [x] 8.2 Run `snyk_code_scan` on new first-party code; fix and rescan until clean (or substitute static compiler/clippy checks if the tool is unavailable, and note it).
+  - [x] 8.3 Mark the PRD Task Checklist items complete; ensure "Relevant Files" above is accurate.
+  - [x] 8.4 Final commit if any cleanup remains.
+
+### Close-out Notes
+
+- Quality gate green: `cargo build --features web-server`, `cargo test --workspace --lib --all-features`
+  (all workspace unit tests pass), `cargo test -p paladin-web --test auth_rbac` (5/5),
+  `cargo clippy --workspace --all-features -- -D warnings` (clean), `cargo fmt --check` (clean).
+- `snyk_code_scan` was unavailable in this environment; substituted strict `cargo clippy -- -D warnings`
+  plus full compiler checks on all new first-party code (auth port, token adapter, middleware, routes).
+- Security posture: opaque bearer tokens (32 random bytes), only SHA-256 hashes persisted, configurable
+  TTL with expiry eviction; non-revealing 401/403 JSON responses; password hashes never serialized in
+  any response DTO. `paladin-web` performs no cryptography (depends only on `Arc<dyn AuthPort>`),
+  preserving the hexagonal boundary.
+- Note: a `cargo test --workspace --all-features` run that also compiles every root-crate example
+  exhausted the build disk (100% full); the lib/integration test paths above were used instead and
+  all passed. The full workspace build (`cargo build --workspace --all-features`) completed
+  successfully prior to that.
