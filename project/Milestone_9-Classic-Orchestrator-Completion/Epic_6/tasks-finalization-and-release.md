@@ -89,26 +89,31 @@ run the quality gate, then commit the parent task with a conventional message.
   > `cargo clippy --workspace --all-features -- -D warnings` (exit 0) and full `cargo build/test`
   > compiler checks, all clean.
 
-- [ ] 4.0 Update CHANGELOG (FR 7, FR 8, FR 9)
-  - [ ] 4.1 Inspect the existing `CHANGELOG.md` format/style.
-  - [ ] 4.2 Add a `0.3.0` entry grouped by feature area: Orchestration (Epic 1), Scheduler/Queue
+- [x] 4.0 Update CHANGELOG (FR 7, FR 8, FR 9)
+  - [x] 4.1 Inspect the existing `CHANGELOG.md` format/style.
+  - [x] 4.2 Add a `0.3.0` entry grouped by feature area: Orchestration (Epic 1), Scheduler/Queue
         (Epic 2), Content Pipeline (Epic 3), Agent–Orchestrator Bridge (Epic 4), User/Admin & Security
         (Epic 5). Describe user-visible/behavioral changes, not commit-by-commit detail.
-  - [ ] 4.3 Verify the new entry matches the existing changelog conventions.
+  - [x] 4.3 Verify the new entry matches the existing changelog conventions.
 
-- [ ] 5.0 Bump workspace version to 0.3.0 (FR 10, FR 11, FR 12, FR 13)
-  - [ ] 5.1 Set the root crate `version` in `Cargo.toml` to `0.3.0`.
-  - [ ] 5.2 Set every member crate `version` in `crates/*/Cargo.toml` to `0.3.0`.
-  - [ ] 5.3 Update all internal path-dependency version pins in `[workspace.dependencies]` (and any
+- [x] 5.0 Bump workspace version to 0.3.0 (FR 10, FR 11, FR 12, FR 13)
+  - [x] 5.1 Set the root crate `version` in `Cargo.toml` to `0.3.0`.
+  - [x] 5.2 Set every member crate `version` in `crates/*/Cargo.toml` to `0.3.0`.
+  - [x] 5.3 Update all internal path-dependency version pins in `[workspace.dependencies]` (and any
         per-crate dependency declarations) to `0.3.0`.
-  - [ ] 5.4 Run `cargo build --workspace` and confirm `Cargo.lock` updates to the new versions.
-  - [ ] 5.5 `grep` the workspace to confirm `0.3.0` is consistent and no stale `0.1.0` pins remain.
+  - [x] 5.4 Run `cargo build --workspace` and confirm `Cargo.lock` updates to the new versions.
+  - [x] 5.5 `grep` the workspace to confirm `0.3.0` is consistent and no stale `0.1.0` pins remain.
 
-- [ ] 6.0 Final verification, commit, and release tag (FR 13, FR 14, FR 15)
-  - [ ] 6.1 Re-run the full quality gate (build, test incl. feature paths, clippy, fmt, doc) to
+- [x] 6.0 Final verification, commit, and release tag (FR 13, FR 14, FR 15)
+  - [x] 6.1 Re-run the full quality gate (build, test incl. feature paths, clippy, fmt, doc) to
         confirm everything is green at version `0.3.0`.
-  - [ ] 6.2 Mark the PRD Task Checklist items complete and ensure "Relevant Files" above is accurate.
-  - [ ] 6.3 Commit the changelog + version bump (stage only the specific files) with a conventional
+  - [x] 6.2 Mark the PRD Task Checklist items complete and ensure "Relevant Files" above is accurate.
+  - [x] 6.3 Commit the changelog + version bump (stage only the specific files) with a conventional
         message referencing Task 5.0/6.0.
-  - [ ] 6.4 Create the `v0.3.0` release-candidate tag on the finalized commit and verify it with
+  - [x] 6.4 Create the `v0.3.0` release-candidate tag on the finalized commit and verify it with
         `git tag`.
+
+  > Final gate at `0.3.0`: `cargo test --workspace` (EXIT=0),
+  > `cargo clippy --workspace --all-features -- -D warnings` (EXIT=0), `cargo fmt --all -- --check`
+  > (clean), `cargo doc --workspace --no-deps` and `--all-features` (clean). Build succeeds at `0.3.0`
+  > with `Cargo.lock` refreshed.

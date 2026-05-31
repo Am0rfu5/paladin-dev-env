@@ -21,6 +21,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-05-31
+
+Milestone 9 — Classic Orchestrator, Content Pipeline, and Agent-Orchestrator Bridge.
+This release makes the time- and event-driven orchestration paths functional end-to-end, bridges
+the content pipeline and AI agents into the `Orchestrator`, and completes the user/admin system with
+authentication and role-based access control.
+
+### Added
+
+#### Orchestration (Milestone 9, Epic 1)
+
+- **Workflow execution loop**: the `Orchestrator` now executes workflows end-to-end rather than
+  simulating them. Jobs are dispatched, their outcomes aggregated into a `WorkflowExecutionResult`,
+  and the configured error strategy is honored when a job fails.
+- **Workflow state persistence & resume**: in-progress workflow state is persisted so incomplete
+  workflows can be resumed after a restart.
+- **Real `TaskService` behavior**: simulated task implementations were replaced with real dispatch
+  and error-strategy handling, validated by a full-lifecycle integration test.
+
+#### Scheduler & Queue (Milestone 9, Epic 2)
+
+- **Validated scheduler tick loop**: `next_run` computation for `Schedule::Interval`,
+  `Schedule::Cron`, and `Schedule::Once` is verified, disabled jobs are skipped, and
+  `last_run`/`run_count`/`next_run` advance correctly after each dispatch.
+- **Validated `QueuePort` contract**: the in-memory queue and the `RedisQueueAdapter` are exercised
+  against the same `QueuePort` contract, including retry and dead-letter behavior.
+- **Validated event → trigger → job pipeline**: a matching event produces exactly one trigger per
+  matching listener, which is converted to a job and executed via the Epic 1 dispatch path.
+
+#### Content Pipeline (Milestone 9, Epic 3)
+
+- **`PaladinContentProcessor`**: a content → agent bridge that routes ingested content through a
+  Paladin agent.
+- **`BattalionContentProcessor`**: a content processor backed by a Battalion for multi-agent content
+  enrichment.
+- **Orchestrator wiring**: the content processors are wired into the `Orchestrator`, with an
+  ingestion → enrichment pipeline integration test.
+
+#### Agent–Orchestrator Bridge (Milestone 9, Epic 4)
+
+- **`OrchestratorPort`**: a new bridge interface in `paladin-ports` that lets agents invoke
+  orchestrator workflows.
+- **`OrchestratorBridgeAdapter`**: an adapter implementing `OrchestratorPort` over the concrete
+  `Orchestrator`.
+- **`PaladinExecutionService` integration**: agents can now drive orchestrator workflows through the
+  port, validated by an agent → orchestrator bridge integration test.
+
+#### User/Admin System & Security (Milestone 9, Epic 5)
+
+- **Role-based access control**: a `UserRole` (`Admin`/`User`) was added to the user domain and is
+  persisted by the SQLite user repositories.
+- **`AuthPort` authentication abstraction**: a new port in `paladin-ports` defining token issuance,
+  verification, and revocation (`AuthToken`, `AuthClaims`, `AuthError`).
+- **In-memory opaque-token auth adapter**: a concrete `AuthPort` implementation issuing opaque
+  bearer tokens (random token material, only SHA-256 hashes stored, configurable expiry).
+- **User CRUD & token-issuing login**: the user service gained `delete_user` and `list_users`, and
+  login now issues an authentication token.
+- **Axum auth middleware & RBAC guards**: bearer-token authentication middleware (`require_auth`),
+  an admin guard (`require_admin`), and self-or-admin authorization, all returning non-revealing
+  `401`/`403` responses.
+- **Protected routes & app router**: a `create_app_router` composition exposing public routes
+  (register, login), self-scoped routes (`GET`/`PUT /users/{id}`), and admin-only routes
+  (`GET /users`, `DELETE /users/{id}`), validated by authentication + RBAC integration tests.
+
+### Changed
+
+- Workspace version bumped to `0.3.0` across the root crate and all member crates.
+
+---
+
 ## [0.2.0] - 2026-05-30
 
 ### Breaking Changes

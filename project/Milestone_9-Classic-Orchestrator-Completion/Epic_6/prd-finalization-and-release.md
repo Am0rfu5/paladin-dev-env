@@ -135,7 +135,7 @@ consumers can depend on. This Epic produces that artifact.
 
 ## Task Checklist (for the generated task list)
 
-- [ ] Full workspace quality gate passes (build, test incl. feature paths, clippy, fmt, doc).
-- [ ] `CHANGELOG.md` updated with a `0.3.0` entry covering Epics 1–5.
-- [ ] Workspace version bumped to `0.3.0` (root + all member crates + internal dependency pins).
-- [ ] `v0.3.0` release-candidate tag created on the finalized commit.
+- [x] Full workspace quality gate passes (build, test incl. feature paths, clippy, fmt, doc).
+- [x] `CHANGELOG.md` updated with a `0.3.0` entry covering Epics 1–5.
+- [x] Workspace version bumped to `0.3.0` (root + all member crates + internal dependency pins).
+- [x] `v0.3.0` release-candidate tag created on the finalized commit.
