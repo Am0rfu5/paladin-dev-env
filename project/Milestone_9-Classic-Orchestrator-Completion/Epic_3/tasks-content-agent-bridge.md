@@ -54,12 +54,12 @@
   - [x] 2.7 Unit tests with mock agents: Formation runs sequentially into one result; Phalanx runs in parallel and merges into one result
   - [x] 2.8 Add rustdoc for all new public items
 
-- [ ] 3.0 Wire content processing into the Orchestrator (PRD Task 3.3)
-  - [ ] 3.1 Confirm/extend `Orchestrator::register_content_processor()` accepts both processors as `Box<dyn ContentProcessor>` registered by name
-  - [ ] 3.2 Confirm `Orchestrator::process_content()` dispatches to the named processor within the existing session lifecycle and returns its `ContentProcessingResult`
-  - [ ] 3.3 Verify the unregistered-name path returns `OrchestratorError::ProcessorNotFound(name)`
-  - [ ] 3.4 Integration test (`tests/content_agent_bridge.rs`): register a `PaladinContentProcessor` (mock LLM), drive a `ContentItem` through `process_content()`, assert enriched result + metadata
-  - [ ] 3.5 Integration test: assert referencing an unregistered processor name returns `ProcessorNotFound`
+- [x] 3.0 Wire content processing into the Orchestrator (PRD Task 3.3)
+  - [x] 3.1 Confirm/extend `Orchestrator::register_content_processor()` accepts both processors as `Box<dyn ContentProcessor>` registered by name
+  - [x] 3.2 Confirm `Orchestrator::process_content()` dispatches to the named processor within the existing session lifecycle and returns its `ContentProcessingResult`
+  - [x] 3.3 Verify the unregistered-name path returns `OrchestratorError::ProcessorNotFound(name)`
+  - [x] 3.4 Integration test (`tests/content_agent_bridge.rs`): register a `PaladinContentProcessor` (mock LLM), drive a `ContentItem` through `process_content()`, assert enriched result + metadata
+  - [x] 3.5 Integration test: assert referencing an unregistered processor name returns `ProcessorNotFound`
 
 - [ ] 4.0 Content ingestion pipeline validation (PRD Task 3.4)
   - [ ] 4.1 Add a deterministic end-to-end test (`tests/content_ingestion_pipeline.rs`) gated by `content-processing`: local fixture / `FileContentListFetcher` → extract/aggregate → content processor (mock LLM) → enriched result, with no network
