@@ -39,7 +39,8 @@ use uuid::Uuid;
 /// objects inside a named collection. The collection is created automatically
 /// when the adapter is constructed if it does not already exist.
 ///
-/// Prefer this adapter over [`InMemorySanctum`] when you need durable storage,
+/// Prefer this adapter over [`InMemorySanctum`](crate::sanctum::InMemorySanctum)
+/// when you need durable storage,
 /// horizontal scalability, or vector counts above ~10 000.
 ///
 /// # Example

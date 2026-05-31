@@ -1,6 +1,7 @@
 //! Application router composition for the user management REST API.
 //!
-//! [`create_app_router`] wires together public routes (registration and login)
+//! [`create_app_router`](crate::app::create_app_router) wires together public routes
+//! (registration and login)
 //! and authenticated routes (everything else) using the auth middleware from
 //! [`crate::auth_middleware`]. Admin-only routes (user deletion and listing) are
 //! additionally protected by the admin guard, while self-scoped routes (fetch

@@ -42,33 +42,52 @@ run the quality gate, then commit the parent task with a conventional message.
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 From the current branch (which contains Epics 1–5), create and checkout
+- [x] 0.0 Create feature branch
+  - [x] 0.1 From the current branch (which contains Epics 1–5), create and checkout
         `feature/milestone_9-epic_6-finalization-and-release`.
-  - [ ] 0.2 Confirm the working tree is clean of unrelated changes (exclude the known pre-existing
+  - [x] 0.2 Confirm the working tree is clean of unrelated changes (exclude the known pre-existing
         prompt-file changes) and that the branch contains the `m9-e1`…`m9-e5` commits.
 
-- [ ] 1.0 Workspace build & test quality gate (FR 1, FR 2, FR 6)
-  - [ ] 1.1 Run `cargo build --workspace`; fix any errors (no feature work).
-  - [ ] 1.2 Run `cargo build --workspace --all-features`; fix any feature-gated build errors.
-  - [ ] 1.3 Run `cargo test --workspace`; ensure all tests pass.
-  - [ ] 1.4 Run `cargo test --workspace --all-features` (or targeted `--features redis-queue web-server`)
+- [x] 1.0 Workspace build & test quality gate (FR 1, FR 2, FR 6)
+  - [x] 1.1 Run `cargo build --workspace`; fix any errors (no feature work).
+  - [x] 1.2 Run `cargo build --workspace --all-features`; fix any feature-gated build errors.
+  - [x] 1.3 Run `cargo test --workspace`; ensure all tests pass.
+  - [x] 1.4 Run `cargo test --workspace --all-features` (or targeted `--features redis-queue web-server`)
         to exercise feature-gated paths; fix failures. Note any tests skipped due to missing external
         services (Docker/Redis) in the close-out.
-  - [ ] 1.5 Re-run any failing command until green.
+  - [x] 1.5 Re-run any failing command until green.
 
-- [ ] 2.0 Lint, format, and documentation quality gate (FR 3, FR 4, FR 5, FR 6)
-  - [ ] 2.1 Run `cargo clippy --workspace -- -D warnings`; fix all warnings.
-  - [ ] 2.2 Run `cargo clippy --workspace --all-features -- -D warnings`; fix all warnings.
-  - [ ] 2.3 Run `cargo fmt --all -- --check`; if diffs exist, run `cargo fmt --all` and re-check.
-  - [ ] 2.4 Run `cargo doc --workspace --no-deps`; add doc comments / fix doc warnings (docs only).
-  - [ ] 2.5 Commit Tasks 1.0–2.0 fixes if any code/doc changes were required (skip commit if the gate
+  > Note: `cargo test --workspace` passes (EXIT=0). Under `--all-features`, 708 tests pass; the only
+  > "failure" is `tests/cli_isolation_test.rs::test_cli_feature_is_not_default`, which **intentionally
+  > panics** when the `cli` feature is enabled (it is a guard ensuring `cli` stays out of the default
+  > feature set). This is expected and not a real failure — it confirms the guard works. Feature-gated
+  > paths (`redis-queue`, `web-server`) compiled and tested cleanly under `--all-features`.
+
+- [x] 2.0 Lint, format, and documentation quality gate (FR 3, FR 4, FR 5, FR 6)
+  - [x] 2.1 Run `cargo clippy --workspace -- -D warnings`; fix all warnings.
+  - [x] 2.2 Run `cargo clippy --workspace --all-features -- -D warnings`; fix all warnings.
+  - [x] 2.3 Run `cargo fmt --all -- --check`; if diffs exist, run `cargo fmt --all` and re-check.
+  - [x] 2.4 Run `cargo doc --workspace --no-deps`; add doc comments / fix doc warnings (docs only).
+  - [x] 2.5 Commit Tasks 1.0–2.0 fixes if any code/doc changes were required (skip commit if the gate
         was already clean and nothing changed).
 
-- [ ] 3.0 Security scan of any changed first-party code (Technical Considerations)
-  - [ ] 3.1 Run `snyk_code_scan` on first-party files modified for the quality gate; fix and rescan
+  > Note: clippy (default and `--all-features`) and `cargo fmt --all -- --check` were already clean.
+  > `cargo doc --workspace --no-deps` (with `RUSTDOCFLAGS="-D warnings"`, both default and
+  > `--all-features`) surfaced 6 unresolved/private intra-doc link warnings inherited from earlier
+  > Epics. Fixed as documentation-only changes: `paladin-web` (`app.rs`, `auth_middleware.rs` —
+  > explicit paths for `create_app_router`, `AuthPort`, `AuthClaims`), root crate
+  > (`orchestration/types.rs` — `JobRunState`/`WorkflowRunState` changed to code spans as they are
+  > crate-private), and `paladin-memory` (`qdrant_adapter.rs` — explicit path for `InMemorySanctum`).
+
+- [x] 3.0 Security scan of any changed first-party code (Technical Considerations)
+  - [x] 3.1 Run `snyk_code_scan` on first-party files modified for the quality gate; fix and rescan
         until clean. If the tool is unavailable, run `cargo clippy --workspace --all-features
         -- -D warnings` plus compiler checks as a substitute and record the substitution.
+
+  > Note: `snyk_code_scan` is **unavailable** in this environment. The only first-party changes in
+  > this Epic are doc-comment edits (no logic changes), plus version metadata. Substituted strict
+  > `cargo clippy --workspace --all-features -- -D warnings` (exit 0) and full `cargo build/test`
+  > compiler checks, all clean.
 
 - [ ] 4.0 Update CHANGELOG (FR 7, FR 8, FR 9)
   - [ ] 4.1 Inspect the existing `CHANGELOG.md` format/style.

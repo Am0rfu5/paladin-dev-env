@@ -1,9 +1,12 @@
 //! Authentication and authorization middleware for the user REST API.
 //!
 //! This module provides Axum middleware that authenticates incoming requests
-//! using a bearer token verified through an [`AuthPort`] implementation, plus
+//! using a bearer token verified through an
+//! [`AuthPort`](paladin_ports::output::auth_port::AuthPort) implementation, plus
 //! authorization guards for role-based access control (RBAC). The middleware
-//! injects the verified [`AuthClaims`] into the request extensions so that
+//! injects the verified
+//! [`AuthClaims`](paladin_ports::output::auth_port::AuthClaims) into the request
+//! extensions so that
 //! downstream handlers can make self-scope decisions.
 //!
 //! All failure responses use a non-revealing JSON body so that the API does not

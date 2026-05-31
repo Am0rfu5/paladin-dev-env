@@ -220,7 +220,7 @@ pub(crate) enum WorkflowRunState {
 /// Result data for a single job executed as part of a workflow.
 ///
 /// The job's success/failure is derived from the crate-private lifecycle state
-/// ([`JobRunState`]); no public state enum is exposed.
+/// (`JobRunState`); no public state enum is exposed.
 #[derive(Debug, Clone)]
 pub struct JobExecutionOutcome {
     /// Identifier of the job.
@@ -271,7 +271,7 @@ impl JobExecutionOutcome {
 /// Aggregated result of executing a workflow end-to-end.
 ///
 /// Exposes result/reporting data only; the terminal status is derived from the
-/// crate-private lifecycle state ([`WorkflowRunState`]) so no new public state
+/// crate-private lifecycle state (`WorkflowRunState`) so no new public state
 /// enum is added.
 #[derive(Debug, Clone)]
 pub struct WorkflowExecutionResult {
