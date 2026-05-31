@@ -83,12 +83,12 @@ each sub-task, not just each parent task.
   - [x] 4.5 Unit tests: delete removes a user; list returns users; login returns a non-empty token with future expiry.
   - [x] 4.6 Quality gate, then commit.
 
-- [ ] 5.0 Add Axum auth middleware + RBAC guard in `paladin-web` (Tasks 5.2–5.3; FR 13–17)
-  - [ ] 5.1 Create `crates/paladin-web/src/auth_middleware.rs`: an extractor/middleware that reads `Authorization: Bearer <token>`, calls `AuthPort::verify_token`, injects `AuthClaims` into request extensions, and returns `401` (JSON body, non-revealing) on missing/invalid/expired.
-  - [ ] 5.2 Add an admin role guard that returns `403` when `AuthClaims.role != Admin`.
-  - [ ] 5.3 Add a self-scope check helper so a non-admin may only access their own `:id` (else `403`).
-  - [ ] 5.4 Unit tests for the middleware/guard decision logic using a mock `AuthPort` (401 vs 200 vs 403 outcomes at the function level).
-  - [ ] 5.5 Quality gate, then commit.
+- [x] 5.0 Add Axum auth middleware + RBAC guard in `paladin-web` (Tasks 5.2–5.3; FR 13–17)
+  - [x] 5.1 Create `crates/paladin-web/src/auth_middleware.rs`: an extractor/middleware that reads `Authorization: Bearer <token>`, calls `AuthPort::verify_token`, injects `AuthClaims` into request extensions, and returns `401` (JSON body, non-revealing) on missing/invalid/expired.
+  - [x] 5.2 Add an admin role guard that returns `403` when `AuthClaims.role != Admin`.
+  - [x] 5.3 Add a self-scope check helper so a non-admin may only access their own `:id` (else `403`).
+  - [x] 5.4 Unit tests for the middleware/guard decision logic using a mock `AuthPort` (401 vs 200 vs 403 outcomes at the function level).
+  - [x] 5.5 Quality gate, then commit.
 
 - [ ] 6.0 Protect routes and compose the app router (Task 5.3; FR 16–21)
   - [ ] 6.1 Update `user_controller.rs`: login handler returns the issued token; add admin-only `DELETE /users/:id` and `GET /users` (list) handlers; apply self-scope checks to `get`/`update`.
