@@ -101,6 +101,11 @@ RUN cargo install cargo-public-api
 # changelog finalize, tag, push). See docs/RELEASE_AUTOMATION.md.
 RUN cargo install --locked --version 1.1.2 cargo-release
 
+# Install security/license/SBOM tooling (pinned) — drives `make deny`,
+# `make security`, and `make sbom`. See docs/SECURITY_SCANNING.md.
+RUN cargo install --locked --version 0.19.8 cargo-deny
+RUN cargo install --locked --version 0.5.9 cargo-cyclonedx
+
 # Install sqlx-cli for database migrations
 RUN cargo install --locked sqlx-cli --no-default-features --features sqlite,mysql
 

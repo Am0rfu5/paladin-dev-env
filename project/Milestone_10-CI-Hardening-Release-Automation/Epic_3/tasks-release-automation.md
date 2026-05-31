@@ -19,9 +19,11 @@
 - `CONTRIBUTING.md` - Existing: document the release flow, required secrets, and dry-run path.
 - `docs/RELEASE_CHECKLIST.md` - Existing: cross-reference the automated flow.
 - `CHANGELOG.md` - Existing: confirm the `## [Unreleased]` structure the `make release` target edits.
-- `.devcontainer/Dockerfile.dev` - Existing: pre-install `cargo-release` in the dev image so rebuilt
-  containers provision the release tool for every developer.
-- `Makefile` (`setup` target) - Existing: install `cargo-release` for non-devcontainer local setups.
+- `.devcontainer/Dockerfile.dev` - Existing: pre-install `cargo-release` (and the Epic 2
+  `cargo-deny` / `cargo-cyclonedx` security/SBOM tools) in the dev image so rebuilt containers
+  provision them for every developer.
+- `Makefile` (`setup` target) - Existing: install `cargo-release`, `cargo-deny`, and
+  `cargo-cyclonedx` for non-devcontainer local setups.
 
 ### Notes
 
@@ -161,3 +163,19 @@ parent task with a conventional message referencing the task number.
   > other entries) to the Makefile `setup` target for local non-devcontainer setups. Existing
   > containers can install on demand via `cargo install --locked cargo-release` (already documented
   > in CONTRIBUTING.md / docs/RELEASE_AUTOMATION.md) or by rebuilding the devcontainer.
+
+- [x] 7.0 Provision Epic 2 security/SBOM tooling in the dev image (follow-up)
+  - [x] 7.1 Pre-install pinned `cargo-deny` and `cargo-cyclonedx` in `.devcontainer/Dockerfile.dev`
+        so rebuilt dev images ship the tools used by `make deny`/`make security`/`make sbom`.
+  - [x] 7.2 Add `cargo-deny` and `cargo-cyclonedx` to the Makefile `setup` target for non-devcontainer
+        local setups.
+  - [x] 7.3 Confirm CI still installs these tools in its own jobs (`ci.yml` cargo-deny job,
+        `release.yml` SBOM job), so the dev-image addition is local-only convenience, not a CI change.
+  - [x] 7.4 Validate, stage only the changed provisioning files, commit, and push.
+
+  > Closes the same rebuild gap for Epic 2's security/license/SBOM tools. `cargo-deny` (0.19.8) and
+  > `cargo-cyclonedx` (0.5.9) pinned in `.devcontainer/Dockerfile.dev` and added to the Makefile
+  > `setup` target. CI is unchanged — `ci.yml` installs `cargo-deny --locked` in its License &
+  > Dependency Policy job and `release.yml` installs `cargo-cyclonedx --locked` in its SBOM job — so
+  > the dev image addition only saves developers an on-demand install for `make deny`/`make
+  > security`/`make sbom`.
