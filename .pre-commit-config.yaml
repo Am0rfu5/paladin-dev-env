@@ -1,0 +1,80 @@
+# Pre-commit hook configuration for the Paladin workspace.
+# Install with: make hooks   (wraps `pre-commit install` for commit + pre-push stages)
+# Run manually with: pre-commit run --all-files
+# See CONTRIBUTING.md for details and the --no-verify emergency override.
+
+# Install both the commit-time and push-time hook stages from a single
+# `pre-commit install` invocation.
+default_install_hook_types:
+  - pre-commit
+  - pre-push
+
+# Skip generated / vendored / build artifacts (most are already gitignored).
+exclude: |
+  (?x)^(
+    target/.*|
+    flat/.*|
+    .*\.lock|
+    lcov\.info
+  )$
+
+repos:
+  # --- General-purpose hygiene hooks ------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-toml          # Cargo.toml / deny.toml / audit.toml syntax
+      - id: check-yaml          # config.yml / compose / workflow syntax
+        args: [--allow-multiple-documents]
+      - id: check-added-large-files
+        args: [--maxkb=1024]    # 1 MB limit to block accidental binaries
+      - id: check-merge-conflict
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        # Rust files are governed by `cargo fmt`; excluding them here avoids an
+        # oscillation between end-of-file-fixer and rustfmt on empty modules.
+        exclude: \.rs$
+      - id: end-of-file-fixer
+        exclude: \.rs$
+
+  # --- Secrets detection ------------------------------------------------------
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  # --- Rust workspace gates (run once per commit, not per file) ---------------
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt (check)
+        entry: cargo fmt --all -- --check
+        language: system
+        types: [rust]
+        pass_filenames: false
+        always_run: true
+
+      - id: cargo-clippy
+        name: cargo clippy (workspace, -D warnings)
+        entry: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
+        always_run: true
+
+      # --- Pre-push gate: fast compile + unit-test subset ---------------------
+      - id: cargo-build-push
+        name: cargo build (workspace)
+        entry: cargo build --workspace
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true
+
+      - id: cargo-test-lib-push
+        name: cargo test (workspace lib/unit tests)
+        entry: cargo test --workspace --lib
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true

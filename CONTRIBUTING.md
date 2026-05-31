@@ -6,6 +6,7 @@ Thank you for your interest in contributing to Paladin! This document provides g
 
 - [Code of Conduct](#code-of-conduct)
 - [Getting Started](#getting-started)
+- [Git Hooks (pre-commit)](#git-hooks-pre-commit)
 - [Development Workflow](#development-workflow)
 - [Testing Guidelines](#testing-guidelines)
 - [Code Quality Standards](#code-quality-standards)
@@ -42,6 +43,64 @@ cargo test
 # Start service dependencies
 make dev  # or docker-compose -f docker/docker-compose.dev.yml up -d
 ```
+
+## Git Hooks (pre-commit)
+
+This repository uses the [`pre-commit`](https://pre-commit.com) framework to enforce formatting,
+linting, secrets detection, and config validation. The hook definitions live in the
+version-controlled `.pre-commit-config.yaml`, so every contributor gets the same checks.
+
+> **Dev container users:** `pre-commit` is installed automatically when the container is built, and
+> the hooks are installed on first container create. The steps below are only needed for local
+> (non-container) setups or to (re)install the hooks manually.
+
+### 1. Install `pre-commit`
+
+```bash
+# Recommended (isolated install)
+pipx install pre-commit
+
+# Alternatives
+pip install --user pre-commit
+# or your OS package manager, e.g. on Debian/Ubuntu:
+sudo apt-get install -y pipx && pipx install pre-commit
+```
+
+### 2. Install the hooks
+
+```bash
+make hooks
+# equivalent to:
+#   pre-commit install
+#   pre-commit install --hook-type pre-push
+```
+
+This wires both stages:
+
+- **pre-commit** (on every `git commit`): `cargo fmt --check`, `cargo clippy`, secrets detection
+  (`gitleaks`), TOML/YAML validation, large-file and merge-conflict checks, trailing-whitespace and
+  end-of-file fixes.
+- **pre-push** (on every `git push`): `cargo build --workspace` and the fast unit-test subset
+  `cargo test --workspace --lib`.
+
+### 3. Run the hooks manually
+
+```bash
+pre-commit run --all-files        # run every hook against the whole repo
+pre-commit run cargo-clippy        # run a single hook
+```
+
+### Emergency override
+
+In genuine emergencies you can bypass the hooks:
+
+```bash
+git commit --no-verify -m "..."   # skip pre-commit hooks
+git push --no-verify              # skip pre-push hooks
+```
+
+Use this sparingly — CI runs `pre-commit run --all-files` as a required gate, so skipped checks will
+still be enforced on your pull request.
 
 ## Development Workflow
 

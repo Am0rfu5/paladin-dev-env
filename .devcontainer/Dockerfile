@@ -60,6 +60,16 @@ RUN apt-get update \
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
 
+# Install pipx + pre-commit (commit/push quality gates) system-wide so the tool
+# is available to the non-root user without a per-user install.
+ENV PIPX_HOME=/usr/local/pipx \
+    PIPX_BIN_DIR=/usr/local/bin
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends pipx \
+    && PIPX_HOME=$PIPX_HOME PIPX_BIN_DIR=$PIPX_BIN_DIR pipx install pre-commit \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install Rust components
 RUN rustup component add \
     rustfmt \

@@ -224,6 +224,17 @@ doc: ## Generate documentation
 .PHONY: clean-code
 clean-code: fmt lint check ## Format, lint, and check code
 
+.PHONY: hooks
+hooks: ## Install git pre-commit and pre-push hooks
+	@echo "$(CYAN)Installing pre-commit hooks...$(NC)"
+	@command -v pre-commit >/dev/null 2>&1 || { \
+		echo "$(RED)pre-commit not found. Install it with 'pipx install pre-commit' (see CONTRIBUTING.md).$(NC)"; \
+		exit 1; \
+	}
+	@pre-commit install
+	@pre-commit install --hook-type pre-push
+	@echo "$(GREEN)✅ Git hooks installed (pre-commit + pre-push)$(NC)"
+
 ##@ Build
 
 .PHONY: build

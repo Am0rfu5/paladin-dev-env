@@ -34,21 +34,17 @@ fi
 
 # Set up git hooks if .git exists
 if [ -d ".git" ]; then
-    echo -e "${BLUE}🔗 Setting up git hooks...${NC}"
-    
-    # Create pre-commit hook
-    cat > .git/hooks/pre-commit << 'EOF'
-#!/bin/bash
-echo "Running pre-commit checks..."
-cargo fmt --check || (echo "❌ Format check failed. Run 'cargo fmt'" && exit 1)
-cargo clippy -- -D warnings || (echo "❌ Clippy check failed." && exit 1)
-echo "✅ Pre-commit checks passed"
-EOF
-    chmod +x .git/hooks/pre-commit
-    
-    echo -e "${GREEN}✅ Git hooks installed${NC}"
-fi
+    echo -e "${BLUE}🔗 Setting up git hooks (pre-commit framework)...${NC}"
 
+    if command -v pre-commit >/dev/null 2>&1; then
+        # Install the version-controlled hook suite (commit + pre-push stages).
+        pre-commit install --install-hooks
+        pre-commit install --hook-type pre-push
+        echo -e "${GREEN}✅ Git hooks installed via pre-commit${NC}"
+    else
+        echo -e "${YELLOW}⚠️  pre-commit not found on PATH; skipping hook install.${NC}"
+        echo -e "${YELLOW}   Install it with 'pipx install pre-commit' then run 'make hooks'.${NC}"
+    fi
 # Create useful aliases
 echo -e "${BLUE}⚙️  Setting up aliases...${NC}"
 cat >> ~/.bashrc << 'EOF'
