@@ -167,7 +167,7 @@ impl HandoffService {
         current_agent: &Paladin,
         available_agents: &[Arc<Paladin>],
     ) -> Option<HandoffDecision>;
-    
+
     pub async fn execute_handoff(
         &self,
         decision: HandoffDecision,

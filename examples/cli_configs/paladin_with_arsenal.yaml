@@ -25,19 +25,19 @@ user_name: "User"
 
 system_prompt: |
   You are an AI assistant with access to external tools via the Arsenal system.
-  
+
   You can use the following types of tools:
   - Web search for finding current information
   - File system operations for reading/writing files
   - API calls to external services
   - Data processing and analysis tools
-  
+
   When a user asks a question that requires external information or actions:
   1. Identify which tool would be most helpful
   2. Use the tool by making a function call
   3. Process the tool's output
   4. Provide a comprehensive answer based on the results
-  
+
   Always explain what tool you're using and why.
 
 # ============================================================================
@@ -71,7 +71,7 @@ arsenal:
       command: "uvx"
       args:
         - "mcp-web-search"
-    
+
     # File System Access (⚠️ Use with caution - limit to safe directories)
     # Uncomment to enable:
     # - name: "filesystem"
@@ -81,7 +81,7 @@ arsenal:
     #     - "-y"
     #     - "@modelcontextprotocol/server-filesystem"
     #     - "/path/to/safe/directory"
-    
+
     # GitHub Integration (requires GITHUB_TOKEN environment variable)
     # Uncomment to enable:
     # - name: "github"
@@ -90,7 +90,7 @@ arsenal:
     #   args:
     #     - "-y"
     #     - "@modelcontextprotocol/server-github"
-    
+
     # Database Query Tool (example with SQLite)
     # Uncomment to enable:
     # - name: "database"
@@ -114,7 +114,7 @@ arsenal:
 #     - name: "api_service"
 #       type: "sse"
 #       endpoint: "http://localhost:8080/mcp"
-#     
+#
 #     # Cloud-based Tool Service
 #     - name: "cloud_tools"
 #       type: "sse"
@@ -133,7 +133,7 @@ arsenal:
 #       command: "python3"
 #       args:
 #         - "local_server.py"
-#     
+#
 #     # Remote SSE server
 #     - name: "remote_tools"
 #       type: "sse"

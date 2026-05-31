@@ -45,7 +45,7 @@ cargo test --features live-api-tests llm_live_api_tests -- --ignored --nocapture
 assert_eq!(response.model, "gpt-3.5-turbo");
 
 // After
-assert!(response.model.starts_with("gpt-3.5-turbo"), 
+assert!(response.model.starts_with("gpt-3.5-turbo"),
     "Expected model starting with 'gpt-3.5-turbo', got: {}", response.model);
 ```
 
@@ -183,14 +183,14 @@ struct ClaudeContent {
 ### OpenAI Tests
 ```
 running 6 tests
-✓ OpenAI capabilities validated: ProviderCapabilities { 
-    supports_streaming: true, 
-    supports_tool_calling: true, 
-    supports_function_calling: true, 
-    supports_vision: true, 
-    supports_embeddings: true, 
-    max_context_tokens: Some(128000), 
-    supports_system_messages: true 
+✓ OpenAI capabilities validated: ProviderCapabilities {
+    supports_streaming: true,
+    supports_tool_calling: true,
+    supports_function_calling: true,
+    supports_vision: true,
+    supports_embeddings: true,
+    max_context_tokens: Some(128000),
+    supports_system_messages: true
 }
 test integration::llm_live_api_tests::test_openai_capabilities ... ok
 
@@ -210,14 +210,14 @@ test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; finished in 9.25s
 ### Anthropic Tests
 ```
 running 4 tests
-✓ Anthropic capabilities validated: ProviderCapabilities { 
-    supports_streaming: true, 
-    supports_tool_calling: true, 
-    supports_function_calling: false, 
-    supports_vision: true, 
-    supports_embeddings: false, 
-    max_context_tokens: Some(200000), 
-    supports_system_messages: true 
+✓ Anthropic capabilities validated: ProviderCapabilities {
+    supports_streaming: true,
+    supports_tool_calling: true,
+    supports_function_calling: false,
+    supports_vision: true,
+    supports_embeddings: false,
+    max_context_tokens: Some(200000),
+    supports_system_messages: true
 }
 test integration::llm_live_api_tests::test_anthropic_capabilities ... ok
 
@@ -278,7 +278,7 @@ Consider adding content analysis integration tests for Anthropic and DeepSeek to
 ### 2. Streaming Error Handling Strategy
 Document the graceful streaming error pattern as a best practice for all LLM adapters.
 
-### 3. Model Configuration 
+### 3. Model Configuration
 Consider making model selection configurable via environment variables:
 ```bash
 ANTHROPIC_TEST_MODEL=claude-3-haiku-20240307

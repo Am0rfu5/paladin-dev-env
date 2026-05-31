@@ -81,11 +81,11 @@ pub struct PaladinConfig {
 pub trait PaladinPort: Send + Sync {
     /// Execute Paladin with given input
     async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult, PaladinError>;
-    
+
     /// Execute with streaming response
-    async fn execute_stream(&self, paladin: &Paladin, input: &str) 
+    async fn execute_stream(&self, paladin: &Paladin, input: &str)
         -> Result<PaladinStream, PaladinError>;
-    
+
     /// Validate Paladin configuration
     fn validate(&self, paladin: &Paladin) -> Result<(), PaladinError>;
 }
@@ -126,12 +126,12 @@ pub struct PaladinExecutionService {
 
 impl PaladinExecutionService {
     /// Execute reasoning loop with retry logic
-    pub async fn execute(&self, paladin: &Paladin, input: &str) 
+    pub async fn execute(&self, paladin: &Paladin, input: &str)
         -> Result<PaladinResult, PaladinError>;
-    
+
     /// Check for stop word presence in output
     fn check_stop_words(&self, output: &str, stop_words: &[String]) -> bool;
-    
+
     /// Build prompt from Paladin configuration and input
     fn build_prompt(&self, paladin: &Paladin, input: &str, history: &[Message]) -> PromptItem;
 }

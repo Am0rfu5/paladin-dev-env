@@ -175,13 +175,13 @@ impl PaladinData {
                 "System prompt is required".into()
             ));
         }
-        
+
         if !(0.0..=2.0).contains(&self.temperature) {
             return Err(PaladinError::ConfigurationError(
                 "Temperature must be between 0.0 and 2.0".into()
             ));
         }
-        
+
         Ok(())
     }
 }
@@ -235,11 +235,11 @@ src/application/
 pub trait LlmPort: Send + Sync {
     /// Generate completion from prompt
     async fn generate(&self, prompt: &PromptItem) -> Result<LlmResponse, LlmError>;
-    
+
     /// Generate with streaming
-    async fn generate_stream(&self, prompt: &PromptItem) 
+    async fn generate_stream(&self, prompt: &PromptItem)
         -> Result<LlmStream, LlmError>;
-    
+
     /// Validate model availability
     fn validate_model(&self, model: &str) -> Result<(), LlmError>;
 }
@@ -256,8 +256,8 @@ pub struct PaladinExecutionService {
 
 impl PaladinExecutionService {
     pub async fn execute(
-        &self, 
-        paladin: &Paladin, 
+        &self,
+        paladin: &Paladin,
         input: &str
     ) -> Result<PaladinResult, PaladinError> {
         // 1. Retrieve context from Garrison
@@ -266,24 +266,24 @@ impl PaladinExecutionService {
         } else {
             vec![]
         };
-        
+
         // 2. Build prompt with context
         let prompt = self.build_prompt(paladin, input, &history);
-        
+
         // 3. Execute LLM call
         let response = self.llm_port.generate(&prompt).await?;
-        
+
         // 4. Check for tool calls
         if let Some(tool_call) = response.tool_calls.first() {
             let result = self.arsenal_registry.invoke(tool_call).await?;
             // Process tool result...
         }
-        
+
         // 5. Store in Garrison
         if let Some(garrison) = &self.garrison_port {
             garrison.add_entry(create_entry(&response)).await?;
         }
-        
+
         Ok(PaladinResult { /* ... */ })
     }
 }
@@ -339,7 +339,7 @@ pub struct OpenAiAdapter {
 impl LlmPort for OpenAiAdapter {
     async fn generate(&self, prompt: &PromptItem) -> Result<LlmResponse, LlmError> {
         let request = self.build_request(prompt)?;
-        
+
         let response = self.client
             .post(&format!("{}/chat/completions", self.base_url))
             .bearer_auth(&self.api_key)
@@ -347,13 +347,13 @@ impl LlmPort for OpenAiAdapter {
             .send()
             .await
             .map_err(|e| LlmError::NetworkError(e.to_string()))?;
-        
+
         let openai_response: OpenAiResponse = response.json().await
             .map_err(|e| LlmError::ParseError(e.to_string()))?;
-        
+
         Ok(self.convert_response(openai_response))
     }
-    
+
     // ... other methods
 }
 ```

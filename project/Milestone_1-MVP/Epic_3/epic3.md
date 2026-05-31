@@ -61,10 +61,10 @@ pub struct ArmamentResult {
 pub trait ArsenalPort: Send + Sync {
     /// List available tools
     async fn list_armaments(&self) -> Vec<Armament>;
-    
+
     /// Invoke a tool
     async fn invoke(&self, call: ArmamentCall) -> Result<ArmamentResult, ArsenalError>;
-    
+
     /// Validate tool call arguments
     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError>;
 }
@@ -74,10 +74,10 @@ pub trait ArsenalPort: Send + Sync {
 pub trait ArsenalRegistry: Send + Sync {
     /// Register a new tool
     async fn register(&self, armament: Armament, handler: Box<dyn ArmamentHandler>);
-    
+
     /// Unregister a tool
     async fn unregister(&self, name: &str) -> Option<Armament>;
-    
+
     /// Get tool by name
     async fn get(&self, name: &str) -> Option<&Armament>;
 }
@@ -128,10 +128,10 @@ pub struct MCPSseAdapter {
 impl PaladinBuilder {
     /// Add a tool to the Paladin's arsenal
     pub fn add_armament(self, armament: Armament, handler: Box<dyn ArmamentHandler>) -> Self;
-    
+
     /// Add STDIO MCP server
     pub async fn add_mcp_stdio(self, command: &str, args: &[&str]) -> Self;
-    
+
     /// Add SSE MCP server
     pub async fn add_mcp_sse(self, name: &str, endpoint: &str) -> Self;
 }

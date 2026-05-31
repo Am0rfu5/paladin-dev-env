@@ -61,7 +61,7 @@ This document contains baseline performance measurements for all Battalion orche
 | 10 | 34.06 µs | 3.41 µs | Concurrency limit: 10 |
 | 20 | 60.19 µs | 3.01 µs | Semaphore queuing |
 
-**Analysis**: 
+**Analysis**:
 - Initial overhead ~17μs for spawning concurrent tasks
 - Marginal cost ~2-3μs per additional Paladin
 - Semaphore limiting (max 10 concurrent) adds queuing delay at 20 Paladins

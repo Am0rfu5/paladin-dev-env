@@ -57,10 +57,10 @@ pub trait CitadelPort: Send + Sync {
 impl PaladinBuilder {
     /// Enable automatic state persistence
     pub fn enable_autosave(self) -> Self;
-    
+
     /// Set directory for state files
     pub fn save_state_dir(self, path: &str) -> Self;
-    
+
     /// Restore from saved state
     pub fn restore_from(self, state_id: Uuid) -> Self;
 }

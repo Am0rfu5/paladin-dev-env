@@ -87,8 +87,8 @@ let agent = PaladinBuilder::new(llm_port)
     .auto_generate_prompt(true)
     .build()?;
 
-// Generates prompt like: "You are Data Analyst, an AI assistant specialized in analyzing 
-// datasets and generating insights. Your role is to examine data, identify patterns, 
+// Generates prompt like: "You are Data Analyst, an AI assistant specialized in analyzing
+// datasets and generating insights. Your role is to examine data, identify patterns,
 // calculate statistics, and provide actionable recommendations..."
 ```
 
@@ -304,22 +304,22 @@ All autonomous features follow Paladin's hexagonal architecture:
 paladin:
   name: "Autonomous Agent"
   model: "gpt-4"
-  
+
   # Autonomous features (all opt-in)
   autonomous:
     planning:
       enabled: true
       max_subtasks: 10
-      
+
     prompt_generation:
       enabled: true
       description: "Expert in data analysis and visualization"
-      
+
     dynamic_temperature:
       enabled: true
       min: 0.1
       max: 0.9
-      
+
     handoffs:
       enabled: true
       strategy: "automatic"
@@ -427,7 +427,7 @@ let agent = PaladinBuilder::new(llm_port)
 ### 9.1 Planning Service
 - **Q**: Should planning support parallel subtask execution, or only sequential?
   - **Recommendation**: Start with sequential, add parallel in Epic 16 (Advanced Battalion Patterns)
-  
+
 - **Q**: Should subtask results be visible to subsequent subtasks (chaining) or only to final synthesis?
   - **Recommendation**: Support both modes via configuration flag
 
@@ -541,9 +541,9 @@ Builder Call: PaladinBuilder::new(llm)
 
 1. Builder detects auto_generate_prompt flag
 2. Calls PromptGenerationService
-3. Service sends to LLM: "Create a system prompt for an agent named 'SQL Expert' 
+3. Service sends to LLM: "Create a system prompt for an agent named 'SQL Expert'
    that writes and optimizes database queries"
-4. LLM generates: "You are SQL Expert, a specialized AI assistant for database 
+4. LLM generates: "You are SQL Expert, a specialized AI assistant for database
    query optimization. Your capabilities include..."
 5. Prompt cached in Paladin instance
 6. Build completes
@@ -566,7 +566,7 @@ Coordinator receives: "Debug this Python code and analyze the performance"
 6. Original coordinator receives results, generates next tool call:
    {
      "tool": "handoff_to_agent",
-     "agent_name": "PerformanceAnalyzer", 
+     "agent_name": "PerformanceAnalyzer",
      "message": "Analyze performance of this code: ..."
    }
 7. HandoffService validates (PerformanceAnalyzer in chain? No → OK)

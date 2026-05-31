@@ -295,10 +295,10 @@ The Arsenal system is configured via `config.yml` (or `config.test.yml` for test
 arsenal:
   # Global timeout for all tool invocations (seconds)
   default_timeout_seconds: 30
-  
+
   # Maximum number of concurrent tool executions
   max_concurrent_tools: 5
-  
+
   # MCP server configurations
   mcp_servers:
     # STDIO-based local tool
@@ -306,18 +306,18 @@ arsenal:
       type: "stdio"
       command: "uvx"
       args: ["mcp-calculator"]
-    
+
     # Another STDIO tool with Python
     - name: "file_reader"
       type: "stdio"
       command: "python"
       args: ["-m", "mcp_file_reader"]
-    
+
     # SSE-based remote tool
     - name: "web_search"
       type: "sse"
       endpoint: "https://api.example.com/mcp/search"
-    
+
     # Another SSE tool
     - name: "weather_api"
       type: "sse"
@@ -354,7 +354,7 @@ import sys
 
 def handle_request(request):
     method = request.get("method")
-    
+
     if method == "tools/list":
         return {
             "jsonrpc": "2.0",
@@ -377,18 +377,18 @@ def handle_request(request):
                 ]
             }
         }
-    
+
     elif method == "tools/call":
         args = request["params"]["arguments"]
         op = args["operation"]
         a, b = args["a"], args["b"]
-        
+
         if op == "add":
             result = a + b
         elif op == "multiply":
             result = a * b
         # ... other operations
-        
+
         return {
             "jsonrpc": "2.0",
             "id": request["id"],
@@ -415,7 +415,7 @@ app.use(express.json());
 // Tool list endpoint
 app.post('/mcp', (req, res) => {
   const { method, id } = req.body;
-  
+
   if (method === 'tools/list') {
     res.json({
       jsonrpc: '2.0',
@@ -510,16 +510,16 @@ drop(permit); // Release permit
 pub enum ArsenalError {
     /// Tool not found in registry
     ToolNotFound(String),
-    
+
     /// Invalid arguments provided to tool
     InvalidArguments(String),
-    
+
     /// Tool execution exceeded timeout
     Timeout { tool_name: String, timeout_secs: u64 },
-    
+
     /// MCP protocol error (invalid JSON-RPC)
     ProtocolError(String),
-    
+
     /// Transport-level error (network, process spawn)
     TransportError(String),
 }
@@ -603,7 +603,7 @@ mod tests {
             parameters: serde_json::json!({}),
             required_params: vec![],
         };
-        
+
         assert_eq!(armament.name, "test_tool");
     }
 }
@@ -620,7 +620,7 @@ async fn test_stdio_adapter_discovery() {
         "python".to_string(),
         vec!["-m".to_string(), "test_mcp_server".to_string()]
     );
-    
+
     let tools = adapter.discover_tools().await?;
     assert!(!tools.is_empty());
 }
@@ -636,7 +636,7 @@ async fn test_paladin_tool_execution() {
     let paladin = PaladinBuilder::new(mock_llm())
         .system_prompt("Use calculator tool")
         .build()?;
-    
+
     let result = paladin.execute("What is 5 + 3?").await?;
     assert!(result.contains("8"));
 }

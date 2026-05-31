@@ -117,7 +117,7 @@ let item_id = adapter.enqueue("my-queue", queue_item).await?;
 if let Some(item) = adapter.dequeue("my-queue").await? {
     // Process the item
     adapter.start_processing("my-queue", item.id(), "worker-1".to_string()).await?;
-    
+
     // Complete processing
     let result = serde_json::json!({"status": "completed"});
     adapter.complete_processing("my-queue", item.id(), Some(result)).await?;
@@ -167,8 +167,8 @@ open http://localhost:8081
 ```rust
 // Get queue statistics
 let stats = adapter.get_queue_stats("my-queue").await?;
-println!("Pending: {}, Processing: {}, Completed: {}, Failed: {}", 
-         stats.pending_items, stats.processing_items, 
+println!("Pending: {}, Processing: {}, Completed: {}, Failed: {}",
+         stats.pending_items, stats.processing_items,
          stats.completed_items, stats.failed_items);
 
 // Get all queue statistics
@@ -286,7 +286,7 @@ The adapter internally uses Redis pipelines for efficient batch operations.
    ```bash
    # Check Redis is running
    docker ps | grep redis
-   
+
    # Check Redis connectivity
    redis-cli ping
    ```
@@ -301,7 +301,7 @@ The adapter internally uses Redis pipelines for efficient batch operations.
    ```bash
    # Check Redis memory usage
    redis-cli info memory
-   
+
    # Configure maxmemory policy in redis.conf
    maxmemory-policy allkeys-lru
    ```
@@ -347,7 +347,7 @@ services:
   redis-master:
     image: redis:7-alpine
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
-    
+
   redis-replica:
     image: redis:7-alpine
     command: redis-server --appendonly yes --slaveof redis-master 6379

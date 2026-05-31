@@ -449,7 +449,7 @@ pub struct HashMapPaladinRegistry {
 ```yaml
 commander:
   metadata_output_dir: "./metadata"  # Optional
-  
+
 grove:
   trees:
     - name: "support"

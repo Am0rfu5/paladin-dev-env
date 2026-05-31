@@ -100,7 +100,7 @@ Visual representation of dependency flows, module interactions, and data flows i
 
 ```
 Infrastructure ─────────can import───────────> Application
-                                               
+
 Infrastructure ─────────can import───────────> Core
 
 Application ────────────can import───────────> Core
@@ -518,7 +518,7 @@ infrastructure/
 #[cfg(test)]
 mod architecture_tests {
     use std::path::Path;
-    
+
     #[test]
     fn test_core_has_no_infrastructure_dependencies() {
         // Parse core source files
@@ -528,7 +528,7 @@ mod architecture_tests {
             &["crate::infrastructure"]
         ));
     }
-    
+
     #[test]
     fn test_core_has_no_application_dependencies() {
         assert!(verify_no_imports(
@@ -536,7 +536,7 @@ mod architecture_tests {
             &["crate::application"]
         ));
     }
-    
+
     #[test]
     fn test_application_has_no_infrastructure_dependencies() {
         assert!(verify_no_imports(

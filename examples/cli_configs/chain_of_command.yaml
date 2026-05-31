@@ -32,7 +32,7 @@ commander:
     name: "TechLead"
     system_prompt: |
       You are a technical lead managing a team of engineering specialists.
-      
+
       RESPONSIBILITIES:
       - Analyze technical requests and break them into subtasks
       - Delegate to appropriate specialists:
@@ -41,25 +41,25 @@ commander:
         * DevOps engineer for infrastructure/deployment
       - Synthesize responses from all delegates
       - Provide comprehensive final recommendations
-      
+
       DELEGATION FORMAT:
       When delegating, clearly specify:
       1. Which specialist(s) to involve
       2. Specific questions or tasks for each
       3. Priority and dependencies
-      
+
       SYNTHESIS:
       - Combine specialist insights
       - Resolve conflicts or contradictions
       - Provide actionable next steps
       - Note any risks or considerations
-    
+
     model: "gpt-4"
     temperature: 0.7
     max_loops: 3
     timeout_seconds: 300
     stop_words: []
-    
+
     provider:
       type: openai
 
@@ -82,22 +82,22 @@ delegates:
         - Authentication and authorization
         - Performance optimization
         - Error handling and logging
-        
+
         Provide detailed technical recommendations including:
         - Specific technologies and frameworks
         - Code structure and patterns
         - Performance considerations
         - Security best practices
         - Testing strategies
-      
+
       model: "gpt-4"
       temperature: 0.6
       max_loops: 2
       timeout_seconds: 240
-      
+
       provider:
         type: openai
-  
+
   # Frontend Specialist
   - inline:
       name: "FrontendEngineer"
@@ -109,22 +109,22 @@ delegates:
         - Performance optimization (lazy loading, code splitting)
         - Browser APIs and WebAssembly
         - Testing (Jest, Testing Library, E2E)
-        
+
         Provide detailed recommendations including:
         - Component architecture
         - Styling approach (CSS-in-JS, Tailwind, etc.)
         - Build tooling (Vite, webpack, etc.)
         - Performance optimizations
         - Accessibility considerations
-      
+
       model: "gpt-4"
       temperature: 0.6
       max_loops: 2
       timeout_seconds: 240
-      
+
       provider:
         type: openai
-  
+
   # DevOps Specialist
   - inline:
       name: "DevOpsEngineer"
@@ -136,7 +136,7 @@ delegates:
         - Cloud platforms (AWS, GCP, Azure)
         - Monitoring and observability (Prometheus, Grafana)
         - Security and compliance
-        
+
         Provide detailed recommendations including:
         - Deployment strategy
         - Infrastructure setup
@@ -144,17 +144,17 @@ delegates:
         - Scaling approach
         - Disaster recovery
         - Cost optimization
-      
+
       model: "gpt-4"
       temperature: 0.5
       max_loops: 2
       timeout_seconds: 240
-      
+
       provider:
         type: openai
-  
+
   # Optional: Additional specialists
-  # 
+  #
   # - inline:
   #     name: "SecurityEngineer"
   #     system_prompt: |
@@ -175,10 +175,10 @@ delegates:
 # delegation_strategy:
 #   # Strategy: all, selective, dynamic
 #   mode: dynamic
-#   
+#
 #   # Maximum parallel delegate consultations
 #   max_parallel: 3
-#   
+#
 #   # Minimum confidence threshold for delegation
 #   confidence_threshold: 0.7
 

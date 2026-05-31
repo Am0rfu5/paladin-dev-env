@@ -274,22 +274,22 @@ Following Paladin's hexagonal architecture:
 pub trait Herald: Send + Sync {
     /// Format complete Paladin result
     fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError>;
-    
+
     /// Format complete Battalion result
     fn format_battalion_result(&self, result: &BattalionResult) -> Result<String, HeraldError>;
-    
+
     /// Format streaming chunk (progressive output)
     fn format_stream_chunk(&self, chunk: &StreamChunk) -> Result<Option<String>, HeraldError>;
-    
+
     /// Finalize streaming output (append metadata)
     fn finalize_stream(&self, metadata: &ExecutionMetadata) -> Result<String, HeraldError>;
-    
+
     /// Format error for display
     fn format_error(&self, error: &PaladinError) -> String;
-    
+
     /// Get formatter name/identifier
     fn name(&self) -> &str;
-    
+
     /// Get formatter MIME type (e.g., "application/json", "text/markdown")
     fn mime_type(&self) -> &str;
 }
@@ -302,7 +302,7 @@ pub trait Herald: Send + Sync {
 let paladin = PaladinBuilder::new(llm_port)
     .name("Analyst")
     .build()?;
-    
+
 let result = paladin.execute("Analyze this data").await?;
 let formatted = paladin.format_result(&result)?; // Uses config default
 
@@ -418,13 +418,13 @@ The analysis shows...
 pub enum HeraldError {
     #[error("Serialization error: {0}")]
     SerializationError(String),
-    
+
     #[error("Template error: {0}")]
     TemplateError(String),
-    
+
     #[error("Invalid result structure: {0}")]
     InvalidResult(String),
-    
+
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
 }
@@ -525,7 +525,7 @@ async fn test_json_herald_formats_paladin_result() {
     let result = create_mock_paladin_result();
     let formatted = herald.format_paladin_result(&result).unwrap();
     let parsed: serde_json::Value = serde_json::from_str(&formatted).unwrap();
-    
+
     assert_eq!(parsed["status"], "success");
     assert_eq!(parsed["paladin_name"], "TestPaladin");
 }
@@ -538,16 +538,16 @@ async fn test_runtime_herald_override() {
     let paladin = PaladinBuilder::new(llm_port)
         .name("Agent")
         .build()?;
-    
+
     let result = paladin.execute("test").await?;
-    
+
     // Default formatter (from config)
     let default_output = paladin.format_result(&result)?;
-    
+
     // Override with Markdown
     let markdown_herald = Arc::new(MarkdownHerald::default());
     let markdown_output = markdown_herald.format_paladin_result(&result)?;
-    
+
     assert!(markdown_output.contains("##")); // Markdown heading
     assert_ne!(default_output, markdown_output);
 }
@@ -559,17 +559,17 @@ async fn test_runtime_herald_override() {
 async fn test_streaming_output_matches_complete() {
     let herald = JsonHerald::new();
     let mut stream = create_mock_stream();
-    
+
     let mut streamed_parts = Vec::new();
     while let Some(chunk) = stream.next().await {
         if let Some(formatted) = herald.format_stream_chunk(&chunk)? {
             streamed_parts.push(formatted);
         }
     }
-    
+
     let complete_result = stream.into_result();
     let complete_formatted = herald.format_paladin_result(&complete_result)?;
-    
+
     // Verify streaming assembled output matches complete formatting
     assert_output_semantically_equal(&streamed_parts.join(""), &complete_formatted);
 }

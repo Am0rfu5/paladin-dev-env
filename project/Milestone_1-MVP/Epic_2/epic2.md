@@ -72,16 +72,16 @@ pub enum GarrisonType {
 pub trait GarrisonPort: Send + Sync {
     /// Add entry to memory
     async fn remember(&self, entry: GarrisonEntry) -> Result<(), GarrisonError>;
-    
+
     /// Retrieve recent entries
     async fn recall_recent(&self, limit: usize) -> Result<Vec<GarrisonEntry>, GarrisonError>;
-    
+
     /// Search memory by content
     async fn search(&self, query: &str, limit: usize) -> Result<Vec<GarrisonEntry>, GarrisonError>;
-    
+
     /// Clear all memory
     async fn forget_all(&self) -> Result<(), GarrisonError>;
-    
+
     /// Get memory statistics
     async fn stats(&self) -> Result<GarrisonStats, GarrisonError>;
 }
@@ -90,11 +90,11 @@ pub trait GarrisonPort: Send + Sync {
 #[async_trait]
 pub trait LongTermGarrisonPort: GarrisonPort {
     /// Add entry with embedding
-    async fn remember_with_embedding(&self, entry: GarrisonEntry, embedding: Vec<f32>) 
+    async fn remember_with_embedding(&self, entry: GarrisonEntry, embedding: Vec<f32>)
         -> Result<(), GarrisonError>;
-    
+
     /// Semantic similarity search
-    async fn search_similar(&self, embedding: Vec<f32>, limit: usize) 
+    async fn search_similar(&self, embedding: Vec<f32>, limit: usize)
         -> Result<Vec<GarrisonEntry>, GarrisonError>;
 }
 ```

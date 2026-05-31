@@ -17,19 +17,19 @@ CREATE TABLE IF NOT EXISTS garrison_entries (
 );
 
 -- Index for efficient retrieval by paladin and timestamp
-CREATE INDEX IF NOT EXISTS idx_paladin_timestamp 
+CREATE INDEX IF NOT EXISTS idx_paladin_timestamp
 ON garrison_entries(paladin_id, timestamp DESC);
 
 -- Index for filtering by role
-CREATE INDEX IF NOT EXISTS idx_paladin_role 
+CREATE INDEX IF NOT EXISTS idx_paladin_role
 ON garrison_entries(paladin_id, role);
 
 -- Index for efficient recent entry retrieval
-CREATE INDEX IF NOT EXISTS idx_created_at 
+CREATE INDEX IF NOT EXISTS idx_created_at
 ON garrison_entries(created_at DESC);
 
 -- Full-text search virtual table for content search
-CREATE VIRTUAL TABLE IF NOT EXISTS garrison_search 
+CREATE VIRTUAL TABLE IF NOT EXISTS garrison_search
 USING fts5(
     content,
     content='garrison_entries',
@@ -37,20 +37,20 @@ USING fts5(
 );
 
 -- Triggers to keep FTS index synchronized
-CREATE TRIGGER IF NOT EXISTS garrison_search_insert 
+CREATE TRIGGER IF NOT EXISTS garrison_search_insert
 AFTER INSERT ON garrison_entries
 BEGIN
     INSERT INTO garrison_search(rowid, content)
     VALUES (new.rowid, new.content);
 END;
 
-CREATE TRIGGER IF NOT EXISTS garrison_search_delete 
+CREATE TRIGGER IF NOT EXISTS garrison_search_delete
 AFTER DELETE ON garrison_entries
 BEGIN
     DELETE FROM garrison_search WHERE rowid = old.rowid;
 END;
 
-CREATE TRIGGER IF NOT EXISTS garrison_search_update 
+CREATE TRIGGER IF NOT EXISTS garrison_search_update
 AFTER UPDATE ON garrison_entries
 BEGIN
     DELETE FROM garrison_search WHERE rowid = old.rowid;
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS garrison_embeddings (
 );
 
 -- Index for embedding lookups
-CREATE INDEX IF NOT EXISTS idx_embedding_model 
+CREATE INDEX IF NOT EXISTS idx_embedding_model
 ON garrison_embeddings(embedding_model);
 
 -- Metadata table for garrison configuration and statistics

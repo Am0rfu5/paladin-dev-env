@@ -172,17 +172,17 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
-      
+
       initContainers:
       - name: wait-for-redis
         image: busybox:1.35
         command: ['sh', '-c', 'until nc -zv redis 6379; do echo waiting for redis; sleep 2; done;']
-      
+
       containers:
       - name: paladin
         image: ghcr.io/your-org/paladin:v0.1.0
         imagePullPolicy: IfNotPresent
-        
+
         ports:
         - name: http
           containerPort: 8080
@@ -190,7 +190,7 @@ spec:
         - name: metrics
           containerPort: 8081
           protocol: TCP
-        
+
         env:
         - name: SERVER_HOST
           value: "0.0.0.0"
@@ -200,7 +200,7 @@ spec:
           value: "info"
         - name: RUST_LOG
           value: "info,paladin=debug"
-        
+
         # Secrets from Secret resource
         - name: OPENAI_API_KEY
           valueFrom:
@@ -219,7 +219,7 @@ spec:
               name: paladin-secrets
               key: anthropic-api-key
               optional: true
-        
+
         # Mount configuration
         volumeMounts:
         - name: config
@@ -230,7 +230,7 @@ spec:
           mountPath: /app/data
         - name: tmp
           mountPath: /tmp
-        
+
         # Resource limits
         resources:
           requests:
@@ -239,7 +239,7 @@ spec:
           limits:
             cpu: 2000m
             memory: 4Gi
-        
+
         # Health checks
         livenessProbe:
           httpGet:
@@ -249,7 +249,7 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
-        
+
         readinessProbe:
           httpGet:
             path: /health/ready
@@ -258,13 +258,13 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
-        
+
         # Graceful shutdown
         lifecycle:
           preStop:
             exec:
               command: ["/bin/sh", "-c", "sleep 10"]
-      
+
       volumes:
       - name: config
         configMap:
@@ -274,7 +274,7 @@ spec:
           claimName: paladin-data
       - name: tmp
         emptyDir: {}
-      
+
       # Affinity for spreading pods across nodes
       affinity:
         podAntiAffinity:
@@ -371,26 +371,26 @@ data:
       host: "0.0.0.0"
       port: 8080
       log_level: "info"
-    
+
     paladin:
       default_model: "gpt-4"
       default_temperature: 0.7
       default_max_loops: 3
       timeout_seconds: 300
-    
+
     garrison:
       type: "sqlite"
       path: "/app/data/garrison.db"
       max_entries: 1000
       max_tokens: 8000
-    
+
     arsenal:
       mcp_servers:
         - name: "web_search"
           type: "stdio"
           command: "uvx"
           args: ["mcp-web-search"]
-    
+
     llm:
       openai:
         base_url: "https://api.openai.com/v1"
@@ -398,13 +398,13 @@ data:
         base_url: "https://api.deepseek.com/v1"
       anthropic:
         base_url: "https://api.anthropic.com/v1"
-    
+
     storage:
       type: "minio"
       endpoint: "minio.paladin.svc.cluster.local:9000"
       bucket: "paladin"
       use_ssl: false
-    
+
     queue:
       type: "redis"
       url: "redis://redis.paladin.svc.cluster.local:6379"
@@ -523,15 +523,15 @@ config:
     defaultModel: "gpt-4"
     defaultTemperature: 0.7
     defaultMaxLoops: 3
-  
+
   garrison:
     type: "sqlite"
     maxEntries: 1000
     maxTokens: 8000
-  
+
   redis:
     url: "redis://redis:6379"
-  
+
   minio:
     endpoint: "minio:9000"
     bucket: "paladin"

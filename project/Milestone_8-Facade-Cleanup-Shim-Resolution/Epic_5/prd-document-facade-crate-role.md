@@ -166,7 +166,7 @@ a new `## Facade Crate Role` section containing:
   `STABLE_API.md`, and `CHANGELOG.md`. No Rust source code logic is added or modified.
 - **No leaf crate documentation.** Crate-level docs for `paladin-core`, `paladin-ports`, etc.
   are out of scope — those belong to Milestone 11 (Documentation Overhaul).
-- **No new feature flags or feature-flag changes.** 
+- **No new feature flags or feature-flag changes.**
 - **No new Rust modules, structs, or traits.**
 - **No API surface changes** — if anything is found during the `STABLE_API.md` audit to be
   genuinely missing from the public API, it must be flagged in §9 Open Questions rather than

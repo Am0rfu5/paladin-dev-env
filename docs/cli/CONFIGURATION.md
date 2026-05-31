@@ -108,9 +108,9 @@ arsenal:
     - name: "web_search"
       type: "stdio"
       command: "uvx"
-      args: 
+      args:
         - "mcp-web-search"
-    
+
     - name: "filesystem"
       type: "stdio"
       command: "node"
@@ -253,13 +253,13 @@ arsenal:
         - "/usr/local/lib/mcp-server-filesystem"
         - "--root"
         - "${WORKSPACE_DIR}"
-    
+
     - name: "git"
       type: "stdio"
       command: "node"
       args:
         - "/usr/local/lib/mcp-server-git"
-    
+
     - name: "web_search"
       type: "stdio"
       command: "uvx"
@@ -278,7 +278,7 @@ system_prompt: |
   - Persistent memory for conversation context
   - Tool access for external operations
   - Scheduled task execution
-  
+
   Always maintain context across sessions and use tools when appropriate.
 
 llm:
@@ -305,7 +305,7 @@ arsenal:
       command: "uvx"
       args:
         - "mcp-web-search"
-    
+
     - name: "slack"
       type: "stdio"
       command: "node"
@@ -315,7 +315,7 @@ arsenal:
         - "${SLACK_WORKSPACE_ID}"
         - "--token"
         - "${SLACK_BOT_TOKEN}"
-    
+
     - name: "api_tools"
       type: "sse"
       url: "https://api.company.com/mcp"
@@ -515,7 +515,7 @@ Still having issues? Check:
 
 3. **GitHub Issues**: [github.com/DF3NDR/paladin-dev-env/issues](https://github.com/DF3NDR/paladin-dev-env/issues)
 
-4. **Documentation**: 
+4. **Documentation**:
    - [CLI Usage Guide](../CLI_USAGE.md)
    - [Testing Guide](TESTING.md)
    - [Architecture Documentation](../Design/Design_and_Architecture.md)

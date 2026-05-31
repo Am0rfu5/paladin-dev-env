@@ -35,108 +35,108 @@ paladins:
   # Role: Create concise summary of content
   # Runs: In parallel with other Paladins
   # Input: Same input text as other Paladins
-  
+
   - inline:
       name: "SummarizerPaladin"
-      
+
       system_prompt: |
         You are an expert summarizer. Your role is to create a concise,
         accurate summary of the input text.
-        
+
         TASK:
         - Capture main ideas and key points
         - Use 3-5 bullet points
         - Be objective and factual
         - Focus on substance over style
-        
+
         OUTPUT:
         Provide a brief summary followed by key takeaways.
-      
+
       # Moderate temperature for balanced summarization
       model: "gpt-4"
       temperature: 0.5
       max_loops: 2
       timeout_seconds: 180
       stop_words: []
-      
+
       provider:
         type: openai
-  
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # PALADIN 2: SENTIMENT ANALYZER
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Role: Analyze emotional tone and sentiment
   # Runs: In parallel with other Paladins
   # Input: Same input text as other Paladins
-  
+
   - inline:
       name: "SentimentAnalyzer"
-      
+
       system_prompt: |
         You are a sentiment analysis expert. Your role is to analyze the
         emotional tone and sentiment of the input text.
-        
+
         TASK:
         - Identify overall sentiment (positive/negative/neutral/mixed)
         - Note emotional tone and intensity
         - Identify key emotional triggers
         - Assess tone (formal/casual/aggressive/empathetic/etc.)
-        
+
         OUTPUT FORMAT:
         - Overall Sentiment: [rating]
         - Tone: [description]
         - Key Emotions: [list]
         - Confidence: [high/medium/low]
-      
+
       # Lower temperature for consistent analysis
       model: "gpt-4"
       temperature: 0.3
       max_loops: 2
       timeout_seconds: 180
       stop_words: []
-      
+
       provider:
         type: openai
-  
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # PALADIN 3: KEYWORD EXTRACTOR
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Role: Extract important keywords and concepts
   # Runs: In parallel with other Paladins
   # Input: Same input text as other Paladins
-  
+
   - inline:
       name: "KeywordExtractor"
-      
+
       system_prompt: |
         You are a keyword extraction expert. Your role is to identify the most
         important terms, concepts, and entities in the text.
-        
+
         TASK:
         - Extract top 10 keywords/phrases
         - Identify named entities (people, places, organizations)
         - Note technical terms or domain-specific vocabulary
         - Group related concepts
-        
+
         OUTPUT FORMAT:
         1. Top Keywords: [ranked list]
         2. Named Entities: [list]
         3. Concept Categories: [grouped terms]
-      
+
       # Lower temperature for consistent extraction
       model: "gpt-4"
       temperature: 0.3
       max_loops: 2
       timeout_seconds: 180
       stop_words: []
-      
+
       provider:
         type: openai
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # OPTIONAL: ADD MORE PARALLEL PALADINS
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  
+
   # Example: Language Detector
   # - inline:
   #     name: "LanguageDetector"
@@ -152,7 +152,7 @@ paladins:
   #     timeout_seconds: 120
   #     provider:
   #       type: openai
-  
+
   # Example: Fact Checker
   # - inline:
   #     name: "FactChecker"
@@ -246,4 +246,3 @@ paladins:
 # 3. BALANCE: Mix different temperature/model settings for variety
 # 4. TIMEOUTS: Set appropriate timeouts (slowest Paladin determines total time)
 # 5. AGGREGATION: Plan how to combine results (in application layer)
-

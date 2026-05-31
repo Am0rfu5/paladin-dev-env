@@ -584,14 +584,14 @@ vision:
     max_retries: 3
     initial_backoff_ms: 1000
     backoff_multiplier: 2.0
-  
+
   openai:
     max_tokens: 4096
     models:
       - "gpt-4-vision-preview"
       - "gpt-4o"
       - "gpt-4o-mini"
-  
+
   anthropic:
     max_tokens: 4096
     models:
@@ -612,16 +612,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build Paladin with vision-capable model
     let llm_port = Arc::new(OpenAIAdapter::new(config.clone()));
     let vision_adapter = Arc::new(OpenAIVisionAdapter::new(config.clone()));
-    
+
     let paladin = PaladinBuilder::new(llm_port)
         .name("Vision Analyst")
         .system_prompt("You are an expert image analyst.")
         .model("gpt-4-vision-preview")
         .build()?;
-    
+
     // Analyze image
     let image = VisionImage::from_url("https://example.com/chart.png")?;
-    
+
     let result = paladin_execution_service
         .execute_with_vision(
             &paladin,
@@ -629,10 +629,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             vec![image],
         )
         .await?;
-    
+
     println!("Analysis: {}", result.content);
     println!("Tokens used: {}", result.token_usage.total_tokens);
-    
+
     Ok(())
 }
 ```

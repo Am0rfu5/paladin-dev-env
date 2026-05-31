@@ -277,7 +277,7 @@ for file_name in rust_files {
         },
         ..Default::default()
     };
-    
+
     adapter.upload_file(&file_path, &content, Some(options)).await?;
 }
 ```
@@ -302,14 +302,14 @@ open http://localhost:9001
 ```rust
 // Get storage statistics (powered by rust-s3)
 let stats = adapter.get_storage_stats().await?;
-println!("Total files: {}, Total size: {} bytes", 
+println!("Total files: {}, Total size: {} bytes",
          stats.total_files, stats.total_size);
 println!("Files by type: {:?}", stats.files_by_type);
 
 // Health check
 let health = adapter.health_check().await?;
 if health.is_available {
-    println!("MinIO is healthy (response time: {}ms)", 
+    println!("MinIO is healthy (response time: {}ms)",
              health.response_time_ms.unwrap_or(0));
 }
 ```
@@ -354,7 +354,7 @@ let config = MinioConfig {
    ```bash
    # Check MinIO is running
    docker ps | grep minio
-   
+
    # Check MinIO health
    curl -f http://localhost:9000/minio/health/live
    ```
@@ -366,7 +366,7 @@ let config = MinioConfig {
        path_style: true,  // Important for MinIO
        ..Default::default()
    };
-   
+
    // For AWS S3, use path_style: false
    let config = MinioConfig {
        path_style: false,  // For AWS S3
@@ -648,7 +648,7 @@ for file_name in rust_files {
         },
         ..Default::default()
     };
-    
+
     adapter.upload_file(&file_path, &content, Some(options)).await?;
 }
 ```
@@ -695,14 +695,14 @@ open http://localhost:9001
 ```rust
 // Get storage statistics
 let stats = adapter.get_storage_stats().await?;
-println!("Total files: {}, Total size: {} bytes", 
+println!("Total files: {}, Total size: {} bytes",
          stats.total_files, stats.total_size);
 println!("Files by type: {:?}", stats.files_by_type);
 
 // Health check
 let health = adapter.health_check().await?;
 if health.is_available {
-    println!("MinIO is healthy (response time: {}ms)", 
+    println!("MinIO is healthy (response time: {}ms)",
              health.response_time_ms.unwrap_or(0));
 }
 ```
@@ -810,7 +810,7 @@ max_file_size = 104857600
    ```bash
    # Check MinIO is running
    docker ps | grep minio
-   
+
    # Check MinIO health
    curl -f http://localhost:9000/minio/health/live
    ```
@@ -863,11 +863,11 @@ services:
   minio1:
     image: minio/minio:latest
     command: server http://minio{1...4}/data{1...2}
-    
+
   minio2:
     image: minio/minio:latest
     command: server http://minio{1...4}/data{1...2}
-    
+
   # ... minio3, minio4
 ```
 

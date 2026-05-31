@@ -20,13 +20,13 @@ user_name: "Developer"
 # This is the most important configuration - it guides all AI responses
 system_prompt: |
   You are an advanced AI assistant with access to memory and external tools.
-  
+
   CAPABILITIES:
   - Remember context from previous interactions using your garrison (memory)
   - Search the web when you need current information
   - Perform calculations and data processing
   - Break down complex tasks into steps
-  
+
   BEHAVIOR:
   - Be thorough but concise
   - Cite sources when using external information
@@ -65,7 +65,7 @@ stop_words: ["TERMINATE", "END_CONVERSATION"]
 provider:
   # Provider type: openai, deepseek, or anthropic
   type: openai
-  
+
   # API key is loaded from environment variable
   # Set OPENAI_API_KEY before running
   # api_key_env: OPENAI_API_KEY (default)
@@ -78,13 +78,13 @@ provider:
 garrison:
   # Memory type: in_memory (ephemeral) or sqlite (persistent)
   type: sqlite
-  
+
   # Path to SQLite database file
   path: ./paladin_memory.db
-  
+
   # Maximum number of memory entries to retain
   max_entries: 1000
-  
+
   # Optional: Semantic search configuration
   # Requires embedding model support
   # semantic_search:
@@ -105,7 +105,7 @@ arsenal:
       args:
         - mcp-web-search
       description: "Search the web for current information"
-    
+
     # File system access (be careful with permissions!)
     # - name: filesystem
     #   type: stdio
@@ -115,7 +115,7 @@ arsenal:
     #     - "@modelcontextprotocol/server-filesystem"
     #     - /path/to/allowed/directory
     #   description: "Read and write files in specified directory"
-    
+
     # GitHub integration
     # - name: github
     #   type: stdio

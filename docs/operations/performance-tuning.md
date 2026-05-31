@@ -114,7 +114,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 fn paladin_benchmark(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
     let paladin = create_test_paladin();
-    
+
     c.bench_function("paladin execution", |b| {
         b.to_async(&rt).iter(|| async {
             let result = paladin.execute(black_box("test input")).await;
@@ -150,11 +150,11 @@ llm:
     simple_tasks:
       model: "gpt-3.5-turbo"  # 5-10x faster than GPT-4
       max_tokens: 500
-    
+
     complex_tasks:
       model: "gpt-4"
       max_tokens: 2000
-    
+
     classification:
       model: "gpt-3.5-turbo"  # Sufficient for most classification
       temperature: 0.1
@@ -173,11 +173,11 @@ pub struct LlmBatcher {
 impl LlmBatcher {
     pub async fn add_request(&mut self, request: LlmRequest) -> Result<LlmResponse> {
         self.pending.push(request);
-        
+
         if self.pending.len() >= self.max_batch_size {
             return self.flush().await;
         }
-        
+
         // Wait for more requests or timeout
         tokio::select! {
             _ = tokio::time::sleep(self.max_wait_time) => {
@@ -185,7 +185,7 @@ impl LlmBatcher {
             }
         }
     }
-    
+
     async fn flush(&mut self) -> Result<Vec<LlmResponse>> {
         let batch = std::mem::take(&mut self.pending);
         self.llm_port.generate_batch(batch).await
@@ -213,14 +213,14 @@ impl CachedLlmPort {
                 .build(),
         }
     }
-    
+
     async fn generate_cached(&self, messages: &[Message]) -> Result<LlmResponse> {
         let key = compute_cache_key(messages);
-        
+
         if let Some(cached) = self.cache.get(&key).await {
             return Ok(cached);
         }
-        
+
         let response = self.inner.generate(messages).await?;
         self.cache.insert(key, response.clone()).await;
         Ok(response)
@@ -237,7 +237,7 @@ pub async fn execute_with_streaming(
     input: &str,
 ) -> Result<impl Stream<Item = String>> {
     let stream = paladin.execute_stream(input).await?;
-    
+
     Ok(stream.map(|chunk| {
         // Process chunk immediately
         format!("Received: {}\n", chunk.content)
@@ -255,12 +255,12 @@ garrison:
   type: "sqlite"
   max_entries: 500        # Reduce from default 1000
   max_tokens: 4000        # Reduce from default 8000
-  
+
   # Use sliding window for active conversations
   windowing:
     strategy: "sliding"
     window_size: 10       # Keep last 10 messages
-    
+
   # Aggressive cleanup
   cleanup:
     enabled: true
@@ -283,7 +283,7 @@ impl<T> MemoryPool<T> {
         let mut pool = self.pool.write().await;
         pool.pop().unwrap_or_else(|| (self.factory)())
     }
-    
+
     pub async fn release(&self, item: T) {
         let mut pool = self.pool.write().await;
         if pool.len() < 100 {  // Max pool size
@@ -309,7 +309,7 @@ impl LazyGarrison {
         if let Some(entries) = cache.as_ref() {
             return Ok(entries.clone());
         }
-        
+
         drop(cache);
         let entries = self.repository.load(self.session_id).await?;
         *self.cache.write().await = Some(entries.clone());
@@ -342,11 +342,11 @@ pub fn create_runtime() -> Runtime {
 # Control concurrent operations
 paladin:
   max_concurrent_executions: 100
-  
+
 arsenal:
   max_concurrent_tools: 10
   tool_timeout: 30s
-  
+
 battalion:
   phalanx:
     max_concurrent_paladins: 5
@@ -367,7 +367,7 @@ impl RateLimiter {
             semaphore: Arc::new(Semaphore::new(max_concurrent)),
         }
     }
-    
+
     pub async fn acquire(&self) -> Result<()> {
         match self.semaphore.acquire().await {
             Ok(permit) => {
@@ -394,11 +394,11 @@ PRAGMA mmap_size = 268435456;        -- 256MB memory-mapped I/O
 PRAGMA page_size = 4096;             -- Optimal page size
 
 -- Add indexes for common queries
-CREATE INDEX IF NOT EXISTS idx_garrison_session 
+CREATE INDEX IF NOT EXISTS idx_garrison_session
   ON garrison_entries(session_id, timestamp);
 
-CREATE INDEX IF NOT EXISTS idx_garrison_search 
-  ON garrison_entries(content) 
+CREATE INDEX IF NOT EXISTS idx_garrison_search
+  ON garrison_entries(content)
   USING gin(to_tsvector('english', content));
 ```
 
@@ -424,7 +424,7 @@ pub async fn create_pool(database_url: &str) -> Result<SqlitePool> {
 ```rust
 // Use prepared statements
 let stmt = sqlx::query!(
-    "SELECT * FROM garrison_entries 
+    "SELECT * FROM garrison_entries
      WHERE session_id = ? AND timestamp > ?
      ORDER BY timestamp DESC
      LIMIT ?",
@@ -437,7 +437,7 @@ let stmt = sqlx::query!(
 let mut tx = pool.begin().await?;
 for entry in entries {
     sqlx::query!(
-        "INSERT INTO garrison_entries (session_id, content, timestamp) 
+        "INSERT INTO garrison_entries (session_id, content, timestamp)
          VALUES (?, ?, ?)",
         entry.session_id, entry.content, entry.timestamp
     )
@@ -537,7 +537,7 @@ use sysinfo::{System, SystemExt};
 pub fn log_resource_usage() {
     let mut system = System::new_all();
     system.refresh_all();
-    
+
     info!(
         cpu_usage = system.global_cpu_info().cpu_usage(),
         memory_used = system.used_memory(),

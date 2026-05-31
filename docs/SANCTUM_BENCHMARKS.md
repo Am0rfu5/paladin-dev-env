@@ -269,7 +269,7 @@ Integrate benchmarks into CI/CD:
 ```yaml
 - name: Run Benchmarks
   run: cargo bench --bench sanctum_benchmarks -- --save-baseline ci-baseline
-  
+
 - name: Check for Regressions
   run: cargo bench --bench sanctum_benchmarks -- --baseline ci-baseline
 ```

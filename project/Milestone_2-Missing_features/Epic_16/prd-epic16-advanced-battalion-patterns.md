@@ -560,7 +560,7 @@ let council = CouncilBuilder::new()
     .add_participant(dev_lead)
     .build()?;
 
-let result = council_service.convene(&council, 
+let result = council_service.convene(&council,
     "Review the proposed authentication changes").await?;
 
 println!("Discussion concluded: {}", result.conclusion.unwrap());
@@ -575,10 +575,10 @@ let grove = GroveBuilder::new()
     .add_tree(performance_tree)
     .build()?;
 
-let result = grove_service.execute(&grove, 
+let result = grove_service.execute(&grove,
     "Analyze this code for SQL injection vulnerabilities").await?;
 
-println!("Routed to: {} (confidence: {})", 
+println!("Routed to: {} (confidence: {})",
     result.routing_decision.selected_agent,
     result.routing_decision.confidence);
 ```

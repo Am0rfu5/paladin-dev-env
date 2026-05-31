@@ -86,7 +86,7 @@ pub trait VisionCapableLlm: LlmPort {
         request: LlmRequest,
         vision: VisionRequest,
     ) -> Result<LlmResponse, LlmError>;
-    
+
     fn supports_vision(&self) -> bool;
 }
 ```
@@ -116,7 +116,7 @@ impl VisionCapableLlm for AnthropicLlmAdapter {
     ) -> Result<LlmResponse, LlmError> {
         // Convert to Anthropic format with image content blocks
     }
-    
+
     fn supports_vision(&self) -> bool {
         self.model.starts_with("claude-3")
     }

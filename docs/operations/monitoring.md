@@ -34,20 +34,20 @@ use axum::{Router, routing::get};
 
 lazy_static! {
     pub static ref REGISTRY: Registry = Registry::new();
-    
+
     // Application metrics
     pub static ref PALADIN_REQUESTS: IntCounter = IntCounter::new(
         "paladin_requests_total",
         "Total number of Paladin execution requests"
     ).unwrap();
-    
+
     pub static ref PALADIN_DURATION: Histogram = Histogram::with_opts(
         HistogramOpts::new(
             "paladin_request_duration_seconds",
             "Paladin execution duration in seconds"
         ).buckets(vec![0.1, 0.5, 1.0, 2.0, 5.0, 10.0])
     ).unwrap();
-    
+
     pub static ref PALADIN_ERRORS: IntCounter = IntCounter::new(
         "paladin_errors_total",
         "Total number of Paladin execution errors"
@@ -82,7 +82,7 @@ use crate::infrastructure::monitoring::metrics::*;
 pub async fn execute_paladin(paladin: &Paladin, input: &str) -> Result<PaladinResult> {
     PALADIN_REQUESTS.inc();
     let timer = PALADIN_DURATION.start_timer();
-    
+
     match paladin.execute(input).await {
         Ok(result) => {
             timer.observe_duration();
@@ -154,7 +154,7 @@ services:
     labels:
       - "prometheus.scrape=true"
       - "prometheus.port=8081"
-  
+
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -165,7 +165,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-  
+
   grafana:
     image: grafana/grafana:latest
     ports:
@@ -176,7 +176,7 @@ services:
       - grafana-data:/var/lib/grafana
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./grafana/datasources:/etc/grafana/provisioning/datasources
-  
+
   alertmanager:
     image: prom/alertmanager:latest
     ports:
@@ -271,7 +271,7 @@ groups:
         annotations:
           summary: "High error rate detected"
           description: "Error rate is {{ $value | humanize }} errors/sec"
-      
+
       - alert: HighLatency
         expr: histogram_quantile(0.95, rate(paladin_request_duration_seconds_bucket[5m])) > 2
         for: 10m
@@ -281,7 +281,7 @@ groups:
         annotations:
           summary: "High P95 latency"
           description: "P95 latency is {{ $value | humanize }}s (threshold: 2s)"
-      
+
       - alert: PaladinDown
         expr: up{job="paladin"} == 0
         for: 1m
@@ -307,12 +307,12 @@ route:
   group_interval: 10s
   repeat_interval: 12h
   receiver: 'slack-notifications'
-  
+
   routes:
     - match:
         severity: critical
       receiver: 'pagerduty-critical'
-    
+
     - match:
         severity: warning
       receiver: 'slack-notifications'
@@ -323,7 +323,7 @@ receivers:
       - channel: '#paladin-alerts'
         title: '{{ .GroupLabels.alertname }}'
         text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
-  
+
   - name: 'pagerduty-critical'
     pagerduty_configs:
       - service_key: 'YOUR_PAGERDUTY_KEY'
@@ -376,19 +376,19 @@ use tracing_opentelemetry::OpenTelemetryLayer;
 
 pub fn init_tracing(service_name: &str) -> Result<()> {
     global::set_text_map_propagator(opentelemetry_jaeger::Propagator::new());
-    
+
     let tracer = opentelemetry_jaeger::new_agent_pipeline()
         .with_service_name(service_name)
         .with_endpoint("jaeger:6831")
         .install_simple()?;
-    
+
     let opentelemetry = OpenTelemetryLayer::new(tracer);
-    
+
     tracing_subscriber::registry()
         .with(opentelemetry)
         .with(tracing_subscriber::fmt::layer())
         .init();
-    
+
     Ok(())
 }
 ```

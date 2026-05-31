@@ -68,26 +68,26 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let paladin_port = Arc::new(/* your PaladinPort implementation */);
-    
+
     let paladins = vec![
         create_paladin("Analyzer", "data analysis"),
         create_paladin("Processor", "data processing"),
         create_paladin("Synthesizer", "report generation"),
     ];
-    
+
     // Commander automatically selects best strategy
     let commander = CommanderBuilder::new(paladin_port)
         .strategy(BattalionStrategy::Auto)
         .paladins(paladins)
         .build()?;
-    
+
     let result = commander.execute("Analyze this data").await?;
-    
+
     println!("Strategy Selected: {:?}", result.strategy_used);
     if let Some(reasoning) = &result.strategy_selection_reasoning {
         println!("Reasoning: {}", reasoning);
     }
-    
+
     Ok(())
 }
 ```
@@ -565,7 +565,7 @@ for (name, time_ms) in &result.per_paladin_times {
         .get(name)
         .map(|t| t.total_tokens)
         .unwrap_or(0);
-    
+
     println!("{}: {}ms, {} tokens", name, time_ms, tokens);
 }
 ```
@@ -790,7 +790,7 @@ let result = commander.execute(input).await;
 if let Ok(r) = result {
     if r.status == BattalionStatus::Timeout {
         println!("Timeout after {}s", config.timeout_seconds);
-        
+
         // Check which Paladins completed
         println!("Completed: {}", r.paladin_success_count);
         println!("Failed: {}", r.paladin_failure_count);
@@ -835,7 +835,7 @@ if result.paladin_failure_count > 0 {
         result.paladin_failure_count,
         result.paladin_success_count + result.paladin_failure_count
     );
-    
+
     // Check metadata for detailed error information
     if let Some(metadata_dir) = config.metadata_output_dir {
         println!("See metadata in: {}", metadata_dir.display());

@@ -172,10 +172,10 @@ pub enum DelegationStrategy {
 pub trait BattalionPort: Send + Sync {
     /// Execute the battalion with given input
     async fn execute(&self, input: &str) -> Result<BattalionResult, BattalionError>;
-    
+
     /// Get current execution status
     async fn status(&self) -> BattalionStatus;
-    
+
     /// Cancel ongoing execution
     async fn cancel(&self) -> Result<(), BattalionError>;
 }
@@ -190,17 +190,17 @@ pub struct FormationExecutionService {
 }
 
 impl FormationExecutionService {
-    pub async fn execute(&self, formation: &Formation, input: &str) 
+    pub async fn execute(&self, formation: &Formation, input: &str)
         -> Result<BattalionResult, BattalionError> {
         let mut current_input = input.to_string();
         let mut results = Vec::new();
-        
+
         for paladin in &formation.paladins {
             let result = self.paladin_service.execute(paladin, &current_input).await?;
             current_input = result.output.clone();
             results.push(result);
         }
-        
+
         Ok(BattalionResult::from_paladin_results(results))
     }
 }
@@ -214,15 +214,15 @@ pub struct PhalanxExecutionService {
 }
 
 impl PhalanxExecutionService {
-    pub async fn execute(&self, phalanx: &Phalanx, input: &str) 
+    pub async fn execute(&self, phalanx: &Phalanx, input: &str)
         -> Result<BattalionResult, BattalionError> {
         let futures: Vec<_> = phalanx.paladins.iter()
             .map(|p| self.paladin_service.execute(p, input))
             .collect();
-        
+
         let results = futures::future::join_all(futures).await;
         let aggregated = phalanx.aggregation.aggregate(results)?;
-        
+
         Ok(aggregated)
     }
 }

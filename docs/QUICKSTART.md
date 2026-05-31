@@ -56,7 +56,7 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load environment variables
     dotenv::dotenv().ok();
-    
+
     // Create an LLM adapter (OpenAI in this example)
     let llm_adapter = Arc::new(
         OpenAiAdapter::new()
@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_model("gpt-4")
             .build()?
     );
-    
+
     // Build a Paladin agent
     let paladin = PaladinBuilder::new(llm_adapter)
         .name("Assistant")
@@ -72,12 +72,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .temperature(0.7)
         .max_loops(3)
         .build()?;
-    
+
     // Execute a query
     let response = paladin.execute("What is the capital of France?").await?;
-    
+
     println!("Paladin: {}", response.content);
-    
+
     Ok(())
 }
 ```

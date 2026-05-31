@@ -34,7 +34,7 @@ nodes:
           2. Target audience
           3. Key messages
           4. Suggested outline
-          
+
           Output JSON format:
           {
             "themes": ["theme1", "theme2"],
@@ -47,7 +47,7 @@ nodes:
         timeout_seconds: 180
         provider:
           type: openai
-  
+
   # Node 2: Research Specialist
   - id: researcher
     paladin:
@@ -63,7 +63,7 @@ nodes:
         timeout_seconds: 300
         provider:
           type: openai
-  
+
   # Node 3a: Technical Writer (parallel path)
   - id: technical_writer
     paladin:
@@ -78,7 +78,7 @@ nodes:
         timeout_seconds: 240
         provider:
           type: openai
-  
+
   # Node 3b: Creative Writer (parallel path)
   - id: creative_writer
     paladin:
@@ -93,7 +93,7 @@ nodes:
         timeout_seconds: 240
         provider:
           type: openai
-  
+
   # Node 4: Editor (merges parallel paths)
   - id: editor
     paladin:
@@ -109,7 +109,7 @@ nodes:
         timeout_seconds: 240
         provider:
           type: openai
-  
+
   # Node 5: Quality Reviewer
   - id: reviewer
     paladin:
@@ -121,7 +121,7 @@ nodes:
           - Grammatical correctness
           - Logical flow
           - Target audience appropriateness
-          
+
           Provide a quality score (1-10) and list any issues.
         model: "gpt-4"
         temperature: 0.3
@@ -139,23 +139,23 @@ edges:
   # Planner → Researcher (sequential)
   - from: planner
     to: researcher
-  
+
   # Researcher → Technical Writer (parallel branch)
   - from: researcher
     to: technical_writer
-  
+
   # Researcher → Creative Writer (parallel branch)
   - from: researcher
     to: creative_writer
-  
+
   # Technical Writer → Editor (merge)
   - from: technical_writer
     to: editor
-  
+
   # Creative Writer → Editor (merge)
   - from: creative_writer
     to: editor
-  
+
   # Editor → Reviewer (final check)
   - from: editor
     to: reviewer

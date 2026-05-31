@@ -371,7 +371,7 @@ impl SanctumRetrievalService {
         paladin_id: &str,
         query: &str,
     ) -> Result<Vec<Memory>, SanctumError>;
-    
+
     pub fn format_for_prompt(&self, memories: &[Memory]) -> String;
 }
 ```
@@ -405,7 +405,7 @@ impl MemoryExtractionService {
         paladin_id: &str,
         conversation: &[GarrisonEntry],
     ) -> Result<Vec<Memory>, SanctumError>;
-    
+
     pub async fn store_memories(
         &self,
         memories: Vec<Memory>,
@@ -433,16 +433,16 @@ impl PaladinExecutionService {
     pub async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult, PaladinError> {
         // 1. Retrieve relevant memories from Sanctum (if configured)
         let memories = self.retrieve_memories(paladin, input).await?;
-        
+
         // 2. Build prompt with memory context
         let enriched_prompt = self.build_prompt_with_context(paladin, input, &memories);
-        
+
         // 3. Execute LLM call
         let result = self.execute_llm(paladin, &enriched_prompt).await?;
-        
+
         // 4. Extract and store new memories (if configured)
         self.extract_and_store_memories(paladin, input, &result).await?;
-        
+
         Ok(result)
     }
 }
@@ -548,7 +548,7 @@ pub trait VisionCapableLlm: LlmPort {
         request: LlmRequest,
         vision: VisionRequest,
     ) -> Result<LlmResponse, LlmError>;
-    
+
     fn supports_vision(&self) -> bool;
 }
 ```
@@ -578,7 +578,7 @@ impl VisionCapableLlm for AnthropicLlmAdapter {
     ) -> Result<LlmResponse, LlmError> {
         // Convert to Anthropic format with image content blocks
     }
-    
+
     fn supports_vision(&self) -> bool {
         self.model.starts_with("claude-3")
     }
@@ -873,7 +873,7 @@ impl DelegationService {
         current_paladin: &Paladin,
         available_squires: &[Arc<Paladin>],
     ) -> Option<DelegationOrder>;
-    
+
     pub async fn execute_delegation(
         &self,
         order: DelegationOrder,
@@ -1024,7 +1024,7 @@ impl ConclaveExecutionService {
         conclave: &Conclave,
         mission: &str,
     ) -> Result<ConclaveResult, BattalionError>;
-    
+
     fn format_expert_counsel_for_loremaster(
         &self,
         outputs: &HashMap<String, PaladinResult>,
@@ -1107,12 +1107,12 @@ experts:
       name: "SirStrategist"
       system_prompt: "Provide strategic military analysis"
       model: "gpt-4"
-  
+
   - inline:
       name: "SirQuartermaster"  
       system_prompt: "Analyze logistics and resource considerations"
       model: "gpt-4"
-  
+
   - inline:
       name: "SirVigilant"
       system_prompt: "Identify risks and potential threats"
@@ -1307,7 +1307,7 @@ impl GroveExecutionService {
         grove: &Grove,
         mission: &str,
     ) -> Result<GroveResult, BattalionError>;
-    
+
     async fn route_mission(
         &self,
         grove: &Grove,
@@ -1472,7 +1472,7 @@ impl ManeuverExecutionService {
         maneuver: &Maneuver,
         orders: &str,
     ) -> Result<ManeuverResult, BattalionError>;
-    
+
     async fn execute_expression(
         &self,
         expr: &TacticalExpression,

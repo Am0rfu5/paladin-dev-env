@@ -108,7 +108,7 @@ impl ManeuverExecutionService {
         maneuver: &Maneuver,
         input: &str,
     ) -> Result<ManeuverResult, BattalionError>;
-    
+
     async fn execute_expression(
         &self,
         expr: &FlowExpression,

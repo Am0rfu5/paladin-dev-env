@@ -507,19 +507,19 @@ impl ConfigLoader {
 ```rust
 pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     let config = ConfigLoader::load(&args.config)?;
-    
+
     // Load garrison (line 293)
     let garrison = config.load_garrison_config()?;
-    
+
     // Load arsenal (line 296)
     let arsenal = config.load_arsenal_config()?;
-    
+
     let paladin = PaladinBuilder::new(llm_port)
         .system_prompt(config.system_prompt)
         .with_garrison(garrison)
         .with_arsenal(arsenal)
         .build()?;
-    
+
     // Execute...
 }
 ```
@@ -532,16 +532,16 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
 pub enum CliError {
     #[error("Configuration error: {0}")]
     ConfigError(String),
-    
+
     #[error("Garrison initialization failed: {0}")]
     GarrisonError(#[from] GarrisonError),
-    
+
     #[error("Arsenal initialization failed: {0}")]
     ArsenalError(#[from] ArsenalError),
-    
+
     #[error("Scheduler error: {0}")]
     SchedulerError(#[from] SchedulerError),
-    
+
     // Existing variants...
 }
 ```
@@ -590,7 +590,7 @@ pub async fn schedule_delivery(&self, content_id: String, schedule: Schedule) ->
             self.deliver_content(&content_id).await
         }
     });
-    
+
     self.scheduler.schedule_job(job_spec).await
         .map_err(|e| ContentDeliveryError::SchedulingFailed(e.to_string()))
 }

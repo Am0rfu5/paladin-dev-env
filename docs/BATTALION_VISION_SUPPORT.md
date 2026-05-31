@@ -276,43 +276,43 @@ use paladin::core::platform::container::battalion::BattalionConfig;
 async fn vision_pipeline_example() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Create vision-enabled Paladins
     let llm_port = Arc::new(OpenAiAdapter::new(openai_config)?);
-    
+
     let detector = PaladinBuilder::new(llm_port.clone())
         .name("detector")
         .system_prompt("Detect all objects in the image")
         .enable_vision(true)
         .model("gpt-4o")
         .build()?;
-    
+
     let classifier = PaladinBuilder::new(llm_port.clone())
         .name("classifier")
         .system_prompt("Classify the detected objects")
         .enable_vision(true)
         .model("gpt-4o")
         .build()?;
-    
+
     let reporter = PaladinBuilder::new(llm_port.clone())
         .name("reporter")
         .system_prompt("Generate a detailed report")
         .build()?; // Text-only
-    
+
     // 2. Create Formation
     let config = BattalionConfig::new("vision_pipeline")
         .with_timeout(600)
         .with_description("Three-stage image analysis");
-    
+
     let formation = Formation::new(
         vec![detector, classifier, reporter],
         config
     )?;
-    
+
     // 3. Execute with image reference
     let service = FormationExecutionService::new(Arc::new(paladin_port));
     let result = service.execute(
         &formation,
         "Analyze the image at ./photos/sample.jpg"
     ).await?;
-    
+
     println!("Analysis complete: {}", result.final_output);
     Ok(())
 }

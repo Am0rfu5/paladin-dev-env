@@ -70,46 +70,46 @@ Options:
   -n, --num-agents <N>
       Number of agents to participate (2-10)
       Default: 3
-      
+
   -m, --mode <MODE>
       Discussion mode: parallel, sequential, or debate
       Default: parallel
-      
+
   -r, --roles <ROLES>
       Comma-separated agent roles
       Example: "technical,business,security,ux"
       If not specified, uses default diverse roles
-      
+
   -o, --output <FILE>
       Save discussion results to file
       Supports: .md, .txt, .json
-      
+
   -f, --format <FORMAT>
       Output format: markdown (default), json, or plain
-      
+
   --synthesize
       Generate a synthesis/summary of all perspectives
       Enabled by default, use --no-synthesize to disable
-      
+
   --provider <PROVIDER>
       LLM provider to use (openai, deepseek, anthropic)
-      
+
   --model <MODEL>
       Specific LLM model for all agents
       Example: gpt-4, deepseek-chat, claude-3-sonnet
-      
+
   --temperature <TEMP>
       Temperature for agent responses (0.0-2.0)
       Default: 0.7
-      
+
   --max-tokens <N>
       Maximum tokens per agent response
       Default: 500
-      
+
   --timeout <SECONDS>
       Timeout for the entire council session
       Default: 120 seconds
-      
+
   -v, --verbose
       Show detailed execution information
 ```
@@ -653,7 +653,7 @@ def council_discussion(question, roles, mode="parallel"):
         "--roles", roles,
         question
     ], capture_output=True, text=True)
-    
+
     return json.loads(result.stdout)
 
 # Use in automation

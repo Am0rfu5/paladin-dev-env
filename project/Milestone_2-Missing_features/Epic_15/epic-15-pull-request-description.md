@@ -191,7 +191,7 @@ experts:
       system_prompt: "You are a technical expert..."
       model: "gpt-4o"
       temperature: 0.7
-      
+
   - inline:
       name: "BusinessExpert"
       system_prompt: "You are a business strategist..."

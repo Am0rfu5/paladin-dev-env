@@ -92,4 +92,3 @@ The user originally asked about this while debugging live API test failures. Now
 The cleanup revealed we should be looking at:
 - `src/infrastructure/adapters/llm/openai_adapter.rs` (the REAL adapter)
 - Not the legacy adapter we were initially trying to fix
-

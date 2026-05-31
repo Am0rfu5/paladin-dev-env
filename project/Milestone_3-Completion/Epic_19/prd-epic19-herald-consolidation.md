@@ -237,7 +237,7 @@ pub struct TokenUsage {
 
 impl ExecutionMetadata {
     pub fn builder() -> ExecutionMetadataBuilder { /* ... */ }
-    
+
     /// Calculate duration from start/end times
     pub fn calculate_duration(&mut self) {
         if let Some(end) = self.end_time {
@@ -252,12 +252,12 @@ impl ExecutionMetadata {
 impl Default for HeraldRegistry {
     fn default() -> Self {
         let mut registry = Self::new();
-        
+
         // Auto-register built-in formatters
         registry.register("json", Arc::new(JsonHerald::new()));
         registry.register("markdown", Arc::new(MarkdownHerald::new()));
         registry.register("table", Arc::new(TableHerald::new()));
-        
+
         registry
     }
 }

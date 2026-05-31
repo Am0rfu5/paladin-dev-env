@@ -533,18 +533,18 @@ encryption:
 battalion:
   type: "formation"
   name: "ImagePipeline"
-  
+
 paladins:
   - name: "Detector"
     system_prompt: "Detect objects in images"
     model: "gpt-4o"
     vision_enabled: true
-    
+
   - name: "Classifier"
     system_prompt: "Classify detected objects"
     model: "gpt-4o"
     vision_enabled: true
-    
+
   - name: "Reporter"
     system_prompt: "Generate analysis report"
     model: "gpt-4"
@@ -566,11 +566,11 @@ vision:
     max_retries: 3                # Maximum retry attempts
     initial_backoff_ms: 1000      # Initial backoff delay (1 second)
     backoff_multiplier: 2.0       # Exponential backoff multiplier
-  
+
   # Provider-specific limits
   openai:
     max_tokens: 4096              # Maximum tokens for OpenAI vision requests
-  
+
   anthropic:
     max_tokens: 4096              # Maximum tokens for Anthropic vision requests
 ```

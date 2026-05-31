@@ -361,7 +361,7 @@ fn test_execution_summary() {
         .add_row(vec!["DataAnalyzer", "Success", "1.2s"]);
 
     let output = table.render();
-    
+
     // Compare against saved snapshot
     insta::assert_snapshot!("execution_summary", output);
 }
@@ -429,7 +429,7 @@ Snapshot tests run automatically in CI:
 # .github/workflows/test.yml
 - name: Run snapshot tests
   run: NO_COLOR=1 cargo test --test cli
-  
+
 - name: Check for pending snapshots
   run: cargo insta test --test cli --check
 ```

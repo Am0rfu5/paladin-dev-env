@@ -406,7 +406,7 @@ images:
 # Document configuration
 documents:
   - "./manual.pdf"
-  
+
 # Security settings
 security:
   encrypt_at_rest: true
@@ -527,22 +527,22 @@ src/
 pub enum VisionError {
     #[error("Unsupported image format: {0}")]
     UnsupportedFormat(String),
-    
+
     #[error("Image file too large: {size} bytes (max: {max})")]
     FileTooLarge { size: usize, max: usize },
-    
+
     #[error("Invalid image data: {0}")]
     InvalidImage(String),
-    
+
     #[error("Model does not support vision: {0}")]
     ModelNotSupported(String),
-    
+
     #[error("Network error: {0}")]
     NetworkError(#[from] reqwest::Error),
-    
+
     #[error("Encryption error: {0}")]
     EncryptionError(String),
-    
+
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
 }
@@ -551,16 +551,16 @@ pub enum VisionError {
 pub enum DocumentError {
     #[error("Unsupported document format: {0}")]
     UnsupportedFormat(String),
-    
+
     #[error("PDF is encrypted and requires a password")]
     EncryptedPdf,
-    
+
     #[error("Document file is corrupted: {0}")]
     CorruptedFile(String),
-    
+
     #[error("Text extraction failed: {0}")]
     ExtractionFailed(String),
-    
+
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
 }
@@ -605,13 +605,13 @@ pub enum DocumentError {
 
 ### Performance Metrics
 
-1. **Vision Request Latency**: 
+1. **Vision Request Latency**:
    - Single image: < 5 seconds (end-to-end including API call)
    - Batch (10 images): < 15 seconds with Phalanx parallel processing
-2. **PDF Extraction Speed**: 
+2. **PDF Extraction Speed**:
    - Small PDF (< 10 pages): < 2 seconds
    - Large PDF (100+ pages): < 10 seconds
-3. **Memory Usage**: 
+3. **Memory Usage**:
    - Baseline: < 50 MB per Paladin instance
    - With vision: < 100 MB per active vision request
 

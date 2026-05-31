@@ -35,7 +35,7 @@
 - Use `cargo test` to run all tests, `cargo test <test_name>` for specific tests
 - Use `ENABLE_VISION_TESTS=true cargo test` to run integration tests with real API calls
 - Follow TDD: Write tests first, then implementation
- 
+
 ### Previous Vision Design Documents
 
 - These tasks are followups to Epic 13 - Sentinel Vision `project/Milestone_2-Missing_features/Epic_13/epic13.md`

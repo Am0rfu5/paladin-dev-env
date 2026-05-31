@@ -362,10 +362,10 @@ Use existing `BattalionError` enum, add variants if needed:
 pub enum BattalionError {
     #[error("Commander validation error: {0}")]
     CommanderValidation(String),
-    
+
     #[error("Strategy selection failed: {0}")]
     StrategySelection(String),
-    
+
     // Existing variants...
 }
 ```
@@ -549,7 +549,7 @@ let result = commander.execute(
 
 // Check what strategy was selected
 println!("Used strategy: {:?}", result.strategy_used);
-println!("Selection reasoning: {}", 
+println!("Selection reasoning: {}",
     result.metadata.strategy_selection_reasoning.unwrap());
 println!("Execution time: {}ms", result.execution_time_ms);
 println!("Per-paladin times: {:?}", result.metadata.per_paladin_times);
@@ -578,7 +578,7 @@ let result = commander.execute("Analyze this from multiple perspectives").await?
 
 // Access detailed telemetry
 println!("Execution time: {}ms", result.execution_time_ms);
-println!("Successes: {}, Failures: {}", 
+println!("Successes: {}, Failures: {}",
     result.metadata.paladin_success_count,
     result.metadata.paladin_failure_count);
 ```

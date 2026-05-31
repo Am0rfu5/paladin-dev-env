@@ -261,13 +261,13 @@ experts:
       system_prompt: "Provide deep technical analysis focusing on architecture and implementation"
       model: "gpt-4o"
       temperature: 0.7
-  
+
   - inline:
       name: "BusinessExpert"
       system_prompt: "Analyze from business perspective: ROI, market fit, competitive advantage"
       model: "gpt-4o"
       temperature: 0.7
-  
+
   - inline:
       name: "SecurityExpert"
       system_prompt: "Identify security risks, vulnerabilities, and compliance concerns"
@@ -324,16 +324,16 @@ Provide a cohesive analysis that integrates all relevant insights.
 pub enum ConclaveError {
     #[error("All experts failed after retries")]
     AllExpertsFailed,
-    
+
     #[error("Aggregator failed: {0}")]
     AggregatorFailed(String),
-    
+
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
-    
+
     #[error("Execution timeout after {0} seconds")]
     Timeout(u64),
-    
+
     #[error("Expert '{0}' failed: {1}")]
     ExpertError(String, String),
 }

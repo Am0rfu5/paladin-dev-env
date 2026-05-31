@@ -69,20 +69,20 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Define flow using DSL
     let flow = FlowParser::parse("analyzer -> summarizer -> reviewer")?;
-    
+
     // Create Paladins
     let mut agents = HashMap::new();
     agents.insert("analyzer".to_string(), create_paladin("analyzer", "Analyze input"));
     agents.insert("summarizer".to_string(), create_paladin("summarizer", "Summarize"));
     agents.insert("reviewer".to_string(), create_paladin("reviewer", "Final review"));
-    
+
     // Create Maneuver
     let maneuver = Maneuver::new("doc-workflow", agents, flow, Default::default())?;
-    
+
     // Execute
     let service = ManeuverExecutionService::new(Arc::new(paladin_port));
     let result = service.execute(&maneuver, "Document to process").await?;
-    
+
     println!("Final output: {}", result.final_output);
     Ok(())
 }
@@ -279,7 +279,7 @@ Parallel:   agent1
        agent2    agent3
            ↘      ↙
          (combine)
-           
+
 Nested:     agent1
               ↓
           ┌───┴───┐
@@ -316,10 +316,10 @@ let maneuver = Maneuver::new("workflow", agents, flow, config)?;
 pub enum ErrorStrategy {
     /// Stop immediately on first error
     FailFast,
-    
+
     /// Continue executing remaining agents despite errors
     ContinueOnError,
-    
+
     /// Continue on error in parallel branches only
     ContinueParallel,
 }
@@ -336,10 +336,10 @@ pub enum ErrorStrategy {
 pub enum OutputFormat {
     /// Concatenate all outputs with newlines
     Concatenate,
-    
+
     /// JSON object with agent names as keys
     Json,
-    
+
     /// Last agent's output only
     LastOnly,
 }
@@ -763,11 +763,11 @@ let config = ManeuverConfig::new()
 #[test]
 fn test_workflow_validation() {
     let flow = FlowParser::parse("analyzer -> summarizer").unwrap();
-    
+
     let mut agents = HashMap::new();
     agents.insert("analyzer".to_string(), create_test_agent("analyzer"));
     agents.insert("summarizer".to_string(), create_test_agent("summarizer"));
-    
+
     let result = Maneuver::new("test", agents, flow, Default::default());
     assert!(result.is_ok());
 }
@@ -779,7 +779,7 @@ fn test_workflow_validation() {
 fn test_flow_visualization() {
     let flow = FlowParser::parse("a -> (b, c)").unwrap();
     let ascii = FlowVisualizer::to_ascii(&flow);
-    
+
     assert!(ascii.contains("PARALLEL"));
     assert!(ascii.contains("a"));
     assert!(ascii.contains("b"));
@@ -826,10 +826,10 @@ impl FlowParser {
 pub enum FlowExpression {
     /// Single agent execution
     Agent(String),
-    
+
     /// Sequential execution (agent₁ → agent₂ → ...)
     Sequential(Vec<FlowExpression>),
-    
+
     /// Parallel execution (agent₁, agent₂, ...)
     Parallel(Vec<FlowExpression>),
 }
@@ -858,7 +858,7 @@ impl Maneuver {
         flow: FlowExpression,
         config: ManeuverConfig,
     ) -> Result<Self, ManeuverError>
-    
+
     /// Validate that all flow agents exist
     pub fn validate(&self) -> Result<(), ManeuverError>
 }
@@ -890,16 +890,16 @@ impl ManeuverConfig {
 pub struct ManeuverResult {
     /// Final aggregated output
     pub final_output: String,
-    
+
     /// Individual agent outputs
     pub step_outputs: HashMap<String, String>,
-    
+
     /// Execution order
     pub execution_order: Vec<String>,
-    
+
     /// Per-agent timing (if enabled)
     pub timing_metrics: Option<HashMap<String, Duration>>,
-    
+
     /// Execution status
     pub status: ExecutionStatus,
 }
@@ -914,7 +914,7 @@ pub struct ManeuverExecutionService {
 
 impl ManeuverExecutionService {
     pub fn new(paladin_port: Arc<dyn PaladinPort>) -> Self
-    
+
     pub async fn execute(
         &self,
         maneuver: &Maneuver,
@@ -933,10 +933,10 @@ pub struct FlowVisualizer;
 impl FlowVisualizer {
     /// Generate ASCII tree visualization
     pub fn to_ascii(flow: &FlowExpression) -> String
-    
+
     /// Generate Mermaid flowchart
     pub fn to_mermaid(flow: &FlowExpression) -> String
-    
+
     /// Generate visualization in specified format
     pub fn visualize(flow: &FlowExpression, format: VisualizationFormat) -> String
 }

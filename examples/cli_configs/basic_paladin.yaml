@@ -69,7 +69,7 @@ stop_words: ["TERMINATE", "STOP"]
 provider:
   # Provider type: openai, deepseek, or anthropic
   type: openai
-  
+
   # API key loaded from environment variable
   # Before running, set: export OPENAI_API_KEY="your-key-here"
   # Default env var name: OPENAI_API_KEY (auto-detected)
@@ -85,7 +85,7 @@ provider:
 #   # - in_memory: Fast but temporary (lost when process ends)
 #   # - sqlite: Persistent across sessions (stored in database)
 #   type: in_memory
-#   
+#
 #   # For persistent memory, specify database path:
 #   # type: sqlite
 #   # path: ./garrison.db
@@ -106,7 +106,7 @@ provider:
 #       command: uvx
 #       args:
 #         - mcp-web-search
-#     
+#
 #     # File system access (⚠️ be careful with permissions!)
 #     # - name: filesystem
 #     #   type: stdio
@@ -141,4 +141,3 @@ provider:
 # 3. Experiment with different system prompts
 # 4. Try advanced_paladin.yaml for garrison/arsenal features
 # 5. Explore battalion configs for multi-agent workflows
-

@@ -241,7 +241,7 @@ System:
     Build Date: 2026-02-09 10:30:00 UTC
     Git Commit: abc123f
     Features: redis-queue, s3-storage, qdrant-vector
-    
+
   ✓ Rust Toolchain
     Version: rustc 1.75.0 (82e1608df 2023-12-21)
     Host: x86_64-unknown-linux-gnu
@@ -253,7 +253,7 @@ Environment:
     Size: 438 bytes
     Variables: 12
     Last Modified: 2026-02-09 09:15:23
-    
+
   ✓ OPENAI_API_KEY
     Format: Valid (sk-...xyz)
     Length: 51 characters
@@ -269,7 +269,7 @@ Providers:
       - gpt-3.5-turbo (context: 4096)
       - gpt-4-32k (context: 32768)
     Organization: org-...
-    
+
 [... continues ...]
 ```
 
@@ -439,7 +439,7 @@ Services (Optional):
    ```bash
    # Docker
    docker run -d -p 6379:6379 redis:7-alpine
-   
+
    # System service
    sudo systemctl start redis
    ```

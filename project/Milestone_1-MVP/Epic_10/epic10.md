@@ -22,24 +22,24 @@
 #### Documentation
 
 1. **API Reference** (rustdoc)
-    
+
     - All public types documented
     - Examples for each major component
     - Error handling guidance
 2. **User Guide**
-    
+
     - Getting started tutorial
     - Paladin configuration guide
     - Battalion patterns cookbook
     - Tool integration guide
 3. **Architecture Documentation**
-    
+
     - System overview diagrams
     - Domain model documentation
     - Port/adapter mapping
     - Extension guide
 4. **Examples Gallery**
-    
+
     - Single Paladin examples
     - Formation workflow examples
     - Phalanx parallel processing

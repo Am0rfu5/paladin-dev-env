@@ -274,7 +274,7 @@ cargo test --doc
 ### 6.9 ✅ Examples Compilation (22 examples, all compile)
 
 ```bash
-for example in examples/*.rs; do 
+for example in examples/*.rs; do
   cargo build --example $(basename $example .rs) --quiet
 done
 ```

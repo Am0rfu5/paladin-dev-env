@@ -74,7 +74,7 @@ impl ConclaveExecutionService {
         conclave: &Conclave,
         input: &str,
     ) -> Result<ConclaveResult, BattalionError>;
-    
+
     fn format_expert_outputs_for_aggregator(
         &self,
         outputs: &HashMap<String, PaladinResult>,
@@ -157,12 +157,12 @@ experts:
       name: "TechnicalExpert"
       system_prompt: "Provide technical analysis"
       model: "gpt-4"
-  
+
   - inline:
       name: "BusinessExpert"  
       system_prompt: "Provide business perspective"
       model: "gpt-4"
-  
+
   - inline:
       name: "RiskExpert"
       system_prompt: "Identify risks and concerns"

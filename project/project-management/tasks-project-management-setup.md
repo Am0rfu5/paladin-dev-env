@@ -35,14 +35,14 @@ Example:
 
 Tasks
 
- 
+
 0.0 Create feature branch
 
  0.1 Create and checkout a new branch for this feature (e.g., git checkout -b feature/PMSYS-001-project-management-system-setup)
  0.2 Push branch and open placeholder PR that references the ticket ID
 
 
- 
+
 1.0 Define & publish AI‑first templates (tickets, PRs, PRDs)
 
  1.1 Draft .github/ISSUE_TEMPLATE/ai_security_ticket.md with:
@@ -63,7 +63,7 @@ Required checklist items that gate human review
  1.6 Add unit/integration test examples for templates parsing automation (simple parser test)
 
 
- 
+
 2.0 Implement Git repo organization and submodule workflow
 
  2.1 Create shared-resources repo (if not present) and add directories: devcontainer/, shared-libs/, deployment-records/, tools/ai/prompts/
@@ -81,7 +81,7 @@ linking ticket IDs across PRs
  2.9 Add tests or a CI job that checks submodule pins are correct (failing if submodule ref is not up-to-date)
 
 
- 
+
 3.0 Build CI/CD pipelines (install/build/test + security + AI review)
 
  3.1 Draft .github/workflows/ci.yml with jobs:
@@ -117,7 +117,7 @@ stores AI report in ticket history (artifact or comment)
  3.8 Add tests for CI workflows (e.g., dry-run via act or pipeline linter)
 
 
- 
+
 4.0 Integrate AI assistant (ticket/PRD generation & CI code review)
 
  4.1 Select or approve an LLM provider (list options and privacy/SLAs): note provider choice and ensure contract/policy clearance
@@ -134,7 +134,7 @@ expands tickets into PRDs and attaches to issue as comment / file
  4.8 Document AI usage policy in docs/process/ai_usage.md (consent, audit logs, when to trust suggestions)
 
 
- 
+
 5.0 Implement tooling & developer UX (CLI helpers, devcontainer, preflight)
 
  5.1 Implement tools/cli/pm-helper commands:
@@ -160,7 +160,7 @@ running pm-helper preflight
  5.6 Add automatic pre-commit hooks (husky/lefthook) to run lint/format checks locally
 
 
- 
+
 6.0 Branch protection, policies, and governance automation
 
  6.1 Create GitHub branch protection rules (apply to main, release/*, and set default protections):
@@ -178,7 +178,7 @@ require up-to-date branch before merge (merge queue recommended)
  6.7 Add a lightweight approval flow for security-flagged tickets that requires security champion sign-off
 
 
- 
+
 7.0 Rollout, training, and KPIs (monitoring + iteration plan)
 
  7.1 Prepare rollout checklist and communicate to team: templates merged, CI enabled, branch protections set

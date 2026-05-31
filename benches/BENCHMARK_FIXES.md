@@ -33,14 +33,14 @@ impl LlmPort for BenchmarkMockPort {
         if self.latency_micros > 0 {
             tokio::time::sleep(tokio::time::Duration::from_micros(self.latency_micros)).await;
         }
-        
+
         Ok(LlmResponse {
             content: "x".repeat(self.output_size),
             model: "benchmark-mock".to_string(),
             usage: TokenUsage::default(),
         })
     }
-    
+
     // Implement other required methods...
 }
 
@@ -66,7 +66,7 @@ let service = PaladinExecutionService::new(port, circuit_breaker, None, None);
   let config = GarrisonConfig::default()
       .with_max_entries(max_entries)
       .with_eviction_strategy(eviction);
-  
+
   // Use:
   let config = GarrisonConfig::new(max_entries, None)
       .with_eviction_strategy(eviction);
@@ -97,7 +97,7 @@ fn create_armament(name: &str, param_count: usize) -> Armament {
         "type": "object",
         "properties": {}
     });
-    
+
     let mut required = Vec::new();
     for i in 0..param_count {
         let param_name = format!("param_{}", i);
@@ -107,7 +107,7 @@ fn create_armament(name: &str, param_count: usize) -> Armament {
         });
         required.push(param_name);
     }
-    
+
     Armament {
         name: name.to_string(),
         description: format!("Benchmark tool: {}", name),

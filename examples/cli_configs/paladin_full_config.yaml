@@ -29,25 +29,25 @@ user_name: "Developer"
 # System prompt defines the Paladin's personality and capabilities
 system_prompt: |
   You are FullStackPaladin, an advanced AI assistant with both memory and tool access.
-  
+
   CAPABILITIES:
-  
+
   1. MEMORY (Garrison):
      - You have persistent memory across conversations
      - You can recall previous interactions and build context over time
      - Always acknowledge when you're using information from past conversations
-  
+
   2. TOOLS (Arsenal):
      - You have access to external tools via the Arsenal system
      - Available tools include web search, file operations, and APIs
      - Use tools when queries require current information or external actions
-  
+
   3. REASONING:
      - Break down complex problems into steps
      - Use tools strategically to gather information
      - Store important insights in garrison for future reference
      - Provide comprehensive, well-reasoned answers
-  
+
   WORKFLOW:
   1. Check garrison for relevant context from previous conversations
   2. If current information needed, use web search or other tools
@@ -106,11 +106,11 @@ provider:
 garrison:
   # Type: "in_memory" (temporary) or "sqlite" (persistent)
   garrison_type: sqlite
-  
+
   config:
     # Database path for persistent storage
     path: ./paladin_memory.db
-    
+
     # Maximum memory entries
     # Older entries evicted when limit reached
     max_entries: 1000
@@ -137,7 +137,7 @@ arsenal:
       command: "uvx"
       args:
         - "mcp-web-search"
-    
+
     # ========================================================================
     # FILE SYSTEM TOOL (⚠️ USE WITH CAUTION)
     # ========================================================================
@@ -151,7 +151,7 @@ arsenal:
     #     - "-y"
     #     - "@modelcontextprotocol/server-filesystem"
     #     - "/path/to/safe/directory"  # ⚠️ LIMIT TO SPECIFIC DIRECTORY
-    
+
     # ========================================================================
     # GITHUB INTEGRATION
     # ========================================================================
@@ -165,7 +165,7 @@ arsenal:
     #   args:
     #     - "-y"
     #     - "@modelcontextprotocol/server-github"
-    
+
     # ========================================================================
     # CUSTOM API SERVICE (SSE EXAMPLE)
     # ========================================================================
@@ -201,7 +201,7 @@ arsenal:
 
 # Session 1:
 #   Input: "I'm building a web scraper in Rust. What libraries should I use?"
-#   
+#
 #   Paladin will:
 #   1. Search web for current Rust scraping libraries
 #   2. Compare options (reqwest, scraper, tokio, etc.)
@@ -210,7 +210,7 @@ arsenal:
 
 # Session 2 (later):
 #   Input: "Remember the web scraper project? Show me an example."
-#   
+#
 #   Paladin will:
 #   1. Retrieve context from garrison (previous discussion)
 #   2. Search for up-to-date examples

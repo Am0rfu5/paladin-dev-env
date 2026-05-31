@@ -85,47 +85,47 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
-    
+
     // Create 3 experts with different perspectives
-    let technical = create_paladin(llm_adapter.clone(), 
-        "TechnicalExpert", 
+    let technical = create_paladin(llm_adapter.clone(),
+        "TechnicalExpert",
         "You are a technical architect. Analyze from a technical perspective."
     )?;
-    
+
     let business = create_paladin(llm_adapter.clone(),
         "BusinessExpert",
         "You are a business strategist. Analyze from a business perspective."
     )?;
-    
+
     let security = create_paladin(llm_adapter.clone(),
         "SecurityExpert",
         "You are a security expert. Analyze from a security perspective."
     )?;
-    
+
     // Create aggregator to synthesize expert outputs
     let aggregator = create_paladin(llm_adapter.clone(),
         "Aggregator",
         "Synthesize the expert analyses into a comprehensive recommendation."
     )?;
-    
+
     // Configure Conclave
     let config = ConclaveConfig::new("expert-panel", BattalionConfig::default())
         .with_timeout(300)
         .with_retry_attempts(2);
-    
+
     // Build Conclave
     let conclave = Conclave::new(
         vec![technical, business, security],
         aggregator,
         config
     )?;
-    
+
     // Execute
     let service = ConclaveExecutionService::new(paladin_port);
-    let result = service.execute(&conclave, 
+    let result = service.execute(&conclave,
         "Should we migrate to microservices?"
     ).await?;
-    
+
     println!("Final Recommendation:\n{}", result.aggregated_output.output);
     Ok(())
 }
@@ -151,25 +151,25 @@ fn create_paladin(
 pub struct ConclaveConfig {
     /// Conclave name (required)
     name: String,
-    
+
     /// Battalion base configuration
     battalion_config: BattalionConfig,
-    
+
     /// Maximum execution time (seconds)
     timeout_seconds: u64,
-    
+
     /// Retry attempts for failed experts (default: 2)
     max_retry_attempts: u32,
-    
+
     /// Custom synthesis prompt (optional)
     synthesis_prompt: Option<String>,
-    
+
     /// Include expert names in aggregator input (default: true)
     include_expert_names: bool,
-    
+
     /// Max tokens per expert before truncation (optional)
     max_expert_tokens: Option<usize>,
-    
+
     /// Observability level (default: Standard)
     observability: ObservabilityLevel,
 }
@@ -324,7 +324,7 @@ let conclave = Conclave::new(experts, aggregator, config)?;
 
 // Execute
 let service = ConclaveExecutionService::new(paladin_port);
-let result = service.execute(&conclave, 
+let result = service.execute(&conclave,
     "Should we implement real-time WebSocket notifications?"
 ).await?;
 
@@ -354,7 +354,7 @@ match service.execute(&conclave, input).await {
             eprintln!("Warning: {} experts failed",
                 conclave.expert_count() - result.successful_expert_count());
         }
-        
+
         // Check aggregation success
         if result.status == ConclaveStatus::Completed {
             println!("Success: {}", result.aggregated_output.output);
@@ -396,7 +396,7 @@ experts:
       stop_words: []
       provider:
         type: openai
-  
+
   - inline:
       name: "BusinessExpert"
       system_prompt: |
@@ -608,7 +608,7 @@ Conclave continues even if some experts fail:
 let result = service.execute(&conclave, input).await?;
 
 // Check success rate
-let success_rate = result.successful_expert_count() as f64 / 
+let success_rate = result.successful_expert_count() as f64 /
                   conclave.expert_count() as f64;
 
 if success_rate < 0.5 {

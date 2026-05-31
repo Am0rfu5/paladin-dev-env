@@ -449,10 +449,10 @@ The following subtasks from Task 14.0 were deferred or deemed optional based on 
 
 - [ ] 14.4 Update Council section with registry usage
   - **Reason:** Paladin Registry integration deferred to Epic 22 Sprint 2 (Q1 2025). Foundation trait exists but full integration (factory pattern, dynamic discovery, runtime registration) requires additional PRD work.
-  
+
 - [ ] 14.5 Update Grove section with LLM routing and fallback configuration  
   - **Reason:** Out of scope for current sprint. Grove LLM routing exists in `examples/grove_routing.rs` but dynamic provider selection/fallback requires additional design work not covered in current Epic 22 user stories.
-  
+
 - [ ] 14.6 Add section: "Paladin Registry" with trait description and usage
   - **Reason:** Paladin Registry trait foundation created (US-22.1) but full registry pattern (factory, discovery, dynamic config) deferred to Sprint 2. Documentation will be added when integration is complete.
 
@@ -461,7 +461,7 @@ The following subtasks from Task 14.0 were deferred or deemed optional based on 
 
 - [ ] 14.17 Create or update `examples/phalanx_with_metrics.rs`
   - **Reason:** Phalanx per-Paladin metrics fully documented in BATTALION.md with comprehensive inline code examples showing `per_paladin_metrics` usage. Metrics also demonstrated in `examples/commander_with_metadata_export.rs`. Separate example file not needed.
-  
+
 - [ ] 14.18 Create or update `examples/council_with_registry.rs`
   - **Reason:** Paladin Registry integration deferred to Epic 22 Sprint 2. Example will be created once factory pattern and dynamic discovery features are implemented per PRD.
 

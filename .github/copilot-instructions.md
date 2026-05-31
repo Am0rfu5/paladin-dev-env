@@ -232,18 +232,18 @@ All ports must be `Send + Sync` for async compatibility:
 pub trait PaladinPort: Send + Sync {
     /// Execute a Paladin with the given input
     async fn execute(
-        &self, 
-        paladin: &Paladin, 
+        &self,
+        paladin: &Paladin,
         input: &str
     ) -> Result<PaladinResult, PaladinError>;
-    
+
     /// Execute with streaming response
     async fn execute_stream(
-        &self, 
-        paladin: &Paladin, 
+        &self,
+        paladin: &Paladin,
         input: &str
     ) -> Result<PaladinStream, PaladinError>;
-    
+
     /// Validate Paladin configuration
     fn validate(&self, paladin: &Paladin) -> Result<(), PaladinError>;
 }
@@ -264,37 +264,37 @@ pub struct PaladinBuilder {
 
 impl PaladinBuilder {
     pub fn new(llm_port: Arc<dyn LlmPort>) -> Self { /* ... */ }
-    
+
     pub fn system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.data.system_prompt = prompt.into();
         self
     }
-    
+
     pub fn name(mut self, name: impl Into<String>) -> Self {
         self.data.name = name.into();
         self
     }
-    
+
     pub fn max_loops(mut self, loops: u32) -> Self {
         self.data.max_loops = loops;
         self
     }
-    
+
     pub fn with_garrison(mut self, garrison: Arc<dyn GarrisonPort>) -> Self {
         self.garrison = Some(garrison);
         self
     }
-    
+
     pub fn add_armament(mut self, armament: Arc<dyn ArsenalPort>) -> Self {
         self.arsenal.push(armament);
         self
     }
-    
+
     pub fn build(self) -> Result<Paladin, PaladinError> {
         self.validate()?;
         Ok(Paladin::new(self.data, self.config))
     }
-    
+
     fn validate(&self) -> Result<(), PaladinError> {
         if self.data.system_prompt.is_empty() {
             return Err(PaladinError::ConfigurationError(
@@ -346,10 +346,10 @@ impl PaladinExecutionService {
         garrison_port: Option<Arc<dyn GarrisonPort>>,
         arsenal_registry: Arc<ArsenalRegistry>,
     ) -> Self { /* ... */ }
-    
+
     pub async fn execute(
-        &self, 
-        paladin: &Paladin, 
+        &self,
+        paladin: &Paladin,
         input: &str
     ) -> Result<PaladinResult, PaladinError> {
         // 1. Build prompt with garrison context
@@ -634,10 +634,10 @@ When working with Rust task lists, the AI must:
    - Use `thiserror` or similar for custom error types when appropriate.
    - Prefer `&str` over `String` for function parameters when ownership isn't needed.
    - Run `cargo clippy` and address warnings before marking tasks complete.
-   
+
 **When implementing, always:**
 1. Check which Task the work belongs to
 2. Follow the technical design in the Project Requirements Document PRD
 3. Write tests first (TDD)
 4. Maintain hexagonal architecture boundaries
-5. Document all public APIs   
+5. Document all public APIs  

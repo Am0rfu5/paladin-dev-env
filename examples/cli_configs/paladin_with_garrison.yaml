@@ -25,11 +25,11 @@ user_name: "User"
 system_prompt: |
   You are an AI assistant with memory capabilities. You can remember previous
   interactions and build context over multiple conversations.
-  
+
   When users ask questions, check your memory (garrison) for relevant context
   from previous interactions. Use this context to provide more personalized
   and contextually aware responses.
-  
+
   Always acknowledge when you're using information from previous conversations.
 
 # ============================================================================
@@ -59,7 +59,7 @@ provider:
 garrison:
   # Garrison type: "in_memory" or "sqlite"
   garrison_type: in_memory
-  
+
   # Optional configuration
   config:
     # Maximum number of memory entries to store
@@ -77,21 +77,21 @@ garrison:
 # Uncomment to use persistent SQLite storage:
 # garrison:
 #   garrison_type: sqlite
-#   
+#
 #   config:
 #     # Database file path (will be created if doesn't exist)
 #     # Relative paths are from working directory
 #     path: ./garrison_memory.db
-#     
+#
 #     # Or use absolute path:
 #     # path: /var/lib/paladin/garrison/memory.db
-#     
+#
 #     # Maximum entries (optional, default: 100)
 #     max_entries: 1000
-#     
+#
 #     # Maximum tokens (same as in-memory)
 #     max_tokens: 16000
-#     
+#
 #     # Eviction strategy (same as in-memory)
 #     eviction_strategy: lru
 
@@ -134,7 +134,7 @@ garrison:
 # - SQLite: Disk (persistent, slightly slower)
 
 # When to Use Each Type:
-# 
+#
 # In-Memory Garrison:
 # ✓ Development and testing
 # ✓ Short-lived conversational sessions

@@ -107,7 +107,7 @@ impl RagRetrievalService {
         paladin_id: &str,
         query: &str,
     ) -> Result<Vec<Memory>, SanctumError>;
-    
+
     pub fn format_for_prompt(&self, memories: &[Memory]) -> String;
 }
 ```
@@ -141,7 +141,7 @@ impl MemoryExtractionService {
         paladin_id: &str,
         conversation: &[GarrisonEntry],
     ) -> Result<Vec<Memory>, SanctumError>;
-    
+
     pub async fn store_memories(
         &self,
         memories: Vec<Memory>,
@@ -170,16 +170,16 @@ impl PaladinExecutionService {
     pub async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult, PaladinError> {
         // 1. Retrieve relevant memories (if sanctum configured)
         let memories = self.retrieve_memories(paladin, input).await?;
-        
+
         // 2. Build prompt with memory context
         let enriched_prompt = self.build_prompt_with_context(paladin, input, &memories);
-        
+
         // 3. Execute LLM call
         let result = self.execute_llm(paladin, &enriched_prompt).await?;
-        
+
         // 4. Extract and store new memories (if configured)
         self.extract_and_store_memories(paladin, input, &result).await?;
-        
+
         Ok(result)
     }
 }

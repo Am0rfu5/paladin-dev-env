@@ -31,10 +31,10 @@ Week 17-18: Integration Testing & Documentation
 
 ## Epic 11: Sanctum Memory Foundation
 
-**Theme:** Vector Embedding Infrastructure  
-**Duration:** 2 weeks  
-**Priority:** Critical  
-**Dependencies:** None  
+**Theme:** Vector Embedding Infrastructure
+**Duration:** 2 weeks
+**Priority:** Critical
+**Dependencies:** None
 
 ### Description
 Establish the foundational infrastructure for vector-based long-term memory, including embedding generation ports, vector storage traits, and the core data structures needed for semantic search.
@@ -42,8 +42,8 @@ Establish the foundational infrastructure for vector-based long-term memory, inc
 ### User Stories
 
 #### US-11.1: Embedding Port Definition
-**As a** framework developer  
-**I want** a standardized port for generating vector embeddings  
+**As a** framework developer
+**I want** a standardized port for generating vector embeddings
 **So that** I can plug in different embedding providers
 
 **Acceptance Criteria:**
@@ -75,8 +75,8 @@ pub struct Embedding {
 ---
 
 #### US-11.2: OpenAI Embedding Adapter
-**As a** developer  
-**I want** to generate embeddings using OpenAI's API  
+**As a** developer
+**I want** to generate embeddings using OpenAI's API
 **So that** I can use industry-standard embedding models
 
 **Acceptance Criteria:**
@@ -108,8 +108,8 @@ pub struct OpenAIEmbeddingConfig {
 ---
 
 #### US-11.3: Vector Store Port Definition
-**As a** framework developer  
-**I want** a standardized port for vector storage operations  
+**As a** framework developer
+**I want** a standardized port for vector storage operations
 **So that** I can plug in different vector databases
 
 **Acceptance Criteria:**
@@ -158,8 +158,8 @@ pub struct SanctumSearchResult {
 ---
 
 #### US-11.4: In-Memory Vector Store
-**As a** developer  
-**I want** an in-memory vector store for development and testing  
+**As a** developer
+**I want** an in-memory vector store for development and testing
 **So that** I can prototype without external dependencies
 
 **Acceptance Criteria:**
@@ -187,8 +187,8 @@ pub struct InMemorySanctumConfig {
 ---
 
 #### US-11.5: Sanctum Domain Model
-**As a** framework developer  
-**I want** domain models for long-term memory concepts  
+**As a** framework developer
+**I want** domain models for long-term memory concepts
 **So that** the system has clear bounded contexts
 
 **Acceptance Criteria:**
@@ -233,10 +233,10 @@ pub enum MemoryType {
 
 ## Epic 12: Sanctum RAG Integration
 
-**Theme:** Retrieval-Augmented Generation  
-**Duration:** 2 weeks  
-**Priority:** Critical  
-**Dependencies:** Epic 11  
+**Theme:** Retrieval-Augmented Generation
+**Duration:** 2 weeks
+**Priority:** Critical
+**Dependencies:** Epic 11
 
 ### Description
 Integrate the Sanctum memory system with Paladin agents to enable RAG (Retrieval-Augmented Generation) capabilities, including automatic memory storage, retrieval during execution, and memory consolidation.
@@ -244,8 +244,8 @@ Integrate the Sanctum memory system with Paladin agents to enable RAG (Retrieval
 ### User Stories
 
 #### US-12.1: Qdrant Vector Store Adapter
-**As a** developer  
-**I want** to use Qdrant as a production vector database  
+**As a** developer
+**I want** to use Qdrant as a production vector database
 **So that** I can scale to millions of memories
 
 **Acceptance Criteria:**
@@ -277,8 +277,8 @@ pub struct QdrantSanctumConfig {
 ---
 
 #### US-12.2: Paladin Long-Term Memory Integration
-**As a** developer  
-**I want** to configure a Paladin with long-term memory  
+**As a** developer
+**I want** to configure a Paladin with long-term memory
 **So that** it can remember across sessions
 
 **Acceptance Criteria:**
@@ -307,8 +307,8 @@ pub enum MemoryExtractionStrategy {
 ---
 
 #### US-12.3: RAG Retrieval Service
-**As a** developer  
-**I want** automatic context retrieval from long-term memory  
+**As a** developer
+**I want** automatic context retrieval from long-term memory
 **So that** Paladins have relevant historical context
 
 **Acceptance Criteria:**
@@ -340,7 +340,7 @@ impl RagRetrievalService {
         paladin_id: &str,
         query: &str,
     ) -> Result<Vec<Memory>, SanctumError>;
-    
+
     pub fn format_for_prompt(&self, memories: &[Memory]) -> String;
 }
 ```
@@ -348,8 +348,8 @@ impl RagRetrievalService {
 ---
 
 #### US-12.4: Memory Extraction Service
-**As a** developer  
-**I want** automatic extraction of memorable information from conversations  
+**As a** developer
+**I want** automatic extraction of memorable information from conversations
 **So that** important insights are preserved
 
 **Acceptance Criteria:**
@@ -374,7 +374,7 @@ impl MemoryExtractionService {
         paladin_id: &str,
         conversation: &[GarrisonEntry],
     ) -> Result<Vec<Memory>, SanctumError>;
-    
+
     pub async fn store_memories(
         &self,
         memories: Vec<Memory>,
@@ -385,8 +385,8 @@ impl MemoryExtractionService {
 ---
 
 #### US-12.5: PaladinExecutionService RAG Integration
-**As a** developer  
-**I want** RAG integrated into the execution flow  
+**As a** developer
+**I want** RAG integrated into the execution flow
 **So that** memory retrieval is automatic
 
 **Acceptance Criteria:**
@@ -403,16 +403,16 @@ impl PaladinExecutionService {
     pub async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult, PaladinError> {
         // 1. Retrieve relevant memories (if sanctum configured)
         let memories = self.retrieve_memories(paladin, input).await?;
-        
+
         // 2. Build prompt with memory context
         let enriched_prompt = self.build_prompt_with_context(paladin, input, &memories);
-        
+
         // 3. Execute LLM call
         let result = self.execute_llm(paladin, &enriched_prompt).await?;
-        
+
         // 4. Extract and store new memories (if configured)
         self.extract_and_store_memories(paladin, input, &result).await?;
-        
+
         Ok(result)
     }
 }
@@ -433,10 +433,10 @@ impl PaladinExecutionService {
 
 ## Epic 13: Sentinel Vision System
 
-**Theme:** Multi-Modal Input Processing  
-**Duration:** 2 weeks  
-**Priority:** Critical  
-**Dependencies:** Epic 6 (Provider Expansion)  
+**Theme:** Multi-Modal Input Processing
+**Duration:** 2 weeks
+**Priority:** Critical
+**Dependencies:** Epic 6 (Provider Expansion)
 
 ### Description
 Add vision and document processing capabilities to Paladins, enabling image analysis, PDF processing, and multi-modal inputs through supported LLM providers.
@@ -444,8 +444,8 @@ Add vision and document processing capabilities to Paladins, enabling image anal
 ### User Stories
 
 #### US-13.1: Vision Request Model
-**As a** framework developer  
-**I want** data structures for multi-modal requests  
+**As a** framework developer
+**I want** data structures for multi-modal requests
 **So that** the system can handle images and documents
 
 **Acceptance Criteria:**
@@ -488,8 +488,8 @@ pub struct VisionRequest {
 ---
 
 #### US-13.2: OpenAI Vision Support
-**As a** developer  
-**I want** to send images to GPT-4 Vision  
+**As a** developer
+**I want** to send images to GPT-4 Vision
 **So that** Paladins can analyze visual content
 
 **Acceptance Criteria:**
@@ -519,7 +519,7 @@ pub trait VisionCapableLlm: LlmPort {
         request: LlmRequest,
         vision: VisionRequest,
     ) -> Result<LlmResponse, LlmError>;
-    
+
     fn supports_vision(&self) -> bool;
 }
 ```
@@ -527,8 +527,8 @@ pub trait VisionCapableLlm: LlmPort {
 ---
 
 #### US-13.3: Anthropic Vision Support
-**As a** developer  
-**I want** to send images to Claude  
+**As a** developer
+**I want** to send images to Claude
 **So that** I can use Anthropic's vision capabilities
 
 **Acceptance Criteria:**
@@ -549,7 +549,7 @@ impl VisionCapableLlm for AnthropicLlmAdapter {
     ) -> Result<LlmResponse, LlmError> {
         // Convert to Anthropic format with image content blocks
     }
-    
+
     fn supports_vision(&self) -> bool {
         self.model.starts_with("claude-3")
     }
@@ -559,8 +559,8 @@ impl VisionCapableLlm for AnthropicLlmAdapter {
 ---
 
 #### US-13.4: Paladin Vision API
-**As a** developer  
-**I want** to run Paladins with image inputs  
+**As a** developer
+**I want** to run Paladins with image inputs
 **So that** I can build vision-based agents
 
 **Acceptance Criteria:**
@@ -593,8 +593,8 @@ impl Paladin {
 ---
 
 #### US-13.5: PDF Text Extraction
-**As a** developer  
-**I want** to extract text from PDF documents  
+**As a** developer
+**I want** to extract text from PDF documents
 **So that** Paladins can process documents
 
 **Acceptance Criteria:**
@@ -629,8 +629,8 @@ pub struct Page {
 ---
 
 #### US-13.6: Document Ingestion Port
-**As a** developer  
-**I want** a standardized port for document processing  
+**As a** developer
+**I want** a standardized port for document processing
 **So that** I can support multiple document types
 
 **Acceptance Criteria:**
@@ -677,10 +677,10 @@ pub struct ChunkConfig {
 
 ## Epic 14: Autonomous Agent Features
 
-**Theme:** Agent Self-Direction and Planning  
-**Duration:** 2 weeks  
-**Priority:** Critical  
-**Dependencies:** Epic 1 (Paladin Domain)  
+**Theme:** Agent Self-Direction and Planning
+**Duration:** 2 weeks
+**Priority:** Critical
+**Dependencies:** Epic 1 (Paladin Domain)
 
 ### Description
 Implement advanced agent autonomy features including automatic planning mode, dynamic temperature adjustment, auto-generated prompts, and agent handoffs for dynamic task delegation.
@@ -688,8 +688,8 @@ Implement advanced agent autonomy features including automatic planning mode, dy
 ### User Stories
 
 #### US-14.1: Autonomous Planning Mode
-**As a** developer  
-**I want** Paladins to automatically plan and execute subtasks  
+**As a** developer
+**I want** Paladins to automatically plan and execute subtasks
 **So that** complex tasks are handled without manual decomposition
 
 **Acceptance Criteria:**
@@ -732,8 +732,8 @@ pub struct Subtask {
 ---
 
 #### US-14.2: Auto-Generate System Prompt
-**As a** developer  
-**I want** automatic system prompt generation  
+**As a** developer
+**I want** automatic system prompt generation
 **So that** I can create agents without manual prompt engineering
 
 **Acceptance Criteria:**
@@ -771,8 +771,8 @@ impl PromptGenerationService {
 ---
 
 #### US-14.3: Dynamic Temperature Adjustment
-**As a** developer  
-**I want** automatic temperature adjustment based on task  
+**As a** developer
+**I want** automatic temperature adjustment based on task
 **So that** responses are appropriately creative or precise
 
 **Acceptance Criteria:**
@@ -808,8 +808,8 @@ pub enum TaskType {
 ---
 
 #### US-14.4: Agent Handoff Infrastructure
-**As a** developer  
-**I want** to configure agents that can delegate to specialists  
+**As a** developer
+**I want** to configure agents that can delegate to specialists
 **So that** complex tasks route to appropriate experts
 
 **Acceptance Criteria:**
@@ -844,7 +844,7 @@ impl HandoffService {
         current_agent: &Paladin,
         available_agents: &[Arc<Paladin>],
     ) -> Option<HandoffDecision>;
-    
+
     pub async fn execute_handoff(
         &self,
         decision: HandoffDecision,
@@ -862,8 +862,8 @@ pub struct HandoffDecision {
 ---
 
 #### US-14.5: Handoff Tool for Agents
-**As a** developer  
-**I want** agents to use a handoff tool  
+**As a** developer
+**I want** agents to use a handoff tool
 **So that** handoffs can happen during execution
 
 **Acceptance Criteria:**
@@ -922,10 +922,10 @@ impl HandoffTool {
 
 ## Epic 15: Conclave - MixtureOfAgents Pattern
 
-**Theme:** Expert Synthesis Orchestration  
-**Duration:** 2 weeks  
-**Priority:** High  
-**Dependencies:** Epic 4 (Battalion Orchestration)  
+**Theme:** Expert Synthesis Orchestration
+**Duration:** 2 weeks
+**Priority:** High
+**Dependencies:** Epic 4 (Battalion Orchestration)
 
 ### Description
 Implement the MixtureOfAgents (MoA) orchestration pattern where multiple expert agents process a task in parallel, and an aggregator agent synthesizes their outputs into a final, high-quality response.
@@ -933,8 +933,8 @@ Implement the MixtureOfAgents (MoA) orchestration pattern where multiple expert 
 ### User Stories
 
 #### US-15.1: Conclave Domain Model
-**As a** framework developer  
-**I want** domain models for MoA orchestration  
+**As a** framework developer
+**I want** domain models for MoA orchestration
 **So that** the pattern has clear structure
 
 **Acceptance Criteria:**
@@ -972,8 +972,8 @@ pub struct ConclaveResult {
 ---
 
 #### US-15.2: Conclave Execution Service
-**As a** developer  
-**I want** to execute MoA workflows  
+**As a** developer
+**I want** to execute MoA workflows
 **So that** I get synthesized expert outputs
 
 **Acceptance Criteria:**
@@ -996,7 +996,7 @@ impl ConclaveExecutionService {
         conclave: &Conclave,
         input: &str,
     ) -> Result<ConclaveResult, BattalionError>;
-    
+
     fn format_expert_outputs_for_aggregator(
         &self,
         outputs: &HashMap<String, PaladinResult>,
@@ -1009,15 +1009,15 @@ impl ConclaveExecutionService {
 //  Expert 'Analyst': {output1}
 //  Expert 'Researcher': {output2}
 //  Expert 'Writer': {output3}
-//  
+//
 //  Synthesize these into a comprehensive response."
 ```
 
 ---
 
 #### US-15.3: Commander Conclave Strategy
-**As a** developer  
-**I want** Commander to support Conclave strategy  
+**As a** developer
+**I want** Commander to support Conclave strategy
 **So that** I can use unified orchestration API
 
 **Acceptance Criteria:**
@@ -1051,8 +1051,8 @@ impl CommanderBuilder {
 ---
 
 #### US-15.4: Conclave CLI Support
-**As a** developer  
-**I want** to run Conclave from CLI  
+**As a** developer
+**I want** to run Conclave from CLI
 **So that** I can use MoA without code
 
 **Acceptance Criteria:**
@@ -1079,12 +1079,12 @@ experts:
       name: "TechnicalExpert"
       system_prompt: "Provide technical analysis"
       model: "gpt-4"
-  
+
   - inline:
-      name: "BusinessExpert"  
+      name: "BusinessExpert"
       system_prompt: "Provide business perspective"
       model: "gpt-4"
-  
+
   - inline:
       name: "RiskExpert"
       system_prompt: "Identify risks and concerns"
@@ -1111,9 +1111,9 @@ config:
 ## Epic 16: Advanced Battalion Patterns
 
 **Theme:** Council and Tree-based routing
-**Duration:** 2 weeks  
-**Priority:** Medium  
-**Dependencies:** Epic 4, Epic 15  
+**Duration:** 2 weeks
+**Priority:** Medium
+**Dependencies:** Epic 4, Epic 15
 
 ### Description
 Implement additional orchestration patterns including Council for conversational collaboration and tree-based agent routing.
@@ -1121,8 +1121,8 @@ Implement additional orchestration patterns including Council for conversational
 ### User Stories
 
 #### US-16.1: Council Domain Model (GroupChat)
-**As a** framework developer  
-**I want** domain models for conversational multi-agent  
+**As a** framework developer
+**I want** domain models for conversational multi-agent
 **So that** agents can discuss and reach consensus
 
 **Acceptance Criteria:**
@@ -1173,8 +1173,8 @@ pub struct CouncilMessage {
 ---
 
 #### US-16.2: Council Execution Service
-**As a** developer  
-**I want** to execute group discussions  
+**As a** developer
+**I want** to execute group discussions
 **So that** agents can collaboratively solve problems
 
 **Acceptance Criteria:**
@@ -1209,8 +1209,8 @@ pub struct CouncilResult {
 ---
 
 #### US-16.3: Grove Domain Model
-**As a** framework developer  
-**I want** domain models for tree-based agent routing  
+**As a** framework developer
+**I want** domain models for tree-based agent routing
 **So that** tasks route to best-fit experts
 
 **Acceptance Criteria:**
@@ -1255,8 +1255,8 @@ pub enum RoutingStrategy {
 ---
 
 #### US-16.4: Grove Execution Service
-**As a** developer  
-**I want** automatic routing to best-fit agents  
+**As a** developer
+**I want** automatic routing to best-fit agents
 **So that** tasks are handled by experts
 
 **Acceptance Criteria:**
@@ -1279,7 +1279,7 @@ impl GroveExecutionService {
         grove: &Grove,
         task: &str,
     ) -> Result<GroveResult, BattalionError>;
-    
+
     async fn route_task(
         &self,
         grove: &Grove,
@@ -1298,8 +1298,8 @@ pub struct RoutingDecision {
 ---
 
 #### US-16.5: Commander Integration
-**As a** developer  
-**I want** Commander to support Council and Grove  
+**As a** developer
+**I want** Commander to support Council and Grove
 **So that** I have unified orchestration
 
 **Acceptance Criteria:**
@@ -1337,10 +1337,10 @@ pub enum BattalionStrategy {
 
 ## Epic 17: Flow DSL & Agent Rearrangement
 
-**Theme:** Flexible Workflow Definition  
-**Duration:** 2 weeks  
-**Priority:** Medium  
-**Dependencies:** Epic 4, Epic 15, Epic 16  
+**Theme:** Flexible Workflow Definition
+**Duration:** 2 weeks
+**Priority:** Medium
+**Dependencies:** Epic 4, Epic 15, Epic 16
 
 ### Description
 Implement the AgentRearrange pattern with a simple string-based DSL for defining complex agent relationships, enabling flexible workflow definition without verbose configuration.
@@ -1348,8 +1348,8 @@ Implement the AgentRearrange pattern with a simple string-based DSL for defining
 ### User Stories
 
 #### US-17.1: Flow DSL Parser
-**As a** developer  
-**I want** to define workflows with simple string syntax  
+**As a** developer
+**I want** to define workflows with simple string syntax
 **So that** I can quickly express agent relationships
 
 **Acceptance Criteria:**
@@ -1384,8 +1384,8 @@ pub enum FlowExpression {
 ---
 
 #### US-17.2: Maneuver Domain Model (AgentRearrange)
-**As a** framework developer  
-**I want** domain models for flow-based orchestration  
+**As a** framework developer
+**I want** domain models for flow-based orchestration
 **So that** the pattern has clear structure
 
 **Acceptance Criteria:**
@@ -1421,8 +1421,8 @@ impl Maneuver {
 ---
 
 #### US-17.3: Maneuver Execution Service
-**As a** developer  
-**I want** to execute flow-based workflows  
+**As a** developer
+**I want** to execute flow-based workflows
 **So that** complex patterns run correctly
 
 **Acceptance Criteria:**
@@ -1444,7 +1444,7 @@ impl ManeuverExecutionService {
         maneuver: &Maneuver,
         input: &str,
     ) -> Result<ManeuverResult, BattalionError>;
-    
+
     async fn execute_expression(
         &self,
         expr: &FlowExpression,
@@ -1463,8 +1463,8 @@ pub struct ManeuverResult {
 ---
 
 #### US-17.4: Commander Maneuver Strategy
-**As a** developer  
-**I want** Commander to support flow-based workflows  
+**As a** developer
+**I want** Commander to support flow-based workflows
 **So that** I can use the unified API
 
 **Acceptance Criteria:**
@@ -1493,8 +1493,8 @@ impl CommanderBuilder {
 ---
 
 #### US-17.5: Flow Visualization
-**As a** developer  
-**I want** to visualize flow expressions  
+**As a** developer
+**I want** to visualize flow expressions
 **So that** I can understand and debug workflows
 
 **Acceptance Criteria:**
@@ -1547,10 +1547,10 @@ impl FlowVisualizer {
 
 ## Epic 18: CLI Enhancement & Polish
 
-**Theme:** Developer Experience  
-**Duration:** 2 weeks  
-**Priority:** Medium  
-**Dependencies:** Epics 11-17  
+**Theme:** Developer Experience
+**Duration:** 2 weeks
+**Priority:** Medium
+**Dependencies:** Epics 11-17
 
 ### Description
 Enhance the Armory CLI with onboarding wizards, setup verification, feature discovery, and advanced commands for common multi-agent patterns.
@@ -1558,8 +1558,8 @@ Enhance the Armory CLI with onboarding wizards, setup verification, feature disc
 ### User Stories
 
 #### US-18.1: Onboarding Wizard
-**As a** new developer  
-**I want** an interactive setup experience  
+**As a** new developer
+**I want** an interactive setup experience
 **So that** I can get started quickly
 
 **Acceptance Criteria:**
@@ -1602,8 +1602,8 @@ Let's set up your environment...
 ---
 
 #### US-18.2: Setup Check Command
-**As a** developer  
-**I want** to verify my environment  
+**As a** developer
+**I want** to verify my environment
 **So that** I can troubleshoot issues
 
 **Acceptance Criteria:**
@@ -1639,8 +1639,8 @@ Summary: 4/5 checks passed
 ---
 
 #### US-18.3: Features Discovery Command
-**As a** developer  
-**I want** to see all available features  
+**As a** developer
+**I want** to see all available features
 **So that** I can discover capabilities
 
 **Acceptance Criteria:**
@@ -1686,13 +1686,13 @@ Memory Systems:
 ---
 
 #### US-18.4: AutoBattalion Command
-**As a** developer  
-**I want** automatic battalion generation  
+**As a** developer
+**I want** automatic battalion generation
 **So that** I can quickly prototype workflows
 
 **Acceptance Criteria:**
 - [ ] `paladin autobattalion --task "..."` command
-- [ ] Uses LLM to analyze task and suggest 
+- [ ] Uses LLM to analyze task and suggest
 - [ ] Generates appropriate configuration
 - [ ] Optionally executes immediately
 - [ ] Saves config for future use
@@ -1717,8 +1717,8 @@ Generated config saved to: muster_20260129.yaml
 ---
 
 #### US-18.5: Council Command
-**As a** developer  
-**I want** quick access to council discussions  
+**As a** developer
+**I want** quick access to council discussions
 **So that** I can run collaborative sessions
 
 **Acceptance Criteria:**
@@ -1755,8 +1755,8 @@ Conclusion: The council recommends starting with a modular monolith...
 ---
 
 #### US-18.6: Rich CLI Output
-**As a** developer  
-**I want** beautiful terminal output  
+**As a** developer
+**I want** beautiful terminal output
 **So that** the CLI is pleasant to use
 
 **Acceptance Criteria:**

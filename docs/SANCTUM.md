@@ -239,7 +239,7 @@ use paladin::infrastructure::adapters::sanctum::InMemorySanctum;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // No configuration needed for in-memory
     let sanctum = InMemorySanctum::new();
-    
+
     println!("InMemory Sanctum ready!");
     Ok(())
 }
@@ -258,7 +258,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "paladin_memories",        // Collection name
         1536,                      // Vector dimension
     ).await?;
-    
+
     println!("Qdrant Sanctum connected!");
     Ok(())
 }
@@ -282,13 +282,13 @@ async fn store_memory(
     .memory_type(MemoryType::Episodic)
     .importance(0.8)
     .build()?;
-    
+
     // Create entry with embedding
     let entry = SanctumEntry::new(memory, embedding_vector)?;
-    
+
     // Store in Sanctum
     sanctum.store(entry).await?;
-    
+
     Ok(())
 }
 ```
@@ -302,10 +302,10 @@ async fn store_batch(
     let entries: Vec<SanctumEntry> = vec![
         // ... create multiple entries
     ];
-    
+
     // Efficient batch storage
     sanctum.store_batch(entries).await?;
-    
+
     Ok(())
 }
 ```
@@ -322,14 +322,14 @@ async fn search_memories(
     // Create search query
     let query = SanctumQuery::new(query_embedding, 5)  // Top 5 results
         .min_score(0.7);  // Minimum similarity threshold
-    
+
     // Execute search
     let results = sanctum.search(query).await?;
-    
+
     for result in results {
         println!("Score: {:.3} - {}", result.score, result.entry.memory.content);
     }
-    
+
     Ok(())
 }
 ```
@@ -348,13 +348,13 @@ async fn filtered_search(
         .paladin_id("paladin-123".to_string())
         .memory_type(MemoryType::Episodic)
         .min_importance(0.5);
-    
+
     // Search with filter
     let query = SanctumQuery::new(query_embedding, 10)
         .filter(filter);
-    
+
     let results = sanctum.search(query).await?;
-    
+
     Ok(())
 }
 ```
@@ -368,7 +368,7 @@ async fn update_memory(
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Update entry (upsert)
     sanctum.update(entry).await?;
-    
+
     Ok(())
 }
 
@@ -378,13 +378,13 @@ async fn delete_memory(
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Delete by ID
     let deleted = sanctum.delete(memory_id).await?;
-    
+
     if deleted {
         println!("Memory deleted successfully");
     } else {
         println!("Memory not found");
     }
-    
+
     Ok(())
 }
 ```
@@ -495,19 +495,19 @@ The main interface for all Sanctum adapters:
 pub trait SanctumPort: Send + Sync {
     /// Store a single memory entry
     async fn store(&self, entry: SanctumEntry) -> Result<(), SanctumError>;
-    
+
     /// Store multiple entries in batch (more efficient)
     async fn store_batch(&self, entries: Vec<SanctumEntry>) -> Result<(), SanctumError>;
-    
+
     /// Search for similar memories using vector similarity
     async fn search(&self, query: SanctumQuery) -> Result<Vec<SanctumSearchResult>, SanctumError>;
-    
+
     /// Delete a memory by ID
     async fn delete(&self, id: &str) -> Result<bool, SanctumError>;
-    
+
     /// Update an existing memory (upsert)
     async fn update(&self, entry: SanctumEntry) -> Result<(), SanctumError>;
-    
+
     /// Count memories matching optional filter
     async fn count(&self, filter: Option<SanctumFilter>) -> Result<usize, SanctumError>;
 }
@@ -558,16 +558,16 @@ Sanctum operations return `Result<T, SanctumError>`:
 pub enum SanctumError {
     #[error("Storage error: {0}")]
     StorageError(String),
-    
+
     #[error("Search error: {0}")]
     SearchError(String),
-    
+
     #[error("Memory not found: {0}")]
     NotFound(String),
-    
+
     #[error("Invalid dimension: {0}")]
     InvalidDimension(String),
-    
+
     #[error("Configuration error: {0}")]
     ConfigError(String),
 }
@@ -1045,7 +1045,7 @@ For issues, questions, or contributions:
 
 ---
 
-**Next Steps**: 
+**Next Steps**:
 - Review [Configuration Examples](../examples/garrison_persistent.rs)
 - Explore [Deployment Guide](./DEPLOYMENT.md)
 - Read [Migration Guide](./MIGRATION.md)

@@ -757,7 +757,7 @@ for input in inputs {
    ```
    # Slow: 300ms
    "analyze -> summarize -> translate"
-   
+
    # Fast: max(150ms, 150ms) = 150ms
    "analyze -> (summarize, translate)"
    ```
@@ -766,7 +766,7 @@ for input in inputs {
    ```
    # Less efficient: Many small agents
    "a -> b -> c -> d -> e -> f"
-   
+
    # More efficient: Combine where possible
    "prepare -> process -> finalize"
    ```
@@ -883,25 +883,25 @@ paladins:
       system_prompt: "Validate and prepare the document for processing."
       model: "gpt-4"
       temperature: 0.3
-  
+
   - inline:
       name: "analyze"
       system_prompt: "Extract key information and structure from the document."
       model: "gpt-4"
       temperature: 0.5
-  
+
   - inline:
       name: "summarize"
       system_prompt: "Create a concise summary of the analysis."
       model: "gpt-4"
       temperature: 0.4
-  
+
   - inline:
       name: "translate"
       system_prompt: "Translate the analysis to Spanish."
       model: "gpt-4"
       temperature: 0.3
-  
+
   - inline:
       name: "output"
       system_prompt: "Combine summary and translation into final report."

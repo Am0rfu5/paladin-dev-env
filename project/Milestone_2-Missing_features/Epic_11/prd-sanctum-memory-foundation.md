@@ -220,7 +220,7 @@ sanctum:
     in_memory:
       max_entries: 10000
       eviction_strategy: "lru"
-  
+
   embedding:
     provider: "openai"
     openai:
@@ -229,7 +229,7 @@ sanctum:
       base_url: "https://api.openai.com/v1"
       max_retries: 3
       timeout_seconds: 30
-  
+
   memory:
     default_importance: 0.5
     decay_strategy: "access_based"  # Per-Paladin override supported

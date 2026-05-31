@@ -41,15 +41,15 @@ export RUST_LOG=paladin::core=debug,paladin::infrastructure=info
 logging:
   # Global log level
   level: "info"
-  
+
   # Format: json, pretty, compact
   format: "json"
-  
+
   # Outputs
   outputs:
     - type: "stdout"
       level: "info"
-    
+
     - type: "file"
       path: "/app/logs/paladin.log"
       level: "debug"
@@ -57,19 +57,19 @@ logging:
         max_size: "100MB"
         max_age: "7d"
         max_backups: 10
-    
+
     - type: "loki"
       url: "http://loki:3100"
       labels:
         app: "paladin"
         environment: "production"
-  
+
   # Module-specific levels
   modules:
     paladin::core: "debug"
     paladin::infrastructure::adapters: "info"
     paladin::application: "debug"
-  
+
   # Sampling (for high-volume logs)
   sampling:
     enabled: true
@@ -144,16 +144,16 @@ use tracing::{info, instrument};
 )]
 async fn execute_paladin(paladin: &Paladin, input: &str) -> Result<PaladinResult> {
     info!(input_length = input.len(), "Starting execution");
-    
+
     let result = paladin.execute(input).await?;
-    
+
     info!(
         loops_used = result.loops_used,
         output_length = result.content.len(),
         success = true,
         "Execution completed"
     );
-    
+
     Ok(result)
 }
 ```
@@ -170,22 +170,22 @@ async fn battalion_execute(battalion: &Battalion, input: &str) -> Result<Battali
         battalion_type = ?battalion.pattern,
         paladin_count = battalion.paladins.len()
     );
-    
+
     async {
         info!("Starting battalion execution");
-        
+
         for (i, paladin) in battalion.paladins.iter().enumerate() {
             let paladin_span = info_span!(
                 "paladin_execution",
                 paladin_index = i,
                 paladin_id = %paladin.id
             );
-            
+
             paladin_span.in_scope(|| {
                 info!("Executing paladin");
             });
         }
-        
+
         Ok(result)
     }.instrument(span).await
 }
@@ -233,15 +233,15 @@ pub fn init_loki_logging(url: &str) -> Result<()> {
             ("environment".to_string(), std::env::var("ENVIRONMENT")?),
         ],
     )?;
-    
+
     tracing_subscriber::registry()
         .with(loki_layer)
         .with(tracing_subscriber::fmt::layer())
         .init();
-    
+
     // Spawn background task for Loki
     tokio::spawn(task);
-    
+
     Ok(())
 }
 ```
@@ -253,12 +253,12 @@ use tracing_elastic::Elastic;
 
 pub fn init_elastic_logging(url: &str, index: &str) -> Result<()> {
     let elastic_layer = Elastic::new(url, index)?;
-    
+
     tracing_subscriber::registry()
         .with(elastic_layer)
         .with(tracing_subscriber::fmt::layer())
         .init();
-    
+
     Ok(())
 }
 ```
@@ -497,7 +497,7 @@ let file_appender = RollingFileAppender::new(
 # Production: Reduce log volume
 logging:
   level: "warn"  # Only warnings and errors
-  
+
   # Enable debug for specific modules
   modules:
     paladin::core::platform: "debug"
@@ -510,14 +510,14 @@ use uuid::Uuid;
 
 async fn handle_request(req: Request) -> Response {
     let request_id = Uuid::new_v4();
-    
+
     let span = info_span!(
         "request",
         request_id = %request_id,
         method = %req.method(),
         path = %req.uri().path()
     );
-    
+
     async {
         // All logs within this span include request_id
         info!("Processing request");

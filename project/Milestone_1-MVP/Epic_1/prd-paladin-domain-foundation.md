@@ -270,7 +270,7 @@ src/
 
 ### Dependencies
 - **Existing**: `tokio`, `serde`, `uuid`, `thiserror`, `tracing`
-- **New**: 
+- **New**:
   - `tokio::time` for timeout handling
   - Consider `governor` crate for circuit breaker (or implement custom)
 
@@ -347,7 +347,7 @@ let mock_llm = MockLlmAdapter::new()
 ## 9. Open Questions
 
 ### Technical Questions
-1. **Circuit Breaker Library**: Should we use `governor` crate or implement custom? 
+1. **Circuit Breaker Library**: Should we use `governor` crate or implement custom?
    - *Decision needed by*: Week 1
    - *Impact*: Implementation complexity
 

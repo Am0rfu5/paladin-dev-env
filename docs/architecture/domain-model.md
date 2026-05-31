@@ -141,25 +141,25 @@ The central entity representing an autonomous AI agent.
 pub struct PaladinData {
     /// System prompt defining Paladin behavior
     pub system_prompt: String,
-    
+
     /// Human-readable name for the Paladin
     pub name: String,
-    
+
     /// User name for personalization
     pub user_name: String,
-    
+
     /// LLM model to use (e.g., "gpt-4", "claude-3-opus")
     pub model: String,
-    
+
     /// Sampling temperature (0.0 - 2.0)
     pub temperature: f32,
-    
+
     /// Maximum reasoning loops before stopping
     pub max_loops: u32,
-    
+
     /// Words that trigger immediate stop
     pub stop_words: Vec<String>,
-    
+
     /// Current execution status
     pub status: PaladinStatus,
 }
@@ -172,16 +172,16 @@ pub type Paladin = Node<PaladinData>;
 pub enum PaladinStatus {
     /// Not currently executing
     Idle,
-    
+
     /// Actively reasoning
     Running,
-    
+
     /// Successfully completed
     Complete,
-    
+
     /// Stopped due to condition (max_loops, stop_word)
     Stopped(StopReason),
-    
+
     /// Encountered an error
     Failed(String),
 }
@@ -211,22 +211,22 @@ impl PaladinData {
                 "System prompt is required".into()
             ));
         }
-        
+
         if !(0.0..=2.0).contains(&self.temperature) {
             return Err(PaladinError::ConfigurationError(
                 format!("Temperature {} must be between 0.0 and 2.0", self.temperature)
             ));
         }
-        
+
         if self.max_loops == 0 {
             return Err(PaladinError::ConfigurationError(
                 "max_loops must be greater than 0".into()
             ));
         }
-        
+
         Ok(())
     }
-    
+
     /// Check if stop word is present in text
     pub fn has_stop_word(&self, text: &str) -> Option<String> {
         self.stop_words.iter()
@@ -267,10 +267,10 @@ pub struct BattalionResult {
 pub enum ErrorStrategy {
     /// Stop immediately on first error
     FailFast,
-    
+
     /// Continue executing remaining Paladins
     Continue,
-    
+
     /// Retry failed Paladin before continuing
     RetryThenContinue,
 }
@@ -300,13 +300,13 @@ impl Formation {
             shared_context: None,
         }
     }
-    
+
     /// Add shared context prepended to each Paladin
     pub fn with_shared_context(mut self, context: &str) -> Self {
         self.shared_context = Some(context.to_string());
         self
     }
-    
+
     /// Validate Formation configuration
     pub fn validate(&self) -> Result<(), BattalionError> {
         if self.paladins.is_empty() {
@@ -314,12 +314,12 @@ impl Formation {
                 "Formation must have at least one Paladin".into()
             ));
         }
-        
+
         for paladin in &self.paladins {
             paladin.data.validate()
                 .map_err(|e| BattalionError::PaladinError(e))?;
         }
-        
+
         Ok(())
     }
 }
@@ -342,16 +342,16 @@ pub struct Phalanx {
 pub enum AggregationStrategy {
     /// Return all results as list
     All,
-    
+
     /// Concatenate all outputs
     Concatenate,
-    
+
     /// Take first successful result
     FirstSuccess,
-    
+
     /// Use voting/consensus
     Consensus,
-    
+
     /// Custom aggregation function
     Custom(Arc<dyn Fn(Vec<PaladinResult>) -> String + Send + Sync>),
 }
@@ -394,7 +394,7 @@ impl Campaign {
                 "Campaign contains cycles (must be DAG)".into()
             ));
         }
-        
+
         // Check entry points exist
         for &node_idx in &self.entry_points {
             if self.graph.node_weight(node_idx).is_none() {
@@ -403,7 +403,7 @@ impl Campaign {
                 ));
             }
         }
-        
+
         Ok(())
     }
 }
@@ -427,13 +427,13 @@ pub struct ChainOfCommand {
 pub enum DelegationStrategy {
     /// Commander analyzes and chooses specialists
     CommanderChoice,
-    
+
     /// Delegate to all specialists
     Broadcast,
-    
+
     /// Round-robin distribution
     RoundRobin,
-    
+
     /// Custom logic
     Custom(Arc<dyn Fn(&str, &[Paladin]) -> Vec<usize> + Send + Sync>),
 }
@@ -478,26 +478,26 @@ impl ConversationHistory {
         if self.entries.len() >= self.max_entries {
             self.entries.pop_front();
         }
-        
+
         self.entries.push_back(entry);
     }
-    
+
     /// Get entries within token window
     pub fn get_window(&self, max_tokens: u32) -> Vec<GarrisonEntry> {
         let mut result = Vec::new();
         let mut token_sum = 0u32;
-        
+
         for entry in self.entries.iter().rev() {
             let entry_tokens = entry.token_count.unwrap_or(0);
-            
+
             if token_sum + entry_tokens > max_tokens {
                 break;
             }
-            
+
             token_sum += entry_tokens;
             result.push(entry.clone());
         }
-        
+
         result.reverse();
         result
     }
@@ -705,7 +705,7 @@ impl Temperature {
         }
         Ok(Self(value))
     }
-    
+
     pub fn value(&self) -> f32 {
         self.0
     }
@@ -723,7 +723,7 @@ impl TokenCount {
     pub fn new(count: u32) -> Self {
         Self(count)
     }
-    
+
     pub fn value(&self) -> u32 {
         self.0
     }
@@ -731,7 +731,7 @@ impl TokenCount {
 
 impl std::ops::Add for TokenCount {
     type Output = Self;
-    
+
     fn add(self, other: Self) -> Self {
         Self(self.0 + other.0)
     }
@@ -749,11 +749,11 @@ impl Model {
     pub fn new(name: impl Into<String>) -> Self {
         Self(name.into())
     }
-    
+
     pub fn as_str(&self) -> &str {
         &self.0
     }
-    
+
     /// Check if model supports function calling
     pub fn supports_tools(&self) -> bool {
         matches!(
@@ -778,14 +778,14 @@ pub enum PaladinEvent {
         name: String,
         timestamp: DateTime<Utc>,
     },
-    
+
     /// Paladin started executing
     ExecutionStarted {
         paladin_id: Uuid,
         input: String,
         timestamp: DateTime<Utc>,
     },
-    
+
     /// Paladin completed execution
     ExecutionCompleted {
         paladin_id: Uuid,
@@ -793,7 +793,7 @@ pub enum PaladinEvent {
         loops_used: u32,
         timestamp: DateTime<Utc>,
     },
-    
+
     /// Paladin invoked a tool
     ToolInvoked {
         paladin_id: Uuid,
@@ -801,14 +801,14 @@ pub enum PaladinEvent {
         parameters: HashMap<String, Value>,
         timestamp: DateTime<Utc>,
     },
-    
+
     /// Paladin stopped due to condition
     Stopped {
         paladin_id: Uuid,
         reason: StopReason,
         timestamp: DateTime<Utc>,
     },
-    
+
     /// Paladin encountered error
     Failed {
         paladin_id: Uuid,
@@ -832,16 +832,16 @@ impl PaladinExecutionService {
             input: input.to_string(),
             timestamp: Utc::now(),
         });
-        
+
         // ... execution logic
-        
+
         self.event_publisher.publish(PaladinEvent::ExecutionCompleted {
             paladin_id: paladin.id,
             output: result.content.clone(),
             loops_used: result.loops_used,
             timestamp: Utc::now(),
         });
-        
+
         Ok(result)
     }
 }

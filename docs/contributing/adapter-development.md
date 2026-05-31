@@ -108,7 +108,7 @@ impl LlmPort for CustomLlmAdapter {
     ) -> Result<LlmResponse, PaladinError> {
         // 1. Transform messages to provider format
         let request_body = self.build_request(messages, config)?;
-        
+
         // 2. Make API call
         let response = self.client
             .post(format!("{}/chat/completions", self.base_url))
@@ -117,13 +117,13 @@ impl LlmPort for CustomLlmAdapter {
             .send()
             .await
             .map_err(|e| PaladinError::LlmError(e.to_string()))?;
-        
+
         // 3. Parse response
         let response_data: CustomApiResponse = response
             .json()
             .await
             .map_err(|e| PaladinError::LlmError(e.to_string()))?;
-        
+
         // 4. Transform to LlmResponse
         Ok(LlmResponse {
             content: response_data.message.content,
@@ -132,7 +132,7 @@ impl LlmPort for CustomLlmAdapter {
             tool_calls: self.parse_tool_calls(&response_data),
         })
     }
-    
+
     async fn generate_stream(
         &self,
         messages: &[Message],
@@ -141,13 +141,13 @@ impl LlmPort for CustomLlmAdapter {
         // Implement streaming if supported
         todo!("Streaming implementation")
     }
-    
+
     fn validate_model(&self, model: &str) -> Result<(), PaladinError> {
         const SUPPORTED_MODELS: &[&str] = &[
             "custom-model-v1",
             "custom-model-v2",
         ];
-        
+
         if SUPPORTED_MODELS.contains(&model) {
             Ok(())
         } else {
@@ -172,7 +172,7 @@ impl CustomLlmAdapter {
             "max_tokens": config.max_tokens,
         }))
     }
-    
+
     fn parse_tool_calls(&self, response: &CustomApiResponse) -> Vec<ToolCall> {
         // Extract tool calls if provider supports them
         vec![]
@@ -265,7 +265,7 @@ impl RedisGarrison {
             prefix: prefix.to_string(),
         })
     }
-    
+
     fn make_key(&self, session_id: &Uuid) -> String {
         format!("{}:garrison:{}", self.prefix, session_id)
     }
@@ -280,19 +280,19 @@ impl GarrisonPort for RedisGarrison {
     ) -> Result<(), GarrisonError> {
         let mut conn = self.client.get_async_connection().await?;
         let key = self.make_key(&session_id);
-        
+
         // Serialize entry
         let value = serde_json::to_string(&entry)?;
-        
+
         // Add to list
         conn.rpush(key, value).await?;
-        
+
         // Set expiration
         conn.expire(key, 3600).await?;
-        
+
         Ok(())
     }
-    
+
     async fn get_entries(
         &self,
         session_id: Uuid,
@@ -300,20 +300,20 @@ impl GarrisonPort for RedisGarrison {
     ) -> Result<Vec<GarrisonEntry>, GarrisonError> {
         let mut conn = self.client.get_async_connection().await?;
         let key = self.make_key(&session_id);
-        
+
         // Get entries
         let values: Vec<String> = if let Some(limit) = limit {
             conn.lrange(key, -(limit as isize), -1).await?
         } else {
             conn.lrange(key, 0, -1).await?
         };
-        
+
         // Deserialize
         values.iter()
             .map(|v| serde_json::from_str(v).map_err(Into::into))
             .collect()
     }
-    
+
     async fn search(
         &self,
         session_id: Uuid,
@@ -326,7 +326,7 @@ impl GarrisonPort for RedisGarrison {
             .filter(|e| e.content.contains(query))
             .collect())
     }
-    
+
     async fn clear(&self, session_id: Uuid) -> Result<(), GarrisonError> {
         let mut conn = self.client.get_async_connection().await?;
         let key = self.make_key(&session_id);
@@ -355,10 +355,10 @@ impl GarrisonPort for VectorGarrison {
     ) -> Result<Vec<GarrisonEntry>, GarrisonError> {
         // 1. Generate query embedding
         let query_embedding = self.embeddings.embed(query).await?;
-        
+
         // 2. Get all entries
         let entries = self.storage.get_entries(session_id, None).await?;
-        
+
         // 3. Compute similarity scores
         let mut scored: Vec<_> = entries.into_iter()
             .map(|entry| {
@@ -366,10 +366,10 @@ impl GarrisonPort for VectorGarrison {
                 (entry, score)
             })
             .collect();
-        
+
         // 4. Sort by relevance
         scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-        
+
         // 5. Return top results
         Ok(scored.into_iter()
             .take(10)
@@ -421,7 +421,7 @@ impl ArsenalPort for WeatherTool {
             }),
         }
     }
-    
+
     async fn execute(
         &self,
         arguments: serde_json::Value,
@@ -430,7 +430,7 @@ impl ArsenalPort for WeatherTool {
         let location = arguments["location"]
             .as_str()
             .ok_or(ArsenalError::InvalidArguments)?;
-        
+
         // 2. Call weather API
         let response = self.client
             .get("https://api.weather.com/v1/current")
@@ -440,10 +440,10 @@ impl ArsenalPort for WeatherTool {
             ])
             .send()
             .await?;
-        
+
         // 3. Parse response
         let weather: WeatherData = response.json().await?;
-        
+
         // 4. Return result
         Ok(ToolResult {
             content: serde_json::to_string(&weather)?,
@@ -474,7 +474,7 @@ impl ArsenalPort for McpToolWrapper {
         // Cache for performance
         todo!()
     }
-    
+
     async fn execute(
         &self,
         arguments: serde_json::Value,
@@ -485,7 +485,7 @@ impl ArsenalPort for McpToolWrapper {
             .json(&arguments)
             .send()
             .await?;
-        
+
         let result: McpToolResult = response.json().await?;
         Ok(result.into())
     }
@@ -524,7 +524,7 @@ impl CitadelPort for S3Citadel {
     ) -> Result<(), CitadelError> {
         let key = format!("paladin-state/{}.json", session_id);
         let body = serde_json::to_vec(&state)?;
-        
+
         self.client
             .put_object()
             .bucket(&self.bucket)
@@ -532,16 +532,16 @@ impl CitadelPort for S3Citadel {
             .body(body.into())
             .send()
             .await?;
-        
+
         Ok(())
     }
-    
+
     async fn load_state(
         &self,
         session_id: Uuid,
     ) -> Result<Option<PaladinState>, CitadelError> {
         let key = format!("paladin-state/{}.json", session_id);
-        
+
         match self.client
             .get_object()
             .bucket(&self.bucket)
@@ -568,28 +568,28 @@ impl CitadelPort for S3Citadel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_custom_llm_adapter() {
         let adapter = CustomLlmAdapter::new(
             "test-key".into(),
             "http://localhost:8080".into(),
         );
-        
+
         let messages = vec![Message::user("Hello")];
         let config = LlmConfig::default();
-        
+
         let response = adapter.generate(&messages, &config).await;
         assert!(response.is_ok());
     }
-    
+
     #[test]
     fn test_model_validation() {
         let adapter = CustomLlmAdapter::new(
             "test-key".into(),
             "http://localhost".into(),
         );
-        
+
         assert!(adapter.validate_model("custom-model-v1").is_ok());
         assert!(adapter.validate_model("invalid-model").is_err());
     }
@@ -603,7 +603,7 @@ mod tests {
 async fn test_garrison_roundtrip() {
     let garrison = RedisGarrison::new("redis://localhost:6379", "test").unwrap();
     let session_id = Uuid::new_v4();
-    
+
     // Add entry
     let entry = GarrisonEntry {
         role: "user".into(),
@@ -611,12 +611,12 @@ async fn test_garrison_roundtrip() {
         timestamp: Utc::now(),
     };
     garrison.add_entry(session_id, entry.clone()).await.unwrap();
-    
+
     // Retrieve
     let entries = garrison.get_entries(session_id, None).await.unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].content, "Test message");
-    
+
     // Clear
     garrison.clear(session_id).await.unwrap();
     let entries = garrison.get_entries(session_id, None).await.unwrap();

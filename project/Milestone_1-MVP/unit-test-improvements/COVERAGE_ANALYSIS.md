@@ -272,7 +272,7 @@ Current: 70.56% baseline (with Task 4.0 improvements)
 
 1. **Complete Task 5.6**: Add missing critical path tests identified above
 2. **Verify Coverage**: Run `cargo llvm-cov --lib --summary-only` after adding tests
-3. **Target Achievement**: 
+3. **Target Achievement**:
    - Arsenal: 0% → 85% (+85 points)
    - Campaign: 4% → 85% (+81 points)
    - Chain of Command: 13% → 85% (+72 points)

@@ -247,12 +247,12 @@ llm:
   max_retries: 3
   retry_delay: 1s
   connection_pooling: true
-  
+
   # Use faster models for simple tasks
   model_routing:
     simple_tasks: "gpt-3.5-turbo"
     complex_tasks: "gpt-4"
-    
+
   # Batch similar requests
   batching:
     enabled: true
@@ -312,7 +312,7 @@ async fn shutdown_signal() {
         _ = ctrl_c => {},
         _ = terminate => {},
     }
-    
+
     tracing::info!("Shutdown signal received, starting graceful shutdown");
 }
 
@@ -368,7 +368,7 @@ where
         max_interval: Duration::from_secs(30),
         ..Default::default()
     };
-    
+
     retry(backoff, || async {
         f().map_err(|e| {
             if e.is_retryable() {
@@ -394,7 +394,7 @@ metrics:
   - paladin_active_paladins         # Active Paladins
   - garrison_entries_total          # Memory entries
   - arsenal_tool_calls_total        # Tool invocations
-  
+
 # System metrics
   - process_cpu_seconds_total       # CPU usage
   - process_resident_memory_bytes   # Memory usage
@@ -422,7 +422,7 @@ groups:
       severity: critical
     annotations:
       summary: "High error rate detected"
-  
+
   - alert: HighLatency
     expr: histogram_quantile(0.95, paladin_request_duration_seconds) > 2
     for: 10m
@@ -430,7 +430,7 @@ groups:
       severity: warning
     annotations:
       summary: "High P95 latency (>2s)"
-  
+
   - alert: PodCrashLooping
     expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
     for: 15m
@@ -449,7 +449,7 @@ use tracing::{info, warn, error, instrument};
 #[instrument(skip(paladin), fields(paladin_id = %paladin.id))]
 async fn execute_paladin(paladin: &Paladin, input: &str) -> Result<PaladinResult> {
     info!("Starting paladin execution");
-    
+
     match paladin.execute(input).await {
         Ok(result) => {
             info!(

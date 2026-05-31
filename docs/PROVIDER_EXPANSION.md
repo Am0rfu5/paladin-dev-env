@@ -51,7 +51,7 @@ Paladin supports multiple LLM providers out of the box, allowing you to choose t
   - Excellent for general-purpose applications
   - Strong vision/multimodal capabilities
   - Large community and documentation
-  
+
 - **Limitations**:
   - Higher cost compared to alternatives
   - Context window smaller than Claude
@@ -70,7 +70,7 @@ Paladin supports multiple LLM providers out of the box, allowing you to choose t
   - High throughput capabilities
   - Good for analytical tasks
   - Competitive performance at lower cost
-  
+
 - **Limitations**:
   - Smaller context window (64K)
   - No vision support
@@ -90,7 +90,7 @@ Paladin supports multiple LLM providers out of the box, allowing you to choose t
   - Excellent for complex analysis
   - Superior long-document processing
   - Strong instruction following
-  
+
 - **Limitations**:
   - Higher cost
   - Claude-specific API differences (system messages separate)
@@ -134,19 +134,19 @@ Add provider configurations to `config.yml`:
 llm:
   # Default provider if multiple are configured
   default_provider: "openai"
-  
+
   openai:
     api_key: "${OPENAI_API_KEY}"
     base_url: "https://api.openai.com/v1"
     model: "gpt-4"
     timeout_seconds: 30
-  
+
   deepseek:
     api_key: "${DEEPSEEK_API_KEY}"
     base_url: "https://api.deepseek.com/v1"
     model: "deepseek-chat"
     timeout_seconds: 60
-  
+
   anthropic:
     api_key: "${ANTHROPIC_API_KEY}"
     base_url: "https://api.anthropic.com/v1"
@@ -335,14 +335,14 @@ fn create_llm_provider() -> Result<Arc<dyn LlmPort>, Box<dyn std::error::Error>>
             return Ok(Arc::new(adapter));
         }
     }
-    
+
     // Fallback to Anthropic (powerful)
     if let Ok(config) = AnthropicConfig::from_env() {
         if let Ok(adapter) = AnthropicAdapter::new(config) {
             return Ok(Arc::new(adapter));
         }
     }
-    
+
     // Final fallback to OpenAI (default)
     let api_key = std::env::var("OPENAI_API_KEY")?;
     Ok(Arc::new(OpenAILlmAdapter::new(

@@ -32,7 +32,7 @@ pub struct DeepSeekConfig {
 #[async_trait]
 impl LlmPort for DeepSeekAdapter {
     async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError>;
-    async fn generate_stream(&self, request: LlmRequest) 
+    async fn generate_stream(&self, request: LlmRequest)
         -> Result<Box<dyn Stream<Item = Result<StreamingResponse, LlmError>> + Send>, LlmError>;
     async fn validate_model(&self, model: &str) -> Result<bool, LlmError>;
     async fn get_available_models(&self) -> Result<Vec<String>, LlmError>;

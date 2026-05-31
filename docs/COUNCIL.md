@@ -94,17 +94,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "TechnicalExpert",
         "You are a technical expert focusing on implementation feasibility."
     );
-    
+
     let business_expert = create_paladin(
         "BusinessExpert",
         "You are a business strategist focusing on ROI and market impact."
     );
-    
+
     let security_expert = create_paladin(
         "SecurityExpert",
         "You are a security expert focusing on risks and compliance."
     );
-    
+
     // Build council
     let council = CouncilBuilder::new()
         .name("Expert Panel Council")
@@ -114,19 +114,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .turn_strategy(TurnStrategy::RoundRobin)
         .termination_condition(TerminationCondition::MaxRounds(3))
         .build()?;
-    
+
     // Execute council discussion
     let service = CouncilExecutionService::new(
         Arc::new(paladin_port),
         Some(Arc::new(garrison_port)) // Optional: store conversation history
     );
-    
+
     let topic = "Should we implement two-factor authentication for all users?";
     let result = service.convene(&council, topic).await?;
-    
+
     println!("Discussion Transcript:\n{}", result.conversation_history);
     println!("\nFinal Recommendation:\n{}", result.final_output);
-    
+
     Ok(())
 }
 ```
@@ -136,12 +136,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 Round 1:
 --------
-TechnicalExpert: Implementing 2FA is technically feasible. We can use TOTP 
+TechnicalExpert: Implementing 2FA is technically feasible. We can use TOTP
 with existing libraries like `authenticator`. Main effort is UI/UX for enrollment
 and recovery flows. Estimate: 2 sprint cycles.
 
 BusinessExpert: From a business perspective, 2FA adds friction but increases trust.
-Our enterprise customers require it per SOC 2 compliance. Churn risk for consumer 
+Our enterprise customers require it per SOC 2 compliance. Churn risk for consumer
 users is moderate, can be mitigated with optional rollout. ROI positive within 6 months.
 
 SecurityExpert: 2FA significantly reduces account takeover risk (98% reduction per
@@ -518,16 +518,16 @@ println!("Full transcript: {}", history);
 pub struct CouncilConfig {
     /// Turn-taking strategy (RoundRobin or ModeratorDirected)
     pub turn_strategy: TurnStrategy,
-    
+
     /// Termination condition
     pub termination_condition: TerminationCondition,
-    
+
     /// Maximum rounds (safety limit)
     pub max_rounds: u32,
-    
+
     /// Whether to store conversation history in Garrison
     pub store_history: bool,
-    
+
     /// Timeout per participant turn (seconds)
     pub turn_timeout: Duration,
 }
@@ -568,11 +568,11 @@ let council = CouncilBuilder::new()
 ### Example 1: Security Review Panel
 
 ```rust
-let security_expert = create_paladin("SecurityExpert", 
+let security_expert = create_paladin("SecurityExpert",
     "Focus on security risks and controls");
-let legal_expert = create_paladin("LegalExpert", 
+let legal_expert = create_paladin("LegalExpert",
     "Focus on compliance and legal requirements");
-let technical_expert = create_paladin("TechnicalExpert", 
+let technical_expert = create_paladin("TechnicalExpert",
     "Focus on implementation feasibility");
 
 let council = CouncilBuilder::new()
@@ -794,7 +794,7 @@ impl CouncilExecutionService {
         paladin_port: Arc<dyn PaladinPort>,
         garrison_port: Option<Arc<dyn GarrisonPort>>,
     ) -> Self;
-    
+
     pub async fn convene(
         &self,
         council: &Council,

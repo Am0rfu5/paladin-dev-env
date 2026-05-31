@@ -120,7 +120,7 @@ The Armory CLI (`paladin-cli`) is a command-line interface tool that enables dev
 ```yaml
 name: string (required)
 system_prompt: string (required)
-model: string (required) 
+model: string (required)
 temperature: float (optional, default: 0.7)
 max_loops: integer (optional, default: 3)
 timeout_seconds: integer (optional, default: 300)

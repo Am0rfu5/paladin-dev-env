@@ -53,21 +53,21 @@ use std::io::Write;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize InMemory adapter with existing data
     let in_memory = InMemorySanctum::new();
-    
+
     // Export all memories
     let filter = SanctumFilter::new(); // No filter = all memories
     let count = in_memory.count(Some(filter.clone())).await?;
     println!("Exporting {} memories...", count);
-    
+
     // For InMemory, we need to implement an export method
     // This is a simplified example
     let memories = export_all_memories(&in_memory).await?;
-    
+
     // Serialize to JSON
     let json = serde_json::to_string_pretty(&memories)?;
     let mut file = File::create("sanctum_export.json")?;
     file.write_all(json.as_bytes())?;
-    
+
     println!("Export complete: {} memories written to sanctum_export.json", memories.len());
     Ok(())
 }
@@ -184,33 +184,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut file = File::open("sanctum_export.json")?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
-    
+
     let export: ExportData = serde_json::from_str(&contents)?;
     println!("Importing {} memories...", export.total_entries);
-    
+
     // Initialize Qdrant adapter
     let qdrant = QdrantSanctumAdapter::new(
         "http://localhost:6334",
         "migrated_memories",
         1536,
     ).await?;
-    
+
     // Import in batches for efficiency
     let batch_size = 100;
     for chunk in export.entries.chunks(batch_size) {
         qdrant.store_batch(chunk.to_vec()).await?;
         println!("Imported batch of {} memories", chunk.len());
     }
-    
+
     // Verify count
     let count = qdrant.count(None).await?;
     println!("Import complete! Total memories in Qdrant: {}", count);
-    
+
     if count != export.total_entries {
-        eprintln!("WARNING: Count mismatch! Expected {}, got {}", 
+        eprintln!("WARNING: Count mismatch! Expected {}, got {}",
                   export.total_entries, count);
     }
-    
+
     Ok(())
 }
 ```
@@ -247,21 +247,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "migrated_memories",
         1536,
     ).await?;
-    
+
     // 1. Count check
     let total = qdrant.count(None).await?;
     println!("✓ Total memories: {}", total);
-    
+
     // 2. Sample search test
     let test_embedding = vec![0.1; 1536]; // Dummy embedding
     let query = SanctumQuery::new(test_embedding, 5);
     let results = qdrant.search(query).await?;
     println!("✓ Search returned {} results", results.len());
-    
+
     // 3. Specific memory retrieval
     // Test with a known memory ID from export
     println!("✓ Validation complete!");
-    
+
     Ok(())
 }
 ```
@@ -393,21 +393,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "old_memories",
         384,
     ).await?;
-    
+
     // New adapter (1536 dimensions)
     let new_qdrant = QdrantSanctumAdapter::new(
         "http://localhost:6334",
         "new_memories",
         1536,
     ).await?;
-    
+
     // New embedding provider
     let embedding_service = OpenAIEmbeddingAdapter::new(...);
-    
+
     // Re-embed and transfer
     let batch_size = 100;
     // ... implementation to fetch, re-embed, and store
-    
+
     Ok(())
 }
 ```
@@ -445,20 +445,20 @@ impl SanctumPort for DualWriteSanctum {
     async fn store(&self, entry: SanctumEntry) -> Result<(), SanctumError> {
         // Write to both, but only require primary to succeed
         let primary_result = self.primary.store(entry.clone()).await;
-        
+
         // Log secondary failures but don't fail the operation
         if let Err(e) = self.secondary.store(entry).await {
             warn!("Secondary write failed: {}", e);
         }
-        
+
         primary_result
     }
-    
+
     async fn search(&self, query: SanctumQuery) -> Result<Vec<SanctumSearchResult>, SanctumError> {
         // Always read from primary
         self.primary.search(query).await
     }
-    
+
     // ... other methods
 }
 ```
@@ -544,23 +544,23 @@ cargo test --test smoke_test
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sanctum = initialize_adapter().await?;
-    
+
     // 1. Count validation
     let count = sanctum.count(None).await?;
     assert!(count > 0, "No memories found");
     println!("✓ Count: {}", count);
-    
+
     // 2. Search functionality
     let test_results = test_search(&sanctum).await?;
     assert!(!test_results.is_empty(), "Search returned no results");
     println!("✓ Search: {} results", test_results.len());
-    
+
     // 3. Memory integrity
     for result in test_results.iter().take(10) {
         validate_memory(&result.entry.memory)?;
     }
     println!("✓ Memory integrity");
-    
+
     // 4. Embedding dimensions
     let expected_dim = 1536;
     for result in test_results.iter().take(5) {
@@ -568,7 +568,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                    "Embedding dimension mismatch");
     }
     println!("✓ Embedding dimensions");
-    
+
     println!("\n✅ All validation checks passed!");
     Ok(())
 }
@@ -650,7 +650,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 3. Use parallel imports:
    ```rust
    use futures::stream::StreamExt;
-   
+
    futures::stream::iter(chunks)
        .for_each_concurrent(4, |chunk| async move {
            adapter.store_batch(chunk).await.unwrap();

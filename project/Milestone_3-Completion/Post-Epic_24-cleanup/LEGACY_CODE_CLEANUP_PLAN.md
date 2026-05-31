@@ -54,12 +54,12 @@ The `output/` directory appears to be a legacy adapter location from an earlier 
 - [ ] Commit with message:
   ```
   refactor: remove legacy OpenAILlmAdapter (dead code)
-  
+
   - Removed src/infrastructure/adapters/output/openai_llm_adapter.rs
   - Updated output/mod.rs to remove export
   - Fixed examples/llm_provider_selection.rs to reference new adapter
   - All functionality now uses src/infrastructure/adapters/llm/openai_adapter.rs
-  
+
   This adapter was replaced by the new architecture but never deleted.
   Zero actual code usage was found during investigation.
   ```

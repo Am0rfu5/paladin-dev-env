@@ -255,13 +255,13 @@ llm:
     base_url: "https://api.openai.com/v1"
     default_model: "gpt-4"
     timeout_seconds: 60
-  
+
   deepseek:
     api_key: "${DEEPSEEK_API_KEY}"
     base_url: "https://api.deepseek.com/v1"
     default_model: "deepseek-chat"
     timeout_seconds: 60
-  
+
   anthropic:
     api_key: "${ANTHROPIC_API_KEY}"
     base_url: "https://api.anthropic.com/v1"
@@ -402,7 +402,7 @@ Implement a provider factory for clean instantiation:
 pub struct LlmProviderFactory;
 
 impl LlmProviderFactory {
-    pub fn create(config: &LlmConfig, provider: &str) 
+    pub fn create(config: &LlmConfig, provider: &str)
         -> Result<Arc<dyn LlmPort>, LlmError> {
         match provider {
             "openai" => Ok(Arc::new(OpenAiAdapter::new(config.openai.clone())?)),
@@ -659,7 +659,7 @@ if let Some(max_tokens) = capabilities.max_context_tokens {
 #[tokio::test]
 async fn test_deepseek_basic_completion() {
     let mock_server = MockServer::start().await;
-    
+
     Mock::given(method("POST"))
         .and(path("/v1/chat/completions"))
         .respond_with(ResponseTemplate::new(200)
@@ -672,20 +672,20 @@ async fn test_deepseek_basic_completion() {
             })))
         .mount(&mock_server)
         .await;
-    
+
     let adapter = DeepSeekAdapter::new(DeepSeekConfig {
         api_key: "test-key".into(),
         base_url: mock_server.uri(),
         model: "deepseek-chat".into(),
         timeout_seconds: 30,
     }).unwrap();
-    
+
     let response = adapter.generate(LlmRequest {
         messages: vec![Message::user("Hello!")],
         temperature: 0.7,
         ..Default::default()
     }).await.unwrap();
-    
+
     assert_eq!(response.content, "Hello, I'm DeepSeek!");
 }
 ```
@@ -698,21 +698,21 @@ async fn test_deepseek_basic_completion() {
 async fn test_deepseek_live_api() {
     let api_key = env::var("DEEPSEEK_API_KEY")
         .expect("DEEPSEEK_API_KEY required for integration test");
-    
+
     let adapter = DeepSeekAdapter::new(DeepSeekConfig {
         api_key,
         base_url: "https://api.deepseek.com/v1".into(),
         model: "deepseek-chat".into(),
         timeout_seconds: 60,
     }).unwrap();
-    
+
     let response = adapter.generate(LlmRequest {
         messages: vec![Message::user("Say hello in 5 words")],
         temperature: 0.1,
         max_tokens: Some(20),
         ..Default::default()
     }).await.unwrap();
-    
+
     assert!(!response.content.is_empty());
     assert!(response.content.split_whitespace().count() <= 7);
 }

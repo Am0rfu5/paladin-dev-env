@@ -164,8 +164,8 @@ See comprehensive documentation:
 
 ### Content Processing Pipeline
 
-Content of various types including text, images, and videos can be ingested and processed 
-through a number of stages. The modular pipeline stages can also be orchestrated to run back through the 
+Content of various types including text, images, and videos can be ingested and processed
+through a number of stages. The modular pipeline stages can also be orchestrated to run back through the
 pipeline for further processing or enrichment.
 
 #### Pipeline Stages Description
@@ -307,5 +307,5 @@ max_concurrent_jobs = 5
 ### 5. Use Cases
 >> Note: These are the initial use cases being considered
 - **Security Auditing**
-- **New Information Processing** News, Sentiment, Social Media Analysis 
+- **New Information Processing** News, Sentiment, Social Media Analysis
 - **Trading AI Backbone**

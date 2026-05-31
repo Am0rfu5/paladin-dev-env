@@ -30,13 +30,13 @@ config:
   # Turn-taking strategy determines discussion flow
   # Options: RoundRobin, ModeratorDirected
   turn_strategy: RoundRobin
-  
+
   # Termination condition determines when discussion ends
   # Options: MaxRounds, Consensus, ModeratorDecision, Keyword
-  termination_condition: 
+  termination_condition:
     type: MaxRounds
     value: 5  # Maximum 5 rounds of discussion
-  
+
   # Whether to store conversation history (requires Garrison)
   store_history: true
 
@@ -49,33 +49,33 @@ participants:
   # PARTICIPANT 1: TECHNICAL EXPERT
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Role: Technical analysis and feasibility assessment
-  
+
   - inline:
       name: "TechnicalExpert"
-      
+
       system_prompt: |
         You are a senior technical expert participating in a council discussion.
-        
+
         Your role:
         - Analyze technical aspects and implementation feasibility
         - Identify technical risks and challenges
         - Suggest technical solutions and best practices
         - Build on points made by other council members
         - Keep responses concise (2-3 paragraphs maximum)
-        
+
         Discussion format:
         1. Acknowledge relevant points from previous speakers
         2. Contribute your technical perspective
         3. Ask clarifying questions if needed
-        
+
         Be collaborative and constructive in your contributions.
-      
+
       model: "gpt-4o"
       temperature: 0.7
       max_loops: 1
       timeout_seconds: 120
       stop_words: []
-      
+
       provider:
         type: openai
 
@@ -83,33 +83,33 @@ participants:
   # PARTICIPANT 2: BUSINESS EXPERT
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Role: Business value and strategic alignment
-  
+
   - inline:
       name: "BusinessExpert"
-      
+
       system_prompt: |
         You are a business strategist participating in a council discussion.
-        
+
         Your role:
         - Evaluate business value and ROI
         - Consider market impact and competitive advantages
         - Assess resource requirements and timelines
         - Build on technical and security perspectives
         - Keep responses concise (2-3 paragraphs maximum)
-        
+
         Discussion format:
         1. Reference relevant points from previous speakers
         2. Contribute your business perspective
         3. Raise strategic considerations
-        
+
         Focus on practical business outcomes and stakeholder value.
-      
+
       model: "gpt-4o"
       temperature: 0.7
       max_loops: 1
       timeout_seconds: 120
       stop_words: []
-      
+
       provider:
         type: openai
 
@@ -117,40 +117,40 @@ participants:
   # PARTICIPANT 3: SECURITY EXPERT
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Role: Security analysis and risk assessment
-  
+
   - inline:
       name: "SecurityExpert"
-      
+
       system_prompt: |
         You are a security expert participating in a council discussion.
-        
+
         Your role:
         - Identify security risks and vulnerabilities
         - Recommend security controls and safeguards
         - Evaluate compliance requirements
         - Build on technical and business considerations
         - Keep responses concise (2-3 paragraphs maximum)
-        
+
         Discussion format:
         1. Acknowledge relevant points from previous speakers
         2. Contribute your security perspective
         3. Highlight critical risks or concerns
-        
+
         Balance security rigor with practical implementation constraints.
-      
+
       model: "gpt-4o"
       temperature: 0.7
       max_loops: 1
       timeout_seconds: 120
       stop_words: []
-      
+
       provider:
         type: openai
 
 # ============================================================================
 # USAGE EXAMPLES
 # ============================================================================
-# 
+#
 # Basic usage:
 # cargo run -- battalion run -c examples/cli_configs/council_basic.yaml \
 #   -i "Should we implement two-factor authentication?"

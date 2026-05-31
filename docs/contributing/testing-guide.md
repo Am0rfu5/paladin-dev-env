@@ -77,7 +77,7 @@ tests/
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_paladin_builder_validation() {
         // Test implementation
@@ -100,37 +100,37 @@ async fn test_redis_queue_operations() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_paladin_builder_creates_valid_paladin() {
         // Arrange
         let llm_port = Arc::new(MockLlmPort::new());
         let builder = PaladinBuilder::new(llm_port);
-        
+
         // Act
         let result = builder
             .name("test-paladin")
             .system_prompt("You are a helpful assistant")
             .build();
-        
+
         // Assert
         assert!(result.is_ok());
         let paladin = result.unwrap();
         assert_eq!(paladin.name(), "test-paladin");
     }
-    
+
     #[test]
     fn test_paladin_builder_validates_empty_prompt() {
         // Arrange
         let llm_port = Arc::new(MockLlmPort::new());
         let builder = PaladinBuilder::new(llm_port);
-        
+
         // Act
         let result = builder
             .name("test-paladin")
             .system_prompt("")  // Invalid: empty prompt
             .build();
-        
+
         // Assert
         assert!(result.is_err());
         assert!(matches!(
@@ -148,16 +148,16 @@ mod tests {
 mod tests {
     use super::*;
     use tokio;
-    
+
     #[tokio::test]
     async fn test_paladin_execution() {
         // Arrange
         let mock_llm = Arc::new(MockLlmPort::with_response("Test response"));
         let paladin = create_test_paladin(mock_llm);
-        
+
         // Act
         let result = paladin.execute("Test input").await;
-        
+
         // Assert
         assert!(result.is_ok());
         let response = result.unwrap();
@@ -179,12 +179,12 @@ proptest! {
         let max_entries = 100;
         let garrison = InMemoryGarrison::new(max_entries);
         let session_id = Uuid::new_v4();
-        
+
         // Add all entries
         for entry in entries {
             let _ = garrison.add_entry(session_id, entry);
         }
-        
+
         // Verify max entries constraint
         let stored = garrison.get_entries(session_id, None).unwrap();
         prop_assert!(stored.len() <= max_entries);
@@ -209,15 +209,15 @@ async fn test_redis_queue_enqueue_dequeue() {
     let docker = clients::Cli::default();
     let redis = docker.run(images::redis::Redis::default());
     let port = redis.get_host_port_ipv4(6379);
-    
+
     let adapter = RedisQueueAdapter::new(&format!("redis://localhost:{}", port))
         .await
         .unwrap();
-    
+
     // Act: Enqueue task
     let task = Task::new("test-task", serde_json::json!({"input": "test"}));
     adapter.enqueue(task.clone()).await.unwrap();
-    
+
     // Assert: Dequeue task
     let dequeued = adapter.dequeue().await.unwrap();
     assert!(dequeued.is_some());
@@ -244,18 +244,18 @@ async fn test_minio_upload_download() {
             .with_env_var("MINIO_ROOT_PASSWORD", "minioadmin")
             .with_wait_for(WaitFor::message_on_stdout("API:"))
     );
-    
+
     let adapter = MinioAdapter::new(
         "localhost:9000",
         "minioadmin",
         "minioadmin",
         "test-bucket",
     ).await.unwrap();
-    
+
     // Act: Upload file
     let content = b"Test content";
     adapter.upload("test.txt", content).await.unwrap();
-    
+
     // Assert: Download file
     let downloaded = adapter.download("test.txt").await.unwrap();
     assert_eq!(downloaded, content);
@@ -274,7 +274,7 @@ use wiremock::matchers::{method, path};
 async fn test_openai_adapter_with_mock_server() {
     // Arrange: Start mock server
     let mock_server = MockServer::start().await;
-    
+
     Mock::given(method("POST"))
         .and(path("/chat/completions"))
         .respond_with(ResponseTemplate::new(200).set_body_json(
@@ -292,16 +292,16 @@ async fn test_openai_adapter_with_mock_server() {
         ))
         .mount(&mock_server)
         .await;
-    
+
     // Act: Create adapter with mock URL
     let adapter = OpenAiAdapter::new(
         "test-key",
         &mock_server.uri(),
     );
-    
+
     let messages = vec![Message::user("Test")];
     let response = adapter.generate(&messages, &LlmConfig::default()).await.unwrap();
-    
+
     // Assert
     assert_eq!(response.content, "Mock response");
 }
@@ -319,18 +319,18 @@ async fn test_complete_content_processing_flow() {
     // Arrange: Set up full application stack
     let config = ApplicationSettings::test_config();
     let app = Application::build(&config).await.unwrap();
-    
+
     // Act: Submit content for processing
     let content = ContentItem::new("Test article", "https://example.com");
     let result = app.ingest_content(content).await.unwrap();
-    
+
     // Assert: Verify content processed through all stages
     assert_eq!(result.status, ContentStatus::Completed);
-    
+
     // Verify analysis results exist
     let analysis = app.get_analysis(result.id).await.unwrap();
     assert!(analysis.is_some());
-    
+
     // Verify stored in database
     let stored = app.get_content(result.id).await.unwrap();
     assert!(stored.is_some());
@@ -350,16 +350,16 @@ async fn test_formation_sequential_execution() {
         "Response 2",
         "Response 3",
     ]));
-    
+
     let paladin1 = create_test_paladin(llm_port.clone(), "paladin-1");
     let paladin2 = create_test_paladin(llm_port.clone(), "paladin-2");
     let paladin3 = create_test_paladin(llm_port.clone(), "paladin-3");
-    
+
     let formation = Formation::new(vec![paladin1, paladin2, paladin3]);
-    
+
     // Act
     let result = formation.execute("Initial input").await.unwrap();
-    
+
     // Assert
     assert_eq!(result.steps.len(), 3);
     assert_eq!(result.steps[0].output, "Response 1");
@@ -426,21 +426,21 @@ impl MockLlmPort {
             call_count: Arc::new(Mutex::new(0)),
         }
     }
-    
+
     pub fn with_response(response: impl Into<String>) -> Self {
         Self {
             responses: vec![response.into()],
             call_count: Arc::new(Mutex::new(0)),
         }
     }
-    
+
     pub fn sequential_responses(responses: Vec<impl Into<String>>) -> Self {
         Self {
             responses: responses.into_iter().map(Into::into).collect(),
             call_count: Arc::new(Mutex::new(0)),
         }
     }
-    
+
     pub fn call_count(&self) -> usize {
         *self.call_count.lock().unwrap()
     }
@@ -456,7 +456,7 @@ impl LlmPort for MockLlmPort {
         let mut count = self.call_count.lock().unwrap();
         let index = *count % self.responses.len();
         *count += 1;
-        
+
         Ok(LlmResponse {
             content: self.responses[index].clone(),
             model: "mock".into(),
@@ -464,7 +464,7 @@ impl LlmPort for MockLlmPort {
             tool_calls: vec![],
         })
     }
-    
+
     async fn generate_stream(
         &self,
         _messages: &[Message],
@@ -472,7 +472,7 @@ impl LlmPort for MockLlmPort {
     ) -> Result<Pin<Box<dyn Stream<Item = Result<LlmChunk>>>>, PaladinError> {
         unimplemented!("Stream not implemented in mock")
     }
-    
+
     fn validate_model(&self, _model: &str) -> Result<(), PaladinError> {
         Ok(())
     }
@@ -523,17 +523,17 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         rust: [stable, beta]
-    
+
     services:
       redis:
         image: redis:7
         ports:
           - 6379:6379
-      
+
       minio:
         image: minio/minio
         env:
@@ -541,29 +541,29 @@ jobs:
           MINIO_ROOT_PASSWORD: minioadmin
         ports:
           - 9000:9000
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
           override: true
-      
+
       - name: Run unit tests
         run: cargo test --lib
-      
+
       - name: Run integration tests
         run: cargo test --test '*' -- --test-threads=1
-      
+
       - name: Run doc tests
         run: cargo test --doc
-      
+
       - name: Generate coverage
         run: |
           cargo install cargo-llvm-cov
           cargo llvm-cov --lcov --output-path lcov.info
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:

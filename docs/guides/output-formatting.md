@@ -51,13 +51,13 @@ pub enum OutputFormat {
 pub trait Herald: Send + Sync {
     /// Format complete output
     async fn format(&self, content: &str) -> Result<String, HeraldError>;
-    
+
     /// Format streaming chunk
     async fn format_chunk(&self, chunk: &str) -> Result<String, HeraldError>;
-    
+
     /// Validate output against format requirements
     fn validate(&self, content: &str) -> Result<(), HeraldError>;
-    
+
     /// Get format metadata
     fn metadata(&self) -> FormatMetadata;
 }
@@ -275,7 +275,7 @@ pub fn reverse_string(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_reverse_string() {
         assert_eq!(reverse_string("hello"), "olleh");
@@ -301,15 +301,15 @@ impl Herald for UppercaseHerald {
     async fn format(&self, content: &str) -> Result<String, HeraldError> {
         Ok(content.to_uppercase())
     }
-    
+
     async fn format_chunk(&self, chunk: &str) -> Result<String, HeraldError> {
         Ok(chunk.to_uppercase())
     }
-    
+
     fn validate(&self, _content: &str) -> Result<(), HeraldError> {
         Ok(())  // No validation needed
     }
-    
+
     fn metadata(&self) -> FormatMetadata {
         FormatMetadata {
             format_name: "uppercase".to_string(),
@@ -350,30 +350,30 @@ impl XmlHerald {
 impl Herald for XmlHerald {
     async fn format(&self, content: &str) -> Result<String, HeraldError> {
         let mut writer = Writer::new(Cursor::new(Vec::new()));
-        
+
         // Write XML declaration
         writer.write_event(quick_xml::events::Event::Decl(
             quick_xml::events::BytesDecl::new("1.0", Some("UTF-8"), None)
         ))?;
-        
+
         // Parse content as structured data
         let data: serde_json::Value = serde_json::from_str(content)
             .map_err(|e| HeraldError::FormatError(e.to_string()))?;
-        
+
         // Convert to XML
         self.json_to_xml(&mut writer, &self.root_element, &data)?;
-        
+
         let xml_bytes = writer.into_inner().into_inner();
         Ok(String::from_utf8(xml_bytes)?)
     }
-    
+
     fn validate(&self, content: &str) -> Result<(), HeraldError> {
         // Validate JSON structure
         serde_json::from_str::<serde_json::Value>(content)
             .map(|_| ())
             .map_err(|e| HeraldError::ValidationError(e.to_string()))
     }
-    
+
     fn metadata(&self) -> FormatMetadata {
         FormatMetadata {
             format_name: "xml".to_string(),
@@ -411,7 +411,7 @@ impl CsvHerald {
             delimiter: b',',
         }
     }
-    
+
     pub fn with_delimiter(mut self, delimiter: u8) -> Self {
         self.delimiter = delimiter;
         self
@@ -424,12 +424,12 @@ impl Herald for CsvHerald {
         // Parse JSON array
         let rows: Vec<serde_json::Value> = serde_json::from_str(content)
             .map_err(|e| HeraldError::FormatError(e.to_string()))?;
-        
+
         let mut wtr = Writer::from_writer(vec![]);
-        
+
         // Write headers
         wtr.write_record(&self.headers)?;
-        
+
         // Write data rows
         for row in rows {
             let record: Vec<String> = self.headers.iter()
@@ -439,22 +439,22 @@ impl Herald for CsvHerald {
                         .unwrap_or_default()
                 })
                 .collect();
-            
+
             wtr.write_record(&record)?;
         }
-        
+
         wtr.flush()?;
         let csv_bytes = wtr.into_inner()?;
         Ok(String::from_utf8(csv_bytes)?)
     }
-    
+
     fn validate(&self, content: &str) -> Result<(), HeraldError> {
         // Validate JSON array structure
         let _: Vec<serde_json::Value> = serde_json::from_str(content)
             .map_err(|e| HeraldError::ValidationError(e.to_string()))?;
         Ok(())
     }
-    
+
     fn metadata(&self) -> FormatMetadata {
         FormatMetadata {
             format_name: "csv".to_string(),
@@ -502,10 +502,10 @@ let mut stream = paladin.execute_stream("Write a story").await?;
 
 while let Some(chunk) = stream.next().await {
     let chunk = chunk?;
-    
+
     // Format chunk
     let formatted = herald.format_chunk(&chunk.content).await?;
-    
+
     // Print in real-time
     print!("{}", formatted);
     std::io::stdout().flush()?;
@@ -528,14 +528,14 @@ impl StreamAccumulator {
             buffer: String::new(),
         }
     }
-    
+
     pub async fn process_chunk(&mut self, chunk: &str) -> Result<String, HeraldError> {
         self.buffer.push_str(chunk);
-        
+
         // Format accumulated content
         self.herald.format(&self.buffer).await
     }
-    
+
     pub fn buffer(&self) -> &str {
         &self.buffer
     }
@@ -548,7 +548,7 @@ let mut stream = paladin.execute_stream("Explain quantum computing").await?;
 while let Some(chunk) = stream.next().await {
     let chunk = chunk?;
     let formatted_so_far = accumulator.process_chunk(&chunk.content).await?;
-    
+
     // Update UI with fully formatted content
     update_ui(&formatted_so_far);
 }
@@ -566,7 +566,7 @@ pub struct ProgressHerald {
 impl Herald for ProgressHerald {
     async fn format_chunk(&self, chunk: &str) -> Result<String, HeraldError> {
         let formatted = self.inner.format_chunk(chunk).await?;
-        
+
         if self.show_progress {
             // Add visual progress indicator
             Ok(format!("{} .", formatted))
@@ -574,15 +574,15 @@ impl Herald for ProgressHerald {
             Ok(formatted)
         }
     }
-    
+
     async fn format(&self, content: &str) -> Result<String, HeraldError> {
         self.inner.format(content).await
     }
-    
+
     fn validate(&self, content: &str) -> Result<(), HeraldError> {
         self.inner.validate(content)
     }
-    
+
     fn metadata(&self) -> FormatMetadata {
         self.inner.metadata()
     }
@@ -606,20 +606,20 @@ impl MultiFormatHerald {
             heralds: HashMap::new(),
         }
     }
-    
+
     pub fn add_format(mut self, name: &str, herald: Arc<dyn Herald>) -> Self {
         self.heralds.insert(name.to_string(), herald);
         self
     }
-    
+
     pub async fn format_all(&self, content: &str) -> Result<HashMap<String, String>, HeraldError> {
         let mut results = HashMap::new();
-        
+
         for (name, herald) in &self.heralds {
             let formatted = herald.format(content).await?;
             results.insert(name.clone(), formatted);
         }
-        
+
         Ok(results)
     }
 }
@@ -659,7 +659,7 @@ impl AdaptiveHerald {
         let herald = self.select_herald(context);
         herald.format(content).await
     }
-    
+
     fn select_herald(&self, context: &OutputContext) -> &Arc<dyn Herald> {
         match context.channel {
             OutputChannel::Web => self.formats.get("html").unwrap_or(&self.default),
@@ -739,16 +739,16 @@ impl SanitizingHerald {
 impl Herald for SanitizingHerald {
     async fn format(&self, content: &str) -> Result<String, HeraldError> {
         let formatted = self.inner.format(content).await?;
-        
+
         // Remove sensitive patterns
         let mut sanitized = formatted;
         for pattern in &self.remove_patterns {
             sanitized = pattern.replace_all(&sanitized, "[REDACTED]").to_string();
         }
-        
+
         Ok(sanitized)
     }
-    
+
     // Implement other methods...
 }
 ```
@@ -764,23 +764,23 @@ pub struct EnhancingHerald {
 impl Herald for EnhancingHerald {
     async fn format(&self, content: &str) -> Result<String, HeraldError> {
         let formatted = self.inner.format(content).await?;
-        
+
         // Add enhancements
         let enhanced = self.add_table_of_contents(&formatted);
         let enhanced = self.add_footnotes(&enhanced);
         let enhanced = self.add_timestamps(&enhanced);
-        
+
         Ok(enhanced)
     }
-    
+
     fn add_table_of_contents(&self, content: &str) -> String {
         // Extract headers and generate TOC
         let headers = self.extract_headers(content);
-        
+
         if headers.is_empty() {
             return content.to_string();
         }
-        
+
         let toc = headers.iter()
             .map(|(level, text, id)| {
                 let indent = "  ".repeat(*level - 1);
@@ -788,16 +788,16 @@ impl Herald for EnhancingHerald {
             })
             .collect::<Vec<_>>()
             .join("\n");
-        
+
         format!("## Table of Contents\n\n{}\n\n{}", toc, content)
     }
-    
+
     fn add_footnotes(&self, content: &str) -> String {
         // Process [^1] style footnote references
         // Implementation...
         content.to_string()
     }
-    
+
     fn add_timestamps(&self, content: &str) -> String {
         format!("Generated at: {}\n\n{}", chrono::Utc::now().to_rfc3339(), content)
     }
@@ -826,27 +826,27 @@ impl Herald for CachingHerald {
                 return Ok(cached.clone());
             }
         }
-        
+
         // Format
         let formatted = self.inner.format(content).await?;
-        
+
         // Store in cache
         {
             let mut cache = self.cache.write().unwrap();
-            
+
             // Evict oldest if at capacity
             if cache.len() >= self.max_cache_size {
                 if let Some(key) = cache.keys().next().cloned() {
                     cache.remove(&key);
                 }
             }
-            
+
             cache.insert(content.to_string(), formatted.clone());
         }
-        
+
         Ok(formatted)
     }
-    
+
     // Implement other methods...
 }
 ```
@@ -960,7 +960,7 @@ impl TemplateHerald {
     pub fn new(template: &str, template_name: &str) -> Result<Self, HeraldError> {
         let mut handlebars = Handlebars::new();
         handlebars.register_template_string(template_name, template)?;
-        
+
         Ok(Self {
             handlebars,
             template_name: template_name.to_string(),
@@ -973,13 +973,13 @@ impl Herald for TemplateHerald {
     async fn format(&self, content: &str) -> Result<String, HeraldError> {
         // Parse content as JSON
         let data: serde_json::Value = serde_json::from_str(content)?;
-        
+
         // Render template
         let rendered = self.handlebars.render(&self.template_name, &data)?;
-        
+
         Ok(rendered)
     }
-    
+
     // Implement other methods...
 }
 
@@ -1017,7 +1017,7 @@ pub struct DiffHerald {
 impl Herald for DiffHerald {
     async fn format(&self, content: &str) -> Result<String, HeraldError> {
         let previous = self.previous_content.read().unwrap().clone();
-        
+
         let formatted = if let Some(prev) = previous {
             // Generate diff
             self.generate_diff(&prev, content)
@@ -1025,13 +1025,13 @@ impl Herald for DiffHerald {
             // First time, show all
             content.to_string()
         };
-        
+
         // Update previous content
         *self.previous_content.write().unwrap() = Some(content.to_string());
-        
+
         Ok(formatted)
     }
-    
+
     fn generate_diff(&self, old: &str, new: &str) -> String {
         // Use diff algorithm
         // Implementation...
@@ -1084,7 +1084,7 @@ impl BufferedStreamHerald {
     async fn format_chunk(&self, chunk: &str) -> Result<String, HeraldError> {
         let mut buffer = self.buffer.write().unwrap();
         buffer.push_str(chunk);
-        
+
         // Check for complete units (e.g., sentences, paragraphs)
         if buffer.ends_with(&self.delimiter) {
             let complete = buffer.clone();
@@ -1120,11 +1120,11 @@ impl LazyHerald {
         if let Some(cached) = self.cached_result.read().unwrap().as_ref() {
             return Ok(cached.clone());
         }
-        
+
         // Format and cache
         let formatted = self.inner.format(content).await?;
         *self.cached_result.write().unwrap() = Some(formatted.clone());
-        
+
         Ok(formatted)
     }
 }
@@ -1138,20 +1138,20 @@ impl LazyHerald {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_json_herald_formats_correctly() {
         let herald = JsonHerald::default();
-        
+
         let input = r#"{"name": "Alice", "age": 30}"#;
         let formatted = herald.format(input).await.unwrap();
-        
+
         // Verify valid JSON
         let parsed: serde_json::Value = serde_json::from_str(&formatted).unwrap();
         assert_eq!(parsed["name"], "Alice");
         assert_eq!(parsed["age"], 30);
     }
-    
+
     #[tokio::test]
     async fn test_json_herald_validates_schema() {
         let schema = json!({
@@ -1161,12 +1161,12 @@ mod tests {
             },
             "required": ["name"]
         });
-        
+
         let herald = JsonHerald::new().with_schema(schema);
-        
+
         // Valid
         assert!(herald.validate(r#"{"name": "Bob"}"#).is_ok());
-        
+
         // Invalid - missing required field
         assert!(herald.validate(r#"{"age": 25}"#).is_err());
     }

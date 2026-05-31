@@ -27,14 +27,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Build DevContainer
         run: |
           docker build -f .devcontainer/Dockerfile.dev -t paladin-dev .
-      
+
       - name: Run tests in DevContainer
         run: |
           docker run --rm \
@@ -42,7 +42,7 @@ jobs:
             -w /workspace \
             paladin-dev \
             bash -c "cargo test --all-features"
-      
+
       - name: Run clippy
         run: |
           docker run --rm \
@@ -50,7 +50,7 @@ jobs:
             -w /workspace \
             paladin-dev \
             bash -c "cargo clippy -- -D warnings"
-      
+
       - name: Check formatting
         run: |
           docker run --rm \
@@ -70,7 +70,7 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       redis:
         image: redis:7-alpine
@@ -81,7 +81,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      
+
       minio:
         image: minio/minio:latest
         ports:
@@ -94,7 +94,7 @@ jobs:
           --health-interval 30s
           --health-timeout 20s
           --health-retries 3
-      
+
       mysql:
         image: mysql:8.0
         ports:
@@ -109,36 +109,36 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-    
+
     container:
       image: rust:1.93-slim-bullseye
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install dependencies
         run: |
           apt-get update
           apt-get install -y pkg-config libssl-dev g++
-      
+
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Cache cargo index
         uses: actions/cache@v3
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Cache target directory
         uses: actions/cache@v3
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Run tests
         env:
           REDIS_URL: redis://redis:6379
@@ -166,17 +166,17 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Build and push DevContainer image
         uses: docker/build-push-action@v5
         with:
@@ -259,12 +259,12 @@ pipeline {
             args '-v $HOME/.cargo:/usr/local/cargo'
         }
     }
-    
+
     environment {
         CARGO_HOME = '/usr/local/cargo'
         RUST_BACKTRACE = '1'
     }
-    
+
     stages {
         stage('Setup') {
             steps {
@@ -273,19 +273,19 @@ pipeline {
                 sh 'cargo --version'
             }
         }
-        
+
         stage('Build') {
             steps {
                 sh 'cargo build --all-features'
             }
         }
-        
+
         stage('Test') {
             steps {
                 sh 'cargo test --all-features'
             }
         }
-        
+
         stage('Lint') {
             steps {
                 sh 'rustup component add rustfmt clippy'
@@ -293,7 +293,7 @@ pipeline {
                 sh 'cargo clippy -- -D warnings'
             }
         }
-        
+
         stage('Security Audit') {
             steps {
                 sh 'cargo install cargo-audit || true'
@@ -301,7 +301,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             cleanWs()
@@ -333,42 +333,42 @@ jobs:
         environment:
           MYSQL_ROOT_PASSWORD: rootpassword
           MYSQL_DATABASE: paladin
-    
+
     environment:
       RUST_BACKTRACE: "1"
       REDIS_URL: redis://localhost:6379
       MINIO_ENDPOINT: localhost:9000
       DATABASE_URL: mysql://root:rootpassword@localhost:3306/paladin
-    
+
     steps:
       - checkout
-      
+
       - run:
           name: Install dependencies
           command: |
             apt-get update
             apt-get install -y pkg-config libssl-dev g++
-      
+
       - restore_cache:
           keys:
             - cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
             - cargo-cache-{{ arch }}-
-      
+
       - run:
           name: Build
           command: cargo build --all-features
-      
+
       - run:
           name: Test
           command: cargo test --all-features
-      
+
       - run:
           name: Lint
           command: |
             rustup component add rustfmt clippy
             cargo fmt --check
             cargo clippy -- -D warnings
-      
+
       - save_cache:
           key: cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
           paths:
@@ -498,7 +498,7 @@ jobs:
         run: cargo fmt --check
       - name: Cargo clippy
         run: cargo clippy -- -D warnings
-  
+
   test:
     needs: check
     runs-on: ubuntu-latest
@@ -518,7 +518,7 @@ jobs:
         run: apt-get update && apt-get install -y pkg-config libssl-dev g++
       - name: Run tests
         run: cargo test --all-features
-  
+
   security:
     needs: test
     runs-on: ubuntu-latest
@@ -528,7 +528,7 @@ jobs:
         run: |
           cargo install cargo-audit
           cargo audit
-  
+
   build-image:
     needs: security
     if: github.ref == 'refs/heads/main'

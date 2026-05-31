@@ -46,7 +46,7 @@ pub struct Commander {
 
 impl Commander {
     pub fn new(strategy: BattalionStrategy, paladins: Vec<Paladin>) -> Self;
-    
+
     pub async fn execute(&self, input: &str) -> Result<BattalionResult, BattalionError> {
         match self.resolve_strategy(input) {
             BattalionStrategy::Formation => self.execute_formation(input).await,
@@ -56,14 +56,14 @@ impl Commander {
             BattalionStrategy::Auto => unreachable!("resolved above"),
         }
     }
-    
+
     fn resolve_strategy(&self, input: &str) -> BattalionStrategy {
         if self.strategy != BattalionStrategy::Auto {
             return self.strategy.clone();
         }
         self.analyze_and_select(input)
     }
-    
+
     fn analyze_and_select(&self, input: &str) -> BattalionStrategy;
 }
 ```

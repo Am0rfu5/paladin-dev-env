@@ -597,24 +597,24 @@ handoffs:
 paladin:
   name: "AutonomousAgent"
   model: "gpt-4o"
-  
+
   handoffs:
     enabled: true
     max_depth: 5
     concurrent: false  # Q2: Sequential for now
-    
+
     retry:  # Q1: Global configuration
       max_retries: 3
       initial_backoff_ms: 1000
       backoff_multiplier: 2.0
-    
+
     history:  # Q5: Capped history
       max_records: 100
       eviction: oldest_first
-    
+
     on_specialist_unavailable: fail  # Q4: Explicit failure
     # Future options: fallback, skip
-    
+
     specialists:
       - name: "CodeExpert"
         description: "Code analysis"

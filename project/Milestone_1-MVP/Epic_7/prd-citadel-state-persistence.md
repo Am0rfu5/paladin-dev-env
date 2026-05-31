@@ -268,12 +268,12 @@ impl PaladinBuilder {
         self.config.autosave_enabled = true;
         self
     }
-    
+
     pub fn save_state_dir(mut self, path: impl Into<String>) -> Self {
         self.config.state_dir = Some(path.into());
         self
     }
-    
+
     pub fn restore_from(mut self, state_id: Uuid) -> Result<Self, PaladinError> {
         // Load state and populate builder fields
     }
@@ -356,16 +356,16 @@ Dependencies flow inward only:
 pub enum CitadelError {
     #[error("State not found: {0}")]
     StateNotFound(Uuid),
-    
+
     #[error("Corrupted state file: {0}")]
     CorruptedState(String),
-    
+
     #[error("Incompatible state version: expected {expected}, found {found}")]
     IncompatibleVersion { expected: String, found: String },
-    
+
     #[error("I/O error: {0}")]
     IoError(#[from] std::io::Error),
-    
+
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
 }
@@ -481,18 +481,18 @@ use paladin::prelude::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_port = Arc::new(OpenAIAdapter::new("gpt-4")?);
-    
+
     let paladin = PaladinBuilder::new(llm_port)
         .system_prompt("You are a research assistant")
         .name("ResearchPaladin")
         .enable_autosave()
         .save_state_dir("./my_app/state")
         .build()?;
-    
+
     // State automatically saved after execution
     let result = paladin.execute("Research quantum computing").await?;
     println!("Result: {}", result);
-    
+
     Ok(())
 }
 ```
@@ -507,14 +507,14 @@ use uuid::Uuid;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_port = Arc::new(OpenAIAdapter::new("gpt-4")?);
     let state_id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000")?;
-    
+
     let paladin = PaladinBuilder::new(llm_port)
         .restore_from(state_id)?
         .build()?;
-    
+
     // Continue conversation from restored Garrison
     let result = paladin.execute("Continue from where we left off").await?;
-    
+
     Ok(())
 }
 ```
@@ -533,11 +533,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .enable_checkpoints()
         .save_state_dir("./workflows")
         .build()?;
-    
+
     // If failure occurs after analysis_paladin completes,
     // resuming will skip research_paladin and analysis_paladin
     let result = formation.execute("Analyze market trends").await?;
-    
+
     Ok(())
 }
 ```

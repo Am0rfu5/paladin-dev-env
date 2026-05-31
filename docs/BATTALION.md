@@ -71,15 +71,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         create_paladin("processor", "Process the analyzed data"),
         create_paladin("summarizer", "Create a summary"),
     ];
-    
+
     // Create Formation
     let config = BattalionConfig::default();
     let formation = Formation::new(paladins, config)?;
-    
+
     // Execute
     let service = FormationExecutionService::new(Arc::new(llm_port));
     let result = service.execute(&formation, "Initial input").await?;
-    
+
     println!("Result: {:?}", result);
     Ok(())
 }
@@ -180,7 +180,7 @@ for (paladin_name, tokens) in &result.per_paladin_tokens {
 }
 
 // Calculate metrics
-let avg_time: u64 = result.per_paladin_times.values().sum::<u64>() 
+let avg_time: u64 = result.per_paladin_times.values().sum::<u64>()
     / result.per_paladin_times.len() as u64;
 let max_time = result.per_paladin_times.values().max().unwrap_or(&0);
 let total_tokens: usize = result.per_paladin_tokens.values()
@@ -235,8 +235,8 @@ campaign.add_paladin("general", create_paladin("general", "Handle general"));
 
 // Add conditional edges
 campaign.add_edge(
-    "classifier", 
-    "technical", 
+    "classifier",
+    "technical",
     EdgeCondition::Contains("technical".into()),
     None // No transformation
 )?;
@@ -285,7 +285,7 @@ use paladin::core::platform::container::battalion::chain_of_command::{
     ChainOfCommand, DelegationStrategy
 };
 
-let commander = create_paladin("commander", 
+let commander = create_paladin("commander",
     "You are a task router. Analyze the input and select specialists.");
 
 let specialists = vec![
@@ -357,7 +357,7 @@ let result = chain_service.execute(&chain, "Query user database").await?;
 use paladin::core::platform::container::battalion::conclave::{Conclave, ConclaveConfig};
 
 // Create 3 experts with different perspectives
-let technical = create_paladin("TechnicalExpert", 
+let technical = create_paladin("TechnicalExpert",
     "Analyze from a technical architecture perspective");
 let business = create_paladin("BusinessExpert",
     "Analyze from a business strategy perspective");
@@ -381,7 +381,7 @@ let conclave = Conclave::new(
     config
 )?;
 
-let result = conclave_service.execute(&conclave, 
+let result = conclave_service.execute(&conclave,
     "Should we migrate to microservices?"
 ).await?;
 
@@ -507,7 +507,7 @@ let grove = GroveBuilder::new()
     })
     .build()?;
 
-let result = grove_service.execute(&grove, 
+let result = grove_service.execute(&grove,
     "Optimize database query performance").await?;
 ```
 
@@ -627,15 +627,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .strategy(BattalionStrategy::Auto)
         .paladins(vec![paladin1, paladin2, paladin3])
         .build()?; // Uses smart defaults
-    
+
     let result = commander.execute("Analyze this data in parallel").await?;
-    
+
     // See what strategy was selected
     println!("Strategy: {:?}", result.strategy_used);
     if let Some(reasoning) = &result.strategy_selection_reasoning {
         println!("Because: {}", reasoning);
     }
-    
+
     Ok(())
 }
 ```
@@ -1175,7 +1175,7 @@ Tested on: Intel i7, 32GB RAM, Rust 1.93
 
 **Formation**: Make each Paladin aware it's in a pipeline
 ```rust
-create_paladin("step2", 
+create_paladin("step2",
     "You are step 2 in a 3-step pipeline. \
      Input is from step 1 (data extractor). \
      Your output goes to step 3 (summarizer).")
@@ -1237,14 +1237,14 @@ let api_campaign = Campaign::new(BattalionConfig {
 mod tests {
     use super::*;
     use paladin::paladin_ports::output::paladin_port::PaladinPort;
-    
+
     // Create mock PaladinPort for testing
     struct MockPort;
-    
+
     #[async_trait]
     impl PaladinPort for MockPort {
-        async fn execute(&self, paladin: &Paladin, input: &str) 
-            -> Result<PaladinResult, PaladinError> 
+        async fn execute(&self, paladin: &Paladin, input: &str)
+            -> Result<PaladinResult, PaladinError>
         {
             Ok(PaladinResult {
                 output: format!("Mock: {}", input),
@@ -1254,15 +1254,15 @@ mod tests {
                 stop_reason: StopReason::Completed,
             })
         }
-        
+
         // ... implement other required methods
     }
-    
+
     #[tokio::test]
     async fn test_formation_pipeline() {
         let mock_port = Arc::new(MockPort);
         let service = FormationExecutionService::new(mock_port);
-        
+
         // Test your Battalion logic
     }
 }

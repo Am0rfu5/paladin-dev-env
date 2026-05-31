@@ -69,14 +69,14 @@ pub trait GarrisonPort: Send + Sync {
 #[async_trait]
 pub trait LongTermGarrisonPort: GarrisonPort {
     async fn add_with_embedding(
-        &self, 
-        entry: GarrisonEntry, 
+        &self,
+        entry: GarrisonEntry,
         embedding: Vec<f32>
     ) -> Result<()>;
-    
+
     async fn semantic_search(
-        &self, 
-        query_embedding: Vec<f32>, 
+        &self,
+        query_embedding: Vec<f32>,
         limit: usize
     ) -> Result<Vec<(GarrisonEntry, f32)>>;
 }
@@ -111,34 +111,34 @@ use paladin::prelude::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
-    
+
     // Create in-memory garrison
     let garrison = Arc::new(InMemoryGarrison::new(
         GarrisonConfig::default()
             .with_max_entries(100)
             .with_max_tokens(4000)
     ));
-    
+
     // Build Paladin with memory
     let paladin = PaladinBuilder::new(llm_adapter)
         .name("ChatBot")
         .system_prompt("You are a helpful assistant with memory of our conversation.")
         .with_garrison(garrison.clone())
         .build()?;
-    
+
     // First interaction
     let response1 = paladin.execute("My name is Alice").await?;
     println!("Bot: {}", response1.content);
-    
+
     // Second interaction - Paladin remembers
     let response2 = paladin.execute("What's my name?").await?;
     println!("Bot: {}", response2.content);  // Should say "Alice"
-    
+
     // Check garrison statistics
     let stats = garrison.stats().await?;
     println!("Total memories: {}", stats.total_entries);
     println!("Total tokens: {}", stats.total_tokens);
-    
+
     Ok(())
 }
 ```
@@ -150,13 +150,13 @@ let garrison = InMemoryGarrison::new(
     GarrisonConfig::default()
         // Maximum number of entries to retain
         .with_max_entries(100)
-        
+
         // Maximum total tokens across all entries
         .with_max_tokens(4000)
-        
+
         // Token estimation strategy
         .with_token_counter(TokenCounter::Gpt4)
-        
+
         // Eviction policy when limits reached
         .with_eviction_policy(EvictionPolicy::Fifo)  // First-in-first-out
 );
@@ -168,13 +168,13 @@ let garrison = InMemoryGarrison::new(
 pub enum EvictionPolicy {
     // Remove oldest entries first
     Fifo,
-    
+
     // Remove least recently accessed entries
     Lru,
-    
+
     // Remove entries based on importance score
     ImportanceBased,
-    
+
     // Custom eviction logic
     Custom(Arc<dyn Fn(&[GarrisonEntry]) -> Vec<Uuid> + Send + Sync>),
 }
@@ -210,14 +210,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .await?
             .with_config(GarrisonConfig::default())
     );
-    
+
     let paladin = PaladinBuilder::new(llm_adapter)
         .with_garrison(garrison)
         .build()?;
-    
+
     // All interactions are automatically persisted
     paladin.execute("Remember this important fact!").await?;
-    
+
     Ok(())
 }
 ```
@@ -268,7 +268,7 @@ impl GarrisonPort for UserGarrison {
         entry.metadata.insert("user_id".to_string(), self.user_id.clone());
         self.db.add_entry(entry).await
     }
-    
+
     async fn get_history(&self, limit: usize) -> Result<Vec<GarrisonEntry>> {
         // Filter by user_id
         let all_entries = self.db.get_history(limit * 2).await?;
@@ -277,7 +277,7 @@ impl GarrisonPort for UserGarrison {
             .take(limit)
             .collect())
     }
-    
+
     // Implement other methods...
 }
 
@@ -307,7 +307,7 @@ CREATE TABLE IF NOT EXISTS garrison_entries (
     metadata TEXT,
     token_count INTEGER,
     embedding BLOB,
-    
+
     INDEX idx_session_timestamp (session_id, timestamp),
     INDEX idx_session_role (session_id, role)
 );
@@ -332,7 +332,7 @@ Intelligently manage context size to respect LLM token limits.
 let window = garrison.get_window(4000).await?;
 
 println!("Window contains {} entries", window.len());
-println!("Total tokens: {}", 
+println!("Total tokens: {}",
     window.iter().map(|e| e.token_count.unwrap_or(0)).sum::<u32>());
 ```
 
@@ -356,12 +356,12 @@ impl GarrisonPort for SlidingWindowGarrison {
         // Always return windowed history
         self.garrison.get_window(self.window_size).await
     }
-    
+
     // Forward other methods to inner garrison
     async fn add_entry(&self, entry: GarrisonEntry) -> Result<()> {
         self.garrison.add_entry(entry).await
     }
-    
+
     // ... other methods
 }
 
@@ -384,30 +384,30 @@ pub struct PriorityWindowGarrison {
 impl PriorityWindowGarrison {
     async fn get_prioritized_window(&self) -> Result<Vec<GarrisonEntry>> {
         let all_entries = self.garrison.get_history(1000).await?;
-        
+
         // Always include system prompts
         let system_entries: Vec<_> = all_entries.iter()
             .filter(|e| e.role == ConversationRole::System)
             .cloned()
             .collect();
-        
+
         // Calculate remaining token budget
         let system_tokens: u32 = system_entries.iter()
             .map(|e| e.token_count.unwrap_or(0))
             .sum();
-        
+
         let remaining_budget = self.window_size.saturating_sub(system_tokens);
-        
+
         // Fill with most recent non-system entries
         let mut recent_entries: Vec<_> = all_entries.iter()
             .filter(|e| e.role != ConversationRole::System)
             .rev()
             .cloned()
             .collect();
-        
+
         let mut token_sum = 0u32;
         let mut windowed_recent = Vec::new();
-        
+
         for entry in recent_entries {
             let entry_tokens = entry.token_count.unwrap_or(0);
             if token_sum + entry_tokens <= remaining_budget {
@@ -417,12 +417,12 @@ impl PriorityWindowGarrison {
                 break;
             }
         }
-        
+
         // Combine: system + recent (chronological order)
         windowed_recent.reverse();
         let mut result = system_entries;
         result.extend(windowed_recent);
-        
+
         Ok(result)
     }
 }
@@ -441,30 +441,30 @@ pub struct SummarizingGarrison {
 impl SummarizingGarrison {
     async fn maybe_summarize(&self) -> Result<()> {
         let entries = self.garrison.get_history(self.summary_threshold).await?;
-        
+
         if entries.len() >= self.summary_threshold {
             // Create summary of old entries
             let old_entries: Vec<_> = entries.iter()
                 .take(self.summary_threshold / 2)
                 .collect();
-            
+
             let conversation_text = old_entries.iter()
                 .map(|e| format!("{:?}: {}", e.role, e.content))
                 .collect::<Vec<_>>()
                 .join("\n");
-            
+
             let prompt = format!(
                 "Summarize this conversation in 2-3 paragraphs, preserving key facts:\n\n{}",
                 conversation_text
             );
-            
+
             let summary = self.summarizer.generate(&prompt).await?;
-            
+
             // Replace old entries with summary
             for entry in old_entries {
                 self.garrison.remove_entry(entry.id).await?;
             }
-            
+
             self.garrison.add_entry(GarrisonEntry {
                 id: Uuid::new_v4(),
                 role: ConversationRole::System,
@@ -476,7 +476,7 @@ impl SummarizingGarrison {
                 token_count: None,
             }).await?;
         }
-        
+
         Ok(())
     }
 }
@@ -496,30 +496,30 @@ use paladin::embeddings::*;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create garrison with embedding support
     let embedding_service = Arc::new(OpenAIEmbeddingService::new(api_key)?);
-    
+
     let garrison = Arc::new(
         VectorGarrison::new("garrison.db")
             .await?
             .with_embedding_service(embedding_service)
     );
-    
+
     let paladin = PaladinBuilder::new(llm_adapter)
         .with_garrison(garrison.clone())
         .build()?;
-    
+
     // Add entries - embeddings generated automatically
     paladin.execute("I love hiking in the mountains").await?;
     paladin.execute("My favorite color is blue").await?;
     paladin.execute("I work as a software engineer").await?;
-    
+
     // Semantic search
     let results = garrison.semantic_search("outdoor activities", 5).await?;
-    
+
     for (entry, similarity) in results {
         println!("Similarity: {:.2} - {}", similarity, entry.content);
     }
     // Output: High similarity for "hiking in the mountains"
-    
+
     Ok(())
 }
 ```
@@ -539,32 +539,32 @@ impl HybridGarrison {
     ) -> Result<Vec<GarrisonEntry>> {
         // Get keyword matches
         let keyword_results = self.garrison.search(query, limit * 2).await?;
-        
+
         // Get semantic matches
         let embedding = self.embedding_service.embed(query).await?;
         let semantic_results = self.garrison
             .semantic_search(embedding, limit * 2)
             .await?;
-        
+
         // Merge and deduplicate
         let mut combined: HashMap<Uuid, (GarrisonEntry, f32)> = HashMap::new();
-        
+
         // Add keyword results with base score
         for entry in keyword_results {
             combined.insert(entry.id, (entry, 0.5));
         }
-        
+
         // Add semantic results, boosting score if already present
         for (entry, similarity) in semantic_results {
             combined.entry(entry.id)
                 .and_modify(|(_, score)| *score += similarity * 0.5)
                 .or_insert((entry, similarity * 0.5));
         }
-        
+
         // Sort by combined score
         let mut sorted: Vec<_> = combined.into_values().collect();
         sorted.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-        
+
         Ok(sorted.into_iter()
             .take(limit)
             .map(|(entry, _)| entry)
@@ -588,19 +588,19 @@ impl RAGPaladin {
         let relevant_memories = self.garrison
             .semantic_search(embedding, 5)
             .await?;
-        
+
         // Build augmented prompt
         let context = relevant_memories.iter()
             .map(|(entry, _)| entry.content.as_str())
             .collect::<Vec<_>>()
             .join("\n\n");
-        
+
         let augmented_query = format!(
             "Context from previous conversations:\n{}\n\n\
              Current question: {}",
             context, query
         );
-        
+
         // Execute with retrieved context
         self.paladin.execute(&augmented_query).await
     }
@@ -764,11 +764,11 @@ pub async fn cleanup_old_memories(
     days_to_keep: i64,
 ) -> Result<usize> {
     let cutoff = Utc::now() - Duration::days(days_to_keep);
-    
+
     let removed = garrison
         .remove_before(cutoff)
         .await?;
-    
+
     println!("Removed {} old memories", removed);
     Ok(removed)
 }
@@ -796,13 +796,13 @@ pub struct BranchingGarrison {
 impl BranchingGarrison {
     pub async fn create_branch(&self, from_entry: Uuid) -> Result<Uuid> {
         let branch_id = Uuid::new_v4();
-        
+
         // Copy history up to branch point
         let history = self.garrison.get_history(1000).await?;
         let branch_history: Vec<_> = history.into_iter()
             .take_while(|e| e.id != from_entry)
             .collect();
-        
+
         // Store branch metadata
         self.garrison.add_entry(GarrisonEntry {
             id: Uuid::new_v4(),
@@ -816,7 +816,7 @@ impl BranchingGarrison {
             ]),
             token_count: None,
         }).await?;
-        
+
         *self.current_branch.write().await = branch_id;
         Ok(branch_id)
     }
@@ -836,14 +836,14 @@ pub struct ConsolidatingGarrison {
 impl ConsolidatingGarrison {
     pub async fn consolidate_memories(&self) -> Result<()> {
         let entries = self.garrison.get_history(100).await?;
-        
+
         // Group by topic using LLM
         let topics = self.extract_topics(&entries).await?;
-        
+
         // Create consolidated memory for each topic
         for (topic, topic_entries) in topics {
             let facts = self.extract_facts(&topic_entries).await?;
-            
+
             self.garrison.add_entry(GarrisonEntry {
                 id: Uuid::new_v4(),
                 role: ConversationRole::System,
@@ -857,28 +857,28 @@ impl ConsolidatingGarrison {
                 token_count: None,
             }).await?;
         }
-        
+
         Ok(())
     }
-    
+
     async fn extract_topics(&self, entries: &[GarrisonEntry]) -> Result<HashMap<String, Vec<GarrisonEntry>>> {
         // Use LLM to categorize entries by topic
         // Implementation details...
         Ok(HashMap::new())
     }
-    
+
     async fn extract_facts(&self, entries: &[GarrisonEntry]) -> Result<String> {
         let conversation = entries.iter()
             .map(|e| &e.content)
             .cloned()
             .collect::<Vec<_>>()
             .join("\n");
-        
+
         let prompt = format!(
             "Extract key facts from this conversation:\n\n{}",
             conversation
         );
-        
+
         self.llm.generate(&prompt).await
     }
 }
@@ -902,27 +902,27 @@ impl AttentionGarrison {
         let candidates = self.garrison
             .semantic_search(query_embedding, 50)
             .await?;
-        
+
         // Score each candidate using attention mechanism
         let mut scored: Vec<_> = candidates.into_iter()
             .map(|(entry, similarity)| {
                 let recency_score = self.recency_score(&entry);
                 let importance_score = self.importance_score(&entry);
-                
+
                 // Weighted combination
                 let attention = similarity * 0.5 + recency_score * 0.3 + importance_score * 0.2;
-                
+
                 (entry, attention)
             })
             .collect();
-        
+
         // Sort by attention score
         scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-        
+
         // Select top entries within token budget
         let mut selected = Vec::new();
         let mut token_sum = 0u32;
-        
+
         for (entry, _) in scored {
             let entry_tokens = entry.token_count.unwrap_or(0);
             if token_sum + entry_tokens <= context_size {
@@ -930,16 +930,16 @@ impl AttentionGarrison {
                 selected.push(entry);
             }
         }
-        
+
         Ok(selected)
     }
-    
+
     fn recency_score(&self, entry: &GarrisonEntry) -> f32 {
         let age = (Utc::now() - entry.timestamp).num_seconds() as f32;
         let decay_rate = 0.0001;  // Adjust for desired decay speed
         (-decay_rate * age).exp()
     }
-    
+
     fn importance_score(&self, entry: &GarrisonEntry) -> f32 {
         // Extract importance from metadata or content
         entry.metadata.get("importance")
@@ -960,13 +960,13 @@ pub struct ReflectiveGarrison {
 impl ReflectiveGarrison {
     pub async fn generate_reflections(&self) -> Result<()> {
         let recent_entries = self.garrison.get_history(50).await?;
-        
+
         // Prompt LLM to reflect on conversation
         let conversation = recent_entries.iter()
             .map(|e| format!("{:?}: {}", e.role, e.content))
             .collect::<Vec<_>>()
             .join("\n");
-        
+
         let prompt = format!(
             "Reflect on this conversation and extract:\n\
              1. Key insights about the user\n\
@@ -975,9 +975,9 @@ impl ReflectiveGarrison {
              Conversation:\n{}",
             conversation
         );
-        
+
         let reflection = self.llm.generate(&prompt).await?;
-        
+
         // Store reflection as high-importance memory
         self.garrison.add_entry(GarrisonEntry {
             id: Uuid::new_v4(),
@@ -990,7 +990,7 @@ impl ReflectiveGarrison {
             ]),
             token_count: None,
         }).await?;
-        
+
         Ok(())
     }
 }
@@ -1073,9 +1073,9 @@ tokio::spawn(async move {
     let mut interval = tokio::time::interval(Duration::from_secs(3600));
     loop {
         interval.tick().await;
-        
+
         let stats = garrison.stats().await.unwrap();
-        
+
         if stats.total_entries > 1000 {
             // Trigger cleanup
             garrison.compact().await.unwrap();
@@ -1092,11 +1092,11 @@ tokio::spawn(async move {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_garrison_add_and_retrieve() {
         let garrison = InMemoryGarrison::new(GarrisonConfig::default());
-        
+
         let entry = GarrisonEntry {
             id: Uuid::new_v4(),
             role: ConversationRole::User,
@@ -1105,20 +1105,20 @@ mod tests {
             metadata: HashMap::new(),
             token_count: Some(2),
         };
-        
+
         garrison.add_entry(entry.clone()).await.unwrap();
-        
+
         let history = garrison.get_history(10).await.unwrap();
         assert_eq!(history.len(), 1);
         assert_eq!(history[0].content, "Test message");
     }
-    
+
     #[tokio::test]
     async fn test_token_window() {
         let garrison = InMemoryGarrison::new(
             GarrisonConfig::default().with_max_tokens(100)
         );
-        
+
         // Add entries totaling 150 tokens
         for i in 0..15 {
             garrison.add_entry(GarrisonEntry {
@@ -1130,13 +1130,13 @@ mod tests {
                 token_count: Some(10),
             }).await.unwrap();
         }
-        
+
         // Window should respect token limit
         let window = garrison.get_window(100).await.unwrap();
         let total_tokens: u32 = window.iter()
             .map(|e| e.token_count.unwrap_or(0))
             .sum();
-        
+
         assert!(total_tokens <= 100);
     }
 }

@@ -163,14 +163,14 @@ use paladin::prelude::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
-    
+
     // Connect to an MCP STDIO server
     let web_search = MCPStdioAdapter::new()
         .command("uvx")
         .args(vec!["mcp-server-fetch"])
         .build()
         .await?;
-    
+
     // Build Paladin with tool access
     let paladin = PaladinBuilder::new(llm_adapter)
         .name("ResearchAssistant")
@@ -179,11 +179,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         Always cite your sources.")
         .add_armament(Arc::new(web_search))
         .build()?;
-    
+
     // Paladin will automatically use tools when needed
     let response = paladin.execute("What are the latest Rust features in 2024?").await?;
     println!("{}", response.content);
-    
+
     Ok(())
 }
 ```
@@ -217,16 +217,16 @@ arsenal:
       command: "uvx"
       args: ["mcp-server-fetch"]
       enabled: true
-      
+
     - name: "filesystem"
       type: "stdio"
       command: "uvx"
-      args: 
+      args:
         - "mcp-server-filesystem"
         - "--allowed-directory"
         - "/home/user/workspace"
       enabled: true
-      
+
     - name: "calculator"
       type: "stdio"
       command: "uvx"
@@ -261,23 +261,23 @@ use paladin::prelude::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
-    
+
     // Connect to an MCP SSE server
     let api_tools = MCPSseAdapter::new()
         .endpoint("https://api.example.com/mcp")
         .api_key(std::env::var("API_KEY")?)
         .build()
         .await?;
-    
+
     let paladin = PaladinBuilder::new(llm_adapter)
         .name("APIAssistant")
         .system_prompt("You have access to company APIs. Use them to retrieve data.")
         .add_armament(Arc::new(api_tools))
         .build()?;
-    
+
     let response = paladin.execute("Get user statistics for last month").await?;
     println!("{}", response.content);
-    
+
     Ok(())
 }
 ```
@@ -352,22 +352,22 @@ impl ArsenalPort for CalculatorTool {
             },
         ])
     }
-    
+
     async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
         let a = call.parameters.get("a")
             .and_then(|v| v.as_f64())
             .ok_or_else(|| ArsenalError::InvalidParameter("a".to_string()))?;
-        
+
         let b = call.parameters.get("b")
             .and_then(|v| v.as_f64())
             .ok_or_else(|| ArsenalError::InvalidParameter("b".to_string()))?;
-        
+
         let result = match call.tool_name.as_str() {
             "add" => a + b,
             "multiply" => a * b,
             _ => return Err(ArsenalError::ToolNotFound(call.tool_name.clone())),
         };
-        
+
         Ok(ArmamentResult {
             call_id: call.call_id,
             success: true,
@@ -376,14 +376,14 @@ impl ArsenalPort for CalculatorTool {
             execution_time_ms: 1,
         })
     }
-    
+
     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
         // Validate tool exists
         let tools = self.list_tools().await?;
         if !tools.iter().any(|t| t.name == call.tool_name) {
             return Err(ArsenalError::ToolNotFound(call.tool_name.clone()));
         }
-        
+
         // Validate required parameters
         let tool = tools.iter().find(|t| t.name == call.tool_name).unwrap();
         for param in &tool.required_params {
@@ -391,7 +391,7 @@ impl ArsenalPort for CalculatorTool {
                 return Err(ArsenalError::MissingParameter(param.clone()));
             }
         }
-        
+
         Ok(())
     }
 }
@@ -437,41 +437,41 @@ impl ArsenalPort for WeatherTool {
             },
         ])
     }
-    
+
     async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
         let location = call.parameters.get("location")
             .and_then(|v| v.as_str())
             .ok_or_else(|| ArsenalError::InvalidParameter("location".to_string()))?;
-        
+
         let units = call.parameters.get("units")
             .and_then(|v| v.as_str())
             .unwrap_or("celsius");
-        
+
         // Call weather API
         let url = format!(
             "https://api.openweathermap.org/data/2.5/weather?q={}&appid={}&units={}",
             location, self.api_key, units
         );
-        
+
         let response = self.client.get(&url)
             .send()
             .await
             .map_err(|e| ArsenalError::ExecutionError(e.to_string()))?;
-        
+
         let weather_data = response.json::<serde_json::Value>()
             .await
             .map_err(|e| ArsenalError::ExecutionError(e.to_string()))?;
-        
+
         let temp = weather_data["main"]["temp"].as_f64().unwrap_or(0.0);
         let description = weather_data["weather"][0]["description"]
             .as_str()
             .unwrap_or("unknown");
-        
+
         let output = format!(
             "Weather in {}: {} with temperature of {}°",
             location, description, temp
         );
-        
+
         Ok(ArmamentResult {
             call_id: call.call_id,
             success: true,
@@ -480,16 +480,16 @@ impl ArsenalPort for WeatherTool {
             execution_time_ms: 200,
         })
     }
-    
+
     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
         if call.tool_name != "get_weather" {
             return Err(ArsenalError::ToolNotFound(call.tool_name.clone()));
         }
-        
+
         if !call.parameters.contains_key("location") {
             return Err(ArsenalError::MissingParameter("location".to_string()));
         }
-        
+
         Ok(())
     }
 }
@@ -532,12 +532,12 @@ impl ArsenalPort for DatabaseTool {
             },
         ])
     }
-    
+
     async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
         let query = call.parameters.get("query")
             .and_then(|v| v.as_str())
             .ok_or_else(|| ArsenalError::InvalidParameter("query".to_string()))?;
-        
+
         // Security: Only allow SELECT queries
         if !query.trim().to_lowercase().starts_with("select") {
             return Ok(ArmamentResult {
@@ -548,18 +548,18 @@ impl ArsenalPort for DatabaseTool {
                 execution_time_ms: 0,
             });
         }
-        
+
         let start = std::time::Instant::now();
-        
+
         let rows = sqlx::query(query)
             .fetch_all(&self.pool)
             .await
             .map_err(|e| ArsenalError::ExecutionError(e.to_string()))?;
-        
+
         // Convert rows to JSON
         let result_json = serde_json::to_string_pretty(&rows)
             .unwrap_or_else(|_| "[]".to_string());
-        
+
         Ok(ArmamentResult {
             call_id: call.call_id,
             success: true,
@@ -568,7 +568,7 @@ impl ArsenalPort for DatabaseTool {
             execution_time_ms: start.elapsed().as_millis() as u64,
         })
     }
-    
+
     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
         if !call.parameters.contains_key("query") {
             return Err(ArsenalError::MissingParameter("query".to_string()));
@@ -588,18 +588,18 @@ When a Paladin invokes a tool, the result is automatically added to the conversa
 // Paladin execution loop
 loop {
     let response = llm.generate(context).await?;
-    
+
     if let Some(tool_call) = response.tool_calls.first() {
         // Execute tool
         let result = arsenal.invoke(tool_call).await?;
-        
+
         // Add result to context
         context.add_tool_result(result);
-        
+
         // Continue reasoning with tool output
         continue;
     }
-    
+
     // No more tool calls, return final response
     break Ok(response);
 }
@@ -617,26 +617,26 @@ impl<T: ArsenalPort> ArsenalPort for LoggingArsenalPort<T> {
     async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
         println!("Invoking tool: {}", call.tool_name);
         println!("Parameters: {:?}", call.parameters);
-        
+
         let start = std::time::Instant::now();
         let result = self.inner.invoke(call).await?;
         let duration = start.elapsed();
-        
+
         println!("Tool completed in {:?}", duration);
         println!("Success: {}", result.success);
-        
+
         if let Some(error) = &result.error {
             eprintln!("Tool error: {}", error);
         }
-        
+
         Ok(result)
     }
-    
+
     // Forward other methods
     async fn list_tools(&self) -> Result<Vec<Armament>, ArsenalError> {
         self.inner.list_tools().await
     }
-    
+
     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
         self.inner.validate_call(call)
     }
@@ -709,14 +709,14 @@ fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
             return Err(ArsenalError::MissingParameter(param.clone()));
         }
     }
-    
+
     // Validate parameter types and values
     if let Some(url) = call.parameters.get("url") {
         if !url.as_str().unwrap_or("").starts_with("http") {
             return Err(ArsenalError::InvalidParameter("url must start with http".into()));
         }
     }
-    
+
     Ok(())
 }
 ```
@@ -735,10 +735,10 @@ let tool = CustomTool::new()
 async fn invoke_with_retry(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
     let mut attempts = 0;
     let max_attempts = 3;
-    
+
     loop {
         attempts += 1;
-        
+
         match self.invoke(call).await {
             Ok(result) => return Ok(result),
             Err(e) if attempts < max_attempts && e.is_retryable() => {
@@ -758,7 +758,7 @@ fn sanitize_sql(query: &str) -> Result<String, ArsenalError> {
     // Remove dangerous keywords
     let dangerous = ["DROP", "DELETE", "UPDATE", "INSERT", "CREATE", "ALTER"];
     let query_upper = query.to_uppercase();
-    
+
     for keyword in dangerous {
         if query_upper.contains(keyword) {
             return Err(ArsenalError::SecurityViolation(
@@ -766,7 +766,7 @@ fn sanitize_sql(query: &str) -> Result<String, ArsenalError> {
             ));
         }
     }
-    
+
     Ok(query.to_string())
 }
 ```
@@ -796,10 +796,10 @@ impl<T: ArsenalPort> ArsenalPort for RateLimitedTool<T> {
     async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
         let _permit = self.semaphore.acquire().await
             .map_err(|e| ArsenalError::ExecutionError(e.to_string()))?;
-        
+
         self.inner.invoke(call).await
     }
-    
+
     // Forward other methods...
 }
 ```
@@ -927,11 +927,11 @@ let tool = MCPSseAdapter::new()
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_calculator_add() {
         let calc = CalculatorTool;
-        
+
         let call = ArmamentCall {
             tool_name: "add".to_string(),
             parameters: HashMap::from([
@@ -940,17 +940,17 @@ mod tests {
             ]),
             call_id: Uuid::new_v4(),
         };
-        
+
         let result = calc.invoke(&call).await.unwrap();
-        
+
         assert!(result.success);
         assert_eq!(result.output, "8");
     }
-    
+
     #[tokio::test]
     async fn test_invalid_parameter() {
         let calc = CalculatorTool;
-        
+
         let call = ArmamentCall {
             tool_name: "add".to_string(),
             parameters: HashMap::from([
@@ -959,7 +959,7 @@ mod tests {
             ]),
             call_id: Uuid::new_v4(),
         };
-        
+
         assert!(calc.invoke(&call).await.is_err());
     }
 }
@@ -972,15 +972,15 @@ mod tests {
 async fn test_paladin_uses_tool() {
     let llm_adapter = Arc::new(MockLlmAdapter::new());
     let calc = Arc::new(CalculatorTool);
-    
+
     let paladin = PaladinBuilder::new(llm_adapter)
         .system_prompt("You have a calculator. Use it for math.")
         .add_armament(calc)
         .build()
         .unwrap();
-    
+
     let response = paladin.execute("What is 15 + 27?").await.unwrap();
-    
+
     assert!(response.content.contains("42"));
 }
 ```

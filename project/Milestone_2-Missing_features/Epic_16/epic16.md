@@ -169,7 +169,7 @@ impl GroveExecutionService {
         grove: &Grove,
         task: &str,
     ) -> Result<GroveResult, BattalionError>;
-    
+
     async fn route_task(
         &self,
         grove: &Grove,

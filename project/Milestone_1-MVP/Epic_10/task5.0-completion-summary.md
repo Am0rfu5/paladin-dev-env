@@ -9,7 +9,7 @@
   - Non-root user (UID 65532)
   - Exposes ports 8080 (HTTP), 9090 (metrics)
   - Includes migrations and config files
-  
+
 - **.dockerignore** - Optimizes build context by excluding:
   - Build artifacts (target/, *.o, *.so)
   - Documentation (docs/, notes/, README.md)

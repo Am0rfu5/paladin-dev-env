@@ -391,7 +391,7 @@ impl PaladinFactory {
             _ => Self::create_default(llm_adapter),
         }
     }
-    
+
     fn create_code_reviewer(llm_adapter: Arc<dyn LlmPort>) -> Result<Paladin> {
         PaladinBuilder::new(llm_adapter)
             .system_prompt("Expert Rust code reviewer")
@@ -399,7 +399,7 @@ impl PaladinFactory {
             .model("gpt-4")
             .build()
     }
-    
+
     // ... other factory methods
 }
 ```

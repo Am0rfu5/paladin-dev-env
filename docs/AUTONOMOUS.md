@@ -144,7 +144,7 @@ paladin agent run --config agent.yaml --input "Research topic" --auto-plan
 #### 1. Planning Phase
 The PlanningService sends a specialized prompt to the LLM:
 ```
-You are a task planner. Decompose the following complex task into 
+You are a task planner. Decompose the following complex task into
 logical subtasks that can be executed sequentially.
 
 Task: [User input]
@@ -264,9 +264,9 @@ The prompt should:
 #### 2. LLM Response
 The LLM generates a contextual system prompt:
 ```
-You are an expert code reviewer with deep expertise in Rust programming, 
-security analysis, and performance optimization. Your role is to provide 
-thorough, constructive code reviews that identify issues and suggest 
+You are an expert code reviewer with deep expertise in Rust programming,
+security analysis, and performance optimization. Your role is to provide
+thorough, constructive code reviews that identify issues and suggest
 improvements.
 
 When reviewing code:
@@ -723,18 +723,18 @@ autonomous:
   planning:
     enabled: true
     max_subtasks: 15
-  
+
   # Auto-Generate System Prompt (US-14.2)
   prompt_generation:
     enabled: true
     description: "Expert data analyst specializing in financial reports"
-  
+
   # Dynamic Temperature Adjustment (US-14.3)
   dynamic_temperature:
     enabled: true
     min: 0.2
     max: 0.85
-  
+
   # Agent Handoff (US-14.4 & US-14.5)
   handoffs:
     enabled: true
@@ -791,7 +791,7 @@ let autonomous_config = AutonomousConfig {
 
 let paladin = PaladinBuilder::new(llm_port)
     .name("analyst")
-    
+
     // Method 1: Individual feature methods
     .max_loops(MaxLoops::Auto)
     .agent_description("Financial analyst")
@@ -801,10 +801,10 @@ let paladin = PaladinBuilder::new(llm_port)
     .enable_handoffs()
     .handoff_strategy(HandoffStrategy::Automatic)
     .max_handoff_depth(5)
-    
+
     // Method 2: Configuration object
     // .with_autonomous_config(autonomous_config)
-    
+
     .build()
     .await?;
 ```
@@ -954,8 +954,8 @@ let prompt_gen_tokens = prompt_gen_enabled && !cached ? 500 : 0;
 let temp_tokens = dynamic_temp_enabled ? 300 : 0;
 let handoff_tokens = handoffs_enabled ? 200 * max_depth : 0;
 
-let estimated_total = base_tokens + planning_tokens 
-                    + prompt_gen_tokens + temp_tokens 
+let estimated_total = base_tokens + planning_tokens
+                    + prompt_gen_tokens + temp_tokens
                     + handoff_tokens;
 
 if estimated_total > budget {
@@ -1026,13 +1026,13 @@ Autonomous features have specific error types for different failure modes.
 pub enum PlanningError {
     /// LLM failed to generate a valid plan
     PlanGenerationFailed(String),
-    
+
     /// Generated plan has no subtasks
     EmptyPlan,
-    
+
     /// Subtask dependencies are circular
     CircularDependencies(Vec<String>),
-    
+
     /// LLM provider error during planning
     LlmError(LlmError),
 }
@@ -1066,13 +1066,13 @@ match paladin.execute(input).await {
 pub enum PromptError {
     /// LLM failed to generate a valid prompt
     GenerationFailed(String),
-    
+
     /// Agent description is missing or empty
     MissingDescription,
-    
+
     /// Generated prompt is too short/long
     InvalidLength { length: usize, min: usize, max: usize },
-    
+
     /// LLM provider error during generation
     LlmError(LlmError),
 }
@@ -1112,16 +1112,16 @@ match builder.build().await {
 pub enum HandoffError {
     /// Target agent not found in registry
     InvalidAgent(String),
-    
+
     /// Circular handoff detected
     CircularHandoff { chain: Vec<String>, attempted_target: String },
-    
+
     /// Maximum handoff depth exceeded
     MaxDepthExceeded { current_depth: u32, max_depth: u32 },
-    
+
     /// Specialist execution failed
     ExecutionFailed { agent: String, error: String },
-    
+
     /// LLM provider error during handoff
     LlmError(LlmError),
 }
@@ -1170,7 +1170,7 @@ async fn execute_with_fallback(paladin: &Paladin, input: &str) -> Result<String>
     // Try with autonomous features
     match paladin.execute(input).await {
         Ok(result) => Ok(result.output),
-        
+
         // Planning failed: retry with fixed loops
         Err(PaladinError::Planning(_)) => {
             eprintln!("Planning failed, using fixed execution");
@@ -1179,7 +1179,7 @@ async fn execute_with_fallback(paladin: &Paladin, input: &str) -> Result<String>
             paladin.execute_with_config(input, config).await
                 .map(|r| r.output)
         }
-        
+
         // Handoff failed: continue without delegation
         Err(PaladinError::Handoff(_)) => {
             eprintln!("Handoff failed, completing task without delegation");
@@ -1188,7 +1188,7 @@ async fn execute_with_fallback(paladin: &Paladin, input: &str) -> Result<String>
             paladin.execute_with_config(input, config).await
                 .map(|r| r.output)
         }
-        
+
         // Other errors: propagate
         Err(e) => Err(e),
     }
@@ -1363,9 +1363,9 @@ if let Some(plan) = result.plan {
 
 // Access handoff history
 for handoff in result.handoff_history {
-    println!("Handoff: {} -> {} ({})", 
-             handoff.from_agent, 
-             handoff.to_agent, 
+    println!("Handoff: {} -> {} ({})",
+             handoff.from_agent,
+             handoff.to_agent,
              handoff.reason);
 }
 ```
@@ -1390,7 +1390,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-let task_type_cache: Arc<RwLock<HashMap<String, TaskType>>> = 
+let task_type_cache: Arc<RwLock<HashMap<String, TaskType>>> =
     Arc::new(RwLock::new(HashMap::new()));
 
 // Check cache before classification
@@ -1543,9 +1543,9 @@ struct AdaptiveAgent {
 impl AdaptiveAgent {
     async fn execute_adaptive(&mut self, task: &str) -> Result<String> {
         // Adjust based on historical performance
-        let avg_performance = self.performance_history.iter().sum::<f32>() 
+        let avg_performance = self.performance_history.iter().sum::<f32>()
                             / self.performance_history.len() as f32;
-        
+
         if avg_performance < 0.7 {
             // Performance is low, enable more features
             self.paladin.config_mut().max_loops = MaxLoops::Auto;
@@ -1555,13 +1555,13 @@ impl AdaptiveAgent {
             self.paladin.config_mut().max_loops = MaxLoops::Fixed(3);
             self.paladin.config_mut().enable_handoffs = false;
         }
-        
+
         let result = self.paladin.execute(task).await?;
-        
+
         // Record performance
         let performance = self.calculate_performance(&result);
         self.performance_history.push(performance);
-        
+
         Ok(result.output)
     }
 }
@@ -1780,7 +1780,7 @@ pub struct PlanningService {
 
 impl PlanningService {
     pub fn new(llm_port: Arc<dyn LlmPort>) -> Self;
-    
+
     pub async fn generate_plan(
         &self,
         task: &str,
@@ -1798,15 +1798,15 @@ pub struct PromptGenerationService {
 
 impl PromptGenerationService {
     pub fn new(llm_port: Arc<dyn LlmPort>) -> Self;
-    
+
     pub async fn generate_prompt(
         &self,
         agent_name: &str,
         description: &str
     ) -> Result<String, PromptError>;
-    
+
     pub async fn clear_cache(&self);
-    
+
     pub async fn invalidate_cache(&self, agent_name: &str, description: &str);
 }
 ```
@@ -1819,13 +1819,13 @@ pub struct TemperatureService {
 
 impl TemperatureService {
     pub fn new(llm_port: Arc<dyn LlmPort>) -> Self;
-    
+
     pub async fn calculate_optimal_temperature(
         &self,
         task: &str,
         config: Option<&TemperatureConfig>
     ) -> Result<f32, TemperatureError>;
-    
+
     pub async fn detect_task_type_with_llm(
         &self,
         task: &str
@@ -1842,20 +1842,20 @@ pub struct HandoffService {
 
 impl HandoffService {
     pub fn new(llm_port: Arc<dyn LlmPort>) -> Self;
-    
+
     pub async fn register_specialist(
         &self,
         name: &str,
         description: &str
     ) -> Result<(), HandoffError>;
-    
+
     pub async fn should_handoff(
         &self,
         task: &str,
         current_agent: &str,
         context: &HandoffContext
     ) -> Result<HandoffDecision, HandoffError>;
-    
+
     pub fn get_specialists(&self) -> Vec<String>;
 }
 ```

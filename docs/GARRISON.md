@@ -195,7 +195,7 @@ use paladin::core::platform::container::garrison::GarrisonConfig;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = GarrisonConfig::default();
-    
+
     // Connect to database (creates if doesn't exist)
     let garrison = SqliteGarrison::connect(
         "./data/garrison.db",
@@ -220,7 +220,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 let results = garrison.search("error handling", 10).await?;
 
 for entry in results {
-    println!("[{}] {}", 
+    println!("[{}] {}",
         match entry.role {
             ConversationRole::User => "User",
             ConversationRole::Assistant => "Assistant",
@@ -462,7 +462,7 @@ garrison.remember(entry).await?;
    ```rust
    // Good: Specific phrase search
    garrison.search("\"memory management\"", 5).await?
-   
+
    // Avoid: Very broad searches with high limits
    // garrison.search("the", 1000).await?  // Slow!
    ```
@@ -471,7 +471,7 @@ garrison.remember(entry).await?;
    ```rust
    // Good: Only what you need
    let context = garrison.recall_recent(10).await?;
-   
+
    // Avoid: Retrieving everything unnecessarily
    // let all = garrison.recall_recent(100000).await?;
    ```

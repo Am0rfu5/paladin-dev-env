@@ -60,15 +60,15 @@ impl MyProviderConfig {
     pub fn from_env() -> Result<Self, String> {
         let api_key = std::env::var("MYPROVIDER_API_KEY")
             .map_err(|_| "MYPROVIDER_API_KEY not set")?;
-        
+
         let base_url = std::env::var("MYPROVIDER_BASE_URL")
             .unwrap_or_else(|_| "https://api.myprovider.com/v1".to_string());
-        
+
         let model = std::env::var("MYPROVIDER_MODEL")
             .unwrap_or_else(|_| "default-model".to_string());
-        
+
         let timeout_seconds = 60;
-        
+
         Ok(Self {
             api_key,
             base_url,
@@ -76,7 +76,7 @@ impl MyProviderConfig {
             timeout_seconds,
         })
     }
-    
+
     /// Create custom configuration
     pub fn new(api_key: String, base_url: String, model: String) -> Self {
         Self {
@@ -86,7 +86,7 @@ impl MyProviderConfig {
             timeout_seconds: 60,
         }
     }
-    
+
     fn validate(&self) -> Result<(), String> {
         if self.api_key.is_empty() {
             return Err("API key cannot be empty".to_string());
@@ -118,9 +118,9 @@ impl MyProviderAdapter {
     pub fn new(config: MyProviderConfig) -> Result<Self, LlmError> {
         config.validate()
             .map_err(|e| LlmError::AuthenticationError(e))?;
-        
+
         let timeout = Duration::from_secs(config.timeout_seconds);
-        
+
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         headers.insert(
@@ -128,13 +128,13 @@ impl MyProviderAdapter {
             HeaderValue::from_str(&format!("Bearer {}", config.api_key))
                 .map_err(|e| LlmError::AuthenticationError(e.to_string()))?
         );
-        
+
         let client = Client::builder()
             .timeout(timeout)
             .default_headers(headers)
             .build()
             .map_err(|e| LlmError::ProviderError(e.to_string()))?;
-        
+
         Ok(Self { client, config })
     }
 }
@@ -148,14 +148,14 @@ impl LlmPort for MyProviderAdapter {
     async fn generate(&self, request: &LlmRequest) -> Result<LlmResponse, LlmError> {
         // 1. Build provider-specific request
         let provider_request = self.build_request(request)?;
-        
+
         // 2. Make HTTP request with retry logic
         let response = self.make_request(provider_request).await?;
-        
+
         // 3. Parse and convert to LlmResponse
         self.parse_response(response, request).await
     }
-    
+
     async fn generate_stream(
         &self,
         request: &LlmRequest,
@@ -163,7 +163,7 @@ impl LlmPort for MyProviderAdapter {
         // Implement SSE streaming if supported
         unimplemented!("Streaming not yet implemented")
     }
-    
+
     fn get_capabilities(&self) -> ProviderCapabilities {
         ProviderCapabilities {
             supports_streaming: true,  // Set based on provider
@@ -175,16 +175,16 @@ impl LlmPort for MyProviderAdapter {
             supports_system_messages: true,
         }
     }
-    
+
     fn get_provider_name(&self) -> String {
         "myprovider".to_string()
     }
-    
+
     async fn validate_model(&self, model: &str) -> Result<bool, LlmError> {
         let available = self.get_available_models().await?;
         Ok(available.contains(&model.to_string()))
     }
-    
+
     async fn get_available_models(&self) -> Result<Vec<String>, LlmError> {
         Ok(vec![
             "model-1".to_string(),
@@ -241,22 +241,22 @@ use paladin::infrastructure::adapters::llm::myprovider_adapter::*;
 #[tokio::test]
 async fn test_successful_completion() {
     let mut server = Server::new_async().await;
-    
+
     let mock = server.mock("POST", "/v1/completions")
         .with_status(200)
         .with_body(r#"{"response": "test"}"#)
         .create_async()
         .await;
-    
+
     let config = MyProviderConfig::new(
         "test-key".to_string(),
         server.url(),
         "test-model".to_string()
     );
-    
+
     let adapter = MyProviderAdapter::new(config).unwrap();
     // Test adapter functionality
-    
+
     mock.assert_async().await;
 }
 

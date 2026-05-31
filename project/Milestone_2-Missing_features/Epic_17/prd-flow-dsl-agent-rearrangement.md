@@ -260,7 +260,7 @@ The parser **must** support the following syntax:
 ### 6.1 Architecture
 - **Layer**: Application (use case) + Core (domain)
 - **Pattern**: Hexagonal architecture maintained
-- **Dependencies**: 
+- **Dependencies**:
   - Core: `FlowExpression`, `Maneuver`, `ManeuverConfig` (domain models)
   - Application: `ManeuverExecutionService`, `FlowParser` (business logic)
   - No infrastructure dependencies for core/app layers
@@ -316,7 +316,7 @@ src/
 
 ### 7.2 Dependencies
 - **Existing**: `tokio`, `futures` (async execution)
-- **New (optional)**: 
+- **New (optional)**:
   - Parser combinator library: `nom` or hand-written recursive descent
   - ASCII diagram: custom implementation or `ptree`
 
@@ -587,7 +587,7 @@ Error: Invalid flow expression
   --> "agent1 - > agent2"
            ^
   Expected: '->' found: '- '
-  
+
   Suggestion: Remove space between '-' and '>'
   Corrected: "agent1 -> agent2"
 ```
@@ -597,9 +597,9 @@ Error: Invalid flow expression
 Error: Agent not found in registry
   Flow: "researcher -> unknown_agent -> writer"
                        ^^^^^^^^^^^^^
-  
+
   Available agents: researcher, writer, editor, reviewer
-  
+
   Suggestion: Did you mean 'writer'?
 ```
 
@@ -609,14 +609,14 @@ Error: Agent execution failed in Maneuver 'ResearchPipeline'
   Agent: 'analyzer'
   Step: 3 of 5
   Error: LLM timeout after 60s
-  
+
   Execution trace:
     ✓ researcher (2.3s)
     ✓ processor (1.8s)
     ✗ analyzer (timeout)
     ⊘ writer (not started)
     ⊘ reviewer (not started)
-  
+
   Suggestion: Increase timeout_seconds in ManeuverConfig
 ```
 
@@ -636,15 +636,15 @@ flow: "extractor -> (summarizer, analyzer), translator -> reviewer"
 config:
   # How to handle errors
   error_strategy: continue_parallel  # Options: fail_fast, continue_parallel, ignore_errors
-  
+
   # Timeout settings
   timeout_seconds: 600
   agent_timeout_seconds: 120
-  
+
   # Output handling
   pass_output_as_input: true
   output_format: concatenate  # Options: concatenate, json_array
-  
+
   # Observability
   collect_timing_metrics: true
   capture_intermediate_outputs: true
@@ -656,25 +656,25 @@ agents:
       system_prompt: "Extract key information from documents"
       model: "gpt-4o"
       temperature: 0.3
-      
+
   - name: summarizer
     inline:
       system_prompt: "Create concise summaries"
       model: "gpt-4o-mini"
       temperature: 0.5
-      
+
   - name: analyzer
     inline:
       system_prompt: "Perform deep analysis"
       model: "gpt-4o"
       temperature: 0.7
-      
+
   - name: translator
     inline:
       system_prompt: "Translate to Spanish"
       model: "gpt-4o"
       temperature: 0.3
-      
+
   - name: reviewer
     inline:
       system_prompt: "Review and validate all outputs"
@@ -689,4 +689,3 @@ agents:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-02-05 | GitHub Copilot | Initial PRD based on Epic 17 and user clarifications |
-

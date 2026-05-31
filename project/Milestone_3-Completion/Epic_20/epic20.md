@@ -78,4 +78,3 @@ Epic 13 established the vision type system and adapter scaffolding, but left the
 - [ ] `cargo clippy` clean, `cargo fmt` clean
 
 ---
-

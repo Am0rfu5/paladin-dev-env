@@ -61,34 +61,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Cache cargo index
         uses: actions/cache@v3
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Cache cargo build
         uses: actions/cache@v3
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Check formatting
         run: cargo fmt --all -- --check
-      
+
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
-      
+
       - name: Check
         run: cargo check --all-features
 
@@ -101,15 +101,15 @@ jobs:
         rust: [stable, beta]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust ${{ matrix.rust }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-      
+
       - name: Run tests
         run: cargo test --all-features
-      
+
       - name: Run doc tests
         run: cargo test --doc --all-features
 
@@ -118,18 +118,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools-preview
-      
+
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
-      
+
       - name: Generate coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
-      
+
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
         with:
@@ -161,17 +161,17 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -179,7 +179,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -193,7 +193,7 @@ jobs:
             type=semver,pattern={{major}}
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
-      
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -239,38 +239,38 @@ jobs:
             target: aarch64-apple-darwin
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      
+
       - name: Install cross-compilation tools (Linux ARM64)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu
-      
+
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
-      
+
       - name: Package (Unix)
         if: matrix.os != 'windows-latest'
         run: |
           cd target/${{ matrix.target }}/release
           tar czf paladin-${{ github.ref_name }}-${{ matrix.target }}.tar.gz paladin
           mv paladin-${{ github.ref_name }}-${{ matrix.target }}.tar.gz ${{ github.workspace }}/
-      
+
       - name: Package (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           cd target/${{ matrix.target }}/release
           7z a paladin-${{ github.ref_name }}-${{ matrix.target }}.zip paladin.exe
           move paladin-${{ github.ref_name }}-${{ matrix.target }}.zip ${{ github.workspace }}/
-      
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -285,17 +285,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Download artifacts
         uses: actions/download-artifact@v3
-      
+
       - name: Generate changelog
         id: changelog
         run: |
           # Extract changelog for this version
           VERSION="${{ github.ref_name }}"
           awk "/^## \[$VERSION\]/,/^## \[/" CHANGELOG.md | head -n -1 > release_notes.md
-      
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -328,7 +328,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    
+
     services:
       redis:
         image: redis:7-alpine
@@ -339,7 +339,7 @@ jobs:
           --health-retries 5
         ports:
           - 6379:6379
-      
+
       minio:
         image: minio/minio:latest
         env:
@@ -352,18 +352,18 @@ jobs:
           --health-retries 5
         ports:
           - 9000:9000
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Wait for services
         run: |
           timeout 60 bash -c 'until curl -f http://localhost:9000/minio/health/live; do sleep 2; done'
           timeout 60 bash -c 'until redis-cli -h localhost ping; do sleep 2; done'
-      
+
       - name: Run integration tests
         run: cargo test --features integration-tests --test '*_integration_test'
         env:
@@ -372,12 +372,12 @@ jobs:
           MINIO_ACCESS_KEY: minioadmin
           MINIO_SECRET_KEY: minioadmin
           RUST_LOG: debug
-      
+
       - name: Integration test coverage
         run: |
           cargo install cargo-llvm-cov
           cargo llvm-cov --features integration-tests --test '*_integration_test' --lcov --output-path integration-lcov.info
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -406,31 +406,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install cargo-audit
         run: cargo install cargo-audit
-      
+
       - name: Run cargo audit
         run: cargo audit
-  
+
   deny:
     name: Cargo Deny
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install cargo-deny
         run: cargo install cargo-deny
-      
+
       - name: Run cargo deny
         run: cargo deny check
-  
+
   snyk:
     name: Snyk Security Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Snyk
         uses: snyk/actions/rust@master
         env:
@@ -467,16 +467,16 @@ jobs:
     environment:
       name: ${{ github.event.inputs.environment || 'production' }}
       url: https://paladin.${{ github.event.inputs.environment || 'prod' }}.example.com
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Configure kubectl
         uses: azure/k8s-set-context@v3
         with:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
-      
+
       - name: Deploy with Helm
         run: |
           helm upgrade --install paladin ./paladin-chart \
@@ -486,7 +486,7 @@ jobs:
             --set secrets.openaiApiKey=${{ secrets.OPENAI_API_KEY }} \
             --values values-${{ github.event.inputs.environment || 'production' }}.yaml \
             --wait
-      
+
       - name: Verify deployment
         run: |
           kubectl rollout status deployment/paladin -n paladin

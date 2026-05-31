@@ -99,13 +99,13 @@ impl PaladinData {
                 "System prompt is required".into()
             ));
         }
-        
+
         if !(0.0..=2.0).contains(&self.temperature) {
             return Err(PaladinError::ConfigurationError(
                 "Temperature must be between 0.0 and 2.0".into()
             ));
         }
-        
+
         Ok(())
     }
 }
@@ -130,19 +130,19 @@ Interfaces (traits) defining contracts between layers.
 pub trait LlmPort: Send + Sync {
     /// Generate completion from prompt
     async fn generate(
-        &self, 
+        &self,
         prompt: &PromptItem
     ) -> Result<LlmResponse, LlmError>;
-    
+
     /// Generate with streaming
     async fn generate_stream(
-        &self, 
+        &self,
         prompt: &PromptItem
     ) -> Result<Pin<Box<dyn Stream<Item = Result<LlmChunk>>>>, LlmError>;
-    
+
     /// Validate model is available
     fn validate_model(&self, model: &str) -> Result<(), LlmError>;
-    
+
     /// Get model capabilities
     fn capabilities(&self) -> ModelCapabilities;
 }
@@ -188,7 +188,7 @@ pub struct OpenAiAdapter {
 #[async_trait]
 impl LlmPort for OpenAiAdapter {
     async fn generate(
-        &self, 
+        &self,
         prompt: &PromptItem
     ) -> Result<LlmResponse, LlmError> {
         // Convert application model to OpenAI API format
@@ -199,7 +199,7 @@ impl LlmPort for OpenAiAdapter {
             max_tokens: prompt.max_tokens,
             tools: self.convert_tools(&prompt.tools),
         };
-        
+
         // Make HTTP request to OpenAI API
         let response = self.client
             .post(&format!("{}/chat/completions", self.base_url))
@@ -208,22 +208,22 @@ impl LlmPort for OpenAiAdapter {
             .send()
             .await
             .map_err(|e| LlmError::NetworkError(e.to_string()))?;
-        
+
         // Check for errors
         if !response.status().is_success() {
             let error: OpenAiError = response.json().await
                 .map_err(|e| LlmError::ParseError(e.to_string()))?;
             return Err(LlmError::ProviderError(error.message));
         }
-        
+
         // Parse OpenAI response
         let openai_response: OpenAiChatResponse = response.json().await
             .map_err(|e| LlmError::ParseError(e.to_string()))?;
-        
+
         // Convert OpenAI format back to application model
         Ok(self.convert_response(openai_response))
     }
-    
+
     // ... other trait methods
 }
 ```
@@ -242,13 +242,13 @@ Define how external actors interact with the application.
 pub trait ContentIngestionPort: Send + Sync {
     /// Ingest new content item
     async fn ingest(
-        &self, 
+        &self,
         content: ContentItem
     ) -> Result<ContentId, IngestionError>;
-    
+
     /// Get ingestion status
     async fn status(
-        &self, 
+        &self,
         id: ContentId
     ) -> Result<IngestionStatus, IngestionError>;
 }
@@ -266,7 +266,7 @@ pub struct ContentIngestionService {
 #[async_trait]
 impl ContentIngestionPort for ContentIngestionService {
     async fn ingest(
-        &self, 
+        &self,
         content: ContentItem
     ) -> Result<ContentId, IngestionError> {
         // Use case logic
@@ -274,7 +274,7 @@ impl ContentIngestionPort for ContentIngestionService {
         self.ml_service.analyze(id).await?;
         Ok(id)
     }
-    
+
     // ... other methods
 }
 ```
@@ -368,10 +368,10 @@ All adapters follow a consistent structure:
 pub struct AdapterName {
     // Client or connection
     client: ClientType,
-    
+
     // Configuration
     config: AdapterConfig,
-    
+
     // Shared state (if needed)
     state: Arc<RwLock<State>>,
 }
@@ -385,17 +385,17 @@ impl AdapterName {
             state: Arc::new(RwLock::new(State::default())),
         }
     }
-    
+
     // Builder pattern
     pub fn builder() -> AdapterBuilder {
         AdapterBuilder::default()
     }
-    
+
     // Helper methods (private)
     fn convert_request(&self, app_model: &AppType) -> ApiType {
         // Convert application model to API model
     }
-    
+
     fn convert_response(&self, api_model: ApiType) -> AppType {
         // Convert API model to application model
     }
@@ -430,15 +430,15 @@ pub struct InMemoryGarrison {
 impl GarrisonPort for InMemoryGarrison {
     async fn add_entry(&self, entry: GarrisonEntry) -> Result<()> {
         let mut entries = self.entries.write().await;
-        
+
         if entries.len() >= self.max_entries {
             entries.pop_front();
         }
-        
+
         entries.push_back(entry);
         Ok(())
     }
-    
+
     async fn get_history(&self, limit: usize) -> Result<Vec<GarrisonEntry>> {
         let entries = self.entries.read().await;
         Ok(entries.iter()
@@ -459,7 +459,7 @@ pub struct SqliteGarrison {
 impl GarrisonPort for SqliteGarrison {
     async fn add_entry(&self, entry: GarrisonEntry) -> Result<()> {
         sqlx::query(
-            "INSERT INTO garrison_entries (id, session_id, role, content, timestamp) 
+            "INSERT INTO garrison_entries (id, session_id, role, content, timestamp)
              VALUES (?, ?, ?, ?, ?)"
         )
         .bind(entry.id.to_string())
@@ -469,22 +469,22 @@ impl GarrisonPort for SqliteGarrison {
         .bind(entry.timestamp.timestamp())
         .execute(&self.pool)
         .await?;
-        
+
         Ok(())
     }
-    
+
     async fn get_history(&self, limit: usize) -> Result<Vec<GarrisonEntry>> {
         let rows = sqlx::query_as::<_, GarrisonEntry>(
-            "SELECT * FROM garrison_entries 
-             WHERE session_id = ? 
-             ORDER BY timestamp DESC 
+            "SELECT * FROM garrison_entries
+             WHERE session_id = ?
+             ORDER BY timestamp DESC
              LIMIT ?"
         )
         .bind(self.session_id.to_string())
         .bind(limit as i64)
         .fetch_all(&self.pool)
         .await?;
-        
+
         Ok(rows)
     }
 }
@@ -636,7 +636,7 @@ impl LlmPort for MockLlmAdapter {
             token_usage: TokenUsage::default(),
         })
     }
-    
+
     // ... other methods
 }
 
@@ -646,10 +646,10 @@ async fn test_paladin_execution() {
     let mock_llm = Arc::new(MockLlmAdapter::new(vec![
         "Hello, user!".to_string(),
     ]));
-    
+
     let service = PaladinExecutionService::new(mock_llm);
     let paladin = create_test_paladin();
-    
+
     let result = service.execute(&paladin, "Hi").await.unwrap();
     assert_eq!(result.content, "Hello, user!");
 }
@@ -684,13 +684,13 @@ impl LlmPort for OpenAiAdapter {
     async fn generate(&self, prompt: &PromptItem) -> Result<LlmResponse> {
         // API changed from v1 to v2
         let request = self.build_v2_request(prompt)?; // Only change here
-        
+
         // Rest of application unaffected
         let response = self.client.post(&self.v2_endpoint)
             .json(&request)
             .send()
             .await?;
-        
+
         Ok(self.convert_response(response))
     }
 }
@@ -727,21 +727,21 @@ impl OpenAiAdapterBuilder {
             timeout: Duration::from_secs(30),
         }
     }
-    
+
     pub fn api_key(mut self, key: impl Into<String>) -> Self {
         self.api_key = Some(key.into());
         self
     }
-    
+
     pub fn base_url(mut self, url: impl Into<String>) -> Self {
         self.base_url = url.into();
         self
     }
-    
+
     pub fn build(self) -> Result<OpenAiAdapter, AdapterError> {
         let api_key = self.api_key
             .ok_or_else(|| AdapterError::MissingConfiguration("api_key"))?;
-        
+
         Ok(OpenAiAdapter {
             client: reqwest::Client::builder()
                 .timeout(self.timeout)
@@ -775,11 +775,11 @@ impl AdapterRegistry {
             storage_adapters: HashMap::new(),
         }
     }
-    
+
     pub fn register_llm(&mut self, name: &str, adapter: Arc<dyn LlmPort>) {
         self.llm_adapters.insert(name.to_string(), adapter);
     }
-    
+
     pub fn get_llm(&self, name: &str) -> Option<&Arc<dyn LlmPort>> {
         self.llm_adapters.get(name)
     }
@@ -835,7 +835,7 @@ Test business logic without any adapters:
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_paladin_validation() {
         let data = PaladinData {
@@ -847,7 +847,7 @@ mod tests {
             stop_words: vec![],
             status: PaladinStatus::Idle,
         };
-        
+
         assert!(data.validate().is_err());
     }
 }
@@ -864,21 +864,21 @@ async fn test_paladin_execution_service() {
     let mock_llm = Arc::new(MockLlmAdapter::new(vec![
         "Response 1".to_string(),
     ]));
-    
+
     // Mock garrison
     let mock_garrison = Arc::new(MockGarrison::new());
-    
+
     // Create service with mocks
     let service = PaladinExecutionService::new(
         mock_llm,
         Some(mock_garrison.clone()),
         Arc::new(ArsenalRegistry::new()),
     );
-    
+
     // Test
     let paladin = create_test_paladin();
     let result = service.execute(&paladin, "Test input").await.unwrap();
-    
+
     assert_eq!(result.content, "Response 1");
     assert_eq!(mock_garrison.entry_count(), 2); // user + assistant
 }
@@ -893,12 +893,12 @@ Test complete system with real implementations:
 #[ignore] // Requires API key
 async fn test_openai_adapter() {
     let api_key = env::var("OPENAI_API_KEY").unwrap();
-    
+
     let adapter = OpenAiAdapter::builder()
         .api_key(api_key)
         .build()
         .unwrap();
-    
+
     let prompt = PromptItem {
         messages: vec![Message {
             role: Role::User,
@@ -909,9 +909,9 @@ async fn test_openai_adapter() {
         max_tokens: Some(50),
         tools: vec![],
     };
-    
+
     let response = adapter.generate(&prompt).await.unwrap();
-    
+
     assert!(!response.content.is_empty());
 }
 ```
@@ -958,10 +958,10 @@ pub trait LlmPort {
 pub enum LlmError {
     #[error("Network error: {0}")]
     NetworkError(String),
-    
+
     #[error("Provider error: {0}")]
     ProviderError(String),
-    
+
     #[error("Invalid response: {0}")]
     ParseError(String),
 }

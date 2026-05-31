@@ -18,11 +18,11 @@ logging.basicConfig(
 def handle_request(request):
     """Handle a JSON-RPC 2.0 request"""
     logging.debug(f"Received request: {request}")
-    
+
     method = request.get("method")
     request_id = request.get("id")
     params = request.get("params", {})
-    
+
     if method == "tools/list":
         # Return list of available tools
         return {
@@ -57,12 +57,12 @@ def handle_request(request):
                 ]
             }
         }
-    
+
     elif method == "tools/call":
         # Execute a tool
         tool_name = params.get("name")
         arguments = params.get("arguments", {})
-        
+
         if tool_name == "echo":
             message = arguments.get("message", "")
             return {
@@ -75,12 +75,12 @@ def handle_request(request):
                     }
                 }
             }
-        
+
         elif tool_name == "calculator":
             operation = arguments.get("operation")
             a = arguments.get("a", 0)
             b = arguments.get("b", 0)
-            
+
             result = 0
             if operation == "add":
                 result = a + b
@@ -90,7 +90,7 @@ def handle_request(request):
                 result = a * b
             elif operation == "divide":
                 result = a / b if b != 0 else 0
-            
+
             return {
                 "jsonrpc": "2.0",
                 "id": request_id,
@@ -101,7 +101,7 @@ def handle_request(request):
                     }
                 }
             }
-        
+
         else:
             # Tool not found
             return {
@@ -112,7 +112,7 @@ def handle_request(request):
                     "message": f"Tool not found: {tool_name}"
                 }
             }
-    
+
     else:
         # Method not found
         return {
@@ -127,21 +127,21 @@ def handle_request(request):
 def main():
     """Main loop - read from stdin, write to stdout"""
     logging.info("Mock MCP Server starting...")
-    
+
     try:
         for line in sys.stdin:
             line = line.strip()
             if not line:
                 continue
-            
+
             try:
                 request = json.loads(line)
                 response = handle_request(request)
-                
+
                 # Write response as single line JSON
                 print(json.dumps(response), flush=True)
                 logging.debug(f"Sent response: {response}")
-                
+
             except json.JSONDecodeError as e:
                 logging.error(f"Invalid JSON: {e}")
                 error_response = {
@@ -153,7 +153,7 @@ def main():
                     }
                 }
                 print(json.dumps(error_response), flush=True)
-    
+
     except KeyboardInterrupt:
         logging.info("Server shutting down...")
     except Exception as e:

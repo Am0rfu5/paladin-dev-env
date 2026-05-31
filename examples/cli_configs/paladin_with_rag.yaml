@@ -8,20 +8,20 @@ description: AI assistant with document retrieval and context-aware responses
 paladin:
   system_prompt: |
     You are an intelligent research assistant with access to a document database.
-    
+
     Your workflow:
     1. Understand the user's question
     2. Search the document database for relevant information
     3. Synthesize the retrieved information
     4. Provide a comprehensive, well-cited answer
-    
+
     Guidelines:
     - Always cite sources when using retrieved information
     - If information isn't in the database, clearly state this
     - Combine multiple sources when relevant
     - Provide context and explain connections
     - Be concise but thorough
-  
+
   name: rag_assistant
   user_name: Researcher
   model: gpt-4
@@ -32,23 +32,23 @@ paladin:
 garrison:
   type: semantic  # Enable semantic search
   backend: qdrant  # Vector database
-  
+
   # Qdrant configuration
   connection:
     url: "http://localhost:6333"
     collection: "documents"
-  
+
   # Embedding configuration
   embeddings:
     provider: openai
     model: text-embedding-ada-002
     dimensions: 1536
-  
+
   # Search configuration
   search:
     top_k: 5  # Retrieve top 5 most relevant chunks
     score_threshold: 0.7  # Minimum similarity score
-    
+
   # Chunking strategy (for document ingestion)
   chunking:
     strategy: semantic  # or: fixed, sentence, paragraph
@@ -63,7 +63,7 @@ arsenal:
       description: "Search the document database for relevant information"
       type: builtin
       function: garrison.search
-    
+
     # Citation formatter
     - name: format_citation
       description: "Format a citation in a standard format"

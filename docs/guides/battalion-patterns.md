@@ -41,7 +41,7 @@ use paladin::prelude::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
-    
+
     // Researcher Paladin
     let researcher = PaladinBuilder::new(llm_adapter.clone())
         .name("Researcher")
@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         Output key facts and sources.")
         .temperature(0.5)
         .build()?;
-    
+
     // Analyst Paladin
     let analyst = PaladinBuilder::new(llm_adapter.clone())
         .name("Analyst")
@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         insights, and patterns. Output structured analysis.")
         .temperature(0.6)
         .build()?;
-    
+
     // Writer Paladin
     let writer = PaladinBuilder::new(llm_adapter)
         .name("Writer")
@@ -65,18 +65,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         concise summary for executives. Output professional report.")
         .temperature(0.7)
         .build()?;
-    
+
     // Create Formation
     let formation = Formation::new()
         .add_paladin(researcher)
         .add_paladin(analyst)
         .add_paladin(writer)
         .build()?;
-    
+
     // Execute
     let result = formation.execute("Analyze trends in Rust adoption 2024").await?;
     println!("{}", result.final_output);
-    
+
     Ok(())
 }
 ```
@@ -132,32 +132,32 @@ use paladin::prelude::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
-    
+
     // Technical Reviewer
     let technical = PaladinBuilder::new(llm_adapter.clone())
         .name("TechnicalReviewer")
         .system_prompt("Review code from a technical perspective: correctness, efficiency, safety.")
         .build()?;
-    
+
     // Security Reviewer
     let security = PaladinBuilder::new(llm_adapter.clone())
         .name("SecurityReviewer")
         .system_prompt("Review code from a security perspective: vulnerabilities, unsafe practices.")
         .build()?;
-    
+
     // UX Reviewer
     let ux = PaladinBuilder::new(llm_adapter.clone())
         .name("UXReviewer")
         .system_prompt("Review code from a UX perspective: usability, error messages, documentation.")
         .build()?;
-    
+
     // Aggregator
     let aggregator = PaladinBuilder::new(llm_adapter)
         .name("Aggregator")
         .system_prompt("Combine multiple code reviews into a single coherent report. \
                         Prioritize critical issues and provide actionable feedback.")
         .build()?;
-    
+
     // Create Phalanx
     let phalanx = Phalanx::new()
         .add_paladin(technical)
@@ -166,16 +166,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .aggregator(aggregator)
         .max_concurrency(3)  // Run all 3 in parallel
         .build()?;
-    
+
     let code = r#"
         pub fn process_user_input(input: String) -> Result<String> {
             // Code to review...
         }
     "#;
-    
+
     let result = phalanx.execute(code).await?;
     println!("{}", result.aggregated_output);
-    
+
     Ok(())
 }
 ```
@@ -230,7 +230,7 @@ use paladin::prelude::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
-    
+
     // Define Paladins
     let topic_generator = create_paladin("TopicGenerator", "Generate blog post topics", llm_adapter.clone())?;
     let researcher = create_paladin("Researcher", "Research the topic", llm_adapter.clone())?;
@@ -238,41 +238,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let writer = create_paladin("Writer", "Write the article", llm_adapter.clone())?;
     let fact_checker = create_paladin("FactChecker", "Verify factual accuracy", llm_adapter.clone())?;
     let editor = create_paladin("Editor", "Edit and polish", llm_adapter)?;
-    
+
     // Build Campaign Graph
     let campaign = Campaign::new()
         // Initial node
         .add_node("generate_topic", topic_generator)
-        
+
         // Research path
         .add_node("research", researcher)
         .add_edge("generate_topic", "research")
-        
+
         // Parallel outline and fact-checking
         .add_node("outline", outline_creator)
         .add_node("fact_check", fact_checker)
         .add_edge("research", "outline")
         .add_edge("research", "fact_check")
-        
+
         // Converge at writing
         .add_node("write", writer)
         .add_edge("outline", "write")
         .add_edge("fact_check", "write")
-        
+
         // Final editing
         .add_node("edit", editor)
         .add_edge("write", "edit")
-        
+
         // Conditional re-check if needed
         .add_conditional("edit", "fact_check", |output| {
             output.contains("NEEDS_VERIFICATION")
         })
-        
+
         .build()?;
-    
+
     let result = campaign.execute("AI in healthcare").await?;
     println!("{}", result.final_output);
-    
+
     Ok(())
 }
 ```
@@ -315,21 +315,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 let campaign = Campaign::new()
     .add_node("start", start_paladin)
     .add_node("process", process_paladin)
-    
+
     // Conditional edges
     .add_conditional("start", "process", |output| {
         output.score > 0.8
     })
-    
+
     // Error handling
     .add_error_handler("process", fallback_paladin)
-    
+
     // Checkpointing
     .enable_checkpoints(true)
-    
+
     // Max iterations for cycles (with safeguards)
     .max_iterations(10)
-    
+
     .build()?;
 ```
 
@@ -352,7 +352,7 @@ use paladin::prelude::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
-    
+
     // Commander - Breaks down project into tasks
     let commander = PaladinBuilder::new(llm_adapter.clone())
         .name("ProjectManager")
@@ -361,26 +361,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         Output format: TASK: <description> for each task.")
         .temperature(0.6)
         .build()?;
-    
+
     // Subordinates - Specialized for different task types
     let developer = PaladinBuilder::new(llm_adapter.clone())
         .name("Developer")
         .system_prompt("You are a senior developer. Implement the given technical task. \
                         Provide code and implementation details.")
         .build()?;
-    
+
     let designer = PaladinBuilder::new(llm_adapter.clone())
         .name("Designer")
         .system_prompt("You are a UX/UI designer. Design solutions for the given task. \
                         Provide wireframes and design specifications.")
         .build()?;
-    
+
     let tester = PaladinBuilder::new(llm_adapter)
         .name("Tester")
         .system_prompt("You are a QA engineer. Create test plans for the given task. \
                         Provide test cases and acceptance criteria.")
         .build()?;
-    
+
     // Create Chain of Command
     let chain = ChainOfCommand::new()
         .commander(commander)
@@ -397,9 +397,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ("QA", "tester"),
         ])))
         .build()?;
-    
+
     let result = chain.execute("Build a user login system with password reset").await?;
-    
+
     // Commander breaks it down into tasks:
     // - TASK: Design login UI
     // - TASK: Implement authentication code
@@ -407,9 +407,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // - TASK: Test security and usability
     //
     // Each task is routed to appropriate subordinate
-    
+
     println!("{}", result.aggregated_output);
-    
+
     Ok(())
 }
 ```

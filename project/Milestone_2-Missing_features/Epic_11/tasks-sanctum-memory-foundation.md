@@ -164,7 +164,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.14 Apply filters (paladin_id, memory_type, importance, timestamps, metadata) in search
   - [x] 4.15 Sort results by similarity score descending, apply top_k and min_score
   - [x] 4.16 Implement `SanctumPort::delete()` with bool return (found/not found)
-  - [x] 4.17 Implement `SanctumPort::update()` 
+  - [x] 4.17 Implement `SanctumPort::update()`
   - [x] 4.18 Implement `SanctumPort::count()` with optional filter support
   - [x] 4.19 Add rustdoc comments for all methods
   - [x] 4.20 Create `src/infrastructure/adapters/sanctum/mod.rs` and export InMemorySanctum

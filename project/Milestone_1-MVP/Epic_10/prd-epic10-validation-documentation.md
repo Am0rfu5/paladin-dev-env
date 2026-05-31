@@ -438,7 +438,7 @@ cargo bench                                   # Performance benchmarks
 ### 7.1 Technology Stack
 
 - **Documentation Format**: Markdown (docs/) + rustdoc (API)
-- **Testing Framework**: 
+- **Testing Framework**:
   - Unit/Integration: `tokio::test`, `mockall`
   - Performance: `criterion`
   - Docker: `testcontainers-rs` or manual docker-compose
@@ -582,7 +582,7 @@ Before marking Epic 10 complete, the following must pass:
 ### 9.4 Performance Questions
 
 **Q7**: What are the target workload sizes for performance benchmarking?
-- **Recommendation**: 
+- **Recommendation**:
   - Light: 10 Paladins, 100 messages
   - Medium: 100 Paladins, 1000 messages
   - Heavy: 1000 Paladins, 10000 messages (stress test)
@@ -755,13 +755,13 @@ Items explicitly deferred beyond Epic 10:
 
 ```rust
 /// Example structure for rustdoc comments
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use paladin::PaladinBuilder;
 /// use paladin::LlmPort;
-/// 
+///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let llm_port: Arc<dyn LlmPort> = // ... setup
 /// let paladin = PaladinBuilder::new(llm_port)

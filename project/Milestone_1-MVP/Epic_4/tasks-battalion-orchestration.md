@@ -207,7 +207,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.42 Commit: "test(battalion): add Phalanx integration tests and examples"
   - [x] 4.43 **PHASE 1 MILESTONE:** Run full test suite: `cargo test`
   - [x] 4.44 **PHASE 1 MILESTONE:** Create PR for Phase 1 review
-  
+
 - [x] 5.0 Implement Campaign Pattern (Phase 2 - Graph Orchestration)
   - [x] 5.1 Create `tests/unit/battalion/campaign_tests.rs`
   - [x] 5.2 Write failing tests for Campaign construction (TDD - Red)
@@ -326,4 +326,3 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 7.24 Commit: "docs(battalion): add comprehensive documentation and benchmarks"
 
 ---
-

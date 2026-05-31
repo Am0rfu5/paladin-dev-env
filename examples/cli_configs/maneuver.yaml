@@ -29,7 +29,7 @@
 # Maneuver: Flow DSL-based orchestration pattern
 # - Define workflows with intuitive string expressions
 # - Sequential operator: ->  (linear execution)
-# - Parallel operator: ,    (concurrent execution)  
+# - Parallel operator: ,    (concurrent execution)
 # - Nested patterns: Use parentheses for grouping
 # - Perfect for declarative workflows and dynamic flow generation
 type: maneuver
@@ -61,22 +61,22 @@ config:
   # - ContinueParallel: Continue parallel branches even if some fail
   # - IgnoreErrors: Continue workflow even with failures
   error_strategy: FailFast
-  
+
   # Output format
   # - CombinedText: Concatenate all outputs as text (default)
   # - StructuredJson: Return structured JSON with per-agent outputs
   output_format: CombinedText
-  
+
   # Pass output from one agent as input to the next in sequential flows
   # If false, all agents receive the original input
   pass_output_as_input: true
-  
+
   # Maximum execution time for entire workflow (seconds)
   timeout_seconds: 300
-  
+
   # Collect detailed timing metrics for each agent
   collect_timing_metrics: true
-  
+
   # Separator for concatenating outputs in CombinedText format
   output_separator: "\n\n---\n\n"
 
@@ -93,38 +93,38 @@ paladins:
   # Role: Initial processing and validation
   # Receives: Original user input
   # Outputs to: analyzer AND classifier (parallel fan-out)
-  
+
   - inline:
       name: "intake"
-      
+
       system_prompt: |
         You are the intake specialist for a document analysis pipeline.
-        
+
         TASK:
         1. Validate the input is processable
         2. Extract key metadata (length, type, language)
         3. Perform basic cleaning and normalization
         4. Flag any quality issues
         5. Prepare text for downstream analysis
-        
+
         OUTPUT FORMAT:
         Return cleaned text with metadata header:
-        
+
         [METADATA]
         Length: <word count>
         Type: <document type>
         Language: <detected language>
         Quality: <quality score 1-10>
-        
+
         [CLEANED TEXT]
         <normalized document text>
-      
+
       model: "gpt-4"
       temperature: 0.3  # Low temperature for consistent processing
       max_loops: 1
       timeout_seconds: 60
       stop_words: []
-      
+
       provider:
         type: openai
 
@@ -135,13 +135,13 @@ paladins:
   # Receives: Output from intake
   # Executes: In parallel with classifier
   # Outputs to: reviewer (fan-in)
-  
+
   - inline:
       name: "analyzer"
-      
+
       system_prompt: |
         You are a content analysis expert specializing in extracting insights.
-        
+
         TASK:
         Perform deep analysis of the document:
         1. Main themes and topics
@@ -150,31 +150,31 @@ paladins:
         4. Logical structure
         5. Notable patterns or trends
         6. Sentiment and tone
-        
+
         OUTPUT FORMAT:
         Structured analysis with sections:
-        
+
         ## THEMES
         <list main themes>
-        
+
         ## KEY ARGUMENTS
         <enumerate arguments>
-        
+
         ## EVIDENCE
         <supporting facts and data>
-        
+
         ## STRUCTURE
         <document organization>
-        
+
         ## INSIGHTS
         <notable patterns and observations>
-      
+
       model: "gpt-4"
       temperature: 0.7
       max_loops: 2
       timeout_seconds: 120
       stop_words: []
-      
+
       provider:
         type: openai
 
@@ -185,13 +185,13 @@ paladins:
   # Receives: Output from intake
   # Executes: In parallel with analyzer
   # Outputs to: reviewer (fan-in)
-  
+
   - inline:
       name: "classifier"
-      
+
       system_prompt: |
         You are a document classification specialist.
-        
+
         TASK:
         Classify and tag the document:
         1. Primary category (Business, Technical, Legal, Academic, etc.)
@@ -200,30 +200,30 @@ paladins:
         4. Complexity level (Basic, Intermediate, Advanced, Expert)
         5. Target audience
         6. Content type (Report, Article, Guide, Reference, etc.)
-        
+
         OUTPUT FORMAT:
-        
+
         ## CLASSIFICATION
         Primary: <category>
         Sub-categories: <category1>, <category2>, <category3>
-        
+
         ## TAGS
         <tag1>, <tag2>, <tag3>, <tag4>, <tag5>, ...
-        
+
         ## METADATA
         Complexity: <level>
         Audience: <target audience>
         Type: <content type>
-        
+
         ## CONFIDENCE
         Classification Confidence: <percentage>
-      
+
       model: "gpt-4"
       temperature: 0.5
       max_loops: 1
       timeout_seconds: 90
       stop_words: []
-      
+
       provider:
         type: openai
 
@@ -233,18 +233,18 @@ paladins:
   # Role: Synthesis and quality review
   # Receives: Combined outputs from analyzer AND classifier (fan-in)
   # Outputs to: formatter
-  
+
   - inline:
       name: "reviewer"
-      
+
       system_prompt: |
         You are a quality reviewer synthesizing multiple analysis streams.
-        
+
         CONTEXT:
         You receive TWO inputs:
         1. Deep content analysis (from analyzer)
         2. Classification and tagging (from classifier)
-        
+
         TASK:
         Review and synthesize the combined analysis:
         1. Verify consistency between analysis and classification
@@ -252,32 +252,32 @@ paladins:
         3. Assess overall quality of analysis
         4. Add additional insights from synthesis
         5. Provide quality score and recommendations
-        
+
         OUTPUT FORMAT:
-        
+
         ## SYNTHESIS
         <combine insights from both analyses>
-        
+
         ## CONSISTENCY CHECK
         <verify alignment between analysis and classification>
-        
+
         ## QUALITY ASSESSMENT
         Analysis Quality: <score 1-10>
         Classification Quality: <score 1-10>
         Overall Quality: <score 1-10>
-        
+
         ## RECOMMENDATIONS
         <suggestions for improvement or next steps>
-        
+
         ## ADDITIONAL INSIGHTS
         <unique insights from combined perspective>
-      
+
       model: "gpt-4"
       temperature: 0.6
       max_loops: 2
       timeout_seconds: 120
       stop_words: []
-      
+
       provider:
         type: openai
 
@@ -287,13 +287,13 @@ paladins:
   # Role: Final output formatting
   # Receives: Output from reviewer
   # Outputs: Final formatted result
-  
+
   - inline:
       name: "formatter"
-      
+
       system_prompt: |
         You are a document formatter creating the final polished output.
-        
+
         TASK:
         Format all analysis into a professional report:
         1. Executive summary (3-5 sentences)
@@ -302,7 +302,7 @@ paladins:
         4. Classification and metadata section
         5. Quality metrics section
         6. Recommendations section
-        
+
         OUTPUT FORMAT:
         Professional markdown report with:
         - Clear hierarchy (# ## ### headers)
@@ -310,15 +310,15 @@ paladins:
         - Code blocks for structured data
         - Horizontal rules between major sections
         - Bold/italic emphasis for key points
-        
+
         Make it scannable and visually appealing.
-      
+
       model: "gpt-4"
       temperature: 0.4
       max_loops: 1
       timeout_seconds: 90
       stop_words: []
-      
+
       provider:
         type: openai
 

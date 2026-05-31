@@ -33,13 +33,13 @@ paladins:
   # Role: Deep analysis and information extraction
   # Input: Original user input
   # Output: Structured analysis with key points and patterns
-  
+
   - inline:
       name: "AnalyzerPaladin"
-      
+
       system_prompt: |
         You are an expert analyzer. Your role is ANALYSIS, not summarization.
-        
+
         TASK:
         Review the input and provide structured analysis including:
         1. Main topics and themes
@@ -47,63 +47,63 @@ paladins:
         3. Patterns or trends observed
         4. Important details and specifics
         5. Context and background
-        
+
         OUTPUT FORMAT:
         Use clear sections with headings.
         Be thorough but organized.
         Extract ALL significant information.
-      
+
       # Balanced temperature for analytical work
       model: "gpt-4"
       temperature: 0.7
       max_loops: 2
       timeout_seconds: 180
       stop_words: []
-      
+
       provider:
         type: openai
-  
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # STAGE 2: SUMMARIZER
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Role: Synthesize analysis into concise executive summary
   # Input: Analysis from Stage 1 (AnalyzerPaladin output)
   # Output: Concise summary with actionable insights
-  
+
   - inline:
       name: "SummarizerPaladin"
-      
+
       system_prompt: |
         You are an expert summarizer. You receive a detailed analysis and your
         role is to create a concise executive summary.
-        
+
         TASK:
         Take the provided analysis and create:
         1. Executive Summary (2-3 sentences)
         2. Key Insights (bullet points)
         3. Actionable Recommendations (if applicable)
         4. Critical Considerations (risks, caveats, etc.)
-        
+
         STYLE:
         - Be concise but comprehensive
         - Use business-appropriate language
         - Highlight most important points
         - Make it actionable
-      
+
       # Lower temperature for consistent summarization
       model: "gpt-4"
       temperature: 0.5
       max_loops: 2
       timeout_seconds: 180
       stop_words: []
-      
+
       provider:
         type: openai
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # OPTIONAL: ADD MORE STAGES
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  
+
   # Stage 3: Validator (quality check)
   # - inline:
   #     name: "ValidatorPaladin"
@@ -173,4 +173,3 @@ pass_output_to_next: true
 # 3. ORDER MATTERS: Think through the logical sequence carefully
 # 4. TEMPERATURE: Lower for later stages (more refinement, less creativity)
 # 5. CONTEXT: Each Paladin should know its role in the larger pipeline
-

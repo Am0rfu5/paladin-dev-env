@@ -112,7 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             TreeAgent::new("ApiExpert")
                 .with_keywords(vec!["api", "rest", "graphql", "endpoint", "route"])
         );
-    
+
     // Create frontend specialists tree
     let frontend_tree = Tree::new("Frontend Specialists")
         .add_agent(
@@ -123,7 +123,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             TreeAgent::new("CssExpert")
                 .with_keywords(vec!["css", "styling", "layout", "responsive", "design"])
         );
-    
+
     // Build grove
     let grove = GroveBuilder::new()
         .name("Tech Specialists Grove")
@@ -135,22 +135,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             similarity_threshold: 0.6,
         })
         .build()?;
-    
+
     // Create execution service
     let service = GroveExecutionService::new(
         Arc::new(paladin_port),
         None, // Optional: embedding service for semantic routing
         None, // Optional: LLM service for LLM routing
     );
-    
+
     // Execute task - routes to DatabaseExpert
     let task = "Optimize database query performance with proper indexing";
     let result = service.execute(&grove, task).await?;
-    
+
     println!("Routed to: {}", result.selected_agent);
     println!("Confidence: {}%", result.confidence * 100.0);
     println!("Result: {}", result.final_output);
-    
+
     Ok(())
 }
 ```
@@ -233,7 +233,7 @@ let tree = Tree::new("Backend Specialists")
     .add_agent(
         TreeAgent::new("DatabaseExpert")
             .with_keywords(vec![
-                "database", "sql", "query", "index", 
+                "database", "sql", "query", "index",
                 "schema", "migration", "postgres"
             ])
     )
@@ -547,7 +547,7 @@ TreeAgent::new("PerformanceExpert")
         - Caching strategies (service workers, HTTP caching, CDN)
         - Build optimization (Webpack, Vite, Rollup)
         - Runtime performance (JavaScript execution, rendering)
-        
+
         Best suited for tasks involving:
         • Page load performance optimization
         • Core Web Vitals improvement
@@ -588,7 +588,7 @@ TreeAgent::new("ApiArchitect")
         - GraphQL schema design and optimization
         - API authentication (OAuth 2.0, JWT, API keys)
         - API versioning and backwards compatibility
-        
+
         Best suited for:
         • API endpoint design and structure
         • Protocol selection (REST vs GraphQL vs gRPC)
@@ -658,13 +658,13 @@ Task: "Build a full-stack feature with frontend, backend, and database"
 pub enum FallbackStrategy {
     /// Route to specified fallback tree
     FallbackTree(String),
-    
+
     /// Return error if no match
     Error,
-    
+
     /// Route to first agent in first tree (default)
     FirstAvailable,
-    
+
     /// Route to random agent
     Random,
 }
@@ -682,10 +682,10 @@ pub enum FallbackStrategy {
 pub struct GroveConfig {
     /// Routing strategy
     pub routing_strategy: RoutingStrategy,
-    
+
     /// Fallback tree name (optional)
     pub fallback_tree: Option<String>,
-    
+
     /// Similarity threshold (0.0-1.0)
     /// - KeywordMatch: keyword overlap percentage
     /// - SemanticSimilarity: cosine similarity
@@ -799,7 +799,7 @@ let queries = vec![
 
 for query in queries {
     let result = service.execute(&grove, query).await?;
-    println!("Query: {}\nExpert: {}\nConfidence: {:.0}%", 
+    println!("Query: {}\nExpert: {}\nConfidence: {:.0}%",
         query, result.selected_agent, result.confidence * 100.0);
 }
 ```
@@ -905,7 +905,7 @@ println!("Reasoning: {}", result.routing_reasoning.unwrap());
 **Monitor and adjust**:
 ```rust
 // Log routing decisions for analysis
-println!("Agent: {} | Confidence: {:.2} | Task: {}", 
+println!("Agent: {} | Confidence: {:.2} | Task: {}",
     result.selected_agent, result.confidence, task);
 
 // Collect data over time
@@ -1029,7 +1029,7 @@ impl GroveExecutionService {
         embedding_port: Option<Arc<dyn EmbeddingPort>>,
         llm_port: Option<Arc<dyn LlmPort>>,
     ) -> Self;
-    
+
     pub async fn execute(
         &self,
         grove: &Grove,

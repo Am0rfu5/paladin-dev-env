@@ -68,37 +68,37 @@ Options:
   -p, --pattern <PATTERN>
       Preferred orchestration pattern (formation, phalanx, campaign, chain_of_command)
       If not specified, LLM will suggest the best pattern
-      
+
   -o, --output <FILE>
       Output file path (YAML or JSON based on extension)
       If not specified, displays configuration without saving
-      
+
   -f, --format <FORMAT>
       Output format: yaml (default) or json
-      
+
   -y, --yes
       Auto-confirm and save without preview
-      
+
   --provider <PROVIDER>
       LLM provider to use for generation (openai, deepseek, anthropic)
       Default: Uses default provider from configuration
-      
+
   --model <MODEL>
       Specific LLM model to use
       Example: gpt-4, deepseek-chat, claude-3-opus
-      
+
   --temperature <TEMP>
       Generation temperature (0.0-2.0)
       Lower = more focused, Higher = more creative
       Default: 0.7
-      
+
   --validate
       Validate the generated configuration against schema
       Enabled by default, use --no-validate to skip
-      
+
   --interactive
       Interactive mode - refine the generated config through conversation
-      
+
   -v, --verbose
       Show detailed generation process
 ```
@@ -169,7 +169,7 @@ battalion:
         condition: "{{toxicity_detector.score}} > 0.7"
       - id: final_decision
         paladin: decision_maker
-    
+
     edges:
       - from: content_classifier
         to: toxicity_detector
@@ -296,7 +296,7 @@ paladin muster "Simple workflow" -o workflow.json -f json
 
 ✅ **Good:**
 ```bash
-paladin muster "Create a 3-stage content pipeline: 
+paladin muster "Create a 3-stage content pipeline:
 1. Extract key information from articles
 2. Summarize findings into bullet points  
 3. Generate social media posts from summaries"

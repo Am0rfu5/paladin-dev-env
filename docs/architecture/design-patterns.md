@@ -48,12 +48,12 @@ impl<T> Node<T> {
             updated_at: now,
         }
     }
-    
+
     pub fn with_id(mut self, id: Uuid) -> Self {
         self.id = id;
         self
     }
-    
+
     pub fn with_metadata(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.metadata.insert(key.into(), value.into());
         self
@@ -126,14 +126,14 @@ pub trait LlmPort: Send + Sync {
         messages: &[Message],
         temperature: f32,
     ) -> Result<LlmResponse, LlmError>;
-    
+
     async fn generate_stream(
         &self,
         model: &str,
         messages: &[Message],
         temperature: f32,
     ) -> Result<Pin<Box<dyn Stream<Item = LlmChunk> + Send>>, LlmError>;
-    
+
     fn supports_tools(&self, model: &str) -> bool;
 }
 ```
@@ -160,18 +160,18 @@ impl LlmPort for OpenAiAdapter {
             messages: messages.iter().map(|m| m.into()).collect(),
             temperature,
         };
-        
+
         let response = self.client
             .post(&format!("{}/chat/completions", self.base_url))
             .bearer_auth(&self.api_key)
             .json(&request)
             .send()
             .await?;
-        
+
         let openai_response: OpenAiResponse = response.json().await?;
         Ok(openai_response.into())
     }
-    
+
     // ... other methods
 }
 ```
@@ -200,19 +200,19 @@ impl<P: ?Sized> AdapterRegistry<P> {
             default: None,
         }
     }
-    
+
     pub fn register(&mut self, name: impl Into<String>, adapter: Arc<P>) {
         self.adapters.insert(name.into(), adapter);
     }
-    
+
     pub fn set_default(&mut self, adapter: Arc<P>) {
         self.default = Some(adapter);
     }
-    
+
     pub fn get(&self, name: &str) -> Option<Arc<P>> {
         self.adapters.get(name).cloned()
     }
-    
+
     pub fn get_or_default(&self, name: &str) -> Option<Arc<P>> {
         self.get(name).or_else(|| self.default.clone())
     }
@@ -267,87 +267,87 @@ impl PaladinBuilder {
             arsenal: Vec::new(),
         }
     }
-    
+
     /// Set system prompt
     pub fn system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.data.system_prompt = prompt.into();
         self
     }
-    
+
     /// Set Paladin name
     pub fn name(mut self, name: impl Into<String>) -> Self {
         self.data.name = name.into();
         self
     }
-    
+
     /// Set temperature
     pub fn temperature(mut self, temp: f32) -> Self {
         self.data.temperature = temp;
         self
     }
-    
+
     /// Set max loops
     pub fn max_loops(mut self, loops: u32) -> Self {
         self.data.max_loops = loops;
         self
     }
-    
+
     /// Add stop word
     pub fn stop_word(mut self, word: impl Into<String>) -> Self {
         self.data.stop_words.push(word.into());
         self
     }
-    
+
     /// Attach garrison for memory
     pub fn with_garrison(mut self, garrison: Arc<dyn GarrisonPort>) -> Self {
         self.garrison = Some(garrison);
         self
     }
-    
+
     /// Add tool to arsenal
     pub fn add_armament(mut self, armament: Arc<dyn ArsenalPort>) -> Self {
         self.arsenal.push(armament);
         self
     }
-    
+
     /// Build final Paladin with validation
     pub fn build(self) -> Result<Paladin, PaladinError> {
         self.validate()?;
-        
+
         let data = self.data;
         let mut paladin = Node::new(data);
-        
+
         // Attach ports
         if let Some(garrison) = self.garrison {
             paladin = paladin.with_metadata("garrison", "enabled");
         }
-        
+
         if !self.arsenal.is_empty() {
             paladin = paladin.with_metadata("arsenal_count", self.arsenal.len().to_string());
         }
-        
+
         Ok(paladin)
     }
-    
+
     fn validate(&self) -> Result<(), PaladinError> {
         if self.data.system_prompt.is_empty() {
             return Err(PaladinError::ConfigurationError(
                 "System prompt is required".into()
             ));
         }
-        
+
         if !(0.0..=2.0).contains(&self.data.temperature) {
             return Err(PaladinError::ConfigurationError(
                 format!("Temperature {} must be between 0.0 and 2.0", self.data.temperature)
             ));
         }
-        
+
         if self.data.max_loops == 0 {
             return Err(PaladinError::ConfigurationError(
                 "max_loops must be greater than 0".into()
             ));
         }
-        
+
         Ok(())
     }
 }
@@ -391,18 +391,18 @@ impl GarrisonFactory {
                 config.max_entries,
                 config.max_tokens,
             ))),
-            
+
             "sqlite" => {
                 let path = config.path.as_ref()
                     .ok_or_else(|| GarrisonError::ConfigError("path required for sqlite"))?;
-                
+
                 Ok(Arc::new(SqliteGarrison::new(
                     path,
                     config.max_entries,
                     config.max_tokens,
                 )?))
             }
-            
+
             other => Err(GarrisonError::UnsupportedType(other.to_string())),
         }
     }
@@ -454,7 +454,7 @@ impl ErrorStrategy {
     {
         match self {
             ErrorStrategy::FailFast => operation().await,
-            
+
             ErrorStrategy::Continue => {
                 match operation().await {
                     Ok(result) => Ok(result),
@@ -465,7 +465,7 @@ impl ErrorStrategy {
                     }
                 }
             }
-            
+
             ErrorStrategy::RetryThenContinue { max_retries } => {
                 let mut attempts = 0;
                 loop {
@@ -518,7 +518,7 @@ impl LlmFallbackChain {
     pub fn new(providers: Vec<Arc<dyn LlmPort>>) -> Self {
         Self { providers }
     }
-    
+
     pub async fn generate(
         &self,
         model: &str,
@@ -526,7 +526,7 @@ impl LlmFallbackChain {
         temperature: f32,
     ) -> Result<LlmResponse, LlmError> {
         let mut last_error = None;
-        
+
         for provider in &self.providers {
             match provider.generate(model, messages, temperature).await {
                 Ok(response) => return Ok(response),
@@ -537,7 +537,7 @@ impl LlmFallbackChain {
                 }
             }
         }
-        
+
         Err(last_error.unwrap_or_else(|| LlmError::NoProvidersAvailable))
     }
 }
@@ -586,7 +586,7 @@ impl EventBus {
             subscribers: Arc::new(RwLock::new(Vec::new())),
         }
     }
-    
+
     pub fn subscribe(&self, subscriber: Arc<dyn EventSubscriber>) {
         self.subscribers.write().unwrap().push(subscriber);
     }
@@ -662,17 +662,17 @@ impl PaladinRepository for SqlitePaladinRepository {
         .bind(name)
         .fetch_optional(&self.pool)
         .await?;
-        
+
         Ok(row.map(|r| r.into()))
     }
-    
+
     async fn find_active(&self) -> Result<Vec<Paladin>, RepositoryError> {
         let rows = sqlx::query_as::<_, PaladinRow>(
             "SELECT * FROM paladins WHERE status = 'Running'"
         )
         .fetch_all(&self.pool)
         .await?;
-        
+
         Ok(rows.into_iter().map(|r| r.into()).collect())
     }
 }
@@ -707,25 +707,25 @@ impl UnitOfWork {
             transaction: None,
         }
     }
-    
+
     /// Start transaction
     pub async fn begin(&mut self) -> Result<(), Error> {
         self.transaction = Some(Transaction::begin().await?);
         Ok(())
     }
-    
+
     /// Add garrison entry
     pub async fn add_entry(&self, entry: GarrisonEntry) -> Result<(), Error> {
         self.garrison.add(entry).await?;
         Ok(())
     }
-    
+
     /// Create checkpoint
     pub async fn create_checkpoint(&self, checkpoint: Checkpoint) -> Result<(), Error> {
         self.citadel.save(checkpoint).await?;
         Ok(())
     }
-    
+
     /// Commit all changes
     pub async fn commit(mut self) -> Result<(), Error> {
         if let Some(tx) = self.transaction.take() {
@@ -733,7 +733,7 @@ impl UnitOfWork {
         }
         Ok(())
     }
-    
+
     /// Rollback changes
     pub async fn rollback(mut self) -> Result<(), Error> {
         if let Some(tx) = self.transaction.take() {
@@ -796,17 +796,17 @@ impl PaladinExecutionService {
             event_publisher,
         }
     }
-    
+
     pub async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult> {
         // Use injected dependencies
         self.event_publisher.publish(PaladinEvent::ExecutionStarted { /* ... */ });
-        
+
         let response = self.llm_port.generate(/* ... */).await?;
-        
+
         if let Some(garrison) = &self.garrison_port {
             garrison.add(/* ... */).await?;
         }
-        
+
         Ok(result)
     }
 }
@@ -829,7 +829,7 @@ impl Container {
         let garrison_port = Arc::new(SqliteGarrison::new(&config.garrison_path)?);
         let arsenal_registry = Arc::new(ArsenalRegistry::new());
         let event_publisher = Arc::new(EventBus::new());
-        
+
         Ok(Self {
             llm_port,
             garrison_port,
@@ -837,7 +837,7 @@ impl Container {
             event_publisher,
         })
     }
-    
+
     /// Create execution service with dependencies
     pub fn paladin_execution_service(&self) -> PaladinExecutionService {
         PaladinExecutionService::new(

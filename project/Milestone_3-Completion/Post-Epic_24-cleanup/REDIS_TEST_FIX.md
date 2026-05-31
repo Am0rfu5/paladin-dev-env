@@ -152,4 +152,3 @@ All changes on branch `bugs/epic-24-post-fixes`:
 **DevContainer configuration** (pending commit):
 - Modified `.devcontainer/devcontainer.json` to use docker-compose.yml
 - Enables automatic Redis, MinIO, MySQL service connectivity
-

@@ -693,7 +693,7 @@ paladin maneuver validate -c workflow.yaml --verbose
 ```
 ❌ Flow syntax error at position 23: unexpected character '|'
    Expected: '->' or ',' for flow operators
-   
+
 ❌ Agent 'reviewer' referenced in flow but not found in configuration
    Flow agents: [intake, technical, business, reviewer]
    Configured: [intake, technical, business]
@@ -776,7 +776,7 @@ stop_words: ["STOP"]
 # Provider
 provider:
   type: openai  # or deepseek, anthropic
-  
+
 # Optional: Memory
 garrison:
   type: sqlite

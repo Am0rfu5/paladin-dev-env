@@ -39,25 +39,25 @@ Following the Paladin theme, multi-agent structures use Medieval Military termin
 ### Development Principles
 
 1. **Domain-Driven Design (DDD)**
-    
+
     - Rich domain models with ubiquitous language
     - Bounded contexts with clear boundaries
     - Domain events for cross-context communication
     - Aggregates protecting invariants
 2. **Test-Driven Development (TDD)**
-    
+
     - Red-Green-Refactor cycle for all features
     - Unit test coverage minimum 80%
     - Integration test coverage minimum 70%
     - Contract tests for port implementations
 3. **Hexagonal Architecture**
-    
+
     - Domain logic isolated from infrastructure
     - Ports define abstract interfaces
     - Adapters implement infrastructure concerns
     - Dependency inversion throughout
 4. **Professional Standards**
-    
+
     - Code review required for all changes
     - Documentation for all public APIs
     - Semantic versioning for releases
@@ -204,11 +204,11 @@ pub struct PaladinConfig {
 pub trait PaladinPort: Send + Sync {
     /// Execute Paladin with given input
     async fn execute(&self, paladin: &Paladin, input: &str) -> Result<PaladinResult, PaladinError>;
-    
+
     /// Execute with streaming response
-    async fn execute_stream(&self, paladin: &Paladin, input: &str) 
+    async fn execute_stream(&self, paladin: &Paladin, input: &str)
         -> Result<PaladinStream, PaladinError>;
-    
+
     /// Validate Paladin configuration
     fn validate(&self, paladin: &Paladin) -> Result<(), PaladinError>;
 }
@@ -249,12 +249,12 @@ pub struct PaladinExecutionService {
 
 impl PaladinExecutionService {
     /// Execute reasoning loop with retry logic
-    pub async fn execute(&self, paladin: &Paladin, input: &str) 
+    pub async fn execute(&self, paladin: &Paladin, input: &str)
         -> Result<PaladinResult, PaladinError>;
-    
+
     /// Check for stop word presence in output
     fn check_stop_words(&self, output: &str, stop_words: &[String]) -> bool;
-    
+
     /// Build prompt from Paladin configuration and input
     fn build_prompt(&self, paladin: &Paladin, input: &str, history: &[Message]) -> PromptItem;
 }
@@ -372,16 +372,16 @@ pub enum GarrisonType {
 pub trait GarrisonPort: Send + Sync {
     /// Add entry to memory
     async fn remember(&self, entry: GarrisonEntry) -> Result<(), GarrisonError>;
-    
+
     /// Retrieve recent entries
     async fn recall_recent(&self, limit: usize) -> Result<Vec<GarrisonEntry>, GarrisonError>;
-    
+
     /// Search memory by content
     async fn search(&self, query: &str, limit: usize) -> Result<Vec<GarrisonEntry>, GarrisonError>;
-    
+
     /// Clear all memory
     async fn forget_all(&self) -> Result<(), GarrisonError>;
-    
+
     /// Get memory statistics
     async fn stats(&self) -> Result<GarrisonStats, GarrisonError>;
 }
@@ -390,11 +390,11 @@ pub trait GarrisonPort: Send + Sync {
 #[async_trait]
 pub trait LongTermGarrisonPort: GarrisonPort {
     /// Add entry with embedding
-    async fn remember_with_embedding(&self, entry: GarrisonEntry, embedding: Vec<f32>) 
+    async fn remember_with_embedding(&self, entry: GarrisonEntry, embedding: Vec<f32>)
         -> Result<(), GarrisonError>;
-    
+
     /// Semantic similarity search
-    async fn search_similar(&self, embedding: Vec<f32>, limit: usize) 
+    async fn search_similar(&self, embedding: Vec<f32>, limit: usize)
         -> Result<Vec<GarrisonEntry>, GarrisonError>;
 }
 ```
@@ -517,10 +517,10 @@ pub struct ArmamentResult {
 pub trait ArsenalPort: Send + Sync {
     /// List available tools
     async fn list_armaments(&self) -> Vec<Armament>;
-    
+
     /// Invoke a tool
     async fn invoke(&self, call: ArmamentCall) -> Result<ArmamentResult, ArsenalError>;
-    
+
     /// Validate tool call arguments
     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError>;
 }
@@ -530,10 +530,10 @@ pub trait ArsenalPort: Send + Sync {
 pub trait ArsenalRegistry: Send + Sync {
     /// Register a new tool
     async fn register(&self, armament: Armament, handler: Box<dyn ArmamentHandler>);
-    
+
     /// Unregister a tool
     async fn unregister(&self, name: &str) -> Option<Armament>;
-    
+
     /// Get tool by name
     async fn get(&self, name: &str) -> Option<&Armament>;
 }
@@ -584,10 +584,10 @@ pub struct MCPSseAdapter {
 impl PaladinBuilder {
     /// Add a tool to the Paladin's arsenal
     pub fn add_armament(self, armament: Armament, handler: Box<dyn ArmamentHandler>) -> Self;
-    
+
     /// Add STDIO MCP server
     pub async fn add_mcp_stdio(self, command: &str, args: &[&str]) -> Self;
-    
+
     /// Add SSE MCP server
     pub async fn add_mcp_sse(self, name: &str, endpoint: &str) -> Self;
 }
@@ -801,10 +801,10 @@ pub enum DelegationStrategy {
 pub trait BattalionPort: Send + Sync {
     /// Execute the battalion with given input
     async fn execute(&self, input: &str) -> Result<BattalionResult, BattalionError>;
-    
+
     /// Get current execution status
     async fn status(&self) -> BattalionStatus;
-    
+
     /// Cancel ongoing execution
     async fn cancel(&self) -> Result<(), BattalionError>;
 }
@@ -819,17 +819,17 @@ pub struct FormationExecutionService {
 }
 
 impl FormationExecutionService {
-    pub async fn execute(&self, formation: &Formation, input: &str) 
+    pub async fn execute(&self, formation: &Formation, input: &str)
         -> Result<BattalionResult, BattalionError> {
         let mut current_input = input.to_string();
         let mut results = Vec::new();
-        
+
         for paladin in &formation.paladins {
             let result = self.paladin_service.execute(paladin, &current_input).await?;
             current_input = result.output.clone();
             results.push(result);
         }
-        
+
         Ok(BattalionResult::from_paladin_results(results))
     }
 }
@@ -843,15 +843,15 @@ pub struct PhalanxExecutionService {
 }
 
 impl PhalanxExecutionService {
-    pub async fn execute(&self, phalanx: &Phalanx, input: &str) 
+    pub async fn execute(&self, phalanx: &Phalanx, input: &str)
         -> Result<BattalionResult, BattalionError> {
         let futures: Vec<_> = phalanx.paladins.iter()
             .map(|p| self.paladin_service.execute(p, input))
             .collect();
-        
+
         let results = futures::future::join_all(futures).await;
         let aggregated = phalanx.aggregation.aggregate(results)?;
-        
+
         Ok(aggregated)
     }
 }
@@ -942,7 +942,7 @@ pub struct Commander {
 
 impl Commander {
     pub fn new(strategy: BattalionStrategy, paladins: Vec<Paladin>) -> Self;
-    
+
     pub async fn execute(&self, input: &str) -> Result<BattalionResult, BattalionError> {
         match self.resolve_strategy(input) {
             BattalionStrategy::Formation => self.execute_formation(input).await,
@@ -952,14 +952,14 @@ impl Commander {
             BattalionStrategy::Auto => unreachable!("resolved above"),
         }
     }
-    
+
     fn resolve_strategy(&self, input: &str) -> BattalionStrategy {
         if self.strategy != BattalionStrategy::Auto {
             return self.strategy.clone();
         }
         self.analyze_and_select(input)
     }
-    
+
     fn analyze_and_select(&self, input: &str) -> BattalionStrategy;
 }
 ```
@@ -1007,7 +1007,7 @@ pub struct DeepSeekConfig {
 #[async_trait]
 impl LlmPort for DeepSeekAdapter {
     async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError>;
-    async fn generate_stream(&self, request: LlmRequest) 
+    async fn generate_stream(&self, request: LlmRequest)
         -> Result<Box<dyn Stream<Item = Result<StreamingResponse, LlmError>> + Send>, LlmError>;
     async fn validate_model(&self, model: &str) -> Result<bool, LlmError>;
     async fn get_available_models(&self) -> Result<Vec<String>, LlmError>;
@@ -1106,10 +1106,10 @@ pub trait CitadelPort: Send + Sync {
 impl PaladinBuilder {
     /// Enable automatic state persistence
     pub fn enable_autosave(self) -> Self;
-    
+
     /// Set directory for state files
     pub fn save_state_dir(self, path: &str) -> Self;
-    
+
     /// Restore from saved state
     pub fn restore_from(self, state_id: Uuid) -> Self;
 }
@@ -1282,24 +1282,24 @@ paladin arsenal test --mcp-stdio "uvx mcp-hn"
 #### Documentation
 
 1. **API Reference** (rustdoc)
-    
+
     - All public types documented
     - Examples for each major component
     - Error handling guidance
 2. **User Guide**
-    
+
     - Getting started tutorial
     - Paladin configuration guide
     - Battalion patterns cookbook
     - Tool integration guide
 3. **Architecture Documentation**
-    
+
     - System overview diagrams
     - Domain model documentation
     - Port/adapter mapping
     - Extension guide
 4. **Examples Gallery**
-    
+
     - Single Paladin examples
     - Formation workflow examples
     - Phalanx parallel processing
