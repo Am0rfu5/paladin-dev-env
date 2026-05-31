@@ -44,15 +44,15 @@
   - [x] 1.8 Unit tests with a mock LLM adapter: prompt conversion + enrichment; raw-text verbatim; well-formed JSON parsed; malformed JSON → degraded result
   - [x] 1.9 Add rustdoc for all new public items
 
-- [ ] 2.0 Implement `BattalionContentProcessor` (PRD Task 3.2)
-  - [ ] 2.1 Define a pattern-selector config (Formation vs. Phalanx) owning the corresponding domain object + execution service
-  - [ ] 2.2 Implement `BattalionContentProcessor` with `name()`/`clone_box()` and `process_content()` building the prompt from the `ContentItem`
-  - [ ] 2.3 Formation path: delegate to `FormationExecutionService::execute()` and thread outputs through the pipeline
-  - [ ] 2.4 Phalanx path: delegate to `PhalanxExecutionService::execute()` and run analysts in parallel
-  - [ ] 2.5 Implement the merge strategy → single `ContentProcessingResult` (Formation surfaces final output; Phalanx merges per-agent outputs into `result_data`), documented in code
-  - [ ] 2.6 Attach metadata identifying the pattern used and participating agents
-  - [ ] 2.7 Unit tests with mock agents: Formation runs sequentially into one result; Phalanx runs in parallel and merges into one result
-  - [ ] 2.8 Add rustdoc for all new public items
+- [x] 2.0 Implement `BattalionContentProcessor` (PRD Task 3.2)
+  - [x] 2.1 Define a pattern-selector config (Formation vs. Phalanx) owning the corresponding domain object + execution service
+  - [x] 2.2 Implement `BattalionContentProcessor` with `name()`/`clone_box()` and `process_content()` building the prompt from the `ContentItem`
+  - [x] 2.3 Formation path: delegate to `FormationExecutionService::execute()` and thread outputs through the pipeline
+  - [x] 2.4 Phalanx path: delegate to `PhalanxExecutionService::execute()` and run analysts in parallel
+  - [x] 2.5 Implement the merge strategy → single `ContentProcessingResult` (Formation surfaces final output; Phalanx merges per-agent outputs into `result_data`), documented in code
+  - [x] 2.6 Attach metadata identifying the pattern used and participating agents
+  - [x] 2.7 Unit tests with mock agents: Formation runs sequentially into one result; Phalanx runs in parallel and merges into one result
+  - [x] 2.8 Add rustdoc for all new public items
 
 - [ ] 3.0 Wire content processing into the Orchestrator (PRD Task 3.3)
   - [ ] 3.1 Confirm/extend `Orchestrator::register_content_processor()` accepts both processors as `Box<dyn ContentProcessor>` registered by name

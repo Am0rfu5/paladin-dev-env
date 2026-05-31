@@ -17,8 +17,10 @@
 //!
 //! [`ContentItem`]: crate::core::platform::container::content::ContentItem
 
+pub mod battalion_processor;
 pub mod paladin_processor;
 
+pub use battalion_processor::{BattalionContentProcessor, BattalionPattern};
 pub use paladin_processor::PaladinContentProcessor;
 
 use crate::core::platform::container::content::{ContentItem, ContentType};
