@@ -7,6 +7,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`paladin-content` module rename** (Milestone 8, Epic 6): Renamed `use_cases` → `services`
+  inside the `paladin-content` leaf crate to align with the naming convention established by
+  Epic 4. The directory `crates/paladin-content/src/use_cases/` is now
+  `crates/paladin-content/src/services/`; `lib.rs` now declares `pub mod services;`.
+- **Resolved six latent `E0432` unresolved import errors** in the facade re-export bridge
+  (`src/application/services/content/mod.rs`). The bridge already referenced
+  `paladin_content::services::*` (correct post-Epic-4 path), but the leaf crate had not been
+  updated. The errors were previously masked by the `content-processing` feature gate and did
+  not surface in default `cargo test` runs.
+
+---
+
+## [0.3.0] - 2026-05-31
+
+Milestone 9 — Classic Orchestrator, Content Pipeline, and Agent-Orchestrator Bridge.
+This release makes the time- and event-driven orchestration paths functional end-to-end, bridges
+the content pipeline and AI agents into the `Orchestrator`, and completes the user/admin system with
+authentication and role-based access control.
+
+### Added
+
+#### Orchestration (Milestone 9, Epic 1)
+
+- **Workflow execution loop**: the `Orchestrator` now executes workflows end-to-end rather than
+  simulating them. Jobs are dispatched, their outcomes aggregated into a `WorkflowExecutionResult`,
+  and the configured error strategy is honored when a job fails.
+- **Workflow state persistence & resume**: in-progress workflow state is persisted so incomplete
+  workflows can be resumed after a restart.
+- **Real `TaskService` behavior**: simulated task implementations were replaced with real dispatch
+  and error-strategy handling, validated by a full-lifecycle integration test.
+
+#### Scheduler & Queue (Milestone 9, Epic 2)
+
+- **Validated scheduler tick loop**: `next_run` computation for `Schedule::Interval`,
+  `Schedule::Cron`, and `Schedule::Once` is verified, disabled jobs are skipped, and
+  `last_run`/`run_count`/`next_run` advance correctly after each dispatch.
+- **Validated `QueuePort` contract**: the in-memory queue and the `RedisQueueAdapter` are exercised
+  against the same `QueuePort` contract, including retry and dead-letter behavior.
+- **Validated event → trigger → job pipeline**: a matching event produces exactly one trigger per
+  matching listener, which is converted to a job and executed via the Epic 1 dispatch path.
+
+#### Content Pipeline (Milestone 9, Epic 3)
+
+- **`PaladinContentProcessor`**: a content → agent bridge that routes ingested content through a
+  Paladin agent.
+- **`BattalionContentProcessor`**: a content processor backed by a Battalion for multi-agent content
+  enrichment.
+- **Orchestrator wiring**: the content processors are wired into the `Orchestrator`, with an
+  ingestion → enrichment pipeline integration test.
+
+#### Agent–Orchestrator Bridge (Milestone 9, Epic 4)
+
+- **`OrchestratorPort`**: a new bridge interface in `paladin-ports` that lets agents invoke
+  orchestrator workflows.
+- **`OrchestratorBridgeAdapter`**: an adapter implementing `OrchestratorPort` over the concrete
+  `Orchestrator`.
+- **`PaladinExecutionService` integration**: agents can now drive orchestrator workflows through the
+  port, validated by an agent → orchestrator bridge integration test.
+
+#### User/Admin System & Security (Milestone 9, Epic 5)
+
+- **Role-based access control**: a `UserRole` (`Admin`/`User`) was added to the user domain and is
+  persisted by the SQLite user repositories.
+- **`AuthPort` authentication abstraction**: a new port in `paladin-ports` defining token issuance,
+  verification, and revocation (`AuthToken`, `AuthClaims`, `AuthError`).
+- **In-memory opaque-token auth adapter**: a concrete `AuthPort` implementation issuing opaque
+  bearer tokens (random token material, only SHA-256 hashes stored, configurable expiry).
+- **User CRUD & token-issuing login**: the user service gained `delete_user` and `list_users`, and
+  login now issues an authentication token.
+- **Axum auth middleware & RBAC guards**: bearer-token authentication middleware (`require_auth`),
+  an admin guard (`require_admin`), and self-or-admin authorization, all returning non-revealing
+  `401`/`403` responses.
+- **Protected routes & app router**: a `create_app_router` composition exposing public routes
+  (register, login), self-scoped routes (`GET`/`PUT /users/{id}`), and admin-only routes
+  (`GET /users`, `DELETE /users/{id}`), validated by authentication + RBAC integration tests.
+
+### Changed
+
+- Workspace version bumped to `0.3.0` across the root crate and all member crates.
+
+---
+
+## [0.2.0] - 2026-05-30
+
+### Breaking Changes
+
+- **Services Directory Rename** (Milestone 8, Epic 4): `src/application/use_cases/` renamed to
+  `src/application/services/`. All module paths under `paladin::application::use_cases` are now at
+  `paladin::application::services`. No logic was changed; this is a pure path rename.
+
+  | Old path | New path |
+  |----------|----------|
+  | `paladin::application::use_cases::paladin::*` | `paladin::application::services::paladin::*` |
+  | `paladin::application::use_cases::battalion::*` | `paladin::application::services::battalion::*` |
+  | `paladin::application::use_cases::arsenal::*` | `paladin::application::services::arsenal::*` |
+  | `paladin::application::use_cases::content::*` | `paladin::application::services::content::*` |
+  | `paladin::application::use_cases::herald::*` | `paladin::application::services::herald::*` |
+  | `paladin::application::use_cases::orchestration::*` | `paladin::application::services::orchestration::*` |
+  | `paladin::application::use_cases::log_orchestrator::*` | `paladin::application::services::log_orchestrator::*` |
+  | `paladin::application::use_cases::notification_orchestrator::*` | `paladin::application::services::notification_orchestrator::*` |
+  | `paladin::application::use_cases::queue_orchestrator::*` | `paladin::application::services::queue_orchestrator::*` |
+  | `paladin::application::use_cases::sanctum::*` | `paladin::application::services::sanctum::*` |
+  | `paladin::application::use_cases::analysis::*` | `paladin::application::services::analysis::*` |
+
 ### Added
 - **CLI Feature Flag** (Milestone 4, Epic 3): Gate the `paladin-cli` binary and `application::cli` module behind the new `cli` feature flag
   - New feature: `cli = ["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml"]`
@@ -17,6 +123,131 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New integration test suite: `tests/cli_isolation_test.rs` — 9 regression tests verifying library compiles without CLI deps
   - Dedicated `cli-isolation` CI job verifies library-only and CLI-enabled builds
   - **Benefit**: Library consumers who don't use the CLI avoid compiling `clap` and associated TUI dependencies
+
+### Changed
+- **Facade Crate Documentation** (Milestone 8, Epic 5): Documented facade crate role as the
+  application assembly point and composition root. Added `src/README.md` with full module layout
+  reference. Updated `src/lib.rs` `//!` docs with a new `## Facade Crate Role` section explaining
+  what the facade contains (ServiceRunner, services, config, CLI, binaries), what it does not
+  contain (business logic, port traits, adapters), and the dependency-flow rule (facade → leaf
+  crates; one direction only).
+
+### Removed
+- **Storage Re-export Shims** (Milestone 8, Epic 3): Deleted `src/application/storage/` (3 files:
+  `sql_store.rs`, `user_store.rs`, `mod.rs`). These files contained only `pub use` re-exports of port
+  traits that already live in `paladin_ports`. Six internal consumers were updated to import directly
+  from the canonical crate paths.
+
+  | Removed shim path | Replacement canonical path |
+  |-------------------|---------------------------|
+  | `paladin::application::storage::sql_store::ContentRepository` | `paladin_ports::output::repository_port::ContentRepository` |
+  | `paladin::application::storage::sql_store::ContentListRepository` | `paladin_ports::output::repository_port::ContentListRepository` |
+  | `paladin::application::storage::sql_store::MigrationManager` | `paladin_ports::output::repository_port::MigrationManager` |
+  | `paladin::application::storage::sql_store::RepositoryError` | `paladin_ports::output::repository_port::RepositoryError` |
+  | `paladin::application::storage::sql_store::RepositoryStats` | `paladin_ports::output::repository_port::RepositoryStats` |
+  | `paladin::application::storage::sql_store::SqlStore` | `paladin_ports::output::repository_port::SqlStore` |
+  | `paladin::application::storage::sql_store::TransactionManager` | `paladin_ports::output::repository_port::TransactionManager` |
+  | `paladin::application::storage::user_store::UserRepositoryPort` | `paladin_ports::output::user_repository_port::UserRepositoryPort` |
+
+- **Facade Short-path Aliases** (Milestone 8, Epic 2): Removed zero-consumer `pub use` re-export aliases
+  from `src/lib.rs`. These aliases had no workspace consumers; the underlying types are unchanged and
+  remain accessible via their canonical crate paths.
+
+  The following short-path aliases (`paladin::<Type>`) have been removed. Use the crate-level paths shown instead:
+
+  | Removed short-path alias | Replacement canonical path |
+  |--------------------------|---------------------------|
+  | `paladin::LlmError` | `paladin_ports::output::llm_port::LlmError` |
+  | `paladin::LlmPort` | `paladin_ports::output::llm_port::LlmPort` |
+  | `paladin::LlmRequest` | `paladin_ports::output::llm_port::LlmRequest` |
+  | `paladin::LlmResponse` | `paladin_ports::output::llm_port::LlmResponse` |
+  | `paladin::ProviderCapabilities` | `paladin_ports::output::llm_port::ProviderCapabilities` |
+  | `paladin::TokenUsage` | `paladin_ports::output::llm_port::TokenUsage` |
+  | `paladin::LlmProviderError` | `paladin_llm::error::LlmProviderError` |
+  | `paladin::PromptItem` | `paladin_core::platform::container::prompt::PromptItem` |
+  | `paladin::GarrisonError` | `paladin_ports::output::garrison_port::GarrisonError` |
+  | `paladin::GarrisonPort` | `paladin_ports::output::garrison_port::GarrisonPort` |
+  | `paladin::GarrisonStats` | `paladin_ports::output::garrison_port::GarrisonStats` |
+  | `paladin::LongTermGarrisonPort` | `paladin_ports::output::garrison_port::LongTermGarrisonPort` |
+  | `paladin::SanctumError` | `paladin_ports::output::sanctum_port::SanctumError` |
+  | `paladin::SanctumFilter` | `paladin_ports::output::sanctum_port::SanctumFilter` |
+  | `paladin::SanctumPort` | `paladin_ports::output::sanctum_port::SanctumPort` |
+  | `paladin::SanctumQuery` | `paladin_ports::output::sanctum_port::SanctumQuery` |
+  | `paladin::SanctumSearchResult` | `paladin_ports::output::sanctum_port::SanctumSearchResult` |
+  | `paladin::SanctumEntry` | `paladin_core::platform::container::sanctum::SanctumEntry` |
+  | `paladin::InMemoryGarrison` | `paladin_memory::garrison::InMemoryGarrison` |
+  | `paladin::SqliteGarrison` | `paladin_memory::garrison::SqliteGarrison` |
+  | `paladin::InMemorySanctum` | `paladin_memory::sanctum::InMemorySanctum` |
+  | `paladin::QdrantSanctumAdapter` | `paladin_memory::sanctum::QdrantSanctumAdapter` |
+  | `paladin::ExtractedMemory` | `paladin_memory::services::ExtractedMemory` |
+  | `paladin::MemoryExtractionService` | `paladin_memory::services::MemoryExtractionService` |
+  | `paladin::MemoryExtractionStrategy` | `paladin_memory::services::MemoryExtractionStrategy` |
+  | `paladin::RagConfig` | `paladin_memory::services::RagConfig` |
+  | `paladin::RagRetrievalService` | `paladin_memory::services::RagRetrievalService` |
+  | `paladin::RetrievalTrigger` | `paladin_memory::services::RetrievalTrigger` |
+  | `paladin::Embedding` | `paladin_ports::output::embedding_port::Embedding` |
+  | `paladin::EmbeddingError` | `paladin_ports::output::embedding_port::EmbeddingError` |
+  | `paladin::EmbeddingPort` | `paladin_ports::output::embedding_port::EmbeddingPort` |
+  | `paladin::ArsenalPort` | `paladin_ports::output::arsenal_port::ArsenalPort` |
+  | `paladin::ArsenalRegistry` | `paladin_ports::output::arsenal_port::ArsenalRegistry` |
+  | `paladin::ArsenalError` | `paladin_core::platform::container::arsenal::ArsenalError` |
+  | `paladin::CitadelPort` | `paladin_ports::output::citadel_port::CitadelPort` |
+  | `paladin::CitadelError` | `paladin_core::application::errors::citadel_error::CitadelError` |
+  | `paladin::CitadelServiceError` | `paladin_core::application::errors::citadel_error::CitadelError` |
+  | `paladin::QueuePort` | `paladin_ports::output::queue_port::QueuePort` |
+  | `paladin::QueueError` | `paladin_core::application::use_cases::queue_orchestrator::QueueError` |
+  | `paladin::NotificationDeliveryPort` | `paladin_ports::output::notification_port::NotificationDeliveryPort` |
+  | `paladin::NotificationTemplatePort` | `paladin_ports::output::notification_port::NotificationTemplatePort` |
+  | `paladin::Notification` | `paladin_ports::output::notification_port::Notification` |
+  | `paladin::NotificationChannel` | `paladin_ports::output::notification_port::NotificationChannel` |
+  | `paladin::NotificationPortError` | `paladin_ports::output::notification_port::NotificationPortError` |
+  | `paladin::NotificationPriority` | `paladin_ports::output::notification_port::NotificationPriority` |
+  | `paladin::NotificationStatus` | `paladin_ports::output::notification_port::NotificationStatus` |
+  | `paladin::NotificationTemplate` | `paladin_ports::output::notification_port::NotificationTemplate` |
+  | `paladin::FileStorageError` | `paladin_ports::output::file_storage_port::FileStorageError` |
+  | `paladin::FileStoragePort` | `paladin_ports::output::file_storage_port::FileStoragePort` |
+  | `paladin::PaladinPort` | `paladin_ports::output::paladin_port::PaladinPort` |
+  | `paladin::PaladinResult` | `paladin_ports::output::paladin_port::PaladinResult` |
+  | `paladin::StopReason` | `paladin_ports::output::paladin_port::StopReason` |
+  | `paladin::BattalionPort` | `paladin_ports::output::battalion_port::BattalionPort` |
+  | `paladin::BattalionResult` | `paladin_core::platform::container::battalion::BattalionResult` |
+  | `paladin::BattalionStatus` | `paladin_core::platform::container::battalion::BattalionStatus` |
+  | `paladin::paladin_battalion` | `paladin_battalion` (direct crate dependency) |
+  | `paladin::ContentIngestionPort` | `paladin_ports::input::content_input_port::ContentIngestionPort` |
+  | `paladin::DocumentPort` | `paladin_ports::input::document_port::DocumentPort` |
+  | `paladin::MlPort` | `paladin_ports::input::ml_port::MlPort` |
+  | `paladin::Campaign` | `paladin_battalion::campaign::Campaign` |
+  | `paladin::ChainOfCommand` | `paladin_battalion::chain_of_command::ChainOfCommand` |
+  | `paladin::Formation` | `paladin_battalion::formation::Formation` |
+  | `paladin::Phalanx` | `paladin_battalion::phalanx::Phalanx` |
+  | `paladin::Armament` | `paladin_core::platform::container::arsenal::Armament` |
+  | `paladin::ArmamentCall` | `paladin_core::platform::container::arsenal::ArmamentCall` |
+  | `paladin::ArmamentResult` | `paladin_core::platform::container::arsenal::ArmamentResult` |
+  | `paladin::CommanderBuilder` | `paladin_battalion::commander::CommanderBuilder` |
+  | `paladin::PaladinBuilder` | `paladin_core::application::use_cases::paladin::PaladinBuilder` |
+  | `paladin::CouncilBuilder` | `paladin_battalion::council::CouncilBuilder` |
+  | `paladin::GroveBuilder` | `paladin_battalion::grove::GroveBuilder` |
+  | `paladin::PaladinError` | `paladin_core::application::use_cases::paladin::error::PaladinError` |
+  | `paladin::CollectionType` | `paladin_core::base::entity::collection::CollectionType` |
+  | `paladin::Field` | `paladin_core::base::entity::field::Field` |
+  | `paladin::Message` | `paladin_core::base::entity::message::Message` |
+  | `paladin::Node` | `paladin_core::base::entity::node::Node` |
+
+  **Still exported as short-path aliases** (confirmed workspace consumers):
+  - `paladin::MockLlmAdapter`, `paladin::MultiStepMockLlmPort` — used in 13+ tests and examples
+  - `paladin::OpenAIAdapter`, `paladin::OpenAIConfig` — used in examples and integration tests
+  - `paladin::AnthropicAdapter`, `paladin::AnthropicConfig` — used in examples and integration tests
+  - `paladin::DeepSeekAdapter`, `paladin::DeepSeekConfig` — used in integration tests
+  - `paladin::OpenAIEmbeddingAdapter`, `paladin::OpenAIEmbeddingConfig` — used in embedding tests
+  - `paladin::LlmProviderFactory` — used in integration tests
+  - `paladin::Paladin`, `paladin::PaladinData`, `paladin::PaladinStatus` — used in 17+ consumers
+  - `paladin::PaladinConfig`, `paladin::BattalionConfig`, `paladin::BattalionError` — used in `cli_isolation_test`
+
+  **Also removed** — 26 empty/orphaned source files from `src/` (Milestone 8, Epic 2, Tasks 2.0–4.0):
+  - Application layer: `notifications/` directory (3 files), `storage/` stubs (4 files),
+    `use_cases/content/` empties (3 files), `use_cases/subject/` directory (5 files + mod.rs)
+  - Core layer: `core/platform/manager/admin/` (4 files), `core/platform/manager/user/` (4 files)
+  - Infrastructure layer: `adapters/logs/access_log_adapter.rs`, `adapters/notifications/push_notification_adapter.rs`
 
 ### Changed - BREAKING
 - **Default Feature Flags Revised**: Default features changed from `["redis-queue", "s3-storage", "openai-embeddings"]` to `["llm-openai"]` only
@@ -1237,5 +1468,6 @@ let result = service.execute_with_vision(&paladin, "Describe this image", conten
 - Comprehensive test suite (1146+ tests)
 - Continuous integration ready
 
-[Unreleased]: https://github.com/jamatulli/paladin/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/jamatulli/paladin/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/jamatulli/paladin/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jamatulli/paladin/releases/tag/v0.1.0

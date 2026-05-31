@@ -10,8 +10,6 @@ pub use paladin_notifications::system_notification_adapter;
 #[cfg(not(feature = "notifications"))]
 pub mod email_notification_adapter;
 #[cfg(not(feature = "notifications"))]
-pub mod push_notification_adapter;
-#[cfg(not(feature = "notifications"))]
 pub mod system_notification_adapter;
 
 // Re-export main adapters for convenience

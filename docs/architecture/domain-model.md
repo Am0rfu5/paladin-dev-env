@@ -36,7 +36,7 @@ Paladin's domain model follows Domain-Driven Design principles with a clear **Ub
 | **Phalanx** | Concurrent Paladin execution pattern (parallel processing) | `battalion/phalanx.rs` |
 | **Campaign** | Graph/DAG-based Paladin orchestration with conditional routing | `battalion/campaign.rs` |
 | **Chain of Command** | Hierarchical Paladin delegation pattern (leader → specialists) | `battalion/chain_of_command.rs` |
-| **Commander** | Dynamic Battalion strategy router | `use_cases/battalion/commander.rs` |
+| **Commander** | Dynamic Battalion strategy router | `services/battalion/commander.rs` |
 | **Garrison** | Paladin memory and conversation context storage | `core/platform/container/garrison.rs` |
 | **Arsenal** | Tool and capability registry | `core/platform/container/arsenal.rs` |
 | **Armament** | A single tool or capability within the Arsenal | Part of Arsenal |

@@ -256,7 +256,7 @@ pub trait ContentIngestionPort: Send + Sync {
 
 **Implementation** (in application layer):
 ```rust
-// src/application/use_cases/content/ingestion_service.rs
+// src/application/services/content/ingestion_service.rs
 
 pub struct ContentIngestionService {
     repository: Arc<dyn ContentRepository>,
@@ -548,7 +548,7 @@ pub struct Paladin {
 }
 
 // ✅ CORRECT - Application uses Core
-// src/application/use_cases/paladin/paladin_execution_service.rs
+// src/application/services/paladin/paladin_execution_service.rs
 use crate::core::platform::container::paladin::Paladin;
 use crate::paladin_ports::output::llm_port::LlmPort;
 

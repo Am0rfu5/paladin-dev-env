@@ -9,7 +9,7 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::use_cases::paladin::planning_service::PlanningService;
+use paladin::application::services::paladin::planning_service::PlanningService;
 use paladin_ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, TokenUsage,
 };

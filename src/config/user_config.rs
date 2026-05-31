@@ -5,7 +5,7 @@ Configuration setup for user-related services, including dependency injection
 and service initialization.
 */
 
-use crate::application::use_cases::notification_orchestrator::NotificationService;
+use crate::application::services::notification_orchestrator::NotificationService;
 use crate::config::Settings;
 use crate::core::platform::manager::user_service::UserService;
 use crate::infrastructure::repositories::sqlite_user_repository::SqliteUserRepository;

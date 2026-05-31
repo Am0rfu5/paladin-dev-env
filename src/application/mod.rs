@@ -45,20 +45,20 @@
 //! - Content ingestion interfaces
 //! - RPC service interfaces
 //!
-//! ## [use_cases]
+//! ## [services]
 //!
 //! Application services that implement business workflows:
 //!
 //! - **Paladin Services**:
-//!   - [`PaladinBuilder`](crate::application::use_cases::paladin::paladin_builder::PaladinBuilder) - Fluent builder for Paladin creation
-//!   - [`PaladinExecutionService`](crate::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService) - Execution orchestration
+//!   - [`PaladinBuilder`](crate::application::services::paladin::paladin_builder::PaladinBuilder) - Fluent builder for Paladin creation
+//!   - [`PaladinExecutionService`](crate::application::services::paladin::paladin_execution_service::PaladinExecutionService) - Execution orchestration
 //!
 //! - **Battalion Services**:
-//!   - [`FormationExecutionService`](crate::application::use_cases::battalion::formation_service::FormationExecutionService) - Sequential execution
-//!   - [`PhalanxExecutionService`](crate::application::use_cases::battalion::phalanx_service::PhalanxExecutionService) - Parallel execution
-//!   - [`CampaignExecutionService`](crate::application::use_cases::battalion::campaign_service::CampaignExecutionService) - Graph orchestration
-//!   - [`ChainOfCommandExecutionService`](crate::application::use_cases::battalion::chain_of_command_service::ChainOfCommandExecutionService) - Hierarchical delegation
-//!   - [`Commander`](crate::application::use_cases::battalion::commander::Commander) - Automatic strategy selection
+//!   - [`FormationExecutionService`](crate::application::services::battalion::formation_service::FormationExecutionService) - Sequential execution
+//!   - [`PhalanxExecutionService`](crate::application::services::battalion::phalanx_service::PhalanxExecutionService) - Parallel execution
+//!   - [`CampaignExecutionService`](crate::application::services::battalion::campaign_service::CampaignExecutionService) - Graph orchestration
+//!   - [`ChainOfCommandExecutionService`](crate::application::services::battalion::chain_of_command_service::ChainOfCommandExecutionService) - Hierarchical delegation
+//!   - [`Commander`](crate::application::services::battalion::commander::Commander) - Automatic strategy selection
 //!
 //! ## [storage]
 //!
@@ -111,7 +111,7 @@
 //! ## Building a Paladin with Ports
 //!
 //! ```ignore
-//! use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+//! use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 //! use std::sync::Arc;
 //!
 //! let llm_port = Arc::new(OpenAiAdapter::new(api_key));
@@ -127,7 +127,7 @@
 //! ## Executing a Battalion
 //!
 //! ```ignore
-//! use paladin::application::use_cases::battalion::formation_service::FormationService;
+//! use paladin::application::services::battalion::formation_service::FormationService;
 //!
 //! let service = FormationService::new(paladin_port);
 //! let result = service.execute(paladins, "input").await?;
@@ -140,6 +140,4 @@ pub mod cli;
 #[allow(missing_docs)]
 pub mod errors;
 #[allow(missing_docs)]
-pub mod storage;
-#[allow(missing_docs)]
-pub mod use_cases;
+pub mod services;

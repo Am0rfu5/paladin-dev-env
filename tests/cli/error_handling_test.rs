@@ -8,7 +8,7 @@ use paladin::application::cli::config::paladin_config::{
 };
 use paladin_ports::output::llm_port::{LlmError, LlmPort};
 use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
-use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
 use std::sync::Arc;

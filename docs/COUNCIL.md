@@ -84,7 +84,7 @@ The Council pattern enables multiple Paladin agents to engage in structured deli
 use paladin::core::platform::container::battalion::council::{
     CouncilBuilder, CouncilConfig, TurnStrategy, TerminationCondition
 };
-use paladin::application::use_cases::battalion::council_service::CouncilExecutionService;
+use paladin::application::services::battalion::council_service::CouncilExecutionService;
 use std::sync::Arc;
 
 #[tokio::main]

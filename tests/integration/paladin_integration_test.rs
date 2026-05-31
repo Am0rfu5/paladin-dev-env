@@ -6,9 +6,9 @@
 // using MockLlmAdapter, verifying all components work together correctly.
 
 use paladin::MockLlmAdapter;
-use paladin::application::use_cases::paladin::error::PaladinError;
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
-use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin_ports::output::llm_port::{LlmError, LlmPort};

@@ -1,9 +1,9 @@
 use chrono::Utc;
-use paladin::application::storage::sql_store::ContentRepository;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::content::{
     ContentData, ContentItem, ContentType, TextContent,
 };
+use paladin_ports::output::repository_port::ContentRepository;
 use paladin_storage::mysql_content_repository::{MySqlConfig, MySqlContentRepository};
 use uuid::Uuid;
 

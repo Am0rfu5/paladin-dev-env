@@ -1,4 +1,4 @@
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::paladin::error::PaladinError;
 
 #[test]
 fn test_paladin_error_messages() {

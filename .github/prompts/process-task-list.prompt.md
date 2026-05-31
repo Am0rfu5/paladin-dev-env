@@ -24,8 +24,6 @@ Guidelines for managing task lists in markdown files to track progress on comple
          ```
   3. Once all the subtasks are marked completed and changes have been committed, mark the **parent task** as completed.
 
-- Stop after each major task and wait for the user's go‑ahead.
-
 ## Rust-Specific Commands
 
 | Purpose | Command |

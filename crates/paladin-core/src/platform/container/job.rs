@@ -784,9 +784,7 @@ mod tests {
         );
         services.insert(
             "EmailNotificationService".to_string(),
-            Box::new(EmailNotificationService {
-                smtp_server: "smtp.test.com".to_string(),
-            }),
+            Box::new(EmailNotificationService::new("smtp.test.com")),
         );
 
         let result = job.execute(&services).await;
@@ -848,9 +846,7 @@ mod tests {
         );
         services.insert(
             "EmailNotificationService".to_string(),
-            Box::new(EmailNotificationService {
-                smtp_server: "smtp.test.com".to_string(),
-            }),
+            Box::new(EmailNotificationService::new("smtp.test.com")),
         );
 
         let result = job.execute(&services).await;

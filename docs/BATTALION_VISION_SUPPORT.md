@@ -268,8 +268,8 @@ let paladin = PaladinBuilder::new(llm_port)
 ## Example: Complete Vision Pipeline
 
 ```rust
-use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::battalion::formation_service::FormationExecutionService;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::BattalionConfig;
 

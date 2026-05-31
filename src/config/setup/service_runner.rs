@@ -1,6 +1,5 @@
-use crate::application::storage::sql_store::MigrationManager;
-use crate::application::use_cases::notification_orchestrator::NotificationService;
-use crate::application::use_cases::orchestration::scheduler::Scheduler;
+use crate::application::services::notification_orchestrator::NotificationService;
+use crate::application::services::orchestration::scheduler::Scheduler;
 use crate::config::Settings;
 use crate::config::user_config::UserServiceFactory;
 use crate::core::base::service::message_service::{MessageService, MessageServiceConfig};
@@ -21,6 +20,7 @@ use paladin_ports::output::file_storage_port::FileStorageUtils;
 use paladin_ports::output::log_port::LogPort;
 #[cfg(feature = "redis-queue")]
 use paladin_ports::output::queue_port::QueuePort;
+use paladin_ports::output::repository_port::MigrationManager;
 #[cfg(feature = "storage-sqlite")]
 use paladin_storage::sqlite_content_repository::SqliteStore;
 use std::env;

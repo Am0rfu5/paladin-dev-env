@@ -97,7 +97,7 @@ The Grove pattern implements **intelligent agent routing** by organizing special
 use paladin::core::platform::container::battalion::grove::{
     GroveBuilder, Tree, TreeAgent, RoutingStrategy, GroveConfig
 };
-use paladin::application::use_cases::battalion::grove_service::GroveExecutionService;
+use paladin::application::services::battalion::grove_service::GroveExecutionService;
 use std::sync::Arc;
 
 #[tokio::main]

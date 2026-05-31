@@ -2,7 +2,7 @@
 //!
 //! Tests tool registration, retrieval, unregistration, and concurrent access.
 
-use paladin::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
+use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
 use paladin::core::platform::container::arsenal::Armament;
 use paladin_ports::output::arsenal_port::ArsenalRegistry;
 use serde_json::json;

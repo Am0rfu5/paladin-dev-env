@@ -9,17 +9,17 @@ Content ingestion and processing services for the Paladin framework.
 ## Key Modules
 
 - `adapters`: Source-specific fetchers and ingestion integrations.
-- `use_cases`: Processing workflows and orchestration logic.
+- `services`: Processing workflows and orchestration logic.
 
 ## Usage
 
 ```rust
 use paladin_content::adapters;
-use paladin_content::use_cases;
+use paladin_content::services;
 
-// Compose content adapters with processing use cases in application services.
+// Compose content adapters with processing services in application services.
 let _adapters_module = std::any::type_name::<adapters::web_content_adapter::WebContentAdapter>();
-let _use_cases_module = std::any::type_name::<use_cases::content_processing_service::ContentProcessingService>();
+let _services_module = std::any::type_name::<services::content_processing_service::ContentProcessingService>();
 ```
 
 ## Feature Flags

@@ -1,0 +1,82 @@
+# Tasks: Orchestrator End-to-End Workflow Execution
+
+**PRD:** `prd-orchestrator-end-to-end-workflow-execution.md`
+**Epic:** 1 — Milestone 9
+**Target:** v0.3.0
+
+## Relevant Files
+
+- `src/application/services/orchestration/mod.rs` - `Orchestrator`; added `execute_workflow()` + crate-private `execute_workflow_inner()`, dispatch path, optional `WorkflowRepositoryPort` field with `with_workflow_repository()`, `persist_state()`, and `resume_incomplete_workflows()` invoked on `start()`.
+- `src/application/services/orchestration/types.rs` - Coordination types; internal `WorkflowRunState`/`JobRunState` + execution-result structures; added `OrchestratorError::PersistenceError`.
+- `src/application/services/orchestration/scheduler.rs` - `SchedulerOrchestrator`; default-service registration uses temp-path constructors.
+- `crates/paladin-core/src/platform/container/workflow.rs` - `Workflow`, `WorkflowStage`, `WorkflowExecutionOrder` (read; Serialize/Deserialize used for persistence).
+- `crates/paladin-core/src/platform/container/job.rs` - `Job::execute`, `JobExecutionMode` (reused for error strategy).
+- `crates/paladin-core/src/platform/container/task.rs` - `TaskService` trait + `DataBackupService`/`ContentIndexingService`/`EmailNotificationService` rewrites + unit tests.
+- `crates/paladin-ports/src/output/workflow_repository_port.rs` - **New** `WorkflowRepositoryPort` trait + `PersistedWorkflow` DTO + `WorkflowPersistenceStatus` + `WorkflowRepositoryError`.
+- `crates/paladin-ports/src/output/mod.rs` - Registers the new port module.
+- `crates/paladin-storage/src/sqlite_workflow_repository.rs` - **New** `SqliteWorkflowRepository` adapter (sqlx, bound params, upsert, migration) + unit tests.
+- `crates/paladin-storage/src/lib.rs` - Registers the new adapter module (gated by `sqlite` feature).
+- `tests/integration/orchestrator_workflow_lifecycle_test.rs` - **New** full-lifecycle integration test.
+- `tests/integration/mod.rs` - Registers the new integration test module.
+
+### Notes
+
+- Unit tests live in `#[cfg(test)]` modules beside the code (services in `task.rs`, execution loop in `mod.rs`).
+- Integration tests live under `tests/`.
+- `Job::execute(&services)` already implements per-job error strategy via `JobExecutionMode` (`Sequential` = fail-fast, `SequentialContinueOnError` = continue-on-error) — reuse it; do not duplicate task dispatch.
+- SQLite adapters use `sqlx` with bound parameters (see `sqlite_user_repository.rs`).
+- Run `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings` before committing each parent task.
+
+## Tasks
+
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Create and checkout `feature/milestone_9-epic_1-orchestrator-workflow-execution`
+
+- [x] 1.0 Implement the workflow execution loop (PRD Task 1.1)
+  - [x] 1.1 Add internal (crate-private) `WorkflowRunState`/`JobRunState` enums and a `WorkflowExecutionResult`/per-job result structure in `types.rs` (non-public API)
+  - [x] 1.2 Add an internal results store to `Orchestrator` (e.g., `Arc<RwLock<HashMap<Uuid, WorkflowExecutionResult>>>`) plus a getter for tests
+  - [x] 1.3 Add `execute_workflow(&self, workflow_id: Uuid)` with workflow lookup + `WorkflowNotFound` handling
+  - [x] 1.4 Implement Sequential execution: run jobs in order, thread job N output into the context/result consumed by job N+1
+  - [x] 1.5 Implement Parallel execution: spawn all jobs via `JoinSet`, aggregate every result (no sibling cancellation on failure)
+  - [x] 1.6 Implement Custom/staged execution: stages in order, jobs within a stage concurrent, barrier between stages
+  - [x] 1.7 Route EventDriven triggered jobs through the real dispatch path (no `println!` placeholder)
+  - [x] 1.8 Remove the four `println!`-only arms in `create_workflow()`
+  - [x] 1.9 Record job/workflow state transitions into the internal results store as they occur
+  - [x] 1.10 Unit tests: sequential ordering + N→N+1 threading; parallel mixed success/failure aggregation; staged ordering with intra-stage concurrency
+
+- [x] 2.0 Wire TaskService execution + error strategy (PRD Task 1.2, dispatch)
+  - [x] 2.1 Implement a job-dispatch helper that resolves services by name from `task_services` and runs the job via `Job::execute(&services)`
+  - [x] 2.2 Return a typed error (no panic/unwrap) when a task's `service_name` is unregistered
+  - [x] 2.3 Honor fail-fast vs. continue-on-error by mapping to the job's existing `JobExecutionMode`
+  - [x] 2.4 Unit test: unregistered service yields typed error; fail-fast vs. continue-on-error behavior verified
+
+- [x] 3.0 Rewrite default TaskService implementations (PRD Task 1.2, services)
+  - [x] 3.1 Rewrite `DataBackupService` to perform a real, path-constrained backup write and return a descriptive result; `TaskError` on failure
+  - [x] 3.2 Rewrite `ContentIndexingService` to build/persist a simple index artifact and return a descriptive result; `TaskError` on failure
+  - [x] 3.3 Rewrite `EmailNotificationService` to dispatch via an injectable sink/transport seam and return a descriptive result; `TaskError` on failure
+  - [x] 3.4 Remove `tokio::time::sleep` simulations and `println!` "simulate..." scaffolding from all three
+  - [x] 3.5 Unit tests for each service: success side effect + forced-failure `TaskError`
+  - [x] 3.6 Fix any existing tests/examples that relied on the old simulated behavior
+
+- [x] 4.0 Workflow state persistence (PRD Task 1.3)
+  - [x] 4.1 Define `WorkflowRepositoryPort` in `paladin-ports/src/output/workflow_repository_port.rs` (`#[async_trait]`, `Send + Sync`): save/update state, load by id, list incomplete
+  - [x] 4.2 Register the port module in `paladin-ports/src/output/mod.rs`
+  - [x] 4.3 Implement `SqliteWorkflowRepository` in `paladin-storage` with `sqlx` + bound parameters + migration
+  - [x] 4.4 Register the adapter module in `paladin-storage/src/lib.rs`
+  - [x] 4.5 Add optional `Option<Arc<dyn WorkflowRepositoryPort>>` to `Orchestrator`; keep `new()` in-memory-only working
+  - [x] 4.6 Persist workflow/job state transitions during `execute_workflow()` when a repository is configured
+  - [x] 4.7 On `start()`, load incomplete workflows and resume from last completed job/stage without re-running completed jobs
+  - [x] 4.8 Unit/integration test: crash-recovery resumes correctly to `Completed`
+
+- [x] 5.0 Full-lifecycle integration test (PRD Task 1.4)
+  - [x] 5.1 Add mock `TaskService` impls with observable, synchronized side effects (ordered record)
+  - [x] 5.2 Create a 3-sequential-job workflow; start orchestrator; execute it
+  - [x] 5.3 Assert ordered execution, `Completed` terminal state, retrievable per-job results; ensure determinism
+  - [x] 5.4 Wire the test into the integration harness so it runs under `cargo test`
+
+- [x] 6.0 Quality gate & finalize
+  - [x] 6.1 `cargo build --workspace`
+  - [x] 6.2 `cargo test --workspace`
+  - [x] 6.3 `cargo clippy --workspace -- -D warnings`
+  - [x] 6.4 `cargo fmt --all -- --check`
+  - [x] 6.5 Remove temporary debug prints; update PRD checklist; update Relevant Files

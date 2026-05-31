@@ -361,7 +361,7 @@ The Flow DSL supports automatic visualization in two formats: **ASCII** and **Me
 Human-readable tree format for terminal display.
 
 ```rust
-use paladin::application::use_cases::battalion::flow_visualizer::FlowVisualizer;
+use paladin::application::services::battalion::flow_visualizer::FlowVisualizer;
 
 let flow = FlowParser::parse("a -> (b, c) -> d")?;
 let ascii = FlowVisualizer::to_ascii(&flow);

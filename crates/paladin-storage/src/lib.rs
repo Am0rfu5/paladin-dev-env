@@ -23,6 +23,10 @@ pub mod sqlite_content_repository;
 #[cfg(feature = "sqlite")]
 pub mod sqlite_user_repository;
 
+/// SQLite implementation of `WorkflowRepositoryPort`.
+#[cfg(feature = "sqlite")]
+pub mod sqlite_workflow_repository;
+
 /// MySQL implementation of `ContentRepository`, `ContentListRepository`,
 /// `MigrationManager`, and `SqlStore`.
 #[cfg(feature = "mysql")]

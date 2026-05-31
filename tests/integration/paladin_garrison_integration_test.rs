@@ -5,9 +5,9 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::use_cases::paladin::error::PaladinError;
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
-use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::platform::container::garrison::{
     ConversationRole, GarrisonConfig, GarrisonEntry,
 };

@@ -5,8 +5,8 @@ use crate::application::cli::config::paladin_config::{
     ArsenalConfig, GarrisonConfig, PaladinYamlConfig, Validate,
 };
 use crate::application::cli::error::CliError;
-use crate::application::use_cases::arsenal::arsenal_execution_service::ArsenalExecutionService;
-use crate::application::use_cases::arsenal::arsenal_registry_service::ArsenalRegistryService;
+use crate::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService;
+use crate::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
 use crate::core::platform::container::garrison::{
     EvictionStrategy, GarrisonConfig as CoreGarrisonConfig,
 };

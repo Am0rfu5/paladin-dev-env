@@ -74,7 +74,7 @@ pub async fn handle_maneuver_command(command: ManeuverCommands) -> Result<(), Cl
 fn handle_maneuver_visualize(args: ManeuverVisualizeArgs) -> Result<(), CliError> {
     use crate::application::cli::config::battalion_config::BattalionYamlConfig;
     use crate::application::cli::config::loader::load_battalion_config;
-    use crate::application::use_cases::battalion::flow_visualizer::{
+    use crate::application::services::battalion::flow_visualizer::{
         FlowVisualizer, VisualizationFormat,
     };
     use crate::core::platform::container::battalion::parser::FlowParser;

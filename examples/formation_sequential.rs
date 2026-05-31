@@ -6,8 +6,8 @@
 //! Run with: cargo run --example formation_sequential
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::battalion::formation_service::FormationExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::{BattalionConfig, ErrorStrategy};

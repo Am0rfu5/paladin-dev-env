@@ -52,7 +52,7 @@ use paladin_core::platform::container::paladin_error::PaladinError;
 ///     executor: &dyn PaladinExecutorPort,
 ///     specialist: &Paladin,
 ///     task: &str,
-/// ) -> Result<PaladinResult, paladin::application::use_cases::paladin::error::PaladinError> {
+/// ) -> Result<PaladinResult, paladin_core::platform::container::paladin_error::PaladinError> {
 ///     executor.execute(specialist, task).await
 /// }
 /// ```

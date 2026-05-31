@@ -1,8 +1,8 @@
 //! Unit tests for PaladinBuilder
 //! Following TDD - these tests should fail initially
 
-use paladin::application::use_cases::paladin::error::PaladinError;
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::error::PaladinError;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::core::platform::container::paladin::MaxLoops;
 use paladin::core::platform::container::paladin::PaladinStatus;
 use paladin::core::platform::container::paladin_config::OutputFormat;

@@ -16,10 +16,10 @@
 //! ```
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::council_service::{
+use paladin::application::services::battalion::council_service::{
     CouncilExecutionService, CouncilResult,
 };
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::council::{
     CouncilBuilder, TerminationCondition, TurnStrategy,

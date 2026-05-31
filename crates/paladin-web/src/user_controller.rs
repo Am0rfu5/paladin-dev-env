@@ -5,18 +5,19 @@ REST API endpoints for user operations. This handles HTTP requests and responses
 delegating business logic to the UserService.
 */
 
-use paladin_core::platform::container::user::{UserError, UserProfile};
+use paladin_core::platform::container::user::{UserError, UserProfile, UserRole};
 use paladin_core::platform::manager::user_service::{
     UserLoginRequest, UserProfileUpdateRequest, UserRegistrationRequest, UserServiceTrait,
 };
 
 use axum::{
-    Router,
+    Extension, Router,
     extract::{Path, State},
     http::StatusCode,
     response::Json,
     routing::{get, post, put},
 };
+use paladin_ports::output::auth_port::AuthClaims;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -86,6 +87,10 @@ pub struct LoginResponse {
     pub email: String,
     pub is_verified: bool,
     pub success: bool,
+    /// Opaque bearer token issued on successful login, when configured.
+    pub token: Option<String>,
+    /// RFC 3339 expiry of the issued token, paired with `token`.
+    pub token_expires_at: Option<String>,
 }
 
 /// Error response DTO
@@ -130,6 +135,7 @@ fn user_error_to_response(error: UserError) -> (StatusCode, Json<ApiResponse<()>
             "INVALID_USERNAME",
             error.to_string(),
         ),
+        UserError::InvalidRole(_) => (StatusCode::BAD_REQUEST, "INVALID_ROLE", error.to_string()),
         UserError::InvalidPassword(_) => (
             StatusCode::BAD_REQUEST,
             "INVALID_PASSWORD",
@@ -175,6 +181,25 @@ fn user_error_to_response(error: UserError) -> (StatusCode, Json<ApiResponse<()>
     (status, Json(ApiResponse::error(message, code.to_string())))
 }
 
+/// Authorize access to a user-scoped resource: admins may access any user,
+/// non-admins may only access their own `user_id`.
+fn ensure_self_or_admin(
+    claims: &AuthClaims,
+    target: Uuid,
+) -> Result<(), (StatusCode, Json<ApiResponse<()>>)> {
+    if claims.role == UserRole::Admin || claims.user_id == target {
+        Ok(())
+    } else {
+        Err((
+            StatusCode::FORBIDDEN,
+            Json(ApiResponse::error(
+                "Forbidden".to_string(),
+                "FORBIDDEN".to_string(),
+            )),
+        ))
+    }
+}
+
 /// Convert User to UserResponse
 fn user_to_response(user: &paladin_core::platform::container::user::User) -> UserResponse {
     UserResponse {
@@ -197,7 +222,7 @@ fn user_to_response(user: &paladin_core::platform::container::user::User) -> Use
 }
 
 /// Register a new user
-async fn register_user(
+pub(crate) async fn register_user(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
     Json(request): Json<RegisterUserRequest>,
 ) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
@@ -233,7 +258,7 @@ async fn register_user(
 }
 
 /// User login
-async fn login_user(
+pub(crate) async fn login_user(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
     Json(request): Json<LoginUserRequest>,
 ) -> Result<Json<ApiResponse<LoginResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
@@ -249,16 +274,22 @@ async fn login_user(
             email: result.email,
             is_verified: result.is_verified,
             success: result.success,
+            token: result.token,
+            token_expires_at: result.token_expires_at.map(|t| t.to_rfc3339()),
         }))),
         Err(error) => Err(user_error_to_response(error)),
     }
 }
 
 /// Get user by ID
-async fn get_user(
+pub(crate) async fn get_user(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
+    claims: Option<Extension<AuthClaims>>,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+    if let Some(Extension(claims)) = &claims {
+        ensure_self_or_admin(claims, user_id)?;
+    }
     match user_service.get_user_by_id(user_id).await {
         Ok(Some(user)) => Ok(Json(ApiResponse::success(user_to_response(&user)))),
         Ok(None) => Err((
@@ -273,11 +304,15 @@ async fn get_user(
 }
 
 /// Update user profile
-async fn update_user_profile(
+pub(crate) async fn update_user_profile(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
+    claims: Option<Extension<AuthClaims>>,
     Path(user_id): Path<Uuid>,
     Json(request): Json<UpdateUserProfileRequest>,
 ) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+    if let Some(Extension(claims)) = &claims {
+        ensure_self_or_admin(claims, user_id)?;
+    }
     let profile = if request.first_name.is_some()
         || request.last_name.is_some()
         || request.bio.is_some()
@@ -360,6 +395,29 @@ async fn verify_user(
 ) -> Result<Json<ApiResponse<()>>, (StatusCode, Json<ApiResponse<()>>)> {
     match user_service.verify_user(user_id).await {
         Ok(_) => Ok(Json(ApiResponse::success(()))),
+        Err(error) => Err(user_error_to_response(error)),
+    }
+}
+
+/// Delete a user by ID (admin-only; enforced by route-level middleware)
+pub(crate) async fn delete_user(
+    State(user_service): State<Arc<dyn UserServiceTrait>>,
+    Path(user_id): Path<Uuid>,
+) -> Result<Json<ApiResponse<()>>, (StatusCode, Json<ApiResponse<()>>)> {
+    match user_service.delete_user(user_id).await {
+        Ok(()) => Ok(Json(ApiResponse::success(()))),
+        Err(error) => Err(user_error_to_response(error)),
+    }
+}
+
+/// List all users (admin-only; enforced by route-level middleware)
+pub(crate) async fn list_users(
+    State(user_service): State<Arc<dyn UserServiceTrait>>,
+) -> Result<Json<ApiResponse<Vec<UserResponse>>>, (StatusCode, Json<ApiResponse<()>>)> {
+    match user_service.list_users().await {
+        Ok(users) => Ok(Json(ApiResponse::success(
+            users.iter().map(user_to_response).collect(),
+        ))),
         Err(error) => Err(user_error_to_response(error)),
     }
 }
@@ -496,6 +554,8 @@ mod tests {
                     email: request.email,
                     is_verified: true,
                     success: true,
+                    token: None,
+                    token_expires_at: None,
                 })
             }
         }
@@ -591,6 +651,21 @@ mod tests {
                 .values()
                 .find(|u| u.email().value() == email)
                 .cloned())
+        }
+
+        async fn delete_user(&self, user_id: Uuid) -> Result<(), UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            self.users.lock().unwrap().remove(&user_id);
+            Ok(())
+        }
+
+        async fn list_users(&self) -> Result<Vec<User>, UserError> {
+            if *self.should_fail.lock().unwrap() {
+                return Err(UserError::RepositoryError("Mock error".to_string()));
+            }
+            Ok(self.users.lock().unwrap().values().cloned().collect())
         }
 
         async fn find_by_active_status(&self, is_active: bool) -> Result<Vec<User>, UserError> {
@@ -784,7 +859,7 @@ mod tests {
         user_service.add_user(mock_user.clone());
         let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
 
-        let result = get_user(State(service_ref), Path(mock_user.uuid)).await;
+        let result = get_user(State(service_ref), None, Path(mock_user.uuid)).await;
 
         assert!(result.is_ok());
         let response = result.unwrap();
@@ -799,7 +874,7 @@ mod tests {
         let service_ref: Arc<dyn UserServiceTrait> = user_service.clone();
         let user_id = Uuid::new_v4();
 
-        let result = get_user(State(service_ref), Path(user_id)).await;
+        let result = get_user(State(service_ref), None, Path(user_id)).await;
 
         assert!(result.is_err());
         let (status, response) = result.err().unwrap();

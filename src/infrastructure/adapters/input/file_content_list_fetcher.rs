@@ -3,7 +3,7 @@ Content List Fetcher for File System
 This module provides an implementation of the ContentListFetchingService that fetches content lists from a file system directory.
 It reads files from the specified directory and creates ContentItem objects for each file.
 */
-use crate::application::use_cases::content::content_list_fetching_service::ContentListFetchingService;
+use crate::application::services::content::content_list_fetching_service::ContentListFetchingService;
 use crate::core::platform::container::content::{
     AudioContent, ContentItem, ContentType, ImageContent, TextContent, VideoContent,
 };

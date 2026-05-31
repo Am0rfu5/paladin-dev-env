@@ -34,11 +34,11 @@
 //! Run with: `cargo run --example maneuver_nested_flow`
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::flow_visualizer::{
+use paladin::application::services::battalion::flow_visualizer::{
     FlowVisualizer, VisualizationFormat,
 };
-use paladin::application::use_cases::battalion::maneuver_service::ManeuverExecutionService;
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::battalion::maneuver_service::ManeuverExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::maneuver::{
     ErrorStrategy, Maneuver, ManeuverConfig, OutputFormat,

@@ -7,7 +7,6 @@ for different logging backends and purposes.
 
 pub mod system_log_adapter;
 // pub mod error_log_adapter;
-pub mod access_log_adapter;
 
 // Re-export the main adapters for easier importing
 pub use system_log_adapter::{SystemLogAdapter, SystemLogAdapterConfig};

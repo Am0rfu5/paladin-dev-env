@@ -5,10 +5,10 @@
 //! 2. Implement minimal code to pass (Green)
 //! 3. Refactor while keeping tests green
 
-use paladin::application::use_cases::battalion::chain_of_command_service::{
+use paladin::application::services::battalion::chain_of_command_service::{
     ChainOfCommandExecutionService, DelegationResult,
 };
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::chain_of_command::ChainOfCommand;
 use paladin::core::platform::container::paladin::{Paladin, PaladinData};

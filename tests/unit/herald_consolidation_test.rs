@@ -8,7 +8,7 @@
 //!
 //! Following TDD methodology: These tests are written first and expected to fail.
 
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::platform::container::battalion::BattalionResult;
 use paladin::core::platform::container::herald::{ExecutionMetadata, StreamChunk};
 use paladin_ports::output::llm_port::TokenUsage;
@@ -80,7 +80,7 @@ fn test_herald_uses_real_battalion_result_type() {
 /// Test that Herald uses the real PaladinError type from paladin/error
 ///
 /// This test verifies that the Herald trait methods accept the actual
-/// PaladinError enum from `application::use_cases::paladin::error`, not
+/// PaladinError enum from `application::services::paladin::error`, not
 /// the placeholder struct.
 #[test]
 fn test_herald_uses_real_paladin_error_type() {
@@ -358,7 +358,7 @@ fn test_execution_metadata_builder_pattern() {
 #[test]
 #[ignore = "Will pass after auto-registration is implemented"]
 fn test_herald_registry_default_has_json_formatter() {
-    use paladin::application::use_cases::herald::herald_registry::HeraldRegistry;
+    use paladin::application::services::herald::herald_registry::HeraldRegistry;
 
     let registry = HeraldRegistry::default();
 
@@ -378,7 +378,7 @@ fn test_herald_registry_default_has_json_formatter() {
 #[test]
 #[ignore = "Will pass after auto-registration is implemented"]
 fn test_herald_registry_default_has_markdown_formatter() {
-    use paladin::application::use_cases::herald::herald_registry::HeraldRegistry;
+    use paladin::application::services::herald::herald_registry::HeraldRegistry;
 
     let registry = HeraldRegistry::default();
 
@@ -398,7 +398,7 @@ fn test_herald_registry_default_has_markdown_formatter() {
 #[test]
 #[ignore = "Will pass after auto-registration is implemented"]
 fn test_herald_registry_default_has_table_formatter() {
-    use paladin::application::use_cases::herald::herald_registry::HeraldRegistry;
+    use paladin::application::services::herald::herald_registry::HeraldRegistry;
 
     let registry = HeraldRegistry::default();
 
@@ -420,7 +420,7 @@ fn test_herald_registry_default_has_table_formatter() {
 #[ignore = "Will pass after all Herald consolidation is complete"]
 fn test_herald_pipeline_with_consolidated_types() {
     use chrono::Utc;
-    use paladin::application::use_cases::herald::herald_registry::HeraldRegistry;
+    use paladin::application::services::herald::herald_registry::HeraldRegistry;
     use paladin::core::platform::container::battalion::{BattalionStatus, BattalionStrategy};
 
     // Create a real PaladinResult

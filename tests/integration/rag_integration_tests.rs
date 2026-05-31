@@ -150,7 +150,7 @@ async fn test_rag_config_boundary_values() {
 
 #[cfg(feature = "qdrant")]
 mod qdrant_rag_tests {
-    use paladin::application::use_cases::sanctum::rag_retrieval_service::{
+    use paladin::application::services::sanctum::rag_retrieval_service::{
         RagConfig, RagRetrievalService, RetrievalTrigger,
     };
     use paladin::core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry};

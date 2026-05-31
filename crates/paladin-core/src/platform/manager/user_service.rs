@@ -6,6 +6,7 @@
 
 use crate::platform::container::user::{User, UserError, UserProfile};
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 /// User registration request DTO.
@@ -41,6 +42,11 @@ pub struct UserAuthenticationResult {
     pub email: String,
     pub is_verified: bool,
     pub success: bool,
+    /// Opaque bearer token issued on successful login, when an auth provider is
+    /// configured. `None` if no token provider is wired into the service.
+    pub token: Option<String>,
+    /// Expiry instant of the issued token, paired with [`Self::token`].
+    pub token_expires_at: Option<DateTime<Utc>>,
 }
 
 /// Abstract user service port: business operations on users.
@@ -66,6 +72,12 @@ pub trait UserServiceTrait: Send + Sync {
 
     /// Get user by email.
     async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, UserError>;
+
+    /// Delete a user account by ID.
+    async fn delete_user(&self, user_id: Uuid) -> Result<(), UserError>;
+
+    /// List all users (administrative operation).
+    async fn list_users(&self) -> Result<Vec<User>, UserError>;
 
     /// Activate user account.
     async fn activate_user(&self, user_id: Uuid) -> Result<(), UserError>;

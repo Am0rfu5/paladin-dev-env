@@ -4,8 +4,8 @@
 //! error handling, and telemetry validation.
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::commander::CommanderBuilder;
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::battalion::commander::CommanderBuilder;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::{
     BattalionConfig, BattalionStatus, BattalionStrategy, ErrorStrategy, RetryPolicy,

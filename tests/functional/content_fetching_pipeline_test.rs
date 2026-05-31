@@ -3,7 +3,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 // Import from your actual project structure
-use paladin::application::use_cases::content::content_fetching_service::{
+use paladin::application::services::content::content_fetching_service::{
     ContentFetchingService, FetchContent,
 };
 use paladin::core::base::service::node_version_service::{

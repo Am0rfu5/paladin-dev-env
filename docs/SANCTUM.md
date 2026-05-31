@@ -661,7 +661,7 @@ memory_extraction:
 #### Basic Usage
 
 ```rust
-use paladin::application::use_cases::sanctum::rag_retrieval_service::{
+use paladin::application::services::sanctum::rag_retrieval_service::{
     RagRetrievalService, RagConfig
 };
 
@@ -711,7 +711,7 @@ let rag_config = RagConfig {
 #### Basic Usage
 
 ```rust
-use paladin::application::use_cases::sanctum::memory_extraction_service::{
+use paladin::application::services::sanctum::memory_extraction_service::{
     MemoryExtractionService, MemoryExtractionStrategy
 };
 
@@ -762,7 +762,7 @@ The extraction service uses LLM-based analysis to:
 #### Programmatic Setup
 
 ```rust
-use paladin::application::use_cases::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 
 // Create services
 let rag_service = Arc::new(RagRetrievalService::new(

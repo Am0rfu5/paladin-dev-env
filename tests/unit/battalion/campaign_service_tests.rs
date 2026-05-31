@@ -3,8 +3,8 @@
 //! Tests the graph-based Paladin orchestration service following TDD methodology.
 
 use async_trait::async_trait;
-use paladin::application::use_cases::battalion::campaign_service::CampaignExecutionService;
-use paladin::application::use_cases::paladin::error::PaladinError;
+use paladin::application::services::battalion::campaign_service::CampaignExecutionService;
+use paladin::application::services::paladin::error::PaladinError;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::campaign::{
     Campaign, CampaignEdge, EdgeCondition,

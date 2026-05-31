@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use paladin::application::use_cases::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::config::MCPServerConfig;
 use paladin::core::platform::container::arsenal::Armament;
 use paladin_ports::output::arsenal_port::ArsenalRegistry;

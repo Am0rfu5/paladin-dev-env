@@ -8,4 +8,5 @@ pub use paladin_content::adapters::input::http_content_fetcher;
 pub use paladin_content::adapters::input::local_file_fetcher;
 #[cfg(feature = "content-processing")]
 pub use paladin_content::adapters::input::news_api_fetcher;
+#[cfg(feature = "ml")]
 pub mod tensorflow_adapter;

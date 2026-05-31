@@ -147,7 +147,7 @@ This project utilizes clearly defined Ports and Adapters, enabling seamless inte
 
 * `src/application` – Application layer containing use cases, ports, and storage repositories.
 
-  * `use_cases` – Business logic and services like content aggregation, filtering, summarization, and analysis.
+  * `services` – Business logic and services like content aggregation, filtering, summarization, and analysis.
   * `ports` – Interfaces for interaction with external systems.
   * `storage` – Abstracts various storage mechanisms (SQL, NoSQL, File storage).
 
@@ -242,7 +242,7 @@ memory_extraction:
 **Example Usage:**
 
 ```rust
-use paladin::application::use_cases::sanctum::{
+use paladin::application::services::sanctum::{
     RagRetrievalService, MemoryExtractionService
 };
 
@@ -656,7 +656,7 @@ cargo build --release
 ### Paladin Agent with Memory
 
 ```rust
-use paladin::application::use_cases::paladin::{PaladinBuilder, PaladinExecutionService};
+use paladin::application::services::paladin::{PaladinBuilder, PaladinExecutionService};
 use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::infrastructure::adapters::garrison::InMemoryGarrison;
 use paladin::core::platform::container::garrison::GarrisonConfig;
@@ -699,7 +699,7 @@ See `examples/` directory for more examples:
 ### Battalion Formation Example
 
 ```rust
-use paladin::application::use_cases::battalion::formation_service::FormationExecutionService;
+use paladin::application::services::battalion::formation_service::FormationExecutionService;
 use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use std::sync::Arc;
@@ -732,7 +732,7 @@ See [docs/BATTALION.md](docs/BATTALION.md) for comprehensive orchestration docum
 Council enables structured multi-agent discussions with turn-based dialogue, perfect for collaborative decision-making, debate, and consensus building:
 
 ```rust
-use paladin::application::use_cases::battalion::council_service::CouncilExecutionService;
+use paladin::application::services::battalion::council_service::CouncilExecutionService;
 use paladin::core::platform::container::battalion::council::{
     CouncilBuilder, TerminationCondition, TurnStrategy
 };
@@ -791,7 +791,7 @@ Grove provides intelligent routing to specialized agent trees based on task cont
 use paladin::core::platform::container::battalion::grove::{
     GroveBuilder, GroveConfig, RoutingStrategy, Tree, TreeAgent
 };
-use paladin::application::use_cases::battalion::grove_service::GroveExecutionService;
+use paladin::application::services::battalion::grove_service::GroveExecutionService;
 use std::sync::Arc;
 
 #[tokio::main]
@@ -865,7 +865,7 @@ See `examples/grove_routing.rs` and `examples/commander_grove.rs` for complete w
 ### Arsenal Tool System Example
 
 ```rust
-use paladin::application::use_cases::arsenal::ArsenalRegistryService;
+use paladin::application::services::arsenal::ArsenalRegistryService;
 use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
 use paladin::infrastructure::adapters::arsenal::Armament;
 use std::sync::Arc;
