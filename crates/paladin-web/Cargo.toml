@@ -28,3 +28,5 @@ async-trait = { workspace = true }
 
 [dev-dependencies]
 mockito = "1.7.0"
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"

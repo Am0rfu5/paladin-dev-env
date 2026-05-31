@@ -96,12 +96,12 @@ each sub-task, not just each parent task.
   - [x] 6.3 Declare/re-export the new `auth_middleware` and `app` modules in `crates/paladin-web/src/lib.rs`.
   - [x] 6.4 Quality gate, then commit.
 
-- [ ] 7.0 Integration tests for auth + RBAC (Task 5.2–5.3; FR 22–23)
-  - [ ] 7.1 Add `tower` + `http-body-util` dev-dependencies to `crates/paladin-web/Cargo.toml`.
-  - [ ] 7.2 Create `crates/paladin-web/tests/auth_rbac.rs` with a mock `UserServiceTrait` and the in-memory `AuthPort` adapter; build the app via `create_app_router`.
-  - [ ] 7.3 Assert: protected route without token → `401`; with valid token → `200`.
-  - [ ] 7.4 Assert: admin-only route with `user`-role token → `403`; with `admin`-role token → success.
-  - [ ] 7.5 Quality gate, then commit.
+- [x] 7.0 Integration tests for auth + RBAC (Task 5.2–5.3; FR 22–23)
+  - [x] 7.1 Add `tower` + `http-body-util` dev-dependencies to `crates/paladin-web/Cargo.toml`.
+  - [x] 7.2 Create `crates/paladin-web/tests/auth_rbac.rs` with a mock `UserServiceTrait` and the in-memory `AuthPort` adapter; build the app via `create_app_router`.
+  - [x] 7.3 Assert: protected route without token → `401`; with valid token → `200`.
+  - [x] 7.4 Assert: admin-only route with `user`-role token → `403`; with `admin`-role token → success.
+  - [x] 7.5 Quality gate, then commit.
 
 - [ ] 8.0 Final verification & Epic close-out (FR 24)
   - [ ] 8.1 Run full quality gate: `cargo build`, `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt --check` (including the `web-server` feature path).
