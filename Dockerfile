@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY crates ./crates
+COPY benches ./benches
 COPY migrations ./migrations
 # config.yml is gitignored (env-specific); provide at runtime via volume mount
 

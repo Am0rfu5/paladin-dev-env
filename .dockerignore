@@ -23,7 +23,6 @@ notes/
 !README.md
 
 # Test files
-benches/
 examples/
 
 # CI/CD

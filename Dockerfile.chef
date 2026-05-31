@@ -34,6 +34,7 @@ COPY crates/paladin-web/Cargo.toml           crates/paladin-web/Cargo.toml
 # Copy source trees so cargo-chef can resolve workspace member paths
 COPY src ./src
 COPY crates ./crates
+COPY benches ./benches
 RUN cargo chef prepare --recipe-path recipe.json
 
 # =============================================================================
@@ -64,7 +65,7 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY crates ./crates
-# COPY benches ./benches  # Optional - excluded via .dockerignore
+COPY benches ./benches
 COPY migrations ./migrations
 # Note: config.yml is NOT baked into the image; provide at runtime via volume mount.
 

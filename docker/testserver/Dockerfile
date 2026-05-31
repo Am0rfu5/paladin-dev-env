@@ -84,6 +84,7 @@ RUN apt-get update && apt-get install -y \
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY crates ./crates
+COPY benches ./benches
 COPY tests ./tests
 COPY migrations ./migrations
 COPY config.test.yml ./
