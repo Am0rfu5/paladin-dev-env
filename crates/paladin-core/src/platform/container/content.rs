@@ -1,6 +1,5 @@
 use crate::base::entity::node::Node;
 use chrono::{DateTime, Utc};
-use fasthash::{FastHash, murmur3::Hash128_x64};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 use std::io::Read;
@@ -368,7 +367,8 @@ fn generate_file_hash(path: &str) -> Result<String, ContentItemError> {
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)
         .map_err(|_| ContentItemError::FileReadError)?;
-    let hash = Hash128_x64::hash(&buffer);
+    let hash = murmur3::murmur3_x64_128(&mut std::io::Cursor::new(&buffer), 0)
+        .map_err(|_| ContentItemError::FileReadError)?;
     Ok(format!("{:x}", hash))
 }
 
