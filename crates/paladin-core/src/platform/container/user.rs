@@ -66,6 +66,54 @@ impl std::fmt::Display for Email {
     }
 }
 
+/// Role assigned to a user, governing access to privileged operations.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum UserRole {
+    /// Administrative user with full access to user-management operations.
+    Admin,
+    /// Standard user with access limited to their own resources.
+    #[default]
+    User,
+}
+
+impl UserRole {
+    /// Returns the canonical lowercase string representation of the role.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            UserRole::Admin => "admin",
+            UserRole::User => "user",
+        }
+    }
+
+    /// Parses a role from its string representation, defaulting to [`UserRole::User`]
+    /// for unrecognized values to fail safe toward least privilege.
+    pub fn from_str_lossy(value: &str) -> Self {
+        match value.trim().to_lowercase().as_str() {
+            "admin" => UserRole::Admin,
+            _ => UserRole::User,
+        }
+    }
+}
+
+impl std::str::FromStr for UserRole {
+    type Err = UserError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value.trim().to_lowercase().as_str() {
+            "admin" => Ok(UserRole::Admin),
+            "user" => Ok(UserRole::User),
+            other => Err(UserError::InvalidRole(other.to_string())),
+        }
+    }
+}
+
+impl std::fmt::Display for UserRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 /// User data structure that will be wrapped by Node
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct UserData {
@@ -74,6 +122,8 @@ pub struct UserData {
     pub password_hash: String,
     pub is_active: bool,
     pub is_verified: bool,
+    #[serde(default)]
+    pub role: UserRole,
     pub profile: UserProfile,
 }
 
@@ -107,6 +157,7 @@ impl Hash for UserData {
         self.password_hash.hash(state);
         self.is_active.hash(state);
         self.is_verified.hash(state);
+        self.role.hash(state);
     }
 }
 
@@ -127,6 +178,7 @@ impl User {
             password_hash,
             is_active: true,
             is_verified: false,
+            role: UserRole::default(),
             profile: profile.unwrap_or_default(),
         };
 
@@ -162,6 +214,17 @@ impl User {
     /// Gets the user profile
     pub fn profile(&self) -> &UserProfile {
         &self.node.profile
+    }
+
+    /// Gets the user's role.
+    pub fn role(&self) -> UserRole {
+        self.node.role
+    }
+
+    /// Sets the user's role and updates the modified timestamp.
+    pub fn set_role(&mut self, role: UserRole) {
+        self.node.role = role;
+        self.modified = Utc::now();
     }
 
     /// Updates username
@@ -233,6 +296,8 @@ pub enum UserError {
     InvalidEmail(String),
     #[error("Invalid username: {0}")]
     InvalidUsername(String),
+    #[error("Invalid role: {0}")]
+    InvalidRole(String),
     #[error("User not found with ID: {0}")]
     UserNotFound(Uuid),
     #[error("User not found with email: {0}")]
@@ -456,5 +521,40 @@ mod tests {
         assert_eq!(user.uuid, deserialized.uuid);
         assert_eq!(user.node.username, deserialized.node.username);
         assert_eq!(user.node.email.value(), deserialized.node.email.value());
+    }
+
+    #[test]
+    fn test_user_role_string_round_trip() {
+        use std::str::FromStr;
+
+        assert_eq!(UserRole::Admin.as_str(), "admin");
+        assert_eq!(UserRole::User.as_str(), "user");
+        assert_eq!(UserRole::from_str("admin").unwrap(), UserRole::Admin);
+        assert_eq!(UserRole::from_str(" USER ").unwrap(), UserRole::User);
+        assert!(UserRole::from_str("superuser").is_err());
+
+        // Lossy parsing fails safe to least privilege.
+        assert_eq!(UserRole::from_str_lossy("admin"), UserRole::Admin);
+        assert_eq!(UserRole::from_str_lossy("nonsense"), UserRole::User);
+    }
+
+    #[test]
+    fn test_user_role_default_and_accessors() {
+        let email = Email::new("user@example.com".to_string()).unwrap();
+        let mut user = User::new_user(
+            "testuser".to_string(),
+            email,
+            "password_hash".to_string(),
+            None,
+        );
+
+        // New users default to the least-privileged role.
+        assert_eq!(user.role(), UserRole::User);
+
+        let before = user.modified;
+        std::thread::sleep(std::time::Duration::from_millis(1));
+        user.set_role(UserRole::Admin);
+        assert_eq!(user.role(), UserRole::Admin);
+        assert!(user.modified > before);
     }
 }

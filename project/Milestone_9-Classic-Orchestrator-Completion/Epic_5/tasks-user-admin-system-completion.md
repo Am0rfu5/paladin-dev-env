@@ -48,15 +48,15 @@ each sub-task, not just each parent task.
 - [x] 0.0 Create feature branch
   - [x] 0.1 Create and checkout `feature/milestone_9-epic_5-user-admin-system-completion` from the current branch.
 
-- [ ] 1.0 Add `UserRole` to the domain and persist it (Task 5.3 foundation; FR 1–4)
-  - [ ] 1.1 Add a `UserRole` enum (`Admin`, `User`) to `crates/paladin-core/src/platform/container/user.rs` with `as_str()` and `FromStr`/`from_str`-style parsing, plus rustdoc; derive `Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize` and a `Default` of `User`.
-  - [ ] 1.2 Add `role: UserRole` to `UserData` (default `User`); update the user constructor(s) so existing call sites still compile.
-  - [ ] 1.3 Add `User::role()` accessor and `User::set_role(UserRole)` mutator following the `Node<UserData>` pattern.
-  - [ ] 1.4 Update `src/infrastructure/repositories/sqlite_user_repository.rs`: add `role` column (`TEXT NOT NULL DEFAULT 'user'`) with idempotent migration; read/write the role in row mapping.
-  - [ ] 1.5 Update `crates/paladin-storage/src/sqlite_user_repository.rs` the same way (schema + idempotent migration + row mapping).
-  - [ ] 1.6 Fix any other `UserData` construction sites broken by the new field (grep for `UserData {`).
-  - [ ] 1.7 Unit tests: `UserRole` string round-trip + default; user role accessor/mutator; repository persists and reads back a non-default role.
-  - [ ] 1.8 Quality gate (`cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`), then commit.
+- [x] 1.0 Add `UserRole` to the domain and persist it (Task 5.3 foundation; FR 1–4)
+  - [x] 1.1 Add a `UserRole` enum (`Admin`, `User`) to `crates/paladin-core/src/platform/container/user.rs` with `as_str()` and `FromStr`/`from_str`-style parsing, plus rustdoc; derive `Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize` and a `Default` of `User`.
+  - [x] 1.2 Add `role: UserRole` to `UserData` (default `User`); update the user constructor(s) so existing call sites still compile.
+  - [x] 1.3 Add `User::role()` accessor and `User::set_role(UserRole)` mutator following the `Node<UserData>` pattern.
+  - [x] 1.4 Update `src/infrastructure/repositories/sqlite_user_repository.rs`: add `role` column (`TEXT NOT NULL DEFAULT 'user'`) with idempotent migration; read/write the role in row mapping.
+  - [x] 1.5 Update `crates/paladin-storage/src/sqlite_user_repository.rs` the same way (schema + idempotent migration + row mapping).
+  - [x] 1.6 Fix any other `UserData` construction sites broken by the new field (grep for `UserData {`).
+  - [x] 1.7 Unit tests: `UserRole` string round-trip + default; user role accessor/mutator; repository persists and reads back a non-default role.
+  - [x] 1.8 Quality gate (`cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`), then commit.
 
 - [ ] 2.0 Define the `AuthPort` interface in `paladin-ports` (Task 5.2; FR 5–7)
   - [ ] 2.1 Create `crates/paladin-ports/src/output/auth_port.rs` with module-level rustdoc.

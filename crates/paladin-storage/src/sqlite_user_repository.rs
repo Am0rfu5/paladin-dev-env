@@ -7,7 +7,9 @@ This adapter handles the actual database operations for user persistence.
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use paladin_core::platform::container::user::{Email, User, UserData, UserError, UserProfile};
+use paladin_core::platform::container::user::{
+    Email, User, UserData, UserError, UserProfile, UserRole,
+};
 use paladin_ports::output::user_repository_port::UserRepositoryPort;
 use sqlx::{sqlite::SqlitePoolOptions, Row, SqlitePool};
 use std::str::FromStr;
@@ -67,6 +69,7 @@ impl SqliteUserRepository {
                 password_hash TEXT NOT NULL,
                 is_active BOOLEAN NOT NULL DEFAULT 1,
                 is_verified BOOLEAN NOT NULL DEFAULT 0,
+                role TEXT NOT NULL DEFAULT 'user',
                 first_name TEXT,
                 last_name TEXT,
                 bio TEXT,
@@ -79,6 +82,22 @@ impl SqliteUserRepository {
         .execute(&self.pool)
         .await
         .map_err(|e| UserError::RepositoryError(format!("Migration failed: {}", e)))?;
+
+        // Idempotent migration: add the `role` column to pre-existing tables.
+        // SQLite has no `ADD COLUMN IF NOT EXISTS`, so ignore the duplicate-column error.
+        if let Err(e) =
+            sqlx::query("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'")
+                .execute(&self.pool)
+                .await
+        {
+            let msg = e.to_string().to_lowercase();
+            if !msg.contains("duplicate column") {
+                return Err(UserError::RepositoryError(format!(
+                    "Role column migration failed: {}",
+                    e
+                )));
+            }
+        }
 
         // Create indexes
         sqlx::query("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
@@ -149,6 +168,10 @@ impl SqliteUserRepository {
             is_verified: row.try_get("is_verified").map_err(|e| {
                 UserError::RepositoryError(format!("Failed to get is_verified: {}", e))
             })?,
+            role: row
+                .try_get::<String, _>("role")
+                .map(|r| UserRole::from_str_lossy(&r))
+                .unwrap_or_default(),
             profile,
         };
 
@@ -214,8 +237,8 @@ impl UserRepositoryPort for SqliteUserRepository {
             INSERT INTO users (
                 id, uuid, version, created_at, modified_at, title,
                 username, email, password_hash, is_active, is_verified,
-                first_name, last_name, bio, avatar_url, timezone, locale
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                role, first_name, last_name, bio, avatar_url, timezone, locale
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(user.uuid.to_string()) // Use UUID as primary key
@@ -229,6 +252,7 @@ impl UserRepositoryPort for SqliteUserRepository {
         .bind(&user.node.password_hash)
         .bind(user.node.is_active)
         .bind(user.node.is_verified)
+        .bind(user.node.role.as_str())
         .bind(&user.node.profile.first_name)
         .bind(&user.node.profile.last_name)
         .bind(&user.node.profile.bio)
@@ -249,7 +273,7 @@ impl UserRepositoryPort for SqliteUserRepository {
                 version = ?, modified_at = ?, title = ?,
                 username = ?, email = ?, password_hash = ?,
                 is_active = ?, is_verified = ?,
-                first_name = ?, last_name = ?, bio = ?,
+                role = ?, first_name = ?, last_name = ?, bio = ?,
                 avatar_url = ?, timezone = ?, locale = ?
             WHERE uuid = ?
             "#,
@@ -262,6 +286,7 @@ impl UserRepositoryPort for SqliteUserRepository {
         .bind(&user.node.password_hash)
         .bind(user.node.is_active)
         .bind(user.node.is_verified)
+        .bind(user.node.role.as_str())
         .bind(&user.node.profile.first_name)
         .bind(&user.node.profile.last_name)
         .bind(&user.node.profile.bio)
@@ -421,6 +446,30 @@ mod tests {
         assert_eq!(found_user.uuid, user.uuid);
         assert_eq!(found_user.username(), user.username());
         assert_eq!(found_user.email().value(), user.email().value());
+    }
+
+    #[tokio::test]
+    async fn test_role_persisted_and_read_back() {
+        let repo = create_test_repository().await.unwrap();
+        let mut user = create_test_user();
+        user.set_role(UserRole::Admin);
+
+        repo.save(user.clone()).await.unwrap();
+
+        let found = repo.find_by_id(user.uuid).await.unwrap().unwrap();
+        assert_eq!(found.role(), UserRole::Admin);
+
+        // Default role round-trips as `User` as well.
+        let mut default_user = create_test_user();
+        default_user
+            .update_email(Email::new("default@example.com".to_string()).unwrap())
+            .unwrap();
+        default_user
+            .update_username("defaultuser".to_string())
+            .unwrap();
+        repo.save(default_user.clone()).await.unwrap();
+        let found_default = repo.find_by_id(default_user.uuid).await.unwrap().unwrap();
+        assert_eq!(found_default.role(), UserRole::User);
     }
 
     #[tokio::test]

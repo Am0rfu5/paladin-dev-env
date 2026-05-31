@@ -130,6 +130,7 @@ fn user_error_to_response(error: UserError) -> (StatusCode, Json<ApiResponse<()>
             "INVALID_USERNAME",
             error.to_string(),
         ),
+        UserError::InvalidRole(_) => (StatusCode::BAD_REQUEST, "INVALID_ROLE", error.to_string()),
         UserError::InvalidPassword(_) => (
             StatusCode::BAD_REQUEST,
             "INVALID_PASSWORD",
