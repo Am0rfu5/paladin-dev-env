@@ -8,6 +8,8 @@
 /// Web-facing adapter integrations.
 #[allow(missing_docs)]
 pub mod adapters;
+/// Application router composition for the user REST API.
+pub mod app;
 /// Authentication and RBAC middleware for the user REST API.
 pub mod auth_middleware;
 /// User management controller handlers.

@@ -90,11 +90,11 @@ each sub-task, not just each parent task.
   - [x] 5.4 Unit tests for the middleware/guard decision logic using a mock `AuthPort` (401 vs 200 vs 403 outcomes at the function level).
   - [x] 5.5 Quality gate, then commit.
 
-- [ ] 6.0 Protect routes and compose the app router (Task 5.3; FR 16–21)
-  - [ ] 6.1 Update `user_controller.rs`: login handler returns the issued token; add admin-only `DELETE /users/:id` and `GET /users` (list) handlers; apply self-scope checks to `get`/`update`.
-  - [ ] 6.2 Create `crates/paladin-web/src/app.rs` with `create_app_router(user_service, auth_port)` composing public routes (`register`, `login`) and protected routes (everything else) with auth middleware + admin guard layered appropriately.
-  - [ ] 6.3 Declare/re-export the new `auth_middleware` and `app` modules in `crates/paladin-web/src/lib.rs`.
-  - [ ] 6.4 Quality gate, then commit.
+- [x] 6.0 Protect routes and compose the app router (Task 5.3; FR 16–21)
+  - [x] 6.1 Update `user_controller.rs`: login handler returns the issued token; add admin-only `DELETE /users/:id` and `GET /users` (list) handlers; apply self-scope checks to `get`/`update`.
+  - [x] 6.2 Create `crates/paladin-web/src/app.rs` with `create_app_router(user_service, auth_port)` composing public routes (`register`, `login`) and protected routes (everything else) with auth middleware + admin guard layered appropriately.
+  - [x] 6.3 Declare/re-export the new `auth_middleware` and `app` modules in `crates/paladin-web/src/lib.rs`.
+  - [x] 6.4 Quality gate, then commit.
 
 - [ ] 7.0 Integration tests for auth + RBAC (Task 5.2–5.3; FR 22–23)
   - [ ] 7.1 Add `tower` + `http-body-util` dev-dependencies to `crates/paladin-web/Cargo.toml`.
