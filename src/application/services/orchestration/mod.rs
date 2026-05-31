@@ -13,6 +13,7 @@ This module exposes:
 */
 
 pub mod listener;
+pub mod processors;
 pub mod scheduler;
 pub mod types;
 
