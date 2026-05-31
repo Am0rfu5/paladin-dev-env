@@ -1,5 +1,7 @@
 // Output port modules
 pub mod arsenal_port;
+/// Authentication port for issuing and verifying bearer tokens.
+pub mod auth_port;
 pub mod battalion_port;
 pub mod citadel_port;
 pub mod content_delivery_port;

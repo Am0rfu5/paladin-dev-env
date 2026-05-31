@@ -58,14 +58,14 @@ each sub-task, not just each parent task.
   - [x] 1.7 Unit tests: `UserRole` string round-trip + default; user role accessor/mutator; repository persists and reads back a non-default role.
   - [x] 1.8 Quality gate (`cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings`), then commit.
 
-- [ ] 2.0 Define the `AuthPort` interface in `paladin-ports` (Task 5.2; FR 5–7)
-  - [ ] 2.1 Create `crates/paladin-ports/src/output/auth_port.rs` with module-level rustdoc.
-  - [ ] 2.2 Define `AuthToken { token: String, expires_at: DateTime<Utc> }` and `AuthClaims { user_id: Uuid, role: UserRole, expires_at: DateTime<Utc> }` (serializable where appropriate).
-  - [ ] 2.3 Define `AuthError` (thiserror): `MissingToken`, `InvalidToken`, `Expired`, `Internal(String)`.
-  - [ ] 2.4 Define `AuthPort: Send + Sync` (`async_trait`) with `issue_token`, `verify_token`, `revoke_token` returning `Result<_, AuthError>`; full rustdoc.
-  - [ ] 2.5 Register `pub mod auth_port;` and re-export public types in `crates/paladin-ports/src/output/mod.rs`.
-  - [ ] 2.6 Unit tests for value-object/`AuthError` basics expressible in the port crate.
-  - [ ] 2.7 Quality gate, then commit.
+- [x] 2.0 Define the `AuthPort` interface in `paladin-ports` (Task 5.2; FR 5–7)
+  - [x] 2.1 Create `crates/paladin-ports/src/output/auth_port.rs` with module-level rustdoc.
+  - [x] 2.2 Define `AuthToken { token: String, expires_at: DateTime<Utc> }` and `AuthClaims { user_id: Uuid, role: UserRole, expires_at: DateTime<Utc> }` (serializable where appropriate).
+  - [x] 2.3 Define `AuthError` (thiserror): `MissingToken`, `InvalidToken`, `Expired`, `Internal(String)`.
+  - [x] 2.4 Define `AuthPort: Send + Sync` (`async_trait`) with `issue_token`, `verify_token`, `revoke_token` returning `Result<_, AuthError>`; full rustdoc.
+  - [x] 2.5 Register `pub mod auth_port;` and re-export public types in `crates/paladin-ports/src/output/mod.rs`.
+  - [x] 2.6 Unit tests for value-object/`AuthError` basics expressible in the port crate.
+  - [x] 2.7 Quality gate, then commit.
 
 - [ ] 3.0 Implement the token auth adapter in the root crate (Task 5.2; FR 8–11)
   - [ ] 3.1 Create `src/infrastructure/adapters/auth/in_memory_token_auth_adapter.rs` with module docs; register `mod.rs`.
