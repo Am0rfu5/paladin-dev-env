@@ -15,6 +15,7 @@
 - `src/application/services/orchestration/listener.rs` - `ListenerOrchestrator`, `EventListener`; subject of event → trigger → job validation incl. rate-limit and fan-out.
 - `src/application/services/orchestration/mod.rs` - `Orchestrator`; `register_event_listener()`/`process_event()` and the trigger → `execute_job` dispatch path used by event tests.
 - `tests/integration/scheduler_queue_event_validation_test.rs` - **New** integration tests: scheduler fire-on-time, `QueuePort` contract (in-memory + feature-gated Redis), event → trigger → job pipeline.
+- `tests/queue_port_contract.rs` - **New** integration tests validating the queue contract (enqueue → dequeue → process lifecycle, retry, dead-letter) for the in-memory `QueueOrchestrator` (always-on) and the feature-gated `RedisQueueAdapter` (skips when Redis unreachable).
 - `tests/integration/mod.rs` - Registers the new integration test module.
 - `docker/docker-compose.test.yml` - Reference for Redis host/port used by the feature-gated queue contract test.
 
@@ -40,15 +41,15 @@
   - [x] 1.6 Scheduler integration test: schedule a job a short interval in the future, drive the scheduler, verify it executes (no clock abstraction)
   - [x] 1.7 `TokioCronSchedulerAdapter` tests: imminent cron job fires (shared counter), invalid cron → `InvalidCronExpression`, scheduling while not running → `NotRunning`, and start→schedule→cancel/shutdown lifecycle; document UTC assumption
 
-- [ ] 2.0 Validate QueuePort contract for in-memory + Redis, incl. retry/dead-letter (PRD Task 2.2)
-  - [ ] 2.1 Write a reusable contract routine parameterized over a `QueuePort` impl: `create_queue` → `enqueue` → `dequeue` (payload round-trip) → `start_processing` → `complete_processing` → `queue_length` → `health_check`
-  - [ ] 2.2 Run the contract against the in-memory `QueueOrchestrator`/`QueueService` as an always-on test
-  - [ ] 2.3 Run the contract against `RedisQueueAdapter`, gated behind `redis-queue`, connecting to docker-compose Redis via config/env; skip gracefully / `#[ignore]` when unreachable
-  - [ ] 2.4 Retry test: item with `max_retries = N`, `fail_processing` reports re-queue while `attempt_count < N` (both adapters)
-  - [ ] 2.5 Dead-letter test: after retries exhausted, `fail_processing` reports no retry and the item is moved to the failed/dead-letter store, observable via stats/getter (both adapters)
-  - [ ] 2.6 If the in-memory queue lacks dead-letter parity, add the minimal behavior to satisfy 2.5 (and only that)
-  - [ ] 2.7 Fallback/health test: in-memory queue succeeds at the same call sites; health check reflects availability per adapter
-  - [ ] 2.8 Inspect `docker/docker-compose.test.yml` + test config to confirm the Redis host/port the test uses (resolves Open Question 1)
+- [x] 2.0 Validate QueuePort contract for in-memory + Redis, incl. retry/dead-letter (PRD Task 2.2)
+  - [x] 2.1 Write a reusable contract routine parameterized over a `QueuePort` impl: `create_queue` → `enqueue` → `dequeue` (payload round-trip) → `start_processing` → `complete_processing` → `queue_length` → `health_check`
+  - [x] 2.2 Run the contract against the in-memory `QueueOrchestrator`/`QueueService` as an always-on test
+  - [x] 2.3 Run the contract against `RedisQueueAdapter`, gated behind `redis-queue`, connecting to docker-compose Redis via config/env; skip gracefully / `#[ignore]` when unreachable
+  - [x] 2.4 Retry test: item with `max_retries = N`, `fail_processing` reports re-queue while `attempt_count < N` (both adapters)
+  - [x] 2.5 Dead-letter test: after retries exhausted, `fail_processing` reports no retry and the item is moved to the failed/dead-letter store, observable via stats/getter (both adapters)
+  - [x] 2.6 If the in-memory queue lacks dead-letter parity, add the minimal behavior to satisfy 2.5 (and only that)
+  - [x] 2.7 Fallback/health test: in-memory queue succeeds at the same call sites; health check reflects availability per adapter
+  - [x] 2.8 Inspect `docker/docker-compose.test.yml` + test config to confirm the Redis host/port the test uses (resolves Open Question 1)
 
 - [ ] 3.0 Validate event → trigger → job pipeline (PRD Task 2.3)
   - [ ] 3.1 Inspect the `ListenerOrchestrator` `trigger_queue` → `Orchestrator` dispatch path to confirm how a created trigger reaches `execute_job` (resolves Open Question 2)
