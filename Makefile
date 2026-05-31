@@ -412,6 +412,27 @@ release: ## Cut a release: bump version (lockstep), finalize changelog, commit, 
 		echo "$(RED)❌ cargo-release not found. Install with 'cargo install --locked cargo-release'.$(NC)"; \
 		exit 1; \
 	}
+	@# Release-branch protection (Milestone 10 Epic 5): tags may only be cut from
+	@# an up-to-date `main`. The CI guard in release.yml is authoritative; this is
+	@# fast local feedback. RELEASE_ALLOW_ANY_BRANCH=1 bypasses only the branch-name
+	@# check (for rare hotfix branches) — see docs/BRANCH_PROTECTION.md.
+	@if [ "$(RELEASE_ALLOW_ANY_BRANCH)" = "1" ]; then \
+		echo "$(YELLOW)⚠  RELEASE_ALLOW_ANY_BRANCH=1 — skipping main-branch check (CI still enforces main-only).$(NC)"; \
+	else \
+		CURRENT_BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+		if [ "$$CURRENT_BRANCH" != "main" ]; then \
+			echo "$(RED)❌ Releases must be cut from 'main' (current branch: $$CURRENT_BRANCH).$(NC)"; \
+			echo "$(RED)   Merge your changes via PR, then 'git checkout main && git pull --ff-only'.$(NC)"; \
+			echo "$(RED)   Override (hotfix only): RELEASE_ALLOW_ANY_BRANCH=1. See docs/BRANCH_PROTECTION.md.$(NC)"; \
+			exit 1; \
+		fi; \
+	fi
+	@echo "$(CYAN)Verifying local branch is up to date with origin/main...$(NC)"
+	@git fetch --quiet origin main || { echo "$(RED)❌ Failed to fetch origin/main.$(NC)"; exit 1; }
+	@if [ -n "$$(git rev-list HEAD..origin/main)" ]; then \
+		echo "$(RED)❌ HEAD is behind origin/main. Run 'git pull --ff-only origin main' before releasing.$(NC)"; \
+		exit 1; \
+	fi
 	@echo "$(CYAN)Cutting release v$(VERSION)...$(NC)"
 	@$(MAKE) release-check
 	@echo "$(CYAN)Bumping all crates to $(VERSION) (lockstep)...$(NC)"

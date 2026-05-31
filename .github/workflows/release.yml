@@ -22,11 +22,53 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # Release-branch protection (Milestone 10 Epic 5): a release tag must point at
+  # a commit that is contained in `main`. This is the authoritative enforcement
+  # of the GitFlow "main is the source of truth" invariant — a tag cut from an
+  # unmerged feature branch fails here before anything is published.
+  verify-tag-source:
+    name: Verify Tag From Main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release commit
+        id: resolve
+        run: |
+          set -euo pipefail
+          git fetch --tags --quiet origin
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Resolve the dispatched tag name to its commit SHA.
+            SHA=$(git rev-list -n 1 "${{ inputs.tag }}")
+          else
+            SHA="${{ github.sha }}"
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Release commit: $SHA"
+
+      - name: Ensure release commit is contained in main
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main
+          SHA="${{ steps.resolve.outputs.sha }}"
+          if git merge-base --is-ancestor "$SHA" origin/main; then
+            echo "✅ Release commit $SHA is contained in origin/main."
+          else
+            echo "::error::Release tag points at commit $SHA, which is NOT contained in main. \
+          Release tags must be cut from the main branch (merge via PR first). See \
+          docs/BRANCH_PROTECTION.md."
+            exit 1
+          fi
+
   # Full test suite — gates crates.io publishing (a release must not publish if
   # tests fail).
   test:
     name: Test Suite
     runs-on: ubuntu-latest
+    needs: verify-tag-source
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,6 +91,7 @@ jobs:
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
+    needs: verify-tag-source
     permissions:
       contents: write
     outputs:

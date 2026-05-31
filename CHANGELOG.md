@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Release Branch Protection — Tag-from-Main Enforcement (Milestone 10, Epic 5)
+
+- **`verify-tag-source` CI guard** — `release.yml` now fails the entire release pipeline before any
+  publishing if the tagged commit is not contained in `main` (`git merge-base --is-ancestor`). The
+  `test` and `create-release` jobs depend on it, so Docker, binary, SBOM, and crates.io publishing
+  are all gated.
+- **`make release` main-branch guard** — refuses to bump/tag unless run from an up-to-date `main`;
+  documented `RELEASE_ALLOW_ANY_BRANCH=1` override for hotfix branches (CI guard remains
+  authoritative).
+- **Importable GitHub rulesets** — `.github/rulesets/protect-main-branch.json` (PR + status checks,
+  no force-push/deletion) and `.github/rulesets/protect-release-tags.json` (restrict `v*` tag
+  creation to admins).
+- **`docs/BRANCH_PROTECTION.md`** — policy rationale, the three enforcement layers, and ruleset
+  import instructions (GitHub UI and `gh api`).
+- Updated `CONTRIBUTING.md` `## Releasing` to document the main-only release policy.
+
 ## [0.4.0] - 2026-05-31
 
 ### Added

@@ -631,11 +631,20 @@ tag-triggered `.github/workflows/release.yml` pipeline. The full evaluation, dec
 guide live in **[docs/RELEASE_AUTOMATION.md](docs/RELEASE_AUTOMATION.md)**; the manual checklist is in
 **[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)**.
 
+> **Releases are cut only from `main`.** Release tags (`v*.*.*`) must point at a commit that is
+> contained in `main`; the `verify-tag-source` CI guard fails the pipeline otherwise, and
+> `make release` refuses to run from any other branch. See
+> **[docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md)** for the policy and its enforcement
+> layers.
+
 ### Cutting a release
 
 A release is cut locally with a single command (CI does the publishing):
 
 ```bash
+# 0. Ensure your release commit is merged and you are on an up-to-date main.
+git checkout main && git pull --ff-only origin main
+
 # Bumps all crates in lockstep, finalizes CHANGELOG.md, commits, tags v<version>, and pushes.
 make release VERSION=0.4.0
 ```
