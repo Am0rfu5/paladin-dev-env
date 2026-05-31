@@ -39,11 +39,14 @@ jobs:
         id: resolve
         run: |
           set -euo pipefail
-          git fetch --tags --quiet origin
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # Resolve the dispatched tag name to its commit SHA.
+            # Resolve the dispatched tag name to its commit SHA. Force-fetch tags
+            # so an annotated tag does not collide with a pre-existing lightweight
+            # ref (`would clobber existing tag`).
+            git fetch --tags --force --quiet origin
             SHA=$(git rev-list -n 1 "${{ inputs.tag }}")
           else
+            # On a tag push the checked-out commit is already the release commit.
             SHA="${{ github.sha }}"
           fi
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
