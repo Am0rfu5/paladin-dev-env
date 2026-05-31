@@ -52,11 +52,11 @@ Epic spec: [Milestone_9-Epic_4-agent-orchestrator-bridge.md](Milestone_9-Epic_4-
   - [x] 2.8 Unit tests for all four actions: success path + `ActionNotAllowed` + `QuotaExceeded`, using mock collaborators (mock orchestrator port or mock notification port).
   - [x] 2.9 Quality gate, then commit.
 
-- [ ] 3.0 Wire the bridge into `PaladinExecutionService` (Task 4.2; FR 19–21)
-  - [ ] 3.1 Add `orchestrator_port: Option<Arc<dyn OrchestratorPort>>` field; initialize to `None` in existing `new(...)` so current call sites keep compiling.
-  - [ ] 3.2 Add backward-compatible `with_orchestrator_port(...)` setter (builder-style) and rustdoc.
-  - [ ] 3.3 Confirm no behavioral change when `None` (existing tests still pass); add a small unit test asserting attach/detach wiring.
-  - [ ] 3.4 Quality gate, then commit.
+- [x] 3.0 Wire the bridge into `PaladinExecutionService` (Task 4.2; FR 19–21)
+  - [x] 3.1 Add `orchestrator_port: Option<Arc<dyn OrchestratorPort>>` field; initialize to `None` in existing `new(...)` so current call sites keep compiling.
+  - [x] 3.2 Add backward-compatible `with_orchestrator_port(...)` setter (builder-style) and rustdoc.
+  - [x] 3.3 Confirm no behavioral change when `None` (existing tests still pass); add a small unit test asserting attach/detach wiring.
+  - [x] 3.4 Quality gate, then commit.
 
 - [ ] 4.0 Integration test — agent triggers orchestration (Task 4.3; FR 23–24)
   - [ ] 4.1 Create `tests/agent_orchestrator_bridge.rs`; build a real `Orchestrator` + `OrchestratorBridgeAdapter` + `PaladinExecutionService` with a scripted mock LLM emitting a tool/function call for `schedule_job`.

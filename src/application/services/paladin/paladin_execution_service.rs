@@ -70,6 +70,7 @@ use log::{debug, error, info, warn};
 use paladin_ports::output::arsenal_port::ArsenalPort;
 use paladin_ports::output::garrison_port::GarrisonPort;
 use paladin_ports::output::llm_port::{FunctionCall, LlmPort, LlmRequest};
+use paladin_ports::output::orchestrator_port::OrchestratorPort;
 use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
 use paladin_ports::output::paladin_port::{PaladinResult, StopReason};
 #[cfg(feature = "vision")]
@@ -134,6 +135,10 @@ pub struct PaladinExecutionService {
 
     /// Optional handoff service for agent delegation (Layer 3)
     handoff_service: Option<Arc<HandoffService>>,
+
+    /// Optional Agent → Orchestrator bridge port for scheduling jobs, queuing
+    /// items, firing events, and sending notifications from agent execution.
+    orchestrator_port: Option<Arc<dyn OrchestratorPort>>,
 }
 
 impl PaladinExecutionService {
@@ -185,7 +190,32 @@ impl PaladinExecutionService {
             planning_service: None,
             prompt_generation_service: None,
             handoff_service: None,
+            orchestrator_port: None,
         }
+    }
+
+    /// Sets the Agent → Orchestrator bridge port
+    ///
+    /// Attaches an [`OrchestratorPort`] so that Paladins can schedule jobs,
+    /// queue items, fire events, and send notifications during execution. When
+    /// not set, the service behaves exactly as before (no orchestration bridge).
+    ///
+    /// # Arguments
+    ///
+    /// * `orchestrator_port` - The orchestrator bridge port implementation
+    ///
+    /// # Returns
+    ///
+    /// Returns self for method chaining
+    pub fn with_orchestrator_port(mut self, orchestrator_port: Arc<dyn OrchestratorPort>) -> Self {
+        info!("Attaching orchestrator bridge port to PaladinExecutionService");
+        self.orchestrator_port = Some(orchestrator_port);
+        self
+    }
+
+    /// Returns a reference to the attached orchestrator bridge port, if any.
+    pub fn orchestrator_port(&self) -> Option<&Arc<dyn OrchestratorPort>> {
+        self.orchestrator_port.as_ref()
     }
 
     /// Sets the RAG retrieval service for context augmentation
@@ -1975,6 +2005,62 @@ mod tests {
 
         // Assert: No RAG section should be present
         assert!(!prompt.contains("## Relevant Context from Memory"));
+    }
+
+    // Mock OrchestratorPort for wiring tests
+    struct MockOrchestratorPort;
+
+    #[async_trait]
+    impl OrchestratorPort for MockOrchestratorPort {
+        async fn schedule_job(
+            &self,
+            _request: paladin_ports::output::orchestrator_port::ScheduleJobRequest,
+        ) -> Result<Uuid, paladin_ports::output::orchestrator_port::OrchestratorBridgeError>
+        {
+            Ok(Uuid::new_v4())
+        }
+
+        async fn queue_item(
+            &self,
+            _request: paladin_ports::output::orchestrator_port::QueueItemRequest,
+        ) -> Result<Uuid, paladin_ports::output::orchestrator_port::OrchestratorBridgeError>
+        {
+            Ok(Uuid::new_v4())
+        }
+
+        async fn fire_event(
+            &self,
+            _request: paladin_ports::output::orchestrator_port::FireEventRequest,
+        ) -> Result<
+            paladin_ports::output::orchestrator_port::EventDispatchResult,
+            paladin_ports::output::orchestrator_port::OrchestratorBridgeError,
+        > {
+            Ok(paladin_ports::output::orchestrator_port::EventDispatchResult::default())
+        }
+
+        async fn send_notification(
+            &self,
+            _request: paladin_ports::output::orchestrator_port::SendNotificationRequest,
+        ) -> Result<Uuid, paladin_ports::output::orchestrator_port::OrchestratorBridgeError>
+        {
+            Ok(Uuid::new_v4())
+        }
+    }
+
+    #[tokio::test]
+    async fn test_orchestrator_port_wiring() {
+        // Arrange
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+
+        // Default: no orchestrator port attached
+        let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
+        assert!(service.orchestrator_port().is_none());
+
+        // After wiring: orchestrator port is attached
+        let orchestrator_port: Arc<dyn OrchestratorPort> = Arc::new(MockOrchestratorPort);
+        let service = service.with_orchestrator_port(orchestrator_port);
+        assert!(service.orchestrator_port().is_some());
     }
 
     #[test]
