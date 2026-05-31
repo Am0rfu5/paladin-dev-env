@@ -80,6 +80,7 @@ setup: ## Initial project setup
 	@rustup update stable
 	@rustup component add rustfmt clippy
 	@$(CARGO) install cargo-audit cargo-watch cargo-expand
+	@$(CARGO) install --locked cargo-release
 	@cp .env.example .env 2>/dev/null || echo ".env already exists"
 	@echo "$(GREEN)✅ Setup complete!$(NC)"
 

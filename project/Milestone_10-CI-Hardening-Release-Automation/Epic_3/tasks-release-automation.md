@@ -19,6 +19,9 @@
 - `CONTRIBUTING.md` - Existing: document the release flow, required secrets, and dry-run path.
 - `docs/RELEASE_CHECKLIST.md` - Existing: cross-reference the automated flow.
 - `CHANGELOG.md` - Existing: confirm the `## [Unreleased]` structure the `make release` target edits.
+- `.devcontainer/Dockerfile.dev` - Existing: pre-install `cargo-release` in the dev image so rebuilt
+  containers provision the release tool for every developer.
+- `Makefile` (`setup` target) - Existing: install `cargo-release` for non-devcontainer local setups.
 
 ### Notes
 
@@ -141,3 +144,20 @@ parent task with a conventional message referencing the task number.
   > the Epic-3 files (`release.toml`, `.github/workflows/release.yml`, `Makefile`, `CONTRIBUTING.md`,
   > `docs/RELEASE_AUTOMATION.md`, `docs/RELEASE_CHECKLIST.md`, and the Epic-3 PRD + tasks) and
   > committed/pushed on `feature/milestone_10-epic_3-release-automation`.
+
+- [x] 6.0 Provision `cargo-release` for future devcontainer/local builds (follow-up)
+  - [x] 6.1 Add a pinned `cargo install --locked --version <ver> cargo-release` step to
+        `.devcontainer/Dockerfile.dev` so a rebuilt dev image ships the release tool for every
+        developer.
+  - [x] 6.2 Add `cargo-release` to the Makefile `setup` target for non-devcontainer local setups.
+  - [x] 6.3 Confirm the CI release pipeline does **not** require `cargo-release` (it publishes with
+        plain `cargo publish`), so no CI workflow change is needed.
+  - [x] 6.4 Validate, stage only the changed provisioning files, commit, and push.
+
+  > `make release` (and `cargo-release`) only runs locally; CI publishes with plain `cargo publish`,
+  > so no workflow change was needed. Pinned `cargo install --locked --version 1.1.2 cargo-release`
+  > added to `.devcontainer/Dockerfile.dev` (alongside the other `cargo install` tool steps) so a
+  > rebuilt dev image provisions the tool for every developer; also added (unpinned, matching the
+  > other entries) to the Makefile `setup` target for local non-devcontainer setups. Existing
+  > containers can install on demand via `cargo install --locked cargo-release` (already documented
+  > in CONTRIBUTING.md / docs/RELEASE_AUTOMATION.md) or by rebuilding the devcontainer.
