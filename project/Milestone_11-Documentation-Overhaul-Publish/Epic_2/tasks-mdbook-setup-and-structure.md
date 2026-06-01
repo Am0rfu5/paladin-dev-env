@@ -84,11 +84,11 @@ Update the file after completing each sub-task, not just after completing an ent
 
 - [x] 9.0 Create GitHub Actions CI/CD workflow
   - [x] 9.1 Created `.github/workflows/docs.yml` with `build` job triggered on PRs and pushes to `main` touching `docs/**`; installs pinned mdbook 0.4.40 and mdbook-mermaid 0.13.0; runs `mdbook build docs/`
-  - [x] 9.2 Added `deploy` job that runs only on `push` to `main`; uses `peaceiris/actions-gh-pages@v3` to publish `docs/book/` to `gh-pages` branch with `GITHUB_TOKEN`; OQ-4 resolved: `contents: write` permission set at workflow level
+  - [x] 9.2 Added `deploy` job that runs only on `push` to `main`; uses official `actions/deploy-pages@v4` (not `peaceiris/actions-gh-pages@v3`) with `actions/upload-pages-artifact@v3` in the build job; permissions set to `pages: write` + `id-token: write` (OIDC, least-privilege); no `gh-pages` branch created; concurrency group `pages` prevents overlapping deployments; OQ-4 resolved
   - [x] 9.3 YAML syntax validated with `python3 -c "import yaml; yaml.safe_load(...)"` — YAML valid
 
 - [x] 10.0 Configure GitHub Pages and commit
-  - [x] 10.1 In the GitHub repository settings (`DF3NDR/paladin-dev-env` → Settings → Pages), set the source branch to `gh-pages` and directory to `/ (root)` — this is a one-time manual step (FR-17); verify OQ-4 (branch protection) is not blocking the `GITHUB_TOKEN` deploy
+  - [x] 10.1 In the GitHub repository settings (`DF3NDR/paladin-dev-env` → Settings → Pages), set Source to **GitHub Actions** (not a branch) — this is a one-time manual step (FR-17); no `gh-pages` branch or `/ (root)` directory needed; OIDC token handles deploy authorization
   - [x] 10.2 Run `cargo test` to confirm no Rust regressions were introduced by the migration
   - [x] 10.3 Stage all changes: `git add docs/ .github/workflows/docs.yml .gitignore`
   - [x] 10.4 Commit with a descriptive message
