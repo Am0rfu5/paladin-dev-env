@@ -611,32 +611,10 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-publish-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Dry run publish paladin-ai-core
-        run: cargo publish --dry-run -p paladin-ai-core
-
-      - name: Dry run publish paladin-ports
-        run: cargo publish --dry-run -p paladin-ports
-
-      - name: Dry run publish paladin-battalion
-        run: cargo publish --dry-run -p paladin-battalion
-
-      - name: Dry run publish paladin-llm
-        run: cargo publish --dry-run -p paladin-llm
-
-      - name: Dry run publish paladin-memory
-        run: cargo publish --dry-run -p paladin-memory
-
-      - name: Dry run publish paladin-storage
-        run: cargo publish --dry-run -p paladin-storage
-
-      - name: Dry run publish paladin-notifications
-        run: cargo publish --dry-run -p paladin-notifications
-
-      - name: Dry run publish paladin-content
-        run: cargo publish --dry-run -p paladin-content
-
-      - name: Dry run publish paladin-web
-        run: cargo publish --dry-run -p paladin-web
-
-      - name: Dry run publish paladin-ai (facade)
-        run: cargo publish --dry-run -p paladin-ai
+      # A single workspace-wide dry run packages and verifies every crate in
+      # dependency order, resolving intra-workspace `version` requirements via
+      # their `path` entries. Per-crate `cargo publish --dry-run -p <crate>`
+      # cannot work on a version bump: the not-yet-published new version of each
+      # sibling fails the `version = "X"` requirement of its dependents.
+      - name: Dry run publish workspace
+        run: cargo publish --workspace --dry-run
