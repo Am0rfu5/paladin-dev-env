@@ -205,8 +205,12 @@ jobs:
 
       - name: Verify image size
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.create-release.outputs.version }}
-          SIZE=$(docker image inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.create-release.outputs.version }} --format='{{.Size}}')
+          # metadata-action's {{version}} semver pattern strips the leading `v`,
+          # so the pushed tag is e.g. `0.4.2` (not `v0.4.2`). Use the resolved
+          # metadata version to pull the image we actually published.
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
+          docker pull "$IMAGE"
+          SIZE=$(docker image inspect "$IMAGE" --format='{{.Size}}')
           SIZE_MB=$((SIZE / 1024 / 1024))
           echo "Image size: ${SIZE_MB} MB"
           if [ $SIZE_MB -gt 500 ]; then
@@ -218,7 +222,10 @@ jobs:
     name: Build Binaries
     runs-on: ${{ matrix.os }}
     needs: create-release
+    permissions:
+      contents: write
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest

@@ -611,8 +611,8 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-publish-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Dry run publish paladin-core
-        run: cargo publish --dry-run -p paladin-core
+      - name: Dry run publish paladin-ai-core
+        run: cargo publish --dry-run -p paladin-ai-core
 
       - name: Dry run publish paladin-ports
         run: cargo publish --dry-run -p paladin-ports
@@ -638,5 +638,5 @@ jobs:
       - name: Dry run publish paladin-web
         run: cargo publish --dry-run -p paladin-web
 
-      - name: Dry run publish paladin (facade)
-        run: cargo publish --dry-run -p paladin
+      - name: Dry run publish paladin-ai (facade)
+        run: cargo publish --dry-run -p paladin-ai
