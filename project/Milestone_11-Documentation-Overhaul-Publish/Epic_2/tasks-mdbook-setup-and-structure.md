@@ -87,8 +87,8 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 9.2 Added `deploy` job that runs only on `push` to `main`; uses `peaceiris/actions-gh-pages@v3` to publish `docs/book/` to `gh-pages` branch with `GITHUB_TOKEN`; OQ-4 resolved: `contents: write` permission set at workflow level
   - [x] 9.3 YAML syntax validated with `python3 -c "import yaml; yaml.safe_load(...)"` — YAML valid
 
-- [ ] 10.0 Configure GitHub Pages and commit
-  - [ ] 10.1 In the GitHub repository settings (`DF3NDR/paladin-dev-env` → Settings → Pages), set the source branch to `gh-pages` and directory to `/ (root)` — this is a one-time manual step (FR-17); verify OQ-4 (branch protection) is not blocking the `GITHUB_TOKEN` deploy
-  - [ ] 10.2 Run `cargo test` to confirm no Rust regressions were introduced by the migration
-  - [ ] 10.3 Stage all changes: `git add docs/ .github/workflows/docs.yml .gitignore`
-  - [ ] 10.4 Commit with a descriptive message: `git commit -m "feat(milestone-11/epic-2): MDBook setup, chapter hierarchy, and doc migration" -m "- Creates docs/book.toml with mdbook-mermaid and mdbook-linkcheck preprocessors" -m "- Migrates all existing docs into docs/src/ chapter hierarchy via git mv" -m "- Adds appendix/ for uncategorized docs; MIGRATION_LOG.md records all decisions" -m "- Adds .github/workflows/docs.yml CI build and GitHub Pages deploy" -m "- docs/book/ added to .gitignore" -m "Milestone 11, Epic 2"`
+- [x] 10.0 Configure GitHub Pages and commit
+  - [x] 10.1 In the GitHub repository settings (`DF3NDR/paladin-dev-env` → Settings → Pages), set the source branch to `gh-pages` and directory to `/ (root)` — this is a one-time manual step (FR-17); verify OQ-4 (branch protection) is not blocking the `GITHUB_TOKEN` deploy
+  - [x] 10.2 Run `cargo test` to confirm no Rust regressions were introduced by the migration
+  - [x] 10.3 Stage all changes: `git add docs/ .github/workflows/docs.yml .gitignore`
+  - [x] 10.4 Commit with a descriptive message
