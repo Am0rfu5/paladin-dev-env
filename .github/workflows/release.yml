@@ -205,10 +205,12 @@ jobs:
 
       - name: Verify image size
         run: |
-          # metadata-action's {{version}} semver pattern strips the leading `v`,
-          # so the pushed tag is e.g. `0.4.2` (not `v0.4.2`). Use the resolved
-          # metadata version to pull the image we actually published.
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
+          # Use the exact tag metadata-action produced. It already lowercases the
+          # repository name (ghcr requires lowercase, but env.IMAGE_NAME keeps the
+          # original `DF3NDR/...` casing) and strips the leading `v` from the
+          # semver tag, so reconstructing the reference by hand is error-prone.
+          IMAGE=$(echo '${{ steps.meta.outputs.json }}' | jq -r '.tags[0]')
+          echo "Inspecting image: $IMAGE"
           docker pull "$IMAGE"
           SIZE=$(docker image inspect "$IMAGE" --format='{{.Size}}')
           SIZE_MB=$((SIZE / 1024 / 1024))
