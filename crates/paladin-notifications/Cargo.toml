@@ -1,6 +1,6 @@
 [package]
 name = "paladin-notifications"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2021"
 authors = ["Am0rfu5"]
 description = "Notification adapter implementations for the Paladin framework (email, push, system)"
@@ -20,8 +20,8 @@ push   = []
 system = []
 
 [dependencies]
-paladin-core  = { package = "paladin-ai-core", version = "0.4.1", path = "../paladin-core" }
-paladin-ports = { version = "0.4.1", path = "../paladin-ports" }
+paladin-core  = { package = "paladin-ai-core", version = "0.4.2", path = "../paladin-core" }
+paladin-ports = { version = "0.4.2", path = "../paladin-ports" }
 async-trait   = { workspace = true }
 chrono        = { workspace = true }
 serde         = { workspace = true }
