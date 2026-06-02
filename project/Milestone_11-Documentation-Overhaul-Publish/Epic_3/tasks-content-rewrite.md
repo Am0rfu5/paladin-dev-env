@@ -116,16 +116,16 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.10 Run `cd /workspace/docs && mdbook build` — confirm zero errors and zero linkcheck warnings
   - [x] 3.11 Commit: `git commit -m "docs(getting-started): full rewrite of installation, quickstart, and configuration guides"`
 
-- [ ] 4.0 Update Architecture documentation in-place (FR-7, FR-8, FR-9, FR-10, FR-11)
-  - [ ] 4.1 Read each crate's `Cargo.toml` and `src/lib.rs` to capture module structure, feature flags, and re-exports; read `.github/copilot-instructions.md` for the authoritative naming convention table
-  - [ ] 4.2 Update `docs/src/architecture/overview.md`: three-layer hexagonal diagram (Mermaid), correct crate-to-layer mapping for all 9 workspace crates, inward-only dependency flow rule
-  - [ ] 4.3 Update `docs/src/architecture/hexagonal-design.md`: current port trait locations under `crates/paladin-ports/`, current adapter locations per crate, step-by-step guide for adding a new adapter
-  - [ ] 4.4 Update `docs/src/architecture/domain-model.md`: all domain entities with current module paths, `Node<T>` pattern, complete Medieval Military naming convention table
-  - [ ] 4.5 Update `docs/src/architecture/crate-map.md`: every workspace crate with layer/purpose/feature flags, Mermaid crate dependency graph
-  - [ ] 4.6 Update `docs/src/architecture/design-patterns.md`: `PaladinBuilder` with current method signatures, `thiserror` error enum examples, port trait pattern (`async_trait`, `Send + Sync`), service composition pattern
-  - [ ] 4.7 Run `make check-doc-examples` to confirm all architecture code examples pass `cargo check`
-  - [ ] 4.8 Run `cd /workspace/docs && mdbook build` — confirm Mermaid diagrams render and zero linkcheck warnings
-  - [ ] 4.9 Commit: `git commit -m "docs(architecture): update all architecture docs for v0.4.3 workspace structure"`
+- [x] 4.0 Update Architecture documentation in-place (FR-7, FR-8, FR-9, FR-10, FR-11)
+  - [x] 4.1 Read each crate's `Cargo.toml` and `src/lib.rs` to capture module structure, feature flags, and re-exports; read `.github/copilot-instructions.md` for the authoritative naming convention table
+  - [x] 4.2 Update `docs/src/architecture/overview.md`: three-layer hexagonal diagram (Mermaid), correct crate-to-layer mapping for all 9 workspace crates, inward-only dependency flow rule
+  - [x] 4.3 Update `docs/src/architecture/hexagonal-design.md`: current port trait locations under `crates/paladin-ports/`, current adapter locations per crate, step-by-step guide for adding a new adapter
+  - [x] 4.4 Update `docs/src/architecture/domain-model.md`: all domain entities with current module paths, `Node<T>` pattern, complete Medieval Military naming convention table
+  - [x] 4.5 Update `docs/src/architecture/crate-map.md`: every workspace crate with layer/purpose/feature flags, Mermaid crate dependency graph
+  - [x] 4.6 Update `docs/src/architecture/design-patterns.md`: `PaladinBuilder` with current method signatures, `thiserror` error enum examples, port trait pattern (`async_trait`, `Send + Sync`), service composition pattern
+  - [x] 4.7 Run `make check-doc-examples` to confirm all architecture code examples pass `cargo check`
+  - [x] 4.8 Run `cd /workspace/docs && mdbook build` — confirm Mermaid diagrams render and zero linkcheck warnings
+  - [x] 4.9 Commit: `git commit -m "docs(architecture): update all architecture docs for v0.4.3 workspace structure"`
 
 - [ ] 5.0 Rewrite User Guides — full rewrites (FR-12, FR-13, FR-14, FR-15, FR-16, FR-17)
   - [ ] 5.1 Read `crates/paladin-core/src/` and `crates/paladin-ports/src/` for `PaladinBuilder`, `PaladinExecutionService`, and `PaladinStatus` current signatures

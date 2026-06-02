@@ -1,735 +1,238 @@
-# Paladin Architecture Overview
+# Architecture Overview
 
-This document provides a comprehensive overview of Paladin's architecture, design principles, and system organization.
+Paladin is a **Rust workspace** of nine focused crates organised around
+**Hexagonal Architecture** (Ports & Adapters) and **Domain-Driven Design**.
+Each workspace crate maps to a distinct architectural layer, keeping the core
+domain free of all external dependencies.
 
-## Table of Contents
+## Workspace Crates at a Glance
 
-- [Executive Summary](#executive-summary)
-- [Architectural Principles](#architectural-principles)
-- [Three-Layer Architecture](#three-layer-architecture)
-- [System Components](#system-components)
-- [Data Flow](#data-flow)
-- [Deployment Architecture](#deployment-architecture)
-- [Technology Stack](#technology-stack)
-- [Design Decisions](#design-decisions)
+| Crate | Layer | Purpose |
+|-------|-------|---------|
+| `paladin-ai-core` | Core | Pure domain entities and base primitives |
+| `paladin-ports` | Application boundary | Port trait contracts (interfaces) |
+| `paladin-battalion` | Application services | Multi-agent orchestration patterns |
+| `paladin-llm` | Infrastructure | LLM provider adapters (OpenAI, Anthropic, DeepSeek) |
+| `paladin-memory` | Infrastructure | Garrison and Sanctum memory adapters |
+| `paladin-storage` | Infrastructure | SQL repository adapters (SQLite, MySQL) |
+| `paladin-notifications` | Infrastructure | Email, push, system notification adapters |
+| `paladin-content` | Infrastructure | Content ingestion and processing adapters |
+| `paladin-web` | Infrastructure | HTTP server (actix-web / axum), REST API |
+| `paladin-ai` *(root)* | Umbrella | Re-exports all crates; workspace feature flags |
 
-## Executive Summary
-
-Paladin is an enterprise-grade multi-agent orchestration framework built with **Hexagonal Architecture** (Ports and Adapters) and **Domain-Driven Design** principles. The system enables autonomous AI agents (Paladins) to execute complex tasks through coordinated multi-agent patterns (Battalions), external tool integration (Arsenal), and persistent memory (Garrison).
-
-**Key Characteristics:**
-- **Clean Architecture**: Strict dependency rules with core business logic isolated from infrastructure
-- **Provider Agnostic**: Support for multiple LLM providers (OpenAI, DeepSeek, Anthropic, custom)
-- **Extensible**: Plugin-based tool system via Model Context Protocol (MCP)
-- **Production-Ready**: Comprehensive error handling, observability, and state management
-- **Type-Safe**: Leverages Rust's type system for compile-time guarantees
-
-## Architectural Principles
-
-### 1. Hexagonal Architecture (Ports & Adapters)
-
-Paladin follows the hexagonal architecture pattern to achieve:
+## Three-Layer Hexagonal Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    External World                        │
-│  (LLMs, Databases, File Systems, APIs, Message Queues)  │
-└────────────┬─────────────────────────────┬──────────────┘
-             │                             │
-             │  Adapters (Infrastructure)  │
-             │                             │
-┌────────────▼─────────────────────────────▼──────────────┐
-│                        Ports                             │
-│            (Application Interfaces)                      │
-└────────────┬─────────────────────────────┬──────────────┘
-             │                             │
-             │    Use Cases & Services     │
-             │                             │
-┌────────────▼─────────────────────────────▼──────────────┐
-│                    Core Domain                           │
-│  (Paladin, Battalion, Garrison, Arsenal - Pure Logic)   │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                      External World                              │
+│   LLMs · Databases · Redis · MinIO · MCP tools · HTTP clients   │
+└──────────────┬──────────────────────────────────┬───────────────┘
+               │                                  │
+               │  Infrastructure adapters         │
+               │  paladin-llm                     │
+               │  paladin-memory                  │
+               │  paladin-storage                 │
+               │  paladin-notifications            │
+               │  paladin-content                 │
+               │  paladin-web                     │
+               │                                  │
+┌──────────────▼──────────────────────────────────▼───────────────┐
+│               Application Boundary  (paladin-ports)              │
+│   LlmPort · GarrisonPort · SanctumPort · ArsenalPort            │
+│   CitadelPort · FileStoragePort · NotificationPort · …          │
+│                                                                  │
+│               Application Services  (paladin-battalion)          │
+│   FormationService · PhalanxService · CampaignService           │
+│   ChainOfCommandService · Commander · ConclaveService           │
+│   CouncilService · GroveService · ManeuverService               │
+└──────────────┬──────────────────────────────────┬───────────────┘
+               │  depends on (inward only)         │
+┌──────────────▼──────────────────────────────────▼───────────────┐
+│                   Core Domain  (paladin-ai-core)                  │
+│   Paladin · Battalion · Garrison · Arsenal · Citadel             │
+│   Herald · Sanctum · Node<T> · PaladinError · …                 │
+│   No I/O · No external SDK imports · Pure domain logic           │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Benefits:**
-- Business logic independent of external dependencies
-- Easy to test (mock adapters)
-- Flexibility to swap implementations (e.g., change LLM provider)
-- Clear boundaries and responsibilities
+### Dependency Flow Rule
 
-### 2. Domain-Driven Design (DDD)
+**Dependencies flow inward only:**
 
-Paladin applies DDD principles:
+- `paladin-ai-core` imports nothing from the workspace.
+- `paladin-ports` imports only `paladin-ai-core`.
+- `paladin-battalion` imports `paladin-ai-core` + `paladin-ports`.
+- Infrastructure crates (`paladin-llm`, `paladin-memory`, etc.) import
+  `paladin-ai-core` + `paladin-ports`. They never import each other.
+- The root `paladin-ai` umbrella crate imports everything.
 
-**Ubiquitous Language**: Medieval Military theme provides clear, consistent terminology
-- **Paladin** = AI agent
-- **Battalion** = Multi-agent orchestration
-- **Garrison** = Memory system
-- **Arsenal** = Tool registry
-- **Armament** = Individual tool
-- **Citadel** = State persistence
+This rule is enforced by Cargo's dependency graph — `paladin-ai-core` cannot
+accidentally pull in `reqwest` or `sqlx`.
 
-**Bounded Contexts**: Clear boundaries between subsystems
-- **Agent Context**: Paladin execution and lifecycle
-- **Memory Context**: Garrison storage and retrieval
-- **Tool Context**: Arsenal management and execution
-- **Orchestration Context**: Battalion coordination
+## Layer 1: Core Domain (`crates/paladin-core`)
 
-**Aggregates**: Entities with clear ownership
-- **Paladin** is an aggregate root containing configuration and state
-- **Battalion** is an aggregate coordinating multiple Paladins
-- **GarrisonEntry** is owned by Garrison aggregate
+**Package name:** `paladin-ai-core`
 
-### 3. Dependency Inversion Principle
+Pure business logic with zero external dependencies.
 
-```rust
-// High-level modules don't depend on low-level modules
-// Both depend on abstractions (traits)
-
-// Core Domain (high-level)
-pub struct Paladin { /* ... */ }
-
-// Application Port (abstraction)
-#[async_trait]
-pub trait LlmPort: Send + Sync {
-    async fn generate(&self, prompt: &str) -> Result<String>;
-}
-
-// Infrastructure Adapter (low-level)
-pub struct OpenAiAdapter { /* ... */ }
-
-impl LlmPort for OpenAiAdapter {
-    async fn generate(&self, prompt: &str) -> Result<String> {
-        // Implementation details
-    }
-}
+```
+crates/paladin-core/src/
+├── base/                      # Framework primitives
+│   ├── node.rs                # Node<T> entity pattern
+│   ├── collection.rs
+│   ├── field.rs
+│   └── message.rs
+└── platform/
+    ├── container/
+    │   ├── paladin.rs             # Paladin aggregate root
+    │   ├── paladin_config.rs
+    │   ├── paladin_error.rs
+    │   ├── garrison.rs            # Garrison memory domain
+    │   ├── arsenal/               # Tool system domain
+    │   ├── citadel.rs             # State persistence domain
+    │   ├── herald.rs              # Output formatting domain
+    │   ├── sanctum.rs             # Vector memory domain
+    │   └── battalion/             # Battalion domain types
+    └── manager/
+        ├── scheduler.rs
+        └── event_manager.rs
 ```
 
-Dependencies flow inward: Infrastructure → Application → Core
+**Constraints:**
+- No imports from `paladin-ports` or any infrastructure crate
+- No I/O operations
+- No HTTP clients, database drivers, or LLM SDKs
 
-## Three-Layer Architecture
+## Layer 2: Application Boundary (`crates/paladin-ports` + `crates/paladin-battalion`)
 
-### Layer 1: Core Domain (`src/core/`)
+### Port Contracts (`paladin-ports`)
 
-**Purpose**: Pure business logic with zero external dependencies
+Defines abstract `trait` interfaces for every external integration point:
 
-**Responsibilities:**
-- Define domain entities (Paladin, Battalion, Garrison, Arsenal)
-- Implement business rules and invariants
-- Provide domain events and value objects
-
-**Key Modules:**
 ```
-src/core/
-├── base/                    # Framework primitives
-│   ├── node.rs             # Node<T> entity pattern
-│   ├── collection.rs       # Collection management
-│   ├── field.rs            # Field definitions
-│   └── message.rs          # Message types
-├── platform/
-│   └── container/
-│       ├── paladin.rs          # Paladin entity
-│       ├── paladin_config.rs   # Configuration
-│       ├── garrison.rs         # Memory domain
-│       ├── arsenal.rs          # Tool domain
-│       ├── citadel.rs          # State persistence
-│       └── battalion/
-│           ├── mod.rs          # Battalion types
-│           ├── formation.rs    # Sequential pattern
-│           ├── phalanx.rs      # Concurrent pattern
-│           ├── campaign.rs     # Graph pattern
-│           └── chain_of_command.rs  # Hierarchical pattern
-└── manager/
-    ├── scheduler.rs
-    ├── queue_service.rs
-    └── event_manager.rs
+crates/paladin-ports/src/
+├── output/
+│   ├── llm_port.rs              # LLM provider abstraction
+│   ├── garrison_port.rs         # Memory CRUD operations
+│   ├── sanctum_port.rs          # Vector memory search
+│   ├── arsenal_port.rs          # Tool invocation
+│   ├── citadel_port.rs          # State persistence
+│   ├── file_storage_port.rs     # File upload/download
+│   ├── notification_port.rs     # Alert delivery
+│   ├── queue_port.rs            # Async task queue
+│   └── …
+└── input/
+    ├── content_delivery_port.rs
+    └── …
 ```
 
-**Design Constraints:**
-- ❌ No imports from `application` or `infrastructure`
-- ❌ No I/O operations
-- ❌ No framework dependencies (except serialization)
-- ✅ Pure functions and data structures
-- ✅ Domain logic only
+### Orchestration Services (`paladin-battalion`)
 
-**Example:**
-```rust
-// Core domain entity - pure business logic
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PaladinData {
-    pub system_prompt: String,
-    pub name: String,
-    pub model: String,
-    pub temperature: f32,
-    pub max_loops: u32,
-    pub status: PaladinStatus,
-}
-
-pub type Paladin = Node<PaladinData>;
-
-// Business rules enforced in the domain
-impl PaladinData {
-    pub fn validate(&self) -> Result<(), PaladinError> {
-        if self.system_prompt.is_empty() {
-            return Err(PaladinError::ConfigurationError(
-                "System prompt is required".into()
-            ));
-        }
-
-        if !(0.0..=2.0).contains(&self.temperature) {
-            return Err(PaladinError::ConfigurationError(
-                "Temperature must be between 0.0 and 2.0".into()
-            ));
-        }
-
-        Ok(())
-    }
-}
+```
+crates/paladin-battalion/src/
+├── formation_service.rs         # Sequential pipeline (N→N+1)
+├── phalanx_service.rs           # Concurrent (parallel) execution
+├── campaign_service.rs          # DAG / graph-based execution
+├── chain_of_command_service.rs  # Hierarchical delegation
+├── conclave_execution_service.rs # Mixture-of-experts synthesis
+├── council_service.rs           # Multi-agent discussion
+├── grove_service.rs             # Semantic routing
+├── maneuver/                    # Flow DSL (parser + runtime)
+└── commander.rs                 # Auto-detect strategy router
 ```
 
-### Layer 2: Application (`src/application/`)
+## Layer 3: Infrastructure Adapters
 
-**Purpose**: Use cases, orchestration, and port definitions
+| Crate | Key adapters |
+|-------|-------------|
+| `paladin-llm` | `OpenAIAdapter`, `AnthropicAdapter`, `DeepSeekAdapter`, `MockLlmAdapter` |
+| `paladin-memory` | `InMemoryGarrison`, `SqliteGarrison`, `InMemorySanctum`, `QdrantSanctumAdapter` |
+| `paladin-storage` | `SqliteContentRepository`, `MySqlContentRepository`, `SqliteUserRepository` |
+| `paladin-notifications` | `EmailNotificationAdapter`, `PushNotificationAdapter`, `SystemNotificationAdapter` |
+| `paladin-content` | HTTP/file fetcher, RSS ingestion, document parsing, LLM analysis pipeline |
+| `paladin-web` | actix-web/axum HTTP server, RBAC middleware, user REST API |
 
-**Responsibilities:**
-- Define port interfaces (traits) for external systems
-- Implement use case services
-- Coordinate domain entities
-- Handle application-level concerns (retries, transactions)
-
-**Key Modules:**
-```
-src/application/
-├── ports/
-│   ├── input/
-│   │   ├── content_ingestion_port.rs
-│   │   └── ml_port.rs
-│   └── output/
-│       ├── paladin_port.rs        # Paladin execution
-│       ├── garrison_port.rs       # Memory operations
-│       ├── arsenal_port.rs        # Tool operations
-│       ├── battalion_port.rs      # Orchestration
-│       ├── citadel_port.rs        # State persistence
-│       ├── llm_port.rs            # LLM providers
-│       ├── file_storage_port.rs   # File storage
-│       └── notification_port.rs   # Notifications
-├── services/
-│   ├── paladin/
-│   │   ├── paladin_builder.rs
-│   │   └── paladin_execution_service.rs
-│   ├── battalion/
-│   │   ├── formation_service.rs
-│   │   ├── phalanx_service.rs
-│   │   ├── campaign_service.rs
-│   │   ├── chain_of_command_service.rs
-│   │   └── commander.rs
-│   └── content/
-└── storage/
-    └── repository traits
-```
-
-**Port Example:**
-```rust
-/// Port abstraction for LLM providers
-#[async_trait]
-pub trait LlmPort: Send + Sync {
-    /// Generate completion from prompt
-    async fn generate(&self, prompt: &PromptItem) -> Result<LlmResponse, LlmError>;
-
-    /// Generate with streaming
-    async fn generate_stream(&self, prompt: &PromptItem)
-        -> Result<LlmStream, LlmError>;
-
-    /// Validate model availability
-    fn validate_model(&self, model: &str) -> Result<(), LlmError>;
-}
-```
-
-**Use Case Example:**
-```rust
-/// Service implementing Paladin execution use case
-pub struct PaladinExecutionService {
-    llm_port: Arc<dyn LlmPort>,
-    garrison_port: Option<Arc<dyn GarrisonPort>>,
-    arsenal_registry: Arc<ArsenalRegistry>,
-}
-
-impl PaladinExecutionService {
-    pub async fn execute(
-        &self,
-        paladin: &Paladin,
-        input: &str
-    ) -> Result<PaladinResult, PaladinError> {
-        // 1. Retrieve context from Garrison
-        let history = if let Some(garrison) = &self.garrison_port {
-            garrison.get_window(4000).await?
-        } else {
-            vec![]
-        };
-
-        // 2. Build prompt with context
-        let prompt = self.build_prompt(paladin, input, &history);
-
-        // 3. Execute LLM call
-        let response = self.llm_port.generate(&prompt).await?;
-
-        // 4. Check for tool calls
-        if let Some(tool_call) = response.tool_calls.first() {
-            let result = self.arsenal_registry.invoke(tool_call).await?;
-            // Process tool result...
-        }
-
-        // 5. Store in Garrison
-        if let Some(garrison) = &self.garrison_port {
-            garrison.add_entry(create_entry(&response)).await?;
-        }
-
-        Ok(PaladinResult { /* ... */ })
-    }
-}
-```
-
-### Layer 3: Infrastructure (`src/infrastructure/`)
-
-**Purpose**: Adapter implementations for external systems
-
-**Responsibilities:**
-- Implement port traits with concrete technology
-- Handle I/O, networking, database operations
-- Manage external dependencies
-- Provide configuration and initialization
-
-**Key Modules:**
-```
-src/infrastructure/
-├── adapters/
-│   ├── llm/
-│   │   ├── openai_adapter.rs      # OpenAI API
-│   │   ├── deepseek_adapter.rs    # DeepSeek API
-│   │   └── anthropic_adapter.rs   # Anthropic API
-│   ├── garrison/
-│   │   ├── in_memory_garrison.rs  # RAM storage
-│   │   └── sqlite_garrison.rs     # SQLite persistence
-│   ├── arsenal/
-│   │   ├── mcp_client.rs          # MCP protocol
-│   │   ├── mcp_stdio_adapter.rs   # STDIO servers
-│   │   └── mcp_sse_adapter.rs     # SSE servers
-│   ├── citadel/
-│   │   └── file_citadel.rs        # File-based state
-│   ├── queue/
-│   │   └── redis_adapter.rs       # Redis queues
-│   └── file_storage/
-│       └── minio_adapter.rs       # S3-compatible storage
-└── repositories/
-    ├── mysql/
-    └── sqlite/
-```
-
-**Adapter Example:**
-```rust
-/// OpenAI implementation of LlmPort
-pub struct OpenAiAdapter {
-    client: reqwest::Client,
-    api_key: String,
-    base_url: String,
-    default_model: String,
-}
-
-#[async_trait]
-impl LlmPort for OpenAiAdapter {
-    async fn generate(&self, prompt: &PromptItem) -> Result<LlmResponse, LlmError> {
-        let request = self.build_request(prompt)?;
-
-        let response = self.client
-            .post(&format!("{}/chat/completions", self.base_url))
-            .bearer_auth(&self.api_key)
-            .json(&request)
-            .send()
-            .await
-            .map_err(|e| LlmError::NetworkError(e.to_string()))?;
-
-        let openai_response: OpenAiResponse = response.json().await
-            .map_err(|e| LlmError::ParseError(e.to_string()))?;
-
-        Ok(self.convert_response(openai_response))
-    }
-
-    // ... other methods
-}
-```
+Each adapter implements the corresponding port trait from `paladin-ports`.
 
 ## System Components
 
-### Paladin Agent
+### Paladin (Agent)
 
-**Purpose**: Autonomous AI agent capable of reasoning and action
-
-**Key Features:**
-- Configurable behavior via system prompts
-- Multi-turn conversation support
-- Tool calling capabilities
-- Loop detection and stop conditions
-- State persistence
-
-**Lifecycle:**
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Paladin Lifecycle                     │
-└─────────────────────────────────────────────────────────┘
-
-   ┌──────────┐
-   │  Create  │  ← PaladinBuilder constructs agent
-   └────┬─────┘
+Create via PaladinBuilder
         │
         ▼
-   ┌──────────┐
-   │   Idle   │  ← Waiting for input
-   └────┬─────┘
-        │
+   ┌─────────┐
+   │  Idle   │ ← waiting for input
+   └────┬────┘
+        │  execute()
         ▼
-   ┌──────────┐
-   │ Running  │  ← Executing reasoning loop
-   └────┬─────┘
-        │
-        ├─────→ Tool Call? ──→ Execute Tool ──┐
-        │                                      │
-        │◄─────────────────────────────────────┘
-        │
-        ├─────→ Max Loops? ──→ Stop
-        │
-        ├─────→ Stop Word? ──→ Stop
-        │
-        ▼
-   ┌──────────┐
-   │ Complete │  ← Return result
-   └──────────┘
+   ┌─────────┐
+   │ Running │ ← LLM reasoning loop (1..max_loops)
+   └────┬────┘
+        ├── tool call? → Arsenal.invoke() → inject result → continue
+        ├── stop word? → StopWordDetected
+        └── max loops? → MaxLoops
 ```
 
-### Battalion Orchestration
+### Battalion (Orchestration)
 
-**Purpose**: Multi-agent coordination patterns
+Eight patterns routed by the Commander auto-detector:
 
-**Patterns:**
+| Pattern | Crate module | When to use |
+|---------|-------------|-------------|
+| Formation | `formation_service` | Strict sequential pipeline |
+| Phalanx | `phalanx_service` | Independent parallel tasks |
+| Campaign | `campaign_service` | DAG dependencies |
+| Chain of Command | `chain_of_command_service` | Hierarchical delegation |
+| Conclave | `conclave_execution_service` | Expert synthesis |
+| Council | `council_service` | Multi-agent discussion |
+| Grove | `grove_service` | Semantic routing |
+| Maneuver | `maneuver/` | Flow DSL expressions |
 
-1. **Formation (Sequential)**
-   ```
-   Paladin 1 → Output → Paladin 2 → Output → Paladin 3
-   ```
-   Use case: Pipeline processing (research → analyze → write)
+### Garrison (Short-term Memory)
 
-2. **Phalanx (Concurrent)**
-   ```
-         ┌─→ Paladin 1 ─┐
-   Input ├─→ Paladin 2 ─┤→ Aggregate
-         └─→ Paladin 3 ─┘
-   ```
-   Use case: Parallel reviews (technical, security, UX)
+Conversation history stored in `paladin-memory`:
+- `InMemoryGarrison` — always available, zero deps
+- `SqliteGarrison` — persistent (feature `sqlite`)
 
-3. **Campaign (Graph/DAG)**
-   ```
-        ┌─→ Paladin 2 ─┐
-   P1 ──┤              ├─→ P5
-        └─→ Paladin 3 ─┤
-               │        │
-               ▼        │
-            Paladin 4 ──┘
-   ```
-   Use case: Conditional workflows
+Configured via `garrison:` section in `config.yml`.
 
-4. **Chain of Command (Hierarchical)**
-   ```
-         Commander
-            │
-      ┌─────┼─────┐
-      ▼     ▼     ▼
-   Spec1  Spec2  Spec3
-   ```
-   Use case: Dynamic delegation
+### Sanctum (Long-term Vector Memory)
 
-### Garrison Memory System
+Semantic memory in `paladin-memory`:
+- `InMemorySanctum` — in-process (testing / dev)
+- `QdrantSanctumAdapter` — production (feature `qdrant`)
 
-**Purpose**: Conversation context and long-term knowledge
+### Arsenal (Tool System)
 
-**Storage Types:**
-- **In-Memory**: Fast, volatile, for active sessions
-- **SQLite**: Persistent, queryable, for session history
-- **Vector**: Semantic search with embeddings
+MCP-compatible tool registry. Connects to external tools via:
+- STDIO process servers (command-line tools)
+- SSE HTTP servers (web services)
 
-**Memory Types:**
-- **Episodic**: Specific events and experiences
-- **Semantic**: General facts and knowledge
-- **Procedural**: How-to instructions
-
-### Arsenal Tool System
-
-**Purpose**: External tool integration and execution
-
-**Protocol Support:**
-- **MCP STDIO**: Command-line tool servers
-- **MCP SSE**: Web-based tool servers
-- **Custom**: Native Rust tool implementations
-
-**Tool Flow:**
-```
-┌─────────────────────────────────────────────────────┐
-│              Arsenal Tool Execution                  │
-└─────────────────────────────────────────────────────┘
-
-Paladin → LLM decides tool needed
-   │
-   ▼
-ArmamentCall created
-   │
-   ▼
-Arsenal validates call
-   │
-   ▼
-Route to correct adapter (STDIO/SSE/Custom)
-   │
-   ▼
-Execute tool
-   │
-   ▼
-ArmamentResult returned
-   │
-   ▼
-Inject result into Paladin context
-   │
-   ▼
-Paladin continues with tool output
-```
-
-## Data Flow
-
-### Request Flow (Single Paladin)
-
-```
-┌────────────────────────────────────────────────────────────┐
-│                    Request Flow                             │
-└────────────────────────────────────────────────────────────┘
-
-1. User Input
-   │
-   ▼
-2. PaladinBuilder creates Paladin
-   │
-   ▼
-3. PaladinExecutionService.execute()
-   │
-   ├─→ Load context from Garrison
-   │
-   ├─→ Build prompt with system + context + user input
-   │
-   ├─→ Call LlmPort.generate()
-   │   │
-   │   └─→ OpenAiAdapter.generate()
-   │       │
-   │       └─→ HTTP POST to api.openai.com
-   │
-   ├─→ Check for tool calls
-   │   │
-   │   └─→ If yes: Arsenal.invoke()
-   │       │
-   │       └─→ Execute tool, inject result
-   │
-   ├─→ Save response to Garrison
-   │
-   └─→ Return PaladinResult to user
-```
-
-### Battalion Flow (Multi-Agent)
-
-```
-┌────────────────────────────────────────────────────────────┐
-│              Battalion Execution Flow                       │
-└────────────────────────────────────────────────────────────┘
-
-Formation (Sequential):
-   Input → P1 → out1 → P2 → out2 → P3 → Final Result
-
-Phalanx (Concurrent):
-   Input ─┬→ spawn(P1.execute()) ─┬→ Aggregate Results
-          ├→ spawn(P2.execute()) ─┤
-          └→ spawn(P3.execute()) ─┘
-
-Campaign (Graph):
-   Input → Evaluate edges → Execute node
-         → Follow conditions → Next node
-         → Repeat until terminal
-
-Chain of Command:
-   Input → Commander analyzes
-         → Commander delegates to specialists
-         → Collect specialist results
-         → Commander synthesizes final answer
-```
-
-## Deployment Architecture
-
-### Single-Instance Deployment
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                   Docker Container                       │
-│                                                          │
-│  ┌────────────────────────────────────────────────┐    │
-│  │           Paladin Application                   │    │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐    │    │
-│  │  │ Paladin  │  │Battalion │  │ Garrison │    │    │
-│  │  │ Service  │  │ Service  │  │ Service  │    │    │
-│  │  └──────────┘  └──────────┘  └──────────┘    │    │
-│  └────────────────────────────────────────────────┘    │
-│                                                          │
-│  External Dependencies:                                 │
-│  • OpenAI API (LLM)                                    │
-│  • SQLite (Garrison persistence)                        │
-│  • MCP Servers (Tools)                                 │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Kubernetes Deployment
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Kubernetes Cluster                        │
-│                                                              │
-│  ┌────────────────────────────────────────────────────┐    │
-│  │             Paladin Deployment                      │    │
-│  │                                                     │    │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐           │    │
-│  │  │ Pod 1   │  │ Pod 2   │  │ Pod 3   │           │    │
-│  │  │ Paladin │  │ Paladin │  │ Paladin │           │    │
-│  │  └─────────┘  └─────────┘  └─────────┘           │    │
-│  └──────────────────┬──────────────────────────────────┘    │
-│                     │                                        │
-│  ┌──────────────────▼─────────────────────────────────┐    │
-│  │                Service (LoadBalancer)               │    │
-│  └──────────────────┬──────────────────────────────────┘    │
-│                     │                                        │
-│  ┌──────────────────▼─────────────────────────────────┐    │
-│  │             ConfigMap & Secrets                     │    │
-│  │  • LLM API Keys                                     │    │
-│  │  • Configuration                                    │    │
-│  └──────────────────────────────────────────────────────┘    │
-│                                                              │
-│  External:                                                   │
-│  • Redis (Queue) - StatefulSet                              │
-│  • MinIO (Storage) - StatefulSet                            │
-│  • PostgreSQL (Garrison) - StatefulSet                      │
-└─────────────────────────────────────────────────────────────┘
-```
+Configured via `arsenal.mcp_servers` in `config.yml`.
 
 ## Technology Stack
 
-### Core Technologies
-- **Language**: Rust 1.70+
-- **Async Runtime**: Tokio
-- **Serialization**: Serde (JSON, YAML)
-- **Error Handling**: thiserror, anyhow
-- **CLI**: clap
-- **Logging**: tracing, tracing-subscriber
+| Component | Technology |
+|-----------|-----------|
+| Language | Rust (edition 2024, MSRV 1.85) |
+| Async runtime | Tokio |
+| HTTP client | reqwest |
+| Serialization | serde / serde_json / serde_yaml |
+| LLM providers | OpenAI, Anthropic, DeepSeek APIs |
+| Vector DB | Qdrant (optional) |
+| Relational DB | SQLite, MySQL (optional) |
+| Cache / Queue | Redis (optional) |
+| Object storage | MinIO / S3 (optional) |
+| Web framework | actix-web / axum |
+| Error handling | thiserror / anyhow |
+| Build / test | Cargo, nextest, cargo-tarpaulin |
+| Docs | mdBook, mdbook-mermaid, mdbook-linkcheck |
 
-### External Integrations
-- **LLM Providers**: OpenAI, DeepSeek, Anthropic (via reqwest)
-- **Databases**: SQLite (sqlx), MySQL (sqlx)
-- **Object Storage**: MinIO (S3-compatible via rusoto_s3)
-- **Message Queue**: Redis (redis-rs)
-- **Protocol**: Model Context Protocol (MCP)
+## See Also
 
-### Testing & Quality
-- **Testing**: cargo test, testcontainers
-- **Benchmarking**: Criterion
-- **Coverage**: cargo-llvm-cov
-- **Linting**: clippy
-- **Formatting**: rustfmt
-- **Security**: cargo-audit
-
-### Deployment
-- **Containerization**: Docker (multi-stage builds)
-- **Orchestration**: Kubernetes
-- **CI/CD**: GitHub Actions
-- **Monitoring**: Prometheus, Grafana (planned)
-
-## Design Decisions
-
-### Why Hexagonal Architecture?
-
-**Decision**: Use Hexagonal Architecture instead of layered or MVC
-
-**Rationale:**
-- Testability: Can mock all external dependencies via ports
-- Flexibility: Easy to swap LLM providers without touching business logic
-- Maintainability: Clear separation of concerns
-- Independence: Core domain has no external dependencies
-
-**Trade-offs:**
-- More abstractions (ports/adapters)
-- Learning curve for developers
-- More files and boilerplate
-
-### Why Rust?
-
-**Decision**: Build in Rust instead of Python or TypeScript
-
-**Rationale:**
-- Performance: Near-C++ speed for token processing
-- Memory Safety: Compile-time guarantees prevent crashes
-- Concurrency: Fearless concurrency with tokio for Battalion parallelism
-- Type Safety: Strong typing catches errors at compile time
-- Zero-Cost Abstractions: No runtime overhead
-
-**Trade-offs:**
-- Steeper learning curve
-- Slower development initially
-- Smaller ecosystem than Python for AI/ML
-
-### Why Medieval Military Theme?
-
-**Decision**: Use Medieval Military terminology (Paladin, Battalion, etc.)
-
-**Rationale:**
-- Ubiquitous Language: DDD principle for clear communication
-- Memorable: Easier to remember than generic terms
-- Hierarchical: Military structure maps well to agent coordination
-- Consistent: Single metaphor throughout codebase
-
-**Trade-offs:**
-- Learning curve for new developers
-- May seem unusual initially
-
-### Why Multiple LLM Providers?
-
-**Decision**: Support OpenAI, DeepSeek, Anthropic, and custom providers
-
-**Rationale:**
-- Vendor Independence: No lock-in to single provider
-- Cost Optimization: Choose provider based on task/budget
-- Reliability: Fallback if one provider is down
-- Feature Access: Different models have different capabilities
-
-**Trade-offs:**
-- More code to maintain
-- Provider-specific quirks to handle
-- Testing complexity
-
-### Why MCP for Tools?
-
-**Decision**: Use Model Context Protocol for tool integration
-
-**Rationale:**
-- Standard Protocol: Open standard for AI tool integration
-- Interoperability: Works with any MCP-compliant server
-- Ecosystem: Growing number of MCP servers available
-- Flexibility: STDIO and SSE support
-
-**Trade-offs:**
-- Protocol complexity
-- Limited adoption currently
-- Need to maintain MCP client
-
-## Next Steps
-
-- **[Hexagonal Design](hexagonal-design.md)** - Deep dive into ports and adapters
-- **[Domain Model](domain-model.md)** - DDD entities and relationships
-- **[Design Patterns](design-patterns.md)** - Patterns used throughout Paladin
-- **[Deployment Guide](../deployment/docker.md)** - Production deployment documentation
+- [Hexagonal Design](hexagonal-design.md) — port and adapter patterns in detail
+- [Domain Model](domain-model.md) — all domain entities and the Medieval Military naming convention
+- [Crate Map](crate-map.md) — workspace crate dependency graph
+- [Design Patterns](design-patterns.md) — `PaladinBuilder`, error types, port traits
