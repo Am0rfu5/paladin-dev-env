@@ -675,5 +675,5 @@ Provide complete working examples in `examples/` directory.
 ## Next Steps
 
 - **[Testing Guide](testing-guide.md)** - Test your adapters
-- **[CONTRIBUTING](CONTRIBUTING.md)** - Contribution guidelines
-- **[CONTRIBUTING_PROVIDERS](../CONTRIBUTING_PROVIDERS.md)** - Provider-specific guides
+- **[Contributing Guide](development-setup.md)** - Contribution guidelines
+- **[Contributing Providers](contributing-providers.md)** - Provider-specific guides

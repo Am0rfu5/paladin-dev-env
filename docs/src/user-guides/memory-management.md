@@ -1158,6 +1158,6 @@ See working examples:
 
 ## Related Resources
 
-- [Token Counting Strategies](../architecture/token-estimation.md)
-- [Vector Database Integration](../contributing/vector-db-setup.md)
-- [Production Deployment](../deployment/garrison-scaling.md)
+- [Token Counting Strategies](../architecture/overview.md)
+- [Vector Database Integration](../user-guides/sanctum-vector-memory.md)
+- [Production Deployment](../deployment/production.md)

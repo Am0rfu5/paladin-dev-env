@@ -906,4 +906,4 @@ kubectl get networkpolicy -n paladin
 
 - **[CI/CD](cicd.md)** - Automated deployments
 - **[Monitoring](../operations/monitoring.md)** - Observability
-- **[Production Best Practices](production-best-practices.md)** - Production checklist
+- **[Production Best Practices](production.md)** - Production checklist

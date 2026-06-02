@@ -651,9 +651,9 @@ if let Some(state) = campaign.load_checkpoint()? {
 
 ## Next Steps
 
-- **[Tool Integration](tool-integration.md)** - Add Arsenal to Battalions
-- **[Memory Management](memory-management.md)** - Use Garrison with Battalions
-- **[Examples](../../examples/)** - See Battalions in action
+- **[Tool Integration](../user-guides/tool-integration.md)** - Add Arsenal to Battalions
+- **[Memory Management](../user-guides/memory-management.md)** - Use Garrison with Battalions
+- **[Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)** - See Battalions in action
 - **[Performance Tuning](../operations/performance-tuning.md)** - Optimize Battalion execution
 
 ## Examples

@@ -487,12 +487,12 @@ stage('Validate Environment') {
 
 ## Related Commands
 
-- **[`paladin onboarding`](ONBOARDING.md)** - Set up environment from scratch
-- **[`paladin features`](../CLI_USAGE.md#paladin-features)** - Check available features
-- **[`paladin agent run`](../CLI_USAGE.md#paladin-agent-run)** - Run agents after validation
+- **[`paladin onboarding`](cli-onboarding.md)** - Set up environment from scratch
+- **[`paladin features`](cli-usage.md)** - Check available features
+- **[`paladin agent run`](cli-usage.md)** - Run agents after validation
 
 ## See Also
 
-- [CLI Usage Guide](../CLI_USAGE.md)
-- [Installation Guide](../INSTALLATION.md)
-- [Troubleshooting Guide](../TROUBLESHOOTING.md)
+- [CLI Usage Guide](cli-usage.md)
+- [Installation Guide](../getting-started/installation.md)
+- [Troubleshooting Guide](../operations/troubleshooting.md)

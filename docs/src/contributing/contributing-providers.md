@@ -219,7 +219,7 @@ Add to `src/infrastructure/adapters/llm/provider_factory.rs`:
 
 ## Adapter Template
 
-See [adapter_template.rs](../examples/adapter_template.rs) for a complete template with:
+See [adapter_template.rs](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/adapter_template.rs) for a complete template with:
 - Full error handling
 - Retry logic with exponential backoff
 - Request/response serialization

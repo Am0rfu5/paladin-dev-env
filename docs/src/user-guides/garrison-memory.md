@@ -496,9 +496,9 @@ garrison.remember(entry).await?;
 
 ## Next Steps
 
-- See [`examples/garrison_in_memory.rs`](../examples/garrison_in_memory.rs) for basic usage
-- See [`examples/garrison_persistent.rs`](../examples/garrison_persistent.rs) for SQLite usage
-- See [`examples/garrison_semantic_search.rs`](../examples/garrison_semantic_search.rs) for future vector search
+- See [`examples/garrison_in_memory.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/garrison_in_memory.rs) for basic usage
+- See [`examples/garrison_persistent.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/garrison_persistent.rs) for SQLite usage
+- See [`examples/garrison_semantic_search.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/garrison_semantic_search.rs) for future vector search
 - Review [API documentation](https://docs.rs/paladin) for detailed type information
 
 ## Future Enhancements

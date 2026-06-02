@@ -155,10 +155,10 @@ Technical implementations and external integrations:
 - **Citadel**: State persistence and checkpoint recovery for long-running operations
 
 See comprehensive documentation:
-- [Garrison Memory System](../GARRISON.md)
-- [Arsenal Tool Integration](../ARSENAL.md)
-- [Battalion Orchestration](../BATTALION.md)
-- [Herald Output Formatting](../HERALD.md)
+- [Garrison Memory System](../user-guides/garrison-memory.md)
+- [Arsenal Tool Integration](../user-guides/arsenal-tools.md)
+- [Battalion Orchestration](../user-guides/battalion-patterns.md)
+- [Herald Output Formatting](../user-guides/herald-output.md)
 
 ## Data Flow and Business Domain Logic
 

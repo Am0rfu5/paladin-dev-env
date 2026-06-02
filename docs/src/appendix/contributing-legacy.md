@@ -49,7 +49,7 @@ tests/                       # Integration and functional tests
 examples/                    # Example code
 ```
 
-See [docs/architecture/overview.md](docs/architecture/overview.md) for detailed architecture.
+See [docs/architecture/overview.md](../architecture/overview.md) for detailed architecture.
 
 ## Development Workflow
 
@@ -151,7 +151,7 @@ Follow the **Medieval Military** theme:
 | Multi-Agent | Battalion | `enum BattalionPattern` |
 | State Persistence | Citadel | `trait CitadelPort` |
 
-See [docs/architecture/domain-model.md](docs/architecture/domain-model.md) for complete vocabulary.
+See [docs/architecture/domain-model.md](../architecture/domain-model.md) for complete vocabulary.
 
 ### Design Patterns
 
@@ -162,7 +162,7 @@ Use established patterns consistently:
 - **Repository Pattern**: Data persistence
 - **Strategy Pattern**: Algorithm variation
 
-See [docs/architecture/design-patterns.md](docs/architecture/design-patterns.md) for details.
+See [docs/architecture/design-patterns.md](../architecture/design-patterns.md) for details.
 
 ## Testing Requirements
 
@@ -224,7 +224,7 @@ cargo test test_paladin_builder
 cargo llvm-cov --html
 ```
 
-See [docs/contributing/testing-guide.md](docs/contributing/testing-guide.md) for complete testing guide.
+See [docs/contributing/testing-guide.md](../contributing/testing-guide.md) for complete testing guide.
 
 ## Documentation Standards
 
@@ -329,7 +329,7 @@ Describe testing performed:
 
 ### Getting Help
 
-- **Documentation**: See [docs/](docs/)
+- **Documentation**: See [docs/](../introduction.md)
 - **Issues**: GitHub Issues for bugs/features
 - **Discussions**: GitHub Discussions for questions
 - **Discord**: Join our Discord server (link TBD)
@@ -379,9 +379,9 @@ Examples, mockups, etc.
 
 ## Specialized Contribution Guides
 
-- **[Adapter Development](adapter-development.md)** - Creating new adapters
-- **[Testing Guide](testing-guide.md)** - Comprehensive testing guide
-- **[Provider Integration](../CONTRIBUTING_PROVIDERS.md)** - Adding LLM providers
+- **[Adapter Development](../contributing/contributing-providers.md)** - Creating new adapters
+- **[Testing Guide](../contributing/testing-guide.md)** - Comprehensive testing guide
+- **[Provider Integration](../contributing/contributing-providers.md)** - Adding LLM providers
 
 ## Recognition
 

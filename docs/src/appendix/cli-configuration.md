@@ -516,9 +516,9 @@ Still having issues? Check:
 3. **GitHub Issues**: [github.com/DF3NDR/paladin-dev-env/issues](https://github.com/DF3NDR/paladin-dev-env/issues)
 
 4. **Documentation**:
-   - [CLI Usage Guide](../CLI_USAGE.md)
-   - [Testing Guide](TESTING.md)
-   - [Architecture Documentation](../Design/Design_and_Architecture.md)
+   - [CLI Usage Guide](cli-usage.md)
+   - [Testing Guide](../contributing/testing-guide.md)
+   - [Architecture Documentation](../architecture/overview.md)
 
 ---
 

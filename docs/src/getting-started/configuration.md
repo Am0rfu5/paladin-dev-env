@@ -455,8 +455,8 @@ redis:
 ### Detailed Documentation
 
 For complete feature flag documentation, see:
-- **[Feature Flags Guide](FEATURE_FLAGS.md)** - Comprehensive reference
-- **[Migration Guide](MIGRATION.md)** - Breaking changes and migration help
+- **[Feature Flags Guide](../api-reference/feature-flags.md)** - Comprehensive reference
+- **[Migration Guide](../api-reference/migration-guide.md)** - Breaking changes and migration help
 
 ### Breaking Change Note
 
@@ -465,7 +465,7 @@ For complete feature flag documentation, see:
 - **Old default**: `redis-queue`, `s3-storage`, `openai-embeddings`
 - **New default**: `llm-openai` only
 
-If you were relying on default features to provide Redis, S3, or embeddings, you must now explicitly add these features to your `Cargo.toml`. See [MIGRATION.md](MIGRATION.md) for details.
+If you were relying on default features to provide Redis, S3, or embeddings, you must now explicitly add these features to your `Cargo.toml`. See [MIGRATION.md](../api-reference/migration-guide.md) for details.
 
 ## Security Best Practices
 
@@ -671,12 +671,12 @@ ls -la .env
 
 ## Further Reading
 
-- [Garrison (Memory) Documentation](GARRISON.md)
-- [Sanctum (Long-term Memory) Documentation](SANCTUM.md)
-- [Arsenal (Tool System) Documentation](ARSENAL.md)
-- [CLI Usage Guide](CLI_USAGE.md)
-- [Deployment Guide](deployment/README.md)
-- [Contributing Guide](../CONTRIBUTING.md)
+- [Garrison (Memory) Documentation](../user-guides/garrison-memory.md)
+- [Sanctum (Long-term Memory) Documentation](../user-guides/sanctum-vector-memory.md)
+- [Arsenal (Tool System) Documentation](../user-guides/arsenal-tools.md)
+- [CLI Usage Guide](../appendix/cli-usage.md)
+- [Deployment Guide](../deployment/docker.md)
+- [Contributing Guide](../contributing/development-setup.md)
 
 ## Support
 

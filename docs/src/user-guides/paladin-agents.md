@@ -1898,11 +1898,11 @@ pub enum HandoffError {
 
 See the `examples/` directory for complete working examples:
 
-- [`autonomous_planning.rs`](../examples/autonomous_planning.rs) - Autonomous planning mode
-- [`autonomous_prompt_generation.rs`](../examples/autonomous_prompt_generation.rs) - Auto-generated prompts
-- [`autonomous_temperature.rs`](../examples/autonomous_temperature.rs) - Dynamic temperature
-- [`autonomous_handoffs.rs`](../examples/autonomous_handoffs.rs) - Agent delegation
-- [`autonomous_complete.rs`](../examples/autonomous_complete.rs) - All features combined
+- [`autonomous_planning.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/autonomous_planning.rs) - Autonomous planning mode
+- [`autonomous_prompt_generation.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/autonomous_prompt_generation.rs) - Auto-generated prompts
+- [`autonomous_temperature.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/autonomous_temperature.rs) - Dynamic temperature
+- [`autonomous_handoffs.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/autonomous_handoffs.rs) - Agent delegation
+- [`autonomous_complete.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/autonomous_complete.rs) - All features combined
 
 Run examples:
 ```bash
@@ -1926,15 +1926,15 @@ cargo run --example autonomous_complete
 
 ## Further Reading
 
-- [Paladin Overview](./README.md)
-- [Battalion Orchestration](./BATTALION.md)
-- [Arsenal Tool System](./ARSENAL.md)
-- [Garrison Memory System](./GARRISON.md)
-- [Configuration Guide](./INSTALLATION.md)
+- [Paladin Overview](../introduction.md)
+- [Battalion Orchestration](battalion-patterns.md)
+- [Arsenal Tool System](arsenal-tools.md)
+- [Garrison Memory System](garrison-memory.md)
+- [Configuration Guide](../getting-started/configuration.md)
 - [API Documentation](https://docs.rs/paladin)
 
 ---
 
-**Version**: 0.1.0  
-**Last Updated**: February 1, 2026  
+**Version**: 0.1.0
+**Last Updated**: February 1, 2026
 **Status**: ✅ Stable (Epic 14 Complete)

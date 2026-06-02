@@ -782,5 +782,5 @@ docker pull ghcr.io/your-org/paladin:latest --registry-mirror=https://mirror.exa
 
 - **[Kubernetes Deployment](kubernetes.md)** - Deploy to Kubernetes
 - **[CI/CD Guide](cicd.md)** - Automated deployments
-- **[Production Best Practices](production-best-practices.md)** - Production checklist
+- **[Production Best Practices](production.md)** - Production checklist
 - **[Monitoring](../operations/monitoring.md)** - Observability setup

@@ -681,11 +681,11 @@ print(f"Recommendations: {recommendations}")
 
 ## See Also
 
-- [CLI Usage Guide](../CLI_USAGE.md) - Overview of all CLI commands
-- [Muster Command](MUSTER.md) - Generate full Battalion configurations
-- [Conclave Pattern](../COUNCIL.md) - Detailed council/conclave documentation
-- [Battalion Patterns](../BATTALION.md) - Understanding orchestration patterns
-- [Examples Directory](../../examples/) - Sample implementations
+- [CLI Usage Guide](cli-usage.md) - Overview of all CLI commands
+- [Muster Command](cli-muster.md) - Generate full Battalion configurations
+- [Conclave Pattern](council.md) - Detailed council/conclave documentation
+- [Battalion Patterns](../user-guides/battalion-patterns.md) - Understanding orchestration patterns
+- [Examples Directory](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) - Sample implementations
 
 ## Support
 

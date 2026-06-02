@@ -613,6 +613,6 @@ echo "All checks passed!"
 
 ## Next Steps
 
-- **[Adapter Development](adapter-development.md)** - Create custom adapters
-- **[CONTRIBUTING](CONTRIBUTING.md)** - Contribution workflow
+- **[Adapter Development](contributing-providers.md)** - Create custom adapters
+- **[Contributing Guide](development-setup.md)** - Contribution workflow
 - **[CI/CD](../deployment/cicd.md)** - Continuous integration setup

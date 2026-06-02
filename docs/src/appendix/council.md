@@ -827,16 +827,16 @@ impl CouncilBuilder {
 
 ## See Also
 
-- [Battalion Overview](BATTALION.md) - All orchestration patterns
-- [Grove Pattern](GROVE.md) - Intelligent agent routing
-- [Commander](BATTALION.md#commander-strategy-router) - Strategy selection
-- [Configuration Examples](../examples/cli_configs/) - YAML configs
-- [Code Examples](../examples/) - Rust examples
+- [Battalion Overview](battalion-patterns-guide.md) - All orchestration patterns
+- [Grove Pattern](grove.md) - Intelligent agent routing
+- [Commander](../user-guides/orchestration.md) - Strategy selection
+- [Configuration Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples/cli_configs) - YAML configs
+- [Code Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) - Rust examples
 
 ---
 
 **Next Steps**:
 - Try the [Quick Start](#quick-start) example
-- Explore [YAML configurations](../examples/cli_configs/council_basic.yaml)
-- See [practical examples](examples/council_examples.md)
+- Explore [YAML configurations](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples/cli_configs)
+- See [practical examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)
 - Review [API documentation](https://docs.rs/paladin)

@@ -732,4 +732,4 @@ Chain of Command:
 - **[Hexagonal Design](hexagonal-design.md)** - Deep dive into ports and adapters
 - **[Domain Model](domain-model.md)** - DDD entities and relationships
 - **[Design Patterns](design-patterns.md)** - Patterns used throughout Paladin
-- **[Deployment Guide](../deployment/)** - Production deployment documentation
+- **[Deployment Guide](../deployment/docker.md)** - Production deployment documentation

@@ -580,7 +580,7 @@ cargo doc --no-deps --open
 Vulnerability advisory exceptions live in `.cargo/audit.toml` (and are mirrored
 in `deny.toml`). Never disable a security or license check to make CI pass —
 follow the documented exception process instead. See
-[docs/SECURITY_SCANNING.md](docs/SECURITY_SCANNING.md) for the full tooling
+[docs/SECURITY_SCANNING.md](../appendix/security-scanning.md) for the full tooling
 overview, license policy, and advisory exception process.
 
 ## Documentation
@@ -628,13 +628,13 @@ Each public crate under `crates/` must keep a `CHANGELOG.md` following Keep a Ch
 
 Releases are automated with [`cargo-release`](https://github.com/crate-ci/cargo-release) and the
 tag-triggered `.github/workflows/release.yml` pipeline. The full evaluation, decision, and operator
-guide live in **[docs/RELEASE_AUTOMATION.md](docs/RELEASE_AUTOMATION.md)**; the manual checklist is in
-**[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)**.
+guide live in **[Release Automation](../appendix/release-automation.md)**; the manual checklist is in
+**[Release Checklist](../appendix/release-checklist.md)**.
 
 > **Releases are cut only from `main`.** Release tags (`v*.*.*`) must point at a commit that is
 > contained in `main`; the `verify-tag-source` CI guard fails the pipeline otherwise, and
 > `make release` refuses to run from any other branch. See
-> **[docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md)** for the policy and its enforcement
+> **[Branch Protection](../appendix/branch-protection.md)** for the policy and its enforcement
 > layers.
 
 ### Cutting a release
@@ -749,7 +749,7 @@ license policy and security posture clean.
 
 ## API Change Process
 
-Paladin maintains a **stable public API contract** defined in **[STABLE_API.md](STABLE_API.md)**. This document defines:
+Paladin maintains a **stable public API contract** defined in **[stable-api.md](../api-reference/stable-api.md)**. This document defines:
 
 - **Stability guarantees** for all public types and traits
 - **Versioning policy** (semantic versioning interpretation)
@@ -758,7 +758,7 @@ Paladin maintains a **stable public API contract** defined in **[STABLE_API.md](
 - **Change approval process** for breaking changes
 - **Migration guides** and deprecation lifecycle
 
-**All changes to the public API must follow the process below.** See [STABLE_API.md](STABLE_API.md) for complete details on API stability and the catalog of stable types.
+**All changes to the public API must follow the process below.** See [stable-api.md](../api-reference/stable-api.md) for complete details on API stability and the catalog of stable types.
 
 ### What is Considered a Public API Change?
 
@@ -902,7 +902,7 @@ async fn generate_with_request(&self, request: &LlmRequest) -> Result<LlmRespons
 ### Questions?
 
 For questions about API changes:
-- Review [STABLE_API.md](STABLE_API.md)
+- Review [stable-api.md](../api-reference/stable-api.md)
 - Open an issue with the `api-stability` label
 - Ask in GitHub Discussions
 
@@ -959,8 +959,8 @@ Why is this change necessary?
 
 ### Getting Help
 
-- **Documentation**: [docs/README.md](docs/README.md)
-- **Examples**: [examples/](examples/)
+- **Documentation**: [Introduction](../introduction.md)
+- **Examples**: [examples/](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)
 - **Issues**: [GitHub Issues](https://github.com/DF3NDR/paladin-dev-env/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/DF3NDR/paladin-dev-env/discussions)
 

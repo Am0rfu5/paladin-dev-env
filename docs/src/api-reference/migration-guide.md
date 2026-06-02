@@ -371,15 +371,15 @@ This includes everything and more, allowing time for proper migration planning.
 
 ### Documentation
 
-- **Feature Flags Reference**: [docs/FEATURE_FLAGS.md](FEATURE_FLAGS.md)
-- **Configuration Guide**: [docs/CONFIGURATION.md](CONFIGURATION.md)
-- **Changelog**: [CHANGELOG.md](../CHANGELOG.md)
+- **Feature Flags Reference**: [Feature Flags](feature-flags.md)
+- **Configuration Guide**: [Configuration Guide](../getting-started/configuration.md)
+- **Changelog**: [CHANGELOG](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md)
 
 ### Support Channels
 
 - **GitHub Issues**: [Report migration problems](https://github.com/yourusername/paladin/issues)
 - **GitHub Discussions**: [Ask migration questions](https://github.com/yourusername/paladin/discussions)
-- **Examples**: Check [examples/](../examples/) for feature-annotated examples
+- **Examples**: Check [examples/](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) for feature-annotated examples
 
 ### Example Migration PRs
 

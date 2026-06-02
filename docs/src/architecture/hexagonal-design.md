@@ -978,4 +978,4 @@ impl From<reqwest::Error> for LlmError {
 
 - **[Domain Model](domain-model.md)** - DDD entities and relationships
 - **[Design Patterns](design-patterns.md)** - Patterns used in Paladin
-- **[Adapter Development](../contributing/adapter-development.md)** - Create custom adapters
+- **[Adapter Development](../contributing/contributing-providers.md)** - Create custom adapters

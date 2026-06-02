@@ -949,4 +949,4 @@ impl PaladinExecutionService {
 
 - **[Design Patterns](design-patterns.md)** - Patterns used in Paladin
 - **[Hexagonal Design](hexagonal-design.md)** - Port/adapter implementation
-- **[Adapter Development](../contributing/adapter-development.md)** - Create custom adapters
+- **[Adapter Development](../contributing/contributing-providers.md)** - Create custom adapters

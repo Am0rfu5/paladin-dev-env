@@ -105,7 +105,7 @@ This enables **only**:
 default = ["redis-queue", "s3-storage", "openai-embeddings"]
 ```
 
-See [MIGRATION.md](MIGRATION.md) for migration guidance.
+See [migration-guide.md](migration-guide.md) for migration guidance.
 
 ## Usage Examples
 
@@ -331,7 +331,7 @@ strategy:
       - "--features full"
 ```
 
-See [.github/workflows/feature-flags.yml](.github/workflows/feature-flags.yml) for Paladin's complete feature matrix testing.
+See [.github/workflows/](https://github.com/DF3NDR/paladin-dev-env/tree/main/.github/workflows) for Paladin's complete feature matrix testing.
 
 ### 5. Feature-Gate Examples
 
@@ -350,7 +350,7 @@ Add feature requirements to example documentation:
 
 ## Migration Guide
 
-If you're upgrading from a version before the feature flag reorganization, see [MIGRATION.md](MIGRATION.md) for detailed migration instructions.
+If you're upgrading from a version before the feature flag reorganization, see [migration-guide.md](migration-guide.md) for detailed migration instructions.
 
 ## CI/CD Integration
 
@@ -397,7 +397,7 @@ CMD ["paladin"]
 ## Support
 
 For issues or questions about feature flags:
-- **Documentation**: [docs/CONFIGURATION.md](CONFIGURATION.md)
-- **Migration**: [docs/MIGRATION.md](MIGRATION.md)
+- **Documentation**: [Configuration Guide](../getting-started/configuration.md)
+- **Migration**: [Migration Guide](migration-guide.md)
 - **Issues**: [GitHub Issues](https://github.com/yourusername/paladin/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/paladin/discussions)

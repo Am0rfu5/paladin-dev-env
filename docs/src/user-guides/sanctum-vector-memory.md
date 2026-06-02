@@ -435,7 +435,7 @@ Performance characteristics based on testing:
 
 ## Deployment
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment guides including:
+See [Deployment Guide](../deployment/production.md) for detailed deployment guides including:
 - Docker Compose setup
 - Kubernetes deployment
 - Cloud provider configurations (AWS, GCP, Azure)
@@ -469,7 +469,7 @@ docker-compose up -d qdrant
 
 ## Migration Guide
 
-See [MIGRATION.md](./MIGRATION.md) for detailed migration guides including:
+See [Migration Guide](../api-reference/migration-guide.md) for detailed migration guides including:
 - Migrating from InMemory to Qdrant
 - Exporting and importing memories
 - Zero-downtime migration strategies
@@ -1032,10 +1032,10 @@ tokio::time::sleep(Duration::from_millis(100)).await;
 
 ## Additional Resources
 
-- [Sanctum Architecture](../notes/hexagonal-arch.md)
+- [Sanctum Architecture](../architecture/hexagonal-design.md)
 - [Qdrant Documentation](https://qdrant.tech/documentation/)
 - [OpenAI Embeddings](https://platform.openai.com/docs/guides/embeddings)
-- [Vector Search Tutorial](./guides/vector-search.md)
+- [Vector Search Guide](sanctum-vector-memory.md)
 
 ## Support
 
@@ -1046,6 +1046,6 @@ For issues, questions, or contributions:
 ---
 
 **Next Steps**:
-- Review [Configuration Examples](../examples/garrison_persistent.rs)
-- Explore [Deployment Guide](./DEPLOYMENT.md)
-- Read [Migration Guide](./MIGRATION.md)
+- Review [Configuration Examples](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/garrison_persistent.rs)
+- Explore [Deployment Guide](../deployment/production.md)
+- Read [Migration Guide](../api-reference/migration-guide.md)

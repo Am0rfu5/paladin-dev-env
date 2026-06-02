@@ -707,6 +707,6 @@ For migration assistance:
 ---
 
 **Next Steps**:
-- [Deployment Guide](./SANCTUM_DEPLOYMENT.md)
-- [Main Documentation](./SANCTUM.md)
-- [Performance Tuning](./guides/performance-tuning.md)
+- [Deployment Guide](sanctum-deployment.md)
+- [Main Documentation](../user-guides/sanctum-vector-memory.md)
+- [Performance Tuning](../operations/performance-tuning.md)

@@ -21,10 +21,6 @@ command = "mdbook-mermaid"
 
 [preprocessor.links]
 
-# [output.linkcheck] is disabled for Epic 2.
-# 227 pre-existing broken internal cross-references exist in migrated content
-# (identified in Epic 1 audit — stale links to old flat-file paths like QUICKSTART.md).
-# Re-enable after Epic 3 content cleanup with the following config:
-#   [output.linkcheck]
-#   follow-web-links = false
-#   warning-policy = "error"
+[output.linkcheck]
+follow-web-links = false
+warning-policy = "error"

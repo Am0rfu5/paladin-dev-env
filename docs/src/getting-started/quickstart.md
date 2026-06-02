@@ -343,7 +343,7 @@ cargo insta review
 cargo insta accept
 ```
 
-**Snapshot testing** ensures CLI output remains consistent across changes. See [`tests/cli/`](../tests/cli/) for examples.
+**Snapshot testing** ensures CLI output remains consistent across changes. See [`tests/cli/`](https://github.com/DF3NDR/paladin-dev-env/tree/main/tests/cli) for examples.
 
 ### Async Context
 
@@ -388,7 +388,7 @@ let config = PaladinConfig::default()
 
 ## Example Projects
 
-Check out complete examples in the [examples/](../examples/) directory:
+Check out complete examples in the [examples/](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) directory:
 
 - `basic_paladin.rs` - Simple question answering
 - `garrison_in_memory.rs` - Conversation with memory
@@ -398,15 +398,15 @@ Check out complete examples in the [examples/](../examples/) directory:
 
 ## Learn More
 
-- **[Installation Guide](INSTALLATION.md)** - Detailed setup for all platforms
-- **[Configuration Guide](guides/paladin-configuration.md)** - Advanced Paladin options
-- **[Battalion Patterns](guides/battalion-patterns.md)** - Multi-agent orchestration
+- **[Installation Guide](installation.md)** - Detailed setup for all platforms
+- **[Configuration Guide](../user-guides/paladin-configuration.md)** - Advanced Paladin options
+- **[Battalion Patterns](../user-guides/battalion-patterns.md)** - Multi-agent orchestration
 - **[API Reference](https://docs.rs/paladin)** - Complete API documentation
 
 ## Get Help
 
-- **Documentation**: [https://github.com/DF3NDR/paladin-dev-env/tree/main/docs](../README.md)
-- **Examples**: [https://github.com/DF3NDR/paladin-dev-env/tree/main/examples](../examples/)
+- **Documentation**: [https://github.com/DF3NDR/paladin-dev-env/tree/main/docs](../introduction.md)
+- **Examples**: [https://github.com/DF3NDR/paladin-dev-env/tree/main/examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)
 - **Issues**: [https://github.com/DF3NDR/paladin-dev-env/issues](https://github.com/DF3NDR/paladin-dev-env/issues)
 
 Happy building with Paladin! 🏰

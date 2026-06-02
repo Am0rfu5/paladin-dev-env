@@ -15,7 +15,7 @@
 >    `application::services`. Any import path containing `::use_cases::` must be updated to
 >    `::services::`.
 >
-> See [CHANGELOG.md](CHANGELOG.md) for the complete migration tables.
+> See [CHANGELOG](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md) for the complete migration tables.
 
 ---
 
@@ -873,18 +873,18 @@ For questions about API stability:
 
 ### Related Documentation
 
-- **[API Audit](project/api-audit.md)** - Classification of current API surface
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and breaking changes
-- **[MIGRATION.md](docs/MIGRATION.md)** - Migration guides between versions
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines including API change process
-- **[Deprecations Tracking](project/DEPRECATIONS.md)** - Current and planned deprecations
+- **[API Reference](stable-api.md)** - Current stable API surface
+- **[CHANGELOG](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md)** - Version history and breaking changes
+- **[Migration Guide](migration-guide.md)** - Migration guides between versions
+- **[Contributing Guide](../contributing/development-setup.md)** - Contribution guidelines including API change process
+- **[Deprecations Tracking](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md)** - Current and planned deprecations
 
 ### Documentation Links
 
 - **Crate Documentation**: [docs.rs/paladin](https://docs.rs/paladin)
-- **User Guides**: [docs/README.md](docs/README.md)
-- **Architecture**: [docs/Design/Design_and_Architecture.md](docs/Design/Design_and_Architecture.md)
-- **Examples**: [examples/](examples/)
+- **User Guides**: [User Guides](../user-guides/paladin-agents.md)
+- **Architecture**: [Architecture Overview](../architecture/overview.md)
+- **Examples**: [examples/](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)
 
 ---
 

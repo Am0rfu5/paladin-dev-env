@@ -1085,7 +1085,7 @@ let config = ConclaveConfig::new("attributed", battalion_config)
 
 ## See Also
 
-- [Battalion Patterns Guide](./battalion-patterns.md) - Other orchestration patterns
-- [Paladin Configuration](./paladin-configuration.md) - Expert setup
-- [Examples](../../examples/conclave_expert_panel.rs) - Complete working examples
-- [CLI Configs](../../examples/cli_configs/conclave_expert_panel.yaml) - YAML templates
+- [Battalion Patterns Guide](battalion-patterns-guide.md) - Other orchestration patterns
+- [Paladin Configuration](../user-guides/paladin-configuration.md) - Expert setup
+- [Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) - Complete working examples
+- [CLI Configs](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) - YAML templates

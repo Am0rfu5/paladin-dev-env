@@ -12,7 +12,7 @@ committed GitHub ruleset definitions.
 ## Why this policy exists
 
 Milestone 10 Epic 3 made releases fully tag-driven: pushing a `v*.*.*` tag triggers
-[`.github/workflows/release.yml`](../.github/workflows/release.yml), which runs the test suite,
+[`.github/workflows/release.yml`](https://github.com/DF3NDR/paladin-dev-env/tree/main/.github/workflows), which runs the test suite,
 publishes crates to crates.io, builds Docker images and binaries, and generates an SBOM.
 
 When the first release (`v0.4.0`, Epic 4) was cut, the tag was pushed from a **feature branch** that
@@ -64,7 +64,7 @@ remains authoritative — an override here does not let an unmerged commit publi
 
 ### Layer 3 — GitHub rulesets
 
-Two importable ruleset definitions live in [`.github/rulesets/`](../.github/rulesets/):
+Two importable ruleset definitions live in [`.github/rulesets/`](https://github.com/DF3NDR/paladin-dev-env/tree/main/.github/rulesets):
 
 - `protect-main-branch.json` — requires a pull request and passing status checks (`Code Quality`,
   `Security Audit`, `License & Dependency Policy`) to merge into `main`, and blocks force-pushes and
@@ -144,6 +144,6 @@ Epic 5 changes.
 
 ## Related documents
 
-- [docs/RELEASE_AUTOMATION.md](RELEASE_AUTOMATION.md) — release tooling decision and operator guide.
-- [docs/RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) — manual release checklist.
-- [CONTRIBUTING.md](../CONTRIBUTING.md) — `## Releasing` section.
+- [docs/RELEASE_AUTOMATION.md](release-automation.md) — release tooling decision and operator guide.
+- [docs/RELEASE_CHECKLIST.md](release-checklist.md) — manual release checklist.
+- [CONTRIBUTING.md](../contributing/development-setup.md) — `## Releasing` section.

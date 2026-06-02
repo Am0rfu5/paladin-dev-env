@@ -845,12 +845,12 @@ if result.paladin_failure_count > 0 {
 
 ## See Also
 
-- [Battalion Documentation](BATTALION.md) - Detailed orchestration pattern documentation
-- [Paladin](../README.md#paladin) - Individual agent configuration
-- [Configuration Guide](../README.md#configuration) - System-wide configuration
-- [Examples](../examples/) - Runnable code examples
+- [Battalion Documentation](battalion-patterns.md) - Detailed orchestration pattern documentation
+- [Paladin](paladin-agents.md) - Individual agent configuration
+- [Configuration Guide](../getting-started/configuration.md) - System-wide configuration
+- [Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) - Runnable code examples
 
 ---
 
-**Version**: 0.1.0  
+**Version**: 0.1.0
 **Last Updated**: 2024-03-15

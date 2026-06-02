@@ -31,7 +31,7 @@ Comprehensive guide for optimizing Paladin performance across different workload
 
 Single Entry Operations:
 - Add entry (10 chars): ~170 ns
-- Add entry (100 chars): ~210 ns  
+- Add entry (100 chars): ~210 ns
 - Add entry (1000 chars): ~225 ns
 - Add entry (10000 chars): ~380 ns
 
@@ -566,4 +566,4 @@ Before production deployment:
 
 - **[Monitoring](monitoring.md)** - Set up performance monitoring
 - **[Troubleshooting](troubleshooting.md)** - Debug performance issues
-- **[Production Best Practices](../deployment/production-best-practices.md)** - Production readiness
+- **[Production Best Practices](../deployment/production.md)** - Production readiness

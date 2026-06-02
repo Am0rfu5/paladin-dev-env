@@ -473,10 +473,10 @@ let paladin = PaladinBuilder::new(llm_adapter)
 - **[Battalion Patterns](battalion-patterns.md)** - Multi-agent orchestration
 - **[Tool Integration](tool-integration.md)** - Add capabilities with Arsenal
 - **[Memory Management](memory-management.md)** - Use Garrison for context
-- **[Examples](../../examples/)** - See configuration in action
+- **[Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)** - See configuration in action
 
 ## Related Documentation
 
-- [Quickstart Guide](../QUICKSTART.md)
+- [Quickstart Guide](../getting-started/quickstart.md)
 - [API Reference](https://docs.rs/paladin)
 - [Performance Tuning](../operations/performance-tuning.md)

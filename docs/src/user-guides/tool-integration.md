@@ -1003,4 +1003,4 @@ See working examples:
 
 - [MCP Specification](https://modelcontextprotocol.io/)
 - [MCP Server Examples](https://github.com/modelcontextprotocol/servers)
-- [Tool Development Best Practices](../contributing/adapter-development.md)
+- [Tool Development Best Practices](../contributing/contributing-providers.md)

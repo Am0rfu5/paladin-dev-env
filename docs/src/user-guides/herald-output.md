@@ -818,22 +818,22 @@ mod tests {
 
 See the `examples/` directory for complete working examples:
 
-- [`herald_json_output.rs`](../examples/herald_json_output.rs) - JSON formatting
-- [`herald_markdown_output.rs`](../examples/herald_markdown_output.rs) - Markdown formatting
-- [`herald_custom_formatter.rs`](../examples/herald_custom_formatter.rs) - XML/CSV custom formatters
-- [`herald_streaming.rs`](../examples/herald_streaming.rs) - Streaming formatters
-- [`basic_paladin.rs`](../examples/basic_paladin.rs) - Updated with Herald usage
+- [`herald_json_output.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/herald_json_output.rs) - JSON formatting
+- [`herald_markdown_output.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/herald_markdown_output.rs) - Markdown formatting
+- [`herald_custom_formatter.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/herald_custom_formatter.rs) - XML/CSV custom formatters
+- [`herald_streaming.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/herald_streaming.rs) - Streaming formatters
+- [`basic_paladin.rs`](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/basic_paladin.rs) - Updated with Herald usage
 
 ---
 
 ## Further Reading
 
-- [Design and Architecture](Design/Design_and_Architecture.md) - Overall system architecture
-- [Battalion Documentation](BATTALION.md) - Multi-agent orchestration
-- [Garrison Documentation](GARRISON.md) - Memory system
-- [Arsenal Documentation](ARSENAL.md) - Tool integration
-- [Hexagonal Architecture](../notes/hexagonal-arch.md) - Architectural pattern
+- [Design and Architecture](../architecture/overview.md) - Overall system architecture
+- [Battalion Documentation](../user-guides/battalion-patterns.md) - Multi-agent orchestration
+- [Garrison Documentation](../user-guides/garrison-memory.md) - Memory system
+- [Arsenal Documentation](../user-guides/arsenal-tools.md) - Tool integration
+- [Hexagonal Architecture](../architecture/hexagonal-design.md) - Architectural pattern
 
 ---
 
-**Questions or Issues?** See [CONTRIBUTING.md](../CONTRIBUTING.md) or open an issue on GitHub.
+**Questions or Issues?** See [Contributing Guide](../contributing/development-setup.md) or open an issue on GitHub.

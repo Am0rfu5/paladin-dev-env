@@ -913,4 +913,4 @@ impl Container {
 
 - **[Hexagonal Design](hexagonal-design.md)** - Port/adapter implementation
 - **[Domain Model](domain-model.md)** - Entity relationships
-- **[Adapter Development](../contributing/adapter-development.md)** - Create custom adapters
+- **[Adapter Development](../contributing/contributing-providers.md)** - Create custom adapters

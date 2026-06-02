@@ -730,8 +730,8 @@ curl -X POST https://mcp.example.com/tools \
 
 See the `examples/` directory for complete working examples:
 
-- [examples/arsenal_stdio_tools.rs](../examples/arsenal_stdio_tools.rs) - STDIO MCP server usage
-- [examples/arsenal_sse_tools.rs](../examples/arsenal_sse_tools.rs) - SSE MCP server usage
+- [examples/arsenal_stdio_tools.rs](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/arsenal_stdio_tools.rs) - STDIO MCP server usage
+- [examples/arsenal_sse_tools.rs](https://github.com/DF3NDR/paladin-dev-env/blob/main/examples/arsenal_sse_tools.rs) - SSE MCP server usage
 
 Run examples:
 
@@ -767,11 +767,11 @@ When contributing Arsenal-related changes:
 
 ## License
 
-See [LICENSE](../LICENSE) for details.
+See [LICENSE](https://github.com/DF3NDR/paladin-dev-env/blob/main/LICENSE) for details.
 
 ## See Also
 
 - [Model Context Protocol Specification](https://spec.modelcontextprotocol.io/)
-- [Paladin Design Documentation](Design/Design_and_Architecture.md)
-- [Hexagonal Architecture Guide](../notes/hexagonal-arch.md)
-- [Garrison Memory System](GARRISON.md)
+- [Paladin Design Documentation](../architecture/overview.md)
+- [Hexagonal Architecture Guide](../architecture/hexagonal-design.md)
+- [Garrison Memory System](garrison-memory.md)

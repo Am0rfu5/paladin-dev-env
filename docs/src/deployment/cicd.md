@@ -592,6 +592,6 @@ strategy:
 
 ## Next Steps
 
-- **[Production Best Practices](production-best-practices.md)** - Production checklist
+- **[Production Best Practices](production.md)** - Production checklist
 - **[Monitoring](../operations/monitoring.md)** - Observability setup
 - **[Docker Deployment](docker.md)** - Docker deployment guide

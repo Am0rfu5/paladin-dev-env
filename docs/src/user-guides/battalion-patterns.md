@@ -390,7 +390,7 @@ println!("Final Recommendation:\n{}", result.aggregated_output.output);
 
 **Performance**: O(1) with respect to expert count (concurrent execution) + O(1) for aggregation.
 
-**Learn More**: See [Conclave Pattern Guide](./guides/conclave-pattern.md) for comprehensive documentation including configuration options, YAML setup, CLI usage, best practices, and troubleshooting.
+**Learn More**: See [Conclave Pattern Guide](../appendix/conclave-pattern.md) for comprehensive documentation including configuration options, YAML setup, CLI usage, best practices, and troubleshooting.
 
 ---
 
@@ -446,7 +446,7 @@ let result = council_service.convene(&council, topic).await?;
 
 **Performance**: O(P × R) where P = participants, R = rounds.
 
-**Learn More**: See [Council Pattern Documentation](COUNCIL.md) for comprehensive guide including moderated discussions, consensus building, and conversation history storage.
+**Learn More**: See [Council Pattern Documentation](../appendix/council.md) for comprehensive guide including moderated discussions, consensus building, and conversation history storage.
 
 ---
 
@@ -513,7 +513,7 @@ let result = grove_service.execute(&grove,
 
 **Performance**: Routing time varies by strategy (10ms-300ms) + agent execution time.
 
-**Learn More**: See [Grove Pattern Documentation](GROVE.md) for complete guide including semantic routing, LLM-powered routing, and expertise definition strategies.
+**Learn More**: See [Grove Pattern Documentation](../appendix/grove.md) for complete guide including semantic routing, LLM-powered routing, and expertise definition strategies.
 
 ---
 
@@ -596,7 +596,7 @@ paladin maneuver visualize -c workflow.yaml --format mermaid
 
 **Performance**: Parsing overhead <1ms, execution time depends on flow structure (sequential = O(n), parallel = O(1) per stage).
 
-**Learn More**: See [Maneuver Pattern Documentation](MANEUVER.md) for complete guide including Flow DSL syntax reference, configuration options, error handling, visualization formats, and troubleshooting.
+**Learn More**: See [Maneuver Pattern Documentation](maneuver-flow-dsl.md) for complete guide including Flow DSL syntax reference, configuration options, error handling, visualization formats, and troubleshooting.
 
 ---
 
@@ -646,7 +646,7 @@ When using `BattalionStrategy::Auto`, the Commander analyzes:
 
 #### 1. **Input Keywords**
 
-- **Maneuver**: "flow", "dynamic flow", "->", "," (DSL operators in input) **[Highest Priority]**
+- **Maneuver**: "flow", "dynamic flow", "->", "," (DSL operators in input) **⭐ Highest Priority**
 - **Formation**: "sequential", "pipeline", "step by step", "one after", "first then"
 - **Phalanx**: "parallel", "concurrent", "all at once", "simultaneously"
 - **Campaign**: "workflow", "graph", "conditional", "if-then", "depends on"
@@ -1437,11 +1437,11 @@ Same as Paladin project license.
 ## Support
 
 - GitHub Issues: [paladin/issues](https://github.com/your-org/paladin/issues)
-- Documentation: [docs/](../docs/)
-- Examples: [examples/](../examples/)
+- Documentation: [Introduction](../introduction.md)
+- Examples: [examples/](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)
 
 ---
 
-**Version**: 0.1.0  
-**Last Updated**: January 2026  
+**Version**: 0.1.0
+**Last Updated**: January 2026
 **Maintainers**: Paladin Core Team

@@ -12,7 +12,7 @@ This guide provides detailed installation instructions for Paladin on Linux, mac
 
 ### Optional
 
-- **Docker**: For containerized deployment (see [Docker Guide](deployment/docker.md))
+- **Docker**: For containerized deployment (see [Docker Guide](../deployment/docker.md))
 - **Redis**: For async queue functionality (see [Development Setup](#development-setup))
 - **MinIO**: For file storage (see [Development Setup](#development-setup))
 
@@ -280,7 +280,7 @@ cargo insta review
 cargo insta accept
 ```
 
-See [`tests/cli/`](../tests/cli/) for snapshot test examples.
+See [`tests/cli/`](https://github.com/DF3NDR/paladin-dev-env/tree/main/tests/cli) for snapshot test examples.
 
 ### 3. Start Docker Services (Optional)
 
@@ -421,9 +421,9 @@ registry = "https://mirrors.ustc.edu.cn/crates.io-index"
 
 ## Next Steps
 
-- **[Quickstart Guide](QUICKSTART.md)** - Build your first Paladin agent
-- **[Configuration Guide](guides/paladin-configuration.md)** - Advanced configuration
-- **[Examples](../examples/)** - Working code examples
+- **[Quickstart Guide](quickstart.md)** - Build your first Paladin agent
+- **[Configuration Guide](../user-guides/paladin-configuration.md)** - Advanced configuration
+- **[Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)** - Working code examples
 - **[API Reference](https://docs.rs/paladin)** - Complete API documentation
 
 ## Platform Support
@@ -448,4 +448,4 @@ registry = "https://mirrors.ustc.edu.cn/crates.io-index"
 
 - **Installation Issues**: [GitHub Issues](https://github.com/DF3NDR/paladin-dev-env/issues)
 - **General Questions**: [GitHub Discussions](https://github.com/DF3NDR/paladin-dev-env/discussions)
-- **Documentation**: [docs/](README.md)
+- **Documentation**: [docs/](../introduction.md)
