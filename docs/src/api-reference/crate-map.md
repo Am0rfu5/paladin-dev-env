@@ -26,7 +26,7 @@ The workspace is a single umbrella crate (`paladin-ai`, published lib name
 | `paladin-llm` | `crates/paladin-llm` | Infrastructure | LLM provider adapters | `OpenAIAdapter`, `AnthropicAdapter`, `DeepSeekAdapter`, `MockLlmAdapter`, `LlmProviderFactory` |
 | `paladin-memory` | `crates/paladin-memory` | Infrastructure | Garrison (history) + Sanctum (vector) adapters | `InMemoryGarrison`, `SqliteGarrison`, `InMemorySanctum`, `QdrantSanctumAdapter` |
 | `paladin-storage` | `crates/paladin-storage` | Infrastructure | SQL repository adapters (SQLite / MySQL) | `SqliteContentRepository`, `SqliteUserRepository`, `SqliteWorkflowRepository`, `MysqlContentRepository` |
-| `paladin-content` | `crates/paladin-content` | Infrastructure | Content ingestion & processing pipeline | `PdfExtractor`, `HttpContentFetcher`, `NewsApiFetcher`, `AggregateContent`, `ContentFilter`, `LlmContentAnalyzer`, `DeliverContentUseCase` |
+| `paladin-content` | `crates/paladin-content` | Infrastructure | Content ingestion & processing pipeline | `PdfExtractor`, `HttpContentFetcher`, `NewsApiFetcher`, `AggregateContent`, `ContentSummarizer`, `LlmContentAnalyzer`, `DeliverContentUseCase` |
 | `paladin-notifications` | `crates/paladin-notifications` | Infrastructure | Notification delivery adapters | `EmailNotificationAdapter`, `PushNotificationAdapter`, `SystemNotificationAdapter` |
 | `paladin-web` | `crates/paladin-web` | Infrastructure | HTTP server layer (actix-web / axum) | `UserController`, auth middleware, content-delivery endpoints |
 
@@ -152,9 +152,9 @@ and `paladin-web` are **optional** dependencies enabled by feature flags
 | Feature flag | Enables | External dependency gated |
 |---|---|---|
 | `pdf` | PDF extraction helpers | — (`pdf-extract` is always present) |
-| `web-scraping` | HTML scraping adapter | `scraper` |
-| `rss` | RSS/Atom feed ingestion | `rss` |
-| `news-api` | News API fetcher | — |
+| `web-scraping` | *Reserved* — pulls in `scraper`; **no adapter implemented yet** | `scraper` |
+| `rss` | *Reserved* — pulls in `rss`; **no adapter implemented yet** | `rss` |
+| `news-api` | News API fetcher (`NewsApiFetcher`) | — |
 | `tiktoken` | Token counting | `tiktoken-rs` |
 | `llm` | LLM-powered content analysis | `paladin-llm` |
 

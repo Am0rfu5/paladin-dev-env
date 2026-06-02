@@ -77,13 +77,13 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.11 Add the **"See also" link** to `agent-orchestrator-bridge.md` (FR-10)
   - [x] 2.12 Ran `make check-doc-examples` — 0 failed (all `rust,ignore` blocks skipped per Epic 3 convention); YAML matches canonical `battalion:` schema
 
-- [ ] 3.0 Write the content processing guide — `user-guides/content-processing.md` (FR-11–FR-14)
-  - [ ] 3.1 Verify content adapters and services against source (`adapters/input`, `adapters/document`, `services/*`) and confirm the web-scraping/RSS gap (OQ-6)
-  - [ ] 3.2 Write **Content Ingestion Sources** section: PDF, HTTP, news/feed, file/local, with `config.yml` snippets; document the web-scraping/RSS limitation honestly (FR-12)
-  - [ ] 3.3 Write **Aggregation, Filtering & Processing Pipeline** section: aggregator, filter/dedup, analysis stages, with a Mermaid pipeline-stages diagram (FR-13)
-  - [ ] 3.4 Write **Content → Agent Bridge** section with a full working example (feed → filter → Paladin analysis → output) (FR-14)
-  - [ ] 3.5 Write **Content Delivery** section: destinations, notification integration, cross-link to the bridge guide (FR-14)
-  - [ ] 3.6 Run `make check-doc-examples`; fix any failing block
+- [x] 3.0 Write the content processing guide — `user-guides/content-processing.md` (FR-11–FR-14)
+  - [x] 3.1 Verified content adapters/services against source. **OQ-6 resolved:** `web-scraping`/`rss` features declare deps but have **no adapter** (crates never referenced); `content_filtering_service` is **commented out** in `services/mod.rs` (not compiled); ml/nlp service files are dead (not in mod tree)
+  - [x] 3.2 Write **Content Ingestion Sources** section: PDF, HTTP, news/feed, file/local — configured via Rust constructors (no `content:` config schema exists, so no speculative YAML); web-scraping/RSS documented as not-yet-implemented (FR-12)
+  - [x] 3.3 Write **Aggregation and Processing Pipeline** section: `FetchContent`/`AggregateContent`/`ContentSummarizer`/`AnalyzeContent` stage table + Mermaid `flowchart LR`; filtering/dedup documented as disabled (FR-13)
+  - [x] 3.4 Write **Content → Agent Bridge** section: `LlmContentAnalyzer` full async example (feed → analysis → JSON output), feature `llm` (FR-14)
+  - [x] 3.5 Write **Content Delivery** section: `DeliverContentUseCase` / `content_delivery_port`, notification cross-link to bridge guide (FR-14)
+  - [x] 3.6 Ran `make check-doc-examples` — 0 failed. Also corrected `crate-map.md`: removed non-compiled `ContentFilter` from key exports; marked `web-scraping`/`rss` flags as reserved/not-implemented
 
 - [ ] 4.0 Write the agent↔orchestrator bridge guide — `user-guides/agent-orchestrator-bridge.md` (FR-15–FR-19)
   - [ ] 4.1 Verify `OrchestratorPort`, `BridgeAction`, `BridgePolicy`, request types, and `PaladinExecutorPort`/`BattalionPort` against source
