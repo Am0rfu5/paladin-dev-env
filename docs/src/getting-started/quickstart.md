@@ -1,412 +1,127 @@
-# Quickstart Guide
+# Quickstart
 
-Get your first Paladin agent running in 15 minutes! This guide will walk you through creating a simple Paladin agent that can answer questions using an LLM.
+Get a Paladin agent running in under five minutes.
 
 ## Prerequisites
 
-- **Rust**: 1.70 or later ([installation guide](https://rustup.rs/))
-- **LLM API Key**: OpenAI, DeepSeek, or Anthropic account
-- **Basic Rust knowledge**: Understanding of `cargo` and async/await
+Complete [Installation](installation.md) first and set your LLM API key:
 
-## Step 1: Installation
-
-Add Paladin to your `Cargo.toml`:
-
-```toml
-[dependencies]
-paladin = "0.1"
-tokio = { version = "1", features = ["full"] }
+```bash
+export OPENAI_API_KEY="sk-..."
 ```
 
-Or create a new project:
+## Create a New Project
 
 ```bash
 cargo new my-paladin-agent
 cd my-paladin-agent
-cargo add paladin
-cargo add tokio --features full
 ```
 
-## Step 2: Set Up Your Environment
+Add Paladin to `Cargo.toml`:
 
-Create a `.env` file in your project root:
-
-```bash
-# OpenAI
-OPENAI_API_KEY=sk-your-api-key-here
-
-# Or DeepSeek
-DEEPSEEK_API_KEY=your-deepseek-key
-
-# Or Anthropic
-ANTHROPIC_API_KEY=your-anthropic-key
+```toml
+[dependencies]
+paladin-ai-core   = "0.4.3"
+paladin-ports     = "0.4.3"
+paladin-llm       = { version = "0.4.3", features = ["llm-openai"] }
+tokio             = { version = "1", features = ["full"] }
 ```
 
-**Security Note**: Never commit API keys to version control. Add `.env` to your `.gitignore`.
+## Your First Paladin Agent
 
-## Step 3: Create Your First Paladin
+Replace `src/main.rs` with the following:
 
-Create or edit `src/main.rs`:
-
-```rust
-use paladin::prelude::*;
+```rust,ignore
+// src/main.rs -- Hello, Paladin!
+use paladin_ai_core::application::services::paladin::paladin_builder::PaladinBuilder;
+use paladin_ai_core::application::services::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin_ports::output::llm_port::LlmPort;
+use paladin_llm::openai::OpenAIAdapter;
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Load environment variables
-    dotenv::dotenv().ok();
+    // 1. Create an LLM adapter (reads OPENAI_API_KEY from env)
+    let llm_port: Arc<dyn LlmPort> = Arc::new(OpenAIAdapter::from_env()?);
 
-    // Create an LLM adapter (OpenAI in this example)
-    let llm_adapter = Arc::new(
-        OpenAiAdapter::new()
-            .with_api_key(std::env::var("OPENAI_API_KEY")?)
-            .with_model("gpt-4")
-            .build()?
-    );
-
-    // Build a Paladin agent
-    let paladin = PaladinBuilder::new(llm_adapter)
-        .name("Assistant")
-        .system_prompt("You are a helpful AI assistant. Be concise and accurate.")
+    // 2. Build the Paladin using the fluent builder
+    let paladin = PaladinBuilder::new(llm_port.clone())
+        .system_prompt("You are a concise and helpful assistant.")
+        .name("HelloPaladin")
+        .model("gpt-4")
         .temperature(0.7)
-        .max_loops(3)
-        .build()?;
+        .max_loops(1)
+        .build()
+        .await?;
 
-    // Execute a query
-    let response = paladin.execute("What is the capital of France?").await?;
+    // 3. Create an execution service
+    let service = PaladinExecutionService::new(llm_port, Default::default(), None, None);
 
-    println!("Paladin: {}", response.content);
+    // 4. Execute with a prompt
+    let result = service.execute(&paladin, "Say hello in one sentence.").await?;
+
+    println!("Output : {}", result.output);
+    println!("Tokens : {}", result.token_count);
+    println!("Time   : {}ms", result.execution_time_ms);
 
     Ok(())
 }
 ```
 
-## Step 4: Run Your Agent
+Run it:
 
 ```bash
 cargo run
 ```
 
-**Expected Output:**
+Expected output (exact wording varies):
 
 ```
-Paladin: The capital of France is Paris.
+Output : Hello! I am your AI assistant, ready to help.
+Tokens : 18
+Time   : 342ms
 ```
 
-## Next Steps
+## Running the Built-in Examples
 
-Congratulations! You've created your first Paladin agent. Here's what to explore next:
-
-### 1. Add Memory (Garrison)
-
-Enable conversation context:
-
-```rust
-let garrison = Arc::new(InMemoryGarrison::new());
-
-let paladin = PaladinBuilder::new(llm_adapter)
-    .name("Assistant")
-    .system_prompt("You are a helpful assistant.")
-    .with_garrison(garrison)
-    .build()?;
-
-// Now the Paladin remembers previous interactions
-paladin.execute("My name is Alice").await?;
-paladin.execute("What is my name?").await?; // "Your name is Alice"
-```
-
-### 2. Add Tools (Arsenal)
-
-Give your Paladin capabilities:
-
-```rust
-use paladin::arsenal::*;
-
-// Connect an MCP tool server
-let web_search = MCPStdioAdapter::new("uvx", vec!["mcp-web-search"]).await?;
-
-let paladin = PaladinBuilder::new(llm_adapter)
-    .name("Research Assistant")
-    .system_prompt("You can search the web to answer questions.")
-    .add_armament(Arc::new(web_search))
-    .build()?;
-
-paladin.execute("What's the latest Rust release?").await?;
-```
-
-### 3. Multi-Agent Orchestration (Battalion)
-
-Coordinate multiple Paladins:
-
-```rust
-use paladin::battalion::*;
-
-// Sequential execution (Formation)
-let analyst = /* create analyst Paladin */;
-let writer = /* create writer Paladin */;
-
-let formation = Formation::new()
-    .add_paladin(analyst)
-    .add_paladin(writer)
-    .build()?;
-
-let result = formation.execute("Analyze market trends and write a summary").await?;
-```
-
-### 4. Council Discussions
-
-Enable multi-agent debate and consensus building:
-
-```rust
-use paladin::battalion::council::*;
-
-// Create expert Paladins with different perspectives
-let security_expert = PaladinBuilder::new(llm_adapter.clone())
-    .name("SecurityExpert")
-    .system_prompt("You are a security expert. Focus on authentication and data protection.")
-    .build()?;
-
-let legal_expert = PaladinBuilder::new(llm_adapter.clone())
-    .name("LegalExpert")
-    .system_prompt("You are a legal expert. Focus on compliance and privacy regulations.")
-    .build()?;
-
-let tech_lead = PaladinBuilder::new(llm_adapter.clone())
-    .name("TechLead")
-    .system_prompt("You are a technical lead. Focus on implementation feasibility.")
-    .build()?;
-
-let paladins = vec![security_expert, legal_expert, tech_lead];
-
-// Build a Council for structured discussion
-let council = CouncilBuilder::new()
-    .name("Feature Discussion")
-    .participants(3)
-    .turn_strategy(TurnStrategy::RoundRobin)  // Each expert takes turns
-    .termination_condition(TerminationCondition::MaxRounds(3))  // 3 rounds of debate
-    .build()?;
-
-// Execute the discussion
-let service = CouncilExecutionService::new(llm_adapter);
-let result = service.execute(
-    &council,
-    &paladins,
-    "Should we implement two-factor authentication?"
-).await?;
-
-println!("Discussion Summary: {}", result.summary);
-println!("Total Turns: {}", result.total_turns);
-```
-
-**Council Features:**
-- **Turn-based dialogue**: Structured conversations with round-robin or custom turn strategies
-- **Termination conditions**: End after max rounds, consensus detection, or time limits
-- **Discussion transcript**: Full conversation history with speaker attribution
-- **Summary generation**: Automatic discussion summary and recommendation synthesis
-
-**Example CLI Command:**
-```bash
-paladin council "Should we adopt microservices?" -n 5 --rounds 3
-```
-
-See `examples/council_discussion.rs` for a complete working example.
-
-### 5. Grove Routing
-
-Route tasks to specialized experts based on content:
-
-```rust
-use paladin::battalion::grove::*;
-
-// Create specialized agent trees
-let security_tree = Tree::new("Security Experts")
-    .add_agent(TreeAgent::new("SecurityAuditor")
-        .with_keywords(vec!["security", "vulnerability", "authentication"]))
-    .add_agent(TreeAgent::new("CryptoExpert")
-        .with_keywords(vec!["encryption", "keys", "certificates"]));
-
-let performance_tree = Tree::new("Performance Experts")
-    .add_agent(TreeAgent::new("DatabaseOptimizer")
-        .with_keywords(vec!["database", "query", "index"]))
-    .add_agent(TreeAgent::new("CachingExpert")
-        .with_keywords(vec!["cache", "redis", "latency"]));
-
-// Build the Grove with keyword-based routing
-let grove = GroveBuilder::new()
-    .name("Expert Router")
-    .add_tree(security_tree)
-    .add_tree(performance_tree)
-    .config(GroveConfig {
-        routing_strategy: RoutingStrategy::KeywordMatch,
-        fallback_tree: Some("Performance Experts".to_string()),
-        confidence_threshold: 0.6,
-    })
-    .build()?;
-
-// Execute with automatic routing
-let grove_service = GroveExecutionService::new(llm_adapter);
-
-// Automatically routes to CryptoExpert
-let result = grove_service.execute(
-    &grove,
-    "How should we implement TLS certificate rotation?"
-).await?;
-
-println!("Routed to: {}", result.selected_tree);
-println!("Agent: {}", result.selected_agent);
-println!("Confidence: {:.1}%", result.routing_confidence * 100.0);
-```
-
-**Grove Features:**
-- **Intelligent routing**: Keyword matching, semantic similarity, or performance-based selection
-- **Expert trees**: Organize agents by domain (security, performance, frontend, backend)
-- **Fallback chains**: Graceful degradation if no good match found
-- **Confidence scoring**: Know how well the input matched the selected agent
-- **Dynamic learning**: Performance-based routing improves over time
-
-**Routing Strategies:**
-- `KeywordMatch`: Fast, rule-based routing (best for well-defined domains)
-- `SemanticSimilarity`: Embedding-based context-aware routing (requires embedding model)
-- `PerformanceBased`: Adaptive routing based on historical success rates
-
-See `examples/grove_routing.rs` for a complete working example.
-
-### 6. Stream Responses
-
-Get real-time output:
-
-```rust
-let mut stream = paladin.execute_stream("Tell me a story").await?;
-
-while let Some(chunk) = stream.next().await {
-    print!("{}", chunk?);
-}
-```
-
-## Common Patterns
-
-### Configuration from File
-
-```rust
-use paladin::config::ApplicationSettings;
-
-let config = ApplicationSettings::load()?;
-let paladin = PaladinBuilder::from_config(&config.paladin)?;
-```
-
-### Error Handling
-
-```rust
-match paladin.execute(input).await {
-    Ok(response) => println!("Success: {}", response.content),
-    Err(PaladinError::Timeout(secs)) => {
-        eprintln!("Timed out after {} seconds", secs);
-    }
-    Err(PaladinError::LlmError(msg)) => {
-        eprintln!("LLM error: {}", msg);
-    }
-    Err(e) => eprintln!("Error: {}", e),
-}
-```
-
-### Testing CLI Output
-
-Paladin provides snapshot testing for CLI output consistency using [`insta`](https://insta.rs/):
-
-```rust
-use paladin::application::cli::formatters::table::TableFormatter;
-
-#[test]
-fn test_result_table() {
-    let mut table = TableFormatter::new();
-    table
-        .set_header(vec!["Agent", "Status", "Time"])
-        .add_row(vec!["Analyzer", "Success", "1.2s"])
-        .add_row(vec!["Generator", "Success", "0.8s"]);
-
-    let output = table.render();
-    insta::assert_snapshot!("result_table", output);
-}
-```
-
-Run tests and review snapshots:
+The Paladin workspace ships with ready-to-run examples:
 
 ```bash
-# Run all tests
-cargo test
+# Clone the workspace if you haven't already
+git clone https://github.com/DF3NDR/paladin-dev-env.git
+cd paladin-dev-env
 
-# Review new/changed snapshots
-cargo insta review
+# Start backing services (Redis, MinIO) -- optional for basic examples
+make services-up
 
-# Accept all snapshots
-cargo insta accept
+# Run the basic Paladin example
+cargo run --example basic_paladin
+
+# Sequential multi-agent pipeline
+cargo run --example formation_sequential
+
+# Concurrent multi-agent execution
+# cargo run --example phalanx_concurrent
 ```
 
-**Snapshot testing** ensures CLI output remains consistent across changes. See [`tests/cli/`](https://github.com/DF3NDR/paladin-dev-env/tree/main/tests/cli) for examples.
+## Understanding the Output
 
-### Async Context
+`PaladinExecutionService::execute` returns a `PaladinResult` with these fields:
 
-Always run Paladins in an async context:
+| Field | Type | Description |
+|-------|------|-------------|
+| `output` | `String` | Final LLM response text |
+| `loop_count` | `u32` | Number of reasoning loops performed |
+| `token_count` | `u32` | Approximate tokens consumed |
+| `execution_time_ms` | `u64` | Wall-clock time in milliseconds |
+| `stop_reason` | `StopReason` | Why execution stopped (`MaxLoops`, `StopWord`, `Done`) |
 
-```rust
-#[tokio::main]
-async fn main() {
-    // Your Paladin code here
-}
-```
+## What's Next?
 
-## Troubleshooting
-
-### "API key not found"
-
-Ensure your `.env` file is in the project root and contains the correct variable name:
-
-```bash
-OPENAI_API_KEY=sk-...
-```
-
-### "Connection timeout"
-
-Check your network connection and API endpoint:
-
-```rust
-let llm_adapter = OpenAiAdapter::new()
-    .with_timeout(Duration::from_secs(60)) // Increase timeout
-    .build()?;
-```
-
-### "Rate limit exceeded"
-
-Implement retry logic or use a rate limiter:
-
-```rust
-let config = PaladinConfig::default()
-    .with_retry_attempts(3)
-    .with_retry_delay(Duration::from_secs(5));
-```
-
-## Example Projects
-
-Check out complete examples in the [examples/](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) directory:
-
-- `basic_paladin.rs` - Simple question answering
-- `garrison_in_memory.rs` - Conversation with memory
-- `arsenal_stdio_tools.rs` - Tool integration
-- `formation_sequential.rs` - Multi-agent workflows
-- `phalanx_parallel.rs` - Concurrent processing
-
-## Learn More
-
-- **[Installation Guide](installation.md)** - Detailed setup for all platforms
-- **[Configuration Guide](../user-guides/paladin-configuration.md)** - Advanced Paladin options
-- **[Battalion Patterns](../user-guides/battalion-patterns.md)** - Multi-agent orchestration
-- **[API Reference](https://docs.rs/paladin)** - Complete API documentation
-
-## Get Help
-
-- **Documentation**: [https://github.com/DF3NDR/paladin-dev-env/tree/main/docs](../introduction.md)
-- **Examples**: [https://github.com/DF3NDR/paladin-dev-env/tree/main/examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)
-- **Issues**: [https://github.com/DF3NDR/paladin-dev-env/issues](https://github.com/DF3NDR/paladin-dev-env/issues)
-
-Happy building with Paladin! 🏰
+| Topic | Guide |
+|-------|-------|
+| Detailed configuration | [Configuration](configuration.md) |
+| Memory between turns | [Garrison Memory](../user-guides/garrison-memory.md) |
+| Tool use / MCP | [Arsenal & Tools](../user-guides/arsenal-tools.md) |
+| Multi-agent patterns | [Battalion Patterns](../user-guides/battalion-patterns.md) |
+| Output formatting | [Herald Output](../user-guides/herald-output.md) |

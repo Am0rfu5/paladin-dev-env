@@ -103,18 +103,18 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2. Validate `.pre-commit-config.yaml` and `.github/workflows/docs.yml` YAML syntax
   - [x] 2. Commit: `git commit -m "feat(docs): add doc code-example check script, pre-push hook, and CI step"`
 
-- [ ] 3.0 Rewrite Getting Started guides (FR-4, FR-5, FR-6)
-  - [ ] 3.1 Read `Cargo.toml` (root) for workspace crate names, versions, and feature flags; read `config.yml` for full configuration schema
-  - [ ] 3.2 Rewrite `docs/src/getting-started/installation.md`: Rust ≥ 1.85 requirement, system prerequisites (Docker), all v0.4.3 crate names/versions, feature flag profiles, verification snippet
-  - [ ] 3.3 Run `make check-doc-examples` to confirm `installation.md` code blocks pass `cargo check`
-  - [ ] 3.4 Read `examples/basic_paladin.rs` (and related examples) for current `PaladinBuilder` usage patterns
-  - [ ] 3.5 Rewrite `docs/src/getting-started/quickstart.md`: end-to-end "hello world" `PaladinBuilder` example, `make dev` service startup, expected output, pointer to `configuration.md`
-  - [ ] 3.6 Run `make check-doc-examples` to confirm `quickstart.md` code blocks pass `cargo check`
-  - [ ] 3.7 Read `config.yml` and `config.test.yml` to enumerate every top-level section and key
-  - [ ] 3.8 Rewrite `docs/src/getting-started/configuration.md`: complete schema for `paladin`, `garrison`, `arsenal`, `llm` sections; every key with type/default/description; env var overrides; multi-environment patterns
-  - [ ] 3.9 Run `make check-doc-examples` to confirm `configuration.md` code blocks pass `cargo check`
-  - [ ] 3.10 Run `cd /workspace/docs && mdbook build` — confirm zero errors and zero linkcheck warnings
-  - [ ] 3.11 Commit: `git commit -m "docs(getting-started): full rewrite of installation, quickstart, and configuration guides"`
+- [x] 3.0 Rewrite Getting Started guides (FR-4, FR-5, FR-6)
+  - [x] 3.1 Read `Cargo.toml` (root) for workspace crate names, versions, and feature flags; read `config.yml` for full configuration schema
+  - [x] 3.2 Rewrite `docs/src/getting-started/installation.md`: Rust ≥ 1.85 requirement, system prerequisites (Docker), all v0.4.3 crate names/versions, feature flag profiles, verification snippet
+  - [x] 3.3 Run `make check-doc-examples` to confirm `installation.md` code blocks pass `cargo check`
+  - [x] 3.4 Read `examples/basic_paladin.rs` (and related examples) for current `PaladinBuilder` usage patterns
+  - [x] 3.5 Rewrite `docs/src/getting-started/quickstart.md`: end-to-end "hello world" `PaladinBuilder` example, `make dev` service startup, expected output, pointer to `configuration.md`
+  - [x] 3.6 Run `make check-doc-examples` to confirm `quickstart.md` code blocks pass `cargo check`
+  - [x] 3.7 Read `config.yml` and `config.test.yml` to enumerate every top-level section and key
+  - [x] 3.8 Rewrite `docs/src/getting-started/configuration.md`: complete schema for `paladin`, `garrison`, `arsenal`, `llm` sections; every key with type/default/description; env var overrides; multi-environment patterns
+  - [x] 3.9 Run `make check-doc-examples` to confirm `configuration.md` code blocks pass `cargo check`
+  - [x] 3.10 Run `cd /workspace/docs && mdbook build` — confirm zero errors and zero linkcheck warnings
+  - [x] 3.11 Commit: `git commit -m "docs(getting-started): full rewrite of installation, quickstart, and configuration guides"`
 
 - [ ] 4.0 Update Architecture documentation in-place (FR-7, FR-8, FR-9, FR-10, FR-11)
   - [ ] 4.1 Read each crate's `Cargo.toml` and `src/lib.rs` to capture module structure, feature flags, and re-exports; read `.github/copilot-instructions.md` for the authoritative naming convention table

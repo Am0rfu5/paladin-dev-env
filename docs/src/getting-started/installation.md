@@ -1,451 +1,136 @@
-# Installation Guide
+# Installation
 
-This guide provides detailed installation instructions for Paladin on Linux, macOS, and Windows.
+This guide covers adding Paladin to an existing Rust project or setting up the
+Paladin workspace for development.
 
 ## Prerequisites
 
 ### Required
 
-- **Rust 1.70 or later**: [https://rustup.rs/](https://rustup.rs/)
-- **Cargo**: Included with Rust installation
-- **LLM API Key**: OpenAI, DeepSeek, or Anthropic account
+| Requirement | Minimum | Recommended |
+|-------------|---------|-------------|
+| **Rust** | 1.85.0 | Latest stable (1.95+) |
+| **Cargo** | Included with Rust | - |
+| **Edition** | 2024 | 2024 |
+| **LLM API Key** | At least one | - |
 
-### Optional
+> **Why Rust >= 1.85?** Paladin uses edition 2024 features. Verify your toolchain:
+> ```bash
+> rustc --version   # should print >= 1.85.0
+> ```
+> Update with `rustup update stable`.
 
-- **Docker**: For containerized deployment (see [Docker Guide](../deployment/docker.md))
-- **Redis**: For async queue functionality (see [Development Setup](#development-setup))
-- **MinIO**: For file storage (see [Development Setup](#development-setup))
+### Optional (for Docker-based services)
 
-## Platform-Specific Setup
+- **Docker + Docker Compose** v2 -- required for the built-in Redis, MinIO, and
+  MySQL services (see [Docker Guide](../deployment/docker.md))
 
-### Linux
-
-#### Ubuntu/Debian
+## Installing Rust
 
 ```bash
-# Install Rust (if not already installed)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+# Install rustup and the stable toolchain
+curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 
-# Install system dependencies
-sudo apt-get update
+# Build tools -- Linux (Ubuntu/Debian)
 sudo apt-get install -y build-essential pkg-config libssl-dev
 
-# Verify installation
-rustc --version
-cargo --version
-```
-
-#### Fedora/RHEL/CentOS
-
-```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
-
-# Install system dependencies
-sudo dnf install -y gcc pkg-config openssl-devel
-
-# Verify installation
-rustc --version
-cargo --version
-```
-
-#### Arch Linux
-
-```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
-
-# Install system dependencies
-sudo pacman -S base-devel openssl pkg-config
-
-# Verify installation
-rustc --version
-cargo --version
-```
-
-### macOS
-
-#### Using Homebrew
-
-```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
-
-# Install OpenSSL (if needed)
+# Build tools -- macOS (via Homebrew)
 brew install openssl pkg-config
-
-# Verify installation
-rustc --version
-cargo --version
 ```
 
-#### Apple Silicon (M1/M2/M3)
+Windows users should use [rustup-init.exe](https://rustup.rs/) or WSL 2.
 
-Rust supports Apple Silicon natively. No additional steps required:
+## Adding Paladin to a Rust Project
 
-```bash
-# Verify architecture
-rustc --version --verbose | grep host
-# Should show: host: aarch64-apple-darwin
-```
+### Cargo.toml -- choose your crates
 
-### Windows
-
-#### Using rustup-init.exe
-
-1. Download rustup-init.exe from [https://rustup.rs/](https://rustup.rs/)
-2. Run the installer and follow prompts
-3. Restart your terminal
-
-```powershell
-# Verify installation
-rustc --version
-cargo --version
-```
-
-#### Using WSL2 (Recommended for Development)
-
-```bash
-# Inside WSL2 Ubuntu
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
-
-# Install dependencies
-sudo apt-get update
-sudo apt-get install -y build-essential pkg-config libssl-dev
-
-# Verify installation
-rustc --version
-cargo --version
-```
-
-## Installing Paladin
-
-### Option 1: From Crates.io (Stable)
-
-```bash
-# Add Paladin to your project
-cargo add paladin
-
-# Or manually edit Cargo.toml
-```
+Paladin v0.4.3 is published as a workspace of focused crates. Add only what you need:
 
 ```toml
 [dependencies]
-paladin = "0.1"
+# Core framework -- always required
+paladin-ai-core   = "0.4.3"
+paladin-ports     = "0.4.3"
+
+# LLM providers (pick one or more)
+paladin-llm       = { version = "0.4.3", features = ["llm-openai"] }
+
+# Multi-agent orchestration (optional)
+paladin-battalion = "0.4.3"
+
+# Memory / Garrison (optional)
+paladin-memory    = "0.4.3"
+
+# Storage adapters (optional)
+paladin-storage   = "0.4.3"
+
+# Async runtime (required)
 tokio = { version = "1", features = ["full"] }
 ```
 
-### Option 2: From Source (Latest)
+### Umbrella crate
 
-```bash
-# Clone the repository
-git clone https://github.com/DF3NDR/paladin-dev-env.git
-cd paladin-dev-env
-
-# Build the project
-cargo build --release
-
-# Run tests to verify
-cargo test
-
-# Optionally install CLI tools
-cargo install --path .
-```
-
-### Option 3: As a Dependency from Git
+The `paladin-ai` umbrella crate (v0.4.3) re-exports everything and accepts workspace feature flags:
 
 ```toml
 [dependencies]
-paladin = { git = "https://github.com/DF3NDR/paladin-dev-env", branch = "main" }
-tokio = { version = "1", features = ["full"] }
+paladin-ai = { version = "0.4.3", features = ["redis-queue", "s3-storage"] }
+tokio      = { version = "1", features = ["full"] }
 ```
 
-## Feature Flags
+### Feature Flag Profiles
 
-Paladin supports optional features that can be enabled in `Cargo.toml`:
+| Flag | Default | Description |
+|------|---------|-------------|
+| `llm-openai` | yes | OpenAI GPT adapter |
+| `redis-queue` | no | Redis async task queue |
+| `s3-storage` | no | MinIO / AWS S3 file storage |
+| `openai-embeddings` | no | OpenAI embedding API |
+| `qdrant` | no | Qdrant vector database for Sanctum |
 
-```toml
-[dependencies.paladin]
-version = "0.1"
-features = [
-    "redis-queue",      # Enable Redis queue adapter (default)
-    "s3-storage",       # Enable MinIO/S3 storage (default)
-    "anthropic",        # Enable Anthropic LLM provider
-    "deepseek",         # Enable DeepSeek LLM provider
-    "mcp",              # Enable MCP tool protocol
-]
-```
-
-### Default Features
-
-Enabled by default:
-- `redis-queue` - Redis-based async queue
-- `s3-storage` - MinIO/S3 file storage
-
-### Optional Features
-
-Not enabled by default:
-- `anthropic` - Anthropic Claude integration
-- `deepseek` - DeepSeek LLM integration
-- `mcp` - Model Context Protocol for tools
-
-Disable default features:
-
-```toml
-[dependencies.paladin]
-version = "0.1"
-default-features = false
-features = ["mcp"]  # Only enable MCP
-```
-
-## Environment Configuration
-
-### API Keys
-
-Create a `.env` file in your project root:
+### Verification
 
 ```bash
-# OpenAI (default provider)
-OPENAI_API_KEY=sk-your-api-key-here
-OPENAI_BASE_URL=https://api.openai.com/v1  # Optional
-
-# DeepSeek
-DEEPSEEK_API_KEY=your-deepseek-key
-DEEPSEEK_BASE_URL=https://api.deepseek.com/v1  # Optional
-
-# Anthropic
-ANTHROPIC_API_KEY=your-anthropic-key
-ANTHROPIC_BASE_URL=https://api.anthropic.com/v1  # Optional
+cargo check
 ```
 
-### Configuration File
+No errors means all selected features resolved correctly.
 
-Create `config.yml` (optional):
-
-```yaml
-paladin:
-  default_model: "gpt-4"
-  default_temperature: 0.7
-  default_max_loops: 3
-  timeout_seconds: 300
-
-garrison:
-  type: "sqlite"  # or "in_memory"
-  path: "./garrison.db"
-  max_entries: 1000
-
-llm:
-  openai:
-    api_key: "${OPENAI_API_KEY}"
-    base_url: "https://api.openai.com/v1"
-```
-
-## Development Setup
-
-For local development with all features:
-
-### 1. Clone the Repository
+## Cloning the Source for Development
 
 ```bash
+# 1. Clone
 git clone https://github.com/DF3NDR/paladin-dev-env.git
 cd paladin-dev-env
-```
 
-### 2. Install Development Dependencies
-
-```bash
-# Install additional cargo tools
-cargo install cargo-watch      # Auto-rebuild on changes
-cargo install cargo-edit        # cargo add/rm commands
-cargo install cargo-audit       # Security vulnerability scanning
-cargo install cargo-llvm-cov    # Code coverage
-cargo install cargo-insta       # Snapshot testing (for CLI output tests)
-```
-
-**cargo-insta** is used for CLI snapshot testing. It allows you to capture and verify terminal output:
-
-```bash
-# Run snapshot tests
-cargo test --test cli
-
-# Review new snapshots
-cargo insta review
-
-# Accept all pending snapshots
-cargo insta accept
-```
-
-See [`tests/cli/`](https://github.com/DF3NDR/paladin-dev-env/tree/main/tests/cli) for snapshot test examples.
-
-### 3. Start Docker Services (Optional)
-
-```bash
-# Start Redis and MinIO
-make dev
-
-# Or manually with docker-compose
-docker-compose -f docker/docker-compose.dev.yml up -d
-```
-
-### 4. Configure Environment
-
-```bash
-# Copy example environment
-cp .env.example .env
-
-# Edit with your API keys
-vim .env
-```
-
-### 5. Build and Test
-
-```bash
-# Build the project
+# 2. Build the workspace
 cargo build
 
-# Run tests
-cargo test
+# 3. Run unit tests
+cargo test --workspace --lib
 
-# Run with auto-reload
-cargo watch -x run
+# 4. (Optional) Start backing services
+make services-up   # Redis, MinIO, MySQL via Docker Compose
 ```
 
-## Verification
+See [Development Setup](../contributing/development-setup.md) for the full contributor workflow.
 
-### Quick Test
+## Environment Variables for LLM Keys
 
-Create `test.rs`:
-
-```rust
-use paladin::prelude::*;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Paladin version: {}", env!("CARGO_PKG_VERSION"));
-    println!("Installation successful!");
-    Ok(())
-}
-```
-
-Run:
+Paladin reads API keys exclusively from environment variables -- **never put keys in config files**.
 
 ```bash
-cargo run --example test
+# Set at least one provider key before running
+export OPENAI_API_KEY="sk-..."       # OpenAI
+export DEEPSEEK_API_KEY="sk-..."     # DeepSeek
+export ANTHROPIC_API_KEY="sk-..."    # Anthropic
 ```
 
-### Full System Test
-
-```bash
-# Run all tests
-cargo test
-
-# Run integration tests (requires Docker services)
-make test-integration-docker
-
-# Run benchmarks
-cargo bench
-```
-
-## Troubleshooting
-
-### OpenSSL Errors (Linux)
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install pkg-config libssl-dev
-
-# Fedora/RHEL
-sudo dnf install pkgconfig openssl-devel
-
-# Arch
-sudo pacman -S openssl pkg-config
-```
-
-### Linking Errors (Windows)
-
-Install Visual Studio Build Tools:
-- Download from [https://visualstudio.microsoft.com/downloads/](https://visualstudio.microsoft.com/downloads/)
-- Select "Desktop development with C++"
-
-### Permission Errors (macOS)
-
-```bash
-# Fix cargo permissions
-sudo chown -R $(whoami) ~/.cargo
-```
-
-### Slow Compilation
-
-Enable parallel compilation:
-
-```bash
-# Add to ~/.cargo/config.toml
-[build]
-jobs = 8  # Adjust based on CPU cores
-```
-
-Use `sccache` for caching:
-
-```bash
-cargo install sccache
-export RUSTC_WRAPPER=sccache
-```
-
-### Network Issues
-
-Use a proxy:
-
-```bash
-# Set in ~/.cargo/config.toml
-[http]
-proxy = "http://proxy.example.com:8080"
-
-[https]
-proxy = "http://proxy.example.com:8080"
-```
-
-Or use a mirror:
-
-```bash
-[source.crates-io]
-replace-with = "ustc"
-
-[source.ustc]
-registry = "https://mirrors.ustc.edu.cn/crates.io-index"
-```
+Copy `.env.example` to `.env` for local development (`.env` is git-ignored).
 
 ## Next Steps
 
-- **[Quickstart Guide](quickstart.md)** - Build your first Paladin agent
-- **[Configuration Guide](../user-guides/paladin-configuration.md)** - Advanced configuration
-- **[Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)** - Working code examples
-- **[API Reference](https://docs.rs/paladin)** - Complete API documentation
-
-## Platform Support
-
-| Platform | Architecture | Status | Notes |
-|----------|-------------|--------|-------|
-| Linux | x86_64 | ✅ Tested | Primary development platform |
-| Linux | aarch64 | ✅ Tested | ARM servers, Raspberry Pi |
-| macOS | x86_64 | ✅ Tested | Intel Macs |
-| macOS | aarch64 | ✅ Tested | Apple Silicon (M1/M2/M3) |
-| Windows | x86_64 | ⚠️ Experimental | WSL2 recommended |
-| Windows | aarch64 | ❌ Untested | May work with WSL2 |
-
-## Minimum System Requirements
-
-- **CPU**: 2 cores (4+ recommended for parallel operations)
-- **RAM**: 4 GB (8+ GB recommended)
-- **Disk**: 2 GB for dependencies and builds
-- **Network**: Internet connection for LLM API calls
-
-## Get Help
-
-- **Installation Issues**: [GitHub Issues](https://github.com/DF3NDR/paladin-dev-env/issues)
-- **General Questions**: [GitHub Discussions](https://github.com/DF3NDR/paladin-dev-env/discussions)
-- **Documentation**: [docs/](../introduction.md)
+- **[Quickstart](quickstart.md)** -- write your first Paladin agent in minutes
+- **[Configuration](configuration.md)** -- full `config.yml` schema reference
+- **[User Guides](../user-guides/paladin-agents.md)** -- in-depth agent patterns

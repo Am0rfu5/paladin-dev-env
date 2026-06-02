@@ -1,691 +1,314 @@
-# Paladin Configuration Guide
+# Configuration
 
-This guide explains how Paladin's configuration system works, best practices for different environments, and the clear separation of concerns between YAML files and environment variables.
+Paladin is configured via a YAML file (`config.yml` by default) and environment
+variables. Environment variables take precedence over file values and use the
+`APP_` prefix format shown throughout this guide.
 
-## Table of Contents
+## Loading Configuration
 
-- [Configuration Philosophy](#configuration-philosophy)
-- [Quick Start](#quick-start)
-- [Configuration Sources](#configuration-sources)
-- [Environment Variables Reference](#environment-variables-reference)
-- [Environment-Specific Setup](#environment-specific-setup)
-- [Feature Flags](#feature-flags)
-- [Security Best Practices](#security-best-practices)
-- [Advanced Topics](#advanced-topics)
+```rust,ignore
+// Load from the default config.yml in the current directory
+let settings = paladin_ai_core::config::ApplicationSettings::load()?;
 
-## Configuration Philosophy
-
-Paladin uses a **dual-path configuration system** with clear separation of concerns:
-
-| What | Where | Purpose | Example |
-|------|-------|---------|---------|
-| **Behavioral Config** | YAML files | Define *how* the system behaves | Timeouts, model names, strategies |
-| **Secrets** | Environment variables | Credentials and sensitive data | API keys, passwords |
-| **Overrides** | `APP_*` env vars | Deployment-time tuning | `APP_GARRISON_MAX_ENTRIES=500` |
-
-### Why Both?
-
-- **YAML files** are version-controlled, reviewed in PRs, and define the system's structure
-- **Environment variables** are injected at deployment time and never committed to source control
-- **This separation** enables security (secrets stay out of repos), flexibility (same code works in dev/staging/prod), and auditability (config changes are tracked in git)
-
-## Quick Start
-
-### Development (DevContainer)
-
-1. **Copy the example environment file:**
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Edit `.env` and add your API keys:**
-   ```bash
-   # LLM Provider API Keys (choose one or more)
-   OPENAI_API_KEY=sk-your-key-here
-   DEEPSEEK_API_KEY=your-deepseek-key
-   ANTHROPIC_API_KEY=your-anthropic-key
-   ```
-
-3. **Load the environment file** (automatic in DevContainer):
-   ```bash
-   # Manual loading if needed:
-   set -a
-   . /workspace/.env
-   set +a
-   ```
-
-4. **Run Paladin:**
-   ```bash
-   cargo run
-   ```
-
-The `.env` file is automatically loaded by the application in debug builds.
-
-### CI/CD
-
-Set secrets as environment variables in your CI system:
-
-**GitHub Actions:**
-```yaml
-env:
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+// Or specify a path
+let settings = paladin_ai_core::config::ApplicationSettings::from_file("config.yml")?;
 ```
 
-**GitLab CI:**
-```yaml
-variables:
-  CONFIG_FILE: "config.test.yml"
-script:
-  - cargo test --features live-api-tests
-```
-
-### Production
-
-Use a secrets manager:
-
-**AWS Secrets Manager + ECS:**
-```json
-"secrets": [
-  {
-    "name": "OPENAI_API_KEY",
-    "valueFrom": "arn:aws:secretsmanager:region:account:secret:paladin/openai"
-  }
-]
-```
-
-**Kubernetes Secrets:**
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: paladin-secrets
-type: Opaque
-data:
-  OPENAI_API_KEY: <base64-encoded-key>
----
-apiVersion: apps/v1
-kind: Deployment
-spec:
-  template:
-    spec:
-      containers:
-      - name: paladin
-        envFrom:
-        - secretRef:
-            name: paladin-secrets
-```
-
-## Configuration Sources
-
-Paladin loads configuration in this **priority order** (later sources override earlier ones):
-
-1. **`config.yml`** (or specified via `--config` flag) - Base configuration
-2. **Environment-specific file** - `config.{APP_ENV}.yml` if `APP_ENV` is set
-3. **`APP_*` environment variables** - Override any YAML value
-4. **Direct environment variables** - LLM API keys bypass the config system
-
-### Example: Loading Sequence
-
-Given this setup:
-
-**config.yml:**
-```yaml
-garrison:
-  garrison_type: "in_memory"
-  max_entries: 100
-```
-
-**Environment:**
-```bash
-APP_GARRISON_MAX_ENTRIES=500
-OPENAI_API_KEY=sk-real-key
-```
-
-**Result:**
-- Garrison type: `in_memory` (from config.yml)
-- Max entries: `500` (overridden by `APP_*` env var)
-- OpenAI key: `sk-real-key` (from direct env var, never in YAML)
-
-## Environment Variables Reference
-
-### LLM Provider API Keys (Direct Read)
-
-These are **NOT** in `config.yml` — adapters read them directly from the environment:
-
-| Variable | Provider | Required When |
-|----------|----------|---------------|
-| `OPENAI_API_KEY` | OpenAI GPT models | Using default_provider: "openai" |
-| `DEEPSEEK_API_KEY` | DeepSeek models | Using default_provider: "deepseek" |
-| `ANTHROPIC_API_KEY` | Anthropic Claude | Using default_provider: "anthropic" |
-
-### APP_* Overrides (Settings System)
-
-Override any YAML value using the `APP_` prefix + uppercase path with underscores:
-
-**YAML path** → **Environment variable**
-
-```yaml
-garrison:
-  max_entries: 100
-```
-→ `APP_GARRISON_MAX_ENTRIES=500`
+## LLM Provider
 
 ```yaml
 llm:
+  default_provider: "openai"   # openai | deepseek | anthropic
+
   openai:
+    base_url: "https://api.openai.com/v1"
     default_model: "gpt-4"
-```
-→ `APP_LLM_OPENAI_DEFAULT_MODEL="gpt-4-turbo"`
+    default_temperature: 0.7
+    timeout_seconds: 300
+    max_retries: 3
 
-### Common Overrides
+  deepseek:
+    base_url: "https://api.deepseek.com/v1"
+    default_model: "deepseek-chat"
+    default_temperature: 0.7
+    timeout_seconds: 300
+    max_retries: 3
 
-#### Garrison (Memory System)
-```bash
-APP_GARRISON_TYPE=sqlite
-APP_GARRISON_PATH=./custom_garrison.db
-APP_GARRISON_MAX_ENTRIES=200
-APP_GARRISON_MAX_TOKENS=8000
-APP_GARRISON_TOKENIZER=gpt-4
-APP_GARRISON_EVICTION_STRATEGY=fifo
-APP_GARRISON_PRESERVE_RECENT_COUNT=20
-```
-
-#### Sanctum (Long-term Memory)
-```bash
-APP_SANCTUM_ENABLED=true
-APP_SANCTUM_ADAPTER_TYPE=qdrant
-APP_SANCTUM_QDRANT_URL=http://qdrant-server:6334
-APP_SANCTUM_QDRANT_COLLECTION_NAME=custom_memories
-APP_SANCTUM_QDRANT_VECTOR_DIMENSION=3072
-```
-
-#### Arsenal (Tool System)
-```bash
-APP_ARSENAL_DEFAULT_TIMEOUT_SECONDS=60
-APP_ARSENAL_MAX_CONCURRENT_TOOLS=10
-```
-
-#### Citadel (State Persistence)
-```bash
-APP_CITADEL_ENABLED=true
-APP_CITADEL_STATE_DIR=./custom-states
-APP_CITADEL_AUTOSAVE_ENABLED=true
-APP_CITADEL_CLEANUP_ENABLED=true
-APP_CITADEL_MAX_STATE_AGE_DAYS=60
-```
-
-#### Redis Queue
-```bash
-APP_REDIS_HOST=redis-prod.example.com
-APP_REDIS_PORT=6379
-APP_REDIS_PASSWORD=secure-password
-APP_REDIS_DB=2
-APP_REDIS_POOL_SIZE=20
-```
-
-#### MinIO File Storage
-```bash
-APP_MINIO_ENDPOINT=https://s3.amazonaws.com
-APP_MINIO_BUCKET=paladin-prod
-APP_MINIO_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
-APP_MINIO_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-APP_MINIO_REGION=us-west-2
-```
-
-## Environment-Specific Setup
-
-### Development (DevContainer)
-
-**Config file:** `config.yml`
-
-**Secrets source:** `.env` file (auto-loaded in debug builds)
-
-**Setup:**
-```bash
-# 1. Copy template
-cp .env.example .env
-
-# 2. Edit .env with your keys
-vim .env
-
-# 3. The DevContainer post-start.sh loads it automatically
-# Or manually in new terminals:
-set -a && . /workspace/.env && set +a
-
-# 4. Run
-cargo run
-```
-
-**Benefits:**
-- ✅ Fast iteration with hot-reload
-- ✅ No need to export vars in every terminal
-- ✅ `.env` is gitignored, so secrets stay local
-
-### CI/CD (GitHub Actions, GitLab, etc.)
-
-**Config file:** `config.test.yml`
-
-**Secrets source:** CI secrets store
-
-**Setup (GitHub Actions example):**
-```yaml
-name: Test
-on: [push]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    env:
-      # Use shorter timeouts and smaller limits for tests
-      CONFIG_FILE: config.test.yml
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run tests with mocks
-        run: cargo test
-
-      - name: Run live API tests
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: cargo test --features live-api-tests -- --ignored
-```
-
-**Benefits:**
-- ✅ Different config for test environment (faster timeouts, smaller limits)
-- ✅ Secrets managed by CI platform (encrypted, audited, rotated)
-- ✅ Mock tests run without API keys, live tests only with secrets present
-
-### Staging
-
-**Config file:** `config.staging.yml` (set `APP_ENV=staging`)
-
-**Secrets source:** Vault, AWS Secrets Manager, or K8s Secrets
-
-**Setup (Kubernetes example):**
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: paladin-config
-data:
-  config.staging.yml: |
-    llm:
-      default_provider: "deepseek"  # Use cheaper model in staging
-    garrison:
-      garrison_type: "sqlite"
-      max_entries: 200
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: paladin-secrets
-type: Opaque
-stringData:
-  OPENAI_API_KEY: "sk-staging-key"
-  DEEPSEEK_API_KEY: "staging-key"
----
-apiVersion: apps/v1
-kind: Deployment
-spec:
-  template:
-    spec:
-      containers:
-      - name: paladin
-        env:
-        - name: APP_ENV
-          value: "staging"
-        envFrom:
-        - secretRef:
-            name: paladin-secrets
-        volumeMounts:
-        - name: config
-          mountPath: /etc/paladin/config.staging.yml
-          subPath: config.staging.yml
-      volumes:
-      - name: config
-        configMap:
-          name: paladin-config
-```
-
-### Production
-
-**Config file:** `config.production.yml` (set `APP_ENV=production`)
-
-**Secrets source:** Enterprise secrets manager (Vault, AWS SM, Azure Key Vault)
-
-**Setup (AWS ECS + Secrets Manager):**
-
-1. **Store secrets:**
-   ```bash
-   aws secretsmanager create-secret \
-     --name paladin/prod/openai \
-     --secret-string "sk-prod-key-..."
-   ```
-
-2. **Task definition:**
-   ```json
-   {
-     "family": "paladin-prod",
-     "containerDefinitions": [{
-       "name": "paladin",
-       "image": "paladin:1.0.0",
-       "command": ["--config", "/etc/paladin/config.production.yml"],
-       "environment": [
-         {"name": "APP_ENV", "value": "production"}
-       ],
-       "secrets": [
-         {
-           "name": "OPENAI_API_KEY",
-           "valueFrom": "arn:aws:secretsmanager:region:account:secret:paladin/prod/openai"
-         }
-       ]
-     }]
-   }
-   ```
-
-**Benefits:**
-- ✅ Secrets never touch disk or config files
-- ✅ Automatic rotation with Secrets Manager
-- ✅ Audit trail of all secret access
-- ✅ Fine-grained IAM permissions
-
-## Feature Flags
-
-Paladin uses Cargo feature flags to control which dependencies and subsystems are compiled into your application. This enables:
-
-- **Smaller binaries** - Include only what you need
-- **Faster compilation** - Skip unused dependencies
-- **Clear dependencies** - Explicit about infrastructure requirements
-- **Provider choice** - Select specific LLM providers (OpenAI, Anthropic, DeepSeek)
-
-### Quick Reference
-
-**Default build** (minimal):
-```toml
-[dependencies]
-paladin = "0.1"  # Only llm-openai enabled
-```
-
-**Full featured build** (development):
-```toml
-[dependencies]
-paladin = { version = "0.1", features = ["full"] }
-```
-
-**Custom feature selection** (production):
-```toml
-[dependencies]
-paladin = { version = "0.1", features = [
-    "llm-anthropic",      # Anthropic Claude provider
-    "redis-queue",        # Redis queue adapter
-    "s3-storage",         # S3/MinIO storage
-    "web-server"          # REST API server
-] }
-```
-
-### Available Features
-
-| Category | Flags | Description |
-|----------|-------|-------------|
-| **LLM Providers** | `llm-openai`, `llm-anthropic`, `llm-deepseek`, `llm-all` | Choose which LLM providers to support |
-| **Subsystems** | `vision`, `content-processing`, `web-server`, `notifications` | Optional functional subsystems |
-| **Infrastructure** | `redis-queue`, `s3-storage`, `openai-embeddings`, `qdrant` | Storage and queue adapters |
-| **Convenience** | `full` | All optional features for development |
-
-### Configuration Integration
-
-Feature flags affect which adapters are available at runtime. Your `config.yml` should only reference adapters enabled by your feature flags:
-
-**Example with `llm-anthropic` feature:**
-```yaml
-llm:
-  default_provider: "anthropic"  # ✅ OK - anthropic adapter compiled
   anthropic:
-    default_model: "claude-3-sonnet-20240229"
+    base_url: "https://api.anthropic.com/v1"
+    default_model: "claude-3-5-sonnet-20241022"
+    default_temperature: 0.7
+    timeout_seconds: 300
+    max_retries: 3
 ```
 
-**Example WITHOUT `redis-queue` feature:**
+**API keys** are read exclusively from environment variables:
+
+| Variable | Provider |
+|----------|----------|
+| `OPENAI_API_KEY` | OpenAI |
+| `DEEPSEEK_API_KEY` | DeepSeek |
+| `ANTHROPIC_API_KEY` | Anthropic |
+| `APP_LLM_DEFAULT_PROVIDER` | Override default provider at runtime |
+
+> **Security:** Never put API keys in `config.yml`. Use environment variables or
+> a secrets manager (AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets).
+
+## Garrison (Short-term Memory)
+
+The Garrison stores conversation context between Paladin turns.
+
 ```yaml
-redis:
-  host: "localhost"
-  port: 6379
-  # ❌ Error at runtime - Redis adapter not compiled
+garrison:
+  garrison_type: "in_memory"       # in_memory | sqlite
+  # path: "./garrison.db"          # Required when garrison_type = "sqlite"
+  max_entries: 100                  # Max conversation turns to retain
+  max_tokens: 4000                  # Context-window token budget
+  tokenizer: "gpt-4"               # Model name for token counting
+  eviction_strategy: "importance_based"  # importance_based | fifo | sliding_window
+  preserve_recent_count: 10        # Always keep at least N recent entries
 ```
 
-### Detailed Documentation
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `garrison_type` | string | `in_memory` | Storage backend |
+| `path` | string | - | SQLite file path (sqlite only) |
+| `max_entries` | int | 100 | Maximum entries before eviction |
+| `max_tokens` | int | 4000 | Token budget for context window |
+| `eviction_strategy` | string | `importance_based` | Eviction algorithm |
+| `preserve_recent_count` | int | 10 | Minimum recent entries to keep |
 
-For complete feature flag documentation, see:
-- **[Feature Flags Guide](../api-reference/feature-flags.md)** - Comprehensive reference
-- **[Migration Guide](../api-reference/migration-guide.md)** - Breaking changes and migration help
+**Env vars:** `APP_GARRISON_TYPE`, `APP_GARRISON_PATH`, `APP_GARRISON_MAX_ENTRIES`,
+`APP_GARRISON_MAX_TOKENS`, `APP_GARRISON_EVICTION_STRATEGY`, `APP_GARRISON_PRESERVE_RECENT_COUNT`
 
-### Breaking Change Note
+## Sanctum (Long-term Vector Memory)
 
-**⚠️ Default features changed in v0.1.0**
+Sanctum stores semantic memories in a vector database for RAG.
 
-- **Old default**: `redis-queue`, `s3-storage`, `openai-embeddings`
-- **New default**: `llm-openai` only
+```yaml
+sanctum:
+  enabled: false
+  adapter_type: "in_memory"        # in_memory | qdrant
 
-If you were relying on default features to provide Redis, S3, or embeddings, you must now explicitly add these features to your `Cargo.toml`. See [MIGRATION.md](../api-reference/migration-guide.md) for details.
+  qdrant:                          # Required when adapter_type = "qdrant"
+    url: "http://localhost:6334"
+    collection_name: "paladin_memories"
+    vector_dimension: 1536         # Must match your embedding model
 
-## Security Best Practices
+rag:
+  top_k: 5                         # Results to retrieve
+  min_similarity: 0.7              # Score threshold (0.0-1.0)
+  max_tokens: 2000                 # Max tokens to inject from RAG
+  timeout_seconds: 5
 
-### ✅ DO
-
-1. **Keep secrets in environment variables only**
-   ```bash
-   export OPENAI_API_KEY="sk-..."
-   ```
-
-2. **Use `.env` files for local development**
-   ```bash
-   # .env (gitignored)
-   OPENAI_API_KEY=sk-dev-key
-   ```
-
-3. **Use secrets managers in production**
-   - AWS Secrets Manager
-   - HashiCorp Vault
-   - Kubernetes Secrets (with encryption at rest)
-   - Azure Key Vault
-   - GCP Secret Manager
-
-4. **Set restrictive file permissions on .env**
-   ```bash
-   chmod 600 .env
-   ```
-
-5. **Rotate API keys regularly**
-
-6. **Use different keys per environment**
-   - Dev key: Limited quota, separate account
-   - Staging key: Separate from prod
-   - Prod key: High quota, monitored
-
-### ❌ DON'T
-
-1. **Never commit secrets to git**
-   ```yaml
-   # ❌ BAD - Don't do this!
-   api_key: "sk-real-key-here"
-   ```
-
-2. **Never use production keys in development**
-
-3. **Never share .env files via Slack/email**
-
-4. **Never log API keys**
-   ```rust
-   // ❌ BAD
-   println!("API key: {}", api_key);
-   ```
-
-5. **Never put secrets in Docker images**
-   ```dockerfile
-   # ❌ BAD
-   ENV OPENAI_API_KEY=sk-...
-   ```
-
-## Advanced Topics
-
-### Custom Configuration Files
-
-Specify a different config file:
-
-```bash
-cargo run -- --config my-custom-config.yml
+memory_extraction:
+  enabled: true
+  strategy: "on_completion"        # every_turn | on_completion | manual
 ```
 
-### Environment-Specific Configs
+**Env vars:** `APP_SANCTUM_ENABLED`, `APP_SANCTUM_ADAPTER_TYPE`,
+`APP_SANCTUM_QDRANT_URL`, `APP_SANCTUM_QDRANT_COLLECTION_NAME`,
+`APP_SANCTUM_QDRANT_VECTOR_DIMENSION`
 
-Set `APP_ENV` to automatically load environment-specific files:
+See [Sanctum Vector Memory](../user-guides/sanctum-vector-memory.md) for detail.
 
-```bash
-export APP_ENV=staging
-cargo run
-# Loads config.yml first, then overrides with config.staging.yml
-```
+## Arsenal (Tool System / MCP)
 
-### Configuration Validation
-
-The application validates configuration on startup:
-
-```rust
-let settings = Settings::new()?; // Returns error if invalid
-```
-
-Common validation errors:
-- Missing required fields
-- Invalid enum values
-- Out-of-range numbers
-- Unreachable URLs (for live validation)
-
-### Programmatic Configuration
-
-For tests or embedded usage:
-
-```rust
-use paladin::config::application_settings::Settings;
-
-// Load from specific file
-let settings = Settings::load_from_file("config.test.yml")?;
-
-// Access config values
-let garrison_config = settings.get_garrison_config()?;
-assert_eq!(garrison_config.max_entries, 100);
-```
-
-### MCP Server Configuration
-
-MCP servers are defined in YAML but may reference env vars:
+The Arsenal connects Paladins to external tools via the Model Context Protocol.
 
 ```yaml
 arsenal:
+  default_timeout_seconds: 30
+  max_concurrent_tools: 5
   mcp_servers:
-    - name: "github"
-      type: "stdio"
-      command: "npx"
-      args: ["-y", "@modelcontextprotocol/server-github"]
-      env:
-        GITHUB_TOKEN: "${GITHUB_TOKEN}"  # ❌ Won't interpolate!
+    # STDIO server (command-line process)
+    - name: "web_search"
+      server_type: "stdio"
+      command: "uvx"
+      args: ["mcp-web-search"]
 
-    - name: "web-search"
-      type: "sse"
-      url: "http://localhost:8080/mcp"
+    # SSE server (HTTP-based)
+    - name: "code_analyzer"
+      server_type: "sse"
+      endpoint: "http://localhost:8080/mcp"
 ```
 
-**Note:** The `${VAR}` syntax in YAML is **not interpolated** by the config crate. Set env vars directly:
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `default_timeout_seconds` | int | 30 | Per-tool execution timeout |
+| `max_concurrent_tools` | int | 5 | Parallel tool invocations |
+| `mcp_servers[].name` | string | - | Unique server identifier |
+| `mcp_servers[].server_type` | string | - | `stdio` or `sse` |
+| `mcp_servers[].command` | string | - | Executable (stdio only) |
+| `mcp_servers[].endpoint` | string | - | URL (sse only) |
+
+**Env vars:** `APP_ARSENAL_DEFAULT_TIMEOUT_SECONDS`, `APP_ARSENAL_MAX_CONCURRENT_TOOLS`
+
+See [Arsenal & Tools](../user-guides/arsenal-tools.md) for full integration guide.
+
+## Citadel (State Persistence)
+
+Citadel saves Paladin state to disk for crash recovery and resumption.
+
+```yaml
+citadel:
+  enabled: false
+  state_dir: "./paladin-states"
+  autosave_enabled: false          # Save state after each execution
+  cleanup_enabled: false           # Delete old state files automatically
+  max_state_age_days: 30
+```
+
+**Env vars:** `APP_CITADEL_ENABLED`, `APP_CITADEL_STATE_DIR`,
+`APP_CITADEL_AUTOSAVE_ENABLED`, `APP_CITADEL_CLEANUP_ENABLED`,
+`APP_CITADEL_MAX_STATE_AGE_DAYS`
+
+## Battalion (Multi-agent Orchestration)
+
+```yaml
+battalion:
+  default_timeout_seconds: 300     # Per-battalion execution timeout
+  error_strategy: "fail_fast"      # fail_fast | continue_on_error | retry_then_continue
+  max_concurrent_paladins: 10      # Phalanx concurrency limit
+  metadata_output_enabled: false   # Write execution metadata to files
+
+  retry:                           # Used when error_strategy = retry_then_continue
+    max_attempts: 3
+    exponential_backoff: true
+    jitter: true
+    base_delay_ms: 100
+    max_delay_seconds: 10
+
+  maneuver:                        # Flow DSL (Maneuver pattern)
+    error_strategy: "fail_fast"    # fail_fast | continue_parallel | ignore_errors
+    output_format: "combined_text" # combined_text | structured_json
+    pass_output_as_input: true
+    timeout_seconds: 300
+    collect_timing_metrics: true
+    max_agents: 30
+    max_depth: 5
+```
+
+**Env vars:** `APP_BATTALION_DEFAULT_TIMEOUT_SECONDS`, `APP_BATTALION_ERROR_STRATEGY`,
+`APP_BATTALION_MAX_CONCURRENT_PALADINS`, `APP_BATTALION_RETRY_MAX_ATTEMPTS`, etc.
+
+See [Battalion Patterns](../user-guides/battalion-patterns.md) for Formation,
+Phalanx, Campaign, and Chain of Command details.
+
+## Herald (Output Formatting)
+
+```yaml
+herald:
+  default_formatter: "json"        # json | markdown | table
+
+  json:
+    pretty: true
+    include_metadata: true
+
+  markdown:
+    include_colors: true
+    heading_level: 2
+
+  table:
+    max_column_width: 60
+    border_style: "rounded"        # ascii | rounded | modern | sharp | none
+```
+
+**Env vars:** `APP_HERALD_DEFAULT_FORMATTER`, `APP_HERALD_JSON_PRETTY`,
+`APP_HERALD_MARKDOWN_INCLUDE_COLORS`, `APP_HERALD_TABLE_BORDER_STYLE`
+
+## Autonomous Features
+
+All autonomous features are opt-in (disabled by default). Uncomment sections in
+`config.yml` to enable:
+
+```yaml
+autonomous:
+  planning:
+    enabled: false          # Decompose complex tasks into subtasks
+    max_subtasks: 10
+
+  prompt_generation:
+    enabled: false          # Auto-generate system prompts from description
+    description: null       # e.g. "Expert data analyst"
+
+  dynamic_temperature:
+    enabled: false          # Adjust temperature per task type
+    min: 0.1
+    max: 0.9
+
+  handoffs:
+    enabled: false          # Delegate to specialist Paladins
+    strategy: "automatic"   # automatic | explicit | {threshold: 0.8}
+    max_depth: 5
+```
+
+**Env vars:** `APP_AUTONOMOUS_PLANNING_ENABLED`, `APP_AUTONOMOUS_PLANNING_MAX_SUBTASKS`,
+`APP_AUTONOMOUS_PROMPT_GENERATION_ENABLED`, `APP_AUTONOMOUS_DYNAMIC_TEMPERATURE_ENABLED`,
+`APP_AUTONOMOUS_HANDOFFS_ENABLED`, `APP_AUTONOMOUS_HANDOFFS_STRATEGY`
+
+## Multi-Environment Pattern
+
+Keep a `config.yml` for defaults and override per environment:
 
 ```bash
-export GITHUB_TOKEN="ghp_..."
-cargo run
+# Development
+export APP_LLM_DEFAULT_PROVIDER=openai
+export APP_GARRISON_TYPE=in_memory
+
+# Staging
+export APP_GARRISON_TYPE=sqlite
+export APP_GARRISON_PATH=/data/garrison.db
+export APP_SANCTUM_ENABLED=true
+
+# Production
+export APP_GARRISON_TYPE=sqlite
+export APP_SANCTUM_ENABLED=true
+export APP_SANCTUM_ADAPTER_TYPE=qdrant
+export APP_CITADEL_ENABLED=true
+export APP_CITADEL_AUTOSAVE_ENABLED=true
 ```
 
-### Debugging Configuration
+## Complete Example (`config.yml`)
 
-Enable debug logging to see config loading:
+```yaml
+llm:
+  default_provider: "openai"
+  openai:
+    default_model: "gpt-4"
+    default_temperature: 0.7
 
-```bash
-RUST_LOG=debug cargo run
+garrison:
+  garrison_type: "sqlite"
+  path: "./garrison.db"
+  max_entries: 200
+  max_tokens: 8000
+
+arsenal:
+  default_timeout_seconds: 30
+  max_concurrent_tools: 5
+  mcp_servers:
+    - name: "web_search"
+      server_type: "stdio"
+      command: "uvx"
+      args: ["mcp-web-search"]
+
+battalion:
+  error_strategy: "retry_then_continue"
+  max_concurrent_paladins: 10
+  retry:
+    max_attempts: 3
+    exponential_backoff: true
+
+herald:
+  default_formatter: "markdown"
 ```
 
-Check what config values are loaded:
+## See Also
 
-```rust
-use log::info;
-
-let settings = Settings::new()?;
-info!("Loaded config: {:?}", settings);
-```
-
-### Configuration Schema
-
-For IDE autocomplete and validation, generate a JSON schema:
-
-```bash
-# Future feature - not yet implemented
-cargo run -- config schema > config-schema.json
-```
-
-## Troubleshooting
-
-### "Missing API key" errors
-
-**Symptom:** `Error: Missing OPENAI_API_KEY environment variable`
-
-**Solutions:**
-1. Check the variable is set: `echo $OPENAI_API_KEY`
-2. Load .env file: `set -a && . .env && set +a`
-3. Export manually: `export OPENAI_API_KEY="sk-..."`
-4. In DevContainer, restart terminal or source ~/.bashrc
-
-### Config file not found
-
-**Symptom:** `Failed to load configuration: config.yml not found`
-
-**Solutions:**
-1. Check current directory: `pwd`
-2. Verify file exists: `ls -la config.yml`
-3. Specify absolute path: `--config /workspace/config.yml`
-4. Use correct filename: `config.yml` not `config.yaml`
-
-### APP_* overrides not working
-
-**Symptom:** Environment variable set but value not changing
-
-**Solutions:**
-1. Check variable name matches YAML structure: `garrison.max_entries` → `APP_GARRISON_MAX_ENTRIES`
-2. Use uppercase and underscores
-3. Verify with: `env | grep APP_`
-4. Check the getter method exists in `application_settings.rs`
-
-### Permissions errors on .env
-
-**Symptom:** `.env` file readable by others
-
-**Solution:**
-```bash
-chmod 600 .env
-ls -la .env
-# Should show: -rw------- (owner read/write only)
-```
-
-## Further Reading
-
-- [Garrison (Memory) Documentation](../user-guides/garrison-memory.md)
-- [Sanctum (Long-term Memory) Documentation](../user-guides/sanctum-vector-memory.md)
-- [Arsenal (Tool System) Documentation](../user-guides/arsenal-tools.md)
-- [CLI Usage Guide](../appendix/cli-usage.md)
-- [Deployment Guide](../deployment/docker.md)
-- [Contributing Guide](../contributing/development-setup.md)
-
-## Support
-
-For configuration issues:
-1. Check this guide first
-2. Search [existing issues](https://github.com/DF3NDR/paladin-dev-env/issues)
-3. Ask in [Discussions](https://github.com/DF3NDR/paladin-dev-env/discussions)
-4. Open a new issue with:
-   - Your config.yml (redact secrets!)
-   - Environment variables (redact secrets!)
-   - Error messages
-   - Rust version and OS
+- [Installation](installation.md)
+- [Quickstart](quickstart.md)
+- [Garrison Memory](../user-guides/garrison-memory.md)
+- [Arsenal & Tools](../user-guides/arsenal-tools.md)
+- [Sanctum Vector Memory](../user-guides/sanctum-vector-memory.md)
+- [Battalion Patterns](../user-guides/battalion-patterns.md)
