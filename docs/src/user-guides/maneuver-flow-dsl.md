@@ -213,7 +213,7 @@ let flow = FlowParser::parse("extractor -> translator -> formatter")?;
 
 // Input: "Extract data from: <raw_text>"
 // extractor output: "Data: {...}"
-// translator output: "Translated: {...}"  
+// translator output: "Translated: {...}"
 // formatter output: "Formatted report: {...}" (final)
 ```
 
@@ -694,7 +694,7 @@ Each agent should have a clear, focused responsibility:
 - name: "analyzer"
   system_prompt: "Analyze technical feasibility only. Focus on implementation challenges."
 
-- name: "risk_assessor"  
+- name: "risk_assessor"
   system_prompt: "Assess security and privacy risks only."
 
 - name: "synthesizer"
@@ -1151,6 +1151,6 @@ let config = ManeuverConfig::new()
 
 ---
 
-**Last Updated**: February 2026  
-**Version**: 0.1.0  
+**Last Updated**: February 2026
+**Version**: 0.1.0
 **Status**: Production Ready

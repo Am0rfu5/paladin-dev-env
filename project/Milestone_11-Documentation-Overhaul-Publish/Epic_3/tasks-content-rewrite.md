@@ -176,25 +176,25 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 7.13 Run `cd /workspace/docs && mdbook build` — zero errors and zero linkcheck warnings
   - [ ] 7.14 Commit: `git commit -m "docs(deployment,operations): in-place updates for docker, k8s, production, cicd, logging, monitoring, perf-tuning, troubleshooting"`
 
-- [ ] 8.0 Update API Reference and Contributing documentation (FR-26–FR-32)
-  - [ ] 8.1 Read root `Cargo.toml` and all `crates/*/Cargo.toml` for all current feature flag definitions and defaults
-  - [ ] 8.2 Rewrite `docs/src/api-reference/stable-api.md`: current stability guarantees, stability tiers, versioning policy for v0.4.3
-  - [ ] 8.3 Update `docs/src/api-reference/feature-flags.md`: every feature flag sourced from `Cargo.toml`, with default, what it enables, and any mutually exclusive flags
-  - [ ] 8.4 Update `docs/src/api-reference/migration-guide.md`: add a migration section for every breaking change since the last stable release; consult `CHANGELOG.md`
-  - [ ] 8.5 Rewrite `docs/src/contributing/development-setup.md`: dev container setup, current `make` targets (from `Makefile`), Clippy `-D warnings` requirement, pre-commit hooks (`make hooks`), workflow for first PR
-  - [ ] 8.6 Update `docs/src/contributing/testing-guide.md`: unit tests (`cargo test --workspace --lib`), integration tests (`make test-all`, `make test-integration-docker`), doc tests (`cargo test --doc`)
-  - [ ] 8.7 Update `docs/src/contributing/architecture-decisions.md`: current adapter locations per crate, port trait contracts in `crates/paladin-ports/`
-  - [ ] 8.8 Update `docs/src/contributing/contributing-providers.md`: current LLM provider adapter structure under `crates/paladin-llm/`, steps to add a new provider
-  - [ ] 8.9 Run `make check-doc-examples` to verify all API reference and contributing code examples pass `cargo check`
-  - [ ] 8.10 Run `cd /workspace/docs && mdbook build` — zero errors and zero linkcheck warnings
-  - [ ] 8.11 Commit: `git commit -m "docs(api-reference,contributing): rewrite stable-api; update feature-flags, migration-guide, dev-setup, testing, architecture-decisions, contributing-providers"`
+- [x] 8.0 Update API Reference and Contributing documentation (FR-26–FR-32)
+  - [x] 8.1 Read root `Cargo.toml` and all `crates/*/Cargo.toml` for all current feature flag definitions and defaults
+  - [x] 8.2 Rewrite `docs/src/api-reference/stable-api.md`: current stability guarantees, stability tiers, versioning policy for v0.4.3
+  - [x] 8.3 Update `docs/src/api-reference/feature-flags.md`: every feature flag sourced from `Cargo.toml`, with default, what it enables, and any mutually exclusive flags
+  - [x] 8.4 Update `docs/src/api-reference/migration-guide.md`: add a migration section for every breaking change since the last stable release; consult `CHANGELOG.md`
+  - [x] 8.5 Rewrite `docs/src/contributing/development-setup.md`: dev container setup, current `make` targets (from `Makefile`), Clippy `-D warnings` requirement, pre-commit hooks (`make hooks`), workflow for first PR
+  - [x] 8.6 Update `docs/src/contributing/testing-guide.md`: unit tests (`cargo test --workspace --lib`), integration tests (`make test-all`, `make test-integration-docker`), doc tests (`cargo test --doc`)
+  - [x] 8.7 Update `docs/src/contributing/architecture-decisions.md`: current adapter locations per crate, port trait contracts in `crates/paladin-ports/`
+  - [x] 8.8 Update `docs/src/contributing/contributing-providers.md`: current LLM provider adapter structure under `crates/paladin-llm/`, steps to add a new provider
+  - [x] 8.9 Run `make check-doc-examples` to verify all API reference and contributing code examples pass `cargo check`
+  - [x] 8.10 Run `cd /workspace/docs && mdbook build` — zero errors and zero linkcheck warnings
+  - [x] 8.11 Commit: `git commit -m "docs(api-reference,contributing): rewrite stable-api; update feature-flags, migration-guide, dev-setup, testing, architecture-decisions, contributing-providers"`
 
-- [ ] 9.0 Final verification and commit
-  - [ ] 9.1 Run `cd /workspace/docs && mdbook build` — must exit 0 with **zero errors and zero warnings** (linkcheck active with `warning-policy = "error"`)
-  - [ ] 9.2 Run `make check-doc-examples` — all fenced Rust code blocks across all 33 files must pass `cargo check`
-  - [ ] 9.3 Run `cargo test` to confirm no Rust regressions were introduced
-  - [ ] 9.4 Run `cargo fmt --check` and `cargo clippy --workspace --all-targets --all-features -- -D warnings`
-  - [ ] 9.5 Confirm `docs/book.toml` has `[output.linkcheck]` active with `warning-policy = "error"` (not commented out)
-  - [ ] 9.6 Confirm `.github/workflows/docs.yml` includes the `Check doc code examples` step
-  - [ ] 9.7 Stage all remaining changes: `git add .`
-  - [ ] 9.8 Commit: `git commit -m "feat(milestone-11/epic-3): documentation content rewrite complete — all links, code examples, and content current for v0.4.3"` with body summarising all files changed
+- [x] 9.0 Final verification and commit
+  - [x] 9.1 Run `cd /workspace/docs && mdbook build` — must exit 0 with **zero errors and zero warnings** (linkcheck active with `warning-policy = "error"`)
+  - [x] 9.2 Run `make check-doc-examples` — all fenced Rust code blocks across all 33 files must pass `cargo check`
+  - [x] 9.3 Run `cargo test` to confirm no Rust regressions were introduced
+  - [x] 9.4 Run `cargo fmt --check` and `cargo clippy --workspace --all-targets --all-features -- -D warnings`
+  - [x] 9.5 Confirm `docs/book.toml` has `[output.linkcheck]` active with `warning-policy = "error"` (not commented out)
+  - [x] 9.6 Confirm `.github/workflows/docs.yml` includes the `Check doc code examples` step
+  - [x] 9.7 Stage all remaining changes: `git add .`
+  - [x] 9.8 Commit: `git commit -m "feat(milestone-11/epic-3): documentation content rewrite complete — all links, code examples, and content current for v0.4.3"` with body summarising all files changed
