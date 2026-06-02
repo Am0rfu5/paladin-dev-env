@@ -16,7 +16,7 @@ This guide covers how to configure Paladin agents for optimal performance, from 
 
 ### Minimal Setup
 
-```rust
+```rust,ignore
 use paladin::prelude::*;
 
 let paladin = PaladinBuilder::new(llm_adapter)
@@ -27,20 +27,20 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### Common Configuration
 
-```rust
+```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
     .name("DataAnalyst")
     .system_prompt("You are an expert data analyst. Provide clear, data-driven insights.")
     .model("gpt-4")
     .temperature(0.7)
     .max_loops(5)
-    .timeout(Duration::from_secs(120))
+    .timeout_seconds(120)
     .build()?;
 ```
 
 ### Full Configuration
 
-```rust
+```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
     .name("ResearchAssistant")
     .system_prompt("You are a research assistant specializing in academic papers.")
@@ -48,10 +48,9 @@ let paladin = PaladinBuilder::new(llm_adapter)
     .model("gpt-4-turbo")
     .temperature(0.8)
     .max_loops(10)
-    .stop_words(vec!["END", "STOP", "FINAL_ANSWER"])
-    .timeout(Duration::from_secs(300))
+    .add_stop_word("END").add_stop_word("STOP").add_stop_word("FINAL_ANSWER")
+    .timeout_seconds(300)
     .retry_attempts(3)
-    .retry_delay(Duration::from_secs(5))
     .with_garrison(garrison)
     .add_armament(search_tool)
     .add_armament(calculator_tool)
@@ -65,19 +64,19 @@ The system prompt defines your Paladin's behavior and capabilities. Follow these
 ### 1. Be Specific About Role
 
 **❌ Vague:**
-```rust
+```rust,ignore
 .system_prompt("You are helpful.")
 ```
 
 **✅ Specific:**
-```rust
+```rust,ignore
 .system_prompt("You are a senior software engineer specializing in Rust. \
                 You provide code reviews focused on safety, performance, and idiomatic patterns.")
 ```
 
 ### 2. Define Output Format
 
-```rust
+```rust,ignore
 .system_prompt("You are a JSON API. Always respond with valid JSON. \
                 Structure: {\"status\": \"success|error\", \"data\": {...}, \"message\": \"...\"}  \
                 Never include markdown code blocks or explanations outside the JSON.")
@@ -85,7 +84,7 @@ The system prompt defines your Paladin's behavior and capabilities. Follow these
 
 ### 3. Set Boundaries
 
-```rust
+```rust,ignore
 .system_prompt("You are a customer support agent for TechCorp. \
                 - Only answer questions about our products and services \
                 - Escalate billing questions to the finance team \
@@ -95,7 +94,7 @@ The system prompt defines your Paladin's behavior and capabilities. Follow these
 
 ### 4. Include Examples (Few-Shot)
 
-```rust
+```rust,ignore
 .system_prompt("You categorize customer feedback as: FEATURE_REQUEST, BUG_REPORT, or PRAISE. \
                 \
                 Examples: \
@@ -111,7 +110,7 @@ The system prompt defines your Paladin's behavior and capabilities. Follow these
 
 ### 5. Specify Tone and Style
 
-```rust
+```rust,ignore
 .system_prompt("You are a technical writer creating documentation for developers. \
                 - Use clear, concise language \
                 - Prefer active voice \
@@ -126,7 +125,7 @@ Choose the right model for your use case:
 
 ### OpenAI Models
 
-```rust
+```rust,ignore
 // GPT-4 Turbo - Best for complex reasoning
 .model("gpt-4-turbo")  // Latest turbo model
 .model("gpt-4")        // Standard GPT-4
@@ -141,7 +140,7 @@ Choose the right model for your use case:
 
 ### DeepSeek Models
 
-```rust
+```rust,ignore
 // DeepSeek Chat - Strong coding capabilities
 .model("deepseek-chat")
 
@@ -155,7 +154,7 @@ Choose the right model for your use case:
 
 ### Anthropic Models
 
-```rust
+```rust,ignore
 // Claude 3 Family
 .model("claude-3-opus")    // Most capable
 .model("claude-3-sonnet")  // Balanced
@@ -185,7 +184,7 @@ Temperature controls randomness in responses:
 
 ### Temperature Scale
 
-```rust
+```rust,ignore
 // 0.0 - Deterministic, focused (best for factual tasks)
 .temperature(0.0)
 
@@ -213,7 +212,7 @@ Temperature controls randomness in responses:
 
 ### Example: Task-Specific Configuration
 
-```rust
+```rust,ignore
 // Code Review - Deterministic
 let code_reviewer = PaladinBuilder::new(llm_adapter)
     .system_prompt("Review Rust code for safety and best practices.")
@@ -239,9 +238,9 @@ Control when a Paladin stops generating:
 
 ### Basic Stop Words
 
-```rust
+```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
-    .stop_words(vec!["END", "STOP", "###"])
+    .add_stop_word("END").add_stop_word("STOP").add_stop_word("###")
     .build()?;
 ```
 
@@ -249,33 +248,33 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 #### 1. Structured Output
 
-```rust
+```rust,ignore
 // Stop at delimiter for parsing
 .system_prompt("Generate a list of items. End with '---'")
-.stop_words(vec!["---"])
+.add_stop_word("---")
 ```
 
 #### 2. Multi-Step Reasoning
 
-```rust
+```rust,ignore
 // Stop when final answer is reached
 .system_prompt("Think step by step. When done, output FINAL_ANSWER: <answer>")
-.stop_words(vec!["FINAL_ANSWER:"])
+.add_stop_word("FINAL_ANSWER:")
 ```
 
 #### 3. Dialog Systems
 
-```rust
+```rust,ignore
 // Stop at turn boundaries
 .system_prompt("You are user A in a conversation. End each turn with [END_TURN]")
-.stop_words(vec!["[END_TURN]"])
+.add_stop_word("[END_TURN]")
 ```
 
 ### Max Loops
 
 Prevent infinite reasoning loops:
 
-```rust
+```rust,ignore
 // Default: 3 loops
 .max_loops(3)
 
@@ -293,11 +292,11 @@ A loop is one reasoning cycle: prompt → LLM → response → (optional tool ca
 
 ### Timeout Configuration
 
-```rust
+```rust,ignore
 use std::time::Duration;
 
 let paladin = PaladinBuilder::new(llm_adapter)
-    .timeout(Duration::from_secs(60))  // 60 second timeout
+    .timeout_seconds(60)  // 60 second timeout
     .build()?;
 ```
 
@@ -308,16 +307,15 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### Retry Configuration
 
-```rust
+```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
     .retry_attempts(3)                        // Retry up to 3 times
-    .retry_delay(Duration::from_secs(5))      // Wait 5 seconds between retries
     .build()?;
 ```
 
 ### Error Handling
 
-```rust
+```rust,ignore
 match paladin.execute(input).await {
     Ok(response) => println!("Success: {}", response.content),
     Err(PaladinError::Timeout(secs)) => {
@@ -340,7 +338,7 @@ match paladin.execute(input).await {
 
 ### Configuration from File
 
-```rust
+```rust,ignore
 use paladin::config::ApplicationSettings;
 
 let config = ApplicationSettings::load_from("config.yml")?;
@@ -364,7 +362,7 @@ paladin:
 
 ### Environment-Based Configuration
 
-```rust
+```rust,ignore
 let model = std::env::var("PALADIN_MODEL").unwrap_or("gpt-3.5-turbo".to_string());
 let temperature = std::env::var("PALADIN_TEMPERATURE")
     .ok()
@@ -379,7 +377,7 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### Dynamic Configuration
 
-```rust
+```rust,ignore
 struct PaladinFactory;
 
 impl PaladinFactory {
@@ -406,7 +404,7 @@ impl PaladinFactory {
 
 ### Configuration Validation
 
-```rust
+```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
     .temperature(0.7)
     .build()?;  // Validates configuration
@@ -435,31 +433,31 @@ Before deploying a Paladin, verify:
 
 ### For Throughput
 
-```rust
+```rust,ignore
 // Fast model, simple prompts
 let paladin = PaladinBuilder::new(llm_adapter)
     .model("gpt-3.5-turbo")
     .temperature(0.7)
     .max_loops(1)
-    .timeout(Duration::from_secs(30))
+    .timeout_seconds(30)
     .build()?;
 ```
 
 ### For Quality
 
-```rust
+```rust,ignore
 // Best model, detailed prompts
 let paladin = PaladinBuilder::new(llm_adapter)
     .model("gpt-4")
     .temperature(0.5)
     .max_loops(10)
-    .timeout(Duration::from_secs(300))
+    .timeout_seconds(300)
     .build()?;
 ```
 
 ### For Cost Efficiency
 
-```rust
+```rust,ignore
 // Cheaper model, efficient prompts
 let paladin = PaladinBuilder::new(llm_adapter)
     .model("deepseek-chat")

@@ -60,7 +60,7 @@ The Commander is a high-level abstraction that simplifies Battalion usage by pro
 
 ### Auto Mode (Recommended for Dynamic Workflows)
 
-```rust
+```rust,ignore
 use paladin::application::services::battalion::commander::CommanderBuilder;
 use paladin::core::platform::container::battalion::BattalionStrategy;
 use std::sync::Arc;
@@ -94,7 +94,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Explicit Strategy (Recommended for Production Pipelines)
 
-```rust
+```rust,ignore
 let commander = CommanderBuilder::new(paladin_port)
     .strategy(BattalionStrategy::Formation)  // Explicit strategy
     .paladins(pipeline_paladins)
@@ -111,29 +111,27 @@ Commander analyzes input and Paladin configuration to select the optimal strateg
 
 #### Selection Logic
 
-Commander evaluates multiple factors:
+Commander applies rule-based heuristics in priority order. **Maneuver is explicit-only** and
+is never selected by Auto mode — use `.strategy(BattalionStrategy::Maneuver)` and `.flow(expr)` directly.
 
-1. **Input Keyword Analysis**:
-   - **Maneuver** (highest priority): "flow", "dynamic flow", "->", "," (DSL operators)
-   - **Formation**: "sequential", "pipeline", "step by step", "one after", "first then"
-   - **Phalanx**: "parallel", "concurrent", "all at once", "simultaneously"
-   - **Campaign**: "workflow", "graph", "conditional", "if-then", "depends on"
-   - **ChainOfCommand**: "delegate", "hierarchy", "specialist", "expert"
+Auto mode priority (first match wins):
 
-2. **Paladin Count Heuristics**:
-   - **1-3 Paladins**: Formation (sequential) by default
-   - **4+ Paladins**: Analyzes for parallelism indicators
-   - **Many similar Paladins**: Prefers Phalanx (parallel execution)
-   - **Mixed specialist Paladins**: Considers ChainOfCommand (delegation)
+| Priority | Strategy | Trigger keywords | Min Paladins |
+|----------|----------|-----------------|--------------|
+| 1 | **Conclave** | "synthesize", "synthesis", "compare", "expert panel", "perspectives", "consensus", "combine", "aggregate" | 3+ |
+| 2 | **Council** | "discuss", "debate", "deliberate", "collaborate", "brainstorm", "dialogue", "round table", "talk through" | 2+ |
+| 3 | **Grove** | "route", "routing", "best agent", "expertise", "most qualified", "dynamic routing", "intelligent assignment" | 2+ |
+| 4 | **Campaign** | "workflow", "graph", "conditional", "if-then", "depends on", "complex", "multi-stage" | any |
+| 5 | **Formation** | "sequential", "pipeline", "chain", "step by step", "one after", "in order", "first", "next" | any |
+| 6 | **Phalanx** | "parallel", "concurrent", "all at once", "simultaneously", "together", "in parallel" | any |
+| 7 | **ChainOfCommand** | "delegate", "hierarchy", "specialist", "coordinator", "manager", "senior" | any |
+| 8 | **Formation** | Fallback — no keywords matched | any |
 
-3. **Fallback Logic**:
-   - If no clear indicators: **Formation** (safest default)
-   - Selection typically completes in 0-5ms
-   - Reasoning explanation included in result metadata
+Selection typically completes in 0–5 ms; reasoning is included in `result.strategy_selection_reasoning`.
 
 #### Example: Auto Mode with Analysis
 
-```rust
+```rust,ignore
 let commander = CommanderBuilder::new(paladin_port)
     .strategy(BattalionStrategy::Auto)
     .paladins(vec![
@@ -158,7 +156,7 @@ println!("Selected: {:?} because {}",
 
 When the orchestration pattern is known, use explicit strategy:
 
-```rust
+```rust,ignore
 // Sequential processing pipeline
 let commander = CommanderBuilder::new(paladin_port)
     .strategy(BattalionStrategy::Formation)
@@ -171,10 +169,29 @@ let commander = CommanderBuilder::new(paladin_port)
     .paladins(parallel_workers)
     .build()?;
 
-// Conditional routing
+// Conditional routing / graph workflow
 let commander = CommanderBuilder::new(paladin_port)
     .strategy(BattalionStrategy::Campaign)
     .paladins(workflow_paladins)
+    .build()?;
+
+// Expert synthesis (3+ Paladins with diverse expertise)
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Conclave)
+    .paladins(expert_paladins)
+    .build()?;
+
+// Collaborative turn-based discussion
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Council)
+    .paladins(council_paladins)
+    .build()?;
+
+// Intelligent routing to best-matched specialist
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Grove)
+    .paladins(specialists)
+    .build()?;
     .build()?;
 ```
 
@@ -184,7 +201,7 @@ Commander can export comprehensive execution metadata to JSON files for audit tr
 
 ### Enabling Metadata Export
 
-```rust
+```rust,ignore
 use std::path::PathBuf;
 use paladin::core::platform::container::battalion::BattalionConfig;
 
@@ -323,7 +340,7 @@ The metadata JSON file contains comprehensive execution information:
 
 #### 1. Performance Analysis
 
-```rust
+```rust,ignore
 let config = BattalionConfig::new("performance_profiling")
     .with_metadata_dir(PathBuf::from("./profiling_data"));
 
@@ -336,7 +353,7 @@ let result = commander.execute(input).await?;
 
 #### 2. Cost Tracking
 
-```rust
+```rust,ignore
 let config = BattalionConfig::new("cost_tracking")
     .with_metadata_dir(PathBuf::from("./billing_data"));
 
@@ -347,7 +364,7 @@ let config = BattalionConfig::new("cost_tracking")
 
 #### 3. Audit Trails & Compliance
 
-```rust
+```rust,ignore
 let config = BattalionConfig::new("production_api_handler")
     .with_metadata_dir(PathBuf::from("/var/log/battalion"));
 
@@ -358,7 +375,7 @@ let config = BattalionConfig::new("production_api_handler")
 
 #### 4. Debugging & Troubleshooting
 
-```rust
+```rust,ignore
 let config = BattalionConfig::new("debug_session")
     .with_metadata_dir(PathBuf::from("./debug_logs"));
 
@@ -377,7 +394,7 @@ battalion:
   error_strategy: "RetryThenContinue"
 ```
 
-```rust
+```rust,ignore
 use config::Config;
 
 let settings = Config::builder()
@@ -402,7 +419,7 @@ let config = BattalionConfig::new("from_config")
 
 Comprehensive configuration for Commander behavior:
 
-```rust
+```rust,ignore
 use paladin::core::platform::container::battalion::{
     BattalionConfig, ErrorStrategy, RetryPolicy
 };
@@ -438,7 +455,7 @@ let config = BattalionConfig::new("my_battalion")
 
 Stops execution immediately on first Paladin failure.
 
-```rust
+```rust,ignore
 let config = BattalionConfig::new("fail_fast")
     .with_error_strategy(ErrorStrategy::FailFast);
 ```
@@ -452,7 +469,7 @@ let config = BattalionConfig::new("fail_fast")
 
 Continues executing remaining Paladins despite failures.
 
-```rust
+```rust,ignore
 let config = BattalionConfig::new("continue_on_error")
     .with_error_strategy(ErrorStrategy::ContinueOnError);
 ```
@@ -466,7 +483,7 @@ let config = BattalionConfig::new("continue_on_error")
 
 Retries failed Paladins up to `max_attempts`, then continues with remaining Paladins.
 
-```rust
+```rust,ignore
 let config = BattalionConfig::new("production")
     .with_error_strategy(ErrorStrategy::RetryThenContinue)
     .with_retry_policy(RetryPolicy {
@@ -484,7 +501,7 @@ let config = BattalionConfig::new("production")
 
 ### Retry Policies
 
-```rust
+```rust,ignore
 pub struct RetryPolicy {
     pub max_attempts: u32,        // Total attempts (including initial)
     pub initial_delay_ms: u64,    // First retry delay
@@ -494,7 +511,7 @@ pub struct RetryPolicy {
 ```
 
 **Default Retry Policy**:
-```rust
+```rust,ignore
 RetryPolicy {
     max_attempts: 3,          // 3 total attempts
     initial_delay_ms: 1000,   // 1 second first retry
@@ -513,7 +530,7 @@ RetryPolicy {
 
 ### BattalionResult Telemetry
 
-```rust
+```rust,ignore
 pub struct BattalionResult {
     pub battalion_id: Uuid,
     pub battalion_name: String,
@@ -537,7 +554,7 @@ pub struct BattalionResult {
 
 #### Execution Duration
 
-```rust
+```rust,ignore
 let result = commander.execute(input).await?;
 
 let duration = result.completed_at
@@ -549,7 +566,7 @@ println!("Execution time: {}ms", duration);
 
 #### Success Rate
 
-```rust
+```rust,ignore
 let success_rate = result.paladin_success_count as f64
     / (result.paladin_success_count + result.paladin_failure_count) as f64
     * 100.0;
@@ -559,7 +576,7 @@ println!("Success rate: {:.1}%", success_rate);
 
 #### Per-Paladin Metrics
 
-```rust
+```rust,ignore
 for (name, time_ms) in &result.per_paladin_times {
     let tokens = result.per_paladin_tokens
         .get(name)
@@ -572,7 +589,7 @@ for (name, time_ms) in &result.per_paladin_times {
 
 #### Integration with Metrics Systems
 
-```rust
+```rust,ignore
 // Prometheus-style metrics
 metrics.record_battalion_duration(
     result.battalion_name.as_str(),
@@ -594,7 +611,7 @@ metrics.record_paladin_counts(
 
 ### 1. Use Auto Mode for User-Driven Workflows
 
-```rust
+```rust,ignore
 // Good: Flexibility for unpredictable inputs
 let commander = CommanderBuilder::new(paladin_port)
     .strategy(BattalionStrategy::Auto)
@@ -604,7 +621,7 @@ let commander = CommanderBuilder::new(paladin_port)
 
 ### 2. Use Explicit Strategies for Production Pipelines
 
-```rust
+```rust,ignore
 // Good: Predictability and performance
 let commander = CommanderBuilder::new(paladin_port)
     .strategy(BattalionStrategy::Formation)  // Known pattern
@@ -614,7 +631,7 @@ let commander = CommanderBuilder::new(paladin_port)
 
 ### 3. Configure Appropriate Timeouts
 
-```rust
+```rust,ignore
 // Good: Realistic timeout with buffer
 let config = BattalionConfig::new("batch_processing")
     .with_timeout(600);  // 10 minutes for batch job
@@ -628,7 +645,7 @@ let config = BattalionConfig::new("batch_processing")
 
 ### 4. Use RetryThenContinue in Production
 
-```rust
+```rust,ignore
 // Best practice for production
 let config = BattalionConfig::new("production")
     .with_error_strategy(ErrorStrategy::RetryThenContinue)
@@ -642,7 +659,7 @@ let config = BattalionConfig::new("production")
 
 ### 5. Enable Metadata Export for Critical Systems
 
-```rust
+```rust,ignore
 // Good: Audit trail for compliance
 let config = BattalionConfig::new("critical_system")
     .with_metadata_dir(PathBuf::from("/var/log/battalion"));
@@ -650,7 +667,7 @@ let config = BattalionConfig::new("critical_system")
 
 ### 6. Monitor Telemetry Regularly
 
-```rust
+```rust,ignore
 let result = commander.execute(input).await?;
 
 // Log key metrics
@@ -665,7 +682,7 @@ log::info!(
 
 ### 7. Handle Errors Gracefully
 
-```rust
+```rust,ignore
 match commander.execute(input).await {
     Ok(result) => {
         if result.paladin_failure_count > 0 {
@@ -694,7 +711,7 @@ match commander.execute(input).await {
 2. Simplify input (avoid very long strings in keyword analysis)
 3. Consider caching strategy decisions for similar inputs
 
-```rust
+```rust,ignore
 // If Auto mode adds too much overhead:
 let commander = CommanderBuilder::new(paladin_port)
     .strategy(BattalionStrategy::Formation)  // Explicit, 0ms overhead
@@ -711,7 +728,7 @@ let commander = CommanderBuilder::new(paladin_port)
 
 **Solutions**:
 
-```rust
+```rust,ignore
 use std::fs;
 
 // Ensure directory exists with correct permissions
@@ -733,7 +750,7 @@ println!("Battalion ID: {}", result.battalion_id);
 
 **Diagnosis**:
 
-```rust
+```rust,ignore
 let result = commander.execute(input).await?;
 
 println!("Expected: X, Got: {:?}", result.strategy_used);
@@ -753,7 +770,7 @@ if let Some(reasoning) = &result.strategy_selection_reasoning {
 
 **Diagnosis**:
 
-```rust
+```rust,ignore
 let result = commander.execute(input).await?;
 
 println!("Total tokens: {}", result.total_tokens);
@@ -784,7 +801,7 @@ if max_tokens > expected_threshold {
 
 **Diagnosis**:
 
-```rust
+```rust,ignore
 let result = commander.execute(input).await;
 
 if let Ok(r) = result {
@@ -804,7 +821,7 @@ if let Ok(r) = result {
 3. Consider using Phalanx (parallel) instead of Formation (sequential)
 4. Optimize slow Paladins
 
-```rust
+```rust,ignore
 // Increase timeout
 let config = BattalionConfig::new("battalion")
     .with_timeout(600);  // 10 minutes instead of 5
@@ -826,7 +843,7 @@ let commander = CommanderBuilder::new(paladin_port)
 
 **Handling**:
 
-```rust
+```rust,ignore
 let result = commander.execute(input).await?;
 
 if result.paladin_failure_count > 0 {

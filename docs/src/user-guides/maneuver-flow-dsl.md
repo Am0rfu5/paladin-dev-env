@@ -48,20 +48,20 @@ Maneuver is a declarative Battalion orchestration pattern that uses a Flow DSL (
 
 ### Installation
 
-Maneuver is included in Paladin core. Ensure you have version 0.1.0+:
+Maneuver is included in `paladin-battalion`. Add it to your workspace:
 
 ```toml
 [dependencies]
-paladin = "0.1.0"
+paladin-battalion = { version = "0.4.3", path = "crates/paladin-battalion" }
 tokio = { version = "1.0", features = ["full"] }
 ```
 
 ### Basic Example
 
-```rust
-use paladin::application::services::battalion::maneuver_service::ManeuverExecutionService;
-use paladin::core::platform::container::battalion::maneuver::Maneuver;
-use paladin::core::platform::container::battalion::parser::FlowParser;
+```rust,ignore
+use paladin_battalion::maneuver::service::ManeuverExecutionService;
+use paladin_battalion::maneuver::Maneuver;
+use paladin_battalion::maneuver::parser::FlowParser;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -207,7 +207,7 @@ agent1 ->
 - Progressive refinement
 
 **Example**:
-```rust
+```rust,ignore
 // Flow: "extractor -> translator -> formatter"
 let flow = FlowParser::parse("extractor -> translator -> formatter")?;
 
@@ -233,7 +233,7 @@ let flow = FlowParser::parse("extractor -> translator -> formatter")?;
 - Parallel processing
 
 **Example**:
-```rust
+```rust,ignore
 // Flow: "(tech_reviewer, business_reviewer, security_reviewer)"
 let flow = FlowParser::parse("(tech_reviewer, business_reviewer, security_reviewer)")?;
 
@@ -259,7 +259,7 @@ let flow = FlowParser::parse("(tech_reviewer, business_reviewer, security_review
 - Complex decision trees
 
 **Example**:
-```rust
+```rust,ignore
 // Flow: "analyzer -> (summarizer, translator) -> reviewer"
 let flow = FlowParser::parse("analyzer -> (summarizer, translator) -> reviewer")?;
 
@@ -294,68 +294,60 @@ Nested:     agent1
 
 ### Maneuver Configuration
 
-```rust
-use paladin::core::platform::container::battalion::maneuver::{
-    ManeuverConfig, ErrorStrategy, OutputFormat
-};
+```rust,ignore
+use paladin_battalion::maneuver::{ManeuverConfig, ErrorStrategy, OutputFormat};
 use std::time::Duration;
 
 let config = ManeuverConfig::new()
-    .with_error_strategy(ErrorStrategy::ContinueOnError)
+    .with_error_strategy(ErrorStrategy::ContinueParallel)
     .with_output_format(OutputFormat::Concatenate)
     .with_pass_output_as_input(true)
     .with_timeout(Duration::from_secs(300))
-    .with_collect_timing_metrics(true);
+    .with_timing_metrics(true);
 
 let maneuver = Maneuver::new("workflow", agents, flow, config)?;
 ```
 
 ### Error Strategies
 
-```rust
+```rust,ignore
 pub enum ErrorStrategy {
     /// Stop immediately on first error
     FailFast,
 
-    /// Continue executing remaining agents despite errors
-    ContinueOnError,
-
-    /// Continue on error in parallel branches only
+    /// Continue parallel branches but fail sequential chains on error
     ContinueParallel,
+
+    /// Log errors but continue execution regardless
+    IgnoreErrors,
 }
 ```
 
 **When to Use**:
 - **FailFast**: Critical workflows where any failure invalidates the result
-- **ContinueOnError**: Best-effort workflows, collect partial results
 - **ContinueParallel**: Parallel sections can fail independently
+- **IgnoreErrors**: Best-effort workflows, collect whatever partial results are available
 
 ### Output Formats
 
-```rust
+```rust,ignore
 pub enum OutputFormat {
-    /// Concatenate all outputs with newlines
+    /// Concatenate all outputs with newlines (default)
     Concatenate,
 
-    /// JSON object with agent names as keys
-    Json,
-
-    /// Last agent's output only
-    LastOnly,
+    /// JSON array with each agent's output as an element
+    JsonArray,
 }
 ```
 
 **Example Outputs**:
 
-```rust
+```rust,ignore
 // Concatenate (default)
 "Output from agent1\n---\nOutput from agent2\n---\nOutput from agent3"
 
-// Json
-r#"{"agent1": "...", "agent2": "...", "agent3": "..."}"#
-
-// LastOnly
-"Output from agent3"  // Only the final agent
+// JsonArray
+r#"["output from agent1", "output from agent2", "output from agent3"]"#
 ```
 
 ### YAML Configuration
@@ -528,10 +520,8 @@ flowchart LR
 
 ### Programmatic Visualization
 
-```rust
-use paladin::application::services::battalion::flow_visualizer::{
-    FlowVisualizer, VisualizationFormat
-};
+```rust,ignore
+use paladin_battalion::maneuver::visualizer::{FlowVisualizer, VisualizationFormat};
 
 let flow = FlowParser::parse("a -> (b, c) -> d")?;
 
@@ -553,8 +543,8 @@ let viz = FlowVisualizer::visualize(&flow, VisualizationFormat::Ascii);
 
 ### Validation Errors
 
-```rust
-use paladin::core::platform::container::battalion::parser::FlowParseError;
+```rust,ignore
+use paladin_battalion::maneuver::parser::FlowParseError;
 
 match FlowParser::parse("agent1 -> (agent2 | agent3)") {
     Ok(flow) => { /* Success */ },
@@ -568,8 +558,8 @@ match FlowParser::parse("agent1 -> (agent2 | agent3)") {
 
 ### Execution Errors
 
-```rust
-use paladin::core::platform::container::battalion::maneuver::ManeuverError;
+```rust,ignore
+use paladin_battalion::maneuver::ManeuverError;
 
 match service.execute(&maneuver, input).await {
     Ok(result) => println!("Success: {}", result.final_output),
@@ -585,10 +575,10 @@ match service.execute(&maneuver, input).await {
 
 ### Error Recovery
 
-```rust
+```rust,ignore
 // Configure error handling strategy
 let config = ManeuverConfig::new()
-    .with_error_strategy(ErrorStrategy::ContinueOnError);
+    .with_error_strategy(ErrorStrategy::IgnoreErrors);
 
 // Execution continues despite failures
 let result = service.execute(&maneuver, input).await?;
@@ -634,7 +624,7 @@ Based on `battalion_benchmarks.rs`:
 
 #### 2. Use Parallel Where Possible
 
-```rust
+```rust,ignore
 // Slow: Sequential when order doesn't matter
 "tech_review -> security_review -> legal_review"
 
@@ -644,7 +634,7 @@ Based on `battalion_benchmarks.rs`:
 
 #### 3. Configure Timeouts
 
-```rust
+```rust,ignore
 let config = ManeuverConfig::new()
     .with_timeout(Duration::from_secs(120))  // Per-agent timeout
     .with_error_strategy(ErrorStrategy::ContinueParallel);  // Don't wait for failures
@@ -658,7 +648,7 @@ let config = ManeuverConfig::new()
 
 #### 5. Monitor Timing Metrics
 
-```rust
+```rust,ignore
 let config = ManeuverConfig::new()
     .with_collect_timing_metrics(true);
 
@@ -678,7 +668,7 @@ if let Some(metrics) = result.timing_metrics {
 ### 1. Flow Design
 
 #### Keep Flows Simple
-```rust
+```rust,ignore
 // ✅ Good: Clear, easy to understand
 "intake -> analyze -> decide"
 
@@ -687,7 +677,7 @@ if let Some(metrics) = result.timing_metrics {
 ```
 
 #### Use Descriptive Names
-```rust
+```rust,ignore
 // ✅ Good: Clear purpose
 "document_analyzer -> sentiment_classifier -> report_generator"
 
@@ -714,7 +704,7 @@ Each agent should have a clear, focused responsibility:
 #### Use Consistent Naming
 Match agent names in flow expression exactly:
 
-```rust
+```rust,ignore
 // Flow uses: analyzer, summarizer, reviewer
 flow: "analyzer -> summarizer -> reviewer"
 
@@ -727,7 +717,7 @@ agents.insert("reviewer", ...);
 ### 3. Error Handling
 
 #### Always Handle Errors
-```rust
+```rust,ignore
 // ✅ Good: Explicit error handling
 match service.execute(&maneuver, input).await {
     Ok(result) => process_result(result),
@@ -746,20 +736,20 @@ let result = service.execute(&maneuver, input).await.unwrap();
 ```
 
 #### Choose Appropriate Strategy
-```rust
+```rust,ignore
 // Critical workflows: fail fast
 let config = ManeuverConfig::new()
     .with_error_strategy(ErrorStrategy::FailFast);
 
 // Best-effort workflows: collect partial results
 let config = ManeuverConfig::new()
-    .with_error_strategy(ErrorStrategy::ContinueOnError);
+    .with_error_strategy(ErrorStrategy::IgnoreErrors);
 ```
 
 ### 4. Testing
 
 #### Validate Flows Early
-```rust
+```rust,ignore
 #[test]
 fn test_workflow_validation() {
     let flow = FlowParser::parse("analyzer -> summarizer").unwrap();
@@ -774,7 +764,7 @@ fn test_workflow_validation() {
 ```
 
 #### Test Visualizations
-```rust
+```rust,ignore
 #[test]
 fn test_flow_visualization() {
     let flow = FlowParser::parse("a -> (b, c)").unwrap();
@@ -810,7 +800,7 @@ flow: "intake -> (technical, business, security) -> synthesis -> review"
 
 #### FlowParser
 
-```rust
+```rust,ignore
 pub struct FlowParser;
 
 impl FlowParser {
@@ -821,7 +811,7 @@ impl FlowParser {
 
 #### FlowExpression
 
-```rust
+```rust,ignore
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FlowExpression {
     /// Single agent execution
@@ -842,7 +832,7 @@ impl FlowExpression {
 
 #### Maneuver
 
-```rust
+```rust,ignore
 pub struct Maneuver {
     pub name: String,
     pub agents: HashMap<String, Paladin>,
@@ -866,7 +856,7 @@ impl Maneuver {
 
 #### ManeuverConfig
 
-```rust
+```rust,ignore
 pub struct ManeuverConfig {
     pub error_strategy: ErrorStrategy,
     pub output_format: OutputFormat,
@@ -886,7 +876,7 @@ impl ManeuverConfig {
 
 #### ManeuverResult
 
-```rust
+```rust,ignore
 pub struct ManeuverResult {
     /// Final aggregated output
     pub final_output: String,
@@ -907,7 +897,7 @@ pub struct ManeuverResult {
 
 #### ManeuverExecutionService
 
-```rust
+```rust,ignore
 pub struct ManeuverExecutionService {
     paladin_port: Arc<dyn PaladinPort>,
 }
@@ -927,7 +917,7 @@ impl ManeuverExecutionService {
 
 #### FlowVisualizer
 
-```rust
+```rust,ignore
 pub struct FlowVisualizer;
 
 impl FlowVisualizer {
@@ -957,14 +947,14 @@ pub enum VisualizationFormat {
 
 **Problem**: Using pipe operator for parallel execution
 
-```rust
+```rust,ignore
 // ❌ Wrong
 let flow = FlowParser::parse("(agent1 | agent2)")?;
 ```
 
 **Solution**: Use comma instead
 
-```rust
+```rust,ignore
 // ✅ Correct
 let flow = FlowParser::parse("(agent1, agent2)")?;
 ```
@@ -973,7 +963,7 @@ let flow = FlowParser::parse("(agent1, agent2)")?;
 
 **Problem**: Agent name in flow doesn't match configured agents
 
-```rust
+```rust,ignore
 // Flow references "analyzer"
 let flow = FlowParser::parse("analyzer -> summarizer")?;
 
@@ -983,7 +973,7 @@ agents.insert("Analyzer".to_string(), paladin);
 
 **Solution**: Use exact same names
 
-```rust
+```rust,ignore
 // ✅ Correct - exact match
 agents.insert("analyzer".to_string(), paladin);
 ```
@@ -992,14 +982,14 @@ agents.insert("analyzer".to_string(), paladin);
 
 **Problem**: Forgetting parentheses around parallel agents
 
-```rust
+```rust,ignore
 // ❌ Wrong - will be parsed as "agent1 -> agent2", "agent3"
 let flow = FlowParser::parse("agent1 -> agent2, agent3")?;
 ```
 
 **Solution**: Always use parentheses for parallel
 
-```rust
+```rust,ignore
 // ✅ Correct
 let flow = FlowParser::parse("agent1 -> (agent2, agent3)")?;
 ```
@@ -1008,14 +998,14 @@ let flow = FlowParser::parse("agent1 -> (agent2, agent3)")?;
 
 **Problem**: Agents taking too long to execute
 
-```rust
+```rust,ignore
 // Default timeout may be too short
 let config = ManeuverConfig::default();  // 300s default
 ```
 
 **Solution**: Increase timeout for slow workflows
 
-```rust
+```rust,ignore
 // ✅ Longer timeout
 let config = ManeuverConfig::new()
     .with_timeout(Duration::from_secs(600));  // 10 minutes
@@ -1027,7 +1017,7 @@ let config = ManeuverConfig::new()
 
 **Solution**: Use appropriate error strategy
 
-```rust
+```rust,ignore
 // Continue despite failures
 let config = ManeuverConfig::new()
     .with_error_strategy(ErrorStrategy::ContinueParallel);
@@ -1046,7 +1036,7 @@ for (agent, output) in result.step_outputs {
 
 #### 1. Enable Verbose Logging
 
-```rust
+```rust,ignore
 env_logger::init();  // In main()
 
 // Set RUST_LOG=debug
@@ -1071,7 +1061,7 @@ Catches configuration mismatches before execution.
 
 #### 4. Check Timing Metrics
 
-```rust
+```rust,ignore
 let config = ManeuverConfig::new()
     .with_collect_timing_metrics(true);
 
@@ -1088,7 +1078,7 @@ if let Some(metrics) = result.timing_metrics {
 
 #### 5. Inspect Individual Outputs
 
-```rust
+```rust,ignore
 let result = service.execute(&maneuver, input).await?;
 
 // Check each agent's output
@@ -1113,12 +1103,12 @@ for agent in result.execution_order {
 
 ### Custom Output Formatting
 
-```rust
-use paladin::core::platform::container::battalion::maneuver::OutputFormat;
+```rust,ignore
+use paladin_battalion::maneuver::OutputFormat;
 
 // Implement custom aggregation logic
 let config = ManeuverConfig::new()
-    .with_output_format(OutputFormat::Json);
+    .with_output_format(OutputFormat::JsonArray);
 
 // Result will be JSON:
 // {"agent1": "output1", "agent2": "output2"}
@@ -1128,26 +1118,26 @@ let config = ManeuverConfig::new()
 
 Commander automatically detects Maneuver patterns:
 
-```rust
-use paladin::application::services::battalion::commander::Commander;
+```rust,ignore
+use paladin_battalion::commander::CommanderBuilder;
+use paladin_core::platform::container::battalion::BattalionStrategy;
 
-let commander = Commander::new(paladin_port)
-    .with_strategy(BattalionStrategy::Auto)
-    .with_paladins(paladins)
+// Maneuver is explicit-only — it is NOT selected by Auto mode.
+// You must explicitly set BattalionStrategy::Maneuver and provide a flow expression.
+let commander = CommanderBuilder::new(paladin_port)
+    .strategy(BattalionStrategy::Maneuver)
+    .paladins(paladins)
+    .flow("agent1 -> agent2 -> agent3".to_string())
     .build()?;
 
-// These inputs trigger Maneuver:
-// - "Create a flow for..."
-// - "Execute: agent1 -> agent2"
-// - "Dynamic flow orchestration"
-// - Any input containing "->" or "," operators
+let result = commander.execute("Process this document").await?;
 ```
 
 ### Performance Tuning
 
 For high-throughput systems:
 
-```rust
+```rust,ignore
 // Minimize overhead
 let config = ManeuverConfig::new()
     .with_collect_timing_metrics(false)  // Disable if not needed
