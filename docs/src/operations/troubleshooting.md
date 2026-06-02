@@ -90,7 +90,7 @@ kubectl create secret generic paladin-secrets \
 ```
 
 **B. Model Not Found**
-```rust
+```rust,ignore
 // Fix: Use valid model name
 let paladin = PaladinBuilder::new(llm_port)
     .model("gpt-4")  // Not "gpt-4-invalid"
@@ -220,13 +220,13 @@ kubectl logs deployment/paladin | grep -i "deadlock\|timeout"
 **Solutions:**
 
 **A. Circular Dependencies (Campaign)**
-```rust
+```rust,ignore
 // Fix: Ensure DAG has no cycles
 campaign.validate()?;  // Will error if cyclic
 ```
 
 **B. Infinite Loop**
-```rust
+```rust,ignore
 // Fix: Set reasonable max_loops
 let paladin = PaladinBuilder::new(llm_port)
     .max_loops(10)  // Prevent infinite loops

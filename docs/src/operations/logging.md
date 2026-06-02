@@ -97,7 +97,7 @@ ERROR < WARN < INFO < DEBUG < TRACE
 
 ### Code Examples
 
-```rust
+```rust,ignore
 use tracing::{error, warn, info, debug, trace};
 
 // ERROR: Critical failures
@@ -131,7 +131,7 @@ trace!("Entering formation execution loop iteration {}", i);
 
 ### Field-Based Logging
 
-```rust
+```rust,ignore
 use tracing::{info, instrument};
 
 #[instrument(
@@ -160,7 +160,7 @@ async fn execute_paladin(paladin: &Paladin, input: &str) -> Result<PaladinResult
 
 ### Spans for Context
 
-```rust
+```rust,ignore
 use tracing::info_span;
 
 async fn battalion_execute(battalion: &Battalion, input: &str) -> Result<BattalionResult> {
@@ -193,7 +193,7 @@ async fn battalion_execute(battalion: &Battalion, input: &str) -> Result<Battali
 
 ### Error Logging
 
-```rust
+```rust,ignore
 use tracing::error;
 use anyhow::Context;
 
@@ -216,7 +216,7 @@ match llm_port.generate(model, messages, temperature).await {
 
 ### Loki Integration
 
-```rust
+```rust,ignore
 // Cargo.toml
 [dependencies]
 tracing-loki = "0.2"
@@ -248,7 +248,7 @@ pub fn init_loki_logging(url: &str) -> Result<()> {
 
 ### Elasticsearch/OpenSearch
 
-```rust
+```rust,ignore
 use tracing_elastic::Elastic;
 
 pub fn init_elastic_logging(url: &str, index: &str) -> Result<()> {
@@ -395,7 +395,7 @@ topk(10, count_over_time({app="paladin"} |= "ERROR" [1h]))
 
 ### 1. Consistent Field Names
 
-```rust
+```rust,ignore
 // ✅ Good: Consistent naming
 info!(paladin_id = %id, "Starting");
 info!(paladin_id = %id, "Completed");
@@ -407,7 +407,7 @@ info!(id = %id, "Completed");
 
 ### 2. Structured Over String Interpolation
 
-```rust
+```rust,ignore
 // ✅ Good: Structured fields
 info!(
     paladin_id = %paladin.id,
@@ -423,7 +423,7 @@ info!("Execution completed for paladin {} in {}ms: success",
 
 ### 3. Sensitive Data Redaction
 
-```rust
+```rust,ignore
 // ✅ Good: Redact sensitive data
 info!(
     api_key = "***REDACTED***",
@@ -437,7 +437,7 @@ info!(api_key = api_key, "Making API call");
 
 ### 4. Appropriate Log Levels
 
-```rust
+```rust,ignore
 // ✅ Good: INFO for normal operations
 info!("Paladin execution started");
 
@@ -447,7 +447,7 @@ debug!("Paladin execution started");
 
 ### 5. Error Context
 
-```rust
+```rust,ignore
 // ✅ Good: Full error context
 error!(
     error = %e,
@@ -462,7 +462,7 @@ error!("Error: {}", e);
 
 ### 6. Performance Considerations
 
-```rust
+```rust,ignore
 // ✅ Good: Conditional expensive operations
 if tracing::enabled!(tracing::Level::DEBUG) {
     let expensive_debug_info = compute_debug_info();
@@ -505,7 +505,7 @@ logging:
 
 ### 9. Correlation IDs
 
-```rust
+```rust,ignore
 use uuid::Uuid;
 
 async fn handle_request(req: Request) -> Response {
@@ -528,7 +528,7 @@ async fn handle_request(req: Request) -> Response {
 
 ### 10. Sampling for High-Volume Logs
 
-```rust
+```rust,ignore
 use rand::Rng;
 
 // Sample 10% of debug logs

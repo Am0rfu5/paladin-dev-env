@@ -206,7 +206,7 @@ autoscaling:
 
 ### Connection Pooling
 
-```rust
+```rust,ignore
 // Configure connection pools
 let redis_config = RedisConfig {
     url: "redis://redis:6379".into(),
@@ -289,7 +289,7 @@ readinessProbe:
 
 ### Graceful Shutdown
 
-```rust
+```rust,ignore
 // Implement graceful shutdown
 use tokio::signal;
 
@@ -335,7 +335,7 @@ spec:
 
 ### Circuit Breakers
 
-```rust
+```rust,ignore
 // Implement circuit breakers for external services
 use circuit_breaker::{CircuitBreaker, Config};
 
@@ -354,7 +354,7 @@ async fn call_llm_with_breaker(prompt: &str) -> Result<Response> {
 
 ### Retry Logic
 
-```rust
+```rust,ignore
 // Implement exponential backoff
 use backoff::{ExponentialBackoff, Error as BackoffError};
 use backoff::future::retry;
@@ -442,7 +442,7 @@ groups:
 
 ### Logging Best Practices
 
-```rust
+```rust,ignore
 // Structured logging with tracing
 use tracing::{info, warn, error, instrument};
 
