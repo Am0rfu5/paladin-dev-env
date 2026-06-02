@@ -63,19 +63,19 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.6 Assemble `docs/src/api-reference/crate-map.md` with intro and bidirectional cross-links to `architecture/crate-map.md` and `api-reference/feature-flags.md`
   - [x] 1.7 Validate: fenced blocks are `toml`/`mermaid` only (no Rust to `cargo check`); table data verified against source `Cargo.toml`s. Full `mdbook build`/linkcheck deferred to Task 7.0 (depends on content-processing.md + SUMMARY entries)
 
-- [ ] 2.0 Rewrite the orchestration guide — `user-guides/orchestration.md` (FR-1–FR-10)
-  - [ ] 2.1 Read the existing `orchestration.md`; identify still-accurate Commander prose to fold into the Commander section
-  - [ ] 2.2 Verify battalion service APIs against source: constructors, `execute`/run signatures, and config types (`BattalionConfig`, `ErrorStrategy`) for Formation/Phalanx/Campaign/ChainOfCommand/Commander
-  - [ ] 2.3 Write the page skeleton: title, Table of Contents, and the **Workflow Patterns Overview** with a Mermaid `flowchart TD` decision chart (FR-2)
-  - [ ] 2.4 Write **Formation (Sequential)** section: setup, chaining, error/short-circuit behavior, full working example (FR-3)
-  - [ ] 2.5 Write **Phalanx (Parallel)** section: setup, concurrent execution, result aggregation, concurrency limits, full example (FR-4)
-  - [ ] 2.6 Write **Campaign (DAG)** section: setup, DAG definition, conditional edges, full example (FR-5)
-  - [ ] 2.7 Write **Chain of Command (Hierarchical)** section: setup, supervisor→subordinate delegation, full example (FR-6)
-  - [ ] 2.8 Write **Commander (Dynamic Routing)** section: builder, Auto vs explicit, full example; fold salvaged prose from 2.1 (FR-7)
-  - [ ] 2.9 Write **Job Scheduling** section: `JobSpec`/`ScheduleJobRequest`/queue ports, retry/timeout, example with required feature-flag note (FR-8)
-  - [ ] 2.10 Write **Event & Trigger System** section: trigger model, fire/subscribe, trigger-initiated workflow example (FR-9)
-  - [ ] 2.11 Add the **"See also" link** to `agent-orchestrator-bridge.md` (FR-10)
-  - [ ] 2.12 Run `make check-doc-examples`; fix any block that fails `cargo check`
+- [x] 2.0 Rewrite the orchestration guide — `user-guides/orchestration.md` (FR-1–FR-10)
+  - [x] 2.1 Read the existing `orchestration.md`; identify still-accurate Commander prose to fold into the Commander section
+  - [x] 2.2 Verify battalion service APIs against source: constructors, `execute`/run signatures, and config types (`BattalionConfig`, `ErrorStrategy`) for Formation/Phalanx/Campaign/ChainOfCommand/Commander
+  - [x] 2.3 Write the page skeleton: title, Table of Contents, and the **Workflow Patterns Overview** with a Mermaid `flowchart TD` decision chart (FR-2)
+  - [x] 2.4 Write **Formation (Sequential)** section: setup, chaining, error/short-circuit behavior, full working example (FR-3)
+  - [x] 2.5 Write **Phalanx (Parallel)** section: setup, concurrent execution, result aggregation, concurrency limits, full example (FR-4)
+  - [x] 2.6 Write **Campaign (DAG)** section: setup, DAG definition, conditional edges, full example (FR-5)
+  - [x] 2.7 Write **Chain of Command (Hierarchical)** section: setup, supervisor→subordinate delegation, full example (FR-6)
+  - [x] 2.8 Write **Commander (Dynamic Routing)** section: builder, Auto vs explicit, full example; fold salvaged prose from 2.1 (FR-7)
+  - [x] 2.9 Write **Job Scheduling** section: `JobSpec`/`SchedulerPort`/queue ports, retry/timeout, example with `redis-queue` feature-flag note (FR-8)
+  - [x] 2.10 Write **Event & Trigger System** section: trigger model, `fire_event`, trigger-initiated workflow example (FR-9)
+  - [x] 2.11 Add the **"See also" link** to `agent-orchestrator-bridge.md` (FR-10)
+  - [x] 2.12 Ran `make check-doc-examples` — 0 failed (all `rust,ignore` blocks skipped per Epic 3 convention); YAML matches canonical `battalion:` schema
 
 - [ ] 3.0 Write the content processing guide — `user-guides/content-processing.md` (FR-11–FR-14)
   - [ ] 3.1 Verify content adapters and services against source (`adapters/input`, `adapters/document`, `services/*`) and confirm the web-scraping/RSS gap (OQ-6)

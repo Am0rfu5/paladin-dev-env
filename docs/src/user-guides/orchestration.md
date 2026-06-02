@@ -1,209 +1,260 @@
-# Commander Strategy Router
+# Orchestration
 
-**Unified interface for intelligent Battalion orchestration with automatic strategy selection**
+The **Battalion** runtime in `crates/paladin-battalion/` coordinates multiple Paladin agents
+through a family of orchestration patterns, a strategy router (**Commander**), a cron-style
+**job scheduler**, and an **event/trigger** system. This guide is the comprehensive reference
+for choosing a pattern and wiring it up.
+
+For a quick pattern-by-pattern cheat sheet see [Battalion Patterns](battalion-patterns.md);
+for the declarative flow language see [Maneuver Flow DSL](maneuver-flow-dsl.md); for how agents
+and workflows call each other see the [Agent ↔ Orchestrator Bridge](agent-orchestrator-bridge.md).
+
+> Every code example targets the current **v0.4.3** workspace. Examples are marked
+> `rust,ignore` because they assume Paladins built elsewhere (see
+> [Paladin Agents](paladin-agents.md)); the API forms are verified against
+> `crates/paladin-battalion/` and `crates/paladin-ports/`.
+
+---
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Quick Start](#quick-start)
-- [Strategy Selection](#strategy-selection)
-  - [Auto Mode](#auto-mode)
-  - [Explicit Strategy Selection](#explicit-strategy-selection)
-- [Metadata Export](#metadata-export)
-  - [Enabling Metadata Export](#enabling-metadata-export)
-  - [JSON Structure](#json-structure)
-  - [Use Cases](#use-cases)
-- [Configuration](#configuration)
-  - [BattalionConfig](#battalionconfig)
-  - [Error Handling Strategies](#error-handling-strategies)
-  - [Retry Policies](#retry-policies)
-- [Telemetry & Monitoring](#telemetry--monitoring)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
+1. [Workflow Patterns Overview](#workflow-patterns-overview)
+2. [Formation — Sequential](#formation--sequential)
+3. [Phalanx — Parallel](#phalanx--parallel)
+4. [Campaign — Graph / DAG](#campaign--graph--dag)
+5. [Chain of Command — Hierarchical](#chain-of-command--hierarchical)
+6. [Commander — Dynamic Strategy Routing](#commander--dynamic-strategy-routing)
+7. [Job Scheduling](#job-scheduling)
+8. [Event and Trigger System](#event-and-trigger-system)
+9. [Configuration Reference](#configuration-reference)
+10. [See Also](#see-also)
 
-## Overview
+---
 
-The Commander is a high-level abstraction that simplifies Battalion usage by providing:
+## Workflow Patterns Overview
 
-1. **Auto Mode**: Automatically selects the optimal orchestration strategy based on input analysis
-2. **Unified API**: Single interface for all Battalion patterns (Formation, Phalanx, Campaign, ChainOfCommand, Maneuver)
-3. **Simplified Configuration**: Smart defaults with comprehensive customization options
-4. **Enhanced Telemetry**: Strategy selection reasoning, detailed timing, and metadata export
+All orchestration services depend only on `Arc<dyn PaladinPort>` (from `paladin-ports`) — they
+never import an LLM provider crate directly. Pick a pattern by the *shape* of the work:
 
-### When to Use Commander
+| Pattern | Service | Execution model | Use when |
+|---------|---------|-----------------|----------|
+| **Formation** | `FormationExecutionService` | Sequential, output N → input N+1 | Multi-step pipelines where each stage refines the previous |
+| **Phalanx** | `PhalanxExecutionService` | Concurrent, same input to all | Independent analyses you want fanned out in parallel |
+| **Campaign** | `CampaignExecutionService` | DAG / topological | Branching workflows with explicit dependencies |
+| **Chain of Command** | `ChainOfCommandExecutionService` | Hierarchical delegation | A commander decomposing work to specialists |
+| **Commander** | `Commander` / `CommanderBuilder` | Auto-routes to a pattern | The right pattern varies per request |
 
-- **Auto Mode**: When strategy may vary per request (e.g., user-driven workflows)
-- **Explicit Mode**: When strategy is known and fixed (e.g., production pipelines)
-- **Metadata Export**: When audit trails, cost tracking, or performance analysis needed
+> Conclave (mixture-of-experts), Council (turn-taking discussion), and Grove (semantic routing)
+> are additional patterns documented in [Battalion Patterns](battalion-patterns.md). The
+> declarative **Maneuver** flow DSL has its own guide: [Maneuver Flow DSL](maneuver-flow-dsl.md).
 
-### Architecture
+### Decision Flowchart
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                      Commander                                 │
-├──────────────────────────────────────────────────────────────┤
-│  Strategy Selection Logic (Auto Mode)                        │
-│    ↓                                                          │
-│  ┌─────────┬─────────┬──────────┬───────────┬─────────┐    │
-│  │Formation│ Phalanx │ Campaign │ChainOfCmd │ Maneuver│    │
-│  └─────────┴─────────┴──────────┴───────────┴─────────┘    │
-├──────────────────────────────────────────────────────────────┤
-│  Telemetry & Metadata Collection                             │
-│  - Execution times per Paladin                               │
-│  - Token usage breakdown                                     │
-│  - Strategy selection reasoning                              │
-│  - Optional JSON export                                      │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    start([Have a task + several Paladins]) --> q1{One fixed order of steps?}
+    q1 -->|Yes| formation[Formation — sequential]
+    q1 -->|No| q2{Steps independent, run together?}
+    q2 -->|Yes| phalanx[Phalanx — parallel]
+    q2 -->|No| q3{Explicit dependencies / branches?}
+    q3 -->|Yes| campaign[Campaign — DAG]
+    q3 -->|No| q4{A lead agent should delegate?}
+    q4 -->|Yes| chain[Chain of Command]
+    q4 -->|No| q5{Pattern varies per request?}
+    q5 -->|Yes| commander[Commander — auto-route]
+    q5 -->|No| formation
 ```
 
-## Quick Start
+---
 
-### Auto Mode (Recommended for Dynamic Workflows)
+## Formation — Sequential
+
+**Source:** `crates/paladin-battalion/src/formation_service.rs`
+
+Each Paladin's output becomes the next Paladin's input. Ideal for refinement pipelines
+(extract → analyze → write). If a stage fails, the configured `ErrorStrategy` decides whether
+the chain short-circuits (`FailFast`, the default) or continues.
 
 ```rust,ignore
-use paladin::application::services::battalion::commander::CommanderBuilder;
-use paladin::core::platform::container::battalion::BattalionStrategy;
+use paladin_battalion::formation_service::FormationExecutionService;
+use paladin_core::platform::container::battalion::formation::Formation;
+use paladin_core::platform::container::battalion::{BattalionConfig, ErrorStrategy};
+
+// `extractor`, `analyzer`, `writer` are Paladins built with PaladinBuilder.
+let config = BattalionConfig {
+    error_strategy: ErrorStrategy::FailFast, // first failure aborts the chain
+    ..Default::default()
+};
+let formation = Formation::new(vec![extractor, analyzer, writer], config)?;
+
+let service = FormationExecutionService::new(paladin_port);
+let result = service.execute(&formation, "Raw Q3 earnings data...").await?;
+
+println!("Final output: {}", result.output);
+```
+
+**Error handling / short-circuit:** with `ErrorStrategy::FailFast` the first failing stage stops
+the Formation and returns the error. With `ContinueOnError`, a failed stage is skipped and its
+input is passed through to the next stage. Keep chains short (≤5) for latency-sensitive paths —
+each stage is one sequential LLM round-trip.
+
+---
+
+## Phalanx — Parallel
+
+**Source:** `crates/paladin-battalion/src/phalanx_service.rs`
+
+Every Paladin receives the **same** input and runs concurrently on `tokio` tasks. Results are
+combined according to an `AggregationStrategy`. Concurrency is bounded by a semaphore configured
+via `max_concurrent_paladins` so you don't exceed LLM rate limits.
+
+```rust,ignore
+use paladin_battalion::phalanx_service::PhalanxExecutionService;
+use paladin_core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
+use paladin_core::platform::container::battalion::BattalionConfig;
+
+let config = BattalionConfig {
+    max_concurrency: Some(4), // cap concurrent Paladins
+    ..Default::default()
+};
+let phalanx = Phalanx::new(
+    vec![security_auditor, performance_analyst, style_checker],
+    AggregationStrategy::Concatenate,
+    config,
+)?;
+
+let service = PhalanxExecutionService::new(paladin_port);
+let result = service.execute(&phalanx, "Review this Rust module...").await?;
+```
+
+`AggregationStrategy` variants: `Concatenate` (join all outputs), `FirstSuccess` (first to
+finish wins), `Majority` (consensus), and `Custom`.
+
+---
+
+## Campaign — Graph / DAG
+
+**Source:** `crates/paladin-battalion/src/campaign_service.rs`
+
+Paladins are arranged in a directed acyclic graph. The service topologically sorts the graph so
+every upstream node completes before its downstream nodes start; independent branches run
+concurrently. `Campaign::build()` rejects cycles.
+
+```rust,ignore
+use paladin_battalion::campaign_service::CampaignExecutionService;
+use paladin_core::platform::container::battalion::campaign::Campaign;
+
+let campaign = Campaign::builder()
+    .add_node("ingest", ingest_paladin)
+    .add_node("analyze", analyze_paladin)
+    .add_node("report", report_paladin)
+    .add_edge("ingest", "analyze")   // analyze depends on ingest
+    .add_edge("analyze", "report")   // report depends on analyze
+    .config(config)
+    .build()?;                        // returns an error if the graph has a cycle
+
+let service = CampaignExecutionService::new(paladin_port);
+let result = service.execute(&campaign, "Start").await?;
+```
+
+For conditional branching, add multiple downstream edges from a node; the service executes each
+reachable branch in dependency order and aggregates the leaf outputs.
+
+---
+
+## Chain of Command — Hierarchical
+
+**Source:** `crates/paladin-battalion/src/chain_of_command_service.rs`
+
+A **commander** Paladin decomposes the task, routes sub-tasks to specialist (subordinate)
+Paladins, and synthesizes their outputs into a final answer.
+
+```rust,ignore
+use paladin_battalion::chain_of_command_service::ChainOfCommandExecutionService;
+use paladin_core::platform::container::battalion::chain_of_command::ChainOfCommand;
+
+let chain = ChainOfCommand::new(
+    commander_paladin,                              // supervisor
+    vec![backend_dev, frontend_dev, qa_engineer],   // subordinates
+    config,
+)?;
+
+let service = ChainOfCommandExecutionService::new(paladin_port);
+let result = service.execute(&chain, "Build a login feature").await?;
+```
+
+Give each subordinate a distinct `agent_description` so the commander can route accurately.
+
+---
+
+## Commander — Dynamic Strategy Routing
+
+**Source:** `crates/paladin-battalion/src/commander.rs`
+
+The Commander is a single entry-point that **selects a pattern automatically** (Auto mode) based
+on the input text and the number/capabilities of the Paladins, or runs an **explicit** strategy
+you name. It also collects rich telemetry and can export execution metadata to JSON.
+
+### Auto mode
+
+```rust,ignore
+use paladin_battalion::commander::CommanderBuilder;
+use paladin_core::platform::container::battalion::BattalionStrategy;
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let paladin_port = Arc::new(/* your PaladinPort implementation */);
 
-    let paladins = vec![
-        create_paladin("Analyzer", "data analysis"),
-        create_paladin("Processor", "data processing"),
-        create_paladin("Synthesizer", "report generation"),
-    ];
-
-    // Commander automatically selects best strategy
     let commander = CommanderBuilder::new(paladin_port)
         .strategy(BattalionStrategy::Auto)
-        .paladins(paladins)
+        .paladins(vec![analyzer, processor, synthesizer])
         .build()?;
 
-    let result = commander.execute("Analyze this data").await?;
+    let result = commander.execute("Analyze and summarize this report").await?;
 
-    println!("Strategy Selected: {:?}", result.strategy_used);
-    if let Some(reasoning) = &result.strategy_selection_reasoning {
-        println!("Reasoning: {}", reasoning);
+    println!("Strategy selected: {:?}", result.strategy_used);
+    if let Some(reason) = &result.strategy_selection_reasoning {
+        println!("Reasoning: {reason}");
     }
-
     Ok(())
 }
 ```
 
-### Explicit Strategy (Recommended for Production Pipelines)
+### Explicit strategy
 
 ```rust,ignore
 let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Formation)  // Explicit strategy
+    .strategy(BattalionStrategy::Formation) // force a specific pattern
     .paladins(pipeline_paladins)
     .build()?;
-
 let result = commander.execute(input).await?;
 ```
 
-## Strategy Selection
-
-### Auto Mode
-
-Commander analyzes input and Paladin configuration to select the optimal strategy.
-
-#### Selection Logic
-
-Commander applies rule-based heuristics in priority order. **Maneuver is explicit-only** and
-is never selected by Auto mode — use `.strategy(BattalionStrategy::Maneuver)` and `.flow(expr)` directly.
-
-Auto mode priority (first match wins):
+### Auto-mode heuristics (first match wins)
 
 | Priority | Strategy | Trigger keywords | Min Paladins |
-|----------|----------|-----------------|--------------|
-| 1 | **Conclave** | "synthesize", "synthesis", "compare", "expert panel", "perspectives", "consensus", "combine", "aggregate" | 3+ |
-| 2 | **Council** | "discuss", "debate", "deliberate", "collaborate", "brainstorm", "dialogue", "round table", "talk through" | 2+ |
-| 3 | **Grove** | "route", "routing", "best agent", "expertise", "most qualified", "dynamic routing", "intelligent assignment" | 2+ |
-| 4 | **Campaign** | "workflow", "graph", "conditional", "if-then", "depends on", "complex", "multi-stage" | any |
-| 5 | **Formation** | "sequential", "pipeline", "chain", "step by step", "one after", "in order", "first", "next" | any |
-| 6 | **Phalanx** | "parallel", "concurrent", "all at once", "simultaneously", "together", "in parallel" | any |
-| 7 | **ChainOfCommand** | "delegate", "hierarchy", "specialist", "coordinator", "manager", "senior" | any |
-| 8 | **Formation** | Fallback — no keywords matched | any |
+|----------|----------|------------------|--------------|
+| 1 | **Conclave** | synthesize, compare, perspectives, consensus, aggregate | 3+ |
+| 2 | **Council** | discuss, debate, deliberate, brainstorm, dialogue | 2+ |
+| 3 | **Grove** | route, best agent, expertise, most qualified | 2+ |
+| 4 | **Campaign** | workflow, graph, conditional, depends on, multi-stage | any |
+| 5 | **Formation** | sequential, pipeline, chain, step by step, in order | any |
+| 6 | **Phalanx** | parallel, concurrent, simultaneously, in parallel | any |
+| 7 | **ChainOfCommand** | delegate, hierarchy, specialist, coordinator | any |
+| 8 | **Formation** | fallback — no keywords matched | any |
 
-Selection typically completes in 0–5 ms; reasoning is included in `result.strategy_selection_reasoning`.
+`Maneuver` is **explicit-only** and is never chosen by Auto mode. Strategy selection typically
+adds ~0–5 ms of overhead; the decision is reported in `result.strategy_selection_reasoning`.
 
-#### Example: Auto Mode with Analysis
+### Metadata export
 
-```rust,ignore
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Auto)
-    .paladins(vec![
-        create_paladin("Worker1", "analysis"),
-        create_paladin("Worker2", "analysis"),
-        create_paladin("Worker3", "analysis"),
-    ])
-    .build()?;
-
-// Input suggests parallel execution
-let result = commander.execute("Process all items in parallel").await?;
-
-assert_eq!(result.strategy_used, BattalionStrategy::Phalanx);
-assert!(result.strategy_selection_reasoning.is_some());
-println!("Selected: {:?} because {}",
-    result.strategy_used,
-    result.strategy_selection_reasoning.unwrap()
-);
-```
-
-### Explicit Strategy Selection
-
-When the orchestration pattern is known, use explicit strategy:
+Point the Commander at a directory and it writes one JSON file per execution
+(`{strategy}_{timestamp}_{uuid}.json`) for audit, cost, and performance analysis.
 
 ```rust,ignore
-// Sequential processing pipeline
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Formation)
-    .paladins(vec![analyzer, enhancer, reviewer])
-    .build()?;
-
-// Parallel batch processing
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Phalanx)
-    .paladins(parallel_workers)
-    .build()?;
-
-// Conditional routing / graph workflow
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Campaign)
-    .paladins(workflow_paladins)
-    .build()?;
-
-// Expert synthesis (3+ Paladins with diverse expertise)
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Conclave)
-    .paladins(expert_paladins)
-    .build()?;
-
-// Collaborative turn-based discussion
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Council)
-    .paladins(council_paladins)
-    .build()?;
-
-// Intelligent routing to best-matched specialist
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Grove)
-    .paladins(specialists)
-    .build()?;
-    .build()?;
-```
-
-## Metadata Export
-
-Commander can export comprehensive execution metadata to JSON files for audit trails, performance analysis, and cost tracking.
-
-### Enabling Metadata Export
-
-```rust,ignore
+use paladin_core::platform::container::battalion::BattalionConfig;
 use std::path::PathBuf;
-use paladin::core::platform::container::battalion::BattalionConfig;
 
 let config = BattalionConfig::new("audited_battalion")
     .with_metadata_dir(PathBuf::from("./battalion_metadata"));
@@ -215,659 +266,172 @@ let commander = CommanderBuilder::new(paladin_port)
     .build()?;
 
 let result = commander.execute(input).await?;
-
-// Metadata automatically written to:
-// ./battalion_metadata/{strategy}_{timestamp}_{uuid}.json
+// Metadata written to ./battalion_metadata/{strategy}_{timestamp}_{uuid}.json
 ```
 
-### File Naming Convention
-
-Metadata files are named using a consistent pattern:
-
-```
-{strategy}_{timestamp}_{uuid}.json
-```
-
-**Components**:
-- `strategy`: Battalion strategy executed (Formation, Phalanx, Campaign, etc.)
-- `timestamp`: ISO 8601 format without separators (YYYYMMDD_HHMMSS)
-- `uuid`: First 8 characters of the Battalion execution UUID
-
-**Examples**:
-```
-Formation_20240315_143022_a1b2c3d4.json
-Phalanx_20240315_150815_f5e6d7c8.json
-Campaign_20240315_162341_9a8b7c6d.json
-```
-
-### JSON Structure
-
-The metadata JSON file contains comprehensive execution information:
-
-```json
-{
-  "battalion_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "battalion_name": "audited_battalion",
-  "strategy_used": "Formation",
-  "started_at": "2024-03-15T14:30:22.123456Z",
-  "completed_at": "2024-03-15T14:31:15.789012Z",
-  "duration_ms": 53666,
-  "status": "Completed",
-  "paladin_success_count": 3,
-  "paladin_failure_count": 0,
-  "total_tokens": 1520,
-  "paladin_results": [
-    {
-      "paladin_name": "Analyzer",
-      "status": "Success",
-      "output": "Analysis complete: 15 insights identified",
-      "execution_time_ms": 1500,
-      "token_count": 450,
-      "loop_count": 1,
-      "stop_reason": "Completed"
-    },
-    {
-      "paladin_name": "Enhancer",
-      "status": "Success",
-      "output": "Enhanced analysis with 8 recommendations",
-      "execution_time_ms": 1800,
-      "token_count": 620,
-      "loop_count": 1,
-      "stop_reason": "Completed"
-    },
-    {
-      "paladin_name": "Reviewer",
-      "status": "Success",
-      "output": "Final review: High quality, approved",
-      "execution_time_ms": 1200,
-      "token_count": 450,
-      "loop_count": 1,
-      "stop_reason": "Completed"
-    }
-  ],
-  "per_paladin_times": {
-    "Analyzer": 1500,
-    "Enhancer": 1800,
-    "Reviewer": 1200
-  },
-  "per_paladin_tokens": {
-    "Analyzer": {
-      "prompt_tokens": 150,
-      "completion_tokens": 300,
-      "total_tokens": 450
-    },
-    "Enhancer": {
-      "prompt_tokens": 220,
-      "completion_tokens": 400,
-      "total_tokens": 620
-    },
-    "Reviewer": {
-      "prompt_tokens": 150,
-      "completion_tokens": 300,
-      "total_tokens": 450
-    }
-  },
-  "strategy_selection_reasoning": "Input contains 'sequential' keyword",
-  "strategy_selection_time_ms": 2,
-  "final_output": "Complete analysis with recommendations and review",
-  "errors": []
-}
-```
-
-#### Field Reference
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `battalion_id` | UUID | Unique identifier for this execution |
-| `battalion_name` | String | Configuration name from BattalionConfig |
-| `strategy_used` | String | Actual strategy executed (may differ from requested in Auto mode) |
-| `started_at` | ISO 8601 | Execution start timestamp with microsecond precision |
-| `completed_at` | ISO 8601 | Execution completion timestamp |
-| `duration_ms` | Integer | Total execution time in milliseconds |
-| `status` | String | "Completed", "Failed", "PartialSuccess", "Timeout" |
-| `paladin_success_count` | Integer | Number of Paladins that completed successfully |
-| `paladin_failure_count` | Integer | Number of Paladins that failed |
-| `total_tokens` | Integer | Sum of all token usage across all Paladins |
-| `paladin_results` | Array | Detailed results for each Paladin execution |
-| `per_paladin_times` | Object | Execution time (ms) per Paladin by name |
-| `per_paladin_tokens` | Object | Token breakdown per Paladin (prompt, completion, total) |
-| `strategy_selection_reasoning` | String\|null | Auto mode decision explanation (null for explicit strategies) |
-| `strategy_selection_time_ms` | Integer | Overhead for strategy selection (0 for explicit strategies) |
-| `final_output` | String | Aggregated or final output from Battalion execution |
-| `errors` | Array | Error details if any Paladins failed |
-
-### Use Cases
-
-#### 1. Performance Analysis
-
-```rust,ignore
-let config = BattalionConfig::new("performance_profiling")
-    .with_metadata_dir(PathBuf::from("./profiling_data"));
-
-let result = commander.execute(input).await?;
-
-// Analyze metadata to identify bottlenecks
-// Find slow Paladins: Check per_paladin_times
-// Optimize token usage: Review per_paladin_tokens
-```
-
-#### 2. Cost Tracking
-
-```rust,ignore
-let config = BattalionConfig::new("cost_tracking")
-    .with_metadata_dir(PathBuf::from("./billing_data"));
-
-// Parse metadata files to calculate costs
-// Cost = total_tokens * model_cost_per_token
-// Per-Paladin cost breakdown available
-```
-
-#### 3. Audit Trails & Compliance
-
-```rust,ignore
-let config = BattalionConfig::new("production_api_handler")
-    .with_metadata_dir(PathBuf::from("/var/log/battalion"));
-
-// Every execution fully documented
-// Tamper-evident JSON with timestamps
-// Track who executed what and when
-```
-
-#### 4. Debugging & Troubleshooting
-
-```rust,ignore
-let config = BattalionConfig::new("debug_session")
-    .with_metadata_dir(PathBuf::from("./debug_logs"));
-
-// Capture execution state before failures
-// Per-Paladin outputs for inspection
-// Strategy selection reasoning for unexpected results
-```
-
-### Configuration via YAML
-
-```yaml
-# config.yml
-battalion:
-  metadata_output_dir: "./battalion_metadata"
-  default_timeout: 300
-  error_strategy: "RetryThenContinue"
-```
-
-```rust,ignore
-use config::Config;
-
-let settings = Config::builder()
-    .add_source(config::File::with_name("config.yml"))
-    .build()?;
-
-let metadata_dir = settings.get_string("battalion.metadata_output_dir")?;
-let config = BattalionConfig::new("from_config")
-    .with_metadata_dir(PathBuf::from(metadata_dir));
-```
-
-### Performance Impact
-
-- **File I/O**: Asynchronous, non-blocking
-- **Overhead**: <1ms for typical payloads
-- **Disk Usage**: ~1-5KB per execution (depends on Paladin count and output size)
-- **Production Ready**: Zero performance impact on critical path
-
-## Configuration
-
-### BattalionConfig
-
-Comprehensive configuration for Commander behavior:
-
-```rust,ignore
-use paladin::core::platform::container::battalion::{
-    BattalionConfig, ErrorStrategy, RetryPolicy
-};
-use std::path::PathBuf;
-
-let config = BattalionConfig::new("my_battalion")
-    .with_description("Processes critical data pipeline")
-    .with_timeout(300)  // 5 minutes
-    .with_error_strategy(ErrorStrategy::RetryThenContinue)
-    .with_retry_policy(RetryPolicy {
-        max_attempts: 3,
-        initial_delay_ms: 1000,
-        max_delay_ms: 30000,
-        backoff_multiplier: 2.0,
-    })
-    .with_metadata_dir(PathBuf::from("./checkpoints"));
-```
-
-#### Configuration Fields
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `name` | String | "default_commander_battalion" | Battalion identifier |
-| `description` | Option<String> | None | Human-readable description |
-| `timeout_seconds` | u64 | 300 | Maximum execution time |
-| `error_strategy` | ErrorStrategy | FailFast | How to handle Paladin failures |
-| `retry_policy` | RetryPolicy | 3 attempts | Retry configuration |
-| `metadata_output_dir` | Option<PathBuf> | None | Directory for metadata JSON export |
-
-### Error Handling Strategies
-
-#### FailFast (Default)
-
-Stops execution immediately on first Paladin failure.
-
-```rust,ignore
-let config = BattalionConfig::new("fail_fast")
-    .with_error_strategy(ErrorStrategy::FailFast);
-```
-
-**When to Use**:
-- All Paladins must succeed for valid result
-- Failures indicate fundamental issues (bad input, configuration errors)
-- Want fast failure feedback for debugging
-
-#### ContinueOnError
-
-Continues executing remaining Paladins despite failures.
-
-```rust,ignore
-let config = BattalionConfig::new("continue_on_error")
-    .with_error_strategy(ErrorStrategy::ContinueOnError);
-```
-
-**When to Use**:
-- Partial results are valuable (e.g., batch processing)
-- Independent tasks where some failures acceptable
-- Need complete execution report for analysis
-
-#### RetryThenContinue (Recommended for Production)
-
-Retries failed Paladins up to `max_attempts`, then continues with remaining Paladins.
-
-```rust,ignore
-let config = BattalionConfig::new("production")
-    .with_error_strategy(ErrorStrategy::RetryThenContinue)
-    .with_retry_policy(RetryPolicy {
-        max_attempts: 3,
-        initial_delay_ms: 1000,
-        max_delay_ms: 30000,
-        backoff_multiplier: 2.0,
-    });
-```
-
-**When to Use**:
-- Transient failures possible (network issues, rate limits, temporary unavailability)
-- Production environments requiring resilience
-- Want to maximize success rate without blocking entire workflow
-
-### Retry Policies
-
-```rust,ignore
-pub struct RetryPolicy {
-    pub max_attempts: u32,        // Total attempts (including initial)
-    pub initial_delay_ms: u64,    // First retry delay
-    pub max_delay_ms: u64,        // Cap on delay
-    pub backoff_multiplier: f64,  // Exponential backoff factor
-}
-```
-
-**Default Retry Policy**:
-```rust,ignore
-RetryPolicy {
-    max_attempts: 3,          // 3 total attempts
-    initial_delay_ms: 1000,   // 1 second first retry
-    max_delay_ms: 30000,      // 30 second cap
-    backoff_multiplier: 2.0,  // Double delay each retry
-}
-```
-
-**Retry Timing Example**:
-- Attempt 1: Immediate
-- Attempt 2: After 1 second
-- Attempt 3: After 2 seconds
-- If max_attempts = 4, Attempt 4: After 4 seconds
-
-## Telemetry & Monitoring
-
-### BattalionResult Telemetry
-
-```rust,ignore
-pub struct BattalionResult {
-    pub battalion_id: Uuid,
-    pub battalion_name: String,
-    pub started_at: DateTime<Utc>,
-    pub completed_at: DateTime<Utc>,
-    pub status: BattalionStatus,
-    pub strategy_used: BattalionStrategy,
-    pub strategy_selection_reasoning: Option<String>,
-    pub strategy_selection_time_ms: u64,
-    pub final_output: String,
-    pub paladin_success_count: usize,
-    pub paladin_failure_count: usize,
-    pub total_tokens: usize,
-    pub per_paladin_times: HashMap<String, u64>,
-    pub per_paladin_tokens: HashMap<String, TokenUsage>,
-    // ... additional fields
-}
-```
-
-### Monitoring Examples
-
-#### Execution Duration
-
-```rust,ignore
-let result = commander.execute(input).await?;
-
-let duration = result.completed_at
-    .signed_duration_since(result.started_at)
-    .num_milliseconds();
-
-println!("Execution time: {}ms", duration);
-```
-
-#### Success Rate
-
-```rust,ignore
-let success_rate = result.paladin_success_count as f64
-    / (result.paladin_success_count + result.paladin_failure_count) as f64
-    * 100.0;
-
-println!("Success rate: {:.1}%", success_rate);
-```
-
-#### Per-Paladin Metrics
-
-```rust,ignore
-for (name, time_ms) in &result.per_paladin_times {
-    let tokens = result.per_paladin_tokens
-        .get(name)
-        .map(|t| t.total_tokens)
-        .unwrap_or(0);
-
-    println!("{}: {}ms, {} tokens", name, time_ms, tokens);
-}
-```
-
-#### Integration with Metrics Systems
-
-```rust,ignore
-// Prometheus-style metrics
-metrics.record_battalion_duration(
-    result.battalion_name.as_str(),
-    duration as f64
-);
-
-metrics.record_strategy_selection(
-    result.strategy_used,
-    result.strategy_selection_time_ms
-);
-
-metrics.record_paladin_counts(
-    result.paladin_success_count,
-    result.paladin_failure_count
-);
-```
-
-## Best Practices
-
-### 1. Use Auto Mode for User-Driven Workflows
-
-```rust,ignore
-// Good: Flexibility for unpredictable inputs
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Auto)
-    .paladins(general_purpose_paladins)
-    .build()?;
-```
-
-### 2. Use Explicit Strategies for Production Pipelines
-
-```rust,ignore
-// Good: Predictability and performance
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Formation)  // Known pattern
-    .paladins(pipeline_paladins)
-    .build()?;
-```
-
-### 3. Configure Appropriate Timeouts
-
-```rust,ignore
-// Good: Realistic timeout with buffer
-let config = BattalionConfig::new("batch_processing")
-    .with_timeout(600);  // 10 minutes for batch job
-```
-
-**Consider**:
-- LLM response times (typically 1-30 seconds per request)
-- Number of Paladins and strategy (sequential vs. parallel)
-- Network latency and retries
-- Add 20-30% buffer for safety
-
-### 4. Use RetryThenContinue in Production
-
-```rust,ignore
-// Best practice for production
-let config = BattalionConfig::new("production")
-    .with_error_strategy(ErrorStrategy::RetryThenContinue)
-    .with_retry_policy(RetryPolicy {
-        max_attempts: 3,
-        initial_delay_ms: 1000,
-        max_delay_ms: 30000,
-        backoff_multiplier: 2.0,
-    });
-```
-
-### 5. Enable Metadata Export for Critical Systems
-
-```rust,ignore
-// Good: Audit trail for compliance
-let config = BattalionConfig::new("critical_system")
-    .with_metadata_dir(PathBuf::from("/var/log/battalion"));
-```
-
-### 6. Monitor Telemetry Regularly
-
-```rust,ignore
-let result = commander.execute(input).await?;
-
-// Log key metrics
-log::info!(
-    "Battalion {} completed in {}ms ({} success, {} failed)",
-    result.battalion_name,
-    result.completed_at.signed_duration_since(result.started_at).num_milliseconds(),
-    result.paladin_success_count,
-    result.paladin_failure_count
-);
-```
-
-### 7. Handle Errors Gracefully
-
-```rust,ignore
-match commander.execute(input).await {
-    Ok(result) => {
-        if result.paladin_failure_count > 0 {
-            log::warn!(
-                "Completed with {} failures",
-                result.paladin_failure_count
-            );
-        }
-        process_result(result);
-    }
-    Err(e) => {
-        log::error!("Battalion execution failed: {}", e);
-        handle_failure(e);
-    }
-}
-```
-
-## Troubleshooting
-
-### Issue: Strategy Selection Takes Too Long
-
-**Symptoms**: High `strategy_selection_time_ms` (>10ms)
-
-**Solutions**:
-1. Use explicit strategy instead of Auto mode
-2. Simplify input (avoid very long strings in keyword analysis)
-3. Consider caching strategy decisions for similar inputs
-
-```rust,ignore
-// If Auto mode adds too much overhead:
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Formation)  // Explicit, 0ms overhead
-    .paladins(paladins)
-    .build()?;
-```
-
-### Issue: Metadata Files Not Created
-
-**Possible Causes**:
-1. Directory doesn't exist or lacks write permissions
-2. `metadata_output_dir` not set in configuration
-3. Execution failed before metadata write
-
-**Solutions**:
-
-```rust,ignore
-use std::fs;
-
-// Ensure directory exists with correct permissions
-let metadata_dir = PathBuf::from("./battalion_metadata");
-fs::create_dir_all(&metadata_dir)?;
-
-let config = BattalionConfig::new("battalion")
-    .with_metadata_dir(metadata_dir);
-
-// Verify after execution
-let result = commander.execute(input).await?;
-println!("Battalion ID: {}", result.battalion_id);
-// Look for: {strategy}_{timestamp}_{first_8_chars_of_uuid}.json
-```
-
-### Issue: Unexpected Strategy Selected
-
-**Symptoms**: Auto mode selects different strategy than expected
-
-**Diagnosis**:
-
-```rust,ignore
-let result = commander.execute(input).await?;
-
-println!("Expected: X, Got: {:?}", result.strategy_used);
-if let Some(reasoning) = &result.strategy_selection_reasoning {
-    println!("Reasoning: {}", reasoning);
-}
-```
-
-**Solutions**:
-1. Review input for keyword conflicts
-2. Use explicit strategy if behavior must be deterministic
-3. Check Paladin count (affects heuristics)
-
-### Issue: High Token Usage
-
-**Symptoms**: `total_tokens` higher than expected
-
-**Diagnosis**:
-
-```rust,ignore
-let result = commander.execute(input).await?;
-
-println!("Total tokens: {}", result.total_tokens);
-for (name, tokens) in &result.per_paladin_tokens {
-    println!("  {}: {} tokens", name, tokens.total_tokens);
-}
-
-// Check for surprisingly high token usage
-let max_tokens = result.per_paladin_tokens.values()
-    .map(|t| t.total_tokens)
-    .max()
-    .unwrap_or(0);
-
-if max_tokens > expected_threshold {
-    println!("WARNING: High token usage detected");
-}
-```
-
-**Solutions**:
-1. Optimize Paladin system prompts (reduce verbosity)
-2. Trim input context before passing to Paladins
-3. Use smaller models for simple tasks
-4. Consider token limits in Paladin configuration
-
-### Issue: Timeouts
-
-**Symptoms**: BattalionStatus::Timeout in result
-
-**Diagnosis**:
-
-```rust,ignore
-let result = commander.execute(input).await;
-
-if let Ok(r) = result {
-    if r.status == BattalionStatus::Timeout {
-        println!("Timeout after {}s", config.timeout_seconds);
-
-        // Check which Paladins completed
-        println!("Completed: {}", r.paladin_success_count);
-        println!("Failed: {}", r.paladin_failure_count);
-    }
-}
-```
-
-**Solutions**:
-1. Increase timeout appropriately
-2. Check per-Paladin execution times for bottlenecks
-3. Consider using Phalanx (parallel) instead of Formation (sequential)
-4. Optimize slow Paladins
-
-```rust,ignore
-// Increase timeout
-let config = BattalionConfig::new("battalion")
-    .with_timeout(600);  // 10 minutes instead of 5
-
-// Or switch to parallel execution
-let commander = CommanderBuilder::new(paladin_port)
-    .strategy(BattalionStrategy::Phalanx)  // Parallel = faster
-    .paladins(paladins)
-    .build()?;
-```
-
-### Issue: Partial Failures
-
-**Symptoms**: `paladin_failure_count > 0` but execution completes
-
-**This is expected behavior with**:
-- `ErrorStrategy::ContinueOnError`
-- `ErrorStrategy::RetryThenContinue` (after retries exhausted)
-
-**Handling**:
-
-```rust,ignore
-let result = commander.execute(input).await?;
-
-if result.paladin_failure_count > 0 {
-    log::warn!(
-        "Partial success: {} of {} Paladins failed",
-        result.paladin_failure_count,
-        result.paladin_success_count + result.paladin_failure_count
-    );
-
-    // Check metadata for detailed error information
-    if let Some(metadata_dir) = config.metadata_output_dir {
-        println!("See metadata in: {}", metadata_dir.display());
-    }
-}
-```
-
-## See Also
-
-- [Battalion Documentation](battalion-patterns.md) - Detailed orchestration pattern documentation
-- [Paladin](paladin-agents.md) - Individual agent configuration
-- [Configuration Guide](../getting-started/configuration.md) - System-wide configuration
-- [Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) - Runnable code examples
+Each file records `battalion_id`, `strategy_used`, `duration_ms`, `total_tokens`,
+per-Paladin `paladin_results` (output, `execution_time_ms`, `token_count`, `stop_reason`),
+`per_paladin_times`, `per_paladin_tokens`, and `strategy_selection_reasoning`.
 
 ---
 
-**Version**: 0.1.0
-**Last Updated**: 2024-03-15
+## Job Scheduling
+
+**Source:** `crates/paladin-ports/src/output/scheduler_port.rs` and `queue_port.rs`
+
+The scheduler runs jobs on a **6-field cron** schedule; the queue ports manage asynchronous
+work items. A Redis-backed implementation is gated behind the root `redis-queue` feature.
+
+> **Prerequisites:** the Redis-backed queue requires the `redis-queue` feature and a running
+> Redis instance. Run `make dev` to start it (alongside MinIO, MySQL, Qdrant).
+
+### Scheduling a recurring job
+
+`JobSpec` carries a human label, a cron expression, and arbitrary metadata. `SchedulerPort`
+returns a `JobId` you can use to query status or cancel.
+
+```rust,ignore
+use paladin_ports::output::scheduler_port::{JobSpec, JobStatus, SchedulerPort};
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let scheduler: Arc<dyn SchedulerPort> = Arc::new(/* adapter */);
+    scheduler.start().await?;
+
+    // 6-field cron: sec min hour day month weekday
+    let spec = JobSpec::new("daily-digest", "0 0 9 * * *")        // every day at 09:00:00
+        .with_metadata("workflow", "news-digest");
+
+    let job_id = scheduler.schedule_job(spec).await?;
+
+    let status: JobStatus = scheduler.get_job_status(&job_id).await?;
+    println!("job {job_id:?} is {status:?}");
+
+    // Later: scheduler.cancel_job(&job_id).await?;
+    Ok(())
+}
+```
+
+`JobStatus` lifecycle: `Scheduled → Running → Completed` (or `Failed { .. }` / `Cancelled`).
+`JobInfo` (from `get_job_info`) adds `created_at`, `last_run`, `next_run`, `run_count`, and
+`failure_count`.
+
+### Queue management, retry, and timeouts
+
+The `FullQueuePort` trait composes enqueue/dequeue, batch, priority, and management operations
+(`pause_queue`, `resume_queue`, `retry_item`, `purge_failed`, `get_queue_stats`). Retry and
+timeout behavior for battalion execution is controlled by the `battalion.retry` and
+`battalion.default_timeout_seconds` configuration (see [Configuration Reference](#configuration-reference)).
+
+```rust,ignore
+use paladin_ports::output::queue_port::{FullQueuePort, QueueStats};
+
+let stats: QueueStats = queue.get_queue_stats("news-digest").await?;
+println!("pending: {}, in-flight: {}", stats.pending, stats.in_flight);
+
+// Retry a failed item or purge the dead-letter set
+queue.retry_item("news-digest", item_id).await?;
+let purged = queue.purge_failed("news-digest").await?;
+```
+
+---
+
+## Event and Trigger System
+
+**Source:** `crates/paladin-core/src/platform/container/trigger.rs`
+
+A **Trigger** binds an incoming event to an action when a `TriggerCondition` matches. Events are
+matched by `event_type_pattern`, optional `source_pattern`, payload conditions, minimum priority,
+and optional `TimeCondition` windows (active hours/days and a cooldown).
+
+### Defining a trigger condition
+
+```rust,ignore
+use paladin_core::platform::container::trigger::{
+    TriggerCondition, TriggerConfig, TimeCondition,
+};
+use paladin_core::platform::container::message::MessagePriority;
+
+let condition = TriggerCondition {
+    event_type_pattern: "critical_finding".to_string(),
+    source_pattern: Some("security-*".to_string()),
+    payload_conditions: vec![],
+    min_priority: Some(MessagePriority::High),
+    time_conditions: Some(TimeCondition {
+        active_hours: Some((9, 17)),       // only 09:00–17:00
+        active_days: Some(vec![1, 2, 3, 4, 5]), // Mon–Fri
+        cooldown_seconds: Some(300),       // at most once per 5 min
+    }),
+};
+
+let config = TriggerConfig {
+    max_retries: 3,
+    timeout_seconds: 60,
+    preserve_after_completion: false,
+    ttl_seconds: 3600,
+    processing_priority: MessagePriority::High,
+};
+```
+
+### Firing an event
+
+Agents and adapters fire events through the orchestrator bridge. `fire_event` returns an
+`EventDispatchResult` reporting how many triggers matched and their IDs.
+
+```rust,ignore
+use paladin_ports::output::orchestrator_port::{FireEventRequest, OrchestratorPort};
+
+let result = orchestrator
+    .fire_event(FireEventRequest {
+        event_type: "critical_finding".to_string(),
+        payload: serde_json::json!({ "severity": "high", "cve": "CVE-2025-0001" }),
+        source: "security-scanner".to_string(),
+    })
+    .await?;
+
+println!("{} trigger(s) fired: {:?}", result.triggered_count, result.trigger_ids);
+```
+
+A matched trigger initiates the bound workflow (e.g. scheduling a job or queuing a Paladin run).
+See the [Agent ↔ Orchestrator Bridge](agent-orchestrator-bridge.md) for end-to-end recipes that
+combine events, triggers, and agent execution.
+
+---
+
+## Configuration Reference
+
+All battalion behavior is configurable through the `battalion:` section of `config.yml`:
+
+```yaml
+battalion:
+  default_timeout_seconds: 300     # Per-battalion execution timeout
+  error_strategy: "fail_fast"      # fail_fast | continue_on_error | retry_then_continue
+  max_concurrent_paladins: 10      # Phalanx concurrency limit
+  metadata_output_enabled: false   # Write execution metadata to files
+
+  retry:                           # Used when error_strategy = retry_then_continue
+    max_attempts: 3
+    exponential_backoff: true
+    jitter: true
+    base_delay_ms: 100
+    max_delay_seconds: 10
+```
+
+Environment overrides follow the `APP_BATTALION_*` convention (e.g.
+`APP_BATTALION_ERROR_STRATEGY`, `APP_BATTALION_MAX_CONCURRENT_PALADINS`). See
+[Configuration](../getting-started/configuration.md) for the full schema.
+
+`BattalionResult` (returned by every service) exposes: `output: String`,
+`paladin_results: Vec<PaladinResult>`, `status: BattalionStatus`, `execution_time_ms: u64`,
+and `token_usage: TokenUsage`.
+
+---
+
+## See Also
+
+- [Agent ↔ Orchestrator Bridge](agent-orchestrator-bridge.md) — agents triggering workflows and workflows invoking agents, with use-case recipes.
+- [Battalion Patterns](battalion-patterns.md) — concise cheat sheet for all eight patterns including Conclave, Council, and Grove.
+- [Maneuver Flow DSL](maneuver-flow-dsl.md) — declarative composition of multiple patterns.
+- [Content Processing](content-processing.md) — feeding a content pipeline into agent analysis.
+- [Crate Map](../api-reference/crate-map.md) — where `paladin-battalion` and `paladin-ports` sit in the workspace.
