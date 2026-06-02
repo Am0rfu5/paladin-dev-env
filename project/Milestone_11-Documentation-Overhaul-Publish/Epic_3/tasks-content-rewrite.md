@@ -66,7 +66,7 @@ Update the file after completing each sub-task, not just after completing an ent
 - [x] 0.0 Create feature branch
   - [x] 0.1 Create and checkout a new branch: `git checkout -b feature/milestone-11-epic-3-content-rewrite`
 
-- [ ] 1.0 Fix all 227 broken internal cross-reference links and re-enable linkcheck (FR-1, FR-33)
+- [x] 1.0 Fix all 227 broken internal cross-reference links and re-enable linkcheck (FR-1, FR-33)
   - [x] 1.1 Temporarily enable linkcheck in `docs/book.toml` with `warning-policy = "warn"` (not "error") to capture the full broken-link list without failing the build
   - [ ] 1.2 Run `cd /workspace/docs && mdbook build 2>&1 | grep -i "warning\|error" > /tmp/linkcheck-report.txt` and review the full list
   - [x] 1.3 Fix the 14 broken links in `docs/src/introduction.md` (e.g., `QUICKSTART.md` → `getting-started/quickstart.md`, `INSTALLATION.md` → `getting-started/installation.md`, etc.) — FR-33
@@ -80,11 +80,11 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 1.11 Run `cd /workspace/docs && mdbook build` and confirm it exits 0 with zero linkcheck errors or warnings
   - [x] 1.12 Commit: `git commit -m "fix(docs): fix all 227 broken internal cross-reference links; re-enable linkcheck"`
 
-- [ ] 2.0 Add code-block check infrastructure (FR-2, FR-3)
-  - [ ] 2.1 Create `scripts/check-doc-examples.sh`: script that (a) extracts each fenced ` ```rust ` block from `docs/src/**/*.md` using `awk`, (b) creates a temp crate at `/tmp/paladin-doc-check-$$` with a `Cargo.toml` pointing at the workspace root, (c) writes each block as `src/main.rs` and runs `cargo check`, (d) reports the source file name and block number on failure, (e) cleans up via `trap` on exit
-  - [ ] 2.2 Make the script executable: `chmod +x scripts/check-doc-examples.sh`
-  - [ ] 2.3 Add a `check-doc-examples` target to the `Makefile` that runs `./scripts/check-doc-examples.sh`
-  - [ ] 2.4 Add the following hook to the `local` repo section of `.pre-commit-config.yaml` as a `pre-push` stage hook:
+- [x] 2.0 Add code-block check infrastructure (FR-2, FR-3)
+  - [x] 2. Create `scripts/check-doc-examples.sh`: script that (a) extracts each fenced ` ```rust ` block from `docs/src/**/*.md` using `awk`, (b) creates a temp crate at `/tmp/paladin-doc-check-$$` with a `Cargo.toml` pointing at the workspace root, (c) writes each block as `src/main.rs` and runs `cargo check`, (d) reports the source file name and block number on failure, (e) cleans up via `trap` on exit
+  - [x] 2. Make the script executable: `chmod +x scripts/check-doc-examples.sh`
+  - [x] 2. Add a `check-doc-examples` target to the `Makefile` that runs `./scripts/check-doc-examples.sh`
+  - [x] 2. Add the following hook to the `local` repo section of `.pre-commit-config.yaml` as a `pre-push` stage hook:
         ```yaml
         - id: check-doc-examples
           name: cargo check (doc code examples)
@@ -94,14 +94,14 @@ Update the file after completing each sub-task, not just after completing an ent
           pass_filenames: false
           always_run: true
         ```
-  - [ ] 2.5 Add the following step to the `build` job in `.github/workflows/docs.yml` (after the `Build docs` step):
+  - [x] 2. Add the following step to the `build` job in `.github/workflows/docs.yml` (after the `Build docs` step):
         ```yaml
         - name: Check doc code examples
           run: ./scripts/check-doc-examples.sh
         ```
-  - [ ] 2.6 Run `make check-doc-examples` locally to confirm the script runs and passes against current doc files (no examples yet — should exit 0)
-  - [ ] 2.7 Validate `.pre-commit-config.yaml` and `.github/workflows/docs.yml` YAML syntax
-  - [ ] 2.8 Commit: `git commit -m "feat(docs): add doc code-example check script, pre-push hook, and CI step"`
+  - [x] 2. Run `make check-doc-examples` locally to confirm the script runs and passes against current doc files (no examples yet — should exit 0)
+  - [x] 2. Validate `.pre-commit-config.yaml` and `.github/workflows/docs.yml` YAML syntax
+  - [x] 2. Commit: `git commit -m "feat(docs): add doc code-example check script, pre-push hook, and CI step"`
 
 - [ ] 3.0 Rewrite Getting Started guides (FR-4, FR-5, FR-6)
   - [ ] 3.1 Read `Cargo.toml` (root) for workspace crate names, versions, and feature flags; read `config.yml` for full configuration schema

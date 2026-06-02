@@ -78,3 +78,11 @@ repos:
         stages: [pre-push]
         pass_filenames: false
         always_run: true
+
+      - id: check-doc-examples
+        name: cargo check (doc code examples)
+        entry: ./scripts/check-doc-examples.sh
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true

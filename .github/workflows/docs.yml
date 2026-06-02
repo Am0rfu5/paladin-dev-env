@@ -41,6 +41,9 @@ jobs:
       - name: Build docs
         run: mdbook build docs/
 
+      - name: Check doc code examples
+        run: ./scripts/check-doc-examples.sh
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
