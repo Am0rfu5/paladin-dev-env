@@ -1,19 +1,12 @@
 # Stable Public API Contract
 
-**Version:** 0.2.0
-**Last Updated:** 2026-05-30
-**Epic:** Milestone 8, Epic 5 - Document Facade Crate Role and Finalize
+**Version:** 0.4.3
+**Last Updated:** 2026-06-02
 **Status:** Active
 
 > **Breaking Changes in v0.2.0**: This release includes two categories of breaking changes:
 >
-> 1. **Removed short-path aliases** (Epics 2 & 3): Zero-consumer `pub use` short-path aliases
->    have been removed from `src/lib.rs`. Port traits, memory adapters, builder types, and base
->    types that previously had `paladin::<Type>` short aliases now require crate-level import paths.
->
-> 2. **Module rename** (Epic 4): The `application::use_cases` module path has been renamed to
->    `application::services`. Any import path containing `::use_cases::` must be updated to
->    `::services::`.
+> **v0.4.3 API Note**: The canonical import path for all port traits is `crates/paladin-ports/`. Short-path aliases (`paladin::<Type>`) have been removed from `src/lib.rs`. Use full crate-level import paths (e.g. `use paladin_ports::output::llm_port::LlmPort`). The `application::use_cases` module path was renamed to `application::services` in a prior release.
 >
 > See [CHANGELOG](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md) for the complete migration tables.
 
@@ -329,7 +322,7 @@ We use [`cargo-public-api`](https://github.com/Enselic/cargo-public-api) to trac
 ./scripts/extract-public-api.sh project/current-exports.txt
 ```
 
-This creates a baseline snapshot of all public items (16,471+ items as of v0.1.0).
+This creates a baseline snapshot of all public items (items as of v0.4.3).
 
 #### Check for API Changes (CI)
 
@@ -370,10 +363,10 @@ API surface changes are automatically detected in CI (`.github/workflows/ci.yml`
 cargo public-api --simplified | less
 
 # Compare against previous version
-cargo public-api --diff-git-checkouts v0.1.0 v0.2.0
+cargo public-api --diff-git-checkouts v0.3.0 v0.4.3
 
 # Generate HTML diff
-cargo public-api --diff-git-checkouts v0.1.0 v0.2.0 --output-format markdown
+cargo public-api --diff-git-checkouts v0.3.0 v0.4.3 --output-format markdown
 ```
 
 ---
@@ -433,7 +426,7 @@ A: Port traits are runtime-agnostic. The default implementations use Tokio, but 
 
 A: **Yes**, all error enums are marked `#[non_exhaustive]`, allowing new variants in minor versions. Always use a wildcard match:
 
-```rust
+```rust,ignore
 match error {
     PaladinError::ConfigurationError(_) => { /* ... */ },
     PaladinError::Timeout(_) => { /* ... */ },
@@ -794,8 +787,8 @@ When we make breaking changes in a major version bump, we will:
 
 ### Deprecation Example
 
-```rust
-// Version 0.1.0 - Original API
+```rust,ignore
+// Version 0.4.3 - Original API
 pub fn execute_paladin(paladin: &Paladin) -> Result<String, Error> {
     // ...
 }
@@ -827,7 +820,7 @@ pub trait PaladinPort {
 
 When possible, we provide compatibility shims during the deprecation period:
 
-```rust
+```rust,ignore
 // Compatibility shim example
 #[deprecated(since = "0.2.0", note = "use PaladinBuilder instead")]
 pub fn create_paladin(name: &str, model: &str) -> Paladin {
@@ -890,7 +883,7 @@ For questions about API stability:
 
 **Last Updated**: 2026-04-16
 **Document Version**: 1.1
-**Paladin Version**: 0.1.0
+**Paladin Version: 0.4.3
 **Maintainers**: @DF3NDR
 
 ---
@@ -906,7 +899,7 @@ This document defines how Paladin versions its workspace crates and what constit
 Paladin uses lockstep versioning for the initial release line.
 
 - Scope: all public crates in this workspace.
-- Current baseline: 0.1.0.
+- Current baseline: 0.4.3.
 - Milestone 7 target: 0.2.0 lockstep for publishable crates.
 - Rule: a single release version is applied to all public crates in the same release cycle.
 

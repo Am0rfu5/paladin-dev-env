@@ -2,6 +2,29 @@
 
 Comprehensive testing guide for Paladin development with TDD practices, coverage requirements, and testing patterns.
 
+## Quick Reference: Test Commands
+
+```bash
+# Unit tests (all workspace crates)
+cargo test --workspace --lib
+
+# All tests (unit + integration)
+make test-all
+
+# Integration tests with Docker services (Redis, MinIO, MySQL)
+make test-integration-docker
+
+# Doc tests only
+cargo test --doc
+
+# Specific integration test file
+cargo test --test paladin_tests
+
+# Run with feature flags
+cargo test --features "integration-tests"
+cargo test --features "live-api-tests"   # requires real API keys
+```
+
 ## Table of Contents
 
 - [Testing Philosophy](#testing-philosophy)
@@ -72,7 +95,7 @@ tests/
 
 ### Test Module Naming
 
-```rust
+```rust,ignore
 // Unit tests inline with code
 #[cfg(test)]
 mod tests {
@@ -96,7 +119,7 @@ async fn test_redis_queue_operations() {
 
 ### Basic Unit Test Pattern
 
-```rust
+```rust,ignore
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -143,7 +166,7 @@ mod tests {
 
 ### Testing Async Code
 
-```rust
+```rust,ignore
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -168,7 +191,7 @@ mod tests {
 
 ### Property-Based Testing
 
-```rust
+```rust,ignore
 use proptest::prelude::*;
 
 proptest! {
@@ -196,7 +219,7 @@ proptest! {
 
 ### Redis Integration Test
 
-```rust
+```rust,ignore
 // tests/integration/redis_queue_test.rs
 
 use paladin::infrastructure::adapters::queue::RedisQueueAdapter;
@@ -227,7 +250,7 @@ async fn test_redis_queue_enqueue_dequeue() {
 
 ### MinIO Integration Test
 
-```rust
+```rust,ignore
 // tests/integration/minio_storage_test.rs
 
 use paladin::infrastructure::adapters::file_storage::MinioAdapter;
@@ -264,7 +287,7 @@ async fn test_minio_upload_download() {
 
 ### LLM Provider Mock Test
 
-```rust
+```rust,ignore
 // tests/integration/llm_provider_test.rs
 
 use wiremock::{MockServer, Mock, ResponseTemplate};
@@ -311,7 +334,7 @@ async fn test_openai_adapter_with_mock_server() {
 
 ### End-to-End Content Lifecycle
 
-```rust
+```rust,ignore
 // tests/functional/content_lifecycle_test.rs
 
 #[tokio::test]
@@ -339,7 +362,7 @@ async fn test_complete_content_processing_flow() {
 
 ### Battalion Execution Flow
 
-```rust
+```rust,ignore
 // tests/functional/battalion_execution_test.rs
 
 #[tokio::test]
@@ -399,7 +422,7 @@ target-dir = "target/llvm-cov-target"
 
 ### Exclude from Coverage
 
-```rust
+```rust,ignore
 // Exclude test utilities from coverage
 #[cfg(not(tarpaulin_include))]
 pub fn test_helper() {
@@ -411,7 +434,7 @@ pub fn test_helper() {
 
 ### Mock LLM Port
 
-```rust
+```rust,ignore
 // tests/lib.rs
 
 pub struct MockLlmPort {
@@ -481,7 +504,7 @@ impl LlmPort for MockLlmPort {
 
 ### Test Fixtures
 
-```rust
+```rust,ignore
 // tests/lib.rs
 
 pub fn create_test_paladin(llm_port: Arc<dyn LlmPort>, name: &str) -> Paladin {

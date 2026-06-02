@@ -32,15 +32,37 @@ Before implementing a new provider:
 
 ### Step 1: Create Adapter File
 
-Create a new file in `src/infrastructure/adapters/llm/`:
+LLM provider adapters live in the `paladin-llm` crate, gated by a feature flag:
 
 ```bash
-touch src/infrastructure/adapters/llm/myprovider_adapter.rs
+# Create provider directory and adapter
+mkdir -p crates/paladin-llm/src/myprovider
+touch crates/paladin-llm/src/myprovider/mod.rs
+```
+
+Add a feature flag to `crates/paladin-llm/Cargo.toml`:
+```toml
+[features]
+myprovider = []
+```
+
+Then gate the module in `crates/paladin-llm/src/lib.rs`:
+```rust,ignore
+#[cfg(feature = "myprovider")]
+pub mod myprovider;
+```
+
+The root `paladin-ai` crate then exposes a top-level feature:
+```toml
+# Cargo.toml (root)
+[features]
+llm-myprovider = ["paladin-llm/myprovider"]
+llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek", "llm-myprovider"]
 ```
 
 ### Step 2: Define Configuration Struct
 
-```rust
+```rust,ignore
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -101,7 +123,7 @@ impl MyProviderConfig {
 
 ### Step 3: Implement Adapter Struct
 
-```rust
+```rust,ignore
 use crate::paladin_ports::output::llm_port::{
     LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities
 };
@@ -142,7 +164,7 @@ impl MyProviderAdapter {
 
 ### Step 4: Implement LlmPort Trait
 
-```rust
+```rust,ignore
 #[async_trait]
 impl LlmPort for MyProviderAdapter {
     async fn generate(&self, request: &LlmRequest) -> Result<LlmResponse, LlmError> {
@@ -197,17 +219,17 @@ impl LlmPort for MyProviderAdapter {
 
 ### Step 5: Add to Module
 
-Update `src/infrastructure/adapters/llm/mod.rs`:
+Update `crates/paladin-llm/src/lib.rs`:
 
-```rust
+```rust,ignore
 pub mod myprovider_adapter;
 ```
 
 ### Step 6: Update Provider Factory
 
-Add to `src/infrastructure/adapters/llm/provider_factory.rs`:
+Add to `crates/paladin-llm/src/provider_factory.rs`:
 
-```rust
+```rust,ignore
 "myprovider" => {
     let config = MyProviderConfig::from_env()
         .map_err(|e| LlmError::ConfigurationError(e))?;
@@ -234,7 +256,7 @@ See [adapter_template.rs](https://github.com/DF3NDR/paladin-dev-env/blob/main/ex
 
 Create `tests/unit/llm/myprovider_adapter_test.rs`:
 
-```rust
+```rust,ignore
 use mockito::Server;
 use paladin::infrastructure::adapters::llm::myprovider_adapter::*;
 
@@ -294,7 +316,7 @@ Create `tests/integration/llm/myprovider_integration_test.rs` with tests marked 
 
 Add comprehensive rustdoc to all public items:
 
-```rust
+```rust,ignore
 /// MyProvider LLM adapter
 ///
 /// Implements the LlmPort trait for MyProvider's API.
@@ -382,12 +404,12 @@ Brief description of the provider and its strengths.
 ### 1. Incomplete Error Handling
 
 ❌ **Bad:**
-```rust
+```rust,ignore
 let response = self.client.post(&url).send().await.unwrap();
 ```
 
 ✅ **Good:**
-```rust
+```rust,ignore
 let response = self.client.post(&url)
     .send()
     .await
@@ -398,7 +420,7 @@ let response = self.client.post(&url)
 
 Implement exponential backoff for rate limits:
 
-```rust
+```rust,ignore
 async fn make_request_with_retry(&self, request: Request) -> Result<Response, LlmError> {
     let mut attempt = 0;
     loop {

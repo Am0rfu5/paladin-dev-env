@@ -25,7 +25,7 @@ We are committed to providing a welcoming and inclusive environment. Please be r
 
 ### Prerequisites
 
-- **Rust**: 1.70 or later (install via [rustup](https://rustup.rs/))
+- **Rust**: 1.85 or later (MSRV; install via [rustup](https://rustup.rs/))
 - **Docker**: For running integration tests with Redis, MinIO, MySQL
 - **Git**: For version control
 
@@ -34,7 +34,7 @@ We are committed to providing a welcoming and inclusive environment. Please be r
 ```bash
 # Clone the repository
 git clone https://github.com/DF3NDR/paladin-dev-env.git
-cd paladin
+cd paladin-dev-env
 
 # Build the project
 cargo build
@@ -42,8 +42,8 @@ cargo build
 # Run unit tests
 cargo test
 
-# Start service dependencies
-make dev  # or docker-compose -f docker/docker-compose.dev.yml up -d
+# Start service dependencies (Redis, MinIO, MySQL)
+make dev  # or: docker-compose -f docker/docker-compose.dev.yml up -d
 ```
 
 ## Git Hooks (pre-commit)
@@ -212,7 +212,7 @@ Test individual functions, methods, and modules in isolation.
 
 **Example**:
 
-```rust
+```rust,ignore
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -253,7 +253,7 @@ Test interactions between multiple components, including external services (data
 
 **Example**:
 
-```rust
+```rust,ignore
 // tests/integration/garrison_tests.rs
 #[tokio::test]
 async fn test_sqlite_garrison_persistence() {
@@ -280,7 +280,7 @@ Test CLI output consistency using the [`insta`](https://insta.rs/) crate.
 
 **Example**:
 
-```rust
+```rust,ignore
 use insta::assert_snapshot;
 
 #[test]
@@ -396,7 +396,7 @@ Performance benchmarks using Criterion.
 
 **Example**:
 
-```rust
+```rust,ignore
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn benchmark_formation(c: &mut Criterion) {
@@ -457,7 +457,7 @@ cargo tarpaulin --out Html
 
 For testing code that depends on external services, create mocks:
 
-```rust
+```rust,ignore
 use async_trait::async_trait;
 
 struct MockLlmAdapter {
@@ -538,7 +538,7 @@ cargo clippy --fix
 
 All public items must have documentation:
 
-```rust
+```rust,ignore
 /// Creates a new Paladin agent with the specified configuration.
 ///
 /// # Arguments
@@ -805,7 +805,7 @@ Changes to any of the following require the API change process:
    - Get consensus from maintainers
 
 2. **Add Deprecation Warning (for removals)**
-   ```rust
+   ```rust,ignore
    #[deprecated(since = "0.2.0", note = "Use `NewType` instead. See MIGRATION.md for details.")]
    pub struct OldType { /* ... */ }
    ```
@@ -864,7 +864,7 @@ If CI fails due to API changes:
 ### Examples of API Changes
 
 **✅ Non-Breaking - Adding Optional Method**:
-```rust
+```rust,ignore
 pub trait LlmPort: Send + Sync {
     async fn generate(&self, request: &LlmRequest) -> Result<LlmResponse, LlmError>;
 
@@ -877,7 +877,7 @@ pub trait LlmPort: Send + Sync {
 ```
 
 **❌ Breaking - Changing Method Signature**:
-```rust
+```rust,ignore
 // Old
 async fn generate(&self, prompt: &str) -> Result<String, LlmError>;
 
@@ -886,7 +886,7 @@ async fn generate(&self, request: &LlmRequest) -> Result<LlmResponse, LlmError>;
 ```
 
 **✅ Correct Way - Deprecate Then Remove**:
-```rust
+```rust,ignore
 // Version 0.1.0 - Original
 async fn generate(&self, prompt: &str) -> Result<String, LlmError>;
 

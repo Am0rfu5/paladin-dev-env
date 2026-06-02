@@ -55,14 +55,15 @@ Paladin uses **Hexagonal Architecture** (Ports and Adapters) to enable pluggable
 
 ### Existing Ports
 
-| Port | Location | Purpose |
-|------|----------|---------|
-| `LlmPort` | `application/ports/output/llm_port.rs` | LLM provider abstraction |
-| `GarrisonPort` | `application/ports/output/garrison_port.rs` | Memory storage |
-| `ArsenalPort` | `application/ports/output/arsenal_port.rs` | Tool execution |
-| `CitadelPort` | `application/ports/output/citadel_port.rs` | State persistence |
-| `FileStoragePort` | `application/ports/output/file_storage_port.rs` | File storage |
-| `NotificationPort` | `application/ports/output/notification_port.rs` | Notifications |
+| Port | Crate / Location | Purpose |
+|------|-----------------|---------|
+| `LlmPort` | `crates/paladin-ports/src/output/llm_port.rs` | LLM provider abstraction |
+| `GarrisonPort` | `crates/paladin-ports/src/output/garrison_port.rs` | Short-term memory |
+| `LongTermGarrisonPort` | `crates/paladin-ports/src/output/garrison_port.rs` | Vector-backed long-term memory |
+| `ArsenalPort` | `crates/paladin-ports/src/output/arsenal_port.rs` | Tool / armament execution |
+| `CitadelPort` | `crates/paladin-ports/src/output/citadel_port.rs` | State persistence |
+| `FileStoragePort` | `crates/paladin-ports/src/output/file_storage_port.rs` | Object/file storage |
+| `NotificationPort` | `crates/paladin-ports/src/output/notification_port.rs` | Notifications |
 
 ### Port Requirements
 
@@ -76,8 +77,9 @@ All ports must be:
 
 ### 1. Define Custom LLM Provider
 
-```rust
-// src/infrastructure/adapters/llm/custom_llm_adapter.rs
+```rust,ignore
+// crates/paladin-llm/src/custom/mod.rs
+// Enable via a feature flag in crates/paladin-llm/Cargo.toml
 
 use async_trait::async_trait;
 use crate::paladin_ports::output::llm_port::{LlmPort, Message, LlmResponse};
@@ -182,7 +184,7 @@ impl CustomLlmAdapter {
 
 ### 2. Handle Tool Calling
 
-```rust
+```rust,ignore
 #[derive(Debug, Deserialize)]
 struct CustomToolCall {
     id: String,
@@ -225,8 +227,8 @@ llm:
 
 ### 4. Registration
 
-```rust
-// src/infrastructure/adapters/llm/mod.rs
+```rust,ignore
+// crates/paladin-llm/src/mod.rs  (feature-gated provider registration)
 
 pub fn create_llm_adapter(config: &LlmConfig) -> Result<Arc<dyn LlmPort>> {
     match config.provider.as_str() {
@@ -246,8 +248,8 @@ pub fn create_llm_adapter(config: &LlmConfig) -> Result<Arc<dyn LlmPort>> {
 
 ### 1. Implement Custom Storage Backend
 
-```rust
-// src/infrastructure/adapters/garrison/redis_garrison.rs
+```rust,ignore
+// crates/paladin-memory/src/garrison/redis_garrison.rs
 
 use async_trait::async_trait;
 use redis::AsyncCommands;
@@ -338,7 +340,7 @@ impl GarrisonPort for RedisGarrison {
 
 ### 2. Add Vector Search Support
 
-```rust
+```rust,ignore
 use crate::infrastructure::embeddings::EmbeddingProvider;
 
 pub struct VectorGarrison {
@@ -383,9 +385,8 @@ impl GarrisonPort for VectorGarrison {
 
 ### 1. Create Custom Tool
 
-```rust
+```rust,ignore
 // src/infrastructure/adapters/arsenal/weather_tool.rs
-
 use async_trait::async_trait;
 use crate::paladin_ports::output::arsenal_port::{ArsenalPort, ToolDefinition};
 
@@ -458,7 +459,7 @@ impl ArsenalPort for WeatherTool {
 
 ### 2. Implement MCP Tool Wrapper
 
-```rust
+```rust,ignore
 // src/infrastructure/adapters/arsenal/mcp_wrapper.rs
 
 pub struct McpToolWrapper {
@@ -496,7 +497,7 @@ impl ArsenalPort for McpToolWrapper {
 
 ### 1. Implement Custom Persistence
 
-```rust
+```rust,ignore
 // src/infrastructure/adapters/citadel/s3_citadel.rs
 
 use async_trait::async_trait;
@@ -564,7 +565,7 @@ impl CitadelPort for S3Citadel {
 
 ### Unit Tests
 
-```rust
+```rust,ignore
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -598,7 +599,7 @@ mod tests {
 
 ### Integration Tests
 
-```rust
+```rust,ignore
 #[tokio::test]
 async fn test_garrison_roundtrip() {
     let garrison = RedisGarrison::new("redis://localhost:6379", "test").unwrap();
@@ -645,7 +646,7 @@ serde_json = "1.0"
 
 ### 2. Documentation
 
-```rust
+```rust,ignore
 //! # Custom LLM Adapter for Paladin
 //!
 //! This adapter provides integration with CustomProvider's LLM API.
@@ -659,7 +660,7 @@ serde_json = "1.0"
 //!
 //! ## Usage
 //!
-//! ```rust
+//! ```rust,ignore
 //! use paladin_custom_llm::CustomLlmAdapter;
 //!
 //! let adapter = CustomLlmAdapter::new(api_key, base_url);
