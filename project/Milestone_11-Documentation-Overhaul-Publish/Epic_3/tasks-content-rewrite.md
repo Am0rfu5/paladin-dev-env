@@ -127,27 +127,27 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.8 Run `cd /workspace/docs && mdbook build` — confirm Mermaid diagrams render and zero linkcheck warnings
   - [x] 4.9 Commit: `git commit -m "docs(architecture): update all architecture docs for v0.4.3 workspace structure"`
 
-- [ ] 5.0 Rewrite User Guides — full rewrites (FR-12, FR-13, FR-14, FR-15, FR-16, FR-17)
-  - [ ] 5.1 Read `crates/paladin-core/src/` and `crates/paladin-ports/src/` for `PaladinBuilder`, `PaladinExecutionService`, and `PaladinStatus` current signatures
-  - [ ] 5.2 Rewrite `docs/src/user-guides/paladin-agents.md`: `PaladinBuilder` fluent API, `PaladinExecutionService`, `PaladinStatus` lifecycle, working end-to-end example
-  - [ ] 5.3 Verify `paladin-agents.md` examples pass `make check-doc-examples`
-  - [ ] 5.4 Read `crates/paladin-battalion/src/` for Formation, Phalanx, Campaign, ChainOfCommand, and Commander current module paths and type signatures
-  - [ ] 5.5 Rewrite `docs/src/user-guides/battalion-patterns.md`: all five patterns with current module paths, when-to-use guide, working example per pattern
-  - [ ] 5.6 Verify `battalion-patterns.md` examples pass `make check-doc-examples`
-  - [ ] 5.7 Read `crates/paladin-ports/src/` for `ArsenalPort` trait and MCP adapter source for tool discovery lifecycle
-  - [ ] 5.8 Rewrite `docs/src/user-guides/arsenal-tools.md`: MCP STDIO and SSE adapters, `ArsenalPort` trait, tool discovery lifecycle, `config.yml` `arsenal.mcp_servers` section, working example
-  - [ ] 5.9 Verify `arsenal-tools.md` examples pass `make check-doc-examples`
-  - [ ] 5.10 Read `crates/paladin-memory/src/` for `GarrisonPort`, in-memory and SQLite adapter implementations
-  - [ ] 5.11 Rewrite `docs/src/user-guides/garrison-memory.md`: both garrison adapters, `GarrisonPort` trait methods, memory lifecycle, `config.yml` `garrison` section, working example
-  - [ ] 5.12 Verify `garrison-memory.md` examples pass `make check-doc-examples`
-  - [ ] 5.13 Read `docker/docker-compose.dev.yml` to confirm Qdrant service name and port; read Sanctum adapter source in `crates/paladin-memory/src/`
-  - [ ] 5.14 Rewrite `docs/src/user-guides/sanctum-vector-memory.md`: Sanctum vector store overview, current adapter, configuration, semantic search usage, working example with `make dev` prerequisite callout
-  - [ ] 5.15 Verify `sanctum-vector-memory.md` examples pass `make check-doc-examples`
-  - [ ] 5.16 Read Herald output formatting source in `crates/paladin-core/src/` or wherever `Herald` is implemented
-  - [ ] 5.17 Rewrite `docs/src/user-guides/herald-output.md`: output formatting system, available formatters, custom formatter example, working example
-  - [ ] 5.18 Verify `herald-output.md` examples pass `make check-doc-examples`
-  - [ ] 5.19 Run `cd /workspace/docs && mdbook build` — zero errors and zero linkcheck warnings
-  - [ ] 5.20 Commit: `git commit -m "docs(user-guides): full rewrite of paladin-agents, battalion-patterns, arsenal-tools, garrison-memory, sanctum, herald"`
+- [x] 5.0 Rewrite User Guides — full rewrites (FR-12, FR-13, FR-14, FR-15, FR-16, FR-17)
+  - [x] 5.1 Read `crates/paladin-core/src/` and `crates/paladin-ports/src/` for `PaladinBuilder`, `PaladinExecutionService`, and `PaladinStatus` current signatures
+  - [x] 5.2 Rewrite `docs/src/user-guides/paladin-agents.md`: `PaladinBuilder` fluent API, `PaladinExecutionService`, `PaladinStatus` lifecycle, working end-to-end example
+  - [x] 5.3 Verify `paladin-agents.md` examples pass `make check-doc-examples`
+  - [x] 5.4 Read `crates/paladin-battalion/src/` for Formation, Phalanx, Campaign, ChainOfCommand, and Commander current module paths and type signatures
+  - [x] 5.5 Rewrite `docs/src/user-guides/battalion-patterns.md`: all eight patterns with current module paths, Commander auto-router heuristics, working example per pattern
+  - [x] 5.6 Verify `battalion-patterns.md` examples pass `make check-doc-examples`
+  - [x] 5.7 Read `crates/paladin-ports/src/` for `ArsenalPort` trait and MCP adapter source for tool discovery lifecycle
+  - [x] 5.8 Rewrite `docs/src/user-guides/arsenal-tools.md`: MCP STDIO and SSE adapters, `ArsenalPort` trait, tool discovery lifecycle, `config.yml` `arsenal.mcp_servers` section, working example
+  - [x] 5.9 Verify `arsenal-tools.md` examples pass `make check-doc-examples`
+  - [x] 5.10 Read `crates/paladin-memory/src/` for `GarrisonPort`, in-memory and SQLite adapter implementations
+  - [x] 5.11 Rewrite `docs/src/user-guides/garrison-memory.md`: both garrison adapters, `GarrisonPort` trait methods, memory lifecycle, `config.yml` `garrison` section, working example
+  - [x] 5.12 Verify `garrison-memory.md` examples pass `make check-doc-examples`
+  - [x] 5.13 Read `docker/docker-compose.dev.yml` to confirm Qdrant service name and port; read Sanctum adapter source in `crates/paladin-memory/src/`
+  - [x] 5.14 Rewrite `docs/src/user-guides/sanctum-vector-memory.md`: Sanctum vector store overview, current adapter, configuration, semantic search usage, working example with `make dev` prerequisite callout
+  - [x] 5.15 Verify `sanctum-vector-memory.md` examples pass `make check-doc-examples`
+  - [x] 5.16 Read Herald output formatting source in `crates/paladin-core/src/` or wherever `Herald` is implemented
+  - [x] 5.17 Rewrite `docs/src/user-guides/herald-output.md`: output formatting system, available formatters, custom formatter example, working example
+  - [x] 5.18 Verify `herald-output.md` examples pass `make check-doc-examples`
+  - [x] 5.19 Run `cd /workspace/docs && mdbook build` — zero errors and zero linkcheck warnings
+  - [x] 5.20 Commit: `git commit -m "docs(user-guides): full rewrite of paladin-agents, battalion-patterns, arsenal-tools, garrison-memory, sanctum, herald"`
 
 - [ ] 6.0 Update remaining User Guide files in-place
   - [ ] 6.1 Update `docs/src/user-guides/orchestration.md` — current Commander routing and orchestration patterns
