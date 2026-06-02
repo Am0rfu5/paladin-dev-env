@@ -85,13 +85,13 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.5 Write **Content Delivery** section: `DeliverContentUseCase` / `content_delivery_port`, notification cross-link to bridge guide (FR-14)
   - [x] 3.6 Ran `make check-doc-examples` — 0 failed. Also corrected `crate-map.md`: removed non-compiled `ContentFilter` from key exports; marked `web-scraping`/`rss` flags as reserved/not-implemented
 
-- [ ] 4.0 Write the agent↔orchestrator bridge guide — `user-guides/agent-orchestrator-bridge.md` (FR-15–FR-19)
-  - [ ] 4.1 Verify `OrchestratorPort`, `BridgeAction`, `BridgePolicy`, request types, and `PaladinExecutorPort`/`BattalionPort` against source
-  - [ ] 4.2 Write **Agents Triggering Orchestration** section: bridge actions, tool-based invocation, `BridgePolicy` caps, error handling, sequenceDiagram, full example (FR-16)
-  - [ ] 4.3 Write **Orchestration Invoking Agents** section: workflow→agent call, context passing, returning output, full example (FR-17)
-  - [ ] 4.4 Write **Configuration Examples** section with `config.yml` bridge snippets (FR-18)
-  - [ ] 4.5 Write **Use-Case Recipes** section: ≥4 recipes (news monitoring, research workflow, scheduled batch enrichment, trigger-initiated run) (FR-19)
-  - [ ] 4.6 Run `make check-doc-examples`; fix any failing block
+- [x] 4.0 Write the agent↔orchestrator bridge guide — `user-guides/agent-orchestrator-bridge.md` (FR-15–FR-19)
+  - [x] 4.1 Verified `OrchestratorPort`, `BridgeAction`, `BridgePolicy`, request types, `OrchestratorBridgeError` variants, the concrete `OrchestratorBridgeAdapter::new(orchestrator, policy)`, and `PaladinExecutorPort`/`BattalionPort` against source
+  - [x] 4.2 Write **Agents Triggering Orchestration** section: action↔method table, tool-based invocation, `BridgePolicy` caps, `ActionNotAllowed`/`QuotaExceeded` handling, sequenceDiagram, full example (FR-16)
+  - [x] 4.3 Write **Orchestration Invoking Agents** section: `PaladinExecutorPort::execute` / `BattalionPort`, context passing via input string, returning `PaladinResult`, sequenceDiagram, full example (FR-17)
+  - [x] 4.4 Write **Configuring the Bridge** section: `BridgePolicy::new`/`allow`/`default` Rust config (no `config.yml` bridge schema exists — documented programmatically, honest per OQ-7) (FR-18)
+  - [x] 4.5 Write **Use-Case Recipes** section: 4 recipes (news monitoring, research workflow, scheduled batch enrichment, trigger-initiated agent run) (FR-19)
+  - [x] 4.6 Ran `make check-doc-examples` — 0 failed; error-enum variants verified against source
 
 - [ ] 5.0 Extend the doc-check gate with config/YAML validation (FR-22)
   - [ ] 5.1 Read `scripts/check-doc-examples.sh` to mirror its structure and conventions
