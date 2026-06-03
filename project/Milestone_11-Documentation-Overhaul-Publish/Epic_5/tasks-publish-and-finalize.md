@@ -75,11 +75,11 @@
   - [x] 3.7 Replaced `README.md` (1022 → 130 lines). Also created a root `LICENSE` (MIT) since none existed and the badge/link + crates.io publish need it
   - [x] 3.8 Verified: README-sync passes; all internal links resolve (LICENSE, CHANGELOG.md, docs/src/contributing/, readme.rs); CI badge URL 200. *(crates.io curl returns 403 = bot-block, not absence; badge resolves in-browser for the published crate.)* Commit
 
-- [ ] 4.0 Prepare `CHANGELOG.md` `[Unreleased]` v0.5.0 content (FR-10)
-  - [ ] 4.1 Review git history and milestone docs to summarize Milestones 8–11 (orchestrator completion, facade cleanup, CI hardening, documentation overhaul)
-  - [ ] 4.2 Populate the existing `## [Unreleased]` section under `### Added`, `### Changed`, `### Fixed`, `### Documentation`
-  - [ ] 4.3 In `### Documentation`, explicitly call out: MDBook published to GitHub Pages; new orchestration / content-processing / bridge guides; crate map & feature-flag reference; all examples compile-verified against the current API
-  - [ ] 4.4 Do **not** add a `## [0.5.0]` heading or date (left to `make release`); confirm the section follows the existing keep-a-changelog format. Commit
+- [x] 4.0 Prepare `CHANGELOG.md` `[Unreleased]` v0.5.0 content (FR-10)
+  - [x] 4.1 Reviewed the existing changelog (Milestone 10 already captured in 0.4.x) and this branch's work; framed 0.5.0 as the Milestone 11 documentation release consolidating 8–11
+  - [x] 4.2 Populated `## [Unreleased]` with `### Added`, `### Changed`, `### Fixed`, `### Documentation`
+  - [x] 4.3 `### Documentation` + `### Added` call out the published mdBook, the new orchestration/content/bridge guides, the crate-map reference, and the compile-verified examples (`paladin-doc-examples`)
+  - [x] 4.4 No `## [0.5.0]` heading/date added (left to `make release`); follows keep-a-changelog format. Commit
 
 - [ ] 5.0 Merge to `main` + go/no-go checkpoint (FR-11)
   - [ ] 5.1 Open a PR from `feature/milestone-11-epic-5-publish-finalize` to `main`; confirm all CI checks pass
