@@ -9,10 +9,10 @@ For a quick pattern-by-pattern cheat sheet see [Battalion Patterns](battalion-pa
 for the declarative flow language see [Maneuver Flow DSL](maneuver-flow-dsl.md); for how agents
 and workflows call each other see the [Agent ↔ Orchestrator Bridge](agent-orchestrator-bridge.md).
 
-> Every code example targets the current **v0.4.3** workspace. Examples are marked
-> `rust,ignore` because they assume Paladins built elsewhere (see
-> [Paladin Agents](paladin-agents.md)); the API forms are verified against
-> `crates/paladin-battalion/` and `crates/paladin-ports/`.
+> Every code example targets the current **v0.5.0** workspace. The substantive examples are real,
+> compiled code pulled from the `paladin-doc-examples` crate via mdBook `{{#include}}`, so they are
+> checked against the live API; a few illustrative fragments are marked `rust,ignore`. The API forms
+> are verified against `crates/paladin-battalion/` and `crates/paladin-ports/`.
 
 ---
 

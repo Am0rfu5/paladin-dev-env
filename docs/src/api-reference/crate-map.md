@@ -9,7 +9,7 @@ boundaries, "adding a new crate"), see
 [Architecture → Crate Map](../architecture/crate-map.md). For the canonical
 per-flag default table, see [Feature Flags](feature-flags.md).
 
-> All versions on this page target the **current published workspace, v0.4.3**.
+> All versions on this page target the **current published workspace, v0.5.0**.
 
 ## Workspace Crate Table
 
@@ -181,7 +181,7 @@ the in-memory/SQLite garrison — enough to build and run a single Paladin.
 
 ```toml
 [dependencies]
-paladin-ai = "0.4.3"   # default features: ["llm-openai"]
+paladin-ai = "0.5.0"   # default features: ["llm-openai"]
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -189,7 +189,7 @@ tokio = { version = "1", features = ["full"] }
 
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4.3", features = [
+paladin-ai = { version = "0.5.0", features = [
     "llm-anthropic",   # add Anthropic alongside the default OpenAI
     "llm-deepseek",    # add DeepSeek
     "storage-sqlite",  # SQLite SQL repositories
@@ -203,7 +203,7 @@ tokio = { version = "1", features = ["full"] }
 
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4.3", features = ["full"] }
+paladin-ai = { version = "0.5.0", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -218,11 +218,11 @@ For consumers who want to avoid the umbrella crate and wire only what they need
 
 ```toml
 [dependencies]
-paladin-core = { package = "paladin-ai-core", version = "0.4.3" }
-paladin-ports = "0.4.3"
-paladin-battalion = "0.4.3"
-paladin-llm = { version = "0.4.3", features = ["openai", "anthropic"] }
-paladin-memory = { version = "0.4.3", features = ["sqlite"] }
+paladin-core = { package = "paladin-ai-core", version = "0.5.0" }
+paladin-ports = "0.5.0"
+paladin-battalion = "0.5.0"
+paladin-llm = { version = "0.5.0", features = ["openai", "anthropic"] }
+paladin-memory = { version = "0.5.0", features = ["sqlite"] }
 tokio = { version = "1", features = ["full"] }
 ```
 

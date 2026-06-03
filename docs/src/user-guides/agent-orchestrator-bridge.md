@@ -11,10 +11,12 @@ This guide covers both directions, how to configure the bridge safely, and four 
 recipes. It builds on the [Orchestration](orchestration.md) and
 [Content Processing](content-processing.md) guides.
 
-> Every example targets the current **v0.4.3** workspace and is marked `rust,ignore`. API forms
-> are verified against `crates/paladin-ports/src/output/orchestrator_port.rs`,
-> `paladin_executor_port.rs`, `battalion_port.rs`, and the concrete
-> `OrchestratorBridgeAdapter` in `src/application/services/orchestration/`.
+> Every example targets the current **v0.5.0** workspace. The substantive examples are real,
+> compiled code pulled from the `paladin-doc-examples` crate via mdBook `{{#include}}` (one
+> illustrative fragment is `rust,ignore`). API forms are verified against
+> `crates/paladin-ports/src/output/orchestrator_port.rs`, `paladin_executor_port.rs`,
+> `battalion_port.rs`, and the concrete `OrchestratorBridgeAdapter` in
+> `src/application/services/orchestration/`.
 
 ---
 
@@ -116,7 +118,7 @@ Battalion instead of a single agent, use `BattalionPort::execute(battalion_id)` 
 ## Configuring the Bridge
 
 Bridge behavior is configured **programmatically** through `BridgePolicy` — there is no dedicated
-`config.yml` bridge section in v0.4.3. A policy is two things: the set of *allowed* actions, and a
+`config.yml` bridge section in v0.5.0. A policy is two things: the set of *allowed* actions, and a
 *per-execution cap* for each action.
 
 ```rust

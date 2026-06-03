@@ -6,7 +6,7 @@ dependency relationships.
 ## Workspace Overview
 
 ```
-paladin-ai  (root umbrella, v0.4.3)
+paladin-ai  (root umbrella, v0.5.0)
 ├── paladin-ai-core          # Core domain
 ├── paladin-ports            # Port trait contracts
 ├── paladin-battalion        # Orchestration services

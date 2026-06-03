@@ -98,18 +98,18 @@ cargo build --bin paladin-cli --features cli
 
 ## Default Configuration
 
-**Current Default** (as of v0.4.3):
+**Current Default** (as of v0.5.0):
 
 ```toml
 [dependencies]
-paladin = "0.1"
+paladin-ai = "0.5"
 ```
 
 This enables **only**:
 - ✅ `llm-openai` - OpenAI LLM provider
 - ✅ Core framework (always available)
 
-**Previous Default** (before v0.4.3):
+**Previous Default** (before v0.5.0):
 
 ```toml
 # Old default - no longer applies
@@ -126,7 +126,7 @@ No external LLM providers, storage, or queues:
 
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4", default-features = false }
+paladin-ai = { version = "0.5", default-features = false }
 ```
 
 **Use case**: Custom LLM integrations, library embedding, edge deployments
@@ -136,21 +136,21 @@ paladin-ai = { version = "0.4", default-features = false }
 **OpenAI Only** (default):
 ```toml
 [dependencies]
-paladin = "0.1"
+paladin-ai = "0.5"
 # Or explicitly:
-paladin-ai = { version = "0.4", features = ["llm-openai"] }
+paladin-ai = { version = "0.5", features = ["llm-openai"] }
 ```
 
 **Anthropic Only**:
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4", default-features = false, features = ["llm-anthropic"] }
+paladin-ai = { version = "0.5", default-features = false, features = ["llm-anthropic"] }
 ```
 
 **DeepSeek Only**:
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4", default-features = false, features = ["llm-deepseek"] }
+paladin-ai = { version = "0.5", default-features = false, features = ["llm-deepseek"] }
 ```
 
 ### Multi-Provider Builds
@@ -158,13 +158,13 @@ paladin-ai = { version = "0.4", default-features = false, features = ["llm-deeps
 **All LLM Providers**:
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4", default-features = false, features = ["llm-all"] }
+paladin-ai = { version = "0.5", default-features = false, features = ["llm-all"] }
 ```
 
 **OpenAI + Anthropic**:
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4", default-features = false, features = ["llm-openai", "llm-anthropic"] }
+paladin-ai = { version = "0.5", default-features = false, features = ["llm-openai", "llm-anthropic"] }
 ```
 
 ### Orchestration Platform Build
@@ -173,7 +173,7 @@ Agents + web API + Redis queue + S3 storage:
 
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4", features = ["web-server", "redis-queue", "s3-storage"] }
+paladin-ai = { version = "0.5", features = ["web-server", "redis-queue", "s3-storage"] }
 ```
 
 ### Content Processing Build
@@ -182,7 +182,7 @@ Content ingestion + processing + all providers:
 
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4", features = ["llm-all", "content-processing", "qdrant", "s3-storage"] }
+paladin-ai = { version = "0.5", features = ["llm-all", "content-processing", "qdrant", "s3-storage"] }
 ```
 
 ### Full Development Build
@@ -191,7 +191,7 @@ All features enabled:
 
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4", features = ["full"] }
+paladin-ai = { version = "0.5", features = ["full"] }
 ```
 
 Or use the CLI:
@@ -207,7 +207,7 @@ Web server + notifications + OpenAI + storage:
 
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4", features = ["web-server", "notifications", "redis-queue", "s3-storage"] }
+paladin-ai = { version = "0.5", features = ["web-server", "notifications", "redis-queue", "s3-storage"] }
 ```
 
 ## Build Comparison
@@ -295,10 +295,10 @@ Begin with default features, add others only when required:
 ```toml
 # Start here
 [dependencies]
-paladin = "0.1"
+paladin-ai = "0.5"
 
 # Add features as needed
-paladin-ai = { version = "0.4", features = ["redis-queue"] }
+paladin-ai = { version = "0.5", features = ["redis-queue"] }
 ```
 
 ### 2. Use `full` for Development Only
@@ -308,11 +308,11 @@ Enable all features during development, but specify exact features for productio
 ```toml
 [dependencies]
 # Production - explicit features
-paladin-ai = { version = "0.4", features = ["llm-anthropic", "s3-storage"] }
+paladin-ai = { version = "0.5", features = ["llm-anthropic", "s3-storage"] }
 
 [dev-dependencies]
 # Development - all features
-paladin-ai = { version = "0.4", features = ["full"] }
+paladin-ai = { version = "0.5", features = ["full"] }
 ```
 
 ### 3. Document Feature Requirements
@@ -324,7 +324,7 @@ If your application requires specific features, document them:
 //!
 //! **Required Features:**
 //! ```toml
-//! paladin-ai = { version = "0.4", features = ["llm-openai", "redis-queue", "s3-storage"] }
+//! paladin-ai = { version = "0.5", features = ["llm-openai", "redis-queue", "s3-storage"] }
 //! ```
 ```
 
@@ -353,7 +353,7 @@ Add feature requirements to example documentation:
 //!
 //! **Required Cargo Features:**
 //! ```toml
-//! paladin-ai = { version = "0.4", features = ["redis-queue"] }
+//! paladin-ai = { version = "0.5", features = ["redis-queue"] }
 //! ```
 //!
 //! Run with: `cargo run --example redis_queue --features redis-queue`

@@ -39,7 +39,7 @@ repository = "https://github.com/DF3NDR/paladin-dev-env"
 license = "MIT"
 keywords = ["ai", "agents", "orchestration", "llm", "multi-agent"]
 categories = ["development-tools", "asynchronous", "api-bindings"]
-documentation = "https://docs.rs/paladin-ai"
+documentation = "https://df3ndr.github.io/paladin-dev-env/"
 
 [lib]
 name = "paladin"

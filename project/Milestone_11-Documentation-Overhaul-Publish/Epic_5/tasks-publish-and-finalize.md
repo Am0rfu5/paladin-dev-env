@@ -57,13 +57,13 @@
   - [x] 1.6 `release-automation.md` accurately describes the current `make release` + `release.yml` flow — no drift; no update needed (FR-5)
   - [x] 1.7 Fixed the issues above; re-ran gates (mdbook 0 broken links, doc-examples pass); committed
 
-- [ ] 2.0 Sync documentation version strings to 0.5.0 + `documentation` metadata (FR-6, FR-7)
-  - [ ] 2.1 `grep -rn '0\.4\.3\|"0\.4"' docs/src/` to enumerate every version reference and the files/lines to change
-  - [ ] 2.2 Update the consumer-profile `Cargo.toml` snippets and crate table in `docs/src/api-reference/crate-map.md` to `0.5.0`
-  - [ ] 2.3 Update version strings in `docs/src/getting-started/installation.md` and `quickstart.md` to `0.5.0`
-  - [ ] 2.4 Update any other `docs/src/**` guide naming the version (from 2.1)
-  - [ ] 2.5 Set the root `Cargo.toml` `documentation` field to `https://df3ndr.github.io/paladin-dev-env/` (FR-7) — *do not* touch crate `version` fields (handled by `make release`)
-  - [ ] 2.6 Re-run `make check-doc-examples` and `mdbook build` to confirm the doc changes still pass; commit
+- [x] 2.0 Sync documentation version strings to 0.5.0 + `documentation` metadata (FR-6, FR-7)
+  - [x] 2.1 Enumerated all `0.4.3` / `"0.4"` / `paladin = "0.1"` references across `docs/src/`
+  - [x] 2.2 Bumped consumer profiles + crate table in `api-reference/crate-map.md` → `0.5.0`
+  - [x] 2.3 Bumped `getting-started/installation.md` + `quickstart.md` → `0.5.0`
+  - [x] 2.4 Bumped other guides: `maneuver-flow-dsl.md`, `battalion-patterns.md`, `paladin-agents.md`, `architecture/crate-map.md`, the three Epic-4 guide intro notes (also corrected the stale "marked `rust,ignore`" wording → compiled `{{#include}}` from `paladin-doc-examples`); `feature-flags.md` (incl. fixing wrong `paladin = "0.1"` → `paladin-ai = "0.5"` and `"0.4"` carets → `"0.5"`); `stable-api.md` current-version labels; `migration-guide.md` (current label + a no-breaking-changes v0.5.0 note); fixed `paladin = "0.1"` package bug in `sentinel.md` / `architecture-decisions.md`. **Left historical refs** (migration history, benchmark baseline names, illustrative Docker image tags)
+  - [x] 2.5 Set root `Cargo.toml` `documentation` → `https://df3ndr.github.io/paladin-dev-env/`; did **not** touch crate `version` fields (left to `make release`)
+  - [x] 2.6 Re-ran gates: doc-examples pass, config 155/0, `mdbook build` 0 broken links. Commit
 
 - [ ] 3.0 Rewrite root `README.md` as a concise landing page with a compile-verified Quick Example (FR-8, FR-9)
   - [ ] 3.1 Add the Quick Example as an anchored fn in a new `crates/doc-examples/src/readme.rs` (registered in `lib.rs`); `cargo check -p paladin-doc-examples` green, clippy/fmt clean

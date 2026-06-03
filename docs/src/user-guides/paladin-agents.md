@@ -30,7 +30,7 @@ Add the `paladin-ai` crate and enable any desired feature flags:
 
 ```toml
 [dependencies]
-paladin-ai = { version = "0.4.3", features = ["llm-openai"] }
+paladin-ai = { version = "0.5.0", features = ["llm-openai"] }
 tokio = { version = "1", features = ["full"] }
 ```
 

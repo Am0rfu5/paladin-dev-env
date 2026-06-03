@@ -1,14 +1,27 @@
 # Migration Guide
 
-This guide covers all breaking changes since v0.1.0 up to the current **v0.4.3** release.
+This guide covers all breaking changes since v0.1.0 up to the current **v0.5.0** release.
 
 ## Table of Contents
 
+- [Migrating to v0.5.0 (from v0.4.x)](#migrating-to-v050-from-v04x)
 - [Migrating to v0.4.x (from v0.3.x)](#migrating-to-v04x-from-v03x)
 - [Migrating to v0.2.0 (from v0.1.x)](#migrating-to-v020-from-v01x)
 - [Migrating to v0.1.0 (Feature Flag Reorganization)](#migrating-to-v010-feature-flag-reorganization)
 - [Migration Scenarios](#migration-scenarios)
 - [Testing Your Migration](#testing-your-migration)
+
+---
+
+## Migrating to v0.5.0 (from v0.4.x)
+
+**No user-facing breaking changes.** v0.5.0 is the documentation-overhaul release (Milestone 11):
+the full MDBook was published to GitHub Pages, new orchestration / content-processing / bridge
+guides and a crate-map reference were added, and all documentation examples are now compile-verified
+against the workspace. No public API changed — bump your dependency from `0.4` to `0.5` and rebuild.
+
+The historical `version = "0.4"` snippets below remain valid for the 0.3 → 0.4 migration they
+document; for v0.5.0 simply substitute `"0.5"`.
 
 ---
 

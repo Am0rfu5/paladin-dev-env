@@ -1,12 +1,12 @@
 # Stable Public API Contract
 
-**Version:** 0.4.3
+**Version:** 0.5.0
 **Last Updated:** 2026-06-02
 **Status:** Active
 
 > **Breaking Changes in v0.2.0**: This release includes two categories of breaking changes:
 >
-> **v0.4.3 API Note**: The canonical import path for all port traits is `crates/paladin-ports/`. Short-path aliases (`paladin::<Type>`) have been removed from `src/lib.rs`. Use full crate-level import paths (e.g. `use paladin_ports::output::llm_port::LlmPort`). The `application::use_cases` module path was renamed to `application::services` in a prior release.
+> **v0.5.0 API Note**: The canonical import path for all port traits is `crates/paladin-ports/`. Short-path aliases (`paladin::<Type>`) have been removed from `src/lib.rs`. Use full crate-level import paths (e.g. `use paladin_ports::output::llm_port::LlmPort`). The `application::use_cases` module path was renamed to `application::services` in a prior release.
 >
 > See [CHANGELOG](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md) for the complete migration tables.
 
@@ -322,7 +322,7 @@ We use [`cargo-public-api`](https://github.com/Enselic/cargo-public-api) to trac
 ./scripts/extract-public-api.sh project/current-exports.txt
 ```
 
-This creates a baseline snapshot of all public items (items as of v0.4.3).
+This creates a baseline snapshot of all public items (items as of v0.5.0).
 
 #### Check for API Changes (CI)
 
@@ -363,10 +363,10 @@ API surface changes are automatically detected in CI (`.github/workflows/ci.yml`
 cargo public-api --simplified | less
 
 # Compare against previous version
-cargo public-api --diff-git-checkouts v0.3.0 v0.4.3
+cargo public-api --diff-git-checkouts v0.3.0 v0.5.0
 
 # Generate HTML diff
-cargo public-api --diff-git-checkouts v0.3.0 v0.4.3 --output-format markdown
+cargo public-api --diff-git-checkouts v0.3.0 v0.5.0 --output-format markdown
 ```
 
 ---
@@ -788,7 +788,7 @@ When we make breaking changes in a major version bump, we will:
 ### Deprecation Example
 
 ```rust,ignore
-// Version 0.4.3 - Original API
+// Version 0.5.0 - Original API
 pub fn execute_paladin(paladin: &Paladin) -> Result<String, Error> {
     // ...
 }
@@ -883,7 +883,7 @@ For questions about API stability:
 
 **Last Updated**: 2026-04-16
 **Document Version**: 1.1
-**Paladin Version: 0.4.3
+**Paladin Version: 0.5.0
 **Maintainers**: @DF3NDR
 
 ---
@@ -899,7 +899,7 @@ This document defines how Paladin versions its workspace crates and what constit
 Paladin uses lockstep versioning for the initial release line.
 
 - Scope: all public crates in this workspace.
-- Current baseline: 0.4.3.
+- Current baseline: 0.5.0.
 - Milestone 7 target: 0.2.0 lockstep for publishable crates.
 - Rule: a single release version is applied to all public crates in the same release cycle.
 
