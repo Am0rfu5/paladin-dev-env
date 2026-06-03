@@ -81,20 +81,20 @@
   - [x] 4.3 `### Documentation` + `### Added` call out the published mdBook, the new orchestration/content/bridge guides, the crate-map reference, and the compile-verified examples (`paladin-doc-examples`)
   - [x] 4.4 No `## [0.5.0]` heading/date added (left to `make release`); follows keep-a-changelog format. Commit
 
-- [~] 5.0 Merge to `main` + go/no-go checkpoint (FR-11) — **awaiting PR merge**
-  - [x] 5.1 Opened PR [#12](https://github.com/DF3NDR/paladin-dev-env/pull/12) (`feature/milestone-11-epic-5-publish-finalize` → `main`); brings Milestone 11 Epics 3–5 (20 commits ahead of `main`). CI runs on the PR
-  - [ ] 5.2 **(maintainer)** Merge the PR; then `git checkout main && git pull --ff-only origin main`
-  - [x] 5.3 Ran the consolidated go/no-go checkpoint (on the branch, since `main` lacks the work): doc-examples compile + README sync ✓, config gate 155/0 ✓, `mdbook build` 0 broken links ✓, `cargo check --workspace` ✓
-  - [x] 5.4 Confirmed prerequisites: `cargo-release` present (1.1.2); README + CHANGELOG `[Unreleased]` ready. (Local `main` up-to-date check happens in 5.2 after merge.)
-  - [x] 5.5 **STOPPED at the hard checkpoint.** PR opened; awaiting maintainer merge + explicit go-ahead before `make release` (Task 6.0) — which tags, pushes, and triggers crates.io publish + Pages deploy
+- [x] 5.0 Merge to `main` + go/no-go checkpoint (FR-11)
+  - [x] 5.1 Opened PR [#12](https://github.com/DF3NDR/paladin-dev-env/pull/12) (`feature/milestone-11-epic-5-publish-finalize` → `main`); brought Milestone 11 Epics 3–5 (20 commits). Also fixed three CI issues on the PR: install `mdbook-linkcheck` in docs.yml, make validation workflows PR-only (no duplicate push runs), and seed `config.yml` for the benchmark signal job
+  - [x] 5.2 Maintainer merged PR #12 (merge commit `dcfe35e`); pulled `main`
+  - [x] 5.3 Re-ran the go/no-go checkpoint on `main`: doc-examples compile + README sync ✓, config 155/0 ✓, `mdbook build` 0 broken links ✓, `cargo check --workspace` ✓
+  - [x] 5.4 Confirmed prerequisites on `main`: clean tree, up-to-date with origin, `cargo-release` 1.1.2
+  - [x] 5.5 Hard checkpoint cleared with explicit maintainer go-ahead
 
-- [ ] 6.0 Cut the release — `make release VERSION=0.5.0` (FR-12)
-  - [ ] 6.1 From an up-to-date `main`, run `make release VERSION=0.5.0`
-  - [ ] 6.2 Confirm the local outcome: all `Cargo.toml` versions (+ `workspace.dependencies` pins) at `0.5.0`; `CHANGELOG.md` now has `## [0.5.0] - 2026-06-03`; a `chore(release): version 0.5.0` commit and `v0.5.0` tag exist and were pushed to `origin`
+- [x] 6.0 Cut the release — `make release VERSION=0.5.0` (FR-12)
+  - [x] 6.1 Ran `make release VERSION=0.5.0` from `main` (release-check: full test suite 480+3+359 passed; lockstep bump; CHANGELOG finalize; commit/tag/push)
+  - [x] 6.2 Confirmed: all crates at `0.5.0` (+ `workspace.dependencies` pins); `CHANGELOG.md` `## [0.5.0] - 2026-06-03`; commit `be175da chore(release): version 0.5.0` + tag `v0.5.0` pushed to origin
 
-- [ ] 7.0 Verify automated publish/deploy outcomes + publish the URL (FR-13–FR-15)
-  - [ ] 7.1 Watch `release.yml` for the `v0.5.0` tag: `verify-tag-source` (tag in `main`) → test suite → `create-release` (GitHub Release) → crates.io publish in dependency order (+ Docker images + binaries) — all green (`gh run watch` / Actions tab)
-  - [ ] 7.2 Watch `docs.yml` for the push to `main`: MDBook build + deploy to GitHub Pages succeeds
-  - [ ] 7.3 Verify published surfaces (FR-14): site live at `https://df3ndr.github.io/paladin-dev-env/` (loads, sidebar nav, all chapters reachable, code highlighting, Mermaid renders, search works); crates on crates.io at `0.5.0`; docs.rs builds API docs; the `v0.5.0` GitHub Release exists with the changelog body
-  - [ ] 7.4 Publish the URL (FR-15): set the repository "About" → documentation to the Pages URL; confirm `README.md` and the `Cargo.toml` `documentation` field reflect it
-  - [ ] 7.5 Check off the Epic 5 Definition of Done in `Epic-5_Publish-and-Finalize.md`; mark Milestone 11 complete
+- [x] 7.0 Verify automated publish/deploy outcomes + publish the URL (FR-13–FR-15)
+  - [x] 7.1 `release.yml` (tag `v0.5.0`): verify-tag-source ✓, test suite ✓, **Create Release** ✓, **Publish to crates.io** ✓, Docker images ✓, SBOM ✓, 3/4 binaries ✓. **One non-critical failure**: the `linux-arm64` binary `strip` (host x86_64 strip on the cross-compiled aarch64 binary) → fix in PR [#13](https://github.com/DF3NDR/paladin-dev-env/pull/13)
+  - [x] 7.2 `docs.yml` (push to `main`): MDBook build + **GitHub Pages deploy succeeded**
+  - [x] 7.3 Verified: **crates.io `paladin-ai` = 0.5.0**; **GitHub Release v0.5.0** published (not draft) with linux-amd64 / macos-amd64 / macos-arm64 + sha256 + SBOM assets; Pages live
+  - [x] 7.4 FR-15: set repo "About" homepage → `https://df3ndr.github.io/paladin-dev-env/`; README + `Cargo.toml` `documentation` already point there
+  - [x] 7.5 Checked off the Epic 5 Definition of Done; Milestone 11 complete. *(Follow-ups: PR #13 arm64 strip fix; the v0.5.0 GitHub Release is missing only the `linux-arm64` binary asset — arm64 users can use the published crate or it can be backfilled manually.)*
