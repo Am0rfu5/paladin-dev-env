@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+The **v0.5.0** release completes **Milestone 11 — Documentation Overhaul & Publish**, consolidating
+the work of Milestones 8–11 (orchestrator completion, facade cleanup, CI hardening, and the full
+documentation rebuild) into the first release with a published, compile-verified documentation site.
+No public API changed; this is a documentation, packaging, and release-readiness milestone.
+
+### Added
+
+#### Documentation site (Milestone 11)
+
+- **Published mdBook** at <https://df3ndr.github.io/paladin-dev-env/> — the complete reorganized
+  documentation (getting started, user guides, architecture, deployment, operations, API reference,
+  contributing) deployed to GitHub Pages via `.github/workflows/docs.yml`.
+- **New user guides** — a comprehensive **Orchestration** guide (all Battalion patterns + job
+  scheduling + the event/trigger system), a **Content Processing** guide, and a standalone
+  **Agent ↔ Orchestrator Bridge** guide with four end-to-end recipes.
+- **Crate Map & Feature-Flag reference** (`api-reference/crate-map.md`) — every workspace crate with
+  purpose, layer, and key exports; a Mermaid dependency graph; per-crate feature-flag tables; and
+  copy-paste `Cargo.toml` consumer profiles.
+
+#### Compile-verified documentation examples (Milestone 11)
+
+- **`paladin-doc-examples` crate** — the substantive code examples in the guides now live in a real
+  workspace crate and are pulled into the markdown via mdBook `{{#include}}`, so `cargo check`
+  guarantees every documented example compiles against the current API.
+- **`scripts/check-doc-examples.sh`** now compiles that crate as the primary gate (and keeps the
+  README Quick Example in sync with its compiled source), and **`scripts/check-doc-config.sh`**
+  validates every fenced YAML config snippet. Both run in CI (`docs.yml`) and as pre-push hooks.
+- **Root `LICENSE`** (MIT) added.
+
+### Changed
+
+- **Root `README.md`** rewritten as a concise landing page (badges, a compile-verified quick
+  example, crate-ecosystem table, and links to the published docs) — down from ~1,000 lines.
+- **Workspace version → 0.5.0** (lockstep across all crates); documentation version references
+  synchronized to 0.5.0.
+- The `documentation` metadata now points at the published mdBook site.
+
+### Fixed
+
+- Corrected numerous documentation inaccuracies surfaced by compiling the examples: wrong
+  `BattalionResult`/`Phalanx`/`Campaign`/`ChainOfCommand` APIs, a non-existent file fetcher, and
+  incorrect queue/aggregation types, among others.
+- Replaced stale `yourusername/paladin` placeholder URLs with the real repository, removed dead
+  "TODO: Add link" stubs, and fixed mislabeled code-fence languages.
+
+### Documentation
+
+- Every existing documentation file was audited (current / stale / delete), migrated into the mdBook
+  chapter structure, and rewritten so that all code examples compile and all internal links resolve
+  (`mdbook build` passes with linkcheck `warning-policy = "error"`, zero broken links).
+
 ## [0.4.3] - 2026-06-01
 
 ## [0.4.2] - 2026-06-01

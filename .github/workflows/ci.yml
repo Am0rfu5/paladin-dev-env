@@ -1,8 +1,12 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [ main, develop, 'feature/**' ]
+  # CI runs on pull requests only, to avoid duplicate runs (one for `push`,
+  # one for `pull_request`) on a branch that already has an open PR.
+  # TROUBLESHOOTING: to run CI on every commit of a branch WITHOUT opening a PR,
+  # temporarily uncomment the `push:` block below.
+  # push:
+  #   branches: [ main, develop, 'feature/**' ]
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:
@@ -544,6 +548,14 @@ jobs:
           mkdir -p benchmark-signal
           LOG=benchmark-signal/criterion-output.log
 
+          # The config benchmarks call `Settings::new()`, which requires a base
+          # `config` file. `config.yml` is gitignored (it can hold secrets), so it
+          # is absent in CI — seed it from the committed `config.test.yml` so the
+          # benchmark can load settings. APP_ENV=test also overlays config.test.
+          if [ ! -f config.yml ]; then
+            cp config.test.yml config.yml
+          fi
+
           {
             echo "# Benchmark regression signal run"
             echo "# commit: ${GITHUB_SHA}"
@@ -580,7 +592,12 @@ jobs:
 
       - name: Publish regression summary
         if: always()
-        run: cat benchmark-signal/summary.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          if [ -f benchmark-signal/summary.md ]; then
+            cat benchmark-signal/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Benchmark signal summary not produced (benchmarks did not complete)." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload regression signal artifacts
         if: always()

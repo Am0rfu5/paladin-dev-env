@@ -9,7 +9,7 @@ Performance benchmarks for the Sanctum long-term memory system measuring vector 
 - **Adapter**: InMemorySanctum (brute-force cosine similarity)
 - **Vector Dimensions**: 384, 768, 1536 (common embedding sizes)
 - **Test Data Scales**: 100 to 10,000 vectors
-- **Hardware**: [Results will show actual hardware]
+- **Hardware**: Results will show actual hardware
 
 ## Performance Targets
 
@@ -131,7 +131,7 @@ Results are saved to:
 
 ### Performance Summary
 
-[Results will be populated after benchmark run]
+Results will be populated after benchmark run
 
 #### Store Operations
 
@@ -278,6 +278,6 @@ Criterion will fail if performance regresses significantly.
 
 ---
 
-**Last Updated**: [Timestamp]  
-**Benchmark Version**: Initial implementation  
+**Last Updated**: TBD
+**Benchmark Version**: Initial implementation
 **Contact**: Paladin Development Team

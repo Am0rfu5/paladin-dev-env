@@ -30,13 +30,16 @@ Paladin uses GitHub Actions for CI/CD with the following pipelines:
 ```
 .github/
 ├── workflows/
-│   ├── ci.yml                    # Main CI pipeline
-│   ├── docker-publish.yml        # Docker image builds
+│   ├── ci.yml                    # Main CI pipeline (lint, test, audit)
+│   ├── docs.yml                  # MDBook build + GitHub Pages deploy
 │   ├── release.yml               # Release automation
 │   ├── integration-tests.yml     # Integration testing
-│   └── security.yml              # Security scanning
+│   ├── feature-flags.yml         # Feature-flag matrix tests
+│   └── pre-commit.yml            # Pre-commit checks
 └── dependabot.yml                # Dependency updates
 ```
+
+> **docs.yml** builds MDBook, runs `./scripts/check-doc-examples.sh` (validates all fenced Rust code blocks), and deploys to GitHub Pages on merge to `main`.
 
 ## CI Pipeline
 
@@ -297,7 +300,7 @@ jobs:
           awk "/^## \[$VERSION\]/,/^## \[/" CHANGELOG.md | head -n -1 > release_notes.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             release-*/paladin-*.tar.gz
@@ -592,6 +595,6 @@ strategy:
 
 ## Next Steps
 
-- **[Production Best Practices](production-best-practices.md)** - Production checklist
+- **[Production Best Practices](production.md)** - Production checklist
 - **[Monitoring](../operations/monitoring.md)** - Observability setup
 - **[Docker Deployment](docker.md)** - Docker deployment guide

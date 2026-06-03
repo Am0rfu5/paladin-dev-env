@@ -15,7 +15,7 @@ Complete guide for monitoring Paladin with Prometheus, Grafana, and observabilit
 
 ## Overview
 
-Paladin exposes Prometheus metrics on `/metrics` endpoint (default port 8081) for comprehensive observability.
+Paladin exposes Prometheus metrics on `/metrics` endpoint (default port 9090) for comprehensive observability. The Kubernetes deployment also exposes a dedicated metrics service on port 9090 (`paladin-metrics`).
 
 **Monitoring Stack:**
 - **Prometheus**: Metrics collection and storage
@@ -27,8 +27,8 @@ Paladin exposes Prometheus metrics on `/metrics` endpoint (default port 8081) fo
 
 ### Exposing Metrics
 
-```rust
-// src/infrastructure/monitoring/metrics.rs
+```rust,ignore
+// Example metrics module
 use prometheus::{Encoder, TextEncoder, Registry};
 use axum::{Router, routing::get};
 
@@ -75,8 +75,8 @@ let app = Router::new()
 
 ### Recording Metrics
 
-```rust
-use crate::infrastructure::monitoring::metrics::*;
+```rust,ignore
+// Metrics are configured via RUST_LOG and tracing subscriber
 
 #[instrument(skip(paladin))]
 pub async fn execute_paladin(paladin: &Paladin, input: &str) -> Result<PaladinResult> {
@@ -369,7 +369,7 @@ receivers:
 
 ### Jaeger Integration
 
-```rust
+```rust,ignore
 use opentelemetry::global;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_opentelemetry::OpenTelemetryLayer;
@@ -397,7 +397,7 @@ pub fn init_tracing(service_name: &str) -> Result<()> {
 
 ### Health Endpoint
 
-```rust
+```rust,ignore
 #[derive(Serialize)]
 pub struct HealthStatus {
     status: String,

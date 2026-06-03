@@ -44,6 +44,8 @@ cargo --version
 
 ## Quick Start
 
+> **Development shortcut**: For local development use `make dev` (starts all services via `docker/docker-compose.dev.yml`) or `make services-up` (starts Redis + MinIO only). See `make help` for all targets.
+
 ### Run Prebuilt Image
 
 ```bash
@@ -86,7 +88,7 @@ Paladin images are available from GitHub Container Registry:
 ghcr.io/your-org/paladin:latest
 
 # Specific version
-ghcr.io/your-org/paladin:v0.1.0
+ghcr.io/your-org/paladin:v0.4.3
 
 # Latest commit on main branch
 ghcr.io/your-org/paladin:main
@@ -100,7 +102,7 @@ ghcr.io/your-org/paladin:dev-<branch-name>
 | Tag Pattern | Description | Use Case |
 |-------------|-------------|----------|
 | `latest` | Most recent stable release | Production |
-| `v<semver>` | Specific version (e.g., `v0.1.0`) | Production (pinned) |
+| `v<semver>` | Specific version (e.g., `v0.4.3`) | Production (pinned) |
 | `main` | Latest commit on main branch | Staging |
 | `<branch>` | Feature branch builds | Development |
 | `slim` | Minimal image without examples | Production (space-constrained) |
@@ -108,66 +110,53 @@ ghcr.io/your-org/paladin:dev-<branch-name>
 
 ### Dockerfile
 
-Paladin's multi-stage Dockerfile optimizes for size and security:
+Paladin's multi-stage Dockerfile optimizes for size and security. There are two Dockerfiles in the repository:
+
+- **`Dockerfile`** — Standard two-stage build (`builder` → `runtime`)
+- **`Dockerfile.chef`** — Cargo-chef optimized build for faster CI (caches Rust dependencies as a separate layer)
 
 ```dockerfile
-# syntax=docker/dockerfile:1.4
+# Standard Dockerfile — two stages
 
-# Stage 1: Builder
-FROM rust:1.70-slim-bullseye AS builder
-
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /usr/src/paladin
-
-# Copy dependency files first (cache layer)
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
-
-# Build release binary
-RUN cargo build --release --bin paladin-server
-
-# Stage 2: Runtime
-FROM debian:bullseye-slim
-
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    libssl1.1 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create non-root user
-RUN useradd -m -u 1000 -U -s /bin/bash paladin
-
+# Stage 1: Builder (rust:1.93-slim-bookworm)
+FROM rust:1.93-slim-bookworm AS builder
 WORKDIR /app
 
-# Copy binary from builder
-COPY --from=builder /usr/src/paladin/target/release/paladin-server /app/
+RUN apt-get update && apt-get install -y \
+    pkg-config libssl-dev g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy default configuration
-COPY config.yml /app/config.yml.template
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+COPY crates ./crates
+COPY benches ./benches
+COPY migrations ./migrations
 
-# Create data directories
-RUN mkdir -p /app/data /app/logs && \
+RUN cargo build --release --workspace --bin paladin
+RUN strip target/release/paladin
+
+# Stage 2: Runtime (debian:12-slim)
+FROM debian:12-slim
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/paladin /usr/local/bin/paladin
+COPY --from=builder /app/migrations /app/migrations
+
+# Non-root user (uid/gid 65532)
+RUN groupadd -g 65532 paladin && \
+    useradd -u 65532 -g paladin -s /bin/false -M paladin && \
     chown -R paladin:paladin /app
 
-USER paladin
-
-# Expose default port
+USER paladin:paladin
 EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
-
-# Set entrypoint
-ENTRYPOINT ["/app/paladin-server"]
-CMD ["--config", "/app/config.yml"]
+CMD ["/usr/local/bin/paladin"]
 ```
+
+> **Tip:** Use `Dockerfile.chef` in CI for faster builds — `cargo-chef` caches the dependency compilation layer separately from application code, so only changed crates are rebuilt.
 
 ## Configuration
 
@@ -241,12 +230,12 @@ OPENAI_API_KEY=sk-...
 DEEPSEEK_API_KEY=your_key_here
 ANTHROPIC_API_KEY=your_key_here
 
-# Database (if using external DB)
-DATABASE_URL=postgres://user:pass@host:5432/paladin
+# Redis (queue)
+REDIS_PASSWORD=changeme
 
-# Storage (if using S3/MinIO)
-S3_ACCESS_KEY=your_access_key
-S3_SECRET_KEY=your_secret_key
+# MinIO (object storage)
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
 ```
 
 ### Optional Variables
@@ -485,7 +474,7 @@ docker buildx inspect --bootstrap
 # Build for multiple platforms
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/your-org/paladin:v0.1.0 \
+  -t ghcr.io/your-org/paladin:v0.4.3 \
   --push \
   .
 ```
@@ -515,10 +504,10 @@ GitHub Actions workflow (see `.github/workflows/docker-publish.yml`):
 Paladin follows semantic versioning with Docker tags:
 
 ```bash
-# Release v0.1.0
+# Release v0.4.3
 ghcr.io/your-org/paladin:latest       # Always points to latest release
-ghcr.io/your-org/paladin:v0.1.0       # Immutable version tag
-ghcr.io/your-org/paladin:v0.1         # Minor version (updates with patches)
+ghcr.io/your-org/paladin:v0.4.3       # Immutable version tag
+ghcr.io/your-org/paladin:v0.4         # Minor version (updates with patches)
 ghcr.io/your-org/paladin:v0           # Major version
 
 # Development
@@ -532,7 +521,7 @@ ghcr.io/your-org/paladin:dev-feature  # Feature branch
 
 ```bash
 # ✅ Good: Immutable version
-docker run ghcr.io/your-org/paladin:v0.1.0
+docker run ghcr.io/your-org/paladin:v0.4.3
 
 # ❌ Avoid: Latest can change
 docker run ghcr.io/your-org/paladin:latest
@@ -628,7 +617,7 @@ version: '3.8'
 
 services:
   paladin:
-    image: ghcr.io/your-org/paladin:v0.1.0  # Pinned version
+    image: ghcr.io/your-org/paladin:v0.4.3  # Pinned version
     restart: unless-stopped
     environment:
       - LOG_LEVEL=warn  # Reduce log verbosity
@@ -782,5 +771,5 @@ docker pull ghcr.io/your-org/paladin:latest --registry-mirror=https://mirror.exa
 
 - **[Kubernetes Deployment](kubernetes.md)** - Deploy to Kubernetes
 - **[CI/CD Guide](cicd.md)** - Automated deployments
-- **[Production Best Practices](production-best-practices.md)** - Production checklist
+- **[Production Best Practices](production.md)** - Production checklist
 - **[Monitoring](../operations/monitoring.md)** - Observability setup

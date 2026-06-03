@@ -6,21 +6,21 @@ Welcome to the Paladin documentation! Paladin is a Rust-based enterprise multi-a
 
 New to Paladin? Start here:
 
-1. **[Quickstart Guide](QUICKSTART.md)** - Get your first Paladin agent running in 15 minutes
-2. **[Installation](INSTALLATION.md)** - Detailed setup instructions for all platforms
-3. **[Examples Gallery](../examples/README.md)** - Working code examples for common use cases
+1. **[Quickstart Guide](getting-started/quickstart.md)** - Get your first Paladin agent running in 15 minutes
+2. **[Installation](getting-started/installation.md)** - Detailed setup instructions for all platforms
+3. **[Examples Gallery](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)** - Working code examples for common use cases
 
 ## 📚 User Guides
 
 Learn how to build with Paladin:
 
-- **[Autonomous Agent Features](AUTONOMOUS.md)** - 🆕 Auto-planning, prompt generation, dynamic temperature, and agent handoffs (Epic 14)
-- **[Battalion Orchestration](BATTALION.md)** - Multi-agent coordination with 8 orchestration patterns
-- **[Maneuver Flow DSL](MANEUVER.md)** - 🆕 Declarative workflows with Flow DSL syntax (Epic 17)
-- **[Tool Integration (Arsenal)](ARSENAL.md)** - Integrate external tools via MCP protocol
-- **[Memory Management (Garrison)](GARRISON.md)** - Conversation context and persistence
-- **[Output Formatting (Herald)](HERALD.md)** - Format and stream agent responses
-- **[CLI Usage Guide](CLI_USAGE.md)** - Complete command-line interface reference
+- **[Autonomous Agent Features](user-guides/paladin-agents.md)** - Auto-planning, prompt generation, dynamic temperature, and agent handoffs
+- **[Battalion Orchestration](user-guides/battalion-patterns.md)** - Multi-agent coordination with orchestration patterns
+- **[Maneuver Flow DSL](user-guides/maneuver-flow-dsl.md)** - Declarative workflows with Flow DSL syntax
+- **[Tool Integration (Arsenal)](user-guides/arsenal-tools.md)** - Integrate external tools via MCP protocol
+- **[Memory Management (Garrison)](user-guides/garrison-memory.md)** - Conversation context and persistence
+- **[Output Formatting (Herald)](user-guides/herald-output.md)** - Format and stream agent responses
+- **[CLI Usage Guide](appendix/cli-usage.md)** - Complete command-line interface reference
 
 ## 🏗️ Architecture
 
@@ -38,9 +38,9 @@ Deploy Paladin to production:
 - **[Docker](deployment/docker.md)** - Containerized deployment
 - **[Kubernetes](deployment/kubernetes.md)** - Cloud-native orchestration
 - **[CI/CD](deployment/cicd.md)** - Automated pipelines with GitHub Actions
-- **[Production Best Practices](deployment/production-best-practices.md)** - Security, scaling, and reliability
-- **[Versioning Policy](VERSIONING_POLICY.md)** - Lockstep versioning rules and transition criteria
-- **[Release Checklist](RELEASE_CHECKLIST.md)** - Dependency-aware release and publish workflow
+- **[Production Best Practices](deployment/production.md)** - Security, scaling, and reliability
+- **[Versioning Policy](api-reference/stable-api.md)** - Lockstep versioning rules and transition criteria
+- **[Release Checklist](appendix/release-checklist.md)** - Dependency-aware release and publish workflow
 
 ## 🔧 Operations
 
@@ -55,8 +55,8 @@ Monitor and maintain Paladin:
 
 Extend and improve Paladin:
 
-- **[Contribution Guide](contributing/CONTRIBUTING.md)** - How to contribute
-- **[Adapter Development](contributing/adapter-development.md)** - Create custom adapters
+- **[Contribution Guide](contributing/development-setup.md)** - How to contribute
+- **[Adapter Development](contributing/contributing-providers.md)** - Create custom adapters
 - **[Testing Guide](contributing/testing-guide.md)** - Testing requirements and patterns
 
 ## 📖 API Reference
@@ -108,4 +108,4 @@ Dependencies flow inward only: Infrastructure → Application → Core
 
 ## 📄 License
 
-See [LICENSE](../LICENSE) for details.
+See [LICENSE](https://github.com/DF3NDR/paladin-dev-env/blob/main/LICENSE) for details.

@@ -140,6 +140,16 @@ test-integration-minio: ## Run MinIO integration tests only
 test-all: test test-doc test-integration ## Run all tests
 	@echo "$(GREEN)✅ All tests completed!$(NC)"
 
+.PHONY: check-doc-examples
+check-doc-examples: ## Compile doc examples (paladin-doc-examples crate) + syntax-scan inline rust blocks
+	@echo "$(CYAN)Checking doc code examples...$(NC)"
+	@./scripts/check-doc-examples.sh
+
+.PHONY: check-doc-config
+check-doc-config: ## Validate fenced YAML config snippets in docs/src parse correctly
+	@echo "$(CYAN)Checking doc config snippets...$(NC)"
+	@./scripts/check-doc-config.sh
+
 .PHONY: test-ci
 test-ci: ## Run tests in CI mode
 	@echo "$(CYAN)Running tests in CI mode...$(NC)"

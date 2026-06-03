@@ -63,7 +63,7 @@ Sentinel follows Paladin's hexagonal architecture:
 ```toml
 # Cargo.toml
 [dependencies]
-paladin = "0.1"
+paladin-ai = "0.5"
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -671,7 +671,7 @@ audit.log_vision_processing("user123", 3, "analysis_complete", true, None);
 
 ## Battalion Integration
 
-All Battalion patterns work seamlessly with vision-enabled Paladins. See [BATTALION_VISION_SUPPORT.md](./BATTALION_VISION_SUPPORT.md) for comprehensive examples.
+All Battalion patterns work seamlessly with vision-enabled Paladins. See [BATTALION_VISION_SUPPORT.md](battalion-vision-support.md) for comprehensive examples.
 
 ### Formation: Sequential Vision Processing
 
@@ -962,14 +962,14 @@ cargo run --example vision_battalion
 
 ## Further Reading
 
-- [Battalion Vision Support](./BATTALION_VISION_SUPPORT.md) - Detailed Battalion integration
-- [Paladin Vision API](./API.md) - Complete API reference
-- [Security Guide](./SECURITY.md) - Encryption and data protection
-- [Performance Tuning](./PERFORMANCE.md) - Optimization strategies
+- [Battalion Vision Support](battalion-vision-support.md) - Detailed Battalion integration
+- [Paladin Vision API](../api-reference/stable-api.md) - Complete API reference
+- [Security Guide](security-scanning.md) - Encryption and data protection
+- [Performance Tuning](../operations/performance-tuning.md) - Optimization strategies
 
 ## Contributing
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on extending vision capabilities.
+See [CONTRIBUTING.md](../contributing/development-setup.md) for guidelines on extending vision capabilities.
 
 ---
 

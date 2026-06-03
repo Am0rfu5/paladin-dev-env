@@ -22,7 +22,7 @@ Complete guide to using the Paladin command-line interface for running AI agents
 - [Examples](#examples)
 - [Troubleshooting](#troubleshooting)
 
-> 📖 **For comprehensive configuration documentation**, see the [CLI Configuration Guide](cli/CONFIGURATION.md) - covers garrison (memory), arsenal (tools), and scheduler configuration with complete examples.
+> 📖 **For comprehensive configuration documentation**, see the [CLI Configuration Guide](cli-configuration.md) - covers garrison (memory), arsenal (tools), and scheduler configuration with complete examples.
 
 ## Quick Start
 
@@ -143,7 +143,7 @@ paladin onboarding
 - ✅ Resumable state (interruption-safe)
 - ✅ Sample configuration generation
 
-**See also:** [Onboarding Guide](cli/ONBOARDING.md)
+**See also:** [Onboarding Guide](cli-onboarding.md)
 
 ---
 
@@ -214,7 +214,7 @@ Next Steps:
   • Check DeepSeek API endpoint connectivity
 ```
 
-**See also:** [Setup Check Guide](cli/SETUP_CHECK.md)
+**See also:** [Setup Check Guide](cli-setup-check.md)
 
 ---
 
@@ -277,7 +277,7 @@ Memory:
 [24 features total]
 ```
 
-**See also:** [Architecture Documentation](Design/Design_and_Architecture.md)
+**See also:** [Architecture Documentation](../architecture/overview.md)
 
 ---
 
@@ -478,7 +478,7 @@ If LLM is unavailable, muster uses template-based fallback with keyword matching
 - Discussion keywords (discuss, consensus, perspectives) → Council
 - Default → Formation (safe fallback)
 
-**See also:** [Muster Guide](cli/MUSTER.md)
+**See also:** [Muster Guide](cli-muster.md)
 
 ---
 
@@ -609,7 +609,7 @@ monolith and extract microservices only when clear boundaries emerge.
 [Summary content]
 ```
 
-**See also:** [Council Guide](cli/COUNCIL.md), [Conclave Documentation](COUNCIL.md)
+**See also:** [Council Guide](cli-council.md), [Conclave Documentation](council.md)
 
 ---
 
@@ -1054,14 +1054,14 @@ paladin agent run -c config.yaml -i "Query" --stream
 ## See Also
 
 ### Documentation
-- [CLI Configuration Guide](cli/CONFIGURATION.md) - Complete reference for garrison, arsenal, and scheduler configuration
-- [CLI Testing Guide](cli/TESTING.md) - Guide for testing CLI commands
-- [Main README](../README.md)
+- [CLI Configuration Guide](cli-configuration.md) - Complete reference for garrison, arsenal, and scheduler configuration
+- [CLI Testing Guide](../contributing/testing-guide.md) - Guide for testing CLI commands
+- [Main README](../introduction.md)
 
 ### Configuration Examples
-- [Basic Paladin Example](../examples/cli_configs/basic_paladin.yaml)
-- [Advanced Paladin Example](../examples/cli_configs/advanced_paladin.yaml)
-- [Formation Example](../examples/cli_configs/formation.yaml)
-- [Phalanx Example](../examples/cli_configs/phalanx.yaml)
-- [Campaign Example](../examples/cli_configs/campaign.yaml)
-- [Chain of Command Example](../examples/cli_configs/chain_of_command.yaml)
+- [Basic Paladin Example](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples/cli_configs)
+- [Advanced Paladin Example](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples/cli_configs)
+- [Formation Example](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples/cli_configs)
+- [Phalanx Example](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples/cli_configs)
+- [Campaign Example](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples/cli_configs)
+- [Chain of Command Example](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples/cli_configs)

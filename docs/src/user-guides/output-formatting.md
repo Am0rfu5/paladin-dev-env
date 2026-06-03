@@ -36,48 +36,34 @@ The Herald system controls how Paladin output is formatted and presented to user
 
 ### Core Components
 
-```rust
-// Output format types
+```rust,ignore
+// Output format types (paladin_core::platform::container::paladin_config)
 pub enum OutputFormat {
-    Plain,         // Raw LLM output
-    Markdown,      // Markdown-formatted
-    Json,          // Structured JSON
-    Html,          // HTML rendering
-    Custom(String), // Custom format name
+    Text,           // Raw text output
+    Json,           // Structured JSON
+    Structured,     // Structured data output
 }
 
-// Herald interface
-#[async_trait]
+// Herald interface (paladin_core::platform::container::herald)
 pub trait Herald: Send + Sync {
-    /// Format complete output
-    async fn format(&self, content: &str) -> Result<String, HeraldError>;
+    /// Format a complete Paladin execution result
+    fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError>;
 
-    /// Format streaming chunk
-    async fn format_chunk(&self, chunk: &str) -> Result<String, HeraldError>;
+    /// Format a complete Battalion execution result
+    fn format_battalion_result(&self, result: &BattalionResult) -> Result<String, HeraldError>;
 
-    /// Validate output against format requirements
-    fn validate(&self, content: &str) -> Result<(), HeraldError>;
-
-    /// Get format metadata
-    fn metadata(&self) -> FormatMetadata;
-}
-
-// Format metadata
-pub struct FormatMetadata {
-    pub format_name: String,
-    pub mime_type: String,
-    pub file_extension: String,
-    pub supports_streaming: bool,
+    /// Format a streaming chunk
+    fn format_stream_chunk(&self, chunk: &StreamChunk) -> Result<String, HeraldError>;
 }
 ```
 
 ### Integration with Paladin
 
-```rust
+```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
     .name("Assistant")
     .system_prompt("You are a helpful assistant.")
-    .output_format(OutputFormat::Markdown)
+    .output_format(OutputFormat::Text)
     .with_herald(Arc::new(MarkdownHerald::default()))
     .build()?;
 
@@ -91,10 +77,11 @@ let response = paladin.execute("Explain async/await").await?;
 
 No formatting, returns raw LLM output.
 
-```rust
-use paladin::herald::*;
+```rust,ignore
+use paladin_core::platform::container::herald::{Herald, HeraldError};
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 
-let herald = Arc::new(PlainHerald::default());
+let herald = Arc::new(MarkdownHerald::new());
 
 let paladin = PaladinBuilder::new(llm_adapter)
     .with_herald(herald)
@@ -108,8 +95,9 @@ println!("{}", response.content);  // Raw output
 
 Formats output as Markdown with proper structure.
 
-```rust
-use paladin::herald::*;
+```rust,ignore
+use paladin_core::platform::container::herald::{Herald, HeraldError};
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 
 let herald = Arc::new(MarkdownHerald::new()
     .with_code_highlighting(true)
@@ -140,7 +128,7 @@ Ownership is a core concept in Rust that ensures memory safety.
 
 ## Example
 
-```rust
+```rust,ignore
 fn main() {
     let s1 = String::from("hello");
     let s2 = s1;  // s1 is moved
@@ -159,8 +147,9 @@ fn main() {
 
 Formats output as structured JSON.
 
-```rust
-use paladin::herald::*;
+```rust,ignore
+use paladin_core::platform::container::herald::{Herald, HeraldError};
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 use serde_json::json;
 
 let herald = Arc::new(JsonHerald::new()
@@ -210,10 +199,11 @@ println!("Key points: {:?}", json["key_points"]);
 
 Formats output as styled HTML.
 
-```rust
-use paladin::herald::*;
+```rust,ignore
+use paladin_core::platform::container::herald::{Herald, HeraldError};
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 
-let herald = Arc::new(HtmlHerald::new()
+let herald = Arc::new(JsonHerald::new()
     .with_css_framework(CssFramework::Tailwind)
     .with_syntax_highlighting(true)
     .with_responsive_design(true)
@@ -245,8 +235,9 @@ let html = format!(r#"
 
 Specialized for code generation with syntax validation.
 
-```rust
-use paladin::herald::*;
+```rust,ignore
+use paladin_core::platform::container::herald::{Herald, HeraldError};
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 
 let herald = Arc::new(CodeHerald::new()
     .language("rust")
@@ -267,7 +258,7 @@ println!("{}", response.content);
 ```
 
 **Output:**
-```rust
+```rust,ignore
 pub fn reverse_string(s: &str) -> String {
     s.chars().rev().collect()
 }
@@ -290,33 +281,20 @@ Create custom heralds for specialized output formats.
 
 ### Simple Custom Herald
 
-```rust
-use paladin::herald::*;
+```rust,ignore
+use paladin_core::platform::container::herald::{Herald, HeraldError};
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 use async_trait::async_trait;
 
 pub struct UppercaseHerald;
 
-#[async_trait]
 impl Herald for UppercaseHerald {
-    async fn format(&self, content: &str) -> Result<String, HeraldError> {
+    fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
         Ok(content.to_uppercase())
     }
 
-    async fn format_chunk(&self, chunk: &str) -> Result<String, HeraldError> {
+    fn format_stream_chunk(&self, chunk: &StreamChunk) -> Result<String, HeraldError> {
         Ok(chunk.to_uppercase())
-    }
-
-    fn validate(&self, _content: &str) -> Result<(), HeraldError> {
-        Ok(())  // No validation needed
-    }
-
-    fn metadata(&self) -> FormatMetadata {
-        FormatMetadata {
-            format_name: "uppercase".to_string(),
-            mime_type: "text/plain".to_string(),
-            file_extension: "txt".to_string(),
-            supports_streaming: true,
-        }
     }
 }
 
@@ -329,8 +307,9 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### XML Herald
 
-```rust
-use paladin::herald::*;
+```rust,ignore
+use paladin_core::platform::container::herald::{Herald, HeraldError};
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 use quick_xml::Writer;
 use std::io::Cursor;
 
@@ -346,9 +325,8 @@ impl XmlHerald {
     }
 }
 
-#[async_trait]
 impl Herald for XmlHerald {
-    async fn format(&self, content: &str) -> Result<String, HeraldError> {
+    fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
         let mut writer = Writer::new(Cursor::new(Vec::new()));
 
         // Write XML declaration
@@ -366,22 +344,6 @@ impl Herald for XmlHerald {
         let xml_bytes = writer.into_inner().into_inner();
         Ok(String::from_utf8(xml_bytes)?)
     }
-
-    fn validate(&self, content: &str) -> Result<(), HeraldError> {
-        // Validate JSON structure
-        serde_json::from_str::<serde_json::Value>(content)
-            .map(|_| ())
-            .map_err(|e| HeraldError::ValidationError(e.to_string()))
-    }
-
-    fn metadata(&self) -> FormatMetadata {
-        FormatMetadata {
-            format_name: "xml".to_string(),
-            mime_type: "application/xml".to_string(),
-            file_extension: "xml".to_string(),
-            supports_streaming: false,
-        }
-    }
 }
 
 // Usage
@@ -395,8 +357,9 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### CSV Herald
 
-```rust
-use paladin::herald::*;
+```rust,ignore
+use paladin_core::platform::container::herald::{Herald, HeraldError};
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 use csv::Writer;
 
 pub struct CsvHerald {
@@ -418,9 +381,8 @@ impl CsvHerald {
     }
 }
 
-#[async_trait]
 impl Herald for CsvHerald {
-    async fn format(&self, content: &str) -> Result<String, HeraldError> {
+    fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
         // Parse JSON array
         let rows: Vec<serde_json::Value> = serde_json::from_str(content)
             .map_err(|e| HeraldError::FormatError(e.to_string()))?;
@@ -447,22 +409,6 @@ impl Herald for CsvHerald {
         let csv_bytes = wtr.into_inner()?;
         Ok(String::from_utf8(csv_bytes)?)
     }
-
-    fn validate(&self, content: &str) -> Result<(), HeraldError> {
-        // Validate JSON array structure
-        let _: Vec<serde_json::Value> = serde_json::from_str(content)
-            .map_err(|e| HeraldError::ValidationError(e.to_string()))?;
-        Ok(())
-    }
-
-    fn metadata(&self) -> FormatMetadata {
-        FormatMetadata {
-            format_name: "csv".to_string(),
-            mime_type: "text/csv".to_string(),
-            file_extension: "csv".to_string(),
-            supports_streaming: false,
-        }
-    }
 }
 
 // Usage
@@ -487,8 +433,9 @@ Process and format output in real-time for better user experience.
 
 ### Basic Streaming
 
-```rust
-use paladin::herald::*;
+```rust,ignore
+use paladin_core::platform::container::herald::{Herald, HeraldError};
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
 use futures::StreamExt;
 
 let herald = Arc::new(MarkdownHerald::default());
@@ -515,7 +462,7 @@ println!();
 
 ### Streaming with Accumulation
 
-```rust
+```rust,ignore
 pub struct StreamAccumulator {
     herald: Arc<dyn Herald>,
     buffer: String,
@@ -556,15 +503,14 @@ while let Some(chunk) = stream.next().await {
 
 ### Progress Indicators
 
-```rust
+```rust,ignore
 pub struct ProgressHerald {
     inner: Arc<dyn Herald>,
     show_progress: bool,
 }
 
-#[async_trait]
 impl Herald for ProgressHerald {
-    async fn format_chunk(&self, chunk: &str) -> Result<String, HeraldError> {
+    fn format_stream_chunk(&self, chunk: &StreamChunk) -> Result<String, HeraldError> {
         let formatted = self.inner.format_chunk(chunk).await?;
 
         if self.show_progress {
@@ -575,16 +521,8 @@ impl Herald for ProgressHerald {
         }
     }
 
-    async fn format(&self, content: &str) -> Result<String, HeraldError> {
-        self.inner.format(content).await
-    }
-
-    fn validate(&self, content: &str) -> Result<(), HeraldError> {
-        self.inner.validate(content)
-    }
-
-    fn metadata(&self) -> FormatMetadata {
-        self.inner.metadata()
+    fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
+        self.inner.format_paladin_result(result)
     }
 }
 ```
@@ -595,7 +533,7 @@ Generate output in multiple formats simultaneously.
 
 ### Multi-Format Herald
 
-```rust
+```rust,ignore
 pub struct MultiFormatHerald {
     heralds: HashMap<String, Arc<dyn Herald>>,
 }
@@ -628,7 +566,7 @@ impl MultiFormatHerald {
 let multi_herald = MultiFormatHerald::new()
     .add_format("json", Arc::new(JsonHerald::default()))
     .add_format("markdown", Arc::new(MarkdownHerald::default()))
-    .add_format("html", Arc::new(HtmlHerald::default()));
+    .add_format("html", Arc::new(JsonHerald::new()));
 
 let paladin = PaladinBuilder::new(llm_adapter).build()?;
 let response = paladin.execute("Summarize Rust features").await?;
@@ -644,7 +582,7 @@ std::fs::write("output.html", &all_formats["html"])?;
 
 ### Adaptive Format Selection
 
-```rust
+```rust,ignore
 pub struct AdaptiveHerald {
     formats: HashMap<String, Arc<dyn Herald>>,
     default: Arc<dyn Herald>,
@@ -686,10 +624,10 @@ pub enum OutputChannel {
 
 // Usage
 let adaptive = AdaptiveHerald::new()
-    .with_format("html", Arc::new(HtmlHerald::default()))
+    .with_format("html", Arc::new(JsonHerald::new()))
     .with_format("json", Arc::new(JsonHerald::default()))
     .with_format("markdown", Arc::new(MarkdownHerald::default()))
-    .with_default(Arc::new(PlainHerald::default()));
+    .with_default(Arc::new(MarkdownHerald::new()));
 
 // Format based on context
 let web_output = adaptive.format_for_context(
@@ -715,7 +653,7 @@ Transform or enhance output after formatting.
 
 ### Sanitization Herald
 
-```rust
+```rust,ignore
 pub struct SanitizingHerald {
     inner: Arc<dyn Herald>,
     remove_patterns: Vec<regex::Regex>,
@@ -735,9 +673,8 @@ impl SanitizingHerald {
     }
 }
 
-#[async_trait]
 impl Herald for SanitizingHerald {
-    async fn format(&self, content: &str) -> Result<String, HeraldError> {
+    fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
         let formatted = self.inner.format(content).await?;
 
         // Remove sensitive patterns
@@ -755,14 +692,13 @@ impl Herald for SanitizingHerald {
 
 ### Enhancement Herald
 
-```rust
+```rust,ignore
 pub struct EnhancingHerald {
     inner: Arc<dyn Herald>,
 }
 
-#[async_trait]
 impl Herald for EnhancingHerald {
-    async fn format(&self, content: &str) -> Result<String, HeraldError> {
+    fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
         let formatted = self.inner.format(content).await?;
 
         // Add enhancements
@@ -806,7 +742,7 @@ impl Herald for EnhancingHerald {
 
 ### Caching Herald
 
-```rust
+```rust,ignore
 use std::collections::HashMap;
 use std::sync::RwLock;
 
@@ -816,9 +752,8 @@ pub struct CachingHerald {
     max_cache_size: usize,
 }
 
-#[async_trait]
 impl Herald for CachingHerald {
-    async fn format(&self, content: &str) -> Result<String, HeraldError> {
+    fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
         // Check cache
         {
             let cache = self.cache.read().unwrap();
@@ -855,7 +790,7 @@ impl Herald for CachingHerald {
 
 ### 1. Match Format to Use Case
 
-```rust
+```rust,ignore
 // ✅ API endpoints - use JSON
 let api_herald = Arc::new(JsonHerald::new()
     .with_schema(api_schema)
@@ -869,7 +804,7 @@ let docs_herald = Arc::new(MarkdownHerald::new()
 );
 
 // ✅ Web display - use HTML
-let web_herald = Arc::new(HtmlHerald::new()
+let web_herald = Arc::new(JsonHerald::new()
     .with_css_framework(CssFramework::Bootstrap)
     .with_responsive_design(true)
 );
@@ -880,7 +815,7 @@ let export_herald = Arc::new(CsvHerald::new(headers));
 
 ### 2. Validate Structured Output
 
-```rust
+```rust,ignore
 let herald = Arc::new(JsonHerald::new()
     .with_schema(schema)
     .validate_output(true)  // Validate against schema
@@ -896,7 +831,7 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### 3. Use Streaming for Long Responses
 
-```rust
+```rust,ignore
 // ❌ Bad: Wait for complete response
 let response = paladin.execute(long_prompt).await?;
 println!("{}", response.content);  // User waits 30 seconds
@@ -912,7 +847,7 @@ while let Some(chunk) = stream.next().await {
 
 ### 4. Layer Heralds for Composability
 
-```rust
+```rust,ignore
 // Layer: Base -> Enhancement -> Sanitization -> Caching
 let herald = Arc::new(
     CachingHerald::new(
@@ -928,7 +863,7 @@ let herald = Arc::new(
 
 ### 5. Provide Format Guidance in System Prompt
 
-```rust
+```rust,ignore
 // ✅ Explicit format instructions
 let paladin = PaladinBuilder::new(llm_adapter)
     .system_prompt(
@@ -948,7 +883,7 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### Template-Based Herald
 
-```rust
+```rust,ignore
 use handlebars::Handlebars;
 
 pub struct TemplateHerald {
@@ -968,9 +903,8 @@ impl TemplateHerald {
     }
 }
 
-#[async_trait]
 impl Herald for TemplateHerald {
-    async fn format(&self, content: &str) -> Result<String, HeraldError> {
+    fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
         // Parse content as JSON
         let data: serde_json::Value = serde_json::from_str(content)?;
 
@@ -1008,14 +942,13 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### Diff Herald
 
-```rust
+```rust,ignore
 pub struct DiffHerald {
     previous_content: RwLock<Option<String>>,
 }
 
-#[async_trait]
 impl Herald for DiffHerald {
-    async fn format(&self, content: &str) -> Result<String, HeraldError> {
+    fn format_paladin_result(&self, result: &PaladinResult) -> Result<String, HeraldError> {
         let previous = self.previous_content.read().unwrap().clone();
 
         let formatted = if let Some(prev) = previous {
@@ -1052,7 +985,7 @@ impl Herald for DiffHerald {
 3. Enable output validation with retries
 4. Use JSON mode in LLM if supported
 
-```rust
+```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
     .system_prompt(
         "CRITICAL INSTRUCTION: You MUST respond with ONLY valid JSON. \
@@ -1074,14 +1007,14 @@ let paladin = PaladinBuilder::new(llm_adapter)
 2. Implement chunk boundary detection
 3. Buffer until complete format units
 
-```rust
+```rust,ignore
 pub struct BufferedStreamHerald {
     buffer: RwLock<String>,
     delimiter: String,
 }
 
 impl BufferedStreamHerald {
-    async fn format_chunk(&self, chunk: &str) -> Result<String, HeraldError> {
+    fn format_stream_chunk(&self, chunk: &StreamChunk) -> Result<String, HeraldError> {
         let mut buffer = self.buffer.write().unwrap();
         buffer.push_str(chunk);
 
@@ -1107,7 +1040,7 @@ impl BufferedStreamHerald {
 3. Optimize regex patterns
 4. Consider parallel processing
 
-```rust
+```rust,ignore
 // Lazy formatting
 pub struct LazyHerald {
     inner: Arc<dyn Herald>,
@@ -1134,7 +1067,7 @@ impl LazyHerald {
 
 ### Unit Testing Heralds
 
-```rust
+```rust,ignore
 #[cfg(test)]
 mod tests {
     use super::*;

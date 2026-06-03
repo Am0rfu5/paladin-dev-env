@@ -13,6 +13,8 @@
 - [Paladin Agents](user-guides/paladin-agents.md)
 - [Battalion Orchestration](user-guides/battalion-patterns.md)
 - [Orchestration Patterns](user-guides/orchestration.md)
+- [Content Processing](user-guides/content-processing.md)
+- [Agent ↔ Orchestrator Bridge](user-guides/agent-orchestrator-bridge.md)
 - [Arsenal Tools](user-guides/arsenal-tools.md)
 - [Garrison Memory](user-guides/garrison-memory.md)
 - [Sanctum Vector Memory](user-guides/sanctum-vector-memory.md)
@@ -47,6 +49,7 @@
 
 # API Reference
 
+- [Crate Map & Feature Flags](api-reference/crate-map.md)
 - [Feature Flags](api-reference/feature-flags.md)
 - [Migration Guide](api-reference/migration-guide.md)
 - [Stable API](api-reference/stable-api.md)

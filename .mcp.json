@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/mcp.json",
+  "_comment": "Project-scoped MCP servers (committed, shared with the team). GitHub and Context7 are already connected via the claude.ai account, so they are NOT redefined here. The servers below are a documented scaffold — they are DISABLED until you move them into 'mcpServers' and ensure the required runtime exists in the devcontainer. This container currently has no node/npx or uv/uvx; install one (e.g. add Node to .devcontainer) before enabling stdio servers that need it.",
+  "mcpServers": {},
+  "_disabledExamples": {
+    "filesystem": {
+      "_note": "Scoped filesystem access for the repo. Requires node/npx.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace"]
+    },
+    "git": {
+      "_note": "Richer git operations via MCP. Requires uv/uvx (Python).",
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "/workspace"]
+    },
+    "fetch": {
+      "_note": "Fetch + convert web pages to markdown. Requires uv/uvx (Python).",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    }
+  }
+}

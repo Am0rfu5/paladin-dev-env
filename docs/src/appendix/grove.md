@@ -1074,16 +1074,16 @@ impl TreeAgent {
 
 ## See Also
 
-- [Battalion Overview](BATTALION.md) - All orchestration patterns
-- [Council Pattern](COUNCIL.md) - Collaborative deliberation
-- [Commander](BATTALION.md#commander-strategy-router) - Strategy selection
-- [Configuration Examples](../examples/cli_configs/) - YAML configs
-- [Code Examples](../examples/) - Rust examples
+- [Battalion Overview](battalion-patterns-guide.md) - All orchestration patterns
+- [Council Pattern](council.md) - Collaborative deliberation
+- [Commander](../user-guides/orchestration.md) - Strategy selection
+- [Configuration Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples/cli_configs) - YAML configs
+- [Code Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) - Rust examples
 
 ---
 
 **Next Steps**:
 - Try the [Quick Start](#quick-start) example
-- Explore [YAML configurations](../examples/cli_configs/grove_keyword.yaml)
-- See [practical examples](examples/grove_examples.md)
+- Explore [YAML configurations](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples/cli_configs)
+- See [practical examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)
 - Review [API documentation](https://docs.rs/paladin)

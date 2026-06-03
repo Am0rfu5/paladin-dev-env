@@ -78,3 +78,19 @@ repos:
         stages: [pre-push]
         pass_filenames: false
         always_run: true
+
+      - id: check-doc-examples
+        name: cargo check (doc code examples)
+        entry: ./scripts/check-doc-examples.sh
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true
+
+      - id: check-doc-config
+        name: validate doc YAML config snippets
+        entry: ./scripts/check-doc-config.sh
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true

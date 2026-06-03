@@ -33,7 +33,7 @@ The Arsenal system enables Paladins to:
 
 ### Core Components
 
-```rust
+```rust,ignore
 // Armament - Tool definition
 pub struct Armament {
     pub name: String,
@@ -45,7 +45,7 @@ pub struct Armament {
 // Arsenal Port - Tool execution interface
 #[async_trait]
 pub trait ArsenalPort: Send + Sync {
-    async fn list_tools(&self) -> Result<Vec<Armament>>;
+    async fn list_armaments(&self) -> Result<Vec<Armament>>;
     async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult>;
 }
 
@@ -156,8 +156,9 @@ STDIO servers are command-line programs that communicate via standard input/outp
 
 ### Connecting a STDIO Server
 
-```rust
-use paladin::arsenal::*;
+```rust,ignore
+use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
+use paladin_core::platform::container::arsenal::{Armament, ArmamentCall, ArmamentResult};
 use paladin::prelude::*;
 
 #[tokio::main]
@@ -236,7 +237,7 @@ arsenal:
 
 ### Advanced STDIO Configuration
 
-```rust
+```rust,ignore
 let web_search = MCPStdioAdapter::new()
     .command("uvx")
     .args(vec!["mcp-server-fetch"])
@@ -254,8 +255,9 @@ SSE (Server-Sent Events) servers are web services that provide MCP tools over HT
 
 ### Connecting an SSE Server
 
-```rust
-use paladin::arsenal::*;
+```rust,ignore
+use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
+use paladin_core::platform::container::arsenal::{Armament, ArmamentCall, ArmamentResult};
 use paladin::prelude::*;
 
 #[tokio::main]
@@ -284,7 +286,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### SSE Configuration
 
-```rust
+```rust,ignore
 let api_server = MCPSseAdapter::new()
     .endpoint("https://api.example.com/mcp")
     .api_key("your-api-key")
@@ -305,14 +307,14 @@ let api_server = MCPSseAdapter::new()
 
 ### SSE Health Checks
 
-```rust
+```rust,ignore
 // Verify server is reachable
 if api_server.health_check().await? {
     println!("SSE server is healthy");
 }
 
 // List available tools
-let tools = api_server.list_tools().await?;
+let tools = api_server.list_armaments().await?;
 for tool in tools {
     println!("Tool: {} - {}", tool.name, tool.description);
 }
@@ -324,15 +326,16 @@ Create your own tools by implementing the `ArsenalPort` trait.
 
 ### Simple Custom Tool
 
-```rust
-use paladin::arsenal::*;
+```rust,ignore
+use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
+use paladin_core::platform::container::arsenal::{Armament, ArmamentCall, ArmamentResult};
 use async_trait::async_trait;
 
 pub struct CalculatorTool;
 
 #[async_trait]
 impl ArsenalPort for CalculatorTool {
-    async fn list_tools(&self) -> Result<Vec<Armament>, ArsenalError> {
+    async fn list_armaments(&self) -> Result<Vec<Armament>, ArsenalError> {
         Ok(vec![
             Armament {
                 name: "add".to_string(),
@@ -379,7 +382,7 @@ impl ArsenalPort for CalculatorTool {
 
     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
         // Validate tool exists
-        let tools = self.list_tools().await?;
+        let tools = self.list_armaments().await?;
         if !tools.iter().any(|t| t.name == call.tool_name) {
             return Err(ArsenalError::ToolNotFound(call.tool_name.clone()));
         }
@@ -406,7 +409,7 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### API Integration Tool
 
-```rust
+```rust,ignore
 use reqwest::Client;
 
 pub struct WeatherTool {
@@ -425,7 +428,7 @@ impl WeatherTool {
 
 #[async_trait]
 impl ArsenalPort for WeatherTool {
-    async fn list_tools(&self) -> Result<Vec<Armament>, ArsenalError> {
+    async fn list_armaments(&self) -> Result<Vec<Armament>, ArsenalError> {
         Ok(vec![
             Armament {
                 name: "get_weather".to_string(),
@@ -505,7 +508,7 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### Database Query Tool
 
-```rust
+```rust,ignore
 use sqlx::SqlitePool;
 
 pub struct DatabaseTool {
@@ -521,7 +524,7 @@ impl DatabaseTool {
 
 #[async_trait]
 impl ArsenalPort for DatabaseTool {
-    async fn list_tools(&self) -> Result<Vec<Armament>, ArsenalError> {
+    async fn list_armaments(&self) -> Result<Vec<Armament>, ArsenalError> {
         Ok(vec![
             Armament {
                 name: "query_database".to_string(),
@@ -584,7 +587,7 @@ impl ArsenalPort for DatabaseTool {
 
 When a Paladin invokes a tool, the result is automatically added to the conversation context:
 
-```rust
+```rust,ignore
 // Paladin execution loop
 loop {
     let response = llm.generate(context).await?;
@@ -607,7 +610,7 @@ loop {
 
 ### Custom Result Processing
 
-```rust
+```rust,ignore
 pub struct LoggingArsenalPort<T: ArsenalPort> {
     inner: T,
 }
@@ -633,8 +636,8 @@ impl<T: ArsenalPort> ArsenalPort for LoggingArsenalPort<T> {
     }
 
     // Forward other methods
-    async fn list_tools(&self) -> Result<Vec<Armament>, ArsenalError> {
-        self.inner.list_tools().await
+    async fn list_armaments(&self) -> Result<Vec<Armament>, ArsenalError> {
+        self.inner.list_armaments().await
     }
 
     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
@@ -651,7 +654,7 @@ paladin.add_armament(logged_tool);
 
 ### Error Handling
 
-```rust
+```rust,ignore
 match arsenal.invoke(&call).await {
     Ok(result) if result.success => {
         // Tool succeeded
@@ -681,7 +684,7 @@ match arsenal.invoke(&call).await {
 
 ### 1. Clear Tool Descriptions
 
-```rust
+```rust,ignore
 // ❌ Bad: Vague description
 Armament {
     name: "search",
@@ -701,7 +704,7 @@ Armament {
 
 ### 2. Validate Inputs
 
-```rust
+```rust,ignore
 fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
     // Check required parameters
     for param in &self.required_params {
@@ -723,7 +726,7 @@ fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
 
 ### 3. Set Timeouts
 
-```rust
+```rust,ignore
 let tool = CustomTool::new()
     .timeout(Duration::from_secs(30))  // Prevent hanging
     .build()?;
@@ -731,7 +734,7 @@ let tool = CustomTool::new()
 
 ### 4. Implement Retries for Flaky Operations
 
-```rust
+```rust,ignore
 async fn invoke_with_retry(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
     let mut attempts = 0;
     let max_attempts = 3;
@@ -753,7 +756,7 @@ async fn invoke_with_retry(&self, call: &ArmamentCall) -> Result<ArmamentResult,
 
 ### 5. Sanitize Inputs
 
-```rust
+```rust,ignore
 fn sanitize_sql(query: &str) -> Result<String, ArsenalError> {
     // Remove dangerous keywords
     let dangerous = ["DROP", "DELETE", "UPDATE", "INSERT", "CREATE", "ALTER"];
@@ -773,7 +776,7 @@ fn sanitize_sql(query: &str) -> Result<String, ArsenalError> {
 
 ### 6. Rate Limiting
 
-```rust
+```rust,ignore
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 
@@ -806,7 +809,7 @@ impl<T: ArsenalPort> ArsenalPort for RateLimitedTool<T> {
 
 ### 7. Structured Output
 
-```rust
+```rust,ignore
 // Return structured data that's easy to parse
 let output = serde_json::json!({
     "status": "success",
@@ -836,10 +839,10 @@ Ok(ArmamentResult {
 **Solutions**:
 1. Check tool description is clear and relevant
 2. Update system prompt to mention tool availability
-3. Verify tool appears in `list_tools()` output
+3. Verify tool appears in `list_armaments()` output
 4. Ensure LLM supports function calling (GPT-4, Claude 3+)
 
-```rust
+```rust,ignore
 // Make tool usage explicit in system prompt
 .system_prompt("You have access to a web_search tool. USE IT to find current information. \
                 Always search before answering questions about recent events.")
@@ -855,7 +858,7 @@ Ok(ArmamentResult {
 3. Check server logs for errors
 4. Verify environment variables are set
 
-```rust
+```rust,ignore
 let tool = MCPStdioAdapter::new()
     .command("uvx")
     .args(vec!["mcp-server-fetch"])
@@ -874,7 +877,7 @@ let tool = MCPStdioAdapter::new()
 3. Add caching for expensive operations
 4. Use async/parallel execution where possible
 
-```rust
+```rust,ignore
 let tool = CustomTool::new()
     .timeout(Duration::from_secs(120))  // Longer timeout
     .build()?;
@@ -890,7 +893,7 @@ let tool = CustomTool::new()
 3. Improve tool schema definitions
 4. Add examples to tool descriptions
 
-```rust
+```rust,ignore
 // Robust parameter extraction
 let count = call.parameters.get("count")
     .and_then(|v| {
@@ -911,7 +914,7 @@ let count = call.parameters.get("count")
 3. Ensure correct authentication method (bearer vs api-key)
 4. Check server CORS settings
 
-```rust
+```rust,ignore
 let tool = MCPSseAdapter::new()
     .endpoint("https://api.example.com/mcp")
     .bearer_token("your-token")  // Use bearer auth instead of api_key
@@ -923,7 +926,7 @@ let tool = MCPSseAdapter::new()
 
 ### Unit Testing Custom Tools
 
-```rust
+```rust,ignore
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -967,7 +970,7 @@ mod tests {
 
 ### Integration Testing with Paladin
 
-```rust
+```rust,ignore
 #[tokio::test]
 async fn test_paladin_uses_tool() {
     let llm_adapter = Arc::new(MockLlmAdapter::new());
@@ -1003,4 +1006,4 @@ See working examples:
 
 - [MCP Specification](https://modelcontextprotocol.io/)
 - [MCP Server Examples](https://github.com/modelcontextprotocol/servers)
-- [Tool Development Best Practices](../contributing/adapter-development.md)
+- [Tool Development Best Practices](../contributing/contributing-providers.md)

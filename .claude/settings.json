@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(cargo build:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo doc:*)",
+      "Bash(cargo tree:*)",
+      "Bash(cargo bench:*)",
+      "Bash(cargo audit:*)",
+      "Bash(cargo deny:*)",
+      "Bash(make help)",
+      "Bash(make build:*)",
+      "Bash(make test:*)",
+      "Bash(make check:*)",
+      "Bash(make lint:*)",
+      "Bash(make fmt:*)",
+      "Bash(make clean-code:*)",
+      "Bash(make audit:*)",
+      "Bash(make deny:*)",
+      "Bash(make status:*)",
+      "Bash(make health:*)",
+      "Bash(make services-ps:*)",
+      "Bash(make doc:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(rg:*)",
+      "Bash(ls:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(cargo publish:*)",
+      "Bash(make release:*)",
+      "Bash(make publish-dry-run:*)"
+    ],
+    "deny": []
+  }
+}

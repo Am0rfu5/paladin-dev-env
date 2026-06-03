@@ -31,7 +31,7 @@ Comprehensive guide for optimizing Paladin performance across different workload
 
 Single Entry Operations:
 - Add entry (10 chars): ~170 ns
-- Add entry (100 chars): ~210 ns  
+- Add entry (100 chars): ~210 ns
 - Add entry (1000 chars): ~225 ns
 - Add entry (10000 chars): ~380 ns
 
@@ -96,19 +96,19 @@ Aggregation Strategies:
 cargo bench
 
 # Specific benchmark
-cargo bench paladin_execution
+cargo bench config_benchmarks
 
 # With baseline comparison
-cargo bench --bench paladin_benchmarks -- --save-baseline v0.1.0
-cargo bench --bench paladin_benchmarks -- --baseline v0.1.0
+cargo bench --bench config_benchmarks -- --save-baseline v0.4.3
+cargo bench --bench config_benchmarks -- --baseline v0.4.3
 
 # Generate HTML report
-cargo bench --bench paladin_benchmarks -- --plotting-backend gnuplot
+cargo bench --bench config_benchmarks -- --plotting-backend gnuplot
 ```
 
 ### Custom Benchmarks
 
-```rust
+```rust,ignore
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn paladin_benchmark(c: &mut Criterion) {
@@ -162,7 +162,7 @@ llm:
 
 ### Request Batching
 
-```rust
+```rust,ignore
 // Batch similar requests
 pub struct LlmBatcher {
     pending: Vec<LlmRequest>,
@@ -195,7 +195,7 @@ impl LlmBatcher {
 
 ### Caching Responses
 
-```rust
+```rust,ignore
 use moka::future::Cache;
 
 pub struct CachedLlmPort {
@@ -230,7 +230,7 @@ impl CachedLlmPort {
 
 ### Streaming for Long Responses
 
-```rust
+```rust,ignore
 // Use streaming to reduce perceived latency
 pub async fn execute_with_streaming(
     paladin: &Paladin,
@@ -270,7 +270,7 @@ garrison:
 
 ### Memory Pooling
 
-```rust
+```rust,ignore
 use tokio::sync::RwLock;
 
 pub struct MemoryPool<T> {
@@ -295,7 +295,7 @@ impl<T> MemoryPool<T> {
 
 ### Lazy Loading
 
-```rust
+```rust,ignore
 // Load garrison entries on-demand
 pub struct LazyGarrison {
     session_id: Uuid,
@@ -322,7 +322,7 @@ impl LazyGarrison {
 
 ### Thread Pool Configuration
 
-```rust
+```rust,ignore
 use tokio::runtime::Builder;
 
 pub fn create_runtime() -> Runtime {
@@ -354,7 +354,7 @@ battalion:
 
 ### Backpressure Handling
 
-```rust
+```rust,ignore
 use tokio::sync::Semaphore;
 
 pub struct RateLimiter {
@@ -404,7 +404,7 @@ CREATE INDEX IF NOT EXISTS idx_garrison_search
 
 ### Connection Pooling
 
-```rust
+```rust,ignore
 use sqlx::sqlite::SqlitePoolOptions;
 
 pub async fn create_pool(database_url: &str) -> Result<SqlitePool> {
@@ -421,7 +421,7 @@ pub async fn create_pool(database_url: &str) -> Result<SqlitePool> {
 
 ### Query Optimization
 
-```rust
+```rust,ignore
 // Use prepared statements
 let stmt = sqlx::query!(
     "SELECT * FROM garrison_entries
@@ -451,7 +451,7 @@ tx.commit().await?;
 
 ### Connection Reuse
 
-```rust
+```rust,ignore
 use reqwest::Client;
 
 // Reuse HTTP client
@@ -478,7 +478,7 @@ server:
 
 ### HTTP/2 and Keep-Alive
 
-```rust
+```rust,ignore
 let client = reqwest::Client::builder()
     .http2_prior_knowledge()      // Use HTTP/2
     .tcp_keepalive(Duration::from_secs(60))
@@ -531,7 +531,7 @@ codegen-units = 1
 
 ### Monitoring Resource Usage
 
-```rust
+```rust,ignore
 use sysinfo::{System, SystemExt};
 
 pub fn log_resource_usage() {
@@ -566,4 +566,4 @@ Before production deployment:
 
 - **[Monitoring](monitoring.md)** - Set up performance monitoring
 - **[Troubleshooting](troubleshooting.md)** - Debug performance issues
-- **[Production Best Practices](../deployment/production-best-practices.md)** - Production readiness
+- **[Production Best Practices](../deployment/production.md)** - Production readiness

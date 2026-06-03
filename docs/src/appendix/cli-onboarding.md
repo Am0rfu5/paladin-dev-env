@@ -319,13 +319,13 @@ PALADIN_SKIP_VALIDATION=1 paladin onboarding
 
 ## Related Commands
 
-- **[`paladin setup-check`](SETUP_CHECK.md)** - Validate configuration after onboarding
-- **[`paladin features`](../CLI_USAGE.md#paladin-features)** - Discover available capabilities
-- **[`paladin agent`](../CLI_USAGE.md#paladin-agent)** - Run your first agent
+- **[`paladin setup-check`](cli-setup-check.md)** - Validate configuration after onboarding
+- **[`paladin features`](cli-usage.md)** - Discover available capabilities
+- **[`paladin agent`](cli-usage.md)** - Run your first agent
 
 ## See Also
 
-- [CLI Usage Guide](../CLI_USAGE.md)
-- [Quick Start Guide](../QUICKSTART.md)
-- [Installation Guide](../INSTALLATION.md)
-- [Provider Configuration](../CONTRIBUTING_PROVIDERS.md)
+- [CLI Usage Guide](cli-usage.md)
+- [Quick Start Guide](../getting-started/quickstart.md)
+- [Installation Guide](../getting-started/installation.md)
+- [Provider Configuration](../contributing/contributing-providers.md)

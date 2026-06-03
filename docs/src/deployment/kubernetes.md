@@ -180,7 +180,7 @@ spec:
 
       containers:
       - name: paladin
-        image: ghcr.io/your-org/paladin:v0.1.0
+        image: ghcr.io/your-org/paladin:v0.4.3
         imagePullPolicy: IfNotPresent
 
         ports:
@@ -469,7 +469,7 @@ replicaCount: 3
 
 image:
   repository: ghcr.io/your-org/paladin
-  tag: "v0.1.0"
+  tag: "v0.4.3"
   pullPolicy: IfNotPresent
 
 serviceAccount:
@@ -906,4 +906,4 @@ kubectl get networkpolicy -n paladin
 
 - **[CI/CD](cicd.md)** - Automated deployments
 - **[Monitoring](../operations/monitoring.md)** - Observability
-- **[Production Best Practices](production-best-practices.md)** - Production checklist
+- **[Production Best Practices](production.md)** - Production checklist

@@ -35,7 +35,7 @@ The Garrison system provides Paladins with:
 
 ### Core Components
 
-```rust
+```rust,ignore
 // Single memory entry
 pub struct GarrisonEntry {
     pub id: Uuid,
@@ -57,28 +57,27 @@ pub enum ConversationRole {
 // Memory interface
 #[async_trait]
 pub trait GarrisonPort: Send + Sync {
-    async fn add_entry(&self, entry: GarrisonEntry) -> Result<()>;
-    async fn get_history(&self, limit: usize) -> Result<Vec<GarrisonEntry>>;
-    async fn get_window(&self, max_tokens: u32) -> Result<Vec<GarrisonEntry>>;
-    async fn search(&self, query: &str, limit: usize) -> Result<Vec<GarrisonEntry>>;
-    async fn clear(&self) -> Result<()>;
-    async fn stats(&self) -> Result<GarrisonStats>;
+    async fn remember(&self, entry: GarrisonEntry) -> Result<(), GarrisonError>;
+    async fn recall_recent(&self, limit: usize) -> Result<Vec<GarrisonEntry>, GarrisonError>;
+    async fn search(&self, query: &str, limit: usize) -> Result<Vec<GarrisonEntry>, GarrisonError>;
+    async fn forget_all(&self) -> Result<(), GarrisonError>;
+    async fn stats(&self) -> Result<GarrisonStats, GarrisonError>;
 }
 
 // Extended port for long-term memory
 #[async_trait]
 pub trait LongTermGarrisonPort: GarrisonPort {
-    async fn add_with_embedding(
+    async fn remember_with_embedding(
         &self,
         entry: GarrisonEntry,
         embedding: Vec<f32>
-    ) -> Result<()>;
+    ) -> Result<(), GarrisonError>;
 
-    async fn semantic_search(
+    async fn search_similar(
         &self,
         query_embedding: Vec<f32>,
         limit: usize
-    ) -> Result<Vec<(GarrisonEntry, f32)>>;
+    ) -> Result<Vec<(GarrisonEntry, f32)>, GarrisonError>;
 }
 ```
 
@@ -104,8 +103,9 @@ Fastest option for short-lived sessions where persistence isn't needed.
 
 ### Basic Usage
 
-```rust
-use paladin::garrison::*;
+```rust,ignore
+use paladin_memory::garrison::InMemoryGarrison;
+use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole, GarrisonConfig};
 use paladin::prelude::*;
 
 #[tokio::main]
@@ -145,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Configuration Options
 
-```rust
+```rust,ignore
 let garrison = InMemoryGarrison::new(
     GarrisonConfig::default()
         // Maximum number of entries to retain
@@ -164,7 +164,7 @@ let garrison = InMemoryGarrison::new(
 
 ### Eviction Policies
 
-```rust
+```rust,ignore
 pub enum EvictionPolicy {
     // Remove oldest entries first
     Fifo,
@@ -199,8 +199,9 @@ SQLite-backed storage for sessions that need to survive restarts.
 
 ### Setup
 
-```rust
-use paladin::garrison::*;
+```rust,ignore
+use paladin_memory::garrison::InMemoryGarrison;
+use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole, GarrisonConfig};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -224,7 +225,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Session Management
 
-```rust
+```rust,ignore
 // Create session-based garrison
 let session_id = Uuid::new_v4();
 
@@ -242,13 +243,13 @@ let garrison_restored = Arc::new(
 );
 
 // History is preserved
-let history = garrison_restored.get_history(100).await?;
+let history = garrison_restored.recall_recent(100).await?;
 println!("Restored {} memories", history.len());
 ```
 
 ### Multiple Users
 
-```rust
+```rust,ignore
 pub struct UserGarrison {
     db: SqliteGarrison,
     user_id: String,
@@ -263,15 +264,15 @@ impl UserGarrison {
 
 #[async_trait]
 impl GarrisonPort for UserGarrison {
-    async fn add_entry(&self, mut entry: GarrisonEntry) -> Result<()> {
+    async fn remember(&self, mut entry: GarrisonEntry) -> Result<()> {
         // Tag entries with user_id
         entry.metadata.insert("user_id".to_string(), self.user_id.clone());
-        self.db.add_entry(entry).await
+        self.db.remember(entry).await
     }
 
-    async fn get_history(&self, limit: usize) -> Result<Vec<GarrisonEntry>> {
+    async fn recall_recent(&self, limit: usize) -> Result<Vec<GarrisonEntry>> {
         // Filter by user_id
-        let all_entries = self.db.get_history(limit * 2).await?;
+        let all_entries = self.db.recall_recent(limit * 2).await?;
         Ok(all_entries.into_iter()
             .filter(|e| e.metadata.get("user_id") == Some(&self.user_id))
             .take(limit)
@@ -327,9 +328,9 @@ Intelligently manage context size to respect LLM token limits.
 
 ### Token-Based Windowing
 
-```rust
+```rust,ignore
 // Get most recent entries that fit within token limit
-let window = garrison.get_window(4000).await?;
+let window = garrison.recall_recent(4000).await?;
 
 println!("Window contains {} entries", window.len());
 println!("Total tokens: {}",
@@ -338,7 +339,7 @@ println!("Total tokens: {}",
 
 ### Sliding Window
 
-```rust
+```rust,ignore
 pub struct SlidingWindowGarrison {
     garrison: Arc<dyn GarrisonPort>,
     window_size: u32,
@@ -352,14 +353,14 @@ impl SlidingWindowGarrison {
 
 #[async_trait]
 impl GarrisonPort for SlidingWindowGarrison {
-    async fn get_history(&self, _limit: usize) -> Result<Vec<GarrisonEntry>> {
+    async fn recall_recent(&self, _limit: usize) -> Result<Vec<GarrisonEntry>> {
         // Always return windowed history
-        self.garrison.get_window(self.window_size).await
+        self.garrison.recall_recent(self.window_size).await
     }
 
     // Forward other methods to inner garrison
-    async fn add_entry(&self, entry: GarrisonEntry) -> Result<()> {
-        self.garrison.add_entry(entry).await
+    async fn remember(&self, entry: GarrisonEntry) -> Result<()> {
+        self.garrison.remember(entry).await
     }
 
     // ... other methods
@@ -375,7 +376,7 @@ let paladin = PaladinBuilder::new(llm_adapter)
 
 ### Smart Windowing with Priorities
 
-```rust
+```rust,ignore
 pub struct PriorityWindowGarrison {
     garrison: Arc<dyn GarrisonPort>,
     window_size: u32,
@@ -383,7 +384,7 @@ pub struct PriorityWindowGarrison {
 
 impl PriorityWindowGarrison {
     async fn get_prioritized_window(&self) -> Result<Vec<GarrisonEntry>> {
-        let all_entries = self.garrison.get_history(1000).await?;
+        let all_entries = self.garrison.recall_recent(1000).await?;
 
         // Always include system prompts
         let system_entries: Vec<_> = all_entries.iter()
@@ -430,7 +431,7 @@ impl PriorityWindowGarrison {
 
 ### Summarization for Compression
 
-```rust
+```rust,ignore
 pub struct SummarizingGarrison {
     garrison: Arc<dyn GarrisonPort>,
     summarizer: Arc<dyn LlmPort>,
@@ -440,7 +441,7 @@ pub struct SummarizingGarrison {
 
 impl SummarizingGarrison {
     async fn maybe_summarize(&self) -> Result<()> {
-        let entries = self.garrison.get_history(self.summary_threshold).await?;
+        let entries = self.garrison.recall_recent(self.summary_threshold).await?;
 
         if entries.len() >= self.summary_threshold {
             // Create summary of old entries
@@ -465,7 +466,7 @@ impl SummarizingGarrison {
                 self.garrison.remove_entry(entry.id).await?;
             }
 
-            self.garrison.add_entry(GarrisonEntry {
+            self.garrison.remember(GarrisonEntry {
                 id: Uuid::new_v4(),
                 role: ConversationRole::System,
                 content: format!("Previous conversation summary: {}", summary),
@@ -488,9 +489,10 @@ Retrieve relevant memories by meaning using embeddings.
 
 ### Setup with Embeddings
 
-```rust
-use paladin::garrison::*;
-use paladin::embeddings::*;
+```rust,ignore
+use paladin_memory::garrison::InMemoryGarrison;
+use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole, GarrisonConfig};
+use paladin_memory::embedding::OpenAIEmbeddingPort;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -526,7 +528,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Hybrid Search (Keyword + Semantic)
 
-```rust
+```rust,ignore
 pub struct HybridGarrison {
     garrison: Arc<dyn LongTermGarrisonPort>,
 }
@@ -575,7 +577,7 @@ impl HybridGarrison {
 
 ### RAG (Retrieval-Augmented Generation)
 
-```rust
+```rust,ignore
 pub struct RAGPaladin {
     paladin: Paladin,
     garrison: Arc<dyn LongTermGarrisonPort>,
@@ -623,9 +625,9 @@ let response = rag_paladin.execute_with_rag(
 
 Memory of specific events and experiences.
 
-```rust
+```rust,ignore
 // Add episodic memory
-garrison.add_entry(GarrisonEntry {
+garrison.remember(GarrisonEntry {
     id: Uuid::new_v4(),
     role: ConversationRole::User,
     content: "I visited Paris last summer".to_string(),
@@ -644,9 +646,9 @@ garrison.add_entry(GarrisonEntry {
 
 General knowledge and facts.
 
-```rust
+```rust,ignore
 // Add semantic memory (facts)
-garrison.add_entry(GarrisonEntry {
+garrison.remember(GarrisonEntry {
     id: Uuid::new_v4(),
     role: ConversationRole::System,
     content: "User prefers Python over JavaScript for backend development".to_string(),
@@ -664,9 +666,9 @@ garrison.add_entry(GarrisonEntry {
 
 Knowledge about how to do things.
 
-```rust
+```rust,ignore
 // Add procedural memory
-garrison.add_entry(GarrisonEntry {
+garrison.remember(GarrisonEntry {
     id: Uuid::new_v4(),
     role: ConversationRole::System,
     content: "To deploy this project: cargo build --release && docker build -t app .".to_string(),
@@ -683,7 +685,7 @@ garrison.add_entry(GarrisonEntry {
 
 ### 1. Choose the Right Garrison Type
 
-```rust
+```rust,ignore
 // ✅ Use InMemoryGarrison for:
 // - Temporary chatbots
 // - Stateless services
@@ -716,7 +718,7 @@ let garrison = Arc::new(
 
 ### 2. Set Appropriate Token Limits
 
-```rust
+```rust,ignore
 // Model context windows
 const GPT_4_TURBO: u32 = 128_000;
 const GPT_4: u32 = 8_192;
@@ -738,8 +740,8 @@ let garrison = InMemoryGarrison::new(
 
 ### 3. Add Metadata for Better Organization
 
-```rust
-garrison.add_entry(GarrisonEntry {
+```rust,ignore
+garrison.remember(GarrisonEntry {
     id: Uuid::new_v4(),
     role: ConversationRole::User,
     content: message.clone(),
@@ -757,7 +759,7 @@ garrison.add_entry(GarrisonEntry {
 
 ### 4. Clean Up Old Memories
 
-```rust
+```rust,ignore
 // Periodic cleanup
 pub async fn cleanup_old_memories(
     garrison: &SqliteGarrison,
@@ -787,7 +789,7 @@ tokio::spawn(async move {
 
 ### 5. Implement Conversation Branching
 
-```rust
+```rust,ignore
 pub struct BranchingGarrison {
     garrison: Arc<dyn GarrisonPort>,
     current_branch: RwLock<Uuid>,
@@ -798,13 +800,13 @@ impl BranchingGarrison {
         let branch_id = Uuid::new_v4();
 
         // Copy history up to branch point
-        let history = self.garrison.get_history(1000).await?;
+        let history = self.garrison.recall_recent(1000).await?;
         let branch_history: Vec<_> = history.into_iter()
             .take_while(|e| e.id != from_entry)
             .collect();
 
         // Store branch metadata
-        self.garrison.add_entry(GarrisonEntry {
+        self.garrison.remember(GarrisonEntry {
             id: Uuid::new_v4(),
             role: ConversationRole::System,
             content: format!("Branch created from entry {}", from_entry),
@@ -827,7 +829,7 @@ impl BranchingGarrison {
 
 ### Memory Consolidation
 
-```rust
+```rust,ignore
 pub struct ConsolidatingGarrison {
     garrison: Arc<dyn GarrisonPort>,
     llm: Arc<dyn LlmPort>,
@@ -835,7 +837,7 @@ pub struct ConsolidatingGarrison {
 
 impl ConsolidatingGarrison {
     pub async fn consolidate_memories(&self) -> Result<()> {
-        let entries = self.garrison.get_history(100).await?;
+        let entries = self.garrison.recall_recent(100).await?;
 
         // Group by topic using LLM
         let topics = self.extract_topics(&entries).await?;
@@ -844,7 +846,7 @@ impl ConsolidatingGarrison {
         for (topic, topic_entries) in topics {
             let facts = self.extract_facts(&topic_entries).await?;
 
-            self.garrison.add_entry(GarrisonEntry {
+            self.garrison.remember(GarrisonEntry {
                 id: Uuid::new_v4(),
                 role: ConversationRole::System,
                 content: format!("Consolidated facts about {}: {}", topic, facts),
@@ -886,7 +888,7 @@ impl ConsolidatingGarrison {
 
 ### Attention Mechanism
 
-```rust
+```rust,ignore
 pub struct AttentionGarrison {
     garrison: Arc<dyn LongTermGarrisonPort>,
 }
@@ -951,7 +953,7 @@ impl AttentionGarrison {
 
 ### Memory Reflection
 
-```rust
+```rust,ignore
 pub struct ReflectiveGarrison {
     garrison: Arc<dyn GarrisonPort>,
     llm: Arc<dyn LlmPort>,
@@ -959,7 +961,7 @@ pub struct ReflectiveGarrison {
 
 impl ReflectiveGarrison {
     pub async fn generate_reflections(&self) -> Result<()> {
-        let recent_entries = self.garrison.get_history(50).await?;
+        let recent_entries = self.garrison.recall_recent(50).await?;
 
         // Prompt LLM to reflect on conversation
         let conversation = recent_entries.iter()
@@ -979,7 +981,7 @@ impl ReflectiveGarrison {
         let reflection = self.llm.generate(&prompt).await?;
 
         // Store reflection as high-importance memory
-        self.garrison.add_entry(GarrisonEntry {
+        self.garrison.remember(GarrisonEntry {
             id: Uuid::new_v4(),
             role: ConversationRole::System,
             content: format!("Reflection: {}", reflection),
@@ -1007,7 +1009,7 @@ impl ReflectiveGarrison {
 2. Check database file path is correct and writable
 3. Ensure proper async handling (`.await` on all operations)
 
-```rust
+```rust,ignore
 // ❌ Won't persist
 let garrison = Arc::new(InMemoryGarrison::new(config));
 
@@ -1024,7 +1026,7 @@ let garrison = Arc::new(SqliteGarrison::new("garrison.db").await?);
 2. Use `get_window()` instead of `get_history()`
 3. Implement summarization for old memories
 
-```rust
+```rust,ignore
 // Calculate safe token limit
 let model_limit = 8192;  // GPT-4
 let response_budget = 1000;
@@ -1067,7 +1069,7 @@ CREATE INDEX idx_embeddings ON garrison_entries(embedding);
 3. Use eviction policies
 4. Monitor with `garrison.stats()`
 
-```rust
+```rust,ignore
 // Periodic memory management
 tokio::spawn(async move {
     let mut interval = tokio::time::interval(Duration::from_secs(3600));
@@ -1088,7 +1090,7 @@ tokio::spawn(async move {
 
 ### Unit Testing
 
-```rust
+```rust,ignore
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1106,9 +1108,9 @@ mod tests {
             token_count: Some(2),
         };
 
-        garrison.add_entry(entry.clone()).await.unwrap();
+        garrison.remember(entry.clone()).await.unwrap();
 
-        let history = garrison.get_history(10).await.unwrap();
+        let history = garrison.recall_recent(10).await.unwrap();
         assert_eq!(history.len(), 1);
         assert_eq!(history[0].content, "Test message");
     }
@@ -1121,7 +1123,7 @@ mod tests {
 
         // Add entries totaling 150 tokens
         for i in 0..15 {
-            garrison.add_entry(GarrisonEntry {
+            garrison.remember(GarrisonEntry {
                 id: Uuid::new_v4(),
                 role: ConversationRole::User,
                 content: format!("Message {}", i),
@@ -1132,7 +1134,7 @@ mod tests {
         }
 
         // Window should respect token limit
-        let window = garrison.get_window(100).await.unwrap();
+        let window = garrison.recall_recent(100).await.unwrap();
         let total_tokens: u32 = window.iter()
             .map(|e| e.token_count.unwrap_or(0))
             .sum();
@@ -1158,6 +1160,6 @@ See working examples:
 
 ## Related Resources
 
-- [Token Counting Strategies](../architecture/token-estimation.md)
-- [Vector Database Integration](../contributing/vector-db-setup.md)
-- [Production Deployment](../deployment/garrison-scaling.md)
+- [Token Counting Strategies](../architecture/overview.md)
+- [Vector Database Integration](../user-guides/sanctum-vector-memory.md)
+- [Production Deployment](../deployment/production.md)

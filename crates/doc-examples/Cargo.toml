@@ -1,0 +1,24 @@
+[package]
+name = "paladin-doc-examples"
+version = "0.4.3"
+edition = "2024"
+publish = false
+description = "Compile-verified documentation examples for the Paladin book (not published)"
+
+[lib]
+doctest = false
+
+[dependencies]
+# The root umbrella crate (lib name `paladin`) — for the README quick example,
+# which uses the public `paladin::prelude` entry point.
+paladin-ai = { version = "0.4.3", path = "../.." }
+paladin-core = { package = "paladin-ai-core", version = "0.4.3", path = "../paladin-core" }
+paladin-ports = { version = "0.4.3", path = "../paladin-ports" }
+paladin-battalion = { version = "0.4.3", path = "../paladin-battalion" }
+paladin-llm = { version = "0.4.3", path = "../paladin-llm", features = ["openai", "mock"] }
+paladin-content = { version = "0.4.3", path = "../paladin-content", features = ["llm", "news-api"] }
+async-trait = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+tokio = { workspace = true }

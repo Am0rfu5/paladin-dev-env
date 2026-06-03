@@ -1,17 +1,76 @@
-# Migration Guide: Feature Flag Changes
+# Migration Guide
 
-This guide helps you migrate from Paladin versions before the feature flag reorganization (pre-v0.1.0) to the current version.
+This guide covers all breaking changes since v0.1.0 up to the current **v0.5.0** release.
 
 ## Table of Contents
 
-- [Breaking Change Summary](#breaking-change-summary)
-- [Quick Fix](#quick-fix)
+- [Migrating to v0.5.0 (from v0.4.x)](#migrating-to-v050-from-v04x)
+- [Migrating to v0.4.x (from v0.3.x)](#migrating-to-v04x-from-v03x)
+- [Migrating to v0.2.0 (from v0.1.x)](#migrating-to-v020-from-v01x)
+- [Migrating to v0.1.0 (Feature Flag Reorganization)](#migrating-to-v010-feature-flag-reorganization)
 - [Migration Scenarios](#migration-scenarios)
-- [What Changed](#what-changed)
-- [Why This Change](#why-this-change)
 - [Testing Your Migration](#testing-your-migration)
 
-## Breaking Change Summary
+---
+
+## Migrating to v0.5.0 (from v0.4.x)
+
+**No user-facing breaking changes.** v0.5.0 is the documentation-overhaul release (Milestone 11):
+the full MDBook was published to GitHub Pages, new orchestration / content-processing / bridge
+guides and a crate-map reference were added, and all documentation examples are now compile-verified
+against the workspace. No public API changed — bump your dependency from `0.4` to `0.5` and rebuild.
+
+The historical `version = "0.4"` snippets below remain valid for the 0.3 → 0.4 migration they
+document; for v0.5.0 simply substitute `"0.5"`.
+
+---
+
+## Migrating to v0.4.x (from v0.3.x)
+
+No user-facing breaking changes in v0.4.0–v0.4.3. Internal module renames only:
+
+- **`paladin-content` module rename** (v0.4.0): `crates/paladin-content/src/use_cases/` was renamed to `crates/paladin-content/src/services/`. If you import `paladin_content::use_cases::*` directly, update to `paladin_content::services::*`.
+
+---
+
+## Migrating to v0.2.0 (from v0.1.x)
+
+v0.2.0 contains two categories of breaking changes:
+
+### 1. Module Path Rename: `use_cases` → `services`
+
+`src/application/use_cases/` was renamed to `src/application/services/`. All import paths changed:
+
+| Old path | New path |
+|----------|----------|
+| `paladin::application::use_cases::paladin::*` | `paladin::application::services::paladin::*` |
+| `paladin::application::use_cases::battalion::*` | `paladin::application::services::battalion::*` |
+| `paladin::application::use_cases::arsenal::*` | `paladin::application::services::arsenal::*` |
+| `paladin::application::use_cases::content::*` | `paladin::application::services::content::*` |
+| `paladin::application::use_cases::herald::*` | `paladin::application::services::herald::*` |
+| `paladin::application::use_cases::orchestration::*` | `paladin::application::services::orchestration::*` |
+| `paladin::application::use_cases::sanctum::*` | `paladin::application::services::sanctum::*` |
+
+**Fix**: Replace `::use_cases::` with `::services::` in all import paths.
+
+```bash
+# Find affected imports
+grep -r "use_cases" src/
+# Replace
+find src/ -name "*.rs" -exec sed -i 's/use_cases/services/g' {} +
+```
+
+### 2. Removed Short-path Aliases
+
+Zero-consumer `pub use` re-export aliases were removed from `src/lib.rs`. These had no workspace consumers; all underlying types are unchanged.
+
+**Fix**: Replace `paladin::<Type>` short paths with crate-level import paths (`paladin_ports::`, `paladin_core::`, `paladin_battalion::`, etc.). See [STABLE_API.md](https://github.com/DF3NDR/paladin-dev-env/blob/main/STABLE_API.md) for the canonical import paths.
+
+---
+
+## Migrating to v0.1.0 (Feature Flag Reorganization)
+
+This section covers the original feature-flag reorganization that happened at v0.1.0.
 
 ### The Change
 
@@ -44,7 +103,7 @@ You are affected if:
 4. **Your `Cargo.toml` does NOT explicitly list features**, relying only on:
    ```toml
    [dependencies]
-   paladin = "0.x"  # No features = default features
+   paladin-ai = "0.4"  # No features = default features
    ```
 
 You are **NOT** affected if:
@@ -61,7 +120,7 @@ Add the old default features explicitly:
 
 ```toml
 [dependencies]
-paladin = { version = "0.1", features = ["llm-openai", "redis-queue", "s3-storage", "openai-embeddings"] }
+paladin-ai = { version = "0.4", features = ["llm-openai", "redis-queue", "s3-storage", "openai-embeddings"] }
 ```
 
 This maintains exact functionality while being explicit about requirements.
@@ -72,7 +131,7 @@ Enable all features:
 
 ```toml
 [dependencies]
-paladin = { version = "0.1", features = ["full"] }
+paladin-ai = { version = "0.4", features = ["full"] }
 ```
 
 **Warning**: This includes ALL optional features. For production, explicitly list only what you need.
@@ -84,13 +143,13 @@ Add only the features you actually use:
 ```toml
 [dependencies]
 # Example: Only need Redis queue
-paladin = { version = "0.1", features = ["redis-queue"] }
+paladin-ai = { version = "0.4", features = ["redis-queue"] }
 
 # Example: Only need S3 storage
-paladin = { version = "0.1", features = ["s3-storage"] }
+paladin-ai = { version = "0.4", features = ["s3-storage"] }
 
 # Example: Need both
-paladin = { version = "0.1", features = ["redis-queue", "s3-storage"] }
+paladin-ai = { version = "0.4", features = ["redis-queue", "s3-storage"] }
 ```
 
 ## Migration Scenarios
@@ -100,13 +159,13 @@ paladin = { version = "0.1", features = ["redis-queue", "s3-storage"] }
 **Before:**
 ```toml
 [dependencies]
-paladin = "0.x"  # Implicitly got redis-queue, s3-storage, openai-embeddings
+paladin-ai = "0.4"  # Implicitly got redis-queue, s3-storage, openai-embeddings
 ```
 
 **After:**
 ```toml
 [dependencies]
-paladin = { version = "0.1", features = ["llm-openai", "redis-queue", "s3-storage", "web-server"] }
+paladin-ai = { version = "0.4", features = ["llm-openai", "redis-queue", "s3-storage", "web-server"] }
 ```
 
 **Why**: Explicitly declares infrastructure dependencies. Adds `web-server` if you use REST APIs.
@@ -116,7 +175,7 @@ paladin = { version = "0.1", features = ["llm-openai", "redis-queue", "s3-storag
 **Before:**
 ```toml
 [dependencies]
-paladin = "0.x"
+paladin-ai = "0.4"
 ```
 
 **Your code** uses:
@@ -128,7 +187,7 @@ paladin = "0.x"
 **After:**
 ```toml
 [dependencies]
-paladin = { version = "0.1", features = [
+paladin-ai = { version = "0.4", features = [
     "llm-openai",           # Default LLM provider
     "content-processing",   # PDF, scraping, RSS, tokenization
     "redis-queue",          # Async job queue
@@ -141,7 +200,7 @@ paladin = { version = "0.1", features = [
 **Before:**
 ```toml
 [dependencies]
-paladin = "0.x"
+paladin-ai = "0.4"
 ```
 
 **Your code** uses:
@@ -151,7 +210,7 @@ paladin = "0.x"
 **After:**
 ```toml
 [dependencies]
-paladin = { version = "0.1", default-features = false, features = ["llm-all"] }
+paladin-ai = { version = "0.4", default-features = false, features = ["llm-all"] }
 ```
 
 **Why**: `default-features = false` removes the default `llm-openai`, then `llm-all` adds all providers.
@@ -161,7 +220,7 @@ paladin = { version = "0.1", default-features = false, features = ["llm-all"] }
 **Before:**
 ```toml
 [dependencies]
-paladin = "0.x"
+paladin-ai = "0.4"
 ```
 
 **Your code** uses:
@@ -172,7 +231,7 @@ paladin = "0.x"
 **After:**
 ```toml
 [dependencies]
-paladin = { version = "0.1", features = [
+paladin-ai = { version = "0.4", features = [
     "llm-openai",      # LLM provider
     "web-server",      # REST API
     "notifications",   # Email with templates
@@ -185,7 +244,7 @@ paladin = { version = "0.1", features = [
 **Before:**
 ```toml
 [dependencies]
-paladin = "0.x"
+paladin-ai = "0.4"
 
 [dev-dependencies]
 # Additional test deps...
@@ -195,11 +254,11 @@ paladin = "0.x"
 ```toml
 [dependencies]
 # Production - minimal features
-paladin = { version = "0.1", features = ["llm-openai", "redis-queue"] }
+paladin-ai = { version = "0.4", features = ["llm-openai", "redis-queue"] }
 
 [dev-dependencies]
 # Development - all features for testing
-paladin = { version = "0.1", features = ["full"] }
+paladin-ai = { version = "0.4", features = ["full"] }
 ```
 
 ## What Changed
@@ -300,7 +359,7 @@ error[E0432]: unresolved import `paladin::infrastructure::adapters::queue::redis
 
 **Fix**:
 ```toml
-paladin = { version = "0.1", features = ["redis-queue"] }
+paladin-ai = { version = "0.4", features = ["redis-queue"] }
 ```
 
 ### Error 2: Missing Adapter Struct
@@ -313,7 +372,7 @@ error[E0433]: failed to resolve: use of undeclared type `MinioAdapter`
 
 **Fix**:
 ```toml
-paladin = { version = "0.1", features = ["s3-storage"] }
+paladin-ai = { version = "0.4", features = ["s3-storage"] }
 ```
 
 ### Error 3: Content Type Detection Missing
@@ -326,7 +385,7 @@ error[E0425]: cannot find function `detect_content_type` in this scope
 
 **Fix**:
 ```toml
-paladin = { version = "0.1", features = ["s3-storage"] }
+paladin-ai = { version = "0.4", features = ["s3-storage"] }
 ```
 
 ### Error 4: PDF Extraction Failed
@@ -339,7 +398,7 @@ error[E0433]: failed to resolve: use of undeclared crate `pdf_extract`
 
 **Fix**:
 ```toml
-paladin = { version = "0.1", features = ["content-processing"] }
+paladin-ai = { version = "0.4", features = ["content-processing"] }
 ```
 
 ## Rollback Plan
@@ -362,7 +421,7 @@ cargo search paladin
 
 ```toml
 [dependencies]
-paladin = { version = "0.1", features = ["full"] }
+paladin-ai = { version = "0.4", features = ["full"] }
 ```
 
 This includes everything and more, allowing time for proper migration planning.
@@ -371,22 +430,15 @@ This includes everything and more, allowing time for proper migration planning.
 
 ### Documentation
 
-- **Feature Flags Reference**: [docs/FEATURE_FLAGS.md](FEATURE_FLAGS.md)
-- **Configuration Guide**: [docs/CONFIGURATION.md](CONFIGURATION.md)
-- **Changelog**: [CHANGELOG.md](../CHANGELOG.md)
+- **Feature Flags Reference**: [Feature Flags](feature-flags.md)
+- **Configuration Guide**: [Configuration Guide](../getting-started/configuration.md)
+- **Changelog**: [CHANGELOG](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md)
 
 ### Support Channels
 
-- **GitHub Issues**: [Report migration problems](https://github.com/yourusername/paladin/issues)
-- **GitHub Discussions**: [Ask migration questions](https://github.com/yourusername/paladin/discussions)
-- **Examples**: Check [examples/](../examples/) for feature-annotated examples
-
-### Example Migration PRs
-
-See these example PRs for migration patterns:
-- [Example: API Server Migration](#) (TODO: Add link)
-- [Example: Content Pipeline Migration](#) (TODO: Add link)
-- [Example: Minimal Orchestration Migration](#) (TODO: Add link)
+- **GitHub Issues**: [Report migration problems](https://github.com/DF3NDR/paladin-dev-env/issues)
+- **GitHub Discussions**: [Ask migration questions](https://github.com/DF3NDR/paladin-dev-env/discussions)
+- **Examples**: Check [examples/](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) for feature-annotated examples
 
 ## Checklist
 
@@ -459,7 +511,7 @@ If you directly import from `paladin::application::cli` (uncommon — internal u
 ```toml
 # Cargo.toml — add the cli feature
 [dependencies]
-paladin = { version = "0.1", features = ["cli"] }
+paladin-ai = { version = "0.4", features = ["cli"] }
 ```
 
 Or add `cli` to your own feature re-export:

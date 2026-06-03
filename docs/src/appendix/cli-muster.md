@@ -553,15 +553,15 @@ paladin muster "Add retry logic component" -o retry_component.yaml
 
 ## See Also
 
-- [CLI Usage Guide](../CLI_USAGE.md) - Overview of all CLI commands
-- [Battalion Documentation](../BATTALION.md) - Understanding orchestration patterns
-- [Paladin Configuration](../QUICKSTART.md) - Manual configuration guide
-- [Council Command](COUNCIL.md) - Quick group discussions
-- [Examples Directory](../../examples/cli_configs/) - Sample configurations
+- [CLI Usage Guide](cli-usage.md) - Overview of all CLI commands
+- [Battalion Documentation](../user-guides/battalion-patterns.md) - Understanding orchestration patterns
+- [Paladin Configuration](../getting-started/quickstart.md) - Manual configuration guide
+- [Council Command](council.md) - Quick group discussions
+- [Examples Directory](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) - Sample configurations
 
 ## Support
 
-- **Issues**: Report bugs at https://github.com/yourusername/paladin/issues
+- **Issues**: Report bugs at https://github.com/DF3NDR/paladin-dev-env/issues
 - **Discussions**: Ask questions in GitHub Discussions
 - **Documentation**: Full docs at https://paladin-ai.dev
 

@@ -921,7 +921,7 @@ paladin battalion run --config workflow.yaml --type maneuver
 ## Additional Resources
 
 - **API Documentation:** Run `cargo doc --open` for full API reference
-- **Battalion Guide:** See [BATTALION.md](../BATTALION.md) for pattern comparisons
+- **Battalion Guide:** See [BATTALION.md](../user-guides/battalion-patterns.md) for pattern comparisons
 - **Examples:** Check `examples/maneuver_*.rs` for runnable code
 - **CLI Reference:** Run `paladin maneuver --help` for all commands
 

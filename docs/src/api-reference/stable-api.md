@@ -1,21 +1,14 @@
 # Stable Public API Contract
 
-**Version:** 0.2.0
-**Last Updated:** 2026-05-30
-**Epic:** Milestone 8, Epic 5 - Document Facade Crate Role and Finalize
+**Version:** 0.5.0
+**Last Updated:** 2026-06-02
 **Status:** Active
 
 > **Breaking Changes in v0.2.0**: This release includes two categories of breaking changes:
 >
-> 1. **Removed short-path aliases** (Epics 2 & 3): Zero-consumer `pub use` short-path aliases
->    have been removed from `src/lib.rs`. Port traits, memory adapters, builder types, and base
->    types that previously had `paladin::<Type>` short aliases now require crate-level import paths.
+> **v0.5.0 API Note**: The canonical import path for all port traits is `crates/paladin-ports/`. Short-path aliases (`paladin::<Type>`) have been removed from `src/lib.rs`. Use full crate-level import paths (e.g. `use paladin_ports::output::llm_port::LlmPort`). The `application::use_cases` module path was renamed to `application::services` in a prior release.
 >
-> 2. **Module rename** (Epic 4): The `application::use_cases` module path has been renamed to
->    `application::services`. Any import path containing `::use_cases::` must be updated to
->    `::services::`.
->
-> See [CHANGELOG.md](CHANGELOG.md) for the complete migration tables.
+> See [CHANGELOG](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md) for the complete migration tables.
 
 ---
 
@@ -329,7 +322,7 @@ We use [`cargo-public-api`](https://github.com/Enselic/cargo-public-api) to trac
 ./scripts/extract-public-api.sh project/current-exports.txt
 ```
 
-This creates a baseline snapshot of all public items (16,471+ items as of v0.1.0).
+This creates a baseline snapshot of all public items (items as of v0.5.0).
 
 #### Check for API Changes (CI)
 
@@ -370,10 +363,10 @@ API surface changes are automatically detected in CI (`.github/workflows/ci.yml`
 cargo public-api --simplified | less
 
 # Compare against previous version
-cargo public-api --diff-git-checkouts v0.1.0 v0.2.0
+cargo public-api --diff-git-checkouts v0.3.0 v0.5.0
 
 # Generate HTML diff
-cargo public-api --diff-git-checkouts v0.1.0 v0.2.0 --output-format markdown
+cargo public-api --diff-git-checkouts v0.3.0 v0.5.0 --output-format markdown
 ```
 
 ---
@@ -433,7 +426,7 @@ A: Port traits are runtime-agnostic. The default implementations use Tokio, but 
 
 A: **Yes**, all error enums are marked `#[non_exhaustive]`, allowing new variants in minor versions. Always use a wildcard match:
 
-```rust
+```rust,ignore
 match error {
     PaladinError::ConfigurationError(_) => { /* ... */ },
     PaladinError::Timeout(_) => { /* ... */ },
@@ -794,8 +787,8 @@ When we make breaking changes in a major version bump, we will:
 
 ### Deprecation Example
 
-```rust
-// Version 0.1.0 - Original API
+```rust,ignore
+// Version 0.5.0 - Original API
 pub fn execute_paladin(paladin: &Paladin) -> Result<String, Error> {
     // ...
 }
@@ -827,7 +820,7 @@ pub trait PaladinPort {
 
 When possible, we provide compatibility shims during the deprecation period:
 
-```rust
+```rust,ignore
 // Compatibility shim example
 #[deprecated(since = "0.2.0", note = "use PaladinBuilder instead")]
 pub fn create_paladin(name: &str, model: &str) -> Paladin {
@@ -873,24 +866,24 @@ For questions about API stability:
 
 ### Related Documentation
 
-- **[API Audit](project/api-audit.md)** - Classification of current API surface
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and breaking changes
-- **[MIGRATION.md](docs/MIGRATION.md)** - Migration guides between versions
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines including API change process
-- **[Deprecations Tracking](project/DEPRECATIONS.md)** - Current and planned deprecations
+- **[API Reference](stable-api.md)** - Current stable API surface
+- **[CHANGELOG](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md)** - Version history and breaking changes
+- **[Migration Guide](migration-guide.md)** - Migration guides between versions
+- **[Contributing Guide](../contributing/development-setup.md)** - Contribution guidelines including API change process
+- **[Deprecations Tracking](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md)** - Current and planned deprecations
 
 ### Documentation Links
 
 - **Crate Documentation**: [docs.rs/paladin](https://docs.rs/paladin)
-- **User Guides**: [docs/README.md](docs/README.md)
-- **Architecture**: [docs/Design/Design_and_Architecture.md](docs/Design/Design_and_Architecture.md)
-- **Examples**: [examples/](examples/)
+- **User Guides**: [User Guides](../user-guides/paladin-agents.md)
+- **Architecture**: [Architecture Overview](../architecture/overview.md)
+- **Examples**: [examples/](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples)
 
 ---
 
 **Last Updated**: 2026-04-16
 **Document Version**: 1.1
-**Paladin Version**: 0.1.0
+**Paladin Version: 0.5.0
 **Maintainers**: @DF3NDR
 
 ---
@@ -906,7 +899,7 @@ This document defines how Paladin versions its workspace crates and what constit
 Paladin uses lockstep versioning for the initial release line.
 
 - Scope: all public crates in this workspace.
-- Current baseline: 0.1.0.
+- Current baseline: 0.5.0.
 - Milestone 7 target: 0.2.0 lockstep for publishable crates.
 - Rule: a single release version is applied to all public crates in the same release cycle.
 

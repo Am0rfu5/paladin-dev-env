@@ -510,8 +510,8 @@ println!("Total cost: ${}", calculate_cost(&response, provider_name));
 
 ## Additional Resources
 
-- [Paladin Examples](../examples/) - Working code examples
-- [Contributing Providers Guide](./CONTRIBUTING_PROVIDERS.md) - Add new providers
+- [Paladin Examples](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) - Working code examples
+- [Contributing Providers Guide](../contributing/contributing-providers.md) - Add new providers
 - [API Documentation](https://docs.rs/paladin) - Full API reference
 - [GitHub Issues](https://github.com/DF3NDR/paladin/issues) - Report issues
 

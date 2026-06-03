@@ -1,14 +1,20 @@
 name: Docs
 
 on:
+  # Unlike the validation workflows, this one INTENTIONALLY keeps `push: [main]`:
+  # the `deploy` job publishes to GitHub Pages and must run when docs land on
+  # `main`. The `main` filter means it never double-runs on feature branches
+  # (those only trigger the `pull_request` build, which does not deploy).
   push:
     branches:
       - main
     paths:
       - "docs/**"
+      - "crates/doc-examples/**"
   pull_request:
     paths:
       - "docs/**"
+      - "crates/doc-examples/**"
 
 permissions:
   contents: read
@@ -35,11 +41,23 @@ jobs:
         run: |
           cargo install mdbook-mermaid --version 0.13.0 --locked
 
+      - name: Install mdbook-linkcheck
+        run: |
+          cargo install mdbook-linkcheck --version 0.7.7 --locked
+
       - name: Inject mermaid assets
         run: mdbook-mermaid install docs/
 
       - name: Build docs
         run: mdbook build docs/
+
+      - name: Check doc code examples (compile paladin-doc-examples + scan inline blocks)
+        run: ./scripts/check-doc-examples.sh
+
+      - name: Check doc config snippets (YAML)
+        run: |
+          pip install --quiet pyyaml
+          ./scripts/check-doc-config.sh
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

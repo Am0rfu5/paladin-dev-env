@@ -804,6 +804,6 @@ curl -X PUT "${QDRANT_URL}/collections/${COLLECTION}/snapshots/recover" \
 ---
 
 **Next Steps**:
-- [Migration Guide](./SANCTUM_MIGRATION.md)
-- [Main Documentation](./SANCTUM.md)
-- [Performance Tuning](./guides/performance-tuning.md)
+- [Migration Guide](sanctum-migration.md)
+- [Main Documentation](../user-guides/sanctum-vector-memory.md)
+- [Performance Tuning](../operations/performance-tuning.md)

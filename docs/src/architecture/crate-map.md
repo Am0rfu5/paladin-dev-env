@@ -1,555 +1,260 @@
-# Dependency Flow Diagrams
+# Crate Map
 
-Visual representation of dependency flows, module interactions, and data flows in Paladin.
+This page documents all nine workspace crates, their roles, feature flags, and
+dependency relationships.
 
-## Table of Contents
-
-- [Hexagonal Architecture Dependency Flow](#hexagonal-architecture-dependency-flow)
-- [Layer Dependencies](#layer-dependencies)
-- [Paladin Execution Flow](#paladin-execution-flow)
-- [Battalion Orchestration Flows](#battalion-orchestration-flows)
-- [Port and Adapter Dependencies](#port-and-adapter-dependencies)
-- [Module Dependency Graph](#module-dependency-graph)
-
-## Hexagonal Architecture Dependency Flow
-
-**Critical Rule**: Dependencies flow **inward only** (from infrastructure → application → core).
+## Workspace Overview
 
 ```
-┌───────────────────────────────────────────────────────────┐
-│                   External Systems                         │
-│  (OpenAI, DeepSeek, Redis, MinIO, PostgreSQL, etc.)       │
-└────────────────────────┬──────────────────────────────────┘
-                         │
-                         │ HTTP/TCP/Protocol
-                         │
-┌────────────────────────▼──────────────────────────────────┐
-│              Infrastructure Layer                          │
-│                                                            │
-│  ┌──────────────────────────────────────────────────┐    │
-│  │          Adapters (Implementations)               │    │
-│  │  - OpenAiAdapter    implements LlmPort            │    │
-│  │  - DeepSeekAdapter  implements LlmPort            │    │
-│  │  - SqliteGarrison   implements GarrisonPort       │    │
-│  │  - McpStdioAdapter  implements ArsenalPort        │    │
-│  │  - FileCitadel      implements CitadelPort        │    │
-│  │  - MinioAdapter     implements FileStoragePort    │    │
-│  └──────────────────────────────────────────────────┘    │
-│                         │                                  │
-│                         │ implements                       │
-│                         │                                  │
-└─────────────────────────┼──────────────────────────────────┘
-                          │
-                          │
-┌─────────────────────────▼──────────────────────────────────┐
-│              Application Layer                              │
-│                                                             │
-│  ┌──────────────────────────────────────────────────┐     │
-│  │              Ports (Interfaces)                   │     │
-│  │  trait LlmPort          - LLM abstraction         │     │
-│  │  trait GarrisonPort     - Memory abstraction      │     │
-│  │  trait ArsenalPort      - Tool abstraction        │     │
-│  │  trait CitadelPort      - State abstraction       │     │
-│  │  trait FileStoragePort  - Storage abstraction     │     │
-│  └──────────────────────────────────────────────────┘     │
-│                         │                                   │
-│                         │ used by                           │
-│                         │                                   │
-│  ┌──────────────────────▼───────────────────────────┐     │
-│  │              Use Cases (Services)                 │     │
-│  │  - PaladinExecutionService                        │     │
-│  │  - FormationService                               │     │
-│  │  - PhalanxService                                 │     │
-│  │  - CampaignService                                │     │
-│  │  - CommanderService                               │     │
-│  └──────────────────────────────────────────────────┘     │
-│                         │                                   │
-│                         │ operates on                       │
-│                         │                                   │
-└─────────────────────────┼───────────────────────────────────┘
-                          │
-                          │
-┌─────────────────────────▼───────────────────────────────────┐
-│                     Core Layer                               │
-│                                                              │
-│  ┌──────────────────────────────────────────────────┐      │
-│  │           Domain Entities                         │      │
-│  │  - Paladin (aggregate root)                       │      │
-│  │  - Battalion (Formation, Phalanx, Campaign, CoC)  │      │
-│  │  - Garrison (memory context)                      │      │
-│  │  - Arsenal (tool registry)                        │      │
-│  │  - Citadel (state persistence)                    │      │
-│  └──────────────────────────────────────────────────┘      │
-│                         │                                    │
-│  ┌──────────────────────▼───────────────────────────┐      │
-│  │              Base Types                           │      │
-│  │  - Node<T>           - Entity wrapper             │      │
-│  │  - Collection<T>     - Entity collections         │      │
-│  │  - Field             - Field definitions          │      │
-│  │  - Message           - Message types              │      │
-│  └──────────────────────────────────────────────────┘      │
-│                                                              │
-│  NO DEPENDENCIES ON OUTER LAYERS                            │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+paladin-ai  (root umbrella, v0.5.0)
+├── paladin-ai-core          # Core domain
+├── paladin-ports            # Port trait contracts
+├── paladin-battalion        # Orchestration services
+├── paladin-llm              # LLM adapters
+├── paladin-memory           # Memory adapters
+├── paladin-storage          # SQL adapters
+├── paladin-notifications    # Notification adapters
+├── paladin-content          # Content adapters
+└── paladin-web              # HTTP server
 ```
 
-## Layer Dependencies
+## Dependency Graph
 
-### Allowed Dependencies
+```mermaid
+graph TD
+    root["paladin-ai (root)"]
+    core["paladin-ai-core"]
+    ports["paladin-ports"]
+    batt["paladin-battalion"]
+    llm["paladin-llm"]
+    mem["paladin-memory"]
+    stor["paladin-storage"]
+    notif["paladin-notifications"]
+    cont["paladin-content"]
+    web["paladin-web"]
 
-```
-Infrastructure ─────────can import───────────> Application
+    root --> core
+    root --> ports
+    root --> batt
+    root --> llm
+    root --> mem
+    root --> stor
+    root --> notif
+    root --> cont
+    root --> web
 
-Infrastructure ─────────can import───────────> Core
-
-Application ────────────can import───────────> Core
-
-Core ───────────────────CANNOT IMPORT────────X Infrastructure
-Core ───────────────────CANNOT IMPORT────────X Application
-Application ────────────CANNOT IMPORT────────X Infrastructure
-```
-
-### Module Import Rules
-
-```rust
-// ✅ ALLOWED: Infrastructure imports application and core
-// src/infrastructure/adapters/llm/openai_adapter.rs
-use crate::paladin_ports::output::llm_port::LlmPort;  // ✅
-use crate::core::platform::container::paladin::Paladin;    // ✅
-
-// ✅ ALLOWED: Application imports core
-// src/application/services/paladin/paladin_execution_service.rs
-use crate::core::platform::container::paladin::Paladin;    // ✅
-use crate::paladin_ports::output::llm_port::LlmPort;  // ✅
-
-// ❌ FORBIDDEN: Core imports application
-// src/core/platform/container/paladin.rs
-use crate::paladin_ports::output::llm_port::LlmPort;  // ❌ FORBIDDEN!
-
-// ❌ FORBIDDEN: Core imports infrastructure
-// src/core/platform/container/paladin.rs
-use crate::infrastructure::adapters::llm::OpenAiAdapter;   // ❌ FORBIDDEN!
-
-// ❌ FORBIDDEN: Application imports infrastructure
-// src/application/services/paladin/paladin_execution_service.rs
-use crate::infrastructure::adapters::llm::OpenAiAdapter;   // ❌ FORBIDDEN!
-```
-
-## Paladin Execution Flow
-
-End-to-end flow for executing a single Paladin:
-
-```
-┌──────────┐
-│  Client  │
-└────┬─────┘
-     │
-     │ execute("input")
-     │
-     ▼
-┌────────────────────────────────────┐
-│  PaladinExecutionService           │  (Application Layer)
-│  (Use Case)                        │
-└────┬─────────────────────────┬─────┘
-     │                         │
-     │ 1. Build prompt         │ 2. Load context
-     │                         │
-     ▼                         ▼
-┌──────────────────┐    ┌────────────────────┐
-│  Garrison        │    │  GarrisonPort      │
-│  (Core Domain)   │◄───│  (Interface)       │
-└──────────────────┘    └────────┬───────────┘
-                                 │ implements
-                                 ▼
-                        ┌────────────────────┐
-                        │ SqliteGarrison     │
-                        │ (Infrastructure)   │
-                        └────────────────────┘
-
-     │
-     │ 3. Call LLM
-     │
-     ▼
-┌──────────────────┐    ┌────────────────────┐
-│  LlmPort         │    │  OpenAiAdapter     │
-│  (Interface)     │◄───│  (Infrastructure)  │
-└────────┬─────────┘    └────────────────────┘
-         │                       │
-         │                       │ HTTPS
-         │                       ▼
-         │              ┌────────────────────┐
-         │              │  OpenAI API        │
-         │              │  (External)        │
-         │              └────────────────────┘
-         │
-         │ 4. Process tool calls (if any)
-         │
-         ▼
-┌──────────────────┐    ┌────────────────────┐
-│  Arsenal         │    │  ArsenalPort       │
-│  (Core Domain)   │◄───│  (Interface)       │
-└──────────────────┘    └────────┬───────────┘
-                                 │ implements
-                                 ▼
-                        ┌────────────────────┐
-                        │ McpStdioAdapter    │
-                        │ (Infrastructure)   │
-                        └────────────────────┘
-
-     │
-     │ 5. Check stop conditions
-     │
-     ▼
-┌──────────────────┐
-│  Loop control    │
-│  - max_loops     │
-│  - stop_words    │
-│  - timeout       │
-└────────┬─────────┘
-         │
-         │ 6. Save results
-         │
-         ▼
-┌──────────────────┐
-│  Update Garrison │
-│  with results    │
-└────────┬─────────┘
-         │
-         │ 7. Return
-         │
-         ▼
-┌──────────────────┐
-│  PaladinResult   │
-└──────────────────┘
+    ports --> core
+    batt --> core
+    batt --> ports
+    llm --> core
+    llm --> ports
+    mem --> core
+    mem --> ports
+    stor --> core
+    stor --> ports
+    notif --> core
+    notif --> ports
+    cont --> core
+    cont --> ports
+    web --> core
+    web --> ports
 ```
 
-## Battalion Orchestration Flows
+## Crate Details
 
-### Formation (Sequential) Flow
+### `paladin-ai-core`
 
+**Directory:** `crates/paladin-core/`
+**Layer:** Core domain
+**External deps:** serde, uuid, chrono, tokio (runtime only), thiserror
+
+Pure domain types — zero infrastructure dependencies.
+
+**Key modules:**
 ```
-┌──────────────┐
-│ Formation    │
-│ Service      │
-└──────┬───────┘
-       │
-       │ execute("input")
-       │
-       ▼
-┌──────────────┐       ┌──────────────┐       ┌──────────────┐
-│ Paladin 1    │──────►│ Paladin 2    │──────►│ Paladin 3    │
-└──────────────┘       └──────────────┘       └──────────────┘
-       │                      │                      │
-       │ output 1             │ output 2             │ output 3
-       │                      │                      │
-       └──────────────────────┴──────────────────────┘
-                              │
-                              ▼
-                    ┌──────────────────┐
-                    │ Aggregated       │
-                    │ Result           │
-                    └──────────────────┘
-
-Data Flow:
-  input → Paladin 1 → output 1 → Paladin 2 → output 2 → Paladin 3 → output 3
-```
-
-### Phalanx (Parallel) Flow
-
-```
-┌──────────────┐
-│ Phalanx      │
-│ Service      │
-└──────┬───────┘
-       │
-       │ execute("input")
-       │
-       ├──────────────┬──────────────┬──────────────┐
-       │              │              │              │
-       ▼              ▼              ▼              ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ Paladin 1    │ │ Paladin 2    │ │ Paladin 3    │ │ Paladin 4    │
-└──────┬───────┘ └──────┬───────┘ └──────┬───────┘ └──────┬───────┘
-       │              │              │              │
-       │ output 1     │ output 2     │ output 3     │ output 4
-       │              │              │              │
-       └──────────────┴──────────────┴──────────────┘
-                      │
-                      ▼
-            ┌──────────────────┐
-            │ Merge Results    │
-            │ (all outputs)    │
-            └──────────────────┘
-
-All Paladins receive same input, execute concurrently
+src/
+├── base/
+│   ├── node.rs          # Node<T> entity wrapper
+│   ├── collection.rs    # Paginated collections
+│   ├── field.rs         # Dynamic field definitions
+│   └── message.rs       # Inter-agent messages
+└── platform/container/
+    ├── paladin.rs             # Paladin aggregate
+    ├── paladin_config.rs
+    ├── paladin_error.rs
+    ├── garrison.rs            # Garrison domain types
+    ├── garrison_error.rs
+    ├── arsenal/               # Arsenal + ToolDefinition
+    ├── citadel.rs
+    ├── herald.rs
+    ├── sanctum.rs
+    └── battalion/             # Battalion domain types
 ```
 
-### Campaign (DAG) Flow
+---
 
+### `paladin-ports`
+
+**Directory:** `crates/paladin-ports/`
+**Layer:** Application boundary
+**External deps:** `paladin-ai-core`, async-trait, tokio
+
+Port trait contracts. No infrastructure SDKs.
+
+**Key modules:**
 ```
-┌──────────────┐
-│ Campaign     │
-│ Service      │
-└──────┬───────┘
-       │
-       │ execute("input")
-       │
-       ▼
-┌──────────────┐
-│ Paladin A    │ (entry point)
-└──────┬───────┘
-       │
-       ├──────────────┬──────────────┐
-       │              │              │
-       ▼              ▼              ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ Paladin B    │ │ Paladin C    │ │ Paladin D    │
-└──────┬───────┘ └──────┬───────┘ └──────────────┘
-       │              │
-       └──────┬───────┘
-              │
-              ▼
-       ┌──────────────┐
-       │ Paladin E    │ (merge point)
-       └──────┬───────┘
-              │
-              ▼
-       ┌──────────────┐
-       │ Final Result │
-       └──────────────┘
-
-Dependencies:
-  A → B, C, D (parallel after A)
-  B, C → E (E waits for both B and C)
-  D is independent branch
+src/output/
+├── llm_port.rs              # LlmPort
+├── garrison_port.rs         # GarrisonPort
+├── sanctum_port.rs          # SanctumPort
+├── arsenal_port.rs          # ArsenalPort
+├── citadel_port.rs          # CitadelPort
+├── file_storage_port.rs     # FileStoragePort
+├── notification_port.rs     # NotificationPort
+├── queue_port.rs            # QueuePort
+├── embedding_port.rs        # EmbeddingPort
+└── …
 ```
 
-### Chain of Command (Hierarchical) Flow
+---
 
+### `paladin-battalion`
+
+**Directory:** `crates/paladin-battalion/`
+**Layer:** Application services
+**External deps:** `paladin-ai-core`, `paladin-ports`, tokio, serde
+
+All eight orchestration patterns + Commander router.
+
+**Key modules:**
 ```
-┌──────────────────┐
-│ Commander        │ (top-level Paladin)
-│ Paladin          │
-└────────┬─────────┘
-         │
-         │ Analyzes task
-         │
-         ├──────────────┬──────────────┐
-         │              │              │
-         │ delegate     │ delegate     │ delegate
-         │              │              │
-         ▼              ▼              ▼
-┌────────────┐  ┌────────────┐  ┌────────────┐
-│ Lieutenant │  │ Lieutenant │  │ Lieutenant │
-│ Paladin 1  │  │ Paladin 2  │  │ Paladin 3  │
-└────────┬───┘  └────────┬───┘  └────────┬───┘
-         │              │              │
-         │ report       │ report       │ report
-         │              │              │
-         └──────────────┴──────────────┘
-                        │
-                        ▼
-              ┌────────────────┐
-              │ Commander      │
-              │ Synthesizes    │
-              └────────────────┘
-
-Commander decides which lieutenants to delegate to based on task
+src/
+├── formation_service.rs          # Sequential N→N+1
+├── phalanx_service.rs            # Concurrent parallel
+├── campaign_service.rs           # DAG / graph
+├── chain_of_command_service.rs   # Hierarchical delegation
+├── conclave_execution_service.rs # Expert synthesis
+├── council_service.rs            # Multi-agent discussion
+├── grove_service.rs              # Semantic routing
+├── maneuver/                     # Flow DSL
+└── commander.rs                  # Strategy auto-router
 ```
 
-## Port and Adapter Dependencies
+---
 
-### LLM Provider Chain
+### `paladin-llm`
 
+**Directory:** `crates/paladin-llm/`
+**Layer:** Infrastructure (LLM adapters)
+**External deps:** `paladin-ai-core`, `paladin-ports`, reqwest, serde_json, tokio
+
+**Feature flags:**
+
+| Flag | Default | Enables |
+|------|---------|---------|
+| `openai` | yes | `OpenAIAdapter`, `OpenAIEmbeddingAdapter` |
+| `anthropic` | no | `AnthropicAdapter` |
+| `deepseek` | no | `DeepSeekAdapter` |
+| `mock` | yes | `MockLlmAdapter`, `MultiStepMockLlmPort` |
+| `openai-embeddings` | no | Embedding API |
+| `vision` | no | Vision / multimodal extensions |
+
+**Key modules:** `src/openai/`, `src/anthropic/`, `src/deepseek/`, `src/mock.rs`
+
+---
+
+### `paladin-memory`
+
+**Directory:** `crates/paladin-memory/`
+**Layer:** Infrastructure (memory adapters)
+**External deps:** `paladin-ai-core`, `paladin-ports`, optionally sqlx, qdrant-client, tiktoken-rs
+
+**Feature flags:**
+
+| Flag | Default | Enables |
+|------|---------|---------|
+| `sqlite` | no | `SqliteGarrison` |
+| `qdrant` | no | `QdrantSanctumAdapter` |
+| `content-processing` | no | `TiktokenCounter`, `TokenCounter` |
+
+**Key modules:**
 ```
-┌────────────────────────────────────────────────────────────┐
-│  Application Layer - Ports                                  │
-│                                                             │
-│  pub trait LlmPort: Send + Sync {                          │
-│      async fn generate(&self, ...) -> Result<LlmResponse>; │
-│      async fn generate_stream(&self, ...) -> ...;          │
-│      fn validate_model(&self, ...) -> Result<()>;          │
-│  }                                                          │
-│                                                             │
-└────────────────┬───────────────────────────────────────────┘
-                 │
-                 │ implemented by
-                 │
-                 ├──────────────┬──────────────┬──────────────┐
-                 │              │              │              │
-                 ▼              ▼              ▼              ▼
-┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-│ OpenAiAdapter    │ │ DeepSeekAdapter  │ │ AnthropicAdapter │ │ CustomAdapter    │
-│ (Infrastructure) │ │ (Infrastructure) │ │ (Infrastructure) │ │ (Infrastructure) │
-└────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
-         │                    │                    │                    │
-         │ HTTPS              │ HTTPS              │ HTTPS              │ Custom
-         │                    │                    │                    │
-         ▼                    ▼                    ▼                    ▼
-┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-│ OpenAI API       │ │ DeepSeek API     │ │ Anthropic API    │ │ Custom Provider  │
-│ (External)       │ │ (External)       │ │ (External)       │ │ (External)       │
-└──────────────────┘ └──────────────────┘ └──────────────────┘ └──────────────────┘
-```
-
-### Garrison Storage Chain
-
-```
-┌────────────────────────────────────────────────────────────┐
-│  Application Layer - Ports                                  │
-│                                                             │
-│  pub trait GarrisonPort: Send + Sync {                     │
-│      async fn add_entry(&self, ...) -> Result<()>;         │
-│      async fn get_entries(&self, ...) -> Result<Vec<...>>; │
-│      async fn search(&self, ...) -> Result<Vec<...>>;      │
-│  }                                                          │
-│                                                             │
-└────────────────┬───────────────────────────────────────────┘
-                 │
-                 │ implemented by
-                 │
-                 ├──────────────┬──────────────┐
-                 │              │              │
-                 ▼              ▼              ▼
-┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-│ InMemoryGarrison │ │ SqliteGarrison   │ │ RedisGarrison    │
-│ (Infrastructure) │ │ (Infrastructure) │ │ (Infrastructure) │
-└────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
-         │                    │                    │
-         │ In-process         │ SQLite             │ Redis protocol
-         │                    │                    │
-         ▼                    ▼                    ▼
-┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-│ HashMap/Vec      │ │ garrison.db      │ │ Redis Server     │
-│ (Memory)         │ │ (File)           │ │ (External)       │
-└──────────────────┘ └──────────────────┘ └──────────────────┘
-```
-
-## Module Dependency Graph
-
-### Core Module Dependencies
-
-```
-core/
-├── base/                    (no dependencies)
-│   ├── node.rs
-│   ├── collection.rs
-│   ├── field.rs
-│   └── message.rs
-│
-└── platform/
-    └── container/
-        ├── paladin.rs       (depends on: base)
-        ├── garrison.rs      (depends on: base)
-        ├── arsenal.rs       (depends on: base)
-        ├── citadel.rs       (depends on: base)
-        └── battalion/
-            ├── mod.rs       (depends on: base, paladin)
-            ├── formation.rs (depends on: base, paladin, mod)
-            ├── phalanx.rs   (depends on: base, paladin, mod)
-            ├── campaign.rs  (depends on: base, paladin, mod)
-            └── chain_of_command.rs (depends on: base, paladin, mod)
-```
-
-### Application Module Dependencies
-
-```
-application/
-├── ports/
-│   ├── input/              (depends on: core)
-│   └── output/
-│       ├── llm_port.rs     (depends on: core)
-│       ├── garrison_port.rs (depends on: core)
-│       ├── arsenal_port.rs (depends on: core)
-│       └── citadel_port.rs (depends on: core)
-│
+src/
+├── garrison/
+│   ├── in_memory.rs     # InMemoryGarrison (always)
+│   └── sqlite.rs        # SqliteGarrison (feature: sqlite)
+├── sanctum/
+│   ├── in_memory.rs     # InMemorySanctum (always)
+│   └── qdrant.rs        # QdrantSanctumAdapter (feature: qdrant)
 └── services/
-    ├── paladin/            (depends on: core, ports)
-    │   ├── paladin_builder.rs
-    │   └── paladin_execution_service.rs
-    └── battalion/          (depends on: core, ports)
-        ├── formation_service.rs
-        ├── phalanx_service.rs
-        ├── campaign_service.rs
-        └── commander.rs
+    ├── memory_extraction_service.rs
+    └── rag_retrieval_service.rs
 ```
 
-### Infrastructure Module Dependencies
+---
 
-```
-infrastructure/
-├── adapters/
-│   ├── llm/                (depends on: core, application/ports)
-│   │   ├── openai_adapter.rs
-│   │   ├── deepseek_adapter.rs
-│   │   └── anthropic_adapter.rs
-│   │
-│   ├── garrison/           (depends on: core, application/ports)
-│   │   ├── in_memory_garrison.rs
-│   │   └── sqlite_garrison.rs
-│   │
-│   ├── arsenal/            (depends on: core, application/ports)
-│   │   ├── mcp_stdio_adapter.rs
-│   │   └── mcp_sse_adapter.rs
-│   │
-│   └── citadel/            (depends on: core, application/ports)
-│       └── file_citadel.rs
-│
-└── repositories/           (depends on: core, application)
-```
+### `paladin-storage`
 
-## Dependency Validation
+**Directory:** `crates/paladin-storage/`
+**Layer:** Infrastructure (SQL repositories)
+**External deps:** `paladin-ai-core`, `paladin-ports`, optionally sqlx, mysql
 
-### Enforcing Boundaries
+**Feature flags:** `sqlite`, `mysql`
 
-```rust
-// Use linting rules to enforce boundaries
-// .cargo/config.toml or rust-toolchain.toml
+---
 
-// Or use cargo-modules to visualize:
-// cargo install cargo-modules
-// cargo modules generate graph --lib | dot -Tpng > modules.png
-```
+### `paladin-notifications`
 
-### Testing Boundaries
+**Directory:** `crates/paladin-notifications/`
+**Layer:** Infrastructure (notification adapters)
+**Feature flags:** `email` (lettre + handlebars), `push` (stub), `system`
 
-```rust
-#[cfg(test)]
-mod architecture_tests {
-    use std::path::Path;
+---
 
-    #[test]
-    fn test_core_has_no_infrastructure_dependencies() {
-        // Parse core source files
-        // Verify no imports from infrastructure
-        assert!(verify_no_imports(
-            "src/core",
-            &["crate::infrastructure"]
-        ));
-    }
+### `paladin-content`
 
-    #[test]
-    fn test_core_has_no_application_dependencies() {
-        assert!(verify_no_imports(
-            "src/core",
-            &["crate::application"]
-        ));
-    }
+**Directory:** `crates/paladin-content/`
+**Layer:** Infrastructure (content processing)
 
-    #[test]
-    fn test_application_has_no_infrastructure_dependencies() {
-        assert!(verify_no_imports(
-            "src/application",
-            &["crate::infrastructure"]
-        ));
-    }
-}
-```
+Provides HTTP/file content fetcher, RSS/news ingestion, document parsing, and
+LLM-powered content analysis pipelines.
 
-## Next Steps
+---
 
-- **[Overview](overview.md)** - System architecture overview
-- **[Hexagonal Design](hexagonal-design.md)** - Ports and adapters details
-- **[Domain Model](domain-model.md)** - Domain entities and relationships
-- **[Design Patterns](design-patterns.md)** - Common patterns used
+### `paladin-web`
+
+**Directory:** `crates/paladin-web/`
+**Layer:** Infrastructure (HTTP server)
+**External deps:** actix-web, axum, tokio, serde
+
+User management REST API, RBAC middleware, content delivery endpoints.
+
+---
+
+### `paladin-ai` (root umbrella)
+
+**Directory:** `/` (workspace root)
+**Feature flags:**
+
+| Flag | Default | Enables |
+|------|---------|---------|
+| `llm-openai` | yes | OpenAI adapter |
+| `redis-queue` | no | Redis task queue |
+| `s3-storage` | no | MinIO / S3 storage |
+| `openai-embeddings` | no | Embedding API |
+| `qdrant` | no | Qdrant vector DB |
+
+## Adding a New Crate
+
+1. Create `crates/my-new-crate/` with `Cargo.toml` + `src/lib.rs`
+2. Add to `[workspace.members]` in the root `Cargo.toml`
+3. Set the layer: depend only on crates at the same or inner layers
+4. Add to the root `paladin-ai` umbrella via an optional dependency
+5. Document in this crate map
+
+## See Also
+
+- [Crate Map & Feature Flags (API Reference)](../api-reference/crate-map.md) — consumer/dependency view with copy-paste `Cargo.toml` profiles.
+- [Architecture Overview](overview.md)
+- [Hexagonal Design](hexagonal-design.md)
+- [Domain Model](domain-model.md)
