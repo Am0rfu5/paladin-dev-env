@@ -13,6 +13,9 @@ lcov.info
 *.cdx.json
 bom.json
 
+# Claude Code - personal/local settings (shared config in .claude/settings.json IS committed)
+.claude/settings.local.json
+
 # MDBook build output
 docs/book/
 # MDBook mermaid generated assets (re-generated at build time via mdbook-mermaid install)
