@@ -37,6 +37,10 @@ jobs:
         run: |
           cargo install mdbook-mermaid --version 0.13.0 --locked
 
+      - name: Install mdbook-linkcheck
+        run: |
+          cargo install mdbook-linkcheck --version 0.7.7 --locked
+
       - name: Inject mermaid assets
         run: mdbook-mermaid install docs/
 
