@@ -1,6 +1,10 @@
 name: Docs
 
 on:
+  # Unlike the validation workflows, this one INTENTIONALLY keeps `push: [main]`:
+  # the `deploy` job publishes to GitHub Pages and must run when docs land on
+  # `main`. The `main` filter means it never double-runs on feature branches
+  # (those only trigger the `pull_request` build, which does not deploy).
   push:
     branches:
       - main

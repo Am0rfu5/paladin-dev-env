@@ -4,10 +4,14 @@ name: pre-commit
 # same checks developers run locally are enforced for every contributor.
 on:
   pull_request:
-  push:
-    branches:
-      - main
-      - develop
+  # Runs on pull requests only, to avoid duplicate runs (one for `push`,
+  # one for `pull_request`) on a branch that already has an open PR.
+  # TROUBLESHOOTING: to run on every commit of a branch WITHOUT opening a PR,
+  # temporarily uncomment the `push:` block below.
+  # push:
+  #   branches:
+  #     - main
+  #     - develop
 
 permissions:
   contents: read

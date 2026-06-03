@@ -5,11 +5,15 @@ on:
     branches:
       - main
       - develop
-  push:
-    branches:
-      - main
-      - develop
-      - 'feature/**'
+  # Runs on pull requests only (plus the daily schedule), to avoid duplicate
+  # runs (one for `push`, one for `pull_request`) on a branch with an open PR.
+  # TROUBLESHOOTING: to run on every commit of a branch WITHOUT opening a PR,
+  # temporarily uncomment the `push:` block below.
+  # push:
+  #   branches:
+  #     - main
+  #     - develop
+  #     - 'feature/**'
   schedule:
     # Run integration tests daily at 2 AM UTC
     - cron: '0 2 * * *'
