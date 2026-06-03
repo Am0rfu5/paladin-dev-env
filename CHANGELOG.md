@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-03
+
 The **v0.5.0** release completes **Milestone 11 — Documentation Overhaul & Publish**, consolidating
 the work of Milestones 8–11 (orchestrator completion, facade cleanup, CI hardening, and the full
 documentation rebuild) into the first release with a published, compile-verified documentation site.
