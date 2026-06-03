@@ -410,5 +410,5 @@ CMD ["paladin"]
 For issues or questions about feature flags:
 - **Documentation**: [Configuration Guide](../getting-started/configuration.md)
 - **Migration**: [Migration Guide](migration-guide.md)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/paladin/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/paladin/discussions)
+- **Issues**: [GitHub Issues](https://github.com/DF3NDR/paladin-dev-env/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/DF3NDR/paladin-dev-env/discussions)

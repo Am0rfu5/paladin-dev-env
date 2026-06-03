@@ -689,7 +689,7 @@ print(f"Recommendations: {recommendations}")
 
 ## Support
 
-- **Issues**: Report bugs at https://github.com/yourusername/paladin/issues
+- **Issues**: Report bugs at https://github.com/DF3NDR/paladin-dev-env/issues
 - **Discussions**: Ask questions in GitHub Discussions
 - **Documentation**: Full docs at https://paladin-ai.dev
 

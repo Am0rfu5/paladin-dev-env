@@ -1,0 +1,100 @@
+## Relevant Files
+
+### Files Rewritten
+- `README.md` — concise landing page: tagline, badge row, quick example, key features, crate table, docs links, getting started, status, contributing, license (FR-8, FR-9)
+
+### Files Updated (In-Place, by hand)
+- `Cargo.toml` — set `documentation` field to the Pages URL (FR-7). *(Versions are bumped by `make release`, not by hand.)*
+- `crates/doc-examples/src/lib.rs` + a new `crates/doc-examples/src/readme.rs` — anchored, compile-verified README Quick Example (FR-8)
+- `docs/src/api-reference/crate-map.md` — consumer-profile snippets + crate table `0.4.3` → `0.5.0` (FR-6)
+- `docs/src/getting-started/installation.md`, `docs/src/getting-started/quickstart.md` — version strings `0.4.3` → `0.5.0` (FR-6)
+- *(any other `docs/src/**` guide naming the version — found via grep)* (FR-6)
+- `CHANGELOG.md` — populate `[Unreleased]` with the Milestones 8–11 / v0.5.0 summary (FR-10)
+- `docs/src/appendix/release-automation.md` — only if it has drifted from the current flow (FR-5)
+
+### Driven by automation (do NOT hand-edit)
+- All `Cargo.toml` versions + `workspace.dependencies` pins — bumped lockstep by `make release` (FR-12)
+- `CHANGELOG.md` `## [0.5.0] - <date>` heading — finalized by `make release` (FR-12)
+- `v0.5.0` tag, GitHub Release, crates.io publish — `make release` + `.github/workflows/release.yml` (FR-12, FR-13)
+- GitHub Pages deploy — `.github/workflows/docs.yml` (FR-13)
+
+### Repository settings (verified, not files)
+- Pages source = "GitHub Actions" (already configured — OQ-1); "About" → documentation URL (FR-15)
+
+### Notes
+
+- **No Rust source/behavior changes.** The only `*.rs`/`Cargo.toml` edits are the `documentation`
+  metadata field and the new README example fn in `crates/doc-examples`. Crate **versions** are
+  bumped exclusively by `make release` (cargo-release, lockstep) — never hand-edited.
+- **The release is automation-driven.** Epic 5 prepares artifacts and then runs `make release
+  VERSION=0.5.0` from an up-to-date `main`; `release.yml` (on the tag) creates the GitHub Release
+  and publishes to crates.io, and `docs.yml` (on the push) deploys Pages. Do not hand-roll
+  `git tag` / `gh release` / `cargo publish`.
+- **Verification gates** (run before the go/no-go in Task 5.0): `make check-doc-examples` (compiles
+  `paladin-doc-examples`), `make check-doc-config` (YAML), and `mdbook build` from inside `docs/`
+  (exit 0, linkcheck `warning-policy = "error"`, 0 broken links).
+- `make release` refuses to run off `main` or when behind `origin/main` (release-branch protection).
+  `cargo-release` must be installed (`cargo install --locked cargo-release` or `make` bootstrap).
+- The README Quick Example must compile via the doc-examples gate — no hand-written-only example
+  (the recurring Epic 4 lesson).
+
+## Instructions for Completing Tasks
+
+**IMPORTANT:** As you complete each task, you must check it off in this markdown file by changing
+`- [ ]` to `- [x]`. Update the file after completing each sub-task, not just each parent task.
+
+## Tasks
+
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Epics 1–4 are **not yet merged to `main`** (Epic 4 is on `feature/milestone-11-epic-4-new-documentation`). Stacked Epic 5 on the Epic 4 branch: created and checked out `feature/milestone-11-epic-5-publish-finalize` from it. **Tasks 5.0–7.0 (merge + release) are blocked until Epics 1–4 land on `main`.**
+
+- [x] 1.0 Final MDBook review & gate verification (FR-1–FR-5)
+  - [x] 1.1 `make check-doc-examples` — 0 failures (paladin-doc-examples compiles)
+  - [x] 1.2 `make check-doc-config` — 155 YAML blocks, 0 failures
+  - [x] 1.3 `mdbook build` from `docs/` — exit 0, 0 broken links; HTML present in `docs/book/html/`
+  - [x] 1.4 Link/cross-ref audit — crate-map table matches the 9 workspace members + umbrella; internal links resolve (linkcheck). **Found & fixed 6 stale `yourusername/paladin` placeholder URLs** across feature-flags.md, migration-guide.md, cli-council.md, cli-muster.md → real repo
+  - [x] 1.5 Content & rendering audit — no placeholder-only pages; Mermaid + code highlighting confirmed in built HTML. **Removed 3 `(TODO: Add link)` stubs** ("Example Migration PRs") from migration-guide.md. *(Version inconsistencies in feature-flags.md — `paladin = "0.1"`, `version = "0.4"` — deferred to Task 2.0 version sync.)*
+  - [x] 1.6 `release-automation.md` accurately describes the current `make release` + `release.yml` flow — no drift; no update needed (FR-5)
+  - [x] 1.7 Fixed the issues above; re-ran gates (mdbook 0 broken links, doc-examples pass); committed
+
+- [ ] 2.0 Sync documentation version strings to 0.5.0 + `documentation` metadata (FR-6, FR-7)
+  - [ ] 2.1 `grep -rn '0\.4\.3\|"0\.4"' docs/src/` to enumerate every version reference and the files/lines to change
+  - [ ] 2.2 Update the consumer-profile `Cargo.toml` snippets and crate table in `docs/src/api-reference/crate-map.md` to `0.5.0`
+  - [ ] 2.3 Update version strings in `docs/src/getting-started/installation.md` and `quickstart.md` to `0.5.0`
+  - [ ] 2.4 Update any other `docs/src/**` guide naming the version (from 2.1)
+  - [ ] 2.5 Set the root `Cargo.toml` `documentation` field to `https://df3ndr.github.io/paladin-dev-env/` (FR-7) — *do not* touch crate `version` fields (handled by `make release`)
+  - [ ] 2.6 Re-run `make check-doc-examples` and `mdbook build` to confirm the doc changes still pass; commit
+
+- [ ] 3.0 Rewrite root `README.md` as a concise landing page with a compile-verified Quick Example (FR-8, FR-9)
+  - [ ] 3.1 Add the Quick Example as an anchored fn in a new `crates/doc-examples/src/readme.rs` (registered in `lib.rs`); `cargo check -p paladin-doc-examples` green, clippy/fmt clean
+  - [ ] 3.2 Draft the README skeleton: title + one-line tagline; **badge row** (CI `ci.yml`, crates.io version for `paladin-ai`, docs.rs, MIT license, MSRV `Rust 1.85+`, Pages docs link) using shields.io with real targets
+  - [ ] 3.3 Write the one-paragraph description (multi-agent **AI orchestration** framing, not "content processing platform") and **Key Features** (5–8 bullets)
+  - [ ] 3.4 Add the **Crate Ecosystem** table (9 crates: name, purpose, key feature flags), consistent with `api-reference/crate-map.md`
+  - [ ] 3.5 Add **Documentation** (Pages + docs.rs links), **Getting Started** (prerequisites, add-to-`Cargo.toml`, link to quickstart), **Project Status** (0.5.0, link `stable-api.md`, changelog link), **Contributing** (links to `CONTRIBUTING.md` / `docs/src/contributing/`), **License** (MIT)
+  - [ ] 3.6 Put the exact `readme.rs` Quick Example code into the README's ```rust block, and make it compile-verified — extend `scripts/check-doc-examples.sh` to also compile/sync the README block against the `readme.rs` anchor (no hand-written-only example)
+  - [ ] 3.7 Replace `README.md` with the new landing page
+  - [ ] 3.8 Verify quality (FR-9): every badge URL resolves (curl); every internal link points to a real file; crate table matches the workspace; Quick Example compiles. Commit
+
+- [ ] 4.0 Prepare `CHANGELOG.md` `[Unreleased]` v0.5.0 content (FR-10)
+  - [ ] 4.1 Review git history and milestone docs to summarize Milestones 8–11 (orchestrator completion, facade cleanup, CI hardening, documentation overhaul)
+  - [ ] 4.2 Populate the existing `## [Unreleased]` section under `### Added`, `### Changed`, `### Fixed`, `### Documentation`
+  - [ ] 4.3 In `### Documentation`, explicitly call out: MDBook published to GitHub Pages; new orchestration / content-processing / bridge guides; crate map & feature-flag reference; all examples compile-verified against the current API
+  - [ ] 4.4 Do **not** add a `## [0.5.0]` heading or date (left to `make release`); confirm the section follows the existing keep-a-changelog format. Commit
+
+- [ ] 5.0 Merge to `main` + go/no-go checkpoint (FR-11)
+  - [ ] 5.1 Open a PR from `feature/milestone-11-epic-5-publish-finalize` to `main`; confirm all CI checks pass
+  - [ ] 5.2 Merge the PR; `git checkout main && git pull --ff-only origin main`
+  - [ ] 5.3 Run the consolidated go/no-go checkpoint on `main`: `make check-doc-examples`, `make check-doc-config`, `mdbook build` (0 broken links), `cargo check --workspace` — all green
+  - [ ] 5.4 Confirm prerequisites: `cargo-release` installed (`cargo install --locked cargo-release`); local `main` up to date with `origin/main`; README + CHANGELOG `[Unreleased]` ready
+  - [ ] 5.5 **STOP — request explicit human go-ahead before the next task** (`make release` is irreversible: it tags, pushes, and triggers crates.io publish + Pages deploy)
+
+- [ ] 6.0 Cut the release — `make release VERSION=0.5.0` (FR-12)
+  - [ ] 6.1 From an up-to-date `main`, run `make release VERSION=0.5.0`
+  - [ ] 6.2 Confirm the local outcome: all `Cargo.toml` versions (+ `workspace.dependencies` pins) at `0.5.0`; `CHANGELOG.md` now has `## [0.5.0] - 2026-06-03`; a `chore(release): version 0.5.0` commit and `v0.5.0` tag exist and were pushed to `origin`
+
+- [ ] 7.0 Verify automated publish/deploy outcomes + publish the URL (FR-13–FR-15)
+  - [ ] 7.1 Watch `release.yml` for the `v0.5.0` tag: `verify-tag-source` (tag in `main`) → test suite → `create-release` (GitHub Release) → crates.io publish in dependency order (+ Docker images + binaries) — all green (`gh run watch` / Actions tab)
+  - [ ] 7.2 Watch `docs.yml` for the push to `main`: MDBook build + deploy to GitHub Pages succeeds
+  - [ ] 7.3 Verify published surfaces (FR-14): site live at `https://df3ndr.github.io/paladin-dev-env/` (loads, sidebar nav, all chapters reachable, code highlighting, Mermaid renders, search works); crates on crates.io at `0.5.0`; docs.rs builds API docs; the `v0.5.0` GitHub Release exists with the changelog body
+  - [ ] 7.4 Publish the URL (FR-15): set the repository "About" → documentation to the Pages URL; confirm `README.md` and the `Cargo.toml` `documentation` field reflect it
+  - [ ] 7.5 Check off the Epic 5 Definition of Done in `Epic-5_Publish-and-Finalize.md`; mark Milestone 11 complete

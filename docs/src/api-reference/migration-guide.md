@@ -423,16 +423,9 @@ This includes everything and more, allowing time for proper migration planning.
 
 ### Support Channels
 
-- **GitHub Issues**: [Report migration problems](https://github.com/yourusername/paladin/issues)
-- **GitHub Discussions**: [Ask migration questions](https://github.com/yourusername/paladin/discussions)
+- **GitHub Issues**: [Report migration problems](https://github.com/DF3NDR/paladin-dev-env/issues)
+- **GitHub Discussions**: [Ask migration questions](https://github.com/DF3NDR/paladin-dev-env/discussions)
 - **Examples**: Check [examples/](https://github.com/DF3NDR/paladin-dev-env/tree/main/examples) for feature-annotated examples
-
-### Example Migration PRs
-
-See these example PRs for migration patterns:
-- [Example: API Server Migration](#) (TODO: Add link)
-- [Example: Content Pipeline Migration](#) (TODO: Add link)
-- [Example: Minimal Orchestration Migration](#) (TODO: Add link)
 
 ## Checklist
 
