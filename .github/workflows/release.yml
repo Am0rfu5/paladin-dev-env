@@ -270,7 +270,17 @@ jobs:
 
       - name: Strip binary
         if: matrix.os != 'windows-latest'
-        run: strip target/${{ matrix.target }}/release/paladin
+        run: |
+          if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
+            # This binary is cross-compiled to aarch64 (via `cross`), so the host
+            # x86_64 `strip` cannot read it ("Unable to recognise the format").
+            # Use the matching aarch64 cross strip from binutils-aarch64-linux-gnu.
+            sudo apt-get update
+            sudo apt-get install -y binutils-aarch64-linux-gnu
+            aarch64-linux-gnu-strip target/${{ matrix.target }}/release/paladin
+          else
+            strip target/${{ matrix.target }}/release/paladin
+          fi
 
       - name: Create archive
         run: |
