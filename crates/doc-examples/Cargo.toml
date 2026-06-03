@@ -9,6 +9,9 @@ description = "Compile-verified documentation examples for the Paladin book (not
 doctest = false
 
 [dependencies]
+# The root umbrella crate (lib name `paladin`) — for the README quick example,
+# which uses the public `paladin::prelude` entry point.
+paladin-ai = { version = "0.4.3", path = "../.." }
 paladin-core = { package = "paladin-ai-core", version = "0.4.3", path = "../paladin-core" }
 paladin-ports = { version = "0.4.3", path = "../paladin-ports" }
 paladin-battalion = { version = "0.4.3", path = "../paladin-battalion" }

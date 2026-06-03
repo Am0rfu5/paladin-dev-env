@@ -3554,6 +3554,7 @@ version = "0.4.3"
 dependencies = [
  "async-trait",
  "chrono",
+ "paladin-ai",
  "paladin-ai-core",
  "paladin-battalion",
  "paladin-content",

@@ -31,6 +31,47 @@ if ! cargo check --quiet --manifest-path "${WORKSPACE_ROOT}/crates/doc-examples/
 fi
 echo "All included examples compile."
 echo ""
+
+# --- Layer 1b: README Quick Example must match its compiled source ------------
+# The root README isn't processed by mdBook, so it can't use `{{#include}}`.
+# Instead the Quick Example is kept verbatim in `crates/doc-examples/src/readme.rs`
+# (compiled by Layer 1) and mirrored in README.md; this check fails if they drift.
+README_FILE="${WORKSPACE_ROOT}/README.md"
+README_SRC="${WORKSPACE_ROOT}/crates/doc-examples/src/readme.rs"
+if [[ -f "${README_FILE}" && -f "${README_SRC}" ]]; then
+    echo "Checking README Quick Example matches crates/doc-examples/src/readme.rs ..."
+    if ! python3 - "${README_FILE}" "${README_SRC}" <<'PY'
+import re, sys
+readme, src = sys.argv[1], sys.argv[2]
+
+# The anchored region in readme.rs (between ANCHOR / ANCHOR_END markers).
+src_text = open(src, encoding="utf-8").read()
+m = re.search(r"// ANCHOR: quickstart\n(.*?)\n[ \t]*// ANCHOR_END: quickstart", src_text, re.S)
+if not m:
+    print("README-SYNC FAIL: could not find the `quickstart` anchor in readme.rs", file=sys.stderr)
+    sys.exit(1)
+anchor = m.group(1).strip("\n")
+
+# The first ```rust block in README.md.
+readme_text = open(readme, encoding="utf-8").read()
+b = re.search(r"```rust\n(.*?)\n```", readme_text, re.S)
+if not b:
+    print("README-SYNC FAIL: no ```rust block found in README.md", file=sys.stderr)
+    sys.exit(1)
+block = b.group(1).strip("\n")
+
+if anchor != block:
+    print("README-SYNC FAIL: README.md Quick Example does not match readme.rs anchor.", file=sys.stderr)
+    print("Update README.md to match crates/doc-examples/src/readme.rs (the compiled source).", file=sys.stderr)
+    sys.exit(1)
+PY
+    then
+        exit 1
+    fi
+    echo "README Quick Example is in sync."
+    echo ""
+fi
+
 TMPDIR_BASE="/tmp/paladin-doc-check-$$"
 FAILED=0
 CHECKED=0

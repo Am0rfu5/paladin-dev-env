@@ -10,3 +10,4 @@ pub mod support;
 pub mod bridge;
 pub mod content;
 pub mod orchestration;
+pub mod readme;
