@@ -81,12 +81,12 @@
   - [x] 4.3 `### Documentation` + `### Added` call out the published mdBook, the new orchestration/content/bridge guides, the crate-map reference, and the compile-verified examples (`paladin-doc-examples`)
   - [x] 4.4 No `## [0.5.0]` heading/date added (left to `make release`); follows keep-a-changelog format. Commit
 
-- [ ] 5.0 Merge to `main` + go/no-go checkpoint (FR-11)
-  - [ ] 5.1 Open a PR from `feature/milestone-11-epic-5-publish-finalize` to `main`; confirm all CI checks pass
-  - [ ] 5.2 Merge the PR; `git checkout main && git pull --ff-only origin main`
-  - [ ] 5.3 Run the consolidated go/no-go checkpoint on `main`: `make check-doc-examples`, `make check-doc-config`, `mdbook build` (0 broken links), `cargo check --workspace` — all green
-  - [ ] 5.4 Confirm prerequisites: `cargo-release` installed (`cargo install --locked cargo-release`); local `main` up to date with `origin/main`; README + CHANGELOG `[Unreleased]` ready
-  - [ ] 5.5 **STOP — request explicit human go-ahead before the next task** (`make release` is irreversible: it tags, pushes, and triggers crates.io publish + Pages deploy)
+- [~] 5.0 Merge to `main` + go/no-go checkpoint (FR-11) — **awaiting PR merge**
+  - [x] 5.1 Opened PR [#12](https://github.com/DF3NDR/paladin-dev-env/pull/12) (`feature/milestone-11-epic-5-publish-finalize` → `main`); brings Milestone 11 Epics 3–5 (20 commits ahead of `main`). CI runs on the PR
+  - [ ] 5.2 **(maintainer)** Merge the PR; then `git checkout main && git pull --ff-only origin main`
+  - [x] 5.3 Ran the consolidated go/no-go checkpoint (on the branch, since `main` lacks the work): doc-examples compile + README sync ✓, config gate 155/0 ✓, `mdbook build` 0 broken links ✓, `cargo check --workspace` ✓
+  - [x] 5.4 Confirmed prerequisites: `cargo-release` present (1.1.2); README + CHANGELOG `[Unreleased]` ready. (Local `main` up-to-date check happens in 5.2 after merge.)
+  - [x] 5.5 **STOPPED at the hard checkpoint.** PR opened; awaiting maintainer merge + explicit go-ahead before `make release` (Task 6.0) — which tags, pushes, and triggers crates.io publish + Pages deploy
 
 - [ ] 6.0 Cut the release — `make release VERSION=0.5.0` (FR-12)
   - [ ] 6.1 From an up-to-date `main`, run `make release VERSION=0.5.0`
