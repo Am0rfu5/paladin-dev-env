@@ -265,7 +265,7 @@ pub fn init_elastic_logging(url: &str, index: &str) -> Result<()> {
 
 ### Fluentd/Fluent Bit
 
-```yaml
+```ini
 # fluent-bit.conf
 [SERVICE]
     Flush        5

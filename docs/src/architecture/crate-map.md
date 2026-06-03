@@ -254,6 +254,7 @@ User management REST API, RBAC middleware, content delivery endpoints.
 
 ## See Also
 
+- [Crate Map & Feature Flags (API Reference)](../api-reference/crate-map.md) — consumer/dependency view with copy-paste `Cargo.toml` profiles.
 - [Architecture Overview](overview.md)
 - [Hexagonal Design](hexagonal-design.md)
 - [Domain Model](domain-model.md)

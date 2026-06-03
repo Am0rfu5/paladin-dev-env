@@ -93,20 +93,24 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.5 Write **Use-Case Recipes** section: 4 recipes (news monitoring, research workflow, scheduled batch enrichment, trigger-initiated agent run) (FR-19)
   - [x] 4.6 Ran `make check-doc-examples` — 0 failed; error-enum variants verified against source
 
-- [ ] 5.0 Extend the doc-check gate with config/YAML validation (FR-22)
-  - [ ] 5.1 Read `scripts/check-doc-examples.sh` to mirror its structure and conventions
-  - [ ] 5.2 Identify the config struct/loader entry point the framework uses to deserialize `config.yml` (resolve OQ-7)
-  - [ ] 5.3 Write `scripts/check-doc-config.sh`: extract fenced `yaml` snippets from `docs/src/**/*.md` and validate each against the config schema, with `trap` cleanup and per-snippet failure reporting
-  - [ ] 5.4 Add a `check-doc-config` target to the `Makefile` (mirroring `check-doc-examples`)
-  - [ ] 5.5 Add `check-doc-config` as a `pre-push` stage hook in `.pre-commit-config.yaml`
-  - [ ] 5.6 Add a config-snippet validation step to the `build` job in `.github/workflows/docs.yml`
-  - [ ] 5.7 Run `make check-doc-config` locally and confirm it passes on the new guides
+- [x] 5.0 Real compile gate for doc examples + config/YAML validation (FR-22) — **scope expanded at maintainer request**
+  > The original gate compiled 0 examples (the script skipped every block using the framework). The maintainer chose to build a **real mdbook-test-style harness**: example code now lives in a compiled workspace crate and is pulled into the guides via `{{#include}}`, so `cargo check` proves it against the live API.
+  - [x] 5.1 Created `crates/doc-examples` (`paladin-doc-examples`, `publish = false`) depending on the workspace, with a `support` module of shared mocks (MockPaladinPort/Executor/Scheduler/Orchestrator/Delivery/ListService + `create_paladin`, content/prompt builders)
+  - [x] 5.2 Wrote real, compiling example fns with `// ANCHOR` markers for all three guides (orchestration: 7, content: 6, bridge: 6) — `cargo check -p paladin-doc-examples` is green, clippy/fmt clean
+  - [x] 5.3 **Found & fixed ~8 real API mismatches** the old gate never caught (see note below) — these were live bugs in the published docs
+  - [x] 5.4 Replaced the `rust,ignore` blocks in the three guides with `{{#include ...:anchor}}` of the compiled code; mdbook renders the real source (verified in built HTML)
+  - [x] 5.5 Updated `scripts/check-doc-examples.sh` to compile `paladin-doc-examples` as the **primary gate** (plus the legacy inline-block syntax scan)
+  - [x] 5.6 Wrote `scripts/check-doc-config.sh` (PyYAML) — syntactic YAML validation of all fenced `yaml` blocks; fixed one pre-existing mislabeled block (`logging.md` Fluent Bit conf → `ini`). Deep serde schema validation deferred with rationale (OQ-7)
+  - [x] 5.7 Wired both gates into `Makefile` (`check-doc-examples`, `check-doc-config`), `.github/workflows/docs.yml` (+ `crates/doc-examples/**` path trigger), and `.pre-commit-config.yaml` (pre-push). Both pass locally.
 
-- [ ] 6.0 Register new pages in `SUMMARY.md` and wire cross-links (FR-23, cross-linking)
-  - [ ] 6.1 Add `orchestration.md` (if not already), `content-processing.md`, and `agent-orchestrator-bridge.md` under **User Guides**, and `crate-map.md` under **API Reference** in `docs/src/SUMMARY.md`
-  - [ ] 6.2 Add a cross-link from `docs/src/architecture/crate-map.md` to the new `api-reference/crate-map.md`
-  - [ ] 6.3 Reconcile and cross-link `docs/src/api-reference/feature-flags.md` with the new feature-flag table
-  - [ ] 6.4 Verify every new internal cross-link resolves (no dangling references)
+  **API mismatches caught by the new compile gate (were wrong in the shipped docs):**
+  `BattalionResult.output` → `final_output`; `Phalanx::new(_, AggregationStrategy, _)` → `Phalanx::new(_, _).with_aggregation().with_max_concurrency()`; `BattalionConfig.max_concurrency` does not exist; `AggregationStrategy::Concatenate` → `CollectAll`; Campaign fluent string-name builder → Uuid-based `add_paladin`/`add_edge(CampaignEdge::new)`/`set_entry_point`; ChainOfCommand service returns `DelegationResult` (not `BattalionResult`); `LocalFileFetcher` does not exist (`FileContentFetcher`, `#[doc(hidden)]`, `ContentIngestionPort`); `QueueStats.pending`/`in_flight` → `pending_items`/`processing_items`.
+
+- [x] 6.0 Register new pages in `SUMMARY.md` and wire cross-links (FR-23, cross-linking)
+  - [x] 6.1 Added `content-processing.md` and `agent-orchestrator-bridge.md` under **User Guides**, and `crate-map.md` under **API Reference** in `docs/src/SUMMARY.md`
+  - [x] 6.2 Added a cross-link from `docs/src/architecture/crate-map.md` to the new `api-reference/crate-map.md`
+  - [x] 6.3 Reconciled/cross-linked `docs/src/api-reference/feature-flags.md` with the new crate-map feature-flag reference
+  - [x] 6.4 `mdbook build` passes with **0 broken links** — every new cross-link and `{{#include}}` path resolves
 
 - [ ] 7.0 Final verification and commit (FR-24)
   - [ ] 7.1 Run `make check-doc-examples` across the whole book — zero failures

@@ -1,16 +1,36 @@
 #!/usr/bin/env bash
 # check-doc-examples.sh
-# Extracts every fenced ```rust code block from docs/src/**/*.md,
-# validates each block with `rustfmt --check` (syntax), and optionally runs
-# `cargo check` for blocks that are complete programs (contain `fn main`).
+#
+# Two-layer guarantee that documentation examples are correct:
+#
+#   1. PRIMARY (compile) gate: the `paladin-doc-examples` workspace crate holds
+#      the real source for every substantive example, exposed via mdBook
+#      `{{#include ...:anchor}}` directives in the guides. `cargo check` on that
+#      crate compiles every example against the current APIs — so a renamed
+#      type or changed signature fails the build. This is the real assurance.
+#
+#   2. SECONDARY (syntax) scan: any remaining inline fenced ```rust blocks in
+#      docs/src/**/*.md are syntax-checked with rustfmt (illustrative `,ignore`
+#      / `{{#include}}` blocks are skipped). This catches stray hand-written
+#      snippets that aren't backed by the examples crate.
 #
 # Usage:  ./scripts/check-doc-examples.sh
-# Exit:   0 if all blocks are valid, non-zero on failure.
+# Exit:   0 if all examples compile and all inline blocks are valid.
 
 set -euo pipefail
 
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOCS_SRC="${WORKSPACE_ROOT}/docs/src"
+
+# --- Layer 1: compile every included example for real ------------------------
+echo "Compiling documentation examples (paladin-doc-examples crate)..."
+if ! cargo check --quiet --manifest-path "${WORKSPACE_ROOT}/crates/doc-examples/Cargo.toml"; then
+    echo "ERROR: documentation examples failed to compile." >&2
+    echo "Fix the example in crates/doc-examples/src/ that no longer matches the API." >&2
+    exit 1
+fi
+echo "All included examples compile."
+echo ""
 TMPDIR_BASE="/tmp/paladin-doc-check-$$"
 FAILED=0
 CHECKED=0

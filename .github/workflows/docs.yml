@@ -6,9 +6,11 @@ on:
       - main
     paths:
       - "docs/**"
+      - "crates/doc-examples/**"
   pull_request:
     paths:
       - "docs/**"
+      - "crates/doc-examples/**"
 
 permissions:
   contents: read
@@ -41,8 +43,13 @@ jobs:
       - name: Build docs
         run: mdbook build docs/
 
-      - name: Check doc code examples
+      - name: Check doc code examples (compile paladin-doc-examples + scan inline blocks)
         run: ./scripts/check-doc-examples.sh
+
+      - name: Check doc config snippets (YAML)
+        run: |
+          pip install --quiet pyyaml
+          ./scripts/check-doc-config.sh
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

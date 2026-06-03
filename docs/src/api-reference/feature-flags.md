@@ -2,6 +2,8 @@
 
 Paladin uses Cargo feature flags to enable fine-grained control over compiled dependencies and functionality. This allows you to build minimal, focused binaries for specific use cases while reducing compile times and binary sizes.
 
+> See also the [Crate Map & Feature Flags](crate-map.md) reference for per-crate flag tables, the crate dependency graph, and copy-paste consumer profiles.
+
 ## Table of Contents
 
 - [Overview](#overview)

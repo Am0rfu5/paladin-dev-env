@@ -40,14 +40,8 @@ pipeline. Sources are constructed and configured **programmatically** (there is 
 `PdfExtractor` parses a PDF (from a path or raw bytes) into a `Document`. `DocumentAdapter`
 wraps document parsing for the pipeline.
 
-```rust,ignore
-use paladin_content::adapters::document::pdf_extractor::PdfExtractor;
-use std::path::Path;
-
-let extractor = PdfExtractor::new();
-let document = extractor.extract(Path::new("./reports/q3-earnings.pdf"))?;
-// Or from bytes already in memory:
-// let document = extractor.extract_bytes(&pdf_bytes)?;
+```rust
+{{#include ../../../crates/doc-examples/src/content.rs:pdf}}
 ```
 
 ### HTTP endpoints — `HttpContentFetcher`
@@ -56,18 +50,8 @@ let document = extractor.extract(Path::new("./reports/q3-earnings.pdf"))?;
 `ContentFetchingService` trait, so it can be driven directly or through the `FetchContent`
 use case.
 
-```rust,ignore
-use paladin_content::adapters::input::http_content_fetcher::HttpContentFetcher;
-use paladin_content::services::content_fetching_service::{ContentFetchingService, FetchContent};
-
-let fetcher = HttpContentFetcher::new();
-
-// Direct use:
-let item = fetcher.fetch_content("https://example.com/article")?;
-
-// Or wrapped in the use case (same trait, swappable adapter):
-let fetch = FetchContent::new(HttpContentFetcher::new());
-let item = fetch.execute("https://example.com/article")?;
+```rust
+{{#include ../../../crates/doc-examples/src/content.rs:http}}
 ```
 
 ### News / feeds — `NewsApiFetcher` (feature `news-api`)
@@ -75,26 +59,17 @@ let item = fetch.execute("https://example.com/article")?;
 `NewsApiFetcher` polls a News API endpoint. It takes an API key and reuses an
 `HttpContentFetcher` for transport.
 
-```rust,ignore
-use paladin_content::adapters::input::news_api_fetcher::NewsApiFetcher;
-use paladin_content::adapters::input::http_content_fetcher::HttpContentFetcher;
-
-let fetcher = NewsApiFetcher::new(std::env::var("NEWS_API_KEY")?)
-    .with_content_fetcher(HttpContentFetcher::new());
+```rust
+{{#include ../../../crates/doc-examples/src/content.rs:news}}
 ```
 
-### Files — `FileContentFetcher`, `LocalFileFetcher`, `FileContentListFetcher`
+### Files — `FileContentFetcher`
 
-For local ingestion and testing, the file fetchers read content (and content lists) from disk,
-each producing `ContentItem`s through the same `ContentFetchingService` interface.
-
-```rust,ignore
-use paladin_content::adapters::input::local_file_fetcher::LocalFileFetcher;
-use paladin_content::services::content_fetching_service::ContentFetchingService;
-
-let fetcher = LocalFileFetcher::new();
-let item = fetcher.fetch_content("./inbox/note.txt")?;
-```
+For local ingestion and testing, `FileContentFetcher` reads a file from disk and infers its
+content type from the extension. Unlike the HTTP fetcher, it implements `ContentIngestionPort`
+(`paladin_ports::input`): its `fetch_content` takes a `ContentItem` describing the source path
+and returns a populated `ContentItem`. (It is an internal `#[doc(hidden)]` adapter; the primary
+documented ingestion paths are HTTP, PDF, and the News API above.)
 
 ---
 
@@ -126,12 +101,8 @@ flowchart LR
 `AggregateContent` wraps a `ContentListService` and merges a vector of JSON values into a single
 aggregated value — useful for collapsing multiple fetched sources before analysis.
 
-```rust,ignore
-use paladin_content::services::content_aggregator_service::AggregateContent;
-
-// `MyListService` implements the `ContentListService` trait.
-let aggregator = AggregateContent::new(MyListService::new());
-let aggregated = aggregator.execute(vec![source_a_json, source_b_json]);
+```rust
+{{#include ../../../crates/doc-examples/src/content.rs:aggregate}}
 ```
 
 ### Summarization
@@ -139,12 +110,8 @@ let aggregated = aggregator.execute(vec![source_a_json, source_b_json]);
 `ContentSummarizer` produces summaries and keywords without an LLM call (deterministic
 text processing), returning a `ContentSummary` plus `ContentMetadata`.
 
-```rust,ignore
-use paladin_content::services::content_summarizer_service::ContentSummarizer;
-
-let summarizer = ContentSummarizer::new();
-let summary = summarizer.summarize_content(&item, 500); // max 500 chars
-let keywords = summarizer.extract_keywords(&item);
+```rust
+{{#include ../../../crates/doc-examples/src/content.rs:summarize}}
 ```
 
 ---
@@ -159,26 +126,8 @@ the agent layer.
 (`prompt: PromptItem`, `content: ContentItem`) and an `LlmContentAnalysisConfig`
 (model, retries, timeout, `max_content_length`), and returns the analysis as JSON.
 
-```rust,ignore
-use std::sync::Arc;
-use paladin_content::services::content_llm_analysis_service::{
-    LlmContentAnalyzer, LlmContentAnalysisInput, LlmContentAnalysisConfig,
-};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // News source → fetch → AI analysis → JSON output
-    let item = fetch_latest_article().await?;          // returns a ContentItem
-    let prompt = build_analysis_prompt();              // a PromptItem (text prompt)
-
-    let analyzer = LlmContentAnalyzer::new(Arc::new(llm_analysis_service));
-    let input = LlmContentAnalysisInput { prompt, content: item };
-    let config = LlmContentAnalysisConfig::default();   // gpt-3.5-turbo, 3 retries, 30s timeout
-
-    let analysis = analyzer.analyze_with_prompt_async(&input, &config).await?;
-    println!("{}", serde_json::to_string_pretty(&analysis)?);
-    Ok(())
-}
+```rust
+{{#include ../../../crates/doc-examples/src/content.rs:llm_bridge}}
 ```
 
 > Use the **async** method (`analyze_with_prompt_async`). The sync `analyze_with_prompt` is a
@@ -196,14 +145,8 @@ For richer agent interactions — an agent that *triggers* a workflow, or a work
 `ContentDeliveryService` port (`paladin_ports::output::content_delivery_port`). It takes a
 `DeliveryRequest` and returns a `DeliveryResponse` (with a `DeliveryStatus`).
 
-```rust,ignore
-use paladin_content::services::content_delivery_service::DeliverContentUseCase;
-use paladin_ports::output::content_delivery_port::DeliveryRequest;
-
-// `MyDeliveryAdapter` implements `ContentDeliveryService`.
-let delivery = DeliverContentUseCase::new(MyDeliveryAdapter::new());
-let response = delivery.execute(DeliveryRequest { /* method, payload, recipient */ ..request })?;
-println!("delivery status: {:?}", response.status);
+```rust
+{{#include ../../../crates/doc-examples/src/content.rs:delivery}}
 ```
 
 For push/email/system notification of delivered content, wire the delivery adapter to the

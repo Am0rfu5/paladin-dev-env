@@ -75,22 +75,8 @@ Each Paladin's output becomes the next Paladin's input. Ideal for refinement pip
 (extract → analyze → write). If a stage fails, the configured `ErrorStrategy` decides whether
 the chain short-circuits (`FailFast`, the default) or continues.
 
-```rust,ignore
-use paladin_battalion::formation_service::FormationExecutionService;
-use paladin_core::platform::container::battalion::formation::Formation;
-use paladin_core::platform::container::battalion::{BattalionConfig, ErrorStrategy};
-
-// `extractor`, `analyzer`, `writer` are Paladins built with PaladinBuilder.
-let config = BattalionConfig {
-    error_strategy: ErrorStrategy::FailFast, // first failure aborts the chain
-    ..Default::default()
-};
-let formation = Formation::new(vec![extractor, analyzer, writer], config)?;
-
-let service = FormationExecutionService::new(paladin_port);
-let result = service.execute(&formation, "Raw Q3 earnings data...").await?;
-
-println!("Final output: {}", result.output);
+```rust
+{{#include ../../../crates/doc-examples/src/orchestration.rs:formation}}
 ```
 
 **Error handling / short-circuit:** with `ErrorStrategy::FailFast` the first failing stage stops
@@ -105,30 +91,15 @@ each stage is one sequential LLM round-trip.
 **Source:** `crates/paladin-battalion/src/phalanx_service.rs`
 
 Every Paladin receives the **same** input and runs concurrently on `tokio` tasks. Results are
-combined according to an `AggregationStrategy`. Concurrency is bounded by a semaphore configured
-via `max_concurrent_paladins` so you don't exceed LLM rate limits.
+combined according to an `AggregationStrategy`, and concurrency is bounded by
+`Phalanx::with_max_concurrency` so you don't exceed LLM rate limits.
 
-```rust,ignore
-use paladin_battalion::phalanx_service::PhalanxExecutionService;
-use paladin_core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
-use paladin_core::platform::container::battalion::BattalionConfig;
-
-let config = BattalionConfig {
-    max_concurrency: Some(4), // cap concurrent Paladins
-    ..Default::default()
-};
-let phalanx = Phalanx::new(
-    vec![security_auditor, performance_analyst, style_checker],
-    AggregationStrategy::Concatenate,
-    config,
-)?;
-
-let service = PhalanxExecutionService::new(paladin_port);
-let result = service.execute(&phalanx, "Review this Rust module...").await?;
+```rust
+{{#include ../../../crates/doc-examples/src/orchestration.rs:phalanx}}
 ```
 
-`AggregationStrategy` variants: `Concatenate` (join all outputs), `FirstSuccess` (first to
-finish wins), `Majority` (consensus), and `Custom`.
+`AggregationStrategy` variants: `CollectAll` (gather all outputs), `FirstSuccess` (first to
+finish wins), `Majority` (consensus), and `Custom(String)`.
 
 ---
 
@@ -140,25 +111,14 @@ Paladins are arranged in a directed acyclic graph. The service topologically sor
 every upstream node completes before its downstream nodes start; independent branches run
 concurrently. `Campaign::build()` rejects cycles.
 
-```rust,ignore
-use paladin_battalion::campaign_service::CampaignExecutionService;
-use paladin_core::platform::container::battalion::campaign::Campaign;
-
-let campaign = Campaign::builder()
-    .add_node("ingest", ingest_paladin)
-    .add_node("analyze", analyze_paladin)
-    .add_node("report", report_paladin)
-    .add_edge("ingest", "analyze")   // analyze depends on ingest
-    .add_edge("analyze", "report")   // report depends on analyze
-    .config(config)
-    .build()?;                        // returns an error if the graph has a cycle
-
-let service = CampaignExecutionService::new(paladin_port);
-let result = service.execute(&campaign, "Start").await?;
+```rust
+{{#include ../../../crates/doc-examples/src/orchestration.rs:campaign}}
 ```
 
-For conditional branching, add multiple downstream edges from a node; the service executes each
-reachable branch in dependency order and aggregates the leaf outputs.
+Paladins are added with `add_paladin` (returning a `Uuid`), wired with `add_edge` using
+`CampaignEdge::new(source, target, condition)`, and the graph's start is set with
+`set_entry_point`. Use `EdgeCondition::Contains`/`Regex` for conditional branching; `validate()`
+(called by `execute`) rejects cycles.
 
 ---
 
@@ -169,21 +129,13 @@ reachable branch in dependency order and aggregates the leaf outputs.
 A **commander** Paladin decomposes the task, routes sub-tasks to specialist (subordinate)
 Paladins, and synthesizes their outputs into a final answer.
 
-```rust,ignore
-use paladin_battalion::chain_of_command_service::ChainOfCommandExecutionService;
-use paladin_core::platform::container::battalion::chain_of_command::ChainOfCommand;
-
-let chain = ChainOfCommand::new(
-    commander_paladin,                              // supervisor
-    vec![backend_dev, frontend_dev, qa_engineer],   // subordinates
-    config,
-)?;
-
-let service = ChainOfCommandExecutionService::new(paladin_port);
-let result = service.execute(&chain, "Build a login feature").await?;
+```rust
+{{#include ../../../crates/doc-examples/src/orchestration.rs:chain_of_command}}
 ```
 
-Give each subordinate a distinct `agent_description` so the commander can route accurately.
+The service returns a `DelegationResult` with `selected_specialists`, `reasoning`, and the
+specialists' `outputs`. Give each subordinate a distinct `agent_description` so the commander can
+route accurately.
 
 ---
 
@@ -197,28 +149,8 @@ you name. It also collects rich telemetry and can export execution metadata to J
 
 ### Auto mode
 
-```rust,ignore
-use paladin_battalion::commander::CommanderBuilder;
-use paladin_core::platform::container::battalion::BattalionStrategy;
-use std::sync::Arc;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let paladin_port = Arc::new(/* your PaladinPort implementation */);
-
-    let commander = CommanderBuilder::new(paladin_port)
-        .strategy(BattalionStrategy::Auto)
-        .paladins(vec![analyzer, processor, synthesizer])
-        .build()?;
-
-    let result = commander.execute("Analyze and summarize this report").await?;
-
-    println!("Strategy selected: {:?}", result.strategy_used);
-    if let Some(reason) = &result.strategy_selection_reasoning {
-        println!("Reasoning: {reason}");
-    }
-    Ok(())
-}
+```rust
+{{#include ../../../crates/doc-examples/src/orchestration.rs:commander}}
 ```
 
 ### Explicit strategy
@@ -290,27 +222,8 @@ work items. A Redis-backed implementation is gated behind the root `redis-queue`
 `JobSpec` carries a human label, a cron expression, and arbitrary metadata. `SchedulerPort`
 returns a `JobId` you can use to query status or cancel.
 
-```rust,ignore
-use paladin_ports::output::scheduler_port::{JobSpec, JobStatus, SchedulerPort};
-use std::sync::Arc;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let scheduler: Arc<dyn SchedulerPort> = Arc::new(/* adapter */);
-    scheduler.start().await?;
-
-    // 6-field cron: sec min hour day month weekday
-    let spec = JobSpec::new("daily-digest", "0 0 9 * * *")        // every day at 09:00:00
-        .with_metadata("workflow", "news-digest");
-
-    let job_id = scheduler.schedule_job(spec).await?;
-
-    let status: JobStatus = scheduler.get_job_status(&job_id).await?;
-    println!("job {job_id:?} is {status:?}");
-
-    // Later: scheduler.cancel_job(&job_id).await?;
-    Ok(())
-}
+```rust
+{{#include ../../../crates/doc-examples/src/orchestration.rs:scheduling}}
 ```
 
 `JobStatus` lifecycle: `Scheduled → Running → Completed` (or `Failed { .. }` / `Cancelled`).
@@ -328,7 +241,7 @@ timeout behavior for battalion execution is controlled by the `battalion.retry` 
 use paladin_ports::output::queue_port::{FullQueuePort, QueueStats};
 
 let stats: QueueStats = queue.get_queue_stats("news-digest").await?;
-println!("pending: {}, in-flight: {}", stats.pending, stats.in_flight);
+println!("pending: {}, processing: {}", stats.pending_items, stats.processing_items);
 
 // Retry a failed item or purge the dead-letter set
 queue.retry_item("news-digest", item_id).await?;
@@ -345,52 +258,14 @@ A **Trigger** binds an incoming event to an action when a `TriggerCondition` mat
 matched by `event_type_pattern`, optional `source_pattern`, payload conditions, minimum priority,
 and optional `TimeCondition` windows (active hours/days and a cooldown).
 
-### Defining a trigger condition
+### Defining a condition and firing an event
 
-```rust,ignore
-use paladin_core::platform::container::trigger::{
-    TriggerCondition, TriggerConfig, TimeCondition,
-};
-use paladin_core::platform::container::message::MessagePriority;
+Build a `TriggerCondition` (and `TriggerConfig`), then fire a matching event through the
+orchestrator bridge. `fire_event` returns an `EventDispatchResult` reporting how many triggers
+matched and their IDs.
 
-let condition = TriggerCondition {
-    event_type_pattern: "critical_finding".to_string(),
-    source_pattern: Some("security-*".to_string()),
-    payload_conditions: vec![],
-    min_priority: Some(MessagePriority::High),
-    time_conditions: Some(TimeCondition {
-        active_hours: Some((9, 17)),       // only 09:00–17:00
-        active_days: Some(vec![1, 2, 3, 4, 5]), // Mon–Fri
-        cooldown_seconds: Some(300),       // at most once per 5 min
-    }),
-};
-
-let config = TriggerConfig {
-    max_retries: 3,
-    timeout_seconds: 60,
-    preserve_after_completion: false,
-    ttl_seconds: 3600,
-    processing_priority: MessagePriority::High,
-};
-```
-
-### Firing an event
-
-Agents and adapters fire events through the orchestrator bridge. `fire_event` returns an
-`EventDispatchResult` reporting how many triggers matched and their IDs.
-
-```rust,ignore
-use paladin_ports::output::orchestrator_port::{FireEventRequest, OrchestratorPort};
-
-let result = orchestrator
-    .fire_event(FireEventRequest {
-        event_type: "critical_finding".to_string(),
-        payload: serde_json::json!({ "severity": "high", "cve": "CVE-2025-0001" }),
-        source: "security-scanner".to_string(),
-    })
-    .await?;
-
-println!("{} trigger(s) fired: {:?}", result.triggered_count, result.trigger_ids);
+```rust
+{{#include ../../../crates/doc-examples/src/orchestration.rs:events}}
 ```
 
 A matched trigger initiates the bound workflow (e.g. scheduling a job or queuing a Paladin run).
@@ -422,9 +297,10 @@ Environment overrides follow the `APP_BATTALION_*` convention (e.g.
 `APP_BATTALION_ERROR_STRATEGY`, `APP_BATTALION_MAX_CONCURRENT_PALADINS`). See
 [Configuration](../getting-started/configuration.md) for the full schema.
 
-`BattalionResult` (returned by every service) exposes: `output: String`,
-`paladin_results: Vec<PaladinResult>`, `status: BattalionStatus`, `execution_time_ms: u64`,
-and `token_usage: TokenUsage`.
+`BattalionResult` (returned by the Formation/Phalanx/Campaign/Commander services) exposes:
+`final_output: String`, `paladin_results: Vec<PaladinResult>`, `status: BattalionStatus`,
+`strategy_used: BattalionStrategy`, `total_tokens: u64`, `per_paladin_times`, and
+`per_paladin_tokens`. (Chain of Command returns a `DelegationResult` instead.)
 
 ---
 
