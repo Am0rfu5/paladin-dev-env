@@ -31,6 +31,9 @@
 #![deny(unsafe_code)]
 #![warn(missing_docs)]
 
+/// Citadel state-persistence adapters (file-based).
+#[allow(missing_docs)]
+pub mod citadel;
 /// Configuration types for garrison, sanctum, and memory extraction behavior.
 #[allow(missing_docs)]
 pub mod config;

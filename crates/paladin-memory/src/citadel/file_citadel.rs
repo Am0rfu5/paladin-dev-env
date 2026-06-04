@@ -14,7 +14,7 @@
 //! # Examples
 //!
 //! ```rust,no_run
-//! use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
+//! use paladin_memory::citadel::file_citadel::FileCitadel;
 //! use paladin_ports::output::citadel_port::CitadelPort;
 //!
 //! #[tokio::main]
@@ -31,10 +31,10 @@ use std::path::PathBuf;
 use tokio::fs;
 use uuid::Uuid;
 
-use crate::application::errors::citadel_error::CitadelError;
-use crate::core::platform::container::citadel::{
+use paladin_core::platform::container::citadel::{
     BattalionState, PaladinState, StateSummary, StateType,
 };
+use paladin_core::platform::container::citadel_error::CitadelError;
 use paladin_ports::output::citadel_port::CitadelPort;
 
 /// File system-based Citadel adapter
@@ -45,7 +45,7 @@ use paladin_ports::output::citadel_port::CitadelPort;
 /// # Examples
 ///
 /// ```rust,no_run
-/// use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
+/// use paladin_memory::citadel::file_citadel::FileCitadel;
 ///
 /// let citadel = FileCitadel::new("./my-app/state")
 ///     .expect("Failed to create citadel");
@@ -80,7 +80,7 @@ impl FileCitadel {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use paladin::infrastructure::adapters::citadel::file_citadel::FileCitadel;
+    /// use paladin_memory::citadel::file_citadel::FileCitadel;
     ///
     /// let citadel = FileCitadel::new("./citadel")?;
     /// # Ok::<(), Box<dyn std::error::Error>>(())
@@ -344,11 +344,11 @@ impl CitadelPort for FileCitadel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::base::entity::node::Node;
-    use crate::core::platform::container::citadel::{
+    use paladin_core::base::entity::node::Node;
+    use paladin_core::platform::container::citadel::{
         BattalionConfig, CheckpointData, PaladinData, PaladinStatus,
     };
-    use crate::core::platform::container::paladin::MaxLoops;
+    use paladin_core::platform::container::paladin::MaxLoops;
     use tempfile::TempDir;
 
     fn create_test_paladin_state() -> PaladinState {
