@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-06-04
+
 ### Fixed
 
 - **Release pipeline: `linux-arm64` binary.** The `Build Binaries` job ran the host x86_64 `strip`
