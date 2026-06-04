@@ -54,7 +54,7 @@ paladin-battalion = { workspace = true }
 paladin-herald = { workspace = true }
 paladin-llm = { version = "0.5.1", path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
 paladin-memory = { workspace = true, features = ["sqlite"] }
-paladin-storage = { workspace = true, optional = true }
+paladin-storage = { workspace = true, features = ["sqlite"] }
 paladin-notifications = { workspace = true, optional = true }
 paladin-content = { workspace = true, optional = true }
 paladin-web = { workspace = true, optional = true }
@@ -226,9 +226,10 @@ vision = []
 content-processing = ["dep:paladin-content", "paladin-content/web-scraping", "paladin-content/rss", "paladin-content/news-api", "paladin-content/tiktoken", "paladin-content/llm", "paladin-memory/content-processing"]
 web-server = ["dep:paladin-web"]
 notifications = ["dep:paladin-notifications", "paladin-notifications/email", "paladin-notifications/push", "paladin-notifications/system"]
-storage-sqlite = ["dep:paladin-storage", "paladin-storage/sqlite"]
-storage-mysql = ["dep:paladin-storage", "paladin-storage/mysql"]
-storage = ["storage-sqlite", "storage-mysql"]
+# SQLite repositories are always available: `paladin-storage` is a non-optional
+# dependency with its `sqlite` feature enabled (see [dependencies]).
+storage-mysql = ["paladin-storage/mysql"]
+storage = ["storage-mysql"]
 
 # CLI (binary and test tooling only — not compiled into the library)
 cli = ["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml"]
