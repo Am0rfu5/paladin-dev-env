@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Release pipeline: `linux-arm64` binary.** The `Build Binaries` job ran the host x86_64 `strip`
+  on the cross-compiled aarch64 binary and failed (`strip: Unable to recognise the format`), so
+  v0.5.0 shipped without the `paladin-linux-arm64` asset. The strip step now uses the matching
+  aarch64 cross strip (`binutils-aarch64-linux-gnu`) for that target. No library code changed.
+
 ## [0.5.0] - 2026-06-03
 
 The **v0.5.0** release completes **Milestone 11 — Documentation Overhaul & Publish**, consolidating
