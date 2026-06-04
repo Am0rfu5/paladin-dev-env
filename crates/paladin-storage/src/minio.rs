@@ -14,8 +14,8 @@ use std::time::Duration;
 use tokio::time::timeout;
 use uuid::Uuid;
 
-use crate::core::base::entity::message::{Location, MessagePriority};
-use crate::core::platform::container::log::{LogEntry, LogLevel, LogMessage};
+use paladin_core::base::entity::message::{Location, MessagePriority};
+use paladin_core::platform::container::log::{LogEntry, LogLevel, LogMessage};
 use paladin_ports::output::file_storage_port::{
     AdvancedFileStoragePort, BatchFileStoragePort, DownloadOptions, FileItem, FileListResult,
     FileStorageError, FileStoragePort, FileStorageResult, FileStorageUtils, FileVersioningPort,

@@ -11,7 +11,7 @@ use paladin_core::platform::container::user::{
     Email, User, UserData, UserError, UserProfile, UserRole,
 };
 use paladin_ports::output::user_repository_port::UserRepositoryPort;
-use sqlx::{sqlite::SqlitePoolOptions, Row, SqlitePool};
+use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
 use std::str::FromStr;
 use uuid::Uuid;
 

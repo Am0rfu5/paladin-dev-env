@@ -1,7 +1,7 @@
 [package]
 name = "paladin-storage"
 version = "0.5.1"
-edition = "2021"
+edition = "2024"
 authors = ["Am0rfu5"]
 description = "SQL-backed repository adapters for the Paladin framework (SQLite and MySQL)"
 readme = "README.md"
@@ -19,6 +19,8 @@ doctest = false
 sqlite = ["dep:sqlx", "sqlx/sqlite"]
 ## Enable the MySQL repository adapters.
 mysql = ["dep:sqlx", "sqlx/mysql"]
+## Enable the MinIO / S3 file-storage adapter.
+s3 = ["dep:rust-s3"]
 
 [dependencies]
 paladin-core = { package = "paladin-ai-core", version = "0.5.1", path = "../paladin-core" }
@@ -34,6 +36,9 @@ tokio      = { workspace = true }
 
 # sqlx is optional: activated by the sqlite or mysql feature.
 sqlx = { workspace = true, optional = true }
+
+# rust-s3 is optional: activated by the s3 feature (MinIO/S3 file storage).
+rust-s3 = { version = "0.35.1", optional = true }
 
 # url is used for parsing source URLs stored in content rows.
 url = "2"

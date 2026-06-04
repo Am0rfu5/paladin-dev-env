@@ -90,7 +90,6 @@ futures = "0.3.31"
 redis = { version = "0.32.2", features = ["aio", "tokio-comp", "connection-manager", "script"], optional = true  }
 bytes = "1.10.1"
 mime_guess = "2.0.5"
-rust-s3 = { version = "0.35.1", optional = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 argon2 = "0.5.3"
 clap = { version = "4.5.40", features = ["derive", "cargo", "env"], optional = true }
@@ -209,7 +208,7 @@ harness = false
 [features]
 default = ["llm-openai"]
 redis-queue = ["redis"]
-s3-storage = ["rust-s3"]
+s3-storage = ["paladin-storage/s3"]
 openai-embeddings = ["paladin-llm/openai-embeddings"]
 qdrant = ["qdrant-client", "paladin-memory/qdrant"]
 integration-tests = []
