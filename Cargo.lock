@@ -3441,6 +3441,7 @@ dependencies = [
  "paladin-ai-core",
  "paladin-battalion",
  "paladin-content",
+ "paladin-herald",
  "paladin-llm",
  "paladin-memory",
  "paladin-notifications",
@@ -3562,6 +3563,20 @@ dependencies = [
  "paladin-ports",
  "serde_json",
  "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "paladin-herald"
+version = "0.5.1"
+dependencies = [
+ "chrono",
+ "colored 2.2.0",
+ "comfy-table",
+ "paladin-ai-core",
+ "paladin-ports",
+ "serde",
+ "serde_json",
  "uuid",
 ]
 

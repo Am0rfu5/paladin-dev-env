@@ -15,7 +15,7 @@
 //! # Examples
 //!
 //! ```rust,ignore
-//! use paladin::infrastructure::adapters::herald::table_herald::{TableHerald, TableHeraldConfig};
+//! use paladin_herald::table_herald::{TableHerald, TableHeraldConfig};
 //!
 //! // Create table formatter with default config
 //! let herald = TableHerald::default();
@@ -28,8 +28,8 @@
 //! let herald = TableHerald::new(config);
 //! ```
 
-use crate::core::platform::container::herald::{Herald, HeraldError, PaladinError};
 use comfy_table::{Attribute, Cell, CellAlignment, Color, ContentArrangement, Table, presets};
+use paladin_core::platform::container::herald::{Herald, HeraldError, PaladinError};
 use serde::{Deserialize, Serialize};
 use std::fmt::Write as FmtWrite;
 
@@ -119,7 +119,7 @@ impl TableHerald {
 impl Herald for TableHerald {
     fn format_paladin_result(
         &self,
-        _result: &crate::core::platform::container::herald::PaladinResult,
+        _result: &paladin_core::platform::container::herald::PaladinResult,
     ) -> Result<String, HeraldError> {
         let mut table = self.create_table();
 
@@ -144,7 +144,7 @@ impl Herald for TableHerald {
 
     fn format_battalion_result(
         &self,
-        _result: &crate::core::platform::container::herald::BattalionResult,
+        _result: &paladin_core::platform::container::herald::BattalionResult,
     ) -> Result<String, HeraldError> {
         let mut output = String::new();
         let mut table = self.create_table();
@@ -185,7 +185,7 @@ impl Herald for TableHerald {
 
     fn format_stream_chunk(
         &self,
-        _chunk: &crate::core::platform::container::herald::StreamChunk,
+        _chunk: &paladin_core::platform::container::herald::StreamChunk,
     ) -> Result<Option<String>, HeraldError> {
         // Table formatting doesn't support streaming - accumulate until complete
         Ok(None)
@@ -193,7 +193,7 @@ impl Herald for TableHerald {
 
     fn finalize_stream(
         &self,
-        _metadata: &crate::core::platform::container::herald::ExecutionMetadata,
+        _metadata: &paladin_core::platform::container::herald::ExecutionMetadata,
     ) -> Result<String, HeraldError> {
         let mut table = self.create_table();
 
@@ -261,7 +261,7 @@ impl Default for TableHerald {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::herald::{ExecutionMetadata, StreamChunk};
+    use paladin_core::platform::container::herald::{ExecutionMetadata, StreamChunk};
 
     #[test]
     fn test_table_herald_creation() {
@@ -287,7 +287,7 @@ mod tests {
     fn test_format_paladin_result() {
         use paladin_ports::output::paladin_port::StopReason;
         let herald = TableHerald::default();
-        let result = crate::core::platform::container::herald::PaladinResult {
+        let result = paladin_core::platform::container::herald::PaladinResult {
             output: "Test output".to_string(),
             token_count: 100,
             execution_time_ms: 1500,
@@ -307,11 +307,11 @@ mod tests {
 
     #[test]
     fn test_format_battalion_result() {
-        use crate::core::platform::container::battalion::BattalionStatus;
         use chrono::Utc;
+        use paladin_core::platform::container::battalion::BattalionStatus;
         use uuid::Uuid;
         let herald = TableHerald::default();
-        let result = crate::core::platform::container::herald::BattalionResult {
+        let result = paladin_core::platform::container::herald::BattalionResult {
             battalion_id: Uuid::new_v4(),
             battalion_name: "Test Battalion".to_string(),
             started_at: Utc::now(),
@@ -320,7 +320,7 @@ mod tests {
             paladin_results: vec![],
             status: BattalionStatus::Completed,
             strategy_used:
-                crate::core::platform::container::battalion::BattalionStrategy::Formation,
+                paladin_core::platform::container::battalion::BattalionStrategy::Formation,
             strategy_selection_reasoning: None,
             strategy_selection_time_ms: 0,
             per_paladin_times: std::collections::HashMap::new(),
@@ -344,7 +344,7 @@ mod tests {
     #[test]
     fn test_format_stream_chunk_returns_none() {
         let herald = TableHerald::default();
-        let chunk = crate::core::platform::container::herald::StreamChunk::builder()
+        let chunk = paladin_core::platform::container::herald::StreamChunk::builder()
             .chunk_id(uuid::Uuid::new_v4())
             .sequence_number(0)
             .timestamp(chrono::Utc::now())
@@ -362,7 +362,7 @@ mod tests {
     fn test_finalize_stream() {
         use paladin_ports::output::llm_port::TokenUsage;
         let herald = TableHerald::default();
-        let metadata = crate::core::platform::container::herald::ExecutionMetadata::builder()
+        let metadata = paladin_core::platform::container::herald::ExecutionMetadata::builder()
             .execution_id(uuid::Uuid::new_v4())
             .start_time(chrono::Utc::now())
             .model_used("test-model".to_string())

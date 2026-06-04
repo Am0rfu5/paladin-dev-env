@@ -6,7 +6,7 @@
 //! # Examples
 //!
 //! ```rust,ignore
-//! use paladin::infrastructure::adapters::herald::MarkdownHerald;
+//! use paladin_herald::MarkdownHerald;
 //! use paladin::core::platform::container::herald::Herald;
 //!
 //! let herald = MarkdownHerald::new();
@@ -14,11 +14,11 @@
 //! println!("{}", formatted);
 //! ```
 
-use crate::core::platform::container::herald::{
+use colored::*;
+use paladin_core::platform::container::herald::{
     BattalionResult, ExecutionMetadata, Herald, HeraldError, PaladinError, PaladinResult,
     StreamChunk,
 };
-use colored::*;
 use serde::{Deserialize, Serialize};
 
 /// Configuration for Markdown Herald formatter
@@ -310,8 +310,8 @@ impl Herald for MarkdownHerald {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::battalion::{BattalionStatus, BattalionStrategy};
     use chrono::Utc;
+    use paladin_core::platform::container::battalion::{BattalionStatus, BattalionStrategy};
     use paladin_ports::output::paladin_port::StopReason;
     use uuid::Uuid;
 

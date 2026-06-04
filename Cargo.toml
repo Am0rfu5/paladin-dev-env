@@ -19,6 +19,7 @@ regex = "1.11.1"
 paladin-core = { package = "paladin-ai-core", version = "0.5.1", path = "crates/paladin-core" }
 paladin-ports = { version = "0.5.1", path = "crates/paladin-ports" }
 paladin-battalion = { version = "0.5.1", path = "crates/paladin-battalion" }
+paladin-herald = { version = "0.5.1", path = "crates/paladin-herald" }
 paladin-llm = { version = "0.5.1", path = "crates/paladin-llm" }
 paladin-memory = { version = "0.5.1", path = "crates/paladin-memory" }
 paladin-storage = { version = "0.5.1", path = "crates/paladin-storage" }
@@ -50,6 +51,7 @@ name = "paladin"
 paladin-core = { workspace = true }
 paladin-ports = { workspace = true }
 paladin-battalion = { workspace = true }
+paladin-herald = { workspace = true }
 paladin-llm = { version = "0.5.1", path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
 paladin-memory = { workspace = true, features = ["sqlite"] }
 paladin-storage = { workspace = true, optional = true }
