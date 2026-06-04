@@ -31,14 +31,15 @@
       "Bash(git show:*)",
       "Bash(git branch:*)",
       "Bash(rg:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git pull *)"
     ],
+    "deny": [],
     "ask": [
       "Bash(git push:*)",
       "Bash(cargo publish:*)",
       "Bash(make release:*)",
       "Bash(make publish-dry-run:*)"
-    ],
-    "deny": []
+    ]
   }
 }
