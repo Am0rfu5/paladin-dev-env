@@ -1,4 +1,3 @@
-pub mod file_content_repository;
 /// SQLite content/user repositories: re-exported from `paladin-storage` when the
 /// `storage-sqlite` feature is active; falls back to the facade-local copy otherwise.
 #[cfg(feature = "storage-sqlite")]
