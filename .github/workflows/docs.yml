@@ -11,10 +11,12 @@ on:
     paths:
       - "docs/**"
       - "crates/doc-examples/**"
+      - ".github/workflows/docs.yml"
   pull_request:
     paths:
       - "docs/**"
       - "crates/doc-examples/**"
+      - ".github/workflows/docs.yml"
 
 permissions:
   contents: read
@@ -62,7 +64,12 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/book/
+          # With `[output.linkcheck]` enabled, mdbook emits a second backend, so
+          # the rendered HTML site lives in `docs/book/html/` (not `docs/book/`,
+          # which then only holds the `html/` and `linkcheck/` subdirectories).
+          # Uploading `docs/book/` would serve a Pages root with no index.html
+          # (404). Publish the HTML subdirectory.
+          path: docs/book/html/
 
   deploy:
     name: Deploy to GitHub Pages
