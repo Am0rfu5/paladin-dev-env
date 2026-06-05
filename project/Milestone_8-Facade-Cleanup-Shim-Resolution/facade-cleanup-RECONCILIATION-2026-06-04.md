@@ -145,3 +145,47 @@ with effectively zero behavioral risk.
 4. **`commands/user.rs`:** delete the dead command, or wire it into the CLI.
 5. **`tensorflow_adapter.rs`:** delete vs. keep as a gated placeholder.
 6. **`src/core/` shims:** keep (recommended) vs. remove.
+
+---
+
+## 7. Execution log (2026-06-04 → 2026-06-05)
+
+Branch `chore/facade-cleanup-m8-finish`. Each commit passed
+`build + clippy -D warnings + fmt + tests` (and the relevant feature combinations).
+
+| Commit | Tier / move | Result |
+|--------|-------------|--------|
+| `e5b2011` | Tier 1 — delete orphaned dead files | ~4,465 LOC removed |
+| `2edc031` | Tier 2 — delete unused `file_content_repository` | 723 LOC removed |
+| `3d48768` | Remove + document deferred features (`user` CLI, tensorflow, `ml` flag) | ~1,700 LOC removed; recorded in `deferred-features.md` |
+| `ca7e4e8` | Consolidate `HashMapPaladinRegistry` → `paladin-battalion` | facade copy deleted, consumers repointed |
+| `8bd7073` | Relocate `FileCitadel` → `paladin-memory` | facade re-exports |
+| `66f6c4e` | Extract Herald formatters → **new `paladin-herald` crate** | keeps `paladin-core` light |
+| `897e77e` | Make `paladin-storage` non-optional; drop facade sqlite fallbacks | ~1,486 LOC removed; `storage-sqlite` feature retired |
+| `ff829e2` | Relocate MinIO/S3 → `paladin-storage` (`s3` feature); bump crate to edition 2024 | facade `rust-s3` dep dropped |
+| `5a7c901` | Relocate Redis queue → `paladin-storage` (`redis-queue` feature) | facade `redis` dep dropped |
+| `cf17559` | Delete dead notification fallback adapters | ~1,072 LOC removed |
+
+**Verification corrections applied during execution** (the original audit was wrong on these):
+- `paladin_registry.rs` was **not** a duplicate — facade's 418-LOC impl is richer than battalion's
+  67-LOC `pub(crate)` copy; consolidated the richer one *into* battalion (not deleted blindly).
+- `sqlite_*_repository.rs` were **not** redundant in the default build (they were the active
+  default-build impl); resolved via the non-optional-storage change, not a naive delete.
+- `mysql_content_repository.rs`, the `input/*` fetchers, `document/*`, `output/api_content_deliverer.rs`,
+  `error_log_adapter.rs` were **orphaned (uncompiled)**, not "active bridges" — safe deletes.
+
+**Net:** ~10,500 LOC of dead/duplicate code removed or relocated; one new leaf crate
+(`paladin-herald`); persistence adapters (sqlite/mysql/minio/redis) consolidated in
+`paladin-storage`; Citadel in `paladin-memory`.
+
+### Still outstanding (not done)
+
+- **`infrastructure/web/user_controller.rs` → `paladin-web`** — blocked: it depends on the
+  facade-local `UserService` (`core/platform/manager/user_service.rs`), which must be split
+  (trait → core/ports, impl → app service) before the controller can move. This is the
+  unresolved Category-4 "user service split."
+- **Category 4 service relocations** (`planning/prompt/temperature/handoff` services,
+  `content_ingestion_service`) and the **`src/core/` re-export shims** — left as deliberate
+  facade-internal decisions per the original disposition.
+- **Category 5 hygiene** (`println!`→`log` in services, `#[allow(dead_code)]` markers, stale
+  `mod.rs` doc-comments).
