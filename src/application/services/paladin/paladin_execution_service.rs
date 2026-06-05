@@ -948,6 +948,7 @@ impl PaladinExecutionService {
     ///
     /// Combines the system prompt, RAG context, conversation history from Garrison,
     /// user input, and accumulated output from previous loops.
+    // Exercised by unit tests; not on the default execution path.
     #[allow(dead_code)]
     fn build_prompt_with_history_and_rag(
         &self,
@@ -1655,6 +1656,7 @@ impl PaladinExecutionService {
     /// # Returns
     ///
     /// The LLM response or an error after exhausting retries
+    // Retry + circuit-breaker call path; retained pending integration into the execution loop.
     #[allow(dead_code)]
     async fn execute_with_retry(
         &self,
@@ -2213,6 +2215,7 @@ mod tests {
             }
         }
 
+        // Test mock builder; retained for failure-path coverage.
         #[allow(dead_code)]
         fn with_failure(mut self) -> Self {
             self.should_fail = true;

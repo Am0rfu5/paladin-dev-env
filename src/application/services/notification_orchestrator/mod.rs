@@ -602,9 +602,11 @@ impl NotificationOrchestrator {
 // ---------------------------------------------------------------------------
 
 struct NotificationMessageHandler {
+    // Populated during registration; consumed via the dispatch path.
     #[allow(dead_code)]
     channel_handlers:
         Arc<RwLock<HashMap<NotificationChannel, Arc<dyn NotificationChannelHandler>>>>,
+    // Maintained for future stats reporting.
     #[allow(dead_code)]
     stats: Arc<RwLock<NotificationServiceStats>>,
 }
