@@ -1,170 +1,41 @@
-//! Infrastructure Layer
+//! Infrastructure Layer (facade)
 //!
-//! This module contains all adapter implementations and external system integrations
-//! following the **Hexagonal Architecture** (Ports and Adapters) pattern.
+//! Infrastructure wiring for the Paladin facade crate. Most adapter **implementations** now live
+//! in dedicated leaf crates; this module hosts the adapters that remain facade-resident and
+//! re-exports the leaf-crate adapters so they are reachable under
+//! `crate::infrastructure::adapters::…` for the composition root, examples, and tests.
 //!
-//! # Architecture
+//! # Where the adapters live
 //!
-//! The infrastructure layer is the outermost layer:
-//! - **Depends on**: Application ports and core domain
-//! - **Implements**: Application port traits (interfaces)
-//! - **Integrates**: External systems (LLMs, databases, file storage, queues)
+//! | Concern | Crate / location |
+//! |---------|------------------|
+//! | LLM providers (OpenAI, Anthropic, DeepSeek, mock) | [`paladin_llm`] (facade keeps only `adapters::llm::config_bridge`) |
+//! | Garrison / Sanctum memory | [`paladin_memory`] (re-exported via `adapters::garrison`, `adapters::sanctum`) |
+//! | Citadel state persistence | [`paladin_memory`]`::citadel` (re-exported via `adapters::citadel`) |
+//! | Repositories (SQLite/MySQL) | [`paladin_storage`] (re-exported via [`repositories`]) |
+//! | MinIO/S3 file storage (`s3-storage`) | [`paladin_storage`]`::minio` (re-exported via `adapters::file_storage`) |
+//! | Redis queue (`redis-queue`) | [`paladin_storage`]`::redis` (re-exported via `adapters::queue`) |
+//! | Content ingestion / documents | [`paladin_content`] (re-exported via `adapters::input`, `adapters::document`) |
+//! | Notifications (`notifications`) | [`paladin_notifications`] (re-exported via `adapters::notifications`) |
+//! | Web / API (`web-server`) | [`paladin_web`] (re-exported via [`web`]) |
+//! | Herald output formatters | [`paladin_herald`] (re-exported via `adapters::herald`) |
 //!
-//! # Dependency Flow
+//! # Facade-resident adapters
 //!
-//! ```text
-//! External Systems
-//!        │
-//!        │ HTTP/TCP/Protocol
-//!        ▼
-//! Infrastructure (Adapters) ──implements──> Application (Ports) ──uses──> Core
-//! ```
+//! - **`adapters::arsenal`** — MCP (Model Context Protocol) client, STDIO/SSE transports, resource
+//!   controls, and tool-result formatting ([`ArsenalPort`](paladin_ports::output::arsenal_port::ArsenalPort)).
+//! - **`adapters::auth`** — in-memory token auth adapter.
+//! - **`adapters::logs`** — system log adapter ([`LogPort`](paladin_ports::output::log_port::LogPort)).
+//! - **`adapters::scheduling`** — Tokio-based cron scheduler.
+//! - [`resilience`] — circuit breaker and related fault-tolerance utilities.
+//! - [`security`] — encryption, audit, and TLS-verification helpers (cross-cutting).
 //!
-//! # Modules
+//! # Feature flags
 //!
-//! ## [adapters]
-//!
-//! Concrete implementations of application ports for external systems:
-//!
-//! ### LLM Provider Adapters ([adapters::llm])
-//!
-//! - **OpenAiAdapter** - OpenAI GPT models (hidden from docs, use via [`LlmPort`](paladin_ports::output::llm_port::LlmPort))
-//!   - Models: gpt-4, gpt-3.5-turbo, etc.
-//!   - Features: Streaming, function calling, vision
-//! - **DeepSeekAdapter** - DeepSeek models (hidden from docs, use via [`LlmPort`](paladin_ports::output::llm_port::LlmPort))
-//!   - Cost-effective alternative with competitive performance
-//! - **AnthropicAdapter** - Claude models (hidden from docs, use via [`LlmPort`](paladin_ports::output::llm_port::LlmPort))
-//!   - Models: claude-3-opus, claude-3-sonnet
-//!
-//! ### Memory Storage Adapters ([adapters::garrison])
-//!
-//! - **InMemoryGarrison** - In-process memory storage (hidden from docs, use via [`GarrisonPort`](paladin_ports::output::garrison_port::GarrisonPort))
-//!   - Fast, ephemeral, suitable for development
-//! - **SqliteGarrison** - SQLite-backed persistent memory (hidden from docs, use via [`GarrisonPort`](paladin_ports::output::garrison_port::GarrisonPort))
-//!   - Local file storage, full-text search support
-//!
-//! ### Tool System Adapters ([adapters::arsenal])
-//!
-//! - **McpStdioAdapter** - MCP (Model Context Protocol) STDIO tools (hidden from docs, use via [`ArsenalPort`](paladin_ports::output::arsenal_port::ArsenalPort))
-//!   - Command-line tool integration
-//! - **McpSseAdapter** - MCP SSE (Server-Sent Events) tools (hidden from docs, use via [`ArsenalPort`](paladin_ports::output::arsenal_port::ArsenalPort))
-//!   - Web-based tool integration
-//!
-//! ### State Persistence Adapters ([adapters::citadel])
-//!
-//! - **FileCitadel** - File-based state persistence (hidden from docs, use via [`CitadelPort`](paladin_ports::output::citadel_port::CitadelPort))
-//!   - Local filesystem storage
-//!
-//! ### Queue Adapters ([adapters::queue])
-//!
-//! - **RedisQueueAdapter** - Redis-backed queue (hidden from docs, use via port trait)
-//!   - Distributed task queue
-//!   - Feature flag: `redis-queue`
-//!
-//! ### File Storage Adapters ([adapters::file_storage])
-//!
-//! - **MinioAdapter** - S3-compatible storage (hidden from docs, use via port trait)
-//!   - Object storage for large files
-//!   - Feature flag: `s3-storage`
-//!
-//! ## [repositories]
-//!
-//! Database repository implementations for data persistence:
-//!
-//! - **MySQL repositories** - Production database storage (hidden from docs, use via repository ports)
-//! - **SQLite repositories** - Development and testing (hidden from docs, use via repository ports)
-//!
-//! ## [web]
-//!
-//! Web server and API implementations:
-//!
-//! - REST API endpoints
-//! - WebSocket handlers
-//! - Middleware and routing
-//!
-//! # Adapter Pattern
-//!
-//! Each adapter translates between the application's port interface and
-//! an external system's API:
-//!
-//! ```text
-//! Application Port (Interface)         External System
-//!         │                                  │
-//!         │ trait LlmPort                    │
-//!         │   fn generate(...)               │
-//!         │                                  │
-//!         ▼                                  │
-//!   ┌─────────────────┐                     │
-//!   │  OpenAiAdapter  │─────────────────────┤
-//!   └─────────────────┘   HTTPS/REST API    │
-//!         │                                  │
-//!         │ implements LlmPort               │
-//!         │                                  │
-//!         └─────► translate request          │
-//!                 call OpenAI API ───────────►
-//!                 ◄──────── response
-//!                 translate response
-//!                 return Result<Response>
-//! ```
-//!
-//! # Feature Flags
-//!
-//! Infrastructure adapters use Cargo feature flags for optional dependencies:
-//!
-//! - `redis-queue` - Enable Redis queue adapter
-//! - `s3-storage` - Enable MinIO/S3 storage adapter
-//! - `integration-tests` - Enable integration test infrastructure
-//!
-//! # Configuration
-//!
-//! Adapters are configured via:
-//! - Environment variables (e.g., `OPENAI_API_KEY`)
-//! - Configuration files (`config.yml`)
-//! - Direct instantiation in code
-//!
-//! # Examples
-//!
-//! ## Creating and Using an LLM Adapter
-//!
-//! ```ignore
-//! use paladin::infrastructure::adapters::llm::openai_adapter::OpenAiAdapter;
-//! use paladin_ports::output::llm_port::LlmPort;
-//!
-//! let adapter = OpenAiAdapter::new(
-//!     std::env::var("OPENAI_API_KEY").unwrap(),
-//!     "https://api.openai.com/v1".to_string(),
-//! );
-//!
-//! let response = adapter.generate(&messages, &config).await?;
-//! ```
-//!
-//! ## Using Redis Queue
-//!
-//! ```ignore
-//! #[cfg(feature = "redis-queue")]
-//! use paladin::infrastructure::adapters::queue::redis_adapter::RedisQueueAdapter;
-//!
-//! #[cfg(feature = "redis-queue")]
-//! let queue = RedisQueueAdapter::new("redis://localhost:6379").await?;
-//! ```
-//!
-//! ## Testing with Mock Adapters
-//!
-//! ```ignore
-//! use paladin_ports::output::llm_port::LlmPort;
-//!
-//! struct MockLlmAdapter;
-//!
-//! #[async_trait]
-//! impl LlmPort for MockLlmAdapter {
-//!     async fn generate(&self, _messages: &[Message]) -> Result<Response> {
-//!         Ok(Response {
-//!             content: "Mock response".to_string(),
-//!             // ...
-//!         })
-//!     }
-//! }
-//! ```
+//! - `redis-queue` — Redis queue adapter (via `paladin-storage/redis-queue`)
+//! - `s3-storage` — MinIO/S3 storage adapter (via `paladin-storage/s3`)
+//! - `content-processing`, `notifications`, `web-server`, `storage-mysql` — enable the
+//!   corresponding leaf-crate adapters and their re-exports.
 
 // Internal modules (public for testing, not part of stable API)
 #[allow(missing_docs)]
