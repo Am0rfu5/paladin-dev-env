@@ -107,7 +107,7 @@ impl Orchestrator {
             scheduler.start().await;
         });
 
-        println!("Orchestrator started successfully");
+        log::info!("Orchestrator started successfully");
         Ok(())
     }
 
@@ -130,7 +130,7 @@ impl Orchestrator {
             services.insert(service_name.clone(), service);
         }
 
-        println!("Registered task service: {}", service_name);
+        log::info!("Registered task service: {}", service_name);
         Ok(())
     }
 
@@ -154,7 +154,7 @@ impl Orchestrator {
         let processor_name = processor.name().to_string();
         let mut processors = self.content_processors.write().await;
         processors.insert(processor_name.clone(), processor);
-        println!("Registered content processor: {}", processor_name);
+        log::info!("Registered content processor: {}", processor_name);
         Ok(())
     }
 
@@ -181,12 +181,12 @@ impl Orchestrator {
         let mut job_clone = job.clone();
         match job_clone.execute(&services).await {
             Ok(_) => {
-                println!("Job '{}' executed successfully", job_clone.name());
+                log::info!("Job '{}' executed successfully", job_clone.name());
                 self.end_session(context.session_id).await?;
                 Ok(job_id)
             }
             Err(e) => {
-                println!("Job '{}' execution failed: {}", job_clone.name(), e);
+                log::info!("Job '{}' execution failed: {}", job_clone.name(), e);
                 self.end_session(context.session_id).await?;
                 Err(OrchestratorError::JobError(e))
             }
@@ -213,7 +213,7 @@ impl Orchestrator {
                 .map_err(OrchestratorError::SchedulerError)?;
         }
 
-        println!("Job scheduled with ID: {}", job_id);
+        log::info!("Job scheduled with ID: {}", job_id);
         Ok(job_id)
     }
 
@@ -265,7 +265,7 @@ impl Orchestrator {
         // Start orchestration session
         self.start_session(context).await?;
 
-        println!("Job queued with item ID: {}", item_id);
+        log::info!("Job queued with item ID: {}", item_id);
         Ok(item_id)
     }
 
@@ -311,11 +311,12 @@ impl Orchestrator {
                 )
                 .await
             {
-                Ok(_) => println!("Created queue: {}", workflow_queue.name),
+                Ok(_) => log::info!("Created queue: {}", workflow_queue.name),
                 Err(e) => {
-                    println!(
+                    log::info!(
                         "Warning: Failed to create queue {}: {:?}",
-                        workflow_queue.name, e
+                        workflow_queue.name,
+                        e
                     );
                     // Continue with workflow creation even if queue creation fails
                 }
@@ -328,9 +329,10 @@ impl Orchestrator {
                 .create_workflow_listener(workflow_listener.clone(), workflow_id)
                 .await?;
             if let Err(e) = self.listener_service.register_listener(listener).await {
-                println!(
+                log::info!(
                     "Warning: Failed to register listener {}: {:?}",
-                    workflow_listener.name, e
+                    workflow_listener.name,
+                    e
                 );
                 // Continue with workflow creation even if listener registration fails
             }
@@ -662,9 +664,10 @@ impl Orchestrator {
         // Process created triggers
         for trigger_id in &trigger_ids {
             if let Some(trigger) = self.listener_service.get_next_trigger().await {
-                println!(
+                log::info!(
                     "Processing trigger {} for trigger ID {}",
-                    trigger.name, trigger_id
+                    trigger.name,
+                    trigger_id
                 );
                 self.execute_trigger(trigger).await?;
             }
@@ -782,7 +785,7 @@ impl Orchestrator {
         let mut workflows = self.workflows.write().await;
         workflows.insert(workflow_id, workflow);
 
-        println!("Content analysis workflow created with ID: {}", workflow_id);
+        log::info!("Content analysis workflow created with ID: {}", workflow_id);
 
         Ok(workflow_id)
     }
@@ -791,7 +794,7 @@ impl Orchestrator {
     async fn start_session(&self, context: OrchestrationContext) -> Result<(), OrchestratorError> {
         let mut sessions = self.active_sessions.write().await;
         sessions.insert(context.session_id, context.clone());
-        println!("Started orchestration session: {}", context.session_id);
+        log::info!("Started orchestration session: {}", context.session_id);
         Ok(())
     }
 
@@ -800,9 +803,10 @@ impl Orchestrator {
         let mut sessions = self.active_sessions.write().await;
         if let Some(context) = sessions.remove(&session_id) {
             let duration = Utc::now().timestamp() - context.started_at.timestamp();
-            println!(
+            log::info!(
                 "Ended orchestration session: {} (duration: {}s)",
-                session_id, duration
+                session_id,
+                duration
             );
         }
         Ok(())

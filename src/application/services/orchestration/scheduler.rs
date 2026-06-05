@@ -59,7 +59,7 @@ impl SchedulerOrchestrator {
     pub fn register_service(&mut self, service: Box<dyn TaskService>) {
         let service_name = service.name().to_string();
         self.services.insert(service_name.clone(), service);
-        println!("Registered service: {}", service_name);
+        log::info!("Registered service: {}", service_name);
     }
 
     /// Register default services.
@@ -98,7 +98,7 @@ impl SchedulerOrchestrator {
         };
 
         self.scheduled_jobs.insert(job_id, scheduled_job);
-        println!("Added job {} to scheduler", job_id);
+        log::info!("Added job {} to scheduler", job_id);
         Ok(job_id)
     }
 
@@ -106,7 +106,7 @@ impl SchedulerOrchestrator {
     pub fn remove_job(&mut self, job_id: Uuid) -> bool {
         match self.scheduled_jobs.remove(&job_id) {
             Some(scheduled_job) => {
-                println!("Removed job '{}' from scheduler", scheduled_job.job.name());
+                log::info!("Removed job '{}' from scheduler", scheduled_job.job.name());
                 true
             }
             None => false,
@@ -118,7 +118,7 @@ impl SchedulerOrchestrator {
         if let Some(scheduled_job) = self.scheduled_jobs.get_mut(&job_id) {
             scheduled_job.enabled = true;
             scheduled_job.next_run = Self::calculate_next_run(&scheduled_job.schedule);
-            println!("Enabled job '{}'", scheduled_job.job.name());
+            log::info!("Enabled job '{}'", scheduled_job.job.name());
             true
         } else {
             false
@@ -130,7 +130,7 @@ impl SchedulerOrchestrator {
         if let Some(scheduled_job) = self.scheduled_jobs.get_mut(&job_id) {
             scheduled_job.enabled = false;
             scheduled_job.next_run = None;
-            println!("Disabled job '{}'", scheduled_job.job.name());
+            log::info!("Disabled job '{}'", scheduled_job.job.name());
             true
         } else {
             false
@@ -140,12 +140,12 @@ impl SchedulerOrchestrator {
     /// Start the scheduler.
     pub async fn start(&mut self) {
         if self.running {
-            println!("Scheduler is already running");
+            log::info!("Scheduler is already running");
             return;
         }
 
         self.running = true;
-        println!(
+        log::info!(
             "Starting scheduler with {} jobs and {} services",
             self.scheduled_jobs.len(),
             self.services.len()
@@ -170,7 +170,7 @@ impl SchedulerOrchestrator {
     /// Stop the scheduler.
     pub fn stop(&mut self) {
         self.running = false;
-        println!("Scheduler stopped");
+        log::info!("Scheduler stopped");
     }
 
     /// Execute jobs that are scheduled to run on startup.
@@ -213,7 +213,7 @@ impl SchedulerOrchestrator {
     /// Execute a specific job.
     async fn execute_job(&mut self, job_id: Uuid) {
         if let Some(scheduled_job) = self.scheduled_jobs.get_mut(&job_id) {
-            println!("Executing scheduled job: '{}'", scheduled_job.job.name());
+            log::info!("Executing scheduled job: '{}'", scheduled_job.job.name());
 
             let start_time = Utc::now();
 
@@ -221,7 +221,7 @@ impl SchedulerOrchestrator {
             match scheduled_job.job.execute(&self.services).await {
                 Ok(_) => {
                     let stats = scheduled_job.job.job_stats();
-                    println!(
+                    log::info!(
                         "Job '{}' completed successfully: {} of {} tasks completed ({}% success rate)",
                         scheduled_job.job.name(),
                         stats.completed_tasks,
@@ -230,14 +230,15 @@ impl SchedulerOrchestrator {
                     );
                 }
                 Err(e) => {
-                    println!("Job '{}' failed: {}", scheduled_job.job.name(), e);
+                    log::info!("Job '{}' failed: {}", scheduled_job.job.name(), e);
 
                     // Log partial completion info if available
                     let stats = scheduled_job.job.job_stats();
                     if stats.completed_tasks > 0 {
-                        println!(
+                        log::info!(
                             "  Partial completion: {} of {} tasks completed",
-                            stats.completed_tasks, stats.total_tasks
+                            stats.completed_tasks,
+                            stats.total_tasks
                         );
                     }
                 }
@@ -255,13 +256,13 @@ impl SchedulerOrchestrator {
             };
 
             if let Some(next_run) = scheduled_job.next_run {
-                println!(
+                log::info!(
                     "Next run for job '{}': {}",
                     scheduled_job.job.name(),
                     next_run
                 );
             } else {
-                println!("Job '{}' will not run again", scheduled_job.job.name());
+                log::info!("Job '{}' will not run again", scheduled_job.job.name());
             }
         }
     }
@@ -286,7 +287,7 @@ impl SchedulerOrchestrator {
             backup_job,
             Schedule::Interval(Duration::from_secs(6 * 3600)),
         ) {
-            println!("Failed to add backup job: {}", e);
+            log::info!("Failed to add backup job: {}", e);
         }
 
         // Content indexing job - runs every hour
@@ -304,7 +305,7 @@ impl SchedulerOrchestrator {
         .with_priority(ActionPriority::Normal);
 
         if let Err(e) = self.add_job(indexing_job, Schedule::Interval(Duration::from_secs(3600))) {
-            println!("Failed to add indexing job: {}", e);
+            log::info!("Failed to add indexing job: {}", e);
         }
 
         // Weekly maintenance job with multiple tasks
@@ -339,7 +340,7 @@ impl SchedulerOrchestrator {
 
         // Run every Sunday at 2:00 AM
         if let Err(e) = self.add_job(maintenance_job, Schedule::Weekly(0, 2, 0)) {
-            println!("Failed to add maintenance job: {}", e);
+            log::info!("Failed to add maintenance job: {}", e);
         }
 
         // Startup job to validate system
@@ -357,7 +358,7 @@ impl SchedulerOrchestrator {
         .with_priority(ActionPriority::Critical);
 
         if let Err(e) = self.add_job(startup_job, Schedule::OnStartup) {
-            println!("Failed to add startup job: {}", e);
+            log::info!("Failed to add startup job: {}", e);
         }
     }
 
