@@ -21,6 +21,8 @@ sqlite = ["dep:sqlx", "sqlx/sqlite"]
 mysql = ["dep:sqlx", "sqlx/mysql"]
 ## Enable the MinIO / S3 file-storage adapter.
 s3 = ["dep:rust-s3"]
+## Enable the Redis queue adapter.
+redis-queue = ["dep:redis"]
 
 [dependencies]
 paladin-core = { package = "paladin-ai-core", version = "0.5.1", path = "../paladin-core" }
@@ -39,6 +41,9 @@ sqlx = { workspace = true, optional = true }
 
 # rust-s3 is optional: activated by the s3 feature (MinIO/S3 file storage).
 rust-s3 = { version = "0.35.1", optional = true }
+
+# redis is optional: activated by the redis-queue feature.
+redis = { version = "0.32.2", features = ["aio", "tokio-comp", "connection-manager", "script"], optional = true }
 
 # url is used for parsing source URLs stored in content rows.
 url = "2"

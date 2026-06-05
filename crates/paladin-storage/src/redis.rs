@@ -7,10 +7,10 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::core::base::entity::message::{Location, MessagePriority};
-use crate::core::platform::container::log::{LogEntry, LogLevel, LogMessage};
-use crate::core::platform::container::queue_config::QueueConfig;
-use crate::core::platform::container::queue_item::{QueueItem, QueueItemStatus, QueueItemSummary};
+use paladin_core::base::entity::message::{Location, MessagePriority};
+use paladin_core::platform::container::log::{LogEntry, LogLevel, LogMessage};
+use paladin_core::platform::container::queue_config::QueueConfig;
+use paladin_core::platform::container::queue_item::{QueueItem, QueueItemStatus, QueueItemSummary};
 use paladin_ports::output::log_port::LogPort;
 use paladin_ports::output::queue_port::{
     BatchQueuePort, FullQueuePort, PriorityQueuePort, QueueManagementPort, QueuePort,

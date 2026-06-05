@@ -3666,6 +3666,7 @@ dependencies = [
  "chrono",
  "paladin-ai-core",
  "paladin-ports",
+ "redis",
  "rust-s3",
  "serde",
  "serde_json",

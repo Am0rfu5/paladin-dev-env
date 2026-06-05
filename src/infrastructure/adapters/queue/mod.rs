@@ -1,2 +1,3 @@
+//! Queue adapters — re-exported from `paladin-storage` (the `redis-queue` feature).
 #[cfg(feature = "redis-queue")]
-pub mod redis;
+pub use paladin_storage::redis;
