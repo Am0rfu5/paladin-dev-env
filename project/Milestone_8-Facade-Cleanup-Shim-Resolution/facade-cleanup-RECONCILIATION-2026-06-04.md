@@ -178,14 +178,21 @@ Branch `chore/facade-cleanup-m8-finish`. Each commit passed
 (`paladin-herald`); persistence adapters (sqlite/mysql/minio/redis) consolidated in
 `paladin-storage`; Citadel in `paladin-memory`.
 
-### Still outstanding (not done)
+### Also completed (follow-on commits)
 
-- **`infrastructure/web/user_controller.rs` → `paladin-web`** — blocked: it depends on the
-  facade-local `UserService` (`core/platform/manager/user_service.rs`), which must be split
-  (trait → core/ports, impl → app service) before the controller can move. This is the
-  unresolved Category-4 "user service split."
+| Commit | Work |
+|--------|------|
+| `6704807` | Delete orphaned `user_controller.rs` duplicate — investigation showed it was uncompiled residue; paladin-web already owns the live copy and `UserServiceTrait`/DTOs already live in paladin-core, so **no user-service split was needed** |
+| `4c7857e` | Hygiene — convert ~100 production `println!` → `log::*` in services/infrastructure (CLI output untouched) |
+| `74ddf11` | Hygiene — refresh `application/mod.rs` + `infrastructure/mod.rs` docs to match the crate layout |
+| `a1e4901` | Hygiene — justify the 11 remaining `#[allow(dead_code)]` markers (mostly test-only helpers + reserved fields) |
+
+### Deliberately left in the facade (per the original disposition)
+
 - **Category 4 service relocations** (`planning/prompt/temperature/handoff` services,
-  `content_ingestion_service`) and the **`src/core/` re-export shims** — left as deliberate
-  facade-internal decisions per the original disposition.
-- **Category 5 hygiene** (`println!`→`log` in services, `#[allow(dead_code)]` markers, stale
-  `mod.rs` doc-comments).
+  `content_ingestion_service`) and the **`src/core/` re-export shims** — facade-internal
+  decisions the original Epic-3 disposition chose to keep; not slop. Revisit only if a future
+  milestone wants them in leaf crates.
+
+**Final tally:** 15 commits, ~10,250 net LOC removed, one new leaf crate (`paladin-herald`).
+Workspace builds/tests/clippy/fmt green on default and across all rewired feature flags.
