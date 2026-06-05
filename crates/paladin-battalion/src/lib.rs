@@ -39,5 +39,5 @@ pub mod maneuver;
 pub mod phalanx_service;
 pub mod retry;
 
-// Internal helpers
-pub(crate) mod in_memory_registry;
+/// In-memory `PaladinRegistry` implementation (also used by the application facade).
+pub mod in_memory_registry;

@@ -37,6 +37,7 @@ pub(super) struct Queue {
     pub(super) completed_items: HashMap<Uuid, QueueItem<serde_json::Value>>,
     pub(super) failed_items: HashMap<Uuid, QueueItem<serde_json::Value>>,
     pub(super) stats: QueueStats,
+    // Recorded at construction for diagnostics; not yet surfaced.
     #[allow(dead_code)]
     pub(super) created_at: DateTime<Utc>,
     pub(super) last_cleanup: DateTime<Utc>,

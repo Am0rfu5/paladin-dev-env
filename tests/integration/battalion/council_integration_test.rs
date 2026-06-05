@@ -10,7 +10,7 @@ use paladin::core::platform::container::battalion::council::{
     CouncilBuilder, TerminationCondition, TurnStrategy,
 };
 use paladin::core::platform::container::paladin::{MaxLoops, Paladin, PaladinData, PaladinStatus};
-use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+use paladin_battalion::in_memory_registry::HashMapPaladinRegistry;
 use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, PaladinStream, StopReason};
 use paladin_ports::output::paladin_registry::PaladinRegistry;
 use std::collections::HashMap;

@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Milestone 8 — Facade Cleanup & Shim Resolution (completion)
+
+Finishes the relocations that Milestone 8 Epic 3 had deferred and removes the dead/duplicate code
+left behind by the earlier workspace decomposition. ~10,250 net LOC removed; the facade is reduced
+to a true composition root. No external consumers exist, but the facade's public API surface
+changed — see **Removed** / **Changed** below.
+
+#### Added
+
+- **New `paladin-herald` crate** — the `Herald` output formatters (`JsonHerald`, `MarkdownHerald`,
+  `TableHerald`) now live here with their presentation dependencies (`comfy-table`, `colored`),
+  keeping `paladin-core` dependency-light. Still reachable via
+  `paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald}` (re-export).
+- `paladin-storage` gained `s3` (MinIO/S3) and `redis-queue` (Redis) features, and is now a
+  non-optional facade dependency with `sqlite` always enabled.
+
+#### Changed
+
+- **Persistence consolidated in `paladin-storage`.** The MinIO/S3 file-storage adapter and the
+  Redis queue adapter moved out of the facade into `paladin-storage` (behind the `s3` and
+  `redis-queue` features); the facade re-exports them under its existing `s3-storage` / `redis-queue`
+  features, so `crate::infrastructure::adapters::file_storage::minio` and `...::queue::redis`
+  paths are unchanged. `paladin-storage` bumped to `edition = "2024"`.
+- **`FileCitadel` moved to `paladin-memory`** (`paladin_memory::citadel::file_citadel`); re-exported
+  by the facade at the same path.
+- **`paladin-storage` is now non-optional** with SQLite always compiled — `sqlx` is now part of the
+  default build. The facade's local SQLite repository fallbacks were deleted; the SQLite repos are
+  always sourced from `paladin-storage`.
+- Facade adapter modules for relocated implementations are now `pub use` re-exports rather than
+  local `pub mod` (citadel, herald, sqlite repositories).
+- Service/infrastructure status `println!` output converted to `log::*` (CLI output unchanged).
+
+#### Removed
+
+- **`paladin::infrastructure::adapters::paladin_registry`** (and `HashMapPaladinRegistry`) — the
+  registry was consolidated into `paladin-battalion`. Use
+  `paladin_battalion::in_memory_registry::HashMapPaladinRegistry` instead. **(breaking — facade API)**
+- **`paladin::infrastructure::repositories::file_content_repository`** — unused, deleted.
+- The half-built `user` CLI command, the placeholder TensorFlow ML adapter, and the now-unused `ml`
+  feature flag — removed and documented for future reintroduction in
+  `project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-features.md`.
+- The dead facade-local notification fallback adapters and orphaned/duplicate adapter files left
+  behind by earlier extractions.
+
 ## [0.5.1] - 2026-06-04
 
 ### Fixed

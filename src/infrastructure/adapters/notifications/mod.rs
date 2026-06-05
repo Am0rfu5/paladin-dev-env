@@ -1,20 +1,15 @@
-/// When `notifications` feature is active, all adapters come from `paladin-notifications`.
+//! Notification adapters — re-exported from `paladin-notifications` under the
+//! `notifications` feature.
+//!
+//! When the feature is inactive the facade exposes no notification adapters; every consumer
+//! of these types (e.g. `config/notifications.rs`, the notification integration test) is itself
+//! gated behind the same feature.
 #[cfg(feature = "notifications")]
-pub use paladin_notifications::email_notification_adapter;
-#[cfg(feature = "notifications")]
-pub use paladin_notifications::push_notification_adapter;
-#[cfg(feature = "notifications")]
-pub use paladin_notifications::system_notification_adapter;
+pub use paladin_notifications::{
+    email_notification_adapter, push_notification_adapter, system_notification_adapter,
+};
 
-/// Fallback: use facade-local copies when `notifications` feature is inactive.
-#[cfg(not(feature = "notifications"))]
-pub mod email_notification_adapter;
-#[cfg(not(feature = "notifications"))]
-pub mod system_notification_adapter;
-
-// Re-export main adapters for convenience
-#[cfg(not(feature = "notifications"))]
-pub use email_notification_adapter::{EmailAdapterConfig, EmailNotificationAdapter};
+// Convenience re-exports of the most-used adapter types.
 #[cfg(feature = "notifications")]
 pub use paladin_notifications::email_notification_adapter::{
     EmailAdapterConfig, EmailNotificationAdapter,
@@ -23,5 +18,3 @@ pub use paladin_notifications::email_notification_adapter::{
 pub use paladin_notifications::system_notification_adapter::{
     SystemAdapterConfig, SystemNotificationAdapter,
 };
-#[cfg(not(feature = "notifications"))]
-pub use system_notification_adapter::{SystemAdapterConfig, SystemNotificationAdapter};

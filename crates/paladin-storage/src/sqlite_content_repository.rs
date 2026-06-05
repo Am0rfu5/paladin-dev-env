@@ -11,7 +11,7 @@ use paladin_ports::output::repository_port::{
 
 use chrono::{DateTime, Utc};
 use serde_json;
-use sqlx::{sqlite::SqlitePoolOptions, Row, SqlitePool};
+use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
 use url::Url;
 use uuid::Uuid;
 

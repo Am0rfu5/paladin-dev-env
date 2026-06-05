@@ -232,7 +232,7 @@ impl ListenerOrchestrator {
                 }
                 Err(e) => {
                     // Log error but continue processing with other listeners
-                    eprintln!(
+                    log::error!(
                         "Failed to create trigger for listener {}: {}",
                         wrapper.listener.name(),
                         e

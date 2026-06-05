@@ -10,8 +10,6 @@ use crate::infrastructure::adapters::file_storage::minio::MinioAdapter;
 use crate::infrastructure::adapters::logs::system_log_adapter::SystemLogAdapter;
 #[cfg(feature = "redis-queue")]
 use crate::infrastructure::adapters::queue::redis::RedisQueueAdapter;
-#[cfg(not(feature = "storage-sqlite"))]
-use crate::infrastructure::repositories::sqlite_content_repository::SqliteStore;
 #[cfg(feature = "s3-storage")]
 use paladin_ports::output::file_storage_port::FileStoragePort;
 #[cfg(feature = "s3-storage")]
@@ -21,7 +19,6 @@ use paladin_ports::output::log_port::LogPort;
 #[cfg(feature = "redis-queue")]
 use paladin_ports::output::queue_port::QueuePort;
 use paladin_ports::output::repository_port::MigrationManager;
-#[cfg(feature = "storage-sqlite")]
 use paladin_storage::sqlite_content_repository::SqliteStore;
 use std::env;
 #[cfg(feature = "s3-storage")]
@@ -67,18 +64,18 @@ impl ServiceRunner {
         &mut self,
         config: Arc<Settings>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        println!("Starting services...");
+        log::info!("Starting services...");
 
         // Initialize the database
         self.database = Some(Self::init_database().await?);
-        println!("Database initialized successfully");
+        log::info!("Database initialized successfully");
 
         // Initialize LogAdapter
         let log_adapter = SystemLogAdapter::new(Default::default())
             .map_err(|e| format!("Failed to initialize SystemLogAdapter: {}", e))?;
         let log_adapter = Arc::new(log_adapter);
         self.log_adapter = Some(log_adapter.clone());
-        println!("Log adapter initialized successfully");
+        log::info!("Log adapter initialized successfully");
 
         // Initialize Redis Queue Adapter
         #[cfg(feature = "redis-queue")]
@@ -104,7 +101,7 @@ impl ServiceRunner {
             qa.health_check()
                 .await
                 .map_err(|e| format!("Redis queue adapter health check failed: {}", e))?;
-            println!("Redis queue adapter initialized successfully");
+            log::info!("Redis queue adapter initialized successfully");
             qa
         };
 
@@ -123,7 +120,7 @@ impl ServiceRunner {
             fsa.health_check()
                 .await
                 .map_err(|e| format!("MinIO file storage adapter health check failed: {}", e))?;
-            println!("MinIO file storage adapter initialized successfully");
+            log::info!("MinIO file storage adapter initialized successfully");
             fsa
         };
 
@@ -135,7 +132,7 @@ impl ServiceRunner {
             .await
             .map_err(|e| format!("Failed to start message service: {}", e))?;
 
-        println!("Message service started successfully");
+        log::info!("Message service started successfully");
         self.message_service = Some(message_service.clone());
 
         // Initialize EventService
@@ -145,7 +142,7 @@ impl ServiceRunner {
                 .map_err(|e| format!("Failed to create event service: {}", e))?,
         );
 
-        println!("Event service initialized successfully");
+        log::info!("Event service initialized successfully");
         self.event_service = Some(event_service.clone());
 
         // Initialize Notification Service
@@ -154,7 +151,7 @@ impl ServiceRunner {
             let notification_service =
                 Self::init_notification_service(&config, message_service.clone()).await?;
             self.notification_service = Some(notification_service);
-            println!("Notification service initialized successfully");
+            log::info!("Notification service initialized successfully");
         }
 
         // Initialize User Service
@@ -165,7 +162,7 @@ impl ServiceRunner {
             let _scheduler = self.scheduler.write().await;
             // Here you would inject the adapters into the scheduler
             // This depends on your scheduler implementation
-            println!("Scheduler updated with queue and file storage adapters");
+            log::info!("Scheduler updated with queue and file storage adapters");
         }
 
         // Start the scheduler
@@ -175,12 +172,12 @@ impl ServiceRunner {
             scheduler.start().await;
         }));
 
-        println!("Scheduler started successfully");
-        println!("All services started successfully!");
+        log::info!("Scheduler started successfully");
+        log::info!("All services started successfully!");
         #[cfg(feature = "redis-queue")]
-        println!("Queue adapter: {}", queue_adapter.get_connection_info());
+        log::info!("Queue adapter: {}", queue_adapter.get_connection_info());
         #[cfg(feature = "s3-storage")]
-        println!(
+        log::info!(
             "File storage adapter: {}",
             file_storage_adapter.get_connection_info()
         );
@@ -264,10 +261,10 @@ impl ServiceRunner {
 
             tokio::select! {
                 _ = ctrl_c => {
-                    println!("Received Ctrl+C, shutting down...");
+                    log::info!("Received Ctrl+C, shutting down...");
                 },
                 _ = sigterm.recv() => {
-                    println!("Received SIGTERM, shutting down...");
+                    log::info!("Received SIGTERM, shutting down...");
                 }
             }
         }
@@ -275,23 +272,23 @@ impl ServiceRunner {
         #[cfg(not(unix))]
         {
             ctrl_c.await.expect("Failed to listen for ctrl-c");
-            println!("Received Ctrl+C, shutting down...");
+            log::info!("Received Ctrl+C, shutting down...");
         }
     }
 
     pub async fn shutdown(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        println!("Shutting down services...");
+        log::info!("Shutting down services...");
 
         // Stop scheduler
         if let Some(handle) = self.scheduler_handle.take() {
             handle.abort();
-            println!("Scheduler stopped");
+            log::info!("Scheduler stopped");
         }
 
         // Shutdown message service
         if let Some(_message_service) = &self.message_service {
             // Assuming MessageService has a shutdown method
-            println!("Message service stopped");
+            log::info!("Message service stopped");
         }
 
         // Shutdown file storage adapter
@@ -301,7 +298,7 @@ impl ServiceRunner {
                 .shutdown()
                 .await
                 .map_err(|e| format!("Failed to shutdown file storage adapter: {}", e))?;
-            println!("File storage adapter stopped");
+            log::info!("File storage adapter stopped");
         }
 
         // Shutdown queue adapter
@@ -311,16 +308,16 @@ impl ServiceRunner {
                 .shutdown()
                 .await
                 .map_err(|e| format!("Failed to shutdown queue adapter: {}", e))?;
-            println!("Queue adapter stopped");
+            log::info!("Queue adapter stopped");
         }
 
         // Close database connection
         if let Some(_database) = &self.database {
             // SQLite connections are automatically closed when dropped
-            println!("Database connection closed");
+            log::info!("Database connection closed");
         }
 
-        println!("All services shut down successfully");
+        log::info!("All services shut down successfully");
         Ok(())
     }
 
@@ -428,7 +425,7 @@ impl ServiceRunner {
                 ),
                 (
                     "code/sample.rs",
-                    "// Sample Rust code for analysis\nfn main() {\n    println!(\"Hello, world!\");\n}",
+                    "// Sample Rust code for analysis\nfn main() {\n    log::info!(\"Hello, world!\");\n}",
                 ),
                 (
                     "code/sample.py",
@@ -450,19 +447,19 @@ impl ServiceRunner {
                     .await
                 {
                     Ok(file_item) => {
-                        println!(
+                        log::info!(
                             "Created sample file: {} ({} bytes)",
                             file_item.path.display(),
                             file_item.size
                         );
                     }
                     Err(e) => {
-                        println!("Failed to create sample file {}: {}", path, e);
+                        log::info!("Failed to create sample file {}: {}", path, e);
                     }
                 }
             }
 
-            println!("Sample files initialized in MinIO storage");
+            log::info!("Sample files initialized in MinIO storage");
         }
 
         Ok(())
@@ -498,7 +495,7 @@ impl ServiceRunner {
             .await?,
         );
 
-        println!("User service initialized successfully");
+        log::info!("User service initialized successfully");
         Ok(())
     }
 
@@ -530,7 +527,7 @@ impl ServiceRunner {
         let notification_service = NotificationService::new(service_config, message_service);
 
         if !notification_config.enabled {
-            println!("Notification service is disabled in configuration");
+            log::info!("Notification service is disabled in configuration");
             return Ok(Arc::new(notification_service));
         }
 
@@ -538,7 +535,7 @@ impl ServiceRunner {
         // The current adapters implement NotificationDeliveryPort but we need NotificationChannelHandler
         // This will be implemented in a future phase when we create adapter bridges
 
-        println!("Notification service configured (adapter registration pending)");
+        log::info!("Notification service configured (adapter registration pending)");
 
         Ok(Arc::new(notification_service))
     }

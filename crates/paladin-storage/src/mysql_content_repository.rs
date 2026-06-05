@@ -11,7 +11,7 @@ use paladin_ports::output::repository_port::{
 
 use chrono::{DateTime, Utc};
 use serde_json;
-use sqlx::{mysql::MySqlPoolOptions, MySqlPool, Row};
+use sqlx::{MySqlPool, Row, mysql::MySqlPoolOptions};
 use url::Url;
 use uuid::Uuid;
 

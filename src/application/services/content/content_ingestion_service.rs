@@ -647,7 +647,7 @@ impl ContentIngestionService for DefaultContentIngestionService {
             match self.ingest_from_source(source_id).await {
                 Ok(result) => batch_results.push(result),
                 Err(e) => {
-                    println!("Failed to ingest from source {}: {}", source_id, e);
+                    log::info!("Failed to ingest from source {}: {}", source_id, e);
                     // Continue with other sources
                 }
             }
@@ -708,7 +708,7 @@ impl ContentIngestionService for DefaultContentIngestionService {
             }
         });
 
-        println!("Content ingestion scheduler started");
+        log::info!("Content ingestion scheduler started");
         Ok(())
     }
 
@@ -716,7 +716,7 @@ impl ContentIngestionService for DefaultContentIngestionService {
         let mut scheduler_running = self.scheduler_running.write().await;
         *scheduler_running = false;
 
-        println!("Content ingestion scheduler stopped");
+        log::info!("Content ingestion scheduler stopped");
         Ok(())
     }
 }

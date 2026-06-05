@@ -94,7 +94,7 @@ impl NotificationOrchestrator {
 
     /// Start the notification orchestrator.
     pub async fn start(&self) -> NotificationOrchestratorResult<()> {
-        println!("Starting notification orchestrator");
+        log::info!("Starting notification orchestrator");
 
         {
             let mut is_running = self.is_running.write().await;
@@ -117,13 +117,13 @@ impl NotificationOrchestrator {
 
         self.start_workers().await?;
 
-        println!("Notification orchestrator started successfully");
+        log::info!("Notification orchestrator started successfully");
         Ok(())
     }
 
     /// Stop the notification orchestrator.
     pub async fn stop(&self) -> NotificationOrchestratorResult<()> {
-        println!("Stopping notification orchestrator");
+        log::info!("Stopping notification orchestrator");
 
         {
             let mut is_running = self.is_running.write().await;
@@ -140,7 +140,7 @@ impl NotificationOrchestrator {
 
         self.message_service.stop().await?;
 
-        println!("Notification orchestrator stopped");
+        log::info!("Notification orchestrator stopped");
         Ok(())
     }
 
@@ -152,9 +152,10 @@ impl NotificationOrchestrator {
         channel: NotificationChannel,
         priority: NotificationPriority,
     ) -> NotificationOrchestratorResult<Notification> {
-        println!(
+        log::info!(
             "Creating notification for recipient: {:?}, channel: {:?}",
-            recipient, channel
+            recipient,
+            channel
         );
 
         let mut notification = Notification::new(recipient, content, channel, priority)?;
@@ -195,7 +196,7 @@ impl NotificationOrchestrator {
         })
         .await;
 
-        println!("Notification created: {}", notification.id);
+        log::info!("Notification created: {}", notification.id);
         Ok(notification)
     }
 
@@ -204,7 +205,7 @@ impl NotificationOrchestrator {
         &self,
         notification_id: Uuid,
     ) -> NotificationOrchestratorResult<NotificationDeliveryResult> {
-        println!("Sending notification: {}", notification_id);
+        log::info!("Sending notification: {}", notification_id);
 
         let mut notification = {
             let mut active = self.active_notifications.write().await;
@@ -306,14 +307,15 @@ impl NotificationOrchestrator {
                     stats.active_notifications -= 1;
                 }
 
-                println!(
+                log::info!(
                     "Notification {} processed with status: {:?}",
-                    notification_id, delivery_result.status
+                    notification_id,
+                    delivery_result.status
                 );
                 Ok(delivery_result)
             }
             Err(error) => {
-                eprintln!("Failed to send notification {}: {}", notification_id, error);
+                log::error!("Failed to send notification {}: {}", notification_id, error);
 
                 if notification.can_retry()
                     && let Some(retry_status) =
@@ -359,9 +361,10 @@ impl NotificationOrchestrator {
         notification_id: Uuid,
         scheduled_time: DateTime<Utc>,
     ) -> NotificationOrchestratorResult<()> {
-        println!(
+        log::info!(
             "Scheduling notification {} for {}",
-            notification_id, scheduled_time
+            notification_id,
+            scheduled_time
         );
 
         let mut active = self.active_notifications.write().await;
@@ -381,9 +384,10 @@ impl NotificationOrchestrator {
         })
         .await;
 
-        println!(
+        log::info!(
             "Notification {} scheduled for {}",
-            notification_id, scheduled_time
+            notification_id,
+            scheduled_time
         );
         Ok(())
     }
@@ -394,7 +398,7 @@ impl NotificationOrchestrator {
         notification_id: Uuid,
         reason: Option<String>,
     ) -> NotificationOrchestratorResult<()> {
-        println!("Cancelling notification: {}", notification_id);
+        log::info!("Cancelling notification: {}", notification_id);
 
         let mut active = self.active_notifications.write().await;
         if let Some(mut notification) = active.remove(&notification_id) {
@@ -410,7 +414,7 @@ impl NotificationOrchestrator {
             let mut stats = self.stats.write().await;
             stats.active_notifications -= 1;
 
-            println!("Notification {} cancelled", notification_id);
+            log::info!("Notification {} cancelled", notification_id);
         }
 
         Ok(())
@@ -419,14 +423,14 @@ impl NotificationOrchestrator {
     /// Register a channel handler.
     pub async fn register_channel_handler(&self, handler: Arc<dyn NotificationChannelHandler>) {
         let channel = handler.channel();
-        println!("Registering channel handler for: {:?}", channel);
+        log::info!("Registering channel handler for: {:?}", channel);
         let mut handlers = self.channel_handlers.write().await;
         handlers.insert(channel, handler);
     }
 
     /// Set template processor.
     pub async fn set_template_processor(&self, processor: Arc<dyn NotificationTemplateProcessor>) {
-        println!("Setting template processor");
+        log::info!("Setting template processor");
         let mut template_processor = self.template_processor.write().await;
         *template_processor = Some(processor);
     }
@@ -515,7 +519,7 @@ impl NotificationOrchestrator {
     }
 
     async fn start_workers(&self) -> NotificationOrchestratorResult<()> {
-        println!("Starting notification processing workers");
+        log::info!("Starting notification processing workers");
         let mut workers = self.workers.write().await;
         workers.push(self.start_scheduled_processor().await);
         workers.push(self.start_retry_processor().await);
@@ -540,7 +544,7 @@ impl NotificationOrchestrator {
                         .collect()
                 };
                 for notification_id in ready_notifications {
-                    println!("Would send scheduled notification: {}", notification_id);
+                    log::info!("Would send scheduled notification: {}", notification_id);
                 }
             }
         })
@@ -566,7 +570,7 @@ impl NotificationOrchestrator {
                         .collect()
                 };
                 for notification_id in retry_notifications {
-                    println!("Would retry notification: {}", notification_id);
+                    log::info!("Would retry notification: {}", notification_id);
                     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                 }
             }
@@ -598,9 +602,11 @@ impl NotificationOrchestrator {
 // ---------------------------------------------------------------------------
 
 struct NotificationMessageHandler {
+    // Populated during registration; consumed via the dispatch path.
     #[allow(dead_code)]
     channel_handlers:
         Arc<RwLock<HashMap<NotificationChannel, Arc<dyn NotificationChannelHandler>>>>,
+    // Maintained for future stats reporting.
     #[allow(dead_code)]
     stats: Arc<RwLock<NotificationServiceStats>>,
 }
@@ -622,7 +628,7 @@ impl NotificationMessageHandler {
 #[async_trait]
 impl MessageHandler<NotificationContent> for NotificationMessageHandler {
     async fn handle_message(&self, message: Message<NotificationContent>) -> MessageResult<()> {
-        println!("Handling notification message: {}", message.id);
+        log::info!("Handling notification message: {}", message.id);
         Ok(())
     }
 

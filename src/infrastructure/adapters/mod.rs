@@ -12,7 +12,6 @@ pub mod logs;
 #[cfg(feature = "notifications")]
 pub mod notifications;
 pub mod output;
-pub mod paladin_registry;
 pub mod queue;
 pub mod sanctum;
 pub mod scheduling;

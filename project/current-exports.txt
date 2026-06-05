@@ -1,4 +1,4 @@
-# Public API Surface - Generated 2026-05-31 22:13:11 UTC
+# Public API Surface - Generated 2026-06-05 14:14:10 UTC
 # This file tracks all publicly exported items from the paladin crate
 # Generated using cargo-public-api v0.52.0
 
@@ -2707,7 +2707,7 @@ impl core::marker::UnsafeUnpin for paladin::infrastructure::adapters::auth::in_m
 impl core::panic::unwind_safe::RefUnwindSafe for paladin::infrastructure::adapters::auth::in_memory_token_auth_adapter::InMemoryTokenAuthAdapter
 impl core::panic::unwind_safe::UnwindSafe for paladin::infrastructure::adapters::auth::in_memory_token_auth_adapter::InMemoryTokenAuthAdapter
 pub mod paladin::infrastructure::adapters::citadel
-pub mod paladin::infrastructure::adapters::citadel::file_citadel
+pub use paladin::infrastructure::adapters::citadel::file_citadel
 pub mod paladin::infrastructure::adapters::file_storage
 pub mod paladin::infrastructure::adapters::garrison
 pub use paladin::infrastructure::adapters::garrison::InMemoryGarrison
@@ -2717,47 +2717,23 @@ pub use paladin::infrastructure::adapters::garrison::in_memory_garrison::InMemor
 pub mod paladin::infrastructure::adapters::garrison::sqlite_garrison
 pub use paladin::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarrison
 pub mod paladin::infrastructure::adapters::herald
-pub mod paladin::infrastructure::adapters::herald::json_herald
-pub mod paladin::infrastructure::adapters::herald::markdown_herald
-pub mod paladin::infrastructure::adapters::herald::table_herald
+pub use paladin::infrastructure::adapters::herald::json_herald
+pub use paladin::infrastructure::adapters::herald::markdown_herald
+pub use paladin::infrastructure::adapters::herald::table_herald
 pub mod paladin::infrastructure::adapters::input
 pub mod paladin::infrastructure::adapters::llm
 pub mod paladin::infrastructure::adapters::llm::config_bridge
 pub mod paladin::infrastructure::adapters::logs
 pub mod paladin::infrastructure::adapters::logs::system_log_adapter
 pub mod paladin::infrastructure::adapters::output
-pub mod paladin::infrastructure::adapters::paladin_registry
-pub struct paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-impl paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-pub fn paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry::clear(&self)
-pub fn paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry::count(&self) -> usize
-pub fn paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry::from_map(std::collections::hash::map::HashMap<alloc::string::String, alloc::sync::Arc<paladin_core::platform::container::paladin::Paladin>>) -> Self
-pub fn paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry::new() -> Self
-impl core::default::Default for paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-pub fn paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry::default() -> paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-impl core::fmt::Debug for paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-pub fn paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl paladin_ports::output::paladin_registry::PaladinRegistry for paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-pub fn paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry::contains(&self, &str) -> bool
-pub fn paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry::get(&self, &str) -> core::option::Option<alloc::sync::Arc<paladin_core::platform::container::paladin::Paladin>>
-pub fn paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry::list_ids(&self) -> alloc::vec::Vec<alloc::string::String>
-pub fn paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry::register(&self, alloc::string::String, alloc::sync::Arc<paladin_core::platform::container::paladin::Paladin>) -> core::result::Result<(), paladin_core::platform::container::registry_error::RegistryError>
-impl !core::marker::Freeze for paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-impl core::marker::Send for paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-impl core::marker::Sync for paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-impl core::marker::Unpin for paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-impl core::marker::UnsafeUnpin for paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-impl core::panic::unwind_safe::RefUnwindSafe for paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
-impl core::panic::unwind_safe::UnwindSafe for paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry
 pub mod paladin::infrastructure::adapters::queue
 pub mod paladin::infrastructure::adapters::sanctum
 pub use paladin::infrastructure::adapters::sanctum::InMemorySanctum
 pub mod paladin::infrastructure::adapters::scheduling
 pub mod paladin::infrastructure::adapters::scheduling::tokio_cron_adapter
 pub mod paladin::infrastructure::repositories
-pub mod paladin::infrastructure::repositories::file_content_repository
-pub mod paladin::infrastructure::repositories::sqlite_content_repository
-pub mod paladin::infrastructure::repositories::sqlite_user_repository
+pub use paladin::infrastructure::repositories::sqlite_content_repository
+pub use paladin::infrastructure::repositories::sqlite_user_repository
 pub mod paladin::infrastructure::resilience
 pub mod paladin::infrastructure::resilience::circuit_breaker
 pub enum paladin::infrastructure::resilience::circuit_breaker::CircuitState
@@ -3185,4 +3161,4 @@ impl !core::panic::unwind_safe::RefUnwindSafe for paladin::application::services
 impl !core::panic::unwind_safe::UnwindSafe for paladin::application::services::paladin::paladin_builder::PaladinBuilder
 
 ## Summary
-Total public items: 1811
+Total public items: 1798

@@ -6,7 +6,7 @@
 //! # Examples
 //!
 //! ```rust,ignore
-//! use paladin::infrastructure::adapters::herald::JsonHerald;
+//! use paladin_herald::JsonHerald;
 //! use paladin::core::platform::container::herald::Herald;
 //!
 //! let herald = JsonHerald::new();
@@ -14,7 +14,7 @@
 //! println!("{}", formatted);
 //! ```
 
-use crate::core::platform::container::herald::{
+use paladin_core::platform::container::herald::{
     BattalionResult, ExecutionMetadata, Herald, HeraldError, PaladinError, PaladinResult,
     StreamChunk,
 };
@@ -236,8 +236,8 @@ impl Herald for JsonHerald {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::platform::container::battalion::BattalionStatus;
     use chrono::Utc;
+    use paladin_core::platform::container::battalion::BattalionStatus;
     use paladin_ports::output::paladin_port::StopReason;
     use uuid::Uuid;
 
@@ -272,7 +272,7 @@ mod tests {
             ],
             status: BattalionStatus::Completed,
             strategy_used:
-                crate::core::platform::container::battalion::BattalionStrategy::Formation,
+                paladin_core::platform::container::battalion::BattalionStrategy::Formation,
             strategy_selection_reasoning: None,
             strategy_selection_time_ms: 0,
             per_paladin_times: [

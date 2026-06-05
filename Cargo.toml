@@ -19,6 +19,7 @@ regex = "1.11.1"
 paladin-core = { package = "paladin-ai-core", version = "0.5.1", path = "crates/paladin-core" }
 paladin-ports = { version = "0.5.1", path = "crates/paladin-ports" }
 paladin-battalion = { version = "0.5.1", path = "crates/paladin-battalion" }
+paladin-herald = { version = "0.5.1", path = "crates/paladin-herald" }
 paladin-llm = { version = "0.5.1", path = "crates/paladin-llm" }
 paladin-memory = { version = "0.5.1", path = "crates/paladin-memory" }
 paladin-storage = { version = "0.5.1", path = "crates/paladin-storage" }
@@ -50,9 +51,10 @@ name = "paladin"
 paladin-core = { workspace = true }
 paladin-ports = { workspace = true }
 paladin-battalion = { workspace = true }
+paladin-herald = { workspace = true }
 paladin-llm = { version = "0.5.1", path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
 paladin-memory = { workspace = true, features = ["sqlite"] }
-paladin-storage = { workspace = true, optional = true }
+paladin-storage = { workspace = true, features = ["sqlite"] }
 paladin-notifications = { workspace = true, optional = true }
 paladin-content = { workspace = true, optional = true }
 paladin-web = { workspace = true, optional = true }
@@ -85,10 +87,8 @@ toml = "0.8.23"
 md5 = "0.8.0"
 async-trait = { workspace = true }
 futures = "0.3.31"
-redis = { version = "0.32.2", features = ["aio", "tokio-comp", "connection-manager", "script"], optional = true  }
 bytes = "1.10.1"
 mime_guess = "2.0.5"
-rust-s3 = { version = "0.35.1", optional = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 argon2 = "0.5.3"
 clap = { version = "4.5.40", features = ["derive", "cargo", "env"], optional = true }
@@ -206,8 +206,8 @@ harness = false
 
 [features]
 default = ["llm-openai"]
-redis-queue = ["redis"]
-s3-storage = ["rust-s3"]
+redis-queue = ["paladin-storage/redis-queue"]
+s3-storage = ["paladin-storage/s3"]
 openai-embeddings = ["paladin-llm/openai-embeddings"]
 qdrant = ["qdrant-client", "paladin-memory/qdrant"]
 integration-tests = []
@@ -221,13 +221,13 @@ llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]
 
 # Subsystem feature flags
 vision = []
-ml = []
 content-processing = ["dep:paladin-content", "paladin-content/web-scraping", "paladin-content/rss", "paladin-content/news-api", "paladin-content/tiktoken", "paladin-content/llm", "paladin-memory/content-processing"]
 web-server = ["dep:paladin-web"]
 notifications = ["dep:paladin-notifications", "paladin-notifications/email", "paladin-notifications/push", "paladin-notifications/system"]
-storage-sqlite = ["dep:paladin-storage", "paladin-storage/sqlite"]
-storage-mysql = ["dep:paladin-storage", "paladin-storage/mysql"]
-storage = ["storage-sqlite", "storage-mysql"]
+# SQLite repositories are always available: `paladin-storage` is a non-optional
+# dependency with its `sqlite` feature enabled (see [dependencies]).
+storage-mysql = ["paladin-storage/mysql"]
+storage = ["storage-mysql"]
 
 # CLI (binary and test tooling only — not compiled into the library)
 cli = ["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml"]

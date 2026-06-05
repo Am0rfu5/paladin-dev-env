@@ -84,11 +84,13 @@ mod tests {
             }
         }
 
+        // Test mock setter; retained for failure-injection scenarios.
         #[allow(dead_code)]
         fn set_should_fail(&self, fail: bool) {
             *self.should_fail.lock().unwrap() = fail;
         }
 
+        // Test mock accessor; retained for call-count assertions.
         #[allow(dead_code)]
         fn get_call_count(&self) -> usize {
             *self.call_count.lock().unwrap()

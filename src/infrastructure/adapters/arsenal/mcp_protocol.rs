@@ -232,6 +232,7 @@ pub struct MCPClient {
     /// Transport implementation (STDIO, SSE, etc.)
     transport: Arc<tokio::sync::Mutex<Box<dyn MCPTransport>>>,
     /// Server capabilities (populated after connection)
+    // Populated on connect; reserved for capability negotiation.
     #[allow(dead_code)]
     capabilities: Option<MCPCapabilities>,
 }

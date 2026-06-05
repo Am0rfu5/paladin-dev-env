@@ -186,7 +186,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     // Create Paladin registry from paladins
-    use paladin::infrastructure::adapters::paladin_registry::HashMapPaladinRegistry;
+    use paladin_battalion::in_memory_registry::HashMapPaladinRegistry;
     use paladin_ports::output::paladin_registry::PaladinRegistry;
     let registry = HashMapPaladinRegistry::new();
     for (idx, paladin) in paladins.iter().enumerate() {

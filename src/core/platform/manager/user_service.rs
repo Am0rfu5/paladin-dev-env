@@ -180,7 +180,7 @@ impl UserService {
 
         // Use write_entry instead of log
         if let Err(e) = self.log_port.write_entry(log_entry).await {
-            eprintln!("Failed to log user action: {}", e);
+            log::error!("Failed to log user action: {}", e);
         }
     }
 }

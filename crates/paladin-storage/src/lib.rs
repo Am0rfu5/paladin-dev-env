@@ -1,6 +1,7 @@
 //! # paladin-storage
 //!
-//! SQL-backed repository adapters for the Paladin multi-agent framework.
+//! Persistence adapters for the Paladin multi-agent framework: SQL-backed repositories
+//! plus MinIO/S3 file storage.
 //!
 //! ## Feature flags
 //!
@@ -8,6 +9,8 @@
 //! |------|---------|
 //! | `sqlite` | [`sqlite_content_repository`], [`sqlite_user_repository`] |
 //! | `mysql`  | [`mysql_content_repository`] |
+//! | `s3`     | [`minio`] (MinIO / S3 file storage) |
+//! | `redis-queue` | [`redis`] (Redis-backed queue) |
 //!
 //! Enable only the backends your deployment actually uses.
 
@@ -31,3 +34,11 @@ pub mod sqlite_workflow_repository;
 /// `MigrationManager`, and `SqlStore`.
 #[cfg(feature = "mysql")]
 pub mod mysql_content_repository;
+
+/// MinIO / S3 implementation of `FileStoragePort`.
+#[cfg(feature = "s3")]
+pub mod minio;
+
+/// Redis implementation of `QueuePort`.
+#[cfg(feature = "redis-queue")]
+pub mod redis;

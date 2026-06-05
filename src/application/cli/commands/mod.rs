@@ -12,4 +12,3 @@ pub mod agent;
 pub mod arsenal;
 pub mod battalion;
 pub mod maneuver;
-pub mod user;

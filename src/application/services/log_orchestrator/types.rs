@@ -66,6 +66,7 @@ impl Default for LogServiceConfig {
 pub(super) struct LogMessageHandler {
     pub(super) logs: Arc<RwLock<HashMap<LogDestination, Log>>>,
     pub(super) log_port: Option<Arc<dyn LogPort>>,
+    // Handler configuration; retained for future log-routing rules.
     #[allow(dead_code)]
     pub(super) config: LogServiceConfig,
 }

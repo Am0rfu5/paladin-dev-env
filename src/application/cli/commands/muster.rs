@@ -166,6 +166,7 @@ async fn analyze_task_with_llm(
 }
 
 /// Build the LLM system prompt for task analysis
+// Exercised by unit tests; the live path builds the prompt inline.
 #[allow(dead_code)]
 fn build_analysis_prompt() -> String {
     r#"You are an expert in multi-agent orchestration patterns. Analyze the given task and recommend the best battalion pattern and agent roles.
