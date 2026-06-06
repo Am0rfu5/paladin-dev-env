@@ -3553,6 +3553,7 @@ name = "paladin-doc-examples"
 version = "0.5.1"
 dependencies = [
  "async-trait",
+ "axum 0.8.9",
  "chrono",
  "paladin-ai",
  "paladin-ai-core",
@@ -3560,6 +3561,9 @@ dependencies = [
  "paladin-content",
  "paladin-llm",
  "paladin-ports",
+ "paladin-storage",
+ "reqwest",
+ "serde",
  "serde_json",
  "tokio",
  "uuid",

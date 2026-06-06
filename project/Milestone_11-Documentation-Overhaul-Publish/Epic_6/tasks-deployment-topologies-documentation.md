@@ -83,20 +83,27 @@
         reference the new pages (remaining `fragment resolution` warnings are pre-existing in
         unrelated files and non-fatal).
 
-- [ ] 2.0 Prepare the doc-example & config-check harness for the new examples (FR-10, FR-12)
-  - [ ] 2.1 Locate the doc-examples test harness manifest (resolve OQ-6): find the crate that
-        `scripts/check-doc-examples.sh` compiles extracted blocks against, and read its
-        `Cargo.toml` to see how features/deps are declared.
-  - [ ] 2.2 Add the dev-dependencies the host/worker/sidecar examples need — `axum`,
-        `reqwest`, `tokio` — and a dependency on `paladin-web`; activate the `redis-queue`
-        feature (and `web-server` if it gates `paladin-web`). Do **not** add these as runtime
-        deps to any shipped library crate.
-  - [ ] 2.3 Confirm the config-loader entry point used by `scripts/check-doc-config.sh` (the
-        struct `config.yml` deserializes into) so the host/queue YAML snippets use real keys.
-  - [ ] 2.4 Smoke-test the harness with a throwaway compilable block that imports `axum`,
-        `reqwest`, and the `redis-queue`-gated `RedisQueueAdapter`: run
-        `make check-doc-examples` (or `scripts/check-doc-examples.sh`) and confirm it
-        compiles, then remove the throwaway block.
+- [x] 2.0 Prepare the doc-example & config-check harness for the new examples (FR-10, FR-12)
+  - [x] 2.1 Resolved OQ-6: the harness crate is `crates/doc-examples` (package
+        `paladin-doc-examples`). Examples live as `// ANCHOR: name` regions in
+        `src/*.rs`, compiled by `cargo check -p paladin-doc-examples` and pulled into guides
+        via mdBook `{{#include ...:anchor}}`. Inline fenced blocks are only syntax-scanned
+        (and skipped if they import external crates) — so **compilable** topology examples
+        must be `{{#include}}`-d from this crate, not written inline.
+  - [x] 2.2 Added to `crates/doc-examples/Cargo.toml`: `axum = "0.8.4"` (matches `paladin-web`),
+        `reqwest` (workspace), `serde` (workspace, derive — for request/response structs), and
+        `paladin-storage` with the `redis-queue` feature. `tokio` was already present. No
+        shipped-library crate was modified. (`web-server` is an umbrella feature on
+        `paladin-ai`, not on `paladin-web`, which is depended on directly when needed — the
+        HTTP-host example composes its own router, so no `paladin-web` dep was required.)
+  - [x] 2.3 Read `scripts/check-doc-config.sh`: the config gate is **syntactic only** (PyYAML
+        `safe_load_all`), not deep schema validation (deep validation is a tracked follow-up,
+        OQ-7). YAML snippets must parse as valid YAML; I will still use realistic keys for
+        accuracy, but the gate enforces syntax, not schema.
+  - [x] 2.4 Smoke-tested with a throwaway `src/_smoke.rs` importing `axum::Router`,
+        `reqwest::Client`, and `paladin_storage::redis::{RedisQueueAdapter, RedisQueueConfig}`:
+        `cargo check -p paladin-doc-examples` compiled, confirming all three resolve. Removed
+        the throwaway file; `make check-doc-examples` passes (0 failed).
 
 - [ ] 3.0 Author the Embedded Library topology page (FR-3)
   - [ ] 3.1 Verify the embedded-library API anchors against source (PRD §7): `PaladinBuilder`,
