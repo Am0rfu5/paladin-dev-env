@@ -8,6 +8,8 @@ for choosing a pattern and wiring it up.
 For a quick pattern-by-pattern cheat sheet see [Battalion Patterns](battalion-patterns.md);
 for the declarative flow language see [Maneuver Flow DSL](maneuver-flow-dsl.md); for how agents
 and workflows call each other see the [Agent ↔ Orchestrator Bridge](agent-orchestrator-bridge.md).
+For how a Battalion fits among the ways to *run* agents, see
+[Deployment Topologies](../deployment-topologies/overview.md).
 
 > Every code example targets the current **v0.5.0** workspace. The substantive examples are real,
 > compiled code pulled from the `paladin-doc-examples` crate via mdBook `{{#include}}`, so they are

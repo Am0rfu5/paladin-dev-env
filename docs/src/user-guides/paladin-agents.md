@@ -5,6 +5,9 @@ operates a configurable reasoning loop, maintains conversation memory via Garris
 external tools via Arsenal, and optionally leverages autonomous features like task planning,
 auto-generated prompts, and dynamic temperature.
 
+> Ready to *run* a number of agents? See [Deployment Topologies](../deployment-topologies/overview.md)
+> for how to choose between embedding, hosting, queue/worker, and sidecar models.
+
 ---
 
 ## Table of Contents

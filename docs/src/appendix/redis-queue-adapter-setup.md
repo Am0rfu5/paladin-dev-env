@@ -2,6 +2,9 @@
 
 This section describes how to set up and use the Redis queue adapter for the paladin framework.
 
+> For the queue/worker *deployment* pattern (producers enqueue agent jobs, workers execute
+> them) see [Queue / Worker (Distributed)](../deployment-topologies/queue-worker.md).
+
 ## Prerequisites
 
 - Docker and Docker Compose

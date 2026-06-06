@@ -17,8 +17,16 @@ paladin-ports = { version = "0.5.1", path = "../paladin-ports" }
 paladin-battalion = { version = "0.5.1", path = "../paladin-battalion" }
 paladin-llm = { version = "0.5.1", path = "../paladin-llm", features = ["openai", "mock"] }
 paladin-content = { version = "0.5.1", path = "../paladin-content", features = ["llm", "news-api"] }
+# Storage adapters — the `redis-queue` feature exposes `RedisQueueAdapter` for the
+# queue/worker deployment-topology example (Epic 6).
+paladin-storage = { version = "0.5.1", path = "../paladin-storage", features = ["redis-queue"] }
 async-trait = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 tokio = { workspace = true }
+# HTTP surface for the deployment-topology examples (Epic 6): `axum` for the
+# HTTP-service-host handler, `reqwest` for the sidecar client call.
+axum = { version = "0.8.4" }
+reqwest = { workspace = true }

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Milestone 11 — Documentation Overhaul & Publish (Epic 6: Deployment Topologies)
+
+#### Documentation
+
+- **New "Deployment Topologies" book section** answering "how do I run a number of different
+  agents?" A decision-matrix landing page (comparison table + Mermaid flowchart) plus one page
+  per topology: **embedded library**, **Battalion orchestration**, **HTTP service host**,
+  **queue / worker (distributed)**, and **sidecar (separate process)**. Each carries a
+  compile-verified example pulled from `paladin-doc-examples` via mdBook `{{#include}}`.
+- **Honest gap callouts** where the framework provides no first-class mechanism: the HTTP-host
+  page documents a *consumer-composed* `axum` endpoint (the shipped `create_app_router` is the
+  user/auth API, not an agent runner), and the sidecar page states plainly that no IPC/RPC
+  transport ships (the pattern composes the HTTP host + an HTTP client).
+- `crates/doc-examples` gained `axum`, `reqwest`, `serde` (derive), and `paladin-storage`
+  (`redis-queue`) so the new topology examples compile against the live API. No shipped-library
+  crate or public API changed.
+
 ### Milestone 8 — Facade Cleanup & Shim Resolution (completion)
 
 Finishes the relocations that Milestone 8 Epic 3 had deferred and removes the dead/duplicate code
