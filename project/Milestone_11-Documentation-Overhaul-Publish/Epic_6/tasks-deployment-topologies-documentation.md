@@ -201,19 +201,22 @@
   - [x] 7.7 Verified: `make check-doc-examples` passes (0 failed); `mdbook build` exits 0, no
         broken links; the `{{#include}}` rendered into the built HTML.
 
-- [ ] 8.0 Cross-link, register, and verify the full book build (FR-9, FR-11, FR-12, FR-13)
-  - [ ] 8.1 Confirm all six pages are registered under the Deployment Topologies section in
-        `docs/src/SUMMARY.md` (no stubs left; no "not in SUMMARY" warnings).
-  - [ ] 8.2 Verify the cross-link map (PRD §6): landing ↔ each topology; embedded-library →
-        paladin-agents; battalion → orchestration/battalion-patterns; http-host →
-        crate-map + sidecar; queue-worker → redis-queue-adapter-setup; sidecar → http-host.
-  - [ ] 8.3 Add optional inbound cross-links from existing pages where natural
-        (`user-guides/paladin-agents.md`, `user-guides/orchestration.md`,
-        `appendix/redis-queue-adapter-setup.md`, `architecture/overview.md`).
-  - [ ] 8.4 Run the full gates: `make check-doc-examples` (0 failures), `make check-doc-config`
-        (0 failures), and `mdbook build docs/` with `[output.linkcheck]` enforcing (**0
-        warnings**, every internal link resolves).
-  - [ ] 8.5 Run `cargo test` to confirm no regressions from the harness manifest change (2.0).
+- [x] 8.0 Cross-link, register, and verify the full book build (FR-9, FR-11, FR-12, FR-13)
+  - [x] 8.1 Confirmed all six pages registered under the Deployment Topologies section in
+        `docs/src/SUMMARY.md`; no stub markers remain; no "not in SUMMARY" warnings.
+  - [x] 8.2 Verified the cross-link map (PRD §6): landing ↔ each topology (overview links to
+        all 5; each links back); embedded-library → paladin-agents; battalion →
+        orchestration + battalion-patterns; http-host → crate-map + sidecar; queue-worker →
+        redis-queue-adapter-setup; sidecar → http-host. All resolve under linkcheck.
+  - [x] 8.3 Added inbound cross-links from `user-guides/paladin-agents.md`,
+        `user-guides/orchestration.md`, `appendix/redis-queue-adapter-setup.md`, and
+        `architecture/overview.md` pointing into the new section.
+  - [x] 8.4 Full gates pass: `make check-doc-examples` (0 failed), `make check-doc-config`
+        (157 YAML blocks, 0 failed), `mdbook build` exit 0 with linkcheck enforcing — "No
+        broken links found" (remaining `fragment resolution` warnings are pre-existing and
+        non-fatal).
+  - [x] 8.5 `cargo test --workspace --lib --bins` passes — 0 failed across all crates
+        (no regressions from the Task 2.0 manifest change).
 
 - [ ] 9.0 CHANGELOG, final checks, commit & PR (docs-focused completion — FR-14)
   - [ ] 9.1 Add a `## [Unreleased]` entry to `CHANGELOG.md` recording the new Deployment

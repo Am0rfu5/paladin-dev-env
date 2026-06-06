@@ -5,6 +5,9 @@ Paladin is a **Rust workspace** of nine focused crates organised around
 Each workspace crate maps to a distinct architectural layer, keeping the core
 domain free of all external dependencies.
 
+> For how to *run* agents built on this architecture — embedded, hosted, queue/worker, or
+> sidecar — see [Deployment Topologies](../deployment-topologies/overview.md).
+
 ## Workspace Crates at a Glance
 
 | Crate | Layer | Purpose |
