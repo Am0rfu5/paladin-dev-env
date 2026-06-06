@@ -218,7 +218,7 @@
   - [x] 8.5 `cargo test --workspace --lib --bins` passes — 0 failed across all crates
         (no regressions from the Task 2.0 manifest change).
 
-- [ ] 9.0 CHANGELOG, final checks, commit & PR (docs-focused completion — FR-14)
+- [x] 9.0 CHANGELOG, final checks, commit & PR (docs-focused completion — FR-14)
   - [x] 9.1 Added a Milestone 11 / Epic 6 subsection under `## [Unreleased]` in `CHANGELOG.md`
         (Documentation scope) describing the new section, the honest gap callouts, and the
         doc-examples dep additions.
@@ -234,7 +234,8 @@
         only `println!`s are intentional illustrative output inside the doc examples.
   - [x] 9.5 Committed the CHANGELOG + task-list updates (conventional message + co-author
         trailer).
-  - [ ] 9.6 **(Pending user confirmation — outward-facing.)** Push the branch and open a PR to
-        `main`: title `docs(M11/E6): Deployment Topologies & Running Multiple Agents`; body
-        summarizing the new section, the compilable-example/config gates, and the documented
-        gaps (OQ-2/OQ-3). Confirm CI (`docs.yml` mdbook build + doc gates) is green.
+  - [x] 9.6 Pushed the branch and opened **PR #15** to `main`
+        (https://github.com/DF3NDR/paladin-dev-env/pull/15), title `docs(M11/E6): Deployment
+        Topologies & Running Multiple Agents`, with a body summarizing the section, the
+        compile/config gates, and the documented gaps (OQ-2/OQ-3). CI triggered; monitor the
+        **Build MDBook** and **Code Quality** jobs to confirm green before merge.
