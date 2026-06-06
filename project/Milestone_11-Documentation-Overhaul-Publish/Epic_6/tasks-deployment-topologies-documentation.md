@@ -105,22 +105,26 @@
         `cargo check -p paladin-doc-examples` compiled, confirming all three resolve. Removed
         the throwaway file; `make check-doc-examples` passes (0 failed).
 
-- [ ] 3.0 Author the Embedded Library topology page (FR-3)
-  - [ ] 3.1 Verify the embedded-library API anchors against source (PRD §7): `PaladinBuilder`,
-        `PaladinExecutionService::new(..)`/`execute(..)`, `MockLlmAdapter::new()`,
-        `CircuitBreaker`, and the prelude re-exports.
-  - [ ] 3.2 Write the page intro: the single-process model, `paladin-ai` (lib `paladin`) as
-        composition root; when to choose it (simplest, in-process, you control invocation).
-  - [ ] 3.3 Add the compilable example: build one agent with `PaladinBuilder` + `MockLlmAdapter`,
-        construct `PaladinExecutionService`, call `.execute(&paladin, input)`. Use `# `-hidden
-        boilerplate; no API key/network required.
-  - [ ] 3.4 Add the "multiple distinct agents in one process" note introducing the agent-registry
-        pattern (`HashMap<AgentId, (Paladin, Arc<PaladinExecutionService>)>`) and a forward
-        link to the HTTP-host page where the registry is served.
-  - [ ] 3.5 Add cross-links: → `user-guides/paladin-agents.md` (full builder API) and ← back to
-        the landing page; do not duplicate the builder reference.
-  - [ ] 3.6 Verify: `make check-doc-examples` passes for this file and `mdbook build docs/` is
-        warning-free.
+- [x] 3.0 Author the Embedded Library topology page (FR-3)
+  - [x] 3.1 Verified anchors against source: `PaladinBuilder::new(Arc<dyn LlmPort>)` +
+        `.build().await`; `PaladinExecutionService::new(llm, circuit_breaker, garrison,
+        arsenal)` + `.execute(&paladin, input).await`; `MockLlmAdapter::new()`;
+        `CircuitBreaker::new(failures, successes, Duration)`; prelude exports `Paladin`,
+        `LlmPort`, `PaladinResult`, `PaladinBuilder`. The single-agent pattern already exists,
+        compiled, as `readme.rs:quickstart`.
+  - [x] 3.2 Wrote the intro: single-process model, `paladin-ai` (lib `paladin`) as composition
+        root, when to choose it / when to look elsewhere.
+  - [x] 3.3 Added the single-agent example by reusing the compiled `readme.rs:quickstart`
+        anchor via `{{#include}}` (DRY — no duplicate source to drift).
+  - [x] 3.4 Added the "multiple distinct agents in one process" section with a **new compiled**
+        `AgentRegistry` example (`crates/doc-examples/src/deployment_topologies.rs`,
+        `embedded_registry` anchor) — `HashMap<String, (Paladin, Arc<PaladinExecutionService>)>`
+        — and a forward link to the HTTP-host page.
+  - [x] 3.5 Added cross-links: → `user-guides/paladin-agents.md`, →
+        `battalion-orchestration.md`, → `http-service-host.md`, ← landing page.
+  - [x] 3.6 Verified: `make check-doc-examples` passes (registry compiles via
+        `cargo check -p paladin-doc-examples`); `mdbook build` exits 0, no broken links; both
+        `{{#include}}` directives confirmed rendered into the built HTML.
 
 - [ ] 4.0 Author the Battalion Orchestration topology page (FR-4)
   - [ ] 4.1 Verify Battalion anchors against source (PRD §7): the chosen service type
