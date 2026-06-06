@@ -65,26 +65,23 @@
   - [x] 0.2 Create and checkout the branch: `git checkout -b feature/milestone-11-epic-6-deployment-topologies-documentation`.
   - [x] 0.3 Confirm a clean working tree: `git status`. *(Pre-existing unrelated changes noted — `.claude/settings.json`, `README.md`, milestone-file move — will NOT be committed by this Epic.)*
 
-- [ ] 1.0 Scaffold the Deployment Topologies section & landing decision-matrix page (FR-1, FR-2, FR-8)
-  - [ ] 1.1 Confirm the book's section-landing convention (resolve OQ-5): inspect existing
-        section parents in `docs/src/SUMMARY.md` (e.g. how `user-guides`/`deployment` name
-        their landing page) and pick the matching filename for the landing page
-        (`overview.md` vs `index.md` vs `README.md`). Record the choice in a comment in the PR.
-  - [ ] 1.2 Create the directory `docs/src/deployment-topologies/` and a stub landing page at
-        `docs/src/deployment-topologies/<landing>.md` (placeholder heading only for now).
-  - [ ] 1.3 Add the new top-level **Deployment Topologies** section to `docs/src/SUMMARY.md`
-        between **User Guides** and **Deployment**: a parent link to the landing page plus
-        five child entries (embedded-library, battalion-orchestration, http-service-host,
-        queue-worker, sidecar) — create empty stub files for the five children so the build
-        has no dangling links yet.
-  - [ ] 1.4 Write the landing page body: a one-paragraph "topology = how you run agents,
-        independent of packaging" framing; a comparison **table** (columns: topology, process
-        model, concurrency, when to use, when to avoid, key crates/features; one row per
-        topology); and the "two of these are documented in depth — see their pages" note.
-  - [ ] 1.5 Add the Mermaid `flowchart TD` decision tree (collaborating-on-one-task? →
-        request/response service? → scale-out? → process isolation?) routing to each topology.
-  - [ ] 1.6 Verify: `mdbook build docs/` succeeds with **zero** warnings (no "not in SUMMARY"
-        warnings; Mermaid renders). Fix any issues before continuing.
+- [x] 1.0 Scaffold the Deployment Topologies section & landing decision-matrix page (FR-1, FR-2, FR-8)
+  - [x] 1.1 Confirm the book's section-landing convention (resolve OQ-5): inspected
+        `docs/src/SUMMARY.md` — sections are mdBook `# Part` headers followed by a flat page
+        list; there is **no separate parent/landing page** per section. Resolution: the landing
+        page is the first list item, named `overview.md` (matching `architecture/overview.md`).
+  - [x] 1.2 Created `docs/src/deployment-topologies/` and the landing page
+        `docs/src/deployment-topologies/overview.md`.
+  - [x] 1.3 Added the **Deployment Topologies** part header to `docs/src/SUMMARY.md`
+        immediately before **Deployment** (after User Guides), with the landing page + five
+        child entries; created the five child stub files so there are no dangling links.
+  - [x] 1.4 Wrote the landing page body: "topology vs packaging" framing, a comparison table
+        (topology, process model, concurrency, when to use, when to avoid, key crates/features),
+        and the "two are documented in depth — see their pages" note.
+  - [x] 1.5 Added the Mermaid `flowchart TD` decision tree routing to each of the five topologies.
+  - [x] 1.6 Verified: `mdbook build` exits 0 with "No broken links found"; no warnings
+        reference the new pages (remaining `fragment resolution` warnings are pre-existing in
+        unrelated files and non-fatal).
 
 - [ ] 2.0 Prepare the doc-example & config-check harness for the new examples (FR-10, FR-12)
   - [ ] 2.1 Locate the doc-examples test harness manifest (resolve OQ-6): find the crate that

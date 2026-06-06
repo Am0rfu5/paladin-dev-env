@@ -33,6 +33,15 @@
 - [Design Patterns](architecture/design-patterns.md)
 - [Crate Map](architecture/crate-map.md)
 
+# Deployment Topologies
+
+- [Choosing a Topology](deployment-topologies/overview.md)
+- [Embedded Library](deployment-topologies/embedded-library.md)
+- [Battalion Orchestration](deployment-topologies/battalion-orchestration.md)
+- [HTTP Service Host](deployment-topologies/http-service-host.md)
+- [Queue / Worker (Distributed)](deployment-topologies/queue-worker.md)
+- [Sidecar (Separate Process)](deployment-topologies/sidecar.md)
+
 # Deployment
 
 - [Docker](deployment/docker.md)
