@@ -219,20 +219,22 @@
         (no regressions from the Task 2.0 manifest change).
 
 - [ ] 9.0 CHANGELOG, final checks, commit & PR (docs-focused completion — FR-14)
-  - [ ] 9.1 Add a `## [Unreleased]` entry to `CHANGELOG.md` recording the new Deployment
-        Topologies section (docs scope).
-  - [ ] 9.2 Confirm scope hygiene: no `*.rs` library changes; **do not** regenerate
-        `project/current-exports.txt` (docs-only Epic — no API change). Review `git diff` to
-        ensure only docs, `SUMMARY.md`, `CHANGELOG.md`, and the doc-examples harness manifest
-        changed.
-  - [ ] 9.3 Run the final check sweep: `cargo fmt --check`, `cargo clippy --workspace
-        --all-targets -- -D warnings` (the harness manifest change must not introduce
-        warnings), `make check-doc-examples`, `make check-doc-config`, `mdbook build docs/`.
-  - [ ] 9.4 Remove any throwaway/placeholder content left from scaffolding (1.2/1.3 stubs,
-        2.4 smoke-test block).
-  - [ ] 9.5 Stage and commit with a conventional message and co-author trailer, e.g.
-        `git commit -m "docs(milestone-11/epic-6): add Deployment Topologies section" -m "- Landing decision matrix + 5 topology pages (embedded, battalion, http-host, queue-worker, sidecar)" -m "- Compilable examples gated by check-doc-examples; config snippets validated" -m "- Honest gaps flagged: no agent-HTTP endpoint, no IPC/sidecar transport" -m "Implements Epic 6 of Milestone 11"`.
-  - [ ] 9.6 Push the branch and open a PR to `main`: title
-        `docs(M11/E6): Deployment Topologies & Running Multiple Agents`; body summarizing the
-        new section, the compilable-example/config gates, and the documented gaps (OQ-2/OQ-3).
-        Confirm CI (`docs.yml` mdbook build + doc gates) is green.
+  - [x] 9.1 Added a Milestone 11 / Epic 6 subsection under `## [Unreleased]` in `CHANGELOG.md`
+        (Documentation scope) describing the new section, the honest gap callouts, and the
+        doc-examples dep additions.
+  - [x] 9.2 Scope hygiene confirmed via `git diff main..HEAD`: 21 files, all under `docs/`,
+        `crates/doc-examples/`, `project/`, plus `Cargo.lock`. **No shipped-library `*.rs`** and
+        **no `current-exports.txt`** change. (Pre-existing unrelated working-tree changes —
+        `.claude/settings.json`, `README.md`, the milestone-file move — were deliberately left
+        uncommitted and out of every Epic commit.)
+  - [x] 9.3 Final sweep green: `cargo fmt --check` OK; `cargo clippy -p paladin-doc-examples
+        --all-targets -- -D warnings` exit 0; `make check-doc-examples` (0 failed);
+        `make check-doc-config` (157 blocks, 0 failed); `mdbook build` (no broken links).
+  - [x] 9.4 Cleanup confirmed: scaffolding stubs replaced, Task 2.0 smoke module removed; the
+        only `println!`s are intentional illustrative output inside the doc examples.
+  - [x] 9.5 Committed the CHANGELOG + task-list updates (conventional message + co-author
+        trailer).
+  - [ ] 9.6 **(Pending user confirmation — outward-facing.)** Push the branch and open a PR to
+        `main`: title `docs(M11/E6): Deployment Topologies & Running Multiple Agents`; body
+        summarizing the new section, the compilable-example/config gates, and the documented
+        gaps (OQ-2/OQ-3). Confirm CI (`docs.yml` mdbook build + doc gates) is green.
