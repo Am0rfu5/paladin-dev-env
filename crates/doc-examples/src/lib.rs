@@ -14,3 +14,4 @@ pub mod http_service_host;
 pub mod orchestration;
 pub mod queue_worker;
 pub mod readme;
+pub mod sidecar;

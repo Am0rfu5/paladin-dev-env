@@ -183,20 +183,23 @@
   - [x] 6.7 Verified: `make check-doc-examples` (0 failed) + `make check-doc-config` (157 YAML
         blocks, 0 failed) pass; `mdbook build` exits 0, no broken links; include rendered.
 
-- [ ] 7.0 Author the Sidecar (separate-process) topology page (FR-7)
-  - [ ] 7.1 Re-confirm (PRD §7 / OQ-3) there is no IPC/gRPC/tonic/RPC client in the workspace,
-        so the page is honest about composing HTTP host + HTTP client.
-  - [ ] 7.2 Write the page intro: agent in its own process, called over the network; when
-        process/security/deploy isolation justifies the overhead vs. the one-process HTTP host.
-  - [ ] 7.3 Add the **honesty callout** (mandate #2): no first-class sidecar transport ships;
+- [x] 7.0 Author the Sidecar (separate-process) topology page (FR-7)
+  - [x] 7.1 Re-confirmed: `grep` for `tonic|grpc|rpc|sidecar|prost` across all crate manifests
+        found nothing (only my own doc-examples comment); `reqwest` is used solely for
+        LLM/content fetching, not inter-process agent calls. No IPC/RPC transport ships.
+  - [x] 7.2 Wrote the intro: agent in its own process, called over the network; when
+        isolation justifies the overhead vs. the one-process HTTP host.
+  - [x] 7.3 Added the **honesty callout** (mandate #2): no first-class sidecar transport ships;
         the wire contract is consumer-owned.
-  - [ ] 7.4 Add the compilable caller-side example: a `reqwest` client call to the FR-5
-        `POST /agents/{id}/execute` contract with request/response structs; `no_run`-style so
-        it compiles without a running server. Cross-link the server side to the HTTP-host page.
-  - [ ] 7.5 Add the "what a first-class sidecar would need" subsection (transport port trait +
-        serialization) as a documented limitation / future direction, linked to OQ-3.
-  - [ ] 7.6 Add cross-links: → `http-service-host.md`, ← landing page.
-  - [ ] 7.7 Verify: `make check-doc-examples` passes for this file; `mdbook build docs/` clean.
+  - [x] 7.4 Added the **compilable** caller-side example (`sidecar.rs:sidecar_client`): a
+        `reqwest` POST to `POST /agents/{id}/execute` with request/response structs mirroring
+        the host. Compiles in full; the network call never runs under `cargo check`. Server
+        side cross-linked to the HTTP-host page.
+  - [x] 7.5 Added the "what a first-class sidecar would need" subsection (transport port trait
+        + serialization contract) as a documented limitation / future direction (OQ-3).
+  - [x] 7.6 Added cross-links: → `http-service-host.md`, → `embedded-library.md`, ← landing.
+  - [x] 7.7 Verified: `make check-doc-examples` passes (0 failed); `mdbook build` exits 0, no
+        broken links; the `{{#include}}` rendered into the built HTML.
 
 - [ ] 8.0 Cross-link, register, and verify the full book build (FR-9, FR-11, FR-12, FR-13)
   - [ ] 8.1 Confirm all six pages are registered under the Deployment Topologies section in
