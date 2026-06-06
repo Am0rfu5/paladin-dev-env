@@ -143,22 +143,23 @@
   - [x] 4.6 Verified: `make check-doc-examples` passes; `mdbook build` exits 0, no broken
         links; the Phalanx `{{#include}}` confirmed rendered into the built HTML.
 
-- [ ] 5.0 Author the HTTP Service Host topology page (FR-5)
-  - [ ] 5.1 Verify anchors against source (PRD §7): `axum` version/API, that
-        `paladin-web::create_app_router(user_service, auth_port)` is **user-management only**,
-        and the `web-server` feature flag. Confirm no agent-execution endpoint ships.
-  - [ ] 5.2 Write the page intro + **honesty callout** (mandate #1): the framework ships no
-        agent-execution endpoint; this page shows how to compose your own.
-  - [ ] 5.3 Add the compilable example: an Axum `Router` with `POST /agents/{id}/execute` over
-        shared state (`Arc` agent registry + `Arc<PaladinExecutionService>`), the handler
-        calling `.execute()` and returning JSON. Show the `axum::serve(..)` bind line as a
-        `# `-hidden / `no_run`-style line so the block compiles without binding a port.
-  - [ ] 5.4 Add a `config.yml` snippet for host/agent configuration (must validate — FR-12).
-  - [ ] 5.5 Optionally add a `sequenceDiagram` (client → handler → execution service → agent).
-  - [ ] 5.6 Add cross-links: → `api-reference/crate-map.md` (paladin-web bundled user/auth
-        routes), → `sidecar.md`, ← landing page.
-  - [ ] 5.7 Verify: `make check-doc-examples` + `make check-doc-config` pass for this file;
-        `mdbook build docs/` clean.
+- [x] 5.0 Author the HTTP Service Host topology page (FR-5)
+  - [x] 5.1 Verified against source: read `crates/paladin-web/src/app.rs` —
+        `create_app_router(user_service, auth_port)` wires only `/users/...` register/login/CRUD
+        (user-management), **no agent endpoint**. Axum is `0.8.x` (route param syntax `{id}`).
+        Honesty callout #1 is accurate.
+  - [x] 5.2 Wrote the intro + **honesty callout**: Paladin ships no agent-execution endpoint;
+        this page composes an `axum` handler around `PaladinExecutionService`.
+  - [x] 5.3 Added the **compilable** example (`http_service_host.rs:http_host`): `axum` Router
+        with `POST /agents/{id}/execute` over shared `AppState` (Arc agent registry), handler
+        calling `.execute()` and returning JSON. The real `axum::serve` bind compiles in full
+        (cargo check never runs it, so no port is bound) — no hiding needed.
+  - [x] 5.4 Added a `config.yml` host/agent snippet (validates — `check-doc-config` passes).
+  - [x] 5.5 Added a `sequenceDiagram` (client → handler → execution service → agent).
+  - [x] 5.6 Added cross-links: → `api-reference/crate-map.md` (paladin-web user/auth routes),
+        → `sidecar.md`, ← landing; embedded-library referenced for the registry.
+  - [x] 5.7 Verified: `make check-doc-examples` (0 failed) + `make check-doc-config` (156 YAML
+        blocks, 0 failed) pass; `mdbook build` exits 0, no broken links; include rendered.
 
 - [ ] 6.0 Author the Queue / Worker (distributed) topology page (FR-6)
   - [ ] 6.1 Verify anchors against source (PRD §7): `RedisQueueAdapter::new(config, log_port)`,
