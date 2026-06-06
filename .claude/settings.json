@@ -32,7 +32,9 @@
       "Bash(git branch:*)",
       "Bash(rg:*)",
       "Bash(ls:*)",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(cat)",
+      "Read(//tmp/**)"
     ],
     "deny": [],
     "ask": [
