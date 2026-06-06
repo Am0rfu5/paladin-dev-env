@@ -126,19 +126,22 @@
         `cargo check -p paladin-doc-examples`); `mdbook build` exits 0, no broken links; both
         `{{#include}}` directives confirmed rendered into the built HTML.
 
-- [ ] 4.0 Author the Battalion Orchestration topology page (FR-4)
-  - [ ] 4.1 Verify Battalion anchors against source (PRD §7): the chosen service type
-        (`PhalanxExecutionService` or `FormationExecutionService`), its `::new(paladin_port)`
-        and `execute(..)` signatures, `BattalionConfig`, `ErrorStrategy`, `AggregationStrategy`.
-  - [ ] 4.2 Write the page intro: "many agents collaborating in one runtime" and when it beats
-        a hand-rolled registry (the agents form a *workflow*, not independent endpoints).
-  - [ ] 4.3 Add the compilable example: a Battalion service with ≥2 agents (mock LLM port) and a
-        `BattalionConfig`, executed end-to-end.
-  - [ ] 4.4 Add the intent→pattern table (sequential→Formation, parallel→Phalanx, DAG→Campaign,
-        hierarchical→Chain of Command, dynamic→Commander).
-  - [ ] 4.5 Add cross-links: → `user-guides/orchestration.md` and
-        `user-guides/battalion-patterns.md` for per-pattern depth; ← landing page. No duplication.
-  - [ ] 4.6 Verify: `make check-doc-examples` passes for this file; `mdbook build docs/` clean.
+- [x] 4.0 Author the Battalion Orchestration topology page (FR-4)
+  - [x] 4.1 Verified the reused anchor against source: `orchestration.rs:phalanx` uses
+        `PhalanxExecutionService::new(paladin_port)` + `.execute(&phalanx, input)`,
+        `Phalanx::new(vec![...], BattalionConfig)`, `AggregationStrategy::CollectAll`,
+        `with_max_concurrency`; `BattalionResult.final_output` confirmed. Already compiled.
+  - [x] 4.2 Wrote the intro: "many agents collaborating in one runtime" and when it beats a
+        hand-rolled registry (agents form a *workflow*, not independent endpoints).
+  - [x] 4.3 Added the compilable example by reusing the existing `orchestration.rs:phalanx`
+        anchor (≥2 agents, `BattalionConfig`, concurrency cap) — no duplicate source.
+  - [x] 4.4 Added the intent→pattern table (Formation / Phalanx / Campaign / Chain of Command /
+        Commander, with the service type for each).
+  - [x] 4.5 Added cross-links: → `user-guides/orchestration.md`,
+        `user-guides/battalion-patterns.md`, ← landing; plus pointers to worker/http-host as
+        composition. No duplication of the pattern guides.
+  - [x] 4.6 Verified: `make check-doc-examples` passes; `mdbook build` exits 0, no broken
+        links; the Phalanx `{{#include}}` confirmed rendered into the built HTML.
 
 - [ ] 5.0 Author the HTTP Service Host topology page (FR-5)
   - [ ] 5.1 Verify anchors against source (PRD §7): `axum` version/API, that
