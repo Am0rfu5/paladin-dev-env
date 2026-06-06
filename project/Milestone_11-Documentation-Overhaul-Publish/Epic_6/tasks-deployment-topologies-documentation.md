@@ -161,24 +161,27 @@
   - [x] 5.7 Verified: `make check-doc-examples` (0 failed) + `make check-doc-config` (156 YAML
         blocks, 0 failed) pass; `mdbook build` exits 0, no broken links; include rendered.
 
-- [ ] 6.0 Author the Queue / Worker (distributed) topology page (FR-6)
-  - [ ] 6.1 Verify anchors against source (PRD §7): `RedisQueueAdapter::new(config, log_port)`,
-        `RedisQueueConfig` fields, the queue port traits
-        (`QueuePort`/`BatchQueuePort`/`FullQueuePort`), `QueueItem<T>`, and the `redis-queue`
-        feature flag.
-  - [ ] 6.2 Write the page intro: producer/worker model — enqueue agent jobs, worker pool
-        dequeues and executes; backpressure, retries, scale-out, fault isolation.
-  - [ ] 6.3 Add the compilable example (feature-gated `redis-queue`): producer builds
-        `RedisQueueConfig` + `RedisQueueAdapter` and enqueues a job payload; worker dequeues,
-        deserializes, runs a `PaladinExecutionService`, marks complete. Use `no_run`-style
-        hiding for the `.await`ed Redis/network calls so it compiles without a live Redis, but
-        exercise the real types/signatures.
-  - [ ] 6.4 Add a `config.yml` snippet for the Redis queue (must validate — FR-12).
-  - [ ] 6.5 Add the `> **Prerequisites:** Run \`make dev\` (Redis) first; enable the
-        \`redis-queue\` feature.` callout.
-  - [ ] 6.6 Add cross-links: → `appendix/redis-queue-adapter-setup.md` (infra setup), ← landing.
-  - [ ] 6.7 Verify: `make check-doc-examples` + `make check-doc-config` pass for this file;
-        `mdbook build docs/` clean.
+- [x] 6.0 Author the Queue / Worker (distributed) topology page (FR-6)
+  - [x] 6.1 Verified against source: `RedisQueueAdapter::new(RedisQueueConfig, Option<Arc<dyn
+        LogPort>>)`; `RedisQueueConfig` fields (host/port/db/timeout/key_prefix/max_retries);
+        `QueuePort::{create_queue, enqueue, dequeue, start_processing, complete_processing}`;
+        `QueueItem::new(queue_name, Message, Option<QueueItemConfig>)`; `redis-queue` feature.
+        **Drift caught:** the queue-port doc-comment example (`rust,ignore`) uses a stale
+        `Message::new(task, source_str, Location::Local)` — the real signature is
+        `Message::new(source: Location, destination: Location, message: T)` and `Location` has
+        no `Local` variant (used `Location::service(..)`). Used the verified API.
+  - [x] 6.2 Wrote the intro: producer/worker model, backpressure, retries, scale-out, isolation.
+  - [x] 6.3 Added the **compilable** example (`queue_worker.rs:queue`, `redis-queue`-gated):
+        producer builds `RedisQueueConfig` + `RedisQueueAdapter` and enqueues a typed
+        `AgentJob`; worker dequeues (generic JSON), reads the input via `message.payload()`,
+        runs `PaladinExecutionService`, marks complete. Redis `.await`s compile but never run
+        under `cargo check`, so no live Redis is needed.
+  - [x] 6.4 Added a `config.yml` Redis-queue snippet (validates — `check-doc-config` passes).
+  - [x] 6.5 Added the `> **Prerequisites:** make dev + redis-queue feature` callout.
+  - [x] 6.6 Added cross-links: → `appendix/redis-queue-adapter-setup.md`, →
+        `embedded-library.md`, → `battalion-orchestration.md`, ← landing.
+  - [x] 6.7 Verified: `make check-doc-examples` (0 failed) + `make check-doc-config` (157 YAML
+        blocks, 0 failed) pass; `mdbook build` exits 0, no broken links; include rendered.
 
 - [ ] 7.0 Author the Sidecar (separate-process) topology page (FR-7)
   - [ ] 7.1 Re-confirm (PRD §7 / OQ-3) there is no IPC/gRPC/tonic/RPC client in the workspace,

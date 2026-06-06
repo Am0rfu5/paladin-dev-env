@@ -12,4 +12,5 @@ pub mod content;
 pub mod deployment_topologies;
 pub mod http_service_host;
 pub mod orchestration;
+pub mod queue_worker;
 pub mod readme;
