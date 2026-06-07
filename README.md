@@ -114,7 +114,7 @@ coordinate several.
 
 ## Project Status
 
-Current version: **0.5.0**. Stability guarantees and the public-API policy are documented in the
+Current version: **0.5.1**. Stability guarantees and the public-API policy are documented in the
 [Stable API reference](https://df3ndr.github.io/paladin-dev-env/api-reference/stable-api.html); see
 [`CHANGELOG.md`](CHANGELOG.md) for release history.
 
