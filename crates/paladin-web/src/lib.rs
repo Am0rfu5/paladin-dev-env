@@ -1,7 +1,7 @@
 //! Web server adapters for the Paladin AI orchestration framework.
 //!
-//! Provides HTTP server components using `actix-web` and `axum`, including
-//! user management REST endpoints and content delivery adapters.
+//! Provides HTTP server components built with `axum`, including user management
+//! REST endpoints and content-delivery routes/adapters.
 
 #![warn(missing_docs)]
 
@@ -12,6 +12,8 @@ pub mod adapters;
 pub mod app;
 /// Authentication and RBAC middleware for the user REST API.
 pub mod auth_middleware;
+/// Content-delivery controller handlers (axum).
+pub mod delivery_controller;
 /// User management controller handlers.
 #[allow(missing_docs)]
 pub mod user_controller;

@@ -95,7 +95,12 @@ allow = ["MPL-2.0"]
 [bans]
 multiple-versions = "warn"
 wildcards = "warn"
-# deny = []   # add { crate = "name", reason = "..." } entries here as needed.
+# Banned crates. Add { crate = "name", reason = "..." } entries here as needed.
+deny = [
+    # paladin-web standardizes on axum; a second HTTP framework is not allowed
+    # (Milestone 8 Epic 7). Reintroducing actix-web must be a deliberate, reviewed decision.
+    { crate = "actix-web", reason = "paladin-web standardizes on axum; no second web framework" },
+]
 
 # ---------------------------------------------------------------------------
 # Advisories: RustSec advisory database checks. The authoritative ignore-list
