@@ -109,8 +109,8 @@ Derived from `prd-paladin-web-single-framework-axum.md`. Audience: a junior deve
     served axum delivery routes; **Changed/Removed** actix-web from `paladin-web`; note the
     cargo-deny ban.
 
-- [ ] 6.0 Final verification, commit, and PR
-  - [ ] 6.1 `cargo test` (default) and `cargo test --features web-server` → all green.
-  - [ ] 6.2 `cargo fmt --check` and `cargo clippy --workspace --features web-server -- -D warnings`.
-  - [ ] 6.3 `cargo tree -p paladin-web | rg actix` → no output; note the dropped transitive crates.
-  - [ ] 6.4 Commit (conventional message referencing M8 Epic 7); push and open a PR against `main`.
+- [x] 6.0 Final verification, commit, and PR
+  - [x] 6.1 `cargo test` (default) and `cargo test --features web-server` → all green.
+  - [x] 6.2 `cargo fmt --check` and `cargo clippy --workspace --features web-server -- -D warnings`.
+  - [x] 6.3 `cargo tree -p paladin-web | rg actix` → no output; note the dropped transitive crates.
+  - [x] 6.4 Commit (conventional message referencing M8 Epic 7); push and open a PR against `main`.
