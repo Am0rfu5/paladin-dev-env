@@ -46,8 +46,8 @@ Derived from `prd-paladin-web-single-framework-axum.md`. Audience: a junior deve
   - [x] 0.1 `git checkout main && git pull --ff-only origin main` to start from the latest tip.
   - [x] 0.2 `git checkout -b feature/m8-epic7-paladin-web-axum-only`.
 
-- [ ] 1.0 Reimplement the three delivery endpoints as axum handlers (TDD: tests first)
-  - [ ] 1.1 Create `crates/paladin-web/src/delivery_controller.rs` with a `#[cfg(test)] mod tests`
+- [x] 1.0 Reimplement the three delivery endpoints as axum handlers (TDD: tests first)
+  - [x] 1.1 Create `crates/paladin-web/src/delivery_controller.rs` with a `#[cfg(test)] mod tests`
     block **first**. Write failing tests that build the router from `create_delivery_routes(...)`
     (Task 2.1) with a real `ApiContentDeliverer` (no scheduler) and assert:
     (a) `GET /api/delivery/stats` → `200 OK`;
@@ -56,17 +56,17 @@ Derived from `prd-paladin-web-single-framework-axum.md`. Audience: a junior deve
     `{"error":"Invalid delivery ID format"}`;
     (d) `POST /api/delivery/deliver` with a minimal valid `DeliveryRequest` → asserts a `2xx`/`4xx`
     matching `deliver_content_async`'s result shape.
-  - [ ] 1.2 Add a small JSON error helper that returns `{ "error": "<message>" }` (parity with the
+  - [x] 1.2 Add a small JSON error helper that returns `{ "error": "<message>" }` (parity with the
     old actix responses), or reuse an existing `ApiResponse`-style helper if one fits.
-  - [ ] 1.3 Implement `async fn deliver_content(State<Arc<ApiContentDeliverer>>, Json<DeliveryRequest>)`:
+  - [x] 1.3 Implement `async fn deliver_content(State<Arc<ApiContentDeliverer>>, Json<DeliveryRequest>)`:
     call `deliver_content_async`; `Ok(resp)` → `(StatusCode::OK, Json(resp))`,
     `Err(e)` → `(StatusCode::BAD_REQUEST, Json(error_json(e)))`.
-  - [ ] 1.4 Implement `async fn get_delivery_status(State<...>, Path<String>)`: `Uuid::parse_str` →
+  - [x] 1.4 Implement `async fn get_delivery_status(State<...>, Path<String>)`: `Uuid::parse_str` →
     on parse error `400` (`"Invalid delivery ID format"`); on success call `get_delivery_status`,
     `Ok` → `200`, `Err` → `404`.
-  - [ ] 1.5 Implement `async fn get_delivery_stats(State<...>)`: call `get_delivery_stats(None)`;
+  - [x] 1.5 Implement `async fn get_delivery_stats(State<...>)`: call `get_delivery_stats(None)`;
     `Ok` → `200`, `Err` → `500`.
-  - [ ] 1.6 `cargo test -p paladin-web` — the new tests now pass.
+  - [x] 1.6 `cargo test -p paladin-web` — the new tests now pass.
 
 - [ ] 2.0 Expose a `create_delivery_routes` builder and mount it into the application router
   - [ ] 2.1 In `delivery_controller.rs`, add
