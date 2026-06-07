@@ -12,6 +12,8 @@ pub mod adapters;
 pub mod app;
 /// Authentication and RBAC middleware for the user REST API.
 pub mod auth_middleware;
+/// Content-delivery controller handlers (axum).
+pub mod delivery_controller;
 /// User management controller handlers.
 #[allow(missing_docs)]
 pub mod user_controller;
