@@ -93,11 +93,11 @@ Derived from `prd-paladin-web-single-framework-axum.md`. Audience: a junior deve
   - [x] 3.3 Remove `actix-web = { version = "4.0" }` from `crates/paladin-web/Cargo.toml`.
   - [x] 3.4 `rg actix crates/paladin-web/` → expect **no matches**; `cargo build -p paladin-web`.
 
-- [ ] 4.0 Add the cargo-deny guardrail banning `actix-web`
-  - [ ] 4.1 In `deny.toml`, add `actix-web` under `[bans] deny` with a one-line rationale
+- [x] 4.0 Add the cargo-deny guardrail banning `actix-web`
+  - [x] 4.1 In `deny.toml`, add `actix-web` under `[bans] deny` with a one-line rationale
     (e.g. "paladin-web standardizes on axum; a second HTTP framework is not allowed").
-  - [ ] 4.2 Run `make deny` (or `cargo deny check bans`) → passes (actix-web is gone).
-  - [ ] 4.3 (Verification, optional) temporarily re-add `actix-web` to `paladin-web` and confirm
+  - [x] 4.2 Run `make deny` (or `cargo deny check bans`) → passes (actix-web is gone).
+  - [x] 4.3 (Verification, optional) temporarily re-add `actix-web` to `paladin-web` and confirm
     `make deny` fails, then revert.
 
 - [ ] 5.0 Refresh the public API-surface baseline and update `CHANGELOG.md`
