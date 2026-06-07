@@ -100,12 +100,12 @@ Derived from `prd-paladin-web-single-framework-axum.md`. Audience: a junior deve
   - [x] 4.3 (Verification, optional) temporarily re-add `actix-web` to `paladin-web` and confirm
     `make deny` fails, then revert.
 
-- [ ] 5.0 Refresh the public API-surface baseline and update `CHANGELOG.md`
-  - [ ] 5.1 Regenerate: `./scripts/extract-public-api.sh project/current-exports.txt`.
-  - [ ] 5.2 Review the diff — it should show only the expected `paladin-web` surface change
+- [x] 5.0 Refresh the public API-surface baseline and update `CHANGELOG.md`
+  - [x] 5.1 Regenerate: `./scripts/extract-public-api.sh project/current-exports.txt`.
+  - [x] 5.2 Review the diff — it should show only the expected `paladin-web` surface change
     (actix `configure` removed; new `delivery_controller` / `create_delivery_routes` added).
-  - [ ] 5.3 `./scripts/check-api-surface.sh project/current-exports.txt` → passes.
-  - [ ] 5.4 Add a `CHANGELOG.md` `[Unreleased]` entry (under the Milestone 8 section): **Added** the
+  - [x] 5.3 `./scripts/check-api-surface.sh project/current-exports.txt` → passes.
+  - [x] 5.4 Add a `CHANGELOG.md` `[Unreleased]` entry (under the Milestone 8 section): **Added** the
     served axum delivery routes; **Changed/Removed** actix-web from `paladin-web`; note the
     cargo-deny ban.
 

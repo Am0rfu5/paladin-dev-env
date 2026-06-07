@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Milestone 8 — Epic 7: `paladin-web` single web framework (axum)
+
+`paladin-web` depended on **two** HTTP frameworks (axum + actix-web) but served everything through
+axum; the actix code was orphaned (never mounted). This consolidates on axum, revives the
+content-delivery endpoints as real served routes, and guards against framework sprawl.
+
+#### Added
+
+- **Content-delivery axum routes** (`paladin_web::delivery_controller`): `POST /api/delivery/deliver`,
+  `GET /api/delivery/status/{delivery_id}`, and `GET /api/delivery/stats`, exposed via
+  `create_delivery_routes` and merged into `create_app_router` as public routes (parity with the
+  previous, never-mounted actix handlers). Backed by the existing `ApiContentDeliverer`.
+
+#### Changed
+
+- `paladin_web::app::create_app_router` now also takes an `Arc<ApiContentDeliverer>` and mounts the
+  delivery routes alongside the user-management API.
+
+#### Removed
+
+- **`actix-web` dependency** from `paladin-web` (its only user). The orphaned actix `configure()` +
+  handlers in `api_content_deliverer.rs` were deleted; the reqwest-based `ApiContentDeliverer`
+  service is unchanged. `Cargo.lock` drops ~450 lines of actix transitive dependencies.
+
+#### Build
+
+- `deny.toml` now bans `actix-web` so a second web framework cannot be reintroduced without a
+  deliberate, reviewed change.
+
 ### Milestone 11 — Documentation Overhaul & Publish (Epic 6: Deployment Topologies)
 
 #### Documentation
