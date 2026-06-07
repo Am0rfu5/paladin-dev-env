@@ -1,7 +1,7 @@
 //! Web server adapters for the Paladin AI orchestration framework.
 //!
-//! Provides HTTP server components using `actix-web` and `axum`, including
-//! user management REST endpoints and content delivery adapters.
+//! Provides HTTP server components built with `axum`, including user management
+//! REST endpoints and content-delivery routes/adapters.
 
 #![warn(missing_docs)]
 

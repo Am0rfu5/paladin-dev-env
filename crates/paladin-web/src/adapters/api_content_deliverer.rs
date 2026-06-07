@@ -1,4 +1,3 @@
-use actix_web::{HttpResponse, Result as ActixResult, web};
 use chrono::Utc;
 use paladin_ports::output::content_delivery_port::{
     BatchContentDeliveryService, ContentDeliveryError, ContentDeliveryService, ContentPayload,
@@ -593,62 +592,6 @@ impl BatchContentDeliveryService for ApiContentDeliverer {
         Err(ContentDeliveryError::DeliveryFailed(
             "Batch status tracking not implemented".to_string(),
         ))
-    }
-}
-
-// Actix Web handlers for API endpoints
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/api/delivery")
-            .route("/deliver", web::post().to(deliver_content_handler))
-            .route(
-                "/status/{delivery_id}",
-                web::get().to(get_delivery_status_handler),
-            )
-            .route("/stats", web::get().to(get_delivery_stats_handler)),
-    );
-}
-
-async fn deliver_content_handler(
-    payload: web::Json<DeliveryRequest>,
-    deliverer: web::Data<ApiContentDeliverer>,
-) -> ActixResult<HttpResponse> {
-    // Use the async version directly in the handler
-    match deliverer.deliver_content_async(payload.into_inner()).await {
-        Ok(response) => Ok(HttpResponse::Ok().json(response)),
-        Err(e) => Ok(HttpResponse::BadRequest().json(serde_json::json!({
-            "error": e.to_string()
-        }))),
-    }
-}
-
-async fn get_delivery_status_handler(
-    path: web::Path<String>,
-    deliverer: web::Data<ApiContentDeliverer>,
-) -> ActixResult<HttpResponse> {
-    let delivery_id_str = path.into_inner();
-
-    match Uuid::parse_str(&delivery_id_str) {
-        Ok(delivery_id) => match deliverer.get_delivery_status(delivery_id) {
-            Ok(response) => Ok(HttpResponse::Ok().json(response)),
-            Err(e) => Ok(HttpResponse::NotFound().json(serde_json::json!({
-                "error": e.to_string()
-            }))),
-        },
-        Err(_) => Ok(HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "Invalid delivery ID format"
-        }))),
-    }
-}
-
-async fn get_delivery_stats_handler(
-    deliverer: web::Data<ApiContentDeliverer>,
-) -> ActixResult<HttpResponse> {
-    match deliverer.get_delivery_stats(None) {
-        Ok(stats) => Ok(HttpResponse::Ok().json(stats)),
-        Err(e) => Ok(HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": e.to_string()
-        }))),
     }
 }
 

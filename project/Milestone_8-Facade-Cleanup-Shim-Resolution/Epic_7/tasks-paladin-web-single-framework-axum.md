@@ -82,16 +82,16 @@ Derived from `prd-paladin-web-single-framework-axum.md`. Audience: a junior deve
     route is reachable through the fully composed router.
   - [x] 2.5 `cargo build -p paladin-web` and `cargo test -p paladin-web`.
 
-- [ ] 3.0 Remove actix-web from `paladin-web`
-  - [ ] 3.1 In `api_content_deliverer.rs`, delete `configure()` and the three actix handler
+- [x] 3.0 Remove actix-web from `paladin-web`
+  - [x] 3.1 In `api_content_deliverer.rs`, delete `configure()` and the three actix handler
     functions (`deliver_content_handler`, `get_delivery_status_handler`,
     `get_delivery_stats_handler`) and remove
     `use actix_web::{HttpResponse, Result as ActixResult, web};`. Leave `ApiContentDeliverer` and
     its `ContentDeliveryService`/`BatchContentDeliveryService`/reqwest code untouched.
-  - [ ] 3.2 In `lib.rs`, add `pub mod delivery_controller;` and change the crate doc-comment from
+  - [x] 3.2 In `lib.rs`, add `pub mod delivery_controller;` and change the crate doc-comment from
     "actix-web and axum" to "axum".
-  - [ ] 3.3 Remove `actix-web = { version = "4.0" }` from `crates/paladin-web/Cargo.toml`.
-  - [ ] 3.4 `rg actix crates/paladin-web/` → expect **no matches**; `cargo build -p paladin-web`.
+  - [x] 3.3 Remove `actix-web = { version = "4.0" }` from `crates/paladin-web/Cargo.toml`.
+  - [x] 3.4 `rg actix crates/paladin-web/` → expect **no matches**; `cargo build -p paladin-web`.
 
 - [ ] 4.0 Add the cargo-deny guardrail banning `actix-web`
   - [ ] 4.1 In `deny.toml`, add `actix-web` under `[bans] deny` with a one-line rationale
