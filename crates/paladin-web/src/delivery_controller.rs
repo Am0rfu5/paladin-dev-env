@@ -109,9 +109,12 @@ pub fn create_delivery_routes(deliverer: Arc<ApiContentDeliverer>) -> Router {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::body::Body;
+    use axum::http::Request;
     use paladin_ports::output::content_delivery_port::{
         ContentPayload, DeliveryMethod, DeliveryPriority, NotificationContent,
     };
+    use tower::ServiceExt; // for `Router::oneshot`
 
     fn deliverer() -> Arc<ApiContentDeliverer> {
         // One attempt, no backoff: keeps the delivery test fast and deterministic.
@@ -170,9 +173,33 @@ mod tests {
         assert_eq!(status, StatusCode::OK);
     }
 
-    #[test]
-    fn create_delivery_routes_builds() {
-        // Smoke check: the router builder wires up without panicking.
-        let _router = create_delivery_routes(deliverer());
+    #[tokio::test]
+    async fn stats_route_is_reachable_through_router() {
+        let app = create_delivery_routes(deliverer());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/delivery/stats")
+                    .body(Body::empty())
+                    .expect("request builds"),
+            )
+            .await
+            .expect("router responds");
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn status_invalid_uuid_route_returns_400_through_router() {
+        let app = create_delivery_routes(deliverer());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/delivery/status/not-a-uuid")
+                    .body(Body::empty())
+                    .expect("request builds"),
+            )
+            .await
+            .expect("router responds");
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
 }

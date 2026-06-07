@@ -68,19 +68,19 @@ Derived from `prd-paladin-web-single-framework-axum.md`. Audience: a junior deve
     `Ok` → `200`, `Err` → `500`.
   - [x] 1.6 `cargo test -p paladin-web` — the new tests now pass.
 
-- [ ] 2.0 Expose a `create_delivery_routes` builder and mount it into the application router
-  - [ ] 2.1 In `delivery_controller.rs`, add
+- [x] 2.0 Expose a `create_delivery_routes` builder and mount it into the application router
+  - [x] 2.1 In `delivery_controller.rs`, add
     `pub fn create_delivery_routes(deliverer: Arc<ApiContentDeliverer>) -> axum::Router` registering
     `POST /api/delivery/deliver`, `GET /api/delivery/status/{delivery_id}`,
     `GET /api/delivery/stats`, finished with `.with_state(deliverer)`.
-  - [ ] 2.2 In `app.rs`, merge the delivery routes into the composed app. Add a
+  - [x] 2.2 In `app.rs`, merge the delivery routes into the composed app. Add a
     `deliverer: Arc<ApiContentDeliverer>` parameter to `create_app_router` (or add a sibling
     composed builder) and `.merge(create_delivery_routes(deliverer))`. Keep the existing user
     public/protected/admin routes and auth middleware unchanged.
-  - [ ] 2.3 Update any callers/tests of `create_app_router` to pass the new argument.
-  - [ ] 2.4 Add a router-level test (in `app.rs` or `delivery_controller.rs`) asserting a delivery
+  - [x] 2.3 Update any callers/tests of `create_app_router` to pass the new argument.
+  - [x] 2.4 Add a router-level test (in `app.rs` or `delivery_controller.rs`) asserting a delivery
     route is reachable through the fully composed router.
-  - [ ] 2.5 `cargo build -p paladin-web` and `cargo test -p paladin-web`.
+  - [x] 2.5 `cargo build -p paladin-web` and `cargo test -p paladin-web`.
 
 - [ ] 3.0 Remove actix-web from `paladin-web`
   - [ ] 3.1 In `api_content_deliverer.rs`, delete `configure()` and the three actix handler

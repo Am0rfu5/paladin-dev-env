@@ -22,6 +22,7 @@ use paladin_core::platform::manager::user_service::{
     UserServiceTrait,
 };
 use paladin_ports::output::auth_port::{AuthClaims, AuthError, AuthPort, AuthToken};
+use paladin_web::adapters::api_content_deliverer::ApiContentDeliverer;
 use paladin_web::app::create_app_router;
 use tower::ServiceExt;
 use uuid::Uuid;
@@ -157,7 +158,8 @@ fn build_app() -> axum::Router {
 
     let user_service: Arc<dyn UserServiceTrait> = Arc::new(MockUserService);
     let auth_port: Arc<dyn AuthPort> = Arc::new(TestAuthPort::new(tokens));
-    create_app_router(user_service, auth_port)
+    let deliverer = Arc::new(ApiContentDeliverer::new());
+    create_app_router(user_service, auth_port, deliverer)
 }
 
 #[tokio::test]
