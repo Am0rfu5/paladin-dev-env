@@ -72,7 +72,10 @@ use paladin_ports::output::garrison_port::GarrisonPort;
 use paladin_ports::output::llm_port::{FunctionCall, LlmPort, LlmRequest};
 use paladin_ports::output::orchestrator_port::OrchestratorPort;
 use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
-use paladin_ports::output::paladin_port::{PaladinResult, StopReason};
+use paladin_ports::output::paladin_port::{
+    PaladinResult, PaladinStream, PaladinStreamChunk, StopReason,
+};
+use paladin_ports::output::streaming_executor_port::StreamingExecutorPort;
 #[cfg(feature = "vision")]
 use paladin_ports::output::vision_port::VisionPort;
 use serde_json::Value;
@@ -80,6 +83,7 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
+use tokio::sync::mpsc;
 use tokio::time::{Duration, sleep, timeout};
 
 /// Paladin Execution Service
@@ -1833,6 +1837,111 @@ impl PaladinExecutorPort for PaladinExecutionService {
     }
 }
 
+/// Streaming execution over [`LlmPort::generate_stream`].
+///
+/// This is a single-pass streaming path (LLM + prompt only — no tool loop, garrison, or
+/// RAG): it composes the prompt the same way the buffered path does for the no-history
+/// case, opens the provider stream, and forwards each delta as a [`PaladinStreamChunk`]
+/// over an `mpsc` channel. A provider that does not support streaming surfaces an error
+/// up front (before any chunk). Dropping the returned receiver (client disconnect or a
+/// timeout) cancels the producer task on its next send.
+#[async_trait::async_trait]
+impl StreamingExecutorPort for PaladinExecutionService {
+    async fn execute_stream(
+        &self,
+        paladin: &Paladin,
+        input: &str,
+    ) -> Result<PaladinStream, PaladinError> {
+        // Compose the prompt (mirrors the buffered no-history path).
+        let prompt = format!("{}\n\nUser: {}\n", paladin.node.system_prompt, input);
+
+        let prompt_data = PromptData {
+            prompt_type: PromptType::User(UserPrompt {
+                query: prompt,
+                context: None,
+            }),
+            content_attachments: vec![],
+            parameters: PromptParameters {
+                max_tokens: None,
+                temperature: Some(paladin.node.temperature),
+                top_p: None,
+                frequency_penalty: None,
+                presence_penalty: None,
+                stop_sequences: if paladin.node.stop_words.is_empty() {
+                    None
+                } else {
+                    Some(paladin.node.stop_words.clone())
+                },
+            },
+            context: None,
+            expected_output: None,
+            tags: None,
+            category: None,
+            author: None,
+            metadata: BTreeMap::new(),
+        };
+
+        let request = LlmRequest {
+            id: uuid::Uuid::new_v4(),
+            model: paladin.node.model.clone(),
+            prompt: PromptItem {
+                node: Node::new(prompt_data, Some("stream".to_string())),
+            },
+            attachments: vec![],
+            stream: true,
+            metadata: HashMap::new(),
+        };
+
+        // Open the provider stream eagerly so an unsupported provider errors here
+        // (before the caller starts an SSE response).
+        let provider_stream = self
+            .llm_port
+            .generate_stream(request)
+            .await
+            .map_err(|e| PaladinError::LlmError(e.to_string()))?;
+
+        let (tx, rx) = mpsc::channel::<Result<PaladinStreamChunk, PaladinError>>(64);
+
+        tokio::spawn(async move {
+            use futures::StreamExt;
+            let mut stream = Box::into_pin(provider_stream);
+            while let Some(item) = stream.next().await {
+                match item {
+                    Ok(resp) => {
+                        let is_final = resp.finish_reason.is_some();
+                        let chunk = PaladinStreamChunk {
+                            text: resp.delta,
+                            is_final,
+                            metadata: None,
+                        };
+                        // A send error means the receiver was dropped — stop producing.
+                        if tx.send(Ok(chunk)).await.is_err() {
+                            return;
+                        }
+                        if is_final {
+                            return;
+                        }
+                    }
+                    Err(e) => {
+                        let _ = tx.send(Err(PaladinError::LlmError(e.to_string()))).await;
+                        return;
+                    }
+                }
+            }
+            // Provider stream ended without an explicit final marker — emit one.
+            let _ = tx
+                .send(Ok(PaladinStreamChunk {
+                    text: String::new(),
+                    is_final: true,
+                    metadata: None,
+                }))
+                .await;
+        });
+
+        Ok(rx)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1894,6 +2003,36 @@ mod tests {
         };
 
         Node::new(data, Some("TestPaladin".to_string()))
+    }
+
+    #[tokio::test]
+    async fn execute_stream_assembles_chunks_into_full_output() {
+        use paladin_llm::mock::MockLlmAdapter;
+
+        // MockLlmAdapter::generate_stream emits the content delta then a final marker.
+        let llm: Arc<dyn LlmPort> = Arc::new(MockLlmAdapter::new());
+        let circuit_breaker = Arc::new(CircuitBreaker::new(5, 3, Duration::from_secs(60)));
+        let service = PaladinExecutionService::new(llm, circuit_breaker, None, None);
+        let paladin = create_test_paladin();
+
+        let mut stream = service
+            .execute_stream(&paladin, "hello")
+            .await
+            .expect("stream starts");
+
+        let mut assembled = String::new();
+        let mut saw_final = false;
+        while let Some(item) = stream.recv().await {
+            let chunk = item.expect("chunk should be Ok");
+            if chunk.is_final {
+                saw_final = true;
+                break;
+            }
+            assembled.push_str(&chunk.text);
+        }
+
+        assert!(saw_final, "stream must end with a final chunk");
+        assert_eq!(assembled, "Mock LLM response");
     }
 
     fn create_mock_search_result(content: &str, score: f32) -> SanctumSearchResult {

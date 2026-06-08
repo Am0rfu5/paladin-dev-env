@@ -49,11 +49,11 @@
   - [x] 1.2 Defined `#[async_trait] pub trait StreamingExecutorPort` with `execute_stream(&self, &Paladin, &str) -> Result<PaladinStream, PaladinError>`, reusing the existing `PaladinStream`/`PaladinStreamChunk`. Full rustdoc + a passing `no_run` doc-test. `PaladinExecutorPort` untouched.
   - [x] 1.3 `cargo test -p paladin-ports --doc` passes; `clippy -D warnings` + `fmt` clean.
 
-- [ ] 2.0 Implement real `execute_stream` on `PaladinExecutionService` (facade)
-  - [ ] 2.1 **(Test first)** Unit test with a multi-chunk mock `LlmPort` (`MultiStepMockLlmPort`/`MockLlmAdapter`): `execute_stream` yields chunks whose concatenated `text` equals the buffered output and ends with `is_final = true`.
-  - [ ] 2.2 Implement `impl StreamingExecutorPort for PaladinExecutionService`: spawn a producer task driving `LlmPort::generate_stream`, forward text as `PaladinStreamChunk`s over an `mpsc` channel, emit a final chunk with best-effort metadata, deliver mid-stream errors as `Err(PaladinError)` items, and stop when the receiver is dropped (client disconnect / timeout).
-  - [ ] 2.3 If the provider doesn't support streaming, surface a clear `PaladinError` (don't hang); the web layer decides the fallback (Open Q2).
-  - [ ] 2.4 Rustdoc; `clippy`; tests green; confirm buffered `execute` is unchanged.
+- [x] 2.0 Implement real `execute_stream` on `PaladinExecutionService` (facade)
+  - [x] 2.1 **(Test first)** Unit test with `MockLlmAdapter` (whose `generate_stream` emits a content delta + final marker): `execute_stream` yields chunks whose concatenated `text` equals the buffered output (`"Mock LLM response"`) and ends with `is_final = true`.
+  - [x] 2.2 Implemented `impl StreamingExecutorPort for PaladinExecutionService`: composes the prompt (mirrors the buffered no-history path), opens `LlmPort::generate_stream`, and a spawned task forwards each delta as a `PaladinStreamChunk` over an `mpsc` channel (final chunk when `finish_reason` is present, or a synthesized terminal chunk if the stream ends), delivers mid-stream errors as `Err(PaladinError)`, and stops on receiver drop (`tx.send` error → return).
+  - [x] 2.3 An unsupported provider errors **up front** (`generate_stream(...).await?` before spawning), never hangs; the web layer's fallback decision (Open Q2) is handled in task 4.
+  - [x] 2.4 Rustdoc; `fmt`/`clippy -D warnings` clean; the streaming test + all 10 execution-service tests pass (buffered `execute` unchanged).
 
 - [ ] 3.0 Thread an optional streaming handle through the registry and Epic 2 wiring
   - [ ] 3.1 **(Test first)** Update `agent_registry` tests: register an agent with and without a streaming handle; `get` returns the optional handle; existing buffered tests stay green.
