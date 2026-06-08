@@ -221,6 +221,40 @@ pub async fn execute_agent(
     }
 }
 
+/// `GET /agents` — list every registered agent as a safe [`AgentSummary`].
+///
+/// Always returns `200 OK` with a JSON array (empty when no agents are registered).
+/// Order is unspecified.
+pub async fn list_agents(State(state): State<AgentApiState>) -> (StatusCode, JsonValue) {
+    let summaries: Vec<AgentSummary> = state
+        .registry
+        .list()
+        .into_iter()
+        .map(|(id, paladin)| AgentSummary::from_agent(id, paladin.as_ref()))
+        .collect();
+    (StatusCode::OK, ok_body(&summaries))
+}
+
+/// `GET /agents/{id}` — describe a single agent.
+///
+/// Returns `200 OK` with the agent's [`AgentSummary`], or `404 Not Found` with
+/// `{ "error": ... }` if no agent is registered under `id`.
+pub async fn describe_agent(
+    State(state): State<AgentApiState>,
+    Path(id): Path<String>,
+) -> (StatusCode, JsonValue) {
+    match state.registry.get(&id) {
+        Some((paladin, _executor)) => (
+            StatusCode::OK,
+            ok_body(&AgentSummary::from_agent(id, paladin.as_ref())),
+        ),
+        None => (
+            StatusCode::NOT_FOUND,
+            error_body(format!("unknown agent '{id}'")),
+        ),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -356,6 +390,85 @@ mod tests {
             .expect("router responds");
 
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    /// Build an agent with a multi-line prompt whose second line is a leak canary.
+    fn agent_with_secret_second_line(name: &str) -> Arc<Paladin> {
+        let data = PaladinData {
+            system_prompt: "Public first line.\nLEAK_CANARY second line.".to_string(),
+            name: name.to_string(),
+            model: "gpt-4".to_string(),
+            ..Default::default()
+        };
+        Arc::new(Paladin::new(data, Some(name.to_string())))
+    }
+
+    fn registry_state(agents: Vec<(&str, Arc<Paladin>)>) -> AgentApiState {
+        let registry = AgentRegistry::new();
+        for (id, paladin) in agents {
+            registry.insert(
+                id,
+                paladin,
+                Arc::new(MockExecutor::Succeeds("x".to_string())),
+            );
+        }
+        AgentApiState::new(Arc::new(registry))
+    }
+
+    #[tokio::test]
+    async fn list_agents_returns_200_with_summaries_and_no_prompt_leak() {
+        let state = registry_state(vec![
+            ("researcher", agent_with_secret_second_line("Researcher")),
+            ("summarizer", test_agent("Summarizer")),
+        ]);
+
+        let (status, Json(body)) = list_agents(State(state)).await;
+        assert_eq!(status, StatusCode::OK);
+
+        let arr = body.as_array().expect("body is a JSON array");
+        assert_eq!(arr.len(), 2);
+
+        let mut ids: Vec<&str> = arr
+            .iter()
+            .map(|a| a["id"].as_str().expect("id is a string"))
+            .collect();
+        ids.sort();
+        assert_eq!(ids, vec!["researcher", "summarizer"]);
+
+        // The full multi-line prompt must never appear in a discovery response.
+        assert!(
+            !body.to_string().contains("LEAK_CANARY"),
+            "discovery response leaked the raw system prompt"
+        );
+    }
+
+    #[tokio::test]
+    async fn list_agents_empty_registry_returns_empty_array() {
+        let state = AgentApiState::new(Arc::new(AgentRegistry::new()));
+        let (status, Json(body)) = list_agents(State(state)).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body.as_array().map(|a| a.len()), Some(0));
+    }
+
+    #[tokio::test]
+    async fn describe_agent_returns_200_for_known_id_without_prompt_leak() {
+        let state = registry_state(vec![("r", agent_with_secret_second_line("Researcher"))]);
+        let (status, Json(body)) = describe_agent(State(state), Path("r".to_string())).await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["id"], "r");
+        assert_eq!(body["name"], "Researcher");
+        assert_eq!(body["model"], "gpt-4");
+        assert_eq!(body["description"], "Public first line.");
+        assert!(!body.to_string().contains("LEAK_CANARY"));
+    }
+
+    #[tokio::test]
+    async fn describe_agent_unknown_id_returns_404() {
+        let state = registry_state(vec![("r", test_agent("Researcher"))]);
+        let (status, Json(body)) = describe_agent(State(state), Path("missing".to_string())).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(body.get("error").is_some(), "expected an error body");
     }
 
     #[test]

@@ -57,10 +57,10 @@
   - [x] 3.2 Implemented `execute_agent(State, Path(id), Json(ExecuteRequest))`: `registry.get(id)` → `404`; `executor.execute(paladin.as_ref(), &input)`; `Ok` → `200` `ExecuteResponse`, `Err` → `502` via `execution_error_response`. No `unwrap`/`expect`/`panic!`.
   - [x] 3.3 Rustdoc on handler + helpers; `fmt`, `clippy -D warnings` (plain + `--all-targets`), tests all green (49 + 5).
 
-- [ ] 4.0 Implement the discovery endpoints `GET /agents` and `GET /agents/{id}`
-  - [ ] 4.1 **(Test first)** `oneshot` tests: `GET /agents` returns `200` with an array of summaries (order-independent assertion); `GET /agents/{id}` returns `200` for a known id and `404` for unknown; assert **no secrets / no raw system prompt** appear in the body. Red.
-  - [ ] 4.2 Implement `list_agents(State)` → `registry.list()` → `200 [AgentSummary]`, and `describe_agent(State, Path(id))` → summary or `404`. Green.
-  - [ ] 4.3 Rustdoc; refactor.
+- [x] 4.0 Implement the discovery endpoints `GET /agents` and `GET /agents/{id}`
+  - [x] 4.1 **(Test first)** Tests: `GET /agents` → `200` with an array of summaries (order-independent id assertion) + empty-registry → `[]`; `GET /agents/{id}` → `200` for a known id and `404` for unknown. A `LEAK_CANARY` second prompt line asserts **the raw system prompt never appears** in either response body.
+  - [x] 4.2 Implemented `list_agents(State)` → `registry.list()` mapped to `AgentSummary` → `200 [..]`, and `describe_agent(State, Path(id))` → summary or `404`. Green.
+  - [x] 4.3 Rustdoc on both handlers; `fmt`, `clippy -D warnings` (plain + `--all-targets`), tests all green (53 + 5).
 
 - [ ] 5.0 Implement the runtime registration endpoints `POST /agents` and `DELETE /agents/{id}`
   - [ ] 5.1 **(Test first)** Add a mock `AgentProvisioner` (configurable: returns a `(Paladin, executor)` pair, or a `ProvisionError`). Write `oneshot` tests: `POST /agents` success → `201` + summary and the agent is afterward retrievable via `GET /agents/{id}`; duplicate id → `409`; provision failure → `422`; invalid body → `400`; **no provisioner wired** → `501`/`503`. Red.
