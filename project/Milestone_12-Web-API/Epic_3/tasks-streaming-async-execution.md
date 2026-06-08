@@ -83,10 +83,10 @@
   - [x] 6.4 Implemented `enqueue_job` (agent lookup `404`, timeout resolve `400`, `create` job, spawn task running `execute` under `tokio::time::timeout`, record complete/fail/time_out) and `get_job` (record or `404`). Added `jobs: Arc<JobStore>` to `AgentApiState`.
   - [x] 6.5 Mounted `POST /agents/{id}/jobs` + `GET /agents/{id}/jobs/{job_id}`; updated module doc table; re-exported `JobStore`/`JobStatus`/`JobRecord`. Rustdoc; `fmt`/`clippy -D warnings` clean; paladin-web 83 + 5, facade infra::web 12 + smoke 1 pass.
 
-- [ ] 7.0 Tests: streaming, timeout, and job integration + boot smoke round-trip
-  - [ ] 7.1 Confirm unit coverage from 1.0–6.0 is in place (stream impl, registry, SSE, timeout resolution + 504, job store + lifecycle).
-  - [ ] 7.2 **(Test first)** Extend `tests/paladin_server_smoke.rs` (real HTTP, mock provider): stream round-trip (collect SSE events → assembled output) and job round-trip (`202` → poll → `completed` with result).
-  - [ ] 7.3 Add a timeout integration assertion if feasible (slow mock agent → `504` / terminal timeout event); otherwise document the unit-level coverage.
+- [x] 7.0 Tests: streaming, timeout, and job integration + boot smoke round-trip
+  - [x] 7.1 Unit coverage confirmed in place: `execute_stream` assembly (2.0); registry streamer (3.0); SSE chunk/done/fallback (4.0); `resolve_timeout` (5) + buffered `504` / `400` / stream terminal-error (5.0); job store (5) + handler lifecycle incl. `timed_out` (6.0).
+  - [x] 7.2 **(Test first)** Extended `tests/paladin_server_smoke.rs` (real HTTP, mock provider): the agent is now registered **with streaming**, and the test adds a stream round-trip (asserts `event: chunk` + `event: done`) and a job round-trip (`202` + `job_id` → poll → `completed` with `result.output`).
+  - [x] 7.3 Timeout is covered at the handler level (buffered `504`, stream terminal-error, job `timed_out`) — these use 1s timeouts and are deterministic; a server-level slow-agent round-trip was omitted to keep the smoke test fast (documented here).
 
 - [ ] 8.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
   - [ ] 8.1 Update `config.example.yml`: `timeouts` (default/max) + a per-agent `timeout_seconds` example.
