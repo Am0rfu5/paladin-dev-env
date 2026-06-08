@@ -39,15 +39,15 @@
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 From an up-to-date base, create and checkout `feature/m12-epic2-configurable-web-host-server-binary`. (Epic 2 depends on Epic 1; branch from the Epic 1 branch if it is not yet merged to `main`, otherwise from `main`.)
-  - [ ] 0.2 Confirm a clean baseline: `cargo build --features web-server` and `cargo test -p paladin-web` pass before any changes.
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Created and checked out `feature/m12-epic2-configurable-web-host-server-binary`, branched from the Epic 1 branch (not yet merged to `main`). Epic 2 PRD/tasks committed on it.
+  - [x] 0.2 Clean baseline confirmed: `cargo build --features web-server` succeeds; `cargo test -p paladin-web` → 62 + 5 pass.
 
-- [ ] 1.0 Add the `agents` configuration schema and wire it into `Settings`
-  - [ ] 1.1 Create `src/config/agents.rs` with `AgentDefinition` (`#[derive(Debug, Clone, Serialize, Deserialize)]`): `id`, `model`, `system_prompt` (required); `provider`, `temperature: Option<f32>`, `max_loops: Option<u32>`, `stop_words: Vec<String>` (optional, `#[serde(default)]`). Document each field.
-  - [ ] 1.2 **(Test first)** Unit tests: deserialize a full agent YAML/JSON; deserialize a minimal one (only required fields) and assert defaults; confirm the bind address derives from the existing `server` (`host`+`port`) section. (Lenient parsing — see PRD Open Q5; do not add `deny_unknown_fields`.)
-  - [ ] 1.3 Add `agents: Vec<AgentDefinition>` to `Settings` (defaulting to empty when absent, per PRD Open Q1) and re-export `AgentDefinition` from the config module. Confirm existing config loading (`config.yml` + `APP_*` env) still works.
-  - [ ] 1.4 Update `Settings` defaults/tests so the workspace config tests still pass; rustdoc the new field.
+- [x] 1.0 Add the `agents` configuration schema and wire it into `Settings`
+  - [x] 1.1 Created `src/config/agents.rs` with `AgentDefinition` (`id`/`model`/`system_prompt` required; `provider`/`temperature`/`max_loops`/`stop_words` optional via `#[serde(default)]`), fully documented.
+  - [x] 1.2 **(Test first)** Unit tests: full deserialize, minimal deserialize (asserts defaults: `provider`/`temperature`/`max_loops` `None`, `stop_words` empty), and missing-required-field → error. (Lenient parsing; no `deny_unknown_fields`.) Bind-address derivation from `server` (`host`+`port`) is covered in task 4 (server binary) where it is used.
+  - [x] 1.3 Added `#[serde(default)] pub agents: Vec<AgentDefinition>` to `Settings` (empty when `agents:` absent — non-server configs unaffected) and re-exported `AgentDefinition` from `config::mod`. Existing config loading unchanged.
+  - [x] 1.4 Updated the `Settings` `Default` impl and the `user_config.rs` test fixture (`agents: Vec::new()`); workspace config tests pass (48); rustdoc on the new field. `fmt`/`clippy -D warnings` clean.
 
 - [ ] 2.0 Build the registry-from-config builder (facade `agent_host`)
   - [ ] 2.1 Create `src/infrastructure/web/` (`mod.rs` + `agent_host.rs`) and wire the module into the facade lib (behind `#[cfg(feature = "web-server")]`).
