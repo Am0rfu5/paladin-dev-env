@@ -192,10 +192,11 @@ pub fn bind_address(settings: &Settings) -> String {
 ///
 /// Returns the first [`HostBuildError`] encountered.
 pub fn validate_config(settings: &Settings) -> Result<(), HostBuildError> {
-    let default_provider = default_provider_name(settings);
-    let available = LlmProviderFactory::list_available_providers();
+    // Pass 1 — structural checks (key-independent): non-empty required fields and
+    // unique ids. These are checked first so a duplicate/empty-field error is reported
+    // before any provider/environment concern, and deterministically regardless of which
+    // API keys happen to be set.
     let mut seen = std::collections::HashSet::new();
-
     for def in &settings.agents {
         if def.id.trim().is_empty() {
             return Err(HostBuildError::InvalidAgent {
@@ -214,6 +215,14 @@ pub fn validate_config(settings: &Settings) -> Result<(), HostBuildError> {
         if !seen.insert(def.id.clone()) {
             return Err(HostBuildError::DuplicateId(def.id.clone()));
         }
+    }
+
+    // Pass 2 — provider availability. `list_available_providers` is gated on the
+    // presence of each provider's API key, so this also catches a missing key for the
+    // configured provider (the message lists what is available).
+    let default_provider = default_provider_name(settings);
+    let available = LlmProviderFactory::list_available_providers();
+    for def in &settings.agents {
         let provider = resolve_provider(def, &default_provider);
         if !available.iter().any(|p| p == &provider) {
             return Err(HostBuildError::UnknownProvider {
