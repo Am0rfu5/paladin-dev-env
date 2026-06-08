@@ -25,6 +25,8 @@ pub mod sanctum_port;
 pub mod scheduler_port;
 /// Search engine port.
 pub mod search_engine_port;
+/// Streaming counterpart to `paladin_executor_port` (SSE / token streaming).
+pub mod streaming_executor_port;
 /// User persistence repository port.
 pub mod user_repository_port;
 /// Workflow persistence repository port.

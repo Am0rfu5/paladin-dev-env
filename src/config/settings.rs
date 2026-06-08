@@ -12,10 +12,10 @@ use std::time::Duration;
 #[cfg(feature = "notifications")]
 use super::NotificationConfig;
 use super::{
-    AgentDefinition, ArsenalConfig, CitadelConfig, FileStorageConfig, GarrisonSettings,
-    HeraldConfig, LlmConfig, MemoryExtractionConfig, MessageServiceSettings, QueueConfig,
-    RagConfig, SanctumAdapterType, SanctumConfig, SchedulerConfig, ServerConfig, SourceConfig,
-    VisionConfig,
+    AgentDefinition, AgentTimeoutsConfig, ArsenalConfig, CitadelConfig, FileStorageConfig,
+    GarrisonSettings, HeraldConfig, LlmConfig, MemoryExtractionConfig, MessageServiceSettings,
+    QueueConfig, RagConfig, SanctumAdapterType, SanctumConfig, SchedulerConfig, ServerConfig,
+    SourceConfig, VisionConfig,
 };
 
 /// Top-level application configuration struct.
@@ -50,6 +50,9 @@ pub struct Settings {
     /// when the `agents:` key is absent, so non-server configs are unaffected.
     #[serde(default)]
     pub agents: Vec<AgentDefinition>,
+    /// Execution timeout policy for the HTTP service host (`default`/`max` seconds).
+    #[serde(default)]
+    pub timeouts: Option<AgentTimeoutsConfig>,
 }
 
 impl Settings {
@@ -334,6 +337,7 @@ impl Default for Settings {
             vision: Some(VisionConfig::default()),
             scheduler: Some(SchedulerConfig::default()),
             agents: Vec::new(),
+            timeouts: Some(AgentTimeoutsConfig::default()),
         }
     }
 }

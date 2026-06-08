@@ -19,13 +19,26 @@ use std::sync::{Arc, RwLock};
 use async_trait::async_trait;
 use paladin_core::platform::container::paladin::Paladin;
 use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
+use paladin_ports::output::streaming_executor_port::StreamingExecutorPort;
 use serde::{Deserialize, Serialize};
 
-/// A registry entry: an agent paired with the executor that runs it.
+/// A registry entry: an agent paired with the executor(s) that run it.
 ///
-/// Both halves are `Arc`-shared so [`AgentRegistry::get`] can hand an owned,
-/// cheaply-cloned handle to a request handler without holding the registry lock.
-pub type AgentEntry = (Arc<Paladin>, Arc<dyn PaladinExecutorPort>);
+/// All handles are `Arc`-shared so [`AgentRegistry::get`] can hand an owned,
+/// cheaply-cloned entry to a request handler without holding the registry lock. The
+/// `streamer` is optional: an agent without a streaming-capable executor still serves
+/// the buffered routes (the SSE endpoint falls back to a buffered single chunk).
+#[derive(Clone)]
+pub struct AgentEntry {
+    /// The resident agent.
+    pub paladin: Arc<Paladin>,
+    /// Buffered executor (always present).
+    pub executor: Arc<dyn PaladinExecutorPort>,
+    /// Streaming executor, when the agent's backend supports it.
+    pub streamer: Option<Arc<dyn StreamingExecutorPort>>,
+    /// Per-agent execution timeout override (seconds); `None` uses the server default.
+    pub timeout_secs: Option<u64>,
+}
 
 /// Declarative description of an agent to provision at runtime.
 ///
@@ -53,6 +66,9 @@ pub struct AgentSpec {
     /// Optional stop words that terminate execution.
     #[serde(default)]
     pub stop_words: Vec<String>,
+    /// Optional per-agent execution timeout (seconds); `None` uses the server default.
+    #[serde(default)]
+    pub timeout_seconds: Option<u64>,
 }
 
 /// Error returned when an [`AgentProvisioner`] cannot turn a spec into an agent.
@@ -78,16 +94,26 @@ pub enum ProvisionError {
 /// Epic 2). Implementations must be `Send + Sync` to be shared across requests.
 #[async_trait]
 pub trait AgentProvisioner: Send + Sync {
-    /// Materialize an agent and its executor from a spec.
+    /// Materialize an agent (and its executor(s)) from a spec.
     ///
     /// # Errors
     ///
     /// Returns [`ProvisionError`] if the spec is unusable or the agent/executor
     /// cannot be constructed.
-    async fn provision(
-        &self,
-        spec: &AgentSpec,
-    ) -> Result<(Paladin, Arc<dyn PaladinExecutorPort>), ProvisionError>;
+    async fn provision(&self, spec: &AgentSpec) -> Result<ProvisionedAgent, ProvisionError>;
+}
+
+/// The output of [`AgentProvisioner::provision`]: a built agent plus its executor(s).
+///
+/// `streamer` is optional so a provisioner may build buffered-only agents; concrete
+/// provisioners that wire a streaming-capable executor set it to `Some`.
+pub struct ProvisionedAgent {
+    /// The built agent.
+    pub paladin: Paladin,
+    /// Buffered executor.
+    pub executor: Arc<dyn PaladinExecutorPort>,
+    /// Streaming executor, when supported.
+    pub streamer: Option<Arc<dyn StreamingExecutorPort>>,
 }
 
 /// A thread-safe, in-memory registry of resident agents keyed by id.
@@ -118,14 +144,24 @@ impl AgentRegistry {
     ) -> Self {
         let map = agents
             .into_iter()
-            .map(|(id, paladin, executor)| (id, (paladin, executor)))
+            .map(|(id, paladin, executor)| {
+                (
+                    id,
+                    AgentEntry {
+                        paladin,
+                        executor,
+                        streamer: None,
+                        timeout_secs: None,
+                    },
+                )
+            })
             .collect();
         Self {
             agents: RwLock::new(map),
         }
     }
 
-    /// Look an agent up by id, returning a cloned `(Paladin, executor)` handle.
+    /// Look an agent up by id, returning a cloned [`AgentEntry`].
     ///
     /// Returns `None` if no agent is registered under `id`.
     pub fn get(&self, id: &str) -> Option<AgentEntry> {
@@ -147,11 +183,11 @@ impl AgentRegistry {
         let guard = self.agents.read().unwrap_or_else(|e| e.into_inner());
         guard
             .iter()
-            .map(|(id, (paladin, _))| (id.clone(), Arc::clone(paladin)))
+            .map(|(id, entry)| (id.clone(), Arc::clone(&entry.paladin)))
             .collect()
     }
 
-    /// Register a new agent.
+    /// Register a new buffered-only agent (no streaming).
     ///
     /// Returns `true` if the agent was inserted, or `false` if an agent was already
     /// registered under `id` (in which case the existing entry is left untouched).
@@ -162,12 +198,40 @@ impl AgentRegistry {
         paladin: Arc<Paladin>,
         executor: Arc<dyn PaladinExecutorPort>,
     ) -> bool {
+        self.insert_with_streaming(id, paladin, executor, None)
+    }
+
+    /// Register a new agent, optionally with a streaming-capable executor.
+    ///
+    /// Same non-overwriting semantics as [`insert`](Self::insert).
+    pub fn insert_with_streaming(
+        &self,
+        id: impl Into<String>,
+        paladin: Arc<Paladin>,
+        executor: Arc<dyn PaladinExecutorPort>,
+        streamer: Option<Arc<dyn StreamingExecutorPort>>,
+    ) -> bool {
+        self.insert_entry(
+            id,
+            AgentEntry {
+                paladin,
+                executor,
+                streamer,
+                timeout_secs: None,
+            },
+        )
+    }
+
+    /// Register a fully-formed [`AgentEntry`] (including any per-agent timeout).
+    ///
+    /// Same non-overwriting semantics as [`insert`](Self::insert).
+    pub fn insert_entry(&self, id: impl Into<String>, entry: AgentEntry) -> bool {
         let id = id.into();
         let mut guard = self.agents.write().unwrap_or_else(|e| e.into_inner());
         if guard.contains_key(&id) {
             return false;
         }
-        guard.insert(id, (paladin, executor));
+        guard.insert(id, entry);
         true
     }
 
@@ -278,10 +342,44 @@ mod tests {
             stub_executor(),
         )]);
 
-        let (paladin, _executor) = registry.get("r").expect("agent should be present");
-        assert_eq!(paladin.node.name, "Researcher");
-        assert_eq!(paladin.node.model, "gpt-4o");
+        let entry = registry.get("r").expect("agent should be present");
+        assert_eq!(entry.paladin.node.name, "Researcher");
+        assert_eq!(entry.paladin.node.model, "gpt-4o");
+        assert!(entry.streamer.is_none(), "from_agents leaves streamer None");
         assert!(registry.get("nope").is_none());
+    }
+
+    #[test]
+    fn insert_with_streaming_attaches_streamer() {
+        struct StubStreamer;
+        #[async_trait]
+        impl StreamingExecutorPort for StubStreamer {
+            async fn execute_stream(
+                &self,
+                _paladin: &Paladin,
+                _input: &str,
+            ) -> Result<paladin_ports::output::paladin_port::PaladinStream, PaladinError>
+            {
+                let (_tx, rx) = tokio::sync::mpsc::channel(1);
+                Ok(rx)
+            }
+        }
+
+        let registry = AgentRegistry::new();
+        let streamer: Arc<dyn StreamingExecutorPort> = Arc::new(StubStreamer);
+        assert!(registry.insert_with_streaming(
+            "s",
+            test_agent("S", "gpt-4"),
+            stub_executor(),
+            Some(streamer),
+        ));
+
+        let entry = registry.get("s").expect("present");
+        assert!(entry.streamer.is_some(), "streamer should be attached");
+
+        // Buffered-only insert leaves streamer None.
+        registry.insert("b", test_agent("B", "gpt-4"), stub_executor());
+        assert!(registry.get("b").expect("present").streamer.is_none());
     }
 
     #[test]
@@ -295,8 +393,8 @@ mod tests {
         let duplicate = registry.insert("a", test_agent("A2", "gpt-4"), stub_executor());
         assert!(!duplicate, "duplicate id must be refused");
         // The original entry must be untouched.
-        let (paladin, _) = registry.get("a").expect("agent present");
-        assert_eq!(paladin.node.name, "A");
+        let entry = registry.get("a").expect("agent present");
+        assert_eq!(entry.paladin.node.name, "A");
     }
 
     #[test]

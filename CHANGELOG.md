@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Milestone 12 — Epic 3: Streaming & asynchronous execution
+
+Adds token streaming, execution timeouts/cancellation, and in-process async jobs to the agent
+HTTP API. All additive — the buffered `execute` path and `PaladinExecutorPort` are unchanged.
+
+#### Added
+
+- **`StreamingExecutorPort`** (`paladin-ports`): a focused streaming counterpart to
+  `PaladinExecutorPort` (`execute_stream → PaladinStream`). `PaladinExecutionService` now implements
+  it over `LlmPort::generate_stream`.
+- **SSE streaming endpoint** `POST /agents/{id}/execute/stream`: real incremental tokens as
+  Server-Sent Events (`chunk` events + a terminal `done`/`error`). Agents without a streaming
+  backend fall back to a buffered single `chunk` + `done`. The registry entry carries an optional
+  streaming handle, wired by the config builder and the runtime provisioner.
+- **Execution timeouts & cancellation**: per-request `timeout_seconds`, per-agent
+  `timeout_seconds`, and a server-wide `timeouts` policy (`default_seconds`/`max_seconds`), resolved
+  request → agent → default and clamped to the max. On expiry the in-flight work is cancelled and
+  the call returns `504` (buffered/job) or a terminal `error` SSE event.
+- **In-process async jobs**: `POST /agents/{id}/jobs` (returns `202` + `job_id`) and
+  `GET /agents/{id}/jobs/{job_id}` (status `running`/`completed`/`failed`/`timed_out` + result).
+  Backed by a bounded, in-memory `JobStore` (ephemeral; durable/distributed jobs remain the
+  queue/worker topology).
+- `config.example.yml` gains a `timeouts` section and a per-agent `timeout_seconds`.
+
+#### Notes
+
+- The new agent routes remain **unauthenticated** in this milestone (auth → Epic 5). `paladin-web`
+  adds `futures` + `async-stream` for the SSE deadline race.
+
 ### Milestone 12 — Epic 2: Configurable web host & `paladin-server` binary
 
 Makes the HTTP service-host topology runnable with no Rust required: a config schema, a

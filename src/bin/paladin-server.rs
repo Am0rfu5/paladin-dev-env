@@ -19,7 +19,7 @@ use log::{error, info};
 use paladin::config::settings::Settings;
 use paladin::infrastructure::web::agent_host::{bind_address, build_agent_registry};
 use paladin::infrastructure::web::facade_provisioner::FacadeProvisioner;
-use paladin::infrastructure::web::{AgentApiState, agent_router};
+use paladin::infrastructure::web::{AgentApiState, TimeoutPolicy, agent_router};
 use tokio::signal;
 
 #[tokio::main]
@@ -50,7 +50,13 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut agent_ids: Vec<String> = registry.list().into_iter().map(|(id, _)| id).collect();
     agent_ids.sort();
     let provisioner = FacadeProvisioner::from_settings(&settings);
-    let state = AgentApiState::new(Arc::new(registry)).with_provisioner(Arc::new(provisioner));
+    let timeouts = settings.timeouts.clone().unwrap_or_default();
+    let state = AgentApiState::new(Arc::new(registry))
+        .with_provisioner(Arc::new(provisioner))
+        .with_timeouts(TimeoutPolicy {
+            default_secs: timeouts.default_seconds,
+            max_secs: timeouts.max_seconds,
+        });
     let app = agent_router(state);
 
     let listener = tokio::net::TcpListener::bind(bind_address(&settings)).await?;

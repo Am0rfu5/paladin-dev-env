@@ -9,10 +9,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use paladin_core::platform::container::paladin::Paladin;
 use paladin_llm::provider_factory::LlmProviderFactory;
-use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
-use paladin_web::{AgentProvisioner, AgentSpec, ProvisionError};
+use paladin_web::{AgentProvisioner, AgentSpec, ProvisionError, ProvisionedAgent};
 
 use crate::config::agents::AgentDefinition;
 use crate::config::settings::Settings;
@@ -59,17 +57,17 @@ fn spec_to_definition(spec: &AgentSpec) -> AgentDefinition {
         temperature: spec.temperature,
         max_loops: None,
         stop_words: spec.stop_words.clone(),
+        // The per-agent timeout is applied by the web layer (registry entry), not the
+        // build path, so it is not mapped onto the definition here.
+        timeout_seconds: None,
     }
 }
 
 #[async_trait]
 impl AgentProvisioner for FacadeProvisioner {
-    async fn provision(
-        &self,
-        spec: &AgentSpec,
-    ) -> Result<(Paladin, Arc<dyn PaladinExecutorPort>), ProvisionError> {
+    async fn provision(&self, spec: &AgentSpec) -> Result<ProvisionedAgent, ProvisionError> {
         let def = spec_to_definition(spec);
-        build_agent(
+        let (paladin, executor, streamer) = build_agent(
             &def,
             &self.factory,
             &self.default_provider,
@@ -82,6 +80,12 @@ impl AgentProvisioner for FacadeProvisioner {
             HostBuildError::Build { .. } => ProvisionError::InvalidSpec(err.to_string()),
             // Provider/registration failures are environment/runtime failures.
             _ => ProvisionError::Failed(err.to_string()),
+        })?;
+
+        Ok(ProvisionedAgent {
+            paladin,
+            executor,
+            streamer,
         })
     }
 }
@@ -98,6 +102,7 @@ mod tests {
             system_prompt: "You research topics.".to_string(),
             temperature: Some(0.5),
             stop_words: vec!["STOP".to_string()],
+            timeout_seconds: None,
         }
     }
 
