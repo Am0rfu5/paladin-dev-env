@@ -75,10 +75,10 @@
   - [x] 5.2 Binary now logs the bound address and a summary including the **sorted agent ids** plus the route paths.
   - [x] 5.3 **(Test first)** Function-level unit tests (no live bind): `bind_address` formatting, validate passes (empty agents), and rejects empty required field / duplicate ids / unknown provider. 10 `agent_host` tests pass; binary builds; `fmt`/`clippy -D warnings` (lib + bin) clean.
 
-- [ ] 6.0 Tests: config parsing, builder, provisioner, and a boot smoke integration test
-  - [ ] 6.1 Ensure unit coverage from 1.0–3.0 is in place (config parse, `build_agent`, `build_agent_registry`, `provision`).
-  - [ ] 6.2 **(Test first)** Add `tests/paladin_server_smoke.rs` (gated `#![cfg(feature = "web-server")]`): build state with a **hermetic mock provider** (e.g. `MockLlmAdapter` or `provider: "mock"`), bind `127.0.0.1:0`, spawn the server, then assert `GET /agents` → `200` and `POST /agents/{id}/execute` → `200` via a real HTTP client (`reqwest`) or `oneshot`. No real network/API calls.
-  - [ ] 6.3 Add a graceful-shutdown assertion if feasible (trigger the shutdown signal/handle and confirm the serve task completes); otherwise document why it is covered manually.
+- [x] 6.0 Tests: config parsing, builder, provisioner, and a boot smoke integration test
+  - [x] 6.1 Unit coverage in place: config parsing (1.0, 3 tests), `build_agent`/`build_agent_with_llm`/`resolve_provider`/`register_built`/validate (2.0+5.0, 10 tests), `provision`/spec-mapping (3.0, 2 tests).
+  - [x] 6.2 **(Test first)** Added `tests/paladin_server_smoke.rs` (gated `#![cfg(feature = "web-server")]`): builds a hermetic `MockLlmAdapter`-backed agent via public API, serves on `127.0.0.1:0` with `axum::serve`, and asserts over real `reqwest` HTTP: `GET /agents` → `200` (1 agent), `POST /agents/researcher/execute` → `200` with an `output` string, unknown id → `404`. No network/keys.
+  - [x] 6.3 Graceful-shutdown asserted: a `oneshot` triggers `with_graceful_shutdown`; the spawned server task is awaited and must join cleanly after the signal.
 
 - [ ] 7.0 Finalize: sample config, docs, CHANGELOG, and quality gates
   - [ ] 7.1 Add/extend a documented sample config (`config.example.yml` or a commented block in `config.yml`) showing the `host` + `agents` shape and the env-var key requirements.
