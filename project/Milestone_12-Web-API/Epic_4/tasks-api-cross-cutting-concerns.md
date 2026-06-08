@@ -1,0 +1,100 @@
+# Tasks: API Cross-Cutting Concerns (Milestone 12, Epic 4)
+
+**PRD:** [prd-api-cross-cutting-concerns.md](prd-api-cross-cutting-concerns.md)
+**Crate:** `paladin-web` (adapter) + facade config/binary wiring
+**Base:** `main` (Milestone 12 Epics 1–3 merged — PRs #19, #21, #22)
+**Status:** Phase 2 — sub-tasks expanded, ready for implementation
+
+---
+
+## Relevant Files
+
+- `crates/paladin-web/src/error.rs` - **New.** `ApiError` (code/message/details + status) implementing `IntoResponse` → nested `{ "error": { … } }`; constructors per status. Unit tests in-file.
+- `crates/paladin-web/src/agent_controller.rs` - **Modify.** Adopt `ApiError`; remove interim `ok_body`/`error_body`/`execution_error_response`; SSE `error` event uses the envelope; update tests (`body["error"]["message"]`).
+- `crates/paladin-web/src/delivery_controller.rs` - **Modify.** Replace its `ok_body`/`error_body` with `ApiError`; update tests.
+- `crates/paladin-web/src/user_controller.rs` - **Modify.** Migrate `user_error_to_response` / `ApiResponse`-based errors to `ApiError`; update tests.
+- `crates/paladin-web/src/health.rs` - **New.** `GET /health` + `GET /ready` handlers (+ a small router). Tests in-file.
+- `crates/paladin-web/src/request_log.rs` - **New.** Request-logging middleware: request-id (honour/generate), `x-request-id` response header, one `log` line per request (method/path/status/latency).
+- `crates/paladin-web/src/http_layers.rs` - **New.** `HttpLayersConfig` (CORS, body limit, global timeout, rate limit) + `with_http_layers(router, config)` composer wiring tower-http + tower-governor + the request-log + health routes; the global timeout excludes the streaming route.
+- `crates/paladin-web/src/lib.rs` - **Modify.** Declare/doc new modules; re-export `ApiError`, `HttpLayersConfig`, health/router helpers.
+- `crates/paladin-web/src/app.rs` - **Modify.** Apply `with_http_layers` / health in `create_app_router_with_agents` (or document the composer the binary calls).
+- `crates/paladin-web/Cargo.toml` - **Modify.** Add `tower`, `tower-http` (features `cors`,`limit`,`timeout`), `tower-governor`.
+- `src/config/web.rs` (or extend `agents.rs`/`settings.rs`) - **Modify.** A web/http config section (CORS, body-limit, global-timeout, rate-limit) on `Settings`.
+- `src/bin/paladin-server.rs` - **Modify.** Map the config into `HttpLayersConfig` and apply the layers.
+- `tests/paladin_server_smoke.rs` - **Modify.** Assert `/health` + `/ready` respond and an error uses the nested envelope.
+- `config.example.yml` / `README.md` / `CHANGELOG.md` / `project/current-exports.txt` - **Modify.** Document + record the additions.
+
+### Notes
+
+- **TDD (Red-Green-Refactor):** failing test first for each behavior-bearing sub-task.
+- Unit/handler tests in-file under `#[cfg(test)]`; HTTP/boot tests in `tests/`. Run with
+  `cargo test --features web-server`. Before committing a parent task: `cargo test` →
+  `cargo fmt --check` → `cargo clippy -- -D warnings` → `make deny`.
+- **Breaking change:** the error body moves from flat `{ "error": "<message>" }` (and the user
+  controller's `ApiResponse`) to nested `{ "error": { code, message, details } }`. All existing
+  `paladin-web` error-asserting tests must be updated.
+- **Hexagonal:** all middleware/error code in `paladin-web`; config values are mapped from
+  `Settings` into a `paladin-web` config struct by the binary (the Epic 3 `TimeoutPolicy` seam).
+  `paladin-web` must gain **no** dependency on the `paladin-ai` facade.
+- **Streaming caveat:** the global request-timeout layer must **not** apply to
+  `POST /agents/{id}/execute/stream` (long-lived SSE); scope it to non-streaming routes or leave it
+  off by default. Streaming stays bounded by Epic 3's per-execution timeout.
+- **Out of scope** (later/other epics): auth (5), OpenAPI (6), Docker/k8s (7), metrics/Prometheus,
+  per-route/identity rate limits, migrating the workspace to `tracing`.
+
+## Tasks
+
+- [ ] 0.0 Create feature branch
+  - [ ] 0.1 Update `main` (Epics 1–3 merged) and create/checkout `feature/m12-epic4-api-cross-cutting-concerns` from it.
+  - [ ] 0.2 Confirm a clean baseline: `cargo build --features web-server` and `cargo test --features web-server` pass before any changes.
+
+- [ ] 1.0 Add the unified error model (`ApiError`) in `paladin-web`
+  - [ ] 1.1 Create `crates/paladin-web/src/error.rs`; declare `pub mod error;` in `lib.rs`.
+  - [ ] 1.2 **(Test first)** Unit tests: `ApiError` renders `{ "error": { "code", "message", "details" } }` with the right status; each constructor sets the expected `code`/status; `details` omitted when `None`.
+  - [ ] 1.3 Define `ApiError { status: StatusCode, code: &'static str, message: String, details: Option<serde_json::Value> }` (or equivalent) and `impl IntoResponse`. Add constructors: `not_found`, `bad_request`/`invalid`, `conflict`, `unprocessable`, `bad_gateway`, `gateway_timeout`, `not_implemented`, `internal` — each with a stable `code`. Rustdoc all public items.
+  - [ ] 1.4 Re-export `ApiError` from `lib.rs`; `cargo build -p paladin-web` + clippy clean.
+
+- [ ] 2.0 Adopt `ApiError` across all controllers (agent, user, delivery) + SSE error event
+  - [ ] 2.1 **(Test first)** Update agent-controller tests to assert the nested envelope (`body["error"]["message"]` / `["code"]`) for `404`/`400`/`502`/`409`/`422`/`501`/`504` paths.
+  - [ ] 2.2 Migrate `agent_controller`: handlers return `Result<_, ApiError>` (or build `ApiError`); remove `ok_body`/`error_body`/`execution_error_response`; map `PaladinError`→`502`, unknown id→`404`, timeout→`504`, bad timeout→`400`, register conflicts/422/501.
+  - [ ] 2.3 Make the SSE `error` event carry the same `{ "error": { … } }` envelope; update the stream tests.
+  - [ ] 2.4 Migrate `delivery_controller` (replace its `ok_body`/`error_body`) and `user_controller` (replace `user_error_to_response`/`ApiResponse` error path) to `ApiError`; update their tests.
+  - [ ] 2.5 Rustdoc/module-doc updates (drop the "interim error helper" notes); `cargo test -p paladin-web` + clippy green.
+
+- [ ] 3.0 Add health & readiness endpoints (`GET /health`, `GET /ready`)
+  - [ ] 3.1 Create `crates/paladin-web/src/health.rs`; declare in `lib.rs`.
+  - [ ] 3.2 **(Test first)** Tests: `GET /health` → `200 { "status": "ok" }`; `GET /ready` → `200 { "status": "ready", "agents": N }` (N from the registry); no network I/O.
+  - [ ] 3.3 Implement the two handlers (readiness reads the agent count from `AgentApiState`) and a small mount helper / routes. Mount them alongside the agent routes (via `agent_router` or the composer in 6.0).
+  - [ ] 3.4 Rustdoc; gates.
+
+- [ ] 4.0 Add the request-logging middleware (request-id + `x-request-id`)
+  - [ ] 4.1 Create `crates/paladin-web/src/request_log.rs`; declare in `lib.rs`.
+  - [ ] 4.2 **(Test first)** Test (via a small router + `oneshot`): a response carries an `x-request-id` header; an inbound `x-request-id` is echoed back; (logging side-effects asserted structurally, not by capturing logs).
+  - [ ] 4.3 Implement an axum middleware (`from_fn`) that honours/generates a request-id (`uuid`), inserts it as the `x-request-id` response header, and logs one line at completion (method, path, status, latency-ms) via `log::info!`. No secrets/bodies logged.
+  - [ ] 4.4 Rustdoc; gates.
+
+- [ ] 5.0 Add edge layers: CORS, body limit, global timeout (excl. streaming), rate limiting
+  - [ ] 5.1 Add deps to `crates/paladin-web/Cargo.toml`: `tower`, `tower-http` (features `cors`,`limit`,`timeout`), `tower-governor`.
+  - [ ] 5.2 Define `HttpLayersConfig` (CORS origins/methods, body-limit bytes, global-timeout seconds, rate-limit `{ enabled, per_second, burst }`) with sensible defaults (`Default`).
+  - [ ] 5.3 **(Test first)** Tests: a CORS preflight (`OPTIONS`) returns the configured `access-control-*` headers; an oversized body → `413` (nested error); with rate-limit enabled (tiny limit), exceeding it → `429` (nested error). Keep limits test-sized.
+  - [ ] 5.4 Build the layers: `CorsLayer` (configurable, permissive when unset), `RequestBodyLimitLayer`, an optional `tower_governor` `GovernorLayer` (only when `enabled`), and a **global timeout scoped to non-streaming routes** (split the stream route out, or omit the layer for it).
+  - [ ] 5.5 Ensure `413`/`429`/timeout rejections render via `ApiError` (map tower-http/governor rejections to the envelope where they surface to clients). Rustdoc; gates.
+
+- [ ] 6.0 Compose the layers (`with_http_layers`) and wire config into `paladin-server`
+  - [ ] 6.1 Create `crates/paladin-web/src/http_layers.rs` with `pub fn with_http_layers(router: Router, config: &HttpLayersConfig) -> Router` applying request-logging + CORS + body-limit + rate-limit (+ health routes) uniformly, keeping the streaming route clear of the global timeout.
+  - [ ] 6.2 **(Test first)** A composition test: a router wrapped by `with_http_layers` still serves an agent route and `/health`, and carries `x-request-id`.
+  - [ ] 6.3 Add a web/http config section to `Settings` (facade): CORS, body-limit, global-timeout, rate-limit. Update `Settings::default()` + the `user_config` test fixture.
+  - [ ] 6.4 In `paladin-server`: map `Settings` → `HttpLayersConfig` and apply `with_http_layers` to the composed router; log the enabled layers on startup.
+  - [ ] 6.5 Rustdoc; gates.
+
+- [ ] 7.0 Tests: probes, error envelope, request-id, CORS preflight, body-limit, 429 + boot-smoke extension
+  - [ ] 7.1 Confirm unit/handler coverage from 1.0–6.0 is in place (error envelope, health, request-id, CORS, body-limit, 429, composition).
+  - [ ] 7.2 **(Test first)** Extend `tests/paladin_server_smoke.rs`: assert `GET /health` and `GET /ready` respond with the documented shapes, an `x-request-id` header is present, and an error response (unknown agent) uses the nested envelope.
+
+- [ ] 8.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
+  - [ ] 8.1 Update `config.example.yml`: a documented `http`/web section (CORS, body limit, global timeout, rate limit off-by-default).
+  - [ ] 8.2 Update `README.md`: health/readiness endpoints, the error envelope, request-id, and the configurable layers.
+  - [ ] 8.3 Full gate: `cargo test --features web-server`, `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny`. Remove any debug prints.
+  - [ ] 8.4 Regenerate `project/current-exports.txt` (new `ApiError`/`HttpLayersConfig`/health items + config fields) — review the diff (error-shape change is internal to `paladin-web`; config additions are additive default-surface).
+  - [ ] 8.5 Add a `CHANGELOG.md [Unreleased]` entry (Milestone 12 — Epic 4), **calling out the breaking error-body change**.
+  - [ ] 8.6 Commit referencing Milestone 12 / Epic 4; mark parent tasks complete and **stop for go-ahead**.
