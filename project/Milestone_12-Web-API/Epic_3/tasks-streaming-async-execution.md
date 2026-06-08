@@ -88,10 +88,10 @@
   - [x] 7.2 **(Test first)** Extended `tests/paladin_server_smoke.rs` (real HTTP, mock provider): the agent is now registered **with streaming**, and the test adds a stream round-trip (asserts `event: chunk` + `event: done`) and a job round-trip (`202` + `job_id` → poll → `completed` with `result.output`).
   - [x] 7.3 Timeout is covered at the handler level (buffered `504`, stream terminal-error, job `timed_out`) — these use 1s timeouts and are deterministic; a server-level slow-agent round-trip was omitted to keep the smoke test fast (documented here).
 
-- [ ] 8.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
-  - [ ] 8.1 Update `config.example.yml`: `timeouts` (default/max) + a per-agent `timeout_seconds` example.
-  - [ ] 8.2 Update `README.md` (and/or the deployment doc): streaming endpoint, async jobs, and timeout behavior.
-  - [ ] 8.3 Full gate: `cargo test --features web-server`, `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny`. Remove any debug prints.
-  - [ ] 8.4 Regenerate `project/current-exports.txt` (new default-surface items: `StreamingExecutorPort`, config timeout fields, registry/state additions) — confirm additive-only.
-  - [ ] 8.5 Add a `CHANGELOG.md [Unreleased]` entry (Milestone 12 — Epic 3): streaming, timeouts/cancellation, async jobs.
-  - [ ] 8.6 Commit with a conventional-commit message referencing Milestone 12 / Epic 3; mark parent tasks complete and **stop for go-ahead**.
+- [x] 8.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
+  - [x] 8.1 `config.example.yml` gains a `timeouts` section (default/max) + a per-agent `timeout_seconds`, with the route list (execute/stream/jobs) commented.
+  - [x] 8.2 `README.md` "Running agents behind an HTTP API" updated: the three run modes (buffered/stream/jobs) + timeout/cancellation behavior.
+  - [x] 8.3 Full gate green: `cargo test --features web-server` (all crates; facade lib 650, paladin-web 391-as-counted, smoke 1), `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny`. No debug prints.
+  - [x] 8.4 Regenerated `project/current-exports.txt` — **additive only** (new `StreamingExecutorPort` impl + `AgentDefinition.timeout_seconds`, `AgentTimeoutsConfig`, `Settings.timeouts`); zero removals.
+  - [x] 8.5 Added a `CHANGELOG.md [Unreleased]` entry (Milestone 12 — Epic 3): streaming, timeouts/cancellation, async jobs.
+  - [x] 8.6 Committed; parent tasks complete; **stop for go-ahead**.

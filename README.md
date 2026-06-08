@@ -124,9 +124,18 @@ OPENAI_API_KEY=sk-... cargo run --bin paladin-server --features web-server
 # or point at a specific config: PALADIN_CONFIG=./config.yml paladin-server
 ```
 
-It exposes `GET/POST /agents`, `GET/DELETE /agents/{id}`, and `POST /agents/{id}/execute`, and
-shuts down gracefully on Ctrl-C / SIGTERM. (Authentication arrives in a later milestone epic; put
-it behind a trusted proxy for now.)
+It exposes agent management (`GET/POST /agents`, `GET/DELETE /agents/{id}`) and three ways to run
+an agent:
+
+- `POST /agents/{id}/execute` — buffered: returns the full result as JSON.
+- `POST /agents/{id}/execute/stream` — streams tokens as Server-Sent Events (`chunk` … `done`).
+- `POST /agents/{id}/jobs` — async fire-and-poll: returns a `job_id`; poll
+  `GET /agents/{id}/jobs/{job_id}` for `running` → `completed`/`failed`/`timed_out`.
+
+Every run is bounded by a timeout (`timeouts.default_seconds`, per-agent `timeout_seconds`, or a
+per-request `timeout_seconds`, clamped to `timeouts.max_seconds`); on expiry the work is cancelled
+(`504`, or a terminal `error` SSE event). The server shuts down gracefully on Ctrl-C / SIGTERM.
+(Authentication arrives in a later milestone epic; put it behind a trusted proxy for now.)
 
 ## Project Status
 
