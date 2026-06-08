@@ -20,7 +20,7 @@ use paladin_llm::provider_factory::{LlmProviderFactory, ProviderFactoryError};
 use paladin_ports::output::llm_port::LlmPort;
 use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
 use paladin_ports::output::streaming_executor_port::StreamingExecutorPort;
-use paladin_web::AgentRegistry;
+use paladin_web::{AgentEntry, AgentRegistry};
 
 use crate::application::services::paladin::paladin_builder::PaladinBuilder;
 use crate::application::services::paladin::paladin_execution_service::PaladinExecutionService;
@@ -174,14 +174,25 @@ pub(crate) async fn build_agent(
 }
 
 /// Insert a built agent into the registry, rejecting a duplicate id.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn register_built(
     registry: &AgentRegistry,
     id: &str,
     paladin: Paladin,
     executor: Arc<dyn PaladinExecutorPort>,
     streamer: Option<Arc<dyn StreamingExecutorPort>>,
+    timeout_secs: Option<u64>,
 ) -> Result<(), HostBuildError> {
-    if registry.insert_with_streaming(id.to_string(), Arc::new(paladin), executor, streamer) {
+    let inserted = registry.insert_entry(
+        id.to_string(),
+        AgentEntry {
+            paladin: Arc::new(paladin),
+            executor,
+            streamer,
+            timeout_secs,
+        },
+    );
+    if inserted {
         Ok(())
     } else {
         Err(HostBuildError::DuplicateId(id.to_string()))
@@ -268,7 +279,14 @@ pub async fn build_agent_registry(settings: &Settings) -> Result<AgentRegistry, 
     for def in &settings.agents {
         let (paladin, executor, streamer) =
             build_agent(def, &factory, &default_provider, Arc::clone(&breaker)).await?;
-        register_built(&registry, &def.id, paladin, executor, streamer)?;
+        register_built(
+            &registry,
+            &def.id,
+            paladin,
+            executor,
+            streamer,
+            def.timeout_seconds,
+        )?;
     }
     Ok(registry)
 }
@@ -287,6 +305,7 @@ mod tests {
             temperature: None,
             max_loops: None,
             stop_words: vec![],
+            timeout_seconds: None,
         }
     }
 
@@ -344,13 +363,14 @@ mod tests {
             build_agent_with_llm(&base("dup"), mock_llm(), default_circuit_breaker())
                 .await
                 .unwrap();
-        register_built(&registry, "dup", p1, e1, s1).expect("first insert ok");
+        register_built(&registry, "dup", p1, e1, s1, None).expect("first insert ok");
 
         let (p2, e2, s2) =
             build_agent_with_llm(&base("dup"), mock_llm(), default_circuit_breaker())
                 .await
                 .unwrap();
-        let err = register_built(&registry, "dup", p2, e2, s2).expect_err("duplicate must error");
+        let err =
+            register_built(&registry, "dup", p2, e2, s2, None).expect_err("duplicate must error");
         assert!(matches!(err, HostBuildError::DuplicateId(_)), "got {err:?}");
     }
 

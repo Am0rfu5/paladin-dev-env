@@ -69,12 +69,12 @@
   - [x] 4.4 Mounted `POST /agents/{id}/execute/stream` in `agent_router`; updated the module doc route table.
   - [x] 4.5 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; paladin-web tests 66 + 5 pass.
 
-- [ ] 5.0 Add timeouts & cancellation (default → per-agent → per-request, clamped) across buffered/stream/job
-  - [ ] 5.1 **(Test first)** Config + resolution tests: parse per-agent `timeout_seconds`; a `TimeoutPolicy { default, max }`; a pure `resolve_timeout(request, agent, policy)` helper (precedence + clamp to max; non-positive request → invalid).
-  - [ ] 5.2 Add config: `AgentDefinition.timeout_seconds: Option<u64>`; default + max timeout in `Settings` (new `timeouts` section or `server` fields); add optional `timeout_seconds` to the execute / stream / job request bodies. Store the resolved per-agent timeout in the registry `AgentEntry` and the `TimeoutPolicy` in `AgentApiState`.
-  - [ ] 5.3 **(Test first → impl)** Buffered: wrap `executor.execute` in `tokio::time::timeout`; on expiry cancel (drop the future) and return `504` with the standard error body. Test with a deliberately slow mock.
-  - [ ] 5.4 Apply the same timeout to the SSE stream (emit a terminal `error`/timeout event and drop the producer) — test the timeout path.
-  - [ ] 5.5 Thread `TimeoutPolicy` from config into `AgentApiState` (builder + `paladin-server`). Rustdoc; gates.
+- [x] 5.0 Add timeouts & cancellation (default → per-agent → per-request, clamped) across buffered/stream/job
+  - [x] 5.1 **(Test first)** New `crate::timeout` module: `TimeoutPolicy { default_secs, max_secs }` + pure `resolve_timeout(request, agent, policy)` (precedence request→agent→default, clamp to `[1, max]`, `Some(0)` request → `InvalidTimeout`). 5 unit tests.
+  - [x] 5.2 Config: `AgentDefinition.timeout_seconds` + `AgentSpec.timeout_seconds` + `ExecuteRequest.timeout_seconds` (all `#[serde(default)]`); `AgentTimeoutsConfig { default_seconds, max_seconds }` + `Settings.timeouts`. Registry `AgentEntry.timeout_secs` + `insert_entry`; `AgentApiState.timeouts` + `with_timeouts`.
+  - [x] 5.3 **(Test first → impl)** Buffered `execute_agent` wraps `executor.execute` in `tokio::time::timeout` → `504` on expiry (future dropped = cancelled); invalid `timeout_seconds: 0` → `400`. Tests: `execute_times_out_with_504`, `execute_zero_timeout_is_400`.
+  - [x] 5.4 SSE stream bounded by `timed_event_stream` (async-stream; races each chunk vs a deadline) → terminal `error` event + drop producer; buffered fallback wrapped in `timeout` → `504`. Test: `stream_times_out_with_terminal_error_event`. (Swapped `tokio-stream`→`async-stream` for the deadline race.)
+  - [x] 5.5 `paladin-server` builds `TimeoutPolicy` from `settings.timeouts` and passes it via `AgentApiState::with_timeouts`. Rustdoc; `fmt`/`clippy -D warnings` (lib+bins+all-targets) clean; paladin-web 74+5, facade config 48 + infra::web 12 + smoke 1 all pass.
 
 - [ ] 6.0 Add in-process async jobs (job store + `POST /agents/{id}/jobs` + `GET …/jobs/{job_id}`)
   - [ ] 6.1 **(Test first)** `job_store` unit tests: create (`pending`/`running`) → update (`completed`/`failed`/`timed_out`); `get` unknown → `None`; bounded retention evicts oldest + logs.

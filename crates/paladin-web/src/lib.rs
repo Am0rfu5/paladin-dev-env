@@ -18,6 +18,8 @@ pub mod app;
 pub mod auth_middleware;
 /// Content-delivery controller handlers (axum).
 pub mod delivery_controller;
+/// Execution timeout policy and resolution.
+pub mod timeout;
 /// User management controller handlers.
 #[allow(missing_docs)]
 pub mod user_controller;
@@ -26,5 +28,6 @@ pub use agent_controller::{
     AgentApiState, AgentSummary, ExecuteRequest, ExecuteResponse, agent_router,
 };
 pub use agent_registry::{
-    AgentProvisioner, AgentRegistry, AgentSpec, ProvisionError, ProvisionedAgent,
+    AgentEntry, AgentProvisioner, AgentRegistry, AgentSpec, ProvisionError, ProvisionedAgent,
 };
+pub use timeout::TimeoutPolicy;

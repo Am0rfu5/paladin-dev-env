@@ -9,6 +9,37 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Server-wide execution timeout configuration for the HTTP service host.
+///
+/// Maps onto `paladin_web::TimeoutPolicy`. Absent fields fall back to the defaults
+/// (300s default, 600s max).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentTimeoutsConfig {
+    /// Default execution timeout (seconds) when neither request nor agent specifies one.
+    #[serde(default = "default_timeout_seconds")]
+    pub default_seconds: u64,
+    /// Maximum execution timeout (seconds); per-request/agent values are clamped to it.
+    #[serde(default = "default_max_timeout_seconds")]
+    pub max_seconds: u64,
+}
+
+fn default_timeout_seconds() -> u64 {
+    300
+}
+
+fn default_max_timeout_seconds() -> u64 {
+    600
+}
+
+impl Default for AgentTimeoutsConfig {
+    fn default() -> Self {
+        Self {
+            default_seconds: default_timeout_seconds(),
+            max_seconds: default_max_timeout_seconds(),
+        }
+    }
+}
+
 /// Declarative definition of one agent to load into the HTTP service host.
 ///
 /// `id`, `model`, and `system_prompt` are required; everything else is optional and
@@ -53,6 +84,10 @@ pub struct AgentDefinition {
     /// Tokens that signal the agent to stop processing.
     #[serde(default)]
     pub stop_words: Vec<String>,
+
+    /// Per-agent execution timeout (seconds). When absent, the server default applies.
+    #[serde(default)]
+    pub timeout_seconds: Option<u64>,
 }
 
 #[cfg(test)]

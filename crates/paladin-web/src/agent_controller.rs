@@ -20,6 +20,7 @@ use std::sync::Arc;
 
 use std::convert::Infallible;
 use std::pin::Pin;
+use std::time::Duration;
 
 use axum::{
     Json, Router,
@@ -28,17 +29,17 @@ use axum::{
     response::{IntoResponse, Response, Sse, sse::Event},
     routing::{get, post},
 };
-use futures::{Stream, StreamExt};
+use futures::Stream;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio_stream::wrappers::ReceiverStream;
 
 use paladin_core::platform::container::execution_result::{PaladinResult, StopReason};
 use paladin_core::platform::container::paladin::Paladin;
 use paladin_core::platform::container::paladin_error::PaladinError;
-use paladin_ports::output::paladin_port::PaladinStreamChunk;
+use paladin_ports::output::paladin_port::{PaladinStream, PaladinStreamChunk};
 
-use crate::agent_registry::{AgentProvisioner, AgentRegistry, AgentSpec};
+use crate::agent_registry::{AgentEntry, AgentProvisioner, AgentRegistry, AgentSpec};
+use crate::timeout::{TimeoutPolicy, resolve_timeout};
 
 /// Shared state for the agent routes.
 ///
@@ -52,20 +53,29 @@ pub struct AgentApiState {
     pub registry: Arc<AgentRegistry>,
     /// Optional provisioner used to build agents for `POST /agents` (injected by Epic 2).
     pub provisioner: Option<Arc<dyn AgentProvisioner>>,
+    /// Server-wide execution timeout policy (default + max).
+    pub timeouts: TimeoutPolicy,
 }
 
 impl AgentApiState {
-    /// Create state with a registry and no provisioner (runtime registration disabled).
+    /// Create state with a registry, no provisioner, and the default timeout policy.
     pub fn new(registry: Arc<AgentRegistry>) -> Self {
         Self {
             registry,
             provisioner: None,
+            timeouts: TimeoutPolicy::default(),
         }
     }
 
     /// Attach a provisioner, enabling runtime registration via `POST /agents`.
     pub fn with_provisioner(mut self, provisioner: Arc<dyn AgentProvisioner>) -> Self {
         self.provisioner = Some(provisioner);
+        self
+    }
+
+    /// Set the server-wide timeout policy.
+    pub fn with_timeouts(mut self, timeouts: TimeoutPolicy) -> Self {
+        self.timeouts = timeouts;
         self
     }
 }
@@ -78,6 +88,9 @@ impl AgentApiState {
 pub struct ExecuteRequest {
     /// The task / prompt to run the agent against.
     pub input: String,
+    /// Optional per-request timeout (seconds), clamped to the server max. `0` is rejected.
+    #[serde(default)]
+    pub timeout_seconds: Option<u64>,
 }
 
 /// Response body for a successful agent execution.
@@ -224,13 +237,31 @@ pub async fn execute_agent(
         );
     };
 
-    match entry
+    let timeout =
+        match resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts) {
+            Ok(d) => d,
+            Err(_) => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    error_body("timeout_seconds must be a positive integer"),
+                );
+            }
+        };
+
+    let run = entry
         .executor
-        .execute(entry.paladin.as_ref(), &request.input)
-        .await
-    {
-        Ok(result) => (StatusCode::OK, ok_body(&ExecuteResponse::from(result))),
-        Err(error) => execution_error_response(&error),
+        .execute(entry.paladin.as_ref(), &request.input);
+    match tokio::time::timeout(timeout, run).await {
+        Ok(Ok(result)) => (StatusCode::OK, ok_body(&ExecuteResponse::from(result))),
+        Ok(Err(error)) => execution_error_response(&error),
+        // The future is dropped on elapse — the in-flight execution is cancelled.
+        Err(_elapsed) => (
+            StatusCode::GATEWAY_TIMEOUT,
+            error_body(format!(
+                "agent '{id}' timed out after {}s",
+                timeout.as_secs()
+            )),
+        ),
     }
 }
 
@@ -300,11 +331,14 @@ pub async fn register_agent(
         Ok(provisioned) => {
             let paladin = Arc::new(provisioned.paladin);
             // Re-check on insert closes the race between the `contains` check and here.
-            if !state.registry.insert_with_streaming(
+            if !state.registry.insert_entry(
                 spec.id.clone(),
-                Arc::clone(&paladin),
-                provisioned.executor,
-                provisioned.streamer,
+                AgentEntry {
+                    paladin: Arc::clone(&paladin),
+                    executor: provisioned.executor,
+                    streamer: provisioned.streamer,
+                    timeout_secs: spec.timeout_seconds,
+                },
             ) {
                 return (
                     StatusCode::CONFLICT,
@@ -362,13 +396,51 @@ fn chunk_to_event(item: Result<PaladinStreamChunk, PaladinError>) -> Event {
     }
 }
 
+/// Adapt an agent [`PaladinStream`] into an SSE event stream bounded by `timeout`.
+///
+/// Races each chunk against a single deadline: on the deadline it yields a terminal
+/// `error` event and stops (dropping the receiver, which cancels the producer). On a
+/// final chunk or channel close it stops normally.
+fn timed_event_stream(
+    rx: PaladinStream,
+    timeout: Duration,
+) -> impl Stream<Item = Result<Event, Infallible>> + Send {
+    async_stream::stream! {
+        let sleep = tokio::time::sleep(timeout);
+        tokio::pin!(sleep);
+        let mut rx = rx;
+        loop {
+            tokio::select! {
+                _ = &mut sleep => {
+                    yield Ok(Event::default()
+                        .event("error")
+                        .data(json!({ "error": "stream timed out" }).to_string()));
+                    break;
+                }
+                item = rx.recv() => match item {
+                    Some(result) => {
+                        let is_final = matches!(&result, Ok(chunk) if chunk.is_final);
+                        yield Ok(chunk_to_event(result));
+                        if is_final {
+                            break;
+                        }
+                    }
+                    None => break,
+                },
+            }
+        }
+    }
+}
+
 /// `POST /agents/{id}/execute/stream` — run an agent, streaming its output over SSE.
 ///
 /// Returns a `text/event-stream` of `chunk` events ending with a `done` event. For an
 /// agent with a streaming backend these are real incremental LLM tokens; for an agent
 /// without one, the buffered result is framed as a single `chunk` + `done` (so the
-/// endpoint always works). Maps unknown id → `404`, invalid body → `400` (extractor),
-/// and an up-front execution failure → `502`.
+/// endpoint always works). Execution is bounded by the resolved timeout: on expiry the
+/// stream yields a terminal `error` event (streaming) or returns `504` (buffered
+/// fallback). Maps unknown id → `404`, invalid `timeout_seconds` → `400`, and an
+/// up-front execution failure → `502`.
 pub async fn execute_agent_stream(
     State(state): State<AgentApiState>,
     Path(id): Path<String>,
@@ -382,6 +454,18 @@ pub async fn execute_agent_stream(
             .into_response();
     };
 
+    let timeout =
+        match resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts) {
+            Ok(d) => d,
+            Err(_) => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    error_body("timeout_seconds must be a positive integer"),
+                )
+                    .into_response();
+            }
+        };
+
     // Real token streaming when the agent has a streaming-capable executor.
     if let Some(streamer) = entry.streamer.clone() {
         return match streamer
@@ -389,22 +473,19 @@ pub async fn execute_agent_stream(
             .await
         {
             Ok(rx) => {
-                let stream = ReceiverStream::new(rx)
-                    .map(|item| Ok::<Event, Infallible>(chunk_to_event(item)));
-                let boxed: SseEventStream = Box::pin(stream);
+                let boxed: SseEventStream = Box::pin(timed_event_stream(rx, timeout));
                 Sse::new(boxed).into_response()
             }
             Err(error) => execution_error_response(&error).into_response(),
         };
     }
 
-    // Fallback (no streaming backend): run buffered, then frame the result as SSE.
-    match entry
+    // Fallback (no streaming backend): run buffered under the timeout, then frame as SSE.
+    let run = entry
         .executor
-        .execute(entry.paladin.as_ref(), &request.input)
-        .await
-    {
-        Ok(result) => {
+        .execute(entry.paladin.as_ref(), &request.input);
+    match tokio::time::timeout(timeout, run).await {
+        Ok(Ok(result)) => {
             let response = ExecuteResponse::from(result);
             let chunk = Event::default()
                 .event("chunk")
@@ -416,7 +497,15 @@ pub async fn execute_agent_stream(
             let boxed: SseEventStream = Box::pin(futures::stream::iter(events));
             Sse::new(boxed).into_response()
         }
-        Err(error) => execution_error_response(&error).into_response(),
+        Ok(Err(error)) => execution_error_response(&error).into_response(),
+        Err(_elapsed) => (
+            StatusCode::GATEWAY_TIMEOUT,
+            error_body(format!(
+                "agent '{id}' timed out after {}s",
+                timeout.as_secs()
+            )),
+        )
+            .into_response(),
     }
 }
 
@@ -459,10 +548,12 @@ mod tests {
     use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
     use tower::ServiceExt; // for `Router::oneshot`
 
-    /// Configurable in-test executor: succeeds with a fixed output, or fails.
+    /// Configurable in-test executor: succeeds with a fixed output, fails, or stalls
+    /// (sleeps far longer than any test timeout, to exercise cancellation).
     enum MockExecutor {
         Succeeds(String),
         Fails(String),
+        Slow,
     }
 
     #[async_trait]
@@ -481,6 +572,16 @@ mod tests {
                     StopReason::Completed,
                 )),
                 MockExecutor::Fails(message) => Err(PaladinError::ExecutionError(message.clone())),
+                MockExecutor::Slow => {
+                    tokio::time::sleep(Duration::from_secs(60)).await;
+                    Ok(PaladinResult::new(
+                        "late".to_string(),
+                        0,
+                        0,
+                        0,
+                        StopReason::Completed,
+                    ))
+                }
             }
         }
     }
@@ -568,6 +669,7 @@ mod tests {
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
+                timeout_seconds: None,
             }),
         )
         .await;
@@ -595,6 +697,7 @@ mod tests {
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
+                timeout_seconds: None,
             }),
         )
         .await;
@@ -619,10 +722,103 @@ mod tests {
             Path("missing".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
+                timeout_seconds: None,
             }),
         )
         .await;
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    /// A streamer that emits one chunk then stalls (never sends a final marker).
+    struct StallStreamer;
+
+    #[async_trait]
+    impl StreamingExecutorPort for StallStreamer {
+        async fn execute_stream(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<PaladinStream, PaladinError> {
+            let (tx, rx) = tokio::sync::mpsc::channel(8);
+            tokio::spawn(async move {
+                let _ = tx
+                    .send(Ok(PaladinStreamChunk {
+                        text: "partial".to_string(),
+                        is_final: false,
+                        metadata: None,
+                    }))
+                    .await;
+                // Hold the sender open without finalizing, forcing a timeout.
+                tokio::time::sleep(Duration::from_secs(60)).await;
+            });
+            Ok(rx)
+        }
+    }
+
+    #[tokio::test]
+    async fn execute_times_out_with_504() {
+        let registry = AgentRegistry::new();
+        registry.insert("r", test_agent("r"), Arc::new(MockExecutor::Slow));
+        let state = AgentApiState::new(Arc::new(registry));
+
+        let (status, _) = execute_agent(
+            State(state),
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+                timeout_seconds: Some(1), // 1s; the Slow executor sleeps 60s
+            }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::GATEWAY_TIMEOUT);
+    }
+
+    #[tokio::test]
+    async fn execute_zero_timeout_is_400() {
+        let state = state_with_agent("r", MockExecutor::Succeeds("ok".to_string()));
+        let (status, _) = execute_agent(
+            State(state),
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+                timeout_seconds: Some(0),
+            }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn stream_times_out_with_terminal_error_event() {
+        let registry = AgentRegistry::new();
+        let streamer: Arc<dyn StreamingExecutorPort> = Arc::new(StallStreamer);
+        registry.insert_with_streaming(
+            "r",
+            test_agent("r"),
+            Arc::new(MockExecutor::Succeeds("x".to_string())),
+            Some(streamer),
+        );
+        let state = AgentApiState::new(Arc::new(registry));
+
+        let response = execute_agent_stream(
+            State(state),
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+                timeout_seconds: Some(1),
+            }),
+        )
+        .await;
+
+        let body = read_body(response).await;
+        assert!(
+            body.contains("partial"),
+            "should emit the partial chunk: {body}"
+        );
+        assert!(
+            body.contains("event: error") && body.contains("timed out"),
+            "should emit a terminal timeout error event: {body}"
+        );
     }
 
     #[test]
@@ -639,6 +835,7 @@ mod tests {
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
+                timeout_seconds: None,
             }),
         )
         .await;
@@ -659,6 +856,7 @@ mod tests {
             Path("missing".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
+                timeout_seconds: None,
             }),
         )
         .await;
@@ -675,6 +873,7 @@ mod tests {
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
+                timeout_seconds: None,
             }),
         )
         .await;
@@ -749,6 +948,7 @@ mod tests {
             system_prompt: "You research topics.".to_string(),
             temperature: None,
             stop_words: vec![],
+            timeout_seconds: None,
         }
     }
 

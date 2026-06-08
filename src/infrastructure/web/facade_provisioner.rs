@@ -57,6 +57,9 @@ fn spec_to_definition(spec: &AgentSpec) -> AgentDefinition {
         temperature: spec.temperature,
         max_loops: None,
         stop_words: spec.stop_words.clone(),
+        // The per-agent timeout is applied by the web layer (registry entry), not the
+        // build path, so it is not mapped onto the definition here.
+        timeout_seconds: None,
     }
 }
 
@@ -99,6 +102,7 @@ mod tests {
             system_prompt: "You research topics.".to_string(),
             temperature: Some(0.5),
             stop_words: vec!["STOP".to_string()],
+            timeout_seconds: None,
         }
     }
 

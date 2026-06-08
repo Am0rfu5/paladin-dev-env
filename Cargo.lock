@@ -3310,6 +3310,7 @@ dependencies = [
 name = "paladin-web"
 version = "0.5.1"
 dependencies = [
+ "async-stream",
  "async-trait",
  "axum 0.8.9",
  "chrono",
@@ -3324,7 +3325,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
- "tokio-stream",
  "tower 0.5.3",
  "uuid",
 ]

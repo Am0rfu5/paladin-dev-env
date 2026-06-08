@@ -277,6 +277,7 @@ mod tests {
             vision: Some(crate::config::VisionConfig::default()),
             scheduler: Some(crate::config::SchedulerConfig::default()),
             agents: Vec::new(),
+            timeouts: None,
         }
     }
 

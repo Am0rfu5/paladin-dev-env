@@ -36,6 +36,8 @@ pub struct AgentEntry {
     pub executor: Arc<dyn PaladinExecutorPort>,
     /// Streaming executor, when the agent's backend supports it.
     pub streamer: Option<Arc<dyn StreamingExecutorPort>>,
+    /// Per-agent execution timeout override (seconds); `None` uses the server default.
+    pub timeout_secs: Option<u64>,
 }
 
 /// Declarative description of an agent to provision at runtime.
@@ -64,6 +66,9 @@ pub struct AgentSpec {
     /// Optional stop words that terminate execution.
     #[serde(default)]
     pub stop_words: Vec<String>,
+    /// Optional per-agent execution timeout (seconds); `None` uses the server default.
+    #[serde(default)]
+    pub timeout_seconds: Option<u64>,
 }
 
 /// Error returned when an [`AgentProvisioner`] cannot turn a spec into an agent.
@@ -146,6 +151,7 @@ impl AgentRegistry {
                         paladin,
                         executor,
                         streamer: None,
+                        timeout_secs: None,
                     },
                 )
             })
@@ -205,19 +211,27 @@ impl AgentRegistry {
         executor: Arc<dyn PaladinExecutorPort>,
         streamer: Option<Arc<dyn StreamingExecutorPort>>,
     ) -> bool {
-        let id = id.into();
-        let mut guard = self.agents.write().unwrap_or_else(|e| e.into_inner());
-        if guard.contains_key(&id) {
-            return false;
-        }
-        guard.insert(
+        self.insert_entry(
             id,
             AgentEntry {
                 paladin,
                 executor,
                 streamer,
+                timeout_secs: None,
             },
-        );
+        )
+    }
+
+    /// Register a fully-formed [`AgentEntry`] (including any per-agent timeout).
+    ///
+    /// Same non-overwriting semantics as [`insert`](Self::insert).
+    pub fn insert_entry(&self, id: impl Into<String>, entry: AgentEntry) -> bool {
+        let id = id.into();
+        let mut guard = self.agents.write().unwrap_or_else(|e| e.into_inner());
+        if guard.contains_key(&id) {
+            return false;
+        }
+        guard.insert(id, entry);
         true
     }
 
