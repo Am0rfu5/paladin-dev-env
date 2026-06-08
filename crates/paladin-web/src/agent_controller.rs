@@ -17,10 +17,17 @@
 
 use std::sync::Arc;
 
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 use paladin_core::platform::container::execution_result::{PaladinResult, StopReason};
 use paladin_core::platform::container::paladin::Paladin;
+use paladin_core::platform::container::paladin_error::PaladinError;
 
 use crate::agent_registry::{AgentProvisioner, AgentRegistry};
 
@@ -156,9 +163,200 @@ fn prompt_preview(system_prompt: &str) -> String {
     format!("{truncated}…")
 }
 
+// --- Response helpers (interim) ---------------------------------------------
+//
+// These mirror `delivery_controller`'s helpers and are kept local on purpose:
+// Milestone 12, Epic 4 introduces a unified error model and these become a single
+// swap point.
+
+/// JSON response body type used by every agent handler.
+pub(crate) type JsonValue = Json<serde_json::Value>;
+
+/// Serialize a successful payload to a JSON body, falling back to an error body if
+/// (very unusually) serialization fails.
+pub(crate) fn ok_body<T: Serialize>(value: &T) -> JsonValue {
+    match serde_json::to_value(value) {
+        Ok(v) => Json(v),
+        Err(e) => Json(json!({ "error": e.to_string() })),
+    }
+}
+
+/// Build an `{ "error": "<message>" }` JSON body.
+pub(crate) fn error_body(message: impl std::fmt::Display) -> JsonValue {
+    Json(json!({ "error": message.to_string() }))
+}
+
+/// Map a [`PaladinError`] from agent execution to an HTTP response.
+///
+/// Execution failures are upstream/LLM/tool failures, so they surface as
+/// `502 Bad Gateway` (not `500`), with the error message in the standard body.
+pub(crate) fn execution_error_response(error: &PaladinError) -> (StatusCode, JsonValue) {
+    (StatusCode::BAD_GATEWAY, error_body(error))
+}
+
+// --- Handlers ---------------------------------------------------------------
+
+/// `POST /agents/{id}/execute` — look the agent up by id and run it.
+///
+/// Returns:
+/// - `200 OK` with [`ExecuteResponse`] on success;
+/// - `404 Not Found` if no agent is registered under `id`;
+/// - `502 Bad Gateway` with `{ "error": ... }` if execution fails;
+/// - `400 Bad Request` (via the `Json` extractor) if the body is missing/invalid.
+pub async fn execute_agent(
+    State(state): State<AgentApiState>,
+    Path(id): Path<String>,
+    Json(request): Json<ExecuteRequest>,
+) -> (StatusCode, JsonValue) {
+    let Some((paladin, executor)) = state.registry.get(&id) else {
+        return (
+            StatusCode::NOT_FOUND,
+            error_body(format!("unknown agent '{id}'")),
+        );
+    };
+
+    match executor.execute(paladin.as_ref(), &request.input).await {
+        Ok(result) => (StatusCode::OK, ok_body(&ExecuteResponse::from(result))),
+        Err(error) => execution_error_response(&error),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use async_trait::async_trait;
+    use axum::body::Body;
+    use axum::http::Request;
+    use axum::routing::post;
+    use paladin_core::platform::container::paladin::PaladinData;
+    use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
+    use tower::ServiceExt; // for `Router::oneshot`
+
+    /// Configurable in-test executor: succeeds with a fixed output, or fails.
+    enum MockExecutor {
+        Succeeds(String),
+        Fails(String),
+    }
+
+    #[async_trait]
+    impl PaladinExecutorPort for MockExecutor {
+        async fn execute(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<PaladinResult, PaladinError> {
+            match self {
+                MockExecutor::Succeeds(output) => Ok(PaladinResult::new(
+                    output.clone(),
+                    5,
+                    10,
+                    1,
+                    StopReason::Completed,
+                )),
+                MockExecutor::Fails(message) => Err(PaladinError::ExecutionError(message.clone())),
+            }
+        }
+    }
+
+    fn test_agent(name: &str) -> Arc<Paladin> {
+        let data = PaladinData {
+            system_prompt: "You are a test agent.".to_string(),
+            name: name.to_string(),
+            model: "gpt-4".to_string(),
+            ..Default::default()
+        };
+        Arc::new(Paladin::new(data, Some(name.to_string())))
+    }
+
+    /// State holding a single agent `id` backed by `executor`.
+    fn state_with_agent(id: &str, executor: MockExecutor) -> AgentApiState {
+        let registry = AgentRegistry::new();
+        registry.insert(id, test_agent(id), Arc::new(executor));
+        AgentApiState::new(Arc::new(registry))
+    }
+
+    #[test]
+    fn error_body_renders_error_envelope() {
+        let Json(value) = error_body("boom");
+        assert_eq!(value, json!({ "error": "boom" }));
+    }
+
+    #[tokio::test]
+    async fn execute_success_returns_200_with_output_and_metadata() {
+        let state = state_with_agent("r", MockExecutor::Succeeds("done".to_string()));
+        let (status, Json(body)) = execute_agent(
+            State(state),
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+            }),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["output"], "done");
+        assert_eq!(body["token_count"], 5);
+        assert_eq!(body["execution_time_ms"], 10);
+        assert_eq!(body["loop_count"], 1);
+        assert_eq!(body["stop_reason"], "completed");
+    }
+
+    #[tokio::test]
+    async fn execute_unknown_id_returns_404() {
+        let state = state_with_agent("r", MockExecutor::Succeeds("done".to_string()));
+        let (status, Json(body)) = execute_agent(
+            State(state),
+            Path("missing".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+            }),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(body.get("error").is_some(), "expected an error body");
+    }
+
+    #[tokio::test]
+    async fn execute_executor_error_returns_502() {
+        let state = state_with_agent("r", MockExecutor::Fails("upstream down".to_string()));
+        let (status, Json(body)) = execute_agent(
+            State(state),
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+            }),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_GATEWAY);
+        assert_eq!(
+            body.get("error").and_then(|v| v.as_str()),
+            Some("Execution error: upstream down")
+        );
+    }
+
+    #[tokio::test]
+    async fn execute_invalid_body_returns_400_through_router() {
+        let state = state_with_agent("r", MockExecutor::Succeeds("done".to_string()));
+        let app = axum::Router::new()
+            .route("/agents/{id}/execute", post(execute_agent))
+            .with_state(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/agents/r/execute")
+                    .header("content-type", "application/json")
+                    .body(Body::from("{ not valid json "))
+                    .expect("request builds"),
+            )
+            .await
+            .expect("router responds");
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
 
     #[test]
     fn execute_response_from_paladin_result_maps_fields_and_label() {

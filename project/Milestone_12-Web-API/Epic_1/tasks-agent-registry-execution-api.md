@@ -51,11 +51,11 @@
   - [x] 2.3 Define `AgentApiState { registry: Arc<AgentRegistry>, provisioner: Option<Arc<dyn AgentProvisioner>> }` (`#[derive(Clone)]`, with `new`/`with_provisioner`).
   - [~] 2.4 **Error-body helper deferred to 3.0.** Implementing `ok_body`/`error_body`/`execution_error_response` here would be dead code until a handler consumes them, which fails `clippy -D warnings`. Moved to task 3.0 (first consumer = the execute handler), with the `{ "error": ... }` render test alongside. 4 DTO/summary unit tests added in 2.0 instead.
 
-- [ ] 3.0 Implement the execution endpoint `POST /agents/{id}/execute`
-  - [ ] 3.0a **(Moved from 2.4)** Implement the interim error helpers (`JsonValue` alias, `ok_body`, `error_body`, `execution_error_response` → `502`) mirroring `delivery_controller.rs`, centralized so Epic 4 can swap them in one place. Add the `{ "error": "<message>" }` render test. (These were deferred from 2.0 to avoid dead-code under `-D warnings`.)
-  - [ ] 3.1 **(Test first)** Add a reusable mock `PaladinExecutorPort` (configurable to return `Ok(PaladinResult)` or `Err(PaladinError)`). Write `oneshot` handler tests: success → `200` + `ExecuteResponse` (asserts `output` and metadata fields), unknown id → `404`, missing/invalid body → `400`, executor `Err` → `502`. Tests fail (Red).
-  - [ ] 3.2 Implement `execute_agent(State, Path(id), Json(ExecuteRequest))`: look up via `registry.get(id)` → `404`; call `executor.execute(&paladin, &input)`; map `Ok` → `200` `ExecuteResponse`, `Err` → `502` via the helper. No `unwrap`/`expect`/`panic!`. Make tests pass (Green).
-  - [ ] 3.3 Rustdoc the handler and DTOs; refactor.
+- [x] 3.0 Implement the execution endpoint `POST /agents/{id}/execute`
+  - [x] 3.0a **(Moved from 2.4)** Implemented the interim error helpers (`JsonValue` alias, `ok_body`, `error_body`, `execution_error_response` → `502`) mirroring `delivery_controller.rs`, centralized so Epic 4 can swap them in one place. Added the `{ "error": "<message>" }` render test.
+  - [x] 3.1 **(Test first)** Added a reusable mock `PaladinExecutorPort` (`MockExecutor::{Succeeds,Fails}`). `oneshot`/direct handler tests: success → `200` + `ExecuteResponse` (asserts output + all metadata fields), unknown id → `404`, executor `Err` → `502` (asserts message), invalid body → `400` (via router `oneshot`).
+  - [x] 3.2 Implemented `execute_agent(State, Path(id), Json(ExecuteRequest))`: `registry.get(id)` → `404`; `executor.execute(paladin.as_ref(), &input)`; `Ok` → `200` `ExecuteResponse`, `Err` → `502` via `execution_error_response`. No `unwrap`/`expect`/`panic!`.
+  - [x] 3.3 Rustdoc on handler + helpers; `fmt`, `clippy -D warnings` (plain + `--all-targets`), tests all green (49 + 5).
 
 - [ ] 4.0 Implement the discovery endpoints `GET /agents` and `GET /agents/{id}`
   - [ ] 4.1 **(Test first)** `oneshot` tests: `GET /agents` returns `200` with an array of summaries (order-independent assertion); `GET /agents/{id}` returns `200` for a known id and `404` for unknown; assert **no secrets / no raw system prompt** appear in the body. Red.
