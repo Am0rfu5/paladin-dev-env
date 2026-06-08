@@ -18,6 +18,8 @@ pub mod app;
 pub mod auth_middleware;
 /// Content-delivery controller handlers (axum).
 pub mod delivery_controller;
+/// Unified API error model (structured JSON error envelope).
+pub mod error;
 /// In-memory async job store for fire-and-poll execution.
 pub mod job_store;
 /// Execution timeout policy and resolution.
@@ -32,5 +34,6 @@ pub use agent_controller::{
 pub use agent_registry::{
     AgentEntry, AgentProvisioner, AgentRegistry, AgentSpec, ProvisionError, ProvisionedAgent,
 };
+pub use error::ApiError;
 pub use job_store::{JobRecord, JobStatus, JobStore};
 pub use timeout::TimeoutPolicy;

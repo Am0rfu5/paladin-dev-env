@@ -44,15 +44,15 @@
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Update `main` (Epics 1–3 merged) and create/checkout `feature/m12-epic4-api-cross-cutting-concerns` from it.
-  - [ ] 0.2 Confirm a clean baseline: `cargo build --features web-server` and `cargo test --features web-server` pass before any changes.
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Updated `main` (Epics 1–3 merged) and created `feature/m12-epic4-api-cross-cutting-concerns`; Epic 4 PRD/tasks committed.
+  - [x] 0.2 Clean baseline confirmed: `cargo build --features web-server` OK; `paladin-web` 83 + 5 tests pass.
 
-- [ ] 1.0 Add the unified error model (`ApiError`) in `paladin-web`
-  - [ ] 1.1 Create `crates/paladin-web/src/error.rs`; declare `pub mod error;` in `lib.rs`.
-  - [ ] 1.2 **(Test first)** Unit tests: `ApiError` renders `{ "error": { "code", "message", "details" } }` with the right status; each constructor sets the expected `code`/status; `details` omitted when `None`.
-  - [ ] 1.3 Define `ApiError { status: StatusCode, code: &'static str, message: String, details: Option<serde_json::Value> }` (or equivalent) and `impl IntoResponse`. Add constructors: `not_found`, `bad_request`/`invalid`, `conflict`, `unprocessable`, `bad_gateway`, `gateway_timeout`, `not_implemented`, `internal` — each with a stable `code`. Rustdoc all public items.
-  - [ ] 1.4 Re-export `ApiError` from `lib.rs`; `cargo build -p paladin-web` + clippy clean.
+- [x] 1.0 Add the unified error model (`ApiError`) in `paladin-web`
+  - [x] 1.1 Created `crates/paladin-web/src/error.rs`; declared `pub mod error;` in `lib.rs`.
+  - [x] 1.2 **(Test first)** 3 unit tests: nested envelope with `details: null` when absent; `with_details` rendered; every constructor maps to the expected status + `code`. (Chose `details: null` over omission — matches the PRD example and gives clients a stable key.)
+  - [x] 1.3 Defined `ApiError { status, code, message, details }` + `IntoResponse` + `to_body()` (for SSE reuse). Constructors: `bad_request`/`not_found`/`conflict`/`unprocessable`/`payload_too_large`/`too_many_requests`/`not_implemented`/`bad_gateway`/`gateway_timeout`/`internal`. Rustdoc complete.
+  - [x] 1.4 Re-exported `ApiError` from `lib.rs`; build + clippy + fmt clean; 3 tests pass.
 
 - [ ] 2.0 Adopt `ApiError` across all controllers (agent, user, delivery) + SSE error event
   - [ ] 2.1 **(Test first)** Update agent-controller tests to assert the nested envelope (`body["error"]["message"]` / `["code"]`) for `404`/`400`/`502`/`409`/`422`/`501`/`504` paths.
