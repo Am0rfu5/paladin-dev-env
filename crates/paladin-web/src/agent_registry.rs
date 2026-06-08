@@ -317,4 +317,51 @@ mod tests {
             "removing a missing agent returns false"
         );
     }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn concurrent_reads_and_mutations_do_not_deadlock_or_panic() {
+        // Seed a set of resident agents that readers will keep resolving.
+        let registry = Arc::new(AgentRegistry::from_agents((0..10).map(|i| {
+            (
+                format!("seed-{i}"),
+                test_agent(&format!("Seed{i}"), "gpt-4"),
+                stub_executor(),
+            )
+        })));
+
+        let mut handles = Vec::new();
+
+        // Readers: hammer get/list/contains while mutations happen concurrently.
+        for _ in 0..8 {
+            let registry = Arc::clone(&registry);
+            handles.push(tokio::spawn(async move {
+                for _ in 0..500 {
+                    // Seed agents are never removed, so this must always resolve.
+                    assert!(registry.get("seed-0").is_some());
+                    let _ = registry.list();
+                    let _ = registry.contains("seed-9");
+                }
+            }));
+        }
+
+        // Writers: churn a disjoint id space (insert then remove) so seeds are stable.
+        for w in 0..4 {
+            let registry = Arc::clone(&registry);
+            handles.push(tokio::spawn(async move {
+                for i in 0..250 {
+                    let id = format!("tmp-{w}-{i}");
+                    registry.insert(&id, test_agent("Tmp", "gpt-4"), stub_executor());
+                    assert!(registry.remove(&id));
+                }
+            }));
+        }
+
+        for handle in handles {
+            handle.await.expect("task should not panic");
+        }
+
+        // After all churn, exactly the 10 seeds remain.
+        assert_eq!(registry.len(), 10);
+        assert!(registry.get("seed-0").is_some());
+    }
 }

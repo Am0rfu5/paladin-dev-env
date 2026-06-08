@@ -75,10 +75,10 @@
   - [x] 6.3 Wired into `app.rs` via a **sibling** `create_app_router_with_agents(user_service, auth_port, deliverer, agent_state)` = `create_app_router(..).merge(agent_router(..))`. Keeps the existing `create_app_router` signature (and facade re-export) unchanged — non-breaking.
   - [x] 6.4 Updated `lib.rs`: documented the two new modules and added root re-exports (`AgentApiState`, `AgentSummary`, `ExecuteRequest`, `ExecuteResponse`, `agent_router`, `AgentRegistry`, `AgentProvisioner`, `AgentSpec`, `ProvisionError`). `#![warn(missing_docs)]` passes. Updated the stale module doc.
 
-- [ ] 7.0 Add concurrency tests and verify the architectural/dependency guardrails
-  - [ ] 7.1 **(Test first)** Concurrency test: spawn concurrent `tokio` tasks doing `execute`/`list` reads while another registers and removes agents; assert no deadlock/panic and consistent results (use `tokio::test(flavor = "multi_thread")`).
-  - [ ] 7.2 Verify `cargo tree -p paladin-web` shows **no `paladin-ai` facade** dependency and no new web framework; verify `Cargo.toml` is unchanged except any justified additions.
-  - [ ] 7.3 Run `make deny` to confirm the dependency guardrails still pass.
+- [x] 7.0 Add concurrency tests and verify the architectural/dependency guardrails
+  - [x] 7.1 **(Test first)** Added `concurrent_reads_and_mutations_do_not_deadlock_or_panic` (`multi_thread`, 4 workers): 8 reader tasks hammer `get`/`list`/`contains` while 4 writer tasks churn a disjoint id space (insert+remove); asserts no panic/deadlock and that exactly the 10 seed agents remain.
+  - [x] 7.2 Verified `cargo tree -p paladin-web -e normal` shows **no `paladin-ai` facade** (only `paladin-ai-core`) and **no actix**; `Cargo.toml` unchanged (no new deps added — all needs met by existing deps).
+  - [x] 7.3 `make deny` → advisories ok, bans ok, licenses ok, sources ok.
 
 - [ ] 8.0 Finalize: docs, API-surface baseline, CHANGELOG, and quality gates
   - [ ] 8.1 Run the full gate: `cargo test` (workspace), `cargo fmt --check`, `cargo clippy -- -D warnings`. Address all findings.
