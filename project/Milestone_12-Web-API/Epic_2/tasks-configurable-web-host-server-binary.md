@@ -49,13 +49,13 @@
   - [x] 1.3 Added `#[serde(default)] pub agents: Vec<AgentDefinition>` to `Settings` (empty when `agents:` absent — non-server configs unaffected) and re-exported `AgentDefinition` from `config::mod`. Existing config loading unchanged.
   - [x] 1.4 Updated the `Settings` `Default` impl and the `user_config.rs` test fixture (`agents: Vec::new()`); workspace config tests pass (48); rustdoc on the new field. `fmt`/`clippy -D warnings` clean.
 
-- [ ] 2.0 Build the registry-from-config builder (facade `agent_host`)
-  - [ ] 2.1 Create `src/infrastructure/web/` (`mod.rs` + `agent_host.rs`) and wire the module into the facade lib (behind `#[cfg(feature = "web-server")]`).
-  - [ ] 2.2 **(Test first)** Unit tests for a per-agent build helper `build_agent(def, provider_factory, breaker) -> Result<(Paladin, Arc<dyn PaladinExecutorPort>), HostBuildError>`: builds a `Paladin` with the def's prompt/model/temperature/max_loops; resolves the provider (agent `provider` → `llm.default_provider`); unknown provider → descriptive error. Use a mock/test provider factory or `MockLlmAdapter`.
-  - [ ] 2.3 Implement `build_agent` using `PaladinBuilder` + the `paladin-llm` provider factory + `PaladinExecutionService::new(llm, breaker, None, None)`. Define `HostBuildError` (`thiserror`).
-  - [ ] 2.4 **(Test first)** Unit tests for `build_agent_registry(settings, ...) -> Result<AgentRegistry, HostBuildError>`: builds N agents from config; **duplicate id → error** (names the id); provider failure → error (names the agent id).
-  - [ ] 2.5 Implement `build_agent_registry`: iterate `settings.agents`, call `build_agent`, insert into a fresh `AgentRegistry`, rejecting duplicates. Make tests pass.
-  - [ ] 2.6 Rustdoc all public items; refactor.
+- [x] 2.0 Build the registry-from-config builder (facade `agent_host`)
+  - [x] 2.1 Added `src/infrastructure/web/agent_host.rs`, declared `pub mod agent_host;` in `src/infrastructure/web/mod.rs` (behind `#[cfg(feature = "web-server")]`).
+  - [x] 2.2 **(Test first)** Split for hermetic testing: `resolve_provider` (precedence test), `build_agent_with_llm` (builds a `Paladin` with prompt/model/temperature/max_loops via `MockLlmAdapter` — no keys), and `build_agent` (provider resolution; unknown-provider → `HostBuildError::Provider`).
+  - [x] 2.3 Implemented `build_agent_with_llm`/`build_agent` using `PaladinBuilder` + the `paladin-llm` `LlmProviderFactory` + `PaladinExecutionService::new(llm, breaker, None, None)`. `HostBuildError` (`thiserror`: `Provider`/`Build`/`DuplicateId`).
+  - [x] 2.4 **(Test first)** `register_built` duplicate-id test (`MockLlmAdapter`, hermetic) → `HostBuildError::DuplicateId`; `build_agent_registry` empty-config test. (Full multi-agent config-load needs real provider keys, so it is covered via component tests + the Epic-6/Task-6 smoke path rather than a key-dependent unit test.)
+  - [x] 2.5 Implemented `build_agent_registry(&Settings)`: resolves the default provider (`settings.llm.default_provider` → factory default → `"openai"`), iterates `settings.agents`, builds each via `build_agent`, inserts via `register_built` (duplicate → error).
+  - [x] 2.6 Rustdoc on all public items; `fmt`/`clippy --all-targets -D warnings` clean; 5 tests pass.
 
 - [ ] 3.0 Implement the concrete `AgentProvisioner` (facade) for runtime registration
   - [ ] 3.1 Create `src/infrastructure/web/facade_provisioner.rs` with a `FacadeProvisioner` holding what `build_agent` needs (provider factory handle + shared `Arc<CircuitBreaker>` + default provider).
