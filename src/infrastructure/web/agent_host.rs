@@ -19,6 +19,7 @@ use paladin_core::platform::container::paladin_error::PaladinError;
 use paladin_llm::provider_factory::{LlmProviderFactory, ProviderFactoryError};
 use paladin_ports::output::llm_port::LlmPort;
 use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
+use paladin_ports::output::streaming_executor_port::StreamingExecutorPort;
 use paladin_web::AgentRegistry;
 
 use crate::application::services::paladin::paladin_builder::PaladinBuilder;
@@ -26,6 +27,13 @@ use crate::application::services::paladin::paladin_execution_service::PaladinExe
 use crate::config::agents::AgentDefinition;
 use crate::config::settings::Settings;
 use crate::infrastructure::resilience::circuit_breaker::CircuitBreaker;
+
+/// A built agent: the agent plus its buffered and (optional) streaming executors.
+pub(crate) type BuiltAgent = (
+    Paladin,
+    Arc<dyn PaladinExecutorPort>,
+    Option<Arc<dyn StreamingExecutorPort>>,
+);
 
 /// Errors raised while building agents from configuration.
 #[derive(Debug, thiserror::Error)]
@@ -108,14 +116,18 @@ pub(crate) async fn build_agent_with_llm(
     def: &AgentDefinition,
     llm: Arc<dyn LlmPort>,
     breaker: Arc<CircuitBreaker>,
-) -> Result<(Paladin, Arc<dyn PaladinExecutorPort>), HostBuildError> {
-    // The executor and the builder share the same LLM port.
-    let executor: Arc<dyn PaladinExecutorPort> = Arc::new(PaladinExecutionService::new(
+) -> Result<BuiltAgent, HostBuildError> {
+    // One execution service backs both the buffered and streaming handles
+    // (`PaladinExecutionService` implements both `PaladinExecutorPort` and
+    // `StreamingExecutorPort`).
+    let service = Arc::new(PaladinExecutionService::new(
         Arc::clone(&llm),
         breaker,
         None,
         None,
     ));
+    let executor: Arc<dyn PaladinExecutorPort> = service.clone();
+    let streamer: Arc<dyn StreamingExecutorPort> = service;
 
     let mut builder = PaladinBuilder::new(llm)
         .name(&def.id)
@@ -139,7 +151,7 @@ pub(crate) async fn build_agent_with_llm(
             source,
         })?;
 
-    Ok((paladin, executor))
+    Ok((paladin, executor, Some(streamer)))
 }
 
 /// Build a `(Paladin, executor)` pair from a definition, resolving the provider via the
@@ -149,7 +161,7 @@ pub(crate) async fn build_agent(
     factory: &LlmProviderFactory,
     default_provider: &str,
     breaker: Arc<CircuitBreaker>,
-) -> Result<(Paladin, Arc<dyn PaladinExecutorPort>), HostBuildError> {
+) -> Result<BuiltAgent, HostBuildError> {
     let provider = resolve_provider(def, default_provider);
     let llm = factory
         .create(&provider)
@@ -167,8 +179,9 @@ pub(crate) fn register_built(
     id: &str,
     paladin: Paladin,
     executor: Arc<dyn PaladinExecutorPort>,
+    streamer: Option<Arc<dyn StreamingExecutorPort>>,
 ) -> Result<(), HostBuildError> {
-    if registry.insert(id.to_string(), Arc::new(paladin), executor) {
+    if registry.insert_with_streaming(id.to_string(), Arc::new(paladin), executor, streamer) {
         Ok(())
     } else {
         Err(HostBuildError::DuplicateId(id.to_string()))
@@ -253,9 +266,9 @@ pub async fn build_agent_registry(settings: &Settings) -> Result<AgentRegistry, 
 
     let registry = AgentRegistry::new();
     for def in &settings.agents {
-        let (paladin, executor) =
+        let (paladin, executor, streamer) =
             build_agent(def, &factory, &default_provider, Arc::clone(&breaker)).await?;
-        register_built(&registry, &def.id, paladin, executor)?;
+        register_built(&registry, &def.id, paladin, executor, streamer)?;
     }
     Ok(registry)
 }
@@ -298,13 +311,14 @@ mod tests {
         def.temperature = Some(0.5);
         def.max_loops = Some(2);
 
-        let (paladin, _executor) =
+        let (paladin, _executor, streamer) =
             build_agent_with_llm(&def, mock_llm(), default_circuit_breaker())
                 .await
                 .expect("builds");
 
         assert_eq!(paladin.node.name, "researcher");
         assert_eq!(paladin.node.model, "gpt-4o");
+        assert!(streamer.is_some(), "execution service is streaming-capable");
     }
 
     #[tokio::test]
@@ -326,15 +340,17 @@ mod tests {
     async fn register_built_rejects_duplicate_id() {
         let registry = AgentRegistry::new();
 
-        let (p1, e1) = build_agent_with_llm(&base("dup"), mock_llm(), default_circuit_breaker())
-            .await
-            .unwrap();
-        register_built(&registry, "dup", p1, e1).expect("first insert ok");
+        let (p1, e1, s1) =
+            build_agent_with_llm(&base("dup"), mock_llm(), default_circuit_breaker())
+                .await
+                .unwrap();
+        register_built(&registry, "dup", p1, e1, s1).expect("first insert ok");
 
-        let (p2, e2) = build_agent_with_llm(&base("dup"), mock_llm(), default_circuit_breaker())
-            .await
-            .unwrap();
-        let err = register_built(&registry, "dup", p2, e2).expect_err("duplicate must error");
+        let (p2, e2, s2) =
+            build_agent_with_llm(&base("dup"), mock_llm(), default_circuit_breaker())
+                .await
+                .unwrap();
+        let err = register_built(&registry, "dup", p2, e2, s2).expect_err("duplicate must error");
         assert!(matches!(err, HostBuildError::DuplicateId(_)), "got {err:?}");
     }
 

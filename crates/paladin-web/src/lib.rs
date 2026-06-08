@@ -25,4 +25,6 @@ pub mod user_controller;
 pub use agent_controller::{
     AgentApiState, AgentSummary, ExecuteRequest, ExecuteResponse, agent_router,
 };
-pub use agent_registry::{AgentProvisioner, AgentRegistry, AgentSpec, ProvisionError};
+pub use agent_registry::{
+    AgentProvisioner, AgentRegistry, AgentSpec, ProvisionError, ProvisionedAgent,
+};

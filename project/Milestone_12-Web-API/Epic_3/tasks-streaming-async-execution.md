@@ -55,12 +55,12 @@
   - [x] 2.3 An unsupported provider errors **up front** (`generate_stream(...).await?` before spawning), never hangs; the web layer's fallback decision (Open Q2) is handled in task 4.
   - [x] 2.4 Rustdoc; `fmt`/`clippy -D warnings` clean; the streaming test + all 10 execution-service tests pass (buffered `execute` unchanged).
 
-- [ ] 3.0 Thread an optional streaming handle through the registry and Epic 2 wiring
-  - [ ] 3.1 **(Test first)** Update `agent_registry` tests: register an agent with and without a streaming handle; `get` returns the optional handle; existing buffered tests stay green.
-  - [ ] 3.2 Replace the `AgentEntry` tuple with a small struct carrying `paladin`, `executor: Arc<dyn PaladinExecutorPort>`, `streamer: Option<Arc<dyn StreamingExecutorPort>>` (and, reserved for task 5, an optional per-agent `timeout`). Keep the 3-arg `insert` working (defaults `streamer`/`timeout` to `None`) and add an `insert_streaming`/builder variant; update `get`/`list`/`from_agents`.
-  - [ ] 3.3 Wire `infrastructure::web::agent_host::build_agent`: construct one `Arc<PaladinExecutionService>` and register it as **both** `Arc<dyn PaladinExecutorPort>` and `Arc<dyn StreamingExecutorPort>` (clone the `Arc`), so config-loaded agents stream.
-  - [ ] 3.4 Wire `FacadeProvisioner` the same way so runtime-registered (`POST /agents`) agents stream.
-  - [ ] 3.5 Rustdoc; gates; verify Epic 1/2 tests + the boot smoke test still pass.
+- [x] 3.0 Thread an optional streaming handle through the registry and Epic 2 wiring
+  - [x] 3.1 **(Test first)** Added `insert_with_streaming_attaches_streamer` (with/without streamer); updated existing registry tests to the struct entry; all buffered tests stay green.
+  - [x] 3.2 Replaced the `AgentEntry` tuple with a struct `{ paladin, executor, streamer: Option<Arc<dyn StreamingExecutorPort>> }` (timeout slot reserved for task 5). Kept the 3-arg `insert` (delegates with `streamer = None`), added `insert_with_streaming`, and updated `get`/`list`/`from_agents`. Added a `ProvisionedAgent` return type for the provisioner and updated `AgentProvisioner::provision` + its re-export; updated the `execute`/`describe`/`register` handlers + `MockProvisioner`.
+  - [x] 3.3 `build_agent_with_llm` now constructs one `Arc<PaladinExecutionService>` and returns it as **both** `Arc<dyn PaladinExecutorPort>` and `Arc<dyn StreamingExecutorPort>` (`BuiltAgent` triple); `build_agent_registry` registers via `register_built`/`insert_with_streaming`, so config-loaded agents stream.
+  - [x] 3.4 `FacadeProvisioner::provision` returns `ProvisionedAgent { paladin, executor, streamer }` from the shared `build_agent` path, so runtime-registered agents stream too.
+  - [x] 3.5 Rustdoc updated; `fmt`/`clippy --all-targets -D warnings` clean; paladin-web (63+5), facade `infrastructure::web` (12), and the boot smoke test all pass.
 
 - [ ] 4.0 Add the SSE streaming endpoint `POST /agents/{id}/execute/stream`
   - [ ] 4.1 Add `tokio-stream` + `futures` to `crates/paladin-web/Cargo.toml` (adapt `PaladinStream` `mpsc::Receiver` → axum SSE `Stream`).

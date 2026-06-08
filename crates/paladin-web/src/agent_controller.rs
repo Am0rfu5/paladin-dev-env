@@ -209,14 +209,18 @@ pub async fn execute_agent(
     Path(id): Path<String>,
     Json(request): Json<ExecuteRequest>,
 ) -> (StatusCode, JsonValue) {
-    let Some((paladin, executor)) = state.registry.get(&id) else {
+    let Some(entry) = state.registry.get(&id) else {
         return (
             StatusCode::NOT_FOUND,
             error_body(format!("unknown agent '{id}'")),
         );
     };
 
-    match executor.execute(paladin.as_ref(), &request.input).await {
+    match entry
+        .executor
+        .execute(entry.paladin.as_ref(), &request.input)
+        .await
+    {
         Ok(result) => (StatusCode::OK, ok_body(&ExecuteResponse::from(result))),
         Err(error) => execution_error_response(&error),
     }
@@ -245,9 +249,9 @@ pub async fn describe_agent(
     Path(id): Path<String>,
 ) -> (StatusCode, JsonValue) {
     match state.registry.get(&id) {
-        Some((paladin, _executor)) => (
+        Some(entry) => (
             StatusCode::OK,
-            ok_body(&AgentSummary::from_agent(id, paladin.as_ref())),
+            ok_body(&AgentSummary::from_agent(id, entry.paladin.as_ref())),
         ),
         None => (
             StatusCode::NOT_FOUND,
@@ -285,13 +289,15 @@ pub async fn register_agent(
     }
 
     match provisioner.provision(&spec).await {
-        Ok((paladin, executor)) => {
-            let paladin = Arc::new(paladin);
+        Ok(provisioned) => {
+            let paladin = Arc::new(provisioned.paladin);
             // Re-check on insert closes the race between the `contains` check and here.
-            if !state
-                .registry
-                .insert(spec.id.clone(), Arc::clone(&paladin), executor)
-            {
+            if !state.registry.insert_with_streaming(
+                spec.id.clone(),
+                Arc::clone(&paladin),
+                provisioned.executor,
+                provisioned.streamer,
+            ) {
                 return (
                     StatusCode::CONFLICT,
                     error_body(format!("agent '{}' already exists", spec.id)),
@@ -488,7 +494,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
 
-    use crate::agent_registry::ProvisionError;
+    use crate::agent_registry::{ProvisionError, ProvisionedAgent};
 
     /// Configurable in-test provisioner.
     enum MockProvisioner {
@@ -498,10 +504,7 @@ mod tests {
 
     #[async_trait]
     impl AgentProvisioner for MockProvisioner {
-        async fn provision(
-            &self,
-            spec: &AgentSpec,
-        ) -> Result<(Paladin, Arc<dyn PaladinExecutorPort>), ProvisionError> {
+        async fn provision(&self, spec: &AgentSpec) -> Result<ProvisionedAgent, ProvisionError> {
             match self {
                 MockProvisioner::Succeeds => {
                     let data = PaladinData {
@@ -513,7 +516,11 @@ mod tests {
                     let paladin = Paladin::new(data, Some(spec.id.clone()));
                     let executor: Arc<dyn PaladinExecutorPort> =
                         Arc::new(MockExecutor::Succeeds("ok".to_string()));
-                    Ok((paladin, executor))
+                    Ok(ProvisionedAgent {
+                        paladin,
+                        executor,
+                        streamer: None,
+                    })
                 }
                 MockProvisioner::Fails(message) => Err(ProvisionError::Failed(message.clone())),
             }

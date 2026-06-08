@@ -9,10 +9,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use paladin_core::platform::container::paladin::Paladin;
 use paladin_llm::provider_factory::LlmProviderFactory;
-use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
-use paladin_web::{AgentProvisioner, AgentSpec, ProvisionError};
+use paladin_web::{AgentProvisioner, AgentSpec, ProvisionError, ProvisionedAgent};
 
 use crate::config::agents::AgentDefinition;
 use crate::config::settings::Settings;
@@ -64,12 +62,9 @@ fn spec_to_definition(spec: &AgentSpec) -> AgentDefinition {
 
 #[async_trait]
 impl AgentProvisioner for FacadeProvisioner {
-    async fn provision(
-        &self,
-        spec: &AgentSpec,
-    ) -> Result<(Paladin, Arc<dyn PaladinExecutorPort>), ProvisionError> {
+    async fn provision(&self, spec: &AgentSpec) -> Result<ProvisionedAgent, ProvisionError> {
         let def = spec_to_definition(spec);
-        build_agent(
+        let (paladin, executor, streamer) = build_agent(
             &def,
             &self.factory,
             &self.default_provider,
@@ -82,6 +77,12 @@ impl AgentProvisioner for FacadeProvisioner {
             HostBuildError::Build { .. } => ProvisionError::InvalidSpec(err.to_string()),
             // Provider/registration failures are environment/runtime failures.
             _ => ProvisionError::Failed(err.to_string()),
+        })?;
+
+        Ok(ProvisionedAgent {
+            paladin,
+            executor,
+            streamer,
         })
     }
 }
