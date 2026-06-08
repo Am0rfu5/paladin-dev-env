@@ -57,11 +57,11 @@
   - [x] 2.5 Implemented `build_agent_registry(&Settings)`: resolves the default provider (`settings.llm.default_provider` → factory default → `"openai"`), iterates `settings.agents`, builds each via `build_agent`, inserts via `register_built` (duplicate → error).
   - [x] 2.6 Rustdoc on all public items; `fmt`/`clippy --all-targets -D warnings` clean; 5 tests pass.
 
-- [ ] 3.0 Implement the concrete `AgentProvisioner` (facade) for runtime registration
-  - [ ] 3.1 Create `src/infrastructure/web/facade_provisioner.rs` with a `FacadeProvisioner` holding what `build_agent` needs (provider factory handle + shared `Arc<CircuitBreaker>` + default provider).
-  - [ ] 3.2 **(Test first)** Unit tests: `provision(&AgentSpec)` returns a `(Paladin, executor)` pair for a valid spec; an unknown provider / bad spec maps to `ProvisionError`. (Map `AgentSpec` → the same build path as `build_agent`.)
-  - [ ] 3.3 Implement `#[async_trait] impl AgentProvisioner for FacadeProvisioner`, translating `AgentSpec` into the build helper and mapping `HostBuildError` → `ProvisionError`. Green.
-  - [ ] 3.4 Rustdoc; refactor (ensure `build_agent` is the single shared build path for both config-load and runtime provisioning).
+- [x] 3.0 Implement the concrete `AgentProvisioner` (facade) for runtime registration
+  - [x] 3.1 Created `src/infrastructure/web/facade_provisioner.rs` with `FacadeProvisioner` (holds `LlmProviderFactory` + default provider + `Arc<CircuitBreaker>`); `new(..)` and `from_settings(&Settings)` constructors.
+  - [x] 3.2 **(Test first)** Unit tests: `spec_to_definition` mapping (id/model/system_prompt/temperature/stop_words carried; provider/max_loops default), and `provision` with an unknown provider → `ProvisionError` (hermetic, no keys). (Success path is covered by the shared `build_agent_with_llm` tests in 2.0 — it routes through the real factory here.)
+  - [x] 3.3 Implemented `#[async_trait] impl AgentProvisioner for FacadeProvisioner`: maps `AgentSpec` → `AgentDefinition` → `build_agent`, with `HostBuildError::Build → ProvisionError::InvalidSpec` and others → `ProvisionError::Failed`.
+  - [x] 3.4 Rustdoc; `build_agent` confirmed as the single shared build path (config-load and runtime provisioning); `fmt`/`clippy --all-targets -D warnings` clean; 2 tests pass.
 
 - [ ] 4.0 Add the `paladin-server` binary (load → build → serve → graceful shutdown)
   - [ ] 4.1 Add `[[bin]] name = "paladin-server"`, `path = "src/bin/paladin-server.rs"`, `required-features = ["web-server"]` to `Cargo.toml`.

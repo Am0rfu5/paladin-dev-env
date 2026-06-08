@@ -57,7 +57,7 @@ pub enum HostBuildError {
 }
 
 /// Default circuit-breaker settings shared across config-built agents.
-fn default_circuit_breaker() -> Arc<CircuitBreaker> {
+pub(crate) fn default_circuit_breaker() -> Arc<CircuitBreaker> {
     Arc::new(CircuitBreaker::new(5, 2, Duration::from_secs(30)))
 }
 
