@@ -40,14 +40,14 @@
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 `git fetch` + update `main` (now contains M12 Epics 1 & 2), then create and checkout `feature/m12-epic3-streaming-async-execution` from `main`.
-  - [ ] 0.2 Confirm a clean baseline: `cargo build --features web-server` and `cargo test --features web-server` pass before any changes.
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Updated `main` (now contains M12 Epics 1 & 2 — PRs #19, #21 merged) and created `feature/m12-epic3-streaming-async-execution` from it. Epic 3 PRD/tasks committed.
+  - [x] 0.2 Clean baseline confirmed: `cargo build --features web-server` OK; `infrastructure::web` tests (12) and the boot smoke test pass.
 
-- [ ] 1.0 Add the `StreamingExecutorPort` trait (`paladin-ports`)
-  - [ ] 1.1 Create `crates/paladin-ports/src/output/streaming_executor_port.rs`; declare `pub mod streaming_executor_port;` in `output/mod.rs`.
-  - [ ] 1.2 Define `#[async_trait] pub trait StreamingExecutorPort: Send + Sync { async fn execute_stream(&self, paladin: &Paladin, input: &str) -> Result<PaladinStream, PaladinError>; }`, reusing the existing `PaladinStream`/`PaladinStreamChunk`. Full rustdoc + a `no_run` doc-test. Does **not** touch `PaladinExecutorPort`.
-  - [ ] 1.3 `cargo build -p paladin-ports` + `clippy -D warnings` clean.
+- [x] 1.0 Add the `StreamingExecutorPort` trait (`paladin-ports`)
+  - [x] 1.1 Created `crates/paladin-ports/src/output/streaming_executor_port.rs`; declared `pub mod streaming_executor_port;` in `output/mod.rs`.
+  - [x] 1.2 Defined `#[async_trait] pub trait StreamingExecutorPort` with `execute_stream(&self, &Paladin, &str) -> Result<PaladinStream, PaladinError>`, reusing the existing `PaladinStream`/`PaladinStreamChunk`. Full rustdoc + a passing `no_run` doc-test. `PaladinExecutorPort` untouched.
+  - [x] 1.3 `cargo test -p paladin-ports --doc` passes; `clippy -D warnings` + `fmt` clean.
 
 - [ ] 2.0 Implement real `execute_stream` on `PaladinExecutionService` (facade)
   - [ ] 2.1 **(Test first)** Unit test with a multi-chunk mock `LlmPort` (`MultiStepMockLlmPort`/`MockLlmAdapter`): `execute_stream` yields chunks whose concatenated `text` equals the buffered output and ends with `is_final = true`.
