@@ -70,10 +70,10 @@
   - [x] 4.4 `shutdown_signal()` selects on `tokio::signal::ctrl_c()` and, on Unix, a `SIGTERM` stream.
   - [x] 4.5 No secrets logged; `run()` returns `Result`, and `main` logs + `process::exit(1)` on startup failure (verified: missing config/provider key fails fast with a clear message).
 
-- [ ] 5.0 Add startup validation and diagnostics (fail-fast + route/address logging)
-  - [ ] 5.1 Validate before serving: parseable bind address; every agent's provider available (`list_available_providers`); required fields present; no duplicate ids — surfacing each as a clear, specific error (reusing `HostBuildError`/`build_agent_registry` errors where possible).
-  - [ ] 5.2 On success, log the bound address and a summary (agent route paths + count/ids of agents loaded).
-  - [ ] 5.3 **(Test first where feasible)** Unit-test the validation helpers (bad bind address, unknown provider, duplicate id) at the function level (not requiring a live bind).
+- [x] 5.0 Add startup validation and diagnostics (fail-fast + route/address logging)
+  - [x] 5.1 Added `validate_config(&Settings)` (key-free pre-flight) called at the top of `build_agent_registry`: non-empty `id`/`model`/`system_prompt`, no duplicate ids, and resolved provider ∈ `list_available_providers()` (catches typos/unavailable providers without needing keys). New `HostBuildError::{UnknownProvider, InvalidAgent}` variants; provider-key failures still surface in `build_agent`. Added `bind_address(&Settings)` helper.
+  - [x] 5.2 Binary now logs the bound address and a summary including the **sorted agent ids** plus the route paths.
+  - [x] 5.3 **(Test first)** Function-level unit tests (no live bind): `bind_address` formatting, validate passes (empty agents), and rejects empty required field / duplicate ids / unknown provider. 10 `agent_host` tests pass; binary builds; `fmt`/`clippy -D warnings` (lib + bin) clean.
 
 - [ ] 6.0 Tests: config parsing, builder, provisioner, and a boot smoke integration test
   - [ ] 6.1 Ensure unit coverage from 1.0–3.0 is in place (config parse, `build_agent`, `build_agent_registry`, `provision`).

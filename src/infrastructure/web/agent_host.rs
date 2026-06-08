@@ -54,6 +54,26 @@ pub enum HostBuildError {
     /// Two agents in the configuration share an id.
     #[error("duplicate agent id '{0}' in configuration")]
     DuplicateId(String),
+
+    /// An agent names a provider that is not available in this build.
+    #[error("agent '{id}': unknown provider '{provider}' (available: {available:?})")]
+    UnknownProvider {
+        /// The offending agent id.
+        id: String,
+        /// The unavailable provider name.
+        provider: String,
+        /// Providers that are available in this build.
+        available: Vec<String>,
+    },
+
+    /// An agent definition is structurally invalid (e.g. an empty required field).
+    #[error("agent '{id}': {reason}")]
+    InvalidAgent {
+        /// The offending agent id (may be empty if that is the problem).
+        id: String,
+        /// Why the definition is invalid.
+        reason: String,
+    },
 }
 
 /// Default circuit-breaker settings shared across config-built agents.
@@ -155,15 +175,69 @@ pub(crate) fn register_built(
     }
 }
 
-/// Build a populated [`AgentRegistry`] from the `agents` section of `settings`.
+/// The TCP bind address derived from the `server` section (`host:port`).
+pub fn bind_address(settings: &Settings) -> String {
+    format!("{}:{}", settings.server.host, settings.server.port)
+}
+
+/// Validate the `agents` configuration *before* building anything.
 ///
-/// Each agent is constructed via [`build_agent`]; a duplicate id or an unresolvable
-/// provider aborts the build with a descriptive [`HostBuildError`] naming the agent.
+/// This is a fast, key-free pre-flight check so misconfiguration fails at startup with a
+/// specific message rather than mid-build. It verifies, for every agent: non-empty `id`,
+/// `model`, and `system_prompt`; no duplicate ids; and that the resolved provider is one
+/// of the providers available in this build. It does **not** verify API keys — those are
+/// checked when the provider is actually created in [`build_agent`].
 ///
 /// # Errors
 ///
-/// Returns [`HostBuildError`] on the first agent that fails to build, or on a duplicate id.
+/// Returns the first [`HostBuildError`] encountered.
+pub fn validate_config(settings: &Settings) -> Result<(), HostBuildError> {
+    let default_provider = default_provider_name(settings);
+    let available = LlmProviderFactory::list_available_providers();
+    let mut seen = std::collections::HashSet::new();
+
+    for def in &settings.agents {
+        if def.id.trim().is_empty() {
+            return Err(HostBuildError::InvalidAgent {
+                id: def.id.clone(),
+                reason: "id must not be empty".to_string(),
+            });
+        }
+        for (field, value) in [("model", &def.model), ("system_prompt", &def.system_prompt)] {
+            if value.trim().is_empty() {
+                return Err(HostBuildError::InvalidAgent {
+                    id: def.id.clone(),
+                    reason: format!("{field} must not be empty"),
+                });
+            }
+        }
+        if !seen.insert(def.id.clone()) {
+            return Err(HostBuildError::DuplicateId(def.id.clone()));
+        }
+        let provider = resolve_provider(def, &default_provider);
+        if !available.iter().any(|p| p == &provider) {
+            return Err(HostBuildError::UnknownProvider {
+                id: def.id.clone(),
+                provider,
+                available: available.clone(),
+            });
+        }
+    }
+    Ok(())
+}
+
+/// Build a populated [`AgentRegistry`] from the `agents` section of `settings`.
+///
+/// Runs [`validate_config`] first (fail-fast), then constructs each agent via
+/// [`build_agent`]. A validation failure, an unresolvable provider, or a build failure
+/// aborts with a descriptive [`HostBuildError`] naming the agent.
+///
+/// # Errors
+///
+/// Returns [`HostBuildError`] on the first problem encountered.
 pub async fn build_agent_registry(settings: &Settings) -> Result<AgentRegistry, HostBuildError> {
+    validate_config(settings)?;
+
     let factory = LlmProviderFactory::new();
     let default_provider = default_provider_name(settings);
     let breaker = default_circuit_breaker();
@@ -260,5 +334,54 @@ mod tests {
         let settings = Settings::default(); // agents is empty
         let registry = build_agent_registry(&settings).await.expect("builds");
         assert!(registry.is_empty());
+    }
+
+    fn settings_with(agents: Vec<AgentDefinition>) -> Settings {
+        Settings {
+            agents,
+            ..Settings::default()
+        }
+    }
+
+    #[test]
+    fn bind_address_uses_server_host_and_port() {
+        let mut settings = Settings::default();
+        settings.server.host = "0.0.0.0".to_string();
+        settings.server.port = 3000;
+        assert_eq!(bind_address(&settings), "0.0.0.0:3000");
+    }
+
+    #[test]
+    fn validate_passes_for_empty_agents() {
+        assert!(validate_config(&Settings::default()).is_ok());
+    }
+
+    #[test]
+    fn validate_rejects_empty_required_field() {
+        let mut def = base("ok");
+        def.system_prompt = "  ".to_string();
+        let err = validate_config(&settings_with(vec![def])).expect_err("must reject");
+        assert!(
+            matches!(err, HostBuildError::InvalidAgent { .. }),
+            "got {err:?}"
+        );
+    }
+
+    #[test]
+    fn validate_rejects_duplicate_ids() {
+        let settings = settings_with(vec![base("dup"), base("dup")]);
+        let err = validate_config(&settings).expect_err("must reject");
+        assert!(matches!(err, HostBuildError::DuplicateId(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn validate_rejects_unknown_provider() {
+        let mut def = base("x");
+        def.provider = Some("no-such-provider".to_string());
+        let err = validate_config(&settings_with(vec![def])).expect_err("must reject");
+        assert!(
+            matches!(err, HostBuildError::UnknownProvider { .. }),
+            "got {err:?}"
+        );
     }
 }

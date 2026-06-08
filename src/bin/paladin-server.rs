@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 use log::{error, info};
 use paladin::config::settings::Settings;
-use paladin::infrastructure::web::agent_host::build_agent_registry;
+use paladin::infrastructure::web::agent_host::{bind_address, build_agent_registry};
 use paladin::infrastructure::web::facade_provisioner::FacadeProvisioner;
 use paladin::infrastructure::web::{AgentApiState, agent_router};
 use tokio::signal;
@@ -44,16 +44,22 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let settings = Settings::load_from_file(&config_path)?;
 
     // Build the resident agents and the runtime provisioner from the same config.
+    // `build_agent_registry` validates the config first, so misconfiguration fails here
+    // with a specific message rather than mid-serve.
     let registry = build_agent_registry(&settings).await?;
-    let agent_count = registry.len();
+    let mut agent_ids: Vec<String> = registry.list().into_iter().map(|(id, _)| id).collect();
+    agent_ids.sort();
     let provisioner = FacadeProvisioner::from_settings(&settings);
     let state = AgentApiState::new(Arc::new(registry)).with_provisioner(Arc::new(provisioner));
     let app = agent_router(state);
 
-    let addr = format!("{}:{}", settings.server.host, settings.server.port);
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    let listener = tokio::net::TcpListener::bind(bind_address(&settings)).await?;
     let bound = listener.local_addr()?;
-    info!("paladin-server listening on http://{bound} — serving {agent_count} agent(s)");
+    info!(
+        "paladin-server listening on http://{bound} — serving {} agent(s): {:?}",
+        agent_ids.len(),
+        agent_ids
+    );
     info!(
         "routes: GET /agents, POST /agents, GET /agents/{{id}}, DELETE /agents/{{id}}, POST /agents/{{id}}/execute"
     );
