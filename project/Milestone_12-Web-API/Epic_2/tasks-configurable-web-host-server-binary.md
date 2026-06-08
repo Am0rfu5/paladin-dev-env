@@ -63,12 +63,12 @@
   - [x] 3.3 Implemented `#[async_trait] impl AgentProvisioner for FacadeProvisioner`: maps `AgentSpec` → `AgentDefinition` → `build_agent`, with `HostBuildError::Build → ProvisionError::InvalidSpec` and others → `ProvisionError::Failed`.
   - [x] 3.4 Rustdoc; `build_agent` confirmed as the single shared build path (config-load and runtime provisioning); `fmt`/`clippy --all-targets -D warnings` clean; 2 tests pass.
 
-- [ ] 4.0 Add the `paladin-server` binary (load → build → serve → graceful shutdown)
-  - [ ] 4.1 Add `[[bin]] name = "paladin-server"`, `path = "src/bin/paladin-server.rs"`, `required-features = ["web-server"]` to `Cargo.toml`.
-  - [ ] 4.2 Implement `main`: initialize logging/tracing (consistent with `paladin-cli`); load `Settings`; build the registry (`build_agent_registry`); construct `AgentApiState::new(Arc::new(registry)).with_provisioner(Arc::new(FacadeProvisioner::…))`; build `agent_router(state)`.
-  - [ ] 4.3 Bind a `TcpListener` to the configured `server` address (`host:port`) and `axum::serve(listener, app).with_graceful_shutdown(shutdown_signal())`.
-  - [ ] 4.4 Implement `shutdown_signal()`: await `tokio::signal::ctrl_c()`, and on Unix also a `SIGTERM` stream; return on whichever fires first.
-  - [ ] 4.5 Ensure no secrets are logged; return a non-zero exit (via `Result` from `main` or explicit `process::exit`) on startup failure.
+- [x] 4.0 Add the `paladin-server` binary (load → build → serve → graceful shutdown)
+  - [x] 4.1 Added `[[bin]] name = "paladin-server"` (`required-features = ["web-server"]`) to `Cargo.toml`; added an **optional `axum`** dep gated by the `web-server` feature (`web-server = ["dep:paladin-web", "dep:axum"]`) so the binary can call `axum::serve` without pulling axum into default builds.
+  - [x] 4.2 Implemented `main`/`run`: `env_logger` init + `dotenv` (debug) like `main.rs`; load `Settings`; `build_agent_registry`; `AgentApiState::new(..).with_provisioner(FacadeProvisioner::from_settings(..))`; `agent_router(state)`.
+  - [x] 4.3 Binds `TcpListener` to `server.host:port` and `axum::serve(..).with_graceful_shutdown(shutdown_signal())`. Verified end-to-end: boots, `GET /agents` → `[]`, unknown `POST …/execute` → `404`, logs bound address + routes.
+  - [x] 4.4 `shutdown_signal()` selects on `tokio::signal::ctrl_c()` and, on Unix, a `SIGTERM` stream.
+  - [x] 4.5 No secrets logged; `run()` returns `Result`, and `main` logs + `process::exit(1)` on startup failure (verified: missing config/provider key fails fast with a clear message).
 
 - [ ] 5.0 Add startup validation and diagnostics (fail-fast + route/address logging)
   - [ ] 5.1 Validate before serving: parseable bind address; every agent's provider available (`list_available_providers`); required fields present; no duplicate ids — surfacing each as a clear, specific error (reusing `HostBuildError`/`build_agent_registry` errors where possible).
