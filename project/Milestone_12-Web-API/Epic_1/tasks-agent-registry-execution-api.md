@@ -62,12 +62,12 @@
   - [x] 4.2 Implemented `list_agents(State)` → `registry.list()` mapped to `AgentSummary` → `200 [..]`, and `describe_agent(State, Path(id))` → summary or `404`. Green.
   - [x] 4.3 Rustdoc on both handlers; `fmt`, `clippy -D warnings` (plain + `--all-targets`), tests all green (53 + 5).
 
-- [ ] 5.0 Implement the runtime registration endpoints `POST /agents` and `DELETE /agents/{id}`
-  - [ ] 5.1 **(Test first)** Add a mock `AgentProvisioner` (configurable: returns a `(Paladin, executor)` pair, or a `ProvisionError`). Write `oneshot` tests: `POST /agents` success → `201` + summary and the agent is afterward retrievable via `GET /agents/{id}`; duplicate id → `409`; provision failure → `422`; invalid body → `400`; **no provisioner wired** → `501`/`503`. Red.
-  - [ ] 5.2 **(Test first)** `DELETE /agents/{id}` tests: known id → `204` and subsequently `404` on `GET`; unknown id → `404`. Red.
-  - [ ] 5.3 Implement `register_agent(State, Json(AgentSpec))`: if `provisioner` is `None` → fail closed (`501`/`503`); reject duplicate id → `409`; call `provision(&spec)` → on `Ok` insert + `201`, on `Err` → `422`; invalid body → `400` (handled by extractor). Green.
-  - [ ] 5.4 Implement `deregister_agent(State, Path(id))`: `registry.remove(id)` → `204`/`404`. Green.
-  - [ ] 5.5 Rustdoc; refactor (extract id-validation / duplicate-check helpers if useful).
+- [x] 5.0 Implement the runtime registration endpoints `POST /agents` and `DELETE /agents/{id}`
+  - [x] 5.1 **(Test first)** Added a mock `AgentProvisioner` (`Succeeds`/`Fails`). Tests: `POST /agents` success → `201` + summary and the agent is afterward retrievable via `describe_agent`; duplicate id → `409`; provision failure → `422` (asserts message); invalid body → `400` (router `oneshot`); **no provisioner wired** → `501`.
+  - [x] 5.2 **(Test first)** `DELETE /agents/{id}` tests: known id → `204` and subsequently `404` on describe; unknown id → `404`.
+  - [x] 5.3 Implemented `register_agent(State, Json(AgentSpec))`: `provisioner` `None` → `501`; early duplicate check → `409`; `provision(&spec)` → `Ok` insert (race-safe re-check → `409`) + `201`, `Err` → `422`; invalid body → `400` via extractor.
+  - [x] 5.4 Implemented `deregister_agent(State, Path(id))` returning `Result<StatusCode, (StatusCode, JsonValue)>` so `204` has a truly empty body; missing id → `404`.
+  - [x] 5.5 Rustdoc on both handlers; `fmt`, `clippy -D warnings` (plain + `--all-targets`), tests all green (60 + 5).
 
 - [ ] 6.0 Compose and mount the agent router; export the public surface (`lib.rs`, `app.rs`)
   - [ ] 6.1 Implement `agent_router(state: AgentApiState) -> Router`: the five routes (`POST /agents/{id}/execute`, `GET /agents`, `GET /agents/{id}`, `POST /agents`, `DELETE /agents/{id}`) with `.with_state(...)`. **No auth layer** (Epic 5), but keep handler signatures layer-compatible.

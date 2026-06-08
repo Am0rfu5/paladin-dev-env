@@ -29,7 +29,7 @@ use paladin_core::platform::container::execution_result::{PaladinResult, StopRea
 use paladin_core::platform::container::paladin::Paladin;
 use paladin_core::platform::container::paladin_error::PaladinError;
 
-use crate::agent_registry::{AgentProvisioner, AgentRegistry};
+use crate::agent_registry::{AgentProvisioner, AgentRegistry, AgentSpec};
 
 /// Shared state for the agent routes.
 ///
@@ -255,6 +255,74 @@ pub async fn describe_agent(
     }
 }
 
+/// `POST /agents` — register a new agent at runtime from an [`AgentSpec`].
+///
+/// Because `paladin-web` cannot build a [`Paladin`] itself, this delegates to the
+/// injected [`AgentProvisioner`]. Returns:
+/// - `201 Created` with the new agent's [`AgentSummary`] on success;
+/// - `409 Conflict` if an agent is already registered under the spec's id;
+/// - `422 Unprocessable Entity` if provisioning fails;
+/// - `400 Bad Request` (via the `Json` extractor) if the body is missing/invalid;
+/// - `501 Not Implemented` if no provisioner is wired (registration disabled).
+pub async fn register_agent(
+    State(state): State<AgentApiState>,
+    Json(spec): Json<AgentSpec>,
+) -> (StatusCode, JsonValue) {
+    let Some(provisioner) = state.provisioner.as_ref() else {
+        return (
+            StatusCode::NOT_IMPLEMENTED,
+            error_body("runtime agent registration is not enabled"),
+        );
+    };
+
+    // Cheap early rejection before paying to provision an agent we'd discard.
+    if state.registry.contains(&spec.id) {
+        return (
+            StatusCode::CONFLICT,
+            error_body(format!("agent '{}' already exists", spec.id)),
+        );
+    }
+
+    match provisioner.provision(&spec).await {
+        Ok((paladin, executor)) => {
+            let paladin = Arc::new(paladin);
+            // Re-check on insert closes the race between the `contains` check and here.
+            if !state
+                .registry
+                .insert(spec.id.clone(), Arc::clone(&paladin), executor)
+            {
+                return (
+                    StatusCode::CONFLICT,
+                    error_body(format!("agent '{}' already exists", spec.id)),
+                );
+            }
+            (
+                StatusCode::CREATED,
+                ok_body(&AgentSummary::from_agent(spec.id, paladin.as_ref())),
+            )
+        }
+        Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error_body(error)),
+    }
+}
+
+/// `DELETE /agents/{id}` — deregister an agent.
+///
+/// Returns `204 No Content` (empty body) on success, or `404 Not Found` with
+/// `{ "error": ... }` if no agent is registered under `id`.
+pub async fn deregister_agent(
+    State(state): State<AgentApiState>,
+    Path(id): Path<String>,
+) -> Result<StatusCode, (StatusCode, JsonValue)> {
+    if state.registry.remove(&id) {
+        Ok(StatusCode::NO_CONTENT)
+    } else {
+        Err((
+            StatusCode::NOT_FOUND,
+            error_body(format!("unknown agent '{id}'")),
+        ))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -390,6 +458,147 @@ mod tests {
             .expect("router responds");
 
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    use crate::agent_registry::ProvisionError;
+
+    /// Configurable in-test provisioner.
+    enum MockProvisioner {
+        Succeeds,
+        Fails(String),
+    }
+
+    #[async_trait]
+    impl AgentProvisioner for MockProvisioner {
+        async fn provision(
+            &self,
+            spec: &AgentSpec,
+        ) -> Result<(Paladin, Arc<dyn PaladinExecutorPort>), ProvisionError> {
+            match self {
+                MockProvisioner::Succeeds => {
+                    let data = PaladinData {
+                        system_prompt: spec.system_prompt.clone(),
+                        name: spec.name.clone(),
+                        model: spec.model.clone(),
+                        ..Default::default()
+                    };
+                    let paladin = Paladin::new(data, Some(spec.id.clone()));
+                    let executor: Arc<dyn PaladinExecutorPort> =
+                        Arc::new(MockExecutor::Succeeds("ok".to_string()));
+                    Ok((paladin, executor))
+                }
+                MockProvisioner::Fails(message) => Err(ProvisionError::Failed(message.clone())),
+            }
+        }
+    }
+
+    fn sample_spec(id: &str) -> AgentSpec {
+        AgentSpec {
+            id: id.to_string(),
+            name: "Researcher".to_string(),
+            model: "gpt-4".to_string(),
+            system_prompt: "You research topics.".to_string(),
+            temperature: None,
+            stop_words: vec![],
+        }
+    }
+
+    /// State with an empty registry and the given provisioner.
+    fn state_with_provisioner(provisioner: MockProvisioner) -> AgentApiState {
+        AgentApiState::new(Arc::new(AgentRegistry::new())).with_provisioner(Arc::new(provisioner))
+    }
+
+    #[tokio::test]
+    async fn register_success_returns_201_and_is_retrievable() {
+        let state = state_with_provisioner(MockProvisioner::Succeeds);
+
+        let (status, Json(body)) =
+            register_agent(State(state.clone()), Json(sample_spec("new"))).await;
+        assert_eq!(status, StatusCode::CREATED);
+        assert_eq!(body["id"], "new");
+        assert_eq!(body["name"], "Researcher");
+
+        // The shared registry now resolves the new agent.
+        let (status, _) = describe_agent(State(state), Path("new".to_string())).await;
+        assert_eq!(status, StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn register_duplicate_id_returns_409() {
+        let state = state_with_provisioner(MockProvisioner::Succeeds);
+        // First registration succeeds.
+        let _ = register_agent(State(state.clone()), Json(sample_spec("dup"))).await;
+        // Second with the same id conflicts.
+        let (status, body) = register_agent(State(state), Json(sample_spec("dup"))).await;
+        assert_eq!(status, StatusCode::CONFLICT);
+        assert!(body.0.get("error").is_some());
+    }
+
+    #[tokio::test]
+    async fn register_provision_failure_returns_422() {
+        let state = state_with_provisioner(MockProvisioner::Fails("no such model".to_string()));
+        let (status, Json(body)) = register_agent(State(state), Json(sample_spec("x"))).await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(
+            body.get("error").and_then(|v| v.as_str()),
+            Some("provisioning failed: no such model")
+        );
+    }
+
+    #[tokio::test]
+    async fn register_without_provisioner_returns_501() {
+        // No provisioner wired: registration must fail closed, not panic.
+        let state = AgentApiState::new(Arc::new(AgentRegistry::new()));
+        let (status, body) = register_agent(State(state), Json(sample_spec("x"))).await;
+        assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+        assert!(body.0.get("error").is_some());
+    }
+
+    #[tokio::test]
+    async fn register_invalid_body_returns_400_through_router() {
+        let state = state_with_provisioner(MockProvisioner::Succeeds);
+        let app = axum::Router::new()
+            .route("/agents", post(register_agent))
+            .with_state(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/agents")
+                    .header("content-type", "application/json")
+                    .body(Body::from("{ not valid json "))
+                    .expect("request builds"),
+            )
+            .await
+            .expect("router responds");
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn deregister_known_id_returns_204_then_404() {
+        let state = registry_state(vec![("r", test_agent("Researcher"))]);
+
+        let result = deregister_agent(State(state.clone()), Path("r".to_string())).await;
+        match result {
+            Ok(status) => assert_eq!(status, StatusCode::NO_CONTENT),
+            Err((status, _)) => panic!("expected 204, got {status:?}"),
+        }
+
+        // The agent is gone afterward.
+        let (status, _) = describe_agent(State(state), Path("r".to_string())).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn deregister_unknown_id_returns_404() {
+        let state = AgentApiState::new(Arc::new(AgentRegistry::new()));
+        let result = deregister_agent(State(state), Path("missing".to_string())).await;
+        match result {
+            Err((status, _)) => assert_eq!(status, StatusCode::NOT_FOUND),
+            Ok(other) => panic!("expected 404, got {other:?}"),
+        }
     }
 
     /// Build an agent with a multi-line prompt whose second line is a leak canary.
