@@ -69,11 +69,11 @@
   - [x] 5.4 Implemented `deregister_agent(State, Path(id))` returning `Result<StatusCode, (StatusCode, JsonValue)>` so `204` has a truly empty body; missing id → `404`.
   - [x] 5.5 Rustdoc on both handlers; `fmt`, `clippy -D warnings` (plain + `--all-targets`), tests all green (60 + 5).
 
-- [ ] 6.0 Compose and mount the agent router; export the public surface (`lib.rs`, `app.rs`)
-  - [ ] 6.1 Implement `agent_router(state: AgentApiState) -> Router`: the five routes (`POST /agents/{id}/execute`, `GET /agents`, `GET /agents/{id}`, `POST /agents`, `DELETE /agents/{id}`) with `.with_state(...)`. **No auth layer** (Epic 5), but keep handler signatures layer-compatible.
-  - [ ] 6.2 **(Test first)** Add a test that builds `agent_router` and `merge`s it with a minimal user/auth-style router to prove no path/state conflict; assert an agent route and a placeholder route both resolve. Red → implement merge wiring → Green.
-  - [ ] 6.3 Wire into `app.rs`: extend `create_app_router` (or add a sibling composition fn) to `merge` the agent router when an `AgentApiState` is provided; keep the existing user/auth + delivery behavior unchanged.
-  - [ ] 6.4 Update `lib.rs`: rustdoc the two new modules and re-export the public surface (`AgentRegistry`, `AgentProvisioner`, `AgentSpec`, `AgentApiState`, `agent_router`). Ensure `#![warn(missing_docs)]` passes.
+- [x] 6.0 Compose and mount the agent router; export the public surface (`lib.rs`, `app.rs`)
+  - [x] 6.1 Implemented `agent_router(state: AgentApiState) -> Router`: the five routes via method chaining (`/agents` GET+POST, `/agents/{id}` GET+DELETE, `/agents/{id}/execute` POST) with `.with_state(...)`. No auth layer (Epic 5); handler signatures kept layer-compatible.
+  - [x] 6.2 **(Test first)** Added `agent_router_merges_with_other_routes_without_conflict`: builds `agent_router` and `merge`s it with a user/auth-style placeholder router, asserting both `GET /agents` and `POST /users/login` resolve `200` (no path/state clash).
+  - [x] 6.3 Wired into `app.rs` via a **sibling** `create_app_router_with_agents(user_service, auth_port, deliverer, agent_state)` = `create_app_router(..).merge(agent_router(..))`. Keeps the existing `create_app_router` signature (and facade re-export) unchanged — non-breaking.
+  - [x] 6.4 Updated `lib.rs`: documented the two new modules and added root re-exports (`AgentApiState`, `AgentSummary`, `ExecuteRequest`, `ExecuteResponse`, `agent_router`, `AgentRegistry`, `AgentProvisioner`, `AgentSpec`, `ProvisionError`). `#![warn(missing_docs)]` passes. Updated the stale module doc.
 
 - [ ] 7.0 Add concurrency tests and verify the architectural/dependency guardrails
   - [ ] 7.1 **(Test first)** Concurrency test: spawn concurrent `tokio` tasks doing `execute`/`list` reads while another registers and removes agents; assert no deadlock/panic and consistent results (use `tokio::test(flavor = "multi_thread")`).

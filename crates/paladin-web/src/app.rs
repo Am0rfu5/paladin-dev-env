@@ -19,6 +19,7 @@ use paladin_core::platform::manager::user_service::UserServiceTrait;
 use paladin_ports::output::auth_port::AuthPort;
 
 use crate::adapters::api_content_deliverer::ApiContentDeliverer;
+use crate::agent_controller::{AgentApiState, agent_router};
 use crate::auth_middleware::{require_admin, require_auth};
 use crate::delivery_controller::create_delivery_routes;
 use crate::user_controller::{
@@ -60,4 +61,23 @@ pub fn create_app_router(
         .merge(protected_routes)
         .merge(admin_routes)
         .merge(create_delivery_routes(deliverer))
+}
+
+/// Build the application router and additionally mount the agent-execution API.
+///
+/// This is [`create_app_router`] plus the `/agents/*` routes from
+/// [`agent_router`](crate::agent_controller::agent_router), merged in. It is the
+/// composition entry point for the HTTP service-host topology (Milestone 12): the
+/// server binary (Epic 2) builds the [`AgentApiState`] — including the concrete
+/// executor and optional provisioner — and passes it here.
+///
+/// The agent routes are unauthenticated in Epic 1; Epic 5 layers auth on without
+/// changing this composition.
+pub fn create_app_router_with_agents(
+    user_service: Arc<dyn UserServiceTrait>,
+    auth_port: Arc<dyn AuthPort>,
+    deliverer: Arc<ApiContentDeliverer>,
+    agent_state: AgentApiState,
+) -> Router {
+    create_app_router(user_service, auth_port, deliverer).merge(agent_router(agent_state))
 }

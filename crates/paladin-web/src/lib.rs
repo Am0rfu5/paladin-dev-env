@@ -21,3 +21,8 @@ pub mod delivery_controller;
 /// User management controller handlers.
 #[allow(missing_docs)]
 pub mod user_controller;
+
+pub use agent_controller::{
+    AgentApiState, AgentSummary, ExecuteRequest, ExecuteResponse, agent_router,
+};
+pub use agent_registry::{AgentProvisioner, AgentRegistry, AgentSpec, ProvisionError};

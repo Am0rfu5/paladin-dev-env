@@ -1,7 +1,7 @@
 //! Axum HTTP controller for the agent-execution API (the HTTP service-host topology).
 //!
-//! This module defines the wire types and shared state for running resident agents
-//! over HTTP. The handlers, error helpers, and router are added in later tasks:
+//! This module defines the wire types, shared state, handlers, and router for running
+//! resident agents over HTTP:
 //!
 //! | Method & path | Description |
 //! |---------------|-------------|
@@ -18,9 +18,10 @@
 use std::sync::Arc;
 
 use axum::{
-    Json,
+    Json, Router,
     extract::{Path, State},
     http::StatusCode,
+    routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -323,6 +324,33 @@ pub async fn deregister_agent(
     }
 }
 
+// --- Router -----------------------------------------------------------------
+
+/// Build the agent-execution sub-router and bind it to its [`AgentApiState`].
+///
+/// Mounts the five agent routes:
+///
+/// - `GET    /agents` — list agents
+/// - `POST   /agents` — register an agent at runtime
+/// - `GET    /agents/{id}` — describe an agent
+/// - `DELETE /agents/{id}` — deregister an agent
+/// - `POST   /agents/{id}/execute` — run an agent
+///
+/// The returned `Router` has its state already applied, so it can be `merge`d into the
+/// application router alongside the user/auth and delivery routers (see
+/// [`create_app_router_with_agents`](crate::app::create_app_router_with_agents)).
+///
+/// These routes are intentionally **unauthenticated** in Milestone 12, Epic 1;
+/// authentication and per-agent authorization are layered on in Epic 5 without changing
+/// these handler signatures.
+pub fn agent_router(state: AgentApiState) -> Router {
+    Router::new()
+        .route("/agents", get(list_agents).post(register_agent))
+        .route("/agents/{id}", get(describe_agent).delete(deregister_agent))
+        .route("/agents/{id}/execute", post(execute_agent))
+        .with_state(state)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -599,6 +627,40 @@ mod tests {
             Err((status, _)) => assert_eq!(status, StatusCode::NOT_FOUND),
             Ok(other) => panic!("expected 404, got {other:?}"),
         }
+    }
+
+    #[tokio::test]
+    async fn agent_router_merges_with_other_routes_without_conflict() {
+        let state = registry_state(vec![("r", test_agent("Researcher"))]);
+        // A stand-in for the user/auth router, with its own state already applied.
+        let other = Router::new().route("/users/login", post(|| async { StatusCode::OK }));
+        let app = other.merge(agent_router(state));
+
+        // An agent route resolves.
+        let agents = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/agents")
+                    .body(Body::empty())
+                    .expect("request builds"),
+            )
+            .await
+            .expect("router responds");
+        assert_eq!(agents.status(), StatusCode::OK);
+
+        // The merged-in placeholder route also resolves.
+        let login = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/users/login")
+                    .body(Body::empty())
+                    .expect("request builds"),
+            )
+            .await
+            .expect("router responds");
+        assert_eq!(login.status(), StatusCode::OK);
     }
 
     /// Build an agent with a multi-line prompt whose second line is a leak canary.
