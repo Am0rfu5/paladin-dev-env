@@ -114,8 +114,9 @@ coordinate several.
 
 ### Running agents behind an HTTP API
 
-To serve configured agents over HTTP (the *HTTP service-host* topology), define an `agents:`
-section in `config.yml` (see the commented example there) and run the `paladin-server` binary:
+To serve configured agents over HTTP (the *HTTP service-host* topology), copy
+[`config.example.yml`](config.example.yml) to `config.yml`, edit its `agents:` section, and run
+the `paladin-server` binary:
 
 ```bash
 # API keys come from the environment, not the config file.

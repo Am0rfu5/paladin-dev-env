@@ -81,7 +81,7 @@
   - [x] 6.3 Graceful-shutdown asserted: a `oneshot` triggers `with_graceful_shutdown`; the spawned server task is awaited and must join cleanly after the signal.
 
 - [x] 7.0 Finalize: sample config, docs, CHANGELOG, and quality gates
-  - [x] 7.1 Added a documented, commented `agents:` example to `config.yml` (host + agents shape; note that API keys come from the `llm:` env vars, not the agent definitions).
+  - [x] 7.1 Added a tracked, runnable **`config.example.yml`** (host + `agents:` shape; keys via env, not the file). `config.yml` is gitignored, so the example lives in a committed file; verified it boots `paladin-server` serving 2 agents. (`README` links to it.)
   - [x] 7.2 Added a "Running agents behind an HTTP API" subsection to `README.md` with the `cargo run --bin paladin-server --features web-server` command, env-var note, route list, and the unauthenticated caveat.
   - [x] 7.3 Full gate green: `cargo test --features web-server` (all crates pass; facade lib 650, smoke 1), `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny` (advisories/bans/licenses/sources ok). No debug prints.
   - [x] 7.4 API-surface check: the `agents` config schema is **not** `web-server`-gated, so `paladin::config::AgentDefinition` + `Settings::agents` are legitimate **additive** default-surface items. Regenerated `project/current-exports.txt` (additive-only, zero removals); check now passes (1827 items).
