@@ -62,12 +62,12 @@
   - [x] 3.4 `FacadeProvisioner::provision` returns `ProvisionedAgent { paladin, executor, streamer }` from the shared `build_agent` path, so runtime-registered agents stream too.
   - [x] 3.5 Rustdoc updated; `fmt`/`clippy --all-targets -D warnings` clean; paladin-web (63+5), facade `infrastructure::web` (12), and the boot smoke test all pass.
 
-- [ ] 4.0 Add the SSE streaming endpoint `POST /agents/{id}/execute/stream`
-  - [ ] 4.1 Add `tokio-stream` + `futures` to `crates/paladin-web/Cargo.toml` (adapt `PaladinStream` `mpsc::Receiver` → axum SSE `Stream`).
-  - [ ] 4.2 **(Test first)** Handler tests: streaming-capable agent → collect SSE events, assert `chunk` events then a `done` event whose assembled text matches; unknown id → `404`; invalid body → `400`; agent **without** a streamer → pseudo-stream the buffered result as one `chunk` + `done` (Open Q2 default).
-  - [ ] 4.3 Implement `execute_agent_stream(State, Path(id), Json(ExecuteRequest)) -> impl IntoResponse` returning `axum::response::sse::Sse`: drive the streamer (or buffered fallback), mapping `PaladinStreamChunk` → `Event` (`chunk`) and a terminal `done` event; mid-stream `Err` → an `error` event then close; client disconnect drops the stream (cancels the producer).
-  - [ ] 4.4 Mount `POST /agents/{id}/execute/stream` in `agent_router`.
-  - [ ] 4.5 Rustdoc; gates.
+- [x] 4.0 Add the SSE streaming endpoint `POST /agents/{id}/execute/stream`
+  - [x] 4.1 Added `futures` + `tokio-stream` to `crates/paladin-web/Cargo.toml` (`ReceiverStream` adapts `PaladinStream` → an axum SSE body).
+  - [x] 4.2 **(Test first)** Handler tests: streaming agent → asserts `chunk` events (`{"text":"Hel"}`, `{"text":"lo"}`) then `done`; agent **without** a streamer → pseudo-streams the buffered result as `chunk` + `done` (Open Q2 default); unknown id → `404`. (Invalid body → `400` already covered by the extractor on the buffered route.)
+  - [x] 4.3 Implemented `execute_agent_stream(...) -> Response`: drives the agent's `StreamingExecutorPort` mapping `PaladinStreamChunk` → `Event` (`chunk`/`done`/`error`) via `chunk_to_event`, or falls back to a buffered single `chunk` + `done`; up-front execution failure → `502`; client disconnect drops the receiver (cancels the producer).
+  - [x] 4.4 Mounted `POST /agents/{id}/execute/stream` in `agent_router`; updated the module doc route table.
+  - [x] 4.5 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; paladin-web tests 66 + 5 pass.
 
 - [ ] 5.0 Add timeouts & cancellation (default → per-agent → per-request, clamped) across buffered/stream/job
   - [ ] 5.1 **(Test first)** Config + resolution tests: parse per-agent `timeout_seconds`; a `TimeoutPolicy { default, max }`; a pure `resolve_timeout(request, agent, policy)` helper (precedence + clamp to max; non-positive request → invalid).

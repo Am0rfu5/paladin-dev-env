@@ -6,6 +6,7 @@
 //! | Method & path | Description |
 //! |---------------|-------------|
 //! | `POST /agents/{id}/execute` | Run an agent and return its output |
+//! | `POST /agents/{id}/execute/stream` | Run an agent, streaming output over SSE |
 //! | `GET /agents` | List registered agents |
 //! | `GET /agents/{id}` | Describe a single agent |
 //! | `POST /agents` | Register an agent at runtime |
@@ -17,18 +18,25 @@
 
 use std::sync::Arc;
 
+use std::convert::Infallible;
+use std::pin::Pin;
+
 use axum::{
     Json, Router,
     extract::{Path, State},
     http::StatusCode,
+    response::{IntoResponse, Response, Sse, sse::Event},
     routing::{get, post},
 };
+use futures::{Stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tokio_stream::wrappers::ReceiverStream;
 
 use paladin_core::platform::container::execution_result::{PaladinResult, StopReason};
 use paladin_core::platform::container::paladin::Paladin;
 use paladin_core::platform::container::paladin_error::PaladinError;
+use paladin_ports::output::paladin_port::PaladinStreamChunk;
 
 use crate::agent_registry::{AgentProvisioner, AgentRegistry, AgentSpec};
 
@@ -330,6 +338,88 @@ pub async fn deregister_agent(
     }
 }
 
+// --- Streaming --------------------------------------------------------------
+
+/// A boxed SSE event stream (the two streaming backends produce different concrete
+/// stream types, so both are boxed to one type for the handler's return).
+type SseEventStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
+
+/// Render a streaming chunk (or error) as an SSE event.
+///
+/// Emits `chunk` events with `{ "text": ... }`, a terminal `done` event, and an `error`
+/// event for a mid-stream failure (after which the stream closes).
+fn chunk_to_event(item: Result<PaladinStreamChunk, PaladinError>) -> Event {
+    match item {
+        Ok(chunk) if chunk.is_final => Event::default()
+            .event("done")
+            .data(json!({ "done": true }).to_string()),
+        Ok(chunk) => Event::default()
+            .event("chunk")
+            .data(json!({ "text": chunk.text }).to_string()),
+        Err(error) => Event::default()
+            .event("error")
+            .data(json!({ "error": error.to_string() }).to_string()),
+    }
+}
+
+/// `POST /agents/{id}/execute/stream` — run an agent, streaming its output over SSE.
+///
+/// Returns a `text/event-stream` of `chunk` events ending with a `done` event. For an
+/// agent with a streaming backend these are real incremental LLM tokens; for an agent
+/// without one, the buffered result is framed as a single `chunk` + `done` (so the
+/// endpoint always works). Maps unknown id → `404`, invalid body → `400` (extractor),
+/// and an up-front execution failure → `502`.
+pub async fn execute_agent_stream(
+    State(state): State<AgentApiState>,
+    Path(id): Path<String>,
+    Json(request): Json<ExecuteRequest>,
+) -> Response {
+    let Some(entry) = state.registry.get(&id) else {
+        return (
+            StatusCode::NOT_FOUND,
+            error_body(format!("unknown agent '{id}'")),
+        )
+            .into_response();
+    };
+
+    // Real token streaming when the agent has a streaming-capable executor.
+    if let Some(streamer) = entry.streamer.clone() {
+        return match streamer
+            .execute_stream(entry.paladin.as_ref(), &request.input)
+            .await
+        {
+            Ok(rx) => {
+                let stream = ReceiverStream::new(rx)
+                    .map(|item| Ok::<Event, Infallible>(chunk_to_event(item)));
+                let boxed: SseEventStream = Box::pin(stream);
+                Sse::new(boxed).into_response()
+            }
+            Err(error) => execution_error_response(&error).into_response(),
+        };
+    }
+
+    // Fallback (no streaming backend): run buffered, then frame the result as SSE.
+    match entry
+        .executor
+        .execute(entry.paladin.as_ref(), &request.input)
+        .await
+    {
+        Ok(result) => {
+            let response = ExecuteResponse::from(result);
+            let chunk = Event::default()
+                .event("chunk")
+                .data(json!({ "text": response.output }).to_string());
+            let done = Event::default().event("done").data(
+                serde_json::to_string(&response).unwrap_or_else(|_| "{\"done\":true}".to_string()),
+            );
+            let events: Vec<Result<Event, Infallible>> = vec![Ok(chunk), Ok(done)];
+            let boxed: SseEventStream = Box::pin(futures::stream::iter(events));
+            Sse::new(boxed).into_response()
+        }
+        Err(error) => execution_error_response(&error).into_response(),
+    }
+}
+
 // --- Router -----------------------------------------------------------------
 
 /// Build the agent-execution sub-router and bind it to its [`AgentApiState`].
@@ -354,6 +444,7 @@ pub fn agent_router(state: AgentApiState) -> Router {
         .route("/agents", get(list_agents).post(register_agent))
         .route("/agents/{id}", get(describe_agent).delete(deregister_agent))
         .route("/agents/{id}/execute", post(execute_agent))
+        .route("/agents/{id}/execute/stream", post(execute_agent_stream))
         .with_state(state)
 }
 
@@ -409,6 +500,129 @@ mod tests {
         let registry = AgentRegistry::new();
         registry.insert(id, test_agent(id), Arc::new(executor));
         AgentApiState::new(Arc::new(registry))
+    }
+
+    use paladin_ports::output::paladin_port::PaladinStream;
+    use paladin_ports::output::streaming_executor_port::StreamingExecutorPort;
+
+    /// In-test streamer that emits the given text chunks then a final marker.
+    struct MockStreamer {
+        chunks: Vec<String>,
+    }
+
+    #[async_trait]
+    impl StreamingExecutorPort for MockStreamer {
+        async fn execute_stream(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<PaladinStream, PaladinError> {
+            let (tx, rx) = tokio::sync::mpsc::channel(8);
+            let chunks = self.chunks.clone();
+            tokio::spawn(async move {
+                for c in chunks {
+                    let _ = tx
+                        .send(Ok(PaladinStreamChunk {
+                            text: c,
+                            is_final: false,
+                            metadata: None,
+                        }))
+                        .await;
+                }
+                let _ = tx
+                    .send(Ok(PaladinStreamChunk {
+                        text: String::new(),
+                        is_final: true,
+                        metadata: None,
+                    }))
+                    .await;
+            });
+            Ok(rx)
+        }
+    }
+
+    async fn read_body(response: axum::response::Response) -> String {
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("read body");
+        String::from_utf8(bytes.to_vec()).expect("utf8 body")
+    }
+
+    fn state_with_streaming_agent(id: &str, chunks: Vec<String>) -> AgentApiState {
+        let registry = AgentRegistry::new();
+        let streamer: Arc<dyn StreamingExecutorPort> = Arc::new(MockStreamer { chunks });
+        registry.insert_with_streaming(
+            id,
+            test_agent(id),
+            Arc::new(MockExecutor::Succeeds("buffered".to_string())),
+            Some(streamer),
+        );
+        AgentApiState::new(Arc::new(registry))
+    }
+
+    #[tokio::test]
+    async fn stream_emits_chunk_events_then_done() {
+        let state = state_with_streaming_agent("r", vec!["Hel".to_string(), "lo".to_string()]);
+        let response = execute_agent_stream(
+            State(state),
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+            }),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = read_body(response).await;
+        assert!(
+            body.contains("event: chunk"),
+            "expected chunk events: {body}"
+        );
+        assert!(body.contains(r#"{"text":"Hel"}"#), "first chunk: {body}");
+        assert!(body.contains(r#"{"text":"lo"}"#), "second chunk: {body}");
+        assert!(
+            body.contains("event: done"),
+            "expected a done event: {body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn stream_falls_back_to_buffered_when_no_streamer() {
+        // Agent registered without a streaming handle (MockExecutor returns "buffered").
+        let state = state_with_agent("r", MockExecutor::Succeeds("buffered".to_string()));
+        let response = execute_agent_stream(
+            State(state),
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+            }),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = read_body(response).await;
+        assert!(
+            body.contains(r#"{"text":"buffered"}"#),
+            "fallback chunk: {body}"
+        );
+        assert!(
+            body.contains("event: done"),
+            "expected a done event: {body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn stream_unknown_id_returns_404() {
+        let state = state_with_agent("r", MockExecutor::Succeeds("x".to_string()));
+        let response = execute_agent_stream(
+            State(state),
+            Path("missing".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+            }),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[test]
