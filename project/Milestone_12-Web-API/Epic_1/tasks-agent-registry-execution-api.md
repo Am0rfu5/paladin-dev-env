@@ -34,16 +34,16 @@
 ## Tasks
 
 - [x] 0.0 Create feature branch
-  - [x] 0.1 Create and checkout `feature/m12-epic1-agent-registry-execution-api` (branched after committing the in-flight M8 Epic 7 work, per the dependency on Epic 7).
-  - [x] 0.2 Confirm a clean baseline: `cargo build -p paladin-web` and `cargo test -p paladin-web` pass before any changes (build OK; 34 + 5 tests pass).
+  - [x] 0.1 Create and checkout `feature/m12-epic1-agent-registry-execution-api`, rooted on `main` (which already contains the fully-merged M8 Epic 7: actix-web removed, deny ban added, axum delivery controller mounted — PR #17). M12 docs re-applied on top.
+  - [x] 0.2 Confirm a clean baseline: `cargo build -p paladin-web` and `cargo test -p paladin-web` pass before any changes (build OK; 35 + 5 tests pass).
 
-- [ ] 1.0 Define the `AgentRegistry` and `AgentProvisioner` port (`agent_registry.rs`)
-  - [ ] 1.1 Create `crates/paladin-web/src/agent_registry.rs` and declare it in `lib.rs` (`mod agent_registry;`) so the crate compiles with the empty module.
-  - [ ] 1.2 **(Test first)** Write `#[cfg(test)]` unit tests for the registry: construct-empty, construct-from-initial-list, `get` (found/`None`), `list` returns ids + metadata, `insert`, `remove` (found/not-found). Use a tiny in-test mock `PaladinExecutorPort` and a `Paladin` built via the core builder/test helper. Tests fail to compile (Red).
-  - [ ] 1.3 Define `AgentSpec` (deserializable: `id`, `name`, `model`, `system_prompt`, plus other public `PaladinData`-equivalent fields) and `ProvisionError` (`thiserror`).
-  - [ ] 1.4 Define the `AgentProvisioner` port: `#[async_trait] pub trait AgentProvisioner: Send + Sync { async fn provision(&self, spec: &AgentSpec) -> Result<(Paladin, Arc<dyn PaladinExecutorPort>), ProvisionError>; }`. Document that the concrete impl lives in the composition root (Epic 2).
-  - [ ] 1.5 Implement `AgentRegistry` over `RwLock<HashMap<String, (Arc<Paladin>, Arc<dyn PaladinExecutorPort>)>>` with `new`/`from_agents`/`get`/`list`/`insert`/`remove`. Never hold the guard across an `.await`; return owned `Arc` clones from `get`. Add a `RegistryError`/`bool` signal for unknown-id on `remove`. Make tests pass (Green).
-  - [ ] 1.6 Add rustdoc to every public item; refactor for clarity while keeping tests green.
+- [x] 1.0 Define the `AgentRegistry` and `AgentProvisioner` port (`agent_registry.rs`)
+  - [x] 1.1 Create `crates/paladin-web/src/agent_registry.rs` and declare it in `lib.rs` (`pub mod agent_registry;`).
+  - [x] 1.2 **(Test first)** `#[cfg(test)]` unit tests for the registry: construct-empty, construct-from-initial-list + `list`, `get` (found/`None`, asserts metadata), `insert` (new + duplicate refused), `remove` (found/not-found). Uses an in-test `StubExecutor` impl of `PaladinExecutorPort` and a `Paladin` built via `Node::new` + `PaladinData { .. ..Default::default() }`.
+  - [x] 1.3 Define `AgentSpec` (`id`, `name`, `model`, `system_prompt`, optional `temperature`, `stop_words`; optional fields `#[serde(default)]`) and `ProvisionError` (`thiserror`: `InvalidSpec`, `Failed`).
+  - [x] 1.4 Define the `AgentProvisioner` port (`#[async_trait]`, returns `(Paladin, Arc<dyn PaladinExecutorPort>)`). Documented that the concrete impl lives in the Epic 2 composition root.
+  - [x] 1.5 Implement `AgentRegistry` over `RwLock<HashMap<String, AgentEntry>>` with `new`/`from_agents`/`get`/`contains`/`list`/`insert`/`remove`/`len`/`is_empty`. Lock held only briefly, never across `.await`; `get` returns cloned `Arc`s; poison recovered via `into_inner` (no panics); `insert` returns `false` on duplicate (→ `409`), `remove` returns `bool` (→ `404`).
+  - [x] 1.6 Rustdoc on every public item; `cargo fmt`, `cargo clippy -- -D warnings`, and tests all green (40 + 5).
 
 - [ ] 2.0 Define request/response DTOs, `AgentApiState`, and the interim error-body helper (`agent_controller.rs`)
   - [ ] 2.1 Create `crates/paladin-web/src/agent_controller.rs`; declare it in `lib.rs`.

@@ -8,6 +8,8 @@
 /// Web-facing adapter integrations.
 #[allow(missing_docs)]
 pub mod adapters;
+/// Resident agent registry and provisioning seam for the HTTP service-host topology.
+pub mod agent_registry;
 /// Application router composition for the user REST API.
 pub mod app;
 /// Authentication and RBAC middleware for the user REST API.
