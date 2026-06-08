@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Milestone 12 — Epic 1: Agent registry & execution API (`paladin-web`)
+
+The HTTP service-host topology previously shipped no agent-execution endpoint — consumers had to
+hand-write the registry and handlers. This adds that surface to `paladin-web`, so agents can be run
+over HTTP out of the box. The web layer depends only on the `PaladinExecutorPort` trait and the
+`Paladin` entity (no dependency on the `paladin-ai` facade).
+
+#### Added
+
+- **Agent registry** (`paladin_web::AgentRegistry`): thread-safe, in-memory map of id →
+  `(Arc<Paladin>, Arc<dyn PaladinExecutorPort>)` (per-agent executor) with `get`/`list`/`insert`
+  (no-overwrite)/`remove`/`contains`; poison-safe, never holds its lock across `.await`.
+- **Provisioning seam** (`paladin_web::{AgentProvisioner, AgentSpec, ProvisionError}`): the trait the
+  composition root implements to build agents for runtime registration, keeping `paladin-web`
+  decoupled from the facade.
+- **Agent-execution HTTP API** (`paladin_web::agent_controller`, mounted via
+  `paladin_web::agent_router` / `app::create_app_router_with_agents`):
+  - `POST /agents/{id}/execute` — run an agent (`200` + output/metadata; `404`; `400`; `502` on
+    execution failure).
+  - `GET /agents` and `GET /agents/{id}` — discovery with a safe `AgentSummary` (no secrets; system
+    prompt reduced to a short description preview).
+  - `POST /agents` — runtime registration via the provisioner (`201`; `409`; `422`; `400`; `501`
+    when no provisioner is wired).
+  - `DELETE /agents/{id}` — deregistration (`204`/`404`).
+- Wire types `ExecuteRequest`/`ExecuteResponse` and a `create_app_router_with_agents` composer that
+  merges the agent routes alongside the user/auth and delivery routers.
+
+#### Notes
+
+- Agent routes are intentionally **unauthenticated** in this epic; authentication and per-agent
+  authorization arrive in Milestone 12, Epic 5. Config-driven hosting and a runnable server binary
+  (including the concrete `AgentProvisioner`) arrive in Epic 2.
+
 ### Milestone 8 — Epic 7: `paladin-web` single web framework (axum)
 
 `paladin-web` depended on **two** HTTP frameworks (axum + actix-web) but served everything through
