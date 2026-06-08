@@ -80,10 +80,10 @@
   - [x] 6.2 **(Test first)** Added `tests/paladin_server_smoke.rs` (gated `#![cfg(feature = "web-server")]`): builds a hermetic `MockLlmAdapter`-backed agent via public API, serves on `127.0.0.1:0` with `axum::serve`, and asserts over real `reqwest` HTTP: `GET /agents` → `200` (1 agent), `POST /agents/researcher/execute` → `200` with an `output` string, unknown id → `404`. No network/keys.
   - [x] 6.3 Graceful-shutdown asserted: a `oneshot` triggers `with_graceful_shutdown`; the spawned server task is awaited and must join cleanly after the signal.
 
-- [ ] 7.0 Finalize: sample config, docs, CHANGELOG, and quality gates
-  - [ ] 7.1 Add/extend a documented sample config (`config.example.yml` or a commented block in `config.yml`) showing the `host` + `agents` shape and the env-var key requirements.
-  - [ ] 7.2 Add a short "Running the server" note (README or the relevant doc) with the `cargo run --bin paladin-server --features web-server` command and required env vars.
-  - [ ] 7.3 Run the full gate: `cargo test` (incl. `--features web-server`), `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `make deny`. Address findings; remove any debug prints.
-  - [ ] 7.4 Verify the facade **API-surface check still passes** (binary + `#[cfg(feature)]` infra additions shouldn't change the default library surface; regenerate the baseline only if it legitimately changed).
-  - [ ] 7.5 Add a `CHANGELOG.md [Unreleased]` entry (Milestone 12 — Epic 2) describing the configurable host + `paladin-server` binary.
-  - [ ] 7.6 Commit with a conventional-commit message referencing Milestone 12 / Epic 2; mark parent tasks complete and **stop for go-ahead**.
+- [x] 7.0 Finalize: sample config, docs, CHANGELOG, and quality gates
+  - [x] 7.1 Added a documented, commented `agents:` example to `config.yml` (host + agents shape; note that API keys come from the `llm:` env vars, not the agent definitions).
+  - [x] 7.2 Added a "Running agents behind an HTTP API" subsection to `README.md` with the `cargo run --bin paladin-server --features web-server` command, env-var note, route list, and the unauthenticated caveat.
+  - [x] 7.3 Full gate green: `cargo test --features web-server` (all crates pass; facade lib 650, smoke 1), `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny` (advisories/bans/licenses/sources ok). No debug prints.
+  - [x] 7.4 API-surface check: the `agents` config schema is **not** `web-server`-gated, so `paladin::config::AgentDefinition` + `Settings::agents` are legitimate **additive** default-surface items. Regenerated `project/current-exports.txt` (additive-only, zero removals); check now passes (1827 items).
+  - [x] 7.5 Added a `CHANGELOG.md [Unreleased]` entry (Milestone 12 — Epic 2): config schema, builder, provisioner, `paladin-server` binary, optional axum dep.
+  - [x] 7.6 Committed; parent tasks complete; **stop for go-ahead**.
