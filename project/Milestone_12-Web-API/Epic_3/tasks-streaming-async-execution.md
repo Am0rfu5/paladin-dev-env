@@ -76,12 +76,12 @@
   - [x] 5.4 SSE stream bounded by `timed_event_stream` (async-stream; races each chunk vs a deadline) → terminal `error` event + drop producer; buffered fallback wrapped in `timeout` → `504`. Test: `stream_times_out_with_terminal_error_event`. (Swapped `tokio-stream`→`async-stream` for the deadline race.)
   - [x] 5.5 `paladin-server` builds `TimeoutPolicy` from `settings.timeouts` and passes it via `AgentApiState::with_timeouts`. Rustdoc; `fmt`/`clippy -D warnings` (lib+bins+all-targets) clean; paladin-web 74+5, facade config 48 + infra::web 12 + smoke 1 all pass.
 
-- [ ] 6.0 Add in-process async jobs (job store + `POST /agents/{id}/jobs` + `GET …/jobs/{job_id}`)
-  - [ ] 6.1 **(Test first)** `job_store` unit tests: create (`pending`/`running`) → update (`completed`/`failed`/`timed_out`); `get` unknown → `None`; bounded retention evicts oldest + logs.
-  - [ ] 6.2 Implement `crates/paladin-web/src/job_store.rs`: `JobId` (uuid), `JobStatus` enum, `JobRecord` (status + optional `ExecuteResponse`/error), `JobStore` (thread-safe map with a configurable retention cap).
-  - [ ] 6.3 **(Test first)** Handler tests: `POST /agents/{id}/jobs` → `202` + `job_id`; the spawned task completes and `GET` returns `completed` + result equal to a buffered call; unknown agent → `404`; unknown job → `404`; slow mock + low timeout → `timed_out`.
-  - [ ] 6.4 Implement `enqueue_job` (validate agent + body; create job; spawn a task running `executor.execute` under the resolved timeout; update the store) and `get_job` (status/result or `404`). Add `Arc<JobStore>` to `AgentApiState`.
-  - [ ] 6.5 Mount `POST /agents/{id}/jobs` + `GET /agents/{id}/jobs/{job_id}` in `agent_router`. Rustdoc; gates.
+- [x] 6.0 Add in-process async jobs (job store + `POST /agents/{id}/jobs` + `GET …/jobs/{job_id}`)
+  - [x] 6.1 **(Test first)** `job_store` unit tests: create → `Running`; transitions to `Completed`/`Failed`/`TimedOut`; `get` unknown → `None`; bounded retention evicts oldest (+ logs); update-after-eviction is a no-op. 5 tests.
+  - [x] 6.2 Implemented `crates/paladin-web/src/job_store.rs`: uuid `job_id`, `JobStatus` (`running`/`completed`/`failed`/`timed_out`), `JobRecord { status, result: Option<Value>, error }` (result kept as JSON to stay decoupled from the controller), `JobStore` (RwLock map + insertion-order deque, capacity cap, poison-safe).
+  - [x] 6.3 **(Test first)** Handler tests: `POST …/jobs` → `202` + `job_id`, poll → `completed` with `result.output`; unknown agent → `404`; unknown job → `404`; slow mock + 1s timeout → `timed_out`.
+  - [x] 6.4 Implemented `enqueue_job` (agent lookup `404`, timeout resolve `400`, `create` job, spawn task running `execute` under `tokio::time::timeout`, record complete/fail/time_out) and `get_job` (record or `404`). Added `jobs: Arc<JobStore>` to `AgentApiState`.
+  - [x] 6.5 Mounted `POST /agents/{id}/jobs` + `GET /agents/{id}/jobs/{job_id}`; updated module doc table; re-exported `JobStore`/`JobStatus`/`JobRecord`. Rustdoc; `fmt`/`clippy -D warnings` clean; paladin-web 83 + 5, facade infra::web 12 + smoke 1 pass.
 
 - [ ] 7.0 Tests: streaming, timeout, and job integration + boot smoke round-trip
   - [ ] 7.1 Confirm unit coverage from 1.0–6.0 is in place (stream impl, registry, SSE, timeout resolution + 504, job store + lifecycle).

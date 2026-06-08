@@ -18,6 +18,8 @@ pub mod app;
 pub mod auth_middleware;
 /// Content-delivery controller handlers (axum).
 pub mod delivery_controller;
+/// In-memory async job store for fire-and-poll execution.
+pub mod job_store;
 /// Execution timeout policy and resolution.
 pub mod timeout;
 /// User management controller handlers.
@@ -30,4 +32,5 @@ pub use agent_controller::{
 pub use agent_registry::{
     AgentEntry, AgentProvisioner, AgentRegistry, AgentSpec, ProvisionError, ProvisionedAgent,
 };
+pub use job_store::{JobRecord, JobStatus, JobStore};
 pub use timeout::TimeoutPolicy;

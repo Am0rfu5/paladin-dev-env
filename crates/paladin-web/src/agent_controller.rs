@@ -11,6 +11,8 @@
 //! | `GET /agents/{id}` | Describe a single agent |
 //! | `POST /agents` | Register an agent at runtime |
 //! | `DELETE /agents/{id}` | Deregister an agent |
+//! | `POST /agents/{id}/jobs` | Enqueue an async run (fire-and-poll) |
+//! | `GET /agents/{id}/jobs/{job_id}` | Poll an async job's status/result |
 //!
 //! Responses follow the same convention as
 //! [`delivery_controller`](crate::delivery_controller): a success body is the serialized
@@ -39,6 +41,7 @@ use paladin_core::platform::container::paladin_error::PaladinError;
 use paladin_ports::output::paladin_port::{PaladinStream, PaladinStreamChunk};
 
 use crate::agent_registry::{AgentEntry, AgentProvisioner, AgentRegistry, AgentSpec};
+use crate::job_store::JobStore;
 use crate::timeout::{TimeoutPolicy, resolve_timeout};
 
 /// Shared state for the agent routes.
@@ -55,15 +58,19 @@ pub struct AgentApiState {
     pub provisioner: Option<Arc<dyn AgentProvisioner>>,
     /// Server-wide execution timeout policy (default + max).
     pub timeouts: TimeoutPolicy,
+    /// In-memory store for async (`POST /agents/{id}/jobs`) execution.
+    pub jobs: Arc<JobStore>,
 }
 
 impl AgentApiState {
-    /// Create state with a registry, no provisioner, and the default timeout policy.
+    /// Create state with a registry, no provisioner, the default timeout policy, and a
+    /// default-capacity job store.
     pub fn new(registry: Arc<AgentRegistry>) -> Self {
         Self {
             registry,
             provisioner: None,
             timeouts: TimeoutPolicy::default(),
+            jobs: Arc::new(JobStore::default()),
         }
     }
 
@@ -509,6 +516,78 @@ pub async fn execute_agent_stream(
     }
 }
 
+// --- Async jobs -------------------------------------------------------------
+
+/// `POST /agents/{id}/jobs` — enqueue an async run and return its job id immediately.
+///
+/// Spawns a task that runs the agent (buffered) under the resolved timeout, recording
+/// the outcome in the job store. Returns `202 Accepted` with `{ "job_id": ... }`. Maps
+/// unknown id → `404` and invalid `timeout_seconds` → `400`.
+pub async fn enqueue_job(
+    State(state): State<AgentApiState>,
+    Path(id): Path<String>,
+    Json(request): Json<ExecuteRequest>,
+) -> (StatusCode, JsonValue) {
+    let Some(entry) = state.registry.get(&id) else {
+        return (
+            StatusCode::NOT_FOUND,
+            error_body(format!("unknown agent '{id}'")),
+        );
+    };
+
+    let timeout =
+        match resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts) {
+            Ok(d) => d,
+            Err(_) => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    error_body("timeout_seconds must be a positive integer"),
+                );
+            }
+        };
+
+    let job_id = state.jobs.create();
+    let jobs = Arc::clone(&state.jobs);
+    let jid = job_id.clone();
+    let agent_id = id.clone();
+    tokio::spawn(async move {
+        let run = entry
+            .executor
+            .execute(entry.paladin.as_ref(), &request.input);
+        match tokio::time::timeout(timeout, run).await {
+            Ok(Ok(result)) => {
+                let value = serde_json::to_value(ExecuteResponse::from(result))
+                    .unwrap_or_else(|_| json!({}));
+                jobs.complete(&jid, value);
+            }
+            Ok(Err(error)) => jobs.fail(&jid, error.to_string()),
+            Err(_elapsed) => jobs.time_out(
+                &jid,
+                format!("agent '{agent_id}' timed out after {}s", timeout.as_secs()),
+            ),
+        }
+    });
+
+    (StatusCode::ACCEPTED, ok_body(&json!({ "job_id": job_id })))
+}
+
+/// `GET /agents/{id}/jobs/{job_id}` — poll an async job's status and result.
+///
+/// Returns `200 OK` with the [`JobRecord`](crate::job_store::JobRecord), or `404` if no
+/// job is found under `job_id` (jobs are ephemeral and may have been evicted).
+pub async fn get_job(
+    State(state): State<AgentApiState>,
+    Path((_id, job_id)): Path<(String, String)>,
+) -> (StatusCode, JsonValue) {
+    match state.jobs.get(&job_id) {
+        Some(record) => (StatusCode::OK, ok_body(&record)),
+        None => (
+            StatusCode::NOT_FOUND,
+            error_body(format!("unknown job '{job_id}'")),
+        ),
+    }
+}
+
 // --- Router -----------------------------------------------------------------
 
 /// Build the agent-execution sub-router and bind it to its [`AgentApiState`].
@@ -534,6 +613,8 @@ pub fn agent_router(state: AgentApiState) -> Router {
         .route("/agents/{id}", get(describe_agent).delete(deregister_agent))
         .route("/agents/{id}/execute", post(execute_agent))
         .route("/agents/{id}/execute/stream", post(execute_agent_stream))
+        .route("/agents/{id}/jobs", post(enqueue_job))
+        .route("/agents/{id}/jobs/{job_id}", get(get_job))
         .with_state(state)
 }
 
@@ -819,6 +900,92 @@ mod tests {
             body.contains("event: error") && body.contains("timed out"),
             "should emit a terminal timeout error event: {body}"
         );
+    }
+
+    /// Poll a job until it leaves `running` (or give up), returning the final record body.
+    async fn poll_job(state: &AgentApiState, agent_id: &str, job_id: &str) -> serde_json::Value {
+        for _ in 0..50 {
+            let (status, Json(body)) = get_job(
+                State(state.clone()),
+                Path((agent_id.to_string(), job_id.to_string())),
+            )
+            .await;
+            assert_eq!(status, StatusCode::OK);
+            if body["status"] != "running" {
+                return body;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        panic!("job did not reach a terminal state in time");
+    }
+
+    #[tokio::test]
+    async fn job_enqueue_completes_with_result() {
+        let state = state_with_agent("r", MockExecutor::Succeeds("done".to_string()));
+
+        let (status, Json(body)) = enqueue_job(
+            State(state.clone()),
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+                timeout_seconds: None,
+            }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::ACCEPTED);
+        let job_id = body["job_id"].as_str().expect("job_id present").to_string();
+
+        let record = poll_job(&state, "r", &job_id).await;
+        assert_eq!(record["status"], "completed");
+        assert_eq!(record["result"]["output"], "done");
+    }
+
+    #[tokio::test]
+    async fn job_enqueue_unknown_agent_returns_404() {
+        let state = state_with_agent("r", MockExecutor::Succeeds("x".to_string()));
+        let (status, _) = enqueue_job(
+            State(state),
+            Path("missing".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+                timeout_seconds: None,
+            }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn get_job_unknown_returns_404() {
+        let state = state_with_agent("r", MockExecutor::Succeeds("x".to_string()));
+        let (status, _) = get_job(
+            State(state),
+            Path(("r".to_string(), "no-such-job".to_string())),
+        )
+        .await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn job_times_out() {
+        let registry = AgentRegistry::new();
+        registry.insert("r", test_agent("r"), Arc::new(MockExecutor::Slow));
+        let state = AgentApiState::new(Arc::new(registry));
+
+        let (status, Json(body)) = enqueue_job(
+            State(state.clone()),
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+                timeout_seconds: Some(1),
+            }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::ACCEPTED);
+        let job_id = body["job_id"].as_str().unwrap().to_string();
+
+        let record = poll_job(&state, "r", &job_id).await;
+        assert_eq!(record["status"], "timed_out");
     }
 
     #[test]
