@@ -45,13 +45,14 @@
   - [x] 1.5 Implement `AgentRegistry` over `RwLock<HashMap<String, AgentEntry>>` with `new`/`from_agents`/`get`/`contains`/`list`/`insert`/`remove`/`len`/`is_empty`. Lock held only briefly, never across `.await`; `get` returns cloned `Arc`s; poison recovered via `into_inner` (no panics); `insert` returns `false` on duplicate (→ `409`), `remove` returns `bool` (→ `404`).
   - [x] 1.6 Rustdoc on every public item; `cargo fmt`, `cargo clippy -- -D warnings`, and tests all green (40 + 5).
 
-- [ ] 2.0 Define request/response DTOs, `AgentApiState`, and the interim error-body helper (`agent_controller.rs`)
-  - [ ] 2.1 Create `crates/paladin-web/src/agent_controller.rs`; declare it in `lib.rs`.
-  - [ ] 2.2 Define DTOs: `ExecuteRequest { input }`, `ExecuteResponse { output, token_count, execution_time_ms, loop_count, stop_reason }`, and `AgentSummary { id, name, model, description }`. Add a `From<&Paladin> for AgentSummary` (or helper) that derives a safe summary and **omits secrets / raw system prompt** per PRD §4.3 / Open Q1.
-  - [ ] 2.3 Define `AgentApiState { registry: Arc<AgentRegistry>, provisioner: Option<Arc<dyn AgentProvisioner>> }` (`#[derive(Clone)]`).
-  - [ ] 2.4 **(Test first)** Write a unit test asserting the error helper renders `{ "error": "<message>" }`. Implement `error_body(message)` / `(StatusCode, Json<Value>)` helper mirroring `delivery_controller.rs`; centralize so Epic 4 can swap it in one place. Add a small `From<PaladinError>`-style mapping to `(StatusCode, body)` returning `502` for execution errors.
+- [x] 2.0 Define request/response DTOs and `AgentApiState` (`agent_controller.rs`)
+  - [x] 2.1 Create `crates/paladin-web/src/agent_controller.rs`; declare it in `lib.rs`.
+  - [x] 2.2 Define DTOs: `ExecuteRequest { input }`, `ExecuteResponse { output, token_count, execution_time_ms, loop_count, stop_reason }` (+ `From<PaladinResult>` and a stable `stop_reason` label), and `AgentSummary { id, name, model, description }` via `AgentSummary::from_agent(id, &Paladin)` (id lives in the registry key, so a `From<&Paladin>` can't carry it). The summary previews only the first line of the system prompt and **omits secrets / the full prompt** per PRD §4.3 / Open Q1 (note: secrets never live on `PaladinData` anyway).
+  - [x] 2.3 Define `AgentApiState { registry: Arc<AgentRegistry>, provisioner: Option<Arc<dyn AgentProvisioner>> }` (`#[derive(Clone)]`, with `new`/`with_provisioner`).
+  - [~] 2.4 **Error-body helper deferred to 3.0.** Implementing `ok_body`/`error_body`/`execution_error_response` here would be dead code until a handler consumes them, which fails `clippy -D warnings`. Moved to task 3.0 (first consumer = the execute handler), with the `{ "error": ... }` render test alongside. 4 DTO/summary unit tests added in 2.0 instead.
 
 - [ ] 3.0 Implement the execution endpoint `POST /agents/{id}/execute`
+  - [ ] 3.0a **(Moved from 2.4)** Implement the interim error helpers (`JsonValue` alias, `ok_body`, `error_body`, `execution_error_response` → `502`) mirroring `delivery_controller.rs`, centralized so Epic 4 can swap them in one place. Add the `{ "error": "<message>" }` render test. (These were deferred from 2.0 to avoid dead-code under `-D warnings`.)
   - [ ] 3.1 **(Test first)** Add a reusable mock `PaladinExecutorPort` (configurable to return `Ok(PaladinResult)` or `Err(PaladinError)`). Write `oneshot` handler tests: success → `200` + `ExecuteResponse` (asserts `output` and metadata fields), unknown id → `404`, missing/invalid body → `400`, executor `Err` → `502`. Tests fail (Red).
   - [ ] 3.2 Implement `execute_agent(State, Path(id), Json(ExecuteRequest))`: look up via `registry.get(id)` → `404`; call `executor.execute(&paladin, &input)`; map `Ok` → `200` `ExecuteResponse`, `Err` → `502` via the helper. No `unwrap`/`expect`/`panic!`. Make tests pass (Green).
   - [ ] 3.3 Rustdoc the handler and DTOs; refactor.
