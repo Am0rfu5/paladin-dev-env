@@ -719,11 +719,19 @@ pub fn agent_openapi_router(state: AgentApiState) -> OpenApiRouter {
         .with_state(state)
 }
 
-/// Build the agent router as a plain `axum` [`Router`]: the annotated agent API plus the
-/// unversioned health probes. (The `/v1` version prefix is added in a later step.)
+/// API version prefix under which the agent routes are served.
+pub const API_V1_PREFIX: &str = "/v1";
+
+/// Build the agent router as a plain `axum` [`Router`]: the annotated agent API nested under
+/// [`API_V1_PREFIX`] (`/v1/agents/...`), plus the unversioned health probes at the root.
+///
+/// The OpenAPI document produced alongside is discarded here; the binary builds and serves
+/// the spec via [`crate::openapi`].
 pub fn agent_router(state: AgentApiState) -> Router {
-    let (routes, _api) = agent_openapi_router(state.clone()).split_for_parts();
-    // Mount the liveness/readiness probes alongside (unauthenticated).
+    let (routes, _api) = OpenApiRouter::new()
+        .nest(API_V1_PREFIX, agent_openapi_router(state.clone()))
+        .split_for_parts();
+    // Mount the liveness/readiness probes alongside (unversioned, unauthenticated).
     routes.merge(crate::health::health_routes(state))
 }
 
@@ -1204,7 +1212,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method("POST")
-                    .uri("/agents/r/execute")
+                    .uri("/v1/agents/r/execute")
                     .header("content-type", "application/json")
                     .body(Body::from("{ not valid json "))
                     .expect("request builds"),
@@ -1331,7 +1339,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method("POST")
-                    .uri("/agents")
+                    .uri("/v1/agents")
                     .header("content-type", "application/json")
                     .body(Body::from("{ not valid json "))
                     .expect("request builds"),
@@ -1452,7 +1460,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/agents")
+                    .uri("/v1/agents")
                     .body(Body::empty())
                     .expect("request builds"),
             )
@@ -1472,6 +1480,50 @@ mod tests {
             .await
             .expect("router responds");
         assert_eq!(login.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn agent_api_is_versioned_under_v1() {
+        let state = registry_state(vec![("r", test_agent("Researcher"))]);
+        let app = agent_router(state);
+
+        // Versioned path resolves.
+        let v1 = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/v1/agents")
+                    .body(Body::empty())
+                    .expect("request builds"),
+            )
+            .await
+            .expect("router responds");
+        assert_eq!(v1.status(), StatusCode::OK);
+
+        // Unversioned path no longer exists.
+        let unversioned = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/agents")
+                    .body(Body::empty())
+                    .expect("request builds"),
+            )
+            .await
+            .expect("router responds");
+        assert_eq!(unversioned.status(), StatusCode::NOT_FOUND);
+
+        // Health stays unversioned.
+        let health = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .expect("request builds"),
+            )
+            .await
+            .expect("router responds");
+        assert_eq!(health.status(), StatusCode::OK);
     }
 
     /// Build an agent with a multi-line prompt whose second line is a leak canary.

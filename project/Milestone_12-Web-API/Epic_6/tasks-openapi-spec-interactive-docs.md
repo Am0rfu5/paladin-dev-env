@@ -59,11 +59,11 @@
   - [x] 2.4 Existing router tests stay green (construction unchanged externally); added `openapi_spec_contains_agent_operation_paths` asserting the assembled `OpenApi.paths` include all six route templates.
   - [x] 2.5 `fmt`/`clippy --all-targets -D warnings` clean; paladin-web 111 + auth_rbac 5 + smoke 2 pass. (Freed a full disk via `cargo clean` after the swagger-ui assets bloated `target/`.)
 
-- [ ] 3.0 Introduce the `/v1` version prefix (agent API versioned; health/docs unversioned)
-  - [ ] 3.1 Nest the agent `OpenApiRouter` under `/v1` (so routes serve at `/v1/agents/...` and the spec records the `/v1` paths); `split_for_parts()` into the axum `Router` + `OpenApi`. Merge the unversioned `health_routes` at root.
-  - [ ] 3.2 **(Test first)** Router tests: `GET /v1/agents` resolves (auth applies), `GET /agents` → `404`, `/health` + `/ready` resolve at root.
-  - [ ] 3.3 Ensure `with_http_layers` still composes (request-log/CORS/body-limit/timeout/rate-limit) over the `/v1` + health router; the global-timeout streaming exemption still matches `/v1/agents/{id}/execute/stream` (update the suffix match if needed).
-  - [ ] 3.4 Update `tests/paladin_server_smoke.rs` agent paths to `/v1/...`; update the binary startup route log. fmt/clippy; gates.
+- [x] 3.0 Introduce the `/v1` version prefix (agent API versioned; health/docs unversioned)
+  - [x] 3.1 `agent_router` now nests `agent_openapi_router` under `API_V1_PREFIX = "/v1"` and `split_for_parts()`s into the axum `Router` (+ discarded `OpenApi`), then merges the unversioned `health_routes` at root.
+  - [x] 3.2 **(Test first)** `agent_api_is_versioned_under_v1`: `GET /v1/agents` → `200`, `GET /agents` → `404`, `/health` → `200`; existing router/auth tests moved to `/v1/agents`.
+  - [x] 3.3 `with_http_layers` composes unchanged; the global-timeout exemption (`path.ends_with("/execute/stream")`) still matches `/v1/agents/{id}/execute/stream` — no change needed (the existing layer test still passes).
+  - [x] 3.4 Moved `tests/paladin_server_smoke.rs` agent paths to `/v1/...` (health/ready at root); updated the binary startup route log to `/v1`. `fmt`/`clippy` clean; paladin-web 112 + smoke 2 pass.
 
 - [ ] 4.0 Build + serve the spec (`/openapi.json`) and Swagger UI (`/docs`), gated by `http.docs.enabled`
   - [ ] 4.1 Create `crates/paladin-web/src/openapi.rs`: `build_openapi() -> utoipa::openapi::OpenApi` assembling the nested `/v1` paths + components, with `info` (title/version) and the two `SecurityScheme`s (`X-API-Key` apiKey-in-header, bearer JWT). Declare `pub mod openapi` in `lib.rs`.

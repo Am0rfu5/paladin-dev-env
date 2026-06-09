@@ -91,7 +91,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         agent_ids
     );
     info!(
-        "routes: GET /health, GET /ready, GET/POST /agents, GET/DELETE /agents/{{id}}, POST /agents/{{id}}/execute[/stream], POST /agents/{{id}}/jobs, GET /agents/{{id}}/jobs/{{job_id}}"
+        "routes: GET /health, GET /ready, GET/POST /v1/agents, GET/DELETE /v1/agents/{{id}}, POST /v1/agents/{{id}}/execute[/stream], POST /v1/agents/{{id}}/jobs, GET /v1/agents/{{id}}/jobs/{{job_id}}"
     );
     info!(
         "layers: request-log + CORS + body-limit({}B){}{}",
