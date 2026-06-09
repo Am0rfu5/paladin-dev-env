@@ -78,9 +78,9 @@
   - [x] 5.3 Regeneration via `UPDATE_OPENAPI=1` (the same test rewrites the file) wrapped in a `make openapi` target; `to_pretty_json` ordering is deterministic (verified idempotent).
   - [x] 5.4 `fmt`/`clippy --all-targets -D warnings` clean; paladin-web 117 pass.
 
-- [ ] 6.0 Tests: spec generation, served endpoints, docs-disabled `404`, `/v1` routing, drift guard
-  - [ ] 6.1 Confirm coverage from 1.0–5.0 (schema shape, operation paths present, security schemes present, `/v1` routing, docs gating, drift).
-  - [ ] 6.2 **(Test first)** Extend `tests/paladin_server_smoke.rs`: with docs enabled, `GET /openapi.json` returns a spec whose `paths` include `/v1/agents/{id}/execute` and whose components declare the security schemes; `GET /docs` returns `200`.
+- [x] 6.0 Tests: spec generation, served endpoints, docs-disabled `404`, `/v1` routing, drift guard
+  - [x] 6.1 Confirmed coverage from 1.0–5.0: error-body schema round-trip, operation paths present, info + security schemes present, `/v1` routing (`/agents` → 404), docs served / absent-→404, drift guard.
+  - [x] 6.2 **(Test first)** Added `server_serves_openapi_spec_and_docs` to `tests/paladin_server_smoke.rs`: over real HTTP, `GET /openapi.json` → `200` with `info.title`, `paths["/v1/agents/{id}/execute"]`, and `components.securitySchemes` `api_key`+`jwt`; `GET /docs/` → `200`. Smoke now 3 tests; fmt/clippy clean.
 
 - [ ] 7.0 Finalize: config sample, README (docs + versioning/stability policy), CHANGELOG, API baseline, gates
   - [ ] 7.1 `config.example.yml`: add `http.docs.enabled` with a note (disable in production if desired).
