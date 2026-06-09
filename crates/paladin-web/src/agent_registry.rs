@@ -53,7 +53,7 @@ pub struct AgentEntry {
 /// Only the fields needed to identify and shape an agent are included here; the
 /// provisioner is free to apply defaults for everything else. More fields can be
 /// added without breaking existing callers (all optional fields use `#[serde(default)]`).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct AgentSpec {
     /// Registry id (the path segment in `/agents/{id}/…`). Client-supplied and unique.
     pub id: String,
@@ -72,8 +72,9 @@ pub struct AgentSpec {
     /// Optional per-agent execution timeout (seconds); `None` uses the server default.
     #[serde(default)]
     pub timeout_seconds: Option<u64>,
-    /// Roles permitted to invoke this agent; empty ⇒ any authenticated caller.
+    /// Roles permitted to invoke this agent (`"admin"`/`"user"`); empty ⇒ any caller.
     #[serde(default)]
+    #[schema(value_type = Vec<String>)]
     pub allowed_roles: Vec<UserRole>,
 }
 

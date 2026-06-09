@@ -42,15 +42,15 @@
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Update `main` (Epics 1–5 merged) and create/checkout `feature/m12-epic6-openapi-docs` from it.
-  - [ ] 0.2 Confirm a clean baseline: `cargo build --features web-server` and `cargo test --features web-server` pass before changes.
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Branched `feature/m12-epic6-openapi-docs` from `main` (Epics 1–5 merged).
+  - [x] 0.2 Baseline confirmed: `cargo build --features web-server` + `cargo test -p paladin-web` (109) green before changes.
 
-- [ ] 1.0 Add OpenAPI tooling and schema the DTOs + error envelope (`ToSchema`)
-  - [ ] 1.1 Add deps to `crates/paladin-web/Cargo.toml`: `utoipa = "5"` (features `axum_extras`, `chrono`, `uuid` as needed), `utoipa-axum = "0.2"`, `utoipa-swagger-ui = { version = "9", features = ["axum"] }`.
-  - [ ] 1.2 Derive `utoipa::ToSchema` on the request/response DTOs: `ExecuteRequest`, `ExecuteResponse`, `AgentSummary` (agent_controller), `AgentSpec` (agent_registry), `JobRecord`/`JobStatus` (job_store). Add `#[schema(example = ...)]`/doc-comments where it improves the rendered docs.
-  - [ ] 1.3 **(Test first)** Add a documented error-envelope schema type (e.g. `ApiErrorBody { error: ApiErrorDetail { code, message, details } }`) deriving `ToSchema`, matching `ApiError::to_body()`; unit test asserting the schema shape mirrors a real `ApiError` body.
-  - [ ] 1.4 `cargo build -p paladin-web`; rustdoc on new public items; fmt/clippy.
+- [x] 1.0 Add OpenAPI tooling and schema the DTOs + error envelope (`ToSchema`)
+  - [x] 1.1 Added `utoipa = "5"` (`axum_extras`/`chrono`/`uuid`), `utoipa-axum = "0.2"`, `utoipa-swagger-ui = "9"` (`axum`) to `paladin-web`.
+  - [x] 1.2 Derived `ToSchema` on `ExecuteRequest`/`ExecuteResponse`/`AgentSummary`, `AgentSpec` (`allowed_roles` via `#[schema(value_type = Vec<String>)]` to avoid `UserRole` needing utoipa in core), and `JobRecord`/`JobStatus` (`result` via `value_type = Object, nullable`).
+  - [x] 1.3 **(Test first)** Added `ApiErrorBody { error: ApiErrorDetail { code, message, details } }` (`ToSchema`) mirroring `ApiError::to_body()`; test round-trips a real `ApiError` body through the schema type 1:1.
+  - [x] 1.4 `cargo build -p paladin-web` clean; rustdoc on new items; paladin-web 110 + auth_rbac 5 pass; fmt/clippy clean.
 
 - [ ] 2.0 Annotate handlers and migrate the agent router to `utoipa-axum` `OpenApiRouter`
   - [ ] 2.1 Add `#[utoipa::path(...)]` to each agent handler (`execute_agent`, `execute_agent_stream`, `list_agents`, `describe_agent`, `register_agent`, `deregister_agent`, `enqueue_job`, `get_job`): method, path (the unprefixed `/agents/...` form), params, request body, and response codes (`200`/`201`/`202`/`204`/`400`/`401`/`403`/`404`/`409`/`422`/`502`/`504`) referencing the error schema. Document the stream endpoint as `text/event-stream` with a prose note on the `chunk`/`done`/`error` events.

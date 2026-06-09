@@ -102,7 +102,7 @@ impl AgentApiState {
 ///
 /// Only `input` is required today; later epics may add optional fields (streaming
 /// flags, per-call overrides) without breaking this contract.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct ExecuteRequest {
     /// The task / prompt to run the agent against.
     pub input: String,
@@ -117,7 +117,7 @@ pub struct ExecuteRequest {
 /// [`PaladinResult`]. The `stop_reason` is rendered as a stable lowercase label
 /// (`"completed"`, `"max_loops"`, `"stop_word"`, `"timeout"`) rather than the raw
 /// serde enum shape, so the wire contract is stable.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct ExecuteResponse {
     /// The generated output text.
     pub output: String,
@@ -160,7 +160,7 @@ fn stop_reason_label(reason: &StopReason) -> &'static str {
 /// supplied to executors at composition time — so none can leak here. The raw system
 /// prompt is reduced to a short `description` preview rather than returned verbatim
 /// (see PRD Open Question 1 on whether to omit it entirely).
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct AgentSummary {
     /// Registry id (the `{id}` path segment).
     pub id: String,

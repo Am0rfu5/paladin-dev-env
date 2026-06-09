@@ -12,9 +12,10 @@ use std::sync::RwLock;
 
 use serde::Serialize;
 use serde_json::Value;
+use utoipa::ToSchema;
 
 /// Lifecycle status of an async job.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum JobStatus {
     /// The job is executing.
@@ -31,12 +32,13 @@ pub enum JobStatus {
 ///
 /// `result` is the serialized success payload (an `ExecuteResponse` as JSON), kept as a
 /// [`Value`] so the store stays decoupled from the controller's wire types.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct JobRecord {
     /// Current status.
     pub status: JobStatus,
-    /// Success payload, present once `status == Completed`.
+    /// Success payload (an `ExecuteResponse` as JSON), present once `status == Completed`.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(value_type = Object, nullable)]
     pub result: Option<Value>,
     /// Error message, present once `status == Failed`/`TimedOut`.
     #[serde(skip_serializing_if = "Option::is_none")]
