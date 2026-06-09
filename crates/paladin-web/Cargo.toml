@@ -27,6 +27,10 @@ async-trait = { workspace = true }
 # Streaming (SSE): build the axum SSE body from the agent PaladinStream with a deadline.
 futures = "0.3"
 async-stream = "0.3"
+# Cross-cutting HTTP layers (Epic 4): CORS, body-size limit, global timeout, rate limiting.
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "limit", "timeout"] }
+tower_governor = { version = "0.8", features = ["axum"] }
 
 [dev-dependencies]
 mockito = "1.7.0"

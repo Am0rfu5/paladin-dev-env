@@ -40,6 +40,72 @@ impl Default for AgentTimeoutsConfig {
     }
 }
 
+/// Per-client rate-limit settings for the HTTP service host (off by default).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RateLimitConfig {
+    /// Whether the rate limiter is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Sustained requests per second allowed per client IP.
+    #[serde(default = "default_rate_per_second")]
+    pub per_second: u64,
+    /// Burst capacity per client IP.
+    #[serde(default = "default_rate_burst")]
+    pub burst: u32,
+}
+
+fn default_rate_per_second() -> u64 {
+    10
+}
+
+fn default_rate_burst() -> u32 {
+    20
+}
+
+impl Default for RateLimitConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            per_second: default_rate_per_second(),
+            burst: default_rate_burst(),
+        }
+    }
+}
+
+/// Cross-cutting HTTP layer configuration (CORS, body limit, global timeout, rate limit).
+///
+/// Maps onto `paladin_web::HttpLayersConfig`; absent fields use safe defaults.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebHttpConfig {
+    /// Allowed CORS origins; empty ⇒ permissive (suitable for local dev).
+    #[serde(default)]
+    pub cors_allow_origins: Vec<String>,
+    /// Maximum request body size in bytes.
+    #[serde(default = "default_body_limit_bytes")]
+    pub body_limit_bytes: usize,
+    /// Global request timeout (seconds) for non-streaming routes; `0` disables it.
+    #[serde(default)]
+    pub global_timeout_seconds: u64,
+    /// Rate-limit settings.
+    #[serde(default)]
+    pub rate_limit: RateLimitConfig,
+}
+
+fn default_body_limit_bytes() -> usize {
+    1024 * 1024
+}
+
+impl Default for WebHttpConfig {
+    fn default() -> Self {
+        Self {
+            cors_allow_origins: Vec::new(),
+            body_limit_bytes: default_body_limit_bytes(),
+            global_timeout_seconds: 0,
+            rate_limit: RateLimitConfig::default(),
+        }
+    }
+}
+
 /// Declarative definition of one agent to load into the HTTP service host.
 ///
 /// `id`, `model`, and `system_prompt` are required; everything else is optional and

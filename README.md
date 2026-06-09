@@ -135,6 +135,17 @@ an agent:
 Every run is bounded by a timeout (`timeouts.default_seconds`, per-agent `timeout_seconds`, or a
 per-request `timeout_seconds`, clamped to `timeouts.max_seconds`); on expiry the work is cancelled
 (`504`, or a terminal `error` SSE event). The server shuts down gracefully on Ctrl-C / SIGTERM.
+
+Operational endpoints and cross-cutting behavior:
+
+- `GET /health` (liveness) and `GET /ready` (readiness, with the live agent count) for k8s probes.
+- Every error is a structured envelope: `{ "error": { "code", "message", "details" } }` with a
+  stable machine-readable `code`.
+- Every response carries an `x-request-id` (generated, or echoed from the request) and each request
+  is logged with method, path, status, and latency.
+- Configurable CORS, request body-size limit, an optional global timeout (non-streaming routes), and
+  an optional per-IP rate limiter — see the `http:` section of `config.example.yml`.
+
 (Authentication arrives in a later milestone epic; put it behind a trusted proxy for now.)
 
 ## Project Status

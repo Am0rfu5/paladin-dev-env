@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Milestone 12 — Epic 4: API cross-cutting concerns
+
+Adds production middleware to the agent HTTP API: a unified error model, health/readiness probes,
+request logging, and configurable CORS / body-limit / timeout / rate-limit layers.
+
+#### Changed
+
+- **BREAKING (HTTP API):** error responses now use a structured envelope
+  `{ "error": { "code", "message", "details" } }` with a stable machine-readable `code`, replacing
+  the previous flat `{ "error": "<message>" }` (and the user controller's `ApiResponse` error form).
+  Applies to all `paladin-web` controllers (agent, user-management, content-delivery) and SSE
+  `error` events. Success bodies are unchanged.
+
+#### Added
+
+- **`ApiError`** (`paladin_web::ApiError`): the unified error type (`IntoResponse`) with
+  constructors per status and stable codes.
+- **Health/readiness**: `GET /health` (`{ "status": "ok" }`) and `GET /ready`
+  (`{ "status": "ready", "agents": N }`), suitable for Kubernetes probes.
+- **Request logging**: an `x-request-id` is generated (or echoed) and returned on every response;
+  each request is logged with method, path, status, and latency via `log`.
+- **Edge layers** (`paladin_web::{HttpLayersConfig, with_http_layers}`): configurable CORS, a
+  request body-size limit (`413`), an optional global request timeout (non-streaming routes only —
+  SSE is never cut off), and an optional per-IP rate limiter (`tower-governor`, `429`, off by
+  default). Configured via the new `http:` section in `config.yml`; `paladin-server` serves with
+  `ConnectInfo` so the limiter keys on the peer IP.
+
+#### Build
+
+- `paladin-web` adds `tower`, `tower-http` (cors/limit/timeout), and `tower_governor`.
+
 ### Milestone 12 — Epic 3: Streaming & asynchronous execution
 
 Adds token streaming, execution timeouts/cancellation, and in-process async jobs to the agent

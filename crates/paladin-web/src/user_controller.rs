@@ -10,6 +10,7 @@ use paladin_core::platform::manager::user_service::{
     UserLoginRequest, UserProfileUpdateRequest, UserRegistrationRequest, UserServiceTrait,
 };
 
+use crate::error::ApiError;
 use axum::{
     Extension, Router,
     extract::{Path, State},
@@ -126,76 +127,71 @@ impl<T> ApiResponse<T> {
     }
 }
 
-/// Convert UserError to HTTP status code and error response
-fn user_error_to_response(error: UserError) -> (StatusCode, Json<ApiResponse<()>>) {
+/// Convert a [`UserError`] to the unified [`ApiError`] (status + stable snake_case code).
+fn user_error_to_response(error: UserError) -> ApiError {
     let (status, code, message) = match error {
-        UserError::InvalidEmail(_) => (StatusCode::BAD_REQUEST, "INVALID_EMAIL", error.to_string()),
+        UserError::InvalidEmail(_) => (StatusCode::BAD_REQUEST, "invalid_email", error.to_string()),
         UserError::InvalidUsername(_) => (
             StatusCode::BAD_REQUEST,
-            "INVALID_USERNAME",
+            "invalid_username",
             error.to_string(),
         ),
-        UserError::InvalidRole(_) => (StatusCode::BAD_REQUEST, "INVALID_ROLE", error.to_string()),
+        UserError::InvalidRole(_) => (StatusCode::BAD_REQUEST, "invalid_role", error.to_string()),
         UserError::InvalidPassword(_) => (
             StatusCode::BAD_REQUEST,
-            "INVALID_PASSWORD",
+            "invalid_password",
             error.to_string(),
         ),
         UserError::EmailAlreadyExists(_) => {
-            (StatusCode::CONFLICT, "EMAIL_EXISTS", error.to_string())
+            (StatusCode::CONFLICT, "email_exists", error.to_string())
         }
         UserError::UsernameAlreadyExists(_) => {
-            (StatusCode::CONFLICT, "USERNAME_EXISTS", error.to_string())
+            (StatusCode::CONFLICT, "username_exists", error.to_string())
         }
-        UserError::UserNotFound(_) => (StatusCode::NOT_FOUND, "USER_NOT_FOUND", error.to_string()),
+        UserError::UserNotFound(_) => (StatusCode::NOT_FOUND, "user_not_found", error.to_string()),
         UserError::UserNotFoundByEmail(_) => {
-            (StatusCode::NOT_FOUND, "USER_NOT_FOUND", error.to_string())
+            (StatusCode::NOT_FOUND, "user_not_found", error.to_string())
         }
         UserError::AuthenticationFailed => (
             StatusCode::UNAUTHORIZED,
-            "AUTH_FAILED",
+            "auth_failed",
             "Invalid credentials".to_string(),
         ),
         UserError::UserNotActive => (
             StatusCode::FORBIDDEN,
-            "USER_INACTIVE",
+            "user_inactive",
             "User account is not active".to_string(),
         ),
         UserError::UserNotVerified => (
             StatusCode::FORBIDDEN,
-            "USER_NOT_VERIFIED",
+            "user_not_verified",
             "User email is not verified".to_string(),
         ),
         UserError::RepositoryError(_) => (
             StatusCode::INTERNAL_SERVER_ERROR,
-            "INTERNAL_ERROR",
+            "internal",
             "Internal server error".to_string(),
         ),
         UserError::HashError(_) => (
             StatusCode::INTERNAL_SERVER_ERROR,
-            "INTERNAL_ERROR",
+            "internal",
             "Internal server error".to_string(),
         ),
     };
 
-    (status, Json(ApiResponse::error(message, code.to_string())))
+    ApiError::new(status, code, message)
 }
 
 /// Authorize access to a user-scoped resource: admins may access any user,
 /// non-admins may only access their own `user_id`.
-fn ensure_self_or_admin(
-    claims: &AuthClaims,
-    target: Uuid,
-) -> Result<(), (StatusCode, Json<ApiResponse<()>>)> {
+fn ensure_self_or_admin(claims: &AuthClaims, target: Uuid) -> Result<(), ApiError> {
     if claims.role == UserRole::Admin || claims.user_id == target {
         Ok(())
     } else {
-        Err((
+        Err(ApiError::new(
             StatusCode::FORBIDDEN,
-            Json(ApiResponse::error(
-                "Forbidden".to_string(),
-                "FORBIDDEN".to_string(),
-            )),
+            "forbidden",
+            "Forbidden",
         ))
     }
 }
@@ -225,7 +221,7 @@ fn user_to_response(user: &paladin_core::platform::container::user::User) -> Use
 pub(crate) async fn register_user(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
     Json(request): Json<RegisterUserRequest>,
-) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+) -> Result<Json<ApiResponse<UserResponse>>, ApiError> {
     let profile = if request.first_name.is_some()
         || request.last_name.is_some()
         || request.bio.is_some()
@@ -261,7 +257,7 @@ pub(crate) async fn register_user(
 pub(crate) async fn login_user(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
     Json(request): Json<LoginUserRequest>,
-) -> Result<Json<ApiResponse<LoginResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+) -> Result<Json<ApiResponse<LoginResponse>>, ApiError> {
     let login_request = UserLoginRequest {
         email: request.email,
         password: request.password,
@@ -286,18 +282,16 @@ pub(crate) async fn get_user(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
     claims: Option<Extension<AuthClaims>>,
     Path(user_id): Path<Uuid>,
-) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+) -> Result<Json<ApiResponse<UserResponse>>, ApiError> {
     if let Some(Extension(claims)) = &claims {
         ensure_self_or_admin(claims, user_id)?;
     }
     match user_service.get_user_by_id(user_id).await {
         Ok(Some(user)) => Ok(Json(ApiResponse::success(user_to_response(&user)))),
-        Ok(None) => Err((
+        Ok(None) => Err(ApiError::new(
             StatusCode::NOT_FOUND,
-            Json(ApiResponse::error(
-                "User not found".to_string(),
-                "USER_NOT_FOUND".to_string(),
-            )),
+            "user_not_found",
+            "User not found",
         )),
         Err(error) => Err(user_error_to_response(error)),
     }
@@ -309,7 +303,7 @@ pub(crate) async fn update_user_profile(
     claims: Option<Extension<AuthClaims>>,
     Path(user_id): Path<Uuid>,
     Json(request): Json<UpdateUserProfileRequest>,
-) -> Result<Json<ApiResponse<UserResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+) -> Result<Json<ApiResponse<UserResponse>>, ApiError> {
     if let Some(Extension(claims)) = &claims {
         ensure_self_or_admin(claims, user_id)?;
     }
@@ -324,12 +318,10 @@ pub(crate) async fn update_user_profile(
         let current_user = match user_service.get_user_by_id(user_id).await {
             Ok(Some(user)) => user,
             Ok(None) => {
-                return Err((
+                return Err(ApiError::new(
                     StatusCode::NOT_FOUND,
-                    Json(ApiResponse::error(
-                        "User not found".to_string(),
-                        "USER_NOT_FOUND".to_string(),
-                    )),
+                    "user_not_found",
+                    "User not found",
                 ));
             }
             Err(error) => return Err(user_error_to_response(error)),
@@ -370,7 +362,7 @@ pub(crate) async fn update_user_profile(
 async fn activate_user(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
     Path(user_id): Path<Uuid>,
-) -> Result<Json<ApiResponse<()>>, (StatusCode, Json<ApiResponse<()>>)> {
+) -> Result<Json<ApiResponse<()>>, ApiError> {
     match user_service.activate_user(user_id).await {
         Ok(_) => Ok(Json(ApiResponse::success(()))),
         Err(error) => Err(user_error_to_response(error)),
@@ -381,7 +373,7 @@ async fn activate_user(
 async fn deactivate_user(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
     Path(user_id): Path<Uuid>,
-) -> Result<Json<ApiResponse<()>>, (StatusCode, Json<ApiResponse<()>>)> {
+) -> Result<Json<ApiResponse<()>>, ApiError> {
     match user_service.deactivate_user(user_id).await {
         Ok(_) => Ok(Json(ApiResponse::success(()))),
         Err(error) => Err(user_error_to_response(error)),
@@ -392,7 +384,7 @@ async fn deactivate_user(
 async fn verify_user(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
     Path(user_id): Path<Uuid>,
-) -> Result<Json<ApiResponse<()>>, (StatusCode, Json<ApiResponse<()>>)> {
+) -> Result<Json<ApiResponse<()>>, ApiError> {
     match user_service.verify_user(user_id).await {
         Ok(_) => Ok(Json(ApiResponse::success(()))),
         Err(error) => Err(user_error_to_response(error)),
@@ -403,7 +395,7 @@ async fn verify_user(
 pub(crate) async fn delete_user(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
     Path(user_id): Path<Uuid>,
-) -> Result<Json<ApiResponse<()>>, (StatusCode, Json<ApiResponse<()>>)> {
+) -> Result<Json<ApiResponse<()>>, ApiError> {
     match user_service.delete_user(user_id).await {
         Ok(()) => Ok(Json(ApiResponse::success(()))),
         Err(error) => Err(user_error_to_response(error)),
@@ -413,7 +405,7 @@ pub(crate) async fn delete_user(
 /// List all users (admin-only; enforced by route-level middleware)
 pub(crate) async fn list_users(
     State(user_service): State<Arc<dyn UserServiceTrait>>,
-) -> Result<Json<ApiResponse<Vec<UserResponse>>>, (StatusCode, Json<ApiResponse<()>>)> {
+) -> Result<Json<ApiResponse<Vec<UserResponse>>>, ApiError> {
     match user_service.list_users().await {
         Ok(users) => Ok(Json(ApiResponse::success(
             users.iter().map(user_to_response).collect(),
@@ -712,32 +704,23 @@ mod tests {
 
     #[test]
     fn test_user_error_to_response_invalid_email() {
-        let error = UserError::InvalidEmail("Invalid email".to_string());
-        let (status, response) = user_error_to_response(error);
-
-        assert_eq!(status, StatusCode::BAD_REQUEST);
-        assert!(!response.0.success);
-        assert_eq!(response.0.error.as_ref().unwrap().code, "INVALID_EMAIL");
+        let err = user_error_to_response(UserError::InvalidEmail("Invalid email".to_string()));
+        assert_eq!(err.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(err.to_body()["error"]["code"], "invalid_email");
     }
 
     #[test]
     fn test_user_error_to_response_user_not_found() {
-        let error = UserError::UserNotFound(Uuid::new_v4());
-        let (status, response) = user_error_to_response(error);
-
-        assert_eq!(status, StatusCode::NOT_FOUND);
-        assert!(!response.0.success);
-        assert_eq!(response.0.error.as_ref().unwrap().code, "USER_NOT_FOUND");
+        let err = user_error_to_response(UserError::UserNotFound(Uuid::new_v4()));
+        assert_eq!(err.status(), StatusCode::NOT_FOUND);
+        assert_eq!(err.to_body()["error"]["code"], "user_not_found");
     }
 
     #[test]
     fn test_user_error_to_response_authentication_failed() {
-        let error = UserError::AuthenticationFailed;
-        let (status, response) = user_error_to_response(error);
-
-        assert_eq!(status, StatusCode::UNAUTHORIZED);
-        assert!(!response.0.success);
-        assert_eq!(response.0.error.as_ref().unwrap().code, "AUTH_FAILED");
+        let err = user_error_to_response(UserError::AuthenticationFailed);
+        assert_eq!(err.status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(err.to_body()["error"]["code"], "auth_failed");
     }
 
     #[test]
@@ -802,10 +785,9 @@ mod tests {
 
         let result = register_user(State(service_ref), Json(request)).await;
 
-        assert!(result.is_err());
-        let (status, response) = result.err().unwrap();
-        assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
-        assert!(!response.0.success);
+        let err = result.err().unwrap();
+        assert_eq!(err.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(err.to_body()["error"]["code"], "internal");
     }
 
     #[tokio::test]
@@ -840,10 +822,9 @@ mod tests {
 
         let result = login_user(State(service_ref), Json(request)).await;
 
-        assert!(result.is_err());
-        let (status, response) = result.err().unwrap();
-        assert_eq!(status, StatusCode::UNAUTHORIZED);
-        assert!(!response.0.success);
+        let err = result.err().unwrap();
+        assert_eq!(err.status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(err.to_body()["error"]["code"], "auth_failed");
     }
 
     #[tokio::test]
@@ -876,10 +857,9 @@ mod tests {
 
         let result = get_user(State(service_ref), None, Path(user_id)).await;
 
-        assert!(result.is_err());
-        let (status, response) = result.err().unwrap();
-        assert_eq!(status, StatusCode::NOT_FOUND);
-        assert!(!response.0.success);
+        let err = result.err().unwrap();
+        assert_eq!(err.status(), StatusCode::NOT_FOUND);
+        assert_eq!(err.to_body()["error"]["code"], "user_not_found");
     }
 
     #[tokio::test]

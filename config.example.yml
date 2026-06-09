@@ -26,6 +26,21 @@ timeouts:
   default_seconds: 300
   max_seconds: 600
 
+# Cross-cutting HTTP layers (Epic 4). All optional with safe defaults.
+http:
+  # Allowed CORS origins; omit or leave empty for permissive (dev only).
+  cors_allow_origins: []
+  # Reject request bodies larger than this many bytes (413).
+  body_limit_bytes: 1048576 # 1 MiB
+  # Coarse outer timeout (seconds) for non-streaming routes; 0 disables it.
+  # (Streaming is bounded by `timeouts` above, never by this.)
+  global_timeout_seconds: 0
+  # Per-client (IP) rate limiting; off by default.
+  rate_limit:
+    enabled: false
+    per_second: 10
+    burst: 20
+
 # Agents served behind the HTTP API. Each becomes resident at /agents/<id>:
 #   POST /agents/<id>/execute          — buffered run
 #   POST /agents/<id>/execute/stream   — token streaming (SSE)

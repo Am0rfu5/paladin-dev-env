@@ -15,7 +15,7 @@ use super::{
     AgentDefinition, AgentTimeoutsConfig, ArsenalConfig, CitadelConfig, FileStorageConfig,
     GarrisonSettings, HeraldConfig, LlmConfig, MemoryExtractionConfig, MessageServiceSettings,
     QueueConfig, RagConfig, SanctumAdapterType, SanctumConfig, SchedulerConfig, ServerConfig,
-    SourceConfig, VisionConfig,
+    SourceConfig, VisionConfig, WebHttpConfig,
 };
 
 /// Top-level application configuration struct.
@@ -53,6 +53,9 @@ pub struct Settings {
     /// Execution timeout policy for the HTTP service host (`default`/`max` seconds).
     #[serde(default)]
     pub timeouts: Option<AgentTimeoutsConfig>,
+    /// Cross-cutting HTTP layer config for the service host (CORS, body limit, rate limit).
+    #[serde(default)]
+    pub http: Option<WebHttpConfig>,
 }
 
 impl Settings {
@@ -338,6 +341,7 @@ impl Default for Settings {
             scheduler: Some(SchedulerConfig::default()),
             agents: Vec::new(),
             timeouts: Some(AgentTimeoutsConfig::default()),
+            http: Some(WebHttpConfig::default()),
         }
     }
 }

@@ -278,6 +278,7 @@ mod tests {
             scheduler: Some(crate::config::SchedulerConfig::default()),
             agents: Vec::new(),
             timeouts: None,
+            http: None,
         }
     }
 

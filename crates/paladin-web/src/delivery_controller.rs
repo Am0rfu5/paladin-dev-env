@@ -10,8 +10,8 @@
 //! | `GET /api/delivery/stats` | [`get_delivery_stats`] | Aggregate delivery statistics |
 //!
 //! Build the router with [`create_delivery_routes`] and merge it into the application router.
-//! Responses preserve the shape used by the previous implementation: a success body is the
-//! serialized domain type, and an error body is `{ "error": "<message>" }`.
+//! A success body is the serialized domain type; failures use the unified
+//! [`ApiError`](crate::error::ApiError) envelope (`{ "error": { "code", "message", "details" } }`).
 
 use std::sync::Arc;
 
@@ -21,40 +21,31 @@ use axum::{
     http::StatusCode,
     routing::{get, post},
 };
-use serde_json::json;
 use uuid::Uuid;
 
 use crate::adapters::api_content_deliverer::ApiContentDeliverer;
+use crate::error::ApiError;
 use paladin_ports::output::content_delivery_port::{ContentDeliveryService, DeliveryRequest};
 
-/// JSON response body type used by every delivery handler.
+/// JSON response body type used by every delivery handler's success path.
 type JsonValue = Json<serde_json::Value>;
 
-/// Serialize a successful payload to a JSON body, falling back to an error body if (very
-/// unusually) serialization fails.
+/// Serialize a successful payload to a JSON body (`null` on the unreachable error path).
 fn ok_body<T: serde::Serialize>(value: &T) -> JsonValue {
-    match serde_json::to_value(value) {
-        Ok(v) => Json(v),
-        Err(e) => Json(json!({ "error": e.to_string() })),
-    }
-}
-
-/// Build an `{ "error": "<message>" }` JSON body.
-fn error_body(message: impl std::fmt::Display) -> JsonValue {
-    Json(json!({ "error": message.to_string() }))
+    Json(serde_json::to_value(value).unwrap_or(serde_json::Value::Null))
 }
 
 /// `POST /api/delivery/deliver` — deliver a content payload immediately.
 ///
 /// Returns `200 OK` with the [`DeliveryResponse`](paladin_ports::output::content_delivery_port::DeliveryResponse)
-/// on success, or `400 Bad Request` with `{ "error": ... }` if delivery fails.
+/// on success, or `400 Bad Request` (unified error envelope) if delivery fails.
 pub async fn deliver_content(
     State(deliverer): State<Arc<ApiContentDeliverer>>,
     Json(request): Json<DeliveryRequest>,
-) -> (StatusCode, JsonValue) {
+) -> Result<(StatusCode, JsonValue), ApiError> {
     match deliverer.deliver_content_async(request).await {
-        Ok(response) => (StatusCode::OK, ok_body(&response)),
-        Err(e) => (StatusCode::BAD_REQUEST, error_body(e)),
+        Ok(response) => Ok((StatusCode::OK, ok_body(&response))),
+        Err(e) => Err(ApiError::bad_request(e.to_string())),
     }
 }
 
@@ -65,29 +56,25 @@ pub async fn deliver_content(
 pub async fn get_delivery_status(
     State(deliverer): State<Arc<ApiContentDeliverer>>,
     Path(delivery_id): Path<String>,
-) -> (StatusCode, JsonValue) {
-    match Uuid::parse_str(&delivery_id) {
-        Ok(id) => match deliverer.get_delivery_status(id) {
-            Ok(response) => (StatusCode::OK, ok_body(&response)),
-            Err(e) => (StatusCode::NOT_FOUND, error_body(e)),
-        },
-        Err(_) => (
-            StatusCode::BAD_REQUEST,
-            error_body("Invalid delivery ID format"),
-        ),
+) -> Result<(StatusCode, JsonValue), ApiError> {
+    let id = Uuid::parse_str(&delivery_id)
+        .map_err(|_| ApiError::bad_request("Invalid delivery ID format"))?;
+    match deliverer.get_delivery_status(id) {
+        Ok(response) => Ok((StatusCode::OK, ok_body(&response))),
+        Err(e) => Err(ApiError::not_found(e.to_string())),
     }
 }
 
 /// `GET /api/delivery/stats` — aggregate delivery statistics across all recipients.
 ///
 /// Returns `200 OK` with [`DeliveryStats`](paladin_ports::output::content_delivery_port::DeliveryStats),
-/// or `500 Internal Server Error` with `{ "error": ... }` on failure.
+/// or `500 Internal Server Error` (unified error envelope) on failure.
 pub async fn get_delivery_stats(
     State(deliverer): State<Arc<ApiContentDeliverer>>,
-) -> (StatusCode, JsonValue) {
+) -> Result<(StatusCode, JsonValue), ApiError> {
     match deliverer.get_delivery_stats(None) {
-        Ok(stats) => (StatusCode::OK, ok_body(&stats)),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, error_body(e)),
+        Ok(stats) => Ok((StatusCode::OK, ok_body(&stats))),
+        Err(e) => Err(ApiError::internal(e.to_string())),
     }
 }
 
@@ -144,32 +131,37 @@ mod tests {
 
     #[tokio::test]
     async fn deliver_content_failure_returns_400() {
-        let (status, body) = deliver_content(State(deliverer()), Json(sample_request())).await;
-        assert_eq!(status, StatusCode::BAD_REQUEST);
-        assert!(body.0.get("error").is_some(), "expected an error body");
+        let err = deliver_content(State(deliverer()), Json(sample_request()))
+            .await
+            .unwrap_err();
+        assert_eq!(err.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(err.to_body()["error"]["code"], "bad_request");
     }
 
     #[tokio::test]
     async fn get_delivery_status_unknown_id_returns_404() {
         let id = Uuid::new_v4().to_string();
-        let (status, _body) = get_delivery_status(State(deliverer()), Path(id)).await;
-        assert_eq!(status, StatusCode::NOT_FOUND);
+        let err = get_delivery_status(State(deliverer()), Path(id))
+            .await
+            .unwrap_err();
+        assert_eq!(err.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
     async fn get_delivery_status_invalid_uuid_returns_400() {
-        let (status, body) =
-            get_delivery_status(State(deliverer()), Path("not-a-uuid".to_string())).await;
-        assert_eq!(status, StatusCode::BAD_REQUEST);
+        let err = get_delivery_status(State(deliverer()), Path("not-a-uuid".to_string()))
+            .await
+            .unwrap_err();
+        assert_eq!(err.status(), StatusCode::BAD_REQUEST);
         assert_eq!(
-            body.0.get("error").and_then(|v| v.as_str()),
-            Some("Invalid delivery ID format")
+            err.to_body()["error"]["message"],
+            "Invalid delivery ID format"
         );
     }
 
     #[tokio::test]
     async fn get_delivery_stats_returns_200() {
-        let (status, _body) = get_delivery_stats(State(deliverer())).await;
+        let (status, _body) = get_delivery_stats(State(deliverer())).await.expect("ok");
         assert_eq!(status, StatusCode::OK);
     }
 
