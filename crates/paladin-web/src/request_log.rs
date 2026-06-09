@@ -4,6 +4,10 @@
 //! (honouring a well-formed inbound `x-request-id`, otherwise generating a UUID), runs the
 //! request, logs one line at completion (method, path, status, latency) via `log`, and
 //! returns the request-id to the client in the `x-request-id` response header.
+//!
+//! **Secret hygiene:** the log line contains only method, path, status, latency, and the
+//! request-id — never request/response headers or bodies — so credentials such as
+//! `Authorization` and `X-API-Key` are never logged.
 
 use std::time::Instant;
 

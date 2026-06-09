@@ -65,11 +65,11 @@
   - [x] 3.3 **Fail-closed:** auth enabled + no credentials ⇒ startup error (verified by boot); `enabled: false` logs a warning and serves open; the resolved posture is logged. Verified end-to-end: no key → `401`, valid `X-API-Key` → `200`, `/health` open.
   - [x] 3.4 `build_agent_registry` passes `def.allowed_roles` into `register_built`. `fmt`/`clippy --workspace --all-targets -D warnings` clean; facade lib 395, paladin-web 108, config 52, smoke 1 pass.
 
-- [ ] 4.0 Secret hygiene (redact credential headers; reconfirm discovery; align user-route errors to `ApiError`)
-  - [ ] 4.1 Verify/ensure the request logger emits no headers/bodies (so `Authorization`/`X-API-Key` are never logged); add a focused note/test that the auth code logs neither the key nor the token.
-  - [ ] 4.2 Reconfirm discovery (`GET /agents[/{id}]`) never returns the raw system prompt, API keys, or provider config (extend the existing leak-canary assertions if needed).
-  - [ ] 4.3 **(Open Q5)** Align the existing user-route `auth_middleware` `401`/`403` responses to the `ApiError` envelope for whole-API consistency; update the `auth_rbac` integration test assertions.
-  - [ ] 4.4 Rustdoc; gates.
+- [x] 4.0 Secret hygiene (redact credential headers; reconfirm discovery; align user-route errors to `ApiError`)
+  - [x] 4.1 Documented the request logger's hygiene (logs only method/path/status/latency/request-id — never headers/bodies, so `Authorization`/`X-API-Key` are never logged) + a test that `authenticate` errors never echo the presented credential.
+  - [x] 4.2 Reconfirmed discovery: the existing leak-canary tests (`list_agents…no_prompt_leak`, `describe_agent…without_prompt_leak`) confirm the raw system prompt isn't returned; API keys/provider config never reach `paladin-web` entities, so they cannot leak via discovery.
+  - [x] 4.3 **(Open Q5)** Aligned the user-route `auth_middleware` `unauthorized()`/`forbidden()` to the unified `ApiError` envelope; `auth_rbac` and middleware tests assert status only, so they remained green unchanged.
+  - [x] 4.4 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; paladin-web 109 + auth_rbac 5 pass.
 
 - [ ] 5.0 Tests: `401`/`403` paths (key + JWT), `allowed_roles`, admin gate, health open, redaction + boot smoke
   - [ ] 5.1 Confirm unit/handler coverage from 1.0–4.0 is in place (authn resolution, authz helpers, handler `401`/`403`, config parse + fail-closed, redaction).

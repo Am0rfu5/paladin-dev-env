@@ -278,6 +278,20 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn error_never_echoes_the_presented_credential() {
+        // Secret hygiene: a rejected credential must not appear in the error body.
+        let cfg = config_with_key("sk-abc", UserRole::User);
+        let err = authenticate(&headers(&[("x-api-key", "super-secret-leak")]), &cfg)
+            .await
+            .unwrap_err();
+        let body = err.to_body().to_string();
+        assert!(
+            !body.contains("super-secret-leak"),
+            "error body must not echo the credential: {body}"
+        );
+    }
+
+    #[tokio::test]
     async fn valid_jwt_authenticates() {
         let cfg = AgentAuthConfig {
             enabled: true,
