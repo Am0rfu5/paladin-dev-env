@@ -82,10 +82,10 @@
   - [x] 6.1 Confirmed coverage from 1.0–5.0: error-body schema round-trip, operation paths present, info + security schemes present, `/v1` routing (`/agents` → 404), docs served / absent-→404, drift guard.
   - [x] 6.2 **(Test first)** Added `server_serves_openapi_spec_and_docs` to `tests/paladin_server_smoke.rs`: over real HTTP, `GET /openapi.json` → `200` with `info.title`, `paths["/v1/agents/{id}/execute"]`, and `components.securitySchemes` `api_key`+`jwt`; `GET /docs/` → `200`. Smoke now 3 tests; fmt/clippy clean.
 
-- [ ] 7.0 Finalize: config sample, README (docs + versioning/stability policy), CHANGELOG, API baseline, gates
-  - [ ] 7.1 `config.example.yml`: add `http.docs.enabled` with a note (disable in production if desired).
-  - [ ] 7.2 `README.md`: document `/openapi.json` + `/docs`, the `/v1` prefix, and the **versioning/stability policy** (additive within `/v1`; breaking → `/v2`).
-  - [ ] 7.3 Full gate: `cargo test --features web-server`, `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny`. Remove debug prints.
-  - [ ] 7.4 Regenerate `project/current-exports.txt` (new `ToSchema` impls, the OpenApi builder, `DocsConfig`) — review the diff (additive expected).
-  - [ ] 7.5 Add a `CHANGELOG.md [Unreleased]` entry (Milestone 12 — Epic 6): OpenAPI spec, Swagger UI, `/v1` versioning + policy, drift guard. **Note the `/v1` route move.**
-  - [ ] 7.6 Commit referencing Milestone 12 / Epic 6; mark parent tasks complete and **stop for go-ahead**.
+- [x] 7.0 Finalize: config sample, README (docs + versioning/stability policy), CHANGELOG, API baseline, gates
+  - [x] 7.1 `config.example.yml`: added `http.docs.enabled` (note: unversioned/unauthenticated, disable in prod); updated the agents-route comments to `/v1`.
+  - [x] 7.2 `README.md`: documented `/openapi.json` + `/docs` and the drift guard, moved the agent-route docs to `/v1`, and added the **versioning/stability policy** (additive within `/v1`; breaking → `/v2`).
+  - [x] 7.3 Full gate green: `cargo test --features web-server` (all binaries, 0 failures), `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny` + `make audit`. Added `RUSTSEC-2024-0436` (`paste` unmaintained, transitive via utoipa) to the `deny.toml` ignore list. axum stays single-version 0.8.
+  - [x] 7.4 Regenerated `project/current-exports.txt` — **additive only** (`config::DocsConfig`, `paladin_web` `ToSchema`/`ApiErrorBody`/openapi items); zero removals.
+  - [x] 7.5 Added the `CHANGELOG.md [Unreleased]` Epic 6 entry with a **BREAKING** note on the `/v1` route move.
+  - [x] 7.6 Committed; parent tasks complete; **stop for go-ahead**.

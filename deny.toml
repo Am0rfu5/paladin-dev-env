@@ -135,6 +135,7 @@ ignore = [
     "RUSTSEC-2025-0119", # number_prefix (unmaintained) — transitive
     "RUSTSEC-2025-0121", # gcc (unmaintained) — transitive build dep
     "RUSTSEC-2025-0134", # rustls-pemfile (unmaintained) — via tonic/testcontainers
+    "RUSTSEC-2024-0436", # paste (unmaintained) — transitive via utoipa (M12 E6); no drop-in replacement upstream
 ]
 
 # ---------------------------------------------------------------------------

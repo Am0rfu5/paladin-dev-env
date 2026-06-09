@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Milestone 12 — Epic 6: OpenAPI specification & interactive docs
+
+Publishes a machine-readable contract for the agent API and an interactive explorer, and introduces
+the `/v1` version prefix as a stability boundary. Built in `paladin-web` with `utoipa`/`utoipa-axum`.
+
+#### Changed
+
+- **BREAKING (HTTP API):** the agent API now serves under a **`/v1`** prefix — `/v1/agents`,
+  `/v1/agents/{id}/execute[/stream]`, `/v1/agents/{id}/jobs[/{job_id}]`. `/health`, `/ready`,
+  `/openapi.json`, and `/docs` remain unversioned. (Pre-release; no released consumer is affected.)
+
+#### Added
+
+- **OpenAPI 3.1 spec** at `GET /openapi.json`, derived from the handlers (`#[utoipa::path]`) and DTOs
+  (`ToSchema`) via `utoipa-axum`, including the error envelope and the `api_key` (`X-API-Key`) +
+  `jwt` (bearer) security schemes.
+- **Swagger UI** at `/docs`. Both endpoints are gated by `http.docs.enabled` (default true; unversioned
+  and unauthenticated) — set it `false` to omit them in production.
+- **Versioning/stability policy** (README): additive-only within `/v1`; breaking changes ship as
+  `/v2`.
+- **Spec drift guard**: a committed `crates/paladin-web/openapi.json` baseline and a test that fails
+  on divergence; regenerate with `make openapi`.
+
+#### Build
+
+- `paladin-web` adds `utoipa`, `utoipa-axum`, and `utoipa-swagger-ui`.
+
 ### Milestone 12 — Epic 5: API security & authorization
 
 Secures the agent HTTP API with authentication, per-agent authorization, and an admin gate on
