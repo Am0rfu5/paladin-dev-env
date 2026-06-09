@@ -20,6 +20,8 @@ pub mod auth_middleware;
 pub mod delivery_controller;
 /// Unified API error model (structured JSON error envelope).
 pub mod error;
+/// Liveness and readiness endpoints.
+pub mod health;
 /// In-memory async job store for fire-and-poll execution.
 pub mod job_store;
 /// Execution timeout policy and resolution.

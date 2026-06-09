@@ -61,11 +61,11 @@
   - [x] 2.4 Migrated `delivery_controller` (handlers → `Result<_, ApiError>`) and `user_controller` (`user_error_to_response` → `ApiError` with granular snake_case codes; inline not-founds + `ensure_self_or_admin` → `ApiError`; success path keeps `ApiResponse<T>`). Updated all affected tests.
   - [x] 2.5 Refreshed the module docs (no more flat-shape notes); `cargo test -p paladin-web` (85 lib + 5 auth_rbac), facade infra::web (12) + smoke (1) green; `clippy --all-targets -D warnings` + `fmt` clean.
 
-- [ ] 3.0 Add health & readiness endpoints (`GET /health`, `GET /ready`)
-  - [ ] 3.1 Create `crates/paladin-web/src/health.rs`; declare in `lib.rs`.
-  - [ ] 3.2 **(Test first)** Tests: `GET /health` → `200 { "status": "ok" }`; `GET /ready` → `200 { "status": "ready", "agents": N }` (N from the registry); no network I/O.
-  - [ ] 3.3 Implement the two handlers (readiness reads the agent count from `AgentApiState`) and a small mount helper / routes. Mount them alongside the agent routes (via `agent_router` or the composer in 6.0).
-  - [ ] 3.4 Rustdoc; gates.
+- [x] 3.0 Add health & readiness endpoints (`GET /health`, `GET /ready`)
+  - [x] 3.1 Created `crates/paladin-web/src/health.rs`; declared `pub mod health;` in `lib.rs`.
+  - [x] 3.2 **(Test first)** Tests: `health()` → `200 { "status": "ok" }`; `ready(State)` → `200 { "status": "ready", "agents": N }` (N from `registry.len()`); no network I/O.
+  - [x] 3.3 Implemented `health`/`ready` handlers + `health_routes(state)`; `agent_router` now merges them so the probes serve alongside the agent routes.
+  - [x] 3.4 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; 2 tests pass.
 
 - [ ] 4.0 Add the request-logging middleware (request-id + `x-request-id`)
   - [ ] 4.1 Create `crates/paladin-web/src/request_log.rs`; declare in `lib.rs`.

@@ -552,14 +552,16 @@ pub async fn get_job(
 /// authentication and per-agent authorization are layered on in Epic 5 without changing
 /// these handler signatures.
 pub fn agent_router(state: AgentApiState) -> Router {
-    Router::new()
+    let routes = Router::new()
         .route("/agents", get(list_agents).post(register_agent))
         .route("/agents/{id}", get(describe_agent).delete(deregister_agent))
         .route("/agents/{id}/execute", post(execute_agent))
         .route("/agents/{id}/execute/stream", post(execute_agent_stream))
         .route("/agents/{id}/jobs", post(enqueue_job))
         .route("/agents/{id}/jobs/{job_id}", get(get_job))
-        .with_state(state)
+        .with_state(state.clone());
+    // Mount the liveness/readiness probes alongside the agent routes.
+    routes.merge(crate::health::health_routes(state))
 }
 
 #[cfg(test)]
