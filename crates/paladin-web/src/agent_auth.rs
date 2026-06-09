@@ -364,7 +364,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/agents")
+                    .uri("/v1/agents")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -379,7 +379,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/agents")
+                    .uri("/v1/agents")
                     .header("x-api-key", "sk-abc")
                     .body(Body::empty())
                     .unwrap(),

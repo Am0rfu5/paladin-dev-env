@@ -235,6 +235,12 @@ deny: ## Run cargo-deny (licenses, bans, advisories, sources)
 	@echo "$(CYAN)Running cargo-deny check...$(NC)"
 	@$(CARGO) deny check
 
+.PHONY: openapi
+openapi: ## Regenerate the committed OpenAPI baseline (crates/paladin-web/openapi.json)
+	@echo "$(CYAN)Regenerating OpenAPI baseline...$(NC)"
+	@UPDATE_OPENAPI=1 $(CARGO) test -p paladin-web --lib openapi_matches_committed_baseline -- --quiet
+	@echo "Wrote crates/paladin-web/openapi.json"
+
 .PHONY: security
 security: audit deny ## Run all dependency security & license checks
 

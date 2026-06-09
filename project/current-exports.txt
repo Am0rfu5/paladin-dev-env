@@ -1,4 +1,4 @@
-# Public API Surface - Generated 2026-06-09 18:37:43 UTC
+# Public API Surface - Generated 2026-06-09 23:07:46 UTC
 # This file tracks all publicly exported items from the paladin crate
 # Generated using cargo-public-api v0.52.0
 
@@ -1796,6 +1796,25 @@ impl core::marker::Unpin for paladin::config::agents::AuthConfig
 impl core::marker::UnsafeUnpin for paladin::config::agents::AuthConfig
 impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::AuthConfig
 impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::AuthConfig
+pub struct paladin::config::agents::DocsConfig
+pub paladin::config::agents::DocsConfig::enabled: bool
+impl core::clone::Clone for paladin::config::agents::DocsConfig
+pub fn paladin::config::agents::DocsConfig::clone(&self) -> paladin::config::agents::DocsConfig
+impl core::default::Default for paladin::config::agents::DocsConfig
+pub fn paladin::config::agents::DocsConfig::default() -> Self
+impl core::fmt::Debug for paladin::config::agents::DocsConfig
+pub fn paladin::config::agents::DocsConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl serde_core::ser::Serialize for paladin::config::agents::DocsConfig
+pub fn paladin::config::agents::DocsConfig::serialize<__S>(&self, __S) -> core::result::Result<<__S as serde_core::ser::Serializer>::Ok, <__S as serde_core::ser::Serializer>::Error> where __S: serde_core::ser::Serializer
+impl<'de> serde_core::de::Deserialize<'de> for paladin::config::agents::DocsConfig
+pub fn paladin::config::agents::DocsConfig::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
+impl core::marker::Freeze for paladin::config::agents::DocsConfig
+impl core::marker::Send for paladin::config::agents::DocsConfig
+impl core::marker::Sync for paladin::config::agents::DocsConfig
+impl core::marker::Unpin for paladin::config::agents::DocsConfig
+impl core::marker::UnsafeUnpin for paladin::config::agents::DocsConfig
+impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::DocsConfig
+impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::DocsConfig
 pub struct paladin::config::agents::JwtAuthConfig
 pub paladin::config::agents::JwtAuthConfig::enabled: bool
 impl core::clone::Clone for paladin::config::agents::JwtAuthConfig
@@ -1840,6 +1859,7 @@ pub struct paladin::config::agents::WebHttpConfig
 pub paladin::config::agents::WebHttpConfig::auth: paladin::config::agents::AuthConfig
 pub paladin::config::agents::WebHttpConfig::body_limit_bytes: usize
 pub paladin::config::agents::WebHttpConfig::cors_allow_origins: alloc::vec::Vec<alloc::string::String>
+pub paladin::config::agents::WebHttpConfig::docs: paladin::config::agents::DocsConfig
 pub paladin::config::agents::WebHttpConfig::global_timeout_seconds: u64
 pub paladin::config::agents::WebHttpConfig::rate_limit: paladin::config::agents::RateLimitConfig
 impl core::clone::Clone for paladin::config::agents::WebHttpConfig
@@ -2442,6 +2462,25 @@ impl core::marker::Unpin for paladin::config::citadel::CitadelConfig
 impl core::marker::UnsafeUnpin for paladin::config::citadel::CitadelConfig
 impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::citadel::CitadelConfig
 impl core::panic::unwind_safe::UnwindSafe for paladin::config::citadel::CitadelConfig
+pub struct paladin::config::DocsConfig
+pub paladin::config::DocsConfig::enabled: bool
+impl core::clone::Clone for paladin::config::agents::DocsConfig
+pub fn paladin::config::agents::DocsConfig::clone(&self) -> paladin::config::agents::DocsConfig
+impl core::default::Default for paladin::config::agents::DocsConfig
+pub fn paladin::config::agents::DocsConfig::default() -> Self
+impl core::fmt::Debug for paladin::config::agents::DocsConfig
+pub fn paladin::config::agents::DocsConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl serde_core::ser::Serialize for paladin::config::agents::DocsConfig
+pub fn paladin::config::agents::DocsConfig::serialize<__S>(&self, __S) -> core::result::Result<<__S as serde_core::ser::Serializer>::Ok, <__S as serde_core::ser::Serializer>::Error> where __S: serde_core::ser::Serializer
+impl<'de> serde_core::de::Deserialize<'de> for paladin::config::agents::DocsConfig
+pub fn paladin::config::agents::DocsConfig::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
+impl core::marker::Freeze for paladin::config::agents::DocsConfig
+impl core::marker::Send for paladin::config::agents::DocsConfig
+impl core::marker::Sync for paladin::config::agents::DocsConfig
+impl core::marker::Unpin for paladin::config::agents::DocsConfig
+impl core::marker::UnsafeUnpin for paladin::config::agents::DocsConfig
+impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::DocsConfig
+impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::DocsConfig
 pub struct paladin::config::FileStorageConfig
 pub paladin::config::FileStorageConfig::allowed_extensions: core::option::Option<alloc::vec::Vec<alloc::string::String>>
 pub paladin::config::FileStorageConfig::connection_timeout: core::option::Option<u64>
@@ -2788,6 +2827,7 @@ pub struct paladin::config::WebHttpConfig
 pub paladin::config::WebHttpConfig::auth: paladin::config::agents::AuthConfig
 pub paladin::config::WebHttpConfig::body_limit_bytes: usize
 pub paladin::config::WebHttpConfig::cors_allow_origins: alloc::vec::Vec<alloc::string::String>
+pub paladin::config::WebHttpConfig::docs: paladin::config::agents::DocsConfig
 pub paladin::config::WebHttpConfig::global_timeout_seconds: u64
 pub paladin::config::WebHttpConfig::rate_limit: paladin::config::agents::RateLimitConfig
 impl core::clone::Clone for paladin::config::agents::WebHttpConfig
@@ -3472,4 +3512,4 @@ impl !core::panic::unwind_safe::RefUnwindSafe for paladin::application::services
 impl !core::panic::unwind_safe::UnwindSafe for paladin::application::services::paladin::paladin_builder::PaladinBuilder
 
 ## Summary
-Total public items: 1940
+Total public items: 1956

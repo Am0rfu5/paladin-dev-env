@@ -124,13 +124,13 @@ OPENAI_API_KEY=sk-... cargo run --bin paladin-server --features web-server
 # or point at a specific config: PALADIN_CONFIG=./config.yml paladin-server
 ```
 
-It exposes agent management (`GET/POST /agents`, `GET/DELETE /agents/{id}`) and three ways to run
-an agent:
+The agent API is served under a **`/v1`** version prefix. It exposes agent management
+(`GET/POST /v1/agents`, `GET/DELETE /v1/agents/{id}`) and three ways to run an agent:
 
-- `POST /agents/{id}/execute` — buffered: returns the full result as JSON.
-- `POST /agents/{id}/execute/stream` — streams tokens as Server-Sent Events (`chunk` … `done`).
-- `POST /agents/{id}/jobs` — async fire-and-poll: returns a `job_id`; poll
-  `GET /agents/{id}/jobs/{job_id}` for `running` → `completed`/`failed`/`timed_out`.
+- `POST /v1/agents/{id}/execute` — buffered: returns the full result as JSON.
+- `POST /v1/agents/{id}/execute/stream` — streams tokens as Server-Sent Events (`chunk` … `done`).
+- `POST /v1/agents/{id}/jobs` — async fire-and-poll: returns a `job_id`; poll
+  `GET /v1/agents/{id}/jobs/{job_id}` for `running` → `completed`/`failed`/`timed_out`.
 
 Every run is bounded by a timeout (`timeouts.default_seconds`, per-agent `timeout_seconds`, or a
 per-request `timeout_seconds`, clamped to `timeouts.max_seconds`); on expiry the work is cancelled
@@ -155,9 +155,21 @@ Authentication & authorization (the `http.auth` section):
   `AuthPort`. Either credential authenticates a request.
 - **Per-agent authorization** — an agent's optional `allowed_roles` restricts who may invoke it
   (empty ⇒ any authenticated caller); a disallowed role gets `403`.
-- **Admin gate** — `POST /agents` (register) and `DELETE /agents/{id}` (deregister) require an
+- **Admin gate** — `POST /v1/agents` (register) and `DELETE /v1/agents/{id}` (deregister) require an
   `admin` role.
 - `GET /health` and `GET /ready` are always reachable without a credential.
+
+API docs & versioning (the `http.docs` section):
+
+- **OpenAPI 3.1 spec** at `GET /openapi.json` and an interactive **Swagger UI** at `/docs`, derived
+  from the handlers (so the contract can't drift — a test guards `crates/paladin-web/openapi.json`;
+  regenerate with `make openapi`). Both are unversioned, unauthenticated, and on by default; set
+  `http.docs.enabled: false` to omit them in production.
+- **Versioning / stability policy:** the agent API lives under `/v1`. Within `/v1` only **additive,
+  backward-compatible** changes are made — new endpoints, new optional request fields, new response
+  fields, new enum variants. Any **breaking** change (removing/renaming a field, changing a type or
+  required shape, removing an endpoint) ships under a new prefix (`/v2`), with `/v1` supported
+  through a deprecation window. `/health`, `/ready`, `/openapi.json`, and `/docs` are unversioned.
 
 ## Project Status
 

@@ -14,7 +14,32 @@
 use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use utoipa::ToSchema;
+
+/// OpenAPI schema for the error envelope returned by every failing handler.
+///
+/// Mirrors [`ApiError::to_body`] (`{ "error": { "code", "message", "details" } }`); it exists
+/// purely so the generated spec can describe error responses. The runtime body is built by
+/// `ApiError`, not this type.
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct ApiErrorBody {
+    /// The error detail object.
+    pub error: ApiErrorDetail,
+}
+
+/// The `error` object inside [`ApiErrorBody`].
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct ApiErrorDetail {
+    /// Stable, machine-readable error code (e.g. `"not_found"`, `"unauthorized"`).
+    pub code: String,
+    /// Human-readable message.
+    pub message: String,
+    /// Optional structured context; `null` when absent.
+    #[schema(value_type = Object, nullable)]
+    pub details: Option<Value>,
+}
 
 /// A structured API error: HTTP status + machine `code` + human `message` + optional details.
 #[derive(Debug, Clone)]
@@ -141,6 +166,20 @@ mod tests {
         assert_eq!(body["error"]["code"], "not_found");
         assert_eq!(body["error"]["message"], "unknown agent 'x'");
         assert!(body["error"]["details"].is_null());
+    }
+
+    #[test]
+    fn error_body_schema_mirrors_runtime_body() {
+        // The documented schema type must round-trip a real ApiError body 1:1, so the spec
+        // and the wire format can't drift.
+        let body = ApiError::not_found("missing").to_body();
+        let parsed: ApiErrorBody =
+            serde_json::from_value(body.clone()).expect("schema type parses the runtime body");
+        assert_eq!(parsed.error.code, "not_found");
+        assert_eq!(parsed.error.message, "missing");
+        assert!(parsed.error.details.is_none());
+        // Re-serializing the schema type yields the same JSON shape.
+        assert_eq!(serde_json::to_value(&parsed).unwrap(), body);
     }
 
     #[test]

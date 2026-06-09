@@ -77,7 +77,7 @@ async fn server_boots_serves_agents_and_shuts_down_cleanly() {
 
     // GET /agents → 200 with the registered agent.
     let resp = client
-        .get(format!("{base}/agents"))
+        .get(format!("{base}/v1/agents"))
         .send()
         .await
         .expect("GET /agents");
@@ -115,7 +115,7 @@ async fn server_boots_serves_agents_and_shuts_down_cleanly() {
 
     // An error response uses the unified nested envelope.
     let resp = client
-        .get(format!("{base}/agents/ghost"))
+        .get(format!("{base}/v1/agents/ghost"))
         .send()
         .await
         .expect("GET unknown agent");
@@ -126,7 +126,7 @@ async fn server_boots_serves_agents_and_shuts_down_cleanly() {
 
     // POST /agents/researcher/execute → 200 with an output string.
     let resp = client
-        .post(format!("{base}/agents/researcher/execute"))
+        .post(format!("{base}/v1/agents/researcher/execute"))
         .json(&serde_json::json!({ "input": "hello" }))
         .send()
         .await
@@ -140,7 +140,7 @@ async fn server_boots_serves_agents_and_shuts_down_cleanly() {
 
     // Unknown agent → 404.
     let resp = client
-        .post(format!("{base}/agents/ghost/execute"))
+        .post(format!("{base}/v1/agents/ghost/execute"))
         .json(&serde_json::json!({ "input": "hi" }))
         .send()
         .await
@@ -149,7 +149,7 @@ async fn server_boots_serves_agents_and_shuts_down_cleanly() {
 
     // POST /agents/researcher/execute/stream → SSE chunk(s) then a done event.
     let resp = client
-        .post(format!("{base}/agents/researcher/execute/stream"))
+        .post(format!("{base}/v1/agents/researcher/execute/stream"))
         .json(&serde_json::json!({ "input": "hello" }))
         .send()
         .await
@@ -161,7 +161,7 @@ async fn server_boots_serves_agents_and_shuts_down_cleanly() {
 
     // POST /agents/researcher/jobs → 202 + job_id, then poll to completion.
     let resp = client
-        .post(format!("{base}/agents/researcher/jobs"))
+        .post(format!("{base}/v1/agents/researcher/jobs"))
         .json(&serde_json::json!({ "input": "hello" }))
         .send()
         .await
@@ -173,7 +173,7 @@ async fn server_boots_serves_agents_and_shuts_down_cleanly() {
     let mut completed = false;
     for _ in 0..50 {
         let resp = client
-            .get(format!("{base}/agents/researcher/jobs/{job_id}"))
+            .get(format!("{base}/v1/agents/researcher/jobs/{job_id}"))
             .send()
             .await
             .expect("GET job");
@@ -233,7 +233,7 @@ async fn server_enforces_authentication_when_enabled() {
 
     // No credential → 401 (nested envelope).
     let resp = client
-        .get(format!("{base}/agents"))
+        .get(format!("{base}/v1/agents"))
         .send()
         .await
         .expect("GET /agents no key");
@@ -243,7 +243,7 @@ async fn server_enforces_authentication_when_enabled() {
 
     // Valid API key → 200.
     let resp = client
-        .get(format!("{base}/agents"))
+        .get(format!("{base}/v1/agents"))
         .header("x-api-key", "sk-smoke-key")
         .send()
         .await
@@ -252,7 +252,7 @@ async fn server_enforces_authentication_when_enabled() {
 
     // Execute with the key → 200.
     let resp = client
-        .post(format!("{base}/agents/researcher/execute"))
+        .post(format!("{base}/v1/agents/researcher/execute"))
         .header("x-api-key", "sk-smoke-key")
         .json(&serde_json::json!({ "input": "hello" }))
         .send()
@@ -262,7 +262,7 @@ async fn server_enforces_authentication_when_enabled() {
 
     // Execute without the key → 401.
     let resp = client
-        .post(format!("{base}/agents/researcher/execute"))
+        .post(format!("{base}/v1/agents/researcher/execute"))
         .json(&serde_json::json!({ "input": "hello" }))
         .send()
         .await
@@ -275,6 +275,67 @@ async fn server_enforces_authentication_when_enabled() {
         .send()
         .await
         .expect("GET /health");
+    assert_eq!(resp.status().as_u16(), 200);
+
+    shutdown_tx.send(()).expect("send shutdown");
+    server.await.expect("server task joins after shutdown");
+}
+
+#[tokio::test]
+async fn server_serves_openapi_spec_and_docs() {
+    use paladin::infrastructure::web::openapi::{build_openapi, docs_router};
+
+    let state = state_with_mock_agent("researcher").await;
+    let spec = build_openapi(state.clone());
+    // Mount the docs alongside the agent API, mirroring the binary when docs are enabled.
+    let app = with_http_layers(
+        agent_router(state).merge(docs_router(spec)),
+        &HttpLayersConfig::default(),
+    );
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind ephemeral port");
+    let addr = listener.local_addr().expect("local addr");
+    let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app)
+            .with_graceful_shutdown(async move {
+                let _ = shutdown_rx.await;
+            })
+            .await
+            .expect("server runs");
+    });
+
+    let base = format!("http://{addr}");
+    let client = reqwest::Client::new();
+
+    // GET /openapi.json → 200 with the expected paths + security schemes.
+    let resp = client
+        .get(format!("{base}/openapi.json"))
+        .send()
+        .await
+        .expect("GET /openapi.json");
+    assert_eq!(resp.status().as_u16(), 200);
+    let spec: serde_json::Value = resp.json().await.expect("spec json");
+    assert_eq!(spec["info"]["title"], "Paladin Agent API");
+    assert!(
+        spec["paths"].get("/v1/agents/{id}/execute").is_some(),
+        "spec missing /v1/agents/{{id}}/execute; paths: {:?}",
+        spec["paths"]
+            .as_object()
+            .map(|o| o.keys().collect::<Vec<_>>())
+    );
+    let schemes = &spec["components"]["securitySchemes"];
+    assert!(schemes.get("api_key").is_some(), "missing api_key scheme");
+    assert!(schemes.get("jwt").is_some(), "missing jwt scheme");
+
+    // GET /docs/ → 200 (Swagger UI index).
+    let resp = client
+        .get(format!("{base}/docs/"))
+        .send()
+        .await
+        .expect("GET /docs/");
     assert_eq!(resp.status().as_u16(), 200);
 
     shutdown_tx.send(()).expect("send shutdown");

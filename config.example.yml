@@ -58,11 +58,15 @@ http:
     # Accept user JWTs via the wired AuthPort (in-process token store).
     jwt:
       enabled: false
+  # Interactive API docs: serve GET /openapi.json + Swagger UI at /docs (unversioned,
+  # unauthenticated — the contract is public). Set false to omit them in production.
+  docs:
+    enabled: true
 
-# Agents served behind the HTTP API. Each becomes resident at /agents/<id>:
-#   POST /agents/<id>/execute          — buffered run
-#   POST /agents/<id>/execute/stream   — token streaming (SSE)
-#   POST /agents/<id>/jobs             — async run (poll GET /agents/<id>/jobs/<job_id>)
+# Agents served behind the HTTP API. Each becomes resident at /v1/agents/<id>:
+#   POST /v1/agents/<id>/execute          — buffered run
+#   POST /v1/agents/<id>/execute/stream   — token streaming (SSE)
+#   POST /v1/agents/<id>/jobs          — async run (poll GET /v1/agents/<id>/jobs/<job_id>)
 agents:
   - id: "researcher"
     provider: "openai" # optional; defaults to llm.default_provider
