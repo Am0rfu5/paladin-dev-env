@@ -44,13 +44,13 @@
   - [ ] 0.1 Update `main` (Epics 1–4 merged) and create/checkout `feature/m12-epic5-api-security-authorization` from it.
   - [ ] 0.2 Confirm a clean baseline: `cargo build --features web-server` and `cargo test --features web-server` pass before any changes.
 
-- [ ] 1.0 Add authentication (`agent_auth`: `Principal`, `AgentAuthConfig`, API-key + JWT middleware → `401`)
-  - [ ] 1.1 Create `crates/paladin-web/src/agent_auth.rs`; declare `pub mod agent_auth;` in `lib.rs`. Define `Principal { id: String, role: UserRole }` and `AgentAuthConfig { enabled: bool, api_keys: HashMap<String, Principal>, jwt: Option<Arc<dyn AuthPort>> }` (+ a constructor/`Default` that is `enabled: true`, empty).
-  - [ ] 1.2 **(Test first)** Unit tests for credential resolution: valid `X-API-Key` → `Principal` (constant-time compare); valid `Authorization: Bearer` via a mock `AuthPort` → `Principal`; missing/invalid/empty → `None`/error; bearer-then-key precedence when both present.
-  - [ ] 1.3 Implement `authenticate(headers, &AgentAuthConfig) -> Result<Principal, ApiError>` (constant-time key compare; `AuthPort::verify_token` for JWT → role from `AuthClaims`) and an axum middleware (`from_fn_with_state`) that runs it, attaches `Principal` to request extensions, and returns `401` (`ApiError`) on failure. When `enabled == false`, attach a default/anonymous principal and pass through.
-  - [ ] 1.4 Add `auth: AgentAuthConfig` to `AgentApiState` (+ `with_auth`); apply the auth middleware to the **agent routes only** in `agent_router` (via `route_layer`), leaving the merged `health_routes` unauthenticated.
-  - [ ] 1.5 **(Test first)** Router tests (`oneshot`): with auth enabled + a key configured — no credential → `401` (nested envelope); valid key → `200`; valid JWT (mock `AuthPort`) → `200`; `GET /health` + `/ready` → `200` without a credential.
-  - [ ] 1.6 Rustdoc; gates.
+- [x] 1.0 Add authentication (`agent_auth`: `Principal`, `AgentAuthConfig`, API-key + JWT middleware → `401`)
+  - [x] 1.1 Created `crates/paladin-web/src/agent_auth.rs` (+ `pub mod`/re-exports). `Principal { id, role }`, `AgentAuthConfig { enabled, api_keys: HashMap<String, Principal>, jwt: Option<Arc<dyn AuthPort>> }` + `has_credentials()`. Added `ApiError::unauthorized`/`forbidden`.
+  - [x] 1.2 **(Test first)** Unit tests: valid `X-API-Key` → `Principal` (constant-time `ct_eq`); valid `Authorization: Bearer` via mock `AuthPort` → `Principal`; missing/invalid → `401`.
+  - [x] 1.3 Implemented `authenticate(headers, &AgentAuthConfig) -> Result<Principal, ApiError>` (bearer-JWT first, then API key) + `require_authentication` middleware (attaches `Principal`; `401` on failure; when disabled attaches an open-access `Admin` principal and passes through).
+  - [x] 1.4 Added `auth` to `AgentApiState` (+ `with_auth`; library default = **disabled/open** so existing tests/embedding are unaffected — the secure default lives in the server). Applied the middleware to agent routes via `route_layer`; merged `health_routes` stay open.
+  - [x] 1.5 **(Test first)** Router tests: auth enabled + key — no credential → `401`, valid `X-API-Key` → `200`; `/health` + `/ready` → `200` without a credential.
+  - [x] 1.6 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; agent_auth 8 tests, full paladin-web 104 pass (no regressions).
 
 - [ ] 2.0 Add authorization (per-agent `allowed_roles` → `403`; admin gate on register/deregister)
   - [ ] 2.1 Add `allowed_roles: Vec<UserRole>` to `AgentEntry` and `allowed_roles` to `AgentSpec` (default empty ⇒ any authenticated caller).

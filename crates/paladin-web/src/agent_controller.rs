@@ -61,6 +61,8 @@ pub struct AgentApiState {
     pub timeouts: TimeoutPolicy,
     /// In-memory store for async (`POST /agents/{id}/jobs`) execution.
     pub jobs: Arc<JobStore>,
+    /// Authentication configuration (disabled = open; see `agent_auth`).
+    pub auth: crate::agent_auth::AgentAuthConfig,
 }
 
 impl AgentApiState {
@@ -72,6 +74,7 @@ impl AgentApiState {
             provisioner: None,
             timeouts: TimeoutPolicy::default(),
             jobs: Arc::new(JobStore::default()),
+            auth: crate::agent_auth::AgentAuthConfig::default(),
         }
     }
 
@@ -84,6 +87,12 @@ impl AgentApiState {
     /// Set the server-wide timeout policy.
     pub fn with_timeouts(mut self, timeouts: TimeoutPolicy) -> Self {
         self.timeouts = timeouts;
+        self
+    }
+
+    /// Set the authentication configuration.
+    pub fn with_auth(mut self, auth: crate::agent_auth::AgentAuthConfig) -> Self {
+        self.auth = auth;
         self
     }
 }
@@ -559,8 +568,14 @@ pub fn agent_router(state: AgentApiState) -> Router {
         .route("/agents/{id}/execute/stream", post(execute_agent_stream))
         .route("/agents/{id}/jobs", post(enqueue_job))
         .route("/agents/{id}/jobs/{job_id}", get(get_job))
+        // Authenticate the agent routes (no-op when auth is disabled). `route_layer`
+        // applies only to these routes, so the merged health probes stay open.
+        .route_layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            crate::agent_auth::require_authentication,
+        ))
         .with_state(state.clone());
-    // Mount the liveness/readiness probes alongside the agent routes.
+    // Mount the liveness/readiness probes alongside the agent routes (unauthenticated).
     routes.merge(crate::health::health_routes(state))
 }
 

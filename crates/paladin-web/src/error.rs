@@ -52,6 +52,16 @@ impl ApiError {
         Self::new(StatusCode::BAD_REQUEST, "bad_request", message)
     }
 
+    /// `401 Unauthorized` — missing or invalid credentials (`code = "unauthorized"`).
+    pub fn unauthorized(message: impl Into<String>) -> Self {
+        Self::new(StatusCode::UNAUTHORIZED, "unauthorized", message)
+    }
+
+    /// `403 Forbidden` — authenticated but not permitted (`code = "forbidden"`).
+    pub fn forbidden(message: impl Into<String>) -> Self {
+        Self::new(StatusCode::FORBIDDEN, "forbidden", message)
+    }
+
     /// `404 Not Found` (`code = "not_found"`).
     pub fn not_found(message: impl Into<String>) -> Self {
         Self::new(StatusCode::NOT_FOUND, "not_found", message)
