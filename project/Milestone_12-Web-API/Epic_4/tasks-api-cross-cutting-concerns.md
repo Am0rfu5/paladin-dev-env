@@ -91,10 +91,10 @@
   - [x] 7.1 Unit/handler coverage confirmed: `ApiError` (3), controller error-envelope assertions (agent/delivery/user), health (2), request-id (3), CORS/body-limit/429/composition/global-timeout-skips-streaming (6).
   - [x] 7.2 **(Test first)** Extended `tests/paladin_server_smoke.rs`: the app is now wrapped in `with_http_layers`, and the test asserts an `x-request-id` header, `GET /health` → `{status: ok}`, `GET /ready` → `{status: ready, agents: 1}`, and `GET /agents/ghost` → `404` with the nested `{ error: { code: "not_found", message } }` envelope.
 
-- [ ] 8.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
-  - [ ] 8.1 Update `config.example.yml`: a documented `http`/web section (CORS, body limit, global timeout, rate limit off-by-default).
-  - [ ] 8.2 Update `README.md`: health/readiness endpoints, the error envelope, request-id, and the configurable layers.
-  - [ ] 8.3 Full gate: `cargo test --features web-server`, `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny`. Remove any debug prints.
-  - [ ] 8.4 Regenerate `project/current-exports.txt` (new `ApiError`/`HttpLayersConfig`/health items + config fields) — review the diff (error-shape change is internal to `paladin-web`; config additions are additive default-surface).
-  - [ ] 8.5 Add a `CHANGELOG.md [Unreleased]` entry (Milestone 12 — Epic 4), **calling out the breaking error-body change**.
-  - [ ] 8.6 Commit referencing Milestone 12 / Epic 4; mark parent tasks complete and **stop for go-ahead**.
+- [x] 8.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
+  - [x] 8.1 Added a documented `http:` section to `config.example.yml` (CORS, body limit, global timeout, rate limit off-by-default).
+  - [x] 8.2 README "Running agents behind an HTTP API" extended: health/readiness, the structured error envelope, `x-request-id`/logging, and the configurable layers.
+  - [x] 8.3 Full gate green: `cargo test --features web-server` (all crates; facade lib 650, paladin-web 96, smoke 1), `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny`. No debug prints.
+  - [x] 8.4 Regenerated `project/current-exports.txt` — **additive only** (`config::{WebHttpConfig, RateLimitConfig}` + `Settings.http`); the `ApiError`/error-shape change is internal to the optional `paladin-web`, so the default facade surface only gains config fields. Zero removals.
+  - [x] 8.5 Added a `CHANGELOG.md [Unreleased]` entry (Milestone 12 — Epic 4) with a **BREAKING** note on the error-body change.
+  - [x] 8.6 Committed; parent tasks complete; **stop for go-ahead**.
