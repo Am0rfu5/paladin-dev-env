@@ -75,10 +75,10 @@
   - [x] 5.1 Confirmed unit/handler coverage from 1.0–4.0: authn resolution (key/JWT/401), `authorize_invoke`/`require_admin`, handler `401`/`403` (disallowed role, non-admin register/deregister), config parse + unknown-role + fail-closed boot, credential-not-echoed.
   - [x] 5.2 **(Test first)** Added `server_enforces_authentication_when_enabled` to `tests/paladin_server_smoke.rs`: auth enabled + admin API key — no credential → `401` (`unauthorized` envelope), valid `X-API-Key` → `200` on `GET /agents` and `POST execute`, execute without key → `401`, `/health` open. Both smoke tests pass; `fmt`/`clippy` clean.
 
-- [ ] 6.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
-  - [ ] 6.1 Update `config.example.yml`: an `http.auth` block (enabled + sample `api_keys` + `jwt`) and a per-agent `allowed_roles` example, with a note that keys belong in env/secrets.
-  - [ ] 6.2 Update `README.md`: authentication (API key + JWT), per-agent `allowed_roles`, the admin gate, and the fail-closed posture / disable flag.
-  - [ ] 6.3 Full gate: `cargo test --features web-server`, `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny`. Remove any debug prints.
-  - [ ] 6.4 Regenerate `project/current-exports.txt` (new `Principal`/`AgentAuthConfig` + config `auth`/`allowed_roles` fields) — review the diff (additive expected).
-  - [ ] 6.5 Add a `CHANGELOG.md [Unreleased]` entry (Milestone 12 — Epic 5): auth (key + JWT), per-agent authz, admin gate, fail-closed default.
-  - [ ] 6.6 Commit referencing Milestone 12 / Epic 5; mark parent tasks complete and **stop for go-ahead**.
+- [x] 6.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
+  - [x] 6.1 `config.example.yml`: added the `http.auth` block (enabled + env-sourced `api_keys` with roles + `jwt`) and per-agent `allowed_roles` examples, with a note that keys belong in env/secrets.
+  - [x] 6.2 `README.md`: documented authentication (API key + JWT), per-agent `allowed_roles`, the admin gate, the fail-closed posture / disable flag, and the always-open probes.
+  - [x] 6.3 Full gate green: `cargo test --features web-server` (all binaries, 0 failures), `cargo fmt --check`, `cargo clippy --workspace --all-targets --features web-server -- -D warnings`, `make deny`. No debug prints.
+  - [x] 6.4 Regenerated `project/current-exports.txt` — **additive only** (`config::{AuthConfig, ApiKeyConfig, JwtAuthConfig}`, `AgentDefinition.allowed_roles`, `paladin_web::{AgentAuthConfig, Principal}`); zero removals.
+  - [x] 6.5 Added the `CHANGELOG.md [Unreleased]` Epic 5 entry (auth key+JWT, per-agent authz, admin gate, fail-closed default, user-route error unification).
+  - [x] 6.6 Committed; parent tasks complete; **stop for go-ahead**.

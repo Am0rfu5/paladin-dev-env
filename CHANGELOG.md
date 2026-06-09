@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Milestone 12 — Epic 5: API security & authorization
+
+Secures the agent HTTP API with authentication, per-agent authorization, and an admin gate on
+runtime registration. Built in `paladin-web` (the JWT `AuthPort` impl is injected by the binary —
+no facade dependency).
+
+#### Added
+
+- **Authentication** (`paladin_web::{AgentAuthConfig, Principal}`): a configured **API-key** list
+  (`X-API-Key` header, constant-time match) and the existing **JWT** bearer path (`AuthPort`). Either
+  credential authenticates; failures return `401` via the unified `ApiError` envelope.
+- **Per-agent authorization**: an agent's optional `allowed_roles` restricts invocation (empty ⇒ any
+  authenticated caller); a disallowed role gets `403`.
+- **Admin gate**: `POST /agents` and `DELETE /agents/{id}` require an `admin` role (`403` otherwise).
+- **Config** (`http.auth`): `enabled` (default true), `api_keys: [{ key, name, role }]`, `jwt`, plus
+  per-agent `allowed_roles`. `paladin-server` maps these onto the auth layer and wires
+  `InMemoryTokenAuthAdapter` for the JWT path.
+
+#### Security
+
+- **Fail-closed posture**: with auth enabled and no credentials configured, `paladin-server` refuses
+  to start with an actionable error. `auth.enabled: false` serves open with a logged warning.
+- `GET /health` and `GET /ready` remain unauthenticated.
+- Credentials are never logged (the request logger emits no headers/bodies) and never echoed in error
+  responses; discovery endpoints never return prompts/keys.
+
+#### Changed
+
+- The user-management routes' `401`/`403` responses now use the unified `ApiError` envelope, matching
+  the agent API.
+
 ### Milestone 12 — Epic 4: API cross-cutting concerns
 
 Adds production middleware to the agent HTTP API: a unified error model, health/readiness probes,

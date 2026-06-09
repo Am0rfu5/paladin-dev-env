@@ -146,7 +146,18 @@ Operational endpoints and cross-cutting behavior:
 - Configurable CORS, request body-size limit, an optional global timeout (non-streaming routes), and
   an optional per-IP rate limiter — see the `http:` section of `config.example.yml`.
 
-(Authentication arrives in a later milestone epic; put it behind a trusted proxy for now.)
+Authentication & authorization (the `http.auth` section):
+
+- **Enabled by default and fail-closed:** the server refuses to start if `auth.enabled` is true and
+  no credentials are configured. Set `auth.enabled: false` for trusted/dev use (logged as a warning).
+- **API keys** — send `X-API-Key: <key>`; each key maps to a principal `{ name, role }`. Ideal for
+  service-to-service callers. **JWT** — send `Authorization: Bearer <token>`, verified via the wired
+  `AuthPort`. Either credential authenticates a request.
+- **Per-agent authorization** — an agent's optional `allowed_roles` restricts who may invoke it
+  (empty ⇒ any authenticated caller); a disallowed role gets `403`.
+- **Admin gate** — `POST /agents` (register) and `DELETE /agents/{id}` (deregister) require an
+  `admin` role.
+- `GET /health` and `GET /ready` are always reachable without a credential.
 
 ## Project Status
 
