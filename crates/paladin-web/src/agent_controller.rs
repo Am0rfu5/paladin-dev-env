@@ -14,9 +14,9 @@
 //! | `POST /agents/{id}/jobs` | Enqueue an async run (fire-and-poll) |
 //! | `GET /agents/{id}/jobs/{job_id}` | Poll an async job's status/result |
 //!
-//! Responses follow the same convention as
-//! [`delivery_controller`](crate::delivery_controller): a success body is the serialized
-//! payload, and an error body is `{ "error": "<message>" }`.
+//! A success body is the serialized payload; failures use the unified
+//! [`ApiError`](crate::error::ApiError) envelope
+//! (`{ "error": { "code", "message", "details" } }`).
 
 use std::sync::Arc;
 
@@ -41,6 +41,7 @@ use paladin_core::platform::container::paladin_error::PaladinError;
 use paladin_ports::output::paladin_port::{PaladinStream, PaladinStreamChunk};
 
 use crate::agent_registry::{AgentEntry, AgentProvisioner, AgentRegistry, AgentSpec};
+use crate::error::ApiError;
 use crate::job_store::JobStore;
 use crate::timeout::{TimeoutPolicy, resolve_timeout};
 
@@ -195,32 +196,16 @@ fn prompt_preview(system_prompt: &str) -> String {
 // --- Response helpers (interim) ---------------------------------------------
 //
 // These mirror `delivery_controller`'s helpers and are kept local on purpose:
-// Milestone 12, Epic 4 introduces a unified error model and these become a single
-// swap point.
+// failures use the unified [`ApiError`] (Epic 4); success bodies use [`ok_body`].
 
-/// JSON response body type used by every agent handler.
+/// JSON response body type used by every agent handler's success path.
 pub(crate) type JsonValue = Json<serde_json::Value>;
 
-/// Serialize a successful payload to a JSON body, falling back to an error body if
-/// (very unusually) serialization fails.
+/// Serialize a successful payload to a JSON body. Serialization of the crate's own DTOs
+/// is infallible in practice; on the unreachable error path we emit `null` rather than
+/// fabricate an error envelope.
 pub(crate) fn ok_body<T: Serialize>(value: &T) -> JsonValue {
-    match serde_json::to_value(value) {
-        Ok(v) => Json(v),
-        Err(e) => Json(json!({ "error": e.to_string() })),
-    }
-}
-
-/// Build an `{ "error": "<message>" }` JSON body.
-pub(crate) fn error_body(message: impl std::fmt::Display) -> JsonValue {
-    Json(json!({ "error": message.to_string() }))
-}
-
-/// Map a [`PaladinError`] from agent execution to an HTTP response.
-///
-/// Execution failures are upstream/LLM/tool failures, so they surface as
-/// `502 Bad Gateway` (not `500`), with the error message in the standard body.
-pub(crate) fn execution_error_response(error: &PaladinError) -> (StatusCode, JsonValue) {
-    (StatusCode::BAD_GATEWAY, error_body(error))
+    Json(serde_json::to_value(value).unwrap_or(serde_json::Value::Null))
 }
 
 // --- Handlers ---------------------------------------------------------------
@@ -230,45 +215,32 @@ pub(crate) fn execution_error_response(error: &PaladinError) -> (StatusCode, Jso
 /// Returns:
 /// - `200 OK` with [`ExecuteResponse`] on success;
 /// - `404 Not Found` if no agent is registered under `id`;
-/// - `502 Bad Gateway` with `{ "error": ... }` if execution fails;
+/// - `502 Bad Gateway` if execution fails; `504` on timeout;
 /// - `400 Bad Request` (via the `Json` extractor) if the body is missing/invalid.
 pub async fn execute_agent(
     State(state): State<AgentApiState>,
     Path(id): Path<String>,
     Json(request): Json<ExecuteRequest>,
-) -> (StatusCode, JsonValue) {
-    let Some(entry) = state.registry.get(&id) else {
-        return (
-            StatusCode::NOT_FOUND,
-            error_body(format!("unknown agent '{id}'")),
-        );
-    };
+) -> Result<(StatusCode, JsonValue), ApiError> {
+    let entry = state
+        .registry
+        .get(&id)
+        .ok_or_else(|| ApiError::not_found(format!("unknown agent '{id}'")))?;
 
-    let timeout =
-        match resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts) {
-            Ok(d) => d,
-            Err(_) => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    error_body("timeout_seconds must be a positive integer"),
-                );
-            }
-        };
+    let timeout = resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts)
+        .map_err(|_| ApiError::bad_request("timeout_seconds must be a positive integer"))?;
 
     let run = entry
         .executor
         .execute(entry.paladin.as_ref(), &request.input);
     match tokio::time::timeout(timeout, run).await {
-        Ok(Ok(result)) => (StatusCode::OK, ok_body(&ExecuteResponse::from(result))),
-        Ok(Err(error)) => execution_error_response(&error),
+        Ok(Ok(result)) => Ok((StatusCode::OK, ok_body(&ExecuteResponse::from(result)))),
+        Ok(Err(error)) => Err(ApiError::bad_gateway(error.to_string())),
         // The future is dropped on elapse — the in-flight execution is cancelled.
-        Err(_elapsed) => (
-            StatusCode::GATEWAY_TIMEOUT,
-            error_body(format!(
-                "agent '{id}' timed out after {}s",
-                timeout.as_secs()
-            )),
-        ),
+        Err(_elapsed) => Err(ApiError::gateway_timeout(format!(
+            "agent '{id}' timed out after {}s",
+            timeout.as_secs()
+        ))),
     }
 }
 
@@ -293,17 +265,15 @@ pub async fn list_agents(State(state): State<AgentApiState>) -> (StatusCode, Jso
 pub async fn describe_agent(
     State(state): State<AgentApiState>,
     Path(id): Path<String>,
-) -> (StatusCode, JsonValue) {
-    match state.registry.get(&id) {
-        Some(entry) => (
-            StatusCode::OK,
-            ok_body(&AgentSummary::from_agent(id, entry.paladin.as_ref())),
-        ),
-        None => (
-            StatusCode::NOT_FOUND,
-            error_body(format!("unknown agent '{id}'")),
-        ),
-    }
+) -> Result<(StatusCode, JsonValue), ApiError> {
+    let entry = state
+        .registry
+        .get(&id)
+        .ok_or_else(|| ApiError::not_found(format!("unknown agent '{id}'")))?;
+    Ok((
+        StatusCode::OK,
+        ok_body(&AgentSummary::from_agent(id, entry.paladin.as_ref())),
+    ))
 }
 
 /// `POST /agents` — register a new agent at runtime from an [`AgentSpec`].
@@ -318,47 +288,45 @@ pub async fn describe_agent(
 pub async fn register_agent(
     State(state): State<AgentApiState>,
     Json(spec): Json<AgentSpec>,
-) -> (StatusCode, JsonValue) {
-    let Some(provisioner) = state.provisioner.as_ref() else {
-        return (
-            StatusCode::NOT_IMPLEMENTED,
-            error_body("runtime agent registration is not enabled"),
-        );
-    };
+) -> Result<(StatusCode, JsonValue), ApiError> {
+    let provisioner = state
+        .provisioner
+        .as_ref()
+        .ok_or_else(|| ApiError::not_implemented("runtime agent registration is not enabled"))?;
 
     // Cheap early rejection before paying to provision an agent we'd discard.
     if state.registry.contains(&spec.id) {
-        return (
-            StatusCode::CONFLICT,
-            error_body(format!("agent '{}' already exists", spec.id)),
-        );
+        return Err(ApiError::conflict(format!(
+            "agent '{}' already exists",
+            spec.id
+        )));
     }
 
-    match provisioner.provision(&spec).await {
-        Ok(provisioned) => {
-            let paladin = Arc::new(provisioned.paladin);
-            // Re-check on insert closes the race between the `contains` check and here.
-            if !state.registry.insert_entry(
-                spec.id.clone(),
-                AgentEntry {
-                    paladin: Arc::clone(&paladin),
-                    executor: provisioned.executor,
-                    streamer: provisioned.streamer,
-                    timeout_secs: spec.timeout_seconds,
-                },
-            ) {
-                return (
-                    StatusCode::CONFLICT,
-                    error_body(format!("agent '{}' already exists", spec.id)),
-                );
-            }
-            (
-                StatusCode::CREATED,
-                ok_body(&AgentSummary::from_agent(spec.id, paladin.as_ref())),
-            )
-        }
-        Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error_body(error)),
+    let provisioned = provisioner
+        .provision(&spec)
+        .await
+        .map_err(|error| ApiError::unprocessable(error.to_string()))?;
+
+    let paladin = Arc::new(provisioned.paladin);
+    // Re-check on insert closes the race between the `contains` check and here.
+    if !state.registry.insert_entry(
+        spec.id.clone(),
+        AgentEntry {
+            paladin: Arc::clone(&paladin),
+            executor: provisioned.executor,
+            streamer: provisioned.streamer,
+            timeout_secs: spec.timeout_seconds,
+        },
+    ) {
+        return Err(ApiError::conflict(format!(
+            "agent '{}' already exists",
+            spec.id
+        )));
     }
+    Ok((
+        StatusCode::CREATED,
+        ok_body(&AgentSummary::from_agent(spec.id, paladin.as_ref())),
+    ))
 }
 
 /// `DELETE /agents/{id}` — deregister an agent.
@@ -368,14 +336,11 @@ pub async fn register_agent(
 pub async fn deregister_agent(
     State(state): State<AgentApiState>,
     Path(id): Path<String>,
-) -> Result<StatusCode, (StatusCode, JsonValue)> {
+) -> Result<StatusCode, ApiError> {
     if state.registry.remove(&id) {
         Ok(StatusCode::NO_CONTENT)
     } else {
-        Err((
-            StatusCode::NOT_FOUND,
-            error_body(format!("unknown agent '{id}'")),
-        ))
+        Err(ApiError::not_found(format!("unknown agent '{id}'")))
     }
 }
 
@@ -397,9 +362,11 @@ fn chunk_to_event(item: Result<PaladinStreamChunk, PaladinError>) -> Event {
         Ok(chunk) => Event::default()
             .event("chunk")
             .data(json!({ "text": chunk.text }).to_string()),
-        Err(error) => Event::default()
-            .event("error")
-            .data(json!({ "error": error.to_string() }).to_string()),
+        Err(error) => Event::default().event("error").data(
+            ApiError::bad_gateway(error.to_string())
+                .to_body()
+                .to_string(),
+        ),
     }
 }
 
@@ -421,7 +388,7 @@ fn timed_event_stream(
                 _ = &mut sleep => {
                     yield Ok(Event::default()
                         .event("error")
-                        .data(json!({ "error": "stream timed out" }).to_string()));
+                        .data(ApiError::gateway_timeout("stream timed out").to_body().to_string()));
                     break;
                 }
                 item = rx.recv() => match item {
@@ -454,21 +421,14 @@ pub async fn execute_agent_stream(
     Json(request): Json<ExecuteRequest>,
 ) -> Response {
     let Some(entry) = state.registry.get(&id) else {
-        return (
-            StatusCode::NOT_FOUND,
-            error_body(format!("unknown agent '{id}'")),
-        )
-            .into_response();
+        return ApiError::not_found(format!("unknown agent '{id}'")).into_response();
     };
 
     let timeout =
         match resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts) {
             Ok(d) => d,
             Err(_) => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    error_body("timeout_seconds must be a positive integer"),
-                )
+                return ApiError::bad_request("timeout_seconds must be a positive integer")
                     .into_response();
             }
         };
@@ -483,7 +443,7 @@ pub async fn execute_agent_stream(
                 let boxed: SseEventStream = Box::pin(timed_event_stream(rx, timeout));
                 Sse::new(boxed).into_response()
             }
-            Err(error) => execution_error_response(&error).into_response(),
+            Err(error) => ApiError::bad_gateway(error.to_string()).into_response(),
         };
     }
 
@@ -504,15 +464,12 @@ pub async fn execute_agent_stream(
             let boxed: SseEventStream = Box::pin(futures::stream::iter(events));
             Sse::new(boxed).into_response()
         }
-        Ok(Err(error)) => execution_error_response(&error).into_response(),
-        Err(_elapsed) => (
-            StatusCode::GATEWAY_TIMEOUT,
-            error_body(format!(
-                "agent '{id}' timed out after {}s",
-                timeout.as_secs()
-            )),
-        )
-            .into_response(),
+        Ok(Err(error)) => ApiError::bad_gateway(error.to_string()).into_response(),
+        Err(_elapsed) => ApiError::gateway_timeout(format!(
+            "agent '{id}' timed out after {}s",
+            timeout.as_secs()
+        ))
+        .into_response(),
     }
 }
 
@@ -527,24 +484,14 @@ pub async fn enqueue_job(
     State(state): State<AgentApiState>,
     Path(id): Path<String>,
     Json(request): Json<ExecuteRequest>,
-) -> (StatusCode, JsonValue) {
-    let Some(entry) = state.registry.get(&id) else {
-        return (
-            StatusCode::NOT_FOUND,
-            error_body(format!("unknown agent '{id}'")),
-        );
-    };
+) -> Result<(StatusCode, JsonValue), ApiError> {
+    let entry = state
+        .registry
+        .get(&id)
+        .ok_or_else(|| ApiError::not_found(format!("unknown agent '{id}'")))?;
 
-    let timeout =
-        match resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts) {
-            Ok(d) => d,
-            Err(_) => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    error_body("timeout_seconds must be a positive integer"),
-                );
-            }
-        };
+    let timeout = resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts)
+        .map_err(|_| ApiError::bad_request("timeout_seconds must be a positive integer"))?;
 
     let job_id = state.jobs.create();
     let jobs = Arc::clone(&state.jobs);
@@ -568,7 +515,7 @@ pub async fn enqueue_job(
         }
     });
 
-    (StatusCode::ACCEPTED, ok_body(&json!({ "job_id": job_id })))
+    Ok((StatusCode::ACCEPTED, ok_body(&json!({ "job_id": job_id }))))
 }
 
 /// `GET /agents/{id}/jobs/{job_id}` — poll an async job's status and result.
@@ -578,13 +525,10 @@ pub async fn enqueue_job(
 pub async fn get_job(
     State(state): State<AgentApiState>,
     Path((_id, job_id)): Path<(String, String)>,
-) -> (StatusCode, JsonValue) {
+) -> Result<(StatusCode, JsonValue), ApiError> {
     match state.jobs.get(&job_id) {
-        Some(record) => (StatusCode::OK, ok_body(&record)),
-        None => (
-            StatusCode::NOT_FOUND,
-            error_body(format!("unknown job '{job_id}'")),
-        ),
+        Some(record) => Ok((StatusCode::OK, ok_body(&record))),
+        None => Err(ApiError::not_found(format!("unknown job '{job_id}'"))),
     }
 }
 
@@ -842,7 +786,7 @@ mod tests {
         registry.insert("r", test_agent("r"), Arc::new(MockExecutor::Slow));
         let state = AgentApiState::new(Arc::new(registry));
 
-        let (status, _) = execute_agent(
+        let err = execute_agent(
             State(state),
             Path("r".to_string()),
             Json(ExecuteRequest {
@@ -850,14 +794,15 @@ mod tests {
                 timeout_seconds: Some(1), // 1s; the Slow executor sleeps 60s
             }),
         )
-        .await;
-        assert_eq!(status, StatusCode::GATEWAY_TIMEOUT);
+        .await
+        .unwrap_err();
+        assert_eq!(err.status(), StatusCode::GATEWAY_TIMEOUT);
     }
 
     #[tokio::test]
     async fn execute_zero_timeout_is_400() {
         let state = state_with_agent("r", MockExecutor::Succeeds("ok".to_string()));
-        let (status, _) = execute_agent(
+        let err = execute_agent(
             State(state),
             Path("r".to_string()),
             Json(ExecuteRequest {
@@ -865,8 +810,9 @@ mod tests {
                 timeout_seconds: Some(0),
             }),
         )
-        .await;
-        assert_eq!(status, StatusCode::BAD_REQUEST);
+        .await
+        .unwrap_err();
+        assert_eq!(err.status(), StatusCode::BAD_REQUEST);
     }
 
     #[tokio::test]
@@ -909,7 +855,8 @@ mod tests {
                 State(state.clone()),
                 Path((agent_id.to_string(), job_id.to_string())),
             )
-            .await;
+            .await
+            .expect("job lookup ok");
             assert_eq!(status, StatusCode::OK);
             if body["status"] != "running" {
                 return body;
@@ -931,7 +878,8 @@ mod tests {
                 timeout_seconds: None,
             }),
         )
-        .await;
+        .await
+        .expect("accepted");
         assert_eq!(status, StatusCode::ACCEPTED);
         let job_id = body["job_id"].as_str().expect("job_id present").to_string();
 
@@ -943,7 +891,7 @@ mod tests {
     #[tokio::test]
     async fn job_enqueue_unknown_agent_returns_404() {
         let state = state_with_agent("r", MockExecutor::Succeeds("x".to_string()));
-        let (status, _) = enqueue_job(
+        let err = enqueue_job(
             State(state),
             Path("missing".to_string()),
             Json(ExecuteRequest {
@@ -951,19 +899,21 @@ mod tests {
                 timeout_seconds: None,
             }),
         )
-        .await;
-        assert_eq!(status, StatusCode::NOT_FOUND);
+        .await
+        .unwrap_err();
+        assert_eq!(err.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
     async fn get_job_unknown_returns_404() {
         let state = state_with_agent("r", MockExecutor::Succeeds("x".to_string()));
-        let (status, _) = get_job(
+        let err = get_job(
             State(state),
             Path(("r".to_string(), "no-such-job".to_string())),
         )
-        .await;
-        assert_eq!(status, StatusCode::NOT_FOUND);
+        .await
+        .unwrap_err();
+        assert_eq!(err.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
@@ -980,18 +930,13 @@ mod tests {
                 timeout_seconds: Some(1),
             }),
         )
-        .await;
+        .await
+        .expect("accepted");
         assert_eq!(status, StatusCode::ACCEPTED);
         let job_id = body["job_id"].as_str().unwrap().to_string();
 
         let record = poll_job(&state, "r", &job_id).await;
         assert_eq!(record["status"], "timed_out");
-    }
-
-    #[test]
-    fn error_body_renders_error_envelope() {
-        let Json(value) = error_body("boom");
-        assert_eq!(value, json!({ "error": "boom" }));
     }
 
     #[tokio::test]
@@ -1005,7 +950,8 @@ mod tests {
                 timeout_seconds: None,
             }),
         )
-        .await;
+        .await
+        .expect("ok");
 
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["output"], "done");
@@ -1018,7 +964,7 @@ mod tests {
     #[tokio::test]
     async fn execute_unknown_id_returns_404() {
         let state = state_with_agent("r", MockExecutor::Succeeds("done".to_string()));
-        let (status, Json(body)) = execute_agent(
+        let err = execute_agent(
             State(state),
             Path("missing".to_string()),
             Json(ExecuteRequest {
@@ -1026,16 +972,17 @@ mod tests {
                 timeout_seconds: None,
             }),
         )
-        .await;
+        .await
+        .unwrap_err();
 
-        assert_eq!(status, StatusCode::NOT_FOUND);
-        assert!(body.get("error").is_some(), "expected an error body");
+        assert_eq!(err.status(), StatusCode::NOT_FOUND);
+        assert_eq!(err.to_body()["error"]["code"], "not_found");
     }
 
     #[tokio::test]
     async fn execute_executor_error_returns_502() {
         let state = state_with_agent("r", MockExecutor::Fails("upstream down".to_string()));
-        let (status, Json(body)) = execute_agent(
+        let err = execute_agent(
             State(state),
             Path("r".to_string()),
             Json(ExecuteRequest {
@@ -1043,13 +990,13 @@ mod tests {
                 timeout_seconds: None,
             }),
         )
-        .await;
+        .await
+        .unwrap_err();
 
-        assert_eq!(status, StatusCode::BAD_GATEWAY);
-        assert_eq!(
-            body.get("error").and_then(|v| v.as_str()),
-            Some("Execution error: upstream down")
-        );
+        assert_eq!(err.status(), StatusCode::BAD_GATEWAY);
+        let body = err.to_body();
+        assert_eq!(body["error"]["code"], "bad_gateway");
+        assert_eq!(body["error"]["message"], "Execution error: upstream down");
     }
 
     #[tokio::test]
@@ -1128,14 +1075,17 @@ mod tests {
     async fn register_success_returns_201_and_is_retrievable() {
         let state = state_with_provisioner(MockProvisioner::Succeeds);
 
-        let (status, Json(body)) =
-            register_agent(State(state.clone()), Json(sample_spec("new"))).await;
+        let (status, Json(body)) = register_agent(State(state.clone()), Json(sample_spec("new")))
+            .await
+            .expect("created");
         assert_eq!(status, StatusCode::CREATED);
         assert_eq!(body["id"], "new");
         assert_eq!(body["name"], "Researcher");
 
         // The shared registry now resolves the new agent.
-        let (status, _) = describe_agent(State(state), Path("new".to_string())).await;
+        let (status, _) = describe_agent(State(state), Path("new".to_string()))
+            .await
+            .expect("ok");
         assert_eq!(status, StatusCode::OK);
     }
 
@@ -1145,19 +1095,23 @@ mod tests {
         // First registration succeeds.
         let _ = register_agent(State(state.clone()), Json(sample_spec("dup"))).await;
         // Second with the same id conflicts.
-        let (status, body) = register_agent(State(state), Json(sample_spec("dup"))).await;
-        assert_eq!(status, StatusCode::CONFLICT);
-        assert!(body.0.get("error").is_some());
+        let err = register_agent(State(state), Json(sample_spec("dup")))
+            .await
+            .unwrap_err();
+        assert_eq!(err.status(), StatusCode::CONFLICT);
+        assert_eq!(err.to_body()["error"]["code"], "conflict");
     }
 
     #[tokio::test]
     async fn register_provision_failure_returns_422() {
         let state = state_with_provisioner(MockProvisioner::Fails("no such model".to_string()));
-        let (status, Json(body)) = register_agent(State(state), Json(sample_spec("x"))).await;
-        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+        let err = register_agent(State(state), Json(sample_spec("x")))
+            .await
+            .unwrap_err();
+        assert_eq!(err.status(), StatusCode::UNPROCESSABLE_ENTITY);
         assert_eq!(
-            body.get("error").and_then(|v| v.as_str()),
-            Some("provisioning failed: no such model")
+            err.to_body()["error"]["message"],
+            "provisioning failed: no such model"
         );
     }
 
@@ -1165,9 +1119,10 @@ mod tests {
     async fn register_without_provisioner_returns_501() {
         // No provisioner wired: registration must fail closed, not panic.
         let state = AgentApiState::new(Arc::new(AgentRegistry::new()));
-        let (status, body) = register_agent(State(state), Json(sample_spec("x"))).await;
-        assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
-        assert!(body.0.get("error").is_some());
+        let err = register_agent(State(state), Json(sample_spec("x")))
+            .await
+            .unwrap_err();
+        assert_eq!(err.status(), StatusCode::NOT_IMPLEMENTED);
     }
 
     #[tokio::test]
@@ -1199,12 +1154,14 @@ mod tests {
         let result = deregister_agent(State(state.clone()), Path("r".to_string())).await;
         match result {
             Ok(status) => assert_eq!(status, StatusCode::NO_CONTENT),
-            Err((status, _)) => panic!("expected 204, got {status:?}"),
+            Err(e) => panic!("expected 204, got {:?}", e.status()),
         }
 
         // The agent is gone afterward.
-        let (status, _) = describe_agent(State(state), Path("r".to_string())).await;
-        assert_eq!(status, StatusCode::NOT_FOUND);
+        let err = describe_agent(State(state), Path("r".to_string()))
+            .await
+            .unwrap_err();
+        assert_eq!(err.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
@@ -1212,7 +1169,7 @@ mod tests {
         let state = AgentApiState::new(Arc::new(AgentRegistry::new()));
         let result = deregister_agent(State(state), Path("missing".to_string())).await;
         match result {
-            Err((status, _)) => assert_eq!(status, StatusCode::NOT_FOUND),
+            Err(e) => assert_eq!(e.status(), StatusCode::NOT_FOUND),
             Ok(other) => panic!("expected 404, got {other:?}"),
         }
     }
@@ -1312,7 +1269,9 @@ mod tests {
     #[tokio::test]
     async fn describe_agent_returns_200_for_known_id_without_prompt_leak() {
         let state = registry_state(vec![("r", agent_with_secret_second_line("Researcher"))]);
-        let (status, Json(body)) = describe_agent(State(state), Path("r".to_string())).await;
+        let (status, Json(body)) = describe_agent(State(state), Path("r".to_string()))
+            .await
+            .expect("ok");
 
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["id"], "r");
@@ -1325,9 +1284,11 @@ mod tests {
     #[tokio::test]
     async fn describe_agent_unknown_id_returns_404() {
         let state = registry_state(vec![("r", test_agent("Researcher"))]);
-        let (status, Json(body)) = describe_agent(State(state), Path("missing".to_string())).await;
-        assert_eq!(status, StatusCode::NOT_FOUND);
-        assert!(body.get("error").is_some(), "expected an error body");
+        let err = describe_agent(State(state), Path("missing".to_string()))
+            .await
+            .unwrap_err();
+        assert_eq!(err.status(), StatusCode::NOT_FOUND);
+        assert_eq!(err.to_body()["error"]["code"], "not_found");
     }
 
     #[test]

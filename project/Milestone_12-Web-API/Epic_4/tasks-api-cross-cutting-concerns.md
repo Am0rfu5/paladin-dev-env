@@ -54,12 +54,12 @@
   - [x] 1.3 Defined `ApiError { status, code, message, details }` + `IntoResponse` + `to_body()` (for SSE reuse). Constructors: `bad_request`/`not_found`/`conflict`/`unprocessable`/`payload_too_large`/`too_many_requests`/`not_implemented`/`bad_gateway`/`gateway_timeout`/`internal`. Rustdoc complete.
   - [x] 1.4 Re-exported `ApiError` from `lib.rs`; build + clippy + fmt clean; 3 tests pass.
 
-- [ ] 2.0 Adopt `ApiError` across all controllers (agent, user, delivery) + SSE error event
-  - [ ] 2.1 **(Test first)** Update agent-controller tests to assert the nested envelope (`body["error"]["message"]` / `["code"]`) for `404`/`400`/`502`/`409`/`422`/`501`/`504` paths.
-  - [ ] 2.2 Migrate `agent_controller`: handlers return `Result<_, ApiError>` (or build `ApiError`); remove `ok_body`/`error_body`/`execution_error_response`; map `PaladinError`→`502`, unknown id→`404`, timeout→`504`, bad timeout→`400`, register conflicts/422/501.
-  - [ ] 2.3 Make the SSE `error` event carry the same `{ "error": { … } }` envelope; update the stream tests.
-  - [ ] 2.4 Migrate `delivery_controller` (replace its `ok_body`/`error_body`) and `user_controller` (replace `user_error_to_response`/`ApiResponse` error path) to `ApiError`; update their tests.
-  - [ ] 2.5 Rustdoc/module-doc updates (drop the "interim error helper" notes); `cargo test -p paladin-web` + clippy green.
+- [x] 2.0 Adopt `ApiError` across all controllers (agent, user, delivery) + SSE error event
+  - [x] 2.1 Updated agent-controller tests to assert the nested envelope via `err.status()` + `err.to_body()["error"]["code"|"message"]` across `404`/`400`/`502`/`409`/`422`/`501`/`504`.
+  - [x] 2.2 Migrated `agent_controller`: fallible handlers now return `Result<_, ApiError>` (using `?`/`ok_or_else`/`map_err`); removed `error_body`/`execution_error_response`; kept `ok_body` (success, `null` fallback). Status mapping preserved.
+  - [x] 2.3 SSE `error` events (mid-stream + timeout) now carry the `ApiError` envelope via `to_body()`; stream tests still assert `event: error` + `timed out`.
+  - [x] 2.4 Migrated `delivery_controller` (handlers → `Result<_, ApiError>`) and `user_controller` (`user_error_to_response` → `ApiError` with granular snake_case codes; inline not-founds + `ensure_self_or_admin` → `ApiError`; success path keeps `ApiResponse<T>`). Updated all affected tests.
+  - [x] 2.5 Refreshed the module docs (no more flat-shape notes); `cargo test -p paladin-web` (85 lib + 5 auth_rbac), facade infra::web (12) + smoke (1) green; `clippy --all-targets -D warnings` + `fmt` clean.
 
 - [ ] 3.0 Add health & readiness endpoints (`GET /health`, `GET /ready`)
   - [ ] 3.1 Create `crates/paladin-web/src/health.rs`; declare in `lib.rs`.
