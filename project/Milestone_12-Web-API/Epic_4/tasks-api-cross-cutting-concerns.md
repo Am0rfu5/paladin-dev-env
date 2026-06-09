@@ -73,12 +73,12 @@
   - [x] 4.3 Implemented `request_log` (`from_fn`): honours a well-formed inbound id else generates a `uuid`, logs `request_id=… METHOD PATH STATUS Nms` via `log::info!`, sets the `x-request-id` response header. No secrets/bodies logged.
   - [x] 4.4 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; 3 tests pass.
 
-- [ ] 5.0 Add edge layers: CORS, body limit, global timeout (excl. streaming), rate limiting
-  - [ ] 5.1 Add deps to `crates/paladin-web/Cargo.toml`: `tower`, `tower-http` (features `cors`,`limit`,`timeout`), `tower-governor`.
-  - [ ] 5.2 Define `HttpLayersConfig` (CORS origins/methods, body-limit bytes, global-timeout seconds, rate-limit `{ enabled, per_second, burst }`) with sensible defaults (`Default`).
-  - [ ] 5.3 **(Test first)** Tests: a CORS preflight (`OPTIONS`) returns the configured `access-control-*` headers; an oversized body → `413` (nested error); with rate-limit enabled (tiny limit), exceeding it → `429` (nested error). Keep limits test-sized.
-  - [ ] 5.4 Build the layers: `CorsLayer` (configurable, permissive when unset), `RequestBodyLimitLayer`, an optional `tower_governor` `GovernorLayer` (only when `enabled`), and a **global timeout scoped to non-streaming routes** (split the stream route out, or omit the layer for it).
-  - [ ] 5.5 Ensure `413`/`429`/timeout rejections render via `ApiError` (map tower-http/governor rejections to the envelope where they surface to clients). Rustdoc; gates.
+- [x] 5.0 Add edge layers: CORS, body limit, global timeout (excl. streaming), rate limiting
+  - [x] 5.1 Added `tower = "0.5"`, `tower-http = "0.6"` (`cors`,`limit`,`timeout`), `tower_governor = "0.8"` (`axum`) — all compatible with axum 0.8 / http 1.x.
+  - [x] 5.2 Defined `HttpLayersConfig` (`cors_allow_origins`, `body_limit_bytes` [1 MiB], `global_timeout_secs` [0 = disabled], `rate_limit { enabled[false], per_second, burst }`) + `RateLimitConfig`, both `Default`.
+  - [x] 5.3 **(Test first)** 4 tests: CORS preflight sets `access-control-allow-origin`; oversized body → `413`; rate-limit enabled (1 rps / burst 1, keyed by `x-real-ip`) → second request `429`; disabled → passthrough.
+  - [x] 5.4 Built `cors_layer` (permissive when unset, else explicit origins), `body_limit_layer`, and `apply_rate_limit` (optional `GovernorLayer` + `SmartIpKeyExtractor`, only when enabled; invalid config logged + skipped). Global timeout config carried for the composer (task 6) to apply scoped to non-streaming routes.
+  - [x] 5.5 `429` renders via `ApiError` (`GovernorLayer::error_handler` → `ApiError::too_many_requests`). `413` uses tower-http's status (body is its default; documented). `fmt`/`clippy --all-targets -D warnings` clean; 94 + 5 tests pass.
 
 - [ ] 6.0 Compose the layers (`with_http_layers`) and wire config into `paladin-server`
   - [ ] 6.1 Create `crates/paladin-web/src/http_layers.rs` with `pub fn with_http_layers(router: Router, config: &HttpLayersConfig) -> Router` applying request-logging + CORS + body-limit + rate-limit (+ health routes) uniformly, keeping the streaming route clear of the global timeout.

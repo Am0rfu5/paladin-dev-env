@@ -22,6 +22,8 @@ pub mod delivery_controller;
 pub mod error;
 /// Liveness and readiness endpoints.
 pub mod health;
+/// Cross-cutting HTTP layers (CORS, body limit, timeout, rate limiting).
+pub mod http_layers;
 /// In-memory async job store for fire-and-poll execution.
 pub mod job_store;
 /// Request-logging middleware with request-id correlation.
