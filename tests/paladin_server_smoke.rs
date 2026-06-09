@@ -13,7 +13,9 @@ use paladin::MockLlmAdapter;
 use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
-use paladin::infrastructure::web::{AgentApiState, AgentRegistry, agent_router};
+use paladin::infrastructure::web::{
+    AgentApiState, AgentRegistry, HttpLayersConfig, agent_router, with_http_layers,
+};
 use paladin_ports::output::llm_port::LlmPort;
 use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
 use paladin_ports::output::streaming_executor_port::StreamingExecutorPort;
@@ -46,7 +48,11 @@ async fn state_with_mock_agent(id: &str) -> AgentApiState {
 
 #[tokio::test]
 async fn server_boots_serves_agents_and_shuts_down_cleanly() {
-    let app = agent_router(state_with_mock_agent("researcher").await);
+    // Wrap with the cross-cutting layers, mirroring the `paladin-server` binary.
+    let app = with_http_layers(
+        agent_router(state_with_mock_agent("researcher").await),
+        &HttpLayersConfig::default(),
+    );
 
     // Bind an ephemeral port and serve with a graceful-shutdown trigger.
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -73,9 +79,47 @@ async fn server_boots_serves_agents_and_shuts_down_cleanly() {
         .await
         .expect("GET /agents");
     assert_eq!(resp.status().as_u16(), 200);
+    // Cross-cutting layer: every response carries a request-id.
+    assert!(
+        resp.headers().contains_key("x-request-id"),
+        "expected x-request-id header"
+    );
     let agents: serde_json::Value = resp.json().await.expect("agents json");
     assert_eq!(agents.as_array().map(|a| a.len()), Some(1));
     assert_eq!(agents[0]["id"], "researcher");
+
+    // GET /health and /ready respond with the documented shapes.
+    let health: serde_json::Value = client
+        .get(format!("{base}/health"))
+        .send()
+        .await
+        .expect("GET /health")
+        .json()
+        .await
+        .expect("health json");
+    assert_eq!(health["status"], "ok");
+
+    let ready: serde_json::Value = client
+        .get(format!("{base}/ready"))
+        .send()
+        .await
+        .expect("GET /ready")
+        .json()
+        .await
+        .expect("ready json");
+    assert_eq!(ready["status"], "ready");
+    assert_eq!(ready["agents"], 1);
+
+    // An error response uses the unified nested envelope.
+    let resp = client
+        .get(format!("{base}/agents/ghost"))
+        .send()
+        .await
+        .expect("GET unknown agent");
+    assert_eq!(resp.status().as_u16(), 404);
+    let err: serde_json::Value = resp.json().await.expect("error json");
+    assert_eq!(err["error"]["code"], "not_found");
+    assert!(err["error"]["message"].is_string());
 
     // POST /agents/researcher/execute → 200 with an output string.
     let resp = client

@@ -87,9 +87,9 @@
   - [x] 6.4 `paladin-server` maps `Settings.http` → `HttpLayersConfig`, applies `with_http_layers`, serves with `into_make_service_with_connect_info::<SocketAddr>()` (so the rate limiter keys on peer IP), and logs the enabled layers. Verified by boot: `/health`/`/ready` respond, error uses the nested envelope, `x-request-id` present.
   - [x] 6.5 Rustdoc; `fmt`/`clippy -D warnings` (lib+bins) clean; paladin-web 96, facade config 48 + infra::web 12 + smoke 1 pass.
 
-- [ ] 7.0 Tests: probes, error envelope, request-id, CORS preflight, body-limit, 429 + boot-smoke extension
-  - [ ] 7.1 Confirm unit/handler coverage from 1.0–6.0 is in place (error envelope, health, request-id, CORS, body-limit, 429, composition).
-  - [ ] 7.2 **(Test first)** Extend `tests/paladin_server_smoke.rs`: assert `GET /health` and `GET /ready` respond with the documented shapes, an `x-request-id` header is present, and an error response (unknown agent) uses the nested envelope.
+- [x] 7.0 Tests: probes, error envelope, request-id, CORS preflight, body-limit, 429 + boot-smoke extension
+  - [x] 7.1 Unit/handler coverage confirmed: `ApiError` (3), controller error-envelope assertions (agent/delivery/user), health (2), request-id (3), CORS/body-limit/429/composition/global-timeout-skips-streaming (6).
+  - [x] 7.2 **(Test first)** Extended `tests/paladin_server_smoke.rs`: the app is now wrapped in `with_http_layers`, and the test asserts an `x-request-id` header, `GET /health` → `{status: ok}`, `GET /ready` → `{status: ready, agents: 1}`, and `GET /agents/ghost` → `404` with the nested `{ error: { code: "not_found", message } }` envelope.
 
 - [ ] 8.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
   - [ ] 8.1 Update `config.example.yml`: a documented `http`/web section (CORS, body limit, global timeout, rate limit off-by-default).
