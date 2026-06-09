@@ -52,12 +52,12 @@
   - [x] 1.3 **(Test first)** Added `ApiErrorBody { error: ApiErrorDetail { code, message, details } }` (`ToSchema`) mirroring `ApiError::to_body()`; test round-trips a real `ApiError` body through the schema type 1:1.
   - [x] 1.4 `cargo build -p paladin-web` clean; rustdoc on new items; paladin-web 110 + auth_rbac 5 pass; fmt/clippy clean.
 
-- [ ] 2.0 Annotate handlers and migrate the agent router to `utoipa-axum` `OpenApiRouter`
-  - [ ] 2.1 Add `#[utoipa::path(...)]` to each agent handler (`execute_agent`, `execute_agent_stream`, `list_agents`, `describe_agent`, `register_agent`, `deregister_agent`, `enqueue_job`, `get_job`): method, path (the unprefixed `/agents/...` form), params, request body, and response codes (`200`/`201`/`202`/`204`/`400`/`401`/`403`/`404`/`409`/`422`/`502`/`504`) referencing the error schema. Document the stream endpoint as `text/event-stream` with a prose note on the `chunk`/`done`/`error` events.
-  - [ ] 2.2 Tag protected operations with `security(...)` referencing the API-key + bearer schemes (defined in 4.1); leave none on health/docs.
-  - [ ] 2.3 Migrate `agent_router` to build a `utoipa_axum::router::OpenApiRouter` via `routes!(...)`, preserving the auth `route_layer` and the health-route exemption (health merged outside the secured/spec scope). Provide an internal accessor that yields the agent `OpenApiRouter` for nesting/spec assembly.
-  - [ ] 2.4 **(Test first)** Keep the existing router tests green (adjust to the new construction); add a test that the assembled `OpenApi` contains the expected agent operation paths.
-  - [ ] 2.5 fmt/clippy; `cargo test -p paladin-web`.
+- [x] 2.0 Annotate handlers and migrate the agent router to `utoipa-axum` `OpenApiRouter`
+  - [x] 2.1 Added `#[utoipa::path(...)]` to all 8 handlers (unprefixed `/agents/...` paths, params, request bodies, response codes referencing `ApiErrorBody`). The stream endpoint documents `text/event-stream` with a prose note on the `chunk`/`done`/`error` events.
+  - [x] 2.2 Tagged protected operations with `security(("api_key" = []), ("jwt" = []))` (string literals — utoipa requires literals, not consts); health/docs carry none.
+  - [x] 2.3 Added `agent_openapi_router(state) -> OpenApiRouter` (`routes!(...)`, auth `route_layer`, state) and rebuilt `agent_router` on top of it via `split_for_parts()` + health merge. Paths remain at `/agents` for now (the `/v1` prefix is task 3.0).
+  - [x] 2.4 Existing router tests stay green (construction unchanged externally); added `openapi_spec_contains_agent_operation_paths` asserting the assembled `OpenApi.paths` include all six route templates.
+  - [x] 2.5 `fmt`/`clippy --all-targets -D warnings` clean; paladin-web 111 + auth_rbac 5 + smoke 2 pass. (Freed a full disk via `cargo clean` after the swagger-ui assets bloated `target/`.)
 
 - [ ] 3.0 Introduce the `/v1` version prefix (agent API versioned; health/docs unversioned)
   - [ ] 3.1 Nest the agent `OpenApiRouter` under `/v1` (so routes serve at `/v1/agents/...` and the spec records the `/v1` paths); `split_for_parts()` into the axum `Router` + `OpenApi`. Merge the unversioned `health_routes` at root.

@@ -29,7 +29,6 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response, Sse, sse::Event},
-    routing::{get, post},
 };
 use futures::Stream;
 use serde::{Deserialize, Serialize};
@@ -40,10 +39,13 @@ use paladin_core::platform::container::paladin::Paladin;
 use paladin_core::platform::container::paladin_error::PaladinError;
 use paladin_ports::output::paladin_port::{PaladinStream, PaladinStreamChunk};
 
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
+
 use crate::agent_auth::{Principal, authorize_invoke, require_admin};
 use crate::agent_registry::{AgentEntry, AgentProvisioner, AgentRegistry, AgentSpec};
-use crate::error::ApiError;
-use crate::job_store::JobStore;
+use crate::error::{ApiError, ApiErrorBody};
+use crate::job_store::{JobRecord, JobStore};
 use crate::timeout::{TimeoutPolicy, resolve_timeout};
 
 /// Shared state for the agent routes.
@@ -227,6 +229,23 @@ pub(crate) fn ok_body<T: Serialize>(value: &T) -> JsonValue {
 /// - `404 Not Found` if no agent is registered under `id`;
 /// - `502 Bad Gateway` if execution fails; `504` on timeout;
 /// - `400 Bad Request` (via the `Json` extractor) if the body is missing/invalid.
+#[utoipa::path(
+    post,
+    path = "/agents/{id}/execute",
+    tag = "agents",
+    params(("id" = String, Path, description = "Registry id of the agent to run")),
+    request_body = ExecuteRequest,
+    responses(
+        (status = 200, description = "Execution result", body = ExecuteResponse),
+        (status = 400, description = "Invalid timeout", body = ApiErrorBody),
+        (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
+        (status = 403, description = "Role not permitted for this agent", body = ApiErrorBody),
+        (status = 404, description = "Unknown agent", body = ApiErrorBody),
+        (status = 502, description = "Upstream execution failure", body = ApiErrorBody),
+        (status = 504, description = "Execution timed out", body = ApiErrorBody),
+    ),
+    security(("api_key" = []), ("jwt" = [])),
+)]
 pub async fn execute_agent(
     State(state): State<AgentApiState>,
     Extension(principal): Extension<Principal>,
@@ -260,6 +279,16 @@ pub async fn execute_agent(
 ///
 /// Always returns `200 OK` with a JSON array (empty when no agents are registered).
 /// Order is unspecified.
+#[utoipa::path(
+    get,
+    path = "/agents",
+    tag = "agents",
+    responses(
+        (status = 200, description = "Registered agents", body = [AgentSummary]),
+        (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
+    ),
+    security(("api_key" = []), ("jwt" = [])),
+)]
 pub async fn list_agents(State(state): State<AgentApiState>) -> (StatusCode, JsonValue) {
     let summaries: Vec<AgentSummary> = state
         .registry
@@ -274,6 +303,18 @@ pub async fn list_agents(State(state): State<AgentApiState>) -> (StatusCode, Jso
 ///
 /// Returns `200 OK` with the agent's [`AgentSummary`], or `404 Not Found` with
 /// `{ "error": ... }` if no agent is registered under `id`.
+#[utoipa::path(
+    get,
+    path = "/agents/{id}",
+    tag = "agents",
+    params(("id" = String, Path, description = "Registry id of the agent")),
+    responses(
+        (status = 200, description = "Agent summary", body = AgentSummary),
+        (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
+        (status = 404, description = "Unknown agent", body = ApiErrorBody),
+    ),
+    security(("api_key" = []), ("jwt" = [])),
+)]
 pub async fn describe_agent(
     State(state): State<AgentApiState>,
     Path(id): Path<String>,
@@ -297,6 +338,21 @@ pub async fn describe_agent(
 /// - `422 Unprocessable Entity` if provisioning fails;
 /// - `400 Bad Request` (via the `Json` extractor) if the body is missing/invalid;
 /// - `501 Not Implemented` if no provisioner is wired (registration disabled).
+#[utoipa::path(
+    post,
+    path = "/agents",
+    tag = "agents",
+    request_body = AgentSpec,
+    responses(
+        (status = 201, description = "Agent registered", body = AgentSummary),
+        (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
+        (status = 403, description = "Admin role required", body = ApiErrorBody),
+        (status = 409, description = "Agent id already exists", body = ApiErrorBody),
+        (status = 422, description = "Provisioning failed", body = ApiErrorBody),
+        (status = 501, description = "Runtime registration not enabled", body = ApiErrorBody),
+    ),
+    security(("api_key" = []), ("jwt" = [])),
+)]
 pub async fn register_agent(
     State(state): State<AgentApiState>,
     Extension(principal): Extension<Principal>,
@@ -349,6 +405,19 @@ pub async fn register_agent(
 ///
 /// Returns `204 No Content` (empty body) on success, or `404 Not Found` with
 /// `{ "error": ... }` if no agent is registered under `id`.
+#[utoipa::path(
+    delete,
+    path = "/agents/{id}",
+    tag = "agents",
+    params(("id" = String, Path, description = "Registry id of the agent to remove")),
+    responses(
+        (status = 204, description = "Agent deregistered"),
+        (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
+        (status = 403, description = "Admin role required", body = ApiErrorBody),
+        (status = 404, description = "Unknown agent", body = ApiErrorBody),
+    ),
+    security(("api_key" = []), ("jwt" = [])),
+)]
 pub async fn deregister_agent(
     State(state): State<AgentApiState>,
     Extension(principal): Extension<Principal>,
@@ -433,6 +502,26 @@ fn timed_event_stream(
 /// stream yields a terminal `error` event (streaming) or returns `504` (buffered
 /// fallback). Maps unknown id → `404`, invalid `timeout_seconds` → `400`, and an
 /// up-front execution failure → `502`.
+#[utoipa::path(
+    post,
+    path = "/agents/{id}/execute/stream",
+    tag = "agents",
+    params(("id" = String, Path, description = "Registry id of the agent to run")),
+    request_body = ExecuteRequest,
+    responses(
+        (status = 200, description = "Server-Sent Events stream: `chunk` events carry \
+            `{ \"text\": ... }`, a terminal `done` event carries the final result, and an \
+            `error` event (with the standard error envelope) is emitted on mid-stream \
+            failure or timeout.", content_type = "text/event-stream"),
+        (status = 400, description = "Invalid timeout", body = ApiErrorBody),
+        (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
+        (status = 403, description = "Role not permitted for this agent", body = ApiErrorBody),
+        (status = 404, description = "Unknown agent", body = ApiErrorBody),
+        (status = 502, description = "Upstream execution failure", body = ApiErrorBody),
+        (status = 504, description = "Execution timed out", body = ApiErrorBody),
+    ),
+    security(("api_key" = []), ("jwt" = [])),
+)]
 pub async fn execute_agent_stream(
     State(state): State<AgentApiState>,
     Extension(principal): Extension<Principal>,
@@ -502,6 +591,21 @@ pub async fn execute_agent_stream(
 /// Spawns a task that runs the agent (buffered) under the resolved timeout, recording
 /// the outcome in the job store. Returns `202 Accepted` with `{ "job_id": ... }`. Maps
 /// unknown id → `404` and invalid `timeout_seconds` → `400`.
+#[utoipa::path(
+    post,
+    path = "/agents/{id}/jobs",
+    tag = "agents",
+    params(("id" = String, Path, description = "Registry id of the agent to run")),
+    request_body = ExecuteRequest,
+    responses(
+        (status = 202, description = "Job accepted; body carries `{ \"job_id\": ... }`", body = Object),
+        (status = 400, description = "Invalid timeout", body = ApiErrorBody),
+        (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
+        (status = 403, description = "Role not permitted for this agent", body = ApiErrorBody),
+        (status = 404, description = "Unknown agent", body = ApiErrorBody),
+    ),
+    security(("api_key" = []), ("jwt" = [])),
+)]
 pub async fn enqueue_job(
     State(state): State<AgentApiState>,
     Extension(principal): Extension<Principal>,
@@ -546,6 +650,21 @@ pub async fn enqueue_job(
 ///
 /// Returns `200 OK` with the [`JobRecord`](crate::job_store::JobRecord), or `404` if no
 /// job is found under `job_id` (jobs are ephemeral and may have been evicted).
+#[utoipa::path(
+    get,
+    path = "/agents/{id}/jobs/{job_id}",
+    tag = "agents",
+    params(
+        ("id" = String, Path, description = "Registry id of the agent"),
+        ("job_id" = String, Path, description = "Job id returned by enqueue"),
+    ),
+    responses(
+        (status = 200, description = "Job status/result", body = JobRecord),
+        (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
+        (status = 404, description = "Unknown job", body = ApiErrorBody),
+    ),
+    security(("api_key" = []), ("jwt" = [])),
+)]
 pub async fn get_job(
     State(state): State<AgentApiState>,
     Path((_id, job_id)): Path<(String, String)>,
@@ -575,22 +694,36 @@ pub async fn get_job(
 /// These routes are intentionally **unauthenticated** in Milestone 12, Epic 1;
 /// authentication and per-agent authorization are layered on in Epic 5 without changing
 /// these handler signatures.
-pub fn agent_router(state: AgentApiState) -> Router {
-    let routes = Router::new()
-        .route("/agents", get(list_agents).post(register_agent))
-        .route("/agents/{id}", get(describe_agent).delete(deregister_agent))
-        .route("/agents/{id}/execute", post(execute_agent))
-        .route("/agents/{id}/execute/stream", post(execute_agent_stream))
-        .route("/agents/{id}/jobs", post(enqueue_job))
-        .route("/agents/{id}/jobs/{job_id}", get(get_job))
+/// Build the agent API as a `utoipa-axum` [`OpenApiRouter`] — the routes and the OpenAPI
+/// paths come from one definition (the `#[utoipa::path]` annotations), so the served API
+/// and the generated spec cannot drift.
+///
+/// The authentication middleware is applied here (a no-op when auth is disabled); the
+/// unversioned, unauthenticated health probes are mounted separately by [`agent_router`].
+/// Paths are declared unprefixed (`/agents/...`); the `/v1` segment is added when this
+/// router is nested (see [`agent_router`] / `crate::openapi`).
+pub fn agent_openapi_router(state: AgentApiState) -> OpenApiRouter {
+    OpenApiRouter::new()
+        .routes(routes!(list_agents, register_agent))
+        .routes(routes!(describe_agent, deregister_agent))
+        .routes(routes!(execute_agent))
+        .routes(routes!(execute_agent_stream))
+        .routes(routes!(enqueue_job))
+        .routes(routes!(get_job))
         // Authenticate the agent routes (no-op when auth is disabled). `route_layer`
         // applies only to these routes, so the merged health probes stay open.
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
             crate::agent_auth::require_authentication,
         ))
-        .with_state(state.clone());
-    // Mount the liveness/readiness probes alongside the agent routes (unauthenticated).
+        .with_state(state)
+}
+
+/// Build the agent router as a plain `axum` [`Router`]: the annotated agent API plus the
+/// unversioned health probes. (The `/v1` version prefix is added in a later step.)
+pub fn agent_router(state: AgentApiState) -> Router {
+    let (routes, _api) = agent_openapi_router(state.clone()).split_for_parts();
+    // Mount the liveness/readiness probes alongside (unauthenticated).
     routes.merge(crate::health::health_routes(state))
 }
 
@@ -1422,6 +1555,23 @@ mod tests {
             .unwrap_err();
         assert_eq!(err.status(), StatusCode::NOT_FOUND);
         assert_eq!(err.to_body()["error"]["code"], "not_found");
+    }
+
+    #[test]
+    fn openapi_spec_contains_agent_operation_paths() {
+        let state = AgentApiState::new(Arc::new(AgentRegistry::new()));
+        let (_router, api) = agent_openapi_router(state).split_for_parts();
+        let paths = &api.paths.paths;
+        for expected in [
+            "/agents",
+            "/agents/{id}",
+            "/agents/{id}/execute",
+            "/agents/{id}/execute/stream",
+            "/agents/{id}/jobs",
+            "/agents/{id}/jobs/{job_id}",
+        ] {
+            assert!(paths.contains_key(expected), "spec missing path {expected}");
+        }
     }
 
     #[test]
