@@ -52,12 +52,12 @@
   - [x] 1.5 **(Test first)** Router tests: auth enabled + key — no credential → `401`, valid `X-API-Key` → `200`; `/health` + `/ready` → `200` without a credential.
   - [x] 1.6 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; agent_auth 8 tests, full paladin-web 104 pass (no regressions).
 
-- [ ] 2.0 Add authorization (per-agent `allowed_roles` → `403`; admin gate on register/deregister)
-  - [ ] 2.1 Add `allowed_roles: Vec<UserRole>` to `AgentEntry` and `allowed_roles` to `AgentSpec` (default empty ⇒ any authenticated caller).
-  - [ ] 2.2 **(Test first)** Authorization-helper tests: `authorize_invoke(principal, allowed_roles)` (empty ⇒ allow; role in list ⇒ allow; else `403`); `require_admin(principal)` (Admin ⇒ ok, else `403`).
-  - [ ] 2.3 Implement the helpers; enforce per-agent `allowed_roles` in `execute_agent`, `execute_agent_stream`, and `enqueue_job` (read `Principal` from extensions + `entry.allowed_roles`); enforce admin in `register_agent` and `deregister_agent`. All denials → `403` (`ApiError`).
-  - [ ] 2.4 **(Test first)** Handler tests: caller role not in `allowed_roles` → `403`; allowed role → success; non-admin register/deregister → `403`; admin → success. (Inject the `Principal` via request extensions in the test setup.)
-  - [ ] 2.5 Carry `allowed_roles` through the build path: `build_agent`/`register_built` (facade) and `FacadeProvisioner` (from `AgentSpec`). Rustdoc; gates.
+- [x] 2.0 Add authorization (per-agent `allowed_roles` → `403`; admin gate on register/deregister)
+  - [x] 2.1 Added `allowed_roles: Vec<UserRole>` to `AgentEntry` and (`#[serde(default)]`) to `AgentSpec`; `UserRole` deserializes from lowercase (`"admin"`/`"user"`).
+  - [x] 2.2 **(Test first)** Helper tests (in `agent_auth`): `authorize_invoke` (empty ⇒ allow; listed ⇒ allow; else `403`) and `require_admin` (Admin ⇒ ok, else `403`).
+  - [x] 2.3 Enforced per-agent `allowed_roles` in `execute_agent`/`execute_agent_stream`/`enqueue_job` and the admin gate in `register_agent`/`deregister_agent`, reading a required `Extension<Principal>` (fail-closed; the middleware always inserts it). `register_agent` carries `spec.allowed_roles` into the entry.
+  - [x] 2.4 **(Test first)** Handler tests: disallowed role → `403`; listed role → success; non-admin register/deregister → `403`; admin → success. (Existing handler tests pass an `admin()` principal extension; the two invalid-body router tests switched to `agent_router` so the default-disabled auth layer attaches a principal.)
+  - [x] 2.5 Carried `allowed_roles` through `register_built` (new param) and the `AgentSpec` path (handler reads `spec.allowed_roles`; `FacadeProvisioner` needs no change as `ProvisionedAgent` is role-agnostic). Config wiring of `def.allowed_roles` deferred to 3.4. `fmt`/`clippy --workspace --all-targets -D warnings`/`make deny` clean; paladin-web 108, facade web 12 pass.
 
 - [ ] 3.0 Config + `paladin-server` wiring (`auth` config, JWT `AuthPort`, fail-closed posture)
   - [ ] 3.1 Add config: an `AuthConfig { enabled, api_keys: [{ key, name, role }], jwt: { enabled } }` on `WebHttpConfig`, and `allowed_roles` on `AgentDefinition` (lenient serde defaults). **(Test first)** parse tests incl. unknown-role-string → error.

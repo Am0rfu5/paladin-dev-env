@@ -103,6 +103,7 @@ mod tests {
             temperature: Some(0.5),
             stop_words: vec!["STOP".to_string()],
             timeout_seconds: None,
+            allowed_roles: vec![],
         }
     }
 
