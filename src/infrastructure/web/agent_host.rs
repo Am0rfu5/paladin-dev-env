@@ -16,6 +16,7 @@ use std::time::Duration;
 
 use paladin_core::platform::container::paladin::Paladin;
 use paladin_core::platform::container::paladin_error::PaladinError;
+use paladin_core::platform::container::user::UserRole;
 use paladin_llm::provider_factory::{LlmProviderFactory, ProviderFactoryError};
 use paladin_ports::output::llm_port::LlmPort;
 use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
@@ -182,6 +183,7 @@ pub(crate) fn register_built(
     executor: Arc<dyn PaladinExecutorPort>,
     streamer: Option<Arc<dyn StreamingExecutorPort>>,
     timeout_secs: Option<u64>,
+    allowed_roles: Vec<UserRole>,
 ) -> Result<(), HostBuildError> {
     let inserted = registry.insert_entry(
         id.to_string(),
@@ -190,6 +192,7 @@ pub(crate) fn register_built(
             executor,
             streamer,
             timeout_secs,
+            allowed_roles,
         },
     );
     if inserted {
@@ -286,6 +289,7 @@ pub async fn build_agent_registry(settings: &Settings) -> Result<AgentRegistry, 
             executor,
             streamer,
             def.timeout_seconds,
+            def.allowed_roles.clone(),
         )?;
     }
     Ok(registry)
@@ -306,6 +310,7 @@ mod tests {
             max_loops: None,
             stop_words: vec![],
             timeout_seconds: None,
+            allowed_roles: vec![],
         }
     }
 
@@ -363,14 +368,14 @@ mod tests {
             build_agent_with_llm(&base("dup"), mock_llm(), default_circuit_breaker())
                 .await
                 .unwrap();
-        register_built(&registry, "dup", p1, e1, s1, None).expect("first insert ok");
+        register_built(&registry, "dup", p1, e1, s1, None, Vec::new()).expect("first insert ok");
 
         let (p2, e2, s2) =
             build_agent_with_llm(&base("dup"), mock_llm(), default_circuit_breaker())
                 .await
                 .unwrap();
-        let err =
-            register_built(&registry, "dup", p2, e2, s2, None).expect_err("duplicate must error");
+        let err = register_built(&registry, "dup", p2, e2, s2, None, Vec::new())
+            .expect_err("duplicate must error");
         assert!(matches!(err, HostBuildError::DuplicateId(_)), "got {err:?}");
     }
 

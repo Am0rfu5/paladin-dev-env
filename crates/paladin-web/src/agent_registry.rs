@@ -18,6 +18,7 @@ use std::sync::{Arc, RwLock};
 
 use async_trait::async_trait;
 use paladin_core::platform::container::paladin::Paladin;
+use paladin_core::platform::container::user::UserRole;
 use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
 use paladin_ports::output::streaming_executor_port::StreamingExecutorPort;
 use serde::{Deserialize, Serialize};
@@ -38,6 +39,8 @@ pub struct AgentEntry {
     pub streamer: Option<Arc<dyn StreamingExecutorPort>>,
     /// Per-agent execution timeout override (seconds); `None` uses the server default.
     pub timeout_secs: Option<u64>,
+    /// Roles permitted to invoke this agent; empty ⇒ any authenticated caller.
+    pub allowed_roles: Vec<UserRole>,
 }
 
 /// Declarative description of an agent to provision at runtime.
@@ -69,6 +72,9 @@ pub struct AgentSpec {
     /// Optional per-agent execution timeout (seconds); `None` uses the server default.
     #[serde(default)]
     pub timeout_seconds: Option<u64>,
+    /// Roles permitted to invoke this agent; empty ⇒ any authenticated caller.
+    #[serde(default)]
+    pub allowed_roles: Vec<UserRole>,
 }
 
 /// Error returned when an [`AgentProvisioner`] cannot turn a spec into an agent.
@@ -152,6 +158,7 @@ impl AgentRegistry {
                         executor,
                         streamer: None,
                         timeout_secs: None,
+                        allowed_roles: Vec::new(),
                     },
                 )
             })
@@ -218,6 +225,7 @@ impl AgentRegistry {
                 executor,
                 streamer,
                 timeout_secs: None,
+                allowed_roles: Vec::new(),
             },
         )
     }

@@ -7,6 +7,7 @@
 //! Secrets (API keys) are **never** read from these definitions — they come from the
 //! `llm:` provider configuration and the corresponding environment variables.
 
+use paladin_core::platform::container::user::UserRole;
 use serde::{Deserialize, Serialize};
 
 /// Server-wide execution timeout configuration for the HTTP service host.
@@ -72,9 +73,63 @@ impl Default for RateLimitConfig {
     }
 }
 
-/// Cross-cutting HTTP layer configuration (CORS, body limit, global timeout, rate limit).
+/// One static API key mapped to a principal (`name` + `role`).
 ///
-/// Maps onto `paladin_web::HttpLayersConfig`; absent fields use safe defaults.
+/// The `key` should come from an environment variable / secret in practice, not be
+/// committed in plaintext.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiKeyConfig {
+    /// The secret key value presented in the `X-API-Key` header.
+    pub key: String,
+    /// A stable identifier for the caller (used as the principal id; appears in logs).
+    pub name: String,
+    /// The role granted to requests authenticated with this key.
+    pub role: UserRole,
+}
+
+/// JWT authentication settings for the agent API.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct JwtAuthConfig {
+    /// Whether to accept `Authorization: Bearer` tokens via the wired `AuthPort`.
+    #[serde(default)]
+    pub enabled: bool,
+}
+
+/// Authentication configuration for the agent API (maps onto `paladin_web::AgentAuthConfig`).
+///
+/// `enabled` defaults to **true** (secure by default); the server fails closed when auth is
+/// enabled but no credential source (API keys or JWT) is configured.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuthConfig {
+    /// Whether authentication is enforced on the agent routes.
+    #[serde(default = "default_auth_enabled")]
+    pub enabled: bool,
+    /// Static API keys accepted via the `X-API-Key` header.
+    #[serde(default)]
+    pub api_keys: Vec<ApiKeyConfig>,
+    /// JWT bearer-token settings.
+    #[serde(default)]
+    pub jwt: JwtAuthConfig,
+}
+
+fn default_auth_enabled() -> bool {
+    true
+}
+
+impl Default for AuthConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_auth_enabled(),
+            api_keys: Vec::new(),
+            jwt: JwtAuthConfig::default(),
+        }
+    }
+}
+
+/// Cross-cutting HTTP layer configuration (CORS, body limit, global timeout, rate limit, auth).
+///
+/// Maps onto `paladin_web::HttpLayersConfig` (+ `AgentAuthConfig`); absent fields use safe
+/// defaults.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebHttpConfig {
     /// Allowed CORS origins; empty ⇒ permissive (suitable for local dev).
@@ -89,6 +144,9 @@ pub struct WebHttpConfig {
     /// Rate-limit settings.
     #[serde(default)]
     pub rate_limit: RateLimitConfig,
+    /// Authentication settings (enabled by default).
+    #[serde(default)]
+    pub auth: AuthConfig,
 }
 
 fn default_body_limit_bytes() -> usize {
@@ -102,6 +160,7 @@ impl Default for WebHttpConfig {
             body_limit_bytes: default_body_limit_bytes(),
             global_timeout_seconds: 0,
             rate_limit: RateLimitConfig::default(),
+            auth: AuthConfig::default(),
         }
     }
 }
@@ -154,6 +213,10 @@ pub struct AgentDefinition {
     /// Per-agent execution timeout (seconds). When absent, the server default applies.
     #[serde(default)]
     pub timeout_seconds: Option<u64>,
+
+    /// Roles permitted to invoke this agent; empty/absent ⇒ any authenticated caller.
+    #[serde(default)]
+    pub allowed_roles: Vec<UserRole>,
 }
 
 #[cfg(test)]
@@ -203,5 +266,50 @@ mod tests {
         let json = serde_json::json!({ "id": "x", "model": "gpt-4" });
         let result: Result<AgentDefinition, _> = serde_json::from_value(json);
         assert!(result.is_err(), "missing required field must fail");
+    }
+
+    #[test]
+    fn definition_parses_allowed_roles() {
+        let json = serde_json::json!({
+            "id": "x", "model": "gpt-4", "system_prompt": "p",
+            "allowed_roles": ["admin", "user"]
+        });
+        let def: AgentDefinition = serde_json::from_value(json).expect("parses");
+        assert_eq!(def.allowed_roles, vec![UserRole::Admin, UserRole::User]);
+    }
+
+    #[test]
+    fn auth_config_defaults_to_enabled_with_no_credentials() {
+        // An empty `auth:` section ⇒ enabled, no keys, JWT off (secure default).
+        let auth: AuthConfig = serde_json::from_value(serde_json::json!({})).expect("parses");
+        assert!(auth.enabled);
+        assert!(auth.api_keys.is_empty());
+        assert!(!auth.jwt.enabled);
+    }
+
+    #[test]
+    fn auth_config_parses_api_keys_with_roles() {
+        let json = serde_json::json!({
+            "enabled": true,
+            "api_keys": [
+                { "key": "sk-1", "name": "ci", "role": "admin" },
+                { "key": "sk-2", "name": "fe", "role": "user" }
+            ],
+            "jwt": { "enabled": true }
+        });
+        let auth: AuthConfig = serde_json::from_value(json).expect("parses");
+        assert_eq!(auth.api_keys.len(), 2);
+        assert_eq!(auth.api_keys[0].role, UserRole::Admin);
+        assert_eq!(auth.api_keys[1].role, UserRole::User);
+        assert!(auth.jwt.enabled);
+    }
+
+    #[test]
+    fn auth_config_rejects_unknown_role() {
+        let json = serde_json::json!({
+            "api_keys": [ { "key": "sk", "name": "x", "role": "superuser" } ]
+        });
+        let result: Result<AuthConfig, _> = serde_json::from_value(json);
+        assert!(result.is_err(), "unknown role must fail to parse");
     }
 }

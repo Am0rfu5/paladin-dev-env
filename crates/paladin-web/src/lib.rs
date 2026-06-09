@@ -8,6 +8,8 @@
 /// Web-facing adapter integrations.
 #[allow(missing_docs)]
 pub mod adapters;
+/// Authentication & authorization for the agent API.
+pub mod agent_auth;
 /// Agent-execution HTTP controller (wire types, state, handlers, router).
 pub mod agent_controller;
 /// Resident agent registry and provisioning seam for the HTTP service-host topology.
@@ -34,6 +36,7 @@ pub mod timeout;
 #[allow(missing_docs)]
 pub mod user_controller;
 
+pub use agent_auth::{AgentAuthConfig, Principal};
 pub use agent_controller::{
     AgentApiState, AgentSummary, ExecuteRequest, ExecuteResponse, agent_router,
 };

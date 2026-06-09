@@ -6,6 +6,7 @@
 //! the server shuts down cleanly when its graceful-shutdown signal fires.
 #![cfg(feature = "web-server")]
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -14,8 +15,10 @@ use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::infrastructure::web::{
-    AgentApiState, AgentRegistry, HttpLayersConfig, agent_router, with_http_layers,
+    AgentApiState, AgentAuthConfig, AgentRegistry, HttpLayersConfig, Principal, agent_router,
+    with_http_layers,
 };
+use paladin_core::platform::container::user::UserRole;
 use paladin_ports::output::llm_port::LlmPort;
 use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
 use paladin_ports::output::streaming_executor_port::StreamingExecutorPort;
@@ -187,6 +190,93 @@ async fn server_boots_serves_agents_and_shuts_down_cleanly() {
     assert!(completed, "job did not complete in time");
 
     // Trigger graceful shutdown; the server task must complete cleanly.
+    shutdown_tx.send(()).expect("send shutdown");
+    server.await.expect("server task joins after shutdown");
+}
+
+#[tokio::test]
+async fn server_enforces_authentication_when_enabled() {
+    // State with auth enabled + one admin API key, mirroring `paladin-server`'s wiring.
+    let mut api_keys = HashMap::new();
+    api_keys.insert(
+        "sk-smoke-key".to_string(),
+        Principal {
+            id: "smoke".to_string(),
+            role: UserRole::Admin,
+        },
+    );
+    let state = state_with_mock_agent("researcher")
+        .await
+        .with_auth(AgentAuthConfig {
+            enabled: true,
+            api_keys,
+            jwt: None,
+        });
+    let app = with_http_layers(agent_router(state), &HttpLayersConfig::default());
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind ephemeral port");
+    let addr = listener.local_addr().expect("local addr");
+    let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app)
+            .with_graceful_shutdown(async move {
+                let _ = shutdown_rx.await;
+            })
+            .await
+            .expect("server runs");
+    });
+
+    let base = format!("http://{addr}");
+    let client = reqwest::Client::new();
+
+    // No credential → 401 (nested envelope).
+    let resp = client
+        .get(format!("{base}/agents"))
+        .send()
+        .await
+        .expect("GET /agents no key");
+    assert_eq!(resp.status().as_u16(), 401);
+    let err: serde_json::Value = resp.json().await.expect("error json");
+    assert_eq!(err["error"]["code"], "unauthorized");
+
+    // Valid API key → 200.
+    let resp = client
+        .get(format!("{base}/agents"))
+        .header("x-api-key", "sk-smoke-key")
+        .send()
+        .await
+        .expect("GET /agents with key");
+    assert_eq!(resp.status().as_u16(), 200);
+
+    // Execute with the key → 200.
+    let resp = client
+        .post(format!("{base}/agents/researcher/execute"))
+        .header("x-api-key", "sk-smoke-key")
+        .json(&serde_json::json!({ "input": "hello" }))
+        .send()
+        .await
+        .expect("POST execute with key");
+    assert_eq!(resp.status().as_u16(), 200);
+
+    // Execute without the key → 401.
+    let resp = client
+        .post(format!("{base}/agents/researcher/execute"))
+        .json(&serde_json::json!({ "input": "hello" }))
+        .send()
+        .await
+        .expect("POST execute no key");
+    assert_eq!(resp.status().as_u16(), 401);
+
+    // Health probe stays open without a credential.
+    let resp = client
+        .get(format!("{base}/health"))
+        .send()
+        .await
+        .expect("GET /health");
+    assert_eq!(resp.status().as_u16(), 200);
+
     shutdown_tx.send(()).expect("send shutdown");
     server.await.expect("server task joins after shutdown");
 }

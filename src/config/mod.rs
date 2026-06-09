@@ -34,7 +34,8 @@ pub use crate::config::herald::{
 };
 // Vision configuration types live in the paladin-llm crate (Task 5.0)
 pub use crate::config::agents::{
-    AgentDefinition, AgentTimeoutsConfig, RateLimitConfig, WebHttpConfig,
+    AgentDefinition, AgentTimeoutsConfig, ApiKeyConfig, AuthConfig, JwtAuthConfig, RateLimitConfig,
+    WebHttpConfig,
 };
 pub use crate::config::arsenal::{ArsenalConfig, MCPServerConfig};
 pub use crate::config::citadel::CitadelConfig;

@@ -25,7 +25,7 @@ use std::pin::Pin;
 use std::time::Duration;
 
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response, Sse, sse::Event},
@@ -40,6 +40,7 @@ use paladin_core::platform::container::paladin::Paladin;
 use paladin_core::platform::container::paladin_error::PaladinError;
 use paladin_ports::output::paladin_port::{PaladinStream, PaladinStreamChunk};
 
+use crate::agent_auth::{Principal, authorize_invoke, require_admin};
 use crate::agent_registry::{AgentEntry, AgentProvisioner, AgentRegistry, AgentSpec};
 use crate::error::ApiError;
 use crate::job_store::JobStore;
@@ -61,6 +62,8 @@ pub struct AgentApiState {
     pub timeouts: TimeoutPolicy,
     /// In-memory store for async (`POST /agents/{id}/jobs`) execution.
     pub jobs: Arc<JobStore>,
+    /// Authentication configuration (disabled = open; see `agent_auth`).
+    pub auth: crate::agent_auth::AgentAuthConfig,
 }
 
 impl AgentApiState {
@@ -72,6 +75,7 @@ impl AgentApiState {
             provisioner: None,
             timeouts: TimeoutPolicy::default(),
             jobs: Arc::new(JobStore::default()),
+            auth: crate::agent_auth::AgentAuthConfig::default(),
         }
     }
 
@@ -84,6 +88,12 @@ impl AgentApiState {
     /// Set the server-wide timeout policy.
     pub fn with_timeouts(mut self, timeouts: TimeoutPolicy) -> Self {
         self.timeouts = timeouts;
+        self
+    }
+
+    /// Set the authentication configuration.
+    pub fn with_auth(mut self, auth: crate::agent_auth::AgentAuthConfig) -> Self {
+        self.auth = auth;
         self
     }
 }
@@ -219,6 +229,7 @@ pub(crate) fn ok_body<T: Serialize>(value: &T) -> JsonValue {
 /// - `400 Bad Request` (via the `Json` extractor) if the body is missing/invalid.
 pub async fn execute_agent(
     State(state): State<AgentApiState>,
+    Extension(principal): Extension<Principal>,
     Path(id): Path<String>,
     Json(request): Json<ExecuteRequest>,
 ) -> Result<(StatusCode, JsonValue), ApiError> {
@@ -226,6 +237,7 @@ pub async fn execute_agent(
         .registry
         .get(&id)
         .ok_or_else(|| ApiError::not_found(format!("unknown agent '{id}'")))?;
+    authorize_invoke(&principal, &entry.allowed_roles)?;
 
     let timeout = resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts)
         .map_err(|_| ApiError::bad_request("timeout_seconds must be a positive integer"))?;
@@ -287,8 +299,11 @@ pub async fn describe_agent(
 /// - `501 Not Implemented` if no provisioner is wired (registration disabled).
 pub async fn register_agent(
     State(state): State<AgentApiState>,
+    Extension(principal): Extension<Principal>,
     Json(spec): Json<AgentSpec>,
 ) -> Result<(StatusCode, JsonValue), ApiError> {
+    require_admin(&principal)?;
+
     let provisioner = state
         .provisioner
         .as_ref()
@@ -316,6 +331,7 @@ pub async fn register_agent(
             executor: provisioned.executor,
             streamer: provisioned.streamer,
             timeout_secs: spec.timeout_seconds,
+            allowed_roles: spec.allowed_roles.clone(),
         },
     ) {
         return Err(ApiError::conflict(format!(
@@ -335,8 +351,10 @@ pub async fn register_agent(
 /// `{ "error": ... }` if no agent is registered under `id`.
 pub async fn deregister_agent(
     State(state): State<AgentApiState>,
+    Extension(principal): Extension<Principal>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, ApiError> {
+    require_admin(&principal)?;
     if state.registry.remove(&id) {
         Ok(StatusCode::NO_CONTENT)
     } else {
@@ -417,12 +435,16 @@ fn timed_event_stream(
 /// up-front execution failure → `502`.
 pub async fn execute_agent_stream(
     State(state): State<AgentApiState>,
+    Extension(principal): Extension<Principal>,
     Path(id): Path<String>,
     Json(request): Json<ExecuteRequest>,
 ) -> Response {
     let Some(entry) = state.registry.get(&id) else {
         return ApiError::not_found(format!("unknown agent '{id}'")).into_response();
     };
+    if let Err(error) = authorize_invoke(&principal, &entry.allowed_roles) {
+        return error.into_response();
+    }
 
     let timeout =
         match resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts) {
@@ -482,6 +504,7 @@ pub async fn execute_agent_stream(
 /// unknown id → `404` and invalid `timeout_seconds` → `400`.
 pub async fn enqueue_job(
     State(state): State<AgentApiState>,
+    Extension(principal): Extension<Principal>,
     Path(id): Path<String>,
     Json(request): Json<ExecuteRequest>,
 ) -> Result<(StatusCode, JsonValue), ApiError> {
@@ -489,6 +512,7 @@ pub async fn enqueue_job(
         .registry
         .get(&id)
         .ok_or_else(|| ApiError::not_found(format!("unknown agent '{id}'")))?;
+    authorize_invoke(&principal, &entry.allowed_roles)?;
 
     let timeout = resolve_timeout(request.timeout_seconds, entry.timeout_secs, &state.timeouts)
         .map_err(|_| ApiError::bad_request("timeout_seconds must be a positive integer"))?;
@@ -559,8 +583,14 @@ pub fn agent_router(state: AgentApiState) -> Router {
         .route("/agents/{id}/execute/stream", post(execute_agent_stream))
         .route("/agents/{id}/jobs", post(enqueue_job))
         .route("/agents/{id}/jobs/{job_id}", get(get_job))
+        // Authenticate the agent routes (no-op when auth is disabled). `route_layer`
+        // applies only to these routes, so the merged health probes stay open.
+        .route_layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            crate::agent_auth::require_authentication,
+        ))
         .with_state(state.clone());
-    // Mount the liveness/readiness probes alongside the agent routes.
+    // Mount the liveness/readiness probes alongside the agent routes (unauthenticated).
     routes.merge(crate::health::health_routes(state))
 }
 
@@ -572,8 +602,25 @@ mod tests {
     use axum::http::Request;
     use axum::routing::post;
     use paladin_core::platform::container::paladin::PaladinData;
+    use paladin_core::platform::container::user::UserRole;
     use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
     use tower::ServiceExt; // for `Router::oneshot`
+
+    /// An admin `Principal` extension for direct handler calls (passes all authz checks).
+    fn admin() -> Extension<Principal> {
+        Extension(Principal {
+            id: "test-admin".to_string(),
+            role: UserRole::Admin,
+        })
+    }
+
+    /// A non-admin (`User`) `Principal` extension for authz tests.
+    fn user() -> Extension<Principal> {
+        Extension(Principal {
+            id: "test-user".to_string(),
+            role: UserRole::User,
+        })
+    }
 
     /// Configurable in-test executor: succeeds with a fixed output, fails, or stalls
     /// (sleeps far longer than any test timeout, to exercise cancellation).
@@ -693,6 +740,7 @@ mod tests {
         let state = state_with_streaming_agent("r", vec!["Hel".to_string(), "lo".to_string()]);
         let response = execute_agent_stream(
             State(state),
+            admin(),
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -721,6 +769,7 @@ mod tests {
         let state = state_with_agent("r", MockExecutor::Succeeds("buffered".to_string()));
         let response = execute_agent_stream(
             State(state),
+            admin(),
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -746,6 +795,7 @@ mod tests {
         let state = state_with_agent("r", MockExecutor::Succeeds("x".to_string()));
         let response = execute_agent_stream(
             State(state),
+            admin(),
             Path("missing".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -790,6 +840,7 @@ mod tests {
 
         let err = execute_agent(
             State(state),
+            admin(),
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -806,6 +857,7 @@ mod tests {
         let state = state_with_agent("r", MockExecutor::Succeeds("ok".to_string()));
         let err = execute_agent(
             State(state),
+            admin(),
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -831,6 +883,7 @@ mod tests {
 
         let response = execute_agent_stream(
             State(state),
+            admin(),
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -874,6 +927,7 @@ mod tests {
 
         let (status, Json(body)) = enqueue_job(
             State(state.clone()),
+            admin(),
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -895,6 +949,7 @@ mod tests {
         let state = state_with_agent("r", MockExecutor::Succeeds("x".to_string()));
         let err = enqueue_job(
             State(state),
+            admin(),
             Path("missing".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -926,6 +981,7 @@ mod tests {
 
         let (status, Json(body)) = enqueue_job(
             State(state.clone()),
+            admin(),
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -946,6 +1002,7 @@ mod tests {
         let state = state_with_agent("r", MockExecutor::Succeeds("done".to_string()));
         let (status, Json(body)) = execute_agent(
             State(state),
+            admin(),
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -968,6 +1025,7 @@ mod tests {
         let state = state_with_agent("r", MockExecutor::Succeeds("done".to_string()));
         let err = execute_agent(
             State(state),
+            admin(),
             Path("missing".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -986,6 +1044,7 @@ mod tests {
         let state = state_with_agent("r", MockExecutor::Fails("upstream down".to_string()));
         let err = execute_agent(
             State(state),
+            admin(),
             Path("r".to_string()),
             Json(ExecuteRequest {
                 input: "hi".to_string(),
@@ -1004,9 +1063,9 @@ mod tests {
     #[tokio::test]
     async fn execute_invalid_body_returns_400_through_router() {
         let state = state_with_agent("r", MockExecutor::Succeeds("done".to_string()));
-        let app = axum::Router::new()
-            .route("/agents/{id}/execute", post(execute_agent))
-            .with_state(state);
+        // Use the real router so the (default-disabled) auth layer attaches a principal;
+        // the malformed body must still be rejected with 400 by the JSON extractor.
+        let app = agent_router(state);
 
         let response = app
             .oneshot(
@@ -1065,6 +1124,7 @@ mod tests {
             temperature: None,
             stop_words: vec![],
             timeout_seconds: None,
+            allowed_roles: vec![],
         }
     }
 
@@ -1077,9 +1137,10 @@ mod tests {
     async fn register_success_returns_201_and_is_retrievable() {
         let state = state_with_provisioner(MockProvisioner::Succeeds);
 
-        let (status, Json(body)) = register_agent(State(state.clone()), Json(sample_spec("new")))
-            .await
-            .expect("created");
+        let (status, Json(body)) =
+            register_agent(State(state.clone()), admin(), Json(sample_spec("new")))
+                .await
+                .expect("created");
         assert_eq!(status, StatusCode::CREATED);
         assert_eq!(body["id"], "new");
         assert_eq!(body["name"], "Researcher");
@@ -1095,9 +1156,9 @@ mod tests {
     async fn register_duplicate_id_returns_409() {
         let state = state_with_provisioner(MockProvisioner::Succeeds);
         // First registration succeeds.
-        let _ = register_agent(State(state.clone()), Json(sample_spec("dup"))).await;
+        let _ = register_agent(State(state.clone()), admin(), Json(sample_spec("dup"))).await;
         // Second with the same id conflicts.
-        let err = register_agent(State(state), Json(sample_spec("dup")))
+        let err = register_agent(State(state), admin(), Json(sample_spec("dup")))
             .await
             .unwrap_err();
         assert_eq!(err.status(), StatusCode::CONFLICT);
@@ -1107,7 +1168,7 @@ mod tests {
     #[tokio::test]
     async fn register_provision_failure_returns_422() {
         let state = state_with_provisioner(MockProvisioner::Fails("no such model".to_string()));
-        let err = register_agent(State(state), Json(sample_spec("x")))
+        let err = register_agent(State(state), admin(), Json(sample_spec("x")))
             .await
             .unwrap_err();
         assert_eq!(err.status(), StatusCode::UNPROCESSABLE_ENTITY);
@@ -1121,7 +1182,7 @@ mod tests {
     async fn register_without_provisioner_returns_501() {
         // No provisioner wired: registration must fail closed, not panic.
         let state = AgentApiState::new(Arc::new(AgentRegistry::new()));
-        let err = register_agent(State(state), Json(sample_spec("x")))
+        let err = register_agent(State(state), admin(), Json(sample_spec("x")))
             .await
             .unwrap_err();
         assert_eq!(err.status(), StatusCode::NOT_IMPLEMENTED);
@@ -1130,9 +1191,8 @@ mod tests {
     #[tokio::test]
     async fn register_invalid_body_returns_400_through_router() {
         let state = state_with_provisioner(MockProvisioner::Succeeds);
-        let app = axum::Router::new()
-            .route("/agents", post(register_agent))
-            .with_state(state);
+        // Use the real router so the (default-disabled) auth layer attaches a principal.
+        let app = agent_router(state);
 
         let response = app
             .oneshot(
@@ -1153,7 +1213,7 @@ mod tests {
     async fn deregister_known_id_returns_204_then_404() {
         let state = registry_state(vec![("r", test_agent("Researcher"))]);
 
-        let result = deregister_agent(State(state.clone()), Path("r".to_string())).await;
+        let result = deregister_agent(State(state.clone()), admin(), Path("r".to_string())).await;
         match result {
             Ok(status) => assert_eq!(status, StatusCode::NO_CONTENT),
             Err(e) => panic!("expected 204, got {:?}", e.status()),
@@ -1169,11 +1229,82 @@ mod tests {
     #[tokio::test]
     async fn deregister_unknown_id_returns_404() {
         let state = AgentApiState::new(Arc::new(AgentRegistry::new()));
-        let result = deregister_agent(State(state), Path("missing".to_string())).await;
+        let result = deregister_agent(State(state), admin(), Path("missing".to_string())).await;
         match result {
             Err(e) => assert_eq!(e.status(), StatusCode::NOT_FOUND),
             Ok(other) => panic!("expected 404, got {other:?}"),
         }
+    }
+
+    // --- Authorization (per-agent allowed_roles + admin gate) ---
+
+    /// State with one agent restricted to the given roles.
+    fn state_with_restricted_agent(id: &str, roles: Vec<UserRole>) -> AgentApiState {
+        let registry = AgentRegistry::new();
+        registry.insert_entry(
+            id.to_string(),
+            AgentEntry {
+                paladin: test_agent(id),
+                executor: Arc::new(MockExecutor::Succeeds("ok".to_string())),
+                streamer: None,
+                timeout_secs: None,
+                allowed_roles: roles,
+            },
+        );
+        AgentApiState::new(Arc::new(registry))
+    }
+
+    #[tokio::test]
+    async fn execute_forbidden_for_disallowed_role() {
+        let state = state_with_restricted_agent("r", vec![UserRole::Admin]);
+        let err = execute_agent(
+            State(state),
+            user(), // role User, not in [Admin]
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+                timeout_seconds: None,
+            }),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(err.status(), StatusCode::FORBIDDEN);
+        assert_eq!(err.to_body()["error"]["code"], "forbidden");
+    }
+
+    #[tokio::test]
+    async fn execute_allowed_for_listed_role() {
+        let state = state_with_restricted_agent("r", vec![UserRole::User]);
+        let (status, _) = execute_agent(
+            State(state),
+            user(),
+            Path("r".to_string()),
+            Json(ExecuteRequest {
+                input: "hi".to_string(),
+                timeout_seconds: None,
+            }),
+        )
+        .await
+        .expect("ok");
+        assert_eq!(status, StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn register_forbidden_for_non_admin() {
+        let state = state_with_provisioner(MockProvisioner::Succeeds);
+        let err = register_agent(State(state), user(), Json(sample_spec("x")))
+            .await
+            .unwrap_err();
+        assert_eq!(err.status(), StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn deregister_forbidden_for_non_admin() {
+        let state = registry_state(vec![("r", test_agent("Researcher"))]);
+        let err = deregister_agent(State(state), user(), Path("r".to_string()))
+            .await
+            .unwrap_err();
+        assert_eq!(err.status(), StatusCode::FORBIDDEN);
     }
 
     #[tokio::test]

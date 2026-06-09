@@ -40,6 +40,24 @@ http:
     enabled: false
     per_second: 10
     burst: 20
+  # Authentication for the agent routes. Enabled by default: the server FAILS TO START
+  # if `enabled` is true and no credentials (api_keys / jwt) are configured. Set
+  # `enabled: false` for trusted/dev environments (logged as a warning). Health/readiness
+  # probes are always open.
+  auth:
+    enabled: true
+    # Static API keys (header `X-API-Key`). Put real keys in env/secrets, not in VCS.
+    # `role` is `admin` or `user`; admins may register/deregister agents at runtime.
+    api_keys:
+      - key: "${PALADIN_API_KEY_CI}" # service-to-service caller
+        name: "ci-runner"
+        role: "admin"
+      - key: "${PALADIN_API_KEY_APP}"
+        name: "frontend"
+        role: "user"
+    # Accept user JWTs via the wired AuthPort (in-process token store).
+    jwt:
+      enabled: false
 
 # Agents served behind the HTTP API. Each becomes resident at /agents/<id>:
 #   POST /agents/<id>/execute          — buffered run
@@ -52,6 +70,9 @@ agents:
     system_prompt: "You research topics thoroughly."
     temperature: 0.7 # optional
     timeout_seconds: 120 # optional per-agent override (clamped to timeouts.max_seconds)
+    # Roles permitted to invoke this agent; omit/empty ⇒ any authenticated caller.
+    allowed_roles: ["admin", "user"]
   - id: "summarizer"
     model: "gpt-4"
     system_prompt: "You write concise summaries."
+    allowed_roles: ["admin"] # restricted to admins

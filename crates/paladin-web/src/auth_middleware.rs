@@ -15,33 +15,25 @@
 use std::sync::Arc;
 
 use axum::{
-    Json,
     extract::{Request, State},
-    http::{HeaderMap, StatusCode, header},
+    http::{HeaderMap, header},
     middleware::Next,
     response::{IntoResponse, Response},
 };
 use paladin_core::platform::container::user::UserRole;
 use paladin_ports::output::auth_port::{AuthClaims, AuthPort};
-use serde_json::json;
 use uuid::Uuid;
 
-/// Build a non-revealing `401 Unauthorized` JSON response.
+use crate::error::ApiError;
+
+/// Build a non-revealing `401 Unauthorized` response (unified [`ApiError`] envelope).
 fn unauthorized() -> Response {
-    (
-        StatusCode::UNAUTHORIZED,
-        Json(json!({ "error": "Unauthorized", "code": "UNAUTHORIZED" })),
-    )
-        .into_response()
+    ApiError::unauthorized("Unauthorized").into_response()
 }
 
-/// Build a non-revealing `403 Forbidden` JSON response.
+/// Build a non-revealing `403 Forbidden` response (unified [`ApiError`] envelope).
 fn forbidden() -> Response {
-    (
-        StatusCode::FORBIDDEN,
-        Json(json!({ "error": "Forbidden", "code": "FORBIDDEN" })),
-    )
-        .into_response()
+    ApiError::forbidden("Forbidden").into_response()
 }
 
 /// Extract a non-empty bearer token from the `Authorization` header.
@@ -136,6 +128,7 @@ pub async fn require_admin(request: Request, next: Next) -> Response {
 mod tests {
     use super::*;
     use async_trait::async_trait;
+    use axum::http::StatusCode;
     use chrono::{Duration, Utc};
     use paladin_ports::output::auth_port::{AuthError, AuthToken};
 

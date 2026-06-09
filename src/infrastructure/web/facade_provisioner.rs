@@ -60,6 +60,9 @@ fn spec_to_definition(spec: &AgentSpec) -> AgentDefinition {
         // The per-agent timeout is applied by the web layer (registry entry), not the
         // build path, so it is not mapped onto the definition here.
         timeout_seconds: None,
+        // Authorization is enforced by the web layer from `AgentSpec.allowed_roles`; the
+        // build path is role-agnostic.
+        allowed_roles: Vec::new(),
     }
 }
 
@@ -103,6 +106,7 @@ mod tests {
             temperature: Some(0.5),
             stop_words: vec!["STOP".to_string()],
             timeout_seconds: None,
+            allowed_roles: vec![],
         }
     }
 
