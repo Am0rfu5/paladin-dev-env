@@ -65,12 +65,12 @@
   - [x] 3.3 `with_http_layers` composes unchanged; the global-timeout exemption (`path.ends_with("/execute/stream")`) still matches `/v1/agents/{id}/execute/stream` — no change needed (the existing layer test still passes).
   - [x] 3.4 Moved `tests/paladin_server_smoke.rs` agent paths to `/v1/...` (health/ready at root); updated the binary startup route log to `/v1`. `fmt`/`clippy` clean; paladin-web 112 + smoke 2 pass.
 
-- [ ] 4.0 Build + serve the spec (`/openapi.json`) and Swagger UI (`/docs`), gated by `http.docs.enabled`
-  - [ ] 4.1 Create `crates/paladin-web/src/openapi.rs`: `build_openapi() -> utoipa::openapi::OpenApi` assembling the nested `/v1` paths + components, with `info` (title/version) and the two `SecurityScheme`s (`X-API-Key` apiKey-in-header, bearer JWT). Declare `pub mod openapi` in `lib.rs`.
-  - [ ] 4.2 Add `DocsConfig { enabled }` (default true) to `WebHttpConfig` (`src/config/agents.rs`) + export; update `Settings` default usage paths as needed.
-  - [ ] 4.3 Provide a `paladin-web` helper to mount the docs routes (`GET /openapi.json` serving the serialized spec + `SwaggerUi` at `/docs`) and a way for the composer/binary to include them only when enabled.
-  - [ ] 4.4 Wire `paladin-server`: build the `/v1` app, conditionally mount the docs routes when `http.docs.enabled`, apply `with_http_layers`, and log whether docs are served.
-  - [ ] 4.5 **(Test first)** Router tests: docs enabled → `GET /openapi.json` is `200 application/json` and `GET /docs` is reachable; docs disabled → both `404` while `/v1/agents` still works. fmt/clippy.
+- [x] 4.0 Build + serve the spec (`/openapi.json`) and Swagger UI (`/docs`), gated by `http.docs.enabled`
+  - [x] 4.1 Created `crates/paladin-web/src/openapi.rs`: `build_openapi(state)`/`openapi_spec()` assemble the `/v1` document (via the shared `versioned_agent_parts`) and `decorate` it with info (title/version/description) + the `api_key` (header `X-API-Key`) and `jwt` (bearer) security schemes. `pub mod openapi` in `lib.rs`.
+  - [x] 4.2 Added `DocsConfig { enabled }` (default true) to `WebHttpConfig` + exported via `config::mod`.
+  - [x] 4.3 `docs_router(spec)` mounts `SwaggerUi::new("/docs").url("/openapi.json", spec)` — serves both the spec and the UI; merged only when enabled.
+  - [x] 4.4 `paladin-server` builds the `/v1` app, merges `docs_router(build_openapi(state))` when `http.docs.enabled`, applies `with_http_layers`, and logs the docs posture.
+  - [x] 4.5 **(Test first)** Tests: spec has info + both security schemes + `/v1` paths; `docs_router` serves `/openapi.json` (`200`) + `/docs/`; without it, `/openapi.json` → `404` and `/health` still `200`. Verified by boot: `/openapi.json` → `200 application/json` (`title: "Paladin Agent API"`), `/docs/` → `200`. paladin-web 116; fmt/clippy clean.
 
 - [ ] 5.0 Spec drift guard (committed `openapi.json` baseline + regenerate-and-compare test)
   - [ ] 5.1 Generate and commit `crates/paladin-web/openapi.json` (pretty-printed `build_openapi()` output).

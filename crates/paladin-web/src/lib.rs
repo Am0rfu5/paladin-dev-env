@@ -28,6 +28,8 @@ pub mod health;
 pub mod http_layers;
 /// In-memory async job store for fire-and-poll execution.
 pub mod job_store;
+/// OpenAPI spec assembly and interactive (Swagger UI) docs serving.
+pub mod openapi;
 /// Request-logging middleware with request-id correlation.
 pub mod request_log;
 /// Execution timeout policy and resolution.

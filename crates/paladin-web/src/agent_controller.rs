@@ -722,15 +722,24 @@ pub fn agent_openapi_router(state: AgentApiState) -> OpenApiRouter {
 /// API version prefix under which the agent routes are served.
 pub const API_V1_PREFIX: &str = "/v1";
 
+/// Assemble the agent API nested under [`API_V1_PREFIX`] into an `axum` [`Router`] and its
+/// raw OpenAPI document (before [`crate::openapi`] adds info/security schemes).
+///
+/// This is the single source of the `/v1` nesting, shared by [`agent_router`] (which keeps
+/// the router and drops the spec) and the spec builder (which keeps the spec).
+pub(crate) fn versioned_agent_parts(state: AgentApiState) -> (Router, utoipa::openapi::OpenApi) {
+    OpenApiRouter::new()
+        .nest(API_V1_PREFIX, agent_openapi_router(state))
+        .split_for_parts()
+}
+
 /// Build the agent router as a plain `axum` [`Router`]: the annotated agent API nested under
 /// [`API_V1_PREFIX`] (`/v1/agents/...`), plus the unversioned health probes at the root.
 ///
 /// The OpenAPI document produced alongside is discarded here; the binary builds and serves
 /// the spec via [`crate::openapi`].
 pub fn agent_router(state: AgentApiState) -> Router {
-    let (routes, _api) = OpenApiRouter::new()
-        .nest(API_V1_PREFIX, agent_openapi_router(state.clone()))
-        .split_for_parts();
+    let (routes, _api) = versioned_agent_parts(state.clone());
     // Mount the liveness/readiness probes alongside (unversioned, unauthenticated).
     routes.merge(crate::health::health_routes(state))
 }

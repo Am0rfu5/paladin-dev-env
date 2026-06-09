@@ -81,7 +81,16 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
             burst: http.rate_limit.burst,
         },
     };
-    let app = with_http_layers(agent_router(state), &layers);
+    // Optionally serve the OpenAPI spec + Swagger UI (unversioned, unauthenticated).
+    let docs_enabled = http.docs.enabled;
+    let routes = agent_router(state.clone());
+    let routes = if docs_enabled {
+        let spec = paladin::infrastructure::web::openapi::build_openapi(state);
+        routes.merge(paladin::infrastructure::web::openapi::docs_router(spec))
+    } else {
+        routes
+    };
+    let app = with_http_layers(routes, &layers);
 
     let listener = tokio::net::TcpListener::bind(bind_address(&settings)).await?;
     let bound = listener.local_addr()?;
@@ -93,6 +102,11 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     info!(
         "routes: GET /health, GET /ready, GET/POST /v1/agents, GET/DELETE /v1/agents/{{id}}, POST /v1/agents/{{id}}/execute[/stream], POST /v1/agents/{{id}}/jobs, GET /v1/agents/{{id}}/jobs/{{job_id}}"
     );
+    if docs_enabled {
+        info!("docs: GET /openapi.json, Swagger UI at /docs");
+    } else {
+        info!("docs: disabled (http.docs.enabled = false)");
+    }
     info!(
         "layers: request-log + CORS + body-limit({}B){}{}",
         layers.body_limit_bytes,

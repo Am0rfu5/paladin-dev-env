@@ -126,6 +126,26 @@ impl Default for AuthConfig {
     }
 }
 
+/// Interactive API-docs settings (OpenAPI spec + Swagger UI).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DocsConfig {
+    /// Whether to serve `GET /openapi.json` and the Swagger UI at `/docs`.
+    #[serde(default = "default_docs_enabled")]
+    pub enabled: bool,
+}
+
+fn default_docs_enabled() -> bool {
+    true
+}
+
+impl Default for DocsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_docs_enabled(),
+        }
+    }
+}
+
 /// Cross-cutting HTTP layer configuration (CORS, body limit, global timeout, rate limit, auth).
 ///
 /// Maps onto `paladin_web::HttpLayersConfig` (+ `AgentAuthConfig`); absent fields use safe
@@ -147,6 +167,9 @@ pub struct WebHttpConfig {
     /// Authentication settings (enabled by default).
     #[serde(default)]
     pub auth: AuthConfig,
+    /// Interactive API-docs settings (enabled by default).
+    #[serde(default)]
+    pub docs: DocsConfig,
 }
 
 fn default_body_limit_bytes() -> usize {
@@ -161,6 +184,7 @@ impl Default for WebHttpConfig {
             global_timeout_seconds: 0,
             rate_limit: RateLimitConfig::default(),
             auth: AuthConfig::default(),
+            docs: DocsConfig::default(),
         }
     }
 }
