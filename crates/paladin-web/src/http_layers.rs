@@ -8,9 +8,13 @@
 //! Layer rejections that reach the client (e.g. rate-limit `429`) render through the
 //! unified [`ApiError`] envelope.
 
+use std::time::Duration;
+
 use axum::Router;
+use axum::extract::Request;
 use axum::http::HeaderValue;
-use axum::response::IntoResponse;
+use axum::middleware::Next;
+use axum::response::{IntoResponse, Response};
 use tower_governor::GovernorLayer;
 use tower_governor::governor::GovernorConfigBuilder;
 use tower_governor::key_extractor::SmartIpKeyExtractor;
@@ -121,6 +125,50 @@ pub fn apply_rate_limit(router: Router, config: &RateLimitConfig) -> Router {
     }
 }
 
+/// Suffix identifying the long-lived SSE streaming route, exempt from the global timeout.
+const STREAM_ROUTE_SUFFIX: &str = "/execute/stream";
+
+/// Global request-timeout middleware that **skips** the SSE streaming route (whose
+/// responses are long-lived and bounded instead by the per-execution timeout). On expiry
+/// it returns `504` via [`ApiError`].
+async fn global_timeout_middleware(request: Request, next: Next, timeout: Duration) -> Response {
+    if request.uri().path().ends_with(STREAM_ROUTE_SUFFIX) {
+        return next.run(request).await;
+    }
+    match tokio::time::timeout(timeout, next.run(request)).await {
+        Ok(response) => response,
+        Err(_elapsed) => ApiError::gateway_timeout("request timed out").into_response(),
+    }
+}
+
+/// Wrap `router` with the cross-cutting HTTP layers, applied uniformly.
+///
+/// Outermost-first the request sees: request logging (request-id) → rate limit → CORS →
+/// body-size limit → (optional) global timeout → routes. The global timeout is applied
+/// only when `global_timeout_secs > 0` and never to the SSE streaming route.
+pub fn with_http_layers(router: Router, config: &HttpLayersConfig) -> Router {
+    // Each `.layer` wraps *outside* the previous, so this reads innermost → outermost.
+    let mut router = router;
+
+    if config.global_timeout_secs > 0 {
+        let timeout = Duration::from_secs(config.global_timeout_secs);
+        router = router.layer(axum::middleware::from_fn(move |req, next| {
+            global_timeout_middleware(req, next, timeout)
+        }));
+    }
+
+    router = router
+        .layer(body_limit_layer(config))
+        .layer(cors_layer(config));
+
+    // Rate limit sits outside CORS/body-limit so it sheds load early.
+    router = apply_rate_limit(router, &config.rate_limit);
+
+    // Request logging is outermost so every response (incl. 429/413/504) is logged and
+    // carries an `x-request-id`.
+    router.layer(axum::middleware::from_fn(crate::request_log::request_log))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -204,6 +252,71 @@ mod tests {
 
         let second = app.oneshot(make_req()).await.unwrap();
         assert_eq!(second.status(), StatusCode::TOO_MANY_REQUESTS);
+    }
+
+    #[tokio::test]
+    async fn with_http_layers_serves_and_sets_request_id() {
+        let app = with_http_layers(
+            Router::new().route("/agents", get(|| async { "[]" })),
+            &HttpLayersConfig::default(),
+        );
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/agents")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert!(resp.headers().contains_key("x-request-id"));
+    }
+
+    #[tokio::test]
+    async fn global_timeout_applies_to_normal_routes_but_skips_streaming() {
+        let config = HttpLayersConfig {
+            global_timeout_secs: 1,
+            ..HttpLayersConfig::default()
+        };
+        let app = with_http_layers(
+            Router::new()
+                .route(
+                    "/slow",
+                    get(|| async {
+                        tokio::time::sleep(Duration::from_millis(1200)).await;
+                        "late"
+                    }),
+                )
+                .route(
+                    "/agents/x/execute/stream",
+                    get(|| async {
+                        tokio::time::sleep(Duration::from_millis(1200)).await;
+                        "streamed"
+                    }),
+                ),
+            &config,
+        );
+
+        // Normal route exceeds the 1s timeout → 504.
+        let slow = app
+            .clone()
+            .oneshot(Request::builder().uri("/slow").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(slow.status(), StatusCode::GATEWAY_TIMEOUT);
+
+        // The streaming route is exempt → completes despite exceeding the timeout.
+        let stream = app
+            .oneshot(
+                Request::builder()
+                    .uri("/agents/x/execute/stream")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(stream.status(), StatusCode::OK);
     }
 
     #[tokio::test]

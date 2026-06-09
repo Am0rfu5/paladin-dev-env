@@ -41,5 +41,6 @@ pub use agent_registry::{
     AgentEntry, AgentProvisioner, AgentRegistry, AgentSpec, ProvisionError, ProvisionedAgent,
 };
 pub use error::ApiError;
+pub use http_layers::{HttpLayersConfig, RateLimitConfig, with_http_layers};
 pub use job_store::{JobRecord, JobStatus, JobStore};
 pub use timeout::TimeoutPolicy;

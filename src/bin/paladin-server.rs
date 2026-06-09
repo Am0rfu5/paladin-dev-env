@@ -13,13 +13,16 @@
 //!
 //! Requires the `web-server` feature (enforced via `required-features` in `Cargo.toml`).
 
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use log::{error, info};
 use paladin::config::settings::Settings;
 use paladin::infrastructure::web::agent_host::{bind_address, build_agent_registry};
 use paladin::infrastructure::web::facade_provisioner::FacadeProvisioner;
-use paladin::infrastructure::web::{AgentApiState, TimeoutPolicy, agent_router};
+use paladin::infrastructure::web::{
+    AgentApiState, HttpLayersConfig, RateLimitConfig, TimeoutPolicy, agent_router, with_http_layers,
+};
 use tokio::signal;
 
 #[tokio::main]
@@ -57,7 +60,19 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
             default_secs: timeouts.default_seconds,
             max_secs: timeouts.max_seconds,
         });
-    let app = agent_router(state);
+    // Cross-cutting HTTP layers (health routes are merged inside `agent_router`).
+    let http = settings.http.clone().unwrap_or_default();
+    let layers = HttpLayersConfig {
+        cors_allow_origins: http.cors_allow_origins.clone(),
+        body_limit_bytes: http.body_limit_bytes,
+        global_timeout_secs: http.global_timeout_seconds,
+        rate_limit: RateLimitConfig {
+            enabled: http.rate_limit.enabled,
+            per_second: http.rate_limit.per_second,
+            burst: http.rate_limit.burst,
+        },
+    };
+    let app = with_http_layers(agent_router(state), &layers);
 
     let listener = tokio::net::TcpListener::bind(bind_address(&settings)).await?;
     let bound = listener.local_addr()?;
@@ -67,12 +82,33 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         agent_ids
     );
     info!(
-        "routes: GET /agents, POST /agents, GET /agents/{{id}}, DELETE /agents/{{id}}, POST /agents/{{id}}/execute"
+        "routes: GET /health, GET /ready, GET/POST /agents, GET/DELETE /agents/{{id}}, POST /agents/{{id}}/execute[/stream], POST /agents/{{id}}/jobs, GET /agents/{{id}}/jobs/{{job_id}}"
+    );
+    info!(
+        "layers: request-log + CORS + body-limit({}B){}{}",
+        layers.body_limit_bytes,
+        if layers.global_timeout_secs > 0 {
+            format!(" + global-timeout({}s)", layers.global_timeout_secs)
+        } else {
+            String::new()
+        },
+        if layers.rate_limit.enabled {
+            format!(
+                " + rate-limit({}/s, burst {})",
+                layers.rate_limit.per_second, layers.rate_limit.burst
+            )
+        } else {
+            String::new()
+        }
     );
 
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    // `ConnectInfo` lets the rate limiter key on the peer IP for direct connections.
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
 
     info!("paladin-server shut down cleanly");
     Ok(())

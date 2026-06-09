@@ -80,12 +80,12 @@
   - [x] 5.4 Built `cors_layer` (permissive when unset, else explicit origins), `body_limit_layer`, and `apply_rate_limit` (optional `GovernorLayer` + `SmartIpKeyExtractor`, only when enabled; invalid config logged + skipped). Global timeout config carried for the composer (task 6) to apply scoped to non-streaming routes.
   - [x] 5.5 `429` renders via `ApiError` (`GovernorLayer::error_handler` → `ApiError::too_many_requests`). `413` uses tower-http's status (body is its default; documented). `fmt`/`clippy --all-targets -D warnings` clean; 94 + 5 tests pass.
 
-- [ ] 6.0 Compose the layers (`with_http_layers`) and wire config into `paladin-server`
-  - [ ] 6.1 Create `crates/paladin-web/src/http_layers.rs` with `pub fn with_http_layers(router: Router, config: &HttpLayersConfig) -> Router` applying request-logging + CORS + body-limit + rate-limit (+ health routes) uniformly, keeping the streaming route clear of the global timeout.
-  - [ ] 6.2 **(Test first)** A composition test: a router wrapped by `with_http_layers` still serves an agent route and `/health`, and carries `x-request-id`.
-  - [ ] 6.3 Add a web/http config section to `Settings` (facade): CORS, body-limit, global-timeout, rate-limit. Update `Settings::default()` + the `user_config` test fixture.
-  - [ ] 6.4 In `paladin-server`: map `Settings` → `HttpLayersConfig` and apply `with_http_layers` to the composed router; log the enabled layers on startup.
-  - [ ] 6.5 Rustdoc; gates.
+- [x] 6.0 Compose the layers (`with_http_layers`) and wire config into `paladin-server`
+  - [x] 6.1 Added `with_http_layers(router, config)` to `http_layers.rs`: request-logging (outermost) → rate-limit → CORS → body-limit → optional global timeout → routes. The global timeout uses a `from_fn` middleware that **skips the `/execute/stream` route** (path suffix check), so SSE is never cut off.
+  - [x] 6.2 **(Test first)** Composition tests: wrapped router serves `/agents` with an `x-request-id`; and `global_timeout_applies_to_normal_routes_but_skips_streaming` (normal route → `504`, stream route completes).
+  - [x] 6.3 Added `WebHttpConfig` (+ `RateLimitConfig`) to the facade config and `Settings.http` (`#[serde(default)]`); updated `Settings::default()` + the `user_config` fixture.
+  - [x] 6.4 `paladin-server` maps `Settings.http` → `HttpLayersConfig`, applies `with_http_layers`, serves with `into_make_service_with_connect_info::<SocketAddr>()` (so the rate limiter keys on peer IP), and logs the enabled layers. Verified by boot: `/health`/`/ready` respond, error uses the nested envelope, `x-request-id` present.
+  - [x] 6.5 Rustdoc; `fmt`/`clippy -D warnings` (lib+bins) clean; paladin-web 96, facade config 48 + infra::web 12 + smoke 1 pass.
 
 - [ ] 7.0 Tests: probes, error envelope, request-id, CORS preflight, body-limit, 429 + boot-smoke extension
   - [ ] 7.1 Confirm unit/handler coverage from 1.0–6.0 is in place (error envelope, health, request-id, CORS, body-limit, 429, composition).
