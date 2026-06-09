@@ -117,6 +117,36 @@ mod tests {
     use axum::http::{Request, StatusCode};
     use tower::ServiceExt;
 
+    /// Path of the committed spec baseline (`crates/paladin-web/openapi.json`).
+    fn baseline_path() -> std::path::PathBuf {
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("openapi.json")
+    }
+
+    /// Drift guard: the generated spec must match the committed `openapi.json` baseline.
+    ///
+    /// Regenerate after an intentional API change with:
+    /// `UPDATE_OPENAPI=1 cargo test -p paladin-web openapi_matches_committed_baseline`
+    /// (or `make openapi`).
+    #[test]
+    fn openapi_matches_committed_baseline() {
+        let generated = openapi_spec().to_pretty_json().expect("serialize spec");
+        let path = baseline_path();
+
+        if std::env::var_os("UPDATE_OPENAPI").is_some() {
+            std::fs::write(&path, format!("{generated}\n")).expect("write baseline");
+            return;
+        }
+
+        let baseline = std::fs::read_to_string(&path).unwrap_or_default();
+        assert_eq!(
+            generated.trim(),
+            baseline.trim(),
+            "OpenAPI spec drifted from {}. If the change is intentional, regenerate with: \
+             UPDATE_OPENAPI=1 cargo test -p paladin-web openapi_matches_committed_baseline",
+            path.display()
+        );
+    }
+
     #[tokio::test]
     async fn docs_router_serves_spec_and_ui() {
         let app = docs_router(openapi_spec());

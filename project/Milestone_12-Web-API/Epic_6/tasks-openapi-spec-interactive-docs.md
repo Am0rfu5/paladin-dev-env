@@ -72,11 +72,11 @@
   - [x] 4.4 `paladin-server` builds the `/v1` app, merges `docs_router(build_openapi(state))` when `http.docs.enabled`, applies `with_http_layers`, and logs the docs posture.
   - [x] 4.5 **(Test first)** Tests: spec has info + both security schemes + `/v1` paths; `docs_router` serves `/openapi.json` (`200`) + `/docs/`; without it, `/openapi.json` → `404` and `/health` still `200`. Verified by boot: `/openapi.json` → `200 application/json` (`title: "Paladin Agent API"`), `/docs/` → `200`. paladin-web 116; fmt/clippy clean.
 
-- [ ] 5.0 Spec drift guard (committed `openapi.json` baseline + regenerate-and-compare test)
-  - [ ] 5.1 Generate and commit `crates/paladin-web/openapi.json` (pretty-printed `build_openapi()` output).
-  - [ ] 5.2 **(Test first)** Add a drift test: serialize `build_openapi()` and assert equality with the committed baseline, failing with a clear "regenerate the baseline" message on mismatch.
-  - [ ] 5.3 Document the regeneration path (a `make openapi` target or an env-gated update test, mirroring `extract-public-api.sh`); ensure deterministic ordering so the baseline is stable.
-  - [ ] 5.4 fmt/clippy; gates.
+- [x] 5.0 Spec drift guard (committed `openapi.json` baseline + regenerate-and-compare test)
+  - [x] 5.1 Generated + committed `crates/paladin-web/openapi.json` (pretty-printed `openapi_spec().to_pretty_json()`, ~28 KB).
+  - [x] 5.2 **(Test first)** `openapi_matches_committed_baseline` reads the baseline at runtime (`CARGO_MANIFEST_DIR`) and asserts equality with the freshly generated spec, failing with a "regenerate with UPDATE_OPENAPI=1 …" message.
+  - [x] 5.3 Regeneration via `UPDATE_OPENAPI=1` (the same test rewrites the file) wrapped in a `make openapi` target; `to_pretty_json` ordering is deterministic (verified idempotent).
+  - [x] 5.4 `fmt`/`clippy --all-targets -D warnings` clean; paladin-web 117 pass.
 
 - [ ] 6.0 Tests: spec generation, served endpoints, docs-disabled `404`, `/v1` routing, drift guard
   - [ ] 6.1 Confirm coverage from 1.0–5.0 (schema shape, operation paths present, security schemes present, `/v1` routing, docs gating, drift).
