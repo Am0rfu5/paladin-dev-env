@@ -71,9 +71,9 @@
   - [x] 4.3 **(Open Q5)** Aligned the user-route `auth_middleware` `unauthorized()`/`forbidden()` to the unified `ApiError` envelope; `auth_rbac` and middleware tests assert status only, so they remained green unchanged.
   - [x] 4.4 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; paladin-web 109 + auth_rbac 5 pass.
 
-- [ ] 5.0 Tests: `401`/`403` paths (key + JWT), `allowed_roles`, admin gate, health open, redaction + boot smoke
-  - [ ] 5.1 Confirm unit/handler coverage from 1.0–4.0 is in place (authn resolution, authz helpers, handler `401`/`403`, config parse + fail-closed, redaction).
-  - [ ] 5.2 **(Test first)** Extend `tests/paladin_server_smoke.rs`: build state with auth enabled + a configured API key; assert no credential → `401`, valid `X-API-Key` → `200` for execute, and `/health` reachable without a credential.
+- [x] 5.0 Tests: `401`/`403` paths (key + JWT), `allowed_roles`, admin gate, health open, redaction + boot smoke
+  - [x] 5.1 Confirmed unit/handler coverage from 1.0–4.0: authn resolution (key/JWT/401), `authorize_invoke`/`require_admin`, handler `401`/`403` (disallowed role, non-admin register/deregister), config parse + unknown-role + fail-closed boot, credential-not-echoed.
+  - [x] 5.2 **(Test first)** Added `server_enforces_authentication_when_enabled` to `tests/paladin_server_smoke.rs`: auth enabled + admin API key — no credential → `401` (`unauthorized` envelope), valid `X-API-Key` → `200` on `GET /agents` and `POST execute`, execute without key → `401`, `/health` open. Both smoke tests pass; `fmt`/`clippy` clean.
 
 - [ ] 6.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
   - [ ] 6.1 Update `config.example.yml`: an `http.auth` block (enabled + sample `api_keys` + `jwt`) and a per-agent `allowed_roles` example, with a note that keys belong in env/secrets.
