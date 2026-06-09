@@ -13,16 +13,21 @@
 //!
 //! Requires the `web-server` feature (enforced via `required-features` in `Cargo.toml`).
 
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use log::{error, info};
+use log::{error, info, warn};
+use paladin::config::agents::AuthConfig;
 use paladin::config::settings::Settings;
+use paladin::infrastructure::adapters::auth::InMemoryTokenAuthAdapter;
 use paladin::infrastructure::web::agent_host::{bind_address, build_agent_registry};
 use paladin::infrastructure::web::facade_provisioner::FacadeProvisioner;
 use paladin::infrastructure::web::{
-    AgentApiState, HttpLayersConfig, RateLimitConfig, TimeoutPolicy, agent_router, with_http_layers,
+    AgentApiState, AgentAuthConfig, HttpLayersConfig, Principal, RateLimitConfig, TimeoutPolicy,
+    agent_router, with_http_layers,
 };
+use paladin_ports::output::auth_port::AuthPort;
 use tokio::signal;
 
 #[tokio::main]
@@ -54,14 +59,18 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     agent_ids.sort();
     let provisioner = FacadeProvisioner::from_settings(&settings);
     let timeouts = settings.timeouts.clone().unwrap_or_default();
+    // Cross-cutting HTTP layers (health routes are merged inside `agent_router`).
+    let http = settings.http.clone().unwrap_or_default();
+
+    // Resolve authentication (fail-closed: enabled + no credentials ⇒ refuse to start).
+    let auth = build_auth_config(&http.auth)?;
     let state = AgentApiState::new(Arc::new(registry))
         .with_provisioner(Arc::new(provisioner))
         .with_timeouts(TimeoutPolicy {
             default_secs: timeouts.default_seconds,
             max_secs: timeouts.max_seconds,
-        });
-    // Cross-cutting HTTP layers (health routes are merged inside `agent_router`).
-    let http = settings.http.clone().unwrap_or_default();
+        })
+        .with_auth(auth);
     let layers = HttpLayersConfig {
         cors_allow_origins: http.cors_allow_origins.clone(),
         body_limit_bytes: http.body_limit_bytes,
@@ -112,6 +121,68 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("paladin-server shut down cleanly");
     Ok(())
+}
+
+/// Translate the config `auth` section into the web layer's [`AgentAuthConfig`].
+///
+/// **Fail-closed:** when auth is enabled but no credential source (API keys or JWT) is
+/// configured, this returns an error so the server refuses to start rather than silently
+/// serving an open API. When auth is disabled, a warning is logged and the API is open.
+fn build_auth_config(cfg: &AuthConfig) -> Result<AgentAuthConfig, Box<dyn std::error::Error>> {
+    if !cfg.enabled {
+        warn!(
+            "agent API authentication is DISABLED (http.auth.enabled = false) — all agent routes are open"
+        );
+        return Ok(AgentAuthConfig {
+            enabled: false,
+            api_keys: HashMap::new(),
+            jwt: None,
+        });
+    }
+
+    let api_keys: HashMap<String, Principal> = cfg
+        .api_keys
+        .iter()
+        .map(|k| {
+            (
+                k.key.clone(),
+                Principal {
+                    id: k.name.clone(),
+                    role: k.role,
+                },
+            )
+        })
+        .collect();
+
+    // The JWT path reuses the existing AuthPort. The in-memory adapter verifies tokens it
+    // issued in-process, so JWT is primarily useful when token issuance is co-located;
+    // API keys are the standalone service-to-service mechanism.
+    let jwt: Option<Arc<dyn AuthPort>> = if cfg.jwt.enabled {
+        Some(Arc::new(InMemoryTokenAuthAdapter::new()))
+    } else {
+        None
+    };
+
+    let auth = AgentAuthConfig {
+        enabled: true,
+        api_keys,
+        jwt,
+    };
+
+    if !auth.has_credentials() {
+        return Err(
+            "authentication is enabled but no credentials are configured: set \
+             http.auth.api_keys and/or http.auth.jwt.enabled, or set http.auth.enabled = false"
+                .into(),
+        );
+    }
+
+    info!(
+        "agent API authentication ENABLED ({} API key(s){})",
+        auth.api_keys.len(),
+        if cfg.jwt.enabled { " + JWT" } else { "" }
+    );
+    Ok(auth)
 }
 
 /// Resolve the config file path: `PALADIN_CONFIG`, else the first CLI argument, else

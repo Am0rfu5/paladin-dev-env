@@ -59,11 +59,11 @@
   - [x] 2.4 **(Test first)** Handler tests: disallowed role → `403`; listed role → success; non-admin register/deregister → `403`; admin → success. (Existing handler tests pass an `admin()` principal extension; the two invalid-body router tests switched to `agent_router` so the default-disabled auth layer attaches a principal.)
   - [x] 2.5 Carried `allowed_roles` through `register_built` (new param) and the `AgentSpec` path (handler reads `spec.allowed_roles`; `FacadeProvisioner` needs no change as `ProvisionedAgent` is role-agnostic). Config wiring of `def.allowed_roles` deferred to 3.4. `fmt`/`clippy --workspace --all-targets -D warnings`/`make deny` clean; paladin-web 108, facade web 12 pass.
 
-- [ ] 3.0 Config + `paladin-server` wiring (`auth` config, JWT `AuthPort`, fail-closed posture)
-  - [ ] 3.1 Add config: an `AuthConfig { enabled, api_keys: [{ key, name, role }], jwt: { enabled } }` on `WebHttpConfig`, and `allowed_roles` on `AgentDefinition` (lenient serde defaults). **(Test first)** parse tests incl. unknown-role-string → error.
-  - [ ] 3.2 Map config → `AgentAuthConfig` in `paladin-server`: build the `api_keys` map (parsing `role` strings to `UserRole`), and wire `InMemoryTokenAuthAdapter` as the JWT `AuthPort` when `jwt.enabled`. Update `Settings` default + `user_config` fixture for the new field.
-  - [ ] 3.3 **Fail-closed:** if `auth.enabled` and no credentials are configured (no API keys and no JWT), the binary exits with a clear startup error; `enabled: false` logs a warning and serves open. Log the resolved auth posture on startup.
-  - [ ] 3.4 Carry `def.allowed_roles` into the registry in `build_agent_registry`/`register_built`. Rustdoc; gates.
+- [x] 3.0 Config + `paladin-server` wiring (`auth` config, JWT `AuthPort`, fail-closed posture)
+  - [x] 3.1 Added `AuthConfig { enabled(default true), api_keys: [ApiKeyConfig{key,name,role}], jwt: JwtAuthConfig{enabled} }` on `WebHttpConfig`, and `allowed_roles` on `AgentDefinition`. **(Test first)** 4 parse tests incl. default-enabled and unknown-role-string → error (`UserRole` lowercase serde).
+  - [x] 3.2 `paladin-server` `build_auth_config` maps config → `AgentAuthConfig` (api_keys → `Principal{id:name, role}`), wiring `InMemoryTokenAuthAdapter` as the JWT `AuthPort` when `jwt.enabled` (documented in-process caveat). `WebHttpConfig::default` carries `AuthConfig::default` (enabled) so `Settings` default is secure; `user_config` fixture (`http: None`) unaffected.
+  - [x] 3.3 **Fail-closed:** auth enabled + no credentials ⇒ startup error (verified by boot); `enabled: false` logs a warning and serves open; the resolved posture is logged. Verified end-to-end: no key → `401`, valid `X-API-Key` → `200`, `/health` open.
+  - [x] 3.4 `build_agent_registry` passes `def.allowed_roles` into `register_built`. `fmt`/`clippy --workspace --all-targets -D warnings` clean; facade lib 395, paladin-web 108, config 52, smoke 1 pass.
 
 - [ ] 4.0 Secret hygiene (redact credential headers; reconfirm discovery; align user-route errors to `ApiError`)
   - [ ] 4.1 Verify/ensure the request logger emits no headers/bodies (so `Authorization`/`X-API-Key` are never logged); add a focused note/test that the auth code logs neither the key nor the token.

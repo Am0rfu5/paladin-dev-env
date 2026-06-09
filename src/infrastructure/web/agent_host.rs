@@ -289,8 +289,7 @@ pub async fn build_agent_registry(settings: &Settings) -> Result<AgentRegistry, 
             executor,
             streamer,
             def.timeout_seconds,
-            // Wired from config in task 3.4 once `AgentDefinition.allowed_roles` exists.
-            Vec::new(),
+            def.allowed_roles.clone(),
         )?;
     }
     Ok(registry)
@@ -311,6 +310,7 @@ mod tests {
             max_loops: None,
             stop_words: vec![],
             timeout_seconds: None,
+            allowed_roles: vec![],
         }
     }
 
