@@ -24,6 +24,8 @@ pub mod error;
 pub mod health;
 /// In-memory async job store for fire-and-poll execution.
 pub mod job_store;
+/// Request-logging middleware with request-id correlation.
+pub mod request_log;
 /// Execution timeout policy and resolution.
 pub mod timeout;
 /// User management controller handlers.

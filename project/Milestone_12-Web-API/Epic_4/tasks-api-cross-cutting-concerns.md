@@ -67,11 +67,11 @@
   - [x] 3.3 Implemented `health`/`ready` handlers + `health_routes(state)`; `agent_router` now merges them so the probes serve alongside the agent routes.
   - [x] 3.4 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; 2 tests pass.
 
-- [ ] 4.0 Add the request-logging middleware (request-id + `x-request-id`)
-  - [ ] 4.1 Create `crates/paladin-web/src/request_log.rs`; declare in `lib.rs`.
-  - [ ] 4.2 **(Test first)** Test (via a small router + `oneshot`): a response carries an `x-request-id` header; an inbound `x-request-id` is echoed back; (logging side-effects asserted structurally, not by capturing logs).
-  - [ ] 4.3 Implement an axum middleware (`from_fn`) that honours/generates a request-id (`uuid`), inserts it as the `x-request-id` response header, and logs one line at completion (method, path, status, latency-ms) via `log::info!`. No secrets/bodies logged.
-  - [ ] 4.4 Rustdoc; gates.
+- [x] 4.0 Add the request-logging middleware (request-id + `x-request-id`)
+  - [x] 4.1 Created `crates/paladin-web/src/request_log.rs`; declared `pub mod request_log;` in `lib.rs`.
+  - [x] 4.2 **(Test first)** Tests via a small router + `oneshot`: response carries an `x-request-id`; a well-formed inbound `x-request-id` is echoed; `is_acceptable_request_id` rejects empty/spaced/over-long ids.
+  - [x] 4.3 Implemented `request_log` (`from_fn`): honours a well-formed inbound id else generates a `uuid`, logs `request_id=… METHOD PATH STATUS Nms` via `log::info!`, sets the `x-request-id` response header. No secrets/bodies logged.
+  - [x] 4.4 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; 3 tests pass.
 
 - [ ] 5.0 Add edge layers: CORS, body limit, global timeout (excl. streaming), rate limiting
   - [ ] 5.1 Add deps to `crates/paladin-web/Cargo.toml`: `tower`, `tower-http` (features `cors`,`limit`,`timeout`), `tower-governor`.
