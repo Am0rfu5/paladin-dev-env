@@ -61,11 +61,11 @@
   - [x] 3.2 Updated the `overview.md` table row to "**`paladin-server` (ships out of the box)**".
   - [x] 3.3 `mdbook build` succeeds (only pre-existing mermaid/fragment warnings); the page + `{{#include}}` anchor resolve. (The included example is refreshed in task 4.3.)
 
-- [ ] 4.0 Runnable `examples/` program + compile-tested `doc-examples` snippet
-  - [ ] 4.1 Add `examples/http_service_host.rs`: build an `AgentApiState` with a `MockLlmAdapter`-backed agent, an enabled `AgentAuthConfig` (a sample key), and docs; serve in-process on an ephemeral port, then call `/v1/agents/{id}/execute` (and a streamed call) with `reqwest`, printing the result; shut down cleanly.
-  - [ ] 4.2 Wire an `[[example]]` entry for it in the root `Cargo.toml` with `required-features = ["web-server"]`.
-  - [ ] 4.3 Add `doc-examples/src/http_service_host.rs` (+ module wiring): a minimal compile-tested "build state → `agent_router` / `with_http_layers` → serve" snippet used by the docs.
-  - [ ] 4.4 `cargo run --example http_service_host --features web-server` succeeds and prints a successful agent call; the doc-example compiles.
+- [x] 4.0 Runnable `examples/` program + compile-tested `doc-examples` snippet
+  - [x] 4.1 Added `examples/http_service_host.rs`: assembles the app like the binary (`/v1` router + `docs_router` + `with_http_layers`, auth on with a sample admin key, `MockLlmAdapter`), serves on an ephemeral port, then lists agents / runs a buffered + a streamed call / reads the OpenAPI title via `reqwest`, printing each; graceful shutdown.
+  - [x] 4.2 Wired the `[[example]]` entry in the root `Cargo.toml` (`required-features = ["web-server"]`).
+  - [x] 4.3 Rewrote `crates/doc-examples/src/http_service_host.rs` to embed the **shipped** API (`AgentApiState` → `agent_router` → `with_http_layers`), replacing the old "compose your own handler" snippet; added `features = ["web-server"]` to the doc-examples `paladin-ai` dep.
+  - [x] 4.4 `cargo run --example http_service_host --features web-server` prints a successful agent call (mock output, 1 stream chunk, OpenAPI title); `cargo check -p paladin-doc-examples` + `mdbook build` succeed. fmt/clippy clean.
 
 - [ ] 5.0 In-process end-to-end integration test suite (hermetic)
   - [ ] 5.1 **(Test first)** Add `tests/web_server_e2e.rs` (`#![cfg(feature = "web-server")]`): a helper that assembles the full app exactly as the binary does — `agent_router(state)` + `docs_router(build_openapi(state))` + `with_http_layers(...)`, with auth enabled (sample admin + user keys) — and serves it on an ephemeral port.

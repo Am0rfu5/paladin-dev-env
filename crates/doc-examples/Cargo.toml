@@ -9,9 +9,10 @@ description = "Compile-verified documentation examples for the Paladin book (not
 doctest = false
 
 [dependencies]
-# The root umbrella crate (lib name `paladin`) — for the README quick example,
-# which uses the public `paladin::prelude` entry point.
-paladin-ai = { version = "0.5.1", path = "../.." }
+# The root umbrella crate (lib name `paladin`) — for the README quick example
+# (`paladin::prelude`) and, via `web-server`, the shipped HTTP agent API used by the
+# HTTP-service-host deployment-topology example.
+paladin-ai = { version = "0.5.1", path = "../..", features = ["web-server"] }
 paladin-core = { package = "paladin-ai-core", version = "0.5.1", path = "../paladin-core" }
 paladin-ports = { version = "0.5.1", path = "../paladin-ports" }
 paladin-battalion = { version = "0.5.1", path = "../paladin-battalion" }

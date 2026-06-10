@@ -194,6 +194,11 @@ name = "document_processing"
 path = "examples/document_processing.rs"
 required-features = ["content-processing"]
 
+[[example]]
+name = "http_service_host"
+path = "examples/http_service_host.rs"
+required-features = ["web-server"]
+
 [[bin]]
 name = "paladin"
 path = "src/main.rs"
