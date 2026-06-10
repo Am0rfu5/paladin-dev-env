@@ -3120,7 +3120,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-ai"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "argon2",
  "async-trait",
@@ -3194,7 +3194,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-ai-core"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "blake3",
@@ -3214,7 +3214,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-battalion"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3236,7 +3236,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-content"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3263,7 +3263,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-doc-examples"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "axum 0.8.9",
@@ -3284,7 +3284,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-herald"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "colored 2.2.0",
@@ -3298,7 +3298,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-llm"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -3320,7 +3320,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-memory"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3343,7 +3343,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-notifications"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3360,7 +3360,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-ports"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3377,7 +3377,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-storage"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3396,7 +3396,7 @@ dependencies = [
 
 [[package]]
 name = "paladin-web"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "async-stream",
  "async-trait",

@@ -1,6 +1,6 @@
 [package]
 name = "paladin-storage"
-version = "0.5.1"
+version = "0.6.0"
 edition = "2024"
 authors = ["Am0rfu5"]
 description = "SQL-backed repository adapters for the Paladin framework (SQLite and MySQL)"
@@ -25,8 +25,8 @@ s3 = ["dep:rust-s3"]
 redis-queue = ["dep:redis"]
 
 [dependencies]
-paladin-core = { package = "paladin-ai-core", version = "0.5.1", path = "../paladin-core" }
-paladin-ports = { version = "0.5.1", path = "../paladin-ports" }
+paladin-core = { package = "paladin-ai-core", version = "0.6.0", path = "../paladin-core" }
+paladin-ports = { version = "0.6.0", path = "../paladin-ports" }
 
 async-trait = { workspace = true }
 chrono     = { workspace = true }

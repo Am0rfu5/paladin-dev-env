@@ -74,11 +74,11 @@
   - [x] 5.4 `ops_health_errors_and_docs`: `/health` + `/ready` → `200` (no credential); unknown agent → `404` nested envelope; `/openapi.json` (paths + `api_key` scheme) + `/docs/` → `200`.
   - [x] 5.5 Hermetic (`MockLlmAdapter`, no network/keys); 3 tests pass; fmt/clippy clean.
 
-- [ ] 6.0 Bump all workspace crates to `0.6.0` (+ inter-crate path-dep pins)
-  - [ ] 6.1 Bump every `crates/*/Cargo.toml` `version` and the root/workspace package version `0.5.1 → 0.6.0`.
-  - [ ] 6.2 Update every inter-crate dependency pin `{ version = "0.5.1", path = … }` → `0.6.0` (and `package = "paladin-ai-core"` style entries).
-  - [ ] 6.3 `cargo build --workspace --features web-server` resolves cleanly; refresh `Cargo.lock`; fix any missed pin.
-  - [ ] 6.4 Update any version strings in docs/manifests that should track the release (e.g. k8s labels), if appropriate.
+- [x] 6.0 Bump all workspace crates to `0.6.0` (+ inter-crate path-dep pins)
+  - [x] 6.1 Bumped every crate's `[package].version` and the root `paladin-ai` version `0.5.1 → 0.6.0` (blanket replace across all `Cargo.toml`; verified all `0.5.1` occurrences were Paladin-only, no external deps).
+  - [x] 6.2 Updated all inter-crate pins (`version = "0.5.1"` and the exact `=0.5.1` pin in `paladin-ports`) → `0.6.0`.
+  - [x] 6.3 `cargo build --workspace --features web-server` resolves cleanly; `Cargo.lock` refreshed to `0.6.0` (caught the `=0.5.1` exact pin on the first build).
+  - [x] 6.4 README "Current version" → `0.6.0`; the new k8s server manifests already carry `version: v0.6.0` labels.
 
 - [ ] 7.0 Finalize: CHANGELOG `[0.6.0]`, regenerate API baseline, full gate + image build
   - [ ] 7.1 Add a `CHANGELOG.md [0.6.0]` section summarizing Milestone 12 (Epics 1–7); keep `[Unreleased]` empty or pointing forward (tagging left to the release process).
