@@ -51,10 +51,10 @@
   - [x] 1.4 Added `make docker-build-server`. **Docker is unavailable in this dev environment**, so the image build wasn't executed here; the server's `/health` behavior is verified in-process by the smoke + e2e suites (5.0).
   - [x] 1.5 Build/run documented in `Dockerfile.server`/compose headers; full deployment docs in task 3.0.
 
-- [ ] 2.0 Kubernetes Deployment/Service/ConfigMap with `/health` + `/ready` probes
-  - [ ] 2.1 Add `k8s/server/deployment.yaml`: `paladin-server` Deployment in the `paladin` namespace (existing labels), container port `8080`, **liveness** `httpGet /health` + **readiness** `httpGet /ready`, config from a ConfigMap mount + secrets from a Secret (LLM/API keys), resource requests/limits, non-root securityContext.
-  - [ ] 2.2 Add `k8s/server/service.yaml` (ClusterIP exposing `8080`) and `k8s/server/configmap.yaml` (the `config.yml`); reuse the existing `k8s/secret.yaml.example` pattern (document the keys needed).
-  - [ ] 2.3 Validate the manifests (`kubectl apply --dry-run=client -f k8s/server/` or `kubeconform` if available); update `k8s/README.md` to list the server manifests.
+- [x] 2.0 Kubernetes Deployment/Service/ConfigMap with `/health` + `/ready` probes
+  - [x] 2.1 Added `k8s/server/deployment.yaml`: `paladin-server` Deployment (namespace `paladin`), container port `8080`, **liveness `/health`** + **readiness `/ready`** probes, config mounted from the ConfigMap, secrets via `secretKeyRef`, requests/limits, non-root + read-only-root securityContext. Standalone (no Redis/MinIO init containers).
+  - [x] 2.2 Added `k8s/server/service.yaml` (ClusterIP 80 → `http`/8080), `k8s/server/configmap.yaml` (embedded `config.yml` — auth + docs + a sample agent), and `k8s/server/secret.yaml.example` (provider + API-key keys). Real `secret.yaml` is now gitignored.
+  - [x] 2.3 `kubectl`/`kubeconform` unavailable in this env; validated all manifests + the embedded `config.yml` as well-formed YAML (Python). Updated `k8s/README.md` with a `paladin-server` section.
 
 - [ ] 3.0 Rewrite the HTTP service-host deployment docs + topology overview table
   - [ ] 3.1 Rewrite `docs/src/deployment-topologies/http-service-host.md`: the shipped `paladin-server`, routes (`/v1/agents…`, `/health`, `/ready`, `/openapi.json`, `/docs`), auth posture + per-agent `allowed_roles` + admin gate, the `http`/`agents`/`timeouts` config, and how to run it (binary, Docker, k8s) — removing the "Paladin ships no agent-execution endpoint / compose your own" framing.
