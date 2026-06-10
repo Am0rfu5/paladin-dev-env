@@ -1,0 +1,26 @@
+# Run the Paladin HTTP API server (`paladin-server`) standalone.
+#
+# Epics 1–6 agents are LLM + prompt only (no garrison/arsenal), so no backing services
+# are required. Provide secrets via the environment (or an .env file next to this compose):
+#
+#   OPENAI_API_KEY=sk-...  PALADIN_API_KEY_CI=sk-...  docker compose -f docker/docker-compose.server.yml up --build
+#
+# Then: curl localhost:8080/health • open http://localhost:8080/docs
+services:
+  paladin-server:
+    build:
+      context: ..
+      dockerfile: Dockerfile.server
+    image: paladin-server:0.6.0
+    ports:
+      - "8080:8080"
+    environment:
+      - PALADIN_CONFIG=/etc/paladin/config.yml
+      # Secrets — never baked into the image. Unset values fall back to empty.
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - PALADIN_API_KEY_CI=${PALADIN_API_KEY_CI:-}
+      - PALADIN_API_KEY_APP=${PALADIN_API_KEY_APP:-}
+    # Mount your own config to override the baked default:
+    # volumes:
+    #   - ../config.yml:/etc/paladin/config.yml:ro
+    restart: unless-stopped

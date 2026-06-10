@@ -290,6 +290,11 @@ build-docker: ## Build Docker image
 	@echo "$(CYAN)Building Docker image...$(NC)"
 	@$(DOCKER) build -f docker/Dockerfile -t $(PROJECT_NAME):latest .
 
+.PHONY: docker-build-server
+docker-build-server: ## Build the paladin-server HTTP API image (Dockerfile.server)
+	@echo "$(CYAN)Building paladin-server image...$(NC)"
+	@$(DOCKER) build -f Dockerfile.server -t paladin-server:latest .
+
 ##@ Docker Services
 
 .PHONY: services-up

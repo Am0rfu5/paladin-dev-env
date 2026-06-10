@@ -17,7 +17,7 @@ sources: []
 # Address the HTTP server binds to.
 server:
   host: "0.0.0.0"
-  port: 3000
+  port: 8080
 
 # Execution timeout policy (seconds). Applied to /execute, /execute/stream, and /jobs.
 # Resolution order: per-request timeout_seconds -> per-agent timeout_seconds -> default,

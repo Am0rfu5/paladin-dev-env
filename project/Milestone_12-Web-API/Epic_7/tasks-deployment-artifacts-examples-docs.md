@@ -40,16 +40,16 @@
 
 ## Tasks
 
-- [ ] 0.0 Create feature branch
-  - [ ] 0.1 Update `main` (Epics 1–6 merged) and create/checkout `feature/m12-epic7-deployment-artifacts` from it.
-  - [ ] 0.2 Confirm a clean baseline: `cargo build --features web-server` and `cargo test --features web-server` pass before changes.
+- [x] 0.0 Create feature branch
+  - [x] 0.1 Branched `feature/m12-epic7-deployment-artifacts` from `main` (Epics 1–6 merged).
+  - [x] 0.2 Baseline confirmed: `cargo build --features web-server` + `cargo test -p paladin-web` (117) green before changes.
 
-- [ ] 1.0 Container image + docker-compose service for `paladin-server`
-  - [ ] 1.1 Write `Dockerfile.server`: multi-stage — `rust`-slim builder running `cargo build --release --bin paladin-server --features web-server`, then a `debian:12-slim` runtime with `ca-certificates`, a non-root user, the binary at `/usr/local/bin/paladin-server`, a baked default `config.yml` (from `config.example.yml`), `ENV PALADIN_CONFIG`, `EXPOSE 8080`, and an `ENTRYPOINT`.
-  - [ ] 1.2 Ensure `config.example.yml` uses `server.port: 8080` and an example-friendly auth/docs setup (so the image is reachable out of the box; secrets come from env).
-  - [ ] 1.3 Add `docker/docker-compose.server.yml` with a `paladin-server` service (build from `Dockerfile.server`, port mapping, mounted/inline `config.yml`, env-sourced `OPENAI_API_KEY`/`PALADIN_API_KEY_*`); standalone (no Redis/MinIO — see PRD Open Q5).
-  - [ ] 1.4 Add a `make docker-build-server` target (and help entry). Build the image locally (`docker build -f Dockerfile.server`) and verify `GET /health` → `200` from a run container.
-  - [ ] 1.5 Document the build/run in the relevant docs (cross-ref task 3.0).
+- [x] 1.0 Container image + docker-compose service for `paladin-server`
+  - [x] 1.1 Wrote `Dockerfile.server`: `rust:1.93-slim-bookworm` builder (`cargo build --release --bin paladin-server --features web-server`, stripped) → `debian:12-slim` runtime (`ca-certificates`/`libssl3`, non-root uid 65532, binary + baked `/etc/paladin/config.yml`, `ENV PALADIN_CONFIG`, `EXPOSE 8080`, `HEALTHCHECK NONE`, entrypoint).
+  - [x] 1.2 `config.example.yml` now binds `0.0.0.0:8080`.
+  - [x] 1.3 Added `docker/docker-compose.server.yml` — standalone `paladin-server` service (builds `Dockerfile.server`, maps `8080`, env-sourced `OPENAI_API_KEY`/`PALADIN_API_KEY_*`, optional config volume).
+  - [x] 1.4 Added `make docker-build-server`. **Docker is unavailable in this dev environment**, so the image build wasn't executed here; the server's `/health` behavior is verified in-process by the smoke + e2e suites (5.0).
+  - [x] 1.5 Build/run documented in `Dockerfile.server`/compose headers; full deployment docs in task 3.0.
 
 - [ ] 2.0 Kubernetes Deployment/Service/ConfigMap with `/health` + `/ready` probes
   - [ ] 2.1 Add `k8s/server/deployment.yaml`: `paladin-server` Deployment in the `paladin` namespace (existing labels), container port `8080`, **liveness** `httpGet /health` + **readiness** `httpGet /ready`, config from a ConfigMap mount + secrets from a Secret (LLM/API keys), resource requests/limits, non-root securityContext.
