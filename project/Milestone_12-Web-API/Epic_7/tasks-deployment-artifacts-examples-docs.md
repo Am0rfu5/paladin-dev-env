@@ -67,12 +67,12 @@
   - [x] 4.3 Rewrote `crates/doc-examples/src/http_service_host.rs` to embed the **shipped** API (`AgentApiState` → `agent_router` → `with_http_layers`), replacing the old "compose your own handler" snippet; added `features = ["web-server"]` to the doc-examples `paladin-ai` dep.
   - [x] 4.4 `cargo run --example http_service_host --features web-server` prints a successful agent call (mock output, 1 stream chunk, OpenAPI title); `cargo check -p paladin-doc-examples` + `mdbook build` succeed. fmt/clippy clean.
 
-- [ ] 5.0 In-process end-to-end integration test suite (hermetic)
-  - [ ] 5.1 **(Test first)** Add `tests/web_server_e2e.rs` (`#![cfg(feature = "web-server")]`): a helper that assembles the full app exactly as the binary does — `agent_router(state)` + `docs_router(build_openapi(state))` + `with_http_layers(...)`, with auth enabled (sample admin + user keys) — and serves it on an ephemeral port.
-  - [ ] 5.2 Auth assertions: no credential → `401`; valid `X-API-Key` → `200`; non-admin `POST /v1/agents` → `403`; disallowed role on a restricted agent → `403`.
-  - [ ] 5.3 Execution assertions: buffered `execute` → `200` + output; streaming → `chunk`…`done` SSE; async job → `202` → poll → `completed`.
-  - [ ] 5.4 Ops assertions: `/health` + `/ready` → `200` (no credential); a malformed body → `400` nested error envelope; `/openapi.json` (paths + security schemes) + `/docs/` → `200`.
-  - [ ] 5.5 Ensure hermetic (mock LLM, no network/keys); fmt/clippy; gates.
+- [x] 5.0 In-process end-to-end integration test suite (hermetic)
+  - [x] 5.1 Added `tests/web_server_e2e.rs` (`#![cfg(feature = "web-server")]`): a `serve()` helper assembling the app like the binary (`agent_router` + `docs_router(build_openapi(state))` + `with_http_layers`, auth enabled with admin + user keys, an open agent + an admin-only agent) on an ephemeral port.
+  - [x] 5.2 `auth_is_enforced`: no credential → `401`; admin key → `200`; non-admin `POST /v1/agents` → `403`; user invoking the admin-only agent → `403` (`forbidden`).
+  - [x] 5.3 `execution_buffered_streaming_and_jobs`: buffered `execute` → `200` + output; streaming → `chunk`…`done`; async job → poll → `completed`.
+  - [x] 5.4 `ops_health_errors_and_docs`: `/health` + `/ready` → `200` (no credential); unknown agent → `404` nested envelope; `/openapi.json` (paths + `api_key` scheme) + `/docs/` → `200`.
+  - [x] 5.5 Hermetic (`MockLlmAdapter`, no network/keys); 3 tests pass; fmt/clippy clean.
 
 - [ ] 6.0 Bump all workspace crates to `0.6.0` (+ inter-crate path-dep pins)
   - [ ] 6.1 Bump every `crates/*/Cargo.toml` `version` and the root/workspace package version `0.5.1 → 0.6.0`.
