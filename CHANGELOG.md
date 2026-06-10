@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0]
+
+**Milestone 12 — Web API.** Paladin now ships an HTTP agent API **out of the box**: the
+`paladin-server` binary (the `web-server` feature) serves a versioned (`/v1`), authenticated,
+OpenAPI-documented surface for executing and managing resident agents — with container, compose,
+and Kubernetes artifacts to deploy it. Epics 1–7 below.
+
+### Milestone 12 — Epic 7: Deployment artifacts, examples & documentation
+
+#### Added
+
+- **Container image** — `Dockerfile.server` (multi-stage, `debian:12-slim`, non-root) building and
+  running `paladin-server`, plus `docker/docker-compose.server.yml` and a `make docker-build-server`
+  target.
+- **Kubernetes manifests** — `k8s/server/` Deployment + Service + ConfigMap (+ `secret.yaml.example`)
+  with liveness `/health` and readiness `/ready` probes.
+- **Runnable example** — `examples/http_service_host.rs` boots the server in-process (hermetic, mock
+  LLM) and exercises an agent; the deployment-topology doc-example now embeds the shipped router.
+- **End-to-end tests** — `tests/web_server_e2e.rs` covering auth, buffered/streaming/jobs, health,
+  errors, and the served spec/UI.
+
+#### Changed
+
+- The **HTTP service-host deployment docs** now describe the shipped `paladin-server` (routes, auth,
+  config, Docker/k8s) instead of "compose your own endpoint".
+- **Version:** all workspace crates bumped to **0.6.0**.
+
 ### Milestone 12 — Epic 6: OpenAPI specification & interactive docs
 
 Publishes a machine-readable contract for the agent API and an interactive explorer, and introduces

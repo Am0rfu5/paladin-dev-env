@@ -1,4 +1,4 @@
-# Public API Surface - Generated 2026-06-09 23:07:46 UTC
+# Public API Surface - Generated 2026-06-10 00:47:43 UTC
 # This file tracks all publicly exported items from the paladin crate
 # Generated using cargo-public-api v0.52.0
 
