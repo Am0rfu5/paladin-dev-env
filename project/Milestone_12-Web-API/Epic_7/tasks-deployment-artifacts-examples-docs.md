@@ -56,10 +56,10 @@
   - [x] 2.2 Added `k8s/server/service.yaml` (ClusterIP 80 → `http`/8080), `k8s/server/configmap.yaml` (embedded `config.yml` — auth + docs + a sample agent), and `k8s/server/secret.yaml.example` (provider + API-key keys). Real `secret.yaml` is now gitignored.
   - [x] 2.3 `kubectl`/`kubeconform` unavailable in this env; validated all manifests + the embedded `config.yml` as well-formed YAML (Python). Updated `k8s/README.md` with a `paladin-server` section.
 
-- [ ] 3.0 Rewrite the HTTP service-host deployment docs + topology overview table
-  - [ ] 3.1 Rewrite `docs/src/deployment-topologies/http-service-host.md`: the shipped `paladin-server`, routes (`/v1/agents…`, `/health`, `/ready`, `/openapi.json`, `/docs`), auth posture + per-agent `allowed_roles` + admin gate, the `http`/`agents`/`timeouts` config, and how to run it (binary, Docker, k8s) — removing the "Paladin ships no agent-execution endpoint / compose your own" framing.
-  - [ ] 3.2 Update the `docs/src/deployment-topologies/overview.md` table row for the HTTP service host to "ships out of the box".
-  - [ ] 3.3 If the docs build in CI (mdBook), confirm the pages render and internal links resolve.
+- [x] 3.0 Rewrite the HTTP service-host deployment docs + topology overview table
+  - [x] 3.1 Rewrote `http-service-host.md` around the shipped `paladin-server`: a route table (`/v1/agents…`, `/health`, `/ready`, `/openapi.json`, `/docs`), the auth posture (fail-closed, API key + JWT, `allowed_roles`, admin gate), the `config.yml` shape, run instructions (binary / Docker / k8s), and a versioning note — removing the "ships no agent-execution endpoint / compose your own" framing (kept an "Embedding in your own app" section).
+  - [x] 3.2 Updated the `overview.md` table row to "**`paladin-server` (ships out of the box)**".
+  - [x] 3.3 `mdbook build` succeeds (only pre-existing mermaid/fragment warnings); the page + `{{#include}}` anchor resolve. (The included example is refreshed in task 4.3.)
 
 - [ ] 4.0 Runnable `examples/` program + compile-tested `doc-examples` snippet
   - [ ] 4.1 Add `examples/http_service_host.rs`: build an `AgentApiState` with a `MockLlmAdapter`-backed agent, an enabled `AgentAuthConfig` (a sample key), and docs; serve in-process on an ephemeral port, then call `/v1/agents/{id}/execute` (and a streamed call) with `reqwest`, printing the result; shut down cleanly.
