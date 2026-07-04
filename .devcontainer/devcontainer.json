@@ -37,6 +37,8 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        // Claude Code
+        "anthropic.claude-code",
         // Rust essentials
         "rust-lang.rust-analyzer",
         "vadimcn.vscode-lldb",
@@ -69,7 +71,7 @@
       ],
       "settings": {
         // Rust analyzer settings
-        // "rust-analyzer.checkOnSave.overrideCommand": "clippy",
+        "rust-analyzer.check.command": "clippy",
         "rust-analyzer.cargo.features": "all",
         "rust-analyzer.diagnostics.enable": true,
         "rust-analyzer.diagnostics.experimental.enable": true,
