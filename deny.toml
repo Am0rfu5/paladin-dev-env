@@ -136,6 +136,14 @@ ignore = [
     "RUSTSEC-2025-0121", # gcc (unmaintained) — transitive build dep
     "RUSTSEC-2025-0134", # rustls-pemfile (unmaintained) — via tonic/testcontainers
     "RUSTSEC-2024-0436", # paste (unmaintained) — transitive via utoipa (M12 E6); no drop-in replacement upstream
+    "RUSTSEC-2022-0104", # structopt (maintenance mode) — CLI arg parsing; migrate to clap-derive later
+
+    # --- New 2026 DoS advisories in transitive deps of OPTIONAL features (no upstream fix) ---
+    # The directly-fixable ones were upgraded instead (quinn-proto 0.11.16 / RUSTSEC-2026-0185,
+    # anyhow 1.0.103 / RUSTSEC-2026-0190). These three have no clean upstream fix:
+    "RUSTSEC-2026-0187", # lopdf stack-overflow — via pdf-extract (optional content-processing); fix needs pdf-extract >=0.12 (breaking + adds a new advisory)
+    "RUSTSEC-2026-0194", # quick-xml quadratic attr parsing — remaining <0.41 instance via rust-s3/aws-creds (optional s3); no rust-s3 with quick-xml>=0.41 yet
+    "RUSTSEC-2026-0195", # quick-xml namespace-alloc DoS — same rust-s3 path
 ]
 
 # ---------------------------------------------------------------------------
