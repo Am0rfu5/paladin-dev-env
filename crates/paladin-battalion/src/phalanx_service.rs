@@ -15,7 +15,7 @@ use uuid::Uuid;
 use crate::error_aggregation::AggregatedError;
 use paladin_core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use paladin_core::platform::container::battalion::{
-    BattalionError, BattalionResult, ErrorStrategy, TokenUsage,
+    BattalionError, BattalionResult, ErrorStrategy, NodeError, TokenUsage,
 };
 use paladin_core::platform::container::herald::Herald;
 use paladin_core::platform::container::paladin_error::PaladinError;
@@ -248,6 +248,19 @@ impl PhalanxExecutionService {
             .filter_map(|e| e.split(':').next().map(|s| s.trim().to_string()))
             .collect();
 
+        // Surface the already-built per-agent "{name}: {error}" strings as
+        // structured NodeError entries instead of dropping them (D-03 /
+        // MERGE-04) — one entry per failed node, name/error text preserved.
+        let node_errors: Vec<NodeError> = errors
+            .iter()
+            .filter_map(|e| {
+                e.split_once(": ").map(|(name, err)| NodeError {
+                    node_name: name.trim().to_string(),
+                    error: err.trim().to_string(),
+                })
+            })
+            .collect();
+
         let mut per_paladin_times = HashMap::new();
         let mut per_paladin_tokens = HashMap::new();
         let mut total_tokens: u64 = 0;
@@ -288,6 +301,7 @@ impl PhalanxExecutionService {
             total_tokens,
             paladin_success_count,
             paladin_failure_count,
+            node_errors,
         })
     }
 
@@ -706,6 +720,15 @@ mod tests {
         let battalion_result = result.unwrap();
         // Only 2 successful results (Agent1 and Agent3)
         assert_eq!(battalion_result.paladin_results.len(), 2);
+
+        // node_errors carries the real failed node's name + error text (D-03 / MERGE-04)
+        assert_eq!(battalion_result.node_errors.len(), 1);
+        assert_eq!(battalion_result.node_errors[0].node_name, "Agent2");
+        assert!(
+            battalion_result.node_errors[0]
+                .error
+                .contains("Mock failure for Agent2")
+        );
     }
 
     #[tokio::test]
@@ -844,6 +867,31 @@ mod tests {
         // Success/failure counts should be accurate
         assert_eq!(result.paladin_success_count, 2);
         assert_eq!(result.paladin_failure_count, 1);
+
+        // node_errors carries the real failed node's name + error text (D-03 / MERGE-04)
+        assert_eq!(result.node_errors.len(), 1);
+        assert_eq!(result.node_errors[0].node_name, "Failure1");
+        assert!(
+            result.node_errors[0]
+                .error
+                .contains("Mock failure for Failure1")
+        );
+    }
+
+    #[tokio::test]
+    async fn test_phalanx_node_errors_empty_on_full_success() {
+        let p1 = create_paladin("Agent1");
+        let p2 = create_paladin("Agent2");
+
+        let phalanx = Phalanx::new(vec![p1, p2], BattalionConfig::new("no_errors_test")).unwrap();
+
+        let mock_port = Arc::new(MockPaladinPort::new());
+        let service = PhalanxExecutionService::new(mock_port);
+
+        let result = service.execute(&phalanx, "Test input").await.unwrap();
+
+        // A fully-successful Phalanx run has zero node_errors entries.
+        assert!(result.node_errors.is_empty());
     }
 
     #[tokio::test]

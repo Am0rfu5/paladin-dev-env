@@ -523,6 +523,25 @@ impl TokenUsage {
     }
 }
 
+/// Per-node failure detail for a Battalion execution.
+///
+/// Carries the failed Paladin's name and its error text, so an operator can
+/// diagnose WHICH node failed and WHY, instead of only an aggregate
+/// success/failure count. Populated under [`ErrorStrategy::ContinueOnError`]
+/// Phalanx runs (see `PhalanxExecutionService::execute_internal`); empty for
+/// every other Battalion strategy and for any fully-successful run.
+///
+/// A new plain-data struct (mirroring [`TokenUsage`]'s shape) rather than a
+/// reuse of [`BattalionError`], since `BattalionError` does not derive
+/// `Serialize`/`Deserialize` and `BattalionResult` does.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NodeError {
+    /// Name of the Paladin node that failed
+    pub node_name: String,
+    /// The error text produced by that node's failure
+    pub error: String,
+}
+
 /// Result of a Battalion execution
 ///
 /// Contains the final output, individual Paladin results, and execution metadata.
@@ -573,6 +592,12 @@ pub struct BattalionResult {
 
     /// Count of Paladins that failed
     pub paladin_failure_count: usize,
+
+    /// Per-node failure detail (name + error text) for `ContinueOnError`
+    /// Phalanx runs. Empty for every non-Phalanx strategy and for any
+    /// fully-successful Phalanx run.
+    #[serde(default)]
+    pub node_errors: Vec<NodeError>,
 }
 
 impl BattalionResult {
@@ -612,6 +637,7 @@ impl BattalionResult {
             total_tokens: 0,
             paladin_success_count,
             paladin_failure_count,
+            node_errors: Vec::new(),
         }
     }
 

@@ -737,6 +737,7 @@ mod tests {
             total_tokens: 0,
             paladin_success_count: 0,
             paladin_failure_count: 0,
+            node_errors: Vec::new(),
         };
 
         let formatted = herald.format_battalion_result(&result).unwrap();
