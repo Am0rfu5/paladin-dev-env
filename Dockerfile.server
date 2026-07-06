@@ -15,10 +15,13 @@
 FROM rust:1.93-slim-bookworm AS builder
 WORKDIR /app
 
+# `curl` is required by the `utoipa-swagger-ui` build script to download the Swagger UI
+# bundle during the build (the `web-server` feature depends on it).
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     g++ \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the workspace sources needed to resolve and build the bin.
