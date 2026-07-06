@@ -9,4 +9,26 @@
 # RUSTSEC-2025-0111: tokio-tar path-traversal via tokio-tar 0.3.x
 #   tokio-tar is a transitive dep of testcontainers (dev/test dependency only).
 #   No fixed version is available upstream; revisit when testcontainers upgrades.
-ignore = ["RUSTSEC-2023-0071", "RUSTSEC-2025-0111"]
+#
+# --- New 2026 advisories in transitive deps of optional features (no upstream fix) ---
+# These are DoS-class advisories in third-party crates pulled only by optional features
+# (content ingestion, S3 storage); our first-party code does not feed them untrusted input
+# in default builds. The directly-fixable ones (RUSTSEC-2026-0185 quinn-proto,
+# RUSTSEC-2026-0190 anyhow) were upgraded instead of ignored.
+#
+# RUSTSEC-2026-0187: stack overflow in lopdf via deeply nested PDF objects.
+#   lopdf is transitive via `pdf-extract` (optional `content-processing`). The fix requires
+#   `pdf-extract` >= 0.12 (a breaking jump that also pulls a fresh `ttf-parser` advisory);
+#   deferred. Revisit when `pdf-extract` ships lopdf >= 0.42 without new advisories.
+#
+# RUSTSEC-2026-0194 / -0195: quick-xml quadratic attribute parsing / unbounded namespace
+#   allocation (DoS). The remaining < 0.41 instance is transitive via `rust-s3`/`aws-creds`
+#   (optional `s3`); no `rust-s3` release uses quick-xml >= 0.41 yet. The `rss`/`atom_syndication`
+#   path was upgraded to quick-xml 0.41. Revisit when `rust-s3` bumps quick-xml.
+ignore = [
+    "RUSTSEC-2023-0071",
+    "RUSTSEC-2025-0111",
+    "RUSTSEC-2026-0187",
+    "RUSTSEC-2026-0194",
+    "RUSTSEC-2026-0195",
+]

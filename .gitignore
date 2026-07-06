@@ -21,3 +21,7 @@ docs/book/
 # MDBook mermaid generated assets (re-generated at build time via mdbook-mermaid install)
 docs/mermaid.min.js
 docs/mermaid-init.js
+
+# Kubernetes secrets (real values — keep out of VCS; .example files are tracked)
+k8s/**/secret.yaml
+k8s/secret.yaml

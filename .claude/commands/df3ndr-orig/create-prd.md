@@ -19,7 +19,7 @@ Feature request: $ARGUMENTS
 2. **Ask Clarifying Questions:** Before writing the PRD, you _must_ ask only the most essential
    clarifying questions (limit to 3–5 critical gaps). Focus on the "what" and "why", not the
    "how". Number questions (1, 2, 3) and list options as A, B, C, D so the user can reply with
-   selections like "1A, 2C, 3B". Only ask when the answer isn't reasonably inferable.
+   selections like "1A, 2C, 3B". Only ask when the answer isn't reasonably inferable. Mark your recommended choice as (Recommended)
 3. **Generate PRD:** Incorporate the user's answers, then write the PRD using the structure below.
 4. **Save PRD:** Save as `project/prd-[feature-name].md`.
 

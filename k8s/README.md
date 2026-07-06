@@ -2,6 +2,26 @@
 
 This directory contains Kubernetes manifests for deploying Paladin in a production environment.
 
+## `paladin-server` (HTTP API)
+
+The [`server/`](server/) subdirectory holds a standalone deployment of the **`paladin-server`**
+HTTP API (Milestone 12) — no Redis/MinIO required (agents are LLM + prompt only):
+
+- [`server/configmap.yaml`](server/configmap.yaml) — the `config.yml` (`/v1` agent API, auth, docs).
+- [`server/deployment.yaml`](server/deployment.yaml) — Deployment with **liveness `/health`** +
+  **readiness `/ready`** probes, read-only root FS, non-root, config mounted from the ConfigMap.
+- [`server/service.yaml`](server/service.yaml) — ClusterIP Service on port 80 → container `8080`.
+- [`server/secret.yaml.example`](server/secret.yaml.example) — provider + API-key secrets template.
+
+```bash
+# Build & load the image (or push to your registry and update the Deployment image:)
+make docker-build-server
+kubectl apply -f k8s/namespace.yaml
+cp k8s/server/secret.yaml.example k8s/server/secret.yaml   # fill in real values (gitignored)
+kubectl apply -f k8s/server/secret.yaml -f k8s/server/
+# Probe:  kubectl -n paladin port-forward svc/paladin-server 8080:80  &&  curl localhost:8080/health
+```
+
 ## Quick Start
 
 ### Prerequisites

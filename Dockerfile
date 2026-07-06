@@ -10,11 +10,14 @@
 FROM rust:1.93-slim-bookworm AS builder
 WORKDIR /app
 
-# Install required build dependencies
+# Install required build dependencies.
+# `curl` is needed by the `utoipa-swagger-ui` build script (pulled by `paladin-web`) to
+# download the Swagger UI bundle during the workspace build.
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     g++ \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy all source files
