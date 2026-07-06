@@ -261,9 +261,27 @@ panic = "abort"
 
 [profile.dev]
 opt-level = 0
-debug = true
 overflow-checks = true
+# Trim debuginfo to keep target/ from ballooning. "line-tables-only" preserves
+# file/line info in backtraces on our own crates without the heavy
+# type/variable debug data.
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+# Dependencies almost never need to be stepped through — drop their debuginfo
+# entirely. This is the single biggest lever against target/deps growth: the
+# ~100-220M linked test binaries are mostly dependency debug sections.
+debug = false
+
+[profile.dev.build-override]
+# Build scripts and proc macros (openssl-sys, utoipa-swagger-ui, serde_derive,
+# sqlx-macros, ...) never need debuginfo.
+debug = false
 
 [profile.test]
 opt-level = 0
-debug = true
+# Must mirror [profile.dev]: an explicit `debug = true` here would keep every
+# [[test]] binary fat regardless of the dev-profile trim. Test dependencies
+# are built under the dev profile, so its package."*" override covers them
+# (Cargo only permits package overrides on dev/release).
+debug = "line-tables-only"
