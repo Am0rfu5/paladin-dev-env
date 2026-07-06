@@ -70,6 +70,7 @@ fn test_herald_uses_real_battalion_result_type() {
         total_tokens: 0,
         paladin_success_count: 0,
         paladin_failure_count: 0,
+        node_errors: Vec::new(),
     };
 
     // This should compile if Herald uses the real type
@@ -450,6 +451,7 @@ fn test_herald_pipeline_with_consolidated_types() {
         total_tokens: 0,
         paladin_success_count: 1,
         paladin_failure_count: 0,
+        node_errors: Vec::new(),
     };
 
     // Get formatters from registry

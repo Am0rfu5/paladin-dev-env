@@ -285,6 +285,7 @@ mod tests {
             total_tokens: 0,
             paladin_success_count: 2,
             paladin_failure_count: 0,
+            node_errors: Vec::new(),
         }
     }
 

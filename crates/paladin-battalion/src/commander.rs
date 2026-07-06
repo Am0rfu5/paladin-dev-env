@@ -485,6 +485,7 @@ impl Commander {
                     total_tokens: 0,
                     paladin_success_count: 0,
                     paladin_failure_count: 0,
+                    node_errors: Vec::new(),
                 }
             }
             BattalionStrategy::Conclave => {
@@ -549,6 +550,7 @@ impl Commander {
                     total_tokens: 0,
                     paladin_success_count: successful_experts,
                     paladin_failure_count: failed_experts,
+                    node_errors: Vec::new(),
                 }
             }
             BattalionStrategy::Council => {
@@ -619,6 +621,7 @@ impl Commander {
                     total_tokens: 0,
                     paladin_success_count: total_participants,
                     paladin_failure_count: 0,
+                    node_errors: Vec::new(),
                 }
             }
             BattalionStrategy::Grove => {
@@ -694,6 +697,7 @@ impl Commander {
                     total_tokens: 0,
                     paladin_success_count: 1,
                     paladin_failure_count: 0,
+                    node_errors: Vec::new(),
                 }
             }
             BattalionStrategy::Maneuver => {
@@ -828,6 +832,7 @@ impl Commander {
                     total_tokens: 0,
                     paladin_success_count: successful_agents,
                     paladin_failure_count: 0,
+                    node_errors: Vec::new(),
                 }
             }
             BattalionStrategy::Auto => {
