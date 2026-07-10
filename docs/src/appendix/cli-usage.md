@@ -732,20 +732,30 @@ Test connection to an MCP server.
 **Syntax:**
 ```bash
 paladin arsenal test --mcp-stdio <command>
-paladin arsenal test --mcp-sse <url>
+paladin arsenal test --mcp-streamable-http <url> [--mcp-auth-token-env <ENV_VAR_NAME>]
 ```
 
 **Options:**
-- `--mcp-stdio <COMMAND>` - Test STDIO MCP server (mutually exclusive with --mcp-sse)
-- `--mcp-sse <URL>` - Test SSE MCP server (mutually exclusive with --mcp-stdio)
+- `--mcp-stdio <COMMAND>` - Test STDIO MCP server (mutually exclusive with `--mcp-streamable-http`)
+- `--mcp-streamable-http <URL>` - Test a Streamable-HTTP MCP server (mutually exclusive with
+  `--mcp-stdio`; renamed from the retired `--mcp-sse` flag, which pointed at a mislabeled
+  plain-HTTP-POST adapter that was never real SSE or Streamable-HTTP)
+- `--mcp-auth-token-env <ENV_VAR_NAME>` - NAMES the environment variable holding the bearer
+  token for `--mcp-streamable-http` (optional; requires `--mcp-streamable-http`). The token
+  itself is never accepted as a CLI argument and never logged.
 
 **Examples:**
 ```bash
 # Test STDIO server
 paladin arsenal test --mcp-stdio "uvx mcp-web-search"
 
-# Test SSE server
-paladin arsenal test --mcp-sse "http://localhost:3000/mcp"
+# Test an unauthenticated Streamable-HTTP server
+paladin arsenal test --mcp-streamable-http "http://localhost:3000/mcp"
+
+# Test an authenticated Streamable-HTTP server (token sourced from the named env var)
+export ETHERSCAN_API_KEY="..."
+paladin arsenal test --mcp-streamable-http "https://mcp.etherscan.io/mcp" \
+    --mcp-auth-token-env ETHERSCAN_API_KEY
 
 # With full command and args
 paladin arsenal test --mcp-stdio "npx -y @modelcontextprotocol/server-filesystem /tmp"

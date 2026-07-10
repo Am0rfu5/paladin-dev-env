@@ -8,7 +8,7 @@ This guide covers how to integrate external tools and capabilities into your Pal
 - [Arsenal Architecture](#arsenal-architecture)
 - [MCP Protocol](#mcp-protocol)
 - [STDIO Tool Servers](#stdio-tool-servers)
-- [SSE Tool Servers](#sse-tool-servers)
+- [Streamable-HTTP Tool Servers](#streamable-http-tool-servers)
 - [Custom Tool Development](#custom-tool-development)
 - [Tool Result Handling](#tool-result-handling)
 - [Best Practices](#best-practices)
@@ -86,7 +86,10 @@ The Model Context Protocol (MCP) is an open standard for connecting LLM applicat
 ### MCP Server Types
 
 1. **STDIO Servers**: Command-line tools communicating via stdin/stdout
-2. **SSE Servers**: Web services using Server-Sent Events
+2. **Streamable-HTTP Servers**: Remote, optionally authenticated web services
+   (the current, real transport; supersedes the legacy standalone SSE
+   transport per the MCP spec — Paladin's own retired `MCPSseAdapter` was
+   never actually SSE, just a mislabeled plain-HTTP-POST adapter)
 
 ### MCP Message Format
 
@@ -157,29 +160,32 @@ STDIO servers are command-line programs that communicate via standard input/outp
 ### Connecting a STDIO Server
 
 ```rust,ignore
-use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
-use paladin_core::platform::container::arsenal::{Armament, ArmamentCall, ArmamentResult};
+use paladin::infrastructure::adapters::arsenal::mcp_stdio_adapter::MCPStdioAdapter;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
 
-    // Connect to an MCP STDIO server
-    let web_search = MCPStdioAdapter::new()
-        .command("uvx")
-        .args(vec!["mcp-server-fetch"])
-        .build()
+    // Connect to an MCP STDIO server: MCPStdioAdapter::new(command, args) is
+    // a thin builder; connect() spawns the subprocess and performs the full
+    // MCP initialize -> notifications/initialized handshake, returning an
+    // MCPClient with discover_tools()/invoke_tool().
+    let mcp_client = MCPStdioAdapter::new("uvx", vec!["mcp-server-fetch"])
+        .connect()
         .await?;
+    let tools = mcp_client.discover_tools().await?;
 
-    // Build Paladin with tool access
+    // Build Paladin with tool access (register discovered tools, or attach
+    // an ArsenalRegistry backed by the connected client)
     let paladin = PaladinBuilder::new(llm_adapter)
         .name("ResearchAssistant")
         .system_prompt("You are a research assistant with web search capabilities. \
                         Use the web_search tool to find current information. \
                         Always cite your sources.")
-        .add_armament(Arc::new(web_search))
-        .build()?;
+        .build()
+        .await?;
 
     // Paladin will automatically use tools when needed
     let response = paladin.execute("What are the latest Rust features in 2024?").await?;
@@ -237,45 +243,53 @@ arsenal:
 
 ### Advanced STDIO Configuration
 
+`MCPStdioAdapter` is currently a minimal builder — it only accepts a command
+and its arguments; working-directory, per-server env-var injection, custom
+timeouts, and retry policies are not yet exposed on the adapter itself
+(pass any required env vars via the spawned command's own args/environment,
+or via the process that launches Paladin):
+
 ```rust,ignore
-let web_search = MCPStdioAdapter::new()
-    .command("uvx")
-    .args(vec!["mcp-server-fetch"])
-    .working_directory("/tmp")
-    .env("API_KEY", api_key)
-    .timeout(Duration::from_secs(30))
-    .max_retries(3)
-    .build()
+let client = MCPStdioAdapter::new("uvx", vec!["mcp-server-fetch"])
+    .connect()
     .await?;
 ```
 
-## SSE Tool Servers
+## Streamable-HTTP Tool Servers
 
-SSE (Server-Sent Events) servers are web services that provide MCP tools over HTTP.
+Streamable-HTTP servers are remote, optionally authenticated MCP servers reached over
+HTTP(S) — Paladin's real remote transport (Phase 12.1 D-02/D-03). This supersedes the
+legacy standalone SSE transport in the MCP spec; Paladin's own retired `MCPSseAdapter`
+was never actually SSE, just a mislabeled, unauthenticated plain-HTTP-POST adapter, and
+has been removed entirely.
 
-### Connecting an SSE Server
+### Connecting a Streamable-HTTP Server
 
 ```rust,ignore
-use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
-use paladin_core::platform::container::arsenal::{Armament, ArmamentCall, ArmamentResult};
+use paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
 
-    // Connect to an MCP SSE server
-    let api_tools = MCPSseAdapter::new()
-        .endpoint("https://api.example.com/mcp")
-        .api_key(std::env::var("API_KEY")?)
-        .build()
-        .await?;
+    // Connect to a remote MCP server over Streamable-HTTP. The bearer token
+    // is read from an env var here in application code -- never hardcode a
+    // literal secret, and never accept one as a CLI argument.
+    let bearer_token = std::env::var("API_KEY").ok();
+    let mut adapter = MCPStreamableHttpAdapter::new("https://api.example.com/mcp");
+    if let Some(token) = bearer_token {
+        adapter = adapter.with_bearer_token(token);
+    }
+    let mcp_client = adapter.connect().await?;
+    let tools = mcp_client.discover_tools().await?;
 
     let paladin = PaladinBuilder::new(llm_adapter)
         .name("APIAssistant")
         .system_prompt("You have access to company APIs. Use them to retrieve data.")
-        .add_armament(Arc::new(api_tools))
-        .build()?;
+        .build()
+        .await?;
 
     let response = paladin.execute("Get user statistics for last month").await?;
     println!("{}", response.content);
@@ -284,37 +298,66 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-### SSE Configuration
+### Streamable-HTTP Configuration
 
-```rust,ignore
-let api_server = MCPSseAdapter::new()
-    .endpoint("https://api.example.com/mcp")
-    .api_key("your-api-key")
-    .bearer_token("bearer-token")  // Alternative auth
-    .headers(HashMap::from([
-        ("X-Custom-Header", "value"),
-    ]))
-    .timeout(Duration::from_secs(60))
-    .retry_config(RetryConfig {
-        max_attempts: 3,
-        initial_delay: Duration::from_secs(1),
-        max_delay: Duration::from_secs(10),
-        exponential_backoff: true,
-    })
-    .build()
-    .await?;
+The config-driven flow (recommended for most use cases) declares the server in
+`config.yml`/`.mcp.json` and lets the CLI/loader connect it for you:
+
+```yaml
+arsenal:
+  mcp_servers:
+    - name: "company_api"
+      type: "streamable_http"
+      endpoint: "https://api.example.com/mcp"
+      # NAMES the env var holding the bearer token -- never a literal secret
+      # in this file. Omit entirely for an unauthenticated server.
+      auth_token_env: "API_KEY"
 ```
 
-### SSE Health Checks
+```bash
+export API_KEY="your-token"
+paladin arsenal test --mcp-streamable-http "https://api.example.com/mcp" \
+    --mcp-auth-token-env API_KEY
+```
+
+The equivalent programmatic flow — `MCPStreamableHttpAdapter` is a thin builder over
+[`MCPClient::connect_streamable_http`], mirroring `MCPStdioAdapter`'s shape for the
+remote transport:
 
 ```rust,ignore
-// Verify server is reachable
-if api_server.health_check().await? {
-    println!("SSE server is healthy");
-}
+use paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter;
 
-// List available tools
-let tools = api_server.list_armaments().await?;
+let adapter = MCPStreamableHttpAdapter::new("https://api.example.com/mcp")
+    .with_bearer_token(std::env::var("API_KEY")?); // never hardcode the token
+    // .with_custom_headers(headers) is also available for non-bearer auth schemes
+
+let client = adapter.connect().await?; // full initialize -> notifications/initialized handshake
+```
+
+Or call the underlying `MCPClient` constructor directly:
+
+```rust,ignore
+use paladin::infrastructure::adapters::arsenal::mcp_protocol::MCPClient;
+
+let client = MCPClient::connect_streamable_http(
+    "https://api.example.com/mcp",
+    Some(&std::env::var("API_KEY")?),
+    None, // optional custom headers
+)
+.await?;
+```
+
+### Verifying Connectivity and Listing Tools
+
+There is no separate `health_check()` — a successful `connect()`/`connect_streamable_http()`
+already means the full MCP handshake succeeded, so `discover_tools()` doubles as the
+liveness check:
+
+```rust,ignore
+// A successful discover_tools() call confirms the server is reachable and
+// the handshake succeeded.
+let tools = client.discover_tools().await?;
+println!("Streamable-HTTP server is healthy — {} tool(s) available", tools.len());
 for tool in tools {
     println!("Tool: {} - {}", tool.name, tool.description);
 }
@@ -904,22 +947,28 @@ let count = call.parameters.get("count")
     .unwrap_or(10);  // Default value
 ```
 
-### SSE Server Authentication
+### Streamable-HTTP Server Authentication
 
-**Problem**: SSE server returns 401 Unauthorized.
+**Problem**: Streamable-HTTP server rejects the connection with `ArsenalError::AuthFailed`
+(a 401/403-shaped rejection during the `initialize` handshake).
 
 **Solutions**:
-1. Verify API key is correct
-2. Check token hasn't expired
-3. Ensure correct authentication method (bearer vs api-key)
-4. Check server CORS settings
+1. Verify the bearer token is correct and hasn't expired
+2. Confirm the token is NOT prefixed with `"Bearer "` yourself — `MCPClient::connect_streamable_http`
+   / `MCPStreamableHttpAdapter` add the prefix internally; a manually-prefixed token double-prefixes
+   and breaks auth
+3. If using `auth_token_env`/`--mcp-auth-token-env`, confirm the NAMED env var is actually set in
+   the process environment (a missing env var fails loud with an actionable error, not a silent 401)
+4. Check the server's own auth requirements (some accept custom headers instead of a bearer token —
+   use `MCPStreamableHttpAdapter::with_custom_headers`)
 
 ```rust,ignore
-let tool = MCPSseAdapter::new()
-    .endpoint("https://api.example.com/mcp")
-    .bearer_token("your-token")  // Use bearer auth instead of api_key
-    .build()
-    .await?;
+use paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter;
+
+let adapter = MCPStreamableHttpAdapter::new("https://api.example.com/mcp")
+    .with_bearer_token(std::env::var("API_KEY")?); // never a literal token, never "Bearer "-prefixed
+
+let client = adapter.connect().await?;
 ```
 
 ## Testing Tools
@@ -992,7 +1041,7 @@ async fn test_paladin_uses_tool() {
 
 See working examples:
 - `examples/arsenal_stdio_tools.rs` - MCP STDIO integration
-- `examples/arsenal_sse_tools.rs` - MCP SSE integration
+- `examples/arsenal_streamable_http_tools.rs` - MCP Streamable-HTTP integration (authenticated remote transport)
 - `examples/custom_tools.rs` - Custom tool implementation
 - `examples/tool_error_handling.rs` - Error handling patterns
 

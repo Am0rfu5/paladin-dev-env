@@ -127,10 +127,13 @@ arsenal:
       command: "uvx"
       args: ["mcp-web-search"]
 
-    # SSE server (HTTP-based)
+    # Streamable-HTTP server (remote, optionally authenticated)
     - name: "code_analyzer"
-      server_type: "sse"
+      server_type: "streamable_http"
       endpoint: "http://localhost:8080/mcp"
+      # NAMES the env var holding the bearer token -- never a literal
+      # secret in this file. Omit entirely for an unauthenticated server.
+      auth_token_env: "CODE_ANALYZER_TOKEN"
 ```
 
 | Key | Type | Default | Description |
@@ -138,9 +141,10 @@ arsenal:
 | `default_timeout_seconds` | int | 30 | Per-tool execution timeout |
 | `max_concurrent_tools` | int | 5 | Parallel tool invocations |
 | `mcp_servers[].name` | string | - | Unique server identifier |
-| `mcp_servers[].server_type` | string | - | `stdio` or `sse` |
+| `mcp_servers[].server_type` | string | - | `stdio` or `streamable_http` (`sse` is retired -- fails loud with a migration message) |
 | `mcp_servers[].command` | string | - | Executable (stdio only) |
-| `mcp_servers[].endpoint` | string | - | URL (sse only) |
+| `mcp_servers[].endpoint` | string | - | URL (streamable_http only) |
+| `mcp_servers[].auth_token_env` | string | - | Env var NAME holding the bearer token (streamable_http only, optional) |
 
 **Env vars:** `APP_ARSENAL_DEFAULT_TIMEOUT_SECONDS`, `APP_ARSENAL_MAX_CONCURRENT_TOOLS`
 

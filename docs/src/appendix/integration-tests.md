@@ -38,8 +38,9 @@ and is declared from `tests/integration/mod.rs`.
 | `herald_integration_test.rs` | `paladin`, `paladin-ports` | none | — |
 | `in_memory_sanctum_tests.rs` | `paladin`, `paladin-ports` | none | — |
 | `llm_live_api_tests.rs` | `paladin`, `paladin-ports` | live-api | `live-api-tests` |
-| `mcp_sse_test.rs` | `paladin` | none | — |
 | `mcp_stdio_test.rs` | `paladin` | none | — |
+| `mcp_streamable_http_test.rs` | `paladin` | none (hermetic, in-process rmcp server) | — |
+| `mcp_streamable_http_live_test.rs` | `paladin` | live-api (`ETHERSCAN_API_KEY`), `#[ignore]`'d | — |
 | `notification_system_integration_test.rs` | `paladin`, `paladin-ports` | none | — |
 | `openai_content_analysis_integration_test.rs` | `paladin`, `paladin-ports` | none (mock) | `llm-openai` |
 | `openai_embedding_tests.rs` | `paladin`, `paladin-ports` | none (mock) | `openai-embeddings` |

@@ -610,41 +610,51 @@ cargo run --example arsenal_stdio_tools
 
 **Code snippet:**
 ```rust
-let web_search = MCPStdioAdapter::new()
-    .command("uvx")
-    .args(vec!["mcp-server-fetch"])
-    .build()
+// MCPStdioAdapter::new(command, args) is a thin builder; connect() spawns
+// the subprocess and performs the full MCP handshake, returning an MCPClient.
+let client = MCPStdioAdapter::new("uvx", vec!["mcp-server-fetch"])
+    .connect()
     .await?;
 
-let paladin = PaladinBuilder::new(llm_adapter)
-    .add_armament(Arc::new(web_search))
-    .build()?;
+let tools = client.discover_tools().await?;
+for tool in tools {
+    registry.register(tool).await;
+}
 
-// Paladin automatically uses tools when needed
+// Paladin automatically uses registered tools when needed
 ```
 
-### [arsenal_sse_tools.rs](arsenal_sse_tools.rs)
-**Demonstrates:** MCP SSE tool servers
+### [arsenal_streamable_http_tools.rs](arsenal_streamable_http_tools.rs)
+**Demonstrates:** MCP Streamable-HTTP tool servers (authenticated remote transport)
 
-Shows how to connect web-based tool servers via Server-Sent Events.
+Shows how to connect remote, optionally authenticated tool servers over the
+Streamable-HTTP transport (Phase 12.1 D-02/D-03) -- the real replacement for
+the retired, never-real `MCPSseAdapter` fluent auth API.
 
 ```bash
-cargo run --example arsenal_sse_tools
+export MCP_STREAMABLE_HTTP_ENDPOINT="https://mcp.etherscan.io/mcp"
+export ETHERSCAN_API_KEY="..."
+export MCP_STREAMABLE_HTTP_AUTH_TOKEN_ENV="ETHERSCAN_API_KEY"
+cargo run --example arsenal_streamable_http_tools
 ```
 
 **Key concepts:**
-- HTTP/SSE communication
-- Authentication
-- API integration
+- Streamable-HTTP communication (rmcp-backed, D-01/D-04)
+- Bearer-token authentication sourced from an env var, never hardcoded
+- Tool discovery and invocation
 - Remote tools
 
 **Code snippet:**
 ```rust
-let api_tools = MCPSseAdapter::new()
-    .endpoint("https://api.example.com/mcp")
-    .api_key(api_key)
-    .build()
-    .await?;
+let client = MCPClient::connect_streamable_http(
+    &endpoint,
+    bearer_token.as_deref(),
+    None,
+)
+.await?;
+
+let tools = client.discover_tools().await?;
+let result = client.invoke_tool(&tools[0].name, HashMap::new()).await?;
 ```
 
 ## Battalion Orchestration Examples

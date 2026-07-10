@@ -650,7 +650,9 @@ All concrete adapter implementations in `src/infrastructure/adapters/` are inter
 - `MinIOAdapter`, `LocalFileAdapter` → Use `FileStoragePort` trait instead
 
 **Arsenal Adapters:**
-- `MCPStdioAdapter`, `MCPSseAdapter` → Use `ArsenalPort` trait instead
+- `MCPStdioAdapter`, `MCPStreamableHttpAdapter` (the retired `MCPSseAdapter` was never
+  actually SSE — a mislabeled plain-HTTP-POST adapter, removed in Phase 12.1 D-02b) →
+  Use `ArsenalPort` trait instead
 
 **Why Internal?** Adapter implementations are infrastructure concerns. Library users should depend on port traits to remain decoupled from specific technologies.
 

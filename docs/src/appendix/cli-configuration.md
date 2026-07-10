@@ -126,24 +126,28 @@ arsenal:
 - `command`: Executable command (e.g., `uvx`, `node`, `python`)
 - `args`: Command-line arguments as a list
 
-### MCP SSE Servers
+### MCP Streamable-HTTP Servers
 
-Connect to HTTP-based MCP servers via Server-Sent Events:
+Connect to remote, optionally authenticated MCP servers over HTTP(S) (the real,
+currently-implemented remote transport, D-02/D-03 — supersedes the retired `"sse"` type,
+which was never actually SSE and now fails loud with a migration message):
 
 ```yaml
 arsenal:
   mcp_servers:
     - name: "api_tools"
-      type: "sse"
-      url: "https://api.example.com/mcp"
-      auth_token: "${MCP_API_TOKEN}"
+      type: "streamable_http"
+      endpoint: "https://api.example.com/mcp"
+      auth_token_env: "MCP_API_TOKEN"
 ```
 
 **Configuration Options:**
 - `name`: Unique identifier for the tool server
-- `type`: Must be `"sse"`
-- `url`: HTTP endpoint for the MCP server
-- `auth_token`: Authentication token (use environment variables for secrets)
+- `type`: Must be `"streamable_http"`
+- `endpoint`: HTTP(S) endpoint for the MCP server
+- `auth_token_env`: NAMES the environment variable holding the bearer token — an env-var
+  REFERENCE, never a literal secret in this file. Resolved host-side at connect time and
+  never serialized back out. Omit entirely for an unauthenticated server.
 
 ### Tool Discovery and Registration
 
@@ -317,9 +321,9 @@ arsenal:
         - "${SLACK_BOT_TOKEN}"
 
     - name: "api_tools"
-      type: "sse"
-      url: "https://api.company.com/mcp"
-      auth_token: "${COMPANY_API_TOKEN}"
+      type: "streamable_http"
+      endpoint: "https://api.company.com/mcp"
+      auth_token_env: "COMPANY_API_TOKEN"
 
 scheduler:
   enabled: true
@@ -373,9 +377,12 @@ garrison:
 arsenal:
   mcp_servers:
     - name: "api"
-      type: "sse"
-      url: "${API_SERVER_URL}"
-      auth_token: "${API_TOKEN}"
+      type: "streamable_http"
+      endpoint: "${API_SERVER_URL}"
+      # auth_token_env is the NAME of an env var, not a "${...}"-interpolated
+      # literal -- the bearer token is resolved from the API_TOKEN env var
+      # host-side at connect time, never written back to this file.
+      auth_token_env: "API_TOKEN"
 ```
 
 ## Troubleshooting
@@ -421,8 +428,9 @@ arsenal:
 **Solutions:**
 - For STDIO: Verify command and args are correct
 - For STDIO: Check executable is in PATH
-- For SSE: Verify URL is reachable: `curl <url>`
-- For SSE: Check auth token is valid
+- For Streamable-HTTP: Verify the endpoint is reachable: `curl <endpoint>`
+- For Streamable-HTTP: Check the `auth_token_env`-named environment variable is set and the
+  token is valid (a missing/invalid token surfaces as `ArsenalError::AuthFailed`)
 - Review MCP server logs for startup errors
 
 #### Tool Invocation Timeout
@@ -489,8 +497,11 @@ arsenal:
 **Solutions:**
 - Export environment variable before running: `export VAR_NAME=value`
 - Check variable name matches exactly (case-sensitive)
-- Use quotes in YAML: `auth_token: "${TOKEN}"`
+- Use quotes in YAML: `api_key: "${OPENAI_API_KEY}"`
 - Verify environment variable is set: `echo $VAR_NAME`
+- Note: `arsenal.mcp_servers[].auth_token_env` is a different pattern -- it takes the env
+  var's NAME as a plain string (e.g. `auth_token_env: "OPENAI_API_KEY"`), not a
+  `"${VAR_NAME}"`-interpolated value
 
 ### Common Error Messages
 
@@ -498,7 +509,8 @@ arsenal:
 |-------|-------|----------|
 | `GarrisonConfigError: Unknown type 'postgres'` | Invalid garrison type | Use `"in_memory"` or `"sqlite"` |
 | `ArsenalConfigError: Missing required field 'command'` | STDIO config incomplete | Add `command` and `args` fields |
-| `ArsenalConfigError: Missing required field 'url'` | SSE config incomplete | Add `url` field for SSE type |
+| `ArsenalConfigError: Missing required field 'endpoint'` | Streamable-HTTP config incomplete | Add `endpoint` field for `streamable_http` type |
+| `ArsenalConfigError: ... 'type' 'sse' is deprecated` | Config still uses the retired `sse` type | Change `type` to `"streamable_http"` and rename `url`/`auth_token` to `endpoint`/`auth_token_env` |
 | `SchedulerError: Job not found` | Attempting to cancel non-existent job | Check JobId is valid before cancellation |
 | `LlmError: API key not found` | Missing environment variable | Set provider API key: `export OPENAI_API_KEY=...` |
 

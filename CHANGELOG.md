@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Phase 12.1 — Complete the Paladin Arsenal MCP client (dogfood)
+
+Swaps the Arsenal's hand-rolled MCP JSON-RPC engine for the official `rmcp` SDK, adds a
+real authenticated remote transport, and un-stubs tool execution — completing the MCP
+client this project depends on for its own downstream Arsenal-MCP-client dogfooding.
+
+#### Added
+
+- **`MCPClient::connect_streamable_http`** — a real, authenticated remote MCP transport
+  (Streamable-HTTP) with a bounded connect+handshake timeout, distinguishing
+  `ArsenalError::AuthFailed` (401/403-shaped rejections) from general transport/protocol
+  faults.
+- **`MCPStreamableHttpAdapter`** — a thin fluent builder (`new(endpoint).with_bearer_token(..)
+  .with_custom_headers(..).connect()`) mirroring `MCPStdioAdapter`'s shape for the remote
+  transport. The bearer token is held in a `BearerToken` wrapper that zeroizes on drop and
+  never derives `Debug` (redacted `{:?}` only).
+- **Config-driven remote servers** — `arsenal.mcp_servers[].type: "streamable_http"` +
+  `endpoint` + `auth_token_env` (an env-var NAME, never a literal secret) in `config.yml`/
+  `.mcp.json`, and the CLI's `--mcp-streamable-http <url> [--mcp-auth-token-env <VAR>]` flags.
+- **`examples/arsenal_streamable_http_tools.rs`** — a runnable example demonstrating the
+  authenticated remote transport end-to-end (connect, discover tools, invoke a tool), with
+  the bearer token sourced from an environment variable only.
+- Hermetic Streamable-HTTP round-trip test against a real in-process `rmcp` server
+  (`tests/integration/mcp_streamable_http_test.rs`), plus a `#[ignore]`'d live probe against
+  `mcp.etherscan.io` for operator-run verification (`tests/integration/mcp_streamable_http_live_test.rs`).
+- `ArsenalRegistry::list()` and a real, un-stubbed `ArsenalExecutionService::invoke` bridge
+  routing tool calls through the connected `MCPClient`.
+
+#### Changed
+
+- **MCP engine swap**: the Arsenal's transport now performs the full spec
+  `initialize -> notifications/initialized` handshake via `rmcp::ServiceExt::serve()` for
+  every transport, closing the #1 correctness gap in the previous hand-rolled engine
+  (which never performed this handshake).
+- **`PaladinYamlConfig::validate()`** now accepts `arsenal.mcp_servers[].type: "streamable_http"`
+  (previously rejected by the schema-validation allowlist before ever reaching the loader —
+  a regression discovered while truthing up this changelog/the docs below).
+- Documentation truth-up: `docs/src/user-guides/tool-integration.md`, `arsenal-tools.md`,
+  `getting-started/configuration.md`, `appendix/cli-usage.md`, `appendix/cli-configuration.md`,
+  `api-reference/stable-api.md`, and `appendix/integration-tests.md` now describe the real,
+  implemented `streamable_http` + `auth_token_env` + `MCPClient::connect_streamable_http` flow.
+
+#### Removed
+
+- **`MCPSseAdapter`/`mcp_sse_adapter`** (and the `--mcp-sse` CLI flag) — retired entirely.
+  This adapter was never real SSE or Streamable-HTTP; it was a mislabeled, unauthenticated
+  plain-HTTP-POST adapter. The `"sse"` `server_type` value in `config.yml`/`.mcp.json` now
+  fails loud with an actionable migration message ("Use 'streamable_http' instead") rather
+  than silently constructing a since-removed adapter.
+- The hand-rolled MCP JSON-RPC 2.0 types (`MCPMessage`/`MCPRequest`/`MCPResponse`/
+  `MCPNotification`/`MCPCapabilities`/`ServerInfo`/`ToolInfo`/`MCPTransport`) — superseded by
+  `rmcp::model::*` and rmcp's own transport abstraction.
+
 ## [0.6.0]
 
 **Milestone 12 — Web API.** Paladin now ships an HTTP agent API **out of the box**: the

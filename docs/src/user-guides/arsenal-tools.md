@@ -10,7 +10,7 @@ to external tools and services through the **Model Context Protocol** (MCP). Too
 
 1. [Concepts](#concepts)
 2. [Quick Start — STDIO Server](#quick-start--stdio-server)
-3. [SSE Server Configuration](#sse-server-configuration)
+3. [Streamable-HTTP Server Configuration](#streamable-http-server-configuration)
 4. [config.yml Reference](#configyml-reference)
 5. [ArsenalPort Trait](#arsenalport-trait)
 6. [ArsenalRegistry Trait](#arsenalregistry-trait)
@@ -32,7 +32,7 @@ to external tools and services through the **Model Context Protocol** (MCP). Too
 | **ArsenalPort** | Trait for discovering and invoking armaments |
 | **ArsenalRegistry** | Trait for managing the registry lifecycle (register, remove) |
 | **MCPStdioAdapter** | Communicates with command-line MCP servers via stdin/stdout |
-| **MCPSseAdapter** | Communicates with HTTP-based MCP servers via SSE |
+| **MCPStreamableHttpAdapter** | Communicates with remote, optionally authenticated MCP servers over Streamable-HTTP (replaces the retired, never-actually-SSE `MCPSseAdapter`) |
 
 ---
 
@@ -83,27 +83,35 @@ the Arsenal, and feed results back into the reasoning loop.
 
 ---
 
-## SSE Server Configuration
+## Streamable-HTTP Server Configuration
 
-HTTP/SSE servers expose a REST endpoint:
+Remote MCP servers are reached over HTTP(S) using the Streamable-HTTP transport (D-02/D-03).
+This is the real, currently-implemented remote transport, replacing the retired
+`MCPSseAdapter` (which was never actually SSE — just a mislabeled, unauthenticated
+plain-HTTP-POST adapter):
 
 ```yaml
 arsenal:
   mcp_servers:
     - name: my_api_server
-      type: sse
+      type: streamable_http
       endpoint: "http://localhost:8080/mcp"
-      timeout_seconds: 30
-      max_retries: 3
+      # NAMES the env var holding the bearer token -- never a literal secret
+      # in this file. Omit entirely for an unauthenticated server.
+      auth_token_env: "MY_API_SERVER_TOKEN"
 ```
 
-The `MCPSseAdapter` sends requests and reads responses over the SSE stream:
+`MCPStreamableHttpAdapter` builds the connection and delegates to
+`MCPClient::connect_streamable_http`, which performs the full
+`initialize -> notifications/initialized` handshake:
 
 ```rust,ignore
-use paladin::infrastructure::adapters::arsenal::mcp_sse_adapter::MCPSseAdapter;
+use paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter;
 
-let mut adapter = MCPSseAdapter::new("http://localhost:8080/mcp");
-adapter.connect().await?;
+let adapter = MCPStreamableHttpAdapter::new("http://localhost:8080/mcp")
+    .with_bearer_token(std::env::var("MY_API_SERVER_TOKEN")?); // never hardcode the token
+let client = adapter.connect().await?;
+let tools = client.discover_tools().await?;
 ```
 
 ---
@@ -113,17 +121,16 @@ adapter.connect().await?;
 ```yaml
 arsenal:
   mcp_servers:
-    - name: <identifier>          # Unique name used in logs and errors
-      type: stdio | sse           # Transport type
+    - name: <identifier>              # Unique name used in logs and errors
+      type: stdio | streamable_http   # Transport type ("sse" is retired --
+                                       # fails loud with a migration message)
       # STDIO fields:
-      command: <executable>       # e.g. python3, npx, uvx
-      args: [<arg>, ...]          # Command-line arguments
-      env:                        # Optional environment variables
-        KEY: value
-      # SSE fields:
-      endpoint: <url>             # Full URL of the SSE endpoint
-      timeout_seconds: 30         # Request timeout
-      max_retries: 3              # Retry attempts on failure
+      command: <executable>           # e.g. python3, npx, uvx
+      args: [<arg>, ...]              # Command-line arguments
+      # Streamable-HTTP fields:
+      endpoint: <url>                 # Full URL of the remote MCP endpoint
+      auth_token_env: <ENV_VAR_NAME>  # NAMES the env var holding the bearer
+                                       # token -- never a literal secret here
 ```
 
 ---
