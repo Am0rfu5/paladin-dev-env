@@ -2,7 +2,7 @@
 
 use paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService;
 use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
-use paladin::core::platform::container::arsenal::{Armament, ArmamentCall};
+use paladin::core::platform::container::arsenal::{Armament, ArmamentCall, ArsenalError};
 use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -163,7 +163,12 @@ async fn test_registry_clear() {
 }
 
 #[tokio::test]
-async fn test_execution_service_invoke() {
+async fn test_execution_service_invoke_without_a_registered_mcp_client_is_tool_not_found() {
+    // As of Phase 12.1 Plan 03, `ArsenalExecutionService::invoke` routes to
+    // the real MCP client serving a tool via `register_client` — it no
+    // longer fakes a successful result. A tool that is only present in the
+    // registry (metadata) but has no serving client registered correctly
+    // fails with `ToolNotFound`, not a simulated success.
     let registry = Arc::new(ArsenalRegistryService::new());
     let service = ArsenalExecutionService::new(registry.clone());
 
@@ -179,10 +184,9 @@ async fn test_execution_service_invoke() {
     let call = ArmamentCall::new("test_tool", args);
 
     let result = service.invoke(call.clone()).await;
-    assert!(result.is_ok());
 
-    let armament_result = result.unwrap();
-    assert!(armament_result.success);
-    assert_eq!(armament_result.call_id, call.call_id);
-    assert!(armament_result.output.is_some());
+    match result {
+        Err(ArsenalError::ToolNotFound(name)) => assert_eq!(name, "test_tool"),
+        other => panic!("expected ToolNotFound (no serving client registered), got: {other:?}"),
+    }
 }

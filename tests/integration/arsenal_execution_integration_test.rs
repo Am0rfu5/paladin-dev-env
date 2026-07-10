@@ -1,6 +1,29 @@
 //! Integration tests for Arsenal execution service.
 //!
 //! Tests tool discovery, invocation, error handling, timeouts, and resource limits.
+//!
+//! # Phase 12.1 Plan 03 behavior change
+//!
+//! `ArsenalExecutionService::invoke` used to return a hardcoded
+//! `"Tool ... executed successfully"` string for ANY registered tool,
+//! regardless of whether a real MCP server backed it. It now routes through
+//! `clients_by_tool` to the real `MCPClient` registered for that tool name
+//! (via `register_client`, called by the config/arsenal loader after
+//! `discover_tools()`), and returns `ArsenalError::ToolNotFound` when no
+//! client is registered.
+//!
+//! Because `MCPClient` can only be constructed via a real rmcp handshake
+//! (subprocess spawn or HTTP connect) and this file is an external
+//! integration-test crate (no access to the crate-private test seam used by
+//! `arsenal_execution_service.rs`'s own in-file unit tests), the tests below
+//! exercise `ArsenalExecutionService` exactly as `ArsenalExecutionService::new`
+//! constructs it with no MCP client registered — proving that validation
+//! (tool exists, required params present) still runs correctly and that the
+//! final routing step now correctly reports `ToolNotFound` instead of
+//! fabricating success. The full real-client success path is proven by
+//! `arsenal_execution_service.rs`'s in-file fake-invoker tests, and the
+//! end-to-end LLM-driven dispatch is proven by
+//! `tests/integration/arsenal_bridge_regression_test.rs`.
 
 use paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService;
 use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;
@@ -35,6 +58,20 @@ fn create_args(key: &str, value: Value) -> HashMap<String, Value> {
     args
 }
 
+/// Asserts `invoke` reached the MCP-routing step (validation passed) and
+/// correctly failed with `ToolNotFound` because no client was registered.
+fn assert_tool_not_found(
+    result: Result<paladin::core::platform::container::arsenal::ArmamentResult, ArsenalError>,
+    expected_name: &str,
+) {
+    match result {
+        Err(ArsenalError::ToolNotFound(name)) => assert_eq!(name, expected_name),
+        other => panic!(
+            "expected ToolNotFound for '{expected_name}' (no serving client registered), got: {other:?}"
+        ),
+    }
+}
+
 #[tokio::test]
 async fn test_arsenal_execution_service_creation() {
     let registry = Arc::new(ArsenalRegistryService::new());
@@ -45,30 +82,24 @@ async fn test_arsenal_execution_service_creation() {
 }
 
 #[tokio::test]
-async fn test_invoke_tool_success() {
+async fn test_invoke_registered_tool_with_no_mcp_client_is_tool_not_found() {
     let registry = Arc::new(ArsenalRegistryService::new());
     let service = ArsenalExecutionService::new(registry.clone());
 
-    // Register a tool
+    // Register a tool's metadata, but never register a serving MCP client.
     let tool = create_test_armament("calculator", vec!["operation".to_string()]);
     registry.register(tool).await;
 
-    // Create a valid call
+    // Create a valid call (passes validate_call + validate_parameters)
     let args = create_args("operation", json!("add"));
     let call = ArmamentCall::new("calculator", args);
 
-    // Invoke the tool
-    let result = service.invoke(call.clone()).await.unwrap();
-
-    // Verify result
-    assert!(result.success);
-    assert_eq!(result.call_id, call.call_id);
-    assert!(result.output.is_some());
-    assert!(result.error.is_none());
+    let result = service.invoke(call).await;
+    assert_tool_not_found(result, "calculator");
 }
 
 #[tokio::test]
-async fn test_invoke_tool_not_found() {
+async fn test_invoke_tool_not_found_when_not_even_registered_in_registry() {
     let registry = Arc::new(ArsenalRegistryService::new());
     let service = ArsenalExecutionService::new(registry);
 
@@ -101,7 +132,8 @@ async fn test_invoke_missing_required_parameter() {
     let args = create_args("email", json!("test@example.com"));
     let call = ArmamentCall::new("validator", args);
 
-    // Invoke should fail
+    // Invoke should fail with InvalidArguments -- validation runs BEFORE the
+    // client-routing lookup, so this is unaffected by the no-client change.
     let result = service.invoke(call).await;
 
     assert!(result.is_err());
@@ -149,7 +181,7 @@ async fn test_validate_call_valid() {
 }
 
 #[tokio::test]
-async fn test_invoke_tool_with_all_required_parameters() {
+async fn test_invoke_tool_with_all_required_parameters_passes_validation_then_tool_not_found() {
     let registry = Arc::new(ArsenalRegistryService::new());
     let service = ArsenalExecutionService::new(registry.clone());
 
@@ -171,14 +203,15 @@ async fn test_invoke_tool_with_all_required_parameters() {
     args.insert("param3".to_string(), json!("value3"));
     let call = ArmamentCall::new("multi_param_tool", args);
 
-    // Invoke should succeed
+    // Parameter validation passes (proving all-required-params-present logic
+    // still works); routing then correctly reports ToolNotFound since no
+    // client is registered.
     let result = service.invoke(call).await;
-    assert!(result.is_ok());
-    assert!(result.unwrap().success);
+    assert_tool_not_found(result, "multi_param_tool");
 }
 
 #[tokio::test]
-async fn test_invoke_tool_with_extra_parameters() {
+async fn test_invoke_tool_with_extra_parameters_passes_validation_then_tool_not_found() {
     let registry = Arc::new(ArsenalRegistryService::new());
     let service = ArsenalExecutionService::new(registry.clone());
 
@@ -193,10 +226,10 @@ async fn test_invoke_tool_with_extra_parameters() {
     args.insert("another_optional".to_string(), json!(123));
     let call = ArmamentCall::new("simple_tool", args);
 
-    // Invoke should succeed (extra params are allowed)
+    // Extra params are allowed (validation passes); routing then correctly
+    // reports ToolNotFound since no client is registered.
     let result = service.invoke(call).await;
-    assert!(result.is_ok());
-    assert!(result.unwrap().success);
+    assert_tool_not_found(result, "simple_tool");
 }
 
 #[tokio::test]
@@ -210,7 +243,31 @@ async fn test_list_armaments_empty_registry() {
 }
 
 #[tokio::test]
-async fn test_execution_time_tracking() {
+async fn test_list_armaments_returns_real_registered_tools() {
+    // OQ1 fix: list_armaments() now delegates to the registry's real list(),
+    // instead of hard-returning an empty Vec.
+    let registry = Arc::new(ArsenalRegistryService::new());
+    let service = ArsenalExecutionService::new(registry.clone());
+
+    for i in 1..=3 {
+        registry
+            .register(create_test_armament(&format!("tool{i}"), vec![]))
+            .await;
+    }
+
+    let mut names: Vec<String> = service
+        .list_armaments()
+        .await
+        .into_iter()
+        .map(|a| a.name)
+        .collect();
+    names.sort();
+
+    assert_eq!(names, vec!["tool1", "tool2", "tool3"]);
+}
+
+#[tokio::test]
+async fn test_invoke_with_no_client_fails_fast_not_hung() {
     let registry = Arc::new(ArsenalRegistryService::new());
     let service = ArsenalExecutionService::new(registry.clone());
 
@@ -218,21 +275,19 @@ async fn test_execution_time_tracking() {
     let tool = create_test_armament("timer_tool", vec![]);
     registry.register(tool).await;
 
-    // Invoke the tool
+    // Invoking without a registered client should fail immediately with
+    // ToolNotFound, not hang or panic.
     let call = ArmamentCall::new("timer_tool", HashMap::new());
-    let result = service.invoke(call).await.unwrap();
-
-    // Execution time should be tracked (u64 is always >= 0, so check it's set)
-    // Just verify the field exists by checking it's not absurdly large
-    assert!(result.execution_time_ms < u64::MAX);
+    let result = service.invoke(call).await;
+    assert_tool_not_found(result, "timer_tool");
 }
 
 #[tokio::test]
-async fn test_concurrent_tool_invocations() {
+async fn test_concurrent_tool_invocations_without_clients_all_report_tool_not_found() {
     let registry = Arc::new(ArsenalRegistryService::new());
     let service = Arc::new(ArsenalExecutionService::new(registry.clone()));
 
-    // Register multiple tools
+    // Register multiple tools (metadata only, no serving clients)
     for i in 1..=5 {
         let tool = create_test_armament(&format!("tool{}", i), vec![]);
         registry.register(tool).await;
@@ -244,7 +299,7 @@ async fn test_concurrent_tool_invocations() {
         let service_clone = service.clone();
         let handle = tokio::spawn(async move {
             let call = ArmamentCall::new(format!("tool{}", i), HashMap::new());
-            service_clone.invoke(call).await
+            (i, service_clone.invoke(call).await)
         });
         handles.push(handle);
     }
@@ -255,16 +310,17 @@ async fn test_concurrent_tool_invocations() {
         results.push(handle.await.unwrap());
     }
 
-    // All should succeed
+    // All should consistently report ToolNotFound under concurrent access to
+    // the shared RwLock-guarded clients_by_tool map -- proving there's no
+    // race/deadlock in the new routing path.
     assert_eq!(results.len(), 5);
-    for result in results {
-        assert!(result.is_ok());
-        assert!(result.unwrap().success);
+    for (i, result) in results {
+        assert_tool_not_found(result, &format!("tool{}", i));
     }
 }
 
 #[tokio::test]
-async fn test_tool_invocation_with_complex_json_arguments() {
+async fn test_tool_invocation_with_complex_json_arguments_passes_validation_then_tool_not_found() {
     let registry = Arc::new(ArsenalRegistryService::new());
     let service = ArsenalExecutionService::new(registry.clone());
 
@@ -290,14 +346,14 @@ async fn test_tool_invocation_with_complex_json_arguments() {
     );
     let call = ArmamentCall::new("complex_tool", args);
 
-    // Invoke should succeed
+    // Complex nested JSON arguments don't trip validation; routing then
+    // correctly reports ToolNotFound since no client is registered.
     let result = service.invoke(call).await;
-    assert!(result.is_ok());
-    assert!(result.unwrap().success);
+    assert_tool_not_found(result, "complex_tool");
 }
 
 #[tokio::test]
-async fn test_invoke_preserves_call_id() {
+async fn test_invoke_error_preserves_tool_name_not_original_call_id() {
     let registry = Arc::new(ArsenalRegistryService::new());
     let service = ArsenalExecutionService::new(registry.clone());
 
@@ -307,17 +363,16 @@ async fn test_invoke_preserves_call_id() {
 
     // Create a call
     let call = ArmamentCall::new("id_test_tool", HashMap::new());
-    let original_id = call.call_id;
 
-    // Invoke the tool
-    let result = service.invoke(call).await.unwrap();
-
-    // Result should have the same call_id
-    assert_eq!(result.call_id, original_id);
+    // With no client registered, invoke fails before an ArmamentResult (and
+    // its call_id-echoing success path) is ever constructed; the returned
+    // error still names the correct tool.
+    let result = service.invoke(call).await;
+    assert_tool_not_found(result, "id_test_tool");
 }
 
 #[tokio::test]
-async fn test_validate_parameters_no_required_params() {
+async fn test_validate_parameters_no_required_params_then_tool_not_found() {
     let registry = Arc::new(ArsenalRegistryService::new());
     let service = ArsenalExecutionService::new(registry.clone());
 
@@ -328,7 +383,8 @@ async fn test_validate_parameters_no_required_params() {
     // Create a call with no arguments
     let call = ArmamentCall::new("optional_tool", HashMap::new());
 
-    // Invoke should succeed
+    // No required params means validate_parameters passes trivially; routing
+    // then correctly reports ToolNotFound since no client is registered.
     let result = service.invoke(call).await;
-    assert!(result.is_ok());
+    assert_tool_not_found(result, "optional_tool");
 }

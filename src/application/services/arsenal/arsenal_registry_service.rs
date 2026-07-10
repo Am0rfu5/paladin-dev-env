@@ -126,4 +126,54 @@ impl ArsenalRegistry for ArsenalRegistryService {
         let armaments = self.armaments.read().await;
         armaments.get(name).cloned()
     }
+
+    async fn list(&self) -> Vec<Armament> {
+        self.armaments.read().await.values().cloned().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn make_armament(name: &str) -> Armament {
+        Armament {
+            name: name.to_string(),
+            description: format!("{name} tool"),
+            parameters: json!({"type": "object"}),
+            required_params: vec![],
+        }
+    }
+
+    #[tokio::test]
+    async fn list_returns_empty_vec_for_a_fresh_registry() {
+        let registry = ArsenalRegistryService::new();
+        assert!(registry.list().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn list_returns_every_registered_armament() {
+        let registry = ArsenalRegistryService::new();
+        registry.register(make_armament("alpha")).await;
+        registry.register(make_armament("beta")).await;
+        registry.register(make_armament("gamma")).await;
+
+        let mut names: Vec<String> = registry.list().await.into_iter().map(|a| a.name).collect();
+        names.sort();
+
+        assert_eq!(names, vec!["alpha", "beta", "gamma"]);
+    }
+
+    #[tokio::test]
+    async fn list_excludes_unregistered_armaments() {
+        let registry = ArsenalRegistryService::new();
+        registry.register(make_armament("keep")).await;
+        registry.register(make_armament("drop")).await;
+
+        registry.unregister("drop").await;
+
+        let names: Vec<String> = registry.list().await.into_iter().map(|a| a.name).collect();
+        assert_eq!(names, vec!["keep"]);
+    }
 }

@@ -7,6 +7,7 @@ use tokio::time::sleep;
 
 #[cfg(feature = "llm-anthropic")]
 pub mod anthropic_provider_test;
+pub mod arsenal_bridge_regression_test;
 pub mod arsenal_execution_integration_test;
 pub mod arsenal_registry_integration_test;
 pub mod autonomous_planning_test;

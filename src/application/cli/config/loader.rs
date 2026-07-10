@@ -220,12 +220,14 @@ pub async fn instantiate_arsenal(
         return Ok(None);
     };
 
-    // Create registry service
-    let registry = ArsenalRegistryService::new();
+    // Create registry service, wrapping it once so both the loop below (via
+    // the concrete type, for `.register()`) and the execution service (via
+    // the trait object) share the SAME underlying store.
+    let registry = Arc::new(ArsenalRegistryService::new());
+    let service = ArsenalExecutionService::new(registry.clone() as Arc<dyn ArsenalRegistry>);
 
     // If no MCP servers configured, return empty arsenal
     if arsenal_config.mcp_servers.is_empty() {
-        let service = ArsenalExecutionService::new(Arc::new(registry));
         return Ok(Some(Arc::new(service) as Arc<dyn ArsenalPort>));
     }
 
@@ -270,10 +272,14 @@ pub async fn instantiate_arsenal(
                             ),
                         })?;
 
-                // Register all tools
+                // Register all tools' metadata, then register the client
+                // that serves them so `ArsenalExecutionService::invoke` has
+                // a real MCP connection to route through (D-05).
+                let tool_names: Vec<String> = tools.iter().map(|t| t.name.clone()).collect();
                 for tool in tools {
                     registry.register(tool).await;
                 }
+                service.register_client(tool_names, Arc::new(client)).await;
             }
             "streamable_http" => {
                 // D-02/D-03: remote, authenticated MCP server. `endpoint` is
@@ -330,9 +336,11 @@ pub async fn instantiate_arsenal(
                             ),
                         })?;
 
+                let tool_names: Vec<String> = tools.iter().map(|t| t.name.clone()).collect();
                 for tool in tools {
                     registry.register(tool).await;
                 }
+                service.register_client(tool_names, Arc::new(client)).await;
             }
             "sse" => {
                 // D-02b: the "sse" transport was actually a mislabeled,
@@ -358,8 +366,6 @@ pub async fn instantiate_arsenal(
         }
     }
 
-    // Wrap registry in execution service
-    let service = ArsenalExecutionService::new(Arc::new(registry));
     Ok(Some(Arc::new(service) as Arc<dyn ArsenalPort>))
 }
 

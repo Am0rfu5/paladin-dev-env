@@ -850,4 +850,28 @@ pub trait ArsenalRegistry: Send + Sync {
     /// }
     /// ```
     async fn get(&self, name: &str) -> Option<Armament>;
+
+    /// Lists all tools currently registered.
+    ///
+    /// Additive default method (Phase 12.1 OQ1) — returns an empty `Vec` by
+    /// default so pre-existing `ArsenalRegistry` implementors (the
+    /// [`InMemoryRegistry`](self) doc-example above and any test double
+    /// predating this method) keep compiling without modification. Real
+    /// implementations backed by actual storage (e.g.
+    /// `ArsenalRegistryService`) should override this to return every
+    /// registered [`Armament`].
+    ///
+    /// # Returns
+    ///
+    /// A vector of all registered tool metadata. Order is not guaranteed.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// let all_tools = registry.list().await;
+    /// println!("{} tools registered", all_tools.len());
+    /// ```
+    async fn list(&self) -> Vec<Armament> {
+        Vec::new()
+    }
 }
