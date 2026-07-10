@@ -32,6 +32,7 @@ pub mod in_memory_sanctum_tests;
 #[cfg(feature = "live-api-tests")]
 pub mod llm_live_api_tests;
 pub mod mcp_stdio_test;
+pub mod mcp_streamable_http_test;
 pub mod notification_system_integration_test;
 #[cfg(feature = "llm-openai")]
 pub mod openai_content_analysis_integration_test;

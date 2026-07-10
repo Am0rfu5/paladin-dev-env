@@ -153,6 +153,19 @@ insta = "1.34"
 redis = { version = "0.32.2", features = ["aio", "tokio-comp"] }
 # Integration test dependencies (gated by integration-tests feature)
 wiremock = "0.6"
+# Phase 12.1 Plan 04 (SC2 hermetic proof): stand up a REAL in-process,
+# spec-strict Streamable-HTTP MCP server via axum + rmcp's OWN server-side
+# transport feature -- the identical pattern rmcp's own test suite
+# (tests/test_streamable_http_*.rs) uses to test its client against its
+# server. dev-only: the workspace's `resolver = "2"` feature resolver keeps
+# these extra rmcp features (and the `axum` dependency below) out of the
+# production `cargo build -p paladin-ai` artifact -- they are unified into
+# the compiled `rmcp`/`axum` units only when building test targets.
+rmcp = { version = "=2.1.0", default-features = false, features = [
+    "server",
+    "transport-streamable-http-server",
+] }
+axum = "0.8.4"
 
 # Integration test configuration
 [[test]]
