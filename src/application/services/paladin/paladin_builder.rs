@@ -933,6 +933,7 @@ impl PaladinBuilder {
             command: Some(command.into()),
             args: Some(args.iter().map(|s| s.to_string()).collect()),
             endpoint: None,
+            auth_token_env: None,
         });
         self
     }
@@ -965,6 +966,7 @@ impl PaladinBuilder {
             command: None,
             args: None,
             endpoint: Some(endpoint.into()),
+            auth_token_env: None,
         });
         self
     }

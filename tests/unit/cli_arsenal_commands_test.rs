@@ -8,6 +8,7 @@ fn test_arsenal_test_args_mcp_stdio_option() {
     let args = ArsenalTestArgs {
         mcp_stdio: Some("python3 server.py".to_string()),
         mcp_streamable_http: None,
+        mcp_auth_token_env: None,
     };
 
     assert!(args.mcp_stdio.is_some());
@@ -22,6 +23,7 @@ fn test_arsenal_test_args_mcp_streamable_http_option() {
     let args = ArsenalTestArgs {
         mcp_stdio: None,
         mcp_streamable_http: Some("http://localhost:8080".to_string()),
+        mcp_auth_token_env: None,
     };
 
     assert!(args.mcp_stdio.is_none());
@@ -35,6 +37,7 @@ fn test_arsenal_test_args_mutual_exclusivity_at_runtime() {
     let args_none = ArsenalTestArgs {
         mcp_stdio: None,
         mcp_streamable_http: None,
+        mcp_auth_token_env: None,
     };
     assert!(args_none.mcp_stdio.is_none());
     assert!(args_none.mcp_streamable_http.is_none());
@@ -44,6 +47,7 @@ fn test_arsenal_test_args_mutual_exclusivity_at_runtime() {
     let args_both = ArsenalTestArgs {
         mcp_stdio: Some("cmd".to_string()),
         mcp_streamable_http: Some("url".to_string()),
+        mcp_auth_token_env: None,
     };
 
     // The validation happens in the handler, not in the struct
@@ -70,6 +74,7 @@ fn test_arsenal_test_args_default_construction() {
     let args = ArsenalTestArgs {
         mcp_stdio: None,
         mcp_streamable_http: None,
+        mcp_auth_token_env: None,
     };
 
     assert!(args.mcp_stdio.is_none());
@@ -82,6 +87,7 @@ fn test_arsenal_test_args_stdio_with_arguments() {
     let args = ArsenalTestArgs {
         mcp_stdio: Some("uvx mcp-web-search --max-results 10".to_string()),
         mcp_streamable_http: None,
+        mcp_auth_token_env: None,
     };
 
     let cmd = args.mcp_stdio.unwrap();
@@ -96,6 +102,7 @@ fn test_arsenal_test_args_streamable_http_with_full_url() {
     let args = ArsenalTestArgs {
         mcp_stdio: None,
         mcp_streamable_http: Some("https://api.example.com:8443/mcp/events".to_string()),
+        mcp_auth_token_env: None,
     };
 
     let url = args.mcp_streamable_http.unwrap();
@@ -110,6 +117,7 @@ fn test_arsenal_test_args_debug_format() {
     let args = ArsenalTestArgs {
         mcp_stdio: Some("debug-test".to_string()),
         mcp_streamable_http: None,
+        mcp_auth_token_env: None,
     };
 
     let debug_output = format!("{:?}", args);

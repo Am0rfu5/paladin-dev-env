@@ -176,6 +176,7 @@ fn test_mcp_stdio_config_structure() {
         command: Some("test_cmd".to_string()),
         args: Some(vec!["arg1".to_string(), "arg2".to_string()]),
         endpoint: None,
+        auth_token_env: None,
     };
 
     assert_eq!(config.name, "test_tool");
@@ -193,6 +194,7 @@ fn test_mcp_sse_config_structure() {
         command: None,
         args: None,
         endpoint: Some("http://localhost:8080/mcp".to_string()),
+        auth_token_env: None,
     };
 
     assert_eq!(config.name, "test_service");

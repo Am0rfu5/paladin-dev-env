@@ -131,6 +131,7 @@ fn test_arsenal_config_serialization() {
             command: Some("test".to_string()),
             args: Some(vec!["arg".to_string()]),
             endpoint: None,
+            auth_token_env: None,
         }],
     };
 
@@ -145,6 +146,70 @@ fn test_arsenal_config_serialization() {
 }
 
 #[test]
+fn test_mcp_server_config_streamable_http_deserialization_with_auth_token_env() {
+    let json = r#"{
+  "name": "etherscan",
+  "server_type": "streamable_http",
+  "command": null,
+  "args": null,
+  "endpoint": "https://mcp.etherscan.io/mcp",
+  "auth_token_env": "ETHERSCAN_API_KEY"
+}"#;
+
+    let config: MCPServerConfig = serde_json::from_str(json).expect("Failed to deserialize");
+
+    assert_eq!(config.name, "etherscan");
+    assert_eq!(config.server_type, "streamable_http");
+    assert_eq!(
+        config.endpoint,
+        Some("https://mcp.etherscan.io/mcp".to_string())
+    );
+    assert_eq!(config.auth_token_env, Some("ETHERSCAN_API_KEY".to_string()));
+}
+
+#[test]
+fn test_mcp_server_config_auth_token_env_defaults_to_none_when_absent() {
+    // Backward compatibility: existing config.yml/mcp.json entries predating
+    // D-03 have no `auth_token_env` field at all -- must still deserialize.
+    let json = r#"{
+  "name": "web_search",
+  "server_type": "stdio",
+  "command": "uvx",
+  "args": ["mcp-web-search"],
+  "endpoint": null
+}"#;
+
+    let config: MCPServerConfig = serde_json::from_str(json).expect("Failed to deserialize");
+    assert_eq!(config.auth_token_env, None);
+}
+
+#[test]
+fn test_mcp_server_config_auth_token_env_is_never_serialized() {
+    // D-03: auth_token_env is an env-var REFERENCE, never a literal secret --
+    // #[serde(skip_serializing)] must hold even when the field is populated,
+    // so it never round-trips back out to `.mcp.json`/config.yml.
+    let config = MCPServerConfig {
+        name: "etherscan".to_string(),
+        server_type: "streamable_http".to_string(),
+        command: None,
+        args: None,
+        endpoint: Some("https://mcp.etherscan.io/mcp".to_string()),
+        auth_token_env: Some("ETHERSCAN_API_KEY".to_string()),
+    };
+
+    let json = serde_json::to_string(&config).expect("Failed to serialize");
+
+    assert!(
+        !json.contains("auth_token_env"),
+        "auth_token_env must never be serialized, got: {json}"
+    );
+    assert!(
+        !json.contains("ETHERSCAN_API_KEY"),
+        "the env-var reference must never be serialized, got: {json}"
+    );
+}
+
+#[test]
 fn test_arsenal_config_clone() {
     let config1 = ArsenalConfig {
         default_timeout_seconds: 30,
@@ -155,6 +220,7 @@ fn test_arsenal_config_clone() {
             command: Some("cmd".to_string()),
             args: Some(vec!["arg".to_string()]),
             endpoint: None,
+            auth_token_env: None,
         }],
     };
 

@@ -11,6 +11,7 @@ use crate::core::platform::container::garrison::{
     EvictionStrategy, GarrisonConfig as CoreGarrisonConfig,
 };
 use crate::infrastructure::adapters::arsenal::mcp_protocol::MCPClient;
+use crate::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter;
 use crate::infrastructure::adapters::garrison::in_memory_garrison::InMemoryGarrison;
 use crate::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarrison;
 use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
@@ -207,9 +208,11 @@ pub async fn instantiate_garrison(
 ///         - "mcp-web-search"
 /// ```
 ///
-/// Note: `type: "streamable_http"` (remote, authenticated MCP servers) lands
-/// in a follow-up plan of Phase 12.1; the retired `type: "sse"` value now
-/// fails loud with a migration message instead of silently misbehaving.
+/// Note: `type: "streamable_http"` (remote, authenticated MCP servers, D-02/
+/// D-03) requires an `endpoint` and, if the server needs auth, an
+/// `auth_token_env` naming the environment variable that holds the bearer
+/// token — never a literal secret in this config. The retired `type: "sse"`
+/// value fails loud with a migration message instead of silently misbehaving.
 pub async fn instantiate_arsenal(
     config: &Option<ArsenalConfig>,
 ) -> Result<Option<Arc<dyn ArsenalPort>>, CliError> {
@@ -272,6 +275,65 @@ pub async fn instantiate_arsenal(
                     registry.register(tool).await;
                 }
             }
+            "streamable_http" => {
+                // D-02/D-03: remote, authenticated MCP server. `endpoint` is
+                // required; `auth_token_env`, if present, NAMES the env var
+                // holding the bearer token -- the token itself is resolved
+                // host-side here and never logged or stored back in config.
+                let endpoint = server_config.endpoint.as_ref().ok_or_else(|| {
+                    CliError::ArsenalConfigError {
+                        message: format!(
+                            "arsenal.mcp_servers[{}].endpoint is required for streamable_http type",
+                            server_config.name
+                        ),
+                    }
+                })?;
+
+                let bearer_token = match server_config.auth_token_env.as_ref() {
+                    Some(env_var_name) => {
+                        let token = std::env::var(env_var_name).map_err(|_| {
+                            CliError::ArsenalConfigError {
+                                message: format!(
+                                    "arsenal.mcp_servers[{}].auth_token_env references '{}', but that environment variable is not set",
+                                    server_config.name, env_var_name
+                                ),
+                            }
+                        })?;
+                        Some(token)
+                    }
+                    None => None,
+                };
+
+                let mut adapter = MCPStreamableHttpAdapter::new(endpoint.clone());
+                if let Some(token) = bearer_token {
+                    adapter = adapter.with_bearer_token(token);
+                }
+
+                let client = adapter
+                    .connect()
+                    .await
+                    .map_err(|e| CliError::ArsenalConfigError {
+                        message: format!(
+                            "Failed to connect to Streamable-HTTP MCP server '{}': {}",
+                            server_config.name, e
+                        ),
+                    })?;
+
+                let tools =
+                    client
+                        .discover_tools()
+                        .await
+                        .map_err(|e| CliError::ArsenalConfigError {
+                            message: format!(
+                                "Failed to discover tools from MCP server '{}': {}",
+                                server_config.name, e
+                            ),
+                        })?;
+
+                for tool in tools {
+                    registry.register(tool).await;
+                }
+            }
             "sse" => {
                 // D-02b: the "sse" transport was actually a mislabeled,
                 // unauthenticated plain-HTTP-POST adapter (never real SSE or
@@ -280,7 +342,7 @@ pub async fn instantiate_arsenal(
                 // constructing a since-removed adapter.
                 return Err(CliError::ArsenalConfigError {
                     message: format!(
-                        "arsenal.mcp_servers[{}].type 'sse' is deprecated: the mislabeled plain-HTTP adapter has been retired. Use 'streamable_http' instead (lands in a follow-up plan of Phase 12.1).",
+                        "arsenal.mcp_servers[{}].type 'sse' is deprecated: the mislabeled plain-HTTP adapter has been retired. Use 'streamable_http' instead.",
                         server_config.name
                     ),
                 });
@@ -288,7 +350,7 @@ pub async fn instantiate_arsenal(
             other => {
                 return Err(CliError::ArsenalConfigError {
                     message: format!(
-                        "arsenal.mcp_servers[{}].type must be 'stdio', got: '{}'",
+                        "arsenal.mcp_servers[{}].type must be 'stdio' or 'streamable_http', got: '{}'",
                         server_config.name, other
                     ),
                 });
@@ -486,5 +548,98 @@ provider:
             result,
             Err(CliError::InvalidFieldValue { field, .. }) if field == "vision_enabled"
         ));
+    }
+
+    // --- instantiate_arsenal: streamable_http (D-02/D-03) ---
+
+    use crate::application::cli::config::paladin_config::McpServerConfig;
+
+    #[tokio::test]
+    async fn test_instantiate_arsenal_streamable_http_missing_endpoint_errors() {
+        let config = ArsenalConfig {
+            mcp_servers: vec![McpServerConfig {
+                name: "etherscan".to_string(),
+                server_type: "streamable_http".to_string(),
+                command: None,
+                args: None,
+                endpoint: None,
+                auth_token_env: None,
+            }],
+        };
+
+        let result = instantiate_arsenal(&Some(config)).await;
+
+        assert!(result.is_err(), "expected an error for missing endpoint");
+        if let Err(CliError::ArsenalConfigError { message }) = result {
+            assert!(
+                message.contains("endpoint is required"),
+                "expected an endpoint-required error, got: {message}"
+            );
+        } else {
+            panic!("Expected ArsenalConfigError");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_instantiate_arsenal_streamable_http_missing_auth_token_env_var_errors() {
+        // auth_token_env NAMES an env var that is (deliberately, for this
+        // test) never set -- must fail loud rather than connecting
+        // unauthenticated (D-03).
+        let config = ArsenalConfig {
+            mcp_servers: vec![McpServerConfig {
+                name: "etherscan".to_string(),
+                server_type: "streamable_http".to_string(),
+                command: None,
+                args: None,
+                endpoint: Some("https://mcp.etherscan.io/mcp".to_string()),
+                auth_token_env: Some("PALADIN_TEST_UNSET_AUTH_TOKEN_ENV_VAR_12_1_02".to_string()),
+            }],
+        };
+
+        let result = instantiate_arsenal(&Some(config)).await;
+
+        assert!(
+            result.is_err(),
+            "expected an error when auth_token_env references an unset var"
+        );
+        if let Err(CliError::ArsenalConfigError { message }) = result {
+            assert!(
+                message.contains("PALADIN_TEST_UNSET_AUTH_TOKEN_ENV_VAR_12_1_02")
+                    && message.contains("not set"),
+                "expected an unset-env-var error, got: {message}"
+            );
+        } else {
+            panic!("Expected ArsenalConfigError");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_instantiate_arsenal_streamable_http_attempts_connect_when_configured() {
+        // No live server exists at this endpoint in the test environment --
+        // this proves the streamable_http arm reaches MCPClient::connect_streamable_http
+        // (rather than silently no-op'ing) by asserting it fails with a
+        // connection error, not a validation error.
+        let config = ArsenalConfig {
+            mcp_servers: vec![McpServerConfig {
+                name: "unreachable".to_string(),
+                server_type: "streamable_http".to_string(),
+                command: None,
+                args: None,
+                endpoint: Some("http://127.0.0.1:1/mcp".to_string()),
+                auth_token_env: None,
+            }],
+        };
+
+        let result = instantiate_arsenal(&Some(config)).await;
+
+        assert!(result.is_err(), "expected a connection error");
+        if let Err(CliError::ArsenalConfigError { message }) = result {
+            assert!(
+                message.contains("Failed to connect"),
+                "expected a connection-failure error, got: {message}"
+            );
+        } else {
+            panic!("Expected ArsenalConfigError");
+        }
     }
 }

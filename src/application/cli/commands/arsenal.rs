@@ -6,10 +6,10 @@
 //! # MCP Protocol Support
 //!
 //! - **STDIO**: Command-line tools executed via stdin/stdout
-//! - **Streamable-HTTP**: Remote, authenticated MCP servers (lands in a
-//!   follow-up plan of Phase 12.1; the retired plain-HTTP "SSE" adapter is
-//!   gone — `--mcp-streamable-http` currently reports "not yet implemented"
-//!   rather than silently misbehaving)
+//! - **Streamable-HTTP**: Remote, authenticated MCP servers (D-02/D-03). Auth
+//!   is optional; when needed, pass `--mcp-auth-token-env <ENV_VAR_NAME>` to
+//!   NAME the environment variable holding the bearer token host-side — the
+//!   token itself is never accepted as a CLI argument and never logged.
 //!
 //! # Examples
 //!
@@ -20,8 +20,13 @@
 //! # Test an STDIO MCP server
 //! paladin arsenal test --mcp-stdio "uvx mcp-web-search"
 //!
-//! # Test a Streamable-HTTP MCP server (coming soon)
+//! # Test an unauthenticated Streamable-HTTP MCP server
 //! paladin arsenal test --mcp-streamable-http "http://localhost:8080/mcp"
+//!
+//! # Test an authenticated Streamable-HTTP MCP server (token sourced from
+//! # the named env var, e.g. `export ETHERSCAN_API_KEY=...` beforehand)
+//! paladin arsenal test --mcp-streamable-http "https://mcp.etherscan.io/mcp" \
+//!     --mcp-auth-token-env ETHERSCAN_API_KEY
 //! ```
 
 use crate::application::cli::error::CliError;
@@ -44,12 +49,19 @@ pub struct ArsenalTestArgs {
     #[arg(long, conflicts_with = "mcp_streamable_http")]
     pub mcp_stdio: Option<String>,
 
-    /// Test a Streamable-HTTP MCP server (endpoint URL). Renamed from the
-    /// retired `--mcp-sse` flag (D-02b) — the old adapter was mislabeled
-    /// plain-HTTP-POST, not real SSE or Streamable-HTTP. The transport lands
-    /// in a follow-up plan of Phase 12.1.
+    /// Test a Streamable-HTTP MCP server (endpoint URL, D-02). Renamed from
+    /// the retired `--mcp-sse` flag (D-02b) — the old adapter was mislabeled
+    /// plain-HTTP-POST, not real SSE or Streamable-HTTP.
     #[arg(long, conflicts_with = "mcp_stdio")]
     pub mcp_streamable_http: Option<String>,
+
+    /// NAME of the environment variable holding the bearer token for
+    /// `--mcp-streamable-http` (D-03). An env-var REFERENCE, never the
+    /// literal secret — the token is resolved host-side and never logged.
+    /// Only meaningful alongside `--mcp-streamable-http`; omit for
+    /// unauthenticated servers.
+    #[arg(long, requires = "mcp_streamable_http")]
+    pub mcp_auth_token_env: Option<String>,
 }
 
 /// Handle the arsenal commands
@@ -156,9 +168,33 @@ pub async fn handle_arsenal_list() -> Result<(), CliError> {
                     }
                 }
             }
+            "streamable_http" => match connect_and_discover_streamable_http(server_config).await {
+                Ok(tools) => {
+                    println!("  {} Discovered {} tool(s)", "✓".green(), tools.len());
+                    for tool in tools {
+                        all_tools.push(ToolEntry {
+                            name: tool.name,
+                            description: tool.description,
+                            server_name: server_config.name.clone(),
+                            server_type: server_config.server_type.clone(),
+                            status: "connected".to_string(),
+                        });
+                    }
+                }
+                Err(e) => {
+                    println!("  {} Connection failed: {}", "✗".red(), e);
+                    all_tools.push(ToolEntry {
+                        name: format!("<{}>", server_config.name),
+                        description: format!("Connection failed: {}", e),
+                        server_name: server_config.name.clone(),
+                        server_type: server_config.server_type.clone(),
+                        status: "failed".to_string(),
+                    });
+                }
+            },
             "sse" => {
                 println!(
-                    "  {} 'sse' transport retired — use 'streamable_http' (coming soon)",
+                    "  {} 'sse' transport retired — use 'streamable_http' instead",
                     "⚠".yellow()
                 );
                 all_tools.push(ToolEntry {
@@ -233,6 +269,38 @@ async fn connect_and_discover_stdio(
 
     // Connect (spawn + full MCP handshake, D-01/D-04) and discover tools.
     let client = MCPClient::connect_stdio(command, &args)
+        .await
+        .map_err(|e| format!("Connection failed: {}", e))?;
+
+    client
+        .discover_tools()
+        .await
+        .map_err(|e| format!("Tool discovery failed: {}", e))
+}
+
+/// Connect to a Streamable-HTTP MCP server (D-02) and discover tools,
+/// resolving the auth token host-side from `server_config.auth_token_env`
+/// if configured (D-03) — never logged.
+async fn connect_and_discover_streamable_http(
+    server_config: &crate::config::MCPServerConfig,
+) -> Result<Vec<crate::core::platform::container::arsenal::Armament>, String> {
+    use crate::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter;
+
+    let endpoint = server_config
+        .endpoint
+        .as_ref()
+        .ok_or_else(|| "missing 'endpoint' for streamable_http server".to_string())?;
+
+    let mut adapter = MCPStreamableHttpAdapter::new(endpoint.clone());
+    if let Some(env_var_name) = server_config.auth_token_env.as_ref() {
+        let token = std::env::var(env_var_name).map_err(|_| {
+            format!("auth_token_env references '{env_var_name}', but that environment variable is not set")
+        })?;
+        adapter = adapter.with_bearer_token(token);
+    }
+
+    let client = adapter
+        .connect()
         .await
         .map_err(|e| format!("Connection failed: {}", e))?;
 
@@ -413,23 +481,82 @@ async fn handle_arsenal_test(args: ArsenalTestArgs) -> Result<(), CliError> {
             }
         }
     }
-    // Handle Streamable-HTTP server testing (transport lands in a follow-up
-    // plan of Phase 12.1; the retired plain-HTTP "SSE" adapter is gone).
+    // Handle Streamable-HTTP server testing (D-02/D-03).
     else if let Some(endpoint) = args.mcp_streamable_http {
+        use crate::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter;
+
         println!("{} Server type: {}", "→".cyan(), "Streamable-HTTP".bold());
         println!("{} Endpoint: {}", "→".cyan(), endpoint.cyan());
 
-        println!(
-            "\n{} Streamable-HTTP server support not yet implemented",
-            "⚠".yellow().bold()
-        );
-        println!("\n{} Debugging Tips:", "💡".yellow().bold());
-        println!("  • Streamable-HTTP MCP servers will be supported in a follow-up plan");
-        println!("  • Use --mcp-stdio for command-line MCP servers");
+        // The token, if any, is resolved host-side from the NAMED env var --
+        // never printed, never logged, never accepted as a raw CLI value
+        // (T-12.1-03).
+        let mut adapter = MCPStreamableHttpAdapter::new(endpoint.clone());
+        if let Some(env_var_name) = args.mcp_auth_token_env.as_ref() {
+            let token = std::env::var(env_var_name).map_err(|_| CliError::MissingApiKey {
+                provider: "streamable_http MCP server".to_string(),
+                env_var: env_var_name.clone(),
+            })?;
+            println!(
+                "{} Auth: bearer token sourced from ${}",
+                "→".cyan(),
+                env_var_name.yellow()
+            );
+            adapter = adapter.with_bearer_token(token);
+        } else {
+            println!("{} Auth: none configured", "→".cyan());
+        }
 
-        Err(CliError::Other(
-            "Streamable-HTTP server testing not yet implemented".to_string(),
-        ))
+        println!("\n{} Connecting to MCP server...", "→".cyan().bold());
+
+        let start = Instant::now();
+
+        match adapter.connect().await {
+            Ok(client) => {
+                let connection_time = start.elapsed();
+                println!(
+                    "{} Connected successfully in {:.2}ms\n",
+                    "✓".green().bold(),
+                    connection_time.as_secs_f64() * 1000.0
+                );
+
+                println!("{} Discovering available tools...", "→".cyan());
+                match client.discover_tools().await {
+                    Ok(tools) => {
+                        println!("{} Discovered {} tool(s)", "✓".green().bold(), tools.len());
+                        for tool in &tools {
+                            println!("  {} {}", "•".cyan(), tool.name);
+                        }
+                        Ok(())
+                    }
+                    Err(e) => {
+                        println!("{} Tool discovery failed: {}", "✗".red().bold(), e);
+                        Err(CliError::ToolError {
+                            message: format!("Tool discovery failed: {}", e),
+                        })
+                    }
+                }
+            }
+            Err(e) => {
+                let connection_time = start.elapsed();
+                println!(
+                    "{} Connection failed after {:.2}ms",
+                    "✗".red().bold(),
+                    connection_time.as_secs_f64() * 1000.0
+                );
+                println!("\n{} Error: {}", "→".red(), e);
+
+                println!("\n{} Debugging Tips:", "💡".yellow().bold());
+                println!("  • Verify the endpoint URL and that the server is reachable");
+                println!(
+                    "  • If the server requires auth, pass --mcp-auth-token-env <ENV_VAR_NAME>"
+                );
+
+                Err(CliError::McpConnectionError {
+                    message: format!("Connection failed: {}", e),
+                })
+            }
+        }
     } else {
         unreachable!("Validation ensures at least one is Some")
     }
@@ -444,6 +571,7 @@ mod tests {
         let args = ArsenalTestArgs {
             mcp_stdio: None,
             mcp_streamable_http: None,
+            mcp_auth_token_env: None,
         };
 
         assert_eq!(args.mcp_stdio, None);
@@ -455,6 +583,7 @@ mod tests {
         let args = ArsenalTestArgs {
             mcp_stdio: Some("uvx mcp-web-search".to_string()),
             mcp_streamable_http: None,
+            mcp_auth_token_env: None,
         };
 
         assert_eq!(args.mcp_stdio, Some("uvx mcp-web-search".to_string()));
@@ -466,6 +595,7 @@ mod tests {
         let args = ArsenalTestArgs {
             mcp_stdio: None,
             mcp_streamable_http: Some("http://localhost:8080/mcp".to_string()),
+            mcp_auth_token_env: None,
         };
 
         assert_eq!(args.mcp_stdio, None);
@@ -480,6 +610,7 @@ mod tests {
         let args = ArsenalTestArgs {
             mcp_stdio: Some("uvx mcp-web-search --verbose".to_string()),
             mcp_streamable_http: None,
+            mcp_auth_token_env: None,
         };
 
         assert!(args.mcp_stdio.is_some());
@@ -491,6 +622,7 @@ mod tests {
         let args = ArsenalTestArgs {
             mcp_stdio: None,
             mcp_streamable_http: Some("https://api.example.com/mcp/tools".to_string()),
+            mcp_auth_token_env: None,
         };
 
         assert!(args.mcp_streamable_http.is_some());
@@ -504,11 +636,13 @@ mod tests {
         let stdio_args = ArsenalTestArgs {
             mcp_stdio: Some("uvx mcp-web-search".to_string()),
             mcp_streamable_http: None,
+            mcp_auth_token_env: None,
         };
 
         let streamable_http_args = ArsenalTestArgs {
             mcp_stdio: None,
             mcp_streamable_http: Some("http://localhost:8080/mcp".to_string()),
+            mcp_auth_token_env: None,
         };
 
         // Verify exactly one is set for each variant
@@ -524,6 +658,7 @@ mod tests {
         let args = ArsenalTestArgs {
             mcp_stdio: Some("uvx mcp-web-search".to_string()),
             mcp_streamable_http: None,
+            mcp_auth_token_env: None,
         };
 
         let debug_str = format!("{:?}", args);
@@ -544,6 +679,7 @@ mod tests {
         let test_args = ArsenalTestArgs {
             mcp_stdio: Some("test".to_string()),
             mcp_streamable_http: None,
+            mcp_auth_token_env: None,
         };
         let test_command = ArsenalCommands::Test(test_args);
         match test_command {

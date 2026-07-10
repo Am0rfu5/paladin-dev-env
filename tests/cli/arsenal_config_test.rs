@@ -14,6 +14,7 @@ async fn test_stdio_mcp_server_config() {
             command: Some("uvx".to_string()),
             args: Some(vec!["mcp-web-search".to_string()]),
             endpoint: None,
+        auth_token_env: None,
         }],
     };
 
@@ -48,6 +49,7 @@ async fn test_sse_mcp_server_config() {
             command: None,
             args: None,
             endpoint: Some("http://localhost:8080/mcp".to_string()),
+        auth_token_env: None,
         }],
     };
 
@@ -83,6 +85,7 @@ async fn test_multiple_mcp_servers() {
                 command: Some("uvx".to_string()),
                 args: Some(vec!["mcp-web-search".to_string()]),
                 endpoint: None,
+            auth_token_env: None,
             },
             McpServerConfig {
                 name: "server2".to_string(),
@@ -90,6 +93,7 @@ async fn test_multiple_mcp_servers() {
                 command: None,
                 args: None,
                 endpoint: Some("http://localhost:8080/mcp".to_string()),
+            auth_token_env: None,
             },
         ],
     };
@@ -122,6 +126,7 @@ async fn test_invalid_server_type() {
             command: Some("command".to_string()),
             args: None,
             endpoint: None,
+        auth_token_env: None,
         }],
     };
 
@@ -152,6 +157,7 @@ async fn test_stdio_missing_command() {
             command: None, // Missing command for stdio
             args: Some(vec!["arg1".to_string()]),
             endpoint: None,
+        auth_token_env: None,
         }],
     };
 
@@ -184,6 +190,7 @@ async fn test_sse_missing_endpoint() {
             command: None,
             args: None,
             endpoint: None, // Missing endpoint for sse
+            auth_token_env: None,
         }],
     };
 
@@ -216,6 +223,7 @@ async fn test_sse_invalid_url_format() {
             command: None,
             args: None,
             endpoint: Some("invalid-url".to_string()), // Invalid URL format
+            auth_token_env: None,
         }],
     };
 

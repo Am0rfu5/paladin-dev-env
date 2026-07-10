@@ -133,7 +133,8 @@ pub struct McpServerConfig {
     /// Server name
     pub name: String,
 
-    /// Server type: stdio or sse
+    /// Server type: "stdio" | "streamable_http" (replaces "sse"; "sse" is
+    /// deprecated and fails loud with a migration message — Phase 12.1 D-02b).
     #[serde(rename = "type")]
     pub server_type: String,
 
@@ -145,9 +146,16 @@ pub struct McpServerConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub args: Option<Vec<String>>,
 
-    /// Endpoint URL for sse type
+    /// Endpoint URL for streamable_http type
     #[serde(skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
+
+    /// Name of the environment variable holding the bearer/auth token for a
+    /// `streamable_http` server (D-03). An env-var REFERENCE (e.g.
+    /// `"ETHERSCAN_API_KEY"`), NEVER a literal secret — resolved host-side
+    /// from the named env var at connect time, never serialized back out.
+    #[serde(default, skip_serializing)]
+    pub auth_token_env: Option<String>,
 }
 
 // Default values
