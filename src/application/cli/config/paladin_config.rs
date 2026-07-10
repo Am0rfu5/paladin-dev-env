@@ -239,7 +239,18 @@ impl Validate for PaladinYamlConfig {
         // Validate MCP server configurations if present
         if let Some(arsenal) = &self.arsenal {
             for server in &arsenal.mcp_servers {
-                let valid_server_types = ["stdio", "sse"];
+                // "sse" remains a valid *shape* here so the loader's own
+                // deprecation error (loader.rs: "the mislabeled plain-HTTP
+                // adapter has been retired. Use 'streamable_http' instead.")
+                // is what the caller sees, rather than a generic
+                // schema-validation rejection at this earlier stage.
+                // "streamable_http" is the real, currently-implemented remote
+                // transport (D-02/D-03) and MUST be accepted here — this
+                // allowlist previously excluded it, which meant every
+                // `type: "streamable_http"` config was rejected by
+                // `validate()` before ever reaching the loader (Phase 12.1
+                // Plan 05 regression fix).
+                let valid_server_types = ["stdio", "sse", "streamable_http"];
                 if !valid_server_types.contains(&server.server_type.as_str()) {
                     return Err(CliError::InvalidFieldValue {
                         field: format!("arsenal.mcp_servers.{}.type", server.name),
@@ -255,11 +266,13 @@ impl Validate for PaladinYamlConfig {
                     });
                 }
 
-                // Validate sse type has endpoint
-                if server.server_type == "sse" && server.endpoint.is_none() {
+                // Validate sse/streamable_http types have endpoint
+                if (server.server_type == "sse" || server.server_type == "streamable_http")
+                    && server.endpoint.is_none()
+                {
                     return Err(CliError::MissingRequiredField {
                         field: format!("arsenal.mcp_servers.{}.endpoint", server.name),
-                        message: "sse server requires endpoint field".to_string(),
+                        message: format!("{} server requires endpoint field", server.server_type),
                     });
                 }
             }
@@ -655,5 +668,105 @@ mod tests {
         std::fs::remove_file(&img1_path).ok();
         std::fs::remove_file(&img2_path).ok();
         std::fs::remove_file(&doc1_path).ok();
+    }
+
+    fn base_config_with_arsenal(arsenal: ArsenalConfig) -> PaladinYamlConfig {
+        PaladinYamlConfig {
+            name: "test-paladin".to_string(),
+            system_prompt: "You are a helpful assistant".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: MaxLoops::Fixed(3),
+            timeout_seconds: 300,
+            stop_words: vec![],
+            provider: ProviderConfig {
+                provider_type: "openai".to_string(),
+            },
+            garrison: None,
+            arsenal: Some(arsenal),
+            vision_enabled: false,
+            images: vec![],
+            documents: vec![],
+        }
+    }
+
+    #[test]
+    fn test_validate_accepts_streamable_http_server_type() {
+        // Regression test (Phase 12.1 Plan 05): `validate()`'s allowlist
+        // previously omitted "streamable_http" entirely, so every real,
+        // config-driven remote MCP server (D-02/D-03) was rejected before
+        // ever reaching the loader's `instantiate_arsenal` match arm.
+        let config = base_config_with_arsenal(ArsenalConfig {
+            mcp_servers: vec![McpServerConfig {
+                name: "etherscan".to_string(),
+                server_type: "streamable_http".to_string(),
+                command: None,
+                args: None,
+                endpoint: Some("https://mcp.etherscan.io/mcp".to_string()),
+                auth_token_env: Some("ETHERSCAN_API_KEY".to_string()),
+            }],
+        });
+
+        assert!(
+            config.validate().is_ok(),
+            "streamable_http must be a valid arsenal.mcp_servers[].type"
+        );
+    }
+
+    #[test]
+    fn test_validate_rejects_streamable_http_missing_endpoint() {
+        let config = base_config_with_arsenal(ArsenalConfig {
+            mcp_servers: vec![McpServerConfig {
+                name: "etherscan".to_string(),
+                server_type: "streamable_http".to_string(),
+                command: None,
+                args: None,
+                endpoint: None,
+                auth_token_env: None,
+            }],
+        });
+
+        assert!(matches!(
+            config.validate(),
+            Err(CliError::MissingRequiredField { .. })
+        ));
+    }
+
+    #[test]
+    fn test_validate_still_accepts_deprecated_sse_shape() {
+        // "sse" must still pass this schema-level `validate()` check so the
+        // loader's own actionable deprecation error (not a generic
+        // validation rejection) is what the caller sees.
+        let config = base_config_with_arsenal(ArsenalConfig {
+            mcp_servers: vec![McpServerConfig {
+                name: "legacy".to_string(),
+                server_type: "sse".to_string(),
+                command: None,
+                args: None,
+                endpoint: Some("http://localhost:8080/mcp".to_string()),
+                auth_token_env: None,
+            }],
+        });
+
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_validate_rejects_unknown_server_type() {
+        let config = base_config_with_arsenal(ArsenalConfig {
+            mcp_servers: vec![McpServerConfig {
+                name: "bogus".to_string(),
+                server_type: "websocket".to_string(),
+                command: None,
+                args: None,
+                endpoint: None,
+                auth_token_env: None,
+            }],
+        });
+
+        assert!(matches!(
+            config.validate(),
+            Err(CliError::InvalidFieldValue { .. })
+        ));
     }
 }
