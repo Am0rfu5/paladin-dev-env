@@ -157,6 +157,7 @@ impl MockArsenalPort {
             ArsenalError::Timeout(t) => ArsenalError::Timeout(*t),
             ArsenalError::ProtocolError(s) => ArsenalError::ProtocolError(s.clone()),
             ArsenalError::TransportError(s) => ArsenalError::TransportError(s.clone()),
+            ArsenalError::AuthFailed(s) => ArsenalError::AuthFailed(s.clone()),
         }
     }
 

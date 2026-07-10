@@ -62,14 +62,31 @@ paladin-web = { workspace = true, optional = true }
 # serve the agent router; gated so default builds don't pull it in.
 axum = { version = "0.8.4", optional = true }
 reqwest = { workspace = true, features = ["blocking", "stream"] }
-# Arsenal MCP client engine (Phase 12.1 D-01/D-04): official rmcp SDK, already
-# exact-pinned + approved elsewhere in this workspace (crates/audit-mcp).
-# stdio transport only this plan; transport-streamable-http-client* + reqwest
-# TLS features land in Plan 02 alongside the remote transport.
+# Arsenal MCP client engine (Phase 12.1 D-01/D-04, D-02/D-03): official rmcp
+# SDK, already exact-pinned + approved elsewhere in this workspace
+# (crates/audit-mcp). stdio (Plan 01) + Streamable-HTTP remote transport with
+# bearer/header auth (Plan 02) — the `reqwest` feature enables rmcp's own
+# rustls TLS backend, REQUIRED for HTTPS to a hosted server (Pitfall 1).
 rmcp = { version = "=2.1.0", default-features = false, features = [
     "client",
     "transport-child-process",
+    "transport-streamable-http-client",
+    "transport-streamable-http-client-reqwest",
+    "reqwest",
 ] }
+# HeaderName/HeaderValue for StreamableHttpClientTransportConfig::custom_headers()
+# — same major version rmcp itself depends on (`http = "1"`), already resolved
+# in this workspace's lockfile (no version-drift risk).
+http = "1"
+# rmcp's `StreamableHttpClient` trait is implemented for ITS OWN pinned
+# `reqwest` major version (0.13.x) — distinct from this crate's existing
+# `reqwest` dependency above (0.12.x, used by unrelated existing HTTP client
+# code). Aliased as `reqwest_mcp` so both major versions coexist without a
+# `[dependencies]` name collision; Cargo unifies this edge with rmcp's own
+# `reqwest = "0.13.2"` requirement into a single compiled instance, so
+# `reqwest_mcp::Client` IS the exact type rmcp's `StreamableHttpClientTransport`
+# impl is written against.
+reqwest_mcp = { package = "reqwest", version = "0.13", default-features = false }
 serde = { workspace = true }
 serde_json = { workspace = true }
 

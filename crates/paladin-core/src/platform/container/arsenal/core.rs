@@ -155,4 +155,11 @@ pub enum ArsenalError {
     /// Transport layer error
     #[error("Transport error: {0}")]
     TransportError(String),
+
+    /// Authentication/authorization rejected by the remote MCP server (e.g. an
+    /// HTTP 401/403 during the Streamable-HTTP handshake or a tool call) —
+    /// distinct from a general transport fault so callers can distinguish
+    /// "server unreachable" from "credentials rejected" (D-03).
+    #[error("MCP authentication failed: {0}")]
+    AuthFailed(String),
 }
