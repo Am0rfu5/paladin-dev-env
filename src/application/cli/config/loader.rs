@@ -11,8 +11,6 @@ use crate::core::platform::container::garrison::{
     EvictionStrategy, GarrisonConfig as CoreGarrisonConfig,
 };
 use crate::infrastructure::adapters::arsenal::mcp_protocol::MCPClient;
-use crate::infrastructure::adapters::arsenal::mcp_sse_adapter::MCPSseAdapter;
-use crate::infrastructure::adapters::arsenal::mcp_stdio_adapter::MCPStdioAdapter;
 use crate::infrastructure::adapters::garrison::in_memory_garrison::InMemoryGarrison;
 use crate::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarrison;
 use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
@@ -207,10 +205,11 @@ pub async fn instantiate_garrison(
 ///       command: "uvx"
 ///       args:
 ///         - "mcp-web-search"
-///     - name: "api_service"
-///       type: "sse"
-///       endpoint: "http://localhost:8080/mcp"
 /// ```
+///
+/// Note: `type: "streamable_http"` (remote, authenticated MCP servers) lands
+/// in a follow-up plan of Phase 12.1; the retired `type: "sse"` value now
+/// fails loud with a migration message instead of silently misbehaving.
 pub async fn instantiate_arsenal(
     config: &Option<ArsenalConfig>,
 ) -> Result<Option<Arc<dyn ArsenalPort>>, CliError> {
@@ -229,16 +228,6 @@ pub async fn instantiate_arsenal(
 
     // Process each MCP server
     for server_config in &arsenal_config.mcp_servers {
-        // Validate server type
-        if server_config.server_type != "stdio" && server_config.server_type != "sse" {
-            return Err(CliError::ArsenalConfigError {
-                message: format!(
-                    "arsenal.mcp_servers[{}].type must be 'stdio' or 'sse', got: '{}'",
-                    server_config.name, server_config.server_type
-                ),
-            });
-        }
-
         match server_config.server_type.as_str() {
             "stdio" => {
                 // Validate required fields for stdio
@@ -255,10 +244,10 @@ pub async fn instantiate_arsenal(
 
                 let args = server_config.args.clone().unwrap_or_default();
 
-                // Create and connect STDIO adapter
-                let mut adapter = MCPStdioAdapter::new(command, args);
-                adapter
-                    .connect()
+                // Connect directly via the rmcp-backed MCPClient (D-01/D-04):
+                // the handshake (initialize -> notifications/initialized)
+                // happens inside connect_stdio, no separate adapter step.
+                let client = MCPClient::connect_stdio(command, &args)
                     .await
                     .map_err(|e| CliError::ArsenalConfigError {
                         message: format!(
@@ -267,8 +256,6 @@ pub async fn instantiate_arsenal(
                         ),
                     })?;
 
-                // Create MCP client and discover tools
-                let client = MCPClient::new(Box::new(adapter));
                 let tools =
                     client
                         .discover_tools()
@@ -286,57 +273,26 @@ pub async fn instantiate_arsenal(
                 }
             }
             "sse" => {
-                // Validate required fields for sse
-                let endpoint = server_config.endpoint.as_ref().ok_or_else(|| {
-                    CliError::ArsenalConfigError {
-                        message: format!(
-                            "arsenal.mcp_servers[{}].endpoint is required for sse type",
-                            server_config.name
-                        ),
-                    }
-                })?;
-
-                // Validate URL format
-                if !endpoint.starts_with("http://") && !endpoint.starts_with("https://") {
-                    return Err(CliError::ArsenalConfigError {
-                        message: format!(
-                            "arsenal.mcp_servers[{}].endpoint must start with 'http://' or 'https://', got: '{}'",
-                            server_config.name, endpoint
-                        ),
-                    });
-                }
-
-                // Create and connect SSE adapter
-                let mut adapter = MCPSseAdapter::new(endpoint);
-                adapter
-                    .connect()
-                    .await
-                    .map_err(|e| CliError::ArsenalConfigError {
-                        message: format!(
-                            "Failed to connect to SSE MCP server '{}': {}",
-                            server_config.name, e
-                        ),
-                    })?;
-
-                // Create MCP client and discover tools
-                let client = MCPClient::new(Box::new(adapter));
-                let tools =
-                    client
-                        .discover_tools()
-                        .await
-                        .map_err(|e| CliError::ArsenalConfigError {
-                            message: format!(
-                                "Failed to discover tools from MCP server '{}': {}",
-                                server_config.name, e
-                            ),
-                        })?;
-
-                // Register all tools
-                for tool in tools {
-                    registry.register(tool).await;
-                }
+                // D-02b: the "sse" transport was actually a mislabeled,
+                // unauthenticated plain-HTTP-POST adapter (never real SSE or
+                // Streamable-HTTP) — retired entirely. Fail loud with an
+                // actionable migration message rather than silently
+                // constructing a since-removed adapter.
+                return Err(CliError::ArsenalConfigError {
+                    message: format!(
+                        "arsenal.mcp_servers[{}].type 'sse' is deprecated: the mislabeled plain-HTTP adapter has been retired. Use 'streamable_http' instead (lands in a follow-up plan of Phase 12.1).",
+                        server_config.name
+                    ),
+                });
             }
-            _ => unreachable!("Server type already validated"),
+            other => {
+                return Err(CliError::ArsenalConfigError {
+                    message: format!(
+                        "arsenal.mcp_servers[{}].type must be 'stdio', got: '{}'",
+                        server_config.name, other
+                    ),
+                });
+            }
         }
     }
 

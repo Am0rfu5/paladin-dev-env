@@ -13,7 +13,8 @@
 //! - **Tool Validation**: Checking parameter schemas before execution
 //!
 //! Following hexagonal architecture, these traits abstract tool operations
-//! from their implementations (STDIO MCP, SSE MCP, direct integrations).
+//! from their implementations (STDIO MCP, Streamable-HTTP MCP, direct
+//! integrations).
 //!
 //! ## Hexagonal Architecture Context
 //!
@@ -39,7 +40,7 @@
 //! │            Infrastructure Layer                      │
 //! │  ┌──────────────────────────────────────────────┐  │
 //! │  │  MCPStdioAdapter (STDIN/STDOUT MCP servers)  │  │
-//! │  │  MCPSseAdapter (HTTP SSE MCP servers)        │  │
+//! │  │  MCPStreamableHttpAdapter (remote MCP, WIP)  │  │
 //! │  │  DirectToolAdapter (Native Rust tools)       │  │
 //! │  └──────────────────────────────────────────────┘  │
 //! └─────────────────────────────────────────────────────┘
@@ -175,16 +176,15 @@
 //! The Model Context Protocol (MCP) enables standardized tool communication:
 //!
 //! ```rust,ignore
-//! // STDIO-based MCP (command-line tools)
-//! let stdio_adapter = MCPStdioAdapter::new("uvx", vec!["mcp-web-search"]);
-//! stdio_adapter.connect().await?;
+//! // STDIO-based MCP (command-line tools) — connect performs the full
+//! // rmcp-backed handshake internally (D-01/D-04)
+//! let client = MCPClient::connect_stdio("uvx", &["mcp-web-search".to_string()]).await?;
 //!
-//! // SSE-based MCP (HTTP streaming)
-//! let sse_adapter = MCPSseAdapter::new("https://mcp-server.example.com");
-//! sse_adapter.connect().await?;
+//! // Streamable-HTTP-based MCP (remote, authenticated servers) lands in a
+//! // follow-up plan of Phase 12.1 — the previous "SSE" adapter (plain HTTP
+//! // POST, no auth) has been retired.
 //!
 //! // Discover tools from MCP server
-//! let client = MCPClient::new(Box::new(stdio_adapter));
 //! let tools = client.discover_tools().await?;
 //!
 //! // Register discovered tools
@@ -246,7 +246,6 @@
 //! - [ARSENAL.md](https://github.com/DF3NDR/paladin-dev-env/blob/main/docs/ARSENAL.md) - Comprehensive Arsenal guide
 //! - [MCP Specification](https://modelcontextprotocol.io) - Model Context Protocol details
 //! - `examples/arsenal_stdio_tools.rs` - STDIO MCP example
-//! - `examples/arsenal_sse_tools.rs` - SSE MCP example
 
 use async_trait::async_trait;
 use paladin_core::platform::container::arsenal::{
@@ -419,17 +418,15 @@ use paladin_core::platform::container::arsenal::{
 /// Implementations typically support multiple MCP transports:
 ///
 /// - **STDIO**: Subprocess communication (Python, Node.js, CLI tools)
-/// - **SSE**: HTTP streaming (web services, cloud APIs)
+/// - **Streamable-HTTP**: Remote, authenticated MCP servers (lands in a
+///   follow-up plan of Phase 12.1; the previous "SSE" adapter — plain HTTP
+///   POST, no auth — has been retired)
 /// - **Direct**: Native Rust tool implementations
 ///
 /// ```rust,ignore
-/// // STDIO example
-/// let stdio = MCPStdioAdapter::new("python3", vec!["mcp_server.py"]);
-/// let arsenal = ArsenalExecutionService::new(stdio);
-///
-/// // SSE example
-/// let sse = MCPSseAdapter::new("https://mcp.example.com");
-/// let arsenal = ArsenalExecutionService::new(sse);
+/// // STDIO example — connect performs the full rmcp handshake internally
+/// let client = MCPClient::connect_stdio("python3", &["mcp_server.py".to_string()]).await?;
+/// let arsenal = ArsenalExecutionService::new(client);
 /// ```
 ///
 /// ## Timeout Management

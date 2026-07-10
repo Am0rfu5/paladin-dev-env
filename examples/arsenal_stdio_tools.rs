@@ -82,12 +82,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 4: Show usage pattern
     println!("Step 4: How to use STDIO MCP in production:");
     println!("  ```rust");
-    println!("  // Create STDIO adapter");
-    println!("  let adapter = MCPStdioAdapter::new(\"python3\", vec![\"server.py\"]);");
-    println!("  adapter.connect().await?;");
+    println!("  // Connect (spawn + full MCP handshake via rmcp, D-01/D-04)");
+    println!(
+        "  let client = MCPClient::connect_stdio(\"python3\", &[\"server.py\".to_string()]).await?;"
+    );
     println!();
     println!("  // Discover tools");
-    println!("  let client = MCPClient::new(Box::new(adapter));");
     println!("  let tools = client.discover_tools().await?;");
     println!();
     println!("  // Register with Arsenal");
@@ -109,7 +109,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("    • Results are formatted and injected into context");
     println!();
     println!("  See also:");
-    println!("    • examples/arsenal_sse_tools.rs (SSE transport)");
     println!("    • tests/integration/mcp_stdio_test.rs");
     println!("══════════════════════════════════════════════════════");
 

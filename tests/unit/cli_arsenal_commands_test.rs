@@ -7,25 +7,26 @@ fn test_arsenal_test_args_mcp_stdio_option() {
     // Test that mcp_stdio option is properly defined
     let args = ArsenalTestArgs {
         mcp_stdio: Some("python3 server.py".to_string()),
-        mcp_sse: None,
+        mcp_streamable_http: None,
     };
 
     assert!(args.mcp_stdio.is_some());
     assert_eq!(args.mcp_stdio.unwrap(), "python3 server.py");
-    assert!(args.mcp_sse.is_none());
+    assert!(args.mcp_streamable_http.is_none());
 }
 
 #[test]
-fn test_arsenal_test_args_mcp_sse_option() {
-    // Test that mcp_sse option is properly defined
+fn test_arsenal_test_args_mcp_streamable_http_option() {
+    // Test that mcp_streamable_http option is properly defined (renamed from
+    // the retired --mcp-sse flag, D-02b)
     let args = ArsenalTestArgs {
         mcp_stdio: None,
-        mcp_sse: Some("http://localhost:8080".to_string()),
+        mcp_streamable_http: Some("http://localhost:8080".to_string()),
     };
 
     assert!(args.mcp_stdio.is_none());
-    assert!(args.mcp_sse.is_some());
-    assert_eq!(args.mcp_sse.unwrap(), "http://localhost:8080");
+    assert!(args.mcp_streamable_http.is_some());
+    assert_eq!(args.mcp_streamable_http.unwrap(), "http://localhost:8080");
 }
 
 #[test]
@@ -33,22 +34,22 @@ fn test_arsenal_test_args_mutual_exclusivity_at_runtime() {
     // Both can be None (list tools operation)
     let args_none = ArsenalTestArgs {
         mcp_stdio: None,
-        mcp_sse: None,
+        mcp_streamable_http: None,
     };
     assert!(args_none.mcp_stdio.is_none());
-    assert!(args_none.mcp_sse.is_none());
+    assert!(args_none.mcp_streamable_http.is_none());
 
     // Struct allows both to be set, but application logic should validate
     // This test documents the expected validation behavior
     let args_both = ArsenalTestArgs {
         mcp_stdio: Some("cmd".to_string()),
-        mcp_sse: Some("url".to_string()),
+        mcp_streamable_http: Some("url".to_string()),
     };
 
     // The validation happens in the handler, not in the struct
     // This test just verifies the struct definition allows flexibility
     assert!(args_both.mcp_stdio.is_some());
-    assert!(args_both.mcp_sse.is_some());
+    assert!(args_both.mcp_streamable_http.is_some());
 }
 
 #[test]
@@ -68,11 +69,11 @@ fn test_arsenal_test_args_default_construction() {
     // Test that ArsenalTestArgs can be constructed with all None
     let args = ArsenalTestArgs {
         mcp_stdio: None,
-        mcp_sse: None,
+        mcp_streamable_http: None,
     };
 
     assert!(args.mcp_stdio.is_none());
-    assert!(args.mcp_sse.is_none());
+    assert!(args.mcp_streamable_http.is_none());
 }
 
 #[test]
@@ -80,7 +81,7 @@ fn test_arsenal_test_args_stdio_with_arguments() {
     // Test that stdio command can include arguments
     let args = ArsenalTestArgs {
         mcp_stdio: Some("uvx mcp-web-search --max-results 10".to_string()),
-        mcp_sse: None,
+        mcp_streamable_http: None,
     };
 
     let cmd = args.mcp_stdio.unwrap();
@@ -90,14 +91,14 @@ fn test_arsenal_test_args_stdio_with_arguments() {
 }
 
 #[test]
-fn test_arsenal_test_args_sse_with_full_url() {
-    // Test that SSE can handle full URLs with paths
+fn test_arsenal_test_args_streamable_http_with_full_url() {
+    // Test that streamable-http can handle full URLs with paths
     let args = ArsenalTestArgs {
         mcp_stdio: None,
-        mcp_sse: Some("https://api.example.com:8443/mcp/events".to_string()),
+        mcp_streamable_http: Some("https://api.example.com:8443/mcp/events".to_string()),
     };
 
-    let url = args.mcp_sse.unwrap();
+    let url = args.mcp_streamable_http.unwrap();
     assert!(url.starts_with("https://"));
     assert!(url.contains("8443"));
     assert!(url.contains("/mcp/events"));
@@ -108,7 +109,7 @@ fn test_arsenal_test_args_debug_format() {
     // Verify Debug trait is implemented (needed for error messages)
     let args = ArsenalTestArgs {
         mcp_stdio: Some("debug-test".to_string()),
-        mcp_sse: None,
+        mcp_streamable_http: None,
     };
 
     let debug_output = format!("{:?}", args);

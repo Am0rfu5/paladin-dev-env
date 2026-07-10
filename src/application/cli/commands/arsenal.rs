@@ -6,7 +6,10 @@
 //! # MCP Protocol Support
 //!
 //! - **STDIO**: Command-line tools executed via stdin/stdout
-//! - **SSE**: HTTP-based remote tool services
+//! - **Streamable-HTTP**: Remote, authenticated MCP servers (lands in a
+//!   follow-up plan of Phase 12.1; the retired plain-HTTP "SSE" adapter is
+//!   gone — `--mcp-streamable-http` currently reports "not yet implemented"
+//!   rather than silently misbehaving)
 //!
 //! # Examples
 //!
@@ -17,8 +20,8 @@
 //! # Test an STDIO MCP server
 //! paladin arsenal test --mcp-stdio "uvx mcp-web-search"
 //!
-//! # Test an SSE MCP server
-//! paladin arsenal test --mcp-sse "http://localhost:8080/mcp"
+//! # Test a Streamable-HTTP MCP server (coming soon)
+//! paladin arsenal test --mcp-streamable-http "http://localhost:8080/mcp"
 //! ```
 
 use crate::application::cli::error::CliError;
@@ -38,12 +41,15 @@ pub enum ArsenalCommands {
 #[derive(Debug, clap::Args)]
 pub struct ArsenalTestArgs {
     /// Test STDIO-based MCP server (e.g., "uvx mcp-web-search")
-    #[arg(long, conflicts_with = "mcp_sse")]
+    #[arg(long, conflicts_with = "mcp_streamable_http")]
     pub mcp_stdio: Option<String>,
 
-    /// Test SSE-based MCP server (endpoint URL)
+    /// Test a Streamable-HTTP MCP server (endpoint URL). Renamed from the
+    /// retired `--mcp-sse` flag (D-02b) — the old adapter was mislabeled
+    /// plain-HTTP-POST, not real SSE or Streamable-HTTP. The transport lands
+    /// in a follow-up plan of Phase 12.1.
     #[arg(long, conflicts_with = "mcp_stdio")]
-    pub mcp_sse: Option<String>,
+    pub mcp_streamable_http: Option<String>,
 }
 
 /// Handle the arsenal commands
@@ -151,10 +157,13 @@ pub async fn handle_arsenal_list() -> Result<(), CliError> {
                 }
             }
             "sse" => {
-                println!("  {} SSE servers not yet implemented", "⚠".yellow());
+                println!(
+                    "  {} 'sse' transport retired — use 'streamable_http' (coming soon)",
+                    "⚠".yellow()
+                );
                 all_tools.push(ToolEntry {
                     name: format!("<{}>", server_config.name),
-                    description: "SSE servers not yet implemented".to_string(),
+                    description: "'sse' is deprecated; use 'streamable_http' instead".to_string(),
                     server_name: server_config.name.clone(),
                     server_type: server_config.server_type.clone(),
                     status: "unsupported".to_string(),
@@ -221,19 +230,12 @@ async fn connect_and_discover_stdio(
     args: Vec<String>,
 ) -> Result<Vec<crate::core::platform::container::arsenal::Armament>, String> {
     use crate::infrastructure::adapters::arsenal::mcp_protocol::MCPClient;
-    use crate::infrastructure::adapters::arsenal::mcp_stdio_adapter::MCPStdioAdapter;
 
-    // Create and connect STDIO adapter
-    let mut adapter = MCPStdioAdapter::new(command, args);
-    adapter
-        .connect()
+    // Connect (spawn + full MCP handshake, D-01/D-04) and discover tools.
+    let client = MCPClient::connect_stdio(command, &args)
         .await
         .map_err(|e| format!("Connection failed: {}", e))?;
 
-    // Create MCP client
-    let client = MCPClient::new(Box::new(adapter));
-
-    // Discover tools
     client
         .discover_tools()
         .await
@@ -243,14 +245,13 @@ async fn connect_and_discover_stdio(
 /// Test an MCP server connection with timing and diagnostics
 async fn handle_arsenal_test(args: ArsenalTestArgs) -> Result<(), CliError> {
     use crate::infrastructure::adapters::arsenal::mcp_protocol::MCPClient;
-    use crate::infrastructure::adapters::arsenal::mcp_stdio_adapter::MCPStdioAdapter;
     use std::time::Instant;
 
     // Validate mutually exclusive args
-    if args.mcp_stdio.is_none() && args.mcp_sse.is_none() {
+    if args.mcp_stdio.is_none() && args.mcp_streamable_http.is_none() {
         return Err(CliError::MissingRequiredField {
-            field: "mcp_stdio or mcp_sse".to_string(),
-            message: "You must specify either --mcp-stdio or --mcp-sse".to_string(),
+            field: "mcp_stdio or mcp_streamable_http".to_string(),
+            message: "You must specify either --mcp-stdio or --mcp-streamable-http".to_string(),
         });
     }
 
@@ -280,12 +281,11 @@ async fn handle_arsenal_test(args: ArsenalTestArgs) -> Result<(), CliError> {
 
         println!("\n{} Connecting to MCP server...", "→".cyan().bold());
 
-        // Create adapter and measure connection time
+        // Connect (spawn + full MCP handshake, D-01/D-04) and measure timing.
         let start = Instant::now();
-        let mut adapter = MCPStdioAdapter::new(command, args_vec);
 
-        match adapter.connect().await {
-            Ok(_) => {
+        match MCPClient::connect_stdio(command, &args_vec).await {
+            Ok(client) => {
                 let connection_time = start.elapsed();
                 println!(
                     "{} Connected successfully in {:.2}ms\n",
@@ -293,9 +293,8 @@ async fn handle_arsenal_test(args: ArsenalTestArgs) -> Result<(), CliError> {
                     connection_time.as_secs_f64() * 1000.0
                 );
 
-                // Create MCP client and discover tools
+                // Discover tools
                 println!("{} Discovering available tools...", "→".cyan());
-                let client = MCPClient::new(Box::new(adapter));
 
                 let discovery_start = Instant::now();
                 match client.discover_tools().await {
@@ -414,21 +413,22 @@ async fn handle_arsenal_test(args: ArsenalTestArgs) -> Result<(), CliError> {
             }
         }
     }
-    // Handle SSE server testing
-    else if let Some(sse_endpoint) = args.mcp_sse {
-        println!("{} Server type: {}", "→".cyan(), "SSE (HTTP)".bold());
-        println!("{} Endpoint: {}", "→".cyan(), sse_endpoint.cyan());
+    // Handle Streamable-HTTP server testing (transport lands in a follow-up
+    // plan of Phase 12.1; the retired plain-HTTP "SSE" adapter is gone).
+    else if let Some(endpoint) = args.mcp_streamable_http {
+        println!("{} Server type: {}", "→".cyan(), "Streamable-HTTP".bold());
+        println!("{} Endpoint: {}", "→".cyan(), endpoint.cyan());
 
         println!(
-            "\n{} SSE server support not yet implemented",
+            "\n{} Streamable-HTTP server support not yet implemented",
             "⚠".yellow().bold()
         );
         println!("\n{} Debugging Tips:", "💡".yellow().bold());
-        println!("  • SSE MCP servers will be supported in a future release");
+        println!("  • Streamable-HTTP MCP servers will be supported in a follow-up plan");
         println!("  • Use --mcp-stdio for command-line MCP servers");
 
         Err(CliError::Other(
-            "SSE server testing not yet implemented".to_string(),
+            "Streamable-HTTP server testing not yet implemented".to_string(),
         ))
     } else {
         unreachable!("Validation ensures at least one is Some")
@@ -443,40 +443,43 @@ mod tests {
     fn test_arsenal_test_args_default_construction() {
         let args = ArsenalTestArgs {
             mcp_stdio: None,
-            mcp_sse: None,
+            mcp_streamable_http: None,
         };
 
         assert_eq!(args.mcp_stdio, None);
-        assert_eq!(args.mcp_sse, None);
+        assert_eq!(args.mcp_streamable_http, None);
     }
 
     #[test]
     fn test_arsenal_test_args_mcp_stdio_option() {
         let args = ArsenalTestArgs {
             mcp_stdio: Some("uvx mcp-web-search".to_string()),
-            mcp_sse: None,
+            mcp_streamable_http: None,
         };
 
         assert_eq!(args.mcp_stdio, Some("uvx mcp-web-search".to_string()));
-        assert_eq!(args.mcp_sse, None);
+        assert_eq!(args.mcp_streamable_http, None);
     }
 
     #[test]
-    fn test_arsenal_test_args_mcp_sse_option() {
+    fn test_arsenal_test_args_mcp_streamable_http_option() {
         let args = ArsenalTestArgs {
             mcp_stdio: None,
-            mcp_sse: Some("http://localhost:8080/mcp".to_string()),
+            mcp_streamable_http: Some("http://localhost:8080/mcp".to_string()),
         };
 
         assert_eq!(args.mcp_stdio, None);
-        assert_eq!(args.mcp_sse, Some("http://localhost:8080/mcp".to_string()));
+        assert_eq!(
+            args.mcp_streamable_http,
+            Some("http://localhost:8080/mcp".to_string())
+        );
     }
 
     #[test]
     fn test_arsenal_test_args_stdio_with_arguments() {
         let args = ArsenalTestArgs {
             mcp_stdio: Some("uvx mcp-web-search --verbose".to_string()),
-            mcp_sse: None,
+            mcp_streamable_http: None,
         };
 
         assert!(args.mcp_stdio.is_some());
@@ -484,14 +487,14 @@ mod tests {
     }
 
     #[test]
-    fn test_arsenal_test_args_sse_with_full_url() {
+    fn test_arsenal_test_args_streamable_http_with_full_url() {
         let args = ArsenalTestArgs {
             mcp_stdio: None,
-            mcp_sse: Some("https://api.example.com/mcp/tools".to_string()),
+            mcp_streamable_http: Some("https://api.example.com/mcp/tools".to_string()),
         };
 
-        assert!(args.mcp_sse.is_some());
-        assert!(args.mcp_sse.unwrap().starts_with("https://"));
+        assert!(args.mcp_streamable_http.is_some());
+        assert!(args.mcp_streamable_http.unwrap().starts_with("https://"));
     }
 
     #[test]
@@ -500,24 +503,27 @@ mod tests {
         // This test verifies the data structure allows only one at a time
         let stdio_args = ArsenalTestArgs {
             mcp_stdio: Some("uvx mcp-web-search".to_string()),
-            mcp_sse: None,
+            mcp_streamable_http: None,
         };
 
-        let sse_args = ArsenalTestArgs {
+        let streamable_http_args = ArsenalTestArgs {
             mcp_stdio: None,
-            mcp_sse: Some("http://localhost:8080/mcp".to_string()),
+            mcp_streamable_http: Some("http://localhost:8080/mcp".to_string()),
         };
 
         // Verify exactly one is set for each variant
-        assert!(stdio_args.mcp_stdio.is_some() && stdio_args.mcp_sse.is_none());
-        assert!(sse_args.mcp_stdio.is_none() && sse_args.mcp_sse.is_some());
+        assert!(stdio_args.mcp_stdio.is_some() && stdio_args.mcp_streamable_http.is_none());
+        assert!(
+            streamable_http_args.mcp_stdio.is_none()
+                && streamable_http_args.mcp_streamable_http.is_some()
+        );
     }
 
     #[test]
     fn test_arsenal_test_args_debug_format() {
         let args = ArsenalTestArgs {
             mcp_stdio: Some("uvx mcp-web-search".to_string()),
-            mcp_sse: None,
+            mcp_streamable_http: None,
         };
 
         let debug_str = format!("{:?}", args);
@@ -537,7 +543,7 @@ mod tests {
         // Test Test variant
         let test_args = ArsenalTestArgs {
             mcp_stdio: Some("test".to_string()),
-            mcp_sse: None,
+            mcp_streamable_http: None,
         };
         let test_command = ArsenalCommands::Test(test_args);
         match test_command {
