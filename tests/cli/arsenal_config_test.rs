@@ -36,10 +36,11 @@ async fn test_stdio_mcp_server_config() {
     }
 }
 
-/// Test 2.8.2: Parse valid sse MCP server config
+/// Test 2.8.2: `sse` is retired -- fails loud with an actionable migration
+/// message rather than attempting to connect via the removed adapter (D-02b).
 #[tokio::test]
 async fn test_sse_mcp_server_config() {
-    // Arrange: Create a valid sse MCP server config
+    // Arrange: Create a legacy sse MCP server config
     let config = ArsenalConfig {
         mcp_servers: vec![McpServerConfig {
             name: "api_service".to_string(),
@@ -50,18 +51,19 @@ async fn test_sse_mcp_server_config() {
         }],
     };
 
-    // Act: Instantiate arsenal (will attempt to connect, expect failure without actual server)
+    // Act: Instantiate arsenal
     let result = instantiate_arsenal(&Some(config)).await;
 
-    // Assert: Should fail with connection error (server doesn't exist in test environment)
+    // Assert: Should fail loud with a deprecation/migration message, never a
+    // silent no-op or a generic connection-failure message.
     assert!(
         result.is_err(),
-        "Expected error when connecting to non-existent SSE server"
+        "Expected a deprecation error for the retired 'sse' server type"
     );
     if let Err(CliError::ArsenalConfigError { message }) = result {
         assert!(
-            message.contains("Failed to connect") || message.contains("Failed to discover"),
-            "Expected connection/discovery error, got: {}",
+            message.contains("deprecated") && message.contains("streamable_http"),
+            "Expected a migration message pointing at 'streamable_http', got: {}",
             message
         );
     } else {
@@ -130,7 +132,7 @@ async fn test_invalid_server_type() {
     assert!(result.is_err(), "Expected error for invalid server type");
     if let Err(CliError::ArsenalConfigError { message }) = result {
         assert!(
-            message.contains("must be 'stdio' or 'sse'"),
+            message.contains("must be 'stdio'"),
             "Expected type validation error, got: {}",
             message
         );
@@ -169,7 +171,9 @@ async fn test_stdio_missing_command() {
     }
 }
 
-/// Test 2.8.7: Validate error for missing endpoint for sse
+/// Test 2.8.7: `sse` is retired unconditionally -- even without an endpoint,
+/// the deprecation error fires (there is no longer a field-level check to
+/// short-circuit on, since the adapter itself is gone).
 #[tokio::test]
 async fn test_sse_missing_endpoint() {
     // Arrange: Create sse config without endpoint
@@ -186,12 +190,12 @@ async fn test_sse_missing_endpoint() {
     // Act: Instantiate arsenal
     let result = instantiate_arsenal(&Some(config)).await;
 
-    // Assert: Should fail with ArsenalConfigError
-    assert!(result.is_err(), "Expected error for sse without endpoint");
+    // Assert: Should fail loud with the deprecation/migration message
+    assert!(result.is_err(), "Expected error for deprecated 'sse' type");
     if let Err(CliError::ArsenalConfigError { message }) = result {
         assert!(
-            message.contains("endpoint is required"),
-            "Expected 'endpoint is required' error, got: {}",
+            message.contains("deprecated") && message.contains("streamable_http"),
+            "Expected a migration message pointing at 'streamable_http', got: {}",
             message
         );
     } else {
@@ -199,7 +203,9 @@ async fn test_sse_missing_endpoint() {
     }
 }
 
-/// Test 2.8.8: Validate URL format for SSE endpoint
+/// Test 2.8.8: `sse` is retired unconditionally -- an invalid URL format
+/// still resolves to the deprecation message, not a URL-format error, since
+/// no field-level validation runs for the retired type anymore.
 #[tokio::test]
 async fn test_sse_invalid_url_format() {
     // Arrange: Create sse config with invalid URL
@@ -216,12 +222,12 @@ async fn test_sse_invalid_url_format() {
     // Act: Instantiate arsenal
     let result = instantiate_arsenal(&Some(config)).await;
 
-    // Assert: Should fail with ArsenalConfigError
-    assert!(result.is_err(), "Expected error for invalid URL format");
+    // Assert: Should fail loud with the deprecation/migration message
+    assert!(result.is_err(), "Expected error for deprecated 'sse' type");
     if let Err(CliError::ArsenalConfigError { message }) = result {
         assert!(
-            message.contains("must start with 'http://' or 'https://'"),
-            "Expected URL format error, got: {}",
+            message.contains("deprecated") && message.contains("streamable_http"),
+            "Expected a migration message pointing at 'streamable_http', got: {}",
             message
         );
     } else {

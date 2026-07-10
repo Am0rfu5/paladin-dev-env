@@ -30,7 +30,6 @@ pub mod herald_integration_test;
 pub mod in_memory_sanctum_tests;
 #[cfg(feature = "live-api-tests")]
 pub mod llm_live_api_tests;
-pub mod mcp_sse_test;
 pub mod mcp_stdio_test;
 pub mod notification_system_integration_test;
 #[cfg(feature = "llm-openai")]
