@@ -1,7 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/mcp.json",
-  "_comment": "Project-scoped MCP servers (committed, shared with the team). GitHub and Context7 are already connected via the claude.ai account, so they are NOT redefined here. The servers below are a documented scaffold — they are DISABLED until you move them into 'mcpServers' and ensure the required runtime exists in the devcontainer. This container currently has no node/npx or uv/uvx; install one (e.g. add Node to .devcontainer) before enabling stdio servers that need it.",
-  "mcpServers": {},
+  "_comment": "Project-scoped MCP servers (committed, shared with the team). GitHub and Context7 are already connected via the claude.ai account, so they are NOT redefined here. The 'etherscan' entry below is Etherscan's OWN official first-party hosted MCP server (https://mcp.etherscan.io/mcp) -- a remote Streamable-HTTP endpoint, not a stdio subprocess, so it needs NO Node/npx or uv/uvx devcontainer runtime (unlike the stdio examples below, which remain disabled scaffolding). Its bearer credential is an ENV-VAR REFERENCE ONLY (${ETHERSCAN_API_KEY}) -- never a literal key committed here; see .devcontainer/SECRETS.md for how that env var is sourced from ~/.config/paladin/etherscan on the host. NOTE (Phase 13, D-07): this file is the operator's own Claude Code session convenience only -- the Rust audit-mcp/audit-cli pipeline does NOT read this file at runtime; it resolves the Etherscan MCP endpoint from the OFFICIAL default (audit_mcp::OFFICIAL_ETHERSCAN_MCP_ENDPOINT) or the optional PALADIN_ETHERSCAN_MCP_URL env override (crates/audit-cli/src/campaign.rs), and the bearer key from ETHERSCAN_API_KEY host-side. SUPERSEDES 13-05: that plan's third-party-server D-10 legitimacy checkpoint (pick/pin/build-from-source a community stdio server) is DISSOLVED -- targeting Etherscan's own official hosted server means there is no third-party server to vet and no self-host fork.",
+  "mcpServers": {
+    "etherscan": {
+      "_note": "Etherscan's official first-party hosted MCP server (remote Streamable-HTTP, no subprocess, no new devcontainer runtime). Bearer credential is an env-var reference only -- never a literal key.",
+      "type": "http",
+      "url": "https://mcp.etherscan.io/mcp",
+      "headers": {
+        "Authorization": "Bearer ${ETHERSCAN_API_KEY}"
+      }
+    }
+  },
   "_disabledExamples": {
     "filesystem": {
       "_note": "Scoped filesystem access for the repo. Requires node/npx.",
