@@ -356,6 +356,34 @@ pub enum LlmError {
     #[error("Token limit exceeded")]
     TokenLimitExceeded,
 
+    /// Completion was truncated before any content was produced: the provider
+    /// reported `finish_reason=length` while `content` was empty or whitespace-only.
+    ///
+    /// This is the signature of a reasoning model (e.g. DeepSeek's `-flash`/`-pro`
+    /// variants) whose hidden `reasoning_content` consumed the entire `max_tokens`
+    /// budget, leaving no tokens for the visible answer. It is distinct from
+    /// [`LlmError::TokenLimitExceeded`], whose recovery (reduce prompt size) is the
+    /// opposite of what this condition needs.
+    ///
+    /// **Recovery**: Retry with a larger `max_tokens` budget to give the model
+    /// headroom for both reasoning and the visible completion. Do not retry with
+    /// an identical request — it will reproduce the same truncation.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use paladin::application::ports::output::llm_port::LlmError;
+    ///
+    /// let error = LlmError::EmptyCompletion(
+    ///     "finish_reason=length, content empty (reasoning consumed max_tokens budget)".to_string()
+    /// );
+    /// assert!(error.to_string().contains("max_tokens"));
+    /// ```
+    #[error(
+        "Empty completion: {0} — retry with a larger max_tokens budget (reasoning likely consumed the whole budget)"
+    )]
+    EmptyCompletion(String),
+
     /// General processing error during LLM interaction
     ///
     /// **Recovery**: Depends on specific error message. May be retryable.
