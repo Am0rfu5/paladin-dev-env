@@ -122,6 +122,13 @@ struct DeepSeekRequest {
 struct DeepSeekMessage {
     role: String,
     content: String,
+    /// Hidden chain-of-thought content emitted by DeepSeek's reasoning models
+    /// (e.g. `-flash`/`-pro`). Only ever present on responses; omitted from
+    /// outgoing requests. Deserialized so a reasoning-model response round-trips
+    /// without a parse error, and observed for diagnostics — never executed or
+    /// treated as an instruction (see threat register T-16-04-02).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    reasoning_content: Option<String>,
 }
 
 // ── DeepSeek API response structures ────────────────────────────────────────
@@ -171,6 +178,32 @@ struct DeepSeekStreamChoice {
 #[derive(Debug, Deserialize)]
 struct DeepSeekStreamDelta {
     content: Option<String>,
+}
+
+/// Detect a completion truncated before any content was produced.
+///
+/// Reasoning models (e.g. DeepSeek's `-flash`/`-pro` variants) share their
+/// `max_tokens` budget between hidden `reasoning_content` and the visible
+/// `content`. When the hidden reasoning alone consumes the whole budget, the
+/// API returns `content:""` with `finish_reason:"length"` — a truncation that
+/// looks, to a naive caller, like a valid-but-empty answer.
+///
+/// This detection is deliberately narrow: it only fires when `finish_reason`
+/// is [`FinishReason::Length`] AND `content` is empty or whitespace-only.
+/// A legitimate empty completion with `finish_reason:"stop"`, or any
+/// non-empty content (regardless of finish reason), is left untouched.
+///
+/// Returns `Some(LlmError::EmptyCompletion(..))` when the truncation
+/// signature is detected, `None` otherwise.
+fn detect_empty_completion(content: &str, finish_reason: &FinishReason) -> Option<LlmError> {
+    if matches!(finish_reason, FinishReason::Length) && content.trim().is_empty() {
+        Some(LlmError::EmptyCompletion(format!(
+            "finish_reason=length with empty content ({} raw chars) — reasoning likely consumed the entire max_tokens budget; retry with a larger max_tokens",
+            content.len()
+        )))
+    } else {
+        None
+    }
 }
 
 /// DeepSeek LLM Adapter implementing [`LlmPort`].
@@ -240,12 +273,14 @@ impl DeepSeekAdapter {
                 messages.push(DeepSeekMessage {
                     role: "system".to_string(),
                     content: system_prompt.instructions.clone(),
+                    reasoning_content: None,
                 });
             }
             PromptType::User(user_prompt) => {
                 messages.push(DeepSeekMessage {
                     role: "user".to_string(),
                     content: user_prompt.query.clone(),
+                    reasoning_content: None,
                 });
             }
             PromptType::Text(text_prompt) => {
@@ -262,18 +297,21 @@ impl DeepSeekAdapter {
                     }
                     .to_string(),
                     content: text_prompt.content.clone(),
+                    reasoning_content: None,
                 });
             }
             PromptType::Assistant(assistant_prompt) => {
                 messages.push(DeepSeekMessage {
                     role: "assistant".to_string(),
                     content: assistant_prompt.response.clone(),
+                    reasoning_content: None,
                 });
             }
             PromptType::Function(function_prompt) => {
                 messages.push(DeepSeekMessage {
                     role: "function".to_string(),
                     content: function_prompt.function_name.clone(),
+                    reasoning_content: None,
                 });
             }
         }
@@ -386,12 +424,18 @@ impl LlmPort for DeepSeekAdapter {
                 LlmError::ProcessingError("DeepSeek response contained no choices".to_string())
             })?;
 
+            let finish_reason = Self::map_finish_reason(choice.finish_reason.clone());
+
+            if let Some(err) = detect_empty_completion(&choice.message.content, &finish_reason) {
+                return Err(err);
+            }
+
             Ok(LlmResponse {
                 id: Uuid::new_v4(),
                 request_id: request.id,
                 model: api_response.model,
                 content: choice.message.content.clone(),
-                finish_reason: Self::map_finish_reason(choice.finish_reason.clone()),
+                finish_reason,
                 usage: TokenUsage {
                     prompt_tokens: api_response.usage.prompt_tokens,
                     completion_tokens: api_response.usage.completion_tokens,
@@ -586,5 +630,52 @@ mod tests {
         assert!(capabilities.supports_system_messages);
         assert_eq!(capabilities.max_context_tokens, Some(64000));
         assert_eq!(adapter.get_provider_name(), "deepseek");
+    }
+
+    #[test]
+    fn test_detect_empty_completion_length_and_empty_is_truncation() {
+        let result = detect_empty_completion("", &FinishReason::Length);
+        assert!(matches!(result, Some(LlmError::EmptyCompletion(_))));
+    }
+
+    #[test]
+    fn test_detect_empty_completion_length_and_whitespace_is_truncation() {
+        let result = detect_empty_completion("   \n\t", &FinishReason::Length);
+        assert!(matches!(result, Some(LlmError::EmptyCompletion(_))));
+    }
+
+    #[test]
+    fn test_detect_empty_completion_non_empty_content_is_never_truncation() {
+        // Non-empty content is not a truncation regardless of finish_reason.
+        assert!(detect_empty_completion("some answer", &FinishReason::Length).is_none());
+        assert!(detect_empty_completion("some answer", &FinishReason::Stop).is_none());
+    }
+
+    #[test]
+    fn test_detect_empty_completion_empty_but_stop_is_not_truncation() {
+        // A legitimate empty completion with finish_reason=stop is NOT a truncation
+        // — detection is narrow to Length+empty only.
+        let result = detect_empty_completion("", &FinishReason::Stop);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_deepseek_message_deserializes_with_reasoning_content() {
+        let json =
+            r#"{"role":"assistant","content":"","reasoning_content":"thinking really hard..."}"#;
+        let message: DeepSeekMessage = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(message.content, "");
+        assert_eq!(
+            message.reasoning_content.as_deref(),
+            Some("thinking really hard...")
+        );
+    }
+
+    #[test]
+    fn test_deepseek_message_deserializes_without_reasoning_content() {
+        let json = r#"{"role":"assistant","content":"the answer"}"#;
+        let message: DeepSeekMessage = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(message.content, "the answer");
+        assert_eq!(message.reasoning_content, None);
     }
 }
