@@ -43,9 +43,9 @@ use paladin_core::platform::container::paladin_error::PaladinError;
 /// # Example
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::paladin_executor_port::PaladinExecutorPort;
-/// use paladin::application::ports::output::paladin_port::PaladinResult;
-/// use paladin::core::platform::container::paladin::Paladin;
+/// use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;
+/// use paladin_ports::output::paladin_port::PaladinResult;
+/// use paladin_core::platform::container::paladin::Paladin;
 /// use std::sync::Arc;
 ///
 /// async fn delegate_to_specialist(

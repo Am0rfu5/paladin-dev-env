@@ -70,8 +70,8 @@
 //! ### 1. Web Search Tool
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
-//! use paladin::core::platform::container::arsenal::{Armament, ArmamentCall};
+//! use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
+//! use paladin_core::platform::container::arsenal::{Armament, ArmamentCall};
 //! use std::collections::HashMap;
 //! use serde_json::json;
 //!
@@ -98,8 +98,8 @@
 //! ### 2. File System Operations
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
-//! use paladin::core::platform::container::arsenal::ArmamentCall;
+//! use paladin_ports::output::arsenal_port::{ArsenalPort, ArsenalRegistry};
+//! use paladin_core::platform::container::arsenal::ArmamentCall;
 //! use std::collections::HashMap;
 //! use serde_json::json;
 //!
@@ -120,8 +120,8 @@
 //! ### 3. MCP Tool Discovery and Registration
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
-//! use paladin::core::platform::container::arsenal::Armament;
+//! use paladin_ports::output::arsenal_port::ArsenalRegistry;
+//! use paladin_core::platform::container::arsenal::Armament;
 //! use serde_json::json;
 //!
 //! async fn discover_and_register_tools(
@@ -156,7 +156,7 @@
 //! ### 4. Tool Listing and Discovery
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::arsenal_port::ArsenalPort;
+//! use paladin_ports::output::arsenal_port::ArsenalPort;
 //!
 //! async fn list_available_tools(arsenal: &dyn ArsenalPort) {
 //!     let tools = arsenal.list_armaments().await;
@@ -285,8 +285,8 @@ use paladin_core::platform::container::arsenal::{
 /// ## Tool Invocation with Validation
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::arsenal_port::ArsenalPort;
-/// use paladin::core::platform::container::arsenal::ArmamentCall;
+/// use paladin_ports::output::arsenal_port::ArsenalPort;
+/// use paladin_core::platform::container::arsenal::ArmamentCall;
 /// use std::collections::HashMap;
 /// use serde_json::json;
 ///
@@ -319,8 +319,8 @@ use paladin_core::platform::container::arsenal::{
 /// ## Error Handling with Retry
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::arsenal_port::ArsenalPort;
-/// use paladin::core::platform::container::arsenal::{ArmamentCall, ArsenalError};
+/// use paladin_ports::output::arsenal_port::ArsenalPort;
+/// use paladin_core::platform::container::arsenal::{ArmamentCall, ArsenalError};
 ///
 /// async fn invoke_with_retry(
 ///     arsenal: &dyn ArsenalPort,
@@ -353,7 +353,7 @@ use paladin_core::platform::container::arsenal::{
 /// ## Listing and Discovering Tools
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::arsenal_port::ArsenalPort;
+/// use paladin_ports::output::arsenal_port::ArsenalPort;
 ///
 /// async fn discover_tools(arsenal: &dyn ArsenalPort) {
 ///     let tools = arsenal.list_armaments().await;
@@ -370,8 +370,8 @@ use paladin_core::platform::container::arsenal::{
 /// ## Custom Implementation Example
 ///
 /// ```rust
-/// use paladin::application::ports::output::arsenal_port::ArsenalPort;
-/// use paladin::core::platform::container::arsenal::{
+/// use paladin_ports::output::arsenal_port::ArsenalPort;
+/// use paladin_core::platform::container::arsenal::{
 ///     Armament, ArmamentCall, ArmamentResult, ArsenalError
 /// };
 /// use async_trait::async_trait;
@@ -584,8 +584,8 @@ pub trait ArsenalPort: Send + Sync {
 /// ## Tool Registration and Lookup
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
-/// use paladin::core::platform::container::arsenal::Armament;
+/// use paladin_ports::output::arsenal_port::ArsenalRegistry;
+/// use paladin_core::platform::container::arsenal::Armament;
 /// use serde_json::json;
 ///
 /// async fn register_calculator(
@@ -619,8 +619,8 @@ pub trait ArsenalPort: Send + Sync {
 /// ## Batch Registration from MCP Discovery
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
-/// use paladin::core::platform::container::arsenal::Armament;
+/// use paladin_ports::output::arsenal_port::ArsenalRegistry;
+/// use paladin_core::platform::container::arsenal::Armament;
 ///
 /// async fn register_discovered_tools(
 ///     registry: &dyn ArsenalRegistry,
@@ -640,12 +640,12 @@ pub trait ArsenalPort: Send + Sync {
 /// ## Tool Lifecycle Management
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
+/// use paladin_ports::output::arsenal_port::ArsenalRegistry;
 ///
 /// async fn replace_tool(
 ///     registry: &dyn ArsenalRegistry,
 ///     tool_name: &str,
-///     new_tool: paladin::core::platform::container::arsenal::Armament,
+///     new_tool: paladin_core::platform::container::arsenal::Armament,
 /// ) {
 ///     // Unregister old version
 ///     if let Some(old) = registry.unregister(tool_name).await {
@@ -661,8 +661,8 @@ pub trait ArsenalPort: Send + Sync {
 /// ## Custom Implementation Example
 ///
 /// ```rust
-/// use paladin::application::ports::output::arsenal_port::ArsenalRegistry;
-/// use paladin::core::platform::container::arsenal::Armament;
+/// use paladin_ports::output::arsenal_port::ArsenalRegistry;
+/// use paladin_core::platform::container::arsenal::Armament;
 /// use async_trait::async_trait;
 /// use std::collections::HashMap;
 /// use std::sync::{Arc, RwLock};

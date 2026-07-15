@@ -105,7 +105,7 @@
 //! ## 1. Execute Battalion with Monitoring
 //!
 //! ```ignore
-//! use paladin::application::ports::output::battalion_port::{
+//! use paladin_ports::output::battalion_port::{
 //!     BattalionPort, BattalionStatus
 //! };
 //! use uuid::Uuid;
@@ -158,7 +158,7 @@
 //! ## 2. Execute with Timeout and Cancellation
 //!
 //! ```ignore
-//! use paladin::application::ports::output::battalion_port::BattalionPort;
+//! use paladin_ports::output::battalion_port::BattalionPort;
 //! use uuid::Uuid;
 //! use std::sync::Arc;
 //! use tokio::time::{timeout, Duration};
@@ -196,8 +196,8 @@
 //! ## 3. Retry Failed Battalions
 //!
 //! ```ignore
-//! use paladin::application::ports::output::battalion_port::BattalionPort;
-//! use paladin::core::platform::container::battalion::BattalionError;
+//! use paladin_ports::output::battalion_port::BattalionPort;
+//! use paladin_core::platform::container::battalion::BattalionError;
 //! use uuid::Uuid;
 //! use std::sync::Arc;
 //! use tokio::time::{sleep, Duration};
@@ -229,7 +229,7 @@
 //! ## 4. Multi-Battalion Orchestration
 //!
 //! ```ignore
-//! use paladin::application::ports::output::battalion_port::BattalionPort;
+//! use paladin_ports::output::battalion_port::BattalionPort;
 //! use uuid::Uuid;
 //! use std::sync::Arc;
 //!
@@ -319,10 +319,10 @@
 //! ## Testing Strategy
 //!
 //! ```ignore
-//! use paladin::application::ports::output::battalion_port::{
+//! use paladin_ports::output::battalion_port::{
 //!     BattalionPort, BattalionStatus
 //! };
-//! use paladin::core::platform::container::battalion::{
+//! use paladin_core::platform::container::battalion::{
 //!     BattalionResult, BattalionError
 //! };
 //! use async_trait::async_trait;
@@ -422,11 +422,11 @@ use paladin_core::platform::container::battalion::{
 ///
 /// ```ignore
 /// use async_trait::async_trait;
-/// use paladin::application::ports::output::battalion_port::{
+/// use paladin_ports::output::battalion_port::{
 ///     BattalionPort
 /// };
-/// use paladin::application::ports::output::paladin_port::PaladinPort;
-/// use paladin::core::platform::container::battalion::{
+/// use paladin_ports::output::paladin_port::PaladinPort;
+/// use paladin_core::platform::container::battalion::{
 ///     BattalionResult, BattalionStatus, BattalionError
 /// };
 /// use uuid::Uuid;
@@ -649,7 +649,7 @@ pub trait BattalionPort: Send + Sync {
     /// # Examples
     ///
     /// ```ignore
-    /// use paladin::application::ports::output::battalion_port::BattalionPort;
+    /// use paladin_ports::output::battalion_port::BattalionPort;
     /// use uuid::Uuid;
     /// use std::sync::Arc;
     ///
@@ -699,7 +699,7 @@ pub trait BattalionPort: Send + Sync {
     /// # Examples
     ///
     /// ```ignore
-    /// use paladin::application::ports::output::battalion_port::{
+    /// use paladin_ports::output::battalion_port::{
     ///     BattalionPort, BattalionStatus
     /// };
     /// use uuid::Uuid;
@@ -768,7 +768,7 @@ pub trait BattalionPort: Send + Sync {
     /// # Examples
     ///
     /// ```ignore
-    /// use paladin::application::ports::output::battalion_port::BattalionPort;
+    /// use paladin_ports::output::battalion_port::BattalionPort;
     /// use uuid::Uuid;
     /// use std::sync::Arc;
     /// use tokio::time::{timeout, Duration};

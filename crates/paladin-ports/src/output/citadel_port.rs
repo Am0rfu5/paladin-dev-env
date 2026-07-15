@@ -72,8 +72,8 @@
 //! ### 1. Automatic State Saving
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::citadel_port::CitadelPort;
-//! use paladin::core::platform::container::citadel::PaladinState;
+//! use paladin_ports::output::citadel_port::CitadelPort;
+//! use paladin_core::platform::container::citadel::PaladinState;
 //!
 //! async fn autosave_paladin_state(
 //!     citadel: &dyn CitadelPort,
@@ -93,7 +93,7 @@
 //! ### 2. State Recovery and Resumption
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::citadel_port::CitadelPort;
+//! use paladin_ports::output::citadel_port::CitadelPort;
 //! use uuid::Uuid;
 //!
 //! async fn restore_paladin(
@@ -119,7 +119,7 @@
 //! ### 3. Battalion Checkpoint Recovery
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::citadel_port::CitadelPort;
+//! use paladin_ports::output::citadel_port::CitadelPort;
 //! use uuid::Uuid;
 //!
 //! async fn resume_battalion_execution(
@@ -143,7 +143,7 @@
 //! ```
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::citadel_port::CitadelPort;
+//! use paladin_ports::output::citadel_port::CitadelPort;
 //!
 //! async fn list_all_saved_states(
 //!     citadel: &dyn CitadelPort,
@@ -310,11 +310,11 @@ use paladin_core::platform::container::citadel_error::CitadelError;
 /// ## Save and Load Paladin State
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::citadel_port::CitadelPort;
-/// use paladin::core::platform::container::citadel::PaladinState;
-/// use paladin::core::base::entity::node::Node;
-/// use paladin::core::platform::container::citadel::PaladinData;
-/// use paladin::core::platform::container::paladin::MaxLoops;
+/// use paladin_ports::output::citadel_port::CitadelPort;
+/// use paladin_core::platform::container::citadel::PaladinState;
+/// use paladin_core::base::entity::node::Node;
+/// use paladin_core::platform::container::citadel::PaladinData;
+/// use paladin_core::platform::container::paladin::MaxLoops;
 ///
 /// async fn save_and_load(
 ///     citadel: &dyn CitadelPort,
@@ -328,7 +328,7 @@ use paladin_core::platform::container::citadel_error::CitadelError;
 ///         temperature: 0.7,
 ///         max_loops: MaxLoops::Fixed(3),
 ///         stop_words: vec![],
-///         status: paladin::core::platform::container::citadel::PaladinStatus::Idle,
+///         status: paladin_core::platform::container::citadel::PaladinStatus::Idle,
 ///         vision_enabled: false,
 ///         ..Default::default()
 ///     };
@@ -354,8 +354,8 @@ use paladin_core::platform::container::citadel_error::CitadelError;
 /// ## Battalion Checkpoint Management
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::citadel_port::CitadelPort;
-/// use paladin::core::platform::container::citadel::{BattalionState, BattalionConfig, CheckpointData};
+/// use paladin_ports::output::citadel_port::CitadelPort;
+/// use paladin_core::platform::container::citadel::{BattalionState, BattalionConfig, CheckpointData};
 /// use uuid::Uuid;
 ///
 /// async fn battalion_checkpoint(
@@ -392,7 +392,7 @@ use paladin_core::platform::container::citadel_error::CitadelError;
 /// ## Listing Saved States
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::citadel_port::CitadelPort;
+/// use paladin_ports::output::citadel_port::CitadelPort;
 ///
 /// async fn inspect_states(
 ///     citadel: &dyn CitadelPort,
@@ -415,9 +415,9 @@ use paladin_core::platform::container::citadel_error::CitadelError;
 /// ## Custom Implementation Example
 ///
 /// ```rust
-/// use paladin::application::ports::output::citadel_port::CitadelPort;
-/// use paladin::application::errors::citadel_error::CitadelError;
-/// use paladin::core::platform::container::citadel::{PaladinState, BattalionState, StateSummary};
+/// use paladin_ports::output::citadel_port::CitadelPort;
+/// use paladin_core::platform::container::citadel_error::CitadelError;
+/// use paladin_core::platform::container::citadel::{PaladinState, BattalionState, StateSummary};
 /// use async_trait::async_trait;
 /// use uuid::Uuid;
 /// use std::collections::HashMap;

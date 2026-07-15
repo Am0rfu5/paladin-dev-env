@@ -73,10 +73,10 @@
 //! ## 1. Execute Paladin Agent
 //!
 //! ```ignore
-//! use paladin::application::ports::output::paladin_port::{
+//! use paladin_ports::output::paladin_port::{
 //!     PaladinPort, PaladinResult, StopReason
 //! };
-//! use paladin::core::platform::container::paladin::Paladin;
+//! use paladin_core::platform::container::paladin::Paladin;
 //! use std::sync::Arc;
 //!
 //! async fn run_agent(
@@ -108,10 +108,10 @@
 //! ## 2. Streaming Execution for Real-Time UI
 //!
 //! ```ignore
-//! use paladin::application::ports::output::paladin_port::{
+//! use paladin_ports::output::paladin_port::{
 //!     PaladinPort, PaladinStreamChunk
 //! };
-//! use paladin::core::platform::container::paladin::Paladin;
+//! use paladin_core::platform::container::paladin::Paladin;
 //! use std::sync::Arc;
 //!
 //! async fn stream_agent_output(
@@ -147,7 +147,7 @@
 //! ## 3. Check Autonomous Planning Metadata
 //!
 //! ```ignore
-//! use paladin::application::ports::output::paladin_port::PaladinResult;
+//! use paladin_ports::output::paladin_port::PaladinResult;
 //!
 //! fn analyze_execution(result: &PaladinResult) {
 //!     // Check if autonomous planning was used
@@ -180,7 +180,7 @@
 //! ## 4. Retry on Failure
 //!
 //! ```ignore
-//! use paladin::application::ports::output::paladin_port::{
+//! use paladin_ports::output::paladin_port::{
 //!     PaladinPort, PaladinResult, StopReason
 //! };
 //! use paladin_core::platform::container::paladin_error::PaladinError;
@@ -190,7 +190,7 @@
 //!
 //! async fn execute_with_retry(
 //!     paladin_port: Arc<dyn PaladinPort>,
-//!     paladin: &paladin::core::platform::container::paladin::Paladin,
+//!     paladin: &paladin_core::platform::container::paladin::Paladin,
 //!     input: &str,
 //!     max_retries: u32,
 //! ) -> Result<PaladinResult, PaladinError> {
@@ -278,11 +278,11 @@
 //! ## Testing Strategy
 //!
 //! ```ignore
-//! use paladin::application::ports::output::paladin_port::{
+//! use paladin_ports::output::paladin_port::{
 //!     PaladinPort, PaladinResult, PaladinStream, StopReason
 //! };
 //! use paladin_core::platform::container::paladin_error::PaladinError;
-//! use paladin::core::platform::container::paladin::Paladin;
+//! use paladin_core::platform::container::paladin::Paladin;
 //! use async_trait::async_trait;
 //!
 //! /// Mock Paladin port for testing
@@ -452,12 +452,12 @@ pub type PaladinStream = mpsc::Receiver<Result<PaladinStreamChunk, PaladinError>
 ///
 /// ```ignore
 /// use async_trait::async_trait;
-/// use paladin::application::ports::output::paladin_port::{
+/// use paladin_ports::output::paladin_port::{
 ///     PaladinPort, PaladinResult, PaladinStream, StopReason
 /// };
-/// use paladin::core::platform::container::paladin::Paladin;
-/// use paladin::core::platform::container::paladin_error::PaladinError;
-/// use paladin::application::ports::output::llm_port::LlmPort;
+/// use paladin_core::platform::container::paladin::Paladin;
+/// use paladin_core::platform::container::paladin_error::PaladinError;
+/// use paladin_ports::output::llm_port::LlmPort;
 /// use std::sync::Arc;
 ///
 /// struct MyPaladinExecutor {
@@ -660,12 +660,12 @@ pub trait PaladinPort: Send + Sync {
     /// # Examples
     ///
     /// ```ignore
-    /// use paladin::application::ports::output::paladin_port::PaladinPort;
+    /// use paladin_ports::output::paladin_port::PaladinPort;
     /// use std::sync::Arc;
     ///
     /// async fn run_paladin(
     ///     port: Arc<dyn PaladinPort>,
-    ///     paladin: &paladin::core::platform::container::paladin::Paladin,
+    ///     paladin: &paladin_core::platform::container::paladin::Paladin,
     /// ) {
     ///     let result = port
     ///         .execute(paladin, "Analyze sales data and provide insights")
@@ -709,14 +709,14 @@ pub trait PaladinPort: Send + Sync {
     /// # Examples
     ///
     /// ```ignore
-    /// use paladin::application::ports::output::paladin_port::{
+    /// use paladin_ports::output::paladin_port::{
     ///     PaladinPort, PaladinStreamChunk
     /// };
     /// use std::sync::Arc;
     ///
     /// async fn stream_paladin(
     ///     port: Arc<dyn PaladinPort>,
-    ///     paladin: &paladin::core::platform::container::paladin::Paladin,
+    ///     paladin: &paladin_core::platform::container::paladin::Paladin,
     /// ) {
     ///     let mut stream = port
     ///         .execute_stream(paladin, "Write a detailed report on market trends")
@@ -786,8 +786,8 @@ pub trait PaladinPort: Send + Sync {
     /// # Examples
     ///
     /// ```ignore
-    /// use paladin::application::ports::output::paladin_port::PaladinPort;
-    /// use paladin::core::platform::container::paladin::Paladin;
+    /// use paladin_ports::output::paladin_port::PaladinPort;
+    /// use paladin_core::platform::container::paladin::Paladin;
     /// use std::sync::Arc;
     ///
     /// async fn validate_before_execution(

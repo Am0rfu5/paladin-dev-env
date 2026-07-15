@@ -67,10 +67,10 @@
 //! ## 1. Send Email Notification
 //!
 //! ```ignore
-//! use paladin::application::ports::output::notification_port::{
+//! use paladin_ports::output::notification_port::{
 //!     NotificationDeliveryPort, NotificationPortError
 //! };
-//! use paladin::core::platform::container::notification::{
+//! use paladin_core::platform::container::notification::{
 //!     Notification, NotificationChannel, NotificationContent,
 //!     NotificationRecipient, NotificationPriority
 //! };
@@ -98,10 +98,10 @@
 //! ## 2. Send Bulk Notifications
 //!
 //! ```ignore
-//! use paladin::application::ports::output::notification_port::{
+//! use paladin_ports::output::notification_port::{
 //!     NotificationDeliveryPort, BulkDeliveryResult
 //! };
-//! use paladin::core::platform::container::notification::{
+//! use paladin_core::platform::container::notification::{
 //!     Notification, NotificationChannel
 //! };
 //! use std::sync::Arc;
@@ -131,10 +131,10 @@
 //! ## 3. Use Template for Consistent Formatting
 //!
 //! ```ignore
-//! use paladin::application::ports::output::notification_port::{
+//! use paladin_ports::output::notification_port::{
 //!     NotificationTemplatePort, NotificationPortError
 //! };
-//! use paladin::core::platform::container::notification::{
+//! use paladin_core::platform::container::notification::{
 //!     NotificationTemplate, NotificationChannel
 //! };
 //! use std::collections::HashMap;
@@ -161,10 +161,10 @@
 //! ## 4. Multi-Channel Notification with Fallback
 //!
 //! ```ignore
-//! use paladin::application::ports::output::notification_port::{
+//! use paladin_ports::output::notification_port::{
 //!     NotificationDeliveryPort, NotificationPortError
 //! };
-//! use paladin::core::platform::container::notification::{
+//! use paladin_core::platform::container::notification::{
 //!     Notification, NotificationChannel, NotificationStatus
 //! };
 //! use std::sync::Arc;
@@ -221,10 +221,10 @@
 //! ## Retry Pattern Example
 //!
 //! ```ignore
-//! use paladin::application::ports::output::notification_port::{
+//! use paladin_ports::output::notification_port::{
 //!     NotificationDeliveryPort, NotificationPortError
 //! };
-//! use paladin::core::platform::container::notification::Notification;
+//! use paladin_core::platform::container::notification::Notification;
 //! use std::sync::Arc;
 //! use std::time::Duration;
 //! use tokio::time::sleep;
@@ -288,11 +288,11 @@
 //! ## Testing Strategy
 //!
 //! ```ignore
-//! use paladin::application::ports::output::notification_port::{
+//! use paladin_ports::output::notification_port::{
 //!     NotificationDeliveryPort, NotificationDeliveryResult,
 //!     NotificationPortError, DeliveryCapabilities
 //! };
-//! use paladin::core::platform::container::notification::{
+//! use paladin_core::platform::container::notification::{
 //!     Notification, NotificationChannel, NotificationStatus
 //! };
 //! use async_trait::async_trait;
@@ -397,7 +397,7 @@ pub type NotificationPortResult<T> = Result<T, NotificationPortError>;
 /// # Examples
 ///
 /// ```
-/// use paladin::application::ports::output::notification_port::NotificationPortError;
+/// use paladin_ports::output::notification_port::NotificationPortError;
 ///
 /// // Check if an error should be retried
 /// fn should_retry(error: &NotificationPortError) -> bool {
@@ -472,7 +472,7 @@ pub enum NotificationPortError {
     ///
     /// # Example
     /// ```
-    /// use paladin::application::ports::output::notification_port::NotificationPortError;
+    /// use paladin_ports::output::notification_port::NotificationPortError;
     /// use std::time::Duration;
     /// use tokio::time::sleep;
     ///
@@ -680,10 +680,10 @@ pub enum SortOrder {
 /// ## Basic Notification Delivery
 ///
 /// ```ignore
-/// use paladin::application::ports::output::notification_port::{
+/// use paladin_ports::output::notification_port::{
 ///     NotificationDeliveryPort, NotificationPortError
 /// };
-/// use paladin::core::platform::container::notification::{
+/// use paladin_core::platform::container::notification::{
 ///     Notification, NotificationChannel, NotificationContent,
 ///     NotificationRecipient, NotificationPriority
 /// };
@@ -720,7 +720,7 @@ pub enum SortOrder {
 /// ## Health Check Before Delivery
 ///
 /// ```ignore
-/// use paladin::application::ports::output::notification_port::{
+/// use paladin_ports::output::notification_port::{
 ///     NotificationDeliveryPort, NotificationPortError
 /// };
 /// use std::sync::Arc;
@@ -729,7 +729,7 @@ pub enum SortOrder {
 ///
 /// async fn send_with_health_check(
 ///     port: Arc<dyn NotificationDeliveryPort>,
-///     notification: paladin::core::platform::container::notification::Notification,
+///     notification: paladin_core::platform::container::notification::Notification,
 /// ) -> Result<(), NotificationPortError> {
 ///     // Check health before sending
 ///     if !port.health_check().await {
@@ -750,7 +750,7 @@ pub enum SortOrder {
 /// ## Query Capabilities
 ///
 /// ```ignore
-/// use paladin::application::ports::output::notification_port::NotificationDeliveryPort;
+/// use paladin_ports::output::notification_port::NotificationDeliveryPort;
 /// use std::sync::Arc;
 ///
 /// fn check_capabilities(port: Arc<dyn NotificationDeliveryPort>) {
@@ -809,7 +809,7 @@ pub trait NotificationDeliveryPort: Send + Sync {
     /// # Examples
     ///
     /// ```ignore
-    /// use paladin::core::platform::container::notification::{Notification, NotificationChannel};
+    /// use paladin_core::platform::container::notification::{Notification, NotificationChannel};
     ///
     /// fn can_handle(&self, notification: &Notification) -> bool {
     ///     notification.channel == NotificationChannel::Email
@@ -836,10 +836,10 @@ pub trait NotificationDeliveryPort: Send + Sync {
     /// # Examples
     ///
     /// ```ignore
-    /// use paladin::application::ports::output::notification_port::{
+    /// use paladin_ports::output::notification_port::{
     ///     NotificationDeliveryPort, NotificationDeliveryResult
     /// };
-    /// use paladin::core::platform::container::notification::Notification;
+    /// use paladin_core::platform::container::notification::Notification;
     ///
     /// async fn deliver_notification(
     ///     &self,
@@ -974,7 +974,7 @@ pub trait NotificationDeliveryPort: Send + Sync {
     /// # Examples
     ///
     /// ```ignore
-    /// use paladin::application::ports::output::notification_port::DeliveryCapabilities;
+    /// use paladin_ports::output::notification_port::DeliveryCapabilities;
     ///
     /// fn capabilities(&self) -> DeliveryCapabilities {
     ///     DeliveryCapabilities {
@@ -1037,10 +1037,10 @@ pub struct DeliveryCapabilities {
 /// ## Create and Render Template
 ///
 /// ```ignore
-/// use paladin::application::ports::output::notification_port::{
+/// use paladin_ports::output::notification_port::{
 ///     NotificationTemplatePort, NotificationPortError
 /// };
-/// use paladin::core::platform::container::notification::{
+/// use paladin_core::platform::container::notification::{
 ///     NotificationTemplate, NotificationChannel
 /// };
 /// use std::collections::HashMap;
@@ -1073,8 +1073,8 @@ pub struct DeliveryCapabilities {
 /// ## List and Validate Templates
 ///
 /// ```ignore
-/// use paladin::application::ports::output::notification_port::NotificationTemplatePort;
-/// use paladin::core::platform::container::notification::NotificationChannel;
+/// use paladin_ports::output::notification_port::NotificationTemplatePort;
+/// use paladin_core::platform::container::notification::NotificationChannel;
 /// use std::sync::Arc;
 ///
 /// async fn audit_templates(port: Arc<dyn NotificationTemplatePort>) {
@@ -1241,10 +1241,10 @@ pub trait NotificationTemplatePort: Send + Sync {
 /// # Examples
 ///
 /// ```ignore
-/// use paladin::application::ports::output::notification_port::{
+/// use paladin_ports::output::notification_port::{
 ///     BasicNotificationPort, NotificationPortError
 /// };
-/// use paladin::core::platform::container::notification::{
+/// use paladin_core::platform::container::notification::{
 ///     Notification, NotificationChannel, NotificationContent, NotificationRecipient
 /// };
 /// use std::sync::Arc;

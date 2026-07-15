@@ -50,8 +50,8 @@
 //! ### Basic Usage
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::llm_port::{LlmPort, LlmRequest};
-//! use paladin::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
+//! use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
+//! use paladin_core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
 //! use uuid::Uuid;
 //! use std::collections::HashMap;
 //!
@@ -76,8 +76,8 @@
 //! ### Streaming Responses
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::llm_port::{LlmPort, LlmRequest};
-//! use paladin::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
+//! use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
+//! use paladin_core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
 //! use uuid::Uuid;
 //! use futures::StreamExt;
 //! use std::collections::HashMap;
@@ -112,7 +112,7 @@
 //! ### Provider Capability Detection
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::llm_port::LlmPort;
+//! use paladin_ports::output::llm_port::LlmPort;
 //!
 //! async fn select_strategy(llm: &dyn LlmPort) {
 //!     let caps = llm.get_capabilities();
@@ -131,7 +131,7 @@
 //! ### Custom Implementation
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::llm_port::{
+//! use paladin_ports::output::llm_port::{
 //!     LlmPort, LlmRequest, LlmResponse, LlmError, ProviderCapabilities,
 //!     FinishReason, TokenUsage
 //! };
@@ -168,7 +168,7 @@
 //!     async fn generate_stream(
 //!         &self,
 //!         _request: LlmRequest,
-//!     ) -> Result<Box<dyn futures::Stream<Item = Result<paladin::application::ports::output::llm_port::StreamingResponse, LlmError>> + Send>, LlmError> {
+//!     ) -> Result<Box<dyn futures::Stream<Item = Result<paladin_ports::output::llm_port::StreamingResponse, LlmError>> + Send>, LlmError> {
 //!         Err(LlmError::ProcessingError("Streaming not supported".to_string()))
 //!     }
 //!
@@ -266,7 +266,7 @@ use paladin_core::platform::container::prompt::PromptItem;
 /// ## Examples
 ///
 /// ```rust
-/// use paladin::application::ports::output::llm_port::LlmError;
+/// use paladin_ports::output::llm_port::LlmError;
 ///
 /// fn handle_error(error: LlmError) -> bool {
 ///     match error {
@@ -295,7 +295,7 @@ pub enum LlmError {
     /// # Examples
     ///
     /// ```rust
-    /// use paladin::application::ports::output::llm_port::LlmError;
+    /// use paladin_ports::output::llm_port::LlmError;
     ///
     /// let error = LlmError::NetworkError("Connection refused".to_string());
     /// assert!(error.to_string().contains("Network error"));
@@ -310,7 +310,7 @@ pub enum LlmError {
     /// # Examples
     ///
     /// ```rust
-    /// use paladin::application::ports::output::llm_port::LlmError;
+    /// use paladin_ports::output::llm_port::LlmError;
     ///
     /// let error = LlmError::AuthenticationError("Invalid API key".to_string());
     /// ```
@@ -330,7 +330,7 @@ pub enum LlmError {
     /// # Examples
     ///
     /// ```rust
-    /// use paladin::application::ports::output::llm_port::LlmError;
+    /// use paladin_ports::output::llm_port::LlmError;
     /// use std::thread;
     /// use std::time::Duration;
     ///
@@ -372,7 +372,7 @@ pub enum LlmError {
     /// # Examples
     ///
     /// ```rust
-    /// use paladin::application::ports::output::llm_port::LlmError;
+    /// use paladin_ports::output::llm_port::LlmError;
     ///
     /// let error = LlmError::EmptyCompletion(
     ///     "finish_reason=length, content empty (reasoning consumed max_tokens budget)".to_string()
@@ -417,8 +417,8 @@ pub enum LlmError {
 /// ## Basic Text Request
 ///
 /// ```rust
-/// use paladin::application::ports::output::llm_port::LlmRequest;
-/// use paladin::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
+/// use paladin_ports::output::llm_port::LlmRequest;
+/// use paladin_core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
 /// use uuid::Uuid;
 /// use std::collections::HashMap;
 ///
@@ -438,8 +438,8 @@ pub enum LlmError {
 /// ## Request with Metadata
 ///
 /// ```rust
-/// use paladin::application::ports::output::llm_port::LlmRequest;
-/// use paladin::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
+/// use paladin_ports::output::llm_port::LlmRequest;
+/// use paladin_core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
 /// use uuid::Uuid;
 /// use std::collections::HashMap;
 ///
@@ -499,7 +499,7 @@ pub struct LlmRequest {
 /// ## Checking Finish Reason
 ///
 /// ```rust
-/// use paladin::application::ports::output::llm_port::{LlmResponse, FinishReason};
+/// use paladin_ports::output::llm_port::{LlmResponse, FinishReason};
 ///
 /// # fn example(response: LlmResponse) {
 /// match response.finish_reason {
@@ -525,7 +525,7 @@ pub struct LlmRequest {
 /// ## Tracking Token Usage
 ///
 /// ```rust
-/// use paladin::application::ports::output::llm_port::LlmResponse;
+/// use paladin_ports::output::llm_port::LlmResponse;
 ///
 /// # fn track_usage(response: LlmResponse) {
 /// println!("Tokens used:");
@@ -589,7 +589,7 @@ pub struct FunctionCall {
 /// # Examples
 ///
 /// ```rust
-/// use paladin::application::ports::output::llm_port::FinishReason;
+/// use paladin_ports::output::llm_port::FinishReason;
 ///
 /// fn handle_finish_reason(reason: FinishReason) -> bool {
 ///     match reason {
@@ -650,7 +650,7 @@ pub enum FinishReason {
 /// # Examples
 ///
 /// ```rust
-/// use paladin::application::ports::output::llm_port::TokenUsage;
+/// use paladin_ports::output::llm_port::TokenUsage;
 ///
 /// let usage = TokenUsage {
 ///     prompt_tokens: 150,
@@ -684,7 +684,7 @@ pub use paladin_core::platform::container::token_usage::TokenUsage;
 /// # Examples
 ///
 /// ```rust
-/// use paladin::application::ports::output::llm_port::StreamingResponse;
+/// use paladin_ports::output::llm_port::StreamingResponse;
 /// use uuid::Uuid;
 ///
 /// // Accumulate streaming chunks
@@ -703,7 +703,7 @@ pub use paladin_core::platform::container::token_usage::TokenUsage;
 ///     StreamingResponse {
 ///         id: Uuid::new_v4(),
 ///         delta: "!".to_string(),
-///         finish_reason: Some(paladin::application::ports::output::llm_port::FinishReason::Stop),
+///         finish_reason: Some(paladin_ports::output::llm_port::FinishReason::Stop),
 ///     },
 /// ];
 ///
@@ -735,7 +735,7 @@ pub struct StreamingResponse {
 /// # Example
 ///
 /// ```rust
-/// # use paladin::application::ports::output::llm_port::ProviderCapabilities;
+/// # use paladin_ports::output::llm_port::ProviderCapabilities;
 /// let capabilities = ProviderCapabilities {
 ///     supports_streaming: true,
 ///     supports_tool_calling: true,
@@ -825,8 +825,8 @@ impl Default for ProviderCapabilities {
 /// ## Using an Adapter
 ///
 /// ```rust,no_run
-/// # use paladin::application::ports::output::llm_port::{LlmPort, LlmRequest, LlmError};
-/// # use paladin::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
+/// # use paladin_ports::output::llm_port::{LlmPort, LlmRequest, LlmError};
+/// # use paladin_core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
 /// # use uuid::Uuid;
 /// # use std::collections::HashMap;
 /// # async fn example(llm: &dyn LlmPort) -> Result<(), LlmError> {
@@ -906,8 +906,8 @@ pub trait LlmPort: Send + Sync {
     /// ## Basic Generation
     ///
     /// ```rust,no_run
-    /// use paladin::application::ports::output::llm_port::{LlmPort, LlmRequest};
-    /// use paladin::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
+    /// use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
+    /// use paladin_core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
     /// use uuid::Uuid;
     /// use std::collections::HashMap;
     ///
@@ -932,8 +932,8 @@ pub trait LlmPort: Send + Sync {
     /// ## With Error Handling
     ///
     /// ```rust,no_run
-    /// use paladin::application::ports::output::llm_port::{LlmPort, LlmRequest, LlmError};
-    /// use paladin::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
+    /// use paladin_ports::output::llm_port::{LlmPort, LlmRequest, LlmError};
+    /// use paladin_core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
     /// use uuid::Uuid;
     /// use std::collections::HashMap;
     ///
@@ -1007,8 +1007,8 @@ pub trait LlmPort: Send + Sync {
     /// ## Basic Streaming
     ///
     /// ```rust,no_run
-    /// use paladin::application::ports::output::llm_port::{LlmPort, LlmRequest};
-    /// use paladin::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
+    /// use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
+    /// use paladin_core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
     /// use uuid::Uuid;
     /// use futures::StreamExt;
     /// use std::collections::HashMap;
@@ -1048,7 +1048,7 @@ pub trait LlmPort: Send + Sync {
     /// ## Capability Check First
     ///
     /// ```rust,no_run
-    /// use paladin::application::ports::output::llm_port::LlmPort;
+    /// use paladin_ports::output::llm_port::LlmPort;
     ///
     /// async fn use_streaming_if_supported(llm: &dyn LlmPort) {
     ///     let caps = llm.get_capabilities();
@@ -1100,7 +1100,7 @@ pub trait LlmPort: Send + Sync {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use paladin::application::ports::output::llm_port::LlmPort;
+    /// use paladin_ports::output::llm_port::LlmPort;
     ///
     /// async fn check_model(llm: &dyn LlmPort, model: &str) -> Result<(), Box<dyn std::error::Error>> {
     ///     if llm.validate_model(model).await? {
@@ -1142,7 +1142,7 @@ pub trait LlmPort: Send + Sync {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use paladin::application::ports::output::llm_port::LlmPort;
+    /// use paladin_ports::output::llm_port::LlmPort;
     ///
     /// async fn list_models(llm: &dyn LlmPort) -> Result<(), Box<dyn std::error::Error>> {
     ///     let models = llm.get_available_models().await?;
@@ -1177,7 +1177,7 @@ pub trait LlmPort: Send + Sync {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use paladin::application::ports::output::llm_port::LlmPort;
+    /// use paladin_ports::output::llm_port::LlmPort;
     ///
     /// fn log_provider(llm: &dyn LlmPort) {
     ///     println!("Using LLM provider: {}", llm.get_provider_name());
@@ -1211,7 +1211,7 @@ pub trait LlmPort: Send + Sync {
     /// ## Feature Detection
     ///
     /// ```rust,no_run
-    /// use paladin::application::ports::output::llm_port::LlmPort;
+    /// use paladin_ports::output::llm_port::LlmPort;
     ///
     /// async fn adaptive_strategy(llm: &dyn LlmPort) {
     ///     let caps = llm.get_capabilities();
@@ -1239,7 +1239,7 @@ pub trait LlmPort: Send + Sync {
     /// ## Fallback Strategy
     ///
     /// ```rust,no_run
-    /// use paladin::application::ports::output::llm_port::LlmPort;
+    /// use paladin_ports::output::llm_port::LlmPort;
     ///
     /// fn select_provider<'a>(
     ///     primary: &'a dyn LlmPort,

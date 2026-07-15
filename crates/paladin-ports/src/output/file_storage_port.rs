@@ -70,7 +70,7 @@
 //! ## 1. Upload and Download Files
 //!
 //! ```ignore
-//! use paladin::application::ports::output::file_storage_port::{
+//! use paladin_ports::output::file_storage_port::{
 //!     FileStoragePort, UploadOptions, FileStorageError
 //! };
 //! use std::path::Path;
@@ -101,7 +101,7 @@
 //! ## 2. Generate Pre-Signed Upload URL (Direct Client Upload)
 //!
 //! ```ignore
-//! use paladin::application::ports::output::file_storage_port::{
+//! use paladin_ports::output::file_storage_port::{
 //!     AdvancedFileStoragePort, UploadOptions, FileStorageError
 //! };
 //! use std::path::Path;
@@ -126,7 +126,7 @@
 //! ## 3. List and Filter Files
 //!
 //! ```ignore
-//! use paladin::application::ports::output::file_storage_port::{
+//! use paladin_ports::output::file_storage_port::{
 //!     FileStoragePort, ListOptions, FileStorageError
 //! };
 //! use std::sync::Arc;
@@ -153,7 +153,7 @@
 //! ## 4. Multipart Upload for Large Files
 //!
 //! ```ignore
-//! use paladin::application::ports::output::file_storage_port::{
+//! use paladin_ports::output::file_storage_port::{
 //!     AdvancedFileStoragePort, UploadOptions, FileStorageError
 //! };
 //! use std::path::Path;
@@ -194,7 +194,7 @@
 //! ## 5. Batch Operations
 //!
 //! ```ignore
-//! use paladin::application::ports::output::file_storage_port::{
+//! use paladin_ports::output::file_storage_port::{
 //!     BatchFileStoragePort, FileStorageError
 //! };
 //! use std::path::PathBuf;
@@ -248,7 +248,7 @@
 //! ## Retry Pattern Example
 //!
 //! ```ignore
-//! use paladin::application::ports::output::file_storage_port::{
+//! use paladin_ports::output::file_storage_port::{
 //!     FileStoragePort, FileStorageError
 //! };
 //! use std::path::Path;
@@ -320,7 +320,7 @@
 //! ## Testing Strategy
 //!
 //! ```ignore
-//! use paladin::application::ports::output::file_storage_port::{
+//! use paladin_ports::output::file_storage_port::{
 //!     FileStoragePort, FileItem, FileStorageResult, FileStorageError,
 //!     ListOptions, FileListResult, UploadOptions, DownloadOptions,
 //!     StorageStats, StorageHealth
@@ -493,7 +493,7 @@ pub type FileStorageResult<T> = Result<T, FileStorageError>;
 /// # Examples
 ///
 /// ```
-/// use paladin::application::ports::output::file_storage_port::FileStorageError;
+/// use paladin_ports::output::file_storage_port::FileStorageError;
 ///
 /// // Check if an error should be retried
 /// fn should_retry(error: &FileStorageError) -> bool {
@@ -539,7 +539,7 @@ pub enum FileStorageError {
     ///
     /// # Example
     /// ```
-    /// use paladin::application::ports::output::file_storage_port::FileStorageError;
+    /// use paladin_ports::output::file_storage_port::FileStorageError;
     ///
     /// fn handle_file_size(error: &FileStorageError) {
     ///     if let FileStorageError::FileTooLarge { size, max_size } = error {
@@ -862,7 +862,7 @@ pub struct StorageHealth {
 /// ## Basic File Upload and Download
 ///
 /// ```ignore
-/// use paladin::application::ports::output::file_storage_port::{
+/// use paladin_ports::output::file_storage_port::{
 ///     FileStoragePort, UploadOptions, FileStorageError
 /// };
 /// use std::path::Path;
@@ -894,7 +894,7 @@ pub struct StorageHealth {
 /// ## List Files with Filtering
 ///
 /// ```ignore
-/// use paladin::application::ports::output::file_storage_port::{
+/// use paladin_ports::output::file_storage_port::{
 ///     FileStoragePort, ListOptions
 /// };
 /// use std::sync::Arc;
@@ -917,7 +917,7 @@ pub struct StorageHealth {
 /// ## Copy and Move Files
 ///
 /// ```ignore
-/// use paladin::application::ports::output::file_storage_port::FileStoragePort;
+/// use paladin_ports::output::file_storage_port::FileStoragePort;
 /// use std::path::Path;
 /// use std::sync::Arc;
 ///
@@ -940,7 +940,7 @@ pub struct StorageHealth {
 ///
 /// Always validate paths to prevent directory traversal:
 /// ```ignore
-/// use paladin::application::ports::output::file_storage_port::FileStorageUtils;
+/// use paladin_ports::output::file_storage_port::FileStorageUtils;
 /// use std::path::Path;
 ///
 /// fn validate_upload_path(path: &Path) -> Result<(), String> {
@@ -953,7 +953,7 @@ pub struct StorageHealth {
 ///
 /// Auto-detect MIME types from extensions:
 /// ```ignore
-/// use paladin::application::ports::output::file_storage_port::FileStorageUtils;
+/// use paladin_ports::output::file_storage_port::FileStorageUtils;
 /// use std::path::Path;
 ///
 /// let path = Path::new("document.pdf");

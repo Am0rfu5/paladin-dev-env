@@ -10,9 +10,9 @@
 //! # Example
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::vision_llm_port::VisionCapableLlm;
-//! use paladin::application::ports::output::llm_port::{LlmRequest, LlmPort};
-//! use paladin::core::platform::container::vision::VisionRequest;
+//! use paladin_ports::output::vision_llm_port::VisionCapableLlm;
+//! use paladin_ports::output::llm_port::{LlmRequest, LlmPort};
+//! use paladin_core::platform::container::vision::VisionRequest;
 //!
 //! async fn analyze_image(llm: &dyn VisionCapableLlm, request: LlmRequest, vision: VisionRequest) {
 //!     if llm.supports_vision() {
@@ -72,10 +72,10 @@ pub trait VisionCapableLlm: LlmPort + Send + Sync {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::ports::output::vision_llm_port::VisionCapableLlm;
-    /// # use paladin::application::ports::output::llm_port::{LlmRequest, LlmError};
-    /// # use paladin::core::platform::container::vision::{VisionRequest, VisionContent, ImageDetail};
-    /// # use paladin::core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
+    /// # use paladin_ports::output::vision_llm_port::VisionCapableLlm;
+    /// # use paladin_ports::output::llm_port::{LlmRequest, LlmError};
+    /// # use paladin_core::platform::container::vision::{VisionRequest, VisionContent, ImageDetail};
+    /// # use paladin_core::platform::container::prompt::{PromptItem, PromptType, UserPrompt};
     /// # use uuid::Uuid;
     /// # use std::collections::HashMap;
     /// # async fn example(llm: &dyn VisionCapableLlm) -> Result<(), Box<dyn std::error::Error>> {
@@ -126,7 +126,7 @@ pub trait VisionCapableLlm: LlmPort + Send + Sync {
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use paladin::application::ports::output::vision_llm_port::VisionCapableLlm;
+    /// # use paladin_ports::output::vision_llm_port::VisionCapableLlm;
     /// # fn example(llm: &dyn VisionCapableLlm) {
     /// if llm.supports_vision() {
     ///     println!("This provider supports vision inputs");

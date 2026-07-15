@@ -73,9 +73,9 @@
 //! ### 1. Async Paladin Execution
 //!
 //! ```rust,ignore
-//! use paladin::application::ports::output::queue_port::QueuePort;
-//! use paladin::core::platform::container::queue_item::{QueueItem, QueueItemConfig};
-//! use paladin::core::base::entity::message::Message;
+//! use paladin_ports::output::queue_port::QueuePort;
+//! use paladin_core::platform::container::queue_item::{QueueItem, QueueItemConfig};
+//! use paladin_core::base::entity::message::Message;
 //! use serde::{Serialize, Deserialize};
 //!
 //! #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -92,7 +92,7 @@
 //!     let message = Message::new(
 //!         task,
 //!         "paladin-service".to_string(),
-//!         paladin::core::base::entity::message::Location::Local,
+//!         paladin_core::base::entity::message::Location::Local,
 //!     );
 //!
 //!     // Create queue item with retry config
@@ -119,7 +119,7 @@
 //! ### 2. Worker Processing Loop
 //!
 //! ```rust,ignore
-//! use paladin::application::ports::output::queue_port::QueuePort;
+//! use paladin_ports::output::queue_port::QueuePort;
 //! use serde::{Serialize, Deserialize};
 //!
 //! #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -174,7 +174,7 @@
 //! }
 //!
 //! async fn process_document(
-//!     item: &paladin::core::platform::container::queue_item::QueueItem<serde_json::Value>,
+//!     item: &paladin_core::platform::container::queue_item::QueueItem<serde_json::Value>,
 //! ) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
 //!     // Simulate document processing
 //!     Ok(serde_json::json!({"status": "processed"}))
@@ -184,9 +184,9 @@
 //! ### 3. Priority-Based Processing
 //!
 //! ```rust,ignore
-//! use paladin::application::ports::output::queue_port::QueuePort;
-//! use paladin::core::platform::container::queue_item::{QueueItem, QueueItemConfig};
-//! use paladin::core::base::entity::message::{Message, MessagePriority};
+//! use paladin_ports::output::queue_port::QueuePort;
+//! use paladin_core::platform::container::queue_item::{QueueItem, QueueItemConfig};
+//! use paladin_core::base::entity::message::{Message, MessagePriority};
 //! use serde::{Serialize, Deserialize};
 //!
 //! #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -203,7 +203,7 @@
 //!     let mut message = Message::new(
 //!         alert,
 //!         "alert-service".to_string(),
-//!         paladin::core::base::entity::message::Location::Local,
+//!         paladin_core::base::entity::message::Location::Local,
 //!     );
 //!     message.priority = MessagePriority::Critical;
 //!
@@ -223,7 +223,7 @@
 //! ### 4. Queue Monitoring and Stats
 //!
 //! ```rust,ignore
-//! use paladin::application::ports::output::queue_port::QueuePort;
+//! use paladin_ports::output::queue_port::QueuePort;
 //!
 //! async fn monitor_queue_health(
 //!     queue: &dyn QueuePort,
@@ -443,10 +443,10 @@ use uuid::Uuid;
 /// ## Basic Queue Operations
 ///
 /// ```rust,ignore
-/// use paladin::application::ports::output::queue_port::QueuePort;
-/// use paladin::core::platform::manager::queue_service::QueueConfig;
-/// use paladin::core::platform::container::queue_item::{QueueItem, QueueItemConfig};
-/// use paladin::core::base::entity::message::Message;
+/// use paladin_ports::output::queue_port::QueuePort;
+/// use paladin_core::platform::container::queue_config::QueueConfig;
+/// use paladin_core::platform::container::queue_item::{QueueItem, QueueItemConfig};
+/// use paladin_core::base::entity::message::Message;
 /// use serde::{Serialize, Deserialize};
 ///
 /// #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -475,7 +475,7 @@ use uuid::Uuid;
 ///     let message = Message::new(
 ///         task,
 ///         "my-service".to_string(),
-///         paladin::core::base::entity::message::Location::Local,
+///         paladin_core::base::entity::message::Location::Local,
 ///     );
 ///
 ///     let item = QueueItem::new(
@@ -498,7 +498,7 @@ use uuid::Uuid;
 /// ## Worker Processing with Retry
 ///
 /// ```rust,ignore
-/// use paladin::application::ports::output::queue_port::QueuePort;
+/// use paladin_ports::output::queue_port::QueuePort;
 ///
 /// async fn worker_with_retry(
 ///     queue: &dyn QueuePort,
@@ -539,7 +539,7 @@ use uuid::Uuid;
 /// }
 ///
 /// async fn process_task(
-///     item: &paladin::core::platform::container::queue_item::QueueItem<serde_json::Value>,
+///     item: &paladin_core::platform::container::queue_item::QueueItem<serde_json::Value>,
 /// ) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
 ///     // Simulate processing
 ///     Ok(serde_json::json!({"status": "done"}))

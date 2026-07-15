@@ -71,9 +71,9 @@
 //! ### Basic Vector Storage and Search
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::sanctum_port::{SanctumPort, SanctumQuery};
-//! use paladin::application::ports::output::embedding_port::EmbeddingPort;
-//! use paladin::core::platform::container::sanctum::{SanctumEntry, MemoryBuilder, MemoryType};
+//! use paladin_ports::output::sanctum_port::{SanctumPort, SanctumQuery};
+//! use paladin_ports::output::embedding_port::EmbeddingPort;
+//! use paladin_core::platform::container::sanctum::{SanctumEntry, MemoryBuilder, MemoryType};
 //!
 //! async fn semantic_memory(
 //!     sanctum: &dyn SanctumPort,
@@ -114,8 +114,8 @@
 //! ### Filtered Search with Metadata
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::sanctum_port::{SanctumPort, SanctumQuery, SanctumFilter};
-//! use paladin::core::platform::container::sanctum::MemoryType;
+//! use paladin_ports::output::sanctum_port::{SanctumPort, SanctumQuery, SanctumFilter};
+//! use paladin_core::platform::container::sanctum::MemoryType;
 //!
 //! async fn filtered_search(
 //!     sanctum: &dyn SanctumPort,
@@ -142,8 +142,8 @@
 //! ### Batch Storage for Efficiency
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::sanctum_port::SanctumPort;
-//! use paladin::core::platform::container::sanctum::{SanctumEntry, MemoryBuilder, MemoryType};
+//! use paladin_ports::output::sanctum_port::SanctumPort;
+//! use paladin_core::platform::container::sanctum::{SanctumEntry, MemoryBuilder, MemoryType};
 //!
 //! async fn batch_store(
 //!     sanctum: &dyn SanctumPort,
@@ -236,8 +236,8 @@ use paladin_core::platform::container::sanctum::{MemoryType, SanctumEntry};
 /// ## Error Handling with Retry
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::sanctum_port::{SanctumPort, SanctumError};
-/// use paladin::core::platform::container::sanctum::SanctumEntry;
+/// use paladin_ports::output::sanctum_port::{SanctumPort, SanctumError};
+/// use paladin_core::platform::container::sanctum::SanctumEntry;
 ///
 /// async fn store_with_retry(
 ///     sanctum: &dyn SanctumPort,
@@ -262,8 +262,8 @@ use paladin_core::platform::container::sanctum::{MemoryType, SanctumEntry};
 /// ## Dimension Validation
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::sanctum_port::{SanctumPort, SanctumError};
-/// use paladin::core::platform::container::sanctum::SanctumEntry;
+/// use paladin_ports::output::sanctum_port::{SanctumPort, SanctumError};
+/// use paladin_core::platform::container::sanctum::SanctumEntry;
 ///
 /// async fn store_with_validation(
 ///     sanctum: &dyn SanctumPort,
@@ -368,8 +368,8 @@ pub enum SanctumError {
 /// # Examples
 ///
 /// ```rust
-/// use paladin::application::ports::output::sanctum_port::SanctumFilter;
-/// use paladin::core::platform::container::sanctum::MemoryType;
+/// use paladin_ports::output::sanctum_port::SanctumFilter;
+/// use paladin_core::platform::container::sanctum::MemoryType;
 /// use chrono::{Utc, Duration};
 ///
 /// // Filter recent important semantic memories
@@ -452,7 +452,7 @@ impl SanctumFilter {
 /// ## Basic Search
 ///
 /// ```rust
-/// use paladin::application::ports::output::sanctum_port::SanctumQuery;
+/// use paladin_ports::output::sanctum_port::SanctumQuery;
 ///
 /// let query_vector = vec![0.1, 0.2, 0.3]; // From embedding model
 /// let query = SanctumQuery::new(query_vector, 10); // Top 10 results
@@ -461,8 +461,8 @@ impl SanctumFilter {
 /// ## Filtered Search with Score Threshold
 ///
 /// ```rust
-/// use paladin::application::ports::output::sanctum_port::{SanctumQuery, SanctumFilter};
-/// use paladin::core::platform::container::sanctum::MemoryType;
+/// use paladin_ports::output::sanctum_port::{SanctumQuery, SanctumFilter};
+/// use paladin_core::platform::container::sanctum::MemoryType;
 ///
 /// let query_vector = vec![0.1, 0.2, 0.3];
 /// let filter = SanctumFilter::new()
@@ -538,8 +538,8 @@ impl SanctumQuery {
 /// # Examples
 ///
 /// ```rust
-/// use paladin::application::ports::output::sanctum_port::SanctumSearchResult;
-/// use paladin::core::platform::container::sanctum::{SanctumEntry, Memory, MemoryType};
+/// use paladin_ports::output::sanctum_port::SanctumSearchResult;
+/// use paladin_core::platform::container::sanctum::{SanctumEntry, Memory, MemoryType};
 /// use uuid::Uuid;
 /// use chrono::Utc;
 ///
@@ -580,7 +580,7 @@ impl SanctumSearchResult {
     }
 }
 
-/// Port trait for vector storage and semantic search.\n///\n/// This trait provides a standardized interface for storing and retrieving\n/// vector embeddings with associated memories. Implementations can use\n/// different vector databases (Qdrant, Pinecone, Weaviate, in-memory, etc.).\n///\n/// # Capabilities\n///\n/// - **Storage**: Add single or batch entries with [`store`](Self::store) / [`store_batch`](Self::store_batch)\n/// - **Search**: Find similar vectors with [`search`](Self::search)\n/// - **Management**: Update or delete entries with [`update`](Self::update) / [`delete`](Self::delete)\n/// - **Monitoring**: Count entries with [`count`](Self::count)\n///\n/// # Thread Safety\n///\n/// All implementations must be `Send + Sync` to support async operations across\n/// thread boundaries. Multiple Paladin agents may access the same Sanctum concurrently.\n///\n/// # Implementation Requirements\n///\n/// Implementations should:\n/// 1. Use ANN (approximate nearest neighbor) indexes for fast similarity search\n/// 2. Validate embedding dimensions on insert (must be consistent)\n/// 3. Support concurrent read/write operations safely\n/// 4. Return search results sorted by similarity score (descending)\n/// 5. Apply filters before similarity calculation for efficiency\n///\n/// # Examples\n///\n/// ## Knowledge Base RAG Pattern\n///\n/// ```rust,no_run\n/// use paladin::application::ports::output::sanctum_port::{SanctumPort, SanctumQuery};\n/// use paladin::application::ports::output::embedding_port::EmbeddingPort;\n///\n/// async fn rag_retrieval(\n///     sanctum: &dyn SanctumPort,\n///     embedder: &dyn EmbeddingPort,\n///     user_query: &str,\n/// ) -> Result<Vec<String>, Box<dyn std::error::Error>> {\n///     // Generate query embedding\n///     let query_embedding = embedder.embed_text(user_query).await?;\n///     \n///     // Search for relevant knowledge\n///     let query = SanctumQuery::new(query_embedding.vector, 3)\n///         .min_score(0.7); // Only high-quality matches\n///     \n///     let results = sanctum.search(query).await?;\n///     \n///     // Extract content for LLM context\n///     let context: Vec<String> = results\n///         .into_iter()\n///         .map(|r| r.entry.memory.content)\n///         .collect();\n///     \n///     Ok(context)\n/// }\n/// ```\n///\n/// ## Multi-Agent Memory Isolation\n///\n/// ```rust,no_run\n/// use paladin::application::ports::output::sanctum_port::{SanctumPort, SanctumQuery, SanctumFilter};\n///\n/// async fn agent_specific_search(\n///     sanctum: &dyn SanctumPort,\n///     paladin_id: &str,\n///     query_embedding: Vec<f32>,\n/// ) -> Result<(), Box<dyn std::error::Error>> {\n///     // Filter to only this agent's memories\n///     let filter = SanctumFilter::new()\n///         .paladin_id(paladin_id.to_string());\n///     \n///     let query = SanctumQuery::new(query_embedding, 10)\n///         .filter(filter);\n///     \n///     let results = sanctum.search(query).await?;\n///     println!(\"Agent {} has {} relevant memories\", paladin_id, results.len());\n///     \n///     Ok(())\n/// }\n/// ```\n///\n/// ## Memory Lifecycle Management\n///\n/// ```rust,no_run\n/// use paladin::application::ports::output::sanctum_port::SanctumPort;\n/// use paladin::core::platform::container::sanctum::SanctumEntry;\n///\n/// async fn update_memory_importance(\n///     sanctum: &dyn SanctumPort,\n///     memory_id: &str,\n///     mut entry: SanctumEntry,\n///     new_importance: f32,\n/// ) -> Result<(), Box<dyn std::error::Error>> {\n///     // Update importance score\n///     entry.memory.importance = new_importance;\n///     \n///     // Persist update\n///     sanctum.update(entry).await?;\n///     println!(\"Updated memory {} importance to {}\", memory_id, new_importance);\n///     \n///     Ok(())\n/// }\n/// ```\n///\n/// # Implementation Notes\n///\n/// ## Vector Database Selection\n///\n/// Choose based on scale and requirements:\n/// - **Qdrant**: Self-hosted, excellent performance, HNSW indexes\n/// - **Pinecone**: Managed service, easy scaling, pay-per-use\n/// - **Weaviate**: GraphQL API, hybrid search, schema validation\n/// - **pgvector**: PostgreSQL extension, SQL integration, ACID guarantees\n/// - **In-Memory**: Development/testing only, no persistence\n///\n/// ## Performance Optimization\n///\n/// ```rust,ignore\n/// // Good: Batch storage (10-100x faster)\n/// sanctum.store_batch(entries).await?;\n///\n/// // Avoid: Individual stores in loop\n/// for entry in entries {\n///     sanctum.store(entry).await?; // Slow!\n/// }\n///\n/// // Good: Filter before search\n/// let query = SanctumQuery::new(embedding, 10)\n///     .filter(SanctumFilter::new().paladin_id(id));\n///\n/// // Good: Set min_score threshold\n/// let query = SanctumQuery::new(embedding, 10)\n///     .min_score(0.5); // Filter low-quality matches\n/// ```\n///\n/// ## Index Configuration\n///\n/// For optimal performance:\n/// - Use HNSW index for < 1M vectors (high recall, fast queries)\n/// - Use IVF index for > 1M vectors (good recall, scalable)\n/// - Tune index parameters: `m`, `ef_construction`, `nprobe`\n/// - Rebuild indexes periodically for best performance\n///\n/// ## Embedding Best Practices\n///\n/// 1. **Consistency**: Always use same model and dimension\n/// 2. **Normalization**: Store normalized vectors for cosine similarity\n/// 3. **Validation**: Check dimension on every insert\n/// 4. **Metadata**: Include rich metadata for filtering\n/// 5. **Batch Operations**: Process embeddings in batches of 10-100\n///\n/// # Common Pitfalls\n///\n/// - Using different embedding models in same collection (invalid similarity)\n/// - Not setting `min_score` threshold (low-quality results)\n/// - Linear scan without indexes (slow for > 10k vectors)\n/// - Storing unnormalized embeddings (inconsistent cosine similarity)\n/// - Not using batch operations (poor performance)\n///\n/// # See Also\n///\n/// - [`SanctumQuery`] - Query builder with fluent API\n/// - [`SanctumFilter`] - Metadata filtering options\n/// - [`SanctumSearchResult`] - Search result with similarity score\n/// - [`GarrisonPort`] - Short-term memory alternative
+/// Port trait for vector storage and semantic search.\n///\n/// This trait provides a standardized interface for storing and retrieving\n/// vector embeddings with associated memories. Implementations can use\n/// different vector databases (Qdrant, Pinecone, Weaviate, in-memory, etc.).\n///\n/// # Capabilities\n///\n/// - **Storage**: Add single or batch entries with [`store`](Self::store) / [`store_batch`](Self::store_batch)\n/// - **Search**: Find similar vectors with [`search`](Self::search)\n/// - **Management**: Update or delete entries with [`update`](Self::update) / [`delete`](Self::delete)\n/// - **Monitoring**: Count entries with [`count`](Self::count)\n///\n/// # Thread Safety\n///\n/// All implementations must be `Send + Sync` to support async operations across\n/// thread boundaries. Multiple Paladin agents may access the same Sanctum concurrently.\n///\n/// # Implementation Requirements\n///\n/// Implementations should:\n/// 1. Use ANN (approximate nearest neighbor) indexes for fast similarity search\n/// 2. Validate embedding dimensions on insert (must be consistent)\n/// 3. Support concurrent read/write operations safely\n/// 4. Return search results sorted by similarity score (descending)\n/// 5. Apply filters before similarity calculation for efficiency\n///\n/// # Examples\n///\n/// ## Knowledge Base RAG Pattern\n///\n/// ```rust,no_run\n/// use paladin_ports::output::sanctum_port::{SanctumPort, SanctumQuery};\n/// use paladin_ports::output::embedding_port::EmbeddingPort;\n///\n/// async fn rag_retrieval(\n///     sanctum: &dyn SanctumPort,\n///     embedder: &dyn EmbeddingPort,\n///     user_query: &str,\n/// ) -> Result<Vec<String>, Box<dyn std::error::Error>> {\n///     // Generate query embedding\n///     let query_embedding = embedder.embed_text(user_query).await?;\n///     \n///     // Search for relevant knowledge\n///     let query = SanctumQuery::new(query_embedding.vector, 3)\n///         .min_score(0.7); // Only high-quality matches\n///     \n///     let results = sanctum.search(query).await?;\n///     \n///     // Extract content for LLM context\n///     let context: Vec<String> = results\n///         .into_iter()\n///         .map(|r| r.entry.memory.content)\n///         .collect();\n///     \n///     Ok(context)\n/// }\n/// ```\n///\n/// ## Multi-Agent Memory Isolation\n///\n/// ```rust,no_run\n/// use paladin_ports::output::sanctum_port::{SanctumPort, SanctumQuery, SanctumFilter};\n///\n/// async fn agent_specific_search(\n///     sanctum: &dyn SanctumPort,\n///     paladin_id: &str,\n///     query_embedding: Vec<f32>,\n/// ) -> Result<(), Box<dyn std::error::Error>> {\n///     // Filter to only this agent's memories\n///     let filter = SanctumFilter::new()\n///         .paladin_id(paladin_id.to_string());\n///     \n///     let query = SanctumQuery::new(query_embedding, 10)\n///         .filter(filter);\n///     \n///     let results = sanctum.search(query).await?;\n///     println!(\"Agent {} has {} relevant memories\", paladin_id, results.len());\n///     \n///     Ok(())\n/// }\n/// ```\n///\n/// ## Memory Lifecycle Management\n///\n/// ```rust,no_run\n/// use paladin_ports::output::sanctum_port::SanctumPort;\n/// use paladin_core::platform::container::sanctum::SanctumEntry;\n///\n/// async fn update_memory_importance(\n///     sanctum: &dyn SanctumPort,\n///     memory_id: &str,\n///     mut entry: SanctumEntry,\n///     new_importance: f32,\n/// ) -> Result<(), Box<dyn std::error::Error>> {\n///     // Update importance score\n///     entry.memory.importance = new_importance;\n///     \n///     // Persist update\n///     sanctum.update(entry).await?;\n///     println!(\"Updated memory {} importance to {}\", memory_id, new_importance);\n///     \n///     Ok(())\n/// }\n/// ```\n///\n/// # Implementation Notes\n///\n/// ## Vector Database Selection\n///\n/// Choose based on scale and requirements:\n/// - **Qdrant**: Self-hosted, excellent performance, HNSW indexes\n/// - **Pinecone**: Managed service, easy scaling, pay-per-use\n/// - **Weaviate**: GraphQL API, hybrid search, schema validation\n/// - **pgvector**: PostgreSQL extension, SQL integration, ACID guarantees\n/// - **In-Memory**: Development/testing only, no persistence\n///\n/// ## Performance Optimization\n///\n/// ```rust,ignore\n/// // Good: Batch storage (10-100x faster)\n/// sanctum.store_batch(entries).await?;\n///\n/// // Avoid: Individual stores in loop\n/// for entry in entries {\n///     sanctum.store(entry).await?; // Slow!\n/// }\n///\n/// // Good: Filter before search\n/// let query = SanctumQuery::new(embedding, 10)\n///     .filter(SanctumFilter::new().paladin_id(id));\n///\n/// // Good: Set min_score threshold\n/// let query = SanctumQuery::new(embedding, 10)\n///     .min_score(0.5); // Filter low-quality matches\n/// ```\n///\n/// ## Index Configuration\n///\n/// For optimal performance:\n/// - Use HNSW index for < 1M vectors (high recall, fast queries)\n/// - Use IVF index for > 1M vectors (good recall, scalable)\n/// - Tune index parameters: `m`, `ef_construction`, `nprobe`\n/// - Rebuild indexes periodically for best performance\n///\n/// ## Embedding Best Practices\n///\n/// 1. **Consistency**: Always use same model and dimension\n/// 2. **Normalization**: Store normalized vectors for cosine similarity\n/// 3. **Validation**: Check dimension on every insert\n/// 4. **Metadata**: Include rich metadata for filtering\n/// 5. **Batch Operations**: Process embeddings in batches of 10-100\n///\n/// # Common Pitfalls\n///\n/// - Using different embedding models in same collection (invalid similarity)\n/// - Not setting `min_score` threshold (low-quality results)\n/// - Linear scan without indexes (slow for > 10k vectors)\n/// - Storing unnormalized embeddings (inconsistent cosine similarity)\n/// - Not using batch operations (poor performance)\n///\n/// # See Also\n///\n/// - [`SanctumQuery`] - Query builder with fluent API\n/// - [`SanctumFilter`] - Metadata filtering options\n/// - [`SanctumSearchResult`] - Search result with similarity score\n/// - [`GarrisonPort`] - Short-term memory alternative
 #[async_trait]
 pub trait SanctumPort: Send + Sync {
     /// Store a single entry in the vector database

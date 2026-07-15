@@ -12,9 +12,9 @@
 //! # Example
 //!
 //! ```rust
-//! use paladin::application::ports::output::paladin_registry::PaladinRegistry;
-//! use paladin::core::platform::container::paladin::{PaladinData, Paladin};
-//! use paladin::core::base::entity::node::Node;
+//! use paladin_ports::output::paladin_registry::PaladinRegistry;
+//! use paladin_core::platform::container::paladin::{PaladinData, Paladin};
+//! use paladin_core::base::entity::node::Node;
 //! use std::sync::Arc;
 //!
 //! # fn example(registry: impl PaladinRegistry) {
@@ -55,8 +55,8 @@ pub use paladin_core::platform::container::registry_error::RegistryError;
 /// # Example Implementation
 ///
 /// ```rust
-/// use paladin::application::ports::output::paladin_registry::{PaladinRegistry, RegistryError};
-/// use paladin::core::platform::container::paladin::Paladin;
+/// use paladin_ports::output::paladin_registry::{PaladinRegistry, RegistryError};
+/// use paladin_core::platform::container::paladin::Paladin;
 /// use std::sync::Arc;
 /// use std::collections::HashMap;
 /// use std::sync::RwLock;
@@ -108,9 +108,9 @@ pub trait PaladinRegistry: Send + Sync {
     /// # Example
     ///
     /// ```rust
-    /// # use paladin::application::ports::output::paladin_registry::PaladinRegistry;
-    /// # use paladin::core::platform::container::paladin::{PaladinData, Paladin};
-    /// # use paladin::core::base::entity::node::Node;
+    /// # use paladin_ports::output::paladin_registry::PaladinRegistry;
+    /// # use paladin_core::platform::container::paladin::{PaladinData, Paladin};
+    /// # use paladin_core::base::entity::node::Node;
     /// # use std::sync::Arc;
     /// # fn example(registry: impl PaladinRegistry) {
     /// let paladin_data = PaladinData::default();
@@ -138,7 +138,7 @@ pub trait PaladinRegistry: Send + Sync {
     /// # Example
     ///
     /// ```rust
-    /// # use paladin::application::ports::output::paladin_registry::PaladinRegistry;
+    /// # use paladin_ports::output::paladin_registry::PaladinRegistry;
     /// # fn example(registry: impl PaladinRegistry) {
     /// if let Some(paladin) = registry.get("analyzer") {
     ///     println!("Found: {:?}", paladin.name);
@@ -166,7 +166,7 @@ pub trait PaladinRegistry: Send + Sync {
     /// # Example
     ///
     /// ```rust
-    /// # use paladin::application::ports::output::paladin_registry::PaladinRegistry;
+    /// # use paladin_ports::output::paladin_registry::PaladinRegistry;
     /// # fn example(registry: impl PaladinRegistry) {
     /// if registry.contains("analyzer") {
     ///     println!("Analyzer is registered");
@@ -187,7 +187,7 @@ pub trait PaladinRegistry: Send + Sync {
     /// # Example
     ///
     /// ```rust
-    /// # use paladin::application::ports::output::paladin_registry::PaladinRegistry;
+    /// # use paladin_ports::output::paladin_registry::PaladinRegistry;
     /// # fn example(registry: impl PaladinRegistry) {
     /// let ids = registry.list_ids();
     /// println!("Registered Paladins: {:?}", ids);

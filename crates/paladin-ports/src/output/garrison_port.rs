@@ -56,8 +56,8 @@
 //! ### Basic Usage
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::garrison_port::GarrisonPort;
-//! use paladin::core::platform::container::garrison::{GarrisonEntry, ConversationRole};
+//! use paladin_ports::output::garrison_port::GarrisonPort;
+//! use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole};
 //!
 //! async fn conversation_memory(garrison: &dyn GarrisonPort) -> Result<(), Box<dyn std::error::Error>> {
 //!     // Store user message
@@ -88,7 +88,7 @@
 //! ### Search and Statistics
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::garrison_port::GarrisonPort;
+//! use paladin_ports::output::garrison_port::GarrisonPort;
 //!
 //! async fn search_history(garrison: &dyn GarrisonPort) -> Result<(), Box<dyn std::error::Error>> {
 //!     // Search for specific topics
@@ -111,8 +111,8 @@
 //! ### Custom Implementation
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::garrison_port::{GarrisonPort, GarrisonError, GarrisonStats};
-//! use paladin::core::platform::container::garrison::GarrisonEntry;
+//! use paladin_ports::output::garrison_port::{GarrisonPort, GarrisonError, GarrisonStats};
+//! use paladin_core::platform::container::garrison::GarrisonEntry;
 //! use async_trait::async_trait;
 //! use std::sync::{Arc, Mutex};
 //!
@@ -216,7 +216,7 @@ pub use paladin_core::platform::container::garrison_error::GarrisonError;
 /// # Examples
 ///
 /// ```rust
-/// use paladin::application::ports::output::garrison_port::GarrisonStats;
+/// use paladin_ports::output::garrison_port::GarrisonStats;
 ///
 /// let stats = GarrisonStats {
 ///     entry_count: 150,
@@ -276,8 +276,8 @@ pub struct GarrisonStats {
 /// ## Basic Conversation Storage
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::garrison_port::GarrisonPort;
-/// use paladin::core::platform::container::garrison::{GarrisonEntry, ConversationRole};
+/// use paladin_ports::output::garrison_port::GarrisonPort;
+/// use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole};
 ///
 /// async fn conversation_flow(garrison: &dyn GarrisonPort) -> Result<(), Box<dyn std::error::Error>> {
 ///     // Store user input
@@ -305,7 +305,7 @@ pub struct GarrisonStats {
 /// ## Memory Management
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::garrison_port::GarrisonPort;
+/// use paladin_ports::output::garrison_port::GarrisonPort;
 ///
 /// async fn manage_memory(garrison: &dyn GarrisonPort) -> Result<(), Box<dyn std::error::Error>> {
 ///     // Check current usage
@@ -326,7 +326,7 @@ pub struct GarrisonStats {
 /// ## Search Historical Context
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::garrison_port::GarrisonPort;
+/// use paladin_ports::output::garrison_port::GarrisonPort;
 ///
 /// async fn search_context(garrison: &dyn GarrisonPort) -> Result<(), Box<dyn std::error::Error>> {
 ///     // Find past discussions about specific topics
@@ -392,8 +392,8 @@ pub trait GarrisonPort: Send + Sync {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::application::ports::output::garrison_port::GarrisonPort;
-    /// # use paladin::core::platform::container::garrison::{GarrisonEntry, ConversationRole};
+    /// # use paladin_ports::output::garrison_port::GarrisonPort;
+    /// # use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole};
     /// # async fn example(garrison: &dyn GarrisonPort) {
     /// let entry = GarrisonEntry::new(
     ///     ConversationRole::User,
@@ -419,7 +419,7 @@ pub trait GarrisonPort: Send + Sync {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::application::ports::output::garrison_port::GarrisonPort;
+    /// # use paladin_ports::output::garrison_port::GarrisonPort;
     /// # async fn example(garrison: &dyn GarrisonPort) {
     /// let recent = garrison.recall_recent(5).await.expect("Failed to recall");
     /// for entry in recent {
@@ -445,7 +445,7 @@ pub trait GarrisonPort: Send + Sync {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::application::ports::output::garrison_port::GarrisonPort;
+    /// # use paladin_ports::output::garrison_port::GarrisonPort;
     /// # async fn example(garrison: &dyn GarrisonPort) {
     /// let results = garrison.search("error", 10).await.expect("Search failed");
     /// println!("Found {} entries containing 'error'", results.len());
@@ -466,7 +466,7 @@ pub trait GarrisonPort: Send + Sync {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::application::ports::output::garrison_port::GarrisonPort;
+    /// # use paladin_ports::output::garrison_port::GarrisonPort;
     /// # async fn example(garrison: &dyn GarrisonPort) {
     /// garrison.forget_all().await.expect("Failed to clear garrison");
     /// # }
@@ -482,7 +482,7 @@ pub trait GarrisonPort: Send + Sync {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::application::ports::output::garrison_port::GarrisonPort;
+    /// # use paladin_ports::output::garrison_port::GarrisonPort;
     /// # async fn example(garrison: &dyn GarrisonPort) {
     /// let stats = garrison.stats().await.expect("Failed to get stats");
     /// println!("Entries: {}, Tokens: {}", stats.entry_count, stats.total_tokens);
@@ -530,9 +530,9 @@ pub trait GarrisonPort: Send + Sync {
 /// ## Semantic Context Retrieval
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::garrison_port::LongTermGarrisonPort;
-/// use paladin::application::ports::output::embedding_port::EmbeddingPort;
-/// use paladin::core::platform::container::garrison::{GarrisonEntry, ConversationRole};
+/// use paladin_ports::output::garrison_port::LongTermGarrisonPort;
+/// use paladin_ports::output::embedding_port::EmbeddingPort;
+/// use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole};
 ///
 /// async fn semantic_context(
 ///     garrison: &dyn LongTermGarrisonPort,
@@ -558,9 +558,9 @@ pub trait GarrisonPort: Send + Sync {
 /// ## Store with Embeddings
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::garrison_port::LongTermGarrisonPort;
-/// use paladin::application::ports::output::embedding_port::EmbeddingPort;
-/// use paladin::core::platform::container::garrison::{GarrisonEntry, ConversationRole};
+/// use paladin_ports::output::garrison_port::LongTermGarrisonPort;
+/// use paladin_ports::output::embedding_port::EmbeddingPort;
+/// use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole};
 ///
 /// async fn store_with_embedding(
 ///     garrison: &dyn LongTermGarrisonPort,
@@ -588,9 +588,9 @@ pub trait GarrisonPort: Send + Sync {
 /// ## Hybrid Search (Text + Semantic)
 ///
 /// ```rust,no_run
-/// use paladin::application::ports::output::garrison_port::{GarrisonPort, LongTermGarrisonPort};
-/// use paladin::application::ports::output::embedding_port::EmbeddingPort;
-/// use paladin::core::platform::container::garrison::GarrisonEntry;
+/// use paladin_ports::output::garrison_port::{GarrisonPort, LongTermGarrisonPort};
+/// use paladin_ports::output::embedding_port::EmbeddingPort;
+/// use paladin_core::platform::container::garrison::GarrisonEntry;
 ///
 /// async fn hybrid_search(
 ///     garrison: &dyn LongTermGarrisonPort,
@@ -669,8 +669,8 @@ pub trait LongTermGarrisonPort: GarrisonPort {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::application::ports::output::garrison_port::LongTermGarrisonPort;
-    /// # use paladin::core::platform::container::garrison::{GarrisonEntry, ConversationRole};
+    /// # use paladin_ports::output::garrison_port::LongTermGarrisonPort;
+    /// # use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole};
     /// # async fn example(garrison: &dyn LongTermGarrisonPort) {
     /// let entry = GarrisonEntry::new(
     ///     ConversationRole::User,
@@ -703,7 +703,7 @@ pub trait LongTermGarrisonPort: GarrisonPort {
     /// # Examples
     ///
     /// ```no_run
-    /// # use paladin::application::ports::output::garrison_port::LongTermGarrisonPort;
+    /// # use paladin_ports::output::garrison_port::LongTermGarrisonPort;
     /// # async fn example(garrison: &dyn LongTermGarrisonPort) {
     /// let query_embedding = vec![0.15, 0.25, 0.35]; // From embedding model
     /// let similar = garrison.search_similar(query_embedding, 10).await

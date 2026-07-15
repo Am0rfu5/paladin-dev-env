@@ -19,7 +19,7 @@
 //! # Usage
 //!
 //! ```rust,no_run
-//! use paladin::application::ports::output::scheduler_port::*;
+//! use paladin_ports::output::scheduler_port::*;
 //!
 //! async fn schedule_example(scheduler: &dyn SchedulerPort) {
 //!     let spec = JobSpec::new(
