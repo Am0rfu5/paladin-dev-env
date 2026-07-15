@@ -938,39 +938,6 @@ impl PaladinBuilder {
         self
     }
 
-    /// Adds an SSE-based MCP server configuration
-    ///
-    /// SSE servers are HTTP-based tools that communicate using Server-Sent Events
-    /// and the Model Context Protocol.
-    ///
-    /// # Arguments
-    ///
-    /// * `name` - Identifier for the server
-    /// * `endpoint` - HTTP endpoint URL
-    ///
-    /// # Example
-    /// ```rust,no_run
-    /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
-    /// # use paladin_ports::output::llm_port::LlmPort;
-    /// # use std::sync::Arc;
-    /// # fn example(llm_port: Arc<dyn LlmPort>) {
-    /// let builder = PaladinBuilder::new(llm_port)
-    ///     .system_prompt("You are an assistant with code analysis")
-    ///     .add_mcp_sse("code_analyzer", "http://localhost:8080/mcp");
-    /// # }
-    /// ```
-    pub fn add_mcp_sse(mut self, name: impl Into<String>, endpoint: impl Into<String>) -> Self {
-        self.mcp_servers.push(MCPServerConfig {
-            name: name.into(),
-            server_type: "sse".to_string(),
-            command: None,
-            args: None,
-            endpoint: Some(endpoint.into()),
-            auth_token_env: None,
-        });
-        self
-    }
-
     /// Attaches a Citadel state persistence system to the Paladin
     ///
     /// The Citadel enables automatic saving and restoration of Paladin state,

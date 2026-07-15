@@ -97,27 +97,12 @@ async fn test_builder_add_mcp_stdio() {
 }
 
 #[tokio::test]
-async fn test_builder_add_mcp_sse() {
-    let llm_port = Arc::new(MockLlmPort);
-    let builder = PaladinBuilder::new(llm_port)
-        .system_prompt("Test prompt")
-        .add_mcp_sse("code_analyzer", "http://localhost:8080/mcp");
-
-    // Build to verify no errors
-    let result = builder.build();
-    assert!(
-        result.await.is_ok(),
-        "Builder should succeed with MCP SSE config"
-    );
-}
-
-#[tokio::test]
 async fn test_builder_add_multiple_mcp_servers() {
     let llm_port = Arc::new(MockLlmPort);
     let builder = PaladinBuilder::new(llm_port)
         .system_prompt("Test prompt")
         .add_mcp_stdio("web_search", "uvx", &["mcp-web-search"])
-        .add_mcp_sse("code_analyzer", "http://localhost:8080/mcp")
+        .add_mcp_stdio("code_analyzer", "python", &["-m", "mcp_code_analyzer"])
         .add_mcp_stdio("calculator", "python", &["-m", "mcp_calculator"]);
 
     // Build to verify no errors
@@ -158,7 +143,7 @@ async fn test_builder_full_arsenal_configuration() {
         .max_loops(10)
         .with_arsenal_registry(registry)
         .add_mcp_stdio("web_search", "uvx", &["mcp-web-search"])
-        .add_mcp_sse("code_analyzer", "http://localhost:8080/mcp");
+        .add_mcp_stdio("code_analyzer", "python", &["-m", "mcp_code_analyzer"]);
 
     // Build to verify no errors
     let result = builder.build();
