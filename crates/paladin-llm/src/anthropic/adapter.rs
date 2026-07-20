@@ -182,8 +182,13 @@ impl AnthropicAdapter {
                                 .parameters
                                 .max_tokens
                                 .unwrap_or(self.config.max_tokens),
-                            temperature: request.prompt.node.node.parameters.temperature,
-                            top_p: request.prompt.node.node.parameters.top_p,
+                            // Phase 23.1: current Claude models (e.g. claude-opus-4-8)
+                            // reject an explicit `temperature` ("deprecated for this
+                            // model") — and restrict other sampling overrides — so omit
+                            // both and let the API default apply. `skip_serializing_if`
+                            // drops the `None`s from the request body entirely.
+                            temperature: None,
+                            top_p: None,
                             stream: false,
                         });
                     }
@@ -222,8 +227,12 @@ impl AnthropicAdapter {
             messages,
             system: system_message,
             max_tokens,
-            temperature: request.prompt.node.node.parameters.temperature,
-            top_p: request.prompt.node.node.parameters.top_p,
+            // Phase 23.1: current Claude models (e.g. claude-opus-4-8) reject an
+            // explicit `temperature` ("deprecated for this model") and restrict other
+            // sampling overrides — omit both and let the API default apply
+            // (`skip_serializing_if` drops the `None`s from the request body).
+            temperature: None,
+            top_p: None,
             stream: false,
         })
     }
