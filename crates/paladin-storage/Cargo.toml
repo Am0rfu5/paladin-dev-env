@@ -23,6 +23,8 @@ mysql = ["dep:sqlx", "sqlx/mysql"]
 s3 = ["dep:rust-s3"]
 ## Enable the Redis queue adapter.
 redis-queue = ["dep:redis"]
+## Enable the tokio-cron-scheduler-backed SchedulerPort adapter.
+scheduler = ["dep:tokio-cron-scheduler"]
 
 [dependencies]
 paladin-core = { package = "paladin-ai-core", version = "0.6.0", path = "../paladin-core" }
@@ -44,6 +46,10 @@ rust-s3 = { version = "0.35.1", optional = true }
 
 # redis is optional: activated by the redis-queue feature.
 redis = { version = "0.32.2", features = ["aio", "tokio-comp", "connection-manager", "script"], optional = true }
+
+# tokio-cron-scheduler is optional: activated by the scheduler feature. Pinned
+# to the same "0.13" the workspace root already resolves.
+tokio-cron-scheduler = { version = "0.13", optional = true }
 
 # url is used for parsing source URLs stored in content rows.
 url = "2"

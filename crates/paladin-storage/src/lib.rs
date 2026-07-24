@@ -11,6 +11,7 @@
 //! | `mysql`  | [`mysql_content_repository`] |
 //! | `s3`     | [`minio`] (MinIO / S3 file storage) |
 //! | `redis-queue` | [`redis`] (Redis-backed queue) |
+//! | `scheduler` | [`scheduler`] (`tokio-cron-scheduler`-backed `SchedulerPort`) |
 //!
 //! Enable only the backends your deployment actually uses.
 
@@ -42,3 +43,7 @@ pub mod minio;
 /// Redis implementation of `QueuePort`.
 #[cfg(feature = "redis-queue")]
 pub mod redis;
+
+/// `tokio-cron-scheduler` implementation of `SchedulerPort`.
+#[cfg(feature = "scheduler")]
+pub mod scheduler;
