@@ -10,10 +10,20 @@ default_install_hook_types:
   - pre-push
 
 # Skip generated / vendored / build artifacts (most are already gitignored).
+#
+# .claude/ holds the vendored GSD toolchain (installed by
+# `npx @opengsd/gsd-core@latest --claude --local`, see .devcontainer/post-create.sh).
+# It is excluded for two reasons:
+#   1. The formatting hooks rewrite its files, which invalidates the SHA-256
+#      checksums recorded in .claude/gsd-file-manifest.json and breaks `gsd update`.
+#   2. Those same manifest checksums are high-entropy strings that gitleaks
+#      reports as `generic-api-key` false positives.
+# Upstream owns this tree; re-run the installer to update it rather than editing.
 exclude: |
   (?x)^(
     target/.*|
     flat/.*|
+    \.claude/.*|
     .*\.lock|
     lcov\.info
   )$

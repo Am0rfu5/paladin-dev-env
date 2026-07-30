@@ -73,6 +73,24 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Node.js 22 LTS from NodeSource — provides node/npm/npx, required by the
+# GSD workflow tooling (`npx @opengsd/gsd-core@latest`, engines: node >=22, npm >=10).
+# Debian bookworm only ships Node 18, which is too old, so the vendor repo is used.
+# The key is stored ASCII-armored as .asc (apt supports this natively) to avoid
+# pulling gnupg into the image just to dearmor it.
+# Keep this an apt install: GSD writes the absolute interpreter path (/usr/bin/node)
+# into .claude/settings.local.json hook commands, so a version-manager install
+# (nvm/fnm, under $HOME) would break those hooks on rebuild.
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+    -o /usr/share/keyrings/nodesource.asc \
+    && chmod go+r /usr/share/keyrings/nodesource.asc \
+    && echo "deb [signed-by=/usr/share/keyrings/nodesource.asc] https://deb.nodesource.com/node_22.x nodistro main" \
+    | tee /etc/apt/sources.list.d/nodesource.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends nodejs \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install pipx + pre-commit (commit/push quality gates) system-wide so the tool
 # is available to the non-root user without a per-user install.
 ENV PIPX_HOME=/usr/local/pipx \

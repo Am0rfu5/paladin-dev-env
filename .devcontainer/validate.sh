@@ -27,13 +27,18 @@ test_command() {
     echo -n "Testing $name... "
     if eval "$command" &> /dev/null; then
         echo -e "${GREEN}✅ PASS${NC}"
-        ((TESTS_PASSED++))
-        return 0
+        # Use $((...)) assignment, not ((TESTS_PASSED++)): the post-increment form
+        # evaluates to 0 on the first call, which is a non-zero *exit status* and
+        # aborts the whole script under `set -e`.
+        TESTS_PASSED=$((TESTS_PASSED + 1))
     else
         echo -e "${RED}❌ FAIL${NC}"
-        ((TESTS_FAILED++))
-        return 1
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
+
+    # Always succeed: a failed check is reported via TESTS_FAILED and the summary,
+    # and must not terminate the run via `set -e`.
+    return 0
 }
 
 echo -e "${BLUE}1. Rust Toolchain${NC}"
@@ -64,6 +69,14 @@ test_command "ripgrep" "rg --version"
 test_command "fd" "fd --version"
 test_command "bat" "bat --version"
 test_command "exa" "exa --version"
+echo ""
+
+echo -e "${BLUE}3b. Node.js / GSD Tooling${NC}"
+echo "-------------------"
+test_command "node (>= 22)" "node --version && [ \"\$(node -p 'process.versions.node.split(\".\")[0]')\" -ge 22 ]"
+test_command "npm" "npm --version"
+test_command "npx" "npx --version"
+test_command "GSD installed" "test -f /workspace/.claude/gsd-file-manifest.json"
 echo ""
 
 echo -e "${BLUE}4. Database Clients${NC}"

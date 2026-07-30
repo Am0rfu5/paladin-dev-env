@@ -32,6 +32,22 @@ if [ -d "migrations" ]; then
     fi
 fi
 
+# Install GSD (Git. Ship. Done.) workflow tooling into ./.claude
+# The install lives in the bind-mounted workspace, so it normally survives a
+# container rebuild on its own. This guard restores it on a fresh clone, or if
+# .claude/ has been cleared, and is a no-op when GSD is already present.
+echo -e "${BLUE}⚙️  Checking GSD workflow tooling...${NC}"
+if [ -f ".claude/gsd-file-manifest.json" ]; then
+    echo -e "${GREEN}✅ GSD already installed (run 'npx @opengsd/gsd-core@latest --claude --local' to update)${NC}"
+elif command -v npx >/dev/null 2>&1; then
+    echo -e "${BLUE}📦 Installing GSD for Claude Code...${NC}"
+    npx --yes @opengsd/gsd-core@latest --claude --local \
+        || echo -e "${YELLOW}⚠️  GSD install failed; run it manually once the network is available.${NC}"
+else
+    echo -e "${YELLOW}⚠️  npx not found on PATH; skipping GSD install.${NC}"
+    echo -e "${YELLOW}   Node.js 22+ is provisioned by .devcontainer/Dockerfile.dev — rebuild the container.${NC}"
+fi
+
 # Set up git hooks if .git exists
 if [ -d ".git" ]; then
     echo -e "${BLUE}🔗 Setting up git hooks (pre-commit framework)...${NC}"
