@@ -1,0 +1,91 @@
+docs:
+  - path: ".project/Milestone_2-Missing_features/Epic_11/EPIC_11_COMPLETION_SUMMARY.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_11/epic11.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_12/epic12.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_13/epic13.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_14/epic14.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_15/epic-15-completion-report.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_15/epic-15-pull-request-description.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_15/epic15.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_15/prd-conclave-mixture-of-agents.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_16/epic16.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_17.5/epic17-5.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_17/epic17.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_18/epic18.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_18/prd-epic-18-cli-enhancement.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_19/epic19.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_19/prd-epic19-herald-consolidation.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_20/epic20.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_20/prd-vision-pipeline-completion.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_21/epic21.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_21/prd-autonomous-agent-completion.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_22/epic22.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_23/EPIC_23_COMPLETION_SUMMARY.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_23/epic23.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_23/prd-epic23-cli-config-infrastructure-completion.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_23/prd-task46-arsenal-tool-integration-tests.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_24/epic24.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/BUILD_TEST_FIXES.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/CHANGELOG_UPDATE.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/LEGACY_CLEANUP_SUMMARY.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/LEGACY_CODE_CLEANUP_PLAN.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/LIVE_API_TESTS_FIX.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/LIVE_API_TESTS_SUCCESS.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/QUICK_SUMMARY.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/REDIS_TEST_FIX.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/SESSION_SUMMARY.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Project_Plan_Milestone_3.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/RELEASE_NOTES_MILESTONE_3.md"
+    type: DOC

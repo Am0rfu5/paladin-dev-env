@@ -1,0 +1,33 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Test Hardening, Benchmarks & QA",
+  "summary": "Requirements for Epic 24: enabling deferred tests, fixing benchmarks, adding Qdrant and live API integration tests, CLI snapshot testing, and documentation updates.",
+  "scope": [
+    "deferred/ignored tests",
+    "Battalion benchmarks (Campaign, ChainOfCommand)",
+    "prompt generation service tests",
+    "timeout and execution service tests",
+    "Qdrant integration tests",
+    "Sanctum RAG pipeline",
+    "CLI snapshot testing (insta)",
+    "LLM provider live API tests (OpenAI, DeepSeek, Anthropic)",
+    "documentation and demo assets",
+    "test coverage targets"
+  ],
+  "cross_refs": [
+    "docs/BATTALION_BENCHMARKS.md",
+    "QUICKSTART.md",
+    "INSTALLATION.md",
+    "docs/cli/README.md",
+    "README.md",
+    "docs/QUICKSTART.md",
+    "docs/Design/Design_and_Architecture.md",
+    "CONTRIBUTING.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

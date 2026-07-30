@@ -1,0 +1,25 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Post-Epic_24-cleanup/LEGACY_CODE_CLEANUP_PLAN.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Legacy OpenAI Adapter Cleanup Plan",
+  "summary": "Investigation and phased cleanup plan for removing the unused legacy OpenAILlmAdapter in favor of the active openai_adapter.",
+  "scope": ["OpenAI adapter", "src/infrastructure/adapters/output/openai_llm_adapter.rs", "src/infrastructure/adapters/llm/openai_adapter.rs", "provider_factory", "OpenAIConfig", "dead code cleanup"],
+  "cross_refs": [
+    "src/infrastructure/adapters/llm/openai_adapter.rs",
+    "src/infrastructure/adapters/output/openai_llm_adapter.rs",
+    "src/infrastructure/adapters/output/mod.rs",
+    "src/infrastructure/adapters/llm/provider_factory.rs",
+    "src/infrastructure/adapters/llm/openai_vision.rs",
+    "src/infrastructure/adapters/output/api_content_deliverer.rs",
+    "tests/integration/llm_live_api_tests.rs",
+    "examples/llm_provider_selection.rs",
+    "examples/vision_battalion.rs",
+    "examples/vision_analysis.rs",
+    "CHANGELOG.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

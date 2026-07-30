@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Post-Epic_24-cleanup/LIVE_API_TESTS_SUCCESS.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Live API Tests - Successful Resolution",
+  "summary": "Report of fixes making live API tests pass for OpenAI and Anthropic providers, with DeepSeek failures due to insufficient credits.",
+  "scope": ["live API tests", "OpenAI adapter", "Anthropic adapter", "DeepSeek adapter", "SSE streaming parsing", "tests/integration/llm_live_api_tests.rs"],
+  "cross_refs": ["tests/integration/llm_live_api_tests.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

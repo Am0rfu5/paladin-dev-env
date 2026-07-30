@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Post-Epic_24-cleanup/LIVE_API_TESTS_FIX.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Live API Tests - Issues Fixed",
+  "summary": "Explains fixes to live LLM API integration tests: API key validation, .env loading in tests, Anthropic prompt type, and how to run them.",
+  "scope": ["live API tests", "tests/integration/llm_live_api_tests.rs", "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "ANTHROPIC_API_KEY", ".env loading", "live-api-tests feature flag", "require_api_key()", "init_test_env()", "UserPrompt"],
+  "cross_refs": ["tests/integration/llm_live_api_tests.rs", ".env"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative; content is a prose runbook/changelog of test fixes with no decision, requirement, or interface contract, consistent with DOC. Note: document body contains what appears to be a real OpenAI API key literal (line 53) — secret leak, should be redacted/rotated."
+}

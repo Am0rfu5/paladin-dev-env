@@ -1,0 +1,29 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Project_Plan_Milestone_3.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Paladin Project Plan: Milestone 3 — Completion & Polish",
+  "summary": "Project plan organizing deferred tasks and inline TODOs from Epics 1-18 into six epics (19-24) over 8-10 weeks.",
+  "scope": [
+    "Milestone 3",
+    "Epics 19-24",
+    "Herald",
+    "domain type consolidation",
+    "vision pipeline",
+    "autonomous agent handoffs",
+    "Battalion",
+    "Commander",
+    "CLI",
+    "configuration",
+    "test hardening",
+    "benchmarks",
+    "documentation"
+  ],
+  "cross_refs": [
+    "./project/Milestone_*/**/tasks-*.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type assigned from MANIFEST_TYPE=DOC. Document status field reads 'Draft'."
+}

@@ -1,0 +1,28 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_15/epic15.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 15: Conclave - MixtureOfAgents Pattern",
+  "summary": "Epic defining the Conclave MixtureOfAgents orchestration pattern: parallel expert Paladins plus an aggregator that synthesizes their outputs.",
+  "scope": [
+    "Conclave",
+    "MixtureOfAgents pattern",
+    "ConclaveConfig",
+    "ConclaveResult",
+    "ConclaveExecutionService",
+    "Commander Conclave strategy",
+    "BattalionStrategy",
+    "Conclave CLI and YAML config"
+  ],
+  "cross_refs": [
+    "src/core/platform/container/battalion/conclave.rs",
+    "src/application/use_cases/battalion/",
+    "docs/guides/conclave-pattern.md",
+    "examples/conclave_expert_panel.rs",
+    "examples/cli_configs/conclave.yaml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content signals were strongly PRD-like (user stories US-15.1..15.4, acceptance criteria, completion criteria) with embedded Rust/YAML contracts (SPEC-like); manifest override retained."
+}

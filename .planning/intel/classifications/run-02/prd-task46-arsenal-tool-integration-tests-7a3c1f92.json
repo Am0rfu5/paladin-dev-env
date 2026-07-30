@@ -1,0 +1,26 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_23/prd-task46-arsenal-tool-integration-tests.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Arsenal Tool Integration Tests (Task 4.6)",
+  "summary": "Requirements for end-to-end tests covering the LLM to Arsenal tool call loop, CLI arsenal integration, error handling, and gated MCP server tests.",
+  "scope": [
+    "Arsenal tool integration tests",
+    "PaladinExecutionService tool call loop",
+    "MockLlmAdapter",
+    "MockArsenalPort",
+    "ArsenalExecutionService",
+    "ArsenalRegistryService",
+    "MCPStdioAdapter",
+    "ToolResultFormatter",
+    "Epic 23 Task 4.6",
+    "CLI arsenal configuration"
+  ],
+  "cross_refs": [
+    "tests/mcp_test_server.py"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

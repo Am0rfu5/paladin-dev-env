@@ -1,0 +1,34 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_15/prd-conclave-mixture-of-agents.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Conclave - MixtureOfAgents Pattern",
+  "summary": "Requirements for the Conclave MixtureOfAgents Battalion pattern: parallel expert Paladins whose outputs an aggregator Paladin synthesizes, plus Commander and CLI/YAML support.",
+  "scope": [
+    "Conclave",
+    "MixtureOfAgents pattern",
+    "Battalion orchestration",
+    "expert Paladins",
+    "aggregator Paladin",
+    "ConclaveExecutionService",
+    "Commander BattalionStrategy",
+    "CLI YAML configuration",
+    "retry with exponential backoff",
+    "observability levels"
+  ],
+  "cross_refs": [
+    "project/Milestone_2-Missing_features/Epic_15/epic15.md",
+    "docs/BATTALION.md",
+    "docs/guides/commander-pattern.md",
+    "docs/CLI_USAGE.md",
+    "project/Milestone_2-Missing_features/Project Plan Missing Features",
+    "docs/guides/conclave-pattern.md",
+    "examples/conclave_expert_panel.rs",
+    "examples/cli_configs/conclave_expert_panel.yaml",
+    "examples/cli_configs/conclave_code_review.yaml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

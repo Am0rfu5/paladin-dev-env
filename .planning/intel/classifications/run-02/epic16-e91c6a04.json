@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_16/epic16.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 16: Advanced Battalion Patterns",
+  "summary": "Epic defining Council (group chat) and Grove (tree-based routing) battalion patterns with user stories, acceptance criteria, and Rust type sketches.",
+  "scope": ["Council", "CouncilConfig", "CouncilExecutionService", "Grove", "Tree", "GroveConfig", "GroveExecutionService", "RoutingStrategy", "Commander", "BattalionStrategy"],
+  "cross_refs": ["src/core/platform/container/battalion/council.rs", "src/core/platform/container/battalion/grove.rs", "examples/council_discussion.rs", "examples/grove_routing.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content signals (user stories, acceptance criteria, Rust type definitions) would otherwise indicate PRD/SPEC hybrid. Declared dependencies: Epic 4, Epic 15."
+}

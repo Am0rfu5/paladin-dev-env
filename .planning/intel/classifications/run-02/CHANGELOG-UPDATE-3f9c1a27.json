@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Post-Epic_24-cleanup/CHANGELOG_UPDATE.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "CHANGELOG Update - Milestone 3 Completion",
+  "summary": "Record of the CHANGELOG.md section added for Milestone 3 post-Epic 24 cleanup, test hardening, and DevContainer fixes.",
+  "scope": ["CHANGELOG.md", "Milestone 3", "Epic 24 cleanup", "Redis queue integration tests", "SQLite Garrison integration tests", "LLM provider integration tests", "DevContainer docker-compose"],
+  "cross_refs": ["CHANGELOG.md", "project/Milestone_3-Completion/Post-Epic_24-cleanup/", "devcontainer.json"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

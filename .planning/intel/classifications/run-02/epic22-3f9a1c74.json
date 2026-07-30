@@ -1,0 +1,29 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_22/epic22.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 22: Battalion & Commander Hardening",
+  "summary": "Epic covering Battalion integration gaps: Paladin registry resolution, Grove LLM routing, Phalanx timing metrics, Commander metadata export, and ignored test completion.",
+  "scope": [
+    "Battalion",
+    "Commander",
+    "Council",
+    "Grove",
+    "Phalanx",
+    "PaladinRegistry",
+    "LLM-based routing",
+    "per-paladin timing metrics",
+    "metadata export",
+    "Commander ignored tests"
+  ],
+  "cross_refs": [
+    "src/application/use_cases/battalion/council_service.rs",
+    "src/application/use_cases/battalion/commander.rs",
+    "src/application/use_cases/battalion/grove_service.rs",
+    "src/application/use_cases/battalion/phalanx_service.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content signals (user stories US-22.1..22.5 with acceptance criteria) would otherwise indicate PRD; manifest override retained."
+}

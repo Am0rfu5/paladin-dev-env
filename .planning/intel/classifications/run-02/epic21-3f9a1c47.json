@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_21/epic21.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 21: Autonomous Agent Completion",
+  "summary": "Epic completing handoff execution, planning integration, autonomous orchestration, and PaladinResult metadata deferred from Epic 14.",
+  "scope": ["HandoffService", "PaladinBuilder", "PaladinResult", "PaladinExecutionService", "PlanningService", "PromptGenerationService", "handoff tools", "autonomous execution orchestration"],
+  "cross_refs": ["project/Milestone_2-Missing_features/Epic_14/epic14.mdd", "src/application/use_cases/paladin/planning_service.rs", "src/application/use_cases/paladin/prompt_generation_service.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content shows strong PRD signals (user stories, acceptance criteria, completion criteria); manifest overrides."
+}

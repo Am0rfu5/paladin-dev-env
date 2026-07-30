@@ -1,0 +1,30 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_11/EPIC_11_COMPLETION_SUMMARY.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 11: Sanctum Memory Foundation - Completion Summary",
+  "summary": "Completion summary of Epic 11 implementing Sanctum long-term vector memory: EmbeddingPort, OpenAI embedding adapter, Sanctum domain models, in-memory adapter, config, docs.",
+  "scope": [
+    "Sanctum Memory Foundation",
+    "EmbeddingPort",
+    "OpenAI embedding adapter",
+    "Memory domain models",
+    "SanctumPort",
+    "InMemory Sanctum adapter",
+    "Qdrant adapter (deferred)",
+    "configuration"
+  ],
+  "cross_refs": [
+    "src/application/ports/output/embedding_port.rs",
+    "src/infrastructure/adapters/llm/openai_embedding_adapter.rs",
+    "src/core/platform/container/sanctum.rs",
+    "src/application/ports/output/sanctum_port.rs",
+    "src/infrastructure/adapters/sanctum/in_memory_adapter.rs",
+    "src/config/application_settings.rs",
+    "config.yml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content is a retrospective status/completion report — consistent with DOC."
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_17.5/epic17-5.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 17.5 - CLI Consolidation Refactoring",
+  "summary": "Refactoring plan to consolidate the duplicate src/cli and src/application/cli modules into a single application-layer CLI module.",
+  "scope": ["CLI module", "src/application/cli", "src/cli", "commands", "config loading", "formatters", "interactive wizard framework", "templates", "lib.rs module declarations", "paladin-cli.rs"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content is a refactoring plan with rationale, target directory layout, and migration steps; contains a 'Recommended Consolidation' rationale section but no ADR status field and no requirements/acceptance criteria."
+}

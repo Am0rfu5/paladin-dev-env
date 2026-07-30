@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_21/prd-autonomous-agent-completion.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Autonomous Agent Completion",
+  "summary": "Requirements to complete Paladin's autonomous agent pipeline: handoff execution, tool auto-registration, result metadata, orchestration, and configuration-driven model selection.",
+  "scope": ["autonomous agent completion", "Epic 21", "HandoffService", "PaladinExecutionService", "PaladinBuilder", "PaladinResult metadata", "handoff execution", "configurable models", "service orchestration"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

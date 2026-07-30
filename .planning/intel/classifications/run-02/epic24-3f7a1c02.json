@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_24/epic24.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 24: Test Hardening, Benchmarks & QA",
+  "summary": "Epic enabling deferred tests, fixing Battalion benchmark API drift, adding Qdrant and live-provider integration tests, CLI snapshot tests, and final documentation.",
+  "scope": ["Battalion benchmarks", "Campaign", "ChainOfCommand", "prompt generation service tests", "timeout tests", "Qdrant integration tests", "Sanctum RAG", "unit test coverage", "CLI snapshot testing", "LLM provider live API tests", "documentation and demo assets"],
+  "cross_refs": ["benches/battalion_benchmarks.rs", "docs/BATTALION_BENCHMARKS.md", "tests/unit/mod.rs", "tests/unit/paladin_execution_service_test.rs", "tests/integration/rag_integration_tests.rs", "tests/unit/sanctum/qdrant_sanctum_test.rs", "src/core/platform/manager/user_service.rs", "src/core/platform/manager/listener_service.rs", "tests/cli/snapshots/", "QUICKSTART.md", "INSTALLATION.md", "README.md", "docs/QUICKSTART.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content contains user stories and acceptance criteria (PRD-like signals); manifest override retained."
+}

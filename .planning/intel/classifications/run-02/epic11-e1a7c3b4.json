@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_11/epic11.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 11: Sanctum Memory Foundation",
+  "summary": "Epic defining vector embedding infrastructure: EmbeddingPort, SanctumPort, OpenAI embedding adapter, in-memory vector store, and Sanctum memory domain models.",
+  "scope": ["EmbeddingPort", "OpenAIEmbeddingAdapter", "SanctumPort", "InMemorySanctum", "Sanctum domain model", "Memory", "MemoryType", "vector embeddings", "semantic search"],
+  "cross_refs": ["src/application/ports/output/embedding_port.rs", "src/application/ports/output/sanctum_port.rs", "src/core/platform/container/sanctum.rs", "docs/SANCTUM.md", "examples/sanctum_basics.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content signals were strongly PRD-like (user stories US-11.1..11.5, acceptance criteria) with embedded Rust trait/struct definitions (SPEC-like)."
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Sanctum RAG Integration",
+  "summary": "Requirements for integrating Sanctum vector long-term memory with Paladin agents to enable retrieval-augmented generation.",
+  "scope": ["Sanctum", "RAG", "Paladin agents", "Qdrant vector store", "embedding port", "memory extraction strategy", "Garrison", "RAG retrieval service"],
+  "cross_refs": ["docs/SANCTUM.md", "docs/PALADIN.md", "docs/GARRISON.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

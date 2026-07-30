@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_23/epic23.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 23: CLI, Config & Infrastructure Completion",
+  "summary": "Epic covering CLI garrison/arsenal YAML config wiring, mock-provider CLI integration tests, and end-to-end environment testing.",
+  "scope": ["CLI muster command", "garrison configuration", "arsenal/MCP configuration", "mock LLM provider", "CLI integration tests", "setup-check", "council command", "API content deliverer scheduler stub", "PaladinBuilder"],
+  "cross_refs": ["src/application/cli/commands/agent.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set by MANIFEST_TYPE=DOC (authoritative). Content signals are PRD-like (user stories US-23.1–23.4 with acceptance criteria); manifest override applied per instructions."
+}

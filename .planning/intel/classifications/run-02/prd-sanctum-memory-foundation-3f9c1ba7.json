@@ -1,0 +1,35 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Sanctum Memory Foundation",
+  "summary": "Requirements for vector-based long-term memory (Sanctum): EmbeddingPort, SanctumPort, OpenAI embedding, Qdrant and in-memory vector stores, memory domain models.",
+  "scope": [
+    "Sanctum",
+    "EmbeddingPort",
+    "SanctumPort",
+    "OpenAI embedding adapter",
+    "Qdrant adapter",
+    "in-memory vector store",
+    "Memory domain model",
+    "MemoryType",
+    "MemoryDecayStrategy",
+    "Garrison integration",
+    "configuration",
+    "performance benchmarks"
+  ],
+  "cross_refs": [
+    "docs/SANCTUM.md",
+    "examples/sanctum_basics.rs",
+    "src/application/ports/output/embedding_port.rs",
+    "src/application/ports/output/sanctum_port.rs",
+    "src/infrastructure/adapters/llm/openai_embedding_adapter.rs",
+    "src/infrastructure/adapters/sanctum/qdrant_adapter.rs",
+    "src/infrastructure/adapters/sanctum/in_memory_adapter.rs",
+    "src/core/platform/container/sanctum.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

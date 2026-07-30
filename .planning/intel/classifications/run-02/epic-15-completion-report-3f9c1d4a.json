@@ -1,0 +1,36 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_15/epic-15-completion-report.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 15: Conclave - MixtureOfAgents Pattern - Completion Report",
+  "summary": "Completion report for the Conclave Battalion pattern: acceptance criteria status, test coverage, security assessment, design decisions, limitations, and commits.",
+  "scope": [
+    "Conclave",
+    "Battalion orchestration pattern",
+    "MixtureOfAgents",
+    "ConclaveExecutionService",
+    "Commander",
+    "CLI and YAML configuration",
+    "retry logic with exponential backoff",
+    "observability levels",
+    "token management"
+  ],
+  "cross_refs": [
+    "../docs/guides/conclave-pattern.md",
+    "../docs/BATTALION.md",
+    "../README.md",
+    "src/core/platform/container/battalion/conclave.rs",
+    "src/application/use_cases/battalion/conclave_execution_service.rs",
+    "src/application/use_cases/battalion/commander.rs",
+    "src/cli/config/battalion_config.rs",
+    "examples/conclave_expert_panel.rs",
+    "examples/cli_configs/conclave_expert_panel.yaml",
+    "examples/cli_configs/conclave_code_review.yaml",
+    "tests/unit/battalion/conclave_domain_test.rs",
+    "tests/unit/battalion/conclave_execution_test.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Document contains acceptance-criteria checklists (FR/NFR/DOC) and design decisions, which are retrospective records of completed work rather than forward requirements."
+}

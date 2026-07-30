@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_23/EPIC_23_COMPLETION_SUMMARY.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 23: CLI, Config & Infrastructure Completion - Summary",
+  "summary": "Completion summary for Epic 23 covering CLI garrison and arsenal YAML configuration, mock LLM/arsenal test infrastructure, and scheduler integration.",
+  "scope": ["CLI configuration", "garrison (memory system)", "arsenal / MCP tool configuration", "MockLlmAdapter", "MockArsenalPort", "CLI integration tests", "scheduler integration", "PaladinBuilder"],
+  "cross_refs": ["tests/helpers/mock_llm_adapter.rs", "tests/helpers/mock_arsenal_adapter.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type taken from MANIFEST_TYPE=DOC (authoritative). Content is a retrospective completion summary with user-story sections, but records completed work rather than forward requirements."
+}

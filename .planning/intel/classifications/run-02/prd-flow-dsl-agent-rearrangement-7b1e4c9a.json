@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Flow DSL & Agent Rearrangement",
+  "summary": "Requirements for a string-based Flow DSL and Maneuver pattern enabling sequential, parallel, and nested agent workflow orchestration in Paladin.",
+  "scope": ["Flow DSL", "Maneuver pattern", "flow parser", "Maneuver execution service", "Commander strategy", "flow visualization", "Battalion orchestration"],
+  "cross_refs": ["flow-dsl.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_18/epic18.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 18: CLI Enhancement & Polish",
+  "summary": "Epic covering Armory CLI onboarding wizard, setup-check, features discovery, muster, council commands, and rich terminal output.",
+  "scope": ["Armory CLI", "onboarding wizard", "setup-check command", "features discovery command", "muster command", "council command", "rich CLI output", "LLM providers", "Garrison", "Sanctum"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content itself carries strong PRD signals (user stories US-18.1..18.6 with acceptance criteria)."
+}

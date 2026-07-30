@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Post-Epic_24-cleanup/BUILD_TEST_FIXES.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Build and Test Fixes - Summary",
+  "summary": "Summary of post-Epic-24 build and test fixes: integration test import path correction and dead-code warning suppression in the OpenAI adapter.",
+  "scope": ["integration tests", "OpenAI adapter", "build warnings", "dead code warnings", "import paths"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

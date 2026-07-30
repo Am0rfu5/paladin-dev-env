@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_20/epic20.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 20: Vision Pipeline Completion",
+  "summary": "Epic completing multi-modal vision API integration for OpenAI and Anthropic vision adapters and PaladinExecutionService vision execution.",
+  "scope": ["OpenAIVisionAdapter", "AnthropicVisionAdapter", "PaladinExecutionService", "vision pipeline", "multimodal prompts", "GPT-4 Vision", "Claude Vision"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content contains user stories and acceptance criteria (PRD signals) plus Epic 19 / Epic 13 dependency mentions; manifest override retained."
+}

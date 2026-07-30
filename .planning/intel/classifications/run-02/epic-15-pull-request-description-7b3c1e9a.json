@@ -1,0 +1,24 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_15/epic-15-pull-request-description.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Pull Request: Epic 15 - Conclave (MixtureOfAgents) Battalion Pattern",
+  "summary": "Pull request description summarizing implementation of the Conclave (Mixture-of-Agents) Battalion orchestration pattern, its components, CLI/YAML support, docs, and test results.",
+  "scope": ["Conclave pattern", "Battalion orchestration", "ConclaveConfig", "conclave_execution_service", "Commander / BattalionStrategy", "CLI battalion config", "YAML configs", "documentation", "test coverage"],
+  "cross_refs": [
+    "src/core/platform/container/battalion/conclave.rs",
+    "src/application/use_cases/battalion/conclave_execution_service.rs",
+    "src/application/use_cases/battalion/commander.rs",
+    "src/cli/config/battalion_config.rs",
+    "docs/guides/conclave-pattern.md",
+    "docs/BATTALION.md",
+    "README.md",
+    "conclave_expert_panel.rs",
+    "conclave_expert_panel.yaml",
+    "conclave_code_review.yaml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

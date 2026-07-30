@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/RELEASE_NOTES_MILESTONE_3.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Release Notes: Milestone 3",
+  "summary": "Release notes for Paladin 0.3.0 describing four new Battalion patterns, test infrastructure, documentation updates, and benchmarks.",
+  "scope": ["Battalion patterns", "Conclave", "Council", "Grove", "Maneuver", "test infrastructure", "benchmarks", "documentation"],
+  "cross_refs": ["docs/BATTALION.md", "examples/conclave_expert_panel.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

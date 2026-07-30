@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Epic 16 - Advanced Battalion Patterns",
+  "summary": "Requirements for Council (conversational collaboration) and Grove (tree-based agent routing) Battalion patterns integrated with the Commander orchestration system.",
+  "scope": ["Council pattern", "Grove pattern", "Battalion", "Commander integration", "turn-taking strategies", "termination conditions", "Paladin routing", "CLI support"],
+  "cross_refs": ["src/core/platform/container/battalion/council.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

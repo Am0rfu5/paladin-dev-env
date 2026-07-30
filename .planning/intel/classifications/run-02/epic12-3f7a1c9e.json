@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_12/epic12.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 12: Sanctum RAG Integration",
+  "summary": "Epic defining Sanctum RAG integration for Paladin agents: Qdrant vector store, long-term memory, retrieval and memory extraction services.",
+  "scope": ["Sanctum", "RAG", "Qdrant vector store", "SanctumPort", "PaladinBuilder", "RagRetrievalService", "MemoryExtractionService", "PaladinExecutionService", "EmbeddingPort", "memory extraction strategy"],
+  "cross_refs": ["src/application/use_cases/sanctum/", "examples/paladin_with_rag.rs", "examples/cli_configs/paladin_rag.yaml"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content signals are strongly PRD-like (user stories US-12.1..US-12.5, acceptance criteria, completion criteria) with embedded Rust type signatures (SPEC-like); manifest override retained."
+}

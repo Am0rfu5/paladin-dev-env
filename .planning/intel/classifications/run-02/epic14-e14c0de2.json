@@ -1,0 +1,33 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_14/epic14.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 14: Autonomous Agent Features",
+  "summary": "Epic covering autonomous planning mode, auto-generated system prompts, dynamic temperature adjustment, and agent handoff infrastructure for Paladin agents.",
+  "scope": [
+    "autonomous planning mode",
+    "MaxLoops::Auto",
+    "PlanningService",
+    "TaskPlan",
+    "Subtask",
+    "PromptGenerationService",
+    "PaladinBuilder",
+    "TemperatureService",
+    "dynamic temperature",
+    "HandoffService",
+    "HandoffStrategy",
+    "HandoffTool",
+    "handoff_to_agent tool",
+    "Armament",
+    "LlmPort"
+  ],
+  "cross_refs": [
+    "docs/AUTONOMOUS.md",
+    "examples/autonomous_planning.rs",
+    "examples/agent_handoffs.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content signals (user stories US-14.1..US-14.5, acceptance criteria, Rust API 'Definition of Done' blocks) would otherwise indicate PRD/SPEC hybrid. Filename hash suffix not cryptographically computed (no shell tool available); slug is unique for this path."
+}

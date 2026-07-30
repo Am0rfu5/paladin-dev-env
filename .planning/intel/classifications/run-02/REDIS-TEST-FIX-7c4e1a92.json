@@ -1,0 +1,27 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Post-Epic_24-cleanup/REDIS_TEST_FIX.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Redis Queue Integration Test Fix",
+  "summary": "Runbook describing why Redis queue integration tests failed on missing Docker socket and how the REDIS_URL/docker-compose DevContainer fix resolves it.",
+  "scope": [
+    "Redis queue integration tests",
+    "testcontainers",
+    "REDIS_URL environment variable",
+    "DevContainer configuration",
+    "docker-compose services",
+    "MinIO",
+    "MySQL",
+    "Makefile test-integration-docker target"
+  ],
+  "cross_refs": [
+    "tests/integration/redis_queue_integration_test.rs",
+    ".devcontainer/devcontainer.json",
+    ".devcontainer/docker-compose.yml",
+    "Makefile"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

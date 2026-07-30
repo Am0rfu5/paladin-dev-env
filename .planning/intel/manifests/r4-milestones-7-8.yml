@@ -1,0 +1,81 @@
+docs:
+  - path: ".project/Milestone_7-Production-Hardening/Epic_1/Milestone_7-Epic_1-Ext_Workspace_Decomp_Infra_Crates.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_1/cost-benefit-assessment.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_1/prd-extract-infrastructure-crates.md"
+    type: PRD
+  - path: ".project/Milestone_7-Production-Hardening/Epic_2/Milestone_7-Epic_2-Production_Build_Infra_Adaptation.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_2/prd-production-build-infra-adaptation.md"
+    type: PRD
+  - path: ".project/Milestone_7-Production-Hardening/Epic_3/Milestone_7-Epic_3-Benchmark_Suite_Migration.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_3/benchmark-assessment.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_3/prd-benchmark-suite-migration.md"
+    type: PRD
+  - path: ".project/Milestone_7-Production-Hardening/Epic_4/Milestone_7-Epic_4-API_Stabilization_Pre-Release_Preparation.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_4/deferred-paladin-ports-publish-verification.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_4/epic-4-completion-summary.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_4/license-compatibility-decision-checklist.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_4/post-release-verification-v0.1.0-rc.1.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_4/prd-api-stabilization-pre-release-preparation.md"
+    type: PRD
+  - path: ".project/Milestone_7-Production-Hardening/Epic_4/release-candidate-signoff-checklist.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_4/release-notes-v0.1.0-rc.1.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_4/release-readiness-audit-report.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/Epic_4/rustsec-remediation-plan.md"
+    type: DOC
+  - path: ".project/Milestone_7-Production-Hardening/overview/Milestone_7-Tier_4-Production_Hardening.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/Milestone_8-Epic_1-facade_crate_audit.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/facade-audit.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/prd-facade-crate-audit.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_2/Milestone_8-Epic_2-remove-dead-shims-empty-modules.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_2/prd-remove-dead-shims-empty-modules.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/Milestone_8-Epic_3-relocate-remaining-misplaced-modules.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/infrastructure-adapter-disposition.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/prd-relocate-remaining-misplaced-modules.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_4/Milestone_8-Epic_4-use_cases-services-rename.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_4/prd-use_cases-services-rename.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_5/Milestone_8-Epic_5-document-facade-crate-role.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_5/prd-document-facade-crate-role.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_6/Milestone_8-Epic_6-paladin-content-use_cases-services-rename.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_6/prd-paladin-content-use_cases-services-rename.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/Milestone_8-Epic_7-paladin-web-single-framework-axum.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/prd-paladin-web-single-framework-axum.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-features.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-items.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/facade-cleanup-RECONCILIATION-2026-06-04.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/overview/Milestone-8_Facade-Cleanup-Shim-Resolution.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/overview/Milestones-8-11_Dependency-Graph.md"
+    type: DOC

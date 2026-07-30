@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Sentinel Vision System",
+  "summary": "Requirements for multi-modal vision and document processing in Paladin agents via OpenAI and Anthropic providers.",
+  "scope": ["Sentinel Vision System", "vision processing", "PDF document extraction", "multi-modal API", "OpenAI GPT-4 Vision", "Anthropic Claude 3", "Battalion patterns", "CLI --image/--document flags", "encryption at rest and in transit"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

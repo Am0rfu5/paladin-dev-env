@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_17/epic17.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 17: Flow DSL & Agent Rearrangement",
+  "summary": "Epic defining a string-based Flow DSL and Maneuver (AgentRearrange) orchestration pattern with parser, domain model, execution service, Commander integration, and visualization.",
+  "scope": ["Flow DSL", "FlowParser", "FlowExpression", "Maneuver", "ManeuverConfig", "ManeuverExecutionService", "Commander / CommanderBuilder", "BattalionStrategy::Maneuver", "FlowVisualizer", "CLI flow syntax", "YAML config"],
+  "cross_refs": ["src/core/platform/container/battalion/maneuver.rs", "docs/guides/flow-dsl.md", "examples/maneuver_workflow.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content signals were strongly PRD-like (user stories US-17.1..17.5, acceptance criteria) with SPEC-like Rust API contracts; manifest override retained."
+}

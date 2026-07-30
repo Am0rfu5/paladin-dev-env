@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_19/epic19.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 19: Herald & Domain Type Consolidation",
+  "summary": "Epic to replace placeholder Herald domain types with real domain types and auto-register built-in Herald formatters.",
+  "scope": ["Herald", "HeraldRegistry", "PaladinResult", "BattalionResult", "PaladinError", "StreamChunk", "ExecutionMetadata", "JsonHerald", "MarkdownHerald", "TableHerald"],
+  "cross_refs": ["src/core/platform/container/herald.rs", "src/application/use_cases/herald/herald_registry.rs", "src/core/platform/container/paladin.rs", "battalion/"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative; content shows user stories + acceptance criteria (PRD-like signals) overridden by manifest."
+}

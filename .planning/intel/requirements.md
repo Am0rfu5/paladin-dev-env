@@ -1184,3 +1184,1408 @@ different PRDs on the same scope. They are NOT merged. See
   - MUST use appropriate mocking and test doubles for external dependencies to isolate unit tests
   - Out of scope: integration/E2E tests, performance/benchmark tests, refactoring solely for testability, tests for third-party or generated code, property-based testing or fuzzing, build/CI changes beyond coverage reporting
 - scope: unit test coverage, cargo llvm-cov, test doubles
+
+---
+
+# Requirements — Ingest run 2 (Milestone 2 + Milestone 3)
+
+Ingest run 2 of 5 — source set: `.project/Milestone_2-Missing_features` +
+`.project/Milestone_3-Completion`. 15 PRDs consumed (30 DOCs went to `context.md`).
+
+MODE=merge. Run-1 entries above are unchanged. Where a run-2 PRD supersedes or
+competes with a run-1 requirement, the run-2 entry says so explicitly and the
+run-1 entry is left intact — later positions do NOT overwrite earlier ones.
+
+IDs marked `-v1` / `-v2` / `-v3` are competing variants preserved verbatim from
+different PRDs on the same scope. They are NOT merged. See
+`.planning/INGEST-CONFLICTS.md` WARNINGS for the resolution each needs.
+
+---
+
+## REQ-embedding-port
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md (US-11.1, FR 1-6)
+- description: Port-based abstraction for pluggable text embedding providers.
+- acceptance:
+  - `EmbeddingPort` trait MUST be defined in `src/application/ports/output/embedding_port.rs`
+  - Trait MUST include async `embed_text()`, `embed_batch()`, and sync `dimension()`, `model_name()`
+  - `Embedding` struct MUST contain vector, model metadata, and token count
+  - `EmbeddingError` MUST cover NetworkError, RateLimited, InvalidInput, ProviderError
+  - MUST support async batch embedding generation for efficiency
+  - MUST validate embedding dimensions match the configured model
+  - Unit tests for error handling and trait contract; documentation with usage examples
+- scope: EmbeddingPort, Embedding, EmbeddingError, application ports/output layer
+
+## REQ-openai-embedding-adapter
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md (US-11.2, FR-3, FR-5)
+- description: OpenAI-backed implementation of EmbeddingPort.
+- acceptance:
+  - `OpenAIEmbeddingAdapter` MUST implement `EmbeddingPort` in `src/infrastructure/adapters/llm/openai_embedding_adapter.rs`
+  - MUST support `text-embedding-3-small` (1536 dims, default), `text-embedding-3-large` (3072), `text-embedding-ada-002` (1536, legacy)
+  - MUST be configurable via `OpenAIEmbeddingConfig` (api_key, model, base_url, max_retries, timeout_seconds)
+  - MUST implement exponential backoff retry for rate limits
+  - Batch processing MUST respect the API limit of max 2048 inputs per request
+  - Feature flag `openai-embeddings`, enabled by default
+  - Integration test with mocked HTTP responses
+- scope: OpenAIEmbeddingAdapter, OpenAIEmbeddingConfig, embedding provider
+
+## REQ-sanctum-port
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md (US-11.3, FR 7-14)
+- description: Port abstraction for vector storage and semantic search.
+- acceptance:
+  - `SanctumPort` trait MUST be defined in `src/application/ports/output/sanctum_port.rs`
+  - MUST support `store()`, `store_batch()`, `search()`, `delete()`, `update()`, `count()`
+  - `SanctumQuery` MUST carry filtering, top-k and min_score parameters
+  - `SanctumSearchResult` MUST return entries with similarity scores (0.0 - 1.0)
+  - `SanctumFilter` MUST support metadata-based filtering (paladin_id, memory_type, date ranges)
+  - MUST be thread-safe (`Send + Sync`)
+  - `SanctumError` MUST cover StorageError, SearchError, InvalidDimension, NotFound, ConfigError
+- scope: SanctumPort, SanctumQuery, SanctumFilter, SanctumSearchResult, SanctumError
+
+## REQ-qdrant-sanctum-adapter-v1
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md (US-11.4, FR-8, section 7.5)
+- description: Production Qdrant vector store adapter as scoped by the Epic 11 PRD. COMPETING VARIANT — see REQ-qdrant-sanctum-adapter-v2.
+- acceptance:
+  - `QdrantSanctumAdapter` MUST implement `SanctumPort` in `src/infrastructure/adapters/sanctum/qdrant_adapter.rs`
+  - MUST use the official Qdrant Rust client
+  - Connection configurable by host, port (6334), api_key, collection, `use_grpc: true`
+  - Collection auto-creation with configurable indexing parameters
+  - MUST support metadata filtering via Qdrant filter syntax; connection pooling and retry logic
+  - Feature flag `qdrant` (optional dependency)
+  - Performance: < 500ms for top-10 searches on 100K vectors
+  - Collection name `paladin_memories_{environment}`, vector dimension 1536 (configurable), Cosine distance, indexed fields paladin_id / memory_type / created_at / importance
+  - Integration tests with a Docker Compose Qdrant container
+- scope: QdrantSanctumAdapter, Qdrant configuration, Epic 11 scope
+
+## REQ-qdrant-sanctum-adapter-v2
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md (US-12.1, FR-1.1 to FR-1.10, section 6.4)
+- description: Production Qdrant vector store adapter as scoped by the Epic 12 PRD. COMPETING VARIANT — see REQ-qdrant-sanctum-adapter-v1.
+- acceptance:
+  - `QdrantSanctum` struct MUST be implemented in `src/infrastructure/adapters/sanctum/qdrant_sanctum.rs`
+  - Connection configuration: URL (`http://localhost:6333`), optional API key, collection_name, vector_size 1536, distance Cosine, on_disk true
+  - MUST implement store (upsert with metadata), search (cosine), delete by ID, update, count
+  - MUST support payload filtering using Qdrant filter syntax
+  - MUST implement a health check verifying the collection exists and is accessible
+  - MUST map connection errors to `SanctumError` variants
+  - Dependency `qdrant-client = "1.7"`
+  - Integration test using a Qdrant Docker container
+- scope: QdrantSanctum, Qdrant configuration, Epic 12 scope
+
+## REQ-in-memory-sanctum
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md (US-11.5, FR-9, FR-19, FR-22)
+- description: Dependency-free in-memory vector store for development and testing.
+- acceptance:
+  - `InMemorySanctum` MUST implement `SanctumPort` in `src/infrastructure/adapters/sanctum/in_memory_adapter.rs`
+  - MUST use brute-force cosine similarity (acceptable for < 10K vectors)
+  - MUST be thread-safe via `Arc<RwLock<HashMap<String, SanctumEntry>>>`
+  - MUST support configurable max capacity with LRU eviction
+  - MUST support all CRUD operations from `SanctumPort`
+  - Performance: < 100ms for searches on 10K vectors
+  - No external dependencies (always available); unit tests for all operations
+- scope: InMemorySanctum, in-memory vector store, LRU eviction
+
+## REQ-sanctum-domain-model
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md (US-11.6, FR 15-18, FR-30)
+- description: Core domain model for long-term memory.
+- acceptance:
+  - Domain types MUST live in `src/core/platform/container/sanctum.rs`
+  - `Memory` MUST carry id, paladin_id, content, memory_type, importance, access_count, timestamps, metadata
+  - `MemoryType` MUST be Episodic (conversations), Semantic (facts), Procedural (how-to)
+  - `MemoryDecayStrategy` MUST be NoDecay, LinearDecay, AccessBasedDecay, CustomDecay
+  - `SanctumEntry` MUST combine memory + embedding + serialization
+  - MUST assign importance scores 0.0-1.0 and track access count / last accessed
+  - MUST validate embedding dimensions against the configured model; Serde support; builder pattern
+  - MUST use the existing `Node<T>` pattern for domain entities
+- scope: Memory, MemoryType, MemoryDecayStrategy, SanctumEntry, core domain layer
+
+## REQ-sanctum-configuration
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md (FR 24-27, section 6.3)
+- description: Configuration surface for Sanctum storage, embedding and memory defaults.
+- acceptance:
+  - MUST allow configuration of embedding provider (model, API keys, base URL)
+  - MUST allow selection of vector database (qdrant vs in_memory)
+  - MUST support environment variable substitution for sensitive values
+  - MUST validate configuration at startup with clear error messages
+  - `config.yml` MUST carry `sanctum.storage`, `sanctum.embedding`, `sanctum.memory` sections; memory defaults `default_importance: 0.5`, `decay_strategy: access_based` with per-Paladin override
+- scope: Sanctum configuration, application_settings, config.yml
+
+## REQ-sanctum-garrison-coexistence
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md (FR 28-29, FR-31)
+- description: Sanctum and Garrison operate as complementary, independently optional memory systems.
+- acceptance:
+  - Garrison remains short-term memory; Sanctum is long-term memory; both usable simultaneously
+  - Paladins MUST be able to opt out of Sanctum entirely (backward compatible)
+  - MUST follow hexagonal layering core -> application -> infrastructure
+  - Automatic Garrison-to-Sanctum migration is explicitly out of scope
+- scope: Garrison/Sanctum boundary, backward compatibility
+
+## REQ-paladin-builder-sanctum-integration
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md (US-12.2, FR-3.1 to FR-3.5)
+- description: PaladinBuilder extensions for long-term memory configuration.
+- acceptance:
+  - `PaladinBuilder::with_sanctum(Arc<dyn SanctumPort>)` MUST be added
+  - `PaladinBuilder::with_embedding_port(Arc<dyn EmbeddingPort>)` MUST be added
+  - `PaladinBuilder::memory_extraction_strategy(MemoryExtractionStrategy)` MUST be added
+  - Builder MUST validate that an embedding port is present whenever a sanctum is configured
+  - RAG configuration MUST be stored in `PaladinConfig` or `PaladinData`
+- scope: PaladinBuilder, Sanctum wiring, RAG configuration
+
+## REQ-memory-extraction-strategy
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md (FR-4.1 to FR-4.5)
+- description: Configurable trigger policy for writing memories to Sanctum.
+- acceptance:
+  - `MemoryExtractionStrategy` MUST define `EveryTurn`, `OnCompletion`, `Manual`, `Threshold { importance: f32 }`
+  - Default MUST be `OnCompletion`
+  - `OnCompletion` MUST trigger extraction when `Paladin::run()` completes successfully
+  - `Manual` MUST require an explicit `extract_memories()` call
+  - `Threshold` MUST extract only when the importance score exceeds the configured value
+- scope: MemoryExtractionStrategy, memory write policy
+
+## REQ-rag-retrieval-service
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md (US-12.3, FR-5.1 to FR-5.11)
+- description: Service that retrieves and formats relevant long-term memories before an LLM call.
+- acceptance:
+  - `RagRetrievalService` MUST live in `src/application/use_cases/sanctum/rag_retrieval_service.rs`
+  - MUST expose `retrieve_context(paladin_id: &str, query: &str) -> Result<Vec<Memory>, SanctumError>`
+  - MUST generate the query embedding via the configured `EmbeddingPort` and call `SanctumPort::search()` with top_k
+  - MUST filter by `min_similarity` (default 0.7) and deduplicate memories with > 0.95 mutual similarity
+  - MUST rank by relevance descending and truncate to the `max_tokens` budget by dropping lowest-scoring memories
+  - MUST expose `format_for_prompt(&[Memory]) -> String`
+  - MUST run asynchronously with a 5-second timeout and return an empty Vec on failure/timeout (graceful degradation)
+- scope: RagRetrievalService, retrieval, deduplication, token budget
+
+## REQ-rag-config
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md (FR-6.1 to FR-6.5, section 6.4)
+- description: Configuration structure governing RAG retrieval behaviour.
+- acceptance:
+  - `RagConfig` MUST define `top_k`, `min_similarity`, `max_tokens`, `retrieval_trigger`
+  - Defaults MUST be `top_k: 5`, `min_similarity: 0.7`, `max_tokens: 2000`
+  - `retrieval_trigger` MUST support `Always`, `KeywordBased`, `SemanticThreshold`; default `Always`
+  - MUST be configurable via YAML and via builder methods; YAML also carries `timeout_seconds: 5`
+- scope: RagConfig, RetrievalTrigger, configuration
+
+## REQ-memory-extraction-service
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md (US-12.4, FR-7.1 to FR-7.9)
+- description: LLM-driven extraction of memorable content from a conversation.
+- acceptance:
+  - `MemoryExtractionService` MUST live in `src/application/use_cases/sanctum/memory_extraction_service.rs`
+  - MUST expose `extract_memories(paladin_id: &str, conversation: &[GarrisonEntry]) -> Result<Vec<Memory>, SanctumError>`
+  - MUST build an extraction prompt asking the LLM to identify memorable content (facts, preferences, events, instructions)
+  - MUST parse the LLM response into structured `Memory` objects with content, type and importance 0.0-1.0
+  - MUST generate embeddings for extracted memories and skip duplicates detected at > 0.95 similarity (no merging)
+  - MUST store new memories via `SanctumPort::store()`
+  - MUST log extraction metrics: count, average importance, duration
+- scope: MemoryExtractionService, memory extraction, deduplication
+
+## REQ-execution-service-rag-integration
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md (US-12.5, FR-8.1 to FR-8.8, FR-10.1 to FR-10.4)
+- description: Wiring of retrieval and extraction into the Paladin execution flow.
+- acceptance:
+  - `PaladinExecutionService::execute()` MUST check for Sanctum configuration and, when present, call `RagRetrievalService::retrieve_context()` before the LLM call
+  - Retrieved memories MUST be injected into the system prompt under a `## Relevant Context` section
+  - On retrieval failure or timeout the service MUST log a warning and continue with empty context (non-fatal)
+  - After successful execution the configured extraction strategy MUST be evaluated; `OnCompletion` triggers `MemoryExtractionService::extract_memories()` asynchronously without blocking the response
+  - MUST collect metrics: retrieval_latency_ms, memories_retrieved_count, extraction_triggered
+  - Extraction failures MUST be logged and MUST NOT affect the Paladin response
+  - `SanctumError` MUST include ConnectionError, QueryError, StorageError, EmbeddingError
+- scope: PaladinExecutionService, RAG integration, graceful degradation, metrics
+
+## REQ-rag-performance-targets
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md (section 7.2, 8.2)
+- description: Non-functional targets for the RAG pipeline.
+- acceptance:
+  - Retrieval latency < 500ms p95 for collections under 100k vectors
+  - Extraction latency < 3 seconds p95 for conversations under 10 messages
+  - Memory overhead < 100MB for an in-memory store with 10k vectors
+  - MUST support 10+ concurrent Paladin executions sharing one Sanctum
+  - Memory retrieval hit rate > 80%; zero degradation in execution time when retrieval fails
+- scope: RAG performance, scalability
+
+---
+
+## REQ-vision-content-model
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (US-13.1, FR-1, section 6)
+- description: Type-safe multi-modal request model for images. SUPERSEDED IN PART by REQ-vision-response-model (Epic 20) — both preserved.
+- acceptance:
+  - `VisionContent` enum MUST provide `ImageUrl { url, detail }`, `ImageBase64 { data, media_type, detail }`, `ImageFile { path, detail }`
+  - `ImageDetail` MUST provide Auto, Low, High for quality control
+  - `VisionRequest` MUST carry `text: String` and `images: Vec<VisionContent>`
+  - MUST allow multiple images in a single request
+  - Image metadata MUST include format, size and dimensions when available
+  - Types MUST live in `src/core/platform/container/vision.rs`
+- scope: VisionContent, ImageDetail, VisionRequest, core domain layer
+
+## REQ-vision-format-validation-v1
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (FR-1.2, US-13.1, success criteria)
+- description: Framework-side image format validation. COMPETING VARIANT — see REQ-vision-format-validation-v2.
+- acceptance:
+  - System MUST validate image formats and accept only PNG, JPEG, GIF, WebP
+  - Validation MUST enforce supported formats before the request is dispatched
+  - `VisionError::UnsupportedFormat` and `VisionError::FileTooLarge { size, max }` MUST be returned for rejected inputs
+  - CLI MUST provide clear error messages for unsupported formats
+- scope: image format validation, VisionError, Epic 13 position
+
+## REQ-vision-format-validation-v2
+- source: /workspace/.project/Milestone_3-Completion/Epic_20/prd-vision-pipeline-completion.md (US-20.1, US-20.2, NG-3, NG-5)
+- description: Provider-side image format validation. COMPETING VARIANT — see REQ-vision-format-validation-v1.
+- acceptance:
+  - Adapters MUST delegate image format validation to the OpenAI / Anthropic API and support all formats the provider accepts
+  - Adapters MUST NOT convert image formats; conversion is the caller's responsibility
+  - Adapters MUST NOT preprocess images (no resizing, cropping, filtering); images are sent as-is
+  - Image size validation MUST be delegated to the provider (OpenAI ~20MB per image; Anthropic varies by model), documented in `docs/SENTINEL.md`
+- scope: image format validation, adapter responsibility, Epic 20 position
+
+## REQ-openai-vision-adapter-v1
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (US-13.2, FR-2)
+- description: OpenAI vision support expressed as an extension of the existing LLM adapter. COMPETING VARIANT — see REQ-openai-vision-adapter-v2.
+- acceptance:
+  - `OpenAILlmAdapter` MUST be extended to support vision requests
+  - MUST support `gpt-4-vision-preview`, `gpt-4o`, `gpt-4o-mini`
+  - MUST convert `VisionContent` to OpenAI message format, handling both URLs and base64
+  - MUST handle image token counting for context limit management
+  - MUST use HTTPS for all API communication and retry transient failures with exponential backoff
+  - MUST respect token limits for image processing
+- scope: OpenAILlmAdapter vision, Epic 13 position
+
+## REQ-openai-vision-adapter-v2
+- source: /workspace/.project/Milestone_3-Completion/Epic_20/prd-vision-pipeline-completion.md (US-20.1, FR-1.1 to FR-1.6)
+- description: Dedicated OpenAI vision adapter making real HTTP calls. COMPETING VARIANT — see REQ-openai-vision-adapter-v1.
+- acceptance:
+  - `OpenAIVisionAdapter::analyze_image()` MUST POST to `https://api.openai.com/v1/chat/completions` from `src/infrastructure/adapters/llm/openai_vision.rs`
+  - Request MUST include model, messages (system prompt + user text + image content), configurable `max_tokens`, `Authorization: Bearer` and `Content-Type` headers
+  - Image content MUST support `{"type":"image_url","image_url":{"url":"https://..."}}` and the `data:image/...;base64,` form
+  - MUST parse 200 responses for `choices[0].message.content`, `usage`, and `model`, returning a `VisionResponse`
+  - MUST map 400 -> `VisionError::InvalidImage`, 401 -> `AuthenticationError`, 429 and 5xx -> retry with backoff
+  - Retry MUST read `max_retries` (default 3), `initial_backoff_ms`, `backoff_multiplier` from configuration, using `initial_backoff_ms * (backoff_multiplier ^ attempt)`, and MUST NOT retry 400/401/403/404
+  - Unit tests with mocked HTTP for success and every error case; integration tests gated by `ENABLE_VISION_TESTS=true`
+- scope: OpenAIVisionAdapter, retry policy, Epic 20 position
+
+## REQ-anthropic-vision-adapter-v1
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (US-13.3, FR-3)
+- description: Anthropic vision support as an LLM adapter extension. COMPETING VARIANT — see REQ-anthropic-vision-adapter-v2.
+- acceptance:
+  - `AnthropicLlmAdapter` MUST be extended to support vision requests
+  - MUST support Claude 3 Opus, Sonnet and Haiku
+  - MUST automatically convert image URLs to base64 (Anthropic requirement)
+  - MUST handle Anthropic content block format for images and multiple images per request
+  - MUST use HTTPS and implement appropriate rate limiting
+- scope: AnthropicLlmAdapter vision, Epic 13 position
+
+## REQ-anthropic-vision-adapter-v2
+- source: /workspace/.project/Milestone_3-Completion/Epic_20/prd-vision-pipeline-completion.md (US-20.2, FR-2.1 to FR-2.6)
+- description: Dedicated Anthropic vision adapter making real HTTP calls. COMPETING VARIANT — see REQ-anthropic-vision-adapter-v1.
+- acceptance:
+  - `AnthropicVisionAdapter::analyze_image()` MUST POST to `https://api.anthropic.com/v1/messages` from `src/infrastructure/adapters/llm/anthropic_vision.rs`
+  - Request MUST include model (e.g. `claude-3-opus-20240229`, `claude-3-sonnet-20240229`), configurable `max_tokens`, user-role messages, and headers `x-api-key`, `anthropic-version: 2023-06-01`, `Content-Type`
+  - Image content MUST use `{"type":"image","source":{"type":"base64"|"url","media_type":...,"data"|"url":...}}`
+  - MUST parse 200 responses for `content[0].text`, `usage`, `model`
+  - MUST map 400 -> InvalidImage, 401 -> AuthenticationError, 429 and 5xx -> retry with backoff, following the same configurable retry contract as the OpenAI adapter
+  - Unit tests with mocked HTTP; integration tests gated by `ENABLE_VISION_TESTS=true`
+- scope: AnthropicVisionAdapter, retry policy, Epic 20 position
+
+## REQ-vision-capable-llm-trait
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (FR-4)
+- description: Trait-level capability detection for vision. COMPETING with the Epic 20 `VisionPort` position — see REQ-vision-port.
+- acceptance:
+  - System MUST define a `VisionCapableLlm` trait extending `LlmPort`
+  - Trait MUST include `generate_with_vision()`
+  - Trait MUST include `supports_vision() -> bool`
+  - Adapters for non-vision models MUST return `false` from `supports_vision()`
+- scope: VisionCapableLlm, LlmPort extension, Epic 13 position
+
+## REQ-vision-port
+- source: /workspace/.project/Milestone_3-Completion/Epic_20/prd-vision-pipeline-completion.md (DC-1, DC-2, FR-5.2)
+- description: Application-layer vision port implemented by provider adapters. COMPETING with REQ-vision-capable-llm-trait.
+- acceptance:
+  - OpenAI and Anthropic vision adapters MUST both implement the same `VisionPort` trait
+  - `VisionPort` MUST be defined in the application layer; adapters are infrastructure
+  - Core domain types (`VisionImage`, `VisionResponse`) MUST live in the core layer
+  - All adapter methods MUST return `Result<VisionResponse, VisionError>` and be `async`
+  - Error handling and retry logic MUST be consistent across providers (provider parity)
+- scope: VisionPort, hexagonal boundaries, Epic 20 position
+
+## REQ-paladin-vision-api-v1
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (US-13.4, FR-5)
+- description: Paladin-level vision entry point as scoped by Epic 13. COMPETING VARIANT — see REQ-paladin-vision-api-v2.
+- acceptance:
+  - `Paladin::run_with_vision(task, images)` MUST be available
+  - `PaladinBuilder::enable_vision(bool)` MUST be provided
+  - System MUST validate the LLM adapter supports vision before execution and return a clear error otherwise
+  - MUST support mixing text and image inputs in a single request
+- scope: Paladin::run_with_vision, PaladinBuilder::enable_vision, Epic 13 position
+
+## REQ-paladin-vision-api-v2
+- source: /workspace/.project/Milestone_3-Completion/Epic_20/prd-vision-pipeline-completion.md (US-20.3, FR-3.1 to FR-3.8)
+- description: Execution-service vision entry point as scoped by Epic 20. COMPETING VARIANT — see REQ-paladin-vision-api-v1.
+- acceptance:
+  - `PaladinExecutionService::execute_with_vision(paladin, prompt, images: Vec<VisionImage>)` MUST build a multimodal prompt from the Paladin system prompt, user text and image references
+  - Provider MUST be derived from `paladin.model()` (gpt-* -> OpenAI, claude-* -> Anthropic); same provider for text and vision; `VisionError::UnsupportedProvider` otherwise
+  - Vision execution MUST be non-streaming: the complete analysis is parsed before continuing
+  - MUST respect `max_loops` (vision analysis counts as one iteration), `stop_words` and `timeout_seconds`
+  - MUST store prompt, images, analysis result, timestamp and metadata in Garrison when configured
+  - MUST return a `VisionResult` with analysis text, token usage, model used and execution metadata (duration, loops used)
+  - `VisionError` MUST convert to `PaladinError` at the service boundary
+- scope: PaladinExecutionService::execute_with_vision, provider selection, Epic 20 position
+
+## REQ-vision-error-model-v1
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (FR-12, section 7)
+- description: VisionError variant set as defined by Epic 13. COMPETING VARIANT — see REQ-vision-error-model-v2.
+- acceptance:
+  - `VisionError` MUST provide UnsupportedFormat, FileTooLarge, InvalidImage, ModelNotSupported, NetworkError, EncryptionError, IoError
+  - `DocumentError` MUST provide UnsupportedFormat, EncryptedPdf, CorruptedFile, ExtractionFailed, IoError
+  - All errors MUST include descriptive messages suitable for end users
+- scope: VisionError, DocumentError, Epic 13 position
+
+## REQ-vision-error-model-v2
+- source: /workspace/.project/Milestone_3-Completion/Epic_20/prd-vision-pipeline-completion.md (FR-5.1)
+- description: VisionError variant set as defined by Epic 20. COMPETING VARIANT — see REQ-vision-error-model-v1.
+- acceptance:
+  - `VisionError` MUST be defined in `src/core/platform/container/sentinel/vision_types.rs`
+  - Variants MUST be InvalidImage, UnsupportedFormat, AuthenticationError, RateLimitExceeded(u64), ProviderError, NetworkError, Timeout(u64), UnsupportedProvider, MaxRetriesExceeded
+  - No `EncryptionError` or `FileTooLarge` variant is specified
+- scope: VisionError, Epic 20 position
+
+## REQ-vision-security-encryption
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (FR-11, section 7 Security Implementation, success metrics)
+- description: Security requirements for handling visual data. Epic 20 is silent on these — see INGEST-CONFLICTS.md.
+- acceptance:
+  - System MUST encrypt image data at rest whenever it is stored temporarily (aes-gcm or chacha20poly1305, unique key per session, keys held in env vars or a secrets manager)
+  - System MUST use HTTPS/TLS 1.3 for all external API communication and validate SSL certificates
+  - System MUST clear sensitive image data from memory after processing (Drop impl, `zeroize`)
+  - System MUST support configurable data retention policies with automatic deletion
+  - System MUST log security-relevant events (file access, API calls) without logging sensitive data
+  - Targets: 100% of stored image/document data encrypted; 100% of API calls over TLS
+- scope: encryption at rest, TLS, data retention, audit logging
+
+## REQ-pdf-extraction
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (US-13.5, FR-6, section 6)
+- description: PDF text extraction utility.
+- acceptance:
+  - `PdfExtractor` MUST support `extract(path)` and `extract_bytes(bytes)`
+  - MUST return a `Document { pages: Vec<Page>, metadata: DocumentMetadata, total_chars }`
+  - `Page` MUST carry number and content; `DocumentMetadata` MUST carry title, author, page_count, creation_date
+  - MUST handle multi-page documents and preserve paragraph/spacing structure reasonably
+  - MUST return a descriptive error for encrypted or malformed PDFs
+  - Targets: small PDF (<10 pages) < 2s, large PDF (100+ pages) < 10s, >95% text accuracy
+- scope: PdfExtractor, Document, Page, DocumentMetadata
+
+## REQ-document-port
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (US-13.6, FR-7)
+- description: Port abstraction for document ingestion and chunking.
+- acceptance:
+  - `DocumentPort` trait MUST be defined in `src/application/ports/input/document_port.rs`
+  - MUST include `ingest(source: DocumentSource)`; `DocumentSource` MUST support File(PathBuf), Bytes, Url
+  - MUST include `chunk(document, config)`; `ChunkConfig` MUST support chunk_size, chunk_overlap, separator
+  - MUST support PDF, TXT and MD (DOCX deferred)
+  - MUST extract metadata (title, author, date) when available
+  - MUST be thread-safe and async-compatible
+- scope: DocumentPort, DocumentSource, ChunkConfig, document ingestion
+
+## REQ-vision-cli-and-yaml
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (FR-8, FR-9)
+- description: CLI and YAML surface for multi-modal inputs.
+- acceptance:
+  - CLI MUST support repeatable `--image <path>` and `--document <path>` flags
+  - CLI MUST validate file paths exist before execution and report unsupported formats clearly
+  - CLI output MUST indicate when vision/document inputs were processed
+  - YAML MUST support `images: [..]`, `documents: [..]`, `vision_enabled: true|false`, plus `security.encrypt_at_rest` and `security.data_retention_hours`
+  - All file paths MUST be validated during configuration loading with helpful errors
+- scope: CLI vision flags, YAML vision configuration
+
+## REQ-battalion-vision-integration
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (FR-10, goal 4)
+- description: Vision support across all Battalion orchestration patterns. Epic 20 NG-6 narrows this — see INGEST-CONFLICTS.md.
+- acceptance:
+  - Formation, Phalanx, Campaign and Chain of Command MUST all support vision inputs
+  - Formation MUST pass vision context sequentially between Paladins
+  - Phalanx MUST support parallel processing of multiple images (e.g. `phalanx.run_with_images(vec![...])`)
+  - Campaign MUST support conditional branching on vision analysis results
+  - Chain of Command MUST support delegating vision tasks to specialised sub-agents
+- scope: Battalion vision integration
+
+## REQ-vision-performance-and-config
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md (FR-13, section 8) and /workspace/.project/Milestone_3-Completion/Epic_20/prd-vision-pipeline-completion.md (FR-4)
+- description: Vision performance targets and retry configuration.
+- acceptance:
+  - MUST support configurable batch sizes for parallel image processing, lazy loading of large files, optional compression/resizing, async processing and configurable timeouts (Epic 13)
+  - `config.yml` MUST carry `vision.retry.{max_retries: 3, initial_backoff_ms: 1000, backoff_multiplier: 2.0}` and per-provider `max_tokens: 4096` plus model allow-lists (Epic 20)
+  - Configuration MUST load into a `VisionConfig` struct in `src/config/application_settings.rs` and be injected into adapters via constructor
+  - Targets: single image < 5s end to end; batch of 10 < 15s with Phalanx; vision API call < 30s typical; total retry time < 60s
+- scope: vision performance, VisionConfig, retry configuration
+
+---
+
+## REQ-max-loops-auto
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md (US-14.1, FR-1.1)
+- description: MaxLoops becomes an enum with an autonomous planning variant. SUPERSEDES the scalar `max_loops` in REQ-paladin-entity and the `[1, 100]` validation in REQ-paladin-builder (run 1, Epic 1) — both preserved.
+- acceptance:
+  - System MUST support `MaxLoops::Auto { max_subtasks: u32 }` in addition to `MaxLoops::Fixed(u32)`
+  - `PaladinBuilder::max_loops(MaxLoops)` MUST accept the enum
+  - `MaxLoops::Auto` MUST route execution through `PlanningService`
+  - Planning loops MUST NOT exceed `max_subtasks`
+- scope: MaxLoops, PaladinData.max_loops, PaladinBuilder, autonomous planning
+
+## REQ-planning-service
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md (US-14.1, FR-1.2 to FR-1.8)
+- description: LLM-driven task decomposition and sequential subtask execution.
+- acceptance:
+  - `PlanningService` MUST use the LLM to generate a `TaskPlan` from the task description
+  - `TaskPlan` MUST include the original task, a list of subtasks and a dependency graph
+  - Each `Subtask` MUST include id, description and expected output
+  - System MUST execute subtasks in dependency order and synthesise their results into a final response
+  - Planning MUST use a dedicated planning prompt template
+  - System MUST log planning decisions and execution progress
+  - Planning overhead target: <= 2x total execution time vs non-planning mode; >= 90% of plans decompose tasks appropriately
+- scope: PlanningService, TaskPlan, Subtask, dependency ordering
+
+## REQ-prompt-generation-service
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md (US-14.2, FR-2.1 to FR-2.8)
+- description: Automatic system-prompt generation from agent metadata.
+- acceptance:
+  - `PaladinBuilder` MUST support `auto_generate_prompt(bool)`, `agent_description(String)` and `regenerate_prompt()`
+  - `PromptGenerationService` MUST generate prompts including role, capabilities and constraints
+  - Generated prompts MUST be cached after first generation
+  - A manual `system_prompt()` call after auto-generation MUST override the generated prompt
+  - Generated prompts MUST be logged for review and MUST be deterministic given identical inputs
+  - Target: generation <= 3s at build time; >= 85% of generated prompts need no manual override
+- scope: PromptGenerationService, PaladinBuilder, prompt caching
+
+## REQ-dynamic-temperature
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md (US-14.3, FR-3.1 to FR-3.7)
+- description: Task-type-driven temperature selection. Interacts with REQ-temperature-range-v1/-v2 (run 1).
+- acceptance:
+  - `PaladinBuilder` MUST support `dynamic_temperature(bool)` and `temperature_bounds(f32, f32)`
+  - `TemperatureService` MUST classify tasks as Factual, Analytical, Conversational or Creative
+  - Ranges MUST be Factual 0.1-0.3, Analytical 0.3-0.5, Conversational 0.5-0.7, Creative 0.7-1.0
+  - When disabled the value from `PaladinBuilder::temperature()` (default 0.7) MUST be used
+  - Selected temperature MUST respect the configured bounds and be logged with the classification reasoning
+  - Classification MUST use heuristics (keywords, question type, context signals), not an LLM call, and complete in <= 50ms
+- scope: TemperatureService, TaskType, dynamic temperature, temperature bounds
+
+## REQ-handoff-infrastructure
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md (US-14.4, FR-4.1 to FR-4.9)
+- description: Specialist delegation infrastructure for a coordinating Paladin.
+- acceptance:
+  - `PaladinBuilder` MUST support `with_handoffs(Vec<Arc<Paladin>>)` and `handoff_strategy(HandoffStrategy)`
+  - `HandoffStrategy` MUST support `Automatic`, `Explicit`, `Threshold { confidence: f32 }`
+  - `HandoffService` MUST analyse the task and decide whether a handoff is needed, based on task complexity, agent capabilities and confidence
+  - System MUST track the handoff chain to prevent circular delegation (100% of circular attempts blocked)
+  - System MUST enforce a maximum handoff depth (default 5, configurable)
+  - Handoff context MUST include task description, conversation history and relevant metadata
+  - Handoff history MUST be included in `PaladinResult`; all handoff decisions MUST be logged with reasoning
+  - Only sequential delegation is in scope; parallel handoffs are a Battalion concern
+- scope: HandoffService, HandoffStrategy, HandoffDecision, handoff depth, circular detection
+
+## REQ-handoff-tool-v1
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md (US-14.5, FR-5.1 to FR-5.8)
+- description: Handoff exposed to the LLM as a tool, as named by Epic 14. COMPETING VARIANT — see REQ-handoff-tool-v2.
+- acceptance:
+  - A tool named `handoff_to_agent` MUST be registered automatically when handoffs are configured
+  - Tool schema MUST include `agent_name` (enum of available agent names) and `message` (context for the specialist), both required
+  - Tool MUST validate `agent_name` against available agents and execute the handoff via `HandoffService`
+  - Tool MUST return the specialist result to the original agent for synthesis
+  - Tool MUST track the handoff chain across invocations and error on circular handoffs, invalid agent names and exceeded depth
+  - Tool calls MUST appear in the execution trace
+- scope: handoff_to_agent tool, tool schema, Epic 14 naming
+
+## REQ-handoff-tool-v2
+- source: /workspace/.project/Milestone_3-Completion/Epic_21/prd-autonomous-agent-completion.md (US-21.2, FR-3.1 to FR-3.6) and /workspace/.project/Milestone_3-Completion/Epic_23/prd-task46-arsenal-tool-integration-tests.md (Non-Goal 5)
+- description: Handoff tool contract as named by Epic 21 / Epic 23. COMPETING VARIANT — see REQ-handoff-tool-v1.
+- acceptance:
+  - `PaladinBuilder::build()` MUST detect a prior `with_handoffs()` call and auto-register the handoff tool in the arsenal
+  - Tool schema MUST include `specialist_name` (enum of configured specialists) and `task_description` (string)
+  - Tool schema MUST carry specialist names, descriptions and parameter requirements
+  - Auto-registration MUST be idempotent (no duplicates, safe to call build repeatedly) and the tool MUST be removed/updated if handoffs are reconfigured
+  - The Epic 23 Task 4.6 PRD refers to this tool as `handoff_to_specialist`
+- scope: handoff tool auto-registration, tool schema, Epic 21/23 naming
+
+## REQ-autonomous-configuration
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md (FR-6.1 to FR-6.5, section 6.2)
+- description: Configuration surface and opt-in semantics for autonomous features.
+- acceptance:
+  - All autonomous features MUST be configurable via `PaladinConfig`
+  - YAML MUST support every autonomous feature flag under `paladin.autonomous` (planning.enabled/max_subtasks, prompt_generation.enabled/description, dynamic_temperature.enabled/min/max, handoffs.enabled/strategy/max_depth/specialists)
+  - CLI MUST support flags for enabling autonomous features
+  - All features MUST be opt-in (disabled by default) so existing `PaladinBuilder` code is unchanged
+  - Configuration validation MUST occur at build time
+- scope: autonomous configuration, YAML schema, backward compatibility
+
+## REQ-autonomous-error-handling
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md (FR-7.1 to FR-7.6)
+- description: Error types and degradation policy for autonomous features.
+- acceptance:
+  - System MUST define `PlanningError`, `PromptError` and `HandoffError` enums
+  - All errors MUST include descriptive messages and be logged with full context
+  - Errors MUST degrade gracefully — e.g. fall back to non-planning mode when planning fails
+  - All autonomous decisions MUST be logged at INFO level; execution traces MUST include planning, temperature and handoff decisions
+- scope: PlanningError, PromptError, HandoffError, graceful degradation, observability
+
+---
+
+## REQ-conclave-domain-model
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_15/prd-conclave-mixture-of-agents.md (US-15.1, FR-C1 to FR-C5, section 6)
+- description: Domain model for the Conclave (MixtureOfAgents) Battalion pattern.
+- acceptance:
+  - `Conclave` MUST live in `src/core/platform/container/battalion/conclave.rs` and carry name, `experts: Vec<Paladin>`, `aggregator: Paladin`, `config: ConclaveConfig`
+  - `Conclave` MUST contain at least 2 experts and exactly 1 aggregator; validation MUST reject duplicate agent names
+  - `ConclaveConfig` MUST carry name, timeout_seconds (10-3600, default 300), retry_attempts (0-5, default 2), synthesis_prompt (Option), include_expert_names (bool), max_expert_output_tokens (Option), observability_level
+  - `ConclaveResult` MUST carry expert_outputs (HashMap<String, PaladinResult>), aggregated_output, execution_time_ms, expert_execution_times, retry_counts, status
+  - `ConclaveStatus` MUST be Success (all experts succeeded), PartialSuccess, Failed
+  - `ConclaveError` MUST provide AllExpertsFailed, AggregatorFailed, ConfigurationError, Timeout and ExpertError(name, detail)
+- scope: Conclave, ConclaveConfig, ConclaveResult, ConclaveStatus, ConclaveError
+
+## REQ-conclave-execution-service
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_15/prd-conclave-mixture-of-agents.md (US-15.2, FR-E1 to FR-E7, section 7)
+- description: Parallel expert execution with resilient aggregation.
+- acceptance:
+  - `ConclaveExecutionService` MUST live in `src/application/use_cases/battalion/conclave_execution_service.rs` and execute all experts in parallel with async/await
+  - Failed experts MUST be retried up to the configured limit with exponential backoff (1s, 2s, 4s, 8s, 16s) plus +/-20% jitter; only transient errors (network, timeout, rate limit) are retried
+  - Execution MUST continue with the available expert outputs when some experts fail after retries; if all fail, `ConclaveError::AllExpertsFailed`
+  - Expert outputs MUST be formatted into a structured aggregator prompt, optionally labelled with agent names
+  - Timeout MUST apply to the entire Conclave execution (experts + aggregation), not per agent
+  - `ConclaveResult` MUST indicate which experts succeeded and which failed
+  - Aggregator prompt template MUST be customisable with a sensible default
+  - Target: total time <= max expert time + aggregation time + 10% overhead
+- scope: ConclaveExecutionService, parallel execution, retry with backoff, partial success
+
+## REQ-conclave-commander-strategy
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_15/prd-conclave-mixture-of-agents.md (US-15.3, FR-M1 to FR-M5)
+- description: Conclave as a first-class Commander strategy.
+- acceptance:
+  - `BattalionStrategy::Conclave` variant MUST be added
+  - `CommanderBuilder` MUST support `.aggregator(paladin)`; aggregator selection MUST also be possible via `aggregator_index` or `aggregator_name`
+  - Default behaviour MUST make the last agent in the roster the aggregator and the rest experts
+  - Commander MUST validate at least 2 experts and 1 aggregator before execution
+  - Auto strategy MUST consider Conclave when the task contains synthesis keywords ("compare", "synthesize", "combine perspectives", "expert panel") or requires multi-perspective analysis, scored +3 keywords / +2 three-or-more distinct expertises / +1 comprehensive question
+- scope: BattalionStrategy::Conclave, CommanderBuilder, auto-strategy scoring
+
+## REQ-conclave-cli-and-yaml
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_15/prd-conclave-mixture-of-agents.md (US-15.4, FR-I1 to FR-I6, section 6)
+- description: CLI and YAML surface for Conclave.
+- acceptance:
+  - CLI MUST support `paladin battalion run --type conclave --config <file>`
+  - CLI MUST support `paladin battalion new --type conclave --name <name>` and generate a template with 3 example experts with distinct roles plus 1 aggregator
+  - YAML MUST support inline and reference-based agent definitions plus `retry_attempts`, `timeout_seconds`, `synthesis_prompt`, `include_expert_names`, `observability_level`
+  - CLI MUST output both individual expert outputs and the aggregated result, in JSON, Markdown or plain text
+  - YAML schema validation MUST produce helpful error messages; template generation MUST complete in < 1 second
+- scope: Conclave CLI, Conclave YAML schema, template generation
+
+## REQ-conclave-observability
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_15/prd-conclave-mixture-of-agents.md (FR-O1 to FR-O4)
+- description: Configurable observability levels for Conclave execution.
+- acceptance:
+  - Observability MUST be configurable as minimal, standard or verbose
+  - Standard MUST include per-expert execution time, total time, retry counts and success/failure status
+  - Verbose MUST additionally include full expert outputs, token usage, LLM provider details and timestamps
+  - Minimal MUST include only the final aggregated result and overall status
+- scope: ObservabilityLevel, Conclave logging
+
+---
+
+## REQ-council-domain-model
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (US-16.1, FR-1.1)
+- description: Domain model for the Council (conversational collaboration) pattern.
+- acceptance:
+  - `Council` MUST be defined in `src/core/platform/container/battalion/council.rs` with name, participant Paladins, optional moderator and configuration
+  - `CouncilConfig` MUST carry max_rounds, turn_strategy, termination_condition and an include_history flag
+  - `CouncilMessage` MUST carry speaker name, content, round number and timestamp
+  - Council is an aggregate containing CouncilConfig and CouncilMessages
+- scope: Council, CouncilConfig, CouncilMessage
+
+## REQ-council-turn-strategies
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (FR-1.2, NG-6)
+- description: Turn-taking strategies for Council discussions.
+- acceptance:
+  - `TurnStrategy::RoundRobin` MUST be implemented (participants speak in sequence)
+  - `TurnStrategy::ModeratorDirected` MUST be implemented (moderator chooses the next speaker)
+  - The enum SHOULD be prepared for future `Random` and `VoluntaryWithTimeout` variants, which are explicitly NOT implemented in this epic
+  - Edge cases MUST be handled: speaker unavailable, moderator offline
+- scope: TurnStrategy, turn-taking, deferred variants
+
+## REQ-council-termination-conditions
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (FR-1.3)
+- description: Conditions that end a Council discussion.
+- acceptance:
+  - `TerminationCondition::MaxRounds` MUST be supported (stop after N rounds)
+  - `TerminationCondition::ModeratorDecision` MUST be supported
+  - `TerminationCondition::Consensus` SHOULD be supported via agreement-keyword detection
+  - `TerminationCondition::Keyword(String)` SHOULD be supported for custom triggers
+- scope: TerminationCondition, consensus detection
+
+## REQ-council-execution-service
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (US-16.2, FR-1.4, FR-4.1)
+- description: Service driving Council conversation flow.
+- acceptance:
+  - `CouncilExecutionService` MUST live in `src/application/use_cases/battalion/council_service.rs`
+  - MUST provide `convene(council, topic)` to start a discussion
+  - MUST track conversation history as an ordered list of `CouncilMessage`
+  - MUST implement turn-taking per the selected strategy and evaluate the termination condition after each turn
+  - MUST return `CouncilResult` with transcript, conclusion, rounds_completed and termination_reason
+  - MUST handle empty participant lists, a missing moderator when required, and invalid turn-strategy configuration with clear errors
+  - Participant execution failures MUST be handled gracefully by skipping to the next speaker; a per-speaker timeout MUST prevent blocking
+- scope: CouncilExecutionService, CouncilResult, conversation flow
+
+## REQ-council-garrison-integration
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (FR-1.5, State Persistence)
+- description: Persistence of Council conversation state.
+- acceptance:
+  - Conversation history MUST be stored in Garrison for context continuity and retrievable for follow-up discussions
+  - Conversation branching MUST be supported (multiple councils on the same topic)
+  - `CouncilResult` SHOULD be stored in Citadel for recovery, with a checkpoint after each round
+  - Conversation history access MUST be thread-safe; multiple Councils MUST be able to run concurrently
+- scope: Council + Garrison, Council + Citadel, concurrency
+
+## REQ-grove-domain-model
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (US-16.3, FR-2.1)
+- description: Domain model for the Grove (tree-based routing) pattern.
+- acceptance:
+  - `Grove` MUST be defined in `src/core/platform/container/battalion/grove.rs` with name, `trees: Vec<Tree>` and `GroveConfig`
+  - `Tree` MUST carry a name and a list of `TreeAgent`
+  - `TreeAgent` MUST carry a Paladin reference, `expertise_keywords` and an optional `expertise_embedding`
+  - Grove is an aggregate containing Trees and TreeAgents; ubiquitous language Grove / Tree / Moderator / Routing MUST be used
+- scope: Grove, Tree, TreeAgent
+
+## REQ-grove-routing-strategies
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (FR-2.2, FR-2.5, NG-3)
+- description: Agent selection strategies for Grove.
+- acceptance:
+  - `RoutingStrategy::KeywordMatch` MUST be implemented as the default, counting matching keywords between task and agent expertise
+  - `RoutingStrategy::SemanticSimilarity` MUST be implemented using cosine similarity between task and agent embeddings, with a configurable similarity threshold
+  - `RoutingStrategy::LlmRouting` MUST be implemented, sending task plus agent descriptions to the LLM and expecting a JSON selection
+  - The agent with the highest score/confidence MUST be selected; `fallback_tree` MUST be used when no agent meets the threshold
+  - Grove learning from past routing decisions is an explicit non-goal (NG-3)
+  - Grove routing MUST complete in < 3s including LlmRouting; routing accuracy target >= 85% in test cases
+- scope: RoutingStrategy, routing scoring, fallback
+
+## REQ-grove-config-v1
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (FR-2.3)
+- description: GroveConfig as defined by Epic 16. COMPETING VARIANT — see REQ-grove-config-v2.
+- acceptance:
+  - `GroveConfig` MUST carry `routing_strategy`, optional `fallback_tree` name and `similarity_threshold`
+  - Configuration MUST be validated on Grove creation
+  - Defaults MUST be `KeywordMatch` strategy and threshold `0.7`
+- scope: GroveConfig, similarity_threshold, Epic 16 position
+
+## REQ-grove-config-v2
+- source: /workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md (FR-6.1 to FR-6.3, US-22.2)
+- description: GroveConfig extensions defined by Epic 22. COMPETING VARIANT — see REQ-grove-config-v1.
+- acceptance:
+  - `GroveConfig` MUST gain `routing_fallback: String` with values "keyword" or "error"
+  - `GroveConfig` MUST gain `min_confidence: f32`, default `0.5`, valid range 0.0-1.0
+  - Validation MUST reject invalid fallback values and out-of-range confidence
+  - Fallback behaviour MUST be configurable rather than always falling back to keyword matching
+- scope: GroveConfig, routing_fallback, min_confidence, Epic 22 position
+
+## REQ-grove-execution-service
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (US-16.4, FR-2.4, FR-4.2)
+- description: Service performing Grove routing and execution.
+- acceptance:
+  - `GroveExecutionService` MUST live in `src/application/use_cases/battalion/grove_service.rs`
+  - MUST provide `execute(grove, task)` and an internal `route_task(grove, task)`
+  - MUST return `GroveResult` with the selected agent, routing decision and execution result
+  - `RoutingDecision` MUST carry selected_tree, selected_agent, confidence score and reasoning
+  - MUST handle empty trees, no agents, invalid routing strategy, missing embeddings for SemanticSimilarity, and LLM routing failure with fallback to KeywordMatch
+  - MUST return a routing decision even on failure, including reasoning
+  - Routing calculation for all agents MAY run in parallel; multiple Grove executions MUST be able to run concurrently
+- scope: GroveExecutionService, GroveResult, RoutingDecision, error handling
+
+## REQ-grove-arsenal-integration
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (FR-2.6)
+- description: Optional tool-availability awareness in Grove routing.
+- acceptance:
+  - TreeAgents SHOULD be able to declare required Arsenal tools
+  - Routing SHOULD validate the agent has access to required tools before routing
+  - Tool availability SHOULD be included in the routing decision
+- scope: Grove + Arsenal, routing constraints
+
+## REQ-council-grove-commander-integration
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md (US-16.5, FR-3.1 to FR-3.3)
+- description: Commander support for Council and Grove.
+- acceptance:
+  - `BattalionStrategy::Council` and `BattalionStrategy::Grove` variants MUST be added
+  - `BattalionStrategy::Auto` logic MUST be updated to consider Council and Grove
+  - Commander MUST route Council requests to `CouncilExecutionService` and Grove requests to `GroveExecutionService`
+  - Explicit strategy selection via config MUST be supported
+  - Auto-detection MUST map "discuss", "debate", "collaborate" to Council and "expert", "specialist", "route" to Grove
+  - CLI MUST support `--strategy council` and `--strategy grove` with example configs in `examples/cli_configs/council_*.yml` and `grove_*.yml`
+  - No breaking changes or regressions to existing Battalion patterns
+- scope: BattalionStrategy::Council, BattalionStrategy::Grove, Commander routing, CLI
+
+---
+
+## REQ-flow-dsl-syntax
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (US-17.1, FR-1)
+- description: String grammar for expressing agent workflows.
+- acceptance:
+  - Parser MUST support `a -> b` (sequential), `a, b` (parallel), `a -> b, c` (fan-out), `a, b -> c` (fan-in), `(a -> b)` (grouping) and `a -> b -> c` (chain)
+  - Nested grouping such as `"planner -> (coder -> tester), docs"` MUST be supported
+- scope: Flow DSL grammar, operators
+
+## REQ-flow-parser
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (FR-2.1 to FR-2.4, section 7.1)
+- description: Parser producing a validated flow AST.
+- acceptance:
+  - Parser MUST live in `src/core/platform/container/battalion/parser/` (mod.rs, lexer.rs, ast.rs, error.rs)
+  - Parser MUST return `Result<FlowExpression, FlowParseError>`
+  - Parser MUST validate balanced parentheses, valid agent identifiers (alphanumeric, underscore, hyphen), no empty groups and no consecutive operators
+  - Errors MUST show the position in the expression and suggest corrections; 100% of parse errors MUST include a helpful suggestion
+  - Parsing MUST complete in < 1ms for 99% of flows (30+ agents) with zero panics on malformed input
+- scope: FlowParser, FlowParseError, lexer, validation
+
+## REQ-flow-expression-ast
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (FR-3.1 to FR-3.3)
+- description: AST representation of a parsed flow.
+- acceptance:
+  - `FlowExpression` MUST provide `Agent(String)`, `Sequential(Vec<FlowExpression>)` and `Parallel(Vec<FlowExpression>)`
+  - The AST MUST be serialisable/deserialisable for storage and debugging
+  - The AST MUST be extensible without breaking changes
+- scope: FlowExpression, AST
+
+## REQ-maneuver-domain-model
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (US-17.2, FR-4.1 to FR-4.4)
+- description: Domain model for the Maneuver (AgentRearrange) pattern.
+- acceptance:
+  - `Maneuver` MUST live in `src/core/platform/container/battalion/maneuver.rs`
+  - `Maneuver` MUST carry `name: String`, `agents: HashMap<String, Paladin>`, `flow: FlowExpression` and `config: ManeuverConfig`
+  - Construction MUST validate that every agent name referenced in the flow exists in the agents map
+  - MUST support 10-30 agents with nesting depth up to 5 levels
+- scope: Maneuver, agent registry validation
+
+## REQ-maneuver-config
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (FR-5.1 to FR-5.4, section 7.4)
+- description: Execution configuration for Maneuver.
+- acceptance:
+  - MUST support `timeout_seconds: u64` and `agent_timeout_seconds: Option<u64>`
+  - MUST support `pass_output_as_input: bool` and `output_format: OutputFormat` (concatenate | json_array) for fan-in
+  - MUST support `collect_timing_metrics: bool` and `capture_intermediate_outputs: bool`
+  - Global defaults MUST be configurable in `config.yml` under `maneuver` (default_error_strategy, default_timeout_seconds 300, max_nesting_depth 5, max_parallel_branches 10)
+- scope: ManeuverConfig, output aggregation, tracing flags
+
+## REQ-maneuver-error-strategy-v2
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (FR-5.1)
+- description: ErrorStrategy variant set for Maneuver. COMPETING VARIANT — see REQ-battalion-error-strategy (run 1, Epic 4), which defines a differently named variant set for the same type.
+- acceptance:
+  - `ErrorStrategy::FailFast` MUST stop the entire workflow on the first error
+  - `ErrorStrategy::ContinueParallel` MUST continue parallel branches but fail the sequence
+  - `ErrorStrategy::IgnoreErrors` MUST log errors but continue execution
+- scope: ErrorStrategy, Maneuver error handling
+
+## REQ-maneuver-execution-service
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (US-17.3, FR-6.1 to FR-6.6)
+- description: Recursive execution of flow expressions.
+- acceptance:
+  - Service MUST execute flow expressions recursively, evaluating nested sub-expressions in the correct order
+  - Sequential execution MUST feed `a`'s output into `b` when `pass_output_as_input` is set, otherwise reuse the original input
+  - Parallel execution MUST run agents concurrently with the same input, wait for all within the timeout, and aggregate per configuration
+  - Error handling MUST respect the configured `ErrorStrategy` and report which agent failed at which step
+  - MUST return `ManeuverResult` with `final_output: String`, `step_outputs: HashMap<String, PaladinResult>`, `execution_order: Vec<String>` and `timing_metrics: Option<HashMap<String, Duration>>`
+  - Orchestration overhead MUST be < 10ms (target < 2% of total execution time); memory footprint O(n) in agent count
+- scope: ManeuverExecutionService, ManeuverResult, recursion, aggregation
+
+## REQ-maneuver-commander-integration
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (US-17.4, FR-7.1 to FR-7.4)
+- description: Commander support for flow-based workflows.
+- acceptance:
+  - `BattalionStrategy::Maneuver` variant MUST be added
+  - `CommanderBuilder` MUST accept `flow(expression: &str)` and `error_strategy(ErrorStrategy)`
+  - Auto strategy MUST NOT select Maneuver — it is explicit only
+  - Commander MUST validate that every agent referenced in the flow is registered
+- scope: BattalionStrategy::Maneuver, CommanderBuilder, explicit-only selection
+
+## REQ-maneuver-cli
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (FR-8.1 to FR-8.3, FR-9.3)
+- description: CLI surface for Maneuver as defined by Epic 17. COMPETING with the `paladin maneuver ...` surface recorded in the Milestone 3 release notes — see INGEST-CONFLICTS.md.
+- acceptance:
+  - CLI MUST support `paladin battalion run --type maneuver --flow "<expr>" --config maneuver.yaml`
+  - YAML MUST support `type: maneuver`, `flow`, `config.{error_strategy, timeout_seconds, pass_output_as_input, collect_timing_metrics}` and an `agents` list
+  - CLI MUST support template generation via `paladin battalion new --type maneuver > maneuver.yaml`
+  - CLI MUST support `paladin battalion visualize --flow "<expr>"` with an optional `--format mermaid`
+- scope: Maneuver CLI, Maneuver YAML schema
+
+## REQ-flow-visualization
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (US-17.5, FR-9.1 to FR-9.4)
+- description: Human-readable rendering of flow expressions.
+- acceptance:
+  - `FlowVisualizer::to_ascii(&FlowExpression) -> String` MUST render parallel branches and sequential chains clearly
+  - `FlowVisualizer::to_mermaid(&FlowExpression) -> String` MUST emit valid Mermaid.js syntax
+  - Visualisation MUST overlay per-agent execution time and total workflow time when metrics are available, highlighting the slowest agent
+  - An `--output` flag SHOULD allow saving diagrams for documentation
+- scope: FlowVisualizer, ASCII and Mermaid rendering, timing overlay
+
+## REQ-maneuver-validation
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md (FR-10.1 to FR-10.3)
+- description: Construction-time validation and graceful degradation for Maneuver.
+- acceptance:
+  - Validation at construction MUST confirm all agent names exist, reject self-references and circular dependencies, and enforce configurable max depth/width
+  - Errors MUST clearly report parse position, missing agent references, which agent timed out, and agent execution failures
+  - Partial results MUST be surfaced where possible, with a clear indication of which steps failed and recovery suggestions
+- scope: Maneuver validation, error messages, partial results
+
+---
+
+## REQ-cli-onboarding-wizard
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_18/prd-epic-18-cli-enhancement.md (US-18.1, FR-6 to FR-10)
+- description: Interactive first-run setup wizard.
+- acceptance:
+  - `paladin onboarding` MUST run an interactive wizard guiding API key configuration for at least one LLM provider
+  - Wizard MUST create a `.env` file containing OPENAI_API_KEY, ANTHROPIC_API_KEY, DEEPSEEK_API_KEY and optional REDIS_URL, QDRANT_URL, MINIO_ENDPOINT entries
+  - Wizard MUST validate API keys by making test API calls to each provider
+  - When existing configuration is detected the wizard MUST show the conflicting path and offer Overwrite / Skip / Merge, merging without duplicates
+  - Wizard MUST offer to generate sample configs: `examples/basic_paladin.yaml`, `formation.yaml`, `phalanx.yaml`, `paladin_with_rag.yaml`
+  - Wizard MUST be resumable after interruption (completed steps tracked) and print a summary of completed setup steps
+  - Target: 90% of new users run their first agent within 5 minutes
+- scope: paladin onboarding, .env generation, sample configs
+
+## REQ-cli-setup-check
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_18/prd-epic-18-cli-enhancement.md (US-18.2, FR-11 to FR-14)
+- description: Environment validation command.
+- acceptance:
+  - `paladin setup-check` MUST validate Paladin CLI version, Rust toolchain version, each configured LLM provider, and Redis / Qdrant / MinIO connectivity when configured
+  - Provider validation MUST make real API calls: OpenAI `/v1/models`, Anthropic minimal message request, DeepSeek models endpoint
+  - Status indicators MUST be green check, red cross and yellow warning, with actionable error messages for failures
+  - `--verbose` MUST show full version strings, API response times, detailed errors and the configuration file locations in use
+  - Exit codes MUST be 0 all pass, 1 critical failure, 2 warnings
+  - Target: 95% of runs identify actual configuration issues
+- scope: paladin setup-check, environment validation, exit codes
+
+## REQ-cli-features-discovery
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_18/prd-epic-18-cli-enhancement.md (US-18.3, FR-15 to FR-17)
+- description: Capability discovery command.
+- acceptance:
+  - `paladin features` MUST list commands grouped as Agent, Battalion, Orchestration Patterns, Memory Systems and Utility
+  - Orchestration patterns listed MUST include Formation, Phalanx, Campaign, ChainOfCommand, Conclave, Council, Grove and Maneuver
+  - Memory systems listed MUST include Garrison (in-memory, SQLite) and Sanctum (Qdrant, in-memory)
+  - Each entry MUST show command name, 1-2 sentence description, availability status (available vs requires feature flag) and a documentation link
+  - MUST support `--category <name>` filtering and `--format json` machine-readable output with the documented `categories[].commands[]` shape
+- scope: paladin features, capability catalogue, JSON output
+
+## REQ-cli-muster-command
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_18/prd-epic-18-cli-enhancement.md (US-18.4, FR-18 to FR-22)
+- description: LLM-powered battalion generation from a task description.
+- acceptance:
+  - `paladin muster --task "description"` MUST accept the task via flag, interactive prompt or stdin
+  - The LLM analysis MUST return a recommended orchestration pattern with justification, suggested agents (name, role, system prompt), estimated complexity (simple|medium|complex) and estimated token usage
+  - Generated configuration MUST be valid YAML immediately executable with `paladin battalion run`, saved by default as `muster_<timestamp>.yaml`
+  - MUST support `--execute`, `--output <path>`, `--provider <name>`, `--model <name>` and `--no-review`
+  - The user MUST be able to review and edit before execution; the chosen pattern MUST be explained
+  - On LLM failure the command MUST fall back to template selection by keyword matching
+- scope: paladin muster, battalion generation, YAML output
+
+## REQ-cli-council-command
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_18/prd-epic-18-cli-enhancement.md (US-18.5, FR-23 to FR-26)
+- description: Shortcut command for Council discussions.
+- acceptance:
+  - `paladin council` MUST support `--topic "description"`, `--participants N` (min 2, max 10, default 3), `--roles "r1,r2,..."`, `--max-rounds N` (default 5) and `--save <path>`
+  - Default role assignment MUST be 2 -> Advocate, Critic; 3 -> Advocate, Critic, Moderator; 4 -> plus Synthesizer; 5+ -> mix of Experts, Advocates, Critics, Moderator
+  - Real-time output MUST show round number, speaker role and name, contribution text and clear visual separation between turns
+  - Final summary MUST include key points, areas of consensus, areas of disagreement and a recommended action
+  - Full transcript MUST be savable to file
+- scope: paladin council, role assignment, transcript
+
+## REQ-cli-rich-output
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_18/prd-epic-18-cli-enhancement.md (US-18.6, FR-27 to FR-30)
+- description: Consistent, accessible terminal presentation.
+- acceptance:
+  - Progress indicators MUST be used for API calls (spinner with status), file operations, battalion execution (completion percentage) and embedding generation batches
+  - Colour scheme MUST be green success, red error, yellow warning, blue informational, cyan links, default standard output, and MUST respect `NO_COLOR`
+  - Tables MUST be used for battalion execution summaries (agent, time, tokens, status), setup-check results and feature listings
+  - Box drawing MUST be used for section headers, important notices, final summaries and error messages with context
+  - Token usage and timing MUST be displayed clearly; agent responses MUST stream in real time
+  - `--quiet` and `--verbose` modes MUST be supported
+  - Libraries: clap 4.5, indicatif 0.17, console 0.15, colored 2.1, comfy-table 7.1, dialoguer 0.11
+- scope: CLI formatters, progress, colour, tables, accessibility
+
+## REQ-cli-core-infrastructure
+- source: /workspace/.project/Milestone_2-Missing_features/Epic_18/prd-epic-18-cli-enhancement.md (FR-1 to FR-5, section 7)
+- description: Cross-cutting CLI infrastructure requirements.
+- acceptance:
+  - Every command MUST support both interactive and non-interactive modes
+  - Every command MUST support `--help` with comprehensive usage information
+  - CLI MUST respect standard environment variables (`NO_COLOR`, `TERM`)
+  - Exit codes MUST be 0 success, 1 error, 2 warning
+  - Configuration MUST load from `.env`, `config.yml` and CLI flags
+  - Command implementations MUST live in `src/application/cli/commands/`, formatters in `src/application/cli/formatters/`, interactive helpers in `src/application/cli/interactive/`, entry point `src/bin/paladin-cli.rs`
+  - Test coverage: unit >= 80% line coverage, integration covering all happy paths plus major error cases, snapshot tests for all user-facing output formats
+- scope: CLI infrastructure, module layout, exit codes, configuration loading
+
+---
+
+## REQ-herald-type-consolidation
+- source: /workspace/.project/Milestone_3-Completion/Epic_19/prd-epic19-herald-consolidation.md (US-19.1, FR-1.1 to FR-1.5)
+- description: Herald must consume the real domain types instead of placeholders. LATER POSITION on the run-1 `REQ-herald-*` / `REQ-battalion-result-*` duplication question — run-1 entries preserved.
+- acceptance:
+  - Placeholder `PaladinResult` (herald.rs line 147), `BattalionResult` (line 158) and `PaladinError` (line 187) MUST be removed
+  - Herald MUST import `PaladinResult` and `PaladinError` from `src/core/platform/container/paladin.rs` and `BattalionResult` from `src/core/platform/container/battalion/mod.rs`
+  - `HeraldPort` in `src/application/ports/output/herald_port.rs` MUST be updated to the consolidated types
+  - `JsonHerald`, `MarkdownHerald` and `TableHerald` MUST be updated to the consolidated types
+  - No duplicate type definitions may remain, verified by grep/search
+  - All existing Herald tests MUST continue to pass; trait bounds and generic constraints updated as needed; `Send + Sync` preserved
+  - This is internal refactoring: breaking changes are acceptable and no compatibility shim is required
+- scope: herald.rs, HeraldPort, Herald adapters, single source of truth for domain types
+
+## REQ-stream-chunk-complete
+- source: /workspace/.project/Milestone_3-Completion/Epic_19/prd-epic19-herald-consolidation.md (US-19.1, FR-2.1 to FR-2.5)
+- description: Complete the StreamChunk streaming metadata structure.
+- acceptance:
+  - `StreamChunk` MUST carry `chunk_id: Uuid`, `sequence_number: u64` (0-indexed), `timestamp: DateTime<Utc>`, `content: String`, `token_count: Option<u32>`, `is_final: bool`
+  - `StreamChunk` MUST carry an extensible `metadata: HashMap<String, serde_json::Value>` using `#[serde(flatten)]`
+  - MUST derive `Debug`, `Clone`, `Serialize`, `Deserialize`
+  - MUST provide a builder (`StreamChunk::builder()`) and validation for required fields
+  - MUST serialise for JSON formatting output, Citadel state persistence and event streaming
+- scope: StreamChunk, streaming telemetry, serialization
+
+## REQ-execution-metadata-complete
+- source: /workspace/.project/Milestone_3-Completion/Epic_19/prd-epic19-herald-consolidation.md (US-19.1, FR-3.1 to FR-3.6)
+- description: Complete the ExecutionMetadata telemetry structure.
+- acceptance:
+  - `ExecutionMetadata` MUST carry `execution_id: Uuid`, `start_time: DateTime<Utc>`, `end_time: Option<DateTime<Utc>>`, `duration_ms: Option<u64>`, `model_used: String`, `token_usage: TokenUsage`, `cost_estimate: Option<f64>`, `error_count: u32`
+  - `TokenUsage` MUST carry `input_tokens`, `output_tokens`, `total_tokens`
+  - MUST carry an extensible `metadata: HashMap<String, serde_json::Value>` with `#[serde(flatten)]` for provider-specific data
+  - MUST derive `Debug`, `Clone`, `Serialize`, `Deserialize` and provide a builder
+  - MUST provide `calculate_duration()` deriving `duration_ms` from start/end times, plus helper methods for token usage analysis
+- scope: ExecutionMetadata, TokenUsage, telemetry, cost estimation
+
+## REQ-herald-formatter-autoregistration
+- source: /workspace/.project/Milestone_3-Completion/Epic_19/prd-epic19-herald-consolidation.md (US-19.2, FR-4.1 to FR-4.6)
+- description: Zero-config Herald usage via default formatter registration.
+- acceptance:
+  - `HeraldRegistry` MUST implement `Default`, auto-registering `JsonHerald` as "json", `MarkdownHerald` as "markdown" and `TableHerald` as "table"
+  - Formatters MUST be retrievable via `registry.get("json")` etc.
+  - The existing manual registration API MUST be preserved so custom formatters can still be added
+  - Duplicate keys MUST be handled deliberately (error or overwrite) and the behaviour documented
+  - Formatter keys MUST be documented in rustdoc, with a zero-config usage example of three lines
+- scope: HeraldRegistry::default, built-in formatters, zero-config usage
+
+## REQ-herald-consolidation-quality-gates
+- source: /workspace/.project/Milestone_3-Completion/Epic_19/prd-epic19-herald-consolidation.md (FR-5.1 to FR-5.8, Success Metrics)
+- description: TDD and quality requirements specific to the Herald consolidation.
+- acceptance:
+  - Failing tests MUST be written before each change (TDD)
+  - Unit tests MUST cover type consolidation, StreamChunk fields, ExecutionMetadata fields and default-registry auto-registration
+  - Integration tests MUST cover the full Herald pipeline with consolidated types
+  - Serialization round-trip tests MUST prove no data loss for extensible metadata fields; builder patterns and validation MUST be tested
+  - Test coverage MUST be >= 95% for modified Herald modules; 100% of public APIs documented
+  - `cargo build` with no warnings, `cargo clippy` zero warnings, all `examples/herald_*.rs` run successfully
+- scope: Herald test coverage, TDD, quality gates
+
+---
+
+## REQ-autonomous-configurable-model
+- source: /workspace/.project/Milestone_3-Completion/Epic_21/prd-autonomous-agent-completion.md (US-21.5, FR-1.1 to FR-1.6)
+- description: Remove hardcoded model identifiers from autonomous services.
+- acceptance:
+  - `PlanningService` MUST read `model` from the Paladin config instead of a hardcoded `"gpt-4"` (planning_service.rs lines 128, 305, 426, 538)
+  - `PromptGenerationService` MUST read `model` from the Paladin config instead of a hardcoded `"gpt-4"` (prompt_generation_service.rs line 146)
+  - Services MUST pass the configured model to `LlmPort` methods
+  - Services MUST validate model compatibility with required features (e.g. vision) and log a warning then fall back to a safe default on invalid configuration
+  - Subtask expected output MUST be generated by the LLM instead of a hardcoded placeholder string
+- scope: PlanningService, PromptGenerationService, model configuration
+
+## REQ-paladin-result-autonomous-metadata
+- source: /workspace/.project/Milestone_3-Completion/Epic_21/prd-autonomous-agent-completion.md (US-21.3, FR-2.1 to FR-2.7)
+- description: PaladinResult gains planning and handoff metadata with zero breaking changes.
+- acceptance:
+  - `PaladinResult` MUST include `plan: Option<TaskPlan>` defaulting to `None`
+  - `PaladinResult` MUST include `handoff_history: Vec<HandoffRecord>` defaulting to `Vec::new()`
+  - `TaskPlan` MUST carry `goal: String`, `subtasks: Vec<Subtask>`, `created_at: DateTime<Utc>`
+  - `HandoffRecord` MUST carry `specialist_name`, `task_description`, `timestamp`, `result: Option<String>`, `depth: usize`
+  - Serialization MUST support JSON and MessagePack; deserialization MUST tolerate missing fields for backward compatibility
+  - All existing tests MUST pass unmodified; new tests MUST verify metadata capture when autonomous features are enabled
+  - Handoff history SHOULD be capped (recommended default 100 records, oldest-first eviction)
+- scope: PaladinResult, TaskPlan, HandoffRecord, backward compatibility
+
+## REQ-autonomous-orchestration-layers
+- source: /workspace/.project/Milestone_3-Completion/Epic_21/prd-autonomous-agent-completion.md (US-21.4, FR-4.1 to FR-4.8, section 6.5)
+- description: Layered orchestration of autonomous features inside the execution service.
+- acceptance:
+  - `PaladinExecutionService` MUST implement a layered flow: Layer 0 core LLM execution (always), Layer 1 planning then prompt generation (optional), Layer 2 dynamic temperature (optional), Layer 3 handoff handling (optional)
+  - Each layer MUST be independently enabled/disabled by configuration: `autonomous_planning`, `autonomous_prompts`, `dynamic_temperature`, `handoffs`
+  - Layer failures MUST NOT prevent core execution (graceful degradation); core execution MUST never fail because an optional feature is disabled
+  - Feature-interaction edge cases MUST be handled: subtasks triggering handoffs, temperature adjusted per loop, all features together
+  - Orchestration MUST populate `PaladinResult` metadata when features are active
+  - Integration tests MUST cover each layer independently and in combination; at least one end-to-end test with all features enabled; performance impact measured
+- scope: PaladinExecutionService orchestration, layered features, graceful degradation
+
+## REQ-handoff-execution-integration
+- source: /workspace/.project/Milestone_3-Completion/Epic_21/prd-autonomous-agent-completion.md (US-21.1, FR-5.1 to FR-5.11)
+- description: End-to-end handoff execution with retry and cycle safety.
+- acceptance:
+  - `HandoffService::execute_handoff()` MUST delegate to `PaladinExecutionService`, passing the specialist Paladin instance
+  - The specialist result MUST flow back to the original agent as a tool response so it can continue with context
+  - The handoff chain MUST be tracked in `HandoffRecord` with a depth counter and maintained across all tool invocations
+  - Circular handoff MUST be detected (same specialist at the same depth) and max depth enforced (configurable, default 5)
+  - Handoff calls MUST be visible in the execution trace and logs
+  - Handoff errors MUST support configurable retry with exponential backoff: `max_handoff_retries`, `initial_backoff_ms` (default 1000), `backoff_multiplier` (default 2.0), `max_retries` default 3
+  - Transient errors (network, timeout, rate limit) MUST retry; permanent errors (invalid specialist, circular reference, config error) MUST fail immediately
+  - Circuit breaker MUST integrate with handoff retry logic
+  - Recommended defaults: sequential (non-concurrent) handoffs; fail with a clear error if a specialist becomes unavailable mid-execution
+  - Error codes: E-HANDOFF-001 CircularHandoff, 002 MaxDepthExceeded, 003 SpecialistNotFound, 004 ExecutionFailed (retryable), 005 InvalidResponse; E-PLAN-001, E-PROMPT-001, E-CONFIG-001, E-CONFIG-002
+- scope: HandoffService::execute_handoff, retry policy, cycle detection, error codes
+
+## REQ-autonomous-completion-config-schema
+- source: /workspace/.project/Milestone_3-Completion/Epic_21/prd-autonomous-agent-completion.md (FR-6.1, Summary Configuration Schema)
+- description: Consolidated YAML schema for autonomous execution. LATER POSITION relative to REQ-autonomous-configuration (Epic 14) — both preserved.
+- acceptance:
+  - Paladin configuration MUST support top-level `model`, `autonomous_planning`, `autonomous_prompts`, `dynamic_temperature`
+  - `handoffs` MUST support `enabled`, `max_depth` (default 5), `concurrent` (default false), `retry.{max_retries, initial_backoff_ms, backoff_multiplier}`, `history.{max_records: 100, eviction: oldest_first}`, `on_specialist_unavailable: fail`, and a `specialists` list of `{name, description, model?}`
+  - `planning.validate_at: planning_time` MUST be supported (fail fast on invalid plans)
+  - Configuration errors MUST fail fast at build time before execution
+  - New settings MUST be opt-in with sensible defaults; no migration scripts required
+- scope: autonomous YAML schema, handoff configuration, validation timing
+
+## REQ-autonomous-completion-quality-gates
+- source: /workspace/.project/Milestone_3-Completion/Epic_21/prd-autonomous-agent-completion.md (section 6.4, SM-1 to SM-5)
+- description: Test and quality requirements for the autonomous completion epic.
+- acceptance:
+  - Unit tests MUST reach >= 90% line coverage for autonomous components
+  - Integration tests MUST cover every user story; at least 3 end-to-end workflow scenarios
+  - All 23 deferred Epic 14 tasks MUST be completed with zero remaining TODO comments in autonomous agent code
+  - `cargo clippy -- -D warnings`, `cargo fmt --check` and `cargo build --release` MUST pass
+  - No breaking changes to public APIs; existing examples and configuration MUST keep working
+  - Core execution performance MUST be unchanged when features are disabled; handoff execution within 2x single-agent time; memory stable across handoff chains
+- scope: autonomous test coverage, quality gates, backward compatibility
+
+---
+
+## REQ-paladin-registry-port
+- source: /workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md (US-22.1, FR-1.1 to FR-1.4, section 6.2)
+- description: Trait-based registry resolving Paladin IDs to instances.
+- acceptance:
+  - `PaladinRegistry` trait MUST be defined in `src/application/ports/output/paladin_registry.rs` and be `Send + Sync`
+  - Trait methods MUST be `register(id: String, paladin: Arc<Paladin>) -> Result<(), RegistryError>`, `get(id: &str) -> Option<Arc<Paladin>>`, `contains(id: &str) -> bool`, `list_ids() -> Vec<String>`
+  - Return types MUST use `Arc<Paladin>` for shared ownership
+  - The registry MUST be passed to services via constructor injection as `Arc<dyn PaladinRegistry>`, never a global singleton
+  - `RegistryError` MUST include DuplicateId and InvalidId
+  - Multi-tenancy, persistence and distribution are explicit non-goals
+- scope: PaladinRegistry port, dependency injection, hexagonal boundary
+
+## REQ-paladin-registry-adapter
+- source: /workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md (FR-2.1 to FR-2.3)
+- description: Default HashMap-backed registry implementation.
+- acceptance:
+  - `HashMapPaladinRegistry` MUST be implemented in `src/infrastructure/adapters/paladin_registry.rs` using `HashMap<String, Arc<Paladin>>`
+  - Access MUST be thread-safe via `RwLock` or `Mutex`
+  - `new()` MUST create an empty registry
+  - Lookup MUST be O(1) with < 1ms overhead per operation
+- scope: HashMapPaladinRegistry, thread safety
+
+## REQ-council-grove-registry-resolution
+- source: /workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md (US-22.1, FR-3.1 to FR-4.3)
+- description: Council and Grove resolve stored IDs to real Paladin instances before execution.
+- acceptance:
+  - `CouncilService` MUST accept `Arc<dyn PaladinRegistry>` in its constructor and resolve all participant IDs before discussion rounds begin
+  - `GroveService` MUST accept `Arc<dyn PaladinRegistry>` and resolve the routed agent ID to a Paladin instance after the routing decision
+  - Unresolvable IDs MUST return `BattalionError::PaladinNotFound(id)`
+  - Commander MUST populate the registry when creating Council/Grove battalions from configuration, after configuration validation
+  - Unit tests MUST cover registration/lookup, Council resolving 3 participants, Grove resolving the selected agent and the missing-ID error path
+  - Integration tests MUST verify the full execution flow with resolved Paladins
+  - The registry is required only for Council and Grove; other patterns are unaffected and existing configurations keep working
+- scope: CouncilService, GroveService, Commander registry population, BattalionError::PaladinNotFound
+
+## REQ-grove-llm-routing
+- source: /workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md (US-22.2, FR-5.1 to FR-5.7)
+- description: Replace the stubbed Grove LLM routing with a real implementation.
+- acceptance:
+  - `GroveService::route_with_llm()` MUST send a routing prompt to the configured LLM provider via `LlmPort::generate()`
+  - The prompt MUST include the user input and the list of available agents with descriptions and specialisations, and MUST instruct the model to return JSON `{"tree_name","agent_id","confidence","reasoning"}`
+  - The response MUST be parsed with `serde_json` and validated: confidence in [0.0, 1.0] and `agent_id` present in the Grove configuration
+  - Confidence below `min_confidence` MUST be treated as a routing failure
+  - Fallback MUST follow `GroveConfig::routing_fallback`: "keyword" falls back to keyword matching, "error" returns an error
+  - Errors MUST be handled for LLM call failure (network, timeout, rate limit), invalid JSON, missing fields and unknown agent_id
+  - Routing decisions with reasoning MUST be logged for observability
+  - Unit tests MUST cover successful routing, low-confidence fallback, invalid JSON, LLM failure and keyword fallback; an integration test MUST cover the full flow with a mocked HTTP LLM adapter
+- scope: GroveService::route_with_llm, JSON contract, fallback strategy
+
+## REQ-phalanx-per-paladin-metrics
+- source: /workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md (US-22.3, FR-7.1 to FR-7.6)
+- description: Per-Paladin timing and token metrics for parallel execution.
+- acceptance:
+  - `PhalanxService::execute()` MUST record start and end time for each Paladin execution
+  - `BattalionMetadata::per_paladin_times` MUST be populated as `HashMap<String, Duration>` keyed by Paladin ID
+  - `BattalionMetadata::per_paladin_tokens` MUST be populated as `HashMap<String, TokenUsage>` (prompt_tokens, completion_tokens, total_tokens) extracted from `PaladinResult::metadata`
+  - Aggregates MUST be computed: `paladin_success_count`, `paladin_failure_count`, `total_tokens`
+  - Metrics MUST survive partial failures and timeouts
+  - Unit tests MUST verify timing accuracy within 10ms tolerance, correct token aggregation, accurate success/failure counts and metric capture when some Paladins fail
+  - Metrics collection overhead MUST stay under 1% of execution time
+  - Memory, GPU and network metrics are explicit non-goals
+- scope: PhalanxService metrics, BattalionMetadata, token aggregation
+
+## REQ-battalion-metadata-extension
+- source: /workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md (FR-8.1 to FR-8.4)
+- description: BattalionMetadata gains per-Paladin and aggregate token fields. LATER POSITION on the run-1 `REQ-battalion-result-v1/-v2` question — run-1 entries preserved. Note the run-1 Epic 5 shape typed `per_paladin_times` as `Vec<u64>`.
+- acceptance:
+  - `BattalionMetadata` MUST gain `per_paladin_times` and `per_paladin_tokens`
+  - `BattalionMetadata` MUST gain `total_tokens` as an aggregate token count
+  - All new fields MUST derive `Serialize`/`Deserialize`
+  - The type is located in `src/core/platform/container/battalion/battalion_result.rs` per this PRD
+- scope: BattalionMetadata, BattalionResult shape, serialization
+
+## REQ-commander-metadata-export
+- source: /workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md (US-22.4, FR-9.1 to FR-9.6, section 6.4)
+- description: Opt-in JSON export of Commander execution metadata.
+- acceptance:
+  - When `metadata_output_dir` is configured, Commander MUST write a metadata JSON file after each execution
+  - File naming MUST follow `<metadata_output_dir>/<strategy>_<timestamp>_<uuid>.json` where timestamp is `YYYYMMDD_HHMMSS` local time and uuid is an 8-character short UUID
+  - The JSON MUST include strategy, timestamp, duration_ms, paladin_count, success_count, failure_count, total_tokens, per_paladin_times, per_paladin_tokens and a sanitised config_snapshot containing no secrets
+  - The output directory MUST be created if missing; write and permission failures MUST be logged but remain non-fatal
+  - Export overhead MUST stay under 50ms per execution
+  - JSON is the only supported format; CSV/YAML/Markdown, streaming, compression and encryption are explicit non-goals
+  - Unit tests MUST verify naming, JSON content, directory creation and write-failure handling in a temp directory; an integration test MUST cover a full Commander execution with export enabled
+- scope: Commander metadata export, JSON schema, non-fatal I/O
+
+## REQ-commander-config-metadata-dir-v3
+- source: /workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md (FR-10.1 to FR-10.3)
+- description: `metadata_output_dir` located on CommanderConfig. COMPETING VARIANT — run 1 placed the same field on `BattalionConfig` in both `REQ-battalion-config-v1` (Epic 4) and `REQ-battalion-config-v2` (Epic 5).
+- acceptance:
+  - `metadata_output_dir: Option<PathBuf>` MUST be added to `CommanderConfig` in `src/core/platform/container/battalion/commander_config.rs`
+  - `None` MUST disable metadata export (default behaviour)
+  - When `Some`, the path MUST be validated as writable before the first execution
+  - YAML surface: `commander.metadata_output_dir: "./metadata"`
+- scope: CommanderConfig, metadata_output_dir ownership, Epic 22 position
+
+## REQ-commander-test-hardening
+- source: /workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md (US-22.5, FR-11.1 to FR-11.5)
+- description: Enable the six ignored Commander tests with real Paladins over a mock LLM.
+- acceptance:
+  - `test_execute_campaign` MUST be enabled and passing with a mocked DAG of 4+ nodes, verifying dependency-respecting execution order and correct result collection
+  - `test_execute_chain_of_command` MUST be enabled and passing with a mocked supervisor plus 2 workers, verifying delegation flow and result aggregation
+  - `test_error_handling_fail_fast`, `test_error_handling_continue_on_error`, `test_error_handling_retry_then_continue` and `test_partial_failure_handling` MUST be enabled and passing
+  - Tests MUST use real `Paladin` instances with a mock LLM adapter; only the LLM layer is mocked
+  - `MockLlmAdapter` MUST support configurable responses per call, failure simulation and call-count tracking, with helper functions for building test Paladins
+  - All `#[ignore]` attributes MUST be removed from these tests; zero regressions in existing Battalion tests; >= 80% unit coverage for new code
+- scope: Commander tests, MockLlmAdapter, error-strategy coverage
+
+---
+
+## REQ-cli-garrison-configuration
+- source: /workspace/.project/Milestone_3-Completion/Epic_23/prd-epic23-cli-config-infrastructure-completion.md (US-23.1, FR-23.1.1 to FR-23.1.5)
+- description: YAML-driven garrison configuration for CLI-launched agents.
+- acceptance:
+  - YAML MUST support `garrison.{type: in_memory|sqlite, path, max_entries, ttl_seconds}`
+  - `in_memory` MUST instantiate `InMemoryGarrison`; `sqlite` MUST instantiate `SqliteGarrison`
+  - Validation MUST check type presence/validity, path presence and writability for sqlite, and positive max_entries and ttl_seconds
+  - Error messages MUST be actionable and name the exact field, e.g. "garrison.type is required (valid values: in_memory, sqlite)"
+  - The configured garrison MUST be passed to `PaladinBuilder` during agent construction (resolving the TODO at `src/application/cli/commands/agent.rs` line 293)
+  - Recommended: auto-create parent directories for SQLite paths; garrison initialisation failures are fatal (fail fast)
+  - Unit tests from sample YAML plus an integration test proving garrison persistence across agent executions
+- scope: CLI garrison configuration, PaladinBuilder wiring, validation errors
+
+## REQ-cli-arsenal-configuration
+- source: /workspace/.project/Milestone_3-Completion/Epic_23/prd-epic23-cli-config-infrastructure-completion.md (US-23.2, FR-23.2.1 to FR-23.2.6)
+- description: YAML-driven arsenal / MCP configuration for CLI-launched agents.
+- acceptance:
+  - YAML MUST support `arsenal.mcp_servers[]` entries with `name`, `type: stdio|sse`, `command` and `args` for stdio, `url` and optional `auth_token` for sse, with `${VAR}` environment substitution
+  - `stdio` MUST instantiate `MCPStdioAdapter`; `sse` MUST instantiate `MCPSseAdapter`
+  - Discovered tools MUST be registered in the arsenal registry with name, description, capability mapping (tool parameters to MCP schema) and a server reference
+  - Validation MUST check required fields per transport, valid HTTP/HTTPS URLs and resolvable environment variables
+  - Error messages MUST name the offending server and field, including connection failures
+  - The configured arsenal registry MUST be passed to `PaladinBuilder` (resolving the TODO at `agent.rs` line 296)
+  - Recommended MCP connection timeout: 10 seconds default, configurable via `arsenal.connection_timeout_seconds`
+  - Unit tests for both transports plus an integration test proving tool discovery and invocation
+- scope: CLI arsenal configuration, MCP adapters, tool registration
+
+## REQ-mock-llm-adapter
+- source: /workspace/.project/Milestone_3-Completion/Epic_23/prd-epic23-cli-config-infrastructure-completion.md (US-23.3, FR-23.3.1 to FR-23.3.6)
+- description: Configurable mock LLM provider enabling dependency-free CLI tests.
+- acceptance:
+  - `MockLlmAdapter` MUST implement the `LlmPort` trait (`generate`, `generate_stream`, `validate_model`)
+  - It MUST support response modes: simple text, tool calls, chunked streaming and error simulation (API failure, rate limit, timeout)
+  - It MUST be configurable in test setup, e.g. `.with_response(..)`, `.with_tool_call(name, args)`, `.with_streaming(vec![..])`, `.with_error(..)`
+  - It MUST record invocations for assertions: call count, prompts received, models requested, tool calls made
+  - Integration tests MUST validate single-Paladin execution from YAML, Formation sequential execution, Phalanx parallel execution, error handling/recovery and tool integration through the arsenal
+  - Mock-based tests MUST run in CI with no API keys and no external dependencies
+  - Recommended placement: test utilities rather than production code
+- scope: MockLlmAdapter, CLI integration tests, CI independence
+
+## REQ-cli-tiered-environment-testing
+- source: /workspace/.project/Milestone_3-Completion/Epic_23/prd-epic23-cli-config-infrastructure-completion.md (US-23.4, FR-23.4.1 to FR-23.4.4)
+- description: Three-tier test strategy gated by external dependency.
+- acceptance:
+  - Tier 1 (always in CI) MUST cover happy paths for every command, error handling for common failures and edge cases (empty input, very large input, malformed YAML, concurrent operations)
+  - Tier 2 (Docker-gated) MUST cover `setup-check` against real Redis, Qdrant and MinIO, plus service health validation and connection error handling
+  - Tier 3 (API-key-gated) MUST cover real OpenAI / DeepSeek / Anthropic execution, the `council` command end to end and streaming response handling
+  - Non-interactive mode MUST be supported: all required arguments available as flags, a `--non-interactive` flag disabling prompts, and clear errors instead of hanging prompts
+  - `NO_COLOR` MUST disable ANSI codes; the CLI MUST work in basic terminals and buffer lines properly in CI
+  - Gated tests MUST print clear skip messages naming the missing prerequisite
+  - Coverage targets: >= 80% unit for new configuration code, >= 70% integration for CLI workflows; CI pipeline under 10 minutes
+- scope: CLI test tiers, non-interactive mode, terminal compatibility, skip messages
+
+## REQ-scheduler-port
+- source: /workspace/.project/Milestone_3-Completion/Epic_23/prd-epic23-cli-config-infrastructure-completion.md (US-23.5, FR-23.5.1 to FR-23.5.3, FR-23.5.7)
+- description: Application-layer scheduling port with a production cron adapter.
+- acceptance:
+  - A `SchedulerPort` trait MUST be defined in the application layer exposing at minimum `schedule_job(JobSpec) -> Result<JobId, SchedulerError>`, `cancel_job(JobId)` and job status retrieval
+  - A `SchedulerAdapter` MUST live in `src/infrastructure/adapters/scheduling/` and wrap `tokio-cron-scheduler` (PRD pins `tokio-cron-scheduler = "0.9"`)
+  - The adapter MUST support creating jobs from cron expressions or intervals, cancelling pending jobs by ID, tracking job state (scheduled, running, completed, failed), configurable retry logic and async job execution
+  - Configuration MUST support `scheduler.{max_concurrent_jobs: 10, retry_failed_jobs: false, max_retries: 3, retry_delay_seconds: 60}`
+  - Scheduled jobs are in-memory only in this phase; persistence across restarts is deferred
+- scope: SchedulerPort, TokioCronSchedulerAdapter, scheduler configuration
+
+## REQ-content-deliverer-scheduling
+- source: /workspace/.project/Milestone_3-Completion/Epic_23/prd-epic23-cli-config-infrastructure-completion.md (FR-23.5.4 to FR-23.5.6, Appendix)
+- description: Replace the API content deliverer scheduler stub with real scheduling.
+- acceptance:
+  - `APIContentDeliverer::schedule_delivery()` MUST create real scheduled jobs, replacing the `unimplemented!("Scheduler integration pending")` stub at `src/infrastructure/adapters/output/api_content_deliverer.rs` line 297
+  - Jobs MUST execute content delivery at the specified times and return a `JobId` for tracking
+  - Cancellation of pending scheduled deliveries MUST be supported
+  - Job failures MUST be logged and optionally retried
+  - Unit tests with a mock scheduler MUST cover job creation, cancellation, successful execution, failure with retry and state transitions
+  - An integration test MUST schedule a job with a short delay (e.g. 2 seconds) and verify execution timing within tolerance and correct state updates
+  - Zero `unimplemented!()` macros may remain in production code paths
+- scope: APIContentDeliverer, schedule_delivery, cancellation
+
+## REQ-cli-error-types
+- source: /workspace/.project/Milestone_3-Completion/Epic_23/prd-epic23-cli-config-infrastructure-completion.md (section 7 Error Handling)
+- description: Unified CLI error surface for the new configuration paths.
+- acceptance:
+  - `CliError` MUST gain `GarrisonError(#[from] GarrisonError)`, `ArsenalError(#[from] ArsenalError)` and `SchedulerError(#[from] SchedulerError)` alongside existing variants
+  - Configuration errors MUST remain distinguishable from network, validation and user errors
+  - Existing `CliError` variants MUST be preserved
+- scope: CliError, error conversion at CLI boundary
+
+## REQ-mock-arsenal-port
+- source: /workspace/.project/Milestone_3-Completion/Epic_23/prd-task46-arsenal-tool-integration-tests.md (FR-1.1 to FR-1.4)
+- description: In-process mock Arsenal for tool-call testing.
+- acceptance:
+  - `MockArsenalPort` MUST implement the `ArsenalPort` trait (`list_armaments`, `invoke`, `validate_call`)
+  - It MUST support a configurable armament list, pre-configured `invoke()` responses keyed by tool name, configurable per-tool error responses and invocation recording (call count, arguments received)
+  - It MUST be `Send + Sync` and usable as `Arc<dyn ArsenalPort>`
+  - It MUST live in `tests/helpers/mock_arsenal_adapter.rs` alongside the existing `MockLlmAdapter`
+  - It SHOULD be designed generically for reuse beyond Epic 23
+- scope: MockArsenalPort, test helpers
+
+## REQ-tool-call-loop-tests
+- source: /workspace/.project/Milestone_3-Completion/Epic_23/prd-task46-arsenal-tool-integration-tests.md (US-1, US-2, US-3, FR-2.1 to FR-2.9)
+- description: End-to-end coverage of the LLM to Arsenal tool-call loop.
+- acceptance:
+  - Core tests MUST live in `tests/cli/tool_integration_test.rs` and use only in-process mocks (no network, no Python process)
+  - `test_tool_call_basic_flow`: mock LLM returns a `calculator` tool call then a text answer; mock Arsenal returns a successful `ArmamentResult`; execution succeeds, output contains the tool result, LLM called twice, Arsenal called once
+  - `test_tool_call_result_fed_back_to_llm`: the second LLM call's context MUST include the formatted tool result
+  - `test_tool_call_no_arsenal_available`: a tool call with `arsenal: None` MUST complete without error, logging a warning
+  - `test_tool_call_unknown_tool`: `ArsenalError::ToolNotFound` MUST inject an error message into context and continue to the next iteration
+  - `test_tool_call_invalid_arguments`: malformed JSON arguments MUST yield `ArsenalError::InvalidArguments` handled gracefully
+  - `test_tool_call_execution_error`: `ArsenalError::ExecutionError` MUST produce a formatted error in output and continue
+  - `test_multiple_sequential_tool_calls`: two tool calls then a final answer MUST invoke both tools, place both results in context and call the LLM three times
+  - `test_tool_call_with_garrison`: the tool result MUST be stored in Garrison as a `ConversationRole::Tool` entry
+  - All error scenarios MUST degrade gracefully with no panic; target >= 8 core tests green in CI
+- scope: PaladinExecutionService tool loop, ToolResultFormatter, error injection path
+
+## REQ-mcp-gated-integration-tests
+- source: /workspace/.project/Milestone_3-Completion/Epic_23/prd-task46-arsenal-tool-integration-tests.md (US-4, FR-3.1 to FR-3.4)
+- description: Optional real-MCP-server tests behind an explicit gate.
+- acceptance:
+  - Gated tests MUST live in `tests/integration/tool_integration_mcp_test.rs` and be marked `#[ignore]` or feature-gated
+  - `test_full_mcp_stdio_tool_call_flow` MUST start `tests/mcp_test_server.py` through a real `MCPStdioAdapter`, discover tools, register them in `ArsenalRegistryService`, wrap in `ArsenalExecutionService`, and prove the `echo` tool result appears in execution output
+  - `test_mcp_calculator_tool_invocation` MUST invoke the calculator tool with `{"operation":"add","a":5,"b":3}` and assert the result contains "8"
+  - Tests MUST check Python availability at start and skip gracefully when unavailable
+  - Target: >= 2 gated tests green when run with `--ignored` and Python available
+  - SSE MCP server integration, real LLM providers, new Arsenal features, benchmarks, handoff tool-call testing and streaming-with-tools are explicit non-goals
+- scope: MCP STDIO integration tests, gating, Python test server
+
+---
+
+## REQ-battalion-benchmark-repair
+- source: /workspace/.project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md (US-24.1, FR-4.1)
+- description: Restore compiling Battalion benchmarks. Related to the run-1 finding that benchmarks were disabled at MVP.
+- acceptance:
+  - `benchmark_campaign` MUST be updated to the current Campaign API (add_node/add_edge) and `benchmark_chain_of_command` to the current constructor signature (`benches/battalion_benchmarks.rs` lines 297, 390, 950)
+  - Both benchmarks MUST be re-enabled in criterion group registration
+  - All benchmarks in `benches/` MUST compile without errors or warnings and use current API signatures
+  - Benchmark results MUST be reproducible and documented in `docs/BATTALION_BENCHMARKS.md`
+  - Benchmark documentation MUST explain what each benchmark measures
+  - `cargo bench --no-run` MUST compile all benchmarks successfully in CI to catch API drift early
+- scope: battalion_benchmarks.rs, criterion registration, benchmark documentation
+
+## REQ-prompt-generation-test-reenable
+- source: /workspace/.project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md (US-24.2)
+- description: Re-enable the disabled prompt generation service test module.
+- acceptance:
+  - The mock in `tests/unit/mod.rs` (line 22) MUST be updated to match the current `LlmPort` trait signature
+  - The `prompt_generation_service_test` module MUST be uncommented, fixed and passing
+  - Prompt generation test coverage MUST reach >= 80%
+  - No `#[ignore]` attributes may remain on passing tests
+- scope: tests/unit/mod.rs, prompt generation coverage
+
+## REQ-timeout-test-hardening
+- source: /workspace/.project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md (US-24.3, FR-4.2)
+- description: Verified execution timeout behaviour.
+- acceptance:
+  - `MockLlmPort` MUST support configurable response delays
+  - A timeout test MUST verify 60-second timeout behaviour and have its `#[ignore]` removed (`tests/unit/paladin_execution_service_test.rs` lines 237, 239)
+  - The test MUST pass reliably in CI with no flakiness
+  - Both hard timeout and graceful shutdown scenarios MUST be covered, plus edge cases (timeout at 0s, timeout greater than max_duration)
+- scope: MockLlmPort delays, timeout verification
+
+## REQ-qdrant-integration-tests
+- source: /workspace/.project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md (US-24.4, FR-4.4)
+- description: Validate the Sanctum RAG pipeline against a real Qdrant instance.
+- acceptance:
+  - Integration tests MUST be implemented in `tests/integration/rag_integration_tests.rs` (replacing the placeholder at line 147) covering store, search, delete and update against a real Qdrant
+  - Tests MUST cover end-to-end RAG-enabled Paladin execution, token budget limiting and context formatting with real vector search results
+  - Tests MUST run against a local Qdrant instance at `http://localhost:6333` via Docker and skip when unavailable
+  - Unit-level Qdrant tests in `tests/unit/sanctum/qdrant_sanctum_test.rs` (line 62) MUST be expanded
+  - Tests MUST create and destroy test collections so no state persists between runs
+  - Vector search MUST be validated with different similarity metrics; integration coverage >= 70%
+- scope: Qdrant integration tests, RAG end-to-end validation, test isolation
+
+## REQ-deferred-coverage-review
+- source: /workspace/.project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md (US-24.5, FR-4.3)
+- description: Cost/benefit review of the two remaining low-coverage platform modules.
+- acceptance:
+  - Coverage MUST be reviewed for `src/core/platform/manager/user_service.rs` (was 4.23%) and `src/core/platform/manager/listener_service.rs` (was 57.83%)
+  - A cost/benefit determination MUST be made and tests implemented where ROI justifies the effort
+  - Any item re-deferred MUST be documented with explicit rationale
+  - Overall project coverage MUST be maintained at >= 80% unit and >= 70% integration
+  - A coverage report MUST be generated and reviewed in the PR; recommended tool `cargo llvm-cov`
+  - If 80% is unreachable for these modules, the lower figure MUST be documented with a follow-up technical-debt ticket
+- scope: user_service coverage, listener_service coverage, deferred-coverage rationale
+
+## REQ-cli-snapshot-testing
+- source: /workspace/.project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md (US-24.6, FR-4.5)
+- description: Snapshot-based regression testing for CLI output.
+- acceptance:
+  - The `insta` crate MUST be added (>= 1.34, latest stable) and a `tests/cli/snapshots/` directory created
+  - Snapshot tests MUST cover table rendering for all table formats, progress indicators and spinners, formatted and coloured error messages, and command help output for all subcommands
+  - Snapshots MUST capture terminal output including ANSI codes and be reviewable with `cargo insta review`
+  - CLI tests MUST validate both success and error output formatting; help output MUST be stable and properly formatted
+  - At least 10 snapshot tests MUST exist
+  - Inline rustdoc MUST be added for all public CLI functions and types
+  - `QUICKSTART.md`, `INSTALLATION.md` and `docs/cli/README.md` MUST be updated with CLI usage, installation and comprehensive documentation
+  - Recommended: inline snapshots for easier PR review
+- scope: insta snapshot tests, CLI output regression, CLI documentation
+
+## REQ-provider-live-api-tests
+- source: /workspace/.project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md (US-24.7, FR-4.2 item 9, section 6.2)
+- description: Optional live API validation for all three LLM providers. COMPETING with the post-Epic-24 change to fail loudly on missing keys — see INGEST-CONFLICTS.md.
+- acceptance:
+  - Integration tests MUST exist for OpenAI, DeepSeek and Anthropic live APIs, each requiring its API key from an env var or `.env` file
+  - Tests MUST validate completion, streaming, tool calling, error handling and rate limits
+  - Tests MUST be gated behind the `live-api-tests` feature flag and excluded from default `cargo test`
+  - Tests MUST skip gracefully when API keys are unavailable — no failures, just warnings
+  - Tests MUST respect provider rate limits with appropriate delays/retries
+  - README MUST document how to run live API tests
+  - Recommended: cache responses for determinism and cap at roughly 10 API calls per provider per CI run
+- scope: live API tests, feature gating, graceful skip
+
+## REQ-final-documentation-and-demo
+- source: /workspace/.project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md (US-24.8, FR-4.6)
+- description: Presentation-ready documentation and demo assets.
+- acceptance:
+  - `README.md` MUST be updated with comprehensive Council and Grove examples; `docs/QUICKSTART.md` MUST gain Council/Grove quickstart guides
+  - A demo video, animated GIF or terminal recording of CLI features MUST be created and stored in an appropriate location (e.g. `docs/assets/`); recommended format asciinema
+  - A CI/CD test job specifically for CLI tests MUST be added
+  - `cargo doc --open` MUST generate clean documentation with no warnings; all public APIs (functions, types, modules) documented with rustdoc including practical examples
+  - `docs/Design/Design_and_Architecture.md` MUST be reviewed and updated; `CONTRIBUTING.md` MUST gain testing guidelines
+  - Release notes for Milestone 3 completion MUST be drafted
+- scope: README, QUICKSTART, demo assets, rustdoc, CONTRIBUTING, release notes
+
+## REQ-epic24-quality-gates
+- source: /workspace/.project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md (FR-4.7, section 7)
+- description: Final quality gate set for Milestone 3.
+- acceptance:
+  - `cargo fmt --check` MUST pass; `cargo clippy -- -D warnings` MUST pass
+  - `cargo test` MUST pass with no ignored tests remaining; `cargo test --features live-api-tests` MUST pass when API keys are provided
+  - `cargo bench --no-run` MUST compile all benchmarks
+  - Unit coverage MUST be >= 80% for all modules and integration coverage >= 70% for critical workflows, with coverage reports generated in CI
+  - The number of enabled tests MUST increase by at least 50; 100% of benchmarks compile and run; 100% of public APIs have rustdoc
+  - Pre-existing TODOs outside the multi-agent scope (content services, `sql_store.rs`, `trigger.rs`, repositories), performance optimisation, load testing, security testing, UI redesign and breaking API changes are explicit non-goals
+- scope: Milestone 3 quality gates, coverage targets, scope exclusions

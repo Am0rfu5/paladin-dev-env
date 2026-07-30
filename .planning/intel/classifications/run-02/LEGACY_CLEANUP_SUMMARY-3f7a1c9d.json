@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Post-Epic_24-cleanup/LEGACY_CLEANUP_SUMMARY.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Legacy OpenAI Adapter Cleanup - Summary",
+  "summary": "Report of removing the unused legacy OpenAILlmAdapter, keeping OpenAIAdapter, with verification steps and follow-up LLM test issues.",
+  "scope": ["OpenAI LLM adapter", "legacy code cleanup", "src/infrastructure/adapters/llm/openai_adapter.rs", "src/infrastructure/adapters/output/openai_llm_adapter.rs", "docs/HERALD.md", "CHANGELOG.md"],
+  "cross_refs": ["LEGACY_CODE_CLEANUP_PLAN.md", "docs/HERALD.md", "examples/llm_provider_selection.rs", "tests/integration/llm_live_api_tests.rs", "src/infrastructure/adapters/llm/provider_factory.rs", "src/infrastructure/adapters/llm/openai_vision.rs", "src/infrastructure/adapters/output/mod.rs", "CHANGELOG.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

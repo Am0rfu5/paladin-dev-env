@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_13/epic13.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 13: Sentinel Vision System",
+  "summary": "Epic adding vision and document processing to Paladins: multi-modal LLM requests, OpenAI/Anthropic vision, PDF extraction, document ingestion port.",
+  "scope": ["Sentinel Vision System", "VisionContent", "VisionRequest", "OpenAILlmAdapter vision", "AnthropicLlmAdapter vision", "Paladin::run_with_vision", "PdfExtractor", "DocumentPort", "CLI --image flag"],
+  "cross_refs": ["src/core/platform/container/vision.rs", "src/infrastructure/adapters/document/", "src/application/ports/input/document_port.rs", "docs/SENTINEL.md", "examples/vision_analysis.rs", "examples/document_processing.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content signals (user stories, acceptance criteria, Rust type contracts) would otherwise indicate PRD/SPEC hybrid."
+}

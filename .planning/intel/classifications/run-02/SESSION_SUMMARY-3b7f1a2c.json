@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Post-Epic_24-cleanup/SESSION_SUMMARY.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Session Summary: Live API Tests Fixed",
+  "summary": "Session record of fixing live API tests for OpenAI, Anthropic, and DeepSeek providers, listing five issues and their fixes.",
+  "scope": ["live API tests", "OpenAI adapter", "Anthropic adapter", "DeepSeek", "provider factory", "streaming completion"],
+  "cross_refs": ["tests/integration/llm_live_api_tests.rs", "src/infrastructure/adapters/llm/anthropic_adapter.rs", "src/infrastructure/adapters/llm/provider_factory.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

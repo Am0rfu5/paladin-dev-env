@@ -1,0 +1,93 @@
+docs:
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/Milestone_9-Epic_1-orchestrator-end-to-end-workflow-execution.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/prd-orchestrator-end-to-end-workflow-execution.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/Milestone_9-Epic_2-scheduler-queue-operational-validation.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/prd-scheduler-queue-operational-validation.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/Milestone_9-Epic_3-content-agent-bridge.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/prd-content-agent-bridge.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/Milestone_9-Epic_4-agent-orchestrator-bridge.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/prd-agent-orchestrator-bridge.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/Milestone_9-Epic_5-user-admin-system-completion.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/prd-user-admin-system-completion.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_6/Milestone_9-Epic_6-finalization-and-release.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_6/prd-finalization-and-release.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/overview/Milestone-9_Classic-Orchestrator-Completion.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/Milestone_10-Epic_1-pre-commit-pre-push-hooks.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/prd-pre-commit-pre-push-hooks.md"
+    type: PRD
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/Milestone_10-Epic_2-dependency-security-license-compliance.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md"
+    type: PRD
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/Milestone_10-Epic_3-release-automation.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/prd-release-automation.md"
+    type: PRD
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_4/Milestone_10-Epic_4-finalization.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_4/prd-milestone10-finalization.md"
+    type: PRD
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_5/prd-milestone10-release-branch-protection.md"
+    type: PRD
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/overview/Milestone-10_CI-Hardening-Release-Automation.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_2/Epic-2_MDBook-Setup-and-Structure.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_2/prd-mdbook-setup-and-structure.md"
+    type: PRD
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/Epic-3_Content-Rewrite.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/prd-content-rewrite.md"
+    type: PRD
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/Epic-4_New-Documentation.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/prd-new-documentation.md"
+    type: PRD
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/Epic-5_Publish-and-Finalize.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/prd-publish-and-finalize.md"
+    type: PRD
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_6/Epic-6_Deployment-Topologies-Documentation.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_6/prd-deployment-topologies-documentation.md"
+    type: PRD
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/overview/Milestone-11_Documentation-Overhaul-Publish.md"
+    type: DOC
+  - path: ".project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_2/prd-configurable-web-host-server-binary.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_3/prd-streaming-async-execution.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_4/prd-api-cross-cutting-concerns.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_6/prd-openapi-spec-interactive-docs.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_7/prd-deployment-artifacts-examples-docs.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/overview/Milestone-12_Web-API.md"
+    type: DOC
+  - path: ".project/Deferred-QA-CICD-Completion/DEFERRED_COVERAGE.md"
+    type: DOC
+  - path: ".project/Deferred-QA-CICD-Completion/Epic_25/prd-cicd-pipeline-enhancement.md"
+    type: PRD
+  - path: ".project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md"
+    type: PRD
+  - path: ".project/project-management/paladin-project-plan-final.md"
+    type: DOC

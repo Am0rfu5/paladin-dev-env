@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Autonomous Agent Features",
+  "summary": "Requirements for autonomous Paladin capabilities: task planning, auto prompt generation, dynamic temperature adjustment, and specialist agent delegation.",
+  "scope": ["autonomous agent features", "MaxLoops::Auto", "PlanningService", "PromptGenerationService", "PaladinBuilder", "dynamic temperature", "agent handoff/delegation", "Epic 14"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

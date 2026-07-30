@@ -1,0 +1,40 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_19/prd-epic19-herald-consolidation.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Herald & Domain Type Consolidation",
+  "summary": "Epic 19 requirements to remove placeholder Herald domain types, complete StreamChunk and ExecutionMetadata telemetry, and auto-register built-in formatters.",
+  "scope": [
+    "Herald",
+    "herald.rs",
+    "HeraldRegistry",
+    "HeraldPort",
+    "JsonHerald",
+    "MarkdownHerald",
+    "TableHerald",
+    "PaladinResult",
+    "BattalionResult",
+    "PaladinError",
+    "StreamChunk",
+    "ExecutionMetadata",
+    "TokenUsage",
+    "Epic 19"
+  ],
+  "cross_refs": [
+    "/project/Milestone_3-Completion/Project_Plan_Milestone_3.md",
+    "/project/Milestone_3-Completion/Epic_19/epic19.md",
+    "src/core/platform/container/herald.rs",
+    "src/application/use_cases/herald/herald_registry.rs",
+    "src/core/platform/container/paladin.rs",
+    "src/core/platform/container/battalion/mod.rs",
+    "src/application/ports/output/herald_port.rs",
+    "notes/hexagonal-arch.md",
+    ".github/copilot-instructions.md",
+    "CHANGELOG.md",
+    "examples/herald_*.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD authoritative; content signals agree (user stories US-19.1/19.2, acceptance criteria, functional requirements, non-goals, success metrics). Status: Draft."
+}

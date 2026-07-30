@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Post-Epic_24-cleanup/QUICK_SUMMARY.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Live API Tests - Complete Success",
+  "summary": "Status summary of fixed live API tests for OpenAI and Anthropic providers, with test commands and passing results.",
+  "scope": ["live API tests", "OpenAI provider", "Anthropic provider", "streaming completion", "unit tests"],
+  "cross_refs": ["LIVE_API_TESTS_SUCCESS.md", "SESSION_SUMMARY.md", "CHANGELOG.md", "verify_live_api_tests.sh"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,30 @@
+{
+  "source_path": "/workspace/.project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Epic 22 — Battalion & Commander Hardening",
+  "summary": "Requirements to complete Battalion integration gaps: Paladin registry resolution, Grove LLM routing, Phalanx metrics, Commander metadata export, and enabling ignored tests.",
+  "scope": [
+    "Battalion",
+    "Commander",
+    "Council",
+    "Grove",
+    "Phalanx",
+    "Formation",
+    "Chain of Command",
+    "PaladinRegistry",
+    "LLM routing",
+    "execution metrics",
+    "metadata export"
+  ],
+  "cross_refs": [
+    "src/application/use_cases/battalion/council_service.rs",
+    "src/application/use_cases/battalion/commander.rs",
+    "src/application/ports/output/paladin_registry.rs",
+    "src/infrastructure/adapters/paladin_registry.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD provided (authoritative). Content signals agree: goals, user stories, acceptance criteria. Frontmatter-style 'Status: Draft' is epic status, not an ADR marker."
+}
