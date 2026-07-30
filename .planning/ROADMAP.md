@@ -147,8 +147,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ## Phase Details
 
-<details>
-<summary><strong>Milestone 1 close-out — Phases 1-4 (not started)</strong></summary>
+**Milestone 1 close-out — Phases 1-4 (not started)**
 
 ### Phase 1: Ground Truth & Decision Records
 **Goal**: `.planning/` describes the v0.7.0 code as it actually is, and each of the six contested definitions has exactly one recorded, evidence-cited answer that later milestones can build on.
@@ -198,10 +197,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. CI on the release branch proves the full gate suite: format, clippy with warnings as errors, workspace tests, doc tests, all 22 examples, the multi-arch Docker build inside its size and time budget, and the Kubernetes smoke test inside its startup budget.
 **Plans**: TBD
 
-</details>
-
-<details>
-<summary><strong>Milestone 2-3 close-out — Phases 5-6 (not started)</strong></summary>
+**Milestone 2-3 close-out — Phases 5-6 (not started)**
 
 ### Phase 5: Milestone 2-3 Ground Truth
 **Goal**: A developer can open `.planning/` and get a truthful account of what Epics 11-24 delivered — which of the 118 requirements the shipped tree satisfies, which of two competing surfaces each feature actually implements, and what the three unverified open-checkbox blocks contain — with the epic-numbering defect corrected at its source so it stops propagating.
@@ -227,10 +223,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. The live-API test harness and both vision surfaces match their Phase 5 recorded decisions in code, with any removal carrying a migration note.
 **Plans**: TBD
 
-</details>
-
-<details>
-<summary><strong>Milestone 4-6 close-out — Phases 7-8 (not started)</strong></summary>
+**Milestone 4-6 close-out — Phases 7-8 (not started)**
 
 ### Phase 7: Workspace Ground Truth & Recorded Answers
 **Goal**: A developer can open `.planning/` and get a truthful account of the three milestones that restructured this codebase — which of the 115 requirements the workspace actually satisfies, which competing position each of the four variant pairs resolved to, and which five documented positions must never be applied literally because shipped code contradicts them.
@@ -258,10 +251,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. `grep -rn 'pub struct TokenUsage' crates src` returns exactly one result, and token figures no longer need conversion when they cross the battalion/ports boundary.
 **Plans**: TBD
 
-</details>
-
-<details>
-<summary><strong>Milestone 7-8 close-out — Phases 9-11 (not started)</strong></summary>
+**Milestone 7-8 close-out — Phases 9-11 (not started)**
 
 ### Phase 9: Release & Security Gate Integrity
 **Goal**: The security, licensing and release gates this project believes it already has actually hold — one advisory exception set instead of four, a licence the manifests declare, and a published crate family that passes its own release criteria.
@@ -300,8 +290,6 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. The condition on returning ML support survives outside a single DOC: any future TensorFlow adapter goes into a dedicated `paladin-ml` leaf crate with the feature flag on that crate, never back into the facade, and `MlPort` stays in the workspace so the integration point does not move.
   5. Every row of the Milestone 9 candidate list is marked done, not-a-candidate, or still-open, and `paladin-arsenal` and `paladin-sanctum` are either confirmed as real future crates or recorded as artefacts of a table that contradicts its own governing PRD — so nobody plans relocations the reconciliation already executed against a milestone that is 100% complete.
 **Plans**: TBD
-
-</details>
 
 **Milestone 9-12 + Deferred-QA close-out — Phases 12-16**
 
@@ -587,9 +575,13 @@ This roadmap is **appended to**, not restructured.
    2.1) only for urgent work that must execute *between* existing integer phases.
 2. **Keep the milestone-grouped form.** Add a row to the `## Milestones` table, a labelled block
    under `## Phases`, and a new expanded `## Phase Details` section for the incoming phases. Wrap
-   completed or superseded milestone sections in a `<details>` block labelled with their milestone
-   and status. Keep the `### Phase N: Name` header format verbatim — downstream tooling parses it,
-   including inside `<details>`.
+   **only genuinely completed or superseded** milestone sections in a `<details>` block labelled
+   with their milestone and status. Keep the `### Phase N: Name` header format verbatim.
+   **`<details>` is a scope signal, not a rendering choice: GSD's roadmap parser strips every
+   `<details>` block before phase lookup** (`stripShippedMilestones` →
+   `markdown-sectionizer.stripTaggedBlocks`), so any phase wrapped in one is invisible to
+   `roadmap.get-phase`, `roadmap.analyze`, and every workflow built on them — `/gsd-plan-phase`
+   included. Use a plain bold label line for milestones that are not started or in progress.
 3. **Add new requirement ID prefixes; do not recycle. Seventeen are spent**: `RECON-*`, `GAP-*`,
    `QUAL-*`, `REL-*` (Milestone 1); `VERIFY-*`, `CLOSE-*` (Milestone 2-3); `ARCH-*`, `DEBT-*`
    (Milestone 4-6); `SEC-*`, `HARD-*`, `FACADE-*` (Milestone 7-8); `SUPPLY-*`, `ORCH-*`, `WEB-*`,
@@ -674,3 +666,15 @@ every `### Phase N:` header is unchanged and verbatim.
 **Cumulative: 263 documents covered, 554 requirements, 86 forward requirements across 16 phases,
 60 variant entries across 30 groups, 69 warnings, 0 blockers, 0 locked decisions, 11 ADR
 candidates.***
+
+*Corrected: 2026-07-30 (structural defect, no scope change). Runs 3, 4 and 5 wrapped the
+**not-started** Milestone 1, 2-3, 4-6 and 7-8 detail sections in `<details>` blocks, citing
+protocol item 2 — but item 2 reserves that wrapper for **completed or superseded** milestones, and
+its claim that "downstream tooling parses it, including inside `<details>`" was false. GSD's
+roadmap parser strips every `<details>` block before phase lookup, so **Phases 1-11 were invisible
+to `roadmap.get-phase` and every workflow built on it**; `/gsd-plan-phase 1` failed with
+`malformed_roadmap`. The four wrappers were replaced with plain bold label lines matching the
+Milestone 9-12 form already used in this file, and protocol item 2 was corrected to state the
+parser contract. **No phase, requirement, goal, success criterion or `### Phase N:` header was
+changed** — only the four `<details>`/`<summary>`/`</details>` wrapper lines were removed. All 16
+phases now resolve.*
