@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_6-Architectural-Refinements/Epic_4/Milestone_6-Epic_4-Relocate_CircuitBreaker_Infra_Layer.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 4: Relocate `CircuitBreaker` to the Infrastructure Layer",
+  "summary": "Epic plan to move CircuitBreaker from application use cases to the infrastructure layer with facade re-export for backward compatibility.",
+  "scope": ["CircuitBreaker", "CircuitState", "infrastructure layer", "PaladinExecutionService", "paladin-infra crate", "facade re-export", "hexagonal architecture"],
+  "cross_refs": ["application/use_cases/paladin/circuit_breaker.rs", "src/application/use_cases/paladin/circuit_breaker.rs", "paladin/src/infrastructure/resilience/circuit_breaker.rs", "STABLE_API.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

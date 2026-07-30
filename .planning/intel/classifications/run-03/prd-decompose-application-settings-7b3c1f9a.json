@@ -1,0 +1,35 @@
+{
+  "source_path": "/workspace/.project/Milestone_6-Architectural-Refinements/Epic_1/prd-decompose-application-settings.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Decompose `application_settings.rs` into Per-Domain Configuration Modules",
+  "summary": "Requirements to replace the monolithic application_settings.rs with per-domain config modules across workspace crates, adding an EnvOverridable trait.",
+  "scope": [
+    "src/config/application_settings.rs",
+    "per-domain configuration modules",
+    "EnvOverridable trait",
+    "read_env helper",
+    "Settings struct",
+    "paladin-memory config",
+    "paladin-llm config",
+    "GarrisonSettings",
+    "SanctumConfig",
+    "RagConfig deduplication",
+    "config.yml backward compatibility",
+    "incremental migration"
+  ],
+  "cross_refs": [
+    "STABLE_API.md",
+    "src/config/application_settings.rs",
+    "src/config/mod.rs",
+    "src/config/env_utils.rs",
+    "src/config/user_config.rs",
+    "src/infrastructure/adapters/llm/config_bridge.rs",
+    "crates/paladin-memory/src/services/rag_retrieval_service.rs",
+    "config.test.yml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

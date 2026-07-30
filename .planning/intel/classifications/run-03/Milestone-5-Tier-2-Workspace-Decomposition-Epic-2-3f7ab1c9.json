@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/Milestone_5-Tier_2-Workspace-Decomposition-Epic_2.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 2: Extract `paladin-ports` Crate",
+  "summary": "Epic plan to extract ~20 port traits from src/application/ports into a dedicated paladin-ports crate depending only on paladin-core.",
+  "scope": ["paladin-ports crate", "paladin-core", "output port traits", "input port traits", "src/application/ports re-export shim", "Cargo workspace"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content also carries an Acceptance Criteria section (PRD-like signal) plus task/deliverable breakdown; manifest override retained."
+}

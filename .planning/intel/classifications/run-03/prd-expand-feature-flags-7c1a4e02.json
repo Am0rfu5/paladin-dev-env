@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_1/prd-expand-feature-flags.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Expand Feature Flags to Gate the Full Optional Surface",
+  "summary": "Expands Cargo feature flags from 5 to a comprehensive gating matrix so consumers compile only the subsystems they use.",
+  "scope": ["Cargo feature flags", "LLM provider adapters (openai, anthropic, deepseek)", "content-processing", "web-server", "notifications", "vision", "redis-queue", "s3-storage", "openai-embeddings", "qdrant", "provider_factory.rs", "default feature set", "CI feature matrix"],
+  "cross_refs": ["/docs/CONFIGURATION.md", "/docs/FEATURE_FLAGS.md", "/docs/MIGRATION.md", "README.md", "CHANGELOG.md", "src/Cargo.toml", "src/infrastructure/adapters/llm/provider_factory.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,32 @@
+{
+  "source_path": "/workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Extract `paladin-llm` Crate",
+  "summary": "Requirements for extracting all LLM provider adapters (OpenAI, Anthropic, DeepSeek, Mock) from the monolithic paladin crate into a feature-flagged paladin-llm crate.",
+  "scope": [
+    "paladin-llm crate",
+    "OpenAI adapter",
+    "Anthropic adapter",
+    "DeepSeek adapter",
+    "mock adapters",
+    "provider factory",
+    "LlmProviderError",
+    "Cargo feature flags",
+    "vision adapters",
+    "config bridge",
+    "paladin::prelude",
+    "workspace build validation"
+  ],
+  "cross_refs": [
+    "tasks-paladin-llm-extraction.md",
+    "src/config/application_settings.rs",
+    "src/infrastructure/adapters/llm/config_bridge.rs",
+    "src/infrastructure/adapters/llm/mod.rs",
+    "crates/paladin-llm/Cargo.toml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD provided and matches content signals (user stories, acceptance criteria, goals/non-goals, success metrics). Status field reads 'Draft'; contains SPEC-like technical detail (module layout, feature-flag tables) but self-described as a specification of what must be true, dominant structure is PRD."
+}

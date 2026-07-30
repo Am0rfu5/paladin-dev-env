@@ -76,3 +76,184 @@ These carry open checkboxes and have not been checked against code:
 - `tasks-content-rewrite.md` — 26 open (Milestone 11 documentation)
 - `tasks-harden-port-traits-stable-api.md` — 20 open
 - `tasks-provider-expansion.md` — 19 open (Milestone 1; live-API tests explicitly deferred)
+
+---
+
+## Ingest run 3 verification — Milestones 4, 5, 6 (32 docs)
+
+Direct verification against the working tree on `release/v0.7.0`, performed 2026-07-30 during ingest
+run 3. Evidence is file existence, `Cargo.toml` contents, and type definitions read from source — not
+LLM inference. Same precedence rule applies: this file outranks every ingested document.
+
+### Verified SHIPPED — the workspace decomposition and the M6 relocations
+
+| Claim | Source doc | Evidence in tree |
+|---|---|---|
+| Cargo workspace with `[workspace] members = [".", "crates/*"]` | M5 Epic 1 PRD FR-1 | root `Cargo.toml` |
+| `paladin-core` extracted | M5 Epic 1 | `crates/paladin-core/` (package name `paladin-ai-core`, lib name `paladin_core`) |
+| `paladin-ports` extracted, `src/application/ports/` fully deleted | M5 Epic 2 FR-16 | `crates/paladin-ports/`; `src/application/ports` does not exist |
+| `paladin-battalion` extracted | M5 Epic 3 | `crates/paladin-battalion/` |
+| `paladin-llm` extracted with per-provider features | M5 Epic 4 | `crates/paladin-llm/`; root dep enables `openai, anthropic, deepseek, mock, vision` |
+| `paladin-memory` extracted, edition 2024, `doctest = false`, features `sqlite`/`qdrant`/`content-processing` | M5 Epic 5 FR-1.2/1.3/1.6 | `crates/paladin-memory/Cargo.toml` — exact match |
+| `paladin::prelude` | M5 Epic 6 FR-1.4 | `src/prelude.rs` |
+| `crate-isolation` CI job | M5 Epic 6 FR-2.8 | `.github/workflows/ci.yml:228` |
+| `--workspace` clippy / doc / test | M5 Epic 6 FR-2.3/2.5/2.6/2.9 | `ci.yml:54,57,222,225` |
+| feature-flags workspace matrix | M5 Epic 6 FR-2.4 | `feature-flags.yml:115,118` |
+| `benchmark-builds.sh` | M5 Epic 6 §6 | `scripts/benchmark-builds.sh` |
+| `application_settings.rs` deleted, replaced by per-domain config modules | M6 Epic 1 SM-3 | `src/config/{agents,arsenal,citadel,env_utils,file_storage,herald,notifications,queue,scheduler,settings,web_server}.rs`; no `application_settings.rs` |
+| Config modules pushed into sub-crates | M6 Epic 1 §4.1 | `crates/paladin-memory/src/config/{garrison,rag,sanctum}.rs`; `crates/paladin-llm/src/config/{llm,vision,bridge}.rs` |
+| Orchestration services relocated out of `core/platform/manager/` | M6 Epic 2 §4.3 | `src/application/services/{notification_orchestrator,queue_orchestrator,log_orchestrator,orchestration}/`; `src/core/platform/manager/` retains only `content_service.rs`, `event_manager.rs`, `user_service.rs`, `mod.rs` |
+| Maneuver DSL co-located with Battalion | M6 Epic 3 §4.1-4.5 | `crates/paladin-battalion/src/maneuver/{mod.rs,parser/{mod,lexer,ast,error}.rs,service.rs,visualizer.rs}`; no `parser/` dir and no `maneuver.rs` in `paladin-core` |
+| `CircuitBreaker` relocated to infrastructure, old path retired | M6 Epic 4 §4.1/4.11 | `src/infrastructure/resilience/{mod.rs,circuit_breaker.rs}`; `src/application/use_cases/` no longer exists at all |
+| Epic-1 decision record Option A implemented | M5 Epic 1 decision doc | `paladin-core/src/platform/container/execution_result.rs` (`PaladinResult`, `StopReason`), `token_usage.rs` (`TokenUsage`), `registry_error.rs` (`RegistryError`), `arsenal/handoff_error.rs` (`HandoffError`) |
+| `default = ["llm-openai"]` | M4 Epic 1 FR2 | root `Cargo.toml [features]` |
+| `full` convenience flag | M4 Epic 1 FR1 | root `Cargo.toml [features]` |
+| `cli` feature + `required-features` on the CLI binary | M4 Epic 3 FR1/FR3 | `cli = ["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml"]`; `[[bin]] paladin-cli` has `required-features = ["cli"]` |
+| Library-only isolation test | M4 Epic 3 FR6 | `feature-flags.yml:141` runs `cargo test --test cli_isolation` |
+| API-surface tooling | M4 Epic 2 FR-7 | `scripts/{extract-public-api,check-api-surface,check-deprecations,check-all-examples}.sh`; `final-api.txt`, `api_surface_current.txt` |
+
+The workspace is **larger** than run 3 describes: 10 library crates ship
+(`paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-herald`, `paladin-llm`,
+`paladin-memory`, `paladin-storage`, `paladin-notifications`, `paladin-content`, `paladin-web`)
+plus a `doc-examples` crate — not the 6 that `build-benchmarks.md` and the M5/M6 overviews
+describe. The additional five crates come from milestones outside this run.
+
+### Resolved variants — settled by shipped code
+
+#### `BattalionResult` field set — run-1 variant CLOSED (merged superset shipped)
+
+`crates/paladin-core/src/platform/container/battalion/mod.rs:549`. The shipped struct is a
+**superset of all three run-1 consumers**, with Epic 5's `metadata` map flattened into top-level
+fields:
+
+`battalion_id`, `battalion_name`, `started_at`, `completed_at`, `final_output`,
+`paladin_results: Vec<PaladinResult>`, `status: BattalionStatus`,
+`strategy_used: BattalionStrategy`, `strategy_selection_reasoning: Option<String>`,
+`strategy_selection_time_ms: u64`, `per_paladin_times: HashMap<String, u64>`,
+`per_paladin_tokens: HashMap<String, TokenUsage>`, `total_tokens: u64`,
+`paladin_success_count: usize`, `paladin_failure_count: usize`,
+`node_errors: Vec<NodeError>`.
+
+- Epic 4's field set (`REQ-battalion-result-v1`): fully present.
+- Epic 5's field set (`REQ-battalion-result-v2`): present except `execution_time_ms`
+  (superseded by `per_paladin_times`) and `errors: Vec<PaladinError>` (superseded by
+  `node_errors: Vec<NodeError>` — a plain-data struct, because `BattalionError` does not derive
+  `Serialize`/`Deserialize` while `BattalionResult` does).
+- Epic 8's Herald expectation (`REQ-herald-battalion-result-fields`): satisfied —
+  Battalion type is available as `strategy_used`, aggregated token usage as `total_tokens` plus
+  `per_paladin_tokens`.
+
+**Resolution: the run-1 `BattalionResult` variant is closed by code.** Do not plan a
+reconciliation task. The M5 Epic 1 decision record does *not* settle this — it never mentions
+`BattalionResult` — the shipped struct does.
+
+#### `BattalionConfig` field set — run-1 variant CLOSED (Epic 4 form shipped)
+
+`battalion/mod.rs:37`: `name`, `description: Option<String>`, `timeout_seconds`,
+`retry_policy: RetryPolicy`, `error_strategy: ErrorStrategy`,
+`metadata_output_dir: Option<PathBuf>`. This is `REQ-battalion-config-v1` exactly. Epic 5's
+`retry_attempts: u32` and `enable_checkpointing: bool` are **not** present, and `description`
+was not dropped.
+
+#### `metadata_output_dir` ownership — run-2 three-owner warning CLOSED
+
+Exactly one owner in the tree: `BattalionConfig` (`battalion/mod.rs:54`). `CommanderConfig`
+**does not exist anywhere** in `crates/` or `src/`, so Epic 22's
+`REQ-commander-config-metadata-dir-v3` was never built. No reconciliation is needed.
+
+#### Competing `ErrorStrategy` variant sets — run-2 warning CLOSED (two distinct enums)
+
+Two enums, two crates, both shipped, exactly as documented:
+
+- `crates/paladin-core/src/platform/container/battalion/mod.rs:240` — `FailFast` (default),
+  `ContinueOnError`, `RetryThenContinue` (Battalion).
+- `crates/paladin-battalion/src/maneuver/mod.rs:18` — `FailFast` (default), `ContinueParallel`,
+  `IgnoreErrors` (Maneuver).
+
+M6 Epic 3 physically separated them into different crates, which removes the name collision as a
+practical concern. Both requirement entries stand as describing different types.
+
+#### Battalion base module path — run-1 warning CLOSED
+
+`battalion/mod.rs` is confirmed; `battalion.rs` does not exist. The Epic 4 section of
+`Paladin Project Completion Plan.md` was wrong.
+
+#### Documentation deliverables — NOT missing, relocated into the mdbook
+
+`STABLE_API.md`, `docs/FEATURE_FLAGS.md`, `docs/MIGRATION.md` and `docs/CONFIGURATION.md` do not
+exist at the paths named by six run-3 documents, but equivalent pages ship in the mdbook:
+`docs/src/api-reference/{stable-api,feature-flags,migration-guide,crate-map}.md` and
+`docs/src/getting-started/installation.md`. The relocation happened during the Milestone 11
+documentation overhaul (ingest run 5). **Do not plan these as missing deliverables.**
+
+### Verified OPEN — genuine remaining work found in run 3
+
+1. **`api-surface` CI job is broken by a stale path.** `scripts/check-api-surface.sh` and
+   `scripts/extract-public-api.sh` default their baseline to `project/current-exports.txt`, and
+   `ci.yml:171,181,186` pass that literal path. The directory was renamed in commit `928c6d5`
+   ("chore: moved project to .project"); the baseline now lives at `.project/current-exports.txt`.
+   `check-api-surface.sh` exits 1 with "No baseline found" when the file is absent, so the job
+   fails on every run. Five stale references to fix (2 scripts, 3 workflow lines).
+
+2. **Zero `#[deprecated]` annotations in the tree.** `grep -rn '#\[deprecated' src crates`
+   returns 0. M4 Epic 2 FR-8 requires them for transitional types, and `DEPRECATIONS.md`
+   self-reports "Deprecated Items: 0 (none yet)". This is consistent with the 20 open checkboxes
+   in `tasks-harden-port-traits-stable-api.md` — Epic 2 of Milestone 4 is the one genuinely
+   incomplete epic in this run.
+
+3. **`.public-api-baseline.txt` was never created.** M4 Epic 2 FR-7.3 names it; the project
+   instead uses `.project/current-exports.txt` plus `final-api.txt` / `api_surface_current.txt`.
+   Path naming, not missing capability — but item 1 above must be fixed for it to work.
+
+4. **`paladin-ports` doctests are disabled with a named follow-up.**
+   `crates/paladin-ports/Cargo.toml` sets `[lib] doctest = false` with the comment: "Doctests in
+   copied port files reference `paladin::` (root crate) which would require a circular
+   dev-dependency. Re-enable in Task 7.0 after rewriting examples to use `paladin_ports::` /
+   `paladin_core::` paths." `ci.yml:225` correspondingly runs
+   `cargo test --workspace --doc --exclude paladin-ports`. This directly contradicts M5 Epic 2
+   FR-21 and Success Metric 8.
+
+5. **CLI dependency isolation is only partly done.** `cli` gates 5 of the 8 dependencies the
+   PRD and the dependency matrix classify as CLI-only. Still unconditional in root
+   `Cargo.toml`: `structopt = "0.3"` (line 93), `colored = "2.1"` (line 125),
+   `comfy-table = "7.1"` (line 126). `tasks-cli-isolation` shows no open items, so this is a
+   checkbox-versus-code gap in the opposite direction from runs 1-2.
+
+6. **Three competing `TokenUsage` definitions ship simultaneously.**
+   `paladin-core/src/platform/container/token_usage.rs:13`,
+   `paladin-core/src/platform/container/battalion/mod.rs:497`, and
+   `paladin-llm/src/llm_analysis_service.rs:51`. This is exactly the duplication run 1 warned
+   about and run 2's `REQ-herald-type-consolidation` was meant to close. The Epic-1 decision
+   record moved *one* `TokenUsage` into `paladin-core/token_usage.rs` but the battalion-local and
+   llm-local copies remain.
+
+### Crate-level facts that contradict run-3 requirement text
+
+| Requirement | Doc position | Shipped |
+|---|---|---|
+| Workspace crate edition | 2021 (M5 Epics 1-4 PRDs) / 2024 (M5 overview + Epic 5 PRD) | **Mixed**: root, `paladin-core`, `paladin-memory` = 2024; `paladin-ports` = 2021 |
+| `paladin-core` dependency allowlist | "complete and exhaustive": serde, serde_json, uuid, chrono, thiserror, async-trait (6) | **14**: those 6 plus `tokio`, `sha2`, `blake3`, `petgraph`, `murmur3`, `url`, `regex`, `futures` |
+| `paladin-ports` dependency allowlist | paladin-core, async-trait, serde, thiserror, uuid, chrono, tokio (7) | **10**: those 7 plus `serde_json`, `futures`, `md5` |
+| LLM config bridge location | root crate `src/infrastructure/adapters/llm/config_bridge.rs`; `paladin-llm` must not own config | `crates/paladin-llm/src/config/bridge.rs` — the bridge moved **into** `paladin-llm` |
+| `vision` feature gates `chacha20poly1305` + `zeroize` | M4 Epic 1 PRD FR1 | `vision = []` gates no dependencies; neither crate is feature-gated. The dependency-matrix DOC ("general encryption in `security/encryption.rs`, **not** vision-specific") was correct and the PRD was wrong |
+| `web-server` gates `actix-web` and `axum` | M4 Epic 1 PRD FR1 | `web-server = ["dep:paladin-web", "dep:axum"]` — axum only; actix-web is no longer a root dependency |
+| MCP transport feature flags (`mcp-transports` / `mcp-stdio` / `mcp-sse`) | M4 milestone overview AC 1 + Appendix B | No MCP feature flag of any kind exists. The PRD's 2026-04-15 elimination note is what shipped |
+| `paladin-cli` as a workspace crate | M5 overview target structure + Appendix D | No `paladin-cli` crate. CLI is a `cli` feature plus `[[bin]] paladin-cli`. M5 Epic 6 PRD's non-goal was correct |
+| Config decomposition target map | M6 overview AC 1 vs M6 Epic 1 PRD §4.1 | **Hybrid**: PRD's split into sub-crates shipped (`paladin-memory/config`, `paladin-llm/config`) and the PRD's facade files shipped (`herald.rs`, `citadel.rs`, `scheduler.rs`), but the file is `agents.rs` (the overview's name) and there is a separate `settings.rs`; no `battalion.rs`, `logging.rs`, `llm.rs` or `garrison.rs` in `src/config/` |
+| Binary targets | M4 Epic 3 Q1 unresolved ("architecture review") | Three targets ship: `paladin` (`src/main.rs`), `paladin-cli` (`required-features = ["cli"]`), `paladin-server` (`required-features = ["web-server"]`). Resolved by outcome, not by a recorded decision |
+| M6 Epic 2 target directory | `src/application/use_cases/` | `src/application/use_cases/` no longer exists; the four orchestrator modules ship under `src/application/services/` with the PRD's exact module names |
+
+### Implication for run-3 open-checkbox counts
+
+`task-completion-state.md` records Milestone 4 at 93.2% (20 open, all in
+`tasks-harden-port-traits-stable-api.md`), Milestone 5 at 96.4% (17 open) and Milestone 6 at
+100.0% (0 open).
+
+- **Milestone 4's 20 open items are corroborated** — items 2 and 3 above (no `#[deprecated]`
+  annotations, no baseline file) are real. This is the first run where the checkbox count
+  understates nothing and is directly supported by code.
+- **Milestone 5's 17 open items are contradicted for the most part** — all six crates, the
+  prelude, the CI isolation job and the benchmark report exist. Items 1 and 4 above are the
+  residue worth carrying forward.
+- **Milestone 6's 0 open items are corroborated** — all four relocations are verifiably complete
+  in the tree.

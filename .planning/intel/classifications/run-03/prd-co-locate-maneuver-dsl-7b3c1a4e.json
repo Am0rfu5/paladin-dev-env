@@ -1,0 +1,35 @@
+{
+  "source_path": "/workspace/.project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Co-locate the Maneuver DSL with the Battalion Execution Layer",
+  "summary": "Requirements to move the Maneuver DSL parser and domain type from paladin-core into paladin-battalion with backward-compatible facade re-exports.",
+  "scope": [
+    "Maneuver Flow DSL",
+    "paladin-core",
+    "paladin-battalion",
+    "parser (lexer, ast, error)",
+    "Maneuver domain type",
+    "ManeuverConfig",
+    "ManeuverExecutionService",
+    "flow visualizer",
+    "commander.rs",
+    "facade re-exports"
+  ],
+  "cross_refs": [
+    "STABLE_API.md",
+    "tests/unit/parser_tests.rs",
+    "tests/unit/maneuver_domain_tests.rs",
+    "src/core/platform/mod.rs",
+    "src/application/cli/commands/maneuver.rs",
+    "src/application/cli/commands/battalion.rs",
+    "src/application/cli/config/battalion_config.rs",
+    "crates/paladin-core/src/platform/container/battalion/mod.rs",
+    "crates/paladin-battalion/src/lib.rs",
+    "crates/paladin-battalion/src/commander.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

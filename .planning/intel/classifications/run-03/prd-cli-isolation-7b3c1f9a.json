@@ -1,0 +1,41 @@
+{
+  "source_path": "/workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: CLI Isolation from Library Compilation Path",
+  "summary": "Requirements to gate the Paladin CLI module and CLI-only dependencies behind a `cli` feature flag so library builds exclude CLI code.",
+  "scope": [
+    "CLI isolation",
+    "src/application/cli/",
+    "cli feature flag",
+    "Cargo.toml optional dependencies",
+    "clap",
+    "dialoguer",
+    "indicatif",
+    "comfy-table",
+    "colored",
+    "console",
+    "serde_yaml",
+    "paladin binary target",
+    "paladin-cli binary target",
+    "193 CLI tests",
+    "library-only integration tests",
+    "CI feature matrix",
+    "build time measurement",
+    "documentation updates"
+  ],
+  "cross_refs": [
+    "README.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "src/application/mod.rs",
+    "src/lib.rs",
+    "src/main.rs",
+    "src/bin/paladin-cli.rs",
+    "config.yml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD provided and consistent with content (user stories, acceptance criteria, non-goals, success metrics, open questions). Status: Draft. Contains design/technical consideration sections with SPEC-like tables, but dominant signals are requirements."
+}

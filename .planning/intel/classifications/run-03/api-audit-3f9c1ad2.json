@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/api-audit.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Public API Surface Audit - Epic 2: Harden Port Traits",
+  "summary": "Audit classifying currently exported Paladin types to determine the stable public API surface for Epic 2 port trait hardening.",
+  "scope": ["public API surface", "port traits", "src/lib.rs glob re-exports", "Paladin domain entities", "Battalion domain", "feature gating"],
+  "cross_refs": ["src/lib.rs", "src/application/ports/output/", "src/application/ports/input/", "src/core/platform/container/", "src/core/platform/container/battalion/"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set from MANIFEST_TYPE=DOC (authoritative). Content is an inventory/audit of exported types with no decision, requirement, or contract sections; consistent with DOC."
+}

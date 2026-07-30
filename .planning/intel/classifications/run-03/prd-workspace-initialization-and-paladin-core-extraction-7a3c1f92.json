@@ -1,0 +1,30 @@
+{
+  "source_path": "/workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Workspace Initialization and `paladin-core` Extraction",
+  "summary": "Requirements for converting the repo into a Cargo workspace and extracting domain types into an independent paladin-core crate.",
+  "scope": [
+    "Cargo workspace root",
+    "paladin-core crate",
+    "src/core/base extraction",
+    "src/core/platform/container extraction",
+    "battalion/mod.rs upward dependency",
+    "root paladin crate re-exports",
+    "dependency graph validation"
+  ],
+  "cross_refs": [
+    "Cargo.toml",
+    "src/core/base/mod.rs",
+    "src/core/platform/container/mod.rs",
+    "src/core/platform/container/battalion/mod.rs",
+    "src/lib.rs",
+    "STABLE_API.md",
+    "project/Milestone_5-Workspace-Decomposition/overview/Milestone_5-Tier_2-Workspace-Decomposition.md",
+    "project/Milestone_5-Workspace-Decomposition/Epic_1/"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD authoritative; content agrees (Goals, User Stories, Functional Requirements FR-1..FR-26, Non-Goals, Success Metrics SM-1..SM-10, Open Questions). Status: Draft."
+}

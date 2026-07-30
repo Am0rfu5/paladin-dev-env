@@ -1,0 +1,30 @@
+{
+  "source_path": "/workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/dependency-analysis.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 2 — Dependency Analysis: Manager-Layer Orchestration Services",
+  "summary": "Analysis of manager-layer service imports, type classifications, and relocation targets for moving orchestration services from core to the application layer.",
+  "scope": [
+    "notification_service.rs",
+    "queue_service.rs",
+    "log_service.rs",
+    "orchestrator.rs",
+    "listener_service.rs",
+    "scheduler.rs",
+    "paladin-core container types",
+    "application use_cases orchestration",
+    "hexagonal layer boundaries",
+    "service_runner.rs import updates"
+  ],
+  "cross_refs": [
+    "tasks-relocate-orchestration-services.md",
+    "crates/paladin-core/src/platform/container/notification.rs",
+    "crates/paladin-core/src/platform/container/queue_config.rs",
+    "crates/paladin-core/src/platform/container/schedule.rs",
+    "crates/paladin-core/src/platform/container/trigger.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content is analysis tables (imports, type placement, import-path maps) supporting a referenced PRD/task list; no decisions with status, no user stories, no external API contracts."
+}

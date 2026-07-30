@@ -1,0 +1,25 @@
+{
+  "source_path": "/workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/Milestone_5-Epic_4.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 4: Extract `paladin-llm` Crate",
+  "summary": "Epic plan to extract LLM provider adapters into a paladin-llm crate with per-provider feature flags, listing acceptance criteria and four tasks.",
+  "scope": [
+    "paladin-llm crate",
+    "LlmPort",
+    "OpenAI adapter",
+    "OpenAI embedding adapter",
+    "Anthropic adapter",
+    "DeepSeek adapter",
+    "mock LLM adapters",
+    "cargo feature flags",
+    "paladin facade crate",
+    "paladin-core",
+    "paladin-ports"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content shows acceptance criteria and task deliverables (PRD-like signals) but manifest declaration takes precedence."
+}

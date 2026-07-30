@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/Milestone_6-Epic_2-Relocation_Manager_Layer_Orch_services.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 2: Relocate Manager-Layer Orchestration Services to the Application Layer",
+  "summary": "Epic plan to move port-dependent orchestration services out of core/platform/manager into the application use-cases layer, with tasks and acceptance criteria.",
+  "scope": ["core/platform/manager", "application/use_cases", "paladin-core", "notification_service.rs", "queue_service.rs", "orchestrator.rs", "log_service.rs", "hexagonal architecture boundaries", "ServiceRunner", "facade crate re-exports"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative; heuristic/content classification skipped. Note: document does contain acceptance criteria and task deliverables (PRD/SPEC-like signals) that the synthesizer may want as requirements despite DOC tagging."
+}

@@ -1,0 +1,27 @@
+{
+  "source_path": "/workspace/.project/Milestone_4-Refactor-Crates-Features/Milestone-Overview/Init-Analysis.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Refactoring into Separate Crates and Feature - Initial Analysis",
+  "summary": "Analysis of Paladin's single-crate structure with tiered recommendations for feature flags, CLI isolation, config splitting, and eventual Cargo workspace extraction.",
+  "scope": [
+    "Cargo workspace split",
+    "feature flags",
+    "paladin-core",
+    "paladin-battalion",
+    "paladin-llm",
+    "paladin-memory",
+    "application/cli",
+    "application/ports",
+    "application_settings.rs",
+    "core/platform/manager",
+    "maneuver DSL",
+    "CircuitBreaker",
+    "compile times"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC treated as authoritative. Content is prose-heavy analysis with tiered recommendations; no ADR status field, no user stories, no API/schema contracts — consistent with DOC."
+}

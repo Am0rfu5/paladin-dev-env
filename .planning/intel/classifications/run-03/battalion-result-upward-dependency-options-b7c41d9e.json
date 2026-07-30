@@ -1,0 +1,30 @@
+{
+  "source_path": "/workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/decisions/battalion-result-upward-dependency-options.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Options Analysis: Resolving `src/core/` → `application::` Upward Dependencies",
+  "summary": "Options analysis for removing application-layer imports from src/core/platform/container so it can be extracted into paladin-core; recommends Option A.",
+  "scope": [
+    "paladin-core",
+    "paladin-ports",
+    "src/core/platform/container",
+    "application ports",
+    "herald.rs",
+    "battalion/mod.rs",
+    "battalion/conclave.rs",
+    "arsenal/handoff_tool.rs",
+    "PaladinResult",
+    "StopReason",
+    "TokenUsage",
+    "RegistryError",
+    "HandoffError",
+    "PaladinError",
+    "GarrisonError",
+    "Milestone 5 Epic 1"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set by MANIFEST_TYPE=DOC (authoritative); heuristics were not used to override. Flagging that content reads as ADR material: trade-off analysis of three named options (A/B/C) with pros/cons ending in a single recommendation (Option A). Status line reads 'Awaiting decision (Task 3.3)', so it would be a Proposed (not Accepted/locked) ADR if retyped. Path is under a 'decisions/' directory. No cross-doc markdown links present; the companion 'battalion-result-upward-dependency-decision.md' is not referenced inside the document body, so cross_refs left empty rather than fabricated. Section 7 contains open implementer interview questions, indicating the decision was not final in this document."
+}

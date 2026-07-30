@@ -1,0 +1,33 @@
+{
+  "source_path": "/workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Extract `paladin-ports` Crate",
+  "summary": "Requirements for extracting all input/output port traits from the monolithic paladin crate into a standalone paladin-ports workspace crate.",
+  "scope": [
+    "paladin-ports crate",
+    "paladin-core",
+    "src/application/ports",
+    "output port traits",
+    "input port traits",
+    "LlmPort",
+    "GarrisonPort",
+    "SanctumPort",
+    "PaladinRegistry",
+    "RegistryError",
+    "vision_llm_port",
+    "vision_port",
+    "src/lib.rs re-exports",
+    "Cargo workspace dependency layering",
+    "import path migration",
+    "docs/ markdown updates"
+  ],
+  "cross_refs": [
+    "project/Milestone_5-Workspace-Decomposition/Epic_2/paladin-ports-isolation-build.txt",
+    "project/Milestone_5-Workspace-Decomposition/Epic_2/paladin-ports-dependency-tree.txt"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

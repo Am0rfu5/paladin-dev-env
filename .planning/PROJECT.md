@@ -15,10 +15,16 @@ providers (OpenAI, Anthropic, DeepSeek, Mock), MCP tool servers, short-term conv
 Its audience is Rust developers and teams embedding agent orchestration inside their own
 services — not end users of a hosted product.
 
-The product **already works**. It is a brownfield project at v0.7.0 with a 9-crate Cargo
-workspace, 22 runnable examples, a multi-arch Docker image and reference Kubernetes manifests.
-This planning setup exists to close out and verify milestones that already shipped, not to build
-the framework.
+The product **already works**. It is a brownfield project at v0.7.0 with a Cargo workspace of
+**ten library crates** (`paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-herald`,
+`paladin-llm`, `paladin-memory`, `paladin-storage`, `paladin-notifications`, `paladin-content`,
+`paladin-web`) plus a `doc-examples` crate and the root facade package `paladin-ai`, 22 runnable
+examples, a multi-arch Docker image and reference Kubernetes manifests. This planning setup exists
+to close out and verify milestones that already shipped, not to build the framework.
+
+*(Corrected by ingest run 3: this file previously said "9-crate workspace", and the Milestone 5/6
+source documents assume six. The tree was read directly — `crates/` holds eleven directories, ten
+of them library crates. Five of those ten have no ingested requirement yet; runs 4-5 supply them.)*
 
 ## Core Value
 
@@ -56,7 +62,8 @@ trustworthy enough to anchor a gate.
 ### Validated
 
 Shipped in the v0.7.0 workspace. Full per-requirement ledgers: `.planning/REQUIREMENTS.md` →
-*Milestone 1 as-shipped ledger* (115 IDs) and *Milestone 2-3 as-shipped ledger* (118 IDs).
+*Milestone 1 as-shipped ledger* (115 IDs), *Milestone 2-3 as-shipped ledger* (118 IDs) and
+*Milestone 4-6 as-shipped ledger* (115 IDs).
 
 **Milestone 1 — the MVP framework** (confirmed by task-list checkbox state, 1,817 of 1,857 items,
 and the codebase map):
@@ -126,11 +133,51 @@ the tree, verified by direct inspection on `release/v0.7.0`; per-criterion confi
 - ✓ Test hardening — benchmarks relocated into per-crate `benches/`, CLI snapshot suite, live-API
   test suite behind a feature flag (Epic 24)
 
+**Milestones 4-6 — the refactor that restructured Milestones 1-3** (the best-evidenced block in
+this planning set: 22 claims verified directly against `Cargo.toml` contents, type definitions and
+file existence during ingest run 3, recorded in `intel/code-verification.md`):
+
+- ✓ Feature-flag expansion — `default = ["llm-openai"]` replacing the old three-flag default;
+  per-provider `llm-openai` / `llm-anthropic` / `llm-deepseek` / `llm-all`; subsystem flags
+  `content-processing`, `web-server`, `notifications`, `vision`; a `full` convenience flag; and a
+  `feature-flags.yml` CI matrix. The planned `mcp-arsenal` flag was **eliminated** by a dated PRD
+  note and no MCP flag exists (Milestone 4 Epic 1)
+- ✓ CLI isolation — a single `cli` feature gating the whole `src/application/cli/` tree, and
+  `[[bin]] paladin-cli` with `required-features = ["cli"]`, plus a `cli_isolation` test target run
+  in CI. Three CLI-only dependencies are still unconditional — see Active (Milestone 4 Epic 3)
+- ✓ API-surface tooling — `scripts/{extract-public-api,check-api-surface,check-deprecations,check-all-examples}.sh`,
+  `final-api.txt`, `api_surface_current.txt`, and the stable-API catalogue (now an mdbook chapter).
+  The CI job that consumes them is broken — see Active (Milestone 4 Epic 2)
+- ✓ Cargo workspace — root `[workspace] members = [".", "crates/*"]` with `resolver = "2"` and a
+  full `[workspace.dependencies]` pin set; `paladin-core`, `paladin-ports`, `paladin-battalion`,
+  `paladin-llm` and `paladin-memory` all extracted, `src/application/ports/` **fully deleted**
+  (no shim), `paladin::prelude` shipped, and a `crate-isolation` CI job proving each crate builds
+  alone (Milestone 5, all six epics)
+- ✓ Upward-dependency resolution — `PaladinResult`, `StopReason`, `TokenUsage`, `RegistryError`
+  and `HandoffError` moved into `paladin-core` with the ports reduced to re-exports, per the
+  corpus's only Approved-status decision record. `PaladinError` was deliberately excluded
+  (Milestone 5 Epic 1)
+- ✓ Config decomposition — `application_settings.rs` **deleted** and replaced by per-domain
+  modules split across the facade (`src/config/`), `paladin-memory` and `paladin-llm`, with an
+  `EnvOverridable` trait and a `read_env` helper replacing ~30 copies of the env-override pattern
+  (Milestone 6 Epic 1)
+- ✓ Orchestration relocation — six manager-layer services moved out of
+  `src/core/platform/manager/` and renamed to `*Orchestrator`, landing under
+  `src/application/services/`; the manager module retains only `content_service`, `event_manager`
+  and `user_service` (Milestone 6 Epic 2)
+- ✓ Maneuver DSL co-location — the lexer, AST, parser, domain type, execution service and
+  visualizer all consolidated under `crates/paladin-battalion/src/maneuver/`, and every parser
+  reference removed from `paladin-core`. This **reverses** a Milestone 5 requirement that had just
+  moved the parser into `paladin-core` (Milestone 6 Epic 3)
+- ✓ `CircuitBreaker` relocation — moved to `src/infrastructure/resilience/`, with the old
+  application-layer path **intentionally retired** and no re-export left behind. A `paladin-infra`
+  crate and a `CircuitBreakerPort` trait were both explicitly rejected (Milestone 6 Epic 4)
+
 ### Active
 
 Current scope is **milestone close-out**: make the planning record match the shipped code, resolve
 the contested type and gate definitions, close the residual functional gaps, and make the quality
-numbers real. **34 requirements across 6 phases** — see `.planning/ROADMAP.md`.
+numbers real. **46 requirements across 8 phases** — see `.planning/ROADMAP.md`.
 
 *Milestone 1 close-out (Phases 1-4, 25 requirements):*
 
@@ -168,20 +215,57 @@ numbers real. **34 requirements across 6 phases** — see `.planning/ROADMAP.md`
       `grove_service.rs:537` (CLOSE-01) — plus whatever VERIFY-02 proves outstanding (CLOSE-02) and
       apply the Phase 5 decisions that have code consequences (CLOSE-03)
 
+*Milestone 4-6 close-out (Phases 7-8, 12 requirements):*
+
+- [ ] Upgrade the Milestone 4-6 ledger to `file:line` per-criterion verdicts for all 115 run-3
+      requirements, and record the corrected workspace shape (ARCH-01)
+- [ ] Fix the milestone/tier numbering collision at its source — the Milestone 4-6 overviews
+      number themselves "Milestone 1/2/3" by refactoring tier, and PRDs cross-reference
+      "Milestone 1 / Epic 2" meaning Milestone 4 Epic 2 (ARCH-02)
+- [ ] Record one answer per run-3 variant pair: Rust edition, the `paladin-core` dependency
+      allowlist, ownership of `PaladinResult`/`StopReason`/`TokenUsage`, and the LLM config bridge
+      location — all four settled by shipped code, three of four PRDs unamended (ARCH-03)
+- [ ] Record the Milestone 6 facade re-export policy and whether it makes Milestone 6 a breaking
+      change requiring a major version bump (ARCH-04)
+- [ ] Correct the five documented positions shipped code contradicts, and record that the four
+      "missing" documentation deliverables are relocated into the mdbook (ARCH-05)
+- [ ] Answer and document the binary-target architecture question Milestone 4 Epic 3 left open
+      (ARCH-06), and make the ≥ 50% incremental-rebuild target falsifiable (ARCH-07)
+- [ ] Fix the `api-surface` CI job, which has failed on every run since the `project/` → `.project/`
+      rename left its baseline path stale (DEBT-01)
+- [ ] Add the `#[deprecated]` annotations Milestone 4 Epic 2 FR-8 requires — zero exist in the tree
+      — or withdraw the requirement with a recorded reason (DEBT-02)
+- [ ] Re-enable `paladin-ports` doctests and drop the CI `--exclude`, so the ~25 port traits have
+      executing examples again (DEBT-03)
+- [ ] Finish CLI dependency isolation — `structopt`, `colored` and `comfy-table` still compile into
+      library-only builds (DEBT-04)
+- [ ] Consolidate the three shipped `TokenUsage` definitions to one (DEBT-05)
+
 ### Out of Scope
 
-- **Milestones 4-12, Deferred-QA-CICD-Completion and project-management scope** — not yet
-  ingested (runs 3-5 of 5). Notably the nine-crate workspace decomposition itself is a Milestone 5
-  deliverable, which is why every `src/...` path in the run-1 and run-2 corpus is historical.
-  Shipped code still awaiting requirements: the Axum HTTP API (auth, rate limiting, OpenAPI, SSE
-  streaming), notifications, and the content ingestion pipeline.
-- **Re-planning shipped work** — Milestone 1 is 98% checked and Milestones 2-3 are shipped
-  wholesale. Anything already satisfied by code is recorded in a ledger, not re-planned as a phase.
+- **Milestones 7-12, Deferred-QA-CICD-Completion and project-management scope** — not yet
+  ingested (runs 4-5 of 5). Shipped code still awaiting requirements: the Axum HTTP API (auth,
+  rate limiting, OpenAPI, SSE streaming), notifications, the content ingestion pipeline, and five
+  of the ten library crates (`paladin-herald`, `paladin-storage`, `paladin-content`,
+  `paladin-notifications`, `paladin-web`). Run 3 supplied the requirements behind the workspace
+  manifest and the other five crates, which is why every `src/...` path in the run-1 and run-2
+  corpus is now formally recorded as historical.
+- **Re-planning shipped work** — Milestone 1 is 98% checked, Milestones 2-3 are shipped wholesale,
+  and Milestones 4-6 are verified shipped against the tree. Anything already satisfied by code is
+  recorded in a ledger, not re-planned as a phase. That explicitly includes the entire workspace
+  decomposition and all four Milestone 6 relocations.
 - **Converting open checkbox counts into requirements** — 542 items are unchecked, and the two
   largest blocks (Conclave 129, Sanctum 111) are verified shipped. Verification precedes planning.
-- **Picking winners among the 16 competing variant groups** — recording answers is in scope;
+- **Picking winners among the 20 competing variant groups** — recording answers is in scope;
   choosing inside an ingest artefact is not. Explicitly requested: variants are expected and
-  settling past disagreements is not the goal of this ingest.
+  settling past disagreements is not the goal of this ingest. Where shipped code settles a variant,
+  that is recorded as a **fact about the tree** at the top of the precedence order, not as a
+  decision taken in a planning file.
+- **Promoting the two ADR candidates into locked decisions** — doing so requires re-tagging the
+  source documents via `--manifest` and re-running ingest, not an edit here. See Key Decisions.
+- **Building `STABLE_API.md`, `docs/FEATURE_FLAGS.md`, `docs/MIGRATION.md` or
+  `docs/CONFIGURATION.md`** — absent from the paths six run-3 documents name, but shipping as
+  mdbook chapters under `docs/src/`. Recording the relocation is ARCH-05.
 - **Migrating between the two shipped vision port surfaces** — both ship deliberately;
   `code-verification.md` says confirm intent before planning a migration.
 - **Decomposing the three oversized service files** (2,757 / 2,294 / 1,840 lines) — real tech
@@ -208,10 +292,67 @@ both are *ahead of* the ingested documents in several places:
   are all **verified shipped** despite documents that variously declare them deferred, unstarted,
   or scheduled for Milestone 4.
 
+**Milestones 4-6 restructured everything Milestones 1-3 built — and it is all in the tree.**
+Ingest run 3 is the first run where documents and code mostly *agree*. Verified directly:
+`[workspace] members = [".", "crates/*"]` in the root `Cargo.toml`; `src/application/ports/` gone
+entirely (full deletion, not a shim); `application_settings.rs` gone, replaced by
+`src/config/{agents,arsenal,citadel,env_utils,file_storage,herald,notifications,queue,scheduler,settings,web_server}.rs`
+plus `crates/paladin-memory/src/config/` and `crates/paladin-llm/src/config/`;
+`src/application/use_cases/` gone entirely, with the orchestrators under
+`src/application/services/`; `crates/paladin-battalion/src/maneuver/` holding the whole Flow DSL;
+`src/infrastructure/resilience/circuit_breaker.rs`; `src/prelude.rs`; and the `crate-isolation`
+job at `ci.yml:228`. **Relocation is not contradiction** — the supersession chains are recorded in
+`REQUIREMENTS.md`.
+
+**Five documented positions are contradicted by shipped code and must not be applied literally.**
+`vision` gating `chacha20poly1305` and `zeroize` (shipped `vision = []` gates nothing; the two
+crates serve user auth and Citadel encryption, so gating them would break
+`cargo build --no-default-features` — the epic's own dependency-matrix audit said so and the PRD
+was wrong); the MCP transport feature flags (none exist; the PRD's dated elimination note is what
+shipped); `web-server` gating `actix-web` (shipped as axum only); a `paladin-cli` workspace crate
+(never built — the CLI is a feature plus a binary target); and `src/application/use_cases/` as the
+orchestration home (shipped under `src/application/services/`). Correcting these at source is
+ARCH-05.
+
+**Run 3 is the first run where a checkbox count proved trustworthy — and the first where one
+overstated completion.** Milestone 4's 20 open items are real: `grep -rn '#\[deprecated' src crates`
+returns 0, and `DEPRECATIONS.md` agrees. Milestone 6's 0 open items are real: all four relocations
+are complete. But Milestone 4 Epic 3's task list is fully checked while three CLI-only
+dependencies remain unconditional. The lesson is not "checkboxes understate" — it is
+**"verify each count against the tree"**.
+
+**Five verified open defects, all small.** The `api-surface` CI job fails on every run because
+`ci.yml:171,181,186` and both scripts point at `project/current-exports.txt` while the file lives
+at `.project/current-exports.txt` after commit `928c6d5` — so the project's only automated
+public-API guard has been inert. Zero `#[deprecated]` annotations exist against Milestone 4 Epic 2
+FR-8. `paladin-ports` sets `[lib] doctest = false` deferring the fix to an unwritten "Task 7.0",
+and CI excludes the crate from `--doc`. Three CLI-only dependencies still compile into library
+builds. Three `TokenUsage` structs ship where the decision record names one. These are Phase 8.
+
+**The corpus now has a second ADR candidate, and it is stronger than the first.**
+`Milestone_5/Epic_1/decisions/battalion-result-upward-dependency-decision.md` carries
+`Status: Approved`, `Decision Date: 2026-05-13`, `Chosen Option: Option A`, a Rationale, a Rejected
+Options section and an implementation checklist, with a full three-option trade-off analysis in its
+`-options.md` sibling. It is the only decision/options pair in all 263 documents. It is
+nevertheless manifest-typed **DOC**, so it sits at the lowest precedence tier and a PRD published
+two days later contradicts it — which means mechanical precedence would pull `PaladinResult`,
+`StopReason` and `TokenUsage` back out of `paladin-core` and reintroduce the exact upward
+dependency the decision removed. **Two caveats on the record, both important:** it settles the
+*location* of five value/error types and nothing else, and despite its filename it **never
+mentions `BattalionResult`** — the run-1 `BattalionResult` variant is closed by shipped code, not
+by this document.
+
+**Two run-1/run-2 questions were closed by run-3 code verification.** `BattalionResult`'s field set
+resolves to a merged superset at `battalion/mod.rs:549` that satisfies all three consumers, so
+RECON-03 became a recording task and GAP-07 lost its code change. `BattalionConfig` resolves to the
+Epic 4 form exactly, and `CommanderConfig` — the third claimed owner of `metadata_output_dir` —
+does not exist anywhere in the tree. The competing `ErrorStrategy` variant sets turned out to be
+two distinct enums in two different crates, which Milestone 6 physically separated.
+
 **The precedence order this project uses**, most authoritative first:
 **shipped tree → `.planning/codebase/` map → `intel/code-verification.md` → PRD → DOC →
-task-list checkbox.** Two ingest runs have now independently found checkbox state understating
-shipped reality, so it sits last by evidence rather than by preference.
+task-list checkbox.** Three ingest runs have now found checkbox state wrong in both directions, so
+it sits last by evidence rather than by preference.
 
 **Two coexisting vision surfaces, on purpose.** Epic 13's `VisionCapableLlm` lineage
 (`crates/paladin-ports/src/output/vision_llm_port.rs`, reached via
@@ -245,38 +386,55 @@ version `0.6.0`, latest tag `v0.5.1`. Three different answers to "what version i
 Phase 4 resolves it.
 
 **Ingest program.** This planning setup was bootstrapped from `.project/Milestone_1-MVP`
-(36 docs) in run **1 of 5**, then merged `.project/Milestone_2-Missing_features` +
-`.project/Milestone_3-Completion` (45 docs) in run **2 of 5** — 81 documents so far (26 PRD,
-55 DOC, 0 ADR, 0 SPEC), 233 requirements, 30 preserved variant entries, 0 blockers. Run 3 covers
-Milestones 4-6, run 4 Milestones 7-8, run 5 Milestones 9-12 plus Deferred-QA-CICD-Completion and
+(36 docs) in run **1 of 5**, merged `.project/Milestone_2-Missing_features` +
+`.project/Milestone_3-Completion` (45 docs) in run **2 of 5**, and merged
+`.project/Milestone_4-Refactor-Crates-Features` + `.project/Milestone_5-Workspace-Decomposition` +
+`.project/Milestone_6-Architectural-Refinements` (32 docs) in run **3 of 5** — 113 documents so far
+(39 PRD, 74 DOC, 0 ADR, 0 SPEC), 348 requirements, 38 preserved variant entries, 0 blockers. Run 4
+covers Milestones 7-8, run 5 Milestones 9-12 plus Deferred-QA-CICD-Completion and
 project-management. This document, `REQUIREMENTS.md` and `ROADMAP.md` are structured so those runs
-**append** (new milestone sections, continuous phase numbering from Phase 7) rather than
+**append** (new milestone sections, continuous phase numbering from Phase 9) rather than
 restructure. Note: run-1 text in some files still says "run 1 of 14" — same run, renumbered
 program.
 
-**Nothing here is locked.** Zero ADR-typed and zero SPEC-typed documents exist across all 81
+**Nothing here is locked.** Zero ADR-typed and zero SPEC-typed documents exist across all 113
 ingested documents, so every technical assertion in the ingested material sits at PRD or DOC
-precedence and is auto-overridable. Run 2 alone produced eight documented supersessions of run-1
-requirements. Where a contested definition matters, this project points at the codebase map or the
-shipped code rather than declaring a winner.
+precedence and is auto-overridable. Run 2 produced eight documented supersessions of run-1
+requirements; run 3 produced eleven more. Where a contested definition matters, this project points
+at the codebase map or the shipped code rather than declaring a winner.
 
-**The strongest ADR candidate in the corpus, if the user later wants to protect a decision:**
-`Epic_17.5/epic17-5.md` decides that the CLI belongs in `src/application/cli` because "CLI is an
-input adapter in the application layer, not infrastructure", directs deletion of the entire
-`src/cli` tree, and gives a full rationale plus target layout. **The decision is already applied in
-code** — `src/cli` is absent from the tree and `src/application/cli/commands/` carries the full
-command set. But it has no ADR status field, no Consequences section and no `locked` flag, so it
-sits at DOC precedence and loses to any PRD — including Epic 17's own PRD, which places CLI
-integration under `src/infrastructure/adapters/cli/`. Promoting it to a real ADR is the cheapest way
-to stop that from being re-litigated. **Not done here:** manufacturing it as a locked decision
-would fabricate authority the corpus does not contain.
+**Constraint-shaped material is abundant and entirely untyped.** Run 3 is the most
+constraint-dense set so far — three milestones of build-system contracts, dependency layering and
+module boundaries — yet 0 SPEC-typed documents exist, so all of it lives as PRD acceptance
+criteria. `intel/constraints.md` inventories what would become real constraints if the carriers
+were re-tagged: the 25-port extraction inventory, every per-crate `[features]` table, the three
+dependency allowlists, the workspace `Cargo.toml` template, the `config.yml` deserialization
+contract, ~20 numeric build and coverage targets, and the `#[cfg]`-guard and import-migration
+protocols. The two strongest re-tag candidates are the **dependency allowlists** and the
+**`config.yml` deserialization contract**, precisely because shipped code already contradicts
+both.
 
 ## Constraints
 
-- **Tech stack**: Rust workspace (9 member crates + facade), Tokio async throughout, Serde,
-  SQLx, `thiserror` — pinned toolchain `rust-toolchain.toml` at 1.97.1. Not negotiable; the
-  entire public surface is Rust traits. Optional capabilities are feature-gated: `qdrant`
-  (qdrant-client 1.14), `scheduler` (tokio-cron-scheduler 0.13), `vision`, `live-api-tests`.
+- **Tech stack**: Rust workspace (ten library crates + a `doc-examples` crate + the root
+  `paladin-ai` facade), Tokio async throughout, Serde, SQLx, `thiserror` — pinned toolchain
+  `rust-toolchain.toml` at 1.97.1. Not negotiable; the entire public surface is Rust traits.
+  Shared dependency versions are pinned once in `[workspace.dependencies]` and referenced with
+  `{ workspace = true }`.
+- **Feature-gating is the compile-time contract**: `default = ["llm-openai"]`; per-provider
+  `llm-openai` / `llm-anthropic` / `llm-deepseek` / `llm-all`; subsystem flags
+  `content-processing`, `web-server` (axum), `notifications`, `vision`; storage flags `qdrant`
+  (qdrant-client 1.14), `redis-queue`, `s3-storage`, `storage-mysql`, `openai-embeddings`; test
+  flags `integration-tests`, `live-api-tests`; a `cli` flag that must never reach `default`; and a
+  `full` convenience flag. `LlmPort` always compiles — only concrete adapters are gated.
+  Unavailable adapters must fail at **compile time**, never at runtime, and `#[allow(dead_code)]`
+  must not be used to paper over a `cfg` gate. Arsenal and its MCP transports are deliberately
+  **not** feature-gated.
+- **Dependency allowlists per crate are the enforcement mechanism for hexagonal purity** — and
+  they are currently stale: `paladin-core` declares an "exhaustive" six and ships fourteen;
+  `paladin-ports` declares seven and ships ten. The substantive invariant still holds (no LLM SDK,
+  database driver, HTTP framework or object-storage client below the adapter layer). Reconciling
+  the text with the tree is ARCH-03(b).
 - **Architecture**: Hexagonal, dependencies flow inward only (core → nothing; ports → core;
   adapters → core + ports). Bypassing a port to import an adapter directly is an anti-pattern
   the codebase map calls out by name. The CLI is an **input adapter in the application layer**
@@ -301,9 +459,12 @@ would fabricate authority the corpus does not contain.
 - **Deploy targets**: Docker (distroless/slim, multi-arch amd64 + arm64) and Kubernetes.
   Image budget < 500 MB, pod startup < 30 s — both currently met.
 - **Licensing/repo**: MIT, `github.com/DF3NDR/paladin-dev-env`.
-- **Edition declaration is currently invalid**: several crates declare `edition = "2024"`, others
-  `"2021"`. Builds succeed today but the mix is brittle (`codebase/CONCERNS.md`). One consistent
-  answer is required before release (REL-02).
+- **Edition is mixed, and the documents disagree too**: verified 2026-07-30, the root package
+  and every crate declare `edition = "2024"` **except** `crates/paladin-ports` and
+  `crates/paladin-notifications`, which declare `"2021"`. Milestone 5 Epics 1-4 require 2021 and
+  Epic 5 plus the milestone overview require 2024, so neither the code nor the record is
+  self-consistent. Builds succeed today but the mix is brittle (`codebase/CONCERNS.md`). ARCH-03(a)
+  records the answer; REL-02 applies it.
 
 ## Key Decisions
 
@@ -311,18 +472,34 @@ would fabricate authority the corpus does not contain.
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| *(none)* | Ingest runs 1-2 surfaced **0 ADR-typed and 0 SPEC-typed documents across 81 files** (26 PRD, 55 DOC). No source doc carried an ADR status field, a Decision/Consequences structure, or `locked: true`. Nothing is recorded here speculatively. | — Pending |
+| *(none)* | Ingest runs 1-3 surfaced **0 ADR-typed and 0 SPEC-typed documents across 113 files** (39 PRD, 74 DOC). No source doc carried an ADR status field with a manifest ADR type, and none carried `locked: true`. Nothing is recorded here speculatively. | — Pending |
 
 Everything asserted in the ingested PRDs and DOCs is **supersedable** — demonstrated, not
-theoretical: run 2 produced eight documented supersessions of run-1 requirements (see *Superseded
-but preserved* in `REQUIREMENTS.md`). The first real entries in this table are expected from
-Phase 1 (six ADRs, one per competing variant pair), Phase 5 (four recorded answers), and any
-ADR-typed documents arriving in ingest runs 3-5.
+theoretical: run 2 produced eight documented supersessions of run-1 requirements and run 3 produced
+eleven more, including the entire monolith → workspace path migration and one requirement a later
+milestone reversed outright (see *Superseded but preserved* in `REQUIREMENTS.md`). The first real
+entries in this table are expected from Phase 1 (six ADRs, one per competing variant pair), Phase 5
+(four recorded answers), Phase 7 (six more), and any ADR-typed documents arriving in runs 4-5.
 
-The strongest ADR candidate found so far is Epic 17.5's CLI-location decision — see Context. It is
-deliberately **not** entered in this table, because doing so would manufacture a locked decision
-from a DOC-precedence assertion.
+**Two ADR candidates now exist, and neither is entered here** — doing so would manufacture a locked
+decision from a DOC-precedence assertion:
+
+1. **`Milestone_5/Epic_1/decisions/battalion-result-upward-dependency-decision.md`** (run 3) — the
+   only decision/options pair in all 263 documents, carrying `Status: Approved`,
+   `Decision Date: 2026-05-13`, `Chosen Option: Option A`, a Rationale, a Rejected Options section
+   and an implementation checklist. It settles where `PaladinResult`, `StopReason`, `TokenUsage`,
+   `RegistryError` and `HandoffError` live, and shipped code implements it. It is manifest-typed
+   DOC, so a PRD published two days later outranks it — and that PRD's rule would undo the fix.
+   **This is the strongest candidate in the corpus and the one with real consequences if left
+   unprotected.**
+2. **`Epic_17.5/epic17-5.md`** (run 2) — the CLI belongs in `src/application/cli` because "CLI is
+   an input adapter in the application layer, not infrastructure". Also already applied in code,
+   also outranked by a PRD that says otherwise.
+
+Promoting either requires re-tagging the source document via `--manifest` and re-running ingest.
 
 ---
-*Last updated: 2026-07-30 after ingest run 2 of 5 (`.project/Milestone_2-Missing_features` +
-`.project/Milestone_3-Completion`, 45 docs; cumulative 81 docs, 233 requirements)*
+*Last updated: 2026-07-30 after ingest run 3 of 5
+(`.project/Milestone_4-Refactor-Crates-Features` + `.project/Milestone_5-Workspace-Decomposition`
++ `.project/Milestone_6-Architectural-Refinements`, 32 docs; cumulative 113 docs, 348 requirements,
+38 variant entries, 0 locked decisions, 0 blockers)*

@@ -1,0 +1,28 @@
+{
+  "source_path": "/workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/DEPRECATIONS.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Deprecation Tracking - Epic 2: API Hardening",
+  "summary": "Tracks deprecation strategy, categories, and status for transitioning Paladin from glob re-exports to a curated public API surface.",
+  "scope": [
+    "public API surface",
+    "glob re-exports",
+    "deprecation annotations",
+    "port traits",
+    "adapter implementations",
+    "repository implementations",
+    "CLI modules",
+    "web server modules",
+    "versioning timeline"
+  ],
+  "cross_refs": [
+    "api-audit.md",
+    "../STABLE_API.md",
+    "../docs/MIGRATION.md",
+    "../CHANGELOG.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,24 @@
+{
+  "source_path": "/workspace/.project/Milestone_5-Workspace-Decomposition/overview/Milestone_5-Tier_2-Workspace-Decomposition.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 2: Workspace Decomposition",
+  "summary": "Milestone plan for decomposing the Paladin monolithic crate into a Cargo workspace of purpose-built crates with enforced dependency direction.",
+  "scope": [
+    "Cargo workspace",
+    "paladin-core",
+    "paladin-ports",
+    "paladin-battalion",
+    "paladin-llm",
+    "paladin-memory",
+    "paladin facade crate",
+    "feature flags",
+    "workspace CI",
+    "migration guide"
+  ],
+  "cross_refs": ["STABLE_API.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set from MANIFEST_TYPE=DOC (manifest authoritative). Document also contains success criteria and in/out-of-scope sections that resemble PRD signals."
+}

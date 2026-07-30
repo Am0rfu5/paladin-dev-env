@@ -2589,3 +2589,1276 @@ different PRDs on the same scope. They are NOT merged. See
   - The number of enabled tests MUST increase by at least 50; 100% of benchmarks compile and run; 100% of public APIs have rustdoc
   - Pre-existing TODOs outside the multi-agent scope (content services, `sql_store.rs`, `trigger.rs`, repositories), performance optimisation, load testing, security testing, UI redesign and breaking API changes are explicit non-goals
 - scope: Milestone 3 quality gates, coverage targets, scope exclusions
+
+---
+
+# Ingest run 3 of 5 — `.project/Milestone_4-Refactor-Crates-Features` + `.project/Milestone_5-Workspace-Decomposition` + `.project/Milestone_6-Architectural-Refinements`
+
+13 PRDs consumed (32 docs total: 13 PRD, 19 DOC, 0 ADR, 0 SPEC).
+
+All file paths below are **as written in the source PRDs** and are largely historical: these three
+milestones restructured the tree that runs 1-2 describe, and milestones outside this run moved it
+again. Resolve current locations through `.planning/intel/code-verification.md` and
+`.planning/codebase/*.md`, never through these paths.
+
+`-v1` / `-v2` IDs are competing variants preserved verbatim from different PRDs on the same scope.
+They are NOT merged. See `.planning/INGEST-CONFLICTS.md` WARNINGS. Where shipped code settles a
+variant, the entry says so and points at `code-verification.md`.
+
+---
+
+## REQ-feature-flag-matrix
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_1/prd-expand-feature-flags.md (FR1)
+- description: Expand Cargo feature flags from 5 thin flags to a comprehensive gating surface so consumers compile only the subsystems they use.
+- acceptance:
+  - LLM provider flags MUST exist: `llm-openai`, `llm-anthropic`, `llm-deepseek`, plus an `llm-all` convenience flag
+  - The `LlmPort` trait MUST always be compiled; only concrete adapter implementations and provider-specific dependencies are gated
+  - Subsystem flags MUST exist: `content-processing` (pdf-extract, scraper, tiktoken-rs, rss), `web-server` (both `actix-web` and `axum` and all HTTP/API infrastructure), `notifications` (lettre and notification publisher adapters), `vision`
+  - Existing flags MUST be retained unchanged: `redis-queue`, `s3-storage`, `openai-embeddings`, `qdrant`, `integration-tests`
+  - The originally planned `mcp-arsenal` flag is ELIMINATED from scope (note dated 2026-04-15): Arsenal and its MCP transport adapters remain unconditionally compiled as core framework components
+- scope: Cargo feature flags, LLM adapters, content processing, web server, notifications, vision
+
+## REQ-vision-feature-gating
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_1/prd-expand-feature-flags.md (FR1 vision, Design Considerations "Dependency Grouping")
+- description: The `vision` flag gates the vision pipeline, its adapters, and the Sentinel Vision encryption dependencies.
+- acceptance:
+  - `vision` MUST gate the vision pipeline and vision adapters (`openai_vision.rs`, `anthropic_vision.rs`)
+  - `vision` MUST gate `chacha20poly1305` and `zeroize` as "Sentinel Vision encryption deps"
+  - `vision` MUST gate `VisionPort` / `VisionCapableLlm` trait implementations
+- scope: vision feature flag, vision adapters, encryption dependencies
+- note: CONTRADICTED by `Epic_1/dependency-matrix.md`, which classifies `chacha20poly1305` and `zeroize` as general-purpose deps of `security/encryption.rs` that must stay unconditional, and by shipped code where `vision = []` gates no dependency at all. See INGEST-CONFLICTS.md WARNINGS and code-verification.md.
+
+## REQ-feature-default-set
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_1/prd-expand-feature-flags.md (FR2, US-3, Non-Goals)
+- description: Replace the current default feature set with a minimal orchestration-only default, accepting the breaking change.
+- acceptance:
+  - Old default `["redis-queue", "s3-storage", "openai-embeddings"]` MUST be replaced with `["llm-openai"]`
+  - The breaking change is intentional; no multi-version deprecation cycle is provided
+  - A migration guide in `CHANGELOG.md` MUST explain the change and give the exact flags to restore old behaviour
+  - Existing examples MUST be updated to use the new defaults or explicitly specify the old features
+  - Existing downstream consumers MUST be able to migrate with fewer than 5 lines of `Cargo.toml` change
+- scope: default feature set, breaking change, migration guide
+
+## REQ-feature-full-flag
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_1/prd-expand-feature-flags.md (FR1 Convenience Flags, US-2)
+- description: A single `full` flag enabling every optional subsystem.
+- acceptance:
+  - `full` MUST enable all LLM providers, content-processing, web-server, notifications, vision, redis-queue, s3-storage, openai-embeddings and qdrant
+  - `paladin = { features = ["full"] }` MUST give the production-ready experience without enumerating flags
+  - All integration tests MUST pass with `--all-features`
+- scope: full convenience feature flag
+
+## REQ-cfg-guard-discipline
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_1/prd-expand-feature-flags.md (FR3, FR4, Technical Considerations)
+- description: Conditional-compilation discipline for all feature-gated code.
+- acceptance:
+  - `#[cfg(feature = "...")]` guards MUST be applied at module declarations, `use` statements for gated imports, port implementation registrations and adapter instantiations, and test modules depending on gated features
+  - Unavailable adapters MUST fail at compile time, not with runtime errors; no dynamic runtime feature detection is required
+  - `#[allow(dead_code)]` MUST NOT be used to suppress `cfg`-gated code
+  - `src/infrastructure/adapters/llm/provider_factory.rs` MUST gain `#[cfg]` guards on each provider import and on the factory match arm for unavailable providers
+- scope: conditional compilation, provider_factory.rs, dead-code warnings
+
+## REQ-feature-flag-docs
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_1/prd-expand-feature-flags.md (FR5)
+- description: Documentation and migration deliverables for the feature-flag expansion.
+- acceptance:
+  - `/docs/CONFIGURATION.md` MUST document all feature flags
+  - `/docs/FEATURE_FLAGS.md` MUST be created with per-flag explanation, use cases and examples
+  - `/docs/MIGRATION.md` MUST explain the breaking change and how to migrate
+  - `README.md` MUST gain a features table; `CHANGELOG.md` MUST carry a breaking-change notice
+  - `/examples` MUST gain feature-flag examples demonstrating minimal and full builds (at least one example per subsystem feature)
+- scope: CONFIGURATION.md, FEATURE_FLAGS.md, MIGRATION.md, README, CHANGELOG, examples
+- note: these root/`docs/` paths are historical — equivalent pages ship as mdbook chapters. See code-verification.md.
+
+## REQ-feature-ci-matrix
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_1/prd-expand-feature-flags.md (FR6, Success Metrics)
+- description: Systematic CI testing of feature-flag combinations.
+- acceptance:
+  - `cargo build --no-default-features`, `cargo build` (default) and `cargo build --all-features` MUST all pass
+  - Each LLM provider flag MUST build in isolation; `web-server`, `content-processing` and `notifications` MUST each build alone; `redis-queue` plus compatible combinations MUST build
+  - Every combination MUST compile without errors, run `cargo test` successfully or skip tests via `#[cfg]`, produce no `cargo clippy -D warnings` output, and pass `cargo fmt --check`
+- scope: CI feature matrix, build combinations
+
+## REQ-curated-lib-exports
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md (FR-1)
+- description: Replace the glob re-exports in `src/lib.rs` with explicit, curated `pub use` statements.
+- acceptance:
+  - The four glob re-exports (`pub use application::*; pub use config::*; pub use core::*; pub use infrastructure::*;`) MUST be removed
+  - All ~20 port traits from `application::ports::{input, output}` MUST be exported
+  - Essential domain entities MUST be exported: `Paladin`, `PaladinData`, `PaladinConfig`, `PaladinResult`, `PaladinStatus`; Battalion types `Formation`, `Phalanx`, `Campaign`, `ChainOfCommand`; `Garrison`, `Arsenal`, `Armament`, `Citadel`; base types `Node<T>`, `Collection`, `Field`, `Message`
+  - Builders (`PaladinBuilder`, `BattalionBuilder` if applicable), configuration types (`ApplicationSettings` and relevant subsystem configs) and error types (`PaladinError`, `BattalionError`, `GarrisonError`, …) MUST be exported
+  - Adapter implementations, repository implementations, CLI modules, manager services and internal infrastructure utilities MUST NOT be exported
+- scope: src/lib.rs, public API surface, curated exports
+
+## REQ-visibility-hardening
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md (FR-2)
+- description: Apply `pub(crate)` / `pub(super)` to internal modules and types.
+- acceptance:
+  - Adapter module internals MUST be `pub(crate)`: llm (`openai_adapter`), garrison adapters, queue (`redis_adapter`), and all other adapter private types
+  - Repository implementations MUST be `pub(crate)`
+  - CLI modules MUST be `pub(crate)` (coordinated with Epic 3)
+  - Manager services MUST be `pub(crate)` unless explicitly part of the public API
+  - Port trait definitions MUST remain `pub` and exported
+- scope: visibility modifiers, adapters, repositories, CLI, manager services
+
+## REQ-port-trait-rustdoc
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md (FR-3, US-2, §6 style guide)
+- description: Reference-grade rustdoc on every port trait.
+- acceptance:
+  - Each trait MUST document purpose (3-5 sentences), when to implement it, thread-safety guarantees (`Send + Sync` implications) and the async execution model
+  - Each method MUST document its behaviour contract, parameter constraints, return semantics, all error variants and any panic conditions
+  - Each trait MUST have a `# Examples` section with at least 2 compiling examples — one basic, one advanced/custom-implementation
+  - Each trait MUST have `# Implementation Notes` with best practices, common pitfalls, performance considerations and links to reference implementations
+  - Minimum trait list: `LlmPort`, `GarrisonPort`, `SanctumPort`, `EmbeddingPort`, `ArsenalPort`/`ArsenalRegistry`, `PaladinPort`, `BattalionPort`, `CitadelPort`, `QueuePort`, `NotificationPort`, `FileStoragePort`, and all input ports
+- scope: port trait rustdoc, examples, implementor guidance
+
+## REQ-stable-api-doc
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md (FR-4)
+- description: A `STABLE_API.md` catalogue of the public API surface with stability guarantees.
+- acceptance:
+  - MUST contain: introduction, versioning policy, stability tiers (Stable / Unstable-Experimental / Deprecated), the public types catalogue, and the API change process
+  - Catalogue sections MUST cover output port traits, input ports, domain entities, builders, configuration types, error types and base types
+  - Each entry MUST give fully qualified path, stability tier, one-sentence description, rustdoc link and breaking-change policy
+  - The versioning policy MUST define a breaking change per SemVer, a deprecation process of at least 1 minor version notice, feature-flag impact on stability, and crate-split impact for future workspace decomposition
+  - Format MUST use tables, a linked table of contents, alphabetical ordering within sections, and a last-updated date
+  - Feature-gated adapters MUST be clearly marked
+- scope: STABLE_API.md, stability tiers, versioning policy
+
+## REQ-import-path-updates-m4
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md (FR-5)
+- description: Update examples and integration tests to the new import paths.
+- acceptance:
+  - All files under `examples/` and `tests/` MUST be audited for direct imports of types that will no longer be re-exported
+  - Imports MUST be updated to explicit paths; `#[allow(deprecated)]` MUST be added to any code using deprecated paths during transition
+  - All 193+ examples MUST compile and all 1,487+ tests MUST pass after the changes
+- scope: examples, integration tests, import paths
+
+## REQ-doc-build-clean
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md (FR-6, US-4)
+- description: Clean documentation generation with zero warnings.
+- acceptance:
+  - `cargo doc --no-deps` MUST complete with zero warnings
+  - All intra-doc links MUST resolve (no `[broken link]` warnings)
+  - All public items MUST have rustdoc
+  - Generated HTML MUST place port traits prominently in the sidebar and clearly mark any internal types that remain public
+- scope: cargo doc, intra-doc links, rustdoc coverage
+
+## REQ-api-surface-ci
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md (FR-7, US-5)
+- description: CI tooling that detects public API surface changes.
+- acceptance:
+  - `cargo-public-api` (or equivalent) MUST be installed and configured in CI
+  - A baseline API snapshot MUST be generated on `main` and stored in version control as `.public-api-baseline.txt`
+  - The job MUST run on every PR targeting `main`, generate an API diff, post it as a PR comment or artifact, and fail the check on breaking changes unless labelled `breaking-change`
+  - The baseline update process MUST be documented in `CONTRIBUTING.md`
+  - The tooling MUST detect removal of deprecated items and verify the deprecation was present for the required period
+- scope: cargo-public-api, CI, API baseline
+
+## REQ-deprecation-warnings
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md (FR-8)
+- description: Deprecation warnings for types leaving the public API.
+- acceptance:
+  - Types currently public but not intended for the stable API MUST be identified from the Task 2.1 audit
+  - Each MUST carry `#[deprecated(since = "X.Y.Z", note = "Use ... instead. This will be made private in version X+1.Y.Z")]`
+  - The note MUST name a public alternative, or explain the pattern to use instead
+  - Deprecated types MUST be marked "Deprecated" in `STABLE_API.md`
+  - A removal timeline of at least 1 minor version MUST be planned
+- scope: deprecation annotations, migration guidance
+- note: VERIFIED OPEN — zero `#[deprecated]` attributes exist in the shipped tree. See code-verification.md.
+
+## REQ-api-surface-reduction-target
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md (§8 Success Metrics)
+- description: Quantitative targets for the API hardening work.
+- acceptance:
+  - Public API surface MUST be reduced from ~200+ exported types to <= 50, measured by `cargo public-api --simplified | wc -l`
+  - Documentation coverage MUST reach 100% of public items; broken intra-doc links MUST be 0
+  - Test pass rate MUST stay at 100% (1,487+ tests); all 193+ examples MUST compile
+  - CI build time MUST NOT increase
+  - Port trait signatures MUST NOT change — only documentation and visibility (explicit non-goal)
+- scope: API surface size, coverage, regression budget
+
+## REQ-cli-feature-gate
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md (FR1, §6.3)
+- description: Gate the entire `src/application/cli/` module tree behind a single `cli` feature flag.
+- acceptance:
+  - `#[cfg(feature = "cli")]` MUST be applied to the `application::cli` module declaration in `src/application/mod.rs` and to all sub-modules
+  - All CLI type re-exports in `src/lib.rs` MUST be gated with `#[cfg(feature = "cli")]`
+  - No dead-code warnings when the `cli` feature is disabled
+  - A single `cli` flag MUST be used rather than granular flags (`cli-agent`, `cli-battalion`, …) — the CLI is a cohesive unit
+  - Gating MUST be applied at the highest module boundary possible, not per-type
+- scope: cli feature flag, src/application/cli, src/lib.rs
+
+## REQ-cli-dependency-isolation
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md (FR2, §6.5)
+- description: CLI-only dependencies must not compile in library builds.
+- acceptance:
+  - CLI-exclusive dependencies MUST be `optional = true` and enabled by the `cli` feature
+  - Every dependency MUST be classified CLI-only, shared, or core; only exclusively-CLI dependencies may be optional
+  - Preliminary CLI-only list: `clap`, `dialoguer`, `indicatif`, `comfy-table`, `colored`, `console`, and any CLI-specific `serde_yaml` usage
+  - Shared dependencies (`serde`, `serde_json`, `tokio`, `anyhow`, `thiserror`, core domain deps) MUST stay unconditional
+  - `cargo tree --no-default-features` MUST exclude CLI dependencies; `cargo tree --features cli` MUST include them
+- scope: Cargo.toml optional dependencies, dependency classification
+- note: PARTIALLY SHIPPED — `structopt`, `colored` and `comfy-table` remain unconditional. See code-verification.md.
+
+## REQ-binary-target-config
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md (FR3, §6.2, Q1)
+- description: Both binary targets must enable the `cli` feature and compile.
+- acceptance:
+  - `src/main.rs` and `src/bin/paladin-cli.rs` MUST enable the `cli` feature
+  - `cargo build --bin paladin` and `cargo build --bin paladin-cli` MUST both succeed
+  - The relationship and intended use case of each binary target MUST be documented
+  - The architecture for `src/main.rs` versus `paladin-cli` requires an architecture review — three options are on the table (keep both with distinct purposes; consolidate to `paladin-cli`; keep `paladin` as a lightweight wrapper). Recorded status: "User selected Option D — requires architecture review"
+  - `cli` MUST NOT be in the `default` feature set (recommendation): library use is the primary case and binary builds can add `features = ["cli"]`
+- scope: binary targets, paladin, paladin-cli, default features
+- note: Q1 was never answered by a decision record; three binaries ship (`paladin`, `paladin-cli`, `paladin-server`). See code-verification.md.
+
+## REQ-cli-test-isolation
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md (FR4, §6.4)
+- description: All 193 CLI tests compile only when the `cli` feature is enabled.
+- acceptance:
+  - All CLI test modules MUST be wrapped with `#[cfg(feature = "cli")]`
+  - All 193 CLI tests MUST pass with `cargo test --features cli`
+  - `cargo test --lib --no-default-features` MUST produce no CLI test failures or warnings
+  - Snapshot test files (`.snap`) MUST remain committed and functional in place
+  - CI MUST run CLI tests with `--features cli`
+  - CLI tests MUST stay in their current location; no test files are moved
+- scope: CLI tests, feature gating, snapshot tests
+
+## REQ-library-only-build
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md (FR5, US-1)
+- description: The library must compile and function without CLI code or dependencies.
+- acceptance:
+  - `cargo build --lib --no-default-features` MUST succeed
+  - `cargo build --lib` (default features, no `cli`) MUST succeed
+  - All core framework functionality (Paladin, Battalion, Arsenal, Garrison) MUST be available without `cli`
+  - `cargo tree --lib --no-default-features` MUST contain zero CLI code or dependencies
+  - A downstream project depending on `paladin` MUST NOT compile `clap`, `dialoguer`, `indicatif`, `comfy-table`, `colored` or `console`
+- scope: library-only build, dependency tree
+
+## REQ-library-only-integration-tests
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md (FR6, US-4, Q4)
+- description: Integration tests that verify library-only usage and catch CLI leakage.
+- acceptance:
+  - A library-only integration test suite MUST exist; recommended placement is `tests/library_only_*.rs` (naming convention in the existing `tests/` directory)
+  - Tests MUST verify core agent orchestration, all four Battalion patterns (Formation, Phalanx, Campaign, Chain of Command), Arsenal tool execution and Garrison memory operations without CLI
+  - Tests MUST explicitly fail if CLI dependencies are detected
+  - CI MUST run them with `--no-default-features` or a minimal feature set
+  - Minimum 5 new tests covering core functionality
+- scope: library-only integration tests, CLI leakage detection
+
+## REQ-cli-build-time-measurement
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md (FR7, §8.1, §8.3)
+- description: Measure and document build-time and dependency-count impact of CLI isolation.
+- acceptance:
+  - Baseline clean and incremental library build times MUST be captured before the change
+  - Post-isolation measurements MUST be captured for library-only and CLI-enabled builds
+  - Dependency counts before and after MUST be documented using `cargo tree`
+  - Results MUST be documented in the milestone completion report
+  - Any measurable improvement is acceptable — no specific percentage target
+- scope: build-time measurement, dependency count, milestone report
+
+## REQ-cli-ci-matrix
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md (FR8, §7.2, §8.4)
+- description: CI matrix entries covering library-only and CLI-enabled configurations.
+- acceptance:
+  - At least 6 new matrix entries MUST be added: `cargo build --lib --no-default-features`, `cargo build --lib`, `cargo build --bin paladin`, `cargo build --bin paladin-cli`, `cargo test --features cli`, and library-only integration tests
+  - All matrix entries MUST be green
+- scope: CI matrix, library/CLI build combinations
+
+## REQ-cli-docs
+- source: /workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md (FR9, §8.5)
+- description: Documentation updates for the CLI isolation change.
+- acceptance:
+  - `README.md` MUST document the `cli` feature flag; `CONTRIBUTING.md` MUST document CLI testing requirements
+  - The binary target architecture decision MUST be documented after the architecture review
+  - A `CHANGELOG.md` entry MUST mark this as a breaking change for consumers who import CLI types or rely on CLI being available by default
+  - A contribution to the cross-epic migration guide MUST be prepared
+  - `cargo clippy -- -D warnings`, `cargo fmt --check` and `cargo doc --no-deps` MUST be clean for all feature configurations
+- scope: README, CONTRIBUTING, CHANGELOG, migration guide, quality gates
+
+## REQ-cargo-workspace-root
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md (FR-1, FR-2, FR-3)
+- description: Convert the repository root into a Cargo workspace manifest with shared dependency versions.
+- acceptance:
+  - Root `Cargo.toml` MUST contain a `[workspace]` section with `members = ["crates/*"]` plus any other existing crate paths
+  - `[workspace.dependencies]` MUST declare shared versions for at minimum `serde` (derive), `uuid` (v4, serde), `chrono` (serde), `thiserror`, `tokio` (full), `async-trait`, `serde_json`, `reqwest` and `log`
+  - Member crates MUST reference them with `dep = { workspace = true }` rather than pinning versions
+  - The existing `paladin` crate MUST remain buildable: `cargo build` from the workspace root MUST succeed after the workspace manifest is created and before any source files are moved
+- scope: workspace root, workspace.dependencies
+
+## REQ-workspace-crate-edition-v1
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md (FR-5, §7 "Cargo Edition"); corroborated by Epic_2 FR-2, Epic_3 FR-2, Epic_4 FR-2
+- description: All workspace crates use Rust edition 2021.
+- acceptance:
+  - `crates/paladin-core/Cargo.toml` MUST set `edition = "2021"`
+  - "All crates in this workspace must use `edition = \"2021\"`. Do not use an older edition."
+  - `paladin-ports`, `paladin-battalion` and `paladin-llm` MUST each set `edition = "2021"`
+- scope: Cargo edition, all workspace crates
+- note: COMPETING with REQ-workspace-crate-edition-v2. Shipped tree is mixed — see code-verification.md.
+
+## REQ-workspace-crate-edition-v2
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md (FR-1.2); corroborated by overview/Milestone_5-Tier_2-Workspace-Decomposition.md Appendix D
+- description: All workspace crates use Rust edition 2024, matching the workspace root.
+- acceptance:
+  - `crates/paladin-memory/Cargo.toml` MUST declare `edition = "2024"` "(matching the workspace root)"
+  - The workspace `[workspace.package]` section MUST declare `edition = "2024"` alongside `version = "0.2.0"`
+- scope: Cargo edition, workspace.package, paladin-memory
+- note: COMPETING with REQ-workspace-crate-edition-v1, which is the later-dated PRD position for four other crates. Later position: v2 for `paladin-memory`, v1 for Epics 1-4 crates. Shipped tree is mixed.
+
+## REQ-paladin-core-scaffold
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md (FR-4, FR-7, Story 1, Story 3)
+- description: Scaffold `crates/paladin-core/` as an independently compilable domain crate.
+- acceptance:
+  - `crates/paladin-core/` MUST exist with a valid `Cargo.toml` and `src/lib.rs`
+  - `Cargo.toml` MUST set `name = "paladin-core"` and reference workspace dependencies
+  - `cargo build -p paladin-core` MUST succeed in isolation without building any other workspace member, in under 30 seconds on a standard developer machine
+  - A downstream crate MUST be able to add `paladin-core` and use `Paladin`, `GarrisonEntry`, `Citadel` etc. with no transitive dependency on `reqwest`, `redis`, `sqlx` or any LLM provider SDK
+- scope: paladin-core crate scaffold, isolated build
+
+## REQ-paladin-core-dependency-allowlist-v1
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md (FR-6, Appendix B, Story 3)
+- description: `paladin-core`'s dependency list is a closed set of six crates.
+- acceptance:
+  - `[dependencies]` MUST contain only `serde`, `uuid`, `chrono`, `thiserror`, `async-trait` and `serde_json`. "No other dependencies are permitted."
+  - Appendix B is "the complete and exhaustive list of external crates that `paladin-core` is allowed to depend on"; any other dependency requires explicit approval and a documented justification
+  - `async-trait` is permitted because some domain types use `#[async_trait]`; `serde_json` because some domain types use `serde_json::Value`
+- scope: paladin-core dependencies, dependency allowlist
+- note: COMPETING with REQ-paladin-core-dependency-allowlist-v2. Shipped `paladin-core` carries 14 dependencies — see code-verification.md.
+
+## REQ-paladin-core-dependency-allowlist-v2
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_3/prd-paladin-battalion-extraction.md (§9 Open Question 4)
+- description: `paladin-core` also depends on `petgraph` for the Campaign DAG domain types.
+- acceptance:
+  - "`petgraph` is used by both `paladin-core` (Campaign DAG domain types) and `paladin-battalion` (Campaign execution service topological sort)"
+  - Both MUST use the same workspace-pinned version to avoid duplicate compilation of `petgraph`
+- scope: paladin-core dependencies, petgraph, version alignment
+- note: COMPETING with REQ-paladin-core-dependency-allowlist-v1, which declares its 6-crate list exhaustive. This is the later PRD (2026-05-17 versus 2026-04-21). Shipped code confirms `petgraph` in `paladin-core`.
+
+## REQ-core-base-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md (FR-8 to FR-12)
+- description: Relocate `src/core/base/` into `paladin-core`.
+- acceptance:
+  - All files MUST move to `crates/paladin-core/src/base/`, preserving the module tree (`mod.rs` declarations, sub-modules)
+  - Types MUST include at minimum `Node<T>`, `Collection`, `Field`, `Message`, `Action`, `Event` and any internal helper types they reference
+  - All `use` statements MUST be updated to crate-local paths (`crate::base::…`) instead of monolith paths (`crate::core::base::…`)
+  - No moved file may contain a `use` statement referencing `application::`, `infrastructure::` or any path outside `paladin-core`
+  - All previously-embedded `#[cfg(test)]` unit tests MUST compile and pass via `cargo test -p paladin-core`
+- scope: src/core/base, paladin-core/src/base, Node/Collection/Field/Message
+
+## REQ-core-container-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md (FR-13 to FR-16, FR-18)
+- description: Relocate `src/core/platform/container/` into `paladin-core`.
+- acceptance:
+  - All files MUST move to `crates/paladin-core/src/platform/container/`, preserving the module tree
+  - Types MUST include at minimum `Paladin`, `PaladinData`, `PaladinConfig`, `PaladinStatus`, all Battalion domain types (`Formation`, `Phalanx`, `Campaign`, `ChainOfCommand`, `Conclave`, `Council`, `Grove`, `Maneuver` with its lexer/AST/parser), `Garrison`, `GarrisonEntry`, `GarrisonConfig`, `Arsenal`, `Armament`, `Citadel`, `Herald`, `Sanctum`, `SanctumEntry`, `Memory`, `MemoryBuilder` and all supporting types
+  - All `use` statements MUST be updated to crate-local paths
+  - After the upward-dependency resolution, no moved file may reference `application::` or `infrastructure::`
+  - All previously-embedded unit tests MUST compile and pass via `cargo test -p paladin-core`
+- scope: src/core/platform/container, paladin-core, domain entities
+- note: the Maneuver lexer/AST/parser inclusion here is SUPERSEDED by REQ-maneuver-files-moved-from-core (M6 Epic 3), which moves them out again into `paladin-battalion`.
+
+## REQ-core-upward-dependency-resolution
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md (FR-17, §7, OQ-1, OQ-2, SM-5, SM-10, Story 4)
+- description: Resolve the upward dependency from `battalion/mod.rs` into the application layer through a structured decision process.
+- acceptance:
+  - `src/core/platform/container/battalion/mod.rs` currently imports from `application::ports::output::paladin_port` and `application::ports::output::paladin_registry`; these imports MUST NOT exist in the extracted crate
+  - The resolution approach is deliberately NOT specified in the PRD — it is the subject of a dedicated architectural decision task producing (a) an options-analysis document, (b) an implementer interview/decision task, (c) implementation sub-tasks generated from the chosen approach
+  - The only hard constraint: after resolution `battalion/mod.rs` MUST NOT import from `application::` or any module outside `paladin-core`
+  - `grep -r "application::" crates/paladin-core/` MUST return no results
+  - A full audit MUST be performed for any other upward dependencies from `src/core/` beyond the known `battalion/mod.rs` coupling
+  - The decision artifact MUST be committed under `project/Milestone_5-Workspace-Decomposition/Epic_1/`
+- scope: battalion/mod.rs, upward dependency, decision task
+- note: SETTLED by the Epic-1 decision record (Option A). See context.md and code-verification.md.
+
+## REQ-port-value-type-ownership-v1
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/decisions/battalion-result-upward-dependency-decision.md (Chosen Option A, Status: Approved, 2026-05-13)
+- description: The five pure value/error types live in `paladin-core`; the application ports become thin re-exports.
+- acceptance:
+  - `PaladinResult` and `StopReason` MUST move to `core/platform/container/execution_result.rs`; `TokenUsage` to `token_usage.rs`; `RegistryError` to `registry_error.rs`; `HandoffError` to `arsenal/handoff_error.rs` (from `src/application/errors/handoff_error.rs`)
+  - `paladin_port.rs`, `llm_port.rs`, `paladin_registry.rs` and `application/errors/handoff_error.rs` MUST have their struct/enum bodies removed and replaced with `pub use` re-exports from the core locations
+  - Zero breaking changes: all existing `paladin::application::ports::output::…` paths MUST continue to resolve via re-exports
+  - `PaladinError` is deliberately EXCLUDED because it depends on `GarrisonError` in `application::`; the convenience `pub use PaladinError` in `herald.rs` MUST be removed and callers must import it from `application::use_cases::paladin::error`
+  - `TaskPlan` and `HandoffRecord` are already in core, so no circular dependency is introduced
+  - These types travel to `paladin-core` in Task 5.0
+- scope: PaladinResult, StopReason, TokenUsage, RegistryError, HandoffError, PaladinError exclusion, port re-exports
+- note: COMPETING with REQ-port-value-type-ownership-v2. This document carries `Status: Approved` and reads as an ADR but is manifest-typed DOC, so it creates no locked decision. It settles the LOCATION of these five types only — it never mentions `BattalionResult`. Shipped code implements this variant.
+
+## REQ-port-value-type-ownership-v2
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md (FR-7 inventory, FR-10)
+- description: Port-associated value types are co-located with their trait inside `paladin-ports`.
+- acceptance:
+  - `paladin_port.rs` MUST export `PaladinPort`, `PaladinResult`, `StopReason` from `crates/paladin-ports/src/output/`
+  - `llm_port.rs` MUST export `LlmPort`, `LlmRequest`, `LlmResponse`, `LlmError`, `TokenUsage`, `FinishReason`, `StreamingResponse`, `ToolCall`, `ToolResult`
+  - "All associated types that are defined **within** a port module file (error enums, request/response structs, config structs, supporting enums) must move with their port trait into `paladin-ports`. Types must not be split across crates." (FR-10)
+  - `RegistryError` is the single named exception: it MUST remain reachable at `paladin_ports::output::paladin_registry::RegistryError` and, if the underlying type lives in `paladin-core`, the re-export MUST point at `paladin_core::platform::container::registry_error::RegistryError` (FR-11)
+- scope: paladin-ports output ports, associated type co-location
+- note: COMPETING with REQ-port-value-type-ownership-v1. This is the later document (2026-05-15 versus 2026-05-13) and is PRD precedence, but it applies the FR-11 core-re-export carve-out only to `RegistryError`, leaving `PaladinResult`, `StopReason` and `TokenUsage` contradicting the Approved decision record. Shipped code follows v1.
+
+## REQ-facade-core-reexports
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md (FR-19 to FR-23, SM-7, SM-8, §7 Visibility Rules)
+- description: Wire the root `paladin` crate to re-export `paladin-core`, preserving all existing import paths.
+- acceptance:
+  - Root `Cargo.toml` MUST list `paladin-core = { path = "crates/paladin-core" }`
+  - `src/lib.rs` MUST re-export `paladin-core` types under the existing module paths so `paladin::core::base::Node`, `paladin::core::platform::container::Paladin` etc. compile unmodified; the exact mechanism is an implementation detail but the result MUST be zero breaking changes
+  - Fully-relocated files MUST be removed from `src/core/`, leaving it empty or a thin re-export shim only
+  - `cargo build --workspace` MUST succeed and `cargo test --workspace` MUST pass with a test count no lower than the pre-epic baseline
+  - Any type that was `pub(crate)` in the monolith and is referenced by the root crate MUST become `pub`; all `pub(crate)` declarations MUST be reviewed during extraction
+  - Breaking changes to `paladin-core`'s own public API are permitted; the facade absorbs them
+- scope: src/lib.rs re-exports, src/core removal, visibility promotion
+
+## REQ-core-dependency-validation
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md (FR-24 to FR-26, SM-4, SM-6)
+- description: Prove `paladin-core`'s dependency layering is clean.
+- acceptance:
+  - A dependency graph analysis (`cargo tree -p paladin-core` or equivalent) MUST confirm no transitive dependency on application or infrastructure crates
+  - The output MUST NOT show any crate suggesting LLM provider SDKs (`openai`, `anthropic`, `deepseek`), database drivers (`sqlx`, `redis`, `mysql`), HTTP frameworks (`axum`, `actix`) or object storage clients (`minio`, `s3`)
+  - `cargo doc -p paladin-core --no-deps` MUST produce documentation with zero broken intra-doc links and zero warnings
+  - All CI pipeline checks MUST pass on the feature branch
+- scope: dependency graph validation, cargo tree, cargo doc
+
+## REQ-paladin-ports-scaffold
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md (FR-1 to FR-6, Story 4, Story 5, §7 Tokio)
+- description: Scaffold `crates/paladin-ports/` as a minimal contract crate depending only on `paladin-core`.
+- acceptance:
+  - `crates/paladin-ports/` MUST exist with a valid `Cargo.toml` and `src/lib.rs`
+  - `Cargo.toml` MUST set `name = "paladin-ports"` and use `dep = { workspace = true }` syntax
+  - `[dependencies]` MUST contain only `paladin-core` (path dependency), `async-trait`, `serde`, `thiserror`, `uuid`, `chrono` and `tokio`; no others without explicit justification and a PRD update
+  - `tokio` is required with at minimum the `sync` feature because streaming port methods use `tokio::sync::mpsc`
+  - `cargo build -p paladin-ports` and `cargo test -p paladin-ports` MUST succeed without building any other workspace member beyond declared dependencies
+  - `src/lib.rs` MUST declare `pub mod input;` and `pub mod output;` with crate-level doc comments describing the crate's role in the hexagonal architecture
+  - `paladin-ports` MUST include all port modules unconditionally — including `vision_llm_port` and `vision_port` — and MUST define no feature flags of its own; the existing `#[cfg(feature = "vision")]` attributes MUST NOT be carried into `paladin-ports/src/output/mod.rs`. Feature gating of vision is the root crate's responsibility via conditional re-export
+- scope: paladin-ports scaffold, dependency allowlist, vision port handling
+
+## REQ-output-ports-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md (FR-7 to FR-11, §7 RegistryError, §7 CitadelError)
+- description: Relocate all output port trait files into `crates/paladin-ports/src/output/`.
+- acceptance:
+  - The full inventory MUST move: `llm_port.rs`, `garrison_port.rs`, `sanctum_port.rs`, `embedding_port.rs`, `arsenal_port.rs`, `citadel_port.rs`, `queue_port.rs`, `notification_port.rs`, `file_storage_port.rs`, `paladin_port.rs`, `paladin_executor_port.rs`, `paladin_registry.rs`, `battalion_port.rs`, `log_port.rs`, `scheduler_port.rs`, `search_engine_port.rs`, `content_delivery_port.rs`, `vision_llm_port.rs`, `vision_port.rs`
+  - The module tree structure MUST be preserved identically
+  - Domain types imported from `crate::core::platform::container::*` MUST become `paladin_core::platform::container::*`; self-referential imports MUST use `crate::output::*`; no moved file may reference `crate::application::`, `crate::infrastructure::` or `crate::core::`
+  - `CitadelError` (in `src/application/errors/citadel_error.rs`) is NOT a port trait and is explicitly out of scope; it stays in the `paladin` crate's `application::errors` module
+- scope: output port traits, paladin-ports/src/output, import rewriting
+
+## REQ-input-ports-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md (FR-12 to FR-14, §9 resolution 1)
+- description: Relocate all input port trait files into `crates/paladin-ports/src/input/`.
+- acceptance:
+  - The full inventory MUST move: `content_input_port.rs` (`ContentIngestionPort`), `document_port.rs`, `listener_port.rs`, `ml_port.rs`, `nlp_port.rs`, `rpc_port.rs` (`RpcGatewayPort`)
+  - Import rules follow FR-9: no references to `crate::application::`, `crate::infrastructure::` or `crate::core::`
+  - Domain types from old monolith paths (e.g. `crate::core::platform::container::content::ContentItem`) MUST be updated to their `paladin-core` equivalents
+  - The five previously-unspecified files (`content_delivery_port.rs`, `listener_port.rs`, `paladin_executor_port.rs`, `scheduler_port.rs`, `search_engine_port.rs`) are all IN scope — every file currently under `src/application/ports/` is extracted
+- scope: input port traits, paladin-ports/src/input
+
+## REQ-ports-facade-wiring
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md (FR-15 to FR-18, Story 3, §9 resolution 2)
+- description: Wire `paladin-ports` into the root crate and fully delete `src/application/ports/`.
+- acceptance:
+  - `paladin-ports = { path = "crates/paladin-ports" }` MUST be added to the root crate's `[dependencies]` alongside the existing `paladin-core`
+  - `src/application/ports/` MUST be **fully deleted** after extraction and import migration — Option B, full deletion, was selected; no shim files are left behind
+  - `src/lib.rs` re-exports MUST be updated to resolve from `paladin_ports::` directly; every type previously reachable at `paladin::application::ports::*` MUST still be re-exported at an equivalent path
+  - The `src/application/ports/{mod,input/mod,output/mod}.rs` files and the corresponding `pub mod` declarations MUST be removed so `src/application/ports/` no longer exists as a module path
+  - The `vision` feature flag MUST remain in the root crate exactly as before, gating the re-exports with `#[cfg(feature = "vision")]`
+- scope: root crate wiring, full deletion of src/application/ports, src/lib.rs re-exports
+
+## REQ-ports-import-migration
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md (FR-19, FR-20, §6 migration, §7 incremental strategy)
+- description: Migrate every import site off `crate::application::ports::`.
+- acceptance:
+  - All 314 occurrences of `use crate::application::ports::` across 76 `.rs` files MUST be updated to import from `paladin_ports::` directly or from the updated `src/lib.rs` re-exports, spanning `src/infrastructure/`, `src/application/use_cases/`, `src/application/` and `src/lib.rs`
+  - Only `use` statement path strings may change — no function bodies, trait implementations, struct definitions or test assertions
+  - A scripted bulk find-and-replace (e.g. `s/crate::application::ports::/paladin_ports::/g`) followed by `cargo build --workspace` is the recommended approach
+  - Recommended extraction order: scaffold, extract output ports one file at a time building after each, extract input ports one at a time, update `src/lib.rs`, bulk-migrate the 314 `.rs` occurrences, bulk-update docs, delete `src/application/ports/`, run the full test suite
+- scope: 314 import occurrences, 76 files, scripted migration
+
+## REQ-ports-doctest-compilation
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md (FR-21, SM-8)
+- description: Rustdoc examples embedded in port files must compile.
+- acceptance:
+  - Rustdoc examples inside `//!` and `///` blocks in the moved port files MUST be updated to import paths that compile under `cargo test --doc`
+  - "Broken doc examples are treated as test failures"
+  - `cargo doc -p paladin-ports --no-deps` MUST complete with zero broken intra-doc link errors
+- scope: paladin-ports doctests, cargo test --doc
+- note: VERIFIED OPEN — `paladin-ports/Cargo.toml` sets `[lib] doctest = false` with a comment deferring the fix to "Task 7.0", and CI runs `cargo test --workspace --doc --exclude paladin-ports`. See code-verification.md.
+
+## REQ-ports-docs-markdown-update
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md (FR-22)
+- description: Update Markdown documentation that names the old port paths.
+- acceptance:
+  - The 12 occurrences of `application::ports::` paths across 5 files under `docs/` MUST be updated
+  - The docs MUST accurately reflect how consumers import port traits after the refactor
+- scope: docs/ markdown, port import paths
+
+## REQ-ports-layering-validation
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md (FR-23 to FR-26, Story 1, Story 2, SM-4, SM-5, SM-9)
+- description: Prove `paladin-ports` has no infrastructure dependencies and no public path regressions.
+- acceptance:
+  - `cargo tree -p paladin-ports` MUST show no transitive dependency on `redis`, `sqlx`, `aws-sdk-s3`, `minio`, storage/queue-originated `reqwest`, `openai`, `anthropic` or any LLM provider SDK
+  - `cargo tree -p paladin-ports` MUST list exactly one workspace-internal dependency: `paladin-core`
+  - The confirmed-green `cargo build -p paladin-ports` output MUST be saved to `project/Milestone_5-Workspace-Decomposition/Epic_2/paladin-ports-isolation-build.txt`
+  - The `cargo tree -p paladin-ports` output MUST be saved to `project/Milestone_5-Workspace-Decomposition/Epic_2/paladin-ports-dependency-tree.txt`
+  - At least three existing examples (`basic_paladin.rs`, `formation_sequential.rs`, `garrison_in_memory.rs`) MUST pass `cargo check --example <name>`, confirming no public import path was broken
+- scope: dependency isolation, evidence artifacts, example verification
+
+## REQ-ports-tests-and-rustdoc
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md (FR-27 to FR-30, SM-1 to SM-3, SM-6, SM-7, §5 Non-Goals)
+- description: Test and documentation preservation for the ports extraction.
+- acceptance:
+  - All unit tests previously in `src/application/ports/` MUST compile and pass via `cargo test -p paladin-ports`
+  - `cargo test --workspace` MUST report the same number of passing tests as the Epic 1 baseline — zero regressions
+  - All public items in `paladin-ports` MUST have rustdoc; existing doc comments MUST be preserved with no documentation lost during the move
+  - `cargo clippy --workspace -- -D warnings` MUST report zero warnings; `cargo fmt --all --check` MUST pass without changes
+  - No behavioural changes: no trait method signature, error variant or associated type may change; no new port traits may be added; `paladin-core` MUST NOT be modified; the CLI MUST remain untouched
+- scope: port unit tests, rustdoc preservation, zero-regression constraint
+
+## REQ-battalion-crate-scaffold
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_3/prd-paladin-battalion-extraction.md (FR-1 to FR-5, Story 1, Story 4, §7.1)
+- description: Scaffold `crates/paladin-battalion/` with an exact dependency set and no infrastructure crates.
+- acceptance:
+  - `crates/paladin-battalion/` MUST exist with a valid `Cargo.toml` and `src/lib.rs`, `name = "paladin-battalion"`, using `dep = { workspace = true }` for shared dependencies
+  - `[dependencies]` MUST contain exactly: `paladin-core`, `paladin-ports`, `tokio`, `async-trait`, `serde`, `serde_json`, `uuid`, `log`, `futures`, `chrono`, `rand`, `tokio-util`, `petgraph`, `regex` — no others unless a gap is discovered and documented
+  - `[dependencies]` MUST NOT contain, even transitively: `reqwest`, `actix-web`, `actix-http`, `sqlx`, `redis`, `qdrant-client`, `lettre`, `aws-sdk-*`, `minio`
+  - `cargo build -p paladin-battalion` MUST succeed in isolation once populated
+  - A project depending only on `paladin-core` + `paladin-ports` + `paladin-battalion` MUST compile with `cargo tree` showing none of `reqwest`, `sqlx`, `redis`, `qdrant-client`, `actix-web`, `lettre`
+- scope: paladin-battalion scaffold, exact dependency set, forbidden crates
+
+## REQ-battalion-service-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_3/prd-paladin-battalion-extraction.md (FR-6, FR-7, §1)
+- description: Relocate all 13 files (~11,180 LOC) from `src/application/use_cases/battalion/`.
+- acceptance:
+  - The nine execution services MUST move to `crates/paladin-battalion/src/`: `formation_service.rs`, `phalanx_service.rs`, `campaign_service.rs`, `chain_of_command_service.rs`, `conclave_execution_service.rs`, `council_service.rs`, `grove_service.rs`, `maneuver_service.rs`, `commander.rs`
+  - The three support utilities MUST also move: `error_aggregation.rs`, `flow_visualizer.rs`, `retry.rs`
+  - Only `src/application/use_cases/battalion/` is in scope; `content`, `herald`, `paladin`, `sanctum` and `arsenal` use-case directories MUST NOT be touched
+- scope: 13 battalion files, execution services, support utilities
+
+## REQ-battalion-import-migration
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_3/prd-paladin-battalion-extraction.md (FR-8 to FR-12, Story 5, §7.2, §7.3, §7.4, §9 OQ1, OQ2)
+- description: Rewrite the ~169 import paths inside the extracted battalion files.
+- acceptance:
+  - Every `crate::application::ports::` MUST become `paladin_ports::`; every `crate::core::` MUST become `paladin_core::`; every `crate::application::use_cases::battalion::` MUST become `crate::`
+  - No extracted file may contain a `use` statement referencing `application::`, `infrastructure::`, or any path outside `paladin-battalion`, `paladin-core` or `paladin-ports`
+  - A scripted `sed` pass covering the three substitutions is the recommended approach, followed by `cargo build -p paladin-battalion` to catch residual misses; each manual fix MUST be documented
+  - `PaladinError`'s location MUST be resolved before `phalanx_service.rs` is extracted — it currently imports from the root crate's use-cases layer. If Epics 1-2 relocated it, update the import; otherwise a decision (move to `paladin-core` or re-export through `paladin-ports`) MUST be made and recorded in Task 1.0 before any code moves
+  - A `grep -rn "#\[cfg(feature" src/application/use_cases/battalion/` audit MUST be run before extraction; any feature flags found MUST be mirrored in `paladin-battalion/Cargo.toml`
+- scope: 169 import occurrences, sed migration, PaladinError location, feature flag audit
+
+## REQ-battalion-inline-tests
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_3/prd-paladin-battalion-extraction.md (FR-13, §5 Non-Goals)
+- description: Preserve every inline test module through the move.
+- acceptance:
+  - All inline `#[cfg(test)]` modules in the extracted files MUST compile and pass via `cargo test -p paladin-battalion`
+  - There are 12 such test modules across the service files; none may be dropped or disabled
+  - Existing tests MUST be migrated verbatim; no test rewrites are required (new doc-tests in `lib.rs` are welcome)
+- scope: inline test modules, verbatim migration
+
+## REQ-battalion-facade-shim
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_3/prd-paladin-battalion-extraction.md (FR-14 to FR-18, Story 3, §6 facade strategy, §7.5)
+- description: Convert `src/application/use_cases/battalion/mod.rs` into a re-export shim.
+- acceptance:
+  - Root `Cargo.toml` MUST add `paladin-battalion = { workspace = true }`
+  - `mod.rs` MUST be converted to re-export all public items from `paladin_battalion` so existing paths such as `crate::application::use_cases::battalion::formation_service::*` continue to resolve; the shim MUST preserve the sub-module path structure (one `pub use paladin_battalion::<module>;` per module)
+  - The original 12 source files MUST be deleted from `src/application/use_cases/battalion/` only after the shim is in place and `cargo test --workspace` passes; only `mod.rs` remains
+  - `cargo build --workspace` MUST succeed with zero errors and zero warnings; `cargo test --workspace` MUST pass at or above the pre-epic baseline of 2,610 tests
+  - The originals MUST NOT be deleted until all 13 files compile in the new crate, the shim is in place, and the workspace test suite passes — preserving a rollback path
+  - The invariant is zero broken import paths, not the exact re-export mechanism
+- scope: facade re-export shim, safe migration order, 2,610-test baseline
+
+## REQ-battalion-dependency-validation
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_3/prd-paladin-battalion-extraction.md (FR-19 to FR-21, SM-3, SM-9, SM-10, Story 2)
+- description: Prove and record `paladin-battalion`'s dependency isolation.
+- acceptance:
+  - `cargo tree -p paladin-battalion` MUST be run once the crate is fully populated and inspected to confirm no forbidden infrastructure crate appears
+  - The `cargo tree` output MUST be saved to `project/Milestone_5-Workspace-Decomposition/Epic_3/paladin-battalion-dependency-tree.txt`
+  - The `cargo build -p paladin-battalion` output (stdout + stderr) MUST be saved to `project/Milestone_5-Workspace-Decomposition/Epic_3/paladin-battalion-isolation-build.txt`
+  - A change to `grove_service.rs` MUST NOT trigger recompilation of any infrastructure crate
+- scope: cargo tree evidence, isolation build evidence
+
+## REQ-battalion-example-verification
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_3/prd-paladin-battalion-extraction.md (FR-22, FR-23, SM-8, §9 OQ3, §5 Non-Goals)
+- description: Verify examples and workspace-level battalion tests still compile against the shim.
+- acceptance:
+  - These examples MUST compile via `cargo check --example <name>`: `formation_sequential`, `campaign_workflow`, `chain_of_command_delegation`, `commander_basic`, `commander_auto`, `commander_full_config`
+  - `tests/unit/battalion/` (6 files) and `tests/integration/battalion/` (7 files listed) MUST pass, plus `tests/battalion_campaign_integration_test.rs` and `tests/battalion_chain_of_command_integration_test.rs`
+  - Workspace-level test directories MUST remain in place; migrating them into `crates/paladin-battalion/tests/` is deferred to Epic 6. Preferred resolution if re-export path resolution differs: keep tests at workspace level and fix import paths
+- scope: example spot-checks, workspace battalion tests
+
+## REQ-battalion-crate-docs
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_3/prd-paladin-battalion-extraction.md (FR-24, FR-25, §5 Non-Goals, §9 OQ4)
+- description: Crate-level documentation and quality gates for `paladin-battalion`.
+- acceptance:
+  - `crates/paladin-battalion/src/lib.rs` MUST include a crate-level `//!` doc comment describing the crate's purpose, listing the eight orchestration patterns, and providing a minimal usage example
+  - `cargo doc -p paladin-battalion --no-deps` MUST produce zero errors and zero warnings
+  - `cargo clippy --workspace -- -D warnings` and `cargo fmt --all --check` MUST both exit 0
+  - No `paladin::prelude` module is added here — deferred to Epic 6
+  - No behavioural or API-shape changes; bugs discovered during migration MUST be tracked separately rather than fixed in this epic
+  - `petgraph` version alignment between `paladin-core` and `paladin-battalion` MUST be confirmed to avoid duplicate compilation
+- scope: crate docs, quality gates, scope discipline
+
+## REQ-llm-crate-scaffold
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-1 to FR-7, §6.2, Story 1, §7.5)
+- description: Scaffold `crates/paladin-llm/` with per-provider feature flags and optional `reqwest`.
+- acceptance:
+  - `crates/paladin-llm/` MUST exist with a valid `Cargo.toml` and `src/lib.rs`, `name = "paladin-llm"`, using workspace dependency syntax
+  - `[features]` MUST define `openai`, `anthropic`, `deepseek`, `mock` and `vision`, with `default = ["openai", "mock"]`
+  - `reqwest` (with TLS features `json`, `rustls-tls`) MUST be optional, activated only by `openai`, `anthropic` or `deepseek`, and MUST NOT compile with `--no-default-features`
+  - `cargo build -p paladin-llm --no-default-features` MUST succeed and produce a crate with no provider code (an empty public surface is acceptable)
+  - `paladin-llm` MUST depend on `paladin-core` and `paladin-ports` as non-optional workspace dependencies
+  - `paladin-llm` MUST NOT depend on the root `paladin` crate, `paladin-battalion`, `paladin-memory`, or any infrastructure crate other than the adapters moved into it
+  - The workspace root `members` list MUST include `"crates/paladin-llm"`
+- scope: paladin-llm scaffold, feature flags, optional reqwest
+
+## REQ-llm-provider-error
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-8 to FR-10, §6.3)
+- description: A `LlmProviderError` enum that converts to the shared `LlmError` at the public boundary.
+- acceptance:
+  - `LlmProviderError` MUST be defined in `crates/paladin-llm/src/error.rs` and re-exported as `paladin_llm::LlmProviderError`, deriving `thiserror::Error` and `Debug`
+  - Variants MUST include at minimum: `OpenAI(String)`, `Anthropic(String)`, `DeepSeek(String)`, `Configuration(String)`, `Network(String)`, `RateLimit`, `Timeout(u64)`, `TokenLimitExceeded { limit: usize, requested: usize }`, `Authentication(String)`, `Serialization(String)`
+  - `From<LlmProviderError> for LlmError` MUST be implemented, where `LlmError` is `paladin_ports::output::llm_port::LlmError`; the conversion is applied in the `impl LlmPort` method bodies
+  - Provider-specific HTTP error structs may remain private within each provider module; only `LlmProviderError` is public
+  - Conversion chain: private provider HTTP error -> `LlmProviderError` -> `LlmError`
+- scope: LlmProviderError, error conversion boundary
+
+## REQ-openai-provider-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-11 to FR-16, §7.2, §7.3, §9 OQ3, OQ4)
+- description: Extract the OpenAI adapter family behind the `openai` feature.
+- acceptance:
+  - `openai_adapter.rs` MUST move to `crates/paladin-llm/src/openai/adapter.rs` and `openai_embedding_adapter.rs` to `crates/paladin-llm/src/openai/embedding.rs`
+  - `openai_vision.rs` MUST move to `crates/paladin-llm/src/openai/vision.rs` gated behind `#[cfg(all(feature = "openai", feature = "vision"))]`
+  - `OpenAIConfig` MUST remain a public struct with fields `api_key: String`, `base_url: String`, `organization: Option<String>`, `timeout_seconds: u64`, `max_retries: u32`, and MUST retain its `from_env()` constructor
+  - `use crate::core::platform::container::content::{ContentItem, ContentType}` and `…::prompt::{PromptItem, PromptType}` MUST become `paladin_core::…`; the implementer MUST grep for `crate::core::` in each moved file
+  - `cargo build -p paladin-llm --features openai` MUST succeed; `--no-default-features` MUST NOT include `OpenAIAdapter`
+  - All OpenAI adapter unit tests MUST move with the source and pass under `cargo test -p paladin-llm --features openai`
+  - `rand` (used by `openai_adapter.rs` for retry-backoff jitter) MUST be added as an optional dependency under the `openai` feature or extracted into a shared internal utility
+  - The embedding adapter is consolidated under `openai`; the monolith's separate `openai-embeddings` flag MUST be confirmed unused downstream before merging the two
+- scope: OpenAI adapter, embedding adapter, vision adapter, OpenAIConfig, rand
+
+## REQ-anthropic-provider-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-17 to FR-20)
+- description: Extract the Anthropic adapter behind the `anthropic` feature.
+- acceptance:
+  - `anthropic_adapter.rs` MUST move to `crates/paladin-llm/src/anthropic/adapter.rs`
+  - `anthropic_vision.rs` MUST move to `crates/paladin-llm/src/anthropic/vision.rs` gated behind `#[cfg(all(feature = "anthropic", feature = "vision"))]`
+  - `AnthropicConfig` MUST be public with at minimum `api_key: String`, `base_url: String`, `timeout_seconds: u64`, `max_retries: u32`, retaining `from_env()`
+  - `cargo build -p paladin-llm --features anthropic` MUST succeed independently of the `openai` and `deepseek` flags
+  - All Anthropic adapter unit tests MUST move and pass under `cargo test -p paladin-llm --features anthropic`
+- scope: Anthropic adapter, Anthropic vision, AnthropicConfig
+
+## REQ-deepseek-provider-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-21 to FR-24, Story 3)
+- description: Extract the DeepSeek adapter behind the `deepseek` feature.
+- acceptance:
+  - `deepseek_adapter.rs` MUST move to `crates/paladin-llm/src/deepseek/adapter.rs` (or `src/deepseek.rs` if it has no sub-modules)
+  - `DeepSeekConfig` MUST be public with at minimum `api_key: String`, `base_url: String`, `timeout_seconds: u64`, `max_retries: u32`, retaining `from_env()`
+  - `cargo build -p paladin-llm --features deepseek` MUST succeed independently of the `openai` and `anthropic` flags
+  - `cargo test -p paladin-llm --features deepseek` MUST run in isolation; DeepSeek-only changes MUST NOT trigger recompilation of `paladin-battalion`, `paladin-core` or the root facade
+- scope: DeepSeek adapter, DeepSeekConfig, isolated rebuild
+
+## REQ-llm-mock-adapters
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-25 to FR-27, Story 2, §9 OQ3)
+- description: Extract the mock LLM adapters behind a default-on `mock` feature.
+- acceptance:
+  - `mock_llm_adapter.rs` MUST move to `crates/paladin-llm/src/mock.rs`
+  - `MockLlmPort` and `MultiStepMockLlmPort` MUST be re-exported at `paladin_llm::mock::MockLlmPort` and `paladin_llm::mock::MultiStepMockLlmPort`
+  - `mock` MUST be enabled by default and MUST compile with no network dependencies — `reqwest` MUST NOT be required when only `mock` is enabled
+  - Mock adapter tests MUST compile and pass under `cargo test -p paladin-llm --features mock` with no other feature required
+  - `MultiStepMockLlmPort` was not found in `mock_llm_adapter.rs` at spec-authoring time; the implementer MUST grep the workspace to locate it or confirm it is a new type to be created
+- scope: MockLlmPort, MultiStepMockLlmPort, mock feature
+
+## REQ-llm-provider-factory
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-28 to FR-30, §9 OQ5)
+- description: Co-locate the provider factory with the adapters.
+- acceptance:
+  - `provider_factory.rs` MUST move to `crates/paladin-llm/src/provider_factory.rs`; `LlmProviderFactory` and `ProviderFactoryError` MUST be re-exported at the crate root
+  - `LlmProviderFactory::create()` MUST remain feature-gated internally: it returns an error for providers whose feature is disabled rather than failing to compile, so the factory works in partial-feature builds
+  - `ProviderFactoryError` is private to `paladin-llm` and MUST implement `From<ProviderFactoryError> for LlmProviderError`
+  - An audit MUST confirm whether the current factory reads `ApplicationSettings` directly; if so that import MUST be removed and replaced with the bridge pattern before the file moves
+- scope: LlmProviderFactory, ProviderFactoryError, partial-feature builds
+
+## REQ-llm-config-bridge-location-v1
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-31 to FR-33, §6.4, §6.5)
+- description: Configuration bridging lives entirely in the root crate; `paladin-llm` owns only its own `*Config` structs.
+- acceptance:
+  - `paladin-llm` MUST NOT import from `crate::config::application_settings` or any equivalent root-crate path — doing so would create a circular dependency
+  - Each provider's `*Config` struct is the configuration boundary; the root `paladin` crate is **solely responsible** for reading `ApplicationSettings.llm.*` and converting into the `paladin-llm` `*Config` structs
+  - The conversion code MUST live in the root crate at `src/infrastructure/adapters/llm/config_bridge.rs`, implementing `From<&LlmProviderConfig> for OpenAIConfig` and equivalents, and MUST be invisible to `paladin-llm`
+  - The same bridge pattern MUST apply to `VisionConfig` -> `OpenAIVisionConfig` (and the Anthropic equivalent); the vision adapters MUST have their direct `application_settings` import removed
+  - Every `*Config` MUST retain `from_env()` so `paladin-llm` stays usable without `ApplicationSettings`
+  - Introducing a `paladin-config` crate is an explicit non-goal
+- scope: config bridge, ApplicationSettings coupling, from_env
+- note: COMPETING with REQ-llm-config-bridge-location-v2. Shipped code follows v2 — see code-verification.md.
+
+## REQ-llm-config-bridge-location-v2
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_1/prd-decompose-application-settings.md (§4.1 paladin-llm table, §7 config_bridge.rs, §7 Cross-Crate Config Re-exports)
+- description: `paladin-llm` owns its own configuration module, including `LlmProviderConfig`, `LlmConfig` and the vision configs.
+- acceptance:
+  - `crates/paladin-llm/src/config/mod.rs`, `config/llm.rs` and `config/vision.rs` MUST be created and exposed via `paladin-llm`'s `lib.rs` as `pub mod config;`
+  - `config/llm.rs` MUST hold `LlmProviderConfig`, `LlmConfig` and their `impl` blocks including `get_provider_config()` and `get_default_provider_name()`
+  - `config/vision.rs` MUST hold `VisionRetryConfig`, `VisionProviderConfig`, `VisionConfig` and their `impl` blocks
+  - `src/infrastructure/adapters/llm/config_bridge.rs` imports MUST be updated after the move and its tests MUST still pass
+  - Crate dependencies still flow inward only: `paladin-llm` may import `paladin-core` and `paladin-ports`; the facade may import all sub-crates
+- scope: paladin-llm config module, LlmConfig, VisionConfig, config_bridge
+- note: COMPETING with REQ-llm-config-bridge-location-v1, which forbids `paladin-llm` from owning `ApplicationSettings`-derived config. This is the later position (2026-05-23 versus 2026-05-18). Shipped code has `crates/paladin-llm/src/config/bridge.rs`.
+
+## REQ-llm-test-architecture
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-34 to FR-36, §6.1 tests layout)
+- description: Split unit and integration tests for `paladin-llm`.
+- acceptance:
+  - Unit tests (individual methods, error conversions) MUST live co-located in `#[cfg(test)]` modules inside `crates/paladin-llm/src/**/*.rs`
+  - Integration tests (full `LlmPort` roundtrips, factory creation, feature-flag matrix) MUST live in `crates/paladin-llm/tests/`, each file gated with the `#[cfg(feature = "...")]` appropriate to the providers it tests: `openai_integration.rs`, `anthropic_integration.rs`, `deepseek_integration.rs`, `mock_integration.rs`, `provider_factory_test.rs`
+  - No integration test in `crates/paladin-llm/tests/` may make real network calls; all MUST use the mock adapter or a test double
+  - Tests requiring a live API key MUST be annotated `#[ignore]` and documented
+- scope: paladin-llm test layout, network isolation, ignored live tests
+
+## REQ-llm-facade-prelude
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-37 to FR-40, §7.4, §7.6)
+- description: Wire `paladin-llm` into the facade through the prelude and retire the old deep paths.
+- acceptance:
+  - The root `Cargo.toml` MUST add `paladin-llm` with `default-features = false` and a features list mirroring the root crate's own LLM flags (e.g. `["openai", "anthropic", "deepseek", "mock"]`)
+  - `paladin::prelude` MUST include at minimum `OpenAIAdapter`, `AnthropicAdapter`, `DeepSeekAdapter`, `MockLlmPort`, `MultiStepMockLlmPort`, `LlmProviderFactory`, `LlmProviderError`
+  - Old deep import paths (e.g. `paladin::infrastructure::adapters::llm::openai_adapter::OpenAIAdapter`) are explicitly **not** required to be preserved; new consumers use `paladin::prelude::OpenAIAdapter`
+  - A grep-and-update sweep over all workspace examples and integration tests MUST fix broken import paths; `grep -r "infrastructure::adapters::llm" --include="*.rs" .` MUST be run and every match updated
+  - The original source files under `src/infrastructure/adapters/llm/` MUST be removed — not left as dead code or re-export shims; the module should be removed entirely or reduced to a comment explaining the move
+- scope: facade wiring, paladin::prelude, deprecated deep paths
+
+## REQ-llm-build-validation
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md (FR-41 to FR-49, §8 Success Metrics, §5 Non-Goals)
+- description: Build, test and quality gates across the `paladin-llm` feature matrix.
+- acceptance:
+  - `cargo build -p paladin-llm` MUST succeed for each of `--no-default-features`, `--features openai`, `--features anthropic`, `--features deepseek`, `--features mock` and `--all-features`
+  - `--no-default-features` MUST succeed in under 5 seconds; `cargo tree -p paladin-llm --features openai` MUST show no Anthropic or DeepSeek deps; zero bytes of dead provider code for a single-provider consumer
+  - `cargo test --workspace` MUST pass with all 1,487+ existing tests green; `cargo clippy -p paladin-llm --all-features -- -D warnings` MUST produce zero warnings; `cargo fmt --check -p paladin-llm` MUST pass
+  - `cargo doc -p paladin-llm --all-features --no-deps` MUST have zero broken intra-doc links and zero warnings
+  - Incremental rebuild for an OpenAI-only change MUST be measurably less than a full workspace rebuild (target >= 50% reduction)
+  - Explicit non-goals: no new providers, no `LlmPort` signature change, no per-provider crates, no `paladin-config` crate, no streaming/SSE architecture change, no retry/backoff logic change, no memory or storage adapters, no CI updates
+- scope: feature-matrix builds, quality gates, scope exclusions
+
+## REQ-memory-crate-scaffold
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md (FR-1, §7 sqlx/qdrant version management, §7 deny unsafe, Story 1)
+- description: Scaffold `crates/paladin-memory/` with feature-gated heavy dependencies.
+- acceptance:
+  - `crates/paladin-memory/` MUST exist with a valid `Cargo.toml` and `src/lib.rs`
+  - `[features]` MUST be exactly `default = []`, `sqlite = ["dep:sqlx"]`, `qdrant = ["dep:qdrant-client"]`, `content-processing = ["dep:tiktoken-rs"]`
+  - Mandatory dependencies MUST be `paladin-core`, `paladin-ports`, `async-trait`, `serde`, `serde_json`, `uuid`, `chrono`, `thiserror`, `tokio`, `futures`, `log`
+  - `sqlx` and `qdrant-client` MUST be hoisted into the root `[workspace.dependencies]` before any source is written (prerequisite of Task 5.1); the workspace `sqlx` entry MUST declare only `runtime-tokio-rustls`, `sqlite`, `chrono`, `uuid`, `json` and MUST NOT include `mysql` (a root-crate-only override); `qdrant-client` MUST be pinned at `1.14`
+  - The exact `tiktoken-rs` version MUST be confirmed via `cargo tree -p paladin | grep tiktoken` before writing the manifest
+  - `[lib]` MUST set `doctest = false`; `src/lib.rs` MUST add `#![deny(unsafe_code)]`
+  - The root workspace `Cargo.toml` MUST add `paladin-memory = { path = "crates/paladin-memory" }` to `[workspace.dependencies]` and to the facade's `[dependencies]` with the appropriate features forwarded
+  - `cargo build -p paladin-memory --no-default-features` MUST succeed and `cargo tree` MUST show no `sqlx`, `qdrant-client` or `tiktoken-rs`
+- scope: paladin-memory scaffold, feature flags, workspace dependency hoisting
+
+## REQ-memory-module-structure
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md (FR-2, Story 4, Story 6)
+- description: Three-module structure plus a prelude for `paladin-memory`.
+- acceptance:
+  - `src/lib.rs` MUST declare `pub mod garrison; pub mod sanctum; pub mod services; pub mod prelude;`
+  - `garrison/mod.rs` MUST unconditionally re-export `InMemoryGarrison`; behind `#[cfg(feature = "sqlite")]` re-export `SqliteGarrison`; behind `#[cfg(feature = "content-processing")]` re-export `TokenCounter`, `TiktokenCounter` and `TokenCounterFactory`
+  - `sanctum/mod.rs` MUST unconditionally re-export `InMemorySanctum` and, behind `#[cfg(feature = "qdrant")]`, `QdrantSanctumAdapter`
+  - `services/mod.rs` MUST unconditionally re-export `MemoryExtractionService`, `ExtractedMemory`, `MemoryExtractionStrategy`, `RagRetrievalService`, `RagConfig`, `RetrievalTrigger` and `retrieve_context_with_timeout`
+  - `prelude.rs` MUST unconditionally re-export `InMemoryGarrison`, `InMemorySanctum`, `MemoryExtractionService`, `RagRetrievalService` and `RagConfig`
+- scope: paladin-memory module tree, prelude
+
+## REQ-garrison-adapter-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md (FR-3, Story 2, Story 6, §7 SQLite migrations, §7 thread safety)
+- description: Extract the Garrison adapters, promoting hidden types to documented public API.
+- acceptance:
+  - `garrison/in_memory_garrison.rs` MUST contain the full `InMemoryGarrison` implementing `GarrisonPort` via `async-trait`, compiled unconditionally
+  - `garrison/sqlite_garrison.rs` MUST sit inside a `#[cfg(feature = "sqlite")]` module boundary and implement `GarrisonPort` using `sqlx::SqlitePool`; the `#[doc(hidden)]` on `SqliteGarrison` MUST be removed and replaced with rustdoc covering purpose, construction and usage
+  - `garrison/token_counter.rs` MUST sit inside `#[cfg(feature = "content-processing")]` and contain the `TokenCounter` trait, `TiktokenCounter` struct and `TokenCounterFactory`; `#[doc(hidden)]` on `TiktokenCounter` MUST be removed and rustdoc added to it, `TokenCounterFactory` and all public methods
+  - `crate::core::platform::container::garrison::*` imports MUST become `paladin_core::platform::container::garrison::*`; `paladin_ports::output::garrison_port::*` imports MUST remain unchanged
+  - `SqliteGarrison`'s inline SQL migrations travel with the file; no separate migration files are required
+  - All adapter types MUST remain `Send + Sync`, verified with a compile-time assertion helper in tests
+- scope: InMemoryGarrison, SqliteGarrison, TokenCounter family, doc(hidden) removal
+
+## REQ-sanctum-adapter-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md (FR-4, Story 3)
+- description: Extract the Sanctum adapters and promote `InMemorySanctumConfig` to public API.
+- acceptance:
+  - `sanctum/in_memory_adapter.rs` MUST contain the full `InMemorySanctum` including `InMemorySanctumConfig`, implementing `SanctumPort` via `async-trait`
+  - `InMemorySanctumConfig` MUST become a fully public documented type: any `#[doc(hidden)]` removed and rustdoc added explaining its fields and defaults; both it and `InMemorySanctum` MUST appear in `paladin-memory`'s public API surface
+  - `sanctum/qdrant_adapter.rs` MUST sit inside a `#[cfg(feature = "qdrant")]` module boundary containing `QdrantSanctumAdapter` implementing `SanctumPort`, and MUST NOT be present in the binary or object files when the feature is absent
+  - `crate::core::platform::container::sanctum::*` imports MUST become `paladin_core::platform::container::sanctum::*`
+- scope: InMemorySanctum, InMemorySanctumConfig, QdrantSanctumAdapter
+
+## REQ-memory-services-extraction
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md (FR-5, Story 4, §7 dependency on paladin-llm)
+- description: Extract the memory services unchanged and keep them backend-agnostic.
+- acceptance:
+  - `services/memory_extraction_service.rs` MUST contain `MemoryExtractionService`, `ExtractedMemory` and `MemoryExtractionStrategy` verbatim from the monolith, logic unchanged, with only import paths updated
+  - `services/rag_retrieval_service.rs` MUST contain `RagRetrievalService`, `RagConfig`, `RetrievalTrigger` and `retrieve_context_with_timeout` verbatim, logic unchanged
+  - Both services MUST depend only on port traits (`GarrisonPort`, `SanctumPort`, `EmbeddingPort`, `LlmPort`) and `paladin-core` domain types, and MUST NOT reference any concrete adapter
+  - No dependency on `paladin-llm` may be introduced — `MemoryExtractionService` imports `LlmPort` and `LlmRequest` from `paladin-ports`, which is correct hexagonal architecture
+  - Both MUST compile with `--no-default-features` and accept `Arc<dyn SanctumPort>` / `Arc<dyn EmbeddingPort>` at construction
+- scope: MemoryExtractionService, RagRetrievalService, backend agnosticism
+
+## REQ-memory-originals-deletion
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md (FR-6)
+- description: Delete the original memory sources from the monolith after extraction.
+- acceptance:
+  - After successful extraction and test passage, these MUST be deleted: `src/infrastructure/adapters/garrison/{in_memory_garrison,sqlite_garrison,token_counter,mod}.rs`, `src/infrastructure/adapters/sanctum/{in_memory_adapter,qdrant_adapter,mod}.rs`, `src/application/use_cases/sanctum/{memory_extraction_service,rag_retrieval_service,mod}.rs`
+  - `pub mod garrison;` / `pub mod sanctum;` declarations in `src/infrastructure/adapters/mod.rs` and `pub mod sanctum;` in `src/application/use_cases/mod.rs` MUST be removed
+- scope: monolith source deletion, mod.rs declarations
+
+## REQ-memory-facade-reexports
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md (FR-7, Story 5)
+- description: Preserve every existing `use paladin::…` memory import path via facade re-exports.
+- acceptance:
+  - `src/lib.rs` MUST add `pub use paladin_memory::…` statements covering: `infrastructure::adapters::garrison::{InMemoryGarrison, SqliteGarrison}`, `garrison::token_counter::{TokenCounter, TiktokenCounter}`, `infrastructure::adapters::sanctum::{InMemorySanctum, QdrantSanctumAdapter}`, and `application::use_cases::sanctum::{MemoryExtractionService, RagRetrievalService, RagConfig, MemoryExtractionStrategy, RetrievalTrigger}`
+  - No breakage to examples, integration tests or functional tests
+  - If a path is discovered during audit to be unused in examples, tests or documented code, the re-export may be omitted with a comment explaining why
+  - All garrison and sanctum examples in `examples/` MUST compile and pass a smoke run without changes to their import statements
+- scope: facade re-exports, backward-compatible import paths
+
+## REQ-memory-test-migration
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md (FR-8, FR-8 addendum)
+- description: Move memory unit tests inline and keep integration tests at workspace level.
+- acceptance:
+  - `tests/unit/sanctum/memory_extraction_service_test.rs`, `rag_retrieval_service_test.rs` and `qdrant_sanctum_test.rs` MUST become inline `#[cfg(test)]` modules in their corresponding `crates/paladin-memory/src/` files (the Qdrant one gated on `#[cfg(feature = "qdrant")]`)
+  - `tests/unit/sanctum_domain_tests.rs` and `tests/unit/sanctum_port_tests.rs` MUST stay at workspace level — they test `paladin-core` domain types and `paladin-ports` traits, not memory adapters
+  - These MUST remain at workspace level in `tests/integration/`: `in_memory_sanctum_tests.rs`, `sqlite_garrison_integration_test.rs`, `qdrant_sanctum_tests.rs`, `rag_integration_tests.rs`, `paladin_garrison_integration_test.rs`
+  - Before closing Task 5.2, existing `TokenCounterFactory` tests MUST be searched for; if none exist, tests covering factory construction, successful counter creation for a known model, and error handling for an unknown model MUST be written inline in `token_counter.rs`
+  - Migrated unit tests MUST pass under `cargo test -p paladin-memory`; integration tests MUST pass under `cargo test --workspace`
+- scope: unit test inlining, integration test placement, TokenCounterFactory tests
+
+## REQ-memory-build-gates
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md (FR-9, §8 Success Metrics, §5 Non-Goals, §7 content-processing semantics)
+- description: Build and quality gates for `paladin-memory`.
+- acceptance:
+  - All of these MUST succeed without errors or warnings: `cargo build -p paladin-memory` with `--no-default-features`, `--features sqlite`, `--features qdrant`, `--features content-processing` and `--all-features`; `cargo build --workspace`; `cargo test --workspace`; `cargo clippy -p paladin-memory -- -D warnings`; `cargo doc -p paladin-memory --no-deps`
+  - In `paladin-memory`, `content-processing` gates **only** `tiktoken-rs` and `token_counter.rs`; it does not gate `pdf-extract`, `scraper` or `rss`, which stay in the root crate. The root crate's aggregate `content-processing` flag is unchanged
+  - Explicit non-goals: no new storage backends, no adapter API changes, no `GarrisonPort`/`SanctumPort` trait changes, no domain type changes, no per-adapter sub-crates, no SQLite schema changes, no CLI tooling, no documentation overhaul
+  - `crates/paladin-llm` (Epic 4) is the canonical template for crate structure, `Cargo.toml` layout, `lib.rs` gating conventions and rustdoc style
+- scope: build gates, content-processing semantics, scope exclusions
+
+## REQ-facade-reexport-audit
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_6/prd-workspace-finalization-epic-6.md (FR-1.1 to FR-1.3, G1, US-1, SM-1)
+- description: Audit and complete the facade crate's re-export coverage.
+- acceptance:
+  - Every `use paladin::…` import path present in `examples/**/*.rs`, `tests/**/*.rs` and `src/**/*.rs` MUST compile without modification
+  - A script or manual audit MUST scan `examples/**/*.rs` and `tests/**/*.rs` for `use paladin::` statements and produce a checklist confirming each path is covered by a re-export in `src/lib.rs`
+  - Any uncovered path found during the audit MUST be added
+  - `paladin-core` and `paladin-ports` MUST be added to `[workspace.dependencies]` (only `paladin-battalion`, `paladin-llm` and `paladin-memory` are listed there today)
+- scope: facade re-export audit, workspace.dependencies completion
+
+## REQ-paladin-prelude
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_6/prd-workspace-finalization-epic-6.md (FR-1.4 to FR-1.7, G2, US-2, SM-2)
+- description: A `paladin::prelude` module carrying the ~20 most commonly used types.
+- acceptance:
+  - `src/lib.rs` MUST provide `pub mod prelude` (recommended: a dedicated `src/prelude.rs` re-exported as `pub mod prelude`)
+  - It MUST contain at minimum: `PaladinBuilder`, `Paladin`, `PaladinData`, `PaladinStatus`, `PaladinConfig`, `PaladinError`; `Formation`, `Phalanx`, `Campaign`, `ChainOfCommand`; `BattalionConfig`, `BattalionError`, `BattalionResult`; `CommanderBuilder`, `CouncilBuilder`, `GroveBuilder`; `LlmPort`, `LlmRequest`, `LlmResponse`, `LlmError`; `GarrisonPort`, `GarrisonError`; `SanctumPort`, `SanctumError`; `InMemoryGarrison`, `InMemorySanctum`; `ArsenalPort`, `ArsenalRegistry`, `Armament`; `PaladinResult`, `StopReason`
+  - The prelude MUST have a short `//!` module doc comment explaining its contents and usage
+  - `use paladin::prelude::*` MUST let a new developer write a working agent in ten lines
+  - `cargo build --workspace` MUST succeed with zero errors or warnings after all facade changes
+  - `cargo doc -p paladin --no-deps 2>&1 | grep -i "warn\|error"` MUST produce no output
+- scope: paladin::prelude, prelude contents, doc cleanliness
+
+## REQ-devcontainer-gh-cli
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_6/prd-workspace-finalization-epic-6.md (FR-2.0, §7, SM-0)
+- description: Install the GitHub CLI in the devcontainer as a prerequisite for CI work.
+- acceptance:
+  - `gh` is confirmed absent from the container (`which gh` returns nothing) and MUST be installed by adding the official GitHub CLI apt repository and `apt-get install -y --no-install-recommends gh` in `.devcontainer/Dockerfile.dev`, using the upstream Debian keyring method
+  - The block MUST be placed after the existing `apt-get` package installation block and before the `rustup` component installation, so it shares the same Docker layer cache
+  - After rebuild, `gh --version` MUST succeed inside the container
+  - Developers MUST run `gh auth login` once after the rebuild before using `gh workflow run`, `gh run watch` or `gh run list`
+  - This is a prerequisite for Task 6.2 and MUST be completed first
+- scope: .devcontainer/Dockerfile.dev, gh CLI, CI prerequisite
+
+## REQ-crate-isolation-ci
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_6/prd-workspace-finalization-epic-6.md (FR-2.1, FR-2.2, FR-2.8, G3, US-3, US-4, SM-3, §6 CI job structure, §7)
+- description: A per-crate isolation CI job that catches cross-crate dependency leaks.
+- acceptance:
+  - A new job named `crate-isolation` MUST be added to `ci.yml`, running in parallel with the existing `test` job and not blocking it, using a matrix strategy in the same style
+  - It MUST build and test each crate independently: `paladin-core`, `paladin-ports`, `paladin-battalion` (plain), `paladin-llm` and `paladin-memory` (`--all-features`), and `paladin` (facade)
+  - It MUST additionally run `cargo build -p <crate> --no-default-features` for each crate, verifying each compiles cleanly without optional dependencies
+  - All 6 crate isolation jobs MUST be green
+  - `cargo-nextest` may optionally replace `cargo test` for parallel execution; an optional install step with fallback is recommended
+- scope: crate-isolation CI job, per-crate build/test matrix
+
+## REQ-workspace-ci-upgrade
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_6/prd-workspace-finalization-epic-6.md (FR-2.3 to FR-2.7, FR-2.9, G4, SM-4 to SM-6, §7)
+- description: Convert the existing CI workflows to workspace scope.
+- acceptance:
+  - `ci.yml` workspace-level jobs MUST run against `--workspace` explicitly (`cargo test --workspace`, `cargo build --workspace`) rather than implicitly targeting only the root crate
+  - `feature-flags.yml` MUST also run `cargo build --workspace <flags>` in addition to the current root-crate-only default, ensuring flags propagate across all members
+  - The lint job MUST run `cargo clippy --workspace -- -D warnings`
+  - The documentation check MUST run `cargo doc --workspace --no-deps` and fail the job on any warning (`2>&1 | grep -c "warning:"` must return 0)
+  - All existing jobs (`lint`, `api-surface`, `test`, `integration-tests`) MUST remain green; none may be removed or disabled
+  - The `test` job matrix (`rust-version: [stable, beta]`) MUST run `cargo test --workspace`
+  - `ci.yml`'s deprecated `actions-rs/toolchain@v1` should be upgraded to `dtolnay/rust-toolchain@stable` in the same PR — "a low-risk improvement that should not be deferred"
+- scope: ci.yml, feature-flags.yml, workspace-scoped commands, toolchain action
+
+## REQ-build-benchmark-report
+- source: /workspace/.project/Milestone_5-Workspace-Decomposition/Epic_6/prd-workspace-finalization-epic-6.md (FR-3.1 to FR-3.5, G5, US-5, SM-7, SM-8, §6 Benchmark Tooling, §9 OQ-2)
+- description: A committed build-time benchmark report comparing workspace to monolith.
+- acceptance:
+  - Five timed scenarios MUST be recorded with `time cargo build …` or equivalent: workspace clean build; workspace incremental after touching `paladin-core/src/`; after touching `paladin-llm/src/`; after touching `paladin-memory/src/`; and `cargo build -p paladin-battalion` with no memory/llm in the dependency tree
+  - Equivalent pre-decomposition times MUST be recorded by checking out the last commit on `main` before the workspace split (recommended: the last commit before `feature/milestone_5-epic_1-paladin-core-extraction` was merged) and running `time cargo build`
+  - Results MUST be committed to `project/Milestone_5-Workspace-Decomposition/Epic_6/build-benchmarks.md` containing the hardware/OS environment, raw timing numbers and a summary table with percentage improvement per scenario
+  - Any incremental regression (workspace slower than monolith for an equivalent change) MUST be called out explicitly with root-cause analysis
+  - The report MUST confirm whether the >= 50% incremental rebuild improvement target was achieved and, if not, recommend follow-up actions
+  - No scenario may be slower than the pre-decomposition monolith (SM-8)
+  - Method: `time` shell built-in, wall-clock `real`, three runs per scenario, report the median, automated by `scripts/benchmark-builds.sh`
+- scope: build-benchmarks.md, timing scenarios, >=50% target, benchmark script
+
+## REQ-config-domain-modules
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_1/prd-decompose-application-settings.md (§4.1, Goals 1-2, §6 file size)
+- description: Replace `application_settings.rs` with per-domain config modules distributed across the workspace crates.
+- acceptance:
+  - `crates/paladin-memory/src/config/` MUST gain `mod.rs`, `garrison.rs` (`GarrisonSettings`), `sanctum.rs` (`QdrantSanctumConfig`, `SanctumConfig`) and `rag.rs` (`MemoryExtractionConfig` plus the consolidated `RagConfig`)
+  - `crates/paladin-llm/src/config/` MUST gain `mod.rs`, `llm.rs` and `vision.rs` (see REQ-llm-config-bridge-location-v2)
+  - The facade `src/config/` MUST gain `mod.rs` (root `Settings`, `Settings::new()`, `load_from_file()`, all `get_*_config()` methods and re-exports of sub-crate config types), `arsenal.rs` (`MCPServerConfig`, `ArsenalConfig`), `citadel.rs` (`CitadelConfig`), `file_storage.rs` (`FileStorageConfig`), `herald.rs` (`JsonHeraldConfig`, `MarkdownHeraldConfig`, `TableHeraldConfig`, `HeraldConfig`), `notifications.rs` (`NotificationConfig`), `queue.rs` (`QueueConfig`), `scheduler.rs` (`SchedulerConfig`), `web_server.rs` (`SourceConfig`, `ServerConfig`, `MessageServiceSettings`) and optionally `sanctum_app.rs`
+  - No file in any `config/` module may exceed 400 lines; a struct approaching ~350 lines MUST be split further
+  - Crate dependencies MUST continue to flow inward only: `paladin-core` must not import from `paladin-memory` or `paladin-llm`
+- scope: config/ module layout, per-crate config ownership, 400-line limit
+- note: the M6 milestone-overview DOC specifies a different single-directory layout including `agent.rs`, `battalion.rs`, `logging.rs` and `llm.rs` under `src/config/`. PRD wins on precedence; shipped code is a hybrid — see INGEST-CONFLICTS.md INFO and code-verification.md.
+
+## REQ-env-overridable-trait
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_1/prd-decompose-application-settings.md (§4.2, Goal 3, §10 OQ1, Task 1.2)
+- description: An `EnvOverridable` trait plus `read_env` helper replacing ~30 copies of the env-var override pattern.
+- acceptance:
+  - `pub trait EnvOverridable { fn apply_env_overrides(&mut self); }` MUST be defined in a shared location — recommended `src/config/env_utils.rs` in the facade crate, since all current env-override logic lives there; `crates/paladin-core/src/config/env_utils.rs` is the alternative if sub-crate config structs need it
+  - `pub fn read_env<T: std::str::FromStr>(var_name: &str) -> Option<T>` MUST be provided, returning `Some(value)` when the variable is set and parseable and `None` otherwise
+  - Every config struct that currently has env-override logic inside `Settings::get_*_config()` MUST instead implement `EnvOverridable` and move that logic into `apply_env_overrides()`
+  - Unit tests MUST cover `read_env::<String>`, `read_env::<u16>`, `read_env::<u64>`, `read_env::<bool>` and `read_env::<Option<_>>` with both set and unset variables
+  - `pub mod env_utils;` MUST be added to `src/config/mod.rs`; `cargo test config::env_utils` MUST pass
+  - Tests using `#[serial]` (serial_test) to avoid env-var collision MUST keep that attribute
+- scope: EnvOverridable trait, read_env helper, env override consolidation
+
+## REQ-settings-root-struct
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_1/prd-decompose-application-settings.md (§4.3, Goal 4)
+- description: The root `Settings` struct remains the single config entry point with an unchanged public API.
+- acceptance:
+  - `Settings` MUST stay in `src/config/mod.rs` (facade crate) and compose all sub-configs; all existing fields remain with types updated to the new module paths
+  - Its public API MUST NOT change: `Settings::new() -> Result<Self, ConfigError>` and `Settings::load_from_file(filename: &str) -> Result<Self, Box<dyn std::error::Error>>` are preserved
+  - `get_queue_config()`, `get_file_storage_config()`, `get_notification_config()`, `get_garrison_config()` and `get_sanctum_config()` MUST remain but now delegate to each sub-struct's `apply_env_overrides()`
+- scope: Settings struct, public API stability, get_*_config delegation
+
+## REQ-config-incremental-migration
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_1/prd-decompose-application-settings.md (§4.4, Goal 5, Task 1.3, Task 1.4)
+- description: A three-step incremental migration keeping the codebase compiling at every step.
+- acceptance:
+  - Step A per domain: create the new file in the target crate/module, move the struct and its `impl` blocks, then add a temporary `pub use` re-export in `application_settings.rs` so existing consumers keep compiling
+  - Step B per file: update all consumers in `src/` to import from the new path
+  - Step C cleanup: delete `application_settings.rs` once no re-export is needed, and remove `pub mod application_settings;` from `src/config/mod.rs`
+  - Per-domain sequence: create file, copy struct + impls, move env-override logic into `apply_env_overrides()`, replace the struct in `application_settings.rs` with a `pub use`, `cargo build` clean, move the struct's tests, `cargo test` clean, repeat
+  - Recommended risk order: HeraldConfig group -> SchedulerConfig -> CitadelConfig -> ArsenalConfig/MCPServerConfig -> QueueConfig -> FileStorageConfig -> NotificationConfig -> web_server trio -> vision configs -> LLM configs -> GarrisonSettings -> Sanctum configs -> RagConfig/MemoryExtractionConfig
+  - The 29 known consumer files include `src/application/cli/commands/arsenal.rs`, `src/application/use_cases/paladin/paladin_builder.rs`, `src/infrastructure/repositories/sqlite_user_repository.rs`, `src/infrastructure/adapters/llm/config_bridge.rs`, `src/main.rs`, `src/config/setup/mod.rs`, `src/config/setup/service_runner.rs` and `src/config/user_config.rs`
+  - `src/config/user_config.rs` is the highest-risk consumer (15+ references, constructs `Settings` inline with many sub-struct defaults) and MUST be updated last; `UserServiceFactory` MUST still produce correct defaults
+  - `grep -r "application_settings" src/` MUST return zero results at the end
+- scope: incremental migration, temporary re-exports, 29 consumer files, user_config.rs risk
+
+## REQ-config-yml-backcompat
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_1/prd-decompose-application-settings.md (§4.5, §6 serialization attributes, §7 feature flags, §8.6, §10 OQ3)
+- description: `config.yml` deserialization must be byte-for-byte compatible after the move.
+- acceptance:
+  - The deserialization contract MUST NOT change; YAML key names MUST remain identical
+  - All `#[serde(default)]` and `#[serde(rename)]` attributes MUST be preserved exactly when moving structs
+  - `#[derive(...)]` lines MUST be copied exactly — no derives added or removed; special attention to `#[serde(default)]`, `#[serde(skip_serializing_if = "Option::is_none")]` and `#[cfg(feature = "...")]` gates on structs and fields
+  - Feature gates MUST travel with their struct: `FileStorageConfig` behind `s3-storage`, `NotificationConfig` fields behind `notifications`, parts of `LlmConfig` behind provider-specific flags
+  - A regression test MUST load the reference `config.test.yml` and assert field values match before and after the migration; whether to use `insta` or plain `assert_eq!` is an open decision
+- scope: config.yml schema stability, serde attributes, cfg gates, regression test
+
+## REQ-rag-config-dedup
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_1/prd-decompose-application-settings.md (§4.6, §8.7, §10 OQ2)
+- description: Consolidate the two competing `RagConfig` definitions into one.
+- acceptance:
+  - `RagConfig` currently exists twice: in `src/config/application_settings.rs` (app-settings struct) and in `crates/paladin-memory/src/services/rag_retrieval_service.rs` (service config)
+  - The canonical location MUST be `crates/paladin-memory/src/config/rag.rs`; the `application_settings.rs` version MUST be removed and replaced with a re-export from `paladin-memory`
+  - All consumers MUST be updated to the `paladin-memory` version
+  - `grep -r "struct RagConfig" crates/` MUST return exactly one result
+  - Before deleting the `application_settings` version, the two structs MUST be diffed field-by-field to confirm the `paladin-memory` version covers every field used in config loading
+- scope: RagConfig deduplication, canonical location
+
+## REQ-config-success-metrics
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_1/prd-decompose-application-settings.md (§8, §5 Non-Goals, §10 OQ4, Goal 7)
+- description: Quality gates and scope boundaries for the config decomposition.
+- acceptance:
+  - `cargo test --workspace` MUST produce zero failures after each task; all 128+ existing config-related tests MUST keep passing
+  - No file may exceed 400 lines, verified by `find crates/*/src/config src/config -name "*.rs" | xargs wc -l`
+  - `application_settings.rs` MUST be deleted by the end of Task 1.4
+  - `cargo doc --workspace --no-deps` MUST show no new public items beyond what existed before
+  - `cargo clippy --workspace -- -D warnings` MUST be clean at the end of each task; `cargo fmt --all -- --check` MUST be clean
+  - `serde` MUST be confirmed as an existing dependency of `paladin-memory` before adding config files with serde derives
+  - Explicit non-goals: no `config.yml` schema change, no new configuration options, no config-loading performance work, no notification-domain-model change, no further crate extractions, no `STABLE_API.md` change, no CLI change
+- scope: config quality gates, 400-line check, scope exclusions
+
+## REQ-orchestration-target-structure
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/prd-relocate-orchestration-services.md (§4.1, Goal 7)
+- description: Target application-layer directory structure for the four orchestrator modules.
+- acceptance:
+  - `src/application/use_cases/notification_orchestrator/` MUST contain `mod.rs` (`NotificationOrchestrator`) and `types.rs` (`NotificationServiceError`, `NotificationServiceConfig`, `NotificationServiceStats`, `NotificationDeliveryResult`, `NotificationChannelHandler`, `NotificationTemplateProcessor` — or `paladin-core` if pure value objects)
+  - `src/application/use_cases/queue_orchestrator/` MUST contain `mod.rs` (`QueueOrchestrator`) and `types.rs` (`QueueError`, `QueueServiceConfig`, other coordination types not already in `paladin-core`)
+  - `src/application/use_cases/orchestration/` MUST contain `mod.rs` (`Orchestrator`), `listener.rs` (`ListenerOrchestrator`), `scheduler.rs` (`SchedulerOrchestrator`) and `types.rs` (`OrchestrationContext` confirm/move, `OrchestratorStats`, `ListenerConfig`, `ListenerStats`, `ScheduledJob`)
+  - `src/application/use_cases/log_orchestrator/` MUST contain `mod.rs` (`LogOrchestrator`) and `types.rs` (`LogServiceConfig`, `LogMessageHandler`, other coordination types)
+  - The existing `src/application/notifications/` directory (`email_notifications.rs`, `push_notifications.rs`, `system_notifications.rs`) is a separate module of channel-specific adapters and MUST NOT be merged with `notification_orchestrator/`; both coexist
+  - No file added by this Epic may exceed 600 lines
+- scope: application/use_cases orchestrator directories, 600-line limit
+- note: shipped code places these four modules under `src/application/services/` with the same module names; `src/application/use_cases/` no longer exists. See code-verification.md.
+
+## REQ-domain-type-placement-rules
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/prd-relocate-orchestration-services.md (§4.2, Goal 2, §7.2, §7.3)
+- description: Mechanical rules deciding whether an extracted type belongs in `paladin-core` or the application layer.
+- acceptance:
+  - Struct with no `Arc<dyn Port>` fields and no async fn in impl -> pure value object -> `paladin-core` container module
+  - Enum that is a pure error type with no port references -> domain error -> `paladin-core` container module
+  - Struct holding `Arc<dyn SomePort>` or calling port methods -> service coordination type -> application layer `types.rs`
+  - Struct requiring `async_trait` to implement -> coordination/service type -> application layer
+  - Struct already in `paladin-core/src/platform/container/` -> no move needed
+  - Types already confirmed in `paladin-core`: `OrchestrationContext`, `QueueConfig`, `QueueItem`, `LogLevel`/`LogDestination`/`LogMessage`/`LogEntry`, `Notification`/`NotificationChannel`/`NotificationContent`
+  - `SchedulerOrchestrator` may still reference the concrete `ContentIndexingService`, `DataBackupService` and `EmailNotificationService` task types because they are `paladin-core` domain types — application -> `paladin-core` is a legal direction
+  - `MessageService` (used by both notification and log services) MUST be imported from `paladin-core` via the workspace dependency; `MessageService` itself is unchanged
+- scope: type placement rules, paladin-core eligibility, MessageService
+
+## REQ-six-service-relocation
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/prd-relocate-orchestration-services.md (§4.3, Goal 1, §6 incremental strategy, §7.1)
+- description: Relocate six manager-layer services, not four.
+- acceptance:
+  - `core/platform/manager/notification_service.rs` -> `application/use_cases/notification_orchestrator/` (imports `paladin_ports`, coordinates delivery via port-backed adapters)
+  - `queue_service.rs` -> `queue_orchestrator/` (coordinates between `Orchestrator` and external queue adapters)
+  - `orchestrator.rs` -> `orchestration/` (imports `listener_service`, `queue_service`, `scheduler`; complex workflow coordination)
+  - `log_service.rs` -> `log_orchestrator/` (imports `paladin_ports::output::log_port`; routes log entries via port adapters)
+  - `listener_service.rs` -> `orchestration/listener.rs` (the orchestrator depends on it directly; relocating together prevents cross-layer coupling)
+  - `scheduler.rs` -> `orchestration/scheduler.rs` (instantiates concrete `TaskService` implementations; application-layer orchestration, not pure domain scheduling)
+  - `orchestrator.rs` imports `QueueService`, `ListenerService` and `Scheduler` directly rather than through traits, so all four MUST move in the same task
+  - Each task MUST leave the workspace in a green build state; recommended order: notification -> queue -> log -> orchestrator+listener+scheduler last
+  - `log_service` moves before `orchestrator` because it has no dependencies on the other three, reducing the diff size of the most complex task
+- scope: six service relocations, sequencing, green-build invariant
+
+## REQ-manager-services-retained
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/prd-relocate-orchestration-services.md (§4.4, §4.7, §5 Non-Goals 1-3, §10 OQ1-OQ3)
+- description: What stays in `core/platform/manager/` and what is deferred.
+- acceptance:
+  - `event_manager.rs` remains (confirm in Task 2.1) — appears to be a pure event bus with no port imports
+  - `content_service.rs` remains (confirm in Task 2.1) — borderline; evaluate port dependencies
+  - `user_service.rs` remains with only an import-path update — it has port dependencies but the relocation scope exceeds this Epic and is flagged for a future Epic
+  - `admin/` and `user/` sub-modules remain untouched — all are comment-only stubs with no implementation; they will not be moved, deleted or implemented
+  - `src/core/platform/manager/mod.rs` MUST be updated to remove `pub mod` declarations for all relocated services and MUST contain declarations for at most `event_manager`, `content_service`, `user_service`, `admin`, `user`
+  - Whether a dedicated Epic should cover the full `user_service` relocation (including `UserServiceFactory`, `user_config.rs`, user CLI commands, user API controller and `SqliteUserRepository`) is an open question
+- scope: retained manager services, stub modules, deferred user_service
+
+## REQ-orchestration-consumer-import-updates
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/prd-relocate-orchestration-services.md (§4.5, Goal 6, §7.1, §8)
+- description: Update the import paths of consumers that do not themselves move.
+- acceptance:
+  - `src/config/setup/service_runner.rs` MUST switch `NotificationService` -> `application::use_cases::notification_orchestrator::NotificationOrchestrator` and `Scheduler` -> `application::use_cases::orchestration::scheduler::SchedulerOrchestrator`
+  - `src/config/user_config.rs` MUST switch `NotificationService` -> `NotificationOrchestrator` and `NotificationServiceConfig` -> `notification_orchestrator::types::NotificationServiceConfig`
+  - `src/core/platform/manager/user_service.rs` MUST switch `NotificationService` -> `NotificationOrchestrator` within the same PR/commit as Task 2.3, or its import breaks
+  - `src/application/use_cases/content/content_ingestion_service.rs` MUST switch `OrchestrationContext` to `paladin_core::platform::container::orchestration_context::OrchestrationContext`
+  - `src/infrastructure/web/user_controller.rs` has no direct notification/orchestrator dependency — verify during Task 2.1
+  - `paladin-core/Cargo.toml` MUST be checked for a `paladin-ports` dependency and, if present, it MUST be removed in Task 2.7
+- scope: consumer import updates, service_runner, user_config, user_service, content_ingestion_service
+
+## REQ-orchestrator-renaming
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/prd-relocate-orchestration-services.md (§4.6)
+- description: Rename relocated services so the layer is explicit.
+- acceptance:
+  - `NotificationService` -> `NotificationOrchestrator`; `QueueService` -> `QueueOrchestrator`; `LogService` -> `LogOrchestrator`; `ListenerService` -> `ListenerOrchestrator`; `Scheduler` -> `SchedulerOrchestrator`
+  - `Orchestrator` keeps its name — already descriptive
+  - Renaming is optional if the existing name does not conflict with a core domain type; Task 2.1 may revise these recommendations based on actual conflicts found
+- scope: service renaming, layer clarity
+
+## REQ-core-isolation-verification
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/prd-relocate-orchestration-services.md (§4.7, Goal 3, §9.1, §9.2, §9.7)
+- description: Prove `paladin-core` builds with zero port or application dependencies after relocation.
+- acceptance:
+  - `cargo build -p paladin-core` MUST succeed with zero errors and zero warnings after Task 2.7
+  - `cargo tree -p paladin-core` MUST show zero references to `paladin_ports`, `application::` or `infrastructure::`, and no `paladin_ports` edge in the dependency graph
+  - `cargo clippy -- -D warnings` MUST produce zero warnings in the modified files
+- scope: paladin-core isolation, cargo tree verification
+
+## REQ-orchestration-test-coverage
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/prd-relocate-orchestration-services.md (§4.8, Goal 5, §9.3, §9.6, §5 Non-Goals 4-8)
+- description: Test requirements for the relocation.
+- acceptance:
+  - Every test that existed before the Epic MUST pass after each individual relocation step; no test may be left failing between tasks
+  - For each domain type extracted to `paladin-core` in Task 2.2 (e.g. `QueueStats`, `NotificationServiceStats`), a `#[cfg(test)] mod tests` block MUST exist in the same file covering `Default::default()` validity where applicable, `serde_json` round-trips where `Serialize`/`Deserialize` are derived, and error-variant `Display` formatting where the type is an error enum
+  - Existing integration tests in `tests/` referencing relocated services MUST have their import paths updated; no new integration tests are required
+  - Explicit non-goals: no new end-to-end notification/queue/log integration suites, no behavioural change to any relocated service, no `config.yml` schema change, no feature-flagging of the six services (all compiled unconditionally)
+- scope: test preservation, domain type unit tests, scope exclusions
+
+## REQ-orchestration-no-reexport-shims
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_2/prd-relocate-orchestration-services.md (§5 Non-Goal 7, §10 OQ4)
+- description: No backward-compatibility re-export shims are added for the relocated services.
+- acceptance:
+  - `pub use` re-exports MUST NOT be added to `src/lib.rs` pointing from old paths to new
+  - "Backward compatibility is scoped to compilation — callers will update their import paths"
+  - The PRD records this as an open question: whether `src/lib.rs` or `src/prelude.rs` should add old-to-new re-exports "should be confirmed with the team before implementation begins"
+- scope: no shim re-exports, migration burden on callers
+- note: the M6 milestone-overview DOC (Epic 2 AC 6) requires exactly the opposite — facade re-exports maintaining backward compatibility. See INGEST-CONFLICTS.md WARNINGS.
+
+## REQ-maneuver-submodule-structure
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md (§4.1, Goal 3, §9.9)
+- description: A unified `maneuver/` sub-module inside `paladin-battalion`.
+- acceptance:
+  - `paladin-battalion/src/maneuver/` MUST contain `mod.rs` (Maneuver struct, `ManeuverConfig`, re-exports), `parser/{mod.rs, lexer.rs, ast.rs, error.rs}`, `service.rs` and `visualizer.rs`
+  - The flat files `maneuver_service.rs` and `flow_visualizer.rs` MUST be replaced by this sub-module
+  - All other `paladin-battalion` files remain unchanged: `campaign_service.rs`, `chain_of_command_service.rs`, `commander.rs` (imports updated only), `conclave_execution_service.rs`, `council_service.rs`, `error_aggregation.rs`, `formation_service.rs`, `grove_service.rs`, `in_memory_registry.rs`, `phalanx_service.rs`, `retry.rs`
+  - No file added or modified by this Epic may exceed 1,000 lines
+- scope: paladin-battalion/src/maneuver, sub-module layout
+
+## REQ-maneuver-files-moved-from-core
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md (§4.2, Goals 1-2, §8)
+- description: Physically move the parser and Maneuver domain type out of `paladin-core`.
+- acceptance:
+  - `paladin-core/src/platform/container/battalion/parser/mod.rs` (250 lines) -> `paladin-battalion/src/maneuver/parser/mod.rs`
+  - `.../parser/lexer.rs` (269 lines) -> `.../maneuver/parser/lexer.rs`
+  - `.../parser/ast.rs` (267 lines) -> `.../maneuver/parser/ast.rs`
+  - `.../parser/error.rs` (188 lines) -> `.../maneuver/parser/error.rs`
+  - `.../battalion/maneuver.rs` (443 lines) -> `.../maneuver/mod.rs` (combined with new sub-module declarations)
+  - Content MUST NOT change — only location and crate context
+  - Adding re-exports from `paladin-core` back to `paladin-battalion` is impossible (circular dependency); backward-compatible re-exports live in the facade only
+- scope: parser/lexer/ast/error/maneuver.rs relocation
+
+## REQ-maneuver-files-reorganized
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md (§4.3, §7.4)
+- description: Rename the two existing `paladin-battalion` Maneuver files into the sub-module.
+- acceptance:
+  - `src/maneuver_service.rs` (984 lines) -> `src/maneuver/service.rs`, with import path updates
+  - `src/flow_visualizer.rs` (663 lines) -> `src/maneuver/visualizer.rs`, with import path updates
+  - When `maneuver.rs` becomes `maneuver/mod.rs`, Rust treats the module identically; content and `use super::*` references inside `#[cfg(test)]` blocks remain valid beyond cross-crate import updates
+- scope: maneuver_service.rs, flow_visualizer.rs renames
+
+## REQ-maneuver-inline-tests
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md (§4.4, Goals 6-7, §6 inline test strategy, §7.1, §9.4, §9.5, §11 OQ1)
+- description: Inline tests travel with their source; workspace-level test files are untouched.
+- acceptance:
+  - All Maneuver DSL tests use `#[cfg(test)] mod tests { use super::*; … }` at the bottom of each source file and move automatically with the file; no test code is rewritten or consolidated
+  - Confirmed inline counts: `parser/mod.rs` 4, `parser/lexer.rs` 8, `parser/error.rs` 5, `parser/ast.rs` 9, `maneuver.rs` 9, `flow_visualizer.rs` 21, `commander.rs` 26 (not moving); `maneuver_service.rs` count TBD and MUST be re-verified with `grep -c "#\[test\]"` during Task 3.1
+  - `tests/unit/parser_tests.rs` (57 tests) and `tests/unit/maneuver_domain_tests.rs` (21 tests) MUST remain unchanged and compile via facade re-exports
+  - `cargo test -p paladin-battalion` MUST pass with a total inline count of at least 35 in `src/maneuver/` (4+8+5+9+9 from `paladin-core` plus 21 from `flow_visualizer.rs`)
+  - `paladin-core/tests/` MUST be re-confirmed to contain no parser or Maneuver integration test files before proceeding
+  - If any test in the original `maneuver.rs` relied on `use super::*` to import types from `paladin-core`'s `battalion/` module, those imports MUST be made explicit
+- scope: inline tests, workspace test files, test counts
+
+## REQ-core-maneuver-cleanup
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md (§4.5, Goal 5, §7.2, §9.1, §9.6)
+- description: Remove every Maneuver/parser reference from `paladin-core`.
+- acceptance:
+  - `pub mod parser;` and `pub mod maneuver;` MUST be removed from `crates/paladin-core/src/platform/container/battalion/mod.rs`
+  - The `parser/` directory and `maneuver.rs` MUST be deleted from `paladin-core`
+  - `cargo build -p paladin-core` MUST succeed with zero parser-related code compiled, verified by `cargo build -p paladin-core --message-format=json 2>&1 | grep parser` returning nothing
+  - `grep -r "parser\|maneuver" crates/paladin-core/src/platform/container/battalion/` MUST return no file paths
+  - The battalion `mod.rs` MUST still compile, retaining `Formation`, `Phalanx`, `Campaign`, `ChainOfCommand`, `Conclave`, `Council`, `Grove` and the shared types `BattalionConfig`, `BattalionResult`, `BattalionStrategy` — none of which depend on the parser
+- scope: paladin-core cleanup, battalion/mod.rs, retained battalion types
+
+## REQ-maneuver-facade-reexports
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md (§4.6, Goal 4, §7.3, §11 OQ2)
+- description: Facade re-exports that keep every original Maneuver import path resolving.
+- acceptance:
+  - `src/core/platform/mod.rs` MUST replace `pub use paladin_core::platform::container;` with an explicit `pub mod container` block
+  - A wildcard at the `container` level MUST NOT be used: it would import the `battalion` module name from `paladin-core` and collide with the local `pub mod battalion` declaration (duplicate definition error). Every non-battalion container sub-module MUST be re-exported explicitly, with the complete list confirmed during Task 3.3 by reading `paladin-core/src/platform/container/mod.rs`
+  - Inside the local `pub mod battalion`, `pub use paladin_core::platform::container::battalion::*;` IS safe, because by Task 3.3 `paladin-core`'s battalion module no longer exports `parser` or `maneuver`
+  - `pub mod parser { pub use paladin_battalion::maneuver::parser::*; }` and `pub mod maneuver { pub use paladin_battalion::maneuver::{AgentResult, ErrorStrategy, ExecutionStatus, Maneuver, ManeuverConfig, ManeuverError, ManeuverResult, OutputFormat}; }` MUST be injected; the type list may be incomplete and Task 3.1 MUST verify every type currently exported from `paladin::core::platform::container::battalion::maneuver` is included (`AgentResult` is one candidate needing addition)
+  - No consumer file needs modification: `src/application/cli/commands/{maneuver,battalion}.rs`, `src/application/cli/config/battalion_config.rs`, `tests/unit/parser_tests.rs` and `tests/unit/maneuver_domain_tests.rs` all resolve via these re-exports
+  - Task 3.1 MUST confirm no consumer imports `paladin::core::platform::container` as a module and calls methods on it as a module object, which the `pub use` -> `pub mod` change could affect
+- scope: facade container re-export block, parser/maneuver forwarding modules
+
+## REQ-maneuver-battalion-import-updates
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md (§4.7, Task 3.1 step 5, Task 3.2 step 8, §11 OQ4)
+- description: Update import paths inside `paladin-battalion`, including inline fully-qualified paths.
+- acceptance:
+  - `maneuver/service.rs`: `paladin_core::platform::container::battalion::maneuver::{…}` -> `super::{…}` or `crate::maneuver::{…}`; `…::battalion::parser::FlowExpression` -> `super::parser::FlowExpression`
+  - `maneuver/visualizer.rs`: `…::battalion::parser::FlowExpression` -> `super::parser::FlowExpression`
+  - `commander.rs`: `…::battalion::maneuver::{Maneuver, ManeuverConfig}` -> `crate::maneuver::{Maneuver, ManeuverConfig}`; `…::battalion::parser::FlowParser` -> `crate::maneuver::parser::FlowParser`
+  - `commander.rs` also contains inline fully-qualified path expressions in function bodies (e.g. `paladin_core::platform::container::battalion::maneuver::ErrorStrategy::FailFast` in match arms, `…::Maneuver::new(…)` in constructor calls) that editing `use` blocks alone will not catch. Task 3.1 MUST produce a `grep -n "paladin_core::platform::container::battalion" crates/paladin-battalion/src/commander.rs` list and Task 3.2 MUST address every occurrence
+  - `in_memory_registry.rs` MUST be verified during Task 3.1 for imports of `…::battalion::maneuver` or `parser`; if found it joins the update list
+- scope: paladin-battalion import updates, commander.rs inline paths
+
+## REQ-maneuver-battalion-lib-exports
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md (§4.8, §11 OQ3)
+- description: Crate-root re-exports in `paladin-battalion`'s `lib.rs`.
+- acceptance:
+  - `pub mod maneuver_service;` and `pub mod flow_visualizer;` MUST be removed; `pub mod maneuver;` MUST be added
+  - `pub use maneuver::parser::{FlowExpression, FlowParseError, FlowParser};` and `pub use maneuver::{ErrorStrategy, ExecutionStatus, Maneuver, ManeuverConfig, ManeuverError, ManeuverResult, ManeuverExecutionService, OutputFormat};` MUST be added so the facade's forwarding modules resolve
+  - Whether `ManeuverExecutionService` needs the crate-root re-export MUST be checked against actual direct consumers
+- scope: paladin-battalion lib.rs, crate-root re-exports
+
+## REQ-maneuver-cargo-dependency-check
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md (§4.9, §4.10, §9.2, §9.3, §9.6 to §9.8, §5 Non-Goals)
+- description: Dependency and quality verification for the Maneuver move.
+- acceptance:
+  - `paladin-battalion/Cargo.toml`: the parser is dependency-free beyond `serde` and `thiserror`, which `paladin-battalion` already has, so no new dependencies are expected; `paladin-core` remains a dependency for the other battalion types
+  - `paladin-core/Cargo.toml`: any dependency needed only by the parser (e.g. `serde` derive for parser types) MUST be removed if no other `paladin-core` type needs it, otherwise left in place
+  - `cargo build -p paladin-battalion` and `cargo build --workspace` MUST succeed with zero errors; `cargo test --workspace` MUST pass including the 57 parser and 21 maneuver domain tests with no test-file modification
+  - `cargo clippy --workspace -- -D warnings` and `cargo fmt --all -- --check` MUST be clean; `cargo doc -p paladin-battalion --no-deps` MUST document the complete Maneuver subsystem under `paladin_battalion::maneuver`
+  - Explicit non-goals: no logic change to the DSL, no new Flow DSL operators, no `config.yml` change, no relocation of the other battalion patterns (their domain types stay in `paladin-core`), no public type renames, no `STABLE_API.md` change, no workspace test-file changes, no relocation of `commander.rs`
+- scope: Cargo.toml verification, quality gates, scope exclusions
+
+## REQ-resilience-module-structure
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_4/prd-relocate-circuitbreaker-infra.md (§4.1, §4.2, §4.9, §4.10, Goal 2, §6 module visibility, §5 Non-Goals)
+- description: Create `src/infrastructure/resilience/` as the canonical home for resilience primitives.
+- acceptance:
+  - `src/infrastructure/resilience/mod.rs` MUST be created with a module-level rustdoc comment stating it is the canonical home for infrastructure-layer resilience primitives, a `pub mod circuit_breaker;` declaration, and a comment block listing planned additions (`retry` — configurable retry policy with exponential backoff; `rate_limiter` — token-bucket limiter for LLM API calls; `bulkhead` — concurrency limiter for external service calls)
+  - `pub mod resilience;` MUST be added to `src/infrastructure/mod.rs`, preferably in alphabetical order
+  - `circuit_breaker` MUST be `pub mod` inside `resilience/mod.rs` and `resilience` MUST be `pub mod` inside `infrastructure/mod.rs`, making `paladin::infrastructure::resilience::circuit_breaker` fully public — consistent with the old path's public accessibility
+  - `src/lib.rs` MUST be verified to expose `pub mod infrastructure;` or equivalent; if `infrastructure` is private or re-exported differently, visibility MUST be updated
+  - The scaffold is documentation-only: no retry policy, rate limiter or bulkhead implementation is part of this Epic; nothing else in the infrastructure layer changes
+- scope: src/infrastructure/resilience, module scaffold, visibility
+
+## REQ-circuitbreaker-relocation
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_4/prd-relocate-circuitbreaker-infra.md (§4.1, §4.3, Goal 1, §5 Non-Goals, §6 dependency direction, §7)
+- description: Move `CircuitBreaker` and `CircuitState` into the infrastructure layer without behavioural change.
+- acceptance:
+  - `CircuitBreaker` and `CircuitState` MUST move from `src/application/use_cases/paladin/circuit_breaker.rs` to `src/infrastructure/resilience/circuit_breaker.rs`
+  - The three states, thresholds and timeout logic MUST NOT change — this is a pure relocation with no functional modification
+  - The internal import `use crate::application::use_cases::paladin::error::PaladinError;` remains valid after the move (same facade crate) and MUST NOT be changed unless `cargo build` fails; confirm with `cargo check` before updating consumers
+  - `PaladinError::CircuitBreakerOpen` stays in the application layer; `PaladinError` is unchanged
+  - No crate extraction: the circuit breaker stays in the `paladin` facade crate and a `paladin-infra` crate is explicitly out of scope
+  - No `CircuitBreakerPort` trait abstraction; that is a future consideration
+  - `PaladinExecutionService` importing an infrastructure type is a technically-inverted layering accepted as a pragmatic trade-off within the facade crate, because it is a module-level move inside one crate and the breaker is injected as an `Arc<CircuitBreaker>` parameter rather than constructed inside the service
+  - The retry logic embedded in `mcp_sse_adapter.rs` and `api_content_deliverer.rs` MUST NOT be consolidated into the resilience module during this Epic
+- scope: CircuitBreaker, CircuitState, relocation, layering trade-off
+
+## REQ-circuitbreaker-rustdoc-updates
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_4/prd-relocate-circuitbreaker-infra.md (§4.4, Goal 6, §7 doc test compilation, §8.3)
+- description: Update every inline rustdoc example in the moved file.
+- acceptance:
+  - Every `use` statement inside `///` or `//!` doc examples within `circuit_breaker.rs` MUST change from `use paladin::application::use_cases::paladin::circuit_breaker::CircuitBreaker;` to `use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;`
+  - This applies to both the module-level `//!` block examples and all method-level `///` examples
+  - `cargo test --doc` MUST pass — all rustdoc examples in `circuit_breaker.rs` and `paladin_execution_service.rs` MUST compile with the new path
+- scope: rustdoc examples, doc tests
+
+## REQ-paladin-execution-service-import
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_4/prd-relocate-circuitbreaker-infra.md (§4.5, Goal 3, §7 clippy)
+- description: Update `PaladinExecutionService` to the new import path atomically with the move.
+- acceptance:
+  - `src/application/use_cases/paladin/paladin_execution_service.rs` MUST change `use crate::application::use_cases::paladin::circuit_breaker::CircuitBreaker;` to `use crate::infrastructure::resilience::circuit_breaker::CircuitBreaker;`
+  - All inline rustdoc examples inside `paladin_execution_service.rs` referencing the old path MUST be updated
+  - This MUST be completed in the same commit as the file move, otherwise the move triggers `unused_imports` warnings
+- scope: PaladinExecutionService import, atomic commit
+
+## REQ-circuitbreaker-example-updates
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_4/prd-relocate-circuitbreaker-infra.md (§4.6, §4.8, Goal 4, §8.9)
+- description: Update all 15 example files and the README code sample.
+- acceptance:
+  - These 15 files MUST switch to the new canonical path: `basic_paladin.rs`, `agent_handoffs.rs`, `autonomous_full_config.rs`, `autonomous_planning.rs`, `autonomous_prompt_generation.rs`, `battalion_checkpoint_recovery.rs`, `citadel_autosave.rs`, `citadel_restore.rs`, `dynamic_temperature.rs`, `herald_custom_formatter.rs`, `herald_json_output.rs`, `herald_markdown_output.rs`, `paladin_with_config.rs`, `vision_analysis.rs`, `vision_battalion.rs`
+  - `README.md` (around lines 659-660) MUST have its `use` statement updated and surrounding prose corrected if it names the module location
+  - All 15 examples, the 3 test files and `README.md` MUST compile with the new import path
+- scope: 15 example files, README code sample
+
+## REQ-circuitbreaker-test-updates
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_4/prd-relocate-circuitbreaker-infra.md (§4.7, Goal 5, §8.1, §8.2, §8.4 to §8.6)
+- description: Update the three CLI test files and pass all quality gates.
+- acceptance:
+  - `tests/cli/paladin_execution_test.rs`, `tests/cli/tool_integration_test.rs` and `tests/cli/error_handling_test.rs` MUST switch to `use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;`
+  - `cargo build --workspace` MUST succeed with zero errors; `cargo test` MUST pass with all existing `CircuitBreaker` tests compiling and passing
+  - `cargo clippy --workspace -- -D warnings` MUST report zero warnings; `cargo fmt --all -- --check` MUST pass; `cargo doc --workspace --no-deps` MUST produce clean documentation with no broken links
+- scope: CLI test files, quality gates
+
+## REQ-circuitbreaker-old-path-retired
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_4/prd-relocate-circuitbreaker-infra.md (§4.11, Goal 7, §8.7, §4.1)
+- description: The old module path is intentionally broken; no re-export is left behind.
+- acceptance:
+  - `pub mod circuit_breaker;` MUST be removed from `src/application/use_cases/paladin/mod.rs`
+  - `paladin::application::use_cases::paladin::circuit_breaker` MUST NO LONGER resolve after this Epic — "no `pub use` re-export is added"; "the old path is intentionally retired"
+  - Grepping `mod.rs` MUST confirm no lingering re-export
+- scope: old module path retirement, no re-export
+- note: the M6 milestone-overview DOC (Epic 4 AC 5) requires the facade to re-export `CircuitBreaker` at the original path for backward compatibility. See INGEST-CONFLICTS.md WARNINGS. Shipped code follows this PRD.
+
+## REQ-circuitbreaker-stable-api-update
+- source: /workspace/.project/Milestone_6-Architectural-Refinements/Epic_4/prd-relocate-circuitbreaker-infra.md (§4.12, Goal 8, §7 final-api.txt, §8.8, §9 OQ1)
+- description: Record the new canonical path in the API surface documents.
+- acceptance:
+  - `STABLE_API.md` MUST remove the entry for `paladin::application::use_cases::paladin::circuit_breaker` and add `paladin::infrastructure::resilience::circuit_breaker` as the new stable module location, with `CircuitBreaker` and `CircuitState` as its stable public types
+  - `final-api.txt` MUST be regenerated after running `cargo doc --workspace --no-deps`, and the old path MUST be verified absent
+  - `api_surface_current.txt` may also need updating alongside `final-api.txt`
+  - Whether an automated regeneration script exists (e.g. `make api-surface`) MUST be confirmed with the team before closing the Epic
+- scope: STABLE_API.md, final-api.txt, api_surface_current.txt

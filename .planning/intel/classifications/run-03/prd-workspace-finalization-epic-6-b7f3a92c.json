@@ -1,0 +1,34 @@
+{
+  "source_path": "/workspace/.project/Milestone_5-Workspace-Decomposition/Epic_6/prd-workspace-finalization-epic-6.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Workspace Finalization — Facade Crate, CI Pipeline, and Build Benchmarks",
+  "summary": "Requirements for completing Milestone 5 workspace decomposition: facade crate audit plus prelude module, per-crate CI isolation jobs, and build-time benchmark report.",
+  "scope": [
+    "paladin facade crate",
+    "paladin::prelude module",
+    "GitHub Actions CI (ci.yml, feature-flags.yml)",
+    "crate-isolation job",
+    "devcontainer GitHub CLI install (.devcontainer/Dockerfile.dev)",
+    "build-time benchmarks",
+    "paladin-core",
+    "paladin-ports",
+    "paladin-battalion",
+    "paladin-llm",
+    "paladin-memory",
+    "workspace.dependencies in Cargo.toml"
+  ],
+  "cross_refs": [
+    "project/Milestone_5-Workspace-Decomposition/Epic_6/build-benchmarks.md",
+    "STABLE_API.md",
+    "src/lib.rs",
+    "src/prelude.rs",
+    "scripts/benchmark-builds.sh",
+    ".devcontainer/Dockerfile.dev",
+    "application_settings.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

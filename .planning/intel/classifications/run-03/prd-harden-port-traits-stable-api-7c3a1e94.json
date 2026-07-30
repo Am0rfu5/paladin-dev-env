@@ -1,0 +1,41 @@
+{
+  "source_path": "/workspace/.project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Harden Port Traits as the Stable Public API Contract",
+  "summary": "Requirements to make Paladin's ~20 port traits the curated, documented, stable public API and restrict internal implementation visibility.",
+  "scope": [
+    "port traits",
+    "src/lib.rs glob re-exports",
+    "public API surface",
+    "pub(crate) visibility hardening",
+    "rustdoc for port traits",
+    "STABLE_API.md",
+    "cargo-public-api CI check",
+    "deprecation warnings",
+    "import path updates in examples and tests",
+    "LlmPort",
+    "GarrisonPort",
+    "SanctumPort",
+    "ArsenalPort",
+    "CitadelPort",
+    "QueuePort",
+    "NotificationPort",
+    "FileStoragePort",
+    "EmbeddingPort"
+  ],
+  "cross_refs": [
+    "notes/hexagonal-arch.md",
+    "docs/Design/Design_and_Architecture.md",
+    "STABLE_API.md",
+    "CONTRIBUTING.md",
+    "../README.md",
+    ".public-api-baseline.txt",
+    "scripts/check-deprecations.sh",
+    "scripts/check-all-examples.sh"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD provided and authoritative; content confirms PRD (user stories US-1..US-5 with acceptance criteria, functional requirements, non-goals, success metrics). Status field reads 'Draft'."
+}

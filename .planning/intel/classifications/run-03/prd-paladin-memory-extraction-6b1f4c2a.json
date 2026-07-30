@@ -1,0 +1,28 @@
+{
+  "source_path": "/workspace/.project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Extract `paladin-memory` Crate",
+  "summary": "Requirements for extracting garrison, sanctum, and memory service components from the paladin monolith into a feature-gated paladin-memory crate.",
+  "scope": [
+    "paladin-memory crate",
+    "InMemoryGarrison",
+    "SqliteGarrison",
+    "TokenCounter / TiktokenCounter",
+    "InMemorySanctum",
+    "QdrantSanctumAdapter",
+    "MemoryExtractionService",
+    "RagRetrievalService",
+    "paladin_memory::prelude",
+    "feature flags (sqlite, qdrant, content-processing)",
+    "facade re-exports in src/lib.rs",
+    "workspace Cargo.toml dependencies"
+  ],
+  "cross_refs": [
+    "tasks-paladin-memory-extraction.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD provided and authoritative; content signals (Status: Draft, Goals, prd- filename) agree."
+}

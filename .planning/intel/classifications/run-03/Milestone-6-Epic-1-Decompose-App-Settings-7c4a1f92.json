@@ -1,0 +1,27 @@
+{
+  "source_path": "/workspace/.project/Milestone_6-Architectural-Refinements/Epic_1/Milestone_6-Epic_1-Decompose_App_Settings.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 1: Decompose `application_settings.rs` into Per-Domain Configuration Modules",
+  "summary": "Epic plan to split the 3,172-line application_settings.rs into per-domain config modules under a config/ directory with a composing root Settings struct.",
+  "scope": [
+    "src/config/application_settings.rs",
+    "config/ module directory",
+    "Settings root struct",
+    "QueueConfig",
+    "FileStorageConfig",
+    "NotificationConfig",
+    "MCPServerConfig",
+    "LlmProviderConfig",
+    "GarrisonConfig",
+    "WebServerConfig",
+    "LoggingConfig",
+    "environment variable overrides",
+    "config.yml deserialization"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content carries PRD-like signals (Objective, Acceptance Criteria, Tasks with deliverables and effort estimates) that would otherwise suggest PRD; manifest override retained."
+}

@@ -1,0 +1,33 @@
+{
+  "source_path": "/workspace/.project/Milestone_6-Architectural-Refinements/overview/Milestone_6-Tier_3-Architectural-Refinements.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 6: Architectural Refinements",
+  "summary": "Milestone plan for four refactoring Epics: config decomposition, manager service relocation, Maneuver DSL co-location, and CircuitBreaker relocation.",
+  "scope": [
+    "application_settings.rs",
+    "per-domain configuration modules",
+    "core/platform/manager services",
+    "notification_service.rs",
+    "queue_service.rs",
+    "orchestrator.rs",
+    "log_service.rs",
+    "Maneuver DSL",
+    "FlowParser",
+    "FlowExpression",
+    "paladin-core",
+    "paladin-battalion",
+    "CircuitBreaker",
+    "hexagonal layer rules"
+  ],
+  "cross_refs": [
+    "STABLE_API.md",
+    "README.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content contains acceptance criteria and task lists (PRD/plan-like signals) that were not used for classification per manifest override."
+}

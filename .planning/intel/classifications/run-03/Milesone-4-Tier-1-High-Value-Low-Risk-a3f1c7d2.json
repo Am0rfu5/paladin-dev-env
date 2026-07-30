@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_4-Refactor-Crates-Features/Milestone-Overview/Milesone-4-Tier-1-High-Value-Low-Risk.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 1: High-Value, Low-Risk Foundations",
+  "summary": "Milestone plan for Tier 1 Paladin refactoring: expanded Cargo feature flags, port trait visibility hardening, and CLI isolation from library compilation.",
+  "scope": ["Cargo feature flags", "port traits", "paladin-cli binary", "compile time", "public API surface", "workspace decomposition prerequisites", "redis-queue", "s3-storage", "actix-web", "LLM provider clients"],
+  "cross_refs": ["Cargo.toml", "src/bin/paladin-cli.rs", "application_settings.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content also shows milestone/epic planning with success criteria and scope boundaries (PRD-like signals), but manifest overrides."
+}

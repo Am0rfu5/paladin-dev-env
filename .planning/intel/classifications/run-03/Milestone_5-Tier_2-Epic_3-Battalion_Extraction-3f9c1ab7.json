@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_5-Workspace-Decomposition/Epic_3/Milestone_5-Tier_2-Epic_3-Battalion_Extraction.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 3: Extract `paladin-battalion` Crate",
+  "summary": "Epic plan to extract battalion orchestration execution services and Commander router into a standalone paladin-battalion crate with isolated dependencies.",
+  "scope": ["paladin-battalion crate", "paladin-core", "paladin-ports", "battalion execution services", "Commander strategy router", "Maneuver DSL", "flow visualizer", "paladin facade crate", "dependency isolation"],
+  "cross_refs": ["src/application/use_cases/battalion/", "core/platform/container/battalion/parser/", "crates/paladin-battalion/", "src/application/use_cases/battalion/maneuver_service.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content also carries PRD-like signals (acceptance criteria, task breakdown, deliverables); manifest override retained per instructions."
+}
