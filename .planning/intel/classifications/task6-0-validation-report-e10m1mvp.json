@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_10/task6.0-validation-report.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Task 6.0 - Validation & Quality Assurance Report",
+  "summary": "Validation and QA report for Epic 10 Task 6.0, recording unit, integration, coverage, quality, security, and Docker check results.",
+  "scope": ["unit test suite", "integration test suite", "unit test coverage", "code quality checks", "security auditing", "Docker validation", "Paladin codebase"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC provided and treated as authoritative; content is a status/results report with no decisions or requirements, consistent with DOC."
+}

@@ -1,0 +1,7 @@
+docs:
+  - path: ".project/Deferred-QA-CICD-Completion/DEFERRED_COVERAGE.md"
+    type: DOC
+  - path: ".project/Deferred-QA-CICD-Completion/Epic_25/prd-cicd-pipeline-enhancement.md"
+    type: PRD
+  - path: ".project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md"
+    type: PRD

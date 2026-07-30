@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_4/tasks-battalion-orchestration.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Task List: Battalion Orchestration System (Epic 4)",
+  "summary": "Phased TDD task list and relevant-files inventory for implementing Epic 4 Battalion orchestration patterns.",
+  "scope": ["Battalion orchestration", "Formation", "Phalanx", "Campaign", "Chain of Command", "BattalionPort", "retry logic", "error aggregation"],
+  "cross_refs": ["prd-battalion-orchestration.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative; content is an implementation task checklist referencing prd-battalion-orchestration.md."
+}

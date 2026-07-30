@@ -1,0 +1,27 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_4/epic4.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 4: Battalion Orchestration",
+  "summary": "Epic defining Battalion orchestration patterns — Formation, Phalanx, Campaign, Chain of Command — with domain types, ports, services, tests, and acceptance criteria.",
+  "scope": [
+    "Battalion orchestration",
+    "Formation (sequential execution)",
+    "Phalanx (concurrent execution)",
+    "Campaign (DAG graph execution)",
+    "Chain of Command (hierarchical delegation)",
+    "BattalionConfig",
+    "BattalionResult",
+    "ErrorStrategy",
+    "AggregationStrategy",
+    "DelegationStrategy",
+    "BattalionPort",
+    "FormationExecutionService",
+    "PhalanxExecutionService"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content signals actually indicate PRD/SPEC hybrid (user stories, acceptance criteria, Rust type/port definitions, test requirements, definition of done); manifest override retained per instructions."
+}

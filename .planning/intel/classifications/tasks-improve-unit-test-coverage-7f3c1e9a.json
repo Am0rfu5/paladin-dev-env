@@ -1,0 +1,28 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/unit-test-improvements/tasks-improve-unit-test-coverage.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "tasks-improve-unit-test-coverage",
+  "summary": "Task checklist tracking unit test coverage improvements across adapters, CLI commands, config, repositories, and use cases toward an 85% coverage target.",
+  "scope": [
+    "unit test coverage",
+    "src/main.rs",
+    "user_controller",
+    "sqlite_user_repository",
+    "MinIO adapter",
+    "OpenAI adapter",
+    "Anthropic adapter",
+    "DeepSeek adapter",
+    "content_ingestion_service",
+    "content_aggregator_service",
+    "CLI commands (agent, arsenal, battalion, interactive, user_commands)",
+    "config/user_config",
+    "config/setup/service_runner",
+    "cargo llvm-cov"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC treated as authoritative. Content is a task/progress checklist with no decision, user stories, or API contracts, consistent with DOC."
+}

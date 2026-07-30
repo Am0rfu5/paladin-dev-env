@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_6/prd-provider-expansion.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: LLM Provider Expansion",
+  "summary": "Requirements for expanding Paladin LLM provider support to DeepSeek and Anthropic with per-Paladin configuration and a feature detection API.",
+  "scope": ["LLM providers", "DeepSeek adapter", "Anthropic adapter", "OpenAI adapter", "LlmPort trait", "ProviderCapabilities", "LlmProviderFactory", "configuration system", "error mapping", "streaming", "PaladinBuilder"],
+  "cross_refs": ["src/infrastructure/adapters/llm/deepseek_adapter.rs", "src/infrastructure/adapters/llm/anthropic_adapter.rs", "src/config/application_settings.rs", "config.yml"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

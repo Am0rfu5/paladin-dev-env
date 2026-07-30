@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_2/tasks-garrison-memory-system.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Task List: Garrison Memory System Implementation",
+  "summary": "Task checklist and relevant-files inventory for implementing the Garrison memory system in Epic 2.",
+  "scope": ["Garrison memory system", "GarrisonPort", "in-memory garrison", "SQLite garrison", "token counter", "garrison configuration", "Paladin builder integration"],
+  "cross_refs": ["prd-garrison-memory-system.md", "docs/GARRISON.md", "migrations/001_create_garrison_tables.sql", "config.yml", "config.test.yml"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

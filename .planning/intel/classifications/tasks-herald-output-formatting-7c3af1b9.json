@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_8/tasks-herald-output-formatting.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Task List: Herald Output Formatting System",
+  "summary": "Epic 8 task checklist for building the Herald output formatting system across core, application, and infrastructure layers.",
+  "scope": ["Herald", "output formatting", "JSON formatter", "Markdown formatter", "Table formatter", "Herald registry", "Epic 8"],
+  "cross_refs": ["docs/HERALD.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

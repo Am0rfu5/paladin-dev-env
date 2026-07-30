@@ -1,0 +1,32 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_5/prd-commander-strategy-router.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Commander Strategy Router",
+  "summary": "Requirements for a Commander unified interface that routes multi-Paladin execution across Formation, Phalanx, Campaign, and ChainOfCommand strategies, including Auto selection.",
+  "scope": [
+    "Commander",
+    "BattalionStrategy",
+    "Auto strategy selection",
+    "Formation",
+    "Phalanx",
+    "Campaign",
+    "ChainOfCommand",
+    "BattalionConfig",
+    "BattalionResult",
+    "ErrorStrategy",
+    "telemetry",
+    "builder pattern"
+  ],
+  "cross_refs": [
+    "./epic5.md",
+    "../Paladin%20Project%20Completion%20Plan.md",
+    "../Epic_4/",
+    "../../../docs/Design/Design_and_Architecture.md",
+    "../../../notes/hexagonal-arch.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_1/epic1.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 1: Paladin Domain Foundation",
+  "summary": "Epic defining the Paladin core domain entity with configuration, builder, execution service, tests, and acceptance criteria.",
+  "scope": ["Paladin domain entity", "PaladinData", "PaladinStatus", "PaladinConfig", "PaladinPort", "PaladinBuilder", "PaladinExecutionService", "stop words", "max_loops", "LlmPort"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC treated as authoritative. Content signals were mixed (user stories + acceptance criteria => PRD; Rust type/trait contracts => SPEC); manifest override applied."
+}

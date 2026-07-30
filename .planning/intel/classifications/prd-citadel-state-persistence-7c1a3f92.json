@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_7/prd-citadel-state-persistence.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Citadel State Persistence",
+  "summary": "Requirements for automatic file-based JSON persistence and restoration of Paladin and Battalion state, including checkpoint resumption.",
+  "scope": ["Citadel", "state persistence", "Paladin", "Battalion", "Garrison memory", "PaladinBuilder restore_from", "Formation", "Phalanx", "Campaign", "JSON state files", "state directory configuration"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

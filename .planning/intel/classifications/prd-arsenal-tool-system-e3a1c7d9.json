@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_3/prd-arsenal-tool-system.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Arsenal Tool System",
+  "summary": "Requirements for the Arsenal Tool System enabling Paladins to discover and invoke external MCP tools over STDIO and SSE transports.",
+  "scope": ["Arsenal Tool System", "Model Context Protocol (MCP)", "Armament", "ArsenalPort", "ArsenalRegistry", "MCPClient", "MCPStdioAdapter", "SSE transport", "STDIO transport", "Paladin"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

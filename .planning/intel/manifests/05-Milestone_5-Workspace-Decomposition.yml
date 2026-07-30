@@ -1,0 +1,41 @@
+docs:
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_1/decisions/battalion-result-upward-dependency-decision.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_1/decisions/battalion-result-upward-dependency-options.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_1/prd-workspace-initialization-and-paladin-core-extraction.md"
+    type: PRD
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_1/tasks-workspace-initialization-and-paladin-core-extraction.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_2/Milestone_5-Tier_2-Workspace-Decomposition-Epic_2.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md"
+    type: PRD
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_2/tasks-paladin-ports-extraction.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_3/Milestone_5-Tier_2-Epic_3-Battalion_Extraction.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_3/prd-paladin-battalion-extraction.md"
+    type: PRD
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_3/tasks-paladin-battalion-extraction.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_4/Milestone_5-Epic_4.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md"
+    type: PRD
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_4/tasks-paladin-llm-extraction.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_5/Milestone_5-Epic_5.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_5/prd-paladin-memory-extraction.md"
+    type: PRD
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_5/tasks-paladin-memory-extraction.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_6/build-benchmarks.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_6/prd-workspace-finalization-epic-6.md"
+    type: PRD
+  - path: ".project/Milestone_5-Workspace-Decomposition/Epic_6/tasks-workspace-finalization-epic-6.md"
+    type: DOC
+  - path: ".project/Milestone_5-Workspace-Decomposition/overview/Milestone_5-Tier_2-Workspace-Decomposition.md"
+    type: DOC

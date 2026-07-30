@@ -1,0 +1,39 @@
+docs:
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/Milestone_9-Epic_1-orchestrator-end-to-end-workflow-execution.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/prd-orchestrator-end-to-end-workflow-execution.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/tasks-orchestrator-end-to-end-workflow-execution.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/Milestone_9-Epic_2-scheduler-queue-operational-validation.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/prd-scheduler-queue-operational-validation.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/tasks-scheduler-queue-operational-validation.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/Milestone_9-Epic_3-content-agent-bridge.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/prd-content-agent-bridge.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/tasks-content-agent-bridge.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/Milestone_9-Epic_4-agent-orchestrator-bridge.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/prd-agent-orchestrator-bridge.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/tasks-agent-orchestrator-bridge.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/Milestone_9-Epic_5-user-admin-system-completion.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/prd-user-admin-system-completion.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/tasks-user-admin-system-completion.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_6/Milestone_9-Epic_6-finalization-and-release.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_6/prd-finalization-and-release.md"
+    type: PRD
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/Epic_6/tasks-finalization-and-release.md"
+    type: DOC
+  - path: ".project/Milestone_9-Classic-Orchestrator-Completion/overview/Milestone-9_Classic-Orchestrator-Completion.md"
+    type: DOC

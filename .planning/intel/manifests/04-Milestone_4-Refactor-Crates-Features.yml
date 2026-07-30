@@ -1,0 +1,23 @@
+docs:
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Epic_1/dependency-matrix.md"
+    type: DOC
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Epic_1/prd-expand-feature-flags.md"
+    type: PRD
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Epic_1/tasks-expand-feature-flags.md"
+    type: DOC
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Epic_2/DEPRECATIONS.md"
+    type: DOC
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Epic_2/api-audit.md"
+    type: DOC
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Epic_2/prd-harden-port-traits-stable-api.md"
+    type: PRD
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Epic_2/tasks-harden-port-traits-stable-api.md"
+    type: DOC
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Epic_3/prd-cli-isolation.md"
+    type: PRD
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Epic_3/tasks-cli-isolation.md"
+    type: DOC
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Milestone-Overview/Init-Analysis.md"
+    type: DOC
+  - path: ".project/Milestone_4-Refactor-Crates-Features/Milestone-Overview/Milesone-4-Tier-1-High-Value-Low-Risk.md"
+    type: DOC

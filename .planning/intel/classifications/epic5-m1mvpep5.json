@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_5/epic5.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 5: Commander Strategy Router",
+  "summary": "Epic describing the Commander router for dynamic Battalion strategy selection, with user stories, Rust technical design, and acceptance criteria.",
+  "scope": ["Commander", "BattalionStrategy", "Formation", "Phalanx", "Campaign", "ChainOfCommand", "use_cases/battalion/commander.rs", "BattalionResult"],
+  "cross_refs": ["Epic 4"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content shows PRD signals (user stories, acceptance criteria) plus SPEC signals (Rust type/API design); manifest override retained."
+}

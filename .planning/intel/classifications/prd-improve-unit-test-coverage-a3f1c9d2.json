@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/unit-test-improvements/prd-improve-unit-test-coverage.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Improve Unit Test Code Coverage to Over 85%",
+  "summary": "Requirements to raise Paladin unit test coverage from 67.79% to over 85% within 1-2 weeks.",
+  "scope": ["unit test coverage", "cargo llvm-cov", "main.rs", "infrastructure adapters", "Paladin execution", "Battalion orchestration", "Arsenal", "Garrison", "Citadel", "error handling paths", "mocks and test doubles"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

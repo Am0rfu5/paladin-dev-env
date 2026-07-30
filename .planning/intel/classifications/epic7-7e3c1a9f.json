@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_7/epic7.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 7: Citadel State Persistence",
+  "summary": "Epic plan for the Citadel persistence layer providing autosave and state restoration for Paladins and Battalions.",
+  "scope": ["Citadel", "PaladinState", "BattalionState", "CitadelPort", "PaladinBuilder autosave", "checkpoints"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content shows SPEC-like signals (trait definitions, data models) plus acceptance criteria; manifest overrides."
+}

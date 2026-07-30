@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_10/tasks-epic10-validation-documentation.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Task List: Epic 10 - Validation & Documentation",
+  "summary": "Task checklist for Epic 10 covering user/technical documentation, rustdoc coverage, and integration testing infrastructure.",
+  "scope": ["documentation", "rustdoc", "integration tests", "deployment docs", "operations docs", "contributing guides", "examples"],
+  "cross_refs": ["project/prd-epic10-validation-documentation.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content is a task checklist referencing FR-* IDs from a separate PRD."
+}

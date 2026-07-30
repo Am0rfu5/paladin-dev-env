@@ -1,0 +1,57 @@
+docs:
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/Milestone_8-Epic_1-facade_crate_audit.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/facade-audit.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/prd-facade-crate-audit.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/tasks-facade-crate-audit.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_2/Milestone_8-Epic_2-remove-dead-shims-empty-modules.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_2/prd-remove-dead-shims-empty-modules.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_2/tasks-remove-dead-shims-empty-modules.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/Milestone_8-Epic_3-relocate-remaining-misplaced-modules.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/infrastructure-adapter-disposition.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/prd-relocate-remaining-misplaced-modules.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/tasks-relocate-remaining-misplaced-modules.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_4/Milestone_8-Epic_4-use_cases-services-rename.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_4/prd-use_cases-services-rename.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_4/tasks-use_cases-services-rename.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_5/Milestone_8-Epic_5-document-facade-crate-role.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_5/prd-document-facade-crate-role.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_5/tasks-document-facade-crate-role.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_6/Milestone_8-Epic_6-paladin-content-use_cases-services-rename.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_6/prd-paladin-content-use_cases-services-rename.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_6/tasks-paladin-content-use_cases-services-rename.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/Milestone_8-Epic_7-paladin-web-single-framework-axum.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/prd-paladin-web-single-framework-axum.md"
+    type: PRD
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/tasks-paladin-web-single-framework-axum.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-features.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-items.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/facade-cleanup-RECONCILIATION-2026-06-04.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/overview/Milestone-8_Facade-Cleanup-Shim-Resolution.md"
+    type: DOC
+  - path: ".project/Milestone_8-Facade-Cleanup-Shim-Resolution/overview/Milestones-8-11_Dependency-Graph.md"
+    type: DOC

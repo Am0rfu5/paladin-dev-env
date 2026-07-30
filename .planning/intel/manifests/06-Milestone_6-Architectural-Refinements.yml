@@ -1,0 +1,29 @@
+docs:
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_1/Milestone_6-Epic_1-Decompose_App_Settings.md"
+    type: DOC
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_1/prd-decompose-application-settings.md"
+    type: PRD
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_1/tasks-decompose-application-settings.md"
+    type: DOC
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_2/Milestone_6-Epic_2-Relocation_Manager_Layer_Orch_services.md"
+    type: DOC
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_2/dependency-analysis.md"
+    type: DOC
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_2/prd-relocate-orchestration-services.md"
+    type: PRD
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_2/tasks-relocate-orchestration-services.md"
+    type: DOC
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_3/Milestone_6-Epic_3-Co-locate_Maneuver_DSL_w_Battalion.md"
+    type: DOC
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_3/prd-co-locate-maneuver-dsl.md"
+    type: PRD
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_3/tasks-co-locate-maneuver-dsl.md"
+    type: DOC
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_4/Milestone_6-Epic_4-Relocate_CircuitBreaker_Infra_Layer.md"
+    type: DOC
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_4/prd-relocate-circuitbreaker-infra.md"
+    type: PRD
+  - path: ".project/Milestone_6-Architectural-Refinements/Epic_4/tasks-relocate-circuitbreaker-infra.md"
+    type: DOC
+  - path: ".project/Milestone_6-Architectural-Refinements/overview/Milestone_6-Tier_3-Architectural-Refinements.md"
+    type: DOC

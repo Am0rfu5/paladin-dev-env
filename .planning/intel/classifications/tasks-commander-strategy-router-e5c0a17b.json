@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_5/tasks-commander-strategy-router.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Task List: Commander Strategy Router (Epic 5)",
+  "summary": "Implementation task checklist for the Epic 5 Commander Strategy Router, listing relevant files, tests, examples, and TDD completion steps.",
+  "scope": ["Commander Strategy Router", "BattalionStrategy enum", "Battalion services", "Formation", "Phalanx", "Campaign", "ChainOfCommand", "Epic 5"],
+  "cross_refs": ["src/application/use_cases/battalion/commander.rs", "src/core/platform/container/battalion/mod.rs", "tests/unit/commander_tests.rs", "tests/integration/commander_integration_tests.rs", "docs/BATTALION.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content is a task checklist with file inventory and process notes, consistent with DOC."
+}

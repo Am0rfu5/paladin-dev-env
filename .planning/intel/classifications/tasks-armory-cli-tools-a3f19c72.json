@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_9/tasks-armory-cli-tools.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Task List: Armory CLI Tools (Epic 9)",
+  "summary": "Implementation task checklist for the Armory CLI (paladin-cli): structure, clap parsing, YAML config, templates, output formatting, and tests.",
+  "scope": ["Armory CLI", "paladin-cli binary", "clap argument parsing", "YAML configuration loading", "template generation", "output formatting", "agent/battalion/arsenal subcommands", "CLI tests"],
+  "cross_refs": ["prd-armory-cli-tools.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content is a task checklist referencing prd-armory-cli-tools.md; no decisions, requirements, or API contracts of its own."
+}

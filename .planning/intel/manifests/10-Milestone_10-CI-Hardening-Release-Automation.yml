@@ -1,0 +1,31 @@
+docs:
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/Milestone_10-Epic_1-pre-commit-pre-push-hooks.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/prd-pre-commit-pre-push-hooks.md"
+    type: PRD
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/tasks-pre-commit-pre-push-hooks.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/Milestone_10-Epic_2-dependency-security-license-compliance.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md"
+    type: PRD
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/tasks-dependency-security-license-compliance.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/Milestone_10-Epic_3-release-automation.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/prd-release-automation.md"
+    type: PRD
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/tasks-release-automation.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_4/Milestone_10-Epic_4-finalization.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_4/prd-milestone10-finalization.md"
+    type: PRD
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_4/tasks-finalization.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_5/prd-milestone10-release-branch-protection.md"
+    type: PRD
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/Epic_5/tasks-release-branch-protection.md"
+    type: DOC
+  - path: ".project/Milestone_10-CI-Hardening-Release-Automation/overview/Milestone-10_CI-Hardening-Release-Automation.md"
+    type: DOC

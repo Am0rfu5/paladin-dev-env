@@ -1,0 +1,27 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Paladin Project Completion Plan.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Enterprise-Grade Multi-Agent Orchestration Framework — Project Plan & Technical Roadmap",
+  "summary": "Project plan and roadmap for completing Paladin's multi-agent orchestration capabilities, with methodology, current-state assessment, and ten prioritized epics.",
+  "scope": [
+    "Paladin agent entity",
+    "Paladin Builder",
+    "Garrison memory system",
+    "Arsenal tool system",
+    "MCP protocol",
+    "Battalion orchestration (Formation, Phalanx, Campaign, Chain of Command)",
+    "Commander strategy router",
+    "Citadel state persistence",
+    "Herald output formatting",
+    "Armory CLI tools",
+    "LLM provider adapters (OpenAI, DeepSeek, Anthropic)",
+    "Hexagonal architecture",
+    "TDD coverage targets"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set from MANIFEST_TYPE=DOC (authoritative). Content is a roadmap/plan with epic and capability tables; no ADR status field or Decision/Consequences sections."
+}

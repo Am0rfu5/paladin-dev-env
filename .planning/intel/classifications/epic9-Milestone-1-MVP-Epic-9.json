@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_9/epic9.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 9: Armory CLI Tools",
+  "summary": "Epic describing the Armory CLI (paladin) for running Paladins, Battalions, and Arsenal tool management, with clap-based command structure.",
+  "scope": ["Armory CLI", "paladin-cli", "Paladin agent commands", "Battalion commands", "Arsenal tool management", "MCP stdio testing", "configuration validation", "interactive mode"],
+  "cross_refs": ["src/bin/paladin-cli.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative; heuristic/content classification skipped. Content shows SPEC-like CLI command structure and acceptance criteria, but manifest declaration governs. Filename hash suffix replaced with path-derived slug (no hashing tool available)."
+}

@@ -1,0 +1,25 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_3/epic3.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 3: Arsenal Tool System",
+  "summary": "Epic defining the Arsenal tool system with MCP STDIO/SSE support, including user stories, Rust type/port designs, tests, and acceptance criteria.",
+  "scope": [
+    "Arsenal tool system",
+    "MCP (Model Context Protocol)",
+    "Armament",
+    "ArmamentCall",
+    "ArmamentResult",
+    "ArsenalPort",
+    "ArsenalRegistry",
+    "MCPClient",
+    "MCPStdioAdapter",
+    "MCPSseAdapter",
+    "PaladinBuilder"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content itself carries PRD signals (user stories, acceptance criteria) and SPEC signals (trait/type contracts); manifest override retained per instructions."
+}

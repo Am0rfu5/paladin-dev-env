@@ -1,0 +1,5 @@
+docs:
+  - path: ".project/project-management/paladin-project-plan-final.md"
+    type: DOC
+  - path: ".project/project-management/tasks-project-management-setup.md"
+    type: DOC

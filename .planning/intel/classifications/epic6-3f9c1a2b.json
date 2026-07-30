@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_6/epic6.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 6: Provider Expansion",
+  "summary": "Epic plan to add DeepSeek and Anthropic LLM adapters implementing LlmPort, with acceptance criteria for interchangeable providers, streaming, and tool use.",
+  "scope": ["LLM providers", "DeepSeek adapter", "Anthropic adapter", "LlmPort", "streaming", "tool use", "configuration"],
+  "cross_refs": ["adapters/llm/deepseek_adapter.rs", "adapters/llm/anthropic_adapter.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content also shows SPEC signals (Rust trait/struct contracts) and acceptance criteria (PRD signal)."
+}

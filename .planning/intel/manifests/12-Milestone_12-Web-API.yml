@@ -1,0 +1,31 @@
+docs:
+  - path: ".project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_1/tasks-agent-registry-execution-api.md"
+    type: DOC
+  - path: ".project/Milestone_12-Web-API/Epic_2/prd-configurable-web-host-server-binary.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_2/tasks-configurable-web-host-server-binary.md"
+    type: DOC
+  - path: ".project/Milestone_12-Web-API/Epic_3/prd-streaming-async-execution.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_3/tasks-streaming-async-execution.md"
+    type: DOC
+  - path: ".project/Milestone_12-Web-API/Epic_4/prd-api-cross-cutting-concerns.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_4/tasks-api-cross-cutting-concerns.md"
+    type: DOC
+  - path: ".project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_5/tasks-api-security-authorization.md"
+    type: DOC
+  - path: ".project/Milestone_12-Web-API/Epic_6/prd-openapi-spec-interactive-docs.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_6/tasks-openapi-spec-interactive-docs.md"
+    type: DOC
+  - path: ".project/Milestone_12-Web-API/Epic_7/prd-deployment-artifacts-examples-docs.md"
+    type: PRD
+  - path: ".project/Milestone_12-Web-API/Epic_7/tasks-deployment-artifacts-examples-docs.md"
+    type: DOC
+  - path: ".project/Milestone_12-Web-API/overview/Milestone-12_Web-API.md"
+    type: DOC

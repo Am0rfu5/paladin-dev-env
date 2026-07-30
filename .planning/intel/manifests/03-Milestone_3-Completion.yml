@@ -1,0 +1,65 @@
+docs:
+  - path: ".project/Milestone_3-Completion/Epic_19/epic19.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_19/prd-epic19-herald-consolidation.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_19/tasks-epic19-herald-consolidation.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_20/epic20.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_20/prd-vision-pipeline-completion.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_20/tasks-vision-pipeline-completion.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_21/epic21.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_21/prd-autonomous-agent-completion.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_21/tasks-autonomous-agent-completion.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_22/epic22.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_22/prd-epic22-battalion-commander-hardening.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_22/tasks-epic22-battalion-commander-hardening.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_23/EPIC_23_COMPLETION_SUMMARY.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_23/epic23.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_23/prd-epic23-cli-config-infrastructure-completion.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_23/prd-task46-arsenal-tool-integration-tests.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_23/tasks-epic23-cli-config-infrastructure-completion.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_23/tasks-task46-arsenal-tool-integration-tests.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_24/epic24.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Epic_24/prd-test-hardening-benchmarks-qa.md"
+    type: PRD
+  - path: ".project/Milestone_3-Completion/Epic_24/tasks-test-hardening-benchmarks-qa.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/BUILD_TEST_FIXES.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/CHANGELOG_UPDATE.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/LEGACY_CLEANUP_SUMMARY.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/LEGACY_CODE_CLEANUP_PLAN.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/LIVE_API_TESTS_FIX.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/LIVE_API_TESTS_SUCCESS.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/QUICK_SUMMARY.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/REDIS_TEST_FIX.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Post-Epic_24-cleanup/SESSION_SUMMARY.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/Project_Plan_Milestone_3.md"
+    type: DOC
+  - path: ".project/Milestone_3-Completion/RELEASE_NOTES_MILESTONE_3.md"
+    type: DOC

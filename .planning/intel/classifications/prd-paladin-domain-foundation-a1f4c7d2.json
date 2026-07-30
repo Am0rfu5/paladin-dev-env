@@ -1,0 +1,18 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_1/prd-paladin-domain-foundation.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Paladin Domain Foundation",
+  "summary": "Requirements for the core Paladin agent domain entity, builder, execution service, and port under hexagonal architecture.",
+  "scope": ["Paladin entity", "PaladinBuilder", "PaladinExecutionService", "PaladinPort", "hexagonal architecture", "LLM integration", "retry with circuit breaker"],
+  "cross_refs": [
+    "/home/jamatulli/Development/ai/paladin/project/Milestone_1-MVP/Paladin%20Project%20Completion%20Plan.md",
+    "/home/jamatulli/Development/ai/paladin/project/Milestone_1-MVP/Epic_1/epic1.md",
+    "/home/jamatulli/Development/ai/paladin/notes/hexagonal-arch.md",
+    "/home/jamatulli/Development/ai/paladin/docs/Design/Design_and_Architecture.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

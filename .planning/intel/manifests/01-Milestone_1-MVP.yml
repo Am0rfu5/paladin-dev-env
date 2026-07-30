@@ -1,0 +1,73 @@
+docs:
+  - path: ".project/Milestone_1-MVP/Epic_1/epic1.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_1/prd-paladin-domain-foundation.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/Epic_1/tasks-paladin-domain-foundation.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_10/epic10.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_10/prd-epic10-validation-documentation.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/Epic_10/task5.0-completion-summary.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_10/task6.0-validation-report.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_10/tasks-epic10-validation-documentation.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_2/epic2.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_2/prd-garrison-memory-system.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/Epic_2/tasks-garrison-memory-system.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_3/epic3.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_3/prd-arsenal-tool-system.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/Epic_3/tasks-arsenal-tool-system.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_4/epic4.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_4/prd-battalion-orchestration.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/Epic_4/tasks-battalion-orchestration.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_5/epic5.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_5/prd-commander-strategy-router.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/Epic_5/tasks-commander-strategy-router.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_6/epic6.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_6/prd-provider-expansion.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/Epic_6/tasks-provider-expansion.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_7/epic7.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_7/prd-citadel-state-persistence.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/Epic_7/tasks-citadel-state-persistence.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_8/epic8.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_8/prd-herald-output-formatting.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/Epic_8/tasks-herald-output-formatting.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_9/epic9.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Epic_9/prd-armory-cli-tools.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/Epic_9/tasks-armory-cli-tools.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/Paladin Project Completion Plan.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/unit-test-improvements/COVERAGE_ANALYSIS.md"
+    type: DOC
+  - path: ".project/Milestone_1-MVP/unit-test-improvements/prd-improve-unit-test-coverage.md"
+    type: PRD
+  - path: ".project/Milestone_1-MVP/unit-test-improvements/tasks-improve-unit-test-coverage.md"
+    type: DOC

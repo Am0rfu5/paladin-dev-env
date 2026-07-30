@@ -1,0 +1,27 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/unit-test-improvements/COVERAGE_ANALYSIS.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Critical Path Coverage Analysis",
+  "summary": "Test coverage analysis of critical paths across Paladin execution, Battalion orchestration, and Arsenal tool execution, identifying gaps against an 85% target.",
+  "scope": ["paladin_execution_service", "paladin_builder", "circuit_breaker", "formation_service", "phalanx_service", "campaign_service", "chain_of_command_service", "commander", "arsenal tool execution", "test coverage"],
+  "cross_refs": [
+    "tests/integration/paladin_integration_test.rs",
+    "tests/integration/paladin_garrison_integration_test.rs",
+    "tests/unit/paladin_execution_service_test.rs",
+    "tests/unit/paladin_builder_test.rs",
+    "tests/unit/paladin_builder_arsenal_test.rs",
+    "tests/unit/paladin_entity_test.rs",
+    "tests/unit/paladin_config_test.rs",
+    "tests/unit/paladin_error_test.rs",
+    "tests/functional/paladin_tool_invocation_test.rs",
+    "tests/unit/battalion_formation_test.rs",
+    "tests/unit/battalion_phalanx_test.rs",
+    "tests/integration/battalion_formation_integration_test.rs",
+    "tests/integration/battalion_phalanx_integration_test.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

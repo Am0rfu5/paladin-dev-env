@@ -1,0 +1,33 @@
+docs:
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_2/Epic-2_MDBook-Setup-and-Structure.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_2/prd-mdbook-setup-and-structure.md"
+    type: PRD
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_2/tasks-mdbook-setup-and-structure.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/Epic-3_Content-Rewrite.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/prd-content-rewrite.md"
+    type: PRD
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/tasks-content-rewrite.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/Epic-4_New-Documentation.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/prd-new-documentation.md"
+    type: PRD
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/tasks-new-documentation.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/Epic-5_Publish-and-Finalize.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/prd-publish-and-finalize.md"
+    type: PRD
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/tasks-publish-and-finalize.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_6/Epic-6_Deployment-Topologies-Documentation.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_6/prd-deployment-topologies-documentation.md"
+    type: PRD
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/Epic_6/tasks-deployment-topologies-documentation.md"
+    type: DOC
+  - path: ".project/Milestone_11-Documentation-Overhaul-Publish/overview/Milestone-11_Documentation-Overhaul-Publish.md"
+    type: DOC

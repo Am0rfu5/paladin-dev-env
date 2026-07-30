@@ -1,0 +1,38 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_9/prd-armory-cli-tools.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Armory CLI Tools",
+  "summary": "Requirements for the paladin-cli command-line tool to run, scaffold, and validate Paladin agents, Battalions, and Arsenal MCP tools from YAML configs.",
+  "scope": [
+    "paladin-cli",
+    "Armory CLI",
+    "agent run",
+    "agent new",
+    "battalion run",
+    "battalion new",
+    "arsenal list",
+    "arsenal test",
+    "YAML configuration",
+    "Formation",
+    "Phalanx",
+    "Campaign",
+    "Chain of Command",
+    "MCP servers (stdio, sse)",
+    "Garrison memory config",
+    "Herald output formatting",
+    "LLM providers (openai, deepseek, anthropic)",
+    "exit codes",
+    "interactive prompts"
+  ],
+  "cross_refs": [
+    "src/bin/paladin-cli.rs",
+    "src/cli/commands/",
+    "src/cli/config/",
+    "src/cli/templates/"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

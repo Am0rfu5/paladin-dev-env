@@ -1,0 +1,24 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_2/epic2.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 2: Garrison Memory System",
+  "summary": "Epic defining the Garrison memory system for Paladin conversation context, windowing, SQLite persistence, and content/semantic search.",
+  "scope": [
+    "Garrison memory system",
+    "GarrisonEntry",
+    "ConversationHistory",
+    "GarrisonPort",
+    "LongTermGarrisonPort",
+    "InMemoryGarrison",
+    "SqliteGarrison",
+    "conversation context windowing",
+    "token limits",
+    "memory search"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content itself carries strong PRD signals (user stories, acceptance criteria, definition of done) plus SPEC signals (Rust type/port definitions); manifest override retained per instructions. Dependency on 'Epic 1' mentioned but no file path given, so no cross_refs recorded."
+}

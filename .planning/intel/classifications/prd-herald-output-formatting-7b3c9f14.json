@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_8/prd-herald-output-formatting.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Product Requirements Document: Herald Output Formatting System",
+  "summary": "Requirements for a trait-based Herald output formatting system with JSON, Markdown, table, custom, and streaming formatters for Paladin/Battalion results.",
+  "scope": ["Herald formatting system", "Herald trait", "JSON formatter", "Markdown formatter", "Table formatter", "custom formatters", "streaming output formatting", "Paladin execution results", "Battalion execution results", "formatter configuration"],
+  "cross_refs": ["./Milestone_1-MVP/Paladin Project Completion Plan.md", "./Milestone_1-MVP/Epic_1/", "../notes/hexagonal-arch.md", "../docs/Design/Design_and_Architecture.md", "docs/HERALD.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

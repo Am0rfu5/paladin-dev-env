@@ -1,0 +1,36 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_6/tasks-provider-expansion.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Task List: LLM Provider Expansion (Epic 6)",
+  "summary": "Implementation task checklist for Epic 6 LLM provider expansion covering DeepSeek, Anthropic, OpenAI adapters, provider factory, config, tests, and docs.",
+  "scope": [
+    "LlmPort trait",
+    "ProviderCapabilities",
+    "DeepSeek adapter",
+    "Anthropic adapter",
+    "OpenAI adapter",
+    "LlmProviderFactory",
+    "ApplicationSettings LLM config",
+    "unit and integration tests",
+    "provider documentation"
+  ],
+  "cross_refs": [
+    "PRD Provider Expansion",
+    "src/application/ports/output/llm_port.rs",
+    "src/infrastructure/adapters/llm/deepseek_adapter.rs",
+    "src/infrastructure/adapters/llm/anthropic_adapter.rs",
+    "src/infrastructure/adapters/llm/openai_adapter.rs",
+    "src/infrastructure/adapters/llm/provider_factory.rs",
+    "src/config/application_settings.rs",
+    "config.yml",
+    "config.test.yml",
+    "docs/PROVIDER_EXPANSION.md",
+    "docs/CONTRIBUTING_PROVIDERS.md",
+    "README.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC treated as authoritative. Content is a task checklist referencing REQ-1..REQ-31 from a separate PRD; requirements themselves live in that PRD, not here."
+}

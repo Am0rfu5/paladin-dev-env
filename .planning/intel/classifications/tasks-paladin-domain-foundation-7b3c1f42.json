@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_1/tasks-paladin-domain-foundation.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Task List: Paladin Domain Foundation (Epic 1)",
+  "summary": "Epic 1 task checklist for implementing the Paladin domain entity, ports, builder, execution service, and tests.",
+  "scope": ["Paladin domain entity", "PaladinConfig", "PaladinPort", "PaladinBuilder", "PaladinExecutionService", "circuit breaker", "MockLlmAdapter", "unit and integration tests"],
+  "cross_refs": ["PRD - Paladin Domain Foundation"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_1-MVP/Epic_7/tasks-citadel-state-persistence.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Task List: Citadel State Persistence (Epic 7)",
+  "summary": "Implementation task checklist for the Citadel file-based state persistence layer for Paladin and Battalion state save/restore.",
+  "scope": ["Citadel", "state persistence", "PaladinState", "BattalionState", "StateSummary", "CheckpointData", "file_citadel adapter", "citadel_port", "autosave", "state restoration", "Epic 7"],
+  "cross_refs": ["prd-citadel-state-persistence.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content is a task checklist referencing a separate PRD; not itself a requirements or decision source."
+}

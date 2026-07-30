@@ -1,0 +1,59 @@
+docs:
+  - path: ".project/Milestone_2-Missing_features/Epic_11/EPIC_11_COMPLETION_SUMMARY.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_11/epic11.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_11/prd-sanctum-memory-foundation.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_11/tasks-sanctum-memory-foundation.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_12/epic12.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_12/prd-sanctum-rag-integration.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_12/tasks-sanctum-rag-integration.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_13/epic13.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_13/prd-sentinel-vision-system.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_13/tasks-sentinel-vision-system.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_14/epic14.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_14/prd-autonomous-agent-features.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_14/tasks-autonomous-agent-features.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_15/epic-15-completion-report.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_15/epic-15-pull-request-description.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_15/epic15.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_15/prd-conclave-mixture-of-agents.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_15/tasks-conclave-mixture-of-agents.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_16/epic16.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_16/prd-epic16-advanced-battalion-patterns.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_16/tasks-epic16-advanced-battalion-patterns.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_17.5/epic17-5.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_17.5/tasks-cli-consolidation.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_17/epic17.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_17/prd-flow-dsl-agent-rearrangement.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_17/tasks-flow-dsl-agent-rearrangement.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_18/epic18.md"
+    type: DOC
+  - path: ".project/Milestone_2-Missing_features/Epic_18/prd-epic-18-cli-enhancement.md"
+    type: PRD
+  - path: ".project/Milestone_2-Missing_features/Epic_18/tasks-epic-18-cli-enhancement.md"
+    type: DOC
