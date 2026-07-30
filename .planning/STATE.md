@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v0.7.0
 milestone_name: milestone
-current_phase: 1
-current_phase_name: Ground Truth & Decision Records
-status: planned
+current_phase: 01
+current_phase_name: ground-truth-decision-records
+status: executing
 stopped_at: Phase 1 planned — 8 plans in 5 waves
-last_updated: "2026-07-30T23:28:52.730Z"
+last_updated: "2026-07-30T23:31:32.646Z"
 last_activity: 2026-07-30
-last_activity_desc: "**ingest run 5 of 5 merged. THE INGEST IS COMPLETE.**"
+last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 1
   completed_phases: 0
@@ -25,16 +25,15 @@ See: .planning/PROJECT.md (updated 2026-07-30)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 1 — Ground Truth & Decision Records
+**Current focus:** Phase 01 — ground-truth-decision-records
 
 ## Current Position
 
-Phase: 1 of 16 (Ground Truth & Decision Records)
-Plan: 0 of 8 in current phase
-Status: **Ready to execute.** Phase 1 planned — 8 plans across 5 waves, verified by gsd-plan-checker
-(0 blockers, 0 warnings). Requirements coverage 8/8 RECON IDs; decision coverage 21/21 CONTEXT.md decisions.
-Last activity: 2026-07-30 — **Phase 1 planned.** Research, pattern map, validation strategy, and 8 plans
-written; plan-checker passed after one revision iteration.
+Phase: 01 (ground-truth-decision-records) — EXECUTING
+Plan: 1 of 8
+Status: Executing Phase 01 — 8 plans across 5 waves, plan-checker passed (0 blockers, 0 warnings).
+Requirements coverage 8/8 RECON IDs; decision coverage 21/21 CONTEXT.md decisions.
+Last activity: 2026-07-30 — Phase 01 execution started
 
 Prior activity: 2026-07-30 — **ingest run 5 of 5 merged. THE INGEST IS COMPLETE.**
 (`.project/Milestone_9-Classic-Orchestrator-Completion` +
