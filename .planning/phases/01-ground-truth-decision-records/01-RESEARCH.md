@@ -676,10 +676,14 @@ LLM classification]
 | A2 | Outbound network to crates.io is blocked specifically in *this research sandbox*, not necessarily in the environment that will execute the plan | Environment Availability, Pitfall 4 | Medium — if the execution environment also lacks network access, the RECON-07 coverage-measurement task needs a different fallback (CI-triggered run, or ask a human to run it and report the number back) |
 | A3 | No Task 7.0 content exists anywhere in the shipped tree or other `.project/` documents for Epic 10 | Pitfall 3 | Medium — this research did a documents-level check (INGEST-CONFLICTS.md) but did not exhaustively grep the entire `.project/Milestone_1-MVP/Epic_10/` directory tree for a possibly-misnamed final-review artifact; the planner should do that grep before concluding the validation report is simply wrong |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+Both questions below were carried into planning and are settled by the phase plans. Each retains its
+original research framing (what we know / what's unclear / recommendation) followed by a `RESOLVED:`
+marker naming the plan and task that settles it. No question in this section is still open.
 
 1. **Does the RECON-07 coverage command include `--features integration-tests` or run with default
-   features only?**
+   features only?** — **RESOLVED**
    - What we know: `integration-tests.yml:117-118` runs `cargo llvm-cov --features
      integration-tests --lcov --output-path integration-lcov.info` — a *feature-scoped* run, not a
      bare `--workspace` default-features run. D-08 says "one workspace-wide line-coverage number,
@@ -692,8 +696,21 @@ LLM classification]
      since that is the only coverage-generating command this project already has evidence of
      working, and record the exact flags used in the ADR per Pitfall 2. If Docker services (Redis,
      MinIO) are unavailable wherever this command runs, note that as a caveat on the recorded number.
+   - **RESOLVED: feature-scoped, reproducing the CI invocation — settled in plan `01-04` Task 1**
+     ("Measure workspace coverage against the current tree and record the raw evidence"). That task
+     pins the scope before the command runs: `--workspace` is mandatory per D-08 (a bare
+     `cargo llvm-cov` covers only the root crate), and the run reproduces the CI feature scope
+     `--features integration-tests` because that is the only coverage-generating command this project
+     has evidence of working. It further pins what this research left unstated: `examples/`,
+     `benches/` and the `doc-examples` crate are excluded from the denominator via
+     `--ignore-filename-regex` (exact regex recorded), doctests are excluded (no `--doctests`), and
+     `--summary-only` is used so no `.lcov`/`.profraw`/HTML artifact is committed. The Docker-services
+     caveat this recommendation asked for is mandatory rather than optional: if Redis/MinIO are
+     unavailable, the task records that as an explicit caveat on the figure rather than silently
+     reporting a lower number. The full command line, toolchain versions, date, commit SHA and
+     verbatim tool output land in `01-coverage-measurement.md`, which the ADR then transcribes.
 
-2. **Where does Epic 10's Task 7.0 dispute actually resolve?**
+2. **Where does Epic 10's Task 7.0 dispute actually resolve?** — **RESOLVED**
    - What we know: the task list has no Task 7.0 and all 103 of its own items are checked; the
      validation report claims a 6-subtask Task 7.0 remains, under the name "Final Documentation
      Review."
@@ -705,6 +722,28 @@ LLM classification]
    - Recommendation: `ls .project/Milestone_1-MVP/Epic_10/` and grep the `docs/` tree for anything
      resembling a documentation-review sign-off before writing the RECON-08 ledger row; this
      research located the conflict but did not do that exhaustive local search.
+   - **RESOLVED: the search is an executed step, not a research finding — settled in plan `01-05`
+     Task 1** ("Resolve the Epic 10 Task 7.0 dispute and the 102-vs-103 discrepancy"). That task
+     performs exactly the exhaustive search this recommendation asked for, and does so *before*
+     writing the verdict: it lists the full contents of `.project/Milestone_1-MVP/Epic_10/`, greps
+     that directory, the rest of `.project/Milestone_1-MVP/`, and the `docs/` tree for the literal
+     phrase "Final Documentation Review" plus the looser terms a renamed artifact would carry, and
+     also greps for the six subtask descriptions the validation report attributes to Task 7.0 in case
+     the work shipped under a different heading. Every command run and its result is recorded in the
+     ledger, because here the absence of a result *is* the evidence and an unrecorded search is not
+     evidence. The task then forces exactly one of two named verdicts with no third hedged option —
+     either "the Final Documentation Review is outstanding work" (row classified `genuinely
+     outstanding`, with a named owning phase or requirement) or "the validation report is recorded as
+     wrong" (row classified `satisfied`, task list corroborated) — and requires both the 102 and 103
+     totals to be stated verbatim against their sources with the arithmetic difference explained,
+     rather than one number being picked and the other dropped.
+   - Note on scope: this research pass deliberately does **not** pre-judge which of the two verdicts
+     is correct; the evidence needed to choose is a local filesystem search, which is execution work.
+     What is resolved here is *where and how* the question gets answered, and that the answer cannot
+     be left open — plan `01-05` Task 1's acceptance criteria fail unless a verdict and its search
+     record are both present in `.planning/ledgers/milestone-01.md`. This closes Assumption A3
+     ("No Task 7.0 content exists anywhere in the shipped tree or other `.project/` documents for
+     Epic 10"), which the Assumptions Log rates Medium risk precisely because that grep had not run.
 
 ## Environment Availability
 
@@ -753,7 +792,7 @@ checkable against the shipped tree by a third party, using the same commands thi
 | RECON-05 | `ProviderCapabilities` has no temperature field | Citation-check | `sed -n '740,775p' crates/paladin-ports/src/output/llm_port.rs` | ✅ verified in this research pass |
 | RECON-06 | `Herald` trait signature citations hold | Citation-check | `sed -n '49,153p' crates/paladin-core/src/platform/container/herald.rs` | ✅ verified in this research pass |
 | RECON-07 | Coverage number is freshly measured, not copied from a stale baseline | Command execution | `cargo llvm-cov --workspace --features integration-tests --summary-only` | ❌ Wave 0 — tool not installed in this sandbox, see Environment Availability |
-| RECON-08 | Epic 10 Task 7.0 / 102-vs-103 discrepancy documented and resolved | Citation-check + local search | `ls .project/Milestone_1-MVP/Epic_10/`; grep `docs/` for documentation-review artifacts | ⚠️ Wave 0 — conflict located, resolution search not exhaustively done in this research pass (Open Question 2) |
+| RECON-08 | Epic 10 Task 7.0 / 102-vs-103 discrepancy documented and resolved | Citation-check + local search | `ls .project/Milestone_1-MVP/Epic_10/`; grep `docs/` for documentation-review artifacts | ⚠️ Wave 0 — conflict located; the exhaustive resolution search is executed by plan `01-05` Task 1, not by this research pass (Open Question 2, RESOLVED) |
 
 ### Sampling Rate
 
