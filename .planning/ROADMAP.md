@@ -159,7 +159,17 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The ledger records the places where shipped code has already superseded an ingested requirement — MCP Streamable-HTTP in place of SSE, Sanctum/Qdrant in place of `sqlite-vss`, the interactive REPL that Epic 9 declared a non-goal — so no later phase mistakes divergence for a defect.
   4. The coverage question has one number and one scope, so Phase 3 can objectively pass or fail against it instead of choosing between 80% and 85%.
   5. The Epic 10 Task 7.0 dispute is answered — either the Final Documentation Review is outstanding work with an owner, or the validation report is recorded as wrong — and the 102-vs-103 subtask discrepancy is explained.
-**Plans**: TBD
+**Plans**: 8 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Tracer: decision-record substrate end-to-end (`decisions/` + `ledgers/` + PROJECT.md precedence order) and the Herald trait ADR
+- [ ] 01-02-PLAN.md — ADR-0001 `BattalionConfig` and ADR-0002 `BattalionResult`
+- [ ] 01-03-PLAN.md — ADR-0003 Formation minimum Paladin count and ADR-0004 temperature validation
+- [ ] 01-04-PLAN.md — Measure workspace coverage and record ADR-0006, the coverage gate
+- [ ] 01-05-PLAN.md — Ledger divergences, the Epic 10 Task 7.0 verdict, and the ingest-bookkeeping corrections
+- [ ] 01-06-PLAN.md — Ledger rows for Epics 1-5 with nested outstanding task items
+- [ ] 01-07-PLAN.md — Ledger rows for Epics 6-10 plus the outstanding-item reconciliation
+- [ ] 01-08-PLAN.md — Source corrections: PROJECT.md Key Decisions, REQUIREMENTS.md pointer, ROADMAP Phase 3 criterion
 
 ### Phase 2: Functional Gap Closure
 **Goal**: Every Milestone-1 functional requirement is either working and tested, or explicitly deferred with a recorded reason — and the types in code match the Phase 1 decisions.
