@@ -35,7 +35,7 @@ run_scenario() {
 
     echo -n "  Running '$label' (${RUNS}x):"
     local -a times=()
-    for i in $(seq 1 $RUNS); do
+    for _ in $(seq 1 "$RUNS"); do
         local ms
         ms=$(measure_seconds "$setup_cmd" "$build_cmd")
         times+=("$ms")
@@ -44,7 +44,8 @@ run_scenario() {
     echo
 
     # Sort and pick median
-    IFS=$'\n' sorted=($(sort -n <<<"${times[*]}")); unset IFS
+    local -a sorted=()
+    mapfile -t sorted < <(printf '%s\n' "${times[@]}" | sort -n)
     local median="${sorted[$(( RUNS / 2 ))]}"
     echo "$median"
 }

@@ -440,7 +440,7 @@ impl LogPort for SystemLogAdapter {
         let destinations = self.destinations.read().await;
         let mut checks = Vec::new();
 
-        for (destination, _config) in destinations.iter() {
+        for destination in destinations.keys() {
             let check = LogHealthCheck {
                 destination: destination.clone(),
                 healthy: true,

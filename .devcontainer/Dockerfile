@@ -1,8 +1,10 @@
 # =============================================================================
 # Development Container for Paladin
 # Optimized for development with all tools and debugging capabilities
+# Note: Rust version must match `channel` in the repo-root rust-toolchain.toml,
+#       otherwise rustup will download a second toolchain on first cargo run.
 # =============================================================================
-FROM rust:1.95-slim-bullseye
+FROM rust:1.97.1-slim-bullseye
 
 # Set working directory
 WORKDIR /workspace
@@ -50,6 +52,8 @@ RUN apt-get update \
     # Shell enhancements
     zsh \
     bash-completion \
+    # Shell linting (drives `make lint-shell` + the shellcheck pre-commit hook)
+    shellcheck \
     # Documentation
     man-db \
     # Clean up
@@ -77,19 +81,24 @@ RUN rustup component add \
     rust-src \
     llvm-tools-preview
 
-# Install essential Rust tools
-RUN cargo install cargo-watch
-RUN cargo install cargo-edit
-RUN cargo install cargo-audit
-RUN cargo install cargo-expand
-RUN cargo install cargo-insta
-RUN cargo install cargo-public-api
+# Install essential Rust tools.
+# `--locked` is mandatory: without it cargo re-resolves every transitive dep to
+# the newest published version, which can pull in a crate whose MSRV exceeds the
+# pinned toolchain above and break the image build (e.g. kstring 2.0.4 requiring
+# rustc 1.96 while this image is on 1.95). `--locked` uses each tool's own
+# published Cargo.lock, which is known-good for that tool's MSRV.
+RUN cargo install --locked cargo-watch
+RUN cargo install --locked cargo-edit
+RUN cargo install --locked cargo-audit
+RUN cargo install --locked cargo-expand
+RUN cargo install --locked cargo-insta
+RUN cargo install --locked cargo-public-api
 
 # Install sqlx-cli for database migrations
 RUN cargo install --locked sqlx-cli --no-default-features --features sqlite,mysql
 
 # Install cargo-nextest (optional, can fail without breaking the build)
-RUN cargo install cargo-nextest || echo "cargo-nextest installation failed, skipping"
+RUN cargo install --locked cargo-nextest || echo "cargo-nextest installation failed, skipping"
 
 # Optional CLI tools - uncomment to install:
 # RUN cargo install bat exa ripgrep fd-find tokei hyperfine

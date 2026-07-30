@@ -74,7 +74,13 @@ status: ## Show project status
 	@git status --porcelain || echo "Not a git repository"
 
 # Include custom targets if they exist
--include Makefile.local setup
+-include Makefile.local
+
+# NOTE: `setup` must NOT share the -include line above. As a second include
+# operand it is treated as a makefile to load; make then tries to *remake* it,
+# finds this rule, and runs the whole recipe (rustup update + cargo install) on
+# every single make invocation before the requested goal.
+.PHONY: setup
 setup: ## Initial project setup
 	@echo "$(CYAN)Setting up development environment...$(NC)"
 	@rustup update stable
@@ -219,6 +225,16 @@ lint: ## Run linter
 	@echo "$(CYAN)Running linter...$(NC)"
 	@$(CARGO) clippy --workspace --all-targets --all-features -- -D warnings
 
+.PHONY: lint-shell
+lint-shell: ## Lint shell scripts with shellcheck (matches the pre-commit gate)
+	@echo "$(CYAN)Running shellcheck...$(NC)"
+	@command -v shellcheck >/dev/null 2>&1 || { \
+		echo "$(RED)shellcheck not found. Install with 'sudo apt-get install shellcheck' (preinstalled in the devcontainer).$(NC)"; \
+		exit 1; \
+	}
+	@git ls-files -z '*.sh' | xargs -0 shellcheck --severity=warning
+	@echo "$(GREEN)✅ shellcheck clean$(NC)"
+
 .PHONY: check
 check: ## Check code without building
 	@echo "$(CYAN)Checking code...$(NC)"
@@ -260,7 +276,7 @@ doc: ## Generate documentation
 	@$(CARGO) doc --workspace --no-deps --open
 
 .PHONY: clean-code
-clean-code: fmt lint check ## Format, lint, and check code
+clean-code: fmt lint lint-shell check ## Format, lint (Rust + shell), and check code
 
 .PHONY: hooks
 hooks: ## Install git pre-commit and pre-push hooks

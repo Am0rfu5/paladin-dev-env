@@ -1,0 +1,25 @@
+# =============================================================================
+# Canonical Rust toolchain for Paladin
+# =============================================================================
+# This file is the single source of truth for the Rust version used by the
+# devcontainer, CI, and every developer's host. rustup reads it automatically
+# for any cargo/rustc invocation inside this repository and will install the
+# pinned toolchain on first use.
+#
+# Keep these three in lockstep when bumping:
+#   1. `channel` below
+#   2. `.devcontainer/Dockerfile.dev`  (FROM rust:<version>-slim-bookworm)
+#   3. `.devcontainer/Dockerfile`      (FROM rust:<version>-slim-bullseye)
+#
+# Pinned to an exact patch release rather than "stable" so that a new upstream
+# release never changes build behaviour underneath a green CI run. Bumping is a
+# deliberate, reviewable commit.
+#
+# Note for CI: this file overrides whatever toolchain a workflow action
+# installed. Jobs that intentionally test a *different* toolchain (the
+# stable/beta matrix in ci.yml) must set RUSTUP_TOOLCHAIN to opt out.
+# =============================================================================
+[toolchain]
+channel = "1.97.1"
+components = ["rustfmt", "clippy", "rust-src", "llvm-tools-preview"]
+profile = "default"

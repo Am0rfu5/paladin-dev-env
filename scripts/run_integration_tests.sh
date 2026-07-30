@@ -13,6 +13,7 @@ NC='\033[0m' # No Color
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+# shellcheck disable=SC2034  # kept for parity with the test compose file below; unreferenced today
 DOCKER_COMPOSE_FILE="$PROJECT_ROOT/docker/docker-compose.yml"
 DOCKER_COMPOSE_TEST_FILE="$PROJECT_ROOT/docker/docker-compose.test.yml"
 
@@ -91,6 +92,7 @@ parse_args() {
                 shift
                 ;;
             -p|--parallel)
+                # shellcheck disable=SC2034  # flag is parsed but not yet honoured by the runner
                 PARALLEL=true
                 shift
                 ;;
@@ -238,8 +240,9 @@ wait_for_services() {
         done
 
         # Wait for MinIO
-        local minio_host=$(echo "$TEST_MINIO_ENDPOINT" | cut -d: -f1)
-        local minio_port=$(echo "$TEST_MINIO_ENDPOINT" | cut -d: -f2)
+        local minio_host minio_port
+        minio_host=$(echo "$TEST_MINIO_ENDPOINT" | cut -d: -f1)
+        minio_port=$(echo "$TEST_MINIO_ENDPOINT" | cut -d: -f2)
 
         log_info "Checking MinIO at $TEST_MINIO_ENDPOINT"
         for i in {1..30}; do

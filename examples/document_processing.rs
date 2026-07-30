@@ -263,11 +263,12 @@ fn display_chunks(
         println!("│ Index: {}", chunk.chunk_index);
         println!("│ Size: {} chars", chunk.content.len());
 
-        // Display first 150 characters
-        let preview = if chunk.content.len() > 150 {
-            format!("{}...", &chunk.content[..150].replace('\n', " "))
-        } else {
-            chunk.content.replace('\n', " ")
+        // Display first 150 characters. Truncate on a char boundary so multi-byte
+        // UTF-8 content can't panic the slice.
+        let normalized = chunk.content.replace('\n', " ");
+        let preview = match normalized.char_indices().nth(150) {
+            Some((byte_idx, _)) => format!("{}...", &normalized[..byte_idx]),
+            None => normalized,
         };
 
         println!("│ Preview: {}", preview);

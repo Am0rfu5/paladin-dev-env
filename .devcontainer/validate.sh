@@ -1,4 +1,4 @@
- c#!/bin/bash
+#!/bin/bash
 # Validation script to test DevContainer setup
 # Run this inside the DevContainer to verify everything works
 

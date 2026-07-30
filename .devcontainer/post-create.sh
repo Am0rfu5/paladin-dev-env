@@ -45,6 +45,8 @@ if [ -d ".git" ]; then
         echo -e "${YELLOW}⚠️  pre-commit not found on PATH; skipping hook install.${NC}"
         echo -e "${YELLOW}   Install it with 'pipx install pre-commit' then run 'make hooks'.${NC}"
     fi
+fi
+
 # Create useful aliases
 echo -e "${BLUE}⚙️  Setting up aliases...${NC}"
 cat >> ~/.bashrc << 'EOF'
@@ -78,6 +80,7 @@ alias pd-examples='cd /workspace/examples'
 
 EOF
 
+# shellcheck source=/dev/null  # user's rc file; not resolvable at lint time
 source ~/.bashrc 2>/dev/null || true
 
 # Create .env if it doesn't exist

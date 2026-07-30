@@ -43,6 +43,20 @@ repos:
     hooks:
       - id: gitleaks
 
+  # --- Shell script linting ---------------------------------------------------
+  # Uses shellcheck-py (vendors its own shellcheck binary) rather than the
+  # upstream docker-based hook, so it works inside the devcontainer and in CI
+  # without a Docker socket. `shellcheck` is also apt-installed in the dev image
+  # for ad-hoc runs via `make lint-shell`.
+  # Gated at --severity=warning: this catches the structural bugs that matter
+  # (unclosed if/fi, missing shebangs) while leaving the ~12 pre-existing
+  # style/info findings (mostly SC2086 quoting) as non-blocking.
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        args: [--severity=warning]
+
   # --- Rust workspace gates (run once per commit, not per file) ---------------
   - repo: local
     hooks:
