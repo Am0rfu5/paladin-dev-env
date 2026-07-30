@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_4/Milestone_10-Epic_4-finalization.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 4: Finalization",
+  "summary": "Finalization epic for Milestone 10: update CONTRIBUTING.md with hooks, scans, release process, and update CHANGELOG with v0.4.0 version bump and tag.",
+  "scope": ["CONTRIBUTING.md", "CHANGELOG.md", "pre-commit hooks", "security scans", "release process", "dependency license and audit checks", "version bump v0.4.0", "release tagging"],
+  "cross_refs": ["CONTRIBUTING.md", "CHANGELOG.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

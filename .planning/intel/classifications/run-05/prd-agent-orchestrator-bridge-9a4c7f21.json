@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/prd-agent-orchestrator-bridge.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Agent → Orchestrator Bridge (Milestone 9, Epic 4)",
+  "summary": "Requirements for an OrchestratorPort bridge letting Paladin agents schedule jobs, queue items, fire events, and send notifications under a BridgePolicy.",
+  "scope": ["OrchestratorPort", "BridgePolicy", "OrchestratorBridgeError", "PaladinExecutionService", "paladin-ports crate", "Orchestrator adapter", "schedule_job", "queue_item", "event firing", "notifications"],
+  "cross_refs": ["Milestone_9-Epic_4-agent-orchestrator-bridge.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

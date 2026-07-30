@@ -1,0 +1,26 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/prd-user-admin-system-completion.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: User and Admin System Completion (Milestone 9, Epic 5)",
+  "summary": "Requirements for token-based authentication, admin/user RBAC, Axum middleware enforcement, and complete user CRUD in the Paladin platform.",
+  "scope": [
+    "authentication",
+    "bearer token",
+    "RBAC",
+    "UserRole",
+    "AuthPort",
+    "Axum middleware",
+    "user CRUD",
+    "admin operations",
+    "SQLite user repository",
+    "users table role column"
+  ],
+  "cross_refs": [
+    "Milestone_9-Epic_5-user-admin-system-completion.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,25 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_6/prd-finalization-and-release.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Milestone 9 — Epic 6: Finalization and Release",
+  "summary": "Finalization epic requiring full workspace quality gate, CHANGELOG 0.3.0 entry, version bump to 0.3.0, and v0.3.0 release-candidate tag.",
+  "scope": [
+    "workspace quality gate",
+    "cargo build/test/clippy/fmt/doc",
+    "CHANGELOG.md",
+    "workspace version 0.3.0",
+    "v0.3.0 release-candidate tag",
+    "workspace.dependencies version pins",
+    "feature flags redis-queue and web-server"
+  ],
+  "cross_refs": [
+    "Milestone_9-Epic_6-finalization-and-release.md",
+    "CHANGELOG.md",
+    "Cargo.toml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

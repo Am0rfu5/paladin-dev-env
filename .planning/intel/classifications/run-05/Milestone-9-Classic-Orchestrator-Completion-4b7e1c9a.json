@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/overview/Milestone-9_Classic-Orchestrator-Completion.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 9: Classic Orchestrator Completion",
+  "summary": "Milestone plan to complete the classic orchestration subsystem, content pipeline, and agent-orchestrator bridge for Paladin v0.3.0.",
+  "scope": ["Orchestrator", "SchedulerOrchestrator", "ListenerOrchestrator", "QueueService", "workflow engine", "content processing pipeline", "TaskService", "Paladin agent bridge", "user/admin auth"],
+  "cross_refs": ["src/application/services/orchestration/mod.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative; document is a milestone/epic plan with success criteria and tasks."
+}

@@ -4900,3 +4900,1342 @@ current locations through `.planning/codebase/` or the tree.
   - **Remaining follow-up:** "Keep CI/package guardrails that detect crates.io package-name collisions early."
 - scope: paladin-ports publish verification, crates.io package-name collision guardrails
 - note: this is a closed item, not forward work. The only residue is the CI/package-guardrail follow-up.
+
+---
+
+# Ingest run 5 of 5 — requirements from Milestones 9-12, Deferred-QA-CICD-Completion, project-management
+
+Source set: `.project/Milestone_9-Classic-Orchestrator-Completion` +
+`.project/Milestone_10-CI-Hardening-Release-Automation` +
+`.project/Milestone_11-Documentation-Overhaul-Publish` + `.project/Milestone_12-Web-API` +
+`.project/Deferred-QA-CICD-Completion` + `.project/project-management` (46 docs: 25 PRD, 21 DOC).
+MODE=merge. Precedence ADR > SPEC > PRD > DOC; no per-doc overrides; no locked docs.
+
+`- settled-by:` lines record a **fact about the shipped tree** (see `code-verification.md` run-5
+section), not a decision taken by the synthesizer. Variants are preserved unmerged.
+
+**Milestone 12 is the most recent milestone in the corpus** (Epics created 2026-06-07 to 2026-06-09).
+Where its positions overlap earlier milestones, it is the later position — but later is not
+authoritative here; both sides are preserved and the tree is cited.
+
+---
+
+## Milestone 9 — Classic Orchestrator Completion (v0.3.0)
+
+## REQ-workflow-execution-loop
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/prd-orchestrator-end-to-end-workflow-execution.md (FR 1-10)
+- description: A real `execute_workflow()` on `Orchestrator` covering all four `WorkflowExecutionOrder` variants, replacing four `println!`-only arms in `create_workflow()`.
+- acceptance:
+  - `execute_workflow(&self, workflow_id: Uuid) -> Result<(), OrchestratorError>`; unknown id returns `OrchestratorError::WorkflowNotFound(id)`
+  - **Sequential:** jobs run in `Vec` order; output of job N is placed into `OrchestrationContext` before job N+1 executes; a test asserts N+1 observed N's output
+  - **Parallel:** all jobs spawned concurrently (`JoinSet`/`join_all`); a failure in one job must not cancel or drop sibling results; all results aggregated
+  - **Custom/staged:** stages run in `Vec` order; `stage.job_ids` run concurrently within a stage; next stage does not begin until all current-stage jobs are terminal
+  - **EventDriven:** listeners registered via `create_workflow_listener` so a matching event routes the target job through the real dispatch path (firing/matching validation is Epic 2)
+  - Internal, crate-private `WorkflowState`/`JobState` (`Pending → Running → Completed | Failed`) recorded as transitions occur. **No new public state API** is introduced (decision 4C)
+  - Unit tests per execution-order variant
+- scope: Orchestrator, execute_workflow, WorkflowExecutionOrder, OrchestrationContext, internal state tracking
+- settled-by: code-verification.md run-5 — `src/application/services/orchestration/mod.rs:382` `pub async fn execute_workflow` plus `execute_workflow_inner` at :403.
+
+## REQ-taskservice-dispatch
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/prd-orchestrator-end-to-end-workflow-execution.md (FR 11-14, Task 1.2)
+- description: `ScheduledJob → TaskService::execute()` dispatch resolving services by name and honouring each job's error strategy.
+- acceptance:
+  - Resolve each task's `service_name` from `task_services: HashMap<String, Box<dyn TaskService>>` and invoke `TaskService::execute()`, collecting `Option<serde_json::Value>` results
+  - An unregistered service returns a typed error (`OrchestratorError::ServiceError(..)`); the dispatch path must not `panic!`/`unwrap()`
+  - Honour **fail-fast** (first failing task aborts the job's remaining tasks, job `Failed`) and **continue-on-error** (failing task recorded, remaining tasks still run, terminal state reflects partial completion)
+  - The strategy **must reuse** the existing `Job::execute(&services)` / `JobExecutionMode` mechanism rather than inventing a parallel one
+  - Retry, backoff and dead-letter are explicitly **out of scope** for this Epic
+- scope: TaskService dispatch, Job, JobExecutionMode, error strategy
+
+## REQ-default-task-services-real-logic
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/prd-orchestrator-end-to-end-workflow-execution.md (FR 15-16)
+- description: Replace the three placeholder `TaskService` implementations in `crates/paladin-core/src/platform/container/task.rs` with real, observable behaviour.
+- acceptance:
+  - `DataBackupService` performs a real, verifiable backup against `backup_path` and returns a result describing what was backed up
+  - `ContentIndexingService` performs real indexing against `index_name` and returns a result describing the index
+  - `EmailNotificationService` performs a real dispatch (SMTP or a pluggable sink the production system wires to a real transport) and returns a delivery result
+  - Each removes its `tokio::time::sleep` simulation and `println!` "simulate …" scaffolding and returns a typed `TaskError` on failure rather than succeeding unconditionally
+  - Unit tests assert the observable side effect and a forced failure (e.g. unwritable path)
+  - File paths used by backup and indexing **must** be validated/constrained against path traversal outside the configured target directory
+- scope: DataBackupService, ContentIndexingService, EmailNotificationService, TaskError
+- note: Open Question 3 — which production transport `EmailNotificationService` should default to (reuse `paladin-notifications` channels, or is the injectable seam alone sufficient?) — has no recorded answer.
+
+## REQ-workflow-repository-port
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/prd-orchestrator-end-to-end-workflow-execution.md (FR 17-21, Task 1.3)
+- description: A `WorkflowRepository` output port in `paladin-ports` with a SQLite-backed adapter, wired optionally into `Orchestrator`.
+- acceptance:
+  - Trait is `Send + Sync`, `#[async_trait]`, in `crates/paladin-ports/src/output/`; supports persist/update execution state (workflow id, current stage/index, per-job state, job results, error history, terminal state), load by id, and list incomplete workflows for recovery
+  - SQLite adapter follows the existing adapter placement convention (`paladin-storage`) and **must use parameterized/bound queries only** — no string-formatted SQL. Persisted job results are externally-influenced data and must never be interpolated into SQL or shell
+  - `Orchestrator` holds `Option<Arc<dyn WorkflowRepository>>`; constructing without a repository must keep working (in-memory default); persistence is additive and opt-in
+  - When configured, `execute_workflow()` persists state at minimum on each job terminal transition and on workflow terminal transition, sufficient to resume
+- scope: WorkflowRepository port, SQLite workflow adapter, Orchestrator persistence
+- settled-by: code-verification.md run-5 — `crates/paladin-ports/src/output/workflow_repository_port.rs` and `crates/paladin-storage/src/sqlite_workflow_repository.rs` both ship.
+
+## REQ-workflow-crash-recovery
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/prd-orchestrator-end-to-end-workflow-execution.md (FR 22-23)
+- description: Incomplete workflows resume on `Orchestrator::start()` without re-running completed work.
+- acceptance:
+  - On `start()`, when a `WorkflowRepository` is configured, load incomplete workflows and resume from the last persisted position — the next unfinished job in sequential mode, the next unfinished stage in staged mode
+  - Already-completed jobs must not be re-executed
+  - Crash-recovery test: persist a partially-completed workflow, construct a new `Orchestrator` on the same repository, `start()`, assert resumption and terminal `Completed`
+- scope: workflow recovery, Orchestrator::start
+
+## REQ-workflow-lifecycle-integration-test
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/prd-orchestrator-end-to-end-workflow-execution.md (FR 24-25, Task 1.4)
+- description: A deterministic full-lifecycle integration test under `tests/`.
+- acceptance:
+  - Mock `TaskService` implementations with observable side effects (shared synchronized `Vec` or ordered counters)
+  - A workflow of **3 sequential jobs**: create → start → execute
+  - Asserts ordered execution via the side effect (**not** stdout), terminal state `Completed`, and retrievable per-job results
+  - Deterministic — no wall-clock reliance, no log scraping — and passes in CI under `cargo test`
+- scope: integration test, workflow lifecycle
+
+## REQ-scheduler-tick-validation
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/prd-scheduler-queue-operational-validation.md (FR 1-7)
+- description: Deterministic validation of the `SchedulerOrchestrator` tick loop and `calculate_next_run`.
+- acceptance:
+  - `calculate_next_run` correct for `Interval`, `Daily`, `Weekly`, `Monthly`, `Once` (future → `Some`, past → `None`), `OnStartup` (`None`)
+  - `check_and_execute_jobs()` test: a job whose `next_run` is past dispatches its `TaskService` test double exactly once on one tick
+  - After dispatch: `last_run` set, `run_count` +1, `next_run` recomputed (non-`None` for recurring, `None` for `Once`/`OnStartup`)
+  - A **disabled** job is skipped — `run_count` does not advance, service not invoked
+  - A `Schedule::Once` job whose time has passed runs once and does not re-fire
+  - A job scheduled a short interval in the future executes (integration-style test, sub-second to a few seconds)
+  - **No clock abstraction and no production scheduler refactor** is permitted to make these tests pass
+- scope: SchedulerOrchestrator, calculate_next_run, check_and_execute_jobs, Schedule variants
+- note: the PRD reads the Epic doc's "Cron" as the recurring `Schedule` variants; the cron-expression path is validated separately via the Tokio adapter.
+
+## REQ-cron-adapter-validation
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/prd-scheduler-queue-operational-validation.md (FR 8)
+- description: Validation of `TokioCronSchedulerAdapter`.
+- acceptance:
+  - A cron job scheduled to fire imminently actually fires, observable via a shared counter/flag the job closure increments
+  - An invalid cron expression returns `SchedulerError::InvalidCronExpression`
+  - Scheduling while not running returns `SchedulerError::NotRunning`
+  - `start → schedule → cancel/shutdown` completes without error
+  - The **UTC assumption** for cron evaluation is documented in the test or adapter doc comment; DST-aware tests are not attempted
+- scope: TokioCronSchedulerAdapter, SchedulerPort, cron expressions
+
+## REQ-queueport-contract-parity
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/prd-scheduler-queue-operational-validation.md (FR 9-11, 15)
+- description: One reusable `QueuePort` contract test run against both the in-memory `QueueOrchestrator` and `RedisQueueAdapter`.
+- acceptance:
+  - Contract exercises `create_queue`, `enqueue`, `dequeue` (round-trip preserves payload), `start_processing`, `complete_processing`, `queue_length`, `health_check`
+  - Runs against the in-memory `QueueOrchestrator`/`QueueService` as an always-on default test
+  - Runs against `RedisQueueAdapter` gated behind the `redis-queue` feature, connecting to the existing docker-compose test stack, and **skipping gracefully** (or `#[ignore]`) when Redis is unreachable so default `cargo test` is not broken
+  - The in-memory queue is verified as the working fallback when Redis is unavailable; health checks accurately reflect availability per adapter
+  - **No `testcontainers` dependency**; the existing docker-compose test stack is used
+- scope: QueuePort contract, QueueOrchestrator, RedisQueueAdapter, redis-queue feature
+- note: resolved Open Question 1 — `docker/docker-compose.test.yml` exposes `redis-test` on host port **6380**; the contract test tries `PALADIN_TEST_REDIS_PORT`, then 6380, then 6379, then skips with a short bounded timeout.
+
+## REQ-queue-retry-dead-letter
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/prd-scheduler-queue-operational-validation.md (FR 12-14)
+- description: Retry and dead-letter behaviour validated for both queue adapters, with minimal parity work only.
+- acceptance:
+  - With `max_retries = N`, `fail_processing` reports the item re-queued for retry while `attempt_count < max_retries`
+  - After `max_retries` is exhausted, `fail_processing` reports no further retry and the item moves to the failed/dead-letter store (`failed_items` in-memory; the `failed` hash for Redis), observable via stats or a getter — for **both** adapters
+  - If the in-memory `QueueOrchestrator` lacks dead-letter parity, add **only** the minimal behaviour needed. No retry/back-off/dead-letter redesign is in scope
+- scope: retry, dead-letter, failed_items, QueuePort contract
+
+## REQ-event-trigger-job-pipeline
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/prd-scheduler-queue-operational-validation.md (FR 16-21)
+- description: Validation of the event → trigger → job pipeline including negative, fan-out and rate-limit cases.
+- acceptance:
+  - A **matching** event through `Orchestrator`/`ListenerOrchestrator` creates exactly one `Trigger`
+  - A **non-matching** event creates **no** trigger
+  - **Fan-out:** multiple listeners whose conditions all match one event create exactly one trigger **per matching listener**
+  - A created trigger is converted to a job and executed via the Epic 1 dispatch path, observable through a `TaskService` test double
+  - **Rate limit:** when `max_triggers_per_window` is exceeded, throttled events create no excess triggers; the count is capped at the window limit
+  - Only minimal glue may be added to route a trigger into dispatch; building a new listener subsystem is out of scope
+- scope: ListenerOrchestrator, EventListener, TriggerCondition, rate limiting, event dispatch
+- note: resolved Open Question 2 — the glue already exists: `Orchestrator::process_event()` drains triggers via `ListenerOrchestrator::get_next_trigger()` and dispatches each through `execute_trigger()` → `execute_job()`. No new glue was required.
+
+## REQ-paladin-content-processor
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/prd-content-agent-bridge.md (FR 1-9, Task 3.1)
+- description: A `ContentProcessor` that turns a `ContentItem` into an agent prompt, runs a single Paladin, and parses the response into a `ContentProcessingResult`.
+- acceptance:
+  - Implements `ContentProcessor` (`name`, `process_content`, `clone_box`) and lives in the **root crate** beside the trait (`src/application/services/orchestration/processors/`)
+  - Converts the `ContentItem` to a prompt via a **configurable prompt template** interpolating body and, where available, metadata/title
+  - Executes via `PaladinExecutionService::execute(&paladin, &prompt)`, with the `Paladin` and service supplied at construction
+  - Maps `PaladinResult` → `ContentProcessingResult` with `content_id` = source UUID, `processor_name`, wall-clock `processing_time_ms`, `success`, and parsed `result_data`
+  - **Configurable output-parsing strategy**, minimum two variants: **RawText (default)** stores the response verbatim (e.g. `{"enrichment": "<agent text>"}`); **Json** attempts to parse the response as JSON into `result_data`
+  - Attaches enrichment metadata (agent name, model if available, parsing strategy, a token/length indicator where cheap)
+  - **Degraded result on malformed JSON:** `success = false` (or clearly-flagged partial success), `error` populated with a diagnostic, and the raw text preserved so no data is lost — asserted in a unit test, never a panic
+  - Depends only on `PaladinExecutionService`/`PaladinPort`/`LlmPort` — no concrete LLM adapter dependency
+- scope: PaladinContentProcessor, prompt template, OutputParsing, ContentProcessingResult
+- settled-by: code-verification.md run-5 — `src/application/services/orchestration/processors/` ships.
+
+## REQ-battalion-content-processor
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/prd-content-agent-bridge.md (FR 10-17, Task 3.2)
+- description: A `ContentProcessor` that runs a Battalion pattern over content and merges multi-agent output into one result.
+- acceptance:
+  - Supports **Formation** (sequential pipeline, e.g. summarizer → classifier → entity extractor) via `FormationExecutionService::execute()`
+  - Supports **Phalanx** (parallel analysts) via `PhalanxExecutionService::execute()`
+  - Pattern selection is configurable at construction (enum/config choosing Formation vs Phalanx plus the corresponding domain object)
+  - A **clearly defined, code-documented merge strategy**: Formation threads outputs through the pipeline and surfaces the final output; Phalanx merges parallel analyst outputs keyed by agent name into `result_data`
+  - Metadata identifies the pattern used and the participating agents
+  - Depends only on the Battalion execution services (themselves `PaladinPort`-driven); unit tests use mock agents with no network
+- scope: BattalionContentProcessor, Formation, Phalanx, merge strategy
+- note: Open Question 5 remains **OPEN** — Maneuver-flow-driven configuration of the Battalion processor is deferred unless trivially addable via `paladin-battalion::maneuver`. Only direct Formation/Phalanx configuration is in scope.
+
+## REQ-content-processor-orchestrator-wiring
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/prd-content-agent-bridge.md (FR 18-22, Task 3.3)
+- description: Both processors registered and dispatched through the orchestrator's existing session lifecycle.
+- acceptance:
+  - `Orchestrator::register_content_processor()` accepts both as `Box<dyn ContentProcessor>` and registers by name
+  - `Orchestrator::process_content(content, processor_name, context)` dispatches to the named processor within the existing session lifecycle and returns its `ContentProcessingResult`
+  - An unregistered processor name returns `OrchestratorError::ProcessorNotFound(name)` — typed, asserted in a test
+  - The step participates in the Epic 1 job/session lifecycle and context threading; no new lifecycle machinery
+- scope: register_content_processor, process_content, ProcessorNotFound
+
+## REQ-content-ingestion-e2e-validation
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/prd-content-agent-bridge.md (FR 23-25, Task 3.4)
+- description: One deterministic and one live end-to-end ingestion → enrichment path.
+- acceptance:
+  - **Deterministic:** gated behind the `content-processing` feature, using a local fixture (`FileContentListFetcher` / fixture file / in-test `ContentItem`) and a **mock LLM**; ingest → extract/aggregate → invoke agent → stored enriched result; passes with **no network access**; asserts content id preserved, enrichment present, success true
+  - **Live:** a separate test exercising a real fetch (e.g. `HttpContentFetcher`) and a real LLM provider, marked `#[ignore]` and/or credential-gated so it never runs in default CI, with documented invocation
+- scope: end-to-end ingestion test, content-processing feature, mock LLM, live test gating
+
+## REQ-orchestrator-port
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/prd-agent-orchestrator-bridge.md (FR 1-7)
+- description: An `OrchestratorPort` trait in `paladin-ports` giving agents four orchestration actions.
+- acceptance:
+  - `#[async_trait] pub trait OrchestratorPort: Send + Sync` in `crates/paladin-ports/src/output/orchestrator_port.rs`, re-exported from `output`
+  - Exactly four methods, each returning `Result<_, OrchestratorBridgeError>`: `schedule_job(ScheduleJobRequest) -> Uuid`, `queue_item(QueueItemRequest) -> Uuid`, `fire_event(FireEventRequest) -> EventDispatchResult`, `send_notification(SendNotificationRequest) -> Uuid`
+  - Request/result/error types live in `paladin-ports` and carry **no dependency on the root-crate `Orchestrator`**; they use only types already available there (`paladin-core` domain types such as `Schedule`, `Event`, primitives, `serde_json`) plus new plain structs
+  - Request types are simple serializable, LLM-friendly value objects
+  - `OrchestratorBridgeError` (thiserror) has at minimum `ActionNotAllowed(String)`, `QuotaExceeded { action, limit }`, `InvalidRequest(String)`, `OrchestratorError(String)` — the last stringified at the boundary so root-crate error types never leak into `paladin-ports`. Messages must be actionable and must not leak secrets
+- scope: OrchestratorPort, request value objects, OrchestratorBridgeError, paladin-ports
+- settled-by: code-verification.md run-5 — `crates/paladin-ports/src/output/orchestrator_port.rs` ships.
+
+## REQ-bridge-policy-guardrails
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/prd-agent-orchestrator-bridge.md (FR 8-11)
+- description: A typed `BridgePolicy` bounding what an agent may trigger.
+- acceptance:
+  - An **action allow-list** over `BridgeAction { ScheduleJob, QueueItem, FireEvent, SendNotification }` plus **quantitative caps** (`max_jobs_scheduled`, `max_items_queued`, `max_events_fired`, `max_notifications_sent`)
+  - A conservative `Default` (all four actions allowed with small, low-single-digit caps) plus a builder or explicit constructors
+  - A disallowed action is rejected with `ActionNotAllowed` and a cap-exceeding action with `QuotaExceeded`, **before** any underlying orchestrator call
+  - Caps are enforced **per `PaladinExecutionService` execution** — counters reset per run, not global for the process lifetime — and the counting mechanism is thread-safe
+  - This is deliberately minimal — an allow-list plus caps, **not** RBAC — sufficient to bound a misbehaving or prompt-injected agent
+- scope: BridgePolicy, BridgeAction, quota enforcement, prompt-injection containment
+
+## REQ-orchestrator-bridge-adapter
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/prd-agent-orchestrator-bridge.md (FR 12-18)
+- description: The concrete `OrchestratorBridgeAdapter` in the root crate.
+- acceptance:
+  - Lives at `src/application/services/orchestration/orchestrator_bridge.rs` **because it depends on the root-crate `Orchestrator`**; a module doc comment must explain the placement (identical rationale to Epic 3's processors — a lower crate cannot depend on the root crate)
+  - Holds `Arc<Orchestrator>`, a `BridgePolicy`, and an optional `Arc<dyn NotificationDeliveryPort>`; absence of the delivery port yields `ActionNotAllowed`/`InvalidRequest` for `send_notification`
+  - `schedule_job` builds a `Job` via `Job::new` and calls `Orchestrator::schedule_job(job, schedule, context)`
+  - `queue_item` enqueues via `Orchestrator::queue_job` / the underlying `QueueService`
+  - `fire_event` builds an `Event` via `Event::new(event_type, payload, source)` and dispatches through `ListenerOrchestrator::process_event` — **the `Orchestrator` exposes no public `fire_event`**, so the adapter dispatches via the listener service it owns — returning an `EventDispatchResult` describing triggers created
+  - `send_notification` builds a `Notification` and delivers via `NotificationDeliveryPort::deliver_notification`
+  - Every method consults `BridgePolicy` first; underlying errors map to `OrchestratorBridgeError::OrchestratorError` with a descriptive message
+- scope: OrchestratorBridgeAdapter, root-crate placement, NotificationDeliveryPort
+- settled-by: code-verification.md run-5 — `src/application/services/orchestration/orchestrator_bridge.rs` ships.
+
+## REQ-execution-service-bridge-wiring
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/prd-agent-orchestrator-bridge.md (FR 19-24)
+- description: Optional bridge attachment on `PaladinExecutionService` with byte-for-byte unchanged behaviour when absent.
+- acceptance:
+  - `PaladinExecutionService` gains `orchestrator_port: Option<Arc<dyn OrchestratorPort>>`, mirroring the existing optional `garrison`/`arsenal` fields
+  - A `with_orchestrator_port(...)` builder-style setter (or equivalent) is added **backward-compatibly**: the 4-arg `PaladinExecutionService::new(llm_port, circuit_breaker, garrison, arsenal)` must keep compiling for existing call sites
+  - When `orchestrator_port` is `None`, agent execution behaviour is **byte-for-byte unchanged**
+  - Unit tests cover all four methods against a mock: success, `ActionNotAllowed`, `QuotaExceeded`
+  - Integration test `tests/agent_orchestrator_bridge.rs` deterministically drives a real `PaladinExecutionService` with a scripted mock LLM tool-call to `schedule_job`, then asserts the job is observable in the real `Orchestrator`'s scheduler state. Only `schedule_job` is required end-to-end
+- scope: PaladinExecutionService, optional bridge, integration test
+- note: **Option B (an LLM-discoverable `OrchestratorArmament` Arsenal tool) was explicitly considered and deferred** as a non-breaking follow-up that can wrap `Arc<dyn OrchestratorPort>` without changing the port. The documented trade-off is that Option A loses LLM self-describing discoverability in exchange for centralised safety enforcement and decoupling.
+
+## REQ-user-role-rbac
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/prd-user-admin-system-completion.md (FR 1-4)
+- description: A persisted `UserRole` on the user record.
+- acceptance:
+  - `UserRole` enum with at least `Admin` and `User`, string representation `"admin"`/`"user"`, and a parser from string
+  - `UserData` carries `role: UserRole` defaulting to `UserRole::User` for new users; `User` exposes `role()` and `set_role(UserRole)` consistent with the `Node<UserData>` accessor pattern
+  - The `users` table gains a `role` column (`TEXT NOT NULL DEFAULT 'user'`) applied **idempotently** so existing databases upgrade without data loss; the SQLite repository row mapping reads and writes it
+  - The role is stored on `UserData` (persisted) rather than only in the token, so privileges survive re-login and the record is the single source of truth; the token merely **carries** the role to avoid a DB round-trip per request
+- scope: UserRole, UserData, users table migration, SQLite user repository
+
+## REQ-auth-port
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/prd-user-admin-system-completion.md (FR 5-7)
+- description: An `AuthPort` in `paladin-ports` with its value objects and error type.
+- acceptance:
+  - `#[async_trait] AuthPort: Send + Sync` with `issue_token(user_id: Uuid, role: UserRole) -> Result<AuthToken, AuthError>`, `verify_token(&str) -> Result<AuthClaims, AuthError>`, `revoke_token(&str) -> Result<(), AuthError>`
+  - `AuthToken { token: String, expires_at: DateTime<Utc> }`; `AuthClaims { user_id: Uuid, role: UserRole, expires_at: DateTime<Utc> }`
+  - `AuthError` (thiserror) with at least `MissingToken`, `InvalidToken`, `Expired`, `Internal(String)`
+  - `AuthPort` and `UserRole` are always-compiled in `paladin-ports`/`paladin-core`, independent of the `web-server` feature
+- scope: AuthPort, AuthToken, AuthClaims, AuthError, paladin-ports
+
+## REQ-opaque-bearer-token-adapter-v1
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/prd-user-admin-system-completion.md (FR 8-12, §5 Non-Goals, §6.1)
+- description: **Variant v1** — the token mechanism behind `AuthPort` is an opaque, randomly-generated bearer token with a server-side hashed store. JWT is an explicit non-goal.
+- acceptance:
+  - The concrete adapter lives in the **root crate** (it needs `rand`/`sha2`/`chrono`) and issues opaque, cryptographically-random bearer tokens
+  - Tokens are stored **hashed** (never plaintext) and compared via hash lookup — no plaintext token comparison
+  - Tokens carry an expiry; `verify_token` rejects expired tokens with `AuthError::Expired`; `revoke_token` invalidates a token so subsequent verification fails
+  - Login issues a token on successful password verification and returns token string + expiry alongside existing identity fields
+  - **Explicit non-goal: "JWT/OIDC/OAuth or any external identity provider integration."**
+  - Recorded rationale: avoids a `jsonwebtoken` dependency and a signing-key management story; supports immediate **revocation** which stateless JWTs cannot; trivially deterministic to unit test; the root crate already has `rand` and `sha2`, so **no new dependencies**
+  - Recorded trade-off: "tokens are validated against an in-process store, so a **multi-process deployment would later need a shared store**. This is acceptable because validation is hidden behind `AuthPort`, so the store can be swapped without touching the web layer."
+- scope: AuthPort adapter, opaque bearer tokens, hashed token store, revocation
+- note: **v1 of a competing pair with `REQ-jwt-bearer-auth-v2` (Milestone 12 Epic 5).** See INGEST-CONFLICTS.md WARNINGS.
+- settled-by: code-verification.md run-5 — `src/infrastructure/adapters/auth/in_memory_token_auth_adapter.rs` is the only shipped `AuthPort` implementation and **no `jsonwebtoken` dependency exists anywhere in the workspace.** v1 is what ships.
+
+## REQ-auth-middleware-rbac-guards
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/prd-user-admin-system-completion.md (FR 13-17, 21)
+- description: Axum authentication middleware and an admin role guard in `paladin-web`.
+- acceptance:
+  - Reusable middleware/extractor reads `Authorization: Bearer <token>`, calls `AuthPort::verify_token`, and injects `AuthClaims` into the request on success
+  - Missing/malformed header or invalid/expired token produces `401 Unauthorized` with a JSON error body and **must not reveal which part failed**
+  - A role guard requiring `UserRole::Admin` produces `403 Forbidden` for non-admin callers
+  - Admin-only endpoints — list users, activate, deactivate, verify, delete — are protected by both authentication and the admin guard
+  - Self-service endpoints (get/update own profile) require authentication; a non-admin accessing **another** user's record gets `403`
+  - A single composition function (e.g. `create_app_router(user_service, auth_port)`) assembles public routes (register, login) and protected routes with the right middleware
+  - `paladin-web` depends only on `paladin-ports` + `paladin-core`; its middleware is generic over `Arc<dyn AuthPort>` and **never performs cryptography itself**
+- scope: paladin-web auth middleware, admin guard, router composition
+
+## REQ-user-crud-completeness
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/prd-user-admin-system-completion.md (FR 18-20, 22-23)
+- description: Complete the user CRUD surface and prove the auth/RBAC paths offline.
+- acceptance:
+  - Add a `delete_user` operation and an admin-only `DELETE /users/:id` route (the repository already supports delete)
+  - Add an admin `list_users` endpoint backed by existing repository/service query methods
+  - All user-data responses continue to **omit the password hash**
+  - Unit tests cover issue → verify round-trip, expiry rejection, revoke rejection, invalid-token rejection, and role/string conversions
+  - Offline deterministic integration tests on the assembled router assert: protected route without a token → `401`; with a valid token → `200`; admin-only route with a `user`-role token → `403`; with an `admin`-role token → success
+- scope: user CRUD, delete_user, list_users, auth integration tests
+
+## REQ-m9-quality-gate-v030
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_6/prd-finalization-and-release.md (FR 1-15)
+- description: Milestone 9 finalization — workspace quality gate, CHANGELOG, lockstep `0.3.0`, `v0.3.0` tag.
+- acceptance:
+  - `cargo build --workspace`, `cargo test --workspace` (including feature paths such as `redis-queue` and `web-server`, run explicitly where `--workspace` alone does not enable them), `cargo clippy --workspace -- -D warnings` (and `--all-features` where earlier Epics relied on flags), `cargo fmt --all -- --check`, and `cargo doc --workspace --no-deps` all exit 0
+  - `CHANGELOG.md` gains a `0.3.0` entry summarising Epics 1-5 grouped by feature area (Orchestration, Scheduler/Queue, Content Pipeline, Agent Bridge, User/Admin & Security), describing user-visible changes rather than commit-by-commit detail
+  - Root crate and every workspace member at `0.3.0`; **all internal `[workspace.dependencies]` pins updated in lock-step** or cargo will fail to resolve path dependencies. `paladin-core` uses `package = "paladin-ai-core"`
+  - A `v0.3.0` release-candidate tag on a commit where the full gate passes
+  - Explicit non-goal: "Reconciling whether the previous published version *should* have been `0.2.0`; this Epic targets `0.3.0` per the Epic specification regardless of intervening version numbers."
+- scope: M9 quality gate, CHANGELOG 0.3.0, lockstep version bump, v0.3.0 tag
+
+---
+
+## Milestone 10 — CI Hardening and Release Automation (v0.4.0)
+
+## REQ-pre-commit-framework
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/prd-pre-commit-pre-push-hooks.md (FR 1-3)
+- description: Adopt the `pre-commit` framework with a version-controlled, revision-pinned configuration.
+- acceptance:
+  - `.pre-commit-config.yaml` at the repository root is the version-controlled hook manager configuration; the rejected alternative (`cargo-husky`) and the rationale must be recorded
+  - The framework must support both Rust-specific hooks (`cargo fmt`, `cargo clippy`) and ecosystem hooks (secrets, TOML, YAML, whitespace, file-size, merge-conflict)
+  - Every hook repository is pinned to a specific released revision (`rev:`) so behaviour is reproducible across machines and over time
+- scope: pre-commit framework, .pre-commit-config.yaml, pinned revisions
+
+## REQ-pre-commit-hook-set
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/prd-pre-commit-pre-push-hooks.md (FR 4-13, 19, 22)
+- description: The nine commit-stage hooks and the whole-repo conformance requirement.
+- acceptance:
+  - `cargo fmt --all -- --check` fails the commit on any diff
+  - `cargo clippy --workspace --all-targets --all-features -- -D warnings` fails on any warning
+  - `gitleaks` secrets detection fails on a detected credential/API key/password pattern
+  - `check-toml` (Cargo.toml / deny.toml / audit.toml), `check-yaml` (config.yml / config.test.yml / compose files)
+  - `check-added-large-files` with a **1 MB** limit; `check-merge-conflict`; `trailing-whitespace`; `end-of-file-fixer`
+  - The Rust hooks run **once for the workspace**, not once per changed file (`pass_filenames: false` system hooks), to avoid redundant `cargo` invocations
+  - The untracked ad-hoc `.git/hooks/pre-commit` script is superseded by the version-controlled configuration
+  - `pre-commit run --all-files` must pass against the current repository; pre-existing violations are remediated as **formatting/whitespace and config-syntax fixes only — no feature or behavioural code changes**
+- scope: pre-commit hooks, gitleaks, check-toml, check-yaml, whitespace hygiene
+
+## REQ-pre-push-hook-set
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/prd-pre-commit-pre-push-hooks.md (FR 14-18)
+- description: A fast pre-push quality subset installed by the same single command.
+- acceptance:
+  - Pre-push runs `cargo build --workspace` and the unit-test subset `cargo test --workspace --lib` (fast; excludes `tests/` integration and doc tests)
+  - Wired through the same `pre-commit` framework (`pre-commit install --hook-type pre-push` / a `pre-push` stage) so one install command enables both stages
+  - A `make hooks` target wraps `pre-commit install` + `pre-commit install --hook-type pre-push`
+  - `CONTRIBUTING.md` documents installing `pre-commit`, installing the hooks, running them manually (`pre-commit run --all-files`), and the emergency override (`git commit --no-verify` / `git push --no-verify`)
+- scope: pre-push hooks, make hooks, CONTRIBUTING.md, --no-verify override
+
+## REQ-pre-commit-ci-gate
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/prd-pre-commit-pre-push-hooks.md (FR 20-21)
+- description: CI runs the identical hook suite as a required gate.
+- acceptance:
+  - A CI step runs `pre-commit run --all-files` so hooks are enforced even for contributors who never installed them locally
+  - Runs on every pull request and on pushes to the primary branches, failing the build when any hook fails
+- scope: CI pre-commit gate, .github/workflows
+
+## REQ-audit-toml-single-source
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md (FR 1-2, 4, §8 Success Metrics)
+- description: **The origin policy for dependency-advisory suppression.** `cargo audit` must source its ignore-list from the version-controlled `audit.toml`, never from inline flags.
+- acceptance:
+  - The CI `security-audit` job invokes `cargo audit` such that its ignore-list is sourced from the version-controlled `audit.toml` (**single source of truth**) rather than inline `--ignore` flags, **"so the workflow and the config cannot drift"**
+  - `cargo audit` runs on every pull request and on every push to the primary branches (`main`, `develop`) and **fails the build on any advisory not listed in `audit.toml`**
+  - The step must be reproducible locally — `cargo audit` from the repo root honours the same `audit.toml` — and the equivalent command is documented
+  - Success metric: **"`audit.toml` and `deny.toml` are the only places policy/exceptions are defined; no inline advisory-ignore flags remain in CI."**
+  - Design consideration: "`deny.toml` and `audit.toml` are the version-controlled single sources of truth; CI must read from them rather than re-specifying policy inline."
+- scope: cargo audit, .cargo/audit.toml, CI security-audit job, single source of truth
+- note: the governing **Epic DOC** (`Milestone_10-Epic_2-dependency-security-license-compliance.md`, Task 2.1) states only "a documented exception process for false positives or unpatched advisories" — it enumerates **no advisory IDs, no suppression counts, and never mentions `.cargo/audit.toml` or inline `ci.yml` ignores.** The PRD is the more specific carrier and is what this entry records.
+- settled-by: code-verification.md run-5 — **PARTIALLY VIOLATED IN THE TREE.** `ci.yml:62-77` (`security-audit`) complies exactly, with an inline comment restating the single-source rule. But a **second, duplicate job `security` at `ci.yml:390-406`, bearing the identical display name "Security Audit", still runs `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111`.** Milestone 10 Epic 2 added the compliant job without removing its predecessor, so the success metric above is unmet on a milestone recorded 100% complete.
+
+## REQ-advisory-exception-process
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md (FR 3, §5 Non-Goals)
+- description: The documented, auditable shape of a RustSec exception.
+- acceptance:
+  - Each ignored advisory in `audit.toml` must carry a comment stating **(a)** the advisory ID, **(b)** the affected crate and why it is present (e.g. transitive/dev-only), **(c)** why it is not yet fixable, and **(d)** a revisit condition
+  - **"The two existing exceptions already follow this shape and must be preserved"** — `RUSTSEC-2023-0071` (rsa via sqlx-mysql) and `RUSTSEC-2025-0111` (tokio-tar via testcontainers)
+  - Explicit non-goal: remediating those two exceptions. "These remain tracked until an upstream fix exists; this Epic preserves and documents them, it does not force an upgrade of `sqlx`/`testcontainers`."
+- scope: audit.toml exception comment schema, the two baseline advisories
+- note: **the PRD's exception baseline is exactly two advisories.** No document in the 199-document ingest authorises a third. See `code-verification.md` run-5 and INGEST-CONFLICTS.md WARNINGS for the current five-advisory state and its governance gap.
+
+## REQ-osv-scanner-supplementary
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md (FR 5-7, OQ-1)
+- description: OSV-Scanner as a supplementary, non-contradictory advisory source.
+- acceptance:
+  - Added to CI and configured to scan `Cargo.lock`
+  - Findings reported as PR annotations (official OSV-Scanner GitHub Action SARIF upload / reviewdog) **without failing the build on advisories already excepted via the `cargo audit` process**, to avoid contradictory gates. The failure/annotation policy must be explicitly chosen and documented
+  - Runs on pull requests, and may additionally run on a schedule for the primary branch so new advisories in already-merged dependencies surface over time
+  - Open Question 1 recommendation: **annotate-only initially (non-blocking)**, tightening to blocking once annotation noise is understood
+- scope: OSV-Scanner, Cargo.lock, SARIF, PR annotations
+
+## REQ-snyk-evaluation-decision
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md (FR 8-9, OQ-2)
+- description: A recorded integrate-or-defer decision on Snyk. No silent skip.
+- acceptance:
+  - A short evaluation comparing Snyk's free tier against the combined `cargo audit` + OSV-Scanner + `cargo deny` coverage, considering added value, required account secrets, and maintenance cost
+  - Either integrate Snyk into CI **or** record a documented deferral with rationale and reconsideration conditions. **"(No silent skip.)"**
+  - Open Question 2 default recommendation: **defer**, because audit + OSV + deny already cover advisories and licences without an external account secret; revisit if reachability analysis or fix-PR automation is needed
+- scope: Snyk evaluation, integrate-or-defer record
+
+## REQ-deny-license-allowlist
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md (FR 10-11, 13-14)
+- description: A version-controlled `deny.toml` enforcing a permissive-only licence allow-list.
+- acceptance:
+  - `deny.toml` exists at the repository root using the current cargo-deny schema (advisories/licenses/bans/sources), SPDX identifiers, and the modern `allow = [...]` form
+  - `[licenses]` allows **`MIT`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `Zlib`**. Copyleft (`GPL-*`, `AGPL-*`, `LGPL-*`) is **not** allowed unless explicitly added with recorded justification
+  - `cargo deny check` is a required CI gate on every PR and push to primary branches, passing against the current tree
+  - A crate whose licence is off-list or unknown is resolved either by (a) adding the specific licence to the allow-list **with justification**, or (b) a narrowly-scoped per-crate `clarify`/exception **with a comment**. **"Blanket disabling of the license check is not acceptable."**
+- scope: deny.toml, licence allow-list, cargo deny check, per-crate exceptions
+- note: the governing Epic DOC states the same six-licence allow-list, and is **silent on Paladin's own crate `license` field.** Neither document addresses the `license = "MIT"` versus `MIT OR Apache-2.0` question raised by the run-4 licence-policy sign-off (`REQ-license-policy-signoff`). No inference is made here.
+
+## REQ-deny-bans-duplicates
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md (FR 12, OQ-4)
+- description: The `[bans]` posture — no banned crates initially, duplicates surfaced as warnings.
+- acceptance:
+  - `[bans]` starts with **no banned crates** (extensible later)
+  - Duplicate crate versions (same crate at multiple incompatible versions) are surfaced **at least as a warning**
+  - Open Question 4: start `multiple-versions` at `warn`, **not `deny`**, to avoid blocking on transitive duplicates outside our control; revisit promoting to `deny` once the tree is de-duplicated
+- scope: deny.toml [bans], multiple-versions, wildcards
+- note: superseded in one respect by Milestone 8 Epic 7, which added `actix-web` to `[bans].deny`. That ban predates this requirement's implementation and is recorded as `REQ-actix-deny-ban` (run 4).
+
+## REQ-cyclonedx-sbom-release
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md (FR 15-17, OQ-3)
+- description: A CycloneDX SBOM generated for every release and attached as an artifact.
+- acceptance:
+  - `.github/workflows/release.yml` generates a CycloneDX SBOM from the locked dependency graph (e.g. `cargo cyclonedx`)
+  - The SBOM is attached as an asset to the corresponding GitHub release
+  - Generation is reproducible locally via a documented command and/or Makefile target
+  - Open Question 3: CycloneDX is the chosen format; SPDX is not required (assume CycloneDX-only for now)
+- scope: CycloneDX SBOM, cargo cyclonedx, release.yml, GitHub release assets
+
+## REQ-security-docs-make-target
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md (FR 18-20)
+- description: Documentation and a one-command local security check.
+- acceptance:
+  - `CONTRIBUTING.md` and/or `docs/` documents how to run `cargo audit` and `cargo deny` locally, how to add an approved exception to `audit.toml`/`deny.toml`, and where SBOMs are published
+  - A `make security` (or `make deny`) target wraps `cargo audit` + `cargo deny check` for one-command local verification
+  - All newly added CI gates pass against the current dependency tree at implementation time; any unavoidable exception is explicit and commented in the relevant config file
+  - Some checks (OSV-Scanner action, Snyk action, SBOM upload-to-release) are **CI-only** and cannot be fully exercised in the dev container; they are validated by config correctness plus the locally-runnable equivalents
+- scope: CONTRIBUTING.md security docs, make security, make deny
+
+## REQ-release-tooling-selection
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/prd-release-automation.md (FR 1-3)
+- description: A written, recorded choice between `cargo-release` and `release-plz`.
+- acceptance:
+  - A written evaluation comparing the two across at least: trigger model (manual vs PR-bot), changelog handling, workspace publish-order support, required secrets/permissions, operational/maintenance cost
+  - An explicit recommendation and selected tool, captured in a version-controlled document (`docs/RELEASE_AUTOMATION.md`)
+  - The selected tool is installable in CI via a pinned `--locked` install (or pinned action) and reproducible locally
+- scope: cargo-release vs release-plz, RELEASE_AUTOMATION.md
+
+## REQ-workspace-publish-order
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/prd-release-automation.md (FR 4, 6-7)
+- description: The canonical dependency-first crates.io publish order.
+- acceptance:
+  - Order (per Milestone 7 Appendix B): 1. `paladin-core`; 2. `paladin-ports`; 3. `paladin-battalion`, `paladin-llm`, `paladin-memory`, `paladin-web`, `paladin-notifications`, `paladin-content`, `paladin-storage` (parallel-safe tier); 4. `paladin` (facade); 5. `paladin-cli` **only if/when it exists as a separate publishable crate**
+  - A dependency-first `cargo publish --dry-run` succeeds for every workspace crate; where an upstream crate is not yet on crates.io, the ordering and expected-failure behaviour is documented, **not** treated as a hard failure for first-publish crates
+  - Non-publishable crates are explicitly `publish = false`; publishable crates carry complete `description`, `license`, `repository`
+- scope: publish order, cargo publish --dry-run, publish = false, crate metadata
+- note: the tier-3 list names **nine** crates plus the facade, omitting `paladin-herald`, which postdates the Milestone 7 appendix it cites. Run-4 verification established that no `paladin-cli` crate exists — the item 5 conditional was never triggered.
+
+## REQ-lockstep-versioning
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/prd-release-automation.md (FR 5, §5 Non-Goals)
+- description: One shared version across all public crates, bumped together.
+- acceptance:
+  - All public crates share one version number bumped in lockstep, consistent with the existing `0.3.0`-everywhere convention and `docs/RELEASE_CHECKLIST.md`
+  - Explicit non-goal: **"Changing the versioning *policy* itself (lockstep vs. independent) — this Epic encodes the existing lockstep convention, it does not redesign it."**
+- scope: lockstep versioning, workspace.dependencies pins
+
+## REQ-tag-triggered-publish-pipeline
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/prd-release-automation.md (FR 8-14)
+- description: Extend `release.yml` to publish crates on a `v*.*.*` tag.
+- acceptance:
+  - Triggered by Git tags matching `v*.*.*` (the existing trigger)
+  - The **full test suite runs before any publish/release step**; a release must not proceed if tests fail
+  - Publishes all publishable crates to crates.io **in dependency order**, gated on tests, using a `CARGO_REGISTRY_TOKEN` / `CRATES_IO_TOKEN` repository secret
+  - The publish job is **safe to re-run**: re-publishing an already-published version must not fail the whole pipeline (idempotent / tolerant of "already uploaded")
+  - Existing behaviour is preserved: Docker images, binaries, SBOM generation, and GitHub release creation with the changelog
+  - The publish job runs only for real releases; a documented dry-run path or pre-release/`workflow_dispatch` mode tests the pipeline without publishing
+  - The workflow YAML must pass `pre-commit run check-yaml`
+- scope: release.yml, publish-crates job, CARGO_REGISTRY_TOKEN, idempotent publish
+
+## REQ-make-release-target
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/prd-release-automation.md (FR 15-19)
+- description: `make release VERSION=x.y.z` orchestrating the local half of a release.
+- acceptance:
+  - Bumps the version in lockstep across all public crates, finalizes the changelog (`Unreleased` → the new version), commits, creates the `vx.y.z` tag, and pushes — the push triggers the CI pipeline
+  - Fails fast with a clear error if `VERSION` is absent or not valid semver
+  - Runs release-readiness checks (or reuses `release-check`) before tagging so a broken tree is never tagged and pushed
+  - The **existing `make release` behaviour (dry-run publishes) is preserved under a clearly named target** (e.g. `make publish-dry-run`) so no capability is lost
+  - The flow is documented in `CONTRIBUTING.md` and cross-referenced from `docs/RELEASE_CHECKLIST.md` / `docs/RELEASE_AUTOMATION.md`, including required secrets and how to dry-run
+- scope: make release, make publish-dry-run, make release-check, CONTRIBUTING.md
+
+## REQ-contributing-add-dependency-guide
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_4/prd-milestone10-finalization.md (FR 1-2)
+- description: A single "Adding a New Dependency" workflow in `CONTRIBUTING.md`.
+- acceptance:
+  - Seven documented steps: choose the crate and add it to the right `Cargo.toml`; verify the licence is in `deny.toml` `[licenses].allow` or that an exception exists (**"If not, open a discussion before adding"**); run `make deny` locally (a licence rejection means the crate is not permitted — resolve before merging); run `make audit` (a fresh dependency must produce **zero** new vulnerability errors); if cargo-deny reports a new **unmaintained** advisory, document the rationale and add a scoped `[advisories].ignore` entry in `deny.toml` **with an explanatory comment**; update `CHANGELOG.md [Unreleased]` if user-visible; the CI `cargo-deny` and `security-audit` jobs are the final gate — do not merge if either fails
+  - The `CONTRIBUTING.md` Table of Contents covers every top-level `##` section, adding `Security`, `Releasing`, `Per-Crate Changelog Maintenance` and `Adding a New Dependency` where missing
+- scope: CONTRIBUTING.md dependency workflow, ToC completeness
+- note: step 5 is the **only** ingested authorisation for adding `deny.toml` `[advisories].ignore` entries beyond the Epic 2 baseline, and it authorises **unmaintained** advisories specifically — not vulnerability advisories.
+
+## REQ-m10-v040-release
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_4/prd-milestone10-finalization.md (FR 3-7, §5 Non-Goals)
+- description: Milestone 10 finalization — CHANGELOG, lockstep `0.4.0`, annotated tag.
+- acceptance:
+  - `CHANGELOG.md [Unreleased]` documents all four Epics: hooks and devcontainer provisioning; `.cargo/audit.toml`, `deny.toml` licence policy and advisory exceptions, CycloneDX SBOM, OSV-Scanner annotate-only job, `make security` / `make sbom`, `docs/SECURITY_SCANNING.md`; cargo-release selection and `release.toml`, tag-triggered `publish-crates`, `make release` / `make publish-dry-run`, `docs/RELEASE_AUTOMATION.md`; the dependency guide and v0.4.0 bump
+  - Lockstep `0.3.0 → 0.4.0` across every `[package].version` and every internal pin, performed atomically via `cargo release version 0.4.0 --execute --no-confirm --workspace`
+  - `make release VERSION=0.4.0` validates semver, runs `make release-check`, bumps, finalizes the changelog, commits `chore(release): version 0.4.0`, creates the annotated `v0.4.0` tag, and pushes
+  - Pre-release conformance: `cargo fmt --check`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo test --workspace`, `cargo audit`, `pre-commit run --all-files` all pass independently
+  - Explicit non-goals: **"No new Rust source code changes"**; **"No changes to `deny.toml` or `.cargo/audit.toml` — the existing exception lists are not revisited"**; **"No new CI jobs — the Epic 3 pipeline is complete."**
+- scope: CHANGELOG 0.4.0, lockstep bump, annotated v0.4.0 tag, conformance gate
+
+## REQ-verify-tag-source-guard
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_5/prd-milestone10-release-branch-protection.md (FR 1)
+- description: A CI guard blocking any release whose commit is not contained in `main`.
+- acceptance:
+  - A `verify-tag-source` job in `release.yml` runs before any release work, checking out with full history (`fetch-depth: 0`)
+  - Resolves the commit under release: `github.sha` for a `push` tag event; the commit `inputs.tag` points to for `workflow_dispatch`
+  - Fetches `origin/main` and verifies the release commit is reachable from it via `git merge-base --is-ancestor`
+  - On failure, prints a GitHub `::error::` annotation and exits non-zero
+  - The `test` and `create-release` jobs (the two roots all other release jobs depend on) declare `needs: verify-tag-source`, so a failed guard prevents publishing, Docker, binaries and SBOM steps
+- scope: release.yml verify-tag-source, main-only tag policy
+- note: this Epic exists because of a recorded incident — **a `v0.4.0` tag cut from a feature branch.** The Epic 5 PRD names it directly as the reason the policy exists.
+
+## REQ-make-release-branch-guard
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_5/prd-milestone10-release-branch-protection.md (FR 2)
+- description: A local guard in `make release` refusing to run off an up-to-date `main`.
+- acceptance:
+  - Before bumping or tagging, verifies the current branch is `main` and that local `HEAD` is not behind `origin/main` (`git rev-list HEAD..origin/main` is empty)
+  - On failure, prints a clear red error and exits non-zero **before any destructive action**
+  - `RELEASE_ALLOW_ANY_BRANCH=1` bypasses **only** the branch-name check (rare hotfix/maintenance releases) while still printing a warning; the CI guard remains the authoritative gate
+- scope: Makefile release guard, RELEASE_ALLOW_ANY_BRANCH override
+
+## REQ-github-rulesets
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_5/prd-milestone10-release-branch-protection.md (FR 3, §5 Non-Goals)
+- description: Importable GitHub ruleset definitions committed to the repository.
+- acceptance:
+  - `.github/rulesets/protect-main-branch.json` — a branch ruleset targeting `main` (optionally `develop`) requiring a pull request before merging, requiring the CI `lint`, `security-audit` and `cargo-deny` status checks, and blocking force-pushes and branch deletion
+  - `.github/rulesets/protect-release-tags.json` — a tag ruleset targeting `refs/tags/v*` restricting tag creation and deletion to bypass actors (repository admins / maintainers)
+  - Each file is valid JSON importable via the GitHub UI (Settings → Rules → Rulesets → Import) or `gh api`
+  - Explicit non-goal: **no automated application.** Rulesets require repo-admin scope and cannot be safely self-applied from CI; an administrator applies them manually
+- scope: .github/rulesets, branch protection, tag protection
+- note: the definitions ship; **whether they have been applied to the GitHub repository is outside the tree and cannot be verified here.** This is the one Milestone 10 deliverable whose effect is unverifiable from the repository alone.
+
+## REQ-branch-protection-doc
+- source: /workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_5/prd-milestone10-release-branch-protection.md (FR 4-6)
+- description: Documentation of the main-only release policy and its three enforcement layers.
+- acceptance:
+  - `docs/BRANCH_PROTECTION.md` explains the policy and **why** it exists (the `v0.4.0`-from-feature-branch incident); the three enforcement layers (CI guard, Makefile guard, GitHub rulesets) and how they relate; step-by-step admin import instructions for each ruleset (UI and `gh api`); the correct release flow (merge to `main` via PR → pull `main` → `make release VERSION=…` from `main`); and the `RELEASE_ALLOW_ANY_BRANCH=1` override and when it is acceptable
+  - `CONTRIBUTING.md` `## Releasing` states releases are cut **only from `main`** after merge via PR, cross-links the new doc, and makes "ensure you are on an up-to-date `main`" step 0
+  - `CHANGELOG.md [Unreleased]` records the Epic 5 additions
+  - Explicit non-goal: **"No rewrite of the existing `v0.4.0` tag/release. Reconciling `main` with the released code is a maintainer merge action, noted in docs but not performed by this epic."**
+- scope: BRANCH_PROTECTION.md, CONTRIBUTING.md Releasing section
+- settled-by: code-verification.md run-5 — ships as `docs/src/appendix/branch-protection.md`, not `docs/BRANCH_PROTECTION.md`. Same Milestone 11 mdbook relocation runs 3 and 4 recorded. **Do not plan it as a missing deliverable.**
+
+---
+
+## Milestone 11 — Documentation Overhaul and Publish (v0.5.0)
+
+## REQ-mdbook-scaffold
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_2/prd-mdbook-setup-and-structure.md (§4.1, Goals 1-4)
+- description: An MDBook at `docs/` with linkcheck and mermaid preprocessors.
+- acceptance:
+  - `docs/book.toml` configures the book with `src = "src"`, the `mdbook-linkcheck` backend and the `mdbook-mermaid` preprocessor
+  - `mdbook build docs/` completes with zero errors and zero warnings locally
+  - `mdbook-linkcheck` passes — no broken internal links
+  - `mdbook-mermaid` renders architecture diagrams present in migrated files
+  - **No MDBook plugins beyond `mdbook-mermaid` and `mdbook-linkcheck`**; default theme only; single-version site (no `mdbook-versioning`)
+- scope: docs/book.toml, mdbook-linkcheck, mdbook-mermaid
+
+## REQ-mdbook-chapter-hierarchy
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_2/prd-mdbook-setup-and-structure.md (§4.2-4.6, Goals 8-9)
+- description: The `docs/src` chapter hierarchy, `SUMMARY.md`, and the appendix escape hatch.
+- acceptance:
+  - Every chapter in `SUMMARY.md` links to a real file; no dangling links
+  - All existing docs not flagged for deletion by the Epic 1 audit are present somewhere in the new structure
+  - **Docs with no single-chapter home are placed in an `appendix/` chapter rather than dropped**
+  - Placeholder files are created where a chapter is planned but unwritten
+  - Explicit non-goal: **content accuracy.** "Stale API paths, wrong version strings, broken Rust examples are Epic 3's responsibility. This Epic migrates content as-is."
+- scope: docs/src hierarchy, SUMMARY.md, appendix chapter, placeholders
+- note: the appendix escape hatch is why `STABLE_API.md`, `docs/FEATURE_FLAGS.md`, `docs/MIGRATION.md`, `docs/CONFIGURATION.md`, `docs/BUILD_BASELINES.md`, `docs/INTEGRATION_TESTS.md`, `docs/PERFORMANCE_BASELINE.md`, `docs/RELEASE_CHECKLIST.md`, `docs/VERSIONING_POLICY.md`, `docs/SECURITY_SCANNING.md`, `docs/RELEASE_AUTOMATION.md`, `docs/BRANCH_PROTECTION.md` and `docs/Design/Design_and_Architecture.md` are all absent from the paths named in runs 3, 4 and 5. **This requirement is the mechanism behind every "missing deliverable" false positive in the corpus.**
+
+## REQ-docs-ci-pages-deploy
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_2/prd-mdbook-setup-and-structure.md (§4.7-4.8, Goals 5-7)
+- description: A `docs.yml` workflow building on PR and deploying to GitHub Pages on merge.
+- acceptance:
+  - `.github/workflows/docs.yml` builds the book on every PR touching `docs/**`
+  - On merge to `main`, the same workflow deploys the built site to GitHub Pages
+  - The site is reachable at `https://df3ndr.github.io/paladin-dev-env/`
+  - Explicit non-goal: `cargo test --doc` in this workflow — the workflow triggers on `docs/**` only
+- scope: .github/workflows/docs.yml, GitHub Pages
+
+## REQ-docs-migration-log
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_2/prd-mdbook-setup-and-structure.md (§4.9, §5)
+- description: A migration log recording where each pre-existing doc went.
+- acceptance:
+  - `docs/MIGRATION_LOG.md` records the source → destination mapping for migrated documents
+  - Files are moved with `git mv`, preserving history; **no history rewriting** and no removal of the old flat structure from git history
+- scope: docs/MIGRATION_LOG.md, git mv
+
+## REQ-doc-link-repair-linkcheck
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/prd-content-rewrite.md (FR-1, FR-33)
+- description: Repair **227 broken internal cross-reference links** and re-enable linkcheck as an error.
+- acceptance:
+  - All 227 broken internal links (stale flat-file paths) resolved to correct MDBook-relative paths
+  - `docs/book.toml` re-enables `[output.linkcheck]` with `follow-web-links = false` and `warning-policy = "error"`
+  - `mdbook build` passes with zero linkcheck errors
+  - `introduction.md`'s 14 broken links to old flat paths (e.g. `QUICKSTART.md` → `getting-started/quickstart.md`) are fixed
+  - Explicit non-goal: external link validation — `follow-web-links = false`
+- scope: 227 broken links, book.toml linkcheck, introduction.md
+- settled-by: code-verification.md run-5 — `docs/book.toml` carries `[output.linkcheck]` with `follow-web-links = false` and `warning-policy = "error"` exactly as specified.
+
+## REQ-doc-example-compile-gate
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/prd-content-rewrite.md (FR-2, FR-3)
+- description: Doc code blocks are `cargo check`ed locally and in CI.
+- acceptance:
+  - A new hook in `.pre-commit-config.yaml` under the existing `local` repo section as a **`pre-push` stage** hook (matching `cargo-build-push` / `cargo-test-lib-push`) runs `scripts/check-doc-examples.sh` — consistent enforcement for every developer with no manual opt-in
+  - A `make check-doc-examples` target exists as a convenience alias
+  - The `.github/workflows/docs.yml` `build` job extracts and `cargo check`s all fenced Rust code blocks in `docs/src/**/*.md`, running on every PR touching `docs/**` and failing the build if any example does not compile
+- scope: scripts/check-doc-examples.sh, pre-push hook, docs.yml code-check, Makefile target
+
+## REQ-getting-started-rewrite
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/prd-content-rewrite.md (FR-4 to FR-6)
+- description: Full rewrite of the three Getting Started pages.
+- acceptance:
+  - `installation.md`: minimum supported Rust (current stable; note `edition = "2024"` requires Rust ≥ 1.85 and that **no `rust-toolchain.toml` is present**), system prerequisites, workspace crate names and versions (`paladin-ai-core`, `paladin-ports`, `paladin-battalion`, … at v0.4.3), feature-flag profiles for common use cases, and a compiling verification snippet
+  - `quickstart.md`: an end-to-end "hello world" `PaladinBuilder` example that compiles and runs, service startup via `make dev` or `docker compose`, expected terminal output, pointer to `configuration.md`
+  - `configuration.md`: complete `config.yml` schema (all top-level sections — `paladin`, `garrison`, `arsenal`, `llm`, and any others present), every key with type, default and one-line description, environment-variable override syntax, multi-environment patterns
+- scope: getting-started/{installation,quickstart,configuration}.md
+
+## REQ-architecture-docs-update
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/prd-content-rewrite.md (FR-7 to FR-11)
+- description: In-place update of the five Architecture pages to the final Milestone 8 workspace structure.
+- acceptance:
+  - `overview.md`: three-layer hexagonal architecture; correct crate-to-layer mapping for `paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory`, `paladin-storage`, `paladin-content`, `paladin-web`, `paladin-notifications`; the inward-only dependency-flow rule; a high-level Mermaid diagram
+  - `hexagonal-design.md`: current port trait locations under `crates/paladin-ports/`, current adapter locations per crate, and a step-by-step new-adapter guide using current module paths
+  - `domain-model.md`: all domain entities with current module paths, the `Node<T>` pattern, and the Medieval Military naming table matching `copilot-instructions.md`
+  - `crate-map.md`: every workspace crate with layer and purpose, a Mermaid dependency graph, feature flags per crate
+  - `design-patterns.md`: `PaladinBuilder` with current signatures, `thiserror` error-handling pattern, the `async_trait` + `Send + Sync` port pattern, and service composition
+- scope: architecture/{overview,hexagonal-design,domain-model,crate-map,design-patterns}.md
+- note: the crate list here names **nine** crates and omits `paladin-herald`, which the run-4 reconciliation created. Same omission as `REQ-workspace-publish-order`.
+
+## REQ-user-guides-rewrite
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/prd-content-rewrite.md (FR-12 to FR-17)
+- description: Full rewrite of six User Guide pages with working examples.
+- acceptance:
+  - `paladin-agents.md`: current `PaladinBuilder` fluent API, `PaladinExecutionService`, `PaladinStatus` lifecycle, working end-to-end example
+  - `battalion-patterns.md`: Formation, Phalanx, Campaign, Chain of Command and Commander, each with current module paths and a working example
+  - `arsenal-tools.md`: MCP STDIO and SSE adapters, `ArsenalPort`, tool-discovery lifecycle, `config.yml` configuration, working example
+  - `garrison-memory.md`: in-memory and SQLite garrison adapters, `GarrisonPort` methods, memory lifecycle, working example
+  - `sanctum-vector-memory.md`: the Sanctum vector store (qdrant-client v1.14), current adapter, configuration, semantic-search usage, working example requiring a running Qdrant from the dev container, with a `> **Prerequisites:** Run \`make dev\` first` callout
+  - `herald-output.md`: the output formatting system, available formatters, working example
+- scope: user-guides/{paladin-agents,battalion-patterns,arsenal-tools,garrison-memory,sanctum-vector-memory,herald-output}.md
+
+## REQ-deployment-operations-docs-update
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/prd-content-rewrite.md (FR-18 to FR-25)
+- description: In-place update of the four Deployment and four Operations pages against the current dev environment.
+- acceptance:
+  - `deployment/docker.md`: `docker/docker-compose.dev.yml`, `Dockerfile`, `Dockerfile.chef`, `make dev`, `make services-up`, current health checks
+  - `deployment/kubernetes.md`: manifests in `k8s/` and Battalion workload scaling
+  - `deployment/production.md`: production configuration checklist, secret management, TLS, resource tuning
+  - `deployment/cicd.md`: the current `.github/workflows/docs.yml` and every other workflow present under `.github/workflows/`
+  - `operations/logging.md`: `tracing`/`log` setup, log-level configuration, structured log format, aggregation recommendations
+  - `operations/monitoring.md`: Sentinel integration, health-check endpoints, alerting recommendations
+  - `operations/performance-tuning.md`: benchmark results from `benches/`, Tokio runtime tuning, Phalanx concurrency limits, DB/queue pooling
+  - `operations/troubleshooting.md`: common error scenarios with current error types and recovery steps
+- scope: deployment/*.md, operations/*.md
+- note: **this requirement plus the six remaining user-guide updates are the substance of Milestone 11's 26 open checkbox items** (`tasks-content-rewrite.md` tasks 6.0 and 7.0 plus 1.2). All target files exist; whether their content is current cannot be settled by file existence.
+
+## REQ-api-reference-contributing-rewrite
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_3/prd-content-rewrite.md (FR-26 to FR-32)
+- description: Rewrite/update the three API Reference and four Contributing pages against v0.4.3.
+- acceptance:
+  - `stable-api.md`: full rewrite. **"The current file is a merge of `STABLE_API.md` and `VERSIONING_POLICY.md` from before v0.4.3"** — must reflect current stability guarantees and versioning policy
+  - `feature-flags.md`: all current Cargo feature flags with defaults and what they enable, **sourced directly from `Cargo.toml`**
+  - `migration-guide.md`: a migration section for every breaking change since the last stable release
+  - `development-setup.md`: full rewrite (was the root `CONTRIBUTING.md` pre-workspace-restructuring) — dev container, current `make` targets, Clippy `-D warnings`, pre-commit hooks
+  - `testing-guide.md`: unit tests, integration tests (`make test-all`, `make test-integration-docker`), doc tests
+  - `architecture-decisions.md`: in-place update, was `adapter-development.md` — current adapter locations and port trait contracts
+  - `contributing-providers.md`: current LLM provider adapter structure under `crates/paladin-llm/`
+  - Explicit non-goals: the **35 appendix files** are reference/archive material and are **not** rewritten; no `*.rs` or `Cargo.toml` changes
+- scope: api-reference/*.md, contributing/*.md
+- note: FR-26 independently confirms the run-4 finding that root-path `STABLE_API.md` does not exist — it was **merged**, not merely relocated.
+
+## REQ-orchestration-guide
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/prd-new-documentation.md (FR-1 to FR-10)
+- description: A full rewrite of `user-guides/orchestration.md` covering all six Battalion patterns plus scheduling and events.
+- acceptance:
+  - Workflow-patterns overview, then Formation (sequential), Phalanx (parallel), Campaign (DAG), Chain of Command (hierarchical) and Commander (dynamic strategy routing) — **each with a working example**
+  - Job scheduling and the event/trigger system, each with a working example
+  - Links to the standalone bridge guide rather than duplicating it
+  - Links to `user-guides/maneuver-flow-dsl.md` rather than duplicating the Flow DSL, which is already documented
+- scope: user-guides/orchestration.md, Battalion patterns, scheduling, events
+
+## REQ-content-processing-guide
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/prd-new-documentation.md (FR-11 to FR-14)
+- description: A new `user-guides/content-processing.md`.
+- acceptance:
+  - Every available ingestion source; aggregation, filtering and dedup; the processing/analysis pipeline; the content → agent bridge; and delivery
+- scope: user-guides/content-processing.md
+
+## REQ-agent-orchestrator-bridge-guide
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/prd-new-documentation.md (FR-15 to FR-19)
+- description: A new standalone `user-guides/agent-orchestrator-bridge.md` covering both directions.
+- acceptance:
+  - Agents triggering orchestration (the Milestone 9 Epic 4 `OrchestratorPort`) and orchestration invoking agents (the Milestone 9 Epic 3 content processors)
+  - Configuration examples and **at least four use-case recipes**
+  - Linked from the orchestration guide
+- scope: user-guides/agent-orchestrator-bridge.md
+
+## REQ-crate-map-feature-flag-reference
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/prd-new-documentation.md (FR-20 to FR-21, Goals 5-8)
+- description: A new consolidated `api-reference/crate-map.md`.
+- acceptance:
+  - Full workspace crate table, a Mermaid dependency graph, every feature flag, and **at least three consumer-profile `Cargo.toml` snippets**, cross-linked with `architecture/crate-map.md`
+  - All new pages registered in `docs/src/SUMMARY.md`
+  - Every fenced Rust example passes `cargo check` via `scripts/check-doc-examples.sh` (pre-push hook + `docs.yml` CI); every `config.yml`/YAML snippet validates via an extended config-check step
+  - `mdbook build` succeeds with zero warnings with `[output.linkcheck]` enforcing
+  - Explicit non-goal: **"If a documented capability is missing, it is recorded as an open question, not implemented here."**
+- scope: api-reference/crate-map.md, SUMMARY.md, doc-example and config gates
+
+## REQ-deployment-topologies-section
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_6/prd-deployment-topologies-documentation.md (FR-1 to FR-14)
+- description: A new six-page "Deployment Topologies" section with a decision-matrix landing page.
+- acceptance:
+  - `deployment-topologies/overview.md`: comparison table + Mermaid decision flowchart + "when to use / avoid" per topology, letting a reader pick in under a minute. **The decision matrix is the single source of routing**
+  - `embedded-library.md` (single process): compilable example building and executing one agent, cross-linking `paladin-agents.md`
+  - `battalion-orchestration.md` (many agents, one runtime): compilable multi-agent example, cross-linking `orchestration.md` / `battalion-patterns.md`
+  - `http-service-host.md`: hosting an agent registry behind Axum by composing `axum` + `PaladinExecutionService`, **with an honest note that `paladin-web::create_app_router` is the user-management API, not an agent endpoint**
+  - `queue-worker.md`: a producer enqueuing agent jobs and a worker dequeuing and executing them via the Redis queue adapter, cross-linking the appendix Redis setup
+  - `sidecar.md`: composing the HTTP host plus an HTTP client, with an honest **"no built-in IPC/RPC"** callout and guidance on when a sidecar is worth the operational cost
+  - New section and all six pages registered in `SUMMARY.md`; every Rust example passes `cargo check`; every YAML snippet validates; `mdbook build` zero-warning; `CHANGELOG.md [Unreleased]` records the section
+  - Explicit non-goal: **"A first-class agent-HTTP endpoint or sidecar transport — explicitly out of scope; documented as consumer-composed and recorded as open questions (OQ-2, OQ-3)."**
+- scope: docs/src/deployment-topologies/, decision matrix, five topology pages
+- note: **this requirement's honest gap statement is what created Milestone 12.** The M12 Epic 1 PRD opens by quoting this page directly — *"Paladin ships no agent-execution endpoint… The agent endpoint is yours to compose"* — and OQ-2/OQ-3 became the milestone. A documentation epic that recorded a capability gap rather than papering over it is the direct cause of the last milestone in the corpus.
+
+## REQ-mdbook-final-review
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/prd-publish-and-finalize.md (FR-1 to FR-5)
+- description: The Milestone 11 final documentation review gate.
+- acceptance:
+  - `mdbook build docs/` completes with **zero errors and zero broken links** (linkcheck `warning-policy = "error"`); all HTML present in `docs/book/`
+  - Recorded tool-limitation carve-out: linkcheck's non-fatal *"fragment resolution isn't implemented"* notices for `#anchor` links and the mdbook-mermaid version notice **are tool limitations, not content errors, and do not fail the build** — this is the accurate interpretation of "zero warnings"
+  - All internal links resolve; no broken relative references in `SUMMARY.md`; external URLs (README badges, Pages URL, repo links) spot-checked; "see also" links correct; `crate-map.md` matches the actual workspace member list and per-crate feature flags
+  - `./scripts/check-doc-examples.sh` (compiling `paladin-doc-examples`) and `./scripts/check-doc-config.sh` both pass with zero failures
+  - Recorded correction: **"the original Epic text references `cargo test --doc`; that is *not* the project's path — most crates set `doctest = false`. Use the `paladin-doc-examples` + `{{#include}}` mechanism, which is the authoritative and stronger gate."**
+  - Every chapter in `SUMMARY.md` has real content (no placeholder-only user-facing pages); Mermaid renders; code blocks are highlighted; tables render; no raw HTML artifacts
+- scope: mdbook final review, linkcheck semantics, doc-example and config gates
+- note: the `doctest = false` observation is the same workspace fact recorded in runs 3 and 4 as an **open defect** for `paladin-ports`. Here it is treated as a settled project characteristic that the documentation gate routes around. Both framings are preserved.
+
+## REQ-doc-version-sync
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/prd-publish-and-finalize.md (FR-6, FR-7)
+- description: Reconcile every `0.4.3` documentation reference to `0.5.0` and point `documentation` metadata at Pages.
+- acceptance:
+  - Update every `0.4.3` (and `"0.4"`-style) reference in `docs/src/**` to `0.5.0`, including the consumer-profile snippets and crate table in `api-reference/crate-map.md` and the Getting Started pages
+  - **Do not hand-edit `Cargo.toml` versions** — those are bumped by `make release`
+  - Re-run the doc-examples compile gate after editing
+  - Root `Cargo.toml` `documentation` field set to `https://df3ndr.github.io/paladin-dev-env/`; docs.rs continues to host generated API docs and the README links both
+- scope: docs version sync, Cargo.toml documentation metadata
+
+## REQ-readme-landing-page
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/prd-publish-and-finalize.md (FR-8, FR-9)
+- description: Replace the 1022-line `README.md` with a concise landing page.
+- acceptance:
+  - Eleven ordered sections: title + tagline; badge row (CI, crates.io version, docs.rs, MIT licence, MSRV Rust ≥ 1.85 from `edition = "2024"` with no `rust-toolchain.toml`, plus a Pages docs link); one-paragraph description positioning Paladin as a **multi-agent AI orchestration framework, not the old "content processing platform" framing**; a **compile-verified** Quick Example routed through the `paladin-doc-examples` gate — **"No hand-written-only example"**; 5-8 key features; a crate-ecosystem table of the 9 crates consistent with `api-reference/crate-map.md`; documentation links; getting started; project status (0.5.0, stability, changelog); contributing; MIT licence
+  - All badges resolve to real URLs; the crate table matches the actual workspace; all internal links point to real files; the Quick Example compiles against the 0.5.0 workspace
+- scope: README.md rewrite, compile-verified quick example, crate ecosystem table
+- note: the crate table is specified as **9 crates**; ten library crates ship. Third instance of the pre-`paladin-herald` crate count in run 5.
+
+## REQ-m11-v050-release
+- source: /workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/prd-publish-and-finalize.md (FR-10 to FR-13)
+- description: Cut v0.5.0 and publish the book by driving the existing Milestone 10 automation.
+- acceptance:
+  - `CHANGELOG.md [Unreleased]` gets a complete Milestones **8-11** summary under `### Added`, `### Changed`, `### Fixed`, `### Documentation`; the Documentation subsection must call out the MDBook on Pages, the new orchestration / content-processing / bridge guides, the crate map and feature-flag reference, and that all examples are compile-verified. **Do not hand-date or add the `## [0.5.0]` heading** — `make release` does it
+  - A single consolidated **go/no-go checkpoint** before release: doc-examples gate green, config gate green, `mdbook build` clean, `cargo check --workspace` green, README and CHANGELOG ready, branch merged to an up-to-date `main`. Only on all-green does the release proceed
+  - `make release VERSION=0.5.0` from an up-to-date `main` runs `release-check`, performs the lockstep bump and pin update via `cargo release version`, finalizes the changelog, commits `chore(release): version 0.5.0`, tags `v0.5.0`, pushes. Prerequisite: `cargo-release` installed; the target refuses to run off `main` or when behind `origin/main`
+  - Verify the automation completes: `release.yml` → `verify-tag-source` → test suite → GitHub Release → crates.io publish in dependency order (plus Docker images and binaries); `docs.yml` → MDBook built and deployed to Pages
+- scope: CHANGELOG v0.5.0, go/no-go checkpoint, make release, release.yml + docs.yml verification
+- note: this is the first requirement in the corpus that **consumes** rather than builds the release automation — Milestone 10 Epic 3's `make release` and `release.yml` are used as-is. The dependency direction M10 → M11 recorded in the run-4 Milestones 8-11 dependency graph as SOFT is confirmed here as real.
+
+---
+
+## Milestone 12 — Web API / HTTP Service Host Topology (v0.6.0)
+
+## REQ-agent-registry
+- source: /workspace/.project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md (§4.1)
+- description: A shared, thread-safe agent registry in `paladin-web`.
+- acceptance:
+  - An `AgentRegistry` mapping agent id (`String`) to a **per-agent pair** `(Arc<Paladin>, Arc<dyn PaladinExecutorPort>)`. Per the executor-model decision, **different agents may be backed by different executor instances** (different circuit breakers, RAG, herald, etc.)
+  - Safe for concurrent reads during request handling and for runtime mutation, using interior mutability (`RwLock<HashMap<…>>` or an equivalent concurrent map) so a shared `Arc<AgentRegistry>` can be cloned into router state
+  - Supports construct-empty, construct-from-an-initial-list, `get(id)`, `list()` (ids + metadata), `insert`, `remove(id)`
+  - `get`/`remove` on an unknown id return a clear "not found" signal — **not a panic and not a default**
+  - Concurrency guidance: prefer `tokio::sync::RwLock` if provisioning happens while holding the guard, otherwise `std::sync::RwLock`; **do not hold a guard across an `.await`**; document the choice
+- scope: paladin-web AgentRegistry, concurrent map, executor pairing
+- settled-by: code-verification.md run-5 — `crates/paladin-web/src/agent_registry.rs` ships.
+
+## REQ-agent-execute-endpoint
+- source: /workspace/.project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md (§4.2)
+- description: `POST /agents/{id}/execute` running an agent via `PaladinExecutorPort`.
+- acceptance:
+  - Deserializes `ExecuteRequest { input: String }`
+  - On a known id, calls `PaladinExecutorPort::execute(&paladin, &input)` and on `Ok(PaladinResult)` returns `200 OK` with `ExecuteResponse` including at least `output: String`, and **should** also surface safe result metadata already on `PaladinResult` — `token_count`, `execution_time_ms`, `loop_count`, `stop_reason`
+  - Unknown id → `404`; missing/invalid body → `400`; `Err(PaladinError)` → **`502 Bad Gateway`, not `500`** (upstream/LLM/execution failure) with the error message
+  - **The handler must not `unwrap()`/`expect()`/`panic!` on any request-driven path**
+  - Open Question 4 default: a single `502` for all `PaladinError` variants in Epic 1; refine with the unified error model in Epic 4
+- scope: POST /agents/{id}/execute, ExecuteRequest/ExecuteResponse, status-code contract
+
+## REQ-agent-discovery-endpoints
+- source: /workspace/.project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md (§4.3)
+- description: `GET /agents` and `GET /agents/{id}` returning secret-free summaries.
+- acceptance:
+  - `GET /agents` returns a JSON array of agent summaries, each with `id` and safe metadata derived from `PaladinData` (`name`, `model`, a `description`/system-prompt-derived summary)
+  - `GET /agents/{id}` returns the single summary, or `404`
+  - **Must not include secrets, credentials, or full provider configuration**; must not expose the raw system prompt if sensitive
+  - Open Question 1 default: return a short `description` and omit the raw prompt
+- scope: GET /agents, GET /agents/{id}, AgentSummary, secret exclusion
+
+## REQ-agent-runtime-registration
+- source: /workspace/.project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md (§4.4)
+- description: `POST /agents` and `DELETE /agents/{id}` mutating the registry at runtime.
+- acceptance:
+  - `POST /agents` accepts an `AgentSpec` and returns `201 Created` with the new agent's summary
+  - Duplicate id → `409 Conflict`; invalid spec → `400`; provision failure → `422 Unprocessable Entity`
+  - `DELETE /agents/{id}` → `204 No Content`, or `404`
+  - **If no `AgentProvisioner` is wired into router state, `POST /agents` must fail closed** with `501 Not Implemented` / `503` rather than panicking. Discovery and execute remain functional without a provisioner
+  - Open Question 3 default: the id is client-supplied and required; `409` on duplicate
+- scope: POST /agents, DELETE /agents/{id}, AgentSpec, fail-closed registration
+
+## REQ-agent-provisioner-port
+- source: /workspace/.project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md (§4.4 FR-15, OQ-2)
+- description: An `AgentProvisioner` abstraction so `paladin-web` can register agents without building them.
+- acceptance:
+  - `#[async_trait] pub trait AgentProvisioner: Send + Sync { async fn provision(&self, spec: &AgentSpec) -> Result<(Paladin, Arc<dyn PaladinExecutorPort>), ProvisionError>; }`
+  - Rationale: **`paladin-web` cannot itself build a `Paladin`** — that needs an `LlmPort` and the builder, which live behind the facade. The registry/handler calls `provision(&spec)` to materialize the pair, then inserts it
+  - The concrete implementation lives in the composition root (Epic 2's binary) and **is the only place that touches the facade/builder**
+  - Open Question 2 default: keep the trait in `paladin-web` (single consumer today); promote to `paladin-ports` only if a second consumer (sidecar/worker topology) appears. Either placement is clean since it references `Paladin` + `PaladinExecutorPort`, both already in core/ports
+- scope: AgentProvisioner port, ProvisionError, composition root
+- note: **Open Question 2 has no recorded answer.** Where the port lives determines whether the queue/worker and sidecar topologies can reuse it.
+
+## REQ-paladin-web-no-facade-dep
+- source: /workspace/.project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md (§1 Architectural seam, Goal 5, §8 Success Metric 2)
+- description: The dependency-flow invariant governing the whole of Milestone 12.
+- acceptance:
+  - `paladin-web` is an infrastructure/adapter crate depending on `paladin-ports` and `paladin-core` but **not** on the `paladin-ai` facade that contains the concrete `PaladinExecutionService`
+  - Registry and handlers depend **only on the `PaladinExecutorPort` trait** (`paladin-ports::output::paladin_executor_port`) and the `Paladin` entity (`paladin-core`)
+  - The concrete `PaladinExecutionService` — which already implements `PaladinExecutorPort` — is injected at composition time by the server binary
+  - Success metric: `cargo tree -p paladin-web` shows **no `paladin-ai` facade dependency**
+  - Re-asserted by Epic 5 FR-17: **"`paladin-web` must not gain a dependency on the `paladin-ai` facade (the JWT `AuthPort` implementation is injected by the binary, mirroring the executor/provisioner seam)."**
+- scope: dependency-flow rule, PaladinExecutorPort seam, composition root injection
+- note: this is the strongest architectural invariant introduced in run 5 and the clearest **SPEC candidate** in the run. It is stated three times across two Epics and has a mechanical verification command. See `constraints.md`.
+
+## REQ-host-agents-config-schema
+- source: /workspace/.project/Milestone_12-Web-API/Epic_2/prd-configurable-web-host-server-binary.md (§4.1, Goals 1-2)
+- description: `host` and `agents` sections loaded through the existing `Settings` system.
+- acceptance:
+  - A `host` section (bind address) and an `agents` list load via the existing `config.yml` + `APP_*` env-override mechanism
+  - **API keys come from env, never the config file**
+  - A consumer can start a Paladin agent HTTP service with **only** a `config.yml` and the `paladin-server` binary — **writing no Rust**
+- scope: config.yml host section, agents section, Settings, env overrides
+
+## REQ-registry-from-config-builder
+- source: /workspace/.project/Milestone_12-Web-API/Epic_2/prd-configurable-web-host-server-binary.md (§4.2)
+- description: A builder turning the `agents` config into a populated `AgentRegistry`.
+- acceptance:
+  - Each configured agent is backed by an LLM provider resolved through the existing provider factory and executed via `PaladinExecutionService`
+  - Explicit non-goal: **Garrison (memory) and Arsenal (tools/MCP) wiring for agents is a later enhancement; agents are LLM + prompt only here**
+- scope: AgentRegistry builder, LLM provider factory, PaladinExecutionService
+
+## REQ-concrete-agent-provisioner
+- source: /workspace/.project/Milestone_12-Web-API/Epic_2/prd-configurable-web-host-server-binary.md (§4.3)
+- description: A concrete `AgentProvisioner` in the facade using the same logic as config load.
+- acceptance:
+  - Lives in the `paladin-ai` facade so `POST /agents` can build and register agents at runtime using the same path as startup config load
+- scope: concrete AgentProvisioner, paladin-ai facade, runtime registration
+
+## REQ-paladin-server-binary
+- source: /workspace/.project/Milestone_12-Web-API/Epic_2/prd-configurable-web-host-server-binary.md (§4.4-4.6, Goals 5-7)
+- description: The `paladin-server` binary: load → build → compose → bind → serve.
+- acceptance:
+  - Loads config → builds the registry + provisioner → composes `agent_router` → binds and serves with **graceful shutdown on SIGINT/SIGTERM**
+  - Startup **fails fast** with actionable errors on invalid config; on success logs the bound address and the served routes
+  - Config is **read once at startup** — hot-reload of `config.yml` is an explicit non-goal
+  - The server binds **plain HTTP**; TLS is expected to be terminated by a proxy/ingress (Epic 7 scope, and out of scope there too)
+  - Unit tests plus a smoke integration test
+- scope: src/bin/paladin-server.rs, graceful shutdown, startup validation
+- settled-by: code-verification.md run-5 — `src/bin/paladin-server.rs` ships with `[[bin]] name = "paladin-server"` and `required-features = ["web-server"]`.
+
+## REQ-execute-stream-service
+- source: /workspace/.project/Milestone_12-Web-API/Epic_3/prd-streaming-async-execution.md (§4.1-4.3, Goals 2-3)
+- description: Real streaming on `PaladinExecutionService` threaded through the registry without changing `PaladinExecutorPort`.
+- acceptance:
+  - `PaladinExecutionService` gains a working `execute_stream` built on `LlmPort::generate_stream`
+  - A streaming executor port is added in `paladin-ports`; registry/state threading is **additive**
+  - **`PaladinExecutorPort` and all Epic 1/2 buffered behaviour are unchanged**
+  - Agents without a streaming backend **degrade gracefully**
+- scope: execute_stream, LlmPort::generate_stream, streaming executor port, additive threading
+
+## REQ-sse-streaming-endpoint
+- source: /workspace/.project/Milestone_12-Web-API/Epic_3/prd-streaming-async-execution.md (§4.4, Goal 1)
+- description: `POST /agents/{id}/execute/stream` emitting real incremental tokens over SSE.
+- acceptance:
+  - Streams real, incremental LLM tokens to the client over Server-Sent Events, ending with a **terminal event carrying final metadata**
+  - Uses the interim `{ "error": ... }` body plus an SSE error event until Epic 4's unified model lands
+  - Explicit non-goal: **WebSocket / bidirectional streaming — SSE only**
+- scope: POST /agents/{id}/execute/stream, SSE, terminal metadata event
+
+## REQ-execution-timeout-cancellation
+- source: /workspace/.project/Milestone_12-Web-API/Epic_3/prd-streaming-async-execution.md (§4.5, Goal 4)
+- description: A resolved, clamped timeout that actually cancels work, on every execution path.
+- acceptance:
+  - Every execution path — buffered, streaming, job — honours a timeout resolved as **request → agent → config-default**, clamped to a server maximum
+  - On expiry the underlying work is **cancelled** and a `504`-style error returned
+- scope: timeout resolution chain, cancellation, 504
+
+## REQ-async-jobs-api
+- source: /workspace/.project/Milestone_12-Web-API/Epic_3/prd-streaming-async-execution.md (§4.6, Goal 5)
+- description: In-process fire-and-poll job execution.
+- acceptance:
+  - `POST /agents/{id}/jobs` enqueues an in-process job and returns a job id
+  - `GET /agents/{id}/jobs/{job_id}` reports status and, when finished, the result
+  - Explicit non-goal: **"Distributed / durable jobs, retries, or backpressure — that is the queue/worker topology; Epic 3 jobs are in-process and ephemeral."**
+- scope: POST /agents/{id}/jobs, GET job status, in-process job store
+- settled-by: code-verification.md run-5 — `crates/paladin-web/src/job_store.rs` ships.
+- note: the milestone overview marks Epic 3 Task 3.3 (async job execution) **optional/stretch**; the Epic 3 PRD promotes it to a goal. Both positions recorded; the tree implements it.
+
+## REQ-api-error-envelope
+- source: /workspace/.project/Milestone_12-Web-API/Epic_4/prd-api-cross-cutting-concerns.md (§4.1, Goals 1, 5)
+- description: One structured error type rendering every failure across all `paladin-web` controllers.
+- acceptance:
+  - Every failure renders as `{ "error": { "code", "message", "details" } }` with the correct HTTP status
+  - **The SSE `error` events and all handlers use the same envelope**; the interim per-controller `ok_body`/`error_body` helpers are **removed** in favour of the shared model
+  - Applies across the agent controller, the user-management controller and the content-delivery controller
+- scope: ApiError, unified error envelope, controller consolidation
+- settled-by: code-verification.md run-5 — `crates/paladin-web/src/error.rs` ships.
+
+## REQ-health-ready-endpoints
+- source: /workspace/.project/Milestone_12-Web-API/Epic_4/prd-api-cross-cutting-concerns.md (§4.2, Goal 2)
+- description: `GET /health` and `GET /ready` returning structured JSON for k8s probes.
+- acceptance:
+  - `/health` is liveness, `/ready` is readiness; both return structured JSON suitable for Kubernetes probes
+  - Re-asserted by Epic 5 FR-11: **both must remain unauthenticated regardless of auth config** — "probes must not require credentials"
+- scope: GET /health, GET /ready, k8s probes, unauthenticated
+
+## REQ-request-logging-request-id
+- source: /workspace/.project/Milestone_12-Web-API/Epic_4/prd-api-cross-cutting-concerns.md (§4.3, Goal 3)
+- description: One log line per request with a client-visible request id.
+- acceptance:
+  - Every request logged **once** with method, path, status, latency and request-id, via `log`
+  - The request-id is surfaced to the client as an `x-request-id` response header
+  - Explicit non-goals: **no metrics/Prometheus, no distributed-tracing exporters, no new `tracing` backend, and no migration of the workspace off `log` to `tracing`**
+- scope: request logging middleware, x-request-id
+- note: Epic 5 FR-13 extends this — the logger **must redact `Authorization` and `X-API-Key`**; "it already logs no headers/bodies — keep it that way."
+
+## REQ-cors-body-limit-timeout
+- source: /workspace/.project/Milestone_12-Web-API/Epic_4/prd-api-cross-cutting-concerns.md (§4.4, Goal 4)
+- description: CORS, body-size limit and a global request timeout applied uniformly.
+- acceptance:
+  - CORS layer, request body-size limit and a global request timeout are configurable and applied uniformly
+  - **Without breaking long-lived SSE streaming** — the global timeout layer is additive and must not interfere with streaming or with Epic 3's per-execution timeouts
+- scope: CORS, body-size limit, global timeout, SSE compatibility
+
+## REQ-rate-limiting
+- source: /workspace/.project/Milestone_12-Web-API/Epic_4/prd-api-cross-cutting-concerns.md (§4.5)
+- description: A basic global IP-based rate limiter, off by default.
+- acceptance:
+  - Configurable and **off by default**, implemented via `tower-governor`
+  - **IP-based, not identity-based**; explicit non-goal: per-route / per-agent rate limits or quotas
+  - Epic 5 restates the boundary: "Epic 4's rate limiter remains IP-based"; **API-key storage backends, rotation and per-key rate limits are out of scope**
+- scope: tower-governor, IP rate limiting, off-by-default
+- settled-by: code-verification.md run-5 — `tower_governor = { version = "0.8", features = ["axum"] }` in `crates/paladin-web/Cargo.toml`.
+
+## REQ-api-key-auth
+- source: /workspace/.project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md (§4.1 FR-1, FR-3, FR-4)
+- description: API-key authentication via the `X-API-Key` header.
+- acceptance:
+  - Accepts an API key via `X-API-Key`, resolved by **constant-time compare** against a configured map of key → principal `{ name, role }`
+  - When both credential headers are present, a **deterministic, documented precedence** applies (e.g. `Authorization` bearer first, then `X-API-Key`)
+  - Success attaches a unified `Principal { id: String, role: UserRole }` to the request extensions for downstream authorization; failure returns `401` as `ApiError`
+  - Open Question 1 default: a single role per key (`{ key, name, role }` per entry)
+  - Open Question 2 default: reuse `UserRole` for both principal kinds, parsing role strings from config; **an unknown role string is a startup error**
+- scope: X-API-Key, constant-time compare, Principal, UserRole
+
+## REQ-jwt-bearer-auth-v2
+- source: /workspace/.project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md (§4.1 FR-2, §6 Credentials, §7, OQ-4)
+- description: **Variant v2** — `Authorization: Bearer <jwt>` verified through `AuthPort::verify_token`.
+- acceptance:
+  - "The system **must** accept a **JWT** via `Authorization: Bearer <token>`, verified through the existing `AuthPort::verify_token`, yielding `AuthClaims { user_id, role }`. JWT is available only when an `AuthPort` verifier is configured."
+  - Config: `http.auth.jwt.enabled` — "use the AuthPort bearer path (verifier wired by the binary)"
+  - `AgentAuthConfig { enabled, api_keys: HashMap<String, Principal>, jwt: Option<Arc<dyn AuthPort>> }`
+  - `paladin-server` "constructs an `AuthPort` JWT verifier when configured (injecting the facade's implementation)"
+  - **Open Question 4 is unanswered:** "which concrete `AuthPort` impl does `paladin-server` wire, and what does it need (signing secret/algorithm) from config/env? (Confirm the available adapter during implementation.)"
+- scope: JWT bearer auth, AuthPort::verify_token, AgentAuthConfig.jwt, paladin-server wiring
+- note: **v2 of a competing pair with `REQ-opaque-bearer-token-adapter-v1` (Milestone 9 Epic 5), which lists "JWT/OIDC/OAuth or any external identity provider integration" as an explicit non-goal and chose opaque tokens specifically to avoid a `jsonwebtoken` dependency and signing-key management.** See INGEST-CONFLICTS.md WARNINGS.
+- settled-by: code-verification.md run-5 — **neither variant wins cleanly.** `crates/paladin-web/src/agent_auth.rs` implements the v2 *shape* (`jwt: Option<Arc<dyn AuthPort>>`, bearer-first precedence, constant-time API-key compare) but **no `jsonwebtoken` dependency exists anywhere in the workspace** and the only shipped `AuthPort` implementation is `src/infrastructure/adapters/auth/in_memory_token_auth_adapter.rs` — v1's opaque, in-process, hashed-token store. The API is **documented as JWT and implemented as opaque tokens.** OQ-4 is unanswered because it is unanswerable for the shipped adapter: there is no signing secret or algorithm.
+
+## REQ-fail-closed-auth-posture
+- source: /workspace/.project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md (§4.2, Goal 4, OQ-3)
+- description: Auth required by default, disable-able, and fail-closed when misconfigured.
+- acceptance:
+  - Configurable under `http.auth`: `enabled` (**default `true`**), an `api_keys` list, and JWT settings
+  - When `enabled` and **no** credential source is configured (no API keys and no JWT verifier), the server **fails closed** — refuses to serve protected routes with a clear error telling the operator to configure credentials or set `enabled: false`
+  - When `enabled: false`, agent routes serve unauthenticated (intended for trusted/dev environments) and this **must be logged as a warning at startup**
+  - Recorded posture rationale: "The agent HTTP API has been **intentionally unauthenticated** through Epics 1-4 — anyone who can reach the port can run, register, or delete agents. That is unacceptable for a real deployment: agent execution spends money (LLM calls) and runtime registration is a powerful capability."
+  - Open Question 3 default: `enabled: false` is **permitted in release builds but loudly warned**, rather than debug-only
+- scope: http.auth.enabled, fail-closed startup validation, dev escape hatch
+
+## REQ-per-agent-role-authorization
+- source: /workspace/.project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md (§4.3 FR-8, FR-10, §7)
+- description: Optional per-agent `allowed_roles` restricting invocation.
+- acceptance:
+  - Each agent **may** declare `allowed_roles`; on `execute`, `execute/stream` and `jobs` the caller's role must be in it. **Empty or absent ⇒ any authenticated caller.** A disallowed role returns `403` as `ApiError`
+  - Discovery (`GET /agents`, `GET /agents/{id}`) and `GET /agents/{id}/jobs/{job_id}` require authentication (any role) when auth is enabled
+  - `AgentEntry` gains `allowed_roles: Vec<UserRole>` (or `Vec<String>` parsed to roles); `AgentDefinition` and `AgentSpec` gain it; the config builder and runtime provisioner carry it **through the same seam as `timeout_secs`**; `AgentApiState` gains `auth: AgentAuthConfig`
+  - Explicit non-goal: fine-grained scopes/permissions beyond `allowed_roles` plus the admin gate
+- scope: allowed_roles, AgentEntry, AgentDefinition, AgentSpec, AgentApiState
+
+## REQ-admin-gated-registration
+- source: /workspace/.project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md (§4.3 FR-9, §4.5 FR-15)
+- description: An admin gate on runtime registration and deregistration.
+- acceptance:
+  - `POST /agents` and `DELETE /agents/{id}` **require an admin role**; non-admin authenticated callers get `403`
+  - Authentication is applied as a **layer/middleware over the protected agent routes (not the health routes)**, composed in `with_http_layers` / the router so it runs before handlers
+  - The per-agent and admin authorization checks run **in the handlers (or a thin extractor)** using the attached principal and the agent's `allowed_roles`
+- scope: admin gate, auth layer composition, with_http_layers
+
+## REQ-secret-hygiene-redaction
+- source: /workspace/.project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md (§4.4 FR-12 to FR-14, §4.6 FR-19)
+- description: No credential, token or prompt reaches a response body or a log line.
+- acceptance:
+  - Discovery responses must not include the raw system prompt, API keys, JWTs or provider configuration (already true for prompts — reconfirm and test)
+  - **No log line may contain an API key or JWT**; the request logger redacts `Authorization` and `X-API-Key`
+  - Auth/authz error messages **must not echo the supplied credential**
+  - Test matrix: unauthenticated → `401`; invalid key/JWT → `401`; valid API key → success; valid JWT → success; role not in `allowed_roles` → `403`; non-admin register/deregister → `403`; admin register → success; health/ready reachable without a credential; **plus a redaction test proving a key/token does not appear in the logged line or responses**
+  - Explicit non-goal: **"Encrypting config at rest — secrets management is the operator's responsibility (as with LLM keys)."** API-key values should come from env/secret indirection in practice, not committed config
+- scope: secret hygiene, header redaction, discovery response filtering, redaction test
+
+## REQ-openapi-spec-generation
+- source: /workspace/.project/Milestone_12-Web-API/Epic_6/prd-openapi-spec-interactive-docs.md (§4.1, Goals 1, 4)
+- description: A code-generated OpenAPI 3.x document — no hand-maintained duplicate.
+- acceptance:
+  - `GET /openapi.json` returns a valid OpenAPI 3.x document describing every agent-API route, its request/response DTOs, the error envelope and the security schemes, when docs are enabled
+  - **The spec is generated from code** via `utoipa` / `utoipa-axum` / `OpenApiRouter`
+  - Explicit non-goal: **"Auth on the docs endpoints — the contract is public; values/secrets are never in the spec."**
+- scope: utoipa, OpenApiRouter, GET /openapi.json, security schemes
+
+## REQ-swagger-ui-docs-endpoint
+- source: /workspace/.project/Milestone_12-Web-API/Epic_6/prd-openapi-spec-interactive-docs.md (§4.2, Goal 5)
+- description: An interactive Swagger UI at `/docs`, disable-able in production.
+- acceptance:
+  - `GET /docs` serves an interactive Swagger UI backed by the generated spec
+  - Exposure is controlled by `http.docs.enabled` (**default true**) so production can disable it
+- scope: GET /docs, Swagger UI, http.docs.enabled
+
+## REQ-api-v1-versioning
+- source: /workspace/.project/Milestone_12-Web-API/Epic_6/prd-openapi-spec-interactive-docs.md (§4.3, Goal 3)
+- description: The agent API served under `/v1` with a written stability policy.
+- acceptance:
+  - The agent API is served under `/v1`; operational and docs endpoints remain **unversioned**
+  - A written stability policy explains what `/v1` guarantees and how a `/v2` would arrive
+  - Explicit non-goal: **versioning the pre-existing user-management and content-delivery routes — they keep their paths**
+- scope: /v1 prefix, versioning policy, unversioned operational endpoints
+- note: this **relocates the entire Epic 1 route surface.** Epic 1 §6 tabulates five routes at `/agents/…`; Epics 3, 4 and 5 all cite those unprefixed paths. Epic 6 is the later position. Recorded, not resolved — see INGEST-CONFLICTS.md WARNINGS.
+
+## REQ-openapi-drift-guard
+- source: /workspace/.project/Milestone_12-Web-API/Epic_6/prd-openapi-spec-interactive-docs.md (§4.4, Goal 4)
+- description: A CI test that fails when the committed spec baseline no longer matches the generated one.
+- acceptance:
+  - A committed `openapi.json` baseline plus a drift-guard test that **fails CI** when the generated spec diverges
+  - Explicit non-goals: multiple spec versions / `/v2`; client SDK generation or publishing (consumers run their own codegen); full OpenAPI expression of SSE event framing (describe the stream endpoint's content type at a high level)
+- scope: openapi.json baseline, drift-guard test
+- settled-by: code-verification.md run-5 — `crates/paladin-web/openapi.json` ships as the committed baseline.
+
+## REQ-dockerfile-server-compose
+- source: /workspace/.project/Milestone_12-Web-API/Epic_7/prd-deployment-artifacts-examples-docs.md (§4.1, Goals 1-2)
+- description: A minimal container image and compose service for `paladin-server`.
+- acceptance:
+  - `Dockerfile.server` builds a minimal `debian:12-slim` image running `paladin-server` and responding on `/health`
+  - A docker-compose service runs the server with config and secrets injected
+  - Explicit non-goals: **multi-arch / static-musl images (single `debian:12-slim` amd64; multi-arch deferred); TLS termination / ingress (a proxy concern, documented not implemented); publishing images to a registry**
+- scope: Dockerfile.server, docker-compose service, debian:12-slim
+
+## REQ-k8s-manifests
+- source: /workspace/.project/Milestone_12-Web-API/Epic_7/prd-deployment-artifacts-examples-docs.md (§4.2, Goal 2)
+- description: Plain Kubernetes Deployment and Service manifests with probes.
+- acceptance:
+  - `k8s/` Deployment + Service run the server with config + secrets injected and **liveness/readiness probes pointing at `/health` and `/ready`**
+  - Explicit non-goal: **Helm charts / Kustomize overlays — plain manifests only**
+- scope: k8s Deployment, Service, ConfigMap/Secret, probes
+- settled-by: code-verification.md run-5 — `k8s/` ships `deployment.yaml`, `service.yaml`, `configmap.yaml`, `secret.yaml.example`, `namespace.yaml`, a `server/` subdirectory, plus `redis.yaml` and `minio.yaml`.
+- note: a Kubernetes **Deployment** implies more than one replica over time. Combined with `REQ-opaque-bearer-token-adapter-v1`'s recorded trade-off — "a multi-process deployment would later need a shared store" — this is the point at which the in-process token store becomes an operational constraint. Neither document connects the two.
+
+## REQ-deployment-topology-doc-update
+- source: /workspace/.project/Milestone_12-Web-API/Epic_7/prd-deployment-artifacts-examples-docs.md (§4.3, Goal 3)
+- description: Replace the "compose your own endpoint" framing with the shipped API.
+- acceptance:
+  - The deployment-topology docs accurately describe the **shipped** API and server binary, **replacing the old "compose your own endpoint" framing**
+  - The topology overview table is updated
+- scope: docs/src/deployment-topologies/, http-service-host.md, overview.md
+- settled-by: code-verification.md run-5 — the stale framing is gone. Greps for "ships no agent-execution", "yours to compose", "compose your own" and "does not run agents" return **zero matches** across `docs/src/`; `http-service-host.md` references `paladin-server` four times. **The Milestone 11 Epic 6 gap statement was closed by Milestone 12 in both code and docs.**
+
+## REQ-server-e2e-tests
+- source: /workspace/.project/Milestone_12-Web-API/Epic_7/prd-deployment-artifacts-examples-docs.md (§4.4-4.5, Goals 4-5)
+- description: A runnable example plus an end-to-end suite against the real assembled server.
+- acceptance:
+  - A runnable `examples/` program (and a compile-tested `doc-examples` snippet) boots the server from a sample config and exercises an agent
+  - An end-to-end suite boots the **real assembled server** and asserts auth, buffered **and** streaming execution, async jobs, health/readiness, the error envelope, and the served spec/UI
+  - Explicit non-goal: **"The spawn-the-binary e2e mode — in-process only this epic."**
+- scope: examples/, doc-examples snippet, end-to-end test suite
+
+## REQ-m12-v060-release
+- source: /workspace/.project/Milestone_12-Web-API/Epic_7/prd-deployment-artifacts-examples-docs.md (§4.6, Goals 6-7)
+- description: Milestone 12 finalization at v0.6.0.
+- acceptance:
+  - All workspace crates at **0.6.0**; `CHANGELOG.md` and `project/current-exports.txt` reflect the release
+  - `cargo test`, `fmt`, `clippy -D warnings`, `make deny` / `make audit` pass; the container image builds
+  - Explicit non-goals: **publishing images or a crates.io release (release automation is its own milestone — this epic produces the artifacts, not the publish); no new API features — "artifacts/docs/tests/release only; no behavior changes to the API."**
+- scope: v0.6.0 lockstep bump, CHANGELOG, current-exports.txt
+- settled-by: code-verification.md run-5 — root `Cargo.toml` is at `version = "0.6.0"`.
+- note: **`project/current-exports.txt` is the stale pre-`.project`-rename path.** Milestone 12 Epics 1, 5, 6 and 7 all name it. This extends `DEBT-01` — the count of stale references to a path renamed in commit `928c6d5` now spans two scripts, three `ci.yml` lines, one Milestone 8 requirement and four Milestone 12 requirements.
+
+---
+
+## Deferred-QA-CICD-Completion — the terminal forward-scope register
+
+## REQ-ci-cli-snapshot-job
+- source: /workspace/.project/Deferred-QA-CICD-Completion/Epic_25/prd-cicd-pipeline-enhancement.md (FR-25.3)
+- description: A `cli-tests` CI job running the 43 `insta` CLI snapshot tests.
+- acceptance:
+  - A job named `cli-tests` (or a step in `test`) runs `cargo test --test cli`, covering all snapshot tests in `tests/cli/` — table, progress, error and help output, **43 total**
+  - Runs on every push and PR to `main`/`develop`, on `stable`, with the same cargo cache config as other jobs, failing the pipeline on any snapshot failure
+  - **Requires no external services** — CLI tests are self-contained
+  - If a separate job, runs in parallel with `lint` and `test` (no `needs:`)
+- scope: ci.yml cli-tests job, insta snapshot tests
+- settled-by: code-verification.md run-5 — **VERIFIED OPEN.** No `cli-tests` job exists in `ci.yml`; its 14 jobs are `lint`, `security-audit`, `cargo-deny`, `osv-scanner`, `api-surface`, `test`, `crate-isolation`, `integration-tests`, `security`, `docker`, `e2e-tests`, `benchmark`, `benchmark-regression-signal`, `publish-dry-run`.
+
+## REQ-ci-bench-check-job
+- source: /workspace/.project/Deferred-QA-CICD-Completion/Epic_25/prd-cicd-pipeline-enhancement.md (FR-25.4)
+- description: A `bench-check` CI job compiling benchmarks without running them.
+- acceptance:
+  - A job named `bench-check` runs `cargo bench --no-run`, catching API breakage and benchmark bitrot
+  - Runs on every push and PR to `main`/`develop` on `stable`, failing on compile failure, **without executing benchmarks** (no performance numbers, no Criterion output), in parallel with other jobs
+  - **The existing `benchmark` job (full runs on schedule/manual) remains unchanged**
+  - Explicit non-goal: benchmark **regression detection** (`critcmp` / `github-action-benchmark`) is a future enhancement
+- scope: ci.yml bench-check job, cargo bench --no-run
+- settled-by: code-verification.md run-5 — **VERIFIED OPEN.** No `bench-check` job exists. Note that a `benchmark-regression-signal` job *does* ship at `ci.yml:531` from Milestone 7 Epic 3 — the future enhancement landed before the prerequisite.
+
+## REQ-ci-combined-coverage-job
+- source: /workspace/.project/Deferred-QA-CICD-Completion/Epic_25/prd-cicd-pipeline-enhancement.md (FR-25.5, FR-25.9)
+- description: A combined unit + integration coverage job uploading to Codecov.
+- acceptance:
+  - A `coverage` job installs `cargo-llvm-cov` via **`taiki-e/install-action@v2` with `tool: cargo-llvm-cov@0.7.1`** (pre-built binaries, ~30 s versus 3-5 min for `cargo install`), runs `cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info`, uploads to Codecov with `flags: combined` and `fail_ci_if_error: true`, and saves an HTML report as an `actions/upload-artifact@v4` artifact with 14-day retention
+  - Runs on every push and PR to `main`/`develop` on `stable`, **starting Redis and MinIO** so integration tests execute during coverage collection
+  - `integration-tests.yml`'s existing coverage step is evaluated; **recommended: remove it** to avoid duplicate uploads, since the combined report subsumes it
+- scope: ci.yml coverage job, cargo-llvm-cov, Codecov upload, HTML artifact
+- settled-by: code-verification.md run-5 — **VERIFIED OPEN.** No `coverage` job in `ci.yml`; no `cargo-llvm-cov` reference anywhere in `ci.yml`. `integration-tests.yml:117-123` still runs `cargo install cargo-llvm-cov` and `codecov/codecov-action@v3` — the integration-only path this requirement was to supersede.
+- note: Open Question 3 (remove versus retain the `integration-tests.yml` step) has no recorded answer.
+
+## REQ-codecov-config-thresholds
+- source: /workspace/.project/Deferred-QA-CICD-Completion/Epic_25/prd-cicd-pipeline-enhancement.md (FR-25.6, FR-25.10, Appendix C)
+- description: A `.codecov.yml` with a **phased** threshold rollout.
+- acceptance:
+  - `.codecov.yml` at the repository root with `require_ci_to_pass: true`, `precision: 2`, `round: down`, `range: "70...100"`; `status.project.default` `target: 70%` / `threshold: 2%` / `if_ci_failed: error`; `status.patch.default` `target: 80%` / `threshold: 5%`; PR comment layout `"reach,diff,flags,files"`; and `ignore` covering `tests/**`, `benches/**`, `examples/**`, `migrations/**`, `scripts/**`, `flat/**`
+  - **Phased rollout:** Phase 1 (Sprint 1-2) project 70% / patch 80%; Phase 2 (Sprint 3-4) project 74%; Phase 3 (Sprint 5+) project 78%. Each phase change is a single `target:` edit
+  - A `CODECOV_TOKEN` repository secret must be configured; without it uploads may fail silently, especially on fork PRs
+- scope: .codecov.yml, phased coverage thresholds, CODECOV_TOKEN
+- settled-by: code-verification.md run-5 — **VERIFIED OPEN.** Neither `.codecov.yml` nor `codecov.yml` exists at the repository root.
+- note: **the initial threshold competes with the parent PRD.** `prd-deferred-qa-completion.md` FR-25.3 item 10 mandates "a coverage threshold gate of **78%** minimum. PRs dropping below this threshold must fail." Epic 25 starts at **70%** and ramps. See INGEST-CONFLICTS.md WARNINGS.
+
+## REQ-makefile-coverage-targets
+- source: /workspace/.project/Deferred-QA-CICD-Completion/Epic_25/prd-cicd-pipeline-enhancement.md (FR-25.7)
+- description: Four new Makefile targets plus CI-target updates.
+- acceptance:
+  - A new **Coverage** section between Testing and Code Quality with `coverage` (`cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info`) and `coverage-html` (`--html --output-dir target/coverage`)
+  - In the Testing section: `test-cli` (`cargo test --test cli`) and `bench-check` (`cargo bench --no-run`)
+  - `ci-test` updated to include `test-cli`; a new `ci-full: ci-test coverage`
+- scope: Makefile coverage/coverage-html/test-cli/bench-check, ci-test, ci-full
+- settled-by: code-verification.md run-5 — **VERIFIED OPEN.** None of `coverage`, `coverage-html`, `test-cli` or `bench-check` exists in the `Makefile`, and it contains no `llvm-cov` reference.
+
+## REQ-modernize-github-actions
+- source: /workspace/.project/Deferred-QA-CICD-Completion/Epic_25/prd-cicd-pipeline-enhancement.md (FR-25.1, FR-25.2)
+- description: Replace deprecated GitHub Actions across all three workflows and fix the invalid YAML block.
+- acceptance:
+  - `actions-rs/toolchain@v1` (deprecated and unmaintained) → `dtolnay/rust-toolchain@stable`/`@beta`/`@nightly`, using the `components:` input for `rustfmt`/`clippy`
+  - `actions/cache@v3` → `@v4`; `codecov/codecov-action@v3` → `@v4` with `token: ${{ secrets.CODECOV_TOKEN }}`; `actions/checkout@v3` → `@v4` where present
+  - Remove the **dangling `on: schedule` block** at `ci.yml` lines ~336-340 — syntactically invalid because the top-level `on:` is already defined at line 3
+  - Validate all three workflows with `actionlint`/`yamllint`, zero errors
+- scope: workflow action versions, dangling schedule block, actionlint
+- settled-by: code-verification.md run-5 — **PARTIALLY OPEN.** The dangling `on: schedule` block is **gone** (`ci.yml` has exactly one `on:` at line 3, no `schedule:`/`cron:`). Still open: **`actions-rs/toolchain@v1` at `ci.yml:147`, `:317`, `:507` and `integration-tests.yml:71`; `actions/cache@v3` at `integration-tests.yml:78`, `:84`, `:90`; `codecov/codecov-action@v3` at `integration-tests.yml:123`.** Eight deprecated-action references remain.
+
+## REQ-contributing-coverage-docs
+- source: /workspace/.project/Deferred-QA-CICD-Completion/Epic_25/prd-cicd-pipeline-enhancement.md (FR-25.8)
+- description: A "Code Coverage" section in `CONTRIBUTING.md`.
+- acceptance:
+  - Prerequisites (`cargo install cargo-llvm-cov` / `cargo binstall`), local generation (`make coverage`, `make coverage-html`), how to read LCOV and HTML output, Codecov PR-comment behaviour and dashboard link, the phased threshold policy (70 → 74 → 78 project, 80 patch) and what `project` versus `patch` mean, and troubleshooting (tool not found, low patch coverage, upload failures / `CODECOV_TOKEN`)
+  - Existing `cargo tarpaulin` references updated to note `cargo-llvm-cov` is the project standard (tarpaulin remains an alternative)
+- scope: CONTRIBUTING.md Code Coverage section
+
+## REQ-arch-doc-modernization
+- source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-26.1, items 19-25; G3)
+- description: Bring the architecture document up to the current system — the largest single documentation gap in the corpus.
+- acceptance:
+  - Audit the current `Design_and_Architecture.md` (**311 lines, 10 sections**) and expand to ~600-800 lines
+  - Expand the AI Agent System section (currently ~20 lines) to cover **all 15+ components**: brief refresh of Paladin, Garrison, Arsenal, Battalion (Formation, Phalanx, Campaign, Chain of Command), Herald, Citadel; **detailed** coverage of **Commander, Council, Conclave, Grove, Maneuver, Sanctum, Sentinel**
+  - Add **Mermaid** diagrams (GitHub-native, no external images) for: overall hexagonal system architecture; Battalion orchestration patterns; data flow through a Paladin execution cycle; Arsenal/MCP tool integration flow
+  - Update Data Flow to include the AI agent execution pipeline, not just content processing; update Deployment Architecture (currently marked "Draft"); add a Configuration section covering `config.yml` for LLM providers, Garrison, Arsenal and Sanctum; remove or update stale content-management-heavy framing
+  - Success metric: components documented **8 of 15+ → 15+ of 15+**
+- scope: Design_and_Architecture.md, 7 undocumented subsystems, 4 Mermaid diagrams
+- settled-by: code-verification.md run-5 — **VERIFIED OPEN, and the file was relocated without being rewritten.** The document now ships as `docs/src/appendix/design-and-architecture.md` and is **still exactly 311 lines** — the same figure this requirement cites. It contains **zero** occurrences of Commander, Council, Conclave, Grove, Maneuver, Sanctum or Sentinel and **zero** ```mermaid blocks. Milestone 11 moved it into the mdbook appendix, which its own Epic 3 non-goals exempt from rewriting ("the 35 appendix files are reference/archive material and are not rewritten"). **The relocation placed the corpus's largest documentation gap into the one chapter nobody was required to fix.**
+
+## REQ-rustdoc-zero-warnings
+- source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-26.2; G5)
+- description: Zero rustdoc warnings, enforced in CI.
+- acceptance:
+  - Run `cargo doc --no-deps 2>&1` and catalog all warnings; fix all of them (**recorded as 12 minor formatting issues**)
+  - `cargo doc --no-deps` produces zero warnings
+  - Add a `cargo doc --no-deps 2>&1 | grep -c warning` check to CI, failing if > 0
+- scope: rustdoc warnings, CI doc-warning gate
+- note: Milestone 7 Epic 4 §4.4.3 independently requires zero `cargo doc --workspace --no-deps` warnings, while Milestone 8 Epic 5 FR-19 relaxes the same command to "warnings acceptable; must not fail". Three positions on one command across three milestones — see run-4 `constraints.md`.
+
+## REQ-public-api-doc-audit
+- source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-26.3; G9)
+- description: 100% rustdoc coverage of public items in `src/`.
+- acceptance:
+  - Enumerate all `pub` items in `src/` lacking `///` documentation and document every undocumented public function, struct, enum, trait and type alias
+  - Add at least one `/// # Examples` block to **all public API entry points** — builders, service constructors, port traits
+  - Verify rendering with `cargo doc --open`
+- scope: public API rustdoc coverage, examples on entry points
+
+## REQ-asciinema-demos
+- source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-26.4; G4)
+- description: Four terminal demo recordings and an index page.
+- acceptance:
+  - Record **Basic Paladin Execution** (30-60 s), **Battalion Formation** (45-90 s), **Council Discussion** (60-120 s) and **Grove Routing** (45-90 s) with `asciinema`
+  - Save originals to `docs/assets/recordings/` in `.cast`; optionally convert to `.gif`/`.svg` (`asciinema-agg` / `svg-term-cli`) for README embedding, with rendered versions in `docs/assets/`
+  - Update `README.md` to embed or link demos in the matching sections; add a `docs/DEMOS.md` index listing all demos with descriptions
+  - Recordings require live LLM API keys (OpenAI preferred)
+- scope: asciinema recordings, docs/assets, docs/DEMOS.md, README embedding
+- settled-by: code-verification.md run-5 — **VERIFIED OPEN.** `docs/assets/` exists and is **empty**; `docs/DEMOS.md` does not exist.
+- note: Open Question 4 (asciinema versus VHS tape files, Terminalizer or plain GIFs) has no recorded answer. The README was subsequently rewritten by Milestone 11 Epic 5 to a concise landing page, which does not include a demos section — so this requirement's README clause targets a document that has since changed shape.
+
+## REQ-llm-tool-calling-port
+- source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-27.1, FR-27.2; G6)
+- description: Tool definitions on `LlmRequest` and tool calls on `LlmResponse`.
+- acceptance:
+  - Add `tools: Option<Vec<ToolDefinition>>` to `LlmRequest`
+  - `ToolDefinition { name: String, description: String, parameters: serde_json::Value }` (JSON Schema), deriving `Debug`, `Clone`, `Serialize`, `Deserialize`
+  - `LlmResponse.function_call` populated from actual API responses — **currently hardcoded to `None` in all three adapters**
+  - Add `tool_calls: Option<Vec<ToolCall>>` to `LlmResponse` for parallel tool calls; `ToolCall { id: String, function: FunctionCall }`
+  - The `ToolDefinition` type is **provider-agnostic and defined in the port layer**; provider-specific serialization happens in the adapter layer (hexagonal pattern)
+  - Recorded risk: this modifies the `LlmPort` trait and is a **breaking change to the port interface** — all adapters must be updated simultaneously. Phased approach: (1) add `tools` as `Option<…>` (backward compatible, `None` = no tools); (2) implement sending; (3) implement parsing; (4) live API tests
+- scope: LlmRequest.tools, ToolDefinition, ToolCall, LlmResponse.tool_calls
+- settled-by: code-verification.md run-5 — **VERIFIED OPEN.** `crates/paladin-ports/src/output/llm_port.rs` has no `tools` field; greps for `struct ToolDefinition`, `struct ToolCall` and `tool_calls` across `paladin-ports` and `paladin-llm` return **zero matches**. The only `tools` occurrences are two doc-comment references, one of which reads "// No tools, rely on prompting".
+- note: the requirement names the path `src/application/ports/output/llm_port.rs`, which **no longer exists** — `src/application/ports/` was deleted by Milestone 5 Epic 2. The current path is `crates/paladin-ports/src/output/llm_port.rs`. Relocation, not contradiction.
+
+## REQ-llm-tool-calling-adapters
+- source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-27.3 to FR-27.7)
+- description: Tool calling implemented and tested across all three LLM adapters.
+- acceptance:
+  - **OpenAI:** include `tools` in the request body when `LlmRequest.tools` is `Some`; parse `tool_calls` from the response; parse single `function_call` for backward compatibility; handle `finish_reason: "tool_calls"` in addition to `"function_call"`; handle streamed tool-call deltas in `generate_stream()`
+  - **Anthropic:** include `tools` in Anthropic format (`tools: [{name, description, input_schema}]`); parse `tool_use` content blocks into `LlmResponse.tool_calls`; handle `stop_reason: "tool_use"`; handle streamed `content_block_start`/`content_block_delta` for tool_use blocks. **The adapter must translate `input_schema` versus `parameters`**
+  - **DeepSeek:** investigate support (may mirror OpenAI); implement if supported, otherwise update `ProviderCapabilities` to report `supports_tool_calling: false` accurately and document the limitation
+  - Unit tests per adapter for request serialization, response deserialization, multi/parallel tool calls, and edge cases (empty tool list, malformed responses, missing tool call ids); test that `ProviderCapabilities` reflects actual support
+  - Live tests `test_openai_tool_calling`, `test_anthropic_tool_calling`, `test_deepseek_tool_calling` in `tests/integration/llm_live_api_tests.rs`, all gated behind `#[cfg(feature = "live-api-tests")]` and `#[ignore]`, skipping gracefully when an API key is absent
+  - Problem statement: "All three LLM adapters declare tool-calling capabilities in `ProviderCapabilities` but hardcode `function_call: None`"
+- scope: OpenAI/Anthropic/DeepSeek tool calling, ProviderCapabilities accuracy, live-api-tests
+- note: Open Question 1 (does DeepSeek's API support tool calling?) and Open Question 5 (OpenAI JSON Schema as canonical versus a provider-agnostic schema) both have no recorded answer. **`ProviderCapabilities` currently over-reports capability** — that is a correctness defect independent of whether tool calling is implemented.
+
+## REQ-mock-infrastructure
+- source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-28.1, FR-29.1)
+- description: Reusable mock and async-test infrastructure shared by Epics 28 and 29.
+- acceptance:
+  - `MockUserRepository` (`UserRepositoryPort`, in-memory `HashMap`), `MockLogPort` (`Vec<LogEntry>` for assertion), `MockNotificationService` (sent-messages vector), placed in `tests/common/mocks/` or `tests/unit/mocks/` for reuse
+  - `MockEventSource` (configurable event sequences with controlled timing), `MockTriggerExecutor` (records executions), Tokio time-control utilities (`tokio::time::pause()`/`advance()`), and test event generators, placed in `tests/common/event_testing/`
+  - **All mocks must be `Send + Sync`** for async test compatibility; use the `Arc<Mutex<Vec<T>>>` pattern for recording calls in async contexts
+  - Design as reusable components, **not per-test one-offs**; a `mod.rs` re-exports all mocks
+  - Open Question 2: adopt `mockall` or keep hand-written mocks (compile-time cost versus boilerplate) — **unanswered**
+- scope: tests/common/mocks, tests/common/event_testing, Send + Sync mocks
+- settled-by: code-verification.md run-5 — **VERIFIED OPEN in the specified shape.** No `tests/common/` directory exists. Mocks live at `tests/helpers/{mock_llm_adapter,mock_arsenal_adapter,mock_paladin_port}.rs` — a different location and a different set. None of `MockUserRepository`, `MockLogPort`, `MockNotificationService`, `MockEventSource` or `MockTriggerExecutor` exists.
+- note: **this is the shared prerequisite for Epics 28 and 29** and the reason the recommended execution order puts Epic 28 before Epic 29. `DEFERRED_COVERAGE.md` lists "create reusable mock infrastructure patterns", "document testing best practices" and "establish concurrency testing patterns" as the three **unchecked** prerequisites for all deferred coverage work.
+
+## REQ-user-service-test-coverage
+- source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-28.2 to FR-28.7; G7) + Deferred-QA-CICD-Completion/DEFERRED_COVERAGE.md (Module 1)
+- description: Raise `user_service.rs` from ~4.23% to ≥ 80% coverage — Epic 28.
+- acceptance:
+  - Registration: happy path (user persisted, welcome email sent, action logged); duplicate username; duplicate email; invalid username formats (too short, too long, special characters); invalid email; password hashing (hashed ≠ plaintext, valid Argon2)
+  - Authentication: correct password; incorrect password; non-existent user; deactivated account; login-attempt tracking increments on failure
+  - Profile: update, email change with verification requirement, activation/deactivation, email-verification flow
+  - Queries: find by id, by email, by active status, by verification status, user count statistics
+  - Edge cases: repository error (database-down simulation); notification failure **must not block registration**; concurrent registration with the same username; Unicode username and password; empty/whitespace-only inputs
+  - `cargo llvm-cov` targeting the module verifies **≥ 80%**; intentionally untested paths documented with justification
+  - Recorded profile: **488 LOC, ~4.23% coverage, complexity High, production status Active** (used in web controllers and CLI commands). Effort 15-20 h (mock infra 6-8, test suite 8-10, edge cases 1-2). Risk of deferral **Medium** — "Authentication logic is critical security component"
+  - Deferral mitigation of record: the service is already exercised through CLI and web-controller integration tests and real dev/staging database interaction; core security is Argon2, a battle-tested library, not custom code
+- scope: user_service.rs coverage, Epic 28, Argon2 validation
+- settled-by: code-verification.md run-5 — the target module still ships at `src/core/platform/manager/user_service.rs` (19,046 bytes). It is one of only **four** files remaining in `src/core/platform/manager/`, and run 4's `REQ-m8-deferred-items-register` D2 recommends **splitting it** — trait + DTOs to `paladin-core`/`paladin-ports`, concrete impl to a facade app-service. **Two ingested registers propose different next actions on the same file.**
+
+## REQ-listener-service-test-coverage
+- source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-29.2 to FR-29.7; G8) + Deferred-QA-CICD-Completion/DEFERRED_COVERAGE.md (Module 2)
+- description: Raise the listener service from ~57.83% to ≥ 80% coverage with concurrency and observability work — Epic 29.
+- acceptance:
+  - Registration: register for a specific event type; multiple listeners on one type; unregister; lifecycle (registered → active → paused → unregistered); complex filter conditions
+  - Processing: single delivery to a matching listener; delivery to multiple matching listeners; filtering (non-matching not delivered); batch processing; **ordering guarantees**
+  - Triggers: creation from a matched event; status tracking (created → executing → completed/failed); condition evaluation; failure handling and retry; execution coordination via `MockTriggerExecutor`
+  - Concurrency and stress: concurrent emission from multiple producers; concurrent registration/unregistration **during** event processing; a high-volume burst of **1000+ events**; **deadlock detection under contention (Tokio `Mutex` + `RwLock` interactions)**; graceful shutdown during active processing; `loom` or manual patterns for race detection
+  - Statistics: processing-count metrics, trigger success/failure rate calculation, health-check status
+  - `cargo llvm-cov` verifies **≥ 80%**; intentionally untested paths documented
+  - Recorded profile: **602 LOC, ~57.83% coverage, complexity Very High, production status Active** (event-driven system core). Effort 20-25 h (mock infra 8-10, async framework 4-6, test suite 8-9). Risk of deferral **Medium-High** — "Event-driven systems are notoriously hard to debug; concurrency bugs can be subtle and intermittent; trigger generation logic is business-critical"
+  - Future-plan scope beyond coverage: an event testing framework, property-based tests for filtering, concurrency stress tests, chaos-engineering tests (random failures), and **distributed tracing for event flows**; target 85%+
+- scope: listener service coverage, Epic 29, concurrency stress, distributed tracing
+- settled-by: code-verification.md run-5 — the module was **relocated, not deleted.** Both this PRD and `DEFERRED_COVERAGE.md` name `src/core/platform/manager/listener_service.rs`, which no longer exists; the code ships as `src/application/services/orchestration/listener.rs` (`ListenerOrchestrator`) after the Milestone 6 Epic 2 relocation. Relocation, not contradiction — but every path in this requirement is stale.
+- note: Milestone 9 Epic 2 (`REQ-event-trigger-job-pipeline`) subsequently added match/no-match/fan-out/rate-limit/dispatch tests against this exact module. **Epic 29's stated coverage baseline of 57.83% predates that work and is almost certainly no longer accurate.** Re-measure before planning.
+
+## REQ-deferred-coverage-register
+- source: /workspace/.project/Deferred-QA-CICD-Completion/DEFERRED_COVERAGE.md
+- description: The Epic 24 coverage deferral record — the terminal deferred register of the corpus.
+- acceptance:
+  - Two modules deferred, **1,090 LOC total (~2.2% of a ~50,000-LOC codebase)**, combined effort **35-45 hours**, coverage impact **−2% to −3%** (78-80% without the deferred modules, 76-77% with; target 75%+, "within acceptable range")
+  - Target epics named and scoped: **Epic 28 "Platform Services Test Coverage"** (priority Medium, 2-3 sprints, 2-3 story points / 1 dev week) and **Epic 29 "Event System Test Coverage & Observability"** (priority Medium-High, 2-4 sprints, 3-5 story points / 1.5-2 dev weeks)
+  - Coverage goals recorded as **achieved**: Paladin core 85%+, Battalion patterns 80%+, Garrison/Arsenal 75%+, CLI 100% snapshot (43 tests). **Deferred**: platform services 60%+
+  - Three **unchecked** prerequisites before tackling deferred coverage: create reusable mock infrastructure patterns; document testing best practices; establish concurrency testing patterns. Three **checked**: Epic 24 complete, snapshot testing patterns established, live API integration tests created
+  - Quality maintained without full coverage through: integration tests with real database/service interactions, 43 CLI snapshot tests, benchmark tests, production monitoring, Rust's compile-time guarantees, and code review
+  - Sign-off: **"Approved By: AI Coding Agent (Epic 24 execution), Date: February 14, 2026, Epic: 24."** Next Review: **Epic 27 or Epic 28 planning**
+- scope: deferred coverage register, Epic 28, Epic 29, prerequisites, sign-off
+- note: this is the third and last deferred register in the corpus, after Milestone 8's `deferred-items.md` (D1-D5) and `deferred-features.md`. Run 4 established those two as the highest-fidelity documents in the corpus — every verifiable claim matched the tree exactly. **This one is materially less reliable:** its two module paths are both stale (one relocated, one still present), and its coverage baselines predate Milestone 9's test work. Treat its *scope* as real and its *numbers* as needing re-measurement.
+
+---
+
+## project-management
+
+## REQ-master-plan-epics-11-18
+- source: /workspace/.project/project-management/paladin-project-plan-final.md
+- description: The master expansion plan defining Epics 11-18 — the origin document for what became Milestone 2.
+- acceptance:
+  - Eight epics over **14-18 weeks**, each scoped at 2 weeks: **Epic 11** Sanctum Memory Foundation; **Epic 12** Sanctum RAG Integration; **Epic 13** Sentinel Vision System; **Epic 14** Autonomous Agent Features; **Epic 15** Conclave Expert Synthesis; **Epic 16** Advanced Battalion Patterns (Council, Grove); **Epic 17** Tactical Flow DSL; **Epic 18** Armory CLI Enhancement
+  - Dependency graph: 11 → 12 → {13, 14} → 15 → {16, 17} → 18
+  - Carries user stories (`US-11.1` onward), per-epic completion criteria, a risk assessment, success metrics, a Medieval Military naming table, and a glossary; Epics 1-10 are marked **Complete** in the Summary Epic List
+  - Status **Draft**, version 1.0, dated **January 29, 2026** — the earliest document in the run-5 set and the highest-level planning document in the corpus
+- scope: Epics 11-18, Sanctum, Sentinel, autonomous agents, Conclave, Council, Grove, Maneuver, Armory CLI
+- note: **do not double-count.** Every one of these eight epics was ingested in run 2 from `.project/Milestone_2-Missing_features` as `VERIFY-*`/`CLOSE-*`-era requirements, and `code-verification.md` runs 1-2 verified Conclave, Sanctum (Qdrant), Council, Grove, Maneuver and Sentinel vision as **shipped**. This document is the **origin** of that scope, not new scope. Its value is provenance — it is the only place the 11 → 12 → {13,14} → 15 → {16,17} → 18 dependency graph and the epic-level risk assessment are recorded.
+- note: the classifier flagged that the content is "strongly PRD-like (user stories, acceptance criteria, success metrics) with embedded SPEC fragments (trait definitions, struct schemas)" but the manifest types it DOC. Retagging it would not add scope; it would only raise the precedence of positions that shipped a year ago.

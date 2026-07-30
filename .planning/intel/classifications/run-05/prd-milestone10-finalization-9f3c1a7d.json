@@ -1,0 +1,34 @@
+{
+  "source_path": "/workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_4/prd-milestone10-finalization.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Milestone 10 — Epic 4: Finalization",
+  "summary": "Requirements to finalize Milestone 10: complete CONTRIBUTING.md dependency-addition guide, populate CHANGELOG.md, and cut the lockstep v0.4.0 release.",
+  "scope": [
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "Adding a New Dependency workflow",
+    "deny.toml",
+    "cargo-deny",
+    "cargo-audit",
+    "cargo-release",
+    "v0.4.0 lockstep version bump",
+    "annotated v0.4.0 tag",
+    "crates.io publish pipeline",
+    "make release",
+    "pre-commit hooks"
+  ],
+  "cross_refs": [
+    "docs/SECURITY_SCANNING.md",
+    "docs/RELEASE_AUTOMATION.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "deny.toml",
+    "release.toml",
+    ".cargo/audit.toml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

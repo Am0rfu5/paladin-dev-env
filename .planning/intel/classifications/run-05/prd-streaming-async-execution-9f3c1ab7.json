@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_12-Web-API/Epic_3/prd-streaming-async-execution.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Streaming & Asynchronous Execution (Milestone 12, Epic 3)",
+  "summary": "Requirements for SSE token streaming, timeouts with cancellation, and in-process async fire-and-poll jobs on the Paladin agent HTTP API.",
+  "scope": ["Server-Sent Events streaming", "PaladinExecutionService execute_stream", "LlmPort::generate_stream", "agent registry streaming port", "timeouts and cancellation", "asynchronous jobs API"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

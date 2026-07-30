@@ -1,0 +1,31 @@
+{
+  "source_path": "/workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/prd-new-documentation.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Epic 4 — New Documentation",
+  "summary": "Requirements for writing net-new Paladin documentation covering orchestration, content processing, the agent-orchestrator bridge, and a consolidated crate map.",
+  "scope": [
+    "MDBook documentation site",
+    "orchestration guide",
+    "Battalion patterns",
+    "content processing pipeline",
+    "agent-orchestrator bridge",
+    "crate map",
+    "feature flags",
+    "doc example CI gate"
+  ],
+  "cross_refs": [
+    "user-guides/orchestration.md",
+    "user-guides/content-processing.md",
+    "user-guides/agent-orchestrator-bridge.md",
+    "api-reference/crate-map.md",
+    "architecture/crate-map.md",
+    "docs/src/SUMMARY.md",
+    "scripts/check-doc-examples.sh",
+    "docs.yml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

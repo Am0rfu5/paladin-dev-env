@@ -1,0 +1,33 @@
+{
+  "source_path": "/workspace/.project/Milestone_12-Web-API/Epic_2/prd-configurable-web-host-server-binary.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Configurable Web Host & Server Binary (Milestone 12, Epic 2)",
+  "summary": "Requirements for a config-driven paladin-server binary, host/agents config schema, registry builder, and concrete AgentProvisioner in the paladin-ai facade.",
+  "scope": [
+    "paladin-server binary",
+    "paladin-ai facade crate",
+    "host config section",
+    "agents config section",
+    "AgentRegistry builder",
+    "AgentProvisioner",
+    "AgentApiState",
+    "agent_router",
+    "graceful shutdown",
+    "startup validation",
+    "PaladinExecutionService",
+    "LLM provider factory"
+  ],
+  "cross_refs": [
+    "../Epic_1/prd-agent-registry-execution-api.md",
+    "src/config/settings.rs",
+    "src/bin/paladin-server.rs",
+    "src/bin/paladin-cli.rs",
+    "crates/doc-examples/src/http_service_host.rs",
+    "tasks-configurable-web-host-server-binary.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD provided and authoritative; content independently confirms PRD (goals, user stories, functional requirements, non-goals, success metrics, open questions). Status field reads 'Ready for Implementation' (not an ADR status)."
+}

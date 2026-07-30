@@ -1,0 +1,30 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/prd-scheduler-queue-operational-validation.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Scheduler and Queue Operational Validation",
+  "summary": "Requirements to validate scheduler tick loop, cron adapter, QueuePort contract for in-memory and Redis queues, and the event-to-trigger-to-job pipeline.",
+  "scope": [
+    "SchedulerOrchestrator",
+    "TokioCronSchedulerAdapter",
+    "QueueOrchestrator",
+    "RedisQueueAdapter",
+    "QueuePort contract",
+    "ListenerOrchestrator",
+    "event to trigger to job pipeline",
+    "retry and dead-letter behavior",
+    "Orchestrator"
+  ],
+  "cross_refs": [
+    "src/application/use_cases/orchestration/scheduler.rs",
+    "src/infrastructure/adapters/scheduling/tokio_cron_adapter.rs",
+    "src/application/services/queue_orchestrator/mod.rs",
+    "src/infrastructure/adapters/queue/redis.rs",
+    "src/application/services/orchestration/listener.rs",
+    "docker/docker-compose.test.yml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,31 @@
+{
+  "source_path": "/workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_5/prd-milestone10-release-branch-protection.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Milestone 10 — Epic 5: Release Branch Protection (Tag-from-Main Enforcement)",
+  "summary": "Requirements to enforce that release tags originate only from main via CI guard, Makefile guard, GitHub rulesets, and documentation.",
+  "scope": [
+    "release.yml workflow",
+    "verify-tag-source CI guard job",
+    "make release target",
+    "GitHub rulesets",
+    ".github/rulesets/protect-main-branch.json",
+    ".github/rulesets/protect-release-tags.json",
+    "docs/BRANCH_PROTECTION.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "release tag policy"
+  ],
+  "cross_refs": [
+    ".github/workflows/release.yml",
+    "docs/BRANCH_PROTECTION.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    ".github/rulesets/protect-main-branch.json",
+    ".github/rulesets/protect-release-tags.json"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_4/Milestone_9-Epic_4-agent-orchestrator-bridge.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 9 — Epic 4: Agent → Orchestrator Bridge",
+  "summary": "Epic plan for enabling Paladin agents to trigger orchestration actions via either an OrchestratorPort or an Arsenal tool bridge.",
+  "scope": ["Paladin agent", "Orchestrator", "OrchestratorPort", "Arsenal tool (Armament)", "PaladinExecutionService", "scheduling", "content queue", "events", "notifications"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set from MANIFEST_TYPE=DOC. Status: Planning; contains scope and task breakdown but no accepted decision."
+}

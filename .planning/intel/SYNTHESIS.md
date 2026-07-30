@@ -2,7 +2,7 @@
 
 Entry point for `gsd-roadmapper`. Produced by `gsd-doc-synthesizer`.
 
-- **Ingest runs completed:** 4 of 5 (see the run-4 section at the end of this file)
+- **Ingest runs completed:** **5 of 5 — INGEST COMPLETE** (see the run-5 section and the corpus-level closing summary at the end of this file)
 - **Run 1 source set:** `.project/Milestone_1-MVP` (36 docs), MODE=new
 - **Run 2 source set:** `.project/Milestone_2-Missing_features` + `.project/Milestone_3-Completion`
   (45 docs), MODE=merge
@@ -456,3 +456,354 @@ Safe to route once the warnings are reviewed. Nothing in run 4 gates the workflo
   "Milestone 4"; directory numbering is authoritative, as in the two prior instances.
 - Run 5 covers Milestones 9-12, `Deferred-QA-CICD-Completion` and `project-management`, and will
   merge into these same intel files.
+
+---
+
+# Ingest run 5 of 5 — synthesis update, and corpus-level close
+
+- **Ingest runs completed: 5 of 5. THE INGEST IS COMPLETE.**
+- **Run 5 source set:** `.project/Milestone_9-Classic-Orchestrator-Completion` +
+  `.project/Milestone_10-CI-Hardening-Release-Automation` +
+  `.project/Milestone_11-Documentation-Overhaul-Publish` + `.project/Milestone_12-Web-API` +
+  `.project/Deferred-QA-CICD-Completion` + `.project/project-management` (46 docs), MODE=merge
+- **Precedence applied:** ADR > SPEC > PRD > DOC (no per-doc overrides in any of the five runs)
+- **Classifications:** `/workspace/.planning/intel/classifications/run-05/`
+- **Cross-ref cycle detection:** run over the `cross_refs` graph. **Acyclic** — 46 nodes, 8 in-set
+  document-to-document edges, maximum depth 2, cap 50 never approached. Most `cross_refs` entries are
+  source-file or artifact paths rather than document paths, so the document-to-document graph is
+  small. Longest chain: `Epic-6_Deployment-Topologies-Documentation.md` →
+  `prd-deployment-topologies-documentation.md`. No cycle blockers.
+
+## Doc counts by type
+
+| Type | Run 1 | Run 2 | Run 3 | Run 4 | Run 5 | Cumulative |
+|---|---|---|---|---|---|---|
+| PRD | 11 | 15 | 13 | 11 | 25 | **75** |
+| DOC | 25 | 30 | 19 | 29 | 21 | **124** |
+| ADR | 0 | 0 | 0 | 0 | 0 | **0** |
+| SPEC | 0 | 0 | 0 | 0 | 0 | **0** |
+| UNKNOWN | 0 | 0 | 0 | 0 | 0 | **0** |
+| **Total** | **36** | **45** | **32** | **40** | **46** | **199** |
+
+All 46 run-5 classifications consumed. Every one carries `manifest_override: true` and
+`confidence: high`. **Run 5 is the most PRD-dense run in the corpus** — 25 of 46 documents, versus
+11-15 in every prior run — because Milestones 9 and 12 generate one PRD per epic.
+
+**Six of the 21 run-5 DOCs are near-verbatim extracts** of the Milestone 9 overview
+(`Milestone_9-Epic_1` … `Epic_6`), and four more extract the Milestone 10 and 11 overviews. They add
+no independent content and are consolidated into milestone-level context topics. Do not
+double-count their acceptance criteria.
+
+### Corpus coverage reconciles exactly
+
+`.project/` holds **263** `.md` files: **188** prose/planning documents and **75** `tasks-*.md`
+checklists. The five runs produced **199** classification records with **199 distinct
+`source_path`s** and **zero duplicates**, comprising all 188 prose documents plus **11** task lists
+that earlier manifests included. The remaining **64** task lists are covered deterministically by
+`intel/task-completion-state.md`, which counts literal GFM checkboxes rather than relying on an LLM
+classifier. 188 + 75 = 263 and 188 + 11 = 199. **The ingest covers the corpus completely, by one
+route or the other.**
+
+## Decisions
+
+- Decisions extracted in run 5: **0**. Cumulative: **0**.
+- Decisions locked: **0**. Cumulative: **0**.
+- Source paths: none.
+
+**The final corpus position: 0 ADR and 0 SPEC across all 199 classified documents.** No
+LOCKED-vs-LOCKED contradiction was ever possible, in any run. Nothing in the 554 requirement entries
+is protected from override by a future ADR.
+
+Run 5 adds **five ADR candidates**, bringing the corpus total to **eleven**. The most valuable are:
+
+- **`M9/Epic_5/prd-user-admin-system-completion.md` §6.1** — the opaque-bearer-token decision, with
+  rationale, a rejected alternative and a recorded trade-off. **The only decision in the corpus that
+  a later milestone contradicts in prose while silently preserving in code.**
+- **`M10/Epic_2/prd-dependency-security-license-compliance.md` FR-1 + §8** — the audit-suppression
+  single-source invariant, **currently violated in the tree**.
+- **`M9/Epic_4/prd-agent-orchestrator-bridge.md` §6.1** — the cleanest ADR-shaped section anywhere in
+  the corpus: a four-criterion comparison table, a `(CHOSEN)` column header, an explicit decision, and
+  the rejected option preserved as a future non-breaking enhancement.
+
+**The two candidates with a live operational cost are `rustsec-remediation-plan.md` (run 4) and
+`prd-dependency-security-license-compliance.md` (run 5), and they are the same subject.** One carries
+the corpus's only expiry date — **2026-09-30** — and the other carries the invariant the tree
+currently violates. Promoting them together via `--manifest` would turn the run-5 supply-chain
+finding from an observation into a gate. See `decisions.md`.
+
+## Requirements
+
+- Requirements extracted in run 5: **120**. Cumulative: **554**.
+- No duplicate IDs across the five runs.
+- Two new competing variant pairs preserved unmerged, plus fourteen other warnings needing resolution:
+  - `REQ-opaque-bearer-token-adapter-v1` ↔ `REQ-jwt-bearer-auth-v2` — opaque bearer tokens versus
+    JWT. **Neither variant wins cleanly in the tree**: the shipped `agent_auth.rs` has v2's shape over
+    v1's mechanism, with no `jsonwebtoken` dependency anywhere in the workspace.
+  - The Deferred-QA coverage threshold — a **78% hard gate** (parent PRD FR-25.3) versus a **phased
+    70 → 74 → 78 ramp** (Epic 25 FR-25.6). The parent PRD's own OQ-3 asks this and is recorded Open.
+- Run-5 requirements by source milestone: Milestone 9 → 23; Milestone 10 → 21; Milestone 11 → 18;
+  Milestone 12 → 32; Deferred-QA → 15; project-management → 1.
+- **Sixteen entries carry `- settled-by:` lines** pointing at `code-verification.md` run 5. Those
+  record facts about the tree, not decisions taken here.
+
+## Constraints
+
+- Constraints extracted in run 5: **0**. Cumulative: **0** (0 SPEC-typed docs corpus-wide).
+- **Run 5 is the most api-contract-dense run in the corpus** — the first with a genuine HTTP surface
+  carrying status codes, headers, envelopes, security schemes and a machine-checked specification.
+  `constraints.md` inventories what would bind if the carriers were re-tagged.
+- The three strongest SPEC candidates in run 5: **the `paladin-web` dependency-flow invariant**
+  (stated three times across two Epics, with a mechanical verification command —
+  `cargo tree -p paladin-web` must show no facade dependency); **the audit-suppression single-source
+  invariant** (the one constraint in run 5 the tree violates); and **the authentication /
+  authorization / fail-closed / redaction contract** in M12 Epic 5 §4.
+
+## Context
+
+- Context topics added in run 5: **16**. Cumulative: **103**.
+- Topics cover the Milestone 9 epic plan, the bidirectional agent/orchestrator bridge, Milestone 10's
+  fifth epic and the incident behind it, the supply-chain governance surface, the mdbook relocation as
+  a false-positive generator, how Milestone 11 Epic 6 created Milestone 12, the Milestone 12 epic
+  architecture, the JWT-versus-opaque-token divergence, the Deferred-QA register, a comparison of all
+  three deferred registers, run-5 checkbox analysis, the completed version trajectory, the
+  `project/current-exports.txt` debt, what Milestone 12 explicitly did not build, the master project
+  plan, and code-verification anchors.
+
+## Conflicts
+
+- Run 5 added: **0 blockers, 16 competing-variant warnings, 19 auto-resolved/informational**.
+- **Cumulative: 0 blockers, 69 warnings, 112 info.**
+- Runs 1-4 entries preserved verbatim — verified by diff: only the two section-count headers changed.
+
+**The three highest-priority run-5 findings, in order:**
+
+1. **A duplicate `cargo audit` CI job falsifies a Milestone 10 success metric.** `ci.yml` has two jobs
+   with the identical display name "Security Audit". `:60-77` complies with FR-1 exactly; `:390-406`
+   still runs `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111`, covering 2 of the
+   5 advisories in `.cargo/audit.toml`. Milestone 10 Epic 2 added the compliant job without deleting
+   its predecessor; Epic 4's non-goals then froze the area. **Milestone 10 is recorded 100% complete
+   and one of its own acceptance criteria is false.** The fix is deleting 18 lines.
+2. **Deferred-QA Epics 25-27 are essentially unbuilt** — verified item by item against the tree. No
+   `cli-tests`, `bench-check` or `coverage` job; no `.codecov.yml`; no Makefile coverage targets;
+   eight deprecated-action references; the architecture document frozen at exactly 311 lines with
+   zero of seven newer subsystems and zero Mermaid diagrams; `docs/assets/` empty; no `docs/DEMOS.md`;
+   no `tools` field, `ToolDefinition` or `ToolCall` anywhere; no `tests/common/`.
+3. **The agent API is documented as JWT and implemented as opaque tokens**, and Milestone 12 ships a
+   Kubernetes Deployment against an in-process token store whose own originating PRD warned that
+   "a multi-process deployment would later need a shared store".
+
+**Run 5 also corrects a run-4 finding.** `deny.toml` **does** now mirror all five vulnerability
+advisories from `.cargo/audit.toml`; run 4's "the three 2026 advisories are absent" is no longer
+true. The two files are in sync. The remaining governance gap is that **13 of the 15 `deny.toml`
+suppressions carry documented reasoning but no owner and no expiry** — only the original two have a
+formal risk-acceptance record, in `rustsec-remediation-plan.md`. Ten of the thirteen (the unmaintained
+notices) are sanctioned by M10 Epic 4 FR-1 step 5; the three additional **vulnerability** ignores are
+not authorised by any ingested document.
+
+Full detail: `/workspace/.planning/INGEST-CONFLICTS.md`.
+
+## Code verification
+
+`code-verification.md` was **appended to**, not overwritten, per the run-5 instruction. The run-5
+section records:
+
+- **Verified SHIPPED (37 rows)** — the whole Milestone 9 orchestrator subsystem; the whole Milestone
+  10 tooling set including textbook FR-14(b) licence-exception compliance (eight per-crate MPL-2.0
+  exceptions rather than weakening the allow-list); the Milestone 11 mdbook with linkcheck at
+  `warning-policy = "error"` and all six deployment-topology pages; and the entire Milestone 12 web
+  API — registry, controller, auth, error envelope, health/ready, layers, job store, OpenAPI +
+  committed drift baseline, `paladin-server`, `Dockerfile.server`, `k8s/`, and version 0.6.0.
+- **One CORRECTION to run 4** — `deny.toml` is in sync.
+- **Verified OPEN (8 findings)** — the duplicate `security` job; the owner/expiry gap on 13
+  suppressions; Epic 25 unimplemented bar one item; Epic 26's architecture document frozen by the
+  appendix rewrite exemption; Epic 27 entirely absent with `ProviderCapabilities` over-reporting;
+  the Epic 28/29 mock prerequisite missing; the JWT-versus-opaque divergence and its multi-replica
+  consequence; and `project/current-exports.txt` at nine stale references.
+- **Checkbox analysis** — M9's 0 open corroborated; M10's 0 open corroborated in artefacts but
+  contradicted in one acceptance criterion; **M11's 26 open is the only genuinely open count in run 5**
+  and cannot be settled by file existence; **M12's 3 open are all Task 0.0 feature-branch scaffolding
+  while the Epic 5 code ships**; **project-management's 1 open is a formatting example inside a
+  template.**
+
+---
+
+# CORPUS-LEVEL CLOSING SUMMARY
+
+## The numbers
+
+| Measure | Value |
+|---|---|
+| Documents in `.project/` | **263** (188 prose + 75 `tasks-*.md`) |
+| Documents classified across 5 runs | **199** (188 prose + 11 task lists) |
+| Task lists covered deterministically instead | **64** |
+| PRD / DOC / **ADR** / **SPEC** / UNKNOWN | 75 / 124 / **0** / **0** / 0 |
+| Requirements extracted | **554** |
+| Decisions extracted | **0** |
+| **Decisions locked** | **0** |
+| Constraints extracted | **0** |
+| Context topics | **103** |
+| Blockers | **0** |
+| Competing variants / warnings | **69** |
+| Informational entries | **112** |
+| ADR candidates identified | **11** |
+| Open checkboxes recorded | 542 across 75 task lists (93.3%) |
+| Cross-ref cycles found | **0**, in all five runs |
+
+## The milestone arc, M1 → M12
+
+- **M1 — MVP.** Paladin, Garrison, Arsenal, Battalion (Formation, Phalanx, Campaign, Chain of
+  Command), Herald, Citadel, Commander, Armory CLI. 97.9% complete. Run 1.
+- **M2 — Missing features.** Sanctum vector memory + RAG, Sentinel vision, autonomous agents,
+  Conclave, Council, Grove, Maneuver/Flow DSL, CLI enhancement. 86.2% by checkbox — **but Conclave
+  (129 open) and Sanctum (111 open) are both verifiably shipped.** Run 2. Originated by
+  `project-management/paladin-project-plan-final.md`, ingested in run 5.
+- **M3 — Completion.** Herald and domain-type consolidation, vision pipeline, autonomous-agent
+  completion, Battalion/Commander hardening, CLI/config/infrastructure, test hardening. 90.0%. Run 2.
+- **M4 — Refactor: crates and features.** Feature-flag expansion, port-trait hardening and stable API,
+  CLI isolation. 93.2% — **the first checkbox count verified accurate.** Run 3.
+- **M5 — Workspace decomposition.** The monolith becomes a Cargo workspace: `paladin-core`,
+  `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory`, plus the prelude and CI
+  isolation. 96.4%. Run 3.
+- **M6 — Architectural refinements.** Config decomposition, orchestration-service relocation, Maneuver
+  DSL co-location, `CircuitBreaker` relocation. **100.0%, fully corroborated by code.** Run 3.
+- **M7 — Production hardening.** `paladin-storage`, `paladin-notifications`, `paladin-content`,
+  `paladin-web` extracted; Docker/cargo-chef adaptation; benchmark migration; API stabilization and
+  the first crates.io publish. 98.8%. Run 4.
+- **M8 — Facade cleanup and shim resolution.** 25 dead files deleted, `src/core/` reduced to six
+  files, `use_cases` → `services` renamed workspace-wide, actix-web removed and banned,
+  `paladin-herald` created. 99.1% — **all three open items contradicted by code.** Run 4.
+- **M9 — Classic orchestrator completion.** `execute_workflow()`, `TaskService` dispatch,
+  `WorkflowRepository` + SQLite adapter with crash recovery, scheduler/queue/event validation, the
+  bidirectional content↔agent bridge, user/admin RBAC. **100.0%, corroborated.** v0.3.0. Run 5.
+- **M10 — CI hardening and release automation.** pre-commit/pre-push hooks, cargo-audit + cargo-deny +
+  OSV-Scanner, CycloneDX SBOM, cargo-release with dependency-ordered publishing, and — after an
+  incident — main-only tag enforcement. **100.0%, corroborated in artefacts, one acceptance criterion
+  false.** v0.4.0. Run 5.
+- **M11 — Documentation overhaul and publish.** mdbook at `docs/`, 227 broken links repaired,
+  linkcheck as an error, content rewritten, new orchestration / content-processing / bridge guides,
+  six deployment-topology pages, GitHub Pages. **92.0% — the only genuinely open count in run 5.**
+  v0.5.0. Run 5.
+- **M12 — Web API.** Agent registry and execution API, config-driven `paladin-server`, SSE streaming
+  and in-process jobs, unified error envelope with health/ready/CORS/limits/rate-limiting, API-key and
+  bearer auth with per-agent roles, OpenAPI with a committed drift guard, Docker and Kubernetes
+  artefacts. **99.0% — all three open items are feature-branch scaffolding.** v0.6.0. Run 5.
+
+The tree is at **0.6.0** on branch **`release/v0.7.0`**, latest tag **v0.5.1**.
+
+**The arc has a shape worth naming.** M1-M3 built capability. M4-M8 dismantled and rebuilt the
+structure that capability lived in, at considerable cost and with almost no feature work. M9 finished
+the half of the platform that M4-M8 had left alone. M10-M11 made it releasable and documented. M12
+exposed it over HTTP — and it exists because M11's documentation epic wrote down a capability gap
+instead of papering over it.
+
+## Where the genuine remaining work lives
+
+**It does not live in the checkbox counts.** Five runs of verification against the tree establish the
+pattern beyond doubt:
+
+- Runs 1-2 found counts **understating** shipped reality — Conclave 129 open and shipped, Sanctum 111
+  open and shipped.
+- Run 3 found the first **accurate** count (M4's 20, corroborated by zero `#[deprecated]`
+  annotations) and the first **overstating** completion (CLI isolation fully checked, three
+  dependencies still unconditional).
+- Run 4 found M8's three open items **contradicted outright**.
+- Run 5 found M12's three **vacuous** (feature-branch scaffolding) and project-management's one
+  **nonexistent** (a formatting example inside a template).
+
+Of the 542 recorded open checkboxes, the only count that survives verification as genuinely open work
+is **Milestone 11's 26** — and even those are content-currency tasks against files that all exist,
+which must be verified by content rather than by presence.
+
+**It lives in three deferred registers and a short list of verified defects.**
+
+**The three deferred registers**, in descending reliability:
+
+1. **`Milestone_8/deferred-items.md` (D1-D5)** and **`deferred-features.md`** — run 4 verified every
+   claim exactly, including a `println!` residue count of 17 across 6 files. Framed as "Record of
+   intentional non-goals (not bugs / not oversights)". D5 is a quick win; D2 (mis-layered manager
+   services) is an architecture pass; D1 and D3 only alongside a broader refactor. The two deferred
+   features carry explicit reintroduction conditions — the `paladin user` CLI surface is "mostly
+   re-wiring, not new domain work", and the ML adapter **must** return in a dedicated `paladin-ml`
+   leaf crate, never to the facade.
+2. **`Deferred-QA-CICD-Completion` (Epics 25-29, 135 FRs)** — the largest by requirement count and the
+   least reliable by path accuracy. **Its scope is real and largely unbuilt** (Epic 25 verified open
+   item by item; Epic 26's architecture rewrite and demos verified open; Epic 27 verified entirely
+   absent). **Its paths and numbers need re-measurement** — four targets were relocated by later
+   milestones, and Epic 29's 57.83% baseline predates Milestone 9's tests on the same module.
+3. **`DEFERRED_COVERAGE.md`** — the coverage arithmetic behind Epics 28-29, with a named sign-off and
+   a "Next Review: Epic 27 or Epic 28 planning" trigger that was never reached.
+
+**The verified defects**, each confirmed against the tree and each small:
+
+- The **duplicate `security` CI job** at `ci.yml:389-406` — delete 18 lines, and a Milestone 10
+  acceptance criterion becomes true.
+- **`project/current-exports.txt`** — nine stale references across two scripts, three workflow lines
+  and four requirements, keeping the `api-surface` CI job permanently red. Unchanged across three
+  ingest runs. The cheapest fix in the corpus.
+- **`ProviderCapabilities` over-reporting tool-calling support** — correctable today, independent of
+  whether Epic 27 is ever built.
+- **`paladin-ports` doctests disabled** with a named "Task 7.0" re-enable point, unchanged since run 3.
+- **`paladin-herald` has no `CHANGELOG.md`**, against an acceptance criterion recorded as Met.
+- **`Dockerfile.chef`'s planner COPY list omits `paladin-herald`.**
+- **Zero `#[deprecated]` annotations** against M4 Epic 2 FR-8.
+- **Three competing `TokenUsage` definitions** shipping simultaneously.
+- **Three CLI-only dependencies still unconditional** (`structopt`, `colored`, `comfy-table`).
+- **The RustSec owner/expiry gap** — 13 of 15 suppressions without either, and a **2026-09-30**
+  expiry on the two that have them that nothing in `.planning/` will otherwise surface.
+
+**And in two open architectural questions that no document resolves:**
+
+- **The token mechanism.** The agent API is documented as JWT and implemented as opaque in-process
+  tokens, and Milestone 12 ships a Kubernetes Deployment against a store its own originating PRD said
+  would need replacing for multi-process serving.
+- **Garrison and Arsenal on HTTP-served agents.** Agents behind the HTTP host are LLM-plus-prompt
+  only — no memory, no tools — stated once, in a non-goal, while the deployment-topologies decision
+  matrix routes readers between topologies as though they were equivalent.
+
+## Status
+
+**STATUS: AWAITING USER — 0 blockers across all five runs. 69 competing variants need resolution
+before routing, 16 of them new in run 5.**
+
+Nothing gates the workflow. The corpus is fully ingested and internally consistent enough to plan
+from, provided the variants are resolved rather than silently collapsed.
+
+## Roadmapper notes for run 5 (and for the whole corpus)
+
+- **Honour the Roadmap Extension Protocol** at the end of `ROADMAP.md`. **New phases start at
+  Phase 12.** Phases 1-11 are never renumbered, and the `### Phase N: Name` header format is parsed
+  by downstream tooling, including inside `<details>` blocks. Wrap completed milestone sections in
+  `<details>` per protocol item 2.
+- **Eleven requirement-ID prefixes are spent** and must not be recycled: `RECON-*`, `GAP-*`, `QUAL-*`,
+  `REL-*` (M1); `VERIFY-*`, `CLOSE-*` (M2-3); `ARCH-*`, `DEBT-*` (M4-6); `SEC-*`, `HARD-*`,
+  `FACADE-*` (M7-8). **Suggested fresh prefixes for run 5:** `ORCH-*` (Milestone 9 orchestrator),
+  `SUPPLY-*` (the dependency-security governance items — note `SEC-*` is spent), `DOCS-*` (Milestone
+  11 documentation currency and the architecture-document gap), `WEB-*` (Milestone 12 web API items),
+  `PIPE-*` (Deferred-QA Epic 25 CI/CD), `DEFER-*` (the three deferred registers — suggested in run 4
+  and still unused). Ingested `REQ-*` IDs remain the stable merge keys; match on them rather than
+  re-deriving, and prefer extending an existing requirement in place over creating a near-duplicate.
+- **Do not re-plan completed work.** M9 100%, M10 100%, M11 92.0%, M12 99.0% — and of those open
+  counts only M11's 26 survive verification. The entire Milestone 9 orchestrator subsystem, the
+  entire Milestone 10 tooling set, the mdbook, and the entire Milestone 12 web API demonstrably ship.
+- **Precedence for this project is: shipped tree > `.planning/codebase/` map >
+  `intel/code-verification.md` > PRD > DOC > task-list checkbox.** Every `src/…` path in runs 1-2 and
+  several in runs 3-5 are historical; resolve current locations through the tree.
+- **The four highest-value things to plan first**, all small and all verified:
+  1. Delete `ci.yml:389-406`, then decide the disposition of the three unauthorised vulnerability
+     ignores and the **2026-09-30** expiry. Consider promoting the two supply-chain ADR candidates.
+  2. Fix the nine `project/current-exports.txt` references — five in tooling, four in requirement
+     text — and turn the `api-surface` CI job green for the first time since commit `928c6d5`.
+  3. Resolve the token-mechanism variant, because it has a correctness consequence under the
+     Kubernetes Deployment that Milestone 12 shipped.
+  4. Decide whether `design-and-architecture.md` is archive material or a live deliverable. It cannot
+     be both, and it has been invisible for two milestones.
+- **Then the deferred registers**, in the order their own documents recommend: Deferred-QA Epic 25
+  first ("establishes quality gates that validate all subsequent work"), and **sequence M8 D2 against
+  Epic 28 deliberately** — one splits `user_service.rs`, the other tests it, and doing them
+  independently means doing the work twice.
+- **Two decisions are worth making explicitly rather than by default:** where `AgentProvisioner`
+  lives (it constrains the queue/worker and sidecar topologies), and whether Garrison/Arsenal wiring
+  for HTTP-served agents is planned scope or a permanent property of the topology.
+- **Eleven ADR candidates exist and zero locked decisions.** If any technical position in this
+  roadmap should be protected from future override, re-tag its carrier via `--manifest` and re-run
+  ingest. Do not manufacture a lock inside a planning artefact.

@@ -1,0 +1,30 @@
+{
+  "source_path": "/workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/prd-release-automation.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Release Automation",
+  "summary": "Requirements to automate Paladin releases: tooling selection, lockstep versioning, dependency-ordered crates.io publishing, tag-triggered pipeline, and a make release target.",
+  "scope": [
+    "release automation",
+    "cargo-release",
+    "release-plz",
+    "workspace publish order",
+    "lockstep versioning",
+    "crates.io publishing",
+    "tag-triggered release pipeline",
+    "make release target",
+    "CHANGELOG.md",
+    "CARGO_REGISTRY_TOKEN"
+  ],
+  "cross_refs": [
+    ".github/workflows/release.yml",
+    "docs/RELEASE_AUTOMATION.md",
+    "docs/RELEASE_CHECKLIST.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,29 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/prd-orchestrator-end-to-end-workflow-execution.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Orchestrator End-to-End Workflow Execution",
+  "summary": "Requirements for implementing Orchestrator execute_workflow() across sequential, parallel, event-driven, and staged orders, with TaskService dispatch and workflow state persistence.",
+  "scope": [
+    "Orchestrator",
+    "execute_workflow()",
+    "WorkflowExecutionOrder",
+    "ScheduledJob",
+    "TaskService",
+    "WorkflowRepository",
+    "SQLite adapter",
+    "SchedulerOrchestrator",
+    "ListenerOrchestrator",
+    "QueueService",
+    "DataBackupService",
+    "ContentIndexingService",
+    "EmailNotificationService"
+  ],
+  "cross_refs": [
+    "src/application/services/orchestration/mod.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD provided and authoritative; content signals (Goals, User Stories, filename prd-*) agree."
+}

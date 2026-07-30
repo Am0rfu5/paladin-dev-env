@@ -236,3 +236,176 @@ If any of this should bind at SPEC precedence, the strongest carriers are
 `rustsec-remediation-plan.md` (the exception list with its expiry), and
 `prd-paladin-web-single-framework-axum.md` §4 (the endpoint contracts). Re-tag those documents via
 `--manifest` and re-run ingest.
+
+---
+
+# Ingest run 5 of 5 — constraints
+
+**Constraints extracted in run 5: 0. Cumulative: 0.**
+**Type breakdown: api-contract 0, schema 0, nfr 0, protocol 0.**
+
+Zero SPEC-typed documents exist in the corpus after all five runs, so no entry can be written at
+constraint precedence. What follows is the run-5 inventory of **constraint-shaped material** — what
+would become constraints if its carriers were re-tagged via `--manifest`.
+
+**Run 5 is the most api-contract-dense run in the corpus.** Runs 3 and 4 were build-system and
+dependency-layering contracts; run 5 is the first to contain a genuine HTTP API surface with status
+codes, headers, envelopes, security schemes and a machine-checked specification.
+
+## api-contract material
+
+- **The agent HTTP route surface with its full status-code table.** Milestone 12 Epic 1 §6 fixes
+  five routes and every outcome: `POST /agents/{id}/execute` → `200` `ExecuteResponse`, `404`, `400`,
+  `502`; `GET /agents` → `200 [AgentSummary]`; `GET /agents/{id}` → `200`, `404`;
+  `POST /agents` → `201`, `400`/`422`, `409`, `501`/`503`; `DELETE /agents/{id}` → `204`, `404`.
+  Epic 3 adds `POST /agents/{id}/execute/stream` (SSE), `POST /agents/{id}/jobs` and
+  `GET /agents/{id}/jobs/{job_id}`. Epic 4 adds `GET /health` and `GET /ready`. Epic 6 adds
+  `GET /openapi.json` and `GET /docs`, and **relocates the whole agent surface under `/v1`**.
+  The `502`-not-`500` rule for upstream LLM failure is a deliberate, stated contract choice.
+
+- **The unified error envelope.** `{ "error": { "code", "message", "details" } }`, applied to every
+  controller *and* to SSE `error` events, replacing the interim `{ "error": "<message>" }` and the
+  per-controller `ok_body`/`error_body` helpers (M12 Epic 4 §4.1). Authentication and authorization
+  failures render `401` and `403` through the same envelope (M12 Epic 5 §1).
+
+- **Security schemes and header contracts.** `X-API-Key` resolved by **constant-time compare**;
+  `Authorization: Bearer <token>` verified through `AuthPort::verify_token`; a deterministic,
+  documented precedence when both are present (bearer first); `x-request-id` on every response;
+  **`Authorization` and `X-API-Key` redacted from all logging**; `/health` and `/ready`
+  unauthenticated **regardless of configuration**.
+
+- **`OrchestratorPort`'s four-method surface.** Exactly four methods, each returning
+  `Result<_, OrchestratorBridgeError>`, with the request value objects constrained to types already
+  available to `paladin-ports` so no root-crate dependency leaks downward (M9 Epic 4 §4.1). The
+  four-variant error enum (`ActionNotAllowed`, `QuotaExceeded { action, limit }`, `InvalidRequest`,
+  `OrchestratorError(String)`) with the boundary rule that root-crate errors are **stringified**.
+
+- **`AuthPort`'s three-method surface** with `AuthToken { token, expires_at }` and
+  `AuthClaims { user_id, role, expires_at }` (M9 Epic 5 §4.2).
+
+- **The `QueuePort` contract as an executable artefact.** M9 Epic 2 FR-9 requires a single reusable
+  contract test parameterized over any `QueuePort` implementation, exercising `create_queue`,
+  `enqueue`, `dequeue`, `start_processing`, `complete_processing`, `queue_length`, `health_check` —
+  then run against **both** the in-memory and Redis adapters. This is the one place in the corpus
+  where a port contract is specified as a test rather than as prose.
+
+- **The committed OpenAPI baseline plus drift guard** (M12 Epic 6 §4.4): the spec is generated from
+  code, committed, and a CI test fails when the generated spec diverges from the baseline. This is
+  the strongest api-contract enforcement mechanism in the corpus and it already ships
+  (`crates/paladin-web/openapi.json`).
+
+## nfr / invariant material
+
+- **The `paladin-web` dependency-flow invariant.** Stated three times across two Epics: `paladin-web`
+  depends only on `paladin-ports` and `paladin-core`, never on the `paladin-ai` facade; the registry
+  and handlers depend only on the `PaladinExecutorPort` trait and the `Paladin` entity; concrete
+  implementations (executor, provisioner, auth verifier) are injected at composition time by the
+  binary. It carries a **mechanical verification command** — `cargo tree -p paladin-web` must show no
+  facade dependency. **This is the single strongest SPEC candidate in run 5** and the natural
+  companion to run 4's crate dependency-direction invariant (M7 Epic 1 §6.1), which is currently
+  violated once by `paladin-content` → `paladin-llm`.
+
+- **The circular-dependency placement rule.** Any type that must reach both the root-crate
+  `Orchestrator`/`ContentProcessor`/`OrchestratorError` and a leaf crate **must live in the root
+  crate**, because a lower crate cannot depend on the root crate. Derived independently in M9 Epic 3
+  §7 and restated in M9 Epic 4 §6.2. This is a hard buildability constraint, not a preference.
+
+- **The audit-suppression single-source invariant.** *"`audit.toml` and `deny.toml` are the only
+  places policy/exceptions are defined; no inline advisory-ignore flags remain in CI"* (M10 Epic 2
+  §8), with FR-1's rationale *"so the workflow and the config cannot drift"*. **Currently violated**
+  — see `code-verification.md` run 5.
+
+- **The licence allow-list as a closed set.** MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib;
+  copyleft not allowed absent recorded justification; **"Blanket disabling of the license check is
+  not acceptable"** — only an allow-list addition with justification or a narrowly-scoped per-crate
+  `clarify`/exception (M10 Epic 2 FR-11, FR-14).
+
+- **The advisory exception comment schema.** Four mandatory fields per ignored advisory: advisory ID;
+  affected crate and why present; why not yet fixable; revisit condition (M10 Epic 2 FR-3). The
+  shipped `.cargo/audit.toml` satisfies this for all five entries. **It does not require an owner or
+  an expiry** — only `rustsec-remediation-plan.md` (run 4) adds those, and only for two advisories.
+
+- **The main-only release invariant**, enforced in three independent layers: the `verify-tag-source`
+  CI job using `git merge-base --is-ancestor` against `origin/main`; the `make release` branch and
+  behind-ness guard; and the committed GitHub rulesets. With one documented escape hatch
+  (`RELEASE_ALLOW_ANY_BRANCH=1`) that bypasses **only** the Makefile branch-name check, leaving CI
+  authoritative (M10 Epic 5 FR-1 to FR-3).
+
+- **Fail-closed auth.** Enabled by default; if enabled with no credential source configured, refuse
+  to serve protected routes with an actionable startup error; if explicitly disabled, log a warning
+  at startup (M12 Epic 5 §4.2).
+
+- **Per-execution quota semantics.** `BridgePolicy` caps are enforced **per
+  `PaladinExecutionService` execution** — counters reset per run, never global for the process
+  lifetime — and the counting mechanism must be thread-safe (M9 Epic 4 FR-11).
+
+- **Timeout resolution order.** request → agent → config-default, clamped to a server maximum, with
+  **actual cancellation** of underlying work on expiry, on every execution path including streaming
+  and jobs (M12 Epic 3 §4.5).
+
+- **No-panic rules.** "The handler **must not** `unwrap()`/`expect()`/`panic!` on any request-driven
+  path" (M12 Epic 1 FR-10); "The dispatch path **must not** `panic!` or `unwrap()` on a missing
+  service" (M9 Epic 1 FR-12); registry `get`/`remove` on an unknown id must return a clear not-found
+  signal, "not a panic and not a default" (M12 Epic 1 FR-4).
+
+- **Determinism rules for tests.** "Deterministic (no reliance on wall-clock timing or log
+  scraping)" (M9 Epic 1 FR-25); "prefer in-process drives, short bounded waits, and shared
+  counters/flags over sleeps tied to wall-clock thresholds" (M9 Epic 2 FR-22); the default suite uses
+  mock LLM adapters and local fixtures, with every real-network/real-LLM test `#[ignore]`d or
+  credential-gated (M9 Epic 3 FR-27).
+
+- **The no-production-refactor constraint on validation work.** "The developer **must not** add a
+  clock abstraction or otherwise refactor production scheduler code to make these tests pass"
+  (M9 Epic 2 FR-7). A rare instance of a requirement constraining *how* a goal may be met.
+
+## security-relevant constraints (OWASP-shaped)
+
+- **Parameterized SQL only.** The new SQLite `WorkflowRepository` adapter "**must** use parameterized
+  queries / bound parameters (no string-formatted SQL)"; persisted job results may contain
+  externally-influenced data and must be treated as data, never interpolated into SQL or shell
+  (M9 Epic 1 §7).
+- **Path-traversal containment.** File paths used by `DataBackupService` and the indexer "**must** be
+  validated/constrained to avoid path traversal outside the configured target directory" (M9 Epic 1 §7).
+- **Prompt-injection containment.** `BridgePolicy` exists specifically so "a misbehaving or
+  prompt-injected agent cannot schedule unbounded work or spam notifications"; caps must never be
+  expanded from agent-supplied input (M9 Epic 4 §4.3, §7).
+- **Token storage.** Tokens stored **hashed**, compared by hash lookup, never plaintext (M9 Epic 5 FR-9).
+- **Secrets never in config files.** "API keys from env, never the file" (M12 Epic 2 §4.1); API-key
+  values "should come from env/secret indirection in practice (documented), not committed config"
+  (M12 Epic 5 §7).
+
+## Numeric and counting assertions that read as contracts
+
+227 broken internal cross-reference links; 33 non-appendix mdbook docs to rewrite; 35 appendix files
+exempt from rewriting; 14 broken links in `introduction.md`; a 1022-line README replaced by an
+11-section landing page; a 9-crate ecosystem table (ten library crates ship); 43 CLI snapshot tests;
+12 rustdoc warnings; `Design_and_Architecture.md` at 311 lines and 10 sections, to expand to
+600-800 lines covering 8 → 15+ components with 4 Mermaid diagrams; 135 numbered functional
+requirements across Epics 25-29; 25 deferred Epic 24 subtasks; `user_service.rs` 488 LOC at ~4.23%;
+`listener_service.rs` 602 LOC at ~57.83%; 1,090 deferred LOC = ~2.2% of ~50,000; 35-45 hours
+combined effort; coverage 78-80% without deferred modules, 76-77% with, target 75%+; Codecov phased
+targets 70 → 74 → 78 project and 80 patch with 2% and 5% thresholds; a 1 MB pre-commit large-file
+limit; a 1000+ event burst for listener stress testing; MSRV Rust ≥ 1.85 from `edition = "2024"`;
+`debian:12-slim` amd64; 14-day coverage-artifact retention; `cargo-llvm-cov@0.7.1`.
+
+## Quality-gate command sets
+
+The same five-command gate recurs verbatim across nearly every run-5 PRD: `cargo build --workspace`,
+`cargo test --workspace`, `cargo clippy --workspace -- -D warnings`, `cargo fmt --all -- --check`,
+`cargo doc --workspace --no-deps`. Milestone 12 consistently adds **`make deny`** and, in Epic 7,
+**`make audit`** — the first milestone to fold the Milestone 10 supply-chain gates into per-epic
+acceptance. Milestone 9 Epic 6 additionally requires the `--all-features` variant because
+`--workspace` alone does not compile the `redis-queue` and `web-server` paths.
+
+## Strongest re-tag candidates in run 5
+
+1. **`prd-agent-registry-execution-api.md` §1 + §6** — the `paladin-web` dependency-flow invariant
+   and the five-route status-code table. One document carries both the run's strongest nfr and its
+   strongest api-contract, and both are mechanically checkable.
+2. **`prd-dependency-security-license-compliance.md` FR-1 + §8** — the audit-suppression
+   single-source invariant, because it is the one constraint in run 5 that the tree currently
+   violates and nothing gates on.
+3. **`prd-api-security-authorization.md` §4** — the authentication, authorization, fail-closed and
+   redaction contract. Security posture expressed as testable rules with an explicit test matrix.
+
+Re-tag any of these via `--manifest` and re-run ingest to bind them at SPEC precedence.

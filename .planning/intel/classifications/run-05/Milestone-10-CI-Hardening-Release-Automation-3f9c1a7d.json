@@ -1,0 +1,37 @@
+{
+  "source_path": "/workspace/.project/Milestone_10-CI-Hardening-Release-Automation/overview/Milestone-10_CI-Hardening-Release-Automation.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 10: CI Hardening and Release Automation",
+  "summary": "Milestone plan adding pre-commit/pre-push hooks, dependency vulnerability and license scanning, SBOM generation, and automated workspace release pipeline for v0.4.0.",
+  "scope": [
+    "pre-commit hooks",
+    "pre-push hooks",
+    "cargo audit",
+    "OSV-Scanner",
+    "Snyk",
+    "cargo deny",
+    "deny.toml",
+    "SBOM",
+    "cargo-release",
+    "release-plz",
+    "workspace crate publishing order",
+    "GitHub Actions release pipeline",
+    "make release",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md"
+  ],
+  "cross_refs": [
+    ".pre-commit-config.yaml",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "deny.toml",
+    "Cargo.toml",
+    "Cargo.lock",
+    "config.yml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC provided and treated as authoritative. Content is a milestone/epic/task plan with success criteria and schedule table; no ADR status or decision sections. References to Milestone 7 Appendix B and Milestone 8 are named, not linked paths."
+}

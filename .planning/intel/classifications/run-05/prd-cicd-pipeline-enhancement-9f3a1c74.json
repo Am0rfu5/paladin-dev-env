@@ -1,0 +1,34 @@
+{
+  "source_path": "/workspace/.project/Deferred-QA-CICD-Completion/Epic_25/prd-cicd-pipeline-enhancement.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: CI/CD Pipeline Enhancement & Coverage Reporting",
+  "summary": "Requirements for adding CLI test, bench-check, and combined coverage CI jobs, modernizing GitHub Actions, and enforcing phased Codecov thresholds.",
+  "scope": [
+    "GitHub Actions CI pipeline",
+    ".github/workflows/ci.yml",
+    ".github/workflows/integration-tests.yml",
+    ".github/workflows/release.yml",
+    "CLI snapshot tests (insta)",
+    "benchmark compilation check",
+    "cargo-llvm-cov coverage reporting",
+    "Codecov integration",
+    ".codecov.yml thresholds",
+    "Makefile coverage targets",
+    "CONTRIBUTING.md coverage documentation",
+    "CODECOV_TOKEN secret"
+  ],
+  "cross_refs": [
+    "PRD-DQC-001 (Deferred QA & Documentation Completion)",
+    ".github/workflows/ci.yml",
+    ".github/workflows/integration-tests.yml",
+    ".github/workflows/release.yml",
+    ".codecov.yml",
+    "Makefile",
+    "CONTRIBUTING.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD authoritative; content confirms PRD (goals, user stories, functional requirements, success metrics, non-goals). Status: Draft — forward scope, not history. Contains technical/SPEC-like detail (YAML snippets, action versions) inside FR sections; classified PRD per manifest."
+}

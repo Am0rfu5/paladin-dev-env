@@ -1138,3 +1138,324 @@ state claim, the tree reading is appended under `verified:` and the full evidenc
 - Superseded by outcome: the `storage-sqlite` feature and optional `paladin-storage`; the per-crate
   ordered publish dry run; the actix-web-in-`paladin-web` requirement; the `STABLE_API.md`
   root-path requirement (relocated into the mdbook); the `160` facade file count (tree reads 136).
+
+---
+
+# Ingest run 5 of 5 — context topics (16)
+
+Source set: Milestones 9-12, `Deferred-QA-CICD-Completion`, `project-management` (46 docs).
+
+## Topic: The Milestone 9 epic plan — completing the *other* half of the platform
+- source: /workspace/.project/Milestone_9-Classic-Orchestrator-Completion/overview/Milestone-9_Classic-Orchestrator-Completion.md plus the six `Milestone_9-Epic_N-*.md` extracts
+- Framing of record: "The Paladin framework was designed as a dual-purpose platform: a classic
+  content orchestration system **and** an AI agent orchestration framework. Milestones 4-8 built and
+  refined the AI agent side. The classic orchestration subsystem … was placed structurally in earlier
+  milestones but is **operationally incomplete**."
+- The concrete gap: in `create_workflow()`, every `WorkflowExecutionOrder` arm was a `println!`
+  placeholder that stored a workflow without ever executing its jobs. "Today a developer can define
+  and store a workflow, but starting the orchestrator never causes that workflow's jobs to execute."
+- Epic sequence and dependency: Epic 1 (execution loop) is the foundation Epics 2, 3 and 4 build on;
+  Epic 2 validates the three things that *tell* the orchestrator to run (scheduler tick, durable
+  queue, event listener); Epics 3 and 4 build the two directions of the content/agent bridge; Epic 5
+  completes user/admin auth; Epic 6 finalizes at v0.3.0.
+- **All six Epic DOCs are near-verbatim extracts of the milestone overview.** They add no independent
+  content and are consolidated into this topic. Do not double-count their acceptance criteria.
+
+## Topic: The bidirectional agent/orchestrator bridge — the architectural centrepiece of run 5
+- source: M9 Epic 3 and Epic 4 PRDs and Epic DOCs
+- The vision statement of record: *"ingest a news article → extract/summarize text → invoke an AI
+  agent to analyze sentiment and extract entities → store the enriched result"* had **no bridge**
+  between the content pipeline (`paladin-content`) and the agent runtime.
+- **Direction 1 (content → agent, Epic 3):** `PaladinContentProcessor` and
+  `BattalionContentProcessor` implement the pre-existing `ContentProcessor` trait, whose only prior
+  implementation was `DefaultContentProcessor` — "a stub that sleeps 100 ms and returns a canned JSON
+  blob".
+- **Direction 2 (agent → orchestrator, Epic 4):** `OrchestratorPort` lets an agent schedule a job,
+  enqueue an item, fire an event or send a notification, bounded by `BridgePolicy`.
+- **Both directions hit the same crate-placement wall and resolve it identically:** the concrete
+  implementations must live in the **root crate** because a lower crate cannot depend on it. Epic 4
+  §6.2 names Epic 3 as precedent — "this is the same constraint encountered and documented in Epic 3".
+- The safety framing is explicit and unusual for this corpus: `BridgePolicy` exists so "a misbehaving
+  or **prompt-injected** agent cannot schedule unbounded work or spam notifications". This is the
+  only place in 199 documents where prompt injection is named as a threat with a designed control.
+
+## Topic: Milestone 10 has five epics, not four
+- source: Milestone_10 overview + the five Epic DOCs and PRDs
+- The milestone overview and every Epic 1-4 PRD header describe **four** epics ("Epic 2 of 4").
+  A fifth — **Epic 5: Release Branch Protection (Tag-from-Main Enforcement)** — exists and was added
+  afterwards.
+- Its PRD states the reason plainly: the policy exists because of **"the `v0.4.0`-from-feature-branch
+  incident"**. Epic 4 cut the v0.4.0 tag; Epic 5 was written to make that impossible again.
+- Epic 5's own non-goals acknowledge the residue: **"No rewrite of the existing `v0.4.0` tag/release.
+  Reconciling `main` with the released code is a maintainer merge action, noted in docs but not
+  performed by this epic."** and, wryly, "Cutting a tag from this feature branch would, correctly, now
+  be blocked by the new guards."
+- **This is the corpus's only recorded process failure with a corrective epic attached**, and it is
+  the clearest example of the project learning from an incident rather than a plan.
+
+## Topic: The supply-chain governance surface — origin policy versus shipped state
+- source: M10 Epic 2 DOC and PRD; verified against the tree
+- **What the origin documents actually say.** The Epic DOC (Task 2.1) specifies a **single**
+  mechanism — "a documented exception process for false positives or unpatched advisories" — with no
+  advisory IDs, no counts, and **no mention of `.cargo/audit.toml` or inline `ci.yml` ignores**. The
+  PRD is more specific and stricter: FR-1 requires the ignore-list be sourced from `audit.toml`
+  *"so the workflow and the config cannot drift"*; FR-3 fixes a four-field comment schema; the
+  non-goals name exactly **two** preserved advisories; §8 makes "no inline advisory-ignore flags
+  remain in CI" a success metric. **One allow-list, one exception surface, two baseline advisories.**
+- **What the tree contains** (verified independently — see `code-verification.md` run 5):
+  `.cargo/audit.toml` carries **5** vulnerability ignores, each with dated reasoning.
+  `deny.toml` carries **15**: the same 5 vulnerabilities **(now correctly mirrored — this corrects
+  run 4)** plus 10 unmaintained/maintenance notices in an explicitly separate, rationalised class.
+  `ci.yml:77` runs a bare `cargo audit` with a comment restating the single-source rule — correct.
+  `ci.yml:406` runs `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111` from a
+  **duplicate `security` job that was never removed**, and both jobs carry the identical display name
+  "Security Audit".
+- **The mechanism of the drift is now known.** The Epic 25 PRD's Appendix B tabulates the *pre-change*
+  `ci.yml` as 7 jobs, of which #4 is `security`. Milestone 10 Epic 2 **added** the compliant
+  `security-audit` job at `ci.yml:60` without deleting its predecessor at `ci.yml:390`. Milestone 10
+  Epic 4's non-goals then locked the configs — "No changes to `deny.toml` or `.cargo/audit.toml`" and
+  "No new CI jobs — the Epic 3 pipeline is complete" — so nothing in the milestone was positioned to
+  notice.
+- **The governance gap, stated precisely.** All 5 audit.toml entries meet FR-3's four-field schema.
+  But only the **original 2** carry a formal risk-acceptance record with an **owner (Platform
+  Security) and an expiry (2026-09-30)** — that record is `rustsec-remediation-plan.md`, ingested in
+  run 4. The 3 newer vulnerability ignores and the 10 unmaintained notices have inline comments and
+  revisit conditions but **no owner and no expiry**. The only ingested authorisation for adding
+  entries beyond the Epic 2 baseline is Milestone 10 Epic 4 FR-1 step 5, which authorises
+  **unmaintained** advisories specifically — not vulnerability advisories.
+- **Conclusion:** the drift is **unsanctioned by the origin policy** — it is not an approved exception
+  regime. The most consequential single item is the duplicate `security` job, because it makes the
+  Epic 2 success metric false on a milestone recorded 100% complete.
+
+## Topic: The mdbook relocation is the corpus's most persistent false-positive generator
+- source: M11 Epic 2 PRD §4.5 + §5; corroborated across runs 3, 4 and 5
+- `REQ-mdbook-chapter-hierarchy` established the rule: **"Docs with no single-chapter home are placed
+  in an `appendix/` chapter rather than dropped."** Combined with Epic 2's non-goal — "Content
+  accuracy … is Epic 3's responsibility. This Epic migrates content as-is" — every legacy document
+  was moved, unchanged, into `docs/src/appendix/`.
+- **Every "missing deliverable" in runs 3, 4 and 5 traces to this one rule.** The complete list now
+  reads: `STABLE_API.md`, `docs/FEATURE_FLAGS.md`, `docs/MIGRATION.md`, `docs/CONFIGURATION.md`,
+  `docs/BUILD_BASELINES.md`, `docs/INTEGRATION_TESTS.md`, `docs/PERFORMANCE_BASELINE.md`,
+  `docs/RELEASE_CHECKLIST.md`, `docs/VERSIONING_POLICY.md`, `docs/SECURITY_SCANNING.md`,
+  `docs/RELEASE_AUTOMATION.md`, `docs/BRANCH_PROTECTION.md`, `docs/Design/Design_and_Architecture.md`.
+  All thirteen exist under `docs/src/appendix/` or `docs/src/api-reference/`. **None is a gap.**
+- **But the rule has a sharp edge.** Milestone 11 Epic 3's non-goals exempt the appendix from
+  rewriting — "the 35 appendix files are reference/archive material and are not rewritten in this
+  Epic". So `design-and-architecture.md` was relocated into the one chapter nobody was required to
+  fix, and it remains **exactly 311 lines with zero coverage of the seven newer subsystems** — the
+  same state the February 2026 Deferred-QA PRD described. **The relocation preserved the file and
+  froze the gap.**
+
+## Topic: Milestone 11 Epic 6 wrote down a gap, and that created Milestone 12
+- source: M11 Epic 6 PRD (FR-5, non-goals, OQ-2/OQ-3) → M12 Epic 1 PRD §1
+- The deployment-topologies epic required the HTTP-service-host page to carry **an honest note** that
+  "`paladin-web::create_app_router` is the user-management API, not an agent endpoint", and the
+  sidecar page to carry a **"no built-in IPC/RPC"** callout. Its non-goals were explicit: "A
+  first-class agent-HTTP endpoint or sidecar transport — explicitly out of scope; documented as
+  consumer-composed and recorded as open questions (OQ-2, OQ-3)."
+- Milestone 12 Epic 1 then opens by **quoting that page back**: *"**Paladin ships no
+  agent-execution endpoint.** The web crate's `create_app_router` wires a user-management / auth REST
+  API — it does *not* run agents. The agent endpoint is yours to compose."*
+- Milestone 12 Epic 7 closes the loop by requiring the docs to "accurately describe the **shipped**
+  API + server binary (replacing the old 'compose your own endpoint' framing)". **Verified done** —
+  the stale framing returns zero grep matches across `docs/src/`.
+- **A documentation epic that recorded a capability gap instead of papering over it directly caused
+  the last milestone in the corpus.** This is the single best argument in 199 documents for the
+  "record the open question, do not implement it here" discipline that M11 Epics 4 and 6 both state.
+
+## Topic: The Milestone 12 epic architecture — one seam, seven epics
+- source: Milestone-12_Web-API.md overview + the seven Epic PRDs
+- Every epic is organised around one invariant: **`paladin-web` never depends on the `paladin-ai`
+  facade.** Epic 1 defines the `PaladinExecutorPort` seam and the `AgentProvisioner` port; Epic 2 puts
+  the concrete implementations in the composition root (the `paladin-server` binary); Epic 5 restates
+  the rule for the auth verifier — "mirroring the executor/provisioner seam".
+- Deliberate sequencing with explicit deferral at each step: Epic 1 mounts routes **unauthenticated**
+  and says so, deferring auth to Epic 5 with the requirement that it be "layerable onto these routes
+  later **without changing their handlers' signatures**"; Epic 1 ships an interim
+  `{ "error": "<message>" }` body and requires error-body construction be **centralised in one helper
+  "so that migration is a single change point"** when Epic 4 lands the unified model. Both promises
+  were kept.
+- Epic 5's justification for eventually securing it is blunt: "anyone who can reach the port can run,
+  register, or delete agents. That is unacceptable for a real deployment: **agent execution spends
+  money (LLM calls)** and runtime registration is a powerful capability."
+- Status of record: Planning, Version Target v0.6.0, Document Version 1.0, Created 2026-06-07.
+  Depends on Milestone 8 Epic 7 landing first. Out of scope: distributed scale-out, per-agent process
+  isolation, and any new agent/LLM/orchestration capability.
+
+## Topic: The API is documented as JWT and implemented as opaque tokens
+- source: M9 Epic 5 §6.1 + §5; M12 Epic 5 §4.1, §6, §7, OQ-4; verified against the tree
+- **Milestone 9 chose opaque bearer tokens deliberately** and listed "JWT/OIDC/OAuth or any external
+  identity provider integration" as an explicit **non-goal**. Recorded rationale: no `jsonwebtoken`
+  dependency, no signing-key management, immediate revocation (which stateless JWTs cannot do),
+  deterministic unit testing, and no new dependencies since `rand` and `sha2` were already present.
+- **Milestone 12 specifies JWT throughout** — `Authorization: Bearer <jwt>`, `http.auth.jwt.enabled`,
+  `jwt: Option<Arc<dyn AuthPort>>`, "constructs an `AuthPort` **JWT verifier**".
+- **The tree implements the M12 shape over the M9 mechanism.** `crates/paladin-web/src/agent_auth.rs`
+  has the field named `jwt`, checks bearer first then `x-api-key`, and does constant-time key
+  comparison — exactly M12's design. But **no `jsonwebtoken` dependency exists anywhere in the
+  workspace**, and the only `AuthPort` implementation is
+  `src/infrastructure/adapters/auth/in_memory_token_auth_adapter.rs` — M9's opaque, in-process,
+  hashed-token store.
+- **M12 Open Question 4 is unanswered because it is unanswerable for the shipped adapter:** "which
+  concrete `AuthPort` impl does `paladin-server` wire, and what does it need (signing
+  secret/algorithm) from config/env?" An opaque-token store has neither.
+- **The operational consequence is real and nobody connected it.** M9 §6.1 recorded the trade-off
+  itself — "tokens are validated against an in-process store, so a **multi-process deployment would
+  later need a shared store**". Milestone 12 Epic 7 then ships a Kubernetes **Deployment** whose
+  whole purpose is multi-process serving. Neither document references the other.
+
+## Topic: Deferred-QA-CICD-Completion — the last deferred register, and the least reliable
+- source: prd-deferred-qa-completion.md (PRD-DQC-001) + DEFERRED_COVERAGE.md + Epic_25/prd-cicd-pipeline-enhancement.md
+- Origin: **25 subtasks deferred during Epic 24 (Test Hardening, Benchmarks & QA)**, mapped in
+  Appendix A to five epics — 25 (CI/CD), 26 (docs and demos), 27 (LLM tool calling), 28 (user_service
+  coverage), 29 (listener_service coverage) — across **135 numbered functional requirements**.
+- Recommended execution order with recorded rationale: **25 first** ("establishes quality gates that
+  validate all subsequent work"), then **27** (highest technical complexity), then **28** ("builds
+  reusable mock infrastructure needed by Epic 29"), then **29**, then **26** ("final polish; demos
+  showcase all completed features"). 27, 28 and 29 can parallelise given the people.
+- Dated **February 14 / February 20, 2026**, status **Draft** — the second-oldest material in run 5
+  after the master project plan.
+- **Reliability assessment.** Run 4 established Milestone 8's `deferred-items.md` and
+  `deferred-features.md` as the highest-fidelity documents in the corpus — every verifiable claim
+  matched the tree exactly. **This register is materially weaker.** `listener_service.rs` moved to
+  `src/application/services/orchestration/listener.rs` in Milestone 6; `LlmRequest`'s path
+  `src/application/ports/output/llm_port.rs` was deleted in Milestone 5; `Design_and_Architecture.md`
+  moved into the mdbook appendix in Milestone 11; the README it targets was rewritten by Milestone 11
+  Epic 5; and the 57.83% listener baseline predates Milestone 9 Epic 2's test work on the same module.
+- **But its scope is real and largely unbuilt.** Epic 25, Epic 26's architecture rewrite and demos,
+  and Epic 27 in its entirety are verified open against the tree. **Treat its scope as live and its
+  paths and numbers as needing re-measurement.**
+
+## Topic: The three deferred registers, compared
+- source: M8 `deferred-items.md` + `deferred-features.md` (run 4); `DEFERRED_COVERAGE.md` +
+  `prd-deferred-qa-completion.md` + `Epic_25/prd-cicd-pipeline-enhancement.md` (run 5)
+- Together these are the **only trustworthy forward-work signal in the corpus**. Checkbox arithmetic
+  is not — see the topic below.
+- **M8 `deferred-items.md` (D1-D5):** framed as "Record of intentional non-goals (not bugs / not
+  oversights)". Verified exact against the tree. No owners, no target milestone beyond a suggested
+  grouping.
+- **M8 `deferred-features.md`:** two removed features with explicit reintroduction conditions, both
+  recoverable verbatim from git history. Verified exact.
+- **Deferred-QA (Epics 25-29):** the largest by requirement count (135 FRs), the oldest, and the one
+  with stale paths. Carries effort estimates, story points, sprint ranges and priorities that the
+  other two lack, plus a named sign-off and a "Next Review: Epic 27 or Epic 28 planning" trigger that
+  was never reached.
+- **One direct collision.** `DEFERRED_COVERAGE.md` plans to *test* `user_service.rs` to ≥80%; M8
+  `deferred-items.md` D2 plans to **split** the same file across `paladin-core`/`paladin-ports` and a
+  facade app-service. Doing D2 first would invalidate much of Epic 28's test surface. **Sequence them
+  deliberately or the work is done twice.**
+
+## Topic: Checkbox counts in run 5 — three of four milestones contradicted or vacuous
+- source: /workspace/.planning/intel/task-completion-state.md; verified against the tree
+- **Milestone 9: 0 open across 6 task lists (100%). Corroborated.** `execute_workflow` at
+  `orchestration/mod.rs:382`, `workflow_repository_port.rs`, `sqlite_workflow_repository.rs`,
+  `processors/`, `orchestrator_bridge.rs`, `orchestrator_port.rs`, `auth_port.rs` and `argon2` all
+  ship.
+- **Milestone 10: 0 open across 5 task lists (100%). Corroborated in artefacts, contradicted in one
+  acceptance criterion.** Every deliverable exists — but Epic 2's success metric "no inline
+  advisory-ignore flags remain in CI" is false, because `ci.yml:406` still carries them.
+- **Milestone 11: 26 open, all in `tasks-content-rewrite.md` (92.0%). Plausible and unverifiable by
+  file existence.** The open items are tasks 6.0 (six user-guide in-place updates), 7.0 (eight
+  deployment/operations updates) and 1.2 (a linkcheck report review). **All fourteen target files
+  exist**; whether their *content* is current cannot be settled from the tree. This is the only run-5
+  count that is genuinely open work.
+- **Milestone 12: 3 open, all in `tasks-api-security-authorization.md` (99.0%). Contradicted.** All
+  three are Task 0.0 scaffolding — "Create feature branch", "Update `main` and create/checkout
+  `feature/m12-epic5-api-security-authorization`", "Confirm a clean baseline". **The Epic 5 work
+  itself shipped:** `crates/paladin-web/src/agent_auth.rs` implements API-key + bearer auth with
+  constant-time comparison, redaction tests and a mock verifier. Zero real work is represented.
+- **project-management: 1 open (0.0%). Vacuous.** The single item is
+  `- [ ] 1.1 Create template → - [x] 1.1 Create template (after completing)` — a **formatting example
+  inside a template**, not a task.
+- **Final corpus position: of 542 open checkboxes across 75 task lists, the verified genuine
+  remainder is small.** Runs 1-2 found counts understating reality (Conclave 129, Sanctum 111 — both
+  shipped). Run 3 found the first accurate count (M4's 20). Run 4 found M8's three contradicted.
+  Run 5 finds M12's three vacuous and project-management's one nonexistent.
+
+## Topic: Version trajectory completed — v0.3.0 → v0.6.0 across four milestones
+- source: M9 Epic 6, M10 Epic 4, M11 Epic 5, M12 Epic 7 + the tree
+- Milestone 9 → **0.3.0** (release candidate tag); Milestone 10 → **0.4.0** (annotated tag, first
+  crates.io publish through the new pipeline); Milestone 11 → **0.5.0** (docs published to GitHub
+  Pages, README rewritten); Milestone 12 → **0.6.0**.
+- Current tree: `Cargo.toml` at **0.6.0**, branch **`release/v0.7.0`**, latest tag **v0.5.1**.
+- **The run-4 Milestones 8-11 dependency graph's release sequence (v0.2.0 → v0.3.0 → v0.4.0 →
+  v0.5.0) completed exactly as planned**, and the project has since moved one further minor plus a
+  patch. Run 4 recorded that the graph's *schedule* should be discarded; its *sequence* held.
+- Every version-bump requirement in run 5 is **history**. Do not plan them.
+- One nuance worth keeping: Milestone 9 Epic 6's non-goals explicitly refuse to reconcile whether the
+  prior published version "should" have been 0.2.0 — "this Epic targets `0.3.0` per the Epic
+  specification regardless of intervening version numbers". The v0.1.0-rc.1 / v0.2.0 discrepancy run
+  4 recorded was noticed and consciously not fixed.
+
+## Topic: `project/current-exports.txt` — the stale path is now written into nine places
+- source: M12 Epics 1, 5, 6 and 7; M8 Epic 7 FR-10; `scripts/`; `ci.yml`
+- The directory was renamed `project/` → `.project/` in commit `928c6d5`. The baseline now lives at
+  `.project/current-exports.txt` (442 KB); `project/current-exports.txt` does not exist.
+- Run 3 found five stale references (two scripts, three `ci.yml` lines) and established that
+  `check-api-surface.sh` exits 1 with "No baseline found" when the file is absent — **so the
+  `api-surface` CI job fails on every run**. Run 4 found all five unchanged and added a sixth: M8
+  Epic 7 FR-10 mandates the stale path inside a requirement.
+- **Run 5 adds three more**, all in Milestone 12: Epic 1 §7 ("new public items will change
+  `project/current-exports.txt`; regenerate the baseline"), Epic 5 §7, Epic 6 `cross_refs`, and Epic 7
+  FR-4.6 ("`CHANGELOG.md` and `project/current-exports.txt` reflect the release").
+- **Nine references across two scripts, three workflow lines and four requirements, unchanged across
+  three ingest runs.** This extends `DEBT-01`. It is the longest-lived unfixed defect in the corpus
+  and the cheapest to fix.
+
+## Topic: What Milestone 12 explicitly did not build
+- source: M12 overview + the seven Epic PRDs' non-goals
+- Recorded as out of scope, with reasons: **distributed scale-out** and **per-agent process
+  isolation** (milestone-level); **Garrison (memory) and Arsenal (tools/MCP) wiring for agents** —
+  "agents are LLM + prompt only here", deferred as "a later enhancement"; **durable/distributed jobs,
+  retries and backpressure** — deferred to the queue/worker topology; **WebSocket / bidirectional
+  streaming** — SSE only; **OAuth/OIDC, mTLS, signed requests**; **API-key storage backends, rotation
+  and per-key rate limits** — "keys are static config; rotation is operational (edit config +
+  restart)"; **fine-grained scopes beyond `allowed_roles`**; **per-route/per-agent rate limits** — the
+  limiter is global and IP-based; **metrics/Prometheus and distributed-tracing exporters**;
+  **migration off `log` to `tracing`**; **TLS termination and ingress**; **Helm charts and Kustomize**;
+  **multi-arch / static-musl images**; **hot-reload of `config.yml`**; **registry persistence across
+  restarts**; **client SDK generation**; **versioning the user/delivery routes**.
+- **The Garrison/Arsenal omission is the most consequential.** Agents served over HTTP have no memory
+  and no tools — they are prompt-plus-model only. That is a substantial functional gap between the
+  embedded-library topology and the HTTP-service-host topology, and it is stated once, in a non-goal.
+
+## Topic: The master project plan — origin of Epics 11-18, not new scope
+- source: /workspace/.project/project-management/paladin-project-plan-final.md
+- Status **Draft**, version 1.0, **January 29, 2026** — the earliest document in run 5 and the
+  highest-level planning document in the corpus. 1,937 lines.
+- Defines eight epics over 14-18 weeks with the dependency graph **11 → 12 → {13,14} → 15 → {16,17}
+  → 18**: Sanctum Memory Foundation, Sanctum RAG Integration, Sentinel Vision System, Autonomous
+  Agent Features, Conclave Expert Synthesis, Advanced Battalion Patterns (Council, Grove), Tactical
+  Flow DSL, Armory CLI Enhancement. Marks Epics 1-10 **Complete**.
+- **Every one of these eight epics shipped and was already ingested in run 2** from
+  `.project/Milestone_2-Missing_features`. `code-verification.md` runs 1-2 verified Conclave,
+  Sanctum/Qdrant, Council, Grove, Maneuver and Sentinel vision in the tree.
+- **Its value to planning is provenance only.** It is the sole record of the epic-level dependency
+  graph, the risk assessment and the success metrics for that expansion. Retagging it as PRD would
+  raise the precedence of positions that shipped a year ago; it would add no scope.
+
+## Topic: Code-verification anchors for run-5 claims
+- source: /workspace/.planning/intel/code-verification.md (run-5 section)
+- **Verified SHIPPED:** the whole Milestone 9 orchestrator subsystem (`execute_workflow`,
+  `WorkflowRepository` port + SQLite adapter, content processors, `OrchestratorPort` +
+  `orchestrator_bridge.rs`, `AuthPort` + argon2); the whole Milestone 10 tooling set
+  (`.pre-commit-config.yaml`, `release.toml`, `.github/rulesets/{protect-main-branch,protect-release-tags}.json`,
+  `pre-commit.yml`, `verify-tag-source`, `publish-crates`, `make security`/`sbom`/`hooks`/`release`/
+  `publish-dry-run`/`release-check`, `cargo-deny` and `osv-scanner` CI jobs, CycloneDX in
+  `release.yml`); the Milestone 11 mdbook with linkcheck at `warning-policy = "error"` and all six
+  deployment-topology pages; and the whole Milestone 12 web API (`agent_registry.rs`,
+  `agent_controller.rs`, `agent_auth.rs`, `error.rs`, `health.rs`, `http_layers.rs`, `job_store.rs`,
+  `openapi.rs`, `request_log.rs`, `timeout.rs`, `openapi.json`, `paladin-server` binary,
+  `Dockerfile.server`, `k8s/`, utoipa + Swagger UI + tower_governor, version 0.6.0).
+- **Verified OPEN:** Epic 25 in its entirety bar one item (no `cli-tests`/`bench-check`/`coverage`
+  jobs, no `.codecov.yml`, no Makefile coverage targets, 8 deprecated-action references remaining);
+  Epic 26's architecture rewrite (`design-and-architecture.md` still 311 lines, 0 of 7 newer
+  subsystems, 0 mermaid blocks), demos (`docs/assets/` empty, no `docs/DEMOS.md`); Epic 27 in its
+  entirety (no `tools` field, no `ToolDefinition`, no `ToolCall`); the Epic 28/29 mock infrastructure
+  (`tests/common/` does not exist); and the duplicate `security` job at `ci.yml:390-406` violating
+  M10 Epic 2's success metric.
+- **Corrected from run 4:** `deny.toml` **does** now mirror all five vulnerability advisories from
+  `.cargo/audit.toml`. Run 4's "the three 2026 advisories are absent" is no longer true. The
+  remaining gap is owner/expiry coverage, not synchronisation.
+- **Relocated, not missing:** `listener_service.rs`; `llm_port.rs`; `Design_and_Architecture.md`;
+  `BRANCH_PROTECTION.md`; `SECURITY_SCANNING.md`; `RELEASE_AUTOMATION.md`.

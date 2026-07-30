@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_6/Milestone_9-Epic_6-finalization-and-release.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 9 — Epic 6: Finalization and Release",
+  "summary": "Finalization checkpoint for Milestone 9: run full workspace quality gate, update CHANGELOG, bump version to 0.3.0, tag v0.3.0 release candidate.",
+  "scope": ["quality gate", "CHANGELOG.md", "workspace version bump", "v0.3.0 release candidate", "cargo build/test/clippy/fmt/doc"],
+  "cross_refs": ["CHANGELOG.md", "Cargo.toml"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set by MANIFEST_TYPE=DOC; heuristic classification skipped."
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_2/Milestone_9-Epic_2-scheduler-queue-operational-validation.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 9 — Epic 2: Scheduler and Queue Operational Validation",
+  "summary": "Epic plan to validate SchedulerOrchestrator tick loop, QueueService/RedisQueueAdapter integration via QueuePort, retry/dead-letter behavior, and event-to-job pipeline.",
+  "scope": ["SchedulerOrchestrator", "tick loop", "Schedule variants (Interval, Cron, Once)", "QueueService", "RedisQueueAdapter", "QueuePort", "retry and dead-letter", "ListenerOrchestrator", "event to trigger to job pipeline"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "Manifest declared type DOC; heuristic/content classification skipped per manifest authority. Document contains task-level acceptance criteria that would otherwise suggest PRD signals."
+}

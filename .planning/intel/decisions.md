@@ -297,3 +297,119 @@ acceptance expires 2026-09-30 and nothing else in `.planning/` will surface that
 
 Run 5 (Milestones 9-12, Deferred-QA-CICD-Completion, project-management) may add ADR-typed docs;
 this file remains append-only in merge mode.
+
+---
+
+# Ingest run 5 of 5 — decisions
+
+**Decisions extracted in run 5: 0. Cumulative across all five runs: 0.**
+**Decisions locked: 0. Cumulative: 0.**
+**Source paths: none.**
+
+Run 5 closes the ingest with the standing constraint intact and now final:
+
+> **There is no ADR-typed and no SPEC-typed document anywhere in the corpus.**
+> **199 classified documents across 263 files in `.project/`. Zero ADR. Zero SPEC. Zero locked decisions.**
+
+The consequences are structural, not cosmetic:
+
+- No LOCKED-vs-LOCKED contradiction has ever been possible, in any run. The zero-blocker result
+  across all five runs is a property of the corpus's document typing, not evidence that the corpus
+  is free of contradictions. It is not — there are 67 recorded competing variants.
+- **Nothing in `requirements.md` is protected from override.** Every one of the 554 requirement
+  entries sits at PRD or DOC precedence and can be superseded by any ADR that arrives later.
+- Where a document *does* make a decision — and several do, emphatically — that decision carries
+  the precedence of its manifest type, not the precedence its content deserves. Milestone 9 Epic 5
+  §6.1 chooses opaque bearer tokens over JWT with a written rationale, a named trade-off and a
+  rejected alternative. Milestone 9 Epic 4 §6.1 tabulates Option A against Option B across four
+  criteria and records "Decision (1A/C): Adopt **Option A**". Both are PRD sections. Neither binds.
+
+## Decision-shaped content in run 5 (ADR candidates)
+
+Run 5 adds **five** candidates, bringing the corpus total to **eleven**. None is promoted here;
+promotion requires re-tagging the source via `--manifest` and re-running ingest. Manufacturing a
+lock inside a planning artefact would fabricate authority the corpus does not contain.
+
+- **`Milestone_9-Classic-Orchestrator-Completion/Epic_4/prd-agent-orchestrator-bridge.md` §6.1** —
+  the cleanest ADR-shaped section in the entire corpus. A four-criterion comparison table
+  (discoverability by LLM, safety/authorization, testability/coupling, consistency with
+  Arsenal/MCP), an explicit **"Option A — `OrchestratorPort` (CHOSEN)"** column header, a stated
+  decision — *"Adopt **Option A**. It maximizes decoupling, testability, and centralized safety
+  enforcement"* — and an explicit preservation of the rejected option as a future non-breaking
+  enhancement: *"an `OrchestratorArmament` can simply wrap an `Arc<dyn OrchestratorPort>` and
+  register in the Arsenal later, without changing the port."* Recorded as `REQ-orchestrator-port`,
+  `REQ-bridge-policy-guardrails` and `REQ-orchestrator-bridge-adapter`.
+
+- **`Milestone_9-Classic-Orchestrator-Completion/Epic_5/prd-user-admin-system-completion.md` §6.1** —
+  *"**Chosen:** opaque, randomly-generated bearer tokens with a server-side hashed store"*, with
+  rationale (no `jsonwebtoken` dependency, no signing-key management story, supports immediate
+  revocation which stateless JWTs cannot, trivially deterministic to unit test, no new dependencies)
+  **and a recorded trade-off**: *"tokens are validated against an in-process store, so a
+  multi-process deployment would later need a shared store."* Recorded as
+  `REQ-opaque-bearer-token-adapter-v1`.
+
+  **This is the highest-value promotion candidate in run 5.** It is the only decision in the corpus
+  that a *later milestone contradicts in prose while silently preserving in code* — Milestone 12
+  Epic 5 specifies JWT throughout, the shipped `agent_auth.rs` is written in JWT vocabulary, and the
+  only `AuthPort` implementation in the workspace is still the opaque in-memory token adapter with
+  no `jsonwebtoken` dependency anywhere. Had this been an ADR, Milestone 12 would have had to
+  supersede it explicitly rather than drift past it.
+
+- **`Milestone_9-Classic-Orchestrator-Completion/Epic_3/prd-content-agent-bridge.md` §7 and OQ-1** —
+  a buildability decision recorded as a **resolved** open question: *"Initial preference was to place
+  the processors inside `paladin-content`. Because the `ContentProcessor` trait and
+  `OrchestratorError` live in the root crate (which already depends on `paladin-content` and
+  `paladin-battalion`), implementing them in `paladin-content` would create a **circular
+  dependency**. **Resolution:** place the processors in the root crate."* The identical constraint is
+  restated in Epic 4 §6.2 for the bridge adapter. A crate-placement rule derived from a hard
+  buildability constraint, applied twice — this is architecture, carried by two PRDs.
+
+- **`Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md` §"Scope decisions (from PRD
+  clarification)"** — a section literally headed *decisions*, resolving four questions: posture
+  (**required by default, but disable-able**); mechanisms (**API keys + JWT**); per-agent
+  authorization (**role-based** via optional `allowed_roles`); route privilege (**admin** for
+  `POST`/`DELETE /agents`). Same shape as the run-4 Milestone 8 Epic 7 *"Decisions (from PRD
+  clarification)"* block. Recorded as `REQ-api-key-auth`, `REQ-jwt-bearer-auth-v2`,
+  `REQ-fail-closed-auth-posture`, `REQ-per-agent-role-authorization` and
+  `REQ-admin-gated-registration`.
+
+- **`Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md`
+  FR-1 plus §8** — the **origin policy for dependency-advisory suppression**, and the one run-5
+  candidate with an ongoing operational cost from not being promoted. It states the invariant twice:
+  FR-1 requires the ignore-list be sourced from `audit.toml` *"so the workflow and the config cannot
+  drift"*, and §8 makes it a success metric — *"`audit.toml` and `deny.toml` are the only places
+  policy/exceptions are defined; **no inline advisory-ignore flags remain in CI**."*
+
+  **It is violated in the shipped tree.** `ci.yml:390-406` still runs
+  `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111` from a duplicate `security`
+  job that Milestone 10 Epic 2 never removed. Because this is a PRD success metric rather than a
+  locked decision, nothing gates on it and the violation survived a milestone recorded 100%
+  complete, plus two subsequent milestones. Recorded as `REQ-audit-toml-single-source`.
+
+## Promoting any of these
+
+Eleven ADR candidates now exist across the corpus:
+
+| Run | Candidate |
+|---|---|
+| 2 | `Epic_17.5/epic17-5.md` — CLI location |
+| 3 | `Milestone_5/Epic_1/decisions/battalion-result-upward-dependency-decision.md` — the only `Status: Approved` decision record |
+| 4 | `Epic_1/cost-benefit-assessment.md` — self-approval block, named approver, approval date |
+| 4 | `Epic_4/rustsec-remediation-plan.md` — owner **Platform Security**, **expiry 2026-09-30** |
+| 4 | `Epic_4/license-compatibility-decision-checklist.md` — approver `DF3NDR`, 2026-05-28 |
+| 4 | `facade-cleanup-RECONCILIATION-2026-06-04.md` — explicit supersession notice |
+| 5 | `M9/Epic_4/prd-agent-orchestrator-bridge.md` §6.1 — Option A versus Option B |
+| 5 | `M9/Epic_5/prd-user-admin-system-completion.md` §6.1 — opaque tokens versus JWT |
+| 5 | `M9/Epic_3/prd-content-agent-bridge.md` §7 — root-crate placement (circular-dependency rule) |
+| 5 | `M12/Epic_5/prd-api-security-authorization.md` — four scope decisions |
+| 5 | `M10/Epic_2/prd-dependency-security-license-compliance.md` — the audit-suppression single-source policy |
+
+**The two with a live operational cost are `rustsec-remediation-plan.md` (run 4) and
+`prd-dependency-security-license-compliance.md` (run 5), and they are the same subject.** One
+carries the only expiry date in the corpus — **2026-09-30**, roughly two months from the ingest
+date, and nothing else in `.planning/` will surface it. The other carries the invariant that the
+tree currently violates. Promoting them together would turn the run-5 supply-chain finding from a
+recorded observation into a gate.
+
+The ingest is complete; this file remains append-only. Any future ADR arriving through a re-run
+outranks everything in `requirements.md`.

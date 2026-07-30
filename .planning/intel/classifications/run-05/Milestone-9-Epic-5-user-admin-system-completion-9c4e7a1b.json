@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_5/Milestone_9-Epic_5-user-admin-system-completion.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 9 — Epic 5: User and Admin System Completion",
+  "summary": "Epic plan to complete user CRUD, argon2 password hashing, token authentication middleware, and admin/user role-based access control.",
+  "scope": ["user authentication", "authorization", "RBAC", "UserService", "argon2 password hashing", "API key/token auth middleware", "admin operations", "paladin-web"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set by MANIFEST_TYPE=DOC (manifest authoritative). Content shows task/deliverable/acceptance-criteria structure with PRD-like signals; manifest override applied."
+}

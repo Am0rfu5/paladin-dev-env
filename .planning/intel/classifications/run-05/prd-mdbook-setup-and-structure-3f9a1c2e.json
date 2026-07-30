@@ -1,0 +1,37 @@
+{
+  "source_path": "/workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_2/prd-mdbook-setup-and-structure.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: MDBook Setup and Structure",
+  "summary": "Requirements for scaffolding an MDBook at docs/, migrating existing docs, adding linkcheck/mermaid preprocessors, and CI deploy to GitHub Pages.",
+  "scope": [
+    "MDBook",
+    "docs/book.toml",
+    "docs/src chapter hierarchy",
+    "SUMMARY.md",
+    "mdbook-linkcheck",
+    "mdbook-mermaid",
+    "GitHub Actions docs.yml",
+    "GitHub Pages",
+    "docs/MIGRATION_LOG.md",
+    "appendix chapter"
+  ],
+  "cross_refs": [
+    "docs-audit.md",
+    "docs/MIGRATION_LOG.md",
+    "docs/Design/Design_and_Architecture.md",
+    "docs/architecture/hexagonal-design.md",
+    "docs/architecture/domain-model.md",
+    "docs/architecture/design-patterns.md",
+    "docs/architecture/dependency-flow-diagrams.md",
+    "docs/contributing/testing-guide.md",
+    "docs/contributing/adapter-development.md",
+    "STABLE_API.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

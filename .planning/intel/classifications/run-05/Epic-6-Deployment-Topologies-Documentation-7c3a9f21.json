@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_6/Epic-6_Deployment-Topologies-Documentation.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 6 — Deployment Topologies & Running Multiple Agents",
+  "summary": "Epic scoping a new MDBook 'Deployment Topologies' section with a decision matrix landing page and five topology pages.",
+  "scope": ["MDBook documentation site", "deployment topologies", "embedded library", "Battalion orchestration", "HTTP service host", "Redis queue/worker", "sidecar process", "SUMMARY.md", "CHANGELOG.md"],
+  "cross_refs": ["getting-started/quickstart.md", "user-guides/battalion-patterns.md", "paladin-agents.md", "orchestration.md", "SUMMARY.md", "CHANGELOG.md", "prd-deployment-topologies-documentation.md", "tasks-deployment-topologies-documentation.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,28 @@
+{
+  "source_path": "/workspace/.project/Milestone_12-Web-API/Epic_4/prd-api-cross-cutting-concerns.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: API Cross-Cutting Concerns (Milestone 12, Epic 4)",
+  "summary": "Requirements for paladin-web production middleware: unified error envelope, health/ready probes, request logging, CORS, body limits, timeout, rate limiting.",
+  "scope": [
+    "paladin-web",
+    "ApiError unified error model",
+    "GET /health liveness endpoint",
+    "GET /ready readiness endpoint",
+    "request-logging middleware",
+    "x-request-id header",
+    "CORS layer",
+    "request body-size limit",
+    "global request timeout",
+    "rate limiting (tower-governor)",
+    "SSE streaming",
+    "agent controller",
+    "user-management controller",
+    "content-delivery controller"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

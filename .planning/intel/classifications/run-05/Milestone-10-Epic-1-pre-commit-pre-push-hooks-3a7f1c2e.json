@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/Milestone_10-Epic_1-pre-commit-pre-push-hooks.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 1: Pre-commit and Pre-push Hooks",
+  "summary": "Epic plan to install pre-commit and pre-push quality gates covering formatting, linting, secrets detection, and file validation.",
+  "scope": ["pre-commit hooks", "pre-push hooks", "cargo fmt", "cargo clippy", "secrets detection", "TOML/YAML validation", "CI verification gate"],
+  "cross_refs": [".pre-commit-config.yaml", "CONTRIBUTING.md", "Cargo.toml", "config.yml"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

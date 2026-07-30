@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_12-Web-API/Epic_6/prd-openapi-spec-interactive-docs.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: OpenAPI Specification & Interactive Docs (Milestone 12, Epic 6)",
+  "summary": "Requirements to publish a code-generated OpenAPI 3 spec, Swagger UI at /docs, a /v1 prefix, and a CI drift-guard test.",
+  "scope": ["OpenAPI 3 specification", "Swagger UI", "/openapi.json", "/docs", "/v1 version prefix", "utoipa", "utoipa-axum", "OpenApiRouter", "drift-guard test", "http.docs.enabled config flag", "agent HTTP API DTOs", "error envelope", "security schemes"],
+  "cross_refs": ["current-exports.txt"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD provided and confirmed by content (goals, user stories, functional requirements)."
+}

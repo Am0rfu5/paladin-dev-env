@@ -1,0 +1,28 @@
+{
+  "source_path": "/workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/prd-publish-and-finalize.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Epic 5 — Publish and Finalize",
+  "summary": "Requirements to finalize MDBook review, sync doc versions, rewrite README, prepare CHANGELOG, and cut the v0.5.0 release via existing automation.",
+  "scope": ["MDBook documentation", "GitHub Pages publish", "root README.md", "CHANGELOG.md", "workspace version 0.5.0", "make release automation", "release.yml", "docs.yml", "crates.io publish", "crate map", "doc-examples compile gate"],
+  "cross_refs": [
+    "../../../docs/src/appendix/release-automation.md",
+    "docs/src/appendix/branch-protection.md",
+    "docs/src/appendix/release-checklist.md",
+    "docs/src/api-reference/crate-map.md",
+    "docs/src/getting-started/installation.md",
+    "docs/src/getting-started/quickstart.md",
+    "docs/src/contributing/",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "README.md",
+    "stable-api.md",
+    "battalion-patterns.md",
+    "scripts/check-doc-examples.sh",
+    "scripts/check-doc-config.sh"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

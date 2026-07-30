@@ -1,0 +1,40 @@
+{
+  "source_path": "/workspace/.project/Milestone_12-Web-API/overview/Milestone-12_Web-API.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 12: Web API for the Paladin Framework",
+  "summary": "Milestone plan making the HTTP Service Host topology first-class: agent registry, execution API, server binary, streaming, security, OpenAPI, deployment artifacts.",
+  "scope": [
+    "paladin-web",
+    "HTTP Service Host topology",
+    "agent registry",
+    "POST /agents/{id}/execute",
+    "GET /agents",
+    "SSE streaming endpoint",
+    "paladin-server binary",
+    "config.yml host and agents schema",
+    "health and readiness endpoints",
+    "consistent JSON error model",
+    "tracing/CORS/body limits/rate limiting",
+    "bearer JWT and API-key auth",
+    "per-agent authorization",
+    "OpenAPI spec and Swagger UI/RapiDoc",
+    "API versioning /v1",
+    "Dockerfile, docker-compose, k8s manifests",
+    "PaladinExecutionService",
+    "v0.6.0 version target"
+  ],
+  "cross_refs": [
+    "../../../docs/src/deployment-topologies/overview.md",
+    "../../../docs/src/deployment-topologies/http-service-host.md",
+    "../../../docs/src/deployment-topologies/queue-worker.md",
+    "../../../docs/src/deployment-topologies/sidecar.md",
+    "doc-examples/src/http_service_host.rs",
+    "project/current-exports.txt",
+    "CHANGELOG.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content is a milestone/epic plan (7 epics, task breakdown, schedule, out-of-scope) with PRD-like success criteria and SPEC-like endpoint listings; each epic is explicitly slated to become its own PRD. Status: Planning, Version Target v0.6.0, Document Version 1.0, Created 2026-06-07. Forward-looking statements: Epic 3 Task 3.3 async job execution marked optional/stretch; distributed scale-out, per-agent process isolation, and new agent/LLM/orchestration capabilities are explicitly out of scope; depends on Milestone 8 Epic 7 landing first."
+}

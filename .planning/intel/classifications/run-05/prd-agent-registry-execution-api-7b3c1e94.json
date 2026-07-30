@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Agent Registry & Execution API (Milestone 12, Epic 1)",
+  "summary": "Requirements for a shared agent registry and agent-execution HTTP API in paladin-web, depending only on PaladinExecutorPort.",
+  "scope": ["paladin-web", "agent registry", "agent-execution HTTP API", "PaladinExecutorPort", "POST /agents/{id}/execute", "GET /agents", "runtime agent registration"],
+  "cross_refs": ["../../../docs/src/deployment-topologies/overview.md", "../../../docs/src/deployment-topologies/http-service-host.md", "doc-examples/src/http_service_host.rs", "src/application/services/paladin/paladin_execution_service.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

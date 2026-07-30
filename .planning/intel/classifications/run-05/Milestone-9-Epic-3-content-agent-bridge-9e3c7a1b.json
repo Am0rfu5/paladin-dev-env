@@ -1,0 +1,26 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/Milestone_9-Epic_3-content-agent-bridge.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 9 — Epic 3: Content → Agent Bridge",
+  "summary": "Epic plan for bridging content processing into Paladin agent and Battalion execution via ContentProcessor implementations wired into the Orchestrator.",
+  "scope": [
+    "ContentProcessor",
+    "PaladinContentProcessor",
+    "BattalionContentProcessor",
+    "PaladinExecutionService",
+    "Orchestrator::process_content()",
+    "ContentItem",
+    "ContentProcessingResult",
+    "OrchestrationContext",
+    "Formation",
+    "Phalanx",
+    "paladin-content",
+    "LlmPort"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Source contains task/acceptance-criteria structure (PRD-like signals) but manifest override takes precedence."
+}

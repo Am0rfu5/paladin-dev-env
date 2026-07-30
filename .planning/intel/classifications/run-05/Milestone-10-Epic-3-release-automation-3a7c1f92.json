@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_3/Milestone_10-Epic_3-release-automation.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 3: Release Automation",
+  "summary": "Epic plan to automate Paladin releases: tooling evaluation, workspace publish order, tag-triggered CI pipeline, and a make release target.",
+  "scope": ["release automation", "cargo-release", "release-plz", "workspace crate publishing order", "GitHub Actions tag-triggered pipeline", "make release target", "changelog", "SBOM", "Docker images"],
+  "cross_refs": ["CONTRIBUTING.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set by MANIFEST_TYPE=DOC. Content is task/deliverable oriented epic planning with no ADR status or user stories."
+}

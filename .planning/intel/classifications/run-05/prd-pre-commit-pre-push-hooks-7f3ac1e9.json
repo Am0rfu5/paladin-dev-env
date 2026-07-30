@@ -1,0 +1,26 @@
+{
+  "source_path": "/workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_1/prd-pre-commit-pre-push-hooks.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Milestone 10 — Epic 1: Pre-commit and Pre-push Hooks",
+  "summary": "Requirements for version-controlled pre-commit and pre-push quality gates enforcing formatting, linting, secrets detection, config validation, and CI verification.",
+  "scope": [
+    "pre-commit framework",
+    ".pre-commit-config.yaml",
+    "pre-push hooks",
+    "cargo fmt",
+    "cargo clippy",
+    "gitleaks secrets detection",
+    "TOML/YAML validation",
+    "CI verification gate",
+    "CONTRIBUTING.md"
+  ],
+  "cross_refs": [
+    "Milestone_10-Epic_1-pre-commit-pre-push-hooks.md",
+    "CONTRIBUTING.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

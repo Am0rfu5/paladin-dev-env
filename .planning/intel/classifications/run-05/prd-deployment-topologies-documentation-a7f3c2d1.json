@@ -1,0 +1,38 @@
+{
+  "source_path": "/workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_6/prd-deployment-topologies-documentation.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Epic 6 — Deployment Topologies & Running Multiple Agents",
+  "summary": "Requirements for authoring a new Deployment Topologies documentation section covering embedded, Battalion, HTTP host, queue/worker, and sidecar topologies.",
+  "scope": [
+    "Deployment Topologies documentation section",
+    "decision-matrix landing page",
+    "embedded library topology",
+    "Battalion orchestration topology",
+    "HTTP service host topology",
+    "queue/worker distributed topology",
+    "sidecar separate-process topology",
+    "SUMMARY.md registration",
+    "mdbook build",
+    "check-doc-examples.sh",
+    "config-check gate",
+    "paladin-web",
+    "PaladinExecutionService",
+    "Redis queue adapter"
+  ],
+  "cross_refs": [
+    "getting-started/quickstart.md",
+    "user-guides/paladin-agents.md",
+    "user-guides/battalion-patterns.md",
+    "user-guides/orchestration.md",
+    "architecture/overview.md",
+    "api-reference/crate-map.md",
+    "appendix/redis-queue-adapter-setup.md",
+    "SUMMARY.md",
+    "scripts/check-doc-examples.sh"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

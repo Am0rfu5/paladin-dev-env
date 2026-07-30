@@ -1,0 +1,35 @@
+{
+  "source_path": "/workspace/.project/project-management/paladin-project-plan-final.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Paladin Project Plan: Advanced Capabilities Expansion",
+  "summary": "Master plan defining 8 new epics (11-18) over 14-18 weeks expanding Paladin into a full enterprise multi-agent orchestration framework.",
+  "scope": [
+    "Sanctum long-term memory",
+    "vector embeddings",
+    "Sanctum RAG integration",
+    "Sentinel vision system",
+    "autonomous agent features",
+    "Conclave expert synthesis",
+    "advanced Battalion patterns",
+    "Council",
+    "Grove",
+    "Tactical Flow DSL",
+    "Armory CLI",
+    "Paladin terminology glossary",
+    "epic dependency graph",
+    "risk assessment",
+    "success metrics"
+  ],
+  "cross_refs": [
+    "docs/SANCTUM.md",
+    "docs/SENTINEL.md",
+    "docs/AUTONOMOUS.md",
+    "docs/guides/conclave-pattern.md",
+    "docs/guides/tactical-dsl.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "Manifest declared DOC; honored as authoritative. Content signals are strongly PRD-like (user stories US-11.1+, acceptance criteria, success metrics) with embedded SPEC fragments (trait definitions, struct schemas). Document status is 'Draft', version 1.0, dated January 29, 2026. Structure: Executive Summary, naming convention table, Epics 11-18 (each 2 weeks), Summary Epic List (Epics 1-10 marked Complete), Dependencies Graph (11 -> 12 -> {13,14} -> 15 -> {16,17} -> 18), Risk Assessment, Success Metrics, Glossary. Highest-level planning doc in corpus; synthesizer may wish to treat sections as PRD source despite DOC tag."
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_3/prd-content-agent-bridge.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Content → Agent Bridge",
+  "summary": "Requirements for PaladinContentProcessor and BattalionContentProcessor bridging the content pipeline to agent execution via orchestrator registration.",
+  "scope": ["ContentProcessor", "PaladinContentProcessor", "BattalionContentProcessor", "Orchestrator", "PaladinExecutionService", "paladin-content", "paladin-battalion", "Formation", "Phalanx", "PaladinPort", "LlmPort"],
+  "cross_refs": ["src/application/services/orchestration/types.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_4/Epic-4_New-Documentation.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 4: New Documentation",
+  "summary": "Epic plan for writing net-new documentation covering orchestration, content processing, crate map, and agent-orchestrator bridge for MDBook publish.",
+  "scope": ["orchestration guide", "content processing", "agent-orchestrator bridge", "crate map", "feature flags", "MDBook", "docs/src"],
+  "cross_refs": ["docs/src/user-guides/orchestration.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_12-Web-API/Epic_7/prd-deployment-artifacts-examples-docs.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Deployment Artifacts, Examples & Documentation (Milestone 12, Epic 7)",
+  "summary": "Requirements for paladin-server deployment artifacts, docker/k8s manifests, deployment docs, runnable example, e2e tests, and v0.6.0 workspace version bump.",
+  "scope": ["paladin-server", "Dockerfile.server", "docker-compose", "k8s Deployment and Service", "deployment topology docs", "examples", "end-to-end tests", "v0.6.0 version bump", "CHANGELOG.md"],
+  "cross_refs": ["CHANGELOG.md", "project/current-exports.txt"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

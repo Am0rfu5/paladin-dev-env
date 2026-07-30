@@ -1,0 +1,31 @@
+{
+  "source_path": "/workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/Milestone_10-Epic_2-dependency-security-license-compliance.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 2: Dependency Security and License Compliance",
+  "summary": "Epic defining CI dependency vulnerability scanning (cargo audit, OSV-Scanner, Snyk evaluation), cargo deny license policy, and SBOM generation for releases.",
+  "scope": [
+    "cargo audit",
+    "RustSec Advisory Database",
+    "Cargo.lock",
+    "CI pipeline",
+    "OSV-Scanner",
+    "Snyk",
+    "cargo deny",
+    "deny.toml",
+    "license compliance",
+    "banned crates",
+    "duplicate dependency versions",
+    "SBOM",
+    "cargo cyclonedx",
+    "cargo sbom",
+    "CycloneDX",
+    "SPDX",
+    "GitHub releases"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Document is task/deliverable-structured Epic prose without frontmatter, decision/consequences, user stories, or schemas. Stated policy captured verbatim: Task 2.1 cargo audit required CI check on every PR and main push, build fails on known vulnerabilities with a documented exception process for false positives or unpatched advisories. Task 2.2 OSV-Scanner supplementary, scans Cargo.lock, results as PR annotations. Task 2.3 Snyk free tier to be evaluated; integrate if warranted or document deferral. Task 2.4 deny.toml at repo root: licenses allow MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib; deny copyleft (GPL, AGPL, LGPL) unless explicitly approved; no banned crates initially; warn on duplicate crate versions; cargo deny check in CI; all current dependencies must pass. Task 2.5 SBOM in release pipeline attached to GitHub releases. Document specifies a single documented exception process for cargo audit advisories and one allow-list license set; it does not enumerate specific advisory IDs, suppression counts, or multiple suppression surfaces, and does not mention .cargo/audit.toml or ci.yml inline ignores."
+}

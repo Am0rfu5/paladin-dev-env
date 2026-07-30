@@ -1,0 +1,30 @@
+{
+  "source_path": "/workspace/.project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: API Security & Authorization (Milestone 12, Epic 5)",
+  "summary": "Requirements for authenticating the Paladin agent HTTP API via API keys and JWT, role-based per-agent authorization, admin-gated registration, and secret hygiene.",
+  "scope": [
+    "agent HTTP API",
+    "API-key authentication (X-API-Key)",
+    "JWT bearer authentication via AuthPort",
+    "Principal / UserRole",
+    "per-agent allowed_roles authorization",
+    "admin gate on POST /agents and DELETE /agents/{id}",
+    "fail-closed auth posture and http.auth config",
+    "secret hygiene and header redaction",
+    "unauthenticated /health and /ready",
+    "paladin-web agent_auth.rs",
+    "paladin-server binary wiring",
+    "AgentApiState / AgentEntry / AgentDefinition / AgentSpec",
+    "ApiError 401/403 envelope"
+  ],
+  "cross_refs": [
+    "tasks-api-security-authorization.md",
+    "project/current-exports.txt"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

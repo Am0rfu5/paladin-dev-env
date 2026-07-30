@@ -1,0 +1,43 @@
+{
+  "source_path": "/workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Deferred QA & Documentation Completion",
+  "summary": "Requirements for five epics (25-29) closing deferred Epic 24 gaps: CI/CD, documentation and demos, LLM tool calling, and service test coverage.",
+  "scope": [
+    "CI/CD pipeline (GitHub Actions ci.yml)",
+    "coverage reporting (cargo-llvm-cov, Codecov, 78% gate)",
+    "Makefile targets (coverage, coverage-html, test-cli, bench-check)",
+    "Design_and_Architecture.md update",
+    "Mermaid architecture diagrams",
+    "rustdoc warnings cleanup",
+    "public API documentation audit",
+    "asciinema demo recordings",
+    "LLM tool calling (LlmRequest.tools, ToolDefinition, ToolCall)",
+    "OpenAI adapter",
+    "Anthropic adapter",
+    "DeepSeek adapter",
+    "user_service.rs test coverage",
+    "listener_service.rs test coverage",
+    "mock infrastructure (UserRepositoryPort, LogPort, NotificationService)",
+    "async/concurrency test infrastructure"
+  ],
+  "cross_refs": [
+    "project/DEFERRED_COVERAGE.md",
+    "../project/DEFERRED_COVERAGE.md",
+    "../project/tasks-test-hardening-benchmarks-qa.md",
+    "../CONTRIBUTING.md",
+    "../RELEASE_NOTES_MILESTONE_3.md",
+    "../docs/Design/Design_and_Architecture.md",
+    "docs/Design/Design_and_Architecture.md",
+    "../.github/workflows/ci.yml",
+    "../.github/workflows/integration-tests.yml",
+    "docs/DEMOS.md",
+    "README.md",
+    "CONTRIBUTING.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD applied (authoritative). Content confirms PRD: 9 goals, 14 user stories, 135 numbered functional requirements across Epics 25-29, non-goals, success metrics table, 6 open questions. Status field reads 'Draft'."
+}

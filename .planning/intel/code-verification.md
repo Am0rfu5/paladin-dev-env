@@ -411,3 +411,249 @@ forward-work source.
   exception drift and its 2026-09-30 expiry (item 1); the five deferred items D1-D5; the two
   deferred features with their reintroduction conditions; and the four small verified defects
   (items 2-5).
+
+---
+
+## Ingest run 5 verification — Milestones 9-12, Deferred-QA-CICD-Completion, project-management (46 docs)
+
+Direct verification against the working tree on `release/v0.7.0`, performed 2026-07-30 during ingest
+run 5. Evidence is file existence, `Cargo.toml` / `deny.toml` / `audit.toml` / workflow / `Makefile`
+contents, line-addressed greps and literal line counts read from source — not LLM inference. Same
+precedence rule applies: this file outranks every ingested document.
+
+**This is the final run.** Run 5 is the first to verify a milestone whose planning documents are
+younger than most of the tree (Milestone 12, created 2026-06-07 to 2026-06-09), and the first to find
+an entire ingested epic-set (Deferred-QA Epics 25-27) essentially unimplemented.
+
+### Verified SHIPPED — Milestones 9, 10, 11 and 12 all landed
+
+| Claim | Source doc | Evidence in tree |
+|---|---|---|
+| `execute_workflow()` replaces the `println!` arms | M9 Epic 1 FR 1-10 | `src/application/services/orchestration/mod.rs:382` `pub async fn execute_workflow`, plus `execute_workflow_inner` at `:403` |
+| `WorkflowRepository` output port | M9 Epic 1 FR-17 | `crates/paladin-ports/src/output/workflow_repository_port.rs` |
+| SQLite `WorkflowRepository` adapter in `paladin-storage` | M9 Epic 1 FR-19, OQ-4 | `crates/paladin-storage/src/sqlite_workflow_repository.rs` — Open Question 4's default placement is what shipped |
+| Content processors in the **root crate** | M9 Epic 3 FR-1, §7, OQ-1 | `src/application/services/orchestration/processors/` — the circular-dependency resolution shipped as decided |
+| `OrchestratorPort` in `paladin-ports` | M9 Epic 4 FR-1 | `crates/paladin-ports/src/output/orchestrator_port.rs` |
+| `OrchestratorBridgeAdapter` in the root crate | M9 Epic 4 FR-12 | `src/application/services/orchestration/orchestrator_bridge.rs` |
+| `AuthPort` in `paladin-ports`; argon2 retained | M9 Epic 5 FR-5, §7 | `crates/paladin-ports/src/output/auth_port.rs`; `argon2 = "0.5.3"` in root `Cargo.toml:121` |
+| Auth adapter in the root crate | M9 Epic 5 FR-8, §6.2 | `src/infrastructure/adapters/auth/in_memory_token_auth_adapter.rs` |
+| `paladin-web` auth middleware generic over `Arc<dyn AuthPort>` | M9 Epic 5 FR-13, §6.2 | `crates/paladin-web/src/auth_middleware.rs`; RBAC tests at `crates/paladin-web/tests/auth_rbac.rs` |
+| pre-commit framework, version-controlled | M10 Epic 1 FR-1 | `.pre-commit-config.yaml`; CI gate at `.github/workflows/pre-commit.yml` |
+| `cargo audit` reading `.cargo/audit.toml` | M10 Epic 2 FR-1 | `ci.yml:62-77` job `security-audit`, bare `cargo audit`, with the inline comment "Exceptions are the single source of truth in `.cargo/audit.toml` … so no inline `--ignore` flags are used here" |
+| `cargo deny check` as a required CI gate | M10 Epic 2 FR-13 | `ci.yml:80-105` job `cargo-deny` |
+| OSV-Scanner, annotate-only, SARIF | M10 Epic 2 FR-5 to FR-7, OQ-1 | `ci.yml:110-135` job `osv-scanner` using `google/osv-scanner-action@v1.9.1` with SARIF upload; OQ-1's annotate-only recommendation is what shipped |
+| Licence allow-list exactly as specified | M10 Epic 2 FR-11 | `deny.toml [licenses] allow` = MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib — **plus four justified additions** (Unicode-3.0, 0BSD, CC0-1.0, CDLA-Permissive-2.0), each with an inline FR-14(a) justification comment |
+| Per-crate `clarify`/exception instead of weakening the allow-list | M10 Epic 2 FR-14(b) | Eight `[[licenses.exceptions]]` entries for MPL-2.0 crates (`colored`, `attohttpc`, `cssparser`, `cssparser-macros`, `dtoa-short`, `minidom`, `selectors`, `smartstring`) with the reasoning that MPL-2.0 is *weak, file-level* copyleft. **Textbook compliance with FR-14** |
+| `[bans]` starts empty; duplicates warn | M10 Epic 2 FR-12, OQ-4 | `deny.toml [bans] multiple-versions = "warn"`, `wildcards = "warn"`; the only `deny` entry is the Milestone 8 `actix-web` ban |
+| CycloneDX SBOM in the release pipeline | M10 Epic 2 FR-15 to FR-17 | `release.yml:328-336` installs `cargo-cyclonedx --locked` and runs `cargo cyclonedx --all --format json`; `Makefile:264` `sbom` target |
+| `make security` wrapping audit + deny | M10 Epic 2 FR-19 | `Makefile:261` `security: audit deny` |
+| `release.toml` + tag-triggered publish | M10 Epic 3 FR-2, FR-8 to FR-13 | `release.toml`; `release.yml:355` job `publish-crates` |
+| `make release` / `make publish-dry-run` / `make release-check` | M10 Epic 3 FR-15, FR-18 | `Makefile:439`, `:424`, `:413` |
+| `make hooks` | M10 Epic 1 FR-17 | `Makefile:282` |
+| `verify-tag-source` guard with `needs:` wiring | M10 Epic 5 FR-1 | `release.yml:29` job `verify-tag-source`; `:74` and `:97` both declare `needs: verify-tag-source` — the two roots, exactly as FR-1.5 specifies |
+| Committed GitHub rulesets | M10 Epic 5 FR-3 | `.github/rulesets/protect-main-branch.json`, `.github/rulesets/protect-release-tags.json` |
+| mdbook with linkcheck as an error | M11 Epic 3 FR-1 | `docs/book.toml` `[output.linkcheck] follow-web-links = false`, `warning-policy = "error"` — verbatim |
+| mdbook-mermaid preprocessor | M11 Epic 2 §4.1 | `docs/book.toml [preprocessor.mermaid] command = "mdbook-mermaid"`; `docs/mermaid.min.js`, `docs/mermaid-init.js` |
+| Migration log | M11 Epic 2 §4.9 | `docs/MIGRATION_LOG.md` |
+| Full chapter hierarchy | M11 Epic 2 §4.2 | `docs/src/{getting-started,architecture,user-guides,deployment,deployment-topologies,operations,api-reference,contributing,appendix}` + `SUMMARY.md` + `introduction.md` |
+| All six deployment-topology pages | M11 Epic 6 FR-1 to FR-7 | `docs/src/deployment-topologies/{overview,embedded-library,battalion-orchestration,http-service-host,queue-worker,sidecar}.md` |
+| Agent registry + controller in `paladin-web` | M12 Epic 1 §4.1, §7 | `crates/paladin-web/src/agent_registry.rs`, `agent_controller.rs` |
+| `paladin-server` binary | M12 Epic 2 §4.4 | `src/bin/paladin-server.rs`; `Cargo.toml:249-251` `[[bin]] name = "paladin-server"` |
+| SSE streaming + in-process jobs | M12 Epic 3 §4.4, §4.6 | `crates/paladin-web/src/job_store.rs`, `timeout.rs` |
+| Unified error envelope, health/ready, request logging, layers | M12 Epic 4 §4.1-4.6 | `crates/paladin-web/src/{error,health,request_log,http_layers}.rs` |
+| Rate limiting via tower-governor | M12 Epic 4 §4.5 | `crates/paladin-web/Cargo.toml:33` `tower_governor = { version = "0.8", features = ["axum"] }` |
+| Agent auth: API key + bearer, constant-time, redaction-tested | M12 Epic 5 §4.1, §7 | `crates/paladin-web/src/agent_auth.rs` — bearer checked first then `x-api-key` (FR-3's documented precedence), `AgentAuthConfig { enabled, api_keys, jwt: Option<Arc<dyn AuthPort>> }`, plus a `MockJwt` test double and a test asserting a key value does not leak |
+| OpenAPI generation, Swagger UI, drift baseline | M12 Epic 6 §4.1-4.4 | `crates/paladin-web/src/openapi.rs`; `crates/paladin-web/openapi.json` (the committed baseline); `utoipa = "5"`, `utoipa-axum = "0.2"`, `utoipa-swagger-ui = "9"` |
+| Container image, compose, k8s manifests with probes | M12 Epic 7 §4.1-4.2 | `Dockerfile.server`; `docker/docker-compose.yml`; `k8s/{deployment,service,configmap,namespace,secret.yaml.example,redis,minio}.yaml` plus a `k8s/server/` directory |
+| Runnable server example | M12 Epic 7 §4.4 | `examples/http_service_host.rs` |
+| Workspace at v0.6.0 | M12 Epic 7 §4.6 | root `Cargo.toml:34` `version = "0.6.0"` |
+| Deployment-topology docs updated to the shipped API | M12 Epic 7 §4.3 | Greps for "ships no agent-execution", "yours to compose", "compose your own" and "does not run agents" across `docs/src/` return **zero matches**; `http-service-host.md` references `paladin-server` four times |
+
+**Milestone 9's and Milestone 10's 0-open checkbox counts are corroborated by artefact, and
+Milestone 12's route surface, auth, streaming, jobs, OpenAPI and deployment artefacts all ship.**
+
+### CORRECTION to the run-4 finding — `deny.toml` is now in sync
+
+Run 4 recorded that `deny.toml` mirrors "only the original two" vulnerability IDs and that "the three
+2026 advisories are absent". **That is no longer true.** Read directly from the tree:
+
+- `.cargo/audit.toml [advisories] ignore` — **five** vulnerability advisories: `RUSTSEC-2023-0071`,
+  `RUSTSEC-2025-0111`, `RUSTSEC-2026-0187`, `RUSTSEC-2026-0194`, `RUSTSEC-2026-0195`.
+- `deny.toml [advisories] ignore` — **fifteen** entries in three explicitly labelled classes:
+  the **same five** vulnerability advisories (2 under "mirrored from .cargo/audit.toml", 3 under
+  "New 2026 DoS advisories in transitive deps of OPTIONAL features"), plus **ten** *unmaintained /
+  maintenance-mode* notices under a header stating "These are informational 'unmaintained' notices,
+  **NOT vulnerabilities**. cargo-audit (the primary advisory gate) does not fail on unmaintained
+  crates; these are ignored here so cargo-deny does not contradict it (Epic 2 FR 6)."
+
+**The vulnerability sets match exactly.** `deny.toml`'s own stated invariant — "Keep these two files
+in sync" — is now satisfied. The ten additional entries are a different advisory class with a
+documented rationale, and Milestone 10 Epic 4 FR-1 step 5 explicitly authorises adding scoped
+`[advisories].ignore` entries **for unmaintained advisories** with an explanatory comment. Those ten
+are therefore sanctioned.
+
+### Verified OPEN — genuine remaining work found in run 5
+
+1. **A duplicate `cargo audit` job still carries inline `--ignore` flags, violating the Milestone 10
+   Epic 2 success metric.** This is the most consequential run-5 finding and it *narrows and
+   corrects* the run-4 framing.
+
+   `ci.yml` contains **two** jobs with the identical display name `Security Audit`:
+   - `ci.yml:60` job id `security-audit` — `cargo install cargo-audit --locked` then a bare
+     `cargo audit`, preceded by the comment "Exceptions are the single source of truth in
+     `.cargo/audit.toml` … so no inline `--ignore` flags are used here." **Compliant with FR-1.**
+   - `ci.yml:390` job id `security` — `cargo install cargo-audit` (unpinned) then
+     `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111`. **Violates FR-1 and §8.**
+
+   **Mechanism:** the Epic 25 PRD's Appendix B ("Current `ci.yml` Job Listing (Pre-Change
+   Reference)") tabulates the pre-Milestone-10 pipeline as 7 jobs, of which **#4 is `security`**.
+   Milestone 10 Epic 2 **added** the compliant `security-audit` job without removing its predecessor.
+   Epic 4's non-goals then froze the configs ("No changes to `deny.toml` or `.cargo/audit.toml`", "No
+   new CI jobs — the Epic 3 pipeline is complete"), so nothing in the milestone was positioned to
+   catch it. `ci.yml` now has 14 jobs.
+
+   **Consequence beyond tidiness:** the `security` job's inline list covers only 2 of the 5 advisories
+   in `.cargo/audit.toml`. `cargo audit` scans `Cargo.lock` irrespective of feature selection, so the
+   three 2026 advisories are in scope for it. The two jobs are therefore configured to reach
+   *different verdicts on the same tree*, and the milestone's own success metric — "no inline
+   advisory-ignore flags remain in CI" — is false on a milestone recorded 100% complete.
+
+   **Fix:** delete `ci.yml:389-406`. One deletion satisfies the origin policy.
+
+2. **The governance gap is owner/expiry coverage, not synchronisation.** All five `.cargo/audit.toml`
+   entries satisfy M10 Epic 2 FR-3's four-field schema (advisory ID; affected crate and why present;
+   why unfixable; revisit condition) and carry dated reasoning, including the note that the
+   directly-fixable `RUSTSEC-2026-0185` (quinn-proto) and `RUSTSEC-2026-0190` (anyhow) were
+   **upgraded rather than ignored**. But **FR-3 does not require an owner or an expiry.** Only
+   `rustsec-remediation-plan.md` (run 4) adds those, and only for the original two — owner **Platform
+   Security**, review/expiry target **2026-09-30**, roughly two months from this ingest.
+
+   So **13 of the 15 `deny.toml` ignores (3 vulnerability + 10 unmaintained) have documented
+   reasoning but no named owner and no expiry date.** Nothing in `.planning/` other than the run-4
+   remediation plan will surface 2026-09-30, and nothing at all will surface a review date for the
+   other thirteen. This is a governance-surface gap, not undocumented risk-taking.
+
+3. **Deferred-QA Epic 25 (CI/CD Pipeline Enhancement) is unimplemented except for one item.**
+   Verified item by item:
+   - **No `cli-tests` job.** `ci.yml`'s 14 job ids are `lint`, `security-audit`, `cargo-deny`,
+     `osv-scanner`, `api-surface`, `test`, `crate-isolation`, `integration-tests`, `security`,
+     `docker`, `e2e-tests`, `benchmark`, `benchmark-regression-signal`, `publish-dry-run`.
+   - **No `bench-check` job.** (Note the inversion: `benchmark-regression-signal` — which Epic 25
+     lists as a *future enhancement* explicitly out of scope — ships from Milestone 7 Epic 3, while
+     the compile-check prerequisite does not.)
+   - **No `coverage` job.** `grep -n "llvm-cov\|codecov" .github/workflows/ci.yml` returns nothing.
+   - **No `.codecov.yml`** (and no `codecov.yml`) at the repository root.
+   - **No Makefile targets** `coverage`, `coverage-html`, `test-cli` or `bench-check`; the `Makefile`
+     contains no `llvm-cov` reference at all.
+   - **Eight deprecated-action references remain:** `actions-rs/toolchain@v1` at `ci.yml:147`,
+     `ci.yml:317`, `ci.yml:507` and `integration-tests.yml:71`; `actions/cache@v3` at
+     `integration-tests.yml:78`, `:84`, `:90`; `codecov/codecov-action@v3` at
+     `integration-tests.yml:123`.
+   - **`integration-tests.yml:117-118` still runs `cargo install cargo-llvm-cov` and
+     `cargo llvm-cov --features integration-tests --lcov`** — the integration-only coverage path
+     Epic 25 was meant to supersede.
+   - **DONE:** the dangling `on: schedule` block is gone. `ci.yml` has exactly one `on:` at line 3
+     and no `schedule:`/`cron:` key. This is the only FR-25.2 item satisfied.
+
+4. **Deferred-QA Epic 26's architecture rewrite never happened, and the relocation hid it.**
+   `docs/src/appendix/design-and-architecture.md` is **exactly 311 lines** — the identical figure the
+   February 2026 PRD cites as the *pre-rewrite* state ("the current `docs/Design/Design_and_Architecture.md`
+   (311 lines, 10 sections)"). Case-insensitive whole-word counts in that file:
+
+   `Commander 0`, `Council 0`, `Conclave 0`, `Grove 0`, `Maneuver 0`, `Sanctum 0`, `Sentinel 0`;
+   `Paladin 6`, `Garrison 2`, `Arsenal 2`, `Battalion 2`, `Herald 2`, `Citadel 1`.
+   ```` ```mermaid ```` blocks: **0**.
+
+   All seven subsystems FR-26.1 requires be documented in detail are absent, and none of the four
+   required Mermaid diagrams exists. **Milestone 11 moved the file into `docs/src/appendix/`, and
+   Milestone 11 Epic 3's non-goals exempt the appendix from rewriting ("the 35 appendix files are
+   reference/archive material and are not rewritten in this Epic").** The relocation preserved the
+   document and froze the gap in the one chapter nobody was required to fix.
+
+   Also open from Epic 26: `docs/assets/` **exists and is empty** (no `.cast` recordings), and
+   `docs/DEMOS.md` does not exist.
+
+5. **Deferred-QA Epic 27 (LLM tool calling) is entirely unimplemented.**
+   `crates/paladin-ports/src/output/llm_port.rs` has **no `tools` field** — the only two occurrences
+   of "tools" in the file are doc-comment prose, one of which literally reads
+   `// No tools, rely on prompting`. Greps across `crates/paladin-ports/src` and
+   `crates/paladin-llm/src` for `struct ToolDefinition`, `struct ToolCall` and `tool_calls` return
+   **zero matches**.
+
+   The PRD's own problem statement stands unchanged in the tree: "All three LLM adapters (OpenAI,
+   DeepSeek, Anthropic) declare tool-calling capabilities in `ProviderCapabilities` but hardcode
+   `function_call: None`." **`ProviderCapabilities` over-reports capability**, which is a correctness
+   defect independent of whether tool calling is ever built.
+
+6. **The Epic 28/29 mock infrastructure does not exist in the specified shape.** No `tests/common/`
+   directory exists. The workspace's mocks are `tests/helpers/{mock_llm_adapter, mock_arsenal_adapter,
+   mock_paladin_port}.rs` plus `tests/unit/mock_llm_adapter_test.rs` — a different location and a
+   disjoint set. None of `MockUserRepository`, `MockLogPort`, `MockNotificationService`,
+   `MockEventSource` or `MockTriggerExecutor` exists. This is the **shared prerequisite** for both
+   coverage epics and the reason the recommended order puts Epic 28 before Epic 29.
+
+7. **The agent API is documented as JWT and implemented as opaque tokens.**
+   `grep -rn "jsonwebtoken" Cargo.toml crates/*/Cargo.toml` returns **nothing** — the crate is not a
+   dependency anywhere in the workspace. The only `AuthPort` implementation is
+   `src/infrastructure/adapters/auth/in_memory_token_auth_adapter.rs`, Milestone 9 Epic 5's opaque,
+   in-process, hashed-token store. `crates/paladin-web/src/agent_auth.rs` nonetheless documents its
+   verifier as JWT throughout — module docs, the `jwt: Option<Arc<dyn AuthPort>>` field, the
+   `bearer JWT checked first` comment.
+
+   Milestone 12 Epic 5's **Open Question 4 is unanswered because it is unanswerable for the shipped
+   adapter**: "which concrete `AuthPort` impl does `paladin-server` wire, and what does it need
+   (signing secret/algorithm) from config/env?" An opaque-token store has no signing secret and no
+   algorithm.
+
+   **The operational edge:** Milestone 9 Epic 5 §6.1 recorded the trade-off itself — "tokens are
+   validated against an in-process store, so a **multi-process deployment would later need a shared
+   store**." Milestone 12 Epic 7 then ships `k8s/deployment.yaml`, whose purpose is multi-process
+   serving. Under more than one replica, a token issued by one pod will not verify on another.
+   Neither document references the other, and no requirement in the corpus covers the shared store.
+
+8. **`project/current-exports.txt` — the stale path is now written into four more requirements.**
+   Run 3 found five references (two scripts, three `ci.yml` lines); run 4 added a sixth (M8 Epic 7
+   FR-10). Run 5 adds **Milestone 12 Epics 1 §7, 5 §7, 6 `cross_refs` and 7 FR-4.6**, all naming
+   `project/current-exports.txt`. `.project/current-exports.txt` exists (442 KB);
+   `project/current-exports.txt` does not. `check-api-surface.sh` exits 1 with "No baseline found"
+   when the file is absent, so the `api-surface` CI job fails on every run. **Nine references,
+   unchanged across three ingest runs.** Extends `DEBT-01`.
+
+### Checkbox counts in run 5 — three of four are contradicted or vacuous
+
+`task-completion-state.md` records Milestone 9 at 100.0% (0 open), Milestone 10 at 100.0% (0 open),
+Milestone 11 at 92.0% (26 open) and Milestone 12 at 99.0% (3 open), plus project-management at 0.0%
+(1 open).
+
+- **Milestone 9's 0 open: corroborated.** Every Epic 1-5 deliverable is present in the tree.
+- **Milestone 10's 0 open: corroborated in artefacts, contradicted in one acceptance criterion.**
+  Every file, job, target and ruleset exists — but Epic 2's own success metric is false (finding 1).
+  A 100% checkbox count that is simultaneously accurate about deliverables and wrong about
+  acceptance is a new failure mode for this corpus.
+- **Milestone 11's 26 open: plausible, and the only genuinely open count in run 5.** The items are
+  `tasks-content-rewrite.md` task 6.0 (six user-guide in-place updates), task 7.0 (eight
+  deployment/operations updates) and task 1.2 (review the linkcheck report). **All fourteen target
+  files exist** under `docs/src/user-guides/`, `docs/src/deployment/` and `docs/src/operations/`.
+  Whether their *content* is current cannot be settled by file existence, and mtimes are too weak an
+  inference to record. Re-verify by content, not by presence.
+- **Milestone 12's 3 open: contradicted.** All three are Task 0.0 scaffolding — "Create feature
+  branch", "Update `main` … and create/checkout `feature/m12-epic5-api-security-authorization`",
+  "Confirm a clean baseline". **The Epic 5 work itself shipped** (`agent_auth.rs`, finding 7). Zero
+  real work is represented by this count.
+- **project-management's 1 open: vacuous.** The item is
+  `- [ ] 1.1 Create template → - [x] 1.1 Create template (after completing)` — a formatting example
+  inside a template file, not a task.
+
+### Final corpus position on open-checkbox counts
+
+Across five runs the pattern is now complete and consistent: **checkbox arithmetic is not a backlog.**
+Runs 1-2 found counts *understating* shipped reality (Conclave 129 open and shipped; Sanctum 111 open
+and shipped). Run 3 found the first *accurate* count (Milestone 4's 20, corroborated by zero
+`#[deprecated]` annotations) **and** the first *overstating* completion (CLI isolation fully checked
+with three dependencies still unconditional). Run 4 found Milestone 8's three contradicted outright.
+Run 5 finds Milestone 12's three vacuous and project-management's one nonexistent.
+
+**Of the 542 open checkboxes recorded across 75 task lists, the verified genuine remainder is
+Milestone 11's documentation-currency work plus Milestone 4's deprecation items.** Everything else
+requires individual verification, and the trustworthy forward-work signal remains the three deferred
+registers plus the verified defects in this file.

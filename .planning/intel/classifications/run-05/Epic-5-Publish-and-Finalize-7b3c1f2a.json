@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_11-Documentation-Overhaul-Publish/Epic_5/Epic-5_Publish-and-Finalize.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 5: Publish and Finalize",
+  "summary": "Terminal epic plan for final MDBook review, GitHub Pages deployment, root README update, and v0.5.0 release.",
+  "scope": ["MDBook", "GitHub Pages", "README.md", "v0.5.0 release", "documentation audit", "paladin-dev-env monorepo"],
+  "cross_refs": ["README.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

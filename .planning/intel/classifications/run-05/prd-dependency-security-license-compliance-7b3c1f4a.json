@@ -1,0 +1,39 @@
+{
+  "source_path": "/workspace/.project/Milestone_10-CI-Hardening-Release-Automation/Epic_2/prd-dependency-security-license-compliance.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Milestone 10 — Epic 2: Dependency Security and License Compliance",
+  "summary": "Requirements for supply-chain hardening: config-driven cargo audit, OSV-Scanner, Snyk evaluation, cargo-deny license policy, and CycloneDX SBOM on releases.",
+  "scope": [
+    "cargo audit",
+    "audit.toml",
+    "cargo deny",
+    "deny.toml",
+    "OSV-Scanner",
+    "Snyk evaluation",
+    "CycloneDX SBOM",
+    "cargo cyclonedx",
+    "license allow-list",
+    "advisory exception process",
+    ".github/workflows/ci.yml security-audit job",
+    ".github/workflows/release.yml",
+    "CONTRIBUTING.md security docs",
+    "make security target",
+    "Cargo.lock",
+    "duplicate crate versions"
+  ],
+  "cross_refs": [
+    "Milestone_10-Epic_2-dependency-security-license-compliance.md",
+    "Milestone_10-Epic_3-release-automation.md",
+    ".github/workflows/ci.yml",
+    ".github/workflows/release.yml",
+    "audit.toml",
+    "deny.toml",
+    "CONTRIBUTING.md",
+    "docs/"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD supplied and content confirms (user stories, goals, FR list, non-goals, success metrics). Stated policy captured verbatim in scope: FR1 requires cargo audit ignore-list sourced from version-controlled audit.toml (single source of truth) instead of inline --ignore flags so workflow and config cannot drift; FR3 requires each audit.toml exception to carry advisory ID, affected crate/why present, why unfixable, revisit condition; existing RUSTSEC-2023-0071 and RUSTSEC-2025-0111 exceptions must be preserved. License posture (FR11): allow MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib; GPL-*/AGPL-*/LGPL-* not allowed absent explicit recorded justification; FR14 forbids blanket disabling of the license check, requiring either allow-list addition with justification or a narrowly-scoped per-crate clarify/exception. FR12 sets bans with no banned crates initially and duplicate versions surfaced at least as warn (Open Question 4: multiple-versions starts at warn, not deny). Success metric: audit.toml and deny.toml are the only places policy/exceptions are defined; no inline advisory-ignore flags remain in CI. Document is silent on the `license = \"MIT\"` vs `MIT OR Apache-2.0` manifest discrepancy noted by the orchestrator — not recorded here, no inference made."
+}

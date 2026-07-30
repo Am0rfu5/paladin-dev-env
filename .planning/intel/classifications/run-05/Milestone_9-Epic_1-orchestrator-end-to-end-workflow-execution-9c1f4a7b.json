@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_9-Classic-Orchestrator-Completion/Epic_1/Milestone_9-Epic_1-orchestrator-end-to-end-workflow-execution.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 9 — Epic 1: Orchestrator End-to-End Workflow Execution",
+  "summary": "Epic plan to replace Orchestrator scaffold logic with functional workflow dispatch across sequential, parallel, event-driven, and staged execution orders.",
+  "scope": ["Orchestrator", "workflow execution loop", "ScheduledJob dispatch", "TaskService", "OrchestrationContext", "WorkflowState", "JobState", "workflow state persistence"],
+  "cross_refs": ["src/application/services/orchestration/mod.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set by MANIFEST_TYPE=DOC. Content also carries PRD-like signals (Objective, Scope in/out, Tasks, Acceptance criteria); manifest is authoritative."
+}

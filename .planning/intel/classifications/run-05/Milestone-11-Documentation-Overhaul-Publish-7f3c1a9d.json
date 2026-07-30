@@ -1,0 +1,43 @@
+{
+  "source_path": "/workspace/.project/Milestone_11-Documentation-Overhaul-Publish/overview/Milestone-11_Documentation-Overhaul-Publish.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 11: Documentation Overhaul and Publish",
+  "summary": "Milestone plan to audit existing docs, set up MDBook, rewrite stale content, add new guides, and publish to GitHub Pages.",
+  "scope": [
+    "documentation audit",
+    "MDBook",
+    "GitHub Pages",
+    "SUMMARY.md",
+    "book.toml",
+    "CI workflow",
+    "getting started guides",
+    "architecture documentation",
+    "user guides",
+    "deployment and operations docs",
+    "orchestration guide",
+    "content processing guide",
+    "agent-orchestrator bridge guide",
+    "crate map",
+    "feature flags reference",
+    "root README.md",
+    "CHANGELOG.md",
+    "v0.5.0 release"
+  ],
+  "cross_refs": [
+    "docs/CONFIGURATION.md",
+    "docs/QUICKSTART.md",
+    "README.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "user-guides/orchestration.md",
+    "user-guides/content-processing.md",
+    "api-reference/crate-map.md",
+    "FEATURE_FLAGS.md",
+    "docs-audit.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

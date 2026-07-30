@@ -1,0 +1,31 @@
+{
+  "source_path": "/workspace/.project/Deferred-QA-CICD-Completion/DEFERRED_COVERAGE.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Deferred Test Coverage Analysis",
+  "summary": "Registers deferred test coverage for user_service.rs (~4.23%) and listener_service.rs (~57.83%), deferring both to future Epics 28 and 29.",
+  "scope": [
+    "user_service.rs",
+    "listener_service.rs",
+    "test coverage",
+    "Epic 24 Test Hardening Benchmarks & QA",
+    "Epic 28 Platform Services Test Coverage",
+    "Epic 29 Event System Test Coverage & Observability",
+    "mock infrastructure",
+    "property-based testing",
+    "concurrency stress testing",
+    "distributed tracing",
+    "snapshot tests",
+    "benchmark tests"
+  ],
+  "cross_refs": [
+    "project/tasks-test-hardening-benchmarks-qa.md",
+    "docs/cli/TESTING.md",
+    "src/core/platform/manager/user_service.rs",
+    "src/core/platform/manager/listener_service.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied. Primary deferred-work register. Deferred items: (1) user_service.rs — 488 LOC, ~4.23% coverage, target 80%, DEFERRED, effort 15-20h (mock infra 6-8h, test suite 8-10h, edge cases 1-2h), medium risk, moved to 'Epic 28: Platform Services Test Coverage', est. 2-3 story points (1 dev week) / priority Medium / 2-3 sprints, target 85%+ with property-based tests and load tests. (2) listener_service.rs — 602 LOC, ~57.83% coverage, target 80%, DEFERRED, effort 20-25h (mock infra 8-10h, async framework 4-6h, test suite 8-9h), medium-high risk, moved to 'Epic 29: Event System Test Coverage & Observability', est. 3-5 story points (1.5-2 dev weeks) / priority Medium-High / 2-4 sprints, target 85%+ with event framework, concurrency stress, chaos tests, distributed tracing. Totals: 1090 deferred LOC (~2.2% of ~50,000 LOC codebase), combined effort 35-45 hours, coverage impact -2% to -3% (76-77% with deferred vs 78-80% without; target 75%+). Platform services goal 60%+ deferred to Epics 28-29; all other coverage goals marked achieved (Paladin core 85%+, Battalion 80%+, Garrison/Arsenal 75%+, CLI 100% snapshot). Outstanding prerequisites (unchecked): create reusable mock infrastructure patterns; document testing best practices; establish concurrency testing patterns. Completed prerequisites: Epic 24, snapshot testing patterns, live API integration tests. Approved by AI Coding Agent 2026-02-14 under Epic 24; Next Review at Epic 27 or Epic 28 planning."
+}
