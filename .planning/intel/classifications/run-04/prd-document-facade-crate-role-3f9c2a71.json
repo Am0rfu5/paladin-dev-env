@@ -1,0 +1,32 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_5/prd-document-facade-crate-role.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Document Facade Crate Role and Finalize (Milestone 8, Epic 5)",
+  "summary": "Requirements to document the facade crate role, sync STABLE_API.md, cut the v0.2.0 CHANGELOG entry, regenerate API baselines, and pass quality gates.",
+  "scope": [
+    "facade crate",
+    "src/lib.rs",
+    "src/README.md",
+    "STABLE_API.md",
+    "CHANGELOG.md",
+    "api_surface_current.txt",
+    "final-api.txt",
+    "ServiceRunner",
+    "application/services",
+    "quality gates"
+  ],
+  "cross_refs": [
+    "STABLE_API.md",
+    "CHANGELOG.md",
+    "src/lib.rs",
+    "src/README.md",
+    "api_surface_current.txt",
+    "final-api.txt",
+    "Makefile"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD applied as authoritative; content signals (Goals, User Stories, Functional Requirements FR-1..FR-19, Non-Goals, Success Metrics) independently confirm PRD."
+}

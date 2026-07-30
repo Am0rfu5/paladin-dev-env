@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_4/Milestone_7-Epic_4-API_Stabilization_Pre-Release_Preparation.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 4: API Stabilization and Pre-Release Preparation",
+  "summary": "Epic plan to finalize public crate APIs, metadata, per-crate READMEs/CHANGELOGs, versioning policy, and documentation coverage for first crates.io release.",
+  "scope": ["Cargo.toml package metadata", "crates.io publishing", "per-crate README", "per-crate CHANGELOG", "semantic versioning policy", "release checklist", "documentation coverage", "STABLE_API.md"],
+  "cross_refs": ["STABLE_API.md", "CHANGELOG.md", "README.md", "crates/paladin-core/README.md", "crates/paladin-ports/README.md", "crates/paladin-battalion/README.md", "crates/paladin-llm/README.md", "crates/paladin-memory/README.md", "crates/paladin-web/README.md", "crates/paladin-notifications/README.md", "crates/paladin-content/README.md", "crates/paladin-storage/README.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Document does contain an Acceptance Criteria section (PRD-like signal) but manifest overrides."
+}

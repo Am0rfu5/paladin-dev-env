@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_2/Milestone_7-Epic_2-Production_Build_Infra_Adaptation.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 2: Production Build Infrastructure Adaptation",
+  "summary": "Epic plan to adapt Docker, Makefile, CI/CD, and integration test infrastructure to the multi-crate Cargo workspace.",
+  "scope": ["Dockerfile.chef", "Dockerfile", "cargo-chef", "Makefile targets", "CI/CD pipeline", "integration tests", "testcontainers", "Docker Compose", "cargo workspace"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content shows acceptance criteria and task deliverables (PRD-like signals) but manifest overrides."
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_4/release-notes-v0.1.0-rc.1.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Release Notes: v0.1.0-rc.1",
+  "summary": "Release notes for tag v0.1.0-rc.1 covering published Paladin crates, package renames, release readiness gates, and GO recommendation.",
+  "scope": ["v0.1.0-rc.1 release", "crates.io publication", "paladin-ai-core", "paladin-ai", "paladin-ports", "Milestone 7 Epic 4", "release readiness gates"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

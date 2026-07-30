@@ -1,0 +1,24 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-items.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 8 — Deliberately Deferred Items",
+  "summary": "Record of five consciously deferred facade-cleanup items (D1-D5) after Milestone 8 PR #14 and Epic 7 PR #17, with recommendations and effort/risk.",
+  "scope": [
+    "D1 src/core/ re-export shims (KEEP by decision; ~49 facade files import via crate::core::; medium churn/low risk)",
+    "D2 src/core/platform/manager/ mis-layered services: content_service.rs to paladin-core, event_manager.rs to paladin-core or facade app-service, user_service.rs split trait+DTOs to paladin-core/paladin-ports and impl to facade app-service; medium/medium",
+    "D3 entangled Paladin use-case services (planning_service, prompt_generation_service, temperature_service, handoff_service, ~2750 LOC) KEEP for now; revisit only alongside builder/execution refactor; high/high",
+    "D4 content_ingestion_service.rs (~1211 LOC) placement; candidate move to paladin-content pending dependency-coupling review; medium/medium",
+    "D5 residual 17 println!/eprintln!/dbg! occurrences across 6 files in src/application/services/ + src/infrastructure/ (down from ~435); low/low",
+    "Grouping: quick wins D5; architecture pass D2 plus optionally D4; only with broader refactor D3 and D1",
+    "Completed context (NOT deferred): dead files and file_content_repository deleted; user CLI + TensorFlow ML stub + ml flag removed; HashMapPaladinRegistry to paladin-battalion; FileCitadel to paladin-memory; Herald formatters to paladin-herald; MinIO/S3, Redis, SQLite repos to paladin-storage (non-optional); notification adapters to paladin-notifications; facade user_controller.rs removed; actix-web removed from paladin-web with cargo-deny ban"
+  ],
+  "cross_refs": [
+    "./facade-cleanup-RECONCILIATION-2026-06-04.md",
+    "Epic_7/deferred-features.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Status line reads 'Record of intentional non-goals (not bugs / not oversights)', dated 2026-06-07, verified against main. No owners named; no target milestone assigned beyond the suggested grouping."
+}

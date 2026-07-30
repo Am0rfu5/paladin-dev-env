@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_3/benchmark-assessment.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Benchmark Assessment",
+  "summary": "Audit of existing root-owned benchmark files, their disposition, and target crate ownership before Milestone 7 Epic 3 benchmark migration.",
+  "scope": ["benchmark suite", "benches/", "root Cargo.toml", "paladin-memory", "paladin-battalion", "paladin-llm", "sanctum benchmarks", "garrison benchmarks", "performance baseline"],
+  "cross_refs": ["benches/sanctum_benchmarks.rs", "benches/battalion_benchmarks.rs", "benches/garrison_benchmarks.rs", "benches/herald_benchmarks.rs", "benches/paladin_benchmarks.rs.disabled", "benches/arsenal_benchmarks.rs.disabled", "docs/PERFORMANCE_BASELINE.md", ".github/workflows/ci.yml", "src/config/settings.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

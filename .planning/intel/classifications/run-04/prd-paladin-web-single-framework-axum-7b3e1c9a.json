@@ -1,0 +1,26 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/prd-paladin-web-single-framework-axum.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: `paladin-web` — Consolidate on a Single Web Framework (axum) and Remove actix-web (Milestone 8, Epic 7)",
+  "summary": "Requirements to reimplement content-delivery endpoints as served axum routes, remove the actix-web dependency from paladin-web, and add a cargo-deny guardrail.",
+  "scope": [
+    "paladin-web",
+    "axum",
+    "actix-web",
+    "ApiContentDeliverer",
+    "content-delivery endpoints",
+    "application router",
+    "cargo-deny",
+    "API surface baseline"
+  ],
+  "cross_refs": [
+    "crates/paladin-web/src/adapters/api_content_deliverer.rs",
+    "crates/paladin-web/Cargo.toml",
+    "CHANGELOG.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_1/Milestone_7-Epic_1-Ext_Workspace_Decomp_Infra_Crates.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 1: Extended Workspace Decomposition — Remaining Infrastructure Crates",
+  "summary": "Epic plan to extract web, notifications, content, and SQL repository subsystems from the paladin facade crate into separate workspace crates.",
+  "scope": ["paladin-web", "paladin-notifications", "paladin-content", "paladin-storage", "workspace decomposition", "facade crate", "ServiceRunner", "feature flags"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative; content also shows acceptance criteria and task deliverables (PRD-like signals)."
+}

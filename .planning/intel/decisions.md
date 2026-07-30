@@ -160,3 +160,140 @@ candidates in the corpus.
 
 Runs 4-5 (Milestones 7-12, Deferred-QA-CICD-Completion, project-management) may add ADR-typed
 docs; this file remains append-only in merge mode.
+
+---
+
+## Ingest run 4 of 5 — `.project/Milestone_7-Production-Hardening` + `.project/Milestone_8-Facade-Cleanup-Shim-Resolution` (40 docs)
+
+**No ADR-typed documents were present in this ingest run either.**
+
+Classification breakdown for run 4: 11 PRD, 29 DOC, 0 ADR, 0 SPEC. Every classification carried
+`locked: false` and `precedence: null`; every one also carried `manifest_override: true`, so the
+types are user-asserted rather than inferred.
+
+Cumulative across runs 1-4: **153 documents ingested, 50 PRD, 103 DOC, 0 ADR, 0 SPEC,
+0 locked decisions.** No LOCKED-vs-LOCKED contradiction is possible and none of the technical
+positions recorded in `requirements.md` or `context.md` is protected from being overridden by a
+future ADR. This holds for the full 153-document corpus, exactly as the standing constraint stated.
+
+Locked decisions: 0.
+
+---
+
+### Decision-shaped material found in run 4 but NOT recorded as a decision
+
+Run 4 is the densest run so far in decision-shaped content — it contains four documents whose whole
+purpose is to record a choice. None of them carries an ADR status field, a Decision/Consequences
+structure, or a `locked` flag, and all four were manifest-typed **DOC**. They are recorded as
+context (and, where they change a requirement, as requirement entries or variants).
+
+- **`.project/Milestone_7-Production-Hardening/Epic_1/cost-benefit-assessment.md` — the strongest
+  ADR candidate in the run.** It is a formal go/defer decision record with an explicit
+  **"Self-Approval (Task 1.6)"** block: *"the Go decisions above are self-approved and documented
+  here as the authoritative record … Approved by: AI Agent (GitHub Copilot), acting as sole
+  developer on `feature/milestone_7`. Approval date: 2026-05-25. Approval scope: Proceed to
+  Task 2.0."* It scores four candidate crate extractions on dependency weight, change frequency,
+  consumer selectivity and extraction complexity, records measured evidence (dep-tree deltas of
+  +41, +145 and +210 lines over a 1,235-line baseline; commit counts of 9, 15, 21 and 32 since
+  2025-01-01), issues **four Go decisions and zero Defer**, and fixes an extraction order. Its own
+  governing PRD (§4.1.5) calls it *"the authoritative source of record for *why* a decision was
+  made."* Everything an ADR needs is present except the type tag. Recorded as
+  `REQ-m7-cost-benefit-gate` and in `context.md`.
+
+- **`.project/Milestone_7-Production-Hardening/Epic_4/rustsec-remediation-plan.md` — a formal risk
+  acceptance, which is a decision with an owner and an expiry.** It records two blocking advisories
+  with no upstream fix, states the acceptance criteria as *"Either vulnerabilities are eliminated
+  from release dependency graph, or formal risk acceptance is documented with: owner, expiry date,
+  affected scope, compensating controls, tracked follow-up issue"*, and then supplies exactly that:
+  **exception owner Platform Security (Milestone 7), review/expiry target 2026-09-30.** This is the
+  only decision in the entire 153-document corpus that carries a **stated expiry date**, and it is
+  a live security posture rather than a structural choice. Recorded as `REQ-rustsec-risk-acceptance`
+  and surfaced prominently in `INGEST-CONFLICTS.md`.
+
+- **`.project/Milestone_7-Production-Hardening/Epic_4/license-compatibility-decision-checklist.md`
+  — a signed-off licensing policy decision.** It names a **policy approver of record (`DF3NDR`,
+  repository owner) and an approval date (2026-05-28)**, and records an explicit accept-or-replace
+  decision on MPL-2.0: *"Explicit acceptance of MPL-2.0 dependencies for unmodified use in this
+  project."* It sets the project licensing model to **`MIT OR Apache-2.0`**, which contradicts the
+  `license (MIT)` position held by the Milestone 7 overview and by the shipped root `Cargo.toml`.
+  A named approver plus a dated approval plus a scoped acceptance is ADR-shaped in substance.
+  Recorded as `REQ-license-policy-signoff`.
+
+- **`.project/Milestone_8-Facade-Cleanup-Shim-Resolution/facade-cleanup-RECONCILIATION-2026-06-04.md`
+  — a supersession notice that reverses a prior Epic.** Its header carries
+  `Supersedes (corrects): Epic_1/facade-audit.md and Epic_3/infrastructure-adapter-disposition.md`
+  and `Status: Proposed`. The status marker is a plan-status field, not an ADR status. §6 lists six
+  **"Open decisions (blockers for Phases 3–4)"** — finish relocations now vs. defer to M9; Herald
+  formatters home (`paladin-core` vs. new `paladin-herald`); queue home (`paladin-storage` vs. new
+  `paladin-queue`); delete vs. wire `commands/user.rs`; delete vs. keep `tensorflow_adapter.rs`;
+  keep vs. remove `src/core/` shims — and all six were then resolved **in execution rather than by
+  a recorded decision**: relocations done now, Herald → new `paladin-herald`, queue →
+  `paladin-storage`, `user.rs` deleted, tensorflow deleted, `src/core/` shims kept. This is the
+  same "resolved by outcome, not by a recorded decision" pattern that run 3 flagged for Milestone 4
+  Epic 3's binary-target question. Recorded as `REQ-m8-reconciliation-relocations`.
+
+- **`.project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-items.md`** — states D1
+  (`src/core/` shims) as **"KEEP, by decision"** and D3 as **"KEEP for now"**, each with an
+  effort/risk rating and a recommendation. The framing line is *"Record of intentional non-goals
+  (not bugs / not oversights)"*. Decision-shaped, DOC precedence; recorded as
+  `REQ-m8-deferred-items-register`.
+
+- **`.project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-features.md`** — sets a placement
+  **condition** on reintroducing the TensorFlow adapter: it must be rebuilt in a dedicated
+  `paladin-ml` leaf crate, *"consistent with the hexagonal layout — ML inference is an
+  infrastructure adapter, not facade code — rather than re-adding it to the facade."* That is an
+  architectural constraint on future work, carried by a DOC. Recorded as
+  `REQ-deferred-tensorflow-ml-adapter-v3`.
+
+- **`.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/prd-relocate-remaining-misplaced-modules.md`
+  §8 "Resolved Decisions (formerly Open Questions)"** — the closest a run-4 PRD comes to an ADR,
+  matching the M5 Epic 2 §9 pattern run 3 flagged. It closes three questions: `garrison/mod.rs`
+  stays (not a deletion candidate); `sanctum/mod.rs` stays (same reasoning); and
+  `output/api_content_deliverer.rs` stays for Epic 3 but is a confirmed M9 `paladin-web` extraction
+  target — with two factual corrections recorded (the file is **724 LOC, not 629**; the 629 figure
+  belongs to `tensorflow_adapter.rs`). §6 also records the reasoned asymmetry for *why* storage
+  shims were deleted but garrison/sanctum shims were not. PRD precedence; recorded as
+  `REQ-garrison-sanctum-bridges-kept`.
+
+- **`.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_4/prd-use_cases-services-rename.md`
+  §4.1.3 / §5** — decides a **clean break** with no backward-compatible re-export, and explicitly
+  rejects the option its own Epic DOC offers: *"Task 4.3 from the Epic spec is explicitly rejected;
+  there will be no `pub use services as use_cases;`."* An explicit rejection of a named alternative
+  is ADR-shaped, but it is carried by a PRD. Recorded as `REQ-rename-clean-break`.
+
+- **`.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/Milestone_8-Epic_7-paladin-web-single-framework-axum.md`**
+  — carries a section literally headed **"Decisions (from PRD clarification)"**: port the three
+  endpoints to axum **and mount them** (revive the API) rather than deleting them; and add
+  `actix-web` to `deny.toml`'s banned crates. Two clean decision statements with named
+  alternatives, in a DOC. Recorded as `REQ-delivery-endpoints-axum` and `REQ-actix-deny-ban`.
+
+- **`.project/Milestone_7-Production-Hardening/Epic_1/prd-extract-infrastructure-crates.md` §9** —
+  a five-row resolution table closing all pre-implementation questions: `tensorflow_adapter.rs`
+  stays in the facade with `paladin-ml` deferred to M8+; two granular storage flags plus a `storage`
+  alias rather than one flag; `sqlx` stays in `[workspace.dependencies]` shared by `paladin-memory`
+  and `paladin-storage`; `file_content_repository.rs` does **not** go into `paladin-storage`; defer
+  decisions are recorded in three places. Recorded as `REQ-tensorflow-stays-facade-v1`,
+  `REQ-storage-feature-flags-v1`, `REQ-sqlx-workspace-dependency`, `REQ-paladin-storage-extraction`
+  and `REQ-m7-cost-benefit-gate`.
+
+- **`.github/workflows/ci.yml:617-680`** (not an ingested document; read from the tree) — carries an
+  inline rationale rejecting the per-crate publish order that M7 Epic 2 FR-26 mandates: *"Per-crate
+  `cargo publish --dry-run -p <crate>` cannot work on a version bump: the not-yet-published new
+  version of each sibling fails the `version = \"X\"` requirement of its dependents."* Recorded as
+  `REQ-ci-publish-dry-run-v2` because the technical position is substantive and contradicts an
+  ingested requirement, but it has no document carrier and therefore no precedence standing.
+
+### Promoting any of these to a decision
+
+Six ADR candidates now exist across the corpus: Epic 17.5's CLI-location decision (run 2), the
+Milestone 5 Epic 1 `battalion-result-upward-dependency-decision.md` (run 3), and the four run-4
+documents named above. Promoting any of them requires **re-tagging the source document via
+`--manifest` and re-running ingest**. Manufacturing a lock inside a planning artefact would
+fabricate authority the corpus does not contain. The two strongest candidates in run 4 are
+`cost-benefit-assessment.md` (has a self-approval block, an approver and an approval date) and
+`rustsec-remediation-plan.md` (has an owner, an expiry date and compensating controls) — the latter
+being the only corpus item where *not* promoting it has an ongoing operational cost, because the
+acceptance expires 2026-09-30 and nothing else in `.planning/` will surface that date.
+
+Run 5 (Milestones 9-12, Deferred-QA-CICD-Completion, project-management) may add ADR-typed docs;
+this file remains append-only in merge mode.

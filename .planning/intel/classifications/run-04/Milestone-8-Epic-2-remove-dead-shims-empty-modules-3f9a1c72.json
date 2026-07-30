@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_2/Milestone_8-Epic_2-remove-dead-shims-empty-modules.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 2: Remove Dead Shims and Empty Modules",
+  "summary": "Epic plan to delete zero-consumer re-export shims, empty modules, and dead code from the facade crate.",
+  "scope": ["facade crate", "re-export shims", "src/application/ports/", "src/core/", "paladin-ports", "paladin-core", "cargo build --workspace", "cargo test --workspace"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

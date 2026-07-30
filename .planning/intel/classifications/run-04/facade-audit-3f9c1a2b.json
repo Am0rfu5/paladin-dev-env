@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/facade-audit.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Facade Crate Audit",
+  "summary": "Audit of 189 facade crate files classifying each as delete, move to a leaf crate, or stay, with consumer reference matrices.",
+  "scope": ["facade crate", "dead code deletion", "file moves", "re-export shims", "paladin-notifications", "paladin-content", "paladin-storage", "paladin-memory", "paladin-web", "src/lib.rs stable API"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

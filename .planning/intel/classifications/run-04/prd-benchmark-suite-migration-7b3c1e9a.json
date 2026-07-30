@@ -1,0 +1,30 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_3/prd-benchmark-suite-migration.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Benchmark Suite Migration and Performance Baseline",
+  "summary": "Requirements to migrate benchmarks into owning crates, dispose of disabled benchmarks, and publish a documented performance baseline.",
+  "scope": [
+    "benchmark suite",
+    "cargo bench --workspace",
+    "paladin-memory",
+    "sanctum_benchmarks",
+    "battalion_benchmarks",
+    "herald_benchmarks",
+    "garrison_benchmarks",
+    "paladin_benchmarks",
+    "arsenal_benchmarks",
+    "docs/PERFORMANCE_BASELINE.md",
+    "CI regression check"
+  ],
+  "cross_refs": [
+    "docs/PERFORMANCE_BASELINE.md",
+    "benches/sanctum_benchmarks.rs",
+    "crates/paladin-memory/benches/sanctum_benchmarks.rs",
+    "crates/paladin-memory/Cargo.toml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

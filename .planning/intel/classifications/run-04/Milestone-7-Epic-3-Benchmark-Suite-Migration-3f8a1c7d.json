@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_3/Milestone_7-Epic_3-Benchmark_Suite_Migration.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 3: Benchmark Suite Migration and Performance Baseline",
+  "summary": "Epic plan to migrate benchmarks into workspace crates, reactivate disabled benchmarks, add critical-path benchmarks, and document a performance baseline.",
+  "scope": ["benchmark suite", "paladin-memory", "paladin-battalion", "sanctum_benchmarks", "cargo bench --workspace", "performance baseline", "CI regression gate", "garrison", "LLM adapter", "config loading"],
+  "cross_refs": ["benches/sanctum_benchmarks.rs", "Cargo.toml", "CHANGELOG.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

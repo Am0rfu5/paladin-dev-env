@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_4/rustsec-remediation-plan.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "RustSec Remediation Plan (Epic 4)",
+  "summary": "Plan to remediate or formally risk-accept two blocking RustSec advisories before the Epic 4 release candidate GO decision.",
+  "scope": ["RUSTSEC-2023-0071", "rsa 0.9.10", "sqlx-mysql", "RUSTSEC-2025-0111", "tokio-tar 0.3.1", "testcontainers", "testcontainers-modules", "cargo audit", "CI security job", "audit.toml", "release dependency graph"],
+  "cross_refs": ["src/infrastructure/repositories/mod.rs", "audit.toml", "Cargo.lock"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Type set by MANIFEST_TYPE=DOC. Open security work recorded verbatim: RUSTSEC-2023-0071 (rsa 0.9.10, Marvin timing side-channel; path rsa -> sqlx-mysql -> sqlx -> workspace crates; no fixed upgrade available) and RUSTSEC-2025-0111 (tokio-tar 0.3.1, PAX header parsing file smuggling; path tokio-tar -> testcontainers -> testcontainers-modules; no fixed upgrade available). Disposition: both UNRESOLVED, mitigated by exception governance — `make audit` and CI run `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111`; exception owner Platform Security (Milestone 7); review/expiry target 2026-09-30. Completed hardening: testcontainers-modules moved to dev-dependencies, MySQL repo module gated on `storage-mysql`, sqlx default features disabled. cargo audit still reports both advisories. Open action items remain (impact-analysis issues, audit.toml entries, re-run audit evidence)."
+}

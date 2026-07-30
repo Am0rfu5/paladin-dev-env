@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_5/Milestone_8-Epic_5-document-facade-crate-role.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 5: Document Facade Crate Role and Finalize",
+  "summary": "Epic tasks to document the facade crate's role, update STABLE_API.md and CHANGELOG, and run final workspace quality gates.",
+  "scope": ["facade crate", "ServiceRunner", "STABLE_API.md", "CHANGELOG.md", "src/lib.rs", "workspace quality gates", "v0.2.0 release candidate"],
+  "cross_refs": ["STABLE_API.md", "CHANGELOG.md", "src/README.md", "src/lib.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

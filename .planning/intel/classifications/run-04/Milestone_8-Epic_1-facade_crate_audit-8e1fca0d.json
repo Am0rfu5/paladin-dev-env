@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/Milestone_8-Epic_1-facade_crate_audit.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 1: Facade Crate Audit",
+  "summary": "Epic plan to inventory, classify, and validate every src/ module as stays, moves to crate, or delete.",
+  "scope": ["src/ module inventory", "re-export shims", "facade crate", "application services", "infrastructure adapters", "config modules", "binary entry points", "dead code"],
+  "cross_refs": ["facade-audit.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

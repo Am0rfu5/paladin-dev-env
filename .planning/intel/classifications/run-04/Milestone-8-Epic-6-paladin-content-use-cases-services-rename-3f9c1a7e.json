@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_6/Milestone_8-Epic_6-paladin-content-use_cases-services-rename.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 6: `paladin-content` — `use_cases` → `services` Rename",
+  "summary": "Epic plan to rename paladin-content's use_cases module to services, fixing six E0432 unresolved import errors in the facade re-export bridge.",
+  "scope": ["paladin-content", "use_cases module", "services module", "facade re-export bridge", "content-processing feature flag", "crates/paladin-content/src/lib.rs"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

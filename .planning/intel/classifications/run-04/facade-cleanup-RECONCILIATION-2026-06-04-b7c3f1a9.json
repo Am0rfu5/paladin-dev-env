@@ -1,0 +1,39 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/facade-cleanup-RECONCILIATION-2026-06-04.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Facade Cleanup — Reconciliation & Refreshed Plan",
+  "summary": "Reconciles recorded vs verified status of Milestone 8 facade cleanup, corrects prior audits, and logs 15 commits removing ~10,250 LOC.",
+  "scope": [
+    "paladin-ai facade crate",
+    "Milestone 8 Facade Cleanup & Shim Resolution",
+    "Epic 3 relocations",
+    "orphaned duplicate adapters",
+    "paladin-storage",
+    "paladin-memory",
+    "paladin-herald",
+    "paladin-battalion",
+    "paladin-content",
+    "paladin-web",
+    "paladin-notifications",
+    "MinIO/S3 adapter",
+    "Redis queue adapter",
+    "FileCitadel",
+    "Herald formatters",
+    "sqlite/mysql repositories",
+    "tensorflow_adapter",
+    "user CLI command",
+    "src/core re-export shims",
+    "println! to log hygiene sweep"
+  ],
+  "cross_refs": [
+    "Epic_1/facade-audit.md",
+    "Epic_3/infrastructure-adapter-disposition.md",
+    "deferred-features.md",
+    "examples/council_discussion.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Header 'Status: Proposed' is a plan-status marker, not an ADR status; doc is a status reconciliation + execution log, not a single decision record. RECONCILED-AS-SHIPPED (per §7 execution log, branch chore/facade-cleanup-m8-finish): Tier 1 orphaned dead-file deletion ~4,465 LOC (e5b2011); file_content_repository deletion 723 LOC (2edc031); deferred-feature removal incl. user CLI command, tensorflow_adapter, ml flag ~1,700 LOC (3d48768); HashMapPaladinRegistry consolidated into paladin-battalion (ca7e4e8); FileCitadel relocated to paladin-memory (8bd7073); Herald formatters extracted to NEW paladin-herald crate (66f6c4e); paladin-storage made non-optional and facade sqlite fallbacks dropped, storage-sqlite feature retired, ~1,486 LOC (897e77e); MinIO/S3 relocated to paladin-storage under s3 feature, crate bumped to edition 2024, facade rust-s3 dep dropped (ff829e2); Redis queue relocated to paladin-storage under redis-queue feature, facade redis dep dropped (5a7c901); dead notification fallback adapters deleted ~1,072 LOC (cf17559); orphaned user_controller.rs duplicate deleted with NO user-service split needed (6704807); ~100 production println! converted to log::* in services/infrastructure, CLI output untouched (4c7857e); application/mod.rs + infrastructure/mod.rs docs refreshed (74ddf11); 11 remaining #[allow(dead_code)] markers justified (a1e4901). Final tally: 15 commits, ~10,250 net LOC removed, one new leaf crate; build/tests/clippy/fmt green on default and all rewired feature flags. STILL OUTSTANDING / DELIBERATELY NOT DONE: Category 4 service relocations (planning/prompt_generation/temperature/handoff services ~2,750 LOC and content_ingestion_service ~1,211 LOC) intentionally left in the facade; src/core re-export shims (~180 LOC, 275+ consumers) kept per recommendation; Epic 6 paladin-content rename 'Not verified; low priority' with no execution-log entry. Open decisions §6 items 2-5 were resolved in execution (herald→new paladin-herald, queue→paladin-storage, user.rs deleted, tensorflow deleted); items 1 and 6 resolved as do-now and keep-shims respectively. In-execution corrections to the audit: paladin_registry.rs was NOT a duplicate (facade 418-LOC impl richer than battalion's 67-LOC copy); sqlite_*_repository.rs were NOT redundant in default build; mysql_content_repository.rs, input/* fetchers, document/*, api_content_deliverer.rs, error_log_adapter.rs confirmed orphaned/uncompiled. This doc explicitly supersedes Epic_1/facade-audit.md and Epic_3/infrastructure-adapter-disposition.md, which contain factual errors."
+}

@@ -1,0 +1,30 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/prd-relocate-remaining-misplaced-modules.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Relocate Remaining Misplaced Modules (Milestone 8, Epic 3)",
+  "summary": "Requirements to delete storage re-export shims, close the notification task, record infrastructure adapter dispositions, and feature-gate the TensorFlow adapter.",
+  "scope": [
+    "src/application/storage/ shims",
+    "paladin_ports repository_port",
+    "paladin_ports user_repository_port",
+    "infrastructure adapter disposition record",
+    "tensorflow_adapter.rs ml feature gate",
+    "garrison/mod.rs bridge",
+    "sanctum/mod.rs bridge",
+    "notifications dual re-export pattern",
+    "Milestone 9 extraction candidates",
+    "CHANGELOG.md"
+  ],
+  "cross_refs": [
+    "project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/facade-audit.md",
+    "CHANGELOG.md",
+    "STABLE_API.md",
+    "src/infrastructure/adapters/notifications/mod.rs",
+    "src/infrastructure/adapters/output/mod.rs"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD applied as authoritative; content independently confirms PRD (Goals, User Stories, Functional Requirements, Non-Goals, Success Metrics)."
+}

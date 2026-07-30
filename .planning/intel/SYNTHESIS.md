@@ -2,7 +2,7 @@
 
 Entry point for `gsd-roadmapper`. Produced by `gsd-doc-synthesizer`.
 
-- **Ingest runs completed:** 3 of 5
+- **Ingest runs completed:** 4 of 5 (see the run-4 section at the end of this file)
 - **Run 1 source set:** `.project/Milestone_1-MVP` (36 docs), MODE=new
 - **Run 2 source set:** `.project/Milestone_2-Missing_features` + `.project/Milestone_3-Completion`
   (45 docs), MODE=merge
@@ -251,3 +251,208 @@ and each has a concrete, small fix.
   runs 1-2 and several in run 3 are historical.
 - Runs 4-5 will cover Milestones 7-12, Deferred-QA-CICD-Completion and project-management, and
   will merge into these same intel files.
+
+---
+
+# Ingest run 4 of 5 — synthesis update
+
+- **Ingest runs completed:** 4 of 5
+- **Run 4 source set:** `.project/Milestone_7-Production-Hardening` +
+  `.project/Milestone_8-Facade-Cleanup-Shim-Resolution` (40 docs), MODE=merge
+- **Precedence applied:** ADR > SPEC > PRD > DOC (no per-doc overrides in run 4 either)
+- **Classifications:** `/workspace/.planning/intel/classifications/run-04/`
+- **Cross-ref cycle detection:** run over the `cross_refs` graph. The graph is a DAG, maximum
+  depth 3, no cycles. Longest chain: `deferred-items.md` → `facade-cleanup-RECONCILIATION-2026-06-04.md`
+  → `Epic_1/facade-audit.md`. Most `cross_refs` entries are source-file or artifact paths rather
+  than document paths, so the document-to-document graph is small. No traversal cap approached.
+
+## Doc counts by type
+
+| Type | Run 1 | Run 2 | Run 3 | Run 4 | Cumulative |
+|---|---|---|---|---|---|
+| PRD | 11 | 15 | 13 | 11 | 50 |
+| DOC | 25 | 30 | 19 | 29 | 103 |
+| ADR | 0 | 0 | 0 | 0 | 0 |
+| SPEC | 0 | 0 | 0 | 0 | 0 |
+| UNKNOWN | 0 | 0 | 0 | 0 | 0 |
+| **Total** | **36** | **45** | **32** | **40** | **153** |
+
+All 40 run-4 classifications consumed. Every one carried `manifest_override: true` and
+`confidence: high`. Run-4 source volume read: ~8,080 lines across the 40 documents (the 10
+`tasks-*.md` files in the same directories are excluded from ingest and covered by
+`task-completion-state.md`).
+
+**Nine of the 29 run-4 DOCs are verbatim extracts** of the two milestone-overview documents
+(Milestone 7 Epics 1-4 and Milestone 8 Epics 1-5). They add no independent content and are
+consolidated into two context topics. Milestone 8 Epics 6 and 7 are originals with no overview
+counterpart — they were added after the milestone plan was written. Do not double-count the
+extracts' acceptance criteria.
+
+## Decisions
+
+- Decisions extracted in run 4: **0**. Cumulative: **0**.
+- Decisions locked: **0**. Cumulative: **0**.
+- Source paths: none.
+
+Run 4 confirms the standing constraint across the full corpus: **0 ADR and 0 SPEC across all 153
+documents**, so no LOCKED-vs-LOCKED hard block is possible and nothing in `requirements.md` is
+protected from a future ADR.
+
+Run 4 is nonetheless the densest run for decision-shaped content, adding **four ADR candidates**
+(six now exist corpus-wide):
+
+- `Epic_1/cost-benefit-assessment.md` — a go/defer record with a "Self-Approval (Task 1.6)" block,
+  a named approver and an approval date; its governing PRD calls it "the authoritative source of
+  record for *why* a decision was made".
+- `Epic_4/rustsec-remediation-plan.md` — a formal risk acceptance with owner **Platform Security**
+  and **review/expiry target 2026-09-30**. The **only item in the entire corpus carrying an expiry
+  date**, and the only one where leaving it untagged has an ongoing operational cost.
+- `Epic_4/license-compatibility-decision-checklist.md` — a licensing policy with approver `DF3NDR`
+  and approval date 2026-05-28.
+- `facade-cleanup-RECONCILIATION-2026-06-04.md` — an explicit supersession notice that reverses a
+  prior Epic and resolves six open decisions in execution.
+
+Promoting any candidate requires re-tagging via `--manifest` and re-running ingest. See
+`decisions.md` for the full list and reasoning.
+
+## Requirements
+
+- Requirements extracted in run 4: **86**. Cumulative: **434**.
+- No duplicate IDs across the four runs.
+- Eight new variant pairs/chains preserved unmerged, per the standing constraint:
+  - `REQ-paladin-web-extraction` ↔ `REQ-actix-removal` (actix-web required vs. banned)
+  - `REQ-storage-feature-flags-v1` ↔ `REQ-storage-nonoptional-v2` (`storage-sqlite` optional vs.
+    retired)
+  - `REQ-ci-publish-dry-run-v1` ↔ `REQ-ci-publish-dry-run-v2` (per-crate ordered vs. workspace-wide)
+  - `REQ-tensorflow-stays-facade-v1` → `REQ-tensorflow-ml-feature-gate-v2` →
+    `REQ-deferred-tensorflow-ml-adapter-v3` (a three-step chain ending in removal)
+  - `REQ-m8-epic3-no-extractions` ↔ `REQ-m8-reconciliation-relocations` (defer to M9 vs. execute now)
+  - `REQ-adapter-disposition-record` internal split on `arsenal/` and `sanctum/` M9 targets
+  - `REQ-dead-file-batch-deletion` ↔ the M8 overview's Epic 3 Task 3.1 (delete vs. move the three
+    notification channel services)
+  - `REQ-paladin-storage-extraction` three-way on `file_content_repository.rs` (stays / move /
+    delete)
+- Where the shipped tree settles a variant, the entry carries a `- settled-by:` line pointing at
+  `code-verification.md`. That records a **fact about the tree**, not a decision taken here.
+- Five entries derive from DOCs rather than PRDs because the DOC is the only carrier of substantive
+  forward-work content: `REQ-m8-deferred-items-register`, `REQ-deferred-cli-user-commands`,
+  `REQ-deferred-tensorflow-ml-adapter-v3`, `REQ-rustsec-risk-acceptance`,
+  `REQ-license-policy-signoff`.
+
+## Constraints
+
+- Constraints extracted in run 4: **0**. Cumulative: **0** (0 SPEC-typed docs corpus-wide).
+- Constraint-shaped material is listed in `constraints.md` for coverage. The three strongest SPEC
+  candidates in run 4: the **crate dependency-direction invariant** (M7 Epic 1 §6.1, currently
+  violated by `paladin-content` → `paladin-llm`), the **RustSec exception list with its expiry**,
+  and the **three delivery endpoint contracts** (M8 Epic 7 §4 — the only genuine api-contract
+  material in the run).
+
+## Context
+
+- Context topics added in run 4: **14**. Topics cover the Milestone 7 and 8 overviews, the Epic
+  definition extracts, the cost-benefit assessment, the benchmark assessment, the v0.1.0-rc.1
+  release outcome, the RustSec acceptance, the license policy, the facade audit, the adapter
+  disposition record, the 2026-06-04 reconciliation, the two deferred registers, the
+  Milestones 8-11 dependency graph, the version trajectory, and code-verification anchors.
+
+## Conflicts
+
+- Run 4 added: **0 blockers, 14 competing-variant warnings, 26 auto-resolved/informational**.
+- Cumulative: **0 blockers, 53 warnings, 93 info**.
+- Runs 1-3 entries preserved verbatim; only the two section-count headers changed.
+- No UNKNOWN classifications and no low-confidence classifications in run 4, so no type-tagging
+  blockers. No cross-ref cycles, so no cycle blockers. No locked decisions, so no LOCKED-vs-LOCKED
+  blockers. **The corpus remains unblocked after four of five runs.**
+
+**The highest-priority run-4 warning is the RustSec exception drift.** The ingested plan formally
+risk-accepts two advisories with an owner and a **2026-09-30 expiry**; the tree now carries five
+vulnerability ignores in `.cargo/audit.toml`, only two of them mirrored into `deny.toml` (whose own
+comment claims they are in sync), and `ci.yml:406` passes only the original two on the command line
+while `make audit` reads all five from `audit.toml`. Three files, three exception sets, on a
+repository that gates CI on `cargo audit` and cargo-deny. This is live security governance, not a
+documentation nit.
+
+Full detail: `/workspace/.planning/INGEST-CONFLICTS.md`.
+
+## Code verification
+
+`code-verification.md` was **appended to**, not overwritten, per the run-4 instruction. The run-4
+section records:
+
+- **Verified SHIPPED (18 rows)** — the `paladin-herald` crate; `FileCitadel` in `paladin-memory`;
+  MinIO/S3 and Redis in `paladin-storage`; non-optional storage with `storage-sqlite` retired; all
+  25 List A deletions and their orphaned directories; `src/core/` at exactly six files; the
+  `use_cases` → `services` rename in **both** the facade and `paladin-content`; actix-web fully
+  removed and banned with three mounted axum delivery routes; the TensorFlow adapter, `ml` feature
+  and CLI `user` command all gone; `src/README.md`; all five benchmarks in their owning crates with
+  zero disabled files; all ten per-crate Makefile targets; the `Dockerfile.chef` workspace
+  adaptation; the crates.io package renames.
+- **Verified OPEN (6 items)** — the RustSec exception drift; `paladin-herald` missing a
+  `CHANGELOG.md`; the stale `Dockerfile.chef` planner COPY list; the still-broken `api-surface`
+  baseline path (now re-asserted by M8 Epic 7 FR-10); `paladin-ports` doctests still disabled; and
+  the crates.io collision guardrail follow-up.
+- **Superseded by outcome (14 rows)** — requirements that must not be planned as written, including
+  the actix-web clause, the `storage-sqlite` flag, the per-crate publish order, the `ml` gate, the
+  Epic 3 no-extraction mandate, the `160` facade file count, and the root-path `STABLE_API.md` and
+  `docs/*.md` deliverables that were relocated into the mdbook.
+- **Contradicted in the favourable direction (2)** — Milestone 8 Epics 3 and 6 are both complete in
+  the tree despite being recorded as punted and unverified respectively.
+
+`deferred-items.md` D5's count matches the tree **exactly** — 17 occurrences across 6 files — as do
+every other verifiable claim in the two deferred registers. That is the strongest reliability signal
+in the corpus and the reason those registers, not checkbox arithmetic, are the Milestone 8
+forward-work source.
+
+## Status
+
+**STATUS: AWAITING USER — 14 new competing variants need resolution. 0 blockers.**
+
+Safe to route once the warnings are reviewed. Nothing in run 4 gates the workflow.
+
+## Roadmapper notes for run 4
+
+- **Honour the Roadmap Extension Protocol** at the end of `ROADMAP.md`. New phases start at
+  **Phase 9** — Phases 1-8 are never renumbered and the `### Phase N: Name` header format is
+  parsed by downstream tooling, including inside `<details>` blocks.
+- **Requirement-ID prefixes already spent:** `RECON-*`, `GAP-*`, `QUAL-*`, `REL-*` (Milestone 1);
+  `VERIFY-*`, `CLOSE-*` (Milestones 2-3); `ARCH-*`, `DEBT-*` (Milestones 4-6). **Use fresh prefixes
+  for run 4.** Suggested and unused: `HARD-*` (production hardening / build and release
+  infrastructure), `FACADE-*` (facade cleanup and shim resolution), `SEC-*` (the RustSec and
+  license governance items), `DEFER-*` (the D1-D5 register and the two deferred features).
+  Ingested `REQ-*` IDs remain the stable merge keys — match on them rather than re-deriving.
+- **Do not re-plan completed work.** Milestone 7 is 98.8% complete (3 open, all in Epic 2) and
+  Milestone 8 is 99.1% (3 open). Both counts were treated as claims and verified: **Milestone 8's
+  three are contradicted** — Epics 2 and 3 are both verifiably complete and Epic 3 went further
+  than its own task list scoped. Milestone 7's three are plausible; the genuine Epic 2 residue is
+  the stale `Dockerfile.chef` COPY list and the broken `api-surface` baseline path.
+- **The genuine forward work from run 4 is small and concrete**, and it is not in the checkbox
+  arithmetic:
+  1. Reconcile the RustSec exception set across `.cargo/audit.toml`, `deny.toml` and `ci.yml:406`,
+     and decide the disposition of the **2026-09-30** expiry. Highest priority.
+  2. The five deferred items D1-D5, with the document's own suggested grouping — quick win D5
+     (println residue); architecture pass D2 (mis-layered manager services) plus optionally D4
+     (`content_ingestion_service.rs` placement); and D1/D3 only alongside a broader refactor.
+  3. The two deferred features, each with a stated reintroduction condition — the `paladin user`
+     CLI surface ("mostly re-wiring, not new domain work") and the ML adapter, which **must** be
+     rebuilt in a dedicated `paladin-ml` leaf crate rather than returned to the facade.
+  4. Four small verified defects: the missing `paladin-herald` CHANGELOG, the stale
+     `Dockerfile.chef` COPY line, the `api-surface` baseline path (five references, unchanged since
+     run 3 and now written into a run-4 requirement), and the `paladin-ports` doctest re-enable.
+- **Two open architecture questions worth surfacing rather than assuming:** whether the
+  extracted-crate dependency rule permits optional feature-gated edges between leaf crates (it is
+  currently stated absolutely and violated once), and whether PDF extraction is still a supported
+  capability (`paladin-content`'s `pdf` feature gates nothing and the facade does not enable it,
+  yet `.cargo/audit.toml` treats `pdf-extract` as live in the graph).
+- **Record version history, do not act on it.** The M7 Epic 4 documents describe a `v0.1.0-rc.1`
+  release at lockstep `0.1.0`; the tree is at `0.6.0` on `release/v0.7.0` with latest tag `v0.5.1`.
+  Every rc.1 artifact is history.
+- **Preserve the Milestones 8-11 dependency graph for run 5.** M9 hard-depends on M8 Epic 4;
+  M11 hard-depends on M8 and partially on M9 (Epics 3-4 wait for M9 Epics 1-3); M10 has no hard
+  dependency. Critical path M8 → M9 → M11 Epics 3-5 = 11-17 sprints. Per
+  `task-completion-state.md`, M9 and M10 are 100% complete and M11 is 92%, so run 5 will be
+  attaching requirements to milestones that have largely shipped.
+- **Expect a fourth milestone-numbering collision.** The Milestone 7 overview titles itself
+  "Milestone 4"; directory numbering is authoritative, as in the two prior instances.
+- Run 5 covers Milestones 9-12, `Deferred-QA-CICD-Completion` and `project-management`, and will
+  merge into these same intel files.

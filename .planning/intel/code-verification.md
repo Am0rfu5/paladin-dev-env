@@ -257,3 +257,157 @@ documentation overhaul (ingest run 5). **Do not plan these as missing deliverabl
   residue worth carrying forward.
 - **Milestone 6's 0 open items are corroborated** — all four relocations are verifiably complete
   in the tree.
+
+---
+
+## Ingest run 4 verification — Milestones 7 and 8 (40 docs)
+
+Direct verification against the working tree on `release/v0.7.0`, performed 2026-07-30 during ingest
+run 4. Evidence is file existence, `Cargo.toml` / `deny.toml` / `audit.toml` / workflow contents, and
+grep counts read from source — not LLM inference. Same precedence rule applies: this file outranks
+every ingested document.
+
+Run 4 is the first run where the ingest corpus contains a document that **audits itself against the
+tree** — `facade-cleanup-RECONCILIATION-2026-06-04.md`. Its findings are corroborated below almost
+without exception, which makes it the most reliable status document in the 153-document corpus.
+
+### Verified SHIPPED — Milestone 8 landed further than its own planning documents record
+
+| Claim | Source doc | Evidence in tree |
+|---|---|---|
+| `paladin-herald` created as a new leaf crate | Reconciliation §7 commit `66f6c4e` | `crates/paladin-herald/src/{lib,json_herald,markdown_herald,table_herald}.rs`; `paladin-herald = { version = "0.6.0", path = "crates/paladin-herald" }` in `[workspace.dependencies]`; non-optional facade dependency |
+| `FileCitadel` relocated to `paladin-memory` | Reconciliation §7 commit `8bd7073` | `crates/paladin-memory/src/citadel/file_citadel.rs` |
+| MinIO/S3 and Redis queue relocated to `paladin-storage` | Reconciliation §7 commits `ff829e2`, `5a7c901` | `crates/paladin-storage/Cargo.toml [features]`: `s3 = ["dep:rust-s3"]`, `redis-queue = ["dep:redis"]`; facade `s3-storage = ["paladin-storage/s3"]`, `redis-queue = ["paladin-storage/redis-queue"]` |
+| `paladin-storage` made non-optional; `storage-sqlite` retired | Reconciliation §7 commit `897e77e` | root `Cargo.toml`: `paladin-storage = { workspace = true, features = ["sqlite"] }` (no `optional = true`), with the inline comment "SQLite repositories are always available: `paladin-storage` is a non-optional dependency with its `sqlite` feature enabled". Only `storage-mysql` and `storage = ["storage-mysql"]` remain |
+| All 25 List A files deleted, plus the orphaned directories | M8 Epic 2 PRD; Reconciliation §2 | `src/application/` contains only `cli`, `errors`, `mod.rs`, `services`; no `notifications/`, no `storage/`; `src/core/platform/manager/` has no `admin/` or `user/` |
+| `src/core/` reduced to exactly six files | M8 Epic 2 PRD §4.3 | `src/core/{mod.rs, platform/mod.rs, platform/manager/{mod,content_service,event_manager,user_service}.rs}` — exactly the six named, no more |
+| `use_cases` → `services` rename complete, facade **and** leaf crate | M8 Epics 4 and 6 | `src/application/services/` with 11 sub-modules; `crates/paladin-content/src/services/`; `crates/paladin-content/src/lib.rs` declares `pub mod services;`; `grep -rn "use_cases" src/ crates/ tests/ examples/ benches/ --include="*.rs"` returns **zero matches** |
+| actix-web removed from `paladin-web` and banned | M8 Epic 7 | `grep -rn "actix" crates/paladin-web/` returns **zero matches**; `deny.toml:99-103` `[bans] deny = [{ crate = "actix-web", reason = "paladin-web standardizes on axum; no second web framework" }]` |
+| Delivery endpoints revived as mounted axum routes | M8 Epic 7 FR 1-3 | `crates/paladin-web/src/delivery_controller.rs` documents `POST /api/delivery/deliver`, `GET /api/delivery/status/{delivery_id}`, `GET /api/delivery/stats`; `app.rs:24` imports `create_delivery_routes`, `app.rs:63` calls `.merge(create_delivery_routes(deliverer))` |
+| TensorFlow adapter and `ml` feature removed entirely | `deferred-features.md` §2 | `grep -rn "tensorflow\|^ml = " Cargo.toml src/` returns **zero matches** |
+| CLI `user` command removed | `deferred-features.md` §1 | `src/application/cli/commands/` contains `agent.rs`, `arsenal.rs`, `battalion.rs`, `council.rs`, `features.rs`, `maneuver.rs`, `mod.rs`, `muster.rs`, `onboarding.rs`, `setup_check.rs` — no `user.rs` |
+| Facade role documented | M8 Epic 5 FR-1, FR-2 | `src/README.md` exists (3,750 bytes) |
+| Benchmarks migrated to owning crates; zero disabled | M7 Epic 3 | `benches/config_benchmarks.rs`; `crates/paladin-battalion/benches/battalion_benchmarks.rs`; `crates/paladin-llm/benches/llm_serialization_benchmarks.rs`; `crates/paladin-memory/benches/{sanctum,garrison}_benchmarks.rs`. No `*.disabled` benchmark file anywhere; no `herald_benchmarks`, `paladin_benchmarks` or `arsenal_benchmarks` |
+| CI benchmark regression signal | M7 Epic 3 FR-24 | `ci.yml:531` job `benchmark-regression-signal` |
+| All ten per-crate Makefile test targets | M7 Epic 2 FR-18 | `Makefile:167-212` — `test-core`, `test-ports`, `test-battalion`, `test-llm`, `test-memory`, `test-storage`, `test-notifications`, `test-content`, `test-web`, `test-facade` |
+| Dockerfile.chef workspace adaptation | M7 Epic 2 FR-01 to FR-06 | `Dockerfile.chef`: `cargo install cargo-chef --version 0.1.77 --locked` (pinned per §7); per-crate `COPY crates/*/Cargo.toml` lines; `cargo chef prepare --recipe-path recipe.json`; `cargo chef cook --release --workspace --recipe-path recipe.json`; `rust:1.93-slim-bookworm` |
+| crates.io package renames | Epic 4 completion summary | root `[package] name = "paladin-ai"` with `[lib] name = "paladin"`; `paladin-core = { package = "paladin-ai-core", … }` in `[workspace.dependencies]` |
+| Per-crate READMEs and CHANGELOGs | M7 Epic 4 §4.2, §4.3 | Nine of ten library crates have both. See the gap below for `paladin-herald` |
+| `println!` hygiene sweep | Reconciliation §7 `4c7857e`; `deferred-items.md` D5 | `grep -rn "println!\|eprintln!\|dbg!" src/application/services/ src/infrastructure/` returns **exactly 17** matches across **exactly 6** files: `services/herald/herald_registry.rs`, `services/paladin/paladin_execution_service.rs`, `infrastructure/adapters/arsenal/{mcp_protocol,tool_result_formatter}.rs`, `infrastructure/adapters/scheduling/tokio_cron_adapter.rs`, `infrastructure/resilience/circuit_breaker.rs` |
+
+**The reconciliation's `deferred-items.md` D5 count is exact.** Both the file count and the
+occurrence count match the tree precisely. This is the highest-fidelity claim in the corpus and is
+the strongest single reason to treat the two deferred registers as the authoritative Milestone 8
+forward-work source.
+
+### Verified OPEN — genuine remaining work found in run 4
+
+1. **The RustSec exception list has grown from two to five, and the three files that encode it
+   disagree.** This is the most consequential open finding in run 4.
+   - `.cargo/audit.toml` `[advisories] ignore` carries **five vulnerability advisories**:
+     `RUSTSEC-2023-0071`, `RUSTSEC-2025-0111`, `RUSTSEC-2026-0187` (lopdf stack overflow via
+     deeply nested PDF objects, transitive through `pdf-extract` under `content-processing`),
+     `RUSTSEC-2026-0194` and `RUSTSEC-2026-0195` (quick-xml quadratic attribute parsing and
+     unbounded namespace allocation, transitive through `rust-s3`/`aws-creds` under `s3`).
+   - `deny.toml` `[advisories] ignore` carries a comment stating "the same advisory IDs are
+     mirrored here so cargo-deny and cargo-audit do not contradict each other. Keep these two files
+     in sync" — but mirrors **only the original two** vulnerability IDs (plus six *unmaintained*
+     notices, which are explicitly a different class). The three 2026 advisories are absent.
+   - `.github/workflows/ci.yml:406` runs
+     `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111` — the **original two only**,
+     passed on the command line, while `make audit` (`Makefile:244-247`) runs a bare `cargo audit`
+     with the comment "Exceptions are sourced from .cargo/audit.toml (single source of truth)".
+   - So local and CI audit surfaces are configured differently, and `deny.toml`'s own stated
+     invariant is violated. Three files, three different exception sets.
+   - `rustsec-remediation-plan.md` records the acceptance owner as **Platform Security
+     (Milestone 7)** with a **review/expiry target of 2026-09-30** — approximately two months from
+     the ingest date. Nothing in `.planning/` other than this record surfaces that date.
+   - The three 2026 advisories carry documented, dated reasoning inside `.cargo/audit.toml`
+     (including that the directly-fixable RUSTSEC-2026-0185 quinn-proto and RUSTSEC-2026-0190
+     anyhow were **upgraded rather than ignored**), so this is drift in governance surface, not
+     undocumented risk-taking.
+
+2. **`paladin-herald` has no `CHANGELOG.md`.** M7 Epic 4 §4.3.1 and AC 3 require a crate-level
+   `CHANGELOG.md` for **every** public crate, and the Epic 4 completion summary records that
+   criterion as Met. `paladin-herald` was created afterwards by the reconciliation (commit
+   `66f6c4e`) and has a `README.md` but no `CHANGELOG.md`. All nine other library crates have both.
+   Small, concrete, and directly traceable to a shipped acceptance criterion.
+
+3. **`Dockerfile.chef`'s explicit planner COPY list is one crate stale.** It copies nine
+   `crates/*/Cargo.toml` files by name — core, ports, battalion, llm, memory, storage,
+   notifications, content, web — and omits `crates/paladin-herald/Cargo.toml`. A later
+   `COPY crates ./crates` means the build still works, but M7 Epic 2 FR-01 requires all crate
+   manifests in the planner stage precisely so the dependency layer invalidates correctly; a
+   `paladin-herald` manifest change will not tighten the recipe layer as intended.
+
+4. **The `api-surface` CI baseline path is still broken, and run 4 re-asserts it.** Run-3
+   verification recorded five stale references to `project/current-exports.txt` after the directory
+   was renamed to `.project/` in commit `928c6d5`. All five are unchanged: `scripts/check-api-surface.sh:6`
+   and `scripts/extract-public-api.sh:6` default to `project/current-exports.txt`, and
+   `ci.yml:171,181,186` pass that literal path. `.project/current-exports.txt` exists (442 KB);
+   `project/current-exports.txt` does not. **M8 Epic 7 FR-10 mandates
+   `./scripts/extract-public-api.sh project/current-exports.txt`** — the same stale path — so the
+   defect is now written into a run-4 requirement as well as into the tooling.
+
+5. **`paladin-ports` doctests remain disabled.** `crates/paladin-ports/Cargo.toml` still sets
+   `[lib] doctest = false` with the identical run-3 comment naming "Task 7.0" as the re-enable
+   point. Unchanged since run 3. This sits directly under M7 Epic 4 §4.4.3's requirement that
+   `cargo doc --workspace --no-deps` complete without documentation warnings and §4.4.4's >90%
+   coverage target.
+
+6. **The `paladin-ports` publish follow-up has no dedicated guardrail.**
+   `deferred-paladin-ports-publish-verification.md` closes with "Keep CI/package guardrails that
+   detect crates.io package-name collisions early." The `publish-dry-run` job would surface a
+   collision at dry-run time, but there is no earlier or name-specific check. Given that collisions
+   cost Epic 4 two package renames and a NO-GO cycle, this is worth a decision rather than silent
+   reliance on the dry run.
+
+### Superseded by shipped outcome — do not plan these as written
+
+| Requirement as written | Where it came from | What the tree says |
+|---|---|---|
+| `paladin-web` declares `actix-web` **and** `axum` as direct non-optional dependencies | M7 Epic 1 PRD §4.2.1 | Zero `actix` references in `crates/paladin-web/`; facade `web-server = ["dep:paladin-web", "dep:axum"]`. M8 Epic 7 reversed it deliberately and added a cargo-deny ban |
+| Facade `storage-sqlite` flag; `paladin-storage` optional; `storage` alias enables both backends | M7 Epic 1 PRD §4.5.6, §7.2 | `storage-sqlite` retired; `paladin-storage` non-optional with `sqlite` always on; `storage = ["storage-mysql"]` |
+| `sqlx` workspace declaration includes `mysql` in its feature list | M7 Epic 1 PRD §7.5 | `sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid", "json", "migrate"] }` — no `mysql`; `default-features = false` and `migrate` added by the RustSec hardening work |
+| `publish-dry-run` runs `cargo publish --dry-run -p <crate>` for ten crates in dependency order | M7 Epic 2 FR-26 | A single `cargo publish --workspace --dry-run`, with an inline rationale that per-crate dry runs "cannot work on a version bump: the not-yet-published new version of each sibling fails the `version = \"X\"` requirement of its dependents" |
+| `tensorflow_adapter.rs` gated behind a new `ml = []` feature | M8 Epic 3 PRD §4.3 item 11 | Both the adapter and the flag were subsequently deleted outright (`3d48768`); neither exists |
+| Every adapter group "Stays in facade", all List B moves deferred to Milestone 9 | M8 Epic 3 PRD §4.3, §5; `infrastructure-adapter-disposition.md` | The relocations were executed in Milestone 8 by the reconciliation; `paladin-herald` was created despite the explicit non-goal "No new crates created — `paladin-herald`, `paladin-ml`, etc. are not in scope" |
+| `find src/ -name "*.rs" \| wc -l` = **163** after Epic 2, **160** after Epic 4 | M8 Epic 2 §7; M8 Epic 4 §4.5 item 9 | **136**. The two PRD figures are internally consistent with each other (163 − 3 storage shims = 160); the further reduction is the reconciliation's Category 1-2 deletions, which the PRDs did not anticipate |
+| `STABLE_API.md` at the repository root, updated by four separate run-4 requirements | M7 Epic 4 §4.6; M8 Epics 2, 4, 5 | No `STABLE_API.md` at the root. Run-3 verification established the equivalent page ships as `docs/src/api-reference/stable-api.md` after the Milestone 11 overhaul. `api_surface_current.txt` (881 KB) and `final-api.txt` (198 KB) **do** exist at the root |
+| `docs/PERFORMANCE_BASELINE.md`, `docs/RELEASE_CHECKLIST.md`, `docs/VERSIONING_POLICY.md`, `docs/BUILD_BASELINES.md`, `docs/INTEGRATION_TESTS.md` | M7 Epics 2, 3, 4 | `docs/` holds only `MIGRATION_LOG.md` plus the mdbook. Equivalents ship as `docs/src/appendix/{performance-baseline,release-checklist,release-automation,integration-tests,build-baselines}.md` — the same Milestone 11 relocation run 3 documented. **Do not plan these as missing deliverables** |
+| Nine leaf crates named in the facade role documentation | M8 Epic 5 FR-1 | Ten library crates ship; the FR-1 list predates `paladin-herald` |
+| `crates/paladin-cli/` as a workspace crate, publish Step 5 | M7 overview Appendices A and B | No `paladin-cli` crate — re-confirming the run-3 finding. `crates/` holds `doc-examples` plus the ten library crates |
+| Extracted crates depend only on `paladin-ports`, `paladin-core` and workspace-shared deps; "no extracted crate may depend on another extracted crate" | M7 Epic 1 PRD §6.1 | `crates/paladin-content/Cargo.toml` declares `paladin-llm = { …, optional = true }` behind its `llm` feature — an extracted-to-extracted edge. The PRD's own §4.4 complexity note anticipated it without amending the rule |
+| Facade `content-processing` activates `paladin-content` "with all capability features enabled" | M7 Epic 1 PRD §4.4.6 | `content-processing` enables `web-scraping`, `rss`, `news-api`, `tiktoken`, `llm` — but **not** `pdf`. `paladin-content` does declare `pdf = []`, gating no dependency |
+
+### Claims contradicted by code in the *favourable* direction
+
+- **Milestone 8 Epic 6 is complete.** The reconciliation records it "Not verified; low priority"
+  with no execution-log entry, and `deferred-items.md` does not list it. The tree shows the rename
+  fully done: `crates/paladin-content/src/services/` exists, `lib.rs` declares `pub mod services;`,
+  `use_cases/` is gone, and a workspace-wide grep for `use_cases` across `src/`, `crates/`,
+  `tests/`, `examples/` and `benches/` returns zero matches. Do not plan Epic 6 as outstanding.
+- **Milestone 8 Epic 3 is complete in substance, not merely deferred.** The Epic 3 PRD and the
+  disposition record both leave every relocation to Milestone 9; the reconciliation executed them
+  and the tree confirms every target. The `task-completion-state.md` figure of 3 open items for
+  Milestone 8 (1 in Epic 3, 2 in Epic 2) reflects checkbox state on documents the reconciliation
+  superseded.
+
+### Implication for run-4 open-checkbox counts
+
+`task-completion-state.md` records Milestone 7 at 98.8% (3 open, all in
+`tasks-production-build-infra-adaptation.md`) and Milestone 8 at 99.1% (3 open: 2 in
+`tasks-remove-dead-shims-empty-modules.md`, 1 in `tasks-relocate-remaining-misplaced-modules.md`).
+
+- **Milestone 8's 3 open items are contradicted.** Both Epic 2 and Epic 3 are verifiably complete in
+  the tree, and Epic 3 went further than its own task list scoped. This is the same
+  checkbox-understates-reality pattern runs 1 and 2 found for Conclave and Sanctum.
+- **Milestone 7's 3 open items are plausible but not corroborated by any single artifact.** Epic 2
+  is the one Milestone 7 epic whose deliverables are partly absent from the tree at the paths the
+  PRD names (`docs/BUILD_BASELINES.md`, `docs/INTEGRATION_TESTS.md`), and partly relocated into the
+  mdbook. The genuine Epic 2 residue is items 3 and 4 above — the stale `Dockerfile.chef` COPY list
+  and the broken `api-surface` baseline path.
+- The real Milestone 7/8 forward work is **not** in the checkbox arithmetic. It is: the RustSec
+  exception drift and its 2026-09-30 expiry (item 1); the five deferred items D1-D5; the two
+  deferred features with their reintroduction conditions; and the four small verified defects
+  (items 2-5).

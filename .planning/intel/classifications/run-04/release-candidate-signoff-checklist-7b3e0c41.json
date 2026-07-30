@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_4/release-candidate-signoff-checklist.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Release Candidate Sign-Off Checklist (Epic 4)",
+  "summary": "Release readiness gate checklist and GO sign-off for Milestone 7 Epic 4, including published crate set verification.",
+  "scope": ["release candidate sign-off", "Milestone 7 Epic 4", "release gates", "published crate set", "STABLE_API"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

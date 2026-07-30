@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_4/deferred-paladin-ports-publish-verification.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Deferred Item: paladin-ports Publish Verification Blocker",
+  "summary": "Deferred blocker record for cargo publish --dry-run verification of paladin-ports; status Resolved, exit criteria satisfied, Task 5.5 complete.",
+  "scope": ["paladin-ports", "paladin-ai-core", "paladin-ai", "cargo publish --dry-run", "crates.io publishing", "Milestone 7 Epic 4 Task 5.5", "CI/package guardrails"],
+  "cross_refs": ["/workspace/Cargo.toml"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Deferred-work doc. Deferred scope: Task 5.5 cargo publish --dry-run -p paladin-ports verification failure. Status: Resolved. Exit criteria (all satisfied): (1) publish paladin-ai-core to crates.io non-dry-run; (2) re-run dry-run for paladin-ports and confirm pass; (3) re-run dry-run for all public crates in dependency order capturing evidence; (4) update Epic 4 Task 5.5 from deferred to complete. Remaining open follow-up: keep CI/package guardrails detecting crates.io package-name collisions early. No residual blocking work."
+}

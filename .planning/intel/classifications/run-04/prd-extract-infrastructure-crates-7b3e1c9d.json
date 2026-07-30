@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_1/prd-extract-infrastructure-crates.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Extract Remaining Infrastructure Subsystems into Dedicated Crates",
+  "summary": "Requirements to extract web, notifications, content, and SQL storage subsystems from the facade crate into four opt-in workspace crates.",
+  "scope": ["paladin-web", "paladin-notifications", "paladin-content", "paladin-storage", "facade crate", "workspace decomposition", "cargo feature flags", "dependency tree", "cost-benefit assessment"],
+  "cross_refs": ["project/Milestone_7-Production-Hardening/Epic_1/cost-benefit-assessment.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

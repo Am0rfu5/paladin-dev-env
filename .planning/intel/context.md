@@ -650,3 +650,491 @@ See INGEST-CONFLICTS.md WARNINGS.
 - Five run-3 statements are contradicted by shipped code and should not be planned as-is: the edition-2021 rule (the tree is mixed), the "exhaustive" `paladin-core` 6-dependency list (14 ship), the `vision`-gates-encryption claim (nothing is gated), the MCP transport feature flags (none exist) and the `paladin-cli` crate (none exists).
 - Genuine remaining work found in run 3: the `api-surface` CI job's stale `project/current-exports.txt` baseline path after the `.project` rename; zero `#[deprecated]` annotations against M4 Epic 2 FR-8; `paladin-ports` doctests disabled with a named "Task 7.0" follow-up; three CLI-only dependencies still unconditional; and three competing `TokenUsage` definitions shipping simultaneously.
 - `STABLE_API.md`, `docs/FEATURE_FLAGS.md`, `docs/MIGRATION.md` and `docs/CONFIGURATION.md` are **not missing** — they ship as mdbook pages under `docs/src/api-reference/` and `docs/src/getting-started/` after the Milestone 11 documentation overhaul. Do not plan them as gaps.
+
+---
+
+# Ingest run 4 of 5 — `.project/Milestone_7-Production-Hardening` + `.project/Milestone_8-Facade-Cleanup-Shim-Resolution`
+
+29 DOC-typed documents. Topics are keyed by subject and attributed to source. Where a DOC records a
+state claim, the tree reading is appended under `verified:` and the full evidence lives in
+`code-verification.md` (run-4 section).
+
+---
+
+## Topic: Milestone 7 scope, structure and self-numbering
+- source: /workspace/.project/Milestone_7-Production-Hardening/overview/Milestone_7-Tier_4-Production_Hardening.md
+- **The document titles itself "Milestone 4: Production Hardening and Extended Workspace
+  Decomposition" while its path is `Milestone_7-Production-Hardening`.** Its subtitle is
+  "Tier 4 — Production Hardening, Extended Crate Extraction, and API Stabilization", and its
+  Prerequisites section credits "Milestones 1-3" with work the directory numbering assigns to
+  Milestones 4-6 (feature flags and CI matrix; core workspace crates; `application_settings.rs`
+  decomposition; manager-service relocation; Maneuver DSL co-location; `CircuitBreaker`
+  relocation). This is the **third instance** of the refactoring-tier-vs-directory numbering
+  collision that the Roadmap Extension Protocol item 8 predicted. Directory numbering is
+  authoritative here.
+- Three themes: extended workspace decomposition (web, notifications, content, repositories into
+  optional crates); production build infrastructure (Docker, CI/CD, Makefile, benchmarks,
+  integration tests); API stabilization and pre-release preparation for "a 0.2.0 (or 1.0.0)
+  release".
+- Success criteria: the workspace contains all logically separable crates; Docker images build with
+  per-crate layer caching; CI/CD supports per-crate testing, per-crate publishing and
+  workspace-level release orchestration; every public crate has complete rustdoc, README, CHANGELOG
+  and crates.io metadata; all benchmarks pass with a documented baseline; integration tests work
+  with the workspace and Docker services; "a release candidate tag can be cut with confidence".
+- Out of scope: new feature development; performance optimization beyond documenting baselines;
+  **actual crates.io publishing** ("this Milestone prepares for it; publishing is a release
+  decision"); Kubernetes manifests; GUI/dashboard.
+- Risk register (5 rows): diminishing returns from extended extraction, mitigated by the Epic 1
+  Task 1.1 cost-benefit gate; slower Docker workspace builds, mitigated by `cargo-chef` with a
+  workspace recipe; per-crate versioning dependency hell, mitigated by starting lockstep;
+  integration tests defeating isolation, mitigated by root-`tests/` placement; **crates.io name
+  squatting on `paladin-*`, mitigated by "reserve crate names early with placeholder publishes;
+  use `paladin-framework-*` prefix if needed"** — the risk that actually materialised, resolved
+  instead by renaming to `paladin-ai-core` and `paladin-ai`.
+- Appendix A target structure lists **`crates/paladin-cli/` (~12k LOC)** as a workspace crate, and
+  Appendix B makes it publish Step 5. Run-3 verification already established that no `paladin-cli`
+  crate exists — the CLI is a `cli` feature plus a `[[bin]] paladin-cli` target. Appendix A also
+  omits `paladin-herald`, which did not yet exist.
+- Appendix C versioning strategy: Phase 1 lockstep at `[workspace.package] version = "0.2.0"` with
+  crates inheriting `version.workspace = true`; Phase 2 independent versioning gated on four
+  criteria (two stable lockstep releases; evidence crates evolve at different rates; downstream
+  requests for individual pinning; tooling such as `cargo-release` or `release-plz` in place).
+- Appendix D maps six downstream consumer profiles to crate sets: Orchestration Only, Full
+  Framework, Custom LLM Provider, Memory System Only, Content Pipeline, Web API + Orchestration.
+- Schedule: Phase 1 Epic 1 (3-4 sprints) → Phase 2A Epic 2 / Phase 2B Epic 3 in parallel (2-3 and
+  1-2) → Phase 3 Epic 4 (2-3). Total 5-8 sprints.
+
+## Topic: Milestone 7 Epic definitions (verbatim extracts of the overview)
+- source: /workspace/.project/Milestone_7-Production-Hardening/Epic_1/Milestone_7-Epic_1-Ext_Workspace_Decomp_Infra_Crates.md, Epic_2/Milestone_7-Epic_2-Production_Build_Infra_Adaptation.md, Epic_3/Milestone_7-Epic_3-Benchmark_Suite_Migration.md, Epic_4/Milestone_7-Epic_4-API_Stabilization_Pre-Release_Preparation.md
+- All four Epic DOCs are **verbatim extracts** of the corresponding sections of the milestone
+  overview — same objectives, background, acceptance criteria and task breakdowns, no additional
+  content. Same pattern run 3 found for the Milestone 5 and 6 epic files.
+- Epic 1 background sizing (used to justify the extractions): web server ~3-4k LOC plus the
+  `actix-web` dependency tree; notification adapters ~2k LOC; content processing ~5-6k LOC "with
+  heavy external dependencies"; SQL repositories ~3k LOC.
+- Epic 1 AC 3 states the post-extraction facade is *"reduced to re-exports, the `ServiceRunner`
+  composition root, and application-layer use-case services that don't warrant their own crate"* —
+  the definition of the facade's role that Milestone 8 Epic 5 later writes into `src/lib.rs`.
+- Epic 4 background: "The workspace now contains approximately 10 crates." Each needs correct
+  `[package]` metadata, a crates.io README, a Keep-a-Changelog `CHANGELOG.md`, explicit
+  `#![deny(missing_docs)]` **or** documented public API coverage, and semantic version alignment.
+  Note the overview says `#![deny(missing_docs)]` in the background prose but `#![warn(missing_docs)]`
+  in AC 7 and Task 4.4 — the PRD settles on `warn`.
+- Epic 4 AC 1 specifies `license (MIT)`; the Task 5.7 checklist later records the policy as
+  `MIT OR Apache-2.0`.
+
+## Topic: Milestone 7 Epic 1 cost-benefit assessment — the extraction go/defer record
+- source: /workspace/.project/Milestone_7-Production-Hardening/Epic_1/cost-benefit-assessment.md
+- Measured on `feature/milestone_7` at 2026-05-25 HEAD. Methodology: `cargo tree -p paladin
+  [--features <flag>] | wc -l` for transitive dep count; `git log --oneline --since="2025-01-01"`
+  per source path for change frequency; `wc -l` for extraction LOC. **Baseline: 1,235 dep-tree
+  lines** at default features, which already includes `sqlx` "because it is in
+  `[workspace.dependencies]` without `optional = true` and the facade includes it unconditionally."
+- Scoring thresholds: dependency weight HIGH ≥ 150 added lines, MEDIUM 50-149, LOW < 50; change
+  frequency HIGH ≥ 20 commits, MEDIUM 10-19, LOW < 10.
+- `paladin-storage` — 2,274 LOC across four files; 21 commits; HIGH selectivity; MEDIUM-HIGH
+  complexity with one **prerequisite**: the repository port traits (`ContentRepository`,
+  `ContentListRepository`, `MigrationManager`) live in `src/application/storage/sql_store.rs` and
+  must move to `paladin-ports` first "before `paladin-storage` can implement them without creating
+  an architectural inversion". **GO**, extracted first.
+- `paladin-notifications` — 1,080 LOC; **+41** dep-tree lines from `lettre` + `handlebars`;
+  9 commits; HIGH selectivity; LOW-MEDIUM complexity. **GO**, second. Justification notes deferral
+  "would leave `lettre`'s OpenSSL linkage in any facade build even when SMTP is never used".
+- `paladin-content` — ~5,000 LOC (largest); **+145**; **32 commits (highest of all four)**; HIGH
+  selectivity; HIGH complexity for four stated reasons including that use-case services depend on
+  `paladin-llm`, "creating an inter-crate dependency that must be handled carefully". **GO**, third.
+- `paladin-web` — 1,595 LOC; **+210, the largest dep reduction**, from `actix-web` + `axum`;
+  15 commits; HIGH selectivity; MEDIUM complexity. **GO**, fourth. Justification: "Web frameworks
+  are infamous for deep dependency trees with C library bindings (OpenSSL, ring, h2, etc.)".
+- **All four Go, zero Defer**, so PRD sub-tasks 1.4 (mark deferred entries) and 1.5 (create
+  Milestone-8+ backlog tickets) were recorded N/A.
+- Self-approval block: approved by "AI Agent (GitHub Copilot), acting as sole developer", 2026-05-25.
+
+## Topic: Milestone 7 Epic 3 benchmark assessment — inventory, dispositions and shipped outcome
+- source: /workspace/.project/Milestone_7-Production-Hardening/Epic_3/benchmark-assessment.md
+- Starting state: "a fully root-owned benchmark layout". Root `dev-dependencies` already carried
+  `criterion = { version = "0.5", features = ["async_tokio"] }`. `[[bench]]` stanzas for
+  `battalion_benchmarks`, `herald_benchmarks`, `garrison_benchmarks` and `sanctum_benchmarks` were
+  present **only as comments**; `paladin_benchmarks` and `arsenal_benchmarks` existed as
+  `.rs.disabled` files. No crate-local `benches/` directories existed.
+- Config-benchmark ownership finding closes PRD open question 1: `Settings` is defined in
+  `src/config/settings.rs`, `impl Settings` there holds the current `Settings::new()` loading path,
+  and no extracted crate owns the type — so the config benchmark belongs in the root crate "unless
+  a later architectural change moves configuration ownership into a dedicated crate."
+- **Final disposition of all five disabled benchmarks — none directly restored:**
+  - `battalion_benchmarks.rs` — remove and replace. It "targets a broad root-level orchestration
+    surface including Formation, Phalanx, Campaign, Chain of Command, Maneuver parsing, and
+    visualization"; Epic 3's accepted scope is narrower (Formation/Phalanx/Campaign execution
+    overhead only), so "a direct restore would preserve the wrong ownership and benchmark scope".
+  - `garrison_benchmarks.rs` — remove and replace. Benchmarks a root-level `ConversationHistory`
+    surface with broad mixed operations; Epic 3 requires crate-local read/write at 100/1000/10000.
+  - `herald_benchmarks.rs` — **deprecate and remove.** "Herald formatting is not part of the
+    confirmed critical-path benchmark set for Epic 3."
+  - `paladin_benchmarks.rs.disabled` — deprecate and remove. Already documented as requiring
+    `LlmPort` trait implementation work; benchmarks the old aggregate execution boundary.
+  - `arsenal_benchmarks.rs.disabled` — deprecate and remove. Already documented as needing a
+    rewrite around current armament domain types; Arsenal is not on the critical path.
+- Final target/ownership map: `config_benchmarks` → root `paladin` crate; `battalion_benchmarks` →
+  `paladin-battalion`; `sanctum_benchmarks` and `garrison_benchmarks` → `paladin-memory`;
+  `llm_serialization_benchmarks` → `paladin-llm`.
+- Sanctum migration detail: imports rewritten from the facade to
+  `paladin_core::platform::container::sanctum::{MemoryBuilder, MemoryType, SanctumEntry}`,
+  `paladin_memory::sanctum::InMemorySanctum`, and
+  `paladin_ports::output::sanctum_port::{SanctumFilter, SanctumPort, SanctumQuery}`;
+  `crates/paladin-memory/Cargo.toml` now owns the Criterion registration and a local `criterion`
+  dev-dependency; the stale root placeholder was removed.
+- CI regression signal as shipped: job `benchmark-regression-signal`, triggered on pull requests and
+  manual dispatch, threshold "more than 3 Criterion `Performance has regressed.` notices in one
+  run", covering `config_benchmarks`, `battalion_benchmarks`, `garrison_benchmarks` and
+  `llm_serialization_benchmarks`, non-blocking via `continue-on-error: true` at job level.
+- Environment notes: `cargo bench --workspace --no-run` is the structural compile-validation
+  command; active benchmark targets are intentionally no-network and need no live provider
+  credentials; `paladin-memory`'s optional `sqlite`/`qdrant` features are not used for benchmark
+  compile validation; `paladin-llm`'s serialization benchmark uses shared request/response types.
+- All six PRD success metrics are recorded **Satisfied** in the document's own status table.
+- verified: all five benchmark files ship at exactly these locations; no `.disabled` benchmark file
+  remains anywhere in the tree; `benchmark-regression-signal` is `ci.yml:531`.
+
+## Topic: Milestone 7 Epic 4 release outcome — v0.1.0-rc.1 and the crates.io package renames
+- source: /workspace/.project/Milestone_7-Production-Hardening/Epic_4/epic-4-completion-summary.md, release-readiness-audit-report.md, release-candidate-signoff-checklist.md, release-notes-v0.1.0-rc.1.md, post-release-verification-v0.1.0-rc.1.md
+- **This is release history, not current state.** Tag `v0.1.0-rc.1` at commit `a9530fc`, dated
+  2026-05-28. The project is now on `release/v0.7.0` with `Cargo.toml` at `0.6.0` and latest tag
+  `v0.5.1`. Do not treat any rc.1 artifact as describing the current release posture.
+- **Crate package renames driven by crates.io collisions** — the single most consequential outcome
+  of Epic 4, and the reason the workspace's package names and library names diverge:
+  - `paladin-core` package renamed to **`paladin-ai-core`**, "while preserving crate import
+    compatibility via lib target name".
+  - Root facade package renamed to **`paladin-ai`**, "preserving code imports with lib name
+    `paladin`".
+- Published crate set at 0.1.0 (all ten): `paladin-ai-core`, `paladin-ports`, `paladin-battalion`,
+  `paladin-llm`, `paladin-memory`, `paladin-storage`, `paladin-notifications`, `paladin-content`,
+  `paladin-web`, `paladin-ai`. Dependency-order publishing was executed in practice as
+  `paladin-ai-core → paladin-ports → leaf crates → paladin-ai`.
+- Four blockers closed from a prior NO-GO state: the `paladin-core` name collision; the
+  `paladin-ports` packaged-verification failure (resolved after the dependency remap and publishing
+  `paladin-ai-core` first); the root facade name conflict; and crates.io publish **rate limits**,
+  "handled by retrying at the documented unlock times and continuing dependency-order publishing".
+- Audit results table, all PASS: `cargo test --workspace` (after "stabilizing env-sensitive settings
+  tests"); `cargo clippy --workspace -- -D warnings`; `cargo fmt --all -- --check`;
+  `cargo doc --workspace --no-deps`; dry-run publish for all public crates; **`cargo audit` marked
+  "PASS (policy-managed)"** with approved exceptions for RUSTSEC-2023-0071 and RUSTSEC-2025-0111;
+  license compatibility; dependency-tree/binary-size review (informational).
+- Nine Epic 4 acceptance criteria all recorded **Met** with traceability, including "7. Missing docs
+  policy and >=90% coverage posture" and "8. STABLE_API per-crate stabilization tiers".
+- Sign-off: **GO**, on the stated rationale that no Epic 4 release-readiness blockers remain.
+- Post-release verification (2026-05-28): all ten crates resolve on docs.rs with HTTP 200 — note
+  `https://docs.rs/paladin-ai-core/latest/paladin_core/` and
+  `https://docs.rs/paladin-ai/latest/paladin/`, the package/lib name split made visible. A fresh
+  external binary project with `paladin-ai = "0.1.0"` passed `cargo check` with the marker
+  `SMOKE_OK: paladin-ai dependency resolved and compiled`. Annotated tag pushed at `a9530fc`.
+- Key commits recorded: `a9530fc` (Epic 4 release closure), `cb9a5eb` (stabilize settings config
+  tests), `957c3a4` (rename root package to paladin-ai), `687ca1f` (rename core package to
+  paladin-ai-core), `8bbdea7` (resolve crates.io paladin-core collision).
+- verified: root `Cargo.toml` declares `[package] name = "paladin-ai"` with `[lib] name = "paladin"`,
+  and `paladin-core = { package = "paladin-ai-core", … }` in `[workspace.dependencies]`. Version is
+  `0.6.0` throughout, not `0.1.0`.
+
+## Topic: RustSec risk acceptance — two advisories, an owner and an expiry
+- source: /workspace/.project/Milestone_7-Production-Hardening/Epic_4/rustsec-remediation-plan.md
+- **Flagged prominently: these are live security risk acceptances, not closed findings.**
+- `RUSTSEC-2023-0071` — `rsa 0.9.10`, Marvin timing side-channel. Path
+  `rsa -> sqlx-mysql -> sqlx -> workspace crates`. **No fixed upgrade available.**
+- `RUSTSEC-2025-0111` — `tokio-tar 0.3.1`, PAX header parsing enabling file smuggling. Path
+  `tokio-tar -> testcontainers -> testcontainers-modules`. **No fixed upgrade available.**
+- Hardening completed 2026-05-28: `testcontainers-modules` moved to `dev-dependencies`; MySQL
+  repository compilation gated on `storage-mysql` in `src/infrastructure/repositories/mod.rs`;
+  `sqlx` default features disabled at workspace level with required features listed explicitly.
+  `cargo tree -i tokio-tar` then showed only dev-dependency paths through `testcontainers`.
+- **`cargo audit` still reports both advisories** "because Cargo.lock includes dev/optional
+  dependency graphs and no fixed upstream versions are available."
+- Exception governance: `make audit` runs
+  `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111`; the CI security job enforces
+  the same command. **Owner: Platform Security (Milestone 7). Review/expiry target: 2026-09-30.**
+- Open action items that the document does **not** mark complete: two tracked impact-analysis issues
+  (one per advisory); `audit.toml` exception entries "only if approved, each with expiry date and
+  owner"; and re-running `cargo audit` after mitigation with evidence attached to the Epic 4 report.
+- Track A also requires confirming whether `sqlx-mysql` is needed in the default release path and
+  "prefer SQLite-only release profile where acceptable", plus documenting that RSA exposure is
+  dependency-only and that untrusted tar extraction is absent from production runtime paths.
+- Track B: investigate `sqlx-mysql` alternatives; ensure published crates do not require the
+  `tokio-tar` chain; subscribe to upstream advisory trackers for `rsa`, `sqlx`, `tokio-tar`,
+  `testcontainers`.
+- verified: `.cargo/audit.toml` now ignores **five** advisories (the two above plus
+  RUSTSEC-2026-0187 lopdf, RUSTSEC-2026-0194 and RUSTSEC-2026-0195 quick-xml); `deny.toml` mirrors
+  only the original two plus six unmaintained notices; `ci.yml:406` still passes only the original
+  two IDs on the command line. The three files disagree. See `INGEST-CONFLICTS.md`.
+
+## Topic: License compatibility policy and sign-off
+- source: /workspace/.project/Milestone_7-Production-Hardening/Epic_4/license-compatibility-decision-checklist.md
+- Policy: **`MIT OR Apache-2.0`** (Rust-style dual licensing). Approval rule — MIT, Apache-2.0, or
+  any SPDX expression containing a permissive MIT/Apache branch is acceptable by default;
+  non-permissive or unresolved entries require explicit decision and sign-off.
+- Inventory: 551 packages, 0 unknown entries after resolution. MPL-2.0 observed in `colored 2.2.0`
+  and `colored 3.0.0`. `r-efi 5.3.0` carries `MIT OR Apache-2.0 OR LGPL-2.1-or-later`.
+- `fuchsia-cprng 0.1.1` resolved from the crates.io artifact — the `.crate` includes a `LICENSE`
+  file and `Cargo.toml` sets `license-file = "LICENSE"`; effective classification BSD-3-Clause-style
+  permissive.
+- Decisions recorded: MPL-2.0 **explicitly accepted for unmodified use**, so replacing the `colored`
+  chain is N/A; `r-efi` accepted via its permissive branch. Approver **`DF3NDR` (repository owner)**,
+  approval date **2026-05-28**. Task 5.7 status: **COMPLETE**.
+- Sign-off evidence: transitive inventory built with `cargo metadata` + `jq`.
+
+## Topic: Milestone 8 scope and the facade crate's permanent role
+- source: /workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/overview/Milestone-8_Facade-Cleanup-Shim-Resolution.md
+- Version target v0.2.0. Success criteria: every `src/` file has an explicit disposition; all dead
+  re-export shims from Milestones 5-6 removed; `src/application/ports/` empty or deleted;
+  **`src/application/notifications/` channel services moved to `paladin-notifications`**;
+  `src/application/use_cases/` renamed to `services/`; the crate compiles with all workspace tests
+  passing and no new warnings; and the facade's role documented as "application assembly and
+  composition root."
+- Parallel-execution context: M8 has **no dependencies** on M9-11 and can begin immediately. It is a
+  prerequisite for M9 (needs a clean facade with a stable directory structure) and M11 (needs
+  finalized paths and module names to document).
+- Epic 4 **Task 4.3 "Add Backward-Compatible Re-Export (Optional)"**: "If any external consumer or
+  example uses `paladin::application::use_cases::*`, add a temporary `pub use services as
+  use_cases;` in `application/mod.rs` with a `#[deprecated]` attribute." The Epic 4 PRD explicitly
+  rejects this. PRD outranks DOC.
+- Epic 3 **Task 3.1** requires moving `email_notifications.rs`, `push_notifications.rs` and
+  `system_notifications.rs` to `crates/paladin-notifications/src/` with facade re-exports added
+  "if needed for backward compatibility". The Epic 2 PRD deletes all three as orphaned dead code.
+- Schedule: Phase 1 Epic 1 audit (0.5-1 sprint) → Phase 2 Epics 2 and 3 in parallel (1 and 1-2) →
+  Phase 3 Epic 4 rename (0.5) → Phase 4 Epic 5 finalize (0.5). Total 3-4 sprints.
+
+## Topic: Milestones 8-11 dependency graph — preserve for run 5
+- source: /workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/overview/Milestones-8-11_Dependency-Graph.md
+- **Carried forward deliberately: this document spans milestones that arrive in ingest run 5.**
+- Milestone summary: **M8** Facade Cleanup & Shim Resolution, v0.2.0, 3-4 sprints, **no hard
+  dependencies**. **M9** Classic Orchestrator Completion, v0.3.0, 6-10 sprints, hard-depends on M8.
+  **M10** CI Hardening & Release Automation, v0.4.0, 2-3 sprints, **no hard dependencies**.
+  **M11** Documentation Overhaul & Publish, v0.5.0, 4-6 sprints, hard-depends on M8 and partially
+  on M9.
+- Edge semantics:
+  - M8 → M9: **HARD**. "M9 work should not begin until M8 Epic 4 (rename) is complete" — otherwise
+    the `services/` rename invalidates M9 import paths written concurrently.
+  - M8 → M11: **HARD** (paths stable). M11 Epics 1-2 (Doc Audit, MDBook Setup) start immediately;
+    **M11 Epics 3-4 wait for M9 Epics 1-3** to reach API stability.
+  - M9 → M11: **HARD** on APIs. M11 Epics 3-4 use "document after merge — only write about APIs
+    that are merged to `main`".
+  - M8 → M10: **SOFT**, and only for M10 Epic 3 (release automation), which "waits for M8 to
+    finalize crate structure" because it references crate names M8 might change. M10 Epics 1-2
+    (Pre-commit, Security Scanning) start immediately.
+- Epic inventory referenced: M8 E1 Audit / E2 Shim Removal / E3 Relocate / E4 Rename / E5 Finalize;
+  M9 E1 Orchestrator E2E / E2 Queue-Scheduler / E3 Content→Agent / E4 Agent→Orchestrator /
+  E5 User-Admin / E6 Finalize; M10 E1 Pre-commit / E2 Security Scanning / E3 Release Automation /
+  E4 Finalize; M11 E1 Doc Audit / E2 MDBook Setup / E3 Rewrite / E4 New Docs / E5 Publish+Finalize.
+- **Critical path: M8 (3-4) → M9 (6-10) → M11 Epics 3-5 (2-3) = 11-17 sprints.** M10 is entirely
+  off the critical path. M11 Epics 1-2 are off it too — net addition 0 sprints.
+- Release gates: v0.2.0 "all shims resolved, `services/` rename complete, quality gates green";
+  v0.3.0 "orchestrator E2E, both bridges working, user/admin auth functional"; v0.4.0 "pre-commit
+  hooks, security scanning, release automation operational"; v0.5.0 "MDBook published, all docs
+  current, all code examples compile".
+- **Ordering caveat recorded in the source:** v0.4.0 (M10) may ship before v0.3.0 (M9) since M10 has
+  no dependency on M9 and is smaller, giving v0.2.0 → v0.4.0 → v0.3.0 → v0.5.0. "If this is
+  unacceptable, hold M10's tag until M9 ships." **Alternative numbering if strict ordering is
+  preferred: v0.2.0 (M8), v0.2.1 (M10 — minor CI tooling, no API changes), v0.3.0 (M9 — new
+  features), v0.4.0 (M11 — docs)."
+- Two-developer parallel track and a sprint-by-sprint single-developer schedule are both given.
+- Five risks with mitigations, including "M9 scope creep delays all downstream milestones —
+  M9 has a clear cut line: if User/Admin (Epic 5) isn't ready, ship v0.3.0 without it and defer to
+  v0.3.1", and "Developer context-switching between milestones reduces velocity — batch milestone
+  work in 2-sprint blocks; don't interleave within a single sprint."
+- Status against `task-completion-state.md`: M9 is 100.0% complete (0 open across 6 task lists),
+  M10 is 100.0% (0 open across 5), M11 is 92.0% (26 open, all in `tasks-content-rewrite.md`). The
+  graph is therefore a **historical planning artefact**, not a live schedule — but its dependency
+  semantics and release-gate criteria are what run 5 should connect M9-M11 to.
+
+## Topic: Milestone 8 Epic definitions (verbatim extracts, plus two originals)
+- source: /workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1..Epic_5/Milestone_8-Epic_*.md
+- Epics 1-5 DOCs are **verbatim extracts** of the corresponding overview sections. Epics 6 and 7
+  are original documents with no overview counterpart — they were added after the milestone plan
+  was written.
+- Epic 5 Task 5.3 deliverable: "v0.2.0 release candidate ready".
+- Epic 6 DOC adds a **Root Cause** section absent from the overview: "The Epic 4 rename scope was
+  defined as the facade crate only (`src/`). The leaf crate `paladin-content` was not in scope for
+  that Epic. As a result the facade's re-export bridge was updated to the new path, but
+  `paladin-content` still publishes the old path, leaving the bridge broken under the
+  `content-processing` feature flag."
+- Epic 7 DOC carries a **"Decisions (from PRD clarification)"** section: port the three endpoints to
+  axum **and mount them** (revive the API) rather than deleting them; add `actix-web` to
+  `deny.toml`'s banned crates. It also states the workflow used — "run `/generate-tasks` against
+  that PRD to produce the implementation checklist".
+
+## Topic: The facade crate audit — 189 files, three lists
+- source: /workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/facade-audit.md
+- Status Complete, created and completed 2026-05-29. **189 files audited: 151 stay (List C),
+  13 move (List B), 25 delete (List A).**
+- List B by target: `paladin-notifications` 3, `paladin-content` 2, `paladin-storage` 6,
+  `paladin-memory` 1, `paladin-web` 2 ("wait for Epic 3 co-ordination — `paladin-web` already holds
+  some of these"). ~8,564 lines to relocate.
+- Key findings:
+  - `src/application/ports/` **does not exist** — already removed prior to Milestone 8.
+  - `src/application/notifications/` is not declared in `src/application/mod.rs`; all three files
+    are dead code.
+  - `src/core/platform/manager/admin/` and `user/` are neither declared in `manager/mod.rs`; all
+    files unreachable.
+  - Most `lib.rs` `pub use` short-form aliases have **0** internal consumers — workspace code uses
+    full paths. Only `MockLlmAdapter`, `OpenAIAdapter`, `AnthropicAdapter` and `DeepSeekAdapter`
+    have 13 consumers via short paths.
+  - **PRD correction:** `planning_error.rs` and `prompt_error.rs` under `src/application/errors/`
+    "are real application-service error types with tests — they are NOT shims and STAY." Only
+    `citadel_error.rs` and `handoff_error.rs` are shims.
+- List A totals ~1,471 lines of dead/comment-only code across 25 files, with three cascade `mod.rs`
+  deletions noted (`subject/`, `admin/`, `user/`).
+- List B file sizes: `email_notification_adapter.rs` 752, `system_notification_adapter.rs` 320,
+  `document_adapter.rs` 480, `pdf_extractor.rs` 350, `minio.rs` 1,198, `redis.rs` 1,570,
+  `file_content_repository.rs` 723, `mysql_content_repository.rs` 780,
+  `sqlite_content_repository.rs` 810, `sqlite_user_repository.rs` 676, `file_citadel.rs` 581,
+  `api_content_deliverer.rs` 724, `user_controller.rs` 870.
+- **This document is explicitly superseded** by `facade-cleanup-RECONCILIATION-2026-06-04.md`,
+  which states its List B and the Epic 3 disposition "contain factual errors" — specifically that
+  ~4,400 LOC described as "active bridges that stay" are in fact orphaned uncompiled duplicates.
+
+## Topic: Infrastructure adapter disposition record — Epic 3's 20-row table
+- source: /workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_3/infrastructure-adapter-disposition.md
+- Twenty adapter groups, **every one recorded "Stays"** in Epic 3, with the sole action taken being
+  the `tensorflow_adapter.rs` `ml` gate plus the storage-shim deletions and their six consumer
+  updates.
+- M9 candidates split into two lists. **List A — "Leaf crate already owns the domain, adapter can be
+  inlined":** the five `input/*` content fetchers → `paladin-content`; `arsenal/` (all 5 adapters) →
+  future `paladin-arsenal`. **List B — "Leaf crate needs to be created or extended first":**
+  `citadel/file_citadel.rs` → `paladin-memory`; `document/` → `paladin-content`;
+  `file_storage/minio.rs` → `paladin-storage`; `output/api_content_deliverer.rs` → `paladin-web`;
+  `queue/redis.rs` → `paladin-storage`; `input/tensorflow_adapter.rs` → future `paladin-ml`.
+- No-extraction-target groups (facade-level concerns): `herald/` ("cross-cutting output
+  formatting"), `logs/` ("cross-cutting logging infrastructure"), `paladin_registry.rs` ("facade
+  orchestration registry"), `scheduling/` ("single concrete scheduler"), `llm/config_bridge.rs`
+  ("config mapping stays in facade").
+- The record **disagrees with its own governing PRD** on two rows: `arsenal/` is flagged an M9
+  candidate here but "No" in the PRD table; `sanctum/` targets a future `paladin-sanctum` here but
+  `paladin-memory` in the PRD.
+- It also describes as "Active bridge" several files the reconciliation later proves **orphaned and
+  uncompiled** — `document/`, the `input/*` fetchers, `output/api_content_deliverer.rs`.
+- Dated `2025-01`, which is inconsistent with every other Milestone 8 document (2026-05/06).
+- **Explicitly superseded** by `facade-cleanup-RECONCILIATION-2026-06-04.md`.
+
+## Topic: The 2026-06-04 facade-cleanup reconciliation — what actually shipped
+- source: /workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/facade-cleanup-RECONCILIATION-2026-06-04.md
+- **The highest-value document in run 4.** A fresh independent file-by-file audit of `src/` (159
+  files at the time) reconciling recorded status against verified status.
+- Reconciled Epic status: **E1 done but with errors** (needs correction); **E2 DONE** (all 25 List A
+  files gone; `notifications/`, `storage/` stubs, `subject/`, `admin/`, `user/` dirs confirmed
+  deleted); **E3 PUNTED** ("disposition kept everything in facade, deferred to M9. Only tensorflow
+  gating + 3 storage-shim deletions were done. This is the remaining work."); **E4 DONE** (tree has
+  `src/application/services/`); **E5 largely done** (`lib.rs` carries facade/composition-root docs);
+  **E6 "Not verified; low priority"**.
+- "Bottom line: the deletions and the rename landed; the *relocations never happened*, and the audit
+  that was supposed to drive them mislabeled the easy wins. Finishing Milestone 8 ≈ finishing
+  Epic 3 correctly."
+- Verification method for the orphan claim: "`rg \"mod <name>\"` across `src/` returns nothing for
+  each; the `mod.rs` in each directory only does `pub use paladin_<crate>::…`; the leaf crate file
+  exists." Conclusion: "They are not bridges; they are dead corpses left behind when the real code
+  was copied into leaf crates."
+- Five risk-ordered categories: **C1** orphaned dead files, delete outright, ~4,465 LOC, zero risk;
+  **C2** compiled but redundant, ~2,627 LOC, low risk; **C3** genuine relocations — the un-done
+  Epic 3, medium risk; **C4** judgment calls needing a decision; **C5** cross-cutting hygiene.
+- C5 starting state: **435 `println!`/`eprintln!`/`dbg!` occurrences across 36 files**, "much of it
+  legitimate CLI output (keep), but the orchestration/services hits should become `log::*`. Scope to
+  `services/` + `infrastructure/`, not `cli/`." Plus ~7 stray `#[allow(dead_code)]` markers and
+  stale `mod.rs` doc comments in `application/` and `infrastructure/`.
+- Execution log, branch `chore/facade-cleanup-m8-finish`, 2026-06-04 → 06-05, each commit passing
+  build + clippy `-D warnings` + fmt + tests: `e5b2011` (Tier 1 orphan deletion, ~4,465 LOC);
+  `2edc031` (`file_content_repository`, 723 LOC); `3d48768` (deferred features — `user` CLI,
+  tensorflow, `ml` flag — ~1,700 LOC); `ca7e4e8` (`HashMapPaladinRegistry` → `paladin-battalion`);
+  `8bd7073` (`FileCitadel` → `paladin-memory`); `66f6c4e` (**Herald formatters → new
+  `paladin-herald` crate**, "keeps `paladin-core` light"); `897e77e` (`paladin-storage`
+  non-optional, facade sqlite fallbacks dropped, `storage-sqlite` retired, ~1,486 LOC);
+  `ff829e2` (MinIO/S3 → `paladin-storage` `s3` feature, crate bumped to edition 2024, facade
+  `rust-s3` dropped); `5a7c901` (Redis queue → `paladin-storage` `redis-queue` feature, facade
+  `redis` dropped); `cf17559` (dead notification fallback adapters deleted, ~1,072 LOC).
+- Follow-on commits: `6704807` (orphaned `user_controller.rs` duplicate deleted — "investigation
+  showed it was uncompiled residue; paladin-web already owns the live copy and
+  `UserServiceTrait`/DTOs already live in paladin-core, so **no user-service split was needed**");
+  `4c7857e` (~100 production `println!` → `log::*`, CLI untouched); `74ddf11` (`application/mod.rs`
+  + `infrastructure/mod.rs` docs refreshed); `a1e4901` (11 remaining `#[allow(dead_code)]` markers
+  justified).
+- **Three in-execution corrections to the audit:** `paladin_registry.rs` was **not** a duplicate —
+  the facade's 418-LOC impl is richer than battalion's 67-LOC `pub(crate)` copy, so the richer one
+  was consolidated *into* battalion rather than deleted blindly; `sqlite_*_repository.rs` were
+  **not** redundant in the default build (they were the active default-build impl), resolved via
+  the non-optional-storage change; `mysql_content_repository.rs`, the `input/*` fetchers,
+  `document/*`, `output/api_content_deliverer.rs` and `error_log_adapter.rs` **were** orphaned and
+  uncompiled — safe deletes.
+- **Final tally: 15 commits, ~10,250 net LOC removed, one new leaf crate (`paladin-herald`).**
+  Persistence adapters (sqlite/mysql/minio/redis) consolidated in `paladin-storage`; Citadel in
+  `paladin-memory`. Workspace green on default and across all rewired feature flags.
+- Deliberately left in the facade: the Category 4 service relocations (`planning`/`prompt`/
+  `temperature`/`handoff` services, `content_ingestion_service`) and the `src/core/` re-export
+  shims — "facade-internal decisions the original Epic-3 disposition chose to keep; not slop.
+  Revisit only if a future milestone wants them in leaf crates."
+
+## Topic: Milestone 8 deferred registers — the genuine forward-work signal
+- source: /workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-items.md, deferred-features.md
+- `deferred-items.md` (2026-06-07, "verified against `main`") is framed as a "Record of intentional
+  non-goals (not bugs / not oversights)" and carries an **"Already done (for context — NOT
+  deferred)"** section precisely "so readers don't mistake completed work for a gap". That section
+  confirms: orphaned dead files and `file_content_repository` deleted; user CLI + TensorFlow stub +
+  `ml` flag removed; `HashMapPaladinRegistry` → `paladin-battalion`; `FileCitadel` →
+  `paladin-memory`; Herald formatters → new `paladin-herald`; MinIO/S3, Redis and SQLite
+  repositories → `paladin-storage` (now non-optional, facade re-exports); notification adapters →
+  `paladin-notifications` (facade keeps a re-export only); facade `user_controller.rs` removed;
+  actix-web removed from `paladin-web` with a cargo-deny ban; `println!` hygiene down from ~435 to
+  **17 across 6 files**.
+- Five deferred items D1-D5 with effort/risk ratings and a suggested grouping — recorded in full as
+  `REQ-m8-deferred-items-register`. No owners are named and no target milestone is assigned.
+- `deferred-features.md` (2026-06-04) preserves the intent of two removed features so they "can be
+  reintroduced deliberately (with tests, TDD) when prioritized": the `paladin user …` CLI command
+  surface (1,065 LOC, eight subcommands, backend intact, "mostly re-wiring, not new domain work")
+  and the TensorFlow ML adapter (636 LOC, `#[doc(hidden)]` placeholder, stub model
+  loading/prediction). Both "recoverable verbatim from git history at the Milestone 8 removal commit
+  on branch `chore/facade-cleanup-m8-finish`".
+- The TensorFlow entry sets a **placement condition on reintroduction**: implement in a dedicated
+  `paladin-ml` leaf crate, "consistent with the hexagonal layout — ML inference is an infrastructure
+  adapter, not facade code — rather than re-adding it to the facade", with the `ml` feature flag
+  moved onto that crate. The port contract `paladin_ports::input::ml_port::MlPort` "remains in the
+  workspace, so the integration point is stable".
+- Cross-reference note: `deferred-items.md` points at `Epic_7/deferred-features.md`, but the file is
+  at the milestone root, not under `Epic_7/`.
+
+## Topic: paladin-ports publish verification — a deferred blocker, closed
+- source: /workspace/.project/Milestone_7-Production-Hardening/Epic_4/deferred-paladin-ports-publish-verification.md
+- Status **Resolved**. The Task 5.5 `cargo publish --dry-run -p paladin-ports` failure is closed;
+  all four deferral exit criteria are recorded satisfied, and `paladin-ai-core` being published
+  first is what unblocked it.
+- **The only residue is a standing follow-up: "Keep CI/package guardrails that detect crates.io
+  package-name collisions early."** Given that name collisions cost Epic 4 two package renames and a
+  NO-GO cycle, this is a small but real carry-forward.
+
+## Topic: Version trajectory across runs 1-4 (history, not current state)
+- source: run-4 release documents + `.planning/intel/code-verification.md` (run-4 section)
+- M7 Epic 4 PRD anchors the first publishable release at lockstep **`0.2.0`**; the M7 overview
+  Appendix C shows `[workspace.package] version = "0.2.0"`.
+- What actually shipped from M7 Epic 4: **all ten crates published at `0.1.0`**, tagged
+  **`v0.1.0-rc.1`** at commit `a9530fc`, 2026-05-28.
+- Milestone 8 targets **v0.2.0** throughout (Epics 1-5). Epic 6 targets "post-v0.2.0 patch".
+  Epic 7 — created 2026-06-06, the latest run-4 document — targets **"post-v0.5.1 (Unreleased)"**,
+  showing v0.3.0 through v0.5.1 all shipped between Epic 5 and Epic 7.
+- Current tree: `Cargo.toml` at **`0.6.0`**, branch **`release/v0.7.0`**, latest tag **v0.5.1**.
+- The Milestones 8-11 dependency graph's release sequence (v0.2.0 → v0.3.0 → v0.4.0 → v0.5.0)
+  therefore completed, and the project has since moved two minors beyond it.
+- **Do not treat any v0.1.0-rc.1 artifact as current.** The published-crate lists, docs.rs
+  verification and GO sign-off all describe the 0.1.0 state.
+
+## Topic: Code-verification anchors for run-4 claims
+- source: /workspace/.planning/intel/code-verification.md (run-4 section)
+- Verified SHIPPED: `paladin-herald` crate (three formatters + `lib.rs`); actix-web fully absent
+  from `paladin-web` with the `deny.toml` ban in place and three axum delivery routes mounted;
+  `paladin-content/src/services/` with zero `use_cases` references anywhere in the workspace;
+  `src/application/services/`; all six `src/core/` files exactly as specified; `src/README.md`;
+  ten per-crate `make test-*` targets; all five migrated/new benchmarks in their owning crates with
+  zero `.disabled` files; `paladin-storage` with `s3`, `redis-queue` and `scheduler` features;
+  `crates/paladin-memory/src/citadel/file_citadel.rs`; the `println!` residue at exactly 17 across
+  6 files; the `tensorflow_adapter` and `ml` feature both fully absent; `user.rs` absent from the
+  CLI command set.
+- Verified OPEN or drifted: the RustSec exception list has grown to five vulnerability advisories
+  with three encoding files disagreeing; `paladin-herald` has no `CHANGELOG.md`; `Dockerfile.chef`'s
+  explicit planner COPY list omits `paladin-herald`; the `api-surface` CI job's stale
+  `project/current-exports.txt` baseline is unchanged from run 3 and is re-asserted by M8 Epic 7
+  FR-10; `paladin-ports` doctests remain disabled with the same "Task 7.0" comment.
+- Superseded by outcome: the `storage-sqlite` feature and optional `paladin-storage`; the per-crate
+  ordered publish dry run; the actix-web-in-`paladin-web` requirement; the `STABLE_API.md`
+  root-path requirement (relocated into the mdbook); the `160` facade file count (tree reads 136).

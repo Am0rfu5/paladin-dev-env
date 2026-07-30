@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_4/post-release-verification-v0.1.0-rc.1.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Post-Release Verification Log: v0.1.0-rc.1",
+  "summary": "Verification log recording docs.rs availability, downstream dependency smoke test, and release tag for v0.1.0-rc.1.",
+  "scope": ["docs.rs availability", "downstream dependency resolution", "release tag v0.1.0-rc.1", "published paladin crates"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

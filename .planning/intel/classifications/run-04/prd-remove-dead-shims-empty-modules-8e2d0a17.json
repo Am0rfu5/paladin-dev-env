@@ -1,0 +1,32 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_2/prd-remove-dead-shims-empty-modules.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Remove Dead Shims and Empty Modules",
+  "summary": "Requirements to delete 25 dead facade files in seven batches, audit stale application::ports imports, and remove zero-consumer lib.rs re-export aliases.",
+  "scope": [
+    "src/ facade crate",
+    "dead re-export shims",
+    "empty modules",
+    "src/lib.rs pub use aliases",
+    "src/application/notifications/",
+    "src/application/storage/ stubs",
+    "src/application/use_cases/content/",
+    "src/application/use_cases/subject/",
+    "src/core/platform/manager/admin/",
+    "src/core/platform/manager/user/",
+    "infrastructure adapter stubs",
+    "crate::application::ports:: references",
+    "STABLE_API.md",
+    "CHANGELOG.md"
+  ],
+  "cross_refs": [
+    "facade-audit.md",
+    "STABLE_API.md",
+    "CHANGELOG.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

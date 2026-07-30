@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_4/Milestone_8-Epic_4-use_cases-services-rename.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 4: `use_cases` → `services` Rename",
+  "summary": "Epic plan to rename src/application/use_cases to services, update imports, and optionally add a deprecated backward-compatible re-export.",
+  "scope": ["src/application/use_cases", "src/application/services", "application/mod.rs", "import paths", "deprecated re-export"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

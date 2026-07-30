@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_1/prd-facade-crate-audit.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Facade Crate Audit",
+  "summary": "Requirements for auditing all 189 .rs files in the facade crate src/ and assigning stays/moves/delete dispositions.",
+  "scope": ["facade crate (src/)", "re-export shims", "file inventory", "file classification", "facade-audit.md", "paladin-notifications", "paladin-storage", "paladin-ports"],
+  "cross_refs": ["facade-audit.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD authoritative; content signals (Goals, User Stories, Functional Requirements) agree."
+}

@@ -1,0 +1,29 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/Milestone_8-Epic_7-paladin-web-single-framework-axum.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 7: `paladin-web` — Single Web Framework (remove actix-web)",
+  "summary": "Epic to port orphaned actix-web content-delivery handlers to mounted axum routes, remove actix-web from paladin-web, and ban it via cargo-deny.",
+  "scope": [
+    "paladin-web",
+    "actix-web",
+    "axum",
+    "api_content_deliverer.rs",
+    "ApiContentDeliverer",
+    "content delivery routes",
+    "deny.toml",
+    "CHANGELOG.md",
+    "project/current-exports.txt"
+  ],
+  "cross_refs": [
+    "prd-paladin-web-single-framework-axum.md",
+    "tasks-paladin-web-single-framework-axum.md",
+    "deny.toml",
+    "CHANGELOG.md",
+    "project/current-exports.txt"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content also carries PRD-like signals (Objective, Scope, Acceptance Criteria) and a 'Decisions (from PRD clarification)' section; manifest overrides."
+}

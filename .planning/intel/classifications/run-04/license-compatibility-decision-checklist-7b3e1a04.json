@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_4/license-compatibility-decision-checklist.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Epic 4 License Compatibility Decision Checklist",
+  "summary": "Checklist recording MIT OR Apache-2.0 licensing policy approval, MPL-2.0 acceptance, and license inventory sign-off evidence for Task 5.7.",
+  "scope": ["dependency licensing", "MIT OR Apache-2.0 policy", "MPL-2.0 colored crate", "fuchsia-cprng 0.1.1", "r-efi 5.3.0", "Task 5.7 sign-off"],
+  "cross_refs": ["release-readiness-audit-report.md", "tasks-api-stabilization-pre-release-preparation.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_2/prd-production-build-infra-adaptation.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: Production Build Infrastructure Adaptation",
+  "summary": "Requirements to adapt Docker, Makefile, and CI/CD build infrastructure to the nine-crate Paladin Cargo workspace.",
+  "scope": ["Dockerfile.chef", "Dockerfile", "cargo-chef", "Makefile", "GitHub Actions CI/CD", "workspace crates", "integration test infrastructure", "cargo publish dry-run", "build-time and image-size baselines"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=PRD applied as authoritative; content signals (Goals, User Stories, Functional Requirements FR-01..FR-06) agree."
+}

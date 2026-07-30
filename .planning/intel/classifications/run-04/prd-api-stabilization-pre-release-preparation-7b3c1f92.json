@@ -1,0 +1,28 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_4/prd-api-stabilization-pre-release-preparation.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "PRD: API Stabilization and Pre-Release Preparation",
+  "summary": "Requirements to make the Paladin workspace crates publishable: metadata, READMEs, changelogs, doc coverage, versioning policy, release checklist, STABLE_API boundaries.",
+  "scope": [
+    "crate metadata",
+    "Cargo.toml [package] section",
+    "per-crate README.md",
+    "per-crate CHANGELOG.md",
+    "documentation coverage audit",
+    "versioning policy",
+    "release checklist",
+    "STABLE_API.md",
+    "cargo publish dry run",
+    "crates.io release"
+  ],
+  "cross_refs": [
+    "STABLE_API.md",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

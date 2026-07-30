@@ -143,3 +143,96 @@ constraint coverage. The materially distinct constraint carriers are `dependency
 If any of this should bind at SPEC precedence — the dependency allowlists and the `config.yml`
 deserialization contract are the strongest candidates, since both are already contradicted by
 shipped code — re-tag the carrier documents via `--manifest` and re-run ingest.
+
+---
+
+## Ingest run 4 of 5 — `.project/Milestone_7-Production-Hardening` + `.project/Milestone_8-Facade-Cleanup-Shim-Resolution` (40 docs)
+
+**No SPEC-typed documents were present in this ingest run either.**
+
+Classification breakdown for run 4: 11 PRD, 29 DOC, 0 ADR, 0 SPEC. Cumulative across runs 1-4:
+**153 documents, 0 SPEC.** No entry in this file is asserted at SPEC precedence.
+
+No constraint entries are recorded for run 4. The material below is constraint-shaped — it reads as
+a contract a future change could violate — but every carrier is a PRD or a DOC, so it lives in
+`requirements.md` and `context.md` at those precedences.
+
+### Constraint-shaped material found in run 4 (recorded elsewhere, listed here for coverage)
+
+- **Crate dependency direction (architectural invariant).** The four extracted infrastructure
+  crates may depend only on `paladin-ports`, `paladin-core` and workspace-shared dependencies;
+  *"No extracted crate may depend on another extracted crate or on the `paladin` facade."*
+  (M7 Epic 1 §6.1, `REQ-extracted-crate-dependency-rule`.) The shipped `paladin-content` breaks it
+  via an optional `paladin-llm` dependency behind its `llm` feature. This is the single strongest
+  SPEC candidate in the run — it is the kind of rule that should bind at a precedence a PRD cannot
+  quietly amend.
+
+- **Dependency-isolation assertions.** `cargo tree -p paladin-core --all-features` and
+  `cargo tree -p paladin-battalion --all-features` must not contain `actix-web`, `axum`, `lettre`,
+  `pdf-extract`, `scraper` or `sqlx` (M7 Epic 1 §8.7-8.8). Mechanically checkable; carried by a PRD.
+
+- **Banned-crate policy.** `actix-web` under `[bans] deny` in `deny.toml`, enforced by `make deny`
+  and the CI dependency-policy job, so *"a second web framework cannot silently return"*
+  (M8 Epic 7 FR-8). This is a live guardrail with a shipped enforcement point.
+
+- **RustSec exception list.** Two advisory IDs approved for ignore, with an owner
+  (Platform Security) and an expiry (**2026-09-30**), enforced identically in `make audit` and the
+  CI security job (M7 Epic 4 `rustsec-remediation-plan.md`). The tree now carries five vulnerability
+  ignores across three files that disagree with each other — see `INGEST-CONFLICTS.md`. If any
+  run-4 material should bind at SPEC precedence, this is the second candidate: an exception list
+  with an expiry is exactly the kind of contract that should not be widened by a PRD or by an
+  uncommented manifest edit.
+
+- **License policy.** `MIT OR Apache-2.0` with a permissive-branch acceptance rule, MPL-2.0
+  accepted for unmodified use, approver `DF3NDR`, approval date 2026-05-28, inventory of 551
+  packages with zero unknown entries (M7 Epic 4 `license-compatibility-decision-checklist.md`).
+  Contradicted by the `license (MIT)` position in the M7 overview and the shipped root
+  `Cargo.toml`.
+
+- **HTTP endpoint contracts.** The three revived delivery endpoints specify paths, methods,
+  request/response types and exact status-code semantics including error-body shape
+  (`{ "error": "<message>" }`), with 200/400/404/500 mapped per case (M8 Epic 7 FR-1.1 to 1.3).
+  This is the only genuine **api-contract**-type material in the run; it is carried by a PRD.
+
+- **Publishing order.** `paladin-core` → `paladin-ports` → leaf crates → `paladin` facade, with the
+  warning *"Violating this order will cause `cargo publish --dry-run` to fail"* (M7 Epic 2 FR-26,
+  M7 Epic 4 §4.5.6, M7 overview Appendix B). The shipped CI job replaces it with a single
+  workspace-wide dry run and records a counter-rationale.
+
+- **Stability tiers.** Every public type and trait must carry a tier of Stable, Unstable or
+  Experimental, with cross-crate dependency contracts documented (M7 Epic 4 §4.6). A three-value
+  enumeration over the whole public surface is contract-shaped.
+
+- **Documentation coverage threshold.** `#![warn(missing_docs)]` on all public crates, zero
+  `cargo doc --workspace --no-deps` warnings, and a per-crate coverage audit **exceeding 90%**
+  (M7 Epic 4 §4.4).
+
+- **Quality-gate command sets** appearing verbatim across nine of the eleven run-4 PRDs:
+  `cargo build --workspace`, `cargo test --workspace`, `cargo clippy --workspace -- -D warnings`,
+  `cargo fmt --all -- --check`, `cargo doc --workspace --no-deps`. M8 Epic 5 FR-19 is the only place
+  that relaxes one — `cargo doc` must exit 0 but *"warnings acceptable; must not fail"* — which is
+  a weaker bar than M7 Epic 4 §4.4.3's zero-warning requirement on the same command.
+
+- **Counting assertions that read as contracts.** 189 facade `.rs` files audited; 151 stay, 13 move,
+  25 delete; exactly 26 files removed leaving 163; `find src/ -name "*.rs" | wc -l` = **160** after
+  the Epic 4 rename; 286 Rust references and 57 markdown references to `use_cases`; 275+ consumers
+  of `crate::core::`; ~49 facade files importing via `crate::core::…`; five `lib.rs` `pub use`
+  exceptions with 13 and 17 consumers; 6 storage-shim consumers; 5 `crate::use_cases` occurrences
+  across 4 files; 13 files in `paladin-content/src/services/`; six `E0432` errors; 17 residual
+  `println!` occurrences across 6 files; 11 justified `#[allow(dead_code)]` markers; 551 licensed
+  packages; ~10,250 net LOC removed across 15 commits.
+
+- **Build-baseline measurement protocol.** Three runs and report the median, for clean workspace
+  build, five per-crate incremental builds, and cold- and warm-cache Docker builds; plus compressed
+  image size for both Dockerfiles and a ≤10% image-size regression target (M7 Epic 2 FR-07).
+
+- **Benchmark isolation rules.** Battalion benchmarks must use mock `PaladinPort` implementations;
+  LLM benchmarks must measure serialization only and exclude live HTTP and provider latency;
+  garrison benchmarks must run at exactly 100 / 1000 / 10000 entries; the critical-path set is
+  closed at four categories (M7 Epic 3 FR-11 to FR-16).
+
+If any of this should bind at SPEC precedence, the strongest carriers are
+`prd-extract-infrastructure-crates.md` §6.1 (the crate dependency-direction invariant),
+`rustsec-remediation-plan.md` (the exception list with its expiry), and
+`prd-paladin-web-single-framework-axum.md` §4 (the endpoint contracts). Re-tag those documents via
+`--manifest` and re-run ingest.

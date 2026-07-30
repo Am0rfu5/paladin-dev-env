@@ -1,0 +1,32 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-features.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Deferred Features — removed from the facade, recorded for future implementation",
+  "summary": "Records two features removed during Milestone 8 facade cleanup — CLI user-management commands and the TensorFlow ML adapter — with reintroduction guidance.",
+  "scope": [
+    "CLI user-management commands (paladin user)",
+    "src/application/cli/commands/user.rs",
+    "UserService / UserServiceTrait",
+    "TensorFlow ML inference adapter",
+    "src/infrastructure/adapters/input/tensorflow_adapter.rs",
+    "ml feature flag",
+    "paladin_ports::input::ml_port::MlPort",
+    "future paladin-ml crate",
+    "Milestone 8 facade cleanup"
+  ],
+  "cross_refs": [
+    "src/application/cli/commands/user.rs",
+    "src/application/cli/commands/mod.rs",
+    "src/bin/paladin-cli.rs",
+    "config/user_config.rs",
+    "src/application/cli/tests/",
+    "src/infrastructure/adapters/input/tensorflow_adapter.rs",
+    "src/infrastructure/adapters/input/mod.rs",
+    "Cargo.toml"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied. Deferred-work document. Item 1: CLI user commands (1,065 LOC) removed, never dispatched; backend UserService intact; reintroduce by adding User(UserCommands) arm + dispatch handler + tests, recovering module from git history. Item 2: TensorFlow adapter (636 LOC) removed with ml feature flag; was a stub placeholder; condition — reimplement in a dedicated paladin-ml leaf crate, target Milestone 9+, not back in the facade. Both recoverable verbatim from the Milestone 8 removal commit on branch chore/facade-cleanup-m8-finish. No owners named. Doc dated 2026-06-04."
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_8-Facade-Cleanup-Shim-Resolution/overview/Milestone-8_Facade-Cleanup-Shim-Resolution.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Milestone 8: Facade Cleanup and Shim Resolution",
+  "summary": "Milestone plan to audit every file in the facade crate src/, remove dead re-export shims, relocate modules, and rename use_cases to services.",
+  "scope": ["facade crate (src/)", "re-export shims", "src/application/ports", "src/application/notifications", "src/application/use_cases → services", "paladin-notifications", "facade-audit.md"],
+  "cross_refs": ["facade-audit.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Document has success criteria and Epic/Task structure (PRD-like signals) but manifest overrides."
+}

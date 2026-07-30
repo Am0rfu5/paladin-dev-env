@@ -1,0 +1,13 @@
+{
+  "source_path": "/workspace/.project/Milestone_7-Production-Hardening/Epic_1/cost-benefit-assessment.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "Cost-Benefit Assessment — Milestone 7 Epic 1 Crate Extractions",
+  "summary": "Cost-benefit matrix rating four candidate crate extractions on dependency weight, change frequency, selectivity, and complexity; all four receive Go decisions.",
+  "scope": ["paladin-storage", "paladin-notifications", "paladin-content", "paladin-web", "paladin facade crate", "paladin-ports", "workspace crate extraction", "feature flags", "ServiceRunner composition root"],
+  "cross_refs": ["PRD §4.1", "PRD §2 goal 5", "PRD §4.1.4", "src/application/storage/sql_store.rs", "src/infrastructure/repositories/", "src/infrastructure/adapters/notifications/", "src/application/use_cases/content/", "src/infrastructure/web/user_controller.rs"],
+  "locked": false,
+  "precedence": null,
+  "notes": "MANIFEST_TYPE=DOC applied as authoritative. Content is consistent with DOC: decision-rationale record with Go/Defer judgments and recommended ordering, but no ADR frontmatter/numbering, no user stories or acceptance criteria, no API/schema contracts."
+}
