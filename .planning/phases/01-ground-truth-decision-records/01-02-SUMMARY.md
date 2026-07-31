@@ -109,3 +109,11 @@ None - no external service configuration required.
 ---
 *Phase: 01-ground-truth-decision-records*
 *Completed: 2026-07-31*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/decisions/0001-battalion-config.md`
+- FOUND: `.planning/decisions/0002-battalion-result.md`
+- FOUND: `.planning/phases/01-ground-truth-decision-records/01-02-SUMMARY.md`
+- FOUND: commit `6c50118` (Task 1)
+- FOUND: commit `cae7455` (Task 2)
