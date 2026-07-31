@@ -168,7 +168,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Tracer: decision-record substrate end-to-end (`decisions/` + `ledgers/` + PROJECT.md precedence order) and the Herald trait ADR
+- [x] 01-01-PLAN.md — Tracer: decision-record substrate end-to-end (`decisions/` + `ledgers/` + PROJECT.md precedence order) and the Herald trait ADR
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
