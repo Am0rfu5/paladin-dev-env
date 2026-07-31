@@ -120,6 +120,15 @@ None - no external service configuration required.
 - Phase 14's WEB-03 planning must account for the sequencing note in ADR-0004 — it touches the same `ProviderCapabilities` struct as GAP-07's temperature-range addition.
 - No Rust source file was modified by this plan, consistent with the plan's success criteria.
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/decisions/0003-formation-min-paladins.md`
+- FOUND: `.planning/decisions/0004-temperature-validation.md`
+- FOUND: `.planning/phases/01-ground-truth-decision-records/01-03-SUMMARY.md`
+- FOUND: commit `43aec54` (ADR-0003)
+- FOUND: commit `fcb690b` (ADR-0004)
+- FOUND: commit `ec7ed62` (SUMMARY.md)
+
 ---
 *Phase: 01-ground-truth-decision-records*
 *Completed: 2026-07-31*
