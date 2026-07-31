@@ -188,7 +188,7 @@ agree. Nothing here re-implements shipped work.
       60.88% unit, 67.79% integration. *Resolves: REQ-test-coverage-target-v1 / -v2; extended to
       the run-2 positions by VERIFY-05.*
 
-- [ ] **RECON-08**: Whether Epic 10 Task 7.0 (Final Documentation Review) is outstanding is
+- [x] **RECON-08**: Whether Epic 10 Task 7.0 (Final Documentation Review) is outstanding is
       answered, and the 102-vs-103 subtask discrepancy between the task list and the validation
       report is explained in the ledger. *Derives: INGEST-CONFLICTS warning 7.*
 
@@ -3967,7 +3967,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | RECON-05 | Phase 1 | Complete |
 | RECON-06 | Phase 1 | Complete |
 | RECON-07 | Phase 1 | Pending |
-| RECON-08 | Phase 1 | Pending |
+| RECON-08 | Phase 1 | Complete |
 | GAP-01 | Phase 2 | Pending |
 | GAP-02 | Phase 2 | Pending |
 | GAP-03 | Phase 2 | Pending |
