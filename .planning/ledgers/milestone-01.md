@@ -38,11 +38,14 @@ task list is fully checked while three CLI-only dependencies remain unconditiona
 | Requirement | Ingested position | Shipped position | Verdict |
 |---|---|---|---|
 | `REQ-cli-interactive-mode` (Epic 9 non-goal NG-7) | "No REPL or interactive shell" — explicitly out of scope | An interactive REPL ships in the Armory CLI | shipped as **an interactive REPL**, not the declared non-goal of no REPL at all; **superseded by shipped code** |
+| `REQ-mcp-sse-transport` | `.project/Milestone_1-MVP/Epic_3/prd-arsenal-tool-system.md` FR-5 (lines 95-110) specifies `MCPSseAdapter` — "Uses Server-Sent Events (SSE) for receiving messages" | MCP ships on the official `rmcp` 2.1.0 SDK with a Streamable-HTTP transport: `pub struct MCPStreamableHttpAdapter` at `src/infrastructure/adapters/arsenal/mcp_streamable_http_adapter.rs:76`; exercised by the passing test `streamable_http_round_trip_with_correct_bearer_token_succeeds` in `tests/integration/mcp_streamable_http_test.rs:176` | shipped as **Streamable-HTTP**, not the specified SSE transport; supersedes `REQ-mcp-sse-transport` (`REQUIREMENTS.md:2408` already records this as `Code diverges`); **superseded by shipped code** |
+| `REQ-garrison-longterm-port`, `REQ-garrison-sqlite` | `.project/Milestone_1-MVP/Epic_2/prd-garrison-memory-system.md` specifies a `sqlite-vss` SQLite extension as Garrison's long-term/vector-search port | Semantic retrieval ships as **Sanctum** over **Qdrant** — `pub struct QdrantSanctumAdapter` at `crates/paladin-memory/src/sanctum/qdrant_adapter.rs:59` — plus an in-memory backend — `pub struct InMemorySanctum` at `crates/paladin-memory/src/sanctum/in_memory_adapter.rs:73`, exercised by the passing test `test_store_and_retrieve` in `tests/integration/in_memory_sanctum_tests.rs:38` (that file carries 0 `#[ignore]` attributes). The Qdrant-specific path is additionally covered by `test_store_and_retrieve` in `tests/integration/qdrant_sanctum_tests.rs:63`, but that test carries `#[ignore = "Requires Qdrant running on localhost:6334"]` at line 47 — **present, unproven** for the Qdrant-exerciser half specifically, not upgraded on the strength of the code existing. Missing coverage is supplied by run-2 requirements `REQ-sanctum-port`, `REQ-embedding-port`, `REQ-sanctum-domain-model` | shipped as **Sanctum**/**Qdrant**, not the specified `sqlite-vss` extension; supersedes `REQ-garrison-longterm-port` and `REQ-garrison-sqlite` (`REQUIREMENTS.md:2392,2394` already record these as `Code diverges`); **superseded by shipped code** |
 
-Plan 01-05 Task 1 resolves the RECON-08 Epic 10 Task 7.0 dispute below (this plan's other two known
-divergences — MCP Streamable-HTTP superseding the Milestone-1 PRD's specified SSE transport, and
-Qdrant/Sanctum superseding the specified `sqlite-vss` extension — plus the RECON-01
-ingest-bookkeeping corrections are added by Task 2, later in this same plan). The per-epic sections
+All three rows carry a `file:line` citation plus a named test, example, or command that exercises
+the shipped alternative, per the D-19 evidence bar, except where noted above (the Qdrant-specific
+exerciser is `present, unproven` rather than upgraded on the strength of the code existing).
+
+Plan 01-05 Task 1 resolved the RECON-08 Epic 10 Task 7.0 dispute below. The per-epic sections
 further below are left as headings for plans 01-06 and 01-07 to fill with `REQ-*` rows; this plan
 does not author any per-epic row.
 
@@ -143,6 +146,67 @@ added — it is an unreconciled number, consistent with the "Task 7.0" claim its
 rather than a real, differently-counted view of the same work. This ledger uses **103** — the task
 list's deterministic, independently-corroborated total — going forward.
 
+## Ingest bookkeeping corrections (RECON-01)
+
+### Battalion base module path
+
+`INGEST-CONFLICTS.md:130-134` ("Contradictory Battalion base module path") records that
+`.project/Milestone_1-MVP/Epic_4/epic4.md` names the Battalion base module `battalion/mod.rs`,
+matching Appendix B of the project plan, while `.project/Milestone_1-MVP/Paladin Project Completion
+Plan.md` names it `battalion/battalion.rs` in its own Epic 4 technical-design section —
+contradicting its own Appendix B.
+
+The code-observed answer, confirmed by listing the directory directly:
+
+```
+$ ls crates/paladin-core/src/platform/container/battalion/
+campaign.rs  chain_of_command.rs  conclave.rs  council.rs  formation.rs  grove.rs  mod.rs  phalanx.rs
+```
+
+`crates/paladin-core/src/platform/container/battalion/mod.rs` **exists**;
+`crates/paladin-core/src/platform/container/battalion/battalion.rs` **does not**. Two of the three
+references (`epic4.md` and both instances of Appendix B) were already right. **The Epic 4 technical
+design section of `Paladin Project Completion Plan.md` is the corrected document** — its
+`battalion/battalion.rs` reference is wrong and its own Appendix B already disagreed with it.
+
+### Requirement-count discrepancy
+
+Counting the `REQ-*` rows in `REQUIREMENTS.md`'s `## Milestone 1 as-shipped ledger` section
+deterministically — a grep over the text between that heading (`REQUIREMENTS.md:2361`) and the next
+`##` heading (`REQUIREMENTS.md:2542`, `## Milestone 2-3 as-shipped ledger`) — gives:
+
+```
+$ awk '/^## Milestone 1 as-shipped ledger/{flag=1; next} /^## /{if(flag){exit}} flag' REQUIREMENTS.md | grep -c '^| REQ-'
+112
+```
+
+Every other total this corpus reports for the same nominal set:
+
+- `REQUIREMENTS.md:31` (the file's own "How to read this file" summary table): "**Milestone 1 as-shipped ledger** | All 115 run-1 requirement IDs, with status. Not forward scope."
+- `.planning/intel/SYNTHESIS.md:72`: "Requirements extracted: 348 cumulative (run 1: **115**, run 2: 118, run 3: 115)."
+- A third, independent cross-check — counting the distinct `## REQ-*` headings in the run-1 section of `.planning/intel/requirements.md` (before the run-2 `MODE=merge` marker at line 1195) — also returns **115**.
+
+**112 enumerated ledger rows, 115 reported IDs. The difference is exactly three, and it is explained
+by how competing-variant pairs are recorded, not by any ID actually missing.** Three of the 115
+ingested run-1 IDs — `REQ-herald-trait-v2`, `REQ-temperature-range-v2`, `REQ-test-coverage-target-v2`
+— are each the "-v2" half of a competing-variant pair whose "-v1" half already occupies its own row
+in the as-shipped ledger:
+
+- `REQ-temperature-range-v1 / -v2` — `REQUIREMENTS.md:2469`
+- `REQ-herald-trait-v1 / -v2` — `REQUIREMENTS.md:2490`
+- `REQ-test-coverage-target-v1 / -v2` — `REQUIREMENTS.md:2537`
+
+Both IDs of each pair are genuinely present in the file — the "-v2" half is fully described in
+`## Competing variants (preserved unmerged)` (`REQUIREMENTS.md:1661,1677,1768`) — but the ledger
+folds each pair into a single `| REQ-X-v1 / -v2 | Variant (group N) |` row rather than giving the
+"-v2" ID a distinct grep-matchable row of its own. So a literal `grep -c '^| REQ-'` reads 112 while
+"all 115 IDs are accounted for" is also true; the two figures measure different things (distinct
+ledger rows vs. distinct requirement IDs), not competing counts of the same thing, and neither is
+wrong. **This ledger uses 112 for "number of ledger rows in the Milestone 1 as-shipped ledger" and
+115 for "number of distinct run-1 requirement IDs" going forward — the two labels are not
+interchangeable, and a future reference to "the Milestone 1 requirement count" must say which one
+it means.**
+
 ## Epic 1 — Paladin Domain Foundation
 
 *(Filled by a later plan in this phase.)*
@@ -181,4 +245,7 @@ list's deterministic, independently-corroborated total — going forward.
 
 ## Epic 10 — Validation and Documentation
 
-*(Filled by a later plan in this phase; carries RECON-08's Task 7.0 disputed-completion row.)*
+*(`REQ-*` rows filled by a later plan in this phase. The RECON-08 Task 7.0 dispute is already
+resolved in the `## Epic 10 Task 7.0 — dispute resolution (RECON-08)` section above — verdict:
+satisfied, the validation report is wrong — and the later plan uses that verdict rather than
+re-opening it.)*
