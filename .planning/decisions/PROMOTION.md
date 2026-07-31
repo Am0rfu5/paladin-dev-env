@@ -69,4 +69,72 @@ Exactly one live ADR answers each question at any time. When a later ADR superse
 
 ## Promotion procedure for existing ADR candidates
 
-*(Appended by Task 2 of this plan — see the section below.)*
+**Phase 1 promotes none of the eleven existing ADR candidates.** Each candidate stays with its
+owning phase, listed in the inventory below — Phase 1 builds the mechanism (this file, and the
+worked example at `.planning/decisions/0005-herald-trait.md`) but does not use it on any of the
+eleven itself.
+
+### Part A — the procedure
+
+An owning phase promotes one of its candidates into `.planning/decisions/` by:
+
+1. Taking the next free number from the **Numbering index** line above and decrementing nothing —
+   numbers are never reused, even if a candidate is later rejected instead of accepted.
+2. Authoring the candidate's substance into the standard heading set (`## Status` · `## Context` ·
+   `## Decision` · `## Considered Options` · `## Code Locations` · `## Code Conformance` ·
+   `## Downstream Consumers`), following `0005-herald-trait.md`'s shape.
+3. Setting `## Code Conformance` to `conforms` or `must change` per D-03 — naming the executing
+   requirement (e.g. a `GAP-*`, `ARCH-*`, or phase-specific ID) where the verdict is `must change`.
+4. Citing the source document's path in `## Code Locations` alongside the shipped-code citations,
+   so a reader can trace the promoted decision back to the corpus document it came from.
+5. Updating the `Next free ADR number` line in this file.
+6. Adding a row to `.planning/PROJECT.md`'s `## Key Decisions` table, linking to the new ADR file.
+
+**Why this is viable now, where it previously was not.** Before this phase, promoting a candidate
+required re-tagging its source document via `--manifest` and re-running the ingest classifier —
+and the ingest is closed (STATE.md: "there is no run 6"). That path no longer exists. It is not
+needed either: ADRs now live in `.planning/decisions/` as their own document class, independent of
+the ingest manifest, and top the precedence order (D-01, D-02). Promotion is now an ordinary write
+to a directory plus a table row — the same six steps any of Phase 1's six ADRs already followed.
+
+### Part B — the inventory
+
+One entry per candidate. Each carries the source document path, the ingest run that surfaced it,
+what it decides in one line, and an explicit **Owner phase**.
+
+1. **`Milestone_5/Epic_1/decisions/battalion-result-upward-dependency-decision.md`** (run 3) —
+   settles where `PaladinResult`, `StopReason`, `TokenUsage`, `RegistryError` and `HandoffError`
+   live (`paladin-core`); shipped code implements it, but a later PRD outranks it on paper.
+   **Owner phase: Phase 7.**
+2. **`Epic_17.5/epic17-5.md`** (run 2) — the CLI belongs in `src/application/cli` as an input
+   adapter, not infrastructure; already applied in code, also outranked by a PRD that says
+   otherwise. **Owner phase: Phase 7.**
+3. **`Milestone_7/Epic_4/rustsec-remediation-plan.md`** (run 4) — formal risk acceptance of two
+   RustSec advisories, owner Platform Security, **review/expiry target 2026-09-30 — the only dated
+   item in the entire 263-document corpus**. **Owner phase: Phase 9.**
+4. **`Milestone_7/Epic_1/cost-benefit-assessment.md`** (run 4) — go/defer scoring for four
+   candidate crate extractions, with a named approver and a Self-Approval block. **Owner phase:
+   Phase 10.**
+5. **`Milestone_7/Epic_4/license-compatibility-decision-checklist.md`** (run 4) — licensing policy
+   accepting MPL-2.0 with a 551-package inventory, approver `DF3NDR`. **Owner phase: Phase 10.**
+6. **`Milestone_8/facade-cleanup-RECONCILIATION-2026-06-04.md`** (run 4) — supersession notice that
+   corrected two prior documents and resolved six open decisions in execution. **Owner phase:
+   Phase 10.**
+7. **`Milestone_10/Epic_2/prd-dependency-security-license-compliance.md` FR-1 + §8** (run 5) — the
+   audit-suppression single-source invariant (exceptions live only in `audit.toml` and
+   `deny.toml`), currently violated by the tree. **Owner phase: Phase 12.**
+8. **`Milestone_12/Epic_1/prd-agent-registry-execution-api.md` §7 + OQ-2** (run 5) — the
+   `AgentProvisioner` placement, currently recorded as a default rather than a decision.
+   **Owner phase: Phase 13.**
+9. **`Milestone_9/Epic_4/prd-agent-orchestrator-bridge.md` §6.1** (run 5) — the bidirectional
+   content/agent bridge decision; the cleanest ADR-shaped section anywhere in the corpus (a
+   four-criterion comparison table with a `(CHOSEN)` column). No open forward requirement currently
+   points at it, so this owner assignment is Claude's Discretion rather than a CONTEXT.md-recorded
+   answer: grouped with candidate 8 under the same Milestone 9-12 close-out phase, since both are
+   run-5 Milestone 9/12 subjects. **Owner phase: Phase 13.**
+10. **`Milestone_9/Epic_5/prd-user-admin-system-completion.md` §6.1** (run 5) — the
+    opaque-bearer-token decision; the only decision in the corpus a later milestone contradicts in
+    prose while silently preserving in code. **Owner phase: Phase 14.**
+11. **`Deferred-QA-CICD-Completion/DEFERRED_COVERAGE.md`** (run 5) — the coverage deferral record,
+    with a named sign-off and an unreached "Next Review" trigger; weaker than the others, since its
+    two module paths are stale and its baselines predate Milestone 9. **Owner phase: Phase 15.**
