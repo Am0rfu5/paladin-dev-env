@@ -28,3 +28,15 @@ providers — were built in Milestone 1 Epic 6 and are shipped. Their coverage s
 phase that changes them (Phase 2's GAP-07 for the `ProviderCapabilities` temperature range recorded
 by ADR-0004, and Phase 14's WEB-03/WEB-04 for tool calling), not to a phase that only records what
 they already are.
+
+## Addendum — offline measurement path
+
+The `cargo install cargo-llvm-cov` step named above as this phase's one external-surface touch was
+**not used**. Plan 01-04 halted at that precondition — `cargo-llvm-cov` was absent and crates.io
+returned HTTP 403 from that sandbox — before this addendum existed. Plan 01-09 carried information
+01-04 did not have: the `llvm-tools` rustup component is already installed, so `rustc`'s own
+source-based coverage instrumentation (`RUSTFLAGS="-C instrument-coverage"`, `llvm-profdata merge`,
+`llvm-cov report`, resolved from `$(rustc --print sysroot)`) produces the same measurement fully
+offline, with no crate installed and no registry touched. The registry trust boundary this
+declaration's opening paragraph named is therefore eliminated: this phase's gap-closure set
+installs nothing. See `01-coverage-measurement.md` for the full command record.
