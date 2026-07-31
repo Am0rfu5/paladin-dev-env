@@ -86,8 +86,8 @@ QUAL-03); CI workflow changes (Phase 15, PIPE); the live-API harness skip-vs-fai
 
 ### The `present, unproven` line
 
-- **D-05: `REQ-battalion-cancellation` is recorded Phalanx-only; the other three patterns are
-  deferred.** `execute_with_cancellation` exists only on Phalanx (`phalanx_service.rs:151`, tested
+- **D-05: `REQ-battalion-cancellation` is recorded Phalanx-only; the other three are deferred.**
+  `execute_with_cancellation` exists only on Phalanx (`phalanx_service.rs:151`, tested
   at `:758`); Formation, Campaign and ChainOfCommand expose no cancellation entry point at all.
   Building it for three more patterns is feature work, not gap closure — it needs a cancellation
   contract across four execution services, including what a cancelled run returns mid-DAG in
@@ -190,8 +190,8 @@ QUAL-03); CI workflow changes (Phase 15, PIPE); the live-API harness skip-vs-fai
   additive, but every adapter must populate it and downstream consumers gain a field they may
   branch on.
 
-- **D-14: `supports_tool_calling` becomes `false` on all three adapters, with a correspondence
-  test.** *Verified during this discussion:* `LlmRequest` (`llm_port.rs:464`) has **no tools field**
+- **D-14: `supports_tool_calling` becomes `false` on all three adapters, with a correspondence test.**
+  *Verified during this discussion:* `LlmRequest` (`llm_port.rs:464`) has **no tools field**
   — its fields are `id`, `model`, `prompt`, `attachments`, `stream`, `metadata` — and neither the
   OpenAI nor the Anthropic adapter sends `tools` or parses `tool_calls` (grep returns zero matches
   in both). Yet `openai/adapter.rs:645` and `anthropic/adapter.rs:521` both report `true`, with
