@@ -137,3 +137,12 @@ None — no external service configuration required.
 ---
 *Phase: 01-ground-truth-decision-records*
 *Completed: 2026-07-31*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/ledgers/milestone-01.md`
+- FOUND: `.planning/phases/01-ground-truth-decision-records/01-06-SUMMARY.md`
+- FOUND: commit `d68a15b` (Task 1: Epic 1-3 ledger rows)
+- FOUND: commit `9f71c54` (Task 2: Epic 4-5 ledger rows)
+- FOUND: commit `f086c96` (fix: bare-legend-string correction)
+- FOUND: commit `860321f` (docs: this SUMMARY.md)
