@@ -177,7 +177,7 @@ agree. Nothing here re-implements shipped work.
       temperature bands (Factual 0.1-0.3 … Creative 0.7-1.0) and the Epic 14 DOC's 0.1-1.0 bound.
       *Resolves: REQ-temperature-range-v1 / -v2; interacts with REQ-dynamic-temperature.*
 
-- [ ] **RECON-06**: The `Herald` trait has one recorded method set (fallible vs infallible,
+- [x] **RECON-06**: The `Herald` trait has one recorded method set (fallible vs infallible,
       `format_paladin_stream` vs `format_stream_chunk` + `finalize_stream`, plus `name()`/
       `mime_type()`), as an ADR citing the shipped trait in
       `crates/paladin-core/src/platform/container/herald.rs`.
@@ -3965,7 +3965,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | RECON-03 | Phase 1 | Complete |
 | RECON-04 | Phase 1 | Complete |
 | RECON-05 | Phase 1 | Complete |
-| RECON-06 | Phase 1 | Pending |
+| RECON-06 | Phase 1 | Complete |
 | RECON-07 | Phase 1 | Pending |
 | RECON-08 | Phase 1 | Pending |
 | GAP-01 | Phase 2 | Pending |
