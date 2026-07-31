@@ -143,3 +143,14 @@ None - no external service configuration required.
 ---
 *Phase: 01-ground-truth-decision-records*
 *Completed: 2026-07-31*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/ledgers/milestone-01.md`
+- FOUND: `.planning/REQUIREMENTS.md`
+- FOUND: `.planning/WINDOWS.md`
+- FOUND: `.planning/phases/01-ground-truth-decision-records/01-11-SUMMARY.md`
+- FOUND: commit `4a8dee3`
+- FOUND: commit `2ec2f9d`
+- FOUND: commit `47b90ea`
+- FOUND: commit `27f448b`
