@@ -132,7 +132,7 @@ agree. Nothing here re-implements shipped work.
 
 ### Reconciliation (RECON)
 
-- [ ] **RECON-01**: A cited status ledger exists that classifies every outstanding Milestone-1
+- [x] **RECON-01**: A cited status ledger exists that classifies every outstanding Milestone-1
       task item as *already satisfied by v0.7.0 code* (with `file:line`), *genuinely outstanding*,
       or *deferred with reason* — replacing the 2026-01 task-list snapshot as the source of truth.
       Must also record the three places where shipped code diverges from an ingested requirement
@@ -3960,7 +3960,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RECON-01 | Phase 1 | Pending |
+| RECON-01 | Phase 1 | Complete |
 | RECON-02 | Phase 1 | Complete |
 | RECON-03 | Phase 1 | Complete |
 | RECON-04 | Phase 1 | Complete |
