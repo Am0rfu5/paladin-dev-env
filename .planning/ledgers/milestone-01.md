@@ -207,17 +207,63 @@ wrong. **This ledger uses 112 for "number of ledger rows in the Milestone 1 as-s
 interchangeable, and a future reference to "the Milestone 1 requirement count" must say which one
 it means.**
 
-## Epic 1 — Paladin Domain Foundation
+### Epic 1 — Paladin Domain Foundation
 
-*(Filled by a later plan in this phase.)*
+No open task items (182/182 complete per `intel/task-completion-state.md`) — every row below carries
+no nested block.
 
-## Epic 2 — Garrison Memory System
+| ID | Verdict | Evidence |
+|---|---|---|
+| REQ-paladin-entity | satisfied | `PaladinData` struct at `crates/paladin-core/src/platform/container/paladin.rs:142`, `Paladin` type alias at `paladin.rs:229`; exercised by `test_paladin_data_default` (`paladin.rs:350`) |
+| REQ-paladin-builder | satisfied | `PaladinBuilder` struct at `src/application/services/paladin/paladin_builder.rs:76`; exercised by `test_builder_validation_empty_prompt` (`paladin_builder.rs:1346`) |
+| REQ-paladin-config | satisfied | `PaladinConfig` struct at `crates/paladin-core/src/platform/container/paladin_config.rs:44`; exercised by `test_paladin_config_defaults` (`paladin_config.rs:173`) |
+| REQ-paladin-port | satisfied | `PaladinPort` trait (`execute`/`execute_stream`) at `crates/paladin-ports/src/output/paladin_port.rs:631,752`; exercised end-to-end through `IntegrationMockPaladinPort`'s trait impl (`tests/integration/commander_integration_tests.rs:78`) by `test_commander_executes_formation_end_to_end` (`commander_integration_tests.rs:150`) |
+| REQ-paladin-execution-service | satisfied | `PaladinExecutionService` struct at `src/application/services/paladin/paladin_execution_service.rs:105`, `execute()` at `:470`; exercised by `test_paladin_without_garrison_single_turn` (`tests/integration/paladin_garrison_integration_test.rs:143`), which constructs the service directly and asserts `execute()` succeeds |
+| REQ-paladin-error-handling | satisfied | `PaladinError` enum at `crates/paladin-core/src/platform/container/paladin_error.rs:19`; exercised by `test_is_retryable` (`paladin_error.rs:100`) and `test_garrison_error_conversion` (`:116`) |
+| REQ-paladin-observability | present, unproven | Code uses `log`/`env_logger` (`use log::{debug, error, info, warn};` at `paladin_execution_service.rs:69`) alongside the workspace's `tracing-subscriber` dependency (`Cargo.toml:120`) — the same divergence `REQUIREMENTS.md:2541` already recorded (PRD specified `tracing`, code uses `log`). Logging calls are real and present at the citation, but no named test asserts log output content, so the exerciser half of the bar is unmet |
+| REQ-paladin-testing-infra | satisfied | `MockLlmAdapter` at `crates/paladin-llm/src/mock.rs:73` (and the parallel `tests/helpers/mock_llm_adapter.rs:66`); exercised by `test_mock_returns_default_response` (`crates/paladin-llm/src/mock.rs:412`) and used throughout the integration suite (e.g. `paladin_garrison_integration_test.rs`) |
 
-*(Filled by a later plan in this phase.)*
+### Epic 2 — Garrison Memory System
 
-## Epic 3 — Arsenal Tool System
+4 open task items per `intel/task-completion-state.md`, all under
+`.project/Milestone_1-MVP/Epic_2/tasks-garrison-memory-system.md`.
 
-*(Filled by a later plan in this phase.)*
+| ID | Verdict | Evidence |
+|---|---|---|
+| REQ-garrison-entry | satisfied | `GarrisonEntry` struct at `crates/paladin-core/src/platform/container/garrison.rs:41`; exercised by `test_garrison_entry_creation` (`garrison.rs:422`) |
+| REQ-garrison-windowing | satisfied | `ConversationHistory` windowing logic in `garrison.rs`; exercised by `test_conversation_history_windowing_by_count` (`garrison.rs:490`) |
+| | | **Nested outstanding item:** `- [ ] 9.14 Write test: \`test_large_conversation_performance\` - benchmark with 1000 entries (future enhancement)` (`tasks-garrison-memory-system.md:222`) — **deferred with reason**. `REQUIREMENTS.md:2549` already records this exact test as "deferred → v2", and `STATE.md`'s Deferred Items table records it "Deferred — marked future enhancement" (Ingest run 1). No code change is expected here; the deferral is the task list's own words. |
+| REQ-garrison-port | satisfied | `GarrisonPort` trait at `crates/paladin-ports/src/output/garrison_port.rs:380`; exercised via `InMemoryGarrison`'s trait impl by `test_remember_and_recall` (`crates/paladin-memory/src/garrison/in_memory_garrison.rs:229`) |
+| REQ-garrison-longterm-port | superseded by shipped code | See the Divergences table above (`REQ-garrison-longterm-port`, `REQ-garrison-sqlite` row) — semantic retrieval ships as Sanctum/Qdrant, not a `sqlite-vss` extension of this port. Not re-decided here. |
+| REQ-garrison-in-memory | satisfied | `InMemoryGarrison` struct at `crates/paladin-memory/src/garrison/in_memory_garrison.rs:58`; exercised by `test_remember_and_recall` (`:229`) and `test_importance_based_eviction` (`:354`) |
+| REQ-garrison-sqlite | satisfied | The SQLite Garrison adapter itself shipped as specified: `SqliteGarrison` struct at `crates/paladin-memory/src/garrison/sqlite_garrison.rs:52`; exercised by `test_sqlite_remember_and_recall` (`sqlite_garrison.rs:521`) and `test_sqlite_persistence` (`:537`). Only the `sqlite-vss` **vector-search** extension diverged — that half is recorded in the Divergences table above (superseded by Sanctum/Qdrant), not repeated here as a contradiction. |
+| REQ-garrison-paladin-integration | satisfied | Exercised by `test_paladin_multi_turn_conversation` (`tests/integration/paladin_garrison_integration_test.rs:169`) and `test_paladin_without_garrison_single_turn` (`:143`) |
+| REQ-garrison-config | satisfied | `GarrisonSettings` struct at `crates/paladin-memory/src/config/garrison.rs:11`; exercised by `test_garrison_settings_validation_success` (`:100`) |
+| REQ-garrison-errors | satisfied | `GarrisonError` enum at `crates/paladin-core/src/platform/container/garrison_error.rs:8`; exercised by `test_storage_error_display` (`:51`) |
+| REQ-garrison-testing | present, unproven | The bulk of the Garrison testing infrastructure is real and passing (all rows above cite live tests; the task list's own annotation records "19 total: 12 paladin_garrison + 7 sqlite_garrison" integration tests). What remains unconfirmed is the closure claim itself — see the two nested items below, neither of which has a citable artifact in this tree. |
+| | | **Nested outstanding item:** `- [ ] 11.0 Final Validation and Cleanup` (`tasks-garrison-memory-system.md:246`) — **present, unproven** (parent). Four of its six children (11.1-11.4: `cargo fmt`, `cargo clippy`, `cargo test`, `cargo build --release`) are marked done; the two below remain open and are the reason the parent stays unchecked — this is not the "stale parent over complete subtasks" shape seen elsewhere in this corpus. |
+| | | **Nested outstanding item:** `- [ ] 11.5 Verify test coverage ≥ 80% using \`cargo llvm-cov\`` (`tasks-garrison-memory-system.md:251`) — **genuinely outstanding**. No coverage measurement for Garrison exists in this planning record as of this plan (`01-coverage-measurement.md`, produced by a sibling plan in this phase, does not exist yet). Forward owner: **QUAL-01**. |
+| | | **Nested outstanding item:** `- [ ] 11.6 Review all acceptance criteria from PRD - ensure all met` (`tasks-garrison-memory-system.md:252`) — **genuinely outstanding**. No PRD-acceptance review artifact exists for Epic 2. Forward owner: **GAP-06** (matches `REQUIREMENTS.md:2557`'s existing "Partial → GAP-06, QUAL-01" note). |
+
+### Epic 3 — Arsenal Tool System
+
+3 open task items per `intel/task-completion-state.md`, all under
+`.project/Milestone_1-MVP/Epic_3/tasks-arsenal-tool-system.md`.
+
+| ID | Verdict | Evidence |
+|---|---|---|
+| REQ-arsenal-domain-types | satisfied | `Armament`/`ArmamentCall`/`ArmamentResult` at `crates/paladin-core/src/platform/container/arsenal/core.rs:17,36,80`; exercised by `invoke_routes_to_the_registered_client_and_returns_real_output` (`src/application/services/arsenal/arsenal_execution_service.rs:303`) |
+| REQ-arsenal-port | satisfied | `ArsenalPort` trait at `crates/paladin-ports/src/output/arsenal_port.rs:470`; exercised via `MockArsenalAdapter`'s trait impl by `test_mock_arsenal_invoke_success` (`tests/helpers/mock_arsenal_adapter.rs:246`). This upgrades the 2026-01 "services untested → QUAL-02" note (`REQUIREMENTS.md:2564`): `arsenal_execution_service.rs` now carries a full passing test module (re-verified 2026-07-31). |
+| REQ-mcp-protocol | superseded by shipped code | `MCPClient` at `src/infrastructure/adapters/arsenal/mcp_protocol.rs:62` is, by its own doc comment (`mcp_protocol.rs:1,12-16`), "a thin facade over `rmcp::service::RunningService`" — the official `rmcp` 2.1.0 SDK performs the handshake, superseding the hand-rolled JSON-RPC client the Epic 3 PRD specified. Exercised by the passing test suite starting at `mcp_protocol.rs:370`. Same class of divergence as the `REQ-mcp-sse-transport` row already recorded in the Divergences table above, but this specific ID was not itself in that table — recorded here instead. |
+| REQ-mcp-stdio-transport | satisfied | `MCPStdioAdapter` at `src/infrastructure/adapters/arsenal/mcp_stdio_adapter.rs:34`, built on `rmcp::transport::TokioChildProcess`; exercised by `test_stdio_connect` (`tests/integration/mcp_stdio_test.rs:23`) and `test_stdio_invoke_tool_calculator` (`:110`) |
+| REQ-mcp-sse-transport | superseded by shipped code | See the Divergences table above — shipped as Streamable-HTTP (`MCPStreamableHttpAdapter`), not SSE. Not re-decided here. |
+| REQ-arsenal-builder-integration | satisfied | `PaladinBuilder::with_arsenal_registry` at `src/application/services/paladin/paladin_builder.rs:685`; exercised by `test_builder_auto_registers_handoff_tool_when_configured` (`paladin_builder.rs:2098`) |
+| REQ-arsenal-resource-controls | satisfied | `TimeoutWrapper`/`ConcurrencyLimiter` at `src/infrastructure/adapters/arsenal/resource_controls.rs:53,160`; exercised by `test_concurrency_limit_enforced` (`resource_controls.rs:280`) |
+| REQ-arsenal-resilience | satisfied | `ArsenalError::ToolNotFound` failure path exercised by `invoke_with_no_serving_client_returns_tool_not_found` (`arsenal_execution_service.rs:341`); `grep -c '#\[ignore' src/infrastructure/adapters/arsenal/*.rs src/application/services/arsenal/*.rs` returns 0. This upgrades the 2026-01 "Partial → QUAL-04 (failure paths untested)" note (`REQUIREMENTS.md:2570`) — the failure paths are tested and none is `#[ignore]`d, re-verified 2026-07-31. |
+| REQ-arsenal-context-injection | satisfied | Exercised by `test_tool_invocation_and_injection` (`tests/integration/context_injection_test.rs:324`) and `test_paladin_continues_after_tool_failure` (`:399`) |
+| | | **Nested outstanding item:** `- [ ] 9.30 Commit all changes with message: "feat: implement Arsenal Tool System (Epic 3)"` (`tasks-arsenal-tool-system.md:302`) — **superseded by shipped code**. A git-workflow step, not a functional requirement; no requirement-bearing row above is a closer semantic match, so it is recorded here against the epic's last row. The literal commit message this text describes has no discoverable trace as its own commit, but the deliverable it describes — the Arsenal Tool System — is fully present and compiles in the current `release/v0.7.0` tree (every citation above resolves against it), which is what "shipped" means for a housekeeping step whose only purpose was landing the code. |
+| | | **Nested outstanding item:** `- [ ] 9.31 Push feature branch: \`git push -u origin feature/epic3-arsenal-tool-system\`` (`tasks-arsenal-tool-system.md:303`) — **superseded by shipped code**. Same reasoning as 9.30 above: the named feature branch has no discoverable trace, but the code it would have carried already ships on `release/v0.7.0`. |
+| | | **Nested outstanding item:** `- [ ] 9.31 Push feature branch: \`git push -u origin feature/epic3-arsenal-tool-system\`` (`tasks-arsenal-tool-system.md:304` — the source file literally duplicates line 303 verbatim at this line, a defect in the source document itself, not a second distinct task) — **superseded by shipped code**, same reasoning. |
 
 ## Epic 4 — Battalion Orchestration
 
