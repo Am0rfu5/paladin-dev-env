@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v0.7.0
 milestone_name: milestone
 current_phase: 01
-current_phase_name: ground-truth-decision-records
+current_phase_name: Ground Truth & Decision Records
 status: executing
-stopped_at: Phase 1 planned — 8 plans in 5 waves
-last_updated: "2026-07-31T14:27:34.345Z"
-last_activity: 2026-07-30
+stopped_at: Completed 01-09-PLAN.md
+last_updated: "2026-07-31T15:36:08.214Z"
+last_activity: 2026-07-31
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 12
-  completed_plans: 0
+  completed_plans: 9
 ---
 
 # Project State
@@ -25,15 +25,15 @@ See: .planning/PROJECT.md (updated 2026-07-30)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 01 — ground-truth-decision-records
+**Current focus:** Phase 01 — Ground Truth & Decision Records
 
 ## Current Position
 
-Phase: 01 (ground-truth-decision-records) — EXECUTING
-Plan: 1 of 8
+Phase: 01 (Ground Truth & Decision Records) — EXECUTING
+Plan: 2 of 12
 Status: Ready to execute
 Requirements coverage 8/8 RECON IDs; decision coverage 21/21 CONTEXT.md decisions.
-Last activity: 2026-07-30 — Phase 01 execution started
+Last activity: 2026-07-31 — Phase 01 execution started
 
 Prior activity: 2026-07-30 — **ingest run 5 of 5 merged. THE INGEST IS COMPLETE.**
 (`.project/Milestone_9-Classic-Orchestrator-Completion` +
@@ -85,7 +85,7 @@ not be made by default**: FACADE-02's D2 (Phase 11) splits `user_service.rs` and
 (Phase 15) tests it — doing them independently means doing the work twice. See the Execution Order
 notes in `ROADMAP.md`.
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -107,6 +107,12 @@ Progress: [░░░░░░░░░░] 0%
 
 - Last 5 plans: —
 - Trend: —
+
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 01 P09 | ~27min + human review cycle | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -280,6 +286,9 @@ Entering them here would fabricate authority the corpus does not contain.
 
 4. Open checkbox counts are not a backlog. Only the six blocks listed under "Not yet verified" in
    `intel/code-verification.md` may be recorded as unverified candidates, explicitly labelled.
+
+- [Phase ?]: Confirmed workspace coverage measurement of record: 84.79% line coverage (61,404 lines, 9,340 missed), human-approved 2026-07-31T15:30:27Z; RECON-07 resolved
+- [Phase ?]: Recorded two accepted observations as context for ADR-0006 and VERIFY-05: 84.79% is ~24pts above stale Milestone-1 baselines (delta noted, not explained); function coverage 77.34% is ~7pts below line coverage 84.79%
 
 ### Pending Todos
 
@@ -680,9 +689,9 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Phase 1 context gathered
+**Stopped at:** Completed 01-09-PLAN.md
 
-Last session: 2026-07-30T22:35:24.881Z
+Last session: 2026-07-31T15:36:08.178Z
 
 **Stopped at: ingest run 5 of 5 merged into PROJECT.md, REQUIREMENTS.md, ROADMAP.md and STATE.md.
 THE INGEST IS COMPLETE.**
@@ -715,7 +724,7 @@ What run 5 produced:
   was rewritten so the file reads as one roadmap rather than five appended fragments. All 16
   `### Phase N:` headers verified present and matching the 16 summary checklist entries.
 
-Resume file: .planning/phases/01-ground-truth-decision-records/01-CONTEXT.md
+Resume file: None
 
 **Next ingest run: none. There is no run 6.** All 263 documents in `.project/` are covered — 199
 classified plus 64 task lists measured deterministically. Every shipped subsystem in the workspace

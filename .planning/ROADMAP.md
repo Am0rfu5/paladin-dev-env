@@ -191,8 +191,8 @@ Plans:
 
 **Wave 6** *(gap closure — from `01-VERIFICATION.md`; blocked on Wave 5 completion)*
 
-- [ ] 01-09-PLAN.md — Tracer: prove the offline coverage pipeline end-to-end, then measure the workspace and record the raw evidence
-- [ ] 01-11-PLAN.md — Add the missing `REQ-battalion-result-v1` ledger row, complete the REQUIREMENTS.md pointer reduction, and close Broken Windows item 1
+- [x] 01-09-PLAN.md — Tracer: prove the offline coverage pipeline end-to-end, then measure the workspace and record the raw evidence
+- [x] 01-11-PLAN.md — Add the missing `REQ-battalion-result-v1` ledger row, complete the REQUIREMENTS.md pointer reduction, and close Broken Windows item 1
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
