@@ -565,3 +565,45 @@ above, not re-typed or rounded.
 
 No `.profraw`, `.profdata`, `.lcov`, or coverage HTML artifact was staged into git for this
 measurement (`target/` remains gitignored throughout).
+
+## Human confirmation (Task 3 checkpoint)
+
+**Approved by:** am0rfu5@protonmail.com (project user), via the plan's `checkpoint:human-verify`,
+`gate="blocking-human"` resume signal.
+**Approved on:** 2026-07-31T15:30:27Z (UTC).
+**Resume signal given:** `approved`.
+
+**What was confirmed:** the measured figure of **84.79%** workspace line coverage (61,404 lines
+counted, 9,340 missed), together with the recorded scope stated above — workspace default-feature
+test targets; `examples/`, `benches/`, `crates/doc-examples/`, cargo registry and rustlib stdlib
+sources excluded via `--ignore-filename-regex`; doctests excluded; the Docker-backed
+`--features integration-tests` CI scope not reproduced because Docker is absent from this
+environment.
+
+Before presenting the checkpoint, the orchestrator additionally verified and recorded:
+
+- The TOTAL row arithmetic is exact: `(61404 - 9340) / 61404 = 84.79%`, matching the pasted stdout
+  character-for-character.
+- Measurement commit `9be788c` touches only `01-coverage-measurement.md` (1 file, 162 insertions),
+  so the Rust source tree measured is byte-identical to base commit `d2714b7` — the figure is valid
+  for that base.
+- `paladin-ai-core` is the legitimate package name of the `crates/paladin-core` crate
+  (`paladin-core = { package = "paladin-ai-core", ... }` in the workspace `Cargo.toml`), not a
+  misnamed target — corroborating the Task 1 deviation recorded in `01-09-SUMMARY.md`.
+
+**Accepted context for ADR-0006 and VERIFY-05 (observations, not a reason to re-measure — the
+figure above is confirmed, not re-derived):**
+
+1. **84.79% is ~24 points above the stale Milestone-1 baselines** (60.88% unit / 67.79%
+   integration). Those baselines predate the workspace migration and may have counted paths this
+   run excludes. The delta is noted and accepted here, not explained — ADR-0006 may need to state
+   explicitly that it does not reconcile against the Milestone-1 figures.
+2. **Function coverage is 77.34%, about seven points below line coverage** (regions 87.33%), per
+   the same TOTAL row (`7546 1710 77.34%` functions; `61404 9340 84.79%` lines; `93834 11888
+   87.33%` regions). A coverage gate expressed only in lines does not see that gap — flagged as
+   context for VERIFY-05 and for ADR-0006's floor/target discussion, which this record does not
+   itself set.
+
+This confirmation closes Task 3. The 84.79% figure, the pasted `llvm-cov report` stdout above, and
+the scope statement are unchanged by this section — nothing above alters the measurement of record;
+it only records that a human independently reviewed and approved it.
