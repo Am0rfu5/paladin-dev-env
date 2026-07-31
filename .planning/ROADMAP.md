@@ -183,7 +183,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-07-PLAN.md — Ledger rows for Epics 6-10 plus the outstanding-item reconciliation
+- [x] 01-07-PLAN.md — Ledger rows for Epics 6-10 plus the outstanding-item reconciliation
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
