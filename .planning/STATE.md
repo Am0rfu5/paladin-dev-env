@@ -5,12 +5,12 @@ milestone_name: milestone
 current_phase: 2
 current_phase_name: Functional Gap Closure
 status: planning
-stopped_at: Completed 01-12-PLAN.md
-last_updated: "2026-07-31T16:48:33.577Z"
+stopped_at: Phase 2 context gathered
+last_updated: "2026-07-31T19:27:35.332Z"
 last_activity: 2026-07-31
 last_activity_desc: Phase 01 complete, transitioned to Phase 2
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 0
   total_plans: 12
   completed_plans: 11
@@ -693,9 +693,9 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Completed 01-12-PLAN.md
+**Stopped at:** Phase 2 context gathered
 
-Last session: 2026-07-31T16:41:59.317Z
+Last session: 2026-07-31T19:27:35.303Z
 
 **Stopped at: ingest run 5 of 5 merged into PROJECT.md, REQUIREMENTS.md, ROADMAP.md and STATE.md.
 THE INGEST IS COMPLETE.**
@@ -728,7 +728,7 @@ What run 5 produced:
   was rewritten so the file reads as one roadmap rather than five appended fragments. All 16
   `### Phase N:` headers verified present and matching the 16 summary checklist entries.
 
-Resume file: None
+Resume file: .planning/phases/02-functional-gap-closure/02-CONTEXT.md
 
 **Next ingest run: none. There is no run 6.** All 263 documents in `.project/` are covered — 199
 classified plus 64 task lists measured deterministically. Every shipped subsystem in the workspace
