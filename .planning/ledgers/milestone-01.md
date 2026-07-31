@@ -277,6 +277,7 @@ and [`ADR-0003`](../decisions/0003-formation-min-paladins.md) respectively rathe
 |---|---|---|
 | REQ-battalion-config-v1 | satisfied | See [ADR-0001](../decisions/0001-battalion-config.md). `BattalionConfig` struct at `crates/paladin-core/src/platform/container/battalion/mod.rs:37` is this exact field set (ADR-0001's Considered Options: "chosen"); exercised by `test_battalion_config_builder` (`battalion/mod.rs:886`). ADR-0001's "must change" conformance note applies only to the unrelated placeholder struct at `citadel.rs:280` (renamed to `BattalionCheckpointConfig` by GAP-07) — this row's struct is unaffected and already conforms. |
 | REQ-battalion-config-v2 | superseded by shipped code | See [ADR-0001](../decisions/0001-battalion-config.md), which records this variant "rejected; not what shipped" — its `retry_attempts: u32` and `enable_checkpointing: bool` fields are absent from the tree, and the `description` field it proposed dropping was in fact kept. Not re-decided here. |
+| REQ-battalion-result-v1 | superseded by shipped code | See [ADR-0002](../decisions/0002-battalion-result.md). The shipped `BattalionResult` (`battalion/mod.rs:549`) is a merged superset in which every field this Epic 4 position specified — `battalion_id`, `battalion_name`, timestamps, `final_output`, `paladin_results`, `status`, and per-Paladin and overall timing — is present, so this position contributed no field the shipped struct dropped and there is no substitution to record; ADR-0002's phrasing for that is "wholly subsumed". Not re-decided per-epic. |
 | REQ-battalion-error-strategy | satisfied | `AggregatedError` at `crates/paladin-battalion/src/error_aggregation.rs:13`; exercised by `test_add_error` (`error_aggregation.rs:186`) |
 | REQ-battalion-retry-policy | satisfied | `RetryPolicy` struct at `battalion/mod.rs:189`, `calculate_retry_delay` at `crates/paladin-battalion/src/retry.rs:40`; exercised by `test_calculate_retry_delay_linear` (`retry.rs:115`) |
 | REQ-formation-min-paladins-v1 | satisfied | See [ADR-0003](../decisions/0003-formation-min-paladins.md). `Formation::validate` at `crates/paladin-core/src/platform/container/battalion/formation.rs:109-111` currently rejects fewer than 2 Paladins, exactly this row's specification; exercised by `test_formation_validation_minimum_paladins` (`formation.rs:173`). ADR-0003 decides this bound **will relax to 1** — Formation's own rejection contradicts the Commander's passing `test_auto_selects_formation_for_single_paladin` (`crates/paladin-battalion/src/commander.rs:1912`), which routes a single Paladin to Formation. Per ADR-0003's "must change" conformance, this row records the code as it stands today; the change is owned by **GAP-07**, not asserted here as already done. |
@@ -507,9 +508,9 @@ verdict words that appear inside evidence prose):
 | `satisfied` | 100 |
 | `present, unproven` | 23 |
 | `genuinely outstanding` | 11 |
-| `superseded by shipped code` | 19 |
+| `superseded by shipped code` | 20 |
 | `deferred with reason` | 1 |
-| **Total (112 `REQ-*` rows + 39 nested items + 3 Divergences rows)** | **154** |
+| **Total (113 `REQ-*` rows + 39 nested items + 3 Divergences rows)** | **155** |
 
 The `present, unproven` bucket — 23 items, the largest non-`satisfied` class — is exactly the size
 D-19's evidence bar was designed to surface: each of those 23 has a real `file:line` citation but no
