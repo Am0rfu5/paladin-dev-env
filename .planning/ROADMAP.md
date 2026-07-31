@@ -187,7 +187,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 01-08-PLAN.md — Source corrections: PROJECT.md Key Decisions, REQUIREMENTS.md pointer, ROADMAP Phase 3 criterion
+- [x] 01-08-PLAN.md — Source corrections: PROJECT.md Key Decisions, REQUIREMENTS.md pointer, ROADMAP Phase 3 criterion
 
 **Cross-cutting constraints:**
 
