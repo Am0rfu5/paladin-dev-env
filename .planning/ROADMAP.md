@@ -220,7 +220,18 @@ Plans:
   4. Commander execution returns a normalized result carrying strategy used, per-Paladin timings, success/failure counts and preserved errors, and writes telemetry metadata to `metadata_output_dir` when one is configured.
   5. The shipped types match the Phase 1 ADRs: one `BattalionConfig` (the duplicate in `citadel.rs` resolved), one `BattalionResult`, and a single-Paladin Commander in Auto mode that executes instead of failing Formation validation.
 
-**Plans**: TBD
+**Plans**: 9 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Measured `cargo test --workspace` baseline with full provenance, plus one executable re-proof each for GAP-01, GAP-02, GAP-04 and GAP-05 (D-01)
+- [ ] 02-02-PLAN.md — GAP-07 ports tracer: `temperature_range` on `ProviderCapabilities`, provider-aware temperature validation, and WEB-03's honest tool-calling flag (D-13/D-14/D-15/D-16)
+- [ ] 02-03-PLAN.md — GAP-07 domain edits: `Formation::validate` relaxed to one Paladin (ADR-0003) and the `citadel.rs` checkpoint-config rename (ADR-0001)
+- [ ] 02-04-PLAN.md — GAP-03 producer and renderers: Formation per-Paladin aggregation, plus JSON/Markdown/Table Herald battalion rendering (the Table Herald stub replaced)
+- [ ] 02-05-PLAN.md — GAP-03 proof: one Formation-driven end-to-end test through all three Heralds, including partial results (D-06, Epic 8 task 7.13)
+- [ ] 02-06-PLAN.md — Reactivate the never-compiled `tests/unit/llm/` module and write the provider-switching integration test (D-10/D-11, Epic 6 tasks 7.10-7.12)
+- [ ] 02-07-PLAN.md — Unblock the CLI test cluster with a helper shim and run the five suites (D-09, Epic 9 tasks 13.4-13.6)
+- [ ] 02-08-PLAN.md — GAP-06: the Epic 2 Garrison PRD-acceptance review, with task 11.5's coverage check dispositioned as superseded (D-04)
+- [ ] 02-09-PLAN.md — Close the record: D-12 test-wiring sweep, ADR-0007 cancellation deferral (D-05/D-08), in-place ledger amendments (D-02) and the ROADMAP criterion corrections
 
 ### Phase 3: Verification Depth
 
