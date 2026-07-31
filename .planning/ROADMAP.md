@@ -179,7 +179,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-06-PLAN.md — Ledger rows for Epics 1-5 with nested outstanding task items
+- [x] 01-06-PLAN.md — Ledger rows for Epics 1-5 with nested outstanding task items
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
