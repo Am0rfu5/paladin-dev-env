@@ -163,7 +163,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. The coverage question has one number and one scope, so Phase 3 can objectively pass or fail against it instead of choosing between 80% and 85%.
   5. The Epic 10 Task 7.0 dispute is answered — either the Final Documentation Review is outstanding work with an owner, or the validation report is recorded as wrong — and the 102-vs-103 subtask discrepancy is explained.
 
-**Plans**: 8 plans
+**Plans**: 12 plans
 
 Plans:
 **Wave 1**
@@ -174,7 +174,7 @@ Plans:
 
 - [x] 01-02-PLAN.md — ADR-0001 `BattalionConfig` and ADR-0002 `BattalionResult`
 - [x] 01-03-PLAN.md — ADR-0003 Formation minimum Paladin count and ADR-0004 temperature validation
-- [ ] 01-04-PLAN.md — Measure workspace coverage and record ADR-0006, the coverage gate
+- [ ] 01-04-PLAN.md — Measure workspace coverage and record ADR-0006, the coverage gate *(halted at its own precondition: `cargo-llvm-cov` not installable, crates.io HTTP 403, no Docker — superseded by gap-closure plans 01-09 and 01-10, which use an offline measurement path)*
 - [x] 01-05-PLAN.md — Ledger divergences, the Epic 10 Task 7.0 verdict, and the ingest-bookkeeping corrections
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -187,7 +187,20 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [x] 01-08-PLAN.md — Source corrections: PROJECT.md Key Decisions, REQUIREMENTS.md pointer, ROADMAP Phase 3 criterion
+- [x] 01-08-PLAN.md — Source corrections: PROJECT.md Key Decisions, REQUIREMENTS.md pointer, ROADMAP Phase 3 criterion *(partial — Tasks 2 and 3 correctly withheld pending a complete ledger and ADR-0006)*
+
+**Wave 6** *(gap closure — from `01-VERIFICATION.md`; blocked on Wave 5 completion)*
+
+- [ ] 01-09-PLAN.md — Tracer: prove the offline coverage pipeline end-to-end, then measure the workspace and record the raw evidence
+- [ ] 01-11-PLAN.md — Add the missing `REQ-battalion-result-v1` ledger row, complete the REQUIREMENTS.md pointer reduction, and close Broken Windows item 1
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 01-10-PLAN.md — Lock the recorded coverage scope, then author ADR-0006: one number, one scope, one floor, one target, one ratchet
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 01-12-PLAN.md — Fill PROJECT.md's ADR-0006 row, amend ROADMAP Phase 3's coverage criterion, and record RECON-07 as satisfied
 
 **Cross-cutting constraints:**
 
