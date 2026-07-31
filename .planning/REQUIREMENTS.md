@@ -183,7 +183,7 @@ agree. Nothing here re-implements shipped work.
       `crates/paladin-core/src/platform/container/herald.rs`.
       *Resolves: REQ-herald-trait-v1 / -v2; must account for REQ-herald-type-consolidation (run 2).*
 
-- [ ] **RECON-07**: One authoritative coverage gate is recorded — a single number and a single
+- [x] **RECON-07**: One authoritative coverage gate is recorded — a single number and a single
       scope — so that a later phase can objectively pass or fail against it. Measured baselines:
       60.88% unit, 67.79% integration. *Resolves: REQ-test-coverage-target-v1 / -v2; extended to
       the run-2 positions by VERIFY-05.*
@@ -3798,7 +3798,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | RECON-04 | Phase 1 | Complete |
 | RECON-05 | Phase 1 | Complete |
 | RECON-06 | Phase 1 | Complete |
-| RECON-07 | Phase 1 | Pending |
+| RECON-07 | Phase 1 | Complete |
 | RECON-08 | Phase 1 | Complete |
 | GAP-01 | Phase 2 | Pending |
 | GAP-02 | Phase 2 | Pending |
