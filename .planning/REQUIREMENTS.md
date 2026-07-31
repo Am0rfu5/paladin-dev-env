@@ -166,13 +166,13 @@ agree. Nothing here re-implements shipped work.
       *Resolves: REQ-battalion-result-v1 / -v2 + REQ-herald-battalion-result-fields; must account
       for the later position in REQ-battalion-metadata-extension (run 2).*
 
-- [ ] **RECON-04**: The minimum Paladin count for Formation/Phalanx and the Commander's
+- [x] **RECON-04**: The minimum Paladin count for Formation/Phalanx and the Commander's
       single-Paladin Auto routing rule have one consistent answer, recorded as an ADR. Shipped code
       currently contains the contradiction live: `formation.rs:109` rejects fewer than 2 Paladins
       while the Auto rule routes a single Paladin to Formation.
       *Resolves: REQ-formation-min-paladins-v1 / -v2.*
 
-- [ ] **RECON-05**: Temperature validation has one recorded answer — provider-aware (range from
+- [x] **RECON-05**: Temperature validation has one recorded answer — provider-aware (range from
       `ProviderCapabilities`) or globally clamped — as an ADR. Must account for the run-2 dynamic
       temperature bands (Factual 0.1-0.3 … Creative 0.7-1.0) and the Epic 14 DOC's 0.1-1.0 bound.
       *Resolves: REQ-temperature-range-v1 / -v2; interacts with REQ-dynamic-temperature.*
@@ -3963,8 +3963,8 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | RECON-01 | Phase 1 | Pending |
 | RECON-02 | Phase 1 | Complete |
 | RECON-03 | Phase 1 | Complete |
-| RECON-04 | Phase 1 | Pending |
-| RECON-05 | Phase 1 | Pending |
+| RECON-04 | Phase 1 | Complete |
+| RECON-05 | Phase 1 | Complete |
 | RECON-06 | Phase 1 | Pending |
 | RECON-07 | Phase 1 | Pending |
 | RECON-08 | Phase 1 | Pending |
