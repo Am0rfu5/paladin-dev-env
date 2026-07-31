@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 01
 current_phase_name: Ground Truth & Decision Records
 status: executing
-stopped_at: Completed 01-10-PLAN.md
-last_updated: "2026-07-31T16:35:27.568Z"
+stopped_at: Completed 01-12-PLAN.md
+last_updated: "2026-07-31T16:41:59.360Z"
 last_activity: 2026-07-31
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -30,7 +30,7 @@ provider, transport, or storage implementation.
 ## Current Position
 
 Phase: 01 (Ground Truth & Decision Records) — EXECUTING
-Plan: 3 of 12
+Plan: 4 of 12
 Status: Ready to execute
 Requirements coverage 8/8 RECON IDs; decision coverage 21/21 CONTEXT.md decisions.
 Last activity: 2026-07-31 — Phase 01 execution started
@@ -85,7 +85,7 @@ not be made by default**: FACADE-02's D2 (Phase 11) splits `user_service.rs` and
 (Phase 15) tests it — doing them independently means doing the work twice. See the Execution Order
 notes in `ROADMAP.md`.
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -114,6 +114,7 @@ Progress: [████████░░] 83%
 |------|----------|-------|-------|
 | Phase 01 P09 | ~27min + human review cycle | 3 tasks | 2 files |
 | Phase 01 P10 | 20min | 2 tasks | 1 files |
+| Phase 01 P12 | 40min | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -291,6 +292,7 @@ Entering them here would fabricate authority the corpus does not contain.
 - [Phase ?]: Confirmed workspace coverage measurement of record: 84.79% line coverage (61,404 lines, 9,340 missed), human-approved 2026-07-31T15:30:27Z; RECON-07 resolved
 - [Phase ?]: Recorded two accepted observations as context for ADR-0006 and VERIFY-05: 84.79% is ~24pts above stale Milestone-1 baselines (delta noted, not explained); function coverage 77.34% is ~7pts below line coverage 84.79%
 - [Phase ?]: ADR-0006: coverage gate = 84% hard-fail floor (measured 84.79%, workspace default-feature scope, option-a); 80% target retired as superseded (deviation from D-09); Herald >=95%/autonomous >=90% preserved, handed to VERIFY-05
+- [Phase ?]: ADR-0006 wired into PROJECT.md/ROADMAP.md/REQUIREMENTS.md/ledger: 84% workspace coverage floor is the single binding number, 80% retired as superseded per D-09 deviation; RECON-07 satisfied gated on adr-parser.cjs
 
 ### Pending Todos
 
@@ -691,9 +693,9 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Completed 01-10-PLAN.md
+**Stopped at:** Completed 01-12-PLAN.md
 
-Last session: 2026-07-31T16:35:27.534Z
+Last session: 2026-07-31T16:41:59.317Z
 
 **Stopped at: ingest run 5 of 5 merged into PROJECT.md, REQUIREMENTS.md, ROADMAP.md and STATE.md.
 THE INGEST IS COMPLETE.**

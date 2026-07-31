@@ -200,7 +200,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 01-12-PLAN.md — Fill PROJECT.md's ADR-0006 row, amend ROADMAP Phase 3's coverage criterion, and record RECON-07 as satisfied
+- [x] 01-12-PLAN.md — Fill PROJECT.md's ADR-0006 row, amend ROADMAP Phase 3's coverage criterion, and record RECON-07 as satisfied
 
 **Cross-cutting constraints:**
 
