@@ -454,19 +454,16 @@ implicit "no Task 7.0" agrees with (the task list contains no Task 7.0 heading a
 
 2 open task items per `intel/task-completion-state.md` (parent tasks 2.0 and 6.0), both under
 `.project/Milestone_1-MVP/unit-test-improvements/tasks-improve-unit-test-coverage.md`. **Note on
-scope**: the plan `read_first` names [ADR-0006](../decisions/0006-coverage-gate.md) as the single
-recorded coverage number this workstream should measure against. That ADR **does not exist yet** —
-it is plan 01-04's output (RECON-07), and 01-04 is non-autonomous, blocked on `user_setup` requiring
-network access to crates.io for `cargo-llvm-cov` (confirmed: `cargo llvm-cov --version` fails with
-"no such command" in this sandbox; no `.planning/decisions/0006-coverage-gate.md` file exists in
-this tree). Per the D-19 discipline this section does not fabricate a link to a file that is not
-there — it carries the task file's own most-recent self-reported figure with an explicit caveat
-instead, and forward-owns the single-number reconciliation to RECON-07/plan 01-04 rather than
-resolving it here.
+scope**: [ADR-0006](../decisions/0006-coverage-gate.md) records the single workspace-wide coverage
+number this workstream should measure against — **84.79%** workspace line coverage, measured by
+plan **01-09**'s offline `rustc`/`llvm-profdata`/`llvm-cov` instrumentation path and recorded as an
+84% hard-fail floor by plan **01-10**. This workstream's own self-reported figures below remain
+workstream-local numbers produced by its own task file, not the RECON-07 figure the ADR now
+records.
 
 | ID | Verdict | Evidence |
 |---|---|---|
-| REQ-test-coverage-target-v1 / -v2 | genuinely outstanding | Variant (group 1) — the coverage-target dispute (80% / 85% / 75%-layered / 78%-hard / 70→74→78 ramp, per `STATE.md`'s "sixth position on the coverage gate" note) is exactly what **RECON-07** and its ADR-0006 output are scoped to resolve with one number. That ADR does not exist in this tree yet (see the workstream-level note above), so neither variant is picked here — recording a winner without the ADR would be exactly the "seventh unverified figure" `01-04-PLAN.md`'s own prohibitions forbid this ledger from repeating |
+| REQ-test-coverage-target-v1 / -v2 | genuinely outstanding | Variant (group 1) — the coverage-target dispute (80% / 85% / 75%-layered / 78%-hard / 70→74→78 ramp, per `STATE.md`'s "sixth position on the coverage gate" note) is exactly what **RECON-07** and [ADR-0006](../decisions/0006-coverage-gate.md) are scoped to resolve with one number. RECON-07 records the measured figure (84.79%, floored to an 84% gate); the ADR does not pick a winner among these competing *targets* — that choice is forward-owned by **QUAL-01** (Phase 3) and **VERIFY-05** (Phase 5), not resolved here |
 | REQ-unit-test-gap-closure | present, unproven | The task file's own "Current Progress" section (line 48) self-reports "70.56% regions / 68.29% lines" as of its own last update — a workstream-local figure, not independently re-measured in this session, and not the same thing as the single workspace-wide RECON-07 number. **Finding**: task 6.3's own claim, at line 131 ("Improved \[Provider Factory\] from 49.73% → 86.71%... Added 16 comprehensive unit tests covering `create_with_config()`"), does not match the current tree — `crates/paladin-llm/src/provider_factory.rs` has exactly 3 test functions today (`test_factory_creation`, `test_unknown_provider_returns_error`, `test_list_available_providers_returns_vec`, all at `provider_factory.rs:163,169,181`) and no `create_with_config()` method exists anywhere in that file. Either the workspace decomposition (Milestone 5) rewrote this file after the claim was recorded, or the claim was inflated at the time — this ledger does not speculate which, it records the mismatch. Forward owner: **QUAL-01, QUAL-02** |
 | | | **Nested outstanding item:** `- [ ] 2.0 Add unit tests for files with 0% coverage` (`tasks-improve-unit-test-coverage.md:91`) — **satisfied** (parent checkbox stale). All 7 of its subtasks (2.1-2.7) are individually checked with per-file coverage deltas recorded inline (e.g. "2.3 ... improved from 0% to ~89.77%") |
 | | | **Nested outstanding item:** `- [ ] 6.0 Improve Unit Test Coverage in gaps and verify coverage improvements` (`tasks-improve-unit-test-coverage.md:128`) — **present, unproven** (parent). Two of its six children (6.1, 6.2) are explicitly `[DEFERRED]` inline (User Service, Listener Service — matching `STATE.md`'s DEFER-01/DEFER-03 forward items), two more (6.4, 6.5) are also `[DEFERRED]` (MySQL/SQLite content repositories), and the deterministic checkbox counter does not count `[DEFERRED]` as open (it counts only literal `- [ ]`) — so this parent's open status comes entirely from its own un-ticked top-level box, not from any of its children. 6.3's own claim is contradicted by the tree (see `REQ-unit-test-gap-closure` finding above), and 6.6's "final coverage achieved 71.91%" is, again, a workstream-local self-report, not the RECON-07 figure |
