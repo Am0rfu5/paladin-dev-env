@@ -546,9 +546,9 @@ It has three consequences worth stating plainly:
    back out of `paladin-core` and reintroduce the exact upward dependency the decision removed
    (ARCH-03(c), variant group 19).
 3. **The project's real arbiter is the shipped tree, by necessity rather than by preference.**
-   Precedence here runs **shipped tree → `.planning/codebase/` map → `intel/code-verification.md`
-   → PRD → DOC → task-list checkbox**, and checkbox state sits last because five runs found it
-   wrong in both directions.
+   Precedence here runs **ADR → shipped tree → `.planning/codebase/` map →
+   `intel/code-verification.md` → PRD → DOC → task-list checkbox**, and checkbox state sits last
+   because five runs found it wrong in both directions.
 
 **Eleven ADR candidates have accumulated, and none is promoted.** Promoting any requires re-tagging
 its source via `--manifest` and re-running ingest — entering one in Key Decisions would fabricate
@@ -729,9 +729,13 @@ must live in a dedicated `paladin-ml` **leaf crate**, never the facade — the s
 non-goal that `paladin-herald` overrode.
 
 **The precedence order this project uses**, most authoritative first:
-**shipped tree → `.planning/codebase/` map → `intel/code-verification.md` → PRD → DOC →
+**ADR → shipped tree → `.planning/codebase/` map → `intel/code-verification.md` → PRD → DOC →
 task-list checkbox.** Three ingest runs have now found checkbox state wrong in both directions, so
-it sits last by evidence rather than by preference.
+it sits last by evidence rather than by preference. An ADR that contradicts shipped code is an
+instruction to change the code, not a description of it — that is why every ADR must carry a
+`Code conformance` field (`conforms` or `must change`, naming the executing requirement in the
+latter case): "authoritative" and "already true" are not the same claim, and the field is what
+keeps them from being confused (D-02, D-03; see `.planning/decisions/`).
 
 **Two coexisting vision surfaces, on purpose.** Epic 13's `VisionCapableLlm` lineage
 (`crates/paladin-ports/src/output/vision_llm_port.rs`, reached via
@@ -1019,18 +1023,25 @@ corpus:
 
 ## Key Decisions
 
-<!-- LOCKED DECISIONS (from ADR-typed documents). Empty by evidence, not by omission. -->
+<!-- LOCKED DECISIONS. See .planning/decisions/ for the full ADR text behind each row — this
+     table links to it rather than restating it. -->
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| *(none)* | **FINAL, ACROSS THE WHOLE CORPUS.** All five ingest runs surfaced **0 ADR-typed and 0 SPEC-typed documents across 263 files** (199 classified: 75 PRD, 124 DOC; plus 64 task lists). No source document carried an ADR status field with a manifest ADR type, and none carried `locked: true`. Nothing is recorded here speculatively. | — Pending |
+| [Herald trait signature](.planning/decisions/0005-herald-trait.md) (ADR-0005) | The shipped trait at `herald.rs:49` ships the v2 fallible form (`Result<String, HeraldError>` throughout except the deliberately infallible `format_error`), matching Epic 8 §6.2 and making FR-10's graceful-degradation requirement expressible. | conforms |
 
-**This emptiness is itself the corpus's most notable structural finding, and it is deliberate
-here.** Twelve milestones, eighteen months and 554 requirements produced **not one protected
-decision**. Every technical position in the entire history of this project — the workspace
-decomposition, the port ownership rules, the feature-flag contract, the auth mechanism, the
-advisory suppressions, the licence posture — sits at PRD or DOC precedence and is auto-overridable
-by the next document that mentions it. Three consequences, all observed rather than hypothesised:
+Phase 1's remaining five ADRs (`BattalionConfig`, `BattalionResult`, Formation minimum Paladin
+count, temperature validation, the coverage gate) are added by later plans in this phase. See
+`.planning/decisions/` for conventions, the numbering index and the full ADR text — this table
+links to each ADR rather than restating it.
+
+**Before this phase, this table was empty by evidence, not by omission — and that emptiness was
+itself the corpus's most notable structural finding.** Twelve milestones, eighteen months and 554
+requirements produced **not one protected decision** anywhere in the ingested corpus. Every
+technical position in the entire history of this project — the workspace decomposition, the port
+ownership rules, the feature-flag contract, the auth mechanism, the advisory suppressions, the
+licence posture — sat at PRD or DOC precedence and was auto-overridable by the next document that
+mentioned it. Three consequences, all observed rather than hypothesised:
 
 - **No LOCKED-vs-LOCKED contradiction was ever possible.** That is why 69 competing variants
   produced **0 blockers** across five runs: there was never a pair of protected positions that
@@ -1039,7 +1050,7 @@ by the next document that mentions it. Three consequences, all observed rather t
   outranking an Approved-status decision record, with a rule that would reintroduce the exact
   upward dependency that decision removed (ARCH-03(c), variant group 19).
 - **The shipped tree is the arbiter by necessity, not preference.** Precedence runs
-  **shipped tree → codebase map → `intel/code-verification.md` → PRD → DOC → checkbox**.
+  **ADR → shipped tree → codebase map → `intel/code-verification.md` → PRD → DOC → checkbox**.
 
 Everything asserted in the ingested PRDs and DOCs is **supersedable** — demonstrated, not
 theoretical: run 2 produced eight documented supersessions of run-1 requirements, run 3 produced
