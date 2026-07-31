@@ -196,7 +196,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 01-10-PLAN.md — Lock the recorded coverage scope, then author ADR-0006: one number, one scope, one floor, one target, one ratchet
+- [x] 01-10-PLAN.md — Lock the recorded coverage scope, then author ADR-0006: one number, one scope, one floor, one target, one ratchet
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
