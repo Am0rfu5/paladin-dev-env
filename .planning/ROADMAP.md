@@ -229,7 +229,7 @@ Plans:
 **Requirements**: QUAL-01, QUAL-02, QUAL-03, QUAL-04, QUAL-05
 **Success Criteria** (what must be TRUE):
 
-  1. `cargo llvm-cov` reports unit coverage at or above the gate recorded in Phase 1 (baseline 60.88%) and integration coverage at or above 70% (baseline 67.79%).
+  1. The workspace-wide line-coverage figure is at or above the hard-fail floor recorded in [ADR-0006](.planning/decisions/0006-coverage-gate.md) — one number, from one reproducible command, with feature set, path exclusions and the doctest decision fixed by that ADR rather than restated here. (Amended by Phase 1 under RECON-07 and D-08, replacing the prior unit/integration split and its stale baselines.)
   2. No first-party source file reports 0% coverage — the arsenal execution and registry services, the Redis and MinIO adapters, the user controller and repository, and `main.rs` all have exercising tests.
   3. Commander failure behaviour is proven by tests that actually run: retry counts increment, partial failures are collected and returned, and a timeout stops sibling agents — none of it behind `#[ignore]`.
   4. Each MCP tool-invocation failure mode has a passing test: expired or rejected token, malformed response, handshake timeout, unknown tool, and bad arguments.
