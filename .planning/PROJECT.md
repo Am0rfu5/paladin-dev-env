@@ -1028,12 +1028,17 @@ corpus:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| [BattalionConfig field set](.planning/decisions/0001-battalion-config.md) (ADR-0001) | `battalion/mod.rs:37` (`REQ-battalion-config-v1`, Epic 4 FR-4.1) is the authoritative field set, confirmed by direct grep; the `citadel.rs:280` struct is a self-described placeholder, not a competitor, and is renamed `BattalionCheckpointConfig` with its serde shape unchanged rather than merged or deleted. | must change (GAP-07 renames the `citadel.rs:280` placeholder) |
+| [BattalionResult field set](.planning/decisions/0002-battalion-result.md) (ADR-0002) | The shipped struct at `battalion/mod.rs:549` is a merged superset satisfying all three competing positions (Epic 4 FR-4.2, Epic 5 FR-5, Epic 8 FR-7) at once, per `intel/code-verification.md`'s explicit "do not plan a reconciliation task" — a recording task, not a reconciliation. | conforms |
+| [Formation minimum Paladin count](.planning/decisions/0003-formation-min-paladins.md) (ADR-0003) | Formation relaxes its minimum to one Paladin (an integer bound, 0 still rejected), resolving the live contradiction between `Formation::validate`'s ≥2 rejection and the Commander's passing `test_auto_selects_formation_for_single_paladin`; Majority aggregation's independent 3-Paladin minimum is untouched. | must change (GAP-07 relaxes `formation.rs:109`) |
+| [Temperature validation](.planning/decisions/0004-temperature-validation.md) (ADR-0004) | Validation becomes provider-aware via a new `temperature_range: Option<(f32, f32)>` on `ProviderCapabilities`, falling back to the existing global `[0.0, 1.0]` when a provider declares none — making DeepSeek's documented `0.0–2.0` range reachable through the normal Paladin path for the first time. | must change (GAP-07 adds the field and each adapter populates it) |
 | [Herald trait signature](.planning/decisions/0005-herald-trait.md) (ADR-0005) | The shipped trait at `herald.rs:49` ships the v2 fallible form (`Result<String, HeraldError>` throughout except the deliberately infallible `format_error`), matching Epic 8 §6.2 and making FR-10's graceful-degradation requirement expressible. | conforms |
+| ADR-0006 — Project-wide test coverage gate | **Pending.** Reserved for RECON-07 in `.planning/decisions/PROMOTION.md`'s numbering index. Plan 01-04, the coverage-measurement plan that would author this ADR, did not run: `cargo-llvm-cov` cannot be installed in this environment (crates.io returns HTTP 403), Docker is unavailable so the `--features integration-tests` scope cannot execute, and the repository's existing `lcov.info` predates the workspace migration. No measured coverage figure, floor, or command exists to record here. | not yet authored |
 
-Phase 1's remaining five ADRs (`BattalionConfig`, `BattalionResult`, Formation minimum Paladin
-count, temperature validation, the coverage gate) are added by later plans in this phase. See
-`.planning/decisions/` for conventions, the numbering index and the full ADR text — this table
-links to each ADR rather than restating it.
+Six competing-variant pairs are Phase 1's scope (`BattalionConfig`, `BattalionResult`, Formation
+minimum Paladin count, temperature validation, the Herald trait signature, and the coverage gate);
+five are recorded above. See `.planning/decisions/` for conventions, the numbering index and the
+full ADR text — this table links to each ADR rather than restating it.
 
 **Before this phase, this table was empty by evidence, not by omission — and that emptiness was
 itself the corpus's most notable structural finding.** Twelve milestones, eighteen months and 554
@@ -1125,6 +1130,11 @@ are the same subject from two different milestones:
 Promoting any of these requires re-tagging the source document via `--manifest` and re-running
 ingest. **Note that the ingest is closed** — promotion is therefore a deliberate, separate,
 user-owned action rather than something a subsequent run will do incidentally.
+
+**`.planning/decisions/PROMOTION.md` now carries the promotion procedure and an explicit owner
+phase for all eleven candidates above** — Phase 1 built the mechanism (this file's numbering
+scheme, required headings, and supersession rule, plus the worked example at
+`.planning/decisions/0005-herald-trait.md`) but promotes none of the eleven itself.
 
 ---
 *Last updated: 2026-07-30 after **ingest run 5 of 5 — FINAL. THE INGEST IS COMPLETE.**
