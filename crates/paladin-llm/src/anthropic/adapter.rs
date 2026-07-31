@@ -24,6 +24,16 @@ use paladin_ports::output::llm_port::{
     StreamingResponse, TokenUsage,
 };
 
+/// The exact phrase observed VERBATIM in Anthropic's HTTP 400
+/// `invalid_request_error` body when an account has reached its configured
+/// API usage limit (live run `4a3b749d`). Matched narrowly and deliberately:
+/// a too-broad match here would silently reclassify a genuine
+/// malformed-prompt bug as "wait for quota reset" — a swallow-errors
+/// anti-pattern with a friendly name (RESEARCH Pitfall #4 / threat
+/// T-41-01). Checked AFTER the pre-existing `max_tokens` branch in
+/// [`AnthropicAdapter::map_error`] so that branch is never shadowed.
+const ANTHROPIC_USAGE_CAP_SIGNATURE: &str = "You have reached your specified API usage limits";
+
 /// Configuration for Anthropic Claude LLM adapter.
 #[derive(Debug, Clone)]
 pub struct AnthropicConfig {
@@ -299,6 +309,11 @@ impl AnthropicAdapter {
                         "Invalid max_tokens value. Claude requires max_tokens to be set."
                             .to_string(),
                     )
+                } else if body.contains(ANTHROPIC_USAGE_CAP_SIGNATURE) {
+                    LlmError::UsageLimitExceeded {
+                        provider: "anthropic".to_string(),
+                        regain_hint: extract_regain_hint(body),
+                    }
                 } else {
                     LlmError::InvalidPrompt(format!("Bad request: {}", body))
                 }
@@ -339,11 +354,21 @@ impl AnthropicAdapter {
                     // each retry is a multi-minute frontier-model
                     // generation. Mirrors the do-not-retry rule already
                     // documented on `LlmError::EmptyCompletion` itself.
+                    //
+                    // `UsageLimitExceeded` is also deliberately non-retryable: a
+                    // usage cap will not clear on backoff — it resets on a
+                    // provider-side billing schedule, not a short window. A
+                    // per-provider breaker (D-06, a layer up, downstream of this
+                    // adapter) is what decides whether to attempt the call at
+                    // all; retrying here would burn retries before the breaker
+                    // ever sees the error, defeating its "does not burn
+                    // retries" guarantee.
                     if matches!(
                         e,
                         LlmError::AuthenticationError(_)
                             | LlmError::InvalidPrompt(_)
                             | LlmError::EmptyCompletion(_)
+                            | LlmError::UsageLimitExceeded { .. }
                     ) {
                         return Err(e);
                     }
@@ -598,6 +623,59 @@ struct ClaudeUsage {
 /// generation (a captured production `thinking` block alone ran past
 /// 10,000 characters) into a single log line.
 const RESPONSE_EXCERPT_CHAR_BUDGET: usize = 512;
+
+/// Character budget for [`extract_regain_hint`]'s extracted prose. This is
+/// the T-41-03 mitigation against an oversized/adversarial provider body
+/// flooding the operator's terminal.
+const REGAIN_HINT_CHAR_BUDGET: usize = 120;
+
+/// Best-effort extraction of "when access regains" prose from a usage-cap
+/// error body, for display to the operator.
+///
+/// Deliberately tiny and tolerant: finds the case-insensitive substring
+/// `"regain access"` in `body`; if absent, returns `None`. Otherwise takes
+/// the remainder of that sentence (up to the first `"`, `}`, or the end of
+/// the body, whichever comes first), collapses whitespace runs to single
+/// ASCII spaces, and bounds the result to [`REGAIN_HINT_CHAR_BUDGET`]
+/// CHARACTERS (never a byte slice — a multi-byte payload must not panic on
+/// a slice boundary; mirrors the `BatchFailure::error_excerpt` discipline
+/// at `crates/audit-agents/src/triage.rs:1010` in the downstream
+/// superproject). Returns `None` if the trimmed result is empty — a
+/// missing hint is never an error.
+///
+/// The returned string is best-effort prose displayed VERBATIM to the
+/// operator. It must NEVER be parsed into a `DateTime` the pipeline
+/// schedules against (D-06) — it is provider free text, not a structured
+/// timestamp contract.
+fn extract_regain_hint(body: &str) -> Option<String> {
+    let lower_body = body.to_lowercase();
+    let marker_byte_pos = lower_body.find("regain access")?;
+
+    // Lowercasing can change a character's UTF-8 byte length for some
+    // Unicode (rare, but possible). Rather than reuse a byte offset
+    // computed against the lowercased string to index the ORIGINAL body
+    // (which could land mid-character and panic on multi-byte input),
+    // convert to a CHARACTER count and re-locate that many characters into
+    // `body` — safe by construction, never a raw byte slice.
+    let chars_before_marker = lower_body[..marker_byte_pos].chars().count();
+    let remainder: String = body.chars().skip(chars_before_marker).collect();
+
+    // `find` with an ASCII-only pattern always returns a valid char
+    // boundary (ASCII bytes never appear inside a multi-byte UTF-8
+    // sequence), so slicing `remainder` at `end` is safe.
+    let end = remainder.find(['"', '}']).unwrap_or(remainder.len());
+    let sentence = &remainder[..end];
+
+    let collapsed = sentence.split_whitespace().collect::<Vec<_>>().join(" ");
+    let bounded: String = collapsed.chars().take(REGAIN_HINT_CHAR_BUDGET).collect();
+    let trimmed = bounded.trim();
+
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
+}
 
 /// Build a diagnostic excerpt of a response body, bounded by character
 /// count rather than byte count.
@@ -974,6 +1052,129 @@ stake, so an attacker donating to himself alone is a strict loss.";
             calls.load(Ordering::SeqCst),
             3,
             "a genuinely retryable error must still be retried up to max_retries"
+        );
+    }
+
+    // ── Task 41-01/2: usage-cap body classification (D-04/D-05) ───────────
+
+    #[test]
+    fn map_error_400_with_usage_cap_body_maps_to_usage_limit_exceeded() {
+        let adapter = test_adapter();
+        let body = r#"{"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified API usage limits. You will regain access on 2026-08-01 at 00:00 UTC."}}"#;
+
+        let error = adapter.map_error(400, body);
+
+        match error {
+            LlmError::UsageLimitExceeded {
+                provider,
+                regain_hint,
+            } => {
+                assert_eq!(provider, "anthropic");
+                let hint = regain_hint.expect("regain hint must be extracted from the body");
+                assert!(
+                    hint.contains("2026-08-01"),
+                    "regain hint must contain the date: {hint}"
+                );
+            }
+            other => panic!("expected UsageLimitExceeded, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn map_error_400_ordinary_bad_request_still_maps_to_invalid_prompt() {
+        // T-41-01 regression: an ordinary malformed-prompt 400 must never
+        // be reclassified as "wait for quota reset".
+        let adapter = test_adapter();
+        let error = adapter.map_error(400, "Bad request: missing required field 'messages'");
+
+        assert!(
+            matches!(error, LlmError::InvalidPrompt(_)),
+            "expected InvalidPrompt, got {error:?}"
+        );
+    }
+
+    #[test]
+    fn map_error_400_max_tokens_branch_is_not_shadowed_by_the_usage_cap_check() {
+        let adapter = test_adapter();
+        let error = adapter.map_error(400, "Invalid max_tokens value");
+
+        assert!(
+            matches!(error, LlmError::InvalidPrompt(_)),
+            "expected InvalidPrompt (max_tokens branch), got {error:?}"
+        );
+    }
+
+    #[test]
+    fn map_error_400_usage_cap_with_no_parseable_regain_prose_yields_none_hint() {
+        let adapter = test_adapter();
+        let error = adapter.map_error(400, "You have reached your specified API usage limits.");
+
+        match error {
+            LlmError::UsageLimitExceeded { regain_hint, .. } => {
+                assert!(
+                    regain_hint.is_none(),
+                    "a missing hint must never be an error: {regain_hint:?}"
+                );
+            }
+            other => panic!("expected UsageLimitExceeded, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn extract_regain_hint_returns_none_when_the_body_has_no_regain_prose() {
+        assert_eq!(
+            extract_regain_hint("You have reached your specified API usage limits."),
+            None
+        );
+    }
+
+    #[test]
+    fn extract_regain_hint_is_char_bounded_and_never_panics_on_multibyte_input() {
+        // Each 'あ' is 3 bytes in UTF-8; a naive byte-index slice built from
+        // a byte offset computed against a different string (e.g. the
+        // lowercased copy) could land mid-character and panic. Build an
+        // adversarially large body of multi-byte characters after the
+        // marker to exercise both the char-boundary safety and the
+        // REGAIN_HINT_CHAR_BUDGET bound.
+        let tail: String = std::iter::repeat_n('あ', 600).collect();
+        let body = format!("You will regain access {tail}\"}}");
+
+        let hint = extract_regain_hint(&body).expect("regain prose must be extracted");
+
+        assert!(
+            hint.chars().count() <= REGAIN_HINT_CHAR_BUDGET,
+            "hint must be bounded to {REGAIN_HINT_CHAR_BUDGET} characters, got {}",
+            hint.chars().count()
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn execute_with_retry_invokes_operation_exactly_once_on_usage_limit_exceeded() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<(), LlmError> = adapter
+            .execute_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        Err(LlmError::UsageLimitExceeded {
+                            provider: "anthropic".to_string(),
+                            regain_hint: None,
+                        })
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            1,
+            "a usage-cap error must not be retried — it will not clear on backoff"
         );
     }
 }

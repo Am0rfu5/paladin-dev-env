@@ -345,6 +345,65 @@ pub enum LlmError {
     #[error("Rate limit exceeded")]
     RateLimitExceeded,
 
+    /// The provider reports the account has reached its configured API usage
+    /// limit for the billing period — a hard quota/balance ceiling, not a
+    /// transient per-request throttle.
+    ///
+    /// Anthropic surfaces this as an HTTP 400 `invalid_request_error` whose
+    /// body carries a specific usage-cap phrase (which is why it was
+    /// previously mis-classified as [`LlmError::InvalidPrompt`] — the 400
+    /// status code alone does not distinguish the two). DeepSeek surfaces an
+    /// insufficient-balance condition as HTTP 402.
+    ///
+    /// This is distinct from its neighbours: unlike [`LlmError::RateLimitExceeded`]
+    /// it does NOT clear on backoff-and-retry — the quota resets on a
+    /// provider-side billing schedule, not a short window. Unlike
+    /// [`LlmError::InvalidPrompt`] the prompt itself is fine; re-authoring it
+    /// is pointless. Unlike [`LlmError::AuthenticationError`] the credentials
+    /// are valid — the account is simply out of budget.
+    ///
+    /// **Recovery**: Do not retry. The caller must stop issuing calls to this
+    /// provider for the remainder of the run and tell the operator to re-run
+    /// after the quota resets. `regain_hint` is best-effort prose lifted
+    /// verbatim from the provider's response body and must never be parsed
+    /// into a value the pipeline schedules against — it is for operator
+    /// display only.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use paladin_ports::output::llm_port::LlmError;
+    ///
+    /// let error = LlmError::UsageLimitExceeded {
+    ///     provider: "anthropic".to_string(),
+    ///     regain_hint: Some("2026-08-01 00:00 UTC".to_string()),
+    /// };
+    /// let rendered = error.to_string();
+    /// assert!(rendered.contains("anthropic"));
+    /// assert!(rendered.contains("2026-08-01 00:00 UTC"));
+    ///
+    /// let error_no_hint = LlmError::UsageLimitExceeded {
+    ///     provider: "deepseek".to_string(),
+    ///     regain_hint: None,
+    /// };
+    /// let rendered_no_hint = error_no_hint.to_string();
+    /// assert!(rendered_no_hint.contains("deepseek"));
+    /// assert!(!rendered_no_hint.contains("None"));
+    /// ```
+    #[error(
+        "Usage limit exceeded for provider '{provider}': the account's configured API usage limit has been reached{}",
+        regain_hint.as_deref().map(|h| format!(" — access regains at {h}")).unwrap_or_default()
+    )]
+    UsageLimitExceeded {
+        /// The provider that reported the usage-cap condition (e.g.
+        /// `"anthropic"`, `"deepseek"`).
+        provider: String,
+        /// Best-effort prose extracted from the provider's response body
+        /// describing when access regains. Display-only — never parsed into
+        /// a scheduled `DateTime`.
+        regain_hint: Option<String>,
+    },
+
     /// Requested model not available or not supported by provider
     ///
     /// **Recovery**: Use `get_available_models()` to find alternatives

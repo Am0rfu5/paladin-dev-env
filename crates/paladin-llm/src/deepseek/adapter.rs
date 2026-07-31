@@ -345,6 +345,17 @@ impl DeepSeekAdapter {
                 message
             )),
             429 => LlmError::RateLimitExceeded,
+            // DeepSeek's documented insufficient-balance/quota-exhausted status
+            // is 402. `regain_hint` is `None` because DeepSeek's 402 body
+            // shape is not first-party-confirmed (RESEARCH Assumption A1 —
+            // corroborated by multiple third-party sources, not by
+            // DeepSeek's own API reference), so there is no prose to parse
+            // yet. This is D-05's "explicitly-empty, documented branch" —
+            // expressed as a real arm with a `None` hint, not as an absence.
+            402 => LlmError::UsageLimitExceeded {
+                provider: "deepseek".to_string(),
+                regain_hint: None,
+            },
             404 => LlmError::ModelNotAvailable(message.to_string()),
             400 => LlmError::InvalidPrompt(message.to_string()),
             _ => LlmError::ProcessingError(format!("DeepSeek API error ({}): {}", status, message)),
@@ -352,6 +363,26 @@ impl DeepSeekAdapter {
     }
 
     /// Perform API call with retry logic.
+    ///
+    /// Two deliberate non-goals, recorded here rather than silently:
+    ///
+    /// - **Retryable-SET parity with `anthropic/adapter.rs::execute_with_retry`,
+    ///   not attempt-COUNT parity (RESEARCH Pitfall #6 / Open Question #1,
+    ///   planner's call):** this loop's `for attempt in 0..=max_retries` makes
+    ///   up to **4** total calls for `max_retries = 3`, while Anthropic's
+    ///   `attempt >= max_retries` check makes up to **3**. D-02 asks for
+    ///   parity of *which* errors are retried, and Phase 41 deliberately does
+    ///   NOT normalize the counter convention — changing DeepSeek's attempt
+    ///   count would alter the latency envelope of every specialist in the
+    ///   same change that fixes the retryable set, making a live regression
+    ///   impossible to attribute. A future phase may unify both loops onto
+    ///   one shared helper.
+    /// - The two adapters' retryable SETS must stay in lockstep: changing one
+    ///   without the other is the exact bug this change fixed (D-02). Today
+    ///   both retry `NetworkError | Timeout | ProcessingError |
+    ///   RateLimitExceeded | ModelNotAvailable | TokenLimitExceeded` and
+    ///   never retry `AuthenticationError | InvalidPrompt | EmptyCompletion |
+    ///   UsageLimitExceeded`.
     async fn call_api_with_retry<F, Fut, T>(
         &self,
         operation: F,
@@ -361,18 +392,40 @@ impl DeepSeekAdapter {
         F: Fn() -> Fut,
         Fut: std::future::Future<Output = Result<T, LlmError>>,
     {
-        let mut last_error = None;
+        let mut last_error: Option<LlmError> = None;
 
         for attempt in 0..=max_retries {
             match operation().await {
                 Ok(result) => return Ok(result),
-                Err(LlmError::RateLimitExceeded) if attempt < max_retries => {
+                Err(e) => {
+                    // `EmptyCompletion` is deliberately non-retryable: a
+                    // byte-identical retry reproduces the same truncation.
+                    // `AuthenticationError`/`InvalidPrompt` need operator
+                    // intervention, not a retry. `UsageLimitExceeded` will
+                    // not clear on backoff — it resets on a provider-side
+                    // billing schedule, not a short window; a per-provider
+                    // breaker (D-06, downstream) decides whether to attempt
+                    // the call at all, and retrying here would burn retries
+                    // before the breaker ever sees the error.
+                    if matches!(
+                        e,
+                        LlmError::AuthenticationError(_)
+                            | LlmError::InvalidPrompt(_)
+                            | LlmError::EmptyCompletion(_)
+                            | LlmError::UsageLimitExceeded { .. }
+                    ) {
+                        return Err(e);
+                    }
+
+                    if attempt >= max_retries {
+                        return Err(e);
+                    }
+
                     let backoff = Duration::from_millis(100 * 2_u64.pow(attempt));
                     let jitter = Duration::from_millis(rand::random::<u64>() % 100);
                     tokio::time::sleep(backoff + jitter).await;
-                    last_error = Some(LlmError::RateLimitExceeded);
+                    last_error = Some(e);
                 }
-                Err(e) => return Err(e),
             }
         }
 
@@ -573,6 +626,8 @@ impl LlmPort for DeepSeekAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     #[test]
     fn test_deepseek_config_validation() {
@@ -679,5 +734,213 @@ mod tests {
         let message: DeepSeekMessage = serde_json::from_str(json).expect("should deserialize");
         assert_eq!(message.content, "the answer");
         assert_eq!(message.reasoning_content, None);
+    }
+
+    // ── Task 41-01/3: DeepSeek retryable-set parity + the 402 arm (D-02) ──
+
+    fn test_adapter() -> DeepSeekAdapter {
+        let config = DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        DeepSeekAdapter::new(config).expect("test config must build a valid adapter")
+    }
+
+    /// The exact live error string that killed the deductive specialist in
+    /// run `4a3b749d` — already used as a fixture at
+    /// `crates/audit-agents/src/deductive.rs:1539` and
+    /// `crates/audit-agents/src/fuzz.rs:2912` in the downstream superproject.
+    const LIVE_BODY_DECODE_ERROR: &str =
+        "Failed to parse DeepSeek response: error decoding response body";
+
+    #[test]
+    fn map_error_402_maps_to_usage_limit_exceeded_not_processing_error() {
+        let adapter = test_adapter();
+        let error = adapter.map_error(402, "Insufficient Balance");
+
+        match error {
+            LlmError::UsageLimitExceeded {
+                provider,
+                regain_hint,
+            } => {
+                assert_eq!(provider, "deepseek");
+                assert_eq!(regain_hint, None);
+            }
+            other => panic!("expected UsageLimitExceeded, got {other:?}"),
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_retries_a_body_decode_processing_error() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<(), LlmError> = adapter
+            .call_api_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        Err(LlmError::ProcessingError(
+                            LIVE_BODY_DECODE_ERROR.to_string(),
+                        ))
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            4,
+            "a body-decode ProcessingError must be retried up to (max_retries + 1) attempts \
+             — this is the LLMR-01 root cause"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_retries_network_error_and_timeout() {
+        let adapter = test_adapter();
+
+        for make_error in [
+            || LlmError::NetworkError("connection reset".to_string()),
+            || LlmError::Timeout("request timed out".to_string()),
+        ] {
+            let calls = Arc::new(AtomicU32::new(0));
+            let calls_clone = Arc::clone(&calls);
+
+            let result: Result<(), LlmError> = adapter
+                .call_api_with_retry(
+                    move || {
+                        let calls = Arc::clone(&calls_clone);
+                        let error = make_error();
+                        async move {
+                            calls.fetch_add(1, Ordering::SeqCst);
+                            Err(error)
+                        }
+                    },
+                    3,
+                )
+                .await;
+
+            assert!(result.is_err());
+            assert_eq!(calls.load(Ordering::SeqCst), 4);
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_succeeds_after_one_transient_processing_error() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<&'static str, LlmError> = adapter
+            .call_api_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        let n = calls.fetch_add(1, Ordering::SeqCst);
+                        if n == 0 {
+                            Err(LlmError::ProcessingError(
+                                LIVE_BODY_DECODE_ERROR.to_string(),
+                            ))
+                        } else {
+                            Ok("recovered")
+                        }
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(matches!(result, Ok("recovered")));
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            2,
+            "must succeed after exactly one transient failure plus one retry"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_invokes_operation_exactly_once_on_empty_completion() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<(), LlmError> = adapter
+            .call_api_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        Err(LlmError::EmptyCompletion("no text".to_string()))
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_invokes_operation_exactly_once_on_usage_limit_exceeded() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<(), LlmError> = adapter
+            .call_api_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        Err(LlmError::UsageLimitExceeded {
+                            provider: "deepseek".to_string(),
+                            regain_hint: None,
+                        })
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            1,
+            "a usage-cap error must not be retried — it will not clear on backoff"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_still_retries_rate_limit_exceeded() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<(), LlmError> = adapter
+            .call_api_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        Err(LlmError::RateLimitExceeded)
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            4,
+            "RateLimitExceeded retry behavior must not regress"
+        );
     }
 }
