@@ -172,10 +172,10 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02-PLAN.md — ADR-0001 `BattalionConfig` and ADR-0002 `BattalionResult`
-- [ ] 01-03-PLAN.md — ADR-0003 Formation minimum Paladin count and ADR-0004 temperature validation
+- [x] 01-02-PLAN.md — ADR-0001 `BattalionConfig` and ADR-0002 `BattalionResult`
+- [x] 01-03-PLAN.md — ADR-0003 Formation minimum Paladin count and ADR-0004 temperature validation
 - [ ] 01-04-PLAN.md — Measure workspace coverage and record ADR-0006, the coverage gate
-- [ ] 01-05-PLAN.md — Ledger divergences, the Epic 10 Task 7.0 verdict, and the ingest-bookkeeping corrections
+- [x] 01-05-PLAN.md — Ledger divergences, the Epic 10 Task 7.0 verdict, and the ingest-bookkeeping corrections
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
