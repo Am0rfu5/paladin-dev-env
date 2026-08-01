@@ -121,6 +121,12 @@ struct DeepSeekRequest {
 #[derive(Debug, Serialize, Deserialize)]
 struct DeepSeekMessage {
     role: String,
+    /// The visible answer. Deserialized through
+    /// [`deserialize_null_as_empty_string`] because a reasoning model that
+    /// spends its whole budget on hidden reasoning may report the empty
+    /// answer as `null` rather than `""`. Serialization is unaffected —
+    /// outgoing messages always emit a plain JSON string.
+    #[serde(default, deserialize_with = "deserialize_null_as_empty_string")]
     content: String,
     /// Hidden chain-of-thought content emitted by DeepSeek's reasoning models
     /// (e.g. `-flash`/`-pro`). Only ever present on responses; omitted from
@@ -204,6 +210,114 @@ fn detect_empty_completion(content: &str, finish_reason: &FinishReason) -> Optio
     } else {
         None
     }
+}
+
+/// Character budget for a diagnostic excerpt of a response body.
+///
+/// Mirrors `anthropic::adapter::RESPONSE_EXCERPT_CHAR_BUDGET`, deliberately —
+/// the two adapters' diagnostics are meant to stay in lockstep for the same
+/// reason their retryable sets are (see [`DeepSeekAdapter::call_api_with_retry`]).
+const RESPONSE_EXCERPT_CHAR_BUDGET: usize = 512;
+
+/// What a redacted credential is replaced with in a diagnostic excerpt.
+const CREDENTIAL_PLACEHOLDER: &str = "[REDACTED]";
+
+/// Deserialize a possibly-`null` (or absent) string field as an empty string.
+///
+/// DeepSeek's reasoning models split their `max_tokens` budget between hidden
+/// `reasoning_content` and visible `content`. When the hidden reasoning
+/// consumes the entire budget, the API may report the empty answer as either
+/// `"content": ""` or `"content": null`. The `""` form is classified by
+/// [`detect_empty_completion`] into an actionable
+/// [`LlmError::EmptyCompletion`]; the `null` form previously aborted
+/// DESERIALIZATION — which happens strictly earlier — so that classifier never
+/// ran and the truncation surfaced as an opaque body-decode failure instead.
+///
+/// Normalizing `null` to `""` routes both spellings of the same provider
+/// behavior down the one code path already built to handle it. It never
+/// invents content: an absent answer stays absent, it just stops being fatal
+/// at the wrong layer.
+fn deserialize_null_as_empty_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(Option::<String>::deserialize(deserializer)?.unwrap_or_default())
+}
+
+/// Build a diagnostic excerpt of a response body, bounded by CHARACTER count
+/// rather than byte count.
+///
+/// Slicing a UTF-8 `&str` by byte offset panics when the offset lands
+/// mid-character, and panics are forbidden in this library — a captured
+/// production response body is full of multi-byte characters. When `body`
+/// exceeds `budget` characters, an ASCII elision marker reports the total byte
+/// length of the untruncated body so the reader knows how much was withheld.
+fn bounded_excerpt(body: &str, budget: usize) -> String {
+    if body.chars().count() <= budget {
+        return body.to_string();
+    }
+
+    let truncated: String = body.chars().take(budget).collect();
+    format!("{truncated}... [truncated, {} total bytes]", body.len())
+}
+
+/// Replace the token that follows every occurrence of `marker` with
+/// [`CREDENTIAL_PLACEHOLDER`].
+///
+/// The token is taken to run until the first whitespace or JSON delimiter.
+/// `marker` must be ASCII so the byte offsets returned by `find` are always
+/// character boundaries; every slice is nonetheless taken through the checked
+/// `get` API so this function has no panicking path.
+fn redact_token_after(body: &str, marker: &str) -> String {
+    let mut out = String::with_capacity(body.len());
+    let mut rest = body;
+
+    while let Some(idx) = rest.find(marker) {
+        let cut = idx + marker.len();
+        let (head, tail) = match (rest.get(..cut), rest.get(cut..)) {
+            (Some(head), Some(tail)) => (head, tail),
+            // Unreachable for an ASCII `marker` located by `find`, but this
+            // library must never panic: stop scanning and emit the remainder
+            // verbatim via the trailing `push_str` below.
+            _ => break,
+        };
+
+        out.push_str(head);
+
+        let end = tail
+            .find(|c: char| c.is_whitespace() || matches!(c, '"' | ',' | '}' | ']' | '\\'))
+            .unwrap_or(tail.len());
+
+        if end > 0 {
+            out.push_str(CREDENTIAL_PLACEHOLDER);
+        }
+
+        rest = tail.get(end..).unwrap_or("");
+    }
+
+    out.push_str(rest);
+    out
+}
+
+/// Strip anything credential-shaped out of text destined for a log line.
+///
+/// Three passes, in order of precision:
+/// 1. the adapter's OWN configured `api_key`, matched exactly — this cannot
+///    miss, and covers a gateway that echoes the request back verbatim;
+/// 2. `Bearer <token>` / `bearer <token>`, the header form;
+/// 3. any surviving `sk-`-prefixed token.
+///
+/// Redaction MUST run before truncation, otherwise a bounded excerpt could
+/// slice a secret in half and leak the surviving prefix.
+fn redact_credentials(body: &str, api_key: &str) -> String {
+    let exact = if api_key.is_empty() {
+        body.to_string()
+    } else {
+        body.replace(api_key, CREDENTIAL_PLACEHOLDER)
+    };
+
+    let no_bearer = redact_token_after(&redact_token_after(&exact, "Bearer "), "bearer ");
+    redact_token_after(&no_bearer, "sk-")
 }
 
 /// DeepSeek LLM Adapter implementing [`LlmPort`].
@@ -337,6 +451,17 @@ impl DeepSeekAdapter {
         }
     }
 
+    /// Render untrusted provider text as a log-safe diagnostic excerpt:
+    /// credentials stripped first, then bounded to
+    /// [`RESPONSE_EXCERPT_CHAR_BUDGET`] characters.
+    ///
+    /// The ordering is load-bearing — truncating first could slice a secret
+    /// in half and leak the surviving prefix.
+    fn diagnostic_excerpt(&self, body: &str) -> String {
+        let redacted = redact_credentials(body, &self.config.api_key);
+        bounded_excerpt(&redacted, RESPONSE_EXCERPT_CHAR_BUDGET)
+    }
+
     /// Map DeepSeek API errors to LlmError.
     fn map_error(&self, status: u16, message: &str) -> LlmError {
         match status {
@@ -466,11 +591,43 @@ impl LlmPort for DeepSeekAdapter {
                     .text()
                     .await
                     .unwrap_or_else(|_| "Unknown error".to_string());
-                return Err(self.map_error(status.as_u16(), &error_text));
+                return Err(self.map_error(status.as_u16(), &self.diagnostic_excerpt(&error_text)));
             }
 
-            let api_response: DeepSeekResponse = response.json().await.map_err(|e| {
-                LlmError::ProcessingError(format!("Failed to parse DeepSeek response: {}", e))
+            // Read the body to text FIRST, then deserialize it separately.
+            //
+            // `Response::json()` collapses two unrelated failures into one
+            // indistinguishable error: reqwest maps BOTH a body-read failure
+            // and a serde failure to `Kind::Decode`, whose `Display` is the
+            // constant string "error decoding response body". Formatting that
+            // with `{}` discards the source chain, so a client timeout that
+            // fires mid-body and a response-shape mismatch produce byte-identical
+            // log lines — and the body that would tell them apart is dropped.
+            // That ambiguity is what made this failure un-diagnosable across two
+            // live runs. Splitting the two steps is the same fix the sibling
+            // Anthropic adapter already carries.
+            let body = response.text().await.map_err(|e| {
+                if e.is_timeout() {
+                    LlmError::Timeout(format!(
+                        "DeepSeek response body did not finish streaming within the {}s client \
+                         timeout — note this timeout covers body streaming, not just the \
+                         response headers, so a slow long completion trips it after a \
+                         successful status line. Raise this stage's timeout or lower its \
+                         max_tokens. Underlying error: {e}",
+                        self.config.timeout_seconds
+                    ))
+                } else {
+                    LlmError::NetworkError(format!("Failed to read DeepSeek response body: {e}"))
+                }
+            })?;
+
+            let api_response: DeepSeekResponse = serde_json::from_str(&body).map_err(|e| {
+                LlmError::ProcessingError(format!(
+                    "Failed to parse DeepSeek response (likely schema drift — see the \
+                     null-`content` reasoning precedent in this adapter's tests): {e} — \
+                     body excerpt: {}",
+                    self.diagnostic_excerpt(&body)
+                ))
             })?;
 
             let choice = api_response.choices.first().ok_or_else(|| {
@@ -734,6 +891,189 @@ mod tests {
         let message: DeepSeekMessage = serde_json::from_str(json).expect("should deserialize");
         assert_eq!(message.content, "the answer");
         assert_eq!(message.reasoning_content, None);
+    }
+
+    /// RED probe (debug session `deepseek-body-decode-persist`): a reasoning
+    /// model that spends its whole `max_tokens` budget on hidden reasoning can
+    /// return `"content": null` rather than `"content": ""`. The `""` form is
+    /// handled by `detect_empty_completion`; the `null` form must not blow up
+    /// in DESERIALIZATION, because that happens strictly before
+    /// `detect_empty_completion` ever runs.
+    #[test]
+    fn deepseek_response_deserializes_reasoning_payload_with_null_content() {
+        let json = r#"{
+            "id": "chatcmpl-abc123",
+            "model": "deepseek-v4-flash",
+            "choices": [{
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": null,
+                    "reasoning_content": "long hidden chain of thought..."
+                },
+                "finish_reason": "length"
+            }],
+            "usage": {"prompt_tokens": 41000, "completion_tokens": 24000, "total_tokens": 65000}
+        }"#;
+
+        let response: DeepSeekResponse =
+            serde_json::from_str(json).expect("a null content field must not fail deserialization");
+        let choice = response
+            .choices
+            .first()
+            .expect("payload declares one choice");
+        assert_eq!(
+            choice.message.content, "",
+            "null content must normalize to empty string so detect_empty_completion can \
+             classify it as a truncation"
+        );
+    }
+
+    // ── Debug `deepseek-body-decode-persist`: body-decode diagnosability ──
+
+    #[test]
+    fn deepseek_message_deserializes_absent_content_as_empty_string() {
+        // A missing `content` key must be as survivable as an explicit null.
+        let json = r#"{"role":"assistant","reasoning_content":"thinking..."}"#;
+        let message: DeepSeekMessage = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(message.content, "");
+    }
+
+    #[test]
+    fn null_content_truncation_is_classified_as_empty_completion_not_a_decode_failure() {
+        // The whole point of tolerating null: it lets the EXISTING truncation
+        // classifier see the response, which hands the caller an actionable
+        // "raise max_tokens" error instead of an opaque decode failure.
+        let json = r#"{"role":"assistant","content":null}"#;
+        let message: DeepSeekMessage = serde_json::from_str(json).expect("should deserialize");
+
+        let detected = detect_empty_completion(&message.content, &FinishReason::Length);
+        assert!(matches!(detected, Some(LlmError::EmptyCompletion(_))));
+    }
+
+    #[test]
+    fn deepseek_message_still_serializes_content_as_a_plain_string() {
+        // The null-tolerant deserializer must not leak into the REQUEST shape.
+        let message = DeepSeekMessage {
+            role: "user".to_string(),
+            content: "hello".to_string(),
+            reasoning_content: None,
+        };
+        let json = serde_json::to_string(&message).expect("should serialize");
+        assert!(json.contains(r#""content":"hello""#), "got {json}");
+        assert!(!json.contains("null"), "got {json}");
+    }
+
+    #[test]
+    fn bounded_excerpt_returns_input_unchanged_when_shorter_than_budget() {
+        let body = r#"{"error":"short"}"#;
+        assert_eq!(bounded_excerpt(body, RESPONSE_EXCERPT_CHAR_BUDGET), body);
+    }
+
+    #[test]
+    fn bounded_excerpt_is_char_boundary_safe_on_multibyte_input() {
+        // Byte-slicing this would panic mid-character; char-count truncation
+        // must not. A production body is full of multi-byte text.
+        let body = "\u{1F5E1}\u{FE0F}\u{2694}\u{FE0F}".repeat(64);
+        let budget = 5;
+        let excerpt = bounded_excerpt(&body, budget);
+
+        assert!(excerpt.starts_with("\u{1F5E1}"));
+        assert!(excerpt.contains("[truncated,"));
+        assert_eq!(
+            excerpt.chars().take(budget).count(),
+            budget,
+            "must keep exactly `budget` characters before the elision marker"
+        );
+    }
+
+    #[test]
+    fn diagnostic_excerpt_never_echoes_the_configured_api_key() {
+        // The constraint that motivated this test: a captured body excerpt is
+        // written straight to an operator-facing log line, so it must never
+        // carry a credential — asserted, not assumed.
+        let secret = "sk-livekey-abcdef0123456789";
+        let config = DeepSeekConfig::new(
+            secret.to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        let adapter = DeepSeekAdapter::new(config).expect("valid config");
+
+        // A gateway echoing the whole request back, headers included.
+        let echoed = format!(
+            r#"{{"error":"bad gateway","request":{{"headers":{{"authorization":"Bearer {secret}"}}}}}}"#
+        );
+        let excerpt = adapter.diagnostic_excerpt(&echoed);
+
+        assert!(
+            !excerpt.contains(secret),
+            "excerpt leaked the API key: {excerpt}"
+        );
+        assert!(
+            !excerpt.contains("livekey"),
+            "excerpt leaked part of the API key: {excerpt}"
+        );
+        assert!(
+            excerpt.contains(CREDENTIAL_PLACEHOLDER),
+            "excerpt should show the redaction happened: {excerpt}"
+        );
+        // The surrounding diagnostic context must survive redaction.
+        assert!(excerpt.contains("bad gateway"), "got {excerpt}");
+    }
+
+    #[test]
+    fn redact_credentials_masks_bearer_and_sk_tokens_it_was_not_configured_with() {
+        // Defense in depth: a key OTHER than this adapter's own (e.g. an
+        // upstream proxy's) must still be masked by shape.
+        let body = r#"{"msg":"denied","auth":"Bearer sk-someoneelses-9876543210"}"#;
+        let redacted = redact_credentials(body, "");
+
+        assert!(!redacted.contains("9876543210"), "got {redacted}");
+        assert!(redacted.contains(CREDENTIAL_PLACEHOLDER), "got {redacted}");
+        assert!(redacted.contains("denied"), "got {redacted}");
+    }
+
+    #[test]
+    fn redact_credentials_leaves_credential_free_bodies_untouched() {
+        let body = r#"{"id":"chatcmpl-1","choices":[{"index":0}]}"#;
+        assert_eq!(redact_credentials(body, "sk-not-present"), body);
+    }
+
+    #[test]
+    fn parse_failure_message_carries_serde_detail_and_a_body_excerpt() {
+        // The regression guard for this whole debug session: the message must
+        // no longer be the information-free constant reqwest hands back.
+        let config = DeepSeekConfig::new(
+            "sk-test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        let adapter = DeepSeekAdapter::new(config).expect("valid config");
+
+        // An HTTP-200 error object — a shape `DeepSeekResponse` cannot accept.
+        let body = r#"{"error":{"message":"model overloaded","type":"server_error"}}"#;
+        let parse_error = serde_json::from_str::<DeepSeekResponse>(body)
+            .expect_err("this body must not deserialize into DeepSeekResponse");
+
+        let rendered = format!(
+            "Failed to parse DeepSeek response (likely schema drift): {parse_error} — \
+             body excerpt: {}",
+            adapter.diagnostic_excerpt(body)
+        );
+
+        assert!(
+            rendered.contains("model overloaded"),
+            "the raw body must survive into the error: {rendered}"
+        );
+        assert!(
+            rendered.contains("missing field"),
+            "serde's own diagnosis must survive into the error: {rendered}"
+        );
+        assert_ne!(
+            rendered, LIVE_BODY_DECODE_ERROR,
+            "must not collapse back to the information-free constant"
+        );
     }
 
     // ── Task 41-01/3: DeepSeek retryable-set parity + the 402 arm (D-02) ──
