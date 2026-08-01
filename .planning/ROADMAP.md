@@ -225,7 +225,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Measured `cargo test --workspace` baseline with full provenance, plus one executable re-proof each for GAP-01, GAP-02, GAP-04 and GAP-05 (D-01)
+- [x] 02-01-PLAN.md — Measured `cargo test --workspace` baseline with full provenance, plus one executable re-proof each for GAP-01, GAP-02, GAP-04 and GAP-05 (D-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
