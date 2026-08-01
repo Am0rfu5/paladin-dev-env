@@ -313,3 +313,16 @@ None - no external service configuration required.
 ---
 *Phase: 02-functional-gap-closure*
 *Completed: 2026-08-01*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/02-functional-gap-closure/02-02-SUMMARY.md`
+- FOUND: commit `fff7a80` (Task 1)
+- FOUND: commit `a2cc1c5` (Task 2)
+- FOUND: commit `3639673` (this SUMMARY)
+- FOUND: all 8 key modified files listed in frontmatter `key-files.modified` verified present on
+  disk (`crates/paladin-ports/src/output/llm_port.rs`,
+  `crates/paladin-llm/src/deepseek/adapter.rs`, `crates/paladin-llm/src/openai/adapter.rs`,
+  `crates/paladin-llm/src/anthropic/adapter.rs`, `crates/paladin-llm/src/mock.rs`,
+  `crates/paladin-llm/src/lib.rs`, `crates/paladin-battalion/src/grove_service.rs`,
+  `src/application/services/paladin/paladin_builder.rs`)
