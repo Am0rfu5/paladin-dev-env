@@ -194,44 +194,64 @@ agree. Nothing here re-implements shipped work.
 
 ### Gap closure (GAP)
 
-- [ ] **GAP-01**: A developer can run a Chain of Command battalion end-to-end and see the commander
+- [x] **GAP-01**: A developer can run a Chain of Command battalion end-to-end and see the commander
       select specialists, handle a specialist failure via fallback, and synthesize a final answer —
       with unit and integration tests covering all four delegation strategies. Shipped code already
       contains `chain_of_command_service.rs`; this requirement is satisfied by verifying and
       finishing it, not rewriting it. *Derives: Epic 4 task 6.0; REQ-chain-of-command-construction,
       REQ-chain-of-command-execution, REQ-chain-of-command-aggregation.*
 
-- [ ] **GAP-02**: Battalion integration and performance-validation tests exist and pass for all four
+- [x] **GAP-02**: Battalion integration and performance-validation tests exist and pass for all four
       patterns, including the Phalanx concurrency claims (≥ 10 concurrent Paladins, < 1 s
       orchestration overhead). *Derives: Epic 4 task 7.0; REQ-phalanx-concurrency,
       REQ-integration-testing.*
 
-- [ ] **GAP-03**: Herald is on the Battalion execution path, not just the Paladin one: a Battalion
+- [x] **GAP-03**: Herald is on the Battalion execution path, not just the Paladin one: a Battalion
       result rendered through JSON, Markdown and Table Heralds shows Battalion name/ID/type,
       per-Paladin results in execution order, aggregated token usage, and partial results on error.
       *Derives: Epic 8 task 7.0 and 7.13; REQ-herald-battalion-result-fields (depends on RECON-03).*
 
-- [ ] **GAP-04**: Commander execution produces a normalized result with strategy used, per-Paladin
+- [x] **GAP-04**: Commander execution produces a normalized result with strategy used, per-Paladin
       timings, success/failure counts and preserved `Vec<PaladinError>`, and writes telemetry
       metadata to `metadata_output_dir` when configured. *Derives: Epic 5 task 5.0 (5.10, 5.14);
       REQ-commander-result-normalization, REQ-commander-telemetry (depends on RECON-03). Note run 2
       adds REQ-commander-metadata-export, which specifies the JSON schema and file naming.*
 
-- [ ] **GAP-05**: `test_auto_selects_campaign_for_workflow_keywords`
+- [x] **GAP-05**: `test_auto_selects_campaign_for_workflow_keywords`
       (`crates/paladin-battalion/src/commander.rs:1864`) passes, and Auto keyword routing is correct
       for all four keyword families. *Derives: Epic 5 task 3.11; REQ-commander-auto-selection.*
 
-- [ ] **GAP-06**: Garrison final validation is closed — measured coverage recorded and every Epic 2
+- [x] **GAP-06**: Garrison final validation is closed — measured coverage recorded and every Epic 2
       PRD acceptance criterion reviewed against shipped code. *Derives: Epic 2 task 11.0 (11.5,
       11.6); REQ-garrison-testing.*
 
-- [ ] **GAP-07**: The reconciled definitions from Phase 1 are applied in code: agreed
+- [x] **GAP-07**: The reconciled definitions from Phase 1 are applied in code: agreed
       minimum-Paladin behaviour (a single-Paladin Commander in Auto mode executes instead of
       failing validation), the recorded temperature rule, the recorded `Herald` trait signature,
       and the duplicate `BattalionConfig` in `citadel.rs` resolved. **Narrowed by ingest run 3:**
       "one `BattalionResult`" and "one `BattalionConfig` field set" are already true in shipped
       code and are dropped from this requirement — the `citadel.rs` duplicate is what survives.
       *Derives: RECON-02 … RECON-06; `intel/code-verification.md` run-3 resolved variants.*
+
+*Closed 2026-08-01 by Phase 2, plans 02-01 through 02-11. Per-requirement closing evidence
+(see `02-VERIFICATION.md`'s "GAP Requirement Coverage" table for the full citations):*
+*GAP-01 — plans 02-01/02-03/02-06/02-07, four delegation-strategy test modules passing.*
+*GAP-02 — plans 02-01/02-06/02-07, `tests/integration/provider_switching_test.rs` and the CLI
+Phalanx suite passing.*
+*GAP-03 — plans 02-04/02-05 **and 02-10**, which closed the Table Herald multi-byte truncation
+panic `02-VERIFICATION.md` graded a blocker (`table_herald.rs::truncate_text`, char-boundary fix).
+GAP-03 was checked at commit `a5f8c27`, reverted at commit `9e5ec04` when `02-VERIFICATION.md`
+returned `gaps_found` on that panic, and is re-checked here only because plan 02-10 closed the
+defect that caused the revert — `cargo test -p paladin-herald` (70 passed, 0 failed) confirmed
+green on this commit before this flip.*
+*GAP-04 — plan 02-01, `commander.rs` normalized-result and telemetry-export code paths exercised
+by passing tests.*
+*GAP-05 — plan 02-01, `test_auto_selects_campaign_for_workflow_keywords` confirmed passing.*
+*GAP-06 — plan 02-08, `02-garrison-prd-review.md`'s 50-row criterion table.*
+*GAP-07 — plans 02-02/02-03/02-09, Phase 1 ADRs applied in code (temperature_range,
+`BattalionCheckpointConfig` rename, Formation single-Paladin acceptance).*
+*Full evidence lives in `.planning/phases/02-functional-gap-closure/02-VERIFICATION.md` and
+`.planning/ledgers/milestone-01.md` — this note is a signpost, not a duplicate of either.*
 
 ### Quality gates (QUAL)
 
@@ -3800,13 +3820,13 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | RECON-06 | Phase 1 | Complete |
 | RECON-07 | Phase 1 | Complete |
 | RECON-08 | Phase 1 | Complete |
-| GAP-01 | Phase 2 | Pending |
-| GAP-02 | Phase 2 | Pending |
-| GAP-03 | Phase 2 | Gaps Found |
-| GAP-04 | Phase 2 | Pending |
-| GAP-05 | Phase 2 | Pending |
-| GAP-06 | Phase 2 | Pending |
-| GAP-07 | Phase 2 | Pending |
+| GAP-01 | Phase 2 | Complete |
+| GAP-02 | Phase 2 | Complete |
+| GAP-03 | Phase 2 | Complete |
+| GAP-04 | Phase 2 | Complete |
+| GAP-05 | Phase 2 | Complete |
+| GAP-06 | Phase 2 | Complete |
+| GAP-07 | Phase 2 | Complete |
 | QUAL-01 | Phase 3 | Pending |
 | QUAL-02 | Phase 3 | Pending |
 | QUAL-03 | Phase 3 | Pending |
