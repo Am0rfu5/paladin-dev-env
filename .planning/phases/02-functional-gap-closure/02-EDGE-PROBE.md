@@ -58,15 +58,36 @@ assumptions)` — a surplus is fine (extra predicates), a shortfall is a silent 
 | Source | Count |
 |--------|-------|
 | Probe-surfaced edges | 17 |
-| Authored `covered` (plain `must_haves.truths` strings) | 4 — `02-02` (GAP-07 precision), `02-03` (GAP-07 boundary), `02-04` (GAP-03 empty, encoding) |
-| Authored `backstop` (`{ statement, verification: backstop }` markers) | 13 — `02-01` ×9, `02-02` ×1, `02-08` ×3 |
+| Authored `covered` (plain `must_haves.truths` strings) | 4 — `02-02` (GAP-07 precision), `02-03` (GAP-07 boundary), `02-04` (GAP-03 empty), `02-04` & `02-10` (GAP-03 encoding, **re-authored** — see the dated amendment below) |
+| Authored `backstop` (`{ statement, verification: backstop }` markers) | 15 — `02-01` ×9, `02-02` ×1, `02-08` ×3, `02-10` ×2 |
 | Flagged assumptions (`unresolved`) | 1 — GAP-04 unclassified, in `02-01` |
-| **Total accounted** | **18** |
+| **Total accounted** | **20** |
 
-18 ≥ 17: no silent drops. The surplus of one is a `backstop` marker in `02-02` that the planner's
+20 ≥ 17: no silent drops. The surplus of three is a `backstop` marker in `02-02` that the planner's
 own return summary omitted from its count (it reported 12 backstop, the plans contain 13). The
 plan-checker flagged the discrepancy; the extra predicate is additive, so it is recorded here
 rather than removed.
+
+### Row 8 disposition amendment (2026-08-01, authority: plan 02-10)
+
+**Original disposition:** `02-04` authored probe row 8 (GAP-03 encoding) as `covered` — a plain
+`must_haves.truths` string asserting the Table Herald "renders a Paladin name containing
+multi-byte UTF-8 without panicking."
+
+**Why that was insufficient:** the string restated the claim rather than expressing a predicate
+that could fail against the code. Its proving test, `test_table_herald_renders_multibyte_paladin_name`,
+used a 21-byte name far below the 60-char default budget, so it never reached the truncation
+branch. The defect shipped behind a green suite, was graded a blocker by `02-VERIFICATION.md`,
+and was independently graded Critical by `02-REVIEW.md` CR-02.
+
+**What replaced it:** `02-10` re-authors row 8 with an admissibility rule attached to the
+predicate — an input proves the truncation branch only if the byte offset at `width - 3` is not
+a char boundary of that input. This rule is necessary because a repeated pure 3-byte CJK name at
+the default width 60 cuts at byte 57 (= 19 × 3, a valid boundary), so it does not reach the
+branch and would have produced a second self-confirming test.
+
+Plans `02-10` and `02-11` also add prohibitions beyond the seven §B lists below; `02-10` sharpens
+existing prohibition 4, "No self-confirming Herald tests," into the arithmetic form stated above.
 
 ## Prohibitions (§B — LLM prose pass, no engine)
 
