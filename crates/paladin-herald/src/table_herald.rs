@@ -90,12 +90,35 @@ impl TableHerald {
         table
     }
 
-    /// Truncates text to maximum column width if needed.
+    /// Truncates text to at most `max_column_width` Unicode scalar values
+    /// (`char`s), never bytes.
+    ///
+    /// The budget is counted in `char`s: the returned string's
+    /// `chars().count()` never exceeds `max_column_width`, for any input and
+    /// any configured width, including widths below the three-character
+    /// ellipsis and a width of `0`. This function never panics.
+    ///
+    /// - If `text`'s char count is within the budget, it is returned
+    ///   unchanged.
+    /// - If the budget is smaller than the three-character ellipsis, the
+    ///   first `max_column_width` chars are returned with no ellipsis
+    ///   appended, because the ellipsis cannot fit and subtracting would
+    ///   underflow.
+    /// - Otherwise, the first `max_column_width - 3` chars are returned
+    ///   followed by the ellipsis, for a total of exactly `max_column_width`
+    ///   chars.
     fn truncate_text(&self, text: &str) -> String {
-        if text.len() <= self.config.max_column_width {
+        let char_count = text.chars().count();
+        if char_count <= self.config.max_column_width {
             text.to_string()
+        } else if self.config.max_column_width < 3 {
+            text.chars().take(self.config.max_column_width).collect()
         } else {
-            format!("{}...", &text[..self.config.max_column_width - 3])
+            let prefix: String = text
+                .chars()
+                .take(self.config.max_column_width - 3)
+                .collect();
+            format!("{prefix}...")
         }
     }
 
@@ -483,6 +506,48 @@ mod tests {
         // truncation, no replacement character.
         assert!(formatted.contains("斥候レビュアー"));
         assert!(!formatted.contains('\u{FFFD}'));
+    }
+
+    /// Proves the panic this plan closes, and does so with input arithmetic
+    /// that is arithmetically guaranteed to reach the truncation branch:
+    /// U+1F6E1 (🛡) is 4 bytes in UTF-8, so 30 repetitions give 120 bytes /
+    /// 30 chars. At the default budget of 60 the byte cut point is
+    /// `60 - 3 = 57`, and 57 is not a multiple of 4, so it lands mid-character.
+    /// At a budget of 20 the cut point is `20 - 3 = 17`, also not a multiple
+    /// of 4. A repeated 3-byte CJK character would NOT prove this — see the
+    /// plan's prohibition on self-confirming inputs.
+    #[test]
+    fn test_table_herald_renders_overlong_multibyte_paladin_name() {
+        let shield = "\u{1F6E1}".repeat(30);
+        assert_eq!(shield.len(), 120);
+        assert_eq!(shield.chars().count(), 30);
+
+        let result = battalion_result_with_paladins(&[shield.as_str()]);
+
+        // Default budget (60): cut point 57 is not a multiple of 4.
+        let default_herald = TableHerald::default();
+        let default_output = default_herald.format_battalion_result(&result);
+        assert!(default_output.is_ok());
+        let default_formatted = default_output.unwrap();
+        assert!(!default_formatted.contains('\u{FFFD}'));
+
+        // Narrow budget (20): cut point 17 is not a multiple of 4.
+        let narrow_config = TableHeraldConfig {
+            max_column_width: 20,
+            border_style: "rounded".to_string(),
+        };
+        let narrow_herald = TableHerald::new(narrow_config);
+        let narrow_output = narrow_herald.format_battalion_result(&result);
+        assert!(narrow_output.is_ok());
+        let narrow_formatted = narrow_output.unwrap();
+        assert!(!narrow_formatted.contains('\u{FFFD}'));
+
+        // Real content reached the table: the first three characters of the
+        // name appear contiguously. Do NOT assert the whole 30-char name is
+        // contiguous — comfy-table's Dynamic content arrangement may wrap a
+        // wide cell across lines.
+        let first_three: String = shield.chars().take(3).collect();
+        assert!(narrow_formatted.contains(&first_three));
     }
 
     #[test]
