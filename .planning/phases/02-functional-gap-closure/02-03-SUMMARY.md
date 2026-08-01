@@ -289,3 +289,13 @@ None - no external service configuration required.
 ---
 *Phase: 02-functional-gap-closure*
 *Completed: 2026-08-01*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/02-functional-gap-closure/02-03-SUMMARY.md`
+- FOUND: `crates/paladin-core/src/platform/container/battalion/formation.rs`
+- FOUND: `crates/paladin-core/src/platform/container/citadel.rs`
+- FOUND: commit `4207f06` (Task 1 RED)
+- FOUND: commit `7dcaa46` (Task 1 GREEN)
+- FOUND: commit `05fde82` (Task 2)
+- FOUND: commit `60c9369` (this SUMMARY)
