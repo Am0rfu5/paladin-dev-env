@@ -253,7 +253,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-09-PLAN.md — Close the record: D-12 test-wiring sweep, ADR-0007 cancellation deferral (D-05/D-08), in-place ledger amendments (D-02) and the ROADMAP criterion corrections
+- [x] 02-09-PLAN.md — Close the record: D-12 test-wiring sweep, ADR-0007 cancellation deferral (D-05/D-08), in-place ledger amendments (D-02) and the ROADMAP criterion corrections
 
 ### Phase 3: Verification Depth
 
