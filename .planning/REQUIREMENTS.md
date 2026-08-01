@@ -206,7 +206,7 @@ agree. Nothing here re-implements shipped work.
       orchestration overhead). *Derives: Epic 4 task 7.0; REQ-phalanx-concurrency,
       REQ-integration-testing.*
 
-- [x] **GAP-03**: Herald is on the Battalion execution path, not just the Paladin one: a Battalion
+- [ ] **GAP-03**: Herald is on the Battalion execution path, not just the Paladin one: a Battalion
       result rendered through JSON, Markdown and Table Heralds shows Battalion name/ID/type,
       per-Paladin results in execution order, aggregated token usage, and partial results on error.
       *Derives: Epic 8 task 7.0 and 7.13; REQ-herald-battalion-result-fields (depends on RECON-03).*
@@ -3802,7 +3802,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | RECON-08 | Phase 1 | Complete |
 | GAP-01 | Phase 2 | Pending |
 | GAP-02 | Phase 2 | Pending |
-| GAP-03 | Phase 2 | Complete |
+| GAP-03 | Phase 2 | Gaps Found |
 | GAP-04 | Phase 2 | Pending |
 | GAP-05 | Phase 2 | Pending |
 | GAP-06 | Phase 2 | Pending |
