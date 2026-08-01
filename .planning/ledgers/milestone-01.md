@@ -18,6 +18,62 @@ not `satisfied` — it gets its own verdict, `present, unproven` (D-19). This ba
 code exists" has already produced false-positive completions in this corpus: Milestone 4 Epic 3's
 task list is fully checked while three CLI-only dependencies remain unconditional in library builds.
 
+## Phase 2 amendments (2026-08-01)
+
+This file is now **amended in place**, per Phase 2 CONTEXT.md D-02: when a Phase 2 plan's measured
+result contradicted a row below, that row was edited directly with the new verdict, the command or
+`file:line` that produced it, and this date — never split into a separate corrections file. Phases
+5, 7, 10 and 13 inherit this same convention for their own sibling ledgers. Every amendment below is
+sourced from a named Phase 2 plan's SUMMARY (`.planning/phases/02-functional-gap-closure/02-0{1..8}-SUMMARY.md`)
+or from `02-test-baseline.md`, plan 02-01's measured `cargo test --workspace` baseline
+(commit `7e55655ccf58e7f010f5fbbf9c2504f30a0ea29c`).
+
+**Plan 02-01's baseline re-proof of GAP-01, GAP-02, GAP-04 and GAP-05 found zero contradictions** —
+all four re-proofs *agreed* with the ledger rows they checked (`REQ-commander-auto-selection`,
+`REQ-chain-of-command-execution`, `REQ-phalanx-concurrency`, `REQ-commander-result-normalization`,
+`REQ-commander-telemetry`). No amendment in this section is driven by a GAP-01/02/04/05
+contradiction — every amendment below instead corrects a `present, unproven` or
+`genuinely outstanding` row that a later Phase 2 plan's own implementation or review work closed, or
+records the new ADR-0007 deferral split. This is stated explicitly here so the absence of any
+GAP-01/02/04/05 contradiction is a recorded fact, not an inferred silence.
+
+### Corrections to this phase's own planning inputs
+
+Three corrections surfaced during Phase 2 execution, each to a document this phase itself used as an
+input — not to a Milestone-1 requirement:
+
+1. **CONTEXT.md D-15's `ProviderCapabilities` construction-site list was incomplete.** D-15 was
+   compiled by grep during Phase 2's discussion phase and named the following sites beyond the three
+   adapters: `grove_service.rs:1110`, `mock.rs:267,378`, `temperature_service.rs:356`,
+   `planning_service.rs:641`, `prompt_generation_service.rs:299`,
+   `paladin_execution_service.rs:2541,2631,2715`, plus `llm_port.rs`'s own doc/test sites. **It
+   omitted the OpenAI and Anthropic adapters' own `get_capabilities` literals** — both needed the
+   same field addition as DeepSeek. Plan 02-02's SUMMARY carries the full, compiler-verified list
+   (every exhaustive `ProviderCapabilities { ... }` construction site cross-referenced against
+   `grep -rn "ProviderCapabilities\s*{"`, confirmed by a clean `cargo build --workspace` after every
+   site was updated): D-15's list plus the two adapters, with `vision_llm_port.rs` and the
+   `examples/herald_*.rs` files correctly excluded (they already used `..Default::default()`).
+2. **ADR-0001's `Code Locations` section omitted the ports-crate consumer sites for the citadel
+   rename.** ADR-0001 named the rename's consumer sites, but plan 02-03 found two additional
+   compiled consumers only when `cargo test --workspace` failed to compile after the declared edits:
+   `crates/paladin-ports/src/output/citadel_port.rs` (4 sites — a compiled `#[cfg(test)]` module's
+   import and construction call, plus a `rust,no_run` doc example's import and construction call) and
+   `tests/integration/citadel_integration_test.rs` (3 sites — an import and two `BattalionState::new`
+   construction calls). Plan 02-03's SUMMARY carries the full corrected count (6 files touched total,
+   2 beyond ADR-0001's own declared list).
+3. **The research document's claim that a missed doc example would fail `cargo test` workspace-wide
+   is false for `paladin-ports`.** `crates/paladin-ports/Cargo.toml` sets `[lib] doctest = false`
+   (the same DEBT-03 finding `PROJECT.md` already records), so a stale doc example inside that crate
+   does not fail `cargo test --workspace` at all — it silently never runs. Plan 02-03 updated
+   `citadel_port.rs`'s doc example anyway, on the plan's own instruction, specifically **because**
+   DEBT-03 leaves it unexercised today: the moment `doctest = false` is lifted (DEBT-03's own future
+   fix), a stale example would then fail the build for the first time. This makes DEBT-03
+   **load-bearing** for any future rename inside this crate — a future renamer must not rely on
+   `cargo test --workspace` to catch a missed doc example here, since the safety net DEBT-03 removed
+   is exactly the one that would have caught it. The real compile-breaking sites for the citadel
+   rename were the ones inside `citadel_port.rs`'s compiled `#[cfg(test)]` module, not its doc
+   example.
+
 ## Verdict legend
 
 | Verdict | Meaning |
@@ -240,10 +296,12 @@ no nested block.
 | REQ-garrison-paladin-integration | satisfied | Exercised by `test_paladin_multi_turn_conversation` (`tests/integration/paladin_garrison_integration_test.rs:169`) and `test_paladin_without_garrison_single_turn` (`:143`) |
 | REQ-garrison-config | satisfied | `GarrisonSettings` struct at `crates/paladin-memory/src/config/garrison.rs:11`; exercised by `test_garrison_settings_validation_success` (`:100`) |
 | REQ-garrison-errors | satisfied | `GarrisonError` enum at `crates/paladin-core/src/platform/container/garrison_error.rs:8`; exercised by `test_storage_error_display` (`:51`) |
-| REQ-garrison-testing | present, unproven | The bulk of the Garrison testing infrastructure is real and passing (all rows above cite live tests; the task list's own annotation records "19 total: 12 paladin_garrison + 7 sqlite_garrison" integration tests). What remains unconfirmed is the closure claim itself — see the two nested items below, neither of which has a citable artifact in this tree. |
-| | | **Nested outstanding item:** `- [ ] 11.0 Final Validation and Cleanup` (`tasks-garrison-memory-system.md:246`) — **present, unproven** (parent). Four of its six children (11.1-11.4: `cargo fmt`, `cargo clippy`, `cargo test`, `cargo build --release`) are marked done; the two below remain open and are the reason the parent stays unchecked — this is not the "stale parent over complete subtasks" shape seen elsewhere in this corpus. |
-| | | **Nested outstanding item:** `- [ ] 11.5 Verify test coverage ≥ 80% using \`cargo llvm-cov\`` (`tasks-garrison-memory-system.md:251`) — **genuinely outstanding**. No coverage measurement for Garrison exists in this planning record as of this plan (`01-coverage-measurement.md`, produced by a sibling plan in this phase, does not exist yet). Forward owner: **QUAL-01**. |
-| | | **Nested outstanding item:** `- [ ] 11.6 Review all acceptance criteria from PRD - ensure all met` (`tasks-garrison-memory-system.md:252`) — **genuinely outstanding**. No PRD-acceptance review artifact exists for Epic 2. Forward owner: **GAP-06** (matches `REQUIREMENTS.md:2557`'s existing "Partial → GAP-06, QUAL-01" note). |
+| REQ-garrison-testing | satisfied | **Amended 2026-08-01, plan 02-09, citing plan 02-08's SUMMARY.** The bulk of the Garrison testing infrastructure is real and passing (all rows above cite live tests; the task list's own annotation records "19 total: 12 paladin_garrison + 7 sqlite_garrison" integration tests), and the closure claim the two nested items below once left unconfirmed is now closed by a real, written PRD-acceptance review: `.planning/phases/02-functional-gap-closure/02-garrison-prd-review.md` (50 criterion rows: 37 satisfied / 9 superseded / 2 genuinely outstanding / 2 present-unproven), which is itself the citable artifact this row previously lacked. |
+| | | **Nested outstanding item:** `- [ ] 11.0 Final Validation and Cleanup` (`tasks-garrison-memory-system.md:246`) — **satisfied** (parent). Four of its six children (11.1-11.4: `cargo fmt`, `cargo clippy`, `cargo test`, `cargo build --release`) were already marked done; the two remaining children (11.5, 11.6, below) are both now closed by plan 02-08. |
+| | | **Nested outstanding item:** `- [ ] 11.5 Verify test coverage ≥ 80% using \`cargo llvm-cov\`` (`tasks-garrison-memory-system.md:251`) — **Amended 2026-08-01, plan 02-09, citing plan 02-08's SUMMARY: superseded by shipped code**. [ADR-0006](../decisions/0006-coverage-gate.md) replaced this per-module 80% target with a single workspace-wide 84% floor (measured 84.79%); re-measuring Garrison alone would reintroduce the second coverage scope ADR-0006 exists to eliminate, per D-04. Forward owner for the workspace-wide figure: **QUAL-01**. |
+| | | **Nested outstanding item:** `- [ ] 11.6 Review all acceptance criteria from PRD - ensure all met` (`tasks-garrison-memory-system.md:252`) — **Amended 2026-08-01, plan 02-09, citing plan 02-08's SUMMARY: satisfied**. `.planning/phases/02-functional-gap-closure/02-garrison-prd-review.md` is exactly this review — 50 rows, one verdict per PRD criterion at the D-19 evidence bar, closing the "no PRD-acceptance review artifact exists for Epic 2" gap this row previously recorded. |
+| | | **New finding (plan 02-08's review, recorded here per its own instruction):** `PaladinError::GarrisonRequired` (`crates/paladin-core/src/platform/container/paladin_error.rs:54`, matched in `is_terminal()` at `:78`) — **genuinely outstanding**. The variant is defined and unit-tested (`:111`) but never *constructed* anywhere in the tree (`grep -rn "GarrisonRequired" src crates` shows only the definition, its own test, and one unrelated routing `match` arm in `conclave_execution_service.rs:364`); no code path detects "multi-turn attempted without Garrison" — execution simply proceeds with an empty history. **Forward owner: the v2 backlog (candidate)** — no existing GAP-*/QUAL-* requirement names this construction path; parallels this ledger's `LlmProviderError` dead-conversion finding (`02-test-wiring-sweep.md`) in shape. |
+| | | **New finding (plan 02-08's review, recorded here per its own instruction):** `GarrisonSettings::validate()` (`crates/paladin-memory/src/config/garrison.rs:46`) — **present, unproven**. The method exists and is directly unit-tested, but returns `Result<(), String>` (not `Result<(), GarrisonError>`) and has zero call sites in the `Settings`-loading path (`grep -rn "\.validate()" src` confirms) — an actually-invalid `garrison:` config block currently produces no error at load time, so the PRD's literal claim (invalid config → `GarrisonError::Configuration` on load) is unexercised end-to-end. **Forward owner: the v2 backlog (candidate)**, same reasoning as the row above. |
 
 ### Epic 3 — Arsenal Tool System
 
@@ -295,9 +353,21 @@ and [`ADR-0003`](../decisions/0003-formation-min-paladins.md) respectively rathe
 | REQ-chain-of-command-aggregation | satisfied | Exercised by `test_broadcast_executes_all_specialists` (`tests/unit/battalion/chain_of_command_service_tests.rs:302`), which aggregates concurrent specialist results |
 | REQ-battalion-status | satisfied | `BattalionStatus` enum at `battalion/mod.rs:471`; exercised by `test_sequential_execution_success` (`formation_service.rs:472`), which asserts `battalion_result.status == BattalionStatus::Completed` |
 | REQ-battalion-logging | present, unproven | `log::info!`/`warn!` calls exist at `formation_service.rs:58,156,173` and the equivalent call sites in `phalanx_service.rs`, `campaign_service.rs` and `chain_of_command_service.rs`; no named test asserts log output content, so the exerciser half of the bar is unmet |
-| REQ-battalion-cancellation | present, unproven | `CancellationToken`-based `execute_with_cancellation` at `phalanx_service.rs:151`, exercised by `test_cancellation_support` (`phalanx_service.rs:758`) — proven for **Phalanx only**. Formation, Campaign and ChainOfCommand expose no equivalent cancellation entry point (`grep -rn "execute_with_cancellation" crates/paladin-battalion/src/` returns only the Phalanx and Commander pass-through sites), so the requirement as a battalion-wide capability is citation-backed for one of four patterns and untested for the rest. Forward note: **GAP-02**. |
+| REQ-battalion-cancellation | satisfied | **Amended 2026-08-01, plan 02-09, citing [ADR-0007](../decisions/0007-battalion-cancellation-deferral.md).** `CancellationToken`-based `execute_with_cancellation` at `phalanx_service.rs:151`, exercised by `test_cancellation_support` (`phalanx_service.rs:758`) — satisfied for **Phalanx**, which ADR-0007 records as the requirement's shipped scope. The other three patterns are addressed in the nested row below, split out per ADR-0007's own "split the row" instruction rather than averaged into one verdict. |
+| | | **Nested item (ADR-0007 split): Formation, Campaign and ChainOfCommand cancellation** — **deferred with reason**, citing [ADR-0007](../decisions/0007-battalion-cancellation-deferral.md) as the deferring authority. Verified 2026-08-01: `grep -rn "execute_with_cancellation\|CancellationToken" crates/paladin-battalion/src/{formation_service.rs,campaign_service.rs,chain_of_command_service.rs,commander.rs}` returns zero matches — no cancellation entry point exists for any of the three, not merely an untested one. Building it is new capability (a cancellation contract across three more services, including two open design questions — what a cancelled run returns mid-DAG in Campaign and mid-delegation in ChainOfCommand), not gap closure; ROADMAP Phase 2's five success criteria never mention cancellation, corroborating that this was never Phase 2's scope. **Forward owner: the v2 backlog, gated on a recorded cancellation-contract decision** (ADR-0007's own named prerequisite). |
 | | | **Nested outstanding item:** `- [ ] 6.0 Implement Chain of Command Pattern (Phase 2 - Hierarchical Delegation)` (`tasks-battalion-orchestration.md:258`) — **satisfied** (parent checkbox stale). All 42 of its own subtasks (6.1-6.42) are individually checked, and direct re-verification confirms the code: `ChainOfCommand` (`chain_of_command.rs:64`), `ChainOfCommandExecutionService` (`chain_of_command_service.rs`), and a full `cargo test --test lib chain_of_command` run on 2026-07-31 passing 54/54 with 0 ignored (see `REQ-chain-of-command-execution` above). This is the same "stale parent over complete subtasks" shape `REQUIREMENTS.md:2573` already flagged in its own heading ("tasks 6.0 and 7.0 open"), and matches the pattern Milestone 1 run 1 already found for this exact epic (Chain of Command wiring existed despite the January task list marking it incomplete). |
 | | | **Nested outstanding item:** `- [ ] 7.0 Integration Testing, Performance Validation & Documentation` (`tasks-battalion-orchestration.md:302`) — **satisfied** (parent checkbox stale). All 22 of its own subtasks (7.1-7.22) are individually checked; re-verified: `tests/integration/battalion/load_test.rs` exists with 5 real, non-`#[ignore]`d load/stress tests (`test_load_formation_50_concurrent_battalions` at `:102`, `test_load_phalanx_concurrent_execution` at `:192`, `test_stress_high_concurrency_limit` at `:273`), `crates/paladin-battalion/benches/battalion_benchmarks.rs` exists, and `examples/chain_of_command_delegation.rs` exists and compiles. `docs/BATTALION.md` (7.9's literal path) does not exist at that path, but its content shipped as `docs/src/appendix/battalion-patterns-guide.md` — the same mdbook relocation pattern `PROJECT.md`'s ARCH-05 already records for other Milestone-1 docs deliverables (relocated, not missing). |
+
+**Planning-input correction (2026-08-01, plan 02-09):** [ADR-0001](../decisions/0001-battalion-config.md)'s
+`Code Locations` section, cited by `REQ-battalion-config-v1` above, omitted two of the six files the
+`citadel.rs` checkpoint-config rename actually touched. Plan 02-03 found the omission only when
+`cargo test --workspace` failed to compile after ADR-0001's own declared four-file edit:
+`crates/paladin-ports/src/output/citadel_port.rs` (4 sites — a compiled `#[cfg(test)]` module's
+import and construction call, plus a `rust,no_run` doc example's import and construction call) and
+`tests/integration/citadel_integration_test.rs` (3 sites — an import and two `BattalionState::new`
+calls). Plan 02-03's SUMMARY carries the full, corrected six-file count. See also the doctest-false
+correction recorded in this ledger's "Phase 2 amendments" section above (item 3), which explains why
+`citadel_port.rs`'s doc example did not itself force this discovery.
 
 ### Epic 5 — Commander Strategy Router
 
@@ -313,7 +383,7 @@ ADRs Epic 4 uses above, rather than re-deciding.
 | REQ-formation-min-paladins-v2 | genuinely outstanding | See [ADR-0003](../decisions/0003-formation-min-paladins.md). The Commander-level half of this variant (construction validates only ≥1 Paladin, Auto routes a single Paladin to Formation) is real: `test_auto_selects_formation_for_single_paladin` (`crates/paladin-battalion/src/commander.rs:1912`) passes today. But the full behavioral claim this row makes — that a single-Paladin Battalion **executes** via Formation rather than failing — does not hold: `Formation::validate` (`crates/paladin-core/src/platform/container/battalion/formation.rs:109-111`) still rejects it, per ADR-0003's own contradiction record. No end-to-end test exists where a real single-Paladin Formation execution succeeds (the passing test only proves strategy *selection*, not successful execution). Forward owner: **GAP-07**, which lands ADR-0003's relaxed bound. |
 | REQ-commander-construction | satisfied | `Commander` struct at `commander.rs:151`, `CommanderBuilder` at `:1272`; exercised by `test_commander_builder_success` (`commander.rs:1689`), `test_commander_builder_missing_paladins` (`:1728`) and `test_commander_builder_invalid_config` (`:1767`) |
 | REQ-commander-strategy-types | satisfied | `BattalionStrategy` enum at `crates/paladin-core/src/platform/container/battalion/mod.rs:375`; exercised by `test_commander_all_strategies` (`commander.rs:1790`) |
-| REQ-commander-auto-selection | satisfied | `analyze_and_select` exercised by 11 passing keyword-selection tests including `test_auto_selects_campaign_for_workflow_keywords`. This upgrades the 2026-01 "Partial → GAP-05 (one failing keyword test)" note (`REQUIREMENTS.md:2607`): the task list's own line 99 records `test_auto_selects_campaign_for_workflow_keywords` as "(FAILING - needs fix)", but `cargo test -p paladin-battalion --lib commander:: -- --test-threads=4` run on 2026-07-31 shows this test, and all 11 auto-selection tests, passing with 0 failures. See the nested item below. |
+| REQ-commander-auto-selection | satisfied | `analyze_and_select` exercised by 11 passing keyword-selection tests including `test_auto_selects_campaign_for_workflow_keywords`. This upgrades the 2026-01 "Partial → GAP-05 (one failing keyword test)" note (`REQUIREMENTS.md:2607`): the task list's own line 99 records `test_auto_selects_campaign_for_workflow_keywords` as "(FAILING - needs fix)", but `cargo test -p paladin-battalion --lib commander:: -- --test-threads=4` run on 2026-07-31 shows this test, and all 11 auto-selection tests, passing with 0 failures. **Amended 2026-08-01, plan 02-09, citing plan 02-01's `02-test-baseline.md` re-proof (GAP-05):** re-executed live, not cited from the January run — `cargo test -p paladin-battalion test_auto_selects` on commit `7e55655ccf58e7f010f5fbbf9c2504f30a0ea29c` shows 7 passed, 0 failed, 0 ignored, naming all 7 `test_auto_selects_*` tests including this one, replacing inference with a command that ran on this phase's own measured commit. See the nested item below. |
 | | | **Nested outstanding item:** `- [ ] 3.11 Write unit test: test_auto_selects_campaign_for_workflow_keywords (FAILING - needs fix)` (`tasks-commander-strategy-router.md:99`) — **satisfied** (checkbox stale). Directly re-run 2026-07-31: `test commander::tests::test_auto_selects_campaign_for_workflow_keywords ... ok`. Whatever caused the January failure has since been fixed; no trace of the original bug remains in the tree. |
 | REQ-commander-execute | satisfied | `Commander::execute` at `commander.rs:337`; exercised by `test_execute_resolves_auto_strategy` (`commander.rs:2063`), `test_execute_routes_to_campaign_service` (`:2006`) and `test_execute_routes_to_chain_service` (`:2035`) |
 | REQ-commander-result-normalization | satisfied | `BattalionResult` metadata population exercised by `test_result_contains_telemetry_metadata` (`commander.rs:2155`). This upgrades the 2026-01 "Partial → GAP-04 (task 5.0 open)" note (`REQUIREMENTS.md:2609`) — see the nested items below, both of which re-verify as done. |
@@ -341,7 +411,7 @@ its 18 subtasks. The row whose subject is the DeepSeek temperature range links t
 | REQ-provider-configuration | satisfied | `LlmProviderFactory::create()` at `crates/paladin-llm/src/provider_factory.rs:62`, matching provider names to `openai`/`deepseek`/`anthropic`; `LlmConfig::default_provider` at `crates/paladin-llm/src/config/llm.rs:27`; exercised by `test_factory_creation` and `test_unknown_provider_returns_error` (`provider_factory.rs:163,169`) |
 | REQ-provider-backward-compat | satisfied | `test_llm_config_default` (`crates/paladin-llm/src/config/llm.rs:123`) asserts `default_provider == Some("openai")`, i.e. OpenAI remains the default when no provider is configured, matching the requirement |
 | REQ-provider-error-mapping | satisfied | Each adapter maps HTTP status codes to `LlmError` variants directly at the call site — e.g. `crates/paladin-llm/src/deepseek/adapter.rs:343-350` maps 401→`AuthenticationError`, 429→`RateLimitExceeded`, 404→`ModelNotAvailable`, 400→`InvalidPrompt`, else→`ProcessingError`. **Finding**: a separate `LlmProviderError` type with its own `From<LlmProviderError> for LlmError` impl exists at `crates/paladin-llm/src/error.rs:16,54`, but `grep -rn "LlmProviderError" crates/paladin-llm/src/` outside that one file returns zero matches — no adapter actually constructs it. The mapping the requirement asks for is real, but via direct `LlmError` construction at each site, not through the named `LlmProviderError` conversion path the file's own doc comment describes |
-| REQ-provider-testing | present, unproven | Mocked-HTTP unit tests exist as source but are split across two locations with different fates. The tests actually wired into a runnable target are the 67 passing `cargo test -p paladin-llm --lib --all-features` tests above (config/adapter-creation/capabilities level, not HTTP-mock level). **Finding**: `tests/unit/llm/{deepseek_adapter_test,anthropic_adapter_test,provider_factory_test}.rs` — the richer mockito-based suite the task list's task 6.0 claims at line 200 ("27 new tests: 9 DeepSeek, 10 Anthropic, 8 Factory", including `test_deepseek_auth_failure_401`, `test_deepseek_rate_limit_429` at `deepseek_adapter_test.rs:119,148`) — is **dead code**: `tests/unit/mod.rs` (the `[[test]] name = "unit"` binary's entry point, `Cargo.toml:172-173`) does not declare `pub mod llm;` anywhere, so these three files are never compiled into any test binary and never run. Task 6.0 is checked `[x]` on the strength of tests that do not execute. The live-API integration suite (`tests/integration/llm_live_api_tests.rs`) does compile and run behind the `live-api-tests` feature flag (`Cargo.toml:265`), un-deferred by ingest run 2 per `STATE.md` §Deferred Items — but `require_api_key()` at `llm_live_api_tests.rs:65` panics on a missing key by design (confirmed by direct read, matching `STATE.md`'s "two contradictions are live in shipped code" note), reversing the graceful-skip semantics VERIFY-06 is scoped to resolve. Neither gap is a fabricated deferral — both are re-verified against the tree, not carried from the January note |
+| REQ-provider-testing | satisfied | **Amended 2026-08-01, plan 02-09, citing plan 02-06's SUMMARY.** `tests/unit/llm/{deepseek_adapter_test,anthropic_adapter_test,provider_factory_test}.rs` is no longer dead code: `tests/unit/mod.rs` was missing the single `pub mod llm;` line that connected these three files to the `unit` `[[test]]` target — plan 02-06 added it (D-10/D-11) and repaired the mechanical construction-API drift the files had accumulated since being written. Per-file counts (present / passing / removed): `deepseek_adapter_test.rs` 8/8/0, `anthropic_adapter_test.rs` 9/9/0, `provider_factory_test.rs` 8/8/0 — **25/25 passing, 0 removed** under the structural-breakage rule (every breakage found was mechanical, not structural; no test asserted behaviour the current adapters no longer have). Exercised by `cargo test --test unit -- llm` (41 passed: the 25 target functions plus 16 pre-existing name matches, 0 failed, 0 ignored). The 401/429/timeout/streaming/malformed-response HTTP-level failure paths these tests cover are ones the 67 live `paladin-llm` tests do not reach. The live-API integration suite (`tests/integration/llm_live_api_tests.rs`) still compiles and runs behind the `live-api-tests` feature flag; `require_api_key()`'s panic-on-missing-key semantics are unchanged by this phase and remain **VERIFY-06**'s (Phase 5) to resolve — not re-decided here. |
 | REQ-provider-documentation | satisfied | `docs/src/appendix/provider-expansion.md` (521 lines) and `docs/src/contributing/contributing-providers.md` (458 lines) — the same mdbook-relocation pattern already recorded elsewhere in this ledger for other Milestone-1 docs deliverables (originally `docs/PROVIDER_EXPANSION.md` / `docs/CONTRIBUTING_PROVIDERS.md` per the task list, relocated not missing) |
 | REQ-temperature-range-v1 / -v2 | superseded by shipped code | See [ADR-0004](../decisions/0004-temperature-validation.md), which records this as `must change`: `ProviderCapabilities` has no `temperature_range` field today, so neither the v1 global-clamp nor the v2 DeepSeek-specific position is currently reachable through the port boundary as the ADR's provider-aware design requires. The builder's shipped clamp is `[0.0, 1.0]` (`paladin_builder.rs:1112-1117`, matching v1 as today's fallback default); the DeepSeek `0.0-2.0` range v2 asks for remains unreachable until **GAP-07** lands the field. Not re-decided here |
 | | | **Nested outstanding item:** `- [ ] 7.0 Write integration tests for live API validation (DEFERRED - unit tests with mocks provide sufficient coverage)` (`tasks-provider-expansion.md:225`) — **present, unproven** (parent). The task's own inline annotation calls this deferred, but per the second prohibition a deferral verdict needs a citation to an actual deferring document, not an inference from the checkbox text. `STATE.md` §Deferred Items records this row differently: "Un-deferred by run 2 — suite ships behind `live-api-tests`; only the skip-vs-fail semantics remain open (VERIFY-06)". The suite does ship (`tests/integration/llm_live_api_tests.rs` exists, gated by the real `live-api-tests` feature), so it is not `genuinely outstanding` either — it is real code with one unresolved semantic question, hence `present, unproven` rather than either extreme. Forward owner: **VERIFY-06** |
@@ -354,15 +424,25 @@ its 18 subtasks. The row whose subject is the DeepSeek temperature range links t
 | | | **Nested outstanding item:** `- [ ] 7.7 Write integration test: \`test_anthropic_live_completion()\` marked with \`#[ignore]\`` (`tasks-provider-expansion.md:232`) — **present, unproven**, same reasoning as 7.3 (Anthropic case, `llm_live_api_tests.rs:424,456,514,542`) |
 | | | **Nested outstanding item:** `- [ ] 7.8 Write integration test: \`test_anthropic_live_streaming()\` marked with \`#[ignore]\`` (`tasks-provider-expansion.md:233`) — **present, unproven**, same reasoning |
 | | | **Nested outstanding item:** `- [ ] 7.9 Write integration test: \`test_anthropic_model_validation()\` marked with \`#[ignore]\`` (`tasks-provider-expansion.md:234`) — **present, unproven**, same reasoning |
-| | | **Nested outstanding item:** `- [ ] 7.10 Create \`tests/integration/llm/provider_switching_test.rs\`` (`tasks-provider-expansion.md:235`) — **genuinely outstanding**. No dedicated provider-switching integration test file exists anywhere in the tree under any name; `test_factory_creation`/`test_unknown_provider_returns_error` (`provider_factory.rs:163,169`) exercise the factory in isolation but not a runtime provider-switch scenario |
-| | | **Nested outstanding item:** `- [ ] 7.11 Write integration test: \`test_switch_providers_via_config()\` with mocks` (`tasks-provider-expansion.md:236`) — **genuinely outstanding**, no matching test found anywhere in the tree |
-| | | **Nested outstanding item:** `- [ ] 7.12 Write integration test: \`test_multiple_providers_simultaneously()\`` (`tasks-provider-expansion.md:237`) — **genuinely outstanding**, no matching test found |
-| | | **Nested outstanding item:** `- [ ] 7.13 Write integration test: \`test_provider_capabilities_detection()\`` (`tasks-provider-expansion.md:238`) — **present, unproven** as a dedicated integration test by this name, though the underlying capability is unit-tested per-adapter (`test_get_capabilities`, `test_deepseek_provider_capabilities`, `test_anthropic_provider_capabilities` cited above) |
-| | | **Nested outstanding item:** `- [ ] 7.14 Add CI configuration notes for optional live API tests (REQ-26)` (`tasks-provider-expansion.md:239`) — **genuinely outstanding**. `grep -n "live-api-tests" .github/workflows/*.yml` returns zero matches; the feature flag exists in `Cargo.toml:265` but no CI job references it |
+| | | **Nested outstanding item:** `- [ ] 7.10 Create \`tests/integration/llm/provider_switching_test.rs\`` (`tasks-provider-expansion.md:235`) — **Amended 2026-08-01, plan 02-09, citing plan 02-06's SUMMARY: satisfied**. `tests/integration/provider_switching_test.rs` now exists (a flat file, not under an `llm/` subdirectory — the same functional-relocation pattern rows 7.1/7.6 above already record for this epic), exercised by `cargo test --test lib -- integration::provider_switching_test` (2 passed, 0 failed): `test_provider_switch_preserves_request_contract` proves two distinct `LlmPort` implementations (a mock and a real `DeepSeekAdapter` against a local mockito server) can be selected at runtime behind the same `Arc<dyn LlmPort>` with the request/response contract preserved and the providers' `temperature_range` capabilities genuinely differing; `test_provider_switch_rejects_unknown_provider` proves the typed-error path. Runs fully offline, no live provider keys. |
+| | | **Nested outstanding item:** `- [ ] 7.11 Write integration test: \`test_switch_providers_via_config()\` with mocks` (`tasks-provider-expansion.md:236`) — **genuinely outstanding**, no matching test found anywhere in the tree. Not amended by this plan — 02-CONTEXT.md D-09 scoped only task 7.10 (the provider-switching test file itself) into Phase 2; this specific named test (config-driven switching, distinct from 7.10's runtime-switching proof) remains open |
+| | | **Nested outstanding item:** `- [ ] 7.12 Write integration test: \`test_multiple_providers_simultaneously()\`` (`tasks-provider-expansion.md:237`) — **genuinely outstanding**, no matching test found. Not amended by this plan, same D-09 scoping reason as 7.11 |
+| | | **Nested outstanding item:** `- [ ] 7.13 Write integration test: \`test_provider_capabilities_detection()\`` (`tasks-provider-expansion.md:238`) — **present, unproven** as a dedicated integration test by this name, though the underlying capability is unit-tested per-adapter (`test_get_capabilities`, `test_deepseek_provider_capabilities`, `test_anthropic_provider_capabilities` cited above). Not amended by this plan |
+| | | **Nested outstanding item:** `- [ ] 7.14 Add CI configuration notes for optional live API tests (REQ-26)` (`tasks-provider-expansion.md:239`) — **Amended 2026-08-01, plan 02-09, per D-09: deferred with reason**. `grep -n "live-api-tests" .github/workflows/*.yml` still returns zero matches — this is a CI-workflow change, D-09's own text names it explicitly out of Phase 2's scope and Phase 15's PIPE territory. **Forward owner: Phase 15 (PIPE)**, blocked in substance on Phase 5's **VERIFY-06**, which has not yet decided whether a keyless CI run should fail loudly or skip cleanly — exactly what such a job would encode. |
 | | | **Nested outstanding item:** `- [ ] 7.15 Run \`cargo test --test deepseek_integration_test\` (without --ignored) to verify non-live tests` (`tasks-provider-expansion.md:240`) — **superseded by shipped code**. No target named `deepseek_integration_test` exists (per 7.2/7.6 above); the equivalent command against the shipped structure is `cargo test --test llm_live_api_tests --features live-api-tests` |
 | | | **Nested outstanding item:** `- [ ] 7.16 Optionally run \`cargo test --ignored\` with API keys set to test live APIs` (`tasks-provider-expansion.md:241`) — **present, unproven**. Running this command requires live provider API keys not available in this sandbox; not executed as part of this ledger entry |
 | | | **Nested outstanding item:** `- [ ] 7.17 Fix any failing integration tests` (`tasks-provider-expansion.md:242`) — **present, unproven**, contingent on 7.16 actually being run |
 | | | **Nested outstanding item:** `- [ ] 7.18 Document how to run integration tests in README or test files` (`tasks-provider-expansion.md:243`) — **satisfied**. `llm_live_api_tests.rs:10-27` carries a full "## Running Tests" doc comment with both `.env`-file and exported-variable invocation methods, provider-scoped run commands, and a cost warning — this documentation already exists, just inline in the test file rather than in the README |
+
+**Planning-input correction (2026-08-01, plan 02-09):** Phase 2 CONTEXT.md's own D-15 enumerated
+every non-adapter `ProviderCapabilities` construction site beyond the three shipped adapters
+(`REQ-llm-port-interface` above), compiled by grep during Phase 2's discussion phase. That list
+**omitted the OpenAI and Anthropic adapters' own `get_capabilities` literals** — both needed the
+`temperature_range` field addition exactly like DeepSeek did. Plan 02-02's SUMMARY carries the full,
+compiler-verified construction-site list (every exhaustive `ProviderCapabilities { … }` literal in
+the workspace, cross-checked against `grep -rn "ProviderCapabilities\s*{"` with a clean
+`cargo build --workspace` after every site was updated). See also this ledger's top-level "Phase 2
+amendments" section, item 1, for the full corrected list.
 
 ### Epic 7 — Citadel State Persistence
 
@@ -398,12 +478,12 @@ re-deciding.
 | REQ-herald-configuration | satisfied | `HeraldConfig` struct at `src/config/herald.rs:62`, `default_formatter` field defaulting to `"json"` (`:64,76`); exercised by `test_herald_config_default` (`:159`) and `test_herald_config_validate_invalid_formatter` (`:191`) |
 | REQ-herald-default-and-override | satisfied | `HeraldRegistry::default()` auto-registers all three built-in formatters (`src/application/services/herald/herald_registry.rs:216`); runtime override via `PaladinBuilder::with_herald()` (`src/application/services/paladin/paladin_builder.rs:713`); exercised by `test_default_registry` (`herald_registry.rs:425`) and `test_default_registry_can_override_builtin_formatters` (`:469`) |
 | REQ-herald-paladin-result-fields | satisfied | `PaladinExecutionService::format_result()` at `src/application/services/paladin/paladin_execution_service.rs:423` calls `herald.format_paladin_result()` when a Herald is configured; exercised by `test_format_paladin_result_includes_metadata` (`json_herald.rs:327`), which asserts the formatted output's metadata fields against a real `PaladinResult`. This upgrades the 2026-01 "Verify" note (`REQUIREMENTS.md:2654`) — the wiring the note flagged as unconfirmed is confirmed and tested, re-verified 2026-07-31 |
-| REQ-herald-battalion-result-fields | satisfied | `format_battalion_result` trait method at `crates/paladin-core/src/platform/container/herald.rs:85`; exercised by `test_format_battalion_result_success` and `test_format_battalion_result_includes_metadata` (`json_herald.rs:354,369`), which assert against `BattalionResult` at `crates/paladin-core/src/platform/container/battalion/mod.rs:549` — the merged superset run-3 code verification already settled (`STATE.md`: "`BattalionResult` resolves to a merged superset... so RECON-03 became a recording task and GAP-07 lost its code change"). This upgrades the 2026-01 "Partial → GAP-03 (depends on RECON-03)" note (`REQUIREMENTS.md:2655`) — RECON-03 is the closed dependency, so the Herald's battalion-field formatting is no longer blocked on it |
+| REQ-herald-battalion-result-fields | satisfied | **Amended 2026-08-01, plan 02-09, citing plans 02-04 and 02-05's SUMMARYs.** `format_battalion_result` trait method at `crates/paladin-core/src/platform/container/herald.rs:85`. **Contradiction found and closed:** plan 02-04's direct code reading contradicted this row's prior citation — `test_format_battalion_result_success`/`_includes_metadata` (`json_herald.rs:354,369`) never exercised the Table Herald at all, and the Table Herald's own pre-existing test asserted only its own two hardcoded placeholder rows ("paladin_1"/"paladin_2") against an empty `paladin_results` input, a test that would pass against a formatter that ignored its argument entirely. Plan 02-04 closed the gap for real: Formation now populates `per_paladin_times`/`per_paladin_tokens`/`total_tokens`/`node_errors` (ported from Phalanx's pattern), and all three Heralds (JSON, Markdown, Table) render the Battalion's name/id/strategy, per-Paladin results in execution order, aggregate tokens and failure detail — the Table Herald's stub replaced entirely, its self-confirming test replaced by four content-asserting tests including a differing-output litmus test. Plan 02-05 then closed the producer-to-renderer proof end-to-end: `tests/integration/battalion_herald_end_to_end_test.rs`'s `test_formation_result_through_json_markdown_table_heralds` and `test_formation_partial_results_through_all_three_heralds` drive a **real** `FormationExecutionService::execute` (no hand-built `BattalionResult` anywhere in the file) through all three Heralds, exercised by `cargo test --test lib -- integration::battalion_herald_end_to_end_test` (2 passed, 0 failed). |
 | REQ-herald-registry | satisfied | `HeraldRegistry` struct at `src/application/services/herald/herald_registry.rs:85`, `register`/`get` at `:120,144`; exercised by `test_register_and_get_formatter` (`:316`) and thread-safety-checked by `test_registry_thread_safety` (`:401`) |
 | REQ-herald-builder-integration | satisfied | `PaladinBuilder::with_herald()` at `paladin_builder.rs:713`; exercised by the same builder test suite pattern as `REQ-citadel-builder-integration` above (builder methods for optional adapters are tested identically across Garrison/Citadel/Herald) |
 | REQ-herald-error-handling | satisfied | `format_error(&self, error: &PaladinError) -> String` — the deliberately infallible method per ADR-0005 — at `json_herald.rs:215`; exercised by `test_format_error` (`json_herald.rs:433`, and the equivalent in `markdown_herald.rs:529`, `table_herald.rs:389`) |
 | | | **Nested outstanding item:** `- [ ] 7.0 Integrate Herald with Paladin/Battalion execution` (`tasks-herald-output-formatting.md:167`) — **satisfied** (parent checkbox stale). 11 of its 12 subtasks (7.1-7.11) are checked; the sole open child is 7.13 below, and the parent's own scope (Paladin and Battalion integration) is otherwise complete — `with_herald`, `format_result`, and Formation/Phalanx Herald support all cited above |
-| | | **Nested outstanding item:** `- [ ] 7.13 Write integration tests for Battalion with Herald (deferred needs Battalion execution setup)` (`tasks-herald-output-formatting.md:180`) — **present, unproven**. `test_format_battalion_result_success` (`json_herald.rs:354`) exercises the Herald-side formatting of a `BattalionResult` directly, but no integration test exercises a real Battalion execution service (Formation/Phalanx) producing that result and piping it through a configured Herald end-to-end — the gap the task's own inline note names ("needs Battalion execution setup") is genuine, not fabricated |
+| | | **Nested outstanding item:** `- [ ] 7.13 Write integration tests for Battalion with Herald (deferred needs Battalion execution setup)` (`tasks-herald-output-formatting.md:180`) — **Amended 2026-08-01, plan 02-09, citing plan 02-05's SUMMARY: satisfied**. `tests/integration/battalion_herald_end_to_end_test.rs`'s `test_formation_result_through_json_markdown_table_heralds` and `test_formation_partial_results_through_all_three_heralds` are exactly this integration test — a real `FormationExecutionService` run over three named mock Paladins, piped through JSON, Markdown and Table Heralds, including one deliberately-failed Paladin for the partial-results case. Command: `cargo test --test lib -- integration::battalion_herald_end_to_end_test` (2 passed, 0 failed). The task's own note said the gap was "needs Battalion execution setup" — the closure drove a real execution service (`FormationExecutionService`), not a hand-built `BattalionResult`. |
 
 ### Epic 9 — Armory CLI Tools
 
@@ -426,9 +506,9 @@ these as un-deferred by ingest run 2 — the blocking mock provider shipped
 | REQ-cli-validation-errors | satisfied | `CliError` enum at `src/application/cli/error.rs:21`; exercised by `test_validation_error_formatting` (`src/application/cli/error_impl.rs:415`) and end-to-end by `test_invalid_config_file_error`/`test_config_file_not_found_error` (`cli_integration_test.rs:676,714`) |
 | REQ-cli-output-formatting | satisfied | `OutputFormatter::format_paladin_result()` at `src/application/cli/formatters/output.rs:234`; exercised end-to-end by `test_output_to_file_flag`/`test_verbose_mode_flag` (`cli_integration_test.rs:748,779`) |
 | REQ-cli-interactive-mode | superseded by shipped code | See the Divergences table above (`REQ-cli-interactive-mode` row) — an interactive REPL ships in the Armory CLI, exceeding Epic 9's own non-goal NG-7 ("No REPL or interactive shell"). Not re-decided here; the divergence is stated once |
-| | | **Nested outstanding item:** `- [ ] 13.4 Write test: run Paladin from config with mock LLM adapter (deferred - requires CLI mock provider support)` (`tasks-armory-cli-tools.md:281`) — **genuinely outstanding**. `STATE.md` records the blocking mock-provider dependency (`REQ-mock-llm-adapter`) as shipped, which un-defers this item in principle, but no CLI-level test wiring a mock LLM adapter into `handle_agent_run()` exists anywhere in `src/application/cli/tests/` or `tests/integration/cli_integration_test.rs` — the blocker is gone, the test itself was never written |
-| | | **Nested outstanding item:** `- [ ] 13.5 Write test: run Formation with multiple mock Paladins (deferred - requires CLI mock provider support)` (`tasks-armory-cli-tools.md:282`) — **genuinely outstanding**, same reasoning as 13.4 — no such CLI-level Formation test exists |
-| | | **Nested outstanding item:** `- [ ] 13.6 Write test: run Phalanx with parallel execution (deferred - requires CLI mock provider support)` (`tasks-armory-cli-tools.md:283`) — **genuinely outstanding**, same reasoning as 13.4 — no such CLI-level Phalanx test exists |
+| | | **Nested outstanding item:** `- [ ] 13.4 Write test: run Paladin from config with mock LLM adapter (deferred - requires CLI mock provider support)` (`tasks-armory-cli-tools.md:281`) — **Amended 2026-08-01, plan 02-09, citing plan 02-07's SUMMARY: satisfied**. **Correction to the prior "never written" finding**: `tests/cli/paladin_execution_test.rs`'s `test_paladin_basic_execution` is exactly this test — it existed, complete, using current construction APIs, and needed only the missing `tests/cli/helpers.rs` shim to compile; it was never rewritten, only reconnected. Command: `cargo test --features cli --test cli -- paladin_execution_test::test_paladin_basic_execution`. |
+| | | **Nested outstanding item:** `- [ ] 13.5 Write test: run Formation with multiple mock Paladins (deferred - requires CLI mock provider support)` (`tasks-armory-cli-tools.md:282`) — **Amended 2026-08-01, plan 02-09, citing plan 02-07's SUMMARY: satisfied**, same correction as 13.4 — `tests/cli/formation_execution_test.rs`'s `test_formation_basic_sequential_execution` is the named exerciser. Command: `cargo test --features cli --test cli -- formation_execution_test::test_formation_basic_sequential_execution`. |
+| | | **Nested outstanding item:** `- [ ] 13.6 Write test: run Phalanx with parallel execution (deferred - requires CLI mock provider support)` (`tasks-armory-cli-tools.md:283`) — **Amended 2026-08-01, plan 02-09, citing plan 02-07's SUMMARY: satisfied**, same correction as 13.4 — `tests/cli/phalanx_execution_test.rs`'s `test_phalanx_basic_parallel_execution` is the named exerciser. Command: `cargo test --features cli --test cli -- phalanx_execution_test::test_phalanx_basic_parallel_execution`. |
 
 ### Epic 10 — Validation & Documentation
 
@@ -470,10 +550,13 @@ records.
 
 ## Outstanding item reconciliation (RECON-01)
 
-**Total outstanding Milestone-1 task items nested in this ledger: 39.** This matches
-`intel/task-completion-state.md`'s deterministic Milestone_1-MVP total exactly (39 open, extracted
-2026-07-30 by counting literal `- [ ]` GFM checkboxes across the milestone's 11 task lists — not an
-LLM classification of what "open" means).
+**Total outstanding Milestone-1 task items nested in this ledger, sourced from a `.project/`
+task-list checkbox: still 39.** This matches `intel/task-completion-state.md`'s deterministic
+Milestone_1-MVP total exactly (39 open, extracted 2026-07-30 by counting literal `- [ ]` GFM
+checkboxes across the milestone's 11 task lists — not an LLM classification of what "open" means).
+Amending a nested item's *verdict* does not remove its row, so this figure is unchanged by Phase 2 —
+none of the amendments below deleted a task-list-sourced nested item, they only updated its verdict
+in place.
 
 **Per-file breakdown, across all 8 task files that carry at least one open item** (source:
 `intel/task-completion-state.md`'s "Open items by list" breakdown for `Milestone_1-MVP`):
@@ -490,27 +573,50 @@ LLM classification of what "open" means).
 | `unit-test-improvements/tasks-improve-unit-test-coverage.md` | 2 | 2 | yes |
 | **Total** | **39** | **39** | **yes** |
 
-The two figures agree exactly: 39 nested outstanding-item bullets exist in this ledger (13 authored
-by plan 01-06 across Epics 2-5, 26 authored by this plan across Epic 6, Epic 8, Epic 9 and
-unit-test-improvements), matching the deterministic source with no adjustment needed in either
-direction.
+The two figures still agree exactly: 39 nested outstanding-item bullets sourced from a task-list
+checkbox exist in this ledger (13 authored by plan 01-06 across Epics 2-5, 26 authored by plan 01-07
+across Epic 6, Epic 8, Epic 9 and unit-test-improvements), matching the deterministic source with no
+adjustment needed in either direction.
 
-**Verdict-class distribution across the whole ledger** (every `REQ-*` table row, every nested
-outstanding item, and the 3 Divergences-table rows, counted programmatically 2026-07-31 by parsing
-each row's own Verdict column rather than a loose full-file text grep, which would double-count
-verdict words that appear inside evidence prose):
+**Phase 2 added 3 further nested rows, none sourced from a `.project/` task-list checkbox** — they
+do not count against the 39/39 reconciliation above, and are named here so their absence from that
+count is a recorded fact, not an inferred silence: the ADR-0007 cancellation-deferral split under
+`REQ-battalion-cancellation` (Epic 4), and the two gaps plan 02-08's Garrison PRD-acceptance review
+surfaced (`PaladinError::GarrisonRequired`, `GarrisonSettings::validate()`, both Epic 2). Physical
+nested-item rows in the ledger: 39 + 3 = **42**.
 
-| Verdict | Count |
-|---|---|
-| `satisfied` | 100 |
-| `present, unproven` | 23 |
-| `genuinely outstanding` | 11 |
-| `superseded by shipped code` | 20 |
-| `deferred with reason` | 1 |
-| **Total (113 `REQ-*` rows + 39 nested items + 3 Divergences rows)** | **155** |
+**Verdict-class distribution across the whole ledger, re-counted 2026-08-01 after Phase 2's
+amendments** (every `REQ-*` table row, every nested outstanding item — the original 39 plus the 3
+Phase 2 added — and the 3 Divergences-table rows, counted by extracting each row's own Verdict
+token: `grep -oE "^\| REQ-[^|]+\| [^|]+ \|"` for the 113 `REQ-*` rows' Verdict column, and the final
+bolded verdict word in each `| | |`-prefixed nested-item line for the 42 nested rows, rather than a
+loose full-file text grep, which would double-count verdict words that appear inside evidence
+prose):
 
-The `present, unproven` bucket — 23 items, the largest non-`satisfied` class — is exactly the size
-D-19's evidence bar was designed to surface: each of those 23 has a real `file:line` citation but no
-named exerciser proves it, which is a different and more precise finding than either "done" or "not
-done". `genuinely outstanding` (11) is smaller than `present, unproven` — most of what looked
-undone on paper turned out to have partial evidence once re-checked against the tree, not none.
+| Verdict | Count (2026-07-31, Phase 1) | Count (2026-08-01, Phase 2) | Net change |
+|---|---|---|---|
+| `satisfied` | 100 | 110 | +10 |
+| `present, unproven` | 23 | 19 | -4 |
+| `genuinely outstanding` | 11 | 5 | -6 |
+| `superseded by shipped code` | 20 | 21 | +1 |
+| `deferred with reason` | 1 | 3 | +2 |
+| **Total (113 `REQ-*` rows + 42 nested items + 3 Divergences rows)** | **155** | **158** | **+3** |
+
+**The arithmetic, shown:** row-count growth is exactly +3 (155 → 158), matching the 3 new nested
+rows named above (no `REQ-*` row was added or removed — only existing verdicts changed, plus three
+brand-new nested rows). Net verdict-class changes sum to zero (+10 -4 -6 +1 +2 = +3, matching the
+row-count growth exactly): eleven existing rows changed class this phase (Epic 8 task 7.13, Epic 9
+tasks 13.4/13.5/13.6, `REQ-provider-testing`, Epic 6 task 7.10, Epic 6 task 7.14, `REQ-battalion-cancellation`,
+`REQ-garrison-testing`, Epic 2 task 11.5, Epic 2 task 11.6), and three brand-new rows were added
+(the ADR-0007 cancellation split → `deferred with reason`; `PaladinError::GarrisonRequired` →
+`genuinely outstanding`; `GarrisonSettings::validate()` → `present, unproven`). `REQ-herald-battalion-result-fields`
+and `REQ-commander-auto-selection` were also amended this phase but stayed in the `satisfied` class
+(their evidence was corrected/strengthened, not their verdict), so neither contributes to the net
+change above.
+
+`present, unproven` (19) remains the largest non-`satisfied` class and is exactly the size D-19's
+evidence bar was designed to surface: each of those 19 has a real `file:line` citation but no named
+exerciser proves it, a different and more precise finding than either "done" or "not done".
+`genuinely outstanding` (5) shrank the most this phase (-6) — most of what Phase 2 set out to close
+turned out to have a citable exerciser once someone wired the barrel declaration or wrote the
+missing test, not nothing at all.

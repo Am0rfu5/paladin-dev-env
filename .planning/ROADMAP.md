@@ -214,11 +214,22 @@ Plans:
 **Requirements**: GAP-01, GAP-02, GAP-03, GAP-04, GAP-05, GAP-06, GAP-07
 **Success Criteria** (what must be TRUE):
 
-  1. `cargo test --workspace` passes with zero failures, including `test_auto_selects_campaign_for_workflow_keywords`, which fails today.
+  1. `cargo test --workspace` passes with zero failures, including `test_auto_selects_campaign_for_workflow_keywords`.
   2. A developer can run a Chain of Command battalion from an example and watch the commander select specialists, survive a specialist failure through fallback logic, and return a synthesized answer — with tests covering all four delegation strategies.
   3. A Battalion result rendered through the JSON, Markdown and Table Heralds shows Battalion name, ID and type, per-Paladin results in execution order, aggregated token usage across Paladins, and partial results when something failed.
   4. Commander execution returns a normalized result carrying strategy used, per-Paladin timings, success/failure counts and preserved errors, and writes telemetry metadata to `metadata_output_dir` when one is configured.
-  5. The shipped types match the Phase 1 ADRs: one `BattalionConfig` (the duplicate in `citadel.rs` resolved), one `BattalionResult`, and a single-Paladin Commander in Auto mode that executes instead of failing Formation validation.
+  5. The shipped types match the Phase 1 ADRs: the duplicate `BattalionConfig` in `citadel.rs` resolved (renamed `BattalionCheckpointConfig`, ADR-0001), and a single-Paladin Formation that executes instead of failing validation (ADR-0003).
+
+*(Amended 2026-08-01, Phase 2 plan 02-09: criterion 1's stale premise, asserting the named test
+still failed at ROADMAP authoring time, is dropped — plan 02-01's baseline re-proof found
+`test_auto_selects_campaign_for_workflow_keywords` passing on this tree, `milestone-01.md:316-317`
+already recorded the premise as stale, and the outcome the criterion asks for is otherwise
+unchanged. Criterion 5's "one `BattalionResult`" clause is dropped —
+ingest run 3 code verification already found `BattalionResult` resolves to a merged superset
+satisfying all consumers (`PROJECT.md`, `ADR-0002`), so the clause asserted a premise that was
+already true in shipped code before this phase started; the remaining two clauses restate what
+GAP-07 actually narrowed to. Phase 1 set the precedent of correcting the ROADMAP at source for the
+same reason when it amended Phase 3's criterion 1.)*
 
 **Plans**: 9 plans
 
