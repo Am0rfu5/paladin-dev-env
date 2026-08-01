@@ -12,14 +12,13 @@ use crate::error_aggregation::AggregatedError;
 use crate::retry::{calculate_retry_delay, should_retry};
 use paladin_core::platform::container::battalion::formation::Formation;
 use paladin_core::platform::container::battalion::{
-    BattalionError, BattalionResult, ErrorStrategy,
+    BattalionError, BattalionResult, BattalionStatus, BattalionStrategy, ErrorStrategy, NodeError,
+    TokenUsage,
 };
 use paladin_core::platform::container::herald::Herald;
 use paladin_core::platform::container::paladin::Paladin;
 use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
-
-#[cfg(test)]
-use paladin_core::platform::container::battalion::BattalionStatus;
+use std::collections::HashMap;
 
 /// Service for executing Formation patterns
 ///
@@ -194,6 +193,10 @@ impl FormationExecutionService {
         let mut current_input = initial_input.to_string();
         let mut paladin_results: Vec<PaladinResult> = Vec::new();
         let mut aggregated_error = AggregatedError::new(formation.paladins.len());
+        let mut per_paladin_times: HashMap<String, u64> = HashMap::new();
+        let mut per_paladin_tokens: HashMap<String, TokenUsage> = HashMap::new();
+        let mut total_tokens: u64 = 0;
+        let mut node_errors: Vec<NodeError> = Vec::new();
 
         // Prepend shared context if present
         if let Some(context) = &formation.shared_context {
@@ -219,6 +222,16 @@ impl FormationExecutionService {
                 .await
             {
                 Ok(result) => {
+                    // Aggregate per-Paladin time/token metrics before the
+                    // result is moved into paladin_results, mirroring
+                    // PhalanxExecutionService::execute_internal.
+                    per_paladin_times.insert(paladin.node.name.clone(), result.execution_time_ms);
+                    per_paladin_tokens.insert(
+                        paladin.node.name.clone(),
+                        TokenUsage::from_total(result.token_count),
+                    );
+                    total_tokens += u64::from(result.token_count);
+
                     // Success: Update input for next Paladin
                     current_input = result.output.clone();
                     paladin_results.push(result);
@@ -239,6 +252,10 @@ impl FormationExecutionService {
                                 "ContinueOnError: Paladin {} failed, continuing with empty output",
                                 index + 1
                             );
+                            node_errors.push(NodeError {
+                                node_name: paladin.node.name.clone(),
+                                error: error.to_string(),
+                            });
                             aggregated_error.add_error(error);
                             // Continue with empty output
                             current_input = String::new();
@@ -265,14 +282,35 @@ impl FormationExecutionService {
             }
         }
 
-        // Create result
-        let result = BattalionResult::new(
+        // Success/failure counts mirror PhalanxExecutionService::execute_internal:
+        // every entry that made it into paladin_results succeeded, and every
+        // recorded node_errors entry is one Paladin that failed outright under
+        // a continue-past-failure strategy.
+        let paladin_success_count = paladin_results.len();
+        let paladin_failure_count = node_errors.len();
+
+        // Create result. Built as a struct literal (mirroring
+        // PhalanxExecutionService) rather than through BattalionResult::new,
+        // since the plain constructor defaults the aggregation fields this
+        // Formation now populates.
+        let result = BattalionResult {
             battalion_id,
-            formation.config.name.clone(),
+            battalion_name: formation.config.name.clone(),
             started_at,
-            current_input, // Final output from last Paladin
+            completed_at: Utc::now(),
+            final_output: current_input, // Final output from last Paladin
             paladin_results,
-        );
+            status: BattalionStatus::Completed,
+            strategy_used: BattalionStrategy::Formation,
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times,
+            per_paladin_tokens,
+            total_tokens,
+            paladin_success_count,
+            paladin_failure_count,
+            node_errors,
+        };
 
         Ok(result)
     }
@@ -556,6 +594,68 @@ mod tests {
         let battalion_result = result.unwrap();
         // Only second Paladin result included
         assert_eq!(battalion_result.paladin_results.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_formation_aggregates_per_paladin_times_and_tokens() {
+        let mock_port = Arc::new(MockPaladinPort::new());
+        let service = FormationExecutionService::new(mock_port);
+
+        let p1 = create_test_paladin("Alpha");
+        let p2 = create_test_paladin("Beta");
+        let p3 = create_test_paladin("Gamma");
+
+        let formation =
+            Formation::new(vec![p1, p2, p3], BattalionConfig::new("test_formation")).unwrap();
+
+        let result = service.execute(&formation, "Initial input").await.unwrap();
+
+        // First Paladin's output is the first entry — execution order preserved.
+        assert_eq!(result.paladin_results.len(), 3);
+
+        assert_eq!(result.per_paladin_times.len(), 3);
+        assert!(result.per_paladin_times.contains_key("Alpha"));
+        assert!(result.per_paladin_times.contains_key("Beta"));
+        assert!(result.per_paladin_times.contains_key("Gamma"));
+
+        assert_eq!(result.per_paladin_tokens.len(), 3);
+        let expected_total: u64 = result
+            .per_paladin_tokens
+            .values()
+            .map(|t| u64::from(t.total_tokens))
+            .sum();
+        assert_eq!(result.total_tokens, expected_total);
+        // Mock returns token_count=100 per Paladin, three Paladins ran.
+        assert_eq!(result.total_tokens, 300);
+    }
+
+    #[tokio::test]
+    async fn test_formation_records_node_errors_on_continue_on_error() {
+        // Fails only the first call (P1); P2 and P3 succeed.
+        let mock_port = Arc::new(MockPaladinPort::new_with_retry_success(1));
+        let service = FormationExecutionService::new(mock_port);
+
+        let p1 = create_test_paladin("P1");
+        let p2 = create_test_paladin("P2");
+        let p3 = create_test_paladin("P3");
+
+        let config = BattalionConfig::new("test_formation")
+            .with_error_strategy(ErrorStrategy::ContinueOnError);
+
+        let formation = Formation::new(vec![p1, p2, p3], config).unwrap();
+
+        let result = service.execute(&formation, "Input").await.unwrap();
+
+        assert_eq!(result.node_errors.len(), 1);
+        assert_eq!(result.node_errors[0].node_name, "P1");
+        assert!(!result.node_errors[0].error.is_empty());
+        assert_eq!(result.paladin_failure_count, 1);
+
+        // The successful Paladins still appear in the aggregation maps.
+        assert_eq!(result.per_paladin_times.len(), 2);
+        assert!(result.per_paladin_times.contains_key("P2"));
+        assert!(result.per_paladin_times.contains_key("P3"));
+        assert_eq!(result.per_paladin_tokens.len(), 2);
     }
 
     #[tokio::test]

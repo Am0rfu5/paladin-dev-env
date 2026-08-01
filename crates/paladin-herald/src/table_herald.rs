@@ -144,9 +144,23 @@ impl Herald for TableHerald {
 
     fn format_battalion_result(
         &self,
-        _result: &paladin_core::platform::container::herald::BattalionResult,
+        result: &paladin_core::platform::container::herald::BattalionResult,
     ) -> Result<String, HeraldError> {
         let mut output = String::new();
+
+        writeln!(&mut output, "Battalion: {}", result.battalion_name).map_err(|e| {
+            HeraldError::SerializationError(format!("Failed to write output: {}", e))
+        })?;
+        writeln!(&mut output, "ID: {}", result.battalion_id).map_err(|e| {
+            HeraldError::SerializationError(format!("Failed to write output: {}", e))
+        })?;
+        writeln!(&mut output, "Strategy: {:?}", result.strategy_used).map_err(|e| {
+            HeraldError::SerializationError(format!("Failed to write output: {}", e))
+        })?;
+        writeln!(&mut output, "Total Tokens: {}\n", result.total_tokens).map_err(|e| {
+            HeraldError::SerializationError(format!("Failed to write output: {}", e))
+        })?;
+
         let mut table = self.create_table();
 
         // Set header for battalion summary
@@ -157,28 +171,63 @@ impl Herald for TableHerald {
             Cell::new("Tokens").add_attribute(Attribute::Bold),
         ]);
 
-        // Add placeholder rows for each paladin (will be replaced with actual data)
-        table.add_row(vec![
-            Cell::new("paladin_1"),
-            self.format_status("Success"),
-            Cell::new("1.2s").set_alignment(CellAlignment::Right),
-            Cell::new("400").set_alignment(CellAlignment::Right),
-        ]);
+        // A consumable pool of (name, time, tokens) built from the
+        // name-keyed per_paladin_times/per_paladin_tokens maps Formation and
+        // Phalanx populate. Each map entry carries the exact
+        // execution_time_ms/token_count pair copied from its PaladinResult,
+        // so matching a row's PaladinResult against this pool recovers the
+        // real Paladin name — PaladinResult itself carries no name field.
+        let mut name_pool: Vec<(String, u64, u32)> = result
+            .per_paladin_times
+            .iter()
+            .filter_map(|(name, time)| {
+                result
+                    .per_paladin_tokens
+                    .get(name)
+                    .map(|tokens| (name.clone(), *time, tokens.total_tokens))
+            })
+            .collect();
 
-        table.add_row(vec![
-            Cell::new("paladin_2"),
-            self.format_status("Success"),
-            Cell::new("2.1s").set_alignment(CellAlignment::Right),
-            Cell::new("550").set_alignment(CellAlignment::Right),
-        ]);
+        for (idx, paladin_result) in result.paladin_results.iter().enumerate() {
+            let name = name_pool
+                .iter()
+                .position(|(_, time, tokens)| {
+                    *time == paladin_result.execution_time_ms
+                        && *tokens == paladin_result.token_count
+                })
+                .map(|pos| name_pool.remove(pos).0)
+                .unwrap_or_else(|| format!("Paladin {}", idx + 1));
 
-        writeln!(&mut output, "Battalion Execution Results\n").map_err(|e| {
-            HeraldError::SerializationError(format!("Failed to write output: {}", e))
-        })?;
+            let status_str = format!("{:?}", paladin_result.stop_reason);
+            table.add_row(vec![
+                Cell::new(self.truncate_text(&name)),
+                self.format_status(&status_str),
+                Cell::new(format!("{}ms", paladin_result.execution_time_ms))
+                    .set_alignment(CellAlignment::Right),
+                Cell::new(paladin_result.token_count.to_string())
+                    .set_alignment(CellAlignment::Right),
+            ]);
+        }
 
         writeln!(&mut output, "{}", table).map_err(|e| {
             HeraldError::SerializationError(format!("Failed to write table: {}", e))
         })?;
+
+        if !result.node_errors.is_empty() {
+            writeln!(&mut output, "\nFailures:").map_err(|e| {
+                HeraldError::SerializationError(format!("Failed to write output: {}", e))
+            })?;
+            for node_error in &result.node_errors {
+                writeln!(
+                    &mut output,
+                    "  {}: {}",
+                    node_error.node_name, node_error.error
+                )
+                .map_err(|e| {
+                    HeraldError::SerializationError(format!("Failed to write output: {}", e))
+                })?;
+            }
+        }
 
         Ok(output)
     }
@@ -305,41 +354,150 @@ mod tests {
         assert!(formatted.contains("Paladin"));
     }
 
-    #[test]
-    fn test_format_battalion_result() {
+    /// Builds a `BattalionResult` with `n` Paladins whose names, execution
+    /// times and token counts are all distinct and non-round, so assertions
+    /// against the rendered output cannot pass if the formatter ignores its
+    /// `result` argument (RESEARCH.md Pitfall 5's litmus test).
+    fn battalion_result_with_paladins(
+        names: &[&str],
+    ) -> paladin_core::platform::container::herald::BattalionResult {
         use chrono::Utc;
         use paladin_core::platform::container::battalion::BattalionStatus;
+        use paladin_ports::output::paladin_port::StopReason;
         use uuid::Uuid;
-        let herald = TableHerald::default();
-        let result = paladin_core::platform::container::herald::BattalionResult {
+
+        let mut per_paladin_times = std::collections::HashMap::new();
+        let mut per_paladin_tokens = std::collections::HashMap::new();
+        let mut paladin_results = Vec::new();
+        let mut total_tokens: u64 = 0;
+
+        for (idx, name) in names.iter().enumerate() {
+            let execution_time_ms = 1000 + (idx as u64) * 137;
+            let token_count = 101 + (idx as u32) * 263;
+            per_paladin_times.insert((*name).to_string(), execution_time_ms);
+            per_paladin_tokens.insert(
+                (*name).to_string(),
+                paladin_core::platform::container::battalion::TokenUsage::from_total(token_count),
+            );
+            total_tokens += u64::from(token_count);
+            paladin_results.push(paladin_core::platform::container::herald::PaladinResult {
+                output: format!("{} output", name),
+                token_count,
+                execution_time_ms,
+                loop_count: 1,
+                stop_reason: StopReason::Completed,
+                ..Default::default()
+            });
+        }
+
+        paladin_core::platform::container::herald::BattalionResult {
             battalion_id: Uuid::new_v4(),
             battalion_name: "Test Battalion".to_string(),
             started_at: Utc::now(),
             completed_at: Utc::now(),
             final_output: "Combined output".to_string(),
-            paladin_results: vec![],
+            paladin_results,
             status: BattalionStatus::Completed,
             strategy_used:
                 paladin_core::platform::container::battalion::BattalionStrategy::Formation,
             strategy_selection_reasoning: None,
             strategy_selection_time_ms: 0,
-            per_paladin_times: std::collections::HashMap::new(),
-            per_paladin_tokens: std::collections::HashMap::new(),
-            total_tokens: 0,
-            paladin_success_count: 0,
+            per_paladin_times,
+            per_paladin_tokens,
+            total_tokens,
+            paladin_success_count: names.len(),
             paladin_failure_count: 0,
             node_errors: Vec::new(),
-        };
+        }
+    }
+
+    #[test]
+    fn test_table_herald_renders_actual_paladin_names() {
+        let herald = TableHerald::default();
+        let result = battalion_result_with_paladins(&["Scoutmaster", "Sentinel", "Vanguard"]);
 
         let output = herald.format_battalion_result(&result);
         assert!(output.is_ok());
-
         let formatted = output.unwrap();
-        assert!(formatted.contains("Battalion Execution Results"));
+
+        // Each real Paladin name appears in the output.
+        assert!(formatted.contains("Scoutmaster"));
+        assert!(formatted.contains("Sentinel"));
+        assert!(formatted.contains("Vanguard"));
+
+        // The Battalion's own identity and strategy are surfaced.
+        assert!(formatted.contains("Test Battalion"));
+        assert!(formatted.contains(&result.battalion_id.to_string()));
+        assert!(formatted.contains("Formation"));
+        assert!(formatted.contains(&result.total_tokens.to_string()));
+
+        // Row count matches Paladin count: one row per entry, in order.
+        let scoutmaster_pos = formatted.find("Scoutmaster").unwrap();
+        let sentinel_pos = formatted.find("Sentinel").unwrap();
+        let vanguard_pos = formatted.find("Vanguard").unwrap();
+        assert!(scoutmaster_pos < sentinel_pos);
+        assert!(sentinel_pos < vanguard_pos);
+
+        // The litmus test (RESEARCH.md Pitfall 5): rendering a second,
+        // differently-populated result produces a different string. A
+        // formatter that ignores `result` would produce identical output
+        // for both.
+        let other_result = battalion_result_with_paladins(&["Herald", "Marshal"]);
+        let other_output = herald.format_battalion_result(&other_result).unwrap();
+        assert_ne!(formatted, other_output);
+    }
+
+    #[test]
+    fn test_table_herald_renders_empty_paladin_results() {
+        let herald = TableHerald::default();
+        let result = battalion_result_with_paladins(&[]);
+        assert!(result.paladin_results.is_empty());
+
+        let output = herald.format_battalion_result(&result);
+        assert!(output.is_ok());
+        let formatted = output.unwrap();
+
+        // Header labels are present...
         assert!(formatted.contains("Paladin"));
         assert!(formatted.contains("Status"));
         assert!(formatted.contains("Duration"));
         assert!(formatted.contains("Tokens"));
+
+        // ...but no body row: no duration suffix and none of the old
+        // stub's invented Paladin names.
+        assert!(!formatted.contains("ms"));
+        assert!(!formatted.contains("paladin_1"));
+        assert!(!formatted.contains("paladin_2"));
+    }
+
+    #[test]
+    fn test_table_herald_renders_multibyte_paladin_name() {
+        let herald = TableHerald::default();
+        let result = battalion_result_with_paladins(&["斥候レビュアー"]);
+
+        let output = herald.format_battalion_result(&result);
+        assert!(output.is_ok());
+        let formatted = output.unwrap();
+
+        // The multi-byte name round-trips intact: no panic, no mid-character
+        // truncation, no replacement character.
+        assert!(formatted.contains("斥候レビュアー"));
+        assert!(!formatted.contains('\u{FFFD}'));
+    }
+
+    #[test]
+    fn test_table_herald_surfaces_node_error_names() {
+        let herald = TableHerald::default();
+        let mut result = battalion_result_with_paladins(&["Scoutmaster"]);
+        result.node_errors = vec![paladin_core::platform::container::battalion::NodeError {
+            node_name: "Herald".to_string(),
+            error: "connection refused".to_string(),
+        }];
+
+        let formatted = herald.format_battalion_result(&result).unwrap();
+
+        assert!(formatted.contains("Herald"));
+        assert!(formatted.contains("connection refused"));
     }
 
     #[test]

@@ -527,9 +527,11 @@ impl TokenUsage {
 ///
 /// Carries the failed Paladin's name and its error text, so an operator can
 /// diagnose WHICH node failed and WHY, instead of only an aggregate
-/// success/failure count. Populated under [`ErrorStrategy::ContinueOnError`]
-/// Phalanx runs (see `PhalanxExecutionService::execute_internal`); empty for
-/// every other Battalion strategy and for any fully-successful run.
+/// success/failure count. Populated for any strategy that continues past a
+/// failure (`ContinueOnError`, `RetryThenContinue`) — see
+/// `FormationExecutionService::execute_internal` and
+/// `PhalanxExecutionService::execute_internal`; empty for a fully-successful
+/// run and for strategies that do not collect it.
 ///
 /// A new plain-data struct (mirroring [`TokenUsage`]'s shape) rather than a
 /// reuse of [`BattalionError`], since `BattalionError` does not derive
@@ -593,9 +595,9 @@ pub struct BattalionResult {
     /// Count of Paladins that failed
     pub paladin_failure_count: usize,
 
-    /// Per-node failure detail (name + error text) for `ContinueOnError`
-    /// Phalanx runs. Empty for every non-Phalanx strategy and for any
-    /// fully-successful Phalanx run.
+    /// Per-node failure detail (name + error text) for any strategy that
+    /// continues past a failure. Empty for a fully-successful run and for
+    /// strategies that do not collect it.
     #[serde(default)]
     pub node_errors: Vec<NodeError>,
 }
