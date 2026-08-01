@@ -10,8 +10,13 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Helper to create a mock server and adapter configured to use it
-fn setup_mock_server() -> (ServerGuard, DeepSeekAdapter) {
-    let server = Server::new();
+///
+/// Uses the async server constructor: the blocking, synchronous
+/// `Server::new()` panics with a runtime-nesting error when called from
+/// inside an already-running Tokio runtime, which every call site here is
+/// (`#[tokio::test]`).
+async fn setup_mock_server() -> (ServerGuard, DeepSeekAdapter) {
+    let server = Server::new_async().await;
     let config = DeepSeekConfig {
         api_key: "test-api-key".to_string(),
         base_url: server.url(),
@@ -44,7 +49,7 @@ fn create_test_request(content: &str) -> LlmRequest {
 
 #[tokio::test]
 async fn test_deepseek_successful_completion() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let mock_response = r#"{
         "id": "chatcmpl-123",
@@ -71,7 +76,8 @@ async fn test_deepseek_successful_completion() {
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_test_request("Hello");
     let response = adapter.generate(request).await;
@@ -86,7 +92,7 @@ async fn test_deepseek_successful_completion() {
 
 #[tokio::test]
 async fn test_deepseek_streaming_response() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     // Mock SSE streaming response
     let mock_stream = "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"deepseek-chat\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"deepseek-chat\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" world\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"deepseek-chat\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n";
@@ -96,7 +102,8 @@ async fn test_deepseek_streaming_response() {
         .with_status(200)
         .with_header("content-type", "text/event-stream")
         .with_body(mock_stream)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_test_request("Hello");
     let stream_result = adapter.generate_stream(request).await;
@@ -108,7 +115,7 @@ async fn test_deepseek_streaming_response() {
 
 #[tokio::test]
 async fn test_deepseek_auth_failure_401() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let error_response = r#"{
         "error": {
@@ -123,7 +130,8 @@ async fn test_deepseek_auth_failure_401() {
         .with_status(401)
         .with_header("content-type", "application/json")
         .with_body(error_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_test_request("Hello");
     let response = adapter.generate(request).await;
@@ -138,7 +146,7 @@ async fn test_deepseek_auth_failure_401() {
 
 #[tokio::test]
 async fn test_deepseek_rate_limit_429() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let error_response = r#"{
         "error": {
@@ -152,7 +160,8 @@ async fn test_deepseek_rate_limit_429() {
         .with_status(429)
         .with_header("content-type", "application/json")
         .with_body(error_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_test_request("Hello");
     let response = adapter.generate(request).await;
@@ -167,32 +176,45 @@ async fn test_deepseek_rate_limit_429() {
 
 #[tokio::test]
 async fn test_deepseek_timeout() {
-    // Create adapter with very short timeout
-    let server = Server::new();
+    // A mockito server responds immediately (with 501) to any unmocked
+    // request, so it cannot exercise a real client-side timeout. Instead,
+    // bind a raw TCP listener and never accept()/respond on it: the TCP
+    // handshake completes (the kernel backlog accepts SYNs once `listen()`
+    // is active), the client's HTTP request bytes are buffered, and no
+    // response is ever produced -- so the request hangs until the 1-second
+    // timeout below fires for real.
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+
     let config = DeepSeekConfig {
         api_key: "test-api-key".to_string(),
-        base_url: server.url(),
+        base_url: format!("http://{addr}"),
         model: "deepseek-chat".to_string(),
         timeout_seconds: 1,
     };
     let adapter = DeepSeekAdapter::new(config).unwrap();
 
-    // Don't create a mock - server will not respond, causing timeout
     let request = create_test_request("Hello");
     let response = adapter.generate(request).await;
+    // Keep the listener alive until after the request has had its chance to
+    // time out, so the connection is not torn down early.
+    drop(listener);
 
     assert!(response.is_err());
-    // Timeout manifests as NetworkError
+    // The adapter now maps reqwest's timeout errors to a dedicated
+    // LlmError::Timeout variant (previously indistinguishable from
+    // LlmError::NetworkError) so callers can retry with a longer timeout
+    // rather than treating every network failure identically.
     let error = response.unwrap_err();
     assert!(matches!(
         error,
-        paladin_ports::output::llm_port::LlmError::NetworkError(_)
+        paladin_ports::output::llm_port::LlmError::Timeout(_)
     ));
 }
 
 #[tokio::test]
 async fn test_deepseek_invalid_model_error() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let error_response = r#"{
         "error": {
@@ -207,7 +229,8 @@ async fn test_deepseek_invalid_model_error() {
         .with_status(400)
         .with_header("content-type", "application/json")
         .with_body(error_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_test_request("Hello");
     let response = adapter.generate(request).await;
@@ -222,7 +245,7 @@ async fn test_deepseek_invalid_model_error() {
 
 #[tokio::test]
 async fn test_deepseek_server_error_500() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let error_response = r#"{
         "error": {
@@ -236,7 +259,8 @@ async fn test_deepseek_server_error_500() {
         .with_status(500)
         .with_header("content-type", "application/json")
         .with_body(error_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_test_request("Hello");
     let response = adapter.generate(request).await;
@@ -251,7 +275,7 @@ async fn test_deepseek_server_error_500() {
 
 #[tokio::test]
 async fn test_deepseek_malformed_response() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let malformed_response = r#"{"invalid": "json", "missing": "required_fields"}"#;
 
@@ -260,7 +284,8 @@ async fn test_deepseek_malformed_response() {
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(malformed_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_test_request("Hello");
     let response = adapter.generate(request).await;

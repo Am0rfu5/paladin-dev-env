@@ -12,8 +12,13 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Helper to create a mock server and adapter configured to use it
-fn setup_mock_server() -> (ServerGuard, AnthropicAdapter) {
-    let server = Server::new();
+///
+/// Uses the async server constructor: the blocking, synchronous
+/// `Server::new()` panics with a runtime-nesting error when called from
+/// inside an already-running Tokio runtime, which every call site here is
+/// (`#[tokio::test]`).
+async fn setup_mock_server() -> (ServerGuard, AnthropicAdapter) {
+    let server = Server::new_async().await;
     let config = AnthropicConfig {
         api_key: "test-api-key".to_string(),
         base_url: server.url(),
@@ -65,7 +70,7 @@ fn create_user_request(content: &str) -> LlmRequest {
 
 #[tokio::test]
 async fn test_anthropic_successful_completion() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let mock_response = r#"{
         "id": "msg_123",
@@ -88,7 +93,8 @@ async fn test_anthropic_successful_completion() {
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_user_request("Hello");
     let response = adapter.generate(request).await;
@@ -103,7 +109,7 @@ async fn test_anthropic_successful_completion() {
 
 #[tokio::test]
 async fn test_anthropic_streaming_response() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     // Mock Claude SSE streaming response with different event types
     let mock_stream = "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_123\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"claude-3-5-sonnet-20241022\"}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Hello\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\" world\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n";
@@ -113,7 +119,8 @@ async fn test_anthropic_streaming_response() {
         .with_status(200)
         .with_header("content-type", "text/event-stream")
         .with_body(mock_stream)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_user_request("Hello");
     let stream_result = adapter.generate_stream(request).await;
@@ -125,7 +132,7 @@ async fn test_anthropic_streaming_response() {
 
 #[tokio::test]
 async fn test_anthropic_system_message_formatting() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let mock_response = r#"{
         "id": "msg_123",
@@ -149,7 +156,8 @@ async fn test_anthropic_system_message_formatting() {
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_response)
-        .create();
+        .create_async()
+        .await;
 
     // Use system prompt to test system message formatting
     let request = create_test_request("You are a helpful assistant");
@@ -162,7 +170,7 @@ async fn test_anthropic_system_message_formatting() {
 
 #[tokio::test]
 async fn test_anthropic_max_tokens_enforcement() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let mock_response = r#"{
         "id": "msg_123",
@@ -185,7 +193,8 @@ async fn test_anthropic_max_tokens_enforcement() {
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_user_request("Generate a long response");
     let response = adapter.generate(request).await;
@@ -201,7 +210,7 @@ async fn test_anthropic_max_tokens_enforcement() {
 
 #[tokio::test]
 async fn test_anthropic_auth_failure_401() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let error_response = r#"{
         "type": "error",
@@ -216,7 +225,8 @@ async fn test_anthropic_auth_failure_401() {
         .with_status(401)
         .with_header("content-type", "application/json")
         .with_body(error_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_user_request("Hello");
     let response = adapter.generate(request).await;
@@ -231,7 +241,7 @@ async fn test_anthropic_auth_failure_401() {
 
 #[tokio::test]
 async fn test_anthropic_rate_limit_429() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let error_response = r#"{
         "type": "error",
@@ -246,7 +256,8 @@ async fn test_anthropic_rate_limit_429() {
         .with_status(429)
         .with_header("content-type", "application/json")
         .with_body(error_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_user_request("Hello");
     let response = adapter.generate(request).await;
@@ -261,7 +272,7 @@ async fn test_anthropic_rate_limit_429() {
 
 #[tokio::test]
 async fn test_anthropic_invalid_request_400() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let error_response = r#"{
         "type": "error",
@@ -276,7 +287,8 @@ async fn test_anthropic_invalid_request_400() {
         .with_status(400)
         .with_header("content-type", "application/json")
         .with_body(error_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_user_request("");
     let response = adapter.generate(request).await;
@@ -291,7 +303,7 @@ async fn test_anthropic_invalid_request_400() {
 
 #[tokio::test]
 async fn test_anthropic_server_error_500() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let error_response = r#"{
         "type": "error",
@@ -306,7 +318,8 @@ async fn test_anthropic_server_error_500() {
         .with_status(500)
         .with_header("content-type", "application/json")
         .with_body(error_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_user_request("Hello");
     let response = adapter.generate(request).await;
@@ -321,7 +334,7 @@ async fn test_anthropic_server_error_500() {
 
 #[tokio::test]
 async fn test_anthropic_malformed_response() {
-    let (mut server, adapter) = setup_mock_server();
+    let (mut server, adapter) = setup_mock_server().await;
 
     let malformed_response = r#"{"invalid": "json", "missing": "content"}"#;
 
@@ -330,7 +343,8 @@ async fn test_anthropic_malformed_response() {
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(malformed_response)
-        .create();
+        .create_async()
+        .await;
 
     let request = create_user_request("Hello");
     let response = adapter.generate(request).await;
