@@ -257,7 +257,7 @@ Plans:
 
 **Wave 5** *(gap closure — added 2026-08-01 from 02-VERIFICATION.md)*
 
-- [ ] 02-10-PLAN.md — Fix the Table Herald's byte-index truncation panic on multi-byte Paladin names: a char-boundary-safe, total `truncate_text`, closing the blocker that falsified success criterion 3 and GAP-03
+- [x] 02-10-PLAN.md — Fix the Table Herald's byte-index truncation panic on multi-byte Paladin names: a char-boundary-safe, total `truncate_text`, closing the blocker that falsified success criterion 3 and GAP-03
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
