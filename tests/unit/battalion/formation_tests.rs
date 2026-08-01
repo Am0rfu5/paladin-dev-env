@@ -45,20 +45,16 @@ mod formation_construction_tests {
     }
 
     #[test]
-    fn test_formation_new_with_single_paladin_fails() {
+    fn test_formation_new_with_single_paladin_succeeds() {
         let paladin = create_test_paladin("Paladin1");
         let paladins = vec![paladin];
         let config = BattalionConfig::new("test_formation");
 
         let result = Formation::new(paladins, config);
-        assert!(result.is_err());
+        assert!(result.is_ok());
 
-        match result.unwrap_err() {
-            BattalionError::ValidationError(msg) => {
-                assert!(msg.contains("at least 2 Paladins"));
-            }
-            _ => panic!("Expected ValidationError"),
-        }
+        let formation = result.unwrap();
+        assert_eq!(formation.paladins.len(), 1);
     }
 
     #[test]
@@ -71,7 +67,7 @@ mod formation_construction_tests {
 
         match result.unwrap_err() {
             BattalionError::ValidationError(msg) => {
-                assert!(msg.contains("at least 2 Paladins"));
+                assert!(msg.contains("at least 1 Paladin"));
             }
             _ => panic!("Expected ValidationError"),
         }
@@ -139,8 +135,7 @@ mod formation_validation_tests {
 
     #[test]
     fn test_validate_requires_minimum_paladins() {
-        let paladin = create_test_paladin("Paladin1");
-        let paladins = vec![paladin];
+        let paladins: Vec<Paladin> = vec![];
         let config = BattalionConfig::new("test_formation");
 
         let result = Formation::new(paladins, config);

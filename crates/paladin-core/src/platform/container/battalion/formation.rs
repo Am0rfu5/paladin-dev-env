@@ -17,7 +17,7 @@ use crate::platform::container::paladin::Paladin;
 ///
 /// # Minimum Requirements
 ///
-/// - At least 2 Paladins are required for a Formation
+/// - At least 1 Paladin is required for a Formation
 /// - Paladins execute in the order they are provided
 ///
 /// # Example
@@ -50,13 +50,13 @@ impl Formation {
     ///
     /// # Arguments
     ///
-    /// * `paladins` - Vector of Paladins to execute sequentially (minimum 2)
+    /// * `paladins` - Vector of Paladins to execute sequentially (minimum 1)
     /// * `config` - Battalion configuration
     ///
     /// # Returns
     ///
     /// * `Ok(Formation)` - Successfully created Formation
-    /// * `Err(BattalionError::ValidationError)` - If validation fails (< 2 Paladins)
+    /// * `Err(BattalionError::ValidationError)` - If validation fails (< 1 Paladin)
     ///
     /// # Example
     ///
@@ -99,16 +99,16 @@ impl Formation {
     /// Validate Formation requirements
     ///
     /// Ensures:
-    /// - At least 2 Paladins are present
+    /// - at least 1 Paladin is present
     ///
     /// # Returns
     ///
     /// * `Ok(())` - Validation passed
     /// * `Err(BattalionError::ValidationError)` - Validation failed
     fn validate(&self) -> Result<(), BattalionError> {
-        if self.paladins.len() < 2 {
+        if self.paladins.is_empty() {
             return Err(BattalionError::ValidationError(format!(
-                "Formation requires at least 2 Paladins, got {}",
+                "Formation requires at least 1 Paladin, got {}",
                 self.paladins.len()
             )));
         }
