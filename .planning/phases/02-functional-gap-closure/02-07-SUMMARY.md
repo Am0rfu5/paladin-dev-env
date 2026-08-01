@@ -336,3 +336,10 @@ pre-existing snapshot suites run fully offline against in-repo mocks; no provide
 ---
 *Phase: 02-functional-gap-closure*
 *Completed: 2026-08-01*
+
+## Self-Check: PASSED
+
+- FOUND: `tests/cli/helpers.rs`
+- FOUND: `.planning/phases/02-functional-gap-closure/02-07-SUMMARY.md`
+- FOUND: commit `aa3f2f5` (Task 1)
+- FOUND: commit `9d6eb2c` (this SUMMARY)
