@@ -146,7 +146,11 @@ impl JsonHerald {
             "battalion_id": result.battalion_id,
             "battalion_name": result.battalion_name,
             "status": format!("{:?}", result.status),
+            "strategy_used": format!("{:?}", result.strategy_used),
             "paladin_results": paladin_results,
+            "total_tokens": result.total_tokens,
+            "per_paladin_tokens": result.per_paladin_tokens,
+            "node_errors": result.node_errors,
         });
 
         if self.config.include_metadata {
@@ -237,7 +241,9 @@ impl Herald for JsonHerald {
 mod tests {
     use super::*;
     use chrono::Utc;
-    use paladin_core::platform::container::battalion::BattalionStatus;
+    use paladin_core::platform::container::battalion::{
+        BattalionStatus, BattalionStrategy, NodeError, TokenUsage,
+    };
     use paladin_ports::output::paladin_port::StopReason;
     use uuid::Uuid;
 
@@ -375,6 +381,100 @@ mod tests {
 
         assert!(parsed["metadata"].is_object());
         assert_eq!(parsed["metadata"]["paladin_count"], 2);
+    }
+
+    #[test]
+    fn test_json_herald_battalion_includes_strategy_and_total_tokens() {
+        let herald = JsonHerald::new();
+
+        let mut per_paladin_tokens = std::collections::HashMap::new();
+        per_paladin_tokens.insert("Scout".to_string(), TokenUsage::from_total(137));
+        per_paladin_tokens.insert("Sentinel".to_string(), TokenUsage::from_total(263));
+
+        let result = BattalionResult {
+            battalion_id: Uuid::new_v4(),
+            battalion_name: "TokenBattalion".to_string(),
+            started_at: Utc::now(),
+            completed_at: Utc::now(),
+            final_output: "Combined output".to_string(),
+            paladin_results: vec![
+                PaladinResult {
+                    output: "Scout output".to_string(),
+                    token_count: 137,
+                    execution_time_ms: 1500,
+                    loop_count: 1,
+                    stop_reason: StopReason::Completed,
+                    ..Default::default()
+                },
+                PaladinResult {
+                    output: "Sentinel output".to_string(),
+                    token_count: 263,
+                    execution_time_ms: 2000,
+                    loop_count: 2,
+                    stop_reason: StopReason::Completed,
+                    ..Default::default()
+                },
+            ],
+            status: BattalionStatus::Completed,
+            strategy_used: BattalionStrategy::Phalanx,
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times: std::collections::HashMap::new(),
+            per_paladin_tokens,
+            total_tokens: 400,
+            paladin_success_count: 2,
+            paladin_failure_count: 1,
+            node_errors: vec![NodeError {
+                node_name: "Herald".to_string(),
+                error: "connection refused".to_string(),
+            }],
+        };
+
+        let formatted = herald.format_battalion_result(&result).unwrap();
+        let parsed: Value = serde_json::from_str(&formatted).unwrap();
+
+        assert_eq!(parsed["strategy_used"], "Phalanx");
+        // The aggregate equals the sum of the two distinct, non-round token counts.
+        assert_eq!(parsed["total_tokens"], 400);
+        assert_eq!(parsed["per_paladin_tokens"]["Scout"]["total_tokens"], 137);
+        assert_eq!(
+            parsed["per_paladin_tokens"]["Sentinel"]["total_tokens"],
+            263
+        );
+        assert_eq!(parsed["node_errors"].as_array().unwrap().len(), 1);
+        assert_eq!(parsed["node_errors"][0]["node_name"], "Herald");
+        assert_eq!(parsed["node_errors"][0]["error"], "connection refused");
+    }
+
+    #[test]
+    fn test_json_herald_battalion_empty_paladin_results_still_valid() {
+        let herald = JsonHerald::new();
+
+        let result = BattalionResult {
+            battalion_id: Uuid::new_v4(),
+            battalion_name: "EmptyBattalion".to_string(),
+            started_at: Utc::now(),
+            completed_at: Utc::now(),
+            final_output: String::new(),
+            paladin_results: vec![],
+            status: BattalionStatus::Completed,
+            strategy_used: BattalionStrategy::Formation,
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times: std::collections::HashMap::new(),
+            per_paladin_tokens: std::collections::HashMap::new(),
+            total_tokens: 0,
+            paladin_success_count: 0,
+            paladin_failure_count: 0,
+            node_errors: Vec::new(),
+        };
+
+        let formatted = herald.format_battalion_result(&result).unwrap();
+        let parsed: Value = serde_json::from_str(&formatted).unwrap();
+
+        assert!(parsed["paladin_results"].as_array().unwrap().is_empty());
+        assert_eq!(parsed["total_tokens"], 0);
+        assert!(parsed["node_errors"].as_array().unwrap().is_empty());
     }
 
     #[test]

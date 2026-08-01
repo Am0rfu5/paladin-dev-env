@@ -229,6 +229,7 @@ impl Herald for MarkdownHerald {
 
         // Summary
         output.push_str(&self.format_field("Battalion ID", &result.battalion_id.to_string()));
+        output.push_str(&self.format_field("Strategy", &format!("{:?}", result.strategy_used)));
         output.push_str(
             &self.format_field("Total Paladins", &result.paladin_results.len().to_string()),
         );
@@ -238,6 +239,7 @@ impl Herald for MarkdownHerald {
         output.push_str(
             &self.format_field("Failure Count", &result.paladin_failure_count.to_string()),
         );
+        output.push_str(&self.format_field("Total Tokens", &result.total_tokens.to_string()));
         output.push('\n');
 
         // Individual Paladin results
@@ -253,6 +255,15 @@ impl Herald for MarkdownHerald {
             output.push_str("\n\n");
             output.push_str(&paladin_result.output);
             output.push_str("\n\n");
+        }
+
+        // Failure detail, rendered only when there is something to report.
+        if !result.node_errors.is_empty() {
+            output.push_str(&self.heading(self.config.heading_level + 1, "Failures"));
+            for node_error in &result.node_errors {
+                output.push_str(&self.format_field(&node_error.node_name, &node_error.error));
+            }
+            output.push('\n');
         }
 
         Ok(output)
@@ -480,6 +491,97 @@ mod tests {
         assert!(formatted.contains("#### Paladin 1")); // Heading for first result
         assert!(formatted.contains("#### Paladin 2")); // Heading for second result
         assert!(formatted.contains("✅")); // Success badge
+        // Strategy and aggregate token fields, added alongside the pre-existing summary fields.
+        assert!(formatted.contains("**Strategy:**"));
+        assert!(formatted.contains("Formation"));
+        assert!(formatted.contains("**Total Tokens:**"));
+    }
+
+    #[test]
+    fn test_markdown_herald_battalion_includes_strategy_and_total_tokens() {
+        let herald = MarkdownHerald::with_config(MarkdownHeraldConfig {
+            include_colors: false,
+            heading_level: 2,
+        });
+
+        let mut per_paladin_tokens = std::collections::HashMap::new();
+        per_paladin_tokens.insert(
+            "Scout".to_string(),
+            paladin_core::platform::container::battalion::TokenUsage::from_total(137),
+        );
+        per_paladin_tokens.insert(
+            "Sentinel".to_string(),
+            paladin_core::platform::container::battalion::TokenUsage::from_total(263),
+        );
+
+        let result = BattalionResult {
+            battalion_id: Uuid::new_v4(),
+            battalion_name: "TokenBattalion".to_string(),
+            started_at: Utc::now(),
+            completed_at: Utc::now(),
+            final_output: "Combined output".to_string(),
+            paladin_results: vec![
+                PaladinResult {
+                    output: "Scout output".to_string(),
+                    token_count: 137,
+                    execution_time_ms: 1500,
+                    loop_count: 1,
+                    stop_reason: StopReason::Completed,
+                    ..Default::default()
+                },
+                PaladinResult {
+                    output: "Sentinel output".to_string(),
+                    token_count: 263,
+                    execution_time_ms: 2000,
+                    loop_count: 2,
+                    stop_reason: StopReason::Completed,
+                    ..Default::default()
+                },
+            ],
+            status: BattalionStatus::Completed,
+            strategy_used: paladin_core::platform::container::battalion::BattalionStrategy::Phalanx,
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times: std::collections::HashMap::new(),
+            per_paladin_tokens,
+            total_tokens: 400,
+            paladin_success_count: 2,
+            paladin_failure_count: 1,
+            node_errors: vec![paladin_core::platform::container::battalion::NodeError {
+                node_name: "Herald".to_string(),
+                error: "connection refused".to_string(),
+            }],
+        };
+
+        let formatted = herald.format_battalion_result(&result).unwrap();
+
+        assert!(formatted.contains("**Strategy:**"));
+        assert!(formatted.contains("Phalanx"));
+        assert!(formatted.contains("**Total Tokens:**"));
+        assert!(formatted.contains("400"));
+
+        // Failure detail: each node error's name and text rendered.
+        assert!(formatted.contains("**Herald:**"));
+        assert!(formatted.contains("connection refused"));
+
+        // paladin_results order is preserved.
+        let scout_pos = formatted.find("Scout output").unwrap();
+        let sentinel_pos = formatted.find("Sentinel output").unwrap();
+        assert!(scout_pos < sentinel_pos);
+    }
+
+    #[test]
+    fn test_markdown_herald_battalion_no_failures_section_when_no_node_errors() {
+        let herald = MarkdownHerald::with_config(MarkdownHeraldConfig {
+            include_colors: false,
+            heading_level: 2,
+        });
+        let result = create_test_battalion_result();
+        assert!(result.node_errors.is_empty());
+
+        let formatted = herald.format_battalion_result(&result).unwrap();
+
+        assert!(!formatted.contains("### Failures"));
     }
 
     #[test]
