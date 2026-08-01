@@ -118,7 +118,9 @@ and the codebase map):
   transports, builder integration, timeout/concurrency controls, graceful degradation, context
   injection (Epic 3)
 - ✓ Battalion orchestration — Formation, Phalanx, Campaign, error strategies, retry policy,
-  status, logging, cancellation (Epic 4; Chain of Command needs verification — see Active)
+  status, logging, cancellation (Epic 4; Chain of Command verified in Phase 2 via GAP-01 —
+  commander specialist selection, fallback survival and synthesized answer, with tests across
+  all four delegation strategies)
 - ✓ Commander strategy router — strategy enum, construction validation, Auto rule-based
   selection, unified `execute()`, error strategies, config passthrough, service composition
   (Epic 5)
@@ -335,10 +337,15 @@ ever started. **86 requirements across 16 phases** — see `.planning/ROADMAP.md
 - [ ] Record one answer per competing variant pair — `BattalionConfig`, `BattalionResult`,
       Formation minimum Paladin count, temperature range, Herald trait signature, coverage gate
       (RECON-02 … RECON-07)
-- [ ] Close residual functional gaps — Chain of Command completion and tests, Battalion
+- [x] Close residual functional gaps — Chain of Command completion and tests, Battalion
       integration/performance tests, Herald on the Battalion execution path, Commander result
       normalization and telemetry export, the one failing Auto-selection test, Garrison final
       validation, and applying the reconciled type definitions in code (GAP-01 … GAP-07)
+      — **Validated in Phase 2: Functional Gap Closure** (2026-08-01). All seven verified
+      against the tree in `.planning/phases/02-functional-gap-closure/02-VERIFICATION.md`
+      (5/5 ROADMAP success criteria, 7/7 GAP requirements), after gap-closure plans 02-10
+      and 02-11 closed the Table Herald UTF-8 truncation panic and the REQUIREMENTS.md
+      traceability staleness the first verification pass found.
 - [ ] Make quality numbers real — coverage to the recorded gate, no 0%-coverage first-party
       files, integration coverage ≥ 70%, `#[ignore]`d error-path tests activated, MCP failure
       modes tested, benchmarks re-enabled with documented baselines (QUAL-01 … QUAL-05)
@@ -1137,6 +1144,9 @@ scheme, required headings, and supersession rule, plus the worked example at
 `.planning/decisions/0005-herald-trait.md`) but promotes none of the eleven itself.
 
 ---
+*Last updated: 2026-08-01 after **Phase 2: Functional Gap Closure** completed and verified
+(GAP-01 … GAP-07 all closed; 11/11 plans). Prior update below.*
+
 *Last updated: 2026-07-30 after **ingest run 5 of 5 — FINAL. THE INGEST IS COMPLETE.**
 (`.project/Milestone_9-Classic-Orchestrator-Completion` +
 `.project/Milestone_10-CI-Hardening-Release-Automation` +
