@@ -565,6 +565,7 @@ impl LlmPort for DeepSeekAdapter {
             supports_embeddings: false,
             max_context_tokens: Some(64000),
             supports_system_messages: true,
+            temperature_range: Some((0.0, 2.0)),
         }
     }
 }
@@ -629,6 +630,7 @@ mod tests {
         assert!(!capabilities.supports_vision);
         assert!(capabilities.supports_system_messages);
         assert_eq!(capabilities.max_context_tokens, Some(64000));
+        assert_eq!(capabilities.temperature_range, Some((0.0, 2.0)));
         assert_eq!(adapter.get_provider_name(), "deepseek");
     }
 

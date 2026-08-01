@@ -270,6 +270,7 @@ impl LlmPort for MockLlmAdapter {
             max_context_tokens: Some(4096),
             supports_embeddings: false,
             supports_system_messages: true,
+            temperature_range: None,
         }
     }
 }
@@ -381,6 +382,7 @@ impl LlmPort for MultiStepMockLlmPort {
             max_context_tokens: Some(4096),
             supports_embeddings: false,
             supports_system_messages: true,
+            temperature_range: None,
         }
     }
 }

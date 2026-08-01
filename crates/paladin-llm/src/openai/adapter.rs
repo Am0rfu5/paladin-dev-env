@@ -648,6 +648,7 @@ impl LlmPort for OpenAIAdapter {
             max_context_tokens: Some(128000),
             supports_embeddings: true,
             supports_system_messages: true,
+            temperature_range: None,
         }
     }
 }

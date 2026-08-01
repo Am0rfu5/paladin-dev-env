@@ -524,6 +524,7 @@ impl LlmPort for AnthropicAdapter {
             supports_embeddings: false,
             max_context_tokens: Some(200_000),
             supports_system_messages: true,
+            temperature_range: None,
         }
     }
 }
