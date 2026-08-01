@@ -301,3 +301,16 @@ None - no external service configuration required.
 ---
 *Phase: 02-functional-gap-closure*
 *Completed: 2026-08-01*
+
+## Self-Check: PASSED
+
+- FOUND: `crates/paladin-battalion/src/formation_service.rs`
+- FOUND: `crates/paladin-core/src/platform/container/battalion/mod.rs`
+- FOUND: `crates/paladin-herald/src/json_herald.rs`
+- FOUND: `crates/paladin-herald/src/markdown_herald.rs`
+- FOUND: `crates/paladin-herald/src/table_herald.rs`
+- FOUND: `.planning/phases/02-functional-gap-closure/02-04-SUMMARY.md`
+- FOUND: commit `7f22d49` (Task 1)
+- FOUND: commit `fbbf33e` (Task 2)
+- FOUND: commit `eea94bf` (Task 3)
+- FOUND: commit `45d3438` (this SUMMARY)
