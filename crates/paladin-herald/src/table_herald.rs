@@ -620,6 +620,117 @@ mod tests {
         assert!(formatted.contains("Timestamp:"));
     }
 
+    /// `format_error` is the second reachable panic path this plan closes:
+    /// `PaladinError`'s display string flows through the same `truncate_text`
+    /// helper, and `format_error`'s `-> String` signature is infallible by
+    /// ADR-0005's deliberate design, so the assertion here is that the call
+    /// completes at all. The arithmetic differs from Task 1's because
+    /// `thiserror` prepends `"Execution error: "` (17 ASCII bytes/chars) to
+    /// the payload before `truncate_text` ever sees it: at the default
+    /// budget of 60 the cut point is byte offset 57, which falls
+    /// `57 - 17 = 40` bytes into the multi-byte payload. A repeated 3-byte
+    /// CJK character (`中`) puts a char boundary every 3 bytes, and
+    /// `40 % 3 == 1`, so the cut lands mid-character — unlike Task 1's
+    /// 4-byte character, which would coincidentally align here (`40 % 4 ==
+    /// 0`) and prove nothing. Against the pre-Task-1 code this panics with
+    /// the same "byte index ... not a char boundary" panic
+    /// `format_battalion_result` produced, because `format_error` reaches
+    /// the identical unfixed `truncate_text` body.
+    #[test]
+    fn test_format_error_renders_overlong_multibyte_message() {
+        let herald = TableHerald::default();
+        let message = "\u{4E2D}".repeat(50);
+        let error = PaladinError::ExecutionError(message);
+        assert_eq!(error.to_string().len(), 17 + 50 * 3);
+
+        let formatted = herald.format_error(&error);
+
+        assert!(!formatted.is_empty());
+        assert!(!formatted.contains('\u{FFFD}'));
+    }
+
+    /// Table-driven sweep proving `truncate_text` never exceeds its
+    /// configured char budget, across widths straddling both sides of the
+    /// three-character ellipsis and across every char-boundary residue
+    /// (2-byte, 3-byte, 4-byte and mixed ASCII-plus-multi-byte). Against the
+    /// pre-Task-1 code this fails by panic the first time the swept width's
+    /// byte-offset cut point lands mid-character for a given input — which
+    /// happens for most (width, input) pairs in this sweep, since byte-range
+    /// indexing was used unconditionally.
+    #[test]
+    fn test_truncate_text_never_exceeds_width_for_any_multibyte_input() {
+        // 2-byte, 3-byte, 4-byte and mixed ASCII+3-byte inputs, each long
+        // enough in chars to exceed the largest swept width (60).
+        let two_byte_input = "\u{00F1}".repeat(70); // 'ñ', 2 bytes/char
+        let three_byte_input = "\u{4E2D}".repeat(70); // '中', 3 bytes/char
+        let four_byte_input = "\u{1F6E1}".repeat(70); // '🛡', 4 bytes/char
+        let mixed_input = format!("ABC{}", "\u{4E2D}".repeat(70));
+
+        let inputs = [
+            two_byte_input.as_str(),
+            three_byte_input.as_str(),
+            four_byte_input.as_str(),
+            mixed_input.as_str(),
+        ];
+
+        let mut widths: Vec<usize> = (0..=24).collect();
+        widths.push(60);
+
+        for &width in &widths {
+            let config = TableHeraldConfig {
+                max_column_width: width,
+                border_style: "rounded".to_string(),
+            };
+            let herald_at_width = TableHerald::new(config);
+            for input in &inputs {
+                let truncated = herald_at_width.truncate_text(input);
+                assert!(
+                    truncated.chars().count() <= width,
+                    "width {width} exceeded for input starting {:?}",
+                    input.chars().take(5).collect::<String>()
+                );
+                assert!(!truncated.contains('\u{FFFD}'));
+            }
+        }
+    }
+
+    /// Widths below the three-character ellipsis are the third reachable
+    /// panic path: the pre-Task-1 subtraction `max_column_width - 3`
+    /// underflows `usize` for widths 0, 1 and 2, producing an enormous slice
+    /// index and panicking on the out-of-bounds byte range. Widths 1 and 2
+    /// are accepted operator configuration (`HeraldConfig::validate` only
+    /// rejects `0`), so this is reachable, not hypothetical.
+    #[test]
+    fn test_truncate_text_handles_width_below_ellipsis() {
+        let over_long_input = "\u{1F6E1}".repeat(30);
+
+        let width_2_config = TableHeraldConfig {
+            max_column_width: 2,
+            border_style: "rounded".to_string(),
+        };
+        let width_2_herald = TableHerald::new(width_2_config);
+        let width_2_result = width_2_herald.truncate_text(&over_long_input);
+        assert_eq!(width_2_result.chars().count(), 2);
+        assert!(!width_2_result.ends_with("..."));
+
+        let width_1_config = TableHeraldConfig {
+            max_column_width: 1,
+            border_style: "rounded".to_string(),
+        };
+        let width_1_herald = TableHerald::new(width_1_config);
+        let width_1_result = width_1_herald.truncate_text(&over_long_input);
+        assert_eq!(width_1_result.chars().count(), 1);
+        assert!(!width_1_result.ends_with("..."));
+
+        let width_0_config = TableHeraldConfig {
+            max_column_width: 0,
+            border_style: "rounded".to_string(),
+        };
+        let width_0_herald = TableHerald::new(width_0_config);
+        let width_0_result = width_0_herald.truncate_text(&over_long_input);
+        assert_eq!(width_0_result, "");
+    }
+
     #[test]
     fn test_truncate_text_short() {
         let herald = TableHerald::default();
