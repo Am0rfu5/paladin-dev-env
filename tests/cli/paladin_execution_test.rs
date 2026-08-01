@@ -3,11 +3,11 @@
 //! Tests the full execution flow of Paladin agents via CLI configuration,
 //! using MockLlmAdapter to avoid external API dependencies.
 
-use paladin_ports::output::llm_port::LlmPort;
-use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
+use paladin_ports::output::llm_port::LlmPort;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -166,8 +166,7 @@ async fn test_paladin_with_stop_word() {
 async fn test_paladin_error_handling() {
     // Arrange: Create mock that simulates an error
     let mock_llm = Arc::new(MockLlmAdapter::new());
-    mock_llm
-        .add_failure(paladin_ports::output::llm_port::LlmError::RateLimitExceeded);
+    mock_llm.add_failure(paladin_ports::output::llm_port::LlmError::RateLimitExceeded);
 
     let paladin_data = PaladinData {
         system_prompt: "You are a test assistant.".to_string(),

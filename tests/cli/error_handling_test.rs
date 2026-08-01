@@ -6,11 +6,11 @@
 use paladin::application::cli::config::paladin_config::{
     GarrisonConfig, PaladinYamlConfig, ProviderConfig,
 };
-use paladin_ports::output::llm_port::{LlmError, LlmPort};
-use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
+use paladin_ports::output::llm_port::{LlmError, LlmPort};
 use std::sync::Arc;
 use std::time::Duration;
 use tempfile::NamedTempFile;

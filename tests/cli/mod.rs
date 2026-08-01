@@ -2,16 +2,22 @@
 
 use std::sync::Once;
 
-// Commented out - missing helpers module (Task 4.0)
+mod helpers;
+
+// arsenal_config_test, environment_tests, garrison_config_test and
+// integration_tests are out of Phase 2's scope per
+// .planning/phases/02-functional-gap-closure/02-CONTEXT.md D-09; the D-12
+// sweep in plan 02-09 reports on them.
 // mod arsenal_config_test;
 // mod environment_tests;
-// mod error_handling_test;
-// mod formation_execution_test;
 // mod garrison_config_test;
 // mod integration_tests;
-// mod paladin_execution_test;
-// mod phalanx_execution_test;
-// mod tool_integration_test;
+
+mod error_handling_test;
+mod formation_execution_test;
+mod paladin_execution_test;
+mod phalanx_execution_test;
+mod tool_integration_test;
 
 // CLI output snapshot tests (Task 4.0 - Epic 24)
 mod error_output_test;
