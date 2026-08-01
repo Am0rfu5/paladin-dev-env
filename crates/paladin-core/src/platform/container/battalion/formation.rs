@@ -175,7 +175,30 @@ mod tests {
         let config = BattalionConfig::new("test");
 
         let result = Formation::new(vec![p1], config);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_formation_rejects_zero_paladins() {
+        let config = BattalionConfig::new("test");
+
+        let result = Formation::new(vec![], config);
         assert!(result.is_err());
+        match result.unwrap_err() {
+            BattalionError::ValidationError(msg) => {
+                assert!(msg.contains('0'));
+            }
+            other => panic!("Expected ValidationError, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_formation_accepts_single_paladin() {
+        let p1 = create_test_paladin("P1");
+        let config = BattalionConfig::new("test");
+
+        let result = Formation::new(vec![p1], config);
+        assert!(result.is_ok());
     }
 
     #[test]
