@@ -261,7 +261,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 02-11-PLAN.md — Check off GAP-01…GAP-07 in REQUIREMENTS.md and set their Traceability rows to Complete, with dated provenance citing each requirement's closing plan
+- [x] 02-11-PLAN.md — Check off GAP-01…GAP-07 in REQUIREMENTS.md and set their Traceability rows to Complete, with dated provenance citing each requirement's closing plan
 
 ### Phase 3: Verification Depth
 
