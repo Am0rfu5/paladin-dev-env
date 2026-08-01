@@ -16,8 +16,8 @@ use chrono::Utc;
 use paladin::application::services::battalion::formation_service::FormationExecutionService;
 use paladin::application::services::paladin::error::PaladinError;
 use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
-use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::formation::Formation;
+use paladin::core::platform::container::battalion::{BattalionConfig, ErrorStrategy};
 use paladin::core::platform::container::herald::Herald;
 use paladin::core::platform::container::paladin::Paladin;
 use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
@@ -25,7 +25,7 @@ use paladin_ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage as LlmTokenUsage,
 };
 use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult, PaladinStream, StopReason};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
@@ -91,9 +91,13 @@ impl LlmPort for MockLlmPort {
 ///
 /// Configured per-name with a distinct, non-round `(output, token_count, execution_time_ms)`
 /// triple so every downstream assertion can only pass if the rendering read the real values.
+/// The failure-injection mechanism follows `IntegrationMockPaladinPort`'s
+/// (`commander_integration_tests.rs`) configurable-failure pattern rather than inventing a new
+/// mock shape.
 #[derive(Clone)]
 struct FormationMockPaladinPort {
     responses: HashMap<String, (String, u32, u64)>,
+    fail_names: Arc<Mutex<HashSet<String>>>,
     execution_log: Arc<Mutex<Vec<String>>>,
 }
 
@@ -101,8 +105,14 @@ impl FormationMockPaladinPort {
     fn new(responses: HashMap<String, (String, u32, u64)>) -> Self {
         Self {
             responses,
+            fail_names: Arc::new(Mutex::new(HashSet::new())),
             execution_log: Arc::new(Mutex::new(Vec::new())),
         }
+    }
+
+    fn with_failures(self, names: Vec<String>) -> Self {
+        *self.fail_names.lock().unwrap() = names.into_iter().collect();
+        self
     }
 
     #[allow(dead_code)]
@@ -122,6 +132,13 @@ impl PaladinPort for FormationMockPaladinPort {
             .lock()
             .unwrap()
             .push(paladin.node.name.clone());
+
+        if self.fail_names.lock().unwrap().contains(&paladin.node.name) {
+            return Err(PaladinError::ExecutionError(format!(
+                "Simulated failure for {}",
+                paladin.node.name
+            )));
+        }
 
         let (output, token_count, execution_time_ms) = self
             .responses
@@ -257,4 +274,99 @@ async fn test_formation_result_through_json_markdown_table_heralds() {
     assert!(table_output.contains("Sentinel"));
     assert!(table_output.contains("Vanguard"));
     assert!(table_output.contains(&expected_total.to_string()));
+}
+
+#[tokio::test]
+async fn test_formation_partial_results_through_all_three_heralds() {
+    let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort);
+
+    let paladin1 = build_paladin(&llm_port, "Outrider").await;
+    let paladin2 = build_paladin(&llm_port, "Skirmisher").await;
+    let paladin3 = build_paladin(&llm_port, "Bulwark").await;
+
+    let mut responses: HashMap<String, (String, u32, u64)> = HashMap::new();
+    responses.insert(
+        "Outrider".to_string(),
+        ("Outrider secured the flank.".to_string(), 173, 921),
+    );
+    // Skirmisher fails deterministically — no response entry is consulted for it.
+    responses.insert(
+        "Bulwark".to_string(),
+        ("Bulwark held the line.".to_string(), 349, 1467),
+    );
+
+    let paladin_port: Arc<dyn PaladinPort> = Arc::new(
+        FormationMockPaladinPort::new(responses.clone())
+            .with_failures(vec!["Skirmisher".to_string()]),
+    );
+
+    // Continue-on-error is required: fail-fast returns Err and produces no partial result to
+    // render, which is not what this criterion is about.
+    let config = BattalionConfig::new("partial_formation")
+        .with_error_strategy(ErrorStrategy::ContinueOnError);
+
+    let formation = Formation::new(vec![paladin1, paladin2, paladin3], config)
+        .expect("Failed to create Formation");
+
+    let service = FormationExecutionService::new(Arc::clone(&paladin_port));
+
+    let result = service
+        .execute(&formation, "Hold the position")
+        .await
+        .expect("ContinueOnError should return a partial result, not an Err");
+
+    assert_eq!(result.paladin_success_count, 2);
+    assert_eq!(result.paladin_failure_count, 1);
+    assert_eq!(result.node_errors.len(), 1);
+    assert_eq!(result.node_errors[0].node_name, "Skirmisher");
+    assert!(result.node_errors[0].error.contains("Skirmisher"));
+
+    // --- JSON Herald ---
+    let json_herald = JsonHerald::new();
+    let json_output = json_herald
+        .format_battalion_result(&result)
+        .expect("JSON formatting should succeed");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&json_output).expect("JSON Herald output should be valid JSON");
+
+    let per_paladin = parsed["paladin_results"]
+        .as_array()
+        .expect("paladin_results should be an array");
+    assert_eq!(per_paladin.len(), 2, "Only the two successes are recorded");
+    let outputs: Vec<&str> = per_paladin
+        .iter()
+        .map(|p| p["output"].as_str().unwrap())
+        .collect();
+    assert!(outputs.contains(&responses["Outrider"].0.as_str()));
+    assert!(outputs.contains(&responses["Bulwark"].0.as_str()));
+
+    // Structured node-error array and its length, not a substring search.
+    let node_errors_json = parsed["node_errors"]
+        .as_array()
+        .expect("node_errors should be an array");
+    assert_eq!(node_errors_json.len(), 1);
+    assert_eq!(node_errors_json[0]["node_name"], "Skirmisher");
+
+    // --- Markdown Herald ---
+    let markdown_herald = MarkdownHerald::new();
+    let markdown_output = markdown_herald
+        .format_battalion_result(&result)
+        .expect("Markdown formatting should succeed");
+
+    assert!(markdown_output.contains("Outrider"));
+    assert!(markdown_output.contains("Bulwark"));
+    assert!(markdown_output.contains("Skirmisher"));
+    assert!(markdown_output.contains("**Success Count:** 2"));
+    assert!(markdown_output.contains("**Failure Count:** 1"));
+
+    // --- Table Herald ---
+    let table_herald = TableHerald::default();
+    let table_output = table_herald
+        .format_battalion_result(&result)
+        .expect("Table formatting should succeed");
+
+    assert!(table_output.contains("Outrider"));
+    assert!(table_output.contains("Bulwark"));
+    assert!(table_output.contains("Skirmisher"));
+    assert!(table_output.contains("Failures"));
 }
