@@ -44,6 +44,7 @@ pub mod openai_provider_test;
 pub mod orchestrator_workflow_lifecycle_test;
 pub mod paladin_garrison_integration_test;
 pub mod paladin_integration_test;
+pub mod provider_switching_test;
 #[cfg(feature = "qdrant")]
 pub mod qdrant_sanctum_tests;
 #[cfg(feature = "qdrant")]
