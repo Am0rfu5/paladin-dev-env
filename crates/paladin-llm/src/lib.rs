@@ -73,3 +73,100 @@ pub mod deepseek;
 /// Mock provider adapters for tests and deterministic workflows.
 #[allow(missing_docs)]
 pub mod mock;
+
+/// Cross-adapter capability invariants (WEB-03, ADR-0004).
+///
+/// These tests need all three shipped adapters in scope simultaneously, which none of
+/// the per-adapter `#[cfg(test)]` modules can see on their own (each only compiles
+/// under its own feature flag) — so they live here, gated on all three features being
+/// enabled together (as they are for `cargo test --workspace`, since the root
+/// `paladin-ai` package requests `openai`, `anthropic` and `deepseek` together).
+#[cfg(all(test, feature = "openai", feature = "anthropic", feature = "deepseek"))]
+mod capability_invariants {
+    use crate::anthropic::{AnthropicAdapter, AnthropicConfig};
+    use crate::deepseek::{DeepSeekAdapter, DeepSeekConfig};
+    use crate::openai::{OpenAIAdapter, OpenAIConfig};
+    use paladin_ports::output::llm_port::LlmPort;
+
+    /// WEB-03's own success criterion 3: a test asserting the correspondence between
+    /// the declared tool-calling capability and whether a tool-calling request path
+    /// actually exists. `LlmRequest`'s complete field set is `id`, `model`, `prompt`,
+    /// `attachments`, `stream`, `metadata` — no field through which a tool definition
+    /// could travel — so the request surface never supports tool calling today, and
+    /// every shipped adapter's declared capability must match that fact.
+    #[test]
+    fn test_capabilities_tool_calling_matches_request_surface() {
+        // `LlmRequest` has no tools field today, so no adapter's request path can
+        // carry a tool call. This is the single source of truth the correspondence
+        // below is checked against.
+        const REQUEST_SURFACE_SUPPORTS_TOOL_CALLING: bool = false;
+
+        let openai = OpenAIAdapter::new(OpenAIConfig::new("test-key".to_string())).unwrap();
+        let anthropic = AnthropicAdapter::new(AnthropicConfig::new(
+            "sk-ant-test123".to_string(),
+            "https://api.anthropic.com/v1".to_string(),
+            "claude-3-5-sonnet-20241022".to_string(),
+            4096,
+        ))
+        .unwrap();
+        let deepseek = DeepSeekAdapter::new(DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        ))
+        .unwrap();
+
+        for (name, declared) in [
+            ("openai", openai.get_capabilities().supports_tool_calling),
+            (
+                "anthropic",
+                anthropic.get_capabilities().supports_tool_calling,
+            ),
+            (
+                "deepseek",
+                deepseek.get_capabilities().supports_tool_calling,
+            ),
+        ] {
+            assert_eq!(
+                declared, REQUEST_SURFACE_SUPPORTS_TOOL_CALLING,
+                "{name}'s declared supports_tool_calling ({declared}) must match whether a \
+                 tool-calling request path exists on LlmRequest ({REQUEST_SURFACE_SUPPORTS_TOOL_CALLING})"
+            );
+        }
+    }
+
+    /// The assumption-delta invariant test: every shipped adapter must declare a
+    /// `Some((min, max))` temperature range, never silently fall back to `None` (the
+    /// framework's `[0.0, 1.0]` default). Catches a future adapter reintroducing the
+    /// singular global-clamp assumption the moment it lands.
+    #[test]
+    fn test_every_adapter_declares_a_temperature_range() {
+        let openai = OpenAIAdapter::new(OpenAIConfig::new("test-key".to_string())).unwrap();
+        let anthropic = AnthropicAdapter::new(AnthropicConfig::new(
+            "sk-ant-test123".to_string(),
+            "https://api.anthropic.com/v1".to_string(),
+            "claude-3-5-sonnet-20241022".to_string(),
+            4096,
+        ))
+        .unwrap();
+        let deepseek = DeepSeekAdapter::new(DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        ))
+        .unwrap();
+
+        assert!(
+            openai.get_capabilities().temperature_range.is_some(),
+            "openai must declare a temperature_range"
+        );
+        assert!(
+            anthropic.get_capabilities().temperature_range.is_some(),
+            "anthropic must declare a temperature_range"
+        );
+        assert!(
+            deepseek.get_capabilities().temperature_range.is_some(),
+            "deepseek must declare a temperature_range"
+        );
+    }
+}
