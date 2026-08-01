@@ -357,3 +357,13 @@ None - no external service configuration required.
 ---
 *Phase: 02-functional-gap-closure*
 *Completed: 2026-08-01*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/02-functional-gap-closure/02-test-wiring-sweep.md`
+- FOUND: `.planning/decisions/0007-battalion-cancellation-deferral.md`
+- FOUND: `.planning/phases/02-functional-gap-closure/02-09-SUMMARY.md`
+- FOUND: commit `0f8b58d` (Task 1)
+- FOUND: commit `96e9be6` (Task 2)
+- FOUND: commit `0dd3ae9` (Task 3)
+- FOUND: commit `f315b82` (this SUMMARY)
