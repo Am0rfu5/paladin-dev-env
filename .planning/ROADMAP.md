@@ -238,7 +238,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-05-PLAN.md — GAP-03 proof: one Formation-driven end-to-end test through all three Heralds, including partial results (D-06, Epic 8 task 7.13)
+- [x] 02-05-PLAN.md — GAP-03 proof: one Formation-driven end-to-end test through all three Heralds, including partial results (D-06, Epic 8 task 7.13)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
