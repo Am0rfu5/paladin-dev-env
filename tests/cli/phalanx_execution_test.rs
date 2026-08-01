@@ -4,11 +4,11 @@
 //! to verify proper concurrent execution and result aggregation.
 
 use paladin::application::services::battalion::phalanx_service::PhalanxExecutionService;
-use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::phalanx::{AggregationStrategy, Phalanx};
 use paladin::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -347,11 +347,9 @@ async fn test_phalanx_error_handling() {
 
     // First Paladin succeeds, second fails
     mock_llm.add_success("Success from first");
-    mock_llm.add_failure(
-        paladin_ports::output::llm_port::LlmError::NetworkError(
-            "Network failure".to_string(),
-        ),
-    );
+    mock_llm.add_failure(paladin_ports::output::llm_port::LlmError::NetworkError(
+        "Network failure".to_string(),
+    ));
 
     // Create 2 Paladins
     let paladin1_data = PaladinData {

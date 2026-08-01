@@ -63,9 +63,18 @@ pub mod integration;
 // Re-export unit test modules
 pub mod unit;
 
-// CLI integration tests (requires cli feature)
-#[cfg(feature = "cli")]
-pub mod cli;
+// Note: the CLI integration tests live under `tests/cli/` and are compiled
+// as their own `[[test]]` target ("cli", Cargo.toml) rather than nested here.
+// `pub mod cli;` was previously declared alongside `integration`/`unit` above
+// but had no consumer anywhere in this crate (`crate::cli::…` is never
+// referenced) — it only re-compiled `tests/cli/` a second time inside this
+// `lib` binary. Once `tests/cli/helpers.rs` (plan 02-07) began re-loading
+// the shared `tests/helpers/` barrel via a `#[path]` attribute, that second
+// compilation caused `tests/helpers/mod.rs` to be loaded twice within this
+// one crate — this `lib` binary's own top-level `pub mod helpers;` above,
+// and again via the nested `crate::cli::helpers` shim — which
+// `clippy::duplicate_mod` rejects under `-D warnings`. Removed as dead code
+// rather than worked around, since nothing depended on it.
 
 // Initialize logging once for all tests
 static INIT: Once = Once::new();

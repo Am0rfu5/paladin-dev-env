@@ -4,11 +4,11 @@
 //! to verify proper output chaining and orchestration.
 
 use paladin::application::services::battalion::formation_service::FormationExecutionService;
-use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::battalion::BattalionConfig;
 use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::paladin::{MaxLoops, PaladinData, PaladinStatus};
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -248,8 +248,7 @@ async fn test_formation_error_propagation() {
 
     // First Paladin succeeds, second fails
     mock_llm.add_success("First step succeeded");
-    mock_llm
-        .add_failure(paladin_ports::output::llm_port::LlmError::RateLimitExceeded);
+    mock_llm.add_failure(paladin_ports::output::llm_port::LlmError::RateLimitExceeded);
 
     // Create 2 Paladins
     let paladin1_data = PaladinData {
