@@ -26,8 +26,9 @@ the plans that follow in this same phase):
 | 0004 | `temperature-validation` | Provider-aware temperature range (RECON-05) |
 | 0005 | `herald-trait` | `Herald` trait signature (RECON-06) |
 | 0006 | `coverage-gate` | Project-wide test coverage gate (RECON-07) |
+| 0007 | `battalion-cancellation-deferral` | Battalion-wide cancellation deferred to Phalanx-only, per D-05/D-08 (Phase 2) |
 
-**Next free ADR number: 0007**
+**Next free ADR number: 0008**
 
 Phases 5, 7, 10 and 13 take the next free number from this line when they author further ADRs —
 they do not need to `ls` the directory to find it. Each phase updates this line when it appends.
