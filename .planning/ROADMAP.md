@@ -231,7 +231,7 @@ already true in shipped code before this phase started; the remaining two clause
 GAP-07 actually narrowed to. Phase 1 set the precedent of correcting the ROADMAP at source for the
 same reason when it amended Phase 3's criterion 1.)*
 
-**Plans**: 9 plans
+**Plans**: 11 plans
 
 Plans:
 **Wave 1**
@@ -254,6 +254,14 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [x] 02-09-PLAN.md — Close the record: D-12 test-wiring sweep, ADR-0007 cancellation deferral (D-05/D-08), in-place ledger amendments (D-02) and the ROADMAP criterion corrections
+
+**Wave 5** *(gap closure — added 2026-08-01 from 02-VERIFICATION.md)*
+
+- [ ] 02-10-PLAN.md — Fix the Table Herald's byte-index truncation panic on multi-byte Paladin names: a char-boundary-safe, total `truncate_text`, closing the blocker that falsified success criterion 3 and GAP-03
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 02-11-PLAN.md — Check off GAP-01…GAP-07 in REQUIREMENTS.md and set their Traceability rows to Complete, with dated provenance citing each requirement's closing plan
 
 ### Phase 3: Verification Depth
 
