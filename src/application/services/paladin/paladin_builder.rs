@@ -54,7 +54,8 @@ use uuid::Uuid;
 /// The builder provides a fluent interface for constructing Paladins with comprehensive
 /// validation of all configuration parameters. It enforces constraints like:
 /// - Non-empty system prompts
-/// - Temperature in range [0.0, 1.0]
+/// - Temperature within the selected provider's declared range (falls back to
+///   [0.0, 1.0] when the provider declares none — ADR-0004)
 /// - Max loops in range [1, 100]
 ///
 /// # Example
@@ -1093,7 +1094,9 @@ impl PaladinBuilder {
     /// # Validation Rules
     ///
     /// - `system_prompt` must be non-empty
-    /// - `temperature` must be in range [0.0, 1.0]
+    /// - `temperature` must fall within the selected provider's declared
+    ///   `temperature_range` (both endpoints inclusive); providers that declare no range
+    ///   fall back to `[0.0, 1.0]` (ADR-0004)
     /// - `max_loops` must be in range [1, 100]
     /// - If `autosave_enabled` is true, `state_dir` must be set or Citadel must be configured
     /// - If `sanctum_port` is set, `embedding_port` must also be set (required for RAG)
@@ -1109,10 +1112,21 @@ impl PaladinBuilder {
             ));
         }
 
-        // Validate temperature is in [0.0, 1.0]
-        if !(0.0..=1.0).contains(&self.data.temperature) {
+        // Validate temperature against the selected provider's declared range, falling
+        // back to [0.0, 1.0] when the provider has not declared one (ADR-0004). Both
+        // endpoints are inclusive; no epsilon, no rounding, no clamping — an
+        // out-of-range value is reported to the caller rather than silently corrected.
+        let (min_temp, max_temp) = self
+            .llm_port
+            .get_capabilities()
+            .temperature_range
+            .unwrap_or((0.0, 1.0));
+        if !(self.data.temperature >= min_temp && self.data.temperature <= max_temp) {
             return Err(PaladinError::ConfigurationError(format!(
-                "temperature must be between 0.0 and 1.0, got {}",
+                "temperature must be between {} and {} for provider '{}', got {}",
+                min_temp,
+                max_temp,
+                self.llm_port.get_provider_name(),
                 self.data.temperature
             )));
         }
@@ -1408,6 +1422,76 @@ mod tests {
 
         let result = builder.validate();
         assert!(result.is_err());
+    }
+
+    /// Builds a DeepSeek-backed `Arc<dyn LlmPort>` for the provider-aware temperature
+    /// validation tests below. DeepSeek declares `temperature_range: Some((0.0, 2.0))`
+    /// (ADR-0004), which is what makes 1.8 and 2.0 reachable through the builder where
+    /// the old global `[0.0, 1.0]` clamp made them permanently unreachable.
+    fn deepseek_llm_port() -> Arc<dyn LlmPort> {
+        let config = paladin_llm::deepseek::DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        Arc::new(paladin_llm::deepseek::DeepSeekAdapter::new(config).unwrap())
+    }
+
+    #[tokio::test]
+    async fn test_deepseek_temperature_range_accepts_two_point_zero() {
+        // Exactly DeepSeek's declared maximum — the upper endpoint is inclusive.
+        let result = PaladinBuilder::new(deepseek_llm_port())
+            .system_prompt("Test")
+            .temperature(2.0)
+            .build()
+            .await;
+        assert!(result.is_ok());
+
+        // 1.8 is unreachable under the old global [0.0, 1.0] clamp and must now build.
+        let result = PaladinBuilder::new(deepseek_llm_port())
+            .system_prompt("Test")
+            .temperature(1.8)
+            .build()
+            .await;
+        assert!(result.is_ok());
+
+        // Exactly DeepSeek's declared minimum — the lower endpoint is inclusive.
+        let result = PaladinBuilder::new(deepseek_llm_port())
+            .system_prompt("Test")
+            .temperature(0.0)
+            .build()
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_temperature_rejected_above_provider_max() {
+        // Just above DeepSeek's declared maximum (2.0) must be rejected with a typed
+        // error naming the rejected value, never silently clamped (ADR-0004).
+        let result = PaladinBuilder::new(deepseek_llm_port())
+            .system_prompt("Test")
+            .temperature(2.1)
+            .build()
+            .await;
+        match result {
+            Err(PaladinError::ConfigurationError(msg)) => {
+                assert!(
+                    msg.contains("2.1"),
+                    "error should name the rejected value: {}",
+                    msg
+                );
+            }
+            other => panic!("expected ConfigurationError, got {:?}", other),
+        }
+
+        // A provider that declares no range (MockLlmPort -> Default -> None) falls back
+        // to exactly today's [0.0, 1.0] behaviour — 1.8 must still be rejected.
+        let result = PaladinBuilder::new(Arc::new(MockLlmPort))
+            .system_prompt("Test")
+            .temperature(1.8)
+            .build()
+            .await;
+        assert!(matches!(result, Err(PaladinError::ConfigurationError(_))));
     }
 
     #[test]

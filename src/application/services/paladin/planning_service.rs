@@ -643,6 +643,7 @@ mod tests {
                 supports_embeddings: false,
                 supports_system_messages: true,
                 max_context_tokens: Some(4096),
+                temperature_range: None,
             }
         }
     }

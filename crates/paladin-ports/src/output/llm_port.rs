@@ -193,6 +193,7 @@
 //!             supports_embeddings: false,
 //!             max_context_tokens: Some(4096),
 //!             supports_system_messages: true,
+//!             temperature_range: None,
 //!         }
 //!     }
 //! }
@@ -744,13 +745,14 @@ pub struct StreamingResponse {
 ///     supports_embeddings: false,
 ///     max_context_tokens: Some(128000),
 ///     supports_system_messages: true,
+///     temperature_range: Some((0.0, 2.0)),
 /// };
 ///
 /// if capabilities.supports_streaming {
 ///     println!("Provider supports streaming responses");
 /// }
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ProviderCapabilities {
     /// Whether the provider supports streaming responses
     pub supports_streaming: bool,
@@ -766,6 +768,13 @@ pub struct ProviderCapabilities {
     pub max_context_tokens: Option<u32>,
     /// Whether the provider supports system messages
     pub supports_system_messages: bool,
+    /// The provider's supported temperature range, inclusive at both endpoints.
+    ///
+    /// `Some((min, max))` means a requested temperature `t` is valid exactly when
+    /// `t >= min && t <= max` — no epsilon tolerance, no rounding. `None` means the
+    /// provider has not declared a range; validation falls back to the framework's
+    /// default `[0.0, 1.0]` inclusive range (ADR-0004).
+    pub temperature_range: Option<(f32, f32)>,
 }
 
 impl Default for ProviderCapabilities {
@@ -778,6 +787,7 @@ impl Default for ProviderCapabilities {
             supports_embeddings: false,
             max_context_tokens: None,
             supports_system_messages: true,
+            temperature_range: None,
         }
     }
 }
@@ -1278,6 +1288,12 @@ mod tests {
         assert!(!capabilities.supports_embeddings);
         assert_eq!(capabilities.max_context_tokens, None);
         assert!(capabilities.supports_system_messages);
+        assert_eq!(capabilities.temperature_range, None);
+    }
+
+    #[test]
+    fn test_provider_capabilities_default_temperature_range_is_none() {
+        assert_eq!(ProviderCapabilities::default().temperature_range, None);
     }
 
     #[test]
@@ -1290,11 +1306,13 @@ mod tests {
             supports_embeddings: false,
             max_context_tokens: Some(128000),
             supports_system_messages: true,
+            temperature_range: Some((0.0, 2.0)),
         };
 
         assert!(capabilities.supports_streaming);
         assert!(capabilities.supports_tool_calling);
         assert_eq!(capabilities.max_context_tokens, Some(128000));
+        assert_eq!(capabilities.temperature_range, Some((0.0, 2.0)));
     }
 
     #[test]
@@ -1307,12 +1325,14 @@ mod tests {
             supports_embeddings: false,
             max_context_tokens: Some(64000),
             supports_system_messages: true,
+            temperature_range: Some((0.0, 1.0)),
         };
 
         // Test serialization
         let json = serde_json::to_string(&capabilities).unwrap();
         assert!(json.contains("supports_streaming"));
         assert!(json.contains("max_context_tokens"));
+        assert!(json.contains("temperature_range"));
 
         // Test deserialization
         let deserialized: ProviderCapabilities = serde_json::from_str(&json).unwrap();
@@ -1329,6 +1349,7 @@ mod tests {
             supports_embeddings: false,
             max_context_tokens: Some(100000),
             supports_system_messages: true,
+            temperature_range: Some((0.0, 1.0)),
         };
 
         let caps2 = ProviderCapabilities {
@@ -1339,6 +1360,7 @@ mod tests {
             supports_embeddings: false,
             max_context_tokens: Some(100000),
             supports_system_messages: true,
+            temperature_range: Some((0.0, 1.0)),
         };
 
         assert_eq!(caps1, caps2);

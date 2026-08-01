@@ -518,12 +518,17 @@ impl LlmPort for AnthropicAdapter {
     fn get_capabilities(&self) -> ProviderCapabilities {
         ProviderCapabilities {
             supports_streaming: true,
-            supports_tool_calling: true,
+            // `LlmRequest` carries no field through which a tool definition could
+            // travel, and this adapter neither sends `tools` nor parses `tool_calls`
+            // out of a response. The flag describes what this adapter does, not what
+            // the vendor's API offers (WEB-03, D-14).
+            supports_tool_calling: false,
             supports_function_calling: false,
             supports_vision: true,
             supports_embeddings: false,
             max_context_tokens: Some(200_000),
             supports_system_messages: true,
+            temperature_range: Some((0.0, 1.0)),
         }
     }
 }
@@ -748,10 +753,13 @@ mod tests {
         let capabilities = adapter.get_capabilities();
 
         assert!(capabilities.supports_streaming);
-        assert!(capabilities.supports_tool_calling);
+        // `LlmRequest` has no field through which a tool definition could travel, and
+        // this adapter neither sends `tools` nor parses `tool_calls` (WEB-03, D-14).
+        assert!(!capabilities.supports_tool_calling);
         assert!(capabilities.supports_vision);
         assert!(capabilities.supports_system_messages);
         assert_eq!(capabilities.max_context_tokens, Some(200_000));
+        assert_eq!(capabilities.temperature_range, Some((0.0, 1.0)));
         assert_eq!(adapter.get_provider_name(), "anthropic");
     }
 

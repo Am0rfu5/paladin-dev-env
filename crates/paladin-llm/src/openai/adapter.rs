@@ -642,12 +642,17 @@ impl LlmPort for OpenAIAdapter {
     fn get_capabilities(&self) -> ProviderCapabilities {
         ProviderCapabilities {
             supports_streaming: true,
-            supports_tool_calling: true,
+            // `LlmRequest` carries no field through which a tool definition could
+            // travel, and this adapter neither sends `tools` nor parses `tool_calls`
+            // out of a response. The flag describes what this adapter does, not what
+            // the vendor's API offers (WEB-03, D-14).
+            supports_tool_calling: false,
             supports_function_calling: true,
             supports_vision: true,
             max_context_tokens: Some(128000),
             supports_embeddings: true,
             supports_system_messages: true,
+            temperature_range: Some((0.0, 1.0)),
         }
     }
 }
@@ -700,9 +705,12 @@ mod tests {
         let adapter = OpenAIAdapter::new(config).unwrap();
         let caps = adapter.get_capabilities();
         assert!(caps.supports_streaming);
-        assert!(caps.supports_tool_calling);
+        // `LlmRequest` has no field through which a tool definition could travel, and
+        // this adapter neither sends `tools` nor parses `tool_calls` (WEB-03, D-14).
+        assert!(!caps.supports_tool_calling);
         assert!(caps.supports_vision);
         assert_eq!(caps.max_context_tokens, Some(128000));
+        assert_eq!(caps.temperature_range, Some((0.0, 1.0)));
     }
 
     #[test]
