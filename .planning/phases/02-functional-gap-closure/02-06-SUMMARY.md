@@ -408,3 +408,16 @@ reactivated LLM tests run fully offline with no API keys.
 ---
 *Phase: 02-functional-gap-closure*
 *Completed: 2026-08-01*
+
+## Self-Check: PASSED
+
+- FOUND: `tests/integration/provider_switching_test.rs`
+- FOUND: `.planning/phases/02-functional-gap-closure/02-06-SUMMARY.md`
+- FOUND: commit `465ecdb` (Task 1)
+- FOUND: commit `7c3d4b7` (Task 2)
+- FOUND: commit `7257f88` (Task 3)
+- FOUND: commit `8132cbf` (this SUMMARY)
+- FOUND: all 6 key modified/created files verified present on disk (`tests/unit/mod.rs`,
+  `tests/unit/llm/mod.rs`, `tests/unit/llm/deepseek_adapter_test.rs`,
+  `tests/unit/llm/anthropic_adapter_test.rs`, `tests/unit/llm/provider_factory_test.rs`,
+  `tests/integration/mod.rs`)
