@@ -7,8 +7,8 @@ use paladin::application::errors::citadel_error::CitadelError;
 use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
 use paladin::core::base::entity::node::Node;
 use paladin::core::platform::container::citadel::{
-    BattalionConfig, BattalionState, CheckpointData, ExecutionRecord, ExecutionStatus, PaladinData,
-    PaladinState, PaladinStatus,
+    BattalionCheckpointConfig, BattalionState, CheckpointData, ExecutionRecord, ExecutionStatus,
+    PaladinData, PaladinState, PaladinStatus,
 };
 use paladin::core::platform::container::garrison::{ConversationRole, GarrisonEntry};
 use paladin::core::platform::container::paladin::MaxLoops;
@@ -236,7 +236,7 @@ async fn test_save_and_load_battalion_state() {
         FileCitadel::new(temp_dir.path().to_path_buf()).expect("Failed to create FileCitadel");
 
     let paladin_state = create_test_paladin_state();
-    let config = BattalionConfig {
+    let config = BattalionCheckpointConfig {
         max_concurrency: Some(4),
         timeout_seconds: Some(300),
         continue_on_error: true,
@@ -290,7 +290,12 @@ async fn test_file_naming_convention() {
     );
 
     // Test battalion naming
-    let battalion_state = BattalionState::new("Phalanx", BattalionConfig::default(), vec![], None);
+    let battalion_state = BattalionState::new(
+        "Phalanx",
+        BattalionCheckpointConfig::default(),
+        vec![],
+        None,
+    );
     let battalion_id = battalion_state.id;
 
     citadel

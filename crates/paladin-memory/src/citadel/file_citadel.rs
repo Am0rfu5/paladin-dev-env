@@ -346,7 +346,7 @@ mod tests {
     use super::*;
     use paladin_core::base::entity::node::Node;
     use paladin_core::platform::container::citadel::{
-        BattalionConfig, CheckpointData, PaladinData, PaladinStatus,
+        BattalionCheckpointConfig, CheckpointData, PaladinData, PaladinStatus,
     };
     use paladin_core::platform::container::paladin::MaxLoops;
     use tempfile::TempDir;
@@ -504,7 +504,7 @@ mod tests {
 
         let state = BattalionState::new(
             "Formation",
-            BattalionConfig::default(),
+            BattalionCheckpointConfig::default(),
             vec![],
             Some(CheckpointData::new()),
         );
@@ -538,7 +538,12 @@ mod tests {
         // Save multiple states
         let state1 = create_test_paladin_state();
         let state2 = create_test_paladin_state();
-        let battalion = BattalionState::new("Phalanx", BattalionConfig::default(), vec![], None);
+        let battalion = BattalionState::new(
+            "Phalanx",
+            BattalionCheckpointConfig::default(),
+            vec![],
+            None,
+        );
 
         citadel.save_paladin(&state1).await.unwrap();
         citadel.save_paladin(&state2).await.unwrap();

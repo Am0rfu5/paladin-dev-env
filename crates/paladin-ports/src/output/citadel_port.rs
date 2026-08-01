@@ -355,7 +355,7 @@ use paladin_core::platform::container::citadel_error::CitadelError;
 ///
 /// ```rust,no_run
 /// use paladin_ports::output::citadel_port::CitadelPort;
-/// use paladin_core::platform::container::citadel::{BattalionState, BattalionConfig, CheckpointData};
+/// use paladin_core::platform::container::citadel::{BattalionState, BattalionCheckpointConfig, CheckpointData};
 /// use uuid::Uuid;
 ///
 /// async fn battalion_checkpoint(
@@ -368,7 +368,7 @@ use paladin_core::platform::container::citadel_error::CitadelError;
 ///
 ///     let battalion_state = BattalionState::new(
 ///         "Formation",
-///         BattalionConfig::default(),
+///         BattalionCheckpointConfig::default(),
 ///         vec![],  // paladin_states would be here
 ///         Some(checkpoint),
 ///     );
@@ -590,7 +590,7 @@ mod tests {
     use super::*;
     use paladin_core::base::entity::node::Node;
     use paladin_core::platform::container::citadel::{
-        BattalionConfig, CheckpointData, PaladinData, PaladinStatus,
+        BattalionCheckpointConfig, CheckpointData, PaladinData, PaladinStatus,
     };
     use paladin_core::platform::container::paladin::MaxLoops;
 
@@ -644,7 +644,7 @@ mod tests {
 
         let battalion_state = BattalionState::new(
             "Formation",
-            BattalionConfig::default(),
+            BattalionCheckpointConfig::default(),
             vec![],
             Some(CheckpointData::new()),
         );

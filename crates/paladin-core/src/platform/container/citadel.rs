@@ -230,7 +230,7 @@ pub struct BattalionState {
     /// Type of Battalion orchestration
     pub battalion_type: String,
     /// Battalion configuration parameters
-    pub config: BattalionConfig,
+    pub config: BattalionCheckpointConfig,
     /// States of all constituent Paladins
     pub paladin_states: Vec<PaladinState>,
     /// Current checkpoint for resumption
@@ -254,7 +254,7 @@ impl BattalionState {
     /// * `checkpoint` - Optional checkpoint data
     pub fn new(
         battalion_type: impl Into<String>,
-        config: BattalionConfig,
+        config: BattalionCheckpointConfig,
         paladin_states: Vec<PaladinState>,
         checkpoint: Option<CheckpointData>,
     ) -> Self {
@@ -272,12 +272,16 @@ impl BattalionState {
     }
 }
 
-/// Configuration parameters for Battalion orchestration
+/// Configuration for a Battalion checkpoint/resume cycle
 ///
-/// Contains settings that control how a Battalion executes its Paladins.
-/// This is a placeholder and will be expanded in Epic 4.
+/// Contains the knobs a checkpoint/resume cycle needs when persisting and
+/// restoring a Battalion's execution state — a different concept from the
+/// Battalion orchestration config of a similar name declared in
+/// `battalion/mod.rs`, which controls how a Battalion executes its
+/// Paladins. This `BattalionCheckpointConfig` name is what distinguishes
+/// the two; see ADR-0001 for the rename.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct BattalionConfig {
+pub struct BattalionCheckpointConfig {
     /// Maximum concurrent Paladins (for Phalanx)
     #[serde(default)]
     pub max_concurrency: Option<usize>,
@@ -439,7 +443,7 @@ mod tests {
     fn test_battalion_state_creation() {
         let paladin = create_test_paladin();
         let paladin_state = PaladinState::new(paladin, vec![], vec![]);
-        let config = BattalionConfig::default();
+        let config = BattalionCheckpointConfig::default();
 
         let battalion_state = BattalionState::new("Formation", config, vec![paladin_state], None);
 
@@ -453,7 +457,7 @@ mod tests {
     fn test_battalion_state_serialization_roundtrip() {
         let paladin = create_test_paladin();
         let paladin_state = PaladinState::new(paladin, vec![], vec![]);
-        let config = BattalionConfig {
+        let config = BattalionCheckpointConfig {
             max_concurrency: Some(4),
             timeout_seconds: Some(300),
             continue_on_error: true,
@@ -656,7 +660,7 @@ mod tests {
             loops_used: 1,
         };
         let checkpoint = CheckpointData::new();
-        let config = BattalionConfig::default();
+        let config = BattalionCheckpointConfig::default();
 
         // All these should serialize successfully
         assert!(serde_json::to_string(&paladin).is_ok());
