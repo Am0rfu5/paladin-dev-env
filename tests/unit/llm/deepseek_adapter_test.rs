@@ -2,13 +2,11 @@
 //
 // Unit tests for DeepSeek adapter with mocked HTTP responses
 
-use mockito::{Mock, Server, ServerGuard};
+use mockito::{Server, ServerGuard};
+use paladin::core::platform::container::prompt::{PromptItem, PromptType, SystemPrompt};
+use paladin_llm::deepseek::{DeepSeekAdapter, DeepSeekConfig};
 use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
-use paladin::core::platform::container::prompt::{
-    PromptData, PromptItem, PromptParameters, PromptRole, PromptType, SystemPrompt, TextPrompt,
-    UserPrompt,
-};
-use paladin::{DeepSeekAdapter, DeepSeekConfig};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Helper to create a mock server and adapter configured to use it
@@ -17,8 +15,8 @@ fn setup_mock_server() -> (ServerGuard, DeepSeekAdapter) {
     let config = DeepSeekConfig {
         api_key: "test-api-key".to_string(),
         base_url: server.url(),
+        model: "deepseek-chat".to_string(),
         timeout_seconds: 30,
-        max_retries: 0, // Disable retries for tests
     };
     let adapter = DeepSeekAdapter::new(config).unwrap();
     (server, adapter)
@@ -26,28 +24,21 @@ fn setup_mock_server() -> (ServerGuard, DeepSeekAdapter) {
 
 /// Helper to create a basic LLM request
 fn create_test_request(content: &str) -> LlmRequest {
-    let system_prompt = PromptItem::new(PromptData {
-        id: Uuid::new_v4(),
-        prompt_type: PromptType::System(SystemPrompt {
-            instructions: content.to_string(),
-            constraints: None,
-            examples: None,
-        }),
-        parameters: PromptParameters {
-            max_tokens: Some(100),
-            temperature: Some(0.7),
-            top_p: Some(1.0),
-            frequency_penalty: None,
-            presence_penalty: None,
-            stop_sequences: None,
-        },
-    });
+    // PromptItem::new returns a Result; construction here uses fixed, valid
+    // inputs, so unwrap cannot fail.
+    let system_prompt = PromptItem::new(PromptType::System(SystemPrompt {
+        instructions: content.to_string(),
+        constraints: None,
+    }))
+    .unwrap();
 
     LlmRequest {
         id: Uuid::new_v4(),
         model: "deepseek-chat".to_string(),
         prompt: system_prompt,
         attachments: vec![],
+        stream: false,
+        metadata: HashMap::new(),
     }
 }
 
@@ -181,8 +172,8 @@ async fn test_deepseek_timeout() {
     let config = DeepSeekConfig {
         api_key: "test-api-key".to_string(),
         base_url: server.url(),
+        model: "deepseek-chat".to_string(),
         timeout_seconds: 1,
-        max_retries: 0,
     };
     let adapter = DeepSeekAdapter::new(config).unwrap();
 

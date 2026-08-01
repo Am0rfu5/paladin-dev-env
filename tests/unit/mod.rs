@@ -13,6 +13,7 @@ pub mod cli_battalion_commands_test;
 pub mod embedding_port_tests;
 pub mod handoff_service_test;
 pub mod herald_consolidation_test;
+pub mod llm;
 pub mod maneuver_domain_tests;
 pub mod mcp_protocol_test;
 pub mod mock_llm_adapter_test;

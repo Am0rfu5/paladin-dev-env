@@ -2,14 +2,13 @@
 //
 // Unit tests for Anthropic adapter with mocked HTTP responses
 
-use mockito::{Mock, Server, ServerGuard};
-use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
+use mockito::{Server, ServerGuard};
 use paladin::core::platform::container::prompt::{
-    PromptData, PromptItem, PromptParameters, PromptType, SystemPrompt, UserPrompt,
+    PromptItem, PromptType, SystemPrompt, UserPrompt,
 };
-use paladin::{
-    AnthropicAdapter, AnthropicConfig,
-};
+use paladin_llm::anthropic::{AnthropicAdapter, AnthropicConfig};
+use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Helper to create a mock server and adapter configured to use it
@@ -18,8 +17,9 @@ fn setup_mock_server() -> (ServerGuard, AnthropicAdapter) {
     let config = AnthropicConfig {
         api_key: "test-api-key".to_string(),
         base_url: server.url(),
+        model: "claude-3-5-sonnet-20241022".to_string(),
+        max_tokens: 4096,
         timeout_seconds: 30,
-        max_retries: 0, // Disable retries for tests
     };
     let adapter = AnthropicAdapter::new(config).unwrap();
     (server, adapter)
@@ -27,54 +27,39 @@ fn setup_mock_server() -> (ServerGuard, AnthropicAdapter) {
 
 /// Helper to create a basic LLM request with system prompt
 fn create_test_request(content: &str) -> LlmRequest {
-    let system_prompt = PromptItem::new(PromptData {
-        id: Uuid::new_v4(),
-        prompt_type: PromptType::System(SystemPrompt {
-            instructions: content.to_string(),
-            constraints: None,
-            examples: None,
-        }),
-        parameters: PromptParameters {
-            max_tokens: Some(100),
-            temperature: Some(0.7),
-            top_p: Some(1.0),
-            frequency_penalty: None,
-            presence_penalty: None,
-            stop_sequences: None,
-        },
-    });
+    // PromptItem::new returns a Result; construction here uses fixed, valid
+    // inputs, so unwrap cannot fail.
+    let system_prompt = PromptItem::new(PromptType::System(SystemPrompt {
+        instructions: content.to_string(),
+        constraints: None,
+    }))
+    .unwrap();
 
     LlmRequest {
         id: Uuid::new_v4(),
         model: "claude-3-5-sonnet-20241022".to_string(),
         prompt: system_prompt,
         attachments: vec![],
+        stream: false,
+        metadata: HashMap::new(),
     }
 }
 
 /// Helper to create a request with user prompt
 fn create_user_request(content: &str) -> LlmRequest {
-    let user_prompt = PromptItem::new(PromptData {
-        id: Uuid::new_v4(),
-        prompt_type: PromptType::User(UserPrompt {
-            context: Some(content.to_string()),
-            examples: None,
-        }),
-        parameters: PromptParameters {
-            max_tokens: Some(100),
-            temperature: Some(0.7),
-            top_p: Some(1.0),
-            frequency_penalty: None,
-            presence_penalty: None,
-            stop_sequences: None,
-        },
-    });
+    let user_prompt = PromptItem::new(PromptType::User(UserPrompt {
+        query: content.to_string(),
+        context: None,
+    }))
+    .unwrap();
 
     LlmRequest {
         id: Uuid::new_v4(),
         model: "claude-3-5-sonnet-20241022".to_string(),
         prompt: user_prompt,
         attachments: vec![],
+        stream: false,
+        metadata: HashMap::new(),
     }
 }
 
