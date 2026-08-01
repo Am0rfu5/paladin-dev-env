@@ -14,6 +14,7 @@ pub mod autonomous_planning_test;
 pub mod battalion;
 pub mod battalion_campaign_integration_test;
 pub mod battalion_chain_of_command_integration_test;
+pub mod battalion_herald_end_to_end_test;
 pub mod citadel_integration_test;
 #[cfg(feature = "cli")]
 pub mod cli_integration_test;
