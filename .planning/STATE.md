@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Verification Depth
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-08-02T15:07:01.489Z"
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-08-02T15:26:41.691Z"
 last_activity: 2026-08-02
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 31
-  completed_plans: 24
+  completed_plans: 25
 ---
 
 # Project State
@@ -30,7 +30,7 @@ provider, transport, or storage implementation.
 ## Current Position
 
 Phase: 3 (Verification Depth) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 Status: Ready to execute
 Requirements coverage 8/8 RECON IDs; decision coverage 21/21 CONTEXT.md decisions.
 Last activity: 2026-08-02 — Phase 3 execution started
@@ -85,7 +85,7 @@ not be made by default**: FACADE-02's D2 (Phase 11) splits `user_service.rs` and
 (Phase 15) tests it — doing them independently means doing the work twice. See the Execution Order
 notes in `ROADMAP.md`.
 
-Progress: [████████░░] 77%
+Progress: [████████░░] 81%
 
 ## Performance Metrics
 
@@ -118,6 +118,7 @@ Progress: [████████░░] 77%
 | Phase 01 P12 | 40min | 4 tasks | 4 files |
 | Phase 03 P01 | 16min | 2 tasks | 1 files |
 | Phase 3 P2 | 25min | 2 tasks | 5 files |
+| Phase 03 P03 | ~15min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -299,6 +300,9 @@ Entering them here would fabricate authority the corpus does not contain.
 - [Phase ?]: Phase 3 Plan 01: reproduced ADR-0006 coverage pipeline verbatim at HEAD bb35554d — measured 85.56% workspace line coverage, PASS against 84.00% floor by 1.56pp; zero-coverage set unchanged from Phase 1 (5 files); 9 of QUAL-02's 11 named offenders contradicted; ratchet trigger not met (1.56pt < 2pt), ADR-0006 not amended
 - [Phase ?]: FaultyPaladinPort's fail_until_attempt counter is global across every Paladin executed through one port instance, not per-Paladin — tests are designed around this shared-counter semantics
 - [Phase ?]: fail_paladin(name) is an additive, chainable builder method so a single FaultyPaladinPort instance can fail more than one named Paladin
+- [Phase ?]: Phase 3 Plan 03: extended the existing hermetic rmcp+axum FixtureServer instead of a parallel wiremock harness for the five MCP failure-mode tests (supersedes CONTEXT.md D-11's wiremock framing per Research Pattern 3)
+- [Phase ?]: Phase 3 Plan 03: malformed-response fixture returns its truncated tools/list body as text/plain, not application/json -- rmcp's client silently swallows a malformed-but-json-labeled 200 body as an accepted no-op (verified against vendored rmcp-2.1.0 source), which would hang the test instead of failing loud
+- [Phase ?]: Phase 3 Plan 03: the 'absent arguments' bad-arguments shape is asserted directly against the fixture's extract_echo_message helper, not through MCPClient::invoke_tool -- rmcp's CallToolRequestParams::with_arguments always wraps its map in Some(..), even when empty, so the public client API cannot construct that wire shape
 
 ### Pending Todos
 
@@ -699,10 +703,10 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Completed 03-02-PLAN.md
+**Stopped at:** Completed 03-03-PLAN.md
 Ready to plan Phase 3.
 
-Last session: 2026-08-02T15:07:01.452Z
+Last session: 2026-08-02T15:26:41.651Z
 Resume file: None
 
 Prior session: 2026-07-31T19:27:35.303Z
