@@ -1214,3 +1214,60 @@ Four of the five entry-run zero-coverage files are closed by this phase's test-w
 **Is the trigger condition met by this figure?** **No.** `1.92 < 2` whole percentage points — the delta falls short of the ratchet's two-point threshold by 0.08 points, closer than the entry run's 1.56-point delta but still short.
 
 **This phase's decision, restated:** applying the ratchet — raising ADR-0006's 84% floor — is a **milestone-close action**, not Phase 3's, per ADR-0006's own text and per the entry section's identical reasoning. **Phase 3 does not amend ADR-0006 at exit either.** The milestone-close audit remains the named owner of the raise question.
+
+## Human confirmation (Task 3 checkpoint)
+
+**Approved by:** the project owner (git user `Am0rfu5`), responding in the GSD
+`/gsd-discuss-phase --chain --auto` session.
+**Approved on:** 2026-08-02T18:27:35Z (UTC).
+**Resume signal given:** `approved`.
+
+**What was confirmed:** both recorded coverage figures, the ratchet decision, and the amendment
+set —
+
+- **Entry figure: 85.56%** workspace line coverage at HEAD `bb35554` (62,953 lines counted, 9,088
+  missed).
+- **Exit figure: 85.92%** workspace line coverage at HEAD `1ad8be5` (63,821 lines counted, 8,984
+  missed).
+
+Before presenting the checkpoint, the orchestrating agent re-derived the following and showed
+them to the approver at the checkpoint; the approver's `approved` was given against that
+presentation, not against the raw stdout alone:
+
+- `(62953 − 9088) / 62953 = 0.855638… → 85.56%`.
+- `(63821 − 8984) / 63821 = 0.859231… → 85.92%`.
+- Both figures at-or-above the 84.00% floor: entry PASSes by 1.56 percentage points, exit PASSes
+  by 1.92 percentage points.
+- Object count is 31 at both entry and exit — identical set, so the denominator did not move and
+  the two figures are directly comparable.
+- Exactly two `Measured workspace line coverage: NN.NN%` lines exist in this file, each matching
+  its pasted `TOTAL` row character-for-character.
+- Amendment scope is confirmed limited to `.planning/REQUIREMENTS.md`, `.planning/ROADMAP.md`,
+  and `.planning/ledgers/milestone-01.md` — no other file was touched by plan 03-08's tasks 1-2.
+- The stale eleven-file QUAL-02 offender list is confirmed still present verbatim in
+  `.planning/REQUIREMENTS.md:263`, with the corrections recorded beside it at `:275` —
+  corrected in place, not deleted.
+- The superseded `## Run — 2026-05-27 (superseded)` performance-baseline section is confirmed
+  retained in `docs/src/appendix/performance-baseline.md`.
+
+**Ratchet decision confirmed.** The exit delta of 1.92 percentage points is below ADR-0006's
+2.00-point ratchet-trigger threshold, so the ratchet does not fire and **ADR-0006 is not amended
+by this phase** — applying it remains a milestone-close action, per the "Ratchet readiness (exit)"
+section above. The approver was told at the checkpoint that the delta missed the trigger by 0.08
+points and was offered the option to raise the floor to 85% now instead of waiting for
+milestone-close; **the approver declined that option by approving the phase's findings as
+written**, leaving the floor at 84% and the raise question with the milestone-close audit.
+
+**`src/bin/paladin-server.rs`** is confirmed deferred at 0.00% line coverage, owner **Phase 5 /
+VERIFY-05**, per the "QUAL-02 closure ledger" and "Post-phase zero-coverage set" sections above.
+
+**One item was flagged to the approver rather than re-decided at this checkpoint.** The
+`QUAL-0N | Phase 3 | Complete` traceability rows in `.planning/REQUIREMENTS.md:3830-3834` remain
+in the file-wide `Complete`/`Pending` vocabulary rather than being switched to the milestone
+ledger's five-class verdict vocabulary, so as to stay consistent with every other requirement row
+in that same traceability table. This was surfaced as a known asymmetry, not resolved as a defect,
+at the checkpoint.
+
+This confirmation closes Task 3. The 85.56% and 85.92% figures, the pasted `llvm-cov report`
+stdout above, and the scope statements are unchanged by this section — nothing above alters the
+measurement of record; it only records that a human independently reviewed and approved it.
