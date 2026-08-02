@@ -553,3 +553,132 @@ order of magnitude.
 
 These are the same five narrowings ADR-0006 recorded, reproduced without alteration — this is a
 re-measurement of the identical scope, not a new one (D-02).
+
+### Re-derived first-party zero-coverage set
+
+Every first-party source file this run's `llvm-cov report` shows at exactly **0.00%** line coverage,
+excluding `tests/**` entries and any path under `target/` (listed separately below with reasons),
+ordered by counted lines descending:
+
+| Path | Counted lines | Missed lines | Line coverage |
+|------|---------------|---------------|----------------|
+| `crates/paladin-storage/src/redis.rs` | 350 | 350 | 0.00% |
+| `src/bin/paladin-server.rs` | 145 | 145 | 0.00% |
+| `crates/paladin-ports/src/output/file_storage_port.rs` | 104 | 104 | 0.00% |
+| `crates/paladin-llm/src/error.rs` | 13 | 13 | 0.00% |
+| `crates/paladin-ports/src/output/arsenal_port.rs` | 2 | 2 | 0.00% |
+
+**Row count: 5.**
+
+**Excluded from this table** (`tests/**` entries and one path under `target/`, listed here with
+their reason rather than silently dropped):
+
+| Path | Counted lines | Reason excluded |
+|------|---------------|-------------------|
+| `target/debug/build/utoipa-swagger-ui-10aed8599aeed486/out/embed.rs` | 1 | Under `target/` — generated build-script output, not first-party source (see Scope exclusions below) |
+| `tests/lib.rs` | 163 | `tests/**` entry — the auto-discovered test-crate root, not application source |
+| `tests/integration/mod.rs` | 115 | `tests/**` entry — a `pub mod` re-export hub, not application source |
+| `tests/integration/mcp_streamable_http_live_test.rs` | 23 | `tests/**` entry — a `#[ignore]`d live-API test file gated on real provider credentials (VERIFY-06 scope), not application source |
+| `tests/helpers/mock_paladin_port.rs` | 15 | `tests/**` entry — the dead mock helper D-10 identifies as having no consumer yet; test infrastructure, not application source |
+
+**Comparison against CONTEXT.md D-04's expected five** (`redis.rs`, `paladin-server.rs`,
+`file_storage_port.rs`, `error.rs`, `arsenal_port.rs`, as measured at the Phase 1 commit
+`9be788c8e9c744ec3a6aad20b64110fb85925de4`): **identical set, zero files entered, zero files left.**
+All five files this run reports at 0.00% are the same five files Phase 1 reported at 0.00%, 98
+commits and all of Phase 2's new tests later. No delta to explain away, none found.
+
+*(Note on the counted-lines figures printed in this table versus CONTEXT.md D-04's prose: D-04's
+inline parenthetical figures — "361 counted lines" for `redis.rs`, "185 lines" for
+`paladin-server.rs`, "117 lines" for `file_storage_port.rs`, "19 lines" for `error.rs` — are each
+that file's **Regions** column value, not its **Lines** column value; this plan's task instructions
+ask specifically for "counted lines, missed lines, line coverage" from the Lines block, so this
+table uses the Lines-block figures — 350/145/104/13/2 — read directly from this run's own pasted
+`llvm-cov report` row for each file, listed above. `arsenal_port.rs` is unaffected since its Regions
+and Lines counts are both 2. This is a column-selection correction against D-04's prose, not a
+disagreement about which five files are in the set — the set itself is identical.)*
+
+### QUAL-02 offender list — claimed versus measured
+
+One row per file `REQUIREMENTS.md:262-267` names as a QUAL-02 offender, verbatim file names as
+QUAL-02 states them:
+
+| File (as QUAL-02 names it) | QUAL-02 claims | This run measures (line coverage) | Verdict |
+|---|---|---|---|
+| `arsenal_execution_service.rs` | 0/46 lines (0%) | 90.23% (`src/application/services/arsenal/arsenal_execution_service.rs`, 215 lines, 21 missed) | contradicted — corrected |
+| `arsenal_registry_service.rs` | 0/28 lines (0%) | 100.00% (`src/application/services/arsenal/arsenal_registry_service.rs`, 59 lines, 0 missed) | contradicted — corrected |
+| `redis.rs` | 0% (named without a fraction, grouped with the other implied-0% offenders) | 0.00% (`crates/paladin-storage/src/redis.rs`, 350 lines, 350 missed) | confirmed |
+| `minio.rs` | 0% (named without a fraction) | not present in this run's `llvm-cov report` output at all | not in denominator |
+| `user_controller.rs` | 0% (named without a fraction) | 72.59% (`crates/paladin-web/src/user_controller.rs`, 518 lines, 142 missed) | contradicted — corrected |
+| `sqlite_user_repository.rs` | 0% (named without a fraction) | 87.72% (`crates/paladin-storage/src/sqlite_user_repository.rs`, 448 lines, 55 missed) | contradicted — corrected |
+| `main.rs` | 0% (named without a fraction) | 41.38% (`src/main.rs`, 29 lines, 17 missed) | contradicted — corrected |
+| `campaign_service.rs` | 4.26% | 80.00% (`crates/paladin-battalion/src/campaign_service.rs`, 180 lines, 36 missed) | contradicted — corrected |
+| `chain_of_command_service.rs` | 13.41% | 84.56% (`crates/paladin-battalion/src/chain_of_command_service.rs`, 259 lines, 40 missed) | contradicted — corrected |
+| `mcp_protocol.rs` | 15.83% | 95.65% (`src/infrastructure/adapters/arsenal/mcp_protocol.rs`, 253 lines, 11 missed) | contradicted — corrected |
+| `deepseek_adapter.rs` | 15.02% | 67.77% (`crates/paladin-llm/src/deepseek/adapter.rs`, 391 lines, 126 missed) | contradicted — corrected |
+
+**Contradicted-row count: 9.** (`confirmed`: 1 — `redis.rs`. `not in denominator`: 1 — `minio.rs`.
+`contradicted — corrected`: 9 — every other named file.) This matches `03-RESEARCH.md` D-03's own
+count ("The Phase 1 measurement contradicts nine of them... Only `redis.rs` (0.00%) is a true
+positive; `minio.rs` is absent from the denominator") — the same nine-contradicted / one-confirmed /
+one-absent shape holds 98 commits later at this run's own measurement, independently re-derived
+here rather than carried over from Phase 1's row. No claimed figure above is replaced by a measured
+one; both are kept side by side, and every contradicted row is marked corrected rather than deleted.
+
+Per REQUIREMENTS.md, ROADMAP criterion 2 names "the Redis and MinIO adapters" together as offenders;
+this run's measurement shows they are **not in the same position** — `redis.rs` is confirmed at
+0.00% inside the denominator, while `minio.rs` never enters the denominator at all because the `s3`
+feature is not part of the workspace default-feature set this measurement runs under (see Scope
+exclusions below).
+
+### Scope exclusions and denominator notes
+
+**(a) `target/` denominator contamination — immaterial, flagged, not fixed here.** ADR-0006's
+`--ignore-filename-regex` excludes `examples/`, `benches/`, `crates/doc-examples/`, the cargo
+registry, and the Rust stdlib — it does not exclude `target/`. One generated file,
+`target/debug/build/utoipa-swagger-ui-10aed8599aeed486/out/embed.rs`, appears in the TOTAL row's
+denominator at 0.00% (1 counted line, 1 missed line). Against the run's total of 62,953 counted
+lines, this is `1 / 62953 = 0.0016%` of the denominator — immaterial at two decimals. This is
+recorded, not fixed: per D-02/D-06, the regex is not amended by this phase. **Owner: VERIFY-05**
+(Phase 5) / **PIPE-02** (Phase 15).
+
+**(b) `crates/paladin-storage/src/minio.rs` — no denominator entry at all, not a 0% file.** `minio.rs`
+exists in the tree but never appears anywhere in this run's `llvm-cov report` output (confirmed by
+`grep -E '/minio\.rs[[:space:]]' llvm_cov_report.txt` returning no match). This is because the `s3`
+feature that gates `minio.rs`'s compilation is not part of the workspace default-feature set this
+`cargo test --workspace --offline` run compiles under — `minio.rs` is **out of ADR-0006's recorded
+scope**, not a file the pipeline measured and found empty. It carries no counted-line figure to be
+0% of. **Owner: VERIFY-05 / PIPE-02**, the same requirements that own extending this measurement's
+scope to the Docker-backed `--features integration-tests` suite where `s3` and MinIO-backed tests
+would run.
+
+**(c) `redis.rs` and `minio.rs` are not in the same position, contrary to how ROADMAP criterion 2
+names them.** `ROADMAP.md`'s Phase 3 success criterion 2 names "the Redis and MinIO adapters"
+together as 0%-coverage offenders. This run's measurement shows they occupy two different
+positions: `redis.rs` is **inside** the denominator, confirmed at exactly 0.00% (a true positive);
+`minio.rs` is **outside** the denominator entirely (an absence, not a measurement). Any future
+amendment to ROADMAP criterion 2 must record this distinction rather than continuing to name them
+as a pair.
+
+### Ratchet readiness
+
+**Delta from the floor:** `measured − 84.00 = 85.56 − 84.00 = 1.56` percentage points.
+
+**ADR-0006's ratchet trigger, stated verbatim in substance:** "The floor is raised to the next whole
+percent below the then-current measured workspace figure whenever a milestone closes with measured
+coverage two or more whole percentage points above the standing floor."
+
+**Is the trigger condition met by this figure?** **No.** `1.56 < 2` whole percentage points — the
+delta falls short of the ratchet's two-point threshold by 0.44 points. Even disregarding the
+"milestone closes" clause, the magnitude condition alone is not satisfied by this measurement.
+
+**This phase's decision, recorded plainly:** applying the ratchet — raising ADR-0006's 84% floor —
+is a **milestone-close action**, not Phase 3's, because ADR-0006's own text scopes the raise to
+milestone close, and amending the ADR mid-milestone would produce a floor that a later Phase 4 or
+Phase 5 measurement could contradict (either by measuring lower, if the milestone-close condition
+were later found unmet, or by measuring higher still, making a mid-milestone raise premature either
+way). **Phase 3 does not amend ADR-0006.** Independent of the "does not amend" decision, the
+trigger's own magnitude condition is not met by this run's figure regardless — so even a
+milestone-close reading of this measurement alone would not fire the ratchet today. **The
+milestone-close audit is the named owner of the raise question**, if and when a future measurement's
+delta reaches two or more whole percentage points above the then-standing floor at a milestone
+boundary.
