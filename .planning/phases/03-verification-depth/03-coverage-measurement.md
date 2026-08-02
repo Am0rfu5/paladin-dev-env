@@ -1150,7 +1150,18 @@ Column layout identical to the entry section's. The TOTAL row's Lines block read
 
 **Measured workspace line coverage: 85.92%**
 
-Arithmetic a reader can re-derive from the TOTAL row above: counted lines `63,821`, missed lines `8,984`, `(63821 - 8984) / 63821 = 54,837 / 63,821 = 0.859243... = 85.92%` (two decimals), matching the pasted stdout character-for-character — not re-typed or rounded from any other source.
+Arithmetic a reader can re-derive from the TOTAL row above: counted lines `63,821`, missed lines
+`8,984`, `(63821 - 8984) / 63821 = 54,837 / 63,821 = 0.859231... = 85.92%` (two decimals), matching
+the pasted stdout character-for-character — not re-typed or rounded from any other source.
+
+*(Corrected 2026-08-02, phase verification: this line originally read `0.859243...`. The exact
+quotient is `0.859231287507...`, so the fifth and sixth decimals were mistyped. **The reported
+figure `85.92%`, the pasted TOTAL row, the PASS verdict and the 1.92pt margin are all unaffected** —
+the error was confined to the intermediate long division shown for the reader's benefit, and both
+the erroneous and the correct value round to `85.92%` at two decimals. Corrected rather than left
+standing because this line exists specifically to be re-derived. The `## Human confirmation` section
+below independently recorded the correct `0.859231`. Flagged by `03-VERIFICATION.md`; note that the
+verifier's own counter-value `0.859169...` was also incorrect.)*
 
 **Comparison against ADR-0006's 84% floor:** measured **85.92%**, floor **84.00%**, comparison **at-or-above** — **85.92 ≥ 84.00 → PASS**, by a margin of **1.92 percentage points**.
 
