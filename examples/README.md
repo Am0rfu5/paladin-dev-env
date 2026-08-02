@@ -13,6 +13,7 @@ This directory contains comprehensive examples demonstrating Paladin's capabilit
 - [Battalion Orchestration Examples](#battalion-orchestration-examples)
 - [Output Formatting Examples](#output-formatting-examples)
 - [State Management Examples](#state-management-examples)
+- [Performance Benchmarking Examples](#performance-benchmarking-examples)
 - [Configuration Examples](#configuration-examples)
 - [Advanced Examples](#advanced-examples)
 - [Running Examples](#running-examples)
@@ -1229,6 +1230,24 @@ cargo run --example battalion_checkpoint_recovery
 - Multi-agent recovery
 - Partial execution
 - Fault handling
+
+## Performance Benchmarking Examples
+
+### [muster_baseline.rs](muster_baseline.rs)
+**Demonstrates:** Performance-baseline measurement harness
+
+The recorded harness behind `docs/src/appendix/performance-baseline.md`'s memory-per-Paladin
+and startup-time figures — the two metric families `criterion` benchmarks do not produce.
+
+```bash
+APP_ENV=test cargo run --offline --release --example muster_baseline
+```
+
+**Key concepts:**
+- Process RSS delta measurement via `/proc/self/status`
+- In-process startup timing
+- Measurement harnesses vs. `criterion` benchmarks
+- Host-specific baseline figures (not portable performance claims)
 
 ## Configuration Examples
 

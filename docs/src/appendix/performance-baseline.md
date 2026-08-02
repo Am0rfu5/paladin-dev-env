@@ -568,6 +568,59 @@ Found 2 outliers among 100 measurements (2.00%)
 
 Throughput: not reported by this target.
 
+### Memory-per-Paladin
+
+This figure comes from `examples/muster_baseline.rs`, a purpose-built recorded harness — **not**
+from `criterion`, which produces neither memory nor startup figures. The harness constructs 1000
+`Paladin` aggregates (via the same `PaladinBuilder` path this workspace's other examples use),
+holds them all alive in one `Vec` so nothing is dropped mid-measurement, and reads
+`/proc/self/status`'s `VmRSS:` line before and after.
+
+```console
+$ APP_ENV=test cargo run --offline --release --example muster_baseline
+    Finished `release` profile [optimized] target(s) in 0.62s
+     Running `target/release/examples/muster_baseline`
+startup_to_first_paladin_ms=0
+rss_before_kb=2716
+rss_after_kb=3184
+paladins_mustered=1000
+rss_delta_kb=468
+bytes_per_paladin=479
+```
+
+Arithmetic, reproducible from the printed lines above: `bytes_per_paladin = (rss_delta_kb * 1024)
+/ paladins_mustered` = `(468 * 1024) / 1000` = `479` bytes/Paladin (integer division).
+
+### Startup Time
+
+This figure also comes from `examples/muster_baseline.rs`, not from `criterion`. Two figures are
+recorded, with distinct labelled scopes:
+
+- **In-process, to first Paladin (`startup_to_first_paladin_ms`):** elapsed time from
+  `Instant::now()` captured as the first statement in `main` to the moment the first `Paladin` is
+  fully constructed. This **excludes** pre-`main` dynamic-link and Rust runtime initialization
+  time. Measured at `0` ms (sub-millisecond; the mock LLM port and `PaladinBuilder` path used here
+  do no I/O).
+- **Whole-process wall clock (`wall_clock_ms`):** the entire process invocation timed from the
+  shell with `date +%s%N` immediately before and after running the already-built release binary
+  directly (bypassing `cargo run`'s own startup overhead). This **includes** pre-`main` dynamic
+  link and Rust runtime init time that the in-process figure excludes.
+
+```console
+$ BIN=target/release/examples/muster_baseline-529a1b0e92b724e8
+$ START_NS=$(date +%s%N)
+$ APP_ENV=test "$BIN"
+$ END_NS=$(date +%s%N)
+$ echo "wall_clock_ms=$(( (END_NS - START_NS) / 1000000 ))"
+wall_clock_ms=8
+startup_to_first_paladin_ms=0
+rss_before_kb=2724
+rss_after_kb=3192
+paladins_mustered=1000
+rss_delta_kb=468
+bytes_per_paladin=479
+```
+
 ### Not produced by this run
 
 QUAL-05 additionally names the **Paladin execution loop** and **Arsenal invocation** as metric
