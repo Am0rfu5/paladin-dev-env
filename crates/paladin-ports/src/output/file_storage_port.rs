@@ -1446,3 +1446,219 @@ impl FileStorageUtils for () {
             .to_string()
     }
 }
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+//
+// `FileStorageUtils` itself declares only trait signatures (no default
+// bodies) -- the executable code the Phase 3 entry measurement records at
+// 0.00% (`file_storage_port.rs` 104/104 lines missed,
+// `.planning/phases/03-verification-depth/03-coverage-measurement.md`) is the
+// `impl FileStorageUtils for ()` block above (lines ~1370-1447). `()` is
+// already the zero-sized implementor the plan asked a test-local struct to
+// provide; calling through it directly reaches the same bodies without a
+// redundant delegating wrapper, so no extra type is declared here.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // -- detect_content_type -------------------------------------------
+
+    #[test]
+    fn detect_content_type_known_extension_returns_documented_mime() {
+        let path = Path::new("document.pdf");
+        assert_eq!(
+            <() as FileStorageUtils>::detect_content_type(path),
+            Some("application/pdf".to_string())
+        );
+    }
+
+    #[test]
+    fn detect_content_type_unknown_extension_returns_text_plain_fallback() {
+        let path = Path::new("data.totally-unknown-extension-xyz");
+        assert_eq!(
+            <() as FileStorageUtils>::detect_content_type(path),
+            Some("text/plain".to_string())
+        );
+    }
+
+    #[test]
+    fn detect_content_type_absent_extension_returns_text_plain_fallback() {
+        let path = Path::new("no_extension_at_all");
+        assert_eq!(
+            <() as FileStorageUtils>::detect_content_type(path),
+            Some("text/plain".to_string())
+        );
+    }
+
+    // -- detect_content_type_with_fallback ------------------------------
+
+    #[test]
+    fn detect_content_type_with_fallback_known_extension_ignores_fallback() {
+        let path = Path::new("payload.json");
+        assert_eq!(
+            <() as FileStorageUtils>::detect_content_type_with_fallback(
+                path,
+                "application/x-should-not-be-used"
+            ),
+            "application/json".to_string()
+        );
+    }
+
+    #[test]
+    fn detect_content_type_with_fallback_unknown_extension_returns_fallback() {
+        let path = Path::new("data.totally-unknown-extension-xyz");
+        assert_eq!(
+            <() as FileStorageUtils>::detect_content_type_with_fallback(
+                path,
+                "application/x-custom-fallback"
+            ),
+            "application/x-custom-fallback".to_string()
+        );
+    }
+
+    // -- validate_content_type_for_domain -------------------------------
+
+    #[test]
+    fn validate_content_type_for_domain_accepts_expected_type() {
+        let path = Path::new("document.pdf");
+        let result =
+            <() as FileStorageUtils>::validate_content_type_for_domain(path, &["application/pdf"]);
+        match result {
+            Ok(mime) => assert_eq!(mime, "application/pdf"),
+            Err(e) => panic!("expected Ok(\"application/pdf\"), got Err({e})"),
+        }
+    }
+
+    #[test]
+    fn validate_content_type_for_domain_rejects_unexpected_type() {
+        let path = Path::new("document.pdf");
+        let result =
+            <() as FileStorageUtils>::validate_content_type_for_domain(path, &["text/plain"]);
+        match result {
+            Err(FileStorageError::InvalidPath(msg)) => {
+                assert!(
+                    msg.contains("application/pdf") && msg.contains("text/plain"),
+                    "error message should name both the detected and expected types, got: {msg}"
+                );
+            }
+            other => panic!("expected Err(InvalidPath(_)), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn validate_content_type_for_domain_empty_expected_list_accepts_anything() {
+        let path = Path::new("document.pdf");
+        let result = <() as FileStorageUtils>::validate_content_type_for_domain(path, &[]);
+        assert_eq!(result.unwrap(), "application/pdf".to_string());
+    }
+
+    // -- calculate_md5 ----------------------------------------------------
+
+    #[test]
+    fn calculate_md5_of_known_bytes_matches_pinned_digest() {
+        // Pinned against the well-known MD5("hello") test vector.
+        assert_eq!(
+            <() as FileStorageUtils>::calculate_md5(b"hello"),
+            "5d41402abc4b2a76b9719d911017c592".to_string()
+        );
+    }
+
+    #[test]
+    fn calculate_md5_of_empty_slice_matches_pinned_digest() {
+        // Pinned against the well-known MD5("") test vector.
+        assert_eq!(
+            <() as FileStorageUtils>::calculate_md5(b""),
+            "d41d8cd98f00b204e9800998ecf8427e".to_string()
+        );
+    }
+
+    // -- validate_path ------------------------------------------------
+
+    #[test]
+    fn validate_path_accepts_plain_relative_path() {
+        let path = Path::new("documents/report.pdf");
+        assert!(<() as FileStorageUtils>::validate_path(path).is_ok());
+    }
+
+    #[test]
+    fn validate_path_rejects_traversal() {
+        let path = Path::new("../etc/passwd");
+        match <() as FileStorageUtils>::validate_path(path) {
+            Err(FileStorageError::InvalidPath(msg)) => {
+                assert_eq!(msg, "Path cannot contain '..'");
+            }
+            other => {
+                panic!("expected Err(InvalidPath(\"Path cannot contain '..'\")), got {other:?}")
+            }
+        }
+    }
+
+    #[test]
+    fn validate_path_rejects_absolute_path() {
+        let path = Path::new("/etc/passwd");
+        match <() as FileStorageUtils>::validate_path(path) {
+            Err(FileStorageError::InvalidPath(msg)) => {
+                assert_eq!(msg, "Path cannot start with '/'");
+            }
+            other => {
+                panic!("expected Err(InvalidPath(\"Path cannot start with '/'\")), got {other:?}")
+            }
+        }
+    }
+
+    #[test]
+    fn validate_path_rejects_empty_path() {
+        let path = Path::new("");
+        match <() as FileStorageUtils>::validate_path(path) {
+            Err(FileStorageError::InvalidPath(msg)) => {
+                assert_eq!(msg, "Path cannot be empty");
+            }
+            other => panic!("expected Err(InvalidPath(\"Path cannot be empty\")), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn validate_path_rejects_path_over_1024_characters() {
+        let long_relative_path = "a".repeat(1025);
+        let path = Path::new(&long_relative_path);
+        match <() as FileStorageUtils>::validate_path(path) {
+            Err(FileStorageError::InvalidPath(msg)) => {
+                assert_eq!(msg, "Path too long (max 1024 characters)");
+            }
+            other => panic!(
+                "expected Err(InvalidPath(\"Path too long (max 1024 characters)\")), got {other:?}"
+            ),
+        }
+    }
+
+    // -- sanitize_filename ----------------------------------------------
+
+    #[test]
+    fn sanitize_filename_leaves_already_safe_name_unchanged() {
+        let name = "already-safe_name.v2.txt";
+        assert_eq!(<() as FileStorageUtils>::sanitize_filename(name), name);
+    }
+
+    #[test]
+    fn sanitize_filename_rewrites_reserved_characters_to_underscore() {
+        let name = "a<b>c:d\"e|f?g*h\\i/j";
+        let expected = "a_b_c_d_e_f_g_h_i_j";
+        assert_eq!(<() as FileStorageUtils>::sanitize_filename(name), expected);
+    }
+
+    #[test]
+    fn sanitize_filename_rewrites_control_characters_to_underscore() {
+        let name = "abc\u{1}def";
+        let expected = "abc_def";
+        assert_eq!(<() as FileStorageUtils>::sanitize_filename(name), expected);
+    }
+
+    #[test]
+    fn sanitize_filename_trims_leading_and_trailing_whitespace() {
+        let name = "  safe_name.txt  ";
+        let expected = "safe_name.txt";
+        assert_eq!(<() as FileStorageUtils>::sanitize_filename(name), expected);
+    }
+}

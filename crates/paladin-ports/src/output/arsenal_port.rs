@@ -875,3 +875,90 @@ pub trait ArsenalRegistry: Send + Sync {
         Vec::new()
     }
 }
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+//
+// The Phase 3 entry measurement (`.planning/phases/03-verification-depth/
+// 03-coverage-measurement.md`) records `arsenal_port.rs` at 0.00% -- 2 of 2
+// counted lines missed. Every other line in this file is either a doc
+// comment or a trait-method signature with no body; the crate's only
+// executable statements are the two lines of `ArsenalRegistry::list`'s
+// default body directly above. This module gives that body its first
+// caller by deliberately NOT overriding `list()` on a minimal implementor.
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+    use std::sync::RwLock;
+
+    /// Minimal in-memory `ArsenalRegistry` implementor that overrides only
+    /// `register`/`unregister`/`get` and deliberately leaves `list()` on the
+    /// trait's default body, so that default is what these tests exercise.
+    struct MinimalRegistry {
+        tools: RwLock<HashMap<String, Armament>>,
+    }
+
+    impl MinimalRegistry {
+        fn new() -> Self {
+            Self {
+                tools: RwLock::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl ArsenalRegistry for MinimalRegistry {
+        async fn register(&self, armament: Armament) {
+            self.tools
+                .write()
+                .unwrap()
+                .insert(armament.name.clone(), armament);
+        }
+
+        async fn unregister(&self, name: &str) -> Option<Armament> {
+            self.tools.write().unwrap().remove(name)
+        }
+
+        async fn get(&self, name: &str) -> Option<Armament> {
+            self.tools.read().unwrap().get(name).cloned()
+        }
+
+        // `list` is intentionally not overridden here -- see module doc above.
+    }
+
+    fn test_armament(name: &str) -> Armament {
+        Armament {
+            name: name.to_string(),
+            description: "test tool".to_string(),
+            parameters: serde_json::json!({}),
+            required_params: vec![],
+        }
+    }
+
+    #[tokio::test]
+    async fn list_default_body_returns_empty_vec_on_empty_registry() {
+        let registry = MinimalRegistry::new();
+        let tools = registry.list().await;
+        assert!(
+            tools.is_empty(),
+            "default list() should return an empty Vec, got {tools:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn list_default_body_stays_empty_regardless_of_registered_tools() {
+        // The default body always returns `Vec::new()` -- it does not
+        // consult the implementor's storage at all. This pins that exact
+        // behavior (rather than "empty because nothing was registered")
+        // against an implementor whose `get` proves the tool really is
+        // stored, so a future accidental wiring of `list()` to storage
+        // would be a visible, intentional change rather than a silent one.
+        let registry = MinimalRegistry::new();
+        registry.register(test_armament("calculator")).await;
+
+        assert!(registry.get("calculator").await.is_some());
+        assert!(registry.list().await.is_empty());
+    }
+}
