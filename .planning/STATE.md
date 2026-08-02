@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Verification Depth
 status: executing
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-08-02T15:26:41.691Z"
+stopped_at: Completed 03-05-PLAN.md
+last_updated: "2026-08-02T15:42:11.897Z"
 last_activity: 2026-08-02
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 31
-  completed_plans: 25
+  completed_plans: 26
 ---
 
 # Project State
@@ -30,7 +30,7 @@ provider, transport, or storage implementation.
 ## Current Position
 
 Phase: 3 (Verification Depth) — EXECUTING
-Plan: 4 of 8
+Plan: 5 of 8
 Status: Ready to execute
 Requirements coverage 8/8 RECON IDs; decision coverage 21/21 CONTEXT.md decisions.
 Last activity: 2026-08-02 — Phase 3 execution started
@@ -85,7 +85,7 @@ not be made by default**: FACADE-02's D2 (Phase 11) splits `user_service.rs` and
 (Phase 15) tests it — doing them independently means doing the work twice. See the Execution Order
 notes in `ROADMAP.md`.
 
-Progress: [████████░░] 81%
+Progress: [████████░░] 84%
 
 ## Performance Metrics
 
@@ -119,6 +119,7 @@ Progress: [████████░░] 81%
 | Phase 03 P01 | 16min | 2 tasks | 1 files |
 | Phase 3 P2 | 25min | 2 tasks | 5 files |
 | Phase 03 P03 | ~15min | 3 tasks | 2 files |
+| Phase 03 P05 | ~25min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -303,6 +304,8 @@ Entering them here would fabricate authority the corpus does not contain.
 - [Phase ?]: Phase 3 Plan 03: extended the existing hermetic rmcp+axum FixtureServer instead of a parallel wiremock harness for the five MCP failure-mode tests (supersedes CONTEXT.md D-11's wiremock framing per Research Pattern 3)
 - [Phase ?]: Phase 3 Plan 03: malformed-response fixture returns its truncated tools/list body as text/plain, not application/json -- rmcp's client silently swallows a malformed-but-json-labeled 200 body as an accepted no-op (verified against vendored rmcp-2.1.0 source), which would hang the test instead of failing loud
 - [Phase ?]: Phase 3 Plan 03: the 'absent arguments' bad-arguments shape is asserted directly against the fixture's extract_echo_message helper, not through MCPClient::invoke_tool -- rmcp's CallToolRequestParams::with_arguments always wraps its map in Some(..), even when empty, so the public client API cannot construct that wire shape
+- [Phase ?]: Phase 3 Plan 05: refactored redis.rs's eight private key/serialization helpers off &self to free functions (private-surface-only, byte-identical key formats), then added its first #[cfg(test)] mod tests -- 11 Docker-free unit tests covering config defaults, all six key builders, priority-key collision-freedom, serialize/deserialize round-trip, error mapping, and get_priority_levels order. Live-server paths recorded deferred with reason, owner Phase 15 (PIPE).
+- [Phase ?]: Phase 3 Plan 05: QUAL-02 NOT marked complete -- requirements ready-ids reports it blocked because sibling plans 03-06/03-07/03-08 also carry QUAL-02 and haven't produced SUMMARY.md yet; final adjudication happens in 03-07 against the exit coverage measurement.
 
 ### Pending Todos
 
@@ -703,10 +706,10 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Completed 03-03-PLAN.md
+**Stopped at:** Completed 03-05-PLAN.md
 Ready to plan Phase 3.
 
-Last session: 2026-08-02T15:26:41.651Z
+Last session: 2026-08-02T15:42:11.853Z
 Resume file: None
 
 Prior session: 2026-07-31T19:27:35.303Z
