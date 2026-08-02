@@ -44,6 +44,73 @@ impl Default for RedisQueueConfig {
     }
 }
 
+/// Generate the Redis key for a queue's main (FIFO) list.
+fn queue_key(config: &RedisQueueConfig, queue_name: &str) -> String {
+    format!("{}:queue:{}", config.key_prefix, queue_name)
+}
+
+/// Generate the Redis key for a queue's priority-specific list.
+fn priority_queue_key(config: &RedisQueueConfig, queue: &str, priority: MessagePriority) -> String {
+    let priority_str = match priority {
+        MessagePriority::Critical => "critical",
+        MessagePriority::High => "high",
+        MessagePriority::Normal => "normal",
+        MessagePriority::Low => "low",
+    };
+    format!("{}:{}:{}", config.key_prefix, queue, priority_str)
+}
+
+/// Generate the Redis key for a queue's metadata hash.
+fn queue_meta_key(config: &RedisQueueConfig, queue_name: &str) -> String {
+    format!("{}:meta:{}", config.key_prefix, queue_name)
+}
+
+/// Generate the Redis key for a queue's in-progress items hash.
+fn processing_key(config: &RedisQueueConfig, queue_name: &str) -> String {
+    format!("{}:processing:{}", config.key_prefix, queue_name)
+}
+
+/// Generate the Redis key for a queue's completed items hash.
+fn completed_key(config: &RedisQueueConfig, queue_name: &str) -> String {
+    format!("{}:completed:{}", config.key_prefix, queue_name)
+}
+
+/// Generate the Redis key for a queue's failed items hash.
+fn failed_key(config: &RedisQueueConfig, queue_name: &str) -> String {
+    format!("{}:failed:{}", config.key_prefix, queue_name)
+}
+
+/// Serialize a queue item to JSON for Redis storage, stamping the target queue name
+/// into the serialized payload.
+fn serialize_item<T>(item: &QueueItem<T>, queue_name: &str) -> Result<String, QueueError>
+where
+    T: Serialize,
+{
+    // Create a JSON value from the item first
+    let mut item_json = serde_json::to_value(item).map_err(|e| {
+        QueueError::SerializationError(format!("Failed to convert item to JSON: {}", e))
+    })?;
+
+    // Update the queue_name in the JSON
+    if let Some(obj) = item_json.as_object_mut() {
+        obj.insert(
+            "queue_name".to_string(),
+            serde_json::Value::String(queue_name.to_string()),
+        );
+    }
+
+    let serialized = serde_json::to_string(&item_json)
+        .map_err(|e| QueueError::SerializationError(format!("Failed to serialize item: {}", e)))?;
+
+    Ok(serialized)
+}
+
+/// Deserialize a queue item from Redis storage.
+fn deserialize_item(data: &str) -> Result<QueueItem<serde_json::Value>, QueueError> {
+    serde_json::from_str(data)
+        .map_err(|e| QueueError::SerializationError(format!("Failed to deserialize item: {}", e)))
+}
+
 /// Redis queue adapter that implements all queue port traits
 #[doc(hidden)]
 pub struct RedisQueueAdapter {
@@ -90,42 +157,6 @@ impl RedisQueueAdapter {
         })
     }
 
-    // In RedisQueueAdapter, check this method:
-    fn queue_key(&self, queue_name: &str) -> String {
-        format!("{}:queue:{}", self.config.key_prefix, queue_name)
-    }
-
-    /// Generate Redis key for priority queue
-    fn priority_queue_key(&self, queue_name: &str, priority: MessagePriority) -> String {
-        let priority_str = match priority {
-            MessagePriority::Critical => "critical",
-            MessagePriority::High => "high",
-            MessagePriority::Normal => "normal",
-            MessagePriority::Low => "low",
-        };
-        format!("{}:{}:{}", self.config.key_prefix, queue_name, priority_str)
-    }
-
-    /// Generate Redis key for queue metadata
-    fn queue_meta_key(&self, queue_name: &str) -> String {
-        format!("{}:meta:{}", self.config.key_prefix, queue_name)
-    }
-
-    /// Generate Redis key for processing items
-    fn processing_key(&self, queue_name: &str) -> String {
-        format!("{}:processing:{}", self.config.key_prefix, queue_name)
-    }
-
-    /// Generate Redis key for completed items
-    fn completed_key(&self, queue_name: &str) -> String {
-        format!("{}:completed:{}", self.config.key_prefix, queue_name)
-    }
-
-    /// Generate Redis key for failed items
-    fn failed_key(&self, queue_name: &str) -> String {
-        format!("{}:failed:{}", self.config.key_prefix, queue_name)
-    }
-
     /// Log operation to LogPort if available
     async fn log_operation(&self, level: LogLevel, message: String) {
         if let Some(log_port) = &self.log_port {
@@ -145,42 +176,10 @@ impl RedisQueueAdapter {
         }
     }
 
-    /// Serialize queue item to JSON for Redis storage
-    fn serialize_item<T>(&self, item: &QueueItem<T>, queue_name: &str) -> Result<String, QueueError>
-    where
-        T: Serialize,
-    {
-        // Create a JSON value from the item first
-        let mut item_json = serde_json::to_value(item).map_err(|e| {
-            QueueError::SerializationError(format!("Failed to convert item to JSON: {}", e))
-        })?;
-
-        // Update the queue_name in the JSON
-        if let Some(obj) = item_json.as_object_mut() {
-            obj.insert(
-                "queue_name".to_string(),
-                serde_json::Value::String(queue_name.to_string()),
-            );
-        }
-
-        let serialized = serde_json::to_string(&item_json).map_err(|e| {
-            QueueError::SerializationError(format!("Failed to serialize item: {}", e))
-        })?;
-
-        Ok(serialized)
-    }
-
-    /// Deserialize queue item from Redis storage
-    fn deserialize_item(&self, data: &str) -> Result<QueueItem<serde_json::Value>, QueueError> {
-        serde_json::from_str(data).map_err(|e| {
-            QueueError::SerializationError(format!("Failed to deserialize item: {}", e))
-        })
-    }
-
     /// Check if queue exists
     async fn queue_exists(&self, queue_name: &str) -> Result<bool, QueueError> {
         let mut conn = self.conn.write().await;
-        let meta_key = self.queue_meta_key(queue_name);
+        let meta_key = queue_meta_key(&self.config, queue_name);
 
         let exists: bool = conn.exists(&meta_key).await.map_err(|e| {
             QueueError::OperationFailed(format!("Failed to check queue existence: {}", e))
@@ -227,7 +226,7 @@ impl QueuePort for RedisQueueAdapter {
         let mut conn = self.conn.write().await;
 
         // Create the metadata key that queue_exists() checks for
-        let meta_key = self.queue_meta_key(&queue_name);
+        let meta_key = queue_meta_key(&self.config, &queue_name);
         let config_json = serde_json::to_string(&queue_config).map_err(|e| {
             QueueError::SerializationError(format!("Failed to serialize config: {}", e))
         })?;
@@ -274,15 +273,15 @@ impl QueuePort for RedisQueueAdapter {
 
         // Delete all queue-related keys using pipeline for efficiency
         let mut pipe = redis::pipe();
-        pipe.del(self.queue_key(name))
-            .del(self.queue_meta_key(name))
-            .del(self.processing_key(name))
-            .del(self.completed_key(name))
-            .del(self.failed_key(name));
+        pipe.del(queue_key(&self.config, name))
+            .del(queue_meta_key(&self.config, name))
+            .del(processing_key(&self.config, name))
+            .del(completed_key(&self.config, name))
+            .del(failed_key(&self.config, name));
 
         // Delete priority queues
         for priority in Self::get_priority_levels() {
-            pipe.del(self.priority_queue_key(name, priority));
+            pipe.del(priority_queue_key(&self.config, name, priority));
         }
 
         let _: () = pipe
@@ -316,18 +315,18 @@ impl QueuePort for RedisQueueAdapter {
         }
 
         let item_id = item.id();
-        let serialized = self.serialize_item(&item, queue_name)?;
+        let serialized = serialize_item(&item, queue_name)?;
         let mut conn = self.conn.write().await;
 
         // Determine which queue to use based on priority
         let queue_key = if let Some(config) = self.queue_configs.read().await.get(queue_name) {
             if config.priority_based {
-                self.priority_queue_key(queue_name, item.message.priority)
+                priority_queue_key(&self.config, queue_name, item.message.priority)
             } else {
-                self.queue_key(queue_name)
+                queue_key(&self.config, queue_name)
             }
         } else {
-            self.queue_key(queue_name)
+            queue_key(&self.config, queue_name)
         };
 
         // Add to queue (LPUSH for FIFO with RPOP)
@@ -363,7 +362,7 @@ impl QueuePort for RedisQueueAdapter {
                 // For priority-based queues, try dequeuing from priority levels in order
                 let mut item_data = None;
                 for priority in Self::get_priority_levels() {
-                    let queue_key = self.priority_queue_key(queue_name, priority);
+                    let queue_key = priority_queue_key(&self.config, queue_name, priority);
                     let data: Option<String> = conn.rpop(&queue_key, None).await.map_err(|e| {
                         QueueError::OperationFailed(format!(
                             "Failed to dequeue from priority queue: {}",
@@ -378,25 +377,25 @@ impl QueuePort for RedisQueueAdapter {
                 item_data
             } else {
                 // Regular FIFO queue
-                let queue_key = self.queue_key(queue_name);
+                let queue_key = queue_key(&self.config, queue_name);
                 conn.rpop(&queue_key, None).await.map_err(|e| {
                     QueueError::OperationFailed(format!("Failed to dequeue item: {}", e))
                 })?
             }
         } else {
             // Fallback to regular queue
-            let queue_key = self.queue_key(queue_name);
+            let queue_key = queue_key(&self.config, queue_name);
             conn.rpop(&queue_key, None).await.map_err(|e| {
                 QueueError::OperationFailed(format!("Failed to dequeue item: {}", e))
             })?
         };
 
         if let Some(data) = result {
-            let item = self.deserialize_item(&data)?;
+            let item = deserialize_item(&data)?;
             let item_id = item.id();
 
             // Move item to processing
-            let processing_key = self.processing_key(queue_name);
+            let processing_key = processing_key(&self.config, queue_name);
             let _: () = conn
                 .hset(&processing_key, item_id.to_string(), &data)
                 .await
@@ -423,7 +422,7 @@ impl QueuePort for RedisQueueAdapter {
         worker_id: String,
     ) -> Result<(), QueueError> {
         let mut conn = self.conn.write().await;
-        let processing_key = self.processing_key(queue_name);
+        let processing_key = processing_key(&self.config, queue_name);
 
         // Check if item exists in processing
         let exists: bool = conn
@@ -465,7 +464,7 @@ impl QueuePort for RedisQueueAdapter {
         result_data: Option<serde_json::Value>,
     ) -> Result<(), QueueError> {
         let mut conn = self.conn.write().await;
-        let processing_key = self.processing_key(queue_name);
+        let processing_key = processing_key(&self.config, queue_name);
 
         // Get item data from processing
         let item_data: Option<String> = conn
@@ -477,7 +476,7 @@ impl QueuePort for RedisQueueAdapter {
 
         if let Some(data) = item_data {
             // Move to completed
-            let completed_key = self.completed_key(queue_name);
+            let completed_key = completed_key(&self.config, queue_name);
             if let Some(result) = result_data {
                 let result_json = serde_json::to_string(&result).map_err(|e| {
                     QueueError::SerializationError(format!("Failed to serialize result: {}", e))
@@ -531,7 +530,7 @@ impl QueuePort for RedisQueueAdapter {
         error: String,
     ) -> Result<bool, QueueError> {
         let mut conn = self.conn.write().await;
-        let processing_key = self.processing_key(queue_name);
+        let processing_key = processing_key(&self.config, queue_name);
 
         // Get item data from processing
         let item_data: Option<String> = conn
@@ -542,7 +541,7 @@ impl QueuePort for RedisQueueAdapter {
             })?;
 
         if let Some(data) = item_data {
-            let mut item = self.deserialize_item(&data)?;
+            let mut item = deserialize_item(&data)?;
 
             // Use the item's max_retries setting, not the global config
             let max_retries = item.config.max_retries;
@@ -557,12 +556,12 @@ impl QueuePort for RedisQueueAdapter {
                 let queue_key = if let Some(config) = config {
                     if config.priority_based {
                         // Re-queue to the correct priority queue based on the message priority
-                        self.priority_queue_key(queue_name, item.message.priority)
+                        priority_queue_key(&self.config, queue_name, item.message.priority)
                     } else {
-                        self.queue_key(queue_name)
+                        queue_key(&self.config, queue_name)
                     }
                 } else {
-                    self.queue_key(queue_name)
+                    queue_key(&self.config, queue_name)
                 };
 
                 // Instead of re-serializing, modify the original JSON data and re-queue that
@@ -621,7 +620,7 @@ impl QueuePort for RedisQueueAdapter {
                 Ok(true) // Will retry
             } else {
                 // Move to failed - max retries exceeded
-                let failed_key = self.failed_key(queue_name);
+                let failed_key = failed_key(&self.config, queue_name);
                 let _: () = conn
                     .hset(&failed_key, item_id.to_string(), &data)
                     .await
@@ -672,9 +671,9 @@ impl QueuePort for RedisQueueAdapter {
         let mut conn = self.conn.write().await;
 
         // Get counts from different Redis keys
-        let processing_key = self.processing_key(queue_name);
-        let completed_key = self.completed_key(queue_name);
-        let failed_key = self.failed_key(queue_name);
+        let processing_key = processing_key(&self.config, queue_name);
+        let completed_key = completed_key(&self.config, queue_name);
+        let failed_key = failed_key(&self.config, queue_name);
 
         // Check if this is a priority-based queue
         let config = self.queue_configs.read().await.get(queue_name).cloned();
@@ -684,19 +683,19 @@ impl QueuePort for RedisQueueAdapter {
                 // For priority-based queues, count items in all priority queues
                 let mut total_pending = 0;
                 for priority in Self::get_priority_levels() {
-                    let priority_key = self.priority_queue_key(queue_name, priority);
+                    let priority_key = priority_queue_key(&self.config, queue_name, priority);
                     let count: usize = conn.llen(&priority_key).await.unwrap_or(0);
                     total_pending += count;
                 }
                 total_pending
             } else {
                 // Regular FIFO queue
-                let queue_key = self.queue_key(queue_name);
+                let queue_key = queue_key(&self.config, queue_name);
                 conn.llen(&queue_key).await.unwrap_or(0)
             }
         } else {
             // Fallback to regular queue
-            let queue_key = self.queue_key(queue_name);
+            let queue_key = queue_key(&self.config, queue_name);
             conn.llen(&queue_key).await.unwrap_or(0)
         };
 
@@ -738,19 +737,19 @@ impl QueuePort for RedisQueueAdapter {
                 // For priority-based queues, count items in all priority queues
                 let mut total_size = 0;
                 for priority in Self::get_priority_levels() {
-                    let priority_key = self.priority_queue_key(queue_name, priority);
+                    let priority_key = priority_queue_key(&self.config, queue_name, priority);
                     let count: usize = conn.llen(&priority_key).await.unwrap_or(0);
                     total_size += count;
                 }
                 total_size
             } else {
                 // Regular FIFO queue
-                let queue_key = self.queue_key(queue_name);
+                let queue_key = queue_key(&self.config, queue_name);
                 conn.llen(&queue_key).await.unwrap_or(0)
             }
         } else {
             // Fallback to regular queue
-            let queue_key = self.queue_key(queue_name);
+            let queue_key = queue_key(&self.config, queue_name);
             conn.llen(&queue_key).await.unwrap_or(0)
         };
 
@@ -771,9 +770,9 @@ impl QueuePort for RedisQueueAdapter {
             // Cleanup expired items in processing, completed, and failed queues
             // This assumes QueueItem<T> has an `expires_at: Option<DateTime<Utc>>` field
 
-            // let processing_key = self.processing_key(&_queue_name);
-            // let completed_key = self.completed_key(&_queue_name);
-            // let failed_key = self.failed_key(&_queue_name);
+            // let processing_key = processing_key(&self.config, &_queue_name);
+            // let completed_key = completed_key(&self.config, &_queue_name);
+            // let failed_key = failed_key(&self.config, &_queue_name);
 
             // let now = chrono::Utc::now();
 
@@ -831,13 +830,13 @@ impl QueuePort for RedisQueueAdapter {
             //     if config.priority_based {
             //         Self::get_priority_levels()
             //             .into_iter()
-            //             .map(|priority| self.priority_queue_key(&_queue_name, priority))
+            //             .map(|priority| priority_queue_key(&self.config, &_queue_name, priority))
             //             .collect::<Vec<_>>()
             //     } else {
-            //         vec![self.queue_key(&_queue_name)]
+            //         vec![queue_key(&self.config, &_queue_name)]
             //     }
             // } else {
-            //     vec![self.queue_key(&_queue_name)]
+            //     vec![queue_key(&self.config, &_queue_name)]
             // };
 
             // for queue_key in queue_keys {
@@ -950,8 +949,8 @@ impl BatchQueuePort for RedisQueueAdapter {
             let item_id = item.id();
             item_ids.push(item_id);
 
-            let serialized = self.serialize_item(item, queue_name)?;
-            let queue_key = self.queue_key(queue_name);
+            let serialized = serialize_item(item, queue_name)?;
+            let queue_key = queue_key(&self.config, queue_name);
             pipe.lpush(&queue_key, &serialized);
         }
 
@@ -987,10 +986,10 @@ impl BatchQueuePort for RedisQueueAdapter {
         }
 
         let item_id = item.id();
-        let serialized = self.serialize_item(&item, queue_name)?;
+        let serialized = serialize_item(&item, queue_name)?;
 
         let mut conn = self.conn.write().await;
-        let queue_key = self.priority_queue_key(queue_name, priority);
+        let queue_key = priority_queue_key(&self.config, queue_name, priority);
 
         let _: () = conn.lpush(&queue_key, &serialized).await.map_err(|e| {
             QueueError::OperationFailed(format!("Failed to enqueue with priority: {}", e))
@@ -1023,8 +1022,8 @@ impl BatchQueuePort for RedisQueueAdapter {
 
         let mut conn = self.conn.write().await;
         let mut items = Vec::new();
-        let queue_key = self.queue_key(queue_name);
-        let processing_key = self.processing_key(queue_name);
+        let queue_key = queue_key(&self.config, queue_name);
+        let processing_key = processing_key(&self.config, queue_name);
 
         // Simple approach: dequeue items one by one
         // In production, you might want to use a Lua script for atomicity
@@ -1034,7 +1033,7 @@ impl BatchQueuePort for RedisQueueAdapter {
             })?;
 
             if let Some(item_data) = data {
-                let item = self.deserialize_item(&item_data)?;
+                let item = deserialize_item(&item_data)?;
                 let item_id = item.id();
 
                 // Mark as processing
@@ -1080,9 +1079,9 @@ impl BatchQueuePort for RedisQueueAdapter {
         let mut summaries = Vec::new();
 
         // Check in processing, completed, and failed
-        let processing_key = self.processing_key(queue_name);
-        let completed_key = self.completed_key(queue_name);
-        let failed_key = self.failed_key(queue_name);
+        let processing_key = processing_key(&self.config, queue_name);
+        let completed_key = completed_key(&self.config, queue_name);
+        let failed_key = failed_key(&self.config, queue_name);
 
         for item_id in item_ids {
             let id_str = item_id.to_string();
@@ -1165,10 +1164,10 @@ impl PriorityQueuePort for RedisQueueAdapter {
         }
 
         let item_id = item.action.id; // Use the action's ID directly
-        let serialized = self.serialize_item(&item, queue_name)?;
+        let serialized = serialize_item(&item, queue_name)?;
 
         let mut conn = self.conn.write().await;
-        let queue_key = self.priority_queue_key(queue_name, priority);
+        let queue_key = priority_queue_key(&self.config, queue_name, priority);
 
         let _: () = conn.lpush(&queue_key, &serialized).await.map_err(|e| {
             QueueError::OperationFailed(format!("Failed to enqueue with priority: {}", e))
@@ -1195,18 +1194,18 @@ impl PriorityQueuePort for RedisQueueAdapter {
         }
 
         let mut conn = self.conn.write().await;
-        let processing_key = self.processing_key(queue_name);
+        let processing_key = processing_key(&self.config, queue_name);
 
         // Try each priority level in order
         for priority in Self::get_priority_levels() {
-            let queue_key = self.priority_queue_key(queue_name, priority);
+            let queue_key = priority_queue_key(&self.config, queue_name, priority);
 
             let data: Option<String> = conn.rpop(&queue_key, None).await.map_err(|e| {
                 QueueError::OperationFailed(format!("Failed to dequeue priority item: {}", e))
             })?;
 
             if let Some(item_data) = data {
-                let item = self.deserialize_item(&item_data)?;
+                let item = deserialize_item(&item_data)?;
                 let item_id = item.id();
 
                 // Move to processing
@@ -1243,7 +1242,7 @@ impl PriorityQueuePort for RedisQueueAdapter {
         }
 
         let mut conn = self.conn.write().await;
-        let queue_key = self.priority_queue_key(queue_name, priority);
+        let queue_key = priority_queue_key(&self.config, queue_name, priority);
 
         // Get all items from priority queue without removing them
         let items: Vec<String> = conn.lrange(&queue_key, 0, -1).await.map_err(|e| {
@@ -1252,7 +1251,7 @@ impl PriorityQueuePort for RedisQueueAdapter {
 
         let mut summaries = Vec::new();
         for data in items {
-            if let Ok(item) = self.deserialize_item(&data) {
+            if let Ok(item) = deserialize_item(&data) {
                 summaries.push(QueueItemSummary {
                     id: item.id(),
                     queue_name: queue_name.to_string(),
@@ -1279,7 +1278,7 @@ impl QueueManagementPort for RedisQueueAdapter {
         }
 
         let mut conn = self.conn.write().await;
-        let meta_key = self.queue_meta_key(queue_name);
+        let meta_key = queue_meta_key(&self.config, queue_name);
 
         let _: () = conn
             .hset(&meta_key, "paused", "true")
@@ -1297,7 +1296,7 @@ impl QueueManagementPort for RedisQueueAdapter {
         }
 
         let mut conn = self.conn.write().await;
-        let meta_key = self.queue_meta_key(queue_name);
+        let meta_key = queue_meta_key(&self.config, queue_name);
 
         let _: () = conn
             .hset(&meta_key, "paused", "false")
@@ -1311,7 +1310,7 @@ impl QueueManagementPort for RedisQueueAdapter {
 
     async fn cancel_item(&self, queue_name: &str, item_id: Uuid) -> Result<(), QueueError> {
         let mut conn = self.conn.write().await;
-        let processing_key = self.processing_key(queue_name);
+        let processing_key = processing_key(&self.config, queue_name);
         let id_str = item_id.to_string();
 
         // Check if item is in processing
@@ -1339,7 +1338,7 @@ impl QueueManagementPort for RedisQueueAdapter {
 
     async fn retry_item(&self, queue_name: &str, item_id: Uuid) -> Result<(), QueueError> {
         let mut conn = self.conn.write().await;
-        let failed_key = self.failed_key(queue_name);
+        let failed_key = failed_key(&self.config, queue_name);
         let id_str = item_id.to_string();
 
         // Get item from failed queue
@@ -1369,7 +1368,7 @@ impl QueueManagementPort for RedisQueueAdapter {
                 QueueError::SerializationError(format!("Failed to serialize retry item: {}", e))
             })?;
 
-            let queue_key = self.queue_key(queue_name);
+            let queue_key = queue_key(&self.config, queue_name);
             let _: () = conn
                 .lpush(&queue_key, &serialized)
                 .await
@@ -1402,9 +1401,9 @@ impl QueueManagementPort for RedisQueueAdapter {
 
         // Check all possible locations
         let keys = vec![
-            self.processing_key(queue_name),
-            self.completed_key(queue_name),
-            self.failed_key(queue_name),
+            processing_key(&self.config, queue_name),
+            completed_key(&self.config, queue_name),
+            failed_key(&self.config, queue_name),
         ];
 
         for key in keys {
@@ -1413,19 +1412,19 @@ impl QueueManagementPort for RedisQueueAdapter {
             })?;
 
             if let Some(data) = item_data {
-                return self.deserialize_item(&data);
+                return deserialize_item(&data);
             }
         }
 
         // Check in pending queues
-        let queue_key = self.queue_key(queue_name);
+        let queue_key = queue_key(&self.config, queue_name);
         let items: Vec<String> = conn
             .lrange(&queue_key, 0, -1)
             .await
             .map_err(|e| QueueError::OperationFailed(format!("Failed to search queue: {}", e)))?;
 
         for data in items {
-            if let Ok(item) = self.deserialize_item(&data)
+            if let Ok(item) = deserialize_item(&data)
                 && item.id() == item_id
             {
                 return Ok(item);
@@ -1437,7 +1436,7 @@ impl QueueManagementPort for RedisQueueAdapter {
 
     async fn purge_completed(&self, queue_name: &str) -> Result<usize, QueueError> {
         let mut conn = self.conn.write().await;
-        let completed_key = self.completed_key(queue_name);
+        let completed_key = completed_key(&self.config, queue_name);
 
         let count: usize = conn.hlen(&completed_key).await.map_err(|e| {
             QueueError::OperationFailed(format!("Failed to get completed count: {}", e))
@@ -1458,7 +1457,7 @@ impl QueueManagementPort for RedisQueueAdapter {
 
     async fn purge_failed(&self, queue_name: &str) -> Result<usize, QueueError> {
         let mut conn = self.conn.write().await;
-        let failed_key = self.failed_key(queue_name);
+        let failed_key = failed_key(&self.config, queue_name);
 
         let count: usize = conn.hlen(&failed_key).await.map_err(|e| {
             QueueError::OperationFailed(format!("Failed to get failed count: {}", e))
@@ -1484,7 +1483,7 @@ impl QueueManagementPort for RedisQueueAdapter {
         } else {
             // Try to load from Redis
             let mut conn = self.conn.write().await;
-            let meta_key = self.queue_meta_key(queue_name);
+            let meta_key = queue_meta_key(&self.config, queue_name);
 
             let config_json: Option<String> =
                 conn.hget(&meta_key, "config").await.map_err(|e| {
@@ -1519,7 +1518,7 @@ impl QueueManagementPort for RedisQueueAdapter {
         }
 
         let mut conn = self.conn.write().await;
-        let meta_key = self.queue_meta_key(queue_name);
+        let meta_key = queue_meta_key(&self.config, queue_name);
         let config_json = serde_json::to_string(&config).map_err(|e| {
             QueueError::SerializationError(format!("Failed to serialize config: {}", e))
         })?;
