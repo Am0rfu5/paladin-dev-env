@@ -287,7 +287,7 @@ Plans:
 
 - [x] 03-02-PLAN.md — `FaultyPaladinPort` and the four relocated Commander error-path tests (wave 2)
 - [x] 03-03-PLAN.md — Five MCP failure modes plus the additive `connect_streamable_http_with_timeout` seam (wave 2)
-- [ ] 03-04-PLAN.md — Performance baseline: five bench targets, derived P50/P95/P99, memory and startup harness (wave 2)
+- [x] 03-04-PLAN.md — Performance baseline: five bench targets, derived P50/P95/P99, memory and startup harness (wave 2)
 - [x] 03-05-PLAN.md — `redis.rs` helper refactor then Docker-free unit tests (wave 2)
 - [x] 03-06-PLAN.md — `paladin-ports` and `paladin-llm` zero-coverage closure (wave 2)
 

@@ -278,7 +278,7 @@ by passing tests.*
       *Derives: `codebase/CONCERNS.md` test-coverage gaps; REQ-arsenal-resilience;
       REQ-commander-test-hardening (run 2) specifies the six tests by name.*
 
-- [ ] **QUAL-05**: `cargo bench` completes and a baseline document records throughput, P50/P95/P99
+- [x] **QUAL-05**: `cargo bench` completes and a baseline document records throughput, P50/P95/P99
       latency, memory-per-Paladin and startup time for the Paladin execution loop, the Battalion
       patterns, Garrison operations and Arsenal invocation. Benchmarks were relocated into
       per-crate `benches/` directories during the workspace decomposition — the shipped set is
@@ -3831,7 +3831,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | QUAL-02 | Phase 3 | Pending |
 | QUAL-03 | Phase 3 | Pending |
 | QUAL-04 | Phase 3 | Complete |
-| QUAL-05 | Phase 3 | Pending |
+| QUAL-05 | Phase 3 | Complete |
 | REL-01 | Phase 4 | Pending |
 | REL-02 | Phase 4 | Pending |
 | REL-03 | Phase 4 | Pending |
