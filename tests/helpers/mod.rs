@@ -13,4 +13,4 @@ pub use mock_llm_adapter::{
     create_mock_with_responses, create_mock_with_tool_calls, create_test_paladin_with_mock,
 };
 
-pub use mock_paladin_port::MockPaladinPort;
+pub use mock_paladin_port::{FaultyPaladinPort, MockPaladinPort};
