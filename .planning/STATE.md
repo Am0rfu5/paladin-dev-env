@@ -4,16 +4,16 @@ milestone: v0.7.0
 milestone_name: milestone
 current_phase: 3
 current_phase_name: Verification Depth
-status: executing
-stopped_at: Completed 03-07-PLAN.md
-last_updated: "2026-08-02T17:51:07.394Z"
+status: verifying
+stopped_at: Completed 03-08-PLAN.md
+last_updated: "2026-08-02T18:32:37.438Z"
 last_activity: 2026-08-02
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 31
-  completed_plans: 29
+  completed_plans: 30
 ---
 
 # Project State
@@ -31,7 +31,7 @@ provider, transport, or storage implementation.
 
 Phase: 3 (Verification Depth) — EXECUTING
 Plan: 8 of 8
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Requirements coverage 8/8 RECON IDs; decision coverage 21/21 CONTEXT.md decisions.
 Last activity: 2026-08-02 — Phase 3 execution started
 
@@ -85,7 +85,7 @@ not be made by default**: FACADE-02's D2 (Phase 11) splits `user_service.rs` and
 (Phase 15) tests it — doing them independently means doing the work twice. See the Execution Order
 notes in `ROADMAP.md`.
 
-Progress: [█████████░] 94%
+Progress: [██████████] 97%
 
 ## Performance Metrics
 
@@ -123,6 +123,7 @@ Progress: [█████████░] 94%
 | Phase 03 P06 | ~20min | 2 tasks | 3 files |
 | Phase 03 P04 | 35min | 3 tasks | 3 files |
 | Phase 03 P07 | 14min | 2 tasks | 2 files |
+| Phase 03 P08 | ~30min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -315,6 +316,7 @@ Entering them here would fabricate authority the corpus does not contain.
 - [Phase ?]: Phase 3 Plan 04: examples/muster_baseline.rs added as a new recorded harness for memory-per-Paladin (479 bytes, via /proc/self/status VmRSS delta across 1000 constructed Paladins) and startup time, since criterion produces neither metric family
 - [Phase ?]: Phase 3 Plan 07: exit coverage measurement at HEAD 1ad8be5 -- measured 85.92% workspace line coverage, PASS against 84.00% floor by 1.92pp (up from entry's 1.56pp); 4 of 5 entry zero-coverage files closed (redis.rs, file_storage_port.rs, paladin-llm/error.rs, arsenal_port.rs), src/bin/paladin-server.rs deferred to Phase 5/VERIFY-05; ratchet trigger not met (1.92pt < 2pt), ADR-0006 not amended
 - [Phase ?]: Phase 3 Plan 07: QUAL-03 critical-path exerciser evidence established at D-19 bar for all three paths (Paladin execution, Battalion orchestration, tool invocation) via 5 verified passing integration tests; percentage clause recorded superseded by ADR-0006 with zero coverage percentages introduced; amendment lands at source in plan 03-08
+- [Phase ?]: Phase 3 Plan 08: QUAL-02 and QUAL-03 amended at source in REQUIREMENTS.md with dated provenance (original text retained); ROADMAP criterion 2 and the milestone ledger amended to match; human confirmed both coverage figures (85.56% entry / 85.92% exit) and the ratchet non-trigger decision (1.92pt delta, 0.08pt short of the 2pt trigger, approver declined the offered floor-raise) via blocking checkpoint, recorded in 03-coverage-measurement.md
 
 ### Pending Todos
 
@@ -715,10 +717,10 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Completed 03-07-PLAN.md
+**Stopped at:** Completed 03-08-PLAN.md
 Ready to plan Phase 3.
 
-Last session: 2026-08-02T17:51:07.358Z
+Last session: 2026-08-02T18:32:37.400Z
 Resume file: None
 
 Prior session: 2026-07-31T19:27:35.303Z

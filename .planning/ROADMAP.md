@@ -297,7 +297,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 03-08-PLAN.md — Amend QUAL-02, QUAL-03, ROADMAP criterion 2 and the ledger at source; human confirmation (wave 4)
+- [x] 03-08-PLAN.md — Amend QUAL-02, QUAL-03, ROADMAP criterion 2 and the ledger at source; human confirmation (wave 4)
 
 ### Phase 4: Release Coherence
 
