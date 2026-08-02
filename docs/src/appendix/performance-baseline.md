@@ -3,9 +3,9 @@
 ## Run — 2026-08-02
 
 Every figure in this section is this host's baseline, measured under the environment stated
-below — it is explicitly **not** a portable performance claim and **not** a cross-machine
-regression signal against the 2026-05-27 run recorded further down this document, since the two
-runs were captured on different hardware. Throughput and latency figures in this section come
+below. It is explicitly not a portable performance claim and not a cross-machine regression
+signal against the 2026-05-27 run recorded further down this document, since the two runs were
+captured on different hardware. Throughput and latency figures in this section come
 from `criterion`; memory-per-Paladin and startup time come from a separate purpose-built harness
 (`examples/muster_baseline.rs`), named explicitly in their own subsections below, since
 `criterion` produces neither of those two metric families.
@@ -620,6 +620,151 @@ paladins_mustered=1000
 rss_delta_kb=468
 bytes_per_paladin=479
 ```
+
+### P50 / P95 / P99 Derivation
+
+Criterion reports mean, median, MAD (median absolute deviation) and confidence intervals per
+benchmark — it does **not** compute P95 or P99. This document derives them directly from
+criterion's own on-disk per-iteration sample data rather than leaving those two columns blank or
+fabricating figures.
+
+**On-disk schema and location.** Criterion writes `target/criterion/<id>/new/sample.json` for
+every benchmark it runs. The schema, read directly from the vendored `criterion-0.5.1` source
+(`src/lib.rs:1502-1505`, `struct SavedSample { iters: Vec<f64>, times: Vec<f64> }`), is:
+
+```json
+{ "sampling_mode": "...", "iters": [f64, f64, ...], "times": [f64, f64, ...] }
+```
+
+This is criterion's internal on-disk format, stable since criterion 0.3.x — it is **not** part of
+criterion's public API.
+
+**`times[i]` is a batch total, not a per-iteration time.** Each `times[i]` is the total measured
+duration, in nanoseconds, for `iters[i]` iterations of that sample batch (`iters[i]` varies across
+samples under criterion's linear sampling plan — it is not a constant). The per-iteration time
+series is therefore `times[i] / iters[i]`, computed element-wise, then sorted ascending.
+
+**Nearest-rank selection, no interpolation.** Given the sorted per-iteration series of length `n`,
+the percentile at proportion `p` is the element at index `round((n - 1) * p)` — nearest-rank
+selection with ties broken by sorted position. This document never interpolates between
+neighbouring samples. Where `n = 1` (a single-sample benchmark), `(n - 1) * p = 0` for every `p`,
+so P50 = P95 = P99 = that one sample — no benchmark in this run hit that degenerate case (every
+sample file below has `n = 50` or `n = 100`), but the rule is stated here because it applies
+uniformly.
+
+**The exact `jq` filter, reproduced verbatim** (rounds each percentile to 2 decimal places in
+nanoseconds so the pasted output matches the Latency percentiles table below exactly):
+
+```bash
+jq -c '([.iters, .times] | transpose | map(.[1]/.[0]) | sort) as $s
+  | ($s|length) as $n
+  | {
+      n: $n,
+      p50_ns: ($s[(($n-1)*0.50|round)] * 100 | round / 100),
+      p95_ns: ($s[(($n-1)*0.95|round)] * 100 | round / 100),
+      p99_ns: ($s[(($n-1)*0.99|round)] * 100 | round / 100)
+    }' <sample.json path>
+```
+
+Applied to every `target/criterion/*/new/sample.json` this run produced (`find target/criterion
+-name sample.json -path '*/new/*' | sort`, one invocation per file), the raw output is:
+
+```
+target/criterion/battalion_campaign_branching_dag/new/sample.json: {"n":100,"p50_ns":5758,"p95_ns":6802.72,"p99_ns":6921.54}
+target/criterion/battalion_formation_3_agents/new/sample.json: {"n":100,"p50_ns":3279.68,"p95_ns":4048.83,"p99_ns":4349.9}
+target/criterion/battalion_phalanx_5_agents/new/sample.json: {"n":100,"p50_ns":29584.82,"p95_ns":35206.37,"p99_ns":40154.25}
+target/criterion/config_domain_accessors/new/sample.json: {"n":100,"p50_ns":14932.55,"p95_ns":18148.13,"p99_ns":19551.87}
+target/criterion/config_settings_new/new/sample.json: {"n":100,"p50_ns":834115.34,"p95_ns":1149300,"p99_ns":1618134.96}
+target/criterion/garrison_read_recent/100/new/sample.json: {"n":100,"p50_ns":3868.91,"p95_ns":4545.4,"p99_ns":4820.5}
+target/criterion/garrison_read_recent/1000/new/sample.json: {"n":100,"p50_ns":4045.81,"p95_ns":5074.3,"p99_ns":5451.25}
+target/criterion/garrison_read_recent/10000/new/sample.json: {"n":100,"p50_ns":4031.19,"p95_ns":5190.11,"p99_ns":6212.07}
+target/criterion/garrison_write/100/new/sample.json: {"n":100,"p50_ns":13112.29,"p95_ns":15336.59,"p99_ns":18776.27}
+target/criterion/garrison_write/1000/new/sample.json: {"n":100,"p50_ns":127906.86,"p95_ns":142539,"p99_ns":152373.1}
+target/criterion/garrison_write/10000/new/sample.json: {"n":100,"p50_ns":1253858.67,"p95_ns":1484174.33,"p99_ns":1681460.67}
+target/criterion/llm_deserialize_response/new/sample.json: {"n":100,"p50_ns":1067.73,"p95_ns":1460.83,"p99_ns":2197.15}
+target/criterion/llm_response_roundtrip/new/sample.json: {"n":100,"p50_ns":2185.9,"p95_ns":2626.4,"p99_ns":2874.37}
+target/criterion/llm_serialize_request/new/sample.json: {"n":100,"p50_ns":2010.99,"p95_ns":2624.39,"p99_ns":3075.96}
+target/criterion/sanctum_count/count_all/new/sample.json: {"n":100,"p50_ns":48.1,"p95_ns":57.27,"p99_ns":60.68}
+target/criterion/sanctum_count/count_with_filter/new/sample.json: {"n":100,"p50_ns":92186,"p95_ns":108738.9,"p99_ns":113881.2}
+target/criterion/sanctum_delete/delete_single/new/sample.json: {"n":100,"p50_ns":43884.71,"p95_ns":58233.06,"p99_ns":62703}
+target/criterion/sanctum_search_filters/filter_combined/new/sample.json: {"n":100,"p50_ns":100243.52,"p95_ns":124529.03,"p99_ns":138505.65}
+target/criterion/sanctum_search_filters/filter_importance/new/sample.json: {"n":100,"p50_ns":6866075.75,"p95_ns":7601689.38,"p99_ns":7859834.5}
+target/criterion/sanctum_search_filters/filter_memory_type/new/sample.json: {"n":100,"p50_ns":3837537.92,"p95_ns":4122067.69,"p99_ns":4268039.54}
+target/criterion/sanctum_search_filters/filter_paladin_id/new/sample.json: {"n":100,"p50_ns":1196055.96,"p95_ns":1508711.25,"p99_ns":1844267.11}
+target/criterion/sanctum_search_filters/no_filter/new/sample.json: {"n":100,"p50_ns":11451372.8,"p95_ns":12327224.6,"p99_ns":12561828.8}
+target/criterion/sanctum_search_scale/vector_count/100/new/sample.json: {"n":50,"p50_ns":196196.87,"p95_ns":204938.21,"p99_ns":215578.42}
+target/criterion/sanctum_search_scale/vector_count/1000/new/sample.json: {"n":50,"p50_ns":2082544.61,"p95_ns":2449273.72,"p99_ns":2653508.02}
+target/criterion/sanctum_search_scale/vector_count/10000/new/sample.json: {"n":50,"p50_ns":23233920.6,"p95_ns":25544634.6,"p99_ns":26794746.4}
+target/criterion/sanctum_search_scale/vector_count/5000/new/sample.json: {"n":50,"p50_ns":11411143.11,"p95_ns":12375725.33,"p99_ns":13183004}
+target/criterion/sanctum_search_topk/top_k/1/new/sample.json: {"n":100,"p50_ns":11547352.4,"p95_ns":12318555.2,"p99_ns":12792401.4}
+target/criterion/sanctum_search_topk/top_k/10/new/sample.json: {"n":100,"p50_ns":11535347.6,"p95_ns":12789619,"p99_ns":13095041.4}
+target/criterion/sanctum_search_topk/top_k/100/new/sample.json: {"n":100,"p50_ns":11403624,"p95_ns":12948476.8,"p99_ns":13495355.8}
+target/criterion/sanctum_search_topk/top_k/5/new/sample.json: {"n":100,"p50_ns":11644216,"p95_ns":12435791.2,"p99_ns":12614508.2}
+target/criterion/sanctum_search_topk/top_k/50/new/sample.json: {"n":100,"p50_ns":11445765,"p95_ns":12822831.2,"p99_ns":13756384.2}
+target/criterion/sanctum_store_batch/batch_size/10/new/sample.json: {"n":100,"p50_ns":4178.15,"p95_ns":5252.54,"p99_ns":6603.2}
+target/criterion/sanctum_store_batch/batch_size/100/new/sample.json: {"n":100,"p50_ns":45990.33,"p95_ns":66895.02,"p99_ns":71899.92}
+target/criterion/sanctum_store_batch/batch_size/50/new/sample.json: {"n":100,"p50_ns":20527.16,"p95_ns":24027.86,"p99_ns":25427.11}
+target/criterion/sanctum_store_batch/batch_size/500/new/sample.json: {"n":100,"p50_ns":337602.69,"p95_ns":387297.71,"p99_ns":427759.61}
+target/criterion/sanctum_store_single/dimension/1536/new/sample.json: {"n":100,"p50_ns":627.49,"p95_ns":794.98,"p99_ns":1980.68}
+target/criterion/sanctum_store_single/dimension/384/new/sample.json: {"n":100,"p50_ns":644.68,"p95_ns":835.2,"p99_ns":2428.76}
+target/criterion/sanctum_store_single/dimension/768/new/sample.json: {"n":100,"p50_ns":695.17,"p95_ns":1138.51,"p99_ns":1291.74}
+target/criterion/sanctum_update/update_single/new/sample.json: {"n":100,"p50_ns":3527.91,"p95_ns":3979.94,"p99_ns":4105.07}
+```
+
+### Latency percentiles
+
+One row per criterion benchmark id that produced a `new/sample.json` in this run (39 of 39). `n`
+is the per-iteration sample count after the `times[i] / iters[i]` transform. Each cell shows the
+human-readable figure in the unit criterion itself used for that benchmark in the Results tables
+above, with the exact raw nanosecond figure from the pasted `jq` output alongside it in
+parentheses — every number in this table therefore also appears verbatim in the pasted output
+above.
+
+| Benchmark | n | P50 | P95 | P99 |
+|---|---|---|---|---|
+| `config/settings_new` | 100 | 834.115 µs (834115.34 ns) | 1.1493 ms (1149300.00 ns) | 1.6181 ms (1618134.96 ns) |
+| `config/domain_accessors` | 100 | 14.933 µs (14932.55 ns) | 18.148 µs (18148.13 ns) | 19.552 µs (19551.87 ns) |
+| `battalion/formation_3_agents` | 100 | 3.280 µs (3279.68 ns) | 4.049 µs (4048.83 ns) | 4.350 µs (4349.90 ns) |
+| `battalion/phalanx_5_agents` | 100 | 29.585 µs (29584.82 ns) | 35.206 µs (35206.37 ns) | 40.154 µs (40154.25 ns) |
+| `battalion/campaign_branching_dag` | 100 | 5.758 µs (5758.00 ns) | 6.803 µs (6802.72 ns) | 6.922 µs (6921.54 ns) |
+| `sanctum_store_single/dimension/384` | 100 | 644.68 ns (644.68 ns) | 835.20 ns (835.20 ns) | 2.429 µs (2428.76 ns) |
+| `sanctum_store_single/dimension/768` | 100 | 695.17 ns (695.17 ns) | 1.139 µs (1138.51 ns) | 1.292 µs (1291.74 ns) |
+| `sanctum_store_single/dimension/1536` | 100 | 627.49 ns (627.49 ns) | 794.98 ns (794.98 ns) | 1.981 µs (1980.68 ns) |
+| `sanctum_store_batch/batch_size/10` | 100 | 4.178 µs (4178.15 ns) | 5.253 µs (5252.54 ns) | 6.603 µs (6603.20 ns) |
+| `sanctum_store_batch/batch_size/50` | 100 | 20.527 µs (20527.16 ns) | 24.028 µs (24027.86 ns) | 25.427 µs (25427.11 ns) |
+| `sanctum_store_batch/batch_size/100` | 100 | 45.990 µs (45990.33 ns) | 66.895 µs (66895.02 ns) | 71.900 µs (71899.92 ns) |
+| `sanctum_store_batch/batch_size/500` | 100 | 337.603 µs (337602.69 ns) | 387.298 µs (387297.71 ns) | 427.760 µs (427759.61 ns) |
+| `sanctum_search_scale/vector_count/100` | 50 | 196.197 µs (196196.87 ns) | 204.938 µs (204938.21 ns) | 215.578 µs (215578.42 ns) |
+| `sanctum_search_scale/vector_count/1000` | 50 | 2.0825 ms (2082544.61 ns) | 2.4493 ms (2449273.72 ns) | 2.6535 ms (2653508.02 ns) |
+| `sanctum_search_scale/vector_count/5000` | 50 | 11.4111 ms (11411143.11 ns) | 12.3757 ms (12375725.33 ns) | 13.1830 ms (13183004.00 ns) |
+| `sanctum_search_scale/vector_count/10000` | 50 | 23.2339 ms (23233920.60 ns) | 25.5446 ms (25544634.60 ns) | 26.7947 ms (26794746.40 ns) |
+| `sanctum_search_topk/top_k/1` | 100 | 11.5474 ms (11547352.40 ns) | 12.3186 ms (12318555.20 ns) | 12.7924 ms (12792401.40 ns) |
+| `sanctum_search_topk/top_k/5` | 100 | 11.6442 ms (11644216.00 ns) | 12.4358 ms (12435791.20 ns) | 12.6145 ms (12614508.20 ns) |
+| `sanctum_search_topk/top_k/10` | 100 | 11.5353 ms (11535347.60 ns) | 12.7896 ms (12789619.00 ns) | 13.0950 ms (13095041.40 ns) |
+| `sanctum_search_topk/top_k/50` | 100 | 11.4458 ms (11445765.00 ns) | 12.8228 ms (12822831.20 ns) | 13.7564 ms (13756384.20 ns) |
+| `sanctum_search_topk/top_k/100` | 100 | 11.4036 ms (11403624.00 ns) | 12.9485 ms (12948476.80 ns) | 13.4954 ms (13495355.80 ns) |
+| `sanctum_search_filters/no_filter` | 100 | 11.4514 ms (11451372.80 ns) | 12.3272 ms (12327224.60 ns) | 12.5618 ms (12561828.80 ns) |
+| `sanctum_search_filters/filter_paladin_id` | 100 | 1.1961 ms (1196055.96 ns) | 1.5087 ms (1508711.25 ns) | 1.8443 ms (1844267.11 ns) |
+| `sanctum_search_filters/filter_memory_type` | 100 | 3.8375 ms (3837537.92 ns) | 4.1221 ms (4122067.69 ns) | 4.2680 ms (4268039.54 ns) |
+| `sanctum_search_filters/filter_importance` | 100 | 6.8661 ms (6866075.75 ns) | 7.6017 ms (7601689.38 ns) | 7.8598 ms (7859834.50 ns) |
+| `sanctum_search_filters/filter_combined` | 100 | 100.244 µs (100243.52 ns) | 124.529 µs (124529.03 ns) | 138.506 µs (138505.65 ns) |
+| `sanctum_update/update_single` | 100 | 3.528 µs (3527.91 ns) | 3.980 µs (3979.94 ns) | 4.105 µs (4105.07 ns) |
+| `sanctum_delete/delete_single` | 100 | 43.885 µs (43884.71 ns) | 58.233 µs (58233.06 ns) | 62.703 µs (62703.00 ns) |
+| `sanctum_count/count_all` | 100 | 48.10 ns (48.10 ns) | 57.27 ns (57.27 ns) | 60.68 ns (60.68 ns) |
+| `sanctum_count/count_with_filter` | 100 | 92.186 µs (92186.00 ns) | 108.739 µs (108738.90 ns) | 113.881 µs (113881.20 ns) |
+| `garrison/write/100` | 100 | 13.112 µs (13112.29 ns) | 15.337 µs (15336.59 ns) | 18.776 µs (18776.27 ns) |
+| `garrison/write/1000` | 100 | 127.907 µs (127906.86 ns) | 142.539 µs (142539.00 ns) | 152.373 µs (152373.10 ns) |
+| `garrison/write/10000` | 100 | 1.2539 ms (1253858.67 ns) | 1.4842 ms (1484174.33 ns) | 1.6815 ms (1681460.67 ns) |
+| `garrison/read_recent/100` | 100 | 3.869 µs (3868.91 ns) | 4.545 µs (4545.40 ns) | 4.821 µs (4820.50 ns) |
+| `garrison/read_recent/1000` | 100 | 4.046 µs (4045.81 ns) | 5.074 µs (5074.30 ns) | 5.451 µs (5451.25 ns) |
+| `garrison/read_recent/10000` | 100 | 4.031 µs (4031.19 ns) | 5.190 µs (5190.11 ns) | 6.212 µs (6212.07 ns) |
+| `llm/serialize_request` | 100 | 2.011 µs (2010.99 ns) | 2.624 µs (2624.39 ns) | 3.076 µs (3075.96 ns) |
+| `llm/deserialize_response` | 100 | 1.068 µs (1067.73 ns) | 1.461 µs (1460.83 ns) | 2.197 µs (2197.15 ns) |
+| `llm/response_roundtrip` | 100 | 2.186 µs (2185.90 ns) | 2.626 µs (2626.40 ns) | 2.874 µs (2874.37 ns) |
+
+No `sample.json` was missing for any of the five bench targets in this run, so no cell in this
+table is `not produced` and no degenerate `n = 1` case occurred — every cell above is a real
+nearest-rank derivation from `n = 50` or `n = 100` per-iteration samples.
 
 ### Not produced by this run
 
