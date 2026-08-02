@@ -255,7 +255,7 @@ by passing tests.*
 
 ### Quality gates (QUAL)
 
-- [ ] **QUAL-01**: `cargo llvm-cov` reports unit coverage at or above the gate recorded in
+- [x] **QUAL-01**: `cargo llvm-cov` reports unit coverage at or above the gate recorded in
       RECON-07, up from the 60.88% baseline. *Derives: REQ-test-coverage-target-v1 / -v2,
       REQ-unit-test-gap-closure (unit-test-improvements tasks 2.0, 6.0).*
 
@@ -3827,7 +3827,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | GAP-05 | Phase 2 | Complete |
 | GAP-06 | Phase 2 | Complete |
 | GAP-07 | Phase 2 | Complete |
-| QUAL-01 | Phase 3 | Pending |
+| QUAL-01 | Phase 3 | Complete |
 | QUAL-02 | Phase 3 | Pending |
 | QUAL-03 | Phase 3 | Pending |
 | QUAL-04 | Phase 3 | Pending |

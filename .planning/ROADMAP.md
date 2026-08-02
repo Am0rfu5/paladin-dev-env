@@ -281,7 +281,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Coverage re-measurement tracer: reproduce ADR-0006's pipeline end-to-end at HEAD, re-derive the zero-coverage set (wave 1)
+- [x] 03-01-PLAN.md — Coverage re-measurement tracer: reproduce ADR-0006's pipeline end-to-end at HEAD, re-derive the zero-coverage set (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
