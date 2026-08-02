@@ -103,12 +103,18 @@ impl MCPClient {
     /// headers, then performs the same full `initialize ->
     /// notifications/initialized` handshake (D-04) as [`Self::connect_stdio`]
     /// — just over a different transport. The entire connect+handshake is
-    /// wrapped in a bounded timeout (T-12.1-06).
+    /// wrapped in a bounded timeout (T-12.1-06), using the default
+    /// [`STREAMABLE_HTTP_HANDSHAKE_TIMEOUT`] bound.
     ///
     /// `bearer_token`, if provided, must NOT include a `"Bearer "` prefix —
     /// rmcp's `auth_header()` adds it internally via reqwest's
     /// `.bearer_auth()`. Passing an already-prefixed token double-prefixes
     /// and breaks auth (RESEARCH.md Anti-Patterns).
+    ///
+    /// This is a thin delegation to
+    /// [`Self::connect_streamable_http_with_timeout`] with the default bound;
+    /// see that method if a caller needs an explicit, shorter handshake
+    /// bound (e.g. tests).
     ///
     /// # Errors
     ///
@@ -139,9 +145,62 @@ impl MCPClient {
         bearer_token: Option<&str>,
         custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
     ) -> Result<Self, ArsenalError> {
+        Self::connect_streamable_http_with_timeout(
+            uri,
+            bearer_token,
+            custom_headers,
+            STREAMABLE_HTTP_HANDSHAKE_TIMEOUT,
+        )
+        .await
+    }
+
+    /// Same as [`Self::connect_streamable_http`], but with an explicit,
+    /// caller-supplied bound on the connect+handshake instead of the default
+    /// [`STREAMABLE_HTTP_HANDSHAKE_TIMEOUT`].
+    ///
+    /// This is the test seam for the handshake-timeout failure mode: the
+    /// default bound is 30 seconds and has no other way to be shortened, so a
+    /// caller (test or otherwise) that needs a tight bound — e.g. to prove a
+    /// never-responding server fails fast rather than hanging — passes a
+    /// short `handshake_timeout` here instead of waiting out the default.
+    /// [`Self::connect_streamable_http`] is the default-bound form for every
+    /// production caller and delegates to this method unchanged.
+    ///
+    /// # Errors
+    ///
+    /// - `ArsenalError::Timeout` if connect+handshake exceeds
+    ///   `handshake_timeout`.
+    /// - `ArsenalError::AuthFailed` if the server rejects the connection with
+    ///   an auth/credential-shaped error (401/403).
+    /// - `ArsenalError::ProtocolError`/`ArsenalError::TransportError` for any
+    ///   other handshake/transport fault.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use paladin::infrastructure::adapters::arsenal::mcp_protocol::MCPClient;
+    /// # use std::time::Duration;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let client = MCPClient::connect_streamable_http_with_timeout(
+    ///     "https://mcp.example.com/mcp",
+    ///     Some("my-bearer-token"),
+    ///     None,
+    ///     Duration::from_millis(200),
+    /// )
+    /// .await?;
+    /// let _ = client.server_capabilities();
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn connect_streamable_http_with_timeout(
+        uri: &str,
+        bearer_token: Option<&str>,
+        custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
+        handshake_timeout: Duration,
+    ) -> Result<Self, ArsenalError> {
         let config = build_streamable_http_config(uri, bearer_token, custom_headers);
 
-        let served = timeout(STREAMABLE_HTTP_HANDSHAKE_TIMEOUT, async {
+        let served = timeout(handshake_timeout, async {
             // `reqwest_mcp` is an aliased dependency on rmcp's OWN pinned
             // reqwest major version (0.13.x) — see Cargo.toml comment; this
             // crate's plain `reqwest` name is a different (0.12.x) instance
@@ -155,9 +214,7 @@ impl MCPClient {
         match served {
             Ok(Ok(running)) => Ok(Self { running }),
             Ok(Err(e)) => Err(map_streamable_http_connect_error(e)),
-            Err(_elapsed) => Err(ArsenalError::Timeout(
-                STREAMABLE_HTTP_HANDSHAKE_TIMEOUT.as_secs(),
-            )),
+            Err(_elapsed) => Err(ArsenalError::Timeout(handshake_timeout.as_secs())),
         }
     }
 
