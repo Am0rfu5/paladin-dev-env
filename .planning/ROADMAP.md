@@ -293,7 +293,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 03-07-PLAN.md — Exit re-measurement and QUAL-03 critical-path exerciser evidence (wave 3)
+- [x] 03-07-PLAN.md — Exit re-measurement and QUAL-03 critical-path exerciser evidence (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 

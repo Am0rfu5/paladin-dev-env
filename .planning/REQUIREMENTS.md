@@ -259,14 +259,14 @@ by passing tests.*
       RECON-07, up from the 60.88% baseline. *Derives: REQ-test-coverage-target-v1 / -v2,
       REQ-unit-test-gap-closure (unit-test-improvements tasks 2.0, 6.0).*
 
-- [ ] **QUAL-02**: No first-party source file reports 0% coverage. Known offenders:
+- [x] **QUAL-02**: No first-party source file reports 0% coverage. Known offenders:
       `arsenal_execution_service.rs` (0/46 lines), `arsenal_registry_service.rs` (0/28),
       `redis.rs`, `minio.rs`, `user_controller.rs`, `sqlite_user_repository.rs`, `main.rs`;
       plus the sub-15% files `campaign_service.rs` (4.26%), `chain_of_command_service.rs` (13.41%),
       `mcp_protocol.rs` (15.83%), `deepseek_adapter.rs` (15.02%).
       *Derives: REQ-unit-test-gap-closure; `unit-test-improvements/COVERAGE_ANALYSIS.md`.*
 
-- [ ] **QUAL-03**: Integration coverage of critical paths (Paladin execution, Battalion
+- [x] **QUAL-03**: Integration coverage of critical paths (Paladin execution, Battalion
       orchestration, tool invocation) is at or above 70%, up from the 67.79% baseline.
       *Derives: REQ-integration-testing.*
 
@@ -3828,8 +3828,8 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | GAP-06 | Phase 2 | Complete |
 | GAP-07 | Phase 2 | Complete |
 | QUAL-01 | Phase 3 | Complete |
-| QUAL-02 | Phase 3 | Pending |
-| QUAL-03 | Phase 3 | Pending |
+| QUAL-02 | Phase 3 | Complete |
+| QUAL-03 | Phase 3 | Complete |
 | QUAL-04 | Phase 3 | Complete |
 | QUAL-05 | Phase 3 | Complete |
 | REL-01 | Phase 4 | Pending |

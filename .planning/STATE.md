@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Verification Depth
 status: executing
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-08-02T16:31:49.888Z"
+stopped_at: Completed 03-07-PLAN.md
+last_updated: "2026-08-02T17:51:07.394Z"
 last_activity: 2026-08-02
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 31
-  completed_plans: 28
+  completed_plans: 29
 ---
 
 # Project State
@@ -30,7 +30,7 @@ provider, transport, or storage implementation.
 ## Current Position
 
 Phase: 3 (Verification Depth) — EXECUTING
-Plan: 7 of 8
+Plan: 8 of 8
 Status: Ready to execute
 Requirements coverage 8/8 RECON IDs; decision coverage 21/21 CONTEXT.md decisions.
 Last activity: 2026-08-02 — Phase 3 execution started
@@ -85,7 +85,7 @@ not be made by default**: FACADE-02's D2 (Phase 11) splits `user_service.rs` and
 (Phase 15) tests it — doing them independently means doing the work twice. See the Execution Order
 notes in `ROADMAP.md`.
 
-Progress: [█████████░] 90%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -122,6 +122,7 @@ Progress: [█████████░] 90%
 | Phase 03 P05 | ~25min | 2 tasks | 1 files |
 | Phase 03 P06 | ~20min | 2 tasks | 3 files |
 | Phase 03 P04 | 35min | 3 tasks | 3 files |
+| Phase 03 P07 | 14min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -312,6 +313,8 @@ Entering them here would fabricate authority the corpus does not contain.
 - [Phase ?]: Phase 3 Plan 04: sequential-only cargo bench execution (no concurrent measurement across targets) to avoid CPU-timing contamination; killed an accidentally-queued second bench process by exact PID after pkill self-matched its own invoking shell
 - [Phase ?]: Phase 3 Plan 04: P50/P95/P99 derived from criterion's internal SavedSample sample.json (times[i]/iters[i] per-iteration transform, nearest-rank round((n-1)*p), jq round() i.e. round-half-away-from-zero as the tie-break, verified against a real tied index) for all 39 sample.json files this run produced; 2026-05-27 run retained in place under a superseded callout with no cross-run delta computed
 - [Phase ?]: Phase 3 Plan 04: examples/muster_baseline.rs added as a new recorded harness for memory-per-Paladin (479 bytes, via /proc/self/status VmRSS delta across 1000 constructed Paladins) and startup time, since criterion produces neither metric family
+- [Phase ?]: Phase 3 Plan 07: exit coverage measurement at HEAD 1ad8be5 -- measured 85.92% workspace line coverage, PASS against 84.00% floor by 1.92pp (up from entry's 1.56pp); 4 of 5 entry zero-coverage files closed (redis.rs, file_storage_port.rs, paladin-llm/error.rs, arsenal_port.rs), src/bin/paladin-server.rs deferred to Phase 5/VERIFY-05; ratchet trigger not met (1.92pt < 2pt), ADR-0006 not amended
+- [Phase ?]: Phase 3 Plan 07: QUAL-03 critical-path exerciser evidence established at D-19 bar for all three paths (Paladin execution, Battalion orchestration, tool invocation) via 5 verified passing integration tests; percentage clause recorded superseded by ADR-0006 with zero coverage percentages introduced; amendment lands at source in plan 03-08
 
 ### Pending Todos
 
@@ -712,10 +715,10 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Completed 03-04-PLAN.md
+**Stopped at:** Completed 03-07-PLAN.md
 Ready to plan Phase 3.
 
-Last session: 2026-08-02T16:31:49.767Z
+Last session: 2026-08-02T17:51:07.358Z
 Resume file: None
 
 Prior session: 2026-07-31T19:27:35.303Z
