@@ -119,7 +119,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Ground Truth & Decision Records** - Verify the planning record against shipped v0.7.0 code and record one answer per competing variant pair (completed 2026-07-31)
 - [x] **Phase 2: Functional Gap Closure** - Finish the residual Milestone-1 functionality and apply the recorded definitions in code (completed 2026-08-01)
-- [ ] **Phase 3: Verification Depth** - Make coverage, error-path testing and performance baselines real and measured
+- [x] **Phase 3: Verification Depth** - Make coverage, error-path testing and performance baselines real and measured (completed 2026-08-02)
 - [ ] **Phase 4: Release Coherence** - One version, one edition, defensible dependencies, reviewed docs, green gate suite
 
 **Milestone 2-3 close-out**
@@ -588,7 +588,7 @@ through it. Recorded here so neither side gets planned twice:
 |-------|----------------|--------|-----------|
 | 1. Ground Truth & Decision Records | 11/12 | Complete    | 2026-07-31 |
 | 2. Functional Gap Closure | 11/11 | Complete    | 2026-08-01 |
-| 3. Verification Depth | 0/TBD | Not started | - |
+| 3. Verification Depth | 8/8 | Complete    | 2026-08-02 |
 | 4. Release Coherence | 0/TBD | Not started | - |
 | 5. Milestone 2-3 Ground Truth | 0/TBD | Not started | - |
 | 6. Verified Gap Closure | 0/TBD | Not started | - |
