@@ -1567,3 +1567,170 @@ impl RedisQueueAdapter {
         )
     }
 }
+
+// ---------------------------------------------------------------------------
+// Pure, connection-free tests -- these construct no RedisQueueAdapter and
+// require no Redis server or Docker. They exercise only the key-construction
+// and (de)serialization seams that Task 1 of this plan moved off `&self` so
+// they could be reached without a live `ConnectionManager`.
+//
+// The live-server code paths of this file (every trait method that reaches
+// through `self.conn`) remain uncovered here. They are exercised instead by
+// the testcontainers-based suite at
+// `tests/integration/redis_queue_integration_test.rs`, which requires
+// Docker. Docker is absent from this execution environment, so closing that
+// gap is deferred with reason: owner is Phase 15 (PIPE), which is where this
+// project's coverage-tooling and CI-hardening work is scoped.
+// ---------------------------------------------------------------------------
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use paladin_core::base::entity::message::Message;
+    use std::collections::HashSet;
+
+    /// Build a `RedisQueueConfig` for tests, overriding only `key_prefix` with a
+    /// synthetic literal. No field here is a real hostname, credential, or
+    /// connection string -- the module never opens a connection.
+    fn test_config() -> RedisQueueConfig {
+        RedisQueueConfig {
+            key_prefix: "test-prefix".to_string(),
+            ..RedisQueueConfig::default()
+        }
+    }
+
+    /// Build a synthetic `QueueItem<serde_json::Value>` for round-trip tests.
+    fn test_item(queue_name: &str, priority: MessagePriority) -> QueueItem<serde_json::Value> {
+        let message = Message::with_priority(
+            Location::service("test-source"),
+            Location::service("test-destination"),
+            serde_json::json!({"payload": "synthetic-fixture-value"}),
+            priority,
+        );
+        QueueItem::new(queue_name.to_string(), message, None)
+    }
+
+    #[test]
+    fn redis_queue_config_default_matches_documented_values() {
+        let config = RedisQueueConfig::default();
+
+        assert_eq!(config.redis_host, "localhost");
+        assert_eq!(config.redis_port, 6379);
+        assert_eq!(config.redis_password, None);
+        assert_eq!(config.redis_db, 0);
+        assert_eq!(config.connection_timeout, 30);
+        assert_eq!(config.key_prefix, "paladin:queue");
+        assert_eq!(config.max_retries, 3);
+    }
+
+    #[test]
+    fn queue_key_builds_expected_literal() {
+        let config = test_config();
+        assert_eq!(queue_key(&config, "orders"), "test-prefix:queue:orders");
+    }
+
+    #[test]
+    fn priority_queue_key_builds_expected_literal_for_each_variant() {
+        let config = test_config();
+        assert_eq!(
+            priority_queue_key(&config, "orders", MessagePriority::Critical),
+            "test-prefix:orders:critical"
+        );
+        assert_eq!(
+            priority_queue_key(&config, "orders", MessagePriority::High),
+            "test-prefix:orders:high"
+        );
+        assert_eq!(
+            priority_queue_key(&config, "orders", MessagePriority::Normal),
+            "test-prefix:orders:normal"
+        );
+        assert_eq!(
+            priority_queue_key(&config, "orders", MessagePriority::Low),
+            "test-prefix:orders:low"
+        );
+    }
+
+    #[test]
+    fn queue_meta_key_builds_expected_literal() {
+        let config = test_config();
+        assert_eq!(queue_meta_key(&config, "orders"), "test-prefix:meta:orders");
+    }
+
+    #[test]
+    fn processing_key_builds_expected_literal() {
+        let config = test_config();
+        assert_eq!(
+            processing_key(&config, "orders"),
+            "test-prefix:processing:orders"
+        );
+    }
+
+    #[test]
+    fn completed_key_builds_expected_literal() {
+        let config = test_config();
+        assert_eq!(
+            completed_key(&config, "orders"),
+            "test-prefix:completed:orders"
+        );
+    }
+
+    #[test]
+    fn failed_key_builds_expected_literal() {
+        let config = test_config();
+        assert_eq!(failed_key(&config, "orders"), "test-prefix:failed:orders");
+    }
+
+    #[test]
+    fn priority_queue_key_no_two_variants_collide() {
+        let config = test_config();
+        let keys: HashSet<String> = RedisQueueAdapter::get_priority_levels()
+            .into_iter()
+            .map(|priority| priority_queue_key(&config, "orders", priority))
+            .collect();
+
+        assert_eq!(
+            keys.len(),
+            RedisQueueAdapter::get_priority_levels().len(),
+            "expected one distinct key per MessagePriority variant, got: {keys:?}"
+        );
+    }
+
+    #[test]
+    fn serialize_then_deserialize_round_trips_identifying_fields() {
+        let item = test_item("original-queue", MessagePriority::High);
+        let item_id = item.id();
+        let message_id = item.message_id();
+
+        let serialized = serialize_item(&item, "retargeted-queue").expect("serialization failed");
+        let round_tripped = deserialize_item(&serialized).expect("deserialization failed");
+
+        assert_eq!(round_tripped.id(), item_id);
+        assert_eq!(round_tripped.message_id(), message_id);
+        // serialize_item stamps the passed-in queue name into the payload,
+        // overriding whatever queue_name the item carried when constructed.
+        assert_eq!(round_tripped.queue_name, "retargeted-queue");
+        assert_eq!(round_tripped.message.priority, MessagePriority::High);
+    }
+
+    #[test]
+    fn deserialize_item_on_invalid_json_returns_serialization_error_not_panic() {
+        let result = deserialize_item("not-valid-json{{{");
+
+        match result {
+            Err(QueueError::SerializationError(_)) => {}
+            other => panic!("expected Err(QueueError::SerializationError(_)), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn get_priority_levels_returns_documented_order() {
+        assert_eq!(
+            RedisQueueAdapter::get_priority_levels(),
+            vec![
+                MessagePriority::Critical,
+                MessagePriority::High,
+                MessagePriority::Normal,
+                MessagePriority::Low,
+            ]
+        );
+    }
+}
