@@ -22,6 +22,7 @@ pub mod cli_integration_test;
 pub mod cli_real_providers_test;
 #[cfg(feature = "cli")]
 pub mod cli_real_services_test;
+pub mod commander_error_paths_test;
 pub mod commander_integration_tests;
 pub mod context_injection_test;
 #[cfg(feature = "llm-deepseek")]

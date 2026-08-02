@@ -2173,40 +2173,9 @@ mod tests {
         assert_eq!(result.strategy_used, BattalionStrategy::Formation);
     }
 
-    // Error handling tests require proper mock setup to simulate Paladin failures
-    // These are marked as ignored and should be implemented as integration tests
-
-    #[tokio::test]
-    #[ignore] // TODO: Requires mock Paladin that can fail - move to integration tests
-    async fn test_fail_fast_stops_on_first_error() {
-        // Test that FailFast strategy stops on first Paladin error
-        // Verify that subsequent Paladins are not executed
-        // Verify that error is propagated immediately
-    }
-
-    #[tokio::test]
-    #[ignore] // TODO: Requires mock Paladin that can fail - move to integration tests
-    async fn test_continue_on_error_collects_all_errors() {
-        // Test that ContinueOnError executes all Paladins despite errors
-        // Verify that all errors are collected in the result
-        // Verify that partial results are still returned
-    }
-
-    #[tokio::test]
-    #[ignore] // TODO: Requires mock Paladin with retry logic - move to integration tests
-    async fn test_retry_then_continue_retries_failed_paladins() {
-        // Test that RetryThenContinue retries failed Paladins
-        // Verify retry_attempts from config is respected
-        // Verify that execution continues after retries exhausted
-    }
-
-    #[tokio::test]
-    #[ignore] // TODO: Requires mock Paladin that can partially fail - move to integration tests
-    async fn test_partial_results_returned_with_errors() {
-        // Test that successful Paladin results are preserved when others fail
-        // Verify that BattalionResult contains both successes and failures
-        // Verify metadata correctly tracks success/failure counts
-    }
+    // Commander error-path tests (fail-fast, continue-on-error, retry-then-continue,
+    // partial-results) now live in tests/integration/commander_error_paths_test.rs,
+    // driven by the shared FaultyPaladinPort mock in tests/helpers/mock_paladin_port.rs.
 
     #[tokio::test]
     async fn test_config_passthrough_to_services() {
