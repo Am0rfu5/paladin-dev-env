@@ -17,7 +17,8 @@
 //! lenient (RESEARCH.md Pitfall 2 / VALIDATION D-06 / threat T-12.1-09).
 
 use axum::Router;
-use axum::extract::Request;
+use axum::body::Bytes;
+use axum::extract::{Request, State};
 use axum::http::{StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
@@ -33,6 +34,7 @@ use rmcp::transport::streamable_http_server::{
 };
 use rmcp::{ErrorData as McpError, RoleServer, ServerHandler};
 use std::collections::HashMap;
+use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
 /// The ONLY bearer token the fixture server accepts. Any other value (or no
@@ -185,6 +187,136 @@ async fn spawn_fixture_server() -> (String, CancellationToken) {
     let router = Router::new()
         .nest_service("/mcp", service)
         .layer(middleware::from_fn(require_bearer_token));
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind an ephemeral localhost port");
+    let addr = listener.local_addr().expect("resolve bound local addr");
+
+    tokio::spawn({
+        let ct = ct.clone();
+        async move {
+            let _ = axum::serve(listener, router)
+                .with_graceful_shutdown(async move { ct.cancelled_owned().await })
+                .await;
+        }
+    });
+
+    (format!("http://{addr}/mcp"), ct)
+}
+
+/// Handles one raw JSON-RPC POST for [`spawn_malformed_fixture_server`]:
+/// valid `initialize`, an accepted `notifications/initialized`, and a
+/// deliberately truncated, unparseable body for anything else (including
+/// `tools/list`). A real `rmcp::ServerHandler` cannot produce a malformed
+/// response by construction (it always serializes through rmcp's own typed
+/// result enums), so this is a hand-rolled axum handler rather than an
+/// extension of `FixtureServer` (Research Pattern 3 / Architecture Patterns).
+async fn handle_malformed_request(body: Bytes) -> Response {
+    let request: serde_json::Value = match serde_json::from_slice(&body) {
+        Ok(value) => value,
+        Err(_) => return (StatusCode::BAD_REQUEST, "invalid JSON-RPC request").into_response(),
+    };
+    let method = request
+        .get("method")
+        .and_then(|m| m.as_str())
+        .unwrap_or_default();
+
+    match method {
+        "initialize" => {
+            let id = request
+                .get("id")
+                .cloned()
+                .unwrap_or(serde_json::Value::Null);
+            // Field shape cross-checked against rmcp-2.1.0's
+            // `model::InitializeResult` Serialize impl: `protocolVersion`,
+            // `capabilities`, `serverInfo` are the required fields;
+            // `protocolVersion` uses the same literal as
+            // `ProtocolVersion::LATEST` ("2025-11-25" in this pinned
+            // version). An empty `capabilities` object is valid -- every
+            // `ServerCapabilities` field is `Option`.
+            let response_body = serde_json::json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "result": {
+                    "protocolVersion": "2025-11-25",
+                    "capabilities": {},
+                    "serverInfo": {"name": "malformed-mcp-fixture", "version": "1.0.0"}
+                }
+            });
+            (
+                StatusCode::OK,
+                [(header::CONTENT_TYPE, "application/json")],
+                response_body.to_string(),
+            )
+                .into_response()
+        }
+        "notifications/initialized" => StatusCode::ACCEPTED.into_response(),
+        // Everything else -- including `tools/list` -- gets HTTP 200 with a
+        // deliberately truncated, unparseable body. Deliberately returned as
+        // a bare `String` (Content-Type: text/plain, axum's default) rather
+        // than labelled `application/json`: verified directly against the
+        // vendored rmcp-2.1.0 client source
+        // (`transport/common/reqwest/streamable_http_client.rs::post_message`),
+        // a 200 response body that fails to deserialize as
+        // `ServerJsonRpcMessage` is silently treated as an accepted no-op
+        // WHEN the response carries a `Content-Type: application/json`
+        // header -- which would make this fixture hang instead of failing
+        // loud. A non-JSON content type routes the same truncated body
+        // through rmcp's `UnexpectedContentType` error path instead, so the
+        // client fails immediately.
+        _ => (
+            StatusCode::OK,
+            "{\"jsonrpc\": \"2.0\", \"id\": 1, \"result\": {\"tools\": [ }TRUNCATED".to_string(),
+        )
+            .into_response(),
+    }
+}
+
+/// Spawns a deliberately non-spec-compliant server: a valid `initialize` +
+/// `notifications/initialized` handshake, then a truncated, unparseable
+/// response to `tools/list`. Returns its `/mcp` endpoint URI plus a
+/// `CancellationToken` the test uses to shut it down cleanly.
+async fn spawn_malformed_fixture_server() -> (String, CancellationToken) {
+    let ct = CancellationToken::new();
+    let router = Router::new().route("/mcp", axum::routing::post(handle_malformed_request));
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind an ephemeral localhost port");
+    let addr = listener.local_addr().expect("resolve bound local addr");
+
+    tokio::spawn({
+        let ct = ct.clone();
+        async move {
+            let _ = axum::serve(listener, router)
+                .with_graceful_shutdown(async move { ct.cancelled_owned().await })
+                .await;
+        }
+    });
+
+    (format!("http://{addr}/mcp"), ct)
+}
+
+/// Accepts the TCP connection and the HTTP request but never writes a
+/// response -- awaits the shared `CancellationToken` instead, so the handler
+/// task still exits cleanly (no leaked task) once the test cancels the token,
+/// rather than hanging forever. A real `rmcp::ServerHandler` cannot produce
+/// this by construction either (Research Pattern 3): rmcp's server transport
+/// always answers.
+async fn handle_silent_request(State(ct): State<CancellationToken>) -> impl IntoResponse {
+    ct.cancelled().await;
+    StatusCode::SERVICE_UNAVAILABLE
+}
+
+/// Spawns a server that accepts every request and never answers it. Returns
+/// its `/mcp` endpoint URI plus a `CancellationToken` the test uses to shut
+/// it down cleanly.
+async fn spawn_silent_fixture_server() -> (String, CancellationToken) {
+    let ct = CancellationToken::new();
+    let router = Router::new()
+        .route("/mcp", axum::routing::post(handle_silent_request))
+        .with_state(ct.clone());
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -390,6 +522,66 @@ async fn streamable_http_invoke_with_missing_message_argument_maps_to_error() {
         }
         Ok(value) => panic!("expected a non-string message to fail, but got: {value:?}"),
     }
+
+    ct.cancel();
+}
+
+/// Against a server that answers `initialize`/`notifications/initialized`
+/// validly and then returns a truncated, unparseable body for `tools/list`,
+/// `MCPClient::discover_tools` must return an `Err` -- not panic, hang, or
+/// return a partially-populated tool list.
+#[tokio::test]
+async fn streamable_http_malformed_tools_list_response_returns_error() {
+    let (uri, ct) = spawn_malformed_fixture_server().await;
+
+    let client = MCPClient::connect_streamable_http(&uri, None, None)
+        .await
+        .expect("handshake against the malformed fixture's valid initialize response must succeed");
+
+    let result = client.discover_tools().await;
+
+    match result {
+        Err(_) => {}
+        Ok(tools) => panic!(
+            "expected discover_tools to fail against a truncated tools/list response, got: {tools:?}"
+        ),
+    }
+
+    ct.cancel();
+}
+
+/// Against a server that accepts the connection and never answers,
+/// `MCPClient::connect_streamable_http_with_timeout` with a 200ms bound must
+/// return `Err(ArsenalError::Timeout(_))`, and the test's own wall clock
+/// stays well under one second -- proving the seam Task 1 added actually
+/// shortens the handshake bound rather than only being wired but unused
+/// (Pitfall 4: the timeout wraps real socket I/O, so tokio's paused
+/// virtual-time test mode would not help here and is not used).
+#[tokio::test]
+async fn streamable_http_handshake_timeout_returns_timeout_error() {
+    let (uri, ct) = spawn_silent_fixture_server().await;
+
+    let started = std::time::Instant::now();
+    let result = MCPClient::connect_streamable_http_with_timeout(
+        &uri,
+        None,
+        None,
+        Duration::from_millis(200),
+    )
+    .await;
+    let elapsed = started.elapsed();
+
+    match result {
+        Err(ArsenalError::Timeout(_)) => {}
+        Err(other) => panic!("expected ArsenalError::Timeout, got a different error: {other}"),
+        Ok(_) => {
+            panic!("expected the handshake to time out against a silent server, but it succeeded")
+        }
+    }
+    assert!(
+        elapsed < Duration::from_secs(1),
+        "handshake-timeout test took {elapsed:?}, expected well under 1s"
+    );
 
     ct.cancel();
 }
