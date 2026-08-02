@@ -270,7 +270,7 @@ by passing tests.*
       orchestration, tool invocation) is at or above 70%, up from the 67.79% baseline.
       *Derives: REQ-integration-testing.*
 
-- [ ] **QUAL-04**: Error-path tests run instead of being skipped — the `#[ignore]`d Commander
+- [x] **QUAL-04**: Error-path tests run instead of being skipped — the `#[ignore]`d Commander
       tests exercise real failure scenarios (retry count increments, partial-failure collection,
       timeout cascade), and MCP failure modes each have a passing test (expired/401 token,
       malformed response, handshake timeout, unknown tool, bad arguments). Four `#[ignore]`
@@ -3830,7 +3830,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | QUAL-01 | Phase 3 | Complete |
 | QUAL-02 | Phase 3 | Pending |
 | QUAL-03 | Phase 3 | Pending |
-| QUAL-04 | Phase 3 | Pending |
+| QUAL-04 | Phase 3 | Complete |
 | QUAL-05 | Phase 3 | Pending |
 | REL-01 | Phase 4 | Pending |
 | REL-02 | Phase 4 | Pending |

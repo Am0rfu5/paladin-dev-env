@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Verification Depth
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-08-02T14:50:40.413Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-08-02T15:07:01.489Z"
 last_activity: 2026-08-02
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 31
-  completed_plans: 23
+  completed_plans: 24
 ---
 
 # Project State
@@ -30,7 +30,7 @@ provider, transport, or storage implementation.
 ## Current Position
 
 Phase: 3 (Verification Depth) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 Status: Ready to execute
 Requirements coverage 8/8 RECON IDs; decision coverage 21/21 CONTEXT.md decisions.
 Last activity: 2026-08-02 — Phase 3 execution started
@@ -85,7 +85,7 @@ not be made by default**: FACADE-02's D2 (Phase 11) splits `user_service.rs` and
 (Phase 15) tests it — doing them independently means doing the work twice. See the Execution Order
 notes in `ROADMAP.md`.
 
-Progress: [███████░░░] 74%
+Progress: [████████░░] 77%
 
 ## Performance Metrics
 
@@ -117,6 +117,7 @@ Progress: [███████░░░] 74%
 | Phase 01 P10 | 20min | 2 tasks | 1 files |
 | Phase 01 P12 | 40min | 4 tasks | 4 files |
 | Phase 03 P01 | 16min | 2 tasks | 1 files |
+| Phase 3 P2 | 25min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -296,6 +297,8 @@ Entering them here would fabricate authority the corpus does not contain.
 - [Phase ?]: ADR-0006: coverage gate = 84% hard-fail floor (measured 84.79%, workspace default-feature scope, option-a); 80% target retired as superseded (deviation from D-09); Herald >=95%/autonomous >=90% preserved, handed to VERIFY-05
 - [Phase ?]: ADR-0006 wired into PROJECT.md/ROADMAP.md/REQUIREMENTS.md/ledger: 84% workspace coverage floor is the single binding number, 80% retired as superseded per D-09 deviation; RECON-07 satisfied gated on adr-parser.cjs
 - [Phase ?]: Phase 3 Plan 01: reproduced ADR-0006 coverage pipeline verbatim at HEAD bb35554d — measured 85.56% workspace line coverage, PASS against 84.00% floor by 1.56pp; zero-coverage set unchanged from Phase 1 (5 files); 9 of QUAL-02's 11 named offenders contradicted; ratchet trigger not met (1.56pt < 2pt), ADR-0006 not amended
+- [Phase ?]: FaultyPaladinPort's fail_until_attempt counter is global across every Paladin executed through one port instance, not per-Paladin — tests are designed around this shared-counter semantics
+- [Phase ?]: fail_paladin(name) is an additive, chainable builder method so a single FaultyPaladinPort instance can fail more than one named Paladin
 
 ### Pending Todos
 
@@ -696,10 +699,10 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Completed 03-01-PLAN.md
+**Stopped at:** Completed 03-02-PLAN.md
 Ready to plan Phase 3.
 
-Last session: 2026-08-02T14:50:40.377Z
+Last session: 2026-08-02T15:07:01.452Z
 Resume file: None
 
 Prior session: 2026-07-31T19:27:35.303Z
