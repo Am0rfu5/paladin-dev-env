@@ -266,9 +266,70 @@ by passing tests.*
       `mcp_protocol.rs` (15.83%), `deepseek_adapter.rs` (15.02%).
       *Derives: REQ-unit-test-gap-closure; `unit-test-improvements/COVERAGE_ANALYSIS.md`.*
 
+      **Amended 2026-08-02, plan 03-08, citing `03-coverage-measurement.md`.** The eleven-file
+      offender list above derives from the ingested pre-workspace
+      `unit-test-improvements/COVERAGE_ANALYSIS.md`, not from a measurement of the shipped tree. A
+      workspace-wide measurement of the shipped tree at HEAD `bb35554d` (entry) / `1ad8be5` (exit)
+      (`03-coverage-measurement.md`) contradicts nine of its eleven entries — each is retained above
+      verbatim and corrected here, claimed figure first, then measured line coverage:
+      `arsenal_execution_service.rs` claimed 0/46 lines (0%), measured **90.23%**
+      (`src/application/services/arsenal/arsenal_execution_service.rs`, 215 lines, 21 missed);
+      `arsenal_registry_service.rs` claimed 0/28 (0%), measured **100.00%**
+      (`src/application/services/arsenal/arsenal_registry_service.rs`, 59 lines, 0 missed);
+      `user_controller.rs` claimed 0% (implied), measured **72.59%**
+      (`crates/paladin-web/src/user_controller.rs`, 518 lines, 142 missed);
+      `sqlite_user_repository.rs` claimed 0% (implied), measured **87.72%**
+      (`crates/paladin-storage/src/sqlite_user_repository.rs`, 448 lines, 55 missed); `main.rs`
+      claimed 0% (implied), measured **41.38%** (`src/main.rs`, 29 lines, 17 missed);
+      `campaign_service.rs` claimed 4.26%, measured **80.00%**
+      (`crates/paladin-battalion/src/campaign_service.rs`, 180 lines, 36 missed);
+      `chain_of_command_service.rs` claimed 13.41%, measured **84.56%**
+      (`crates/paladin-battalion/src/chain_of_command_service.rs`, 259 lines, 40 missed);
+      `mcp_protocol.rs` claimed 15.83%, measured **95.65%**
+      (`src/infrastructure/adapters/arsenal/mcp_protocol.rs`, 253 lines, 11 missed);
+      `deepseek_adapter.rs` claimed 15.02%, measured **67.77%**
+      (`crates/paladin-llm/src/deepseek/adapter.rs`, 391 lines, 126 missed). `redis.rs` is the one
+      confirmed true positive — 0.00% at entry (`crates/paladin-storage/src/redis.rs`, 350/350
+      missed) — and is now **closed**: plan 03-05's Docker-free unit tests bring it to **34.69%** at
+      exit (441 lines, 288 missed); its live-server paths remain `deferred with reason`, owner
+      Phase 15 / PIPE. `minio.rs` never appears in this run's `llvm-cov report` output at all — the
+      `s3` feature that gates its compilation is not part of the workspace default-feature set
+      ADR-0006 measures under, so `minio.rs` is **outside ADR-0006's recorded scope**, not a 0% file;
+      owner **VERIFY-05 / PIPE-02**. Restated surviving substance against this re-derived set: nine
+      of the eleven originally named files now measure non-zero (figures above, all `satisfied` at
+      the D-19 bar via the workspace test suite); `redis.rs` is closed at 34.69% with its
+      live-server remainder `deferred with reason` (owner Phase 15 / PIPE); `minio.rs` is
+      `deferred with reason`, out of ADR-0006's scope, owner VERIFY-05 / PIPE-02.
+      `src/bin/paladin-server.rs` — not one of QUAL-02's originally named offenders, but part of the
+      same re-derived zero-coverage set — remains at 0.00% and is `deferred with reason`, owner
+      Phase 5 / VERIFY-05 (closing it needs a `run()` seam extracted from
+      `#[tokio::main] async fn main()`).
+
 - [x] **QUAL-03**: Integration coverage of critical paths (Paladin execution, Battalion
       orchestration, tool invocation) is at or above 70%, up from the 67.79% baseline.
       *Derives: REQ-integration-testing.*
+
+      **Amended 2026-08-02, plan 03-08, citing `03-critical-path-exercisers.md` and
+      [ADR-0006](.planning/decisions/0006-coverage-gate.md).** The clause "at or above 70%, up from
+      the 67.79% baseline" is **superseded by shipped code** — ADR-0006 abolished a second coverage
+      number under a second scope in favor of one workspace-wide line-coverage figure (QUAL-01);
+      ROADMAP criterion 1 was already amended by plan 01-12 to cite the ADR's single figure, while
+      this clause was not, until now. No coverage percentage is recorded for QUAL-03 in this
+      amendment, or in `03-coverage-measurement.md`'s exit section, or in any other artifact this
+      phase writes. Surviving substance: each of the three named critical paths has a named,
+      passing, non-`#[ignore]`d integration exerciser at the D-19 bar
+      (`01-CONTEXT.md` D-19: `file:line` citation **plus** a named passing exerciser), evidenced in
+      `03-critical-path-exercisers.md` — Paladin execution: `test_end_to_end_paladin_execution`
+      (`tests/integration/paladin_integration_test.rs:19`); Battalion orchestration:
+      `test_commander_executes_formation_end_to_end`
+      (`tests/integration/commander_integration_tests.rs:150`) and
+      `test_load_formation_50_concurrent_battalions`
+      (`tests/integration/battalion/load_test.rs:102`); tool invocation:
+      `function_call_dispatch_still_invokes_arsenal_exactly_once_with_matching_call`
+      (`tests/integration/arsenal_bridge_regression_test.rs:165`) and
+      `streamable_http_round_trip_with_correct_bearer_token_succeeds`
+      (`tests/integration/mcp_streamable_http_test.rs:342`). All three paths are `satisfied` at the
+      D-19 bar; none is `genuinely outstanding`.
 
 - [x] **QUAL-04**: Error-path tests run instead of being skipped — the `#[ignore]`d Commander
       tests exercise real failure scenarios (retry count increments, partial-failure collection,
