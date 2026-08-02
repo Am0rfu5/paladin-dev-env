@@ -279,13 +279,24 @@ Plans:
 **Plans**: 8 plans in 4 waves
 
 Plans:
+**Wave 1**
+
 - [ ] 03-01-PLAN.md — Coverage re-measurement tracer: reproduce ADR-0006's pipeline end-to-end at HEAD, re-derive the zero-coverage set (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 03-02-PLAN.md — `FaultyPaladinPort` and the four relocated Commander error-path tests (wave 2)
 - [ ] 03-03-PLAN.md — Five MCP failure modes plus the additive `connect_streamable_http_with_timeout` seam (wave 2)
 - [ ] 03-04-PLAN.md — Performance baseline: five bench targets, derived P50/P95/P99, memory and startup harness (wave 2)
 - [ ] 03-05-PLAN.md — `redis.rs` helper refactor then Docker-free unit tests (wave 2)
 - [ ] 03-06-PLAN.md — `paladin-ports` and `paladin-llm` zero-coverage closure (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 03-07-PLAN.md — Exit re-measurement and QUAL-03 critical-path exerciser evidence (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 03-08-PLAN.md — Amend QUAL-02, QUAL-03, ROADMAP criterion 2 and the ledger at source; human confirmation (wave 4)
 
 ### Phase 4: Release Coherence

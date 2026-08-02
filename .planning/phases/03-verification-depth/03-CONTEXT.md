@@ -158,8 +158,8 @@ Arsenal-invocation benchmark suites (see D-11).
 
 ### QUAL-04 — the error paths
 
-- **D-09: The four Commander tests move to integration, and the failing mock lands in
-  `tests/helpers/`.** The four tests at `crates/paladin-battalion/src/commander.rs:2180,2188,2196,2204`
+- **D-09: The four Commander tests move to integration; the failing mock lands in `tests/helpers/`.**
+  The four tests at `crates/paladin-battalion/src/commander.rs:2180,2188,2196,2204`
   are `#[ignore]`d with **completely empty bodies** — three comment lines each, no code (verified in
   this discussion). Their own TODO comments say `move to integration tests`. Phase 3 honours them:
   build a configurable `FaultyPaladinPort` in `tests/helpers/` and relocate the four tests to a new
@@ -209,8 +209,8 @@ Arsenal-invocation benchmark suites (see D-11).
 
 ### QUAL-05 — the performance baseline
 
-- **D-12: Run the five shipped bench targets; record the missing suites as gaps rather than building
-  them.** The tree ships exactly five bench targets, all declared and all present:
+- **D-12: Run the five shipped bench targets; record the missing suites as gaps, not built.**
+  The tree ships exactly five bench targets, all declared and all present:
   `benches/config_benchmarks.rs` (root), `crates/paladin-battalion/benches/battalion_benchmarks.rs`,
   `crates/paladin-memory/benches/{garrison,sanctum}_benchmarks.rs`, and
   `crates/paladin-llm/benches/llm_serialization_benchmarks.rs`. QUAL-05 additionally names the
@@ -226,8 +226,8 @@ Arsenal-invocation benchmark suites (see D-11).
   **Feasibility confirmed in this discussion:** `criterion 0.5.1` source is present in the local
   cargo registry, so `cargo bench --offline` builds despite crates.io returning 403.
 
-- **D-13: Memory-per-Paladin and startup time are measured by a small recorded harness, not by new
-  criterion suites.** QUAL-05 names four metric families. Criterion produces throughput and latency;
+- **D-13: Memory-per-Paladin and startup time come from a recorded harness, not new criterion suites.**
+  QUAL-05 names four metric families. Criterion produces throughput and latency;
   it produces neither memory-per-Paladin nor startup time. Rather than leave two of four blank or
   fabricate them, Phase 3 records them from a purpose-built, documented measurement (process RSS
   delta across a controlled number of constructed Paladins; wall-clock to a ready
@@ -253,8 +253,8 @@ Arsenal-invocation benchmark suites (see D-11).
 
 ### Measurement provenance — applies to every measurement in this phase
 
-- **D-16: Every recorded figure carries the Phase 1 provenance block, and every command carries
-  `--offline`.** `rustc -vV`, `cargo --version`, `git rev-parse HEAD`, `date -u`, plus CPU model,
+- **D-16: Every figure carries the Phase 1 provenance block; every command carries `--offline`.**
+  `rustc -vV`, `cargo --version`, `git rev-parse HEAD`, `date -u`, plus CPU model,
   core/thread count and kernel for the benchmark runs — captured immediately before the command,
   with raw stdout pasted, and arithmetic a reader can re-derive.
   `01-coverage-measurement.md` is the template; Phase 1's verifier called this the highest-value

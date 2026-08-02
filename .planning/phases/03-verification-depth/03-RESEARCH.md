@@ -779,7 +779,22 @@ against the 84% floor if one is ever produced.
 | A2 | The planner will choose Pattern 3 (extend the existing rmcp+axum fixture) over building a parallel `wiremock`-only harness for token-rejection/unknown-tool/bad-arguments | Architecture Patterns, Pattern 3 | MEDIUM — this is a recommendation, not a locked constraint; a `wiremock`-only approach is technically possible but was assessed as more work and less consistent with existing precedent. If the planner disagrees, the two pre-handshake modes (token, timeout) are the safer `wiremock` candidates regardless. |
 | A3 | Adding a timeout parameter/variant to `connect_streamable_http` (Pitfall 4, option 1) is an acceptable minimal source change for a "measurement phase" | Pitfall 4 | MEDIUM — CONTEXT.md's phase framing emphasizes measurement over construction; this is a small but real production-code change. If rejected, the handshake-timeout test either costs 30+ real seconds or becomes a `deferred with reason` ledger row — the planner/user should explicitly choose, since CONTEXT.md did not anticipate this decision point at all. |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> **Both questions were resolved at plan time (2026-08-02) and are recorded in plan `03-03-PLAN.md`
+> §"Recorded decisions this plan carries". Retained here unedited as the audit trail of what was
+> open when research completed.**
+>
+> - **Q1 — RESOLVED:** take Pitfall 4 option 1 — add an additive
+>   `connect_streamable_http_with_timeout` variant defaulting to the existing 30s constant, so the
+>   test passes ~200ms. Rated **`costly`, not `one-way`** (undo = delete the added method; no
+>   migration, no persisted schema, no breaking signature change), therefore flagged rather than
+>   gated — no `checkpoint:decision`.
+> - **Q2 — RESOLVED:** hand-rolled axum route for the malformed-response fixture, keeping
+>   `tests/integration/mcp_streamable_http_test.rs` internally consistent with the shipped hermetic
+>   rmcp+axum `FixtureServer`. `wiremock` is the recorded fallback only if hand-matching the
+>   `initialize` JSON-RPC response shape proves fragile. **This supersedes CONTEXT.md D-11's
+>   "driven by wiremock" framing**, which is recorded as superseded rather than silently diverged from.
 
 1. **Should the handshake-timeout test's 30-second cost (Pitfall 4) be paid, engineered around, or
    deferred?**
