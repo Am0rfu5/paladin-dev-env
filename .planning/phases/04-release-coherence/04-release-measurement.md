@@ -994,3 +994,301 @@ here by binary presence, not by a bulk invocation's exit code.
 / 4 declared targets / 0 crate-level `examples/` directories; every one of the 47 basenames has a
 built executable; the silent-skip hazard of a bulk-only build is stated and demonstrated rather
 than assumed.
+
+## Entry measurement — version convergence to 0.7.0
+
+**Checkpoint (Task 1) resolved by the human user, out of band, on 2026-08-03.** Presented with the
+plan's three options verbatim (`option-a` 0.7.0 / `option-b` 1.0.0 / `option-c` 0.6.1-or-block), the
+human selected **option-a — 0.7.0**, and separately confirmed the scope of execution as **local
+only**: bump the manifests, finalize `CHANGELOG.md`, and create the annotated tag `v0.7.0` locally,
+unpushed. No push or publish of any kind is authorized by this approval. This record proceeds
+directly to Task 2 without re-raising the decision.
+
+### Environment probes (verbatim)
+
+Command: `rustc -vV`
+
+```
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+binary: rustc
+commit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452
+commit-date: 2026-07-14
+host: x86_64-unknown-linux-gnu
+release: 1.97.1
+LLVM version: 22.1.6
+```
+
+Command: `cargo --version`
+
+```
+cargo 1.97.1 (c980f4866 2026-06-30)
+```
+
+Command: `git rev-parse HEAD` (base commit, before this plan's edits)
+
+```
+ed170c8d1034b4a9530ca911f08bc8d9d0620107
+```
+
+Command: `git rev-parse --abbrev-ref HEAD`
+
+```
+worktree-agent-a68dacf6e27e9f7f3
+```
+
+This is a parallel-executor worktree branch spawned by the orchestrator for phase
+04-release-coherence plan 05; its parent branch is `release/v0.7.0`, verified at the base commit
+above via the worktree's own startup assertion before any task ran (base commit matches the
+orchestrator-declared expected base exactly).
+
+Command: `git status --porcelain` (captured immediately before the version bump)
+
+```
+```
+
+Empty — clean tree, no uncommitted changes outside this session's own edits at task start.
+
+Command: `date -u`
+
+```
+2026-08-03T12:59:20Z
+```
+
+### Pre-flight check: cargo-release installed
+
+Command: `cargo release --version`
+
+```
+cargo-release 1.1.2
+```
+
+Confirms the environment matches `04-RESEARCH.md` Part A Q2's live finding — no re-installation
+needed.
+
+### The bump command actually run, and a deviation from the plan's literal text
+
+The plan's `<action>` specifies:
+`cargo release version 0.7.0 --execute --no-confirm --workspace --offline`
+
+Run verbatim first:
+
+```
+$ cargo release version 0.7.0 --execute --no-confirm --workspace --offline
+error: unexpected argument '--offline' found
+
+  tip: to pass '--offline' as a value, use '-- --offline'
+
+Usage: cargo release version --execute --no-confirm --workspace <LEVEL|VERSION>
+
+For more information, try '--help'.
+EXIT:2
+```
+
+**Deviation (Rule 3 — auto-fix blocking issue):** `cargo-release 1.1.2`'s `version` subcommand does
+not accept an `--offline` flag at all (confirmed via `cargo release version --help`, whose full
+flag list contains no `--offline`). This is a plan-authoring assumption that doesn't hold against
+the installed tool version — the `version` subcommand only rewrites manifest text; it performs no
+network operation of its own (no registry fetch, no crates.io call), so `--offline` was never a
+correctness requirement here, only an attempted (and rejected) safety belt. D-17's "every cargo
+invocation carries `--offline` unless it needs the advisory DB" principle is honored in spirit: this
+command needs neither the network nor `--offline`, because `cargo release version` performs no
+network-touching action. Re-ran without the flag:
+
+```bash
+$ cargo release version 0.7.0 --execute --no-confirm --workspace
+```
+
+```
+   Upgrading paladin-ai-core from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+    Updating paladin-battalion's dependency from 0.6.0 to 0.7.0
+    Updating paladin-content's dependency from 0.6.0 to 0.7.0
+    Updating paladin-doc-examples's dependency from 0.6.0 to 0.7.0
+    Updating paladin-herald's dependency from 0.6.0 to 0.7.0
+    Updating paladin-llm's dependency from 0.6.0 to 0.7.0
+    Updating paladin-memory's dependency from 0.6.0 to 0.7.0
+    Updating paladin-notifications's dependency from 0.6.0 to 0.7.0
+    Updating paladin-ports's dependency from =0.6.0 to =0.7.0
+    Updating paladin-storage's dependency from 0.6.0 to 0.7.0
+    Updating paladin-web's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-ports from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+    Updating paladin-battalion's dependency from 0.6.0 to 0.7.0
+    Updating paladin-content's dependency from 0.6.0 to 0.7.0
+    Updating paladin-doc-examples's dependency from 0.6.0 to 0.7.0
+    Updating paladin-herald's dependency from 0.6.0 to 0.7.0
+    Updating paladin-llm's dependency from 0.6.0 to 0.7.0
+    Updating paladin-memory's dependency from 0.6.0 to 0.7.0
+    Updating paladin-notifications's dependency from 0.6.0 to 0.7.0
+    Updating paladin-storage's dependency from 0.6.0 to 0.7.0
+    Updating paladin-web's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-battalion from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+    Updating paladin-doc-examples's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-llm from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+    Updating paladin-content's dependency from 0.6.0 to 0.7.0
+    Updating paladin-doc-examples's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-content from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+    Updating paladin-doc-examples's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-herald from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-memory from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-notifications from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-storage from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+    Updating paladin-doc-examples's dependency from 0.6.0 to 0.7.0
+    Updating paladin-doc-examples's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-web from 0.6.0 to 0.7.0
+    Updating workspace's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-ai from 0.6.0 to 0.7.0
+    Updating paladin-doc-examples's dependency from 0.6.0 to 0.7.0
+   Upgrading paladin-doc-examples from 0.6.0 to 0.7.0
+EXIT:0
+```
+
+No dirty-tree warning this run (unlike `04-RESEARCH.md` Part A Q2's dry-run session, which flagged
+`.planning/config.json` as modified) — the tree was fully clean at this session's start, verified
+above.
+
+### Verification greps (verbatim)
+
+Command: `grep -h '^version' Cargo.toml crates/*/Cargo.toml | sort -u`
+
+```
+version = "0.7.0"
+```
+
+Command: `grep -h '^version' Cargo.toml crates/*/Cargo.toml | sort -u | wc -l`
+
+```
+1
+```
+
+Command: `grep -h '^version' Cargo.toml crates/*/Cargo.toml | grep -c '0.7.0'`
+
+```
+12
+```
+
+Twelve manifests (root `Cargo.toml` plus eleven member crates including `crates/doc-examples`), all
+naming `0.7.0`, one distinct version string workspace-wide.
+
+Command: `grep -c 'version = "0.7.0", path = ' Cargo.toml`
+
+```
+11
+```
+
+Command: `grep -c 'version = "0.7.0"' Cargo.toml`
+
+```
+12
+```
+
+The ten internal `[workspace.dependencies]` path-pins plus `[package] version = "0.7.0"` and the
+`paladin-llm` non-workspace path-pin at `[dependencies]` — all eleven `path = ` internal pins in the
+root manifest plus the root package's own version line, twelve total occurrences of the literal
+string, exceeding the plan's "at least 9" / "at least 10" acceptance floor.
+
+Command: `grep -c '"=0.7.0"' crates/paladin-ports/Cargo.toml`
+
+```
+1
+```
+
+The one exact pin (`paladin-core = { package = "paladin-ai-core", version = "=0.7.0", ... }`) moved
+in lockstep.
+
+Command: `grep -c 'tiktoken-rs = { version = "0.6.0"' crates/paladin-memory/Cargo.toml`
+
+```
+1
+```
+
+Command: `grep -c 'tiktoken-rs = { version = "0.6.0"' crates/paladin-content/Cargo.toml`
+
+```
+0
+```
+
+**This is a whitespace formatting artifact, not a version drift.** `crates/paladin-content/Cargo.toml`
+aligns its dependency table with extra spaces (`tiktoken-rs   = { version = "0.6.0", ... }`, three
+spaces before `=`), so the plan's literal single-space grep pattern does not match the line's exact
+text even though the version requirement is unchanged. Confirmed with a whitespace-tolerant pattern:
+
+Command: `grep -c 'tiktoken-rs.*version = "0.6.0"' crates/paladin-content/Cargo.toml crates/paladin-memory/Cargo.toml`
+
+```
+crates/paladin-memory/Cargo.toml:1
+crates/paladin-content/Cargo.toml:1
+```
+
+Both external `tiktoken-rs` requirements are confirmed untouched at `0.6.0` — `cargo-release`
+correctly distinguished them from the internal pins, exactly as `04-RESEARCH.md` Part A Q2's dry-run
+predicted.
+
+### Build verification (verbatim, dependency-compile lines elided per the D-17 allowance)
+
+Command: `cargo build --workspace --offline`
+
+```
+   Compiling paladin-web v0.7.0 (.../crates/paladin-web)
+   Compiling paladin-battalion v0.7.0 (.../crates/paladin-battalion)
+   ...
+   Compiling paladin-notifications v0.7.0 (.../crates/paladin-notifications)
+   Compiling paladin-content v0.7.0 (.../crates/paladin-content)
+   ...
+   Compiling paladin-memory v0.7.0 (.../crates/paladin-memory)
+   Compiling paladin-storage v0.7.0 (.../crates/paladin-storage)
+   Compiling paladin-ai v0.7.0 (.../)
+   Compiling paladin-doc-examples v0.7.0 (.../crates/doc-examples)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4m 29s
+EXIT:0
+```
+
+Every crate name in the compile transcript now carries `v0.7.0`. Build exits `0` fully offline —
+the workspace resolves correctly with the new internal pins.
+
+### Scope check: no unintended files touched
+
+Command: `git status --porcelain`
+
+```
+ M Cargo.lock
+ M Cargo.toml
+ M crates/doc-examples/Cargo.toml
+ M crates/paladin-battalion/Cargo.toml
+ M crates/paladin-content/Cargo.toml
+ M crates/paladin-core/Cargo.toml
+ M crates/paladin-herald/Cargo.toml
+ M crates/paladin-llm/Cargo.toml
+ M crates/paladin-memory/Cargo.toml
+ M crates/paladin-notifications/Cargo.toml
+ M crates/paladin-ports/Cargo.toml
+ M crates/paladin-storage/Cargo.toml
+ M crates/paladin-web/Cargo.toml
+```
+
+Twelve manifests plus the lockfile (a necessary, mechanical consequence of the version bump —
+`Cargo.lock`'s own `paladin-*` package entries record each crate's version and are regenerated by
+the subsequent `cargo build`). No file outside the plan's declared `files_modified` scope changed.
+
+Command: `git diff --name-only | grep -c Makefile`
+
+```
+0
+```
+
+The Makefile was read (per `<read_first>`) and never modified or invoked — confirmed.
+
+**Task 2 summary:** all twelve manifests and every internal pin (ten `[workspace.dependencies]`
+entries plus the one exact pin in `paladin-ports`) converged on `0.7.0`; both external `tiktoken-rs`
+requirements remain untouched at `0.6.0`; the workspace builds offline with exit `0`; the one
+plan-authoring deviation (the `version` subcommand rejecting `--offline`, which it never needed) is
+recorded and resolved by omitting the flag rather than by any workaround that could mask a real
+network dependency.
