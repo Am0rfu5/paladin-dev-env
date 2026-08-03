@@ -177,6 +177,21 @@ resolution: |
 
   Safe because the tag is local and unpushed; no crates.io state was ever affected.
 
+  **Follow-up note (same day).** Two further commits landed after the tag was moved —
+  `729813a` (this UAT record + 04-VERIFICATION.md) and `fedaba2` (pre-commit whitespace
+  normalization in two planning docs). The tag is therefore again behind HEAD, but this
+  drift is **not** the defect above and must not be confused with it:
+
+  `git diff --stat v0.7.0..HEAD -- . ':(exclude).planning'` returns **empty** — the shipped
+  tree (crates, src, docs, .github, Cargo.toml, CHANGELOG.md) is byte-identical at the tag
+  and at HEAD. Everything after the tag is planning record *about* the release, produced
+  after it, which is where such records belong. The tag was deliberately left in place.
+
+  **The distinguishing check for any future reader**, and the one that should be run before
+  concluding a release tag has drifted: compare with `.planning/` excluded. Drift that
+  touches only `.planning/` is benign; drift that touches shipped content is the blocker
+  recorded above.
+
 <!-- Human-judgment checkpoints from `uat classify-coverage` (4 of 26) -->
 
 ### 24. CI examples job — first execution never run
