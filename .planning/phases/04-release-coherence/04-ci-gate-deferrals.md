@@ -164,3 +164,73 @@ action versions and file paths already resolvable in this repository, and has ne
 First execution — and the only event that can turn any of the six rows above from `deferred with
 reason` into `satisfied` — requires a CI runner with Docker (rows 1, 2, 5), `paladin-web` health
 endpoints (row 3), or the human-gated tag push (row 4, and by extension row 6's disposition).
+
+---
+
+## First real CI execution — 2026-08-03
+
+**Added by the phase orchestrator after `release/v0.7.0` was pushed to origin.** The user
+supplied a `GH_TOKEN`, so run results became readable for the first time; the deferral rows
+above were written when `gh` was unauthenticated and CI results were genuinely unknown.
+
+### What the push proved
+
+Run `30824230947` (`CI/CD Pipeline`, push, `release/v0.7.0`, 11m57s):
+
+- **The `release/**` push trigger fires.** This is REL-05's core repair, and it is now
+  proven by execution rather than by YAML inspection. Before this phase, `ci.yml`'s `push:`
+  trigger was commented out and a push to this branch ran nothing.
+- **`Unit Tests (stable)`, `Unit Tests (beta)` and `Integration Tests` all passed on clean
+  CI runners** — independent corroboration of plan 04-04's locally-measured suite, from
+  machines that are not this sandbox.
+- **`OSV Scanner` passed.**
+
+### What it did not prove — the three Phase 4 jobs were SKIPPED, not run
+
+`Example Muster (Feature Matrix)`, `Docker Build` and `Kubernetes Smoke Test` all show
+`skipped`: their `needs:` dependencies failed, so they never executed. **The deferral rows
+above are unchanged and remain accurate.** No Docker image was built, no image size or build
+time was measured, no kind cluster started, no pod-startup figure was taken.
+
+### The blocker, and why it is not this phase's regression
+
+14 jobs failed at `Install Rust toolchain` in 4-7 seconds each:
+
+```
+toolchain:
+'toolchain' is a required input
+##[error]Process completed with exit code 1.
+```
+
+`dtolnay/rust-toolchain` is referenced at the moving `@master` ref. Upstream made
+`toolchain` a required input sometime after this branch's last green run (2026-07-06); the
+repository's pinned-action hygiene did not catch it because the ref is not pinned.
+
+**Verified pre-existing, not introduced here.** At this phase's base commit `68ba809` there
+were **8** usages of `dtolnay/rust-toolchain@master` of which only **1** passed a
+`toolchain:` input — seven were already latent-broken. Phase 4 added exactly one line
+(`uses: dtolnay/rust-toolchain@master` in the new `examples` job, copying the convention of
+the analog jobs it was instructed to reuse) and modified **zero** existing toolchain steps.
+The next push to this branch was going to fail regardless of its content; Phase 4 was simply
+the first push since the upstream change.
+
+### The fix applied
+
+Eight input-less usages switched to the action's documented no-input form,
+`dtolnay/rust-toolchain@stable` (lines 29, 69, 89, 239, 336, 474, 782, 868). The one usage
+that already passes an explicit input — line 209, `toolchain: ${{ matrix.rust-version }}`,
+the stable/beta matrix, and **the only job of the fourteen that passed** — is deliberately
+left on `@master` and unmodified.
+
+`rust-toolchain.toml` continues to pin the effective toolchain at **1.97.1** and, by its own
+documented contract, overrides whatever version the action installs. The effective toolchain
+in CI is therefore unchanged by this fix; only the action's required-input error is resolved.
+
+### Still open after this fix
+
+- `API Surface Tracking` fails for an unrelated, pre-existing reason — **DEBT-01, Phase 8**.
+  It is not one of SC5's named gates and is not addressed here.
+- Pinning `dtolnay/rust-toolchain` to a commit SHA so this class of silent upstream drift
+  cannot recur was considered and **not** done: it would touch the one working job and
+  duplicate the version across nine places, against `rust-toolchain.toml`'s single-source-of-
+  truth contract. **Owner: Phase 15 / PIPE-04**, alongside the deprecated-actions sweep.
