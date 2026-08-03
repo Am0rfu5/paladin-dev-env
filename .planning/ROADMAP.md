@@ -312,7 +312,31 @@ Plans:
   4. A developer following QUICKSTART on a clean machine reaches a working agent, and the elapsed time is recorded against the documented under-15-minute target (measured for the first time, pass or fail).
   5. CI on the release branch proves the full gate suite: format, clippy with warnings as errors, workspace tests, doc tests, all 22 examples, the multi-arch Docker build inside its size and time budget, and the Kubernetes smoke test inside its startup budget.
 
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+
+**Wave 1** *(parallel — no shared files)*
+
+- [ ] 04-01-PLAN.md — Edition unification (tracer): bump `paladin-ports` and `paladin-notifications` to 2024, prove both build legs, create the measurement record (wave 1)
+- [ ] 04-02-PLAN.md — Advisory posture: remove the stale suppression, complete six migration/review notes, record the measured verdicts and four newly-surfaced advisories (wave 1)
+- [ ] 04-03-PLAN.md — CI repair: `release/**` push trigger, examples feature-matrix job, Docker size/time budgets, kind-based Kubernetes smoke job, deferral register (wave 1)
+
+**Wave 2** *(blocked on 04-01)*
+
+- [ ] 04-04-PLAN.md — Local gate suite proven and recorded; the "22 examples" figure re-derived and amended at source (wave 2)
+
+**Wave 3** *(blocked on 04-04 — the tag must land on a gate-green commit)*
+
+- [ ] 04-05-PLAN.md — Version convergence to 0.7.0: twelve manifests, every internal pin, CHANGELOG finalize, local unpushed tag, human release gate (wave 3)
+
+**Wave 4** *(blocked on 04-05)*
+
+- [ ] 04-06-PLAN.md — QUICKSTART structural repair and the first recorded timing measurement (wave 4)
+
+**Wave 5** *(blocked on all prior waves)*
+
+- [ ] 04-07-PLAN.md — ADR-0008 (version) and ADR-0009 (edition), the CONCERNS correction, Phase 7 requirement citations, and the REL-01..REL-05 ledger (wave 5)
 
 **Milestone 2-3 close-out — Phases 5-6 (not started)**
 
