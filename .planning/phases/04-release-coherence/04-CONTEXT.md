@@ -59,8 +59,8 @@ with a named owner rather than claiming it.
 
 ### Version convergence (REL-01, SC1)
 
-- **D-01: Phase 4 converges on `0.7.0`, and records the answer itself rather than waiting for
-  Phase 7.** The three-way disagreement is verified live: branch `release/v0.7.0`, root
+- **D-01:** Phase 4 converges on `0.7.0`, and records the answer itself rather than waiting for
+  Phase 7. The three-way disagreement is verified live: branch `release/v0.7.0`, root
   `Cargo.toml` and all eleven member manifests at `0.6.0`, latest tag `v0.5.1`. `0.7.0` is chosen
   because it is (a) the branch's own declared intent, (b) the next lockstep minor after the
   `M9 → 0.3.0 / M10 → 0.4.0 / M11 → 0.5.0 / M12 → 0.6.0` chain ORCH-05 records, and (c) **not an
@@ -82,14 +82,14 @@ with a named owner rather than claiming it.
   at a lockstep version on crates.io cannot be unpublished, only yanked. Reversible right up to
   that point, which is exactly why D-03 puts the push behind a human.
 
-- **D-02: An ADR records the version answer, so Phase 7's ARCH-04 and Phase 10's HARD-03 inherit it
-  rather than re-deciding it.** Every ADR in `.planning/decisions/` carries a `Code conformance`
+- **D-02:** An ADR records the version answer, so Phase 7's ARCH-04 and Phase 10's HARD-03 inherit it
+  rather than re-deciding it. Every ADR in `.planning/decisions/` carries a `Code conformance`
   field (`conforms` / `must change`); this one is `must change`, naming REL-01 as executor. Without
   the ADR, the answer sits at DOC precedence and the next document that mentions a version
   auto-overrides it — the precise failure mode PROJECT.md's "not one protected decision in twelve
   milestones" finding names. Number it as the next free ADR after `0007`.
 
-- **D-03: Phase 4 prepares the release; it does not push the tag or publish.** Concretely: bump all
+- **D-03:** Phase 4 prepares the release; it does not push the tag or publish. Concretely: bump all
   eleven manifests plus `[workspace.dependencies]` internal pins to `0.7.0`, finalize `CHANGELOG.md`
   (move `## [Unreleased]` under a new dated `## [0.7.0] - <date>` heading **and give the existing
   undated `## [0.6.0]` heading its date** — it is the only version heading in the file without
@@ -103,7 +103,7 @@ with a named owner rather than claiming it.
 
 ### Rust edition (REL-02, SC2)
 
-- **D-04: Standardize on `edition = "2024"` — bump the two stragglers, do not downgrade the nine.**
+- **D-04:** Standardize on `edition = "2024"` — bump the two stragglers, do not downgrade the nine.
   Verified live: the root `paladin-ai` package and nine crates declare `2024`; exactly
   `crates/paladin-ports` and `crates/paladin-notifications` declare `2021`. Moving two manifests
   forward is a two-line change against a 38-file surface; moving nine backward is a workspace-wide
@@ -111,8 +111,8 @@ with a named owner rather than claiming it.
   Chosen over standardizing on `2021` (which is what `codebase/CONCERNS.md:25` recommends — see
   D-05 for why that recommendation is void) and over leaving the split (SC2 forbids it).
 
-- **D-05: `codebase/CONCERNS.md`'s edition finding is factually wrong at the pinned toolchain and is
-  corrected at source with dated provenance.** It states (line 9) that `edition = "2024"` *"does not
+- **D-05:** `codebase/CONCERNS.md`'s edition finding is factually wrong at the pinned toolchain and is
+  corrected at source with dated provenance. It states (line 9) that `edition = "2024"` *"does not
   exist in Rust's stable channel. Rust only defines editions 2015, 2018, and 2021."* **Rust 2024
   stabilized in Rust 1.85; `rust-toolchain.toml` pins `1.97.1`** (verified: `rustc 1.97.1
   (8bab26f4f 2026-07-14)`), and the workspace builds under 2024 today. The map's "current build
@@ -121,8 +121,8 @@ with a named owner rather than claiming it.
   `.planning/codebase/` map), and the amendment follows the same in-place, dated convention Phase 1,
   2 and 3 used. **Do not plan an edition decision that cites the stale claim.**
 
-- **D-06: The edition answer is recorded as an ADR carrying ARCH-03(a)'s answer, and REL-02 applies
-  it in the same phase.** REL-02's text authorizes exactly this ("Whichever of Phase 4 / Phase 7
+- **D-06:** The edition answer is recorded as an ADR carrying ARCH-03(a)'s answer, and REL-02 applies
+  it in the same phase. REL-02's text authorizes exactly this ("Whichever of Phase 4 / Phase 7
   executes first records the answer, the other applies it"). The ADR must note that Milestone 5
   Epics 1-4 require 2021 while Epic 5 and the milestone overview require 2024 — neither the code
   nor the record was self-consistent — and that the documents are **amended**, not merely
@@ -135,8 +135,8 @@ with a named owner rather than claiming it.
 
 ### Advisory posture (REL-03, SC3) — what this phase owns
 
-- **D-07: SC3's first half is already true, and Phase 4's job is to *record it as measured*, not to
-  fix it.** Run live during this discussion at HEAD `68ba809`:
+- **D-07:** SC3's first half is already true, and Phase 4's job is to *record it as measured*, not to
+  fix it. Run live during this discussion at HEAD `68ba809`:
   - `cargo audit` → **0 vulnerabilities**; `warning: 13 allowed warnings found`; advisory DB fetched
     successfully from GitHub (1186 advisories loaded).
   - `cargo deny check` → **`advisories ok, bans ok, licenses ok, sources ok`**.
@@ -149,8 +149,8 @@ with a named owner rather than claiming it.
   dual `reqwest`) describes a *suppression inventory*, not a failing gate — the plan must not read
   it as five open defects.
 
-- **D-08: One stale suppression is removed; the duplicate CI audit job is measured, recorded, and
-  left to its owner.** Two concrete findings:
+- **D-08:** One stale suppression is removed; the duplicate CI audit job is measured, recorded, and
+  left to its owner. Two concrete findings:
   1. `cargo deny check` emits `warning[advisory-not-detected]` at `deny.toml:136` —
      **`RUSTSEC-2025-0121` (gcc) no longer matches any crate in the graph.** A suppression for an
      advisory that cannot fire is exactly the "silent suppression" SC3 forbids. Remove it, and check
@@ -162,8 +162,8 @@ with a named owner rather than claiming it.
      **SUPPLY-01 (Phase 12)**, which owns it and for which it makes a Milestone 10 acceptance
      criterion true.
 
-- **D-09: Four newly-surfaced advisories are recorded as a dated finding and handed to SEC-01 /
-  SUPPLY-02 — not suppressed here.** Surfaced by the current advisory DB and present in neither
+- **D-09:** Four newly-surfaced advisories are recorded as a dated finding and handed to SEC-01 /
+  SUPPLY-02 — not suppressed here. Surfaced by the current advisory DB and present in neither
   `.cargo/audit.toml` nor `deny.toml`: `RUSTSEC-2021-0145` (atty, unsound — distinct from the
   already-ignored `-2024-0375` unmaintained notice for the same crate), `RUSTSEC-2026-0221`
   (event-listener, unsound), `RUSTSEC-2026-0205` (scc, unsound), and `spin 0.9.8` **yanked**. None
@@ -180,8 +180,8 @@ with a named owner rather than claiming it.
 
 ### Documentation review and the QUICKSTART measurement (REL-04, SC4)
 
-- **D-10: REL-04's "documentation final review is complete per the RECON-08 answer" is already
-  discharged — do not invent the review.** RECON-08's recorded verdict
+- **D-10:** REL-04's "documentation final review is complete per the RECON-08 answer" is already
+  discharged — do not invent the review. RECON-08's recorded verdict
   (`.planning/ledgers/milestone-01.md` §"Epic 10 Task 7.0 — dispute resolution") is that **the
   validation report is wrong and no Task 7.0 exists**: the task list is 103/103 with no Task 7.0
   heading, independently corroborated by `intel/task-completion-state.md`, and no artifact anywhere
@@ -190,8 +190,8 @@ with a named owner rather than claiming it.
   Phase 4 cites that verdict and moves on. **The live half of REL-04 is the QUICKSTART measurement
   and nothing else.**
 
-- **D-11: The documented target is settled at 15 minutes, the tighter in-page claim is reconciled,
-  and the measurement is recorded pass or fail under stated conditions.** Two defects and one
+- **D-11:** The documented target is settled at 15 minutes, the tighter in-page claim is reconciled,
+  and the measurement is recorded pass or fail under stated conditions. Two defects and one
   constraint:
   1. **The target is contested inside the shipped docs.** `docs/src/introduction.md:9` says "in 15
      minutes"; `docs/src/getting-started/quickstart.md:3` says *"under five minutes"*. REL-04 and
@@ -211,13 +211,13 @@ with a named owner rather than claiming it.
 
 ### The gate suite (REL-05, SC5)
 
-- **D-12: Run locally everything that can run locally, and record each with the provenance block.**
+- **D-12:** Run locally everything that can run locally, and record each with the provenance block.
   In scope and confirmed feasible: `cargo fmt --check --all` (**verified clean at HEAD during this
   discussion**), `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`
   (Phase 2's verification recorded 2864 passed / 0 failed on this tree; re-run, do not cite),
   doc tests, and building **every example target**. Use `--offline` throughout, per Phase 3's D-16.
 
-- **D-13: The "22 examples" figure is stale; re-derive it from the tree and amend at source.**
+- **D-13:** The "22 examples" figure is stale; re-derive it from the tree and amend at source.
   Verified: `examples/` contains **47 `.rs` files** (4 declared as `[[example]]` targets for
   feature-gating, the rest auto-discovered); no crate under `crates/` has an `examples/` directory.
   The "22 examples" figure traces to a Milestone 1 Epic 10 validation report ("22/22 examples
@@ -226,7 +226,7 @@ with a named owner rather than claiming it.
   exactly — an ingested count losing to a measurement of the shipped tree. **Gate on "every example
   target builds", not on a count**, and amend the five restatements at source with dated provenance.
 
-- **D-14: CI cannot currently prove SC5 on the release branch, and repairing that is in scope.**
+- **D-14:** CI cannot currently prove SC5 on the release branch, and repairing that is in scope.
   Three verified configuration gaps, all of which make SC5 unprovable as written rather than merely
   unproven:
   1. **`ci.yml` has no `push` trigger** — line 9's `branches: [main, develop, 'feature/**']` is
@@ -248,8 +248,8 @@ with a named owner rather than claiming it.
   It is distinct from Phase 15's PIPE register, which owns the `cli-tests`, `bench-check` and
   `coverage` jobs, `.codecov.yml` and the deprecated-actions sweep — none of which is touched here.
 
-- **D-15: The Docker and Kubernetes gates are written, lint-verified, and then deferred with reason
-  — never claimed green.** `docker`, `kind` and `kubectl` are all **absent from this environment**
+- **D-15:** The Docker and Kubernetes gates are written, lint-verified, and then deferred with reason
+  — never claimed green. `docker`, `kind` and `kubectl` are all **absent from this environment**
   (verified), so the new jobs cannot be executed locally. Validate them statically (YAML parse,
   action-reference sanity, `Dockerfile` and `k8s/` manifest references resolve) and file a
   `deferred with reason` row: *"authored and statically validated; first execution requires a CI
@@ -257,16 +257,16 @@ with a named owner rather than claiming it.
   report SC5 as met on the strength of configuration alone.** This is the single largest honesty
   risk in the phase.
 
-- **D-16: `gh` is available and the remote is live — use it to *read* CI state, not to trigger
-  runs.** Verified: `gh 2.96.0`, remote `https://github.com/DF3NDR/paladin-dev-env.git`. Reading
+- **D-16:** `gh` is available and the remote is live — use it to *read* CI state, not to trigger
+  runs. Verified: `gh 2.96.0`, remote `https://github.com/DF3NDR/paladin-dev-env.git`. Reading
   workflow-run history for the release branch is legitimate evidence and cheaper than inference.
   Dispatching a workflow run, pushing a branch or opening a PR is an outward-facing action and
   stays behind the same human gate as D-03.
 
 ### Measurement provenance — applies to every measurement in this phase
 
-- **D-17: Every figure carries the Phase 1/Phase 3 provenance block, and every cargo command carries
-  `--offline` unless it needs the advisory DB.** `rustc -vV`, `cargo --version`,
+- **D-17:** Every figure carries the Phase 1/Phase 3 provenance block, and every cargo command carries
+  `--offline` unless it needs the advisory DB. `rustc -vV`, `cargo --version`,
   `git rev-parse HEAD`, `date -u`, plus raw pasted stdout and arithmetic a reader can re-derive.
   `01-coverage-measurement.md` and `03-coverage-measurement.md` are the templates. The exception is
   `cargo audit`, which must reach `github.com/RustSec/advisory-db` — record the DB's advisory count
