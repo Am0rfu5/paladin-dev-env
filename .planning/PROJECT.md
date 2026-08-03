@@ -1058,6 +1058,8 @@ corpus:
 | [Temperature validation](.planning/decisions/0004-temperature-validation.md) (ADR-0004) | Validation becomes provider-aware via a new `temperature_range: Option<(f32, f32)>` on `ProviderCapabilities`, falling back to the existing global `[0.0, 1.0]` when a provider declares none — making DeepSeek's documented `0.0–2.0` range reachable through the normal Paladin path for the first time. | must change (GAP-07 adds the field and each adapter populates it) |
 | [Herald trait signature](.planning/decisions/0005-herald-trait.md) (ADR-0005) | The shipped trait at `herald.rs:49` ships the v2 fallible form (`Result<String, HeraldError>` throughout except the deliberately infallible `format_error`), matching Epic 8 §6.2 and making FR-10's graceful-degradation requirement expressible. | conforms |
 | [Project-wide test coverage gate](.planning/decisions/0006-coverage-gate.md) (ADR-0006) | Measured **84.79%** workspace line coverage against commit `9be788c8e9c744ec3a6aad20b64110fb85925de4`, truncated to an **84%** hard-fail floor effective from the first run — freshly measured, not carried forward from a stale baseline. | must change (PIPE-02 wires the 84% floor into CI, Phase 15) |
+| [Workspace version is 0.7.0](.planning/decisions/0008-workspace-version-0-7-0.md) (ADR-0008) | The Milestone 6 facade change was breaking but already shipped inside the pre-1.0 series, so SemVer's pre-1.0 convention expresses it as a minor bump; `0.7.0` is the branch's own declared intent and the next lockstep figure in the ORCH-05 chain, confirmed by the human user 2026-08-03. | must change (REL-01 executes it in Phase 4; ARCH-04/Phase 7 and HARD-03/Phase 10 inherit it) |
+| [Workspace Rust edition is 2024](.planning/decisions/0009-workspace-rust-edition-2024.md) (ADR-0009) | Ten of twelve manifests already declared `edition = "2024"`; the toolchain (pinned `1.97.1`) has supported it since Rust 1.85, so the two stragglers (`paladin-ports`, `paladin-notifications`) were bumped forward rather than the other ten moved back. Closes `CONCERNS.md`'s false "does not exist in stable" claim. | must change (REL-02 executes it in Phase 4; ARCH-03(a)/Phase 7 inherits it) |
 
 Six competing-variant pairs are Phase 1's scope (`BattalionConfig`, `BattalionResult`, Formation
 minimum Paladin count, temperature validation, the Herald trait signature, and the coverage gate);
@@ -1092,6 +1094,13 @@ recorded answers), Phase 7 (six more), Phases 9-10 (the RustSec exception set, t
 the leaf-crate dependency rule, the PDF capability and the `cargo doc` bar), Phase 12 (the advisory
 governance schema and the ADR-promotion decision), Phase 13 (the two Milestone 12 seams) and
 Phase 14 (the token mechanism).
+
+**Phase 4 entered two protected decisions above** (ADR-0008, the workspace version; ADR-0009, the
+workspace Rust edition), ahead of the phases this paragraph originally forecast as their owners.
+REL-01/REL-02's own convention — "whichever of Phase 4 / Phase 7 executes first records the answer,
+the other applies it" — is why: Phase 4 runs before Phase 7 in the roadmap, so it recorded both
+answers itself rather than leaving them at DOC precedence for nine more phases. Phase 7's ARCH-04
+and ARCH-03(a) inherit these two rows instead of re-deciding them.
 
 **Eleven ADR candidates now exist, and none is entered here** — doing so would manufacture a locked
 decision from a DOC-precedence assertion. The two with a live operational cost come first, and they

@@ -6,7 +6,7 @@
 
 ### Edition 2024 in Project Manifests
 
-**Issue:** Multiple crates specify `edition = "2024"` in their `Cargo.toml` files, but this edition does not exist in Rust's stable channel. Rust only defines editions 2015, 2018, and 2021.
+**Issue:** Multiple crates specify `edition = "2024"` in their `Cargo.toml` files, but this edition does not exist in Rust's stable channel. Rust only defines editions 2015, 2018, and 2021. (**Amended by Phase 4, dated 2026-08-03, citing `.planning/decisions/0009-workspace-rust-edition-2024.md`**: this claim is factually wrong at this workspace's pinned toolchain. Rust 2024 stabilized in Rust 1.85; `rust-toolchain.toml` pins `channel = "1.97.1"`, verified live via `rustc -vV` → `rustc 1.97.1 (8bab26f4f 2026-07-14)`, twelve minor releases past the edition's stabilization point. Rust in fact defines five stable editions — 2015, 2018, 2021 and **2024** (this workspace's pinned toolchain also nightly-gates a sixth) — not three. The precedence order (ADR → shipped tree → this map) resolves the disagreement in the ADR's favor: this map's claim is superseded, not the toolchain.)
 
 **Files:**
 - `Cargo.toml` (root)
@@ -20,9 +20,9 @@
 - `crates/paladin-herald/Cargo.toml`
 - `crates/doc-examples/Cargo.toml`
 
-**Impact:** While current build succeeds (possibly via lenient parsing), this is brittle and may break with future Rust versions. Future tooling expecting valid edition values may fail. Some crates still use `edition = "2021"`, creating inconsistency.
+**Impact:** While current build succeeds (possibly via lenient parsing), this is brittle and may break with future Rust versions. Future tooling expecting valid edition values may fail. Some crates still use `edition = "2021"`, creating inconsistency. (**Amended by Phase 4, dated 2026-08-03, citing `.planning/decisions/0009-workspace-rust-edition-2024.md` and `04-release-measurement.md`**: the "possibly via lenient parsing" hypothesis is void — the build succeeds because `edition = "2024"` is a real, stable edition under the pinned `1.97.1` toolchain, not because Cargo is tolerating an invalid value. The "some crates still use 2021" inconsistency this Impact line flags is closed: `crates/paladin-ports` and `crates/paladin-notifications`, the two stragglers, were bumped to `edition = "2024"` by plan 04-01, and both required `cargo build --workspace [--offline] [--no-default-features]` legs are proven green. All twelve workspace manifests now agree on `2024`.)
 
-**Fix approach:** Standardize all crates to `edition = "2021"` (or wait for Rust 2024 edition to stabilize if intentional future-proofing). Make a deliberate, documented decision and execute consistently across the workspace.
+**Fix approach:** Standardize all crates to `edition = "2021"` (or wait for Rust 2024 edition to stabilize if intentional future-proofing). Make a deliberate, documented decision and execute consistently across the workspace. (**Amended by Phase 4, dated 2026-08-03, citing `.planning/decisions/0009-workspace-rust-edition-2024.md`**: this recommendation is void — it rests on the false "2024 does not exist in stable" premise corrected above, and the edition **had** already stabilized (Rust 1.85) by the time this concern was recorded. The deliberate, documented decision this Fix approach asked for has been made, in the opposite direction: standardize on `2024`, not `2021` — closing the split by moving the two 2021 stragglers forward rather than moving the other ten manifests backward. That split is now closed: the corpus's edition finding is now recorded as this ADR, not this map entry, which is superseded but preserved per the amend-at-source convention.)
 
 ### Excessive unwrap()/expect() in Service Code
 

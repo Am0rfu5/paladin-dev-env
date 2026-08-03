@@ -352,11 +352,11 @@ by passing tests.*
 
 ### Release coherence (REL)
 
-- [ ] **REL-01**: Version metadata agrees everywhere — workspace `Cargo.toml`, member crate
+- [x] **REL-01**: Version metadata agrees everywhere — workspace `Cargo.toml`, member crate
       versions, the git tag and the release notes tell one story. Current state: branch
       `release/v0.7.0`, `Cargo.toml` `0.6.0`, latest tag `v0.5.1`. *Derives: repo state.*
 
-- [ ] **REL-02**: Every workspace crate declares one consistent, valid Rust edition, and
+- [x] **REL-02**: Every workspace crate declares one consistent, valid Rust edition, and
       `cargo build --workspace` succeeds under it. **Exact state verified 2026-07-30:** the root
       `paladin-ai` package and nine crates — `paladin-core`, `paladin-battalion`, `paladin-herald`,
       `paladin-llm`, `paladin-memory`, `paladin-storage`, `paladin-content`, `paladin-web` and
@@ -372,13 +372,13 @@ by passing tests.*
       3 unfixed feature-gated advisories (lopdf, quick-xml ×2), 10 unmaintained-crate ignores, and
       a dual `reqwest` 0.12/0.13 exposure. *Derives: REQ-epic10-quality-gates; CONCERNS.md.*
 
-- [ ] **REL-04**: Documentation final review is complete per the RECON-08 answer, and a developer
+- [x] **REL-04**: Documentation final review is complete per the RECON-08 answer, and a developer
       following QUICKSTART on a clean machine reaches a working agent with the elapsed time
       recorded against the documented < 15-minute target. *Derives: REQ-user-documentation,
       REQ-api-documentation, REQ-architecture-documentation, REQ-operations-documentation,
       REQ-contribution-documentation.*
 
-- [ ] **REL-05**: The full gate suite passes in CI on the release branch: `cargo fmt --check`,
+- [x] **REL-05**: The full gate suite passes in CI on the release branch: `cargo fmt --check`,
       `cargo clippy -- -D warnings`, `cargo test --workspace`, doc tests, all 22 examples,
       multi-arch Docker build within the < 500 MB / < 5 min budget, and the kind-based Kubernetes
       smoke test within the < 30 s pod-startup budget. (**Amended by Phase 4, dated 2026-08-03,
@@ -558,7 +558,11 @@ shipped.
       code is accepted as the resolution. All four are settled *in code* — which is unusual for
       this corpus — but three of the four PRDs are unamended and would produce the wrong answer if
       applied literally to future work:
-      **(a) Rust edition** (group 17) — the answer feeds REL-02, which is the code fix;
+      **(a) Rust edition** (group 17) — the answer feeds REL-02, which is the code fix. (**Amended
+      by Phase 4, dated 2026-08-03, citing `.planning/decisions/0009-workspace-rust-edition-2024.md`**:
+      recorded and applied in the same phase — all twelve workspace manifests now declare
+      `edition = "2024"`, both required build legs proven green. This clause's remaining scope is
+      citing ADR-0009's answer, not deciding it.);
       **(b) `paladin-core` dependency allowlist** (group 18) — the allowlist is the enforcement
       mechanism for the whole hexagonal-purity argument (M5 Epic 1 FR-24, FR-25, SM-4), so leaving
       it wrong by eight crates makes it unenforceable as written; the same drift applies to
@@ -588,6 +592,11 @@ shipped.
       *Derives: REQ-orchestration-no-reexport-shims, REQ-circuitbreaker-old-path-retired,
       REQ-battalion-facade-shim (which took the opposite posture one milestone earlier);
       INGEST-CONFLICTS run-3 warning 7.*
+      (**Amended by Phase 4, dated 2026-08-03, citing `.planning/decisions/0008-workspace-version-0-7-0.md`**:
+      the major-version-bump question is answered — Milestone 6's facade change was breaking but
+      shipped inside the pre-1.0 series, so the workspace converges on `0.7.0`, a minor bump, not a
+      major one. This requirement's remaining scope — the facade re-export policy itself — is
+      untouched by Phase 4 and still applies here.)
 
 - [ ] **ARCH-05**: The five documented positions that shipped code contradicts are corrected at
       source, so no later work applies them literally. All five verified:
@@ -3900,11 +3909,11 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | QUAL-03 | Phase 3 | Complete |
 | QUAL-04 | Phase 3 | Complete |
 | QUAL-05 | Phase 3 | Complete |
-| REL-01 | Phase 4 | Pending |
-| REL-02 | Phase 4 | Pending |
+| REL-01 | Phase 4 | Complete |
+| REL-02 | Phase 4 | Complete |
 | REL-03 | Phase 4 | Complete |
-| REL-04 | Phase 4 | Pending |
-| REL-05 | Phase 4 | Pending |
+| REL-04 | Phase 4 | Complete |
+| REL-05 | Phase 4 | Complete |
 | VERIFY-01 | Phase 5 | Pending |
 | VERIFY-02 | Phase 5 | Pending |
 | VERIFY-03 | Phase 5 | Pending |
