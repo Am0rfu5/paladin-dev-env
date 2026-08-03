@@ -292,3 +292,61 @@ Not one of SC5's named gates.
 `docker/build-push-action@v6` and `docker/setup-qemu-action@v3` raised Node.js 20 deprecation
 annotations on this run. Not addressed here — **Owner: Phase 15 / PIPE-04**, with the
 deprecated-actions sweep.
+
+---
+
+## Docker budget disposition — decided 2026-08-03
+
+**Decided by the human user** after the 2946 s measurement, on the evidence below. No figure was
+relaxed to obtain a pass; the criterion's *scope* was corrected to match what it actually measures.
+
+### Evidence that settled it
+
+| Multi-arch build | Duration | Source |
+|---|---|---|
+| Release v0.4.2 | 48m 09s | run `26728527369` |
+| Release v0.4.3 | 47m 58s | run `26730162077` |
+| Release v0.5.0 | 41m 47s | run `26905942598` |
+| Release v0.5.1 ✅ | 44m 03s | run `26922470521` |
+| CI, first execution of this gate | **49m 43s** (2946 s asserted) | run `30833088746` |
+
+**The 300 s budget has never been met for a multi-arch build in this repository's history.** The
+figure derives from `PROJECT.md:767` — "112 MB built in 5m31s" — a **single-arch** Milestone 1
+measurement. `Dockerfile:33` runs `cargo build --release --workspace` with no `--target`, so buildx
+compiles the entire workspace once per platform and the `linux/arm64` pass runs under QEMU
+emulation, roughly an order of magnitude slower than native amd64.
+
+**Image size is 86 MB** (`Image size: 86 MB`, run `26922470521`, the last successful multi-arch
+build) — 5.8× inside the 500 MB budget. The size gate was never the problem; it simply never ran,
+because the time assertion aborted the job one step earlier.
+
+**Repo precedent:** `release.yml:206-220`, the pipeline that actually ships releases, treats image
+size as a `::warning::` and carries **no time budget at all**. Plan 04-03 authored `ci.yml` strictly
+harder than that on both axes. The asymmetry was the anomaly, not the 2946 s.
+
+### What was applied
+
+1. **Image size stays a HARD gate** at 500 MB (`exit 1`). Size is a property of the artifact, not of
+   the runner, and 04-03's hardening over `release.yml`'s warning is a genuine improvement. Kept.
+2. **Wall-clock became advisory** (`::warning::`, still printing the measured seconds). Under
+   emulation the figure measures the GitHub runner, not Paladin; a gate that has failed 5 of 5 times
+   across a year is not a quality signal.
+3. **SC5 and REL-05 amended at source** with dated provenance, scoping the "< 5 min" figure to
+   single-arch and citing all five runs above.
+
+### What was deliberately NOT done, and who owns it
+
+**The real fix is native arm64 runners.** This repository is **public**, so GitHub-hosted
+`ubuntu-24.04-arm` runners are free. Splitting the job into native `ubuntu-latest` (amd64) and
+`ubuntu-24.04-arm` (arm64) legs removes QEMU entirely and would very likely bring the build back
+into minutes — at which point a **hard, evidence-backed** time budget should be reinstated.
+That is a CI restructure belonging to **Phase 15 / PIPE**, not a coherence-phase edit.
+
+### Separate finding, not addressed here
+
+`Dockerfile:10` pins `rust:1.93-slim-bookworm` while `rust-toolchain.toml` pins **1.97.1** and
+declares itself "the single source of truth for the Rust version used by the devcontainer, CI, and
+every developer's host." The Docker image therefore builds Paladin with a different compiler than
+every other surface. It builds correctly (edition 2024 requires ≥ 1.85, and 1.93 satisfies it), so
+this is not urgent — but it is a genuine version-coherence defect, surfaced by this phase and
+recorded rather than silently fixed. **No owner assigned; nominate one when the row is triaged.**
