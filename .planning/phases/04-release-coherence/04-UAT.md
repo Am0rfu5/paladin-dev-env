@@ -155,7 +155,8 @@ expected: |
   The `v0.7.0` tag points at a commit whose test suite passes and whose QUICKSTART
   is the repaired one — i.e. a developer cloning the tag gets the release the phase
   claims to have produced.
-result: issue
+result: pass
+verdict: "Issue found and closed twice; expected behaviour re-verified true at 44cbc6e. The `reported`/`resolution` fields below preserve the full record of what was wrong and how it was fixed — this test passes on evidence, not by erasure."
 reported: "Orchestrator pre-check: tag v0.7.0 pointed at 648e7a4, 17 commits behind HEAD. At that commit crates/paladin-web/openapi.json still read 0.6.0 while its manifest read 0.7.0, so `cargo test --workspace` FAILED at the tag; and docs/src/getting-started/quickstart.md was still the un-repaired version citing paladin-ai-core 0.5.0 and the non-existent llm-openai feature. ADR-0008 and ADR-0009 were also absent. A developer cloning the tag would get a failing build and a broken quickstart — directly falsifying two clauses of the phase goal."
 severity: blocker
 status: resolved
@@ -192,6 +193,28 @@ resolution: |
   touches only `.planning/` is benign; drift that touches shipped content is the blocker
   recorded above.
 
+  **RECURRENCE — 2026-08-03, caught by the check above.** On re-running this test at
+  `/gsd-verify-work 4`, the distinguishing check **failed**: `git diff --name-only
+  v0.7.0..HEAD | grep -v '^\.planning/'` returned `.github/workflows/ci.yml` (58 insertions,
+  14 deletions). The tag at `35535d2` shipped the **pre-fix** CI configuration — zero
+  `dtolnay/rust-toolchain@stable` occurrences (so 14 jobs would fail on the required-input
+  error) and no `Load amd64 image for size measurement` step (so the size gate would fail with
+  "No such image"). A developer cloning the tag would have got a broken pipeline.
+
+  **Cause: the same one, not a new one.** The tag was placed while the phase was still
+  producing shipped changes. Four CI iterations landed `ci.yml` fixes afterwards, and each one
+  re-staled the tag. Moving it once was never going to be enough.
+
+  **The real lesson, recorded so it is not re-learned a third time:** a release tag must be
+  created **at seal time**, after the last shipped change — not at the point in the plan where
+  the version bump happens. Until a phase is sealed, any tag it creates is provisional and MUST
+  be re-checked against the distinguishing check immediately before any push.
+
+  Re-fixed by moving the tag to HEAD again. Re-verified at `44cbc6e`: 0 commits after the tag,
+  0 shipped-content drift, 8 `@stable` occurrences and 1 size-load step present in the tagged
+  `ci.yml`, and `git ls-remote --tags origin` still shows the tag absent from origin.
+
+
 <!-- Human-judgment checkpoints from `uat classify-coverage` (4 of 26) -->
 
 ### 24. CI examples job — first execution never run
@@ -201,7 +224,7 @@ expected: |
   invocation count, gated-example names present) — but never executed, because GitHub
   Actions cannot be triggered from this sandbox.
 result: pass
-reason: "User accepted the deferral — authored + statically validated is the correct disposition; first execution owned by Phase 15 / PIPE. Superseded in part by the branch push below, which lets CI execute this job for real."
+reason: "User accepted the deferral at the time. **Subsequently SUPERSEDED BY MEASUREMENT**: run 30842748080 executed `Example Muster (Feature Matrix)` on a real GitHub runner and it PASSED — all 47 example targets built via the four-invocation matrix, off this machine. No longer a deferral."
 
 ### 25. Docker multi-arch build and its 500 MB / 300 s budgets
 expected: |
@@ -210,7 +233,7 @@ expected: |
   PIPE. Note the 300 s gate is expected RED on first real execution: the only Docker
   figure in the corpus (PROJECT.md:767) is 5m31s single-arch, already over budget.
 result: pass
-reason: "User accepted the deferral. The 300 s budget is recorded as expected-RED on first execution; a red there is the measurement REL-05 has never taken, not a regression."
+reason: "User accepted the deferral at the time. **Subsequently SUPERSEDED BY MEASUREMENT**: after two defects were found and fixed (time budget derived from a single-arch figure; size assertion inspecting an image multi-arch never produces), run 30842748080 PASSED — image size **86 MB** vs the 500 MB budget, wall-clock 44 s warm / 2946 s cold. Both budgets measured."
 
 ### 26. Kubernetes smoke job and its 30 s pod-startup budget
 expected: |
@@ -220,21 +243,20 @@ expected: |
   measures container scheduling, not application readiness. Owners: Phase 15 / PIPE
   (first execution), Phase 14 / WEB (real probe wiring).
 result: pass
-reason: "User accepted the deferral. Owners confirmed: Phase 15 / PIPE for first execution, Phase 14 / WEB for real readiness-probe wiring."
+reason: "User accepted the deferral at the time. **Subsequently SUPERSEDED BY MEASUREMENT**: run 30842748080 executed `Kubernetes Smoke Test` and it PASSED — pod startup **6 s** vs the 30 s budget, kind control-plane ready in 14 s. **Caveat retained**: k8s/deployment.yaml still runs a placeholder `sleep 3600` with probes commented out, so 6 s measures container scheduling, not application readiness. Real probe wiring remains Phase 14 / WEB."
 
 ### 27. The tag/push/publish human gate
 expected: |
   The annotated tag `v0.7.0` exists locally and is absent from origin. The push+publish
   sequence is documented and unexecuted.
 result: pass
-reason: "User directed: push the BRANCH only, not the tag. release/v0.7.0 pushed to origin so CI exercises the examples/Docker/Kubernetes jobs for real. The tag stays local; crates.io is untouched, since release.yml fires on tag push only."
+reason: "User directed: push the BRANCH only, not the tag. Branch pushed (origin at 44cbc6e); CI exercised all three jobs for real across four runs. The tag remains local and absent from origin; crates.io untouched, since release.yml fires on tag push only. Note the tag was re-pointed at HEAD during this session — see test 23's recurrence note."
 
 ## Summary
 
 total: 27
-passed: 26
-issues: 1
-resolved: 1
+passed: 27
+issues: 0 open (1 found, 1 resolved — test 23, closed twice; see its verdict and resolution)
 pending: 0
 skipped: 0
 blocked: 0
@@ -253,5 +275,7 @@ blocked: 0
       issue: "pointed at 648e7a4 rather than the final phase commit"
   missing:
     - "Recreate the local annotated tag at HEAD once all content changes have landed"
-  resolved_by: "orchestrator, in-session"
+  resolved_by: "orchestrator, in-session (twice — see recurrence note on test 23)"
   resolved_at: 2026-08-03
+  recurrence: "Re-detected 2026-08-03 during /gsd-verify-work by the documented exclude-.planning check; ci.yml had changed since the tag across four CI-fix iterations. Re-fixed at 44cbc6e. Root lesson recorded: a release tag must be created at SEAL time, after the last shipped change."
+  verified_at: "44cbc6e — 0 commits after tag, 0 shipped-content drift, tag absent from origin"
