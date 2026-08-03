@@ -343,7 +343,7 @@ Plans:
 
 **Wave 5** *(blocked on all prior waves)*
 
-- [ ] 04-07-PLAN.md — ADR-0008 (version) and ADR-0009 (edition), the CONCERNS correction, Phase 7 requirement citations, and the REL-01..REL-05 ledger (wave 5)
+- [x] 04-07-PLAN.md — ADR-0008 (version) and ADR-0009 (edition), the CONCERNS correction, Phase 7 requirement citations, and the REL-01..REL-05 ledger (wave 5)
 
 **Milestone 2-3 close-out — Phases 5-6 (not started)**
 
