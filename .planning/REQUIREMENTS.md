@@ -558,7 +558,11 @@ shipped.
       code is accepted as the resolution. All four are settled *in code* — which is unusual for
       this corpus — but three of the four PRDs are unamended and would produce the wrong answer if
       applied literally to future work:
-      **(a) Rust edition** (group 17) — the answer feeds REL-02, which is the code fix;
+      **(a) Rust edition** (group 17) — the answer feeds REL-02, which is the code fix. (**Amended
+      by Phase 4, dated 2026-08-03, citing `.planning/decisions/0009-workspace-rust-edition-2024.md`**:
+      recorded and applied in the same phase — all twelve workspace manifests now declare
+      `edition = "2024"`, both required build legs proven green. This clause's remaining scope is
+      citing ADR-0009's answer, not deciding it.);
       **(b) `paladin-core` dependency allowlist** (group 18) — the allowlist is the enforcement
       mechanism for the whole hexagonal-purity argument (M5 Epic 1 FR-24, FR-25, SM-4), so leaving
       it wrong by eight crates makes it unenforceable as written; the same drift applies to
@@ -588,6 +592,11 @@ shipped.
       *Derives: REQ-orchestration-no-reexport-shims, REQ-circuitbreaker-old-path-retired,
       REQ-battalion-facade-shim (which took the opposite posture one milestone earlier);
       INGEST-CONFLICTS run-3 warning 7.*
+      (**Amended by Phase 4, dated 2026-08-03, citing `.planning/decisions/0008-workspace-version-0-7-0.md`**:
+      the major-version-bump question is answered — Milestone 6's facade change was breaking but
+      shipped inside the pre-1.0 series, so the workspace converges on `0.7.0`, a minor bump, not a
+      major one. This requirement's remaining scope — the facade re-export policy itself — is
+      untouched by Phase 4 and still applies here.)
 
 - [ ] **ARCH-05**: The five documented positions that shipped code contradicts are corrected at
       source, so no later work applies them literally. All five verified:
