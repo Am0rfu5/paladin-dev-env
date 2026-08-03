@@ -1,6 +1,6 @@
 # Quickstart
 
-Get a Paladin agent running in under five minutes.
+Get a Paladin agent running in under 15 minutes.
 
 ## Prerequisites
 
