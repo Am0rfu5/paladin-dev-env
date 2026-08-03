@@ -335,7 +335,7 @@ Plans:
 
 **Wave 3** *(blocked on 04-04 — the tag must land on a gate-green commit)*
 
-- [ ] 04-05-PLAN.md — Version convergence to 0.7.0: twelve manifests, every internal pin, CHANGELOG finalize, local unpushed tag, human release gate (wave 3)
+- [x] 04-05-PLAN.md — Version convergence to 0.7.0: twelve manifests, every internal pin, CHANGELOG finalize, local unpushed tag, human release gate (wave 3)
 
 **Wave 4** *(blocked on 04-05)*
 
