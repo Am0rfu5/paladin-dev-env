@@ -339,7 +339,7 @@ Plans:
 
 **Wave 4** *(blocked on 04-05)*
 
-- [ ] 04-06-PLAN.md — QUICKSTART structural repair and the first recorded timing measurement (wave 4)
+- [x] 04-06-PLAN.md — QUICKSTART structural repair and the first recorded timing measurement (wave 4)
 
 **Wave 5** *(blocked on all prior waves)*
 
