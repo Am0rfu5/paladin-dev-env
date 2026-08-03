@@ -212,3 +212,8 @@ None - no external service configuration required.
 ---
 *Phase: 04-release-coherence*
 *Completed: 2026-08-03*
+
+## Self-Check: PASSED
+
+All claimed files found on disk (`04-06-SUMMARY.md`) and all three commit hashes (`6813725`,
+`76709c4`, `36fd198`) found in `git log --oneline --all`.
