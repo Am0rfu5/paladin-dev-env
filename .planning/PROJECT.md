@@ -20,7 +20,13 @@ The product **already works**. It is a brownfield project at v0.7.0 with a Cargo
 `paladin-llm`, `paladin-memory`, `paladin-storage`, `paladin-notifications`, `paladin-content`,
 `paladin-web`) plus a `doc-examples` crate and the root facade package `paladin-ai`, 22 runnable
 examples, an HTTP API with OpenAPI and SSE streaming, a `paladin-server` binary, a multi-arch
-Docker image and reference Kubernetes manifests.
+Docker image and reference Kubernetes manifests. (**Amended by Phase 4, dated 2026-08-03, citing
+`04-release-measurement.md`**: "22 runnable examples" traces to a Milestone 1 Epic 10 validation
+report ("22/22 examples compiling") and is stale — the shipped tree carries **47** `.rs` files
+under `examples/`, 4 of them declared `[[example]]` targets gating on non-default features
+(`vision`, `content-processing`, `web-server`); no crate under `crates/` ships its own
+`examples/` directory. The shipped tree outranks an ingested count under this project's precedence
+order. The gate REL-05 now expresses is "every example target builds", not a count.)
 
 ## What This Planning Corpus Is
 
@@ -134,7 +140,11 @@ and the codebase map):
   API keys, validation and exit codes, output formatting, interactive prompts (Epic 9)
 - ✓ Validation and documentation — integration test infrastructure, rustdoc and doc tests,
   24 user/technical docs, 22 examples, multi-arch Docker, Kubernetes manifests, GitHub Actions
-  release and integration workflows (Epic 10)
+  release and integration workflows (Epic 10) (**Amended by Phase 4, dated 2026-08-03, citing
+  `04-release-measurement.md`**: "22 examples" restates the same Milestone 1 Epic 10 validation
+  report amended above and in the Overview; the shipped tree carries 47 `.rs` files under
+  `examples/`, 4 declared `[[example]]` targets, 0 crate-level `examples/` directories. See the
+  Overview amendment for the full figure and precedence-order rationale.)
 
 **Milestones 2-3 — the capability build-out and its completion** (component-level file evidence in
 the tree, verified by direct inspection on `release/v0.7.0`; per-criterion confirmation is Phase 5):
@@ -765,7 +775,14 @@ cross-references. Fixing this at the source is VERIFY-03.
 failures (706 unit, 385 integration, 133 doc); `cargo fmt --check` clean; `cargo clippy -- -D
 warnings` at 0 warnings after fixing 102 across 48 files; unit coverage 60.88%, integration 67.79%;
 2 medium transitive advisories; 22/22 examples compiling; Docker image 112 MB built in 5m31s; all
-benchmarks disabled. Milestone 3 release notes report ~78% overall coverage, Battalion
+benchmarks disabled. (**Provenance note added by Phase 4, dated 2026-08-03, citing
+`04-release-measurement.md`**: this "22/22 examples compiling" line is the historical origin of
+the "22 examples" figure restated elsewhere in this document, in `ROADMAP.md` and in
+`REQUIREMENTS.md` — all four of those restatements are amended at source with the same date. This
+line itself is **not** corrected: it is Milestone 1's own dated measurement of the tree as it
+existed on 2026-01-27, and a historical measurement is not stale merely because the tree has since
+grown to 47 example files. Phase 4's re-derivation measures the *current* shipped tree, not this
+one.) Milestone 3 release notes report ~78% overall coverage, Battalion
 orchestration overhead < 10 ms for 100+ concurrent battalions, Garrison queries < 50 ms on a
 1,000-entry store, and Herald formatting at 0.0095 ms for a 10 KB result. Reported test totals
 across the corpus (999 → 1,292 → 1,674 → 1,628 → 853) are not monotonic and none is treated as

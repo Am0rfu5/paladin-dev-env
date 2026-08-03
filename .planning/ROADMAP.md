@@ -5,7 +5,14 @@
 **Paladin already works.** It ships at v0.7.0 with a Cargo workspace of ten library crates plus a
 `doc-examples` crate and the root `paladin-ai` facade, 22 runnable examples, an HTTP API with
 OpenAPI and SSE streaming, a `paladin-server` binary, a 112 MB multi-arch Docker image and
-reference Kubernetes manifests.
+reference Kubernetes manifests. (**Amended by Phase 4, dated 2026-08-03, citing
+`04-release-measurement.md`**: the "22 runnable examples" figure traces to a Milestone 1 Epic 10
+validation report ("22/22 examples compiling") and has since gone stale — the shipped tree carries
+**47** `.rs` files under `examples/`, of which four are declared `[[example]]` targets gating on
+non-default features (`vision`, `content-processing`, `web-server`); no crate under `crates/` ships
+its own `examples/` directory. The shipped tree outranks an ingested count under this project's
+precedence order. Going forward the gate REL-05 and ROADMAP criterion 5 express is "every example
+target builds", not a count, so this figure cannot go stale the same way again.)
 
 **This planning corpus is a historical record of twelve shipped milestones plus a verified-defect
 and deferred-work forward scope. It is not a greenfield plan.** Across the 263 documents in
@@ -310,7 +317,7 @@ Plans:
   2. Every workspace crate declares the same valid Rust edition and `cargo build --workspace` succeeds under it, ending the `edition = "2024"` / `"2021"` split.
   3. `cargo audit` and `cargo deny` report no high or critical advisories, and every ignored advisory carries a written rationale plus a migration or review note — no silent suppressions.
   4. A developer following QUICKSTART on a clean machine reaches a working agent, and the elapsed time is recorded against the documented under-15-minute target (measured for the first time, pass or fail).
-  5. CI on the release branch proves the full gate suite: format, clippy with warnings as errors, workspace tests, doc tests, all 22 examples, the multi-arch Docker build inside its size and time budget, and the Kubernetes smoke test inside its startup budget.
+  5. CI on the release branch proves the full gate suite: format, clippy with warnings as errors, workspace tests, doc tests, all 22 examples, the multi-arch Docker build inside its size and time budget, and the Kubernetes smoke test inside its startup budget. (**Amended by Phase 4, dated 2026-08-03, citing `04-release-measurement.md`**: "all 22 examples" is stale — the same Milestone 1 Epic 10 validation-report figure amended in the Overview above. The shipped tree carries 47 `.rs` files under `examples/`, 4 declared `[[example]]` targets gating on non-default features, 0 crate-level `examples/` directories. This criterion's own gate is corrected to "every example target builds" — a property proven by a 4-invocation feature matrix plus a binary-presence assertion, not a count restated from an ingested report.)
 
 **Plans**: 7 plans
 
