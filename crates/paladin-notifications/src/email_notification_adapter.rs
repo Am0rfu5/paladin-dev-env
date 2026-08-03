@@ -20,9 +20,9 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use handlebars::Handlebars;
 use lettre::{
-    message::{header::ContentType, Attachment, MultiPart, SinglePart},
-    transport::smtp::authentication::Credentials,
     Message, SmtpTransport, Transport,
+    message::{Attachment, MultiPart, SinglePart, header::ContentType},
+    transport::smtp::authentication::Credentials,
 };
 use paladin_ports::output::notification_port::{
     BasicNotificationPort, DeliveryCapabilities, Notification, NotificationChannel,
