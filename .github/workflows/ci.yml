@@ -482,6 +482,19 @@ jobs:
         run: cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111
 
   # Build and test Docker images
+  #
+  # AUTHORED AND STATICALLY VALIDATED ONLY — docker is absent from the
+  # environment that authored this job (verified 2026-08-02). It has never
+  # been executed. See .planning/phases/04-release-coherence/04-ci-gate-deferrals.md
+  # for the deferral record; do not read a green run of this file as proof
+  # these two budgets have ever been met.
+  #
+  # The 500 MB size budget has enormous headroom against the corpus's only
+  # measurement (112 MB, PROJECT.md:767). The 300 s time budget has none: the
+  # same measurement records 5m31s for a SINGLE-ARCH build, and this job adds
+  # linux/arm64 via QEMU emulation on top. This gate is expected to be red on
+  # its first real execution, and that red is the measurement REL-05 has never
+  # taken — do not soften it to a warning to make it look achievable.
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
@@ -490,8 +503,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+
+      - name: Record build start time
+        id: build_start
+        run: echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
 
       - name: Build Docker image
         uses: docker/build-push-action@v6
@@ -500,14 +520,159 @@ jobs:
           file: Dockerfile
           push: false
           tags: paladin:test
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Assert build wall-clock budget (<= 300s)
+        run: |
+          START=${{ steps.build_start.outputs.start }}
+          END=$(date +%s)
+          ELAPSED=$((END - START))
+          echo "Docker build wall-clock time: ${ELAPSED}s"
+          if [ "$ELAPSED" -gt 300 ]; then
+            echo "::error::Docker multi-arch build took ${ELAPSED}s, exceeding the 300s budget"
+            exit 1
+          fi
+
+      - name: Assert image size budget (<= 500 MB)
+        run: |
+          # push: false means there is no registry image to pull — inspect the
+          # locally built tag directly.
+          SIZE=$(docker image inspect paladin:test --format='{{.Size}}')
+          SIZE_MB=$((SIZE / 1024 / 1024))
+          echo "Image size: ${SIZE_MB} MB"
+          if [ "$SIZE_MB" -gt 500 ]; then
+            echo "::error::Image size (${SIZE_MB} MB) exceeds the 500 MB budget"
+            exit 1
+          fi
 
       - name: Test Docker Compose
         run: |
           cp .env.example .env
           docker compose -f docker/docker-compose.yml -f docker/docker-compose.test.yml config
           echo "Docker Compose configuration validated"
+
+  # Kubernetes smoke test via kind — reuses integration-tests.yml's working
+  # kubernetes-smoke-test job shape rather than reinventing it.
+  #
+  # AUTHORED AND STATICALLY VALIDATED ONLY — kind and kubectl are absent from
+  # the environment that authored this job (verified 2026-08-02). It has never
+  # been executed. See
+  # .planning/phases/04-release-coherence/04-ci-gate-deferrals.md.
+  #
+  # Caveat carried over from the source job: k8s/deployment.yaml:66-68 runs a
+  # placeholder `sleep 3600` command with all three probes (liveness/readiness/
+  # startup, k8s/deployment.yaml:137-174) commented out pending paladin-web
+  # health endpoints. This budget therefore measures container scheduling, not
+  # application readiness. The job still proves the kind/kubectl orchestration
+  # and the manifest set apply cleanly, which is what this gate asks for; real
+  # readiness-probe wiring is Phase 14 / WEB's.
+  kubernetes-smoke:
+    name: Kubernetes Smoke Test
+    runs-on: ubuntu-latest
+    needs: [docker]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up kind (Kubernetes in Docker)
+        uses: helm/kind-action@v1
+        with:
+          version: v0.20.0
+          cluster_name: paladin-test
+
+      - name: Verify cluster
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Create namespace
+        run: kubectl create namespace paladin
+
+      - name: Create secret (with dummy values)
+        run: |
+          kubectl create secret generic paladin-secrets \
+            --from-literal=OPENAI_API_KEY=dummy \
+            --from-literal=DEEPSEEK_API_KEY=dummy \
+            --from-literal=ANTHROPIC_API_KEY=dummy \
+            --from-literal=MINIO_ROOT_USER=minioadmin \
+            --from-literal=MINIO_ROOT_PASSWORD=minioadmin \
+            --from-literal=MINIO_ACCESS_KEY=paladin \
+            --from-literal=MINIO_SECRET_KEY=paladin-secret \
+            -n paladin
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/redis.yaml
+          kubectl apply -f k8s/minio.yaml
+          sleep 20
+
+      - name: Wait for dependencies
+        run: |
+          kubectl wait --for=condition=ready pod -l app=redis -n paladin --timeout=120s
+          kubectl wait --for=condition=ready pod -l app=minio -n paladin --timeout=120s
+
+      - name: Build and load Docker image
+        run: |
+          docker build -t paladin:test .
+          kind load docker-image paladin:test --name paladin-test
+
+      - name: Deploy Paladin
+        run: |
+          # Use test image tag
+          sed 's/paladin:latest/paladin:test/g' k8s/deployment.yaml | kubectl apply -f -
+          kubectl apply -f k8s/service.yaml
+
+      - name: Wait for Paladin pods
+        run: |
+          # Improvement over the copied source job: the source's `|| true` lets
+          # a timeout pass silently. A pod that never becomes ready must fail
+          # this smoke test.
+          kubectl wait --for=condition=ready pod -l app=paladin -n paladin --timeout=180s
+          kubectl get pods -n paladin
+
+      - name: Check pod status
+        run: |
+          kubectl get pods -n paladin
+          kubectl describe pods -n paladin
+          kubectl logs -l app=paladin -n paladin --tail=100 || true
+
+      - name: Verify startup time (<= 30s)
+        run: |
+          START_TIME=$(kubectl get pod -l app=paladin -n paladin -o jsonpath='{.items[0].status.startTime}')
+          READY_TIME=$(kubectl get pod -l app=paladin -n paladin -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].lastTransitionTime}')
+          # Improvement over the copied source job: the source only checks the
+          # startup budget when both timestamps are non-empty, so an unreadable
+          # timestamp silently passes a check that measured nothing. Invert it:
+          # an empty timestamp is a hard failure.
+          if [ -z "$START_TIME" ] || [ -z "$READY_TIME" ]; then
+            echo "::error::Could not read pod start/ready timestamps (START_TIME='${START_TIME}' READY_TIME='${READY_TIME}')"
+            exit 1
+          fi
+          START_EPOCH=$(date -d "$START_TIME" +%s)
+          READY_EPOCH=$(date -d "$READY_TIME" +%s)
+          STARTUP_TIME=$((READY_EPOCH - START_EPOCH))
+          echo "Startup time: ${STARTUP_TIME} seconds"
+          if [ "$STARTUP_TIME" -gt 30 ]; then
+            echo "::error::Startup time (${STARTUP_TIME}s) exceeds the 30 second budget"
+            exit 1
+          fi
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          echo "=== Paladin Pods ==="
+          kubectl get pods -n paladin
+          echo "=== Paladin Logs ==="
+          kubectl logs -l app=paladin -n paladin --tail=200 || true
+          echo "=== Redis Logs ==="
+          kubectl logs -l app=redis -n paladin --tail=100 || true
+          echo "=== MinIO Logs ==="
+          kubectl logs -l app=minio -n paladin --tail=100 || true
+          echo "=== Events ==="
+          kubectl get events -n paladin --sort-by='.lastTimestamp'
 
   # End-to-end tests with full Docker stack
   e2e-tests:
