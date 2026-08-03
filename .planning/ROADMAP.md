@@ -318,9 +318,9 @@ Plans:
 
 **Wave 1** *(parallel — no shared files)*
 
-- [ ] 04-01-PLAN.md — Edition unification (tracer): bump `paladin-ports` and `paladin-notifications` to 2024, prove both build legs, create the measurement record (wave 1)
-- [ ] 04-02-PLAN.md — Advisory posture: remove the stale suppression, complete six migration/review notes, record the measured verdicts and four newly-surfaced advisories (wave 1)
-- [ ] 04-03-PLAN.md — CI repair: `release/**` push trigger, examples feature-matrix job, Docker size/time budgets, kind-based Kubernetes smoke job, deferral register (wave 1)
+- [x] 04-01-PLAN.md — Edition unification (tracer): bump `paladin-ports` and `paladin-notifications` to 2024, prove both build legs, create the measurement record (wave 1)
+- [x] 04-02-PLAN.md — Advisory posture: remove the stale suppression, complete six migration/review notes, record the measured verdicts and four newly-surfaced advisories (wave 1)
+- [x] 04-03-PLAN.md — CI repair: `release/**` push trigger, examples feature-matrix job, Docker size/time budgets, kind-based Kubernetes smoke job, deferral register (wave 1)
 
 **Wave 2** *(blocked on 04-01)*
 
