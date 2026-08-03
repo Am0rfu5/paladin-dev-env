@@ -127,14 +127,13 @@ ignore = [
     # (Epic 2 FR 6). All are transitive with no drop-in maintained replacement
     # available without an upstream dependency upgrade. Revisit when the
     # respective parent crates upgrade.
-    "RUSTSEC-2021-0139", # ansi_term (unmaintained) — transitive
+    "RUSTSEC-2021-0139", # ansi_term (unmaintained) — transitive via clap 2.x/structopt; revisit when structopt migrates to clap-derive
     "RUSTSEC-2021-0141", # dotenv (unmaintained) — replace with dotenvy later
-    "RUSTSEC-2024-0370", # proc-macro-error (unmaintained) — via structopt
-    "RUSTSEC-2024-0375", # atty (unmaintained) — transitive
-    "RUSTSEC-2025-0057", # fxhash (unmaintained) — transitive
-    "RUSTSEC-2025-0119", # number_prefix (unmaintained) — transitive
-    "RUSTSEC-2025-0121", # gcc (unmaintained) — transitive build dep
-    "RUSTSEC-2025-0134", # rustls-pemfile (unmaintained) — via tonic/testcontainers
+    "RUSTSEC-2024-0370", # proc-macro-error (unmaintained) — via structopt; revisit when structopt migrates to clap-derive
+    "RUSTSEC-2024-0375", # atty (unmaintained) — transitive via clap 2.x/structopt; revisit when structopt migrates to clap-derive
+    "RUSTSEC-2025-0057", # fxhash (unmaintained) — transitive via selectors/scraper (paladin-content); revisit when scraper upgrades selectors
+    "RUSTSEC-2025-0119", # number_prefix (unmaintained) — transitive via indicatif; revisit when indicatif drops number_prefix
+    "RUSTSEC-2025-0134", # rustls-pemfile (unmaintained) — via tonic/testcontainers; revisit when tonic/testcontainers upgrades rustls-pemfile
     "RUSTSEC-2024-0436", # paste (unmaintained) — transitive via utoipa (M12 E6); no drop-in replacement upstream
     "RUSTSEC-2022-0104", # structopt (maintenance mode) — CLI arg parsing; migrate to clap-derive later
 
@@ -143,7 +142,7 @@ ignore = [
     # anyhow 1.0.103 / RUSTSEC-2026-0190). These three have no clean upstream fix:
     "RUSTSEC-2026-0187", # lopdf stack-overflow — via pdf-extract (optional content-processing); fix needs pdf-extract >=0.12 (breaking + adds a new advisory)
     "RUSTSEC-2026-0194", # quick-xml quadratic attr parsing — remaining <0.41 instance via rust-s3/aws-creds (optional s3); no rust-s3 with quick-xml>=0.41 yet
-    "RUSTSEC-2026-0195", # quick-xml namespace-alloc DoS — same rust-s3 path
+    "RUSTSEC-2026-0195", # quick-xml namespace-alloc DoS — same rust-s3 path; revisit when rust-s3 bumps quick-xml
 ]
 
 # ---------------------------------------------------------------------------
