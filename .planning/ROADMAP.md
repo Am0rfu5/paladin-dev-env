@@ -181,7 +181,7 @@ Plans:
 
 - [x] 01-02-PLAN.md — ADR-0001 `BattalionConfig` and ADR-0002 `BattalionResult`
 - [x] 01-03-PLAN.md — ADR-0003 Formation minimum Paladin count and ADR-0004 temperature validation
-- [ ] 01-04-PLAN.md — Measure workspace coverage and record ADR-0006, the coverage gate *(halted at its own precondition: `cargo-llvm-cov` not installable, crates.io HTTP 403, no Docker — superseded by gap-closure plans 01-09 and 01-10, which use an offline measurement path)*
+- [x] 01-04-PLAN.md — Measure workspace coverage and record ADR-0006, the coverage gate *(**superseded, not executed**: halted at its own precondition — `cargo-llvm-cov` not installable, crates.io HTTP 403, no Docker. Scope delivered by gap-closure plans 01-09 and 01-10 via an offline measurement path. Closed out 2026-08-03; disposition recorded in [01-04-SUMMARY.md](phases/01-ground-truth-decision-records/01-04-SUMMARY.md))*
 - [x] 01-05-PLAN.md — Ledger divergences, the Epic 10 Task 7.0 verdict, and the ingest-bookkeeping corrections
 
 **Wave 3** *(blocked on Wave 2 completion)*
