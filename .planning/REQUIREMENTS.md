@@ -366,7 +366,7 @@ by passing tests.*
       Whichever of Phase 4 / Phase 7 executes first records the answer, the other applies it.
       *Derives: `codebase/CONCERNS.md` tech debt; REQ-workspace-crate-edition-v1 / -v2 (run 3).*
 
-- [ ] **REL-03**: `cargo audit` and `cargo deny` report no high/critical advisories, and every
+- [x] **REL-03**: `cargo audit` and `cargo deny` report no high/critical advisories, and every
       ignored advisory in `deny.toml` carries a written rationale plus a migration or review note.
       Current: 2 medium transitive advisories (RUSTSEC-2023-0071 rsa, RUSTSEC-2025-0111 tokio-tar),
       3 unfixed feature-gated advisories (lopdf, quick-xml ×2), 10 unmaintained-crate ignores, and
@@ -3895,7 +3895,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | QUAL-05 | Phase 3 | Complete |
 | REL-01 | Phase 4 | Pending |
 | REL-02 | Phase 4 | Pending |
-| REL-03 | Phase 4 | Pending |
+| REL-03 | Phase 4 | Complete |
 | REL-04 | Phase 4 | Pending |
 | REL-05 | Phase 4 | Pending |
 | VERIFY-01 | Phase 5 | Pending |
