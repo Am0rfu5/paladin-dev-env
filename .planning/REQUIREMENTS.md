@@ -352,11 +352,11 @@ by passing tests.*
 
 ### Release coherence (REL)
 
-- [ ] **REL-01**: Version metadata agrees everywhere — workspace `Cargo.toml`, member crate
+- [x] **REL-01**: Version metadata agrees everywhere — workspace `Cargo.toml`, member crate
       versions, the git tag and the release notes tell one story. Current state: branch
       `release/v0.7.0`, `Cargo.toml` `0.6.0`, latest tag `v0.5.1`. *Derives: repo state.*
 
-- [ ] **REL-02**: Every workspace crate declares one consistent, valid Rust edition, and
+- [x] **REL-02**: Every workspace crate declares one consistent, valid Rust edition, and
       `cargo build --workspace` succeeds under it. **Exact state verified 2026-07-30:** the root
       `paladin-ai` package and nine crates — `paladin-core`, `paladin-battalion`, `paladin-herald`,
       `paladin-llm`, `paladin-memory`, `paladin-storage`, `paladin-content`, `paladin-web` and
@@ -372,13 +372,13 @@ by passing tests.*
       3 unfixed feature-gated advisories (lopdf, quick-xml ×2), 10 unmaintained-crate ignores, and
       a dual `reqwest` 0.12/0.13 exposure. *Derives: REQ-epic10-quality-gates; CONCERNS.md.*
 
-- [ ] **REL-04**: Documentation final review is complete per the RECON-08 answer, and a developer
+- [x] **REL-04**: Documentation final review is complete per the RECON-08 answer, and a developer
       following QUICKSTART on a clean machine reaches a working agent with the elapsed time
       recorded against the documented < 15-minute target. *Derives: REQ-user-documentation,
       REQ-api-documentation, REQ-architecture-documentation, REQ-operations-documentation,
       REQ-contribution-documentation.*
 
-- [ ] **REL-05**: The full gate suite passes in CI on the release branch: `cargo fmt --check`,
+- [x] **REL-05**: The full gate suite passes in CI on the release branch: `cargo fmt --check`,
       `cargo clippy -- -D warnings`, `cargo test --workspace`, doc tests, all 22 examples,
       multi-arch Docker build within the < 500 MB / < 5 min budget, and the kind-based Kubernetes
       smoke test within the < 30 s pod-startup budget. (**Amended by Phase 4, dated 2026-08-03,
@@ -3909,11 +3909,11 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | QUAL-03 | Phase 3 | Complete |
 | QUAL-04 | Phase 3 | Complete |
 | QUAL-05 | Phase 3 | Complete |
-| REL-01 | Phase 4 | Pending |
-| REL-02 | Phase 4 | Pending |
+| REL-01 | Phase 4 | Complete |
+| REL-02 | Phase 4 | Complete |
 | REL-03 | Phase 4 | Complete |
-| REL-04 | Phase 4 | Pending |
-| REL-05 | Phase 4 | Pending |
+| REL-04 | Phase 4 | Complete |
+| REL-05 | Phase 4 | Complete |
 | VERIFY-01 | Phase 5 | Pending |
 | VERIFY-02 | Phase 5 | Pending |
 | VERIFY-03 | Phase 5 | Pending |
