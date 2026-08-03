@@ -399,3 +399,57 @@ single-arch.
 recent real measurement, and it is from June 2026 (`v0.5.1`, run `26922470521`). Whether the
 workspace has grown past 500 MB since is not yet known — the next run is the first that can answer
 it.
+
+---
+
+## Fourth CI execution — 2026-08-03: both remaining gates EXECUTED and PASSED
+
+Run `30842748080`. **`Docker Build` and `Kubernetes Smoke Test` both succeeded.** Every gate SC5
+names has now run on a real GitHub runner. The deferral rows in this document are superseded by
+measurement; they are retained above as the record of what was and was not known at each point.
+
+### Measurements — first of their kind in this project's history
+
+| Gate | Budget | Measured | Verdict |
+|---|---|---|---|
+| Docker image size (amd64) | ≤ 500 MB | **86 MB** | pass, 5.8× headroom |
+| Docker multi-arch build wall-clock | 300 s (advisory, single-arch-scoped) | **44 s** (warm GHA cache) | pass |
+| Kubernetes pod startup | ≤ 30 s | **6 s** | pass |
+| kind control-plane ready | — | 14 s | — |
+
+The **86 MB** figure is byte-identical to the last successful multi-arch release build
+(`v0.5.1`, run `26922470521`, June 2026). The image has not grown; the earlier uncertainty about
+whether it had was genuine, and is now closed by measurement rather than by assumption.
+
+The **44 s** wall-clock is a warm-cache figure, against 2946 s cold on run `30833088746`. Both are
+real; they measure the runner's cache state, which is exactly why the assertion is advisory. Had the
+budget been left hard, this gate would pass or fail depending on cache warmth rather than on
+anything about Paladin.
+
+### What the Kubernetes pass does and does not prove
+
+The job proves the kind/kubectl orchestration works, the `k8s/` manifest set applies cleanly, and a
+pod reaches `Ready` in 6 s. **It does not prove application readiness.**
+`k8s/deployment.yaml:66-68` still runs a placeholder `sleep 3600` with all three probes
+(liveness / readiness / startup, `:137-174`) commented out pending `paladin-web` health endpoints.
+The 6 s therefore measures **container scheduling**, not a Paladin process serving traffic.
+
+This caveat must survive into any downstream reading of the `satisfied` verdict. Real
+readiness-probe wiring remains **Phase 14 / WEB**.
+
+### Still failing, unchanged and out of scope
+
+`API Surface Tracking` — pre-existing, unrelated to this phase, and **not one of SC5's named
+gates**. **Owner: DEBT-01, Phase 8.**
+
+### Cost note, recorded deliberately
+
+Reaching these measurements took four CI iterations, each surfacing a distinct defect invisible to
+static validation: (1) unpinned `dtolnay/rust-toolchain@master` drift breaking 14 jobs —
+pre-existing; (2) a time budget derived from a single-arch figure and applied to a multi-arch build;
+(3) a size assertion inspecting an image a multi-arch build never produces. Only the second and
+third were this phase's own authored work, and neither was findable by reading.
+
+That is the case for the D-15 discipline in concrete terms: had "authored and statically validated"
+been rounded up to "SC5 met", this phase would have sealed green with a size gate that measured
+nothing and a time gate that could not pass.
