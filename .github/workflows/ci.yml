@@ -1,12 +1,13 @@
 name: CI/CD Pipeline
 
 on:
-  # CI runs on pull requests only, to avoid duplicate runs (one for `push`,
-  # one for `pull_request`) on a branch that already has an open PR.
-  # TROUBLESHOOTING: to run CI on every commit of a branch WITHOUT opening a PR,
-  # temporarily uncomment the `push:` block below.
-  # push:
-  #   branches: [ main, develop, 'feature/**' ]
+  # CI runs on pushes to main/develop/feature/release branches, and on pull
+  # requests targeting main/develop. A push to a branch that also has an open
+  # PR against main/develop will therefore run CI twice (once per trigger) —
+  # accepted so that `release/**` branches (which never open a PR) still get
+  # CI coverage on every push, per REL-05/SC5.
+  push:
+    branches: [ main, develop, 'feature/**', 'release/**' ]
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:
@@ -223,6 +224,81 @@ jobs:
 
       - name: Run doc tests
         run: cargo test --workspace --doc --exclude paladin-ports
+
+  # Example muster: builds every example target in examples/ via a 4-invocation
+  # feature matrix (REL-05/SC5).
+  examples:
+    name: Example Muster (Feature Matrix)
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-examples-${{ hashFiles('**/Cargo.lock') }}
+
+      # examples/ holds 47 .rs files. Exactly 4 are declared [[example]] targets
+      # in Cargo.toml, and every one of those 4 gates on a feature outside the
+      # default set (`default = ["llm-openai"]`): vision_analysis/vision_battalion
+      # need "vision,llm-openai", document_processing needs "content-processing",
+      # http_service_host needs "web-server". cargo's bulk `--examples` selector
+      # SILENTLY SKIPS targets whose required-features are unmet — no error, no
+      # warning, exit code 0 (verified live during 04-RESEARCH.md Part B, Q1(b)).
+      # A single bare `cargo build --examples` step would therefore report success
+      # while covering only 43 of 47 targets, with nothing flagging the gap. The
+      # 4 invocations below are the minimum needed to cover all 47.
+      - name: Build examples (default features — 43 auto-discovered targets)
+        run: cargo build --examples --offline
+
+      - name: Build examples (vision — vision_analysis, vision_battalion)
+        run: cargo build --example vision_analysis --example vision_battalion --features "vision,llm-openai" --offline
+
+      - name: Build examples (content-processing — document_processing)
+        run: cargo build --example document_processing --features "content-processing" --offline
+
+      - name: Build examples (web-server — http_service_host)
+        run: cargo build --example http_service_host --features "web-server" --offline
+
+      # Assert the full 47-target count. Match on basenames derived from the
+      # example source files rather than raw `ls`, since cargo also emits `.d`
+      # dependency files and hash-suffixed duplicates into target/debug/examples.
+      - name: Assert all 47 example binaries were produced
+        run: |
+          EXPECTED=$(find examples -name '*.rs' | wc -l)
+          FOUND=0
+          MISSING=""
+          for f in examples/*.rs; do
+            name=$(basename "$f" .rs)
+            if [ -x "target/debug/examples/$name" ] && [ ! -d "target/debug/examples/$name" ]; then
+              FOUND=$((FOUND + 1))
+            else
+              MISSING="$MISSING $name"
+            fi
+          done
+          echo "Expected: $EXPECTED example binaries; found: $FOUND"
+          if [ "$FOUND" -ne "$EXPECTED" ]; then
+            echo "::error::Expected $EXPECTED example binaries, found $FOUND. Missing:$MISSING"
+            exit 1
+          fi
 
   # Crate isolation: verify each workspace member builds and tests independently
   crate-isolation:
