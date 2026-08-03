@@ -1437,3 +1437,330 @@ former `[Unreleased]` content, `## [0.6.0]` carries its derived `2026-06-10` dat
 disambiguating provenance note, and the tag creation plus the full push/publish sequence are
 documented and deferred — the tag to the orchestrator (for correctness, not avoidance), the
 push/publish to a human (per D-03), with neither executed here.
+
+## Entry measurement — QUICKSTART elapsed time (first measurement)
+
+### Environment probes (verbatim)
+
+Command: `rustc -vV`
+
+```
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+binary: rustc
+commit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452
+commit-date: 2026-07-14
+host: x86_64-unknown-linux-gnu
+release: 1.97.1
+LLVM version: 22.1.6
+```
+
+Command: `cargo --version`
+
+```
+cargo 1.97.1 (c980f4866 2026-06-30)
+```
+
+Command: `git rev-parse HEAD` (base commit, before this plan's Task 1 edit)
+
+```
+68137255172af340bb2b0805931b485431b20dfc
+```
+
+Command: `git rev-parse --abbrev-ref HEAD`
+
+```
+worktree-agent-a803797d4d2a4752e
+```
+
+Command: `uname -a`
+
+```
+Linux 46a1fd6ea53a 6.8.0-136-generic #136~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 3 16:29:11 UTC x86_64 GNU/Linux
+```
+
+Command: `lscpu` (relevant lines)
+
+```
+CPU(s):                                  8
+Model name:                              Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz
+```
+
+Command: `curl -s -o /dev/null -w "%{http_code}\n" https://crates.io/api/v1/crates/serde --max-time 5`
+
+```
+403
+```
+
+Command: `command -v docker`
+
+```
+(no output — docker absent, exit 1)
+```
+
+Command: `env | grep -i OPENAI_API_KEY`
+
+```
+OPENAI_API_KEY=
+```
+
+`OPENAI_API_KEY` is set but empty in this shell; `LLM_API_KEY=your_openai_api_key_here` is a
+placeholder value, not a usable credential. No LLM API key capable of a live call exists in this
+environment.
+
+### What is and is not measurable here, stated before any figure is recorded
+
+Per D-11.2 and Task 2's own instruction, most of the documented QUICKSTART path is not reachable in
+this sandbox: crates.io returns HTTP 403 above, so `cargo build`/`cargo run` against a fresh
+project's `paladin-ai`, `paladin-ports` and `paladin-llm` registry dependencies cannot resolve —
+and the 0.7.0 crates are not published anywhere yet regardless. There is no usable LLM API key, so
+`OpenAIAdapter::from_env()?` making a live call (the sample's final step) cannot execute even if
+the dependency resolution problem were absent. Docker is absent, so `make services-up` (an
+"optional" step per the page's own text) cannot run either.
+
+**What is measurable: the in-workspace prefix**, using this already-checked-out tree and its warm
+build cache — exactly the prefix Q3 of `04-RESEARCH.md` Part B identifies as the largest
+honestly-measurable slice.
+
+### Measurement 1 — the in-workspace reachable prefix (verbatim)
+
+Command: `date -u` (before `cargo new`)
+
+```
+Mon Aug  3 13:28:19 UTC 2026
+```
+
+Command: `cargo new my-paladin-agent` (run in a scratch directory outside this repository, exactly
+mirroring quickstart.md's own step 2 — offline-safe, no dependency resolution needed for a bare
+scaffold)
+
+```
+    Creating binary (application) `my-paladin-agent` package
+note: see more `Cargo.toml` keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+```
+
+Command: `date -u` (after `cargo new`)
+
+```
+Mon Aug  3 13:28:28 UTC 2026
+```
+
+**`cargo new` elapsed: 9 seconds.** This stands in for quickstart.md's steps 2 ("Create a New
+Project") and represents the "read prerequisites, run one command" prefix — editing the
+`Cargo.toml` dependency block and pasting the `src/main.rs` sample (quickstart.md's steps 3-4) are
+pure text edits with no wall-clock cost worth separately timing; they are bundled into this step's
+budget as effectively instantaneous.
+
+Command: `date -u` (before building the example the page points a developer at running, per
+quickstart.md's step 6 — `cargo run --example basic_paladin`, timed here as a build since running it
+needs the unavailable LLM key)
+
+```
+Mon Aug  3 13:28:36 UTC 2026
+```
+
+Command: `cargo build --example basic_paladin --offline` (run from this checked-out workspace)
+
+```
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3m 58s
+```
+
+Command: `date -u` (immediately after)
+
+```
+Mon Aug  3 13:32:49 UTC 2026
+```
+
+**Build elapsed (wall-clock): 4 minutes 13 seconds** (13:32:49 − 13:28:36), consistent with cargo's
+own self-reported 3m 58s compile time plus harness overhead. This single invocation compiled the
+full dev-dependency graph for the root `paladin-ai` package's example/dev-dependency set from a
+cold `target/` state for this specific target (`serial_test`, `insta`, `wiremock`, `redis`,
+`bollard`, `testcontainers`, and the workspace's own `paladin-storage`/`paladin-memory`/`paladin-ai`
+crates all show `Compiling` in the transcript) — this is the honest, warm-registry/cold-target-slice
+figure, not an artificially fast or slow number.
+
+Command: `ls target/debug/examples/ | grep basic_paladin` (binary-presence proof)
+
+```
+basic_paladin
+basic_paladin-2aedbd921ae5c5ee
+basic_paladin-2aedbd921ae5c5ee.d
+basic_paladin.d
+```
+
+**Arithmetic — the in-workspace reachable prefix totals:** 9s (`cargo new`) + 4m13s (build) =
+**4 minutes 22 seconds**, re-derivable directly from the four raw timestamps above.
+
+### Measurement 2 — substitute measurement: does the corrected sample compile against the shipped tree
+
+**This substitution is named explicitly, per Task 2's instruction.** It answers "does the sample
+Task 1 repaired actually compile against this workspace's shipped code" — the defect Task 1 fixed —
+without pretending to exercise quickstart.md's documented registry-dependency path. A scratch Cargo
+project was created **outside this repository tree** (under this session's scratchpad directory,
+not under `examples/` or `crates/`), with its three Paladin dependencies pointed at this workspace
+via `path = ` requirements instead of registry versions, and quickstart.md's exact repaired
+`src/main.rs` sample (Task 1's committed text, verbatim) pasted in as its `main.rs`. Its `Cargo.toml`:
+
+```toml
+[package]
+name = "pkgtest"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+paladin-ai    = { version = "0.7.0", path = "<this-worktree-path>" }
+paladin-ports = { version = "0.7.0", path = "<this-worktree-path>/crates/paladin-ports" }
+paladin-llm   = { version = "0.7.0", path = "<this-worktree-path>/crates/paladin-llm", features = ["openai"] }
+tokio         = { version = "1", features = ["full"] }
+```
+
+First build (fresh dependency-graph resolution against a copy of this workspace's own `Cargo.lock`,
+to avoid re-solving into `spin 0.9.8` — yanked, per D-09 — from an unlocked scratch project):
+
+```
+   Compiling paladin-llm v0.7.0 (.../crates/paladin-llm)
+   ...
+   Compiling paladin-ai v0.7.0 (.../)
+   Compiling pkgtest v0.1.0 (.../pkgtest)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4m 08s
+```
+
+Second build, after replacing the scratch project's `main.rs` with Task 1's exact repaired sample
+text and confirming the `Cargo.toml` above matches quickstart.md's corrected dependency block field
+for field:
+
+Command: `date -u`
+
+```
+Mon Aug  3 13:25:03 UTC 2026
+```
+
+Command: `cargo build --offline`
+
+```
+   Compiling paladin-llm v0.7.0 (.../crates/paladin-llm)
+   Compiling paladin-ai v0.7.0 (.../)
+   Compiling pkgtest v0.1.0 (.../pkgtest)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 38.44s
+```
+
+Command: `date -u`
+
+```
+Mon Aug  3 13:25:41 UTC 2026
+```
+
+**Exit status 0. The repaired sample — Task 1's exact committed imports, dependency block, and
+four-argument `PaladinExecutionService::new` call — compiles cleanly against the shipped tree.**
+This is the load-bearing proof that Task 1's structural fix (not just the version numbers) is
+correct: before the fix, this same scratch harness pointed at the *original* quickstart text would
+fail with an unresolved-import error (`paladin_ai_core::application::services` does not exist), a
+network-independent, environment-independent compile failure. After the fix, it builds offline in
+under a minute from a warm cache.
+
+**Cleanup, per Task 2's instruction:** the scratch project was deleted after this measurement.
+
+```
+$ git status --porcelain examples crates
+(empty)
+```
+
+Confirmed empty — no scratch artifact leaked into the workspace tree the example-target count
+(`04-04`'s 47-target figure) depends on.
+
+### Deciding the timing claim — after measuring, not before
+
+The reachable in-workspace prefix measured **4 minutes 22 seconds** (Measurement 1), and the
+substitute compile-only proof measured **38 seconds to under 5 minutes** depending on cache state
+(Measurement 2) — both comfortably under five minutes on their own. **This is not sufficient grounds
+to keep quickstart.md's original "under five minutes" claim.** Both measurements cover only the
+offline-reachable prefix; the two legs that dominate a real developer's wall-clock time on the
+documented path — resolving three crates from a cold or even warm crates.io registry, and a live
+round-trip to the OpenAI API — could not be measured at all in this environment (crates.io 403, no
+usable LLM key). Retaining a "five minutes" claim on the strength of a partial measurement that
+excludes the two most time-variable real-world steps would be exactly the dishonest-number risk
+D-11.2 and T-04-26 warn against. **Settling the gate at 15 minutes — the figure both
+`docs/src/introduction.md:9` and ROADMAP SC4/REL-04 already carry, and the one two of three doc
+references support — is the defensible choice**, not the untested five-minute figure. `quickstart.md:3`
+is amended from "under five minutes" to "under 15 minutes" accordingly (Task 1's sibling edit,
+committed with this record). The reachable-prefix measurement (4m22s) is recorded as supporting
+evidence that the 15-minute budget is comfortably achievable for the parts of the path this sandbox
+can prove — not as proof of the full path, which remains unmeasured.
+
+**This is a PASS against the settled 15-minute gate for the reachable prefix, with the two
+unreachable legs recorded as deferrals below rather than assumed to also pass.**
+
+### Stated-conditions label
+
+**This record is measured under stated conditions, not a clean-machine claim.** The conditions:
+this sandbox's cargo registry and local build cache are warm from this and prior phase-4 sessions
+(not a cold-start machine); there is no network route to crates.io (HTTP 403, verified above); no
+Docker is present (`make services-up` cannot run); no usable LLM API key is present (`OPENAI_API_KEY`
+is empty, `LLM_API_KEY` is a placeholder); and this machine is `x86_64-unknown-linux-gnu`, `Intel(R)
+Xeon(R) CPU E3-1505M v5 @ 2.80GHz`, 8 CPUs, kernel `6.8.0-136-generic`, per the `uname -a`/`lscpu`
+probes above.
+
+### Deferred with reason — the two legs this record cannot honestly claim
+
+| Item | Verdict | Evidence / reason | Owner |
+|---|---|---|---|
+| The true clean-machine, cold-registry QUICKSTART timing (a fresh `cargo new` project resolving `paladin-ai`, `paladin-ports`, `paladin-llm` from a published crates.io, with no local build cache) | deferred with reason | crates.io returns HTTP 403 in this sandbox (verified above) and the 0.7.0 crates are not published to crates.io at all yet — no runner in this environment has the network route or the published artifact needed to time this leg. | **Owner: Phase 15 / PIPE** |
+| The live LLM execution of the repaired sample (`OpenAIAdapter::from_env()?` reaching the real OpenAI API and returning the documented "Hello!" output) | deferred with reason | No usable LLM API key exists in this environment (`OPENAI_API_KEY` empty, `LLM_API_KEY` a placeholder) — the call cannot be attempted, let alone timed, without a real credential and network egress to `api.openai.com`. | **Owner: Phase 15 / PIPE** |
+
+### REL-04's documentation-review clause — discharged by citation
+
+REL-04 also names a "documentation final review" clause. Per D-10, this is **already discharged**
+and is not re-derived or re-performed here. `.planning/ledgers/milestone-01.md` §"Epic 10 Task 7.0 —
+dispute resolution (RECON-08)" records the verdict: the task list
+(`.project/Milestone_1-MVP/Epic_10/tasks-epic10-validation-documentation.md`) is 103/103 complete
+with **no Task 7.0 heading anywhere**, independently corroborated by
+`.planning/intel/task-completion-state.md`'s deterministic open-item count (Epic 10 absent from
+that list — zero open items), and no artifact anywhere in the 263-document corpus or in `docs/`
+supplies content for a "Final Documentation Review" of any kind. RECON-08 classifies this
+**`satisfied`, no owner needed** — there is no outstanding documentation-review work item to
+perform, named or otherwise. This record cites that verdict rather than constructing a review to
+fill a gap the corpus already established does not exist.
+
+### Workspace integrity check (verbatim)
+
+Command: `date -u`
+
+```
+Mon Aug  3 13:34:02 UTC 2026
+```
+
+Command: `cargo build --workspace --offline`
+
+```
+   Compiling type1-encoding-parser v0.1.1
+   Compiling euclid v0.20.14
+   Compiling paladin-storage v0.7.0 (.../crates/paladin-storage)
+   Compiling postscript v0.14.1
+   Compiling paladin-notifications v0.7.0 (.../crates/paladin-notifications)
+   Compiling pdf-extract v0.7.12
+   Compiling paladin-content v0.7.0 (.../crates/paladin-content)
+   Compiling paladin-ai v0.7.0 (.../)
+   Compiling paladin-doc-examples v0.7.0 (.../crates/doc-examples)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 02s
+```
+
+Command: `date -u`
+
+```
+Mon Aug  3 13:36:21 UTC 2026
+```
+
+The two `date -u` stamps bracketing this command (`13:34:02` → `13:36:21`) give a wall-clock delta
+of 2 minutes 19 seconds, consistent with cargo's self-reported `2m 02s` compile time plus harness
+overhead. `cargo build --workspace --offline` exits `0`. `git status --porcelain examples crates`
+was re-checked immediately after and is empty (shown above, unchanged since Task 1).
+
+**Task 2 summary:** the offline-reachable QUICKSTART prefix (new project scaffold + build of the
+example the page points a user at) measures **4 minutes 22 seconds** under the stated conditions
+above; the sample Task 1 repaired is proven to compile against the shipped tree via a named
+substitute measurement (38s–4m08s depending on cache state); the gate is settled at **15 minutes**
+(not the untested "five minutes" the page previously claimed) and `quickstart.md:3` now agrees with
+`introduction.md:9`; the clean-machine and live-LLM legs are filed as `deferred with reason` rows
+with a named owner each (**Phase 15 / PIPE**, both); and REL-04's documentation-review clause is
+discharged by citing RECON-08's recorded verdict rather than inventing a review. The workspace
+remains green (`cargo build --workspace --offline` exits `0`) and no scratch artifact survives under
+`examples/` or `crates/`.
