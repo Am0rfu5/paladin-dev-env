@@ -190,7 +190,7 @@ pub trait ContentDeliveryService {
 
     /// Validate delivery method configuration
     fn validate_delivery_method(&self, method: &DeliveryMethod)
-        -> Result<(), ContentDeliveryError>;
+    -> Result<(), ContentDeliveryError>;
 }
 
 /// Batch Content Delivery Service

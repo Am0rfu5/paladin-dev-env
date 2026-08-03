@@ -342,7 +342,7 @@ use async_trait::async_trait;
 use paladin_core::base::entity::message::{Location, MessagePriority};
 use paladin_core::platform::container::queue_config::QueueConfig;
 use paladin_core::platform::container::queue_item::{QueueItem, QueueItemConfig, QueueItemSummary};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use thiserror::Error;
 
 /// Queue service errors
@@ -620,7 +620,7 @@ where
 {
     /// Enqueue a strongly-typed item
     async fn enqueue_typed(&self, queue_name: &str, item: QueueItem<T>)
-        -> Result<Uuid, QueueError>;
+    -> Result<Uuid, QueueError>;
 
     /// Dequeue a strongly-typed item
     async fn dequeue_typed(&self, queue_name: &str) -> Result<Option<QueueItem<T>>, QueueError>;

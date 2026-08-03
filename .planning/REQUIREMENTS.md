@@ -381,7 +381,14 @@ by passing tests.*
 - [ ] **REL-05**: The full gate suite passes in CI on the release branch: `cargo fmt --check`,
       `cargo clippy -- -D warnings`, `cargo test --workspace`, doc tests, all 22 examples,
       multi-arch Docker build within the < 500 MB / < 5 min budget, and the kind-based Kubernetes
-      smoke test within the < 30 s pod-startup budget.
+      smoke test within the < 30 s pod-startup budget. (**Amended by Phase 4, dated 2026-08-03,
+      citing `04-release-measurement.md`**: "all 22 examples" is stale — it traces to a Milestone 1
+      Epic 10 validation report ("22/22 examples compiling") restated in `ROADMAP.md` and
+      `PROJECT.md`. The shipped tree carries 47 `.rs` files under `examples/`, 4 declared
+      `[[example]]` targets gating on non-default features, 0 crate-level `examples/` directories.
+      This requirement's own gate is corrected to "every example target builds", proven by a
+      4-invocation feature matrix plus a binary-presence assertion rather than a count restated
+      from an ingested report — so the figure cannot go stale the same way again.)
       *Derives: REQ-epic10-quality-gates, REQ-deployment-artifacts.*
 
 ---

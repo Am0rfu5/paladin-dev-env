@@ -1167,7 +1167,7 @@ pub trait NotificationTemplatePort: Send + Sync {
     /// - `ValidationError`: Template not found
     /// - `StorageError`: Failed to retrieve template
     async fn get_template(&self, template_id: &str)
-        -> NotificationPortResult<NotificationTemplate>;
+    -> NotificationPortResult<NotificationTemplate>;
 
     /// List templates with optional filtering
     ///
