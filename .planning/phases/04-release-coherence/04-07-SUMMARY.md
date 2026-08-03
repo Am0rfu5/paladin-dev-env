@@ -269,3 +269,12 @@ None - no external service configuration required.
 ---
 *Phase: 04-release-coherence*
 *Completed: 2026-08-03*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/decisions/0008-workspace-version-0-7-0.md`
+- FOUND: `.planning/decisions/0009-workspace-rust-edition-2024.md`
+- FOUND: `.planning/phases/04-release-coherence/04-07-SUMMARY.md`
+- FOUND: commit `e984582` (Task 1)
+- FOUND: commit `33fe807` (Task 2)
+- FOUND: commit `7a02582` (Task 3)
