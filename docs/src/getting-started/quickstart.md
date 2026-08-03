@@ -21,10 +21,10 @@ Add Paladin to `Cargo.toml`:
 
 ```toml
 [dependencies]
-paladin-ai-core   = "0.5.0"
-paladin-ports     = "0.5.0"
-paladin-llm       = { version = "0.5.0", features = ["llm-openai"] }
-tokio             = { version = "1", features = ["full"] }
+paladin-ai    = "0.7.0"
+paladin-ports = "0.7.0"
+paladin-llm   = { version = "0.7.0", features = ["openai"] }
+tokio         = { version = "1", features = ["full"] }
 ```
 
 ## Your First Paladin Agent
@@ -33,11 +33,13 @@ Replace `src/main.rs` with the following:
 
 ```rust,ignore
 // src/main.rs -- Hello, Paladin!
-use paladin_ai_core::application::services::paladin::paladin_builder::PaladinBuilder;
-use paladin_ai_core::application::services::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
+use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin_ports::output::llm_port::LlmPort;
 use paladin_llm::openai::OpenAIAdapter;
 use std::sync::Arc;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -54,8 +56,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()
         .await?;
 
-    // 3. Create an execution service
-    let service = PaladinExecutionService::new(llm_port, Default::default(), None, None);
+    // 3. Create an execution service (the circuit breaker guards against cascading failures)
+    let circuit_breaker = Arc::new(CircuitBreaker::new(3, 2, Duration::from_secs(30)));
+    let service = PaladinExecutionService::new(llm_port, circuit_breaker, None, None);
 
     // 4. Execute with a prompt
     let result = service.execute(&paladin, "Say hello in one sentence.").await?;
@@ -101,7 +104,7 @@ cargo run --example basic_paladin
 cargo run --example formation_sequential
 
 # Concurrent multi-agent execution
-# cargo run --example phalanx_concurrent
+cargo run --example phalanx_parallel
 ```
 
 ## Understanding the Output
