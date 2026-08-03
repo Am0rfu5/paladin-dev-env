@@ -282,3 +282,8 @@ which is a deliberate, out-of-band decision, not a setup step for this plan.
 ---
 *Phase: 04-release-coherence*
 *Completed: 2026-08-03*
+
+## Self-Check: PASSED
+
+All claimed files found on disk (`04-05-SUMMARY.md`) and all three commit hashes (`c2e20a1`,
+`7df20c4`, `d53e278`) found in `git log --oneline --all`.
