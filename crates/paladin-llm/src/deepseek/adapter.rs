@@ -212,6 +212,41 @@ fn detect_empty_completion(content: &str, finish_reason: &FinishReason) -> Optio
     }
 }
 
+/// Annotate an [`LlmError::EmptyCompletion`] with the provider's own reported
+/// `usage` so a caller's error message names `prompt_tokens`,
+/// `completion_tokens`, and `total_tokens` instead of discarding them.
+///
+/// A reasoning model that returns `finish_reason=length` with empty content
+/// is ambiguous between two distinct failure modes: "the prompt itself
+/// consumed the whole context window" and "reasoning genuinely overran the
+/// completion budget on a well-sized prompt". `prompt_tokens` is the number
+/// that distinguishes them — before this function existed, `api_response.usage`
+/// was deserialized and then thrown away on exactly the failure path where it
+/// mattered (`detect_empty_completion` returns its error, at the call site
+/// below, BEFORE the `LlmResponse` carrying `usage` is ever constructed).
+///
+/// Deliberately additive and narrow: every non-`EmptyCompletion` variant
+/// passes through byte-identical (no reconstruction), and this does NOT
+/// change [`detect_empty_completion`]'s own signature — five existing tests
+/// call it with two arguments and are left untouched.
+///
+/// **Known, deliberate limitation.** The reasoning/content token SPLIT stays
+/// unobservable: [`DeepSeekUsage`] does not deserialize
+/// `completion_tokens_details.reasoning_tokens`. Recording `prompt_tokens`
+/// here is a strictly smaller, separately-scoped change — splitting
+/// reasoning from content is a distinct upstream change left for its own
+/// task, not silently implied as solved by this one.
+fn annotate_with_usage(err: LlmError, usage: &DeepSeekUsage) -> LlmError {
+    match err {
+        LlmError::EmptyCompletion(msg) => LlmError::EmptyCompletion(format!(
+            "{msg} (provider-reported usage: prompt_tokens={}, completion_tokens={}, \
+             total_tokens={})",
+            usage.prompt_tokens, usage.completion_tokens, usage.total_tokens
+        )),
+        other => other,
+    }
+}
+
 /// Character budget for a diagnostic excerpt of a response body.
 ///
 /// Mirrors `anthropic::adapter::RESPONSE_EXCERPT_CHAR_BUDGET`, deliberately —
@@ -637,7 +672,7 @@ impl LlmPort for DeepSeekAdapter {
             let finish_reason = Self::map_finish_reason(choice.finish_reason.clone());
 
             if let Some(err) = detect_empty_completion(&choice.message.content, &finish_reason) {
-                return Err(err);
+                return Err(annotate_with_usage(err, &api_response.usage));
             }
 
             Ok(LlmResponse {
@@ -871,6 +906,53 @@ mod tests {
         // — detection is narrow to Length+empty only.
         let result = detect_empty_completion("", &FinishReason::Stop);
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_annotate_with_usage_names_all_three_token_counts_on_empty_completion() {
+        let err = LlmError::EmptyCompletion("finish_reason=length with empty content".to_string());
+        let usage = DeepSeekUsage {
+            prompt_tokens: 31_000,
+            completion_tokens: 32_000,
+            total_tokens: 63_000,
+        };
+
+        let annotated = annotate_with_usage(err, &usage);
+
+        match annotated {
+            LlmError::EmptyCompletion(msg) => {
+                assert!(
+                    msg.contains("finish_reason=length with empty content"),
+                    "original message must survive, got: {msg}"
+                );
+                assert!(msg.contains("31000"), "must name prompt_tokens, got: {msg}");
+                assert!(
+                    msg.contains("32000"),
+                    "must name completion_tokens, got: {msg}"
+                );
+                assert!(msg.contains("63000"), "must name total_tokens, got: {msg}");
+            }
+            other => {
+                panic!("expected EmptyCompletion to round-trip as EmptyCompletion, got {other:?}")
+            }
+        }
+    }
+
+    #[test]
+    fn test_annotate_with_usage_passes_through_non_empty_completion_variants_unchanged() {
+        let err = LlmError::Timeout("request timed out".to_string());
+        let usage = DeepSeekUsage {
+            prompt_tokens: 1,
+            completion_tokens: 2,
+            total_tokens: 3,
+        };
+
+        let annotated = annotate_with_usage(err, &usage);
+
+        match annotated {
+            LlmError::Timeout(msg) => assert_eq!(msg, "request timed out"),
+            other => panic!("expected Timeout to round-trip unchanged, got {other:?}"),
+        }
     }
 
     #[test]
