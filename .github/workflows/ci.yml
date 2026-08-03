@@ -555,10 +555,34 @@ jobs:
             echo "::warning::Docker multi-arch build took ${ELAPSED}s, over the 300s single-arch-derived budget. Advisory only — see Phase 15 / PIPE for the native-arm64 rework that would make a hard budget meaningful."
           fi
 
+      # A multi-platform buildx build produces a manifest list, which CANNOT be
+      # loaded into the local Docker image store — `load: true` is single-platform
+      # only. The multi-arch step above therefore leaves nothing for
+      # `docker image inspect` to find, which is why the size assertion failed
+      # with "No such image: paladin:test" on its first real execution
+      # (run 30839816736, 2026-08-03).
+      #
+      # Re-build the amd64 leg alone with `load: true` so there is a concrete
+      # image to measure. Every layer is already in the GHA cache from the step
+      # above, so this is a cache hit, not a second compile. amd64 is also the
+      # arch the 500 MB budget has always described — the historical 86 MB and
+      # 112 MB figures are both single-arch.
+      - name: Load amd64 image for size measurement
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          load: true
+          tags: paladin:test
+          platforms: linux/amd64
+          cache-from: type=gha
+
       - name: Assert image size budget (<= 500 MB)
         run: |
-          # push: false means there is no registry image to pull — inspect the
-          # locally built tag directly.
+          # Inspects the amd64 image loaded by the step above. Do NOT point this
+          # at the multi-arch build — that produces a manifest list with no local
+          # image to inspect (see the comment on the load step).
           SIZE=$(docker image inspect paladin:test --format='{{.Size}}')
           SIZE_MB=$((SIZE / 1024 / 1024))
           echo "Image size: ${SIZE_MB} MB"

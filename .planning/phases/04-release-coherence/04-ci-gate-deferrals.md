@@ -350,3 +350,52 @@ every developer's host." The Docker image therefore builds Paladin with a differ
 every other surface. It builds correctly (edition 2024 requires ≥ 1.85, and 1.93 satisfies it), so
 this is not urgent — but it is a genuine version-coherence defect, surfaced by this phase and
 recorded rather than silently fixed. **No owner assigned; nominate one when the row is triaged.**
+
+---
+
+## Third CI execution — 2026-08-03: the size gate was structurally broken
+
+Run `30839816736`, after the time assertion became advisory. Two results, one good and one a
+genuine defect in this phase's own authored job.
+
+### The advisory change worked
+
+`Report build wall-clock (advisory; budget scoped to single-arch)` **passed**. The build itself
+took **1m27s** on this run — a full GHA cache hit from the previous run's layers — so the advisory
+threshold was not even reached. That also demonstrates the 2946 s figure was a cold-cache cost, not
+a per-run cost, which is further reason the wall-clock number is a property of the runner and its
+cache state rather than of Paladin.
+
+### The size assertion failed — and NOT because the image is too large
+
+```
+Error response from daemon: No such image: paladin:test
+##[error]Process completed with exit code 1.
+```
+
+**Root cause.** A multi-platform buildx build produces a **manifest list**, which cannot be loaded
+into the local Docker image store — `load: true` is single-platform only. With
+`platforms: linux/amd64,linux/arm64` and `push: false`, nothing named `paladin:test` ever exists
+locally, so `docker image inspect` fails outright. The step never measured anything.
+
+**This is a defect in the job plan 04-03 authored, and it is exactly the class of bug that
+"authored and statically validated" cannot catch.** Static validation confirmed the YAML parsed,
+the action references resolved, and the `Dockerfile` path existed — all true, and all irrelevant to
+this failure. The plan's own inline comment reasoned it out explicitly — *"push: false means there
+is no registry image to pull — inspect the locally built tag directly"* — which is **correct for a
+single-arch build and wrong for a multi-arch one**. Careful reasoning produced a wrong answer that
+only execution could expose. The D-15 discipline of refusing to call an unexecuted job "proven" is
+vindicated by this specific failure.
+
+### Fix applied
+
+A `Load amd64 image for size measurement` step now re-builds the **amd64 leg alone** with
+`load: true` before the assertion. Every layer is already in the GHA cache from the multi-arch step,
+so it is a cache hit rather than a second compile. amd64 is also the architecture the 500 MB budget
+has always described — both historical figures (86 MB at v0.5.1, 112 MB at Milestone 1) are
+single-arch.
+
+**The image size is still unmeasured in CI as of this writing.** The 86 MB figure remains the most
+recent real measurement, and it is from June 2026 (`v0.5.1`, run `26922470521`). Whether the
+workspace has grown past 500 MB since is not yet known — the next run is the first that can answer
+it.
