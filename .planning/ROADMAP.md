@@ -331,7 +331,7 @@ Plans:
 
 **Wave 2** *(blocked on 04-01)*
 
-- [ ] 04-04-PLAN.md — Local gate suite proven and recorded; the "22 examples" figure re-derived and amended at source (wave 2)
+- [x] 04-04-PLAN.md — Local gate suite proven and recorded; the "22 examples" figure re-derived and amended at source (wave 2)
 
 **Wave 3** *(blocked on 04-04 — the tag must land on a gate-green commit)*
 
