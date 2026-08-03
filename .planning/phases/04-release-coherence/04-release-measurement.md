@@ -1764,3 +1764,93 @@ with a named owner each (**Phase 15 / PIPE**, both); and REL-04's documentation-
 discharged by citing RECON-08's recorded verdict rather than inventing a review. The workspace
 remains green (`cargo build --workspace --offline` exits `0`) and no scratch artifact survives under
 `examples/` or `crates/`.
+
+---
+
+## Exit re-measurement — full test suite at the final phase commit
+
+**Added 2026-08-03 by the phase orchestrator, closing a gap found by `04-VERIFICATION.md`.**
+
+### Why this section exists
+
+The REL-05 ledger row and plan 04-04's measurement cite **2,924 passed / 0 failed / 122 ignored**.
+That figure was accurate when taken — but it was taken at commit `d2898a3`, **before** plan 04-05's
+version bump. It was never re-verified against the final tree, and the ledger presented it as though
+it still held. `04-VERIFICATION.md` caught this by re-deriving rather than trusting the SUMMARY.
+
+Re-running the suite at that point exposed a real regression the phase's own records had missed:
+
+```
+openapi::tests::openapi_matches_committed_baseline ... FAILED
+assertion `left == right` failed: OpenAPI spec drifted from crates/paladin-web/openapi.json
+  left:  "version": "0.7.0"    (generated live from CARGO_PKG_VERSION)
+  right: "version": "0.6.0"    (committed baseline, stale)
+```
+
+**Root cause.** Plan 04-05 bumped `crates/paladin-web/Cargo.toml` to `0.7.0`. `paladin-web`'s
+OpenAPI spec derives its `info.version` field from `CARGO_PKG_VERSION`, so the generated spec moved
+while the committed baseline did not. No plan in this phase owned "regenerate the OpenAPI baseline
+after a version bump", and no plan re-ran the full suite after the bump — the two omissions
+together are what let it through.
+
+### The fix
+
+```
+UPDATE_OPENAPI=1 cargo test -p paladin-web openapi_matches_committed_baseline --offline
+```
+
+Diff verified to be **exactly one line**, the version field, and nothing else:
+
+```
+ crates/paladin-web/openapi.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+-    "version": "0.6.0"
++    "version": "0.7.0"
+```
+
+Committed as `f57a34d`.
+
+### Provenance
+
+```
+$ rustc -vV
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+host: x86_64-unknown-linux-gnu
+release: 1.97.1
+LLVM version: 22.1.6
+
+$ cargo --version
+cargo 1.97.1 (c980f4866 2026-06-30)
+
+$ git rev-parse --abbrev-ref HEAD
+release/v0.7.0
+
+$ git rev-parse HEAD
+f57a34d   (the commit carrying the regenerated baseline)
+
+$ date -u
+2026-08-03
+```
+
+### Result
+
+```
+$ cargo test --workspace --offline
+... (per-target `test result:` lines summed)
+passed=2924  failed=0  ignored=122
+```
+
+**2,924 passed / 0 failed / 122 ignored** — the same totals plan 04-04 recorded, which is the
+expected outcome since the bump changed only version strings. The difference that matters is that
+this figure is now measured **at the final phase commit** rather than inherited from a pre-bump one.
+
+### The discipline point
+
+This phase's whole premise is that a cited number is not a measured number. The REL-05 row cited a
+figure it had not re-derived after the tree moved underneath it — the same class of error the
+milestone exists to close, committed by the phase closing it. Recorded here rather than quietly
+fixed, so the correction is legible as a correction.
+
+**Standing instruction for any future phase that bumps the workspace version:**
+`crates/paladin-web/openapi.json` must be regenerated in the same change, and the full suite re-run
+**after** the bump, not before.
