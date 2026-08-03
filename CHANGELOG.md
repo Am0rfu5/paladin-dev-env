@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-03
+
 ### Phase 12.1 — Complete the Paladin Arsenal MCP client (dogfood)
+
+> **Provenance note (Phase 4, 2026-08-03):** "Phase 12.1" refers to the historical `.project/`-era
+> milestone and epic numbering, not a GSD `.planning/phases/` phase. This project's GSD phases are
+> numbered 1, 2, 3, 4… with no decimal sub-phases; GSD Phase 12 is unrelated (SUPPLY-01/SUPPLY-02).
 
 Swaps the Arsenal's hand-rolled MCP JSON-RPC engine for the official `rmcp` SDK, adds a
 real authenticated remote transport, and un-stubs tool execution — completing the MCP
@@ -60,7 +66,7 @@ client this project depends on for its own downstream Arsenal-MCP-client dogfood
   `MCPNotification`/`MCPCapabilities`/`ServerInfo`/`ToolInfo`/`MCPTransport`) — superseded by
   `rmcp::model::*` and rmcp's own transport abstraction.
 
-## [0.6.0]
+## [0.6.0] - 2026-06-10
 
 **Milestone 12 — Web API.** Paladin now ships an HTTP agent API **out of the box**: the
 `paladin-server` binary (the `web-server` feature) serves a versioned (`/v1`), authenticated,

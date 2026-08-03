@@ -1292,3 +1292,148 @@ requirements remain untouched at `0.6.0`; the workspace builds offline with exit
 plan-authoring deviation (the `version` subcommand rejecting `--offline`, which it never needed) is
 recorded and resolved by omitting the flag rather than by any workaround that could mask a real
 network dependency.
+
+## Entry measurement — CHANGELOG finalize, tag deferral, and the human release gate
+
+### Environment probes (verbatim)
+
+Command: `rustc -vV` / `cargo --version` — unchanged from the prior entry (same session).
+
+Command: `git rev-parse HEAD` (before this task's edits)
+
+```
+c2e20a1a7f9880d0b1a0aa973541a45fdf13b489
+```
+
+Command: `date -u`
+
+```
+2026-08-03T13:01:08Z
+```
+
+### CHANGELOG finalize — the heading transformation
+
+Reproduced `Makefile:477-479`'s `perl -0pi` substitution by hand-editing the two lines it would
+touch (no network or tool invocation needed; a pure text edit). `## [Unreleased]` remains in place
+and is now empty; a new `## [0.7.0] - 2026-08-03` heading was inserted immediately below it, and
+everything that previously followed `## [Unreleased]` (the "Phase 12.1" section in full) now falls
+under the new `## [0.7.0]` heading by virtue of the insertion point — no content was moved by hand.
+
+### The retroactive `[0.6.0]` date — derivation command and raw output
+
+Command: `git log -S'## [0.6.0]' --oneline --pretty='%h %ad %s' --date=short -- CHANGELOG.md`
+
+```
+67b6207 2026-06-10 docs(release): finalize CHANGELOG [0.6.0] + regen API baseline (M12 E7, task 7.0)
+```
+
+Names commit `67b6207`, dated `2026-06-10` — matching the plan's own transcription exactly; the
+command was re-run in this session (not trusted from the plan text) per D-17 and per the plan's own
+"stop and report rather than approximate" instruction. `## [0.6.0]` now reads
+`## [0.6.0] - 2026-06-10`, in the file's established `YYYY-MM-DD` form (matching
+`## [0.5.1] - 2026-06-04`'s precedent).
+
+### The "Phase 12.1" disambiguation
+
+Left the heading text unchanged and added a one-line blockquote note immediately beneath it,
+identifying "Phase 12.1" as `.project/`-era historical milestone/epic numbering, not a GSD
+`.planning/phases/` phase number, consistent with CONTEXT.md's Claude's Discretion item 2.
+
+### Verification greps (verbatim)
+
+Command: `grep -cE '^## \[0\.7\.0\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$' CHANGELOG.md`
+
+```
+1
+```
+
+Command: `grep -cE '^## \[0\.6\.0\] - 2026-06-10$' CHANGELOG.md`
+
+```
+1
+```
+
+Command: `grep -cE '^## \[[0-9]' CHANGELOG.md` / `grep -cE '^## \[[0-9][^]]*\] - ' CHANGELOG.md`
+
+```
+11
+11
+```
+
+Equal counts — every version heading in the file now carries a date or date-like suffix (the
+pre-existing `## [0.1.0] - Previous Releases` heading already satisfied this pattern).
+
+Command: `grep -c '^## \[Unreleased\]' CHANGELOG.md`
+
+```
+1
+```
+
+The `## [Unreleased]` heading survives the finalize, now empty of content.
+
+Command: `grep -c 'Phase 12.1' CHANGELOG.md` / `grep -ci 'not a GSD' CHANGELOG.md`
+
+```
+2
+1
+```
+
+### Tag creation — deferred to the orchestrator, not created in this worktree
+
+**Deviation (correctness fix, not a scope reduction).** The plan's Task 3 instructs creating the
+annotated tag `v0.7.0` locally on "the current commit." This executor runs inside a Claude Code
+worktree whose HEAD is on branch `worktree-agent-a68dacf6e27e9f7f3` — a per-agent branch that the
+orchestrator force-removes after this plan returns (`isolation="worktree"`). A git tag is a
+repo-global ref: creating `v0.7.0` here would make it point at this worktree's commit
+(`c2e20a1` plus this task's CHANGELOG commit), not at the commit that lands on `release/v0.7.0`
+after the orchestrator merges this wave. A tag on a soon-to-be-deleted worktree branch, orphaned
+from the branch it was meant to mark, would be strictly worse than no tag — it would silently point
+at unreachable history once the worktree branch is cleaned up.
+
+**Therefore the tag is NOT created in this session.** It is deferred to the orchestrator, which
+creates it on the merged `release/v0.7.0` commit where it actually belongs, using:
+
+```bash
+git tag -a v0.7.0 -m "Release 0.7.0" <merged-commit-sha>
+```
+
+(message form per `release.toml:21`'s `tag-message = "Release {{version}}"` template). The plan's
+own acceptance criteria for the tag (`git rev-parse --verify refs/tags/v0.7.0`,
+`git cat-file -t v0.7.0` returning `tag`) are therefore **not satisfied inside this worktree** and
+are re-scoped to the orchestrator's post-merge step. This SUMMARY documents the exact command so
+the deferred action is traceable rather than silently dropped.
+
+## Human release gate — not executed by this phase
+
+None of the following commands was run in this session. This is the exact, ordered sequence a human
+runs to complete the release once the orchestrator has created the local tag above, together with
+the consequence of each step:
+
+1. `git push origin release/v0.7.0` — pushes the branch (containing the version bump and CHANGELOG
+   finalize commits) to `origin`. Reversible up to this point; nothing outward-facing has happened
+   yet other than making the branch visible on the remote.
+2. `git push origin v0.7.0` — pushes the annotated tag. **This is the irreversible step.** Pushing a
+   `v*.*.*` tag triggers `.github/workflows/release.yml` (`on: push: tags: ['v*.*.*']`), whose
+   `verify-tag-source` job confirms the tag's commit is contained in `main`, and whose
+   `Publish to crates.io` job (`release.yml:356`) then publishes all ten publishable workspace
+   crates to crates.io in dependency order (`release.yml:350`). **Ten crates at a lockstep version
+   on crates.io cannot be unpublished, only yanked** (D-01, D-03).
+
+**`make release` is explicitly not the vehicle for any of this.** Its branch guard
+(`Makefile:456-466`) requires the current branch to be `main` (this tree is `release/v0.7.0`, so it
+would fail outright without `RELEASE_ALLOW_ANY_BRANCH=1`), and even with that override its own
+`git push` lines (`Makefile:484-485`) sit entirely outside `release.toml`'s `push = false` /
+`publish = false` safety net — those settings govern `cargo-release`'s own orchestration path, not
+the Makefile's hand-written shell. The two commands above are the correct, minimal, human-run
+substitute.
+
+**This is where Phase 4 deliberately stops.** Nothing in this record authorizes running either of
+the two commands above; they are documented so a human owner can execute them deliberately, on
+their own schedule, with the consequence understood in advance.
+
+**Task 3 summary:** `CHANGELOG.md` carries a dated `## [0.7.0] - 2026-08-03` section holding the
+former `[Unreleased]` content, `## [0.6.0]` carries its derived `2026-06-10` date sourced from
+`git log -S`, every version heading in the file is now dated, the "Phase 12.1" heading carries a
+disambiguating provenance note, and the tag creation plus the full push/publish sequence are
+documented and deferred — the tag to the orchestrator (for correctness, not avoidance), the
+push/publish to a human (per D-03), with neither executed here.
