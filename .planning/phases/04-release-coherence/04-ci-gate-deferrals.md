@@ -234,3 +234,61 @@ in CI is therefore unchanged by this fix; only the action's required-input error
   cannot recur was considered and **not** done: it would touch the one working job and
   duplicate the version across nine places, against `rust-toolchain.toml`'s single-source-of-
   truth contract. **Owner: Phase 15 / PIPE-04**, alongside the deprecated-actions sweep.
+
+---
+
+## Second CI execution — 2026-08-03, after the toolchain fix
+
+Run `30833088746` (`CI/CD Pipeline`, push, `release/v0.7.0`). The toolchain fix cleared the
+blockage; 14 previously-failing jobs passed and two of the three Phase 4 jobs finally executed.
+
+### `Example Muster (Feature Matrix)` — **SUCCESS. No longer deferred.**
+
+The examples job executed on a clean GitHub runner and passed. This is REL-05's examples
+clause **proven by execution**, not by YAML inspection. It is the clause carrying the trap
+that a bare `cargo build --examples` silently covers only 43 of 47 targets; the four-invocation
+feature matrix plus the 47-binary assertion both held in CI. **Deferral row 1 above is
+superseded — this gate is satisfied.**
+
+### `Docker Build` — **EXECUTED AND FAILED. First real measurement.**
+
+```
+Docker build wall-clock time: 2946s
+##[error]Docker multi-arch build took 2946s, exceeding the 300s budget
+```
+
+Job duration 49m43s. **The image itself built successfully** — `Build Docker image` passed;
+the failure is the wall-clock assertion alone.
+
+**This is the measurement REL-05 had never taken, and it says the budget is mis-specified
+rather than merely unmet.** SC5 asserts a *multi-arch* build inside a 500 MB / 5-minute
+budget, but those two figures trace to `PROJECT.md:767` — "112 MB built in 5m31s" — which was
+a **single-arch** measurement from Milestone 1. Building `linux/arm64` under QEMU emulation on
+a stock `ubuntu-latest` runner is roughly an order of magnitude slower than native amd64, so
+2946s is not an anomaly to tune away: it is what multi-arch-under-emulation costs. As written,
+SC5's time budget is unreachable for the build SC5 itself demands.
+
+**The image-size budget remains unmeasured.** `Assert image size budget (<= 500 MB)` is the
+step immediately after the failing one and never ran. Nothing here establishes whether the
+multi-arch image is over or under 500 MB.
+
+**No budget was relaxed to make this pass.** Changing a success criterion's figure to fit a
+measurement is the inversion this milestone exists to end; the number is recorded as-is and
+the disposition is left to a human. Candidate resolutions, none adopted here:
+1. Scope the existing budget to single-arch and give multi-arch its own, larger one.
+2. Replace QEMU emulation with native `arm64` runners or cross-compilation, then re-measure.
+3. Keep the multi-arch build but make the time assertion non-blocking, with the size assertion
+   still hard — accepting that build *duration* is a runner property, not a code property.
+
+### `Kubernetes Smoke Test` — **still never executed.** `skipped`; its `needs:` chain includes
+`Docker Build`, which failed. The 30 s pod-startup budget remains unmeasured, and the
+`k8s/deployment.yaml` placeholder caveat (`sleep 3600`, readiness probes commented out) is
+still untested. **Deferral row 2 stands unchanged. Owner: Phase 15 / PIPE.**
+
+### `API Surface Tracking` — still failing, unrelated and pre-existing. **DEBT-01, Phase 8.**
+Not one of SC5's named gates.
+
+### Standing note
+`docker/build-push-action@v6` and `docker/setup-qemu-action@v3` raised Node.js 20 deprecation
+annotations on this run. Not addressed here — **Owner: Phase 15 / PIPE-04**, with the
+deprecated-actions sweep.
