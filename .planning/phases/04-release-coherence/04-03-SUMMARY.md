@@ -158,3 +158,9 @@ None - no external service configuration required.
 ---
 *Phase: 04-release-coherence*
 *Completed: 2026-08-03*
+
+## Self-Check: PASSED
+
+All claimed files found on disk (`.github/workflows/ci.yml`, `04-ci-gate-deferrals.md`,
+`COVERAGE.md`, `04-03-SUMMARY.md`) and all four commit hashes (`8d4ea16`, `2526fef`, `ceeb2a7`,
+`4ecda7b`) found in `git log --oneline --all`.
