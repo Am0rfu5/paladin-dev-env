@@ -435,13 +435,13 @@ Diff in /workspace/.claude/worktrees/agent-ac61c0d15366ee9c1/crates/paladin-noti
  use paladin_ports::output::notification_port::{
      BasicNotificationPort, DeliveryCapabilities, Notification, NotificationChannel,
 Diff in /workspace/.claude/worktrees/agent-ac61c0d15366ee9c1/crates/paladin-ports/src/output/content_delivery_port.rs:190:
- 
+
      /// Validate delivery method configuration
      fn validate_delivery_method(&self, method: &DeliveryMethod)
 -        -> Result<(), ContentDeliveryError>;
 +    -> Result<(), ContentDeliveryError>;
  }
- 
+
  /// Batch Content Delivery Service
 Diff in /workspace/.claude/worktrees/agent-ac61c0d15366ee9c1/crates/paladin-ports/src/output/notification_port.rs:1167:
      /// - `ValidationError`: Template not found
@@ -449,7 +449,7 @@ Diff in /workspace/.claude/worktrees/agent-ac61c0d15366ee9c1/crates/paladin-port
      async fn get_template(&self, template_id: &str)
 -        -> NotificationPortResult<NotificationTemplate>;
 +    -> NotificationPortResult<NotificationTemplate>;
- 
+
      /// List templates with optional filtering
      ///
 Diff in /workspace/.claude/worktrees/agent-ac61c0d15366ee9c1/crates/paladin-ports/src/output/queue_port.rs:342:
@@ -459,7 +459,7 @@ Diff in /workspace/.claude/worktrees/agent-ac61c0d15366ee9c1/crates/paladin-port
 -use serde::{de::DeserializeOwned, Deserialize, Serialize};
 +use serde::{Deserialize, Serialize, de::DeserializeOwned};
  use thiserror::Error;
- 
+
  /// Queue service errors
 Diff in /workspace/.claude/worktrees/agent-ac61c0d15366ee9c1/crates/paladin-ports/src/output/queue_port.rs:620:
  {
@@ -467,7 +467,7 @@ Diff in /workspace/.claude/worktrees/agent-ac61c0d15366ee9c1/crates/paladin-port
      async fn enqueue_typed(&self, queue_name: &str, item: QueueItem<T>)
 -        -> Result<Uuid, QueueError>;
 +    -> Result<Uuid, QueueError>;
- 
+
      /// Dequeue a strongly-typed item
      async fn dequeue_typed(&self, queue_name: &str) -> Result<Option<QueueItem<T>>, QueueError>;
 ```

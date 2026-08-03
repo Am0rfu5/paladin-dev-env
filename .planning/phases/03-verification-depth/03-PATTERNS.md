@@ -734,4 +734,3 @@ architectural construction.
 
 ### Ready for Planning
 Pattern mapping complete. Planner can now reference analog patterns in PLAN.md files.
-
