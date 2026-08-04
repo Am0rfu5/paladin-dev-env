@@ -409,7 +409,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 05-08-PLAN.md — Epic 13 and Epic 20 ledger rows (19), including the corrected encryption row (wave 5)
+- [x] 05-08-PLAN.md — Epic 13 and Epic 20 ledger rows (19), including the corrected encryption row (wave 5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
