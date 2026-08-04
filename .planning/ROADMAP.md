@@ -405,7 +405,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 05-07-PLAN.md — Epic 24 block verdict and cluster table, plus Epic 24's 9 ledger rows (wave 4)
+- [x] 05-07-PLAN.md — Epic 24 block verdict and cluster table, plus Epic 24's 9 ledger rows (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
