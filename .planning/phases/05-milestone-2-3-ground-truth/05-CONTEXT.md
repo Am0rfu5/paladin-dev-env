@@ -254,7 +254,12 @@ CONTEXT.md. Source: `.planning/milestones/v0.7.1-phases/01-ground-truth-decision
 
 ### Plan decomposition
 
-- **D-20:** **Scaffold first, then epic fan-out, then blocks, then decisions.** Suggested shape,
+- **D-20 [informational]:** **Scaffold first, then epic fan-out, then blocks, then decisions.**
+  *(Tagged informational 2026-08-04: this decision governs how the plan set is decomposed, so the
+  13-plan set itself is its artefact — no individual plan can cite it as something it delivers.
+  Implemented as: 05-01 scaffold+tracer, 05-02/03/04 decisions, 05-05/06/07 blocks,
+  05-08…05-12 fan-out, 05-13 summary.)*
+  Suggested shape,
   ~10-11 plans, matching Phase 1's proven shape at comparable scale:
   1. **Ledger scaffold** (1 plan) — create `.planning/ledgers/milestone-02-03.md` with the head
      notes (D-04 path caveats, D-01 evidence bar, D-00e primary key), the verdict vocabulary, and

@@ -165,7 +165,6 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 <details>
 <summary>✅ <strong>Milestone 1 close-out — Phases 1-4</strong> — SHIPPED v0.7.1 2026-08-04 (full detail archived at <code>milestones/v0.7.1-ROADMAP.md</code>)</summary>
 
-
 ### Phase 1: Ground Truth & Decision Records
 
 **Goal**: `.planning/` describes the v0.7.0 code as it actually is, and each of the six contested definitions has exactly one recorded, evidence-cited answer that later milestones can build on.
@@ -354,7 +353,6 @@ Plans:
 
 - [x] 04-07-PLAN.md — ADR-0008 (version) and ADR-0009 (edition), the CONCERNS correction, Phase 7 requirement citations, and the REL-01..REL-05 ledger (wave 5)
 
-
 </details>
 
 **Milestone 2-3 close-out — Phases 5-6 (not started)**
@@ -370,6 +368,7 @@ VERIFY-05 and must be dispositioned by it rather than rediscovered:
 
 - `src/bin/paladin-server.rs` at **0.00% coverage** — closing it needs a `run()` seam extracted from
   `main()`; owner recorded as Phase 5 / VERIFY-05.
+
 - `minio.rs` sits **outside ADR-0006's default-feature scope** — owner recorded as
   VERIFY-05 / PIPE-02, so VERIFY-05 decides the scope question and Phase 15 applies it.
 
@@ -389,19 +388,52 @@ no phase home anywhere in Phases 5-16** and needs a placement decision, not a si
 **Plans:** 13 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 05-01-PLAN.md — Ledger scaffold with 118 keyed rows plus Epic 11 fully cited (tracer), and REQUIREMENTS.md reduced to a pointer (wave 1)
 - [ ] 05-02-PLAN.md — ADR-0010 epic numbering, and the annotated RELEASE_NOTES_MILESTONE_3.md correction (wave 1)
 - [ ] 05-03-PLAN.md — ADR-0011 vision surfaces plus encryption disposition, and ADR-0012 live-API missing-key behaviour (wave 1)
 - [ ] 05-04-PLAN.md — ADR-0006 amended in place: module-scoped gates, the two inherited dispositions, the ~78% falsifiability statement (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 05-05-PLAN.md — Epic 22 block verdict and cluster table, plus Epic 22's 10 ledger rows (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 05-06-PLAN.md — Epic 14 block verdict and cluster table, plus Epic 14's 8 ledger rows (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 05-07-PLAN.md — Epic 24 block verdict and cluster table, plus Epic 24's 9 ledger rows (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 05-08-PLAN.md — Epic 13 and Epic 20 ledger rows (19), including the corrected encryption row (wave 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 05-09-PLAN.md — Epic 12 and Epic 15 ledger rows (13) (wave 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
 - [ ] 05-10-PLAN.md — Epic 16 and Epic 18 ledger rows (18) (wave 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
 - [ ] 05-11-PLAN.md — Epic 17 / 17.5 and Epic 19 ledger rows (16) (wave 8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
 - [ ] 05-12-PLAN.md — Epic 21 and Epic 23 ledger rows (17) (wave 9)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+
 - [ ] 05-13-PLAN.md — Ledger summary, consolidated CLOSE-02 scope, final counts, PROMOTION.md to 0013 (wave 10)
+
+**Cross-cutting constraints:**
+
+- The block verdict is `satisfied by shipped code` only if every parent-task cluster verifies; otherwise it is `partially outstanding`, the failing clusters are named, and those named clusters are exactly Phase 6 CLOSE-02's scope for this block and nothing else.
 
 **Sequencing note:** the ledger is a single file, so the ten ledger-writing plans are chained one per
 wave — same-wave plans must not share `files_modified`. The three ADR plans (05-02, 05-03, 05-04)
