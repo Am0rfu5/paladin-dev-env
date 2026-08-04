@@ -397,7 +397,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 05-05-PLAN.md — Epic 22 block verdict and cluster table, plus Epic 22's 10 ledger rows (wave 2)
+- [x] 05-05-PLAN.md — Epic 22 block verdict and cluster table, plus Epic 22's 10 ledger rows (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
