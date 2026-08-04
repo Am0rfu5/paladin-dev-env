@@ -1,5 +1,12 @@
 # Release Notes: Milestone 3
 
+> **Correction (dated 2026-08-04, ADR-0010):** This document's Epic 19-24 numbering does not
+> match the authoritative plan/epic-definition set, and two further claims are verified absent
+> from the tree. See
+> [`.planning/decisions/0010-milestone-3-epic-numbering.md`](../../.planning/decisions/0010-milestone-3-epic-numbering.md)
+> for the full mapping. Original text is retained below with inline corrections — nothing is
+> deleted.
+
 **Version**: 0.3.0  
 **Release Date**: February 2026  
 **Codename**: "The Grand Assembly"
@@ -18,7 +25,9 @@ Milestone 3 brings major enhancements to Paladin's multi-agent orchestration cap
 
 ## 🆕 New Features
 
-### Epic 19: Conclave Pattern (Multi-Expert Synthesis)
+### ~~Epic 19: Conclave Pattern (Multi-Expert Synthesis)~~ Epic 19: Herald & Domain Type Consolidation
+**Corrected numbering (ADR-0010):** this section's content (Conclave) is Milestone 2 **Epic 15**,
+not Epic 19. See ADR-0010's mapping table for the full correction.
 **Status**: ✅ Complete
 
 Implements the Mixture-of-Agents pattern for high-quality multi-perspective analysis:
@@ -45,7 +54,9 @@ let result = conclave_service.execute(&conclave, "Review microservices design").
 
 **Documentation**: `docs/BATTALION.md#conclave`, `examples/conclave_expert_panel.rs`
 
-### Epic 20: Council Pattern (Iterative Discussion)
+### ~~Epic 20: Council Pattern (Iterative Discussion)~~ Epic 20: Vision Pipeline Completion
+**Corrected numbering (ADR-0010):** this section's content (Council) is Milestone 2 **Epic 16**,
+not Epic 20. See ADR-0010's mapping table for the full correction.
 **Status**: ✅ Complete
 
 Enables structured multi-agent discussions with turn-based dialogue:
@@ -69,11 +80,19 @@ let result = council_service.execute(&council, &experts, "Should we implement 2F
 println!("Summary: {}", result.summary);
 ```
 
+**Corrected API form (ADR-0010):** ~~`council_service.execute(&council, &experts, topic)`~~ and
+~~`result.summary`~~ diverge from the shipped surface. The shipped method is
+`CouncilExecutionService::convene(&self, council: &Council, topic: &str) ->
+Result<CouncilResult, BattalionError>` and the result field is `CouncilResult.conclusion:
+Option<String>` — see `crates/paladin-battalion/src/council_service.rs:118` and `:25-29`.
+
 **Use Cases**: Policy development, technical decisions, threat modeling, code review  
 **CLI**: `paladin council "question" -n 5 --rounds 3`  
 **Documentation**: `docs/BATTALION.md#council`, `examples/council_discussion.rs`
 
-### Epic 21: Grove Pattern (Contextual Routing)
+### ~~Epic 21: Grove Pattern (Contextual Routing)~~ Epic 21: Autonomous Agent Completion
+**Corrected numbering (ADR-0010):** this section's content (Grove) is Milestone 2 **Epic 16**,
+not Epic 21. See ADR-0010's mapping table for the full correction.
 **Status**: ✅ Complete
 
 Intelligent task routing to specialized agent trees based on content analysis:
@@ -83,6 +102,8 @@ Intelligent task routing to specialized agent trees based on content analysis:
 - **Confidence Scoring**: Know how well input matched selected agent
 - **Fallback Chains**: Graceful degradation if no good match found
 - **Dynamic Learning**: Performance-based routing improves over time
+  (**Corrected (ADR-0010):** same discredited premise as the `PerformanceBased` correction below —
+  no such routing mode exists in the shipped `RoutingStrategy` enum)
 
 **Example**:
 ```rust
@@ -103,12 +124,20 @@ let result = grove_service.execute(&grove, "How to implement TLS rotation?").awa
 **Routing Strategies**:
 - `KeywordMatch`: Fast, rule-based (best for well-defined domains)
 - `SemanticSimilarity`: Embedding-based context-aware routing
-- `PerformanceBased`: Adaptive routing based on historical success
+- ~~`PerformanceBased`: Adaptive routing based on historical success~~
+  **Corrected (ADR-0010):** `RoutingStrategy::PerformanceBased` is verified **absent** from the
+  tree (`grep -rn "PerformanceBased" crates/ src/` returns no matches) and contradicts Epic 16
+  non-goal NG-3 ("Grove learning from routing decisions to improve future matches (future ML
+  feature)"). The shipped `RoutingStrategy` enum
+  (`crates/paladin-core/src/platform/container/battalion/grove.rs:54`) has exactly three
+  variants: `KeywordMatch` (default), `SemanticSimilarity`, `LlmRouting`.
 
 **Use Cases**: Help desk routing, code analysis, multi-domain systems, customer support  
 **Documentation**: `docs/BATTALION.md#grove`, `examples/grove_routing.rs`
 
-### Epic 22: Maneuver Pattern (Flow DSL)
+### ~~Epic 22: Maneuver Pattern (Flow DSL)~~ Epic 22: Battalion & Commander Hardening
+**Corrected numbering (ADR-0010):** this section's content (Maneuver / Flow DSL) is Milestone 2
+**Epic 17 / 17.5**, not Milestone 3 Epic 22. See ADR-0010's mapping table for the full correction.
 **Status**: ✅ Complete
 
 String-based workflow orchestration with declarative syntax:
@@ -136,6 +165,12 @@ let maneuver = Maneuver::new(flow3, paladins, config)?;
 let result = maneuver_service.execute(&maneuver, input).await?;
 ```
 
+**Corrected API form (ADR-0010):** ~~`Maneuver::new(flow3, paladins, config)`~~ (flow first,
+config third, no name argument) diverges from the shipped constructor. The shipped signature is
+`Maneuver::new(name: impl Into<String>, agents: HashMap<String, Paladin>, flow: FlowExpression,
+config: ManeuverConfig) -> Result<Self, ManeuverError>` — see
+`crates/paladin-battalion/src/maneuver/mod.rs:148-153`.
+
 **CLI**:
 ```bash
 paladin maneuver validate "a -> (b, c) -> d"
@@ -144,7 +179,10 @@ paladin maneuver visualize "intake -> (analysis, review) -> summary" --format me
 
 **Documentation**: `docs/MANEUVER.md`, `docs/guides/flow-dsl.md`
 
-### Epic 23: Commander Enhancement
+### ~~Epic 23: Commander Enhancement~~ Epic 23: CLI/Config/Infrastructure Completion
+**Corrected numbering (ADR-0010):** this section's content (Commander auto-detection with
+Council/Grove/Conclave integration) is Milestone 3 **Epic 22** (Battalion & Commander Hardening),
+not Epic 23. See ADR-0010's mapping table for the full correction.
 **Status**: ✅ Complete
 
 Enhanced Commander pattern with automatic strategy detection:
@@ -158,6 +196,8 @@ Enhanced Commander pattern with automatic strategy detection:
 **Documentation**: `docs/COMMANDER.md`, `examples/commander_council.rs`, `examples/commander_grove.rs`
 
 ### Epic 24: Test Hardening, Benchmarks & QA
+**Note (ADR-0010):** this is the one heading in this document whose numbering already agrees
+with the authoritative plan/epic-definition set — no correction needed here.
 **Status**: ✅ Complete
 
 Comprehensive testing infrastructure and quality improvements:
@@ -316,6 +356,13 @@ let grove = GroveBuilder::new()
 
 - CLI snapshot tests fail in `cargo llvm-cov` environment (workaround: run `cargo llvm-cov --lib`)
 - `user_service.rs` and `listener_service.rs` have low test coverage (tracked in DEFERRED_COVERAGE.md)
+
+> **Superseded (dated 2026-08-04, ADR-0010):** The section below is a point-in-time forward-look,
+> not current scope. Sentinel Vision, listed below as planned for Milestone 4, is verified
+> **shipped** — see `.planning/intel/code-verification.md` §"Verified SHIPPED" ("Sentinel vision"
+> row), which records `crates/paladin-ports/src/output/vision_port.rs`, `vision_llm_port.rs`,
+> `tests/integration/vision_integration_test.rs`, `examples/vision_analysis.rs` and
+> `examples/vision_battalion.rs` as shipped. Original text retained unchanged below.
 
 ## 🔮 What's Next (Milestone 4)
 
