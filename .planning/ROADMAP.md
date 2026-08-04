@@ -421,7 +421,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 05-11-PLAN.md — Epic 17 / 17.5 and Epic 19 ledger rows (16) (wave 8)
+- [x] 05-11-PLAN.md — Epic 17 / 17.5 and Epic 19 ledger rows (16) (wave 8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
