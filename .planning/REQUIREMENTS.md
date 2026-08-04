@@ -125,10 +125,13 @@ below; they are not defects.
 
 ---
 
-## v1 Requirements — Milestone 1 close-out (Phases 1-4)
+## v1 Requirements — Milestone 1 close-out (Phases 1-4) — ✅ SHIPPED v0.7.1 (2026-08-04)
 
 Scope: close out Milestone 1 so that the planning record, the code, and the quality numbers all
 agree. Nothing here re-implements shipped work.
+
+**All 25 requirements verified.** Archive: `milestones/v0.7.1-ROADMAP.md` ·
+Audit: `milestones/v0.7.1-MILESTONE-AUDIT.md`.
 
 ### Reconciliation (RECON)
 
@@ -393,7 +396,15 @@ by passing tests.*
 
 ---
 
-## v1 Requirements — Milestone 2-3 close-out (Phases 5-6)
+## v1 Requirements — Milestone 2-3 close-out (Phases 5-6) — ◆ CURRENT MILESTONE v0.7.2
+
+**These 9 requirements are the scope of milestone v0.7.2, started 2026-08-04.** The 52 forward
+requirements in the three sections below (Phases 7-16) are not in this milestone.
+
+Two of them — CLOSE-02 and CLOSE-03 — are **scope-deferred by construction**: their size is set by
+Phase 5's verdicts, not knowable at planning time. CLOSE-02 closes with a recorded "no work
+required" verdict if VERIFY-02 finds all three blocks satisfied by shipped code. Plan Phase 6 after
+Phase 5 reports, not before.
 
 Added by ingest run 2. Scope is deliberately small: **Milestones 2 and 3 shipped.** Every
 capability those 118 requirements describe — Sanctum, RAG, Sentinel vision, autonomous planning
