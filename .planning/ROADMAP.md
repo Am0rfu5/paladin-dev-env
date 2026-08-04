@@ -96,7 +96,7 @@ frozen at 311 lines that two milestones made invisible.
 | Milestone | Phases | Status | Source |
 |---|---|---|---|
 | **Milestone 1 close-out** | 1-4 | ✅ **Shipped v0.7.1 (2026-08-04)** — [archive](milestones/v0.7.1-ROADMAP.md) | Ingest run 1 — `.project/Milestone_1-MVP` (36 docs) |
-| **Milestone 2-3 close-out** | 5-6 | Not started | Ingest run 2 — `.project/Milestone_2-Missing_features` + `.project/Milestone_3-Completion` (45 docs) |
+| **Milestone 2-3 close-out** | 5-6 | ◆ **Current — v0.7.2, started 2026-08-04** | Ingest run 2 — `.project/Milestone_2-Missing_features` + `.project/Milestone_3-Completion` (45 docs) |
 | **Milestone 4-6 close-out** | 7-8 | Not started | Ingest run 3 — `.project/Milestone_4-Refactor-Crates-Features` + `.project/Milestone_5-Workspace-Decomposition` + `.project/Milestone_6-Architectural-Refinements` (32 docs) |
 | **Milestone 7-8 close-out** | 9-11 | Not started | Ingest run 4 — `.project/Milestone_7-Production-Hardening` + `.project/Milestone_8-Facade-Cleanup-Shim-Resolution` (40 docs) |
 | **Milestone 9-12 + Deferred-QA close-out** | 12-16 | Not started | Ingest run 5 (FINAL) — `.project/Milestone_9-Classic-Orchestrator-Completion` + `.project/Milestone_10-CI-Hardening-Release-Automation` + `.project/Milestone_11-Documentation-Overhaul-Publish` + `.project/Milestone_12-Web-API` + `.project/Deferred-QA-CICD-Completion` + `.project/project-management` (46 docs) |
@@ -136,7 +136,7 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 
 </details>
 
-**Milestone 2-3 close-out**
+**Milestone 2-3 close-out** — ◆ **CURRENT MILESTONE v0.7.2** (started 2026-08-04, 9 requirements)
 
 - [ ] **Phase 5: Milestone 2-3 Ground Truth** - Record what Epics 11-24 actually shipped, verify the three unverified blocks, and fix the epic-numbering defect at its source
 - [ ] **Phase 6: Verified Gap Closure** - Close the one verified defect plus whatever Phase 5 proves genuinely outstanding
@@ -362,8 +362,21 @@ Plans:
 ### Phase 5: Milestone 2-3 Ground Truth
 
 **Goal**: A developer can open `.planning/` and get a truthful account of what Epics 11-24 delivered — which of the 118 requirements the shipped tree satisfies, which of two competing surfaces each feature actually implements, and what the three unverified open-checkbox blocks contain — with the epic-numbering defect corrected at its source so it stops propagating.
-**Depends on**: Phase 1 (RECON-07 must exist before VERIFY-05 can extend it; the rest of Phase 5 is independent of Phases 2-4)
+**Depends on**: Phase 1 (RECON-07 must exist before VERIFY-05 can extend it; the rest of Phase 5 is independent of Phases 2-4). **Satisfied — Phase 1 shipped in v0.7.1.**
 **Requirements**: VERIFY-01, VERIFY-02, VERIFY-03, VERIFY-04, VERIFY-05, VERIFY-06
+
+**Inherited from the v0.7.1 close-out** (STATE.md → Deferred Items, 2026-08-04). Both land on
+VERIFY-05 and must be dispositioned by it rather than rediscovered:
+
+- `src/bin/paladin-server.rs` at **0.00% coverage** — closing it needs a `run()` seam extracted from
+  `main()`; owner recorded as Phase 5 / VERIFY-05.
+- `minio.rs` sits **outside ADR-0006's default-feature scope** — owner recorded as
+  VERIFY-05 / PIPE-02, so VERIFY-05 decides the scope question and Phase 15 applies it.
+
+**Open-ended risk to watch:** VERIFY-04 asks whether Epic 13's encryption-at-rest requirement
+(`REQ-vision-security-encryption`, recorded *"Not found in tree… not carried as forward work until
+that answer exists"*) was consciously dropped. **If the answer is no, that is new security work with
+no phase home anywhere in Phases 5-16** and needs a placement decision, not a silent absorption.
 **Success Criteria** (what must be TRUE):
 
   1. A developer can look up any of the 118 Milestone 2-3 requirement IDs and see a `file:line`-cited verdict — satisfied, diverged, partial, or genuinely outstanding — instead of a PRD path that predates the workspace decomposition and no longer resolves.
@@ -378,8 +391,17 @@ Plans:
 ### Phase 6: Verified Gap Closure
 
 **Goal**: Every Milestone 2-3 gap that verification actually proved is closed or explicitly deferred with a recorded reason — and no shipped surface is removed without a decision behind it.
-**Depends on**: Phase 5
+**Depends on**: Phase 5 — **hard, and for scope as well as sequence.** CLOSE-02's size is set by VERIFY-02's verdicts (0 to 155 items) and CLOSE-03 derives from VERIFY-04 and VERIFY-06. **Plan this phase after Phase 5 reports, not alongside it.**
 **Requirements**: CLOSE-01, CLOSE-02, CLOSE-03
+
+**Inherited from the v0.7.1 close-out** (STATE.md → Deferred Items, 2026-08-04):
+
+- **WARN-01 — Herald is not reachable from Campaign, Chain of Command, or the Commander router.**
+  Formation and Phalanx wire Herald; the other three carry zero references. `format_battalion_result`
+  is pattern-agnostic so no requirement's text is falsified, but the composite Chain-of-Command
+  developer flow does not compose without the caller invoking a Herald directly. Recorded
+  *"Unassigned — candidate for Phase 6"*; this milestone should either adopt it under CLOSE-02/03 or
+  record a decision declining it.
 **Success Criteria** (what must be TRUE):
 
   1. A Grove battalion configured with Anthropic or DeepSeek routes through *that* provider: the hardcoded `model: "gpt-4"` at `grove_service.rs:537` is gone, the routing model comes from configuration, and a test proves a non-OpenAI model reaches the LLM call.
@@ -633,8 +655,8 @@ through it. Recorded here so neither side gets planned twice:
 | 2. Functional Gap Closure | v0.7.1 | 11/11 | Complete    | 2026-08-01 |
 | 3. Verification Depth | v0.7.1 | 8/8 | Complete    | 2026-08-02 |
 | 4. Release Coherence | v0.7.1 | 7/7 | Complete    | 2026-08-03 |
-| 5. Milestone 2-3 Ground Truth | M2-3 | 0/TBD | Not started | - |
-| 6. Verified Gap Closure | M2-3 | 0/TBD | Not started | - |
+| 5. Milestone 2-3 Ground Truth | **v0.7.2** | 0/TBD | ◆ Current milestone | - |
+| 6. Verified Gap Closure | **v0.7.2** | 0/TBD | ◆ Current milestone | - |
 | 7. Workspace Ground Truth & Recorded Answers | M4-6 | 0/TBD | Not started | - |
 | 8. Verified Defect Closure | M4-6 | 0/TBD | Not started | - |
 | 9. Release & Security Gate Integrity | M7-8 | 0/TBD | Not started | - |
