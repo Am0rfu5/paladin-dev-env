@@ -165,6 +165,67 @@ is why the command below differs in shape from `.github/workflows/integration-te
   67.79%)"). It must be amended to cite this ADR's single workspace-wide 84% floor instead.
   **Plan 01-12** is where that amendment lands.
 
+## Phase 5 amendment (2026-08-04)
+
+**(Amended by Phase 5, dated 2026-08-04, citing `REQUIREMENTS.md`'s VERIFY-05 and
+`05-CONTEXT.md` D-12–D-16):** VERIFY-05 extends this same ADR rather than writing a second one —
+this ADR's own ratchet clause already specifies in-place amendment, D-00g makes it the house
+convention, and RECON-07 exists precisely to eliminate the "choosing between two numbers" failure a
+second coverage ADR would recreate. Superseded text elsewhere in this document is retained, not
+deleted, per D-00g. **No re-measurement was performed in this phase** — the 84.79% figure measured
+2026-07-31T14:57:11Z and recorded above under "The measured figure" stands unchanged (D-16).
+**Phase 15 / PIPE-02 remains the enforcement owner** for everything this amendment records: the CI
+threshold itself, the two module-scoped gates below, the `run()`-seam prerequisite, and the
+`minio.rs` feature-scope question.
+
+The floor arithmetic recorded above under "The gate (floor): 84%, hard-fail from the first run" is
+unchanged and is restated here by reference only, not rewritten: the floor is derived by truncating
+the measured 84.79% toward zero to a whole percent, the comparison is at-or-above, and the same
+worked example already given there (84% clears the floor, 83.99% does not) still holds exactly as
+written. No new comparison operator, rounding mode, or precision rule is introduced by this
+amendment.
+
+### Module-scoped gate table (D-13)
+
+Both targets below sit **above** the global 84% floor and are **explicitly not withdrawn** — see
+"The two module-scoped gates" above, ADR-0006's own standing instruction. Where a module target and
+the global floor both apply to the same file, both numbers coexist: the module target is a target
+above the floor, never a replacement for it, and **the 84% floor remains the only binding gate**.
+This amendment records the number, the scope and the gap for each target — it does not convert
+either into a hard CI gate, because Phase 5 has no CI in which to enforce one. Enforcement is
+Phase 15 / PIPE-02's.
+
+| Module scope | Target | Measured | Gap | Owner |
+|---|---|---|---|---|
+| Herald (`REQ-herald-consolidation-quality-gates`) | ≥ 95% | **80.49%** line coverage — `crates/paladin-core/src/platform/container/herald.rs`, transcribed from `01-coverage-measurement.md:317` | ~14.5 points below target | Phase 15 / PIPE-02 |
+| Autonomous components (`REQ-autonomous-completion-quality-gates`) | ≥ 90% | **92.80%** line-weighted aggregate across the four autonomous services, transcribed from `01-coverage-measurement.md`: `planning_service.rs:421` 577 lines / 43 missed / 92.55%, `prompt_generation_service.rs:422` 234 lines / 26 missed / 88.89%, `temperature_service.rs:423` 394 lines / 23 missed / 94.16%, `handoff_service.rs:418` 239 lines / 12 missed / 94.98% — aggregate `(1444 - 104) / 1444 = 92.80%` | Aggregate clears the target by ~2.8 points; `prompt_generation_service.rs` individually sits ~1.1 points below it | Phase 15 / PIPE-02 |
+
+### Inherited dispositions from the v0.7.1 close-out (D-14a, D-14b)
+
+- **`src/bin/paladin-server.rs` — deferred with reason.** Measured at **0.00%** line coverage (185
+  regions / 13 functions / 145 lines, all missed — transcribed from `01-coverage-measurement.md:426`).
+  Closing it requires extracting a testable `run()` seam from `#[tokio::main] async fn main()`, which
+  is a code change and therefore outside this phase's boundary — this plan records the disposition
+  only and edits no `.rs` file. The seam extraction is named as the concrete prerequisite so
+  Phase 15 inherits a task, not a puzzle. A 0%-coverage binary is not allowed to sit silently in the
+  denominator without a record. **Owner: Phase 15 / PIPE-02.**
+
+- **`minio.rs` — outside the gated denominator by construction.** ADR-0006's scope stays
+  default-feature workspace-wide (see "The scope" above); `minio.rs` sits behind the non-default
+  `s3-storage` feature, so it does not appear in the 84.79% measurement's denominator at all — it is
+  outside scope by construction, not a 0%-coverage file inside scope. Widening the denominator to
+  non-default features in Phase 5 would move the 84% floor with no measurement behind it, which is
+  exactly what this ADR forbids. Whether to add a second, feature-scoped measurement is
+  **Phase 15 / PIPE-02's** decision — RECON-07's one-number-one-scope rule stays intact until then.
+
+### The ~78% Milestone-3 figure (D-15)
+
+The ~78% overall figure reported in `RELEASE_NOTES_MILESTONE_3.md` **fails** the 84% floor and
+**predates** the measurement that set it — a stale historical figure, not a competing current one.
+It is accepted and noted here, not explained away or reconciled, in the same shape "The ~24-point gap
+above the stale Milestone-1 baselines is accepted and noted, not explained" above already gives the
+60.88% / 67.79% Milestone-1 baselines.
+
 ## Considered Options
 
 - `REQ-test-coverage-target-v1` (80% unit / 70% integration, nine Milestone-1 PRDs) — rejected; the
@@ -197,6 +258,19 @@ is why the command below differs in shape from `.github/workflows/integration-te
   this ADR's deviation from D-09; a floor above its own target is self-contradictory and would hand
   Phase 15 two numbers instead of RECON-07's required one. Recorded here rather than silently
   dropped, per the deviation protocol.
+- **(Added by Phase 5, dated 2026-08-04, VERIFY-05/D-12)** Milestone 3 plan's layered per-tier table
+  (run 2) — 75% overall (core ≥ 85%, application ≥ 80%, infrastructure ≥ 70%, CLI ≥ 70%) — rejected
+  against the measured 84.79%: 75% sits ten points below the measured baseline and would under-gate
+  what the tree already achieves, and a four-tier table introduces four numbers where RECON-07
+  requires one. See the existing rejection above ("Run-2 third position (75% overall, layered
+  per-tier table, Milestone 3 plan) — rejected; RECON-07 asks for one workspace-wide number, not a
+  per-tier table with four separate targets.") for the RECON-07 argument in full; this bullet adds
+  the numeric under-gating comparison against the measured figure.
+- **(Added by Phase 5, dated 2026-08-04, VERIFY-05/D-12)** Epic 24's re-assertion of ≥ 80% / ≥ 70%
+  (run 2) — rejected against the measured 84.79% for the same under-gating reason as the existing
+  rejection above ("`REQ-epic24-quality-gates` (80% all modules / 70% integration, re-asserted) —
+  rejected; re-asserts the same immediate-80%-hard-gate shape D-09 already rejected ... and is now
+  moot since measured coverage already exceeds it."); cross-referenced rather than restated.
 
 ## Code Locations
 
@@ -230,3 +304,12 @@ floor into CI either way.
 - **Phase 15 (PIPE-02)** — must land the 84% CI threshold on this number, or record why its figure
   differs; must also extend the recorded scope to the Docker-backed `integration-tests.yml` suite
   this ADR could not reach.
+- **Phase 15 (PIPE-02) — extended by this Phase 5 amendment.** In addition to the CI threshold and
+  Docker-backed-scope extension recorded above, PIPE-02 now also receives: the `run()`-seam
+  extraction from `src/bin/paladin-server.rs` named as a concrete prerequisite (D-14a); the
+  `minio.rs` feature-scoped-measurement decision (D-14b); and enforcement of both module-scoped
+  gates in the table above (D-13).
+- **Phase 5 ledger plans 05-11 and 05-12** — cite this amendment's transcribed Herald (80.49%) and
+  autonomous-components (92.80% aggregate) figures on the `REQ-herald-consolidation-quality-gates`
+  and `REQ-autonomous-completion-quality-gates` ledger rows respectively, rather than restating an
+  unmeasured target.
