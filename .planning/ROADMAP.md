@@ -413,7 +413,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 05-09-PLAN.md — Epic 12 and Epic 15 ledger rows (13) (wave 6)
+- [x] 05-09-PLAN.md — Epic 12 and Epic 15 ledger rows (13) (wave 6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
