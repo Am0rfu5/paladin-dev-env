@@ -386,7 +386,28 @@ no phase home anywhere in Phases 5-16** and needs a placement decision, not a si
   5. One coverage number and one scope survive across all four competing positions (80 / 85 / 75-layered / 80-Epic-24), the two module-scoped gates are placed relative to it, and the ~78% measured figure can be judged pass or fail against it.
   6. A CI run with no API keys behaves the way one recorded decision says it should — loud failure or clean skip — and `llm_live_api_tests.rs` matches that decision rather than contradicting the PRDs that specified it.
 
-**Plans**: TBD
+**Plans:** 13 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Ledger scaffold with 118 keyed rows plus Epic 11 fully cited (tracer), and REQUIREMENTS.md reduced to a pointer (wave 1)
+- [ ] 05-02-PLAN.md — ADR-0010 epic numbering, and the annotated RELEASE_NOTES_MILESTONE_3.md correction (wave 1)
+- [ ] 05-03-PLAN.md — ADR-0011 vision surfaces plus encryption disposition, and ADR-0012 live-API missing-key behaviour (wave 1)
+- [ ] 05-04-PLAN.md — ADR-0006 amended in place: module-scoped gates, the two inherited dispositions, the ~78% falsifiability statement (wave 1)
+- [ ] 05-05-PLAN.md — Epic 22 block verdict and cluster table, plus Epic 22's 10 ledger rows (wave 2)
+- [ ] 05-06-PLAN.md — Epic 14 block verdict and cluster table, plus Epic 14's 8 ledger rows (wave 3)
+- [ ] 05-07-PLAN.md — Epic 24 block verdict and cluster table, plus Epic 24's 9 ledger rows (wave 4)
+- [ ] 05-08-PLAN.md — Epic 13 and Epic 20 ledger rows (19), including the corrected encryption row (wave 5)
+- [ ] 05-09-PLAN.md — Epic 12 and Epic 15 ledger rows (13) (wave 6)
+- [ ] 05-10-PLAN.md — Epic 16 and Epic 18 ledger rows (18) (wave 7)
+- [ ] 05-11-PLAN.md — Epic 17 / 17.5 and Epic 19 ledger rows (16) (wave 8)
+- [ ] 05-12-PLAN.md — Epic 21 and Epic 23 ledger rows (17) (wave 9)
+- [ ] 05-13-PLAN.md — Ledger summary, consolidated CLOSE-02 scope, final counts, PROMOTION.md to 0013 (wave 10)
+
+**Sequencing note:** the ledger is a single file, so the ten ledger-writing plans are chained one per
+wave — same-wave plans must not share `files_modified`. The three ADR plans (05-02, 05-03, 05-04)
+touch disjoint files and run in parallel with the scaffold in wave 1, so ADR-0010's corrected epic
+numbering is available before any ledger row cites it. **Phase 6 must not be planned until 05-07
+completes** — CLOSE-02's scope is set by the three block verdicts from 05-05, 05-06 and 05-07.
 
 ### Phase 6: Verified Gap Closure
 
