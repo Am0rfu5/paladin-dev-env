@@ -390,10 +390,10 @@ no phase home anywhere in Phases 5-16** and needs a placement decision, not a si
 Plans:
 **Wave 1**
 
-- [ ] 05-01-PLAN.md — Ledger scaffold with 118 keyed rows plus Epic 11 fully cited (tracer), and REQUIREMENTS.md reduced to a pointer (wave 1)
-- [ ] 05-02-PLAN.md — ADR-0010 epic numbering, and the annotated RELEASE_NOTES_MILESTONE_3.md correction (wave 1)
-- [ ] 05-03-PLAN.md — ADR-0011 vision surfaces plus encryption disposition, and ADR-0012 live-API missing-key behaviour (wave 1)
-- [ ] 05-04-PLAN.md — ADR-0006 amended in place: module-scoped gates, the two inherited dispositions, the ~78% falsifiability statement (wave 1)
+- [x] 05-01-PLAN.md — Ledger scaffold with 118 keyed rows plus Epic 11 fully cited (tracer), and REQUIREMENTS.md reduced to a pointer (wave 1)
+- [x] 05-02-PLAN.md — ADR-0010 epic numbering, and the annotated RELEASE_NOTES_MILESTONE_3.md correction (wave 1)
+- [x] 05-03-PLAN.md — ADR-0011 vision surfaces plus encryption disposition, and ADR-0012 live-API missing-key behaviour (wave 1)
+- [x] 05-04-PLAN.md — ADR-0006 amended in place: module-scoped gates, the two inherited dispositions, the ~78% falsifiability statement (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
