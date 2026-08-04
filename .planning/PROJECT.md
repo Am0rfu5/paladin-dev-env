@@ -103,6 +103,55 @@ Reported test totals are deliberately excluded from the metric: across the corpu
 999 → 1,292 → 1,674 → 1,628 → 853, i.e. not a monotonic series, so no single figure is
 trustworthy enough to anchor a gate.
 
+## Current Milestone: v0.7.2 Milestone 2-3 close-out
+
+**Goal:** Convert the Milestone 2-3 record from component-level claims into `file:line` verdicts,
+settle the four contested definitions Epics 11-24 left open, and close whatever verification proves
+genuinely outstanding.
+
+**Phases:** 5-6 (numbering continues; Phases 1-4 shipped as v0.7.1)
+
+**Target features:**
+
+- **A truthful Milestone 2-3 ledger** — all 118 run-2 requirements carrying a `file:line` verdict
+  (satisfied / diverged / partial / genuinely outstanding) instead of a PRD path that predates the
+  workspace decomposition (VERIFY-01)
+- **Verdicts, not checkbox arithmetic, for the last three unverified blocks** — Epic 22 (81 open),
+  Epic 14 (45), Epic 24 (29). A written verdict per block; 23 ledger rows currently route here
+  (VERIFY-02)
+- **The Milestone 3 epic-numbering defect fixed at source**, with the two release-notes claims
+  verified absent from the tree corrected or withdrawn (VERIFY-03)
+- **The two vision surfaces recorded as deliberate coexistence**, and an answer on whether Epic 13's
+  encryption-at-rest requirement was consciously dropped (VERIFY-04)
+- **One coverage number and one scope** surviving across all four competing positions, with the two
+  module-scoped gates placed relative to it (VERIFY-05)
+- **One recorded answer for live-API test behaviour when keys are missing** — loud failure or clean
+  skip — with the harness matching it (VERIFY-06)
+- **Grove routing honours its configured provider** — the hardcoded `model: "gpt-4"` at
+  `grove_service.rs:537` gone, with a test proving a non-OpenAI model reaches the LLM call (CLOSE-01)
+- **Everything verification proves outstanding closed or deferred with a reason** (CLOSE-02), and
+  the Phase 5 answers with code consequences applied (CLOSE-03)
+
+**Key context carried in:**
+
+- **Phase 5's only hard dependency is Phase 1 (RECON-07), which shipped in v0.7.1** — this milestone
+  is runnable now, out of numeric order relative to Phases 7-16.
+- **Two of Phase 6's three requirements have undefined scope until Phase 5 runs.** CLOSE-02's size is
+  set by Phase 5's verdicts, not by the 155 open checkboxes; it closes with a recorded "no work
+  required" verdict if all three blocks prove satisfied. This is deliberate containment — Phase 5
+  discovers, Phase 6 absorbs, both inside this milestone.
+- **Inbound from the v0.7.1 close-out:** `src/bin/paladin-server.rs` at 0.00% coverage and `minio.rs`
+  sitting outside ADR-0006's default-feature scope both land on VERIFY-05; WARN-01 (Herald
+  unreachable from Campaign, Chain of Command and the Commander router) is a candidate for Phase 6.
+- **One forward coupling out:** VERIFY-05's coverage number is what PIPE-02 (Phase 15) must land on,
+  or record why the CI gate differs.
+- **One open-ended risk:** if VERIFY-04 finds Epic 13's encryption-at-rest requirement was *not*
+  consciously dropped, that is new security work with no phase home anywhere in Phases 5-16.
+- **Deliberately deferred to a later milestone:** Phase 9's RustSec exception reconciliation, which
+  carries the corpus's only dated item — a risk acceptance expiring **2026-09-30**, roughly eight
+  weeks from this milestone's start — and Phase 12's 18-line duplicate-audit-job deletion. Plan the
+  next milestone before that date lapses.
+
 ## Requirements
 
 ### Validated
@@ -365,7 +414,11 @@ ever started. **61 requirements remaining across 12 phases (5-16)** — see `.pl
 The first 25, covering Phases 1-4, shipped as **v0.7.1** on 2026-08-04 and have moved to
 *Validated* above.
 
-*Milestone 2-3 close-out (Phases 5-6, 9 requirements):*
+**The 9 requirements under *Milestone 2-3 close-out* immediately below are the scope of the current
+milestone, v0.7.2 (Phases 5-6).** The remaining 52 across Phases 7-16 stay in this list as
+forward scope and are not part of v0.7.2.
+
+*Milestone 2-3 close-out (Phases 5-6, 9 requirements) — **v0.7.2, current milestone**:*
 
 - [ ] Upgrade the Milestone 2-3 ledger from component-level file evidence to `file:line`
       per-criterion verdicts for all 118 run-2 requirements, recording the historical-path caveat
@@ -1171,7 +1224,30 @@ phase for all eleven candidates above** — Phase 1 built the mechanism (this fi
 scheme, required headings, and supersession rule, plus the worked example at
 `.planning/decisions/0005-herald-trait.md`) but promotes none of the eleven itself.
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
+*Last updated: 2026-08-04 after **milestone v0.7.2 "Milestone 2-3 close-out" started** — Phases 5-6
+scoped, 9 requirements (VERIFY-01 … VERIFY-06, CLOSE-01 … CLOSE-03). Phase 9's 2026-09-30 RustSec
+acceptance deliberately deferred to a later milestone with ~8 weeks of margin. Prior updates below.*
+
 *Last updated: 2026-08-04 after the **v0.7.1 "Milestone 1 close-out" milestone** shipped —
 Phases 1-4, 38 plans, 88 tasks, 25/25 requirements verified. Nine ADRs (0001-0009) now hold every
 contested definition; coverage measured at 85.92% against an 84% floor; all twelve manifests
