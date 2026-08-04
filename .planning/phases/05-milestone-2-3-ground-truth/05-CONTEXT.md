@@ -369,8 +369,10 @@ CONTEXT.md. Source: `.planning/milestones/v0.7.1-phases/01-ground-truth-decision
 - `crates/paladin-core/src/platform/container/vision.rs:189-212` — `VisionError`, **including the
   `EncryptionError` variant the ingest record says is absent** (D-10).
 - `src/infrastructure/security/encryption.rs` — `EncryptionService` (`encrypt_image_data` :200,
-  `decrypt_image_data` :217), `SecureData` with `#[derive(Zeroize, ZeroizeOnDrop)]` :68,
-  `DataRetentionPolicy::is_expired` :95 (D-10).
+  `decrypt_image_data` :217), `SecureData` with `#[derive(Zeroize, ZeroizeOnDrop)]` :68 and
+  `is_expired` :95, `DataRetentionPolicy` :106 with `should_retain` :132 (D-10).
+  *(Citations corrected 2026-08-04 during research: `is_expired` is a `SecureData` method, not a
+  `DataRetentionPolicy` one.)*
 - `src/infrastructure/security/mod.rs:44` — the public re-export; `src/infrastructure/mod.rs:47`
   wires the module in.
 - `Cargo.toml:134-135` — `chacha20poly1305 = "0.10"`, `zeroize = { version = "1.8", … }`, both
@@ -456,7 +458,9 @@ tree during this session.
      re-exported publicly (`security/mod.rs:44`) and wired (`infrastructure/mod.rs:47`).
    - Zeroization ships — `SecureData` is `#[derive(Zeroize, ZeroizeOnDrop)]` (:68) and key material
      is explicitly zeroized (:161).
-   - Retention ships — `DataRetentionPolicy::is_expired` (:95).
+   - Retention ships — `SecureData::is_expired` (:95) and `DataRetentionPolicy::should_retain`
+     (:132). *(Corrected during research — an earlier draft attributed `is_expired` to
+     `DataRetentionPolicy`.)*
    - Both dependencies are declared and **unconditional**: `Cargo.toml:134-135`.
 
 2. **But it has zero consumers.** `EncryptionService`, `DataRetentionPolicy` and
