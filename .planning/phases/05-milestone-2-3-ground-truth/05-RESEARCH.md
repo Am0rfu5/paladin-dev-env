@@ -442,10 +442,16 @@ code citation was re-verified against the tree during this research session (see
 confirmed by direct `grep`/`sed`/`cargo metadata` inspection, not transcribed from CONTEXT.md
 without checking).
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should the three VERIFY-02 block-verification plans run before or interleaved with the ledger
-   epic fan-out?**
+*Both questions were resolved by the Phase 5 plan set, written 2026-08-04. Resolutions recorded
+inline below.*
+
+1. **RESOLVED — Combined, as recommended.** Should the three VERIFY-02 block-verification plans run
+   before or interleaved with the ledger epic fan-out?
+   → Each block plan authors its own epic's ledger rows: `05-05` (Epic 22, 10 rows), `05-06`
+   (Epic 14, 8 rows), `05-07` (Epic 24, 9 rows). Those three epics are excluded from the fan-out
+   plans' scope. No epic is read twice.
    - What we know: D-20 lists them as step 3, after the epic fan-out (step 2). But Epic 22
      (81 open), Epic 14 (45 open) and Epic 24 (29 open) are themselves part of the epic fan-out's
      row count (they contain 10, 8, and 9 `REQ-*` rows respectively) — so their ledger rows and
@@ -459,7 +465,13 @@ without checking).
      "the deepest verification work" and get dedicated plans) without literally re-reading the same
      epic twice.
 
-2. **Exact per-plan epic grouping for the fan-out step.**
+2. **RESOLVED — Recommendation adopted, groupings adjusted because the tracer consumed Epic 11.**
+   Exact per-plan epic grouping for the fan-out step.
+   → As shipped in the plan set: `05-01` (tracer) Epic 11 = 8 · `05-08` Epic 13+20 = 19 (the
+   recommended cross-milestone pairing, kept) · `05-09` Epic 12+15 = 13 · `05-10` Epic 16+18 = 18 ·
+   `05-11` Epic 17/17.5+19 = 16 · `05-12` Epic 21+23 = 17. Fan-out total 91; plus the three block
+   plans' 27 = **118**. The pairings below were re-cut around Epic 11 moving into the tracer plan;
+   the Epic 13+20 rationale survived unchanged.
    - What we know: Full per-epic counts (verified from REQUIREMENTS.md's ledger, sums to 118):
      Epic 11 (8), Epic 12 (8), Epic 13 (13), Epic 20 (6), Epic 14 (8, block), Epic 15 (5), Epic 16
      (11), Epic 17/17.5 (11), Epic 18 (7), Epic 19 (5), Epic 21 (7), Epic 22 (10, block), Epic 23
