@@ -107,7 +107,30 @@ trustworthy enough to anchor a gate.
 
 ### Validated
 
-Shipped in the v0.7.0 workspace. Full per-requirement ledgers: `.planning/REQUIREMENTS.md` →
+**Milestone 1 close-out — shipped v0.7.1, 2026-08-04** (Phases 1-4, 38 plans, 25/25 requirements
+verified). Archive: `.planning/milestones/v0.7.1-ROADMAP.md`. Audit:
+`.planning/milestones/v0.7.1-MILESTONE-AUDIT.md`.
+
+- ✓ Reconciled `.planning/` against shipped v0.7.0 code; cited status ledger covering every
+  outstanding Milestone-1 task item with `file:line` verdicts (RECON-01, RECON-08) — v0.7.1
+- ✓ One recorded answer per competing variant pair — `BattalionConfig`, `BattalionResult`,
+  Formation minimum Paladin count, temperature range, Herald trait signature, coverage gate —
+  each an evidence-cited ADR (RECON-02 … RECON-07) — v0.7.1
+- ✓ Residual functional gaps closed — Chain of Command completion and tests, Battalion
+  integration/performance tests, Herald on the Battalion execution path, Commander result
+  normalization, the failing Auto-selection test, Garrison final validation, and the reconciled
+  type definitions applied in code (GAP-01 … GAP-07) — v0.7.1
+- ✓ Quality numbers made real — 85.92% workspace coverage against ADR-0006's 84% floor, 4 of 5
+  zero-coverage first-party files closed, `#[ignore]`d Commander error-path tests activated, all
+  five MCP failure modes tested, benchmarks re-enabled with a P50/P95/P99 baseline
+  (QUAL-01 … QUAL-05) — v0.7.1
+- ✓ Release coherence — version and edition agreement across all twelve manifests, advisory
+  posture with written rationale, documentation review with a measured 15-minute quickstart, and
+  the gate suite measured green at 2,924 tests / 185 doc tests / 47 example targets
+  (REL-01 … REL-05) — v0.7.1
+
+Prior shipped work, in the v0.7.0 workspace. Full per-requirement ledgers:
+`.planning/REQUIREMENTS.md` →
 *Milestone 1 as-shipped ledger* (115 IDs), *Milestone 2-3 as-shipped ledger* (118 IDs),
 *Milestone 4-6 as-shipped ledger* (115 IDs), *Milestone 7-8 as-shipped ledger* (86 IDs) and
 *Milestone 9-12 as-shipped ledger* (120 IDs) — **554 requirement IDs in total, all accounted
@@ -338,30 +361,9 @@ while the code ships):
 Current scope is **milestone close-out**: make the planning record match the shipped code, resolve
 the contested type and gate definitions, close the residual functional gaps, make the quality
 numbers real, make the release and security gates actually hold, and build the one epic-set nobody
-ever started. **86 requirements across 16 phases** — see `.planning/ROADMAP.md`.
-
-*Milestone 1 close-out (Phases 1-4, 25 requirements):*
-
-- [ ] Reconcile `.planning/` against shipped v0.7.0 code; produce a cited status ledger for the
-      ~40 outstanding Milestone-1 task items (RECON-01, RECON-08)
-- [ ] Record one answer per competing variant pair — `BattalionConfig`, `BattalionResult`,
-      Formation minimum Paladin count, temperature range, Herald trait signature, coverage gate
-      (RECON-02 … RECON-07)
-- [x] Close residual functional gaps — Chain of Command completion and tests, Battalion
-      integration/performance tests, Herald on the Battalion execution path, Commander result
-      normalization and telemetry export, the one failing Auto-selection test, Garrison final
-      validation, and applying the reconciled type definitions in code (GAP-01 … GAP-07)
-      — **Validated in Phase 2: Functional Gap Closure** (2026-08-01). All seven verified
-      against the tree in `.planning/phases/02-functional-gap-closure/02-VERIFICATION.md`
-      (5/5 ROADMAP success criteria, 7/7 GAP requirements), after gap-closure plans 02-10
-      and 02-11 closed the Table Herald UTF-8 truncation panic and the REQUIREMENTS.md
-      traceability staleness the first verification pass found.
-- [ ] Make quality numbers real — coverage to the recorded gate, no 0%-coverage first-party
-      files, integration coverage ≥ 70%, `#[ignore]`d error-path tests activated, MCP failure
-      modes tested, benchmarks re-enabled with documented baselines (QUAL-01 … QUAL-05)
-- [ ] Release coherence — version metadata agreement, one valid Rust edition across crates,
-      advisory posture with written rationale, documentation final review and a measured
-      quickstart, and the full gate suite green in CI (REL-01 … REL-05)
+ever started. **61 requirements remaining across 12 phases (5-16)** — see `.planning/ROADMAP.md`.
+The first 25, covering Phases 1-4, shipped as **v0.7.1** on 2026-08-04 and have moved to
+*Validated* above.
 
 *Milestone 2-3 close-out (Phases 5-6, 9 requirements):*
 
@@ -1052,14 +1054,14 @@ corpus:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| [BattalionConfig field set](.planning/decisions/0001-battalion-config.md) (ADR-0001) | `battalion/mod.rs:37` (`REQ-battalion-config-v1`, Epic 4 FR-4.1) is the authoritative field set, confirmed by direct grep; the `citadel.rs:280` struct is a self-described placeholder, not a competitor, and is renamed `BattalionCheckpointConfig` with its serde shape unchanged rather than merged or deleted. | must change (GAP-07 renames the `citadel.rs:280` placeholder) |
+| [BattalionConfig field set](.planning/decisions/0001-battalion-config.md) (ADR-0001) | `battalion/mod.rs:37` (`REQ-battalion-config-v1`, Epic 4 FR-4.1) is the authoritative field set, confirmed by direct grep; the `citadel.rs:280` struct is a self-described placeholder, not a competitor, and is renamed `BattalionCheckpointConfig` with its serde shape unchanged rather than merged or deleted. | ✓ Good — applied in Phase 2 (`citadel.rs:284` now `BattalionCheckpointConfig`, serde shape unchanged) |
 | [BattalionResult field set](.planning/decisions/0002-battalion-result.md) (ADR-0002) | The shipped struct at `battalion/mod.rs:549` is a merged superset satisfying all three competing positions (Epic 4 FR-4.2, Epic 5 FR-5, Epic 8 FR-7) at once, per `intel/code-verification.md`'s explicit "do not plan a reconciliation task" — a recording task, not a reconciliation. | conforms |
-| [Formation minimum Paladin count](.planning/decisions/0003-formation-min-paladins.md) (ADR-0003) | Formation relaxes its minimum to one Paladin (an integer bound, 0 still rejected), resolving the live contradiction between `Formation::validate`'s ≥2 rejection and the Commander's passing `test_auto_selects_formation_for_single_paladin`; Majority aggregation's independent 3-Paladin minimum is untouched. | must change (GAP-07 relaxes `formation.rs:109`) |
-| [Temperature validation](.planning/decisions/0004-temperature-validation.md) (ADR-0004) | Validation becomes provider-aware via a new `temperature_range: Option<(f32, f32)>` on `ProviderCapabilities`, falling back to the existing global `[0.0, 1.0]` when a provider declares none — making DeepSeek's documented `0.0–2.0` range reachable through the normal Paladin path for the first time. | must change (GAP-07 adds the field and each adapter populates it) |
+| [Formation minimum Paladin count](.planning/decisions/0003-formation-min-paladins.md) (ADR-0003) | Formation relaxes its minimum to one Paladin (an integer bound, 0 still rejected), resolving the live contradiction between `Formation::validate`'s ≥2 rejection and the Commander's passing `test_auto_selects_formation_for_single_paladin`; Majority aggregation's independent 3-Paladin minimum is untouched. | ✓ Good — applied in Phase 2 (`formation.rs:108-112` rejects only the empty case) |
+| [Temperature validation](.planning/decisions/0004-temperature-validation.md) (ADR-0004) | Validation becomes provider-aware via a new `temperature_range: Option<(f32, f32)>` on `ProviderCapabilities`, falling back to the existing global `[0.0, 1.0]` when a provider declares none — making DeepSeek's documented `0.0–2.0` range reachable through the normal Paladin path for the first time. | ✓ Good — applied in Phase 2 (`llm_port.rs:777`; all three adapters populate it, DeepSeek 0.0-2.0 now reachable) |
 | [Herald trait signature](.planning/decisions/0005-herald-trait.md) (ADR-0005) | The shipped trait at `herald.rs:49` ships the v2 fallible form (`Result<String, HeraldError>` throughout except the deliberately infallible `format_error`), matching Epic 8 §6.2 and making FR-10's graceful-degradation requirement expressible. | conforms |
-| [Project-wide test coverage gate](.planning/decisions/0006-coverage-gate.md) (ADR-0006) | Measured **84.79%** workspace line coverage against commit `9be788c8e9c744ec3a6aad20b64110fb85925de4`, truncated to an **84%** hard-fail floor effective from the first run — freshly measured, not carried forward from a stale baseline. | must change (PIPE-02 wires the 84% floor into CI, Phase 15) |
-| [Workspace version is 0.7.0](.planning/decisions/0008-workspace-version-0-7-0.md) (ADR-0008) | The Milestone 6 facade change was breaking but already shipped inside the pre-1.0 series, so SemVer's pre-1.0 convention expresses it as a minor bump; `0.7.0` is the branch's own declared intent and the next lockstep figure in the ORCH-05 chain, confirmed by the human user 2026-08-03. | must change (REL-01 executes it in Phase 4; ARCH-04/Phase 7 and HARD-03/Phase 10 inherit it) |
-| [Workspace Rust edition is 2024](.planning/decisions/0009-workspace-rust-edition-2024.md) (ADR-0009) | Ten of twelve manifests already declared `edition = "2024"`; the toolchain (pinned `1.97.1`) has supported it since Rust 1.85, so the two stragglers (`paladin-ports`, `paladin-notifications`) were bumped forward rather than the other ten moved back. Closes `CONCERNS.md`'s false "does not exist in stable" claim. | must change (REL-02 executes it in Phase 4; ARCH-03(a)/Phase 7 inherits it) |
+| [Project-wide test coverage gate](.planning/decisions/0006-coverage-gate.md) (ADR-0006) | Measured **84.79%** workspace line coverage against commit `9be788c8e9c744ec3a6aad20b64110fb85925de4`, truncated to an **84%** hard-fail floor effective from the first run — freshly measured, not carried forward from a stale baseline. | — Pending — floor honoured by measurement (85.56% / 85.92% in Phase 3) but not yet wired into CI; PIPE-02, Phase 15 |
+| [Workspace version is 0.7.0](.planning/decisions/0008-workspace-version-0-7-0.md) (ADR-0008) | The Milestone 6 facade change was breaking but already shipped inside the pre-1.0 series, so SemVer's pre-1.0 convention expresses it as a minor bump; `0.7.0` is the branch's own declared intent and the next lockstep figure in the ORCH-05 chain, confirmed by the human user 2026-08-03. | ✓ Good — executed in Phase 4; all twelve manifests and internal pins converged on 0.7.0 |
+| [Workspace Rust edition is 2024](.planning/decisions/0009-workspace-rust-edition-2024.md) (ADR-0009) | Ten of twelve manifests already declared `edition = "2024"`; the toolchain (pinned `1.97.1`) has supported it since Rust 1.85, so the two stragglers (`paladin-ports`, `paladin-notifications`) were bumped forward rather than the other ten moved back. Closes `CONCERNS.md`'s false "does not exist in stable" claim. | ✓ Good — executed in Phase 4; `paladin-ports` and `paladin-notifications` bumped, 12/12 on edition 2024 |
 
 Six competing-variant pairs are Phase 1's scope (`BattalionConfig`, `BattalionResult`, Formation
 minimum Paladin count, temperature validation, the Herald trait signature, and the coverage gate);
@@ -1170,6 +1172,13 @@ scheme, required headings, and supersession rule, plus the worked example at
 `.planning/decisions/0005-herald-trait.md`) but promotes none of the eleven itself.
 
 ---
+*Last updated: 2026-08-04 after the **v0.7.1 "Milestone 1 close-out" milestone** shipped —
+Phases 1-4, 38 plans, 88 tasks, 25/25 requirements verified. Nine ADRs (0001-0009) now hold every
+contested definition; coverage measured at 85.92% against an 84% floor; all twelve manifests
+converged on version 0.7.0 / edition 2024. Closed as `override_closeout` (one verification
+override: Phase 1's timestamp, see MILESTONES.md). Audit status `tech_debt` — no unsatisfied
+requirements, ten deferred items carrying named owners. Prior updates below.*
+
 *Last updated: 2026-08-01 after **Phase 2: Functional Gap Closure** completed and verified
 (GAP-01 … GAP-07 all closed; 11/11 plans). Prior update below.*
 

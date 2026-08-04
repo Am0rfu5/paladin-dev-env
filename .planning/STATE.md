@@ -1,91 +1,40 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.7.0
-milestone_name: milestone
-current_phase: 4
-current_phase_name: Release Coherence
-status: executing
-stopped_at: Phase 4 executed; gap found and closed; verification report written
-last_updated: "2026-08-03T14:13:53.164Z"
-last_activity: 2026-08-03
-last_activity_desc: Phase 4 execution started
+milestone: v0.7.1
+milestone_name: Milestone 1 close-out
+status: Awaiting next milestone
+stopped_at: Milestone v0.7.1 shipped and archived; awaiting /gsd-new-milestone
+last_updated: "2026-08-04T14:14:01.410Z"
+last_activity: 2026-08-04
+last_activity_desc: Milestone v0.7.1 completed and archived
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 38
   completed_plans: 38
+current_phase: null
+current_phase_name: null
+last_shipped_milestone: v0.7.1
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-01)
+See: .planning/PROJECT.md (updated 2026-08-04)
 
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 4 — Release Coherence
+**Current focus:** Planning next milestone — Milestone 2-3 close-out (Phases 5-6) is the next
+block in the roadmap. Run `/gsd-new-milestone`.
 
 ## Current Position
 
-Phase: 4 (Release Coherence) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 4
-Requirements coverage 8/8 RECON IDs; decision coverage 21/21 CONTEXT.md decisions.
-Last activity: 2026-08-03 — Phase 4 execution started
-
-Prior activity: 2026-07-30 — **ingest run 5 of 5 merged. THE INGEST IS COMPLETE.**
-(`.project/Milestone_9-Classic-Orchestrator-Completion` +
-`.project/Milestone_10-CI-Hardening-Release-Automation` +
-`.project/Milestone_11-Documentation-Overhaul-Publish` + `.project/Milestone_12-Web-API` +
-`.project/Deferred-QA-CICD-Completion` + `.project/project-management`, 46 docs);
-Phases 12-16 appended, Phases 1-11 unchanged and unrenumbered.
-
-**Ingest status: 5 of 5 runs complete. 263 of 263 documents covered.**
-
-| | |
-|---|---|
-| Documents in `.project/` | **263** (188 prose + 75 `tasks-*.md`) |
-| Classified across 5 runs | **199** (188 prose + 11 task lists included by earlier manifests) |
-| Task lists measured deterministically instead | **64** (`intel/task-completion-state.md`) |
-| Reconciliation | 188 + 75 = 263 · 188 + 11 = 199 — **every document covered by one route or the other** |
-| PRD / DOC / **ADR** / **SPEC** / UNKNOWN | 75 / 124 / **0** / **0** / 0 |
-| Requirements extracted | **554** |
-| Forward (v1) requirements | **86 across 16 phases** |
-| Competing variants preserved unmerged | **69 warnings / 30 groups / 60 entries** |
-| Blockers · locked decisions · ADR candidates | **0 · 0 · 11** |
-| Cross-ref cycles found | **0**, in all five runs |
-
-**What the next action should be.** The ingest produced no blockers and nothing gates the workflow.
-The corpus is internally consistent enough to plan from, **provided the competing variants are
-resolved deliberately rather than collapsed silently.** Two viable entry points:
-
-1. **Start planning Phase 1** (`/gsd-plan-phase 1`) and work the roadmap in numeric order. Phase 1
-   is the ground-truth pass that every later record phase builds on, and RECON-07's coverage answer
-   feeds VERIFY-05 (Phase 5) and PIPE-02 (Phase 15).
-
-2. **Or take the four cheapest high-value items first**, none of which depends on anything:
-   **SUPPLY-01** (delete `ci.yml:389-406`, 18 lines, and a Milestone 10 acceptance criterion
-   becomes true); **DEBT-01** (fix nine `project/current-exports.txt` references and turn the
-   `api-surface` job green for the first time since commit `928c6d5`); **WEB-03** (make
-   `ProviderCapabilities` stop over-reporting); and **WEB-01/WEB-02** (the token mechanism, which
-   has a correctness consequence under the shipped Kubernetes Deployment).
-
-**Note on ordering — one phase has a date attached, and it is not first.** Phase 9 carries the only
-dated item in the 263-document corpus: a formal RustSec risk acceptance with a **2026-09-30**
-review/expiry target, roughly two months out, on a repository that gates CI on both `cargo audit`
-and `cargo deny`. Numeric order puts it ninth; urgency does not. **Phase 12 should run with or
-before it** — SUPPLY-01 and SUPPLY-02 carry the concrete deletion and the corrected governance
-scope. Phase 10 depends on nothing and feeds four other phases (HARD-06 → SEC-01/SUPPLY-02 on
-whether `pdf-extract` is reachable; HARD-07 → DEBT-03 and DOCS-03 on the `cargo doc` bar;
-HARD-03 → ORCH-05 → REL-01 on the version story), so running it early saves three phases from
-guessing. Phase 7 remains the cheapest early phase for Phases 1-8. **One sequencing decision must
-not be made by default**: FACADE-02's D2 (Phase 11) splits `user_service.rs` and DEFER-02
-(Phase 15) tests it — doing them independently means doing the work twice. See the Execution Order
-notes in `ROADMAP.md`.
-
-Progress: [██████████] 97%
+Phase: Milestone v0.7.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-08-04 — Milestone v0.7.1 completed and archived
 
 ## Performance Metrics
 
@@ -674,6 +623,18 @@ requirement.
 
 ## Deferred Items
 
+### Acknowledged at v0.7.1 milestone close (2026-08-04)
+
+**Verification overrides: 1.** Closeout type `override_closeout`.
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| Verification | Phase 1 verification timestamp stale | `01-VERIFICATION.md` records `passed` 5/5 at 2026-07-31T16:46:51Z; commit `be2ff05` (2026-08-03) later added `01-04-SUMMARY.md`, so `init.manager` reports `verification_status: stale` / `phase_complete: false`. The commit is documentation-only ("No ADR, measurement, or source changes"); accepted as an override rather than re-verified | v0.7.1 close |
+| Integration | Herald not reachable from Campaign, Chain of Command, or the Commander router (audit WARN-01) | Formation and Phalanx wire Herald; the other three carry zero references. `format_battalion_result` is pattern-agnostic so no requirement's text is falsified, but the composite Chain-of-Command developer flow does not compose without the caller invoking a Herald directly. Unassigned — candidate for Phase 6 | v0.7.1 close |
+| Testing | Nyquist validation never reconciled for Phases 1-4 | All four `VALIDATION.md` files read `status: draft` — seeded by plan-phase, never promoted by validate-phase, so `nyquist_compliant` is not authoritative. Coverage TODO, not a compliance failure (#2117). Run `/gsd-validate-phase 1`…`4` | v0.7.1 close |
+
+### Carried from earlier ingest runs
+
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | Testing | Live-provider-API integration tests (Epic 6 task 7.0, 18 subtasks) | **Un-deferred by run 2** — suite ships behind `live-api-tests`; only the skip-vs-fail semantics remain open (VERIFY-06) | Ingest run 1, revised run 2 |
@@ -718,8 +679,9 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Phase 4 executed; gap found and closed; verification report written
-Ready to plan Phase 3.
+**Stopped at:** Milestone v0.7.1 "Milestone 1 close-out" shipped and archived 2026-08-04.
+Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
+Ready to start the next milestone with `/gsd-new-milestone`.
 
 Last session: 2026-08-03T14:13:53.108Z
 Resume file: .planning/phases/04-release-coherence/04-VERIFICATION.md
@@ -778,3 +740,7 @@ correctness consequence under the shipped Kubernetes Deployment).
 
 2. **FACADE-02's D2 and DEFER-02 must be sequenced together.** One splits `user_service.rs`, the
    other tests it to ≥ 80%. Doing them independently means doing the work twice.
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
