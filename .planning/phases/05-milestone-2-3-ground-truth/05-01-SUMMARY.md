@@ -200,6 +200,13 @@ None — no external service configuration required.
 - No blockers for the next wave. This plan (05-01, wave 1) has no `depends_on`, and its output is a
   pure prerequisite for the fan-out plans — nothing here is itself blocked on their completion.
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/ledgers/milestone-02-03.md`
+- FOUND: `.planning/phases/05-milestone-2-3-ground-truth/05-01-SUMMARY.md`
+- FOUND: commit `71b6d7b` (task commit, both plan files)
+- FOUND: commit `7ffb2b7` (SUMMARY.md commit)
+
 ---
 *Phase: 05-milestone-2-3-ground-truth*
 *Completed: 2026-08-04*
