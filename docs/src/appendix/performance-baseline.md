@@ -1,5 +1,179 @@
 # Performance Baseline
 
+## Run — 2026-08-05
+
+This run measures only the `battalion/chain_of_command_*` target added by Phase 6 plan 06-04
+(`benchmark_chain_of_command` in `crates/paladin-battalion/benches/battalion_benchmarks.rs`) — it
+is not a whole-suite re-measurement. These figures are **not** merged into the 2026-08-02 table
+below, are **not** annotated as superseding it (they measure a different, newly added target, not
+a re-measurement of an existing one), and **no cross-run delta is computed** against either the
+2026-08-02 or 2026-05-27 runs, since none of the three were taken in one sitting.
+
+### Scope
+
+Three ChainOfCommand benchmark ids, all newly added by this plan and not present in any prior run
+of this document:
+
+- `battalion/chain_of_command_2_levels_3_subordinates`
+- `battalion/chain_of_command_2_levels_5_subordinates`
+- `battalion/chain_of_command_wide_10_subordinates`
+
+Run timestamp (UTC): `2026-08-05T19:34:22` (environment capture) through the completion of the
+`cargo bench` invocation below, run once, immediately after.
+
+### Environment
+
+| Field | Value |
+|---|---|
+| Commit SHA | `d7ee3d73b4dc4c2f2cbe1b7e9e8b9df105d9d38a` |
+| OS | Debian GNU/Linux 12 (bookworm) |
+| Kernel | Linux 6.8.0-136-generic |
+| CPU | Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz |
+| Cores / Threads | 4 cores / 8 threads |
+| Rust | `rustc 1.97.1 (8bab26f4f 2026-07-14)` |
+| Cargo | `cargo 1.97.1 (c980f4866 2026-06-30)` |
+| Config Profile | `APP_ENV=test` |
+
+**Measurement conditions, stated explicitly per this document's own requirement:** this run
+executed inside a parallel wave of Phase 6 worktree executors. An earlier attempt at this same
+task halted on its own precondition check after detecting a sibling executor's `cargo test`
+process running concurrently — that measurement was never taken, precisely to avoid recording a
+contended figure. This run was dispatched only after the orchestrator confirmed all Phase 6
+wave-2 sibling executors had returned, `pgrep` for `cargo`, `rustc`, and `docker build` returned
+nothing, and the 1-minute load average had settled to `0.66` (5-minute: `2.86`, 15-minute:
+`5.57`) — re-verified independently by this agent immediately before running the benchmark below.
+No other build, test, or benchmark process was running on this machine during measurement.
+
+Raw provenance commands, run immediately before this run's benchmark:
+
+```console
+$ git rev-parse HEAD
+d7ee3d73b4dc4c2f2cbe1b7e9e8b9df105d9d38a
+
+$ cat /etc/os-release | grep -i PRETTY_NAME
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+
+$ uname -r
+6.8.0-136-generic
+
+$ grep 'model name' /proc/cpuinfo | head -1
+model name	: Intel(R) Xeon(R) CPU E3-1505M v5 @ 2.80GHz
+
+$ nproc
+8
+
+$ lscpu | grep -i "^Core(s) per socket\|^Socket(s)\|^Thread(s) per core"
+Thread(s) per core:                      2
+Core(s) per socket:                      4
+Socket(s):                               1
+
+$ rustc -vV
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+binary: rustc
+commit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452
+commit-date: 2026-07-14
+host: x86_64-unknown-linux-gnu
+release: 1.97.1
+LLVM version: 22.1.6
+
+$ cargo --version
+cargo 1.97.1 (c980f4866 2026-06-30)
+
+$ date -u
+Wed Aug  5 19:34:22 UTC 2026
+
+$ pgrep -a cargo; pgrep -a rustc; pgrep -a -f "docker build"
+(no output — nothing running)
+
+$ cat /proc/loadavg
+0.66 2.86 5.57 1/3700 651135
+```
+
+### Methodology
+
+Same command shape and `--offline` flag as the 2026-08-02 run, filtered to only the new target's
+criterion ids so this remains a single-target measurement rather than a whole-suite re-run:
+
+```bash
+APP_ENV=test cargo bench --offline -p paladin-battalion --bench battalion_benchmarks -- chain_of_command --noplot
+```
+
+Run once, to completion, with nothing else building on the machine (see Environment above).
+P50/P95/P99 are derived from the resulting `sample.json` files using the exact same nearest-rank
+formula and verbatim `jq` filter this document's own `### P50 / P95 / P99 Derivation` section
+specifies — no different percentile method, and no substitution of criterion's reported mean or
+median in place of a derived percentile.
+
+#### Battalion Benchmarks (ChainOfCommand only)
+
+```
+     Running benches/battalion_benchmarks.rs (target/release/deps/battalion_benchmarks-145a03efbda8782c)
+Gnuplot not found, using plotters backend
+Benchmarking battalion/chain_of_command_2_levels_3_subordinates
+Benchmarking battalion/chain_of_command_2_levels_3_subordinates: Warming up for 3.0000 s
+Benchmarking battalion/chain_of_command_2_levels_3_subordinates: Collecting 100 samples in estimated 5.0805 s (298k iterations)
+Benchmarking battalion/chain_of_command_2_levels_3_subordinates: Analyzing
+battalion/chain_of_command_2_levels_3_subordinates
+                        time:   [16.943 µs 17.148 µs 17.343 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) low mild
+  2 (2.00%) high mild
+
+Benchmarking battalion/chain_of_command_2_levels_5_subordinates
+Benchmarking battalion/chain_of_command_2_levels_5_subordinates: Warming up for 3.0000 s
+Benchmarking battalion/chain_of_command_2_levels_5_subordinates: Collecting 100 samples in estimated 5.0613 s (227k iterations)
+Benchmarking battalion/chain_of_command_2_levels_5_subordinates: Analyzing
+battalion/chain_of_command_2_levels_5_subordinates
+                        time:   [22.212 µs 22.488 µs 22.792 µs]
+Found 5 outliers among 100 measurements (5.00%)
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+
+Benchmarking battalion/chain_of_command_wide_10_subordinates
+Benchmarking battalion/chain_of_command_wide_10_subordinates: Warming up for 3.0000 s
+Benchmarking battalion/chain_of_command_wide_10_subordinates: Collecting 100 samples in estimated 5.1668 s (152k iterations)
+Benchmarking battalion/chain_of_command_wide_10_subordinates: Analyzing
+battalion/chain_of_command_wide_10_subordinates
+                        time:   [33.863 µs 34.114 µs 34.386 µs]
+Found 10 outliers among 100 measurements (10.00%)
+  10 (10.00%) high mild
+```
+
+| Benchmark | Time (lower .. upper) |
+|---|---|
+| `battalion/chain_of_command_2_levels_3_subordinates` | `16.943 µs .. 17.343 µs` |
+| `battalion/chain_of_command_2_levels_5_subordinates` | `22.212 µs .. 22.792 µs` |
+| `battalion/chain_of_command_wide_10_subordinates` | `33.863 µs .. 34.386 µs` |
+
+Throughput: not reported by this target (matches the existing Battalion Benchmarks subsection in
+the 2026-08-02 run — `criterion`'s `Throughput` API is not configured for this bench target).
+
+Percentile derivation, verbatim `jq` filter applied to each of the three new
+`target/criterion/<id>/new/sample.json` files:
+
+```
+target/criterion/battalion_chain_of_command_2_levels_3_subordinates/new/sample.json: {"n":100,"p50_ns":17088.34,"p95_ns":18552.09,"p99_ns":20492.68}
+target/criterion/battalion_chain_of_command_2_levels_5_subordinates/new/sample.json: {"n":100,"p50_ns":22072.15,"p95_ns":24337.18,"p99_ns":25792.13}
+target/criterion/battalion_chain_of_command_wide_10_subordinates/new/sample.json: {"n":100,"p50_ns":33909.37,"p95_ns":36695.22,"p99_ns":37002.33}
+```
+
+### Latency percentiles
+
+One row per new criterion benchmark id, `n` is the per-iteration sample count after the
+`times[i] / iters[i]` transform, following this document's established "human figure (raw ns)"
+cell convention.
+
+| Benchmark | n | P50 | P95 | P99 |
+|---|---|---|---|---|
+| `battalion/chain_of_command_2_levels_3_subordinates` | 100 | 17.088 µs (17088.34 ns) | 18.552 µs (18552.09 ns) | 20.493 µs (20492.68 ns) |
+| `battalion/chain_of_command_2_levels_5_subordinates` | 100 | 22.072 µs (22072.15 ns) | 24.337 µs (24337.18 ns) | 25.792 µs (25792.13 ns) |
+| `battalion/chain_of_command_wide_10_subordinates` | 100 | 33.909 µs (33909.37 ns) | 36.695 µs (36695.22 ns) | 37.002 µs (37002.33 ns) |
+
+No `sample.json` was missing for any of the three new criterion ids in this run, so no cell in
+this table is `not produced` and no degenerate `n = 1` case occurred.
+
+---
+
 ## Run — 2026-08-02
 
 Every figure in this section is this host's baseline, measured under the environment stated
