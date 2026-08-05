@@ -429,7 +429,7 @@ Plans:
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
-- [ ] 05-13-PLAN.md — Ledger summary, consolidated CLOSE-02 scope, final counts, PROMOTION.md to 0013 (wave 10)
+- [x] 05-13-PLAN.md — Ledger summary, consolidated CLOSE-02 scope, final counts, PROMOTION.md to 0013 (wave 10)
 
 **Cross-cutting constraints:**
 
