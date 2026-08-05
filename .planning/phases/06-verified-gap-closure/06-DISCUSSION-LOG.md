@@ -220,9 +220,21 @@ Measured before the question: `formation_service.rs` and `phalanx_service.rs` ca
 ## Deferred Ideas
 
 - `cli-tests` / `bench-check` / `coverage` CI jobs → Phase 15, PIPE-01 and PIPE-02.
-- The uncommitted `.github/workflows/ci.yml` revert (+6/−50) of a shipped v0.7.1 deliverable —
-  still needs an owner and a disposition; Phase 6's `.github/` prohibition prevents it riding along
-  silently but does not resolve it.
+- ~~The uncommitted `.github/workflows/ci.yml` revert (+6/−50) of a shipped v0.7.1 deliverable.~~
+  **Resolved 2026-08-05, after the areas above, in a follow-up exchange.** Investigation found it
+  reverted two Phase 4 changes — the advisory wall-clock rationale *and* the `Load amd64 image for
+  size measurement` step from commit `163f0ee`, without which the size gate breaks — and that it
+  was failing every commit via a pre-commit stash/restore artifact (clippy itself exits 0 and
+  modifies nothing; proven by staging the file and watching all hooks pass). Origin never
+  established; it predated this session. User chose **discard**; `git checkout --` restored HEAD's
+  Phase 4 version, working tree clean.
+
+  | Option | Description | Selected |
+  |--------|-------------|----------|
+  | Discard — restore HEAD's version | Unblocks commits, keeps the v0.7.1 record true, restores the amd64 load step the size gate depends on. | ✓ |
+  | Show the full diff first | Print the complete +6/−50 diff before deciding; nothing changed. | |
+  | Stash it for now | Off the working tree and recoverable, but leaves an undated stash entry to rediscover. | |
+  | Leave it | Take no action; commits keep needing `--no-verify`. | |
 - Feature-gating `chacha20poly1305` / `zeroize` → already owned by ARCH-05, Phase 7.
 - The four test-code TODOs in `crates/paladin-battalion/src/` requesting `MockPaladinPort` error
   injection → candidate for DEFER-01's shared mock infrastructure, Phase 15.
