@@ -29,9 +29,33 @@
 //!       server_type: "stdio"
 //!       command: "uvx"
 //!       args: ["mcp-web-search"]
+//!
+//! # Optional autonomous features (planning, prompt generation, dynamic
+//! # temperature, handoffs) -- reuses paladin-core's AutonomousConfig
+//! # directly (D-06). The four --auto-plan / --auto-prompt / --dynamic-temp
+//! # / --enable-handoffs CLI flags layer on top of this section additively.
+//! autonomous:
+//!   planning:
+//!     enabled: true
+//!     max_subtasks: 10
+//!   prompt_generation:
+//!     enabled: false
+//!   dynamic_temperature:
+//!     enabled: false
+//!     min: 0.1
+//!     max: 0.9
+//!   handoffs:
+//!     enabled: false
+//!     strategy: Automatic
+//!     max_depth: 5
+//!     retry:
+//!       max_retries: 3
+//!       initial_backoff_ms: 1000
+//!       backoff_multiplier: 2.0
 //! ```
 
 use crate::application::cli::error::CliError;
+use crate::core::platform::container::autonomous_config::AutonomousConfig;
 use crate::core::platform::container::paladin::MaxLoops;
 use serde::{Deserialize, Serialize};
 
@@ -73,6 +97,18 @@ pub struct PaladinYamlConfig {
     /// Optional arsenal (tools) configuration
     #[serde(skip_serializing_if = "Option::is_none")]
     pub arsenal: Option<ArsenalConfig>,
+
+    /// Optional autonomous features configuration (planning, prompt
+    /// generation, dynamic temperature, handoffs).
+    ///
+    /// Reuses `paladin-core`'s `AutonomousConfig` directly rather than a
+    /// CLI-local mirror type like `GarrisonConfig`/`ArsenalConfig` above —
+    /// the mapping cost across its four sub-configs was judged not worth the
+    /// decoupling (D-06, `06-CONTEXT.md`). The four `--auto-plan` /
+    /// `--auto-prompt` / `--dynamic-temp` / `--enable-handoffs` CLI flags
+    /// layer on top of this baseline additively; see `handle_agent_run`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub autonomous: Option<AutonomousConfig>,
 
     /// Enable vision capabilities
     #[serde(default)]
@@ -367,6 +403,7 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            autonomous: None,
             vision_enabled: false,
             images: vec![],
             documents: vec![],
@@ -390,6 +427,7 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            autonomous: None,
             vision_enabled: false,
             images: vec![],
             documents: vec![],
@@ -416,6 +454,7 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            autonomous: None,
             vision_enabled: false,
             images: vec![],
             documents: vec![],
@@ -442,6 +481,7 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            autonomous: None,
             vision_enabled: false,
             images: vec![],
             documents: vec![],
@@ -468,6 +508,7 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            autonomous: None,
             vision_enabled: true,
             images: vec![],
             documents: vec![],
@@ -507,6 +548,7 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            autonomous: None,
             vision_enabled: true,
             images: vec![png_path.clone()],
             documents: vec![],
@@ -545,6 +587,7 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            autonomous: None,
             vision_enabled: false,
             images: vec![],
             documents: vec![pdf_path.clone()],
@@ -571,6 +614,7 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            autonomous: None,
             vision_enabled: true,
             images: vec!["/nonexistent/image.png".to_string()],
             documents: vec![],
@@ -609,6 +653,7 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            autonomous: None,
             vision_enabled: true,
             images: vec![bmp_path.clone()],
             documents: vec![],
@@ -657,6 +702,7 @@ mod tests {
             },
             garrison: None,
             arsenal: None,
+            autonomous: None,
             vision_enabled: true,
             images: vec![img1_path.clone(), img2_path.clone()],
             documents: vec![doc1_path.clone()],
@@ -684,6 +730,7 @@ mod tests {
             },
             garrison: None,
             arsenal: Some(arsenal),
+            autonomous: None,
             vision_enabled: false,
             images: vec![],
             documents: vec![],
@@ -768,5 +815,94 @@ mod tests {
             config.validate(),
             Err(CliError::InvalidFieldValue { .. })
         ));
+    }
+
+    // ------------------------------------------------------------------
+    // D-06: `autonomous` section (CLOSE-02, Epic 14 cluster 8.0)
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn test_load_paladin_config_with_autonomous_section() {
+        // A YAML document carrying an `autonomous:` block with
+        // `planning.enabled: true` deserializes into a `PaladinYamlConfig`
+        // whose `autonomous` is `Some` and whose `autonomous.planning.enabled`
+        // is `true` -- reusing `paladin-core`'s `AutonomousConfig` directly
+        // (D-06), with no CLI-local mirror type.
+        //
+        // Hand-written YAML rather than a serialize-then-deserialize round
+        // trip: `serde_yaml` 0.9 (deprecated) has a known limitation
+        // deserializing `MaxLoops`'s untagged enum representation back out
+        // of a document that also carries other nested enums (here,
+        // `HandoffStrategy`) -- unrelated to the `autonomous` wiring under
+        // test.
+        let yaml = r#"
+name: "test-paladin"
+system_prompt: "You are a helpful assistant"
+model: "gpt-4"
+provider:
+  type: "openai"
+autonomous:
+  planning:
+    enabled: true
+    max_subtasks: 7
+  prompt_generation:
+    enabled: false
+  dynamic_temperature:
+    enabled: false
+    min: 0.1
+    max: 0.9
+  handoffs:
+    enabled: false
+    strategy: Automatic
+    max_depth: 5
+    retry:
+      max_retries: 3
+      initial_backoff_ms: 1000
+      backoff_multiplier: 2.0
+"#;
+
+        let reloaded: PaladinYamlConfig =
+            serde_yaml::from_str(yaml).expect("deserialize PaladinYamlConfig");
+
+        let autonomous = reloaded
+            .autonomous
+            .expect("autonomous section must deserialize as Some");
+        assert!(autonomous.planning.enabled);
+        assert_eq!(autonomous.planning.max_subtasks, 7);
+    }
+
+    #[test]
+    fn test_load_paladin_config_without_autonomous_section() {
+        // A YAML document with no `autonomous:` key deserializes with
+        // `autonomous` equal to `None` -- an existing config gains no new
+        // capability by upgrading (T-06-03-01).
+        let yaml = r#"
+name: "test-paladin"
+system_prompt: "You are a helpful assistant"
+model: "gpt-4"
+provider:
+  type: "openai"
+"#;
+
+        let config: PaladinYamlConfig =
+            serde_yaml::from_str(yaml).expect("deserialize PaladinYamlConfig");
+        assert!(config.autonomous.is_none());
+    }
+
+    #[test]
+    fn test_paladin_yaml_config_omits_autonomous_when_none() {
+        // Serializing a `PaladinYamlConfig` whose `autonomous` is `None`
+        // produces output with no `autonomous` key, matching the
+        // `garrison`/`arsenal` optional-section convention.
+        let config = base_config_with_arsenal(ArsenalConfig {
+            mcp_servers: vec![],
+        });
+        assert!(config.autonomous.is_none());
+
+        let yaml = serde_yaml::to_string(&config).expect("serialize PaladinYamlConfig");
+        assert!(
+            !yaml.contains("autonomous"),
+            "serialized YAML must omit the autonomous key when None: {yaml}"
+        );
     }
 }

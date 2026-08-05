@@ -15,11 +15,14 @@
 //! ```
 
 use crate::application::cli::config::loader::{instantiate_arsenal, instantiate_garrison};
+use crate::application::cli::config::paladin_config::PaladinYamlConfig;
 use crate::application::cli::error::CliError;
 use crate::application::cli::templates::paladin_template::generate_paladin_template;
+use crate::application::services::paladin::paladin_builder::PaladinBuilder;
 use clap::Subcommand;
 use colored::Colorize;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 /// Agent subcommands for Paladin management
 #[derive(Debug, Subcommand)]
@@ -74,20 +77,39 @@ pub struct AgentRunArgs {
     #[arg(long = "document")]
     pub document: Option<PathBuf>,
 
-    // Autonomous feature flags (override config file)
-    /// Enable autonomous planning mode (MaxLoops::Auto)
+    // Autonomous feature flags: additive overrides layered on top of the
+    // YAML `autonomous` section (D-05, D-06, D-07). Each flag can only force
+    // its feature ON. None of the four can turn OFF a feature the
+    // configuration file already enabled -- there are no `--no-*`
+    // counterparts.
+    /// Force autonomous planning mode on, regardless of the configuration
+    /// file's `autonomous.planning.enabled`. Cannot turn planning off if the
+    /// configuration file already enabled it. Note: this does not set
+    /// `MaxLoops::Auto` -- that mode is controlled independently by
+    /// `max_loops` in the configuration file.
     #[arg(long = "auto-plan")]
     pub auto_plan: bool,
 
-    /// Enable automatic prompt generation
+    /// Force automatic prompt generation on, regardless of the
+    /// configuration file's `autonomous.prompt_generation.enabled`. Cannot
+    /// turn prompt generation off if the configuration file already enabled
+    /// it.
     #[arg(long = "auto-prompt")]
     pub auto_prompt: bool,
 
-    /// Enable dynamic temperature adjustment based on task type
+    /// Force dynamic temperature adjustment on, regardless of the
+    /// configuration file's `autonomous.dynamic_temperature.enabled`.
+    /// Cannot turn dynamic temperature off if the configuration file
+    /// already enabled it.
     #[arg(long = "dynamic-temp")]
     pub dynamic_temp: bool,
 
-    /// Enable agent handoff capabilities
+    /// Force agent handoff capabilities on, regardless of the configuration
+    /// file's `autonomous.handoffs.enabled`. Cannot turn handoffs off if the
+    /// configuration file already enabled them. This flag only enables the
+    /// handoff *configuration*; the specialist agents to hand off to are
+    /// wired through the library's `PaladinBuilder::with_handoffs` surface,
+    /// which this CLI does not expose.
     #[arg(long = "enable-handoffs")]
     pub enable_handoffs: bool,
 }
@@ -150,7 +172,6 @@ pub fn handle_agent_new(args: AgentNewArgs) -> Result<(), CliError> {
 pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     use crate::application::cli::config::loader::load_paladin_config;
     use crate::application::cli::interactive::prompt_for_input;
-    use crate::application::services::paladin::paladin_builder::PaladinBuilder;
     use crate::application::services::paladin::paladin_execution_service::PaladinExecutionService;
     #[cfg(feature = "vision")]
     use crate::core::platform::container::vision::{ImageDetail, VisionContent};
@@ -161,7 +182,6 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     #[cfg(feature = "content-processing")]
     use paladin_ports::input::document_port::{DocumentPort, DocumentSource};
     use paladin_ports::output::llm_port::LlmPort;
-    use std::sync::Arc;
     use std::time::Duration;
 
     // Validate image paths if provided
@@ -240,8 +260,10 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     // Load configuration
     let config = load_paladin_config(&args.config)?;
 
-    // Get input - prompt interactively if not provided per FR-6
-    let input = if let Some(input_text) = args.input {
+    // Get input - prompt interactively if not provided per FR-6.
+    // Cloned rather than moved out of `args.input`: `args` is borrowed again
+    // below by `apply_autonomous_config` for the autonomous flag overrides.
+    let input = if let Some(input_text) = args.input.clone() {
         input_text
     } else {
         prompt_for_input("Enter input for Paladin")?
@@ -319,6 +341,12 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     for word in &config.stop_words {
         builder = builder.add_stop_word(word);
     }
+
+    // Apply the YAML `autonomous` baseline, then layer the four CLI flags on
+    // top as additive-only overrides: the configuration file supplies the
+    // baseline and a present flag forces its feature on, never off (D-05,
+    // D-07).
+    builder = apply_autonomous_config(builder, &config, &args);
 
     // Enable vision if images are provided
     #[cfg(feature = "vision")]
@@ -500,11 +528,114 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     Ok(())
 }
 
+/// Applies the YAML `autonomous` section to `builder` as a baseline, then
+/// layers the CLI flag overrides on top, additive only (D-05, D-07): the
+/// configuration file supplies the baseline and a present flag forces its
+/// feature on, never off.
+///
+/// Order is part of the contract -- baseline first, flags second -- even
+/// though a force-on-only override makes the result order-independent for
+/// any single feature; keeping the order explicit is what makes the D-07
+/// semantics readable at the call site. `handle_agent_run` and this module's
+/// tests both drive Paladin construction through this same function so the
+/// tests exercise the exact composition the CLI uses.
+fn apply_autonomous_config(
+    mut builder: PaladinBuilder,
+    config: &PaladinYamlConfig,
+    args: &AgentRunArgs,
+) -> PaladinBuilder {
+    // Baseline: the YAML `autonomous` section, if present.
+    if let Some(autonomous) = &config.autonomous
+        && autonomous.planning.enabled
+    {
+        builder = builder.enable_autonomous_planning(true);
+    }
+
+    // Override: a present flag forces its feature on, additive only -- it
+    // never resets a feature the configuration file already enabled.
+    if args.auto_plan {
+        builder = builder.enable_autonomous_planning(true);
+    }
+
+    builder
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::cli::config::paladin_config::ProviderConfig;
+    use crate::core::platform::container::autonomous_config::{AutonomousConfig, PlanningConfig};
+    use crate::core::platform::container::paladin::{MaxLoops, PaladinData};
+    use paladin_llm::mock::MockLlmAdapter;
+    use paladin_ports::output::llm_port::LlmPort;
     use std::fs;
     use tempfile::TempDir;
+
+    /// Builds a minimal, otherwise-valid `PaladinYamlConfig` fixture, with
+    /// `autonomous` set to the given value. Every other field is the
+    /// smallest valid value so tests can focus on the `autonomous` wiring
+    /// alone.
+    fn make_yaml_config(autonomous: Option<AutonomousConfig>) -> PaladinYamlConfig {
+        PaladinYamlConfig {
+            name: "test-paladin".to_string(),
+            system_prompt: "You are a helpful assistant".to_string(),
+            model: "gpt-4".to_string(),
+            temperature: 0.7,
+            max_loops: MaxLoops::Fixed(3),
+            timeout_seconds: 300,
+            stop_words: vec![],
+            provider: ProviderConfig {
+                provider_type: "openai".to_string(),
+            },
+            garrison: None,
+            arsenal: None,
+            autonomous,
+            vision_enabled: false,
+            images: vec![],
+            documents: vec![],
+        }
+    }
+
+    /// Builds an `AgentRunArgs` fixture with only the four autonomous flags
+    /// varying; every other field is a harmless default.
+    fn make_args(
+        auto_plan: bool,
+        auto_prompt: bool,
+        dynamic_temp: bool,
+        enable_handoffs: bool,
+    ) -> AgentRunArgs {
+        AgentRunArgs {
+            config: PathBuf::from("config.yaml"),
+            input: None,
+            output: None,
+            verbose: false,
+            #[cfg(feature = "vision")]
+            images: vec![],
+            document: None,
+            auto_plan,
+            auto_prompt,
+            dynamic_temp,
+            enable_handoffs,
+        }
+    }
+
+    /// Drives Paladin construction through the exact same `apply_autonomous_config`
+    /// composition `handle_agent_run` uses, against a `MockLlmAdapter`, and
+    /// returns the resulting `PaladinData` for field assertions.
+    async fn build_paladin_with(
+        autonomous: Option<AutonomousConfig>,
+        args: AgentRunArgs,
+    ) -> PaladinData {
+        let config = make_yaml_config(autonomous);
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmAdapter::new());
+        let builder = PaladinBuilder::new(llm_port).system_prompt(&config.system_prompt);
+        let builder = apply_autonomous_config(builder, &config, &args);
+        builder
+            .build()
+            .await
+            .expect("builder composition under test should always succeed")
+            .node
+    }
 
     #[test]
     fn test_agent_new_args_creation() {
@@ -739,5 +870,41 @@ mod tests {
             }
             _ => panic!("Expected Run variant"),
         }
+    }
+
+    // ------------------------------------------------------------------
+    // D-05/D-06/D-07: autonomous YAML section + CLI flag override wiring
+    // (CLOSE-02, Epic 14 cluster 8.0)
+    // ------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn test_autonomous_planning_from_yaml_reaches_paladin_data() {
+        // A config whose `autonomous.planning.enabled` is true, with
+        // `auto_plan` false, yields `PaladinData.autonomous_planning == true`
+        // -- the YAML baseline alone reaches the built Paladin.
+        let autonomous = Some(AutonomousConfig {
+            planning: PlanningConfig {
+                enabled: true,
+                max_subtasks: 10,
+            },
+            ..Default::default()
+        });
+        let args = make_args(false, false, false, false);
+
+        let data = build_paladin_with(autonomous, args).await;
+
+        assert!(data.autonomous_planning);
+    }
+
+    #[tokio::test]
+    async fn test_auto_plan_flag_forces_planning_on() {
+        // A bare `--auto-plan`, with no `autonomous` section at all, yields
+        // `PaladinData.autonomous_planning == true` -- the flag alone
+        // reaches the built Paladin.
+        let args = make_args(true, false, false, false);
+
+        let data = build_paladin_with(None, args).await;
+
+        assert!(data.autonomous_planning);
     }
 }
