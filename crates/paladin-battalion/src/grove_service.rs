@@ -53,6 +53,16 @@ pub struct GroveResult {
     pub metadata: HashMap<String, String>,
 }
 
+/// Error message returned when `RoutingStrategy::LlmRouting` is selected but no
+/// operator-configured `routing_model` is present (D-02).
+///
+/// This is the single definition of the message text: both `route_task`'s pre-dispatch
+/// check and `route_by_llm`'s in-strategy guard call [`GroveExecutionService::resolve_routing_model`],
+/// which returns this exact string, so the dispatch-layer check and the strategy-layer guard
+/// cannot drift apart. ADR-0013, `CHANGELOG.md` and the pre-existing `route_by_llm` guard
+/// tests all key on this wording — do not change it.
+const MISSING_ROUTING_MODEL_ERROR: &str = "routing_model not configured for LLM-based routing";
+
 /// LLM routing response structure
 ///
 /// Expected JSON structure from LLM when performing routing decisions.
@@ -219,11 +229,43 @@ impl GroveExecutionService {
         })
     }
 
+    /// Resolves and validates the operator-configured `routing_model` for LLM-based routing.
+    ///
+    /// This is the single definition of the D-02 configuration check: both `route_task`'s
+    /// pre-dispatch early return and `route_by_llm`'s in-strategy guard call this function,
+    /// so the dispatch-layer check and the strategy-layer guard cannot drift apart.
+    ///
+    /// A `None` value and a string that is empty after trimming are treated identically as
+    /// unconfigured. There is no fallback of any kind here: this function must not consult
+    /// `routing_fallback`, must not call `handle_routing_failure`, and must not query the LLM
+    /// port for its available models — a misconfigured Grove fails loudly rather than silently
+    /// substituting a model the operator did not choose.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BattalionError::RoutingError` naming `routing_model` when `grove`'s
+    /// `routing_model` is absent or blank.
+    fn resolve_routing_model(grove: &Grove) -> Result<&str, BattalionError> {
+        grove
+            .node
+            .config
+            .routing_model
+            .as_deref()
+            .map(str::trim)
+            .filter(|model| !model.is_empty())
+            .ok_or_else(|| BattalionError::RoutingError(MISSING_ROUTING_MODEL_ERROR.to_string()))
+    }
+
     /// Routes a task to the most appropriate agent
     ///
     /// Uses the Grove's configured routing strategy to select the best agent
     /// for the given task. Falls back to alternative strategies or fallback
     /// trees if the primary routing fails.
+    ///
+    /// This fallback behaviour applies to routing *failures* only — a transient LLM call
+    /// failure, unparseable JSON, a below-threshold confidence, or an absent `llm_port`. It
+    /// explicitly excludes the missing-`routing_model` configuration error (D-02), which is
+    /// resolved before dispatch below and propagated to the caller with no fallback consulted.
     ///
     /// # Arguments
     ///
@@ -243,6 +285,18 @@ impl GroveExecutionService {
         task: &str,
     ) -> Result<RoutingDecision, BattalionError> {
         let strategy = &grove.node.config.routing_strategy;
+
+        // D-02: a Grove selecting LLM routing with no configured routing_model is a
+        // configuration error, not a routing failure. Resolve it here, above the dispatch
+        // below, so the `?` propagates it directly to `execute()`'s caller before it can ever
+        // enter the `match result { .. Err(e) => .. }` fallback arm. Neither `fallback_tree`
+        // nor the `grove.node.trees.first()` terminal fallback may absorb this case — every
+        // *other* routing failure (transient LLM call failure, unparseable JSON,
+        // below-threshold confidence, an absent `llm_port`) deliberately keeps its existing
+        // fallback behaviour and is unaffected by this check.
+        if matches!(strategy, RoutingStrategy::LlmRouting) {
+            Self::resolve_routing_model(grove)?;
+        }
 
         // Try the configured strategy
         let result = match strategy {
@@ -490,24 +544,14 @@ impl GroveExecutionService {
             )
         })?;
 
-        // Check that an operator-configured routing model is present (D-01/D-02). A `None`
-        // value or a string that is empty after trimming are treated identically as
-        // unconfigured. There is no fallback of any kind here: this guard must not consult
-        // `routing_fallback`, must not call `handle_routing_failure`, and must not query the
-        // LLM port for its available models — a misconfigured Grove fails loudly rather than
-        // silently substituting a model the operator did not choose.
-        let routing_model = grove
-            .node
-            .config
-            .routing_model
-            .as_deref()
-            .map(str::trim)
-            .filter(|model| !model.is_empty())
-            .ok_or_else(|| {
-                BattalionError::RoutingError(
-                    "routing_model not configured for LLM-based routing".to_string(),
-                )
-            })?;
+        // Check that an operator-configured routing model is present (D-01/D-02). Delegates to
+        // the single shared resolver (also called by `route_task`'s pre-dispatch check) so this
+        // guard and the dispatch-layer check cannot drift apart. There is no fallback of any
+        // kind here: this guard must not consult `routing_fallback`, must not call
+        // `handle_routing_failure`, and must not query the LLM port for its available models —
+        // a misconfigured Grove fails loudly rather than silently substituting a model the
+        // operator did not choose.
+        let routing_model = Self::resolve_routing_model(grove)?;
 
         // Build prompt with agent information
         let mut prompt = format!(
