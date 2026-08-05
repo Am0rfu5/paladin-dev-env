@@ -19,6 +19,7 @@ use crate::application::cli::config::paladin_config::PaladinYamlConfig;
 use crate::application::cli::error::CliError;
 use crate::application::cli::templates::paladin_template::generate_paladin_template;
 use crate::application::services::paladin::paladin_builder::PaladinBuilder;
+use crate::core::platform::container::autonomous_config::HandoffConfig;
 use clap::Subcommand;
 use colored::Colorize;
 use std::path::PathBuf;
@@ -347,6 +348,16 @@ pub async fn handle_agent_run(args: AgentRunArgs) -> Result<(), CliError> {
     // baseline and a present flag forces its feature on, never off (D-05,
     // D-07).
     builder = apply_autonomous_config(builder, &config, &args);
+    if args.verbose {
+        let enabled_features = autonomous_feature_summary(&config, &args);
+        if !enabled_features.is_empty() {
+            println!(
+                "{} Autonomous features enabled: {}",
+                "→".cyan().bold(),
+                enabled_features.join(", ")
+            );
+        }
+    }
 
     // Enable vision if images are provided
     #[cfg(feature = "vision")]
@@ -545,10 +556,19 @@ fn apply_autonomous_config(
     args: &AgentRunArgs,
 ) -> PaladinBuilder {
     // Baseline: the YAML `autonomous` section, if present.
-    if let Some(autonomous) = &config.autonomous
-        && autonomous.planning.enabled
-    {
-        builder = builder.enable_autonomous_planning(true);
+    if let Some(autonomous) = &config.autonomous {
+        if autonomous.planning.enabled {
+            builder = builder.enable_autonomous_planning(true);
+        }
+        if autonomous.prompt_generation.enabled {
+            builder = builder.enable_autonomous_prompts(true);
+        }
+        if autonomous.dynamic_temperature.enabled {
+            builder = builder.enable_dynamic_temperature(true);
+        }
+        if let Some(handoffs) = effective_handoffs(Some(&autonomous.handoffs), false) {
+            builder = builder.handoff_config(Arc::new(handoffs));
+        }
     }
 
     // Override: a present flag forces its feature on, additive only -- it
@@ -556,15 +576,81 @@ fn apply_autonomous_config(
     if args.auto_plan {
         builder = builder.enable_autonomous_planning(true);
     }
+    if args.auto_prompt {
+        builder = builder.enable_autonomous_prompts(true);
+    }
+    if args.dynamic_temp {
+        builder = builder.enable_dynamic_temperature(true);
+    }
+    if args.enable_handoffs {
+        let yaml_handoffs = config.autonomous.as_ref().map(|a| &a.handoffs);
+        if let Some(handoffs) = effective_handoffs(yaml_handoffs, true) {
+            builder = builder.handoff_config(Arc::new(handoffs));
+        }
+    }
 
     builder
+}
+
+/// Computes the effective `HandoffConfig` to hand to the builder's handoff
+/// setter, given an optional YAML-sourced baseline and whether
+/// `force_enabled` (the `--enable-handoffs` flag) forces the feature on.
+///
+/// `force_enabled == false` returns the YAML baseline only when the operator
+/// enabled it there (or `None` when there is nothing to apply).
+/// `force_enabled == true` always returns a config with `enabled` forced
+/// `true`, preserving every other field the YAML block set (`strategy`,
+/// `max_depth`, `retry`) -- or `HandoffConfig::default()`'s fields when no
+/// YAML block exists. The flag never resets a field the operator configured
+/// (D-07) -- this is what "additive only" means for the one non-boolean
+/// autonomous feature.
+fn effective_handoffs(
+    yaml_handoffs: Option<&HandoffConfig>,
+    force_enabled: bool,
+) -> Option<HandoffConfig> {
+    if force_enabled {
+        let mut handoffs = yaml_handoffs.cloned().unwrap_or_default();
+        handoffs.enabled = true;
+        Some(handoffs)
+    } else {
+        yaml_handoffs.filter(|handoffs| handoffs.enabled).cloned()
+    }
+}
+
+/// Names the autonomous features that end up enabled once the YAML baseline
+/// and the CLI flag overrides are both accounted for, for `--verbose`
+/// reporting. Mirrors `apply_autonomous_config`'s "YAML OR flag" logic
+/// without touching the builder.
+fn autonomous_feature_summary(
+    config: &PaladinYamlConfig,
+    args: &AgentRunArgs,
+) -> Vec<&'static str> {
+    let autonomous = config.autonomous.as_ref();
+    let mut enabled = Vec::new();
+
+    if autonomous.is_some_and(|a| a.planning.enabled) || args.auto_plan {
+        enabled.push("planning");
+    }
+    if autonomous.is_some_and(|a| a.prompt_generation.enabled) || args.auto_prompt {
+        enabled.push("prompt-generation");
+    }
+    if autonomous.is_some_and(|a| a.dynamic_temperature.enabled) || args.dynamic_temp {
+        enabled.push("dynamic-temperature");
+    }
+    if autonomous.is_some_and(|a| a.handoffs.enabled) || args.enable_handoffs {
+        enabled.push("handoffs");
+    }
+
+    enabled
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::application::cli::config::paladin_config::ProviderConfig;
-    use crate::core::platform::container::autonomous_config::{AutonomousConfig, PlanningConfig};
+    use crate::core::platform::container::autonomous_config::{
+        AutonomousConfig, PlanningConfig, PromptConfig, TemperatureConfig,
+    };
     use crate::core::platform::container::paladin::{MaxLoops, PaladinData};
     use paladin_llm::mock::MockLlmAdapter;
     use paladin_ports::output::llm_port::LlmPort;
@@ -906,5 +992,203 @@ mod tests {
         let data = build_paladin_with(None, args).await;
 
         assert!(data.autonomous_planning);
+    }
+
+    /// Edge row CLOSE-02/adjacency: every YAML-value x flag-presence
+    /// combination for one feature, in the order `must_haves.truths`
+    /// enumerates them.
+    fn adjacency_matrix() -> [(Option<bool>, bool, bool); 6] {
+        [
+            (Some(true), false, true),   // YAML true, flag absent -> stays on
+            (Some(true), true, true),    // YAML true, flag present -> stays on
+            (Some(false), true, true),   // YAML false, flag present -> turns on
+            (Some(false), false, false), // YAML false, flag absent -> stays off
+            (None, true, true),          // YAML section absent, flag present -> turns on
+            (None, false, false),        // YAML section absent, flag absent -> stays off
+        ]
+    }
+
+    #[tokio::test]
+    async fn test_autonomous_prompts_yaml_and_flag() {
+        for (yaml_enabled, flag, expected) in adjacency_matrix() {
+            let autonomous = yaml_enabled.map(|enabled| AutonomousConfig {
+                prompt_generation: PromptConfig {
+                    enabled,
+                    description: None,
+                },
+                ..Default::default()
+            });
+            let args = make_args(false, flag, false, false);
+
+            let data = build_paladin_with(autonomous, args).await;
+
+            assert_eq!(
+                data.autonomous_prompts, expected,
+                "yaml_enabled={yaml_enabled:?} flag={flag} expected={expected}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_dynamic_temperature_yaml_and_flag() {
+        for (yaml_enabled, flag, expected) in adjacency_matrix() {
+            let autonomous = yaml_enabled.map(|enabled| AutonomousConfig {
+                dynamic_temperature: TemperatureConfig {
+                    enabled,
+                    ..Default::default()
+                },
+                ..Default::default()
+            });
+            let args = make_args(false, false, flag, false);
+
+            let data = build_paladin_with(autonomous, args).await;
+
+            assert_eq!(
+                data.dynamic_temperature, expected,
+                "yaml_enabled={yaml_enabled:?} flag={flag} expected={expected}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_handoffs_yaml_and_flag() {
+        // `PaladinData` carries no handoff field (the domain-level surface
+        // stops at `PaladinBuilder`, which exposes no getter for its private
+        // handoff-configuration field -- D-08 forbids touching that file).
+        // This test therefore exercises `effective_handoffs` directly: the
+        // pure function `apply_autonomous_config` calls to compute the exact
+        // value it hands to the builder's handoff setter in both the
+        // baseline and override blocks.
+
+        // A YAML `autonomous.handoffs.enabled: true` with a non-default
+        // `max_depth` is preserved as the baseline (no flag).
+        let yaml_handoffs = HandoffConfig {
+            enabled: true,
+            max_depth: 9,
+            ..HandoffConfig::default()
+        };
+        assert_eq!(
+            effective_handoffs(Some(&yaml_handoffs), false),
+            Some(yaml_handoffs.clone())
+        );
+
+        // `--enable-handoffs` with no YAML `autonomous` section produces a
+        // `HandoffConfig` with `enabled` true and every other field at its
+        // `Default`.
+        assert_eq!(
+            effective_handoffs(None, true),
+            Some(HandoffConfig {
+                enabled: true,
+                ..HandoffConfig::default()
+            })
+        );
+
+        // `--enable-handoffs` on top of a YAML `handoffs` block preserves
+        // that block's non-`enabled` fields (max_depth stays 9) and forces
+        // `enabled` true.
+        let disabled_yaml_handoffs = HandoffConfig {
+            enabled: false,
+            max_depth: 9,
+            ..HandoffConfig::default()
+        };
+        assert_eq!(
+            effective_handoffs(Some(&disabled_yaml_handoffs), true),
+            Some(HandoffConfig {
+                enabled: true,
+                max_depth: 9,
+                ..HandoffConfig::default()
+            })
+        );
+    }
+
+    /// Edge row CLOSE-02/ordering: applying a flag twice is idempotent, and
+    /// setting any subset of the four flags leaves the other three
+    /// features' `PaladinData` fields untouched.
+    #[tokio::test]
+    async fn test_autonomous_flag_application_is_idempotent_and_independent() {
+        let config = make_yaml_config(None);
+        let args = make_args(true, false, false, false);
+        let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmAdapter::new());
+
+        let builder_once =
+            PaladinBuilder::new(llm_port.clone()).system_prompt(&config.system_prompt);
+        let builder_once = apply_autonomous_config(builder_once, &config, &args);
+        let data_once = builder_once.build().await.expect("build once").node;
+
+        let builder_twice = PaladinBuilder::new(llm_port).system_prompt(&config.system_prompt);
+        let builder_twice = apply_autonomous_config(builder_twice, &config, &args);
+        let builder_twice = apply_autonomous_config(builder_twice, &config, &args);
+        let data_twice = builder_twice.build().await.expect("build twice").node;
+
+        assert_eq!(
+            data_once.autonomous_planning,
+            data_twice.autonomous_planning
+        );
+        assert_eq!(data_once.autonomous_prompts, data_twice.autonomous_prompts);
+        assert_eq!(
+            data_once.dynamic_temperature,
+            data_twice.dynamic_temperature
+        );
+
+        // Planning-only leaves prompts/dynamic-temperature untouched.
+        let data = build_paladin_with(None, make_args(true, false, false, false)).await;
+        assert!(data.autonomous_planning);
+        assert!(!data.autonomous_prompts);
+        assert!(!data.dynamic_temperature);
+
+        // Prompts-only leaves planning/dynamic-temperature untouched.
+        let data = build_paladin_with(None, make_args(false, true, false, false)).await;
+        assert!(!data.autonomous_planning);
+        assert!(data.autonomous_prompts);
+        assert!(!data.dynamic_temperature);
+
+        // Dynamic-temperature-only leaves planning/prompts untouched.
+        let data = build_paladin_with(None, make_args(false, false, true, false)).await;
+        assert!(!data.autonomous_planning);
+        assert!(!data.autonomous_prompts);
+        assert!(data.dynamic_temperature);
+    }
+
+    #[tokio::test]
+    async fn test_no_autonomous_section_and_no_flags_is_a_no_op() {
+        // A config with `autonomous` `None` and all four flags false yields
+        // every `PaladinData` autonomous field false, and no handoff
+        // configuration.
+        let data = build_paladin_with(None, make_args(false, false, false, false)).await;
+
+        assert!(!data.autonomous_planning);
+        assert!(!data.autonomous_prompts);
+        assert!(!data.dynamic_temperature);
+        assert_eq!(effective_handoffs(None, false), None);
+    }
+
+    #[tokio::test]
+    async fn test_yaml_enabled_feature_cannot_be_disabled_from_cli() {
+        // With `autonomous.planning.enabled: true` in YAML, no combination
+        // of the four flags produces `PaladinData.autonomous_planning ==
+        // false` -- the stated, deliberate consequence of D-07.
+        let autonomous = Some(AutonomousConfig {
+            planning: PlanningConfig {
+                enabled: true,
+                max_subtasks: 10,
+            },
+            ..Default::default()
+        });
+
+        for auto_plan in [false, true] {
+            for auto_prompt in [false, true] {
+                for dynamic_temp in [false, true] {
+                    for enable_handoffs in [false, true] {
+                        let args = make_args(auto_plan, auto_prompt, dynamic_temp, enable_handoffs);
+                        let data = build_paladin_with(autonomous.clone(), args).await;
+                        assert!(
+                            data.autonomous_planning,
+                            "flags ({auto_plan}, {auto_prompt}, {dynamic_temp}, \
+                             {enable_handoffs}) must not disable a YAML-enabled feature"
+                        );
+                    }
+                }
+            }
+        }
     }
 }
