@@ -18,15 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking (runtime): Grove LLM routing now requires `routing_model` to be set.** A Grove whose
   `routing_strategy` is `RoutingStrategy::LlmRouting` must set `routing_model` in its
-  configuration; until it does, LLM-based routing returns `BattalionError::RoutingError` naming
-  the missing configuration, instead of silently defaulting to OpenAI's `gpt-4` as it did before
-  this change. There is no fallback of any kind — no `routing_fallback` consultation, no
-  provider-model lookup, no default.
+  configuration; until it does, calling `GroveExecutionService::execute()` — the entry point every
+  caller uses — returns `BattalionError::RoutingError` naming the missing configuration, instead of
+  silently defaulting to OpenAI's `gpt-4` as it did before this change. This configuration error is
+  excluded from Grove's routing fallback handling: no `fallback_tree` substitution and no default
+  agent selection, regardless of whether either is configured and would otherwise succeed.
   **Migration:** set `routing_model` in the Grove's YAML/JSON configuration (e.g.
   `routing_model: "claude-3-5-sonnet-20241022"` or `routing_model: "deepseek-chat"`), or pass it
   via `GroveBuilder::routing_model(..)` when building the Grove programmatically.
-  **Scope:** only Groves that explicitly select `RoutingStrategy::LlmRouting` are affected — a
-  default-constructed Grove is unaffected, since `RoutingStrategy::default()` is `KeywordMatch`.
+  **Scope:** only Groves that explicitly select `RoutingStrategy::LlmRouting` *and* do not set
+  `routing_model` are affected — a default-constructed Grove is unaffected, since
+  `RoutingStrategy::default()` is `KeywordMatch`, and every other Grove routing failure (a
+  transient LLM call failure, unparseable JSON, a below-threshold confidence, or an absent
+  `llm_port`) keeps its existing fallback behaviour unchanged.
   See [ADR-0013](.planning/decisions/0013-grove-routing-model.md).
 
 ## [0.7.0] - 2026-08-03
