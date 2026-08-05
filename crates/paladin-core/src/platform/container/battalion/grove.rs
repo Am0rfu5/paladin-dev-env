@@ -209,6 +209,17 @@ pub struct GroveConfig {
     /// Strategy to use for routing requests to agents
     pub routing_strategy: RoutingStrategy,
 
+    /// LLM model used for routing decisions
+    ///
+    /// Required when `routing_strategy` is `RoutingStrategy::LlmRouting`. Names the
+    /// operator-configured model (e.g. `"gpt-4"`, `"claude-3-5-sonnet-20241022"`,
+    /// `"deepseek-chat"`) that receives the routing prompt. When `routing_strategy` is
+    /// `RoutingStrategy::LlmRouting` and this field is absent (or empty/whitespace-only),
+    /// routing returns `BattalionError::RoutingError` rather than selecting a model on the
+    /// caller's behalf — there is no default and no fallback lookup.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub routing_model: Option<String>,
+
     /// Optional fallback Tree name if no good match is found
     ///
     /// If routing fails to find a suitable agent (e.g., no keywords match,
@@ -244,6 +255,7 @@ impl Default for GroveConfig {
     fn default() -> Self {
         Self {
             routing_strategy: RoutingStrategy::default(),
+            routing_model: None,
             fallback_tree: None,
             similarity_threshold: 0.7,
             routing_fallback: "keyword".to_string(),
@@ -295,6 +307,7 @@ pub struct GroveBuilder {
     name: String,
     trees: Vec<Tree>,
     routing_strategy: RoutingStrategy,
+    routing_model: Option<String>,
     fallback_tree: Option<String>,
     similarity_threshold: f32,
     routing_fallback: String,
@@ -314,6 +327,7 @@ impl GroveBuilder {
             name: String::new(),
             trees: Vec::new(),
             routing_strategy: RoutingStrategy::default(),
+            routing_model: None,
             fallback_tree: None,
             similarity_threshold: 0.7,
             routing_fallback: "keyword".to_string(),
@@ -369,6 +383,28 @@ impl GroveBuilder {
     /// ```
     pub fn routing_strategy(mut self, strategy: RoutingStrategy) -> Self {
         self.routing_strategy = strategy;
+        self
+    }
+
+    /// Sets the LLM model used for routing decisions
+    ///
+    /// Required when `routing_strategy` is `RoutingStrategy::LlmRouting`; routing returns
+    /// `BattalionError::RoutingError` at runtime if this is unset under that strategy.
+    ///
+    /// # Arguments
+    ///
+    /// * `model` - Model identifier the configured `LlmPort` should receive (e.g.
+    ///   `"gpt-4"`, `"claude-3-5-sonnet-20241022"`, `"deepseek-chat"`)
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let builder = GroveBuilder::new()
+    ///     .routing_strategy(RoutingStrategy::LlmRouting)
+    ///     .routing_model("deepseek-chat");
+    /// ```
+    pub fn routing_model(mut self, model: impl Into<String>) -> Self {
+        self.routing_model = Some(model.into());
         self
     }
 
@@ -455,6 +491,7 @@ impl GroveBuilder {
     /// ```
     pub fn config(mut self, config: GroveConfig) -> Self {
         self.routing_strategy = config.routing_strategy;
+        self.routing_model = config.routing_model;
         self.fallback_tree = config.fallback_tree;
         self.similarity_threshold = config.similarity_threshold;
         self.routing_fallback = config.routing_fallback;
@@ -546,6 +583,7 @@ impl GroveBuilder {
             trees: self.trees,
             config: GroveConfig {
                 routing_strategy: self.routing_strategy,
+                routing_model: self.routing_model,
                 fallback_tree: self.fallback_tree,
                 similarity_threshold: self.similarity_threshold,
                 routing_fallback: self.routing_fallback,
@@ -601,6 +639,28 @@ mod tests {
         assert_eq!(config.routing_strategy, RoutingStrategy::KeywordMatch);
         assert!(config.fallback_tree.is_none());
         assert_eq!(config.similarity_threshold, 0.7);
+    }
+
+    #[test]
+    fn test_grove_config_default_routing_model_is_none() {
+        let config = GroveConfig::default();
+        assert!(config.routing_model.is_none());
+        assert_eq!(config.routing_strategy, RoutingStrategy::KeywordMatch);
+    }
+
+    #[test]
+    fn test_grove_builder_sets_routing_model() {
+        let grove = GroveBuilder::new()
+            .name("Test Grove")
+            .add_tree(Tree::new("support").add_agent(TreeAgent::new("agent1")))
+            .routing_model("claude-3-5-sonnet-20241022")
+            .build()
+            .unwrap();
+
+        assert_eq!(
+            grove.node.config.routing_model,
+            Some("claude-3-5-sonnet-20241022".to_string())
+        );
     }
 
     #[test]
