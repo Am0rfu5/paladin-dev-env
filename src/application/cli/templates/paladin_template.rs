@@ -85,6 +85,31 @@ provider:
 #     # - name: api_service
 #     #   type: sse
 #     #   endpoint: http://localhost:3000/mcp
+
+# Optional: Autonomous Features Configuration
+# Uncomment to enable planning, prompt generation, dynamic temperature
+# adjustment, or agent handoffs. Note: the --auto-plan / --auto-prompt /
+# --dynamic-temp / --enable-handoffs CLI flags force their feature on over
+# this section but cannot turn one off.
+# autonomous:
+#   planning:
+#     enabled: false        # default: false
+#     max_subtasks: 10      # default: 10
+#   prompt_generation:
+#     enabled: false        # default: false
+#     description: null     # default: null (required if enabled)
+#   dynamic_temperature:
+#     enabled: false        # default: false
+#     min: 0.1               # default: 0.1
+#     max: 0.9               # default: 0.9
+#   handoffs:
+#     enabled: false        # default: false
+#     strategy: Automatic   # default: Automatic (Explicit, Threshold also available)
+#     max_depth: 5          # default: 5
+#     retry:
+#       max_retries: 3            # default: 3
+#       initial_backoff_ms: 1000  # default: 1000
+#       backoff_multiplier: 2.0   # default: 2.0
 "#,
         name = name,
         provider = provider,
@@ -132,5 +157,47 @@ mod tests {
         // Verify it parses as valid YAML
         let result = serde_yaml::from_str::<serde_yaml::Value>(&template);
         assert!(result.is_ok(), "Generated template should be valid YAML");
+    }
+
+    #[test]
+    fn test_generate_template_documents_autonomous_section() {
+        // The generated template documents the `autonomous:` section and
+        // all four sub-sections, matching `PaladinYamlConfig.autonomous`'s
+        // schema key-for-key (D-06's `AutonomousConfig` reuse). Resolves
+        // 06-CONTEXT.md's open discretion question in favour of emitting
+        // the example.
+        let template = generate_paladin_template("test-agent", "openai");
+        assert!(template.contains("autonomous:"));
+        assert!(template.contains("planning"));
+        assert!(template.contains("prompt_generation"));
+        assert!(template.contains("dynamic_temperature"));
+        assert!(template.contains("handoffs"));
+    }
+
+    #[test]
+    fn test_generate_template_autonomous_section_is_commented_out() {
+        // Every line mentioning `autonomous:` or one of its four
+        // sub-sections is a `#` comment -- required for
+        // `test_template_is_valid_yaml` to keep passing once this section
+        // exists, and for the section to be inert until an operator
+        // deliberately uncomments it.
+        let template = generate_paladin_template("test-agent", "openai");
+        let markers = [
+            "autonomous:",
+            "planning",
+            "prompt_generation",
+            "dynamic_temperature",
+            "handoffs",
+        ];
+
+        for line in template.lines() {
+            if markers.iter().any(|marker| line.contains(marker)) {
+                let trimmed = line.trim_start();
+                assert!(
+                    trimmed.starts_with('#'),
+                    "expected autonomous-section line to be commented out: {line:?}"
+                );
+            }
+        }
     }
 }
