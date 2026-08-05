@@ -267,10 +267,232 @@ async fn test_grove_llm_routing() {
 
     let service = GroveExecutionService::new(paladin_port, None, None, Arc::new(registry));
 
-    // Execute task - will use keyword fallback since we don't have real LLM
+    // A Grove selecting LLM routing without a routing model is a configuration error, not a
+    // thing to guess at: it surfaces from `execute()` with no fallback of any kind (D-02). This
+    // test is the direct inversion of the counter-example `06-VERIFICATION.md` cited — it used
+    // to assert `result.is_ok()` for exactly this misconfiguration.
     let result = service.execute(&grove, "Fix the login bug").await;
 
-    assert!(result.is_ok(), "Execution should succeed");
+    match result {
+        Err(paladin::core::platform::container::battalion::BattalionError::RoutingError(msg)) => {
+            assert!(
+                msg.contains("routing_model"),
+                "error message should name routing_model, got: {}",
+                msg
+            );
+        }
+        other => panic!(
+            "Expected RoutingError naming routing_model, got {:?}",
+            other
+        ),
+    }
+}
+
+/// Recording mock `LlmPort` used to prove that a Grove misconfigured for `LlmRouting` (no
+/// `routing_model`) never reaches the LLM through `GroveExecutionService::execute()` — the
+/// public entry point. A green result on a test using this mock while recording zero calls
+/// means the D-02 no-fallback guarantee held; any recorded call is a direct proof it did not.
+struct RecordingRoutingLlmMock {
+    recorded_models: Arc<Mutex<Vec<String>>>,
+}
+
+impl RecordingRoutingLlmMock {
+    fn new() -> Self {
+        Self {
+            recorded_models: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    fn recorded_models(&self) -> Vec<String> {
+        self.recorded_models.lock().unwrap().clone()
+    }
+}
+
+#[async_trait]
+impl paladin_ports::output::llm_port::LlmPort for RecordingRoutingLlmMock {
+    async fn generate(
+        &self,
+        request: paladin_ports::output::llm_port::LlmRequest,
+    ) -> Result<
+        paladin_ports::output::llm_port::LlmResponse,
+        paladin_ports::output::llm_port::LlmError,
+    > {
+        self.recorded_models
+            .lock()
+            .unwrap()
+            .push(request.model.clone());
+
+        let response_json = r#"{
+            "tree_name": "Team A",
+            "agent_id": "agent_0",
+            "confidence": 0.9,
+            "reasoning": "Recording mock always selects agent_0"
+        }"#;
+
+        Ok(paladin_ports::output::llm_port::LlmResponse {
+            id: uuid::Uuid::new_v4(),
+            request_id: request.id,
+            model: request.model,
+            content: response_json.to_string(),
+            finish_reason: paladin_ports::output::llm_port::FinishReason::Stop,
+            usage: paladin_ports::output::llm_port::TokenUsage {
+                prompt_tokens: 100,
+                completion_tokens: 50,
+                total_tokens: 150,
+            },
+            created_at: chrono::Utc::now(),
+            metadata: std::collections::HashMap::new(),
+            function_call: None,
+        })
+    }
+
+    async fn generate_stream(
+        &self,
+        _request: paladin_ports::output::llm_port::LlmRequest,
+    ) -> Result<
+        Box<
+            dyn futures::Stream<
+                    Item = Result<
+                        paladin_ports::output::llm_port::StreamingResponse,
+                        paladin_ports::output::llm_port::LlmError,
+                    >,
+                > + Send,
+        >,
+        paladin_ports::output::llm_port::LlmError,
+    > {
+        unimplemented!("Mock not needed for these tests")
+    }
+
+    async fn validate_model(
+        &self,
+        _model: &str,
+    ) -> Result<bool, paladin_ports::output::llm_port::LlmError> {
+        Ok(true)
+    }
+
+    async fn get_available_models(
+        &self,
+    ) -> Result<Vec<String>, paladin_ports::output::llm_port::LlmError> {
+        Ok(vec!["mock-model".to_string()])
+    }
+
+    fn get_provider_name(&self) -> &'static str {
+        "recording-routing-mock"
+    }
+
+    fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+        paladin_ports::output::llm_port::ProviderCapabilities::default()
+    }
+}
+
+#[tokio::test]
+async fn test_grove_llm_routing_errors_when_routing_model_absent_through_execute() {
+    // 06-VERIFICATION.md missing item (b): a Grove built for LlmRouting, with two trees and
+    // registered agents, a **configured** llm_port, and no routing_model, driven through
+    // GroveExecutionService::execute() — the only public entry point — must return
+    // Err(BattalionError::RoutingError(..)) naming routing_model, with zero LLM calls made.
+    let paladin_port = Arc::new(GroveMockPaladinPort::new());
+
+    let paladins = vec![
+        create_specialist_paladin("agent_0", "features", vec!["feature"]),
+        create_specialist_paladin("agent_1", "bugs", vec!["bug"]),
+    ];
+
+    let tree1 =
+        Tree::new("Team A").add_agent(create_tree_agent("agent_0", vec!["feature", "development"]));
+    let tree2 = Tree::new("Team B").add_agent(create_tree_agent("agent_1", vec!["bug", "fix"]));
+
+    let grove = GroveBuilder::new()
+        .name("LlmRoutingGroveNoModel")
+        .add_tree(tree1)
+        .add_tree(tree2)
+        .routing_strategy(RoutingStrategy::LlmRouting)
+        // no routing_model set
+        .build()
+        .expect("Grove build should succeed");
+
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    let llm_mock = Arc::new(RecordingRoutingLlmMock::new());
+    let service = GroveExecutionService::new(
+        paladin_port,
+        None,
+        Some(llm_mock.clone()),
+        Arc::new(registry),
+    );
+
+    let result = service.execute(&grove, "Fix the login bug").await;
+
+    match result {
+        Err(paladin::core::platform::container::battalion::BattalionError::RoutingError(msg)) => {
+            assert!(
+                msg.contains("routing_model"),
+                "error message should name routing_model, got: {}",
+                msg
+            );
+        }
+        other => panic!(
+            "Expected RoutingError naming routing_model, got {:?}",
+            other
+        ),
+    }
+    assert!(
+        llm_mock.recorded_models().is_empty(),
+        "no LLM call should have been made for a misconfigured Grove"
+    );
+}
+
+/// Scope negative control (planner-recorded assumption, 06-08-PLAN.md
+/// `<assumption_delta_decision>`): the D-02 hard error is scoped strictly to the missing-
+/// `routing_model` configuration case. An absent `llm_port` under LLM routing is a *different*
+/// failure mode and deliberately keeps its pre-existing fallback behaviour through `execute()`
+/// — no recorded decision covers breaking it, and generalizing the hard error to every
+/// LLM-routing configuration error was explicitly not taken.
+#[tokio::test]
+async fn test_grove_llm_routing_falls_back_when_llm_port_absent_but_routing_model_set() {
+    let paladin_port = Arc::new(GroveMockPaladinPort::new());
+
+    let paladins = vec![
+        create_specialist_paladin("agent_0", "features", vec!["feature"]),
+        create_specialist_paladin("agent_1", "bugs", vec!["bug"]),
+    ];
+
+    let tree1 =
+        Tree::new("Team A").add_agent(create_tree_agent("agent_0", vec!["feature", "development"]));
+    let tree2 = Tree::new("Team B").add_agent(create_tree_agent("agent_1", vec!["bug", "fix"]));
+
+    let grove = GroveBuilder::new()
+        .name("LlmRoutingGroveNoPort")
+        .add_tree(tree1)
+        .add_tree(tree2)
+        .routing_strategy(RoutingStrategy::LlmRouting)
+        .routing_model("deepseek-chat")
+        .build()
+        .expect("Grove build should succeed");
+
+    let registry = HashMapPaladinRegistry::new();
+    for paladin in &paladins {
+        registry
+            .register(paladin.node.name.clone(), Arc::new(paladin.clone()))
+            .expect("Registry should accept paladin");
+    }
+
+    // llm_port passed as None: this is a different, pre-existing failure mode from the
+    // missing-routing_model configuration error, and it deliberately keeps its fallback.
+    let service = GroveExecutionService::new(paladin_port, None, None, Arc::new(registry));
+
+    let result = service.execute(&grove, "Fix the login bug").await;
+
+    assert!(
+        result.is_ok(),
+        "an absent llm_port under LlmRouting with a configured routing_model must still fall \
+         back successfully through execute() — this is out of D-02's scope"
+    );
 }
 
 #[tokio::test]

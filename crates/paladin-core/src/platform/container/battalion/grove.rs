@@ -217,6 +217,11 @@ pub struct GroveConfig {
     /// `RoutingStrategy::LlmRouting` and this field is absent (or empty/whitespace-only),
     /// routing returns `BattalionError::RoutingError` rather than selecting a model on the
     /// caller's behalf — there is no default and no fallback lookup.
+    ///
+    /// This error is observable from `GroveExecutionService::execute()`, the public execution
+    /// entry point — not only from an internal routing helper. It is resolved before the Grove's
+    /// routing strategy is dispatched, so neither `fallback_tree` nor default agent selection is
+    /// ever consulted for this specific configuration error (D-02).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub routing_model: Option<String>,
 
