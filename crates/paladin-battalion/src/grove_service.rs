@@ -1903,4 +1903,135 @@ mod tests {
             ]
         );
     }
+
+    // Task 2 (06-08-PLAN.md): prove the D-02 no-fallback guarantee at the execute() level —
+    // the public entry point — rather than only at route_by_llm. `MockPaladinPort`'s
+    // `unimplemented!` body is safe in every test below precisely because a passing test never
+    // reaches Paladin execution: if any of these tests ever panics inside the mock instead of
+    // returning the expected `Err`, that panic is itself the regression signal that the routing
+    // error was swallowed again by route_task's fallback arm.
+
+    #[tokio::test]
+    async fn test_execute_errors_when_routing_model_absent() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
+
+        let mut grove = create_test_grove();
+        grove.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+        // routing_model left unset (default None)
+
+        let mock = Arc::new(RecordingLlmMock::new());
+        let service = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(mock.clone()),
+            Arc::new(registry),
+        );
+
+        let result = service.execute(&grove, "any task").await;
+
+        match result {
+            Err(BattalionError::RoutingError(msg)) => {
+                assert!(
+                    msg.contains("routing_model"),
+                    "error message should name routing_model, got: {}",
+                    msg
+                );
+            }
+            other => panic!(
+                "Expected RoutingError naming routing_model, got {:?}",
+                other
+            ),
+        }
+        assert!(
+            mock.recorded_models().is_empty(),
+            "no LLM call should have been made"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_execute_errors_when_routing_model_blank() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+
+        for blank in ["", "   "] {
+            let registry = HashMapPaladinRegistry::new();
+            let mut grove = create_test_grove();
+            grove.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+            grove.node.config.routing_model = Some(blank.to_string());
+
+            let mock = Arc::new(RecordingLlmMock::new());
+            let service = GroveExecutionService::new(
+                Arc::new(MockPaladinPort),
+                None,
+                Some(mock.clone()),
+                Arc::new(registry),
+            );
+
+            let result = service.execute(&grove, "any task").await;
+
+            match result {
+                Err(BattalionError::RoutingError(msg)) => {
+                    assert!(
+                        msg.contains("routing_model"),
+                        "error message should name routing_model for input {:?}, got: {}",
+                        blank,
+                        msg
+                    );
+                }
+                other => panic!(
+                    "Expected RoutingError naming routing_model for input {:?}, got {:?}",
+                    blank, other
+                ),
+            }
+            assert!(
+                mock.recorded_models().is_empty(),
+                "no LLM call should have been made for input {:?}",
+                blank
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_execute_errors_despite_fallback_tree_when_routing_model_absent() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
+
+        // create_test_grove() builds exactly one tree, named "engineering" — read from the
+        // source rather than assumed, so this test proves a *configured and resolvable*
+        // fallback tree is declined, not one that was never found.
+        let mut grove = create_test_grove();
+        grove.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+        grove.node.config.fallback_tree = Some("engineering".to_string());
+        // routing_model left unset (default None)
+
+        let mock = Arc::new(RecordingLlmMock::new());
+        let service = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(mock.clone()),
+            Arc::new(registry),
+        );
+
+        let result = service.execute(&grove, "any task").await;
+
+        match result {
+            Err(BattalionError::RoutingError(msg)) => {
+                assert!(
+                    msg.contains("routing_model"),
+                    "error message should name routing_model despite a configured, resolvable \
+                     fallback_tree, got: {}",
+                    msg
+                );
+            }
+            other => panic!(
+                "Expected RoutingError naming routing_model (fallback_tree must not be \
+                 consulted for this configuration error), got {:?}",
+                other
+            ),
+        }
+        assert!(
+            mock.recorded_models().is_empty(),
+            "no LLM call should have been made"
+        );
+    }
 }
