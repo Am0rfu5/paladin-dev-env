@@ -29,8 +29,11 @@ the plans that follow in this same phase):
 | 0007 | `battalion-cancellation-deferral` | Battalion-wide cancellation deferred to Phalanx-only, per D-05/D-08 (Phase 2) |
 | 0008 | `workspace-version-0-7-0` | Workspace version converges on 0.7.0, per D-01/D-02 (Phase 4) |
 | 0009 | `workspace-rust-edition-2024` | Workspace Rust edition converges on 2024, per D-04/D-06 (Phase 4) |
+| 0010 | `milestone-3-epic-numbering` | Milestone 3 epic numbering (Phase 5) |
+| 0011 | `vision-port-surfaces` | Vision port surfaces and the encryption-at-rest disposition (Phase 5) |
+| 0012 | `live-api-test-key-behaviour` | Live-API-test missing-key behaviour (Phase 5) |
 
-**Next free ADR number: 0010**
+**Next free ADR number: 0013**
 
 Phases 5, 7, 10 and 13 take the next free number from this line when they author further ADRs —
 they do not need to `ls` the directory to find it. Each phase updates this line when it appends.
