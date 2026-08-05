@@ -138,7 +138,7 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 
 **Milestone 2-3 close-out** — ◆ **CURRENT MILESTONE v0.7.2** (started 2026-08-04, 9 requirements)
 
-- [ ] **Phase 5: Milestone 2-3 Ground Truth** - Record what Epics 11-24 actually shipped, verify the three unverified blocks, and fix the epic-numbering defect at its source
+- [x] **Phase 5: Milestone 2-3 Ground Truth** - Record what Epics 11-24 actually shipped, verify the three unverified blocks, and fix the epic-numbering defect at its source (completed 2026-08-05)
 - [ ] **Phase 6: Verified Gap Closure** - Close the one verified defect plus whatever Phase 5 proves genuinely outstanding
 
 **Milestone 4-6 close-out**
@@ -385,7 +385,7 @@ no phase home anywhere in Phases 5-16** and needs a placement decision, not a si
   5. One coverage number and one scope survive across all four competing positions (80 / 85 / 75-layered / 80-Epic-24), the two module-scoped gates are placed relative to it, and the ~78% measured figure can be judged pass or fail against it.
   6. A CI run with no API keys behaves the way one recorded decision says it should — loud failure or clean skip — and `llm_live_api_tests.rs` matches that decision rather than contradicting the PRDs that specified it.
 
-**Plans:** 13 plans
+**Plans:** 13/13 plans complete
 
 Plans:
 **Wave 1**
@@ -708,7 +708,7 @@ through it. Recorded here so neither side gets planned twice:
 | 2. Functional Gap Closure | v0.7.1 | 11/11 | Complete    | 2026-08-01 |
 | 3. Verification Depth | v0.7.1 | 8/8 | Complete    | 2026-08-02 |
 | 4. Release Coherence | v0.7.1 | 7/7 | Complete    | 2026-08-03 |
-| 5. Milestone 2-3 Ground Truth | **v0.7.2** | 0/TBD | ◆ Current milestone | - |
+| 5. Milestone 2-3 Ground Truth | **v0.7.2** | 13/13 | Complete    | 2026-08-05 |
 | 6. Verified Gap Closure | **v0.7.2** | 0/TBD | ◆ Current milestone | - |
 | 7. Workspace Ground Truth & Recorded Answers | M4-6 | 0/TBD | Not started | - |
 | 8. Verified Defect Closure | M4-6 | 0/TBD | Not started | - |
