@@ -115,6 +115,15 @@ None - no external service configuration required.
 - Epic 24 cluster `1.0` (the missing ChainOfCommand benchmark) is closed: the benchmark exists, compiles under `cargo bench --no-run`, registers all three cases `docs/src/appendix/battalion-benchmarks.md` already claimed, and its baseline is recorded as its own honestly-dated, uncontended run. D-12 and D-13 are both satisfied.
 - No blockers for the remaining 06-verified-gap-closure plans; this plan's scope (Epic 24 cluster 1.0 only) is fully closed.
 
+## Self-Check: PASSED
+
+- FOUND: `crates/paladin-battalion/benches/battalion_benchmarks.rs`
+- FOUND: `docs/src/appendix/performance-baseline.md`
+- FOUND: `.planning/phases/06-verified-gap-closure/06-04-SUMMARY.md`
+- FOUND commit: `d7ee3d7`
+- FOUND commit: `b703dc6`
+- FOUND commit: `97dec89`
+
 ---
 *Phase: 06-verified-gap-closure*
 *Completed: 2026-08-05*
