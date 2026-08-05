@@ -467,9 +467,9 @@ completes** — CLOSE-02's scope is set by the three block verdicts from 05-05, 
 Plans:
 **Wave 1**
 
-- [ ] 06-01-PLAN.md — CLOSE-01: Grove routing model from configuration, with a hard error when unset (wave 1, has a one-way decision checkpoint)
-- [ ] 06-02-PLAN.md — CLOSE-02 / WARN-01: Herald reachability for Campaign, Chain of Command and the Commander, with a composite end-to-end witness (wave 1)
-- [ ] 06-03-PLAN.md — CLOSE-02 / Epic 14 cluster 8.0: `autonomous` YAML section plus additive CLI flag overrides (wave 1)
+- [x] 06-01-PLAN.md — CLOSE-01: Grove routing model from configuration, with a hard error when unset (wave 1, has a one-way decision checkpoint)
+- [x] 06-02-PLAN.md — CLOSE-02 / WARN-01: Herald reachability for Campaign, Chain of Command and the Commander, with a composite end-to-end witness (wave 1)
+- [x] 06-03-PLAN.md — CLOSE-02 / Epic 14 cluster 8.0: `autonomous` YAML section plus additive CLI flag overrides (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
