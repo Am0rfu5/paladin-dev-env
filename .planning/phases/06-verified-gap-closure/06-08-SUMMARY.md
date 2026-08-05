@@ -163,6 +163,11 @@ None - no external service configuration required.
 - Plan 06-09 and 06-10 (reconciling ADR-0013, `CHANGELOG.md`, and `.planning/REQUIREMENTS.md`'s CLOSE-01 closure text with the now-actually-shipped `execute()`-reachable behaviour — 06-VERIFICATION.md `missing:` item (c)) can now proceed: the code they need to describe is landed and green.
 - Full workspace gate confirmed green at HEAD `d83cd36`: `cargo test --workspace` (0 failed), `cargo fmt --check` (clean), `cargo clippy --workspace --all-targets -- -D warnings` (0 warnings).
 
+## Self-Check: PASSED
+
+- Files: `crates/paladin-battalion/src/grove_service.rs`, `crates/paladin-core/src/platform/container/battalion/grove.rs`, `tests/integration/battalion/grove_integration_test.rs` — all FOUND.
+- Commits: `41b4075`, `ab16dc3`, `d83cd36` — all FOUND in `git log`.
+
 ---
 *Phase: 06-verified-gap-closure*
 *Completed: 2026-08-05*
