@@ -37,6 +37,7 @@ use uuid::Uuid;
 
 use paladin_core::platform::container::battalion::campaign::{Campaign, EdgeCondition};
 use paladin_core::platform::container::battalion::{BattalionError, BattalionResult};
+use paladin_core::platform::container::herald::Herald;
 use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
 
 /// Service for executing Campaign patterns
@@ -57,6 +58,8 @@ use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
 pub struct CampaignExecutionService {
     /// Paladin execution port
     paladin_port: Arc<dyn PaladinPort>,
+    /// Optional Herald for formatting Battalion results
+    herald: Option<Arc<dyn Herald>>,
 }
 
 impl CampaignExecutionService {
@@ -73,7 +76,68 @@ impl CampaignExecutionService {
     /// ```
     pub fn new(paladin_port: Arc<dyn PaladinPort>) -> Self {
         info!("Creating CampaignExecutionService");
-        Self { paladin_port }
+        Self {
+            paladin_port,
+            herald: None,
+        }
+    }
+
+    /// Set the Herald for formatting results
+    ///
+    /// This allows runtime override of the default Herald. If set, this Herald
+    /// will be used to format Battalion results.
+    ///
+    /// # Arguments
+    ///
+    /// * `herald` - The Herald to use for formatting
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let service = CampaignExecutionService::new(paladin_port)
+    ///     .with_herald(Arc::new(JsonHerald::new()));
+    /// ```
+    pub fn with_herald(mut self, herald: Arc<dyn Herald>) -> Self {
+        self.herald = Some(herald);
+        self
+    }
+
+    /// Format a Battalion result using the configured Herald
+    ///
+    /// Converts the Battalion result into the Herald's output format. If no Herald
+    /// is configured, returns None.
+    ///
+    /// # Arguments
+    ///
+    /// * `result` - The Battalion result to format
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Some(String))` - Formatted output if Herald is configured
+    /// * `Ok(None)` - If no Herald is configured
+    /// * `Err(BattalionError)` - If formatting fails
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let formatted = service.format_result(&result)?;
+    /// if let Some(output) = formatted {
+    ///     println!("{}", output);
+    /// }
+    /// ```
+    pub fn format_result(
+        &self,
+        result: &BattalionResult,
+    ) -> Result<Option<String>, BattalionError> {
+        match &self.herald {
+            Some(herald) => herald
+                .format_battalion_result(result)
+                .map(Some)
+                .map_err(|e| {
+                    BattalionError::CampaignError(format!("Herald formatting error: {}", e))
+                }),
+            None => Ok(None),
+        }
     }
 
     /// Execute a Campaign with the given input
@@ -371,6 +435,7 @@ impl CampaignExecutionService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use paladin_core::platform::container::battalion::BattalionConfig;
     use paladin_core::platform::container::paladin::Paladin;
 
     #[test]
@@ -419,5 +484,135 @@ mod tests {
         let port = Arc::new(MockPort);
         let _service = CampaignExecutionService::new(port);
         // Service creation should succeed
+    }
+
+    /// Mock Herald for `format_result` tests, mirroring `herald.rs`'s own `MockHerald` test
+    /// fixture shape.
+    struct MockHerald;
+
+    impl paladin_core::platform::container::herald::Herald for MockHerald {
+        fn format_paladin_result(
+            &self,
+            result: &paladin_core::platform::container::herald::PaladinResult,
+        ) -> Result<String, paladin_core::platform::container::herald::HeraldError> {
+            Ok(format!("MOCK PALADIN: {}", result.output))
+        }
+
+        fn format_battalion_result(
+            &self,
+            result: &BattalionResult,
+        ) -> Result<String, paladin_core::platform::container::herald::HeraldError> {
+            Ok(format!("MOCK BATTALION: {}", result.battalion_name))
+        }
+
+        fn format_stream_chunk(
+            &self,
+            chunk: &paladin_core::platform::container::herald::StreamChunk,
+        ) -> Result<Option<String>, paladin_core::platform::container::herald::HeraldError>
+        {
+            Ok(Some(chunk.content.clone()))
+        }
+
+        fn finalize_stream(
+            &self,
+            _metadata: &paladin_core::platform::container::herald::ExecutionMetadata,
+        ) -> Result<String, paladin_core::platform::container::herald::HeraldError> {
+            Ok(String::new())
+        }
+
+        fn format_error(
+            &self,
+            error: &paladin_core::platform::container::herald::PaladinError,
+        ) -> String {
+            format!("ERROR: {}", error)
+        }
+
+        fn name(&self) -> &str {
+            "mock"
+        }
+
+        fn mime_type(&self) -> &str {
+            "text/plain"
+        }
+    }
+
+    #[tokio::test]
+    async fn test_campaign_with_herald_formats_result() {
+        use async_trait::async_trait;
+        use paladin_core::platform::container::paladin_error::PaladinError;
+        use paladin_ports::output::paladin_port::StopReason;
+
+        struct MockPort;
+
+        #[async_trait]
+        impl PaladinPort for MockPort {
+            async fn execute(
+                &self,
+                _paladin: &Paladin,
+                _input: &str,
+            ) -> Result<PaladinResult, PaladinError> {
+                Ok(PaladinResult {
+                    output: "campaign output".to_string(),
+                    token_count: 10,
+                    execution_time_ms: 5,
+                    loop_count: 1,
+                    stop_reason: StopReason::Completed,
+                    ..Default::default()
+                })
+            }
+
+            async fn execute_stream(
+                &self,
+                _paladin: &Paladin,
+                _input: &str,
+            ) -> Result<
+                tokio::sync::mpsc::Receiver<
+                    Result<paladin_ports::output::paladin_port::PaladinStreamChunk, PaladinError>,
+                >,
+                PaladinError,
+            > {
+                unimplemented!()
+            }
+
+            fn validate(&self, _paladin: &Paladin) -> Result<(), PaladinError> {
+                Ok(())
+            }
+        }
+
+        let paladin_data = paladin_core::platform::container::paladin::PaladinData {
+            system_prompt: "You are a test node".to_string(),
+            name: "solo_node".to_string(),
+            user_name: "test_user".to_string(),
+            ..Default::default()
+        };
+        let paladin = Paladin::new(paladin_data, Some("solo_node".to_string()));
+
+        let mut campaign = Campaign::new(BattalionConfig::new("herald_campaign"));
+        let node_id = campaign.add_paladin(paladin);
+        campaign
+            .set_entry_point(node_id)
+            .expect("single-node entry point should be valid");
+
+        let port = Arc::new(MockPort);
+        let service = CampaignExecutionService::new(port).with_herald(Arc::new(MockHerald));
+
+        let result = service
+            .execute(&campaign, "start")
+            .await
+            .expect("Campaign execution should succeed");
+
+        let formatted = service
+            .format_result(&result)
+            .expect("format_result should succeed with a Herald configured");
+        assert_eq!(
+            formatted,
+            Some("MOCK BATTALION: herald_campaign".to_string())
+        );
+
+        let service_without_herald = CampaignExecutionService::new(Arc::new(MockPort));
+        let unformatted = service_without_herald
+            .format_result(&result)
+            .expect("format_result should succeed without a Herald configured");
+        assert_eq!(unformatted, None);
     }
 }
