@@ -416,7 +416,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
 
 ### Ground truth (VERIFY)
 
-- [ ] **VERIFY-01**: The *Milestone 2-3 as-shipped ledger* below is upgraded from component-level
+- [x] **VERIFY-01**: The *Milestone 2-3 as-shipped ledger* below is upgraded from component-level
       file evidence to per-criterion verdicts with `file:line` citations, for all 118 run-2
       requirement IDs. Must record, per requirement, whether the shipped artefact satisfies the
       PRD acceptance criteria, diverges from them, or only partially covers them. Must also record
@@ -427,7 +427,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       `benches/` directories. *Derives: `intel/code-verification.md`; INGEST-CONFLICTS INFO
       "Sentinel and Autonomous docs disagree with the codebase map on where features live".*
 
-- [ ] **VERIFY-02**: The three run-2 open-checkbox blocks that `intel/code-verification.md` leaves
+- [x] **VERIFY-02**: The three run-2 open-checkbox blocks that `intel/code-verification.md` leaves
       unverified are checked against the tree, and each produces a written verdict —
       *satisfied by shipped code*, *genuinely outstanding*, or *deferred with reason*. The blocks
       are `tasks-epic22-battalion-commander-hardening.md` (81 open),
@@ -437,7 +437,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       state understates reality. *Derives: `intel/task-completion-state.md`;
       `intel/code-verification.md` "Not yet verified".*
 
-- [ ] **VERIFY-03**: The Milestone 3 epic-numbering defect is recorded once and permanently, and
+- [x] **VERIFY-03**: The Milestone 3 epic-numbering defect is recorded once and permanently, and
       the defective source document is corrected in-repo. The authoritative numbering is the
       plan/epic-definition set — 19 Herald & Domain Type Consolidation, 20 Vision Pipeline
       Completion, 21 Autonomous Agent Completion, 22 Battalion & Commander Hardening, 23
@@ -451,7 +451,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       shipped surfaces. *Derives: `intel/code-verification.md` "Milestone 3 epic numbering";
       INGEST-CONFLICTS warnings 1, 2, 12, 13, 14.*
 
-- [ ] **VERIFY-04**: The two vision port surfaces are recorded as **coexisting, not competing** —
+- [x] **VERIFY-04**: The two vision port surfaces are recorded as **coexisting, not competing** —
       `crates/paladin-ports/src/output/vision_llm_port.rs` (Epic 13 `VisionCapableLlm` lineage,
       reached via `PaladinBuilder::enable_vision`) and
       `crates/paladin-ports/src/output/vision_port.rs` (Epic 20 `VisionPort` lineage, reached via
@@ -464,7 +464,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       *Derives: `intel/code-verification.md` "Vision API surface — BOTH shipped";
       INGEST-CONFLICTS warnings 6, 8.*
 
-- [ ] **VERIFY-05**: RECON-07's single coverage answer is extended to cover the two positions
+- [x] **VERIFY-05**: RECON-07's single coverage answer is extended to cover the two positions
       run 2 added, so the gate has one number and one scope across all four positions: 80% (nine
       Milestone-1 Epic PRDs), 85% (`unit-test-improvements` PRD), **overall ≥ 75% with a layered
       per-tier table** (Milestone 3 plan: core ≥ 85%, application ≥ 80%, infrastructure ≥ 70%, CLI
@@ -475,7 +475,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       *Derives: REQ-test-coverage-target-v1 / -v2, REQ-epic24-quality-gates; INGEST-CONFLICTS
       warning 3 and the module-scoped-targets INFO.*
 
-- [ ] **VERIFY-06**: The live-API-test missing-key behaviour has one recorded answer, and the
+- [x] **VERIFY-06**: The live-API-test missing-key behaviour has one recorded answer, and the
       shipped harness matches it. Epic 23 FR-23.4.4 and Epic 24 US-24.7 both require graceful skip
       with a clear message; the post-Epic-24 cleanup deliberately reversed this, changing
       `require_api_key()` to panic so that "tests will now properly FAIL when keys are missing".
@@ -3687,12 +3687,12 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | REL-03 | Phase 4 | Complete |
 | REL-04 | Phase 4 | Complete |
 | REL-05 | Phase 4 | Complete |
-| VERIFY-01 | Phase 5 | Pending |
-| VERIFY-02 | Phase 5 | Pending |
-| VERIFY-03 | Phase 5 | Pending |
-| VERIFY-04 | Phase 5 | Pending |
-| VERIFY-05 | Phase 5 | Pending |
-| VERIFY-06 | Phase 5 | Pending |
+| VERIFY-01 | Phase 5 | Complete |
+| VERIFY-02 | Phase 5 | Complete |
+| VERIFY-03 | Phase 5 | Complete |
+| VERIFY-04 | Phase 5 | Complete |
+| VERIFY-05 | Phase 5 | Complete |
+| VERIFY-06 | Phase 5 | Complete |
 | CLOSE-01 | Phase 6 | Pending |
 | CLOSE-02 | Phase 6 | Pending |
 | CLOSE-03 | Phase 6 | Pending |
