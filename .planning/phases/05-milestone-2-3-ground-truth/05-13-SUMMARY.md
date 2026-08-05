@@ -165,6 +165,15 @@ None.
 
 Phase 6's CLOSE-02 planner can read `.planning/ledgers/milestone-02-03.md`'s `## Summary` → `### Phase 6 CLOSE-02 scope` section directly and size itself against exactly three named clusters (Epic 14 `8.0`; Epic 24 `1.0` and `8.0`) without re-reading the three block verdicts or re-deriving the scope itself. Phases 7, 10 and 13 can take ADR numbers starting at 0013 without collision. This is the final plan in Phase 05 — the phase is complete pending orchestrator-level STATE.md/ROADMAP.md updates after all wave agents merge.
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/05-milestone-2-3-ground-truth/05-13-SUMMARY.md`
+- FOUND: `.planning/ledgers/milestone-02-03.md`
+- FOUND: `.planning/REQUIREMENTS.md`
+- FOUND: `.planning/decisions/PROMOTION.md`
+- FOUND commit `386f95e` (plan commit) in `git log --oneline --all`
+- FOUND commit `4e8bcb9` (SUMMARY commit) in `git log --oneline --all`
+
 ---
 *Phase: 05-milestone-2-3-ground-truth*
 *Completed: 2026-08-05*
