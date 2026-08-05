@@ -50,6 +50,134 @@ separate verdicts, because the `REQ-*` ID, not the citation, is the primary key 
 follow D-00g: edit in place, retain superseded text, date every amendment, never a separate
 corrections file.
 
+## Summary
+
+This section is written last, by plan 05-13, after all 118 rows below carry a verdict. Every
+count in it was produced by counting the rows in this file — none is re-judged, and none is
+adjusted to make a more flattering narrative. Per D-03's own prediction, the `present, unproven`
+bucket is large; that is reported as the headline honest outcome of the evidence bar this ledger
+applies, not softened.
+
+### Verdict distribution
+
+| Verdict | Count |
+|---|---|
+| `satisfied` | 64 |
+| `present, unproven` | 25 |
+| `genuinely outstanding` | 3 |
+| `deferred with reason` | 5 |
+| `superseded by shipped code` | 21 |
+| **Total** | **118** |
+
+**Legend-deviation note, recorded rather than silently absorbed:** 3 of the 64 `satisfied` rows
+(`REQ-autonomous-configurable-model`, `REQ-autonomous-orchestration-layers`,
+`REQ-mock-llm-adapter`) and 2 of the 15 cluster rows in the Epic 22 and Epic 14 parent-task tables
+below carry the literal Verdict-cell text `satisfied, with caveat` or `satisfied by shipped code,
+with caveat` rather than the bare legend value `satisfied`. These are counted in the `satisfied`
+bucket above — each one's own evidence text confirms the D-01 bar is cleared (citation plus a
+named passing test) and flags an additional caveat that does not defeat the row's own claim, the
+same distinction the legend's `satisfied` entry itself draws between the bar and a narrower
+divergence. The five-value legend at the top of this file was not amended to add a sixth value;
+this note exists so a reader diffing the legend against the table does not mistake the omission
+for an inconsistency Task 1 failed to catch.
+
+### Nested outstanding items
+
+**Count: 2.** Exactly two rows in this ledger use the blank-first-two-column nested-row format —
+under `REQ-vision-security-encryption` (Epic 13, plan 05-08) and under `REQ-conclave-domain-model`
+(Epic 15, plan 05-09). A further ten `**New finding (plan 05-NN):**` annotations exist in this
+ledger but are folded inline into their host `REQ-*` row's own Evidence cell rather than added as
+a separate blank-first-two-column row beneath it (under `REQ-council-turn-strategies`,
+`REQ-council-garrison-integration`, `REQ-flow-parser`, `REQ-maneuver-config`,
+`REQ-maneuver-execution-service`, `REQ-maneuver-cli`, `REQ-maneuver-validation`,
+`REQ-cli-onboarding-wizard`, `REQ-execution-metadata-complete`, and cluster `10.0` of the Epic 22
+table) — twelve `New finding` annotations total, two of them nested rows in the strict sense this
+count uses. REQUIREMENTS.md's pointer states the strict figure, 2, matching this section's own
+definition of "nested row."
+
+### Block verdict roll-up
+
+| Block | Open items | Verdict |
+|---|---|---|
+| [`tasks-epic22-battalion-commander-hardening.md`](#epic-22--battalion--commander-hardening-10-ids) | 81 | `satisfied by shipped code` — all fifteen parent-task clusters verify; no work required |
+| [`tasks-autonomous-agent-features.md`](#epic-14--autonomous-agent-features-8-ids) | 45 | `partially outstanding` — eleven of twelve clusters verify; cluster `8.0` fails |
+| [`tasks-test-hardening-benchmarks-qa.md`](#epic-24--test-hardening-benchmarks--qa-9-ids) | 29 | `partially outstanding` — seven of nine clusters verify; clusters `1.0` and `8.0` fail |
+
+### Phase 6 CLOSE-02 scope
+
+Per D-06, this list is exactly CLOSE-02's scope and nothing else — every entry below is a parent-
+task cluster one of the three block verdicts above named as failing, and no entry here was added
+that no block verdict named.
+
+- **Epic 14, cluster `8.0` — YAML & CLI Configuration Support.** The four `--auto-plan`/
+  `--auto-prompt`/`--dynamic-temp`/`--enable-handoffs` CLI flags on `AgentRunArgs` are declared but
+  read by no code in the tree, and the CLI's `PaladinYamlConfig` loader carries no `autonomous`
+  field at all (`config.example.yml` has zero `autonomous` occurrences). The domain-level
+  `PaladinConfig.autonomous` surface is itself satisfied and tested; only the CLI-facing wiring is
+  missing.
+- **Epic 24, cluster `1.0` — Fix Campaign & ChainOfCommand Benchmarks.** `battalion_benchmarks.rs`
+  contains a working Campaign benchmark but no ChainOfCommand benchmark at all, contradicting
+  `docs/src/appendix/battalion-benchmarks.md:193,223,237`'s repeated claim that "ChainOfCommand
+  Benchmarks: Compiling and enabled" — a doc-vs-tree contradiction, not a documented deferral.
+- **Epic 24, cluster `8.0` — Final Quality Verification and CI/CD Integration.** The test/lint/
+  build verification half shipped; the CI/CD-integration half did not — `.github/workflows/ci.yml`
+  has zero jobs named `cli-tests`, `bench-check`, or `coverage` among its fifteen job keys.
+
+**Epic 22 verified clean.** All fifteen of `tasks-epic22-battalion-commander-hardening.md`'s
+parent-task clusters verify against the current tree, including the three the source task list
+still marks open. Per D-06 and REQUIREMENTS.md's own CLOSE-02 text, this block's verdict is
+recorded here as `satisfied by shipped code` with **no work required** for Phase 6 — it is not
+deleted from CLOSE-02's consideration, it closes with this recorded verdict.
+
+### Findings the ingest record did not contain
+
+Twelve `New finding` annotations — the corpus's own evidence for why a verdict is never
+transcribed from the ingest record without independently re-checking the tree:
+
+- **`REQ-vision-security-encryption`** (plan 05-08) — the run-2 ledger's REQUIREMENTS.md absence
+  claim is superseded by direct inspection; see ADR-0011.
+- **`REQ-conclave-domain-model`** (plan 05-09) — `epic-15-completion-report.md:36`'s own checklist
+  misstates `ConclaveStatus`'s first variant as "Completed"; the shipped enum and the PRD both say
+  "Success". The completion report's transcription is wrong, not the code.
+- **`REQ-council-turn-strategies`** (plan 05-10) — neither the `Random` nor `VoluntaryWithTimeout`
+  turn-selection branch has a dedicated unit or integration test, despite the shipped surface
+  exceeding NG-6's deferral.
+- **`REQ-council-garrison-integration`** (plan 05-10) — nothing in the tree exercises
+  `store_in_garrison`; every `CouncilExecutionService::new` call site passes `None` for
+  `garrison_port`. The SHOULD-level Citadel checkpoint-per-round persistence has no shipped code.
+- **`REQ-flow-parser`** (plan 05-11) — the FR-2.4 performance claim ("< 1ms for 99% of flows, 30+
+  agents") has no benchmark anywhere in the tree.
+- **`REQ-maneuver-config`** (plan 05-11) — three PRD-named fields (`max_nesting_depth`,
+  `max_parallel_branches`, `agent_timeout_seconds`, `capture_intermediate_outputs`) do not exist
+  anywhere in the tree; depth-5 and agent-count-30 bounds are hardcoded, not config-driven.
+- **`REQ-maneuver-execution-service`** (plan 05-11) — the <10ms orchestration-overhead / O(n)-
+  memory performance claims have no benchmark anywhere in the tree.
+- **`REQ-maneuver-cli`** (plan 05-11) — a third top-level subcommand, `paladin maneuver validate -c
+  <file>`, ships and is named by no ingested document.
+- **`REQ-maneuver-validation`** (plan 05-11) — `Maneuver::new`'s rejection paths are entirely
+  untested; a literal self-reference (`"a -> a"`) parses and validates successfully, contrary to
+  the PRD's "reject self-references" clause.
+- **`REQ-cli-onboarding-wizard`** (plan 05-10) — the PRD's optional `REDIS_URL`/`QDRANT_URL`/
+  `MINIO_ENDPOINT` `.env` entries are absent; only the three LLM provider keys are ever written.
+- **`REQ-execution-metadata-complete`** (plan 05-11) — `TokenUsage`'s field names
+  (`prompt_tokens`/`completion_tokens`) diverge from the PRD's literal `input_tokens`/
+  `output_tokens`; cross-referenced to DEBT-05 (Phase 7-8 scope), not re-adjudicated here.
+- **Epic 22 cluster `10.0`** (plan 05-05) — `MockLlmAdapter`'s test file carries no explicit
+  `[[test]]` entry in `Cargo.toml`; it is reachable only via `tests/lib.rs`'s auto-discovery. The
+  capability and its tests are real and passing; the wiring is implicit rather than declared.
+
+### Citation resolution sweep
+
+Every `file:line` citation in this ledger was extracted (141 unique cited paths) and checked with
+`test -f`. 93 carry a full repository-relative path and all 93 resolve. The remaining 48 are bare
+filenames used as shorthand later in the same row after the full path was already established in
+an earlier sentence of that row (for example, cluster `8.0`'s file list in the
+`REQ-content-deliverer-scheduling` row); two of those shorthand forms retain a partial directory
+prefix (`maneuver/service.rs`, `parser/mod.rs`) and were confirmed to resolve to
+`crates/paladin-battalion/src/maneuver/service.rs` and
+`crates/paladin-battalion/src/maneuver/parser/mod.rs` respectively via `find`. **Zero unresolved
+citations; no row required a D-00g in-place fix as a result of this sweep.**
+
 ### Epic 11 — Sanctum Memory Foundation (8 IDs)
 
 Epic-level note: `EPIC_11_COMPLETION_SUMMARY.md` claims COMPLETE while recording Qdrant as

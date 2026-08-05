@@ -2644,8 +2644,8 @@ Per-requirement verdicts for Milestones 2 and 3 now live in
 [`.planning/ledgers/milestone-02-03.md`](ledgers/milestone-02-03.md) rather than inline here (D-21).
 REQUIREMENTS.md is already ~4,000 lines and holds five as-shipped ledger sections; five sets of
 `file:line`-cited verdicts inline would make it unreadable. That ledger carries **118** `REQ-*`
-rows, each with a `file:line` citation and, where the verdict is `satisfied`, a named passing test,
-example, or command that exercises it. Nested outstanding-item count is finalised by plan 05-13.
+rows and **2** nested outstanding-task items, each with a `file:line` citation and, where the
+verdict is `satisfied`, a named passing test, example, or command that exercises it.
 Phases 7, 10 and 13 add the remaining sibling ledger files (`milestone-04-06.md`,
 `milestone-07-08.md`, `milestone-09-12.md`) in the same directory.
 
