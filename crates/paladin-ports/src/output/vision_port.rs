@@ -43,6 +43,22 @@ pub struct VisionTokenUsage {
 }
 
 /// Vision port trait for multi-modal image analysis
+///
+/// # Choosing a vision surface
+///
+/// `VisionPort` is the **recommended entry point for application code**. It is reached via
+/// `PaladinExecutionService::execute_with_vision`, which validates that vision is enabled on
+/// the Paladin, resolves the provider's vision adapter, and calls
+/// [`analyze_image`](VisionPort::analyze_image) on it.
+///
+/// The sibling surface, `VisionCapableLlm`, is the **adapter-author surface**: the trait an
+/// adapter author implements when adding a vision-capable provider, reached via
+/// `PaladinBuilder::enable_vision`. Application code should generally call `VisionPort` via
+/// `execute_with_vision` instead of reaching for `VisionCapableLlm` directly.
+///
+/// Both traits ship deliberately, at different layers of the framework. Neither is legacy, and
+/// no migration between them is planned or recommended for either audience. See the recorded
+/// decision at `.planning/decisions/0011-vision-port-surfaces.md`.
 #[async_trait]
 pub trait VisionPort: Send + Sync {
     /// Analyze one or more images with a text prompt
