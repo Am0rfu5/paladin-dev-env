@@ -34,14 +34,18 @@
 //! # }
 //! ```
 
-use paladin_core::platform::container::battalion::BattalionError;
 use paladin_core::platform::container::battalion::chain_of_command::{
     ChainOfCommand, DelegationStrategy,
 };
+use paladin_core::platform::container::battalion::{
+    BattalionError, BattalionResult, BattalionStatus, BattalionStrategy,
+};
+use paladin_core::platform::container::herald::Herald;
 use paladin_core::platform::container::paladin_error::PaladinError;
 use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 
 /// Result of executing a Chain of Command delegation
 #[derive(Debug, Clone)]
@@ -62,6 +66,8 @@ pub struct ChainOfCommandExecutionService {
     paladin_port: Arc<dyn PaladinPort>,
     /// Round-robin state: maps chain ID to current index
     round_robin_state: Arc<Mutex<HashMap<String, usize>>>,
+    /// Optional Herald for formatting Battalion results
+    herald: Option<Arc<dyn Herald>>,
 }
 
 impl ChainOfCommandExecutionService {
@@ -84,6 +90,124 @@ impl ChainOfCommandExecutionService {
         Self {
             paladin_port,
             round_robin_state: Arc::new(Mutex::new(HashMap::new())),
+            herald: None,
+        }
+    }
+
+    /// Set the Herald for formatting results
+    ///
+    /// This allows runtime override of the default Herald. If set, this Herald
+    /// will be used to format Battalion results produced by [`to_battalion_result`].
+    ///
+    /// [`to_battalion_result`]: ChainOfCommandExecutionService::to_battalion_result
+    ///
+    /// # Arguments
+    ///
+    /// * `herald` - The Herald to use for formatting
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let service = ChainOfCommandExecutionService::new(paladin_port)
+    ///     .with_herald(Arc::new(JsonHerald::new()));
+    /// ```
+    pub fn with_herald(mut self, herald: Arc<dyn Herald>) -> Self {
+        self.herald = Some(herald);
+        self
+    }
+
+    /// Convert a `DelegationResult` into a `BattalionResult`
+    ///
+    /// This is the single, shared conversion used both by direct callers of this service
+    /// (via [`format_result`](ChainOfCommandExecutionService::format_result)) and by
+    /// [`Commander`](crate::commander::Commander)'s `BattalionStrategy::ChainOfCommand`
+    /// branch, so the two can never drift apart. Field values reproduce exactly what the
+    /// Commander's inline `BattalionResult` literal previously constructed.
+    ///
+    /// # Arguments
+    ///
+    /// * `chain` - The Chain of Command that was executed, used for its configured name
+    /// * `result` - The `DelegationResult` produced by [`execute`](ChainOfCommandExecutionService::execute)
+    /// * `started_at` - When execution began, supplied by the caller
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let battalion_result = service.to_battalion_result(&chain, &delegation_result, started_at);
+    /// ```
+    pub fn to_battalion_result(
+        &self,
+        chain: &ChainOfCommand,
+        result: &DelegationResult,
+        started_at: chrono::DateTime<chrono::Utc>,
+    ) -> BattalionResult {
+        BattalionResult {
+            battalion_id: Uuid::new_v4(),
+            battalion_name: chain.config().name.clone(),
+            started_at,
+            completed_at: chrono::Utc::now(),
+            final_output: result.outputs.join("\n"),
+            paladin_results: Vec::new(),
+            status: BattalionStatus::Completed,
+            strategy_used: BattalionStrategy::ChainOfCommand,
+            strategy_selection_reasoning: None,
+            strategy_selection_time_ms: 0,
+            per_paladin_times: HashMap::new(),
+            per_paladin_tokens: HashMap::new(),
+            total_tokens: 0,
+            paladin_success_count: 0,
+            paladin_failure_count: 0,
+            node_errors: Vec::new(),
+        }
+    }
+
+    /// Format a Chain of Command delegation result using the configured Herald
+    ///
+    /// Converts `result` into a `BattalionResult` via [`to_battalion_result`], then formats
+    /// it through the configured Herald. If no Herald is configured, returns `Ok(None)`.
+    ///
+    /// [`to_battalion_result`]: ChainOfCommandExecutionService::to_battalion_result
+    ///
+    /// # Arguments
+    ///
+    /// * `chain` - The Chain of Command that was executed
+    /// * `result` - The `DelegationResult` to format
+    /// * `started_at` - When execution began, supplied by the caller
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Some(String))` - Formatted output if a Herald is configured
+    /// * `Ok(None)` - If no Herald is configured
+    /// * `Err(BattalionError)` - If formatting fails
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let formatted = service.format_result(&chain, &result, started_at)?;
+    /// if let Some(output) = formatted {
+    ///     println!("{}", output);
+    /// }
+    /// ```
+    pub fn format_result(
+        &self,
+        chain: &ChainOfCommand,
+        result: &DelegationResult,
+        started_at: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Option<String>, BattalionError> {
+        match &self.herald {
+            Some(herald) => {
+                let battalion_result = self.to_battalion_result(chain, result, started_at);
+                herald
+                    .format_battalion_result(&battalion_result)
+                    .map(Some)
+                    .map_err(|e| {
+                        BattalionError::ChainOfCommandError(format!(
+                            "Herald formatting error: {}",
+                            e
+                        ))
+                    })
+            }
+            None => Ok(None),
         }
     }
 
@@ -573,5 +697,158 @@ mod tests {
 
         let result = service.validate(&chain).await;
         assert!(result.is_ok());
+    }
+
+    /// Minimal `PaladinPort` mock for the Herald tests below, where the port is never
+    /// actually invoked -- `with_herald`/`to_battalion_result`/`format_result` operate on an
+    /// already-produced `DelegationResult`.
+    struct HeraldTestMockPort;
+
+    #[async_trait::async_trait]
+    impl PaladinPort for HeraldTestMockPort {
+        async fn execute(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<PaladinResult, paladin_core::platform::container::paladin_error::PaladinError>
+        {
+            use paladin_ports::output::paladin_port::StopReason;
+            Ok(PaladinResult {
+                output: String::new(),
+                token_count: 0,
+                execution_time_ms: 0,
+                loop_count: 1,
+                stop_reason: StopReason::Completed,
+                ..Default::default()
+            })
+        }
+
+        async fn execute_stream(
+            &self,
+            _paladin: &Paladin,
+            _input: &str,
+        ) -> Result<
+            paladin_ports::output::paladin_port::PaladinStream,
+            paladin_core::platform::container::paladin_error::PaladinError,
+        > {
+            unimplemented!()
+        }
+
+        fn validate(
+            &self,
+            _paladin: &Paladin,
+        ) -> Result<(), paladin_core::platform::container::paladin_error::PaladinError> {
+            Ok(())
+        }
+    }
+
+    /// Mock Herald for `format_result` unit tests, mirroring `herald.rs`'s own `MockHerald`
+    /// test fixture shape.
+    struct MockHerald;
+
+    impl Herald for MockHerald {
+        fn format_paladin_result(
+            &self,
+            result: &paladin_core::platform::container::herald::PaladinResult,
+        ) -> Result<String, paladin_core::platform::container::herald::HeraldError> {
+            Ok(format!("MOCK PALADIN: {}", result.output))
+        }
+
+        fn format_battalion_result(
+            &self,
+            result: &BattalionResult,
+        ) -> Result<String, paladin_core::platform::container::herald::HeraldError> {
+            Ok(format!("MOCK BATTALION: {}", result.battalion_name))
+        }
+
+        fn format_stream_chunk(
+            &self,
+            chunk: &paladin_core::platform::container::herald::StreamChunk,
+        ) -> Result<Option<String>, paladin_core::platform::container::herald::HeraldError>
+        {
+            Ok(Some(chunk.content.clone()))
+        }
+
+        fn finalize_stream(
+            &self,
+            _metadata: &paladin_core::platform::container::herald::ExecutionMetadata,
+        ) -> Result<String, paladin_core::platform::container::herald::HeraldError> {
+            Ok(String::new())
+        }
+
+        fn format_error(
+            &self,
+            error: &paladin_core::platform::container::herald::PaladinError,
+        ) -> String {
+            format!("ERROR: {}", error)
+        }
+
+        fn name(&self) -> &str {
+            "mock"
+        }
+
+        fn mime_type(&self) -> &str {
+            "text/plain"
+        }
+    }
+
+    #[test]
+    fn test_chain_of_command_with_herald_sets_field() {
+        let port = Arc::new(HeraldTestMockPort);
+        let service = ChainOfCommandExecutionService::new(port).with_herald(Arc::new(MockHerald));
+
+        let commander = create_test_paladin("commander");
+        let specialist = create_test_paladin("specialist");
+        let config = BattalionConfig::new("herald_test_chain");
+
+        let chain = ChainOfCommand::new(commander, vec![specialist], config).expect("valid chain");
+
+        let delegation_result = DelegationResult {
+            selected_specialists: vec!["specialist".to_string()],
+            reasoning: "test reasoning".to_string(),
+            outputs: vec!["specialist output".to_string()],
+        };
+
+        let formatted = service
+            .format_result(&chain, &delegation_result, chrono::Utc::now())
+            .expect("format_result should succeed with a Herald configured");
+
+        assert_eq!(
+            formatted,
+            Some("MOCK BATTALION: herald_test_chain".to_string())
+        );
+    }
+
+    #[test]
+    fn test_to_battalion_result_maps_delegation_outputs() {
+        let port = Arc::new(HeraldTestMockPort);
+        let service = ChainOfCommandExecutionService::new(port);
+
+        let commander = create_test_paladin("commander");
+        let specialist = create_test_paladin("specialist");
+        let config = BattalionConfig::new("mapped_chain");
+
+        let chain = ChainOfCommand::new(commander, vec![specialist], config).expect("valid chain");
+
+        let delegation_result = DelegationResult {
+            selected_specialists: vec!["specialist".to_string()],
+            reasoning: "test reasoning".to_string(),
+            outputs: vec!["first output".to_string(), "second output".to_string()],
+        };
+
+        let started_at = chrono::Utc::now();
+        let battalion_result = service.to_battalion_result(&chain, &delegation_result, started_at);
+
+        assert_eq!(battalion_result.battalion_name, "mapped_chain");
+        assert_eq!(battalion_result.final_output, "first output\nsecond output");
+        assert_eq!(
+            battalion_result.strategy_used,
+            BattalionStrategy::ChainOfCommand
+        );
+        assert_eq!(battalion_result.status, BattalionStatus::Completed);
+        assert_eq!(battalion_result.started_at, started_at);
+        assert!(battalion_result.paladin_results.is_empty());
+        assert_eq!(battalion_result.paladin_success_count, 0);
+        assert_eq!(battalion_result.paladin_failure_count, 0);
     }
 }
