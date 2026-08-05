@@ -462,7 +462,16 @@ completes** — CLOSE-02's scope is set by the three block verdicts from 05-05, 
   3. Every item VERIFY-02 classified as genuinely outstanding across Epics 14, 22 and 24 is either passing in `cargo test --workspace` or recorded as deferred with a written reason — and if verification found nothing outstanding, that verdict is recorded rather than the requirement quietly dropped.
   4. The live-API test harness and both vision surfaces match their Phase 5 recorded decisions in code, with any removal carrying a migration note.
 
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — CLOSE-01: Grove routing model from configuration, with a hard error when unset (wave 1, has a one-way decision checkpoint)
+- [ ] 06-02-PLAN.md — CLOSE-02 / WARN-01: Herald reachability for Campaign, Chain of Command and the Commander, with a composite end-to-end witness (wave 1)
+- [ ] 06-03-PLAN.md — CLOSE-02 / Epic 14 cluster 8.0: `autonomous` YAML section plus additive CLI flag overrides (wave 1)
+- [ ] 06-04-PLAN.md — CLOSE-02 / Epic 24 cluster 1.0: ChainOfCommand benchmark and its dated baseline (wave 2)
+- [ ] 06-05-PLAN.md — CLOSE-03: vision entry-point rustdoc, the unimposed-encryption verdict, ADR-0011 amendment, live-API doc correction (wave 2)
+- [ ] 06-06-PLAN.md — CLOSE-01 record: ADR-0013, PROMOTION index, CHANGELOG breaking-change entry, PROJECT Key Decisions row (wave 2)
+- [ ] 06-07-PLAN.md — CLOSE-01/02/03 close-out: ledger amendments, CI-job deferral recorded bidirectionally, Epic 22 "no work required" verdict, WARN-01 outcome (wave 3)
 
 **Milestone 4-6 close-out — Phases 7-8 (not started)**
 
