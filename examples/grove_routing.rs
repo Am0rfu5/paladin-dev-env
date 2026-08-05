@@ -92,6 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Configure Grove with KeywordMatch routing
     let config = GroveConfig {
         routing_strategy: RoutingStrategy::KeywordMatch,
+        routing_model: None,
         fallback_tree: Some("Security Experts".to_string()),
         similarity_threshold: 0.7,
         routing_fallback: "keyword".to_string(),

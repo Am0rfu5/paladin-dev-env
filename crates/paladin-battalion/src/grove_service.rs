@@ -490,6 +490,25 @@ impl GroveExecutionService {
             )
         })?;
 
+        // Check that an operator-configured routing model is present (D-01/D-02). A `None`
+        // value or a string that is empty after trimming are treated identically as
+        // unconfigured. There is no fallback of any kind here: this guard must not consult
+        // `routing_fallback`, must not call `handle_routing_failure`, and must not query the
+        // LLM port for its available models — a misconfigured Grove fails loudly rather than
+        // silently substituting a model the operator did not choose.
+        let routing_model = grove
+            .node
+            .config
+            .routing_model
+            .as_deref()
+            .map(str::trim)
+            .filter(|model| !model.is_empty())
+            .ok_or_else(|| {
+                BattalionError::RoutingError(
+                    "routing_model not configured for LLM-based routing".to_string(),
+                )
+            })?;
+
         // Build prompt with agent information
         let mut prompt = format!(
             "You are a task routing system. Given the following task and available specialized agents, \
@@ -534,7 +553,7 @@ impl GroveExecutionService {
         // Call LLM
         let llm_request = LlmRequest {
             id: uuid::Uuid::new_v4(),
-            model: "gpt-4".to_string(), // TODO: Make configurable
+            model: routing_model.to_string(),
             prompt: prompt_item,
             attachments: vec![],
             stream: false,
@@ -1206,7 +1225,8 @@ mod tests {
             Arc::new(registry),
         );
 
-        let grove = create_test_grove();
+        let mut grove = create_test_grove();
+        grove.node.config.routing_model = Some("mock-model".to_string());
 
         let result = service
             .route_by_llm(&grove, "rust backend development task")
@@ -1306,6 +1326,7 @@ mod tests {
         // Set routing_fallback to "error" to test that low confidence triggers fallback logic
         grove.node.config.routing_fallback = "error".to_string();
         grove.node.config.min_confidence = 0.5;
+        grove.node.config.routing_model = Some("mock-model".to_string());
 
         let service = GroveExecutionService::new(
             Arc::new(MockPaladinPort),
@@ -1405,6 +1426,7 @@ mod tests {
         let registry = HashMapPaladinRegistry::new();
         let mut grove = create_test_grove();
         grove.node.config.routing_fallback = "error".to_string();
+        grove.node.config.routing_model = Some("mock-model".to_string());
 
         let service = GroveExecutionService::new(
             Arc::new(MockPaladinPort),
@@ -1506,6 +1528,7 @@ mod tests {
         // Set routing_fallback to "keyword" to test fallback to keyword matching
         grove.node.config.routing_fallback = "keyword".to_string();
         grove.node.config.min_confidence = 0.5;
+        grove.node.config.routing_model = Some("mock-model".to_string());
 
         let service = GroveExecutionService::new(
             Arc::new(MockPaladinPort),
@@ -1528,5 +1551,312 @@ mod tests {
         assert_eq!(decision.selected_agent, "backend_expert");
         // The reasoning should indicate fallback occurred
         assert!(decision.reasoning.contains("keyword") || decision.reasoning.contains("fallback"));
+    }
+
+    // CLOSE-01 (D-01/D-02/D-04): Grove LLM routing must use the operator-configured
+    // `routing_model` rather than a hardcoded literal, and must hard-error with no fallback
+    // of any kind when it is absent.
+
+    /// Recording mock `LlmPort` that captures every `LlmRequest.model` it is handed.
+    ///
+    /// Used to prove Grove LLM routing sources its model from `GroveConfig.routing_model`
+    /// rather than a hardcoded provider literal (D-04). Extends the established in-file mock
+    /// convention (see `SuccessfulLlmMock` above) rather than introducing a parallel harness.
+    struct RecordingLlmMock {
+        recorded_models: std::sync::Arc<std::sync::Mutex<Vec<String>>>,
+    }
+
+    impl RecordingLlmMock {
+        fn new() -> Self {
+            Self {
+                recorded_models: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+            }
+        }
+
+        /// Returns every `LlmRequest.model` this mock has recorded, in call order.
+        fn recorded_models(&self) -> Vec<String> {
+            self.recorded_models
+                .lock()
+                .expect("recorded_models mutex poisoned")
+                .clone()
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl LlmPort for RecordingLlmMock {
+        async fn generate(
+            &self,
+            request: paladin_ports::output::llm_port::LlmRequest,
+        ) -> Result<
+            paladin_ports::output::llm_port::LlmResponse,
+            paladin_ports::output::llm_port::LlmError,
+        > {
+            self.recorded_models
+                .lock()
+                .expect("recorded_models mutex poisoned")
+                .push(request.model.clone());
+
+            let response_json = r#"{
+                "tree_name": "engineering",
+                "agent_id": "backend_expert",
+                "confidence": 0.85,
+                "reasoning": "Task mentions rust and backend, which are backend expert's core skills"
+            }"#;
+
+            Ok(paladin_ports::output::llm_port::LlmResponse {
+                id: uuid::Uuid::new_v4(),
+                request_id: uuid::Uuid::new_v4(),
+                model: request.model,
+                content: response_json.to_string(),
+                finish_reason: paladin_ports::output::llm_port::FinishReason::Stop,
+                usage: paladin_ports::output::llm_port::TokenUsage {
+                    prompt_tokens: 100,
+                    completion_tokens: 50,
+                    total_tokens: 150,
+                },
+                created_at: chrono::Utc::now(),
+                metadata: std::collections::HashMap::new(),
+                function_call: None,
+            })
+        }
+
+        async fn generate_stream(
+            &self,
+            _request: paladin_ports::output::llm_port::LlmRequest,
+        ) -> Result<
+            Box<
+                dyn futures::Stream<
+                        Item = Result<
+                            paladin_ports::output::llm_port::StreamingResponse,
+                            paladin_ports::output::llm_port::LlmError,
+                        >,
+                    > + Send,
+            >,
+            paladin_ports::output::llm_port::LlmError,
+        > {
+            unimplemented!("Mock not needed for these tests")
+        }
+
+        async fn validate_model(
+            &self,
+            _model: &str,
+        ) -> Result<bool, paladin_ports::output::llm_port::LlmError> {
+            Ok(true)
+        }
+
+        async fn get_available_models(
+            &self,
+        ) -> Result<Vec<String>, paladin_ports::output::llm_port::LlmError> {
+            Ok(vec!["mock-model".to_string()])
+        }
+
+        fn get_provider_name(&self) -> &'static str {
+            "mock"
+        }
+
+        fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+            paladin_ports::output::llm_port::ProviderCapabilities::default()
+        }
+    }
+
+    #[tokio::test]
+    async fn test_llm_routing_uses_configured_routing_model() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
+
+        let mut grove = create_test_grove();
+        grove.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+        grove.node.config.routing_model = Some("deepseek-chat".to_string());
+
+        let mock = Arc::new(RecordingLlmMock::new());
+        let service = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(mock.clone()),
+            Arc::new(registry),
+        );
+
+        let result = service
+            .route_by_llm(&grove, "rust backend development task")
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "Expected successful routing, got {:?}",
+            result
+        );
+        assert_eq!(mock.recorded_models(), vec!["deepseek-chat".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn test_llm_routing_errors_when_routing_model_absent() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
+
+        let mut grove = create_test_grove();
+        grove.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+        // routing_model left unset (default None)
+
+        let mock = Arc::new(RecordingLlmMock::new());
+        let service = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(mock.clone()),
+            Arc::new(registry),
+        );
+
+        let result = service.route_by_llm(&grove, "any task").await;
+
+        match result {
+            Err(BattalionError::RoutingError(msg)) => {
+                assert!(
+                    msg.contains("routing_model"),
+                    "error message should name routing_model, got: {}",
+                    msg
+                );
+            }
+            other => panic!(
+                "Expected RoutingError naming routing_model, got {:?}",
+                other
+            ),
+        }
+        assert!(
+            mock.recorded_models().is_empty(),
+            "no LLM call should have been made"
+        );
+    }
+
+    // CLOSE-01 edge rows: empty, adjacency, concurrency (04-CONTEXT.md D-02, <specifics>).
+
+    #[tokio::test]
+    async fn test_llm_routing_errors_when_routing_model_empty() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+
+        for blank in ["", "   "] {
+            let registry = HashMapPaladinRegistry::new();
+            let mut grove = create_test_grove();
+            grove.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+            grove.node.config.routing_model = Some(blank.to_string());
+
+            let mock = Arc::new(RecordingLlmMock::new());
+            let service = GroveExecutionService::new(
+                Arc::new(MockPaladinPort),
+                None,
+                Some(mock.clone()),
+                Arc::new(registry),
+            );
+
+            let result = service.route_by_llm(&grove, "any task").await;
+
+            match result {
+                Err(BattalionError::RoutingError(msg)) => {
+                    assert!(
+                        msg.contains("routing_model"),
+                        "error message should name routing_model for input {:?}, got: {}",
+                        blank,
+                        msg
+                    );
+                }
+                other => panic!(
+                    "Expected RoutingError naming routing_model for input {:?}, got {:?}",
+                    blank, other
+                ),
+            }
+            assert!(
+                mock.recorded_models().is_empty(),
+                "no LLM call should have been made for input {:?}",
+                blank
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_llm_routing_missing_model_error_precedes_keyword_fallback() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
+
+        // create_test_grove()'s "backend_expert" agent carries keywords ("rust", "backend",
+        // "api", "database") that would match this task under keyword routing, so a
+        // successful keyword-fallback result would be a false pass for this test.
+        let mut grove = create_test_grove();
+        grove.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+        grove.node.config.routing_fallback = "keyword".to_string();
+        // routing_model left unset (default None)
+
+        let mock = Arc::new(RecordingLlmMock::new());
+        let service = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(mock.clone()),
+            Arc::new(registry),
+        );
+
+        let result = service
+            .route_by_llm(&grove, "rust backend api development")
+            .await;
+
+        match result {
+            Err(BattalionError::RoutingError(msg)) => {
+                assert!(
+                    msg.contains("routing_model"),
+                    "error should name routing_model, not a keyword-fallback failure, got: {}",
+                    msg
+                );
+            }
+            other => panic!(
+                "Expected the missing-routing_model RoutingError to precede keyword fallback, got: {:?}",
+                other
+            ),
+        }
+        assert!(
+            mock.recorded_models().is_empty(),
+            "no LLM call should have been made"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_concurrent_groves_use_their_own_routing_model() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+
+        let mock = Arc::new(RecordingLlmMock::new());
+
+        let mut grove_a = create_test_grove();
+        grove_a.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+        grove_a.node.config.routing_model = Some("deepseek-chat".to_string());
+
+        let mut grove_b = create_test_grove();
+        grove_b.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+        grove_b.node.config.routing_model = Some("claude-3-5-sonnet-20241022".to_string());
+
+        let service_a = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(mock.clone()),
+            Arc::new(HashMapPaladinRegistry::new()),
+        );
+        let service_b = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(mock.clone()),
+            Arc::new(HashMapPaladinRegistry::new()),
+        );
+
+        let (result_a, result_b) = tokio::join!(
+            service_a.route_by_llm(&grove_a, "rust backend development task"),
+            service_b.route_by_llm(&grove_b, "rust backend development task")
+        );
+
+        assert!(result_a.is_ok(), "Grove A should route successfully");
+        assert!(result_b.is_ok(), "Grove B should route successfully");
+
+        let mut recorded = mock.recorded_models();
+        recorded.sort();
+        assert_eq!(
+            recorded,
+            vec![
+                "claude-3-5-sonnet-20241022".to_string(),
+                "deepseek-chat".to_string(),
+            ]
+        );
     }
 }

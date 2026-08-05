@@ -120,6 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_tree(devops_tree.clone())
         .config(GroveConfig {
             routing_strategy: RoutingStrategy::KeywordMatch,
+            routing_model: None,
             fallback_tree: Some("Backend Specialists".to_string()),
             similarity_threshold: 0.7,
             routing_fallback: "keyword".to_string(),
@@ -172,6 +173,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_tree(devops_tree.clone())
         .config(GroveConfig {
             routing_strategy: RoutingStrategy::SemanticSimilarity,
+            routing_model: None,
             fallback_tree: Some("Backend Specialists".to_string()),
             similarity_threshold: 0.75,
             routing_fallback: "keyword".to_string(),
@@ -232,6 +234,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_tree(devops_tree.clone())
         .config(GroveConfig {
             routing_strategy: RoutingStrategy::LlmRouting,
+            // Required under LlmRouting (CLOSE-01/D-01/D-02): routing hard-errors if this is
+            // absent. Matches the "LLM Model: gpt-4" configuration printed above.
+            routing_model: Some("gpt-4".to_string()),
             fallback_tree: Some("Backend Specialists".to_string()),
             similarity_threshold: 0.7,
             routing_fallback: "keyword".to_string(),

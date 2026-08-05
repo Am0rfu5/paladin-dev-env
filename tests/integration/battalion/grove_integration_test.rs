@@ -649,6 +649,7 @@ async fn test_grove_llm_routing_end_to_end() {
         .name("LLMRoutingGrove")
         .add_tree(tree)
         .routing_strategy(RoutingStrategy::LlmRouting)
+        .routing_model("gpt-4")
         .min_confidence(0.5)
         .routing_fallback("error")
         .build()
