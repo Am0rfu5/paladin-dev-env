@@ -272,6 +272,20 @@ impl Validate for PaladinYamlConfig {
             }
         }
 
+        // Validate autonomous features configuration if present, per the
+        // threat register's T-06-03-01/T-06-03-02 mitigation, which names
+        // `AutonomousConfig::validate` as the bound on `max_subtasks`, the
+        // temperature range, and handoff `max_depth` -- this is the call
+        // site that makes that mitigation real.
+        if let Some(autonomous) = &self.autonomous {
+            autonomous
+                .validate()
+                .map_err(|e| CliError::InvalidFieldValue {
+                    field: "autonomous".to_string(),
+                    message: e,
+                })?;
+        }
+
         // Validate MCP server configurations if present
         if let Some(arsenal) = &self.arsenal {
             for server in &arsenal.mcp_servers {
@@ -904,5 +918,44 @@ provider:
             !yaml.contains("autonomous"),
             "serialized YAML must omit the autonomous key when None: {yaml}"
         );
+    }
+
+    #[test]
+    fn test_validate_rejects_out_of_bounds_autonomous_config() {
+        // T-06-03-01/T-06-03-02: `AutonomousConfig::validate`'s bounds
+        // (max_subtasks <= 100, handoff max_depth <= 20) must actually be
+        // reached from `PaladinYamlConfig::validate` -- the mitigation the
+        // threat register names is only real if this call site exists.
+        let mut config = base_config_with_arsenal(ArsenalConfig {
+            mcp_servers: vec![],
+        });
+        config.autonomous = Some(AutonomousConfig {
+            planning: crate::core::platform::container::autonomous_config::PlanningConfig {
+                enabled: true,
+                max_subtasks: 150,
+            },
+            ..Default::default()
+        });
+
+        assert!(matches!(
+            config.validate(),
+            Err(CliError::InvalidFieldValue { field, .. }) if field == "autonomous"
+        ));
+    }
+
+    #[test]
+    fn test_validate_accepts_valid_autonomous_config() {
+        let mut config = base_config_with_arsenal(ArsenalConfig {
+            mcp_servers: vec![],
+        });
+        config.autonomous = Some(AutonomousConfig {
+            planning: crate::core::platform::container::autonomous_config::PlanningConfig {
+                enabled: true,
+                max_subtasks: 10,
+            },
+            ..Default::default()
+        });
+
+        assert!(config.validate().is_ok());
     }
 }
