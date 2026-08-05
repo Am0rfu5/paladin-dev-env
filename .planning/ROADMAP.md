@@ -472,7 +472,7 @@ completes** — CLOSE-02's scope is set by the three block verdicts from 05-05, 
   3. Every item VERIFY-02 classified as genuinely outstanding across Epics 14, 22 and 24 is either passing in `cargo test --workspace` or recorded as deferred with a written reason — and if verification found nothing outstanding, that verdict is recorded rather than the requirement quietly dropped.
   4. The live-API test harness and both vision surfaces match their Phase 5 recorded decisions in code, with any removal carrying a migration note.
 
-**Plans**: 7 plans
+**Plans**: 10 plans (7 executed + 3 gap-closure)
 
 Plans:
 **Wave 1**
@@ -490,6 +490,20 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 06-07-PLAN.md — CLOSE-01/02/03 close-out: ledger amendments, CI-job deferral recorded bidirectionally, Epic 22 "no work required" verdict, WARN-01 outcome (wave 3)
+
+**Gap closure** *(planned after `06-VERIFICATION.md` reported `gaps_found`, 8/10 truths — waves restart at 1 for this run)*
+
+`06-VERIFICATION.md` proved two failures against the four success criteria above. Truth 3: D-02's
+"no fallback of any kind" guard in `route_by_llm` is correct in isolation but unreachable from
+`GroveExecutionService::execute()`, because `route_task`'s blanket `Err` arm (untouched by plans
+06-01 through 06-07) intercepts the deliberate configuration error and substitutes a fallback agent.
+Truth 10: four permanent records — ADR-0013, `CHANGELOG.md`, `.planning/PROJECT.md` and
+`.planning/REQUIREMENTS.md` — assert that unreachable behaviour as shipped fact. Truths 1, 2, 4-9 are
+verified and are not re-planned; CLOSE-02 and CLOSE-03 are ✓ SATISFIED and get re-affirmation only.
+
+- [ ] 06-08-PLAN.md — CLOSE-01 gap: resolve the missing-`routing_model` configuration error before strategy dispatch in `route_task`, proved end to end through `execute()` with a configured `llm_port` (gap-closure wave 1)
+- [ ] 06-09-PLAN.md — CLOSE-01 record reconciliation: ADR-0013, `CHANGELOG.md` and PROJECT Key Decisions row amended to describe the `execute()`-reachable behaviour, with dated provenance (gap-closure wave 2)
+- [ ] 06-10-PLAN.md — CLOSE-01/02/03 re-close: REQUIREMENTS.md CLOSE-01 amendment reconciled, CLOSE-02/CLOSE-03 re-affirmed against commands re-run at HEAD, checkboxes and traceability rows flipped behind that evidence (gap-closure wave 3)
 
 **Milestone 4-6 close-out — Phases 7-8 (not started)**
 
