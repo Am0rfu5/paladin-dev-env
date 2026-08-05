@@ -32,8 +32,9 @@ the plans that follow in this same phase):
 | 0010 | `milestone-3-epic-numbering` | Milestone 3 epic numbering (Phase 5) |
 | 0011 | `vision-port-surfaces` | Vision port surfaces and the encryption-at-rest disposition (Phase 5) |
 | 0012 | `live-api-test-key-behaviour` | Live-API-test missing-key behaviour (Phase 5) |
+| 0013 | `grove-routing-model` | Grove routing model from configuration, per D-01/D-02/D-03 (Phase 6) |
 
-**Next free ADR number: 0013**
+**Next free ADR number: 0014**
 
 Phases 5, 7, 10 and 13 take the next free number from this line when they author further ADRs —
 they do not need to `ls` the directory to find it. Each phase updates this line when it appends.
