@@ -490,6 +490,25 @@ impl GroveExecutionService {
             )
         })?;
 
+        // Check that an operator-configured routing model is present (D-01/D-02). A `None`
+        // value or a string that is empty after trimming are treated identically as
+        // unconfigured. There is no fallback of any kind here: this guard must not consult
+        // `routing_fallback`, must not call `handle_routing_failure`, and must not call
+        // `get_available_models()` — a misconfigured Grove fails loudly rather than silently
+        // substituting a model the operator did not choose.
+        let routing_model = grove
+            .node
+            .config
+            .routing_model
+            .as_deref()
+            .map(str::trim)
+            .filter(|model| !model.is_empty())
+            .ok_or_else(|| {
+                BattalionError::RoutingError(
+                    "routing_model not configured for LLM-based routing".to_string(),
+                )
+            })?;
+
         // Build prompt with agent information
         let mut prompt = format!(
             "You are a task routing system. Given the following task and available specialized agents, \
@@ -534,7 +553,7 @@ impl GroveExecutionService {
         // Call LLM
         let llm_request = LlmRequest {
             id: uuid::Uuid::new_v4(),
-            model: "gpt-4".to_string(), // TODO: Make configurable
+            model: routing_model.to_string(),
             prompt: prompt_item,
             attachments: vec![],
             stream: false,
@@ -1206,7 +1225,8 @@ mod tests {
             Arc::new(registry),
         );
 
-        let grove = create_test_grove();
+        let mut grove = create_test_grove();
+        grove.node.config.routing_model = Some("mock-model".to_string());
 
         let result = service
             .route_by_llm(&grove, "rust backend development task")
@@ -1306,6 +1326,7 @@ mod tests {
         // Set routing_fallback to "error" to test that low confidence triggers fallback logic
         grove.node.config.routing_fallback = "error".to_string();
         grove.node.config.min_confidence = 0.5;
+        grove.node.config.routing_model = Some("mock-model".to_string());
 
         let service = GroveExecutionService::new(
             Arc::new(MockPaladinPort),
@@ -1405,6 +1426,7 @@ mod tests {
         let registry = HashMapPaladinRegistry::new();
         let mut grove = create_test_grove();
         grove.node.config.routing_fallback = "error".to_string();
+        grove.node.config.routing_model = Some("mock-model".to_string());
 
         let service = GroveExecutionService::new(
             Arc::new(MockPaladinPort),
@@ -1506,6 +1528,7 @@ mod tests {
         // Set routing_fallback to "keyword" to test fallback to keyword matching
         grove.node.config.routing_fallback = "keyword".to_string();
         grove.node.config.min_confidence = 0.5;
+        grove.node.config.routing_model = Some("mock-model".to_string());
 
         let service = GroveExecutionService::new(
             Arc::new(MockPaladinPort),
