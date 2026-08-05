@@ -1244,6 +1244,19 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+*Last updated: 2026-08-05 after **Phase 5: Milestone 2-3 Ground Truth** completed and verified —
+13 plans across 10 waves, all six VERIFY requirements validated. `.planning/ledgers/milestone-02-03.md`
+now carries all 118 run-2 requirements as cited verdicts: 64 satisfied (3 with caveat), 25 present
+but unproven, 21 superseded by shipped code, 5 deferred with reason, and **3 genuinely outstanding**
+— the inherited record was substantially more wrong about what was missing than about what was
+broken. 141 unique cited paths, zero unresolved. Four ADRs settle the contested definitions: 0010
+(epic numbering, corrected at source in `RELEASE_NOTES_MILESTONE_3.md`), 0011 (vision surfaces
+coexist; the "absent" encryption requirement verified present-but-unwired), 0012 (live-API
+missing-key behaviour), and 0006 amended in place — still the only coverage ADR. All three
+previously-unverified blocks now carry written verdicts, reducing Phase 6's CLOSE-02 to three named
+clusters: Epic 14 cluster 8.0, Epic 24 clusters 1.0 and 8.0. Epic 22 needs no work. Zero code files
+were touched — the phase's own prohibition held across all 13 plans. Prior updates below.*
+
 *Last updated: 2026-08-04 after **milestone v0.7.2 "Milestone 2-3 close-out" started** — Phases 5-6
 scoped, 9 requirements (VERIFY-01 … VERIFY-06, CLOSE-01 … CLOSE-03). Phase 9's 2026-09-30 RustSec
 acceptance deliberately deferred to a later milestone with ~8 weeks of margin. Prior updates below.*
