@@ -502,7 +502,7 @@ Truth 10: four permanent records — ADR-0013, `CHANGELOG.md`, `.planning/PROJEC
 verified and are not re-planned; CLOSE-02 and CLOSE-03 are ✓ SATISFIED and get re-affirmation only.
 
 - [x] 06-08-PLAN.md — CLOSE-01 gap: resolve the missing-`routing_model` configuration error before strategy dispatch in `route_task`, proved end to end through `execute()` with a configured `llm_port` (gap-closure wave 1)
-- [ ] 06-09-PLAN.md — CLOSE-01 record reconciliation: ADR-0013, `CHANGELOG.md` and PROJECT Key Decisions row amended to describe the `execute()`-reachable behaviour, with dated provenance (gap-closure wave 2)
+- [x] 06-09-PLAN.md — CLOSE-01 record reconciliation: ADR-0013, `CHANGELOG.md` and PROJECT Key Decisions row amended to describe the `execute()`-reachable behaviour, with dated provenance (gap-closure wave 2)
 - [ ] 06-10-PLAN.md — CLOSE-01/02/03 re-close: REQUIREMENTS.md CLOSE-01 amendment reconciled, CLOSE-02/CLOSE-03 re-affirmed against commands re-run at HEAD, checkboxes and traceability rows flipped behind that evidence (gap-closure wave 3)
 
 **Milestone 4-6 close-out — Phases 7-8 (not started)**
