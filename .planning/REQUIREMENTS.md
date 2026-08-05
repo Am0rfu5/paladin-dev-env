@@ -484,7 +484,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
 
 ### Verified gap closure (CLOSE)
 
-- [ ] **CLOSE-01**: Grove routing uses the LLM model from configuration instead of a hardcoded
+- [x] **CLOSE-01**: Grove routing uses the LLM model from configuration instead of a hardcoded
       literal. `crates/paladin-battalion/src/grove_service.rs:537` builds its routing `LlmRequest`
       with `model: "gpt-4".to_string(), // TODO: Make configurable` in production code
       (`#[cfg(test)]` begins at line 732), so Grove routing silently ignores the configured
@@ -513,7 +513,53 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       **CHANGELOG.md** entry, and the `GroveConfig.routing_model` rustdoc itself — all three shipped
       by plans 06-01 and 06-06.
 
-- [ ] **CLOSE-02**: Everything VERIFY-02 classifies as *genuinely outstanding* in Epics 14, 22 and
+      **Amended 2026-08-05, plan 06-10 — correction and closure.** `06-VERIFICATION.md` (truth 3;
+      `missing:` item (c)) proved the guard above correct in isolation but unreachable from
+      `GroveExecutionService::execute()` — the requirement's own governing entry point — because
+      `route_task`'s blanket `Err` arm intercepted the deliberate `routing_model`-absent
+      configuration error and substituted `fallback_tree` or the first agent in the first tree
+      instead of propagating it. The then-standing `test_grove_llm_routing` integration test was
+      green while asserting exactly that fallback, which is what made the gap invisible until
+      verification ran the entry point directly rather than the crate-private `route_by_llm`.
+
+      This corrects one specific sentence in the amendment above: "ROADMAP criteria 1 and 2 are both
+      met" was accurate for criterion 2 (the `"gpt-4"` literal and the TODO were genuinely gone) and
+      for criterion 1's happy path (the configured model does reach `LlmRequest.model`), but
+      overstated criterion 1's implicit no-fallback contract — the hard error the amendment describes
+      was not, at the time, reachable by any real caller of `execute()`. The original sentence is
+      retained above unedited; this paragraph is the correction, not a rewrite.
+
+      **What closed it:** plan 06-08 added `GroveExecutionService::resolve_routing_model`, a single
+      shared resolver backed by `MISSING_ROUTING_MODEL_ERROR`, called from both `route_task`'s new
+      pre-dispatch early return (above the fallback arm, so `?` propagates the configuration error
+      before the fallback arm can see it) and `route_by_llm`'s in-strategy guard, so the two checks
+      cannot drift apart.
+
+      **Proof, re-run at HEAD in this plan (2026-08-05):**
+      `cargo test -p paladin-ai --test lib grove_integration_test` — 10 passed, 0 failed, naming
+      `test_grove_llm_routing_errors_when_routing_model_absent_through_execute` (a configured
+      `llm_port`, absent `routing_model`, asserts `Err(BattalionError::RoutingError(..))` and zero
+      LLM calls via a recording mock) and the former counter-example `test_grove_llm_routing`, now
+      inverted to assert the error, both passing. `cargo test -p paladin-battalion --lib --
+      grove_service::` — 23 passed, 0 failed, naming the three `execute()`-level edge tests
+      (`test_execute_errors_when_routing_model_absent`, `test_execute_errors_when_routing_model_blank`,
+      `test_execute_errors_despite_fallback_tree_when_routing_model_absent`) passing alongside the
+      four pre-existing `route_by_llm`-level guard tests, unmodified and still green.
+      `awk '/^#\[cfg\(test\)\]/{exit}{print}' crates/paladin-battalion/src/grove_service.rs | grep -c
+      'gpt-4'` → `0`. `grep -rn 'TODO' crates/paladin-battalion/src/ | grep -c 'grove_service.rs'` →
+      `0`.
+
+      **Scope boundary:** the hard error covers the missing/blank `routing_model` case only. Every
+      other Grove routing failure keeps its existing fallback behaviour, proved by
+      `test_grove_llm_routing_falls_back_when_llm_port_absent_but_routing_model_set` (an absent
+      `llm_port` under `LlmRouting` with `routing_model` set still falls back successfully through
+      `execute()`), which also passed in the re-run above.
+
+      ADR-0013, `CHANGELOG.md` and `.planning/PROJECT.md` were reconciled with this same
+      `execute()`-reachable behaviour by plan 06-09 (06-VERIFICATION.md truth 10); all four records
+      now agree.
+
+- [x] **CLOSE-02**: Everything VERIFY-02 classifies as *genuinely outstanding* in Epics 14, 22 and
       24 is either closed or explicitly deferred with a recorded reason. Scope is set by Phase 5's
       verdicts, not by the 155 open checkboxes in those three lists. If VERIFY-02 finds all three
       blocks satisfied by shipped code, this requirement closes with a recorded "no work
@@ -561,7 +607,27 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       `tests/integration/battalion_chain_of_command_herald_test.rs#chain_of_command_result_renders_through_json_herald`
       (`06-02-SUMMARY.md`).
 
-- [ ] **CLOSE-03**: The Phase 5 recorded answers that have code consequences are applied: the
+      **Re-affirmed 2026-08-05, plan 06-10.** `06-VERIFICATION.md` independently verified this
+      requirement against the tree (✓ SATISFIED, Requirements Coverage table). The checkbox above
+      was reverted alongside CLOSE-01's and CLOSE-03's only because CLOSE-01's gap blocked the whole
+      phase, not because anything in (a)-(d) or WARN-01 was found lacking. No new claim is made here;
+      the exercisers items (a)-(d) already cite were re-run at HEAD in this plan:
+      `cargo test -p paladin-ai --lib --features cli -- autonomous` (11 passed, naming
+      `test_load_paladin_config_without_autonomous_section`,
+      `test_load_paladin_config_with_autonomous_section`,
+      `test_no_autonomous_section_and_no_flags_is_a_no_op`,
+      `test_autonomous_flag_application_is_idempotent_and_independent` and
+      `test_autonomous_prompts_yaml_and_flag`) plus
+      `cargo test -p paladin-ai --lib --features cli -- test_yaml_enabled_feature_cannot_be_disabled_from_cli`
+      (1 passed — its name has no literal `autonomous` substring, so it does not match the
+      `-- autonomous` filter and was re-run explicitly); `cargo bench --no-run -p paladin-battalion`
+      (exit 0) and `grep -c 'benchmark_chain_of_command'
+      crates/paladin-battalion/benches/battalion_benchmarks.rs` → `2`; `git log --oneline -- .github/`
+      (no phase-6 commit — D-11 still honoured); and
+      `cargo test -p paladin-ai --test lib battalion_chain_of_command_herald_test` (2 passed) for
+      WARN-01.
+
+- [x] **CLOSE-03**: The Phase 5 recorded answers that have code consequences are applied: the
       VERIFY-06 answer on live-API-test key handling is reflected in
       `tests/integration/llm_live_api_tests.rs`, and the VERIFY-04 answer on the two vision
       surfaces is reflected in the tree (both retained and documented as such, or one deprecated
@@ -586,6 +652,19 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       traits remain, `require_api_key`'s panic stands unchanged, the four autonomous CLI flags
       remain, and `GroveExecutionService::new`'s signature is unchanged — so no migration note is
       owed under ROADMAP criterion 4.
+
+      **Re-affirmed 2026-08-05, plan 06-10.** `06-VERIFICATION.md` independently verified this
+      requirement against the tree (✓ SATISFIED, Requirements Coverage table). The checkbox above
+      was reverted alongside CLOSE-01's and CLOSE-02's only because CLOSE-01's gap blocked the whole
+      phase, not because anything in the paragraph above was found lacking. No new claim is made
+      here; the exercisers already cited are re-run at HEAD in this plan:
+      `grep -rn '#\[deprecated' crates/paladin-ports/src/output/vision_port.rs
+      crates/paladin-ports/src/output/vision_llm_port.rs` returns nothing (neither vision trait
+      deprecated or removed), and `cargo test --workspace` exits 0 (418+ test-binary results, 0
+      failed) — the parallel-run evidence behind the CLOSE-03 concurrency truth: this requirement's
+      deliverables are documentation-only with no `.rs` behavioural diff, so `tests/integration/mod.rs`'s
+      documented double gate (`#[cfg(feature = "live-api-tests")]` plus 13 `#[ignore]` attributes)
+      keeps the live-API module out of the parallel `cargo test --workspace` run entirely.
 
 ---
 
@@ -3790,9 +3869,9 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | VERIFY-04 | Phase 5 | Complete |
 | VERIFY-05 | Phase 5 | Complete |
 | VERIFY-06 | Phase 5 | Complete |
-| CLOSE-01 | Phase 6 | Gaps Found |
-| CLOSE-02 | Phase 6 | Gaps Found |
-| CLOSE-03 | Phase 6 | Gaps Found |
+| CLOSE-01 | Phase 6 | Complete |
+| CLOSE-02 | Phase 6 | Complete |
+| CLOSE-03 | Phase 6 | Complete |
 | ARCH-01 | Phase 7 | Pending |
 | ARCH-02 | Phase 7 | Pending |
 | ARCH-03 | Phase 7 | Pending |
