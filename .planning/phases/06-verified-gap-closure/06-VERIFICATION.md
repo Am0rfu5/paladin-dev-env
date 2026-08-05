@@ -1,172 +1,157 @@
 ---
 phase: 06-verified-gap-closure
-verified: 2026-08-05T21:00:00Z
-status: gaps_found
-score: 8/10 must-haves verified
+verified: 2026-08-05T22:00:00Z
+status: passed
+score: 10/10 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
-gaps:
-  - truth: "Grove LLM routing hard-errors with no fallback of any kind when `routing_model` is absent under `RoutingStrategy::LlmRouting`, and that error is reachable from `GroveExecutionService::execute()` — the only public entry point (D-02; ROADMAP criterion 1's implicit contract; PLAN 06-01 must_haves `[edge/CLOSE-01/empty]` and `[edge/CLOSE-01/adjacency]`)."
-    status: failed
-    reason: >
-      `route_by_llm` (grove_service.rs:487-510) does correctly return
-      `BattalionError::RoutingError` when `routing_model` is `None`/blank under LLM routing,
-      with no fallback consulted inside that function — that half of D-02 is real. But
-      `route_task` (grove_service.rs:240-290), the only caller `execute()` (grove_service.rs:171)
-      goes through, wraps every strategy call in a blanket `match result { Err(e) => ... }` that
-      catches *any* error — including this deliberate, no-fallback-by-design `RoutingError` —
-      and silently substitutes `fallback_tree` or, failing that, "first agent in first tree."
-      `GroveBuilder::build()` (grove.rs:521-560) requires at least one non-empty tree to
-      construct a `Grove` at all, so that final fallback can never itself fail. The practical
-      effect: a Grove configured for `RoutingStrategy::LlmRouting` with no `routing_model` set,
-      called through `execute()`, does not error — it silently and completely bypasses LLM
-      routing and falls back to default agent selection, with no error ever surfacing to the
-      caller. This is arguably a regression from the pre-phase behaviour (which at least
-      attempted an LLM call, hardcoded to `gpt-4`): the new behaviour hides the misconfiguration
-      entirely.
-      Evidence this is real, not theoretical: `tests/integration/battalion/grove_integration_test.rs::test_grove_llm_routing`
-      (line 235) builds a Grove with `RoutingStrategy::LlmRouting` and no `routing_model`, calls
-      `service.execute(...)`, and asserts `result.is_ok()` — currently green, with its own inline
-      comment reading "Execute task - will use keyword fallback since we don't have real LLM."
-      Plan 06-01's own commit (05ee6b4) modified the *sibling* test
-      `test_grove_llm_routing_end_to_end` to add `.routing_model("gpt-4")` and explicitly noted in
-      the commit message that `test_grove_llm_routing` "hits the pre-existing llm_port guard
-      first and was unaffected" — i.e., the executor identified this exact gap during
-      implementation and chose not to close it. No test anywhere in the repository calls
-      `execute()` on an `LlmRouting` Grove with a configured `llm_port` and an absent
-      `routing_model` and asserts an error. This independently reproduces `06-REVIEW.md`'s CR-01,
-      which the orchestrator also confirmed by reading the code.
-      Nuance for the record: the *happy path* half of criterion 1 is real and reachable —
-      `test_grove_llm_routing_end_to_end` proves a correctly-configured Grove routes its
-      configured model through `execute()` end to end (Test 1-3 all pass with `.routing_model("gpt-4")`
-      set). Only the D-02 hard-error/no-fallback guarantee is unreachable from the public API.
-    artifacts:
-      - path: "crates/paladin-battalion/src/grove_service.rs"
-        issue: "`route_task` (lines 240-290) treats `route_by_llm`'s deliberate missing-config `RoutingError` identically to a transient routing failure and silently substitutes a fallback agent, defeating D-02's 'no fallback of any kind' guarantee for every real caller of `execute()`."
-      - path: ".planning/decisions/0013-grove-routing-model.md"
-        issue: "States as fact that 'a Grove using RoutingStrategy::LlmRouting today works (silently, against gpt-4) and starts returning BattalionError::RoutingError after this change until its configuration names a model' and that operators 'must set routing_model... or routing now returns BattalionError::RoutingError' — this describes behaviour that does not occur through the only public entry point (`execute()`); an operator will instead see a silent fallback with no error."
-      - path: "CHANGELOG.md"
-        issue: "The `## [Unreleased]` entry (lines 19-29) makes the identical unreachable claim: 'until it does [set routing_model], LLM-based routing returns BattalionError::RoutingError.'"
-      - path: ".planning/REQUIREMENTS.md"
-        issue: "CLOSE-01's 2026-08-05 amendment (lines 498-514) states 'ROADMAP criteria 1 and 2 are both met' and cites the guard/tests as proof without noting the guard is unreachable from `execute()`, the requirement's own governing entry point."
-    missing:
-      - "A code fix that honours the D-02 decision the human already approved as locked (checkpoint:decision, plan 06-01 Task 1): `route_task` must not silently substitute a fallback agent when the underlying error is the deliberate missing-`routing_model` configuration error. Likely shape: either have `route_by_llm`'s missing-model guard short-circuit `route_task` before the generic fallback logic (e.g. a distinct error variant or an early return in `route_task` for this specific case), or otherwise make the no-fallback guarantee observable from `execute()`."
-      - "A test that calls `GroveExecutionService::execute()` (not `route_by_llm` directly) on an `LlmRouting` Grove with a configured `llm_port` and an absent/blank `routing_model`, and asserts the call returns `Err(BattalionError::RoutingError(..))` — the currently-green `test_grove_llm_routing` either needs this assertion added or a sibling test needs to supply it, since as of this review that exact configuration (`LlmRouting`, no `routing_model`, real `llm_port`) has never been driven through `execute()` and asserted to fail."
-      - "Once the code is fixed (or if the team instead decides to soften D-02 with a human decision), reconcile ADR-0013, CHANGELOG.md, and REQUIREMENTS.md's CLOSE-01 entry with whatever the actually-shipped, `execute()`-reachable behaviour is."
+re_verification:
+  previous_status: gaps_found
+  previous_score: 8/10
+  gaps_closed:
+    - "Truth 3: Grove LLM routing hard-errors with no fallback of any kind when routing_model is absent under RoutingStrategy::LlmRouting, and that error is reachable from GroveExecutionService::execute() — the only public entry point"
+    - "Truth 10: ADR-0013, CHANGELOG.md, and .planning/REQUIREMENTS.md accurately describe the shipped, execute()-reachable runtime behaviour of the CLOSE-01 fix"
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 6: Verified Gap Closure Verification Report
 
 **Phase Goal:** Every Milestone 2-3 gap that verification actually proved is closed or explicitly
 deferred with a recorded reason — and no shipped surface is removed without a decision behind it.
-**Verified:** 2026-08-05T21:00:00Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-08-05T22:00:00Z
+**Status:** passed
+**Re-verification:** Yes — after gap closure (plans 06-08, 06-09, 06-10)
 
 ## Goal Achievement
 
 ### Observable Truths
 
+All ten truths from the prior verification report were re-checked against the current tree — the
+eight that previously passed were re-confirmed with fresh commands rather than carried forward on
+the prior report's word, and the two that failed were re-derived adversarially by tracing
+`GroveExecutionService::execute()`'s control flow directly rather than accepting a test that calls
+`route_by_llm` in isolation.
+
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | A correctly-configured Grove (routing_model set, LlmRouting strategy) routes its configured, non-OpenAI-capable model through `LlmPort::generate` via the public `execute()` entry point | ✓ VERIFIED | `tests/integration/battalion/grove_integration_test.rs::test_grove_llm_routing_end_to_end` drives `service.execute(...)` three times over a Grove built with `.routing_model("gpt-4")`, asserting correct agent selection each time; `grove_service.rs:554-556` sources `LlmRequest.model` from `grove.node.config.routing_model`, not a literal |
-| 2 | No OpenAI model literal remains in `grove_service.rs`'s production region | ✓ VERIFIED | `awk '/^#\[cfg\(test\)\]/{exit} {print}' crates/paladin-battalion/src/grove_service.rs \| grep -c gpt-4` → 0 (re-run during this verification) |
-| 3 | Grove LLM routing hard-errors with **no fallback of any kind** when `routing_model` is absent, and that guarantee is reachable from `GroveExecutionService::execute()`, the only public entry point (D-02) | ✗ FAILED | See gap above. `route_by_llm` itself errors correctly; `route_task`'s blanket `Err` handler (lines 256-289) swallows that error and substitutes a fallback agent before it ever reaches `execute()`'s caller. `test_grove_llm_routing` is green while calling `execute()` on exactly this misconfiguration and asserting `Ok`. |
-| 4 | `grep -rn 'TODO' crates/paladin-battalion/src/` returns nothing Epic 22's completion criteria claimed already resolved | ✓ VERIFIED | 5 TODOs remain, all in `commander.rs` (lines 3128, 3161, 3201, 3242) and `council_service.rs` (line 733); all confirmed inside each file's `#[cfg(test)]` module (commander.rs test module starts line 1613, council_service.rs at line 521) — test-code only, matching `06-CONTEXT.md`'s `<deferred>` disposition |
-| 5 | Every VERIFY-02 item genuinely outstanding across Epics 14, 22, 24 is closed or explicitly deferred with a recorded reason; Epic 22's "nothing outstanding" verdict is itself recorded, not dropped | ✓ VERIFIED | Epic 14 cluster 8.0 (autonomous YAML+CLI) closed by 06-03 — `PaladinYamlConfig.autonomous: Option<AutonomousConfig>` at `paladin_config.rs:111`, applied via `apply_autonomous_config` (`agent.rs:553`), overrides wired at `agent.rs:576-586`. Epic 24 cluster 1.0 (ChainOfCommand benchmark) closed by 06-04 — `benchmark_chain_of_command` registered in `criterion_group!` (`battalion_benchmarks.rs:225-230`), measured run recorded at `performance-baseline.md:3` (`## Run — 2026-08-05`, dated separately from the 2026-08-02 table). Epic 24 cluster 8.0 (3 CI jobs) recorded deferred with reason, bidirectionally, in `.planning/ledgers/milestone-02-03.md` and `.planning/REQUIREMENTS.md` PIPE-01/PIPE-02 (D-09/D-10) — no `.github/` file touched (`git log --oneline -- .github/` shows no phase-6 commits). Epic 22 "no work required" verdict carried into `.planning/REQUIREMENTS.md` CLOSE-02 text (lines 547-556) and `milestone-02-03.md:163`, not left ledger-only |
-| 6 | WARN-01 (Herald reachability) adopted across `campaign_service.rs`, `chain_of_command_service.rs`, `commander.rs`, proved by one executable composite witness | ✓ VERIFIED | `herald: Option<Arc<dyn Herald>>` + `with_herald()` + `format_result()` present in all three files (grep confirmed); `tests/integration/battalion_chain_of_command_herald_test.rs::chain_of_command_result_renders_through_json_herald` drives a real `ChainOfCommandExecutionService::execute` and formats through a real `JsonHerald`, registered in `tests/integration/mod.rs` |
-| 7 | Live-API harness (ADR-0012) matches its Phase 5 recorded decision in code: doc-only correction, `require_api_key` panic stands | ✓ VERIFIED | `tests/integration/llm_live_api_tests.rs:61` doc comment corrected (no longer claims "skip"); `tests/integration/mod.rs:34-35` feature gate documented; `require_api_key`'s panic behaviour unchanged (no `.rs` behavioural diff in this function per plan 06-05 scope) |
-| 8 | Both vision surfaces (ADR-0011) match their Phase 5 recorded decision: both retained, entry-point rustdoc added, encryption disposition (D-16/D-17) documented, no trait removed | ✓ VERIFIED | `VisionPort` and `VisionCapableLlm` both still `pub trait`, no `#[deprecated]` (`grep -rn '#\[deprecated'` → 0); entry-point rustdoc present at `vision_port.rs:49` and `vision_llm_port.rs:54`; ADR-0011 amended in place with a dated 2026-08-05 resolution note and `## Code Conformance` reflecting the doc-only outcome |
-| 9 | No shipped surface is removed without a recorded decision behind it | ✓ VERIFIED | No `.rs` public API removals found in this phase's diff beyond the documented additive changes; `.github/` untouched (D-11 constraint honoured, confirmed via git log) |
-| 10 | ADR-0013 and CHANGELOG.md accurately describe the shipped, `execute()`-reachable runtime behaviour of the CLOSE-01 fix | ✗ FAILED | Both documents assert operators "must set `routing_model`... or routing now returns `BattalionError::RoutingError`" — this is not true through `execute()`, the only path a real operator uses (see truth 3). The documents describe the *intended* design (which the human approved at the Task 1 checkpoint) rather than the *shipped* behaviour. |
+| 1 | A correctly-configured Grove (routing_model set, LlmRouting strategy) routes its configured, non-OpenAI-capable model through `LlmPort::generate` via the public `execute()` entry point | ✓ VERIFIED | `cargo test -p paladin-ai --test lib grove_integration_test` (re-run this session) names `test_grove_llm_routing_end_to_end` passing; `grove_service.rs:602-604` sources `LlmRequest.model` from `routing_model`, itself resolved from `grove.node.config.routing_model` via `resolve_routing_model` |
+| 2 | No OpenAI model literal remains in `grove_service.rs`'s production region | ✓ VERIFIED | `awk '/^#\[cfg\(test\)\]/{exit}{print}' crates/paladin-battalion/src/grove_service.rs \| grep -c gpt-4` → `0` (re-run this session) |
+| 3 | Grove LLM routing hard-errors with **no fallback of any kind** when `routing_model` is absent, and that guarantee is reachable from `GroveExecutionService::execute()`, the only public entry point (D-02) | ✓ VERIFIED | Traced `route_task` directly: lines 291-303 call `Self::resolve_routing_model(grove)?` for `RoutingStrategy::LlmRouting` **above** the `let result = match strategy { .. }` dispatch at line 306, so the configuration error propagates via `?` before it can ever enter the `match result { Err(e) => .. }` fallback arm at lines 314-347 (`fallback_tree` lookup, then `grove.node.trees.first()`). Confirmed with a configured `fallback_tree`, not just its absence: `cargo test -p paladin-battalion --lib grove_service::` (re-run this session, 23 passed) names `test_execute_errors_despite_fallback_tree_when_routing_model_absent` passing — a Grove with a *resolvable* fallback tree still hard-errors. `cargo test -p paladin-ai --test lib grove_integration_test` (re-run this session, 10 passed) names `test_grove_llm_routing_errors_when_routing_model_absent_through_execute` (configured `llm_port`, absent `routing_model`, drives `execute()`, asserts `Err(RoutingError)` naming `routing_model`, asserts zero recorded LLM calls) and the former counter-example `test_grove_llm_routing` (inverted to assert the error instead of `Ok`) both passing. Scope negative control also re-confirmed: `test_grove_llm_routing_falls_back_when_llm_port_absent_but_routing_model_set` passes — an absent `llm_port` (a different failure mode, not covered by D-02) still falls back successfully, proving the fix did not over-generalize |
+| 4 | `grep -rn 'TODO' crates/paladin-battalion/src/` returns nothing Epic 22's completion criteria claimed already resolved | ✓ VERIFIED | 5 TODOs remain (re-run this session), all in `commander.rs` (lines 3128, 3161, 3201, 3242) and `council_service.rs` (line 733); confirmed inside each file's `#[cfg(test)]` module (`commander.rs` test module starts line 1613, `council_service.rs` at line 521) |
+| 5 | Every VERIFY-02 item genuinely outstanding across Epics 14, 22, 24 is closed or explicitly deferred with a recorded reason; Epic 22's "nothing outstanding" verdict is itself recorded, not dropped | ✓ VERIFIED | Re-run this session: `cargo test -p paladin-ai --lib --features cli -- autonomous` → 11 passed (names 5 of 6 cited tests); `cargo test -p paladin-ai --lib --features cli -- test_yaml_enabled_feature_cannot_be_disabled_from_cli` → 1 passed (6th test, no literal `autonomous` substring in its name); `cargo bench --no-run -p paladin-battalion` → exit 0, `grep -c benchmark_chain_of_command battalion_benchmarks.rs` → `2`; `git log --oneline -- .github/` shows no phase-6 commit (D-11 honoured); Epic 22 "no work required" verdict recorded in `.planning/REQUIREMENTS.md` CLOSE-02 text |
+| 6 | WARN-01 (Herald reachability) adopted across `campaign_service.rs`, `chain_of_command_service.rs`, `commander.rs`, proved by one executable composite witness | ✓ VERIFIED | `herald`/`with_herald`/`format_result` present in all three files (12 matches each, re-grepped this session); `cargo test -p paladin-ai --test lib battalion_chain_of_command_herald_test` (re-run this session) → 2 passed, including `chain_of_command_result_renders_through_json_herald` |
+| 7 | Live-API harness (ADR-0012) matches its Phase 5 recorded decision in code: doc-only correction, `require_api_key` panic stands | ✓ VERIFIED | `tests/integration/llm_live_api_tests.rs:61` doc comment corrected (no "skip" claim, describes the panic); `tests/integration/mod.rs` documents the double gate; untouched by plans 06-08/09/10 (outside their `files_modified`), so no regression risk — re-confirmed present in the tree this session |
+| 8 | Both vision surfaces (ADR-0011) match their Phase 5 recorded decision: both retained, entry-point rustdoc added, encryption disposition (D-16/D-17) documented, no trait removed | ✓ VERIFIED | `grep -rn '#\[deprecated' crates/paladin-ports/src/output/vision_port.rs crates/paladin-ports/src/output/vision_llm_port.rs` (re-run this session) → empty; both traits still `pub trait`; ADR-0011 unmodified by plans 06-08/09/10 |
+| 9 | No shipped surface is removed without a recorded decision behind it | ✓ VERIFIED | `git diff --stat 1d78461..HEAD -- crates/ src/ tests/` shows only additive/expanding diffs in the three files plans 06-08 touched (grove_service.rs, grove.rs, grove_integration_test.rs) — no public API deletions; `.github/` untouched (git log confirms no phase-6 commit there) |
+| 10 | ADR-0013, `CHANGELOG.md`, `.planning/PROJECT.md`, and `.planning/REQUIREMENTS.md` accurately describe the shipped, `execute()`-reachable runtime behaviour of the CLOSE-01 fix | ✓ VERIFIED | Read all four records directly (not taken on SUMMARY's word). ADR-0013 carries a dated amendment under `## Status` naming `GroveExecutionService::execute()`, `resolve_routing_model`, and citing `test_grove_llm_routing_errors_when_routing_model_absent_through_execute` at `:389` (line-citation confirmed against the tree); `## Decision`/`## Considered Options`/checkpoint outcome unchanged (byte-identical, D-02 not re-litigated). `CHANGELOG.md`'s `### Changed` entry now reads "calling `GroveExecutionService::execute()` — the entry point every caller uses — returns `BattalionError::RoutingError`... excluded from Grove's routing fallback handling"; `**Migration:**` preserved. `.planning/PROJECT.md`'s ADR-0013 row records the full shipped/found/closed history (06-01 shipped, 06-VERIFICATION found unreachable, 06-08 closed) — single-row diff confirmed via `git show --stat`. `.planning/REQUIREMENTS.md`'s CLOSE-01 entry carries a second dated amendment (plan 06-10) that retains the original 2026-08-05 text and appends an honest correction, the fix, re-run proof, and scope boundary — the "ROADMAP criteria 1 and 2 are both met" overstatement is corrected in place, not silently re-asserted |
 
-**Score:** 8/10 truths verified
+**Score:** 10/10 truths verified
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `crates/paladin-core/src/platform/container/battalion/grove.rs` | `routing_model: Option<String>` on `GroveConfig`, threaded through `GroveBuilder` | ✓ VERIFIED | Field at line ~209, serde-additive, `GroveBuilder::routing_model(..)` setter present, `Default` sets `None` |
-| `crates/paladin-battalion/src/grove_service.rs` | Missing-model guard + config-sourced `LlmRequest.model` inside `route_by_llm` | ✓ VERIFIED (guard itself) / ⚠️ ORPHANED (guard's no-fallback guarantee, from the caller's perspective) | Guard is correct in isolation (lines 493-510) but its effect is discarded by `route_task`'s catch-all before reaching any caller of `execute()` |
-| `src/application/cli/config/paladin_config.rs` | `autonomous: Option<AutonomousConfig>` section | ✓ VERIFIED | Line 111, reuses `paladin-core`'s `AutonomousConfig` directly, validated at line 280 |
-| `crates/paladin-battalion/src/campaign_service.rs`, `chain_of_command_service.rs`, `commander.rs` | Herald triad | ✓ VERIFIED | `herald` field, `with_herald`, `format_result` present in all three |
-| `crates/paladin-battalion/benches/battalion_benchmarks.rs` | `benchmark_chain_of_command`, registered | ✓ VERIFIED | Line 160 function, line 225-230 `criterion_group!` registration |
-| `.planning/decisions/0013-grove-routing-model.md` | New ADR recording the break | ✓ EXISTS, but ⚠️ describes unreachable behaviour | See truth 10 |
+| `crates/paladin-battalion/src/grove_service.rs` | `MISSING_ROUTING_MODEL_ERROR` const + `resolve_routing_model` shared resolver + pre-dispatch early return in `route_task` | ✓ VERIFIED | `grep -c 'const MISSING_ROUTING_MODEL_ERROR'` → 1, `grep -c 'fn resolve_routing_model'` → 1, `grep -c 'Self::resolve_routing_model'` → 2 (route_task line 302, route_by_llm line 558) — all re-confirmed this session |
+| `tests/integration/battalion/grove_integration_test.rs` | `test_grove_llm_routing` inverted; two new `execute()`-level tests | ✓ VERIFIED | `test_grove_llm_routing` (line 235) now asserts `Err(RoutingError)`; `test_grove_llm_routing_errors_when_routing_model_absent_through_execute` (line 389) and `test_grove_llm_routing_falls_back_when_llm_port_absent_but_routing_model_set` (line 457) both present and passing |
+| `crates/paladin-core/src/platform/container/battalion/grove.rs` | `GroveConfig.routing_model` rustdoc names `execute()` | ✓ VERIFIED | rustdoc extended per plan 06-08 Task 3; 5-line diff confirmed additive |
+| `.planning/decisions/0013-grove-routing-model.md` | Dated amendment reconciling ADR with shipped behaviour | ✓ VERIFIED | Amendment under `## Status`, extended `## Code Locations` with real line numbers, dated correction in `## Code Conformance`, precised `## Downstream Consumers` |
+| `CHANGELOG.md` | Breaking-change entry names `execute()` and scope boundary | ✓ VERIFIED | Confirmed by direct read; `**Migration:**` preserved |
+| `.planning/PROJECT.md` | ADR-0013 Key Decisions row records full history | ✓ VERIFIED | Single-row diff confirmed |
+| `.planning/REQUIREMENTS.md` | CLOSE-01 second amendment + CLOSE-02/03 re-affirmations + flipped checkboxes/traceability rows | ✓ VERIFIED | All three `[x]`, all three traceability rows `Complete`, no `Gaps Found` remaining anywhere in the file |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|-----|-----|--------|---------|
-| `GroveConfig.routing_model` | `LlmRequest.model` (happy path) | `GroveBuilder` → `grove_service::route_by_llm` | ✓ WIRED | Confirmed by `test_llm_routing_uses_configured_routing_model` and `test_grove_llm_routing_end_to_end` |
-| `route_by_llm`'s missing-model `RoutingError` | `GroveExecutionService::execute()`'s return value | `route_task` | ✗ NOT WIRED | `route_task`'s blanket fallback intercepts and discards the error before it reaches `execute()`'s caller (see gap) |
-| `ChainOfCommandExecutionService::execute` | `Herald::format_battalion_result` | `to_battalion_result` → `format_result` | ✓ WIRED | Composite integration test exercises the full chain |
-| `paladin.yaml` `autonomous:` section | `PaladinBuilder` | `PaladinYamlConfig.autonomous` → `apply_autonomous_config` | ✓ WIRED | `agent.rs:350` calls `apply_autonomous_config(builder, &config, &args)` |
+| `route_by_llm`'s missing-model `RoutingError` | `GroveExecutionService::execute()`'s return value | `route_task`'s pre-dispatch `resolve_routing_model` call | ✓ WIRED | Previously ✗ NOT WIRED (prior verification). Now: `route_task` line 301-303 resolves before dispatch, `?` propagates before the fallback arm (line 306+) can see it. Proven with a configured `fallback_tree` present (still declined) and with zero LLM calls recorded |
+| `GroveConfig.routing_model` | `LlmRequest.model` (happy path) | `GroveBuilder` → `grove_service::route_by_llm` | ✓ WIRED | Unchanged, re-confirmed via `test_grove_llm_routing_end_to_end` |
+| `ChainOfCommandExecutionService::execute` | `Herald::format_battalion_result` | `to_battalion_result` → `format_result` | ✓ WIRED | Re-confirmed via composite integration test |
+| `paladin.yaml` `autonomous:` section | `PaladinBuilder` | `PaladinYamlConfig.autonomous` → `apply_autonomous_config` | ✓ WIRED | Re-confirmed via `--features cli` test run |
+| `06-VERIFICATION.md` truth 10 | ADR-0013 / CHANGELOG.md / PROJECT.md / REQUIREMENTS.md | dated amendments naming shipped mechanism + exercisers | ✓ WIRED | All four records read directly and confirmed consistent with each other and with the shipped code |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
+| D-02 hard error reachable from `execute()` with configured `llm_port`, no `routing_model` | `cargo test -p paladin-ai --test lib grove_integration_test` | 10 passed, 0 failed | ✓ PASS |
+| D-02 error survives a resolvable `fallback_tree` | `cargo test -p paladin-battalion --lib grove_service::` | 23 passed, 0 failed (names `test_execute_errors_despite_fallback_tree_when_routing_model_absent`) | ✓ PASS |
 | No `gpt-4` literal in grove_service.rs production region | `awk '/^#\[cfg\(test\)\]/{exit}{print}' grove_service.rs \| grep -c gpt-4` | 0 | ✓ PASS |
 | No TODO in grove_service.rs | `grep -rn TODO crates/paladin-battalion/src/ \| grep -c grove_service.rs` | 0 | ✓ PASS |
-| Existing test proves the swallowed-error defect | `grove_integration_test.rs::test_grove_llm_routing` (existing, not run — reasoned from source) | Builds `LlmRouting` Grove with no `routing_model`, calls `execute()`, asserts `Ok` | ✗ FAIL (as evidence of the gap, not of a broken build) |
-| Benchmark compiles | `cargo bench --no-run -p paladin-battalion` (per 06-04-SUMMARY, not re-run here — build/test already green per task's build_state) | exit 0 (reported) | ✓ PASS (relied on reported build state) |
+| Autonomous CLI/YAML wiring (CLOSE-02) | `cargo test -p paladin-ai --lib --features cli -- autonomous` + explicit named test | 11 passed + 1 passed | ✓ PASS |
+| ChainOfCommand benchmark compiles and is registered | `cargo bench --no-run -p paladin-battalion`; `grep -c benchmark_chain_of_command` | exit 0; count 2 | ✓ PASS |
+| Herald composite witness (WARN-01) | `cargo test -p paladin-ai --test lib battalion_chain_of_command_herald_test` | 2 passed, 0 failed | ✓ PASS |
+| No vision trait deprecated/removed (CLOSE-03) | `grep -rn '#\[deprecated' vision_port.rs vision_llm_port.rs` | empty | ✓ PASS |
+| Full workspace gate | `cargo test --workspace` | 0 failed across every test binary | ✓ PASS |
+| Formatting | `cargo fmt --check` | exit 0 | ✓ PASS |
+| Linting | `cargo clippy --workspace --all-targets -- -D warnings` | exit 0 | ✓ PASS |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|------------|-------------|--------|----------|
-| CLOSE-01 | 06-01, 06-06, 06-07 | Grove routing uses the LLM model from configuration instead of a hardcoded literal | ✗ BLOCKED (partial) | Happy path genuinely fixed and wired; the hard-error/no-fallback half of the design (D-02) is implemented but unreachable from the only public entry point, and ADR-0013/CHANGELOG/REQUIREMENTS.md's satisfaction claims overstate what is actually reachable |
-| CLOSE-02 | 06-02, 06-03, 06-04, 06-07 | VERIFY-02 genuinely-outstanding items in Epics 14/22/24 closed or deferred with reason | ✓ SATISFIED | All four items disposed (a-d in REQUIREMENTS.md), each independently verified above |
-| CLOSE-03 | 06-05, 06-07 | Phase 5 ADR code consequences applied (vision, live-API harness) | ✓ SATISFIED | Both ADR-0011 and ADR-0012 dispositions verified in code and docs |
+| CLOSE-01 | 06-01, 06-06, 06-07, 06-08, 06-09, 06-10 | Grove routing uses the LLM model from configuration instead of a hardcoded literal, with the D-02 hard-error/no-fallback guarantee reachable from `execute()` | ✓ SATISFIED | Happy path and hard-error path both real and reachable from `GroveExecutionService::execute()`; ADR-0013/CHANGELOG/PROJECT.md/REQUIREMENTS.md all reconciled and mutually consistent |
+| CLOSE-02 | 06-02, 06-03, 06-04, 06-07, 06-10 | VERIFY-02 genuinely-outstanding items in Epics 14/22/24 closed or deferred with reason | ✓ SATISFIED | All four items re-confirmed at HEAD this session (autonomous CLI/YAML, ChainOfCommand benchmark, CI-job deferral honoured, Epic 22 "no work required" recorded) |
+| CLOSE-03 | 06-05, 06-07, 06-10 | Phase 5 ADR code consequences applied (vision, live-API harness) | ✓ SATISFIED | Both ADR-0011 and ADR-0012 dispositions re-confirmed in code and docs; no surface removed |
 
-No orphaned requirement IDs found — all three CLOSE-* IDs declared across plan frontmatter match `.planning/REQUIREMENTS.md`'s CLOSE section.
+No orphaned requirement IDs found. All plan frontmatter `requirements:` fields (06-01 through 06-10) map to CLOSE-01, CLOSE-02, or CLOSE-03 — matching this phase's declared requirement IDs exactly.
 
 ### Anti-Patterns Found
 
-No `TBD`/`FIXME`/`XXX`/`TODO` debt markers in any file modified by this phase's plans (grove.rs, grove_service.rs, campaign_service.rs, chain_of_command_service.rs, commander.rs, paladin_config.rs, agent.rs, battalion_benchmarks.rs, vision_port.rs, vision_llm_port.rs, llm_live_api_tests.rs — all checked, all clean).
+No `TBD`/`FIXME`/`XXX`/`TODO` debt markers in any file modified by plans 06-08/06-09/06-10
+(`grove_service.rs`, `grove.rs`, `grove_integration_test.rs`, `0013-grove-routing-model.md`,
+`CHANGELOG.md`, `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md` — all checked, all clean). The
+5 pre-existing test-code TODOs in `commander.rs`/`council_service.rs` are unchanged and out of this
+phase's scope (recorded as deferred in `06-CONTEXT.md`).
 
-The gap identified above is not a code-smell anti-pattern (no placeholder, no stub, no empty implementation) — it is a genuine control-flow wiring defect: a correctly-implemented guard whose effect is discarded by a pre-existing, unmodified-by-this-phase catch-all one call frame up (`route_task`, which this phase did not touch). Severity: 🛑 Blocker, because the phase's own locked design decision (D-02, human-approved at a `checkpoint:decision` gate as `proceed-as-locked`) is not actually in effect for any real caller, and three documents (ADR-0013, CHANGELOG.md, REQUIREMENTS.md) now assert in writing that it is.
+No stub patterns, no placeholder returns, no empty implementations found in the gap-closure diff.
+The fix is a genuine control-flow correction: a pre-dispatch resolver call placed above an existing
+fallback arm, verified both by unit tests (`grove_service.rs`'s `#[cfg(test)]` module) and
+integration tests that drive the public entry point.
 
 ### Human Verification Required
 
-None. This finding is fully provable by static code-path analysis (`route_task`'s blanket `match result { Err(e) => ... }` unconditionally intercepts `route_by_llm`'s error before `execute()` returns, and `GroveBuilder::build()` guarantees the terminal fallback always succeeds) and by an existing, currently-green test that directly demonstrates the swallowed behavior. No runtime/visual/external-service judgment is needed to close this gap — it is a deterministic code fix plus a missing test.
+None. Every truth in this re-verification is provable by direct code-path tracing (confirmed by
+reading `route_task` and `route_by_llm` in full, not by trusting a SUMMARY's description) and by
+commands re-run in this verification session, not carried forward from any prior report or SUMMARY.
 
 ### Gaps Summary
 
-Eight of the ten observable truths derived from the four ROADMAP success criteria are genuinely
-met: the CLOSE-02 and CLOSE-03 halves of this phase (Herald reachability, autonomous CLI/YAML
-wiring, the ChainOfCommand benchmark, the vision and live-API-harness documentation work) are all
-implemented, wired, and independently re-verified against the tree rather than taken on
-SUMMARY.md's word.
+None. Both truths that failed the previous verification round are now genuinely closed:
 
-CLOSE-01 — the phase's headline defect and the reason ROADMAP success criteria 1 and 2 exist — is
-**half-closed**. The happy path (a correctly-configured Grove routes its configured model through
-`LlmPort::generate` via `execute()`) is real and independently confirmed. But the other, equally
-load-bearing half of the design — that a *misconfigured* Grove (`LlmRouting` with no
-`routing_model`) fails loudly with no fallback, per D-02's explicit, human-approved, "one-way"
-design decision — is not reachable from `GroveExecutionService::execute()`, the only public entry
-point. `route_task`'s pre-existing blanket fallback (unmodified by this phase) intercepts the new
-guard's error and silently substitutes default agent selection instead. A currently-green
-integration test (`test_grove_llm_routing`) directly demonstrates this: it builds exactly the
-misconfiguration D-02 was meant to reject, calls `execute()`, and asserts success.
+**Truth 3** — the D-02 no-fallback guarantee is now reachable from `GroveExecutionService::execute()`.
+The fix is structurally sound, not merely test-shaped: `route_task`'s pre-dispatch check
+(`crates/paladin-battalion/src/grove_service.rs:301-303`) calls the same `resolve_routing_model`
+resolver `route_by_llm` uses, sits *above* the `match result { .. Err(e) => .. }` fallback arm, and
+lets `?` propagate the configuration error before that arm can ever intercept it. This was verified
+adversarially per this task's instructions — not by accepting a test that calls `route_by_llm`
+directly, but by tracing `execute()`'s actual call chain and by confirming the guarantee holds even
+when a Grove carries a resolvable `fallback_tree` (`test_execute_errors_despite_fallback_tree_when_routing_model_absent`).
+The scope boundary is intact: a Grove with `routing_model` set but no `llm_port` still falls back
+successfully (`test_grove_llm_routing_falls_back_when_llm_port_absent_but_routing_model_set`), so the
+fix did not over-generalize to every routing failure.
 
-This independently reproduces `06-REVIEW.md`'s CR-01 finding, which the orchestrator had already
-confirmed by reading the code before this verification ran. Because ADR-0013, `CHANGELOG.md`, and
-`.planning/REQUIREMENTS.md`'s CLOSE-01 closure text all now assert — in writing, as fact — that
-"routing now returns `BattalionError::RoutingError`" when misconfigured, and that "ROADMAP
-criteria 1 and 2 are both met," this is not a cosmetic gap: three permanent project records
-describe shipped behavior that does not exist. Closing this phase's gap-closure purpose requires
-either (a) a code fix making the no-fallback guarantee actually reachable from `execute()`, which
-is what the human already approved at the Task 1 checkpoint, plus a test that exercises `execute()`
-(not `route_by_llm` directly) with the misconfiguration, or (b) a fresh human decision to soften
-D-02 and then correcting ADR-0013/CHANGELOG/REQUIREMENTS.md to match whatever is actually shipped.
-Given the checkpoint already recorded `proceed-as-locked`, (a) is the path consistent with the
-recorded decision.
+**Truth 10** — all four permanent records (ADR-0013, `CHANGELOG.md`, `.planning/PROJECT.md`,
+`.planning/REQUIREMENTS.md`) now describe the `execute()`-reachable behaviour accurately, each naming
+the shipped mechanism (`resolve_routing_model`, `route_task`'s pre-dispatch resolution) and citing at
+least one exerciser that drives `execute()` directly. Every amendment is at-source with dated
+provenance — original text retained, corrections appended, `## Decision`/checkpoint outcome in
+ADR-0013 left byte-identical. The `.planning/REQUIREMENTS.md` checkbox flip (the exact failure mode
+commit `2f6fc18` had to revert) is honestly re-earned this round: plan 06-10's re-run commands were
+independently re-executed again in this verification session (not merely re-read), and every one is
+green — `cargo test --workspace`, the grove test suites, the autonomous CLI/YAML tests, the
+ChainOfCommand benchmark, the Herald composite test, `cargo fmt --check`, and `cargo clippy
+--workspace --all-targets -- -D warnings`.
 
-No deferred items apply here (CLOSE-01 is fully in this phase's scope, not addressed by any later
-milestone phase).
+The remaining eight truths were re-checked, not carried forward, and none regressed. No shipped
+surface was removed anywhere in this phase (`.github/` untouched throughout, confirmed by `git log`
+showing no phase-6 commit under it).
+
+Phase 6's goal is achieved: every Milestone 2-3 gap that verification actually proved is now closed,
+with the closure itself independently re-provable against the tree rather than resting on any prior
+report's or SUMMARY's word.
 
 ---
 
-*Verified: 2026-08-05T21:00:00Z*
+*Verified: 2026-08-05T22:00:00Z*
 *Verifier: Claude (gsd-verifier)*

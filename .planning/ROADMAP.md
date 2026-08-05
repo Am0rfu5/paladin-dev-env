@@ -139,7 +139,7 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 **Milestone 2-3 close-out** — ◆ **CURRENT MILESTONE v0.7.2** (started 2026-08-04, 9 requirements)
 
 - [x] **Phase 5: Milestone 2-3 Ground Truth** - Record what Epics 11-24 actually shipped, verify the three unverified blocks, and fix the epic-numbering defect at its source (completed 2026-08-05)
-- [ ] **Phase 6: Verified Gap Closure** - Close the one verified defect plus whatever Phase 5 proves genuinely outstanding
+- [x] **Phase 6: Verified Gap Closure** - Close the one verified defect plus whatever Phase 5 proves genuinely outstanding (completed 2026-08-05)
 
 **Milestone 4-6 close-out**
 
@@ -750,7 +750,7 @@ through it. Recorded here so neither side gets planned twice:
 | 3. Verification Depth | v0.7.1 | 8/8 | Complete    | 2026-08-02 |
 | 4. Release Coherence | v0.7.1 | 7/7 | Complete    | 2026-08-03 |
 | 5. Milestone 2-3 Ground Truth | **v0.7.2** | 13/13 | Complete    | 2026-08-05 |
-| 6. Verified Gap Closure | **v0.7.2** | 0/TBD | ◆ Current milestone | - |
+| 6. Verified Gap Closure | **v0.7.2** | 10/10 | Complete    | 2026-08-05 |
 | 7. Workspace Ground Truth & Recorded Answers | M4-6 | 0/TBD | Not started | - |
 | 8. Verified Defect Closure | M4-6 | 0/TBD | Not started | - |
 | 9. Release & Security Gate Integrity | M7-8 | 0/TBD | Not started | - |
