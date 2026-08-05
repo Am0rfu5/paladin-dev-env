@@ -484,7 +484,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
 
 ### Verified gap closure (CLOSE)
 
-- [x] **CLOSE-01**: Grove routing uses the LLM model from configuration instead of a hardcoded
+- [ ] **CLOSE-01**: Grove routing uses the LLM model from configuration instead of a hardcoded
       literal. `crates/paladin-battalion/src/grove_service.rs:537` builds its routing `LlmRequest`
       with `model: "gpt-4".to_string(), // TODO: Make configurable` in production code
       (`#[cfg(test)]` begins at line 732), so Grove routing silently ignores the configured
@@ -513,7 +513,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       **CHANGELOG.md** entry, and the `GroveConfig.routing_model` rustdoc itself — all three shipped
       by plans 06-01 and 06-06.
 
-- [x] **CLOSE-02**: Everything VERIFY-02 classifies as *genuinely outstanding* in Epics 14, 22 and
+- [ ] **CLOSE-02**: Everything VERIFY-02 classifies as *genuinely outstanding* in Epics 14, 22 and
       24 is either closed or explicitly deferred with a recorded reason. Scope is set by Phase 5's
       verdicts, not by the 155 open checkboxes in those three lists. If VERIFY-02 finds all three
       blocks satisfied by shipped code, this requirement closes with a recorded "no work
@@ -561,7 +561,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       `tests/integration/battalion_chain_of_command_herald_test.rs#chain_of_command_result_renders_through_json_herald`
       (`06-02-SUMMARY.md`).
 
-- [x] **CLOSE-03**: The Phase 5 recorded answers that have code consequences are applied: the
+- [ ] **CLOSE-03**: The Phase 5 recorded answers that have code consequences are applied: the
       VERIFY-06 answer on live-API-test key handling is reflected in
       `tests/integration/llm_live_api_tests.rs`, and the VERIFY-04 answer on the two vision
       surfaces is reflected in the tree (both retained and documented as such, or one deprecated
@@ -3790,9 +3790,9 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | VERIFY-04 | Phase 5 | Complete |
 | VERIFY-05 | Phase 5 | Complete |
 | VERIFY-06 | Phase 5 | Complete |
-| CLOSE-01 | Phase 6 | Complete |
-| CLOSE-02 | Phase 6 | Complete |
-| CLOSE-03 | Phase 6 | Complete |
+| CLOSE-01 | Phase 6 | Gaps Found |
+| CLOSE-02 | Phase 6 | Gaps Found |
+| CLOSE-03 | Phase 6 | Gaps Found |
 | ARCH-01 | Phase 7 | Pending |
 | ARCH-02 | Phase 7 | Pending |
 | ARCH-03 | Phase 7 | Pending |
