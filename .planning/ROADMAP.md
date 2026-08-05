@@ -489,7 +489,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 06-07-PLAN.md — CLOSE-01/02/03 close-out: ledger amendments, CI-job deferral recorded bidirectionally, Epic 22 "no work required" verdict, WARN-01 outcome (wave 3)
+- [x] 06-07-PLAN.md — CLOSE-01/02/03 close-out: ledger amendments, CI-job deferral recorded bidirectionally, Epic 22 "no work required" verdict, WARN-01 outcome (wave 3)
 
 **Milestone 4-6 close-out — Phases 7-8 (not started)**
 

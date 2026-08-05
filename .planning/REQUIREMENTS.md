@@ -3790,9 +3790,9 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | VERIFY-04 | Phase 5 | Complete |
 | VERIFY-05 | Phase 5 | Complete |
 | VERIFY-06 | Phase 5 | Complete |
-| CLOSE-01 | Phase 6 | Pending |
-| CLOSE-02 | Phase 6 | Pending |
-| CLOSE-03 | Phase 6 | Pending |
+| CLOSE-01 | Phase 6 | Complete |
+| CLOSE-02 | Phase 6 | Complete |
+| CLOSE-03 | Phase 6 | Complete |
 | ARCH-01 | Phase 7 | Pending |
 | ARCH-02 | Phase 7 | Pending |
 | ARCH-03 | Phase 7 | Pending |
