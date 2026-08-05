@@ -484,7 +484,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
 
 ### Verified gap closure (CLOSE)
 
-- [ ] **CLOSE-01**: Grove routing uses the LLM model from configuration instead of a hardcoded
+- [x] **CLOSE-01**: Grove routing uses the LLM model from configuration instead of a hardcoded
       literal. `crates/paladin-battalion/src/grove_service.rs:537` builds its routing `LlmRequest`
       with `model: "gpt-4".to_string(), // TODO: Make configurable` in production code
       (`#[cfg(test)]` begins at line 732), so Grove routing silently ignores the configured
@@ -495,18 +495,97 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       REQ-autonomous-configurable-model; `codebase/CONCERNS.md` "Grove Service Model Hardcoded";
       INGEST-CONFLICTS warning 18.*
 
-- [ ] **CLOSE-02**: Everything VERIFY-02 classifies as *genuinely outstanding* in Epics 14, 22 and
+      **Amended 2026-08-05, plan 06-07 — satisfied.** `GroveConfig.routing_model: Option<String>`
+      (`crates/paladin-core/src/platform/container/battalion/grove.rs:208`), threaded through
+      `GroveBuilder.routing_model(..)`; `route_by_llm` in `grove_service.rs` no longer hardcodes
+      `"gpt-4"` — a guard hard-errors with `BattalionError::RoutingError` (no fallback of any kind)
+      when `routing_model` is absent or blank under `RoutingStrategy::LlmRouting`, and the
+      configured model is what reaches `LlmRequest.model`; proved by
+      `crates/paladin-battalion/src/grove_service.rs#test_llm_routing_uses_configured_routing_model`
+      and the missing/blank/precedence/concurrency tests in `06-01-SUMMARY.md`'s coverage table
+      (all pass, `cargo test --workspace` green). ROADMAP criteria 1 and 2 are both met: the
+      `"gpt-4"` literal is gone from `grove_service.rs`'s production region
+      (`awk '/^#\[cfg\(test\)\]/{exit}{print}' grove_service.rs | grep -c 'gpt-4'` → 0), and no
+      inline deferral comment remains anywhere in `crates/paladin-battalion/src/` at that line — the
+      file's only TODO is resolved (`grep -rn 'TODO' crates/paladin-battalion/src/ | grep -c
+      'grove_service.rs'` → 0). The one-way runtime break (D-02) is recorded three ways per D-03:
+      **ADR-0013** (`.planning/decisions/0013-grove-routing-model.md`), a `## [Unreleased]`
+      **CHANGELOG.md** entry, and the `GroveConfig.routing_model` rustdoc itself — all three shipped
+      by plans 06-01 and 06-06.
+
+- [x] **CLOSE-02**: Everything VERIFY-02 classifies as *genuinely outstanding* in Epics 14, 22 and
       24 is either closed or explicitly deferred with a recorded reason. Scope is set by Phase 5's
       verdicts, not by the 155 open checkboxes in those three lists. If VERIFY-02 finds all three
       blocks satisfied by shipped code, this requirement closes with a recorded "no work
       required" verdict rather than being deleted. *Derives: VERIFY-02.*
 
-- [ ] **CLOSE-03**: The Phase 5 recorded answers that have code consequences are applied: the
+      **Amended 2026-08-05, plan 06-07 — satisfied, all four items disposed, none omitted (ROADMAP
+      success criterion 3):**
+      (a) **Epic 14 cluster `8.0` (YAML & CLI Configuration Support) — closed by plan 06-03.**
+      `PaladinYamlConfig.autonomous: Option<AutonomousConfig>` deserializes, round-trips, and is
+      bounds-validated; the four `--auto-plan`/`--auto-prompt`/`--dynamic-temp`/`--enable-handoffs`
+      flags apply as additive-only overrides via `apply_autonomous_config`; proved by
+      `src/application/cli/commands/agent.rs#test_autonomous_planning_from_yaml_reaches_paladin_data`
+      and the 16-case `#test_yaml_enabled_feature_cannot_be_disabled_from_cli`
+      (`06-03-SUMMARY.md`).
+      (b) **Epic 24 cluster `1.0` (ChainOfCommand benchmark) — closed by plan 06-04.**
+      `benchmark_chain_of_command` registered in `battalion_benchmarks.rs`'s `criterion_group!`
+      driving a real `ChainOfCommandExecutionService` across three criterion ids
+      (`battalion/chain_of_command_2_levels_3_subordinates`, `_2_levels_5_subordinates`,
+      `_wide_10_subordinates`); proved by `cargo bench --no-run -p paladin-battalion` (exit 0) and
+      an uncontended measured run recorded in `docs/src/appendix/performance-baseline.md`'s new
+      dated `## Run — 2026-08-05` section (`06-04-SUMMARY.md`).
+      (c) **Epic 24 cluster `8.0` (the three CI jobs) — deferred with a written reason.** All three
+      — `cli-tests`, `bench-check`, `coverage` — are literally **PIPE-01** (`cli-tests` +
+      `bench-check`) and **PIPE-02** (`coverage` + `.codecov.yml`), owned by **Phase 15**, per D-09:
+      Phase 15's own register states its first half "establishes quality gates that validate all
+      subsequent work" and must come first, and PIPE-02 cannot be built before a coverage threshold
+      is settled among six competing positions (the Deferred-QA parent PRD's 78% hard gate, Epic
+      25's 70→74→78 ramp, and ADR-0006's 84% floor among them) — Phase 6 does not pick one. Recorded
+      in `.planning/ledgers/milestone-02-03.md`'s Epic 24 block verdict and `### Phase 6 CLOSE-02
+      scope` section, and bidirectionally on PIPE-01/PIPE-02 below (D-10).
+      (d) **Epic 22 — recorded "no work required."** All fifteen of
+      `tasks-epic22-battalion-commander-hardening.md`'s parent-task clusters verify against the
+      current tree, including the three the source task list still marks open (Council/Grove
+      registry integration, Grove LLM routing — shipped via commits `761c49c`, `0cdf8dd`, `5f05db7`).
+      Per `.planning/ledgers/milestone-02-03.md`'s block verdict (`satisfied by shipped code`), this
+      block closes with **no work required** for Phase 6 rather than being deleted from this
+      requirement's scope — this sentence is what satisfies CLOSE-02's own "closes with a recorded
+      'no work required' verdict" text and ROADMAP success criterion 3's "if verification found
+      nothing outstanding, that verdict is recorded rather than the requirement quietly dropped"
+      clause.
+      Also recorded here: **WARN-01** (Herald reachability from Campaign, Chain of Command and the
+      Commander router) was adopted under this requirement and closed by plan 06-02 — the Herald
+      triad (field, setter, format wrapper) now exists on all three previously Herald-less services,
+      proved by the composite end-to-end witness
+      `tests/integration/battalion_chain_of_command_herald_test.rs#chain_of_command_result_renders_through_json_herald`
+      (`06-02-SUMMARY.md`).
+
+- [x] **CLOSE-03**: The Phase 5 recorded answers that have code consequences are applied: the
       VERIFY-06 answer on live-API-test key handling is reflected in
       `tests/integration/llm_live_api_tests.rs`, and the VERIFY-04 answer on the two vision
       surfaces is reflected in the tree (both retained and documented as such, or one deprecated
       with a migration note). No surface is removed without a recorded decision.
       *Derives: VERIFY-04, VERIFY-06.*
+
+      **Amended 2026-08-05, plan 06-07 — satisfied, documentation only.** Both vision entry points
+      are documented per ADR-0011's `## Decision`: `VisionPort`
+      (`crates/paladin-ports/src/output/vision_port.rs`) as the recommended application-code entry
+      point (reached via `execute_with_vision`), and `VisionCapableLlm`
+      (`crates/paladin-ports/src/output/vision_llm_port.rs`) as the adapter-author surface (reached
+      via `PaladinBuilder::enable_vision`) — neither trait deprecated or removed. `EncryptionService`
+      (`src/infrastructure/security/encryption.rs`) carries a "Framework usage" rustdoc section
+      recording it as a deliberately unimposed, consumer-facing utility. ADR-0011
+      (`.planning/decisions/0011-vision-port-surfaces.md`) is amended in place with a dated
+      resolution note and its `## Code Conformance` flipped from `must change` to `conforms`. The
+      live-API harness's `require_api_key` doc comment is corrected (it no longer claims a skip it
+      does not perform) and the double gate (`cfg(feature = "live-api-tests")` plus 13 `#[ignore]`
+      attributes) is documented as the actual skip mechanism in `tests/integration/mod.rs`'s header
+      — all four from `06-05-SUMMARY.md`, `cargo test --workspace` green throughout, no behaviour
+      changed on any path. **No shipped surface was removed anywhere in this phase** — both vision
+      traits remain, `require_api_key`'s panic stands unchanged, the four autonomous CLI flags
+      remain, and `GroveExecutionService::new`'s signature is unchanged — so no migration note is
+      owed under ROADMAP criterion 4.
 
 ---
 
@@ -1543,6 +1622,15 @@ threshold configuration and the local targets. Scope accordingly.
       *Derives: REQ-ci-cli-snapshot-job (FR-25.3), REQ-ci-bench-check-job (FR-25.4);
       `intel/code-verification.md` run-5 verified-open finding 3.*
 
+      **Inbound scope note, added 2026-08-05 by plan 06-07 (D-10):** Phase 6's Epic 24 cluster
+      `8.0` (`tasks-test-hardening-benchmarks-qa.md`) named the `cli-tests` and `bench-check` jobs
+      as genuinely outstanding and deferred them here with a written reason rather than building
+      them in Phase 6 — Phase 15's own register puts its quality-gate work first, ahead of
+      everything it gates. See `.planning/ledgers/milestone-02-03.md`'s Epic 24 block verdict (the
+      `8.0` row) and `### Phase 6 CLOSE-02 scope` section for the full reason and the two rejected
+      alternatives; this note is the reverse pointer so a Phase 15 planner does not have to
+      rediscover the link.
+
 - [ ] **PIPE-02**: Unit and integration coverage is measured together in CI and gated at **one
       recorded threshold**. A `coverage` job installs `cargo-llvm-cov` via
       `taiki-e/install-action@v2` with `tool: cargo-llvm-cov@0.7.1` (pre-built binaries, ~30 s
@@ -1576,6 +1664,15 @@ threshold configuration and the local targets. Scope accordingly.
       (FR-25.6, FR-25.10, Appendix C); `intel/code-verification.md` run-5 verified-open finding 3;
       INGEST-CONFLICTS run-5 warning on the competing initial coverage threshold. Couples to
       RECON-07 (Phase 1) and VERIFY-05 (Phase 5).*
+
+      **Inbound scope note, added 2026-08-05 by plan 06-07 (D-10):** Phase 6's Epic 24 cluster
+      `8.0` (`tasks-test-hardening-benchmarks-qa.md`) named the `coverage` job and `.codecov.yml`
+      as genuinely outstanding and deferred them here with a written reason rather than picking a
+      threshold in Phase 6 — this requirement's own contested-threshold text above (six competing
+      positions) is exactly why Phase 6 declined to settle it; **PIPE-02 still owns that decision.**
+      See `.planning/ledgers/milestone-02-03.md`'s Epic 24 block verdict (the `8.0` row) and
+      `### Phase 6 CLOSE-02 scope` section for the full reason and the two rejected alternatives;
+      this note is the reverse pointer so a Phase 15 planner does not have to rediscover the link.
 
 - [ ] **PIPE-03**: Coverage and the two new test targets are runnable locally. A new **Coverage**
       section in the `Makefile` between Testing and Code Quality with `coverage`
