@@ -50,6 +50,19 @@ service is a consumer-facing utility the framework deliberately does not impose 
 call. No new phase and no new requirement is created for it; this ADR records the disposition and
 hands the decision forward.
 
+**Resolution note (Phase 6, 2026-08-05):** CLOSE-03 resolved the open wiring question above in
+favour of the deliberately-unimposed-utility option, on ground stronger than this ADR had when it
+was written: the shipped vision path never stores image bytes.
+`PaladinExecutionService::execute_with_vision`
+(`src/application/services/paladin/paladin_execution_service.rs:517`) takes caller-supplied
+`Vec<VisionContent>` — URL, base64, or file path — and hands it straight to the vision adapter,
+with no framework-owned temporary file or cache anywhere in that path. Epic 13 FR-11's premise,
+"encryption at rest for *temporarily stored* image data," therefore has no storage in the shipped
+design to protect. `EncryptionService`, `SecureData`, and `DataRetentionPolicy` are documented as
+a consumer-facing utility a caller who does hold image bytes at rest may call directly; the
+framework itself does not invoke them on the vision path. See D-16 and D-17 in
+`.planning/phases/06-verified-gap-closure/06-CONTEXT.md`.
+
 ## Considered Options
 
 - Deprecating `VisionCapableLlm` in favour of `VisionPort` — rejected. Both ship deliberately at
@@ -67,6 +80,13 @@ hands the decision forward.
 - Silently omitting the zero-consumer finding and treating "the code exists" as sufficient —
   rejected. Per this phase's threat register (T-05-06), spoofing a capability's wired state is a
   real risk to a downstream reader sizing follow-up work.
+- **(Phase 6, D-16)** Wiring `SecureData` zeroization into the in-flight vision path — rejected.
+  This would be a real behaviour change, and one that only partly satisfies FR-11 even so, since
+  zeroizing a value that is never persisted protects nothing at rest.
+- **(Phase 6, D-16)** Wiring `EncryptionService::encrypt_image_data` fully into the vision
+  execution path — rejected. With no persistence between encrypt and decrypt on the shipped
+  path, this is ceremony rather than protection, and it costs an encrypt/decrypt cycle on every
+  vision request for no security benefit.
 
 ## Code Locations
 
@@ -99,15 +119,16 @@ hands the decision forward.
 
 ## Code Conformance
 
-must change
+conforms
 
-**CLOSE-03 in Phase 6** is the requirement that executes the consequence of this ADR. The vision
-half is documentation only: rustdoc entry-point guidance naming `VisionPort` as recommended and
-`VisionCapableLlm` as the adapter-author surface, with no removal of either trait. The encryption
-half is a recorded wiring decision, not an implementation — CLOSE-03 either wires
-`EncryptionService::encrypt_image_data` into the vision path or records the service as a
-deliberately unimposed consumer-facing utility. Nothing in this phase edits Rust source; this ADR
-records the decision only.
+**CLOSE-03 in Phase 6** is the requirement that executed the consequence of this ADR. The
+executed change is rustdoc: a "Choosing a vision surface" section on `VisionPort` and the mirror
+section on `VisionCapableLlm` naming the entry points recorded above, plus a "Framework usage"
+section on `EncryptionService` recording the deliberately-unimposed-utility disposition this
+ADR's resolution note above records. No source behaviour was altered, and neither vision trait
+was removed, deprecated, or documented as legacy. The requirement's original framing — either
+wire `encrypt_image_data` into the vision path or record the service as unimposed — is resolved
+in favour of the latter; see the resolution note in `## Decision` above for the reason.
 
 ## Downstream Consumers
 
@@ -117,3 +138,6 @@ records the decision only.
   tree" to `present, unproven`, citing this ADR and the unwired-consumer finding
 - Any adapter author choosing a vision entry point — reads this ADR's `## Decision` section for
   which surface to implement or call
+- Phase 6 plan 06-07 — amends the `REQ-vision-security-encryption` ledger row to the
+  deliberately-unimposed-utility verdict this ADR's resolution note records, carrying the same
+  disposition through to the ledger

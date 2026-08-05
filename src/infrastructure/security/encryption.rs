@@ -141,6 +141,23 @@ impl DataRetentionPolicy {
 /// Encryption service for vision and document data
 ///
 /// Uses ChaCha20-Poly1305 AEAD for authenticated encryption.
+///
+/// # Framework usage
+///
+/// The framework does not invoke this service on the vision path. The reason: the shipped
+/// vision path never stores image bytes. `PaladinExecutionService::execute_with_vision` takes
+/// caller-supplied [`VisionContent`](paladin_core::platform::container::vision::VisionContent)
+/// (a URL, base64 payload, or file path) and hands it straight to the vision adapter — there is
+/// no framework-owned temporary file or cache for this service to protect.
+///
+/// A consumer who does hold image bytes at rest, or who persists them between requests, is the
+/// party that should call [`EncryptionService::encrypt_image_data`] and
+/// [`EncryptionService::decrypt_image_data`] directly, and should hold the returned
+/// [`SecureData`] for its zeroizing drop. Likewise, [`DataRetentionPolicy`] is a utility the
+/// consumer applies to its own stored data — it is not a policy the framework enforces anywhere
+/// in the vision execution path.
+///
+/// See the recorded decision at `.planning/decisions/0011-vision-port-surfaces.md`.
 pub struct EncryptionService {
     cipher: ChaCha20Poly1305,
 }
@@ -186,6 +203,9 @@ impl EncryptionService {
 
     /// Encrypts image data
     ///
+    /// The framework itself never calls this on the vision path — see
+    /// [`EncryptionService`]'s "Framework usage" section for why and for who should call it.
+    ///
     /// # Arguments
     ///
     /// * `data` - Raw image bytes to encrypt
@@ -202,6 +222,9 @@ impl EncryptionService {
     }
 
     /// Decrypts image data
+    ///
+    /// The framework itself never calls this on the vision path — see
+    /// [`EncryptionService`]'s "Framework usage" section for why and for who should call it.
     ///
     /// # Arguments
     ///

@@ -58,10 +58,17 @@ use paladin_ports::output::llm_port::{FinishReason, LlmError, LlmPort, LlmReques
 // Helper Functions
 // ============================================================================
 
-/// Skip test if API key is not present or empty, otherwise return the key
+/// Returns the API key read from `env_var` when it is present and non-empty, and panics with a
+/// clear, actionable message when the variable is absent or set to the empty string.
 ///
 /// This will panic with a clear message if the API key is missing or empty,
 /// causing the test to fail rather than silently passing.
+///
+/// Exactly two conditions count as missing: the variable being absent, and the variable being
+/// present with an empty-string value. The check is `str::is_empty()`, a byte-length check with
+/// no trimming — a whitespace-only value (e.g. `" "`) is therefore treated as present and is
+/// returned as-is, with no validation that it looks like a plausible key. See the recorded
+/// decision at `.planning/decisions/0012-live-api-test-key-behaviour.md`: the panic stands.
 fn require_api_key(env_var: &str, provider: &str) -> String {
     // Initialize test environment (loads .env if present)
     init_test_env();

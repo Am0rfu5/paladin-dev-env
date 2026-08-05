@@ -48,6 +48,19 @@ use paladin_core::platform::container::vision::VisionRequest;
 /// - `LlmError::InvalidPrompt` for invalid image formats or sizes
 /// - `LlmError::ModelNotAvailable` for non-vision models
 /// - `LlmError::ProcessingError` for image processing failures
+///
+/// # Choosing a vision surface
+///
+/// `VisionCapableLlm` is the **adapter-author surface**: implement this trait when adding a
+/// vision-capable LLM provider. It is reached via `PaladinBuilder::enable_vision`.
+///
+/// Application code should generally call the sibling surface, `VisionPort`, via
+/// `PaladinExecutionService::execute_with_vision`, instead of calling `VisionCapableLlm` methods
+/// directly.
+///
+/// Both traits ship deliberately, at different layers of the framework. Neither is legacy, and
+/// no migration between them is planned or recommended for either audience. See the recorded
+/// decision at `.planning/decisions/0011-vision-port-surfaces.md`.
 #[async_trait]
 pub trait VisionCapableLlm: LlmPort + Send + Sync {
     /// Generate a completion with both text and vision inputs.

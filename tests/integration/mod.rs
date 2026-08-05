@@ -1,4 +1,25 @@
 // tests/integration/mod.rs - Common integration test framework
+//
+// ## The live-API test suite's double gate
+//
+// `llm_live_api_tests` (below) is the actual skip mechanism for Epic 23 FR-23.4.4 and Epic 24
+// US-24.7's "skip gracefully when API keys are missing" requirement — not `require_api_key`'s
+// panic inside that module. Two gates apply together:
+//
+// 1. A `cfg(feature = "live-api-tests")` gate attribute on the `llm_live_api_tests` module
+//    below excludes it from compilation entirely unless the `live-api-tests` feature is
+//    explicitly enabled.
+// 2. Every one of that module's 13 tests additionally carries `#[ignore]`.
+//
+// Consequence: a default `cargo test --workspace` run — no feature flag, no `--ignored` — never
+// compiles `llm_live_api_tests` at all, so it skips the whole live-API suite cleanly without
+// ever reaching `require_api_key`. And because the module is absent from the compiled test
+// binary in that default configuration, the panic inside `require_api_key` cannot abort or
+// corrupt an unrelated test running concurrently in that default parallel run.
+//
+// The suite runs only when a developer explicitly opts in with
+// `cargo test --features live-api-tests -- --ignored`. See the recorded decision at
+// `.planning/decisions/0012-live-api-test-key-behaviour.md`.
 
 use std::env;
 use std::sync::Once;
