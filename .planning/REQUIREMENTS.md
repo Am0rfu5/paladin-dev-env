@@ -484,7 +484,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
 
 ### Verified gap closure (CLOSE)
 
-- [ ] **CLOSE-01**: Grove routing uses the LLM model from configuration instead of a hardcoded
+- [x] **CLOSE-01**: Grove routing uses the LLM model from configuration instead of a hardcoded
       literal. `crates/paladin-battalion/src/grove_service.rs:537` builds its routing `LlmRequest`
       with `model: "gpt-4".to_string(), // TODO: Make configurable` in production code
       (`#[cfg(test)]` begins at line 732), so Grove routing silently ignores the configured
@@ -559,7 +559,7 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       `execute()`-reachable behaviour by plan 06-09 (06-VERIFICATION.md truth 10); all four records
       now agree.
 
-- [ ] **CLOSE-02**: Everything VERIFY-02 classifies as *genuinely outstanding* in Epics 14, 22 and
+- [x] **CLOSE-02**: Everything VERIFY-02 classifies as *genuinely outstanding* in Epics 14, 22 and
       24 is either closed or explicitly deferred with a recorded reason. Scope is set by Phase 5's
       verdicts, not by the 155 open checkboxes in those three lists. If VERIFY-02 finds all three
       blocks satisfied by shipped code, this requirement closes with a recorded "no work
@@ -607,7 +607,27 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       `tests/integration/battalion_chain_of_command_herald_test.rs#chain_of_command_result_renders_through_json_herald`
       (`06-02-SUMMARY.md`).
 
-- [ ] **CLOSE-03**: The Phase 5 recorded answers that have code consequences are applied: the
+      **Re-affirmed 2026-08-05, plan 06-10.** `06-VERIFICATION.md` independently verified this
+      requirement against the tree (✓ SATISFIED, Requirements Coverage table). The checkbox above
+      was reverted alongside CLOSE-01's and CLOSE-03's only because CLOSE-01's gap blocked the whole
+      phase, not because anything in (a)-(d) or WARN-01 was found lacking. No new claim is made here;
+      the exercisers items (a)-(d) already cite were re-run at HEAD in this plan:
+      `cargo test -p paladin-ai --lib --features cli -- autonomous` (11 passed, naming
+      `test_load_paladin_config_without_autonomous_section`,
+      `test_load_paladin_config_with_autonomous_section`,
+      `test_no_autonomous_section_and_no_flags_is_a_no_op`,
+      `test_autonomous_flag_application_is_idempotent_and_independent` and
+      `test_autonomous_prompts_yaml_and_flag`) plus
+      `cargo test -p paladin-ai --lib --features cli -- test_yaml_enabled_feature_cannot_be_disabled_from_cli`
+      (1 passed — its name has no literal `autonomous` substring, so it does not match the
+      `-- autonomous` filter and was re-run explicitly); `cargo bench --no-run -p paladin-battalion`
+      (exit 0) and `grep -c 'benchmark_chain_of_command'
+      crates/paladin-battalion/benches/battalion_benchmarks.rs` → `2`; `git log --oneline -- .github/`
+      (no phase-6 commit — D-11 still honoured); and
+      `cargo test -p paladin-ai --test lib battalion_chain_of_command_herald_test` (2 passed) for
+      WARN-01.
+
+- [x] **CLOSE-03**: The Phase 5 recorded answers that have code consequences are applied: the
       VERIFY-06 answer on live-API-test key handling is reflected in
       `tests/integration/llm_live_api_tests.rs`, and the VERIFY-04 answer on the two vision
       surfaces is reflected in the tree (both retained and documented as such, or one deprecated
@@ -632,6 +652,19 @@ open-checkbox blocks contain. That is the forward work below, plus exactly one v
       traits remain, `require_api_key`'s panic stands unchanged, the four autonomous CLI flags
       remain, and `GroveExecutionService::new`'s signature is unchanged — so no migration note is
       owed under ROADMAP criterion 4.
+
+      **Re-affirmed 2026-08-05, plan 06-10.** `06-VERIFICATION.md` independently verified this
+      requirement against the tree (✓ SATISFIED, Requirements Coverage table). The checkbox above
+      was reverted alongside CLOSE-01's and CLOSE-02's only because CLOSE-01's gap blocked the whole
+      phase, not because anything in the paragraph above was found lacking. No new claim is made
+      here; the exercisers already cited are re-run at HEAD in this plan:
+      `grep -rn '#\[deprecated' crates/paladin-ports/src/output/vision_port.rs
+      crates/paladin-ports/src/output/vision_llm_port.rs` returns nothing (neither vision trait
+      deprecated or removed), and `cargo test --workspace` exits 0 (418+ test-binary results, 0
+      failed) — the parallel-run evidence behind the CLOSE-03 concurrency truth: this requirement's
+      deliverables are documentation-only with no `.rs` behavioural diff, so `tests/integration/mod.rs`'s
+      documented double gate (`#[cfg(feature = "live-api-tests")]` plus 13 `#[ignore]` attributes)
+      keeps the live-API module out of the parallel `cargo test --workspace` run entirely.
 
 ---
 
@@ -3836,9 +3869,9 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | VERIFY-04 | Phase 5 | Complete |
 | VERIFY-05 | Phase 5 | Complete |
 | VERIFY-06 | Phase 5 | Complete |
-| CLOSE-01 | Phase 6 | Gaps Found |
-| CLOSE-02 | Phase 6 | Gaps Found |
-| CLOSE-03 | Phase 6 | Gaps Found |
+| CLOSE-01 | Phase 6 | Complete |
+| CLOSE-02 | Phase 6 | Complete |
+| CLOSE-03 | Phase 6 | Complete |
 | ARCH-01 | Phase 7 | Pending |
 | ARCH-02 | Phase 7 | Pending |
 | ARCH-03 | Phase 7 | Pending |
