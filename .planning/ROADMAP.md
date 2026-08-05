@@ -455,6 +455,16 @@ completes** — CLOSE-02's scope is set by the three block verdicts from 05-05, 
   developer flow does not compose without the caller invoking a Herald directly. Recorded
   *"Unassigned — candidate for Phase 6"*; this milestone should either adopt it under CLOSE-02/03 or
   record a decision declining it.
+
+  **Outcome, recorded 2026-08-05 by plan 06-07:** this milestone **adopted** WARN-01 under CLOSE-02
+  rather than declining it. All three previously Herald-less services —
+  `crates/paladin-battalion/src/campaign_service.rs`, `chain_of_command_service.rs`, and
+  `commander.rs` — now carry the Herald triad (field, `with_herald` setter, format-wrapper),
+  replicated from the established `formation_service.rs`/`phalanx_service.rs` pattern, shipped by
+  plan 06-02. The composite Chain-of-Command developer flow has an executable end-to-end witness,
+  not just a compile check: `tests/integration/battalion_chain_of_command_herald_test.rs#chain_of_command_result_renders_through_json_herald`
+  drives a real `ChainOfCommandExecutionService::execute` over mock Paladins and formats the result
+  through a real `JsonHerald` (`06-02-SUMMARY.md`).
 **Success Criteria** (what must be TRUE):
 
   1. A Grove battalion configured with Anthropic or DeepSeek routes through *that* provider: the hardcoded `model: "gpt-4"` at `grove_service.rs:537` is gone, the routing model comes from configuration, and a test proves a non-OpenAI model reaches the LLM call.
