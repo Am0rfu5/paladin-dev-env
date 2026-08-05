@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`GroveConfig.routing_model: Option<String>`** — the operator-configured LLM model used by
+  Grove's `RoutingStrategy::LlmRouting` routing decisions, additive to the existing YAML/JSON
+  config surface (`#[serde(skip_serializing_if = "Option::is_none")]`).
+- **`GroveBuilder::routing_model(..)`** — the fluent setter for the field above.
+
+### Changed
+
+- **Breaking (runtime): Grove LLM routing now requires `routing_model` to be set.** A Grove whose
+  `routing_strategy` is `RoutingStrategy::LlmRouting` must set `routing_model` in its
+  configuration; until it does, LLM-based routing returns `BattalionError::RoutingError` naming
+  the missing configuration, instead of silently defaulting to OpenAI's `gpt-4` as it did before
+  this change. There is no fallback of any kind — no `routing_fallback` consultation, no
+  provider-model lookup, no default.
+  **Migration:** set `routing_model` in the Grove's YAML/JSON configuration (e.g.
+  `routing_model: "claude-3-5-sonnet-20241022"` or `routing_model: "deepseek-chat"`), or pass it
+  via `GroveBuilder::routing_model(..)` when building the Grove programmatically.
+  **Scope:** only Groves that explicitly select `RoutingStrategy::LlmRouting` are affected — a
+  default-constructed Grove is unaffected, since `RoutingStrategy::default()` is `KeywordMatch`.
+  See [ADR-0013](.planning/decisions/0013-grove-routing-model.md).
+
 ## [0.7.0] - 2026-08-03
 
 ### Phase 12.1 — Complete the Paladin Arsenal MCP client (dogfood)
