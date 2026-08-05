@@ -206,3 +206,9 @@ None - no external service configuration required.
 ---
 *Phase: 06-verified-gap-closure*
 *Completed: 2026-08-05*
+
+## Self-Check: PASSED
+
+- All 3 declared-scope files found: `src/application/cli/config/paladin_config.rs`, `src/application/cli/commands/agent.rs`, `src/application/cli/templates/paladin_template.rs`
+- This SUMMARY.md found at `.planning/phases/06-verified-gap-closure/06-03-SUMMARY.md`
+- All 4 task/fix commits verified present in `git log --oneline --all`: `94d093a`, `2d359ef`, `3b4857d`, `2d20ebc`
