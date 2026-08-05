@@ -907,4 +907,47 @@ mod tests {
             _ => panic!("Expected ValidationError for min_confidence > 1.0"),
         }
     }
+
+    // CLOSE-01 edge rows: ordering (serde stability) and concurrency (Send + Sync).
+    // 06-CONTEXT.md D-01.
+
+    #[test]
+    fn test_grove_config_omits_routing_model_when_none() {
+        let config = GroveConfig {
+            routing_model: None,
+            ..GroveConfig::default()
+        };
+
+        let json = serde_json::to_string(&config).expect("serialize GroveConfig");
+        assert!(
+            !json.contains("routing_model"),
+            "serialized GroveConfig should omit routing_model when None, got: {}",
+            json
+        );
+    }
+
+    #[test]
+    fn test_grove_config_deserializes_without_routing_model_key() {
+        // A document carrying every other GroveConfig field but no routing_model key,
+        // representing a config serialized before this change.
+        let json = r#"{
+            "routing_strategy": "keyword_match",
+            "fallback_tree": "general",
+            "similarity_threshold": 0.7,
+            "routing_fallback": "keyword",
+            "min_confidence": 0.5
+        }"#;
+
+        let config: GroveConfig = serde_json::from_str(json).expect("deserialize GroveConfig");
+        assert_eq!(config.routing_model, None);
+        assert_eq!(config.routing_strategy, RoutingStrategy::KeywordMatch);
+        assert_eq!(config.fallback_tree, Some("general".to_string()));
+    }
+
+    #[test]
+    fn test_grove_config_is_send_and_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<GroveConfig>();
+        assert_send_sync::<Grove>();
+    }
 }

@@ -493,9 +493,9 @@ impl GroveExecutionService {
         // Check that an operator-configured routing model is present (D-01/D-02). A `None`
         // value or a string that is empty after trimming are treated identically as
         // unconfigured. There is no fallback of any kind here: this guard must not consult
-        // `routing_fallback`, must not call `handle_routing_failure`, and must not call
-        // `get_available_models()` — a misconfigured Grove fails loudly rather than silently
-        // substituting a model the operator did not choose.
+        // `routing_fallback`, must not call `handle_routing_failure`, and must not query the
+        // LLM port for its available models — a misconfigured Grove fails loudly rather than
+        // silently substituting a model the operator did not choose.
         let routing_model = grove
             .node
             .config
@@ -1723,6 +1723,140 @@ mod tests {
         assert!(
             mock.recorded_models().is_empty(),
             "no LLM call should have been made"
+        );
+    }
+
+    // CLOSE-01 edge rows: empty, adjacency, concurrency (04-CONTEXT.md D-02, <specifics>).
+
+    #[tokio::test]
+    async fn test_llm_routing_errors_when_routing_model_empty() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+
+        for blank in ["", "   "] {
+            let registry = HashMapPaladinRegistry::new();
+            let mut grove = create_test_grove();
+            grove.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+            grove.node.config.routing_model = Some(blank.to_string());
+
+            let mock = Arc::new(RecordingLlmMock::new());
+            let service = GroveExecutionService::new(
+                Arc::new(MockPaladinPort),
+                None,
+                Some(mock.clone()),
+                Arc::new(registry),
+            );
+
+            let result = service.route_by_llm(&grove, "any task").await;
+
+            match result {
+                Err(BattalionError::RoutingError(msg)) => {
+                    assert!(
+                        msg.contains("routing_model"),
+                        "error message should name routing_model for input {:?}, got: {}",
+                        blank,
+                        msg
+                    );
+                }
+                other => panic!(
+                    "Expected RoutingError naming routing_model for input {:?}, got {:?}",
+                    blank, other
+                ),
+            }
+            assert!(
+                mock.recorded_models().is_empty(),
+                "no LLM call should have been made for input {:?}",
+                blank
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_llm_routing_missing_model_error_precedes_keyword_fallback() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+        let registry = HashMapPaladinRegistry::new();
+
+        // create_test_grove()'s "backend_expert" agent carries keywords ("rust", "backend",
+        // "api", "database") that would match this task under keyword routing, so a
+        // successful keyword-fallback result would be a false pass for this test.
+        let mut grove = create_test_grove();
+        grove.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+        grove.node.config.routing_fallback = "keyword".to_string();
+        // routing_model left unset (default None)
+
+        let mock = Arc::new(RecordingLlmMock::new());
+        let service = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(mock.clone()),
+            Arc::new(registry),
+        );
+
+        let result = service
+            .route_by_llm(&grove, "rust backend api development")
+            .await;
+
+        match result {
+            Err(BattalionError::RoutingError(msg)) => {
+                assert!(
+                    msg.contains("routing_model"),
+                    "error should name routing_model, not a keyword-fallback failure, got: {}",
+                    msg
+                );
+            }
+            other => panic!(
+                "Expected the missing-routing_model RoutingError to precede keyword fallback, got: {:?}",
+                other
+            ),
+        }
+        assert!(
+            mock.recorded_models().is_empty(),
+            "no LLM call should have been made"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_concurrent_groves_use_their_own_routing_model() {
+        use crate::in_memory_registry::HashMapPaladinRegistry;
+
+        let mock = Arc::new(RecordingLlmMock::new());
+
+        let mut grove_a = create_test_grove();
+        grove_a.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+        grove_a.node.config.routing_model = Some("deepseek-chat".to_string());
+
+        let mut grove_b = create_test_grove();
+        grove_b.node.config.routing_strategy = RoutingStrategy::LlmRouting;
+        grove_b.node.config.routing_model = Some("claude-3-5-sonnet-20241022".to_string());
+
+        let service_a = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(mock.clone()),
+            Arc::new(HashMapPaladinRegistry::new()),
+        );
+        let service_b = GroveExecutionService::new(
+            Arc::new(MockPaladinPort),
+            None,
+            Some(mock.clone()),
+            Arc::new(HashMapPaladinRegistry::new()),
+        );
+
+        let (result_a, result_b) = tokio::join!(
+            service_a.route_by_llm(&grove_a, "rust backend development task"),
+            service_b.route_by_llm(&grove_b, "rust backend development task")
+        );
+
+        assert!(result_a.is_ok(), "Grove A should route successfully");
+        assert!(result_b.is_ok(), "Grove B should route successfully");
+
+        let mut recorded = mock.recorded_models();
+        recorded.sort();
+        assert_eq!(
+            recorded,
+            vec![
+                "claude-3-5-sonnet-20241022".to_string(),
+                "deepseek-chat".to_string(),
+            ]
         );
     }
 }
