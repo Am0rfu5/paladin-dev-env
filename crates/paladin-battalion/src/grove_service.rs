@@ -167,6 +167,10 @@ impl GroveExecutionService {
     ///
     /// Returns `BattalionError` if:
     /// - Routing fails and no fallback is available
+    /// - `routing_strategy` is `RoutingStrategy::LlmRouting` and `routing_model` is absent or
+    ///   blank (`BattalionError::RoutingError`, naming `routing_model`) — this specific
+    ///   configuration error is excluded from all fallback handling; it never consults
+    ///   `fallback_tree` or default agent selection (D-02)
     /// - Required embedding port is missing for SemanticSimilarity strategy
     /// - Agent not found in registry (`PaladinNotFound`)
     /// - Paladin execution fails

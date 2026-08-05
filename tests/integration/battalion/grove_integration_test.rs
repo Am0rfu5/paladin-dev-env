@@ -313,9 +313,14 @@ impl paladin_ports::output::llm_port::LlmPort for RecordingRoutingLlmMock {
     async fn generate(
         &self,
         request: paladin_ports::output::llm_port::LlmRequest,
-    ) -> Result<paladin_ports::output::llm_port::LlmResponse, paladin_ports::output::llm_port::LlmError>
-    {
-        self.recorded_models.lock().unwrap().push(request.model.clone());
+    ) -> Result<
+        paladin_ports::output::llm_port::LlmResponse,
+        paladin_ports::output::llm_port::LlmError,
+    > {
+        self.recorded_models
+            .lock()
+            .unwrap()
+            .push(request.model.clone());
 
         let response_json = r#"{
             "tree_name": "Team A",
