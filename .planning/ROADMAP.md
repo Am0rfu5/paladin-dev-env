@@ -473,9 +473,9 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 06-04-PLAN.md — CLOSE-02 / Epic 24 cluster 1.0: ChainOfCommand benchmark and its dated baseline (wave 2)
-- [ ] 06-05-PLAN.md — CLOSE-03: vision entry-point rustdoc, the unimposed-encryption verdict, ADR-0011 amendment, live-API doc correction (wave 2)
-- [ ] 06-06-PLAN.md — CLOSE-01 record: ADR-0013, PROMOTION index, CHANGELOG breaking-change entry, PROJECT Key Decisions row (wave 2)
+- [x] 06-04-PLAN.md — CLOSE-02 / Epic 24 cluster 1.0: ChainOfCommand benchmark and its dated baseline (wave 2)
+- [x] 06-05-PLAN.md — CLOSE-03: vision entry-point rustdoc, the unimposed-encryption verdict, ADR-0011 amendment, live-API doc correction (wave 2)
+- [x] 06-06-PLAN.md — CLOSE-01 record: ADR-0013, PROMOTION index, CHANGELOG breaking-change entry, PROJECT Key Decisions row (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
