@@ -555,7 +555,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 07-11-PLAN.md — Ledger: Milestone 5 Epics 5-6, 16 rows (wave 7)
+- [x] 07-11-PLAN.md — Ledger: Milestone 5 Epics 5-6, 16 rows (wave 7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
