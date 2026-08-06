@@ -140,6 +140,13 @@ None - no external service configuration required.
 - `REQ-workspace-ci-upgrade`'s two named forward-owners (Phase 15/PIPE-04 for the toolchain-action sweep, Phase 8/DEBT-03 for the `paladin-ports` doctest exclusion) are ready inputs for those phases' own planning.
 - `REQ-crate-isolation-ci`'s row carries a `human-check` per the plan's `<verify>` block — a human should open `ci.yml:304` and confirm it is the per-crate isolated build matrix before this row is treated as fully closed (07-VALIDATION.md §Manual-Only Verifications, row 1).
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/ledgers/milestone-04-06.md`
+- FOUND: `.planning/phases/07-workspace-ground-truth-recorded-answers/07-11-SUMMARY.md`
+- FOUND: commit `5fb1578` (ledger row content)
+- FOUND: commit `40fc623` (this summary)
+
 ---
 *Phase: 07-workspace-ground-truth-recorded-answers*
 *Completed: 2026-08-06*
