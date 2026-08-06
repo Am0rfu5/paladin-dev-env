@@ -527,7 +527,7 @@ verified and are not re-planned; CLOSE-02 and CLOSE-03 are ✓ SATISFIED and get
 Plans:
 **Wave 1**
 
-- [ ] 07-01-PLAN.md — Tracer: ledger scaffold with 115 rows and Milestone 6 Epic 3 fully cited, REQUIREMENTS.md reduced to a pointer, `STRUCTURE.md` corrected to ten crates, ADR-0014 and the first `.project/` annotation (wave 1)
+- [x] 07-01-PLAN.md — Tracer: ledger scaffold with 115 rows and Milestone 6 Epic 3 fully cited, REQUIREMENTS.md reduced to a pointer, `STRUCTURE.md` corrected to ten crates, ADR-0014 and the first `.project/` annotation (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
