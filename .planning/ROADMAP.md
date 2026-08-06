@@ -536,7 +536,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 07-04-PLAN.md — ADR-0015 dependency allowlist and purity invariant, ADR-0017 LLM config bridge, plus the Epic 4 llm-extraction PRD annotation (wave 3)
+- [x] 07-04-PLAN.md — ADR-0015 dependency allowlist and purity invariant, ADR-0017 LLM config bridge, plus the Epic 4 llm-extraction PRD annotation (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
