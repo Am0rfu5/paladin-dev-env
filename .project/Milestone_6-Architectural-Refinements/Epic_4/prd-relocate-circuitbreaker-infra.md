@@ -1,5 +1,14 @@
 # PRD: Relocate `CircuitBreaker` to the Infrastructure Layer
 
+> **Correction (dated 2026-08-06, ADR-0018):** This PRD's Goal 7 and FR-4.11 no-shim position is
+> the recorded answer — confirmed against the Milestone 6 overview's contrary Epic 4 Acceptance
+> Criterion 5, which required a backward-compatible facade re-export and is annotated superseded.
+> See
+> [`.planning/decisions/0018-m6-facade-reexport-policy.md`](../../../.planning/decisions/0018-m6-facade-reexport-policy.md).
+> Separately, FR-4.12's `STABLE_API.md` deliverable has relocated into the mdbook at
+> `docs/src/api-reference/stable-api.md`. Original text is retained below with inline
+> corrections — nothing is deleted.
+
 **Feature Name:** relocate-circuitbreaker-infra
 **Milestone:** 6 — Architectural Refinements
 **Epic:** 4
@@ -49,6 +58,10 @@ its module registration. Update `STABLE_API.md` to record the new canonical path
    canonical path.
 7. Remove `circuit_breaker` from the `application/use_cases/paladin/mod.rs` module
    registration (no re-export left behind — old path is intentionally broken).
+
+   **Confirmed (ADR-0018):** this no-shim position is ratified. The Milestone 6 overview's
+   contrary Epic 4 Acceptance Criterion 5 (facade re-export required) is annotated superseded.
+
 8. Update `STABLE_API.md` to record
    `paladin::infrastructure::resilience::circuit_breaker` as the new stable module path.
 9. `cargo build --workspace` must succeed and `cargo test` must pass.
@@ -243,7 +256,15 @@ Remove the `pub mod circuit_breaker;` line from
 `paladin::application::use_cases::paladin::circuit_breaker` must no longer resolve after
 this Epic — no `pub use` re-export is added.
 
-### 4.12 `STABLE_API.md` Update
+**Confirmed (ADR-0018):** this no-shim position is ratified. The Milestone 6 overview's contrary
+Epic 4 Acceptance Criterion 5 (facade re-export required) is annotated superseded.
+
+### 4.12 ~~`STABLE_API.md`~~ `docs/src/api-reference/stable-api.md` Update
+
+**Corrected (D-18, ADR-0018, dated 2026-08-06):** the root `STABLE_API.md` deliverable this
+requirement named has relocated into the mdbook — it is not missing. The clause below now applies
+to `docs/src/api-reference/stable-api.md`, which already carries the canonical-path change for
+`CircuitBreaker`/`CircuitState`. Original text retained below, superseded.
 
 Update `STABLE_API.md` to:
 - Remove the entry for `paladin::application::use_cases::paladin::circuit_breaker`.
