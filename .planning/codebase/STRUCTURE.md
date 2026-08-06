@@ -247,6 +247,13 @@ paladin/
 
 ## Directory Purposes
 
+**Corrected 2026-08-06 (Phase 7, D-05):** this section previously described only 6 of the workspace's
+10 library crates (`paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-llm`,
+`paladin-memory`, `paladin-storage`), even though this map sits third in the project's precedence
+order — above `intel/` and every PRD — and the top-level directory tree above already listed all ten
+correctly. The five entries below (`paladin-herald`, `paladin-notifications`, `paladin-content`,
+`paladin-web`, `doc-examples`) close that gap; the six original entries are unchanged.
+
 **`crates/`:**
 - Purpose: Workspace member crates (leaf crates)
 - Contains: Domain, ports, adapters, orchestration, content processing
@@ -281,6 +288,35 @@ paladin/
 - Purpose: Repository and persistence adapters
 - Contains: SQLite, MySQL, Redis queue, MinIO/S3, scheduler
 - Key files: `src/{sqlite,mysql,redis,minio,scheduler}/*.rs`
+
+**`crates/paladin-herald/`:**
+- Purpose: Herald output-formatter adapters (JSON, Markdown, Table)
+- Contains: JSON, Markdown (via `colored`) and Table (via `comfy-table`) Herald implementations
+- Key files: `src/{json_herald,markdown_herald,table_herald}.rs`
+
+**`crates/paladin-notifications/`:**
+- Purpose: Notification adapter implementations (email, push, system)
+- Contains: Email (via `lettre`/`handlebars`, feature-gated), push, and system notification adapters
+- Key files: `src/{email_notification_adapter,push_notification_adapter,system_notification_adapter}.rs`
+
+**`crates/paladin-content/`:**
+- Purpose: Content processing adapters and use-case services
+- Contains: Web scraping, RSS, PDF extraction, tokenization, and LLM-backed content analysis
+  (optional `paladin-llm` dependency behind the `llm` feature)
+- Key files: `src/adapters/`, `src/services/`
+
+**`crates/paladin-web/`:**
+- Purpose: Web server adapters (Axum) exposing the agent orchestration API over HTTP
+- Contains: Agent/job/user controllers, auth middleware, rate limiting, OpenAPI/Swagger UI, SSE
+  streaming
+- Key files: `src/{app,agent_controller,agent_auth,auth_middleware,openapi}.rs`
+
+**`crates/doc-examples/`:**
+- Purpose: Compile-verified documentation examples for the Paladin book (`publish = false`, not
+  published to crates.io)
+- Contains: Deployment-topology examples (HTTP service host, queue worker, sidecar), orchestration
+  and content-bridge examples, README quick-example verification
+- Key files: `src/{deployment_topologies,http_service_host,queue_worker,sidecar,bridge,orchestration,content,readme}.rs`
 
 **`src/`:**
 - Purpose: Facade crate (composition root and assembly point)
