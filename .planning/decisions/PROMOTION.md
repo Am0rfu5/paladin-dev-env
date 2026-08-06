@@ -33,8 +33,21 @@ the plans that follow in this same phase):
 | 0011 | `vision-port-surfaces` | Vision port surfaces and the encryption-at-rest disposition (Phase 5) |
 | 0012 | `live-api-test-key-behaviour` | Live-API-test missing-key behaviour (Phase 5) |
 | 0013 | `grove-routing-model` | Grove routing model from configuration, per D-01/D-02/D-03 (Phase 6) |
+| 0014 | `milestone-4-6-tier-numbering` | Milestone 4-6 tier numbering convention (Phase 7) |
+| 0015 | `core-ports-dependency-allowlist` | `paladin-core` / `paladin-ports` dependency allowlist and purity invariant (Phase 7) |
+| 0016 | `port-value-type-ownership` | Port value-type ownership — `paladin-core` canonical (Phase 7) |
+| 0017 | `llm-config-bridge-location` | LLM configuration bridge location (Phase 7) |
+| 0018 | `m6-facade-reexport-policy` | Milestone 6 facade re-export policy and its version consequence (Phase 7) |
+| 0019 | `binary-target-architecture` | Binary-target architecture and per-binary purpose (Phase 7) |
+| 0020 | `build-benchmark-per-scenario` | Build-time benchmark target restated per scenario (Phase 7) |
+| 0021 | `cli-application-layer-placement` | CLI placement in the application layer (Phase 7) |
 
-**Next free ADR number: 0014**
+**Next free ADR number: 0022**
+
+*Dated note, 2026-08-06 (plan 07-13):* the line advances to **0022**, not 0021, because D-25a
+(`07-CONTEXT.md`) allocated an eighth ADR — 0021, promoting Part B candidate 2 below — beyond the
+seven D-25 originally reserved (0014-0020). A reader who expects the jump from thirteen prior ADRs
+to land on 0021 should read this note rather than treat 0022 as a skipped number.
 
 Phases 5, 7, 10 and 13 take the next free number from this line when they author further ADRs —
 they do not need to `ls` the directory to find it. Each phase updates this line when it appends.
@@ -112,10 +125,11 @@ what it decides in one line, and an explicit **Owner phase**.
 1. **`Milestone_5/Epic_1/decisions/battalion-result-upward-dependency-decision.md`** (run 3) —
    settles where `PaladinResult`, `StopReason`, `TokenUsage`, `RegistryError` and `HandoffError`
    live (`paladin-core`); shipped code implements it, but a later PRD outranks it on paper.
-   **Owner phase: Phase 7.**
+   **Owner phase: Phase 7. Closed 2026-08-06 by ADR-0016** (`0016-port-value-type-ownership.md`).
 2. **`Epic_17.5/epic17-5.md`** (run 2) — the CLI belongs in `src/application/cli` as an input
    adapter, not infrastructure; already applied in code, also outranked by a PRD that says
-   otherwise. **Owner phase: Phase 7.**
+   otherwise. **Owner phase: Phase 7. Closed 2026-08-06 by ADR-0021**
+   (`0021-cli-application-layer-placement.md`).
 3. **`Milestone_7/Epic_4/rustsec-remediation-plan.md`** (run 4) — formal risk acceptance of two
    RustSec advisories, owner Platform Security, **review/expiry target 2026-09-30 — the only dated
    item in the entire 263-document corpus**. **Owner phase: Phase 9.**

@@ -283,3 +283,140 @@ exercised during this task (2026-08-06): citations re-grepped fresh against the 
 | REQ-circuitbreaker-test-updates | satisfied | Epic 4 PRD §4.7 (`:203-219`) names three workspace test files needing the import update: `tests/cli/paladin_execution_test.rs`, `tests/cli/tool_integration_test.rs`, `tests/cli/error_handling_test.rs`. All three confirmed this task at the new path (`use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;` at `paladin_execution_test.rs:9`, `error_handling_test.rs:12`, `tool_integration_test.rs:14`), zero remaining references to the old path (same grep as the row above extended to `tests/`). Exercised by `cargo test --offline -p paladin-ai --test cli --features cli error_handling` (run this task) — 16 passed, 0 failed, including 4 `error_handling_test::*` cases that construct a `CircuitBreaker` through this exact import and 2 execution tests (`paladin_execution_test::test_paladin_error_handling`, `phalanx_execution_test::test_phalanx_error_handling`) exercising it transitively through `PaladinExecutionService`. `tests/unit/circuit_breaker_test.rs` (5 inline `#[test]` attributes, grepped this task) is the crate's own dedicated CircuitBreaker suite, exercised in the `REQ-circuitbreaker-relocation` row's 6-test run above. |
 | REQ-circuitbreaker-old-path-retired | superseded by shipped code | Cites ADR-0018 (`.planning/decisions/0018-m6-facade-reexport-policy.md`), which records the old path as intentionally unresolvable with no re-export. Confirmed this task: `grep -rn "application::use_cases::paladin::circuit_breaker\|application::services::paladin::circuit_breaker" src/ examples/ tests/` returns exactly one hit — `docs/src/api-reference/stable-api.md:619`, which is prose *describing* the historical path as part of a canonical-path-change note, not a live `use` statement or re-export. `src/infrastructure/resilience/circuit_breaker.rs` (the moved file, cited above) contains no `pub use` shim pointing back at the old location, and `src/application/services/paladin/mod.rs` (checked this task) declares no `circuit_breaker` module. This matches Epic 4 Goal 7 / FR-4.11 (`prd-relocate-circuitbreaker-infra.md:50-51,239-244`, "no re-export left behind — old path is intentionally broken") and contradicts the milestone overview's Epic 4 Acceptance Criterion 5, which plan 07-05 annotated superseded per ADR-0018. |
 | REQ-circuitbreaker-stable-api-update | relocated | Epic 4 FR-4.12 named updating root-level `STABLE_API.md`; that file does not exist at the root (confirmed this task via `find . -maxdepth 1 -iname "STABLE_API.md"`, no result). The deliverable ships as `docs/src/api-reference/stable-api.md`, confirmed present and current this task: `:614-627` carries a dedicated "Resilience Types" section with a "Canonical path change (Milestone 6, Epic 4)" callout stating `CircuitBreaker` and `CircuitState` "were relocated ... The old path is retired and no longer resolves," and lists both types at `paladin::infrastructure::resilience::circuit_breaker::{CircuitBreaker,CircuitState}` as 🟢 Stable. This is the D-04(b) mdbook-relocation caveat, not a gap — FR-4.12's "update `STABLE_API.md`" now applies to this mdbook chapter per plan 07-05's re-pointing. Where this row could also be argued `superseded by shipped code` (the mdbook content *is* a different, updated answer to the same deliverable), the ledger's tie-break rule is applied and `relocated` is taken, because D-02 exists to preserve the moved-not-missing signal. `final-api.txt` and `api_surface_current.txt` both exist at the repo root (confirmed this task via `test -f`), but their regeneration currency is not confirmed by this task — the `api-surface` CI job that would regenerate them is recorded broken by a stale baseline path (DEBT-01, `.project/current-exports.txt` vs. the job's literal `project/current-exports.txt`), so their presence is not evidence they are current. |
+
+## Summary
+
+This section is written last, by plan 07-13, after all 115 rows above carry a verdict. Every count
+in it was produced by counting the rows in this file — none is re-judged, and none is adjusted to
+make a more flattering narrative. `milestone-02-03.md`'s own summary is the shape this one copies.
+
+### Verdict distribution
+
+| Verdict | Count |
+|---|---|
+| `satisfied` | 71 |
+| `present, unproven` | 15 |
+| `genuinely outstanding` | 3 |
+| `deferred with reason` | 1 |
+| `superseded by shipped code` | 12 |
+| `relocated` | 5 |
+| `diverged` | 8 |
+| **Total** | **115** |
+
+Counted by `grep -oP '^\| REQ-[a-z0-9-]+ \| \K[a-z, ]+(?= \|)' .planning/ledgers/milestone-04-06.md
+\| sort \| uniq -c` against the finished file, re-run this task. 71 + 15 + 3 + 1 + 12 + 5 + 8 = 115,
+matching `grep -c '^\| REQ-'`'s own count exactly. Zero unverdicted stub rows remain (the stub token
+this ledger's own verify block checks for prints a `0` count, re-run this task) and zero duplicate
+`REQ-*` IDs (`grep -o '^\| REQ-[a-z0-9-]*' .planning/ledgers/milestone-04-06.md \| sort \| uniq -d`
+prints nothing, re-run this task).
+
+### Per-milestone roll-up
+
+| Milestone | satisfied | present, unproven | genuinely outstanding | deferred with reason | superseded by shipped code | relocated | diverged | Total |
+|---|---|---|---|---|---|---|---|---|
+| 4 (Epics 1-3) | 9 | 6 | 2 | 0 | 2 | 2 | 4 | 25 |
+| 5 (Epics 1-6) | 37 | 6 | 1 | 1 | 7 | 2 | 2 | 56 |
+| 6 (Epics 1-4) | 25 | 3 | 0 | 0 | 3 | 1 | 2 | 34 |
+| **Total** | **71** | **15** | **3** | **1** | **12** | **5** | **8** | **115** |
+
+**How each milestone's own checkbox claim held up, per D-06's per-milestone heuristic (this
+corpus's dominant record-understates-the-tree pattern does not apply uniformly here):**
+
+- **Milestone 4** was 93.2% complete with 20 open items, all in Epic 2. Run-3 verification found
+  those 20 **corroborated** — real remaining work, not a stale count. This ledger's Epic 2 section
+  is the row-level evidence: `REQ-api-surface-ci` and `REQ-deprecation-warnings` verdict
+  `genuinely outstanding`, and `REQ-port-trait-rustdoc`, `REQ-doc-build-clean`,
+  `REQ-api-surface-reduction-target` and `REQ-cli-docs` verdict `present, unproven` — six of Epic
+  2's nine rows short of `satisfied`, concentrated exactly where the open checkboxes said they
+  would be.
+- **Milestone 5** was 96.4% complete with 17 open items. Run-3 verification found those 17
+  **mostly contradicted** by the tree — the crates, the CI job and the benchmark report all ship
+  despite the open checkboxes. This ledger's 37-of-56 `satisfied` rate for Milestone 5, the highest
+  of the three, is the row-level evidence: the open-checkbox count overstated how much was
+  genuinely left.
+- **Milestone 6** was 100% complete with 0 open items, **corroborated** — all four relocations
+  (`application_settings.rs` decomposition, orchestration-service relocation, Maneuver DSL
+  co-location, CircuitBreaker relocation) verify shipped, with a 25-of-34 `satisfied` rate and zero
+  `genuinely outstanding` or `deferred with reason` rows.
+
+### Nested outstanding items
+
+**Count: 0.** No row in this ledger uses the blank-first-two-column nested-row format the
+primary-key convention permits (D-00e) — confirmed this task via `grep -n '^| *|'
+.planning/ledgers/milestone-04-06.md`, which prints nothing. Every task-level finding that a lesser
+discipline might have promoted to its own nested row is instead folded inline into its host
+`REQ-*` row's own Evidence cell, and several rows say so explicitly: `REQ-core-container-extraction`
+("Recorded here inline per this plan's instruction, not reopened as a nested outstanding item"),
+`REQ-config-yml-backcompat` ("Recorded as a finding in this cell ... not as a nested outstanding
+item"), and `REQ-manager-services-retained` (the deferred `user_service.rs` relocation, "folded in
+here as a finding, not reopened as a nested item"). REQUIREMENTS.md's Milestone 4-6 pointer states
+this same figure, 0.
+
+### Forward scope
+
+Five code consequences this phase found, each recorded here with its owning phase and requirement,
+each recorded-here-executed-elsewhere:
+
+- **Phase 8 / DEBT-05** receives the canonical `TokenUsage` target ADR-0016 names:
+  `crates/paladin-core/src/platform/container/token_usage.rs:13` is canonical; the two duplicates at
+  `battalion/mod.rs:497` and `llm_analysis_service.rs:51` are collapsed into re-exports of it.
+  DEBT-05 was blocked on this ADR landing; it now has.
+- **Phase 8's CLI-isolation requirement** receives ADR-0019's two-part finding: `structopt`'s only
+  consumer in the tree is the un-gated `paladin` binary (`src/main.rs`), so `structopt` cannot be
+  marked `optional = true` until `src/main.rs`'s fate is decided (gate it, migrate it to `clap`, or
+  retire it); and `paladin-herald` re-introduces two of the three CLI-only dependencies
+  (`colored`, `comfy-table`) unconditionally, with no `[features]` section at all, so gating the
+  root manifest's copies alone cannot satisfy FR5.4's zero-CLI-dependency bar. The recorded
+  "three-line fix" is wrong for one of its three lines and has a hole `paladin-herald` opens.
+- **Phase 11 / FACADE-02 D1** receives ADR-0018's re-export policy: the no-shim posture stands,
+  Epic 2's Open Question 4 is confirmed no, and FACADE-02 D1 applies this answer rather than
+  re-opening it.
+- **Phase 15** receives ADR-0015's `cargo tree`-based allowlist-enforcement candidate: the
+  enforceable invariant (no provider SDK, transport client, storage driver, or web framework in
+  `paladin-core`/`paladin-ports`) is stated and holds today, but nothing mechanically checks it on
+  every build. Phase 15 may build that check against this ADR's invariant.
+- **Phase 16** receives ADR-0019's user-facing binary-architecture mdbook page: the ADR plus this
+  ledger's rows satisfy FR9.3's *record*, not its *user-facing deliverable*. Phase 16's
+  documentation-currency work is the executor of that deliverable.
+
+**ADR-0020 declined the benchmark re-measurement, with the reason recorded in the ADR itself, so no
+phase inherits it.** The report's own recommended follow-up — re-measuring against a mid-tree
+monolith baseline — is declined because that pre-workspace tree no longer exists in buildable form
+three milestones later; this is a closed question, not forward work.
+
+### Citation resolution
+
+Every row in this ledger's own Evidence cell records at least one command, grep, or file read
+executed *during the task that wrote it*, not transcribed from an earlier document — 117
+occurrences of `this task` / `re-confirmed` / `re-measured` / `re-verified` / `re-grepped` /
+`re-counted` phrasing across the 115 rows (`grep -c 'this task\|re-confirmed\|re-measured\|
+re-verified\|re-grepped\|re-counted\|confirmed this' .planning/ledgers/milestone-04-06.md`, re-run
+this task), confirming the D-01 evidence bar's "nothing exercises it" carve-out was checked fresh
+per row rather than assumed from `intel/code-verification.md` or REQUIREMENTS.md's run-3 text.
+
+**One confirmed drift, recorded once at the head note (above) rather than repeated here:** the
+`crate-isolation` job in `.github/workflows/ci.yml` is cited by this ledger at **line 304**
+(re-confirmed this task via `grep -n 'crate-isolation:' .github/workflows/ci.yml`), not line 228 —
+`intel/code-verification.md`'s citation of that job at line 228 is stale and was not copied
+forward into this ledger.
+
+**One further citation-accuracy finding, closed by this plan rather than left in the ledger for a
+reader to trip over:** `REQ-battalion-facade-shim`'s row (Milestone 5 Epic 3) recorded a residual
+finding during plan 07-10 — the literal `src/application/use_cases/battalion/` path ADR-0018 cites
+as retired is indeed gone, but the shim *mechanism* survives, carried forward by the unrelated
+Milestone 8 Epic 4 `use_cases` → `services` rename, at `src/application/services/battalion/mod.rs`
+(re-confirmed this task: the file's own header comment calls itself "a thin shim"), consumed by 36
+files (`src/` 5, `tests/` 18, `examples/` 13 — `grep -rln 'application::services::battalion' src/
+tests/ examples/ crates/`, re-run this task, crates/ returns zero). ADR-0018 clause (iv) is amended
+in place this task to state that narrower fact — see `.planning/decisions/0018-m6-facade-reexport-policy.md`.
+This does not reopen the no-new-shim policy question ADR-0018 clause (i) settles for the Epic
+2/Epic 4 orchestration and CircuitBreaker relocations; it narrows one adjacent historical claim in
+the same ADR's clause (iv) to match what shipped.
+
+**A third finding worth recording here even though it required no fix:** plan 07-12 found, and this
+task re-confirmed, that `Cargo.toml:55` hardcodes `paladin-llm`'s own `features = ["openai",
+"anthropic", "deepseek", "mock", "vision"]` on the dependency declaration itself, decoupled from
+the root crate's `llm-openai`/`llm-anthropic`/`llm-deepseek`/`vision` flags — a third divergence for
+`REQ-feature-flag-matrix` the corpus had not previously recorded, already inline in that row's
+Evidence cell (Milestone 4 Epic 1) rather than repeated as a separate finding here. Recorded, not
+fixed, per this plan's record-only boundary.

@@ -2837,8 +2837,9 @@ rows, each with a `file:line` citation and, where the verdict is `satisfied`, a 
 example, command or CI job that exercises it. The ledger records the real workspace shape of ten
 library crates plus `doc-examples` plus the root facade package `paladin-ai` — replacing both the
 six crates the Milestone 5/6 overviews assume and the nine-crate figure this planning set carried
-before run 3. Nested outstanding-item count is finalised by plan 07-13. Phases 10 and 13 add the
-remaining sibling ledger files (`milestone-07-08.md`, `milestone-09-12.md`) in the same directory.
+before run 3. Nested outstanding-item count: **0** — no row uses the blank-first-two-column
+nested-row format, per the ledger's own `## Summary` section. Phases 10 and 13 add the remaining
+sibling ledger files (`milestone-07-08.md`, `milestone-09-12.md`) in the same directory.
 
 ---
 
