@@ -152,3 +152,9 @@ None — no external service configuration required.
 ---
 *Phase: 07-workspace-ground-truth-recorded-answers*
 *Completed: 2026-08-06*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/07-workspace-ground-truth-recorded-answers/07-10-SUMMARY.md`
+- FOUND: commit `23ea295` (ledger rows)
+- FOUND: commit `c41d774` (this SUMMARY)
