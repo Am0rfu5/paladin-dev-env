@@ -531,8 +531,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 07-02-PLAN.md — ADR-0016 port value-type ownership plus the Epic 2 ports-extraction PRD annotation; carries the one-way reversibility gate and unblocks Phase 8 / DEBT-05 (wave 2)
-- [ ] 07-03-PLAN.md — ARCH-02 pointer banners on the eight byte-equivalent overview extracts, and the seven-versus-eight-versus-nine count reconciliation recorded in ADR-0014 (wave 2)
+- [x] 07-02-PLAN.md — ADR-0016 port value-type ownership plus the Epic 2 ports-extraction PRD annotation; carries the one-way reversibility gate and unblocks Phase 8 / DEBT-05 (wave 2)
+- [x] 07-03-PLAN.md — ARCH-02 pointer banners on the eight byte-equivalent overview extracts, and the seven-versus-eight-versus-nine count reconciliation recorded in ADR-0014 (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
