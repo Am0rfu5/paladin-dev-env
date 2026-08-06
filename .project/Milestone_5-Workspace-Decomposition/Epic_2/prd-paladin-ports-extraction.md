@@ -1,5 +1,25 @@
 # PRD: Extract `paladin-ports` Crate
 
+> **Correction (dated 2026-08-06, ADR-0016 and ADR-0014):** FR-7 and FR-10 as written would move
+> `PaladinResult`, `StopReason` and `TokenUsage` out of `paladin-core` and back into this crate,
+> reintroducing the upward dependency the Milestone 5 Epic 1 decision record removed. See
+> [`../../../.planning/decisions/0016-port-value-type-ownership.md`](../../../.planning/decisions/0016-port-value-type-ownership.md)
+> for the corrected answer: `paladin-core` owns those three types, and this crate holds thin
+> re-exports, extending FR-11's existing `RegistryError` carve-out.
+>
+> Separately, ADR-0014
+> ([`../../../.planning/decisions/0014-milestone-4-6-tier-numbering.md`](../../../.planning/decisions/0014-milestone-4-6-tier-numbering.md))
+> flagged a possible §1 "Milestone 1 / Epic 2" cross-reference in this document (CONTEXT.md D-08(5),
+> mirroring `prd-paladin-llm-extraction.md` Non-Goal 2's "hardened in Milestone 1 / Epic 2").
+> Re-verified during this correction (`grep -in "milestone 1"` and `grep -in "milestone-1"` across
+> the whole document, 2026-08-06): no such text exists in this document as it currently ships —
+> only this file's own correct self-identification as "Milestone 5 (Tier 2)" below. No §1 numbering
+> correction is made here for that reason. Inside these three milestones, "Milestone 1" would mean
+> the Tier 1 label for Milestone 4 under ADR-0014's convention, if such a reference is ever added to
+> this document in the future.
+>
+> Original text is retained below with inline corrections; nothing is deleted.
+
 **Epic:** Epic 2 — Extract `paladin-ports` Crate
 **Milestone:** Milestone 5 (Tier 2) — Cargo Workspace Split
 **Project:** Paladin Framework Refactoring Initiative
@@ -112,7 +132,13 @@ This PRD is a **specification**, not an implementation plan. It defines *what* m
 
 ### 4.2 Extraction of Output Port Traits
 
-- **FR-7:** All files from `src/application/ports/output/` must be relocated to `crates/paladin-ports/src/output/`. The full inventory of files to extract is:
+- **FR-7:** ~~All files from `src/application/ports/output/` must be relocated to `crates/paladin-ports/src/output/`. The full inventory of files to extract is:~~
+  **Corrected (ADR-0016, dated 2026-08-06):** `llm_port.rs` and `paladin_port.rs` relocate as
+  files, but their `TokenUsage`, `PaladinResult` and `StopReason` type bodies do not travel with
+  them — per ADR-0016, FR-11's `RegistryError` core-re-export carve-out (below) extends to these
+  three types, so `paladin-ports` holds thin re-exports of the `paladin-core` definitions rather
+  than independent bodies. Original text retained above, superseded; the file inventory table
+  below is otherwise unaffected. The full inventory of files to extract is:
 
   | File | Primary Exported Types |
   |------|----------------------|
@@ -141,7 +167,12 @@ This PRD is a **specification**, not an implementation plan. It defines *what* m
   - Domain types imported from `crate::core::platform::container::*` are replaced with imports from `paladin_core::platform::container::*`.
   - Self-referential imports within `paladin-ports` (e.g., a port file importing another port's error type) use `crate::output::*`.
   - No moved file contains a `use` statement referencing `crate::application::`, `crate::infrastructure::`, or `crate::core::`.
-- **FR-10:** All associated types that are defined **within** a port module file (error enums, request/response structs, config structs, supporting enums) must move with their port trait into `paladin-ports`. Types must not be split across crates.
+- **FR-10:** ~~All associated types that are defined **within** a port module file (error enums, request/response structs, config structs, supporting enums) must move with their port trait into `paladin-ports`. Types must not be split across crates.~~
+  **Corrected (ADR-0016, dated 2026-08-06):** FR-11's `RegistryError` core-re-export carve-out
+  extends to `PaladinResult`, `StopReason` and `TokenUsage` — these three types are defined in
+  `paladin-core`, and `paladin-ports` holds thin re-exports, not independent bodies. Original text
+  retained above, superseded. All other associated types not named by this carve-out still move
+  with their port trait per the original rule.
 - **FR-11:** `RegistryError`, which is currently re-exported in `paladin_registry.rs` from `crate::core::platform::container::registry_error`, must remain accessible from `paladin_ports::output::paladin_registry::RegistryError`. If the underlying type lives in `paladin-core`, the re-export must be updated to `paladin_core::platform::container::registry_error::RegistryError`.
 
 ### 4.3 Extraction of Input Port Traits

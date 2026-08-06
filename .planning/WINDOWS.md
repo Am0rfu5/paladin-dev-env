@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 1
+open_count: 3
 waived_count: 0
 fixed_count: 1
-total_count: 2
-last_updated: 2026-08-02T15:41:28.892Z
+total_count: 4
+last_updated: 2026-08-06T18:09:08.207Z
 ---
 
 # Broken Windows Ledger
@@ -17,6 +17,8 @@ last_updated: 2026-08-02T15:41:28.892Z
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
 | 1 | 01 | unmet-truth | .planning/ledgers/milestone-01.md |  | REQ-battalion-result-v1 (Epic 4 FR-4.2, cited in ADR-0002's Considered Options as 'superseded by the shipped superset') has no row anywhere in the Milestone 1 ledger's Epic 4 table, even though REQUIREMENTS.md's original ledger body carried it as 'Variant (group 4)'. Plan 01-08 Task 2's subset-check safety gate caught this and HALTED per the plan's explicit instruction rather than reducing REQUIREMENTS.md's Milestone 1 body to a pointer at an incomplete destination. | fixed |  | 2026-07-31T13:22:57.385Z | 2026-07-31T14:46:37.492Z |
 | 2 | 03 | deviation | crates/paladin-storage/src/redis.rs |  | Live-server code paths of redis.rs (everything reaching through self.conn) remain uncovered by unit tests; deferred with reason, owner Phase 15 (PIPE), exerciser tests/integration/redis_queue_integration_test.rs (requires Docker) | open |  | 2026-08-02T15:41:28.892Z |  |
+| 3 | 07 | deviation | .project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md |  | Task 3's requested single combined commit for ADR-0016 + PRD annotation was split into two atomic commits (9e8db80, 71ea46e) per standard task_commit_protocol; both files present, no content impact. | open |  | 2026-08-06T18:09:04.871Z |  |
+| 4 | 07 | deviation | .project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md |  | No fabricated 3rd strikethrough correction for CONTEXT.md D-08(5)'s anticipated section-1 Milestone 1/Epic 2 cross-reference — re-verified absent from live tree (matches ADR-0014's own flagged drift); acceptance criterion expecting >=3 strikethrough lines not met by design. | open |  | 2026-08-06T18:09:08.207Z |  |
 
 ````json
 [
@@ -42,6 +44,30 @@ last_updated: 2026-08-02T15:41:28.892Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-08-02T15:41:28.892Z",
+    "resolved_at": null
+  },
+  {
+    "id": 3,
+    "kind": "deviation",
+    "phase": "07",
+    "file": ".project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md",
+    "line": null,
+    "description": "Task 3's requested single combined commit for ADR-0016 + PRD annotation was split into two atomic commits (9e8db80, 71ea46e) per standard task_commit_protocol; both files present, no content impact.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-06T18:09:04.871Z",
+    "resolved_at": null
+  },
+  {
+    "id": 4,
+    "kind": "deviation",
+    "phase": "07",
+    "file": ".project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md",
+    "line": null,
+    "description": "No fabricated 3rd strikethrough correction for CONTEXT.md D-08(5)'s anticipated section-1 Milestone 1/Epic 2 cross-reference — re-verified absent from live tree (matches ADR-0014's own flagged drift); acceptance criterion expecting >=3 strikethrough lines not met by design.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-06T18:09:08.207Z",
     "resolved_at": null
   }
 ]
