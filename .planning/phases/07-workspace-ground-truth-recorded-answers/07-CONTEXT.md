@@ -526,7 +526,11 @@ Recorded here so downstream agents do not re-derive them from archived CONTEXT.m
   D-17(5)).
 - `crates/paladin-herald/Cargo.toml` — `comfy-table = "7.1"` and `colored = "2.1"`, unconditional,
   no `[features]` section (D-20 / specifics 3).
-- `src/application/mod.rs:59` — `pub mod cli;`, un-gated (specifics 3).
+- ~~`src/application/mod.rs:59` — `pub mod cli;`, un-gated (specifics 3).~~
+  **Corrected 2026-08-06 during execution (plan 07-07):** this claim was **wrong**. `pub mod cli;`
+  at `src/application/mod.rs:57-59` **is** gated — `#[cfg(feature = "cli")]` — as is its
+  `src/lib.rs:153-156` re-export. `git log -p --follow` confirms the gating pre-dates this phase.
+  Re-verified directly in the main checkout by the orchestrator.
 - `.github/workflows/ci.yml:228` (`crate-isolation`) and `feature-flags.yml:115,118,141` — the
   exercising artefacts D-01's manifest carve-out relies on.
 
@@ -621,8 +625,16 @@ tree during this session.
      CLI-only and was correct *at the time* — `paladin-herald` was extracted in Milestone 8,
      afterwards. The honest ledger verdict is `superseded by shipped code`, not `genuinely
      outstanding`.
-   - Related: `src/application/mod.rs:59` declares `pub mod cli;` **un-gated**, so the CLI module
-     compiles into the library regardless of the `cli` feature.
+   - ~~Related: `src/application/mod.rs:59` declares `pub mod cli;` **un-gated**, so the CLI module
+     compiles into the library regardless of the `cli` feature.~~
+     **Corrected 2026-08-06 during execution (plan 07-07), re-verified by the orchestrator:** this
+     was **wrong**. `src/application/mod.rs:57-59` carries `#[cfg(feature = "cli")]`, and
+     `src/lib.rs:153-156` gates the re-export the same way; `git log -p --follow` shows the gating
+     pre-dates this phase. The CLI module does **not** compile into a default library build.
+     **The other two findings in this bullet stand** — they were independently re-verified during
+     execution: `structopt`'s only consumer is still the un-gated `src/main.rs` binary, and
+     `paladin-herald` still declares `colored` and `comfy-table` unconditionally with no
+     `[features]` section. Phase 8's CLI-isolation scope is re-shaped by those two, not by this one.
 
 4. **`.planning/codebase/STRUCTURE.md` is four crates out of date.** It documents `paladin-core`,
    `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory` and `paladin-storage` and
