@@ -1,4 +1,21 @@
-# Milestone 2: Workspace Decomposition
+> **Correction (dated 2026-08-06, ADR-0014, ADR-0019):** This document titles itself "Milestone 2"
+> while the authoritative numbering makes it **Milestone 5** (Tier 2) — "Milestone 2" here is a
+> refactoring-tier label internal to Milestones 4-6, not the corpus's Milestone counter. Its target
+> workspace structure, Appendix C and Appendix D also list a `crates/paladin-cli/` workspace
+> member that was never built; the CLI ships as a `cli` feature plus a `[[bin]] paladin-cli`
+> target with `required-features`, per
+> [`.planning/decisions/0019-binary-target-architecture.md`](../../../.planning/decisions/0019-binary-target-architecture.md).
+> Milestone 5 Epic 6's own non-goal (`Epic_6/prd-workspace-finalization-epic-6.md`) correctly
+> declined to extract a `paladin-cli` crate; this overview's target structure did not agree with
+> its own Epic. See
+> [`.planning/decisions/0014-milestone-4-6-tier-numbering.md`](../../../.planning/decisions/0014-milestone-4-6-tier-numbering.md)
+> for the numbering mapping. Original text is retained below with inline corrections — nothing is
+> deleted.
+
+# ~~Milestone 2: Workspace Decomposition~~ Milestone 5 (Tier 2): Workspace Decomposition
+**Corrected numbering (ADR-0014):** this document is Milestone 5, Tier 2 in the directory /
+task-list numbering; "Milestone 2" is this document's own tier label, not the corpus's Milestone
+counter. See ADR-0014's mapping table for the full correction.
 
 **Project:** Paladin Framework Refactoring Initiative
 **Milestone:** Tier 2 — Cargo Workspace Split
@@ -81,6 +98,13 @@ The workspace decomposition follows a precise extraction order designed to minim
 ---
 
 ## Target Workspace Structure
+
+> **Superseded (dated 2026-08-06, ADR-0019, ARCH-05):** the ~~`crates/paladin-cli/`~~ member below
+> (with its own `Cargo.toml` and `src/main.rs`) was never built. `crates/` holds the ten library
+> crates plus `doc-examples`, confirmed by listing the directory during this task. The CLI ships
+> as the `cli` feature (`Cargo.toml:284`) plus a `[[bin]] paladin-cli` target with
+> `required-features = ["cli"]` (`Cargo.toml:245-247`), both re-grepped during this task. The
+> block below is retained unmodified as the proposal that was not adopted.
 
 ```
 paladin/
@@ -767,11 +791,21 @@ After Epics 1–5, the source code is distributed across six crates. The facade 
 | **paladin-llm** | ✓ | ✓ | | — | |
 | **paladin-memory** | ✓ | ✓ | | | — |
 | **paladin (facade)** | ✓ | ✓ | ✓ | ✓ | ✓ |
-| **paladin-cli** | | | | | |
+| ~~**paladin-cli**~~ | | | | | |
+
+**Corrected (dated 2026-08-06, ADR-0019, ARCH-05):** no `paladin-cli` workspace crate exists — the
+CLI ships as the `cli` feature plus a `[[bin]] paladin-cli` target with `required-features`, both
+cited in the Target Workspace Structure banner above.
 
 *Note: `paladin-cli` depends on the `paladin` facade crate, not individual workspace crates.*
 
 ## Appendix D: Workspace `Cargo.toml` Template
+
+> **Superseded (dated 2026-08-06, ADR-0019, ARCH-05):** the ~~`"crates/paladin-cli"`~~ members entry
+> below did not ship. The shipped root `Cargo.toml` uses `members = ["crates/*"]` and holds no
+> `paladin-cli` crate; the CLI ships as the `cli` feature plus a `[[bin]] paladin-cli` target with
+> `required-features`, cited in the Target Workspace Structure banner above. The template below is
+> retained unmodified as the proposal that was not adopted.
 
 ```toml
 [workspace]
