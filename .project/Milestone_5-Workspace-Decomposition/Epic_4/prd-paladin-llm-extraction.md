@@ -1,5 +1,13 @@
 # PRD: Extract `paladin-llm` Crate
 
+> **Correction (dated 2026-08-06, ADR-0017 and ADR-0014):** FR-31 and FR-32's circular-dependency
+> concern was resolved structurally by Milestone 6 rather than by relocating the bridge — see
+> [`../../../.planning/decisions/0017-llm-config-bridge-location.md`](../../../.planning/decisions/0017-llm-config-bridge-location.md).
+> Separately, Non-Goal 2's "hardened in Milestone 1 / Epic 2" cross-reference means Milestone 4
+> Epic 2 under the authoritative numbering — see
+> [`../../../.planning/decisions/0014-milestone-4-6-tier-numbering.md`](../../../.planning/decisions/0014-milestone-4-6-tier-numbering.md).
+> Original text is retained below with inline corrections; nothing is deleted.
+
 **Epic:** Epic 4 — Extract `paladin-llm` Crate
 **Milestone:** Milestone 5 (Tier 2) — Cargo Workspace Split
 **Project:** Paladin Framework Refactoring Initiative
@@ -194,6 +202,12 @@ This PRD is a **specification**, not an implementation plan. It defines *what* m
 
 ### 4.8 Configuration Integration
 
+> **Superseded (dated 2026-08-06, ADR-0017):** The concern below was real but mis-sited: Milestone
+> 6 moved the config types down into `paladin-llm` rather than moving the bridge up into the root,
+> so the cycle these requirements guard against does not exist, and the shipped bridge at
+> `crates/paladin-llm/src/config/bridge.rs` is the accepted answer. Original text retained
+> unchanged below.
+
 - **FR-31:** `paladin-llm` must NOT import from `crate::config::application_settings` or any equivalent path in the root `paladin` crate. Doing so would create a circular dependency.
 
 - **FR-32:** Each provider adapter's `*Config` struct (e.g. `OpenAIConfig`) is the configuration boundary. The root `paladin` crate is solely responsible for reading `ApplicationSettings.llm.*` fields and converting them into the appropriate `paladin-llm` `*Config` struct. This conversion code lives in the main crate (e.g., in a new `src/infrastructure/adapters/llm/config_bridge.rs`), not in `paladin-llm`.
@@ -237,7 +251,7 @@ This PRD is a **specification**, not an implementation plan. It defines *what* m
 The following are explicitly **not** part of this epic:
 
 1. **Adding new LLM providers.** This epic is a refactoring extraction only. No new providers (e.g., Google Gemini, Mistral) are to be added.
-2. **Changing the `LlmPort` trait interface.** The port trait lives in `paladin-ports` and was hardened in Milestone 1 / Epic 2. Its signature must not be changed here.
+2. **Changing the `LlmPort` trait interface.** The port trait lives in `paladin-ports` and was hardened in ~~Milestone 1 / Epic 2~~ **Milestone 4 Epic 2** (Port Trait Hardening & Stable API). Its signature must not be changed here. **Corrected numbering (ADR-0014, dated 2026-08-06):** inside Milestones 4-6's own documents, "Milestone 1" is the Tier 1 label for Milestone 4 under the corpus's authoritative directory/task-list numbering, not the corpus's actual Milestone 1.
 3. **Splitting `paladin-llm` into one crate per provider.** A single crate with feature flags is the chosen design. Per-provider crates are a future consideration only.
 4. **Introducing a `paladin-config` crate.** Configuration extraction is scoped to Milestone 5 Tier 3. This epic only enforces the bridge pattern described in FR-32.
 5. **Streaming / SSE architecture changes.** The existing streaming implementation in each adapter is moved as-is. Refactoring stream handling is out of scope.
