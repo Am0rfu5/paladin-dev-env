@@ -217,6 +217,14 @@ None — no external service configuration required.
   their own numbering-collision documents.
 - No blockers. The D-08(5) drift flag is advisory, not blocking, for plan 07-02.
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/ledgers/milestone-04-06.md`
+- FOUND: `.planning/decisions/0014-milestone-4-6-tier-numbering.md`
+- FOUND: `.planning/phases/07-workspace-ground-truth-recorded-answers/07-01-SUMMARY.md`
+- FOUND: commit `e0b793a` (Tasks 1-3 combined)
+- FOUND: commit `7667085` (this SUMMARY.md)
+
 ---
 *Phase: 07-workspace-ground-truth-recorded-answers*
 *Completed: 2026-08-06*
