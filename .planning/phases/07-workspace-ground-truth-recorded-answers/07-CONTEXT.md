@@ -146,10 +146,17 @@ Recorded here so downstream agents do not re-derive them from archived CONTEXT.m
   3. `.project/Milestone_6-Architectural-Refinements/overview/Milestone_6-Tier_3-Architectural-Refinements.md` — "Completed in Milestones 1 and 2".
   4. `.project/Milestone_5-Workspace-Decomposition/Epic_4/prd-paladin-llm-extraction.md` Non-Goal 2 — "hardened in Milestone 1 / Epic 2".
   5. `.project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md` §1 — same cross-reference.
-  The seven byte-equivalent extracts INGEST-CONFLICTS lists (M5 Epics 2/3/4/5, M6 Epics 1/2/3/4
-  copies) get a **one-line dated pointer to ADR-0014 at the top and nothing else** — they carry no
-  independent content, and rewriting a copy seven times multiplies edit risk without adding
-  information.
+  The byte-equivalent extracts INGEST-CONFLICTS lists (M5 Epics 2/3/4/5, M6 Epics 1/2/3/4 copies)
+  get a **one-line dated pointer to ADR-0014 at the top and nothing else** — they carry no
+  independent content, and rewriting a copy multiplies edit risk without adding information.
+  *(**Amended 2026-08-06 during research**: this clause originally said "seven" extracts.
+  `INGEST-CONFLICTS.md:656` enumerates **eight** — M5 Epics 2, 3, 4, 5 and M6 Epics 1, 2, 3, 4 —
+  while its own headline at `:655` says "Nine of the nineteen run-3 DOCs". The **enumerated eight
+  is the operative list**; M5 Epic 1 was checked and holds a PRD, not an overview extract, so it is
+  not a ninth. The headline/list mismatch is a bookkeeping defect **inside** INGEST-CONFLICTS and
+  reconciling it is this phase's business — record the reconciliation alongside the pointer
+  banners. The decision itself — pointer banner on copies, inline correction on materially
+  distinct documents — is unchanged.)*
   — **Reversibility:** costly — the corrected numbering becomes the provenance key every later
   reader and every Phase 8-16 citation uses. Reverting means re-checking which of two numbering
   schemes each downstream citation meant.
@@ -345,6 +352,27 @@ Recorded here so downstream agents do not re-derive them from archived CONTEXT.m
     Phase 8.
   - **ADR-0020** — Build-time benchmark target restated per scenario (ARCH-07). Conformance:
     `conforms`.
+
+- **D-25a [added 2026-08-06 during research]:** **`PROMOTION.md`'s inventory assigns Phase 7 a
+  *second* ADR candidate that D-25 did not allocate, and it needs a disposition.**
+  `.planning/decisions/PROMOTION.md` Part B lists two candidates owned by Phase 7:
+  - **Candidate 1** — `.project/Milestone_5-.../Epic_1/decisions/battalion-result-upward-dependency-decision.md`.
+    **Covered**: D-11 promotes it as ADR-0016.
+  - **Candidate 2** — `.project/Milestone_2-Missing_features/Epic_17.5/epic17-5.md` (run 2) — "the
+    CLI belongs in `src/application/cli` as an input adapter, not infrastructure; already applied
+    in code, also outranked by a PRD that says otherwise." **Not covered by D-25.**
+
+  **Disposition: promote Candidate 2 as ADR-0021**, authored in the same plan as ADR-0019 — the two
+  share a subject (the CLI/binary surface), the shipped tree already implements the candidate's
+  position (`src/application/cli/` exists; `src/application/mod.rs:59` declares it), and D-20's
+  `structopt` finding lands in the same territory. `PROMOTION.md`'s next-free line then advances to
+  **0022**, not 0021 (superseding D-25's closing sentence).
+  The alternative — recording an explicit deferral in `PROMOTION.md` naming a later owner — is
+  acceptable **only if the planner finds the candidate genuinely out of run-3 scope**; leaving an
+  unowned candidate whose recorded owner is this phase is not. Whichever is chosen must be written
+  down, not left implicit.
+  — **Reversibility:** reversible — an ADR number is cheap and never reused; a deferral is a
+  one-line record.
 
 - **D-26:** **REQUIREMENTS.md's `## Milestone 4-6 as-shipped ledger` section (line 2830 to the
   `## Milestone 7-8` heading at 3069) is reduced to a pointer** by the scaffold plan, per D-00d —
