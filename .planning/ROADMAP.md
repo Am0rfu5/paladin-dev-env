@@ -563,7 +563,7 @@ Plans:
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
-- [ ] 07-13-PLAN.md — Close-out: counted verdict distribution, the five forward-scope handoffs, `PROMOTION.md` advanced to 0022, PROJECT.md Key Decisions, `COVERAGE.md`, phase-boundary check (wave 9)
+- [x] 07-13-PLAN.md — Close-out: counted verdict distribution, the five forward-scope handoffs, `PROMOTION.md` advanced to 0022, PROJECT.md Key Decisions, `COVERAGE.md`, phase-boundary check (wave 9)
 
 **Cross-cutting constraints:**
 
