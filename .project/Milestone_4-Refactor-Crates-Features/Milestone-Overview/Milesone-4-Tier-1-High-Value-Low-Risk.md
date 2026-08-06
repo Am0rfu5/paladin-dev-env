@@ -4,6 +4,11 @@
 > [`.planning/decisions/0014-milestone-4-6-tier-numbering.md`](../../../.planning/decisions/0014-milestone-4-6-tier-numbering.md)
 > for the full mapping. Original text is retained below with inline corrections — nothing is
 > deleted.
+>
+> **Also corrected here (dated 2026-08-06, ARCH-05):** Epic 1 acceptance criterion 1 and Appendix B
+> below describe MCP transport feature flags (`mcp-transports` / `mcp-stdio` / `mcp-sse`) that no
+> shipped Cargo feature implements — corrected inline below, dispositioned by the Epic 1 PRD's own
+> dated elimination note.
 
 # ~~Milestone 1: High-Value, Low-Risk Foundations~~ Milestone 4 (Tier 1): High-Value, Low-Risk Foundations
 **Corrected numbering (ADR-0014):** this document is Milestone 4, Tier 1 in the directory /
@@ -97,7 +102,13 @@ The existing feature flag pattern for `redis` and `rust-s3` is correct and well-
    - **Vision Pipeline:** `vision` (gates vision-related adapters and the Sentinel Vision System).
    - **Web Server:** `web-server` (gates `actix-web` and all web/API infrastructure).
    - **Notification Adapters:** `notifications` (gates `lettre` and notification publisher adapters).
-   - **MCP Transports:** `mcp-stdio`, `mcp-sse` (or combined `mcp-transports`) — gates the concrete MCP transport adapters (`MCPStdioAdapter`, `MCPSseAdapter`) and their infrastructure dependencies. The Arsenal domain types (`Armament`, `ArmamentCall`, `ArsenalPort`, `ArsenalRegistry`) and application services (`ArsenalExecutionService`, `ArsenalRegistryService`) remain unconditionally compiled as core framework components.
+   - ~~**MCP Transports:** `mcp-stdio`, `mcp-sse` (or combined `mcp-transports`) — gates the concrete MCP transport adapters (`MCPStdioAdapter`, `MCPSseAdapter`) and their infrastructure dependencies.~~ The Arsenal domain types (`Armament`, `ArmamentCall`, `ArsenalPort`, `ArsenalRegistry`) and application services (`ArsenalExecutionService`, `ArsenalRegistryService`) remain unconditionally compiled as core framework components.
+     **Corrected (dated 2026-08-06, ARCH-05):** No MCP feature flag of any kind exists in the
+     shipped manifest — `grep -n mcp Cargo.toml` returns no output. The Epic 1 PRD's own dated
+     2026-04-15 elimination note
+     (`.project/Milestone_4-Refactor-Crates-Features/Epic_1/prd-expand-feature-flags.md:15`) is
+     what shipped: Arsenal and its MCP transport adapters compile unconditionally as core
+     framework components, exactly as this bullet's own second half already says.
    - **Existing flags retained:** `redis-queue`, `s3-storage`, `openai-embeddings`, `qdrant`.
 2. A new `full` convenience feature enables all optional features.
 3. The `default` feature set is revised to include only the minimal viable surface for agent orchestration (core + battalion + one LLM provider).
@@ -158,6 +169,8 @@ The existing feature flag pattern for `redis` and `rust-s3` is correct and well-
 **Description:** Gate notification adapters (`lettre`, email/SMS/push publishers) behind `notifications` and vision pipeline adapters behind `vision`. Gate the concrete MCP transport adapters behind `mcp-transports` (or split as `mcp-stdio` / `mcp-sse`).
 
 **Important distinction:** The Arsenal domain types (`Armament`, `ArmamentCall`, `ArmamentResult`, `ArsenalError`), port traits (`ArsenalPort`, `ArsenalRegistry`), and application services (`ArsenalExecutionService`, `ArsenalRegistryService`) are **not gated** — they are core framework components used pervasively by `PaladinBuilder`, `PaladinExecutionService`, all battalion execution services, and the CLI. The Arsenal is the agent's toolkit abstraction (tools, skills, prompts, instructions, and future extensions beyond MCP), not merely an MCP integration layer. Gating it would require `#[cfg]` guards across every execution path in the framework for negligible dependency savings (the Arsenal core depends only on `serde`, `serde_json`, `uuid`, and `async-trait`). Only the **infrastructure transport adapters** that connect to external MCP servers via subprocess (STDIO) or HTTP (SSE) — and their dependencies (`tokio::process`, protocol serialization, HTTP client configuration) — are gated.
+
+**Note (dated 2026-08-06, ARCH-05):** the `mcp-transports` gating argument above was superseded by the Epic 1 PRD's own 2026-04-15 elimination note (Task 7.0 dropped), not by an error in this argument's reasoning — the Arsenal-stays-unconditional conclusion is exactly what shipped.
 
 **Deliverables:**
 - Three new feature flags: `notifications`, `vision`, `mcp-transports`.
@@ -435,6 +448,12 @@ live-api-tests = []
 ```
 
 ## Appendix B: Proposed Feature Flag State (Post-Milestone)
+
+> **Superseded (dated 2026-08-06, ARCH-05):** the "MCP Transport Adapters" block below
+> (`mcp-transports`, `mcp-stdio`, `mcp-sse`) did not ship. `grep -n mcp Cargo.toml` returns no
+> output — the Epic 1 PRD's own dated 2026-04-15 elimination note is what shipped: Arsenal and its
+> MCP transport adapters compile unconditionally as core framework components, with no feature
+> flag of any kind. The block is retained below unmodified as the proposal that was not adopted.
 
 ```toml
 [features]

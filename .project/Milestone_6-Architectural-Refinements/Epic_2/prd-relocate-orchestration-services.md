@@ -1,5 +1,14 @@
 # PRD: Relocate Manager-Layer Orchestration Services to the Application Layer
 
+> **Correction (dated 2026-08-06, ADR-0018):** This PRD's target directory
+> `src/application/use_cases/` does not exist in the shipped tree; the four orchestrator module
+> groups ship under `src/application/services/` with this PRD's exact module names
+> (`notification_orchestrator`, `queue_orchestrator`, `orchestration`, `log_orchestrator`). This is
+> a deliberate divergence, not a missing deliverable — the ledger records it `diverged`. This PRD's
+> Non-Goal 7 no-shim position is the recorded answer, confirmed by
+> [`.planning/decisions/0018-m6-facade-reexport-policy.md`](../../../.planning/decisions/0018-m6-facade-reexport-policy.md)
+> (ADR-0018). Original text is retained below with inline corrections — nothing is deleted.
+
 **Feature Name:** relocate-orchestration-services
 **Milestone:** 6 — Architectural Refinements
 **Epic:** 2
@@ -63,7 +72,7 @@ so that my work is not blocked by the relocation, and I can defer a full `user_s
 After relocation, the new application-layer modules must exist at these paths:
 
 ```
-src/application/use_cases/
+~~src/application/use_cases/~~ src/application/services/
 ├── notification_orchestrator/
 │   ├── mod.rs          # NotificationOrchestrator (renamed from NotificationService)
 │   └── types.rs        # NotificationServiceError, NotificationServiceConfig,
@@ -86,6 +95,15 @@ src/application/use_cases/
     └── types.rs        # LogServiceConfig, LogMessageHandler, and other coordination
                         # types not already in paladin-core
 ```
+
+**Corrected (dated 2026-08-06, ADR-0018):** the parent directory struck through above did not
+ship. The four sub-module names are unchanged — only the parent directory differs. Shipped paths,
+re-grepped during this task:
+`src/application/services/notification_orchestrator/mod.rs:64` (`NotificationOrchestrator`),
+`src/application/services/queue_orchestrator/mod.rs:46` (`QueueOrchestrator`),
+`src/application/services/orchestration/mod.rs:56` (`Orchestrator`), and
+`src/application/services/log_orchestrator/mod.rs:47` (`LogOrchestrator`). This is a deliberate
+divergence, not a missing deliverable; the ledger records it `diverged`.
 
 **Note:** The existing `src/application/notifications/` directory (`email_notifications.rs`, `push_notifications.rs`, `system_notifications.rs`) is a separate module of channel-specific adapters — it must **not** be merged with `notification_orchestrator/`. Both directories will coexist.
 
@@ -190,6 +208,8 @@ After all relocations are complete:
 5. **Changing the behavior of any relocated service.** This Epic is a pure structural relocation. No logic changes, new features, or refactoring of service internals is permitted.
 6. **Updating `config.yml` or any configuration file schema.** Config shapes are not affected by service relocation.
 7. **Adding pub-use re-exports in `src/lib.rs`.** Backward compatibility is scoped to compilation — callers will update their import paths. No shim re-exports are added.
+   **Confirmed (dated 2026-08-06, ADR-0018):** the no-shim posture stands as policy — ADR-0018
+   ratifies it and this Non-Goal is not re-opened.
 8. **Feature-flagging the relocated services.** All six services are compiled unconditionally.
 
 ---
@@ -328,3 +348,5 @@ After relocation, verify that `paladin-core/Cargo.toml` does not list `paladin-p
 2. **`event_manager.rs` classification:** Same as above — Task 2.1 will confirm it is a pure event bus with no port references. If port references are found, it should be flagged for a future Epic (not added to this one's scope, to preserve the Epic's size).
 3. **`user_service.rs` future Epic:** Should a dedicated Epic be created for the full `user_service` relocation (including `UserServiceFactory`, `user_config.rs`, user CLI commands, user API controller, and `SqliteUserRepository`)? This is a larger blast radius than the services in Epic 2 and warrants its own planning.
 4. **Re-export compatibility:** Should `src/lib.rs` or `src/prelude.rs` add `pub use` re-exports pointing from old paths to new paths to ease migration for downstream consumers? The current decision is no re-exports, but this should be confirmed with the team before implementation begins.
+   **Confirmed (dated 2026-08-06, ADR-0018):** now confirmed rather than left dangling — no `pub
+   use` re-exports are added at `src/lib.rs` or `src/prelude.rs`. This question is not re-opened.

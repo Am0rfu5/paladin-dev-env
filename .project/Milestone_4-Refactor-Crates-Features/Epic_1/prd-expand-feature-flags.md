@@ -1,5 +1,15 @@
 # Product Requirements Document: Expand Feature Flags to Gate the Full Optional Surface
 
+> **Correction (dated 2026-08-06, ARCH-05):** This PRD's FR1 and Design Considerations describe
+> three feature-flag behaviours the shipped `Cargo.toml` manifest contradicts — the `vision`
+> gating of the encryption dependencies, the MCP transport flags, and the `web-server` gating of
+> `actix-web`. Applying the `vision` clause literally would break
+> `cargo build --no-default-features` for user auth and Citadel encryption. See the Milestone 4-6
+> ledger's `diverged` rows and
+> [`.planning/decisions/0011-vision-port-surfaces.md`](../../../.planning/decisions/0011-vision-port-surfaces.md)
+> for the prior decision that dispositioned this same encryption code. Original text is retained
+> below with inline corrections — nothing is deleted.
+
 **Created:** April 14, 2026
 **Epic:** Epic 1 (Paladin Milestone 4)
 **Document Version:** 1.1
@@ -110,10 +120,31 @@ The following feature flags **must** be implemented:
 
 #### Subsystem Flags
 - `content-processing` — Gates document parsing, web scraping, token counting (pdf-extract, scraper, tiktoken-rs, rss)
-- `web-server` — Gates both `actix-web` and `axum` frameworks and all HTTP/API infrastructure (both are present in Cargo.toml)
+- ~~`web-server` — Gates both `actix-web` and `axum` frameworks and all HTTP/API infrastructure (both are present in Cargo.toml)~~
+  **Corrected (dated 2026-08-06, diverged from shipped code):** Shipped `Cargo.toml:276`
+  declares `web-server = ["dep:paladin-web", "dep:axum"]` — `actix-web` is not a root dependency,
+  confirmed by `grep -rn actix Cargo.toml` returning no output during this task. The `web-server`
+  feature gates the `paladin-web` crate and `axum` only.
 - `notifications` — Gates Lettre and notification publisher adapters
-- `vision` — Gates vision pipeline, vision adapters (`openai_vision.rs`, `anthropic_vision.rs`), Sentinel Vision encryption deps (`chacha20poly1305`, `zeroize`), and `VisionPort`/`VisionCapableLlm` trait implementations
+- ~~`vision` — Gates vision pipeline, vision adapters (`openai_vision.rs`, `anthropic_vision.rs`), Sentinel Vision encryption deps (`chacha20poly1305`, `zeroize`), and `VisionPort`/`VisionCapableLlm` trait implementations~~
+  **Corrected (dated 2026-08-06, diverged from shipped code):** Shipped `Cargo.toml:274` declares
+  `vision = []` — an empty feature that gates **no dependency**. `chacha20poly1305`
+  (`Cargo.toml:134`) and `zeroize` (`Cargo.toml:135`) are unconditional root dependencies,
+  confirmed by `grep -rn 'chacha20poly1305\|zeroize' Cargo.toml crates/*/Cargo.toml` during this
+  task — they serve `src/infrastructure/security/encryption.rs`'s general encryption for user
+  auth and Citadel state, not only the vision pipeline. The Epic 1
+  [`dependency-matrix.md`](dependency-matrix.md) audit in this same directory classified both
+  correctly at the time; this clause did not. Applying this clause literally would break
+  `cargo build --no-default-features` for user auth and Citadel. Cross-reference
+  [ADR-0011](../../../.planning/decisions/0011-vision-port-surfaces.md), which dispositioned this
+  same encryption code.
 - ~~`mcp-arsenal`~~ — **ELIMINATED:** Arsenal remains unconditionally compiled
+  **Confirmed (dated 2026-08-06, ARCH-05):** No MCP feature flag of any kind exists in the
+  shipped manifest — `grep -n mcp Cargo.toml` returns no output, re-run during this task. This
+  document's own 2026-04-15 elimination note above (line 15) is what shipped: Arsenal and its MCP
+  transport adapters compile unconditionally as core framework components. This is the citation
+  the Milestone 4 overview's MCP correction and the Milestone 4-6 ledger's `diverged` rows point
+  at.
 
 #### Existing Flags (Retained)
 - `redis-queue` — Existing, unchanged
