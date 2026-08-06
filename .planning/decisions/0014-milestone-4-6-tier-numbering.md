@@ -30,6 +30,19 @@ epic numbers 19-23, now at the Milestone integer. `REQ-*` provenance keys in thi
 `.planning/ledgers/milestone-04-06.md` only resolve uniformly across the corpus if both of the
 corpus's two numbering defects close under the same convention.
 
+**Reconciliation (dated 2026-08-06, plan 07-03):** `INGEST-CONFLICTS.md`'s own count of its
+byte-equivalent Milestone 5/6 extracts is stated three different ways in this corpus: nine in its
+headline at `:655` ("Nine of the nineteen run-3 DOCs are verbatim extracts"), eight in its own
+enumerated Note at `:656` (M5 Epics 2, 3, 4, 5 and M6 Epics 1, 2, 3, 4), and seven in this phase's
+CONTEXT.md D-08 before its 2026-08-06 amendment. **The enumerated eight is operative.**
+`.project/Milestone_5-Workspace-Decomposition/Epic_1/` was checked directly during this task and
+holds a PRD (`prd-workspace-initialization-and-paladin-core-extraction.md`), its companion task
+list, two decision records, and two analysis text files — not an overview extract — so it is not a
+ninth member of this set. The headline figure at `INGEST-CONFLICTS.md:655` is a bookkeeping defect
+inside that file; it is left in place there, per this phase's annotate-do-not-rewrite posture
+toward the ingest ledger, and corrected here as the operative count for every downstream reader of
+this ADR.
+
 ## Decision
 
 The directory / task-list numbering is authoritative: Milestone 4 is Tier 1, Milestone 5 is Tier 2,
@@ -96,6 +109,25 @@ the mapping table below rather than treated as a competing numbering scheme.
   collision) with the same convention: the numbering scheme the majority of the corpus's own
   documents and every task-list filename agree on is authoritative, and the minority scheme's
   content is preserved as history via a dated correction banner, never deleted.
+- `.project/Milestone_5-Workspace-Decomposition/Epic_2/Milestone_5-Tier_2-Workspace-Decomposition-Epic_2.md`
+  — byte-equivalent extract of the Milestone 5 overview's Epic 2 section, carrying the same tier
+  numbering collision as its source ("hardened and documented as the stable public API in
+  Milestone 1 (Epic 2)"). Annotated by plan 07-03 with a one-line pointer banner to this ADR
+  (D-08, 2026-08-06 amendment).
+- `.project/Milestone_5-Workspace-Decomposition/Epic_3/Milestone_5-Tier_2-Epic_3-Battalion_Extraction.md`
+  — byte-equivalent extract of the Milestone 5 overview's Epic 3 section. Annotated by plan 07-03.
+- `.project/Milestone_5-Workspace-Decomposition/Epic_4/Milestone_5-Epic_4.md` — byte-equivalent
+  extract of the Milestone 5 overview's Epic 4 section. Annotated by plan 07-03.
+- `.project/Milestone_5-Workspace-Decomposition/Epic_5/Milestone_5-Epic_5.md` — byte-equivalent
+  extract of the Milestone 5 overview's Epic 5 section. Annotated by plan 07-03.
+- `.project/Milestone_6-Architectural-Refinements/Epic_1/Milestone_6-Epic_1-Decompose_App_Settings.md`
+  — byte-equivalent extract of the Milestone 6 overview's Epic 1 section. Annotated by plan 07-03.
+- `.project/Milestone_6-Architectural-Refinements/Epic_2/Milestone_6-Epic_2-Relocation_Manager_Layer_Orch_services.md`
+  — byte-equivalent extract of the Milestone 6 overview's Epic 2 section. Annotated by plan 07-03.
+- `.project/Milestone_6-Architectural-Refinements/Epic_3/Milestone_6-Epic_3-Co-locate_Maneuver_DSL_w_Battalion.md`
+  — byte-equivalent extract of the Milestone 6 overview's Epic 3 section. Annotated by plan 07-03.
+- `.project/Milestone_6-Architectural-Refinements/Epic_4/Milestone_6-Epic_4-Relocate_CircuitBreaker_Infra_Layer.md`
+  — byte-equivalent extract of the Milestone 6 overview's Epic 4 section. Annotated by plan 07-03.
 
 ## Code Conformance
 

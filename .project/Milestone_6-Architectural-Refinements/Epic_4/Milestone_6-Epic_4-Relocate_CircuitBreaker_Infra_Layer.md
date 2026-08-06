@@ -1,6 +1,13 @@
 
 ## Epic 4: Relocate `CircuitBreaker` to the Infrastructure Layer
 
+> **See [ADR-0014](../../../.planning/decisions/0014-milestone-4-6-tier-numbering.md)** (dated
+> 2026-08-06) for the corrected Milestone/Tier numbering this document's Milestone-numbering
+> references predate. This document is a byte-equivalent copy of
+> `.project/Milestone_6-Architectural-Refinements/overview/Milestone_6-Tier_3-Architectural-Refinements.md`,
+> carrying no independent content beyond that source, which is corrected there. Not corrected
+> inline here.
+
 **Epic Owner:** TBD
 **Priority:** Medium
 **Estimated Effort:** Small
