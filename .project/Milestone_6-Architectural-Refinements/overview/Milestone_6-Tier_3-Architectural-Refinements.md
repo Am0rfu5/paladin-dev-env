@@ -1,5 +1,16 @@
 # Milestone 6: Architectural Refinements
 
+> **Correction (dated 2026-08-06, ADR-0018 and ADR-0014):** This document's backward-compatible
+> facade re-export requirement (Epic 2 AC 6, Epic 4 AC 5, and the risk register's CircuitBreaker
+> row) is the minority position — both governing PRDs and the shipped tree agree on a no-shim
+> posture instead. See
+> [`.planning/decisions/0018-m6-facade-reexport-policy.md`](../../../.planning/decisions/0018-m6-facade-reexport-policy.md)
+> for the recorded answer. Separately, this document's "Completed in Milestones 1 and 2"
+> prerequisite line uses internal refactoring-tier labels, not the corpus's Milestone numbers — it
+> means Milestones 4 and 5 under the authoritative numbering; see
+> [`.planning/decisions/0014-milestone-4-6-tier-numbering.md`](../../../.planning/decisions/0014-milestone-4-6-tier-numbering.md).
+> Original text is retained below with inline corrections — nothing is deleted.
+
 **Project:** Paladin Framework Refactoring Initiative
 **Milestone:** 6 (Refactoring Tier 3 — Architectural Refinements Within the Existing Structure
 **Status:** Planning
@@ -23,7 +34,11 @@ The four Epics in this Milestone are:
 3. **Co-locate the Maneuver DSL** — Consolidate the tightly coupled lexer, AST, parser, and execution service so they travel together rather than being split across layers.
 4. **Relocate `CircuitBreaker`** — Move this infrastructure concern out of the application use-cases layer into the infrastructure layer alongside retry logic and rate limiting.
 
-### Prerequisites (Completed in Milestones 1 and 2)
+### ~~Prerequisites (Completed in Milestones 1 and 2)~~ Prerequisites (Completed in Milestones 4 and 5)
+**Corrected numbering (ADR-0014):** "Milestones 1 and 2" here are refactoring-tier labels, not
+corpus Milestone numbers — this document is Tier 3 (Milestone 6), so its prerequisites are
+Milestone 4 (Tier 1) and Milestone 5 (Tier 2). See ADR-0014's mapping table for the full
+correction.
 
 - Feature flags expanded and CI matrix testing in place (Milestone 1).
 - Port traits hardened as stable API contracts (Milestone 1).
@@ -70,6 +85,12 @@ The four Epics in this Milestone are:
 - No concurrent feature development is modifying the same files targeted by these Epics.
 
 ### Risk Register
+
+> **Superseded (dated 2026-08-06, ADR-0018):** The "CircuitBreaker relocation" row's Mitigation
+> column below reads "Facade crate re-exports absorb the change." The recorded answer is the
+> no-shim posture instead — no facade re-export was added; internal imports were updated directly.
+> See `.planning/decisions/0018-m6-facade-reexport-policy.md`. Original table retained unchanged
+> below.
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
@@ -212,6 +233,13 @@ The remaining managers — `content_service.rs`, `event_manager.rs`, `listener_s
 3. After relocation, `paladin-core` has zero remaining imports from `application::` or `infrastructure::` — enforced by the workspace crate boundary.
 4. The `core/platform/manager/` directory retains only services that contain pure domain logic without port dependencies (e.g., `scheduler.rs` if it operates purely on domain types, `event_manager.rs` if it is a pure event bus).
 5. All existing tests pass with updated import paths.
+
+> **Superseded (dated 2026-08-06, ADR-0018):** Acceptance Criterion 6 below requires
+> backward-compatible facade re-exports. The recorded answer is the no-shim posture instead —
+> relocated types are not re-exported at their original paths, and
+> `src/application/use_cases/` does not exist in the shipped tree. See
+> `.planning/decisions/0018-m6-facade-reexport-policy.md`. Original text retained unchanged below.
+
 6. The facade crate re-exports maintain backward compatibility for any types that were publicly accessible.
 
 ### Tasks
@@ -431,6 +459,14 @@ The circuit breaker has comprehensive tests (concurrent access, state transition
 2. `PaladinExecutionService` imports `CircuitBreaker` from its new location.
 3. All circuit breaker tests pass in the new location.
 4. All integration tests and examples that use `CircuitBreaker` compile and pass.
+
+> **Superseded (dated 2026-08-06, ADR-0018):** Acceptance Criterion 5 below requires a
+> backward-compatible facade re-export of `CircuitBreaker` at its original path. The recorded
+> answer is the no-shim posture instead — no re-export exists at
+> `paladin::application::use_cases::paladin::circuit_breaker` in the shipped tree; see
+> `docs/src/api-reference/stable-api.md`'s canonical-path note. See
+> `.planning/decisions/0018-m6-facade-reexport-policy.md`. Original text retained unchanged below.
+
 5. The facade crate re-exports `CircuitBreaker` at the original path for backward compatibility.
 6. The `application/use_cases/paladin/` directory no longer contains infrastructure concerns.
 
