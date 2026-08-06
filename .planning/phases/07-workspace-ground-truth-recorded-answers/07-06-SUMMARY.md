@@ -102,3 +102,10 @@ None - no external service configuration required.
 ---
 *Phase: 07-workspace-ground-truth-recorded-answers*
 *Completed: 2026-08-06*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/ledgers/milestone-04-06.md`
+- FOUND: `.planning/phases/07-workspace-ground-truth-recorded-answers/07-06-SUMMARY.md`
+- FOUND: commit `18dbc34` (ledger rows)
+- FOUND: commit `6254182` (this summary)
