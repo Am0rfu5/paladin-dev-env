@@ -550,8 +550,8 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 07-09-PLAN.md — ARCH-05's five source corrections across four `.project/` documents (wave 6)
-- [ ] 07-10-PLAN.md — Ledger: Milestone 5 Epics 3-4, 20 rows (wave 6)
+- [x] 07-09-PLAN.md — ARCH-05's five source corrections across four `.project/` documents (wave 6)
+- [x] 07-10-PLAN.md — Ledger: Milestone 5 Epics 3-4, 20 rows (wave 6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
