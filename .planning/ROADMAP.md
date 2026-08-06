@@ -582,7 +582,36 @@ Plans:
   4. A downstream project depending on `paladin` compiles no CLI crates: `cargo tree --lib --no-default-features` shows none of `structopt`, `colored` or `comfy-table`, and the library-only build is genuinely library-only rather than 5-of-8 isolated.
   5. `grep -rn 'pub struct TokenUsage' crates src` returns exactly one result, and token figures no longer need conversion when they cross the battalion/ports boundary.
 
-**Plans**: TBD
+**Plans**: 9 plans
+
+Plans:
+
+**Wave 1** *(fully parallel — zero file overlap)*
+
+- [ ] 08-01-PLAN.md — DEBT-05: extend the canonical `TokenUsage`, then collapse both duplicates into `pub use` re-exports (blocking `checkpoint:decision`, D-18 rated one-way)
+- [ ] 08-02-PLAN.md — DEBT-01 tooling: five stale path literals, baseline regeneration, the guard proven in both directions, and `check-deprecations.sh` made able to fail
+- [ ] 08-04-PLAN.md — ADR-0022 (deprecation withdrawal) and ADR-0023 (CLI dependency isolation), authored before the code they authorise
+- [ ] 08-05-PLAN.md — DEBT-01 records: the five `.project/` requirement-text sources annotated and the five REQUIREMENTS.md traceability rows corrected
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 08-03-PLAN.md — DEBT-03: remove `[lib] doctest = false` and `ci.yml`'s `--exclude paladin-ports` in one commit, and prove the doctests run (depends on 08-02 for `ci.yml` file serialization only — zero line contention)
+- [ ] 08-06-PLAN.md — DEBT-02: the three-way reconciliation of `DEPRECATIONS.md`, `stable-api.md` and the tree behind ADR-0022
+- [ ] 08-07-PLAN.md — DEBT-04 core: `structopt`→clap v4, `required-features = ["cli"]` on the `paladin` binary, `paladin-herald`'s first `[features]` section, and all six Herald construction sites gated (both root-`Cargo.toml` halves in one plan)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 08-08-PLAN.md — DEBT-04 downstream: both Dockerfiles, the inverted `feature-flags.yml` step, the deployment page, two `CHANGELOG.md` entries, and criterion 4 proved by command into ADR-0023
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 08-09-PLAN.md — Close-out: five ledger rows amended in place, DEBT checkboxes flipped behind evidence, `PROMOTION.md` → 0024, PROJECT.md Key Decisions, `COVERAGE.md`, the ADR-0006 84% floor re-check, and a blocking human seal on the three shipped-surface changes
+
+**Cross-cutting constraints:**
+
+- Every plan is subject to the CLAUDE.md workspace gate (`cargo test` → `cargo fmt --check` → `cargo clippy -- -D warnings`) and to ADR-0006's 84% workspace line-coverage floor. Prefer `--offline`: `crates.io` returns HTTP 403 in this environment while the tree builds and tests offline.
+- Prohibited across the whole phase: `ci.yml:148/393/792`'s `actions-rs/toolchain@v1` (Phase 15 / PIPE-04); converging `VisionTokenUsage` (out of ADR-0016's five); auditing the 87 pre-existing `ignore`/`no_run`/`text` fences in `paladin-ports` (Phase 16 / DOCS-03); deciding the `cargo doc --workspace --no-deps` warning bar (Phase 10 / HARD-07); retiring `src/main.rs` (ADR-0019 recorded its purpose).
+- CI is knowingly red between 08-07 and 08-08: `feature-flags.yml:144`'s step "Verify paladin binary builds without cli feature" inverts the moment the binary gate lands, and 08-08 repairs it. Do not merge the phase to a protected branch between those two plans.
 
 **Milestone 7-8 close-out — Phases 9-11 (not started)**
 
