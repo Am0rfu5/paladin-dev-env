@@ -71,6 +71,29 @@ place at that milestone). Milestone 6 retired it. The ledger records that row `s
 shipped code`, pointing here, not as a contradiction to reopen — Milestone 5's shim requirement was
 never wrong for Milestone 5; Milestone 6 changed the posture going forward.
 
+**Amended 2026-08-06, plan 07-13 (original clause retained above; narrowed, not reversed).**
+"Milestone 6 retired it" overstates what shipped, and the overstatement is corrected here rather
+than left for a later reader to trip over. The literal FR-14 path this clause means,
+`src/application/use_cases/battalion/`, is indeed gone — re-confirmed this task via
+`test -d src/application/use_cases` (fails). But the shim *mechanism* was not deleted: it survives
+today, carried forward under the unrelated Milestone 8 Epic 4 `use_cases` → `services` rename, at
+`src/application/services/battalion/mod.rs` — still a thin `pub use paladin_battalion::<module>;`
+re-export block whose own header comment calls itself "a thin shim" (re-read this task),
+declared in `src/application/services/mod.rs`, and actively consumed by 36 files, re-grepped this
+task via `grep -rln 'application::services::battalion' src/ tests/ examples/ crates/`: 5 in `src/`
+(`src/prelude.rs`, `src/application/mod.rs`, the shim file itself, and two CLI command modules),
+18 in `tests/`, 13 in `examples/`, 0 in `crates/`. First surfaced as a residual finding in plan
+07-10's `REQ-battalion-facade-shim` ledger row; amended at source here per that plan's own
+deferral (it did not touch `.planning/decisions/*.md`, per its prohibitions).
+
+What this clause should say, stated plainly: Milestone 6 retired the *directory* the FR-14 path
+named and the posture it represented going forward (no new shims are added — clause (i) is
+unaffected and holds). The *re-export mechanism itself* — a pre-existing, Milestone-5-era artifact
+— outlived that directory under a later, unrelated rename and remains live in the shipped tree
+today. This does not reopen Non-Goal 7 or FR-4.11's settled scope, both of which name the
+orchestration-service and CircuitBreaker relocations specifically, not this battalion re-export;
+it narrows one adjacent historical claim in this clause to match what shipped.
+
 ## Considered Options
 
 - Ratify the no-shim posture the PRDs and the shipped tree already agree on (accepted) — the

@@ -692,7 +692,7 @@ shipped.
 
 ### Ground truth (ARCH)
 
-- [ ] **ARCH-01**: The *Milestone 4-6 as-shipped ledger* below is upgraded from component-level
+- [x] **ARCH-01**: The *Milestone 4-6 as-shipped ledger* below is upgraded from component-level
       file evidence to per-criterion verdicts with `file:line` citations, for all 115 run-3
       requirement IDs. Must record the corrected workspace shape: **ten library crates**
       (`paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-herald`, `paladin-llm`,
@@ -711,7 +711,7 @@ shipped.
       *Derives: `intel/code-verification.md` run-3 section (22 verified-shipped claims, 12-row
       contradiction table); INGEST-CONFLICTS run-3 INFO on `in_memory_registry.rs`.*
 
-- [ ] **ARCH-02**: The milestone/tier numbering collision is recorded once and corrected at its
+- [x] **ARCH-02**: The milestone/tier numbering collision is recorded once and corrected at its
       source. The Milestone 4 overview is titled "Milestone 1: High-Value, Low-Risk Foundations",
       the Milestone 5 overview "Milestone 2: Workspace Decomposition", the Milestone 6 overview
       lists its prerequisites as "Completed in Milestones 1 and 2", and PRDs cross-reference the
@@ -722,7 +722,7 @@ shipped.
       both must be fixed with the same convention so `REQ-*` provenance keys resolve.
       *Derives: INGEST-CONFLICTS run-3 warning 1; affects 9 of the 19 run-3 DOCs.*
 
-- [ ] **ARCH-03**: Each of the four run-3 competing variant pairs has exactly one recorded answer,
+- [x] **ARCH-03**: Each of the four run-3 competing variant pairs has exactly one recorded answer,
       citing the shipped code that settles it and stating whether the documents are amended or the
       code is accepted as the resolution. All four are settled *in code* — which is unusual for
       this corpus — but three of the four PRDs are unamended and would produce the wrong answer if
@@ -747,7 +747,7 @@ shipped.
       REQ-port-value-type-ownership-v1/-v2, REQ-llm-config-bridge-location-v1/-v2;
       INGEST-CONFLICTS run-3 warnings 2-5.*
 
-- [ ] **ARCH-04**: The Milestone 6 facade re-export policy has one recorded answer and its version
+- [x] **ARCH-04**: The Milestone 6 facade re-export policy has one recorded answer and its version
       consequence is recorded. The Milestone 6 overview requires the facade to re-export relocated
       types at their original paths for backward compatibility (Epic 2 AC 6, Epic 4 AC 5, and the
       risk register's "facade crate re-exports absorb the change"); both PRDs require the
@@ -767,7 +767,7 @@ shipped.
       major one. This requirement's remaining scope — the facade re-export policy itself — is
       untouched by Phase 4 and still applies here.)
 
-- [ ] **ARCH-05**: The five documented positions that shipped code contradicts are corrected at
+- [x] **ARCH-05**: The five documented positions that shipped code contradicts are corrected at
       source, so no later work applies them literally. All five verified:
 
       1. `vision` gating `chacha20poly1305` and `zeroize` — the Epic 1 `dependency-matrix.md`
@@ -797,7 +797,7 @@ shipped.
       REQ-orchestration-target-structure, REQ-circuitbreaker-stable-api-update;
       `intel/code-verification.md` "Crate-level facts that contradict run-3 requirement text".*
 
-- [ ] **ARCH-06**: The Milestone 4 Epic 3 binary-target architecture question is answered and
+- [x] **ARCH-06**: The Milestone 4 Epic 3 binary-target architecture question is answered and
       documented, closing FR9.3's never-produced deliverable. Q1 recorded "User selected Option D —
       requires architecture review" and made it a blocker for Task 3.3; no architecture-review
       record exists anywhere in the ingest set. The tree answers it de facto with **three** binary
@@ -806,7 +806,7 @@ shipped.
       recorded answer must state each binary's intended use case, which is what FR3 asked for.
       *Derives: REQ-binary-target-config, REQ-cli-docs; INGEST-CONFLICTS run-3 INFO.*
 
-- [ ] **ARCH-07**: The build-time benchmark record is made falsifiable.
+- [x] **ARCH-07**: The build-time benchmark record is made falsifiable.
       `Epic_6/build-benchmarks.md` marks four of five scenarios "Meets ≥ 50% target? No" (clean
       build −6.6%, core incremental −18.9%, llm incremental −44.6%) and two "Yes" (memory −50.2%,
       battalion-only −90.9%), then concludes "**Overall verdict: Target achieved**"; it also states
@@ -2837,8 +2837,9 @@ rows, each with a `file:line` citation and, where the verdict is `satisfied`, a 
 example, command or CI job that exercises it. The ledger records the real workspace shape of ten
 library crates plus `doc-examples` plus the root facade package `paladin-ai` — replacing both the
 six crates the Milestone 5/6 overviews assume and the nine-crate figure this planning set carried
-before run 3. Nested outstanding-item count is finalised by plan 07-13. Phases 10 and 13 add the
-remaining sibling ledger files (`milestone-07-08.md`, `milestone-09-12.md`) in the same directory.
+before run 3. Nested outstanding-item count: **0** — no row uses the blank-first-two-column
+nested-row format, per the ledger's own `## Summary` section. Phases 10 and 13 add the remaining
+sibling ledger files (`milestone-07-08.md`, `milestone-09-12.md`) in the same directory.
 
 ---
 
@@ -3648,13 +3649,13 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | CLOSE-01 | Phase 6 | Complete |
 | CLOSE-02 | Phase 6 | Complete |
 | CLOSE-03 | Phase 6 | Complete |
-| ARCH-01 | Phase 7 | Pending |
-| ARCH-02 | Phase 7 | Pending |
-| ARCH-03 | Phase 7 | Pending |
-| ARCH-04 | Phase 7 | Pending |
-| ARCH-05 | Phase 7 | Pending |
-| ARCH-06 | Phase 7 | Pending |
-| ARCH-07 | Phase 7 | Pending |
+| ARCH-01 | Phase 7 | Complete |
+| ARCH-02 | Phase 7 | Complete |
+| ARCH-03 | Phase 7 | Complete |
+| ARCH-04 | Phase 7 | Complete |
+| ARCH-05 | Phase 7 | Complete |
+| ARCH-06 | Phase 7 | Complete |
+| ARCH-07 | Phase 7 | Complete |
 | DEBT-01 | Phase 8 | Pending |
 | DEBT-02 | Phase 8 | Pending |
 | DEBT-03 | Phase 8 | Pending |
