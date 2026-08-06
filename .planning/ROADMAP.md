@@ -559,7 +559,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 07-12-PLAN.md — Ledger: Milestone 4 Epics 1-3, 25 rows; the ledger reaches 115 of 115 verdicted (wave 8)
+- [x] 07-12-PLAN.md — Ledger: Milestone 4 Epics 1-3, 25 rows; the ledger reaches 115 of 115 verdicted (wave 8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
