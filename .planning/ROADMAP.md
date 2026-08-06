@@ -540,8 +540,8 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 07-05-PLAN.md — ADR-0018 Milestone 6 facade re-export policy and its version consequence, plus the Milestone 6 overview and CircuitBreaker PRD annotations (wave 4)
-- [ ] 07-06-PLAN.md — Ledger: Milestone 5 Epics 1-2, 20 rows (wave 4)
+- [x] 07-05-PLAN.md — ADR-0018 Milestone 6 facade re-export policy and its version consequence, plus the Milestone 6 overview and CircuitBreaker PRD annotations (wave 4)
+- [x] 07-06-PLAN.md — Ledger: Milestone 5 Epics 1-2, 20 rows (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
