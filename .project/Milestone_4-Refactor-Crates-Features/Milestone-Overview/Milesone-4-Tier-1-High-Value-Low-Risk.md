@@ -1,4 +1,14 @@
-# Milestone 1: High-Value, Low-Risk Foundations
+> **Correction (dated 2026-08-06, ADR-0014):** This document titles itself "Milestone 1" while the
+> authoritative numbering makes it **Milestone 4** (Tier 1) — "Milestone 1" here is a
+> refactoring-tier label internal to Milestones 4-6, not the corpus's Milestone counter. See
+> [`.planning/decisions/0014-milestone-4-6-tier-numbering.md`](../../../.planning/decisions/0014-milestone-4-6-tier-numbering.md)
+> for the full mapping. Original text is retained below with inline corrections — nothing is
+> deleted.
+
+# ~~Milestone 1: High-Value, Low-Risk Foundations~~ Milestone 4 (Tier 1): High-Value, Low-Risk Foundations
+**Corrected numbering (ADR-0014):** this document is Milestone 4, Tier 1 in the directory /
+task-list numbering; "Milestone 1" is this document's own tier label, not the corpus's Milestone
+counter. See ADR-0014's mapping table for the full correction.
 
 **Project:** Paladin Framework Refactoring Initiative
 **Milestone:** Tier 1 — High-Value, Low-Risk Improvements
