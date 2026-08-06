@@ -231,3 +231,13 @@ None - no external service configuration required.
 ---
 *Phase: 07-workspace-ground-truth-recorded-answers*
 *Completed: 2026-08-06*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/decisions/0015-core-ports-dependency-allowlist.md`
+- FOUND: `.planning/decisions/0017-llm-config-bridge-location.md`
+- FOUND: `.planning/phases/07-workspace-ground-truth-recorded-answers/07-04-SUMMARY.md`
+- FOUND: commit `331115e` (ADR-0015)
+- FOUND: commit `4c8450a` (ADR-0017)
+- FOUND: commit `ebbe3af` (PRD annotation)
+- FOUND: commit `545ec14` (this SUMMARY)
