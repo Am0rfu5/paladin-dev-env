@@ -95,14 +95,24 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   one command.
 
 - **D-03: If `cargo public-api` cannot run in this environment, land the path fix and record a
-  blocker. Do not fake the baseline.** `cargo public-api` needs a nightly toolchain and
+  blocker. Do not fake the baseline.** ~~`cargo public-api` needs a nightly toolchain and
   `cargo install`, i.e. network. The tree *does* build offline (`cargo doc --offline -p
   paladin-ports` and `cargo test --offline -p paladin-ports --lib` both ran during Phase 7), but
   nothing has proven `cargo install cargo-public-api` works here, and Phase 1's coverage
-  measurement was halted by exactly this class of constraint. If regeneration is impossible: the
+  measurement was halted by exactly this class of constraint.~~ If regeneration is impossible: the
   five references still get fixed, the regeneration command is recorded as the documented
   procedure, and the DEBT-01 closure claim is scoped honestly to "path corrected; baseline
   refresh blocked, procedure recorded" — never "criterion 1 satisfied".
+  — **Amended 2026-08-06 during research (superseded text retained above per D-00d).** The struck
+  premise is **wrong for this environment, proven end to end.** `cargo-public-api` **0.52.0 is
+  already installed** — no `cargo install` is needed at all — and `rustup toolchain install nightly`
+  succeeds because it fetches from `static.rust-lang.org`, which is reachable, even though
+  `crates.io` returns HTTP 403. `08-RESEARCH.md` regenerated the baseline to completion (1,968
+  items, deterministic), diffed it against the stale one (**53 real diff lines**), and confirmed
+  `check-api-surface.sh` reports "unchanged" against a matching baseline and "changed" against
+  drift. **Baseline regeneration is therefore the expected default path, not a best-effort attempt
+  with a pre-written excuse.** The blocker text above survives only as a documented contingency in
+  case CI's runner differs from this devcontainer. D-02 is unchanged and now known-achievable.
 
 - **D-04: The five requirement-text references get D-00c annotation at source *and* a
   REQUIREMENTS.md correction.** The four FR clauses plus one `cross_refs` field —
@@ -181,6 +191,14 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   failure list; every later task's scope derives from that list, not from an estimate.
   Volume for sizing: **274** fenced blocks across 33 port files, of which **87** carry
   `ignore` / `no_run` / `text` — so roughly **187** executing candidates.
+  — **MEASURED 2026-08-06 during research — the answer is "they already pass."** `08-RESEARCH.md`
+  temporarily removed `doctest = false` and ran `cargo test --offline -p paladin-ports --doc`:
+  **96 passed, 0 failed, 94 ignored** (the manifest was restored; `git status --short` clean).
+  The stale-justification hypothesis is confirmed. **DEBT-03 collapses to a two-line diff** —
+  drop the manifest flag, drop `ci.yml:226`'s `--exclude paladin-ports` — plus a verification task
+  that re-runs the same command at the workspace level. D-10's example-repair rules survive only as
+  a contingency if the workspace-level run surfaces something the crate-level run did not. **Any
+  DEBT-03 task list longer than ~2 tasks is a planning error.**
 
 - **D-10: Fix failures by making examples compile. `ignore` is permitted only for examples needing
   a live external service, and each one gets a one-line reason.** Blanket-`ignore`ing a fence to
@@ -242,6 +260,18 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   that fallback must be *proven*, not assumed, and it must be written down.
   — **Reversibility:** costly — a crate's default feature set is part of its published contract;
   Herald ships on crates.io.
+  — **Extended 2026-08-06 during research — two files this decision did not name will break the
+  default *build*, not merely leak dependencies.** `08-RESEARCH.md` found that
+  `src/infrastructure/adapters/herald/mod.rs` (`pub use paladin_herald::{JsonHerald, MarkdownHerald,
+  TableHerald};`, un-gated) and `src/application/services/herald/herald_registry.rs`
+  (unconditionally calls `TableHerald::default()` / `MarkdownHerald::new()`, un-gated) will fail to
+  **compile** under `--no-default-features` once `paladin-herald` gates those types. Criterion 4
+  would never reach `cargo tree` because the library would not build first. Both files must be in
+  D-14's task list. The fix is a clean additive `#[cfg(feature = …)]` split matching the pattern
+  `herald_registry.rs` **already uses for its sibling `content-processing` and `notifications`
+  modules** — so D-14's "genuinely infeasible" fallback does **not** apply; the research confirmed
+  `colored` / `comfy_table` appear only in function bodies, never in Herald's public trait
+  signatures.
 
 - **D-15: Both D-13 and D-14 are recorded in one ADR-0023, "CLI dependency isolation and the
   binary/Herald surface".** They are one question — what a library-only consumer compiles — with
@@ -335,6 +365,17 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
     evidence, `PROMOTION.md` → 0024, `PROJECT.md` Key Decisions rows, `CHANGELOG.md` entries for
     D-13/D-14's user-visible changes, `COVERAGE.md`, coverage-floor re-check against ADR-0006.
   Plan-file naming is `08-NN-PLAN.md`.
+  — **Amended 2026-08-06 during research — the file-contention premise was wider than reality.**
+  `08-RESEARCH.md` verified that the `api-surface` job is `ci.yml:140-190` and the doctest exclusion
+  at `:226` sits in a **separate `test` job** beginning at `:191`, so **DEBT-01 and DEBT-03 have zero
+  line contention**; and **DEBT-02 touches no CI file at all** (its scope is `DEPRECATIONS.md`,
+  `stable-api.md`, ADR-0022; D-05's `check-deprecations.sh` fix belongs to DEBT-01's plan).
+  **The only real single-file contention in this phase is DEBT-04's two halves on the root
+  `Cargo.toml`** — that one must stay a single plan, as D-24 already says. DEBT-01, DEBT-02,
+  DEBT-03 and DEBT-05 are fully parallel-safe against each other and against DEBT-04. D-24's
+  four-wave shape remains reasonable, but the residual sequencing is a **content** dependency
+  (author each ADR before the code it authorises), not a file dependency — and with DEBT-03 now
+  measured, its wave-1 "measurement spike" becomes the two-line fix itself.
 
 ### Claude's Discretion
 
