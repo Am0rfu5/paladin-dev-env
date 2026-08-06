@@ -163,13 +163,13 @@ Recorded here so downstream agents do not re-derive them from archived CONTEXT.m
 
 ### ARCH-03 — the four competing variant pairs
 
-- **D-09 (a) Rust edition — citation only, no new ADR.** Phase 4 recorded **and applied** it:
+- **D-09:** **(a) Rust edition — citation only, no new ADR.** Phase 4 recorded **and applied** it:
   `.planning/decisions/0009-workspace-rust-edition-2024.md`. Verified this session — **all twelve
   workspace manifests declare `edition = "2024"`** (root plus the eleven crates under `crates/`).
   The ledger rows for `REQ-workspace-crate-edition-v1/-v2` cite ADR-0009 and record v1 (2021) as
   superseded. REL-02's code fix is done. Nothing to decide.
 
-- **D-10 (b) `paladin-core` / `paladin-ports` dependency allowlists — ADR-0015 rewrites the
+- **D-10:** **(b) `paladin-core` / `paladin-ports` dependency allowlists — ADR-0015 rewrites the
   allowlist against reality and separates the *invariant* from the *list*.** The PRD's Appendix B
   calls itself "complete and exhaustive" at six crates; the tree carries **14** in `paladin-core`
   and — measured this session — **11** in `paladin-ports`, not the 10 `intel/code-verification.md`
@@ -189,7 +189,7 @@ Recorded here so downstream agents do not re-derive them from archived CONTEXT.m
   manufactures twelve debt items nobody intends to pay and leaves the invariant still unstated.
   **Enforcement is not built here.** A `cargo tree`-based check is recorded as a Phase 15 candidate.
 
-- **D-11 (c) Port value-type ownership — ADR-0016 ratifies the shipped answer (`paladin-core`
+- **D-11:** **(c) Port value-type ownership — ADR-0016 ratifies the shipped answer (`paladin-core`
   owns), and fixes the record on both sides.** This is the one place mechanical precedence gives
   the architecturally wrong result: the Epic 1 decision record is `Status: Approved` but
   manifest-typed DOC, so the later Epic 2 PRD outranks it and would pull `PaladinResult`,
@@ -212,7 +212,7 @@ Recorded here so downstream agents do not re-derive them from archived CONTEXT.m
   — **Reversibility:** one-way — ADR-0016 is what DEBT-05 consolidates against. Once the two copies
   are collapsed, reversing means re-splitting a public type across two crates.
 
-- **D-12 (d) LLM config bridge location — ADR-0017 accepts v2, and states the circular-dependency
+- **D-12:** **(d) LLM config bridge location — ADR-0017 accepts v2, and states the circular-dependency
   concern was *real but mis-sited*.** Shipped code is `crates/paladin-llm/src/config/bridge.rs`.
   Epic 4 FR-31/FR-32 feared a cycle `paladin-llm → root crate`; that cycle does not exist, because
   Milestone 6 moved the config types **down** into `paladin-llm` rather than moving the bridge

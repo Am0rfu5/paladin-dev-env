@@ -889,9 +889,13 @@ facade, confirmed at all three correction sites (ledger head note, REQUIREMENTS.
 | A3 | `PROMOTION.md`'s inventory candidate 2 (`Epic_17.5/epic17-5.md`, the CLI-placement decision, "Owner phase: Phase 7") is **not** part of this phase's locked scope, since CONTEXT.md's D-25 ADR allocation table only names 0014-0020 for seven ARCH-*-numbered subjects that do not include it | Pattern 3 | Medium — if PROMOTION.md's ownership assignment is meant to be binding independent of CONTEXT.md, this phase should also promote candidate 2 (an eighth ADR, 0021, pushing the next-free line to 0022). This research treats CONTEXT.md as authoritative (it is the locked, discussed decision record) and flags the PROMOTION.md assignment as a discrepancy rather than silently acting on it either way. |
 | A4 | The `Cargo.toml` feature-flag block's exact line numbers (`vision` at 274, `web-server` at 276, `cli` at 284) may drift by the time plans execute, the same way `ci.yml:228` drifted to 304 | The evidence bar in practice | Low-medium — these were freshly verified this session (2026-08-06), same day as CONTEXT.md's own verification, so drift risk before plan execution is low, but should still be re-grepped rather than hard-coded into a plan's prose. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Does the seven-vs-eight byte-equivalent-extracts count (D-08 vs. `INGEST-CONFLICTS.md:656`)
+> **Both questions were resolved by orchestrator amendments to CONTEXT.md on 2026-08-06, after this
+> research returned and before the planner ran.** The original text of each is retained below with
+> its resolution appended, per the project's retain-don't-delete convention (D-00f).
+
+1. **(RESOLVED)** **Does the seven-vs-eight byte-equivalent-extracts count (D-08 vs. `INGEST-CONFLICTS.md:656`)
    resolve to the same file set?**
    - What we know: `INGEST-CONFLICTS.md:656` names exactly eight `.project/` files as byte-equivalent
      copies; D-08's prose in CONTEXT.md says "seven."
@@ -901,8 +905,13 @@ facade, confirmed at all three correction sites (ledger head note, REQUIREMENTS.
    - Recommendation: The scaffold or correction-batch plan should enumerate the exact file list by
      re-running the `INGEST-CONFLICTS.md:656` grep and diffing against D-08's implied set, then
      record whichever count is correct with the reasoning, rather than picking a number silently.
+   - **RESOLVED (2026-08-06):** the enumerated **eight** is the operative list. `.project/Milestone_5-…/Epic_1/`
+     was checked and holds a PRD, not an overview extract, so there is no ninth despite the
+     headline at `INGEST-CONFLICTS.md:655` saying "Nine". The headline/list mismatch is a
+     bookkeeping defect *inside* INGEST-CONFLICTS and reconciling it is this phase's business.
+     Recorded as an amendment to CONTEXT.md D-08; implemented in plan **07-03**.
 
-2. **Is `PROMOTION.md` candidate 2 (`Epic_17.5/epic17-5.md`) in scope for this phase?**
+2. **(RESOLVED)** **Is `PROMOTION.md` candidate 2 (`Epic_17.5/epic17-5.md`) in scope for this phase?**
    - What we know: `PROMOTION.md`'s own inventory names "Owner phase: Phase 7" for this candidate.
      CONTEXT.md's locked D-25 allocates exactly seven ADR numbers (0014-0020) for seven named
      subjects, none of which is this candidate.
@@ -913,6 +922,12 @@ facade, confirmed at all three correction sites (ledger head note, REQUIREMENTS.
      and explicit about "seven new ADRs," this research treats candidate 2 as **not** this phase's
      scope, but the discrepancy against `PROMOTION.md`'s own inventory should be visible to whoever
      next edits `PROMOTION.md`'s ownership column.
+   - **RESOLVED (2026-08-06):** it is **in scope**, and the research recommendation above was
+     overturned rather than adopted. Leaving an unowned candidate whose recorded owner is *this*
+     phase would be exactly the silent gap this phase exists to close. Recorded as CONTEXT.md
+     **D-25a**: promote it as **ADR-0021**, authored alongside ADR-0019 (shared CLI/binary
+     subject), with `PROMOTION.md`'s next-free line advancing to **0022**. Implemented in plans
+     **07-07** (the ADR) and **07-13** (the bookkeeping).
 
 ## Environment Availability
 

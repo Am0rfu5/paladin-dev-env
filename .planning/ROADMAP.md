@@ -525,19 +525,49 @@ verified and are not re-planned; CLOSE-02 and CLOSE-03 are ✓ SATISFIED and get
 **Plans**: 13 plans across 9 waves. Exactly one plan writes `.planning/ledgers/milestone-04-06.md` per wave, so the six ledger plans never collide. **ADR-0016 lands in wave 2**, which is what unblocks Phase 8 / DEBT-05.
 
 Plans:
+**Wave 1**
+
 - [ ] 07-01-PLAN.md — Tracer: ledger scaffold with 115 rows and Milestone 6 Epic 3 fully cited, REQUIREMENTS.md reduced to a pointer, `STRUCTURE.md` corrected to ten crates, ADR-0014 and the first `.project/` annotation (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 07-02-PLAN.md — ADR-0016 port value-type ownership plus the Epic 2 ports-extraction PRD annotation; carries the one-way reversibility gate and unblocks Phase 8 / DEBT-05 (wave 2)
 - [ ] 07-03-PLAN.md — ARCH-02 pointer banners on the eight byte-equivalent overview extracts, and the seven-versus-eight-versus-nine count reconciliation recorded in ADR-0014 (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 07-04-PLAN.md — ADR-0015 dependency allowlist and purity invariant, ADR-0017 LLM config bridge, plus the Epic 4 llm-extraction PRD annotation (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 07-05-PLAN.md — ADR-0018 Milestone 6 facade re-export policy and its version consequence, plus the Milestone 6 overview and CircuitBreaker PRD annotations (wave 4)
 - [ ] 07-06-PLAN.md — Ledger: Milestone 5 Epics 1-2, 20 rows (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 07-07-PLAN.md — ADR-0019 binary-target architecture, ADR-0021 CLI placement, ADR-0020 build-benchmark restated per scenario (wave 5)
 - [ ] 07-08-PLAN.md — Ledger: Milestone 6 Epics 1, 2 and 4, 25 rows (wave 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 07-09-PLAN.md — ARCH-05's five source corrections across four `.project/` documents (wave 6)
 - [ ] 07-10-PLAN.md — Ledger: Milestone 5 Epics 3-4, 20 rows (wave 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
 - [ ] 07-11-PLAN.md — Ledger: Milestone 5 Epics 5-6, 16 rows (wave 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
 - [ ] 07-12-PLAN.md — Ledger: Milestone 4 Epics 1-3, 25 rows; the ledger reaches 115 of 115 verdicted (wave 8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
 - [ ] 07-13-PLAN.md — Close-out: counted verdict distribution, the five forward-scope handoffs, `PROMOTION.md` advanced to 0022, PROJECT.md Key Decisions, `COVERAGE.md`, phase-boundary check (wave 9)
+
+**Cross-cutting constraints:**
+
+- Row count in the ledger is still exactly 115, no `REQ-*` ID appears twice, and rows in these two sections appear in the order the scaffold fixed.
 
 ### Phase 8: Verified Defect Closure
 
