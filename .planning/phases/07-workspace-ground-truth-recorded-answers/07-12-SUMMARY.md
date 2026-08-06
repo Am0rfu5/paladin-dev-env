@@ -139,6 +139,13 @@ None. The worktree had no pre-existing `target/` directory, so the first `cargo 
 - Phase 8's DEBT-01 (api-surface CI), DEBT-02 (deprecation warnings), DEBT-03 (paladin-ports doctests), and DEBT-04 (CLI dependency isolation) all now have this ledger's fresh, corrected-scope evidence to plan against — DEBT-04 in particular must plan against ADR-0019's two-part `structopt`/`paladin-herald` scope, not the original three-line fix.
 - Phase 16 receives the FR9.3 user-facing binary-architecture mdbook page as owed work (ADR-0019 plus this ledger's `REQ-binary-target-config`/`REQ-cli-docs` rows are the source record, not the deliverable itself).
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/ledgers/milestone-04-06.md` (modified, committed)
+- FOUND: `.planning/phases/07-workspace-ground-truth-recorded-answers/07-12-SUMMARY.md`
+- FOUND: commit `db656bb` (ledger content)
+- FOUND: commit `6d9d099` (this summary)
+
 ---
 *Phase: 07-workspace-ground-truth-recorded-answers*
 *Completed: 2026-08-06*
