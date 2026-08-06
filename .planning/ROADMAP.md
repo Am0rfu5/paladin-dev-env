@@ -545,8 +545,8 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 07-07-PLAN.md — ADR-0019 binary-target architecture, ADR-0021 CLI placement, ADR-0020 build-benchmark restated per scenario (wave 5)
-- [ ] 07-08-PLAN.md — Ledger: Milestone 6 Epics 1, 2 and 4, 25 rows (wave 5)
+- [x] 07-07-PLAN.md — ADR-0019 binary-target architecture, ADR-0021 CLI placement, ADR-0020 build-benchmark restated per scenario (wave 5)
+- [x] 07-08-PLAN.md — Ledger: Milestone 6 Epics 1, 2 and 4, 25 rows (wave 5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
