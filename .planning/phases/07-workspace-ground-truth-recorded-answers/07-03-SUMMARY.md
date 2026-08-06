@@ -243,6 +243,13 @@ None - no external service configuration required.
 - No blockers for later phases. `.planning/decisions/PROMOTION.md`'s "Next free ADR number" line
   is unaffected by this plan (that's plan 07-13's job).
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/decisions/0014-milestone-4-6-tier-numbering.md`
+- FOUND: all eight `.project/` extract files (existence-verified individually before editing)
+- FOUND: commit `a16aa71` (nine-file annotation commit) in `git log --oneline --all`
+- FOUND: commit `8408f93` (this SUMMARY commit) in `git log --oneline --all`
+
 ---
 *Phase: 07-workspace-ground-truth-recorded-answers*
 *Completed: 2026-08-06*
