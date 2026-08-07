@@ -1,5 +1,18 @@
 # PRD: API Security & Authorization (Milestone 12, Epic 5)
 
+> **Correction (dated 2026-08-06, DEBT-01):** This document's §7 "API surface" bullet (struck
+> below) instructs a future implementer to write the public-API surface baseline to the pre-rename
+> `project/` path — a path that has not existed since commit `928c6d5` renamed `project/` to
+> `.project/`. The baseline lives at `.project/current-exports.txt`, confirmed present at 442,369
+> bytes via `ls -la .project/current-exports.txt`, re-run during this task; the pre-rename path is
+> confirmed absent via `ls` on it, which returns "No such file or directory", also re-run during
+> this task. This document was created 2026-06-09, months after commit `928c6d5` renamed the
+> directory, so the defect it names propagates forward rather than decaying. This is one of five
+> requirement documents Phase 8 / DEBT-01 corrects on the requirement-text side; the corresponding
+> tooling (`scripts/check-api-surface.sh`, `scripts/extract-public-api.sh`,
+> `.github/workflows/ci.yml`) was corrected separately in plan 08-02. Original text is retained
+> below with inline corrections — nothing is deleted.
+
 **Project:** Paladin Framework
 **Milestone:** 12 — Web API / HTTP Service Host Topology, Out of the Box
 **Epic:** 5 — API Security & Authorization
@@ -217,9 +230,14 @@ request ─► [auth layer] ──(401 if required & invalid)──► attach Pr
   Open Q5).
 - **Config:** extend `WebHttpConfig` with an `auth` section (lenient serde defaults); API-key values
   should come from env/secret indirection in practice (documented), not committed config.
-- **API surface:** new public items (`Principal`, `AgentAuthConfig`, auth middleware, config types)
-  will change `project/current-exports.txt` — regenerate (expected additive, plus the
-  `allowed_roles`/auth fields).
+- ~~**API surface:** new public items (`Principal`, `AgentAuthConfig`, auth middleware, config types)~~
+  ~~will change `project/current-exports.txt` — regenerate (expected additive, plus the~~
+  ~~`allowed_roles`/auth fields).~~
+  **Corrected (dated 2026-08-06, DEBT-01):** The correct baseline path is
+  `.project/current-exports.txt`, not the pre-rename path struck above — the directory was renamed
+  by commit `928c6d5`. Confirmed via `ls -la .project/current-exports.txt` (442,369 bytes present)
+  and `ls` on the struck path ("No such file or directory"), both re-run during this task. The rest
+  of the bullet (the additive-change expectation) is unaffected.
 
 ---
 
