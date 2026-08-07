@@ -33,6 +33,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `llm_port`) keeps its existing fallback behaviour unchanged.
   See [ADR-0013](.planning/decisions/0013-grove-routing-model.md).
 
+- **Breaking (build): the `paladin` binary now requires the `cli` feature.** `cargo run` and
+  `cargo build --bin paladin` no longer build that binary without `--features cli` — it now
+  carries `required-features = ["cli"]`, the same gate its two siblings (`paladin-cli`,
+  `paladin-server`) already had, making all three `[[bin]]` targets consistent with
+  ADR-0019's three-binary architecture. **Remedy:** run `cargo build --bin paladin --features cli`
+  (or `cargo run --features cli`) instead of the bare command. `Dockerfile` and `Dockerfile.chef`
+  were updated to pass `--features cli` in their release build stage. Underneath this gate,
+  `src/main.rs` was also migrated from `structopt` (removed from the workspace entirely) to
+  `clap` v4, with identical flags (`-c` / `--config`, default `config.yml`) and an unchanged
+  binary name (`smartcontent-aggregator`) — a caller's invocation and arguments do not change,
+  only the feature requirement does. See
+  [ADR-0023](.planning/decisions/0023-cli-dependency-isolation.md).
+- **Breaking (library): `paladin-herald`'s table and coloured-markdown formatters moved behind
+  features.** `paladin-herald` gained its first `[features]` section (`default = []`, `table`,
+  `color`). `TableHerald` is now available only under the `table` feature, and `MarkdownHerald`'s
+  coloured rendering path (status badges, bold fields, the coloured error heading) is now behind
+  the `color` feature — `MarkdownHerald` itself stays constructible and functional without it,
+  falling back to plain text. `JsonHerald` and the uncoloured `MarkdownHerald` remain available in
+  a default (featureless) build. **Remedy:** add `features = ["table", "color"]` to the
+  `paladin-herald` dependency, or depend on the root `paladin` crate's `cli` feature, which enables
+  both. Two consequences a downstream consumer can observe: (1)
+  `paladin::infrastructure::adapters::herald::TableHerald` is available only when the root `cli`
+  feature is enabled; (2) `Settings::create_default_herald()` called with
+  `herald.default_formatter = "table"` in a build without `cli` returns the existing
+  `Unknown formatter 'table'. Valid options: json, markdown` error instead of constructing a table
+  Herald. `paladin-herald` is published on crates.io, so this is a change to its default public
+  API. See [ADR-0023](.planning/decisions/0023-cli-dependency-isolation.md).
+
 ## [0.7.0] - 2026-08-03
 
 ### Phase 12.1 — Complete the Paladin Arsenal MCP client (dogfood)
