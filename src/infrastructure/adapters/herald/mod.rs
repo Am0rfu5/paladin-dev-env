@@ -5,6 +5,13 @@
 //! domain crate. The facade re-exports them here so the
 //! `crate::infrastructure::adapters::herald::…` paths remain stable for the composition
 //! root, examples, and tests.
+//!
+//! `JsonHerald` and `MarkdownHerald` are always available. `TableHerald` requires the
+//! root `cli` feature (which enables `paladin-herald/table`) and is gated to match.
 
-pub use paladin_herald::{JsonHerald, MarkdownHerald, TableHerald};
-pub use paladin_herald::{json_herald, markdown_herald, table_herald};
+#[cfg(feature = "cli")]
+pub use paladin_herald::TableHerald;
+#[cfg(feature = "cli")]
+pub use paladin_herald::table_herald;
+pub use paladin_herald::{JsonHerald, MarkdownHerald};
+pub use paladin_herald::{json_herald, markdown_herald};

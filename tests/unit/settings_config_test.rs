@@ -219,10 +219,20 @@ fn test_create_default_herald_table() {
     };
 
     let herald = settings.create_default_herald();
-    assert!(herald.is_ok());
-    let herald = herald.unwrap();
-    assert_eq!(herald.name(), "table");
-    assert_eq!(herald.mime_type(), "text/plain");
+
+    // `TableHerald` requires the `cli` feature (ADR-0023). With it enabled, "table"
+    // constructs normally; without it, the "table" match arm is compiled out and the
+    // request falls through to the existing `Unknown formatter` error path.
+    if cfg!(feature = "cli") {
+        assert!(herald.is_ok());
+        let herald = herald.unwrap();
+        assert_eq!(herald.name(), "table");
+        assert_eq!(herald.mime_type(), "text/plain");
+    } else {
+        assert!(herald.is_err());
+        let err_msg = herald.err().unwrap();
+        assert!(err_msg.contains("Unknown formatter 'table'"));
+    }
 }
 
 #[test]

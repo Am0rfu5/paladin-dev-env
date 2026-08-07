@@ -6,12 +6,13 @@
 //!
 //! # Auto-Registration
 //!
-//! When using `HeraldRegistry::default()`, three built-in formatters are automatically
+//! When using `HeraldRegistry::default()`, built-in formatters are automatically
 //! registered and ready to use:
 //!
-//! - **"json"** - Structured JSON output with metadata
-//! - **"markdown"** - Human-readable Markdown with colors and formatting
-//! - **"table"** - Formatted tables with borders and alignment
+//! - **"json"** - Structured JSON output with metadata. Always registered.
+//! - **"markdown"** - Human-readable Markdown with colors and formatting. Always registered.
+//! - **"table"** - Formatted tables with borders and alignment. Registered only when the
+//!   root `cli` feature is enabled (it gates the `paladin-herald/table` feature).
 //!
 //! # Examples
 //!
@@ -66,7 +67,9 @@
 //! ```
 
 use crate::core::platform::container::herald::Herald;
-use crate::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
+#[cfg(feature = "cli")]
+use crate::infrastructure::adapters::herald::TableHerald;
+use crate::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -247,6 +250,7 @@ impl Default for HeraldRegistry {
         // Auto-register built-in formatters with default configurations
         registry.register("json", Arc::new(JsonHerald::new()));
         registry.register("markdown", Arc::new(MarkdownHerald::new()));
+        #[cfg(feature = "cli")]
         registry.register("table", Arc::new(TableHerald::default()));
 
         registry
@@ -421,48 +425,54 @@ mod tests {
         assert_eq!(registry.len(), 10);
     }
 
+    /// Expected built-in formatter count: "json" + "markdown" always, plus "table" only
+    /// when the root `cli` feature (which enables `paladin-herald/table`) is on.
+    const EXPECTED_BUILTIN_COUNT: usize = if cfg!(feature = "cli") { 3 } else { 2 };
+
     #[test]
     fn test_default_registry() {
         let registry = HeraldRegistry::default();
 
-        // Default registry should have 3 built-in formatters
-        assert_eq!(registry.len(), 3);
+        // Default registry should have the built-in formatters for this feature set
+        assert_eq!(registry.len(), EXPECTED_BUILTIN_COUNT);
         assert!(!registry.is_empty());
 
         // Verify all built-in formatters are registered
         assert!(registry.contains("json"));
         assert!(registry.contains("markdown"));
-        assert!(registry.contains("table"));
+        assert_eq!(registry.contains("table"), cfg!(feature = "cli"));
 
         // Verify formatters are retrievable
         assert!(registry.get("json").is_some());
         assert!(registry.get("markdown").is_some());
-        assert!(registry.get("table").is_some());
+        assert_eq!(registry.get("table").is_some(), cfg!(feature = "cli"));
 
         // Verify formatter names match
         assert_eq!(registry.get("json").unwrap().name(), "json");
         assert_eq!(registry.get("markdown").unwrap().name(), "markdown");
-        assert_eq!(registry.get("table").unwrap().name(), "table");
+        if cfg!(feature = "cli") {
+            assert_eq!(registry.get("table").unwrap().name(), "table");
+        }
     }
 
     #[test]
     fn test_default_registry_can_add_custom_formatters() {
         let registry = HeraldRegistry::default();
 
-        // Start with 3 built-in formatters
-        assert_eq!(registry.len(), 3);
+        // Start with the built-in formatters for this feature set
+        assert_eq!(registry.len(), EXPECTED_BUILTIN_COUNT);
 
         // Add custom formatter
         registry.register("custom", Arc::new(MockHerald::new("custom")));
 
-        // Should now have 4 formatters
-        assert_eq!(registry.len(), 4);
+        // Should now have one more formatter
+        assert_eq!(registry.len(), EXPECTED_BUILTIN_COUNT + 1);
         assert!(registry.contains("custom"));
 
         // Built-in formatters should still be present
         assert!(registry.contains("json"));
         assert!(registry.contains("markdown"));
-        assert!(registry.contains("table"));
+        assert_eq!(registry.contains("table"), cfg!(feature = "cli"));
     }
 
     #[test]
@@ -476,8 +486,8 @@ mod tests {
         // Override json formatter with mock
         registry.register("json", Arc::new(MockHerald::new("custom-json")));
 
-        // Should still have 3 formatters (replaced, not added)
-        assert_eq!(registry.len(), 3);
+        // Should still have the same count (replaced, not added)
+        assert_eq!(registry.len(), EXPECTED_BUILTIN_COUNT);
 
         // Verify formatter was replaced
         let new_json = registry.get("json").unwrap();
@@ -485,7 +495,9 @@ mod tests {
 
         // Other built-in formatters should still be present
         assert_eq!(registry.get("markdown").unwrap().name(), "markdown");
-        assert_eq!(registry.get("table").unwrap().name(), "table");
+        if cfg!(feature = "cli") {
+            assert_eq!(registry.get("table").unwrap().name(), "table");
+        }
     }
 
     #[test]
@@ -499,7 +511,7 @@ mod tests {
 
         // default() creates registry with built-in formatters
         assert!(!default_registry.is_empty());
-        assert_eq!(default_registry.len(), 3);
+        assert_eq!(default_registry.len(), EXPECTED_BUILTIN_COUNT);
 
         // Can still register formatters in new() registry
         new_registry.register("json", Arc::new(MockHerald::new("json")));

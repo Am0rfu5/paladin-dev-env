@@ -4,10 +4,48 @@
 //! showing how each formatter handles progressive output.
 
 use paladin::core::platform::container::herald::{ExecutionMetadata, Herald, StreamChunk};
-use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
+#[cfg(feature = "cli")]
+use paladin::infrastructure::adapters::herald::TableHerald;
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
+
+/// Example 3: Table Herald (Buffered streaming). Requires the `cli` feature (ADR-0023) —
+/// `TableHerald` is gated behind it, so this example is skipped in a default-features build.
+#[cfg(feature = "cli")]
+fn run_table_herald_example(
+    chunks: &[StreamChunk],
+    metadata: &ExecutionMetadata,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("--- Example 3: Table Herald (Buffered) ---\n");
+    println!("Streaming behavior: Buffers all chunks, renders complete table at end\n");
+
+    let herald: Arc<dyn Herald> = Arc::new(TableHerald::default());
+
+    println!("Simulating stream:");
+    for (chunk_count, chunk) in chunks.iter().enumerate() {
+        let result = herald.format_stream_chunk(chunk)?;
+        if result.is_some() {
+            println!("  Chunk {} returned content (unexpected!)", chunk_count + 1);
+        } else {
+            println!("  Chunk {} buffered (returns None)", chunk_count + 1);
+        }
+        thread::sleep(Duration::from_millis(300)); // Simulate delay
+    }
+
+    println!("\nFinalizing stream...");
+    let final_output = herald.finalize_stream(metadata)?;
+    println!("{}\n", final_output);
+
+    println!("Characteristics:");
+    println!("  ✓ No partial output during streaming");
+    println!("  ✓ Complete table rendered at end");
+    println!("  ✓ Proper table formatting guaranteed");
+    println!("  ✓ Ideal for dashboards and reports\n");
+
+    Ok(())
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Herald Streaming Example ===\n");
@@ -132,33 +170,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  ✓ Ideal for CLI and terminals\n");
     }
 
-    // Example 3: Table Herald (Buffered streaming)
-    println!("--- Example 3: Table Herald (Buffered) ---\n");
-    println!("Streaming behavior: Buffers all chunks, renders complete table at end\n");
-    {
-        let herald: Arc<dyn Herald> = Arc::new(TableHerald::default());
-
-        println!("Simulating stream:");
-        for (chunk_count, chunk) in chunks.iter().enumerate() {
-            let result = herald.format_stream_chunk(chunk)?;
-            if result.is_some() {
-                println!("  Chunk {} returned content (unexpected!)", chunk_count + 1);
-            } else {
-                println!("  Chunk {} buffered (returns None)", chunk_count + 1);
-            }
-            thread::sleep(Duration::from_millis(300)); // Simulate delay
-        }
-
-        println!("\nFinalizing stream...");
-        let final_output = herald.finalize_stream(&metadata)?;
-        println!("{}\n", final_output);
-
-        println!("Characteristics:");
-        println!("  ✓ No partial output during streaming");
-        println!("  ✓ Complete table rendered at end");
-        println!("  ✓ Proper table formatting guaranteed");
-        println!("  ✓ Ideal for dashboards and reports\n");
-    }
+    // Example 3: Table Herald (Buffered streaming) — requires the `cli` feature (ADR-0023)
+    #[cfg(feature = "cli")]
+    run_table_herald_example(&chunks, &metadata)?;
+    #[cfg(not(feature = "cli"))]
+    println!(
+        "--- Example 3: Table Herald (Buffered) ---\n\nSkipped — requires the `cli` feature.\n"
+    );
 
     // Example 4: Comparing streaming strategies
     println!("--- Example 4: Strategy Comparison ---\n");

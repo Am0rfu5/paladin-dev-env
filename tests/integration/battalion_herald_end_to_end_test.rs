@@ -6,10 +6,16 @@
 //! (name, id, strategy), per-Paladin results in execution order, aggregated token usage derived
 //! from the mocks' own counts, partial results on failure, and all three Heralds exercised.
 //!
+//! `TableHerald` requires the `cli` feature (ADR-0023); this whole file's tests exercise all
+//! three Heralds together, so the entire module is `#![cfg(feature = "cli")]`-gated and does not
+//! run in a default-features build (two `#[test]` functions skipped, per ADR-0023).
+//!
 //! Task 7.13's own inline note names the missing piece as "needs Battalion execution setup" — a
 //! hand-built `BattalionResult` literal would close the criterion on paper without proving the
 //! producer side. This file contains no such literal; every result comes out of
 //! `FormationExecutionService::execute`.
+
+#![cfg(feature = "cli")]
 
 use async_trait::async_trait;
 use chrono::Utc;

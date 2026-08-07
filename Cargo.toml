@@ -90,7 +90,6 @@ reqwest_mcp = { package = "reqwest", version = "0.13", default-features = false 
 serde = { workspace = true }
 serde_json = { workspace = true }
 
-structopt = "0.3"
 tokio = { workspace = true }
 tokio-util = "0.7"
 dotenv = "0.15.0"
@@ -122,8 +121,8 @@ argon2 = "0.5.3"
 clap = { version = "4.5.40", features = ["derive", "cargo", "env"], optional = true }
 petgraph = "0.6"
 rand = "0.8"
-colored = "2.1"
-comfy-table = "7.1"
+colored = { version = "2.1", optional = true }
+comfy-table = { version = "7.1", optional = true }
 serde_yaml = { version = "0.9", optional = true }
 indicatif = { version = "0.17", optional = true }
 console = { version = "0.15", optional = true }
@@ -240,6 +239,7 @@ required-features = ["web-server"]
 [[bin]]
 name = "paladin"
 path = "src/main.rs"
+required-features = ["cli"]
 
 [[bin]]
 name = "paladin-cli"
@@ -281,7 +281,7 @@ storage-mysql = ["paladin-storage/mysql"]
 storage = ["storage-mysql"]
 
 # CLI (binary and test tooling only — not compiled into the library)
-cli = ["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml"]
+cli = ["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml", "dep:colored", "dep:comfy-table", "paladin-herald/table", "paladin-herald/color"]
 
 # Convenience flag for enabling all optional features
 full = ["llm-all", "content-processing", "web-server", "notifications", "storage", "vision", "redis-queue", "s3-storage", "openai-embeddings", "qdrant", "cli"]

@@ -14,6 +14,7 @@
 //! println!("{}", formatted);
 //! ```
 
+#[cfg(feature = "color")]
 use colored::*;
 use paladin_core::platform::container::herald::{
     BattalionResult, ExecutionMetadata, Herald, HeraldError, PaladinError, PaladinResult,
@@ -34,7 +35,7 @@ pub struct MarkdownHeraldConfig {
 impl Default for MarkdownHeraldConfig {
     fn default() -> Self {
         Self {
-            include_colors: Self::supports_color(),
+            include_colors: Self::default_include_colors(),
             heading_level: 2,
         }
     }
@@ -69,6 +70,19 @@ impl MarkdownHeraldConfig {
         }
 
         // Default to no colors if we can't detect
+        false
+    }
+
+    /// Default `include_colors` value: auto-detected terminal support when the `color`
+    /// feature is enabled, `false` (the existing plain-text path) when it is not.
+    #[cfg(feature = "color")]
+    fn default_include_colors() -> bool {
+        Self::supports_color()
+    }
+
+    /// Default `include_colors` value when the `color` feature is not enabled.
+    #[cfg(not(feature = "color"))]
+    fn default_include_colors() -> bool {
         false
     }
 }
@@ -144,6 +158,7 @@ impl MarkdownHerald {
     }
 
     /// Generate status badge with emoji
+    #[cfg(feature = "color")]
     fn status_badge(&self, status: &str) -> String {
         let (emoji, color_fn): (&str, fn(&str) -> ColoredString) =
             match status.to_lowercase().as_str() {
@@ -162,7 +177,22 @@ impl MarkdownHerald {
         }
     }
 
+    /// Generate status badge with emoji (plain-text path; `color` feature not enabled)
+    #[cfg(not(feature = "color"))]
+    fn status_badge(&self, status: &str) -> String {
+        let emoji = match status.to_lowercase().as_str() {
+            "success" | "completed" | "ok" => "✅",
+            "failed" | "error" => "❌",
+            "timeout" | "warning" => "⏱️",
+            "running" | "in_progress" => "🔄",
+            "pending" | "queued" => "⏳",
+            _ => "ℹ️",
+        };
+        format!("{} {}", emoji, status)
+    }
+
     /// Format a key-value pair as bold key
+    #[cfg(feature = "color")]
     fn format_field(&self, key: &str, value: &str) -> String {
         if self.config.include_colors {
             format!("**{}:** {}\n", key.bold(), value)
@@ -171,9 +201,31 @@ impl MarkdownHerald {
         }
     }
 
+    /// Format a key-value pair as bold key (plain-text path; `color` feature not enabled)
+    #[cfg(not(feature = "color"))]
+    fn format_field(&self, key: &str, value: &str) -> String {
+        format!("**{}:** {}\n", key, value)
+    }
+
     /// Format code block
     fn code_block(&self, content: &str, language: &str) -> String {
         format!("```{}\n{}\n```\n\n", language, content)
+    }
+
+    /// Render the "Error" heading used by [`Herald::format_error`]
+    #[cfg(feature = "color")]
+    fn error_heading(&self) -> String {
+        if self.config.include_colors {
+            format!("**{}**\n\n", "Error".red().bold())
+        } else {
+            "**Error**\n\n".to_string()
+        }
+    }
+
+    /// Render the "Error" heading (plain-text path; `color` feature not enabled)
+    #[cfg(not(feature = "color"))]
+    fn error_heading(&self) -> String {
+        "**Error**\n\n".to_string()
     }
 }
 
@@ -298,12 +350,7 @@ impl Herald for MarkdownHerald {
     fn format_error(&self, error: &PaladinError) -> String {
         let mut output = String::new();
 
-        if self.config.include_colors {
-            output.push_str(&format!("**{}**\n\n", "Error".red().bold()));
-        } else {
-            output.push_str("**Error**\n\n");
-        }
-
+        output.push_str(&self.error_heading());
         output.push_str(&self.code_block(&error.to_string(), ""));
 
         output
