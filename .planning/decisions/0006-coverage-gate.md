@@ -226,6 +226,88 @@ It is accepted and noted here, not explained away or reconciled, in the same sha
 above the stale Milestone-1 baselines is accepted and noted, not explained" above already gives the
 60.88% / 67.79% Milestone-1 baselines.
 
+## Phase 8 amendment (2026-08-06)
+
+**(Amended by Phase 8, dated 2026-08-06, citing plan 08-09's SUMMARY):** the 84% floor is
+re-measured against the Phase 8 close-out tree using this ADR's own pipeline, verbatim, with the
+absolute rustup LLVM tool paths (`cargo-llvm-cov` remains uninstalled and crates.io still returns
+HTTP 403 in this environment; **not** attempted, matching this ADR's own tool-of-record note ruling
+out `cargo tarpaulin`):
+
+```
+RUSTFLAGS="-C instrument-coverage" \
+LLVM_PROFILE_FILE="$PWD/target/coverage/paladin-%p-%m.profraw" \
+cargo test --workspace --offline
+```
+
+Result: exit 0, 3013 passed / 0 failed across every `test result: ok.` line in the run (matching the
+figure carried forward from plan 08-08's SUMMARY at the same tree state).
+
+```
+llvm-profdata merge -sparse target/coverage/*.profraw -o target/coverage/paladin.profdata
+```
+
+Exit 0, `target/coverage/paladin.profdata` created from 2,321 `.profraw` files.
+
+```
+RUSTFLAGS="-C instrument-coverage" cargo test --workspace --no-run --message-format=json --offline \
+  | jq -r 'select(.profile.test == true) | .filenames[]' \
+  | grep -v '\.dSYM' \
+  | sort -u
+```
+
+Result: **30** unique test-binary object paths (one fewer than the 31 this ADR's original
+measurement discovered — `paladin-herald`'s `table_herald` test module no longer produces a
+default-feature test binary of its own significance here; see the accounting below).
+
+```
+llvm-cov report --instr-profile=target/coverage/paladin.profdata \
+  --ignore-filename-regex='(^|/)(examples|benches)/|crates/doc-examples/|registry/src/|rustlib/src/' \
+  --object=<each of the 30 discovered test-binary objects>
+```
+
+TOTAL row, transcribed byte-identical:
+
+```
+TOTAL   97193   11610   88.05%   7799   1677   78.50%   63999   9059   85.85%   0   0   -
+```
+
+(regions / missed regions / region-cover / functions / missed functions / function-cover / lines /
+missed lines / line-cover / branches / missed branches / branch-cover, matching this ADR's own
+column order.)
+
+**The measured figure: 85.85% workspace line coverage** — 63,999 first-party lines counted, 9,059
+missed. **This clears the 84.00% floor by 1.85 points.** Region coverage 88.05%; function coverage
+78.50% (the same ~7-9-point function/line gap this ADR already flagged for VERIFY-05, unchanged in
+kind).
+
+**Delta from the last recorded measurement:** 85.92% at HEAD `1ad8be5` (Phase 3, plan 07) → 85.85%
+now, a **−0.07 point** move — effectively flat, well inside measurement noise, and nowhere near the
+floor.
+
+**Plan 08-07's `cli`-gating change (D-16/D-00e — this phase's one plausible regression vector,
+addressed explicitly rather than assumed neutral):** gating `paladin-herald`'s `table_herald` module
+behind the `table` feature removed **30** `#[test]` functions from the default-feature run (3 in the
+root `paladin-ai` crate, 27 inside `paladin-herald`'s own `table_herald` test module) — ten times the
+3 the plan anticipated (`08-07-SUMMARY.md`, "Issues Encountered"). Crucially, the *source* module
+(`crates/paladin-herald/src/table_herald.rs`) is gated the same way as its tests: this llvm-cov run's
+per-file rows contain **no `table_herald.rs` row at all** (confirmed:
+`grep 'table_herald' <report-output>` returns only `markdown_herald.rs`, which stays compiled by
+default with only its *coloured* rendering path split out). Both the removed tests and the source
+lines they exercised are gone from **both** the numerator and the denominator symmetrically — this
+is a **feature-gating removal, not a coverage regression**: no line that used to count as covered
+now counts as missed. All 30 tests still run and pass under `--features cli` / `--features
+table,color` (`08-07-SUMMARY.md`), so no test coverage is lost, only excluded from this scope's
+denominator by the same construction `minio.rs` already sits outside it under (see "`minio.rs` —
+outside the gated denominator by construction" above).
+
+**No coverage claim is degraded by this phase's changes.** The floor arithmetic recorded above under
+"The gate (floor): 84%, hard-fail from the first run" is unchanged and restated here by reference
+only: the floor is derived by truncating the measured figure toward zero to a whole percent, the
+comparison is at-or-above, and 85.85% floors to 85%, still above the standing 84% floor — this run
+does **not** trigger the ratchet (which requires ≥ 2 whole points above the standing floor at a
+*milestone* close, not a phase close).
+
 ## Considered Options
 
 - `REQ-test-coverage-target-v1` (80% unit / 70% integration, nine Milestone-1 PRDs) — rejected; the
