@@ -628,7 +628,16 @@ Plans:
   4. Asking "what licence is this project?" returns one answer that the root package, all ten library crates and `deny.toml` agree on — replacing today's split between a signed `MIT OR Apache-2.0` policy with a named approver and the `license = "MIT"` the manifests actually declare, on which a 551-package sign-off rests.
   5. `crates/paladin-herald/CHANGELOG.md` exists (or its exemption is recorded), `Dockerfile.chef`'s planner stage covers every crate manifest by a mechanism that cannot go stale on the next crate, and a crates.io name collision is detectable before a release cycle rather than at dry-run time — the three release-gate criteria a published crate family currently fails.
 
-**Plans**: TBD
+**Plans**: 7 plans in 4 waves
+
+Plans:
+- [ ] 09-01-PLAN.md — Tracer: herald CHANGELOG.md + `scripts/check-changelogs.sh` end-to-end through Makefile and a required CI context (SEC-04)
+- [ ] 09-02-PLAN.md — `SECURITY-EXCEPTIONS.md` register (ten rows, eleven governance fields) + ADR-0024 (SEC-01)
+- [ ] 09-03-PLAN.md — Delete `Dockerfile.chef`'s nine-manifest planner enumeration + ADR-0027 (SEC-05)
+- [ ] 09-04-PLAN.md — `.crate-names.txt` + bidirectional name guard, wired to make and CI, + ADR-0026 (SEC-03)
+- [ ] 09-05-PLAN.md — Licence posture: blocking `checkpoint:decision`, then the selected branch across eleven manifests and every other site, + ADR-0025 (SEC-02)
+- [ ] 09-06-PLAN.md — Reconcile `deny.toml`/`.cargo/audit.toml`, land `scripts/check-advisory-register.sh`, delete the duplicate CI audit job (SEC-01)
+- [ ] 09-07-PLAN.md — Close-out: REQUIREMENTS.md evidence flips, source corrections, PROMOTION.md → 0028, Phase 10/12 hand-offs, phase gate (all five)
 
 ### Phase 10: Milestone 7-8 Ground Truth & Recorded Account
 
