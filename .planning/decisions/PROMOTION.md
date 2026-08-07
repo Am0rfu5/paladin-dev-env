@@ -41,13 +41,20 @@ the plans that follow in this same phase):
 | 0019 | `binary-target-architecture` | Binary-target architecture and per-binary purpose (Phase 7) |
 | 0020 | `build-benchmark-per-scenario` | Build-time benchmark target restated per scenario (Phase 7) |
 | 0021 | `cli-application-layer-placement` | CLI placement in the application layer (Phase 7) |
+| 0022 | `deprecation-requirement-withdrawal` | Milestone 4 Epic 2 FR-8 deprecation requirement withdrawn (Phase 8) |
+| 0023 | `cli-dependency-isolation` | CLI dependency isolation and the binary/Herald surface (Phase 8) |
 
-**Next free ADR number: 0022**
+**Next free ADR number: 0024**
 
 *Dated note, 2026-08-06 (plan 07-13):* the line advances to **0022**, not 0021, because D-25a
 (`07-CONTEXT.md`) allocated an eighth ADR — 0021, promoting Part B candidate 2 below — beyond the
 seven D-25 originally reserved (0014-0020). A reader who expects the jump from thirteen prior ADRs
 to land on 0021 should read this note rather than treat 0022 as a skipped number.
+
+*Dated note, 2026-08-06 (plan 08-09):* the line advances again, to **0024**. Phase 8 consumed both
+0022 and 0023 — the first two ADRs in this corpus whose executing phase is their own (D-22): Phase 8
+both authored them (plan 08-04) and performed the `must change` work they record (plans 08-06, 08-07,
+08-08). Neither number was skipped or reused.
 
 Phases 5, 7, 10 and 13 take the next free number from this line when they author further ADRs —
 they do not need to `ls` the directory to find it. Each phase updates this line when it appends.
