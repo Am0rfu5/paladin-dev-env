@@ -47,12 +47,8 @@ pub struct LlmAnalysisOutput {
     pub processing_time_ms: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TokenUsage {
-    pub prompt_tokens: u32,
-    pub completion_tokens: u32,
-    pub total_tokens: u32,
-}
+// Re-export the canonical domain type from paladin-core (ADR-0016 / DEBT-05).
+pub use paladin_core::platform::container::token_usage::TokenUsage;
 
 #[derive(Clone)] // Remove Debug derive here
 pub struct LlmAnalysisService {

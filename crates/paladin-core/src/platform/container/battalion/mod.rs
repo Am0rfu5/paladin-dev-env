@@ -489,39 +489,9 @@ pub enum BattalionStatus {
     Cancelled,
 }
 
-/// Token usage metrics for a single Paladin execution
-///
-/// Tracks prompt and completion token counts to enable cost analysis
-/// and resource monitoring at the Battalion level.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
-pub struct TokenUsage {
-    /// Number of tokens in the input prompt
-    pub prompt_tokens: u32,
-    /// Number of tokens in the completion response
-    pub completion_tokens: u32,
-    /// Total tokens used (prompt + completion)
-    pub total_tokens: u32,
-}
-
-impl TokenUsage {
-    /// Create a new `TokenUsage` with specified counts
-    pub fn new(prompt_tokens: u32, completion_tokens: u32) -> Self {
-        Self {
-            prompt_tokens,
-            completion_tokens,
-            total_tokens: prompt_tokens + completion_tokens,
-        }
-    }
-
-    /// Create a `TokenUsage` from a total count only (no prompt/completion breakdown)
-    pub fn from_total(total_tokens: u32) -> Self {
-        Self {
-            prompt_tokens: 0,
-            completion_tokens: 0,
-            total_tokens,
-        }
-    }
-}
+// Token usage metrics for a single Paladin execution — re-exported from the
+// canonical definition (ADR-0016 / DEBT-05) so this path keeps resolving.
+pub use crate::platform::container::token_usage::TokenUsage;
 
 /// Per-node failure detail for a Battalion execution.
 ///
