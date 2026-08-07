@@ -1,5 +1,18 @@
 # PRD: Deployment Artifacts, Examples & Documentation (Milestone 12, Epic 7)
 
+> **Correction (dated 2026-08-06, DEBT-01):** This document instructs a future implementer to
+> write/regenerate the public-API surface baseline at the pre-rename `project/` path in two places
+> (Success Metric 6 and §4.6 FR-13, both struck below) — a path that has not existed since commit
+> `928c6d5` renamed `project/` to `.project/`. The baseline lives at `.project/current-exports.txt`,
+> confirmed present at 442,369 bytes via `ls -la .project/current-exports.txt`, re-run during this
+> task; the pre-rename path is confirmed absent via `ls` on it, which returns "No such file or
+> directory", also re-run during this task. This document was created 2026-06-09,
+> months after commit `928c6d5` renamed the directory, so the defect it names propagates forward
+> rather than decaying. This is one of five requirement documents Phase 8 / DEBT-01 corrects on
+> the requirement-text side; the corresponding tooling (`scripts/check-api-surface.sh`,
+> `scripts/extract-public-api.sh`, `.github/workflows/ci.yml`) was corrected separately in plan
+> 08-02. Original text is retained below with inline corrections — nothing is deleted.
+
 **Project:** Paladin Framework
 **Milestone:** 12 — Web API / HTTP Service Host Topology, Out of the Box
 **Epic:** 7 — Deployment Artifacts, Examples & Documentation (final epic)
@@ -48,8 +61,13 @@ the milestone.
    a sample config and exercises an agent.
 5. An end-to-end test suite boots the real assembled server and asserts auth, buffered + streaming
    execution, async jobs, health/readiness, the error envelope, and the served spec/UI.
-6. All workspace crates are at **0.6.0**; `CHANGELOG.md` and `project/current-exports.txt` reflect the
-   release.
+6. ~~All workspace crates are at **0.6.0**; `CHANGELOG.md` and `project/current-exports.txt` reflect the
+   release.~~
+   **Corrected (dated 2026-08-06, DEBT-01):** The correct baseline path is
+   `.project/current-exports.txt`, not the pre-rename path struck above — the directory was
+   renamed by commit `928c6d5`. Confirmed via `ls -la .project/current-exports.txt` (442,369 bytes
+   present) and `ls` on the struck path ("No such file or directory"), both re-run during this
+   task. The version and `CHANGELOG.md` clauses are unaffected.
 7. New code compiles warning-free; `cargo test`, `fmt`, `clippy -D warnings`, `make deny`/`make audit`
    pass; the container image builds.
 
@@ -125,8 +143,13 @@ the milestone.
 
 12. **All workspace crates** **must** be bumped to **`0.6.0`**, including inter-crate path-dependency
     `version = "0.5.1"` pins updated to `0.6.0`.
-13. `CHANGELOG.md` **must** gain a finalized Milestone 12 release summary (and/or a `[0.6.0]` section)
-    and `project/current-exports.txt` **must** be regenerated.
+13. ~~`CHANGELOG.md` **must** gain a finalized Milestone 12 release summary (and/or a `[0.6.0]` section)
+    and `project/current-exports.txt` **must** be regenerated.~~
+    **Corrected (dated 2026-08-06, DEBT-01):** The correct baseline path is
+    `.project/current-exports.txt`, not the pre-rename path struck above — the directory was
+    renamed by commit `928c6d5`. Confirmed via `ls -la .project/current-exports.txt` (442,369
+    bytes present) and `ls` on the struck path ("No such file or directory"), both re-run during
+    this task. The `CHANGELOG.md` clause is unaffected.
 14. The full gate (`cargo test`/`--features web-server`, `fmt`, `clippy`, `make deny`, `make audit`)
     **must** pass and the server image **must** build.
 

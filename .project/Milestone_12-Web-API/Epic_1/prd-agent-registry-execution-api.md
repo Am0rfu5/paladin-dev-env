@@ -1,5 +1,18 @@
 # PRD: Agent Registry & Execution API (Milestone 12, Epic 1)
 
+> **Correction (dated 2026-08-06, DEBT-01):** This document's §7 "API surface" bullet (struck
+> below) instructs a future implementer to write the public-API surface baseline to the pre-rename
+> `project/` path — a path that has not existed since commit `928c6d5` renamed `project/` to
+> `.project/`. The baseline lives at `.project/current-exports.txt`, confirmed present at 442,369
+> bytes via `ls -la .project/current-exports.txt`, re-run during this task; the pre-rename path is
+> confirmed absent via `ls` on it, which returns "No such file or directory", also re-run during
+> this task. This document was created 2026-06-07, months after commit `928c6d5` renamed the
+> directory, so the defect it names propagates forward rather than decaying. This is one of five
+> requirement documents Phase 8 / DEBT-01 corrects on the
+> requirement-text side; the corresponding tooling (`scripts/check-api-surface.sh`,
+> `scripts/extract-public-api.sh`, `.github/workflows/ci.yml`) was corrected separately in plan
+> 08-02. Original text is retained below with inline corrections — nothing is deleted.
+
 **Project:** Paladin Framework
 **Milestone:** 12 — Web API / HTTP Service Host Topology, Out of the Box
 **Epic:** 1 — Agent Registry & Execution API
@@ -282,8 +295,13 @@ Mirror the existing crate's pattern: build a dedicated sub-router with `.with_st
   generalizes it (port-typed, mutable, with discovery + registration) and moves it into the crate.
 - **Error mapping** lives in one helper now so Epic 4 can swap it for the unified model in a single
   place.
-- **API surface:** new public items will change `project/current-exports.txt`; regenerate the
-  baseline and update `CHANGELOG.md [Unreleased]` as part of the parent-task completion protocol.
+- ~~**API surface:** new public items will change `project/current-exports.txt`; regenerate the
+  baseline and update `CHANGELOG.md [Unreleased]` as part of the parent-task completion protocol.~~
+  **Corrected (dated 2026-08-06, DEBT-01):** The correct baseline path is
+  `.project/current-exports.txt`, not the pre-rename path struck above — the directory was renamed
+  by commit `928c6d5`. Confirmed via `ls -la .project/current-exports.txt` (442,369 bytes present)
+  and `ls` on the struck path ("No such file or directory"), both re-run during this task. The
+  `CHANGELOG.md` clause is unaffected.
 
 ---
 

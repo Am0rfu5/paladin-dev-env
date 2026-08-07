@@ -3025,7 +3025,7 @@ tree.** Do not plan it as outstanding → HARD-02(d).
 | REQ-actix-removal | Shipped — `grep -rn "actix" crates/paladin-web/` returns zero matches. Variant group 21 |
 | REQ-actix-deny-ban | Shipped — `deny.toml:99-103` bans `actix-web` with the reason "paladin-web standardizes on axum; no second web framework" |
 | REQ-delivery-handler-tests | Verify → HARD-01 |
-| REQ-web-api-baseline-changelog | **Open defect → DEBT-01** — FR-10 mandates `./scripts/extract-public-api.sh project/current-exports.txt`, the path that has been stale since commit `928c6d5`. **The defect is now written into a requirement as well as into the tooling**, so DEBT-01 must correct both |
+| REQ-web-api-baseline-changelog | **Open defect → DEBT-01** — FR-10 mandates `./scripts/extract-public-api.sh project/current-exports.txt`, the path that has been stale since commit `928c6d5`. **The defect is now written into a requirement as well as into the tooling**, so DEBT-01 must correct both. **Corrected (Phase 8, dated 2026-08-06):** FR-10 is now annotated in place at source (`.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/prd-paladin-web-single-framework-axum.md`) with a dated D-00c banner and inline struck-and-corrected text naming `.project/current-exports.txt`; original text retained, nothing deleted → DEBT-01 |
 | REQ-web-quality-gate | Verify — the `web-server` feature-matrix entry and the change-confinement clause were not re-checked → HARD-01 |
 
 ### Cross-milestone entries carried by DOCs rather than PRDs (5 IDs)
@@ -3242,7 +3242,7 @@ capability gap — there was no HTTP service host — instead of papering over i
 
 | Requirement | Verdict |
 |---|---|
-| REQ-agent-registry | Shipped — `crates/paladin-web/src/agent_registry.rs`. **§7 names `project/current-exports.txt`** → DEBT-01 |
+| REQ-agent-registry | Shipped — `crates/paladin-web/src/agent_registry.rs`. **§7 names `project/current-exports.txt`** → DEBT-01. **Corrected (Phase 8, dated 2026-08-06):** §7's "API surface" bullet is now annotated in place at source (`.project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md`) with a dated D-00c banner and inline struck-and-corrected text naming `.project/current-exports.txt`; original text retained, nothing deleted → DEBT-01 |
 | REQ-agent-execute-endpoint | Shipped — `crates/paladin-web/src/agent_controller.rs`. **Route prefix contested** (`/agents/...` here, `/v1` in Epic 6) → ORCH-03(a) |
 | REQ-agent-discovery-endpoints | Shipped — same controller; the "no raw system prompt in discovery responses" clause is re-asserted by Epic 5 FR-12 |
 | REQ-agent-runtime-registration | Shipped — admin-gated by Epic 5 FR-9 |
@@ -3289,7 +3289,7 @@ Epic 5 code ships. Zero real work is represented by that count.
 | REQ-api-key-auth | Shipped — `crates/paladin-web/src/agent_auth.rs`, constant-time comparison, with a test asserting a key value does not leak |
 | REQ-jwt-bearer-auth-v2 | **Contract diverges → WEB-01** — the v2 *shape* ships (bearer-first precedence, `jwt: Option<Arc<dyn AuthPort>>`, `MockJwt` test double) while the v1 *mechanism* is what executes. No `jsonwebtoken` anywhere. **Open Question 4 is unanswerable for the shipped adapter.** Variant group 29 |
 | REQ-fail-closed-auth-posture | Verify → ORCH-01 — `enabled` defaults true; the fail-closed startup path and the `enabled: false` startup warning were not exercised |
-| REQ-per-agent-role-authorization | Verify → ORCH-01. **§7 names `project/current-exports.txt`** → DEBT-01 |
+| REQ-per-agent-role-authorization | Verify → ORCH-01. **§7 names `project/current-exports.txt`** → DEBT-01. **Corrected (Phase 8, dated 2026-08-06):** §7's "API surface" bullet is now annotated in place at source (`.project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md`) with a dated D-00c banner and inline struck-and-corrected text naming `.project/current-exports.txt`; original text retained, nothing deleted → DEBT-01 |
 | REQ-admin-gated-registration | Verify → ORCH-01 |
 | REQ-secret-hygiene-redaction | Shipped (partially verified) — the redaction test exists in `agent_auth.rs`; the full nine-case test matrix was not re-run → ORCH-01 |
 
@@ -3300,7 +3300,7 @@ Epic 5 code ships. Zero real work is represented by that count.
 | REQ-openapi-spec-generation | Shipped — `crates/paladin-web/src/openapi.rs`; `utoipa = "5"`, `utoipa-axum = "0.2"`, `utoipa-swagger-ui = "9"` |
 | REQ-swagger-ui-docs-endpoint | Shipped — `utoipa-swagger-ui` wired; unversioned, per §4.3 |
 | REQ-api-v1-versioning | **Later position, contested → ORCH-03(a)** — §4.3 relocates the agent API under `/v1` after four Epics wrote acceptance criteria, tests and examples against unprefixed paths |
-| REQ-openapi-drift-guard | Shipped — `crates/paladin-web/openapi.json` is the committed baseline, and is therefore **the artefact that settles the route-prefix question**. **`cross_refs` names `project/current-exports.txt`** → DEBT-01 |
+| REQ-openapi-drift-guard | Shipped — `crates/paladin-web/openapi.json` is the committed baseline, and is therefore **the artefact that settles the route-prefix question**. **`cross_refs` names `project/current-exports.txt`** → DEBT-01. **Corrected (Phase 8, dated 2026-08-06):** the source clause is in fact §7's "API surface" bullet, not a `cross_refs` field — that label drift is recorded at source. It is now annotated in place (`.project/Milestone_12-Web-API/Epic_6/prd-openapi-spec-interactive-docs.md`) with a dated D-00c banner and inline struck-and-corrected text naming `.project/current-exports.txt`; original text retained, nothing deleted → DEBT-01 |
 
 ### Milestone 12 Epic 7 — Deployment Artefacts, Examples & Docs (5 IDs)
 
@@ -3310,7 +3310,7 @@ Epic 5 code ships. Zero real work is represented by that count.
 | REQ-k8s-manifests | **Shipped, correctness question open → WEB-02** — `k8s/{deployment,service,configmap,namespace,secret.yaml.example,redis,minio}.yaml` plus a `k8s/server/` directory, with liveness and readiness probes. Multi-replica serving against an in-process token store is unaddressed by any requirement in the corpus |
 | REQ-deployment-topology-doc-update | Shipped — greps for the pre-M12 disclaimers ("ships no agent-execution", "yours to compose", "compose your own", "does not run agents") across `docs/src/` return **zero matches**; `http-service-host.md` references `paladin-server` four times |
 | REQ-server-e2e-tests | Verify → ORCH-01 |
-| REQ-m12-v060-release | Shipped — root `Cargo.toml:34` `version = "0.6.0"`, the terminal release gate → ORCH-05. **FR-4.6 names `project/current-exports.txt`** → DEBT-01. Its non-goals are notable: "artifacts/docs/tests/release only; no behavior changes to the API" |
+| REQ-m12-v060-release | Shipped — root `Cargo.toml:34` `version = "0.6.0"`, the terminal release gate → ORCH-05. **FR-4.6 names `project/current-exports.txt`** → DEBT-01. Its non-goals are notable: "artifacts/docs/tests/release only; no behavior changes to the API". **Corrected (Phase 8, dated 2026-08-06):** both defective clauses (Success Metric 6 and §4.6 FR-13, the corpus's "FR-4.6") are now annotated in place at source (`.project/Milestone_12-Web-API/Epic_7/prd-deployment-artifacts-examples-docs.md`) with a dated D-00c banner and inline struck-and-corrected text naming `.project/current-exports.txt`; original text retained, nothing deleted → DEBT-01 |
 
 ### Deferred-QA Epic 25 — CI/CD Pipeline Enhancement (7 IDs)
 

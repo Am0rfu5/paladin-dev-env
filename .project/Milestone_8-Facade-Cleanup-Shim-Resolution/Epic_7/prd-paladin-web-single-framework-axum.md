@@ -1,5 +1,17 @@
 # PRD: `paladin-web` — Consolidate on a Single Web Framework (axum) and Remove actix-web (Milestone 8, Epic 7)
 
+> **Correction (dated 2026-08-06, DEBT-01):** This document instructs a future implementer to
+> write the public-API surface baseline to the pre-rename `project/` path in two places (FR-10 and
+> §7 "Technical Considerations", both struck below) — a path that has not existed since commit
+> `928c6d5` renamed `project/` to `.project/`. The baseline lives at `.project/current-exports.txt`,
+> confirmed present at 442,369 bytes via `ls -la .project/current-exports.txt`, re-run during this
+> task; the pre-rename path is confirmed absent via `ls` on it, which returns "No such file or
+> directory", also re-run during this task. This is one of five requirement documents
+> Phase 8 / DEBT-01 corrects on the requirement-text side; the corresponding tooling
+> (`scripts/check-api-surface.sh`, `scripts/extract-public-api.sh`,
+> `.github/workflows/ci.yml`) was corrected separately in plan 08-02. Original text is retained
+> below with inline corrections — nothing is deleted.
+
 **Project:** Paladin Framework
 **Milestone:** 8 — Facade Cleanup, Shim Resolution, and Directory Stabilization
 **Epic:** 7 — `paladin-web` single-framework consolidation (remove actix-web)
@@ -95,10 +107,17 @@ ports (and is exercised by the scheduler tests) — is **kept unchanged**; it do
 9. The system **must** add unit tests for the three new axum handlers covering: a successful
    response, the error/`404` path for unknown delivery id, and the `400` path for an invalid UUID
    (mirroring the test style already used in `user_controller.rs`).
-10. The system **must** regenerate the public API-surface baseline
-    (`./scripts/extract-public-api.sh project/current-exports.txt`) and add a `CHANGELOG.md`
-    `[Unreleased]` entry describing the framework consolidation and any public-API change in
-    `paladin-web` (the removal of the actix `configure`/handlers and the new axum route-builder).
+10. ~~The system **must** regenerate the public API-surface baseline~~
+    ~~(`./scripts/extract-public-api.sh project/current-exports.txt`) and add a `CHANGELOG.md`~~
+    ~~`[Unreleased]` entry describing the framework consolidation and any public-API change in~~
+    ~~`paladin-web` (the removal of the actix `configure`/handlers and the new axum route-builder).~~
+    **Corrected (dated 2026-08-06, DEBT-01):** The correct baseline path is
+    `.project/current-exports.txt`, not the pre-rename path struck above — the directory was
+    renamed by commit `928c6d5`. The correct command is
+    `./scripts/extract-public-api.sh .project/current-exports.txt`. Confirmed via
+    `ls -la .project/current-exports.txt` (442,369 bytes present) and `ls` on the struck path
+    ("No such file or directory"), both re-run during this task. The `CHANGELOG.md` clause is
+    unaffected.
 11. The workspace **must** build, lint (`cargo clippy -- -D warnings`), format-check, and test
     cleanly on the default feature set and with the `web-server` feature enabled.
 
@@ -125,10 +144,14 @@ ports (and is exercised by the scheduler tests) — is **kept unchanged**; it do
 
 ## 7. Technical Considerations
 
-- **Crate / layer:** all changes are confined to the `paladin-web` leaf crate, plus `deny.toml`,
-  `project/current-exports.txt`, and `CHANGELOG.md` at the workspace root. No facade (`src/`)
-  source changes are expected (the facade already re-exports `paladin_web::*` via
-  `src/infrastructure/web/mod.rs` under the `web-server` feature).
+- ~~**Crate / layer:** all changes are confined to the `paladin-web` leaf crate, plus `deny.toml`,~~
+  ~~`project/current-exports.txt`, and `CHANGELOG.md` at the workspace root. No facade (`src/`)~~
+  ~~source changes are expected (the facade already re-exports `paladin_web::*` via~~
+  ~~`src/infrastructure/web/mod.rs` under the `web-server` feature).~~
+  **Corrected (dated 2026-08-06, DEBT-01):** The workspace-root artefact this bullet names is
+  `.project/current-exports.txt`, not the pre-rename path struck above — see the FR-10 correction
+  above for the evidence. The rest of this bullet (`deny.toml`, `CHANGELOG.md`, the no-facade-change
+  expectation) is unaffected.
 - **State injection:** actix used `web::Data<ApiContentDeliverer>`; the axum equivalent is
   `State<Arc<ApiContentDeliverer>>`. `ApiContentDeliverer` is already `Clone` and built around
   `Arc<Mutex<...>>` internals, so sharing via `Arc` is straightforward.
