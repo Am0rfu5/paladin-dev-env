@@ -36,6 +36,8 @@ key-decisions:
   - "The Herald half of REQ-cli-dependency-isolation / REQ-library-only-build (Milestone 4 Epic 3), which Phase 7 recorded as superseded by shipped code, is amended to satisfied per ADR-0023/D-14 — ROADMAP criterion 4 is stricter than that verdict, and DEBT-04's fix now satisfies the criterion, so the row is amended rather than the criterion narrowed."
   - "REQ-workspace-ci-upgrade's verdict word is NOT flipped to satisfied — two of three clauses now ship (workspace scoping, the paladin-ports doctest exclusion); clause 2 (actions-rs/toolchain@v1) stays deferred with reason, Phase 15/PIPE-04 named as owner, per the plan's explicit prohibition against a fully-satisfied verdict here."
   - "Rule-1 deviation found and fixed during this plan's own Task 3 spot-check: DEBT-04's table_herald feature-gating (plan 08-07) removed a re-export from the default-feature public API surface after 08-02's baseline was captured; nothing in the phase regenerated it. Fixed by regenerating .project/current-exports.txt (1968 -> 1967 items); the guard now reports unchanged, exit 0."
+  - "The Task 4 checkpoint is this phase's only human-confirmed decision (approved 2026-08-07) -- every other decision this plan's evidence rests on (D-06, D-13, D-14, the D-18 TokenUsage collapse) was auto-selected during discussion/execution. Recorded explicitly so a future reader can tell approved-by-human from approved-by-auto-mode."
+  - "At the human's request when approving the checkpoint, DEBT-01's four residual .project/ sites gained a recommended (not binding) owner, Phase 13, added as a dated additive amendment to both deferred-items.md and REQUIREMENTS.md's DEBT-01 closure note."
 
 requirements-completed: [DEBT-01, DEBT-02, DEBT-03, DEBT-04, DEBT-05]
 
@@ -64,7 +66,7 @@ Each task was committed atomically:
 4. **Task 3d: ADR-0006 coverage-floor re-check** — `d1b8350` (docs)
 5. **Deviation (Rule 1): regenerate the stale api-surface baseline** — `ce38132` (fix), found and fixed during Task 3's own spot-checking
 
-**Checkpoint:** Task 4, `type="checkpoint:human-verify" gate="blocking"`, is reached next. Per this plan's explicit instruction, it is **not** self-approved regardless of auto-mode — the orchestrator surfaces it to a human. This SUMMARY documents Tasks 1-3 (all substantive work); no further record changes are made until the checkpoint resolves.
+**Checkpoint:** Task 4, `type="checkpoint:human-verify" gate="blocking"` — **resolved: approved, by a human, 2026-08-07.** Per this plan's explicit instruction, it was **not** self-approved regardless of auto-mode; the orchestrator surfaced it and a human reviewed it directly. See "Task 4 — Checkpoint resolution" below for what was shown and the exact approval record.
 
 ## Task 1 — Ledger amendments
 
@@ -176,6 +178,60 @@ No coverage claim from this phase is below the floor; the checkpoint below does 
 
 **Workspace gate (CLAUDE.md):** `cargo fmt --check` → exit 0 (no Rust files were touched by this plan). `cargo test`/`cargo clippy` were not re-run in full a second time beyond the coverage pipeline's own `cargo test --workspace --offline` (3013 passed, 0 failed) and the crate-scoped/no-default-features spot-checks above, since this plan changes no source.
 
+## Task 4 — Checkpoint resolution
+
+**Resolved: approved, by a human, 2026-08-07.** This is the phase's **only** decision confirmed by
+direct human review rather than auto-selected during discussion or execution — recorded explicitly
+so a future reader can tell the two apart without reconstructing it from context. Every other
+decision this plan's evidence rests on (D-06's deprecation-policy withdrawal, D-13's `paladin`
+binary gate, D-14's `paladin-herald` default-API reduction, and the D-18 `TokenUsage` collapse
+`08-01` auto-resolved under a separate `checkpoint:decision`) was **auto-selected** during this
+phase's discussion or execution stages, per `08-CONTEXT.md`'s recorded auto-mode rationale in each
+case — not by a human looking at the shipped-surface consequence directly.
+
+**What the human was shown, together, at this checkpoint** (per the plan's `<how-to-verify>`):
+
+1. **`.planning/decisions/0022-deprecation-requirement-withdrawal.md`** (ADR-0022, D-06) — Milestone
+   4 Epic 2 FR-8 withdrawn, not implemented; zero `#[deprecated]` attributes is the shipped, correct
+   terminal state.
+2. **`.planning/decisions/0023-cli-dependency-isolation.md`** (ADR-0023, D-13/D-14) — the `paladin`
+   binary now requires `--features cli`; `paladin-herald`'s default public API on crates.io shrinks
+   (`TableHerald` behind `table`, `MarkdownHerald`'s coloured path behind `color`).
+3. Both `CHANGELOG.md [Unreleased] ### Changed` entries recording the two breaking changes above,
+   each citing ADR-0023.
+4. The coverage figure: **85.85%** workspace line coverage, measured via ADR-0006's verbatim
+   pipeline, clearing the 84.00% floor by 1.85 points (delta −0.07pp from the last recorded 85.92%).
+
+**The human's response:** "Approve and seal" — relayed by the orchestrator as *"CHECKPOINT
+RESOLVED — approved. This is a genuine human approval, not an auto-mode resolution."* No decision,
+ledger row, checkbox, or coverage figure was changed as a result of this approval — the seal ratifies
+what Tasks 1-3 already recorded; it does not reopen or re-adjudicate any of it.
+
+**Residual-ownership addition, carried forward per the human's request at approval time:** DEBT-01's
+four residual `.project/` requirement-text sites (found by `08-05`, outside the original
+nine-reference count, and recorded as unowned in this plan's Task 2 closure note) now carry a
+**recommended** owner — see "Residual-ownership recommendation" below. The recommendation is framed
+for Phase 13's planner to accept or reassign, not as a binding assignment this plan is authorised to
+make.
+
+### Residual-ownership recommendation (DEBT-01's four unowned sites)
+
+Three of the four residual sites are Milestone 12 records
+(`.project/Milestone_12-Web-API/Epic_4/prd-api-cross-cutting-concerns.md:225-227`,
+`.project/Milestone_12-Web-API/overview/Milestone-12_Web-API.md:318`, and — grouped with the M11 one
+below since it shares the same defect class — none of the three is M11) and the fourth spans
+Milestone 8/11
+(`.project/Milestone_11-Documentation-Overhaul-Publish/Epic_6/prd-deployment-topologies-documentation.md:254`,
+`.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/Milestone_8-Epic_7-paladin-web-single-framework-axum.md:40`).
+**Recommended owner: Phase 13 (Milestone 9-12 Ground Truth & Recorded Account)** — three of the four
+sites are Milestone 12 records and Phase 13's whole job is the M9-M12 recorded account; the fourth
+(M8/M11) is the closest-fitting adjacent pickup since no other phase in the roadmap currently owns
+`.project/` record corrections at that milestone range. This is a recommendation for Phase 13's own
+planner to accept or reassign during its own discussion/planning stage — not a binding assignment
+this close-out plan is authorised to make on Phase 13's behalf. Recorded in both
+`deferred-items.md` (dated addition, existing text retained per D-00d) and `REQUIREMENTS.md`'s
+DEBT-01 closure note (dated additive amendment, existing text retained).
+
 ## Issues Encountered
 
 None beyond the Rule-1 deviation documented above. The instrumented coverage test run (`cargo test --workspace --offline` under `RUSTFLAGS="-C instrument-coverage"`) triggered a full cold recompile of the workspace under the new RUSTFLAGS fingerprint, taking the bulk of this plan's wall-clock time — expected, not an issue.
@@ -186,10 +242,10 @@ None — no external service configuration required.
 
 ## Next Phase Readiness
 
-Phase 8 is closed on paper pending the human checkpoint below. Once approved:
+**Phase 8 is sealed — the human checkpoint is approved (2026-08-07).**
 - STATE.md, ROADMAP.md phase-status line, and the final metadata commit are the orchestrator's, not this plan's (per worktree instructions).
 - Phase 9 (SEC-01…SEC-05) and all later planners can read `REQUIREMENTS.md`, the Milestone 4-6 ledger, and `PROMOTION.md` as current — DEBT-01…DEBT-05 are closed, ADR-0022/ADR-0023 are indexed, and the 84% coverage floor is confirmed not regressed.
-- **Residual, unowned:** DEBT-01's four residual `.project/` requirement-text sites (recorded in the ledger, REQUIREMENTS.md, and `deferred-items.md`) have no assigned owning phase — a future phase touching Milestone 8/11/12 `.project/` records should close them using the D-00c pattern already applied to the other five.
+- **Residual, recommended-but-not-assigned:** DEBT-01's four residual `.project/` requirement-text sites (recorded in the ledger, REQUIREMENTS.md, and `deferred-items.md`) now carry a **recommended** owner, **Phase 13**, added at the human's request when approving this checkpoint — Phase 13's own planner accepts or reassigns it; it is not binding.
 - **HARD-07 (Phase 10)** inherits the `cargo doc --workspace --no-deps` warning-bar decision, unresolved by DEBT-03.
 
 ## Self-Check: PASSED
@@ -201,11 +257,13 @@ Phase 8 is closed on paper pending the human checkpoint below. Once approved:
 - FOUND: `.planning/decisions/0006-coverage-gate.md`
 - FOUND: `.planning/phases/08-verified-defect-closure/COVERAGE.md`
 - FOUND: `.project/current-exports.txt`
+- FOUND: `.planning/phases/08-verified-defect-closure/deferred-items.md`
 - FOUND commit `dba894b` (Task 1)
 - FOUND commit `e71df30` (Task 2)
 - FOUND commit `f4bf080` (Task 3a-c)
 - FOUND commit `d1b8350` (Task 3d)
 - FOUND commit `ce38132` (Rule-1 deviation fix)
+- FOUND commit `8b5ad7f` (SUMMARY, checkpoint pending)
 
 ---
 *Phase: 08-verified-defect-closure*

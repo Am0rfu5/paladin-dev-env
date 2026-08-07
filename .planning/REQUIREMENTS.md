@@ -906,6 +906,13 @@ shipped tree during ingest run 3 and re-confirmed on 2026-07-30. Each has a smal
       guard defect. Fixed (Rule 1): baseline re-regenerated, now 1967 items (one fewer, the removed
       re-export); `bash scripts/check-api-surface.sh .project/current-exports.txt` →
       `✅ API surface unchanged`, exit 0, re-confirmed.
+      **Addition, dated 2026-08-06 (plan 08-09, at the checkpoint-approving human's request):** the
+      residual four sites now carry a **recommended, non-binding** owner — **Phase 13 (Milestone
+      9-12 Ground Truth & Recorded Account)** — rather than remaining unassigned. Three of the four
+      sites are Milestone 12 records and Phase 13's whole scope is the M9-M12 recorded account; the
+      fourth (Milestone 8) is the closest-fitting adjacent pickup. Phase 13's own planner accepts,
+      reassigns, or declines this recommendation at its own discussion/planning stage. Full detail
+      in `.planning/phases/08-verified-defect-closure/deferred-items.md`.
 
 - [x] **DEBT-02**: Every type leaving the public API carries
       `#[deprecated(since = "…", note = "…")]` per Milestone 4 Epic 2 FR-8, **or** FR-8 is

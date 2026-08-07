@@ -49,3 +49,21 @@ defect class the five corrected documents carry).
 evidence) or a small follow-up plan applying the same D-00c annotation pattern to these four
 files before DEBT-01's checkbox is ticked. Do not tick DEBT-01's checkbox on the assumption that
 "nine of nine" references are closed — the true count is at least thirteen, and four remain open.
+
+## Addition, dated 2026-08-06 (plan 08-09, at the checkpoint-approving human's request)
+
+**DEBT-01's checkbox was ticked on 2026-08-06** (its own literal done-condition — five tooling plus
+five requirement-text references — is fully met; see `REQUIREMENTS.md`'s DEBT-01 closure note and
+`.planning/ledgers/milestone-04-06.md`'s `REQ-api-surface-ci` row). The four sites above remain
+open and are **not** part of that done-condition. At the Task 4 human-checkpoint approval, the human
+asked that this residual not be left with no assigned owner, since an unowned residual is the exact
+pattern this corpus keeps getting burned by.
+
+**Recommended owner: Phase 13 (Milestone 9-12 Ground Truth & Recorded Account).** Three of the four
+sites are Milestone 12 records (items 1 and 3 above, plus the M12 share of item 2's neighbourhood)
+and Phase 13's whole scope is the M9-M12 recorded account; the fourth site (item 4 above) is
+Milestone 8, the closest-fitting adjacent pickup since no other phase in the roadmap currently owns
+`.project/` record corrections at that milestone range. **This is a recommendation, not a binding
+assignment** — Phase 13's own planner (at its discussion/planning stage) should accept it, reassign
+it, or explicitly decline it with a reason; this close-out plan has no authority to commit Phase 13's
+scope on its behalf.
