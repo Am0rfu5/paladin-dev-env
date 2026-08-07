@@ -3,7 +3,7 @@
 # Requires cargo-public-api: cargo install cargo-public-api
 set -euo pipefail
 
-OUTPUT_FILE="${1:-project/current-exports.txt}"
+OUTPUT_FILE="${1:-.project/current-exports.txt}"
 
 echo "Extracting public API surface using cargo-public-api..."
 
