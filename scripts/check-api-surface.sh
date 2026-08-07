@@ -3,7 +3,7 @@
 # Used in CI to detect accidental API changes
 set -euo pipefail
 
-BASELINE="${1:-project/current-exports.txt}"
+BASELINE="${1:-.project/current-exports.txt}"
 TEMP_FILE=$(mktemp)
 
 echo "🔍 Checking API surface for changes..."

@@ -169,7 +169,7 @@ jobs:
         run: chmod +x scripts/*.sh
 
       - name: Check API surface changes
-        run: ./scripts/check-api-surface.sh project/current-exports.txt
+        run: ./scripts/check-api-surface.sh .project/current-exports.txt
 
       - name: Check deprecation warnings
         run: ./scripts/check-deprecations.sh
@@ -179,12 +179,12 @@ jobs:
         run: |
           echo "API surface has changed. Generating diff..."
           ./scripts/extract-public-api.sh /tmp/current-api.txt
-          diff -u project/current-exports.txt /tmp/current-api.txt || true
+          diff -u .project/current-exports.txt /tmp/current-api.txt || true
           echo ""
           echo "If this change is intentional:"
           echo "  1. Review the changes carefully"
           echo "  2. Update CHANGELOG.md with breaking changes"
-          echo "  3. Update the baseline: ./scripts/extract-public-api.sh project/current-exports.txt"
+          echo "  3. Update the baseline: ./scripts/extract-public-api.sh .project/current-exports.txt"
           echo "  4. Commit the updated baseline"
 
   # Unit tests
