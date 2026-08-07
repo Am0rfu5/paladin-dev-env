@@ -595,9 +595,9 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 08-03-PLAN.md — DEBT-03: remove `[lib] doctest = false` and `ci.yml`'s `--exclude paladin-ports` in one commit, and prove the doctests run (depends on 08-02 for `ci.yml` file serialization only — zero line contention)
-- [ ] 08-06-PLAN.md — DEBT-02: the three-way reconciliation of `DEPRECATIONS.md`, `stable-api.md` and the tree behind ADR-0022
-- [ ] 08-07-PLAN.md — DEBT-04 core: `structopt`→clap v4, `required-features = ["cli"]` on the `paladin` binary, `paladin-herald`'s first `[features]` section, and all six Herald construction sites gated (both root-`Cargo.toml` halves in one plan)
+- [x] 08-03-PLAN.md — DEBT-03: remove `[lib] doctest = false` and `ci.yml`'s `--exclude paladin-ports` in one commit, and prove the doctests run (depends on 08-02 for `ci.yml` file serialization only — zero line contention)
+- [x] 08-06-PLAN.md — DEBT-02: the three-way reconciliation of `DEPRECATIONS.md`, `stable-api.md` and the tree behind ADR-0022
+- [x] 08-07-PLAN.md — DEBT-04 core: `structopt`→clap v4, `required-features = ["cli"]` on the `paladin` binary, `paladin-herald`'s first `[features]` section, and all six Herald construction sites gated (both root-`Cargo.toml` halves in one plan)
 
 **Wave 3** *(blocked on Wave 2)*
 
