@@ -144,7 +144,7 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 **Milestone 4-6 close-out**
 
 - [x] **Phase 7: Workspace Ground Truth & Recorded Answers** - Record what the refactor milestones actually shipped, correct the five positions the code contradicts, and answer the four variant pairs and two policy questions (completed 2026-08-06)
-- [ ] **Phase 8: Verified Defect Closure** - Fix the five defects verification proved open: the broken API-surface CI job, missing deprecations, disabled port doctests, leaked CLI dependencies, and duplicate `TokenUsage`
+- [x] **Phase 8: Verified Defect Closure** - Fix the five defects verification proved open: the broken API-surface CI job, missing deprecations, disabled port doctests, leaked CLI dependencies, and duplicate `TokenUsage` (completed 2026-08-07)
 
 **Milestone 7-8 close-out**
 
@@ -826,7 +826,7 @@ through it. Recorded here so neither side gets planned twice:
 | 5. Milestone 2-3 Ground Truth | **v0.7.2** | 13/13 | Complete    | 2026-08-05 |
 | 6. Verified Gap Closure | **v0.7.2** | 10/10 | Complete    | 2026-08-05 |
 | 7. Workspace Ground Truth & Recorded Answers | M4-6 | 13/13 | Complete    | 2026-08-06 |
-| 8. Verified Defect Closure | M4-6 | 0/TBD | Not started | - |
+| 8. Verified Defect Closure | M4-6 | 9/9 | Complete    | 2026-08-07 |
 | 9. Release & Security Gate Integrity | M7-8 | 0/TBD | Not started | - |
 | 10. Milestone 7-8 Ground Truth & Recorded Account | M7-8 | 0/TBD | Not started | - |
 | 11. Facade Residue & Deferred Register Disposition | M7-8 | 0/TBD | Not started | - |
