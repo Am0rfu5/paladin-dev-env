@@ -601,7 +601,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 08-08-PLAN.md — DEBT-04 downstream: both Dockerfiles, the inverted `feature-flags.yml` step, the deployment page, two `CHANGELOG.md` entries, and criterion 4 proved by command into ADR-0023
+- [x] 08-08-PLAN.md — DEBT-04 downstream: both Dockerfiles, the inverted `feature-flags.yml` step, the deployment page, two `CHANGELOG.md` entries, and criterion 4 proved by command into ADR-0023
 
 **Wave 4** *(blocked on Wave 3)*
 
