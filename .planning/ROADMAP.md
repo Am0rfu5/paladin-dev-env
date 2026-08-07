@@ -605,7 +605,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3)*
 
-- [ ] 08-09-PLAN.md — Close-out: five ledger rows amended in place, DEBT checkboxes flipped behind evidence, `PROMOTION.md` → 0024, PROJECT.md Key Decisions, `COVERAGE.md`, the ADR-0006 84% floor re-check, and a blocking human seal on the three shipped-surface changes
+- [x] 08-09-PLAN.md — Close-out: five ledger rows amended in place, DEBT checkboxes flipped behind evidence, `PROMOTION.md` → 0024, PROJECT.md Key Decisions, `COVERAGE.md`, the ADR-0006 84% floor re-check, and a blocking human seal on the three shipped-surface changes
 
 **Cross-cutting constraints:**
 
