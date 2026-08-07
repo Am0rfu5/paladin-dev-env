@@ -204,3 +204,12 @@ None - no external service configuration required.
 ---
 *Phase: 08-verified-defect-closure*
 *Completed: 2026-08-07*
+
+## Self-Check: PASSED
+
+- FOUND: `.project/Milestone_4-Refactor-Crates-Features/Epic_2/DEPRECATIONS.md`
+- FOUND: `docs/src/api-reference/stable-api.md`
+- FOUND: `.planning/phases/08-verified-defect-closure/08-06-SUMMARY.md`
+- FOUND commit `c8bd7b1` (Task 1)
+- FOUND commit `2e30e89` (Task 2)
+- FOUND commit `454f528` (Task 3 — this SUMMARY)
