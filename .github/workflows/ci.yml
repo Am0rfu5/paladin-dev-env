@@ -223,7 +223,7 @@ jobs:
         run: cargo test --workspace --lib --bins
 
       - name: Run doc tests
-        run: cargo test --workspace --doc --exclude paladin-ports
+        run: cargo test --workspace --doc
 
   # Example muster: builds every example target in examples/ via a 4-invocation
   # feature matrix (REL-05/SC5).

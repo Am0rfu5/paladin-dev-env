@@ -11,12 +11,6 @@ keywords = ["ai", "agents", "hexagonal", "ports", "traits"]
 categories = ["development-tools", "asynchronous", "api-bindings"]
 documentation = "https://docs.rs/paladin-ports"
 
-[lib]
-# Doctests in copied port files reference `paladin::` (root crate) which would
-# require a circular dev-dependency.  Re-enable in Task 7.0 after rewriting
-# examples to use `paladin_ports::` / `paladin_core::` paths.
-doctest = false
-
 [dependencies]
 paladin_core = { package = "paladin-ai-core", version = "=0.7.0", path = "../paladin-core" }
 async-trait = { workspace = true }
