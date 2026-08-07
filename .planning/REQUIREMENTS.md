@@ -898,6 +898,14 @@ shipped tree during ingest run 3 and re-confirmed on 2026-07-30. Each has a smal
       nine-reference count undercounted, not a failure of this requirement's own five-and-five
       scope. No owning phase is currently assigned for the residual four; a future phase touching
       `.project/` Milestone 8/11/12 records should close them using the same D-00c pattern.
+      **Follow-up finding, this same plan's own Task 3 (2026-08-06):** re-running the guard found it
+      genuinely `❌ API surface has changed!` — plan 08-07's `table_herald` feature-gating (DEBT-04)
+      removed `pub use paladin::infrastructure::adapters::herald::table_herald` from the
+      default-feature surface after this baseline was captured, and no later plan regenerated it.
+      The guard caught a real, already-`CHANGELOG.md`-documented breaking change correctly — not a
+      guard defect. Fixed (Rule 1): baseline re-regenerated, now 1967 items (one fewer, the removed
+      re-export); `bash scripts/check-api-surface.sh .project/current-exports.txt` →
+      `✅ API surface unchanged`, exit 0, re-confirmed.
 
 - [x] **DEBT-02**: Every type leaving the public API carries
       `#[deprecated(since = "…", note = "…")]` per Milestone 4 Epic 2 FR-8, **or** FR-8 is
