@@ -588,10 +588,10 @@ Plans:
 
 **Wave 1** *(fully parallel — zero file overlap)*
 
-- [ ] 08-01-PLAN.md — DEBT-05: extend the canonical `TokenUsage`, then collapse both duplicates into `pub use` re-exports (blocking `checkpoint:decision`, D-18 rated one-way)
-- [ ] 08-02-PLAN.md — DEBT-01 tooling: five stale path literals, baseline regeneration, the guard proven in both directions, and `check-deprecations.sh` made able to fail
-- [ ] 08-04-PLAN.md — ADR-0022 (deprecation withdrawal) and ADR-0023 (CLI dependency isolation), authored before the code they authorise
-- [ ] 08-05-PLAN.md — DEBT-01 records: the five `.project/` requirement-text sources annotated and the five REQUIREMENTS.md traceability rows corrected
+- [x] 08-01-PLAN.md — DEBT-05: extend the canonical `TokenUsage`, then collapse both duplicates into `pub use` re-exports (blocking `checkpoint:decision`, D-18 rated one-way)
+- [x] 08-02-PLAN.md — DEBT-01 tooling: five stale path literals, baseline regeneration, the guard proven in both directions, and `check-deprecations.sh` made able to fail
+- [x] 08-04-PLAN.md — ADR-0022 (deprecation withdrawal) and ADR-0023 (CLI dependency isolation), authored before the code they authorise
+- [x] 08-05-PLAN.md — DEBT-01 records: the five `.project/` requirement-text sources annotated and the five REQUIREMENTS.md traceability rows corrected
 
 **Wave 2** *(blocked on Wave 1)*
 
