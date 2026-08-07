@@ -193,7 +193,51 @@ cargo build --offline --lib --no-default-features
 cargo tree --offline --no-default-features | grep -E 'structopt|colored|comfy-table'
 ```
 
-Output: PENDING — filled by plan 08-08 once the code lands.
+Output, captured 2026-08-07 by plan 08-08 (worktree HEAD after 08-07's manifest/source changes
+landed):
+
+```
+$ cargo build --offline --lib --no-default-features
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 41s
+```
+Exit 0 — the precondition per RESEARCH.md Pitfall 2: a `cargo tree` that errors instead of
+printing a tree is not a passing criterion, and this build succeeding first rules that out.
+
+```
+$ cargo tree --offline --no-default-features | grep -E 'structopt|colored|comfy-table'
+│   ├── colored v3.1.1
+```
+One match on the literal command as ADR-0023 first wrote it — **not** a criterion-4 violation.
+Traced: `cargo tree --offline --no-default-features -i colored` →
+`colored v3.1.1 └── mockito v1.7.2 [dev-dependencies] └── paladin-ai v0.7.0`. This is
+`colored 3.1.1`, a transitive **dev-dependency** of the pre-existing `mockito = "1.7.0"` entry
+(`Cargo.toml:143`, untouched by this decision) — a different major version from the `colored 2.1`
+this decision gates, reached only through a dev-dependency edge. Cargo never propagates
+dev-dependencies into a downstream consumer's build graph, so this match does not violate what
+criterion 4 actually measures ("a downstream project depending on `paladin` as a library compiles
+no CLI crates"). Confirmed by excluding dev/build edges, per D-16's instruction to record the
+substitute invocation and why it is equivalent rather than silently swapping it in:
+
+```
+$ cargo tree --offline --no-default-features -e normal | grep -E 'structopt|colored|comfy-table'
+(no output — exit 1)
+```
+Zero matches — the true criterion-4 view of what a downstream library consumer compiles.
+`structopt` and `comfy-table`: zero matches under either invocation.
+
+```
+$ cargo build --offline --bin paladin --features cli
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 20.13s
+```
+Exit 0 — the binary still builds when the feature is explicitly enabled.
+
+```
+$ grep -c structopt Cargo.toml
+0
+$ grep -rln structopt src/ crates/
+(no output)
+```
+`structopt` is fully removed from the tree.
 
 ## Code Conformance
 

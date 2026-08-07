@@ -30,7 +30,9 @@ COPY migrations ./migrations
 
 # Build the application in release mode
 # --workspace ensures all crates are resolved correctly
-RUN cargo build --release --workspace --bin paladin
+# --features cli: the `paladin` binary carries `required-features = ["cli"]` (ADR-0023) —
+# omitting this flag now fails the build.
+RUN cargo build --release --workspace --bin paladin --features cli
 
 # Strip debug symbols to reduce binary size
 RUN strip target/release/paladin
