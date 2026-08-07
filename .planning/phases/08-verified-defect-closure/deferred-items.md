@@ -50,7 +50,7 @@ evidence) or a small follow-up plan applying the same D-00c annotation pattern t
 files before DEBT-01's checkbox is ticked. Do not tick DEBT-01's checkbox on the assumption that
 "nine of nine" references are closed — the true count is at least thirteen, and four remain open.
 
-## Addition, dated 2026-08-06 (plan 08-09, at the checkpoint-approving human's request)
+## Addition, dated 2026-08-06 (plan 08-09, on the orchestrator's initiative at seal time — NOT requested by the approving human)
 
 **DEBT-01's checkbox was ticked on 2026-08-06** (its own literal done-condition — five tooling plus
 five requirement-text references — is fully met; see `REQUIREMENTS.md`'s DEBT-01 closure note and

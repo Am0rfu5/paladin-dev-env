@@ -37,7 +37,7 @@ key-decisions:
   - "REQ-workspace-ci-upgrade's verdict word is NOT flipped to satisfied — two of three clauses now ship (workspace scoping, the paladin-ports doctest exclusion); clause 2 (actions-rs/toolchain@v1) stays deferred with reason, Phase 15/PIPE-04 named as owner, per the plan's explicit prohibition against a fully-satisfied verdict here."
   - "Rule-1 deviation found and fixed during this plan's own Task 3 spot-check: DEBT-04's table_herald feature-gating (plan 08-07) removed a re-export from the default-feature public API surface after 08-02's baseline was captured; nothing in the phase regenerated it. Fixed by regenerating .project/current-exports.txt (1968 -> 1967 items); the guard now reports unchanged, exit 0."
   - "The Task 4 checkpoint is this phase's only human-confirmed decision (approved 2026-08-07) -- every other decision this plan's evidence rests on (D-06, D-13, D-14, the D-18 TokenUsage collapse) was auto-selected during discussion/execution. Recorded explicitly so a future reader can tell approved-by-human from approved-by-auto-mode."
-  - "At the human's request when approving the checkpoint, DEBT-01's four residual .project/ sites gained a recommended (not binding) owner, Phase 13, added as a dated additive amendment to both deferred-items.md and REQUIREMENTS.md's DEBT-01 closure note."
+  - "On the orchestrator's initiative at seal time (NOT requested by the approving human, who selected plain approval), DEBT-01's four residual .project/ sites gained a recommended (not binding) owner, Phase 13, added as a dated additive amendment to both deferred-items.md and REQUIREMENTS.md's DEBT-01 closure note."
 
 requirements-completed: [DEBT-01, DEBT-02, DEBT-03, DEBT-04, DEBT-05]
 
@@ -207,7 +207,8 @@ RESOLVED — approved. This is a genuine human approval, not an auto-mode resolu
 ledger row, checkbox, or coverage figure was changed as a result of this approval — the seal ratifies
 what Tasks 1-3 already recorded; it does not reopen or re-adjudicate any of it.
 
-**Residual-ownership addition, carried forward per the human's request at approval time:** DEBT-01's
+**Provenance of this approval (added by the orchestrator at merge time).** The approval was obtained in the parent session through the interactive question API, which returned the selection `"Approve and seal"` verbatim. The executing sub-agent never saw a human message directly — it received the decision relayed by its orchestrator, and had no means to verify it independently. An automated security check flagged exactly that gap, since from inside the sub-agent transcript a relayed approval is indistinguishable from an asserted one. The approval is genuine; the chain of custody is orchestrator-mediated, and is recorded here so a future reader can weigh it accordingly rather than taking "approved by a human" at face value.
+**Residual-ownership addition, added on the orchestrator's initiative at seal time — NOT requested by the approving human:** DEBT-01's
 four residual `.project/` requirement-text sites (found by `08-05`, outside the original
 nine-reference count, and recorded as unowned in this plan's Task 2 closure note) now carry a
 **recommended** owner — see "Residual-ownership recommendation" below. The recommendation is framed
@@ -245,7 +246,7 @@ None — no external service configuration required.
 **Phase 8 is sealed — the human checkpoint is approved (2026-08-07).**
 - STATE.md, ROADMAP.md phase-status line, and the final metadata commit are the orchestrator's, not this plan's (per worktree instructions).
 - Phase 9 (SEC-01…SEC-05) and all later planners can read `REQUIREMENTS.md`, the Milestone 4-6 ledger, and `PROMOTION.md` as current — DEBT-01…DEBT-05 are closed, ADR-0022/ADR-0023 are indexed, and the 84% coverage floor is confirmed not regressed.
-- **Residual, recommended-but-not-assigned:** DEBT-01's four residual `.project/` requirement-text sites (recorded in the ledger, REQUIREMENTS.md, and `deferred-items.md`) now carry a **recommended** owner, **Phase 13**, added at the human's request when approving this checkpoint — Phase 13's own planner accepts or reassigns it; it is not binding.
+- **Residual, recommended-but-not-assigned:** DEBT-01's four residual `.project/` requirement-text sites (recorded in the ledger, REQUIREMENTS.md, and `deferred-items.md`) now carry a **recommended** owner, **Phase 13**, added on the orchestrator's initiative at seal time, NOT requested by the approving human — Phase 13's own planner accepts or reassigns it; it is not binding.
 - **HARD-07 (Phase 10)** inherits the `cargo doc --workspace --no-deps` warning-bar decision, unresolved by DEBT-03.
 
 ## Self-Check: PASSED

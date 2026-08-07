@@ -906,7 +906,7 @@ shipped tree during ingest run 3 and re-confirmed on 2026-07-30. Each has a smal
       guard defect. Fixed (Rule 1): baseline re-regenerated, now 1967 items (one fewer, the removed
       re-export); `bash scripts/check-api-surface.sh .project/current-exports.txt` →
       `✅ API surface unchanged`, exit 0, re-confirmed.
-      **Addition, dated 2026-08-06 (plan 08-09, at the checkpoint-approving human's request):** the
+      **Addition, dated 2026-08-06 (plan 08-09, on the orchestrator's initiative at seal time — NOT requested by the approving human):** the
       residual four sites now carry a **recommended, non-binding** owner — **Phase 13 (Milestone
       9-12 Ground Truth & Recorded Account)** — rather than remaining unassigned. Three of the four
       sites are Milestone 12 records and Phase 13's whole scope is the M9-M12 recorded account; the
