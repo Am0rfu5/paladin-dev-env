@@ -1,5 +1,20 @@
 # Deprecation Tracking - Epic 2: API Hardening
 
+> **Correction (dated 2026-08-06, DEBT-02 / ADR-0022):** Milestone 4 Epic 2 FR-8 — the requirement
+> this document tracks — is **withdrawn**. See
+> [ADR-0022](../../../../.planning/decisions/0022-deprecation-requirement-withdrawal.md) for the
+> full record. This document's zeros (§"Current Status"'s `Deprecated Items: 0 (none yet)`, §"Deprecation
+> Log"'s `*No deprecations added yet.*`) are the **outcome** of this epic's own decisions, not a gap:
+> its own §"⚠️ IMMEDIATE DEPRECATION" category — the only category that would ever produce a
+> `#[deprecated]` attribute — lists, in its own words, "None identified yet." Re-run this session:
+> `grep -rn '#\[deprecated' src crates | wc -l` → **0**; `grep -rn 'doc(hidden)' src crates | wc -l` →
+> **38**, confirming the §"🔒 SOFT DEPRECATION" category *was* executed via `#[doc(hidden)]` even
+> though this category was not. §"⚠️ IMMEDIATE DEPRECATION" is annotated below as **Confirmed** (its
+> text is correct as written, not struck); the stale Deprecation Timeline is struck and restated;
+> §"Current Status" and §"Deprecation Log" are annotated as terminal, not in-progress; all four
+> §"Open Questions" are closed. Original text is retained below with inline annotations — nothing is
+> deleted.
+
 **Created:** 2026-04-15
 **Epic:** Epic 2 - Milestone 4, Tier 1
 **Purpose:** Track all deprecation warnings for API transition
@@ -12,10 +27,19 @@ This document tracks types being deprecated as we transition from glob re-export
 
 ### Deprecation Timeline
 
-- **v0.1.0** (current): All types exported via glob
-- **v0.2.0** (this Epic): Add deprecation warnings, curated exports begin
-- **v0.3.0** (future): Remove deprecated exports, finalize stable API
-- **v1.0.0** (future): Stable public API guarantee
+~~- **v0.1.0** (current): All types exported via glob~~
+~~- **v0.2.0** (this Epic): Add deprecation warnings, curated exports begin~~
+~~- **v0.3.0** (future): Remove deprecated exports, finalize stable API~~
+~~- **v1.0.0** (future): Stable public API guarantee~~
+
+**Corrected (dated 2026-08-06, DEBT-02 / ADR-0022):** This schedule is stale by five minor
+versions — the workspace ships at **0.7.0** (root `Cargo.toml:34`, re-verified this session:
+`version = "0.7.0"`), five minor versions past the `v0.2.0` this schedule anchors on. Per
+[ADR-0008](../../../../.planning/decisions/0008-workspace-version-0-7-0.md), the pre-1.0 series
+absorbs API evolution through minor bumps rather than a named-release removal schedule, so a
+future deprecation's removal window is **"at least one minor version"** rather than a named
+release that has already shipped and passed. This timeline is superseded by that restatement, not
+deleted — it remains above as the epic's original v0.2.0-era plan.
 
 ### Deprecation Categories
 
@@ -87,6 +111,12 @@ Types with clear alternatives that should be deprecated now.
 
 **List:**
 None identified yet - managers are currently pub(crate) or will be moved to application layer (Epic 3)
+
+**Confirmed (dated 2026-08-06, DEBT-02 / ADR-0022):** This "None identified yet" answer is correct
+as written and needs no strike — it is now the **final** answer, not a pending one. This is the
+only category in this document that would ever produce a `#[deprecated]` attribute, and it names no
+candidate; that is the primary evidence ADR-0022 cites for withdrawing Milestone 4 Epic 2 FR-8.
+`grep -rn '#\[deprecated' src crates | wc -l` → **0**, re-confirmed this session.
 
 **Migration Path:** TBD based on Epic 3 refactoring
 
@@ -178,10 +208,21 @@ pub struct DeprecatedType { /* ... */ }
 - ✅ DEPRECATIONS.md created
 
 **In Progress:**
-- ⏳ Adding deprecation warnings (Task 3.0)
+- ~~⏳ Adding deprecation warnings (Task 3.0)~~
+  **Closed (dated 2026-08-06, DEBT-02 / ADR-0022):** This item is closed by withdrawal, not
+  completion. Milestone 4 Epic 2 FR-8 is withdrawn per ADR-0022 — there is no deprecation-warnings
+  task left in progress; the epic's own §"⚠️ IMMEDIATE DEPRECATION" category named no candidate to
+  warn about.
 - ⏳ Curating explicit exports (Task 6.0)
+  **Annotated (dated 2026-08-06, DEBT-02):** This item is **outside DEBT-02's scope** — ADR-0022
+  withdraws FR-8's *deprecation* requirement only, not this epic's separate export-curation task.
+  Its state is recorded here truthfully as unchanged, not absorbed into this withdrawal. Phase 8
+  did not adjudicate it.
 
 **Deprecated Items:** 0 (none yet)
+
+**Confirmed (dated 2026-08-06, DEBT-02 / ADR-0022):** This zero is the terminal state for the 0.7.0
+tree, not an in-progress count. See ADR-0022.
 
 **Restricted Items:** 0 (to be done in Task 6.0)
 
@@ -190,6 +231,11 @@ pub struct DeprecatedType { /* ... */ }
 ## Deprecation Log
 
 *No deprecations added yet.*
+
+**Confirmed (dated 2026-08-06, DEBT-02 / ADR-0022):** This is accurate and is now the **terminal**
+state for the 0.7.0 tree, not a pending one — Milestone 4 Epic 2 FR-8 is withdrawn per ADR-0022.
+The format block below is retained unchanged for use if a future ADR explicitly supersedes ADR-0022
+and re-instates a deprecation requirement.
 
 ### Format:
 ```
@@ -206,9 +252,21 @@ pub struct DeprecatedType { /* ... */ }
 ## Open Questions
 
 1. **Adapter Visibility Strategy:** Confirm `#[doc(hidden)]` approach vs. full deprecation
+   **Resolved (dated 2026-08-06, DEBT-02 / ADR-0022):** `#[doc(hidden)]` was the approach taken —
+   `grep -rn 'doc(hidden)' src crates | wc -l` → **38** occurrences confirmed tree-wide this session.
 2. **Factory Functions:** Should we provide factory functions in v0.2.0 or wait for Epic 3?
+   **Moot (dated 2026-08-06, DEBT-02 / ADR-0022):** No deprecation timeline exists to schedule this
+   against — Milestone 4 Epic 2 FR-8 is withdrawn per ADR-0022. Whether factory functions are
+   independently worth adding is a live design question outside DEBT-02's scope.
 3. **Prelude Module:** Should we add `paladin::prelude::*` for common imports?
+   **Closed — answered by shipped code (dated 2026-08-06, DEBT-02):** Yes, and it already exists.
+   `src/prelude.rs` re-exports `Paladin`, `PaladinConfig`, `PaladinData`, `PaladinStatus`,
+   `BattalionConfig` and `BattalionError` for `use paladin::prelude::*`. Verified this session —
+   file present at that path.
 4. **Manager Refactoring:** Wait for Epic 3 (Tier 3) before deprecating manager types?
+   **Moot (dated 2026-08-06, DEBT-02 / ADR-0022):** No deprecation timeline exists to schedule this
+   against — Milestone 4 Epic 2 FR-8 is withdrawn per ADR-0022. Manager types' `pub(crate)` /
+   application-layer placement is Epic 3's own concern, unaffected by this withdrawal.
 
 ---
 
