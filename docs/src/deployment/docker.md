@@ -115,6 +115,8 @@ Paladin's multi-stage Dockerfile optimizes for size and security. There are two 
 - **`Dockerfile`** — Standard two-stage build (`builder` → `runtime`)
 - **`Dockerfile.chef`** — Cargo-chef optimized build for faster CI (caches Rust dependencies as a separate layer)
 
+The `paladin` binary carries `required-features = ["cli"]` ([ADR-0023](../../../.planning/decisions/0023-cli-dependency-isolation.md)), so a build command that omits `--features cli` fails — the Dockerfile below always passes it.
+
 ```dockerfile
 # Standard Dockerfile — two stages
 
@@ -132,7 +134,7 @@ COPY crates ./crates
 COPY benches ./benches
 COPY migrations ./migrations
 
-RUN cargo build --release --workspace --bin paladin
+RUN cargo build --release --workspace --bin paladin --features cli
 RUN strip target/release/paladin
 
 # Stage 2: Runtime (debian:12-slim)

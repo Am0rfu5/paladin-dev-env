@@ -140,8 +140,14 @@ jobs:
       - name: Run cli_isolation regression tests
         run: cargo test --test cli_isolation
 
-      - name: Verify paladin binary builds without cli feature
-        run: cargo build --bin paladin
+      - name: Verify paladin binary requires the cli feature
+        run: |
+          if cargo build --bin paladin; then
+            echo "ERROR: paladin binary built without --features cli; required-features gate is not enforced (ADR-0023)" >&2
+            exit 1
+          else
+            echo "OK: paladin binary correctly failed to build without --features cli (required-features gate holds)"
+          fi
 
       - name: Verify paladin-cli binary builds with cli feature
         run: cargo build --bin paladin-cli --features cli
