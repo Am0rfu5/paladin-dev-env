@@ -823,7 +823,7 @@ shipped.
 Unlike the run-1 and run-2 open-checkbox blocks, every item below was confirmed against the
 shipped tree during ingest run 3 and re-confirmed on 2026-07-30. Each has a small, concrete fix.
 
-- [ ] **DEBT-01**: The `api-surface` CI job works. `scripts/check-api-surface.sh:6` and
+- [x] **DEBT-01**: The `api-surface` CI job works. `scripts/check-api-surface.sh:6` and
       `scripts/extract-public-api.sh:6` default `BASELINE` to `project/current-exports.txt`, and
       `.github/workflows/ci.yml:171,181,186` pass that literal path — but the directory was renamed
       in commit `928c6d5` ("chore: moved project to .project") and the baseline now lives at
@@ -870,8 +870,36 @@ shipped tree during ingest run 3 and re-confirmed on 2026-07-30. Each has a smal
       this very job — plus `:317`, `:507` and `integration-tests.yml:71`) now belong to **PIPE-04**
       in Phase 15, which owns the full eight-reference action-modernization sweep. DEBT-01 keeps
       the baseline path; PIPE-04 keeps the action versions.
+      **Closed (Phase 8, dated 2026-08-06), both halves.** Tooling half (`08-02-SUMMARY.md`): all
+      five path literals corrected (`scripts/check-api-surface.sh:6`,
+      `scripts/extract-public-api.sh:6`, `ci.yml:172,182,187`), the baseline regenerated from HEAD
+      (`bash scripts/extract-public-api.sh .project/current-exports.txt` → 1968 items), and the
+      guard proven in both directions (`bash scripts/check-api-surface.sh .project/current-exports.txt`
+      → `✅ API surface unchanged`, exit 0; a throwaway probe function → `❌ API surface has
+      changed!`, exit 1, then reverted). Requirement-text half (`08-05-SUMMARY.md`): the five
+      `.project/` sources named by this requirement's own "nine references" count (M8 Epic 7 FR-10
+      plus M12 Epic 1/5/6/7 §7) were each annotated with a dated D-00c banner and inline
+      struck-and-corrected clauses naming `.project/current-exports.txt`. The adjacent M4 Epic 2
+      FR-7.3 `.public-api-baseline.txt` item this requirement's own text already names above is
+      closed as **superseded by naming** (`.project/current-exports.txt` plus `final-api.txt` /
+      `api_surface_current.txt`) — not a missing capability, per the requirement's own sentence.
+      **Residual, not closed by this phase:** `08-05`'s own verification grep, re-run 2026-08-07
+      (`grep -rn 'project/current-exports.txt' .project/ 2>/dev/null | grep -v '~~' | grep -v
+      '\.project/current-exports' | grep -v 'tasks-'`), finds **four** further requirement-level
+      sites this "nine references" count never included —
+      `.project/Milestone_12-Web-API/Epic_4/prd-api-cross-cutting-concerns.md:225-227`,
+      `.project/Milestone_11-Documentation-Overhaul-Publish/Epic_6/prd-deployment-topologies-documentation.md:254`,
+      `.project/Milestone_12-Web-API/overview/Milestone-12_Web-API.md:318`,
+      `.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_7/Milestone_8-Epic_7-paladin-web-single-framework-axum.md:40`
+      — full detail in `.planning/phases/08-verified-defect-closure/deferred-items.md`. **This
+      checkbox is ticked on the literal done-condition this requirement states** ("all five tooling
+      references are fixed... and all five requirement texts are corrected"), **which is met in
+      full** — the residual four sites are a real, separate propagation the corpus's own
+      nine-reference count undercounted, not a failure of this requirement's own five-and-five
+      scope. No owning phase is currently assigned for the residual four; a future phase touching
+      `.project/` Milestone 8/11/12 records should close them using the same D-00c pattern.
 
-- [ ] **DEBT-02**: Every type leaving the public API carries
+- [x] **DEBT-02**: Every type leaving the public API carries
       `#[deprecated(since = "…", note = "…")]` per Milestone 4 Epic 2 FR-8, **or** FR-8 is
       explicitly withdrawn with a recorded reason. `grep -rn '#\[deprecated' src crates` returns
       **0** today, and `Epic_2/DEPRECATIONS.md` corroborates from the other side: "Deprecated
@@ -883,8 +911,19 @@ shipped tree during ingest run 3 and re-confirmed on 2026-07-30. Each has a smal
       v0.2.0 → v0.3.0 → v1.0.0 removal timeline must either start or be withdrawn.
       *Derives: REQ-deprecation-warnings, REQ-stable-api-doc, REQ-api-surface-reduction-target;
       `intel/code-verification.md` run-3 verified-open item 2; INGEST-CONFLICTS run-3 warning 10.*
+      **Closed by withdrawal (Phase 8, dated 2026-08-06).** `.planning/decisions/0022-deprecation-requirement-withdrawal.md`
+      withdraws Milestone 4 Epic 2 FR-8, citing `DEPRECATIONS.md:81`'s own IMMEDIATE DEPRECATION
+      section naming no candidate ("None identified yet...") as the primary evidence, and restating
+      the stale `v0.2.0→v0.3.0→v1.0.0` timeline against the shipped `0.7.0` per ADR-0008.
+      `grep -rn '#\[deprecated' src crates | wc -l` → `0` (re-confirmed 2026-08-06, unchanged).
+      `08-06-SUMMARY.md`'s three-way reading confirms ADR-0022, `DEPRECATIONS.md` (as annotated) and
+      `stable-api.md` (its `:875` false present-tense "Current and planned deprecations" claim
+      corrected, forward-looking policy prose retained verbatim) all now tell one story: zero
+      `#[deprecated]` attributes is the recorded outcome of the withdrawal, not an unfinished task.
+      **This requirement closes by withdrawal, not by implementation** — no `#[deprecated]`
+      attribute was added, and none should be expected by a later reader.
 
-- [ ] **DEBT-03**: `paladin-ports` doctests compile and run.
+- [x] **DEBT-03**: `paladin-ports` doctests compile and run.
       `crates/paladin-ports/Cargo.toml:18` sets `[lib] doctest = false` with the comment
       "Doctests in copied port files reference `paladin::` (root crate) which would require a
       circular dev-dependency. Re-enable in **Task 7.0** after rewriting examples to use
@@ -906,8 +945,19 @@ shipped tree during ingest run 3 and re-confirmed on 2026-07-30. Each has a smal
       document acknowledging the other. **Resolve DEBT-03 together with HARD-07**, which settles
       which `cargo doc` bar the project actually holds. *Derives additionally: REQ-doc-coverage-audit,
       REQ-m8-final-quality-gate; `intel/code-verification.md` run-4 verified-open item 5.*
+      **Closed (Phase 8, dated 2026-08-06).** `08-03-SUMMARY.md`: `crates/paladin-ports/Cargo.toml`'s
+      `[lib] doctest = false` and its stale "Task 7.0" comment removed; `.github/workflows/ci.yml:226`'s
+      `Run doc tests` step no longer carries `--exclude paladin-ports` — both edits in one commit
+      (`2bffe22`), no window where the doctests exist but CI still excludes them.
+      `cargo test --offline -p paladin-ports --doc` → `96 passed; 0 failed; 94 ignored`. Workspace-scoped
+      `cargo test --offline --workspace --doc` totals 281 passed vs. 185 with `--exclude paladin-ports`
+      re-applied — a delta of exactly 96, proving the exclusion removal changed what CI executes.
+      **HARD-07 seam preserved, not decided here:** which `cargo doc --workspace --no-deps` warning
+      bar the project actually holds (D-12) remains **Phase 10 / HARD-07**'s to settle — this phase
+      records the measured state (`paladin-battalion` 3 warnings, `paladin-ai` 3 warnings, per the
+      Milestone 4-6 ledger's `REQ-doc-build-clean` row) without deciding it.
 
-- [ ] **DEBT-04**: A library-only consumer compiles zero CLI dependencies. The shipped `cli`
+- [x] **DEBT-04**: A library-only consumer compiles zero CLI dependencies. The shipped `cli`
       feature is `["dep:clap", "dep:dialoguer", "dep:indicatif", "dep:console", "dep:serde_yaml"]`
       — 5 of the 8 dependencies the Epic 3 PRD and the Epic 1 dependency matrix classify as
       CLI-only — while `structopt = "0.3"` (`Cargo.toml:93`), `colored = "2.1"` (`:125`) and
@@ -919,8 +969,26 @@ shipped tree during ingest run 3 and re-confirmed on 2026-07-30. Each has a smal
       run-2 pattern — here the checkboxes overstate completion rather than understating it.
       *Derives: REQ-cli-dependency-isolation, REQ-library-only-build, REQ-cli-build-time-measurement;
       `intel/code-verification.md` run-3 verified-open item 5; INGEST-CONFLICTS run-3 warning 12.*
+      **Closed (Phase 8, dated 2026-08-06).** `.planning/decisions/0023-cli-dependency-isolation.md`,
+      `08-07-SUMMARY.md`, `08-08-SUMMARY.md`: `structopt` fully removed
+      (`grep -c structopt Cargo.toml` → `0`; `grep -rln structopt src/ crates/` → no output);
+      `src/main.rs` migrated to `clap` v4 derive; the `paladin` `[[bin]]` gained
+      `required-features = ["cli"]`; `paladin-herald` gained its first `[features]` section (`table`
+      gates `comfy-table`, `color` gates `colored`'s coloured path) threaded through the root `cli`
+      feature, with all three root-facade consumer sites gated in lockstep. Criterion-4 proof, run
+      2026-08-07: `cargo build --offline --lib --no-default-features` → exit 0, then
+      `cargo tree --offline --no-default-features -e normal | grep -E 'structopt|colored|comfy-table'`
+      → no output. (The literal, non-`-e normal` invocation shows one hit, `colored v3.1.1`, traced
+      to the pre-existing `mockito` dev-dependency — not a criterion-4 violation, since Cargo never
+      propagates dev-dependencies into a downstream consumer's build graph; both invocations
+      recorded per D-16.) The four `Dockerfile`/CI/docs downstream surfaces this gate broke were
+      repaired (`08-08-SUMMARY.md`) and two `CHANGELOG.md [Unreleased]` entries record the two
+      breaking changes for consumers. **Coverage-delta accounting for DEBT-06/close-out:** gating
+      `table_herald` removed **30** `#[test]` functions from the default-feature run (3 root-crate +
+      27 in `paladin-herald`'s own `table_herald` module) — larger than originally anticipated; all
+      30 still run and pass under `--features cli` / `--features table,color`, none lost.
 
-- [ ] **DEBT-05**: One `TokenUsage`. Three definitions ship simultaneously —
+- [x] **DEBT-05**: One `TokenUsage`. Three definitions ship simultaneously —
       `crates/paladin-core/src/platform/container/token_usage.rs:13`,
       `crates/paladin-core/src/platform/container/battalion/mod.rs:497` (carrying its own `new()`
       and `from_total()` constructors) and `crates/paladin-llm/src/llm_analysis_service.rs:51`.
@@ -934,6 +1002,14 @@ shipped tree during ingest run 3 and re-confirmed on 2026-07-30. Each has a smal
       `paladin-ports` owns the canonical type.
       *Derives: REQ-port-value-type-ownership-v1/-v2, REQ-herald-type-consolidation (run 2);
       `intel/code-verification.md` run-3 verified-open item 6; INGEST-CONFLICTS run-3 warning 11.*
+      **Closed (Phase 8, dated 2026-08-06).** `08-01-SUMMARY.md`: the two duplicate definitions
+      (`battalion/mod.rs:497`, `llm_analysis_service.rs:51`) collapsed into `pub use` re-exports of
+      the canonical `paladin-core` type, with zero call-site edits across ~182 references.
+      `grep -rn 'pub struct TokenUsage' crates src | wc -l` → `1`. `cargo test --offline --workspace --lib`
+      → 1574 passed (up from the 1570 pre-change baseline), 0 failed. **`VisionTokenUsage`
+      (`crates/paladin-ports/src/output/vision_port.rs:34`) is deliberately out of scope per D-20** —
+      `grep -rn 'VisionTokenUsage' crates/paladin-ports/src/output/vision_port.rs | wc -l` → `2`,
+      unchanged; a later reader should not treat it as a missed consolidation site.
 
 ---
 
@@ -3656,11 +3732,11 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | ARCH-05 | Phase 7 | Complete |
 | ARCH-06 | Phase 7 | Complete |
 | ARCH-07 | Phase 7 | Complete |
-| DEBT-01 | Phase 8 | Pending |
-| DEBT-02 | Phase 8 | Pending |
-| DEBT-03 | Phase 8 | Pending |
-| DEBT-04 | Phase 8 | Pending |
-| DEBT-05 | Phase 8 | Pending |
+| DEBT-01 | Phase 8 | Complete |
+| DEBT-02 | Phase 8 | Complete |
+| DEBT-03 | Phase 8 | Complete |
+| DEBT-04 | Phase 8 | Complete |
+| DEBT-05 | Phase 8 | Complete |
 | SEC-01 | Phase 9 | Pending |
 | SEC-02 | Phase 9 | Pending |
 | SEC-03 | Phase 9 | Pending |
@@ -3747,17 +3823,17 @@ it; recorded here so neither is planned twice):
 |---|---|---|
 | ARCH-03(a) (Phase 7) | REL-02 (Phase 4) | One Rust edition across the workspace |
 | ARCH-04 (Phase 7) | REL-01 (Phase 4) | Whether Milestone 6 forces a major version bump |
-| ARCH-03(c) (Phase 7) | DEBT-05 (Phase 8) | Which crate owns the canonical `TokenUsage` |
+| ARCH-03(c) (Phase 7) | DEBT-05 (Phase 8) | Which crate owns the canonical `TokenUsage` — **discharged (2026-08-06):** DEBT-05 collapsed the two duplicate definitions into `pub use` re-exports of the `paladin-core` canonical type; `grep -rn 'pub struct TokenUsage' crates src \| wc -l` → `1` |
 | RECON-07 (Phase 1) → VERIFY-05 (Phase 5) | QUAL-01 / QUAL-03 (Phase 3) | The coverage gate |
 | HARD-06 (Phase 10) | SEC-01 (Phase 9) | Whether `pdf-extract` is reachable — decides if the `RUSTSEC-2026-0187` suppression is needed at all |
 | HARD-03 (Phase 10) | REL-01 (Phase 4) | The version trajectory; REL-01 must not converge on an rc.1 figure |
 | HARD-05 (Phase 10) | FACADE-02 (Phase 11) | Whether leaf-to-leaf crate edges are permitted, which decides D2/D3/D4's relocation targets |
-| HARD-07 (Phase 10) | DEBT-03 (Phase 8) | Which `cargo doc` bar governs, and therefore what re-enabling `paladin-ports` doctests must satisfy |
+| HARD-07 (Phase 10) | DEBT-03 (Phase 8) | Which `cargo doc` bar governs, and therefore what re-enabling `paladin-ports` doctests must satisfy — **live coupling, unresolved by DEBT-03 (2026-08-06):** DEBT-03 re-enabled the doctests (`ci.yml:226` no longer excludes `paladin-ports`) but deliberately declined to decide the warning bar (D-12); Phase 10 / HARD-07 still owns that question and inherits the measured 6-warning `cargo doc --workspace --no-deps` state |
 | ARCH-04 (Phase 7) | FACADE-02 (Phase 11) | Whether a no-re-export-alias policy is adopted, which decides D1 |
 | SEC-01 (Phase 9) | SUPPLY-01 / SUPPLY-02 (Phase 12) | The RustSec exception set. SEC-01 owns the whole set and the 2026-09-30 disposition; SUPPLY-01 makes the CI deletion and SUPPLY-02 carries the corrected governance scope. **Phase 12 should not wait for Phase 9** |
 | HARD-06 (Phase 10) | SUPPLY-02 (Phase 12) | Whether `pdf-extract` is reachable, which decides whether `RUSTSEC-2026-0187` needs suppressing at all |
 | HARD-07 (Phase 10) | DOCS-03 (Phase 16) | Which `cargo doc` bar governs; DOCS-03 applies it and adds the CI gate |
-| DEBT-03 (Phase 8) | DOCS-03 (Phase 16) | Re-enabling `paladin-ports` doctests is what makes the port traits' rustdoc examples executable rather than merely present |
+| DEBT-03 (Phase 8) | DOCS-03 (Phase 16) | Re-enabling `paladin-ports` doctests is what makes the port traits' rustdoc examples executable rather than merely present — **input now ready (2026-08-06):** 96/96 doctests pass at both crate and workspace scope; Phase 16 / DOCS-03 inherits executable examples as input for its documentation-quality work, including the 87 pre-existing `ignore`/`no_run`/`text` fences DEBT-03 deliberately left un-audited (D-10) |
 | HARD-03 (Phase 10) | ORCH-05 (Phase 13) | The version trajectory. HARD-03 records `v0.1.0-rc.1` as history; ORCH-05 completes the chain v0.3.0 → v0.6.0, and REL-01 (Phase 4) converges on the result |
 | FACADE-02 (Phase 11) — D2 | DEFER-02 (Phase 15) | **Split or test `user_service.rs`.** Two registers, two incompatible next actions on one file. Splitting first is cheaper but changes Epic 28's estimate and mock set. Do not schedule independently |
 | RECON-07 (Phase 1) → VERIFY-05 (Phase 5) | PIPE-02 (Phase 15) | The coverage gate, sixth position. The CI threshold must land on the recorded number or record why it differs |
