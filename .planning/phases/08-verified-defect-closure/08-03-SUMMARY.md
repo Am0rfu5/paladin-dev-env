@@ -220,6 +220,14 @@ None - no external service configuration required.
 - **Plan 08-09** (phase close-out) has the exact ledger rows and evidence commands it needs to amend `.planning/ledgers/milestone-04-06.md` (see table above).
 - No blockers. This was the smallest plan in the phase and stayed that way — a two-line diff plus verification, as the plan predicted.
 
+## Self-Check: PASSED
+
+- FOUND: crates/paladin-ports/Cargo.toml
+- FOUND: .github/workflows/ci.yml
+- FOUND: .planning/phases/08-verified-defect-closure/08-03-SUMMARY.md
+- FOUND: commit 2bffe22 (Task 1: manifest + CI edits)
+- FOUND: commit a5aaef6 (SUMMARY)
+
 ---
 *Phase: 08-verified-defect-closure*
 *Completed: 2026-08-07*
