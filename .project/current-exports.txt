@@ -1,4 +1,4 @@
-# Public API Surface - Generated 2026-08-07 00:18:19 UTC
+# Public API Surface - Generated 2026-08-07 20:57:43 UTC
 # This file tracks all publicly exported items from the paladin crate
 # Generated using cargo-public-api v0.52.0
 
@@ -3103,7 +3103,6 @@ pub use paladin::infrastructure::adapters::garrison::sqlite_garrison::SqliteGarr
 pub mod paladin::infrastructure::adapters::herald
 pub use paladin::infrastructure::adapters::herald::json_herald
 pub use paladin::infrastructure::adapters::herald::markdown_herald
-pub use paladin::infrastructure::adapters::herald::table_herald
 pub mod paladin::infrastructure::adapters::input
 pub mod paladin::infrastructure::adapters::llm
 pub mod paladin::infrastructure::adapters::llm::config_bridge
@@ -3544,4 +3543,4 @@ impl !core::panic::unwind_safe::RefUnwindSafe for paladin::application::services
 impl !core::panic::unwind_safe::UnwindSafe for paladin::application::services::paladin::paladin_builder::PaladinBuilder
 
 ## Summary
-Total public items: 1968
+Total public items: 1967
