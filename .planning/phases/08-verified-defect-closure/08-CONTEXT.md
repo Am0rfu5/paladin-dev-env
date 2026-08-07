@@ -67,8 +67,9 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   corrections file. *(Phase 2 D-02)*
 - **D-00e:** Evidence bar (the "D-19 bar"): no claim of closure without the exact command or
   `file:line` that produced it, recorded verbatim. *(Phases 3, 5, 7)*
-- **D-00f:** Medieval-military ubiquitous language is mandatory in code, docs and comments.
-  *(CLAUDE.md)*
+- **D-00f [informational]:** Medieval-military ubiquitous language is mandatory in code, docs and
+  comments. *(CLAUDE.md — a standing project-wide convention that binds every phase, not a decision
+  this phase makes or tracks.)*
 
 ---
 
@@ -84,8 +85,8 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   survived three ingest runs because nobody looked at five literals is not fixed by adding a sixth
   place to look. This is the cheapest item in the phase and it should stay cheap.
 
-- **D-02: The baseline must be regenerated, and that — not the path edit — is DEBT-01's real
-  work.** `.project/current-exports.txt` is dated 2026-07-06, *before* Phases 2, 3 and 6 changed
+- **D-02: The baseline must be regenerated, and that is DEBT-01's real work.**
+  Not the path edit — the baseline. `.project/current-exports.txt` is dated 2026-07-06, *before* Phases 2, 3 and 6 changed
   code (Phase 3 alone added ~43 tests and refactored `redis.rs`'s private surface; Phase 6 changed
   `route_task`). ROADMAP criterion 1 requires that **an unchanged tree makes the job pass** — a
   path fix against a stale baseline produces a job that fails for a *different* reason, which is
@@ -94,8 +95,9 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   — **Reversibility:** reversible — the baseline is a generated artefact; regenerating it again is
   one command.
 
-- **D-03: If `cargo public-api` cannot run in this environment, land the path fix and record a
-  blocker. Do not fake the baseline.** ~~`cargo public-api` needs a nightly toolchain and
+- **D-03: Do not fake the baseline.**
+  If `cargo public-api` cannot run in this environment, land the path fix and record a blocker.
+  ~~`cargo public-api` needs a nightly toolchain and
   `cargo install`, i.e. network. The tree *does* build offline (`cargo doc --offline -p
   paladin-ports` and `cargo test --offline -p paladin-ports --lib` both ran during Phase 7), but
   nothing has proven `cargo install cargo-public-api` works here, and Phase 1's coverage
@@ -114,8 +116,8 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   with a pre-written excuse.** The blocker text above survives only as a documented contingency in
   case CI's runner differs from this devcontainer. D-02 is unchanged and now known-achievable.
 
-- **D-04: The five requirement-text references get D-00c annotation at source *and* a
-  REQUIREMENTS.md correction.** The four FR clauses plus one `cross_refs` field —
+- **D-04: Correct the five requirement-text references on both sides.**
+  They get D-00c annotation at source *and* a REQUIREMENTS.md correction. The four FR clauses plus one `cross_refs` field —
   M8 Epic 7 FR-10, M12 Epic 1 §7, M12 Epic 5 §7, M12 Epic 6 `cross_refs`, M12 Epic 7 FR-4.6 — are
   annotated in `.project/` per D-00c, and the corresponding `REQ-*` rows in REQUIREMENTS.md's
   traceability are updated to point at the corrected path. Both sides, because the `.project/`
@@ -123,8 +125,8 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   reads. Chosen over correcting only REQUIREMENTS.md: the M12 clauses were written in June 2026,
   months after commit `928c6d5`, which is proof the defect propagates from the source documents.
 
-- **D-05: `check-deprecations.sh` is fixed in the same plan, because "it gets to execute" is
-  meaningless if it cannot fail.** Verified this session: the script's primary branch pipes to
+- **D-05: `check-deprecations.sh` is fixed in the same plan as the path references.**
+  "It gets to execute" is meaningless if it cannot fail. Verified this session: the script's primary branch pipes to
   `/dev/null` and its fallback branch `exit 0`s on *both* outcomes, so the only way it can fail is
   its final malformed-attribute grep — which scans `src/` only and misses all eleven crates.
   Scope, deliberately narrow: make the malformed-attribute check cover `src` **and** `crates`, and
@@ -133,8 +135,8 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
 
 ### DEBT-02 — implement or withdraw the deprecation requirement
 
-- **D-06: Withdraw FR-8, with the reason recorded in a new ADR-0022 — do not manufacture
-  deprecations to satisfy a grep.** ⚠ **HUMAN REVIEW.**
+- **D-06: Withdraw FR-8, with the reason recorded in a new ADR-0022.**
+  Do not manufacture deprecations to satisfy a grep. ⚠ **HUMAN REVIEW.**
   The evidence read this session points one way, and it comes from the epic's own tracking document
   rather than from inference:
   - `DEPRECATIONS.md`'s **⚠ IMMEDIATE DEPRECATION** section — the only category that would produce
@@ -169,16 +171,17 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
      **exist today** is corrected. The policy is not deleted; the framework will need it.
   3. The tree is unchanged — zero `#[deprecated]` is the recorded correct state.
 
-- **D-08: The stale v0.2.0→v0.3.0→v1.0.0 timeline is restated against 0.7.0 inside ADR-0022, not
-  silently dropped.** Same treatment ADR-0020 gave the build benchmark: judge the stale artefact,
+- **D-08: The stale v0.2.0→v0.3.0→v1.0.0 timeline is restated against 0.7.0 inside ADR-0022.**
+  Not silently dropped. Same treatment ADR-0020 gave the build benchmark: judge the stale artefact,
   say why it is stale, and state what replaces it — here, that the pre-1.0 series absorbs API
   evolution through minor bumps per ADR-0008, so the deprecation policy's version anchors move to
   "one minor version" rather than named releases that already shipped.
 
 ### DEBT-03 — `paladin-ports` doctests
 
-- **D-09: Measure before scoping. The recorded justification for `doctest = false` is stale, and
-  that changes the size of this item.** Verified this session:
+- **D-09: Measure before scoping.**
+  The recorded justification for `doctest = false` is stale, and that changes the size of this
+  item. Verified this session:
   `grep -rn 'use paladin::' crates/paladin-ports/src` returns **0**, and a wider
   `grep -rnE '(^|[^_a-z])paladin::'` filtered for the root crate returns **0** — the 19 apparent
   hits are all `paladin_core::platform::container::paladin::Paladin`, a *module* path, not the root
@@ -200,14 +203,16 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   a contingency if the workspace-level run surfaces something the crate-level run did not. **Any
   DEBT-03 task list longer than ~2 tasks is a planning error.**
 
-- **D-10: Fix failures by making examples compile. `ignore` is permitted only for examples needing
-  a live external service, and each one gets a one-line reason.** Blanket-`ignore`ing a fence to
+- **D-10: Fix failures by making examples compile.**
+  `ignore` is permitted only for examples needing a live external service, and each one gets a
+  one-line reason. Blanket-`ignore`ing a fence to
   turn the gate green reproduces the exact failure DEBT-03 exists to close — a documentation guard
   configured not to guard. The 87 pre-existing `ignore`/`no_run`/`text` fences are **not** audited
   by this phase; they are pre-existing state, and re-litigating them would triple the item.
 
-- **D-11: `ci.yml:226`'s `--exclude paladin-ports` is dropped in the same commit that removes
-  `doctest = false`.** Two halves of one guard; splitting them across plans creates a window where
+- **D-11: The CI doctest exclusion drops in the same commit as the manifest flag.**
+  `ci.yml:226`'s `--exclude paladin-ports` goes when `doctest = false` goes.
+  Two halves of one guard; splitting them across plans creates a window where
   the crate's doctests exist and CI still refuses to run them. (Note the citation drift the Phase 7
   ledger flagged: the line is **226**, not the `:225` most of this corpus cites.)
 
@@ -220,8 +225,8 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
 
 ### DEBT-04 — the library-only build
 
-- **D-13: Migrate `src/main.rs` from `structopt` to `clap` v4, and give the `paladin` binary
-  `required-features = ["cli"]`.** ⚠ **HUMAN REVIEW — this changes a shipped surface.**
+- **D-13: Migrate `src/main.rs` from `structopt` to `clap` v4, and gate the `paladin` binary.**
+  The binary gains `required-features = ["cli"]`. ⚠ **HUMAN REVIEW — this changes a shipped surface.**
   ADR-0019 established the constraint and left three doors open (gate it, migrate it, retire it).
   Re-verified this session: `structopt`'s only consumer in the entire tree is `src/main.rs`
   (`grep -rln structopt src/ crates/` → one file), and that file is the `paladin` binary, which has
@@ -241,8 +246,8 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   — **Reversibility:** costly — `required-features` on a default binary changes how every existing
   invocation, Dockerfile stage and CI leg builds it; reverting means re-auditing each consumer.
 
-- **D-14: Feature-gate `paladin-herald`'s `colored` and `comfy-table` formatters. Root-manifest
-  gating alone cannot satisfy criterion 4.** ⚠ **HUMAN REVIEW — this shrinks a crate's default
+- **D-14: Feature-gate `paladin-herald`'s `colored` and `comfy-table` formatters.**
+  Root-manifest gating alone cannot satisfy criterion 4. ⚠ **HUMAN REVIEW — this shrinks a crate's default
   public API.**
   Re-verified this session: `crates/paladin-herald/Cargo.toml:22-23` declares `comfy-table = "7.1"`
   and `colored = "2.1"` unconditionally, the crate has **no `[features]` section at all**, and
@@ -273,8 +278,9 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   `colored` / `comfy_table` appear only in function bodies, never in Herald's public trait
   signatures.
 
-- **D-15: Both D-13 and D-14 are recorded in one ADR-0023, "CLI dependency isolation and the
-  binary/Herald surface".** They are one question — what a library-only consumer compiles — with
+- **D-15: Both D-13 and D-14 are recorded in one ADR-0023.**
+  Its subject is CLI dependency isolation and the binary/Herald surface.
+  They are one question — what a library-only consumer compiles — with
   two sites. The phase goal's own second clause ("no shipped surface is removed without a recorded
   decision behind it") is aimed precisely here. ADR-0023 cites ADR-0019 as its precondition and
   records the `cargo tree` command and output that proves criterion 4.
@@ -301,8 +307,8 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   Sequence, non-negotiable: (1) extend the canonical type; (2) replace `battalion/mod.rs:497` with a
   re-export; (3) replace `llm_analysis_service.rs:51` with a re-export; (4) grep-verify.
 
-- **D-18: Both duplicate sites become `pub use` re-exports, preserving their existing import
-  paths.** DEBT-05's own done-condition says "the other two sites are re-exports", and ADR-0016
+- **D-18: Both duplicate sites become `pub use` re-exports.**
+  Their existing import paths are preserved. DEBT-05's own done-condition says "the other two sites are re-exports", and ADR-0016
   says the same. `paladin-ports` already demonstrates the exact pattern at
   `llm_port.rs:671`. This keeps every downstream `use` path resolving — no breaking change — while
   `grep -rn 'pub struct TokenUsage' crates src` returns exactly one.
@@ -312,8 +318,8 @@ deliverable (Phase 16 / DOCS-03 — DEBT-03 only makes them *executable*); `Visi
   — **Reversibility:** one-way — once the two bodies are collapsed, re-splitting means re-dividing a
   public type across two published crates, which is what ADR-0016 exists to prevent.
 
-- **D-19: `paladin-llm` already depends on `paladin-core`, so the re-export is a one-line change
-  with no new edge.** Verified: `crates/paladin-llm/Cargo.toml:27` declares
+- **D-19: `paladin-llm` already depends on `paladin-core`, so the re-export adds no new edge.**
+  It is a one-line change. Verified: `crates/paladin-llm/Cargo.toml:27` declares
   `paladin-core = { package = "paladin-ai-core", … }`. No dependency-graph consequence, and
   ADR-0015's purity invariant is untouched.
 
