@@ -769,6 +769,18 @@ This section defines the process for proposing, reviewing, and implementing chan
 
 When we make breaking changes in a major version bump, we will:
 
+> **Current deprecation state (dated 2026-08-06):** The lifecycle policy below stands and governs
+> any future deprecation. Milestone 4 Epic 2's requirement to deprecate the existing transitional
+> API surface was withdrawn by ADR-0022 (`.planning/decisions/0022-deprecation-requirement-withdrawal.md`)
+> on 2026-08-06 — the epic's own tracking document named no candidate for deprecation, so
+> `grep -rn '#\[deprecated' src crates` returns **0** today, and that is the recorded outcome, not
+> an unfinished task. Where the policy below references named-version anchors (`v0.2.0`, `v0.3.0`),
+> note that ADR-0022 restates the removal window as **"at least one minor version"** rather than a
+> release that has already shipped, per the pre-1.0 versioning posture recorded in ADR-0008
+> (`.planning/decisions/0008-workspace-version-0-7-0.md`).
+> The `#[deprecated]`-attribute example below illustrates the *form* a future deprecation will
+> take — it is not a record of an active one.
+
 ### Deprecation Lifecycle
 
 1. **Announcement** (Version N):
@@ -872,7 +884,7 @@ For questions about API stability:
 - **[CHANGELOG](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md)** - Version history and breaking changes
 - **[Migration Guide](migration-guide.md)** - Migration guides between versions
 - **[Contributing Guide](../contributing/development-setup.md)** - Contribution guidelines including API change process
-- **[Deprecations Tracking](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md)** - Current and planned deprecations
+- **[Deprecations Tracking](https://github.com/DF3NDR/paladin-dev-env/blob/main/CHANGELOG.md)** - The deprecation process is documented here; no deprecation is currently active (see ADR-0022, `.planning/decisions/0022-deprecation-requirement-withdrawal.md`)
 
 ### Documentation Links
 
