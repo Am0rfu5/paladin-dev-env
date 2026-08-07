@@ -55,9 +55,11 @@ files before DEBT-01's checkbox is ticked. Do not tick DEBT-01's checkbox on the
 **DEBT-01's checkbox was ticked on 2026-08-06** (its own literal done-condition — five tooling plus
 five requirement-text references — is fully met; see `REQUIREMENTS.md`'s DEBT-01 closure note and
 `.planning/ledgers/milestone-04-06.md`'s `REQ-api-surface-ci` row). The four sites above remain
-open and are **not** part of that done-condition. At the Task 4 human-checkpoint approval, the human
-asked that this residual not be left with no assigned owner, since an unowned residual is the exact
-pattern this corpus keeps getting burned by.
+open and are **not** part of that done-condition. The approving human selected plain "Approve and seal" and did **not** request an owner for this
+residual — a separate residual-assignment option was offered at that checkpoint and was not chosen.
+The recommendation below is the **orchestrator's own initiative** at seal time, on the reasoning that
+an unowned residual is the exact pattern this corpus keeps getting burned by. It carries no human
+authority and Phase 13's planner is free to reject it.
 
 **Recommended owner: Phase 13 (Milestone 9-12 Ground Truth & Recorded Account).** Three of the four
 sites are Milestone 12 records (items 1 and 3 above, plus the M12 share of item 2's neighbourhood)
