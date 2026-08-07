@@ -90,7 +90,6 @@ reqwest_mcp = { package = "reqwest", version = "0.13", default-features = false 
 serde = { workspace = true }
 serde_json = { workspace = true }
 
-structopt = "0.3"
 tokio = { workspace = true }
 tokio-util = "0.7"
 dotenv = "0.15.0"
@@ -240,6 +239,7 @@ required-features = ["web-server"]
 [[bin]]
 name = "paladin"
 path = "src/main.rs"
+required-features = ["cli"]
 
 [[bin]]
 name = "paladin-cli"
