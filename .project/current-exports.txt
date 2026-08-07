@@ -1,4 +1,4 @@
-# Public API Surface - Generated 2026-06-10 00:47:43 UTC
+# Public API Surface - Generated 2026-08-07 00:18:19 UTC
 # This file tracks all publicly exported items from the paladin crate
 # Generated using cargo-public-api v0.52.0
 
@@ -85,7 +85,9 @@ pub mod paladin::application::services::arsenal
 pub mod paladin::application::services::arsenal::arsenal_execution_service
 pub struct paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService
 impl paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService
+pub async fn paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService::invoke_tool_direct(&self, &str, std::collections::hash::map::HashMap<alloc::string::String, serde_json::value::Value>) -> core::result::Result<serde_json::value::Value, paladin_core::platform::container::arsenal::core::ArsenalError>
 pub fn paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService::new(alloc::sync::Arc<dyn paladin_ports::output::arsenal_port::ArsenalRegistry>) -> Self
+pub async fn paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService::register_client(&self, alloc::vec::Vec<alloc::string::String>, alloc::sync::Arc<MCPClient>)
 impl paladin_ports::output::arsenal_port::ArsenalPort for paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService
 pub fn paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService::invoke<'life0, 'async_trait>(&'life0 self, paladin_core::platform::container::arsenal::core::ArmamentCall) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<paladin_core::platform::container::arsenal::core::ArmamentResult, paladin_core::platform::container::arsenal::core::ArsenalError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait
 pub fn paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService::list_armaments<'life0, 'async_trait>(&'life0 self) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = alloc::vec::Vec<paladin_core::platform::container::arsenal::core::Armament>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait
@@ -111,6 +113,7 @@ impl core::fmt::Debug for paladin::application::services::arsenal::arsenal_regis
 pub fn paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 impl paladin_ports::output::arsenal_port::ArsenalRegistry for paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService
 pub fn paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService::get<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::option::Option<paladin_core::platform::container::arsenal::core::Armament>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
+pub fn paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService::list<'life0, 'async_trait>(&'life0 self) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = alloc::vec::Vec<paladin_core::platform::container::arsenal::core::Armament>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait
 pub fn paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService::register<'life0, 'async_trait>(&'life0 self, paladin_core::platform::container::arsenal::core::Armament) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = ()> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait
 pub fn paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService::unregister<'life0, 'life1, 'async_trait>(&'life0 self, &'life1 str) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::option::Option<paladin_core::platform::container::arsenal::core::Armament>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
 impl core::marker::Freeze for paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService
@@ -1451,7 +1454,6 @@ impl core::panic::unwind_safe::UnwindSafe for paladin::application::services::pa
 pub mod paladin::application::services::paladin::paladin_builder
 pub struct paladin::application::services::paladin::paladin_builder::PaladinBuilder
 impl paladin::application::services::paladin::paladin_builder::PaladinBuilder
-pub fn paladin::application::services::paladin::paladin_builder::PaladinBuilder::add_mcp_sse(self, impl core::convert::Into<alloc::string::String>, impl core::convert::Into<alloc::string::String>) -> Self
 pub fn paladin::application::services::paladin::paladin_builder::PaladinBuilder::add_mcp_stdio(self, impl core::convert::Into<alloc::string::String>, impl core::convert::Into<alloc::string::String>, &[&str]) -> Self
 pub fn paladin::application::services::paladin::paladin_builder::PaladinBuilder::add_stop_word(self, impl core::convert::Into<alloc::string::String>) -> Self
 pub fn paladin::application::services::paladin::paladin_builder::PaladinBuilder::agent_description(self, impl core::convert::Into<alloc::string::String>) -> Self
@@ -1903,6 +1905,7 @@ impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::arsenal::Arsen
 impl core::panic::unwind_safe::UnwindSafe for paladin::config::arsenal::ArsenalConfig
 pub struct paladin::config::arsenal::MCPServerConfig
 pub paladin::config::arsenal::MCPServerConfig::args: core::option::Option<alloc::vec::Vec<alloc::string::String>>
+pub paladin::config::arsenal::MCPServerConfig::auth_token_env: core::option::Option<alloc::string::String>
 pub paladin::config::arsenal::MCPServerConfig::command: core::option::Option<alloc::string::String>
 pub paladin::config::arsenal::MCPServerConfig::endpoint: core::option::Option<alloc::string::String>
 pub paladin::config::arsenal::MCPServerConfig::name: alloc::string::String
@@ -2580,6 +2583,7 @@ impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::JwtAut
 impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::JwtAuthConfig
 pub struct paladin::config::MCPServerConfig
 pub paladin::config::MCPServerConfig::args: core::option::Option<alloc::vec::Vec<alloc::string::String>>
+pub paladin::config::MCPServerConfig::auth_token_env: core::option::Option<alloc::string::String>
 pub paladin::config::MCPServerConfig::command: core::option::Option<alloc::string::String>
 pub paladin::config::MCPServerConfig::endpoint: core::option::Option<alloc::string::String>
 pub paladin::config::MCPServerConfig::name: alloc::string::String
@@ -3014,11 +3018,40 @@ pub mod paladin::infrastructure
 pub mod paladin::infrastructure::adapters
 pub mod paladin::infrastructure::adapters::arsenal
 pub mod paladin::infrastructure::adapters::arsenal::mcp_protocol
-pub trait paladin::infrastructure::adapters::arsenal::mcp_protocol::MCPTransport: core::marker::Send + core::marker::Sync
-pub fn paladin::infrastructure::adapters::arsenal::mcp_protocol::MCPTransport::receive<'life0, 'async_trait>(&'life0 mut self) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<MCPMessage, paladin_core::platform::container::arsenal::core::ArsenalError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait
-pub fn paladin::infrastructure::adapters::arsenal::mcp_protocol::MCPTransport::send<'life0, 'life1, 'async_trait>(&'life0 mut self, &'life1 MCPMessage) -> core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), paladin_core::platform::container::arsenal::core::ArsenalError>> + core::marker::Send + 'async_trait)>> where Self: 'async_trait, 'life0: 'async_trait, 'life1: 'async_trait
-pub mod paladin::infrastructure::adapters::arsenal::mcp_sse_adapter
 pub mod paladin::infrastructure::adapters::arsenal::mcp_stdio_adapter
+pub mod paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter
+pub struct paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken(_)
+impl paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+pub fn paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken::new(impl core::convert::Into<alloc::string::String>) -> Self
+impl core::fmt::Debug for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+pub fn paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::drop::Drop for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+pub fn paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken::drop(&mut self)
+impl zeroize::Zeroize for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+pub fn paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken::zeroize(&mut self)
+impl core::marker::Freeze for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+impl core::marker::Send for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+impl core::marker::Sync for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+impl core::marker::Unpin for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+impl core::marker::UnsafeUnpin for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+impl core::panic::unwind_safe::RefUnwindSafe for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+impl core::panic::unwind_safe::UnwindSafe for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::BearerToken
+pub struct paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter
+impl paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter
+pub async fn paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter::connect(&self) -> core::result::Result<MCPClient, paladin_core::platform::container::arsenal::core::ArsenalError>
+pub fn paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter::endpoint(&self) -> &str
+pub fn paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter::new(impl core::convert::Into<alloc::string::String>) -> Self
+pub fn paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter::with_bearer_token(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter::with_custom_headers(self, std::collections::hash::map::HashMap<http::header::name::HeaderName, http::header::value::HeaderValue>) -> Self
+impl core::fmt::Debug for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter
+pub fn paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter
+impl core::marker::Send for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter
+impl core::marker::Sync for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter
+impl core::marker::Unpin for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter
+impl core::marker::UnsafeUnpin for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter
+impl core::panic::unwind_safe::RefUnwindSafe for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter
+impl core::panic::unwind_safe::UnwindSafe for paladin::infrastructure::adapters::arsenal::mcp_streamable_http_adapter::MCPStreamableHttpAdapter
 pub mod paladin::infrastructure::adapters::arsenal::resource_controls
 pub mod paladin::infrastructure::adapters::arsenal::tool_result_formatter
 pub mod paladin::infrastructure::adapters::auth
@@ -3468,7 +3501,6 @@ pub use paladin::prelude::SanctumPort
 pub use paladin::prelude::StopReason
 pub struct paladin::prelude::PaladinBuilder
 impl paladin::application::services::paladin::paladin_builder::PaladinBuilder
-pub fn paladin::application::services::paladin::paladin_builder::PaladinBuilder::add_mcp_sse(self, impl core::convert::Into<alloc::string::String>, impl core::convert::Into<alloc::string::String>) -> Self
 pub fn paladin::application::services::paladin::paladin_builder::PaladinBuilder::add_mcp_stdio(self, impl core::convert::Into<alloc::string::String>, impl core::convert::Into<alloc::string::String>, &[&str]) -> Self
 pub fn paladin::application::services::paladin::paladin_builder::PaladinBuilder::add_stop_word(self, impl core::convert::Into<alloc::string::String>) -> Self
 pub fn paladin::application::services::paladin::paladin_builder::PaladinBuilder::agent_description(self, impl core::convert::Into<alloc::string::String>) -> Self
@@ -3512,4 +3544,4 @@ impl !core::panic::unwind_safe::RefUnwindSafe for paladin::application::services
 impl !core::panic::unwind_safe::UnwindSafe for paladin::application::services::paladin::paladin_builder::PaladinBuilder
 
 ## Summary
-Total public items: 1956
+Total public items: 1968
