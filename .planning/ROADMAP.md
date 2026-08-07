@@ -631,12 +631,23 @@ Plans:
 **Plans**: 7 plans in 4 waves
 
 Plans:
+**Wave 1**
+
 - [ ] 09-01-PLAN.md — Tracer: herald CHANGELOG.md + `scripts/check-changelogs.sh` end-to-end through Makefile and a required CI context (SEC-04)
 - [ ] 09-02-PLAN.md — `SECURITY-EXCEPTIONS.md` register (ten rows, eleven governance fields) + ADR-0024 (SEC-01)
 - [ ] 09-03-PLAN.md — Delete `Dockerfile.chef`'s nine-manifest planner enumeration + ADR-0027 (SEC-05)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 09-04-PLAN.md — `.crate-names.txt` + bidirectional name guard, wired to make and CI, + ADR-0026 (SEC-03)
 - [ ] 09-05-PLAN.md — Licence posture: blocking `checkpoint:decision`, then the selected branch across eleven manifests and every other site, + ADR-0025 (SEC-02)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 09-06-PLAN.md — Reconcile `deny.toml`/`.cargo/audit.toml`, land `scripts/check-advisory-register.sh`, delete the duplicate CI audit job (SEC-01)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 09-07-PLAN.md — Close-out: REQUIREMENTS.md evidence flips, source corrections, PROMOTION.md → 0028, Phase 10/12 hand-offs, phase gate (all five)
 
 ### Phase 10: Milestone 7-8 Ground Truth & Recorded Account

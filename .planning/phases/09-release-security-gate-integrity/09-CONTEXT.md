@@ -91,9 +91,9 @@ exactly that.
 
 ### SEC-01(a) — which surface is authoritative, and where governance lives
 
-- **D-01: `.cargo/audit.toml` is the authoritative *suppression* surface; `deny.toml` mirrors its
-  vulnerability class exactly and adds one clearly-labelled second class; a new root-level
-  `SECURITY-EXCEPTIONS.md` is the authoritative *governance* register.**
+- **D-01: `.cargo/audit.toml` is the authoritative suppression surface.**
+  `deny.toml` mirrors its vulnerability class exactly and adds one clearly-labelled second class; a
+  new root-level `SECURITY-EXCEPTIONS.md` is the authoritative *governance* register.
   Three surfaces, one register, one direction of truth.
   Verified this session: `ci.yml:75-77` already declares `.cargo/audit.toml` "the single source of
   truth", `Makefile:246` says the same, and `deny.toml`'s own header says "Keep these two files in
@@ -158,8 +158,7 @@ exactly that.
   landing in the same phase.
   — **Reversibility:** reversible — four lines, restorable from git if a dependency returns.
 
-- **D-05: The corpus's "fifteen entries / ten unmaintained" figure is stale by one and is corrected
-  at source.**
+- **D-05: The "fifteen entries / ten unmaintained" figure is stale by one; correct it at source.**
   Read directly this session: `deny.toml`'s `[advisories] ignore` holds **fourteen** entries, not
   fifteen, and **nine** unmaintained, not ten. `RUSTSEC-2025-0121` (`gcc`) is absent from
   `deny.toml`, absent from `.cargo/audit.toml`, and `gcc` returns 0 hits in `Cargo.lock`. Someone
@@ -174,8 +173,8 @@ exactly that.
 
 ### SEC-01(c) — the governance schema and the CI reconciliation
 
-- **D-06: Extend M10 Epic 2 FR-3's four-field schema with owner and expiry, and record the extension
-  in an ADR rather than treating it as a defect fix.**
+- **D-06: Extend M10 Epic 2 FR-3's four-field schema with owner and expiry, via an ADR.**
+  Record the extension in an ADR rather than treating it as a defect fix.
   REQUIREMENTS.md is explicit that FR-3's schema (advisory ID, affected crate and why present, why
   not yet fixable, revisit condition) **does not require an owner or an expiry** — only
   `rustsec-remediation-plan.md` adds those, and only for the original two. So ROADMAP criterion 2's
@@ -186,8 +185,8 @@ exactly that.
   why not yet fixable · **owner** · **expiry / review date** · affected scope · compensating control ·
   revisit condition.
 
-- **D-07: Delete `ci.yml`'s second `cargo audit` job in this phase, and re-scope Phase 12's
-  SUPPLY-01 to verification.** ⚠ **HUMAN REVIEW — this changes another phase's scope.**
+- **D-07: Delete `ci.yml`'s second `cargo audit` job here; re-scope Phase 12's SUPPLY-01.**
+  SUPPLY-01 becomes verification-only. ⚠ **HUMAN REVIEW — this changes another phase's scope.**
   ROADMAP criterion 3 ("`make audit`, `ci.yml:77` and `ci.yml:406` cannot pass different advisory
   sets, because there is one configuration rather than three") **cannot be satisfied without the
   deletion.** REQUIREMENTS.md delegates the concrete deletion to SUPPLY-01 (Phase 12) and warns "Do
@@ -206,8 +205,8 @@ exactly that.
   duplicate-display-name defect SUPPLY-01 clause 1 describes.
   — **Reversibility:** reversible — an 18-line deletion in a workflow file.
 
-- **D-08: The three 2026 vulnerability ignores are ratified, not removed — with the ratification
-  written into the register.**
+- **D-08: The three 2026 vulnerability ignores are ratified, not removed.**
+  The ratification is written into the register.
   `RUSTSEC-2026-0187` (lopdf via `pdf-extract`), `-0194` and `-0195` (quick-xml via
   `rust-s3`/`aws-creds`) are authorised by no ingested document; M10 Epic 2 FR-3 §5 names exactly
   two. That is an authorisation gap, not a technical error: all three are real, all three are
@@ -226,8 +225,8 @@ exactly that.
   from `license-compatibility-decision-checklist.md`. A security exception whose owner is a closed
   milestone has no owner.
 
-- **D-10: The 2026-09-30 acceptance is renewed with a new per-advisory review date of
-  2026-12-31 — not closed, not blanket-renewed.**
+- **D-10: Renew the 2026-09-30 acceptance to a per-advisory review date of 2026-12-31.**
+  Not closed, not blanket-renewed.
   Closing requires an upstream fix; verified this session that none exists for either original
   advisory (`rsa` via `sqlx-mysql`, `tokio-tar` via `testcontainers`, both dev/test-scoped). A single
   blanket date is what produced the current state, where one date governs two advisories and nine
@@ -241,8 +240,9 @@ exactly that.
 
 ### SEC-02 — the licence posture
 
-- **D-11: Adopt `MIT OR Apache-2.0` across the root package and all ten library crates, matching the
-  signed checklist.** ⚠ **HUMAN REVIEW — this is a licence change on already-published crates, and
+- **D-11: Adopt `MIT OR Apache-2.0` across the root package and all ten library crates.**
+  This matches the signed checklist.
+  ⚠ **HUMAN REVIEW — this is a licence change on already-published crates, and
   SEC-02 says in terms that it "must not be resolved by inference".** This decision is the
   *recommendation*; it must be confirmed by `DF3NDR` before any plan executes it.
   Verified this session: `license = "MIT"` appears in exactly eleven manifests — root `Cargo.toml:40`
@@ -313,8 +313,7 @@ exactly that.
   crate's default public API** — a user-visible published-contract change that already owes a
   changelog entry. Keep-a-Changelog format, matching the nine siblings.
 
-- **D-15: The same close-out adds a guard: every `crates/*/` directory must carry a
-  `CHANGELOG.md`.**
+- **D-15: Add a guard asserting every library crate directory carries a CHANGELOG.md.**
   Folded into `scripts/check-advisory-register.sh`'s sibling or into the release workflow —
   planner's choice of home, but it must exist. Herald was missed because nothing checked. This is the
   same mechanism-not-assertion idiom as D-02 and D-16, and it costs one `for` loop.
@@ -350,8 +349,8 @@ exactly that.
 
 ### SEC-01's forward coupling
 
-- **D-17: SEC-01 does not wait for HARD-06, and this phase supplies the evidence that decouples
-  them.** ⚠ **Fresh finding.**
+- **D-17: SEC-01 does not wait for HARD-06; this phase supplies the decoupling evidence.**
+  ⚠ **Fresh finding.**
   REQUIREMENTS.md sequences SEC-01 behind HARD-06 (Phase 10) because "the `RUSTSEC-2026-0187`
   suppression rests on `pdf-extract` being reachable". Verified this session at
   `crates/paladin-content/Cargo.toml:41`: `pdf-extract = { version = "0.7" }` — **unconditional**,
@@ -387,8 +386,8 @@ exactly that.
   D-03 lesson, and it applies harder here because **four of this phase's five requirements are about
   gates that cannot be run locally.**
 
-- **D-20: The Milestone 7-8 ledger does not yet exist, so SEC rows are recorded in
-  `REQUIREMENTS.md` and handed to Phase 10.**
+- **D-20: Record SEC rows in `REQUIREMENTS.md` and hand them to Phase 10.**
+  The Milestone 7-8 ledger does not yet exist.
   HARD-01 (Phase 10) builds the Milestone 7-8 ledger for all 86 run-4 requirement IDs. Phase 9 runs
   first, so there is no ledger to amend in place. The close-out therefore flips the SEC-01 … SEC-05
   checkboxes in `REQUIREMENTS.md` behind evidence, updates the traceability rows at
