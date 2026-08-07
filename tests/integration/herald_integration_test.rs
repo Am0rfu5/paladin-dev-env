@@ -15,7 +15,9 @@ use paladin::core::platform::container::battalion::formation::Formation;
 use paladin::core::platform::container::battalion::phalanx::Phalanx;
 use paladin::core::platform::container::herald::Herald;
 use paladin::core::platform::container::paladin::Paladin;
-use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
+#[cfg(feature = "cli")]
+use paladin::infrastructure::adapters::herald::TableHerald;
+use paladin::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald};
 use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 use paladin_ports::output::llm_port::{
     FinishReason, LlmError, LlmPort, LlmRequest, LlmResponse, TokenUsage,
@@ -233,6 +235,7 @@ async fn test_paladin_with_markdown_herald() {
 }
 
 #[tokio::test]
+#[cfg(feature = "cli")]
 async fn test_paladin_with_table_herald() {
     // Create mock LLM port
     let llm_port: Arc<dyn LlmPort> = Arc::new(MockLlmPort::new("Table test response"));

@@ -211,7 +211,9 @@ impl Settings {
     pub fn create_default_herald(
         &self,
     ) -> Result<std::sync::Arc<dyn crate::core::platform::container::herald::Herald>, String> {
-        use crate::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald, TableHerald};
+        #[cfg(feature = "cli")]
+        use crate::infrastructure::adapters::herald::TableHerald;
+        use crate::infrastructure::adapters::herald::{JsonHerald, MarkdownHerald};
         use std::sync::Arc;
 
         let config = self.get_herald_config();
@@ -235,6 +237,7 @@ impl Settings {
                 let herald = MarkdownHerald::with_config(markdown_config);
                 Ok(Arc::new(herald))
             }
+            #[cfg(feature = "cli")]
             "table" => {
                 let table_config =
                     crate::infrastructure::adapters::herald::table_herald::TableHeraldConfig {
@@ -244,10 +247,16 @@ impl Settings {
                 let herald = TableHerald::new(table_config);
                 Ok(Arc::new(herald))
             }
-            other => Err(format!(
-                "Unknown formatter '{}'. Valid options: json, markdown, table",
-                other
-            )),
+            other => {
+                #[cfg(feature = "cli")]
+                let valid_options = "json, markdown, table";
+                #[cfg(not(feature = "cli"))]
+                let valid_options = "json, markdown";
+                Err(format!(
+                    "Unknown formatter '{}'. Valid options: {}",
+                    other, valid_options
+                ))
+            }
         }
     }
 
