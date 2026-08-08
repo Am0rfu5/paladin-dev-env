@@ -60,8 +60,7 @@ requirements, FACADE-01 … FACADE-04.
   `Status / Context / Decision / Considered Options / Code Locations / Code Conformance /
   Downstream Consumers`, **no frontmatter**. `PROMOTION.md:57` records **0034 as next free** —
   verified this session. *(Phase 1 D-01/D-03, Phase 7 D-00a/D-00h, Phase 9 D-00a, Phase 10 D-00a)*
-- **D-00b:** Precedence order is **ADR → shipped tree → `.planning/codebase/` map →
-  `intel/code-verification.md` → PRD → DOC → task-list checkbox.** An ADR that contradicts shipped
+- **D-00b:** Precedence order is **ADR → shipped tree → `.planning/codebase/` map → `intel/code-verification.md` → PRD → DOC → task-list checkbox.** An ADR that contradicts shipped
   code is an instruction to change the code. *(Phase 1 D-02)*
 - **D-00c:** Source corrections under `.project/` are **annotation, not rewriting** — a dated
   correction banner naming what was wrong and pointing at the ADR or requirement, each defective
@@ -109,8 +108,7 @@ it first. Record this in the phase's artefacts; do not silently build on it.
 
 ### FACADE-01 — the D5 disposition, and the finding that reframes it
 
-- **D-01: All 17 occurrences are rustdoc examples. Every one resolves to "deliberate stdout,
-  annotated" — zero executable code changes.**
+- **D-01: All 17 occurrences are rustdoc examples. Every one resolves to "deliberate stdout, annotated" — zero executable code changes.**
   The rule chosen was *default to `log::*`, annotate provable exceptions*. Verified directly this
   session: `grep -rn "println!\|eprintln!\|dbg!" src/application/services/ src/infrastructure/`
   returns exactly 17 across exactly 6 files (register count **exact**), and **every single line is a
@@ -144,15 +142,13 @@ it first. Record this in the phase's artefacts; do not silently build on it.
 
 ### FACADE-02 — D1–D4, decided on merit, relocations deferred
 
-- **D-04: Each of D1–D4 gets a real verdict with a named owner; no relocation executes in this
-  phase.** The ROADMAP goal is "a decision rather than a rating" — that is satisfied by a verdict
+- **D-04: Each of D1–D4 gets a real verdict with a named owner; no relocation executes in this phase.** The ROADMAP goal is "a decision rather than a rating" — that is satisfied by a verdict
   plus an owner plus, where deferred, a concrete trigger. It is *not* satisfied by executing
   relocations, and it is *not* satisfied by a uniform "defer all" that reads as a rating by another
   name. Chosen over "execute what is cheap" because a disposition phase that also refactors has two
   jobs and a much larger blast radius.
 
-- **D-05: D1 — `src/core/` re-export shims: defer, with the trigger stated as a facade-wide
-  no-alias sweep, owner recorded.** Verified this session: `src/core/` is **exactly six files**
+- **D-05: D1 — `src/core/` re-export shims: defer, with the trigger stated as a facade-wide no-alias sweep, owner recorded.** Verified this session: `src/core/` is **exactly six files**
   (`mod.rs`, `platform/mod.rs`, `platform/manager/{mod,content_service,event_manager,user_service}.rs`)
   and **49 files import via `crate::core::…`**. Removal is a mechanical path rewrite of those 49
   **plus** preserving `platform/mod.rs`'s maneuver/parser path injection, which carries real logic
@@ -161,8 +157,7 @@ it first. Record this in the phase's artefacts; do not silently build on it.
   `CircuitBreaker`), which is a different construct from `src/core/`'s surviving re-export layer.
   The planner must record that distinction rather than treating D1 as already-answered by ARCH-04.
 
-- **D-06: D2 — the `user_service.rs` split half is WITHDRAWN, with the reason recorded; the
-  mis-layering verdict for `content_service.rs` and `event_manager.rs` is decided separately.**
+- **D-06: D2 — the `user_service.rs` split half is WITHDRAWN, with the reason recorded; the mis-layering verdict for `content_service.rs` and `event_manager.rs` is decided separately.**
   Three facts narrow D2 to almost nothing on the `user_service` axis: reconciliation commit
   `6704807` already found **"no user-service split was needed"** for the controller case because
   `UserServiceTrait` and the DTOs **already live in `paladin-core`**; the *full* `user_service`
@@ -175,8 +170,7 @@ it first. Record this in the phase's artefacts; do not silently build on it.
   unsplit file; reinstating the split later invalidates that sizing and requires DEFER-02 to be
   re-sequenced against a moving target, which is the exact coupling this withdrawal removes.
 
-- **D-07: D3 — entangled Paladin services: defer, gated explicitly on the D-00i test, not on
-  HARD-05 being unanswered.** `src/application/services/paladin/{planning_service,
+- **D-07: D3 — entangled Paladin services: defer, gated explicitly on the D-00i test, not on HARD-05 being unanswered.** `src/application/services/paladin/{planning_service,
   prompt_generation_service,temperature_service,handoff_service}.rs`, ~2,750 LOC, tightly coupled to
   `paladin_builder.rs` and `paladin_execution_service.rs`. HARD-05 **is answered** — ADR-0031
   restated the rule, so D3's `paladin-battalion` (planning/handoff) and `paladin-llm`
@@ -185,8 +179,7 @@ it first. Record this in the phase's artefacts; do not silently build on it.
   edge non-default, facade-gated and `cfg`-scoped? Record the verdict as defer-with-trigger; the
   trigger is the broader refactor the register itself names.
 
-- **D-08: D4 — `content_ingestion_service.rs` placement: defer pending the dependency-coupling
-  review the register already names as the precondition.** `src/application/services/content/
+- **D-08: D4 — `content_ingestion_service.rs` placement: defer pending the dependency-coupling review the register already names as the precondition.** `src/application/services/content/
   content_ingestion_service.rs`, ~1,211 LOC. M7 Epic 1's extraction PRD listed it as moving to
   `paladin-content`; the facade kept its own copy. Legal under D-00i on the same terms as D3. The
   review is the trigger; it is not performed in this phase.
@@ -195,8 +188,7 @@ it first. Record this in the phase's artefacts; do not silently build on it.
 
 ### FACADE-03 — the two removed features and their reintroduction conditions
 
-- **D-09: Both features are recorded in a `.planning/` register file, and the `paladin-ml` placement
-  condition additionally gets an ADR because it is a contested position.**
+- **D-09: Both features are recorded in a `.planning/` register file, and the `paladin-ml` placement condition additionally gets an ADR because it is a contested position.**
   Per D-00g: the CLI surface's status is not contested (it was declared but never dispatched, the
   backend is intact, reintroduction is re-wiring) — that is register material. The **`paladin-ml`
   leaf-crate placement condition is contested**: it is the surviving half of the M8 Epic 3 non-goal
@@ -241,8 +233,7 @@ it first. Record this in the phase's artefacts; do not silently build on it.
   *Out of Scope* already records "none exists… named only by a superseded disposition record that
   contradicts its own governing PRD". Record that finding; do not create a crate.
 
-- **D-12: Run the triage against ADR-0028's commit range, not against the disposition record's own
-  claims.** Per D-00j, any row whose relocation falls inside `e5b2011~1..a1e4901` is *done* by
+- **D-12: Run the triage against ADR-0028's commit range, not against the disposition record's own claims.** Per D-00j, any row whose relocation falls inside `e5b2011~1..a1e4901` is *done* by
   outcome regardless of what the record says. This is the mechanism that stops FACADE-04 re-planning
   relocations that already happened — the failure mode the requirement was written to prevent.
 
