@@ -639,8 +639,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 09-04-PLAN.md — `.crate-names.txt` + bidirectional name guard, wired to make and CI, + ADR-0026 (SEC-03)
-- [ ] 09-05-PLAN.md — Licence posture: blocking `checkpoint:decision`, then the selected branch across eleven manifests and every other site, + ADR-0025 (SEC-02)
+- [x] 09-04-PLAN.md — `.crate-names.txt` + bidirectional name guard, wired to make and CI, + ADR-0026 (SEC-03)
+- [x] 09-05-PLAN.md — Licence posture: blocking `checkpoint:decision`, then the selected branch across eleven manifests and every other site, + ADR-0025 (SEC-02)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
