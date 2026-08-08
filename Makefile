@@ -156,6 +156,10 @@ check-doc-config: ## Validate fenced YAML config snippets in docs/src parse corr
 	@echo "$(CYAN)Checking doc config snippets...$(NC)"
 	@./scripts/check-doc-config.sh
 
+.PHONY: check-changelogs
+check-changelogs: ## Verify every publishable crate carries a CHANGELOG.md
+	@./scripts/check-changelogs.sh
+
 .PHONY: test-ci
 test-ci: ## Run tests in CI mode
 	@echo "$(CYAN)Running tests in CI mode...$(NC)"
