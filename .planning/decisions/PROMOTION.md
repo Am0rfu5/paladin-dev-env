@@ -47,8 +47,28 @@ the plans that follow in this same phase):
 | 0025 | `licence-posture` | Project licence posture — `MIT OR Apache-2.0` (Phase 9) |
 | 0026 | `crate-name-collision-guard` | crates.io package-name collision guard (Phase 9) |
 | 0027 | `dockerfile-chef-planner-stage` | `Dockerfile.chef` planner-stage supersession of M7 Epic 2 FR-01 (Phase 9) |
+| 0028 | `m8-reconciliation-authoritative` | Milestone 8's authoritative account — the 2026-06-04 reconciliation supersedes the Epic 1 audit and Epic 3 disposition record (Phase 10) |
+| 0029 | `version-trajectory-history` | Version trajectory — `v0.1.0-rc.1` recorded as closed history, with a `## Trajectory` table extended by Phase 13 (Phase 10) |
+| 0030 | `milestone-7-self-numbering` | Milestone 7's self-numbering collision — directory numbering is authoritative, citing ADR-0010 and ADR-0014 (Phase 10) |
+| 0031 | `extracted-crate-dependency-rule` | The extracted-crate dependency rule restated as a default-build invariant (Phase 10) |
+| 0032 | `pdf-extraction-capability` | PDF extraction is unconditional; the inert `pdf` feature deleted and the `RUSTSEC-2026-0187` reachability path corrected (Phase 10) |
+| 0033 | `cargo-doc-warning-bar` | One `cargo doc` bar ratified, the measured warning residue recorded with an owner, DEBT-03 discharged (Phase 10) |
 
-**Next free ADR number: 0028**
+**Next free ADR number: 0034**
+
+*Dated note, 2026-08-08 (plan 10-11):* the line advances by **six** in one phase, from 0028 to
+0034, because Phase 10 authored all six of ADR-0028 through ADR-0033 across its own plans — a
+fifth phase, after Phases 1, 8 and 9, whose executing phase is also each ADR's owning phase.
+Plan 10-02 authored ADR-0028; plan 10-03 authored ADR-0029 and ADR-0030 (citing ADR-0010 and
+ADR-0014 as its own two precedents); plan 10-04 authored ADR-0031; plan 10-05 authored ADR-0032;
+plan 10-06 authored ADR-0033. This matches the precedent Phase 9's own note above established for
+four ADRs in one phase, now extended to six. **Two of the six carry `must change` verdicts,
+executed by the same phase that authored them:** ADR-0032 (`must change`, the `pdf = []` feature
+deletion and the two config corrections, executed by plan 10-05) and ADR-0033 (`must change` for
+the `Makefile` fix only, executed by plan 10-06 — the warning residue itself is left to Phase 16 /
+DOCS-03, not executed here). `ls .planning/decisions/00{28,29,30,31,32,33}-*.md` (re-run before
+writing this note) confirms all six files exist with contiguous numbers; none of the six was
+skipped or reused, and no existing index row above was renumbered, reworded or reordered.
 
 *Dated note, 2026-08-08 (plan 09-07):* the line advances by **four** in one phase, from 0024 to
 0028, not by the single number a reader might expect from one phase's close-out. Phase 9 authored
