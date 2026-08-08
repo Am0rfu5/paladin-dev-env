@@ -1080,7 +1080,25 @@ the gates the project believes it already has; four of the five do not hold as d
 > scope**, and **SUPPLY-01 (Phase 12) carries the concrete `ci.yml:389-406` deletion** that
 > SEC-01's fourth surface describes. Do not plan the same fix twice.
 
-- [ ] **SEC-01**: The RustSec exception set is **one** set, every entry carries the governance the
+> **CORRECTED BY PHASE 9 (plan 09-07), dated 2026-08-08 — the arithmetic above and in point 3 below
+> was itself wrong, twice, before this phase touched a single file.** Read directly this session
+> against the pre-Phase-9 tree (`ADR-0024`'s verbatim liveness transcript): `deny.toml`'s
+> `[advisories] ignore` array held **fourteen** entries, not fifteen, with **nine** unmaintained
+> notices, not ten — and `RUSTSEC-2025-0121` (`gcc`) was already absent from `deny.toml`, absent
+> from `.cargo/audit.toml`, and returned zero hits in `Cargo.lock`, with no record anywhere of when
+> or by whom it was removed. Consequently "13 of the 15 … no named owner" above is also off by one:
+> the correct pre-Phase-9 figure is **twelve of fourteen** lacking owner and expiry (the same two —
+> `RUSTSEC-2023-0071`, `RUSTSEC-2025-0111` — carry the formal `rustsec-remediation-plan.md`
+> acceptance). The stale `ci.yml:389-406`/`ci.yml:406` line citations above and in point 4 below are
+> also corrected: re-derived this session, the duplicate job actually sat at `ci.yml:465-482` (job
+> id `security:` at `:466`, the `run:` line at `:482`) — roughly seventy-seven lines below the cited
+> range, not at it — and plan 09-06 (this phase) has since **deleted** that job entirely, so any
+> future citation into `ci.yml` for this subject must be re-derived against the current file rather
+> than carried forward from either number. **SEC-01 is now closed** — see the closure note appended
+> to the SEC-01 item below. The original run-4/run-5 narrative above is retained verbatim, exactly as
+> D-00c/D-00d require; nothing in it was deleted, only superseded in place.
+
+- [x] **SEC-01**: The RustSec exception set is **one** set, every entry carries the governance the
       acceptance criteria demand, and the 2026-09-30 expiry has a disposition. **Four surfaces
       encode four different sets** (verified by direct file reads during run 4, and re-read in run
       5 — see the correction above, which withdraws the sync claim in point 3):
@@ -1112,12 +1130,35 @@ the gates the project believes it already has; four of the five do not hold as d
          documented rationale and explicit FR-1-step-5 authorisation. Run 4's contrary finding is
          withdrawn.
 
+         **Corrected by Phase 9 (plan 09-07), dated 2026-08-08:** "fifteen" and "ten unmaintained"
+         above are themselves stale by one. Re-read directly against the pre-Phase-9 tree
+         (`ADR-0024`'s verbatim `Cargo.lock` liveness transcript), `deny.toml`'s `[advisories]
+         ignore` array held **fourteen** entries and **nine** unmaintained notices, not fifteen and
+         ten — `RUSTSEC-2025-0121` (`gcc`) was already absent from this file, from
+         `.cargo/audit.toml`, and from `Cargo.lock`, with no record anywhere of its removal. Plan
+         09-06 (this phase) has since deleted the four further entries whose parent crates Phase 8's
+         clap v4 migration removed from the graph (`RUSTSEC-2022-0104` structopt, `-2021-0139`
+         ansi_term, `-2024-0375` atty, `-2024-0370` proc-macro-error), leaving **ten** live entries
+         (five vulnerability, five unmaintained) — see `SECURITY-EXCEPTIONS.md` and the SEC-01
+         closure note below. Original text retained verbatim above.
+
       4. `.github/workflows/ci.yml` runs **two independent, differently configured `cargo audit`
          jobs**: `security-audit` at `:77` runs a bare `cargo audit` under a comment declaring
          `.cargo/audit.toml` "the single source of truth" (so: five), and `security` at `:406` runs
          `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111` (so: two, inline).
          `Makefile:244-247` `make audit` is bare; `make security` = `audit` + `deny`;
          `cargo deny check` gates at `ci.yml:105`.
+
+         **Corrected by Phase 9 (plan 09-07), dated 2026-08-08:** the `:406`/`:77` line citations
+         above are stale — re-derived this session before deletion, the duplicate job actually sat
+         at `ci.yml:465-482` (job id `security:` at `:466`, its `run:` line at `:482`), roughly
+         seventy-seven lines below the cited range, and the surviving job was `security-audit:` at
+         `ci.yml:61-78` (bare `cargo audit` at `:78`), not `:77`. Plan 09-06 (this phase) has since
+         **deleted** the `security:` job entirely (`.github/workflows/ci.yml`, commit `cb75b2b`);
+         `.github/rulesets/protect-main-branch.json:39`'s required status-check context string
+         `"Security Audit"` still resolves via the surviving job. Any future citation into `ci.yml`
+         for this subject must be re-derived against the current file rather than carried forward
+         from either stale range.
       **Thirteen of `deny.toml`'s fifteen have no entry in the formal risk-acceptance register.**
       They carry one-line inline comments, which is documented reasoning but not the owner, expiry
       date, affected scope and compensating control that the plan's own acceptance criteria
@@ -1129,6 +1170,13 @@ the gates the project believes it already has; four of the five do not hold as d
       `cargo deny` — not undocumented risk-taking, but it needs an owner's decision. The plan's own
       open action items are also unclosed: two tracked impact-analysis issues, and "add
       `audit.toml` exception entries only if approved, each with expiry date and owner".
+
+      **Corrected by Phase 9 (plan 09-07), dated 2026-08-08:** "Thirteen of fifteen" above compounds
+      point 3's stale count. With the tree-verified pre-Phase-9 figure of fourteen entries (not
+      fifteen) and the same two advisories carrying the formal risk acceptance, the correct
+      pre-Phase-9 figure is **twelve of fourteen** lacking owner and expiry, not thirteen of fifteen.
+      This gap is now closed for all ten surviving entries — see the SEC-01 closure note below.
+      Original text retained verbatim above.
       **Done when** one register is authoritative and the other surfaces mirror it exactly; every
       suppressed ID carries owner, expiry, affected scope and compensating control; the two
       `cargo audit` CI jobs are reconciled to one configuration; and the 2026-09-30 acceptance is
@@ -1144,6 +1192,37 @@ the gates the project believes it already has; four of the five do not hold as d
       and 2**; INGEST-CONFLICTS run-4 warning on the RustSec exception list and the two run-5
       warnings that narrow it. **The only item in the 199-document corpus carrying an expiry
       date.***
+
+      **CLOSED by Phase 9 (plan 09-07), dated 2026-08-08.** One register is now authoritative:
+      `SECURITY-EXCEPTIONS.md` (repo root, authored by plan 09-02, commits `a587e5a` feat +
+      `7ee741c` docs) holds exactly ten fully-governed rows (five `vulnerability`, five
+      `unmaintained`), every row carrying all eleven governance fields non-empty — `id`, `class`,
+      `crate`, `path`, `why_present`, `why_not_fixable`, `owner` (`DF3NDR` on all ten), `review_date`
+      (`2026-12-31` on all ten), `scope`, `compensating_control`, `revisit_condition`.
+      `.planning/decisions/0024-rustsec-exception-governance.md` (ADR-0024) records the governance
+      architecture, the M10 Epic 2 FR-3 schema supersession, the ratification of the three 2026
+      vulnerability advisories, the owner reassignment, and the expiry renewal. Plan 09-06
+      (commits `6513cb7` fix, `9cef391` feat, `cb75b2b` fix) reconciled `deny.toml` and
+      `.cargo/audit.toml` to exactly those ten live suppressions (deleting the four dead entries
+      confirmed by `grep -c '^name = "<crate>"$' Cargo.lock` returning `0` for `structopt`,
+      `ansi_term`, `atty`, `proc-macro-error`), landed `scripts/check-advisory-register.sh` (a
+      three-clause guard demonstrated failing nine distinct ways in `09-06-SUMMARY.md`), and deleted
+      the duplicate `ci.yml` `security:` job so exactly one `cargo audit` invocation remains
+      (`grep -c 'run: cargo audit' .github/workflows/ci.yml` → `1`), confirmed against
+      `.github/rulesets/protect-main-branch.json:39`'s required context string `"Security Audit"`
+      before deletion. The 2026-09-30 acceptance is **renewed**, not closed — every register row now
+      carries its own `review_date` of `2026-12-31`, owner `DF3NDR` (the repository owner), replacing
+      the closed-milestone label "Platform Security (Milestone 7)". **`cargo audit` and
+      `cargo deny check` themselves were NOT run against the reconciled configuration in this
+      environment** — `crates.io` returns HTTP 403 here, so neither tool is installable; their
+      pass/fail verdict against the reconciled `deny.toml`/`.cargo/audit.toml` is CI-only evidence,
+      recorded as unverified-here rather than inferred (see plan 09-07's CI-only claims list).
+      Sequencing with HARD-06 is resolved without waiting for Phase 10: `RUSTSEC-2026-0187`'s
+      suppression is warranted on tree evidence alone (`crates/paladin-content/Cargo.toml:41`
+      declares `pdf-extract` unconditionally while `:18`'s `pdf = []` gates nothing), independent of
+      how HARD-06 answers the capability question — HARD-06 receives this finding as input and is
+      not itself answered here. SUPPLY-01 and SUPPLY-02 (Phase 12) are recorded closed by this
+      phase's execution in the Phase 12 hand-off block below.
 
 - [x] **SEC-02**: The project's licence posture has one answer and the manifests declare it. Three
       positions are live: `Epic_4/license-compatibility-decision-checklist.md` records
@@ -1163,7 +1242,7 @@ the gates the project believes it already has; four of the five do not hold as d
       *Derives: REQ-license-policy-signoff, REQ-crate-metadata-completion; INGEST-CONFLICTS run-4
       warning on the three-way licence posture.*
 
-- [ ] **SEC-03**: crates.io package-name collisions are caught before they cost a release cycle.
+- [x] **SEC-03**: crates.io package-name collisions are caught before they cost a release cycle.
       `Epic_4/deferred-paladin-ports-publish-verification.md` closes Task 5.5 as **Resolved** and
       leaves exactly one residue: "Keep CI/package guardrails that detect crates.io package-name
       collisions early." Collisions were not hypothetical — they cost Epic 4 two package renames
@@ -1177,6 +1256,25 @@ the gates the project believes it already has; four of the five do not hold as d
       *Derives: REQ-paladin-ports-publish-verification-closed, REQ-ci-publish-dry-run-v1/-v2;
       `intel/code-verification.md` run-4 verified-open item 6.*
 
+      **CLOSED by Phase 9 (plan 09-07), dated 2026-08-08.** A name-availability check now runs on
+      every pull request, earlier than either dry run: plan 09-04 (commits `264721a` feat,
+      `2758a9d` feat, `5cde208` docs) added `.crate-names.txt` (the committed, hand-edited allow-list
+      of the eleven package names this project owns on crates.io) and
+      `scripts/check-crate-names.sh`, a bidirectional set-equality guard wired into the required
+      `cargo-deny` CI job (`License & Dependency Policy`) and `make check-crate-names`. The guard was
+      demonstrated failing six distinct ways (unlisted tree name, stale allow-list entry, emptied
+      allow-list, missing allow-list, case-only variant, and a `publish = false` exemption-flip) in
+      `09-04-SUMMARY.md`, and is offline by design — `crates.io` returns HTTP 403 in this
+      environment, so it cannot be a live registry query. `.planning/decisions/0026-crate-name-collision-guard.md`
+      (ADR-0026) records the decision and states the accepted residual cost explicitly: the guard
+      catches collisions among the eleven names this project already owns; a genuinely *novel* crate
+      name is still a human check against crates.io, not a CI one. That residual cost is the "accepted
+      decision with its known cost" branch of this requirement's own done-condition, recorded rather
+      than left implicit. ADR-0026 also closes the residue named in
+      `deferred-paladin-ports-publish-verification.md` ("Keep CI/package guardrails that detect
+      crates.io package-name collisions early") — Phase 10 / HARD-01's ledger row should cite this
+      ADR as satisfying it.
+
 - [x] **SEC-04**: `crates/paladin-herald/CHANGELOG.md` exists, or an exemption is recorded. M7
       Epic 4 §4.3.1 and AC 3 require a Keep-a-Changelog `CHANGELOG.md` for **every** public crate,
       and `epic-4-completion-summary.md` records that criterion **Met** ("Per-crate changelogs
@@ -1188,7 +1286,7 @@ the gates the project believes it already has; four of the five do not hold as d
       *Derives: REQ-per-crate-changelog, REQ-crate-metadata-completion, REQ-release-readiness-audit;
       `intel/code-verification.md` run-4 verified-open item 2.*
 
-- [ ] **SEC-05**: `Dockerfile.chef`'s planner stage cannot silently go stale as crates are added.
+- [x] **SEC-05**: `Dockerfile.chef`'s planner stage cannot silently go stale as crates are added.
       M7 Epic 2 FR-01 requires all `crates/*/Cargo.toml` files in the planner stage, and §6 states
       the purpose: "the dependency layer only invalidates when a `Cargo.toml` changes". Verified:
       `Dockerfile.chef:25-33` enumerates exactly nine crate manifests by name — core, ports,
@@ -1201,6 +1299,60 @@ the gates the project believes it already has; four of the five do not hold as d
       one missing line.
       *Derives: REQ-docker-workspace-build; `intel/code-verification.md` run-4 verified-open
       item 3.*
+
+      **CLOSED by Phase 9 (plan 09-07), dated 2026-08-08 — closed by deletion, not by addition.**
+      Plan 09-03 (commits `52b1943` fix, `d1ae033` docs) deleted `Dockerfile.chef:25-33`'s nine
+      per-crate `COPY crates/paladin-*/Cargo.toml` lines entirely, rather than adding
+      `paladin-herald`'s tenth line: `grep -c 'COPY crates/paladin' Dockerfile.chef` now returns `0`,
+      and the pre-existing `COPY crates ./crates` instruction (unchanged, now the sole coverage
+      mechanism) is structural — it cannot miss an eleventh crate the way an enumerated list can.
+      `grep -c 'COPY crates/paladin' Dockerfile Dockerfile.server` also returns `0` for both,
+      confirming SEC-05 closes across the whole Docker surface, not `Dockerfile.chef` alone.
+      `.planning/decisions/0027-dockerfile-chef-planner-stage.md` (ADR-0027) records the M7 Epic 2
+      FR-01 supersession, citing cargo-chef's own upstream documentation for why the deleted
+      enumeration never delivered the cache-tightness FR-01 named (a strictly later full-tree `COPY`
+      already dominated the cache decision for all ten crates before this edit). **The caching claim
+      itself is recorded as established-from-cargo-chef-documentation, not measured** — Docker is
+      absent from this environment, so the builder-stage `cargo chef cook` layer reporting `CACHED`
+      on a source-only rebuild is CI-only evidence, stated as such in ADR-0027 and in plan 09-07's
+      CI-only claims list, never inferred as passing.
+
+#### Hand-off to Phase 10 / HARD-01 — dated 2026-08-08 (plan 09-07)
+
+**No Milestone 7-8 as-shipped ledger exists yet — HARD-01 (Phase 10) builds it, per D-20
+(`09-CONTEXT.md`).** Because Phase 9 runs before Phase 10, there is no ledger row here to amend in
+place; the *closest available surrogate* — the Milestone 7 Epic 4 ledger table rows above — has
+already been amended with dated "Closed by Phase 9" notes. This block is the explicit, additional
+hand-off D-20 requires: when HARD-01 builds the Milestone 7-8 ledger, it must record each of the
+following seven `REQ-*` rows as **already closed by Phase 9**, citing this phase's ADRs and commits,
+rather than re-verifying or re-planning them:
+
+1. **`REQ-rustsec-risk-acceptance`** — closed by SEC-01 / ADR-0024. `SECURITY-EXCEPTIONS.md` is the
+   one register for all ten live suppressions; the 2026-09-30 acceptance is renewed to per-advisory
+   `2026-12-31` review dates, owner `DF3NDR`.
+2. **`REQ-rustsec-hardening-actions`** — closed by SEC-01 / ADR-0024. The "approved `audit.toml`
+   entries with owner and expiry" action item is satisfied by the register's ten fully-governed
+   rows; post-mitigation `cargo audit`/`cargo deny check` re-audit evidence remains CI-only (HTTP 403
+   against crates.io in this environment).
+3. **`REQ-license-policy-signoff`** — closed by SEC-02 / ADR-0025. The root package and all ten
+   library crates declare `MIT OR Apache-2.0`, matching the signed 551-package checklist; the PRD's
+   single-licence claim is annotated superseded.
+4. **`REQ-crate-metadata-completion`** — closed by SEC-02 and SEC-03 / ADR-0025 and ADR-0026. The
+   licence field agrees with the checklist across all eleven manifests, and a crates.io
+   name-collision guard now runs on every pull request.
+5. **`REQ-per-crate-changelog`** — closed by SEC-04. All ten library crates have a `CHANGELOG.md`,
+   mechanically enforced by `scripts/check-changelogs.sh`.
+6. **`REQ-docker-workspace-build`** — closed by SEC-05 / ADR-0027. `Dockerfile.chef`'s planner-stage
+   crate coverage is structural (`COPY crates ./crates`), not an enumerated list that can go stale.
+7. **`REQ-paladin-ports-publish-verification-closed`** — closed by SEC-03 / ADR-0026. The residue
+   named in `deferred-paladin-ports-publish-verification.md` ("keep CI/package guardrails that
+   detect crates.io package-name collisions early") is satisfied by `scripts/check-crate-names.sh`.
+
+**Evidence for all seven:** `SECURITY-EXCEPTIONS.md`; `.planning/decisions/0024-rustsec-exception-governance.md`,
+`0025-licence-posture.md`, `0026-crate-name-collision-guard.md`, `0027-dockerfile-chef-planner-stage.md`;
+commits `0458b6a`, `a587e5a`, `7ee741c`, `52b1943`, `d1ae033`, `264721a`, `2758a9d`, `5cde208`,
+`6bf860f`, `74a05fe`, `6513cb7`, `9cef391`, `cb75b2b` (plans 09-01 through 09-06). None of these seven
+rows requires further code work; HARD-01's task is to cite them, not re-open them.
 
 ### Milestone 7-8 ground truth & recorded account (HARD)
 
@@ -1503,6 +1655,20 @@ expiry coverage, and one unauthorised expansion.
       `intel/code-verification.md` run-5 verified-open finding 1; INGEST-CONFLICTS run-5 warning on
       the duplicate `cargo audit` job.*
 
+      **Closed by Phase 9, dated 2026-08-08 — see D-07 (`09-CONTEXT.md`).** REQUIREMENTS.md's own
+      SEC-01 block warned "do not plan the same fix twice"; Phase 9 ran first and made the deletion
+      itself rather than leaving it for this requirement. Plan 09-06's Task 3 deleted the duplicate
+      `security:` job — re-derived at `ci.yml:465-482` (the `:389-406` citation above was already
+      stale before Phase 9 touched anything), commit `cb75b2b` (`.github/workflows/ci.yml`, 19 lines
+      removed per `git diff --numstat`). `grep -c 'run: cargo audit' .github/workflows/ci.yml` → `1`;
+      the surviving `security-audit:` job (`:61-78`) posts the identical `"Security Audit"` context
+      string `.github/rulesets/protect-main-branch.json:39` requires, confirmed before deletion, so
+      no required-status-check coverage was lost. **This requirement's own checkbox is left for
+      Phase 12 to check** — this note records the substance as done and cites the evidence; Phase 12
+      inherits a closed item to verify, not work to re-plan. **Remaining for Phase 12:** confirming
+      the required status check still resolves on the first real CI run after this deletion (CI-only,
+      not verifiable in this sandboxed environment).
+
 - [ ] **SUPPLY-02**: Every advisory suppression carries an owner and a review date, and the
       vulnerability baseline matches what a document authorises. Three separable facts, all read
       from the tree:
@@ -1538,6 +1704,24 @@ expiry coverage, and one unauthorised expansion.
       REQ-deny-license-allowlist, REQ-rustsec-risk-acceptance (run 4);
       `intel/code-verification.md` run-5 CORRECTION section and verified-open finding 2;
       INGEST-CONFLICTS run-5 warning on the exception set exceeding its authorising baseline.*
+
+      **Closed by Phase 9, dated 2026-08-08 — see D-07 (`09-CONTEXT.md`).** All three of this
+      requirement's clauses are executed by this phase's plans, not left for Phase 12 to re-plan:
+      (a) the three 2026 vulnerability ignores are **ratified**, not removed, by ADR-0024 decision 3,
+      each with a concrete compensating control naming the actual reachable input path
+      (`SECURITY-EXCEPTIONS.md`); (b) M10 Epic 2 FR-3's schema is extended with `owner` and
+      `review_date` by ADR-0024 decision 2, and all ten surviving suppressions are backfilled in
+      `SECURITY-EXCEPTIONS.md` (owner `DF3NDR`, `review_date` `2026-12-31` on every row) — note the
+      corrected baseline is **ten** entries, not the thirteen this clause names, since four of the
+      original fifteen/fourteen were already dead (deleted, not backfilled — see the SEC-01
+      correction above); (c) the 2026-09-30 acceptance is renewed to per-advisory 2026-12-31 dates,
+      recorded in ADR-0024. Evidence: plan 09-02 (commits `a587e5a`, `7ee741c`) authored the register
+      and ADR; plan 09-06 (commits `6513cb7`, `9cef391`, `cb75b2b`) reconciled both TOML files and
+      landed `scripts/check-advisory-register.sh`, demonstrated failing nine distinct ways in
+      `09-06-SUMMARY.md`. **This requirement's own checkbox is left for Phase 12 to check** — this
+      note records the substance as done; Phase 12 inherits a closed item to verify. **Remaining for
+      Phase 12:** `cargo audit`/`cargo deny check` actually passing against the reconciled
+      configuration is CI-only, not run in this environment (crates.io returns HTTP 403).
 
 - [ ] **SUPPLY-03**: The two supply-chain ADR candidates are promoted or declined, deliberately.
       `Milestone_7/Epic_4/rustsec-remediation-plan.md` carries the corpus's **only expiry date**;
@@ -2985,7 +3169,7 @@ Its genuine residue is two defects, both carried forward.
 
 | Requirement | Verdict |
 |---|---|
-| REQ-docker-workspace-build | **Shipped, defect → SEC-05** — `Dockerfile.chef` pins `cargo-chef 0.1.77 --locked`, runs `chef prepare` / `chef cook --release --workspace`, and uses `rust:1.93-slim-bookworm`; its planner COPY list enumerates nine manifests and omits `crates/paladin-herald/Cargo.toml` |
+| REQ-docker-workspace-build | **Shipped, defect → SEC-05** — `Dockerfile.chef` pins `cargo-chef 0.1.77 --locked`, runs `chef prepare` / `chef cook --release --workspace`, and uses `rust:1.93-slim-bookworm`; its planner COPY list enumerates nine manifests and omits `crates/paladin-herald/Cargo.toml` — **Amended by Phase 9 (plan 09-07), dated 2026-08-08:** SEC-05 **closed** — plan 09-03 (commit `52b1943`) deleted the nine-manifest enumeration rather than adding a tenth line, per ADR-0027; planner-stage crate coverage is now structural (`COPY crates ./crates`), not enumerated |
 | REQ-build-baselines-doc | **Shipped (relocated)** — `docs/BUILD_BASELINES.md` does not exist; the equivalent ships as `docs/src/appendix/build-baselines.md` after the Milestone 11 overhaul. **Do not plan as missing** |
 | REQ-makefile-workspace-targets | Verify → HARD-01 |
 | REQ-makefile-per-crate-targets | Shipped — all ten targets at `Makefile:167-212` (`test-core` … `test-facade`) |
@@ -3024,18 +3208,18 @@ history** (HARD-03) — but three of its gates do not hold today.
 
 | Requirement | Verdict |
 |---|---|
-| REQ-crate-metadata-completion | **Shipped, contested → SEC-02** — the `paladin-ai` / `paladin-ai-core` renames are applied with lib names preserved (`paladin`, `paladin_core`); the `license` field reads MIT against the signed dual-licence checklist |
+| REQ-crate-metadata-completion | **Shipped, contested → SEC-02** — the `paladin-ai` / `paladin-ai-core` renames are applied with lib names preserved (`paladin`, `paladin_core`); the `license` field reads MIT against the signed dual-licence checklist — **Amended by Phase 9 (plan 09-07), dated 2026-08-08:** SEC-02 **closed** — plan 09-05 (commits `6bf860f`, `74a05fe`) relicensed the root package and all ten library crates to `MIT OR Apache-2.0`, per ADR-0025 and the repository owner's checkpoint answer; the contest is resolved, not merely narrowed |
 | REQ-per-crate-readme | Shipped — all ten library crates have a `README.md` |
-| REQ-per-crate-changelog | **Open defect → SEC-04** — nine of ten; `crates/paladin-herald/` has none, and the completion summary records this criterion Met |
+| REQ-per-crate-changelog | **Open defect → SEC-04** — nine of ten; `crates/paladin-herald/` has none, and the completion summary records this criterion Met — **Amended by Phase 9 (plan 09-07), dated 2026-08-08:** SEC-04 **closed** — plan 09-01 (commit `0458b6a`) created `crates/paladin-herald/CHANGELOG.md`; ten of ten library crates now have a `CHANGELOG.md`, mechanically enforced by `scripts/check-changelogs.sh` in the required CI job |
 | REQ-doc-coverage-audit | **Contested → HARD-07** — the >90% coverage posture is recorded Met while `paladin-ports` sets `doctest = false` and CI excludes it from `--doc` |
 | REQ-versioning-policy | **Shipped (relocated), superseded by outcome** — no `docs/VERSIONING_POLICY.md`; the lockstep `0.2.0` target was superseded by the `0.1.0` publish → HARD-03 |
 | REQ-release-checklist | **Shipped (relocated)** — `docs/src/appendix/{release-checklist,release-automation}.md` |
 | REQ-stable-api-per-crate | **Shipped (relocated)** — no root `STABLE_API.md`; the equivalent ships at `docs/src/api-reference/stable-api.md`. `api_surface_current.txt` (881 KB) and `final-api.txt` (198 KB) do exist at the root → ARCH-05, DEBT-01 |
 | REQ-release-readiness-audit | **Shipped (history)** — every gate PASS, GO sign-off, tag `v0.1.0-rc.1` at `a9530fc`, all ten crates verified on docs.rs, external smoke project compiled → HARD-03 |
-| REQ-rustsec-risk-acceptance | **Open → SEC-01** — the accepted set has grown beyond the two documented advisories and diverges across four surfaces; the acceptance expires **2026-09-30** |
-| REQ-rustsec-hardening-actions | **Partially shipped → SEC-01** — `testcontainers-modules` is in `dev-dependencies`, MySQL compilation is gated on `storage-mysql`, and `sqlx` runs `default-features = false`; the four named open action items (two impact-analysis issues, approved `audit.toml` entries with owner and expiry, post-mitigation re-audit evidence) are unclosed |
-| REQ-license-policy-signoff | **Contested → SEC-02** — a signed policy with a named approver that the manifests do not declare |
-| REQ-paladin-ports-publish-verification-closed | **Closed** — not forward work. The only residue is the collision guardrail → SEC-03 |
+| REQ-rustsec-risk-acceptance | **Open → SEC-01** — the accepted set has grown beyond the two documented advisories and diverges across four surfaces; the acceptance expires **2026-09-30** — **Amended by Phase 9 (plan 09-07), dated 2026-08-08:** SEC-01 **closed** — `SECURITY-EXCEPTIONS.md` (plan 09-02) is now the one register for all ten live suppressions; the 2026-09-30 acceptance is renewed to per-advisory `2026-12-31` review dates, owner `DF3NDR`, per ADR-0024 |
+| REQ-rustsec-hardening-actions | **Partially shipped → SEC-01** — `testcontainers-modules` is in `dev-dependencies`, MySQL compilation is gated on `storage-mysql`, and `sqlx` runs `default-features = false`; the four named open action items (two impact-analysis issues, approved `audit.toml` entries with owner and expiry, post-mitigation re-audit evidence) are unclosed — **Amended by Phase 9 (plan 09-07), dated 2026-08-08:** SEC-01 **closed** — the "approved `audit.toml` entries with owner and expiry" action item is satisfied by `SECURITY-EXCEPTIONS.md`'s ten fully-governed rows (plan 09-02/09-06); post-mitigation re-audit evidence (`cargo audit`/`cargo deny check` passing) remains CI-only, not run in this environment (HTTP 403 against crates.io) |
+| REQ-license-policy-signoff | **Contested → SEC-02** — a signed policy with a named approver that the manifests do not declare — **Amended by Phase 9 (plan 09-07), dated 2026-08-08:** SEC-02 **closed** — plan 09-05 declared `MIT OR Apache-2.0` in the root package and all ten library crates, matching the signed checklist; the PRD's single-licence claim is annotated superseded per ADR-0025 |
+| REQ-paladin-ports-publish-verification-closed | **Closed** — not forward work. The only residue is the collision guardrail → SEC-03 — **Amended by Phase 9 (plan 09-07), dated 2026-08-08:** SEC-03 **closed** — plan 09-04 (commits `264721a`, `2758a9d`, `5cde208`) shipped `.crate-names.txt` + `scripts/check-crate-names.sh`, an offline pre-dry-run guard; ADR-0026 records the decision and its accepted residual cost (a genuinely novel name is still a human crates.io check) |
 
 ### Milestone 8 Epic 1 — Facade Crate Audit (4 IDs)
 
@@ -3752,11 +3936,11 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | DEBT-03 | Phase 8 | Complete |
 | DEBT-04 | Phase 8 | Complete |
 | DEBT-05 | Phase 8 | Complete |
-| SEC-01 | Phase 9 | Pending |
+| SEC-01 | Phase 9 | Complete |
 | SEC-02 | Phase 9 | Complete |
-| SEC-03 | Phase 9 | Pending |
+| SEC-03 | Phase 9 | Complete |
 | SEC-04 | Phase 9 | Complete |
-| SEC-05 | Phase 9 | Pending |
+| SEC-05 | Phase 9 | Complete |
 | HARD-01 | Phase 10 | Pending |
 | HARD-02 | Phase 10 | Pending |
 | HARD-03 | Phase 10 | Pending |
@@ -3840,12 +4024,12 @@ it; recorded here so neither is planned twice):
 | ARCH-04 (Phase 7) | REL-01 (Phase 4) | Whether Milestone 6 forces a major version bump |
 | ARCH-03(c) (Phase 7) | DEBT-05 (Phase 8) | Which crate owns the canonical `TokenUsage` — **discharged (2026-08-06):** DEBT-05 collapsed the two duplicate definitions into `pub use` re-exports of the `paladin-core` canonical type; `grep -rn 'pub struct TokenUsage' crates src \| wc -l` → `1` |
 | RECON-07 (Phase 1) → VERIFY-05 (Phase 5) | QUAL-01 / QUAL-03 (Phase 3) | The coverage gate |
-| HARD-06 (Phase 10) | SEC-01 (Phase 9) | Whether `pdf-extract` is reachable — decides if the `RUSTSEC-2026-0187` suppression is needed at all |
+| HARD-06 (Phase 10) | SEC-01 (Phase 9) | Whether `pdf-extract` is reachable — decides if the `RUSTSEC-2026-0187` suppression is needed at all — **Amended by Phase 9 (plan 09-07), dated 2026-08-08:** discharged in the SEC-01 direction on tree evidence — `crates/paladin-content/Cargo.toml:41` declares `pdf-extract` unconditionally (not `optional = true`) while `:18`'s `pdf = []` feature gates nothing, so `lopdf` is reachable in the graph whenever `paladin-content` builds regardless of how HARD-06 answers the capability question. SEC-01 ratifies `RUSTSEC-2026-0187` on this evidence (ADR-0024 decision 3) without waiting for Phase 10. This phase does **not** answer whether PDF extraction is a supported capability — that contradiction (a mandatory dependency behind an empty feature flag) remains HARD-06's subject, handed over as a `file:line` finding, not resolved |
 | HARD-03 (Phase 10) | REL-01 (Phase 4) | The version trajectory; REL-01 must not converge on an rc.1 figure |
 | HARD-05 (Phase 10) | FACADE-02 (Phase 11) | Whether leaf-to-leaf crate edges are permitted, which decides D2/D3/D4's relocation targets |
 | HARD-07 (Phase 10) | DEBT-03 (Phase 8) | Which `cargo doc` bar governs, and therefore what re-enabling `paladin-ports` doctests must satisfy — **live coupling, unresolved by DEBT-03 (2026-08-06):** DEBT-03 re-enabled the doctests (`ci.yml:226` no longer excludes `paladin-ports`) but deliberately declined to decide the warning bar (D-12); Phase 10 / HARD-07 still owns that question and inherits the measured 6-warning `cargo doc --workspace --no-deps` state |
 | ARCH-04 (Phase 7) | FACADE-02 (Phase 11) | Whether a no-re-export-alias policy is adopted, which decides D1 |
-| SEC-01 (Phase 9) | SUPPLY-01 / SUPPLY-02 (Phase 12) | The RustSec exception set. SEC-01 owns the whole set and the 2026-09-30 disposition; SUPPLY-01 makes the CI deletion and SUPPLY-02 carries the corrected governance scope. **Phase 12 should not wait for Phase 9** |
+| SEC-01 (Phase 9) | SUPPLY-01 / SUPPLY-02 (Phase 12) | The RustSec exception set. SEC-01 owns the whole set and the 2026-09-30 disposition; SUPPLY-01 makes the CI deletion and SUPPLY-02 carries the corrected governance scope. **Phase 12 should not wait for Phase 9** — **Amended by Phase 9 (plan 09-07), dated 2026-08-08:** the coupling is discharged, not merely scheduled — Phase 9 ran first (plans 09-02 and 09-06) and executed both SUPPLY-01's CI deletion and all three of SUPPLY-02's clauses itself, per D-07 (`09-CONTEXT.md`). Both requirements carry a "Closed by Phase 9" note with commit references at their own definitions above. Phase 12 inherits SUPPLY-01 and SUPPLY-02 as closed items to verify (a CI-only confirmation that the required status check still resolves, and that `cargo audit`/`cargo deny check` pass against the reconciled configuration); what remains open for Phase 12 to actually plan is **SUPPLY-03** alone |
 | HARD-06 (Phase 10) | SUPPLY-02 (Phase 12) | Whether `pdf-extract` is reachable, which decides whether `RUSTSEC-2026-0187` needs suppressing at all |
 | HARD-07 (Phase 10) | DOCS-03 (Phase 16) | Which `cargo doc` bar governs; DOCS-03 applies it and adds the CI gate |
 | DEBT-03 (Phase 8) | DOCS-03 (Phase 16) | Re-enabling `paladin-ports` doctests is what makes the port traits' rustdoc examples executable rather than merely present — **input now ready (2026-08-06):** 96/96 doctests pass at both crate and workspace scope; Phase 16 / DOCS-03 inherits executable examples as input for its documentation-quality work, including the 87 pre-existing `ignore`/`no_run`/`text` fences DEBT-03 deliberately left un-audited (D-10) |
