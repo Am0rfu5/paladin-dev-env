@@ -58,8 +58,10 @@ six added by it. There is no run 6; the ingest is closed.
 verdict means the named artefact exists in the tree at the cited path. Confirming each PRD
 acceptance criterion against that artefact is forward work (RECON-01 / VERIFY-01 / ARCH-01 /
 HARD-01 / ORCH-01), not something this file claims to have done. The Milestone 7-8 ledger was the
-best-evidenced of the first four: 18 verified-shipped rows, 6 verified-open items, a 14-row
-superseded-by-outcome table and 2 favourable contradictions were checked directly against
+best-evidenced of the first four: 18 verified-shipped rows, 6 verified-open items, a ~~14-row~~
+**Corrected (dated 2026-08-08, HARD-01):** 13-row (`sed -n '365,381p'
+.planning/intel/code-verification.md | grep -c '^|'` → 15 lines = 1 header + 1 separator + 13 data
+rows) superseded-by-outcome table and 2 favourable contradictions were checked directly against
 `Cargo.toml`, `deny.toml`, `.cargo/audit.toml`, workflow contents and grep counts during ingest
 run 4, and are recorded in `intel/code-verification.md`. Run 4 is also the only run whose corpus
 contains a document that **audits itself against the tree** —
@@ -1359,7 +1361,9 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
 - [ ] **HARD-01**: The *Milestone 7-8 as-shipped ledger* below is upgraded from component-level file
       evidence to per-criterion verdicts with `file:line` citations, for all **86** run-4
       requirement IDs. Must carry four dispositions, not two: `Shipped`, `Superseded by outcome`
-      (the 14-row table in `intel/code-verification.md` — requirements that must **not** be planned
+      (the ~~14-row~~ **Corrected (dated 2026-08-08, HARD-01):** 13-row — confirmed via `sed -n
+      '365,381p' .planning/intel/code-verification.md | grep -c '^|'` → 15 lines (1 header + 1
+      separator + 13 data rows) — table in `intel/code-verification.md` — requirements that must **not** be planned
       as written), `Relocated` (deliverables that exist at a different path, chiefly the mdbook), and
       `Deferred with register` (the D1-D5 items and the two removed features). Must also record that
       **the five crates ARCH-01 marked "provenance pending" now have one**: `paladin-storage`,
@@ -1413,9 +1417,18 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
       `paladin-ai = "0.1.0"`. Milestone 8 targeted v0.2.0 throughout; its Epic 7, written
       2026-06-06, targets "post-v0.5.1 (Unreleased)" — so v0.3.0 through v0.5.1 all shipped between
       Epic 5 and Epic 7, and the M8-11 dependency graph's v0.2.0 → v0.3.0 → v0.4.0 → v0.5.0 sequence
-      completed. Current tree: `Cargo.toml` `0.6.0`, branch `release/v0.7.0`, latest tag `v0.5.1`.
+      completed. ~~Current tree: `Cargo.toml` `0.6.0`, branch `release/v0.7.0`, latest tag `v0.5.1`.
       **Feeds REL-01**, which converges the three-way version disagreement — and REL-01 must not
-      converge on any rc.1 figure.
+      converge on any rc.1 figure.~~ **Corrected (dated 2026-08-08, HARD-03):** `Cargo.toml:34` reads
+      `version = "0.7.0"` (Phase 4 plan 04-05, commit `c2e20a1`, converged every manifest and internal
+      pin on 0.7.0, per ADR-0008). `git tag --sort=-v:refname | head -3` (run this session) returns
+      `v0.7.1`, `v0.7.0`, `v0.5.1` in that order — Milestone 1's close-out shipped `v0.7.1` on
+      2026-08-04. The branch is still `release/v0.7.0`, unchanged. **`REL-01` is already `[x]`
+      complete** (`REQUIREMENTS.md:360`, traceability row `REQUIREMENTS.md:3740` reads `Phase 4 |
+      Complete`) — it converged on `0.7.0` via ADR-0008 and did **not** converge on any `rc.1` figure.
+      HARD-03's "Feeds REL-01" clause has therefore already fired: this HARD-03 record is
+      backwards-looking confirmation of closed history, not a hand-off to open work, and REL-01's own
+      checkbox is left untouched.
       *Derives: REQ-versioning-policy, REQ-release-checklist, REQ-release-readiness-audit,
       REQ-crate-metadata-completion; `context.md` Topic: Version trajectory across runs 1-4.*
 
@@ -1434,11 +1447,21 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
 - [ ] **HARD-05**: The extracted-crate dependency rule has **one** stated form. M7 Epic 1 PRD §6.1
       states it absolutely — "No extracted crate may depend on another extracted crate or on the
       `paladin` facade" — and Goal 2 restricts each new crate to `paladin-core`, `paladin-ports` and
-      workspace-shared dependencies. The same PRD's §4.4 complexity assessment anticipated the
+      workspace-shared dependencies. ~~The same PRD's §4.4 complexity assessment anticipated the
       violation without amending the rule: "use-case services depend on `paladin-llm` for LLM
-      analysis, creating an inter-crate dependency that must be handled carefully". Verified:
+      analysis, creating an inter-crate dependency that must be handled carefully".~~
+      **Corrected (dated 2026-08-08, HARD-05):** this complexity-assessment sentence does not resolve at "the same
+      PRD's §4.4" — `prd-extract-infrastructure-crates.md` §4.4 is Task 1.4 and contains no mention of
+      `paladin-llm`. The sentence lives in the sibling document
+      `.project/Milestone_7-Production-Hardening/Epic_1/cost-benefit-assessment.md:118`, inside the
+      `paladin-content` row's `Extraction complexity` cell, and reads: "use-case services depend on
+      `paladin-llm` for LLM analysis, creating an inter-crate dependency that must be handled
+      carefully" — the quoted claim itself is unchanged, only its citation. Verified:
       `crates/paladin-content/Cargo.toml` declares
-      `paladin-llm = { version = "0.6.0", path = "../paladin-llm", optional = true }` behind its
+      ~~`paladin-llm = { version = "0.6.0", path = "../paladin-llm", optional = true }`~~
+      **Corrected (dated 2026-08-08, HARD-05):** `paladin-llm = { version = "0.7.0", path =
+      "../paladin-llm", optional = true }` at `crates/paladin-content/Cargo.toml:28` — converged by Phase 4's commit
+      `c2e20a1` — behind its
       `llm` feature, and the facade's `content-processing` enables `paladin-content/llm`. This is
       the invariant that keeps the extraction from re-creating the coupling it was built to remove;
       stated absolutely and violated once, it is unclear whether the rule is "never" or "never,
@@ -1471,12 +1494,21 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
       / §8.9 require `cargo doc --workspace --no-deps` to complete with **zero warnings**; M8 Epic 5
       FR-19 requires only exit 0 with "**warnings acceptable; must not fail**". The same command is
       a zero-warning gate in one milestone and a warnings-tolerated gate in the next. Combined with
-      `crates/paladin-ports/Cargo.toml` still setting `[lib] doctest = false` and `ci.yml:225`
-      excluding the crate from `--doc` (DEBT-03), and with M7 Epic 4 §4.4.1's
+      ~~`crates/paladin-ports/Cargo.toml` still setting `[lib] doctest = false` and `ci.yml:225`
+      excluding the crate from `--doc` (DEBT-03)~~, and with M7 Epic 4 §4.4.1's
       `#![warn(missing_docs)]` and §4.4.4's >90% documented-public-item coverage target — both
       recorded **Met** by `epic-4-completion-summary.md` — the documentation bar the project
       actually holds itself to is ambiguous. **Resolve alongside DEBT-03**, not separately: the
       "Task 7.0" doctest re-enable and the gate bar are the same question asked twice.
+      **Corrected (dated 2026-08-08, HARD-07):** `crates/paladin-ports/Cargo.toml` has **no `[lib]`
+      section at all** — `git log --oneline -- crates/paladin-ports/Cargo.toml` shows `2bffe22
+      feat(08-03): re-enable paladin-ports doctests` — and `.github/workflows/ci.yml:238` is a bare
+      `cargo test --workspace --doc`, carrying no `--exclude` of any kind (the `:225` citation is
+      stale by both line number and content). DEBT-03 and the "unwritten Task 7.0" are therefore
+      **discharged by Phase 8**, not by this phase. The surviving residue is one line in the
+      `Makefile`'s `release-check` target (`Makefile:432-433`, `--exclude paladin-ports` plus a stale
+      echo explaining it) — weaker than CI, the wrong direction for a release gate — and plan 10-06
+      executes that fix.
       *Derives: REQ-doc-coverage-audit, REQ-crate-metadata-completion, REQ-m8-final-quality-gate;
       INGEST-CONFLICTS run-4 warning on the two `cargo doc` bars; extends DEBT-03.*
 
@@ -3690,7 +3722,7 @@ Recorded so a later reader does not mistake omission for oversight.
 | Registry multi-tenancy, persistence, distribution | Epic 22 explicit non-goals |
 | Non-Rust client SDKs | The product *is* a Rust library surface |
 | Re-planning shipped Milestone 7-8 work | The four crate extractions, the build/CI/benchmark infrastructure, the release-candidate cycle, the facade deletions, the rename, the actix consolidation and the reconciliation's fifteen commits are all verified in the tree |
-| Implementing the 14 requirements marked *Superseded by outcome* | Shipped code went a different way, deliberately. Recording that is HARD-01; implementing them would undo it |
+| Implementing the ~~14~~ **Corrected (dated 2026-08-08, HARD-01):** 13 requirements marked *Superseded by outcome* — see `.planning/ledgers/milestone-07-08.md`'s summary table | Shipped code went a different way, deliberately. Recording that is HARD-01; implementing them would undo it |
 | Building `paladin-arsenal`, `paladin-sanctum` or `paladin-ml` | None exists. The first two are named only by a superseded disposition record that contradicts its own PRD (FACADE-04); the third is a placement *condition* on reintroducing a removed feature (FACADE-03b), not a deliverable |
 | Rebuilding `docs/{PERFORMANCE_BASELINE,RELEASE_CHECKLIST,VERSIONING_POLICY,BUILD_BASELINES,INTEGRATION_TESTS}.md` or a root `STABLE_API.md` | Relocated into the mdbook by the Milestone 11 overhaul, not missing — same finding ARCH-05 records for the run-3 deliverables |
 | Treating any `v0.1.0-rc.1` artefact as current | It is history. The published-crate list, docs.rs verification and GO sign-off all describe the 0.1.0 state; the tree is at 0.6.0 → HARD-03 |
