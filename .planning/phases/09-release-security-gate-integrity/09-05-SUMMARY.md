@@ -267,6 +267,16 @@ None — no external service configuration required.
   inferred as done).
 - No blockers for downstream plans in this wave.
 
+## Self-Check: PASSED
+
+- FOUND: LICENSE-MIT
+- FOUND: LICENSE-APACHE
+- FOUND: .planning/decisions/0025-licence-posture.md
+- FOUND: .planning/phases/09-release-security-gate-integrity/09-05-SUMMARY.md
+- FOUND commit: 6bf860f (Task 2)
+- FOUND commit: 74a05fe (Task 3)
+- FOUND commit: 6e05f9d (SUMMARY.md)
+
 ---
 *Phase: 09-release-security-gate-integrity*
 *Completed: 2026-08-08*
