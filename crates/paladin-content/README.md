@@ -24,7 +24,11 @@ let _services_module = std::any::type_name::<services::content_processing_servic
 
 ## Feature Flags
 
-- `pdf`: Enable PDF extraction and parsing support.
+**Corrected (dated 2026-08-08, HARD-06, plan 10-11):** the `pdf` feature no longer exists — it
+gated no dependency and no code, and was deleted (see ADR-0032,
+`.planning/decisions/0032-pdf-extraction-capability.md`). PDF extraction ships unconditionally in
+every build of `paladin-content`, via the crate's own unconditional `pdf-extract` dependency.
+
 - `web-scraping`: Enable HTML scraping adapters.
 - `rss`: Enable RSS feed parsing support.
 - `news-api`: Enable NewsAPI integration.
