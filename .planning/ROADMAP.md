@@ -682,10 +682,10 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 10-07-PLAN.md — Ledger fan-out: M7 Epic 1 (12) + Epic 2 (13) = 25 cited rows
-- [ ] 10-08-PLAN.md — Ledger fan-out: M7 Epic 3 (10) + Epic 4 (12) = 22 cited rows, including the six Phase-9-closed
-- [ ] 10-09-PLAN.md — Ledger fan-out: M8 Epics 1-3 = 14 cited rows with the do-not-re-delete markers
-- [ ] 10-10-PLAN.md — Ledger fan-out: M8 Epics 5-7 + 5 cross-milestone = 21 cited rows
+- [x] 10-07-PLAN.md — Ledger fan-out: M7 Epic 1 (12) + Epic 2 (13) = 25 cited rows
+- [x] 10-08-PLAN.md — Ledger fan-out: M7 Epic 3 (10) + Epic 4 (12) = 22 cited rows, including the six Phase-9-closed
+- [x] 10-09-PLAN.md — Ledger fan-out: M8 Epics 1-3 = 14 cited rows with the do-not-re-delete markers
+- [x] 10-10-PLAN.md — Ledger fan-out: M8 Epics 5-7 + 5 cross-milestone = 21 cited rows
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
