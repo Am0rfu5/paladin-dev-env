@@ -7,6 +7,23 @@
 **Created:** 2026-05-25
 **Author:** AI-assisted, reviewed by team
 
+> **Correction (dated 2026-08-08, HARD-05):** Two clauses in this document — Goal 2 below and §6.1
+> "Crate Dependency Rules" below, both struck — state the extracted-crate dependency rule in an
+> absolute form ("never... on the facade") that the shipped tree satisfies only in its **default
+> build**.
+> [ADR-0031](../../../.planning/decisions/0031-extracted-crate-dependency-rule.md) restates the
+> enforceable invariant against the default build: no extracted crate may depend on another
+> extracted crate or on the facade in its default build; a non-default optional feature may
+> declare such an edge only where the facade opts in explicitly and the dependent code is
+> `cfg`-gated. This is a **promotion** of the invariant to its general form — the original absolute
+> form becomes the special case of a crate with no non-default features — and **not** permission
+> for a default-build edge: `paladin-content`'s `llm` feature already satisfies both conditions
+> today. The original text below is retained with inline corrections; nothing is deleted.
+>
+> **This document is annotated by two plans in this phase.** Plan 10-04 owns Goal 2 and §6.1
+> (HARD-05, this banner). Plan 10-05 owns §4.4.1 and §4.4.6 (HARD-06) and adds its own separate
+> dated blockquote in a later wave. This banner covers only the two clauses named in it.
+
 ---
 
 ## 1. Introduction / Overview
@@ -27,7 +44,9 @@ After Milestones 1–6, the Paladin workspace contains six crates (`paladin-core
 ## 2. Goals
 
 1. Create four new workspace crates: `paladin-web`, `paladin-notifications`, `paladin-content`, `paladin-storage`.
-2. Each new crate must depend only on `paladin-core`, `paladin-ports`, and workspace-shared dependencies — never on other new infrastructure crates or on the facade.
+2. ~~Each new crate must depend only on `paladin-core`, `paladin-ports`, and workspace-shared dependencies — never on other new infrastructure crates or on the facade.~~
+
+   **Corrected (dated 2026-08-08, HARD-05):** [ADR-0031](../../../.planning/decisions/0031-extracted-crate-dependency-rule.md) restates this as a default-build invariant: no extracted crate may depend on another extracted crate or on the facade **in its default build**; a non-default optional feature may declare such an edge only where the facade opts in explicitly and the dependent code is `cfg`-gated. Checkable per crate via `cargo tree --no-default-features`.
 3. All four new crates are **opt-in** from the facade crate's perspective; they are not enabled in `default` features.
 4. All new crates are versioned at `0.1.0` in lockstep with the rest of the workspace.
 5. A downstream consumer depending on `paladin-core + paladin-ports + paladin-battalion + paladin-llm` must not transitively pull in `actix-web`, `axum`, `lettre`, `pdf-extract`, `scraper`, or `sqlx`.
@@ -254,7 +273,9 @@ paladin-content      → paladin-ports, paladin-core
 paladin-storage      → paladin-ports, paladin-core
 ```
 
-No extracted crate may depend on another extracted crate or on the `paladin` facade.
+~~No extracted crate may depend on another extracted crate or on the `paladin` facade.~~
+
+**Corrected (dated 2026-08-08, HARD-05):** [ADR-0031](../../../.planning/decisions/0031-extracted-crate-dependency-rule.md) restates the enforceable invariant against the default build: no extracted crate may depend on another extracted crate or on the facade in its default build; a non-default optional feature may declare such an edge only where the facade opts in explicitly and the dependent code is `cfg`-gated (e.g., `paladin-content`'s `llm` feature, gating `paladin-llm` behind an explicit facade opt-in at `Cargo.toml:275`). Checkable per crate via `cargo tree --no-default-features`, which must show no other extracted crate and no facade in the resulting tree.
 
 ### 6.2 Recommended Extraction Order
 
