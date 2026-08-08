@@ -1,5 +1,12 @@
 # cargo-audit configuration
 # See: https://docs.rs/cargo-audit/latest/cargo_audit/
+#
+# `SECURITY-EXCEPTIONS.md` (repo root) is the authoritative GOVERNANCE record
+# for every entry below — owner, review date, affected scope and compensating
+# control. This file is the mechanical suppression surface `cargo-audit`
+# reads; `scripts/check-advisory-register.sh` enforces that it stays in sync
+# with the register and with `deny.toml`'s mirrored vulnerability class (see
+# ADR-0024).
 
 [advisories]
 # RUSTSEC-2023-0071: RSA timing side-channel via rsa 0.9.x
