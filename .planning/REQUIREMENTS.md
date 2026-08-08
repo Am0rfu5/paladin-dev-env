@@ -1358,7 +1358,7 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
 
 ### Milestone 7-8 ground truth & recorded account (HARD)
 
-- [ ] **HARD-01**: The *Milestone 7-8 as-shipped ledger* below is upgraded from component-level file
+- [x] **HARD-01**: The *Milestone 7-8 as-shipped ledger* below is upgraded from component-level file
       evidence to per-criterion verdicts with `file:line` citations, for all **86** run-4
       requirement IDs. Must carry four dispositions, not two: `Shipped`, `Superseded by outcome`
       (the ~~14-row~~ **Corrected (dated 2026-08-08, HARD-01):** 13-row — confirmed via `sed -n
@@ -1373,8 +1373,18 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
       reason the earlier "9-crate workspace" figure was wrong.
       *Derives: all 86 run-4 `REQ-*` IDs; `intel/code-verification.md` run-4 section; narrows
       ARCH-01's pending-provenance clause.*
+      **Closed, dated 2026-08-08 (plan 10-11):** `.planning/ledgers/milestone-07-08.md` closes this
+      requirement — 86 `REQ-*` rows across 12 sections, re-verified this session:
+      `grep -c '^| REQ-' .planning/ledgers/milestone-07-08.md` → `86`,
+      `grep -o '^| REQ-[a-z0-9-]*' .planning/ledgers/milestone-07-08.md | sort -u | wc -l` → `86`,
+      `grep -c '^### ' .planning/ledgers/milestone-07-08.md` → `12`, zero `pending — plan` markers,
+      zero blank Verdict/Evidence cells. The four HARD-01 dispositions are unmissable via the
+      ledger's head-of-file 13-row "Superseded by outcome" summary table. The five previously
+      provenance-pending crates carry their provenance in the ledger's head note (D-06). See
+      `.planning/phases/10-milestone-7-8-ground-truth-recorded-account/10-01-SUMMARY.md` through
+      `10-10-SUMMARY.md` for the per-section derivation record.
 
-- [ ] **HARD-02**: `facade-cleanup-RECONCILIATION-2026-06-04.md` is recorded as **the authoritative
+- [x] **HARD-02**: `facade-cleanup-RECONCILIATION-2026-06-04.md` is recorded as **the authoritative
       account of Milestone 8**, superseding `Epic_1/facade-audit.md` and
       `Epic_3/infrastructure-adapter-disposition.md`. The record must carry:
       **(a) why it supersedes them** — both describe ~4,400 LOC of *orphaned, uncompiled duplicate
@@ -1405,8 +1415,16 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
       REQ-adapter-disposition-record, REQ-m8-epic3-no-extractions, REQ-paladin-content-services-rename;
       `intel/code-verification.md` run-4 "Claims contradicted by code in the favourable direction";
       INGEST-CONFLICTS run-4 warnings on the disposition record and the new-crate non-goal.*
+      **Closed, dated 2026-08-08 (plan 10-11):** ADR-0028
+      (`.planning/decisions/0028-m8-reconciliation-authoritative.md`), `conforms`, names the
+      reconciliation authoritative, naming FACADE-02, FACADE-03(b) and FACADE-04 downstream.
+      `facade-audit.md` and `infrastructure-adapter-disposition.md` each carry a dated 2026-08-08
+      `SUPERSEDED BY [ADR-0028]` banner (`grep -c 'SUPERSEDED BY \[ADR-0028\]'` on each file → `1`).
+      The ledger's Milestone 8 Epic 1 and Epic 3 sections carry the do-not-re-delete markers on
+      `REQ-storage-shim-deletion` and `REQ-garrison-sanctum-bridges-kept`. See `10-02-SUMMARY.md`
+      and `10-09-SUMMARY.md`.
 
-- [ ] **HARD-03**: The version trajectory is recorded as **history**, and no `v0.1.0-rc.1` artefact
+- [x] **HARD-03**: The version trajectory is recorded as **history**, and no `v0.1.0-rc.1` artefact
       is treated as current state. What happened: M7 Epic 4's PRD and the overview Appendix C
       anchored the first publishable release at lockstep `0.2.0`; what shipped was **all ten crates
       published at `0.1.0`**, tagged **`v0.1.0-rc.1`** at commit `a9530fc` on 2026-05-28, with a
@@ -1431,8 +1449,13 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
       checkbox is left untouched.
       *Derives: REQ-versioning-policy, REQ-release-checklist, REQ-release-readiness-audit,
       REQ-crate-metadata-completion; `context.md` Topic: Version trajectory across runs 1-4.*
+      **Closed, dated 2026-08-08 (plan 10-11):** ADR-0029
+      (`.planning/decisions/0029-version-trajectory-history.md`), `conforms`, records `v0.1.0-rc.1`
+      at commit `a9530fc` as closed history with a `## Trajectory` table Phase 13/ORCH-05 extends.
+      `REQUIREMENTS.md:360` confirms REL-01 is still `[x]` and was not re-opened; its traceability
+      row reads `Phase 4 | Complete`. See `10-03-SUMMARY.md`.
 
-- [ ] **HARD-04**: The **fourth** milestone-numbering collision is recorded with the same convention
+- [x] **HARD-04**: The **fourth** milestone-numbering collision is recorded with the same convention
       that closes the first three. The Milestone 7 overview titles itself "Milestone 4: Production
       Hardening and Extended Workspace Decomposition" while its path is
       `Milestone_7-Production-Hardening`, and its Prerequisites credit "Milestones 1-3" with work
@@ -1443,8 +1466,15 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
       this is it. Expect a fifth in run 5.
       *Derives: `context.md` Topic: Milestone 7 scope, structure and self-numbering; same defect
       class as ARCH-02 and VERIFY-03.*
+      **Closed, dated 2026-08-08 (plan 10-11):** ADR-0030
+      (`.planning/decisions/0030-milestone-7-self-numbering.md`), `conforms`, citing ADR-0010 and
+      ADR-0014, records the Roadmap Extension Protocol's predicted fifth instance discharged by this
+      fourth one. The Milestone 7 overview carries a dated Shape B banner beneath its title plus six
+      inline Prerequisites corrections
+      (`.project/Milestone_7-Production-Hardening/overview/Milestone_7-Tier_4-Production_Hardening.md`).
+      See `10-03-SUMMARY.md`.
 
-- [ ] **HARD-05**: The extracted-crate dependency rule has **one** stated form. M7 Epic 1 PRD §6.1
+- [x] **HARD-05**: The extracted-crate dependency rule has **one** stated form. M7 Epic 1 PRD §6.1
       states it absolutely — "No extracted crate may depend on another extracted crate or on the
       `paladin` facade" — and Goal 2 restricts each new crate to `paladin-core`, `paladin-ports` and
       workspace-shared dependencies. ~~The same PRD's §4.4 complexity assessment anticipated the
@@ -1472,8 +1502,16 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
       *Derives: REQ-extracted-crate-dependency-rule, REQ-paladin-content-extraction;
       INGEST-CONFLICTS run-4 warning on the dependency rule; `constraints.md` run-4 strongest SPEC
       candidate.*
+      **Closed, dated 2026-08-08 (plan 10-11):** ADR-0031
+      (`.planning/decisions/0031-extracted-crate-dependency-rule.md`), `conforms`, restates the rule
+      as a default-build invariant, checkable via `cargo tree -p paladin-content
+      --no-default-features` (re-run this session, zero occurrences of any extracted crate or the
+      facade). `prd-extract-infrastructure-crates.md` Goal 2 and §6.1 carry the two dated
+      corrections naming ADR-0031. The ledger's `REQ-extracted-crate-dependency-rule` row reads
+      `satisfied`, citing ADR-0031, with the wording-not-code explanation stated in the row. See
+      `10-04-SUMMARY.md` and `10-07-SUMMARY.md`.
 
-- [ ] **HARD-06**: Whether PDF extraction is still a supported capability has one answer. Three
+- [x] **HARD-06**: Whether PDF extraction is still a supported capability has one answer. Three
       facts point in two directions. `crates/paladin-content/Cargo.toml:18` declares `pdf = []` — a
       feature gating **no dependency at all**, so `pdf-extract` is not reachable through it. The
       facade's `content-processing` enables `web-scraping`, `rss`, `news-api`, `tiktoken`, `llm`
@@ -1489,8 +1527,15 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
       *Derives: REQ-paladin-content-extraction, REQ-content-processing-build-gate,
       REQ-rustsec-risk-acceptance; INGEST-CONFLICTS run-4 warning on the `content-processing`
       feature.*
+      **Closed, dated 2026-08-08 (plan 10-11):** ADR-0032
+      (`.planning/decisions/0032-pdf-extraction-capability.md`), `must change`, executed in this
+      phase. `grep -cE '^pdf +=' crates/paladin-content/Cargo.toml` → `0`;
+      `grep -cE '^news-api +=' crates/paladin-content/Cargo.toml` → `1` (the retained comparator).
+      `.cargo/audit.toml:26-29`'s `RUSTSEC-2026-0187` comment now states the true reachability path,
+      with the suppression itself untouched. `crates/paladin-content/CHANGELOG.md` records the
+      consumer-visible cost under `### Removed`, citing ADR-0032. See `10-05-SUMMARY.md`.
 
-- [ ] **HARD-07**: One `cargo doc` bar, applied consistently. M7 Epic 4 §4.4.3 and M7 Epic 1 §4.6.4
+- [x] **HARD-07**: One `cargo doc` bar, applied consistently. M7 Epic 4 §4.4.3 and M7 Epic 1 §4.6.4
       / §8.9 require `cargo doc --workspace --no-deps` to complete with **zero warnings**; M8 Epic 5
       FR-19 requires only exit 0 with "**warnings acceptable; must not fail**". The same command is
       a zero-warning gate in one milestone and a warnings-tolerated gate in the next. Combined with
@@ -1511,6 +1556,62 @@ rows requires further code work; HARD-01's task is to cite them, not re-open the
       executes that fix.
       *Derives: REQ-doc-coverage-audit, REQ-crate-metadata-completion, REQ-m8-final-quality-gate;
       INGEST-CONFLICTS run-4 warning on the two `cargo doc` bars; extends DEBT-03.*
+      **Closed, dated 2026-08-08 (plan 10-11):** ADR-0033
+      (`.planning/decisions/0033-cargo-doc-warning-bar.md`), `must change` for the `Makefile` fix
+      only, executed in this phase. `Makefile` greps: `grep -c 'exclude paladin-ports' Makefile` →
+      `0`, `grep -c 'not yet published' Makefile` → `0`. ADR-0033 records the measured warning
+      state — exit 1, 20 warnings across four crates (`paladin-web` 13, `paladin-battalion` 3,
+      `paladin-ai` 3, `paladin-herald` 1) — with Phase 16 / DOCS-03 named owner. FR-19
+      (`.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_5/prd-document-facade-crate-role.md`)
+      carries its dated correction. **The `cargo doc --workspace --no-deps` gate itself is still red
+      today** — this requirement closes because the bar is now recorded once with its measured
+      state and a named owner, not because the tree clears it. See `10-06-SUMMARY.md`.
+
+#### Hand-off to Phase 11 / FACADE-02 — dated 2026-08-08 (plan 10-11)
+
+**FACADE-02 inherits ADR-0031's restated default-build invariant and ADR-0028's record that the
+Epic 3 relocations already executed — do not re-derive either.**
+
+1. **The invariant that legalises D2/D3/D4's leaf-to-leaf relocation targets** is ADR-0031's
+   restated form: no extracted crate may depend on another extracted crate or on the `paladin`
+   facade *in its default build*; a non-default optional feature may declare such an edge only
+   where the facade opts in explicitly and the dependent code is `cfg`-gated. D3's proposed
+   `paladin-battalion`/`paladin-llm` targets and D4's `paladin-content` target are legal under this
+   form on exactly the same terms `paladin-content`'s existing `llm` feature already satisfies —
+   FACADE-02 does not need to re-litigate whether a leaf-to-leaf edge is permissible at all, only
+   whether each specific proposed edge is non-default, facade-gated and `cfg`-scoped.
+2. **The Epic 3 relocations are already executed, inside Milestone 8, not deferred to Milestone 9.**
+   ADR-0028 `## Decision (iii)` records 15 commits and net 10,252 LOC removed
+   (`e5b2011~1..a1e4901`), independently re-measured twice (plans 10-02 and 10-09). FACADE-02's own
+   candidate list must not re-plan any relocation this range already performed.
+
+**Evidence:** `.planning/decisions/0031-extracted-crate-dependency-rule.md` (`conforms`,
+`Downstream Consumers` names Phase 11 / FACADE-02 explicitly);
+`.planning/decisions/0028-m8-reconciliation-authoritative.md` `## Decision (iii)`;
+`.planning/ledgers/milestone-07-08.md`'s `REQ-m8-epic3-no-extractions` and
+`REQ-extracted-crate-dependency-rule` rows.
+
+#### Hand-off to Phase 11 / FACADE-03(b) — dated 2026-08-08 (plan 10-11)
+
+**FACADE-03(b) inherits the Epic 3 §5 non-goal split ADR-0028 records: overridden for
+`paladin-herald`, still holding for `paladin-ml`.**
+
+1. The M8 Epic 3 PRD §5 non-goal "No new crates created — `paladin-herald`, `paladin-ml`, etc. are
+   not in scope" names the exact crate that was then created, in the same milestone. `ls crates/`
+   (re-run this session) returns `paladin-herald` present, `paladin-ml` absent
+   (`test -d crates/paladin-ml` exits `1`).
+2. **The directory evidence for both halves:** `crates/paladin-herald/` exists (created by
+   reconciliation commit `66f6c4e`), overriding the non-goal for that crate specifically, not for
+   the non-goal as a class. `paladin-ml` remains absent — the TensorFlow adapter and its `ml`
+   feature were deleted outright (commit `3d48768`), not gated into the facade, and the
+   reintroduction condition (`REQ-deferred-tensorflow-ml-adapter-v3`) requires a dedicated
+   `paladin-ml` leaf crate, never a return to the facade.
+3. FACADE-03(b) must not treat `paladin-herald`'s existence as licence to create `paladin-ml`
+   without its own decision — the two halves of the split are independent.
+
+**Evidence:** `.planning/decisions/0028-m8-reconciliation-authoritative.md` (`Downstream Consumers`
+names FACADE-03(b) explicitly); `.planning/ledgers/milestone-07-08.md`'s
+`REQ-deferred-tensorflow-ml-adapter-v3` row (`deferred with register`).
 
 ### Facade residue & deferred register disposition (FACADE)
 
@@ -1653,6 +1754,40 @@ never revisited** — Epic 25's quality gates plus the Epic 28/29 coverage arith
 and the documentation currency Milestone 11 left open plus the architecture gap two milestones hid
 (DOCS).
 
+#### Hand-off to Phase 12 / SUPPLY-02 and SUPPLY-03 — dated 2026-08-08 (plan 10-11)
+
+**SUPPLY-02 and SUPPLY-03 inherit D-19's answer to the `pdf-extract` reachability question,
+delivered rather than deferred.**
+
+1. **The corrected `.cargo/audit.toml` reasoning, and what it now says:** `RUSTSEC-2026-0187`'s
+   comment block (`.cargo/audit.toml:26-29`) no longer attributes `pdf-extract`'s reachability to
+   the facade's `content-processing` feature gating it — that framing was wrong. It now states the
+   true path positively: `pdf-extract` is an unconditional dependency of `paladin-content`
+   (`crates/paladin-content/Cargo.toml:40`, no `optional = true`), and reachability from the
+   workspace root is gated one level up, by whether the facade's own optional `paladin-content`
+   dependency is enabled (`Cargo.toml:59`).
+2. **The suppression set is unchanged.** This is a comment correction only — the `ignore = [...]`
+   array in `.cargo/audit.toml` was not touched, and `RUSTSEC-2026-0187` remains suppressed on the
+   same grounds (the advisory is warranted regardless of the deleted `pdf` feature's disposition).
+3. **Phase 12 inherits this as an answer, not a question** — do not re-derive whether
+   `pdf-extract` is reachable; ADR-0032 and this session's source-level re-verification already
+   settled it. The `cargo audit` / `cargo deny check` confirmation that the reconciled suppression
+   set actually passes remains **CI-only** — `crates.io` returns HTTP 403 in this environment,
+   unchanged since Phase 9, and no local pass is claimed for either tool.
+4. **A dead-dependency finding, named with an owner rather than left only in an ADR body:**
+   `scraper`, `rss` and `tiktoken-rs` are declared optional in `crates/paladin-content/Cargo.toml`
+   and consumed by no code in the crate — confirmed independently by both plan 10-05
+   (`grep -rn "scraper::\|tiktoken_rs\|::rss::" crates/paladin-content/src/` → zero matches) and
+   plan 10-10. ADR-0032 named this out of scope for Phase 10 and left the owner as "Phase 11 or
+   Phase 15." **This hand-off assigns it to Phase 15** (the coverage-and-CI quality gates phase,
+   which already inherits the seven-crate doctest posture from ADR-0033 as a related
+   dependency-and-build-surface hygiene item) — Phase 11's facade-residue work may still pick it up
+   incidentally if it touches the same manifest, but Phase 15 is the named owner of record.
+
+**Evidence:** `.planning/decisions/0032-pdf-extraction-capability.md` `## Decision`,
+`## Downstream Consumers`; `.cargo/audit.toml:26-29`; `.planning/ledgers/milestone-07-08.md`'s
+`REQ-content-processing-build-gate` row.
+
 ### Supply-chain gate integrity (SUPPLY)
 
 Confirmed by direct file reads on 2026-07-30. **This section corrects a run-4 finding** — see the
@@ -1768,6 +1903,31 @@ expiry coverage, and one unauthorised expansion.
       here would fabricate authority the corpus does not contain.
       *Derives: `intel/decisions.md` run-5 ADR-candidate list (11 candidates, 0 locked);
       `intel/SYNTHESIS.md` run-5 Decisions section.*
+
+#### Hand-off to Phase 13 / ORCH-05 — dated 2026-08-08 (plan 10-11)
+
+**ORCH-05 inherits ADR-0029's `## Trajectory` table to append to, and the note that REL-01 is
+already converged so ORCH-05 applies rather than re-decides.**
+
+1. **The table to append to, not replace:** `.planning/decisions/0029-version-trajectory-history.md`'s
+   `## Trajectory` table records `v0.1.0-rc.1` (commit `a9530fc`, 2026-05-28, all ten crates
+   published at `0.1.0`, GO sign-off) through the current `0.7.0`/`v0.7.0`/`v0.7.1` state, with a
+   labelled placeholder row naming Phase 13 / ORCH-05 as owner of `v0.3.0` through `v0.6.0`.
+   ORCH-05 appends rows for `v0.3.0`, `v0.4.0`, `v0.5.0` and `v0.6.0` in ascending order, without
+   re-sorting or re-keying the existing rows.
+2. **REL-01 is already converged and must not be re-opened.** `REQUIREMENTS.md:360` — `REL-01` is
+   `[x]` — and its traceability row reads `Phase 4 | Complete`, converged on `0.7.0` via ADR-0008.
+   HARD-03's "Feeds REL-01" clause has already fired; it is backwards-looking confirmation of closed
+   history, not a hand-off to open work. ORCH-05 applies the already-converged result rather than
+   re-deciding it, per the ROADMAP's own coupling note.
+3. **Three ADRs, one unbroken line:** HARD-03 (ADR-0029) covers rc.1 → v0.2.0; ORCH-05 extends the
+   same ADR's table through v0.6.0; REL-01 (ADR-0008, Phase 4, done) covers the landing at v0.7.0.
+   Writing a second, competing version ADR for ORCH-05 is prohibited — whichever of HARD-03/ORCH-05
+   runs second applies to the one artefact rather than authoring a rival.
+
+**Evidence:** `.planning/decisions/0029-version-trajectory-history.md` `## Trajectory` table and
+`## Downstream Consumers` (names Phase 13 / ORCH-05 explicitly); `REQUIREMENTS.md:360` (REL-01
+checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
 
 ### Milestone 9-12 ground truth & recorded account (ORCH)
 
@@ -3796,13 +3956,13 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | SEC-03 | Phase 9 | Complete |
 | SEC-04 | Phase 9 | Complete |
 | SEC-05 | Phase 9 | Complete |
-| HARD-01 | Phase 10 | Pending |
-| HARD-02 | Phase 10 | Pending |
-| HARD-03 | Phase 10 | Pending |
-| HARD-04 | Phase 10 | Pending |
-| HARD-05 | Phase 10 | Pending |
-| HARD-06 | Phase 10 | Pending |
-| HARD-07 | Phase 10 | Pending |
+| HARD-01 | Phase 10 | Complete |
+| HARD-02 | Phase 10 | Complete |
+| HARD-03 | Phase 10 | Complete |
+| HARD-04 | Phase 10 | Complete |
+| HARD-05 | Phase 10 | Complete |
+| HARD-06 | Phase 10 | Complete |
+| HARD-07 | Phase 10 | Complete |
 | FACADE-01 | Phase 11 | Pending |
 | FACADE-02 | Phase 11 | Pending |
 | FACADE-03 | Phase 11 | Pending |
