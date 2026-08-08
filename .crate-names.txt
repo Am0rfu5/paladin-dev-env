@@ -1,0 +1,23 @@
+# .crate-names.txt
+#
+# The committed, hand-edited allow-list of crates.io package names this
+# project already owns. scripts/check-crate-names.sh reads this file as the
+# authoritative owned-name set and asserts it matches the workspace's
+# publishable [package] names exactly, in both directions -- see ADR-0026.
+#
+# Add a line here ONLY after a human has confirmed the new crate's name is
+# available on crates.io. This file is never auto-generated from the tree:
+# deriving the expected set from the thing being checked would let the guard
+# rubber-stamp whatever was just added, which defeats the point of the
+# guard. Order does not matter -- this is a set, not a sequence.
+paladin-ai
+paladin-ai-core
+paladin-ports
+paladin-battalion
+paladin-herald
+paladin-llm
+paladin-memory
+paladin-storage
+paladin-notifications
+paladin-content
+paladin-web

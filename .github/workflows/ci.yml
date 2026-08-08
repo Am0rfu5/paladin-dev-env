@@ -94,6 +94,9 @@ jobs:
       - name: Check per-crate changelogs
         run: ./scripts/check-changelogs.sh
 
+      - name: Check crates.io package names
+        run: ./scripts/check-crate-names.sh
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
