@@ -1,5 +1,18 @@
 # Epic 4 License Compatibility Decision Checklist
 
+> **CONFIRMED AND NOW DECLARED — 2026-08-08, per [ADR-0025](../../../../.planning/decisions/0025-licence-posture.md).**
+> This checklist's target policy, `MIT OR Apache-2.0`, was the only signed governance artefact in
+> the corpus with a named approver (`DF3NDR`) while the shipped root `Cargo.toml` and all ten
+> library crate manifests declared `license = "MIT"` — a three-way split with the M7 Epic 4 PRD
+> §4.7.7 and the M7 overview Acceptance Criterion 1, which also said `MIT`. SEC-02 required this be
+> resolved by an explicit human decision, not by inference. At a blocking checkpoint on 2026-08-08,
+> the repository owner (`DF3NDR`) selected the dual expression this checklist already recorded.
+> Phase 9 Plan 05, Task 2 then set `license = "MIT OR Apache-2.0"` in the root package and all ten
+> library crates, renamed `LICENSE` to `LICENSE-MIT`, added a verbatim `LICENSE-APACHE`, and updated
+> `README.md` and `Dockerfile.chef`'s OCI label to match. This artefact's policy is no longer merely
+> signed — it is now what the tree states. The original text below is retained unmodified as the
+> historical sign-off record; nothing below this banner was rewritten.
+
 Date: 2026-05-28
 Scope: Task 5.7 (transitive dependency license review)
 
