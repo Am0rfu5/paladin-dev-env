@@ -10,6 +10,15 @@
 
 ---
 
+> **Dated correction (2026-08-08, HARD-07), see
+> [ADR-0033](../../../.planning/decisions/0033-cargo-doc-warning-bar.md):** FR-19 below (struck)
+> sets a "warnings acceptable; must not fail" bar on `cargo doc --workspace --no-deps` — the same
+> command M7 Epic 4 §4.4.3 and M7 Epic 1 §4.6.4/§8.9 require to complete with **zero** warnings.
+> The required CI `lint` job (`.github/workflows/ci.yml:58`) runs the stricter zero-warning form.
+> ADR-0033 ratifies that zero-warning bar as the project's one bar and records FR-19 as superseded
+> by outcome. Original text is retained below, struck, with a dated correction — nothing is
+> deleted.
+
 ## 1. Introduction / Overview
 
 Epic 5 is the closing act of Milestone 8. Epics 1–4 cleaned and stabilized the facade crate
@@ -156,7 +165,16 @@ a new `## Facade Crate Role` section containing:
 **FR-16.** `cargo test --workspace` — all tests pass, zero failures.
 **FR-17.** `cargo clippy --workspace -- -D warnings` — zero warnings.
 **FR-18.** `cargo fmt --all -- --check` — exit 0, no formatting drift.
-**FR-19.** `cargo doc --workspace --no-deps` — exit 0 (warnings acceptable; must not fail).
+~~**FR-19.** `cargo doc --workspace --no-deps` — exit 0~~
+~~(warnings acceptable; must not fail).~~
+
+**Corrected (dated 2026-08-08, HARD-07):** The project's one `cargo doc` bar is **zero warnings**
+on `cargo doc --workspace --no-deps`, ratified by
+[ADR-0033](../../../.planning/decisions/0033-cargo-doc-warning-bar.md), and enforced today by the
+required CI `lint` job at `.github/workflows/ci.yml:58`. Ratification is not compliance: the gate is
+currently **red** — `cargo doc --workspace --no-deps` exits 1, producing 20 warnings across four
+crates (`paladin-web` 13, `paladin-battalion` 3, `paladin-ai` 3, `paladin-herald` 1), measured this
+session and recorded with `file:line` citations in ADR-0033. Phase 16 / DOCS-03 owns clearing them.
 
 ---
 

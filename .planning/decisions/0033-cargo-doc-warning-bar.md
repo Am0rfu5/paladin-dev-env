@@ -44,7 +44,7 @@ warning: `paladin-battalion` (lib doc) generated 3 warnings
 warning: `paladin-herald` (lib doc) generated 1 warning
 ```
 
-Twenty individual warnings across four crates (13 + 3 + 3 + 1 = 20; `grep -c '^warning: '
+The tree produces **20 warnings** across four crates (13 + 3 + 3 + 1 = 20; `grep -c '^warning: '
 doc-output.txt` returns `24` — the 20 individual warnings plus these four per-crate summary lines).
 This reproduces exactly the figure this plan's own frontmatter recorded from an earlier measurement
 at commit `11e9bdb` — the count and the crate split have not moved between that commit and this
