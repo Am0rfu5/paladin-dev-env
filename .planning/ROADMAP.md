@@ -665,7 +665,20 @@ Plans:
   6. Asking "is PDF extraction supported?" returns one answer, and it is consistent with the advisory suppression that assumes `pdf-extract` is in the dependency graph — closing a contradiction where `pdf = []` gates nothing, `content-processing` omits it, and `.cargo/audit.toml` says otherwise.
   7. `cargo doc --workspace --no-deps` has one bar, applied consistently, rather than zero-warnings in Milestone 7 and warnings-acceptable in Milestone 8 on the same command — and it is settled together with the `paladin-ports` doctest exclusion that has been deferred to an unwritten "Task 7.0" since run 3.
 
-**Plans**: TBD
+**Plans**: 11 plans in 4 waves
+
+Plans:
+- [ ] 10-01-PLAN.md — Ledger scaffold (tracer): head notes, seven-class legend, 13-row superseded-by-outcome summary table, 86 row stubs, M8 Epic 4 derived end-to-end; REQUIREMENTS.md pointer; stale-figure corrections in HARD-01/03/05/07 and ROADMAP criterion 1
+- [ ] 10-02-PLAN.md — ADR-0028 (reconciliation authoritative, orphan test, three do-not-re-delete corrections, Epic 3/6 completeness, non-goal split) + three M8 source annotations
+- [ ] 10-03-PLAN.md — ADR-0029 (version trajectory, ORCH-05-extensible table) + ADR-0030 (fourth numbering collision, citing 0010/0014) + M7 overview annotation
+- [ ] 10-04-PLAN.md — Blocking `checkpoint:decision` on the three flagged branches (D-15, D-18, the `cargo doc` boundary), then ADR-0031 (default-build dependency invariant) + M7 Epic 1 §6.1/Goal 2 annotations
+- [ ] 10-05-PLAN.md — ADR-0032 (PDF unconditional; inert feature) + the manifest, CHANGELOG and `.cargo/audit.toml` changes + M7 Epic 1 §4.4.1/§4.4.6 annotations
+- [ ] 10-06-PLAN.md — ADR-0033 (one `cargo doc` bar, the measured 20-warning debt with an owner, DEBT-03 discharged, doctest posture) + `Makefile` release-gate fix + M8 Epic 5 FR-19 and Epic 4 summary annotations
+- [ ] 10-07-PLAN.md — Ledger fan-out: M7 Epic 1 (12) + Epic 2 (13) = 25 cited rows
+- [ ] 10-08-PLAN.md — Ledger fan-out: M7 Epic 3 (10) + Epic 4 (12) = 22 cited rows, including the six Phase-9-closed
+- [ ] 10-09-PLAN.md — Ledger fan-out: M8 Epics 1-3 = 14 cited rows with the do-not-re-delete markers
+- [ ] 10-10-PLAN.md — Ledger fan-out: M8 Epics 5-7 + 5 cross-milestone = 21 cited rows
+- [ ] 10-11-PLAN.md — Close-out: seven evidence-backed checkbox flips, traceability rows, PROMOTION.md → 0034, PROJECT.md decisions, four forward hand-off blocks, ledger close-out amendment, phase gate
 
 ### Phase 11: Facade Residue & Deferred Register Disposition
 
