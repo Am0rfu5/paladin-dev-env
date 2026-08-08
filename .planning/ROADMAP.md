@@ -689,12 +689,32 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 10-11-PLAN.md — Close-out: seven evidence-backed checkbox flips, traceability rows, PROMOTION.md → 0034, PROJECT.md decisions, four forward hand-off blocks, ledger close-out amendment, phase gate
+- [x] 10-11-PLAN.md — Close-out: seven evidence-backed checkbox flips, traceability rows, PROMOTION.md → 0034, PROJECT.md decisions, four forward hand-off blocks, ledger close-out amendment, phase gate
 
 **Cross-cutting constraints:**
 
 - This plan writes only its own two epic sections and replaces Verdict and Evidence cells in place, so `grep -c '^| REQ-'` still reads 86 and the ledger's added and deleted line counts are equal
 - Two requirements citing the same artefact keep separate rows and separate verdicts; the `REQ-*` ID is the primary key (D-00f)
+
+**Dated completion note, 2026-08-08 (plan 10-11):** Phase 10 is closed. All seven HARD requirements
+are `[x]` in `REQUIREMENTS.md`, each behind a dated closure note naming its artefact and a re-run
+command or `file:line`. `.planning/ledgers/milestone-07-08.md` carries all 86 `REQ-*` rows across
+12 sections with zero pending stubs and zero dangling `ADR-*` citations, plus an appended
+`## Phase 10 close-out amendments (2026-08-08)` section recording the per-class verdict tally, the
+12-vs-13 supersession-count reconciliation, and the three Manual-Only dispositions. Six new ADRs are
+indexed in `PROMOTION.md` (next free number **0034**): ADR-0028 (M8 reconciliation authoritative),
+ADR-0029 (version trajectory), ADR-0030 (M7 self-numbering), ADR-0031 (extracted-crate dependency
+rule), ADR-0032 (PDF extraction capability), ADR-0033 (`cargo doc` warning bar). Three config
+changes executed the phase's D-23 boundary in full: `crates/paladin-content/Cargo.toml`'s inert
+`pdf = []` feature deleted (plan 10-05), `.cargo/audit.toml`'s `RUSTSEC-2026-0187` reachability
+comment corrected (plan 10-05), `Makefile`'s stale `--exclude paladin-ports` release-gate flag
+deleted (plan 10-06). `git diff --name-only 6a6f175..HEAD -- '*.rs' | wc -l` → `0` across the whole
+phase — D-23's zero-`.rs`-change boundary held and is checkable by that command rather than only
+asserted. Four forward hand-off blocks are written in `REQUIREMENTS.md` for Phase 11 (FACADE-02,
+FACADE-03(b)), Phase 12 (SUPPLY-02/03, including the `scraper`/`rss`/`tiktoken-rs` dead-dependency
+finding named to Phase 15), and Phase 13 (ORCH-05). Criterion 1's plan-10-01 correction (thirteen,
+not fourteen, superseded-by-outcome rows) is left in place, uncorrected further. The goal line,
+requirement list, and success criteria above are unchanged by this note.
 
 ### Phase 11: Facade Residue & Deferred Register Disposition
 

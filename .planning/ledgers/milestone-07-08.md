@@ -345,3 +345,205 @@ re-read this session; none is copied from the run-4 ledger text.
 | REQ-m8-deferred-items-register | deferred with register | Register: `.project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-items.md` (dated 2026-06-07, "Record of intentional non-goals"). All five items re-checked against the tree this session and all five still hold: **D1** (`src/core/` re-export shims, KEEP) — `grep -rln 'crate::core::' src/` (re-run this session) returns **49** files, matching the register's "~49 facade files" exactly. **D2** (`core/platform/manager/` mis-layered services) — `content_service.rs`, `event_manager.rs`, `user_service.rs` all still present (`ls src/core/platform/manager/`, re-run this session). **D3** (entangled Paladin services, KEEP for now) — `planning_service.rs`, `prompt_generation_service.rs`, `temperature_service.rs`, `handoff_service.rs` all still present in `src/application/services/paladin/`. **D4** (`content_ingestion_service.rs` placement) — still present at `src/application/services/content/content_ingestion_service.rs` (also `REQ-paladin-content-extraction`'s subject, M7 Epic 1). **D5** (println/eprintln/dbg residue) — `grep -rn 'println!\|eprintln!\|dbg!' src/application/services/ src/infrastructure/` (re-run this session) returns **17** matches across **6** files, exactly matching the register's count and `intel/code-verification.md`'s run-4 figure, unchanged. No owners are named and no target milestone is assigned beyond the register's own "suggested grouping" — the defect the FACADE requirements exist to close: **FACADE-01** owns D5 (`.planning/REQUIREMENTS.md:1522`), **FACADE-02** owns D1 through D4 (`:1535`), so Phase 11 inherits both by requirement ID rather than by re-reading this register. |
 | REQ-deferred-cli-user-commands | deferred with register | Register: `deferred-features.md` §1 (dated 2026-06-04). `src/application/cli/commands/` (re-run `ls` this session) holds exactly ten modules — `agent.rs`, `arsenal.rs`, `battalion.rs`, `council.rs`, `features.rs`, `maneuver.rs`, `mod.rs`, `muster.rs`, `onboarding.rs`, `setup_check.rs` — `user.rs` is absent, confirming the register's claim. The backend is intact: `core::platform::manager::user_service::{UserService, UserServiceTrait, ...}` (`src/core/platform/manager/user_service.rs`) and `core::platform::container::user::{User, UserProfile}` (`src/core/platform/container/user.rs`) both still exist, re-confirmed this session. The register states the removed module is "recoverable verbatim from git history at the Milestone 8 removal commit" — that fact is why this row must not read as a loss: the 1,065-LOC command surface plus its eight clap subcommands is mostly re-wiring, not new domain work. Names **FACADE-03(a)** (`.planning/REQUIREMENTS.md:1567`) as the owning requirement. |
 | REQ-deferred-tensorflow-ml-adapter-v3 | deferred with register | Register: `deferred-features.md` §2 (dated 2026-06-04). Both halves confirmed absent this session: `grep -rn 'tensorflow\|^ml = ' Cargo.toml src/` returns zero matches (the adapter and the feature flag). The `MlPort` contract remains stable: `crates/paladin-ports/src/input/ml_port.rs` exists (re-confirmed via `find` this session) — the reintroduction condition names a dedicated `paladin-ml` leaf crate as the required home, "consistent with the hexagonal layout — ML inference is an infrastructure adapter, not facade code". Citing ADR-0028 (iv)'s non-goal split, both halves confirmed by `ls crates/` this session (eleven entries: `doc-examples` plus ten library crates): **overridden for `paladin-herald`** (present) and **still holding for `paladin-ml`** (absent, `test -d crates/paladin-ml` exits 1). This distinction is what **FACADE-03(b)** (`.planning/REQUIREMENTS.md:1567`, named in ADR-0028's `Downstream Consumers`) depends on: Phase 11 must not treat `paladin-herald`'s existence as license to create `paladin-ml` without its own decision. Variant group 24; terminal state of the chain `REQ-tensorflow-stays-facade-v1` → `REQ-tensorflow-ml-feature-gate-v2` → this entry. |
+
+## Phase 10 close-out amendments (2026-08-08)
+
+Appended per D-00d — the twelve epic sections above are unmodified by this amendment; nothing is
+rewritten or absorbed. Sourced from all ten of the plan SUMMARY files below (plan 10-11), plus a
+fresh re-run of every command this section reports. Named individually, one per line, the ten
+source files (all in `.planning/phases/10-milestone-7-8-ground-truth-recorded-account/`) are:
+
+- `10-01-SUMMARY.md` — the ledger scaffold, head notes, legend, and the 13-row summary table
+- `10-02-SUMMARY.md` — ADR-0028, the M8 reconciliation authority
+- `10-03-SUMMARY.md` — ADR-0029 and ADR-0030, version trajectory and self-numbering
+- `10-04-SUMMARY.md` — ADR-0031 and the three checkpoint answers (`q1-restate`, `q2-delete`,
+  `q3-ratify`)
+- `10-05-SUMMARY.md` — ADR-0032, the PDF capability, executing `q2-delete`
+- `10-06-SUMMARY.md` — ADR-0033, the `cargo doc` bar, executing `q3-ratify`
+- `10-07-SUMMARY.md` — Milestone 7 Epic 1-2 ledger derivation
+- `10-08-SUMMARY.md` — Milestone 7 Epic 3-4 ledger derivation
+- `10-09-SUMMARY.md` — Milestone 8 Epic 1-3 ledger derivation
+- `10-10-SUMMARY.md` — Milestone 8 Epic 5-7 and cross-milestone ledger derivation
+
+**Whole-file integrity check, re-run before writing this section:** `grep -c '^| REQ-'` → `86`;
+distinct-ID count (`grep -o '^| REQ-[a-z0-9-]*' | sort -u | wc -l`) → `86`; `grep -c '^### '` → `12`,
+in the same run-4 order the twelve section headings have carried since `10-01-SUMMARY.md`; zero
+`pending — plan` markers remain in any row (the one surviving occurrence of that string is the head
+note's own explanation of the convention, at the line beginning "For every row this plan does not
+derive…", not a live stub); zero blank Verdict/Evidence cells. **Every `ADR-NNNN` citation in the
+ledger resolves to a file that exists** — the nine distinct numbers cited (`ADR-0024` through
+`ADR-0029`, `ADR-0031`, `ADR-0032`, `ADR-0033`; `ADR-0030` is not cited by any row, only by
+`10-CONTEXT.md` and `REQUIREMENTS.md`) were extracted and checked individually against
+`.planning/decisions/`, zero failures.
+
+**Per-class verdict distribution across all 86 rows**, counted directly from the Verdict column
+this session (`awk -F'|' '{print $3}'` over every `^| REQ-` line, trimmed and tallied):
+
+| Verdict | Count |
+|---|---|
+| `satisfied` | 41 |
+| `satisfied (closed by Phase 9)` | 7 |
+| `satisfied (history)` | 3 |
+| `superseded by outcome` | 12 |
+| `relocated` | 8 |
+| `present, unproven` | 6 |
+| `diverged` | 5 |
+| `deferred with register` | 3 |
+| `genuinely outstanding` | 1 |
+| **Total** | **86** |
+
+The three `satisfied` variants (51 rows total) share one evidentiary bar — a `file:line` citation
+plus something that exercises it — and are split into three labels only to record *why* each is
+proven: a fresh command run this session (`satisfied`), a citation to a decision closed by an
+earlier phase and re-run rather than re-opened (`satisfied (closed by Phase 9)`), or a historical
+snapshot requirement that was met at the time and is not an evergreen freshness bar
+(`satisfied (history)`).
+
+**Rows cited rather than re-derived.** Seven rows carry `satisfied (closed by Phase 9)`: the six
+Phase 9 D-04 hand-off rows in Milestone 7 Epic 4 (`REQ-crate-metadata-completion`,
+`REQ-per-crate-changelog`, `REQ-rustsec-risk-acceptance`, `REQ-rustsec-hardening-actions`,
+`REQ-license-policy-signoff`, `REQ-paladin-ports-publish-verification-closed`) plus
+`REQ-docker-workspace-build` in Milestone 7 Epic 2 — matching D-04's instruction exactly (seven
+named rows, no more, no fewer). **Every one of the seven had its citation re-run this session**
+(plan 10-08 for the six Epic 4 rows, plan 10-07 for the Epic 2 row) against
+`REQUIREMENTS.md:1320-1355`'s hand-off block, and **none had moved** from where that block names
+them — the register file (`SECURITY-EXCEPTIONS.md`, still 10 governed rows), both CI-wired guard
+scripts (`scripts/check-changelogs.sh`, `scripts/check-crate-names.sh`), the licence field across
+all eleven manifests, and the crate/lib name split (`paladin-ai-core` / `paladin_core`) were all
+re-verified against the current tree rather than transcribed. No sixth or eighth row was added to
+this set; the boundary D-04 drew held exactly.
+
+**Claims that are CI-only and were never measured here**, each with the exact command a CI runner
+executes:
+
+- **The RustSec/advisory gates.** `cargo audit --config .cargo/audit.toml` and `cargo deny check
+  advisories` — neither tool can reach `crates.io` in this environment (HTTP 403, unchanged since
+  Phase 4's own scoping note at `.planning/phases/04-release-coherence/04-ci-gate-deferrals.md`).
+  Plan 10-05 corrected `.cargo/audit.toml`'s `RUSTSEC-2026-0187` comment to state the true
+  reachability path; the suppression set itself (`ignore = [...]`) was not touched, so both commands
+  are expected to behave identically to before this phase's edits once they run in CI.
+- **The ADR-0006 84% workspace line-coverage floor.** `cargo-llvm-cov` is not installable here. The
+  confirmation this phase records is **reasoning, not measurement**: `git diff --name-only
+  6a6f175..HEAD -- '*.rs' | wc -l` → `0` (re-run this session, `6a6f175` being the commit at the head
+  of `release/v0.7.0` immediately before Phase 10's first commit) — a phase that modifies no `.rs`
+  file cannot move line coverage. No partial substitute was run and presented as the floor.
+- **Anything Docker.** `docker` is absent from this environment
+  (`.planning/phases/04-release-coherence/04-ci-gate-deferrals.md`, unchanged). No row in this
+  ledger's Milestone 7/8 range depends on a Docker-only artefact beyond `REQ-docker-workspace-build`,
+  which is cited to Phase 9 rather than re-verified with a live build.
+
+**The measured `cargo doc` state**, as ADR-0033 recorded it and as this session re-confirmed
+unchanged: `cargo doc --workspace --no-deps 2>&1 | tee doc-output.txt && ! grep -q "warning:"
+doc-output.txt` exits **1** (re-run this session against the current HEAD; `grep -c '^warning:'` on
+the captured output returns **24** — the 20 individual warnings plus 4 per-crate summary lines,
+exactly ADR-0033's own accounting). The crate split is unchanged: `paladin-web` 13,
+`paladin-battalion` 3, `paladin-ai` (facade) 3, `paladin-herald` 1. Dated 2026-08-08 (ADR-0033,
+written by plan 10-06). **Phase 16 / DOCS-03** is the named owner of clearing them — doing so needs
+`.rs` doc-comment edits outside this phase's D-23 boundary, so this phase does not attempt it and
+does not infer a pass.
+
+**The three rows carrying do-not-re-delete markers, and where each sits:**
+
+1. **The sqlite marker** — `REQ-storage-shim-deletion`'s own row (Milestone 8 Epic 3): the
+   `sqlite_*_repository.rs` files were the active default-build implementation, not redundant;
+   resolved by making `paladin-storage` non-optional (commit `897e77e`), not by deleting a shim.
+2. **The registry marker** — inside `REQ-garrison-sanctum-bridges-kept`'s row (Milestone 8 Epic 3):
+   `paladin_registry.rs` was not a duplicate; the facade's richer 418-LOC implementation was
+   consolidated *into* `paladin-battalion` (commit `ca7e4e8`), not deleted as if orphaned.
+3. **The "rest genuinely orphaned" marker** — the Milestone 8 Epic 3 section's own epic note (not a
+   single row, since it applies epic-wide): the remaining ten Category 1 files
+   (`mysql_content_repository.rs`, the five `input/*` fetchers, `document/*`,
+   `output/api_content_deliverer.rs`, `logs/error_log_adapter.rs`) genuinely were orphaned and were
+   correctly removed in commit `e5b2011` — do not re-audit them as if the original "active bridge"
+   classification still applied.
+
+All three markers were re-confirmed present in the ledger text this session (`grep -ci 'DO NOT
+RE-DELETE'` → `2` literal occurrences across the two rows above, plus the epic note's own
+unmarked-but-equivalent third correction) rather than assumed carried forward.
+
+**The checkpoint answers plan 10-04 recorded**, so this ledger states on its own page which branch
+each flagged decision took, rather than sending a reader to a fourth document to find out:
+
+- **D-15 (the extracted-crate dependency rule) → `q1-restate`.** The rule is a default-build
+  invariant, not an absolute "never"; `paladin-content → paladin-llm` stays, legalised by ADR-0031.
+  This ledger's `REQ-extracted-crate-dependency-rule` row (Milestone 7 Epic 1) reads `satisfied` on
+  that authority.
+- **D-18 (the inert `pdf` feature) → `q2-delete`.** `pdf = []` is deleted from
+  `crates/paladin-content/Cargo.toml`, not wired or kept. This ledger's
+  `REQ-content-processing-build-gate` row (Milestone 8 Epic 6) reads `satisfied` on ADR-0032's
+  post-deletion manifest.
+- **The `cargo doc` bar → `q3-ratify`.** ADR-0033 ratifies the zero-warning bar and records the
+  measured 20-warning debt with Phase 16 / DOCS-03 as owner, rather than clearing it in this phase.
+  This ledger's `REQ-m8-final-quality-gate` row (Milestone 8 Epic 5) states plainly that the gate
+  does not currently pass.
+
+**The 12-vs-13 supersession-count reconciliation.** The twelve epic sections carry **12** rows
+verdicted `superseded by outcome` (see the per-class table above — re-counted this session via
+`grep -n '^| REQ-.*| superseded by outcome |'`), while the head-of-file "Superseded by outcome"
+summary table (built by plan 10-01 directly from `intel/code-verification.md:365-381`) holds **13**
+data rows, expanding to **16** distinct `REQ-*` IDs once the bundled five-document row (5 IDs in one
+table row) and the no-`REQ-*`-owner row (0 IDs — the M7 overview's Appendix A/B `paladin-cli` entry,
+which is not part of the 86-row inventory at all) are unpacked. The two counts are not the same
+population and were never expected to match one-for-one; tracing all 16 IDs to their own
+epic-section verdict accounts for the gap completely, with nothing left unexplained:
+
+- **5 of the 16** land `superseded by outcome` in their own epic-section row, exactly as the summary
+  table anticipated: `REQ-paladin-web-extraction`, `REQ-storage-feature-flags-v1` (both M7 Epic 1),
+  `REQ-tensorflow-ml-feature-gate-v2`, `REQ-m8-epic3-no-extractions` (both M8 Epic 3), and
+  `REQ-facade-role-lib-docs` (M8 Epic 5).
+- **6 of the 16** land `relocated` instead, per this ledger's own tie-break rule (a row eligible for
+  both `relocated` and `superseded by outcome` takes `relocated`): `REQ-stable-api-per-crate` and
+  the five-document group (`REQ-build-baselines-doc`, `REQ-integration-tests-doc`,
+  `REQ-performance-baseline-doc`, `REQ-release-checklist`, `REQ-versioning-policy` — the last of
+  which also states its `superseded by outcome` half explicitly in the same cell, per the tie-break
+  rule's own carve-out for that case).
+- **2 of the 16** land `satisfied` once their ADRs landed, per the `‡` markers already in the
+  summary table: `REQ-extracted-crate-dependency-rule` (ADR-0031) and
+  `REQ-content-processing-build-gate` (ADR-0032).
+- **2 of the 16** turned out, on independent re-derivation, to be `diverged` rather than
+  `superseded by outcome` — the tree implements the requirement differently on purpose, but not in a
+  way that would be *undone* by implementing the PRD as written: `REQ-sqlx-workspace-dependency`
+  (M7 Epic 1) and `REQ-ci-publish-dry-run-v1` (M7 Epic 2, which this ledger's own row text already
+  flagged as "not superseded — coexists" before this reconciliation was written).
+- **1 of the 16** turned out to already be `satisfied`, not superseded: `REQ-dead-file-batch-deletion`
+  — run 4's own re-count (136 files) matches the tree exactly; the PRD's anticipated post-Epic
+  figures (163, then 160) were simply higher than what the reconciliation's further deletions left
+  behind, which is a wrong PRD estimate, not shipped code undoing the requirement.
+- **0 of the 16** for the M7 overview Appendix A/B `paladin-cli` entry — it carries no `REQ-*` ID and
+  is outside the 86-row inventory by the summary table's own parenthetical.
+
+5 (still superseded) + 7 rows found independently during the 82-row fan-out that were **never part
+of `code-verification.md`'s original 13-row table at all** — `REQ-paladin-storage-extraction`,
+`REQ-tensorflow-stays-facade-v1` (cross-referenced by variant group only, not literal ID, per plan
+10-07's own recorded finding), `REQ-disabled-bench-disposition`, `REQ-facade-file-classification`,
+`REQ-facade-audit-document`, `REQ-adapter-disposition-record`, and `REQ-m8-final-quality-gate` — sum
+to the 12-row epic-section tally exactly (5 + 7 = 12). No table row and no epic-section row is
+unaccounted for; the apparent off-by-one is fully explained by re-derivation moving rows between
+classes, not by a miscount in either figure.
+
+**Phase gate, run against the whole of Phase 10** (base commit `6a6f175`, the tip of `release/v0.7.0`
+immediately before Phase 10's first commit, to current HEAD):
+
+1. `git diff --name-only 6a6f175..HEAD -- '*.rs' | wc -l` → **`0`**. D-23's boundary is proved by a
+   command, not only stated.
+2. `cargo test --workspace` → **pass** (all reported suites `ok`, `0 failed`, across every crate and
+   the facade, including doctests). `cargo fmt --check` → **pass** (exit `0`, no diff). `cargo
+   clippy --workspace --all-targets --all-features -- -D warnings` → **pass** (exit `0`, `Finished`
+   with no warnings emitted).
+3. `cargo metadata --no-deps --format-version 1` → exit `0`. The manifest still parses after plan
+   10-05's `pdf` feature deletion.
+4. `make -n release-check` → exit `0`; the expanded recipe still runs `clean-code` → `test` →
+   (doc-test) → `audit` → `build-release` in original order, with no `--exclude paladin-ports`
+   anywhere in it (plan 10-06's fix holds).
+5. ADR-0006's coverage floor: recorded as **reasoning**, not measurement, per item 1 above —
+   `cargo-llvm-cov` remains uninstallable here.
+6. The three Manual-Only rows from `10-VALIDATION.md`, each given an explicit disposition rather
+   than left implicit:
+   - **The `cargo doc` zero-warning bar** — branch (a) taken: ADR-0033 ratifies the bar and records
+     the 20-warning debt against Phase 16 / DOCS-03. The gate itself is confirmed still exiting `1`
+     this session (see "The measured `cargo doc` state," above).
+   - **`cargo audit` / `cargo deny check`** — CI-only, not run in this environment; the
+     `.cargo/audit.toml` comment correction landed (plan 10-05) and the exact commands are recorded
+     above. No local pass is claimed for either.
+   - **The ADR-0006 84% coverage floor** — CI-only; recorded as reasoning (zero `.rs` files changed)
+     rather than as a measurement, per item 5 above.
