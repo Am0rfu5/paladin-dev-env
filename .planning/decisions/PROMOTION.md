@@ -43,8 +43,21 @@ the plans that follow in this same phase):
 | 0021 | `cli-application-layer-placement` | CLI placement in the application layer (Phase 7) |
 | 0022 | `deprecation-requirement-withdrawal` | Milestone 4 Epic 2 FR-8 deprecation requirement withdrawn (Phase 8) |
 | 0023 | `cli-dependency-isolation` | CLI dependency isolation and the binary/Herald surface (Phase 8) |
+| 0024 | `rustsec-exception-governance` | RustSec exception governance register, schema and disposition (Phase 9) |
+| 0025 | `licence-posture` | Project licence posture — `MIT OR Apache-2.0` (Phase 9) |
+| 0026 | `crate-name-collision-guard` | crates.io package-name collision guard (Phase 9) |
+| 0027 | `dockerfile-chef-planner-stage` | `Dockerfile.chef` planner-stage supersession of M7 Epic 2 FR-01 (Phase 9) |
 
-**Next free ADR number: 0024**
+**Next free ADR number: 0028**
+
+*Dated note, 2026-08-08 (plan 09-07):* the line advances by **four** in one phase, from 0024 to
+0028, not by the single number a reader might expect from one phase's close-out. Phase 9 authored
+all four of ADR-0024 through ADR-0027 across its own plans (09-02, 09-05, 09-04, 09-03
+respectively) — a fourth phase, after Phases 1 and 8, whose executing phase is also each ADR's
+owning phase. None of the four numbers was skipped or reused; each is a distinct decision (the
+RustSec exception register, the licence posture, the crates.io name-collision guard, and the
+Dockerfile planner-stage supersession) that this phase's own plans both authored and executed the
+code consequences of, matching the precedent Phase 8's D-22 established for 0022/0023.
 
 *Dated note, 2026-08-06 (plan 07-13):* the line advances to **0022**, not 0021, because D-25a
 (`07-CONTEXT.md`) allocated an eighth ADR — 0021, promoting Part B candidate 2 below — beyond the
@@ -139,12 +152,19 @@ what it decides in one line, and an explicit **Owner phase**.
    (`0021-cli-application-layer-placement.md`).
 3. **`Milestone_7/Epic_4/rustsec-remediation-plan.md`** (run 4) — formal risk acceptance of two
    RustSec advisories, owner Platform Security, **review/expiry target 2026-09-30 — the only dated
-   item in the entire 263-document corpus**. **Owner phase: Phase 9.**
+   item in the entire 263-document corpus**. **Owner phase: Phase 9. Closed 2026-08-08 by ADR-0024**
+   (`0024-rustsec-exception-governance.md`) — renewed to per-advisory `2026-12-31` review dates,
+   owner reassigned to `DF3NDR`.
 4. **`Milestone_7/Epic_1/cost-benefit-assessment.md`** (run 4) — go/defer scoring for four
    candidate crate extractions, with a named approver and a Self-Approval block. **Owner phase:
    Phase 10.**
 5. **`Milestone_7/Epic_4/license-compatibility-decision-checklist.md`** (run 4) — licensing policy
    accepting MPL-2.0 with a 551-package inventory, approver `DF3NDR`. **Owner phase: Phase 10.**
+   **Promoted early, 2026-08-08, by Phase 9 rather than Phase 10 — Closed by ADR-0025**
+   (`0025-licence-posture.md`) — SEC-02, sequenced ahead of Phase 10 in the actual execution order,
+   confirmed the checklist's `MIT OR Apache-2.0` over the PRD's single-licence claim. The original
+   "Owner phase: Phase 10" assignment is retained above rather than rewritten; this note records
+   that the promotion happened two phases earlier than planned, not that the assignment was wrong.
 6. **`Milestone_8/facade-cleanup-RECONCILIATION-2026-06-04.md`** (run 4) — supersession notice that
    corrected two prior documents and resolved six open decisions in execution. **Owner phase:
    Phase 10.**
