@@ -648,7 +648,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 09-07-PLAN.md — Close-out: REQUIREMENTS.md evidence flips, source corrections, PROMOTION.md → 0028, Phase 10/12 hand-offs, phase gate (all five)
+- [x] 09-07-PLAN.md — Close-out: REQUIREMENTS.md evidence flips, source corrections, PROMOTION.md → 0028, Phase 10/12 hand-offs, phase gate (all five)
 
 ### Phase 10: Milestone 7-8 Ground Truth & Recorded Account
 
