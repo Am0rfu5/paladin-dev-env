@@ -328,3 +328,12 @@ None - no external service configuration required. `cargo audit` and `cargo deny
 ---
 *Phase: 09-release-security-gate-integrity*
 *Completed: 2026-08-08*
+
+## Self-Check: PASSED
+
+- FOUND: scripts/check-advisory-register.sh
+- FOUND: .planning/phases/09-release-security-gate-integrity/09-06-SUMMARY.md
+- FOUND: 6513cb7 (Task 1 commit)
+- FOUND: 9cef391 (Task 2 commit)
+- FOUND: cb75b2b (Task 3 commit)
+- FOUND: ab5f9cc (SUMMARY commit)
