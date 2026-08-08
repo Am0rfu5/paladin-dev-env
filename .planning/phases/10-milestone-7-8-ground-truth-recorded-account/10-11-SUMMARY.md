@@ -281,6 +281,7 @@ None. The ledger's own whole-file integrity check (re-run this session) confirms
 - FOUND: commit `7027570` (Task 2)
 - FOUND: commit `865850c` (Task 3)
 - FOUND: commit `feb56eb` (README correction)
+- FOUND: commit `8dba83b` (SUMMARY)
 
 ---
 *Phase: 10-milestone-7-8-ground-truth-recorded-account*
