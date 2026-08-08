@@ -144,6 +144,15 @@ None — no external service configuration required.
 - `REQUIREMENTS.md` and `ROADMAP.md` corrections are in place for HARD-01/03/05/07; HARD-02, HARD-04 and HARD-06's own text corrections are out of this plan's scope (owned by wave-3 plans 10-07/10-08's ADR-adjacent work per the phase's plan index).
 - No blockers. No `.rs` file was touched; `git status --porcelain -- '*.rs'` is empty, satisfying this plan's phase-note acceptance criterion.
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/ledgers/milestone-07-08.md`
+- FOUND: `.planning/phases/10-milestone-7-8-ground-truth-recorded-account/10-01-SUMMARY.md`
+- FOUND: commit `0f33ddc` (Task 1)
+- FOUND: commit `e3a476a` (Task 2)
+- FOUND: commit `fe06cee` (Task 3)
+- FOUND: commit `07910a2` (SUMMARY)
+
 ---
 *Phase: 10-milestone-7-8-ground-truth-recorded-account*
 *Completed: 2026-08-08*
