@@ -729,7 +729,14 @@ requirement list, and success criteria above are unchanged by this note.
   4. The condition on returning ML support survives outside a single DOC: any future TensorFlow adapter goes into a dedicated `paladin-ml` leaf crate with the feature flag on that crate, never back into the facade, and `MlPort` stays in the workspace so the integration point does not move.
   5. Every row of the Milestone 9 candidate list is marked done, not-a-candidate, or still-open, and `paladin-arsenal` and `paladin-sanctum` are either confirmed as real future crates or recorded as artefacts of a table that contradicts its own governing PRD — so nobody plans relocations the reconciliation already executed against a milestone that is 100% complete.
 
-**Plans**: TBD
+**Plans:** 5 plans in 3 waves
+
+Plans:
+- [ ] 11-01-PLAN.md — FACADE-01: record all 17 D5 occurrences as deliberate rustdoc stdout, correct the framing in `deferred-items.md` and ROADMAP criterion 1, and gate the ADR allocation (tracer, wave 1)
+- [ ] 11-02-PLAN.md — FACADE-02: ADR-0034 giving D1–D4 verdicts with owners and triggers, and dated corrections on the four clauses (wave 2)
+- [ ] 11-03-PLAN.md — FACADE-03: the `.planning/` register for both removed features plus ADR-0035 holding the `paladin-ml` leaf-crate placement condition (wave 2)
+- [ ] 11-04-PLAN.md — FACADE-04: the 20-row Milestone 9 candidate triage and the `paladin-arsenal` / `paladin-sanctum` artefact finding (wave 2)
+- [ ] 11-05-PLAN.md — close-out: five ledger rows amended, two REQUIREMENTS.md source corrections, `PROMOTION.md` and `PROJECT.md` updated last (wave 3)
 
 **Milestone 9-12 + Deferred-QA close-out — Phases 12-16**
 
