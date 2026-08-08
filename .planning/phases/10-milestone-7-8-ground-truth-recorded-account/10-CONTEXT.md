@@ -86,8 +86,7 @@ requirements, HARD-01 … HARD-07.
 
 ### HARD-01 — the ledger: home, vocabulary, evidence bar, and what is already closed
 
-- **D-01: New file `.planning/ledgers/milestone-07-08.md`; REQUIREMENTS.md's section becomes a
-  pointer.**
+- **D-01: New file `.planning/ledgers/milestone-07-08.md`; REQUIREMENTS.md's section becomes a pointer.**
   This is not a judgement call so much as a commitment already made: `.planning/ledgers/milestone-04-06.md`'s
   own head note states "Phases 10 and 13 each add a sibling ledger (`milestone-07-08.md`,
   `milestone-09-12.md`) rather than growing REQUIREMENTS.md further". REQUIREMENTS.md is 4,136 lines
@@ -95,8 +94,7 @@ requirements, HARD-01 … HARD-07.
   pointer by the scaffold plan, exactly as Phase 7's D-26 did for Milestone 4-6.
   **Do not leave the REQUIREMENTS.md section in place as a second, diverging copy.**
 
-- **D-02: Seven verdict classes — Phase 7's five plus `deferred with register`, and
-  `superseded by outcome` kept visually distinct.**
+- **D-02: Seven verdict classes — Phase 7's five plus `deferred with register`, and `superseded by outcome` kept visually distinct.**
   HARD-01 mandates four dispositions (`Shipped`, `Superseded by outcome`, `Relocated`,
   `Deferred with register`); the ledger series already runs a seven-class vocabulary. Carry the
   series vocabulary forward and map HARD-01's four names onto it in the head note, rather than
@@ -122,8 +120,7 @@ requirements, HARD-01 … HARD-07.
   bare "the code exists" claim the bar exists to reject — every one of the 86 rows is re-derived,
   including the ones REQUIREMENTS.md already marked `Shipped`.
 
-- **D-04: Phase 9's seven closed rows are cited, not re-verified — but their citations are
-  re-derived.**
+- **D-04: Phase 9's seven closed rows are cited, not re-verified — but their citations are re-derived.**
   `REQUIREMENTS.md:1320-1355` carries an explicit hand-off block (Phase 9 plan 09-07, per its D-20)
   naming seven `REQ-*` rows that HARD-01 must record as **already closed by Phase 9**:
   `REQ-rustsec-risk-acceptance`, `REQ-rustsec-hardening-actions`, `REQ-license-policy-signoff`,
@@ -154,8 +151,7 @@ requirements, HARD-01 … HARD-07.
 
 ### HARD-02 — the reconciliation as the authoritative account of Milestone 8
 
-- **D-07: ADR-0028 records the supersession; both superseded documents get D-00c annotations; the
-  ledger carries the rows.**
+- **D-07: ADR-0028 records the supersession; both superseded documents get D-00c annotations; the ledger carries the rows.**
   This is a contested position — two ingested documents assert the opposite of what the tree shows —
   so it gets an ADR under D-00g, not just a ledger row. Three deliverables, matching the Phase 7
   ADR-plus-source-correction pairing:
@@ -165,8 +161,7 @@ requirements, HARD-01 … HARD-07.
   **The reason is factual, not procedural, and must be stated that way:** both describe ~4,400 LOC of
   *orphaned, uncompiled duplicate files* as "active bridges that stay".
 
-- **D-08: The reconciliation's verification method is preserved verbatim as a reusable test, and the
-  three in-execution corrections are a named subsection of the ADR.**
+- **D-08: The reconciliation's verification method is preserved verbatim as a reusable test, and the three in-execution corrections are a named subsection of the ADR.**
   The method — `rg "mod <name>"` across `src/` returns nothing for the file; the directory's `mod.rs`
   only does `pub use paladin_<crate>::…`; the leaf-crate file exists — is the most valuable thing in
   the run-4 corpus, and it is reproducible. Record it as a procedure, not as prose about a procedure.
@@ -181,8 +176,7 @@ requirements, HARD-01 … HARD-07.
   Each of the three gets a "do not re-delete" marker in the ledger row, not only in the ADR. The ADR
   is where a reader looks after a question; the ledger row is where a planner looks before one.
 
-- **D-09: Epic 3 complete in substance, Epic 6 complete despite its own record, and the new-crate
-  non-goal recorded as split.**
+- **D-09: Epic 3 complete in substance, Epic 6 complete despite its own record, and the new-crate non-goal recorded as split.**
   Three separate claims, three separate ledger rows, one ADR section:
   - **Epic 3** executed the relocations it had deferred to Milestone 9 — 15 commits, ~10,250 net LOC
     removed, one new leaf crate. Do not plan it as outstanding, and do not plan its relocations as
@@ -200,8 +194,7 @@ requirements, HARD-01 … HARD-07.
 
 ### HARD-03 — the version trajectory as history
 
-- **D-10: ADR-0029 records `v0.1.0-rc.1` as closed history. REL-01 is not re-opened — it is already
-  complete.**
+- **D-10: ADR-0029 records `v0.1.0-rc.1` as closed history. REL-01 is not re-opened — it is already complete.**
   ⚠ **Fresh finding that changes HARD-03's shape.** HARD-03 says "**Feeds REL-01**, which converges
   the three-way version disagreement". Verified this session: **REL-01 is `[x]` at
   `REQUIREMENTS.md:358` and its traceability row at `:3913` reads `Phase 4 | Complete`.** Phase 4
@@ -209,8 +202,7 @@ requirements, HARD-01 … HARD-07.
   confirmation**, not a hand-off: record the history, and record that REL-01 did not converge on any
   rc.1 figure. A planner who treats REL-01 as open will re-plan a closed requirement.
 
-- **D-11: The tree has moved past every current-state figure in HARD-03's own text; correct them at
-  source.**
+- **D-11: The tree has moved past every current-state figure in HARD-03's own text; correct them at source.**
   ⚠ **Fresh finding.** HARD-03 states "Current tree: `Cargo.toml` `0.6.0`, branch `release/v0.7.0`,
   latest tag `v0.5.1`". Verified this session:
   - `Cargo.toml:34` — `version = "0.7.0"` (Phase 4 plan 04-05, commit `c2e20a1`, converged every
@@ -224,8 +216,7 @@ requirements, HARD-01 … HARD-07.
   are unchanged and are what the ADR transcribes. The *current-state* clause is stale and gets the
   D-00c/D-00d treatment in REQUIREMENTS.md and the ROADMAP phase section.
 
-- **D-12: ADR-0029 is the single home for the whole trajectory; Phase 13 / ORCH-05 extends it rather
-  than writing a second version ADR.**
+- **D-12: ADR-0029 is the single home for the whole trajectory; Phase 13 / ORCH-05 extends it rather than writing a second version ADR.**
   HARD-03 covers rc.1 → v0.2.0; ORCH-05 (Phase 13) covers v0.3.0 → v0.6.0; REL-01 (Phase 4, done)
   covers the landing at 0.7.0. Three ADRs for one unbroken line would guarantee the third contradicts
   the first. ADR-0029 is written with a `## Trajectory` table that ORCH-05 appends rows to, and says
@@ -235,8 +226,7 @@ requirements, HARD-01 … HARD-07.
 
 ### HARD-04 — the fourth milestone-numbering collision
 
-- **D-13: ADR-0030, citing ADR-0010 and ADR-0014 as its two precedents; the M7 overview corrected at
-  source.**
+- **D-13: ADR-0030, citing ADR-0010 and ADR-0014 as its two precedents; the M7 overview corrected at source.**
   Same convention, third application: **directory / task-list numbering is authoritative.** The
   Milestone 7 overview titles itself "Milestone 4: Production Hardening and Extended Workspace
   Decomposition" while its path is `Milestone_7-Production-Hardening`, and its Prerequisites credit
@@ -249,8 +239,7 @@ requirements, HARD-01 … HARD-07.
   provenance keys resolve uniformly across four ledgers — it is the whole reason the convention is
   worth an ADR each time instead of a footnote.
 
-- **D-14: The "expect a fifth in run 5" prediction is recorded as already closed, not carried
-  forward.**
+- **D-14: The "expect a fifth in run 5" prediction is recorded as already closed, not carried forward.**
   `ROADMAP.md:112-114` states it: "The protocol predicted a fifth instance in run 5; run 5 found
   none, and ORCH-05 records the prediction closed." ADR-0030 records that the Roadmap Extension
   Protocol item is discharged with this fourth instance and that no fifth exists, so no later phase
@@ -258,8 +247,8 @@ requirements, HARD-01 … HARD-07.
 
 ### HARD-05 — the extracted-crate dependency rule
 
-- **D-15: The rule is restated as "never, except behind a non-default optional feature the facade
-  opts into explicitly." ADR-0031.** ⚠ **HUMAN REVIEW — this is the answer Phase 11 plans
+- **D-15: The rule is restated as "never, except behind a non-default optional feature the facade opts into explicitly." ADR-0031.**
+  ⚠ **HUMAN REVIEW — this is the answer Phase 11 plans
   FACADE-02's D2/D3/D4 relocation targets against.**
   The two permitted answers were (a) "never", with `paladin-content → paladin-llm` removed from the
   tree, or (b) "never, except behind an optional feature", with the rule restated. **(b) is
@@ -300,8 +289,7 @@ requirements, HARD-01 … HARD-07.
   — **Reversibility:** costly — D2/D3/D4's relocation targets in FACADE-02 are chosen against this
   answer; reversing means re-planning three relocations and removing a shipped facade capability.
 
-- **D-16: M7 Epic 1 PRD §6.1 and Goal 2 are annotated at source, and the ledger row moves from
-  `Code diverges` to `satisfied`.**
+- **D-16: M7 Epic 1 PRD §6.1 and Goal 2 are annotated at source, and the ledger row moves from `Code diverges` to `satisfied`.**
   `REQUIREMENTS.md:3159` currently reads **`Code diverges → HARD-05`** for
   `REQ-extracted-crate-dependency-rule`. Once ADR-0031 lands, the tree conforms to the restated rule
   and the row becomes `satisfied` with the ADR as its citation — the divergence was in the *rule's
@@ -357,8 +345,7 @@ requirements, HARD-01 … HARD-07.
   — **Reversibility:** costly — a published feature name, restorable in one line but visible to
   consumers.
 
-- **D-19: M7 Epic 1 §4.4.1 and §4.4.6 are annotated superseded at source; `.cargo/audit.toml`'s
-  parenthetical is corrected.**
+- **D-19: M7 Epic 1 §4.4.1 and §4.4.6 are annotated superseded at source; `.cargo/audit.toml`'s parenthetical is corrected.**
   §4.4.1 requires `pdf` to gate `pdf-extract`; §4.4.6 requires `content-processing` to activate
   `paladin-content` "with **all** capability features enabled". Both are superseded by outcome under
   D-17. The `.cargo/audit.toml` comment at `:26-29` is corrected to name the actual path
@@ -369,8 +356,7 @@ requirements, HARD-01 … HARD-07.
 
 ### HARD-07 — the `cargo doc` bar and the doctest posture
 
-- **D-20: The bar is zero warnings on `cargo doc --workspace --no-deps`. The tree already enforces
-  it. ADR-0033 ratifies the shipped answer.**
+- **D-20: The bar is zero warnings on `cargo doc --workspace --no-deps`. The tree already enforces it. ADR-0033 ratifies the shipped answer.**
   ⚠ **Fresh finding that shrinks HARD-07 substantially.** Verified this session:
   - `.github/workflows/ci.yml:58` —
     `cargo doc --workspace --no-deps 2>&1 | tee /tmp/doc-output.txt && ! grep -q "warning:" /tmp/doc-output.txt`.
@@ -382,8 +368,7 @@ requirements, HARD-01 … HARD-07.
   updated to say so. This is ratification of a shipped answer, not a new decision — the same move
   Phase 7's D-09 and D-13 made.
 
-- **D-21: DEBT-03 is already closed. HARD-07's "resolve alongside DEBT-03" clause resolves to a
-  three-word Makefile fix.**
+- **D-21: DEBT-03 is already closed. HARD-07's "resolve alongside DEBT-03" clause resolves to a three-word Makefile fix.**
   ⚠ **Fresh finding.** HARD-07 and `REQUIREMENTS.md:3178`/`:3214` both rest on
   `crates/paladin-ports/Cargo.toml` setting `[lib] doctest = false` and `ci.yml:225` excluding the
   crate from `--doc`. Verified this session, **both are gone**:
@@ -417,8 +402,7 @@ requirements, HARD-01 … HARD-07.
 
 ### Cross-cutting
 
-- **D-23: Phase 10's code-change boundary — record-writing, plus a three-file config surface, and no
-  `.rs`.**
+- **D-23: Phase 10's code-change boundary — record-writing, plus a three-file config surface, and no `.rs`.**
   Phase 7 was record-only; Phase 9 was config-changing. Phase 10 sits between them, and the boundary
   is set by ROADMAP criteria 5 and 6, which both require the record and the tree to **agree**. For
   both, the cheaper side to move is the record — D-15 restates a rule rather than removing an edge;
