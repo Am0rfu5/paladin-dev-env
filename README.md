@@ -4,7 +4,7 @@
 [![crates.io](https://img.shields.io/crates/v/paladin-ai.svg)](https://crates.io/crates/paladin-ai)
 [![docs.rs](https://img.shields.io/docsrs/paladin-ai)](https://docs.rs/paladin-ai)
 [![docs: mdBook](https://img.shields.io/badge/docs-mdBook-blue.svg)](https://df3ndr.github.io/paladin-dev-env/)
-[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![license: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 [![MSRV](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org)
 
 **Paladin is a Rust framework for building and orchestrating teams of AI agents.**
@@ -186,4 +186,8 @@ sources live in [`docs/src/contributing/`](docs/src/contributing/).
 
 ## License
 
-Licensed under the [MIT License](LICENSE).
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or
+[MIT license](LICENSE-MIT) at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in
+this project by you shall be dual licensed as above, without any additional terms or conditions.
