@@ -15,7 +15,6 @@ documentation = "https://docs.rs/paladin-content"
 doctest = false
 
 [features]
-pdf          = []
 web-scraping = ["dep:scraper"]
 rss          = ["dep:rss"]
 news-api     = []
