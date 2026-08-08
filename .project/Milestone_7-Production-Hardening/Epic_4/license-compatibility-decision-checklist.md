@@ -1,6 +1,6 @@
 # Epic 4 License Compatibility Decision Checklist
 
-> **CONFIRMED AND NOW DECLARED — 2026-08-08, per [ADR-0025](../../../../.planning/decisions/0025-licence-posture.md).**
+> **CONFIRMED AND NOW DECLARED — 2026-08-08, per [ADR-0025](../../../.planning/decisions/0025-licence-posture.md).**
 > This checklist's target policy, `MIT OR Apache-2.0`, was the only signed governance artefact in
 > the corpus with a named approver (`DF3NDR`) while the shipped root `Cargo.toml` and all ten
 > library crate manifests declared `license = "MIT"` — a three-way split with the M7 Epic 4 PRD

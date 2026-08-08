@@ -1,5 +1,35 @@
 # RustSec Remediation Plan (Epic 4)
 
+> **SUPERSEDED AS THE EXCEPTION REGISTER — 2026-08-08, per [ADR-0024](../../../.planning/decisions/0024-rustsec-exception-governance.md).**
+> This document was one of the **four divergent answers** ROADMAP Phase 9 criterion 1 named to the
+> question "which RustSec advisories does this project suppress, and why?" — it formally risk-accepted
+> exactly two advisories while `.cargo/audit.toml` suppressed five, `deny.toml` suppressed fourteen,
+> and `.github/workflows/ci.yml` ran two independently-configured `cargo audit` jobs. The
+> authoritative register is now **[`SECURITY-EXCEPTIONS.md`](../../../SECURITY-EXCEPTIONS.md)** at
+> the repository root, which carries all ten live suppressions with owner, review date, affected
+> scope and compensating control, and is mechanically enforced by
+> `scripts/check-advisory-register.sh`.
+>
+> **Three specific claims below are now false and are corrected here rather than rewritten in place:**
+>
+> 1. **"Exception owner: Platform Security (Milestone 7)"** (below) — that is a team label attached to
+>    a milestone that has ended, so the acceptance had no reachable owner. The owner is now the
+>    repository owner, **`DF3NDR`**, on every one of the ten register rows.
+> 2. **"Exception review/expiry target: 2026-09-30"** (below) — **this was the only dated item in the
+>    entire 199-document planning corpus.** It has been **renewed**, not allowed to lapse: every
+>    suppression now carries a per-advisory review date of **2026-12-31**. Neither original advisory
+>    (`RUSTSEC-2023-0071` via `rsa`/`sqlx-mysql`, `RUSTSEC-2025-0111` via `tokio-tar`/`testcontainers`)
+>    has an upstream fix, so closing was not available; renewal with a named owner was.
+> 3. **"Local audit target (`make audit`) runs `cargo audit --ignore RUSTSEC-2023-0071 --ignore
+>    RUSTSEC-2025-0111`"** and **"CI security job enforces the same command"** (below) — both describe
+>    a configuration that no longer exists. `make audit` runs a bare `cargo audit`, sourcing its
+>    exceptions from `.cargo/audit.toml`; the second, inline-`--ignore` CI job was **deleted** by Phase 9
+>    plan 09-06, leaving exactly one `cargo audit` invocation in `ci.yml`. Two jobs both displaying the
+>    name "Security Audit" could previously reach different verdicts on the same `Cargo.lock`.
+>
+> The original text below is retained unmodified as the historical risk-acceptance record; nothing
+> below this banner was rewritten.
+
 Date: 2026-05-28
 Scope: Findings from `cargo audit` during Task 5.6
 
