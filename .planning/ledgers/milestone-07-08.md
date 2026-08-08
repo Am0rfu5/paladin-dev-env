@@ -367,11 +367,11 @@ source files (all in `.planning/phases/10-milestone-7-8-ground-truth-recorded-ac
 
 **Whole-file integrity check, re-run before writing this section:** `grep -c '^| REQ-'` → `86`;
 distinct-ID count (`grep -o '^| REQ-[a-z0-9-]*' | sort -u | wc -l`) → `86`; `grep -c '^### '` → `12`,
-in the same run-4 order the twelve section headings have carried since `10-01-SUMMARY.md`; zero
-`pending — plan` markers remain in any row (the one surviving occurrence of that string is the head
-note's own explanation of the convention, at the line beginning "For every row this plan does not
-derive…", not a live stub); zero blank Verdict/Evidence cells. **Every `ADR-NNNN` citation in the
-ledger resolves to a file that exists** — the nine distinct numbers cited (`ADR-0024` through
+in the same run-4 order the twelve section headings have carried since `10-01-SUMMARY.md`; zero rows
+carry an unresolved wave-3 stub marker of the `pending`-hyphen-`plan-10-NN` form the scaffold's own
+head note (near line 169) describes as its interim-state contract; zero blank Verdict/Evidence
+cells. **Every `ADR-NNNN` citation in the ledger resolves to a file that exists** — the nine
+distinct numbers cited (`ADR-0024` through
 `ADR-0029`, `ADR-0031`, `ADR-0032`, `ADR-0033`; `ADR-0030` is not cited by any row, only by
 `10-CONTEXT.md` and `REQUIREMENTS.md`) were extracted and checked individually against
 `.planning/decisions/`, zero failures.
