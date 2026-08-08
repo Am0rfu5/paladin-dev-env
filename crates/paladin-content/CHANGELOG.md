@@ -14,5 +14,13 @@ and this project follows lockstep workspace versioning.
 ### Changed
 - Content API stability documentation aligned with crate-tier stability expectations.
 
+### Removed
+- The `pdf` feature flag. It gated no dependency (`pdf-extract` was always an unconditional
+  dependency of this crate) and no code (no `#[cfg(feature = "pdf")]` site existed anywhere in
+  `src/`). PDF extraction is unaffected and remains unconditional in every build of
+  `paladin-content`. **Consumer-visible cost:** `cargo build -p paladin-content --features pdf`
+  begins to fail where it previously succeeded and did nothing. See
+  [ADR-0032](../../.planning/decisions/0032-pdf-extraction-capability.md).
+
 ### Fixed
 - Crate metadata and README linkage validated for crates.io release preparation.
