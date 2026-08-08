@@ -1,5 +1,12 @@
 # Milestone 4: Production Hardening and Extended Workspace Decomposition
 
+> **TITLE AND PREREQUISITES SUPERSEDED BY [ADR-0030](../../../.planning/decisions/0030-milestone-7-self-numbering.md) — 2026-08-08.**
+> This document's own title reads "Milestone 4" while its path is `Milestone_7-Production-Hardening`.
+> Directory and task-list numbering is authoritative under ADR-0030, which cites ADR-0010 and
+> ADR-0014 as its two precedents; this is the fourth instance of this numbering-collision class in
+> this corpus. The original title and Prerequisites text below are retained unmodified except for
+> the inline correction markers described in this banner.
+
 **Project:** Paladin Framework Refactoring Initiative
 **Milestone:** Tier 4 — Production Hardening, Extended Crate Extraction, and API Stabilization
 **Status:** Planning
@@ -22,15 +29,32 @@ This Milestone addresses three themes that emerged from the Tier 3 retrospective
 
 3. **API Stabilization and Pre-Release Preparation** — Formalize the public API across all crates, implement semantic versioning discipline, prepare crate metadata for crates.io publishing, and produce the documentation suite needed for a 0.2.0 (or 1.0.0) release.
 
-### Prerequisites (Completed in Milestones 1–3)
+### Prerequisites ~~(Completed in Milestones 1–3)~~
+
+**Corrected (dated 2026-08-08, HARD-04):** The six items below marked **Corrected** were delivered
+by Milestones 4-6 under directory numbering, per
+[ADR-0030](../../../.planning/decisions/0030-milestone-7-self-numbering.md), and each is ledgered
+in `.planning/ledgers/milestone-04-06.md`.
 
 - Feature flags expanded and CI matrix in place (Milestone 1).
+  **Corrected:** delivered by Milestone 4 Epic 1, ledgered as `REQ-feature-flag-matrix`
+  (`.planning/ledgers/milestone-04-06.md:112`).
 - Core workspace crates extracted: `paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-llm`, `paladin-memory` (Milestone 2).
+  **Corrected:** delivered by Milestone 5 Epic 1, ledgered as `REQ-cargo-workspace-root`
+  (`.planning/ledgers/milestone-04-06.md:152`).
 - Facade crate with backward-compatible re-exports (Milestone 2).
 - `application_settings.rs` decomposed into per-domain config modules (Milestone 3).
+  **Corrected:** delivered by Milestone 6 Epic 1, ledgered as `REQ-config-incremental-migration` /
+  `REQ-config-success-metrics` (`.planning/ledgers/milestone-04-06.md:250,253`).
 - Manager services relocated to the application layer; core layer purity verified (Milestone 3).
+  **Corrected:** delivered by Milestone 6 Epic 2, ledgered as `REQ-manager-services-retained`
+  (`.planning/ledgers/milestone-04-06.md:263`).
 - Maneuver DSL co-located in `paladin-battalion` (Milestone 3).
+  **Corrected:** delivered by Milestone 6 Epic 3, ledgered as `REQ-maneuver-cargo-dependency-check`
+  (`.planning/ledgers/milestone-04-06.md:287`).
 - `CircuitBreaker` relocated to infrastructure layer (Milestone 3).
+  **Corrected:** delivered by Milestone 6 Epic 4, ledgered as `REQ-circuitbreaker-relocation`
+  (`.planning/ledgers/milestone-04-06.md:294`).
 - Architecture compliance report produced (Milestone 3).
 
 ### Success Criteria
