@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Licence: the project is now dual-licensed `MIT OR Apache-2.0`, additive to the existing MIT
+  grant.** The root package and all ten library crates (`paladin-ai`, `paladin-ai-core`,
+  `paladin-ports`, `paladin-battalion`, `paladin-herald`, `paladin-llm`, `paladin-memory`,
+  `paladin-storage`, `paladin-notifications`, `paladin-content`, `paladin-web`) now declare
+  `license = "MIT OR Apache-2.0"`. The root `LICENSE` file (MIT text) is renamed to `LICENSE-MIT`
+  with its history preserved via `git mv`; a new `LICENSE-APACHE` carries the verbatim Apache
+  License, Version 2.0 text. This is an **additional grant to existing consumers, not a
+  restriction** — everyone who already depends on the published `0.1.0` crates under MIT keeps
+  that permission unchanged, and gains the option to instead rely on the Apache-2.0 grant (which
+  includes an explicit patent license). Decided by the repository owner (`DF3NDR`) at a blocking
+  checkpoint on 2026-08-08, confirming the licence policy recorded in
+  `.project/Milestone_7-Production-Hardening/Epic_4/license-compatibility-decision-checklist.md`.
+  See [ADR-0025](.planning/decisions/0025-licence-posture.md).
+
 ### Added
 
 - **`GroveConfig.routing_model: Option<String>`** — the operator-configured LLM model used by

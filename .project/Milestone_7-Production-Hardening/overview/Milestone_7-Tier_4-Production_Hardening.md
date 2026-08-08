@@ -386,6 +386,12 @@ The public API was hardened in Milestone 1 (Epic 2) and documented in `STABLE_AP
 
 ### Acceptance Criteria
 
+> **AC 1 SUPERSEDED BY [ADR-0025](../../../.planning/decisions/0025-licence-posture.md) — 2026-08-08.**
+> At a blocking checkpoint on 2026-08-08 the repository owner (`DF3NDR`) selected the dual licence
+> expression recorded in this same Epic's `license-compatibility-decision-checklist.md` over the
+> single `MIT` expression this criterion names. The root package and all ten library crates now
+> declare `license = "MIT OR Apache-2.0"`. The original criterion text below is retained unmodified.
+
 1. Every public crate has a complete `[package]` section with description, license (`MIT`), repository URL, keywords, and categories.
 2. Every public crate has a `README.md` that renders correctly on crates.io.
 3. Every public crate has a `CHANGELOG.md`.

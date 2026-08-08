@@ -1145,7 +1145,7 @@ the gates the project believes it already has; four of the five do not hold as d
       warnings that narrow it. **The only item in the 199-document corpus carrying an expiry
       date.***
 
-- [ ] **SEC-02**: The project's licence posture has one answer and the manifests declare it. Three
+- [x] **SEC-02**: The project's licence posture has one answer and the manifests declare it. Three
       positions are live: `Epic_4/license-compatibility-decision-checklist.md` records
       **`MIT OR Apache-2.0`** with approver **`DF3NDR` (repository owner)**, approval date
       **2026-05-28**, an inventory of 551 packages with zero unknown entries, and an explicit
@@ -3753,7 +3753,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | DEBT-04 | Phase 8 | Complete |
 | DEBT-05 | Phase 8 | Complete |
 | SEC-01 | Phase 9 | Pending |
-| SEC-02 | Phase 9 | Pending |
+| SEC-02 | Phase 9 | Complete |
 | SEC-03 | Phase 9 | Pending |
 | SEC-04 | Phase 9 | Complete |
 | SEC-05 | Phase 9 | Pending |

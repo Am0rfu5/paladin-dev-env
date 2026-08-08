@@ -121,6 +121,14 @@ As a contributor, I want per-crate READMEs and changelogs so that I can understa
 
 4.7.7 License compatibility must be verified so that dependencies remain compatible with the project's MIT licensing posture.
 
+> **SUPERSEDED BY [ADR-0025](../../../.planning/decisions/0025-licence-posture.md) — 2026-08-08.**
+> The project's licensing posture is no longer MIT-only. At a blocking checkpoint on 2026-08-08 the
+> repository owner (`DF3NDR`) selected the dual expression already recorded in this same Epic's
+> `license-compatibility-decision-checklist.md`: the root package and all ten library crates now
+> declare `license = "MIT OR Apache-2.0"`. The original requirement text above is retained
+> unmodified; it described the posture at the time this PRD was written, not the posture the tree
+> states today.
+
 4.7.8 The release readiness audit must review dependency tree and binary size for unexpected bloat before the release candidate tag is approved.
 
 ## 5. Non-Goals / Out of Scope

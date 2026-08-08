@@ -84,7 +84,7 @@ LABEL org.opencontainers.image.description="Enterprise AI orchestration framewor
 LABEL org.opencontainers.image.version="0.1.0"
 LABEL org.opencontainers.image.authors="Am0rfu5"
 LABEL org.opencontainers.image.source="https://github.com/DF3NDR/paladin-dev-env"
-LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
 
 # Copy binary from builder
 COPY --from=app-builder /app/target/release/paladin /usr/local/bin/paladin
