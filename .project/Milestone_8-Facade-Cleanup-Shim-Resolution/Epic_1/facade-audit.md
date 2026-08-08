@@ -1,5 +1,18 @@
 # Facade Crate Audit
 
+> **SUPERSEDED BY [ADR-0028](../../../.planning/decisions/0028-m8-reconciliation-authoritative.md) — 2026-08-08.**
+> This document classified 189 audited files as 151 stay / 13 move / 25 delete, and approximately
+> 4,400 LOC of the "stay" set — described here and in the sibling disposition record as active
+> bridge shims — were orphaned, uncompiled duplicate files: no `mod <name>` declaration exists
+> anywhere under `src/` naming them, so none was ever part of a compiled artifact.
+> `facade-cleanup-RECONCILIATION-2026-06-04.md` established the mis-classification with a
+> reproducible three-step orphan test and is the account that replaces this one. Three of this
+> document's classifications were corrected in execution rather than accepted as written —
+> `paladin_registry.rs` was consolidated into `paladin-battalion` rather than deleted, and the
+> `sqlite_*_repository.rs` files were the active default-build implementation rather than
+> redundant — and ADR-0028 §(ii) holds the do-not-re-delete record for all three. The original
+> text below is retained unmodified.
+
 **Epic:** 1 — Facade Crate Audit
 **Milestone:** 8 — Facade Cleanup, Shim Resolution, and Directory Stabilization
 **Status:** Complete
