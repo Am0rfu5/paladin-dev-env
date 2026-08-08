@@ -1,5 +1,16 @@
 # Infrastructure Adapter Disposition Record — Epic 3
 
+> **SUPERSEDED BY [ADR-0028](../../../.planning/decisions/0028-m8-reconciliation-authoritative.md) — 2026-08-08.**
+> This document's 20-row table marks every adapter group as staying in the facade and defers every
+> List B move to Milestone 9, both of which the tree contradicts: the relocations executed inside
+> Milestone 8 itself (`facade-cleanup-RECONCILIATION-2026-06-04.md` — 15 commits, ~10,250 net LOC
+> removed, one new leaf crate, `paladin-herald`), and several of its "stays" rows mis-classified
+> orphaned, uncompiled duplicate files as active bridges (ADR-0028's Context cites the specific
+> rows). Two further defects survive independent of the supersession: row 1 (`arsenal/`) and row
+> 19 (`sanctum/mod.rs`) each name a target crate — `paladin-arsenal` and `paladin-sanctum` — that
+> disagrees with the governing PRD and does not exist in the tree; it remains FACADE-04's subject
+> for those two names. The original text below is retained unmodified.
+
 **Milestone:** 8 — Facade Cleanup & Shim Resolution
 **Epic:** 3 — Relocate Remaining Misplaced Modules
 **Branch:** `feature/milestone_8-epic_3-relocate-misplaced-modules`
