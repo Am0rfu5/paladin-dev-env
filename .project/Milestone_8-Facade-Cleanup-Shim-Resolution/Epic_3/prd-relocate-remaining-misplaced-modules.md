@@ -1,5 +1,14 @@
 # PRD: Relocate Remaining Misplaced Modules (Milestone 8, Epic 3)
 
+> **Correction (dated 2026-08-08, HARD-02):** This document's §5 Non-Goals clause (struck below)
+> names `paladin-herald` and `paladin-ml` as crates out of scope for this Epic — "No new crates
+> created." `paladin-herald` was in fact created inside this same Milestone 8, by the
+> 2026-06-04 reconciliation's relocation work (commit `66f6c4e`, "extract Herald formatters into
+> new `paladin-herald` crate"). [ADR-0028](../../../.planning/decisions/0028-m8-reconciliation-authoritative.md)
+> records this clause **overridden for `paladin-herald`** and **still holding for `paladin-ml`**,
+> which does not exist in the tree. The original text is retained below with an inline correction;
+> nothing is deleted.
+
 **Project:** Paladin Framework
 **Epic:** 3 — Relocate Remaining Misplaced Modules
 **Milestone:** 8 — Facade Cleanup, Shim Resolution, and Directory Stabilization
@@ -208,7 +217,15 @@ missing `ml` feature gate to `tensorflow_adapter.rs`.
 - **No changes to `paladin-notifications` crate.** The crate already has the adapter
   implementations; this Epic does not touch it.
 - **No `use_cases` → `services` rename.** That is Epic 4.
-- **No new crates created.** `paladin-herald`, `paladin-ml`, etc. are not in scope.
+- ~~**No new crates created.**
+  `paladin-herald`, `paladin-ml`, etc. are not in scope.~~
+  **Corrected (dated 2026-08-08, HARD-02):** This non-goal is split. It is **overridden for
+  `paladin-herald`**, which exists at `crates/paladin-herald/` (confirmed this session via
+  `ls crates/`) and was created during Milestone 8 by the reconciliation's own relocation work
+  (commit `66f6c4e`). It **still holds for `paladin-ml`**, which does not exist in the tree
+  (confirmed this session: `test -d crates/paladin-ml` exits 1) and whose reintroduction condition
+  is [FACADE-03(b)](../../../.planning/decisions/0028-m8-reconciliation-authoritative.md)'s
+  subject.
 - **No feature flag changes** other than adding the `ml` flag for `tensorflow_adapter.rs`.
 - **No breaking changes to public API** beyond what is documented in `CHANGELOG.md`. The storage
   shim paths were never part of `STABLE_API.md` and are internal-only.
