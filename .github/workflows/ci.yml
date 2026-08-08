@@ -97,6 +97,9 @@ jobs:
       - name: Check crates.io package names
         run: ./scripts/check-crate-names.sh
 
+      - name: Check advisory exception register
+        run: ./scripts/check-advisory-register.sh
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -470,25 +473,6 @@ jobs:
           path: |
             target/debug/
             *.log
-
-  # Security audit
-  security:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install cargo-audit
-        run: cargo install cargo-audit
-
-      - name: Run security audit
-        # RUSTSEC-2023-0071 (rsa, no fix) and RUSTSEC-2025-0111 (tokio-tar, no fix)
-        # are transitive dev-dependency advisories with no upstream fix available.
-        run: cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111
 
   # Build and test Docker images
   #
