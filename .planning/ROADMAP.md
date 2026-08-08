@@ -670,10 +670,10 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 10-01-PLAN.md — Ledger scaffold (tracer): head notes, seven-class legend, 13-row superseded-by-outcome summary table, 86 row stubs, M8 Epic 4 derived end-to-end; REQUIREMENTS.md pointer; stale-figure corrections in HARD-01/03/05/07 and ROADMAP criterion 1
-- [ ] 10-02-PLAN.md — ADR-0028 (reconciliation authoritative, orphan test, three do-not-re-delete corrections, Epic 3/6 completeness, non-goal split) + three M8 source annotations
-- [ ] 10-03-PLAN.md — ADR-0029 (version trajectory, ORCH-05-extensible table) + ADR-0030 (fourth numbering collision, citing 0010/0014) + M7 overview annotation
-- [ ] 10-04-PLAN.md — Blocking `checkpoint:decision` on the three flagged branches (D-15, D-18, the `cargo doc` boundary), then ADR-0031 (default-build dependency invariant) + M7 Epic 1 §6.1/Goal 2 annotations
+- [x] 10-01-PLAN.md — Ledger scaffold (tracer): head notes, seven-class legend, 13-row superseded-by-outcome summary table, 86 row stubs, M8 Epic 4 derived end-to-end; REQUIREMENTS.md pointer; stale-figure corrections in HARD-01/03/05/07 and ROADMAP criterion 1
+- [x] 10-02-PLAN.md — ADR-0028 (reconciliation authoritative, orphan test, three do-not-re-delete corrections, Epic 3/6 completeness, non-goal split) + three M8 source annotations
+- [x] 10-03-PLAN.md — ADR-0029 (version trajectory, ORCH-05-extensible table) + ADR-0030 (fourth numbering collision, citing 0010/0014) + M7 overview annotation
+- [x] 10-04-PLAN.md — Blocking `checkpoint:decision` on the three flagged branches (D-15, D-18, the `cargo doc` boundary), then ADR-0031 (default-build dependency invariant) + M7 Epic 1 §6.1/Goal 2 annotations
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
