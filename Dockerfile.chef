@@ -18,19 +18,13 @@ RUN cargo install cargo-chef --version 0.1.77 --locked
 # Analyzes the project and generates a recipe for dependencies
 # =============================================================================
 FROM chef AS planner
-# Copy manifests first (changes rarely) to maximise layer cache reuse.
-# Each crate Cargo.toml is copied individually so the recipe layer only
-# invalidates when a manifest — not source — changes.
+# cargo-chef's cache tightness does not come from enumerating manifests here: `cargo chef
+# prepare` distils recipe.json from the manifests and lockfile alone, and the builder stage
+# consumes it via a content-addressed cross-stage COPY --from, so expensive dependency
+# compilation is skipped whenever recipe.json's bytes are unchanged — independent of whether
+# this planner stage itself was a cache hit. This stage copies whole directories deliberately,
+# so a new crate needs no edit here.
 COPY Cargo.toml Cargo.lock ./
-COPY crates/paladin-core/Cargo.toml          crates/paladin-core/Cargo.toml
-COPY crates/paladin-ports/Cargo.toml         crates/paladin-ports/Cargo.toml
-COPY crates/paladin-battalion/Cargo.toml     crates/paladin-battalion/Cargo.toml
-COPY crates/paladin-llm/Cargo.toml           crates/paladin-llm/Cargo.toml
-COPY crates/paladin-memory/Cargo.toml        crates/paladin-memory/Cargo.toml
-COPY crates/paladin-storage/Cargo.toml       crates/paladin-storage/Cargo.toml
-COPY crates/paladin-notifications/Cargo.toml crates/paladin-notifications/Cargo.toml
-COPY crates/paladin-content/Cargo.toml       crates/paladin-content/Cargo.toml
-COPY crates/paladin-web/Cargo.toml           crates/paladin-web/Cargo.toml
 # Copy source trees so cargo-chef can resolve workspace member paths
 COPY src ./src
 COPY crates ./crates
