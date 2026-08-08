@@ -633,9 +633,9 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 09-01-PLAN.md — Tracer: herald CHANGELOG.md + `scripts/check-changelogs.sh` end-to-end through Makefile and a required CI context (SEC-04)
-- [ ] 09-02-PLAN.md — `SECURITY-EXCEPTIONS.md` register (ten rows, eleven governance fields) + ADR-0024 (SEC-01)
-- [ ] 09-03-PLAN.md — Delete `Dockerfile.chef`'s nine-manifest planner enumeration + ADR-0027 (SEC-05)
+- [x] 09-01-PLAN.md — Tracer: herald CHANGELOG.md + `scripts/check-changelogs.sh` end-to-end through Makefile and a required CI context (SEC-04)
+- [x] 09-02-PLAN.md — `SECURITY-EXCEPTIONS.md` register (ten rows, eleven governance fields) + ADR-0024 (SEC-01)
+- [x] 09-03-PLAN.md — Delete `Dockerfile.chef`'s nine-manifest planner enumeration + ADR-0027 (SEC-05)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
