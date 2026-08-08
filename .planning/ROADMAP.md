@@ -149,7 +149,7 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 **Milestone 7-8 close-out**
 
 - [ ] **Phase 9: Release & Security Gate Integrity** - Reconcile the four divergent RustSec exception sets before the 2026-09-30 expiry, settle the licence posture, and close the three small release-gate defects
-- [ ] **Phase 10: Milestone 7-8 Ground Truth & Recorded Account** - Record what production hardening and facade cleanup actually delivered, make the 2026-06-04 reconciliation authoritative, and answer the three architecture questions the documents left ambiguous
+- [x] **Phase 10: Milestone 7-8 Ground Truth & Recorded Account** - Record what production hardening and facade cleanup actually delivered, make the 2026-06-04 reconciliation authoritative, and answer the three architecture questions the documents left ambiguous (completed 2026-08-08)
 - [ ] **Phase 11: Facade Residue & Deferred Register Disposition** - Give each of the five deferred items and both deliberately removed features a decision, and triage the Milestone 9 candidate list
 
 **Milestone 9-12 + Deferred-QA close-out**
@@ -909,7 +909,7 @@ through it. Recorded here so neither side gets planned twice:
 | 7. Workspace Ground Truth & Recorded Answers | M4-6 | 13/13 | Complete    | 2026-08-06 |
 | 8. Verified Defect Closure | M4-6 | 9/9 | Complete    | 2026-08-07 |
 | 9. Release & Security Gate Integrity | M7-8 | 0/TBD | Not started | - |
-| 10. Milestone 7-8 Ground Truth & Recorded Account | M7-8 | 0/TBD | Not started | - |
+| 10. Milestone 7-8 Ground Truth & Recorded Account | M7-8 | 11/11 | Complete    | 2026-08-08 |
 | 11. Facade Residue & Deferred Register Disposition | M7-8 | 0/TBD | Not started | - |
 | 12. Supply-Chain Gate Integrity | M9-12 | 0/TBD | Not started | - |
 | 13. Milestone 9-12 Ground Truth & Recorded Account | M9-12 | 0/TBD | Not started | - |
