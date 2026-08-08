@@ -24,6 +24,19 @@
 > (HARD-05, this banner). Plan 10-05 owns §4.4.1 and §4.4.6 (HARD-06) and adds its own separate
 > dated blockquote in a later wave. This banner covers only the two clauses named in it.
 
+> **Correction (dated 2026-08-08, HARD-06):** Two further clauses in this document — §4.4.1 and
+> §4.4.6 below, both struck — are superseded by outcome. §4.4.1 requires the `pdf` feature to gate
+> `pdf-extract`; the tree instead declares `pdf-extract` as an unconditional dependency, and a
+> workspace search for the feature gate under the crate's `src/` returns zero matches — the
+> feature gates neither the dependency nor any code
+> ([ADR-0032](../../../.planning/decisions/0032-pdf-extraction-capability.md)). §4.4.6 requires the
+> facade's `content-processing` feature to activate `paladin-content` "with all capability features
+> enabled"; the shipped list omits the inert `pdf` feature, which has no behavioural effect because
+> that feature gates nothing — PDF extraction ships in every build of `paladin-content` regardless.
+> The original text below is retained with inline corrections; nothing is deleted. This is the
+> second of two dated blocks annotating this document — see the block above (plan 10-04, HARD-05)
+> for the unrelated dependency-rule correction; each plan's block covers only the clauses it names.
+
 ---
 
 ## 1. Introduction / Overview
@@ -148,7 +161,9 @@ so that I can audit each crate's attack surface in isolation.
 
 ### 4.4 Task 1.4 — Extract `paladin-content` Crate
 
-4.4.1 Create `crates/paladin-content/` with feature flags: `pdf` (gates `pdf-extract`), `web-scraping` (gates `scraper`), `rss` (gates the `rss` crate), `news-api` (gates `NewsApiFetcher` HTTP logic), `tiktoken` (gates `tiktoken-rs`).
+4.4.1 Create `crates/paladin-content/` with feature flags: ~~`pdf` (gates `pdf-extract`),~~ `web-scraping` (gates `scraper`), `rss` (gates the `rss` crate), `news-api` (gates `NewsApiFetcher` HTTP logic), `tiktoken` (gates `tiktoken-rs`).
+
+**Corrected (dated 2026-08-08, HARD-06):** `crates/paladin-content/Cargo.toml:41` declares `pdf-extract = { version = "0.7" }` with no `optional = true` — an unconditional dependency of every build. A workspace search, `grep -rn 'cfg(feature = "pdf")' crates/paladin-content/src/`, returns zero matches: no feature named `pdf` gates the dependency or any code. [ADR-0032](../../../.planning/decisions/0032-pdf-extraction-capability.md) records the outcome — PDF extraction ships, always, in every build of `paladin-content` — and the inert `pdf` feature declaration has been deleted from the manifest (formerly `crates/paladin-content/Cargo.toml:18`).
 
 4.4.2 Move the following infrastructure adapters into `crates/paladin-content/src/adapters/`:
   - `src/infrastructure/adapters/document/pdf_extractor.rs`
@@ -181,7 +196,9 @@ so that I can audit each crate's attack surface in isolation.
 
 4.4.5 The crate must compile with no default features: `cargo build -p paladin-content --no-default-features` must succeed.
 
-4.4.6 The facade crate's `content-processing` feature flag is redefined to activate the `paladin-content` dependency (with all capability features enabled) rather than the raw `pdf-extract`, `scraper`, `tiktoken-rs`, and `rss` dependencies directly.
+4.4.6 The facade crate's `content-processing` feature flag is redefined to activate the `paladin-content` dependency ~~(with all capability features enabled)~~ rather than the raw `pdf-extract`, `scraper`, `tiktoken-rs`, and `rss` dependencies directly.
+
+**Corrected (dated 2026-08-08, HARD-06):** Root `Cargo.toml:275`'s `content-processing` list enables five of `paladin-content`'s six declared features (`web-scraping`, `rss`, `news-api`, `tiktoken`, `llm`) and omits `pdf` — the sixth. This is harmless: `pdf` gated nothing (see the §4.4.1 correction above), so its absence from the list changes no build's behavior. PDF extraction ships in every build of `paladin-content` regardless of which features the facade activates. [ADR-0032](../../../.planning/decisions/0032-pdf-extraction-capability.md) records this outcome.
 
 4.4.7 Unit tests for each adapter and service are relocated into the new crate. Content-related integration tests remain at the workspace root.
 
