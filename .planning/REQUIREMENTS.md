@@ -1177,7 +1177,7 @@ the gates the project believes it already has; four of the five do not hold as d
       *Derives: REQ-paladin-ports-publish-verification-closed, REQ-ci-publish-dry-run-v1/-v2;
       `intel/code-verification.md` run-4 verified-open item 6.*
 
-- [ ] **SEC-04**: `crates/paladin-herald/CHANGELOG.md` exists, or an exemption is recorded. M7
+- [x] **SEC-04**: `crates/paladin-herald/CHANGELOG.md` exists, or an exemption is recorded. M7
       Epic 4 §4.3.1 and AC 3 require a Keep-a-Changelog `CHANGELOG.md` for **every** public crate,
       and `epic-4-completion-summary.md` records that criterion **Met** ("Per-crate changelogs
       created/backfilled"). Verified 2026-07-30: nine of ten library crates have both a `README.md`
@@ -3755,7 +3755,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | SEC-01 | Phase 9 | Pending |
 | SEC-02 | Phase 9 | Pending |
 | SEC-03 | Phase 9 | Pending |
-| SEC-04 | Phase 9 | Pending |
+| SEC-04 | Phase 9 | Complete |
 | SEC-05 | Phase 9 | Pending |
 | HARD-01 | Phase 10 | Pending |
 | HARD-02 | Phase 10 | Pending |
