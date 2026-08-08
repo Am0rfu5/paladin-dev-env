@@ -732,11 +732,23 @@ requirement list, and success criteria above are unchanged by this note.
 **Plans:** 5 plans in 3 waves
 
 Plans:
+**Wave 1**
+
 - [ ] 11-01-PLAN.md — FACADE-01: record all 17 D5 occurrences as deliberate rustdoc stdout, correct the framing in `deferred-items.md` and ROADMAP criterion 1, and gate the ADR allocation (tracer, wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 11-02-PLAN.md — FACADE-02: ADR-0034 giving D1–D4 verdicts with owners and triggers, and dated corrections on the four clauses (wave 2)
 - [ ] 11-03-PLAN.md — FACADE-03: the `.planning/` register for both removed features plus ADR-0035 holding the `paladin-ml` leaf-crate placement condition (wave 2)
 - [ ] 11-04-PLAN.md — FACADE-04: the 20-row Milestone 9 candidate triage and the `paladin-arsenal` / `paladin-sanctum` artefact finding (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 11-05-PLAN.md — close-out: five ledger rows amended, two REQUIREMENTS.md source corrections, `PROMOTION.md` and `PROJECT.md` updated last (wave 3)
+
+**Cross-cutting constraints:**
+
+- No Rust source file is modified by this plan (D-13)
 
 **Milestone 9-12 + Deferred-QA close-out — Phases 12-16**
 
