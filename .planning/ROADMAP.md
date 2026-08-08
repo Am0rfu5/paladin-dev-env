@@ -677,8 +677,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 10-05-PLAN.md — ADR-0032 (PDF unconditional; inert feature) + the manifest, CHANGELOG and `.cargo/audit.toml` changes + M7 Epic 1 §4.4.1/§4.4.6 annotations
-- [ ] 10-06-PLAN.md — ADR-0033 (one `cargo doc` bar, the measured 20-warning debt with an owner, DEBT-03 discharged, doctest posture) + `Makefile` release-gate fix + M8 Epic 5 FR-19 and Epic 4 summary annotations
+- [x] 10-05-PLAN.md — ADR-0032 (PDF unconditional; inert feature) + the manifest, CHANGELOG and `.cargo/audit.toml` changes + M7 Epic 1 §4.4.1/§4.4.6 annotations
+- [x] 10-06-PLAN.md — ADR-0033 (one `cargo doc` bar, the measured 20-warning debt with an owner, DEBT-03 discharged, doctest posture) + `Makefile` release-gate fix + M8 Epic 5 FR-19 and Epic 4 summary annotations
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
