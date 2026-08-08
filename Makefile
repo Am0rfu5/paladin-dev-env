@@ -164,6 +164,13 @@ check-changelogs: ## Verify every publishable crate carries a CHANGELOG.md
 check-crate-names: ## Guard against crates.io package-name collisions (allow-list)
 	@./scripts/check-crate-names.sh
 
+.PHONY: check-advisory-register
+check-advisory-register: ## Verify SECURITY-EXCEPTIONS.md agrees with deny.toml/.cargo/audit.toml/Cargo.lock
+	@./scripts/check-advisory-register.sh
+
+.PHONY: check-gates
+check-gates: check-changelogs check-crate-names check-advisory-register ## Run all offline release-gate guards
+
 .PHONY: test-ci
 test-ci: ## Run tests in CI mode
 	@echo "$(CYAN)Running tests in CI mode...$(NC)"

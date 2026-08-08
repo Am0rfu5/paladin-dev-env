@@ -103,46 +103,30 @@ deny = [
 ]
 
 # ---------------------------------------------------------------------------
-# Advisories: RustSec advisory database checks. The authoritative ignore-list
-# lives in `.cargo/audit.toml` (auto-read by cargo-audit); the same advisory
-# IDs are mirrored here so cargo-deny and cargo-audit do not contradict each
-# other. Keep these two files in sync when adding/removing an exception.
+# Advisories: RustSec advisory database checks. `SECURITY-EXCEPTIONS.md` (repo
+# root) is the authoritative GOVERNANCE register for every entry below — owner,
+# review date, affected scope and compensating control for each. This file and
+# `.cargo/audit.toml` are mechanical mirrors of that register, not independent
+# sources of truth; `scripts/check-advisory-register.sh` enforces the
+# agreement (see ADR-0024). The vulnerability class below is mirrored exactly
+# from `.cargo/audit.toml`; the unmaintained class is cargo-deny-only, per
+# ADR-0024 decision 1.
 # ---------------------------------------------------------------------------
 [advisories]
 ignore = [
-    # --- Vulnerability advisories (mirrored from .cargo/audit.toml) ---
-    # RUSTSEC-2023-0071: RSA timing side-channel via rsa 0.9.x.
-    #   rsa is a transitive dev/test dependency of sqlx-mysql. No upstream fix
-    #   available; revisit when sqlx upgrades rsa. (Mirrors .cargo/audit.toml.)
-    "RUSTSEC-2023-0071",
-    # RUSTSEC-2025-0111: tokio-tar path-traversal via tokio-tar 0.3.x.
-    #   Transitive dev/test dependency of testcontainers. No upstream fix
-    #   available; revisit when testcontainers upgrades. (Mirrors .cargo/audit.toml.)
-    "RUSTSEC-2025-0111",
+    # --- Vulnerability advisories (mirrored from .cargo/audit.toml; see SECURITY-EXCEPTIONS.md) ---
+    "RUSTSEC-2023-0071", # rsa (timing side-channel) — transitive dev/test dep of sqlx-mysql
+    "RUSTSEC-2025-0111", # tokio-tar (path-traversal) — transitive dev/test dep of testcontainers
+    "RUSTSEC-2026-0187", # lopdf (stack-overflow) — transitive via pdf-extract (paladin-content)
+    "RUSTSEC-2026-0194", # quick-xml (quadratic attr parsing DoS) — transitive via rust-s3/aws-creds (optional s3)
+    "RUSTSEC-2026-0195", # quick-xml (namespace-alloc DoS) — transitive via rust-s3/aws-creds (optional s3)
 
-    # --- Unmaintained advisories (cargo-deny only) ---
-    # These are informational "unmaintained" notices, NOT vulnerabilities.
-    # cargo-audit (the primary advisory gate) does not fail on unmaintained
-    # crates; these are ignored here so cargo-deny does not contradict it
-    # (Epic 2 FR 6). All are transitive with no drop-in maintained replacement
-    # available without an upstream dependency upgrade. Revisit when the
-    # respective parent crates upgrade.
-    "RUSTSEC-2021-0139", # ansi_term (unmaintained) — transitive via clap 2.x/structopt; revisit when structopt migrates to clap-derive
-    "RUSTSEC-2021-0141", # dotenv (unmaintained) — replace with dotenvy later
-    "RUSTSEC-2024-0370", # proc-macro-error (unmaintained) — via structopt; revisit when structopt migrates to clap-derive
-    "RUSTSEC-2024-0375", # atty (unmaintained) — transitive via clap 2.x/structopt; revisit when structopt migrates to clap-derive
-    "RUSTSEC-2025-0057", # fxhash (unmaintained) — transitive via selectors/scraper (paladin-content); revisit when scraper upgrades selectors
-    "RUSTSEC-2025-0119", # number_prefix (unmaintained) — transitive via indicatif; revisit when indicatif drops number_prefix
-    "RUSTSEC-2025-0134", # rustls-pemfile (unmaintained) — via tonic/testcontainers; revisit when tonic/testcontainers upgrades rustls-pemfile
-    "RUSTSEC-2024-0436", # paste (unmaintained) — transitive via utoipa (M12 E6); no drop-in replacement upstream
-    "RUSTSEC-2022-0104", # structopt (maintenance mode) — CLI arg parsing; migrate to clap-derive later
-
-    # --- New 2026 DoS advisories in transitive deps of OPTIONAL features (no upstream fix) ---
-    # The directly-fixable ones were upgraded instead (quinn-proto 0.11.16 / RUSTSEC-2026-0185,
-    # anyhow 1.0.103 / RUSTSEC-2026-0190). These three have no clean upstream fix:
-    "RUSTSEC-2026-0187", # lopdf stack-overflow — via pdf-extract (optional content-processing); fix needs pdf-extract >=0.12 (breaking + adds a new advisory)
-    "RUSTSEC-2026-0194", # quick-xml quadratic attr parsing — remaining <0.41 instance via rust-s3/aws-creds (optional s3); no rust-s3 with quick-xml>=0.41 yet
-    "RUSTSEC-2026-0195", # quick-xml namespace-alloc DoS — same rust-s3 path; revisit when rust-s3 bumps quick-xml
+    # --- Unmaintained advisories (cargo-deny only; cargo-audit does not gate on these; see SECURITY-EXCEPTIONS.md) ---
+    "RUSTSEC-2021-0141", # dotenv (unmaintained) — local .env file loading; replace with dotenvy later
+    "RUSTSEC-2025-0057", # fxhash (unmaintained) — transitive via selectors/scraper (optional web-scraping)
+    "RUSTSEC-2025-0119", # number_prefix (unmaintained) — transitive via indicatif (CLI progress-bar formatting)
+    "RUSTSEC-2025-0134", # rustls-pemfile (unmaintained) — transitive via tonic/testcontainers (dev/test PEM parsing)
+    "RUSTSEC-2024-0436", # paste (unmaintained) — transitive via utoipa (paladin-web OpenAPI generation)
 ]
 
 # ---------------------------------------------------------------------------
