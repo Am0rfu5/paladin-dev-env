@@ -644,7 +644,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 09-06-PLAN.md — Reconcile `deny.toml`/`.cargo/audit.toml`, land `scripts/check-advisory-register.sh`, delete the duplicate CI audit job (SEC-01)
+- [x] 09-06-PLAN.md — Reconcile `deny.toml`/`.cargo/audit.toml`, land `scripts/check-advisory-register.sh`, delete the duplicate CI audit job (SEC-01)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
