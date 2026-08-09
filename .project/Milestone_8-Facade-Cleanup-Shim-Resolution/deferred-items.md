@@ -11,6 +11,21 @@ each is either low-ROI/high-churn, an unresolved architecture decision, or out o
 scope — and are captured here so a future milestone can pick them up deliberately rather than
 rediscovering them.
 
+> **Correction (dated 2026-08-08, FACADE-01):** The `### D5` section below (`- **Effort / risk:**
+> low / low.` and its `- **Recommendation:**` line) and the `## Suggested grouping` section's
+> `- **Quick wins:** D5 (println residue).` line are all premised on D5's 17
+> `println!`/`eprintln!`/`dbg!` occurrences being runtime diagnostic residue in library code that
+> needs case-by-case conversion judgment. **They are not.** Re-verified 2026-08-08:
+> `grep -rn "println!\|eprintln!\|dbg!" src/application/services/ src/infrastructure/` still
+> returns exactly **17** occurrences across exactly **6** files (this document's count was and
+> remains exact), and every one of the 17 is a `///` or `//!` doc-comment line inside a fenced
+> `rust`/`rust,ignore` code block — a rustdoc example, not runtime stdout. Filtering the same grep
+> to non-doc-comment lines returns **0**. There is no conversion to perform and no quick win to
+> bank. Full per-occurrence disposition:
+> `.planning/registers/facade-01-rustdoc-stdout-disposition.md`. This is the corpus's first
+> measured case of this document's own count being exact while its characterisation is wrong —
+> struck below, corrected inline, nothing deleted.
+
 > Verified against `main` on 2026-06-07.
 
 ---
@@ -99,15 +114,27 @@ So readers don't mistake completed work for a gap, the following from the reconc
 - **Current state:** small residue after the main hygiene sweep.
 - **Why deferred:** the bulk was converted; the remainder needs case-by-case judgment (some may be
   intentional user-facing output rather than diagnostics).
-- **Recommendation:** review the 6 files; convert genuine diagnostics to `log::*`, keep
-  intentional stdout output.
-- **Effort / risk:** low / low.
+- ~~**Recommendation:** review the 6 files; convert genuine diagnostics to `log::*`, keep
+  intentional stdout output.~~
+  **Corrected (dated 2026-08-08, FACADE-01):** No conversion review is needed. Re-verified this
+  date: all 17 occurrences are `///`/`//!` rustdoc-example lines, zero are runtime diagnostics —
+  the filtered grep (`grep -v '///' | grep -v '//!'`) returns 0. Each of the 17 carries a recorded
+  per-occurrence disposition in
+  `.planning/registers/facade-01-rustdoc-stdout-disposition.md` naming it deliberate rustdoc
+  stdout. See `FACADE-01`.
+- ~~**Effort / risk:** low / low.~~
+  **Corrected (dated 2026-08-08, FACADE-01):** Not applicable — there is no conversion work to
+  rate, low or otherwise. This item closes by recorded disposition, not by execution.
 
 ---
 
 ## Suggested grouping for a future milestone
 
-- **Quick wins:** D5 (println residue).
+- ~~**Quick wins:** D5 (println residue).~~
+  **Corrected (dated 2026-08-08, FACADE-01):** D5 is not a quick win to bank — it is not
+  executable work at all. All 17 occurrences are rustdoc example lines with a recorded disposition
+  (`.planning/registers/facade-01-rustdoc-stdout-disposition.md`); nothing is converted or
+  reviewed. Struck rather than deleted so the original grouping advice remains legible.
 - **Architecture pass (one focused milestone):** D2 (manager services) + optionally D4
   (content_ingestion), since both are layer/placement corrections.
 - **Only with a broader refactor:** D3 (entangled Paladin services), and D1 (`core` shims) if a
