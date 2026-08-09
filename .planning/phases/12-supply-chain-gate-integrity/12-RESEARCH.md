@@ -1059,6 +1059,231 @@ planner making a small confirming choice at execution time.
 python3+tomllib, python3+PyYAML, cargo-audit, cargo-deny, gh) is entirely present and already
 proven working in this environment this session.
 
+## Validation Architecture
+
+This phase's Nyquist validation applies to **records**, not code — the same framing Phase 11's own
+Validation Architecture established (`11-RESEARCH.md:690-692`): a "test" is a shell command that
+proves a citation resolves, a count matches, or an annotation exists at a named path. No Rust is
+written, so no Rust test harness is added. **Phase 12 differs from Phase 11 in one material way:**
+it carries three genuine external gate invocations (`cargo audit`, `cargo deny check`,
+`./scripts/check-advisory-register.sh`) that hit a real advisory database and a real crates.io
+index, not only tree greps — so its "full suite" is an actual command run with real (if short)
+latency, not purely instantaneous.
+
+### Test Framework
+
+| Property | Value |
+|----------|-------|
+| Framework | None — direct shell verification (`grep`, `ls`, `find`, `git log`) for every record-shaped deliverable, **plus** three real compiled-tool invocations (`cargo-audit`, `cargo-deny`) already installed and proven this session (§D.11) |
+| Config file | None for the record checks. The three real gates read their existing config from `.cargo/audit.toml` and `deny.toml` (unchanged by this phase, per D-00i) — no new config file is introduced. |
+| Quick run command | Per-claim `grep -n "<pattern>" <file>` for a banner/citation; `./scripts/check-advisory-register.sh` alone (~1s) for the register; `node .claude/gsd-core/bin/lib/adr-parser.cjs --input <path>` for a single ADR's structural shape |
+| Full suite command | `cargo audit && cargo deny check && ./scripts/check-advisory-register.sh && <D-08 guard invocation>` — re-run every citation in §B/§E, plus the ADR structural check (below), plus the D-08 positive/negative pair |
+| Estimated runtime | `cargo audit` ~10-30s (advisory-db git fetch + crates.io index update — network-bound, not compute-bound); `cargo deny check` ~5-15s (crates.io index cache reuse); `check-advisory-register.sh` ~1s; D-08 guard ~1s; all `grep`/`ls`/`node adr-parser.cjs` checks ~1s each. **No `cargo build`/`cargo clippy`/`cargo test` is required** — this phase's own D-00l/D-13-style expectation is zero `.rs` file changes, so the workspace's own compiled-Rust test suite is out of scope for this phase's own validation (though the pre-commit hook chain will still *attempt* a clippy pass per §D.18 unless `--no-verify` is used, per `worktree_skip_hooks=true`). Total full suite: well under a minute, dominated by `cargo audit`'s network fetch. |
+
+### Phase Requirements → Test Map
+
+| Req ID | Behavior | Test Type | Automated Command | File Exists? |
+|--------|----------|-----------|-------------------|-------------|
+| SUPPLY-01 | `cargo audit` reports the surviving `security-audit:` job's suppression set with zero unauthorised advisories | gate-command | `cargo audit` → exit 0 (§D.11) | ✅ |
+| SUPPLY-01 | Exactly one `cargo audit` invocation across all workflow files | grep-count | `grep -rc 'run: cargo audit' .github/workflows/*.yml \| awk -F: '{s+=$2} END {print s}'` → `1` | ✅ |
+| SUPPLY-02 | `cargo deny check` passes against the reconciled configuration | gate-command | `cargo deny check` → exit 0, tail line `advisories ok, bans ok, licenses ok, sources ok` (§D.11) | ✅ |
+| SUPPLY-02 | Register agrees with both TOML files and `Cargo.lock` | gate-command | `./scripts/check-advisory-register.sh` → exit 0, `✅ 10 register row(s) …` (§D.11) | ✅ |
+| SUPPLY-01/02 | The two "CI-only" `REQUIREMENTS.md`/`ROADMAP.md` sites carry a dated "blocker lifted" banner, original text retained | grep-presence | `grep -n "blocker lifted\|Corrected by Phase 12" .planning/REQUIREMENTS.md .planning/ROADMAP.md` finds both sites named in §D.12 items 2-3 | ❌ W0 — banner text this phase authors |
+| SUPPLY-03 | ADR-0036 exists, `Accepted`, `conforms`, cites ADR-0024, does not supersede it | file-exists + structural-parse | `ls .planning/decisions/0036-*.md` **and** the ADR structural check (below) | ❌ W0 |
+| SUPPLY-03 | `PROMOTION.md:59` advances to `0036` with a dated note in the established shape | grep | `grep -n "Next free ADR number" .planning/decisions/PROMOTION.md` → `0036` | ❌ W0 |
+| SUPPLY-03 | `PROJECT.md` gains a Key Decisions row for ADR-0036 | grep | `grep -n "0036-" .planning/PROJECT.md` → the new table row | ❌ W0 |
+| SUPPLY-03 | The four stale passages (§B.1-B.4) each carry a dated correction parenthetical, original text retained | grep-presence (×4) | `grep -n "Corrected by Phase 12" .planning/REQUIREMENTS.md .planning/PROJECT.md` → 4 hits, one per site named in §B | ❌ W0 |
+| SUPPLY-03 (D-08) | The regression guard fires on a planted inline advisory-ignore and stays silent on both known false-positive tokens | positive/negative pair | see "D-08 Guard Verification" below — both halves independently re-run and passing this session (logic-level) | ❌ W0 (script) / ✅ (regex logic, proven this session) |
+| SUPPLY-03 (D-09) | `#### Hand-off to Phase 13 / ORCH-01` block exists in the established four-part shape | grep | `grep -n "Hand-off to Phase 13 / ORCH-01" .planning/REQUIREMENTS.md` | ❌ W0 |
+| SUPPLY-01/02/03 | Traceability table rows flip `Pending` → `Complete` | grep | `grep -n "SUPPLY-0[123]" .planning/REQUIREMENTS.md` — three rows, all reading `Complete` | ❌ W0 |
+
+*File Exists: ✅ = the command's target already exists and passes today; ❌ W0 = the target is an
+artifact this phase authors — the command becomes runnable as soon as that artifact is written, not
+missing infrastructure.*
+
+### Per-Deliverable Verification Approach
+
+**1. The three gate transcripts (D-06).** Test type: direct command execution, verbatim transcript
+captured into the plan's own verification section — not a citation back to this RESEARCH.md, per
+D-06's own instruction ("a context file is not evidence, the command output is"). Closure proof for
+each:
+- `cargo audit` — exit code `0`, plus the `Loaded N security advisories` / `Scanning Cargo.lock for
+  vulnerabilities (N crate dependencies)` header lines and the absence of any `error:` line or a
+  `Vulnerabilities found` summary block. §D.11 gives the exact transcript shape to match.
+- `cargo deny check` — exit code `0`, plus the literal tail line `advisories ok, bans ok, licenses
+  ok, sources ok`.
+- `./scripts/check-advisory-register.sh` — exit code `0`, plus the literal `✅ N register row(s)
+  checked against N deny.toml and N .cargo/audit.toml ignore entries; all clauses satisfied.` line.
+  A `❌` prefix or nonzero exit is an unambiguous fail signal; the script's own header (§C.1)
+  guarantees it reports every violation, not just the first, so a single re-run is sufficient — no
+  need to iterate.
+
+**2. ADR-0036 (D-03/D-04/D-05) — mechanical structural check.** The concrete command, **run and
+verified against ADR-0031 this session** to confirm the check logic itself is sound before it is
+ever pointed at ADR-0036:
+```bash
+node .claude/gsd-core/bin/lib/adr-parser.cjs --input .planning/decisions/0036-<slug>.md \
+  | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+assert d['status'] == 'accepted', f\"status={d['status']!r}, expected 'accepted'\"
+assert len(d['key_files']) > 0, 'Code Locations parsed to zero entries'
+assert len(d['options_considered']) > 0, 'Considered Options parsed to zero entries'
+assert len(d['decisions']) > 0, 'Decision section empty'
+unmapped = set(d['unmapped_headers'])
+assert 'Code Conformance' in unmapped, 'Code Conformance heading missing or misnamed'
+assert 'Downstream Consumers' in unmapped, 'Downstream Consumers heading missing or misnamed'
+print('ADR-0036 STRUCTURAL CHECK: PASS')
+"
+```
+**Re-run against `0031-extracted-crate-dependency-rule.md` this session — output:**
+`ADR STRUCTURAL CHECK: PASS`, with `status=accepted`, `key_files` count `28`,
+`options_considered` count `21`, `unmapped_headers = ['ADR-0031: …title…', 'Code Conformance',
+'Downstream Consumers']`. `[VERIFIED: node adr-parser.cjs invocation, this session]` **Note the
+mechanical detail this proves:** `unmapped_headers` always includes the ADR's own H1 title line
+(the parser treats every heading, including H1, as a section boundary) — a structural check must
+assert `'Code Conformance' in unmapped` and `'Downstream Consumers' in unmapped` as **subset**
+membership, not `len(unmapped_headers) == 2`, or it will spuriously fail on every ADR in the corpus
+including the four already-`Accepted` ones.
+
+**Second mechanical detail this run surfaced, actionable for ADR-0036's own drafting (not just its
+verification):** ADR-0031's `key_files` count (28) is far higher than its ~10 real bulleted
+citations, because `## Code Locations` also contains one trailing **un-bulleted** paragraph (the
+`cargo tree` verification transcript) after the bulleted list — `splitEntries` chops that prose
+paragraph into ~18 additional per-line fragment "entries" (§A.3's exact mechanism). **Recommendation
+for ADR-0036's own authoring, not only its check:** if a verification transcript needs to be
+embedded, put it inside `## Code Conformance` (an unmapped, unparsed-into-list header, so a prose
+block there is harmless) rather than trailing after `## Code Locations`'s bullets — ADR-0036 can
+improve on ADR-0031's own minor structural wrinkle rather than repeat it.
+
+**3. The dated correction banners (D-01/D-02) — proof each stale passage now carries a banner and
+retains its original text.** For each of the four sites in §B (`REQUIREMENTS.md:1929/1937-1939`,
+`REQUIREMENTS.md:103-109`, `PROJECT.md:587-588`, `PROJECT.md:625-627`), two independent greps:
+```bash
+# 1. The banner is present, dated, and cites the correcting ADR/decision
+grep -n "Corrected by Phase 12\|Amended by Phase 12" .planning/REQUIREMENTS.md .planning/PROJECT.md
+
+# 2. The original stale text is still present verbatim (not deleted) — re-run the exact
+#    string each site's original claim contains, confirming a hit still exists post-edit
+grep -n "This requirement does not act" .planning/REQUIREMENTS.md          # site B.1
+grep -n "Eleven ADR candidates exist and none is promoted" .planning/REQUIREMENTS.md   # site B.2
+grep -n "Promoting the two ADR candidates into locked decisions" .planning/PROJECT.md  # site B.3
+grep -n "Eleven ADR candidates have accumulated, and none is promoted" .planning/PROJECT.md  # site B.4
+```
+A pass requires **both** greps to hit for every site — banner present *and* original text retained
+— matching D-00c's "annotation, not rewriting" rule exactly. A site where the first grep hits but
+the second does not (original text deleted) is a **process violation**, not a content error, and
+should fail verification even though the corrected fact itself might be accurate.
+
+**4. The D-08 guard — positive/negative test pair.** This is the one deliverable with a genuine
+positive/negative pair, and the discriminating regex logic proposed in §C.4 was **extracted and
+run standalone this session**, independent of any script file, to prove the design is sound before
+implementation:
+```bash
+python3 -c "
+import re
+CARGO_GATE_RE = re.compile(r'\bcargo\s+(audit|deny)\b')
+IGNORE_FLAG_RE = re.compile(r'--ignore(?:[= ]|\$)')
+
+def violates(run_text):
+    return bool(CARGO_GATE_RE.search(run_text) and IGNORE_FLAG_RE.search(run_text))
+
+# Positive — must fire
+assert violates('cargo audit --ignore RUSTSEC-2024-0001') is True
+assert violates('cargo deny check --ignore RUSTSEC-2024-0001') is True
+assert violates('cargo audit --ignore=RUSTSEC-2024-0001') is True
+
+# Negative — must stay silent (verbatim tokens from the real ci.yml, not paraphrased)
+assert violates('mc mb testminio/test-bucket --ignore-existing') is False
+assert violates('cargo test redis_queue_integration_tests --release -- --ignored --nocapture') is False
+assert violates('cargo audit') is False
+
+print('POSITIVE/NEGATIVE PAIR: PASS')
+"
+```
+**Re-run this session — output: `POSITIVE/NEGATIVE PAIR: PASS`.** `[VERIFIED: python3 inline
+execution, this session]` This proves the *matching logic* (§C.4) is sound at the regex level,
+independent of whichever wrapper (fourth clause vs. sibling script, PyYAML-driven structural parse
+vs. this simplified string check) the planner chooses. **Once the guard script itself exists**, the
+same pair should be re-run **against the actual script**, not just the extracted regex, in two
+forms:
+- **Negative container test (must stay silent):** run the guard directly against the real,
+  unmodified `.github/workflows/` tree, which already contains both known false-positive tokens —
+  `<guard invocation>` → expect exit `0`.
+- **Positive container test (must fire):** point the guard at a **scratch copy** of the workflow
+  directory with one planted violation line appended to a copied file (never the real tree), e.g.:
+  ```bash
+  mkdir -p /tmp/scratch-workflows && cp .github/workflows/ci.yml /tmp/scratch-workflows/
+  printf '\n      - name: planted violation\n        run: cargo audit --ignore RUSTSEC-2024-0001\n' \
+    >> /tmp/scratch-workflows/ci.yml
+  # invoke the guard with its scan root pointed at /tmp/scratch-workflows (requires the guard to
+  # accept a root-directory override — an env var or first positional arg, matching the existing
+  # scripts' WORKSPACE_ROOT-from-BASH_SOURCE convention but with an explicit override hook added
+  # for testability, since none of the three existing check-*.sh scripts currently expose one)
+  rm -rf /tmp/scratch-workflows   # never commit the scratch fixture
+  ```
+  **Design note for the planner:** none of the three existing guard scripts (`check-advisory-
+  register.sh`, `check-crate-names.sh`, `check-changelogs.sh`) currently accepts a root-directory
+  override — each hardcodes `WORKSPACE_ROOT` from `BASH_SOURCE`. D-08's guard should add one
+  (e.g. `WORKFLOWS_DIR="${1:-${WORKSPACE_ROOT}/.github/workflows}"`), purely so this positive-case
+  test is runnable without ever mutating the real tree. This is a small, self-contained addition to
+  the guard's own contract, not a change to the three existing scripts.
+
+### Sampling Rate
+
+- **After every task commit:** re-run the specific citation/grep the task's own banner, ADR
+  section, or hand-off line depends on (matching Phase 11's per-task granularity) — for a gate-
+  touching task specifically, also re-run the one gate command that task's own evidence cites.
+- **After every plan wave:** re-run the full three-gate suite (`cargo audit && cargo deny check &&
+  ./scripts/check-advisory-register.sh`) to confirm no wave's edits — even a `.planning/`-only
+  edit — accidentally broke a previously-passing gate (unlikely given D-00i, but cheap to confirm
+  given the whole suite runs in well under a minute). Once the D-08 guard has landed, also re-run
+  its positive/negative pair at each subsequent wave merge, to confirm no later edit silently
+  disabled its detection.
+- **Before `/gsd-verify-work`:** full suite green, including a live re-run of the D-08 guard's
+  planted-violation test (performed against a scratch copy and torn down, never left in the tree)
+  and the ADR structural check against the final `0036-*.md` file.
+- **Max feedback latency:** ~30-60s (dominated by `cargo audit`'s network fetch) — well within
+  Phase 11's 10-second precedent for the pure-grep checks, but the two real gate tools introduce a
+  genuine (if still fast) network-bound latency floor this phase's sampling rate should account
+  for, unlike Phase 11's zero-latency grep-only suite.
+
+### Wave 0 Gaps
+
+None — there is no test framework to install. `grep`/`ls`/`find`/`git`/`python3`/`node` are already
+available and every command in this section was proven runnable this session, including two that
+do not depend on any artifact this phase has not yet authored (the ADR structural-check command
+against an *existing* ADR, and the D-08 regex logic standalone). The `❌ W0` rows in the Phase
+Requirements → Test Map above target records this phase itself authors (ADR-0036, the four
+banners, the hand-off block, the guard script) — their commands become runnable the moment the
+corresponding artifact exists; this is not missing infrastructure, it is not-yet-written content.
+
+### What CANNOT Be Validated In-Repo
+
+Two items are explicitly **not** verifiable by any command in this section, and a verifier should
+**abstain** on them rather than report a false pass:
+
+1. **The CI-run observation (D-07, SUPPLY-01's one still-open clause).** Confirming the required
+   status check resolves on the first real push to `release/v0.7.0` after the Phase 9 deletion is,
+   by construction, a fact about a future GitHub Actions run — it cannot be produced by any local
+   command. The most recent run remains `30861568499` (2026-08-03T23:14:24Z, five days *before*
+   the deletion, §D.13) — no run exists that could confirm or deny this clause. **The correct
+   verification posture is: record it as `pending`, named trigger `next push to release/v0.7.0`,
+   and move on — do not attempt to simulate, fake, or infer a pass.** A verifier that marks this
+   clause "done" without a `gh run` citation postdating the deletion is reporting a false positive.
+2. **The GitHub rulesets finding (D-10).** `gh api repos/:owner/:repo/rulesets` returning empty and
+   `.../branches/main/protection` returning `404` are facts about **live repository
+   administration state**, re-confirmed by CONTEXT.md this session but explicitly out of this
+   phase's scope to act on (D-10, and this research's own `<explicit_non_goals>`). There is nothing
+   for Phase 12 to build or verify here beyond citing CONTEXT.md's own already-run commands in the
+   hand-off block (§E) — **no new verification command should be added for this finding**, since
+   doing so would risk implying the phase intends to act on it.
+
+Both should be represented in `12-VALIDATION.md`'s Manual-Only Verifications table (Phase 11's
+precedent shape, `11-VALIDATION.md:83-89`) rather than the automated Test Map, with "Why Manual"
+reading, respectively, "future CI-run fact, no local proof exists" and "live repository admin
+state, explicitly out of phase scope to change."
+
 ## Package Legitimacy Audit
 
 **Not applicable.** This phase installs no new external packages (no `Cargo.toml` dependency
@@ -1158,6 +1383,9 @@ and this phase adds a fifth (ADR-0036).
 - `ls .planning/decisions/`, `ls .planning/ledgers/`, `ls .github/workflows/` — re-run this session.
 - `grep -rn "cargo audit\|--ignore" .github/workflows/*.yml` — re-run this session, all 6 files.
 - `python3 -c "import yaml; print(yaml.__version__)"` — re-run this session, `6.0`.
+- `node .claude/gsd-core/bin/lib/adr-parser.cjs --input .planning/decisions/0031-extracted-crate-dependency-rule.md` — re-run this session (Validation Architecture, ADR structural check design), full JSON output inspected.
+- `.planning/phases/11-facade-residue-deferred-register-disposition/11-RESEARCH.md:688-731` and `11-VALIDATION.md` (full) — read as the Validation Architecture shape precedent.
+- Standalone `python3` regex logic proving the D-08 positive/negative token pair (§C.4's design) — re-run this session, `POSITIVE/NEGATIVE PAIR: PASS`.
 
 ### Secondary (MEDIUM confidence)
 
