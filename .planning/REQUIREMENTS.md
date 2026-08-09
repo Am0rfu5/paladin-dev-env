@@ -1630,6 +1630,17 @@ arithmetic — are the Milestone 8 forward-work source.
       `services/` + `infrastructure/` only; `cli/` stdout is intentional and out of scope.
       **Done when** each of the 17 is either converted to `log::*` or annotated as deliberate
       stdout, with the disposition recorded per file.
+      **Corrected 2026-08-08 (plan 11-05):** No conversion is possible or required. Re-measured:
+      `grep -rn "println!\|eprintln!\|dbg!" src/application/services/ src/infrastructure/` returns
+      exactly **17** occurrences across exactly **6** files, and every one of the 17 is a `///` or
+      `//!` doc-comment line inside a fenced code block — a rustdoc example, not runtime library
+      stdout. The same grep filtered to non-doc-comment lines
+      (`grep -v '///' | grep -v '//!'`) returns **0**. All 17 therefore resolve to the annotate
+      branch and the conversion branch above is not available. See
+      `.planning/registers/facade-01-rustdoc-stdout-disposition.md`, which records all 17 as
+      deliberate rustdoc-example stdout with a per-occurrence disposition, and the amended
+      `.planning/ROADMAP.md` §Phase 11 criterion 1, which states the same two commands and the same
+      17/0 figures word for word.
       *Derives: REQ-m8-deferred-items-register (D5); `intel/code-verification.md` run-4 — count
       verified exact.*
 
@@ -1677,6 +1688,19 @@ arithmetic — are the Milestone 8 forward-work source.
       history at the Milestone 8 removal commit on branch `chore/facade-cleanup-m8-finish`** rather
       than rewriting. Verified: `src/application/cli/commands/` holds ten modules and `user.rs` is
       not among them.
+      **Corrected 2026-08-08 (plan 11-05):** **One commit did both removals** — `3d48768`,
+      2026-06-04, "chore(facade): remove half-built user CLI + tensorflow ML stub (M8)" — so the
+      CLI removal above and the ML removal in (b) below are one event, not two, and should carry
+      one pointer, not a branch for one and a commit for the other. The durable pointer is the
+      immutable SHA in its runnable form `git show 3d48768^:src/application/cli/commands/user.rs`,
+      because a branch ref is mutable and deletable at any time by anyone with push access, while a
+      commit SHA is immutable once created. The branch state, recorded as it was actually measured
+      rather than asserted: at planning time no *local* branch named
+      `chore/facade-cleanup-m8-finish` existed in this checkout, but the *remote-tracking* ref
+      `refs/remotes/origin/chore/facade-cleanup-m8-finish` did resolve and is an ancestor of
+      `3d48768` — which contradicts the stronger "not present as a local or remote ref" framing this
+      phase's own `11-CONTEXT.md` D-10 carried. See
+      `.planning/registers/facade-03-removed-features.md` §1 for the full re-measurement.
       **(b) The TensorFlow ML adapter** — 636 LOC `#[doc(hidden)]` placeholder implementing
       `MlPort` with stub model loading and prediction, plus the `ml = []` flag; both removed
       outright (commit `3d48768`), verified absent from `Cargo.toml` and `src/`. **The load-bearing
