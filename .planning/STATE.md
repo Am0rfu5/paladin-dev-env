@@ -2,44 +2,53 @@
 gsd_state_version: 1.0
 milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
-current_phase: 11
-current_phase_name: facade-residue-deferred-register-disposition
-status: executing
-stopped_at: Phase 11 context gathered
-last_updated: "2026-08-08T23:51:02.832Z"
-last_activity: 2026-08-08
-last_activity_desc: Phase 11 execution started
+current_phase: 12
+current_phase_name: Supply-Chain Gate Integrity
+status: planning
+stopped_at: Phase 11 complete and verified, ready to plan Phase 12
+last_updated: "2026-08-09T01:01:28.762Z"
+last_activity: 2026-08-09
+last_activity_desc: Phase 11 complete, transitioned to Phase 12
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 68
-  completed_plans: 63
+  completed_plans: 68
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-04)
+See: .planning/PROJECT.md (updated 2026-08-09)
 
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 11 — facade-residue-deferred-register-disposition
-block in the roadmap. Run `/gsd-new-milestone`.
+**Current focus:** Phase 12 — Supply-Chain Gate Integrity
+
+**Progress:** [████████████████████] 68/68 plans (100%)
+
+> ⚠ **Milestone-boundary discrepancy — needs a decision.** STATE tracks milestone v0.7.2 as
+> 7 phases (5-11), now 7/7 complete. The ROADMAP `## Milestones` table still scopes
+> **Milestone 2-3 close-out to phases 5-6** and marks the **Milestone 4-6 (7-8)** and
+> **Milestone 7-8 (9-11)** blocks "Not started", even though phases 7, 8, 10 and 11 are all
+> checked complete. Phase 12 opens the **Milestone 9-12 + Deferred-QA** block, so it is a
+> milestone boundary either way. Decide whether to close v0.7.2 with `/gsd-complete-milestone`
+> and refresh the Milestones table's status cells before planning Phase 12.
 
 ## Current Position
 
-Phase: 11 (facade-residue-deferred-register-disposition) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 11
-Last activity: 2026-08-08 — Phase 11 execution started
+Phase: 12 — Supply-Chain Gate Integrity
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-08-09 — Phase 11 complete, transitioned to Phase 12
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 86
+- Total plans completed: 91
 - Average duration: —
 - Total execution time: —
 
@@ -55,6 +64,7 @@ Last activity: 2026-08-08 — Phase 11 execution started
 | 07 | 13 | - | - |
 | 08 | 9 | - | - |
 | 10 | 11 | - | - |
+| 11 | 5 | - | - |
 
 *Updated after each plan completion*
 
@@ -275,6 +285,11 @@ Entering them here would fabricate authority the corpus does not contain.
 - [Phase ?]: 06-07: Verdict distribution 118-row total recomputed by counting rather than assumed unchanged after ledger amendments — count only REQ-*-keyed rows, cluster-table verdicts are a separate bookkeeping layer
 - [Phase ?]: 06-07: REQ-vision-security-encryption legend verdict stays present, unproven (documentation-only resolution, no new exerciser); recorded disposition is deliberately unimposed, consumer-facing utility (D-16/D-17)
 - [Phase ?]: 06-07: CI-job deferral (Epic 24 cluster 8.0) recorded bidirectionally per D-10 — ledger points at PIPE-01/PIPE-02, PIPE-01/PIPE-02 point back at the ledger
+- [Phase 11]: FACADE-01 — D5's 17 `println!` occurrences are **not** converted to `log::*`. All 17 across 6 files are `///`/`//!` doc-comment lines inside fenced code blocks (the same grep filtered to non-doc lines returns 0), so conversion would degrade the rustdoc examples the lines exist to illustrate. Closed by a recorded per-occurrence disposition; ROADMAP criterion 1 amended at source with the original text retained
+- [Phase 11]: FACADE-02 / ADR-0034 — D1–D4 get verbs, owners and triggers instead of effort ratings. The `user_service.rs` split is **withdrawn** into three non-overlapping owners: the split owned by nobody, full relocation by the run-3 v2 tech-debt item, tests by DEFER-02/Phase 15. ADR-0034 discloses that ADR-0031 was authored under Phase 10 `--auto`, is flagged `⚠ HUMAN REVIEW` and has never been human-ratified — any future phase executing a D3/D4 edge must confirm it with a human first
+- [Phase 11]: FACADE-03 / ADR-0035 — the `paladin-ml` leaf-crate placement condition is promoted out of DOC precedence into an ADR **without** creating the crate or reintroducing the adapter (`ls crates/` still 11). The `user.rs` recovery pointer is corrected from a mutable branch name to the immutable SHA `3d48768` in runnable `git show` form
+- [Phase 11]: FACADE-04 — the 20-row Milestone 9 candidate triage resolves to **14 done / 6 not a candidate / 0 still open**, superseding two mutually inconsistent RESEARCH.md figures. `paladin-arsenal` and `paladin-sanctum` are recorded as artefacts of a mis-written table, not future crates
+- [Phase 11]: ADR allocation — two ADRs (0034 for the D1–D4 set, 0035 for `paladin-ml`) rather than five or one-plus-ledger-rows. Accepted cost: a coarser supersession unit, since a future phase revisiting only D3's verdict must supersede an ADR that also carries D1, D2 and D4. Human-confirmed at UAT
 
 ### Pending Todos
 
@@ -687,12 +702,14 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Phase 11 context gathered
+**Stopped at:** Phase 11 complete and verified — ready to plan Phase 12.
+Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
+`threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
-Ready to start the next milestone with `/gsd-new-milestone`.
+See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-08T21:10:51.235Z
-Resume file: .planning/phases/11-facade-residue-deferred-register-disposition/11-CONTEXT.md
+Last session: 2026-08-09
+Resume file: None
 
 Prior session: 2026-07-31T19:27:35.303Z
 

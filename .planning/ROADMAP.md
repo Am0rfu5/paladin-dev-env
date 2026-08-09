@@ -150,7 +150,7 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 
 - [ ] **Phase 9: Release & Security Gate Integrity** - Reconcile the four divergent RustSec exception sets before the 2026-09-30 expiry, settle the licence posture, and close the three small release-gate defects
 - [x] **Phase 10: Milestone 7-8 Ground Truth & Recorded Account** - Record what production hardening and facade cleanup actually delivered, make the 2026-06-04 reconciliation authoritative, and answer the three architecture questions the documents left ambiguous (completed 2026-08-08)
-- [ ] **Phase 11: Facade Residue & Deferred Register Disposition** - Give each of the five deferred items and both deliberately removed features a decision, and triage the Milestone 9 candidate list
+- [x] **Phase 11: Facade Residue & Deferred Register Disposition** - Give each of the five deferred items and both deliberately removed features a decision, and triage the Milestone 9 candidate list (completed 2026-08-09)
 
 **Milestone 9-12 + Deferred-QA close-out**
 
@@ -729,7 +729,7 @@ requirement list, and success criteria above are unchanged by this note.
   4. The condition on returning ML support survives outside a single DOC: any future TensorFlow adapter goes into a dedicated `paladin-ml` leaf crate with the feature flag on that crate, never back into the facade, and `MlPort` stays in the workspace so the integration point does not move.
   5. Every row of the Milestone 9 candidate list is marked done, not-a-candidate, or still-open, and `paladin-arsenal` and `paladin-sanctum` are either confirmed as real future crates or recorded as artefacts of a table that contradicts its own governing PRD — so nobody plans relocations the reconciliation already executed against a milestone that is 100% complete.
 
-**Plans:** 5 plans in 3 waves
+**Plans:** 5/5 plans complete
 
 Plans:
 **Wave 1**
@@ -929,7 +929,7 @@ through it. Recorded here so neither side gets planned twice:
 | 8. Verified Defect Closure | M4-6 | 9/9 | Complete    | 2026-08-07 |
 | 9. Release & Security Gate Integrity | M7-8 | 0/TBD | Not started | - |
 | 10. Milestone 7-8 Ground Truth & Recorded Account | M7-8 | 11/11 | Complete    | 2026-08-08 |
-| 11. Facade Residue & Deferred Register Disposition | M7-8 | 0/TBD | Not started | - |
+| 11. Facade Residue & Deferred Register Disposition | M7-8 | 5/5 | Complete    | 2026-08-09 |
 | 12. Supply-Chain Gate Integrity | M9-12 | 0/TBD | Not started | - |
 | 13. Milestone 9-12 Ground Truth & Recorded Account | M9-12 | 0/TBD | Not started | - |
 | 14. API Contract Truthfulness | M9-12 | 0/TBD | Not started | - |

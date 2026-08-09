@@ -1276,6 +1276,19 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+*Last updated: 2026-08-09 after **Phase 11: Facade Residue & Deferred Register Disposition**
+completed and verified — 5 plans, all four requirements (FACADE-01 … FACADE-04) satisfied, UAT
+3/3 passed, security `threats_open: 0`. The phase wrote records, not code: D5's 17 `println!`
+occurrences are recorded as deliberate rustdoc-example stdout rather than converted (the register
+`.planning/registers/facade-01-rustdoc-stdout-disposition.md` corrects ROADMAP criterion 1 at
+source); ADR-0034 replaces D1–D4's effort ratings with verbs, owners and triggers, withdrawing the
+`user_service.rs` split to a three-owner split; ADR-0035 promotes the `paladin-ml` leaf-crate
+placement condition out of DOC precedence without creating the crate; and the 20-row Milestone 9
+candidate triage resolves to 14 done / 6 not a candidate / 0 still open, finding `paladin-arsenal`
+and `paladin-sanctum` to be artefacts of a mis-written table rather than future crates. The
+FACADE-* bullets remain in Active pending the v0.7.2 milestone close, per this project's
+convention of graduating requirements to Validated at ship time.*
+
 *Last updated: 2026-08-05 after **Phase 5: Milestone 2-3 Ground Truth** completed and verified —
 13 plans across 10 waves, all six VERIFY requirements validated. `.planning/ledgers/milestone-02-03.md`
 now carries all 118 run-2 requirements as cited verdicts: 64 satisfied (3 with caveat), 25 present

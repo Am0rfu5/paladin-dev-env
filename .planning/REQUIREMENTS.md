@@ -1332,20 +1332,26 @@ rather than re-verifying or re-planning them:
 1. **`REQ-rustsec-risk-acceptance`** — closed by SEC-01 / ADR-0024. `SECURITY-EXCEPTIONS.md` is the
    one register for all ten live suppressions; the 2026-09-30 acceptance is renewed to per-advisory
    `2026-12-31` review dates, owner `DF3NDR`.
+
 2. **`REQ-rustsec-hardening-actions`** — closed by SEC-01 / ADR-0024. The "approved `audit.toml`
    entries with owner and expiry" action item is satisfied by the register's ten fully-governed
    rows; post-mitigation `cargo audit`/`cargo deny check` re-audit evidence remains CI-only (HTTP 403
    against crates.io in this environment).
+
 3. **`REQ-license-policy-signoff`** — closed by SEC-02 / ADR-0025. The root package and all ten
    library crates declare `MIT OR Apache-2.0`, matching the signed 551-package checklist; the PRD's
    single-licence claim is annotated superseded.
+
 4. **`REQ-crate-metadata-completion`** — closed by SEC-02 and SEC-03 / ADR-0025 and ADR-0026. The
    licence field agrees with the checklist across all eleven manifests, and a crates.io
    name-collision guard now runs on every pull request.
+
 5. **`REQ-per-crate-changelog`** — closed by SEC-04. All ten library crates have a `CHANGELOG.md`,
    mechanically enforced by `scripts/check-changelogs.sh`.
+
 6. **`REQ-docker-workspace-build`** — closed by SEC-05 / ADR-0027. `Dockerfile.chef`'s planner-stage
    crate coverage is structural (`COPY crates ./crates`), not an enumerated list that can go stale.
+
 7. **`REQ-paladin-ports-publish-verification-closed`** — closed by SEC-03 / ADR-0026. The residue
    named in `deferred-paladin-ports-publish-verification.md` ("keep CI/package guardrails that
    detect crates.io package-name collisions early") is satisfied by `scripts/check-crate-names.sh`.
@@ -1580,6 +1586,7 @@ Epic 3 relocations already executed — do not re-derive either.**
    form on exactly the same terms `paladin-content`'s existing `llm` feature already satisfies —
    FACADE-02 does not need to re-litigate whether a leaf-to-leaf edge is permissible at all, only
    whether each specific proposed edge is non-default, facade-gated and `cfg`-scoped.
+
 2. **The Epic 3 relocations are already executed, inside Milestone 8, not deferred to Milestone 9.**
    ADR-0028 `## Decision (iii)` records 15 commits and net 10,252 LOC removed
    (`e5b2011~1..a1e4901`), independently re-measured twice (plans 10-02 and 10-09). FACADE-02's own
@@ -1600,12 +1607,14 @@ Epic 3 relocations already executed — do not re-derive either.**
    not in scope" names the exact crate that was then created, in the same milestone. `ls crates/`
    (re-run this session) returns `paladin-herald` present, `paladin-ml` absent
    (`test -d crates/paladin-ml` exits `1`).
+
 2. **The directory evidence for both halves:** `crates/paladin-herald/` exists (created by
    reconciliation commit `66f6c4e`), overriding the non-goal for that crate specifically, not for
    the non-goal as a class. `paladin-ml` remains absent — the TensorFlow adapter and its `ml`
    feature were deleted outright (commit `3d48768`), not gated into the facade, and the
    reintroduction condition (`REQ-deferred-tensorflow-ml-adapter-v3`) requires a dedicated
    `paladin-ml` leaf crate, never a return to the facade.
+
 3. FACADE-03(b) must not treat `paladin-herald`'s existence as licence to create `paladin-ml`
    without its own decision — the two halves of the split are independent.
 
@@ -1620,7 +1629,7 @@ measurement: D5's claim of 17 `println!`/`eprintln!`/`dbg!` occurrences across 6
 tree **exactly**, as does every other verifiable claim in either register. They — not checkbox
 arithmetic — are the Milestone 8 forward-work source.
 
-- [ ] **FACADE-01**: D5 is closed. `grep -rn "println!\|eprintln!\|dbg!" src/application/services/
+- [x] **FACADE-01**: D5 is closed. `grep -rn "println!\|eprintln!\|dbg!" src/application/services/
       src/infrastructure/` returns **exactly 17 occurrences across exactly 6 files**:
       `services/herald/herald_registry.rs`, `services/paladin/paladin_execution_service.rs`,
       `infrastructure/adapters/arsenal/{mcp_protocol,tool_result_formatter}.rs`,
@@ -1644,7 +1653,7 @@ arithmetic — are the Milestone 8 forward-work source.
       *Derives: REQ-m8-deferred-items-register (D5); `intel/code-verification.md` run-4 — count
       verified exact.*
 
-- [ ] **FACADE-02**: D1-D4 each carry a **disposition with an owner**, not an effort rating. The
+- [x] **FACADE-02**: D1-D4 each carry a **disposition with an owner**, not an effort rating. The
       register states ratings and recommendations; it names no owners and assigns no target
       milestone. Each must resolve to *do* / *defer with a stated trigger* / *withdraw*:
       **D1 — `src/core/` re-export shims (currently "KEEP, by decision").** Verified: `src/core/`
@@ -1676,7 +1685,7 @@ arithmetic — are the Milestone 8 forward-work source.
       *Derives: REQ-m8-deferred-items-register (D1-D4); gated on HARD-05; interacts with ARCH-04 and
       the run-3 v2 `user_service` deferral.*
 
-- [ ] **FACADE-03**: The two deliberately removed features have a recorded status, and their
+- [x] **FACADE-03**: The two deliberately removed features have a recorded status, and their
       reintroduction conditions survive in `.planning/` rather than only in a DOC.
       **(a) The `paladin user …` CLI surface** — 1,065 LOC, eight subcommands (`register`, `login`,
       `get`, `update`, `list`, `activate`, `deactivate`, `verify`), removed because it was declared
@@ -1717,7 +1726,7 @@ arithmetic — are the Milestone 8 forward-work source.
       (and its `-v1`/`-v2` predecessors, variant group 24); `intel/code-verification.md` run-4 —
       both removals verified.*
 
-- [ ] **FACADE-04**: The Milestone 9 candidate lists the reconciliation superseded are triaged.
+- [x] **FACADE-04**: The Milestone 9 candidate lists the reconciliation superseded are triaged.
       **Run-5 outcome, recorded so the urgency is not overstated:** run 5 read the Milestone 9
       documents directly rather than through this record and did **not** re-plan any relocation —
       `code-verification.md` verified the whole Milestone 9 orchestrator subsystem shipped, and
@@ -1790,14 +1799,17 @@ delivered rather than deferred.**
    (`crates/paladin-content/Cargo.toml:40`, no `optional = true`), and reachability from the
    workspace root is gated one level up, by whether the facade's own optional `paladin-content`
    dependency is enabled (`Cargo.toml:59`).
+
 2. **The suppression set is unchanged.** This is a comment correction only — the `ignore = [...]`
    array in `.cargo/audit.toml` was not touched, and `RUSTSEC-2026-0187` remains suppressed on the
    same grounds (the advisory is warranted regardless of the deleted `pdf` feature's disposition).
+
 3. **Phase 12 inherits this as an answer, not a question** — do not re-derive whether
    `pdf-extract` is reachable; ADR-0032 and this session's source-level re-verification already
    settled it. The `cargo audit` / `cargo deny check` confirmation that the reconciled suppression
    set actually passes remains **CI-only** — `crates.io` returns HTTP 403 in this environment,
    unchanged since Phase 9, and no local pass is claimed for either tool.
+
 4. **A dead-dependency finding, named with an owner rather than left only in an ADR body:**
    `scraper`, `rss` and `tiktoken-rs` are declared optional in `crates/paladin-content/Cargo.toml`
    and consumed by no code in the crate — confirmed independently by both plan 10-05
@@ -1939,11 +1951,13 @@ already converged so ORCH-05 applies rather than re-decides.**
    labelled placeholder row naming Phase 13 / ORCH-05 as owner of `v0.3.0` through `v0.6.0`.
    ORCH-05 appends rows for `v0.3.0`, `v0.4.0`, `v0.5.0` and `v0.6.0` in ascending order, without
    re-sorting or re-keying the existing rows.
+
 2. **REL-01 is already converged and must not be re-opened.** `REQUIREMENTS.md:360` — `REL-01` is
    `[x]` — and its traceability row reads `Phase 4 | Complete`, converged on `0.7.0` via ADR-0008.
    HARD-03's "Feeds REL-01" clause has already fired; it is backwards-looking confirmation of closed
    history, not a hand-off to open work. ORCH-05 applies the already-converged result rather than
    re-deciding it, per the ROADMAP's own coupling note.
+
 3. **Three ADRs, one unbroken line:** HARD-03 (ADR-0029) covers rc.1 → v0.2.0; ORCH-05 extends the
    same ADR's table through v0.6.0; REL-01 (ADR-0008, Phase 4, done) covers the landing at v0.7.0.
    Writing a second, competing version ADR for ORCH-05 is prohibited — whichever of HARD-03/ORCH-05
@@ -3987,10 +4001,10 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | HARD-05 | Phase 10 | Complete |
 | HARD-06 | Phase 10 | Complete |
 | HARD-07 | Phase 10 | Complete |
-| FACADE-01 | Phase 11 | Pending |
-| FACADE-02 | Phase 11 | Pending |
-| FACADE-03 | Phase 11 | Pending |
-| FACADE-04 | Phase 11 | Pending |
+| FACADE-01 | Phase 11 | Complete |
+| FACADE-02 | Phase 11 | Complete |
+| FACADE-03 | Phase 11 | Complete |
+| FACADE-04 | Phase 11 | Complete |
 | SUPPLY-01 | Phase 12 | Pending |
 | SUPPLY-02 | Phase 12 | Pending |
 | SUPPLY-03 | Phase 12 | Pending |
