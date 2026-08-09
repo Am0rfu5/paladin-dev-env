@@ -55,8 +55,20 @@ the plans that follow in this same phase):
 | 0033 | `cargo-doc-warning-bar` | One `cargo doc` bar ratified, the measured warning residue recorded with an owner, DEBT-03 discharged (Phase 10) |
 | 0034 | `d1-d4-facade-relocation-disposition` | D1–D4 verdicts — `src/core/` shims defer, the `user_service.rs` split withdrawn, D3/D4 defer-with-trigger under ADR-0031 (Phase 11) |
 | 0035 | `paladin-ml-leaf-crate-placement` | The `paladin-ml` leaf-crate placement condition for a future ML adapter, promoted out of DOC precedence (Phase 11) |
+| 0036 | `audit-suppression-single-source-topology` | The audit-suppression single-source topology invariant — which files may legally carry a `cargo audit`/`cargo deny` suppression — promoted out of PRD precedence (Phase 12) |
 
-**Next free ADR number: 0036**
+**Next free ADR number: 0037**
+
+*Dated note, 2026-08-09 (plan 12-04):* the line advances by **one**, from 0036 to 0037, because
+Phase 12 authored ADR-0036 (plan 12-03, the audit-suppression single-source topology invariant). The
+ADR carries a `conforms` verdict, so — like Phase 11's two — it instructs no code change: this phase
+changed zero executable Rust. `ls .planning/decisions/0036-*.md` (re-run before writing this note)
+returned `.planning/decisions/0036-audit-suppression-single-source-topology.md`, confirming the file
+exists with a contiguous number, none skipped or reused, and no existing index row above was
+renumbered, reworded or reordered. This is the first advancing note since Phase 7's to cover exactly
+**one** ADR rather than a multi-ADR batch. And unlike Phase 11's note above, which stated that
+neither of its ADRs closed an inventory entry — **this ADR does close a Part B entry**, candidate 7,
+noted at its own entry below.
 
 *Dated note, 2026-08-08 (plan 11-05):* the line advances by **two** in one phase, from 0034 to
 0036, because Phase 11 authored ADR-0034 (plan 11-02, the D1–D4 disposition set) and ADR-0035
@@ -202,7 +214,10 @@ what it decides in one line, and an explicit **Owner phase**.
    Phase 10.**
 7. **`Milestone_10/Epic_2/prd-dependency-security-license-compliance.md` FR-1 + §8** (run 5) — the
    audit-suppression single-source invariant (exceptions live only in `audit.toml` and
-   `deny.toml`), currently violated by the tree. **Owner phase: Phase 12.**
+   `deny.toml`), currently violated by the tree. **Owner phase: Phase 12. Closed 2026-08-09 by ADR-0036**
+   (`0036-audit-suppression-single-source-topology.md`) — promoted with a `conforms` verdict
+   because the tree already satisfies the invariant, and a regression guard
+   (`scripts/check-workflow-suppressions.sh`) now enforces it.
 8. **`Milestone_12/Epic_1/prd-agent-registry-execution-api.md` §7 + OQ-2** (run 5) — the
    `AgentProvisioner` placement, currently recorded as a default rather than a decision.
    **Owner phase: Phase 13.**
