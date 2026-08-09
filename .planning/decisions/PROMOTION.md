@@ -53,8 +53,20 @@ the plans that follow in this same phase):
 | 0031 | `extracted-crate-dependency-rule` | The extracted-crate dependency rule restated as a default-build invariant (Phase 10) |
 | 0032 | `pdf-extraction-capability` | PDF extraction is unconditional; the inert `pdf` feature deleted and the `RUSTSEC-2026-0187` reachability path corrected (Phase 10) |
 | 0033 | `cargo-doc-warning-bar` | One `cargo doc` bar ratified, the measured warning residue recorded with an owner, DEBT-03 discharged (Phase 10) |
+| 0034 | `d1-d4-facade-relocation-disposition` | D1–D4 verdicts — `src/core/` shims defer, the `user_service.rs` split withdrawn, D3/D4 defer-with-trigger under ADR-0031 (Phase 11) |
+| 0035 | `paladin-ml-leaf-crate-placement` | The `paladin-ml` leaf-crate placement condition for a future ML adapter, promoted out of DOC precedence (Phase 11) |
 
-**Next free ADR number: 0034**
+**Next free ADR number: 0036**
+
+*Dated note, 2026-08-08 (plan 11-05):* the line advances by **two** in one phase, from 0034 to
+0036, because Phase 11 authored ADR-0034 (plan 11-02, the D1–D4 disposition set) and ADR-0035
+(plan 11-03, the `paladin-ml` placement condition) across its own plans. Both carry `conforms`
+verdicts, so unlike Phase 10 neither instructs a code change (D-13 — this phase changed zero
+executable Rust). `ls .planning/decisions/0034-*.md .planning/decisions/0035-*.md` (re-run before
+writing this note) confirms both files exist with contiguous numbers, none skipped or reused, and
+no existing index row above was renumbered, reworded or reordered. **Neither ADR closes an entry
+in Part B's eleven-candidate inventory below** — `deferred-features.md` is not among the eleven
+listed candidates, so no Part B "Closed by" note is added by this phase.
 
 *Dated note, 2026-08-08 (plan 10-11):* the line advances by **six** in one phase, from 0028 to
 0034, because Phase 10 authored all six of ADR-0028 through ADR-0033 across its own plans — a
