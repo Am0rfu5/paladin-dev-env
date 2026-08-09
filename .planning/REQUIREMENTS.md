@@ -1830,7 +1830,7 @@ Confirmed by direct file reads on 2026-07-30. **This section corrects a run-4 fi
 callout above SEC-01: `deny.toml` **is** in sync with `.cargo/audit.toml`. The gap is owner and
 expiry coverage, and one unauthorised expansion.
 
-- [ ] **SUPPLY-01**: `ci.yml` runs exactly one `cargo audit`, with no inline advisory-ignore flags.
+- [x] **SUPPLY-01**: `ci.yml` runs exactly one `cargo audit`, with no inline advisory-ignore flags.
       **Two jobs currently carry the identical display name `Security Audit`.** Job id
       `security-audit` at `ci.yml:60-77` installs `cargo-audit --locked` and runs a bare
       `cargo audit` under the comment "Exceptions are the single source of truth in
@@ -1872,7 +1872,50 @@ expiry coverage, and one unauthorised expansion.
       the required status check still resolves on the first real CI run after this deletion (CI-only,
       not verifiable in this sandboxed environment).
 
-- [ ] **SUPPLY-02**: Every advisory suppression carries an owner and a review date, and the
+      **Verified by Phase 12, dated 2026-08-09 (plan 12-01):** the two structural measurements Phase
+      9's note claims were re-run fresh this session, over every workflow file, not only `ci.yml`, so
+      a future workflow cannot hide a second invocation:
+      - `grep -rhc 'run: cargo audit' .github/workflows/*.yml | awk '{s+=$1} END{print s}'` → `1`
+      - `grep -rhc 'name: Security Audit' .github/workflows/*.yml | awk '{s+=$1} END{print s}'` → `1`
+
+      `cargo audit` was re-run in this execution: exit `0`.
+      ```
+      $ cargo audit
+          Fetching advisory database from `https://github.com/RustSec/advisory-db.git`
+            Loaded 1190 security advisories (from /usr/local/cargo/advisory-db)
+          Updating crates.io index
+          Scanning Cargo.lock for vulnerabilities (677 crate dependencies)
+      [8 unmaintained/unsound/yanked warnings for dotenv, fxhash, number_prefix, paste,
+       rustls-pemfile, event-listener, scc, spin — all covered by SECURITY-EXCEPTIONS.md]
+      warning: 8 allowed warnings found
+      ```
+      This run's own numbers (`1190` advisories, `677` crate dependencies, `8` allowed warnings)
+      match yesterday's research figures coincidentally — they were not copied from
+      `12-CONTEXT.md`/`12-RESEARCH.md`; the transcript above was produced by re-running the command
+      in this execution.
+
+      **Pending — trigger: the next push to `release/v0.7.0`.** The CI-run-observation clause above
+      has not failed; it has never had the opportunity to fire. `gh run list --workflow=ci.yml
+      --limit 5` confirms the most recent run against `release/v0.7.0` is still `30861568499`,
+      dated `2026-08-03T23:14:24Z` — five days before Phase 9's 2026-08-08 deletion (commit
+      `cb75b2b`), so no CI run has executed against the reconciled `ci.yml` yet. `gh run view
+      30861568499 --json jobs -q '.jobs[] | "\(.name): \(.conclusion)"'` shows the only failing job
+      in that boundary run was **`API Surface Tracking`** — DEBT-01's, Phase 8's, unrelated to
+      supply-chain — while every `Security Audit` job entry (two, at that run, since the duplicate
+      job had not yet been deleted) reported `success`. This clause is not closed here and must not
+      be inferred or simulated closed; it closes only on a `gh run` citation newer than `30861568499`
+      (D-07).
+
+      **GitHub-rulesets finding.** `.github/rulesets/` is version-controlled
+      (`protect-main-branch.json`, `protect-release-tags.json`) but is not applied to the live
+      repository: `gh api repos/:owner/:repo/rulesets` returned `[]`, and `gh api
+      repos/:owner/:repo/branches/main/protection` returned `404 Branch not protected`. SUPPLY-01's
+      "required status check" clause therefore currently has no live enforcement point on `main` —
+      the committed ruleset JSON is correct and ready, but nothing evaluates it. **Owner: the
+      milestone close-out.** This phase applied nothing and enables nothing; both `gh api` calls
+      above are the only ones made, and both are reads.
+
+- [x] **SUPPLY-02**: Every advisory suppression carries an owner and a review date, and the
       vulnerability baseline matches what a document authorises. Three separable facts, all read
       from the tree:
 
@@ -1925,6 +1968,48 @@ expiry coverage, and one unauthorised expansion.
       note records the substance as done; Phase 12 inherits a closed item to verify. **Remaining for
       Phase 12:** `cargo audit`/`cargo deny check` actually passing against the reconciled
       configuration is CI-only, not run in this environment (crates.io returns HTTP 403).
+
+      **Verified by Phase 12, dated 2026-08-09 (plan 12-01):** `cargo deny check` and
+      `./scripts/check-advisory-register.sh` were both re-run in this execution, on `PATH`, with no
+      installability blocker.
+
+      `cargo deny check` — exit `0`, tail line:
+      ```
+      advisories ok, bans ok, licenses ok, sources ok
+      ```
+
+      `./scripts/check-advisory-register.sh` — run twice in succession to demonstrate the
+      idempotence property the script's own header asserts at `:44-45`, not merely quote it. Both
+      runs exited `0` and produced byte-identical output:
+      ```
+      $ ./scripts/check-advisory-register.sh
+      🔍 Checking the advisory exception register against deny.toml, .cargo/audit.toml and Cargo.lock ...
+      ✅ 10 register row(s) checked against 10 deny.toml and 5 .cargo/audit.toml ignore entries; all clauses satisfied.
+
+      $ ./scripts/check-advisory-register.sh
+      🔍 Checking the advisory exception register against deny.toml, .cargo/audit.toml and Cargo.lock ...
+      ✅ 10 register row(s) checked against 10 deny.toml and 5 .cargo/audit.toml ignore entries; all clauses satisfied.
+      ```
+      `diff` of the two captured transcripts is empty; both exit codes are `0`.
+
+      This run demonstrates four register properties, each citing the script line that asserts it:
+      - **Set-based, case-sensitive comparison** (`check-advisory-register.sh:11-15`) — class
+        partitions are compared as sets of raw strings; an identifier differing only in letter case
+        fails, and reordering rows or TOML entries does not change the verdict, because the
+        comparison is over Python `set` equality, not list order or string casefolding.
+      - **The one-sided-empty case is a distinct named failure** (`:31-33`) — zero register rows
+        against a non-empty `deny.toml`/`.cargo/audit.toml` ignore array prints `ONE_SIDED_EMPTY` and
+        fails; zero rows with two empty arrays is the only legitimate pass in that branch. This run's
+        live state (10 rows, 10 `deny.toml` entries, 5 `.cargo/audit.toml` entries) does not hit this
+        branch, but the branch is inspected in source at the cited lines and confirmed present.
+      - **Read-only, no temporary file** (`:43`) — the script's own header states it, and `git status
+        --porcelain` immediately after both runs is unchanged, consistent with no write occurring.
+      - **Identical output and exit code across two consecutive runs** (`:44-45`) — demonstrated
+        above by the two captured transcripts, not merely asserted.
+
+      Live counts: **10 register rows** against **10 `deny.toml`** and **5 `.cargo/audit.toml`**
+      ignore entries — matching the corrected baseline this closure note already records above (ten
+      surviving suppressions, not the original thirteen/fifteen).
 
 - [ ] **SUPPLY-03**: The two supply-chain ADR candidates are promoted or declined, deliberately.
       `Milestone_7/Epic_4/rustsec-remediation-plan.md` carries the corpus's **only expiry date**;
@@ -4005,8 +4090,8 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | FACADE-02 | Phase 11 | Complete |
 | FACADE-03 | Phase 11 | Complete |
 | FACADE-04 | Phase 11 | Complete |
-| SUPPLY-01 | Phase 12 | Pending |
-| SUPPLY-02 | Phase 12 | Pending |
+| SUPPLY-01 | Phase 12 | Complete |
+| SUPPLY-02 | Phase 12 | Complete |
 | SUPPLY-03 | Phase 12 | Pending |
 | ORCH-01 | Phase 13 | Pending |
 | ORCH-02 | Phase 13 | Pending |
