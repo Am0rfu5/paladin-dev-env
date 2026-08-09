@@ -58,21 +58,34 @@ contract each task must satisfy. Rows are grouped by deliverable class.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | 1 | SUPPLY-01 | — | The single surviving audit job reaches one verdict | gate-command | `cargo audit` → exit 0 | ✅ | ⬜ pending |
-| TBD | TBD | 1 | SUPPLY-01 | — | Exactly one `cargo audit` invocation across all workflows | grep-count | `grep -rc 'run: cargo audit' .github/workflows/*.yml \| awk -F: '{s+=$2} END {print s}'` → `1` | ✅ | ⬜ pending |
-| TBD | TBD | 1 | SUPPLY-02 | — | Reconciled suppression set passes the licence/ban/advisory gate | gate-command | `cargo deny check` → exit 0, tail `advisories ok, bans ok, licenses ok, sources ok` | ✅ | ⬜ pending |
-| TBD | TBD | 1 | SUPPLY-02 | — | Register agrees with both TOMLs and `Cargo.lock` | gate-command | `./scripts/check-advisory-register.sh` → exit 0, `✅ 10 register row(s) …` | ✅ | ⬜ pending |
-| TBD | TBD | 1 | SUPPLY-01, SUPPLY-02 | — | The "CI-only" sites carry a dated blocker-lifted banner, original retained | grep-presence ×2 | `grep -n "Corrected by Phase 12\|Amended by Phase 12" .planning/REQUIREMENTS.md .planning/ROADMAP.md` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | SUPPLY-03 | — | ADR-0036 exists, `Accepted`, `conforms`, cites ADR-0024 without superseding | file-exists + structural-parse | `ls .planning/decisions/0036-*.md` + ADR structural check (below) | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | SUPPLY-03 | — | `PROMOTION.md` next-free advances to 0037 with a dated note | grep | `grep -n "Next free ADR number" .planning/decisions/PROMOTION.md` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | SUPPLY-03 | — | `PROMOTION.md` Part B candidate 7 carries a "Closed by ADR-0036" note | grep | `grep -n "Closed .*ADR-0036" .planning/decisions/PROMOTION.md` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | SUPPLY-03 | — | `PROJECT.md` gains a Key Decisions row for ADR-0036 | grep | `grep -n "0036-" .planning/PROJECT.md` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | SUPPLY-03 | — | Each stale passage carries a dated correction AND retains its original text | grep-pair ×4 | see "Correction-banner protocol" below | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | SUPPLY-03 | T-12-01 | Guard fires on a planted inline advisory-ignore | positive test | guard invoked against a scratch copy with one planted violation → non-zero exit | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | SUPPLY-03 | T-12-01 | Guard stays silent on `mc mb --ignore-existing` and `cargo test -- --ignored` | negative test | guard invoked against the real unmodified `.github/workflows/` → exit 0 | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | SUPPLY-03 | — | Guard is wired into both `make check-gates` and `ci.yml` | grep ×2 | `grep -n "<guard>" Makefile .github/workflows/ci.yml` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 3 | SUPPLY-03 | — | `#### Hand-off to Phase 13 / ORCH-01` exists in the established shape | grep | `grep -n "Hand-off to Phase 13 / ORCH-01" .planning/REQUIREMENTS.md` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 3 | SUPPLY-01, SUPPLY-02, SUPPLY-03 | — | Traceability rows flip `Pending` → closed | grep | `grep -n "^| SUPPLY-0[123]" .planning/REQUIREMENTS.md` — three rows, none reading `Pending` | ❌ W0 | ⬜ pending |
+| 12-01-T1 | 12-01 | 1 | SUPPLY-01 | T-12-01 | The single surviving audit job reaches one verdict | gate-command | `cargo audit` → exit 0 | ✅ | ⬜ pending |
+| 12-01-T1 | 12-01 | 1 | SUPPLY-01 | T-12-01 | Exactly one `cargo audit` invocation across all workflows | grep-count | `grep -rhc 'run: cargo audit' .github/workflows/*.yml \| awk '{s+=$1} END {print s}'` → `1` | ✅ | ⬜ pending |
+| 12-01-T1 | 12-01 | 1 | SUPPLY-01 | T-12-01 | No two jobs share the `Security Audit` display name — the adjacency defect | grep-count | `grep -rhc 'name: Security Audit' .github/workflows/*.yml \| awk '{s+=$1} END {print s}'` → `1` | ✅ | ⬜ pending |
+| 12-01-T1 | 12-01 | 1 | SUPPLY-02 | T-12-03 | Reconciled suppression set passes the licence/ban/advisory gate | gate-command | `cargo deny check` → exit 0, tail `advisories ok, bans ok, licenses ok, sources ok` | ✅ | ⬜ pending |
+| 12-01-T1 | 12-01 | 1 | SUPPLY-02 | T-12-03 | Register agrees with both TOMLs and `Cargo.lock`, case-sensitively and over sets | gate-command | `./scripts/check-advisory-register.sh` → exit 0, `✅ 10 register row(s) …` | ✅ | ⬜ pending |
+| 12-01-T1 | 12-01 | 1 | SUPPLY-02 | T-12-03 | The register check is idempotent — two consecutive runs, identical output and exit code | gate-command ×2 | run `./scripts/check-advisory-register.sh` twice; `diff` the two captures → identical | ✅ | ⬜ pending |
+| 12-01-T1 | 12-01 | 1 | SUPPLY-01 | T-12-02 | The CI-run observation is recorded `pending` with its trigger and run-ID boundary, never closed | grep-presence | `grep -c '30861568499' .planning/REQUIREMENTS.md` → non-zero, inside SUPPLY-01's block | ❌ W0 | ⬜ pending |
+| 12-01-T1 | 12-01 | 1 | SUPPLY-01, SUPPLY-02 | — | Both checkboxes and both traceability rows close together | grep ×2 | `grep -c '^\| SUPPLY-0[12] \| Phase 12 \| Complete \|'` → `2` | ❌ W0 | ⬜ pending |
+| 12-01-T2 | 12-01 | 1 | SUPPLY-01, SUPPLY-02 | T-12-04 | The two "CI-only" sites carry a dated blocker-lifted banner, original retained | grep-pair ×2 | see "Correction-banner protocol" below | ❌ W0 | ⬜ pending |
+| 12-01-T2 | 12-01 | 1 | SUPPLY-01 | T-12-04 | Every live stale `ci.yml:389-406` citation in the canonical set names `ci.yml:465-482` and commit `cb75b2b` | grep-pair ×8 | `grep -rc '465-482' .planning/REQUIREMENTS.md .planning/PROJECT.md .planning/ROADMAP.md .planning/STATE.md` summed → ≥ `8` | ❌ W0 | ⬜ pending |
+| 12-02-T1 | 12-02 | 2 | SUPPLY-03 | T-12-09 | Guard fires on a planted inline advisory-ignore (space, `=`, `cargo deny`, backslash-continuation forms) | positive test ×4 | guard invoked against a scratch copy with one planted violation → non-zero exit | ❌ W0 | ⬜ pending |
+| 12-02-T1 | 12-02 | 2 | SUPPLY-03 | T-12-12 | Guard stays silent on `mc mb --ignore-existing` and `cargo test -- --ignored` | negative test | guard invoked against the real unmodified `.github/workflows/` → exit 0 | ❌ W0 | ⬜ pending |
+| 12-02-T1 | 12-02 | 2 | SUPPLY-03 | T-12-10 | Zero-`run:` file is clean; zero-file scan directory is a named non-zero failure, never a silent pass | empty-input test ×2 | guard invoked against an empty `mktemp -d` → non-zero with a named failure | ❌ W0 | ⬜ pending |
+| 12-02-T1 | 12-02 | 2 | SUPPLY-03 | T-12-15 | Report order is deterministic — two runs over an unchanged tree are byte-identical | idempotency test | run guard twice, `diff -q` the two captures → identical | ❌ W0 | ⬜ pending |
+| 12-02-T1 | 12-02 | 2 | SUPPLY-03 | T-12-13 | No planted fixture reaches the tree | cleanliness check | `git status --porcelain -- .github/workflows/` → empty at task end | ❌ W0 | ⬜ pending |
+| 12-02-T2 | 12-02 | 2 | SUPPLY-03 | T-12-14 | Guard is wired into both `make check-gates` and the `cargo-deny:` CI job | make-run + structural-parse | `make check-gates` → exit 0; PyYAML parse of `ci.yml` finds the step in `jobs.cargo-deny.steps` | ❌ W0 | ⬜ pending |
+| 12-03-T1 | 12-03 | 3 | SUPPLY-03 | T-12-22 | ADR-0036 exists, `Accepted`, `conforms`, cites ADR-0024 without superseding | file-exists + structural-parse | `ls .planning/decisions/0036-*.md` + ADR structural check (below) | ❌ W0 | ⬜ pending |
+| 12-03-T1 | 12-03 | 3 | SUPPLY-03 | T-12-18 | ADR-0024 is untouched — no `## Supersedes` line, no status change | cleanliness check | `git status --porcelain -- .planning/decisions/0024-*.md` → empty | ❌ W0 | ⬜ pending |
+| 12-03-T1 | 12-03 | 3 | SUPPLY-03 | T-12-17 | Every `ci.yml` citation is re-derived after plan 12-02's step insertion | source assertion | each cited line/range resolves to the content the ADR claims | ❌ W0 | ⬜ pending |
+| 12-03-T2 | 12-03 | 3 | SUPPLY-03 | T-12-19 | Each of the four stale promotion-viability passages carries a dated correction AND retains its original text | grep-pair ×4 | see "Correction-banner protocol" below | ❌ W0 | ⬜ pending |
+| 12-04-T1 | 12-04 | 4 | SUPPLY-01, SUPPLY-02, SUPPLY-03 | T-12-30 | `#### Hand-off to Phase 13 / ORCH-01` exists in the established four-part shape | grep | `grep -n "Hand-off to Phase 13 / ORCH-01" .planning/REQUIREMENTS.md` | ❌ W0 | ⬜ pending |
+| 12-04-T1 | 12-04 | 4 | — | T-12-29 | `.planning/ledgers/milestone-09-12.md` is NOT created | absence check | `ls .planning/ledgers/milestone-09-12.md` → fails; `ls .planning/ledgers/` → 4 files | ❌ W0 | ⬜ pending |
+| 12-04-T1 | 12-04 | 4 | SUPPLY-01, SUPPLY-02, SUPPLY-03 | T-12-28 | Traceability rows flip `Pending` → closed | grep | `grep -c '\| Phase 12 \| Pending \|' .planning/REQUIREMENTS.md` → `0` | ❌ W0 | ⬜ pending |
+| 12-04-T2 | 12-04 | 4 | SUPPLY-03 | T-12-25 | The Numbering index holds 36 ascending, unique, contiguous rows with none renumbered | sort-check ×2 | `awk -F'\|' '/^\| 00/{gsub(/ /,"",$2); print $2}' PROMOTION.md \| sort -c` and `\| sort -u \| wc -l` → `36` | ❌ W0 | ⬜ pending |
+| 12-04-T2 | 12-04 | 4 | SUPPLY-03 | T-12-26 | `PROMOTION.md` next-free advances to 0037 with a dated note, written last | grep | `grep -c "Next free ADR number" PROMOTION.md` → `1`, reading `0037` | ❌ W0 | ⬜ pending |
+| 12-04-T2 | 12-04 | 4 | SUPPLY-03 | T-12-27 | Exactly one plan writes `PROMOTION.md`, in the final wave — no concurrent allocation of 0036 | structural | scan each plan's `files_modified` block only (a plain `grep -l` also matches plans that merely *cite* the file): exactly one plan lists `decisions/PROMOTION.md`, and it is `12-04-PLAN.md` at `wave: 4` | ✅ | ⬜ pending |
+| 12-04-T2 | 12-04 | 4 | SUPPLY-03 | — | `PROMOTION.md` Part B candidate 7 carries a "Closed 2026-08-09 by ADR-0036" note | grep | `grep -c "Closed 2026-08-09 by ADR-0036" .planning/decisions/PROMOTION.md` → `1` | ❌ W0 | ⬜ pending |
+| 12-04-T2 | 12-04 | 4 | SUPPLY-03 | — | `PROJECT.md` gains exactly one Key Decisions row for ADR-0036 (31 → 32) | count | `sed -n '/^## Key Decisions/,/^## /p' .planning/PROJECT.md \| grep -c '^\| \['` → `32` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 *File Exists: ✅ = target exists and passes today; ❌ W0 = target is an artifact this phase authors — the command becomes runnable the moment that artifact is written. **This is not-yet-written content, not missing infrastructure.***
@@ -110,13 +123,32 @@ verifying it:
 
 ### Correction-banner protocol (D-00c: annotation, not rewriting)
 
-Each of the four stale sites needs **both** greps to hit. Banner present *and* original retained:
+Every corrected site needs **both** greps to hit. Banner present *and* original retained.
+
+**Plan 12-01's sites** — the two lifted-blocker caveats, plus the stale `ci.yml:389-406` sweep:
 
 ```bash
-# 1. Banner present, dated, citing the correcting decision
-grep -n "Corrected by Phase 12\|Amended by Phase 12" .planning/REQUIREMENTS.md .planning/PROJECT.md
+# 1. Banner present, dated, naming the authoring plan
+grep -n "Corrected by Phase 12 (plan 12-01), dated 2026-08-09" \
+  .planning/REQUIREMENTS.md .planning/PROJECT.md .planning/ROADMAP.md .planning/STATE.md
 
-# 2. Original stale text still present verbatim
+# 2. Originals still present verbatim
+grep -n "crates.io returns HTTP 403" .planning/REQUIREMENTS.md      # SUPPLY-02's caveat
+grep -n "returns HTTP 403" .planning/ROADMAP.md                     # the ROADMAP closure note
+grep -n 'Delete `ci.yml:389-406`' .planning/PROJECT.md              # the open-checkbox citation
+
+# 3. NOT bannered — SUPPLY-01's CI-run clause is genuinely still pending (D-07)
+grep -n "confirming the required status check still resolves" .planning/REQUIREMENTS.md
+```
+
+**Plan 12-03's sites** — the four promotion-viability passages:
+
+```bash
+# 1. Banner present, dated, naming the authoring plan
+grep -n "Corrected by Phase 12 (plan 12-03), dated 2026-08-09" \
+  .planning/REQUIREMENTS.md .planning/PROJECT.md
+
+# 2. Originals still present verbatim
 grep -n "This requirement does not act" .planning/REQUIREMENTS.md
 grep -n "Eleven ADR candidates exist and none is promoted" .planning/REQUIREMENTS.md
 grep -n "Promoting the two ADR candidates into locked decisions" .planning/PROJECT.md
@@ -124,7 +156,17 @@ grep -n "Eleven ADR candidates have accumulated, and none is promoted" .planning
 ```
 
 A site where grep 1 hits but grep 2 does not — original text deleted — is a **process violation**,
-not a content error, and fails verification even if the corrected fact is accurate.
+not a content error, and fails verification even if the corrected fact is accurate. A `--numstat`
+deletion count above zero on any of the four documents is the same violation seen from the diff side.
+
+**Scope note on the `389-406` sweep.** `12-CONTEXT.md` says "three documents"; `12-RESEARCH.md` §B.5
+found one and flagged the discrepancy as Open Question 1. The planner re-ran the broad grep:
+`grep -rn '389-406' .planning/ .project/` returns **46 hits across 21 files**. Plan 12-01 re-runs it and
+records the live count. In scope: `REQUIREMENTS.md`, `PROJECT.md`, `ROADMAP.md`, `STATE.md`. Out of
+scope with reasons: `.planning/milestones/v0.7.1-*` (frozen archive), `.planning/phases/09-*` (prior-phase
+record, per Assumption A2), `.planning/intel/*` and `INGEST-CONFLICTS.md` (closed ingest outputs),
+`.planning/ledgers/milestone-01.md` (accurate as written), and `0024-*.md` (already annotated, and not
+edited under D-00i).
 
 ### D-08 guard — positive/negative pair
 

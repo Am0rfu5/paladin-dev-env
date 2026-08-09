@@ -777,7 +777,31 @@ returns HTTP 403). **What remains for Phase 12 to actually plan is SUPPLY-03 alo
 ADR-promotion decision for the two supply-chain candidates. The goal line, requirement list, and
 every other phase section in this document are unchanged by this note.
 
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 12-01-PLAN.md — tracer: re-run all three supply-chain gates, close SUPPLY-01 and SUPPLY-02 on verbatim transcripts, record the CI-run observation as pending and the unapplied-rulesets finding, sweep the stale `ci.yml:389-406` citations, and gate the ADR allocation at a blocking decision checkpoint (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 12-02-PLAN.md — SUPPLY-03 / D-08: the offline `check-workflow-suppressions.sh` regression guard, proven with a positive/negative pair and wired into `make check-gates` and the `cargo-deny:` CI job (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 12-03-PLAN.md — SUPPLY-03: ADR-0036 promoting the audit-suppression single-source topology invariant with a `conforms` verdict, plus dated corrections on the four passages claiming the promotion is impossible (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 12-04-PLAN.md — close-out: the Phase 13 / ORCH-01 hand-off block, three closed requirement rows, the `PROJECT.md` Key Decisions row, and `PROMOTION.md` advanced to 0037 last (wave 4)
+
+**Cross-cutting constraints:**
+
+- No Rust source file is modified by any plan in this phase
+- ADR-0024's suppression set, schema, owner and review dates are not touched (D-00i)
+- `.planning/ledgers/milestone-09-12.md` is not created — it is ORCH-01 / Phase 13's deliverable (D-09)
+- Nothing is applied to live GitHub repository administration state (D-10)
 
 ### Phase 13: Milestone 9-12 Ground Truth & Recorded Account
 
