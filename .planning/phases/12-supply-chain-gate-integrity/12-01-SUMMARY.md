@@ -14,7 +14,7 @@ provides:
   - "GitHub-rulesets finding recorded with an owner, nothing applied to the live repository"
   - "Two dated blocker-lifted banners on the crates.io HTTP-403 installability caveats"
   - "Eight dated corrections sweeping the stale ci.yml:389-406 citation across REQUIREMENTS.md, PROJECT.md, ROADMAP.md and STATE.md"
-  - "A blocking decision checkpoint gating ADR-0036 and the D-08 guard, surfaced to a human unselected"
+  - "A blocking decision checkpoint gating ADR-0036 and the D-08 guard — RESOLVED 2026-08-09: a human selected option-a, authorizing plans 12-02, 12-03 and 12-04 to execute as written"
 affects: [12-02-guard-script, 12-03-adr-0036, 12-04-hand-off]
 
 # Tech tracking
@@ -36,6 +36,7 @@ key-decisions:
   - "SUPPLY-01's CI-run-observation clause is recorded pending, not closed — no CI run postdates the 2026-08-08 deletion (boundary run 30861568499, 2026-08-03T23:14:24Z); closing it without that citation would be a false positive per D-07"
   - "09-CONTEXT.md's HTTP-403 caveat is deliberately left uncorrected — no precedent in this corpus for one phase amending a different phase's NN-CONTEXT.md; cited as provenance, not edited"
   - "Checkpoint reached and returned unselected, per this plan's explicit contract — the three ⚠ HUMAN REVIEW decisions (D-01, D-08, D-00l) go in front of a human before ADR-0036 or the D-08 guard are written"
+  - "RESOLVED 2026-08-09: a human selected option-a at the checkpoint. This authorizes plans 12-02, 12-03 and 12-04 to execute as written, and ratifies D-01, D-08 and D-00l — the three ⚠ HUMAN REVIEW decisions that had never been human-confirmed. See Checkpoint Status below for the full record."
 
 requirements-completed: [SUPPLY-01, SUPPLY-02]
 
@@ -78,10 +79,10 @@ coverage:
         status: pass
     human_judgment: false
   - id: D6
-    description: "Blocking decision checkpoint reached and returned to the orchestrator without selecting an option"
+    description: "Blocking decision checkpoint reached and returned to the orchestrator without selecting an option; RESOLVED 2026-08-09 when a human selected option-a"
     verification: []
     human_judgment: true
-    rationale: "This is the plan's designed stopping point — a human must select option-a/b/c before any further work in this phase proceeds"
+    rationale: "This is the plan's designed stopping point — a human had to select option-a/b/c before any further work in this phase could proceed. That selection has been made (option-a, 2026-08-09) and is recorded in full under Checkpoint Status."
 
 duration: ~50min
 completed: 2026-08-09
@@ -94,8 +95,8 @@ status: complete
 deny check, check-advisory-register.sh all exit 0), SUPPLY-01's CI-run-observation clause recorded
 pending with run-ID boundary 30861568499, the GitHub-rulesets non-enforcement finding recorded with
 an owner, eight stale `ci.yml:389-406` citations corrected in place, and a blocking decision
-checkpoint reached unselected — waiting on a human to choose option-a/b/c before ADR-0036 or the
-D-08 guard are written.**
+checkpoint reached and RESOLVED on 2026-08-09 — a human selected option-a, authorizing plans 12-02,
+12-03 and 12-04 (ADR-0036 and the D-08 guard) to proceed as written.**
 
 ## Performance
 
@@ -145,9 +146,11 @@ Each task was committed atomically:
    SUPPLY-01 and SUPPLY-02 records** - `1041d3d` (docs)
 2. **Task 2: Banner the two lifted-blocker sites and sweep the live stale `ci.yml:389-406`
    citations** - `7567d15` (docs)
-3. **Task 3: checkpoint:decision (gate="blocking")** - reached, not executed; no commit. This
-   SUMMARY and the STATE.md/ROADMAP.md/REQUIREMENTS.md bookkeeping commit that follows are the last
-   commits until a human selects an option.
+3. **Task 3: checkpoint:decision (gate="blocking")** - reached and returned unselected in this
+   plan's original execution (no commit at that point). **RESOLVED 2026-08-09**: a human selected
+   option-a. This SUMMARY's update recording that selection, plus the accompanying STATE.md and
+   ROADMAP.md bookkeeping, is committed separately as `docs(12-01): record option-a selected at
+   blocking checkpoint` — see Checkpoint Status below.
 
 ## Files Created/Modified
 
@@ -180,6 +183,16 @@ Each task was committed atomically:
   `type="checkpoint:decision" gate="blocking"` and no option was auto-selected, even though this
   execution ran under auto-chain mode — `gate="blocking-human"`-equivalent decisions in this
   contract are never auto-approved.
+- **RESOLVED 2026-08-09: a human selected option-a.** "Proceed as planned — ADR-0036 and the D-08
+  guard." This authorizes plans 12-02 (the D-08 inline-suppression regression guard plus its
+  `Makefile` and `ci.yml` wiring), 12-03 (ADR-0036 promoting `PROMOTION.md` Part B candidate 7), and
+  12-04 (the Phase 13 hand-off, requirement closure, and the `PROMOTION.md` update) to execute as
+  written. Selecting option-a ratifies the three decisions this checkpoint existed to confirm:
+  D-01, D-08 and D-00l. The human was shown all three options (option-a, option-b, option-c) with
+  their full pros and cons before selecting, including that option-a spends ADR number 0036
+  permanently and adds a CI check no requirement explicitly asked for, and that both consequences
+  follow from decisions no human had previously ratified. See Checkpoint Status below for the full
+  record of what was shown and what was selected.
 
 ## Deviations from Plan
 
@@ -278,16 +291,18 @@ None - no external service configuration required.
 
 ## Checkpoint Status
 
-**Task 3 (`type="checkpoint:decision" gate="blocking"`) has been reached and this execution has
-stopped, exactly as `12-01-PLAN.md`'s checkpoint contract requires.** No option was auto-selected —
-this is one of the cases where auto-chain mode does not apply, per this plan's explicit contract
-overriding the standard auto-mode checkpoint behavior.
+**RESOLVED.** Task 3 (`type="checkpoint:decision" gate="blocking"`) was reached and this execution
+stopped, exactly as `12-01-PLAN.md`'s checkpoint contract required — no option was auto-selected,
+because this is one of the cases where auto-chain mode does not apply, per this plan's explicit
+contract overriding the standard auto-mode checkpoint behavior. **A human has since selected an
+option, on 2026-08-09, resolving the checkpoint.**
 
 **Decision:** Proceed with SUPPLY-03 acting — spend ADR number 0036 promoting `PROMOTION.md` Part B
 candidate 7, and add the D-08 regression guard to CI — or stop at the verification this plan just
 delivered.
 
-**Options:**
+**Options shown to the human (retained verbatim as the audit record — this is annotation, not
+rewriting, per `12-CONTEXT.md` D-00c):**
 
 - **option-a — Proceed as planned — ADR-0036 and the D-08 guard (recommended).** Pros: delivers
   SUPPLY-03's own stated intent, closes `PROMOTION.md` Part B candidate 7 (Owner phase: Phase 12),
@@ -303,20 +318,36 @@ delivered.
   irreversible happens. Cons: leaves candidate 7 open with its owning phase spent, leaves ROADMAP
   criterion 5 half-satisfied.
 
-**What is not at risk either way:** the three gate transcripts, SUPPLY-01 and SUPPLY-02 closed, the
+**What was not at risk either way:** the three gate transcripts, SUPPLY-01 and SUPPLY-02 closed, the
 CI-run observation recorded pending, the rulesets finding recorded with an owner, and the
-stale-citation sweep — none of that depends on this decision.
+stale-citation sweep — none of that depended on this decision.
 
-**Awaiting:** a human to select `option-a`, `option-b`, or `option-c`. If `option-b` or `option-c`,
-plans `12-02`, `12-03` and `12-04` (written against `option-a`) must be re-scoped before execution
-continues.
+**RESOLUTION — recorded 2026-08-09:**
+
+**`option-a` was selected by a human on 2026-08-09.** "Proceed as planned — ADR-0036 and the D-08
+guard."
+
+- **This authorizes:** plans `12-02` (the D-08 inline-suppression regression guard plus its
+  `Makefile` and `ci.yml` wiring), `12-03` (ADR-0036 promoting `PROMOTION.md` Part B candidate 7),
+  and `12-04` (the Phase 13 hand-off, requirement closure, and the `PROMOTION.md` update) to execute
+  **as written** — no re-scoping required.
+- **This ratifies:** D-01, D-08 and D-00l — the three ⚠ HUMAN REVIEW decisions named in this
+  checkpoint's context, none of which had previously been confirmed by a human.
+- **What the human was shown before selecting:** all three options above, in full, with their pros
+  and cons, including the explicit callout that option-a spends ADR number 0036 permanently and adds
+  a CI check no requirement explicitly asked for, and that both consequences follow from decisions
+  (D-01, D-08, D-00l) that no human had previously ratified.
+
+**Awaiting:** nothing further from this checkpoint. Plans `12-02`, `12-03` and `12-04` are cleared to
+execute against `option-a` as written.
 
 ## Next Phase Readiness
 
 - SUPPLY-01 and SUPPLY-02 are closed and verified; nothing further required from waves 2-4 for
   those two requirements.
-- Waves 2-4 (the D-08 guard script, ADR-0036, and the Phase 13 hand-off) are blocked on the
-  checkpoint decision above and must not proceed until a human selects an option.
+- Waves 2-4 (the D-08 guard script, ADR-0036, and the Phase 13 hand-off) were blocked on the
+  checkpoint decision above. **Unblocked as of 2026-08-09** — a human selected option-a, so plans
+  `12-02`, `12-03` and `12-04` are cleared to execute as written. See Checkpoint Status above.
 - No blockers on the verification work itself.
 
 ---

@@ -792,7 +792,7 @@ D-07.)
 Plans:
 **Wave 1**
 
-- [ ] 12-01-PLAN.md — tracer: re-run all three supply-chain gates, close SUPPLY-01 and SUPPLY-02 on verbatim transcripts, record the CI-run observation as pending and the unapplied-rulesets finding, sweep the stale `ci.yml:389-406` citations, and gate the ADR allocation at a blocking decision checkpoint (wave 1)
+- [x] 12-01-PLAN.md — tracer: re-run all three supply-chain gates, close SUPPLY-01 and SUPPLY-02 on verbatim transcripts, record the CI-run observation as pending and the unapplied-rulesets finding, sweep the stale `ci.yml:389-406` citations, and gate the ADR allocation at a blocking decision checkpoint (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
