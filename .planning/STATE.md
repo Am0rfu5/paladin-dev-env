@@ -5,15 +5,15 @@ milestone_name: Milestone 2-3 close-out
 current_phase: 12
 current_phase_name: Supply-Chain Gate Integrity
 status: executing
-stopped_at: "Phase 12 checkpoint (12-01 Task 3) resolved: human selected option-a. Plans 12-02, 12-03, 12-04 cleared to execute — not yet run."
-last_updated: "2026-08-09T13:19:23.317Z"
+stopped_at: Completed 12-02-PLAN.md
+last_updated: "2026-08-09T13:29:12.984Z"
 last_activity: 2026-08-09
 last_activity_desc: Phase 12 execution started
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 72
-  completed_plans: 69
+  completed_plans: 70
 ---
 
 # Project State
@@ -27,7 +27,7 @@ LLM provider through stable port abstractions — without their own domain code 
 provider, transport, or storage implementation.
 **Current focus:** Phase 12 — Supply-Chain Gate Integrity
 
-**Progress:** [██████████] 69/72 plans (96%)
+**Progress:** [██████████] 69/72 plans ([██████████] 97%)
 
 > ⚠ **Milestone-boundary discrepancy — needs a decision.** STATE tracks milestone v0.7.2 as
 > 7 phases (5-11), now 7/7 complete. The ROADMAP `## Milestones` table still scopes
@@ -40,7 +40,7 @@ provider, transport, or storage implementation.
 ## Current Position
 
 Phase: 12 (Supply-Chain Gate Integrity) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-08-09 — Phase 12 execution started
 
@@ -89,6 +89,7 @@ Last activity: 2026-08-09 — Phase 12 execution started
 | Phase 03 P07 | 14min | 2 tasks | 2 files |
 | Phase 03 P08 | ~30min | 3 tasks | 4 files |
 | Phase 06 P07 | ~50min | 3 tasks | 4 files |
+| Phase 12 P02 | ~20min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -291,6 +292,7 @@ Entering them here would fabricate authority the corpus does not contain.
 - [Phase 11]: FACADE-04 — the 20-row Milestone 9 candidate triage resolves to **14 done / 6 not a candidate / 0 still open**, superseding two mutually inconsistent RESEARCH.md figures. `paladin-arsenal` and `paladin-sanctum` are recorded as artefacts of a mis-written table, not future crates
 - [Phase 11]: ADR allocation — two ADRs (0034 for the D1–D4 set, 0035 for `paladin-ml`) rather than five or one-plus-ledger-rows. Accepted cost: a coarser supersession unit, since a future phase revisiting only D3's verdict must supersede an ADR that also carries D1, D2 and D4. Human-confirmed at UAT
 - [Phase ?]: Phase 12 checkpoint (12-01 Task 3) RESOLVED 2026-08-09: a human selected option-a — proceed as planned with ADR-0036 and the D-08 guard. This authorizes plans 12-02, 12-03 and 12-04 to execute as written and ratifies D-01, D-08 and D-00l (previously unconfirmed ⚠ HUMAN REVIEW decisions). Obtained via the runtime's interactive question mechanism (`AskUserQuestion` → `option-a — ADR-0036 + guard`) after the orchestrator declined to auto-select under `--auto`; provenance recorded in 12-01-SUMMARY.md Checkpoint Status.
+- [Phase ?]: 12-02: sibling script (not a 4th check-advisory-register.sh clause) chosen for the D-08 guard — TOML-vs-YAML parser separation and the new root-directory override contract
 
 ### Pending Todos
 
@@ -707,14 +709,14 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Phase 12 checkpoint (12-01 Task 3) resolved: human selected option-a. Plans 12-02, 12-03, 12-04 cleared to execute — not yet run.
+**Stopped at:** Completed 12-02-PLAN.md
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-09T13:19:23.269Z
-Resume file: .planning/phases/12-supply-chain-gate-integrity/12-02-PLAN.md
+Last session: 2026-08-09T13:29:12.934Z
+Resume file: None
 
 Prior session: 2026-07-31T19:27:35.303Z
 

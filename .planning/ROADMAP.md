@@ -796,7 +796,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 12-02-PLAN.md — SUPPLY-03 / D-08: the offline `check-workflow-suppressions.sh` regression guard, proven with a positive/negative pair and wired into `make check-gates` and the `cargo-deny:` CI job (wave 2)
+- [x] 12-02-PLAN.md — SUPPLY-03 / D-08: the offline `check-workflow-suppressions.sh` regression guard, proven with a positive/negative pair and wired into `make check-gates` and the `cargo-deny:` CI job (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 

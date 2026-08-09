@@ -1881,6 +1881,7 @@ expiry coverage, and one unauthorised expansion.
       **Verified by Phase 12, dated 2026-08-09 (plan 12-01):** the two structural measurements Phase
       9's note claims were re-run fresh this session, over every workflow file, not only `ci.yml`, so
       a future workflow cannot hide a second invocation:
+
       - `grep -rhc 'run: cargo audit' .github/workflows/*.yml | awk '{s+=$1} END{print s}'` → `1`
       - `grep -rhc 'name: Security Audit' .github/workflows/*.yml | awk '{s+=$1} END{print s}'` → `1`
 
@@ -2005,17 +2006,21 @@ expiry coverage, and one unauthorised expansion.
       `diff` of the two captured transcripts is empty; both exit codes are `0`.
 
       This run demonstrates four register properties, each citing the script line that asserts it:
+
       - **Set-based, case-sensitive comparison** (`check-advisory-register.sh:11-15`) — class
         partitions are compared as sets of raw strings; an identifier differing only in letter case
         fails, and reordering rows or TOML entries does not change the verdict, because the
         comparison is over Python `set` equality, not list order or string casefolding.
+
       - **The one-sided-empty case is a distinct named failure** (`:31-33`) — zero register rows
         against a non-empty `deny.toml`/`.cargo/audit.toml` ignore array prints `ONE_SIDED_EMPTY` and
         fails; zero rows with two empty arrays is the only legitimate pass in that branch. This run's
         live state (10 rows, 10 `deny.toml` entries, 5 `.cargo/audit.toml` entries) does not hit this
         branch, but the branch is inspected in source at the cited lines and confirmed present.
+
       - **Read-only, no temporary file** (`:43`) — the script's own header states it, and `git status
         --porcelain` immediately after both runs is unchanged, consistent with no write occurring.
+
       - **Identical output and exit code across two consecutive runs** (`:44-45`) — demonstrated
         above by the two captured transcripts, not merely asserted.
 
@@ -2023,7 +2028,7 @@ expiry coverage, and one unauthorised expansion.
       ignore entries — matching the corrected baseline this closure note already records above (ten
       surviving suppressions, not the original thirteen/fifteen).
 
-- [ ] **SUPPLY-03**: The two supply-chain ADR candidates are promoted or declined, deliberately.
+- [x] **SUPPLY-03**: The two supply-chain ADR candidates are promoted or declined, deliberately.
       `Milestone_7/Epic_4/rustsec-remediation-plan.md` carries the corpus's **only expiry date**;
       `Milestone_10/Epic_2/prd-dependency-security-license-compliance.md` FR-1 + §8 carries the
       **single-source invariant the tree currently violates**. They are the same subject from two
@@ -4110,7 +4115,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | FACADE-04 | Phase 11 | Complete |
 | SUPPLY-01 | Phase 12 | Complete |
 | SUPPLY-02 | Phase 12 | Complete |
-| SUPPLY-03 | Phase 12 | Pending |
+| SUPPLY-03 | Phase 12 | Complete |
 | ORCH-01 | Phase 13 | Pending |
 | ORCH-02 | Phase 13 | Pending |
 | ORCH-03 | Phase 13 | Pending |
