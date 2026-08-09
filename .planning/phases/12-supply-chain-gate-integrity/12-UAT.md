@@ -1,19 +1,17 @@
 ---
-status: testing
+status: partial
 phase: 12-supply-chain-gate-integrity
 source: [12-VERIFICATION.md]
 started: 2026-08-09T14:40:00Z
-updated: 2026-08-09T14:40:00Z
+updated: 2026-08-09T15:20:00Z
 ---
 
 ## Current Test
 
-number: 1
-name: Confirm the required-status-check clause resolves on the first real CI run after Phase 9's 2026-08-08 deletion
-expected: |
-  A `gh run view <run-id>` citation, for a run whose creation timestamp postdates 2026-08-08, shows
-  the `Security Audit` context reporting `success` and the ruleset (once applied) resolving against it.
-awaiting: user response
+[testing paused — 2 items outstanding]
+
+Test 1 is retryable: push `release/v0.7.0` (the pre-push blocker is cleared), wait for CI,
+then re-run `/gsd-verify-work 12`.
 
 ## Tests
 
@@ -29,6 +27,23 @@ five days *before* Phase 9's deletion commit `cb75b2b`. No run exists that could
 clause.
 
 **Trigger:** the next push to `release/v0.7.0`.
+
+**Attempt 1 — 2026-08-09 — push blocked, blocker since cleared. Test remains `[pending]`, retryable.**
+The user attempted the push; the `pre-push` hook stage failed on `fix end of files`. Diagnosed: the
+`end-of-file-fixer` hook found `.planning/phases/11-facade-residue-deferred-register-disposition/11-04-PLAN.md`
+committed **without a trailing newline** by Phase 11's `de24170`, fixed it in place, and exited
+non-zero — which is that hook's designed behaviour. The diff was purely the missing newline; zero
+content change.
+
+Root cause, and why it surfaced only now: `.planning/config.json` sets
+`workflow.worktree_skip_hooks: true`, so executor agents commit with `--no-verify` and the
+commit-stage hook never inspected the file. The `pre-push` stage was the first check it ever faced,
+and this was the first push attempt since Phase 11.
+
+**Not a Phase 12 defect** — a latent Phase 11 artefact defect surfaced by Phase 12's push. Fixed in
+commit `a2ab726`. Full `pre-commit run --all-files --hook-stage pre-push` then passed all 14 hooks,
+including `cargo build (workspace)` and `cargo test (workspace lib/unit tests)`, so nothing else
+blocks the push.
 
 **Do not mark this passed without a `gh run` citation postdating 2026-08-08.** Both `12-VALIDATION.md`'s
 Manual-Only table and CONTEXT.md D-07 name that specific false positive. This is also the truth
