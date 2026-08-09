@@ -4,16 +4,16 @@ milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
 current_phase: 12
 current_phase_name: Supply-Chain Gate Integrity
-status: executing
-stopped_at: Completed 12-03-PLAN.md
-last_updated: "2026-08-09T13:43:43.206Z"
+status: verifying
+stopped_at: Completed 12-04-PLAN.md
+last_updated: "2026-08-09T13:55:39.558Z"
 last_activity: 2026-08-09
 last_activity_desc: Phase 12 execution started
 progress:
   total_phases: 8
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 72
-  completed_plans: 71
+  completed_plans: 72
 ---
 
 # Project State
@@ -27,7 +27,7 @@ LLM provider through stable port abstractions — without their own domain code 
 provider, transport, or storage implementation.
 **Current focus:** Phase 12 — Supply-Chain Gate Integrity
 
-**Progress:** [██████████] 69/72 plans ([██████████] 99%)
+**Progress:** [██████████] 69/72 plans ([██████████] 100%)
 
 > ⚠ **Milestone-boundary discrepancy — needs a decision.** STATE tracks milestone v0.7.2 as
 > 7 phases (5-11), now 7/7 complete. The ROADMAP `## Milestones` table still scopes
@@ -41,7 +41,7 @@ provider, transport, or storage implementation.
 
 Phase: 12 (Supply-Chain Gate Integrity) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-09 — Phase 12 execution started
 
 ## Performance Metrics
@@ -91,6 +91,7 @@ Last activity: 2026-08-09 — Phase 12 execution started
 | Phase 06 P07 | ~50min | 3 tasks | 4 files |
 | Phase 12 P02 | ~20min | 2 tasks | 3 files |
 | Phase 12 P03 | ~20min | 2 tasks | 3 files |
+| Phase 12 P04 | ~25min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -297,6 +298,8 @@ Entering them here would fabricate authority the corpus does not contain.
 - [Phase ?]: ADR-0036 (Accepted, conforms) promotes PROMOTION.md Part B candidate 7 in the source PRD's §8 two-file framing (.cargo/audit.toml AND deny.toml), citing ADR-0024 as the sibling governing suppression contents without superseding it
 - [Phase ?]: Code Locations/Considered Options rewritten as single-physical-line bullets after the structural self-check showed adr-parser.cjs's per-line splitEntries inflating key_files to 29 and options_considered to 19 against 13/4 real bullets; fixed to 12/12 and 4/4 before commit
 - [Phase ?]: SUPPLY-03's checkbox and traceability row deliberately left Pending; requirements-completed left empty in 12-03-SUMMARY.md — plan 12-04 owns SUPPLY-03's closure and PROMOTION.md's single writer in the final wave
+- [Phase ?]: PROMOTION.md's Part A step 5 procedural text was left untouched despite causing a grep-count-2 vs expected-1 mismatch in the plan's own verify script — the actual Next free ADR number state line is correct and singular; editing Part A prose would be a fourth unauthorized PROMOTION.md edit
+- [Phase ?]: Phase 13 / ORCH-01 hand-off written carrying Milestone 10's verdict class in both halves: 100% complete and one acceptance criterion false, and as of 2026-08-08 no longer false
 
 ### Pending Todos
 
@@ -713,13 +716,13 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Completed 12-03-PLAN.md
+**Stopped at:** Completed 12-04-PLAN.md
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-09T13:43:43.146Z
+Last session: 2026-08-09T13:55:39.512Z
 Resume file: None
 
 Prior session: 2026-07-31T19:27:35.303Z

@@ -804,7 +804,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 12-04-PLAN.md — close-out: the Phase 13 / ORCH-01 hand-off block, three closed requirement rows, the `PROJECT.md` Key Decisions row, and `PROMOTION.md` advanced to 0037 last (wave 4)
+- [x] 12-04-PLAN.md — close-out: the Phase 13 / ORCH-01 hand-off block, three closed requirement rows, the `PROJECT.md` Key Decisions row, and `PROMOTION.md` advanced to 0037 last (wave 4)
 
 **Cross-cutting constraints:**
 
