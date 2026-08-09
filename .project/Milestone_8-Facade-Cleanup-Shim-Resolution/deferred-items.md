@@ -67,6 +67,14 @@ So readers don't mistake completed work for a gap, the following from the reconc
   maneuver/parser injection is preserved (it carries real logic, not just re-exports).
 - **Effort / risk:** medium churn / low risk (mechanical, compiler-checked).
 
+> **Correction (dated 2026-08-08, FACADE-02, plan 11-02):** This rating is superseded by a
+> disposition with a named owner. **Verdict: DEFER.** Trigger: a facade-wide no-alias sweep.
+> Owner: unassigned-pending that sweep — named as unassigned rather than left blank. ADR-0018
+> (the Milestone 6 no-shim posture) does **not** settle this item on its own: it retired old
+> paths for *relocated types*, a different construct from `src/core/`'s surviving re-export
+> layer, which still fronts live code for 49 importers today. Full record:
+> `.planning/decisions/0034-d1-d4-facade-relocation-disposition.md`.
+
 ### D2 — `src/core/platform/manager/` services are mis-layered
 
 - **What:** `content_service.rs`, `event_manager.rs`, `user_service.rs` live under
@@ -82,6 +90,16 @@ So readers don't mistake completed work for a gap, the following from the reconc
     (depends on repo/log/notification ports + argon2) → a facade app-service.
 - **Effort / risk:** medium / medium (touches consumers across the facade + tests).
 
+> **Correction (dated 2026-08-08, FACADE-02, plan 11-02):** This rating is superseded by three
+> independent verdicts, one per file. **`user_service.rs`: the split above is WITHDRAWN.**
+> Reconciliation commit `6704807` already found no split was needed for the controller case
+> (`UserServiceTrait` + DTOs already live in `paladin-core`); the full relocation is owned by
+> the run-3 v2 tech-debt item; the tests are owned by DEFER-02 / Phase 15. Three owners, no
+> overlap. **`content_service.rs` and `event_manager.rs`: each DEFERS independently**, trigger:
+> the architecture-pass milestone named in `## Suggested grouping` below; owner:
+> unassigned-pending that milestone. Full record:
+> `.planning/decisions/0034-d1-d4-facade-relocation-disposition.md`.
+
 ### D3 — Entangled Paladin use-case services (KEEP for now)
 
 - **What:** `src/application/services/paladin/{planning_service, prompt_generation_service,
@@ -96,6 +114,15 @@ So readers don't mistake completed work for a gap, the following from the reconc
   move.
 - **Effort / risk:** high / high.
 
+> **Correction (dated 2026-08-08, FACADE-02, plan 11-02):** This rating is superseded by a
+> disposition with a named owner. **Verdict: DEFER.** Trigger: the broader builder/execution
+> refactor named above. Owner: unassigned-pending that refactor. HARD-05 is answered — ADR-0031
+> restated the extracted-crate dependency rule, so the `paladin-battalion`/`paladin-llm` targets
+> are legal on the same terms `paladin-content`'s existing `llm` feature already satisfies; the
+> remaining question is per-edge (non-default, facade-gated, `cfg`-scoped), answered when the
+> trigger fires, not here. Full record:
+> `.planning/decisions/0034-d1-d4-facade-relocation-disposition.md`.
+
 ### D4 — `content_ingestion_service.rs` placement
 
 - **What:** `src/application/services/content/content_ingestion_service.rs` (~1,211 LOC) —
@@ -106,6 +133,11 @@ So readers don't mistake completed work for a gap, the following from the reconc
 - **Recommendation:** evaluate moving to `paladin-content` if/when the content pipeline is
   consolidated there.
 - **Effort / risk:** medium / medium.
+
+> **Correction (dated 2026-08-08, FACADE-02, plan 11-02):** This rating is superseded by a
+> disposition with a named owner. **Verdict: DEFER.** Trigger: the dependency-coupling review
+> named above. Owner: unassigned-pending that review. Legal under ADR-0031 on the same terms as
+> D3. Full record: `.planning/decisions/0034-d1-d4-facade-relocation-disposition.md`.
 
 ### D5 — Residual `println!`/`eprintln!` in services/infrastructure
 
@@ -139,3 +171,12 @@ So readers don't mistake completed work for a gap, the following from the reconc
   (content_ingestion), since both are layer/placement corrections.
 - **Only with a broader refactor:** D3 (entangled Paladin services), and D1 (`core` shims) if a
   "no re-export aliases" policy is adopted.
+
+> **Correction (dated 2026-08-08, FACADE-02, plan 11-02):** The two groupings above are
+> superseded by four individual verdicts, each with a named owner and (where deferred) a
+> concrete trigger — see `.planning/decisions/0034-d1-d4-facade-relocation-disposition.md`.
+> D2's `content_service.rs`/`event_manager.rs` DEFER to the architecture-pass milestone named
+> here; `user_service.rs`'s split is WITHDRAWN, out of this grouping's scope. D3 DEFERs to the
+> broader refactor named here; D1 DEFERs to a facade-wide no-alias sweep — the sweep is itself
+> the trigger, not conditioned on whether the policy is "adopted." The grouping's own text above
+> is retained as the input that informed these triggers, not as a live disposition.
