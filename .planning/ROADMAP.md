@@ -738,9 +738,9 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 11-02-PLAN.md — FACADE-02: ADR-0034 giving D1–D4 verdicts with owners and triggers, and dated corrections on the four clauses (wave 2)
-- [ ] 11-03-PLAN.md — FACADE-03: the `.planning/` register for both removed features plus ADR-0035 holding the `paladin-ml` leaf-crate placement condition (wave 2)
-- [ ] 11-04-PLAN.md — FACADE-04: the 20-row Milestone 9 candidate triage and the `paladin-arsenal` / `paladin-sanctum` artefact finding (wave 2)
+- [x] 11-02-PLAN.md — FACADE-02: ADR-0034 giving D1–D4 verdicts with owners and triggers, and dated corrections on the four clauses (wave 2)
+- [x] 11-03-PLAN.md — FACADE-03: the `.planning/` register for both removed features plus ADR-0035 holding the `paladin-ml` leaf-crate placement condition (wave 2)
+- [x] 11-04-PLAN.md — FACADE-04: the 20-row Milestone 9 candidate triage and the `paladin-arsenal` / `paladin-sanctum` artefact finding (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
