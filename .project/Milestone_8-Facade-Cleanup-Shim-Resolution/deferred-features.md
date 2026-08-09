@@ -16,8 +16,11 @@
 > branch (below, at `:72`) and the ML removal to a commit splits a single event across two pointer
 > kinds. Measured this session: no *local* branch named `chore/facade-cleanup-m8-finish` exists in
 > this checkout, while a *remote-tracking* ref of that name does resolve
-> (`refs/remotes/origin/chore/facade-cleanup-m8-finish`) and is an ancestor of the removal commit.
-> A branch ref — local or remote-tracking — is mutable and deletable regardless of whether it
+> (`refs/remotes/origin/chore/facade-cleanup-m8-finish`, at `4bf6745`). The removal commit
+> `3d48768` is an ancestor of that ref — the branch's history runs through the removal and 14
+> commits past it (`git merge-base --is-ancestor 3d48768 refs/remotes/origin/chore/facade-cleanup-m8-finish`
+> exits 0; the reverse direction exits 1; `git rev-list 3d48768..refs/remotes/origin/chore/facade-cleanup-m8-finish --count`
+> returns 14). A branch ref — local or remote-tracking — is mutable and deletable regardless of whether it
 > happens to resolve today; that mutability, not its absence, is the durable reason to cite the
 > immutable SHA instead.
 >
