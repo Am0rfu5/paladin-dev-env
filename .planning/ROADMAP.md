@@ -734,7 +734,7 @@ requirement list, and success criteria above are unchanged by this note.
 Plans:
 **Wave 1**
 
-- [ ] 11-01-PLAN.md — FACADE-01: record all 17 D5 occurrences as deliberate rustdoc stdout, correct the framing in `deferred-items.md` and ROADMAP criterion 1, and gate the ADR allocation (tracer, wave 1)
+- [x] 11-01-PLAN.md — FACADE-01: record all 17 D5 occurrences as deliberate rustdoc stdout, correct the framing in `deferred-items.md` and ROADMAP criterion 1, and gate the ADR allocation (tracer, wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
