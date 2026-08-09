@@ -90,25 +90,47 @@ workflows_dir = sys.argv[1]
 
 failures = []
 
-# Word-bounded "cargo audit" or "cargo deny" -- the gate half of clause 1.
-CARGO_GATE_RE = re.compile(r'\bcargo\s+(?:audit|deny)\b')
-# Word-bounded "cargo audit" alone -- clause 2's invocation counter.
-# "cargo install cargo-audit" does NOT match: the pattern requires
-# whitespace between "cargo" and "audit", and the installed binary's own
-# name is hyphenated ("cargo-audit"), so no whitespace ever separates the
-# two words in that phrase.
-CARGO_AUDIT_ONLY_RE = re.compile(r'\bcargo\s+audit\b')
-# Requires a space, an equals sign, or end-of-string immediately after
-# "--ignore". This precise trailing-character requirement -- not a plain
-# word-boundary assertion -- is what excludes "--ignore-existing" (followed
-# by a hyphen) and "--ignored" (followed by "d"). A word-boundary assertion
-# would NOT exclude "--ignore-existing": the transition from "e" to "-" is
-# itself a word boundary, so `\b--ignore\b` would still match it.
-IGNORE_FLAG_RE = re.compile(r'--ignore(?:[= ]|$)')
+# Word-bounded "cargo audit"/"cargo deny" -- the gate half of clause 1.
+# Also accepts an optional "+toolchain" token between "cargo" and the
+# subcommand ("cargo +nightly audit ...") and the hyphenated direct-binary
+# form ("cargo-audit"/"cargo-deny") that `cargo install cargo-audit
+# --locked` puts on PATH -- both are ordinary, documented ways to invoke
+# these tools, not just the space-separated "cargo audit" form. A
+# `cargo install cargo-audit --locked` line itself is excluded via
+# INSTALL_LINE_RE in violates()/the clause-2 counter below rather than by
+# omission from this pattern, because the hyphenated alternative must also
+# match a bare, non-install "cargo-audit --ignore ..." invocation.
+INSTALL_LINE_RE = re.compile(r'\bcargo\s+install\b')
+CARGO_GATE_RE = re.compile(
+    r'\bcargo\s+(?:\+\S+\s+)?(?:audit|deny)\b'
+    r'|(?<!\w)cargo-(?:audit|deny)\b'
+)
+# Word-bounded "cargo audit" alone (optionally "+toolchain"-qualified), or
+# the hyphenated direct-binary form -- clause 2's invocation counter. The
+# INSTALL_LINE_RE exclusion applied at each call site keeps
+# "cargo install cargo-audit --locked" from being counted as an invocation.
+CARGO_AUDIT_ONLY_RE = re.compile(
+    r'\bcargo\s+(?:\+\S+\s+)?audit\b'
+    r'|(?<!\w)cargo-audit\b'
+)
+# Requires whitespace (space or tab), an equals sign, a surrounding quote,
+# or end-of-string immediately after "--ignore". This precise trailing-
+# character requirement -- not a plain word-boundary assertion -- is what
+# excludes "--ignore-existing" (followed by a hyphen) and "--ignored"
+# (followed by "d"), while still catching a quoted ("--ignore") or
+# tab-separated flag. A word-boundary assertion would NOT exclude
+# "--ignore-existing": the transition from "e" to "-" is itself a word
+# boundary, so `\b--ignore\b` would still match it.
+IGNORE_FLAG_RE = re.compile(r'''--ignore(?:[\s=]|['"]|$)''')
 
 
 def violates(line):
-    """Both patterns matching the same logical line is the violation."""
+    """Both patterns matching the same logical line is the violation. A
+    `cargo install cargo-audit --locked`-shaped line never violates: it
+    installs the binary rather than invoking it, even though the
+    hyphenated form in CARGO_GATE_RE also matches its literal text."""
+    if INSTALL_LINE_RE.search(line):
+        return False
     return bool(CARGO_GATE_RE.search(line) and IGNORE_FLAG_RE.search(line))
 
 
@@ -182,7 +204,7 @@ for path in files:
                         f'advisory-ignore flag on a cargo audit/deny '
                         f'invocation: {line!r}'
                     )
-                if CARGO_AUDIT_ONLY_RE.search(line):
+                if not INSTALL_LINE_RE.search(line) and CARGO_AUDIT_ONLY_RE.search(line):
                     clause2_locations.append(
                         f'{path} job "{job_name}" step "{step_name}" '
                         f'(index {step_idx}): {line!r}'
