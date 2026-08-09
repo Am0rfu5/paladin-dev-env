@@ -498,6 +498,12 @@ forward scope and are not part of v0.7.2.
       different verdicts on the same `Cargo.lock`**, and Milestone 10 Epic 2's own success metric
       ("no inline advisory-ignore flags remain in CI") is false on a milestone recorded 100%
       complete. One 18-line deletion (SUPPLY-01)
+      (**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing `ci.yml:465-482` and commit
+      `cb75b2b`:** this line citation was already stale — the duplicate job was actually at
+      `ci.yml:465-482`, not `:389-406`. **The deletion is done**, not outstanding: Phase 9's plan
+      09-06 deleted it in commit `cb75b2b`, dated 2026-08-08, before this checkbox's item was ever
+      read against the live tree. This checkbox describes closed work; see SUPPLY-01's "Verified by
+      Phase 12" closure block in `REQUIREMENTS.md`.)
 - [ ] Give all fifteen advisory suppressions an owner and a review date — thirteen have documented
       reasoning and neither — and ratify or remove the three 2026 vulnerability ignores that no
       ingested document authorises (SUPPLY-02); decide whether to promote the two supply-chain ADR
@@ -868,6 +874,11 @@ Appendix B tabulates the pre-Milestone-10 pipeline as 7 jobs, of which #4 is `se
 froze the area ("No changes to `deny.toml` or `.cargo/audit.toml`", "No new CI jobs"). Milestone 10
 is recorded **100% complete with 0 open checkboxes** and its Epic 2 §8 metric — "no inline
 advisory-ignore flags remain in CI" — is false. **The fix is deleting 18 lines** (SUPPLY-01).
+(**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing `ci.yml:465-482` and commit
+`cb75b2b`:** the `:389-406` citation two paragraphs above never held this job — it was re-derived at
+`ci.yml:465-482` and deleted by Phase 9's plan 09-06 in commit `cb75b2b`, so the citation was
+already stale before Phase 9 touched anything. The job no longer exists and the fix is done — see
+SUPPLY-01's "Verified by Phase 12" closure block in `REQUIREMENTS.md`.)
 
 **A run-4 finding is corrected, not extended.** Run 4 recorded `deny.toml` as out of sync with
 `.cargo/audit.toml` — mirroring "only the original two" advisories while the three 2026 advisories

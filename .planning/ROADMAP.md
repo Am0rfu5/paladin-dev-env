@@ -777,6 +777,16 @@ returns HTTP 403). **What remains for Phase 12 to actually plan is SUPPLY-03 alo
 ADR-promotion decision for the two supply-chain candidates. The goal line, requirement list, and
 every other phase section in this document are unchanged by this note.
 
+(**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing this plan's own re-run:** the
+HTTP-403 blocker cited two paragraphs above has lifted — `cargo-audit` and `cargo-deny` are both on
+`PATH` in this environment as of 2026-08-09, and both tools plus
+`./scripts/check-advisory-register.sh` were re-run and exited `0` on 2026-08-09 by plan 12-01,
+transcripts recorded in `REQUIREMENTS.md`'s SUPPLY-01/SUPPLY-02 "Verified by Phase 12" blocks.
+Phases 9 and 10 were both correct at the time they wrote this caveat; it was not permanent. The
+CI-run-observation half of this note — confirming the required status check still resolves on the
+first real CI run — is **not** bannered here: it is still true and remains recorded pending, per
+D-07.)
+
 **Plans:** 4 plans
 
 Plans:
@@ -875,6 +885,11 @@ through it. Recorded here so neither side gets planned twice:
 
 1. **SUPPLY-01 (Phase 12)** — delete `ci.yml:389-406`. Eighteen lines, and a Milestone 10
    acceptance criterion becomes true.
+   (**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing `ci.yml:465-482` and commit
+   `cb75b2b`:** this citation was already stale — the duplicate job was actually at
+   `ci.yml:465-482`, and Phase 9's plan 09-06 deleted it in commit `cb75b2b` before this item was
+   read against the live tree. SUPPLY-01 is closed; see `REQUIREMENTS.md`'s "Verified by Phase 12"
+   block.)
 
 2. **DEBT-01 (Phase 8)** — fix nine `project/current-exports.txt` references (five tooling, four
    requirement texts) and turn the `api-surface` CI job green for the first time since commit

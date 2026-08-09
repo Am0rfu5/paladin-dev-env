@@ -1189,6 +1189,12 @@ the gates the project believes it already has; four of the five do not hold as d
       governance scope is **SUPPLY-02** (ratify or remove the three unauthorised 2026 vulnerability
       ignores; extend the FR-3 schema with owner and expiry; backfill thirteen). SEC-01 remains the
       requirement of record for the whole exception set and for the 2026-09-30 disposition.
+      (**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing `ci.yml:465-482` and commit `cb75b2b`:**
+      the `ci.yml:389-406` citation two paragraphs above never held the duplicate job — it was
+      re-derived at `ci.yml:465-482` and deleted by Phase 9's plan 09-06 in commit `cb75b2b`, so the
+      line citation was already stale before Phase 9 touched anything. The deletion this clause
+      delegates to SUPPLY-01 is done — see SUPPLY-01's own "Verified by Phase 12" closure block
+      above.)
       *Derives: REQ-rustsec-risk-acceptance, REQ-rustsec-hardening-actions;
       `intel/code-verification.md` run-4 verified-open item 1 **as corrected by run-5 findings 1
       and 2**; INGEST-CONFLICTS run-4 warning on the RustSec exception list and the two run-5
@@ -1868,9 +1874,9 @@ expiry coverage, and one unauthorised expansion.
       string `.github/rulesets/protect-main-branch.json:39` requires, confirmed before deletion, so
       no required-status-check coverage was lost. **This requirement's own checkbox is left for
       Phase 12 to check** — this note records the substance as done and cites the evidence; Phase 12
-      inherits a closed item to verify, not work to re-plan. **Remaining for Phase 12:** confirming
-      the required status check still resolves on the first real CI run after this deletion (CI-only,
-      not verifiable in this sandboxed environment).
+      inherits a closed item to verify, not work to re-plan. **Remaining for Phase 12:**
+      confirming the required status check still resolves on the first real CI run after this
+      deletion (CI-only, not verifiable in this sandboxed environment).
 
       **Verified by Phase 12, dated 2026-08-09 (plan 12-01):** the two structural measurements Phase
       9's note claims were re-run fresh this session, over every workflow file, not only `ci.yml`, so
@@ -1968,6 +1974,12 @@ expiry coverage, and one unauthorised expansion.
       note records the substance as done; Phase 12 inherits a closed item to verify. **Remaining for
       Phase 12:** `cargo audit`/`cargo deny check` actually passing against the reconciled
       configuration is CI-only, not run in this environment (crates.io returns HTTP 403).
+      (**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing this plan's own re-run:**
+      the HTTP-403 blocker has lifted — `cargo-audit` and `cargo-deny` are both on `PATH` in this environment as
+      of 2026-08-09. Phases 9 and 10 were both correct at the time they wrote this caveat; it is not
+      permanent. Both tools, plus the register script, were re-run and exited `0` on 2026-08-09 by
+      plan 12-01 — see the "Verified by Phase 12" transcripts immediately below rather than a
+      restatement here.)
 
       **Verified by Phase 12, dated 2026-08-09 (plan 12-01):** `cargo deny check` and
       `./scripts/check-advisory-register.sh` were both re-run in this execution, on `PATH`, with no
@@ -3571,6 +3583,12 @@ ships and §8's "no inline advisory-ignore flags remain in CI" is false.
 | REQ-cyclonedx-sbom-release | Shipped — `release.yml:328-336` installs `cargo-cyclonedx --locked` and runs `cargo cyclonedx --all --format json`; `Makefile:264` `sbom` |
 | REQ-security-docs-make-target | Shipped — `Makefile:261` `security: audit deny` |
 
+(**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing `ci.yml:465-482` and commit `cb75b2b`:**
+`REQ-audit-toml-single-source`'s row above cites `ci.yml:389-406` for the duplicate `security` job —
+that range never held it; it was re-derived at `ci.yml:465-482` and deleted by Phase 9's plan 09-06
+in commit `cb75b2b`, so the citation was already stale before Phase 9 touched anything. SUPPLY-01 is
+closed; see its "Verified by Phase 12" block in this document's requirement list above.)
+
 ### Milestone 10 Epic 3 — Release Automation (6 IDs)
 
 | Requirement | Verdict |
@@ -4145,6 +4163,10 @@ each requirement.
   owner/expiry coverage on 13 of 15 entries, plus three vulnerability ignores no document
   authorises — is carried by SUPPLY-02. The concrete `ci.yml:389-406` deletion SEC-01's fourth
   surface describes is carried by SUPPLY-01.
+  (**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing `ci.yml:465-482` and commit `cb75b2b`:**
+  the deletion cited above was already stale at `:389-406` — the true location was `ci.yml:465-482`,
+  deleted by Phase 9's plan 09-06 in commit `cb75b2b`. SUPPLY-01 is now closed; see its "Verified by
+  Phase 12" block.)
 
 **Two run-5 requirements deliberately record rather than act.** SUPPLY-03 (promote or decline the
 two supply-chain ADR candidates) and the recording halves of ORCH-01 … ORCH-05 produce decisions and

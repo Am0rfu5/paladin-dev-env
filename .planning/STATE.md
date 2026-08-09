@@ -6,9 +6,9 @@ current_phase: 12
 current_phase_name: Supply-Chain Gate Integrity
 status: executing
 stopped_at: Phase 12 context gathered
-last_updated: "2026-08-09T02:20:34.373Z"
+last_updated: "2026-08-09T02:23:01.636Z"
 last_activity: 2026-08-09
-last_activity_desc: Phase 11 complete, transitioned to Phase 12
+last_activity_desc: Phase 12 execution started
 progress:
   total_phases: 8
   completed_phases: 7
@@ -39,10 +39,10 @@ provider, transport, or storage implementation.
 
 ## Current Position
 
-Phase: 12 — Supply-Chain Gate Integrity
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-08-09 — Phase 11 complete, transitioned to Phase 12
+Phase: 12 (Supply-Chain Gate Integrity) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 12
+Last activity: 2026-08-09 — Phase 12 execution started
 
 ## Performance Metrics
 
@@ -318,6 +318,10 @@ requirement.
   identical display name `Security Audit`**: `:60-77` runs a bare `cargo audit` under a comment
   declaring `.cargo/audit.toml` the single source of truth (compliant), and `:389-406` runs
   `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111` — 2 of the 5 advisories.
+  (**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing `ci.yml:465-482` and commit `cb75b2b`:**
+  this citation was already stale — the job actually sat at `ci.yml:465-482`, deleted
+  by Phase 9's plan 09-06 in commit `cb75b2b`. SUPPLY-01 is closed; see `REQUIREMENTS.md`'s
+  "Verified by Phase 12" block.)
   `cargo audit` scans `Cargo.lock` irrespective of features, so **the two jobs are configured to
   reach different verdicts on the same tree.** Mechanism: the Epic 25 PRD's Appendix B tabulates
   the pre-M10 pipeline as 7 jobs, #4 being `security`; M10 Epic 2 **added** the compliant job
@@ -756,6 +760,10 @@ take the four cheapest verified items first, none of which depends on anything �
 stale references; the `api-surface` job has been red since commit `928c6d5`), WEB-03
 (`ProviderCapabilities` stops over-reporting), and WEB-01/WEB-02 (the token mechanism, which has a
 correctness consequence under the shipped Kubernetes Deployment).
+(**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing `ci.yml:465-482` and commit `cb75b2b`:**
+this SUPPLY-01 citation was already stale — the deleted job actually sat at `ci.yml:465-482`, removed by Phase 9's
+plan 09-06 in commit `cb75b2b`. SUPPLY-01 is closed, not a live cheap-item candidate; see
+`REQUIREMENTS.md`'s "Verified by Phase 12" block.)
 
 **Two things to carry into any planning session:**
 
