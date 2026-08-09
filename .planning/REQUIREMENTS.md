@@ -2044,7 +2044,7 @@ expiry coverage, and one unauthorised expansion.
       ignore entries — matching the corrected baseline this closure note already records above (ten
       surviving suppressions, not the original thirteen/fifteen).
 
-- [ ] **SUPPLY-03**: The two supply-chain ADR candidates are promoted or declined, deliberately.
+- [x] **SUPPLY-03**: The two supply-chain ADR candidates are promoted or declined, deliberately.
       `Milestone_7/Epic_4/rustsec-remediation-plan.md` carries the corpus's **only expiry date**;
       `Milestone_10/Epic_2/prd-dependency-security-license-compliance.md` FR-1 + §8 carries the
       **single-source invariant the tree currently violates**. They are the same subject from two
@@ -2080,6 +2080,99 @@ expiry coverage, and one unauthorised expansion.
       act; a fourth says it can, and four ADRs prove it. The corpus's rule that "nothing is locked"
       was itself superseded when Phase 1 built `.planning/decisions/`, and the requirement text never
       caught up. This requirement's checkbox and traceability row are left `Pending` for plan 12-04.)
+
+#### Hand-off to Phase 13 / ORCH-01 — dated 2026-08-09 (plan 12-04)
+
+**ORCH-01 inherits all three SUPPLY requirements closed with dated `file:line`-cited verdicts,
+delivered rather than deferred, plus one observation that is honestly pending and one finding that
+is honestly owner-only.**
+
+1. **The three SUPPLY verdicts and where their evidence lives.** SUPPLY-01 and SUPPLY-02 were
+   closed by Phase 9 (dated 2026-08-08) and verified in-repo by plan 12-01 (dated 2026-08-09) with
+   three re-run gate transcripts (`cargo audit`, `cargo deny check`,
+   `./scripts/check-advisory-register.sh`, all exit `0`); SUPPLY-03 was closed by ADR-0036. The
+   full transcripts live in this document's own SUPPLY-01 (`REQUIREMENTS.md:1855-1940`) and
+   SUPPLY-02 (`:1941-2046`) blocks; SUPPLY-03's block is `:2047-2082`. ADR-0036 itself is
+   `.planning/decisions/0036-audit-suppression-single-source-topology.md`, and its enforcement
+   mechanism is `scripts/check-workflow-suppressions.sh`, wired into `Makefile:171-176` and
+   `.github/workflows/ci.yml:103-104`. This item points at that evidence rather than repeating it.
+
+2. **ORCH-01's named verdict class, both halves, verbatim.** Milestone 10 is recorded 100%
+   complete, ships every artefact it promised, **and failed one of its own acceptance criteria** —
+   and, as of 2026-08-08, **no longer does**. The criterion is M10 Epic 2 §8's "`audit.toml` and
+   `deny.toml` are the only places policy/exceptions are defined; no inline advisory-ignore flags
+   remain in CI." Phase 9 made it true (plan 09-06, commit `cb75b2b`, deleting the duplicate
+   `security:` job at pre-deletion `ci.yml:465-482`); Phase 12 promoted it to ADR-0036 and put a
+   regression guard behind it so it stays true. **ORCH-01 must carry both halves** — the corpus's
+   only verdict of this class, and Phase 12 is the phase that gets to date the second half.
+
+3. **What Phase 12 deliberately did not build, and why.** `.planning/ledgers/milestone-09-12.md`
+   does not exist, and Phase 12 did not create it, not even as a stub — `ls
+   .planning/ledgers/` returns exactly the four pre-existing files (`milestone-01.md`,
+   `milestone-02-03.md`, `milestone-04-06.md`, `milestone-07-08.md`). Its 120-requirement-ID scope
+   is ORCH-01's own stated deliverable (`ROADMAP.md` §Phase 13 criterion 1); a stub here would
+   either be re-planned by Phase 13 or would silently constrain its shape (D-09). Phase 12 wrote its
+   evidence where every prior phase wrote pre-ledger evidence: the requirement rows themselves, plus
+   this block.
+
+4. **One observation genuinely pending, with its trigger.** SUPPLY-01's clause "confirming the
+   required status check still resolves on the first real CI run after the deletion"
+   (`REQUIREMENTS.md:1893-1895`) has not failed — it has never had the opportunity to fire. The
+   most recent run against `release/v0.7.0` is still `30861568499`, dated `2026-08-03T23:14:24Z`,
+   five days before Phase 9's 2026-08-08 deletion — no CI run has executed against the reconciled
+   `ci.yml` yet. **Trigger: the next push to `release/v0.7.0`.** A verifier marking this clause done
+   without a `gh run` citation newer than `30861568499` is reporting a false positive (D-07). In
+   that last pre-deletion run, the only failing job was `API Surface Tracking` (DEBT-01's, Phase
+   8's, unrelated to supply-chain), while every `Security Audit` job entry reported `success`.
+
+5. **The unapplied GitHub rulesets, a finding with an owner.** `.github/rulesets/` is
+   version-controlled (`protect-main-branch.json`, `protect-release-tags.json`) but the rulesets
+   are not applied and `main` is not protected: `gh api repos/:owner/:repo/rulesets` returned `[]`,
+   and `gh api repos/:owner/:repo/branches/main/protection` returned `404 Branch not protected`
+   (both transcribed in SUPPLY-01's own block, `REQUIREMENTS.md:1932-1939`). SUPPLY-01's "required
+   status check" clause therefore currently has no live enforcement point. **Owner: the milestone
+   close-out** — only the repository owner can apply a ruleset or protect a branch. Phase 12 applied
+   nothing; both `gh api` calls above are reads.
+
+6. **The provenance of the re-scope, carried forward rather than laundered.** Phase 12 treated
+   SUPPLY-01 and SUPPLY-02 as verification rather than work because Phase 9's D-07 re-scoped this
+   phase — a decision made under `--auto`, flagged "⚠ HUMAN REVIEW — this changes another phase's
+   scope" in `09-CONTEXT.md`, and never itself ratified by a human. It is durable because it is
+   recorded at source in `ROADMAP.md`'s dated Phase 12 closure note (`ROADMAP.md:768-778`) and in
+   this document's own SEC-01/SUPPLY traceability coupling row (`REQUIREMENTS.md:4236`), not
+   because a human approved it. The three re-run gate transcripts plan 12-01 produced are strong
+   independent evidence regardless. ORCH-01 should record the closure **and** its provenance rather
+   than a bare `Complete`. This phase carries its own two unratified `--auto` decisions alongside
+   Phase 9's: **D-01** (SUPPLY-03 acts and writes an ADR, overriding its own "does not act" clause)
+   and **D-08** (the regression guard adds a CI check no requirement explicitly asked for) — both
+   flagged `⚠ HUMAN REVIEW` in `12-CONTEXT.md` and resolved only when a human selected `option-a` at
+   plan 12-01's blocking checkpoint, dated 2026-08-09 (`12-01-SUMMARY.md` §Checkpoint Status).
+
+7. **A measurement that contradicts two of this phase's own upstream artefacts.** The stale
+   `ci.yml:389-406` citation appears far more widely than either `12-CONTEXT.md` ("three documents")
+   or `12-RESEARCH.md` ("one") recorded: plan 12-01 measured **87 hits across 25 files** in
+   `.planning/` and `.project/` this session (`grep -rn '389-406' .planning/ .project/`). Of those,
+   **8 sites across four canonical governance documents** (`REQUIREMENTS.md`, `PROJECT.md`,
+   `ROADMAP.md`, `STATE.md`) were in scope and each received one dated correction naming the true
+   location `ci.yml:465-482` and commit `cb75b2b`, with every original citation retained. The
+   remaining hits were excluded by a stated scoping rule, class by class: frozen archived-milestone
+   snapshots (`.planning/milestones/v0.7.1-*`); prior-phase context/log/summary files left as
+   historical record (`.planning/phases/09-*`); closed ingest outputs with no run 6
+   (`.planning/intel/*`, `.planning/INGEST-CONFLICTS.md`); a closed prior-milestone ledger row
+   whose deferral text is accurate as written (`.planning/ledgers/milestone-01.md:144`); ADR-0024's
+   own already-self-annotated stale citation (`0024-rustsec-exception-governance.md:223`, not
+   edited, D-00i); Phase 9's own pre-existing correction banners that already correct the citation
+   within their own regions; and this phase's own context/research/plan files, which describe the
+   defect rather than citing it live. ORCH-01 inherits this measured inventory (`12-01-SUMMARY.md`
+   §Grep Inventory) rather than re-deriving it, and knows which sites are deliberately left as
+   historical record.
+
+**Evidence:** `.planning/decisions/0036-audit-suppression-single-source-topology.md`;
+`scripts/check-workflow-suppressions.sh`; `Makefile:171-176`; `.github/workflows/ci.yml:103-104`;
+`cargo audit`, `cargo deny check`, `./scripts/check-advisory-register.sh`; `gh run
+list --workflow=ci.yml --limit 5`, `gh run view 30861568499 --json jobs`, `gh api
+repos/:owner/:repo/rulesets`, `gh api repos/:owner/:repo/branches/main/protection`;
+`REQUIREMENTS.md:1855-1940` (SUPPLY-01), `:1941-2046` (SUPPLY-02), `:2047-2082` (SUPPLY-03).
 
 #### Hand-off to Phase 13 / ORCH-05 — dated 2026-08-08 (plan 10-11)
 
@@ -4154,7 +4247,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | FACADE-04 | Phase 11 | Complete |
 | SUPPLY-01 | Phase 12 | Complete |
 | SUPPLY-02 | Phase 12 | Complete |
-| SUPPLY-03 | Phase 12 | Pending |
+| SUPPLY-03 | Phase 12 | Complete |
 | ORCH-01 | Phase 13 | Pending |
 | ORCH-02 | Phase 13 | Pending |
 | ORCH-03 | Phase 13 | Pending |
