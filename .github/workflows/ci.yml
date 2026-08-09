@@ -100,6 +100,9 @@ jobs:
       - name: Check advisory exception register
         run: ./scripts/check-advisory-register.sh
 
+      - name: Check workflow files for inline advisory suppressions
+        run: ./scripts/check-workflow-suppressions.sh
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:

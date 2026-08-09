@@ -168,8 +168,12 @@ check-crate-names: ## Guard against crates.io package-name collisions (allow-lis
 check-advisory-register: ## Verify SECURITY-EXCEPTIONS.md agrees with deny.toml/.cargo/audit.toml/Cargo.lock
 	@./scripts/check-advisory-register.sh
 
+.PHONY: check-workflow-suppressions
+check-workflow-suppressions: ## Verify no workflow file passes an advisory-ignore flag to cargo audit or cargo deny
+	@./scripts/check-workflow-suppressions.sh
+
 .PHONY: check-gates
-check-gates: check-changelogs check-crate-names check-advisory-register ## Run all offline release-gate guards
+check-gates: check-changelogs check-crate-names check-advisory-register check-workflow-suppressions ## Run all offline release-gate guards
 
 .PHONY: test-ci
 test-ci: ## Run tests in CI mode
