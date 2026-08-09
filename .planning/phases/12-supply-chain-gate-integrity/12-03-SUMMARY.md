@@ -234,3 +234,11 @@ None — no external service configuration required.
 ---
 *Phase: 12-supply-chain-gate-integrity*
 *Completed: 2026-08-09*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/decisions/0036-audit-suppression-single-source-topology.md`
+- FOUND: `.planning/phases/12-supply-chain-gate-integrity/12-03-SUMMARY.md`
+- FOUND: commit `931fc29` (Task 1)
+- FOUND: commit `e78eaac` (Task 2)
+- FOUND: commit `692af96` (this SUMMARY)
