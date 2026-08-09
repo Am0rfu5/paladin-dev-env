@@ -96,19 +96,20 @@ failures = []
 # form ("cargo-audit"/"cargo-deny") that `cargo install cargo-audit
 # --locked` puts on PATH -- both are ordinary, documented ways to invoke
 # these tools, not just the space-separated "cargo audit" form. A
-# `cargo install cargo-audit --locked` line itself is excluded via
-# INSTALL_LINE_RE in violates()/the clause-2 counter below rather than by
-# omission from this pattern, because the hyphenated alternative must also
-# match a bare, non-install "cargo-audit --ignore ..." invocation.
-INSTALL_LINE_RE = re.compile(r'\bcargo\s+install\b')
+# `cargo install cargo-audit --locked` invocation itself is neutralized by
+# strip_install_segments() below (see its docstring for why a whole-line
+# exclusion is not used) rather than by omission from this pattern,
+# because the hyphenated alternative must also match a bare, non-install
+# "cargo-audit --ignore ..." invocation.
 CARGO_GATE_RE = re.compile(
     r'\bcargo\s+(?:\+\S+\s+)?(?:audit|deny)\b'
     r'|(?<!\w)cargo-(?:audit|deny)\b'
 )
 # Word-bounded "cargo audit" alone (optionally "+toolchain"-qualified), or
-# the hyphenated direct-binary form -- clause 2's invocation counter. The
-# INSTALL_LINE_RE exclusion applied at each call site keeps
-# "cargo install cargo-audit --locked" from being counted as an invocation.
+# the hyphenated direct-binary form -- clause 2's invocation counter. Every
+# call site runs this against a strip_install_segments()-neutralized line,
+# so "cargo install cargo-audit --locked" alone is never counted as an
+# invocation.
 CARGO_AUDIT_ONLY_RE = re.compile(
     r'\bcargo\s+(?:\+\S+\s+)?audit\b'
     r'|(?<!\w)cargo-audit\b'
@@ -122,16 +123,35 @@ CARGO_AUDIT_ONLY_RE = re.compile(
 # "--ignore-existing": the transition from "e" to "-" is itself a word
 # boundary, so `\b--ignore\b` would still match it.
 IGNORE_FLAG_RE = re.compile(r'''--ignore(?:[\s=]|['"]|$)''')
+# Matches a `cargo install ...` invocation from the word "install" through
+# to (but not including) the next shell command-chaining operator
+# (`&&`, `||`, `;`, `|`) or end of line.
+INSTALL_SEGMENT_RE = re.compile(r'\bcargo\s+install\b[^;&|]*')
+
+
+def strip_install_segments(line):
+    """Remove every `cargo install ...` segment from a logical line before
+    running the gate/flag checks against what remains. A `cargo install`
+    invocation only installs a binary, it never invokes cargo-audit/
+    cargo-deny itself -- but dropping the *entire* logical line whenever it
+    merely contains an install invocation (an earlier version of this
+    guard's exclusion) let a chained command that immediately invokes what
+    was just installed ride through undetected:
+    `cargo install cargo-audit --locked && cargo-audit --ignore RUSTSEC-...`
+    is an ordinary shell idiom, not a contrived fixture. Stripping only the
+    install segment itself -- up to the next `&&`/`||`/`;`/`|` or end of
+    line -- and evaluating the remainder normally handles arbitrary
+    chaining uniformly through the same code path, rather than requiring a
+    special case per chaining operator."""
+    return INSTALL_SEGMENT_RE.sub('', line)
 
 
 def violates(line):
-    """Both patterns matching the same logical line is the violation. A
-    `cargo install cargo-audit --locked`-shaped line never violates: it
-    installs the binary rather than invoking it, even though the
-    hyphenated form in CARGO_GATE_RE also matches its literal text."""
-    if INSTALL_LINE_RE.search(line):
-        return False
-    return bool(CARGO_GATE_RE.search(line) and IGNORE_FLAG_RE.search(line))
+    """Both patterns matching the same logical line (after neutralizing any
+    `cargo install ...` segments, which install a binary rather than
+    invoking it) is the violation."""
+    remainder = strip_install_segments(line)
+    return bool(CARGO_GATE_RE.search(remainder) and IGNORE_FLAG_RE.search(remainder))
 
 
 def logical_lines(run_text):
@@ -204,7 +224,7 @@ for path in files:
                         f'advisory-ignore flag on a cargo audit/deny '
                         f'invocation: {line!r}'
                     )
-                if not INSTALL_LINE_RE.search(line) and CARGO_AUDIT_ONLY_RE.search(line):
+                if CARGO_AUDIT_ONLY_RE.search(strip_install_segments(line)):
                     clause2_locations.append(
                         f'{path} job "{job_name}" step "{step_name}" '
                         f'(index {step_idx}): {line!r}'
