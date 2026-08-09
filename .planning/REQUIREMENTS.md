@@ -108,6 +108,22 @@ and `Milestone_10/Epic_2/prd-dependency-security-license-compliance.md` (the sin
 invariant the tree currently violates) — **the same subject from two milestones.** SUPPLY-03
 records the recommendation and does not act on it.
 
+(**Corrected by Phase 12 (plan 12-03), dated 2026-08-09, citing `.planning/decisions/PROMOTION.md`
+§Part A and ADR-0016, ADR-0021, ADR-0024, ADR-0025, ADR-0036:** all three claims above are stale.
+**Not "none is promoted":** four of the eleven candidates are now promoted — candidate 1 by
+ADR-0016, candidate 2 by ADR-0021, candidate 3 by ADR-0024, candidate 5 by ADR-0025 — and this
+phase adds a fifth: candidate 7
+(`Milestone_10/Epic_2/prd-dependency-security-license-compliance.md` FR-1 + §8, named here) is
+closed by ADR-0036. **The `--manifest`/re-ingest requirement is superseded:** `PROMOTION.md`
+§Part A states promotion is now an ordinary write to a directory plus a table row, since ADRs live
+in `.planning/decisions/` as their own document class, independent of the ingest manifest, and top
+the precedence order. **The tree no longer violates the single-source invariant:** ADR-0036's
+`## Code Conformance` section carries the `conforms` verdict and the measurement establishing it,
+not restated here. This paragraph's own claim that "SUPPLY-03 records the recommendation and does
+not act on it" is likewise stale: SUPPLY-03's own definition above carries the identical correction.
+Stated plainly, because it is a fact about the corpus and not only about this passage: three
+documents say promotion cannot happen; a fourth says it can, and four ADRs — now five — prove it.)
+
 **Run 3 found the corpus's only decision record — and it is still not a locked decision.**
 `Milestone_5/Epic_1/decisions/battalion-result-upward-dependency-decision.md` and its
 `-options.md` companion carry `Status: Approved`, `Decision Date: 2026-05-13`,
@@ -2041,6 +2057,29 @@ expiry coverage, and one unauthorised expansion.
       here would fabricate authority the corpus does not contain.
       *Derives: `intel/decisions.md` run-5 ADR-candidate list (11 candidates, 0 locked);
       `intel/SYNTHESIS.md` run-5 Decisions section.*
+
+      (**Corrected by Phase 12 (plan 12-03), dated 2026-08-09, citing `.planning/decisions/PROMOTION.md`
+      §Part A and `.planning/decisions/0036-audit-suppression-single-source-topology.md` (ADR-0036):**
+      both stale claims above are superseded. **The does-not-act clause is superseded:** the
+      `--manifest`/re-ingest path this clause describes no longer exists and is not needed —
+      `PROMOTION.md` §Part A states plainly "Promotion is now an ordinary write to a directory plus a
+      table row," because ADRs live in `.planning/decisions/` as their own document class,
+      independent of the ingest manifest, and top the precedence order. Four prior promotions already
+      prove the practice: candidate 1 closed by ADR-0016, candidate 2 by ADR-0021, candidate 3 by
+      ADR-0024, candidate 5 by ADR-0025. Under the project's own precedence order, shipped practice
+      plus a higher-precedence ADR-class document outrank PRD/DOC-tier requirement text (D-01, D-00b).
+      ADR-0036 is this requirement's own act. **The candidate-count clause is corrected:** "the two
+      supply-chain ADR candidates" is now one. Candidate 3
+      (`Milestone_7/Epic_4/rustsec-remediation-plan.md`, the corpus's only dated item, review target
+      2026-09-30) was discharged 2026-08-08 by ADR-0024, which renewed it to per-advisory
+      `2026-12-31` review dates and reassigned the owner; `PROMOTION.md:185-189` records the closure.
+      Candidate 7 (`Milestone_10/Epic_2/prd-dependency-security-license-compliance.md` FR-1 + §8) is
+      the surviving subject, and it is what ADR-0036 promotes. No second ADR is written on ADR-0024's
+      subject — exactly one live ADR answers each question. **Stated plainly, because it is a fact
+      about the corpus and not only about SUPPLY-03:** three documents say this requirement cannot
+      act; a fourth says it can, and four ADRs prove it. The corpus's rule that "nothing is locked"
+      was itself superseded when Phase 1 built `.planning/decisions/`, and the requirement text never
+      caught up. This requirement's checkbox and traceability row are left `Pending` for plan 12-04.)
 
 #### Hand-off to Phase 13 / ORCH-05 — dated 2026-08-08 (plan 10-11)
 

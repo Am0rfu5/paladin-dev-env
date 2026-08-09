@@ -592,6 +592,15 @@ forward scope and are not part of v0.7.2.
   decision taken in a planning file.
 - **Promoting the two ADR candidates into locked decisions** — doing so requires re-tagging the
   source documents via `--manifest` and re-running ingest, not an edit here. See Key Decisions.
+  (**Corrected by Phase 12 (plan 12-03), dated 2026-08-09, citing `.planning/decisions/PROMOTION.md`
+  §Part A and `.planning/decisions/0036-audit-suppression-single-source-topology.md` (ADR-0036):**
+  the `--manifest` requirement is superseded — `PROMOTION.md` §Part A states promotion is now an
+  ordinary write to a directory plus a table row, since ADRs live in `.planning/decisions/` as their
+  own document class, independent of the ingest manifest, and top the precedence order. Both counts
+  above are stale: this is no longer "the two ADR candidates," and the promotion this bullet declared
+  out of scope has now happened for one of them — candidate 7
+  (`Milestone_10/Epic_2/prd-dependency-security-license-compliance.md` FR-1 + §8) is closed by
+  ADR-0036, `Accepted`, `conforms`. See the `## Key Decisions` row plan 12-04 adds.)
 - **Building `STABLE_API.md`, `docs/FEATURE_FLAGS.md`, `docs/MIGRATION.md` or
   `docs/CONFIGURATION.md`** — absent from the paths six run-3 documents name, but shipping as
   mdbook chapters under `docs/src/`. Recording the relocation is ARCH-05.
@@ -631,6 +640,17 @@ It has three consequences worth stating plainly:
 **Eleven ADR candidates have accumulated, and none is promoted.** Promoting any requires re-tagging
 its source via `--manifest` and re-running ingest — entering one in Key Decisions would fabricate
 authority the corpus does not contain. In rough order of consequence:
+
+(**Corrected by Phase 12 (plan 12-03), dated 2026-08-09, citing `.planning/decisions/PROMOTION.md`
+§Part A and ADR-0016, ADR-0021, ADR-0024, ADR-0025, ADR-0036:** all three claims in this passage are
+stale. **Not "none is promoted":** four of the eleven are now promoted — candidate 1 by ADR-0016,
+candidate 2 by ADR-0021, candidate 3 by ADR-0024, candidate 5 by ADR-0025 — and this phase adds a
+fifth: candidate 7, item 2 below, is closed by ADR-0036. **The `--manifest`/re-ingest requirement is
+superseded:** `PROMOTION.md` §Part A states promotion is now an ordinary write to a directory plus a
+table row, since ADRs live in `.planning/decisions/` as their own document class, independent of
+the ingest manifest, and top the precedence order. **Item 2's "Currently violated in the tree" is
+no longer true:** ADR-0036's `## Code Conformance` section carries the `conforms` verdict and the
+measurement establishing it, not restated here.)
 
 1. **`Milestone_7/Epic_4/rustsec-remediation-plan.md`** (run 4) — a formal risk acceptance with
    **owner Platform Security** and **review/expiry target 2026-09-30**. **The only item in all 263
