@@ -277,3 +277,11 @@ None — no external service configuration required.
 ---
 *Phase: 12-supply-chain-gate-integrity*
 *Completed: 2026-08-09*
+
+## Self-Check: PASSED
+
+- FOUND: `scripts/check-workflow-suppressions.sh`
+- FOUND: `.planning/phases/12-supply-chain-gate-integrity/12-02-SUMMARY.md`
+- FOUND: commit `87affa9` (Task 1)
+- FOUND: commit `9eed488` (Task 2)
+- FOUND: commit `5a8d0bf` (docs: SUMMARY)
