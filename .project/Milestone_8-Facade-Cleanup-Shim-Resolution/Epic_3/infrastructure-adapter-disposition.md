@@ -9,6 +9,7 @@
 > rows). Two further defects survive independent of the supersession: row 1 (`arsenal/`) and row
 > 19 (`sanctum/mod.rs`) each name a target crate — `paladin-arsenal` and `paladin-sanctum` — that
 > disagrees with the governing PRD and does not exist in the tree; it remains FACADE-04's subject
+> **Update — 2026-08-08 (Phase 11, plan 11-04):** all twenty rows of the table below are now triaged at [`facade-04-m9-candidate-triage.md`](../../../.planning/registers/facade-04-m9-candidate-triage.md) — 14 `done`, 6 `not a candidate`, 0 `still open` — and `paladin-arsenal` / `paladin-sanctum` are recorded there as artefacts of this table rather than as future crates.
 > for those two names. The original text below is retained unmodified.
 
 **Milestone:** 8 — Facade Cleanup & Shim Resolution
