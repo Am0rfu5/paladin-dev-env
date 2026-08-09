@@ -5,12 +5,12 @@ milestone_name: Milestone 2-3 close-out
 current_phase: 12
 current_phase_name: Supply-Chain Gate Integrity
 status: planning
-stopped_at: Phase 11 complete and verified, ready to plan Phase 12
-last_updated: "2026-08-09T01:01:28.762Z"
+stopped_at: Phase 12 context gathered
+last_updated: "2026-08-09T01:24:48.455Z"
 last_activity: 2026-08-09
 last_activity_desc: Phase 11 complete, transitioned to Phase 12
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 7
   total_plans: 68
   completed_plans: 68
@@ -702,14 +702,14 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Phase 11 complete and verified — ready to plan Phase 12.
+**Stopped at:** Phase 12 context gathered
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-09
-Resume file: None
+Last session: 2026-08-09T01:24:48.403Z
+Resume file: .planning/phases/12-supply-chain-gate-integrity/12-CONTEXT.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
