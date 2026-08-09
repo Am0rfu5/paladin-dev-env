@@ -1,5 +1,28 @@
 # Deferred Features — removed from the facade, recorded for future implementation
 
+> **RECORDS RELOCATED TO `.planning/` — 2026-08-08 (FACADE-03).**
+> Both features' records now live at
+> [`.planning/registers/facade-03-removed-features.md`](../../.planning/registers/facade-03-removed-features.md),
+> so the answer to "why can I not run `paladin user register`?" is findable from `.planning/`
+> without opening this document. The `paladin-ml` leaf-crate placement condition in §2 below is
+> additionally promoted to
+> [`.planning/decisions/0035-paladin-ml-leaf-crate-placement.md`](../../.planning/decisions/0035-paladin-ml-leaf-crate-placement.md)
+> (ADR-0035), since it is a contested position rather than settled status.
+>
+> **Recovery-pointer correction.** The recoverable form is the immutable commit `3d48768`, given as
+> the runnable command `git show 3d48768^:src/application/cli/commands/user.rs`. **One commit
+> removed both features** — `3d48768` deletes both `src/application/cli/commands/user.rs` and
+> `src/infrastructure/adapters/input/tensorflow_adapter.rs` — so attributing the CLI removal to a
+> branch (below, at `:72`) and the ML removal to a commit splits a single event across two pointer
+> kinds. Measured this session: no *local* branch named `chore/facade-cleanup-m8-finish` exists in
+> this checkout, while a *remote-tracking* ref of that name does resolve
+> (`refs/remotes/origin/chore/facade-cleanup-m8-finish`) and is an ancestor of the removal commit.
+> A branch ref — local or remote-tracking — is mutable and deletable regardless of whether it
+> happens to resolve today; that mutability, not its absence, is the durable reason to cite the
+> immutable SHA instead.
+>
+> The original text below is retained unmodified.
+
 **Date:** 2026-06-04
 **Context:** Milestone 8 facade cleanup. Two half-built/placeholder features were removed from
 `src/` to keep the facade lean. They were never wired into a runnable path. This document
