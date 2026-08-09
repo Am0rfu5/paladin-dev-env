@@ -83,8 +83,12 @@ SUPPLY-01 … SUPPLY-03 — but **only SUPPLY-03 is open work.**
   rewriting** — a dated correction banner naming what was wrong and pointing at the ADR or
   requirement, each defective claim corrected inline with the original text retained and marked
   superseded. *(Phase 5 D-08.)*
-- **D-00d:** Ledgers are **amended in place**, dated, superseded text retained. Never a separate
-  corrections file. *(Phase 2 D-02.)*
+- **D-00d [informational]:** Ledgers are **amended in place**, dated, superseded text retained.
+  Never a separate corrections file. *(Phase 2 D-02.)* **Tagged informational for Phase 12 on
+  2026-08-09:** this phase amends no ledger. `.planning/ledgers/` holds only `milestone-01`,
+  `-02-03`, `-04-06` and `-07-08`, none of which is in scope, and D-09 defers `milestone-09-12.md`
+  to Phase 13 / ORCH-01 — the plans explicitly prohibit creating it. The convention still binds any
+  future phase that does touch a ledger; it simply has no trackable deliverable here.
 - **D-00e:** Evidence bar (the "D-19 bar"): no claim of closure without the exact command or
   `file:line` that produced it, **recorded verbatim**. *(Phases 3, 5, 7, 8, 9, 10, 11.)*
 - **D-00f:** Primary key is the `REQ-*` / requirement ID; outstanding task items nest under the
