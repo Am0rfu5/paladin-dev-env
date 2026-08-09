@@ -121,6 +121,12 @@ struct DeepSeekRequest {
 #[derive(Debug, Serialize, Deserialize)]
 struct DeepSeekMessage {
     role: String,
+    /// The visible answer. Deserialized through
+    /// [`deserialize_null_as_empty_string`] because a reasoning model that
+    /// spends its whole budget on hidden reasoning may report the empty
+    /// answer as `null` rather than `""`. Serialization is unaffected —
+    /// outgoing messages always emit a plain JSON string.
+    #[serde(default, deserialize_with = "deserialize_null_as_empty_string")]
     content: String,
     /// Hidden chain-of-thought content emitted by DeepSeek's reasoning models
     /// (e.g. `-flash`/`-pro`). Only ever present on responses; omitted from
@@ -204,6 +210,149 @@ fn detect_empty_completion(content: &str, finish_reason: &FinishReason) -> Optio
     } else {
         None
     }
+}
+
+/// Annotate an [`LlmError::EmptyCompletion`] with the provider's own reported
+/// `usage` so a caller's error message names `prompt_tokens`,
+/// `completion_tokens`, and `total_tokens` instead of discarding them.
+///
+/// A reasoning model that returns `finish_reason=length` with empty content
+/// is ambiguous between two distinct failure modes: "the prompt itself
+/// consumed the whole context window" and "reasoning genuinely overran the
+/// completion budget on a well-sized prompt". `prompt_tokens` is the number
+/// that distinguishes them — before this function existed, `api_response.usage`
+/// was deserialized and then thrown away on exactly the failure path where it
+/// mattered (`detect_empty_completion` returns its error, at the call site
+/// below, BEFORE the `LlmResponse` carrying `usage` is ever constructed).
+///
+/// Deliberately additive and narrow: every non-`EmptyCompletion` variant
+/// passes through byte-identical (no reconstruction), and this does NOT
+/// change [`detect_empty_completion`]'s own signature — five existing tests
+/// call it with two arguments and are left untouched.
+///
+/// **Known, deliberate limitation.** The reasoning/content token SPLIT stays
+/// unobservable: [`DeepSeekUsage`] does not deserialize
+/// `completion_tokens_details.reasoning_tokens`. Recording `prompt_tokens`
+/// here is a strictly smaller, separately-scoped change — splitting
+/// reasoning from content is a distinct upstream change left for its own
+/// task, not silently implied as solved by this one.
+fn annotate_with_usage(err: LlmError, usage: &DeepSeekUsage) -> LlmError {
+    match err {
+        LlmError::EmptyCompletion(msg) => LlmError::EmptyCompletion(format!(
+            "{msg} (provider-reported usage: prompt_tokens={}, completion_tokens={}, \
+             total_tokens={})",
+            usage.prompt_tokens, usage.completion_tokens, usage.total_tokens
+        )),
+        other => other,
+    }
+}
+
+/// Character budget for a diagnostic excerpt of a response body.
+///
+/// Mirrors `anthropic::adapter::RESPONSE_EXCERPT_CHAR_BUDGET`, deliberately —
+/// the two adapters' diagnostics are meant to stay in lockstep for the same
+/// reason their retryable sets are (see [`DeepSeekAdapter::call_api_with_retry`]).
+const RESPONSE_EXCERPT_CHAR_BUDGET: usize = 512;
+
+/// What a redacted credential is replaced with in a diagnostic excerpt.
+const CREDENTIAL_PLACEHOLDER: &str = "[REDACTED]";
+
+/// Deserialize a possibly-`null` (or absent) string field as an empty string.
+///
+/// DeepSeek's reasoning models split their `max_tokens` budget between hidden
+/// `reasoning_content` and visible `content`. When the hidden reasoning
+/// consumes the entire budget, the API may report the empty answer as either
+/// `"content": ""` or `"content": null`. The `""` form is classified by
+/// [`detect_empty_completion`] into an actionable
+/// [`LlmError::EmptyCompletion`]; the `null` form previously aborted
+/// DESERIALIZATION — which happens strictly earlier — so that classifier never
+/// ran and the truncation surfaced as an opaque body-decode failure instead.
+///
+/// Normalizing `null` to `""` routes both spellings of the same provider
+/// behavior down the one code path already built to handle it. It never
+/// invents content: an absent answer stays absent, it just stops being fatal
+/// at the wrong layer.
+fn deserialize_null_as_empty_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(Option::<String>::deserialize(deserializer)?.unwrap_or_default())
+}
+
+/// Build a diagnostic excerpt of a response body, bounded by CHARACTER count
+/// rather than byte count.
+///
+/// Slicing a UTF-8 `&str` by byte offset panics when the offset lands
+/// mid-character, and panics are forbidden in this library — a captured
+/// production response body is full of multi-byte characters. When `body`
+/// exceeds `budget` characters, an ASCII elision marker reports the total byte
+/// length of the untruncated body so the reader knows how much was withheld.
+fn bounded_excerpt(body: &str, budget: usize) -> String {
+    if body.chars().count() <= budget {
+        return body.to_string();
+    }
+
+    let truncated: String = body.chars().take(budget).collect();
+    format!("{truncated}... [truncated, {} total bytes]", body.len())
+}
+
+/// Replace the token that follows every occurrence of `marker` with
+/// [`CREDENTIAL_PLACEHOLDER`].
+///
+/// The token is taken to run until the first whitespace or JSON delimiter.
+/// `marker` must be ASCII so the byte offsets returned by `find` are always
+/// character boundaries; every slice is nonetheless taken through the checked
+/// `get` API so this function has no panicking path.
+fn redact_token_after(body: &str, marker: &str) -> String {
+    let mut out = String::with_capacity(body.len());
+    let mut rest = body;
+
+    while let Some(idx) = rest.find(marker) {
+        let cut = idx + marker.len();
+        let (head, tail) = match (rest.get(..cut), rest.get(cut..)) {
+            (Some(head), Some(tail)) => (head, tail),
+            // Unreachable for an ASCII `marker` located by `find`, but this
+            // library must never panic: stop scanning and emit the remainder
+            // verbatim via the trailing `push_str` below.
+            _ => break,
+        };
+
+        out.push_str(head);
+
+        let end = tail
+            .find(|c: char| c.is_whitespace() || matches!(c, '"' | ',' | '}' | ']' | '\\'))
+            .unwrap_or(tail.len());
+
+        if end > 0 {
+            out.push_str(CREDENTIAL_PLACEHOLDER);
+        }
+
+        rest = tail.get(end..).unwrap_or("");
+    }
+
+    out.push_str(rest);
+    out
+}
+
+/// Strip anything credential-shaped out of text destined for a log line.
+///
+/// Three passes, in order of precision:
+/// 1. the adapter's OWN configured `api_key`, matched exactly — this cannot
+///    miss, and covers a gateway that echoes the request back verbatim;
+/// 2. `Bearer <token>` / `bearer <token>`, the header form;
+/// 3. any surviving `sk-`-prefixed token.
+///
+/// Redaction MUST run before truncation, otherwise a bounded excerpt could
+/// slice a secret in half and leak the surviving prefix.
+fn redact_credentials(body: &str, api_key: &str) -> String {
+    let exact = if api_key.is_empty() {
+        body.to_string()
+    } else {
+        body.replace(api_key, CREDENTIAL_PLACEHOLDER)
+    };
+
+    let no_bearer = redact_token_after(&redact_token_after(&exact, "Bearer "), "bearer ");
+    redact_token_after(&no_bearer, "sk-")
 }
 
 /// DeepSeek LLM Adapter implementing [`LlmPort`].
@@ -337,6 +486,17 @@ impl DeepSeekAdapter {
         }
     }
 
+    /// Render untrusted provider text as a log-safe diagnostic excerpt:
+    /// credentials stripped first, then bounded to
+    /// [`RESPONSE_EXCERPT_CHAR_BUDGET`] characters.
+    ///
+    /// The ordering is load-bearing — truncating first could slice a secret
+    /// in half and leak the surviving prefix.
+    fn diagnostic_excerpt(&self, body: &str) -> String {
+        let redacted = redact_credentials(body, &self.config.api_key);
+        bounded_excerpt(&redacted, RESPONSE_EXCERPT_CHAR_BUDGET)
+    }
+
     /// Map DeepSeek API errors to LlmError.
     fn map_error(&self, status: u16, message: &str) -> LlmError {
         match status {
@@ -345,6 +505,17 @@ impl DeepSeekAdapter {
                 message
             )),
             429 => LlmError::RateLimitExceeded,
+            // DeepSeek's documented insufficient-balance/quota-exhausted status
+            // is 402. `regain_hint` is `None` because DeepSeek's 402 body
+            // shape is not first-party-confirmed (RESEARCH Assumption A1 —
+            // corroborated by multiple third-party sources, not by
+            // DeepSeek's own API reference), so there is no prose to parse
+            // yet. This is D-05's "explicitly-empty, documented branch" —
+            // expressed as a real arm with a `None` hint, not as an absence.
+            402 => LlmError::UsageLimitExceeded {
+                provider: "deepseek".to_string(),
+                regain_hint: None,
+            },
             404 => LlmError::ModelNotAvailable(message.to_string()),
             400 => LlmError::InvalidPrompt(message.to_string()),
             _ => LlmError::ProcessingError(format!("DeepSeek API error ({}): {}", status, message)),
@@ -352,6 +523,26 @@ impl DeepSeekAdapter {
     }
 
     /// Perform API call with retry logic.
+    ///
+    /// Two deliberate non-goals, recorded here rather than silently:
+    ///
+    /// - **Retryable-SET parity with `anthropic/adapter.rs::execute_with_retry`,
+    ///   not attempt-COUNT parity (RESEARCH Pitfall #6 / Open Question #1,
+    ///   planner's call):** this loop's `for attempt in 0..=max_retries` makes
+    ///   up to **4** total calls for `max_retries = 3`, while Anthropic's
+    ///   `attempt >= max_retries` check makes up to **3**. D-02 asks for
+    ///   parity of *which* errors are retried, and Phase 41 deliberately does
+    ///   NOT normalize the counter convention — changing DeepSeek's attempt
+    ///   count would alter the latency envelope of every specialist in the
+    ///   same change that fixes the retryable set, making a live regression
+    ///   impossible to attribute. A future phase may unify both loops onto
+    ///   one shared helper.
+    /// - The two adapters' retryable SETS must stay in lockstep: changing one
+    ///   without the other is the exact bug this change fixed (D-02). Today
+    ///   both retry `NetworkError | Timeout | ProcessingError |
+    ///   RateLimitExceeded | ModelNotAvailable | TokenLimitExceeded` and
+    ///   never retry `AuthenticationError | InvalidPrompt | EmptyCompletion |
+    ///   UsageLimitExceeded`.
     async fn call_api_with_retry<F, Fut, T>(
         &self,
         operation: F,
@@ -361,18 +552,40 @@ impl DeepSeekAdapter {
         F: Fn() -> Fut,
         Fut: std::future::Future<Output = Result<T, LlmError>>,
     {
-        let mut last_error = None;
+        let mut last_error: Option<LlmError> = None;
 
         for attempt in 0..=max_retries {
             match operation().await {
                 Ok(result) => return Ok(result),
-                Err(LlmError::RateLimitExceeded) if attempt < max_retries => {
+                Err(e) => {
+                    // `EmptyCompletion` is deliberately non-retryable: a
+                    // byte-identical retry reproduces the same truncation.
+                    // `AuthenticationError`/`InvalidPrompt` need operator
+                    // intervention, not a retry. `UsageLimitExceeded` will
+                    // not clear on backoff — it resets on a provider-side
+                    // billing schedule, not a short window; a per-provider
+                    // breaker (D-06, downstream) decides whether to attempt
+                    // the call at all, and retrying here would burn retries
+                    // before the breaker ever sees the error.
+                    if matches!(
+                        e,
+                        LlmError::AuthenticationError(_)
+                            | LlmError::InvalidPrompt(_)
+                            | LlmError::EmptyCompletion(_)
+                            | LlmError::UsageLimitExceeded { .. }
+                    ) {
+                        return Err(e);
+                    }
+
+                    if attempt >= max_retries {
+                        return Err(e);
+                    }
+
                     let backoff = Duration::from_millis(100 * 2_u64.pow(attempt));
                     let jitter = Duration::from_millis(rand::random::<u64>() % 100);
                     tokio::time::sleep(backoff + jitter).await;
-                    last_error = Some(LlmError::RateLimitExceeded);
+                    last_error = Some(e);
                 }
-                Err(e) => return Err(e),
             }
         }
 
@@ -413,11 +626,43 @@ impl LlmPort for DeepSeekAdapter {
                     .text()
                     .await
                     .unwrap_or_else(|_| "Unknown error".to_string());
-                return Err(self.map_error(status.as_u16(), &error_text));
+                return Err(self.map_error(status.as_u16(), &self.diagnostic_excerpt(&error_text)));
             }
 
-            let api_response: DeepSeekResponse = response.json().await.map_err(|e| {
-                LlmError::ProcessingError(format!("Failed to parse DeepSeek response: {}", e))
+            // Read the body to text FIRST, then deserialize it separately.
+            //
+            // `Response::json()` collapses two unrelated failures into one
+            // indistinguishable error: reqwest maps BOTH a body-read failure
+            // and a serde failure to `Kind::Decode`, whose `Display` is the
+            // constant string "error decoding response body". Formatting that
+            // with `{}` discards the source chain, so a client timeout that
+            // fires mid-body and a response-shape mismatch produce byte-identical
+            // log lines — and the body that would tell them apart is dropped.
+            // That ambiguity is what made this failure un-diagnosable across two
+            // live runs. Splitting the two steps is the same fix the sibling
+            // Anthropic adapter already carries.
+            let body = response.text().await.map_err(|e| {
+                if e.is_timeout() {
+                    LlmError::Timeout(format!(
+                        "DeepSeek response body did not finish streaming within the {}s client \
+                         timeout — note this timeout covers body streaming, not just the \
+                         response headers, so a slow long completion trips it after a \
+                         successful status line. Raise this stage's timeout or lower its \
+                         max_tokens. Underlying error: {e}",
+                        self.config.timeout_seconds
+                    ))
+                } else {
+                    LlmError::NetworkError(format!("Failed to read DeepSeek response body: {e}"))
+                }
+            })?;
+
+            let api_response: DeepSeekResponse = serde_json::from_str(&body).map_err(|e| {
+                LlmError::ProcessingError(format!(
+                    "Failed to parse DeepSeek response (likely schema drift — see the \
+                     null-`content` reasoning precedent in this adapter's tests): {e} — \
+                     body excerpt: {}",
+                    self.diagnostic_excerpt(&body)
+                ))
             })?;
 
             let choice = api_response.choices.first().ok_or_else(|| {
@@ -427,7 +672,7 @@ impl LlmPort for DeepSeekAdapter {
             let finish_reason = Self::map_finish_reason(choice.finish_reason.clone());
 
             if let Some(err) = detect_empty_completion(&choice.message.content, &finish_reason) {
-                return Err(err);
+                return Err(annotate_with_usage(err, &api_response.usage));
             }
 
             Ok(LlmResponse {
@@ -573,6 +818,8 @@ impl LlmPort for DeepSeekAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     #[test]
     fn test_deepseek_config_validation() {
@@ -662,6 +909,53 @@ mod tests {
     }
 
     #[test]
+    fn test_annotate_with_usage_names_all_three_token_counts_on_empty_completion() {
+        let err = LlmError::EmptyCompletion("finish_reason=length with empty content".to_string());
+        let usage = DeepSeekUsage {
+            prompt_tokens: 31_000,
+            completion_tokens: 32_000,
+            total_tokens: 63_000,
+        };
+
+        let annotated = annotate_with_usage(err, &usage);
+
+        match annotated {
+            LlmError::EmptyCompletion(msg) => {
+                assert!(
+                    msg.contains("finish_reason=length with empty content"),
+                    "original message must survive, got: {msg}"
+                );
+                assert!(msg.contains("31000"), "must name prompt_tokens, got: {msg}");
+                assert!(
+                    msg.contains("32000"),
+                    "must name completion_tokens, got: {msg}"
+                );
+                assert!(msg.contains("63000"), "must name total_tokens, got: {msg}");
+            }
+            other => {
+                panic!("expected EmptyCompletion to round-trip as EmptyCompletion, got {other:?}")
+            }
+        }
+    }
+
+    #[test]
+    fn test_annotate_with_usage_passes_through_non_empty_completion_variants_unchanged() {
+        let err = LlmError::Timeout("request timed out".to_string());
+        let usage = DeepSeekUsage {
+            prompt_tokens: 1,
+            completion_tokens: 2,
+            total_tokens: 3,
+        };
+
+        let annotated = annotate_with_usage(err, &usage);
+
+        match annotated {
+            LlmError::Timeout(msg) => assert_eq!(msg, "request timed out"),
+            other => panic!("expected Timeout to round-trip unchanged, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn test_deepseek_message_deserializes_with_reasoning_content() {
         let json =
             r#"{"role":"assistant","content":"","reasoning_content":"thinking really hard..."}"#;
@@ -679,5 +973,396 @@ mod tests {
         let message: DeepSeekMessage = serde_json::from_str(json).expect("should deserialize");
         assert_eq!(message.content, "the answer");
         assert_eq!(message.reasoning_content, None);
+    }
+
+    /// RED probe (debug session `deepseek-body-decode-persist`): a reasoning
+    /// model that spends its whole `max_tokens` budget on hidden reasoning can
+    /// return `"content": null` rather than `"content": ""`. The `""` form is
+    /// handled by `detect_empty_completion`; the `null` form must not blow up
+    /// in DESERIALIZATION, because that happens strictly before
+    /// `detect_empty_completion` ever runs.
+    #[test]
+    fn deepseek_response_deserializes_reasoning_payload_with_null_content() {
+        let json = r#"{
+            "id": "chatcmpl-abc123",
+            "model": "deepseek-v4-flash",
+            "choices": [{
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": null,
+                    "reasoning_content": "long hidden chain of thought..."
+                },
+                "finish_reason": "length"
+            }],
+            "usage": {"prompt_tokens": 41000, "completion_tokens": 24000, "total_tokens": 65000}
+        }"#;
+
+        let response: DeepSeekResponse =
+            serde_json::from_str(json).expect("a null content field must not fail deserialization");
+        let choice = response
+            .choices
+            .first()
+            .expect("payload declares one choice");
+        assert_eq!(
+            choice.message.content, "",
+            "null content must normalize to empty string so detect_empty_completion can \
+             classify it as a truncation"
+        );
+    }
+
+    // ── Debug `deepseek-body-decode-persist`: body-decode diagnosability ──
+
+    #[test]
+    fn deepseek_message_deserializes_absent_content_as_empty_string() {
+        // A missing `content` key must be as survivable as an explicit null.
+        let json = r#"{"role":"assistant","reasoning_content":"thinking..."}"#;
+        let message: DeepSeekMessage = serde_json::from_str(json).expect("should deserialize");
+        assert_eq!(message.content, "");
+    }
+
+    #[test]
+    fn null_content_truncation_is_classified_as_empty_completion_not_a_decode_failure() {
+        // The whole point of tolerating null: it lets the EXISTING truncation
+        // classifier see the response, which hands the caller an actionable
+        // "raise max_tokens" error instead of an opaque decode failure.
+        let json = r#"{"role":"assistant","content":null}"#;
+        let message: DeepSeekMessage = serde_json::from_str(json).expect("should deserialize");
+
+        let detected = detect_empty_completion(&message.content, &FinishReason::Length);
+        assert!(matches!(detected, Some(LlmError::EmptyCompletion(_))));
+    }
+
+    #[test]
+    fn deepseek_message_still_serializes_content_as_a_plain_string() {
+        // The null-tolerant deserializer must not leak into the REQUEST shape.
+        let message = DeepSeekMessage {
+            role: "user".to_string(),
+            content: "hello".to_string(),
+            reasoning_content: None,
+        };
+        let json = serde_json::to_string(&message).expect("should serialize");
+        assert!(json.contains(r#""content":"hello""#), "got {json}");
+        assert!(!json.contains("null"), "got {json}");
+    }
+
+    #[test]
+    fn bounded_excerpt_returns_input_unchanged_when_shorter_than_budget() {
+        let body = r#"{"error":"short"}"#;
+        assert_eq!(bounded_excerpt(body, RESPONSE_EXCERPT_CHAR_BUDGET), body);
+    }
+
+    #[test]
+    fn bounded_excerpt_is_char_boundary_safe_on_multibyte_input() {
+        // Byte-slicing this would panic mid-character; char-count truncation
+        // must not. A production body is full of multi-byte text.
+        let body = "\u{1F5E1}\u{FE0F}\u{2694}\u{FE0F}".repeat(64);
+        let budget = 5;
+        let excerpt = bounded_excerpt(&body, budget);
+
+        assert!(excerpt.starts_with("\u{1F5E1}"));
+        assert!(excerpt.contains("[truncated,"));
+        assert_eq!(
+            excerpt.chars().take(budget).count(),
+            budget,
+            "must keep exactly `budget` characters before the elision marker"
+        );
+    }
+
+    #[test]
+    fn diagnostic_excerpt_never_echoes_the_configured_api_key() {
+        // The constraint that motivated this test: a captured body excerpt is
+        // written straight to an operator-facing log line, so it must never
+        // carry a credential — asserted, not assumed.
+        let secret = "sk-livekey-abcdef0123456789";
+        let config = DeepSeekConfig::new(
+            secret.to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        let adapter = DeepSeekAdapter::new(config).expect("valid config");
+
+        // A gateway echoing the whole request back, headers included.
+        let echoed = format!(
+            r#"{{"error":"bad gateway","request":{{"headers":{{"authorization":"Bearer {secret}"}}}}}}"#
+        );
+        let excerpt = adapter.diagnostic_excerpt(&echoed);
+
+        assert!(
+            !excerpt.contains(secret),
+            "excerpt leaked the API key: {excerpt}"
+        );
+        assert!(
+            !excerpt.contains("livekey"),
+            "excerpt leaked part of the API key: {excerpt}"
+        );
+        assert!(
+            excerpt.contains(CREDENTIAL_PLACEHOLDER),
+            "excerpt should show the redaction happened: {excerpt}"
+        );
+        // The surrounding diagnostic context must survive redaction.
+        assert!(excerpt.contains("bad gateway"), "got {excerpt}");
+    }
+
+    #[test]
+    fn redact_credentials_masks_bearer_and_sk_tokens_it_was_not_configured_with() {
+        // Defense in depth: a key OTHER than this adapter's own (e.g. an
+        // upstream proxy's) must still be masked by shape.
+        let body = r#"{"msg":"denied","auth":"Bearer sk-someoneelses-9876543210"}"#;
+        let redacted = redact_credentials(body, "");
+
+        assert!(!redacted.contains("9876543210"), "got {redacted}");
+        assert!(redacted.contains(CREDENTIAL_PLACEHOLDER), "got {redacted}");
+        assert!(redacted.contains("denied"), "got {redacted}");
+    }
+
+    #[test]
+    fn redact_credentials_leaves_credential_free_bodies_untouched() {
+        let body = r#"{"id":"chatcmpl-1","choices":[{"index":0}]}"#;
+        assert_eq!(redact_credentials(body, "sk-not-present"), body);
+    }
+
+    #[test]
+    fn parse_failure_message_carries_serde_detail_and_a_body_excerpt() {
+        // The regression guard for this whole debug session: the message must
+        // no longer be the information-free constant reqwest hands back.
+        let config = DeepSeekConfig::new(
+            "sk-test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        let adapter = DeepSeekAdapter::new(config).expect("valid config");
+
+        // An HTTP-200 error object — a shape `DeepSeekResponse` cannot accept.
+        let body = r#"{"error":{"message":"model overloaded","type":"server_error"}}"#;
+        let parse_error = serde_json::from_str::<DeepSeekResponse>(body)
+            .expect_err("this body must not deserialize into DeepSeekResponse");
+
+        let rendered = format!(
+            "Failed to parse DeepSeek response (likely schema drift): {parse_error} — \
+             body excerpt: {}",
+            adapter.diagnostic_excerpt(body)
+        );
+
+        assert!(
+            rendered.contains("model overloaded"),
+            "the raw body must survive into the error: {rendered}"
+        );
+        assert!(
+            rendered.contains("missing field"),
+            "serde's own diagnosis must survive into the error: {rendered}"
+        );
+        assert_ne!(
+            rendered, LIVE_BODY_DECODE_ERROR,
+            "must not collapse back to the information-free constant"
+        );
+    }
+
+    // ── Task 41-01/3: DeepSeek retryable-set parity + the 402 arm (D-02) ──
+
+    fn test_adapter() -> DeepSeekAdapter {
+        let config = DeepSeekConfig::new(
+            "test-key".to_string(),
+            "https://api.deepseek.com/v1".to_string(),
+            "deepseek-chat".to_string(),
+        );
+        DeepSeekAdapter::new(config).expect("test config must build a valid adapter")
+    }
+
+    /// The exact live error string that killed the deductive specialist in
+    /// run `4a3b749d` — already used as a fixture at
+    /// `crates/audit-agents/src/deductive.rs:1539` and
+    /// `crates/audit-agents/src/fuzz.rs:2912` in the downstream superproject.
+    const LIVE_BODY_DECODE_ERROR: &str =
+        "Failed to parse DeepSeek response: error decoding response body";
+
+    #[test]
+    fn map_error_402_maps_to_usage_limit_exceeded_not_processing_error() {
+        let adapter = test_adapter();
+        let error = adapter.map_error(402, "Insufficient Balance");
+
+        match error {
+            LlmError::UsageLimitExceeded {
+                provider,
+                regain_hint,
+            } => {
+                assert_eq!(provider, "deepseek");
+                assert_eq!(regain_hint, None);
+            }
+            other => panic!("expected UsageLimitExceeded, got {other:?}"),
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_retries_a_body_decode_processing_error() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<(), LlmError> = adapter
+            .call_api_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        Err(LlmError::ProcessingError(
+                            LIVE_BODY_DECODE_ERROR.to_string(),
+                        ))
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            4,
+            "a body-decode ProcessingError must be retried up to (max_retries + 1) attempts \
+             — this is the LLMR-01 root cause"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_retries_network_error_and_timeout() {
+        let adapter = test_adapter();
+
+        for make_error in [
+            || LlmError::NetworkError("connection reset".to_string()),
+            || LlmError::Timeout("request timed out".to_string()),
+        ] {
+            let calls = Arc::new(AtomicU32::new(0));
+            let calls_clone = Arc::clone(&calls);
+
+            let result: Result<(), LlmError> = adapter
+                .call_api_with_retry(
+                    move || {
+                        let calls = Arc::clone(&calls_clone);
+                        let error = make_error();
+                        async move {
+                            calls.fetch_add(1, Ordering::SeqCst);
+                            Err(error)
+                        }
+                    },
+                    3,
+                )
+                .await;
+
+            assert!(result.is_err());
+            assert_eq!(calls.load(Ordering::SeqCst), 4);
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_succeeds_after_one_transient_processing_error() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<&'static str, LlmError> = adapter
+            .call_api_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        let n = calls.fetch_add(1, Ordering::SeqCst);
+                        if n == 0 {
+                            Err(LlmError::ProcessingError(
+                                LIVE_BODY_DECODE_ERROR.to_string(),
+                            ))
+                        } else {
+                            Ok("recovered")
+                        }
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(matches!(result, Ok("recovered")));
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            2,
+            "must succeed after exactly one transient failure plus one retry"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_invokes_operation_exactly_once_on_empty_completion() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<(), LlmError> = adapter
+            .call_api_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        Err(LlmError::EmptyCompletion("no text".to_string()))
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_invokes_operation_exactly_once_on_usage_limit_exceeded() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<(), LlmError> = adapter
+            .call_api_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        Err(LlmError::UsageLimitExceeded {
+                            provider: "deepseek".to_string(),
+                            regain_hint: None,
+                        })
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            1,
+            "a usage-cap error must not be retried — it will not clear on backoff"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn call_api_with_retry_still_retries_rate_limit_exceeded() {
+        let adapter = test_adapter();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls_clone = Arc::clone(&calls);
+
+        let result: Result<(), LlmError> = adapter
+            .call_api_with_retry(
+                move || {
+                    let calls = Arc::clone(&calls_clone);
+                    async move {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        Err(LlmError::RateLimitExceeded)
+                    }
+                },
+                3,
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            4,
+            "RateLimitExceeded retry behavior must not regress"
+        );
     }
 }
