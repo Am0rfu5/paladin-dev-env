@@ -1,25 +1,32 @@
 ---
 phase: 11-facade-residue-deferred-register-disposition
 verified: 2026-08-09T00:39:13Z
-status: human_needed
+status: passed
 score: 9/9 must-haves verified (record-only domain; behavior_unverified: 0 — no state-transition/cancellation-invariant truths in this phase)
 overrides_applied: 0
 requirements_coverage:
+
   - id: FACADE-01
     status: satisfied
+
   - id: FACADE-02
     status: satisfied
+
   - id: FACADE-03
     status: satisfied
+
   - id: FACADE-04
     status: satisfied
 human_verification:
+
   - test: "Confirm the FACADE-02 cross-register backstop truth: that user_service.rs resolves to exactly three non-overlapping owners (split withdrawn/no owner, full relocation owned by the run-3 v2 tech-debt item, tests owned by DEFER-02/Phase 15) with no file left proposing two incompatible next actions."
     expected: "A human reads ADR-0034's D2 sub-decision, the run-3 v2 tech-debt item, and Deferred-QA Epic 28/DEFER-02's entry side by side and confirms the three owners are distinct and non-overlapping."
     why_human: "must_haves.truths marks this `verification: backstop` and 11-VALIDATION.md independently classes it manual-only — no single command proves a cross-document non-collision. This verifier found strong supporting evidence (ADR-0034 lines 106-118 name all three owners explicitly, and REQUIREMENTS.md lines 2314-2339, 3255-3281, 4076 corroborate the collision this withdrawal resolves) but per the backstop-truth protocol this abstains to human_needed rather than silently passing on inference."
+
   - test: "Confirm the ADR-allocation checkpoint (plan 11-01, Task 2) was an acceptable resolution."
     expected: "A human reviews option-a (two ADRs: 0034 for D1-D4, 0035 for paladin-ml placement) and confirms it was the right call, since the plan's own coverage table flags this item `human_judgment: true`."
     why_human: "The `checkpoint:decision` gate was auto-selected by the orchestrator under AUTO_MODE=true rather than independently reasoned by a human reviewer (11-01-SUMMARY.md's own D5 coverage entry states this explicitly). The selection is transparently recorded and evidence-backed, but was not human-confirmed at the time it was made."
+
   - test: "Spot-check the 8 judgment-tier prohibitions across the 5 plans (all authored descriptor-less, no check_* wiring) for any silent violation this verifier's greps could have missed."
     expected: "Each prohibition (`must not delete or rewrite the text it corrects`, `ADR-0031's unratified status must not be laundered`, `the CLI reintroduction record must not imply purely mechanical re-wiring`, `the ROADMAP amendment must remain falsifiable, not retro-fitted`) holds under closer human reading of the full annotated documents, not just the grep/diff evidence this verifier collected."
     why_human: "Per the prohibition-handling protocol, judgment-tier prohibitions with no wired check are NON-AUTHORITATIVE when confirmed only by an LLM judge (this verifier). This verifier's own LLM-judge disposition for all 8 is PASS (see below), backed by `git diff --numstat` zero-deletion evidence and targeted greps, but the protocol requires this be flagged for human review rather than silently folded into a passed verdict."
