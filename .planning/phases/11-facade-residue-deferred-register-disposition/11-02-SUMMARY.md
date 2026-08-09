@@ -124,6 +124,14 @@ None - no external service configuration required.
 - The facade-wide no-alias sweep (D1), the architecture-pass milestone (D2's `content_service.rs`/`event_manager.rs`), the broader builder/execution refactor (D3), and the dependency-coupling review (D4) are all named as triggers but have no scheduled owner phase yet — recorded as `unassigned-pending` in ADR-0034, consistent with D-04's instruction that a verdict need only name the trigger, not schedule it.
 - No blockers for plan 11-05's PROMOTION.md numbering-index update (ADR-0034 row) or ledger amendment.
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/decisions/0034-d1-d4-facade-relocation-disposition.md`
+- FOUND: `.project/Milestone_8-Facade-Cleanup-Shim-Resolution/deferred-items.md`
+- FOUND: `.planning/phases/11-facade-residue-deferred-register-disposition/11-02-SUMMARY.md`
+- FOUND commit `cc31aed` (Task 1: ADR-0034)
+- FOUND commit `a14db07` (Task 2: deferred-items.md corrections)
+
 ---
 *Phase: 11-facade-residue-deferred-register-disposition*
 *Completed: 2026-08-09*
