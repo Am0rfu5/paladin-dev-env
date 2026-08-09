@@ -2028,7 +2028,7 @@ expiry coverage, and one unauthorised expansion.
       ignore entries — matching the corrected baseline this closure note already records above (ten
       surviving suppressions, not the original thirteen/fifteen).
 
-- [x] **SUPPLY-03**: The two supply-chain ADR candidates are promoted or declined, deliberately.
+- [ ] **SUPPLY-03**: The two supply-chain ADR candidates are promoted or declined, deliberately.
       `Milestone_7/Epic_4/rustsec-remediation-plan.md` carries the corpus's **only expiry date**;
       `Milestone_10/Epic_2/prd-dependency-security-license-compliance.md` FR-1 + §8 carries the
       **single-source invariant the tree currently violates**. They are the same subject from two
@@ -4115,7 +4115,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | FACADE-04 | Phase 11 | Complete |
 | SUPPLY-01 | Phase 12 | Complete |
 | SUPPLY-02 | Phase 12 | Complete |
-| SUPPLY-03 | Phase 12 | Complete |
+| SUPPLY-03 | Phase 12 | Pending |
 | ORCH-01 | Phase 13 | Pending |
 | ORCH-02 | Phase 13 | Pending |
 | ORCH-03 | Phase 13 | Pending |
