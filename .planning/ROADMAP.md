@@ -800,7 +800,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 12-03-PLAN.md — SUPPLY-03: ADR-0036 promoting the audit-suppression single-source topology invariant with a `conforms` verdict, plus dated corrections on the four passages claiming the promotion is impossible (wave 3)
+- [x] 12-03-PLAN.md — SUPPLY-03: ADR-0036 promoting the audit-suppression single-source topology invariant with a `conforms` verdict, plus dated corrections on the four passages claiming the promotion is impossible (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
