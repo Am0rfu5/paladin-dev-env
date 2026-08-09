@@ -744,7 +744,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 11-05-PLAN.md — close-out: five ledger rows amended, two REQUIREMENTS.md source corrections, `PROMOTION.md` and `PROJECT.md` updated last (wave 3)
+- [x] 11-05-PLAN.md — close-out: five ledger rows amended, two REQUIREMENTS.md source corrections, `PROMOTION.md` and `PROJECT.md` updated last (wave 3)
 
 **Cross-cutting constraints:**
 
