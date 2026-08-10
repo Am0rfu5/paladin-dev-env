@@ -51,11 +51,18 @@ sequenceDiagram
     Client->>Server: POST /v1/agents/{id}/execute  (X-API-Key / Bearer)
     Server->>Server: authenticate + authorize (allowed_roles)
     Server->>Service: execute(agent, input)
-    Service->>Agent: run (LLM + tools + memory)
+    Service->>Agent: run (LLM + prompt)
     Agent-->>Service: PaladinResult
     Service-->>Server: output
     Server-->>Client: 200 JSON { output, … }
 ```
+
+> **This topology carries no Garrison and no Arsenal.** An HTTP-served agent has no memory
+> (Garrison) and no tools/MCP (Arsenal) — `AgentSpec` has no field for either, and this is a
+> permanent property of the shipped topology, not a gap awaiting a future release. If your
+> agent needs memory or tools, build it on the [embedded library](embedded-library.md)
+> topology instead (optionally wrapped in your own HTTP layer, as shown in
+> [Embedding](#embedding-in-your-own-app) below).
 
 ## Configuring the host
 
