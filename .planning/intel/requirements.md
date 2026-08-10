@@ -6108,6 +6108,7 @@ authoritative here; both sides are preserved and the tree is cited.
   - Success metric: components documented **8 of 15+ → 15+ of 15+**
 - scope: Design_and_Architecture.md, 7 undocumented subsystems, 4 Mermaid diagrams
 - settled-by: code-verification.md run-5 — **VERIFIED OPEN, and the file was relocated without being rewritten.** The document now ships as `docs/src/appendix/design-and-architecture.md` and is **still exactly 311 lines** — the same figure this requirement cites. It contains **zero** occurrences of Commander, Council, Conclave, Grove, Maneuver, Sanctum or Sentinel and **zero** ```mermaid blocks. Milestone 11 moved it into the mdbook appendix, which its own Epic 3 non-goals exempt from rewriting ("the 35 appendix files are reference/archive material and are not rewritten"). **The relocation placed the corpus's largest documentation gap into the one chapter nobody was required to fix.**
+- note (dated 2026-08-10, ORCH-03(d)): two separately labelled facts, not merged. **Relocation — closed:** the move from `docs/Design/Design_and_Architecture.md` (absent, confirmed via `test -f`, re-run this session) to `docs/src/appendix/design-and-architecture.md` (present) is done. **Rewrite — open:** the content gap the `settled-by` line above describes is unresolved. Owner **Phase 16 / DOCS-02**. Matches `.planning/ledgers/milestone-09-12.md` row `REQ-arch-doc-modernization` (D-13(d)).
 
 ## REQ-rustdoc-zero-warnings
 - source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-26.2; G5)
@@ -6139,6 +6140,7 @@ authoritative here; both sides are preserved and the tree is cited.
 - scope: asciinema recordings, docs/assets, docs/DEMOS.md, README embedding
 - settled-by: code-verification.md run-5 — **VERIFIED OPEN.** `docs/assets/` exists and is **empty**; `docs/DEMOS.md` does not exist.
 - note: Open Question 4 (asciinema versus VHS tape files, Terminalizer or plain GIFs) has no recorded answer. The README was subsequently rewritten by Milestone 11 Epic 5 to a concise landing page, which does not include a demos section — so this requirement's README clause targets a document that has since changed shape.
+- note (dated 2026-08-10, ORCH-03(e)): correcting the `settled-by` line above — `docs/assets/` does **not** exist at all (`test -d docs/assets` fails, re-run this session), it is not merely empty as previously recorded. The path that does exist, `docs/src/assets/`, holds six architecture SVGs unrelated to demo content (re-confirmed this session, matches `.planning/ledgers/milestone-09-12.md` row `REQ-asciinema-demos` D-13(e)'s own path correction). `docs/DEMOS.md` absence and the README's changed shape are both still accurate. Owner **Phase 16 / DOCS-04**.
 
 ## REQ-llm-tool-calling-port
 - source: /workspace/.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md (FR-27.1, FR-27.2; G6)
@@ -6210,6 +6212,7 @@ authoritative here; both sides are preserved and the tree is cited.
 - scope: listener service coverage, Epic 29, concurrency stress, distributed tracing
 - settled-by: code-verification.md run-5 — the module was **relocated, not deleted.** Both this PRD and `DEFERRED_COVERAGE.md` name `src/core/platform/manager/listener_service.rs`, which no longer exists; the code ships as `src/application/services/orchestration/listener.rs` (`ListenerOrchestrator`) after the Milestone 6 Epic 2 relocation. Relocation, not contradiction — but every path in this requirement is stale.
 - note: Milestone 9 Epic 2 (`REQ-event-trigger-job-pipeline`) subsequently added match/no-match/fan-out/rate-limit/dispatch tests against this exact module. **Epic 29's stated coverage baseline of 57.83% predates that work and is almost certainly no longer accurate.** Re-measure before planning.
+- note (dated 2026-08-10, ORCH-03(b)): the relocation above and the stale-baseline finding are both accurate and already recorded; adding only the owner they were missing — **Phase 15 / DEFER-03**. Matches `.planning/ledgers/milestone-09-12.md` row `REQ-listener-service-test-coverage` (D-13(b)) and the dated correction banner atop `DEFERRED_COVERAGE.md`.
 
 ## REQ-deferred-coverage-register
 - source: /workspace/.project/Deferred-QA-CICD-Completion/DEFERRED_COVERAGE.md
