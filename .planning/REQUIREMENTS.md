@@ -2213,6 +2213,26 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
       component-level file evidence to per-criterion verdicts, and when the ledger states plainly
       that the whole M9 orchestrator subsystem, the whole M10 tooling set, the mdbook and the whole
       M12 web API ship — so nothing in them is re-planned.
+      **Corrected (dated 2026-08-10, D-04, plan 13-10):** ~~"Sixteen entries already carry
+      `settled-by` pointers into `intel/code-verification.md` run 5 … and the remaining 104 need the
+      same treatment"~~ counts two different populations. The sixteen are **variant-register**
+      entries, not ledger rows —
+      `intel/SYNTHESIS.md:335` defines the `settled-by` mechanism as applying "where the shipped
+      tree settles a *variant*", and `:546` counts "sixteen entries carry `- settled-by:` lines"
+      under the variant register, above, not under this ledger. Measured this session:
+      `grep -c "settled-by" .planning/REQUIREMENTS.md` → **10**, none inside the ledger region
+      (`sed -n '3607,3931p' .planning/REQUIREMENTS.md | grep -c "settled-by"` → **0**). **No ledger
+      row carries a `settled-by` pointer, and all 120 rows need a verdict** — not 104. The measured
+      split, re-run this session against `REQUIREMENTS.md:3607-3931` before plan 13-10 replaced that
+      range with a pointer: `grep -c '^| REQ-'` → **120**; bare `Verify` rows → **35**; bare
+      `Shipped` rows (`Shipped — ` plus the `Shipped → ` arrow form) → **51 + 2 = 53**; the
+      remainder, already carrying a richer verdict → **32** (120 − 35 − 53). This is the same class
+      of error as Phase 10's D-05 — an arithmetic claim inside the very requirement that exists to
+      retire it — and a planner budgeting 104 rows against this ledger would have been wrong in both
+      directions at once: too low by the 16 already-settled variant entries this ledger never held,
+      and too high by counting them against a 120-row surface where 0 carry the pointer. See
+      `.planning/ledgers/milestone-09-12.md`'s own "Corrected arithmetic" paragraph, which reconciles
+      the identical 35/53/32 figures against the same commands.
       **One verdict class is new and must survive into the ledger:** Milestone 10 is recorded 100%
       complete, ships every file, job, target and ruleset it promised, **and fails one of its own
       acceptance criteria** (SUPPLY-01). A count that is simultaneously accurate about deliverables
@@ -2299,6 +2319,20 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
       lockstep-versioned chain in which each milestone's finalization Epic bumps the root crate and
       every workspace member together and cuts a tag. That chain terminates exactly where the tree
       is: root `Cargo.toml` at `version = "0.6.0"`, branch `release/v0.7.0`, latest tag `v0.5.1`.
+      **Corrected (dated 2026-08-10, D-18, plan 13-10):** ~~"That chain terminates exactly where the
+      tree is: root `Cargo.toml` at `version = "0.6.0"`, branch `release/v0.7.0`, latest tag
+      `v0.5.1`"~~ — two of the three clauses are two releases
+      stale. Re-run this session: `grep -n '^version' Cargo.toml` → `Cargo.toml:34` `version =
+      "0.7.0"`; `git tag --sort=-v:refname | head -8` → `v0.7.1, v0.7.0, v0.5.1, v0.5.0, v0.4.3,
+      v0.4.2, v0.4.1, v0.4.0`; `git branch --show-current` → `release/v0.7.0` — the one accurate
+      clause of the three. This is the identical defect Phase 10's D-11 already corrected once, in
+      HARD-03 (see that entry's own `**Corrected (dated 2026-08-08, HARD-03)**` block, which reads
+      `Cargo.toml:34` `version = "0.7.0"` and `git tag --sort=-v:refname | head -3` → `v0.7.1,
+      v0.7.0, v0.5.1`), regrown one requirement later. `intel/code-verification.md:469` carries the
+      same stale `0.6.0` figure — correct as of the 2026-07-30 ingest and superseded since; Phase 13
+      plan 13-11 corrects it there. **The historical facts below are unchanged**: the four lockstep
+      gates M9 → `v0.3.0`, M10 → `v0.4.0`, M11 → `v0.5.0`, M12 → `v0.6.0` are exactly what plan 13-12
+      transcribes into ADR-0029 — only this current-state clause is corrected.
       **HARD-03 records `v0.1.0-rc.1` as history; ORCH-05 completes the line from rc.1 to 0.6.0**,
       so REL-01 converges a three-way disagreement with the full trajectory in view rather than a
       fragment of it.
