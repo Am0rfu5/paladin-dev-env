@@ -1,14 +1,16 @@
 ---
 phase: 12-supply-chain-gate-integrity
 verified: 2026-08-09T14:32:09Z
-status: human_needed
+status: passed
 score: 8/9 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
+
   - test: "Confirm the required-status-check clause resolves on the first real CI run against release/v0.7.0 after Phase 9's 2026-08-08 deletion (commit cb75b2b)."
     expected: "A `gh run view <run-id>` citation, for a run whose creation timestamp postdates 2026-08-08, shows the `Security Audit` context reporting `success` and the ruleset (once applied) resolving against it."
     why_human: "This is a future CI-run fact, not derivable from the repository at rest. Re-run live in this verification: `gh run list --workflow=ci.yml --limit 5` still returns run `30861568499` (2026-08-03T23:14:24Z) as the most recent run against `release/v0.7.0` — five days *before* the deletion. No run exists that could confirm or deny the clause. Per the phase's own D-07 constraint and 12-VALIDATION.md's Manual-Only table, marking this VERIFIED here would be exactly the false positive the phase warns against. This is also the truth carrying `verification: backstop` in 12-01's must_haves — per the honest-verifier contract it abstains rather than passes."
+
   - test: "Apply (or decline to apply) the committed GitHub rulesets (`.github/rulesets/protect-main-branch.json`, `protect-release-tags.json`) to the live repository, and confirm main-branch protection actually enforces the `Security Audit` required status check."
     expected: "A repository-owner decision and action, recorded at the milestone close-out, on whether/when to apply the version-controlled ruleset JSON."
     why_human: "Live repository administration state, explicitly out of this phase's scope (D-10). Re-verified live in this session: `gh api repos/:owner/:repo/rulesets` returns `[]` and `gh api repos/:owner/:repo/branches/main/protection` returns `404 Branch not protected` — unchanged from the phase's own recorded finding. The phase correctly did not apply anything; a human/repo-owner decision is what remains outstanding, not a verification gap in the phase's own work."

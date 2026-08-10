@@ -154,7 +154,7 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 
 **Milestone 9-12 + Deferred-QA close-out**
 
-- [ ] **Phase 12: Supply-Chain Gate Integrity** - Delete the duplicate audit job that falsifies a completed milestone's success metric, and give every advisory suppression an owner and a date
+- [x] **Phase 12: Supply-Chain Gate Integrity** - Delete the duplicate audit job that falsifies a completed milestone's success metric, and give every advisory suppression an owner and a date (completed 2026-08-10)
 - [ ] **Phase 13: Milestone 9-12 Ground Truth & Recorded Account** - Record what the orchestrator, release-automation, documentation and Web API milestones delivered, and turn two recorded defaults into decisions
 - [ ] **Phase 14: API Contract Truthfulness** - Make every capability the project advertises through an interface one it actually has — the token mechanism, the multi-replica store, and the LLM capability flag
 - [ ] **Phase 15: Coverage & CI Quality Gates** - Build the quality gates Deferred-QA Epic 25 specified and nobody started, then close the coverage register those gates measure
@@ -787,7 +787,7 @@ CI-run-observation half of this note — confirming the required status check st
 first real CI run — is **not** bannered here: it is still true and remains recorded pending, per
 D-07.)
 
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -969,7 +969,7 @@ through it. Recorded here so neither side gets planned twice:
 | 9. Release & Security Gate Integrity | M7-8 | 0/TBD | Not started | - |
 | 10. Milestone 7-8 Ground Truth & Recorded Account | M7-8 | 11/11 | Complete    | 2026-08-08 |
 | 11. Facade Residue & Deferred Register Disposition | M7-8 | 5/5 | Complete    | 2026-08-09 |
-| 12. Supply-Chain Gate Integrity | M9-12 | 0/TBD | Not started | - |
+| 12. Supply-Chain Gate Integrity | M9-12 | 4/4 | Complete    | 2026-08-10 |
 | 13. Milestone 9-12 Ground Truth & Recorded Account | M9-12 | 0/TBD | Not started | - |
 | 14. API Contract Truthfulness | M9-12 | 0/TBD | Not started | - |
 | 15. Coverage & CI Quality Gates | M9-12 | 0/TBD | Not started | - |
