@@ -1,5 +1,57 @@
 # PRD: Deferred QA & Documentation Completion
 
+> **Correction (dated 2026-08-10, ORCH-03(b)-(e)):** This document names four paths that have
+> since moved or changed shape. Each is verified against the tree this session and recorded here;
+> original text is retained throughout with no line deleted. The same four relocations are
+> recorded as ledger rows in `.planning/ledgers/milestone-09-12.md` (`REQ-listener-service-test-coverage`
+> D-13(b), `REQ-llm-tool-calling-port` D-13(c), `REQ-arch-doc-modernization` D-13(d),
+> `REQ-asciinema-demos` D-13(e)) — this annotation states the same two paths per relocation as
+> those rows.
+>
+> **(b) `listener_service.rs`:** `src/core/platform/manager/listener_service.rs` (referenced below
+> at G8 and elsewhere) is absent — confirmed via `test -f src/core/platform/manager/listener_service.rs`,
+> re-run this session (Milestone 6 Epic 2 relocation). The module ships as
+> `src/application/services/orchestration/listener.rs` (`pub struct ListenerOrchestrator` at
+> `:141`, confirmed present, re-run this session). The 602 LOC / ~57.83% baseline (dated
+> 2026-02-14) is stale in **both path and number** — Milestone 9 Epic 2 added
+> `tests/event_trigger_pipeline.rs` (5 passing tests) against this module after that baseline was
+> struck. Scope real, arithmetic not; not remeasured here. Owner **Phase 15 / DEFER-03**. Full
+> detail in the dated correction banner atop `DEFERRED_COVERAGE.md`.
+>
+> **(c) `llm_port.rs`:** `src/application/ports/output/llm_port.rs` (referenced below at FR-27.1)
+> is absent — the whole `src/application/ports/` directory was deleted by Milestone 5 Epic 2,
+> confirmed via `test -d src/application/ports`, re-run this session. The port ships as
+> `crates/paladin-ports/src/output/llm_port.rs`, confirmed present this session. This is the same
+> file **WEB-03** and **WEB-04** (Phase 14) act on.
+>
+> **(d) `Design_and_Architecture.md`:** `docs/Design/Design_and_Architecture.md` (referenced below
+> at item 19 and G3) is absent — confirmed via `test -f docs/Design/Design_and_Architecture.md`,
+> re-run this session (Milestone 11 mdbook overhaul). The document ships as
+> `docs/src/appendix/design-and-architecture.md` (confirmed present, 311 lines — `wc -l`, re-run
+> this session). **Two facts, two labels, not merged:** the *move* is closed — the file exists at
+> its new address. The *rewrite* this PRD's FR-26.1 requires is **open** — the file is still 311
+> lines, the identical figure this PRD cites below as the pre-rewrite state, with zero occurrences
+> of Commander, Council, Conclave, Grove, Maneuver, Sanctum or Sentinel and zero ` ```mermaid ` code
+> blocks (all re-confirmed this session), because Milestone 11 Epic 3's non-goals exempt the
+> appendix chapter that Epic 2 moved it into. Owner for the rewrite: **Phase 16 / DOCS-02**.
+>
+> **(e) asciinema / README embedding (FR-26.4, G4):** the clause below targets a `README.md` that
+> has since changed shape — Milestone 11 Epic 5 rewrote it into a 193-line landing page (`wc -l
+> README.md`, re-run this session) with zero occurrences of "asciinema" or "demo"
+> (`grep -ic 'asciinema\|demo' README.md`, re-run this session). `docs/assets/` (the save path FR-26.4
+> names) **does not exist** — confirmed via `test -d docs/assets`, re-run this session, which fails;
+> this corrects `.planning/intel/requirements.md`'s prior "exists and is empty" framing, superseded
+> by the ledger's own re-verification. The path that does exist, `docs/src/assets/`, holds six
+> architecture SVGs unrelated to demo content and is not a candidate save location for `.cast`
+> recordings. `docs/DEMOS.md` does not exist — confirmed via `test -f docs/DEMOS.md`, re-run this
+> session, which fails. Owner **Phase 16 / DOCS-04**.
+>
+> If a successor path cannot be located in the tree, it is annotated as absent with no successor
+> found and the search command recorded, rather than given a guessed replacement (none of the four
+> above hit that case — all four successors were located and confirmed present this session).
+> Nothing under `.project/Milestone_12-Web-API/` is touched by this correction; Phase 8 already
+> annotated it and plan 13-08 owns the route annotations.
+
 ## Document Info
 
 | Field | Value |
@@ -23,6 +75,9 @@ During the execution of **Epic 24 (Test Hardening, Benchmarks & QA)**, 25 subtas
 3. **LLM Tool Calling Implementation & Tests** — All three LLM adapters (OpenAI, DeepSeek, Anthropic) declare tool-calling capabilities in `ProviderCapabilities` but hardcode `function_call: None` and `LlmRequest` has no field for tool definitions. Live API tests for tool calling were skipped.
 4. **User Service Test Coverage** — `user_service.rs` (488 LOC) sits at ~4.23% coverage. Requires mock infrastructure for `UserRepositoryPort`, `LogPort`, and `NotificationService`. Detailed in `project/DEFERRED_COVERAGE.md`.
 5. **Listener Service Test Coverage & Observability** — `listener_service.rs` (602 LOC) is at ~57.83% coverage. Requires specialized async/concurrency test infrastructure. Detailed in `project/DEFERRED_COVERAGE.md`.
+   > **Corrected (dated 2026-08-10, ORCH-03(b)):** the module named above ships as
+   > `src/application/services/orchestration/listener.rs`; see the correction banner at the top of
+   > this document for the full relocation and stale-baseline record.
 
 This PRD defines five epics (25–29) to systematically close these gaps, bringing the project to full Milestone 3 quality standards.
 
@@ -135,6 +190,14 @@ This PRD defines five epics (25–29) to systematically close these gaps, bringi
 > **Estimated Effort**: 3–5 story points (1–1.5 weeks)
 
 #### FR-26.1: Architecture Document Update
+
+> **Corrected (dated 2026-08-10, ORCH-03(d) / DOCS-02):** item 19's path below is superseded — the
+> file ships as `docs/src/appendix/design-and-architecture.md` after the Milestone 11 mdbook
+> overhaul. It is still 311 lines, the same figure item 19 cites as the pre-rewrite state, with
+> none of the 7 newer subsystems and no Mermaid diagrams. The move is closed; the rewrite this FR
+> requires is open, owned by Phase 16 / DOCS-02. See the correction banner at the top of this
+> document.
+
 19. Read and audit the current `docs/Design/Design_and_Architecture.md` (311 lines, 10 sections).
 20. Add or expand the **AI Agent System** section (currently ~20 lines) to cover all 15+ components:
     - Existing (brief refresh): Paladin, Garrison, Arsenal, Battalion (Formation, Phalanx, Campaign, Chain of Command), Herald, Citadel
@@ -172,6 +235,16 @@ This PRD defines five epics (25–29) to systematically close these gaps, bringi
 41. Update `README.md` to embed or link demo recordings in the appropriate sections (Paladin example, Battalion example, Council example, Grove example).
 42. Add a `docs/DEMOS.md` index page listing all available demos with descriptions.
 
+> **Corrected (dated 2026-08-10, ORCH-03(e) / DOCS-04):** items 39-42 target paths and a document
+> shape that have changed. `docs/assets/` (item 39's save path) does not exist in the tree —
+> confirmed via `test -d docs/assets`, re-run this session, which fails; the path that does exist,
+> `docs/src/assets/`, holds six architecture SVGs unrelated to demo content. `docs/DEMOS.md`
+> (item 42) does not exist — confirmed via `test -f docs/DEMOS.md`, re-run this session. `README.md`
+> (item 41's embedding target) was rewritten by Milestone 11 Epic 5 into a 193-line landing page
+> with zero occurrences of "asciinema" or "demo" — a document that has changed shape, not merely
+> gained a section. Owner **Phase 16 / DOCS-04**. See the correction banner at the top of this
+> document.
+
 ---
 
 ### Epic 27: LLM Tool Calling Implementation & Tests
@@ -181,6 +254,13 @@ This PRD defines five epics (25–29) to systematically close these gaps, bringi
 > **Prerequisite**: Tool calling must be _implemented_ in adapters before tests can be written.
 
 #### FR-27.1: LlmRequest Tool Definitions
+
+> **Corrected (dated 2026-08-10, ORCH-03(c) / WEB-04):** item 43's path below is superseded — the
+> whole `src/application/ports/` directory was deleted by Milestone 5 Epic 2 (`test -d
+> src/application/ports` fails, re-run this session). `LlmRequest` and `LlmPort` now ship at
+> `crates/paladin-ports/src/output/llm_port.rs` (confirmed present this session) — the same file
+> WEB-03 and WEB-04 (Phase 14) act on. See the correction banner at the top of this document.
+
 43. Add a `tools: Option<Vec<ToolDefinition>>` field to `LlmRequest` (in `src/application/ports/output/llm_port.rs`).
 44. Define the `ToolDefinition` struct with fields: `name: String`, `description: String`, `parameters: serde_json::Value` (JSON Schema).
 45. Ensure `ToolDefinition` implements `Debug`, `Clone`, `Serialize`, `Deserialize`.

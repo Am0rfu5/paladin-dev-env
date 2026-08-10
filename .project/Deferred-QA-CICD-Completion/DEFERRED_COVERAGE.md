@@ -2,6 +2,22 @@
 
 This document tracks modules with deferred test coverage, providing rationale and plans for future improvement.
 
+> **Correction (dated 2026-08-10, ORCH-03(b) / DEFER-03):** This document's Module 2 entry records
+> `listener_service.rs` at the path `src/core/platform/manager/listener_service.rs` (struck below)
+> and ~57.83% coverage dated 2026-02-14. **Both are stale.** The module ships as
+> `src/application/services/orchestration/listener.rs` (`pub struct ListenerOrchestrator`) —
+> confirmed present via `test -f src/application/services/orchestration/listener.rs` (exists) and
+> `grep -n 'pub struct ListenerOrchestrator' src/application/services/orchestration/listener.rs` ->
+> `141:pub struct ListenerOrchestrator {`, both re-run this session; the struck path is confirmed
+> absent via `test -f src/core/platform/manager/listener_service.rs`, also re-run this session
+> (Milestone 6 Epic 2 relocation). Milestone 9 Epic 2 subsequently added
+> `tests/event_trigger_pipeline.rs` (5 passing tests, `cargo test --test event_trigger_pipeline`)
+> directly exercising this module, so the 602 LOC / ~57.83% figure is stale in **both path and
+> number**. Scope real, arithmetic not — this correction does not remeasure coverage. This is one
+> of four relocations `.planning/ledgers/milestone-09-12.md` derives (row
+> `REQ-listener-service-test-coverage`, D-13(b)) and ORCH-03(b) names. Owner **Phase 15 / DEFER-03**.
+> Original text is retained below with inline corrections — nothing is deleted.
+
 ## Epic 24 Coverage Review Status
 
 **Date**: February 14, 2026  
@@ -164,9 +180,18 @@ Two platform-layer service modules have been identified for deferred coverage:
 ### Location
 `src/core/platform/manager/listener_service.rs`
 
+**Corrected (dated 2026-08-10, ORCH-03(b)):** the path above is superseded and absent from the
+tree (Milestone 6 Epic 2 relocation). The module ships as
+`src/application/services/orchestration/listener.rs`. See the dated correction banner at the top
+of this document.
+
 ### Current State
 - **Lines of Code**: 602
 - **Estimated Coverage**: ~57.83%
+- **Corrected (dated 2026-08-10, ORCH-03(b) / DEFER-03):** both figures above are stale — the LOC
+  count and coverage percentage predate Milestone 9 Epic 2's `tests/event_trigger_pipeline.rs`
+  (5 passing tests exercising this module directly). Not remeasured by this correction; scope real,
+  arithmetic not. Owner **Phase 15 / DEFER-03**.
 - **Complexity**: Very High
 - **Production Status**: **Active** (event-driven system core)
 
@@ -403,6 +428,7 @@ Before tackling deferred coverage:
 |------|--------|--------|----------|
 | 2026-02-14 | user_service.rs | Initial deferral decision | AI Agent |
 | 2026-02-14 | listener_service.rs | Initial deferral decision | AI Agent |
+| 2026-08-10 | listener_service.rs | **Correction (ORCH-03(b) / DEFER-03):** path relocated to `src/application/services/orchestration/listener.rs` (Milestone 6 Epic 2); 602 LOC / ~57.83% baseline stale in both path and number after Milestone 9 Epic 2 added `tests/event_trigger_pipeline.rs` — scope real, arithmetic not. Owner Phase 15 / DEFER-03. | AI Agent (plan 13-11) |
 
 ---
 
