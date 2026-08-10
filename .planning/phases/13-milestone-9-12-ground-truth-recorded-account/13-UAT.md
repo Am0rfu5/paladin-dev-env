@@ -1,24 +1,14 @@
 ---
-status: testing
+status: complete
 phase: 13-milestone-9-12-ground-truth-recorded-account
 source: [13-VERIFICATION.md]
 started: 2026-08-10T21:44:37Z
-updated: 2026-08-10T21:44:37Z
+updated: 2026-08-10T22:05:00Z
 ---
 
 ## Current Test
 
-number: 1
-name: Ratify the CR-01 / ORCH-03 scope trade-off
-expected: |
-  A human confirms this is an acceptable scope boundary for ORCH-03's `[x]` — i.e., that
-  ORCH-03's done-when ("anyone applying a run-5 requirement literally cannot write to a path
-  that does not exist") is read as scoped to the five items (a)-(e) it names, matching
-  ROADMAP.md Phase 13 Success Criterion 4's own narrower wording ("the four stale module and
-  document paths are corrected at source, and the agent API's route surface has one answer"),
-  not as an unbounded claim over every code example in the tree — OR overrides that reading and
-  reopens ORCH-03 / directs an out-of-band `.rs` fix that breaches D-19 deliberately.
-awaiting: user response
+[testing complete]
 
 ## Tests
 
@@ -47,15 +37,53 @@ self-disclosed (not hidden) with a working fix and a named owner.
 verifier_recommendation: DEFENSIBLE AS DOCUMENTED — disclosure and deferral done right, not silent
 scope-cutting. Do not reopen ORCH-03; confirm Phase 14 hand-off item 6 is the fix vehicle.
 
-result: [pending]
+result: pass
+ratified_by: human operator, 2026-08-10
+ratification_provenance: |
+  Obtained interactively from the human operator during the `/gsd-verify-work 13` session on
+  2026-08-10, via the runtime's AskUserQuestion prompt. The operator was shown the scope trade-off
+  in full — the residue's exact location (`crates/doc-examples/src/sidecar.rs:34` and its `:25` doc
+  comment), the two competing readings of ORCH-03's done-when, the D-19 boundary cost of the
+  alternative, and the verifier's recommendation — alongside two explicit override options
+  ("Reopen ORCH-03" and "Ratify, but fix the .rs now"). The operator selected
+  "Ratify — ORCH-03 stays [x]". This is a relayed human decision, not an agent inference, and was
+  not auto-approved (auto-mode off for this run).
+ratification: |
+  ORCH-03's done-when is read as scoped to the five items (a)-(e) it names, matching ROADMAP.md
+  Phase 13 Success Criterion 4's identical wording — not as an unbounded claim over every code
+  example in the tree. ORCH-03 remains `[x]`. Phase 14 hand-off item 6 in REQUIREMENTS.md is
+  confirmed as the fix vehicle for the CR-01 residue.
 
 ## Summary
 
 total: 1
-passed: 0
+passed: 1
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 0
+
+## Acknowledged Gate Overrides
+
+- gate: api-coverage.verify-pre (ai-integration capability, blocking)
+  fired: 2026-08-10, during `/gsd-verify-work 13`
+  verdict: false positive — overridden by the human operator via AskUserQuestion, 2026-08-10
+  signal: single match, `verb: "(surface)"` + `noun: "api"`
+  actual_trigger: |
+    The literal token `api-surface` — the name of an internal CI job and script
+    (`scripts/check-api-surface.sh`, the `api-surface` job in `.github/workflows/ci.yml`) that
+    checks Paladin's OWN public-export baseline. Plans 13-10 and 13-11 corrected stale references
+    to that job name, so the token recurs throughout their artifacts. The gate matched the phase's
+    subject matter (documentation about an internally-named API-surface job) rather than its
+    activity (integrating an external API).
+  evidence: |
+    - `git diff --name-only ca7afb6..HEAD -- '*.rs' | wc -l` → 0 (no source changed)
+    - `git diff --name-only ca7afb6..HEAD -- '*Cargo.toml' | wc -l` → 0 (no dependency added)
+    - the same gate returns `detected: false` on completed phases 11 and 12
+    - Phase 13 integrates no external API; a COVERAGE.md would enumerate an empty set
+  note: |
+    The gate remains ENABLED (`workflow.api_coverage_gate: true`). This override is scoped to
+    Phase 13 only. Phase 14 carries WEB-01/WEB-02 on the live web surface, where this gate is
+    expected to do real work — it was deliberately not disabled.
 
 ## Gaps
