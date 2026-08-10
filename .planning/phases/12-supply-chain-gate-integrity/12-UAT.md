@@ -1,24 +1,29 @@
 ---
-status: partial
+status: complete
 phase: 12-supply-chain-gate-integrity
 source: [12-VERIFICATION.md]
 started: 2026-08-09T14:40:00Z
-updated: 2026-08-09T15:20:00Z
+updated: 2026-08-10T00:00:00Z
 ---
 
 ## Current Test
 
-[testing paused — 2 items outstanding]
-
-Test 1 is retryable: push `release/v0.7.0` (the pre-push blocker is cleared), wait for CI,
-then re-run `/gsd-verify-work 12`.
+[testing complete]
 
 ## Tests
 
 ### 1. Required-status-check resolves on the first post-deletion CI run
 
 expected: A `gh run view <run-id>` citation, for a run created after 2026-08-08, shows the `Security Audit` context reporting `success`.
-result: [pending]
+result: pass
+evidence: |
+  gh run view 31320378772 — created 2026-08-09T15:10:05Z (postdates the deletion boundary
+  cb75b2b, 2026-08-08 03:47:45), sha 9f4c19d, conclusion success.
+  Exactly one job named `Security Audit`; conclusion success. Zero failing jobs in the run —
+  `API Surface Tracking`, red on every run since 2026-08-03, is green here too.
+  Phase 12's own D-08 guard ran in real CI for the first time and passed:
+  `License & Dependency Policy` → step `Check workflow files for inline advisory suppressions` → success.
+confirmed_by: user, 2026-08-10
 
 **Why this cannot be automated:** it is a fact about a future CI run, not derivable from the
 repository at rest. Re-checked live during verification — `gh run list --workflow=ci.yml --limit 5`
@@ -56,7 +61,29 @@ Audit` entries reporting `success`.)*
 ### 2. Apply, or decline to apply, the committed GitHub rulesets
 
 expected: A repository-owner decision, recorded at the milestone close-out, on whether and when to apply `.github/rulesets/protect-main-branch.json` and `protect-release-tags.json` to the live repository.
-result: [pending]
+result: pass
+decision: APPLY — switch on branch protection for code merges.
+confirmed_by: user, 2026-08-10
+outstanding_action: |
+  **The decision is made; the rules are NOT yet in force.** Do not read this `pass` as "applied".
+  The test asked for a decision and the decision is APPLY. Applying it needs a token with repo
+  administration scope, which the session token lacks (`gh api .../rulesets --method POST` returned
+  403 `Resource not accessible by personal access token`; the account is otherwise repo ADMIN).
+
+  To apply:
+    gh api repos/DF3NDR/paladin-dev-env/rulesets --method POST \
+      --input .github/rulesets/protect-main-branch.json
+  Or: Settings -> Rules -> Rulesets -> New ruleset -> Import a ruleset.
+
+  Pre-checked safe: the three required contexts (`Code Quality`, `Security Audit`,
+  `License & Dependency Policy`) all exist as real job names and all passed in run 31320378772,
+  so no merge can wedge on a check that never reports. `bypass_actors` grants RepositoryRole 5
+  (admin) `always`, so the owner cannot be locked out — which matters on a solo repo, since the
+  rule requires 1 approving review and GitHub does not let you approve your own PR.
+
+  `protect-release-tags.json` was NOT applied and was NOT part of this decision. It blocks
+  `creation` on `refs/tags/v*`, which is tag policy rather than code merges, and would affect the
+  release process. Decide it separately at the milestone close-out.
 
 **Why this cannot be automated:** live repository administration state, and an outward-facing change
 only the repository owner can authorize. Phase 12 deliberately did not act on it (CONTEXT.md D-10).
@@ -72,9 +99,9 @@ phase correctly recorded it and applied nothing. What remains outstanding is an 
 ## Summary
 
 total: 2
-passed: 0
+passed: 2
 issues: 0
-pending: 2
+pending: 0
 skipped: 0
 blocked: 0
 
