@@ -149,3 +149,13 @@ None - no external service configuration required.
 ---
 *Phase: 13-milestone-9-12-ground-truth-recorded-account*
 *Completed: 2026-08-10*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/decisions/0037-agent-route-surface-v1.md`
+- FOUND: `docs/src/deployment-topologies/sidecar.md`
+- FOUND: `.planning/phases/13-milestone-9-12-ground-truth-recorded-account/13-08-SUMMARY.md`
+- FOUND: commit `6d3710f` (Task 1)
+- FOUND: commit `64446bd` (Task 2)
+- FOUND: commit `c7f85d4` (Task 3)
+- FOUND: commit `46bb693` (this SUMMARY)
