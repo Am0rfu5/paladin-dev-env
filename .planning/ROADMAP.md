@@ -838,11 +838,11 @@ Plans:
 - [x] 13-05-PLAN.md — ledger fan-out: Milestone 12 Epics 1-4, 19 rows, the `/v1` route surface and the provisioner facts (wave 2)
 - [x] 13-06-PLAN.md — ledger fan-out: Milestone 12 Epics 5-7, 15 rows, the WEB-01 and WEB-02 hand-off inputs (wave 2)
 - [x] 13-07-PLAN.md — ledger fan-out: Deferred-QA Epics 25-29 and project-management, 18 rows, the `Verified open` block (wave 2)
-- [ ] 13-08-PLAN.md — ADR-0037 (agent route surface `/v1`), the `sidecar.md` correction, and seven Milestone 12 route annotations (wave 3)
-- [ ] 13-09-PLAN.md — blocking checkpoint, then ADR-0038 (`AgentProvisioner` placement) and ADR-0039 (Garrison/Arsenal on the HTTP topology) with the two documentation corrections (wave 3)
-- [ ] 13-10-PLAN.md — REQUIREMENTS.md source corrections: ORCH-01's arithmetic, ORCH-05's version figures, PIPE-01's job list, and the ledger pointer (wave 3)
-- [ ] 13-11-PLAN.md — `.project/` and `.planning/intel/` source corrections for the four relocations and the three superseded verification statements (wave 3)
-- [ ] 13-12-PLAN.md — ORCH-05: four ADR-0029 trajectory rows and the ADR-0030 citation with the provenance-key confirmation (wave 3)
+- [x] 13-08-PLAN.md — ADR-0037 (agent route surface `/v1`), the `sidecar.md` correction, and seven Milestone 12 route annotations (wave 3)
+- [x] 13-09-PLAN.md — blocking checkpoint, then ADR-0038 (`AgentProvisioner` placement) and ADR-0039 (Garrison/Arsenal on the HTTP topology) with the two documentation corrections (wave 3)
+- [x] 13-10-PLAN.md — REQUIREMENTS.md source corrections: ORCH-01's arithmetic, ORCH-05's version figures, PIPE-01's job list, and the ledger pointer (wave 3)
+- [x] 13-11-PLAN.md — `.project/` and `.planning/intel/` source corrections for the four relocations and the three superseded verification statements (wave 3)
+- [x] 13-12-PLAN.md — ORCH-05: four ADR-0029 trajectory rows and the ADR-0030 citation with the provenance-key confirmation (wave 3)
 - [ ] 13-13-PLAN.md — close-out: ledger amendment and phase gate, five closed requirements, three forward hand-offs, PROMOTION.md to 0040 (wave 4)
 
 **Cross-cutting constraints:**
