@@ -109,6 +109,13 @@ None - no external service configuration required.
 - Phase 16 / DOCS-04 inherits: the corrected `docs/src/assets/` (not `docs/assets/`) path for the README/demos cross-reference, six architecture SVGs present, no demo content, `docs/DEMOS.md` absent
 - No `.rs` or `docs/` file was modified by this plan (`git diff --name-only -- '*.rs' 'docs/*' | wc -l` → `0`)
 
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/13-milestone-9-12-ground-truth-recorded-account/13-04-SUMMARY.md`
+- FOUND: commit `c4e3c2a` (Task 1)
+- FOUND: commit `3338cbe` (Task 2)
+- FOUND: commit `8c6ec4a` (this SUMMARY)
+
 ---
 *Phase: 13-milestone-9-12-ground-truth-recorded-account*
 *Completed: 2026-08-10*
