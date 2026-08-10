@@ -156,3 +156,11 @@ None - no external service configuration required.
 ---
 *Phase: 13-milestone-9-12-ground-truth-recorded-account*
 *Completed: 2026-08-10*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/13-milestone-9-12-ground-truth-recorded-account/13-10-SUMMARY.md`
+- FOUND commit `88e92c6` (Task 1)
+- FOUND commit `2a59850` (Task 2)
+- FOUND commit `d13e139` (Task 3)
+- FOUND commit `cf662ec` (SUMMARY.md)
