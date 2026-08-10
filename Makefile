@@ -175,6 +175,10 @@ check-workflow-suppressions: ## Verify no workflow file passes an advisory-ignor
 .PHONY: check-gates
 check-gates: check-changelogs check-crate-names check-advisory-register check-workflow-suppressions ## Run all offline release-gate guards
 
+.PHONY: test-shell-guards
+test-shell-guards: ## Run regression tests for the offline gate guard scripts (not part of check-gates)
+	@./tests/scripts/check-workflow-suppressions_test.sh
+
 .PHONY: test-ci
 test-ci: ## Run tests in CI mode
 	@echo "$(CYAN)Running tests in CI mode...$(NC)"
