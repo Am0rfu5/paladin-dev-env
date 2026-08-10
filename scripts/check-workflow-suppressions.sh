@@ -21,7 +21,7 @@
 # running it twice in succession, with no change to any input, produces
 # identical output and the same exit code.
 #
-# Two clauses are asserted, both accumulated into one shared failure list
+# Three clauses are asserted, all accumulated into one shared failure list
 # before the verdict is decided:
 #
 #   1. Inline-suppression co-occurrence. For every logical line of every
@@ -39,6 +39,24 @@
 #      word-bounded `cargo audit` must exist across every scanned workflow
 #      file. Zero means the compliant job vanished; more than one means the
 #      duplicate-job defect SUPPLY-01 closed has come back.
+#   3. Unresolvable expression indirection. This script scans literal
+#      YAML-decoded text -- a GitHub Actions expression (`${{ vars.X }}`,
+#      `${{ matrix.audit_flags }}`, `${{ inputs.ignore_id }}`) resolves at
+#      workflow-run time, so a suppression assembled through one never
+#      appears as the literal substring `--ignore` in the source this
+#      script reads:
+#        run: cargo audit ${{ vars.AUDIT_EXTRA_ARGS }}
+#      with `AUDIT_EXTRA_ARGS` set to `--ignore RUSTSEC-2024-0001` at the
+#      workflow/environment/org level would pass clause 1 cleanly. Clause 3
+#      cannot resolve the expression, so it does not try -- it fails any
+#      logical line that invokes `cargo audit`/`cargo deny` (any of the
+#      forms clause 1 recognises) AND contains a literal `${{` on that same
+#      line. This is a distinct, lower-confidence "cannot prove there isn't
+#      a suppression" verdict, not "found one" -- reported under its own
+#      `CLAUSE3_UNRESOLVABLE_EXPRESSION` name so the report distinguishes
+#      the two. An unrelated `${{ }}` on a `run:` line that never invokes
+#      cargo audit/deny does not trip this -- the co-occurrence requirement
+#      is the same discipline clause 1 uses.
 #
 # Matching is case-sensitive over the YAML-decoded `run:` string. Shell
 # commands are conventionally lowercase, and a case-insensitive match would
@@ -62,9 +80,10 @@
 #         this guard's own positive test can run against a scratch copy
 #         without ever mutating the real tree.
 # Exit:   0 if no workflow file carries an inline advisory-ignore
-#         suppression on a cargo audit/deny invocation, and exactly one
-#         `cargo audit` invocation exists across the corpus; non-zero
-#         otherwise.
+#         suppression on a cargo audit/deny invocation, exactly one
+#         `cargo audit` invocation exists across the corpus, and no cargo
+#         audit/deny invocation carries an unresolvable `${{ }}` expression;
+#         non-zero otherwise.
 
 set -euo pipefail
 
@@ -127,6 +146,12 @@ IGNORE_FLAG_RE = re.compile(r'''--ignore(?:[\s=]|['"]|$)''')
 # to (but not including) the next shell command-chaining operator
 # (`&&`, `||`, `;`, `|`) or end of line.
 INSTALL_SEGMENT_RE = re.compile(r'\bcargo\s+install\b[^;&|]*')
+# The literal opening of a GitHub Actions expression. Deliberately just the
+# opening token, not a balanced `${{ ... }}` match -- clause 3 does not need
+# to extract the expression's contents (it cannot resolve them anyway), only
+# to know one is present on the same logical line as a cargo audit/deny
+# invocation.
+EXPRESSION_RE = re.compile(r'\$\{\{')
 
 
 def strip_install_segments(line):
@@ -152,6 +177,18 @@ def violates(line):
     invoking it) is the violation."""
     remainder = strip_install_segments(line)
     return bool(CARGO_GATE_RE.search(remainder) and IGNORE_FLAG_RE.search(remainder))
+
+
+def has_unresolvable_expression(line):
+    """A cargo audit/deny invocation (any form CARGO_GATE_RE recognises, and
+    after the same `cargo install ...` neutralization clause 1 uses, so
+    `cargo install cargo-audit --locked && cargo audit ${{ vars.X }}` is
+    still caught) that also carries a literal `${{` on the same logical
+    line. This is clause 3: the script cannot see through the expression to
+    know whether it resolves to an `--ignore` flag, so it refuses to certify
+    the line rather than silently passing it."""
+    remainder = strip_install_segments(line)
+    return bool(CARGO_GATE_RE.search(remainder) and EXPRESSION_RE.search(remainder))
 
 
 def logical_lines(run_text):
@@ -181,6 +218,7 @@ if not files:
 
 clause1_failures = []
 clause2_locations = []
+clause3_failures = []
 files_scanned = 0
 run_steps_examined = 0
 
@@ -224,18 +262,29 @@ for path in files:
                         f'advisory-ignore flag on a cargo audit/deny '
                         f'invocation: {line!r}'
                     )
+                if has_unresolvable_expression(line):
+                    clause3_failures.append(
+                        f'CLAUSE3_UNRESOLVABLE_EXPRESSION: {path} job '
+                        f'"{job_name}" step "{step_name}" (index {step_idx}) '
+                        f'invokes cargo audit/deny with a GitHub Actions '
+                        f'${{{{ ... }}}} expression this guard cannot resolve '
+                        f'statically -- it cannot prove the expression does '
+                        f'not expand to an --ignore flag: {line!r}'
+                    )
                 if CARGO_AUDIT_ONLY_RE.search(strip_install_segments(line)):
                     clause2_locations.append(
                         f'{path} job "{job_name}" step "{step_name}" '
                         f'(index {step_idx}): {line!r}'
                     )
 
-# clause1_failures and clause2_locations are already in file-path-then-
-# position order: the outer loop walks `files` sorted, and within one file
-# jobs/steps/logical-lines are walked in document order (PyYAML preserves
-# mapping insertion order), so no further re-sort is needed for two runs
-# over an unchanged tree to produce byte-identical output.
+# clause1_failures, clause2_locations and clause3_failures are already in
+# file-path-then-position order: the outer loop walks `files` sorted, and
+# within one file jobs/steps/logical-lines are walked in document order
+# (PyYAML preserves mapping insertion order), so no further re-sort is
+# needed for two runs over an unchanged tree to produce byte-identical
+# output.
 failures.extend(clause1_failures)
+failures.extend(clause3_failures)
 
 audit_count = len(clause2_locations)
 if audit_count != 1:
@@ -278,7 +327,13 @@ else
     echo "  2. If a second cargo audit invocation was added deliberately, it is"
     echo "     the duplicate-job defect SUPPLY-01 closed -- remove it rather"
     echo "     than reintroducing it."
-    echo "  3. If this guard is wrong about a command, fix the guard rather"
+    echo "  3. If a cargo audit/deny line was flagged for an unresolvable"
+    echo "     \${{ ... }} expression, inline the flags directly in the"
+    echo "     workflow file so they are auditable as plain text, or pin the"
+    echo "     variable/input's value in the workflow itself rather than"
+    echo "     sourcing it indirectly -- either way this guard needs to see"
+    echo "     the literal flags to certify there is no suppression."
+    echo "  4. If this guard is wrong about a command, fix the guard rather"
     echo "     than the workflow."
     exit 1
 fi
