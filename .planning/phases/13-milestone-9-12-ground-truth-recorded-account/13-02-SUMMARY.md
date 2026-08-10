@@ -190,6 +190,14 @@ None - no external service configuration required.
 - No `.rs` file was touched by this plan (`git diff --name-only <base>..HEAD -- '*.rs' | wc -l` → `0`),
   consistent with the phase's D-19 boundary.
 
+## Self-Check: PASSED
+
+- `.planning/phases/13-milestone-9-12-ground-truth-recorded-account/13-02-SUMMARY.md` — FOUND
+- `.planning/ledgers/milestone-09-12.md` — FOUND
+- Commit `2bcfa39` (Task 1) — FOUND
+- Commit `eaeaa6e` (Task 2) — FOUND
+- Commit `dd4d14d` (plan summary) — FOUND
+
 ---
 *Phase: 13-milestone-9-12-ground-truth-recorded-account*
 *Completed: 2026-08-10*
