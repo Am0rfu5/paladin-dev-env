@@ -830,7 +830,8 @@ Plans:
 **Plans**: 13 plans
 
 Plans:
-- [ ] 13-01-PLAN.md — ledger scaffold (tracer): head notes, verdict legend and seven-class mapping, both highlight tables, contention table, 120 row stubs, and Milestone 9 Epic 1 derived end-to-end (wave 1)
+
+- [x] 13-01-PLAN.md — ledger scaffold (tracer): head notes, verdict legend and seven-class mapping, both highlight tables, contention table, 120 row stubs, and Milestone 9 Epic 1 derived end-to-end (wave 1)
 - [ ] 13-02-PLAN.md — ledger fan-out: Milestone 9 Epics 2-6, 19 rows, the densest bare-`Verify` cluster (wave 2)
 - [ ] 13-03-PLAN.md — ledger fan-out: Milestone 10 Epics 1-5, 23 rows, the both-halves verdict and the SUPPLY provenance (wave 2)
 - [ ] 13-04-PLAN.md — ledger fan-out: Milestone 11, 20 rows, the 26-open verdict carried to Phase 16 (wave 2)
