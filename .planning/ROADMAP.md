@@ -832,12 +832,12 @@ Plans:
 Plans:
 
 - [x] 13-01-PLAN.md — ledger scaffold (tracer): head notes, verdict legend and seven-class mapping, both highlight tables, contention table, 120 row stubs, and Milestone 9 Epic 1 derived end-to-end (wave 1)
-- [ ] 13-02-PLAN.md — ledger fan-out: Milestone 9 Epics 2-6, 19 rows, the densest bare-`Verify` cluster (wave 2)
-- [ ] 13-03-PLAN.md — ledger fan-out: Milestone 10 Epics 1-5, 23 rows, the both-halves verdict and the SUPPLY provenance (wave 2)
-- [ ] 13-04-PLAN.md — ledger fan-out: Milestone 11, 20 rows, the 26-open verdict carried to Phase 16 (wave 2)
-- [ ] 13-05-PLAN.md — ledger fan-out: Milestone 12 Epics 1-4, 19 rows, the `/v1` route surface and the provisioner facts (wave 2)
-- [ ] 13-06-PLAN.md — ledger fan-out: Milestone 12 Epics 5-7, 15 rows, the WEB-01 and WEB-02 hand-off inputs (wave 2)
-- [ ] 13-07-PLAN.md — ledger fan-out: Deferred-QA Epics 25-29 and project-management, 18 rows, the `Verified open` block (wave 2)
+- [x] 13-02-PLAN.md — ledger fan-out: Milestone 9 Epics 2-6, 19 rows, the densest bare-`Verify` cluster (wave 2)
+- [x] 13-03-PLAN.md — ledger fan-out: Milestone 10 Epics 1-5, 23 rows, the both-halves verdict and the SUPPLY provenance (wave 2)
+- [x] 13-04-PLAN.md — ledger fan-out: Milestone 11, 20 rows, the 26-open verdict carried to Phase 16 (wave 2)
+- [x] 13-05-PLAN.md — ledger fan-out: Milestone 12 Epics 1-4, 19 rows, the `/v1` route surface and the provisioner facts (wave 2)
+- [x] 13-06-PLAN.md — ledger fan-out: Milestone 12 Epics 5-7, 15 rows, the WEB-01 and WEB-02 hand-off inputs (wave 2)
+- [x] 13-07-PLAN.md — ledger fan-out: Deferred-QA Epics 25-29 and project-management, 18 rows, the `Verified open` block (wave 2)
 - [ ] 13-08-PLAN.md — ADR-0037 (agent route surface `/v1`), the `sidecar.md` correction, and seven Milestone 12 route annotations (wave 3)
 - [ ] 13-09-PLAN.md — blocking checkpoint, then ADR-0038 (`AgentProvisioner` placement) and ADR-0039 (Garrison/Arsenal on the HTTP topology) with the two documentation corrections (wave 3)
 - [ ] 13-10-PLAN.md — REQUIREMENTS.md source corrections: ORCH-01's arithmetic, ORCH-05's version figures, PIPE-01's job list, and the ledger pointer (wave 3)
