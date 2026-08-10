@@ -2240,7 +2240,7 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
       *Derives: `intel/task-completion-state.md`; `intel/code-verification.md` run-5 checkbox
       analysis and *Final corpus position on open-checkbox counts*.*
 
-- [ ] **ORCH-03**: The run-5 positions the tree contradicts are corrected at source, and the
+- [x] **ORCH-03**: The run-5 positions the tree contradicts are corrected at source, and the
       relocations are recorded as relocations rather than gaps. Five specific items:
       (a) **The agent route surface.** Milestone 12 Epics 1, 3, 4 and 5 all write acceptance
       criteria, test assertions and examples against unprefixed paths (`/agents`,
@@ -4250,7 +4250,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | SUPPLY-03 | Phase 12 | Complete |
 | ORCH-01 | Phase 13 | Pending |
 | ORCH-02 | Phase 13 | Pending |
-| ORCH-03 | Phase 13 | Pending |
+| ORCH-03 | Phase 13 | Complete |
 | ORCH-04 | Phase 13 | Pending |
 | ORCH-05 | Phase 13 | Pending |
 | WEB-01 | Phase 14 | Pending |
