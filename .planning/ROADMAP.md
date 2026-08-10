@@ -827,7 +827,29 @@ Plans:
   5. Both seams Milestone 12 recorded as defaults are decisions with reasoning: where `AgentProvisioner` lives — which determines whether the queue/worker and sidecar topologies can reuse it or must duplicate it — and whether Garrison and Arsenal for HTTP-served agents are planned scope or a permanent property of the topology, stated in the decision matrix that routes readers between topologies rather than in a single non-goal line.
   6. The version story runs unbroken from `v0.1.0-rc.1` through v0.3.0, v0.4.0, v0.5.0 and v0.6.0 to the tree, so REL-01 converges with the whole trajectory in view.
 
-**Plans**: TBD
+**Plans**: 13 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — ledger scaffold (tracer): head notes, verdict legend and seven-class mapping, both highlight tables, contention table, 120 row stubs, and Milestone 9 Epic 1 derived end-to-end (wave 1)
+- [ ] 13-02-PLAN.md — ledger fan-out: Milestone 9 Epics 2-6, 19 rows, the densest bare-`Verify` cluster (wave 2)
+- [ ] 13-03-PLAN.md — ledger fan-out: Milestone 10 Epics 1-5, 23 rows, the both-halves verdict and the SUPPLY provenance (wave 2)
+- [ ] 13-04-PLAN.md — ledger fan-out: Milestone 11, 20 rows, the 26-open verdict carried to Phase 16 (wave 2)
+- [ ] 13-05-PLAN.md — ledger fan-out: Milestone 12 Epics 1-4, 19 rows, the `/v1` route surface and the provisioner facts (wave 2)
+- [ ] 13-06-PLAN.md — ledger fan-out: Milestone 12 Epics 5-7, 15 rows, the WEB-01 and WEB-02 hand-off inputs (wave 2)
+- [ ] 13-07-PLAN.md — ledger fan-out: Deferred-QA Epics 25-29 and project-management, 18 rows, the `Verified open` block (wave 2)
+- [ ] 13-08-PLAN.md — ADR-0037 (agent route surface `/v1`), the `sidecar.md` correction, and seven Milestone 12 route annotations (wave 3)
+- [ ] 13-09-PLAN.md — blocking checkpoint, then ADR-0038 (`AgentProvisioner` placement) and ADR-0039 (Garrison/Arsenal on the HTTP topology) with the two documentation corrections (wave 3)
+- [ ] 13-10-PLAN.md — REQUIREMENTS.md source corrections: ORCH-01's arithmetic, ORCH-05's version figures, PIPE-01's job list, and the ledger pointer (wave 3)
+- [ ] 13-11-PLAN.md — `.project/` and `.planning/intel/` source corrections for the four relocations and the three superseded verification statements (wave 3)
+- [ ] 13-12-PLAN.md — ORCH-05: four ADR-0029 trajectory rows and the ADR-0030 citation with the provenance-key confirmation (wave 3)
+- [ ] 13-13-PLAN.md — close-out: ledger amendment and phase gate, five closed requirements, three forward hand-offs, PROMOTION.md to 0040 (wave 4)
+
+**Cross-cutting constraints:**
+
+- No Rust source file is modified by any plan in this phase; the close-out asserts it with a `git diff --name-only <base>..HEAD -- '*.rs' | wc -l` → `0` (D-19)
+- The entire in-tree edit surface is three files under `docs/src/deployment-topologies/`: `sidecar.md` (plan 13-08), `http-service-host.md` and `overview.md` (plan 13-09)
+- Exactly three ADRs are authored — 0037, 0038, 0039 — and `PROMOTION.md` advances to 0040; ORCH-01, ORCH-02 and ORCH-05 get no ADR (D-20)
+- `.planning/ledgers/milestone-09-12.md` is written by plan 13-01 and appended by plans 13-02 through 13-07 on disjoint section ranges; `.planning/REQUIREMENTS.md` is touched in waves 1, 3 and 4 only, never concurrently
 
 ### Phase 14: API Contract Truthfulness
 
