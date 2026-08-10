@@ -843,7 +843,7 @@ Plans:
 - [x] 13-10-PLAN.md — REQUIREMENTS.md source corrections: ORCH-01's arithmetic, ORCH-05's version figures, PIPE-01's job list, and the ledger pointer (wave 3)
 - [x] 13-11-PLAN.md — `.project/` and `.planning/intel/` source corrections for the four relocations and the three superseded verification statements (wave 3)
 - [x] 13-12-PLAN.md — ORCH-05: four ADR-0029 trajectory rows and the ADR-0030 citation with the provenance-key confirmation (wave 3)
-- [ ] 13-13-PLAN.md — close-out: ledger amendment and phase gate, five closed requirements, three forward hand-offs, PROMOTION.md to 0040 (wave 4)
+- [x] 13-13-PLAN.md — close-out: ledger amendment and phase gate, five closed requirements, three forward hand-offs, PROMOTION.md to 0040 (wave 4)
 
 **Cross-cutting constraints:**
 
