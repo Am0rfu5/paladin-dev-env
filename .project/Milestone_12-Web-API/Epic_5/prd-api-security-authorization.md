@@ -13,6 +13,12 @@
 > `.github/workflows/ci.yml`) was corrected separately in plan 08-02. Original text is retained
 > below with inline corrections — nothing is deleted.
 
+> **Note (dated 2026-08-10, Phase 13 / 13-REVIEW.md IN-01):** the `442,369 bytes` figure above is a
+> correct point-in-time measurement taken on 2026-08-06 and is retained unchanged. The file has
+> since grown to `446,377 bytes` (Epics 3 and 4 regenerated the export baseline additively). The
+> banner's load-bearing claim is the *path* (`.project/current-exports.txt`), which remains correct;
+> the byte count is a snapshot and will continue to drift, so it should not be relied on as current.
+
 > **Correction (dated 2026-08-10, ADR-0037):** This document's route text — every unprefixed
 > `/agents...` path below — is **superseded provenance, not a live contract**. The shipped agent
 > API is served under a `/v1` prefix, confirmed against the committed

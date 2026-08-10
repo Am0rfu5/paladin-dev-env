@@ -2452,12 +2452,42 @@ final forward-work signal Phases 14, 15 and 16 receive (D-22).**
    currently owns it; Phase 14 is the nearest natural owner given it sits in the same
    `crates/paladin-web`/`paladin-server` auth surface as WEB-01/WEB-02.
 
+6. **One ORCH-03 residue the `.rs` boundary put out of reach — dated 2026-08-10, from
+   `13-REVIEW.md` CR-01.** `docs/src/deployment-topologies/sidecar.md` embeds its caller-side
+   example verbatim from `crates/doc-examples/src/sidecar.rs` via mdBook `{{#include}}`, and the
+   page claims that example "matches the current API". Plan 13-08 corrected the page's own prose to
+   the ADR-0037 route (`POST /v1/agents/{id}/execute`, line 30), but the embedded example still
+   builds `{base_url}/agents/{agent}/execute` at `crates/doc-examples/src/sidecar.rs:34`, and the
+   same unprefixed path appears in that file's doc comment at `:25`. The live server serves the
+   agent API only under `API_V1_PREFIX = "/v1"`
+   (`crates/paladin-web/src/agent_controller.rs:723`, asserted by
+   `spec_paths_are_versioned_under_v1` at `crates/paladin-web/src/openapi.rs:103`), so a reader
+   copying the rendered example writes a client that receives `404 Not Found`. This is ORCH-03's
+   own failure mode — a reader applying the document literally writes against a path that does not
+   exist — surviving inside a rendered page whose prose is correct.
+   **Why it was not fixed in Phase 13:** the defect lives in a `.rs` file, and Phase 13's D-19
+   boundary admits no `.rs` change; the close-out's zero-`.rs` boundary assertion
+   (`git diff --stat` against base `e12f18306ca9a80b1c3301e6afca31602e7c41ec`) depends on that
+   holding. Deferring was chosen deliberately over breaching the boundary — recorded here rather
+   than left silent, per D-22. **ORCH-03 remains `[x]`**: its five named items were all corrected
+   at source; this is a sixth site the requirement's own done-when reaches but its scope did not
+   name, found by post-execution review.
+   **What Phase 14 owes it:** change `:34` to `{base_url}/v1/agents/{agent}/execute` and the `:25`
+   doc comment to match. `cargo check` cannot catch this (the URL is an opaque string literal), so
+   pair the fix with an assertion tying the literal back to
+   `paladin_web::agent_controller::API_V1_PREFIX`, or the drift silently returns on the next prefix
+   change. Phase 14 is the natural owner: it already holds WEB-01/WEB-02 on the same
+   `crates/paladin-web` route-and-auth surface.
+
 **Evidence:** `.planning/ledgers/milestone-09-12.md` rows `REQ-opaque-bearer-token-adapter-v1`,
 `REQ-jwt-bearer-auth-v2`, `REQ-k8s-manifests`, `REQ-health-ready-endpoints`,
 `REQ-fail-closed-auth-posture`, `REQ-llm-tool-calling-port`, `REQ-llm-tool-calling-adapters`;
 `.planning/decisions/0038-agent-provisioner-placement.md`;
 `.planning/decisions/0039-http-topology-no-garrison-no-arsenal.md`; this ledger's own `## Phase 13
-close-out amendments (2026-08-10)` section, "Reconciled against the two highlight tables" paragraph.
+close-out amendments (2026-08-10)` section, "Reconciled against the two highlight tables" paragraph;
+`.planning/phases/13-milestone-9-12-ground-truth-recorded-account/13-REVIEW.md` CR-01;
+`crates/doc-examples/src/sidecar.rs:25,34`; `crates/paladin-web/src/agent_controller.rs:723`;
+`crates/paladin-web/src/openapi.rs:103`.
 
 #### Hand-off to Phase 15 / PIPE-01 … — dated 2026-08-10 (plan 13-13)
 
