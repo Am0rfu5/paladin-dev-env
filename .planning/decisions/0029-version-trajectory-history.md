@@ -147,3 +147,7 @@ an already-executed convergence; the tree already reflects `0.7.0` via Phase 4's
   rather than re-deciding it.
 - **Phase 10 / HARD-01** — the ledger rows for `REQ-versioning-policy`, `REQ-release-readiness-audit`
   and `REQ-changelog-v020-cut` cite this ADR, written by plans 10-08 and 10-10.
+- **ORCH-05's numbering half** is discharged by `.planning/decisions/0030-milestone-7-self-numbering.md`
+  lines 79-84 (the Roadmap Extension Protocol's fifth-instance prediction, already closed there); the
+  run-5 provenance-key re-confirmation (plan 13-12, 2026-08-10) found no fifth collision and is not
+  re-recorded here — see `0030-milestone-7-self-numbering.md` for the record.
