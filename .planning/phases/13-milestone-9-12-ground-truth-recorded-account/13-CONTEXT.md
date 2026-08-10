@@ -121,7 +121,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
   would not be silently constrained (`REQUIREMENTS.md:2109-2116`, Phase 12's D-09). `ls
   .planning/ledgers/` returns exactly four files, verified this session. This phase creates the fifth.
 
-- **D-02: The ledger's vocabulary is the run-5 status key that is already written, not the series'
+- **D-02:** **The ledger's vocabulary is the run-5 status key that is already written, not the series'
   seven classes — with one class retired.**
   `REQUIREMENTS.md:3634-3637` already carries an eleven-class key that extends the run-4 key:
   `Shipped` · `Shipped (relocated)` · `Shipped, superseded` · **`Shipped, one acceptance criterion
@@ -148,7 +148,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
   held — those 37 are the cheapest rows in the ledger, but the citation is re-run, because Phase 10's
   single most productive move was re-reading `file:line` references that had gone stale.
 
-- **D-04: ORCH-01's "sixteen already have it, the remaining 104 need the same treatment" counts two
+- **D-04:** **ORCH-01's "sixteen already have it, the remaining 104 need the same treatment" counts two
   different populations. Correct the arithmetic at source.**
   ⚠ **Fresh finding.** ORCH-01 (`REQUIREMENTS.md:2210-2212`) says *"Sixteen entries already carry
   `settled-by` pointers into `intel/code-verification.md` run 5; those are facts about the tree, not
@@ -207,7 +207,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
   knows which sites are **deliberately** left as historical record. Re-running the grep and "fixing"
   the excluded classes would undo a deliberate decision.
 
-- **D-08: `ci.yml`'s job list that run 5 recorded is stale — measure it once, here, and hand the
+- **D-08:** **`ci.yml`'s job list that run 5 recorded is stale — measure it once, here, and hand the
   number to Phase 15.**
   ⚠ **Fresh finding.** `intel/code-verification.md:539-540` records *"`ci.yml`'s 14 job ids are
   `lint`, `security-audit`, `cargo-deny`, `osv-scanner`, `api-surface`, `test`, `crate-isolation`,
@@ -224,7 +224,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
   Phase 15 does not plan against a 14-job pipeline that no longer exists. Do not attribute the two
   additions without checking `git log` — record what is there.
 
-- **D-09: DEBT-01's stale-path defect is half closed, and the four Milestone 12 references stay ledger
+- **D-09:** **DEBT-01's stale-path defect is half closed, and the four Milestone 12 references stay ledger
   rows rather than becoming a sixth ORCH-03 item.**
   ⚠ **Fresh finding.** Run-5 finding 8 (`intel/code-verification.md:614-620`) records nine references
   to `project/current-exports.txt`, a file that does not exist, and concludes *"`check-api-surface.sh`
@@ -240,7 +240,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
 
 ### ORCH-02 — the five checkbox verdicts and the corpus-level pattern
 
-- **D-10: Five verdicts, no ADR, and the five-run pattern written in exactly one place — the ledger's
+- **D-10:** **Five verdicts, no ADR, and the five-run pattern written in exactly one place — the ledger's
   head note.**
   ORCH-02 states the five verdicts almost completely already (`REQUIREMENTS.md:2223-2241`); the
   requirement's real content is *where they live* and *that none becomes a task*. All five are
@@ -266,7 +266,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
 
 ### ORCH-03 — the positions the tree contradicts
 
-- **D-11: (a) The agent route surface is `/v1`. Confirmed against the committed drift-guard baseline;
+- **D-11:** **(a) The agent route surface is `/v1`. Confirmed against the committed drift-guard baseline;
   Epic 1-5 route text becomes superseded provenance. ADR-0037.**
   Verified this session — every agent path in `crates/paladin-web/openapi.json` carries the prefix:
   `/v1/agents`, `/v1/agents/{id}`, `/v1/agents/{id}/execute`, `/v1/agents/{id}/execute/stream`,
@@ -278,7 +278,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
   instruction to preserve it as a run-5 unsettled position in the *variants register* still holds —
   the ADR records the answer, the register keeps the disagreement.
 
-- **D-12: (a′) The one *live* route defect is in shipped documentation, and ORCH-03 does not name it.**
+- **D-12:** **(a′) The one *live* route defect is in shipped documentation, and ORCH-03 does not name it.**
   ⚠ **Fresh finding.** `grep -rn "POST /agents\|GET /agents\|\`/agents" docs/src/ examples/ README.md`
   returns exactly one hit: **`docs/src/deployment-topologies/sidecar.md:29`** — *"the agent runs behind
   the HTTP service host exactly as documented there (`POST /agents/{id}/execute`)"*. Meanwhile
@@ -316,7 +316,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
 
 ### ORCH-04 — the two seams recorded as defaults
 
-- **D-14: (a) `AgentProvisioner` stays in `paladin-web` — but not for the reason the default gives.
+- **D-14:** **(a) `AgentProvisioner` stays in `paladin-web` — but not for the reason the default gives.
   The reason is that its parameter type is an OpenAPI-annotated HTTP DTO, and that reason survives a
   second consumer. ADR-0038.**
   ⚠ **HUMAN REVIEW — this is the placement the queue/worker and sidecar topologies are built
@@ -370,7 +370,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
   — **Reversibility:** costly — the trait and its four types are public API on two published crates;
   reversing means the split described above plus a deprecation cycle.
 
-- **D-15: (b) HTTP-served agents have no Garrison and no Arsenal. Record it as a property of the
+- **D-15:** **(b) HTTP-served agents have no Garrison and no Arsenal. Record it as a property of the
   shipped topology, state it in the decision matrix, and correct the page that currently promises the
   opposite. ADR-0039.**
   ⚠ **HUMAN REVIEW — this writes a capability limitation into published user documentation and
@@ -407,7 +407,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
 
 ### ORCH-05 — the version trajectory and the numbering prediction
 
-- **D-16: Append four rows to ADR-0029's `## Trajectory` table. No second version ADR. REL-01 is not
+- **D-16:** **Append four rows to ADR-0029's `## Trajectory` table. No second version ADR. REL-01 is not
   re-opened.**
   Phase 10's hand-off is explicit (`REQUIREMENTS.md:2177-2202`) and ADR-0029 names Phase 13 / ORCH-05
   in its own `## Downstream Consumers`, verified this session. Append **`v0.3.0` (M9), `v0.4.0` (M10),
@@ -419,7 +419,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
   v0.7.0. REL-01 is `[x]` at `REQUIREMENTS.md:360` with a `Phase 4 | Complete` traceability row;
   ORCH-05 **applies** the converged result.
 
-- **D-17: ORCH-05's second half is already discharged by ADR-0030. Cite it; run the confirmation; do
+- **D-17:** **ORCH-05's second half is already discharged by ADR-0030. Cite it; run the confirmation; do
   not re-decide.**
   ⚠ **Fresh finding.** ORCH-05's done-when asks that *"the prediction is recorded closed — or, if a
   fifth collision is found on closer reading, it is corrected at source"*. Read this session,
@@ -434,7 +434,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
   rival ADR. Recording a closure that another ADR already recorded, in a second place, is how the
   numbering convention starts disagreeing with itself — which is the defect ADR-0030 exists to fix.
 
-- **D-18: ORCH-05's own current-state figures are two releases stale — the same defect Phase 10
+- **D-18:** **ORCH-05's own current-state figures are two releases stale — the same defect Phase 10
   corrected in HARD-03, recurring verbatim. Correct at source.**
   ⚠ **Fresh finding.** ORCH-05 states (`REQUIREMENTS.md:2300-2301`) *"That chain terminates exactly
   where the tree is: root `Cargo.toml` at `version = "0.6.0"`, branch `release/v0.7.0`, latest tag
@@ -452,7 +452,7 @@ each. Five requirements, ORCH-01 … ORCH-05.
 
 ### Cross-cutting
 
-- **D-19: Phase 13's code-change boundary — record-writing, plus a three-file documentation surface,
+- **D-19:** **Phase 13's code-change boundary — record-writing, plus a three-file documentation surface,
   and no `.rs`.**
   Phase 7 was record-only; Phase 9 was config-changing; Phase 10 sat between them with a three-file
   config surface. Phase 13 is the same shape with the surface moved from config to docs, because
