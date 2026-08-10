@@ -56,8 +56,52 @@ the plans that follow in this same phase):
 | 0034 | `d1-d4-facade-relocation-disposition` | D1–D4 verdicts — `src/core/` shims defer, the `user_service.rs` split withdrawn, D3/D4 defer-with-trigger under ADR-0031 (Phase 11) |
 | 0035 | `paladin-ml-leaf-crate-placement` | The `paladin-ml` leaf-crate placement condition for a future ML adapter, promoted out of DOC precedence (Phase 11) |
 | 0036 | `audit-suppression-single-source-topology` | The audit-suppression single-source topology invariant — which files may legally carry a `cargo audit`/`cargo deny` suppression — promoted out of PRD precedence (Phase 12) |
+| 0037 | `agent-route-surface-v1` | The agent API route surface is `/v1`-prefixed; four Milestone 12 Epics' unprefixed route text is superseded provenance, not a live contract (Phase 13, plan 13-08) |
+| 0038 | `agent-provisioner-placement` | `AgentProvisioner` stays in `paladin-web`; `AgentSpec` is an OpenAPI-annotated HTTP request DTO (`utoipa::ToSchema`), and `paladin-ports` carries no `utoipa` dependency, against ADR-0015 Decision (i) (Phase 13, plan 13-09) |
+| 0039 | `http-topology-no-garrison-no-arsenal` | The absence of Garrison and Arsenal on HTTP-served agents is a permanent property of the shipped topology, not planned scope; the deployment-topology docs now state the limitation in prose (Phase 13, plan 13-09) |
 
-**Next free ADR number: 0037**
+**Next free ADR number: 0040**
+
+*Dated note, 2026-08-10 (plan 13-13):* the line advances by **three**, from 0037 to 0040, because
+Phase 13 authored all three of ADR-0037 through ADR-0039 across its own plans — plan 13-08 authored
+ADR-0037 (the `/v1` agent route surface, `must change`, executed by the same plan against
+`docs/src/deployment-topologies/sidecar.md`); plan 13-09 authored ADR-0038 (the `AgentProvisioner`
+placement, `conforms`) and ADR-0039 (Garrison/Arsenal absence on HTTP-served agents, `must change`,
+executed by the same plan against `docs/src/deployment-topologies/http-service-host.md` and
+`overview.md`) — a sixth phase, after Phases 1, 8, 9, 10 and 12, whose executing phase is also each
+ADR's owning phase. `ls .planning/decisions/003{7,8,9}-*.md` (re-run before writing this note)
+confirms all three files exist with contiguous numbers, none skipped or reused, and no existing index
+row above was renumbered, reworded or reordered.
+
+**Both Part B dispositions from this phase's allocation are stated explicitly, per D-20 and T-13-27's
+mitigation, rather than left for a reader to notice a gap:**
+
+- **Candidate 8 — the `AgentProvisioner` placement** (`Milestone_12/Epic_1/prd-agent-registry-execution-api.md`
+  §7 + OQ-2) — **closed by ADR-0038** (`0038-agent-provisioner-placement.md`), ratified at plan
+  13-09's blocking checkpoint, dated 2026-08-10. See that candidate's own Part B row below for the
+  updated closure record.
+- **Candidate 9 — the Milestone 9 Epic 4 agent/orchestrator bridge decision**
+  (`Milestone_9/Epic_4/prd-agent-orchestrator-bridge.md` §6.1) — **NOT promoted this phase.**
+  D-20's locked three-ADR allocation (0037, 0038, 0039) stays intact, and no ORCH requirement's
+  `Derives` list reaches that PRD section, so there is no requirement-level mandate to promote it
+  here. This candidate's own "Owner phase: Phase 13" assignment is **redirected to Phase 14**, per
+  `13-RESEARCH.md`'s own recommendation: Phase 14's WEB-01 and WEB-02 (the opaque-token mechanism and
+  the multi-replica store) already sit in the same Milestone 9 Epic 4/5 neighbourhood as this
+  inventory's own candidate 10 (the opaque-bearer-token decision, itself owned by Phase 14), so
+  grouping candidate 9 with candidate 10 under one owner phase is the natural fit rather than a
+  redirection with no rationale. This disposition was obtained interactively from a human operator
+  during the `/gsd-execute-phase 13` orchestrator session, dated 2026-08-10, via the runtime's
+  `AskUserQuestion` mechanism — recorded in full, including the options presented and the provenance
+  mechanism, in `13-09-SUMMARY.md` §Checkpoint Status (D-00i). This advancing note cites that record
+  rather than re-deriving or re-deciding it. See that candidate's own Part B row below for the updated
+  disposition.
+
+**ORCH-01, ORCH-02 and ORCH-05 deliberately produced no ADR.** A ledger (ORCH-01), a set of checkbox
+verdicts (ORCH-02), and an append to an existing trajectory table plus a citation of an existing ADR
+(ORCH-05, appending to ADR-0029 and citing ADR-0030) are not contested positions requiring a new
+protected decision — they are records of what the tree and the corpus already settled. ORCH-05
+amended ADR-0029 in place and cited ADR-0030 rather than authoring a rival numbering ADR (D-00g,
+D-16, D-17, D-20).
 
 *Dated note, 2026-08-09 (plan 12-04):* the line advances by **one**, from 0036 to 0037, because
 Phase 12 authored ADR-0036 (plan 12-03, the audit-suppression single-source topology invariant). The
@@ -220,13 +264,25 @@ what it decides in one line, and an explicit **Owner phase**.
    (`scripts/check-workflow-suppressions.sh`) now enforces it.
 8. **`Milestone_12/Epic_1/prd-agent-registry-execution-api.md` §7 + OQ-2** (run 5) — the
    `AgentProvisioner` placement, currently recorded as a default rather than a decision.
-   **Owner phase: Phase 13.**
+   **Owner phase: Phase 13. Closed 2026-08-10 by ADR-0038**
+   (`0038-agent-provisioner-placement.md`) — `AgentProvisioner` stays in `crates/paladin-web`,
+   ratified at plan 13-09's blocking checkpoint by a human operator (D-00i, `13-09-SUMMARY.md`
+   §Checkpoint Status), verdict `conforms`.
 9. **`Milestone_9/Epic_4/prd-agent-orchestrator-bridge.md` §6.1** (run 5) — the bidirectional
    content/agent bridge decision; the cleanest ADR-shaped section anywhere in the corpus (a
    four-criterion comparison table with a `(CHOSEN)` column). No open forward requirement currently
    points at it, so this owner assignment is Claude's Discretion rather than a CONTEXT.md-recorded
    answer: grouped with candidate 8 under the same Milestone 9-12 close-out phase, since both are
-   run-5 Milestone 9/12 subjects. **Owner phase: Phase 13.**
+   run-5 Milestone 9/12 subjects. **Owner phase: Phase 13. NOT promoted this phase, dated 2026-08-10
+   (plan 13-13).** D-20's locked three-ADR allocation for this phase (0037, 0038, 0039) stays intact,
+   and no ORCH requirement's `Derives` list reaches this PRD section, so there is no requirement-level
+   mandate to promote it here. **This "Owner phase" assignment is redirected to Phase 14**, per
+   `13-RESEARCH.md`'s own recommendation: Phase 14's WEB-01 and WEB-02 (the opaque-token mechanism and
+   the multi-replica store) already sit in the same Milestone 9 Epic 4/5 neighbourhood as candidate 10
+   below (the opaque-bearer-token decision, also owned by Phase 14), so grouping this candidate with
+   candidate 10 under one owner phase is the natural fit. Disposition obtained interactively from a
+   human operator at plan 13-09's blocking checkpoint, dated 2026-08-10 (D-00i, `13-09-SUMMARY.md`
+   §Checkpoint Status) — this row is not left silent, per T-13-27's mitigation.
 10. **`Milestone_9/Epic_5/prd-user-admin-system-completion.md` §6.1** (run 5) — the
     opaque-bearer-token decision; the only decision in the corpus a later milestone contradicts in
     prose while silently preserving in code. **Owner phase: Phase 14.**

@@ -619,3 +619,233 @@ Owned by plan 13-07. This section has zero bare-`Verify` rows.
 |---|---|
 | REQ-master-plan-epics-11-18 | **Two facts under one ID — a corpus-naming artefact, not a merge (D-00f):** **(1) Provenance only — do not double-count.** The master expansion plan (`.project/project-management/paladin-project-plan-final.md`, Status Draft, v1.0, dated **January 29, 2026** — re-confirmed this session, `:1-6` — the earliest document in run 5 and the highest-level planning document in the corpus) defines Epics 11-18 with the dependency graph 11 → 12 → {13, 14} → 15 → {16, 17} → 18. Every one of those eight epics was ingested in run 2, and Conclave, Sanctum/Qdrant, Council, Grove, Maneuver and Sentinel vision are all **verified shipped**. Its value is provenance: it is the only place the dependency graph and the epic-level risk assessment are recorded. **(2) `project-management`'s own single "open" item — nonexistent, quoted verbatim, ORCH-02's fifth verdict.** Re-confirmed this session against `.project/project-management/tasks-project-management-setup.md:33`: `- [ ] 1.1 Create template → - [x] 1.1 Create template (after completing)` — a formatting **example** illustrating the file's own "Instructions for Completing Tasks" convention (`:29-33`), not a real task line. `grep -n '\[ \]\|\[x\]' .project/project-management/tasks-project-management-setup.md` returns exactly this one line — the file's 39 numbered task items (`0.0` through `7.7`) carry no checkbox syntax at all, confirming the "1 open" figure from this file's own per-milestone corroboration paragraph above is this same formatting artefact, not a genuine backlog item. It does not become a task (D-10) |
 
+## Phase 13 close-out amendments (2026-08-10)
+
+Appended per D-00d — the twenty-eight epic/register sections above are unmodified by this amendment;
+nothing above this heading is rewritten or absorbed. Sourced from all twelve prior plan SUMMARY files
+below (`.planning/phases/13-milestone-9-12-ground-truth-recorded-account/`), plus a fresh re-run of
+every command this section reports:
+
+- `13-01-SUMMARY.md` — Milestone 9-12 Ledger Scaffold (head notes, legend, both highlight tables, all
+  29 originally-planned/28 actually-written section headings, all 120 row stubs, Milestone 9 Epic 1
+  fully derived)
+- `13-02-SUMMARY.md` — Milestone 9 Epics 2-6 Ledger Derivation
+- `13-03-SUMMARY.md` — Milestone 10 Epics 1-5 Ledger Derivation
+- `13-04-SUMMARY.md` — Milestone 11 Ledger Derivation (Epics 1-2, 3, 4, 6, 5&7)
+- `13-05-SUMMARY.md` — Milestone 12 Epics 1-4 Ledger Derivation
+- `13-06-SUMMARY.md` — Milestone 12 Epics 5-7 Ledger Derivation
+- `13-07-SUMMARY.md` — Deferred-QA Ledger Derivation (Epics 25-29 & project-management)
+- `13-08-SUMMARY.md` — Agent Route Surface ADR (ADR-0037)
+- `13-09-SUMMARY.md` — Milestone 12 Seam Ratification (ADR-0038, ADR-0039)
+- `13-10-SUMMARY.md` — Correct ORCH-01/ORCH-05/PIPE-01 at source and pointer the Milestone 9-12 ledger
+- `13-11-SUMMARY.md` — Source-Level ORCH-03 Relocation Annotations
+- `13-12-SUMMARY.md` — ADR-0029 trajectory completion + ORCH-05 numbering citation
+
+**Whole-file integrity re-check, re-run this session:**
+
+- `grep -c '^| REQ-' .planning/ledgers/milestone-09-12.md` → **120**.
+- `grep -oE '^\| REQ-[a-z0-9-]+' .planning/ledgers/milestone-09-12.md | sort -u | wc -l` → **120**
+  distinct IDs — no row was duplicated or dropped across four waves of independent edits.
+- `grep -c '^### ' .planning/ledgers/milestone-09-12.md` → **28**, not 29. **This is a plan-authoring
+  defect in `13-13-PLAN.md`'s own acceptance criteria, not a tree defect, and it is not corrected by
+  adding a spurious 29th heading.** `.planning/REQUIREMENTS.md:3672` (plan 13-10's own pointer section,
+  written before this plan ran) already states the true count in prose — "across **28** epic/register
+  sections" — so the 29 figure was never true at any point in this phase's history; it originates in
+  `13-01-PLAN.md`'s own task-authoring estimate and was carried unchecked into this plan's acceptance
+  criteria. Listing all 28 headings (`grep -n '^### '`) confirms one heading per row-owning section in
+  the contention table above, no section missing a heading and no heading owning zero rows. Following
+  this phase's own precedent for `13-12`'s acceptance-criteria defect (a `numbering` grep miscount) and
+  `13-09`'s and `13-10`'s (an unanchored `diff` regex, an `awk` off-by-one): the real invariant — every
+  one of the 120 rows sits under exactly one of 28 correctly-scoped section headings, none orphaned,
+  none duplicated — holds and is verified above; the miscounted expectation is recorded here rather
+  than manufactured a false pass or a false tree edit.
+- A search for the interim-state stub marker — the word `pending`, an em dash, then the owning plan's
+  ID — returns **zero** rows carrying it. (This amendment deliberately does not reproduce the exact
+  three-token grep pattern inline, to avoid the self-reference trap the next bullet documents: a
+  pattern quoted verbatim inside this very file would match its own quotation on the next re-run.)
+- A search for the un-rederived-row prefix (`run-5 input`, followed by a `(not yet re-derived)`
+  parenthetical) is **not** zero on a bare literal-string count once this amendment exists in the
+  file — it is self-referential, because the file's own head note and contention-table paragraphs
+  (near the top of the file) describe the marker convention in prose using that exact phrase (three
+  occurrences there, pre-dating this amendment), and this amendment's own description of that fact,
+  two sentences up, necessarily uses the phrase once more to be legible. None of those occurrences is
+  a live marker left in any row's Verdict cell. The invariant that actually matters — zero **rows**
+  still carrying an unresolved stub — is confirmed precisely by anchoring the search to row lines only
+  (a search restricted to lines beginning `| REQ-` and containing the un-rederived-row prefix) →
+  **zero**. All 120 rows carry real, re-derived verdict text; only descriptive prose about the
+  convention, never a row itself, contains the phrase.
+- `grep -cE '^\| REQ-[a-z0-9-]+ \|\s*\|?\s*$' .planning/ledgers/milestone-09-12.md` (blank Verdict
+  cells) → **0**.
+- **Every `ADR-NNNN` citation resolves to a file that exists.** Extracted and checked individually
+  against `.planning/decisions/` this session: `ADR-0024`, `ADR-0029`, `ADR-0033`, `ADR-0034`,
+  `ADR-0036`, `ADR-0037`, `ADR-0038`, `ADR-0039` — eight distinct numbers, zero failures. `ADR-0037`,
+  `ADR-0038` and `ADR-0039` are this phase's own three (plans 13-08 and 13-09), confirming the ledger
+  rows written before either ADR existed (wave 2) correctly forward-cited numbers that wave 3 then
+  filled in, with no dangling reference at any point a reader might open this file mid-phase.
+
+**Per-class verdict distribution, counted directly from the Verdict column this session** (via a
+field-split extraction of every `^| REQ-` line's second cell, classified by its leading text — not
+assumed from the 35/53/32 input split the head note already reconciles above):
+
+| Verdict class (as written in the row) | Count |
+|---|---|
+| `Shipped` (bare, including minor in-cell caveats that do not change the class — "and it invalidates a later baseline", "with a caveat on the push half", "with a tag-sequence gap surfaced this session", etc.) | 87 |
+| `Shipped (relocated)` | 4 |
+| `Shipped, superseded (route text)` | 3 |
+| `Shipped, one acceptance criterion false` | 1 |
+| `Contract diverges` | 2 |
+| `Verified open` (as the row's own primary classification) | 12 |
+| `Partially open` | 1 |
+| `Open,` (bare — a class this ledger's own legend does not name, used by two fan-out plans for a nuance the eleven-class vocabulary does not distinguish from `Verified open`) | 2 |
+| `Open register` (bare — same observation) | 1 |
+| Dual/split-verdict rows (two facts under one `REQ-*` ID per D-00f, or an explicit "Split verdict") | 5 |
+| `Owner-only; nothing applied by this phase` (a D-06 citation, not a fresh verdict) | 1 |
+| `Closed → SUPPLY-02` (a D-06 citation, not a fresh verdict) | 1 |
+| **Total** | **120** |
+
+**Reconciled against the head note's corrected arithmetic:** the head note's own re-run figures —
+`Verify` rows → 35 (bare) before re-derivation, `Shipped` rows → 53 (51 + 2 arrow form) before
+re-derivation, richer-verdict rows → 32 before re-derivation, 120 total — describe the **input** state
+this ledger started from (D-04), not this session's output; they are not expected to match the output
+distribution table above one-for-one, and they do not (input `Shipped` 53 vs. output `Shipped`-family
+94 [87 + 4 relocated + 3 superseded], because most of the 35 bare-`Verify` and much of the 32
+richer-verdict input rows resolved to `Shipped` once re-derived this phase). No discrepancy here needed
+reconciling in the sense the plan's <action> describes for the two highlight tables below — the input
+and output tables measure different populations by design, exactly as this ledger's own "Corrected
+arithmetic" paragraph already states for the 35/53/32 figures.
+
+**Reconciled against the two highlight tables, which the plan requires match exactly:**
+
+1. **`Shipped, one acceptance criterion false` count is 1**, matching the highlight table's single row
+   (`REQ-audit-toml-single-source`). Confirmed identical: the distribution table's row and the
+   highlight table's row are the same requirement, cited once, not double-counted.
+2. **`Verified open` does *not* cleanly match the highlight table's row list, and the mismatch is
+   real, not a miscount — recorded here rather than silently reconciled away.** The "Verified open —
+   the Deferred-QA block" highlight table lists **19** `REQ-*` IDs. Comparing that list against every
+   row's actual Verdict-cell text this session:
+   - **11 of the 19** carry the literal phrase `Verified open` as their row's sole primary
+     classification (`REQ-ci-cli-snapshot-job`, `REQ-ci-bench-check-job`, `REQ-ci-combined-coverage-job`,
+     `REQ-codecov-config-thresholds`, `REQ-makefile-coverage-targets`, `REQ-contributing-coverage-docs`,
+     `REQ-public-api-doc-audit`, `REQ-asciinema-demos`, `REQ-mock-infrastructure`,
+     `REQ-user-guides-rewrite`, `REQ-deployment-operations-docs-update`).
+   - **3 of the 19** are dual/split-verdict rows (`REQ-arch-doc-modernization`,
+     `REQ-llm-tool-calling-port`, `REQ-llm-tool-calling-adapters`) whose *second* half embeds
+     `Verified open → <requirement>` inline, not as the row's sole primary classification — counted
+     once in the distribution table's "Dual/split-verdict rows" bucket, not in the bare `Verified open`
+     bucket, per this ledger's own tie-break rule for rows eligible for two classes at once.
+   - **5 of the 19** (`REQ-modernize-github-actions` → `Partially open`; `REQ-rustdoc-zero-warnings`,
+     `REQ-user-service-test-coverage` → bare `Open,`; `REQ-listener-service-test-coverage` → bare
+     `Open,` embedded in its own dual-fact row; `REQ-deferred-coverage-register` → `Open register`)
+     are forward-open rows the highlight table correctly groups under its own heading, but whose
+     row-level verdict text uses a phrasing this ledger's eleven-class legend does not itself define —
+     four separate fan-out plans (13-03 through 13-07) each wrote natural-language nuance for "this is
+     open but not identically shaped to the other `Verified open` rows" without a shared vocabulary for
+     it. Not a tree defect and not fixed here (fixing it would mean rewriting five other plans' rows,
+     out of this plan's `files_modified` scope) — recorded so a future reader searching literally for
+     `Verified open` does not undercount the Deferred-QA block by five.
+   - **1 row carries `Verified open` as its own primary classification and is *not* in the highlight
+     table at all: `REQ-fail-closed-auth-posture`** (Milestone 12 Epic 5, plan 13-06's section). Its
+     verdict is `Verified open` for a different reason than the Deferred-QA block's eighteen forward
+     items — the code path exists and matches the requirement's shape, but no test drives the `Err`
+     branch or observes a real refusal, so per D-03 it cannot be marked `Shipped`. This is a genuine
+     finding of this close-out's integrity re-check, not previously flagged in `13-CONTEXT.md`'s
+     `<deferred>` register. **No new phase scope is opened for it here** (this plan's own prohibition:
+     "no new scope is absorbed") and `13-CONTEXT.md` is outside this plan's declared
+     `files_modified`, so it is not written there either — recorded here, with the observation that no
+     downstream `Phase 14/15/16` requirement currently owns it, as the nearest available durable
+     record. A future milestone close-out or Phase 14 (the nearest owner of the surrounding auth
+     surface, per WEB-01/WEB-02) is the natural place to pick it up.
+   - Sum check: 11 + 3 + 5 = 19 (the highlight table's full list, no ID left unaccounted for) plus the
+     1 extra genuinely-`Verified open` row outside the table = **12 rows carry `Verified open` as a
+     primary classification** in the ledger, matching the distribution table's own count above.
+
+**Rows cited rather than re-derived, and why (D-06):**
+
+1. **`REQ-audit-toml-single-source`'s "both halves" citation** (Milestone 10 Epic 2, the sole
+   `Shipped, one acceptance criterion false` row) — the failure and the fix are each dated and cited
+   to `cb75b2b` (Phase 9, plan 09-06) and ADR-0036 (Phase 12) respectively, per the ledger's own head
+   note. Re-confirmed this session: `grep -n "cargo audit --ignore" .github/workflows/ci.yml` returns
+   **zero matches** — the deletion holds.
+2. **`REQ-advisory-exception-process`** cites its closure to `REQUIREMENTS.md:1941-2046` (ORCH-01's
+   own SUPPLY-02 hand-off block) rather than re-deriving ADR-0024's governance register from scratch —
+   the citation-not-re-derivation choice this ledger's own D-06/D-07 provenance paragraph (Milestone 10
+   Epic 2 section header) already names and justifies: Phase 12 verified rather than re-worked SUPPLY-01
+   and SUPPLY-02 because Phase 9's D-07 re-scoped Phase 12 under `--auto`, a decision that was never
+   itself human-ratified but is durable because it is recorded at source.
+3. **`REQ-github-rulesets`** carries `Owner-only; nothing applied by this phase (D-06)` — both halves
+   (the rulesets are version-controlled; they are not applied and `main` is not protected) are
+   re-confirmed present this session (`gh api repos/:owner/:repo/rulesets` → `[]`;
+   `gh api repos/:owner/:repo/branches/main/protection` → HTTP `404`), matching ORCH-01's own hand-off
+   item 5's citation exactly rather than re-running a fresh `gh` query narrative.
+4. **The three SUPPLY closures generally** (SUPPLY-01, SUPPLY-02, SUPPLY-03) are cited via the
+   `REQUIREMENTS.md:1855-2082` hand-off block throughout the Milestone 10 Epic 2 section, per D-06 —
+   they are Phase 9/12 work, not Phase 13's, and this ledger's job is to record the citation, not
+   reproduce the transcripts.
+5. **Phase 12's 87-hit stale-citation inventory**, inherited whole per D-07 (see the ledger's own
+   "Inherited stale-citation inventory (D-07)" paragraph above this amendment) — plan 12-01's measured
+   87-hit, 8-corrected, class-by-class-scoped exclusion set is carried forward rather than re-measured;
+   re-running the grep and "fixing" the excluded hits would undo a deliberate historical-record
+   decision this ledger inherits.
+
+**Claims that are CI-only, each with the exact command a CI runner executes — re-confirmed rather than
+repeated from precedent this session (D-21):**
+
+- **`cargo audit --config .cargo/audit.toml`** (the flag CI actually passes; a bare
+  `cargo audit --config` invocation this session returned "unexpected argument", confirming the CLI
+  surface is unchanged from precedent) and **`cargo deny check`** — neither can complete here:
+  `curl -sS -o /dev/null -w '%{http_code}' https://crates.io/` → **403**, re-run this session, unchanged
+  since Phase 4's first scoping note. This phase makes no `.cargo/audit.toml` or `deny.toml` edit, so
+  both commands are expected to behave identically to before this phase once they run in CI.
+- **`cargo llvm-cov --workspace`** — `cargo llvm-cov --version` → `error: no such command: `llvm-cov``,
+  re-run this session (exit `101`); the subcommand is not installed in this environment. Confirmation
+  is reasoning, not measurement: a phase that changes zero `.rs` files cannot move line coverage
+  (verified below), so the workspace coverage gate is recorded as **unaffected by the measured zero
+  diff**, following Phase 10's own precedent for the identical situation.
+- **Anything Docker** — `which docker` → exit `1` (absent), re-run this session, unchanged since
+  Phase 4. No row in this ledger's Milestone 9-12 range depends on a Docker-only artefact this phase
+  needed to exercise fresh.
+
+**Phase gate, recorded with commands and outputs:**
+
+1. **The phase base SHA.** The parent of this phase's first commit: `git log --oneline --reverse
+   --all -- '.planning/phases/13-milestone-9-12-ground-truth-recorded-account/' | head -1` →
+   `97bc748 docs(13): capture phase context`; its parent, `git rev-parse 97bc748^` →
+   **`e12f18306ca9a80b1c3301e6afca31602e7c41ec`** (`e12f183 docs(phase-12): complete phase execution`,
+   dated `2026-08-10T02:43:22+00:00`) — the tip of Phase 12's own work, recorded verbatim.
+2. **The D-19 boundary, measured not claimed:**
+   `git diff --name-only e12f18306ca9a80b1c3301e6afca31602e7c41ec..HEAD -- '*.rs' | wc -l` → **`0`**,
+   re-run this session. Every one of Phase 13's thirteen plans changed only `.planning/`,
+   `docs/src/deployment-topologies/`, `.planning/decisions/` and this ledger — zero Rust source files,
+   across all thirteen plans and all four waves.
+3. **`mdbook build docs/`, re-run this session against the current tree.** First, `mdbook-mermaid
+   install docs/` (the gitignored `docs/mermaid.min.js`/`docs/mermaid-init.js` assets this worktree
+   started without, exactly the "install the pinned toolchain offline" step 13-09's own Task 3 already
+   named and executed once this phase — re-run here because this is a fresh worktree) → exit `0`, no
+   tracked-file change (`git status --short docs/` empty after). Then `mdbook build docs/` → **exit
+   `101`**, with exactly the two pre-existing errors the pre-phase baseline recorded and no others:
+   `error: Linking outside of the "root" directory is forbidden` at `deployment/docker.md:118:61`
+   (citing `../../../.planning/decisions/0023-cli-dependency-isolation.md`), and
+   `error: Potential incomplete link` at `user-guides/tool-integration.md:324:1`
+   (`` [`MCPClient::connect_streamable_http`] ``, no declared URL). `grep -n
+   'sidecar.md\|http-service-host.md\|overview.md'` against the full build output this session →
+   **zero matches** — neither of the two Milestone 12 documentation pages plan 13-08 and plan 13-09
+   corrected introduced a new linkcheck error. **The failure predates Phase 13**: both broken-link
+   commits post-date the last successful `docs.yml` CI run (2026-07-06, per `13-RESEARCH.md`'s own
+   `gh run` citation, not re-run here since neither commit date nor CI history changes phase-to-phase)
+   — meaning `docs.yml`'s gate would fail today independently of this phase. Neither reinterpreted as a
+   pass nor attributed to this phase's three documentation edits (`sidecar.md` by plan 13-08,
+   `http-service-host.md` and `overview.md` by plan 13-09).
+4. **The workspace gate's disposition**, recorded by reasoning from the measured zero diff (item 2
+   above), following Phase 10's precedent exactly: a phase with a zero-`.rs`-file diff cannot move
+   `cargo test`, `cargo fmt --check`, `cargo clippy -- -D warnings` or ADR-0006's 84% coverage floor —
+   none of these commands was re-run this session, and none needed to be, because the artefact they
+   would measure (compiled Rust behaviour) is provably unchanged by a diff of zero files. This is
+   stated as reasoning, not measurement, exactly as item 2's own coverage-tool unavailability note
+   above already frames it.
+
+**Series completion.** `milestone-09-12.md` is the **fifth and final sibling** in the series —
+`milestone-01.md`, `milestone-02-03.md`, `milestone-04-06.md` and `milestone-07-08.md` — exactly as
+this ledger's own head note and `REQUIREMENTS.md:3680-3681`'s pointer section already state. There is
+no sixth name to forward, and this close-out amendment is the last write any Phase 13 plan makes to
+this file.
+

@@ -2203,7 +2203,7 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
 
 ### Milestone 9-12 ground truth & recorded account (ORCH)
 
-- [ ] **ORCH-01**: A developer can look up any of the **120** Milestone 9-12 + Deferred-QA
+- [x] **ORCH-01**: A developer can look up any of the **120** Milestone 9-12 + Deferred-QA
       requirement IDs and see a `file:line`-cited verdict — shipped, relocated, superseded by
       outcome, verified open, or genuinely outstanding — instead of a PRD path that may predate the
       workspace decomposition, the Milestone 6 relocations or the Milestone 11 mdbook move.
@@ -2237,10 +2237,21 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
       complete, ships every file, job, target and ruleset it promised, **and fails one of its own
       acceptance criteria** (SUPPLY-01). A count that is simultaneously accurate about deliverables
       and wrong about acceptance is a failure mode this corpus had not previously produced.
+      **Closed (dated 2026-08-10, plan 13-13):** the ledger exists at
+      `.planning/ledgers/milestone-09-12.md` with all **120** requirement IDs carrying a
+      `file:line`-cited verdict (`grep -c '^| REQ-' .planning/ledgers/milestone-09-12.md` → `120`),
+      and this document's own `## Milestone 9-12 as-shipped ledger` section
+      (`REQUIREMENTS.md:3664-3681`) is reduced to a pointer exactly as the done-when criterion
+      requires. The whole M9 orchestrator subsystem, the whole M10 tooling set, the mdbook and the
+      whole M12 web API are all stated shipped in the ledger's own per-milestone corroboration
+      paragraph, so none of them is re-planned. The ledger's own `## Phase 13 close-out amendments
+      (2026-08-10)` section (this same plan) re-confirms the whole-file integrity bar — 120 rows, 120
+      distinct IDs, zero blank verdict cells, all cited `ADR-NNNN` numbers resolving — one final time
+      before this checkbox closes.
       *Derives: all 120 run-5 `REQ-*` IDs; `intel/code-verification.md` run-5 (37 verified-shipped
       rows, 8 verified-open findings, 1 correction).*
 
-- [ ] **ORCH-02**: Each run-5 open-checkbox block has a written verdict, and the corpus-level
+- [x] **ORCH-02**: Each run-5 open-checkbox block has a written verdict, and the corpus-level
       pattern is stated once. Five blocks, five different answers, none of which is a task list:
       **M9's 0 open** — corroborated; every Epic 1-5 deliverable is present.
       **M10's 0 open** — corroborated in artefacts, contradicted in one acceptance criterion
@@ -2257,6 +2268,16 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
       **Done when** these five verdicts are recorded, none is converted into a task, and the
       five-run pattern (understated → accurate → overstated → contradicted → vacuous) is written
       down in exactly one place so it stops being rediscovered.
+      **Closed (dated 2026-08-10, plan 13-13):** all five verdicts and the five-run pattern are
+      recorded exactly once, in `.planning/ledgers/milestone-09-12.md`'s own "Per-milestone checkbox
+      corroboration (D-10, ORCH-02)" paragraph — M9 0 open corroborated; M10 0 open corroborated in
+      artefacts, contradicted in one acceptance criterion (the ledger's own `Shipped, one acceptance
+      criterion false` highlight row); M11 26 open, the only genuinely open count across all 542
+      items in the corpus, carried to DOCS-01; M12 3 open, vacuous Task 0.0 feature-branch
+      scaffolding while the Epic 5 code ships; project-management 1 open, a template formatting
+      example, not a real task line. None of the five is converted into a task, and the pattern
+      (understated → accurate → overstated → contradicted → vacuous) is written down in exactly the
+      one place the requirement's own done-when criterion names.
       *Derives: `intel/task-completion-state.md`; `intel/code-verification.md` run-5 checkbox
       analysis and *Final corpus position on open-checkbox counts*.*
 
@@ -2284,11 +2305,22 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
       that has since changed shape (DOCS-04).
       **Done when** anyone applying a run-5 requirement literally cannot write to a path that does
       not exist, and (a) has one recorded answer.
+      **Closed (dated 2026-08-10, plan 13-13; checkbox flipped 2026-08-10 by plan 13-08, evidence
+      recorded here):** (a) ADR-0037 (`.planning/decisions/0037-agent-route-surface-v1.md`, plan
+      13-08) is the recorded answer on the `/v1` route surface, citing `crates/paladin-web/openapi.json`
+      as the committed drift-guard baseline that settles which form shipped; `docs/src/deployment-topologies/sidecar.md:29`
+      is corrected to the `/v1`-prefixed form in the same plan (D-12). (b)-(e) the four stale paths —
+      `REQ-listener-service-test-coverage`, `REQ-llm-tool-calling-port`, `REQ-arch-doc-modernization`,
+      `REQ-asciinema-demos` — are corrected at source with dated banners naming the current path,
+      originals retained (plan 13-11, Source-Level ORCH-03 Relocation Annotations, in
+      `.project/Deferred-QA-CICD-Completion/{prd-deferred-qa-completion.md,DEFERRED_COVERAGE.md}` and
+      `.planning/intel/requirements.md`). Every item this requirement names now has a `file:line`-cited
+      answer; none is left as a run-5 position the tree merely contradicts.
       *Derives: REQ-agent-execute-endpoint, REQ-api-v1-versioning, REQ-openapi-drift-guard,
       REQ-listener-service-test-coverage, REQ-llm-tool-calling-port, REQ-arch-doc-modernization,
       REQ-asciinema-demos; INGEST-CONFLICTS run-5 warning on the competing agent route surface.*
 
-- [ ] **ORCH-04**: The two seams Milestone 12 recorded as *defaults* get **decisions**.
+- [x] **ORCH-04**: The two seams Milestone 12 recorded as *defaults* get **decisions**.
       (a) **`AgentProvisioner` placement.** Epic 1 Open Question 2 reads "keep in `paladin-web`
       (single consumer today) or promote to `paladin-ports` now for reuse by future topologies
       (sidecar/worker)? (Default: `paladin-web`; promote only if a second consumer appears.)" §7
@@ -2308,12 +2340,31 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
       **Done when** (a) has a recorded placement with its reasoning, and (b) is either planned scope
       with a target or a **permanent property of the topology** stated explicitly in the
       decision matrix.
+      **Closed (dated 2026-08-10, plan 13-13):** (a) ADR-0038
+      (`.planning/decisions/0038-agent-provisioner-placement.md`, plan 13-09) records
+      `AgentProvisioner` staying in `crates/paladin-web` — `AgentSpec` derives `utoipa::ToSchema` and
+      is an OpenAPI-annotated HTTP request DTO, not a portable core type; `paladin-ports` carries no
+      `utoipa` dependency; `FacadeProvisioner` is `#[cfg(feature = "web-server")]`-gated, confirming
+      it is the HTTP composition root rather than a second topology. Verdict `conforms`. (b) ADR-0039
+      (`.planning/decisions/0039-http-topology-no-garrison-no-arsenal.md`, plan 13-09) records the
+      absence of Garrison and Arsenal on HTTP-served agents as a **permanent property of the shipped
+      topology**, not planned scope, and the limitation is now stated in prose in
+      `docs/src/deployment-topologies/http-service-host.md` and `overview.md` (plan 13-09, Task 3).
+      Verdict `must change` — executed by the same plan that authored it. **Both decisions were
+      ratified at plan 13-09's blocking checkpoint** (`type="checkpoint:decision" gate="blocking"`),
+      resolved by a human operator via the runtime's `AskUserQuestion` interactive mechanism during
+      the `/gsd-execute-phase 13` orchestrator session, dated **2026-08-10**, with auto-mode
+      confirmed off for that session — the human selected the recommended option (`option-a`) on all
+      three items presented (D-14, D-15, and PROMOTION.md Part B candidate 9), recorded in full,
+      including the options shown and the provenance mechanism, in `13-09-SUMMARY.md` §Checkpoint
+      Status (D-00i). This closing note cites that record rather than re-deriving or re-deciding it,
+      per the checkpoint provenance convention Phase 12's plan 12-01 established.
       *Derives: REQ-agent-provisioner-port (Epic 1 §4.4 FR-15, OQ-2), REQ-concrete-agent-provisioner,
       REQ-registry-from-config-builder (Epic 2 §4.2 non-goal), REQ-deployment-topologies-section
       (M11 Epic 6 FR-8); INGEST-CONFLICTS run-5 warnings on the AgentProvisioner placement and on
       HTTP-served agents having no Garrison and no Arsenal.*
 
-- [ ] **ORCH-05**: The version trajectory is complete through the tree, and the milestone-numbering
+- [x] **ORCH-05**: The version trajectory is complete through the tree, and the milestone-numbering
       prediction is closed. Run 5 supplies the four release gates that HARD-03's history stopped
       short of: **M9 → v0.3.0**, **M10 → v0.4.0**, **M11 → v0.5.0**, **M12 → v0.6.0** — a
       lockstep-versioned chain in which each milestone's finalization Epic bumps the root crate and
@@ -2344,9 +2395,147 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
       resolve directly against directory numbering, and the prediction is recorded closed — or, if
       a fifth collision is found on closer reading, it is corrected at source with the same
       convention that closed the first four.
+      **Closed (dated 2026-08-10, plan 13-13):** ADR-0029's `## Trajectory` table
+      (`.planning/decisions/0029-version-trajectory-history.md`, plan 13-12) now runs unbroken from
+      `v0.1.0-rc.1` through `v0.2.0`, `v0.3.0` (M9), `v0.4.0` (M10), `v0.5.0` (M11), `v0.6.0` (M12) to
+      `0.7.0`/`v0.7.1` — four new rows appended in ascending order, each citing its own
+      `.planning/ledgers/milestone-09-12.md` row and `REQ-lockstep-versioning` as the shared bump
+      mechanism; the `v0.6.0` row records the missing `v0.6.0` tag by citing the three finalization
+      commits (`90ca591`, `67b6207`, `23b187b`) rather than asserting a tag that does not exist. The
+      spanning Phase-13 placeholder row is superseded in place, original text retained (D-00d). The
+      milestone-numbering prediction's second half is closed: plan 13-12 ran the provenance-key
+      confirmation across all 120 run-5 `REQ-*` provenance source paths (Milestone 9-12,
+      Deferred-QA-CICD-Completion, project-management) and found **no fifth self-numbering
+      collision** — every overview H1, Epic-level PRD H1 and `**Milestone:**` metadata line
+      self-titles with its own directory's milestone number — citing **ADR-0030:79-84** as the
+      existing closure rather than authoring a rival numbering ADR, exactly as this requirement's own
+      done-when criterion and D-20's locked-allocation rule require.
       *Derives: REQ-m9-quality-gate-v030, REQ-m10-v040-release, REQ-lockstep-versioning,
       REQ-m11-v050-release, REQ-doc-version-sync, REQ-m12-v060-release; couples to HARD-03
       (Phase 10) and REL-01 (Phase 4).*
+
+#### Hand-off to Phase 14 / WEB-01 … WEB-04 — dated 2026-08-10 (plan 13-13)
+
+**Phase 13 is the last ground-truth phase in the corpus. This block, and the two below it, are the
+final forward-work signal Phases 14, 15 and 16 receive (D-22).**
+
+1. **The token mechanism has one un-settled variant, and shipped code carries both halves at once.**
+   `.planning/ledgers/milestone-09-12.md`'s `REQ-opaque-bearer-token-adapter-v1` row (Milestone 9
+   Epic 5) is `Contract diverges → WEB-01` — variant group 29, the only variant in five verification
+   runs shipped code itself cannot settle. Its sibling `REQ-jwt-bearer-auth-v2` row (Milestone 12
+   Epic 5) carries the same pointer. WEB-01 owns the resolution; this hand-off does not pre-empt it.
+2. **The multi-replica correctness edge, `Verified open`.** `REQ-k8s-manifests`'s row (Milestone 12
+   Epic 7) is `Shipped, correctness question open → Phase 14 / WEB-02` — `k8s/deployment.yaml` ships
+   liveness/readiness probes for multi-replica serving against an in-process token store, and
+   `REQ-health-ready-endpoints`'s row cross-references it: the readiness probe's shallow check does
+   not address the shared-store question. Not a scaling optimisation; a correctness question WEB-02
+   owns.
+3. **ADR-0038's placement answer and its stated cost.** ADR-0038
+   (`.planning/decisions/0038-agent-provisioner-placement.md`) ratifies `AgentProvisioner` staying in
+   `crates/paladin-web`. Its own `## Downstream Consumers` names the cost explicitly: a future
+   non-HTTP consumer (the queue-worker or sidecar topology) would need to depend on the HTTP adapter
+   crate to reuse the trait, or duplicate it — the split-`AgentSpec`-into-a-domain-spec-and-an-HTTP-DTO
+   alternative (option-b at plan 13-09's checkpoint) was declined on `.rs`-boundary grounds, not
+   because the cost is zero. Cite the ADR directly if this seam is revisited.
+4. **ADR-0039 as half of WEB-04's required "stated relationship".** ADR-0039
+   (`.planning/decisions/0039-http-topology-no-garrison-no-arsenal.md`) ratifies the absence of
+   Garrison and Arsenal on HTTP-served agents as a **permanent property of the shipped topology**,
+   `must change` verdict already executed (the two doc-page corrections, this same plan's Task 1
+   phase-gate). WEB-04 needs a "stated relationship" between Arsenal/MCP and a future `LlmPort` tool
+   surface; ADR-0039 supplies the HTTP-agent half of that relationship (no Arsenal wiring, by design)
+   — WEB-04 still owns the LLM-tool-calling half (`REQ-llm-tool-calling-port`,
+   `REQ-llm-tool-calling-adapters`, both `Verified open → WEB-04` in the ledger).
+5. **Two `Verified open` rows this ledger's own close-out amendment found, not previously in any
+   Phase-14 hand-off.** `REQ-fail-closed-auth-posture` (Milestone 12 Epic 5) — the fail-closed auth
+   posture's code path exists and matches its requirement's shape, but no test drives the `Err` branch
+   or observes a real refusal; per D-03 this cannot be marked `Shipped`. No downstream requirement
+   currently owns it; Phase 14 is the nearest natural owner given it sits in the same
+   `crates/paladin-web`/`paladin-server` auth surface as WEB-01/WEB-02.
+
+**Evidence:** `.planning/ledgers/milestone-09-12.md` rows `REQ-opaque-bearer-token-adapter-v1`,
+`REQ-jwt-bearer-auth-v2`, `REQ-k8s-manifests`, `REQ-health-ready-endpoints`,
+`REQ-fail-closed-auth-posture`, `REQ-llm-tool-calling-port`, `REQ-llm-tool-calling-adapters`;
+`.planning/decisions/0038-agent-provisioner-placement.md`;
+`.planning/decisions/0039-http-topology-no-garrison-no-arsenal.md`; this ledger's own `## Phase 13
+close-out amendments (2026-08-10)` section, "Reconciled against the two highlight tables" paragraph.
+
+#### Hand-off to Phase 15 / PIPE-01 … — dated 2026-08-10 (plan 13-13)
+
+1. **The measured 15-job `ci.yml` list, corrected at source.** `.planning/ledgers/milestone-09-12.md`'s
+   own head-note paragraph 2 re-ran `grep -nE '^  [a-z][a-z0-9-]*:$' .github/workflows/ci.yml` this
+   phase and found **fifteen** job ids, not the fourteen `intel/code-verification.md:539-540`
+   recorded — `examples` and `kubernetes-smoke` are present with no corresponding run-5 entry, and
+   `security` is gone (Phase 9, D-05). PIPE-01's own text is corrected at source by plan 13-10 (D-08);
+   this hand-off points at that correction rather than repeating the job list.
+2. **`scripts/check-api-surface.sh:6` — closed in the script, open in four requirement texts.** The
+   `.project/current-exports.txt` baseline exists and the script reads the dotted path correctly
+   (ledger head-note paragraph 3); the *documentation* half — four Milestone 12 requirement texts
+   still naming the undotted path, carrying Phase 8's dated banners already — stays open. Not a sixth
+   ORCH-03 item (D-09); PIPE-04's own scope.
+3. **Deferred-QA Epic 25's coverage-threshold variant, recorded on both sides, unresolved.** A **78%
+   hard gate** (parent PRD FR-25.3) versus a **phased 70 → 74 → 78 ramp** (Epic 25 FR-25.6), with the
+   parent PRD's own OQ-3 recorded Open. Joins variant group 30 alongside the coverage gate's other
+   three positions. `.planning/ledgers/milestone-09-12.md` rows `REQ-ci-combined-coverage-job` and
+   `REQ-codecov-config-thresholds` (both `Verified open → PIPE-02`) carry both sides; PIPE-02 picks
+   one.
+4. **The eight deprecated GitHub Action references, with stale line numbers.** `REQ-modernize-github-actions`'s
+   row is `Partially open → PIPE-04` — the dangling `on: schedule` block (FR-25.2) is the one closed
+   item; `actions-rs/toolchain@v1` (×4), `actions/cache@v3` (×3), `codecov/codecov-action@v3` (×1)
+   remain, and run 5's own line numbers for them are stale by D-08 — re-grep before acting, don't
+   trust the cited line numbers.
+5. **The shared mock-infrastructure prerequisite and the two coverage registers it unblocks.**
+   `REQ-mock-infrastructure` (`Verified open, with one correction → DEFER-01`) is the shared
+   prerequisite for both `REQ-user-service-test-coverage` (`DEFER-02`, its Milestone-8-vs-Deferred-QA
+   sequencing collision already resolved by ADR-0034 — split withdrawn, unsplit file is the sizing
+   basis) and `REQ-listener-service-test-coverage` (`DEFER-03`, stale by both path and baseline
+   number — the module ships as `src/application/services/orchestration/listener.rs`, 538 lines, and
+   Milestone 9 Epic 2 already added direct-exercising tests since the 57.83% baseline was struck).
+
+**Evidence:** `.planning/ledgers/milestone-09-12.md` head-note paragraph 2 (the 15-job list) and rows
+`REQ-modernize-github-actions`, `REQ-mock-infrastructure`, `REQ-user-service-test-coverage`,
+`REQ-listener-service-test-coverage`, `REQ-ci-combined-coverage-job`,
+`REQ-codecov-config-thresholds`; `.planning/decisions/0034-d1-d4-facade-relocation-disposition.md`;
+`REQUIREMENTS.md`'s own PIPE-04 D-09 four-requirement-text pointer.
+
+#### Hand-off to Phase 16 / DOCS-01 … DOCS-04 — dated 2026-08-10 (plan 13-13)
+
+**This is the last ground-truth phase in the corpus, so this block is the final word on what Phase 16
+inherits — nothing further will re-derive these findings.**
+
+1. **ORCH-02's verdict: Milestone 11's 26 open items are the corpus's only genuine open count.** All
+   fourteen target files exist (`REQ-user-guides-rewrite`, `REQ-deployment-operations-docs-update`,
+   both `Verified open (content) → Phase 16 / DOCS-01`), so file existence settles nothing — they are
+   settleable only by content, per ORCH-02's own closed verdict above.
+2. **D-13(d)'s split — a closed relocation, an open rewrite.** `REQ-arch-doc-modernization`'s row is a
+   dual-fact row per D-00f: `Shipped (relocated)` (the file moved from
+   `docs/Design/Design_and_Architecture.md` to `docs/src/appendix/design-and-architecture.md`,
+   Milestone 11 Epic 2) **and** `Verified open → DOCS-02` (re-measured this session's own ledger
+   amendment: still exactly **311** lines, zero mentions of Commander, Council, Conclave, Grove,
+   Maneuver, Sanctum or Sentinel, zero mermaid blocks — the seven missing subsystems). The relocation
+   hid the gap rather than closing it, because Milestone 11 Epic 3's own non-goals exempt exactly the
+   chapter its own Epic 2 moved the file into.
+3. **D-13(e)'s README and demos finding.** `REQ-asciinema-demos`'s row: `docs/assets/` **does not
+   exist at all** (not merely empty, a correction plan 13-11 made to the plan's own stale premise),
+   `docs/DEMOS.md` does not exist, and the README (193 lines, rewritten by Milestone 11 Epic 5) has no
+   demos section at all — the clause targets a document that has changed shape. `docs/src/assets/`
+   (a different, unrelated path) holds six architecture SVGs, not demo content.
+4. **The pre-existing `mdbook build` failure, unowned by any phase.** Two broken links —
+   `deployment/docker.md:118` (a link outside the book root) and
+   `user-guides/tool-integration.md:324` (an incomplete reference link) — both discovered by this
+   phase's own research and confirmed still present, unchanged, by this same plan's Task 1 phase-gate
+   re-run (`mdbook build docs/` → exit `101`, identical two errors, re-confirmed 2026-08-10). Both
+   commits post-date the last successful `docs.yml` CI run (2026-07-06). Neither is caused by, nor
+   corrected by, this phase's three documentation edits (`sidecar.md`, `http-service-host.md`,
+   `overview.md`) — no phase owns fixing them yet.
+5. **`REQ-rustdoc-zero-warnings` and `REQ-public-api-doc-audit`**, both carrying DOCS-03: the
+   `cargo doc` zero-warning bar is already ratified (ADR-0033, Phase 10) and the measured 20-warning
+   residue is already assigned to Phase 16 by that ADR — DOCS-03 applies the already-decided bar, it
+   does not re-litigate whether one should exist.
+
+**Evidence:** `.planning/ledgers/milestone-09-12.md` rows `REQ-user-guides-rewrite`,
+`REQ-deployment-operations-docs-update`, `REQ-arch-doc-modernization`, `REQ-asciinema-demos`,
+`REQ-rustdoc-zero-warnings`, `REQ-public-api-doc-audit`; this same plan's Task 1 `mdbook build`
+phase-gate re-run; `.planning/decisions/0033-cargo-doc-warning-bar.md`.
 
 ### API contract truthfulness (WEB)
 
@@ -3790,11 +3979,11 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | SUPPLY-01 | Phase 12 | Complete |
 | SUPPLY-02 | Phase 12 | Complete |
 | SUPPLY-03 | Phase 12 | Complete |
-| ORCH-01 | Phase 13 | Pending |
-| ORCH-02 | Phase 13 | Pending |
+| ORCH-01 | Phase 13 | Complete |
+| ORCH-02 | Phase 13 | Complete |
 | ORCH-03 | Phase 13 | Complete |
-| ORCH-04 | Phase 13 | Pending |
-| ORCH-05 | Phase 13 | Pending |
+| ORCH-04 | Phase 13 | Complete |
+| ORCH-05 | Phase 13 | Complete |
 | WEB-01 | Phase 14 | Pending |
 | WEB-02 | Phase 14 | Pending |
 | WEB-03 | Phase 14 | Pending |
