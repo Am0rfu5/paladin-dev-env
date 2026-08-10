@@ -2478,6 +2478,23 @@ final forward-work signal Phases 14, 15 and 16 receive (D-22).**
    `paladin_web::agent_controller::API_V1_PREFIX`, or the drift silently returns on the next prefix
    change. Phase 14 is the natural owner: it already holds WEB-01/WEB-02 on the same
    `crates/paladin-web` route-and-auth surface.
+   **Security disposition — dated 2026-08-10.** The Phase 13 security audit ruled the corresponding
+   threat **T-13-20** (Spoofing, `high`, "the published route in `sidecar.md`") **OPEN**, since a
+   Spoofing threat about a published route is not closed while what is published is wrong. It was
+   then **accepted as a documented residual risk** (`AR-13-01` in
+   `.planning/phases/13-milestone-9-12-ground-truth-recorded-account/13-SECURITY.md`) by human
+   decision rather than mitigated, which is what let Phase 13 close with `threats_open: 0`. Landing
+   the fix above moves T-13-20 from `accept` to `closed`; re-run `/gsd-secure-phase 13` afterwards
+   to record that.
+   **Method note — do not redraw this boundary.** The acceptance criterion that originally closed
+   T-13-20 was `grep -c 'POST /agents/{id}/execute' sidecar.md` → `0`, run against the **raw
+   markdown source**. That source contains only the `{{#include}}` directive, never the literal
+   route string, so the grep was *structurally incapable* of catching the residue however often it
+   ran — the check was performed in the wrong layer. Any future assertion of the form "zero
+   occurrences of X remain in `page.md`" is unsound for a page that includes external files. Sweep
+   the `{{#include}}` targets as well as the including page, or assert against the rendered
+   `docs/book/` output instead of `docs/src/`. Scoping a sweep to `docs/src/` silently exempts every
+   include source, and `crates/doc-examples/src/` is exactly such a source.
 
 **Evidence:** `.planning/ledgers/milestone-09-12.md` rows `REQ-opaque-bearer-token-adapter-v1`,
 `REQ-jwt-bearer-auth-v2`, `REQ-k8s-manifests`, `REQ-health-ready-endpoints`,
