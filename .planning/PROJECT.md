@@ -1311,6 +1311,26 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+*Last updated: 2026-08-10 after **Phase 13: Milestone 9-12 Ground Truth & Recorded Account**
+completed and verified — 13 plans across 4 waves, all five requirements (ORCH-01 … ORCH-05) closed
+with cited evidence, UAT 1/1 passed, security `threats_open: 0`. This was the **last ground-truth
+phase in the corpus**: `.planning/ledgers/milestone-09-12.md` is the fifth and final as-shipped
+ledger, carrying all 120 Milestone 9-12 requirements as cited verdicts, and `REQUIREMENTS.md`'s
+120-row draft is reduced to a pointer at it. Three ADRs: 0037 (the agent route surface is `/v1`,
+correcting the one shipped mdbook page that named an unserved path), plus 0038 (`AgentProvisioner`
+stays in `paladin-web`) and 0039 (Garrison and Arsenal absent from HTTP-served agents is a
+**permanent** topology property, not planned scope) — both ratified at plan 13-09's blocking human
+checkpoint rather than auto-resolved, with provenance recorded per D-00i. ADR-0029's version
+trajectory is completed through `v0.6.0` and `PROMOTION.md` advanced to `0040`. Zero `.rs` files
+were touched across all 13 plans — the phase's D-19 prohibition held and is independently
+re-measured in the ledger's close-out amendment. Four forward hand-offs carry the residue to Phases
+14, 15 and 16. One accepted residual risk (`AR-13-01` / threat T-13-20): `sidecar.md` embeds
+`crates/doc-examples/src/sidecar.rs:34` via mdBook `{{#include}}`, and that example still posts to
+the unprefixed `/agents/{id}/execute`; the original mitigation greped the markdown source, which
+never contains the included literal, so the check ran in the wrong layer. Phase 14 owns the fix.
+The ORCH-* bullets remain in Active pending the v0.7.2 milestone close, per this project's
+convention of graduating requirements to Validated at ship time.*
+
 *Last updated: 2026-08-09 after **Phase 11: Facade Residue & Deferred Register Disposition**
 completed and verified — 5 plans, all four requirements (FACADE-01 … FACADE-04) satisfied, UAT
 3/3 passed, security `threats_open: 0`. The phase wrote records, not code: D5's 17 `println!`
