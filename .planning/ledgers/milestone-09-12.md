@@ -341,6 +341,19 @@ one false acceptance criterion lives — every deliverable ships and §8's "no i
 flags remain in CI" is false. See this ledger's own `Shipped, one acceptance criterion false` highlight
 table above, which carries both halves dated, superseding the bare "false" half transcribed below.
 
+**Provenance of the SUPPLY closures this Epic's rows cite, carried forward per D-00i rather than
+laundered** (`REQUIREMENTS.md:2084-2176`, Phase 12's hand-off, dated 2026-08-09, plan 12-04): Phase 12
+treated SUPPLY-01 and SUPPLY-02 as verification rather than work because Phase 9's **D-07** re-scoped
+Phase 12 under `--auto`, flagged `⚠ HUMAN REVIEW` in `09-CONTEXT.md`, and was **never itself ratified
+by a human** — it is durable only because it is recorded at source (`ROADMAP.md:768-778`,
+`REQUIREMENTS.md:4236`), not because a human approved it. Phase 12 carried its own two unratified
+`--auto` decisions alongside it — **D-01** (SUPPLY-03 acts and writes ADR-0036, overriding its own
+"does not act" clause) and **D-08** (`scripts/check-workflow-suppressions.sh` adds a CI check no
+requirement explicitly asked for) — both flagged `⚠ HUMAN REVIEW` in `12-CONTEXT.md` and **resolved
+only when a human selected `option-a` at plan 12-01's blocking checkpoint, dated 2026-08-09**
+(`12-01-SUMMARY.md` §Checkpoint Status). This ledger records the closure **and** how it was obtained,
+on the `REQ-audit-toml-single-source` and `REQ-advisory-exception-process` rows below.
+
 | Requirement | Verdict |
 |---|---|
 | REQ-audit-toml-single-source | **Shipped, one acceptance criterion false** — both halves, dated (D-05; the full account is this ledger's own highlight table above, echoed here rather than restated). **Failed** — the duplicate `security` job at pre-deletion `ci.yml:465-482` ran `cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2025-0111` after `security-audit` (`ci.yml:61-78`, single-source comment at `:74-76`, re-confirmed this session) had already been corrected: two jobs, one display name ("Security Audit"), different verdicts on the same `Cargo.lock`. **Fixed, dated 2026-08-08** — commit `cb75b2b` (Phase 9, plan 09-06) deleted the duplicate job; ADR-0036 (Phase 12) records the single-source topology, with `scripts/check-workflow-suppressions.sh` (`Makefile:171-176`, `.github/workflows/ci.yml:103-104`) regression-guarding it. Re-run this session: `grep -n "cargo audit --ignore" .github/workflows/ci.yml` → zero matches — the deletion held. **SUPPLY-01's previously-pending trigger clause is now resolved with a live citation, re-run this session** (superseding D-06's "pending" framing, which named `30861568499` (2026-08-03) as the newest run before the deletion): `gh run list --workflow=ci.yml --limit 5 --branch release/v0.7.0` returns run **`31320378772`** (2026-08-09, `success`) as the newest entry, newer than `30861568499`; `gh run view 31320378772 --json jobs` shows the single `Security Audit` job with `conclusion: "success"` — one non-duplicated job, resolving the required-status-check trigger the first real CI run after the 2026-08-08 deletion |
