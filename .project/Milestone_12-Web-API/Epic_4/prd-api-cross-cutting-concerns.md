@@ -1,5 +1,13 @@
 # PRD: API Cross-Cutting Concerns (Milestone 12, Epic 4)
 
+> **Correction (dated 2026-08-10, ADR-0037):** This document's one unprefixed `/agents...` path
+> below is **superseded provenance, not a live contract**. The shipped agent API is served under a
+> `/v1` prefix, confirmed against the committed `crates/paladin-web/openapi.json` drift-guard
+> baseline and enforced live by `openapi.rs`'s `spec_paths_are_versioned_under_v1` test. The
+> recorded answer is `.planning/decisions/0037-agent-route-surface-v1.md`. Original text is
+> retained below; the occurrence is followed by a new note line marking it superseded — nothing
+> is struck, rewritten, or removed.
+
 **Project:** Paladin Framework
 **Milestone:** 12 — Web API / HTTP Service Host Topology, Out of the Box
 **Epic:** 4 — API Cross-Cutting Concerns
@@ -120,6 +128,7 @@ middleware, and configurable CORS / body-limit / global-timeout / rate-limit lay
     **must not** apply to the SSE streaming route (`/agents/{id}/execute/stream`), whose responses
     are long-lived; streaming remains bounded by Epic 3's per-execution timeout. (Either scope the
     layer to non-streaming routes or set/disable it so streams are unaffected.)
+    > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/execute/stream`)*
 15. These layers **must** be configurable and have safe defaults; applying them **must not** change
     the existing route behavior other than enforcing the limits.
 

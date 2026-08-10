@@ -1,5 +1,14 @@
 # Tasks: API Cross-Cutting Concerns (Milestone 12, Epic 4)
 
+> **Correction (dated 2026-08-10, ADR-0037):** This document's route text — every unprefixed
+> `/agents...` mention below — is **superseded provenance, not a live contract**. The shipped
+> agent API is served under a `/v1` prefix, confirmed against the committed
+> `crates/paladin-web/openapi.json` drift-guard baseline and enforced live by `openapi.rs`'s
+> `spec_paths_are_versioned_under_v1` test. The recorded answer is
+> `.planning/decisions/0037-agent-route-surface-v1.md`. Original text is retained below; each
+> occurrence of an unprefixed route is followed by a new note line marking it superseded —
+> nothing is struck, rewritten, or removed.
+
 **PRD:** [prd-api-cross-cutting-concerns.md](prd-api-cross-cutting-concerns.md)
 **Crate:** `paladin-web` (adapter) + facade config/binary wiring
 **Base:** `main` (Milestone 12 Epics 1–3 merged — PRs #19, #21, #22)
@@ -39,6 +48,7 @@
 - **Streaming caveat:** the global request-timeout layer must **not** apply to
   `POST /agents/{id}/execute/stream` (long-lived SSE); scope it to non-streaming routes or leave it
   off by default. Streaming stays bounded by Epic 3's per-execution timeout.
+  > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/execute/stream`)*
 - **Out of scope** (later/other epics): auth (5), OpenAPI (6), Docker/k8s (7), metrics/Prometheus,
   per-route/identity rate limits, migrating the workspace to `tracing`.
 
@@ -83,6 +93,7 @@
 - [x] 6.0 Compose the layers (`with_http_layers`) and wire config into `paladin-server`
   - [x] 6.1 Added `with_http_layers(router, config)` to `http_layers.rs`: request-logging (outermost) → rate-limit → CORS → body-limit → optional global timeout → routes. The global timeout uses a `from_fn` middleware that **skips the `/execute/stream` route** (path suffix check), so SSE is never cut off.
   - [x] 6.2 **(Test first)** Composition tests: wrapped router serves `/agents` with an `x-request-id`; and `global_timeout_applies_to_normal_routes_but_skips_streaming` (normal route → `504`, stream route completes).
+    > *(superseded — ADR-0037: shipped as `/v1/agents`)*
   - [x] 6.3 Added `WebHttpConfig` (+ `RateLimitConfig`) to the facade config and `Settings.http` (`#[serde(default)]`); updated `Settings::default()` + the `user_config` fixture.
   - [x] 6.4 `paladin-server` maps `Settings.http` → `HttpLayersConfig`, applies `with_http_layers`, serves with `into_make_service_with_connect_info::<SocketAddr>()` (so the rate limiter keys on peer IP), and logs the enabled layers. Verified by boot: `/health`/`/ready` respond, error uses the nested envelope, `x-request-id` present.
   - [x] 6.5 Rustdoc; `fmt`/`clippy -D warnings` (lib+bins) clean; paladin-web 96, facade config 48 + infra::web 12 + smoke 1 pass.
@@ -90,6 +101,7 @@
 - [x] 7.0 Tests: probes, error envelope, request-id, CORS preflight, body-limit, 429 + boot-smoke extension
   - [x] 7.1 Unit/handler coverage confirmed: `ApiError` (3), controller error-envelope assertions (agent/delivery/user), health (2), request-id (3), CORS/body-limit/429/composition/global-timeout-skips-streaming (6).
   - [x] 7.2 **(Test first)** Extended `tests/paladin_server_smoke.rs`: the app is now wrapped in `with_http_layers`, and the test asserts an `x-request-id` header, `GET /health` → `{status: ok}`, `GET /ready` → `{status: ready, agents: 1}`, and `GET /agents/ghost` → `404` with the nested `{ error: { code: "not_found", message } }` envelope.
+    > *(superseded — ADR-0037: shipped as `/v1/agents/ghost`)*
 
 - [x] 8.0 Finalize: config sample, docs, CHANGELOG, API baseline, and quality gates
   - [x] 8.1 Added a documented `http:` section to `config.example.yml` (CORS, body limit, global timeout, rate limit off-by-default).
