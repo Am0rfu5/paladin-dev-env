@@ -2474,6 +2474,29 @@ threshold configuration and the local targets. Scope accordingly.
       *Derives: REQ-ci-cli-snapshot-job (FR-25.3), REQ-ci-bench-check-job (FR-25.4);
       `intel/code-verification.md` run-5 verified-open finding 3.*
 
+      **Corrected (dated 2026-08-10, D-08, plan 13-10):** ~~"Neither exists today; `ci.yml`'s 14 job
+      ids are `lint`, `security-audit`, `cargo-deny`, `osv-scanner`, `api-surface`, `test`,
+      `crate-isolation`, `integration-tests`, `security`, `docker`, `e2e-tests`, `benchmark`,
+      `benchmark-regression-signal`, `publish-dry-run`"~~ — this list, quoting
+      `intel/code-verification.md:539-540` verbatim, is stale: `security` was deleted by Phase 9
+      (D-05) and two jobs the run-5 list does not name are present. Re-run this session:
+      `grep -nE '^  [a-z][a-z0-9-]*:$' .github/workflows/ci.yml` returns fifteen entries — `lint`
+      (`:21`), `security-audit` (`:61`), `cargo-deny` (`:81`), `osv-scanner` (`:126`), `api-surface`
+      (`:155`), `test` (`:206`), **`examples`** (`:245`), `crate-isolation` (`:319`),
+      `integration-tests` (`:374`), `docker` (`:494`), **`kubernetes-smoke`** (`:611`), `e2e-tests`
+      (`:718`), `benchmark` (`:779`), `benchmark-regression-signal` (`:812`), `publish-dry-run`
+      (`:898`) — **fifteen jobs**, not fourteen. The two additions (`examples`, `kubernetes-smoke`)
+      are recorded as present without attributing them to a commit — what is there, not a guess about
+      how it got there. **Hand-off: Phase 15 / PIPE-01** inherits this measured fifteen-job list so
+      it does not plan against a fourteen-job pipeline that no longer exists.
+      **D-09 residue, recorded in the same hand-off:** `sed -n '1,10p' scripts/check-api-surface.sh`
+      confirms `check-api-surface.sh:6`: `BASELINE="${1:-.project/current-exports.txt}"`, and
+      `test -f .project/current-exports.txt` confirms the file is present (446 KB). Run-5 finding 8's
+      "the `api-surface` CI job fails on every run" consequence clause is therefore **closed in the
+      script** and open only in the four Milestone 12 requirement texts already carrying Phase 8's
+      dated banners (M12 Epic 1 §7, Epic 5 §7, Epic 6 `cross_refs`, Epic 7 FR-4.6) — not as a sixth
+      ORCH-03 item.
+
       **Inbound scope note, added 2026-08-05 by plan 06-07 (D-10):** Phase 6's Epic 24 cluster
       `8.0` (`tasks-test-hardening-benchmarks-qa.md`) named the `cli-tests` and `bench-check` jobs
       as genuinely outstanding and deferred them here with a written reason rather than building
