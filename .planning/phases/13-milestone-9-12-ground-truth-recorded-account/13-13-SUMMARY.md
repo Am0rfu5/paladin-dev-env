@@ -210,3 +210,14 @@ None - no external service configuration required.
 ---
 *Phase: 13-milestone-9-12-ground-truth-recorded-account*
 *Completed: 2026-08-10*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/ledgers/milestone-09-12.md`
+- FOUND: `.planning/REQUIREMENTS.md`
+- FOUND: `.planning/decisions/PROMOTION.md`
+- FOUND: `.planning/PROJECT.md`
+- FOUND: `.planning/phases/13-milestone-9-12-ground-truth-recorded-account/13-13-SUMMARY.md`
+- FOUND: commit `cf81700` (Task 1)
+- FOUND: commit `ba4c3eb` (Task 2)
+- FOUND: commit `55b6fe1` (Task 3)
