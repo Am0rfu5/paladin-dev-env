@@ -1,11 +1,12 @@
 ---
 phase: 13-milestone-9-12-ground-truth-recorded-account
 verified: 2026-08-10T21:44:37Z
-status: human_needed
+status: passed
 score: 7/7 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
+
   - test: "Ratify the CR-01 / ORCH-03 scope trade-off: `crates/doc-examples/src/sidecar.rs:34` (and its `:25` doc comment) still builds the unprefixed `/agents/{agent}/execute` URL, embedded verbatim into the rendered `docs/src/deployment-topologies/sidecar.md` page via mdBook `{{#include}}`, even though the page's own prose (line 29-30) correctly states the `/v1`-prefixed route. A reader who copies the rendered example writes a client that 404s. Phase 13 left this uncorrected because fixing it requires a `.rs` edit, which would breach the phase's own D-19 zero-`.rs` boundary — the same boundary this phase's close-out independently measures and proves held (`git diff --name-only <base>..HEAD -- '*.rs'` → 0, re-confirmed independently by this verification). The defect, its cause, its exact fix, and its owner (Phase 14) are all recorded in REQUIREMENTS.md's Phase-14 hand-off item 6 and in `13-REVIEW.md` CR-01, citing exact file:line evidence."
     expected: "A human confirms this is an acceptable scope boundary for ORCH-03's `[x]` — i.e., that ORCH-03's done-when ('anyone applying a run-5 requirement literally cannot write to a path that does not exist') is read as scoped to the five items (a)-(e) it names (matching ROADMAP.md Phase 13 Success Criterion 4's own narrower wording: 'the four stale module and document paths are corrected at source, and the agent API's route surface has one answer'), not as an unbounded claim over every code example in the tree — OR overrides that reading and reopens ORCH-03 / directs an out-of-band `.rs` fix that breaches D-19 deliberately."
     why_human: "This is an editorial scope-interpretation judgment, not a fact a grep can settle: the literal done-when sentence is broader than the five named items, but the roadmap's own success criterion for the same phase is scoped identically to the five items, and the finding was honestly self-disclosed (not hidden) with a working fix and a named owner. Verifier's own recommendation: DEFENSIBLE AS DOCUMENTED — this is disclosure and deferral done right, not silent scope-cutting — but it is a call a human should explicitly ratify rather than have an agent quietly wave through."
@@ -107,6 +108,7 @@ No `TBD`/`FIXME`/`XXX` markers were found inside any file this phase actually wr
 **Finding:** The residue is real. Independently confirmed: `crates/doc-examples/src/sidecar.rs:34` builds `.post(format!("{base_url}/agents/{agent}/execute"))` — the unprefixed form — while the page that embeds it via `{{#include}}` states the correct `/v1`-prefixed route two lines above in prose. A reader who copies the rendered example gets a client that 404s against the live server (`API_V1_PREFIX = "/v1"` at `agent_controller.rs:723`, asserted by the `spec_paths_are_versioned_under_v1` test at `openapi.rs:103`).
 
 **Reasoning:**
+
 - ORCH-03's prose does read as a totalizing claim ("anyone applying a run-5 requirement literally cannot write to a path that does not exist"), and read that literally, the residue violates it.
 - But ORCH-03 itself scopes its own work to "five specific items," (a)-(e), enumerated explicitly, and all five are independently confirmed corrected at source. The `crates/doc-examples/src/sidecar.rs` file was never one of the five named items.
 - ROADMAP.md's own Phase 13 Success Criterion 4 — the authoritative roadmap contract for this exact requirement — uses narrower, matching language: "the four stale module and document paths are corrected at source, and the agent API's route surface has one answer confirmed against the committed `openapi.json`." Both halves are independently confirmed true. The criterion does not say "and every embedded code example agrees," and the *route surface's answer* (ADR-0037, `/v1`) is not in dispute anywhere — only one stale example still uses the old form.
