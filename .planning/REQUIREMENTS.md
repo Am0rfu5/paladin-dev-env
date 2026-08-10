@@ -2213,6 +2213,26 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
       component-level file evidence to per-criterion verdicts, and when the ledger states plainly
       that the whole M9 orchestrator subsystem, the whole M10 tooling set, the mdbook and the whole
       M12 web API ship — so nothing in them is re-planned.
+      **Corrected (dated 2026-08-10, D-04, plan 13-10):** ~~"Sixteen entries already carry
+      `settled-by` pointers into `intel/code-verification.md` run 5 … and the remaining 104 need the
+      same treatment"~~ counts two different populations. The sixteen are **variant-register**
+      entries, not ledger rows —
+      `intel/SYNTHESIS.md:335` defines the `settled-by` mechanism as applying "where the shipped
+      tree settles a *variant*", and `:546` counts "sixteen entries carry `- settled-by:` lines"
+      under the variant register, above, not under this ledger. Measured this session:
+      `grep -c "settled-by" .planning/REQUIREMENTS.md` → **10**, none inside the ledger region
+      (`sed -n '3607,3931p' .planning/REQUIREMENTS.md | grep -c "settled-by"` → **0**). **No ledger
+      row carries a `settled-by` pointer, and all 120 rows need a verdict** — not 104. The measured
+      split, re-run this session against `REQUIREMENTS.md:3607-3931` before plan 13-10 replaced that
+      range with a pointer: `grep -c '^| REQ-'` → **120**; bare `Verify` rows → **35**; bare
+      `Shipped` rows (`Shipped — ` plus the `Shipped → ` arrow form) → **51 + 2 = 53**; the
+      remainder, already carrying a richer verdict → **32** (120 − 35 − 53). This is the same class
+      of error as Phase 10's D-05 — an arithmetic claim inside the very requirement that exists to
+      retire it — and a planner budgeting 104 rows against this ledger would have been wrong in both
+      directions at once: too low by the 16 already-settled variant entries this ledger never held,
+      and too high by counting them against a 120-row surface where 0 carry the pointer. See
+      `.planning/ledgers/milestone-09-12.md`'s own "Corrected arithmetic" paragraph, which reconciles
+      the identical 35/53/32 figures against the same commands.
       **One verdict class is new and must survive into the ledger:** Milestone 10 is recorded 100%
       complete, ships every file, job, target and ruleset it promised, **and fails one of its own
       acceptance criteria** (SUPPLY-01). A count that is simultaneously accurate about deliverables
@@ -2299,6 +2319,20 @@ checkbox) and its traceability row (`grep -n '^| REL-01' REQUIREMENTS.md`).
       lockstep-versioned chain in which each milestone's finalization Epic bumps the root crate and
       every workspace member together and cuts a tag. That chain terminates exactly where the tree
       is: root `Cargo.toml` at `version = "0.6.0"`, branch `release/v0.7.0`, latest tag `v0.5.1`.
+      **Corrected (dated 2026-08-10, D-18, plan 13-10):** ~~"That chain terminates exactly where the
+      tree is: root `Cargo.toml` at `version = "0.6.0"`, branch `release/v0.7.0`, latest tag
+      `v0.5.1`"~~ — two of the three clauses are two releases
+      stale. Re-run this session: `grep -n '^version' Cargo.toml` → `Cargo.toml:34` `version =
+      "0.7.0"`; `git tag --sort=-v:refname | head -8` → `v0.7.1, v0.7.0, v0.5.1, v0.5.0, v0.4.3,
+      v0.4.2, v0.4.1, v0.4.0`; `git branch --show-current` → `release/v0.7.0` — the one accurate
+      clause of the three. This is the identical defect Phase 10's D-11 already corrected once, in
+      HARD-03 (see that entry's own `**Corrected (dated 2026-08-08, HARD-03)**` block, which reads
+      `Cargo.toml:34` `version = "0.7.0"` and `git tag --sort=-v:refname | head -3` → `v0.7.1,
+      v0.7.0, v0.5.1`), regrown one requirement later. `intel/code-verification.md:469` carries the
+      same stale `0.6.0` figure — correct as of the 2026-07-30 ingest and superseded since; Phase 13
+      plan 13-11 corrects it there. **The historical facts below are unchanged**: the four lockstep
+      gates M9 → `v0.3.0`, M10 → `v0.4.0`, M11 → `v0.5.0`, M12 → `v0.6.0` are exactly what plan 13-12
+      transcribes into ADR-0029 — only this current-state clause is corrected.
       **HARD-03 records `v0.1.0-rc.1` as history; ORCH-05 completes the line from rc.1 to 0.6.0**,
       so REL-01 converges a three-way disagreement with the full trajectory in view rather than a
       fragment of it.
@@ -2439,6 +2473,29 @@ threshold configuration and the local targets. Scope accordingly.
       Epic 3, while the compile-check prerequisite does not.
       *Derives: REQ-ci-cli-snapshot-job (FR-25.3), REQ-ci-bench-check-job (FR-25.4);
       `intel/code-verification.md` run-5 verified-open finding 3.*
+
+      **Corrected (dated 2026-08-10, D-08, plan 13-10):** ~~"Neither exists today; `ci.yml`'s 14 job
+      ids are `lint`, `security-audit`, `cargo-deny`, `osv-scanner`, `api-surface`, `test`,
+      `crate-isolation`, `integration-tests`, `security`, `docker`, `e2e-tests`, `benchmark`,
+      `benchmark-regression-signal`, `publish-dry-run`"~~ — this list, quoting
+      `intel/code-verification.md:539-540` verbatim, is stale: `security` was deleted by Phase 9
+      (D-05) and two jobs the run-5 list does not name are present. Re-run this session:
+      `grep -nE '^  [a-z][a-z0-9-]*:$' .github/workflows/ci.yml` returns fifteen entries — `lint`
+      (`:21`), `security-audit` (`:61`), `cargo-deny` (`:81`), `osv-scanner` (`:126`), `api-surface`
+      (`:155`), `test` (`:206`), **`examples`** (`:245`), `crate-isolation` (`:319`),
+      `integration-tests` (`:374`), `docker` (`:494`), **`kubernetes-smoke`** (`:611`), `e2e-tests`
+      (`:718`), `benchmark` (`:779`), `benchmark-regression-signal` (`:812`), `publish-dry-run`
+      (`:898`) — **fifteen jobs**, not fourteen. The two additions (`examples`, `kubernetes-smoke`)
+      are recorded as present without attributing them to a commit — what is there, not a guess about
+      how it got there. **Hand-off: Phase 15 / PIPE-01** inherits this measured fifteen-job list so
+      it does not plan against a fourteen-job pipeline that no longer exists.
+      **D-09 residue, recorded in the same hand-off:** `sed -n '1,10p' scripts/check-api-surface.sh`
+      confirms `check-api-surface.sh:6`: `BASELINE="${1:-.project/current-exports.txt}"`, and
+      `test -f .project/current-exports.txt` confirms the file is present (446 KB). Run-5 finding 8's
+      "the `api-surface` CI job fails on every run" consequence clause is therefore **closed in the
+      script** and open only in the four Milestone 12 requirement texts already carrying Phase 8's
+      dated banners (M12 Epic 1 §7, Epic 5 §7, Epic 6 `cross_refs`, Epic 7 FR-4.6) — not as a sixth
+      ORCH-03 item.
 
       **Inbound scope note, added 2026-08-05 by plan 06-07 (D-10):** Phase 6's Epic 24 cluster
       `8.0` (`tasks-test-hardening-benchmarks-qa.md`) named the `cli-tests` and `bench-check` jobs
@@ -3606,537 +3663,22 @@ written · `Deferred with register` = removed on purpose, condition recorded · 
 
 ## Milestone 9-12 as-shipped ledger
 
-All 120 requirement IDs extracted by ingest run 5 — Milestone 9 (classic orchestrator completion),
-Milestone 10 (CI hardening and release automation), Milestone 11 (documentation overhaul and
-publish), Milestone 12 (Web API), plus the `Deferred-QA-CICD-Completion` register and the
-`project-management` master plan. **Not forward scope.** Acceptance criteria live in
-`.planning/intel/requirements.md`.
-
-**This is the largest ledger and the one with the most shipped rows.** Ingest run 5 verified 37
-claims directly against the tree — `Cargo.toml`, `deny.toml`, `.cargo/audit.toml`, workflow and
-`Makefile` contents, `book.toml`, line-addressed greps and literal line counts — and every one held.
-The entire Milestone 9 orchestrator subsystem, the entire Milestone 10 tooling set, the mdbook, and
-the entire Milestone 12 web API demonstrably ship.
-
-**One verdict class is new to this ledger.** `Shipped, one acceptance criterion false` belongs to
-Milestone 10, which is recorded 100% complete, ships every file, job, target and ruleset it
-promised, and nonetheless fails its own Epic 2 §8 success metric because a superseded CI job was
-never deleted (SUPPLY-01). A count that is simultaneously accurate about deliverables and wrong
-about acceptance is a failure mode the first four runs did not produce.
-
-**The second distinguishing feature is a register whose work was never started.**
-`Deferred-QA-CICD-Completion` Epics 25-27 are the only ingested epic-set in the corpus verified
-**open item by item** rather than inferred. Their `Verified open` verdicts are the highest-confidence
-forward-work signal in this file.
-
-Status key (extends the run-4 key): `Shipped` · `Shipped (relocated)` · `Shipped, superseded` ·
-`Shipped, one acceptance criterion false` · `Superseded by outcome` = do not plan as written ·
-`Verified open` = confirmed absent from the tree · `Verify` → ORCH-01 · `Variant` ·
-`Contract diverges` · `Open defect → X` · `Provenance only` = origin document, scope already
-ingested elsewhere.
-
-### Milestone 9 Epic 1 — Orchestrator End-to-End Workflow Execution (6 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-workflow-execution-loop | Shipped — `src/application/services/orchestration/mod.rs:382` `pub async fn execute_workflow`, with `execute_workflow_inner` at `:403`. Replaces the four `println!`-only arms in `create_workflow()`. Per-variant behaviour (Sequential context hand-off, Parallel, Conditional, Priority) not individually re-checked → ORCH-01 |
-| REQ-taskservice-dispatch | Verify → ORCH-01 |
-| REQ-default-task-services-real-logic | Verify → ORCH-01 |
-| REQ-workflow-repository-port | Shipped — `crates/paladin-ports/src/output/workflow_repository_port.rs` |
-| REQ-workflow-crash-recovery | Shipped — `crates/paladin-storage/src/sqlite_workflow_repository.rs`. Epic 1 **Open Question 4**'s default placement (`paladin-storage` rather than the facade) is what shipped; recorded as resolved by outcome |
-| REQ-workflow-lifecycle-integration-test | Verify → ORCH-01 |
-
-### Milestone 9 Epic 2 — Scheduler, Queue & Event Operational Validation (5 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-scheduler-tick-validation | Verify → ORCH-01 |
-| REQ-cron-adapter-validation | Verify → ORCH-01 — the `tokio-cron-scheduler` adapter ships (run-2 ledger); its validation criteria were not re-checked |
-| REQ-queueport-contract-parity | Verify → ORCH-01 |
-| REQ-queue-retry-dead-letter | Verify → ORCH-01 |
-| REQ-event-trigger-job-pipeline | Shipped, **and it invalidates a later baseline** — FR-16 to FR-21 added match, no-match, fan-out, rate-limit and trigger-to-dispatch tests against `ListenerOrchestrator`. This is the work that makes Epic 29's 57.83% figure stale → DEFER-03 |
-
-### Milestone 9 Epic 3 — Content Processing Pipeline (4 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-paladin-content-processor | Shipped — `src/application/services/orchestration/processors/`. Epic 3 **Open Question 1**'s circular-dependency resolution (processors in the **root crate**, not `paladin-content`) is what shipped |
-| REQ-battalion-content-processor | Shipped — same directory |
-| REQ-content-processor-orchestrator-wiring | Verify → ORCH-01 |
-| REQ-content-ingestion-e2e-validation | Verify → ORCH-01 |
-
-### Milestone 9 Epic 4 — Agent / Orchestrator Bridge (4 IDs)
-
-Epic-level note: §6.1 is **the cleanest ADR-shaped section anywhere in the corpus** — a
-four-criterion comparison table, a `(CHOSEN)` column header, an explicit decision, and the rejected
-option preserved as a future non-breaking enhancement. It is manifest-typed PRD, so it is an ADR
-candidate, not a locked decision.
-
-| Requirement | Verdict |
-|---|---|
-| REQ-orchestrator-port | Shipped — `crates/paladin-ports/src/output/orchestrator_port.rs` |
-| REQ-bridge-policy-guardrails | Verify → ORCH-01 |
-| REQ-orchestrator-bridge-adapter | Shipped — `src/application/services/orchestration/orchestrator_bridge.rs`, in the root crate exactly as FR-12 specifies |
-| REQ-execution-service-bridge-wiring | Verify → ORCH-01 |
-
-### Milestone 9 Epic 5 — User / Admin System Completion (5 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-user-role-rbac | Verify → ORCH-01 — the idempotent `role` column migration was not re-checked |
-| REQ-auth-port | Shipped — `crates/paladin-ports/src/output/auth_port.rs`; `argon2 = "0.5.3"` retained at root `Cargo.toml:121` per §7 |
-| REQ-opaque-bearer-token-adapter-v1 | Shipped — `src/infrastructure/adapters/auth/in_memory_token_auth_adapter.rs` is the **only** `AuthPort` implementation in the workspace, and no `jsonwebtoken` dependency exists anywhere. **Variant group 29; contract diverges → WEB-01.** Its own §6.1 multi-process caveat → WEB-02 |
-| REQ-auth-middleware-rbac-guards | Shipped — `crates/paladin-web/src/auth_middleware.rs`; RBAC tests at `crates/paladin-web/tests/auth_rbac.rs` |
-| REQ-user-crud-completeness | Verify → ORCH-01 |
-
-### Milestone 9 Epic 6 — Finalization & Release (1 ID)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-m9-quality-gate-v030 | Shipped — lockstep `0.3.0`, the first of four release gates run 5 supplies → ORCH-05. Its explicit non-goal ("reconciling whether the previous published version *should* have been 0.2.0") is the reason the trajectory has a gap HARD-03 records |
-
-### Milestone 10 Epic 1 — Pre-Commit & Pre-Push Hooks (4 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-pre-commit-framework | Shipped — `.pre-commit-config.yaml`, version-controlled; `Makefile:282` `hooks` target |
-| REQ-pre-commit-hook-set | Verify → ORCH-01 |
-| REQ-pre-push-hook-set | Verify → ORCH-01 |
-| REQ-pre-commit-ci-gate | Shipped — `.github/workflows/pre-commit.yml` |
-
-### Milestone 10 Epic 2 — Dependency Security & Licence Compliance (8 IDs)
-
-Epic-level note: **this Epic is where the one false acceptance criterion lives.** Every deliverable
-ships and §8's "no inline advisory-ignore flags remain in CI" is false.
-
-| Requirement | Verdict |
-|---|---|
-| REQ-audit-toml-single-source | **Shipped, one acceptance criterion false → SUPPLY-01** — `ci.yml:62-77` job `security-audit` runs a bare `cargo audit` with the correct inline rationale, but job `security` at `ci.yml:389-406` still passes two `--ignore` flags. Two jobs, one display name, different verdicts on the same `Cargo.lock` |
-| REQ-advisory-exception-process | **Open governance gap → SUPPLY-02** — all five `.cargo/audit.toml` entries satisfy FR-3's four-field schema and carry dated reasoning, including that `RUSTSEC-2026-0185` and `-0190` were **upgraded rather than ignored**. But FR-3 requires **no owner and no expiry**, and FR-3/§5 authorise exactly **two** advisories against the five in the tree. 13 of 15 `deny.toml` entries are ungoverned |
-| REQ-osv-scanner-supplementary | Shipped — `ci.yml:110-135` job `osv-scanner` using `google/osv-scanner-action@v1.9.1` with SARIF upload. Epic 2 **Open Question 1**'s annotate-only recommendation is what shipped |
-| REQ-snyk-evaluation-decision | Verify → ORCH-01 — no Snyk artefact was located in the tree; whether the evaluation was performed and declined is unrecorded |
-| REQ-deny-license-allowlist | Shipped — `deny.toml [licenses] allow` = MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib **plus four justified additions** (Unicode-3.0, 0BSD, CC0-1.0, CDLA-Permissive-2.0), each with an inline FR-14(a) justification comment. **Textbook FR-14(b) compliance**: eight `[[licenses.exceptions]]` entries for MPL-2.0 crates rather than weakening the allow-list. Licence *posture* remains contested → SEC-02 |
-| REQ-deny-bans-duplicates | Shipped — `multiple-versions = "warn"`, `wildcards = "warn"`; the only `deny` entry is the Milestone 8 `actix-web` ban, so `[bans]` started empty exactly as **Open Question 4** proposed |
-| REQ-cyclonedx-sbom-release | Shipped — `release.yml:328-336` installs `cargo-cyclonedx --locked` and runs `cargo cyclonedx --all --format json`; `Makefile:264` `sbom` |
-| REQ-security-docs-make-target | Shipped — `Makefile:261` `security: audit deny` |
-
-(**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing `ci.yml:465-482` and commit `cb75b2b`:**
-`REQ-audit-toml-single-source`'s row above cites `ci.yml:389-406` for the duplicate `security` job —
-that range never held it; it was re-derived at `ci.yml:465-482` and deleted by Phase 9's plan 09-06
-in commit `cb75b2b`, so the citation was already stale before Phase 9 touched anything. SUPPLY-01 is
-closed; see its "Verified by Phase 12" block in this document's requirement list above.)
-
-### Milestone 10 Epic 3 — Release Automation (6 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-release-tooling-selection | Shipped — `release.toml` |
-| REQ-workspace-publish-order | Verify → ORCH-01 — dependency-ordered publishing is configured; the order was not re-derived |
-| REQ-lockstep-versioning | Shipped — root and every member at one version; the mechanism that produced v0.3.0 → v0.6.0 → ORCH-05 |
-| REQ-tag-triggered-publish-pipeline | Shipped — `release.yml:355` job `publish-crates` |
-| REQ-make-release-target | Shipped — `Makefile:439` `release`, `:424` `publish-dry-run`, `:413` `release-check` |
-| REQ-contributing-add-dependency-guide | Verify → ORCH-01 — couples to PIPE-05, which adds the Code Coverage section to the same document |
-
-### Milestone 10 Epic 4 — v0.4.0 Release (1 ID)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-m10-v040-release | Shipped → ORCH-05. Its **non-goals froze the security configs** ("No changes to `deny.toml` or `.cargo/audit.toml`", "No new CI jobs — the Epic 3 pipeline is complete"), which is why nothing in the milestone was positioned to catch SUPPLY-01. FR-1 step 5 is also what **authorises** the ten unmaintained `deny.toml` ignores → SUPPLY-02 |
-
-### Milestone 10 Epic 5 — Tag-Source Enforcement (4 IDs)
-
-Epic-level note: this Epic exists **because of an incident** — the only Epic in the corpus created
-in response to one.
-
-| Requirement | Verdict |
-|---|---|
-| REQ-verify-tag-source-guard | Shipped — `release.yml:29` job `verify-tag-source`; `:74` and `:97` both declare `needs: verify-tag-source`, which is the two roots FR-1.5 specifies |
-| REQ-make-release-branch-guard | Verify → ORCH-01 |
-| REQ-github-rulesets | Shipped — `.github/rulesets/protect-main-branch.json`, `.github/rulesets/protect-release-tags.json`, committed rather than configured only in the UI |
-| REQ-branch-protection-doc | Verify → ORCH-01 |
-
-### Milestone 11 Epics 1-2 — mdbook Scaffold & Chapter Hierarchy (4 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-mdbook-scaffold | Shipped — `docs/book.toml`, with `mdbook-mermaid` wired (`docs/mermaid.min.js`, `docs/mermaid-init.js`) |
-| REQ-mdbook-chapter-hierarchy | Shipped — `docs/src/{getting-started,architecture,user-guides,deployment,deployment-topologies,operations,api-reference,contributing,appendix}` plus `SUMMARY.md` and `introduction.md` |
-| REQ-docs-ci-pages-deploy | Verify → ORCH-01 |
-| REQ-docs-migration-log | Shipped — `docs/MIGRATION_LOG.md`. **This is the document that makes the run-3/run-4 "missing deliverables" findings explicable**: `STABLE_API.md`, `docs/FEATURE_FLAGS.md`, `docs/MIGRATION.md`, `docs/CONFIGURATION.md`, `docs/PERFORMANCE_BASELINE.md` and four more were **relocated here, not deleted** → ARCH-05, HARD-01 |
-
-### Milestone 11 Epic 3 — Content Rewrite (7 IDs)
-
-Epic-level note: **the only genuinely open checkbox block in run 5 lives here** — 26 items, all in
-`tasks-content-rewrite.md`. And its §5 non-goals are what froze the architecture appendix.
-
-| Requirement | Verdict |
-|---|---|
-| REQ-doc-link-repair-linkcheck | Shipped — `docs/book.toml [output.linkcheck]` with `follow-web-links = false` and `warning-policy = "error"`, verbatim as FR-1 specifies. **Task 1.2 (review the full report) is one of the 26 open items** → DOCS-01 |
-| REQ-doc-example-compile-gate | Verify → ORCH-01; couples to DOCS-03 and DEBT-03 |
-| REQ-getting-started-rewrite | Verify → ORCH-01 |
-| REQ-architecture-docs-update | **Shipped, with the gap intact → DOCS-02** — the architecture *chapter* was rewritten; §5 non-goals exempt the 35 appendix files, and `design-and-architecture.md` had been relocated into the appendix by Epic 2. It is still exactly 311 lines with zero of seven newer subsystems and zero Mermaid diagrams |
-| REQ-user-guides-rewrite | **Verified open (content) → DOCS-01** — all six target files exist under `docs/src/user-guides/`; task 6.0's in-place updates are unchecked and cannot be settled by file existence |
-| REQ-deployment-operations-docs-update | **Verified open (content) → DOCS-01** — all eight target files exist under `docs/src/deployment/` and `docs/src/operations/`; task 7.0 is unchecked |
-| REQ-api-reference-contributing-rewrite | Verify → ORCH-01 |
-
-### Milestone 11 Epic 4 — New Subsystem Guides (4 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-orchestration-guide | Verify → ORCH-01 |
-| REQ-content-processing-guide | Verify → ORCH-01 |
-| REQ-agent-orchestrator-bridge-guide | Verify → ORCH-01 |
-| REQ-crate-map-feature-flag-reference | Shipped (relocated) — ships as `docs/src/api-reference/{crate-map,feature-flags}.md`, which is where run 3's four "missing" deliverables went |
-
-### Milestone 11 Epic 6 — Deployment Topologies (1 ID)
-
-Epic-level note: **this Epic created Milestone 12.** Writing the topology documentation surfaced a
-capability gap — there was no HTTP service host — instead of papering over it.
-
-| Requirement | Verdict |
-|---|---|
-| REQ-deployment-topologies-section | Shipped — all six pages exist: `docs/src/deployment-topologies/{overview,embedded-library,battalion-orchestration,http-service-host,queue-worker,sidecar}.md`. **FR-8 makes `overview.md` "the single source of routing" between topologies**, which is what makes the Garrison/Arsenal asymmetry a documentation defect → ORCH-04(b) |
-
-### Milestone 11 Epics 5 & 7 — README, Version Sync, Final Review, v0.5.0 (4 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-mdbook-final-review | Verify → ORCH-01; task 1.2's linkcheck review is open → DOCS-01 |
-| REQ-doc-version-sync | Verify → ORCH-01 → ORCH-05 |
-| REQ-readme-landing-page | Shipped, **and it supersedes a Deferred-QA clause** — the README became a concise landing page with no demos section, so FR-26.4's embedding requirement targets a document that changed shape → DOCS-04 |
-| REQ-m11-v050-release | Shipped → ORCH-05 |
-
-### Milestone 12 Epic 1 — Agent Registry & Execution API (6 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-agent-registry | Shipped — `crates/paladin-web/src/agent_registry.rs`. **§7 names `project/current-exports.txt`** → DEBT-01. **Corrected (Phase 8, dated 2026-08-06):** §7's "API surface" bullet is now annotated in place at source (`.project/Milestone_12-Web-API/Epic_1/prd-agent-registry-execution-api.md`) with a dated D-00c banner and inline struck-and-corrected text naming `.project/current-exports.txt`; original text retained, nothing deleted → DEBT-01 |
-| REQ-agent-execute-endpoint | Shipped — `crates/paladin-web/src/agent_controller.rs`. **Route prefix contested** (`/agents/...` here, `/v1` in Epic 6) → ORCH-03(a) |
-| REQ-agent-discovery-endpoints | Shipped — same controller; the "no raw system prompt in discovery responses" clause is re-asserted by Epic 5 FR-12 |
-| REQ-agent-runtime-registration | Shipped — admin-gated by Epic 5 FR-9 |
-| REQ-agent-provisioner-port | **Shipped, placement undecided → ORCH-04(a)** — Open Question 2 recorded a *default* (`paladin-web`) rather than a decision, and two shipped deployment-topology pages describe would-be second consumers |
-| REQ-paladin-web-no-facade-dep | Shipped — **the strongest architectural invariant in run 5**, stated three times across two Epics with a mechanical verification command (`cargo tree -p paladin-web` must show no facade dependency). The clearest SPEC candidate in the run |
-
-### Milestone 12 Epic 2 — Configurable Web Host & Server Binary (4 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-host-agents-config-schema | Verify → ORCH-01 — the "start an agent HTTP service with only a `config.yml` and the binary, writing no Rust" claim was not exercised |
-| REQ-registry-from-config-builder | **Shipped, with a non-goal that needs surfacing → ORCH-04(b)** — "Garrison (memory) and Arsenal (tools/MCP) wiring for agents is a later enhancement; agents are LLM + prompt only here" |
-| REQ-concrete-agent-provisioner | Shipped — in the facade, as specified |
-| REQ-paladin-server-binary | Shipped — `src/bin/paladin-server.rs`; `Cargo.toml:249-251` `[[bin]] name = "paladin-server"` with `required-features = ["web-server"]` |
-
-### Milestone 12 Epic 3 — Streaming & Async Jobs (4 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-execute-stream-service | Verify → ORCH-01 |
-| REQ-sse-streaming-endpoint | Shipped — SSE plus in-process jobs via `crates/paladin-web/src/job_store.rs` |
-| REQ-execution-timeout-cancellation | Shipped — `crates/paladin-web/src/timeout.rs` |
-| REQ-async-jobs-api | Shipped — `crates/paladin-web/src/job_store.rs` |
-
-### Milestone 12 Epic 4 — Operational Hardening (5 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-api-error-envelope | Shipped — `crates/paladin-web/src/error.rs` |
-| REQ-health-ready-endpoints | Shipped — `crates/paladin-web/src/health.rs`; deliberately outside the auth layer per Epic 5 FR-15 |
-| REQ-request-logging-request-id | Shipped — `crates/paladin-web/src/request_log.rs`; carries the header-redaction duty from Epic 5 FR-13 |
-| REQ-cors-body-limit-timeout | Shipped — `crates/paladin-web/src/http_layers.rs` |
-| REQ-rate-limiting | Shipped — `crates/paladin-web/Cargo.toml:33` `tower_governor = { version = "0.8", features = ["axum"] }` |
-
-### Milestone 12 Epic 5 — API Security & Authorization (6 IDs)
-
-Epic-level note: **all three of Milestone 12's open checkboxes are in this Epic and all three are
-Task 0.0 feature-branch scaffolding** — "Create feature branch", "Update `main` … and
-create/checkout `feature/m12-epic5-api-security-authorization`", "Confirm a clean baseline". The
-Epic 5 code ships. Zero real work is represented by that count.
-
-| Requirement | Verdict |
-|---|---|
-| REQ-api-key-auth | Shipped — `crates/paladin-web/src/agent_auth.rs`, constant-time comparison, with a test asserting a key value does not leak |
-| REQ-jwt-bearer-auth-v2 | **Contract diverges → WEB-01** — the v2 *shape* ships (bearer-first precedence, `jwt: Option<Arc<dyn AuthPort>>`, `MockJwt` test double) while the v1 *mechanism* is what executes. No `jsonwebtoken` anywhere. **Open Question 4 is unanswerable for the shipped adapter.** Variant group 29 |
-| REQ-fail-closed-auth-posture | Verify → ORCH-01 — `enabled` defaults true; the fail-closed startup path and the `enabled: false` startup warning were not exercised |
-| REQ-per-agent-role-authorization | Verify → ORCH-01. **§7 names `project/current-exports.txt`** → DEBT-01. **Corrected (Phase 8, dated 2026-08-06):** §7's "API surface" bullet is now annotated in place at source (`.project/Milestone_12-Web-API/Epic_5/prd-api-security-authorization.md`) with a dated D-00c banner and inline struck-and-corrected text naming `.project/current-exports.txt`; original text retained, nothing deleted → DEBT-01 |
-| REQ-admin-gated-registration | Verify → ORCH-01 |
-| REQ-secret-hygiene-redaction | Shipped (partially verified) — the redaction test exists in `agent_auth.rs`; the full nine-case test matrix was not re-run → ORCH-01 |
-
-### Milestone 12 Epic 6 — OpenAPI & Interactive Docs (4 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-openapi-spec-generation | Shipped — `crates/paladin-web/src/openapi.rs`; `utoipa = "5"`, `utoipa-axum = "0.2"`, `utoipa-swagger-ui = "9"` |
-| REQ-swagger-ui-docs-endpoint | Shipped — `utoipa-swagger-ui` wired; unversioned, per §4.3 |
-| REQ-api-v1-versioning | **Later position, contested → ORCH-03(a)** — §4.3 relocates the agent API under `/v1` after four Epics wrote acceptance criteria, tests and examples against unprefixed paths |
-| REQ-openapi-drift-guard | Shipped — `crates/paladin-web/openapi.json` is the committed baseline, and is therefore **the artefact that settles the route-prefix question**. **`cross_refs` names `project/current-exports.txt`** → DEBT-01. **Corrected (Phase 8, dated 2026-08-06):** the source clause is in fact §7's "API surface" bullet, not a `cross_refs` field — that label drift is recorded at source. It is now annotated in place (`.project/Milestone_12-Web-API/Epic_6/prd-openapi-spec-interactive-docs.md`) with a dated D-00c banner and inline struck-and-corrected text naming `.project/current-exports.txt`; original text retained, nothing deleted → DEBT-01 |
-
-### Milestone 12 Epic 7 — Deployment Artefacts, Examples & Docs (5 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-dockerfile-server-compose | Shipped — `Dockerfile.server`; `docker/docker-compose.yml` |
-| REQ-k8s-manifests | **Shipped, correctness question open → WEB-02** — `k8s/{deployment,service,configmap,namespace,secret.yaml.example,redis,minio}.yaml` plus a `k8s/server/` directory, with liveness and readiness probes. Multi-replica serving against an in-process token store is unaddressed by any requirement in the corpus |
-| REQ-deployment-topology-doc-update | Shipped — greps for the pre-M12 disclaimers ("ships no agent-execution", "yours to compose", "compose your own", "does not run agents") across `docs/src/` return **zero matches**; `http-service-host.md` references `paladin-server` four times |
-| REQ-server-e2e-tests | Verify → ORCH-01 |
-| REQ-m12-v060-release | Shipped — root `Cargo.toml:34` `version = "0.6.0"`, the terminal release gate → ORCH-05. **FR-4.6 names `project/current-exports.txt`** → DEBT-01. Its non-goals are notable: "artifacts/docs/tests/release only; no behavior changes to the API". **Corrected (Phase 8, dated 2026-08-06):** both defective clauses (Success Metric 6 and §4.6 FR-13, the corpus's "FR-4.6") are now annotated in place at source (`.project/Milestone_12-Web-API/Epic_7/prd-deployment-artifacts-examples-docs.md`) with a dated D-00c banner and inline struck-and-corrected text naming `.project/current-exports.txt`; original text retained, nothing deleted → DEBT-01 |
-
-### Deferred-QA Epic 25 — CI/CD Pipeline Enhancement (7 IDs)
-
-Epic-level note: **verified open item by item — seven of eight substantive items are unbuilt.** This
-is the largest concrete unbuilt scope in the corpus and the register's own recommended first epic,
-because it "establishes quality gates that validate all subsequent work".
-
-| Requirement | Verdict |
-|---|---|
-| REQ-ci-cli-snapshot-job | **Verified open → PIPE-01** — no `cli-tests` job; 43 CLI snapshot tests never run in CI |
-| REQ-ci-bench-check-job | **Verified open → PIPE-01** — no `bench-check` job. Note the inversion: `benchmark-regression-signal`, which this Epic's own non-goals place out of scope, ships at `ci.yml:531` while the compile-check prerequisite does not |
-| REQ-ci-combined-coverage-job | **Verified open → PIPE-02** — no `coverage` job and no `llvm-cov`/`codecov` reference in `ci.yml`. **But coverage tooling is partially built**: `integration-tests.yml:117-123` runs `cargo llvm-cov --features integration-tests --lcov` and `codecov/codecov-action@v3` — the integration-only path this requirement supersedes. **Open Question 3** (remove or retain it) is unanswered |
-| REQ-codecov-config-thresholds | **Verified open → PIPE-02** — neither `.codecov.yml` nor `codecov.yml` exists at the root. **The entry threshold competes with the parent PRD**: variant group 30 |
-| REQ-makefile-coverage-targets | **Verified open → PIPE-03** — none of `coverage`, `coverage-html`, `test-cli`, `bench-check` exists; the `Makefile` has no `llvm-cov` reference at all |
-| REQ-modernize-github-actions | **Partially open → PIPE-04** — the dangling `on: schedule` block is **gone** (`ci.yml` has exactly one `on:` at line 3, no `schedule:`/`cron:`), the **only** Epic 25 item found closed. Eight deprecated references remain: `actions-rs/toolchain@v1` at `ci.yml:147,317,507` and `integration-tests.yml:71`; `actions/cache@v3` at `integration-tests.yml:78,84,90`; `codecov/codecov-action@v3` at `integration-tests.yml:123` |
-| REQ-contributing-coverage-docs | **Verified open → PIPE-05** |
-
-### Deferred-QA Epic 26 — Documentation & Rustdoc (4 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-arch-doc-modernization | **Verified open, and hidden by a relocation → DOCS-02** — `docs/src/appendix/design-and-architecture.md` is **exactly 311 lines**, the same figure the PRD cites as the pre-rewrite state. Commander 0, Council 0, Conclave 0, Grove 0, Maneuver 0, Sanctum 0, Sentinel 0; zero ```mermaid blocks. Milestone 11 moved the corpus's largest documentation gap into the one chapter its own Epic 3 non-goals exempt from rewriting |
-| REQ-rustdoc-zero-warnings | **Open, and the bar is contested → DOCS-03** — three positions on one command across three milestones (M7 zero-warnings, M8 warnings-acceptable, Deferred-QA zero-warnings-enforced-in-CI). HARD-07 picks; DOCS-03 applies |
-| REQ-public-api-doc-audit | **Verified open → DOCS-03** — couples to DEBT-03, which makes port-trait examples executable rather than merely present |
-| REQ-asciinema-demos | **Verified open → DOCS-04** — `docs/assets/` exists and is **empty**; `docs/DEMOS.md` does not exist. Open Question 4 (asciinema versus VHS/Terminalizer/GIF) unanswered, and the README target changed shape |
-
-### Deferred-QA Epic 27 — LLM Tool Calling (2 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-llm-tool-calling-port | **Verified open → WEB-04** — `crates/paladin-ports/src/output/llm_port.rs` has no `tools` field; `struct ToolDefinition`, `struct ToolCall` and `tool_calls` return zero matches across `paladin-ports` and `paladin-llm`. The requirement names a path deleted by M5 Epic 2 → ORCH-03(c). The PRD flags the change as **breaking to the port interface** |
-| REQ-llm-tool-calling-adapters | **Verified open, with a separable defect → WEB-03 (the flag), WEB-04 (the scope)** — the problem statement stands unchanged: all three adapters declare tool-calling capability in `ProviderCapabilities` and hardcode `function_call: None`. **`ProviderCapabilities` over-reporting is a correctness defect independent of whether Epic 27 is ever built.** Open Questions 1 and 5 unanswered |
-
-### Deferred-QA Epics 28-29 & the coverage register (4 IDs)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-mock-infrastructure | **Verified open in the specified shape → DEFER-01** — no `tests/common/` directory; mocks live at `tests/helpers/{mock_llm_adapter,mock_arsenal_adapter,mock_paladin_port}.rs`, a different location and a disjoint set; none of the five named mocks exists. **The shared prerequisite for both coverage epics**, ~6-10 of the 35-45 estimated hours |
-| REQ-user-service-test-coverage | **Open, and collides with a run-4 register → DEFER-02** — the target still ships at `src/core/platform/manager/user_service.rs` (19,046 bytes), one of only four files left in that directory. M8 `deferred-items.md` D2 (FACADE-02) plans to **split** the same file Epic 28 plans to **test**. Sequence deliberately |
-| REQ-listener-service-test-coverage | **Open, with a stale path and a stale number → DEFER-03** — the module ships as `src/application/services/orchestration/listener.rs` after the M6 relocation, and M9 Epic 2 added tests against it, so the 57.83% baseline dated 2026-02-14 no longer holds. Scope real, arithmetic not |
-| REQ-deferred-coverage-register | **Open register → DEFER-01/02/03** — the third and last deferred register in the corpus. Sign-off "AI Coding Agent (Epic 24 execution), February 14, 2026"; **Next Review: "Epic 27 or Epic 28 planning"**, a trigger never reached. **Materially less reliable than Milestone 8's two registers**: both module paths are stale and both baselines predate Milestone 9. Its three unchecked prerequisites are DEFER-01's scope |
-
-### project-management (1 ID)
-
-| Requirement | Verdict |
-|---|---|
-| REQ-master-plan-epics-11-18 | **Provenance only — do not double-count.** The master expansion plan (Status Draft, v1.0, **2026-01-29** — the earliest document in run 5 and the highest-level planning document in the corpus) defining Epics 11-18 with the dependency graph 11 → 12 → {13, 14} → 15 → {16, 17} → 18. Every one of those eight epics was ingested in run 2, and Conclave, Sanctum/Qdrant, Council, Grove, Maneuver and Sentinel vision are all **verified shipped**. Its value is provenance: it is the only place the dependency graph and the epic-level risk assessment are recorded. Its classifier note observes the content is "strongly PRD-like with embedded SPEC fragments" against a DOC manifest type — retagging it would raise the precedence of positions that shipped a year ago, not add scope |
-
----
-
-## v2 Requirements
-
-Acknowledged, deferred, not in the current roadmap. **The ingest is complete, so nothing below is
-waiting on a future run** — anything here that was going to acquire a requirement has done so, and
-what remains is deferred on its merits.
-
-### Testing
-
-- **Live-provider-API integration tests** — Epic 6 task 7.0 (18 subtasks), deferred at Milestone 1,
-  un-deferred by Epic 24 (REQ-provider-live-api-tests) and shipped behind `live-api-tests`. What
-  remains open is the skip-vs-fail semantics (VERIFY-06), not the suite.
-
-- **CLI end-to-end tests** — Epic 9 tasks 13.4-13.6, originally blocked on CLI mock-provider
-  support. Run 2 supplied the mock provider (REQ-mock-llm-adapter) and the Tier-1 suites, so the
-  original blocker is gone.
-
-- **Garrison large-conversation performance test** — Epic 2 task 9.14 (1,000 entries).
-- **Bearer-token redaction enforcement test** — prove `BearerToken` cannot be logged
-  (`codebase/CONCERNS.md`).
-
-- **Vision end-to-end latency measurement** — REQ-vision-performance-and-config and
-  REQ-rag-performance-targets state numeric targets (single image < 5 s, retrieval < 500 ms p95,
-  extraction < 3 s p95) with no recorded measurement anywhere in `.planning/`.
-
-### Tech debt (from `codebase/CONCERNS.md`, no ingested requirement)
-
-- Decompose the three oversized service files: `paladin_execution_service.rs` (2,757 lines),
-  `paladin_builder.rs` (2,294), `orchestration/mod.rs` (1,840).
-
-- Reduce the 383 `.clone()` calls and the 9-lock orchestrator contention — needs the Phase 3
-  benchmark baselines first.
-
-- Replace `structopt` with clap v4 and `dotenv` with `dotenvy`; upgrade `utoipa` off `paste`;
-  converge the dual `reqwest` 0.12/0.13 dependency. Note DEBT-04 *gates* `structopt` behind `cli`
-  but does not migrate it — the two are complementary, not alternatives.
-
-- Bring the `paladin-core` and `paladin-ports` dependency allowlists back in line with reality, or
-  reduce the crates to match them (`paladin-core` ships 14 against a "complete and exhaustive" 6;
-  `paladin-ports` ships 10 against 7). The architectural invariant holds either way — no infra SDK
-  is present — so this is document-versus-code drift, not a layering break. Depends on ARCH-03(b)
-  choosing a direction. *(run 3)*
-
-- Add the planned `retry`, `rate_limiter` and `bulkhead` primitives to
-  `src/infrastructure/resilience/`, and consolidate the retry logic currently embedded in
-  `mcp_sse_adapter.rs` and `api_content_deliverer.rs` — both explicitly deferred by Milestone 6
-  Epic 4. *(run 3)*
-
-- Complete the `user_service` relocation out of `src/core/platform/manager/`, including
-  `UserServiceFactory`, `user_config.rs`, the user CLI commands, the user API controller and
-  `SqliteUserRepository`. Milestone 6 Epic 2 explicitly scoped this out and flagged it for "a
-  future Epic". *(run 3)*
-
-- Orchestrator state durability: workflow checkpointing, resume-on-startup, enforced queue
-  persistence in production mode.
-
-- Single-threaded orchestration scheduler in `src/application/services/orchestration/scheduler.rs`
-  — `codebase/CONCERNS.md` recommends leaning on `tokio-cron-scheduler`, already a dependency and
-  already adapted in `crates/paladin-storage/src/scheduler.rs` (REQ-scheduler-port).
-
-- Environment isolation for `system_log_integration_test.rs`.
-- Add the `retry`, `rate_limiter` and `bulkhead` primitives — unchanged by run 4. *(run 3)*
-- **Reconsider the `src/core/` re-export shims and the mis-layered manager services** only if
-  FACADE-02 decides against keeping them. D1 (six files, 49 importers) and D2 (three manager
-  services) are currently *deliberate* keeps, not debt; they become debt only if the facade adopts
-  a no-alias policy (ARCH-04). *(run 4)*
-
-- **Untangle the `paladin_builder.rs` / `paladin_execution_service.rs` coupling** so the ~2,750 LOC
-  of entangled Paladin services (D3) can move to `paladin-battalion` and `paladin-llm`. Blocked
-  twice over: on the coupling itself, and on HARD-05 deciding whether leaf-to-leaf edges are
-  permitted. Overlaps the existing oversized-service-file item above. *(run 4)*
-
-- **A future content-delivery crate.** M7 Epic 1 §4.5.2 reserved one as the "correct long-term home"
-  for `file_content_repository.rs`; the file was then deleted and no later document mentions the
-  crate again. Carried so the idea is not lost silently. *(run 4)*
-
-### Unimplemented code paths (requirement pending later ingest runs)
-
-- Notification adapter wiring (`service_runner.rs:534`) — notifications register but never deliver.
-- Media content handlers — video/audio/image stubs in `file_content_fetcher.rs:105-115`.
-- Trigger payload conditions (JSONPath) and cooldown checks — `trigger.rs:216, 261`.
-- MCP config validation coupling — schema accepts server types the client cannot construct.
-- MCP WebSocket transport — recorded as a known limitation by the Epic 23 completion summary.
-- *(Removed from this list by run 2: Grove service hardcoded `model: "gpt-4"` — now a first-class
-  forward requirement, CLOSE-01, verified at `grove_service.rs:537`.)*
-
-### Deliberately not carried forward from run 2
-
-Recorded so a later reader does not mistake omission for oversight.
-
-- **The 155 open checkboxes in Epics 14, 22 and 24** are not requirements. They are a verification
-  task (VERIFY-02). Run 1 and run 2 both proved checkbox state understates shipped reality.
-
-- **The 240 open checkboxes in Epics 11 and 15** (Sanctum 111, Conclave 129) are not carried at
-  all — `intel/code-verification.md` verifies both features shipped.
-
-- **Milestone-4 work named by the release notes** (`Epic 28` user_service coverage, `Epic 29`
-  listener_service coverage, Grove semantic-similarity routing, RAG integration) is not carried:
-  the release-notes forward-look is stale, RAG and Grove semantic routing already ship, and
-  Milestone 4 itself arrives in ingest run 3.
-
-- **`RoutingStrategy::PerformanceBased`** is not carried as a requirement — it is verified absent
-  from the tree and contradicts Epic 16 NG-3. Correcting the claim is part of VERIFY-03.
-
-- **Epic 17.5's CLI-location decision** is not carried as a requirement — it is already applied in
-  code (`src/cli` absent, `src/application/cli/` populated). It is noted in PROJECT.md Context as
-  one of the corpus's two strongest ADR candidates should the user want to protect it.
-
-**Deliberately not carried forward from run 3:**
-
-- **The 9-plus-crate workspace extraction itself** (Milestone 5, all six epics) and **the four
-  Milestone 6 relocations** are not planned as forward phases. They shipped, and
-  `intel/code-verification.md` verifies each against the tree. The ledger records them.
-
-- **Milestone 5's 17 open checkboxes** are not a backlog — the crates, the prelude, the
-  `crate-isolation` CI job and the benchmark report all exist. Only the two residues
-  (`paladin-ports` doctests, the toolchain-action cleanup) become DEBT items.
-
-- **Milestone 6's task lists** produce nothing: 0 open items, corroborated by code.
-- **`STABLE_API.md`, `docs/FEATURE_FLAGS.md`, `docs/MIGRATION.md`, `docs/CONFIGURATION.md`** are
-  not carried as missing deliverables — they are relocated into the mdbook. Recording that is
-  ARCH-05, not building them.
-
-- **A `paladin-cli` workspace crate** and **MCP transport feature flags** are not carried at all:
-  both are documented positions that shipped code contradicts, and in both cases the later PRD
-  agreed with the code.
-
-- **The two ADR candidates are not converted into locked decisions here.** Promoting the Epic 1
-  decision record or Epic 17.5's CLI-location decision requires re-tagging the source documents
-  via `--manifest` and re-running ingest; manufacturing the lock inside an ingest artefact would
-  fabricate authority the corpus does not contain. ARCH-03(c) records the recommendation.
-
-**Deliberately not carried forward from run 4:**
-
-- **Every shipped Milestone 7-8 deliverable.** The four crate extractions and their cost-benefit
-  gate, the Docker/Makefile/CI adaptation, the five-benchmark migration, the whole
-  release-candidate cycle, the 25 List A deletions, the `use_cases` → `services` rename in both the
-  facade and `paladin-content`, the actix removal and ban, the three mounted axum delivery routes,
-  and the reconciliation's fifteen commits are all verified in the tree. The ledger records them;
-  no phase re-plans them.
-
-- **Milestone 8's three open checkboxes.** Contradicted by code: Epics 2 and 3 are both complete,
-  and Epic 3 went *further* than its own task list scoped. Same pattern as Conclave and Sanctum in
-  runs 1-2.
-
-- **Milestone 8 Epic 6.** Recorded "Not verified; low priority" by the reconciliation and omitted
-  from `deferred-items.md`, but verifiably complete. Not planned.
-
-- **Milestone 7's three open checkboxes as a task list.** Their genuine residue is SEC-05 (the
-  stale `Dockerfile.chef` COPY list) and DEBT-01 (the `api-surface` baseline path). The rest of
-  Epic 2's apparently-missing deliverables are mdbook relocations.
-
-- **The 14 "superseded by outcome" requirements** are not planned as written — that is the point of
-  recording them. Chief among them: actix-web as a `paladin-web` dependency, the `storage-sqlite`
-  flag, the per-crate ordered publish dry run, the `ml` feature gate, the M8 Epic 3 no-extraction
-  mandate, and the `find src/ -name "*.rs" | wc -l` = 160 target (the tree reads **136**).
-
-- **`docs/PERFORMANCE_BASELINE.md`, `docs/RELEASE_CHECKLIST.md`, `docs/VERSIONING_POLICY.md`,
-  `docs/BUILD_BASELINES.md`, `docs/INTEGRATION_TESTS.md` and a root `STABLE_API.md`** — the same
-  Milestone 11 mdbook relocation ARCH-05 already covers for the run-3 deliverables. Relocated, not
-  missing.
-
-- **`paladin-arsenal` and `paladin-sanctum`** are not planned as crates. Neither exists; both are
-  named only by a superseded disposition record that disagrees with its own governing PRD.
-  Triaging the list is FACADE-04; building the crates is not in scope.
-
-- **`paladin-ml`** is not planned as a crate either. It is a *condition* on reintroducing a removed
-  feature (FACADE-03b), not a deliverable.
-
-- **The four new ADR candidates are not converted into locked decisions.** `cost-benefit-assessment.md`
-  (self-approval block, named approver, 2026-05-25), `rustsec-remediation-plan.md` (owner, expiry
-  2026-09-30), `license-compatibility-decision-checklist.md` (approver `DF3NDR`, 2026-05-28) and
-  `facade-cleanup-RECONCILIATION-2026-06-04.md` (an explicit supersession notice) are all
-  manifest-typed DOC. Promoting any requires re-tagging via `--manifest` and re-running ingest.
-  SEC-01 and SEC-02 record the recommendations; they do not act on them.
-
-### Ingest closed (run 5 of 5 complete)
-
-- **All five runs are done.** 263 documents covered: 199 classified (188 prose + 11 task lists) and
-  64 `tasks-*.md` measured deterministically. 554 requirements, 103 context topics, 0 blockers,
-  0 locked decisions. **There is no run 6.** Anything arriving after this point is a new ingest, not
-  a continuation, and the Roadmap Extension Protocol's numbering rules still apply to it.
-
-- **~~Shipped code with no ingested requirement~~ — closed by run 5.** Run 4 closed the crate gap
-  (all ten library crates). Run 5 closed the last one: Milestone 12's Axum HTTP API surface — auth,
-  rate limiting, OpenAPI and SSE streaming — now has 34 ingested requirements across seven Epics.
-  **Every shipped subsystem in this workspace now has at least one ingested requirement behind it.**
-
-- **The Milestones 8-11 dependency graph is spent, and is retained only for its semantics.**
-  `Milestones-8-11_Dependency-Graph.md` records M8 → M9 **HARD** ("M9 work should not begin until M8
-  Epic 4 is complete"); M8 → M11 **HARD** on path stability, with M11 Epics 3-4 waiting on M9
-  Epics 1-3; M9 → M11 **HARD** on API stability ("only write about APIs that are merged to
-  `main`"); M8 → M10 **SOFT** and only for M10 Epic 3. Critical path M8 → M9 → M11 Epics 3-5 =
-  11-17 sprints, M10 entirely off it; release gates v0.2.0 / v0.3.0 / v0.4.0 / v0.5.0.
-  **Run 5 confirms every one of those dependencies was honoured and every gate was cut** — M9 100%
-  at v0.3.0, M10 100% at v0.4.0, M11 92% at v0.5.0, M12 99% at v0.6.0. The schedule is history; the
-  release-gate criteria are the part worth keeping.
-
-- **The predicted fifth milestone-numbering collision did not occur.** Four instances were found in
-  runs 2-4 (VERIFY-03, ARCH-02, HARD-04); run 5's provenance keys resolve directly against
-  directory numbering. ORCH-05 records the prediction as closed rather than leaving it standing.
-
-- **The last unbuilt scope in the corpus is `Deferred-QA-CICD-Completion`.**
-  `intel/code-verification.md` named the Deferred-QA documents as one of the two places the genuine
-  remaining-work signal lives, before run 5 read them. That held: Epics 25-27 are verified open item
-  by item (PIPE-01 … PIPE-05, WEB-03, WEB-04, DOCS-02 … DOCS-04) and Epics 28-29 rest on a mock
-  prerequisite that does not exist (DEFER-01 … DEFER-03). Run 4 supplied the other place —
-  `deferred-items.md` and `deferred-features.md`, both verified exact against the tree (FACADE-01 …
-  FACADE-03).
+Per-requirement verdicts for Milestones 9-12 plus the `Deferred-QA-CICD-Completion` and
+`project-management` registers now live in
+[`.planning/ledgers/milestone-09-12.md`](ledgers/milestone-09-12.md) rather than inline here (D-01,
+Phase 13 plan 13-10, dated 2026-08-10). REQUIREMENTS.md is already ~4,200 lines and holds five
+as-shipped ledger sections; five sets of `file:line`-cited verdicts inline would make it unreadable.
+The ledger is **authoritative** for Milestone 9-12: it carries the full **120**-row `file:line`-cited
+verdict table across **28** epic/register sections, an eleven-class evidence bar extending the run-4
+seven-class vocabulary, the corrected 35/53/32 arithmetic (ORCH-01, D-04), the corrected fifteen-job
+`ci.yml` list (PIPE-01, D-08), the corrected `0.7.0`/`v0.7.1` current-state figures (ORCH-05, D-18),
+and a per-milestone checkbox corroboration paragraph (ORCH-02). Preconditions asserted before this
+section's body was removed: `grep -c '^| REQ-' .planning/ledgers/milestone-09-12.md` → `120`;
+`grep -c 'pending — plan' .planning/ledgers/milestone-09-12.md` → `0`; the ID list in the ledger
+diffs clean against the ID list this section held. This section is retained as a pointer only,
+exactly as Phase 7's D-26 did for Milestone 4-6 and Phase 10's D-01 did for Milestone 7-8. **This is
+the fifth and final sibling** — `milestone-01.md`, `milestone-02-03.md`, `milestone-04-06.md` and
+`milestone-07-08.md` complete the series; there is no sixth name to forward.
 
 ---
 
