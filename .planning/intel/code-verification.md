@@ -469,6 +469,15 @@ an entire ingested epic-set (Deferred-QA Epics 25-27) essentially unimplemented.
 | Workspace at v0.6.0 | M12 Epic 7 §4.6 | root `Cargo.toml:34` `version = "0.6.0"` |
 | Deployment-topology docs updated to the shipped API | M12 Epic 7 §4.3 | Greps for "ships no agent-execution", "yours to compose", "compose your own" and "does not run agents" across `docs/src/` return **zero matches**; `http-service-host.md` references `paladin-server` four times |
 
+**Correction (dated 2026-08-10, D-18):** the `v0.6.0` figure above was correct as of the 2026-07-30
+ingest and is superseded. Live measured this session: `grep '^version' Cargo.toml` -> root
+`Cargo.toml:34` `version = "0.7.0"`; `git tag --sort=-v:refname | head -8` -> `v0.7.1`, `v0.7.0`,
+`v0.5.1`, `v0.5.0`, `v0.4.3`, `v0.4.2`, `v0.4.1`, `v0.4.0` — the workspace has shipped two further
+releases (`v0.7.0`, then `v0.7.1`) since the `v0.6.0` figure was recorded. This document's own
+verification banner (line 3 and elsewhere) already frames its checks as run "against the working
+tree on `release/v0.7.0`" — this correction brings the workspace-version row into agreement with
+that framing. Original figure retained above; both are recorded, not one replacing the other.
+
 **Milestone 9's and Milestone 10's 0-open checkbox counts are corroborated by artefact, and
 Milestone 12's route surface, auth, streaming, jobs, OpenAPI and deployment artefacts all ship.**
 
@@ -555,6 +564,30 @@ are therefore sanctioned.
    - **DONE:** the dangling `on: schedule` block is gone. `ci.yml` has exactly one `on:` at line 3
      and no `schedule:`/`cron:` key. This is the only FR-25.2 item satisfied.
 
+   **Correction (dated 2026-08-10, D-08):** the 14-job list above is stale. Live measured via
+   `grep -nE '^  [a-z][a-z0-9-]*:$' .github/workflows/ci.yml`, re-run this session: `lint` (`:21`),
+   `security-audit` (`:61`), `cargo-deny` (`:81`), `osv-scanner` (`:126`), `api-surface` (`:155`),
+   `test` (`:206`), `examples` (`:245`), `crate-isolation` (`:319`), `integration-tests` (`:374`),
+   `docker` (`:494`), `kubernetes-smoke` (`:611`), `e2e-tests` (`:718`), `benchmark` (`:779`),
+   `benchmark-regression-signal` (`:812`), `publish-dry-run` (`:898`) — **15 jobs**, not 14.
+
+   (The same grep pattern, run against `ci.yml`'s top-level `on:` block at line 3, also matches the
+   `push` trigger key at `:9` — that is a workflow trigger, not a fifteenth job, and is excluded
+   from the 15-job count above.)
+
+   Two changes account for the delta. The `security` job (this finding's non-compliant duplicate)
+   is gone — deleted by Phase 9's plan 09-06, commit `cb75b2b` (SUPPLY-01 closed; see
+   `.planning/REQUIREMENTS.md`'s "Verified by Phase 12" block). Two jobs the recorded list does not
+   name are present: `examples`, added by commit `8d4ea16` (2026-08-03, "feat(04-03): restore
+   release/** CI trigger and add examples feature-matrix job"), and `kubernetes-smoke`, added by
+   commit `2526fef` (2026-08-03, "feat(04-03): add Docker budget assertions and kind Kubernetes
+   smoke job") — both attributed by `git log -S` on the job-id string, not guessed. Net: 14 − 1 + 2
+   = **15**.
+
+   `PIPE-01` (`.planning/REQUIREMENTS.md:2434`) quotes the stale 14-job list verbatim; plan 13-10
+   corrects it there. This correction does not re-run or revise Phase 12's 87-hit stale-citation
+   inventory (D-07).
+
 4. **Deferred-QA Epic 26's architecture rewrite never happened, and the relocation hid it.**
    `docs/src/appendix/design-and-architecture.md` is **exactly 311 lines** — the identical figure the
    February 2026 PRD cites as the *pre-rewrite* state ("the current `docs/Design/Design_and_Architecture.md`
@@ -618,6 +651,22 @@ are therefore sanctioned.
    `project/current-exports.txt` does not. `check-api-surface.sh` exits 1 with "No baseline found"
    when the file is absent, so the `api-surface` CI job fails on every run. **Nine references,
    unchanged across three ingest runs.** Extends `DEBT-01`.
+
+   **Correction (dated 2026-08-10, D-09):** the consequence clause above — "so the `api-surface`
+   CI job fails on every run" — is **no longer true**. `scripts/check-api-surface.sh:6` reads
+   `BASELINE="${1:-.project/current-exports.txt}"` — the dotted path, not the undotted
+   `project/current-exports.txt` this finding names — and `ci.yml:187` invokes it as
+   `./scripts/check-api-surface.sh .project/current-exports.txt`, explicitly passing the dotted
+   path. Both checks re-run this session: `ls -la .project/current-exports.txt` -> present, 446,377
+   bytes; `ls project/current-exports.txt` -> "No such file or directory". The job reads a baseline
+   that exists; it does not fail on this ground.
+
+   What remains true, precisely: the **documentation half**. The four Milestone 12 requirement
+   texts named above (Epic 1 §7, Epic 5 §7, Epic 6 `cross_refs`, Epic 7 FR-4.6) still name the
+   undotted `project/current-exports.txt` path in their own prose — a stale citation, not a broken
+   automated guard. Phase 8's dated `DEBT-01` banners already annotate these four at source
+   (`.project/Milestone_12-Web-API/...`). This does not become a sixth ORCH-03 item; it is handed
+   to **Phase 15** alongside `DEBT-01`'s tooling half.
 
 ### Checkbox counts in run 5 — three of four are contradicted or vacuous
 
