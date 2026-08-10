@@ -1,5 +1,14 @@
 # PRD: Streaming & Asynchronous Execution (Milestone 12, Epic 3)
 
+> **Correction (dated 2026-08-10, ADR-0037):** This document's route text — every unprefixed
+> `/agents...` path below (the SSE streaming endpoint and the async job endpoints) — is
+> **superseded provenance, not a live contract**. The shipped agent API is served under a `/v1`
+> prefix, confirmed against the committed `crates/paladin-web/openapi.json` drift-guard baseline
+> and enforced live by `openapi.rs`'s `spec_paths_are_versioned_under_v1` test. The recorded
+> answer is `.planning/decisions/0037-agent-route-surface-v1.md`. Original text is retained
+> below; each occurrence of an unprefixed route is followed by a new note line marking it
+> superseded — nothing is struck, rewritten, or removed.
+
 **Project:** Paladin Framework
 **Milestone:** 12 — Web API / HTTP Service Host Topology, Out of the Box
 **Epic:** 3 — Streaming & Asynchronous Execution
@@ -48,6 +57,7 @@ execution service and threads it through the registry **additively**.
 
 1. `POST /agents/{id}/execute/stream` streams real, incremental LLM tokens to the client over SSE,
    ending with a terminal event carrying final metadata.
+   > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/execute/stream`)*
 2. `PaladinExecutionService` gains a working `execute_stream` built on `LlmPort::generate_stream`.
 3. Streaming is threaded through the registry **without changing** `PaladinExecutorPort` or any
    Epic 1/2 buffered behavior; agents without a streaming backend degrade gracefully.
@@ -56,6 +66,7 @@ execution service and threads it through the registry **additively**.
    returning a `504`-style error.
 5. `POST /agents/{id}/jobs` enqueues an in-process job and returns a job id; `GET
    /agents/{id}/jobs/{job_id}` reports status and (when finished) the result.
+   > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/jobs` and `/v1/agents/{id}/jobs/{job_id}`)*
 6. All new code compiles warning-free and passes `cargo fmt`/`clippy -D warnings`/`cargo test`;
    streaming, timeout, and job paths have unit + integration coverage.
 
@@ -119,6 +130,7 @@ execution service and threads it through the registry **additively**.
 
 8. The system **must** add `POST /agents/{id}/execute/stream` returning `Content-Type:
    text/event-stream`, driven by the agent's `StreamingExecutorPort`.
+   > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/execute/stream`)*
 9. It **must** emit one SSE event per chunk (incremental `text`) and a terminal event marking
    completion (with final metadata), and map: unknown id → `404`; invalid body → `400`; an agent
    without streaming → per FR7; mid-stream failure → an SSE error event then close.
@@ -143,9 +155,11 @@ execution service and threads it through the registry **additively**.
 15. The system **must** add `POST /agents/{id}/jobs`: validate the agent + body, enqueue an
     in-process job (spawned task running the buffered execute under the resolved timeout), and
     return `202 Accepted` with a generated `job_id`.
+    > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/jobs`)*
 16. The system **must** add `GET /agents/{id}/jobs/{job_id}` returning the job's status
     (`pending`/`running`/`completed`/`failed`/`timed_out`) and, when finished, the `ExecuteResponse`
     or error. Unknown job id → `404`.
+    > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/jobs/{job_id}`)*
 17. Jobs **must** be stored in an in-memory, thread-safe job store. Jobs are **ephemeral** (lost on
     restart) and **must not** require external infrastructure (distributed execution remains the
     [queue/worker topology](../../../docs/src/deployment-topologies/queue-worker.md)).
@@ -189,6 +203,10 @@ execution service and threads it through the registry **additively**.
 | `POST` | `/agents/{id}/jobs` | Enqueue async job | `202` `{ job_id }` | `404`, `400` |
 | `GET`  | `/agents/{id}/jobs/{job_id}` | Poll job | `200` status/result | `404` |
 
+> *(superseded — ADR-0037: every path in this table is `/v1`-prefixed in the shipped API —
+> `/v1/agents/{id}/execute/stream`, `/v1/agents/{id}/jobs`, `/v1/agents/{id}/jobs/{job_id}`,
+> in table row order)*
+
 ### SSE event shape (illustrative)
 
 ```text
@@ -214,6 +232,9 @@ GET .../jobs/{job_id} ──► { status: "completed", result: { output, ... } }
                           { status: "failed",    error: "..." }
                           { status: "timed_out", error: "..." }
 ```
+
+> *(superseded — ADR-0037: the `POST /agents/{id}/jobs` and `GET .../jobs/{job_id}` paths above
+> shipped as `/v1/agents/{id}/jobs` and `/v1/agents/{id}/jobs/{job_id}`)*
 
 ### Timeout resolution
 
@@ -257,10 +278,12 @@ effective = clamp( request.timeout_seconds
 1. A client `POST`ing to `/agents/{id}/execute/stream` receives multiple incremental `chunk` events
    followed by a `done` event whose assembled text equals the buffered `execute` output (verified
    with a multi-response mock LLM).
+   > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/execute/stream`)*
 2. A request that exceeds the effective timeout is cancelled and returns `504` (buffered/job) or a
    terminal `error` event (SSE) — verified by a test with a deliberately slow mock.
 3. `POST /agents/{id}/jobs` returns `202` + id; polling transitions `running` → `completed` with the
    same result a buffered call would produce; unknown job → `404`; timed-out job → `timed_out`.
+   > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/jobs`)*
 4. Buffered `execute` and all Epic 1/2 tests still pass unchanged (additive, no regressions).
 5. `cargo test` (incl. streaming/job integration tests), `fmt`, `clippy -D warnings`, and `make
    deny` are green; the facade API-surface check passes (new public items recorded as additive).

@@ -1,5 +1,14 @@
 # Tasks: Agent Registry & Execution API (Milestone 12, Epic 1)
 
+> **Correction (dated 2026-08-10, ADR-0037):** This document's route text — every unprefixed
+> `/agents...` mention below — is **superseded provenance, not a live contract**. The shipped
+> agent API is served under a `/v1` prefix, confirmed against the committed
+> `crates/paladin-web/openapi.json` drift-guard baseline and enforced live by `openapi.rs`'s
+> `spec_paths_are_versioned_under_v1` test. The recorded answer is
+> `.planning/decisions/0037-agent-route-surface-v1.md`. Original text is retained below; each
+> occurrence of an unprefixed route is followed by a new note line marking it superseded —
+> nothing is struck, rewritten, or removed.
+
 **PRD:** [prd-agent-registry-execution-api.md](prd-agent-registry-execution-api.md)
 **Crate:** `paladin-web` (adapter layer)
 **Status:** Phase 2 — sub-tasks expanded, ready for implementation
@@ -52,26 +61,36 @@
   - [~] 2.4 **Error-body helper deferred to 3.0.** Implementing `ok_body`/`error_body`/`execution_error_response` here would be dead code until a handler consumes them, which fails `clippy -D warnings`. Moved to task 3.0 (first consumer = the execute handler), with the `{ "error": ... }` render test alongside. 4 DTO/summary unit tests added in 2.0 instead.
 
 - [x] 3.0 Implement the execution endpoint `POST /agents/{id}/execute`
+  > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/execute`)*
   - [x] 3.0a **(Moved from 2.4)** Implemented the interim error helpers (`JsonValue` alias, `ok_body`, `error_body`, `execution_error_response` → `502`) mirroring `delivery_controller.rs`, centralized so Epic 4 can swap them in one place. Added the `{ "error": "<message>" }` render test.
   - [x] 3.1 **(Test first)** Added a reusable mock `PaladinExecutorPort` (`MockExecutor::{Succeeds,Fails}`). `oneshot`/direct handler tests: success → `200` + `ExecuteResponse` (asserts output + all metadata fields), unknown id → `404`, executor `Err` → `502` (asserts message), invalid body → `400` (via router `oneshot`).
   - [x] 3.2 Implemented `execute_agent(State, Path(id), Json(ExecuteRequest))`: `registry.get(id)` → `404`; `executor.execute(paladin.as_ref(), &input)`; `Ok` → `200` `ExecuteResponse`, `Err` → `502` via `execution_error_response`. No `unwrap`/`expect`/`panic!`.
   - [x] 3.3 Rustdoc on handler + helpers; `fmt`, `clippy -D warnings` (plain + `--all-targets`), tests all green (49 + 5).
 
 - [x] 4.0 Implement the discovery endpoints `GET /agents` and `GET /agents/{id}`
+  > *(superseded — ADR-0037: shipped as `/v1/agents` and `/v1/agents/{id}`)*
   - [x] 4.1 **(Test first)** Tests: `GET /agents` → `200` with an array of summaries (order-independent id assertion) + empty-registry → `[]`; `GET /agents/{id}` → `200` for a known id and `404` for unknown. A `LEAK_CANARY` second prompt line asserts **the raw system prompt never appears** in either response body.
+    > *(superseded — ADR-0037: shipped as `/v1/agents` and `/v1/agents/{id}`)*
   - [x] 4.2 Implemented `list_agents(State)` → `registry.list()` mapped to `AgentSummary` → `200 [..]`, and `describe_agent(State, Path(id))` → summary or `404`. Green.
   - [x] 4.3 Rustdoc on both handlers; `fmt`, `clippy -D warnings` (plain + `--all-targets`), tests all green (53 + 5).
 
 - [x] 5.0 Implement the runtime registration endpoints `POST /agents` and `DELETE /agents/{id}`
+  > *(superseded — ADR-0037: shipped as `/v1/agents` and `/v1/agents/{id}`)*
   - [x] 5.1 **(Test first)** Added a mock `AgentProvisioner` (`Succeeds`/`Fails`). Tests: `POST /agents` success → `201` + summary and the agent is afterward retrievable via `describe_agent`; duplicate id → `409`; provision failure → `422` (asserts message); invalid body → `400` (router `oneshot`); **no provisioner wired** → `501`.
+    > *(superseded — ADR-0037: shipped as `/v1/agents`)*
   - [x] 5.2 **(Test first)** `DELETE /agents/{id}` tests: known id → `204` and subsequently `404` on describe; unknown id → `404`.
+    > *(superseded — ADR-0037: shipped as `/v1/agents/{id}`)*
   - [x] 5.3 Implemented `register_agent(State, Json(AgentSpec))`: `provisioner` `None` → `501`; early duplicate check → `409`; `provision(&spec)` → `Ok` insert (race-safe re-check → `409`) + `201`, `Err` → `422`; invalid body → `400` via extractor.
   - [x] 5.4 Implemented `deregister_agent(State, Path(id))` returning `Result<StatusCode, (StatusCode, JsonValue)>` so `204` has a truly empty body; missing id → `404`.
   - [x] 5.5 Rustdoc on both handlers; `fmt`, `clippy -D warnings` (plain + `--all-targets`), tests all green (60 + 5).
 
 - [x] 6.0 Compose and mount the agent router; export the public surface (`lib.rs`, `app.rs`)
   - [x] 6.1 Implemented `agent_router(state: AgentApiState) -> Router`: the five routes via method chaining (`/agents` GET+POST, `/agents/{id}` GET+DELETE, `/agents/{id}/execute` POST) with `.with_state(...)`. No auth layer (Epic 5); handler signatures kept layer-compatible.
+    > *(superseded — ADR-0037: all three route fragments above shipped `/v1`-prefixed —
+    > `/v1/agents`, `/v1/agents/{id}`, `/v1/agents/{id}/execute`)*
   - [x] 6.2 **(Test first)** Added `agent_router_merges_with_other_routes_without_conflict`: builds `agent_router` and `merge`s it with a user/auth-style placeholder router, asserting both `GET /agents` and `POST /users/login` resolve `200` (no path/state clash).
+    > *(superseded — ADR-0037: `GET /agents` shipped as `/v1/agents`; `POST /users/login` is
+    > outside the agent route surface and unaffected)*
   - [x] 6.3 Wired into `app.rs` via a **sibling** `create_app_router_with_agents(user_service, auth_port, deliverer, agent_state)` = `create_app_router(..).merge(agent_router(..))`. Keeps the existing `create_app_router` signature (and facade re-export) unchanged — non-breaking.
   - [x] 6.4 Updated `lib.rs`: documented the two new modules and added root re-exports (`AgentApiState`, `AgentSummary`, `ExecuteRequest`, `ExecuteResponse`, `agent_router`, `AgentRegistry`, `AgentProvisioner`, `AgentSpec`, `ProvisionError`). `#![warn(missing_docs)]` passes. Updated the stale module doc.
 

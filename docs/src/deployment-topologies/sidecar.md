@@ -26,7 +26,7 @@ deploy isolation per agent — at the cost of more operational moving parts.
 ## The two sides
 
 - **Server side** — the agent runs behind the [HTTP service host](http-service-host.md)
-  exactly as documented there (`POST /agents/{id}/execute`), deployed as its own process or
+  exactly as documented there (`POST /v1/agents/{id}/execute`), deployed as its own process or
   container.
 - **Caller side** — your app makes an HTTP request to that endpoint:
 

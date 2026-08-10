@@ -13,6 +13,15 @@
 > `.github/workflows/ci.yml`) was corrected separately in plan 08-02. Original text is retained
 > below with inline corrections — nothing is deleted.
 
+> **Correction (dated 2026-08-10, ADR-0037):** This document's route text — every unprefixed
+> `/agents...` path below — is **superseded provenance, not a live contract**. The shipped agent
+> API is served under a `/v1` prefix, confirmed against the committed
+> `crates/paladin-web/openapi.json` drift-guard baseline and enforced live by `openapi.rs`'s
+> `spec_paths_are_versioned_under_v1` test. The recorded answer is
+> `.planning/decisions/0037-agent-route-surface-v1.md`. Original text is retained below; each
+> occurrence of an unprefixed route is followed by a new note line marking it superseded —
+> nothing is struck, rewritten, or removed.
+
 **Project:** Paladin Framework
 **Milestone:** 12 — Web API / HTTP Service Host Topology, Out of the Box
 **Epic:** 5 — API Security & Authorization
@@ -46,6 +55,7 @@ responses or logs). All rejections use the Epic 4 [`ApiError`] envelope (`401`/`
   ⇒ any authenticated caller.
 - **Route privilege:** **admin** required for `POST /agents` and `DELETE /agents/{id}`;
   execute/stream/jobs/discovery require any authenticated caller (subject to per-agent authz).
+  > *(superseded — ADR-0037: shipped as `/v1/agents` and `/v1/agents/{id}`)*
 
 ---
 
@@ -56,6 +66,7 @@ responses or logs). All rejections use the Epic 4 [`ApiError`] envelope (`401`/`
 2. Two credential types are accepted: a configured **API key** (`X-API-Key` header) mapped to a
    principal+role, and a **JWT** (`Authorization: Bearer`) verified via the existing `AuthPort`.
 3. Per-agent `allowed_roles` restricts invocation; `POST`/`DELETE /agents` require an admin role.
+   > *(superseded — ADR-0037: shipped under `/v1/agents`)*
 4. Auth is **fail-closed**: if enabled but no credentials are configured (no API keys and no JWT
    verifier), the server refuses to serve protected routes (clear startup error), unless auth is
    explicitly disabled.
@@ -115,8 +126,11 @@ responses or logs). All rejections use the Epic 4 [`ApiError`] envelope (`401`/`
    empty/absent ⇒ any authenticated caller. A disallowed role **must** get `403` (`ApiError`).
 9. **Admin-gated routes:** `POST /agents` (register) and `DELETE /agents/{id}` (deregister) **must**
    require an admin role; non-admin authenticated callers get `403`.
+   > *(superseded — ADR-0037: shipped as `/v1/agents` and `/v1/agents/{id}`)*
 10. Discovery (`GET /agents`, `GET /agents/{id}`) and `GET /agents/{id}/jobs/{job_id}` require
     authentication (any role) when auth is enabled.
+    > *(superseded — ADR-0037: shipped as `/v1/agents`, `/v1/agents/{id}`, and
+    > `/v1/agents/{id}/jobs/{job_id}`)*
 11. `GET /health` and `GET /ready` **must** remain unauthenticated regardless of config.
 
 ### 4.4 Secret hygiene
@@ -248,6 +262,7 @@ request ─► [auth layer] ──(401 if required & invalid)──► attach Pr
 2. A user JWT (existing `AuthPort`) authenticates against the agent API.
 3. A caller whose role is not in an agent's `allowed_roles` gets `403`; a non-admin `POST /agents`
    gets `403`; an admin succeeds.
+   > *(superseded — ADR-0037: shipped as `/v1/agents`)*
 4. `GET /health` and `GET /ready` succeed with no credential.
 5. With auth enabled and **no** credentials configured, the server fails closed at startup with an
    actionable message; `enabled: false` serves open with a logged warning.

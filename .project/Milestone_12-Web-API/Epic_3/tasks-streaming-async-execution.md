@@ -1,5 +1,14 @@
 # Tasks: Streaming & Asynchronous Execution (Milestone 12, Epic 3)
 
+> **Correction (dated 2026-08-10, ADR-0037):** This document's route text — every unprefixed
+> `/agents...` mention below — is **superseded provenance, not a live contract**. The shipped
+> agent API is served under a `/v1` prefix, confirmed against the committed
+> `crates/paladin-web/openapi.json` drift-guard baseline and enforced live by `openapi.rs`'s
+> `spec_paths_are_versioned_under_v1` test. The recorded answer is
+> `.planning/decisions/0037-agent-route-surface-v1.md`. Original text is retained below; each
+> occurrence of an unprefixed route is followed by a new note line marking it superseded —
+> nothing is struck, rewritten, or removed.
+
 **PRD:** [prd-streaming-async-execution.md](prd-streaming-async-execution.md)
 **Crates:** `paladin-ports` (new port), `paladin-ai` facade (streaming impl + wiring), `paladin-web` (SSE, jobs, timeouts)
 **Status:** Phase 2 — sub-tasks expanded, ready for implementation
@@ -63,10 +72,12 @@
   - [x] 3.5 Rustdoc updated; `fmt`/`clippy --all-targets -D warnings` clean; paladin-web (63+5), facade `infrastructure::web` (12), and the boot smoke test all pass.
 
 - [x] 4.0 Add the SSE streaming endpoint `POST /agents/{id}/execute/stream`
+  > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/execute/stream`)*
   - [x] 4.1 Added `futures` + `tokio-stream` to `crates/paladin-web/Cargo.toml` (`ReceiverStream` adapts `PaladinStream` → an axum SSE body).
   - [x] 4.2 **(Test first)** Handler tests: streaming agent → asserts `chunk` events (`{"text":"Hel"}`, `{"text":"lo"}`) then `done`; agent **without** a streamer → pseudo-streams the buffered result as `chunk` + `done` (Open Q2 default); unknown id → `404`. (Invalid body → `400` already covered by the extractor on the buffered route.)
   - [x] 4.3 Implemented `execute_agent_stream(...) -> Response`: drives the agent's `StreamingExecutorPort` mapping `PaladinStreamChunk` → `Event` (`chunk`/`done`/`error`) via `chunk_to_event`, or falls back to a buffered single `chunk` + `done`; up-front execution failure → `502`; client disconnect drops the receiver (cancels the producer).
   - [x] 4.4 Mounted `POST /agents/{id}/execute/stream` in `agent_router`; updated the module doc route table.
+    > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/execute/stream`)*
   - [x] 4.5 Rustdoc; `fmt`/`clippy --all-targets -D warnings` clean; paladin-web tests 66 + 5 pass.
 
 - [x] 5.0 Add timeouts & cancellation (default → per-agent → per-request, clamped) across buffered/stream/job
@@ -77,11 +88,13 @@
   - [x] 5.5 `paladin-server` builds `TimeoutPolicy` from `settings.timeouts` and passes it via `AgentApiState::with_timeouts`. Rustdoc; `fmt`/`clippy -D warnings` (lib+bins+all-targets) clean; paladin-web 74+5, facade config 48 + infra::web 12 + smoke 1 all pass.
 
 - [x] 6.0 Add in-process async jobs (job store + `POST /agents/{id}/jobs` + `GET …/jobs/{job_id}`)
+  > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/jobs` and `/v1/agents/{id}/jobs/{job_id}`)*
   - [x] 6.1 **(Test first)** `job_store` unit tests: create → `Running`; transitions to `Completed`/`Failed`/`TimedOut`; `get` unknown → `None`; bounded retention evicts oldest (+ logs); update-after-eviction is a no-op. 5 tests.
   - [x] 6.2 Implemented `crates/paladin-web/src/job_store.rs`: uuid `job_id`, `JobStatus` (`running`/`completed`/`failed`/`timed_out`), `JobRecord { status, result: Option<Value>, error }` (result kept as JSON to stay decoupled from the controller), `JobStore` (RwLock map + insertion-order deque, capacity cap, poison-safe).
   - [x] 6.3 **(Test first)** Handler tests: `POST …/jobs` → `202` + `job_id`, poll → `completed` with `result.output`; unknown agent → `404`; unknown job → `404`; slow mock + 1s timeout → `timed_out`.
   - [x] 6.4 Implemented `enqueue_job` (agent lookup `404`, timeout resolve `400`, `create` job, spawn task running `execute` under `tokio::time::timeout`, record complete/fail/time_out) and `get_job` (record or `404`). Added `jobs: Arc<JobStore>` to `AgentApiState`.
   - [x] 6.5 Mounted `POST /agents/{id}/jobs` + `GET /agents/{id}/jobs/{job_id}`; updated module doc table; re-exported `JobStore`/`JobStatus`/`JobRecord`. Rustdoc; `fmt`/`clippy -D warnings` clean; paladin-web 83 + 5, facade infra::web 12 + smoke 1 pass.
+    > *(superseded — ADR-0037: shipped as `/v1/agents/{id}/jobs` and `/v1/agents/{id}/jobs/{job_id}`)*
 
 - [x] 7.0 Tests: streaming, timeout, and job integration + boot smoke round-trip
   - [x] 7.1 Unit coverage confirmed in place: `execute_stream` assembly (2.0); registry streamer (3.0); SSE chunk/done/fallback (4.0); `resolve_timeout` (5) + buffered `504` / `400` / stream terminal-error (5.0); job store (5) + handler lifecycle incl. `timed_out` (6.0).
