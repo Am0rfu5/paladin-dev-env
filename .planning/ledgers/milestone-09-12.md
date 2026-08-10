@@ -72,6 +72,170 @@ class would destroy the moved-not-missing signal). This ledger has one recurring
 `Shipped, one acceptance criterion false` is not resolved by picking one side — D-05 requires **both
 halves**, dated, so the row's Verdict cell carries both classes rather than a single winner.
 
+**Manifest carve-out.** Milestones 10 and 12 are structural/infrastructural in large part (CI
+hardening and release automation; Web API deployment artefacts), so for those rows a manifest line, a
+workflow job or a `Makefile` target **plus** a named consumer is the exercising artefact — a bare
+`Cargo.toml` feature declaration or an unconsumed manifest line is `Verified open` or a `pending`
+placeholder, never `Shipped` on its own (Phase 7's D-01, carried by D-03). The canonical job-name
+reference every fan-out plan cites by name, rather than asserting "CI runs it," is the corrected
+15-job `ci.yml` list in the next paragraph.
+
+**Path-caveat / factual-anchor paragraphs**, each re-grepped fresh this session, not trusted from an
+earlier document:
+
+1. **The agent route surface is `/v1`.** `grep -n '"/v1/agents' crates/paladin-web/openapi.json`
+   returns six paths, all prefixed: `/v1/agents` (`:17`), `/v1/agents/{id}` (`:148`),
+   `/v1/agents/{id}/execute` (`:271`), `/v1/agents/{id}/execute/stream` (`:382`),
+   `/v1/agents/{id}/jobs` (`:489`), `/v1/agents/{id}/jobs/{job_id}` (`:580`) (D-11).
+2. **`.github/workflows/ci.yml` has 15 job ids, not the 14 `intel/code-verification.md:539-540`
+   records.** `grep -nE '^  [a-z][a-z0-9-]*:$' .github/workflows/ci.yml`, re-run this session, returns
+   `lint`(:21), `security-audit`(:61), `cargo-deny`(:81), `osv-scanner`(:126), `api-surface`(:155),
+   `test`(:206), **`examples`**(:245), `crate-isolation`(:319), `integration-tests`(:374),
+   `docker`(:494), **`kubernetes-smoke`**(:611), `e2e-tests`(:718), `benchmark`(:779),
+   `benchmark-regression-signal`(:812), `publish-dry-run`(:898) — fifteen entries. `security` is gone
+   (Phase 9, D-05) and `examples`/`kubernetes-smoke` are present without a corresponding run-5 entry.
+   Handed to Phase 15 / PIPE-01 (D-08).
+3. **The `.project/current-exports.txt` baseline exists and the script reads the dotted path.**
+   `sed -n '1,10p' scripts/check-api-surface.sh` confirms `check-api-surface.sh:6`:
+   `BASELINE="${1:-.project/current-exports.txt}"`, and `test -f .project/current-exports.txt` — 446 KB,
+   present. Run-5 finding 8's "fails on every run" consequence clause is closed in the script; the
+   *documentation* half (four Milestone 12 requirement texts still naming the undotted path) stays open
+   and is recorded in those four rows below, not as a sixth ORCH-03 item (D-09).
+4. **The tree is at `v0.7.0`/`v0.7.1`, not the `0.6.0`/`v0.5.1` ORCH-05's own text states.**
+   `Cargo.toml:34` — `version = "0.7.0"`; `git tag --sort=-v:refname | head -8`, re-run this session,
+   returns `v0.7.1, v0.7.0, v0.5.1, v0.5.0, v0.4.3, v0.4.2, v0.4.1, v0.4.0`; branch `release/v0.7.0`.
+   The same defect class Phase 10's D-11 already corrected once in HARD-03, recurring one requirement
+   later (D-18).
+
+**Corrected arithmetic.** ORCH-01's own text ("sixteen entries already carry `settled-by` pointers…
+the remaining 104 need the same treatment") counts two different populations. Re-run this session:
+`grep -c "settled-by" .planning/REQUIREMENTS.md` → **10**, none inside the ledger region
+(`sed -n '3607,3931p' .planning/REQUIREMENTS.md | grep -c "settled-by"` → **0**) — the sixteen are
+variant-register entries (`intel/SYNTHESIS.md:335`, `:546`), not ledger rows. **All 120 rows need a
+verdict.** The measured split, re-run this session against `REQUIREMENTS.md:3607-3931`:
+`grep -c '^| REQ-'` → **120**; bare `Verify` rows → **35**; bare `Shipped` rows (`Shipped — ` plus the
+`Shipped → ` arrow form) → **51 + 2 = 53**; the remainder, already carrying a richer verdict → **32**
+(120 − 35 − 53). D-04's headline 35/53/32 figures are reconciled exactly (D-04).
+
+**Per-milestone checkbox corroboration (D-10, ORCH-02).** The five verdicts, once, here, in milestone
+order, none converted into a task, per `intel/task-completion-state.md` and
+`code-verification.md:622-659`: **M9** — 0 open, corroborated, every Epic 1-5 deliverable present.
+**M10** — 0 open, corroborated in artefacts, contradicted in one acceptance criterion (the row above).
+**M11** — 26 open, the only genuinely open count in run 5 and the only one of all 542 items across 75
+task lists that survives verification — all fourteen target files exist, but whether their *content*
+is current is settleable only by reading them, carried to DOCS-01 in Phase 16. **M12** — 3 open, all
+three Task 0.0 feature-branch scaffolding ("Create feature branch," checkout/create
+`feature/m12-epic5-api-security-authorization`, "Confirm a clean baseline") while the Epic 5 code ships
+as `crates/paladin-web/src/agent_auth.rs` — vacuous. **project-management** — 1 open, nonexistent: a
+`- [ ] 1.1 Create template → - [x] 1.1 Create template` formatting example inside a template file.
+Across five runs, the pattern is **understated → accurate → overstated → contradicted → vacuous**, and
+the corpus position (`code-verification.md:647-659`) is that checkbox arithmetic is not a backlog.
+This paragraph is the only home for the pattern in the corpus, so a sixth rediscovery has somewhere to
+land.
+
+**Precedence.** Every verdict in this file is resolved under one order: **ADR → shipped tree →
+`.planning/codebase/` map → `intel/code-verification.md` → PRD → DOC → task-list checkbox** (D-00b). An
+ADR that contradicts shipped code is an instruction to change the code. This phase's own material adds
+one note the order otherwise leaves implicit: a published page under `docs/src/` sits between the tree
+and the maps, because a reader treats it as the contract — which is why the `sidecar.md` and
+`http-service-host.md` defects this phase's D-19 boundary corrects are **corrections**, not mere
+annotations, unlike a `.project/` PRD nobody executes against.
+
+**Inherited stale-citation inventory (D-07).** Phase 12's plan 12-01 measured **87 stale-citation hits
+across 25 files** for the `ci.yml:389-406` citation, corrected **8 sites across four canonical
+governance documents** (`REQUIREMENTS.md`, `PROJECT.md`, `ROADMAP.md`, `STATE.md`), and excluded the
+rest by a stated class-by-class scoping rule recorded in `12-01-SUMMARY.md` §Grep Inventory (frozen
+milestone snapshots, prior-phase records, closed ingest outputs, a closed ledger row, ADR-0024's own
+self-annotated citation, Phase 9's own correction banners, and Phase 12's own files). Those exclusions
+are deliberate historical record; re-running the grep and "fixing" them would undo a decision this
+ledger inherits rather than re-derives.
+
+**Provenance.** Plan 13-01 is the scaffold — wave 1, dated 2026-08-10. It writes every head-note
+element above, all 29 section headers and all 120 row stubs, and fully derives Milestone 9 Epic 1's
+six rows end-to-end, the only section no fan-out plan owns. Every other row's Verdict cell is replaced
+**in place** by the fan-out plan named in the ledger-file contention table below — never inserted,
+deleted, or reordered.
+
+## Shipped, one acceptance criterion false — the single instance
+
+Placed here, at the head of the file, so a reader never has to scan 120 rows to find it (D-02, D-05).
+
+Milestone 10 is recorded 100% complete and ships every artefact, job, target and ruleset it promised —
+**and** it failed one of its own acceptance criteria, M10 Epic 2 §8's "`audit.toml` and `deny.toml`
+are the only places policy/exceptions are defined; no inline advisory-ignore flags remain in CI." Both
+halves, dated: the criterion was false when ingested, and **as of 2026-08-08 it no longer is.** Phase 9
+made it true (plan 09-06, commit `cb75b2b`, deleting the duplicate `security:` job at pre-deletion
+`ci.yml:465-482`); Phase 12 promoted the fix to ADR-0036 and put `scripts/check-workflow-suppressions.sh`
+behind it so it stays true. Re-verified independently this session: `grep -n "cargo audit --ignore"
+.github/workflows/ci.yml` returns **nothing** — the deletion held. A row recording only the failure, or
+only the fix, is wrong; this ledger's own `REQ-audit-toml-single-source` row (Milestone 10 Epic 2,
+below) carries both.
+
+| `REQ-*` ID | Both halves |
+|---|---|
+| `REQ-audit-toml-single-source` | **Failed** — the duplicate `security` job at pre-deletion `ci.yml:465-482` still passed `cargo audit --ignore RUSTSEC-...` flags after `security-audit` (`ci.yml:62-77`) had already been corrected, so two jobs with different names covered the same `Cargo.lock` with different policies. **Fixed, dated 2026-08-08** — commit `cb75b2b` (Phase 9, plan 09-06) deleted the duplicate job; ADR-0036 (Phase 12) records the single-source topology and `scripts/check-workflow-suppressions.sh` regression-guards it. `grep -n "cargo audit --ignore" .github/workflows/ci.yml` → zero matches, re-confirmed this session |
+
+## Verified open — the Deferred-QA block
+
+Placed here for the same reason — this is the highest-confidence forward-work signal in the corpus and
+the direct input to Phases 14, 15 and 16, and a planner must not have to scan 120 rows to find it
+(D-02). Every ID below carries the verdict `Verified open` in its epic section; listed here with its
+owning downstream requirement so a planner never scans for them.
+
+| `REQ-*` ID | Owning downstream requirement |
+|---|---|
+| `REQ-ci-cli-snapshot-job` | PIPE-01 (Phase 15) |
+| `REQ-ci-bench-check-job` | PIPE-01 (Phase 15) |
+| `REQ-ci-combined-coverage-job` | PIPE-02 (Phase 15) |
+| `REQ-codecov-config-thresholds` | PIPE-02 (Phase 15) |
+| `REQ-makefile-coverage-targets` | PIPE-03 (Phase 15) |
+| `REQ-modernize-github-actions` | PIPE-04 (Phase 15) — partially open, the one Epic 25 item found closed |
+| `REQ-contributing-coverage-docs` | PIPE-05 (Phase 15) |
+| `REQ-arch-doc-modernization` | DOCS-02 (Phase 16) — verified open and hidden by a relocation |
+| `REQ-rustdoc-zero-warnings` | DOCS-03 (Phase 16) — open, and the bar itself is contested |
+| `REQ-public-api-doc-audit` | DOCS-03 (Phase 16) |
+| `REQ-asciinema-demos` | DOCS-04 (Phase 16) |
+| `REQ-llm-tool-calling-port` | WEB-04 (Phase 14) |
+| `REQ-llm-tool-calling-adapters` | WEB-03 (the flag) / WEB-04 (the scope) (Phase 14) |
+| `REQ-mock-infrastructure` | DEFER-01 |
+| `REQ-user-service-test-coverage` | DEFER-02 |
+| `REQ-listener-service-test-coverage` | DEFER-03 |
+| `REQ-deferred-coverage-register` | DEFER-01/02/03 |
+| `REQ-user-guides-rewrite` | DOCS-01 (Phase 16) — verified open (content), not in Deferred-QA but the same M11 signal |
+| `REQ-deployment-operations-docs-update` | DOCS-01 (Phase 16) — verified open (content), not in Deferred-QA but the same M11 signal |
+
+## Row order and amendment convention
+
+Epic sections appear in `REQUIREMENTS.md`'s own order and are **never re-sorted**; a later plan
+replaces a row's Verdict cell **in place** and never inserts, deletes, or reorders a row. Amendments
+follow D-00d: edit in place, retain superseded text, date every amendment, never a separate
+corrections file (D-00d).
+
+## Ledger-file contention
+
+The rule every ledger-writing plan in this phase obeys — disjoint section ranges fixed before any
+fan-out plan runs, so parallel wave-2 writes never collide (D-23, T-13-05).
+
+| Plan | Wave | Owns | May |
+|---|---|---|---|
+| 13-01 | 1 | the whole file | create head notes, legend, both highlight tables, all 29 section headings, all 120 row stubs; fully derive Milestone 9 Epic 1 |
+| 13-02 | 2 | Milestone 9 Epics 2-6 | replace Verdict cells inside its own sections; nothing else |
+| 13-03 | 2 | Milestone 10 Epics 1-5 | replace Verdict cells inside its own sections; nothing else |
+| 13-04 | 2 | Milestone 11 Epics 1-2, 3, 4, 6 and 5 & 7 | replace Verdict cells inside its own sections; nothing else |
+| 13-05 | 2 | Milestone 12 Epics 1-4 | replace Verdict cells inside its own sections; nothing else |
+| 13-06 | 2 | Milestone 12 Epics 5-7 | replace Verdict cells inside its own sections; nothing else |
+| 13-07 | 2 | Deferred-QA Epics 25, 26, 27, 28-29 and project-management | replace Verdict cells inside its own sections; nothing else |
+| 13-13 | 4 | a dated close-out amendment section appended at the foot | append only |
+
+Milestone 9 Epic 1's six rows are derived by plan 13-01 and are owned by no fan-out plan. The six wave-2
+plans run in parallel over **disjoint, contiguous** section ranges and perform **cell replacement
+only** — never row insertion, deletion or reordering — so their diffs are non-adjacent hunks in one
+file and merge without conflict. `grep -c '^| REQ-'` reads `120` before and after every one of them.
+
+For every row this plan does not derive, the Verdict cell reads `pending — plan 13-NN` naming the
+owning fan-out plan from the table above, or the row's existing text prefixed
+`run-5 input (not yet re-derived):` when it already carries content. No cell is ever left blank.
+
 ### Milestone 9 Epic 1 — Orchestrator End-to-End Workflow Execution (6 IDs)
 
 **Epic note.** This section is the tracer: derived end-to-end this session at the same evidence bar
