@@ -1,4 +1,4 @@
-# Public API Surface - Generated 2026-08-07 20:57:43 UTC
+# Public API Surface - Generated 2026-08-12 16:40:58 UTC
 # This file tracks all publicly exported items from the paladin crate
 # Generated using cargo-public-api v0.52.0
 
@@ -1779,8 +1779,8 @@ impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::ApiKey
 impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::ApiKeyConfig
 pub struct paladin::config::agents::AuthConfig
 pub paladin::config::agents::AuthConfig::api_keys: alloc::vec::Vec<paladin::config::agents::ApiKeyConfig>
+pub paladin::config::agents::AuthConfig::bearer_token: paladin::config::agents::BearerTokenAuthConfig
 pub paladin::config::agents::AuthConfig::enabled: bool
-pub paladin::config::agents::AuthConfig::jwt: paladin::config::agents::JwtAuthConfig
 impl core::clone::Clone for paladin::config::agents::AuthConfig
 pub fn paladin::config::agents::AuthConfig::clone(&self) -> paladin::config::agents::AuthConfig
 impl core::default::Default for paladin::config::agents::AuthConfig
@@ -1798,6 +1798,25 @@ impl core::marker::Unpin for paladin::config::agents::AuthConfig
 impl core::marker::UnsafeUnpin for paladin::config::agents::AuthConfig
 impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::AuthConfig
 impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::AuthConfig
+pub struct paladin::config::agents::BearerTokenAuthConfig
+pub paladin::config::agents::BearerTokenAuthConfig::enabled: bool
+impl core::clone::Clone for paladin::config::agents::BearerTokenAuthConfig
+pub fn paladin::config::agents::BearerTokenAuthConfig::clone(&self) -> paladin::config::agents::BearerTokenAuthConfig
+impl core::default::Default for paladin::config::agents::BearerTokenAuthConfig
+pub fn paladin::config::agents::BearerTokenAuthConfig::default() -> paladin::config::agents::BearerTokenAuthConfig
+impl core::fmt::Debug for paladin::config::agents::BearerTokenAuthConfig
+pub fn paladin::config::agents::BearerTokenAuthConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl serde_core::ser::Serialize for paladin::config::agents::BearerTokenAuthConfig
+pub fn paladin::config::agents::BearerTokenAuthConfig::serialize<__S>(&self, __S) -> core::result::Result<<__S as serde_core::ser::Serializer>::Ok, <__S as serde_core::ser::Serializer>::Error> where __S: serde_core::ser::Serializer
+impl<'de> serde_core::de::Deserialize<'de> for paladin::config::agents::BearerTokenAuthConfig
+pub fn paladin::config::agents::BearerTokenAuthConfig::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
+impl core::marker::Freeze for paladin::config::agents::BearerTokenAuthConfig
+impl core::marker::Send for paladin::config::agents::BearerTokenAuthConfig
+impl core::marker::Sync for paladin::config::agents::BearerTokenAuthConfig
+impl core::marker::Unpin for paladin::config::agents::BearerTokenAuthConfig
+impl core::marker::UnsafeUnpin for paladin::config::agents::BearerTokenAuthConfig
+impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::BearerTokenAuthConfig
+impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::BearerTokenAuthConfig
 pub struct paladin::config::agents::DocsConfig
 pub paladin::config::agents::DocsConfig::enabled: bool
 impl core::clone::Clone for paladin::config::agents::DocsConfig
@@ -1817,25 +1836,6 @@ impl core::marker::Unpin for paladin::config::agents::DocsConfig
 impl core::marker::UnsafeUnpin for paladin::config::agents::DocsConfig
 impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::DocsConfig
 impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::DocsConfig
-pub struct paladin::config::agents::JwtAuthConfig
-pub paladin::config::agents::JwtAuthConfig::enabled: bool
-impl core::clone::Clone for paladin::config::agents::JwtAuthConfig
-pub fn paladin::config::agents::JwtAuthConfig::clone(&self) -> paladin::config::agents::JwtAuthConfig
-impl core::default::Default for paladin::config::agents::JwtAuthConfig
-pub fn paladin::config::agents::JwtAuthConfig::default() -> paladin::config::agents::JwtAuthConfig
-impl core::fmt::Debug for paladin::config::agents::JwtAuthConfig
-pub fn paladin::config::agents::JwtAuthConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl serde_core::ser::Serialize for paladin::config::agents::JwtAuthConfig
-pub fn paladin::config::agents::JwtAuthConfig::serialize<__S>(&self, __S) -> core::result::Result<<__S as serde_core::ser::Serializer>::Ok, <__S as serde_core::ser::Serializer>::Error> where __S: serde_core::ser::Serializer
-impl<'de> serde_core::de::Deserialize<'de> for paladin::config::agents::JwtAuthConfig
-pub fn paladin::config::agents::JwtAuthConfig::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
-impl core::marker::Freeze for paladin::config::agents::JwtAuthConfig
-impl core::marker::Send for paladin::config::agents::JwtAuthConfig
-impl core::marker::Sync for paladin::config::agents::JwtAuthConfig
-impl core::marker::Unpin for paladin::config::agents::JwtAuthConfig
-impl core::marker::UnsafeUnpin for paladin::config::agents::JwtAuthConfig
-impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::JwtAuthConfig
-impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::JwtAuthConfig
 pub struct paladin::config::agents::RateLimitConfig
 pub paladin::config::agents::RateLimitConfig::burst: u32
 pub paladin::config::agents::RateLimitConfig::enabled: bool
@@ -2419,8 +2419,8 @@ impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::arsenal::Arsen
 impl core::panic::unwind_safe::UnwindSafe for paladin::config::arsenal::ArsenalConfig
 pub struct paladin::config::AuthConfig
 pub paladin::config::AuthConfig::api_keys: alloc::vec::Vec<paladin::config::agents::ApiKeyConfig>
+pub paladin::config::AuthConfig::bearer_token: paladin::config::agents::BearerTokenAuthConfig
 pub paladin::config::AuthConfig::enabled: bool
-pub paladin::config::AuthConfig::jwt: paladin::config::agents::JwtAuthConfig
 impl core::clone::Clone for paladin::config::agents::AuthConfig
 pub fn paladin::config::agents::AuthConfig::clone(&self) -> paladin::config::agents::AuthConfig
 impl core::default::Default for paladin::config::agents::AuthConfig
@@ -2438,6 +2438,25 @@ impl core::marker::Unpin for paladin::config::agents::AuthConfig
 impl core::marker::UnsafeUnpin for paladin::config::agents::AuthConfig
 impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::AuthConfig
 impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::AuthConfig
+pub struct paladin::config::BearerTokenAuthConfig
+pub paladin::config::BearerTokenAuthConfig::enabled: bool
+impl core::clone::Clone for paladin::config::agents::BearerTokenAuthConfig
+pub fn paladin::config::agents::BearerTokenAuthConfig::clone(&self) -> paladin::config::agents::BearerTokenAuthConfig
+impl core::default::Default for paladin::config::agents::BearerTokenAuthConfig
+pub fn paladin::config::agents::BearerTokenAuthConfig::default() -> paladin::config::agents::BearerTokenAuthConfig
+impl core::fmt::Debug for paladin::config::agents::BearerTokenAuthConfig
+pub fn paladin::config::agents::BearerTokenAuthConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl serde_core::ser::Serialize for paladin::config::agents::BearerTokenAuthConfig
+pub fn paladin::config::agents::BearerTokenAuthConfig::serialize<__S>(&self, __S) -> core::result::Result<<__S as serde_core::ser::Serializer>::Ok, <__S as serde_core::ser::Serializer>::Error> where __S: serde_core::ser::Serializer
+impl<'de> serde_core::de::Deserialize<'de> for paladin::config::agents::BearerTokenAuthConfig
+pub fn paladin::config::agents::BearerTokenAuthConfig::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
+impl core::marker::Freeze for paladin::config::agents::BearerTokenAuthConfig
+impl core::marker::Send for paladin::config::agents::BearerTokenAuthConfig
+impl core::marker::Sync for paladin::config::agents::BearerTokenAuthConfig
+impl core::marker::Unpin for paladin::config::agents::BearerTokenAuthConfig
+impl core::marker::UnsafeUnpin for paladin::config::agents::BearerTokenAuthConfig
+impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::BearerTokenAuthConfig
+impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::BearerTokenAuthConfig
 pub struct paladin::config::CitadelConfig
 pub paladin::config::CitadelConfig::autosave_enabled: bool
 pub paladin::config::CitadelConfig::cleanup_enabled: bool
@@ -2562,25 +2581,6 @@ impl core::marker::Unpin for paladin::config::herald::JsonHeraldConfig
 impl core::marker::UnsafeUnpin for paladin::config::herald::JsonHeraldConfig
 impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::herald::JsonHeraldConfig
 impl core::panic::unwind_safe::UnwindSafe for paladin::config::herald::JsonHeraldConfig
-pub struct paladin::config::JwtAuthConfig
-pub paladin::config::JwtAuthConfig::enabled: bool
-impl core::clone::Clone for paladin::config::agents::JwtAuthConfig
-pub fn paladin::config::agents::JwtAuthConfig::clone(&self) -> paladin::config::agents::JwtAuthConfig
-impl core::default::Default for paladin::config::agents::JwtAuthConfig
-pub fn paladin::config::agents::JwtAuthConfig::default() -> paladin::config::agents::JwtAuthConfig
-impl core::fmt::Debug for paladin::config::agents::JwtAuthConfig
-pub fn paladin::config::agents::JwtAuthConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl serde_core::ser::Serialize for paladin::config::agents::JwtAuthConfig
-pub fn paladin::config::agents::JwtAuthConfig::serialize<__S>(&self, __S) -> core::result::Result<<__S as serde_core::ser::Serializer>::Ok, <__S as serde_core::ser::Serializer>::Error> where __S: serde_core::ser::Serializer
-impl<'de> serde_core::de::Deserialize<'de> for paladin::config::agents::JwtAuthConfig
-pub fn paladin::config::agents::JwtAuthConfig::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
-impl core::marker::Freeze for paladin::config::agents::JwtAuthConfig
-impl core::marker::Send for paladin::config::agents::JwtAuthConfig
-impl core::marker::Sync for paladin::config::agents::JwtAuthConfig
-impl core::marker::Unpin for paladin::config::agents::JwtAuthConfig
-impl core::marker::UnsafeUnpin for paladin::config::agents::JwtAuthConfig
-impl core::panic::unwind_safe::RefUnwindSafe for paladin::config::agents::JwtAuthConfig
-impl core::panic::unwind_safe::UnwindSafe for paladin::config::agents::JwtAuthConfig
 pub struct paladin::config::MCPServerConfig
 pub paladin::config::MCPServerConfig::args: core::option::Option<alloc::vec::Vec<alloc::string::String>>
 pub paladin::config::MCPServerConfig::auth_token_env: core::option::Option<alloc::string::String>

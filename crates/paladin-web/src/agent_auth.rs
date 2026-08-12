@@ -4,7 +4,9 @@
 //!
 //! - **API key** via the `X-API-Key` header, matched (constant-time) against a configured
 //!   map of key → [`Principal`];
-//! - **JWT** via `Authorization: Bearer <token>`, verified by the injected [`AuthPort`].
+//! - **Opaque server-issued bearer token** via `Authorization: Bearer <token>`, verified by
+//!   the injected [`AuthPort`] against the server's own in-process token store — not a
+//!   signed or self-describing token.
 //!
 //! On success a [`Principal`] (role + identifier) is attached to the request for the
 //! handlers' authorization checks (per-agent `allowed_roles`, admin gate). Failures render
@@ -33,7 +35,7 @@ use crate::error::ApiError;
 /// An authenticated caller: an identifier plus the role used for authorization.
 #[derive(Debug, Clone)]
 pub struct Principal {
-    /// Stable identifier (API-key name or JWT subject).
+    /// Stable identifier (API-key name or opaque bearer-token subject).
     pub id: String,
     /// Role used for per-agent and admin authorization.
     pub role: UserRole,
@@ -56,8 +58,9 @@ pub struct AgentAuthConfig {
     pub enabled: bool,
     /// API key → principal map.
     pub api_keys: HashMap<String, Principal>,
-    /// Optional JWT verifier (the `AuthPort` implementation is injected by the binary).
-    pub jwt: Option<Arc<dyn AuthPort>>,
+    /// Optional opaque bearer-token verifier (the `AuthPort` implementation is injected by
+    /// the binary).
+    pub token_verifier: Option<Arc<dyn AuthPort>>,
 }
 
 impl Default for AgentAuthConfig {
@@ -66,7 +69,7 @@ impl Default for AgentAuthConfig {
         Self {
             enabled: false,
             api_keys: HashMap::new(),
-            jwt: None,
+            token_verifier: None,
         }
     }
 }
@@ -74,7 +77,7 @@ impl Default for AgentAuthConfig {
 impl AgentAuthConfig {
     /// Whether any credential source is configured (used for the server's fail-closed check).
     pub fn has_credentials(&self) -> bool {
-        !self.api_keys.is_empty() || self.jwt.is_some()
+        !self.api_keys.is_empty() || self.token_verifier.is_some()
     }
 }
 
@@ -108,7 +111,7 @@ fn lookup_api_key(keys: &HashMap<String, Principal>, presented: &str) -> Option<
         .map(|(_, p)| p.clone())
 }
 
-/// Authenticate a request from its headers (bearer JWT checked first, then API key).
+/// Authenticate a request from its headers (opaque bearer token checked first, then API key).
 ///
 /// # Errors
 ///
@@ -118,9 +121,9 @@ pub async fn authenticate(
     headers: &HeaderMap,
     config: &AgentAuthConfig,
 ) -> Result<Principal, ApiError> {
-    // 1. Bearer JWT (only when a verifier is configured).
-    if let (Some(token), Some(jwt)) = (bearer_token(headers), config.jwt.as_ref())
-        && let Ok(claims) = jwt.verify_token(token).await
+    // 1. Opaque bearer token (only when a verifier is configured).
+    if let (Some(token), Some(verifier)) = (bearer_token(headers), config.token_verifier.as_ref())
+        && let Ok(claims) = verifier.verify_token(token).await
     {
         return Ok(Principal {
             id: claims.user_id.to_string(),
@@ -197,12 +200,12 @@ mod tests {
     use uuid::Uuid;
 
     /// Mock AuthPort: any token equal to `valid` verifies as a `User`.
-    struct MockJwt {
+    struct MockTokenVerifier {
         valid: String,
     }
 
     #[async_trait]
-    impl AuthPort for MockJwt {
+    impl AuthPort for MockTokenVerifier {
         async fn issue_token(&self, _u: Uuid, _r: UserRole) -> Result<AuthToken, AuthError> {
             Err(AuthError::Internal("unused".into()))
         }
@@ -234,7 +237,7 @@ mod tests {
         AgentAuthConfig {
             enabled: true,
             api_keys,
-            jwt: None,
+            token_verifier: None,
         }
     }
 
@@ -292,11 +295,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn valid_jwt_authenticates() {
+    async fn valid_bearer_token_authenticates() {
         let cfg = AgentAuthConfig {
             enabled: true,
             api_keys: HashMap::new(),
-            jwt: Some(Arc::new(MockJwt {
+            token_verifier: Some(Arc::new(MockTokenVerifier {
                 valid: "good-token".to_string(),
             })),
         };

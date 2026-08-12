@@ -52,7 +52,7 @@
             "api_key": []
           },
           {
-            "jwt": []
+            "bearer_token": []
           }
         ]
       },
@@ -140,7 +140,7 @@
             "api_key": []
           },
           {
-            "jwt": []
+            "bearer_token": []
           }
         ]
       }
@@ -201,7 +201,7 @@
             "api_key": []
           },
           {
-            "jwt": []
+            "bearer_token": []
           }
         ]
       },
@@ -263,7 +263,7 @@
             "api_key": []
           },
           {
-            "jwt": []
+            "bearer_token": []
           }
         ]
       }
@@ -374,7 +374,7 @@
             "api_key": []
           },
           {
-            "jwt": []
+            "bearer_token": []
           }
         ]
       }
@@ -481,7 +481,7 @@
             "api_key": []
           },
           {
-            "jwt": []
+            "bearer_token": []
           }
         ]
       }
@@ -572,7 +572,7 @@
             "api_key": []
           },
           {
-            "jwt": []
+            "bearer_token": []
           }
         ]
       }
@@ -642,7 +642,7 @@
             "api_key": []
           },
           {
-            "jwt": []
+            "bearer_token": []
           }
         ]
       }
@@ -881,10 +881,9 @@
         "in": "header",
         "name": "X-API-Key"
       },
-      "jwt": {
+      "bearer_token": {
         "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
+        "scheme": "bearer"
       }
     }
   }

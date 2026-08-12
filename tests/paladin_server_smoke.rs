@@ -210,7 +210,7 @@ async fn server_enforces_authentication_when_enabled() {
         .with_auth(AgentAuthConfig {
             enabled: true,
             api_keys,
-            jwt: None,
+            token_verifier: None,
         });
     let app = with_http_layers(agent_router(state), &HttpLayersConfig::default());
 

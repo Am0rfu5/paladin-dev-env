@@ -244,7 +244,7 @@ pub(crate) fn ok_body<T: Serialize>(value: &T) -> JsonValue {
         (status = 502, description = "Upstream execution failure", body = ApiErrorBody),
         (status = 504, description = "Execution timed out", body = ApiErrorBody),
     ),
-    security(("api_key" = []), ("jwt" = [])),
+    security(("api_key" = []), ("bearer_token" = [])),
 )]
 pub async fn execute_agent(
     State(state): State<AgentApiState>,
@@ -287,7 +287,7 @@ pub async fn execute_agent(
         (status = 200, description = "Registered agents", body = [AgentSummary]),
         (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
     ),
-    security(("api_key" = []), ("jwt" = [])),
+    security(("api_key" = []), ("bearer_token" = [])),
 )]
 pub async fn list_agents(State(state): State<AgentApiState>) -> (StatusCode, JsonValue) {
     let summaries: Vec<AgentSummary> = state
@@ -313,7 +313,7 @@ pub async fn list_agents(State(state): State<AgentApiState>) -> (StatusCode, Jso
         (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
         (status = 404, description = "Unknown agent", body = ApiErrorBody),
     ),
-    security(("api_key" = []), ("jwt" = [])),
+    security(("api_key" = []), ("bearer_token" = [])),
 )]
 pub async fn describe_agent(
     State(state): State<AgentApiState>,
@@ -351,7 +351,7 @@ pub async fn describe_agent(
         (status = 422, description = "Provisioning failed", body = ApiErrorBody),
         (status = 501, description = "Runtime registration not enabled", body = ApiErrorBody),
     ),
-    security(("api_key" = []), ("jwt" = [])),
+    security(("api_key" = []), ("bearer_token" = [])),
 )]
 pub async fn register_agent(
     State(state): State<AgentApiState>,
@@ -416,7 +416,7 @@ pub async fn register_agent(
         (status = 403, description = "Admin role required", body = ApiErrorBody),
         (status = 404, description = "Unknown agent", body = ApiErrorBody),
     ),
-    security(("api_key" = []), ("jwt" = [])),
+    security(("api_key" = []), ("bearer_token" = [])),
 )]
 pub async fn deregister_agent(
     State(state): State<AgentApiState>,
@@ -520,7 +520,7 @@ fn timed_event_stream(
         (status = 502, description = "Upstream execution failure", body = ApiErrorBody),
         (status = 504, description = "Execution timed out", body = ApiErrorBody),
     ),
-    security(("api_key" = []), ("jwt" = [])),
+    security(("api_key" = []), ("bearer_token" = [])),
 )]
 pub async fn execute_agent_stream(
     State(state): State<AgentApiState>,
@@ -604,7 +604,7 @@ pub async fn execute_agent_stream(
         (status = 403, description = "Role not permitted for this agent", body = ApiErrorBody),
         (status = 404, description = "Unknown agent", body = ApiErrorBody),
     ),
-    security(("api_key" = []), ("jwt" = [])),
+    security(("api_key" = []), ("bearer_token" = [])),
 )]
 pub async fn enqueue_job(
     State(state): State<AgentApiState>,
@@ -663,7 +663,7 @@ pub async fn enqueue_job(
         (status = 401, description = "Missing/invalid credentials", body = ApiErrorBody),
         (status = 404, description = "Unknown job", body = ApiErrorBody),
     ),
-    security(("api_key" = []), ("jwt" = [])),
+    security(("api_key" = []), ("bearer_token" = [])),
 )]
 pub async fn get_job(
     State(state): State<AgentApiState>,
