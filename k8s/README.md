@@ -22,6 +22,12 @@ kubectl apply -f k8s/server/secret.yaml -f k8s/server/
 # Probe:  kubectl -n paladin port-forward svc/paladin-server 8080:80  &&  curl localhost:8080/health
 ```
 
+> **Scaling note:** the shipped `configmap.yaml` authenticates with static API keys sourced
+> from a Secret, byte-identical in every pod, so horizontal scaling is safe with the shipped
+> configuration. If you flip `http.auth.bearer_token.enabled: true`, do not scale past a
+> single replica — that store is in-process and per-pod, so a token issued by one replica
+> does not verify on another. See ADR-0041.
+
 ## Quick Start
 
 ### Prerequisites
@@ -123,6 +129,13 @@ kubectl edit deployment paladin -n paladin
 ### Scaling
 
 #### Horizontal Scaling
+
+Safe with the `paladin-server` shipped configuration — authentication is by static API keys
+from a Secret, byte-identical in every pod. **Not** safe while
+`http.auth.bearer_token.enabled: true` in [`server/configmap.yaml`](server/configmap.yaml):
+that store is in-process and per-pod, so a token issued by one replica does not verify on
+another. Pin to a single replica if you enable it, until the shared-store implementation
+exists (ADR-0041).
 
 ```bash
 # Scale to 5 replicas

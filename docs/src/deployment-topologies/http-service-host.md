@@ -100,6 +100,14 @@ key/token maps to a role. Per-agent `allowed_roles` gate invocation, and runtime
 register/deregister require an `admin` role. `/health`, `/ready`, `/openapi.json`, and `/docs`
 are always reachable without a credential.
 
+**Choosing a credential path for a multi-replica deployment:** the API-key path scales
+horizontally without qualification — keys are static and byte-identical across every replica.
+The `http.auth.bearer_token.enabled` path does not: the shipped `AuthPort` implementation is
+an in-process, per-process token store, so a token issued by one replica is not verified by
+another. A topology serving more than one replica of `paladin-server` and relying on
+bearer-token verification would need the shared-store `AuthPort` implementation that
+ADR-0041 defers with a named trigger, not the store shipped today.
+
 ## Running it
 
 **Binary:**
