@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 4
+open_count: 5
 waived_count: 0
 fixed_count: 1
-total_count: 5
-last_updated: 2026-08-12T16:51:08.832Z
+total_count: 6
+last_updated: 2026-08-12T17:13:58.989Z
 ---
 
 # Broken Windows Ledger
@@ -20,6 +20,7 @@ last_updated: 2026-08-12T16:51:08.832Z
 | 3 | 07 | deviation | .project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md |  | Task 3's requested single combined commit for ADR-0016 + PRD annotation was split into two atomic commits (9e8db80, 71ea46e) per standard task_commit_protocol; both files present, no content impact. | open |  | 2026-08-06T18:09:04.871Z |  |
 | 4 | 07 | deviation | .project/Milestone_5-Workspace-Decomposition/Epic_2/prd-paladin-ports-extraction.md |  | No fabricated 3rd strikethrough correction for CONTEXT.md D-08(5)'s anticipated section-1 Milestone 1/Epic 2 cross-reference — re-verified absent from live tree (matches ADR-0014's own flagged drift); acceptance criterion expecting >=3 strikethrough lines not met by design. | open |  | 2026-08-06T18:09:08.207Z |  |
 | 5 | 14 | unrun-verify | Cargo.toml |  | cargo test --workspace not run to completion for 14-01: system-wide disk exhaustion (830G/875G used, 0 avail on /workspace mount) blocked full workspace compile; targeted plan <verify> commands (paladin-ai lib config::agents, paladin-web full suite, paladin-server binary build, openapi drift guard, check-api-surface.sh) all passed | open |  | 2026-08-12T16:51:08.832Z |  |
+| 6 | 14 | unrun-verify | N/A (workspace-wide) |  | 14-04: full 'cargo test --workspace' not run — shared /workspace mount at 99%25 (13G free), matching 14-01's documented disk-exhaustion condition; the plan's own targeted verify (cargo test --bin paladin-server --features web-server, cargo fmt --check, cargo clippy --all-targets --features web-server -- -D warnings) all ran to completion and passed | open |  | 2026-08-12T17:13:58.989Z |  |
 
 ````json
 [
@@ -81,6 +82,18 @@ last_updated: 2026-08-12T16:51:08.832Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-08-12T16:51:08.832Z",
+    "resolved_at": null
+  },
+  {
+    "id": 6,
+    "kind": "unrun-verify",
+    "phase": "14",
+    "file": "N/A (workspace-wide)",
+    "line": null,
+    "description": "14-04: full 'cargo test --workspace' not run — shared /workspace mount at 99%25 (13G free), matching 14-01's documented disk-exhaustion condition; the plan's own targeted verify (cargo test --bin paladin-server --features web-server, cargo fmt --check, cargo clippy --all-targets --features web-server -- -D warnings) all ran to completion and passed",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-12T17:13:58.989Z",
     "resolved_at": null
   }
 ]

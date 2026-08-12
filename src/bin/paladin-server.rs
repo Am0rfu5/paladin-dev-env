@@ -137,6 +137,19 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Warning emitted, unconditionally, every time `build_auth_config` wires the in-process
+/// bearer-token store (`http.auth.bearer_token.enabled = true`).
+///
+/// The store verifies a token only on the process that issued it — it holds no shared state
+/// across replicas. A running pod has no built-in way to learn how many peers it has without
+/// calling out to the orchestrator's own API, so this warning is not conditioned on an
+/// observed replica count (see ADR-0041); it fires on every start that wires the store,
+/// whether that deployment runs one replica or many.
+const IN_PROCESS_TOKEN_STORE_WARNING: &str = "in-process bearer-token store ENABLED \
+     (http.auth.bearer_token.enabled = true) — this is an in-process token store: tokens verify \
+     only on the issuing process. Do not scale past one replica while this store is wired. \
+     See ADR-0041 (.planning/decisions/0041-in-process-token-store-single-replica-scope.md).";
+
 /// Translate the config `auth` section into the web layer's [`AgentAuthConfig`].
 ///
 /// **Fail-closed:** when auth is enabled but no credential source (API keys or an opaque
@@ -174,6 +187,7 @@ fn build_auth_config(cfg: &AuthConfig) -> Result<AgentAuthConfig, Box<dyn std::e
     // primarily useful when token issuance is co-located; API keys are the standalone
     // service-to-service mechanism.
     let token_verifier: Option<Arc<dyn AuthPort>> = if cfg.bearer_token.enabled {
+        warn!("{IN_PROCESS_TOKEN_STORE_WARNING}");
         Some(Arc::new(InMemoryTokenAuthAdapter::new()))
     } else {
         None
@@ -236,5 +250,114 @@ async fn shutdown_signal() {
     tokio::select! {
         _ = ctrl_c => info!("received Ctrl-C; shutting down"),
         _ = terminate => info!("received SIGTERM; shutting down"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use paladin::config::agents::{ApiKeyConfig, BearerTokenAuthConfig};
+    use paladin_core::platform::container::user::UserRole;
+    use std::sync::{Mutex, Once};
+
+    /// A `log::Log` implementation that records formatted `(level, message)` pairs instead of
+    /// printing them, so tests can assert on what `build_auth_config` actually emits rather
+    /// than on documentation about what it emits.
+    struct CapturingLogger {
+        records: Mutex<Vec<(log::Level, String)>>,
+    }
+
+    impl log::Log for CapturingLogger {
+        fn enabled(&self, _metadata: &log::Metadata) -> bool {
+            true
+        }
+
+        fn log(&self, record: &log::Record) {
+            if let Ok(mut records) = self.records.lock() {
+                records.push((record.level(), record.args().to_string()));
+            }
+        }
+
+        fn flush(&self) {}
+    }
+
+    static CAPTURING_LOGGER: CapturingLogger = CapturingLogger {
+        records: Mutex::new(Vec::new()),
+    };
+    static INIT: Once = Once::new();
+
+    /// Install the capturing logger as the global `log` sink, once per test binary run.
+    ///
+    /// `log`'s default max level is `Off`, so `set_max_level(Warn)` is required here — without
+    /// it every `log::Log::enabled`/`log` call is skipped before it reaches this logger at all,
+    /// and the capture would pass vacuously.
+    fn install_capturing_logger() {
+        INIT.call_once(|| {
+            log::set_logger(&CAPTURING_LOGGER).expect("failed to install capturing test logger");
+            log::set_max_level(log::LevelFilter::Warn);
+        });
+    }
+
+    /// Tests in this binary run in parallel and share the one process-global logger, so callers
+    /// must search for their own expected substring rather than assert on buffer length or on
+    /// an exact index.
+    fn captured_records_contain(level: log::Level, needle: &str) -> bool {
+        CAPTURING_LOGGER
+            .records
+            .lock()
+            .expect("capturing logger mutex poisoned")
+            .iter()
+            .any(|(recorded_level, message)| *recorded_level == level && message.contains(needle))
+    }
+
+    fn api_key(name: &str) -> ApiKeyConfig {
+        ApiKeyConfig {
+            key: format!("test-key-{name}"),
+            name: name.to_string(),
+            role: UserRole::User,
+        }
+    }
+
+    #[test]
+    fn build_auth_config_warns_when_in_process_token_store_is_wired() {
+        install_capturing_logger();
+
+        let cfg = AuthConfig {
+            enabled: true,
+            api_keys: vec![api_key("wired-store-test")],
+            bearer_token: BearerTokenAuthConfig { enabled: true },
+        };
+
+        let result = build_auth_config(&cfg);
+
+        let auth = result.expect("enabled auth with one API key and the store wired must build");
+        assert!(
+            auth.token_verifier.is_some(),
+            "the bearer-token verifier must be wired when http.auth.bearer_token.enabled = true"
+        );
+        assert!(
+            captured_records_contain(log::Level::Warn, IN_PROCESS_TOKEN_STORE_WARNING),
+            "expected a WARN record carrying the in-process token store constraint; captured: {:?}",
+            CAPTURING_LOGGER.records.lock().unwrap()
+        );
+    }
+
+    #[test]
+    fn build_auth_config_fails_closed_when_enabled_with_no_credentials() {
+        install_capturing_logger();
+
+        let cfg = AuthConfig {
+            enabled: true,
+            api_keys: vec![],
+            bearer_token: BearerTokenAuthConfig { enabled: false },
+        };
+
+        let result = build_auth_config(&cfg);
+
+        assert!(
+            result.is_err(),
+            "authentication enabled with no API keys and the token store disabled must refuse \
+             to start, not silently build an unauthenticated-but-enabled config"
+        );
     }
 }

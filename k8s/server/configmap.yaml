@@ -36,6 +36,11 @@ data:
           - key: "${PALADIN_API_KEY_APP}"
             name: "frontend"
             role: "user"
+        # The shipped AuthPort implementation behind this flag is an in-process, per-pod
+        # token store: a token issued by one pod does not verify on another. Flipping this
+        # to true requires pinning the Deployment to a single replica until the shared-store
+        # implementation exists (ADR-0041). Leave false to keep horizontal scaling safe —
+        # the API keys above are byte-identical in every pod.
         bearer_token:
           enabled: false
       # Serve the OpenAPI spec + Swagger UI (set false to disable in production).
