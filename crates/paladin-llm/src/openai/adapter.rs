@@ -645,9 +645,12 @@ impl LlmPort for OpenAIAdapter {
             // `LlmRequest` carries no field through which a tool definition could
             // travel, and this adapter neither sends `tools` nor parses `tool_calls`
             // out of a response. The flag describes what this adapter does, not what
-            // the vendor's API offers (WEB-03, D-14).
+            // the vendor's API offers (WEB-03, D-14). This adapter's `generate()` also
+            // hard-codes the absent function call in the response it builds, so the
+            // function-calling flag describes what this adapter does rather than what
+            // the vendor's API offers (WEB-03, D-12).
             supports_tool_calling: false,
-            supports_function_calling: true,
+            supports_function_calling: false,
             supports_vision: true,
             max_context_tokens: Some(128000),
             supports_embeddings: true,
@@ -708,6 +711,10 @@ mod tests {
         // `LlmRequest` has no field through which a tool definition could travel, and
         // this adapter neither sends `tools` nor parses `tool_calls` (WEB-03, D-14).
         assert!(!caps.supports_tool_calling);
+        // This adapter hard-codes the absent function call in the response it
+        // builds, so the flag describes what this adapter does rather than what
+        // the vendor's API offers (WEB-03, D-12).
+        assert!(!caps.supports_function_calling);
         assert!(caps.supports_vision);
         assert_eq!(caps.max_context_tokens, Some(128000));
         assert_eq!(caps.temperature_range, Some((0.0, 1.0)));

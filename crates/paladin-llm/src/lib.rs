@@ -94,12 +94,22 @@ mod capability_invariants {
     /// `attachments`, `stream`, `metadata` — no field through which a tool definition
     /// could travel — so the request surface never supports tool calling today, and
     /// every shipped adapter's declared capability must match that fact.
+    ///
+    /// Extended for D-12: no shipped adapter's `generate()` ever returns a populated
+    /// `function_call` on its `LlmResponse` — every occurrence of a populated one in
+    /// the workspace is in a test double under `tests/` — so `supports_function_calling`
+    /// is pinned here too, by the same test, so the two flags cannot drift apart
+    /// independently again.
     #[test]
     fn test_capabilities_tool_calling_matches_request_surface() {
         // `LlmRequest` has no tools field today, so no adapter's request path can
         // carry a tool call. This is the single source of truth the correspondence
         // below is checked against.
         const REQUEST_SURFACE_SUPPORTS_TOOL_CALLING: bool = false;
+        // No shipped adapter's `generate()` ever returns `Some(FunctionCall)` on the
+        // `LlmResponse` it builds. This is the single source of truth the second
+        // correspondence below is checked against (D-12).
+        const RESPONSE_SURFACE_SUPPORTS_FUNCTION_CALLING: bool = false;
 
         let openai = OpenAIAdapter::new(OpenAIConfig::new("test-key".to_string())).unwrap();
         let anthropic = AnthropicAdapter::new(AnthropicConfig::new(
@@ -116,21 +126,33 @@ mod capability_invariants {
         ))
         .unwrap();
 
-        for (name, declared) in [
-            ("openai", openai.get_capabilities().supports_tool_calling),
+        for (name, declared_tool_calling, declared_function_calling) in [
+            (
+                "openai",
+                openai.get_capabilities().supports_tool_calling,
+                openai.get_capabilities().supports_function_calling,
+            ),
             (
                 "anthropic",
                 anthropic.get_capabilities().supports_tool_calling,
+                anthropic.get_capabilities().supports_function_calling,
             ),
             (
                 "deepseek",
                 deepseek.get_capabilities().supports_tool_calling,
+                deepseek.get_capabilities().supports_function_calling,
             ),
         ] {
             assert_eq!(
-                declared, REQUEST_SURFACE_SUPPORTS_TOOL_CALLING,
-                "{name}'s declared supports_tool_calling ({declared}) must match whether a \
+                declared_tool_calling, REQUEST_SURFACE_SUPPORTS_TOOL_CALLING,
+                "{name}'s declared supports_tool_calling ({declared_tool_calling}) must match whether a \
                  tool-calling request path exists on LlmRequest ({REQUEST_SURFACE_SUPPORTS_TOOL_CALLING})"
+            );
+            assert_eq!(
+                declared_function_calling, RESPONSE_SURFACE_SUPPORTS_FUNCTION_CALLING,
+                "{name}'s declared supports_function_calling ({declared_function_calling}) must match \
+                 whether generate() ever returns a populated function_call \
+                 ({RESPONSE_SURFACE_SUPPORTS_FUNCTION_CALLING})"
             );
         }
     }
