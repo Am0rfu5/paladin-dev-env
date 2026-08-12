@@ -119,3 +119,11 @@ None - no external service configuration required.
 ---
 *Phase: 14-api-contract-truthfulness*
 *Completed: 2026-08-12*
+
+## Self-Check: PASSED
+
+- FOUND: .planning/decisions/0042-llm-native-tool-calling-deferred.md
+- FOUND: .planning/phases/14-api-contract-truthfulness/14-06-SUMMARY.md
+- FOUND commit: 09374f6 (Task 1)
+- FOUND commit: e86d27f (Task 2)
+- FOUND commit: 75e5394 (plan metadata / this SUMMARY)
