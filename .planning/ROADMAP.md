@@ -869,9 +869,9 @@ Plans:
 Plans:
 **Wave 1** *(parallel — no shared files)*
 
-- [ ] 14-01-PLAN.md — Tracer: the WEB-01 token-vocabulary rename end-to-end through config, binary wiring, web middleware and the published contract, with both machine baselines regenerated; plus the prose/YAML sweep and the BREAKING changelog entries. *Leads with a one-way `checkpoint:decision` ratifying the replacement identifiers.*
-- [ ] 14-02-PLAN.md — WEB-03's last asymmetric capability flag flipped and the correspondence test extended to pin both flags; plus D-15a's sidecar route fix and its `API_V1_PREFIX` drift guard (closes T-13-20 / AR-13-01)
-- [ ] 14-03-PLAN.md — D-13's tool-call reachability statement: rustdoc on the capability type and the response field that gates the tool branch, plus the four documentation pages that imply otherwise
+- [x] 14-01-PLAN.md — Tracer: the WEB-01 token-vocabulary rename end-to-end through config, binary wiring, web middleware and the published contract, with both machine baselines regenerated; plus the prose/YAML sweep and the BREAKING changelog entries. *Leads with a one-way `checkpoint:decision` ratifying the replacement identifiers.*
+- [x] 14-02-PLAN.md — WEB-03's last asymmetric capability flag flipped and the correspondence test extended to pin both flags; plus D-15a's sidecar route fix and its `API_V1_PREFIX` drift guard (closes T-13-20 / AR-13-01)
+- [x] 14-03-PLAN.md — D-13's tool-call reachability statement: rustdoc on the capability type and the response field that gates the tool branch, plus the four documentation pages that imply otherwise
 
 **Wave 2** *(blocked on Wave 1)*
 
