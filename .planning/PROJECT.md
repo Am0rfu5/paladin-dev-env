@@ -398,7 +398,9 @@ while the code ships):
   CORS/body-limit/timeout layers, tower-governor rate limiting (Epic 4)
 - ✓ API-key and bearer auth with constant-time comparison, per-agent `allowed_roles`, an admin gate
   on runtime registration, and a redaction test proving a key value does not leak (Epic 5).
-  **The bearer path is documented as JWT and implemented as opaque tokens** — see Active
+  ~~**The bearer path is documented as JWT and implemented as opaque tokens**~~ — **resolved in
+  Phase 14 (2026-08-12)**: the vocabulary was renamed to match the mechanism (ADR-0040), and the
+  single-replica scope of the in-process store is now stated in the deployment artefacts (ADR-0041)
 - ✓ OpenAPI generation with Swagger UI and a **committed `openapi.json` drift baseline** (Epic 6)
 - ✓ `Dockerfile.server`, `docker-compose.yml`, `k8s/` manifests with liveness and readiness probes,
   a runnable `examples/http_service_host.rs`, and the deployment-topology docs updated to the
@@ -521,11 +523,13 @@ forward scope and are not part of v0.7.2.
 - [ ] Complete the version trajectory v0.3.0 → v0.4.0 → v0.5.0 → v0.6.0 so REL-01 converges with
       the whole chain in view, and close the fifth milestone-numbering collision that was predicted
       and did not occur (ORCH-05)
-- [ ] **Resolve the token mechanism** — the agent API is documented as JWT throughout and
-      implemented as opaque in-process tokens, with no `jsonwebtoken` dependency anywhere and an
-      open question that is unanswerable for the shipped adapter (WEB-01); and decide whether the
-      shipped Kubernetes Deployment is pinned to one replica or gets the shared token store
-      Milestone 9 said it would need (WEB-02)
+- [x] **Resolve the token mechanism** — *validated in Phase 14: API Contract Truthfulness
+      (2026-08-12).* The vocabulary was renamed end to end to the mechanism actually shipped —
+      opaque server-issued bearer tokens (WEB-01, ADR-0040) — dissolving Milestone 12 Epic 5's
+      Open Question 4 rather than answering it. The Kubernetes Deployment was pinned to neither
+      literal exit: the shipped manifests authenticate with static API keys and now state the
+      in-process store's single-replica scope, with the shared store deferred under a named
+      trigger (WEB-02, ADR-0041)
 - [ ] Make `ProviderCapabilities` report the tool-calling support the adapters actually have — a
       correctness defect independent of Epic 27 (WEB-03) — and decide whether LLM tool calling is
       in scope at all, given that Arsenal/MCP already provides tool execution (WEB-04)
@@ -913,6 +917,10 @@ their policy and **the policy is the gap.** Separately, the three 2026 *vulnerab
 authorised by **no** ingested document: FR-3 and §5 name exactly two. SUPPLY-02.
 
 **The agent API is documented as JWT and implemented as opaque tokens.**
+> **RESOLVED in Phase 14 (2026-08-12).** The analysis below records the state as found. Phase 14
+> renamed the vocabulary to match the mechanism rather than changing the mechanism: see ADR-0040
+> (opaque bearer-token mechanism ratified) and ADR-0041 (in-process store, single-replica scope,
+> shared store deferred with a named trigger). Open Question 4 is dissolved, not answered.
 `grep -rn "jsonwebtoken" Cargo.toml crates/*/Cargo.toml` returns **nothing** — the crate is not a
 dependency anywhere in the workspace. The only `AuthPort` implementation is
 `src/infrastructure/adapters/auth/in_memory_token_auth_adapter.rs`, Milestone 9 Epic 5's opaque,
