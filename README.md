@@ -151,8 +151,13 @@ Authentication & authorization (the `http.auth` section):
 - **Enabled by default and fail-closed:** the server refuses to start if `auth.enabled` is true and
   no credentials are configured. Set `auth.enabled: false` for trusted/dev use (logged as a warning).
 - **API keys** — send `X-API-Key: <key>`; each key maps to a principal `{ name, role }`. Ideal for
-  service-to-service callers. **JWT** — send `Authorization: Bearer <token>`, verified via the wired
-  `AuthPort`. Either credential authenticates a request.
+  service-to-service callers. **Bearer tokens** — send `Authorization: Bearer <token>`, verified via
+  the wired `AuthPort`. These are opaque, server-issued tokens: a random string checked against the
+  store's own hashed records, not a signed or self-describing token such as a JWT. The shipped store
+  is in-process, so a token issued by one replica does not verify against another (see
+  [ADR-0040](.planning/decisions/0040-opaque-bearer-token-mechanism.md) and
+  [ADR-0041](.planning/decisions/0041-in-process-token-store-single-replica-scope.md)). Either
+  credential authenticates a request.
 - **Per-agent authorization** — an agent's optional `allowed_roles` restricts who may invoke it
   (empty ⇒ any authenticated caller); a disallowed role gets `403`.
 - **Admin gate** — `POST /v1/agents` (register) and `DELETE /v1/agents/{id}` (deregister) require an

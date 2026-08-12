@@ -128,12 +128,14 @@
 - Key storage: Environment variables (never in VCS)
 - Example env vars: `PALADIN_API_KEY_CI`, `PALADIN_API_KEY_APP`
 
-**JWT Authentication**
-- Method: Bearer token via Authorization header (optional, feature-gated)
-- Configuration: In `config.yml` under `http.auth.jwt`
+**Bearer Token Authentication**
+- Method: Opaque server-issued bearer token via Authorization header (optional, feature-gated)
+- Configuration: In `config.yml` under `http.auth.bearer_token`
 - Purpose: User identity assertion and role-based access control
 - Status: Optional, not enabled by default (requires configuration)
-- Token storage: In-process via `AuthPort` trait
+- Token storage: In-process via `AuthPort` trait — a random string checked against the store's own
+  hashed records, not a signed or self-describing token such as a JWT (ADR-0040). The in-process
+  store is single-replica scoped (ADR-0041).
 
 **Authorization:**
 - Role-based access control (RBAC) on agent invocation
