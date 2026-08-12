@@ -196,3 +196,9 @@ None beyond the plan's own threat model, which is addressed by construction: T-1
 ---
 *Phase: 14-api-contract-truthfulness*
 *Completed: 2026-08-12*
+
+## Self-Check: PASSED
+
+All three claimed modified files verified present on disk (`test -f`, three calls) plus this
+SUMMARY itself. All three commit hashes (`1b664ec`, `5c23958`, `bfb2ec9`) verified present in
+`git log --oneline --all`.
