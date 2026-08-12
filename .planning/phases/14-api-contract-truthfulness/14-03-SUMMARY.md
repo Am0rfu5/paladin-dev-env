@@ -104,6 +104,14 @@ _Note: this plan is documentation-only; both commits use `docs(14-03):` type._
 
 ## Decisions Made
 
+- **REQUIREMENTS.md's WEB-04 checkbox was deliberately NOT marked complete by this plan.** Three
+  plans in this phase declare `requirements: [WEB-04]` (14-03, 14-06, 14-07); WEB-04's own "done
+  when" text is "LLM tool calling is either in scope with a plan, or withdrawn with a reason" --
+  a decision this plan's documentation sweep does not itself make. That decision is ADR-0042,
+  owned by sibling plan 14-06. Marking the single WEB-04 checkbox complete after only this plan's
+  documentation half would misstate the record the way STATE.md's own accumulated context already
+  warns against ("checkbox state is the least reliable signal in this project"). Left `[ ]` for
+  14-06/14-07 (or the orchestrator) to close with full evidence once ADR-0042 lands.
 - Used a labeled "Tool-call reachability" / "## Tool-call reachability" sub-section in the rustdoc rather than a single trailing sentence, to match the file's existing detailed-doc voice used for `FinishReason` and `temperature_range`.
 - Each of the four documentation pages states the limitation in its own register (a callout box in the user guide, a footnote under a diagram, a sentence after a type listing, an inline code comment plus prose in the contributing guide) rather than a single copy-pasted paragraph, per the plan's instruction.
 - The tool-integration.md callout explicitly states how a reader invokes Arsenal today (directly, via the `ArsenalPort` API) so the note reads as "the LLM cannot trigger this yet" rather than "tools do not work" -- required by both the plan's must_haves and the WEB-04 prohibition against implying Arsenal/MCP itself is unavailable.
