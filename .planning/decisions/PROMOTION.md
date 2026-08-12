@@ -59,8 +59,23 @@ the plans that follow in this same phase):
 | 0037 | `agent-route-surface-v1` | The agent API route surface is `/v1`-prefixed; four Milestone 12 Epics' unprefixed route text is superseded provenance, not a live contract (Phase 13, plan 13-08) |
 | 0038 | `agent-provisioner-placement` | `AgentProvisioner` stays in `paladin-web`; `AgentSpec` is an OpenAPI-annotated HTTP request DTO (`utoipa::ToSchema`), and `paladin-ports` carries no `utoipa` dependency, against ADR-0015 Decision (i) (Phase 13, plan 13-09) |
 | 0039 | `http-topology-no-garrison-no-arsenal` | The absence of Garrison and Arsenal on HTTP-served agents is a permanent property of the shipped topology, not planned scope; the deployment-topology docs now state the limitation in prose (Phase 13, plan 13-09) |
+| 0040 | `opaque-bearer-token-mechanism` | Opaque server-issued bearer tokens ratified as the agent API's token mechanism; M12 Epic 5 Open Question 4 dissolved, not answered (Phase 14, plan 14-05) |
+| 0041 | `in-process-token-store-single-replica-scope` | The shared-store requirement scoped to the `AuthPort` credential path, not the replica count; WEB-02's own two literal exits declined and the deviation stated explicitly; the shared store deferred with a named trigger (Phase 14, plan 14-05) |
+| 0042 | `llm-native-tool-calling-deferred` | LLM-native tool calling (Deferred-QA Epic 27) recorded as a future capability improvement, not built, with a named reintroduction trigger and owner (Phase 14, plan 14-06) |
 
-**Next free ADR number: 0040**
+**Next free ADR number: 0043**
+
+*Dated note, 2026-08-12 (plan 14-07):* the line advances by **three**, from 0040 to 0043, because
+Phase 14 authored all three of ADR-0040 through ADR-0042 across its own plans — plan 14-05 authored
+ADR-0040 (opaque server-issued bearer tokens ratified as the agent API's token mechanism, `conforms`,
+the code already matching per plan 14-01) and ADR-0041 (the in-process token store's shared-store
+requirement scoped to the `AuthPort` credential path, `conforms`, the code already matching per plan
+14-04); plan 14-06 authored ADR-0042 (LLM-native tool calling recorded as a deferred future
+capability with a named trigger and owner, `conforms` — no code change is made by the record itself).
+A seventh phase, after Phases 1, 8, 9, 10, 12 and 13, whose executing phase is also each ADR's owning
+phase. `ls .planning/decisions/004{0,1,2}-*.md` (re-run before writing this note) confirms all three
+files exist with contiguous numbers, none skipped or reused, and no existing index row above was
+renumbered, reworded or reordered.
 
 *Dated note, 2026-08-10 (plan 13-13):* the line advances by **three**, from 0037 to 0040, because
 Phase 13 authored all three of ADR-0037 through ADR-0039 across its own plans — plan 13-08 authored

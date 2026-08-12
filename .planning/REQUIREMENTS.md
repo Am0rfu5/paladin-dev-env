@@ -2499,6 +2499,21 @@ final forward-work signal Phases 14, 15 and 16 receive (D-22).**
    the `{{#include}}` targets as well as the including page, or assert against the rendered
    `docs/book/` output instead of `docs/src/`. Scoping a sweep to `docs/src/` silently exempts every
    include source, and `crates/doc-examples/src/` is exactly such a source.
+   **Closed, dated 2026-08-12 (plan 14-02).** `crates/doc-examples/src/sidecar.rs:34`'s request
+   builder and the `:25` doc comment now build `{base_url}/v1/agents/{agent}/execute`, with the new
+   `sidecar_example_route_matches_api_v1_prefix` test tying that literal back to
+   `paladin::infrastructure::web::agent_controller::API_V1_PREFIX`, placed after
+   `// ANCHOR_END: sidecar_client` so the mdBook-included region is unchanged. This moves **T-13-20**
+   from `accept`/`AR-13-01` toward `closed` — `13-SECURITY.md`'s own instruction is to **re-run
+   `/gsd-secure-phase 13`** once the fix lands to record that disposition; this worktree-isolated
+   plan does not itself run that command (`13-SECURITY.md` is outside this plan's `files_modified`),
+   so the re-run remains an action for the orchestrator/user after this wave merges, per
+   `14-02-SUMMARY.md`.
+
+**Item 5 above (`REQ-fail-closed-auth-posture`) — closed, dated 2026-08-12 (plan 14-04).** See the
+`REQ-fail-closed-auth-posture` amendment in `.planning/ledgers/milestone-09-12.md` (2026-08-12,
+plan 14-07) for the full closure: `build_auth_config_fails_closed_when_enabled_with_no_credentials`
+is the first test anywhere in the workspace to drive the `Err` branch and observe a real refusal.
 
 **Evidence:** `.planning/ledgers/milestone-09-12.md` rows `REQ-opaque-bearer-token-adapter-v1`,
 `REQ-jwt-bearer-auth-v2`, `REQ-k8s-manifests`, `REQ-health-ready-endpoints`,
@@ -2602,7 +2617,7 @@ Four items with one shape: **the project advertises a capability through an inte
 implementation behind that interface does something else.** Two are in the HTTP auth surface, two
 in the LLM port. All four are verified against the tree, and three of the four are cheap.
 
-- [ ] **WEB-01**: The agent API's token mechanism has **one** answer, and the contract matches the
+- [x] **WEB-01**: The agent API's token mechanism has **one** answer, and the contract matches the
       implementation. Two documents specify incompatible mechanisms:
       **M9 Epic 5 §6.1** records "**Chosen:** opaque, randomly-generated bearer tokens with a
       server-side hashed store", with rationale (avoids a `jsonwebtoken` dependency and a
@@ -2634,6 +2649,19 @@ in the LLM port. All four are verified against the tree, and three of the four a
       REQ-api-key-auth, REQ-openapi-spec-generation; `intel/code-verification.md` run-5
       verified-open finding 7; INGEST-CONFLICTS run-5 warning on the competing token mechanism.*
 
+      **Closed, dated 2026-08-12 (plan 14-01, `ADR-0040`).** Option (a) was taken: opaque tokens are
+      kept as the mechanism, and the Milestone 12 vocabulary is corrected to match — `http.auth.jwt.enabled`
+      → `http.auth.bearer_token.enabled`, `JwtAuthConfig` → `BearerTokenAuthConfig`,
+      `AgentAuthConfig.jwt` → `.token_verifier`, `SEC_JWT`/`"jwt"` → `SEC_BEARER_TOKEN`/`"bearer_token"`
+      (with `.bearer_format("JWT")` dropped), no `#[serde(alias = "jwt")]`. Both machine baselines
+      (`crates/paladin-web/openapi.json`, `.project/current-exports.txt`) regenerated in the same
+      commit. `ADR-0040` records M12 Epic 5's Open Question 4 as **dissolved, not answered** — an
+      opaque hashed store has neither a signing secret nor an algorithm to configure. Verified per
+      `14-01-SUMMARY.md`: `cargo test -p paladin-ai --lib config::agents` (7 tests, pass),
+      `cargo test -p paladin-web` (117 unit + 5 integration tests, pass), `grep -rci 'jwt'` across all
+      nine plan-owned surfaces → 0 for every file. Two `BREAKING` CHANGELOG entries recorded
+      (`CHANGELOG.md`, `crates/paladin-web/CHANGELOG.md`).
+
 - [x] **WEB-02**: Multi-replica token verification is correct, or the deployment says it is not
       supported. **M9 Epic 5 §6.1 recorded the trade-off in its own words:** "tokens are validated
       against an in-process store, so a **multi-process deployment would later need a shared
@@ -2656,7 +2684,48 @@ in the LLM port. All four are verified against the tree, and three of the four a
       verified-open finding 7; INGEST-CONFLICTS run-5 warning on the in-process store versus the
       Kubernetes Deployment.*
 
+      **Correction, dated 2026-08-12 (plan 14-07, D-08): the manifest citation above names the wrong
+      pair.** Original citation retained above and marked superseded — `k8s/deployment.yaml` and
+      `k8s/service.yaml` (no `server/` subdirectory) are a distinct, older Milestone-1-era placeholder
+      (`image: paladin:test`, `imagePullPolicy: Never`, `args: ["-c", "echo 'Paladin started' &&
+      sleep 3600"]`, liveness/readiness/startup probes all commented out "Disabled for testing").
+      Nothing in that placeholder can issue or verify a token, so it carries no correctness question
+      and is deliberately left unannotated (out of scope). The real Milestone 12 Epic 7 artefacts this
+      requirement describes are `k8s/server/deployment.yaml` and `k8s/server/service.yaml` — live
+      liveness/readiness probes, `replicas: 2`. See `ADR-0041` for the full correction.
+
+      **Closed, dated 2026-08-12 (plan 14-04, `ADR-0041`) — basis stated explicitly, not implied.**
+      Neither of this entry's own two literal "done when" exits was taken: `k8s/server/deployment.yaml`'s
+      `replicas: 2` is unchanged (`git diff --exit-code -- k8s/server/deployment.yaml k8s/deployment.yaml`
+      is clean, `14-04-SUMMARY.md`), and no shared-store `AuthPort` was built. **The closure rests on
+      ROADMAP criterion 2's second clause — "the deployment artefacts and documentation say it will
+      not [scale past one replica while the store is wired]" — plus ADR-0041's recorded reasoning**,
+      not on the literal text above: the shipped `k8s/server/configmap.yaml` sets
+      `bearer_token.enabled: false` and authenticates with static, byte-identical API keys, so pinning
+      `replicas: 1` would degrade a working deployment to guard a disabled path. What shipped instead:
+      an unconditional startup warning (`IN_PROCESS_TOKEN_STORE_WARNING`,
+      `cargo test --bin paladin-server --features web-server
+      tests::build_auth_config_warns_when_in_process_token_store_is_wired`, pass) plus the limitation
+      stated in `k8s/server/configmap.yaml`, `k8s/README.md`, and
+      `docs/src/deployment-topologies/http-service-host.md`. The shared store is deferred with a named
+      trigger (ADR-0041's D-09), not built.
+
 - [x] **WEB-03**: `ProviderCapabilities` reports the capability the adapters actually have.
+      **Closed, dated 2026-08-12 (plan 14-02) — provenance carried forward, not laundered (D-00i,
+      D-14, `--auto`).** The last asymmetric flag —
+      `OpenAIAdapter::get_capabilities().supports_function_calling` — flipped `true` → `false`, and
+      `test_capabilities_tool_calling_matches_request_surface` (`crates/paladin-llm/src/lib.rs`) was
+      extended in place to pin **both** `supports_tool_calling` and `supports_function_calling` for
+      all three adapters against named request/response-surface constants, closing this
+      requirement's own "Done when… a test asserts the correspondence" clause. Verified per
+      `14-02-SUMMARY.md`: `crates/paladin-llm/src/openai/adapter.rs#tests::test_get_capabilities`
+      (pass) and the extended correspondence test (pass). **The bulk of this requirement's substance
+      — `supports_tool_calling: false` on all three adapters — shipped earlier, in Phase 2 plan 02-02
+      (commit `a2cc1c5`), which ran under `--auto` and was not human-ratified.** This closure is
+      recorded with that qualification rather than as a bare `Complete`, matching the same
+      qualification carried on the `REQ-llm-tool-calling-adapters` ledger row
+      (`.planning/ledgers/milestone-09-12.md`).
+
       The Deferred-QA problem statement stands **unchanged in the tree**: "All three LLM adapters
       (OpenAI, DeepSeek, Anthropic) declare tool-calling capabilities in `ProviderCapabilities` but
       hardcode `function_call: None`." Verified: `crates/paladin-ports/src/output/llm_port.rs` has
@@ -2672,7 +2741,7 @@ in the LLM port. All four are verified against the tree, and three of the four a
       `intel/code-verification.md` run-5 verified-open finding 5; INGEST-CONFLICTS run-5 warning on
       Epic 27 and `ProviderCapabilities`.*
 
-- [ ] **WEB-04**: LLM tool calling is either in scope with a plan, or withdrawn with a reason.
+- [x] **WEB-04**: LLM tool calling is either in scope with a plan, or withdrawn with a reason.
       Deferred-QA **Epic 27 is verified entirely unimplemented** (see WEB-03 for the evidence). It
       is also the most expensive item in the register: it modifies the `LlmPort` trait, which the
       PRD itself flags as "**a breaking change to the port interface**" requiring all adapters to
@@ -2690,6 +2759,22 @@ in the LLM port. All four are verified against the tree, and three of the four a
       for a fourth time.**
       *Derives: REQ-llm-tool-calling-port (FR-27.1, FR-27.2), REQ-llm-tool-calling-adapters
       (FR-27.3 to FR-27.7); INGEST-CONFLICTS run-5 warning on Epic 27.*
+
+      **Closed, dated 2026-08-12 (plans 14-03, 14-06, `ADR-0042`) — a recorded decision, not the build
+      branch and not a withdrawal.** `ADR-0042` records LLM-native tool calling (Deferred-QA Epic 27)
+      as a future capability improvement, **not built**, with a named reintroduction trigger (the
+      first consumer needing a shipped adapter, rather than its own `LlmPort` implementation, to
+      initiate a tool call, conditioned on both open questions being answered) and a named owner (`LlmPort` in
+      `paladin-ports`, its three adapters and the mock in `paladin-llm`). This is **not** "leaving it
+      as a deferred register entry for a fourth time" — plan 14-06 added a dated correction banner at
+      all five D-11 sites in the Epic 27 source
+      (`.project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md`) pointing at this record,
+      purely additive (`git diff --numstat` — 32 insertions, 0 deletions, per `14-06-SUMMARY.md`).
+      Plan 14-03 supplied the "stated relationship" this entry's own text asks for, pairing with
+      `ADR-0039`'s HTTP half: reachability rustdoc on `LlmResponse.function_call` and
+      `ProviderCapabilities` (`crates/paladin-ports/src/output/llm_port.rs`) plus matching statements
+      on four documentation pages, all pointing at `ADR-0042`, verified per `14-03-SUMMARY.md`:
+      `cargo test -p paladin-ports --doc` (97 passed, 0 failed).
 
 ### Coverage & CI quality gates (PIPE, DEFER)
 
@@ -4043,10 +4128,10 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | ORCH-03 | Phase 13 | Complete |
 | ORCH-04 | Phase 13 | Complete |
 | ORCH-05 | Phase 13 | Complete |
-| WEB-01 | Phase 14 | Pending |
+| WEB-01 | Phase 14 | Complete |
 | WEB-02 | Phase 14 | Complete |
 | WEB-03 | Phase 14 | Complete |
-| WEB-04 | Phase 14 | Pending |
+| WEB-04 | Phase 14 | Complete |
 | PIPE-01 | Phase 15 | Pending |
 | PIPE-02 | Phase 15 | Pending |
 | PIPE-03 | Phase 15 | Pending |
