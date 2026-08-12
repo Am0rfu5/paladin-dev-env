@@ -875,8 +875,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 14-04-PLAN.md — WEB-02: the unconditional startup warning when the in-process token store is wired, the fail-closed test `REQ-fail-closed-auth-posture` never had, and the single-replica limitation stated in the ConfigMap, the Kubernetes README and the topology page — with the shipped Deployment left unchanged (D-06)
-- [ ] 14-06-PLAN.md — ADR-0042 (WEB-04: LLM-native tool calling deferred with a named trigger and an owner) and the dated, additive correction banner on the Deferred-QA Epic 27 source
+- [x] 14-04-PLAN.md — WEB-02: the unconditional startup warning when the in-process token store is wired, the fail-closed test `REQ-fail-closed-auth-posture` never had, and the single-replica limitation stated in the ConfigMap, the Kubernetes README and the topology page — with the shipped Deployment left unchanged (D-06)
+- [x] 14-06-PLAN.md — ADR-0042 (WEB-04: LLM-native tool calling deferred with a named trigger and an owner) and the dated, additive correction banner on the Deferred-QA Epic 27 source
 
 **Wave 3** *(blocked on Wave 2)*
 
