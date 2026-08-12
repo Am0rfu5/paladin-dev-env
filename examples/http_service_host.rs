@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = AgentApiState::new(Arc::new(registry)).with_auth(AgentAuthConfig {
         enabled: true,
         api_keys,
-        jwt: None,
+        token_verifier: None,
     });
 
     // 3. Assemble the app like `paladin-server`: /v1 routes + docs + cross-cutting layers.

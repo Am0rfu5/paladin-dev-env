@@ -112,7 +112,7 @@ async fn build_state() -> AgentApiState {
         paladin::infrastructure::web::AgentAuthConfig {
             enabled: true,
             api_keys,
-            jwt: None,
+            token_verifier: None,
         },
     )
 }

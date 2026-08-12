@@ -87,9 +87,9 @@ pub struct ApiKeyConfig {
     pub role: UserRole,
 }
 
-/// JWT authentication settings for the agent API.
+/// Opaque server-issued bearer-token settings for the agent API.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct JwtAuthConfig {
+pub struct BearerTokenAuthConfig {
     /// Whether to accept `Authorization: Bearer` tokens via the wired `AuthPort`.
     #[serde(default)]
     pub enabled: bool,
@@ -98,7 +98,7 @@ pub struct JwtAuthConfig {
 /// Authentication configuration for the agent API (maps onto `paladin_web::AgentAuthConfig`).
 ///
 /// `enabled` defaults to **true** (secure by default); the server fails closed when auth is
-/// enabled but no credential source (API keys or JWT) is configured.
+/// enabled but no credential source (API keys or bearer token) is configured.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthConfig {
     /// Whether authentication is enforced on the agent routes.
@@ -107,9 +107,9 @@ pub struct AuthConfig {
     /// Static API keys accepted via the `X-API-Key` header.
     #[serde(default)]
     pub api_keys: Vec<ApiKeyConfig>,
-    /// JWT bearer-token settings.
+    /// Opaque server-issued bearer-token settings.
     #[serde(default)]
-    pub jwt: JwtAuthConfig,
+    pub bearer_token: BearerTokenAuthConfig,
 }
 
 fn default_auth_enabled() -> bool {
@@ -121,7 +121,7 @@ impl Default for AuthConfig {
         Self {
             enabled: default_auth_enabled(),
             api_keys: Vec::new(),
-            jwt: JwtAuthConfig::default(),
+            bearer_token: BearerTokenAuthConfig::default(),
         }
     }
 }
@@ -304,11 +304,11 @@ mod tests {
 
     #[test]
     fn auth_config_defaults_to_enabled_with_no_credentials() {
-        // An empty `auth:` section ⇒ enabled, no keys, JWT off (secure default).
+        // An empty `auth:` section ⇒ enabled, no keys, bearer token off (secure default).
         let auth: AuthConfig = serde_json::from_value(serde_json::json!({})).expect("parses");
         assert!(auth.enabled);
         assert!(auth.api_keys.is_empty());
-        assert!(!auth.jwt.enabled);
+        assert!(!auth.bearer_token.enabled);
     }
 
     #[test]
@@ -319,13 +319,13 @@ mod tests {
                 { "key": "sk-1", "name": "ci", "role": "admin" },
                 { "key": "sk-2", "name": "fe", "role": "user" }
             ],
-            "jwt": { "enabled": true }
+            "bearer_token": { "enabled": true }
         });
         let auth: AuthConfig = serde_json::from_value(json).expect("parses");
         assert_eq!(auth.api_keys.len(), 2);
         assert_eq!(auth.api_keys[0].role, UserRole::Admin);
         assert_eq!(auth.api_keys[1].role, UserRole::User);
-        assert!(auth.jwt.enabled);
+        assert!(auth.bearer_token.enabled);
     }
 
     #[test]

@@ -3,7 +3,7 @@
 //! The spec is **derived from the handlers** (`#[utoipa::path]`) and DTOs (`ToSchema`) via
 //! `utoipa-axum`, so the served API and the published contract come from one source.
 //! [`build_openapi`] assembles the `/v1` agent API document and decorates it with API info
-//! and the two security schemes (API key + bearer JWT); [`docs_router`] serves it at
+//! and the two security schemes (API key + opaque bearer token); [`docs_router`] serves it at
 //! `GET /openapi.json` with a Swagger UI at `/docs`.
 //!
 //! Exposure is gated by the binary on `http.docs.enabled` — when disabled, the docs router
@@ -23,8 +23,8 @@ use crate::agent_registry::AgentRegistry;
 
 /// Security-scheme name for the `X-API-Key` header credential (matches the handler annotations).
 pub const SEC_API_KEY: &str = "api_key";
-/// Security-scheme name for the `Authorization: Bearer` (JWT) credential.
-pub const SEC_JWT: &str = "jwt";
+/// Security-scheme name for the `Authorization: Bearer` opaque server-issued token credential.
+pub const SEC_BEARER_TOKEN: &str = "bearer_token";
 
 /// Path at which the raw OpenAPI document is served.
 pub const OPENAPI_JSON_PATH: &str = "/openapi.json";
@@ -47,13 +47,8 @@ fn decorate(api: &mut OpenApi) {
         SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("X-API-Key"))),
     );
     components.add_security_scheme(
-        SEC_JWT,
-        SecurityScheme::Http(
-            HttpBuilder::new()
-                .scheme(HttpAuthScheme::Bearer)
-                .bearer_format("JWT")
-                .build(),
-        ),
+        SEC_BEARER_TOKEN,
+        SecurityScheme::Http(HttpBuilder::new().scheme(HttpAuthScheme::Bearer).build()),
     );
 }
 
@@ -96,7 +91,10 @@ mod tests {
             .expect("components present")
             .security_schemes;
         assert!(schemes.contains_key(SEC_API_KEY), "missing api_key scheme");
-        assert!(schemes.contains_key(SEC_JWT), "missing jwt scheme");
+        assert!(
+            schemes.contains_key(SEC_BEARER_TOKEN),
+            "missing bearer_token scheme"
+        );
     }
 
     #[test]

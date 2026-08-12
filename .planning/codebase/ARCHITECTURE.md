@@ -117,7 +117,7 @@ Paladin is an enterprise multi-agent orchestration framework built with **Hexago
    - POST `/v1/agents/{id}/execute` with `{input: "query"}`
 
 2. **Web Layer Routes** (`crates/paladin-web/src/app.rs`)
-   - Auth middleware validates X-API-Key or JWT
+   - Auth middleware validates the `X-API-Key` header or an opaque server-issued bearer token
    - Rate limiter applied
    - Request timeout enforced
 
@@ -315,7 +315,7 @@ Paladin is an enterprise multi-agent orchestration framework built with **Hexago
 - Request validation in HTTP handlers
 
 **Authentication:**
-- Web API: X-API-Key header or JWT token
+- Web API: `X-API-Key` header or an opaque server-issued bearer token
 - Adapter: `InMemoryTokenAuthAdapter` (`src/infrastructure/adapters/auth/`)
 - Roles: `admin` (register agents) or `user` (invoke agents)
 

@@ -94,10 +94,11 @@ agents:
 
 Auth is **enabled by default and fail-closed** — with no credentials configured the server
 refuses to start (set `http.auth.enabled: false` for trusted/dev use). Callers present an
-**API key** (`X-API-Key`) or a **JWT** (`Authorization: Bearer`); a key/token maps to a role.
-Per-agent `allowed_roles` gate invocation, and runtime register/deregister require an `admin`
-role. `/health`, `/ready`, `/openapi.json`, and `/docs` are always reachable without a
-credential.
+**API key** (`X-API-Key`) or an **opaque server-issued bearer token** (`Authorization: Bearer`),
+verified against the server's own token store — not a signed or self-describing token; a
+key/token maps to a role. Per-agent `allowed_roles` gate invocation, and runtime
+register/deregister require an `admin` role. `/health`, `/ready`, `/openapi.json`, and `/docs`
+are always reachable without a credential.
 
 ## Running it
 

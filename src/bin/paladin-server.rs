@@ -139,9 +139,10 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Translate the config `auth` section into the web layer's [`AgentAuthConfig`].
 ///
-/// **Fail-closed:** when auth is enabled but no credential source (API keys or JWT) is
-/// configured, this returns an error so the server refuses to start rather than silently
-/// serving an open API. When auth is disabled, a warning is logged and the API is open.
+/// **Fail-closed:** when auth is enabled but no credential source (API keys or an opaque
+/// bearer token) is configured, this returns an error so the server refuses to start rather
+/// than silently serving an open API. When auth is disabled, a warning is logged and the API
+/// is open.
 fn build_auth_config(cfg: &AuthConfig) -> Result<AgentAuthConfig, Box<dyn std::error::Error>> {
     if !cfg.enabled {
         warn!(
@@ -150,7 +151,7 @@ fn build_auth_config(cfg: &AuthConfig) -> Result<AgentAuthConfig, Box<dyn std::e
         return Ok(AgentAuthConfig {
             enabled: false,
             api_keys: HashMap::new(),
-            jwt: None,
+            token_verifier: None,
         });
     }
 
@@ -168,10 +169,11 @@ fn build_auth_config(cfg: &AuthConfig) -> Result<AgentAuthConfig, Box<dyn std::e
         })
         .collect();
 
-    // The JWT path reuses the existing AuthPort. The in-memory adapter verifies tokens it
-    // issued in-process, so JWT is primarily useful when token issuance is co-located;
-    // API keys are the standalone service-to-service mechanism.
-    let jwt: Option<Arc<dyn AuthPort>> = if cfg.jwt.enabled {
+    // The bearer-token path reuses the existing AuthPort against the in-process opaque
+    // token store. The in-memory adapter verifies tokens it issued in-process, so it is
+    // primarily useful when token issuance is co-located; API keys are the standalone
+    // service-to-service mechanism.
+    let token_verifier: Option<Arc<dyn AuthPort>> = if cfg.bearer_token.enabled {
         Some(Arc::new(InMemoryTokenAuthAdapter::new()))
     } else {
         None
@@ -180,13 +182,13 @@ fn build_auth_config(cfg: &AuthConfig) -> Result<AgentAuthConfig, Box<dyn std::e
     let auth = AgentAuthConfig {
         enabled: true,
         api_keys,
-        jwt,
+        token_verifier,
     };
 
     if !auth.has_credentials() {
         return Err(
             "authentication is enabled but no credentials are configured: set \
-             http.auth.api_keys and/or http.auth.jwt.enabled, or set http.auth.enabled = false"
+             http.auth.api_keys and/or http.auth.bearer_token.enabled, or set http.auth.enabled = false"
                 .into(),
         );
     }
@@ -194,7 +196,11 @@ fn build_auth_config(cfg: &AuthConfig) -> Result<AgentAuthConfig, Box<dyn std::e
     info!(
         "agent API authentication ENABLED ({} API key(s){})",
         auth.api_keys.len(),
-        if cfg.jwt.enabled { " + JWT" } else { "" }
+        if cfg.bearer_token.enabled {
+            " + bearer token"
+        } else {
+            ""
+        }
     );
     Ok(auth)
 }
