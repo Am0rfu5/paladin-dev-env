@@ -2634,7 +2634,7 @@ in the LLM port. All four are verified against the tree, and three of the four a
       REQ-api-key-auth, REQ-openapi-spec-generation; `intel/code-verification.md` run-5
       verified-open finding 7; INGEST-CONFLICTS run-5 warning on the competing token mechanism.*
 
-- [ ] **WEB-02**: Multi-replica token verification is correct, or the deployment says it is not
+- [x] **WEB-02**: Multi-replica token verification is correct, or the deployment says it is not
       supported. **M9 Epic 5 §6.1 recorded the trade-off in its own words:** "tokens are validated
       against an in-process store, so a **multi-process deployment would later need a shared
       store**. This is acceptable because validation is hidden behind `AuthPort`, so the store can
@@ -4044,7 +4044,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | ORCH-04 | Phase 13 | Complete |
 | ORCH-05 | Phase 13 | Complete |
 | WEB-01 | Phase 14 | Pending |
-| WEB-02 | Phase 14 | Pending |
+| WEB-02 | Phase 14 | Complete |
 | WEB-03 | Phase 14 | Complete |
 | WEB-04 | Phase 14 | Pending |
 | PIPE-01 | Phase 15 | Pending |
