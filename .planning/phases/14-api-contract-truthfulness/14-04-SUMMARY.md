@@ -166,3 +166,8 @@ None. `src/bin/paladin-server.rs`'s new surface is a `warn!` log emission naming
 ---
 *Phase: 14-api-contract-truthfulness*
 *Completed: 2026-08-12*
+
+## Self-Check: PASSED
+
+All 5 claimed key files verified present on disk (`ls -la`). All four commit hashes
+(`8db7e7d`, `e8b6fac`, `c3602b4`, `e09587f`) verified present in `git log --oneline --all`.
