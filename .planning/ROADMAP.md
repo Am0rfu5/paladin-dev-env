@@ -864,7 +864,38 @@ Plans:
   3. `ProviderCapabilities` reports tool-calling support that matches what the OpenAI, Anthropic and DeepSeek adapters actually do, with a test asserting the correspondence — so a consumer branching on the flag stops getting the wrong answer, whether or not tool calling is ever built.
   4. Asking "does Paladin support LLM tool calling?" returns one recorded answer with reasoning — built with the phased plan the PRD names, or withdrawn given that Arsenal/MCP already provides tool execution — rather than a fourth appearance as a deferred register entry.
 
-**Plans**: TBD
+**Plans**: 8 plans in 5 waves
+
+Plans:
+**Wave 1** *(parallel — no shared files)*
+
+- [ ] 14-01-PLAN.md — Tracer: the WEB-01 token-vocabulary rename end-to-end through config, binary wiring, web middleware and the published contract, with both machine baselines regenerated; plus the prose/YAML sweep and the BREAKING changelog entries. *Leads with a one-way `checkpoint:decision` ratifying the replacement identifiers.*
+- [ ] 14-02-PLAN.md — WEB-03's last asymmetric capability flag flipped and the correspondence test extended to pin both flags; plus D-15a's sidecar route fix and its `API_V1_PREFIX` drift guard (closes T-13-20 / AR-13-01)
+- [ ] 14-03-PLAN.md — D-13's tool-call reachability statement: rustdoc on the capability type and the response field that gates the tool branch, plus the four documentation pages that imply otherwise
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 14-04-PLAN.md — WEB-02: the unconditional startup warning when the in-process token store is wired, the fail-closed test `REQ-fail-closed-auth-posture` never had, and the single-replica limitation stated in the ConfigMap, the Kubernetes README and the topology page — with the shipped Deployment left unchanged (D-06)
+- [ ] 14-06-PLAN.md — ADR-0042 (WEB-04: LLM-native tool calling deferred with a named trigger and an owner) and the dated, additive correction banner on the Deferred-QA Epic 27 source
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 14-05-PLAN.md — ADR-0040 (WEB-01: opaque server-issued bearer tokens; M12 Epic 5 OQ-4 dissolved) and ADR-0041 (WEB-02: verification scope, the deliberate deviation from the literal done-when, and the deferred shared store)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 14-07-PLAN.md — Close the record: six ledger rows amended in place with carried-forward `--auto` provenance, WEB-01…04 checked with `Complete` traceability, WEB-02's manifest citation corrected at source, and the ADR index advanced
+
+**Wave 5** *(blocked on Wave 4 — the bump must land last, D-18)*
+
+- [ ] 14-08-PLAN.md — Lockstep 0.8.0 bump across all twelve manifests and the dated changelog section, then the **second** OpenAPI baseline regeneration and the drift guard proven in checking mode
+
+**Cross-cutting constraints:**
+
+- The committed `crates/paladin-web/openapi.json` baseline moves **twice** — once for the security-scheme rename (14-01) and once for the version bump (14-08), because the document's advertised version is sourced from the crate version. A phase that regenerates only once leaves the drift guard red (D-18).
+- Both machine baselines are regenerated in the same commit that moves them (D-20).
+- `k8s/server/deployment.yaml` and the root `k8s/deployment.yaml` placeholder are byte-identical at phase end (D-06, D-08).
+- No git tag is created: publishing is tag-triggered and irreversible (D-17).
 
 ### Phase 15: Coverage & CI Quality Gates
 

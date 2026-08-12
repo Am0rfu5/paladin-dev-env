@@ -133,7 +133,7 @@ two items Phase 13's hand-off assigned to this phase by name.
   — **Reversibility:** one-way — it breaks every deployed `config.yml` that names the old key; undoing
   it is a second break or the alias this decision declined.
 
-- **D-03: The OpenAPI security scheme is renamed and `bearerFormat: "JWT"` is dropped.** `SEC_JWT`
+- **D-03:** The OpenAPI security scheme is renamed and `bearerFormat: "JWT"` is dropped. `SEC_JWT`
   (`crates/paladin-web/src/openapi.rs:27`) becomes a name describing an opaque bearer token, the
   `.bearer_format("JWT")` hint at `:54` is removed (an opaque token has no format), and every handler
   `security(...)` annotation that names the scheme follows. **The committed baseline
@@ -151,8 +151,8 @@ two items Phase 13's hand-off assigned to this phase by name.
   passes.
   — **Reversibility:** one-way — a semver-visible break in a published crate.
 
-- **D-05: The correction reaches every surface that names the mechanism, and the plan must enumerate
-  them.** Verified sites as of 2026-08-11: `crates/paladin-web/src/agent_auth.rs` (module docs, field,
+- **D-05:** The correction reaches every surface that names the mechanism, and the plan must
+  enumerate them. Verified sites as of 2026-08-11: `crates/paladin-web/src/agent_auth.rs` (module docs, field,
   `Principal` doc, comment, test double), `crates/paladin-web/src/openapi.rs:6,26-27,49-57`,
   `crates/paladin-web/src/agent_controller.rs` (handler `security(...)` annotations),
   `src/config/agents.rs:90-112` (`JwtAuthConfig`, `AuthConfig.jwt`, and the three tests at `:306-334`),
@@ -165,8 +165,8 @@ two items Phase 13's hand-off assigned to this phase by name.
 
 ### WEB-02 — the multi-replica store
 
-- **D-06: The shared-store requirement attaches to the `AuthPort` credential path, not to the replica
-  count — replicas stay as shipped.** Neither of WEB-02's two literal exits is taken, and **the
+- **D-06:** The shared-store requirement attaches to the `AuthPort` credential path, not to the
+  replica count — replicas stay as shipped. Neither of WEB-02's two literal exits is taken, and **the
   deviation is the decision**: `k8s/server/configmap.yaml` sets `jwt.enabled: false` and authenticates
   with static API keys sourced from a Secret, which are byte-identical in every pod, so
   `k8s/server/deployment.yaml:14`'s `replicas: 2` is correct today. Pinning `replicas: 1` would degrade
@@ -206,8 +206,8 @@ two items Phase 13's hand-off assigned to this phase by name.
 
 ### WEB-03 / WEB-04 — capability flags and tool calling
 
-- **D-10: LLM-native tool calling (Deferred-QA Epic 27) is recorded as a future capability
-  improvement, not built.** The user's answer sets the frame for the whole phase and is recorded
+- **D-10:** LLM-native tool calling (Deferred-QA Epic 27) is recorded as a future capability
+  improvement, not built. The user's answer sets the frame for the whole phase and is recorded
   verbatim in `<specifics>` finding 5: *"We want to maximize the capabilities so this sounds like a
   future feature improvement. This is listed under 'deferred'. … this is the source of some potential
   future version improvements not any current functionality. This should be recorded as such and
@@ -228,8 +228,8 @@ two items Phase 13's hand-off assigned to this phase by name.
   it as a deferred register entry for a fourth time" — the banner is what makes the difference: the
   next reader of Epic 27 meets the decision instead of an unbuilt epic.
 
-- **D-12: `supports_function_calling` is brought into line, and the correspondence test covers both
-  flags.** OpenAI declares `supports_function_calling: true`
+- **D-12:** `supports_function_calling` is brought into line, and the correspondence test covers both
+  flags. OpenAI declares `supports_function_calling: true`
   (`crates/paladin-llm/src/openai/adapter.rs:650`) while hardcoding `function_call: None` at `:553`;
   Anthropic (`:551`) and DeepSeek (`:808`) declare `false`. The flag is flipped to `false` and the
   existing correspondence test `test_capabilities_tool_calling_matches_request_surface`
@@ -287,8 +287,8 @@ two items Phase 13's hand-off assigned to this phase by name.
   gets **no ADR** — a code-settled defect (D-00g). Bundling WEB-01 and WEB-02 into a single
   auth-mechanism ADR was considered and declined despite their coupling.
 
-- **D-17: Release bookkeeping lands in this phase — `BREAKING` CHANGELOG entries and a lockstep bump to
-  0.8.0.** All twelve manifests currently read `0.7.0`; `release.toml:17` sets `shared-version = true`,
+- **D-17:** Release bookkeeping lands in this phase — `BREAKING` CHANGELOG entries and a lockstep
+  bump to 0.8.0. All twelve manifests currently read `0.7.0`; `release.toml:17` sets `shared-version = true`,
   so the bump moves them together. **0.8.0, not 0.7.2:** under SemVer for `0.x` a breaking change bumps
   the minor, and D-02 and D-04 each break consumers — shipping two renames under a patch version would
   be the same class of untruth this phase exists to close. *(The cost flagged at decision time —

@@ -44,23 +44,39 @@ Seeded from the research requirement→test map. Task IDs are assigned by the pl
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | WEB-01 | — | Renamed config key is not silently aliased to the old `jwt` key | unit | `cargo test -p paladin --lib config::agents` | ✅ existing (`src/config/agents.rs:306-334`) | ⬜ pending |
-| TBD | TBD | TBD | WEB-01 | — | OpenAPI security scheme matches the committed baseline after the rename | integration (drift guard) | `cargo test -p paladin-web openapi_matches_committed_baseline` | ✅ existing (`crates/paladin-web/src/openapi.rs:120-125`) | ⬜ pending |
-| TBD | TBD | TBD | WEB-01 | — | Public export surface matches `.project/current-exports.txt` after the rename | integration (CI script) | `./scripts/check-api-surface.sh` | ✅ existing (`scripts/check-api-surface.sh`) | ⬜ pending |
-| TBD | TBD | TBD | WEB-02 | — | Startup warning fires when the in-process token store is wired | unit | new test around `build_auth_config` asserting the WARN line | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-fail-closed-auth-posture (D-15b) | T-13-20 adjacent | `build_auth_config` returns `Err` when auth is enabled with no credentials | unit | new test: `AuthConfig { enabled: true, api_keys: vec![], jwt: JwtAuthConfig { enabled: false } }` → `is_err()` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | WEB-03 | — | `supports_function_calling` matches actual request-surface reachability across all shipped adapters | unit | `cargo test -p paladin-llm test_capabilities_tool_calling_matches_request_surface` (extended) | ✅ existing (`crates/paladin-llm/src/lib.rs:98-136`) | ⬜ pending |
-| TBD | TBD | TBD | D-15a | T-13-20 | Sidecar doc-example route literal matches `paladin_web::agent_controller::API_V1_PREFIX` | unit | `cargo test -p doc-examples sidecar_example_route_matches_api_v1_prefix` (new) | ❌ W0 | ⬜ pending |
+| 14-01 T2 | 14-01 | 1 | WEB-01 | T-14-06 | The renamed config key is not silently aliased to the superseded one; a config naming the old key fails to load | unit | `cargo test -p paladin-ai --lib config::agents` | ✅ existing (three tests near the end of `src/config/agents.rs`) | ⬜ pending |
+| 14-01 T2 | 14-01 | 1 | WEB-01 | T-14-05 | OpenAPI security scheme matches the committed baseline after the rename (first of two baseline moves) | integration (drift guard) | `cargo test -p paladin-web openapi_matches_committed_baseline` | ✅ existing (drift-guard test module in `crates/paladin-web/src/openapi.rs`) | ⬜ pending |
+| 14-01 T2 | 14-01 | 1 | WEB-01 | T-14-05 | Public export surface matches `.project/current-exports.txt` after the config-type rename | integration (CI script) | `./scripts/check-api-surface.sh` | ✅ existing (`scripts/check-api-surface.sh`) | ⬜ pending |
+| 14-01 T2 | 14-01 | 1 | WEB-01 | T-14-01, T-14-02 | Constant-time credential comparison and the non-echoing 401 body survive the rename | unit + router-level | `cargo test -p paladin-web` | ✅ existing (test module in `crates/paladin-web/src/agent_auth.rs`) | ⬜ pending |
+| 14-01 T3 | 14-01 | 1 | WEB-01 | T-14-03 | No superseded-acronym prose survives on the four non-Rust surfaces the compiler cannot check | source assertion | `grep -ci 'jwt'` over the four files, each reporting 0 | ✅ existing files | ⬜ pending |
+| 14-02 T1 | 14-02 | 1 | WEB-03 | T-14-07, T-14-08 | Both capability flags match actual request/response-surface reachability across all shipped adapters, pinned by two separate named constants | unit | `cargo test -p paladin-llm --features openai,anthropic,deepseek test_capabilities_tool_calling_matches_request_surface` (extended) | ✅ existing (`capability_invariants` module in `crates/paladin-llm/src/lib.rs`) | ⬜ pending |
+| 14-02 T2 | 14-02 | 1 | WEB-04 / D-15a | **T-13-20 → closed (AR-13-01)** | Sidecar doc-example route literal matches `paladin_web::agent_controller::API_V1_PREFIX` | unit | `cargo test -p paladin-doc-examples sidecar_example_route_matches_api_v1_prefix` (new) | ❌ **W0** — created by this task | ⬜ pending |
+| 14-03 T1 | 14-03 | 1 | WEB-04 | T-14-10 | The reachability rustdoc compiles and its illustrative example still runs | doctest | `cargo test -p paladin-ports --doc` | ✅ existing (doctests enabled by Phase 8 / DEBT-03) | ⬜ pending |
+| 14-03 T2 | 14-03 | 1 | WEB-04 | T-14-11 | The provider-author template declares the capability honestly | source assertion | `grep -c 'supports_function_calling: false' docs/src/contributing/contributing-providers.md` is 1 | ✅ existing file | ⬜ pending |
+| 14-04 T1 | 14-04 | 2 | WEB-02 | T-14-13, T-14-15 | Startup WARN fires whenever the in-process token store is wired, observed through a capturing logger | unit | `cargo test --bin paladin-server --features web-server build_auth_config_warns_when_in_process_token_store_is_wired` | ❌ **W0** — created by this task | ⬜ pending |
+| 14-04 T1 | 14-04 | 2 | REQ-fail-closed-auth-posture (D-15b) | T-14-14 | `build_auth_config` returns `Err` when auth is enabled with an empty API-key list and the token verifier disabled | unit | `cargo test --bin paladin-server --features web-server build_auth_config_fails_closed_when_enabled_with_no_credentials` | ❌ **W0** — created by this task | ⬜ pending |
+| 14-04 T2 | 14-04 | 2 | WEB-02 | T-14-16 | The shipped Deployment manifests are unmodified while the limitation is stated in three artefacts | source assertion | `git diff --exit-code -- k8s/server/deployment.yaml k8s/deployment.yaml` | ✅ existing files | ⬜ pending |
+| 14-05 T1/T2 | 14-05 | 3 | WEB-01, WEB-02 | T-14-18 | Every path cited in each ADR's `## Code Locations` resolves on disk | CLI assertion | `test -e` sweep over every path extracted from that section | ❌ **W0** — the ADRs are created by this plan | ⬜ pending |
+| 14-06 T2 | 14-06 | 2 | WEB-04 | T-14-22 | The Epic 27 correction is additive: zero original lines deleted | CLI assertion | `git diff --numstat -- .project/Deferred-QA-CICD-Completion/prd-deferred-qa-completion.md` reports 0 deletions | ✅ existing file | ⬜ pending |
+| 14-07 T1/T2 | 14-07 | 4 | WEB-01…04 | T-14-26, T-14-29 | Every indexed ADR slug resolves, and the ledger's requirement-keyed row count is unchanged | CLI assertion | `test -e` sweep over the three indexed slugs plus a recomputed row count | ✅ existing files | ⬜ pending |
+| 14-08 T2 | 14-08 | 5 | WEB-01 (D-18) | T-14-32, T-14-33 | The published contract advertises the bumped version and the drift guard is green in **checking** mode (second baseline move) | integration (drift guard) | `cargo test -p paladin-web --lib openapi_matches_committed_baseline` with the update variable **unset** | ✅ existing | ⬜ pending |
+| 14-08 T1/T2 | 14-08 | 5 | WEB-01 (D-17) | T-14-31 | No version tag is created and nothing is published | CLI assertion | `git tag --list 'v0.8.0'` returns nothing | ✅ n/a | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+
+**Sampling continuity check:** no three consecutive tasks lack an automated verify — every task in all
+eight plans carries an `<automated>` block. The three Wave 0 gaps below are each created by the task
+that consumes them, so no task depends on a test that does not exist by the time it runs.
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] Unit test asserting `build_auth_config` emits its WARN when the in-process store is wired (`cfg.jwt.enabled` or its renamed equivalent is `true`) — covers WEB-02 / D-07
-- [ ] Unit test driving `build_auth_config`'s `Err` branch (enabled, no credentials) — covers `REQ-fail-closed-auth-posture` / D-15b
-- [ ] `crates/doc-examples` test asserting the sidecar route literal against `API_V1_PREFIX` — covers D-15a. Confirm `crates/doc-examples/Cargo.toml` already depends on `paladin-web` before adding the import
+All three gaps are closed by the plan task that consumes them, so no task runs against a missing test.
+
+- [ ] Unit test asserting `build_auth_config` emits its WARN when the in-process store is wired — covers WEB-02 / D-07. **Owner: plan 14-04, Task 1** (wave 2). Creates this binary's first `#[cfg(test)] mod tests`; the binary logs through the `log` crate, not `tracing`, so the test installs a capturing `log::Log` and must call `log::set_max_level` or the capture is vacuous.
+- [ ] Unit test driving `build_auth_config`'s `Err` branch (enabled, empty API-key list, verifier disabled) — covers `REQ-fail-closed-auth-posture` / D-15b. **Owner: plan 14-04, Task 1** (wave 2), same new test module.
+- [ ] `crates/doc-examples` test asserting the sidecar route literal against `API_V1_PREFIX` — covers D-15a. **Owner: plan 14-02, Task 2** (wave 1). **Resolved during planning:** `crates/doc-examples/Cargo.toml` depends on the root facade with the `web-server` feature, and `src/infrastructure/web/mod.rs` re-exports the web crate's public items including its `agent_controller` module — so the constant is reachable through the same import path the sibling `http_service_host.rs` example already uses, and **no dependency needs adding**.
 - [ ] Framework install: **none needed** — `cargo test` is already the workspace test runner
 
 ---
