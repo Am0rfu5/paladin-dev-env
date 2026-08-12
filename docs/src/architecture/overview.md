@@ -178,6 +178,12 @@ Create via PaladinBuilder
         └── max loops? → MaxLoops
 ```
 
+> The "tool call?" branch is taken only when the `LlmPort` implementation in use returns a
+> populated function call from `generate()` — no shipped adapter (OpenAI, Anthropic,
+> DeepSeek, or the bundled mock) ever does. See the [Tool Integration
+> Guide](../user-guides/tool-integration.md#overview) and ADR-0042 for the tracked reachability
+> status.
+
 ### Battalion (Orchestration)
 
 Eight patterns routed by the Commander auto-detector:
