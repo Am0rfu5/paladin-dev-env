@@ -29,6 +29,15 @@ The Arsenal system enables Paladins to:
 - **Tool Call**: Request from Paladin to execute a tool
 - **Tool Result**: Response from tool execution
 
+> **Reachability note:** Arsenal and MCP tool execution ship and work today — everything below
+> this note is real and invocable. What is *not* reachable through any shipped `LlmPort`
+> adapter (OpenAI, Anthropic, DeepSeek, or the bundled mock) is the LLM-initiated entry into
+> that loop: none of them ever returns a populated function call from `generate()`, so a
+> Paladin's own reasoning loop never triggers an `Armament` on its own today. You invoke
+> Arsenal directly through the `ArsenalPort` API this guide documents below; LLM-driven
+> invocation requires a consumer-supplied `LlmPort` implementation that parses tool calls
+> itself. See ADR-0042 for the tracked status of LLM-native tool calling.
+
 ## Arsenal Architecture
 
 ### Core Components
@@ -78,6 +87,8 @@ ArmamentResult → Injected into Paladin context
     ↓
 Paladin continues reasoning with tool result
 ```
+
+The first arrow — "LLM decides to use tool" — is the step no shipped adapter can take today; see the reachability note above and ADR-0042.
 
 ## MCP Protocol
 

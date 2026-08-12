@@ -616,7 +616,19 @@ pub struct LlmResponse {
     pub created_at: DateTime<Utc>,
     /// Additional provider-specific information
     pub metadata: HashMap<String, String>,
-    /// Function call details if the model requested a tool invocation
+    /// Function call details if the model requested a tool invocation.
+    ///
+    /// As of this writing, no shipped adapter — OpenAI, Anthropic, DeepSeek, or the bundled
+    /// mock in `paladin_llm::mock` — ever populates this field; `generate()` always yields
+    /// `None` here. The reasoning loop's tool-invocation branch in
+    /// `paladin_execution_service.rs` (both the Arsenal invocation and the
+    /// `handoff_to_specialist` path) is therefore reachable only through a consumer-supplied
+    /// [`LlmPort`] implementation that parses tool calls itself. See ADR-0042 for the tracked
+    /// status of LLM-native tool calling.
+    ///
+    /// This does not limit Arsenal/MCP tool execution itself, which ships and works through a
+    /// different seam — what is unreachable through a shipped provider is the LLM-initiated
+    /// entry into it.
     pub function_call: Option<FunctionCall>,
 }
 
@@ -792,14 +804,26 @@ pub struct StreamingResponse {
 /// LLM provider supports, enabling graceful degradation when features
 /// are not available.
 ///
+/// ## Tool-call reachability
+///
+/// A declared `supports_tool_calling` or `supports_function_calling` describes what *this
+/// adapter's* `generate()` does, not what the vendor's underlying API offers. As of this
+/// writing, no shipped adapter — OpenAI, Anthropic, DeepSeek, or the bundled mock in
+/// `paladin_llm::mock` — declares either flag `true`, because none of them ever populates
+/// [`LlmResponse::function_call`]. The reasoning loop's tool-invocation branch is therefore
+/// reachable only through a consumer-supplied [`LlmPort`] implementation that parses tool
+/// calls itself; see ADR-0042 for the tracked status of LLM-native tool calling. Arsenal/MCP
+/// tool execution itself ships and works through a different seam — this limitation is about
+/// the LLM-initiated entry into it, not about Arsenal's availability.
+///
 /// # Example
 ///
 /// ```rust
 /// # use paladin_ports::output::llm_port::ProviderCapabilities;
 /// let capabilities = ProviderCapabilities {
 ///     supports_streaming: true,
-///     supports_tool_calling: true,
-///     supports_function_calling: true,
+///     supports_tool_calling: false,
+///     supports_function_calling: false,
 ///     supports_vision: false,
 ///     supports_embeddings: false,
 ///     max_context_tokens: Some(128000),
@@ -815,9 +839,15 @@ pub struct StreamingResponse {
 pub struct ProviderCapabilities {
     /// Whether the provider supports streaming responses
     pub supports_streaming: bool,
-    /// Whether the provider supports tool calling (external function execution)
+    /// Whether the provider supports tool calling (external function execution).
+    ///
+    /// See the reachability note on this struct's documentation — no shipped adapter
+    /// declares this `true` today.
     pub supports_tool_calling: bool,
-    /// Whether the provider supports function calling (structured output)
+    /// Whether the provider supports function calling (structured output).
+    ///
+    /// See the reachability note on this struct's documentation — no shipped adapter
+    /// declares this `true` today.
     pub supports_function_calling: bool,
     /// Whether the provider supports vision/image inputs
     pub supports_vision: bool,

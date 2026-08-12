@@ -164,6 +164,13 @@ impl MyProviderAdapter {
 
 ### Step 4: Implement LlmPort Trait
 
+Declaring `supports_tool_calling` or `supports_function_calling` as `true` requires your
+adapter to actually produce a populated `LlmResponse.function_call` — the shared
+correspondence test in `crates/paladin-llm/src/lib.rs`
+(`test_capabilities_tool_calling_matches_request_surface`) pins every adapter's declared
+capability to what its request/response surface actually carries, and fails the build
+otherwise.
+
 ```rust,ignore
 #[async_trait]
 impl LlmPort for MyProviderAdapter {
@@ -189,8 +196,12 @@ impl LlmPort for MyProviderAdapter {
     fn get_capabilities(&self) -> ProviderCapabilities {
         ProviderCapabilities {
             supports_streaming: true,  // Set based on provider
-            supports_tool_calling: true,
-            supports_function_calling: true,
+            // These flags describe what *this adapter's* `generate()` does, not what the
+            // vendor's API offers. Set `true` only once your `parse_response` actually
+            // populates `LlmResponse.function_call` from the provider's reply — every
+            // shipped adapter declares `false` today because none of them does (ADR-0042).
+            supports_tool_calling: false,
+            supports_function_calling: false,
             supports_vision: false,  // Set based on provider
             supports_embeddings: false,
             max_context_tokens: Some(128_000),  // Provider's limit

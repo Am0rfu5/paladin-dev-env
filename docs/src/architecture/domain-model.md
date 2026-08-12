@@ -122,6 +122,11 @@ pub struct ToolResult {
 }
 ```
 
+These types are real, registered and invocable — Arsenal/MCP tool execution ships and works.
+What no shipped `LlmPort` adapter exercises is the LLM-initiated path that would populate them
+from a provider response: `generate()` never returns a populated function call today, on any
+of OpenAI, Anthropic, DeepSeek, or the bundled mock. See ADR-0042 for the tracked status.
+
 ### Citadel (State Persistence)
 
 ```rust,ignore
