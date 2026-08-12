@@ -139,6 +139,11 @@ None - no external service configuration required.
 - The `temperature_range` staleness in `contributing-providers.md` is now on record for Phase 16 / DOCS-01 to pick up alongside the other Milestone 11 content-currency items.
 - No blockers for the rest of Phase 14's waves.
 
+## Self-Check: PASSED
+
+All five modified files verified present on disk; all three task/summary commit hashes
+(`498adb7`, `f3e5f82`, `f615c34`) verified present in `git log --oneline --all`.
+
 ---
 *Phase: 14-api-contract-truthfulness*
 *Completed: 2026-08-12*
