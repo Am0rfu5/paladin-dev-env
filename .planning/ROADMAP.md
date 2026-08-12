@@ -884,7 +884,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3)*
 
-- [ ] 14-07-PLAN.md — Close the record: six ledger rows amended in place with carried-forward `--auto` provenance, WEB-01…04 checked with `Complete` traceability, WEB-02's manifest citation corrected at source, and the ADR index advanced
+- [x] 14-07-PLAN.md — Close the record: six ledger rows amended in place with carried-forward `--auto` provenance, WEB-01…04 checked with `Complete` traceability, WEB-02's manifest citation corrected at source, and the ADR index advanced
 
 **Wave 5** *(blocked on Wave 4 — the bump must land last, D-18)*
 
