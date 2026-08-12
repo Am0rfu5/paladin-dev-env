@@ -888,7 +888,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 — the bump must land last, D-18)*
 
-- [ ] 14-08-PLAN.md — Lockstep 0.8.0 bump across all twelve manifests and the dated changelog section, then the **second** OpenAPI baseline regeneration and the drift guard proven in checking mode
+- [x] 14-08-PLAN.md — Lockstep 0.8.0 bump across all twelve manifests and the dated changelog section, then the **second** OpenAPI baseline regeneration and the drift guard proven in checking mode
 
 **Cross-cutting constraints:**
 
