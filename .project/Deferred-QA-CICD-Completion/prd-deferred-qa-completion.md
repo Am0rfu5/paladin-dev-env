@@ -52,6 +52,17 @@
 > Nothing under `.project/Milestone_12-Web-API/` is touched by this correction; Phase 8 already
 > annotated it and plan 13-08 owns the route annotations.
 
+> **Correction (dated 2026-08-12, WEB-04):** Epic 27 below (**LLM Tool Calling Implementation &
+> Tests**) is recorded as a **future capability improvement — not current functionality and not
+> scheduled work** — by `.planning/decisions/0042-llm-native-tool-calling-deferred.md` (ADR-0042).
+> The deferred register this epic lives in is a source of future version improvements, not a
+> description of what ships today (D-10); recording this as a fourth deferred-register entry was
+> explicitly rejected (D-11) — ADR-0042 plus this banner is the whole record. Every line of Epic
+> 27's original text below is retained; five sites carry their own inline pointer to ADR-0042: the
+> user-story block, the functional-requirements section, the breaking-change/phased-approach risk
+> note, the epic-priority ordering row, and both of Epic 27's open questions (still `Open` —
+> answering them is a precondition for ADR-0042's reintroduction trigger, not an afterthought).
+
 ## Document Info
 
 | Field | Value |
@@ -128,6 +139,10 @@ This PRD defines five epics (25–29) to systematically close these gaps, bringi
 **US-27.2**: As a **developer**, I want live API integration tests for tool calling across all three providers (OpenAI, DeepSeek, Anthropic) so that tool-calling behavior is verified against real APIs.
 
 **US-27.3**: As a **developer**, I want unit tests for tool-call request serialization and response parsing in each adapter so that the implementation is validated without requiring API keys.
+
+> **Correction (dated 2026-08-12, WEB-04):** neither US-27.1, US-27.2 nor US-27.3 above describes
+> current functionality — LLM-native tool calling is recorded as a future capability improvement,
+> not built, by ADR-0042 (see the correction banner at the top of this document).
 
 ### Epic 28: User Service Test Coverage
 
@@ -301,6 +316,14 @@ This PRD defines five epics (25–29) to systematically close these gaps, bringi
 68. Add `test_deepseek_tool_calling` — if DeepSeek supports tools; otherwise skip with documented reason.
 69. All tool-calling tests must be gated behind `#[cfg(feature = "live-api-tests")]` and `#[ignore]`.
 70. Tests must skip gracefully if the provider's API key is not set.
+
+> **Correction (dated 2026-08-12, WEB-04):** the whole FR-27.1 … FR-27.7 section above is unbuilt
+> and is now a recorded future capability, per ADR-0042 (see the correction banner at the top of
+> this document). The flag-honesty half of the original problem statement in §1 item 3 — all three
+> adapters declaring tool-calling capability while hardcoding `function_call: None` — was
+> separately closed: `ProviderCapabilities::supports_function_calling` now matches adapter
+> behaviour, pinned by a correspondence test
+> (`crates/paladin-llm/src/lib.rs::test_capabilities_tool_calling_matches_request_surface`).
 
 ---
 
@@ -495,6 +518,12 @@ Epic 27 requires modifying the `LlmPort` trait (adding `tools` to `LlmRequest`),
 3. Phase 3: Implement tool-call response parsing.
 4. Phase 4: Write live API integration tests.
 
+> **Correction (dated 2026-08-12, WEB-04):** the four-step phased approach above is preserved as
+> the shape the future work would take if the reintroduction trigger in ADR-0042 fires; the
+> breaking-change cost this note flags — modifying the `LlmPort` trait, requiring all three shipped
+> adapters and the mock to change together — is part of the recorded reason the capability is
+> deferred rather than built now (see the correction banner at the top of this document).
+
 ### Codebase TODOs Discovered During Research
 
 The following `todo!()` items were found in the codebase but are **out of scope** for this PRD. They are documented here for awareness:
@@ -555,6 +584,7 @@ Epic 29 (listener_service) │    │                   │     │
 |-------|------|-----------|
 | 1st | **Epic 25** (CI/CD) | Establishes quality gates that validate all subsequent work |
 | 2nd | **Epic 27** (Tool Calling) | Implementation + tests; highest technical complexity |
+| — | **Correction (dated 2026-08-12, WEB-04):** superseded for this epic only — recorded as a deferred future capability by ADR-0042, not scheduled work now; the ordering of Epics 25, 26, 28 and 29 is untouched | see the correction banner at the top of this document |
 | 3rd | **Epic 28** (User Service) | Builds reusable mock infrastructure needed by Epic 29 |
 | 4th | **Epic 29** (Listener Service) | Leverages mock patterns from Epic 28 |
 | 5th | **Epic 26** (Docs & Demos) | Final polish; demos showcase all completed features |
@@ -568,10 +598,12 @@ Epics 27, 28, and 29 can also run in parallel if multiple developers are availab
 | ID | Question | Impact | Status |
 |----|----------|--------|--------|
 | OQ-1 | Does DeepSeek's API support tool calling? Their adapter reports `supports_tool_calling: false`. Need to verify current API docs. | Determines scope of Epic 27 for DeepSeek. | Open |
+| — | **Correction (dated 2026-08-12, WEB-04):** OQ-1 remains `Open`; its being unanswered is part of the reasoning ADR-0042 records for deferring Epic 27 — answering it is a precondition for the reintroduction trigger, not an afterthought. | see ADR-0042 | Open |
 | OQ-2 | Should `mockall` crate be adopted for Epics 28–29, or should mocks remain hand-written? `mockall` adds compile-time cost but reduces boilerplate. | Affects mock infrastructure design. | Open |
 | OQ-3 | Should the coverage threshold gate be a hard fail (block merge) or a soft warning initially? Moving from no gate to 78% hard fail could block legitimate PRs during ramp-up. | Affects Epic 25 CI configuration. | Open |
 | OQ-4 | Are asciinema recordings acceptable, or does the team prefer a different format (e.g., VHS tape files, Terminalizer, or plain GIFs)? | Affects tooling choice in Epic 26. | Open |
 | OQ-5 | Should `LlmRequest.tools` use the OpenAI JSON Schema format as canonical, or should we define our own provider-agnostic schema? | Affects `ToolDefinition` struct design in Epic 27. | Open |
+| — | **Correction (dated 2026-08-12, WEB-04):** OQ-5 remains `Open`; its being unanswered is part of the reasoning ADR-0042 records for deferring Epic 27 — answering it is a precondition for the reintroduction trigger, not an afterthought. | see ADR-0042 | Open |
 | OQ-6 | What Rust toolchain version should CI pin to? Currently the matrix includes `stable` and `beta`. Should coverage/CLI tests only run on `stable`? | Affects CI job configuration in Epic 25. | Open |
 
 ---
