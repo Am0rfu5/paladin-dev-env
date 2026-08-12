@@ -148,3 +148,13 @@ None - no external service configuration required.
 ---
 *Phase: 14-api-contract-truthfulness*
 *Completed: 2026-08-12*
+
+## Self-Check: PASSED
+
+- FOUND: crates/paladin-llm/src/lib.rs
+- FOUND: crates/paladin-llm/src/openai/adapter.rs
+- FOUND: crates/doc-examples/src/sidecar.rs
+- FOUND: .planning/phases/14-api-contract-truthfulness/14-02-SUMMARY.md
+- FOUND commit: 3ccf2d0 (Task 1)
+- FOUND commit: 8ad9908 (Task 2)
+- FOUND commit: d2bf538 (plan metadata / this SUMMARY)
