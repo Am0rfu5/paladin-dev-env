@@ -226,3 +226,8 @@ None. This plan renames identifiers and prose only; T-14-01 through T-14-06 and 
 ---
 *Phase: 14-api-contract-truthfulness*
 *Completed: 2026-08-12*
+
+## Self-Check: PASSED
+
+All 17 claimed modified files verified present on disk (`ls -la`, two batches). All three
+commit hashes (`1f8a1d1`, `51deeeb`, `7d493e3`) verified present in `git log --oneline --all`.
