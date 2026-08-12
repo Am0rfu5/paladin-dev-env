@@ -880,7 +880,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 14-05-PLAN.md — ADR-0040 (WEB-01: opaque server-issued bearer tokens; M12 Epic 5 OQ-4 dissolved) and ADR-0041 (WEB-02: verification scope, the deliberate deviation from the literal done-when, and the deferred shared store)
+- [x] 14-05-PLAN.md — ADR-0040 (WEB-01: opaque server-issued bearer tokens; M12 Epic 5 OQ-4 dissolved) and ADR-0041 (WEB-02: verification scope, the deliberate deviation from the literal done-when, and the deferred shared store)
 
 **Wave 4** *(blocked on Wave 3)*
 
