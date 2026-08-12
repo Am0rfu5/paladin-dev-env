@@ -137,6 +137,19 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Warning emitted, unconditionally, every time `build_auth_config` wires the in-process
+/// bearer-token store (`http.auth.bearer_token.enabled = true`).
+///
+/// The store verifies a token only on the process that issued it — it holds no shared state
+/// across replicas. A running pod has no built-in way to learn how many peers it has without
+/// calling out to the orchestrator's own API, so this warning is not conditioned on an
+/// observed replica count (see ADR-0041); it fires on every start that wires the store,
+/// whether that deployment runs one replica or many.
+const IN_PROCESS_TOKEN_STORE_WARNING: &str = "in-process bearer-token store ENABLED \
+     (http.auth.bearer_token.enabled = true) — this is an in-process token store: tokens verify \
+     only on the issuing process. Do not scale past one replica while this store is wired. \
+     See ADR-0041 (.planning/decisions/0041-in-process-token-store-single-replica-scope.md).";
+
 /// Translate the config `auth` section into the web layer's [`AgentAuthConfig`].
 ///
 /// **Fail-closed:** when auth is enabled but no credential source (API keys or an opaque
@@ -174,6 +187,7 @@ fn build_auth_config(cfg: &AuthConfig) -> Result<AgentAuthConfig, Box<dyn std::e
     // primarily useful when token issuance is co-located; API keys are the standalone
     // service-to-service mechanism.
     let token_verifier: Option<Arc<dyn AuthPort>> = if cfg.bearer_token.enabled {
+        warn!("{IN_PROCESS_TOKEN_STORE_WARNING}");
         Some(Arc::new(InMemoryTokenAuthAdapter::new()))
     } else {
         None
