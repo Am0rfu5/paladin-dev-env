@@ -16,22 +16,22 @@ rand = "0.8"
 base64 = "0.22"
 futures = "0.3"
 regex = "1.11.1"
-paladin-core = { package = "paladin-ai-core", version = "0.7.0", path = "crates/paladin-core" }
-paladin-ports = { version = "0.7.0", path = "crates/paladin-ports" }
-paladin-battalion = { version = "0.7.0", path = "crates/paladin-battalion" }
-paladin-herald = { version = "0.7.0", path = "crates/paladin-herald" }
-paladin-llm = { version = "0.7.0", path = "crates/paladin-llm" }
-paladin-memory = { version = "0.7.0", path = "crates/paladin-memory" }
-paladin-storage = { version = "0.7.0", path = "crates/paladin-storage" }
-paladin-notifications = { version = "0.7.0", path = "crates/paladin-notifications" }
-paladin-content = { version = "0.7.0", path = "crates/paladin-content" }
-paladin-web = { version = "0.7.0", path = "crates/paladin-web" }
+paladin-core = { package = "paladin-ai-core", version = "0.8.0", path = "crates/paladin-core" }
+paladin-ports = { version = "0.8.0", path = "crates/paladin-ports" }
+paladin-battalion = { version = "0.8.0", path = "crates/paladin-battalion" }
+paladin-herald = { version = "0.8.0", path = "crates/paladin-herald" }
+paladin-llm = { version = "0.8.0", path = "crates/paladin-llm" }
+paladin-memory = { version = "0.8.0", path = "crates/paladin-memory" }
+paladin-storage = { version = "0.8.0", path = "crates/paladin-storage" }
+paladin-notifications = { version = "0.8.0", path = "crates/paladin-notifications" }
+paladin-content = { version = "0.8.0", path = "crates/paladin-content" }
+paladin-web = { version = "0.8.0", path = "crates/paladin-web" }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid", "json", "migrate"] }
 qdrant-client = { version = "1.14" }
 
 [package]
 name = "paladin-ai"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2024"
 authors = ["Am0rfu5"]
 description = "Enterprise AI orchestration framework with multi-agent coordination patterns"
@@ -52,7 +52,7 @@ paladin-core = { workspace = true }
 paladin-ports = { workspace = true }
 paladin-battalion = { workspace = true }
 paladin-herald = { workspace = true }
-paladin-llm = { version = "0.7.0", path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
+paladin-llm = { version = "0.8.0", path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
 paladin-memory = { workspace = true, features = ["sqlite"] }
 paladin-storage = { workspace = true, features = ["sqlite"] }
 paladin-notifications = { workspace = true, optional = true }
