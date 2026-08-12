@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING: the agent API's `http.auth` bearer-token config key is renamed, with no
+  compatibility alias.** `http.auth.jwt.enabled` is renamed to `http.auth.bearer_token.enabled`;
+  the corresponding Rust type `paladin::config::agents::JwtAuthConfig` is renamed to
+  `BearerTokenAuthConfig`, and `AuthConfig`'s `jwt` field is renamed to `bearer_token`. No
+  `#[serde(alias = ...)]` or other compatibility shim is provided — a `config.yml` naming the old
+  `jwt` key (as shipped in v0.6.0/v0.7.0) will fail to deserialize rather than being silently
+  accepted. **Remedy:** rename the key from `jwt:` to `bearer_token:` in your `config.yml`. This
+  corrects the config surface to match the mechanism it has always run: an opaque, server-issued
+  bearer token verified in-process, never a signed or self-describing JWT. See
+  [ADR-0040](.planning/decisions/0040-opaque-bearer-token-mechanism.md).
+
 - **Licence: the project is now dual-licensed `MIT OR Apache-2.0`, additive to the existing MIT
   grant.** The root package and all ten library crates (`paladin-ai`, `paladin-ai-core`,
   `paladin-ports`, `paladin-battalion`, `paladin-herald`, `paladin-llm`, `paladin-memory`,

@@ -36,7 +36,7 @@ data:
           - key: "${PALADIN_API_KEY_APP}"
             name: "frontend"
             role: "user"
-        jwt:
+        bearer_token:
           enabled: false
       # Serve the OpenAPI spec + Swagger UI (set false to disable in production).
       docs:

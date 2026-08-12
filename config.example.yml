@@ -41,7 +41,7 @@ http:
     per_second: 10
     burst: 20
   # Authentication for the agent routes. Enabled by default: the server FAILS TO START
-  # if `enabled` is true and no credentials (api_keys / jwt) are configured. Set
+  # if `enabled` is true and no credentials (api_keys / bearer_token) are configured. Set
   # `enabled: false` for trusted/dev environments (logged as a warning). Health/readiness
   # probes are always open.
   auth:
@@ -55,8 +55,10 @@ http:
       - key: "${PALADIN_API_KEY_APP}"
         name: "frontend"
         role: "user"
-    # Accept user JWTs via the wired AuthPort (in-process token store).
-    jwt:
+    # Accept opaque server-issued bearer tokens via the wired AuthPort (in-process token
+    # store). A random string checked against the store's own hashed records — not a
+    # signed or self-describing token.
+    bearer_token:
       enabled: false
   # Interactive API docs: serve GET /openapi.json + Swagger UI at /docs (unversioned,
   # unauthenticated — the contract is public). Set false to omit them in production.
