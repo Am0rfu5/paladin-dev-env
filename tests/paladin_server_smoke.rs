@@ -328,7 +328,10 @@ async fn server_serves_openapi_spec_and_docs() {
     );
     let schemes = &spec["components"]["securitySchemes"];
     assert!(schemes.get("api_key").is_some(), "missing api_key scheme");
-    assert!(schemes.get("jwt").is_some(), "missing jwt scheme");
+    assert!(
+        schemes.get("bearer_token").is_some(),
+        "missing bearer_token scheme"
+    );
 
     // GET /docs/ → 200 (Swagger UI index).
     let resp = client
