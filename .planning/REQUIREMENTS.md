@@ -2424,12 +2424,14 @@ final forward-work signal Phases 14, 15 and 16 receive (D-22).**
    Epic 5) is `Contract diverges → WEB-01` — variant group 29, the only variant in five verification
    runs shipped code itself cannot settle. Its sibling `REQ-jwt-bearer-auth-v2` row (Milestone 12
    Epic 5) carries the same pointer. WEB-01 owns the resolution; this hand-off does not pre-empt it.
+
 2. **The multi-replica correctness edge, `Verified open`.** `REQ-k8s-manifests`'s row (Milestone 12
    Epic 7) is `Shipped, correctness question open → Phase 14 / WEB-02` — `k8s/deployment.yaml` ships
    liveness/readiness probes for multi-replica serving against an in-process token store, and
    `REQ-health-ready-endpoints`'s row cross-references it: the readiness probe's shallow check does
    not address the shared-store question. Not a scaling optimisation; a correctness question WEB-02
    owns.
+
 3. **ADR-0038's placement answer and its stated cost.** ADR-0038
    (`.planning/decisions/0038-agent-provisioner-placement.md`) ratifies `AgentProvisioner` staying in
    `crates/paladin-web`. Its own `## Downstream Consumers` names the cost explicitly: a future
@@ -2437,6 +2439,7 @@ final forward-work signal Phases 14, 15 and 16 receive (D-22).**
    crate to reuse the trait, or duplicate it — the split-`AgentSpec`-into-a-domain-spec-and-an-HTTP-DTO
    alternative (option-b at plan 13-09's checkpoint) was declined on `.rs`-boundary grounds, not
    because the cost is zero. Cite the ADR directly if this seam is revisited.
+
 4. **ADR-0039 as half of WEB-04's required "stated relationship".** ADR-0039
    (`.planning/decisions/0039-http-topology-no-garrison-no-arsenal.md`) ratifies the absence of
    Garrison and Arsenal on HTTP-served agents as a **permanent property of the shipped topology**,
@@ -2445,6 +2448,7 @@ final forward-work signal Phases 14, 15 and 16 receive (D-22).**
    surface; ADR-0039 supplies the HTTP-agent half of that relationship (no Arsenal wiring, by design)
    — WEB-04 still owns the LLM-tool-calling half (`REQ-llm-tool-calling-port`,
    `REQ-llm-tool-calling-adapters`, both `Verified open → WEB-04` in the ledger).
+
 5. **Two `Verified open` rows this ledger's own close-out amendment found, not previously in any
    Phase-14 hand-off.** `REQ-fail-closed-auth-posture` (Milestone 12 Epic 5) — the fail-closed auth
    posture's code path exists and matches its requirement's shape, but no test drives the `Err` branch
@@ -2514,22 +2518,26 @@ close-out amendments (2026-08-10)` section, "Reconciled against the two highligh
    recorded — `examples` and `kubernetes-smoke` are present with no corresponding run-5 entry, and
    `security` is gone (Phase 9, D-05). PIPE-01's own text is corrected at source by plan 13-10 (D-08);
    this hand-off points at that correction rather than repeating the job list.
+
 2. **`scripts/check-api-surface.sh:6` — closed in the script, open in four requirement texts.** The
    `.project/current-exports.txt` baseline exists and the script reads the dotted path correctly
    (ledger head-note paragraph 3); the *documentation* half — four Milestone 12 requirement texts
    still naming the undotted path, carrying Phase 8's dated banners already — stays open. Not a sixth
    ORCH-03 item (D-09); PIPE-04's own scope.
+
 3. **Deferred-QA Epic 25's coverage-threshold variant, recorded on both sides, unresolved.** A **78%
    hard gate** (parent PRD FR-25.3) versus a **phased 70 → 74 → 78 ramp** (Epic 25 FR-25.6), with the
    parent PRD's own OQ-3 recorded Open. Joins variant group 30 alongside the coverage gate's other
    three positions. `.planning/ledgers/milestone-09-12.md` rows `REQ-ci-combined-coverage-job` and
    `REQ-codecov-config-thresholds` (both `Verified open → PIPE-02`) carry both sides; PIPE-02 picks
    one.
+
 4. **The eight deprecated GitHub Action references, with stale line numbers.** `REQ-modernize-github-actions`'s
    row is `Partially open → PIPE-04` — the dangling `on: schedule` block (FR-25.2) is the one closed
    item; `actions-rs/toolchain@v1` (×4), `actions/cache@v3` (×3), `codecov/codecov-action@v3` (×1)
    remain, and run 5's own line numbers for them are stale by D-08 — re-grep before acting, don't
    trust the cited line numbers.
+
 5. **The shared mock-infrastructure prerequisite and the two coverage registers it unblocks.**
    `REQ-mock-infrastructure` (`Verified open, with one correction → DEFER-01`) is the shared
    prerequisite for both `REQ-user-service-test-coverage` (`DEFER-02`, its Milestone-8-vs-Deferred-QA
@@ -2553,6 +2561,7 @@ inherits — nothing further will re-derive these findings.**
    fourteen target files exist (`REQ-user-guides-rewrite`, `REQ-deployment-operations-docs-update`,
    both `Verified open (content) → Phase 16 / DOCS-01`), so file existence settles nothing — they are
    settleable only by content, per ORCH-02's own closed verdict above.
+
 2. **D-13(d)'s split — a closed relocation, an open rewrite.** `REQ-arch-doc-modernization`'s row is a
    dual-fact row per D-00f: `Shipped (relocated)` (the file moved from
    `docs/Design/Design_and_Architecture.md` to `docs/src/appendix/design-and-architecture.md`,
@@ -2561,11 +2570,13 @@ inherits — nothing further will re-derive these findings.**
    Maneuver, Sanctum or Sentinel, zero mermaid blocks — the seven missing subsystems). The relocation
    hid the gap rather than closing it, because Milestone 11 Epic 3's own non-goals exempt exactly the
    chapter its own Epic 2 moved the file into.
+
 3. **D-13(e)'s README and demos finding.** `REQ-asciinema-demos`'s row: `docs/assets/` **does not
    exist at all** (not merely empty, a correction plan 13-11 made to the plan's own stale premise),
    `docs/DEMOS.md` does not exist, and the README (193 lines, rewritten by Milestone 11 Epic 5) has no
    demos section at all — the clause targets a document that has changed shape. `docs/src/assets/`
    (a different, unrelated path) holds six architecture SVGs, not demo content.
+
 4. **The pre-existing `mdbook build` failure, unowned by any phase.** Two broken links —
    `deployment/docker.md:118` (a link outside the book root) and
    `user-guides/tool-integration.md:324` (an incomplete reference link) — both discovered by this
@@ -2574,6 +2585,7 @@ inherits — nothing further will re-derive these findings.**
    commits post-date the last successful `docs.yml` CI run (2026-07-06). Neither is caused by, nor
    corrected by, this phase's three documentation edits (`sidecar.md`, `http-service-host.md`,
    `overview.md`) — no phase owns fixing them yet.
+
 5. **`REQ-rustdoc-zero-warnings` and `REQ-public-api-doc-audit`**, both carrying DOCS-03: the
    `cargo doc` zero-warning bar is already ratified (ADR-0033, Phase 10) and the measured 20-warning
    residue is already assigned to Phase 16 by that ADR — DOCS-03 applies the already-decided bar, it
@@ -2644,7 +2656,7 @@ in the LLM port. All four are verified against the tree, and three of the four a
       verified-open finding 7; INGEST-CONFLICTS run-5 warning on the in-process store versus the
       Kubernetes Deployment.*
 
-- [ ] **WEB-03**: `ProviderCapabilities` reports the capability the adapters actually have.
+- [x] **WEB-03**: `ProviderCapabilities` reports the capability the adapters actually have.
       The Deferred-QA problem statement stands **unchanged in the tree**: "All three LLM adapters
       (OpenAI, DeepSeek, Anthropic) declare tool-calling capabilities in `ProviderCapabilities` but
       hardcode `function_call: None`." Verified: `crates/paladin-ports/src/output/llm_port.rs` has
@@ -4033,7 +4045,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | ORCH-05 | Phase 13 | Complete |
 | WEB-01 | Phase 14 | Pending |
 | WEB-02 | Phase 14 | Pending |
-| WEB-03 | Phase 14 | Pending |
+| WEB-03 | Phase 14 | Complete |
 | WEB-04 | Phase 14 | Pending |
 | PIPE-01 | Phase 15 | Pending |
 | PIPE-02 | Phase 15 | Pending |
