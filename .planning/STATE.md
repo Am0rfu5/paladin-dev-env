@@ -5,8 +5,8 @@ milestone_name: Milestone 2-3 close-out
 current_phase: 15.1
 current_phase_name: Git & CI Governance
 status: planning
-stopped_at: Phase 15 context gathered
-last_updated: "2026-08-13T20:45:44.316Z"
+stopped_at: Phase 15.1 context gathered
+last_updated: "2026-08-13T23:14:49.334Z"
 last_activity: 2026-08-13
 last_activity_desc: Phase 15 complete, transitioned to Phase 15.1
 progress:
@@ -724,14 +724,14 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Phase 15 context gathered
+**Stopped at:** Phase 15.1 context gathered
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-12T23:31:32.619Z
-Resume file: .planning/phases/15-coverage-ci-quality-gates/15-CONTEXT.md
+Last session: 2026-08-13T23:14:49.232Z
+Resume file: .planning/phases/15.1-git-ci-governance/15.1-CONTEXT.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
