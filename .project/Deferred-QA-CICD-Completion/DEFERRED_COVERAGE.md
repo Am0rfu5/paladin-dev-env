@@ -17,6 +17,20 @@ This document tracks modules with deferred test coverage, providing rationale an
 > of four relocations `.planning/ledgers/milestone-09-12.md` derives (row
 > `REQ-listener-service-test-coverage`, D-13(b)) and ORCH-03(b) names. Owner **Phase 15 / DEFER-03**.
 > Original text is retained below with inline corrections — nothing is deleted.
+>
+> **Re-measured (dated 2026-08-13, Phase 15 / DEFER-03, plan 15-10):** the 57.83% baseline above is
+> now superseded by a real measurement, not merely flagged stale. An entry-side re-measurement
+> attempt was recorded honestly as **NOT MEASURED** (`cargo-llvm-cov` uninstallable in every
+> authoring environment this phase used — crates.io returned HTTP 403), rather than carrying
+> 57.83% forward or fabricating a number. The exit measurement, produced via
+> `.planning/decisions/0006-coverage-gate.md`'s own local raw `rustc`/`llvm-profdata`/`llvm-cov`
+> substitute scoped to `cargo test -p paladin-ai --lib application::services::orchestration::listener`
+> (the module's own tests): **96.90% line coverage (1161 lines, 36 missed)**, clearing the 80%
+> target by 16.90 points. Not comparable to ADR-0006's 82.39% workspace `--features
+> integration-tests` gate figure — different scope, stated explicitly per the same
+> non-comparability rule ADR-0006 states throughout. See `.planning/REQUIREMENTS.md`'s DEFER-03
+> correction and `.planning/ledgers/milestone-09-12.md`'s `REQ-listener-service-test-coverage` row
+> for the full evidence chain (plans 15-08, 15-09, commits `4291c44`/`53b1179`/`f216c16`/`6a66719`).
 
 ## Epic 24 Coverage Review Status
 
@@ -400,6 +414,28 @@ Before tackling deferred coverage:
 4. Create reusable mock infrastructure patterns
 5. Document testing best practices
 6. Establish concurrency testing patterns
+
+> **Closure record (dated 2026-08-13, Phase 15, plan 15-10):** all three remaining unchecked
+> prerequisites are now satisfied, each with named evidence — recorded explicitly rather than left
+> as an unchecked box with satisfied content, which is exactly the class of stale signal this phase
+> exists to remove.
+>
+> 4. ✅ **Create reusable mock infrastructure patterns** — met by `src/test_support/`
+>    (`src/test_support/mod.rs`, `failing_channel_handler.rs`, `event_factory.rs`), the `src/`-side
+>    twin to `tests/helpers/` that this module's and `user_service.rs`'s co-located tests actually
+>    needed (plan 15-05, commits `b89b263`/`a03b043`). See `.planning/REQUIREMENTS.md`'s DEFER-01
+>    correction for the full five-name verdict table.
+> 5. ✅ **Document testing best practices** — met by the Code Coverage section in
+>    `docs/src/contributing/testing-guide.md` (rewritten end-to-end: prerequisites, local
+>    generation, threshold policy, reading output, troubleshooting; plan 15-04, commit `b6baf96`).
+> 6. ✅ **Establish concurrency testing patterns** — met by the four timeout-guarded,
+>    exact-assertion concurrency/stress scenarios in `listener.rs`'s test module:
+>    `concurrent_emission_from_multiple_producers_yields_the_exact_expected_trigger_total`,
+>    `concurrent_registration_and_unregistration_during_active_processing_stays_consistent`,
+>    `a_1000_plus_event_burst_across_several_producers_yields_exact_aggregate_counts`, and
+>    `dropping_the_orchestrator_during_active_processing_completes_without_panicking_or_leaking_a_lock`
+>    (plan 15-09, commit `f216c16`), named as the reference implementation for future
+>    `tokio::sync::Mutex`/`RwLock`-guarded orchestrator tests in this workspace.
 
 ---
 

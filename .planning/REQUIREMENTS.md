@@ -2567,6 +2567,35 @@ close-out amendments (2026-08-10)` section, "Reconciled against the two highligh
 `REQ-codecov-config-thresholds`; `.planning/decisions/0034-d1-d4-facade-relocation-disposition.md`;
 `REQUIREMENTS.md`'s own PIPE-04 D-09 four-requirement-text pointer.
 
+**Dispositions (dated 2026-08-13, Phase 15, plan 15-10) — each of the five items above, closed:**
+
+1. **The 15-job list has grown to 19, re-counted at execution time.** Phase 15 added four jobs —
+   `coverage` (plan 15-01), `cli-tests` (plan 15-01), `bench-check` (plan 15-01), `actionlint`
+   (plan 15-02) — `python3 -c "import yaml; print(len(yaml.safe_load(open('.github/workflows/ci.yml'))['jobs']))"`
+   → **19**. The corrected job id list: `lint`, `actionlint`, `security-audit`, `cargo-deny`,
+   `osv-scanner`, `api-surface`, `test`, `examples`, `crate-isolation`, `integration-tests`,
+   `coverage`, `cli-tests`, `bench-check`, `docker`, `kubernetes-smoke`, `e2e-tests`, `benchmark`,
+   `benchmark-regression-signal`, `publish-dry-run`.
+2. **`check-api-surface.sh:6` — no further action.** This item was already closed in the script at
+   the time of this hand-off (D-09) and open only in four Milestone 12 requirement texts, which
+   remain out of this phase's `PIPE-*`/`DEFER-*` scope — nothing in Phase 15 touches
+   `check-api-surface.sh` or those four texts. Recorded here as disposed-elsewhere, not
+   re-actioned.
+3. **The threshold variant is settled by ADR-0006.** See PIPE-02's own correction above — the
+   78%-vs-70→74→78 variant (group 30) is resolved by ADR-0006's Phase 15 amendment recording one
+   number (82%, derived from a fresh 82.39% measurement), not by picking a side of either inherited
+   position. Both positions are recorded rejected in ADR-0006's `## Considered Options`.
+4. **The stale action line numbers are corrected by PIPE-04's own amendment above** — the count is
+   seven upgraded plus one deleted (not eight upgraded), all eight original stale references are
+   gone (`grep -rn 'actions-rs/\|cache@v3\|codecov-action@v3' .github/workflows/` → zero matches),
+   and no new line-number citation is recorded here per PIPE-04's own note that any such citation
+   goes stale the moment the file changes.
+5. **The mock prerequisite is resolved with ADR-0034's resolution applied.** DEFER-01 (mock
+   infrastructure) shipped first (plan 15-05), unblocking DEFER-02 and DEFER-03 in sequence per the
+   register's own stated order. ADR-0034's resolution (the `user_service.rs` split withdrawn, sized
+   against the unsplit file) is what DEFER-02's correction above applies — the sequencing collision
+   this item names is closed, not merely inherited forward.
+
 #### Hand-off to Phase 16 / DOCS-01 … DOCS-04 — dated 2026-08-10 (plan 13-13)
 
 **This is the last ground-truth phase in the corpus, so this block is the final word on what Phase 16
@@ -2789,7 +2818,7 @@ reference at all — but `integration-tests.yml:117-123` **does** run `cargo ins
 integration-only coverage path exists; what is missing is the combined unit + integration job, the
 threshold configuration and the local targets. Scope accordingly.
 
-- [ ] **PIPE-01**: The 43 CLI snapshot tests and a benchmark compile check run in CI.
+- [x] **PIPE-01**: The 43 CLI snapshot tests and a benchmark compile check run in CI.
       A **`cli-tests`** job (or a step in `test`) runs `cargo test --test cli` across every snapshot
       test in `tests/cli/` — table, progress, error and help output, **43 total** — on every push
       and PR to `main`/`develop`, on `stable`, with the same cargo cache config as other jobs,
@@ -2839,7 +2868,29 @@ threshold configuration and the local targets. Scope accordingly.
       alternatives; this note is the reverse pointer so a Phase 15 planner does not have to
       rediscover the link.
 
-- [ ] **PIPE-02**: Unit and integration coverage is measured together in CI and gated at **one
+      **Corrected and closed (dated 2026-08-13, Phase 15, plan 15-10):** ~~"43 total"~~ was itself
+      stale — it counted four of the seven `tests/cli/*.rs` files that carry `#[test]` functions.
+      Re-counted at execution time: `ls tests/cli/snapshots | wc -l` → **86** snapshot files;
+      `grep -c '#\[test\]' tests/cli/*.rs` summed across all fifteen files in `tests/cli/` →
+      **97** test functions, non-zero in exactly seven of them
+      (`error_output_test.rs` 15, `environment_tests.rs` 44, `progress_output_test.rs` 8,
+      `integration_tests.rs` 3, `error_handling_test.rs` 7, `help_output_test.rs` 12,
+      `table_output_test.rs` 8 — sum 97). The original "43 total" figure is retained above, marked
+      superseded, per D-00d. **`cargo test --test cli` as written compiles nothing**: the `cli`
+      `[[test]]` target carries `required-features = ["cli"]` (`Cargo.toml:211-213`), which makes
+      Cargo silently skip the target when that feature is not passed — this is why the suite never
+      ran in CI before this phase. Plan 15-01 landed the fix: `.github/workflows/ci.yml`'s
+      **`cli-tests`** job (`Workflow Lint`-adjacent, id `cli-tests`, name "CLI Snapshot Tests")
+      runs `cargo test -p paladin-ai --features cli --test cli` with a shell guard that fails the
+      step on a zero-executed-tests report (the exact failure mode the silent skip would otherwise
+      hide), and the **`bench-check`** job runs `cargo bench --workspace --no-run`, compile-only,
+      leaving the pre-existing `benchmark`/`benchmark-regression-signal` jobs untouched. Both job
+      ids re-confirmed present via `python3 -c "import yaml; print(list(yaml.safe_load(open('.github/workflows/ci.yml'))['jobs']))"`.
+      Requirement closed by plans 15-01 (job scaffolding) and 15-04 (CI run
+      `31727496744`, job "CLI Snapshot Tests" → success, job "Benchmark Compile Check" → success,
+      commit `e9e3267f9ae6d8483be3ee52c04ffe6a763cbb37`).
+
+- [x] **PIPE-02**: Unit and integration coverage is measured together in CI and gated at **one
       recorded threshold**. A `coverage` job installs `cargo-llvm-cov` via
       `taiki-e/install-action@v2` with `tool: cargo-llvm-cov@0.7.1` (pre-built binaries, ~30 s
       versus 3-5 min for `cargo install`), runs
@@ -2882,6 +2933,39 @@ threshold configuration and the local targets. Scope accordingly.
       `### Phase 6 CLOSE-02 scope` section for the full reason and the two rejected alternatives;
       this note is the reverse pointer so a Phase 15 planner does not have to rediscover the link.
 
+      **Corrected and closed (dated 2026-08-13, Phase 15, plan 15-10):** the threshold is **settled**
+      — see `.planning/decisions/0006-coverage-gate.md`'s `## Phase 15 amendment (2026-08-13)`,
+      which is the one home for this number; it is not restated here. `--all-features` (this
+      text's own original instruction, above) was **rejected** in favor of
+      `--features integration-tests`: `--all-features` would pull in `qdrant` (needs a live
+      Qdrant service) and the vision/embedding suites (need real provider API keys), putting code
+      in the denominator that nothing in CI can exercise (ADR-0006 Phase 15 amendment, section
+      Two). The gate actually landed is `cargo llvm-cov --workspace --features integration-tests
+      --lcov --output-path lcov.info --fail-under-lines 82 -- --test-threads=1` in
+      `.github/workflows/ci.yml`'s `coverage` job (`grep -n 'fail-under-lines' .github/workflows/ci.yml`
+      → one match); Codecov (`codecov/codecov-action@v5`) uploads from the same job with no
+      `fail_ci_if_error`, so **Codecov reports without gating** — the enforcement mechanism is
+      `--fail-under-lines`, not the Codecov status check this requirement's original text
+      specified. The `taiki-e/install-action` pin named in the original text above
+      (`cargo-llvm-cov@0.7.1`) was stale; the version verified at execution time and actually
+      pinned is `cargo-llvm-cov@0.8.7` (`grep -n 'tool: cargo-llvm-cov' .github/workflows/ci.yml`).
+      **Epic 25's Open Question 3 is recorded answered**: the `integration-tests.yml` coverage step
+      (`cargo llvm-cov --features integration-tests --lcov` plus `codecov/codecov-action@v3`) was
+      **removed**, matching the parent PRD's own recommendation ("Remove it to avoid duplicate
+      coverage uploads") rather than retained with a different flag — plan 15-02, commit `f9b5ad2`.
+      **The two outward couplings this requirement's own text names, both closed by observation
+      rather than left to be discovered:** PIPE-02's threshold lands on ADR-0006's single binding
+      number — there is no second number recorded anywhere in this requirement text. The CI figure
+      (82.39% workspace line coverage, `--features integration-tests`, Redis/MinIO live) differs
+      from RECON-07's (84.79%, default-feature offline `rustc`/`llvm-profdata` pipeline) and
+      VERIFY-05's (85.85%, Phase 8 re-measurement, same offline pipeline) recorded figures **by
+      scope, not by regression** — a wider feature set and the inclusion of `crates/doc-examples/`
+      (previously excluded by the offline pipeline's `--ignore-filename-regex`) grow the
+      denominator; nothing that used to count as covered now counts as missed (ADR-0006 Phase 15
+      amendment, section Three, states the same arithmetic in full). Closed by CI run `31727496744`
+      (job `Coverage` → success, `Lines: 39233/47618 = 82.39%`, truncates to 82, passes
+      `--fail-under-lines 82`), commit `e9e3267f9ae6d8483be3ee52c04ffe6a763cbb37`.
+
 - [x] **PIPE-03**: Coverage and the two new test targets are runnable locally. A new **Coverage**
       section in the `Makefile` between Testing and Code Quality with `coverage`
       (`cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info`) and
@@ -2892,6 +2976,20 @@ threshold configuration and the local targets. Scope accordingly.
       adds would be unreproducible locally, which is the failure mode this requirement prevents.
       *Derives: REQ-makefile-coverage-targets (FR-25.7); `intel/code-verification.md` run-5
       verified-open finding 3.*
+
+      **Corrected and closed (dated 2026-08-13, Phase 15, plan 15-10):** the two flag references in
+      this requirement's own original text above are wrong. The `coverage`/`coverage-html`
+      Makefile targets carry `--features integration-tests`, not `--all-features` — identical,
+      flag-for-flag, to the CI `coverage` job (`diff` of the extracted `llvm-cov ...
+      test-threads=1` substring between `.github/workflows/ci.yml` and `make -n coverage` output is
+      empty). `test-cli` carries `cargo test -p paladin-ai --features cli --test cli`, not a bare
+      `cargo test --test cli` — without `--features cli` the target's `required-features = ["cli"]`
+      makes Cargo silently skip it and run zero tests, per PIPE-01's correction above. The five
+      shipped targets: `coverage`, `coverage-html`, `test-cli`, `bench-check` (all four this
+      requirement names), plus the extended `ci-test` (now runs `test-cli` between `test` and
+      `test-doc`) and `ci-full: ci-test coverage` (new). Closed by plan 15-01, commits `e54a94f`
+      (coverage/coverage-html) and `a6653b5` (test-cli/bench-check/ci-test/ci-full), and armed by
+      plan 15-03, commit `3454749` (`--fail-under-lines 82` added to the `coverage` target).
 
 - [x] **PIPE-04**: No deprecated GitHub Action remains in any workflow. **Eight references,
       verified by line:** `actions-rs/toolchain@v1` (deprecated and unmaintained) at `ci.yml:147`,
@@ -2913,6 +3011,32 @@ threshold configuration and the local targets. Scope accordingly.
       *Derives: REQ-modernize-github-actions (FR-25.1, FR-25.2), REQ-workspace-ci-upgrade (run 3);
       `intel/code-verification.md` run-5 verified-open finding 3.*
 
+      **Corrected and closed (dated 2026-08-13, Phase 15, plan 15-10):** all three defects in this
+      requirement's own original text above are corrected. **The cited line numbers
+      (`ci.yml:147`, `:317`, `:507`, `integration-tests.yml:71`, `:78`, `:84`, `:90`, `:123`) were
+      stale before this phase touched the files** — 15-02's own SUMMARY records the real
+      pre-edit sites as `ci.yml`'s `api-surface`, `integration-tests` and `benchmark` jobs plus
+      `integration-tests.yml`'s `integration-tests` job (four `actions-rs/toolchain@v1` sites,
+      not the four lines quoted above) and three `actions/cache@v3` sites in
+      `integration-tests.yml`. **Any line number written in this requirement is stale the moment
+      the cited file next changes** — re-grep, do not trust a citation transcribed here. **The
+      count of references to *upgrade* is seven, not eight**: `codecov/codecov-action@v3` was
+      **deleted** (D-03), not upgraded to `codecov/codecov-action@v4` as this requirement's
+      original text directs — the `Generate integration test coverage` /
+      `Upload integration coverage` step pair that carried it was removed from
+      `integration-tests.yml` entirely, because the replacement upload lands in `ci.yml`'s new
+      `coverage` job instead (a **v5** upload, not v4 — `codecov/codecov-action@v5`,
+      `grep -n 'codecov-action@v5' .github/workflows/ci.yml`). The remaining seven (four
+      `actions-rs/toolchain@v1` → `dtolnay/rust-toolchain@stable`, three `actions/cache@v3` →
+      `@v4`) were upgraded in place. **"All three workflows" is wrong — six workflow files exist**
+      (`ls .github/workflows/` → `ci.yml`, `docs.yml`, `feature-flags.yml`,
+      `integration-tests.yml`, `pre-commit.yml`, `release.yml`) and **all six are linted**, not by
+      a one-time check but by a **standing `actionlint` job** (`ci.yml`, job id `actionlint`, name
+      "Workflow Lint", no `needs:`, targets `.github/workflows/*.yml`) that runs on every push and
+      PR. `grep -rn 'actions-rs/\|cache@v3\|codecov-action@v3' .github/workflows/` returns zero
+      matches across all six files. Closed by plan 15-02, commits `f9b5ad2` (action upgrades and
+      the coverage-step deletion) and `801a300` (the `actionlint` job).
+
 - [x] **PIPE-05**: `CONTRIBUTING.md` has a Code Coverage section that matches what CI does.
       Prerequisites (`cargo install cargo-llvm-cov` / `cargo binstall`), local generation
       (`make coverage`, `make coverage-html`), how to read LCOV and HTML output, Codecov PR-comment
@@ -2925,7 +3049,35 @@ threshold configuration and the local targets. Scope accordingly.
       *Derives: REQ-contributing-coverage-docs (FR-25.8); depends on PIPE-02 for the threshold and
       PIPE-03 for the targets it documents.*
 
-- [ ] **DEFER-01**: The shared mock and async-test infrastructure that three registers name as a
+      **Corrected and closed (dated 2026-08-13, Phase 15, plan 15-10):** the `CONTRIBUTING.md`
+      premise in this requirement's own original text above is **relocated-by-outcome**, not
+      simply stale — the file does not exist (`test -f CONTRIBUTING.md` fails); Milestone 11's
+      mdbook overhaul relocated contributor documentation into the book, and the Code Coverage
+      section landed at `docs/src/contributing/testing-guide.md`. The second premise is also
+      corrected: the `cargo tarpaulin` references this requirement says to update **are not in
+      contributor documentation at all** — the only ones in the tree were in
+      `.planning/codebase/TESTING.md` (a planning artefact, not a contributor-facing doc), which
+      ADR-0006 had already flagged as stale tool-of-record guidance. Both files were corrected:
+      `docs/src/contributing/testing-guide.md`'s `## Test Coverage` section was rewritten
+      end-to-end (prerequisites, `make coverage`/`make coverage-html`, the `--features
+      integration-tests` scope rationale, the 82% threshold policy, reading LCOV/HTML output,
+      Codecov's non-gating behaviour, troubleshooting), and `.planning/codebase/TESTING.md`'s
+      Coverage section now relabels `cargo tarpaulin` as a non-comparable informal alternative
+      (`cargo-llvm-cov` is the tool of record). **The "done when" outcome, from plan 15-04's
+      checkpoint:** the CI-produced figure is confirmed — run `31727496744`, commit
+      `e9e3267f9ae6d8483be3ee52c04ffe6a763cbb37`, job `Coverage` → success, `Lines:
+      39233/47618 = 82.39%` — but the **local** `make services-up` → `make coverage` walkthrough
+      of the rewritten section has **not** been run end-to-end on a Docker-capable machine by a
+      human (no authoring environment in Phase 15 had Docker), so the two figures — CI's 82.39%
+      and a local reproduction — could not be compared, and no "they agreed" claim is made. The
+      human user, presented with this at plan 15-04's checkpoint, selected **"Accept, track local
+      check"** — tracked at
+      `.planning/todos/pending/2026-08-13-verify-local-coverage-reproduction.md`, owner repo
+      maintainer, no `resolves_phase` tag so it outlives this phase. Closed by plan 15-04, commits
+      `b6baf96` (testing-guide.md) and `b7c74b2` (instruction-file corrections), with the local
+      walkthrough recorded as an open, owned item rather than assumed complete.
+
+- [x] **DEFER-01**: The shared mock and async-test infrastructure that three registers name as a
       prerequisite exists. `MockUserRepository` (`UserRepositoryPort`, in-memory `HashMap`),
       `MockLogPort` (`Vec<LogEntry>` for assertion), `MockNotificationService` (sent-messages
       vector), `MockEventSource` (configurable event sequences with controlled timing),
@@ -2949,7 +3101,39 @@ threshold configuration and the local targets. Scope accordingly.
       `intel/code-verification.md` run-5 verified-open finding 6; INGEST-CONFLICTS run-5 warning on
       the missing mock prerequisite.*
 
-- [ ] **DEFER-02**: `user_service.rs` reaches the coverage gate — **sequenced deliberately against
+      **Corrected and closed (dated 2026-08-13, Phase 15, plan 15-10):** the `tests/common/`
+      placement this requirement's original text weighs against `tests/helpers/` is corrected as
+      **stale-by-structure, not merely stale-by-path.** Both coverage requirements this
+      infrastructure exists to unblock (DEFER-02, DEFER-03) test from **inside `src/`** via
+      co-located `#[cfg(test)] mod tests` blocks, and `tests/` is a separate crate `src/` cannot
+      import from — no placement under `tests/` (neither the PRD's `tests/common/` nor the
+      existing `tests/helpers/`) could ever have served either requirement. The shipped answer is
+      `src/test_support/` (`#[cfg(test)]`-gated at the module declaration in `src/lib.rs`), the
+      `src/`-side twin to `tests/helpers/`, coexisting without overlap. **Open Question 2 is
+      answered explicitly**: hand-written mocks, `mockall` **not** adopted — the demand-driven set
+      built (`FailingChannelHandler`, `event_factory`) needed no derive-macro mocking framework,
+      and adding one would be a manifest edit this phase's own acceptance criteria forbid. Named
+      reintroduction trigger: a future consumer whose required trait surface is large enough that
+      hand-written boilerplate cost exceeds `mockall`'s compile-time cost — not met by anything
+      built in this phase.
+
+      **The five-name verdict table**, reconciled with the ledger's existing
+      `REQ-mock-infrastructure` row (which already corrects the register on `MockLogPort`, present
+      but unshared, rather than absent — this table does not contradict that finding):
+
+      | Named mock | Verdict | Detail |
+      |---|---|---|
+      | `MockUserRepository` | Unnecessary | `user_service.rs`'s tests (15-06, 15-07) exercise the real `SqliteUserRepository` against `sqlite::memory:`, not a repository double — a real in-memory database gave stronger guarantees (e.g. proving the `username TEXT UNIQUE NOT NULL` constraint arbitrates concurrent same-username registration) than a `HashMap`-backed fake could have. |
+      | `MockLogPort` | Built (locally), not shared | The ledger's existing finding stands: present but unshared at two pre-existing module-local `#[cfg(test)]` sites (`src/application/services/log_orchestrator/mod.rs:372`, `src/config/user_config.rs:74`). Plan 15-06 added a **third**, `RecordingLogPort`, local to `user_service.rs`'s own test module — not exported to `src/test_support/` because `LogPort` is `Arc<dyn LogPort>`, a sanctioned per-consumer seam, and the three sites' needs did not converge on one shared shape. |
+      | `MockNotificationService` | Replaced by a named alternative | `FailingChannelHandler` in `src/test_support/failing_channel_handler.rs` — a real `NotificationChannelHandler` double registered on a genuine `NotificationService` via the public `register_channel_handler` seam, rather than a substitute for the concrete `Arc<NotificationService>` itself (which is not trait-substitutable). |
+      | `MockEventSource` | Unnecessary | `listener.rs`'s tests (15-08, 15-09) drive real `Event`s through the real `ListenerOrchestrator` via `src/test_support/event_factory` (`build_event`, `build_non_matching_event`, `build_event_batch`), not a configurable fake source — the deterministic factory served every DEFER-03 scenario including the 1200-event burst. |
+      | `MockTriggerExecutor` | Unnecessary | No consumer needed one: `listener.rs`'s trigger status/retry coverage (15-08) exercises `update_trigger_status`/`get_trigger` directly against the real trigger store, and DEFER-03's own scope text names no external trigger-execution boundary this module delegates to. |
+
+      No name is silently dropped. Closed by plan 15-05 (module scaffolding, `FailingChannelHandler`,
+      `event_factory`, commits `b89b263`/`a03b043`) plus the consumption evidence in plans 15-06
+      through 15-09.
+
+- [x] **DEFER-02**: `user_service.rs` reaches the coverage gate — **sequenced deliberately against
       deferred item D2, not scheduled independently of it.** Recorded profile: **488 LOC, ~4.23%
       coverage, complexity High, production status Active** (used in web controllers and CLI
       commands); effort 15-20 h; risk of deferral **Medium** — "Authentication logic is critical
@@ -2976,7 +3160,66 @@ threshold configuration and the local targets. Scope accordingly.
       REQ-m8-deferred-items-register D2 (run 4); INGEST-CONFLICTS run-5 warning on two registers
       proposing incompatible actions on `user_service.rs`. **Couples to FACADE-02 (Phase 11).***
 
-- [ ] **DEFER-03**: The listener service's coverage scope is **re-measured before it is planned**.
+      **Corrected and closed (dated 2026-08-13, Phase 15, plan 15-10):** the recorded profile in
+      this requirement's own original text above is stale — the file ships at **583 lines**, not
+      488 (`wc -l src/core/platform/manager/user_service.rs`, as re-verified by ADR-0034 section
+      (ii) D2, dated before this phase's own test additions), and by the end of this phase's own
+      plans 15-06/15-07 has grown to **1628 lines** — the difference is this phase's own added test
+      code, not a further staleness to chase. The `~4.23%` coverage figure is likewise stale;
+      plan 15-07 measured **entry**-adjacent state via `cargo llvm-cov --workspace --lib --json
+      --output-path /tmp/cov.json` (default features, no `--features integration-tests`) at
+      commit `432d514`, reaching **94.21% line coverage (927/984 lines)** — the module's
+      **exit** figure for this requirement, well above the ≥ 80% bar. This figure is **not
+      comparable** to ADR-0006's 82.39% workspace `--features integration-tests` gate figure —
+      different scope (`--lib` vs `--features integration-tests`, module-only vs workspace-wide),
+      stated explicitly per the same non-comparability rule ADR-0006 states for every module-scoped
+      measurement. **The collision text is corrected**: it described a live sequencing question
+      that **ADR-0034 has since dissolved** (`.planning/decisions/0034-d1-d4-facade-relocation-disposition.md`
+      § "(ii) D2"). The split is **withdrawn**, owned by **nobody** — there is no future trigger
+      that revives it. The full `user_service.rs` relocation (beyond the split) is owned by the
+      **run-3 v2 tech-debt item**. **The tests are owned by this requirement (DEFER-02)**, sized
+      against the file as it ships today (unsplit), exactly as ADR-0034 directs.
+      **Every observed-versus-assumed difference plans 15-06 and 15-07 found, named with an
+      owner:**
+      - Duplicate-registration check is **email-scoped only** — a case-variant username with a
+        distinct email is **accepted**, not rejected; no username-uniqueness check exists in
+        `register_user` at the application layer (owner: none — this is the module's real,
+        intentional behaviour, not a defect).
+      - `validate_username`'s length bounds are enforced via `str::len()` (UTF-8 **byte** length),
+        not `chars().count()` — a 2-character/4-byte Unicode username is accepted where a
+        char-count rule would reject it (owner: none — pinned as observed behaviour, not changed).
+      - **Notification failure does not block registration**, confirmed by discriminating test
+        rather than assumed: `register_user` returns `Ok`, the user is retrievable, and a `Warn`
+        log entry is written when the registered channel handler always fails.
+      - **A production finding, named with an owner**: concurrent same-username registration has
+        **no race in `register_user`'s own logic** — its email-scoped check clears both concurrent
+        calls, but the database's `username TEXT UNIQUE NOT NULL` constraint (declared in
+        `sqlite_user_repository.rs`'s migration) catches the collision downstream; exactly one
+        `INSERT` succeeds, confirmed stable across 5 repeated runs (owner: none — no production
+        change needed, the constraint is the safety net doing its job).
+      - **A second production-shaped finding, named with an owner**: the "send a welcome
+        notification" success path (`send_welcome_notification`'s `Ok(())` return) is unreachable
+        in the module's own test suite by design — the shared `build_service()` fixture never
+        caches a `"user_welcome"` template, so `NotificationService::send_notification` always
+        fails at template resolution before reaching a channel handler; the 94.21% figure is
+        reached entirely through that call's *failure* branch. Owner: **none assigned** — closing
+        this gap would need a third notification fixture (cached template + processor + a
+        succeeding channel handler) that no requirement in this phase's scope named.
+      - **Login-attempt tracking, named in this requirement's own test-scope text above, is not
+        implemented anywhere in the module** — `login_user` has no attempt counter or lockout
+        threshold, and `UserData` carries no related field; there is nothing to test. This
+        requirement's own scope text names a path the shipped code does not have (owner: none —
+        recorded as a scope-text defect, not a gap in test coverage).
+      - **The generic "repository error" edge case is intentionally left untested at this layer**
+        — every method propagates `UserRepositoryPort` failures with a bare `?`; forcing a live
+        failure here would need a dedicated test double disproportionate to this requirement's
+        scope, and `SqliteUserRepository`'s own error-mapping already has direct unit tests
+        (owner: none — a deliberate, recorded scope boundary).
+      Closed by plans 15-06 (registration/validation/hashing/notification-failure, commits
+      `a249f68`/`298d6c3`) and 15-07 (authentication/profile/queries/concurrency/measurement,
+      commits `432d514`/`42ae77f`).
+
+- [x] **DEFER-03**: The listener service's coverage scope is **re-measured before it is planned**.
       Recorded profile: **602 LOC, ~57.83% coverage, complexity Very High, production status
       Active** (event-driven system core); effort 20-25 h; risk of deferral **Medium-High** —
       "Event-driven systems are notoriously hard to debug; concurrency bugs can be subtle and
@@ -3001,6 +3244,58 @@ threshold configuration and the local targets. Scope accordingly.
       *Derives: REQ-listener-service-test-coverage (FR-29.2 to FR-29.7; DEFERRED_COVERAGE Module 2),
       REQ-event-trigger-job-pipeline (M9 Epic 2 FR-16 to FR-21), REQ-deferred-coverage-register;
       INGEST-CONFLICTS run-5 warning on the stale Epic 29 baseline.*
+
+      **Corrected and closed (dated 2026-08-13, Phase 15, plan 15-10):** the path half of this
+      requirement's own original text above was already self-corrected when it was written (it
+      names `src/application/services/orchestration/listener.rs` directly, above) — re-confirmed
+      present this session (`test -f src/application/services/orchestration/listener.rs`). **The
+      57.83% baseline dated 2026-02-14 is superseded**, not by an "entry figure" — plan 15-08
+      attempted the re-measurement first and recorded it honestly as **NOT MEASURED**
+      (`cargo-llvm-cov` uninstallable in every authoring environment this phase used: crates.io
+      returned HTTP 403), rather than fabricating a number or silently carrying 57.83% forward.
+      Plan 15-09 then produced a real measurement via ADR-0006's own already-proven local
+      substitute (the raw `rustc -C instrument-coverage` + `llvm-profdata`/`llvm-cov` pipeline),
+      scoped to `cargo test -p paladin-ai --lib application::services::orchestration::listener` —
+      the module's own 27 tests. **Exit figure: 96.90% line coverage (1161 lines, 36 missed)**,
+      clearing the 80% module bar by 16.90 points. The delta is framed as a re-measurement across
+      the Milestone 6 Epic 2 relocation and roughly six months of accumulated test work (the
+      2026-02-14 baseline to this phase's 2026-08-13 measurement) — not a like-for-like before/after
+      on the same scope, since no entry figure exists to compare against; this is stated
+      explicitly rather than implied. This exit figure is **not comparable** to ADR-0006's 82.39%
+      workspace `--features integration-tests` gate figure (narrower — one module's own tests only,
+      not every workspace lib test; offline/local rather than CI's Docker-backed run) — stated
+      inline per the same non-comparability rule DEFER-02's correction above states.
+      **The re-derived effort**, superseding this requirement's own inherited 20-25 h figure (and
+      the register total's 35-45 h, which included this module): the register's estimate budgeted
+      for infrastructure (a dedicated `MockEventSource`/`MockTriggerExecutor` pair, a mock-clock
+      framework) that turned out unnecessary or structurally inapplicable — direct inspection shows
+      `ListenerWrapper::can_create_trigger`, `record_trigger_created` and `Trigger::is_expired` all
+      read `chrono::Utc::now()`, never `tokio::time::Instant`, so no mock-clock framework matching
+      the register's spec could ever have controlled this module's rate-limit or expiry behaviour.
+      Actual effort across plans 15-08 and 15-09 was on the order of **low single-digit hours**.
+      **Every justification entry** for the 36 remaining missed lines, categorized rather than
+      hand-waved: the hand-written `Debug` impl for `ListenerWrapper` (no branching logic, nothing
+      to assert); the `create_trigger` error-log arm in `process_event` (structurally unreachable
+      without a mock returning `Err`, which this phase's DEFER-01 scope did not authorize adding to
+      `MockEventListener`); and a handful of `llvm-cov` line-vs-region attribution artifacts on
+      multi-line `match`/`?`/macro constructs where the enclosing statement demonstrably executes.
+      **The production/concurrency finding from plan 15-09's concurrency suite, named with an
+      owner**: one genuine test gap was discovered and **closed within the same plan**, not left as
+      a defect — `update_trigger_status`'s `triggers_completed`/`triggers_failed` listener-side
+      increment arms were never exercised by plan 15-08's status round-trip test (it never
+      registered a listener under the trigger's `source`), closed by
+      `update_trigger_status_increments_the_registered_listeners_completed_and_failed_counters`
+      (owner: none — closed, not deferred). Separately, the graceful-shutdown test
+      (`dropping_the_orchestrator_during_active_processing_completes_without_panicking_or_leaking_a_lock`)
+      is a **confirmation, not a defect**: `ListenerOrchestrator` has no `shutdown()` method and no
+      custom `Drop`; a `Weak`-reference proof confirms no lock is left held when the last strong
+      `Arc` is dropped mid-processing (owner: none — no production change needed). The
+      `DEFERRED_COVERAGE.md` "establish concurrency testing patterns" prerequisite is satisfied by
+      plan 15-09's four concurrency/stress tests, named as the reference implementation for future
+      `tokio::sync::Mutex`/`RwLock`-guarded orchestrator tests in this workspace. Closed by plan
+      15-08 (re-measurement record and lifecycle/delivery/status/health coverage, commits
+      `4291c44`/`53b1179`) and plan 15-09 (concurrency/stress suite and exit measurement, commits
+      `f216c16`/`6a66719`).
 
 ### Documentation currency & the architecture gap (DOCS)
 
@@ -4132,14 +4427,14 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | WEB-02 | Phase 14 | Complete |
 | WEB-03 | Phase 14 | Complete |
 | WEB-04 | Phase 14 | Complete |
-| PIPE-01 | Phase 15 | Pending |
-| PIPE-02 | Phase 15 | Pending |
+| PIPE-01 | Phase 15 | Complete |
+| PIPE-02 | Phase 15 | Complete |
 | PIPE-03 | Phase 15 | Complete |
 | PIPE-04 | Phase 15 | Complete |
 | PIPE-05 | Phase 15 | Complete |
-| DEFER-01 | Phase 15 | Pending |
-| DEFER-02 | Phase 15 | Pending |
-| DEFER-03 | Phase 15 | Pending |
+| DEFER-01 | Phase 15 | Complete |
+| DEFER-02 | Phase 15 | Complete |
+| DEFER-03 | Phase 15 | Complete |
 | DOCS-01 | Phase 16 | Pending |
 | DOCS-02 | Phase 16 | Pending |
 | DOCS-03 | Phase 16 | Pending |
