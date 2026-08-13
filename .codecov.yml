@@ -24,3 +24,12 @@ ignore:
   - "migrations/**"
   - "scripts/**"
   - "flat/**"
+  # Codecov auto-discovers any *coverage*.json in the tree regardless of the
+  # explicit `--file lcov.info`. On the first real run it reported "Found 9
+  # coverage files", seven of them GSD edge-probe fixtures under .claude/ and
+  # two planning-intel classifications under .planning/ -- none of which are
+  # this project's coverage data. Excluded so the report denominator is the
+  # Rust workspace and nothing else.
+  - ".claude/**"
+  - ".planning/**"
+  - ".project/**"

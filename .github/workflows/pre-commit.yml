@@ -4,20 +4,27 @@ name: pre-commit
 # same checks developers run locally are enforced for every contributor.
 on:
   pull_request:
-  # Runs on pull requests only, to avoid duplicate runs (one for `push`,
-  # one for `pull_request`) on a branch that already has an open PR.
-  # TROUBLESHOOTING: to run on every commit of a branch WITHOUT opening a PR,
-  # temporarily uncomment the `push:` block below.
-  # push:
-  #   branches:
-  #     - main
-  #     - develop
+  # Also runs on pushes to the long-lived branches. Duplicate runs (one for
+  # `push`, one for `pull_request`) are collapsed by the `concurrency` group
+  # below rather than by dropping a trigger: a PR-only trigger means this gate
+  # never runs at all on a branch that receives direct pushes and only opens a
+  # PR at the very end, which is exactly how eight broken action references
+  # survived two weeks unnoticed.
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/**'
 
 permissions:
   contents: read
 
 concurrency:
-  group: pre-commit-${{ github.ref }}
+  # `head_ref` is set only on pull_request events (the source branch); on push
+  # it is empty and this falls back to `ref`. That makes the push run and the
+  # PR run for the same branch share one group, so the newer supersedes the
+  # older instead of both burning a runner.
+  group: pre-commit-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -29,7 +36,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
 
