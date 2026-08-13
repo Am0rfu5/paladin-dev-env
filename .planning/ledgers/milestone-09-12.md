@@ -924,4 +924,3 @@ this phase made move exactly three rows across class boundaries
 
 This phase's own writer scope is exactly the six rows and two forward-scope-table rows amended above,
 plus this summary section — nothing else in the file is touched.
-
