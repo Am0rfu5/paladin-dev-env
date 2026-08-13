@@ -952,6 +952,27 @@ Plans:
 
 - The production half of `listener.rs` — everything above the `#[cfg(test)]` marker — is byte-identical to its pre-plan state.
 
+### Phase 15.1: Git & CI Governance (INSERTED)
+
+**Goal**: The branching model, the branch protection rules and the CI trigger surface agree with each other and are written down — so a broken workflow cannot survive undetected, a release tag cannot be cut from unmerged work, and a new feature branch is a normal thing to create rather than something CI fails on.
+**Requirements**: TBD — minted during `/gsd-discuss-phase 15.1`
+**Depends on**: Phase 15 (its `actionlint` job and workflow edits land first). Also consumes the outcome of branch `fix/ci-workflow-health`, which already repaired the eight broken `dtolnay/rust-toolchain@master` references and restored `push:` coverage — **this phase does not redo that work**; it addresses why it went unnoticed for two weeks.
+**Success Criteria** (what must be TRUE):
+
+  1. A broken workflow cannot sit undetected for two weeks again — every workflow's trigger surface is deliberate and recorded, closing the state where three of six workflows were `pull_request`-only and *every* workflow filtered `pull_request` to `[main, develop]`, so a branch taking direct pushes and a PR into a release branch both exercised only a fraction of CI.
+  2. `main` and the integration branch are protected with required status checks, replacing today's state where **neither `main` nor `release/v0.7.0` has any protection** and therefore no check can block anything.
+  3. `docs/BRANCH_PROTECTION.md` exists and matches reality — `release.yml`'s `verify-tag-source` job already enforces the "main is the source of truth" invariant and points contributors at that document, which **does not exist**.
+  4. The branching model is decided and documented, resolving that `release/v0.7.0` is being used as `develop` (a branch that already exists, unused) while `main` sits **909 commits behind with nothing ahead**, and that the branch name says `v0.7.0` while every manifest says **0.8.0**. Covers the long-lived-vs-short-lived release branch question and the version/naming policy.
+  5. Creating a new feature branch does not break CI — `ci.yml`'s `examples` job runs `cargo build --examples --offline` with **no `restore-keys` cache fallback**, so a fresh branch gets a cache miss and fails with `failed to download <crate> ... --offline was specified`. This currently fails on the first run of every new branch and directly blocks adopting feature-branch flow.
+  6. No CI job is dark — jobs reachable only by `schedule`/`workflow_dispatch` are either exercised on a known cadence or removed, closing the state where `Performance Benchmarks` was `skipped` in every observed run and failed the first time it was actually dispatched.
+  7. The `smartstring` unmaintained advisory (`cargo-deny`, `License & Dependency Policy`) has a recorded disposition in `SECURITY-EXCEPTIONS.md` per the existing governance mechanism, rather than a permanently red required check.
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 15.1 to break down)
+
 ### Phase 16: Documentation Currency & the Architecture Gap
 
 **Goal**: The documentation describes the system that exists — the fourteen guides Milestone 11 left mid-update are current against the tree, and the architecture document either covers the seven subsystems it omits or says out loud that it is archive material.

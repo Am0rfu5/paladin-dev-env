@@ -6,14 +6,14 @@ current_phase: 15
 current_phase_name: Coverage & CI Quality Gates
 status: executing
 stopped_at: Phase 15 context gathered
-last_updated: "2026-08-13T01:39:13.611Z"
+last_updated: "2026-08-13T16:49:23.267Z"
 last_activity: 2026-08-13
 last_activity_desc: Phase 15 execution started
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 10
   total_plans: 103
-  completed_plans: 93
+  completed_plans: 95
 ---
 
 # Project State
@@ -660,6 +660,10 @@ requirement.
   API key in its body. The value was never copied into any `.planning/` file. The user has confirmed
   it is rotated. Redacting the source document and running a repository-wide secret scan is still
   recommended — the same value may appear in `.env` history or coverage artefacts.
+
+### Roadmap Evolution
+
+- Phase 15.1 inserted after Phase 15: Git & CI Governance — branch protection, trigger surface, gitflow model, docs/BRANCH_PROTECTION.md (URGENT)
 
 ## Deferred Items
 
