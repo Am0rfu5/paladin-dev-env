@@ -941,8 +941,8 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 15-07-PLAN.md — `user_service.rs`: authentication, profile, queries, concurrency, and the module measurement
-- [ ] 15-09-PLAN.md — `listener.rs`: the concurrency and stress suite, and the exit measurement
+- [x] 15-07-PLAN.md — `user_service.rs`: authentication, profile, queries, concurrency, and the module measurement
+- [x] 15-09-PLAN.md — `listener.rs`: the concurrency and stress suite, and the exit measurement
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
